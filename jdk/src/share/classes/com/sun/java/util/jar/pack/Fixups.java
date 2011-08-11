@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.util.Iterator;
  *
  * @author John Rose
  */
-final class Fixups extends AbstractCollection {
+final class Fixups extends AbstractCollection<Fixups.Fixup> {
     byte[] bytes;    // the subject of the relocations
     int head;        // desc locating first reloc
     int tail;        // desc locating last reloc
@@ -66,11 +66,11 @@ final class Fixups extends AbstractCollection {
         // If there are no bytes, all descs are kept in bigDescs.
         this((byte[])null);
     }
-    Fixups(byte[] bytes, Collection fixups) {
+    Fixups(byte[] bytes, Collection<Fixup> fixups) {
         this(bytes);
         addAll(fixups);
     }
-    Fixups(Collection fixups) {
+    Fixups(Collection<Fixup> fixups) {
         this((byte[])null);
         addAll(fixups);
     }
@@ -108,8 +108,7 @@ final class Fixups extends AbstractCollection {
     public void clear() {
         if (bytes != null) {
             // Clean the bytes:
-            for (Iterator i = iterator(); i.hasNext(); ) {
-                Fixup fx = (Fixup) i.next();
+            for (Fixup fx : this) {
                 //System.out.println("clean "+fx);
                 storeIndex(fx.location(), fx.format(), 0);
             }
@@ -124,15 +123,14 @@ final class Fixups extends AbstractCollection {
         return bytes;
     }
 
-    @SuppressWarnings("unchecked")
     public void setBytes(byte[] newBytes) {
         if (bytes == newBytes)  return;
-        ArrayList old = null;
-        assert((old = new ArrayList(this)) != null);
+        ArrayList<Fixup> old = null;
+        assert((old = new ArrayList<>(this)) != null);
         if (bytes == null || newBytes == null) {
             // One or the other representations is deficient.
             // Construct a checkpoint.
-            ArrayList save = new ArrayList(this);
+            ArrayList<Fixup> save = new ArrayList<>(this);
             clear();
             bytes = newBytes;
             addAll(save);
@@ -140,7 +138,7 @@ final class Fixups extends AbstractCollection {
             // assume newBytes is some sort of bitwise copy of the old bytes
             bytes = newBytes;
         }
-        assert(old.equals(new ArrayList(this)));
+        assert(old.equals(new ArrayList<>(this)));
     }
 
     static final int LOC_SHIFT = 1;
@@ -236,7 +234,7 @@ final class Fixups extends AbstractCollection {
 
     /** Simple and necessary tuple to present each fixup. */
     public static
-    class Fixup implements Comparable {
+    class Fixup implements Comparable<Fixup> {
         int desc;         // location and format of reloc
         Entry entry;      // which entry to plug into the bytes
         Fixup(int desc, Entry entry) {
@@ -254,9 +252,6 @@ final class Fixups extends AbstractCollection {
             // Ordering depends only on location.
             return this.location() - that.location();
         }
-        public int compareTo(Object that) {
-            return compareTo((Fixup)that);
-        }
         public boolean equals(Object x) {
             if (!(x instanceof Fixup))  return false;
             Fixup that = (Fixup) x;
@@ -268,13 +263,13 @@ final class Fixups extends AbstractCollection {
     }
 
     private
-    class Itr implements Iterator {
+    class Itr implements Iterator<Fixup> {
         int index = 0;               // index into entries
         int bigIndex = BIGSIZE+1;    // index into bigDescs
         int next = head;             // desc pointing to next fixup
         public boolean hasNext() { return index < size; }
         public void remove() { throw new UnsupportedOperationException(); }
-        public Object next() {
+        public Fixup next() {
             int thisIndex = index;
             return new Fixup(nextDesc(), entries[thisIndex]);
         }
@@ -298,7 +293,7 @@ final class Fixups extends AbstractCollection {
         }
     }
 
-    public Iterator iterator() {
+    public Iterator<Fixup> iterator() {
         return new Itr();
     }
     public void add(int location, int format, Entry entry) {
@@ -308,11 +303,8 @@ final class Fixups extends AbstractCollection {
         addDesc(f.desc, f.entry);
         return true;
     }
-    public boolean add(Object fixup) {
-        return add((Fixup) fixup);
-    }
-    @SuppressWarnings("unchecked")
-    public boolean addAll(Collection c) {
+
+    public boolean addAll(Collection<? extends Fixup> c) {
         if (c instanceof Fixups) {
             // Use knowledge of Itr structure to avoid building little structs.
             Fixups that = (Fixups) c;
@@ -453,8 +445,7 @@ final class Fixups extends AbstractCollection {
     void finishRefs(ConstantPool.Index ix) {
         if (isEmpty())
             return;
-        for (Iterator i = iterator(); i.hasNext(); ) {
-            Fixup fx = (Fixup) i.next();
+        for (Fixup fx : this) {
             int index = ix.indexOf(fx.entry);
             //System.out.println("finish "+fx+" = "+index);
             // Note that the iterator has already fetched the

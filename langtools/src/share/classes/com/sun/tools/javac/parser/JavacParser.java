@@ -57,7 +57,7 @@ public class JavacParser implements Parser {
 
     /** The scanner used for lexical analysis.
      */
-    private Lexer S;
+    protected Lexer S;
 
     /** The factory to be used for abstract syntax tree construction.
      */
@@ -99,9 +99,9 @@ public class JavacParser implements Parser {
         this.allowTWR = source.allowTryWithResources();
         this.allowDiamond = source.allowDiamond();
         this.allowMulticatch = source.allowMulticatch();
+        this.allowStringFolding = fac.options.getBoolean("allowStringFolding", true);
         this.keepDocComments = keepDocComments;
-        if (keepDocComments)
-            docComments = new HashMap<JCTree,String>();
+        docComments = keepDocComments ? new HashMap<JCTree,String>() : null;
         this.keepLineMap = keepLineMap;
         this.errorTree = F.Erroneous();
     }
@@ -145,6 +145,10 @@ public class JavacParser implements Parser {
     /** Switch: should we recognize try-with-resources?
      */
     boolean allowTWR;
+
+    /** Switch: should we fold strings?
+     */
+    boolean allowStringFolding;
 
     /** Switch: should we keep docComments?
      */
@@ -757,6 +761,8 @@ public class JavacParser implements Parser {
          *  by a single literal representing the concatenated string.
          */
         protected StringBuffer foldStrings(JCTree tree) {
+            if (!allowStringFolding)
+                return null;
             List<String> buf = List.nil();
             while (true) {
                 if (tree.getTag() == JCTree.LITERAL) {
@@ -1375,8 +1381,10 @@ public class JavacParser implements Parser {
         int oldmode = mode;
         mode = TYPE;
         boolean diamondFound = false;
+        int lastTypeargsPos = -1;
         if (S.token() == LT) {
             checkGenerics();
+            lastTypeargsPos = S.pos();
             t = typeArguments(t, true);
             diamondFound = (mode & DIAMOND) != 0;
         }
@@ -1389,6 +1397,7 @@ public class JavacParser implements Parser {
             S.nextToken();
             t = toP(F.at(pos).Select(t, ident()));
             if (S.token() == LT) {
+                lastTypeargsPos = S.pos();
                 checkGenerics();
                 t = typeArguments(t, true);
                 diamondFound = (mode & DIAMOND) != 0;
@@ -1397,7 +1406,11 @@ public class JavacParser implements Parser {
         mode = oldmode;
         if (S.token() == LBRACKET) {
             JCExpression e = arrayCreatorRest(newpos, t);
-            if (typeArgs != null) {
+            if (diamondFound) {
+                reportSyntaxError(lastTypeargsPos, "cannot.create.array.with.diamond");
+                return toP(F.at(newpos).Erroneous(List.of(e)));
+            }
+            else if (typeArgs != null) {
                 int pos = newpos;
                 if (!typeArgs.isEmpty() && typeArgs.head.pos != Position.NOPOS) {
                     // note: this should always happen but we should

@@ -25,6 +25,7 @@
 
 
 #include "DllUtil.h"
+#include <jdk_util.h>
 
 // Disable warning about using this in the initializer list.
 #pragma warning( disable : 4355)
@@ -40,7 +41,7 @@ DllUtil::~DllUtil()
 HMODULE DllUtil::GetModule()
 {
     if (!module) {
-        module = ::LoadLibrary(name);
+        module = JDK_LoadSystemLibrary(name);
     }
     return module;
 }
@@ -60,7 +61,7 @@ DwmAPI & DwmAPI::GetInstance()
 }
 
 DwmAPI::DwmAPI() :
-    DllUtil(_T("DWMAPI.DLL")),
+    DllUtil("DWMAPI.DLL"),
     DwmIsCompositionEnabledFunction((DllUtil*)this, "DwmIsCompositionEnabled"),
     DwmGetWindowAttributeFunction((DllUtil*)this, "DwmGetWindowAttribute")
 {

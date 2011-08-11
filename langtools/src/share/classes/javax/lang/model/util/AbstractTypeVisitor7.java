@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ import javax.lang.model.type.*;
  *            additional parameter.
  *
  * @see AbstractTypeVisitor6
+ * @see AbstractTypeVisitor8
  * @since 1.7
  */
 public abstract class AbstractTypeVisitor7<R, P> extends AbstractTypeVisitor6<R, P> {

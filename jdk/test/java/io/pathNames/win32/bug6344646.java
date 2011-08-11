@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,17 +32,24 @@ import java.util.*;
 
 public class bug6344646 {
     public static void main(String[] s) {
-        /* This test is only valid on win32 systems */
-        if (File.separatorChar != '\\') {
-            return;
-        }
+        Locale reservedLocale = Locale.getDefault();
+        try {
+            /* This test is only valid on win32 systems */
+            if (File.separatorChar != '\\') {
+                return;
+            }
 
-        Locale.setDefault(new Locale("lt"));
-        File f1 = new File("J\u0301");
-        File f2 = new File("j\u0301");
+            Locale.setDefault(new Locale("lt"));
+            File f1 = new File("J\u0301");
+            File f2 = new File("j\u0301");
 
-        if (f1.hashCode() != f2.hashCode()) {
-            throw new RuntimeException("File.hashCode() for \"J\u0301\" and \"j\u0301\" should be the same");
+            if (f1.hashCode() != f2.hashCode()) {
+                throw new RuntimeException("File.hashCode() for \"J\u0301\" " +
+                        "and \"j\u0301\" should be the same");
+            }
+        } finally {
+            // restore the reserved locale
+            Locale.setDefault(reservedLocale);
         }
     }
 }

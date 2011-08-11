@@ -134,13 +134,10 @@ public:
 
 G1CollectorPolicy::G1CollectorPolicy() :
   _parallel_gc_threads(G1CollectedHeap::use_parallel_gc_threads()
-    ? ParallelGCThreads : 1),
-
+                        ? ParallelGCThreads : 1),
 
   _n_pauses(0),
-  _recent_CH_strong_roots_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
-  _recent_G1_strong_roots_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
-  _recent_evac_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
+  _recent_rs_scan_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
   _recent_pause_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
   _recent_rs_sizes(new TruncatedSeq(NumPrevPausesForHeuristics)),
   _recent_gc_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
@@ -1050,18 +1047,6 @@ void G1CollectorPolicy::record_concurrent_pause() {
 void G1CollectorPolicy::record_concurrent_pause_end() {
 }
 
-void G1CollectorPolicy::record_collection_pause_end_CH_strong_roots() {
-  _cur_CH_strong_roots_end_sec = os::elapsedTime();
-  _cur_CH_strong_roots_dur_ms =
-    (_cur_CH_strong_roots_end_sec - _cur_collection_start_sec) * 1000.0;
-}
-
-void G1CollectorPolicy::record_collection_pause_end_G1_strong_roots() {
-  _cur_G1_strong_roots_end_sec = os::elapsedTime();
-  _cur_G1_strong_roots_dur_ms =
-    (_cur_G1_strong_roots_end_sec - _cur_CH_strong_roots_end_sec) * 1000.0;
-}
-
 template<class T>
 T sum_of(T* sum_arr, int start, int n, int N) {
   T sum = (T)0;
@@ -1183,7 +1168,6 @@ void G1CollectorPolicy::record_collection_pause_end() {
   double end_time_sec = os::elapsedTime();
   double elapsed_ms = _last_pause_time_ms;
   bool parallel = G1CollectedHeap::use_parallel_gc_threads();
-  double evac_ms = (end_time_sec - _cur_G1_strong_roots_end_sec) * 1000.0;
   size_t rs_size =
     _cur_collection_pause_used_regions_at_start - collection_set_size();
   size_t cur_used_bytes = _g1->used();
@@ -1256,13 +1240,51 @@ void G1CollectorPolicy::record_collection_pause_end() {
 
   _n_pauses++;
 
-  if (update_stats) {
-    _recent_CH_strong_roots_times_ms->add(_cur_CH_strong_roots_dur_ms);
-    _recent_G1_strong_roots_times_ms->add(_cur_G1_strong_roots_dur_ms);
-    _recent_evac_times_ms->add(evac_ms);
-    _recent_pause_times_ms->add(elapsed_ms);
+  double ext_root_scan_time = avg_value(_par_last_ext_root_scan_times_ms);
+  double mark_stack_scan_time = avg_value(_par_last_mark_stack_scan_times_ms);
+  double update_rs_time = avg_value(_par_last_update_rs_times_ms);
+  double update_rs_processed_buffers =
+    sum_of_values(_par_last_update_rs_processed_buffers);
+  double scan_rs_time = avg_value(_par_last_scan_rs_times_ms);
+  double obj_copy_time = avg_value(_par_last_obj_copy_times_ms);
+  double termination_time = avg_value(_par_last_termination_times_ms);
 
+  double parallel_known_time = update_rs_time +
+                               ext_root_scan_time +
+                               mark_stack_scan_time +
+                               scan_rs_time +
+                               obj_copy_time +
+                               termination_time;
+
+  double parallel_other_time = _cur_collection_par_time_ms - parallel_known_time;
+
+  PauseSummary* summary = _summary;
+
+  if (update_stats) {
+    _recent_rs_scan_times_ms->add(scan_rs_time);
+    _recent_pause_times_ms->add(elapsed_ms);
     _recent_rs_sizes->add(rs_size);
+
+    MainBodySummary* body_summary = summary->main_body_summary();
+    guarantee(body_summary != NULL, "should not be null!");
+
+    if (_satb_drain_time_set)
+      body_summary->record_satb_drain_time_ms(_cur_satb_drain_time_ms);
+    else
+      body_summary->record_satb_drain_time_ms(0.0);
+
+    body_summary->record_ext_root_scan_time_ms(ext_root_scan_time);
+    body_summary->record_mark_stack_scan_time_ms(mark_stack_scan_time);
+    body_summary->record_update_rs_time_ms(update_rs_time);
+    body_summary->record_scan_rs_time_ms(scan_rs_time);
+    body_summary->record_obj_copy_time_ms(obj_copy_time);
+    if (parallel) {
+      body_summary->record_parallel_time_ms(_cur_collection_par_time_ms);
+      body_summary->record_clear_ct_time_ms(_cur_clear_ct_time_ms);
+      body_summary->record_termination_time_ms(termination_time);
+      body_summary->record_parallel_other_time_ms(parallel_other_time);
+    }
+    body_summary->record_mark_closure_time_ms(_mark_closure_time_ms);
 
     // We exempt parallel collection from this check because Alloc Buffer
     // fragmentation can produce negative collections.  Same with evac
@@ -1328,56 +1350,12 @@ void G1CollectorPolicy::record_collection_pause_end() {
     gclog_or_tty->print_cr("   Recording collection pause(%d)", _n_pauses);
   }
 
-  PauseSummary* summary = _summary;
-
-  double ext_root_scan_time = avg_value(_par_last_ext_root_scan_times_ms);
-  double mark_stack_scan_time = avg_value(_par_last_mark_stack_scan_times_ms);
-  double update_rs_time = avg_value(_par_last_update_rs_times_ms);
-  double update_rs_processed_buffers =
-    sum_of_values(_par_last_update_rs_processed_buffers);
-  double scan_rs_time = avg_value(_par_last_scan_rs_times_ms);
-  double obj_copy_time = avg_value(_par_last_obj_copy_times_ms);
-  double termination_time = avg_value(_par_last_termination_times_ms);
-
-  double parallel_other_time = _cur_collection_par_time_ms -
-    (update_rs_time + ext_root_scan_time + mark_stack_scan_time +
-     scan_rs_time + obj_copy_time + termination_time);
-  if (update_stats) {
-    MainBodySummary* body_summary = summary->main_body_summary();
-    guarantee(body_summary != NULL, "should not be null!");
-
-    if (_satb_drain_time_set)
-      body_summary->record_satb_drain_time_ms(_cur_satb_drain_time_ms);
-    else
-      body_summary->record_satb_drain_time_ms(0.0);
-    body_summary->record_ext_root_scan_time_ms(ext_root_scan_time);
-    body_summary->record_mark_stack_scan_time_ms(mark_stack_scan_time);
-    body_summary->record_update_rs_time_ms(update_rs_time);
-    body_summary->record_scan_rs_time_ms(scan_rs_time);
-    body_summary->record_obj_copy_time_ms(obj_copy_time);
-    if (parallel) {
-      body_summary->record_parallel_time_ms(_cur_collection_par_time_ms);
-      body_summary->record_clear_ct_time_ms(_cur_clear_ct_time_ms);
-      body_summary->record_termination_time_ms(termination_time);
-      body_summary->record_parallel_other_time_ms(parallel_other_time);
-    }
-    body_summary->record_mark_closure_time_ms(_mark_closure_time_ms);
-  }
-
   if (G1PolicyVerbose > 1) {
     gclog_or_tty->print_cr("      ET: %10.6f ms           (avg: %10.6f ms)\n"
-                           "        CH Strong: %10.6f ms    (avg: %10.6f ms)\n"
-                           "        G1 Strong: %10.6f ms    (avg: %10.6f ms)\n"
-                           "        Evac:      %10.6f ms    (avg: %10.6f ms)\n"
                            "       ET-RS:  %10.6f ms      (avg: %10.6f ms)\n"
                            "      |RS|: " SIZE_FORMAT,
                            elapsed_ms, recent_avg_time_for_pauses_ms(),
-                           _cur_CH_strong_roots_dur_ms, recent_avg_time_for_CH_strong_ms(),
-                           _cur_G1_strong_roots_dur_ms, recent_avg_time_for_G1_strong_ms(),
-                           evac_ms, recent_avg_time_for_evac_ms(),
-                           scan_rs_time,
-                           recent_avg_time_for_pauses_ms() -
-                           recent_avg_time_for_G1_strong_ms(),
+                           scan_rs_time, recent_avg_time_for_rs_scan_ms(),
                            rs_size);
 
     gclog_or_tty->print_cr("       Used at start: " SIZE_FORMAT"K"
@@ -1438,7 +1416,7 @@ void G1CollectorPolicy::record_collection_pause_end() {
       }
       print_par_stats(2, "GC Worker Times", _par_last_gc_worker_times_ms);
 
-      print_stats(2, "Other", parallel_other_time);
+      print_stats(2, "Parallel Other", parallel_other_time);
       print_stats(1, "Clear CT", _cur_clear_ct_time_ms);
     } else {
       print_stats(1, "Update RS", update_rs_time);
@@ -1967,38 +1945,27 @@ void G1CollectorPolicy::update_recent_gc_times(double end_time_sec,
 }
 
 double G1CollectorPolicy::recent_avg_time_for_pauses_ms() {
-  if (_recent_pause_times_ms->num() == 0) return (double) MaxGCPauseMillis;
-  else return _recent_pause_times_ms->avg();
+  if (_recent_pause_times_ms->num() == 0) {
+    return (double) MaxGCPauseMillis;
+  }
+  return _recent_pause_times_ms->avg();
 }
 
-double G1CollectorPolicy::recent_avg_time_for_CH_strong_ms() {
-  if (_recent_CH_strong_roots_times_ms->num() == 0)
+double G1CollectorPolicy::recent_avg_time_for_rs_scan_ms() {
+  if (_recent_rs_scan_times_ms->num() == 0) {
     return (double)MaxGCPauseMillis/3.0;
-  else return _recent_CH_strong_roots_times_ms->avg();
-}
-
-double G1CollectorPolicy::recent_avg_time_for_G1_strong_ms() {
-  if (_recent_G1_strong_roots_times_ms->num() == 0)
-    return (double)MaxGCPauseMillis/3.0;
-  else return _recent_G1_strong_roots_times_ms->avg();
-}
-
-double G1CollectorPolicy::recent_avg_time_for_evac_ms() {
-  if (_recent_evac_times_ms->num() == 0) return (double)MaxGCPauseMillis/3.0;
-  else return _recent_evac_times_ms->avg();
+  }
+  return _recent_rs_scan_times_ms->avg();
 }
 
 int G1CollectorPolicy::number_of_recent_gcs() {
-  assert(_recent_CH_strong_roots_times_ms->num() ==
-         _recent_G1_strong_roots_times_ms->num(), "Sequence out of sync");
-  assert(_recent_G1_strong_roots_times_ms->num() ==
-         _recent_evac_times_ms->num(), "Sequence out of sync");
-  assert(_recent_evac_times_ms->num() ==
+  assert(_recent_rs_scan_times_ms->num() ==
          _recent_pause_times_ms->num(), "Sequence out of sync");
   assert(_recent_pause_times_ms->num() ==
          _recent_CS_bytes_used_before->num(), "Sequence out of sync");
   assert(_recent_CS_bytes_used_before->num() ==
          _recent_CS_bytes_surviving->num(), "Sequence out of sync");
+
   return _recent_pause_times_ms->num();
 }
 

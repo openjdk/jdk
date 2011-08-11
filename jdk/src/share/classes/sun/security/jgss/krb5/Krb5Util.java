@@ -44,7 +44,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import sun.misc.SharedSecrets;
+import sun.security.krb5.KerberosSecrets;
 import sun.security.krb5.PrincipalName;
 /**
  * Utilities for obtaining and converting Kerberos tickets.
@@ -378,7 +378,7 @@ public class Krb5Util {
      */
     public static EncryptionKey[] keysFromJavaxKeyTab(
             KeyTab ktab, PrincipalName cname) {
-        return SharedSecrets.getJavaxSecurityAuthKerberosAccess().
+        return KerberosSecrets.getJavaxSecurityAuthKerberosAccess().
                 keyTabGetEncryptionKeys(ktab, cname);
     }
 

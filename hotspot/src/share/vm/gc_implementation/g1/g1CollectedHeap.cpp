@@ -1901,12 +1901,27 @@ jint G1CollectedHeap::initialize() {
   PermanentGenerationSpec* pgs = collector_policy()->permanent_generation();
   // Includes the perm-gen.
 
-  const size_t total_reserved = max_byte_size + pgs->max_size();
+  // When compressed oops are enabled, the preferred heap base
+  // is calculated by subtracting the requested size from the
+  // 32Gb boundary and using the result as the base address for
+  // heap reservation. If the requested size is not aligned to
+  // HeapRegion::GrainBytes (i.e. the alignment that is passed
+  // into the ReservedHeapSpace constructor) then the actual
+  // base of the reserved heap may end up differing from the
+  // address that was requested (i.e. the preferred heap base).
+  // If this happens then we could end up using a non-optimal
+  // compressed oops mode.
+
+  // Since max_byte_size is aligned to the size of a heap region (checked
+  // above), we also need to align the perm gen size as it might not be.
+  const size_t total_reserved = max_byte_size +
+                                align_size_up(pgs->max_size(), HeapRegion::GrainBytes);
+  Universe::check_alignment(total_reserved, HeapRegion::GrainBytes, "g1 heap and perm");
+
   char* addr = Universe::preferred_heap_base(total_reserved, Universe::UnscaledNarrowOop);
 
-  ReservedSpace heap_rs(max_byte_size + pgs->max_size(),
-                        HeapRegion::GrainBytes,
-                        UseLargePages, addr);
+  ReservedHeapSpace heap_rs(total_reserved, HeapRegion::GrainBytes,
+                            UseLargePages, addr);
 
   if (UseCompressedOops) {
     if (addr != NULL && !heap_rs.is_reserved()) {
@@ -1914,14 +1929,17 @@ jint G1CollectedHeap::initialize() {
       // region is taken already, for example, by 'java' launcher.
       // Try again to reserver heap higher.
       addr = Universe::preferred_heap_base(total_reserved, Universe::ZeroBasedNarrowOop);
-      ReservedSpace heap_rs0(total_reserved, HeapRegion::GrainBytes,
-                             UseLargePages, addr);
+
+      ReservedHeapSpace heap_rs0(total_reserved, HeapRegion::GrainBytes,
+                                 UseLargePages, addr);
+
       if (addr != NULL && !heap_rs0.is_reserved()) {
         // Failed to reserve at specified address again - give up.
         addr = Universe::preferred_heap_base(total_reserved, Universe::HeapBasedNarrowOop);
         assert(addr == NULL, "");
-        ReservedSpace heap_rs1(total_reserved, HeapRegion::GrainBytes,
-                               UseLargePages, addr);
+
+        ReservedHeapSpace heap_rs1(total_reserved, HeapRegion::GrainBytes,
+                                   UseLargePages, addr);
         heap_rs = heap_rs1;
       } else {
         heap_rs = heap_rs0;
@@ -4834,6 +4852,7 @@ public:
                                   scan_perm_cl,
                                   i);
     pss.end_strong_roots();
+
     {
       double start = os::elapsedTime();
       G1ParEvacuateFollowersClosure evac(_g1h, &pss, _queues, &_terminator);
@@ -4890,17 +4909,29 @@ g1_process_strong_roots(bool collecting_perm_gen,
                        &eager_scan_code_roots,
                        &buf_scan_perm);
 
-  // Finish up any enqueued closure apps.
+  // Now the ref_processor roots.
+  if (!_process_strong_tasks->is_task_claimed(G1H_PS_refProcessor_oops_do)) {
+    // We need to treat the discovered reference lists as roots and
+    // keep entries (which are added by the marking threads) on them
+    // live until they can be processed at the end of marking.
+    ref_processor()->weak_oops_do(&buf_scan_non_heap_roots);
+    ref_processor()->oops_do(&buf_scan_non_heap_roots);
+  }
+
+  // Finish up any enqueued closure apps (attributed as object copy time).
   buf_scan_non_heap_roots.done();
   buf_scan_perm.done();
+
   double ext_roots_end = os::elapsedTime();
+
   g1_policy()->reset_obj_copy_time(worker_i);
-  double obj_copy_time_sec =
-    buf_scan_non_heap_roots.closure_app_seconds() +
-    buf_scan_perm.closure_app_seconds();
+  double obj_copy_time_sec = buf_scan_perm.closure_app_seconds() +
+                                buf_scan_non_heap_roots.closure_app_seconds();
   g1_policy()->record_obj_copy_time(worker_i, obj_copy_time_sec * 1000.0);
+
   double ext_root_time_ms =
     ((ext_roots_end - ext_roots_start) - obj_copy_time_sec) * 1000.0;
+
   g1_policy()->record_ext_root_scan_time(worker_i, ext_root_time_ms);
 
   // Scan strong roots in mark stack.
@@ -4910,21 +4941,11 @@ g1_process_strong_roots(bool collecting_perm_gen,
   double mark_stack_scan_ms = (os::elapsedTime() - ext_roots_end) * 1000.0;
   g1_policy()->record_mark_stack_scan_time(worker_i, mark_stack_scan_ms);
 
-  // XXX What should this be doing in the parallel case?
-  g1_policy()->record_collection_pause_end_CH_strong_roots();
   // Now scan the complement of the collection set.
   if (scan_rs != NULL) {
     g1_rem_set()->oops_into_collection_set_do(scan_rs, worker_i);
   }
-  // Finish with the ref_processor roots.
-  if (!_process_strong_tasks->is_task_claimed(G1H_PS_refProcessor_oops_do)) {
-    // We need to treat the discovered reference lists as roots and
-    // keep entries (which are added by the marking threads) on them
-    // live until they can be processed at the end of marking.
-    ref_processor()->weak_oops_do(scan_non_heap_roots);
-    ref_processor()->oops_do(scan_non_heap_roots);
-  }
-  g1_policy()->record_collection_pause_end_G1_strong_roots();
+
   _process_strong_tasks->all_tasks_completed();
 }
 

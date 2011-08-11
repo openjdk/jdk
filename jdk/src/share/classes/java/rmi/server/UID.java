@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,15 +118,17 @@ public final class UID implements Serializable {
                 boolean done = false;
                 while (!done) {
                     long now = System.currentTimeMillis();
-                    if (now <= lastTime) {
+                    if (now == lastTime) {
                         // wait for time to change
                         try {
-                            Thread.currentThread().sleep(1);
+                            Thread.sleep(1);
                         } catch (InterruptedException e) {
                             interrupted = true;
                         }
                     } else {
-                        lastTime = now;
+                        // If system time has gone backwards increase
+                        // original by 1ms to maintain uniqueness
+                        lastTime = (now < lastTime) ? lastTime+1 : now;
                         lastCount = Short.MIN_VALUE;
                         done = true;
                     }

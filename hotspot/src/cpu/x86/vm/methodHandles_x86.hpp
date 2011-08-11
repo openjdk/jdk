@@ -291,6 +291,10 @@ public:
                  "reference is a MH");
   }
 
+  // Similar to InterpreterMacroAssembler::jump_from_interpreted.
+  // Takes care of special dispatch from single stepping too.
+  static void jump_from_method_handle(MacroAssembler* _masm, Register method, Register temp);
+
   static void trace_method_handle(MacroAssembler* _masm, const char* adaptername) PRODUCT_RETURN;
 
   static Register saved_last_sp_register() {

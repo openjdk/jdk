@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6993963
+ * @bug 6993963 7025809
  * @summary Project Coin: Use precise exception analysis for effectively final catch parameters
  * @library ../../lib
  * @build JavacTestingAbstractProcessor ModelChecker
@@ -107,7 +107,7 @@ public class ModelChecker extends JavacTestingAbstractProcessor {
             ; // Expected
         }
 
-        UnionType unionType = new SimpleTypeVisitor7<UnionType, Void>(){
+        UnionType unionType = new SimpleTypeVisitor<UnionType, Void>(){
             @Override
             protected UnionType defaultAction(TypeMirror e, Void p) {return null;}
 

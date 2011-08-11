@@ -26,6 +26,8 @@
 package java.lang.invoke;
 
 import sun.invoke.util.VerifyType;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -82,155 +84,63 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         }
         DirectMethodHandle mh = new DirectMethodHandle(mtype, method, doDispatch, lookupClass);
         if (!mh.isValid())
-            throw method.makeAccessException("no access", lookupClass);
+            throw method.makeAccessException("no direct method handle", lookupClass);
         assert(mh.type() == mtype);
         if (!method.isVarargs())
             return mh;
-        else
-            return mh.asVarargsCollector(mtype.parameterType(mtype.parameterCount()-1));
+        int argc = mtype.parameterCount();
+        if (argc != 0) {
+            Class<?> arrayType = mtype.parameterType(argc-1);
+            if (arrayType.isArray())
+                return AdapterMethodHandle.makeVarargsCollector(mh, arrayType);
+        }
+        throw method.makeAccessException("cannot make variable arity", null);
     }
 
     static
     MethodHandle makeAllocator(MethodHandle rawConstructor) {
         MethodType rawConType = rawConstructor.type();
+        Class<?> allocateClass = rawConType.parameterType(0);
         // Wrap the raw (unsafe) constructor with the allocation of a suitable object.
-        MethodHandle allocator
-            = AllocateObject.make(rawConType.parameterType(0), rawConstructor);
-        assert(allocator.type()
-               .equals(rawConType.dropParameterTypes(0, 1).changeReturnType(rawConType.parameterType(0))));
-        return allocator;
+        assert(AdapterMethodHandle.canCollectArguments(rawConType, MethodType.methodType(allocateClass), 0, true));
+        // allocator(arg...)
+        // [fold]=> cookedConstructor(obj=allocate(C), arg...)
+        // [dup,collect]=> identity(obj, void=rawConstructor(obj, arg...))
+        MethodHandle returner = MethodHandles.identity(allocateClass);
+        MethodType ctype = rawConType.insertParameterTypes(0, allocateClass).changeReturnType(allocateClass);
+        MethodHandle  cookedConstructor = AdapterMethodHandle.makeCollectArguments(returner, rawConstructor, 1, false);
+        assert(cookedConstructor.type().equals(ctype));
+        ctype = ctype.dropParameterTypes(0, 1);
+        cookedConstructor = AdapterMethodHandle.makeCollectArguments(cookedConstructor, returner, 0, true);
+        MethodHandle allocator = new AllocateObject(allocateClass);
+        // allocate() => new C(void)
+        assert(allocator.type().equals(MethodType.methodType(allocateClass)));
+        ctype = ctype.dropParameterTypes(0, 1);
+        MethodHandle fold = foldArguments(cookedConstructor, ctype, 0, allocator);
+        return fold;
     }
 
     static final class AllocateObject<C> extends BoundMethodHandle {
         private static final Unsafe unsafe = Unsafe.getUnsafe();
 
         private final Class<C> allocateClass;
-        private final MethodHandle rawConstructor;
 
-        private AllocateObject(MethodHandle invoker,
-                               Class<C> allocateClass, MethodHandle rawConstructor) {
-            super(invoker);
+        // for allocation only:
+        private AllocateObject(Class<C> allocateClass) {
+            super(ALLOCATE.asType(MethodType.methodType(allocateClass, AllocateObject.class)));
             this.allocateClass = allocateClass;
-            this.rawConstructor = rawConstructor;
-        }
-        static MethodHandle make(Class<?> allocateClass, MethodHandle rawConstructor) {
-            MethodType rawConType = rawConstructor.type();
-            assert(rawConType.parameterType(0) == allocateClass);
-            MethodType newType = rawConType.dropParameterTypes(0, 1).changeReturnType(allocateClass);
-            int nargs = rawConType.parameterCount() - 1;
-            if (nargs < INVOKES.length) {
-                MethodHandle invoke = INVOKES[nargs];
-                MethodType conType = CON_TYPES[nargs];
-                MethodHandle gcon = convertArguments(rawConstructor, conType, rawConType, 0);
-                if (gcon == null)  return null;
-                MethodHandle galloc = new AllocateObject(invoke, allocateClass, gcon);
-                assert(galloc.type() == newType.generic());
-                return convertArguments(galloc, newType, galloc.type(), 0);
-            } else {
-                MethodHandle invoke = VARARGS_INVOKE;
-                MethodType conType = CON_TYPES[nargs];
-                MethodHandle gcon = spreadArguments(rawConstructor, conType, 1);
-                if (gcon == null)  return null;
-                MethodHandle galloc = new AllocateObject(invoke, allocateClass, gcon);
-                return collectArguments(galloc, newType, 1, null);
-            }
-        }
-        @Override
-        public String toString() {
-            return addTypeString(allocateClass.getSimpleName(), this);
         }
         @SuppressWarnings("unchecked")
         private C allocate() throws InstantiationException {
             return (C) unsafe.allocateInstance(allocateClass);
         }
-        private C invoke_V(Object... av) throws Throwable {
-            C obj = allocate();
-            rawConstructor.invokeExact((Object)obj, av);
-            return obj;
-        }
-        private C invoke_L0() throws Throwable {
-            C obj = allocate();
-            rawConstructor.invokeExact((Object)obj);
-            return obj;
-        }
-        private C invoke_L1(Object a0) throws Throwable {
-            C obj = allocate();
-            rawConstructor.invokeExact((Object)obj, a0);
-            return obj;
-        }
-        private C invoke_L2(Object a0, Object a1) throws Throwable {
-            C obj = allocate();
-            rawConstructor.invokeExact((Object)obj, a0, a1);
-            return obj;
-        }
-        private C invoke_L3(Object a0, Object a1, Object a2) throws Throwable {
-            C obj = allocate();
-            rawConstructor.invokeExact((Object)obj, a0, a1, a2);
-            return obj;
-        }
-        private C invoke_L4(Object a0, Object a1, Object a2, Object a3) throws Throwable {
-            C obj = allocate();
-            rawConstructor.invokeExact((Object)obj, a0, a1, a2, a3);
-            return obj;
-        }
-        private C invoke_L5(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable {
-            C obj = allocate();
-            rawConstructor.invokeExact((Object)obj, a0, a1, a2, a3, a4);
-            return obj;
-        }
-        private C invoke_L6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable {
-            C obj = allocate();
-            rawConstructor.invokeExact((Object)obj, a0, a1, a2, a3, a4, a5);
-            return obj;
-        }
-        private C invoke_L7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable {
-            C obj = allocate();
-            rawConstructor.invokeExact((Object)obj, a0, a1, a2, a3, a4, a5, a6);
-            return obj;
-        }
-        private C invoke_L8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable {
-            C obj = allocate();
-            rawConstructor.invokeExact((Object)obj, a0, a1, a2, a3, a4, a5, a6, a7);
-            return obj;
-        }
-        static MethodHandle[] makeInvokes() {
-            ArrayList<MethodHandle> invokes = new ArrayList<MethodHandle>();
-            MethodHandles.Lookup lookup = IMPL_LOOKUP;
-            for (;;) {
-                int nargs = invokes.size();
-                String name = "invoke_L"+nargs;
-                MethodHandle invoke = null;
-                try {
-                    invoke = lookup.findVirtual(AllocateObject.class, name, MethodType.genericMethodType(nargs));
-                } catch (ReflectiveOperationException ex) {
-                }
-                if (invoke == null)  break;
-                invokes.add(invoke);
-            }
-            assert(invokes.size() == 9);  // current number of methods
-            return invokes.toArray(new MethodHandle[0]);
-        };
-        static final MethodHandle[] INVOKES = makeInvokes();
-        // For testing use this:
-        //static final MethodHandle[] INVOKES = Arrays.copyOf(makeInvokes(), 2);
-        static final MethodHandle VARARGS_INVOKE;
+        static final MethodHandle ALLOCATE;
         static {
             try {
-                VARARGS_INVOKE = IMPL_LOOKUP.findVirtual(AllocateObject.class, "invoke_V", MethodType.genericMethodType(0, true));
+                ALLOCATE = IMPL_LOOKUP.findVirtual(AllocateObject.class, "allocate", MethodType.genericMethodType(0));
             } catch (ReflectiveOperationException ex) {
                 throw uncaughtException(ex);
             }
-        }
-        // Corresponding generic constructor types:
-        static final MethodType[] CON_TYPES = new MethodType[INVOKES.length];
-        static {
-            for (int i = 0; i < INVOKES.length; i++)
-                CON_TYPES[i] = makeConType(INVOKES[i]);
-        }
-        static final MethodType VARARGS_CON_TYPE = makeConType(VARARGS_INVOKE);
-        static MethodType makeConType(MethodHandle invoke) {
-            MethodType invType = invoke.type();
-            return invType.changeParameterType(0, Object.class).changeReturnType(void.class);
         }
     }
 
@@ -278,7 +188,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             this.base = staticBase(field);
         }
         @Override
-        public String toString() { return addTypeString(name, this); }
+        String debugString() { return addTypeString(name, this); }
 
         int getFieldI(C obj) { return unsafe.getInt(obj, offset); }
         void setFieldI(C obj, int x) { unsafe.putInt(obj, offset, x); }
@@ -302,17 +212,20 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         void setFieldL(C obj, V x) { unsafe.putObject(obj, offset, x); }
         // cast (V) is OK here, since we wrap convertArguments around the MH.
 
-        static Object staticBase(MemberName field) {
+        static Object staticBase(final MemberName field) {
             if (!field.isStatic())  return null;
-            Class c = field.getDeclaringClass();
-            java.lang.reflect.Field f;
-            try {
-                // FIXME:  Should not have to create 'f' to get this value.
-                f = c.getDeclaredField(field.getName());
-                return unsafe.staticFieldBase(f);
-            } catch (Exception ee) {
-                throw uncaughtException(ee);
-            }
+            return AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                    public Object run() {
+                        try {
+                            Class c = field.getDeclaringClass();
+                            // FIXME:  Should not have to create 'f' to get this value.
+                            java.lang.reflect.Field f = c.getDeclaredField(field.getName());
+                            return unsafe.staticFieldBase(f);
+                        } catch (NoSuchFieldException ee) {
+                            throw uncaughtException(ee);
+                        }
+                    }
+                });
         }
 
         int getStaticI() { return unsafe.getInt(base, offset); }
@@ -455,14 +368,14 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
      */
     static
     MethodHandle bindReceiver(MethodHandle target, Object receiver) {
+        if (receiver == null)  return null;
         if (target instanceof AdapterMethodHandle &&
             ((AdapterMethodHandle)target).conversionOp() == MethodHandleNatives.Constants.OP_RETYPE_ONLY
             ) {
             Object info = MethodHandleNatives.getTargetInfo(target);
             if (info instanceof DirectMethodHandle) {
                 DirectMethodHandle dmh = (DirectMethodHandle) info;
-                if (receiver == null ||
-                    dmh.type().parameterType(0).isAssignableFrom(receiver.getClass())) {
+                if (dmh.type().parameterType(0).isAssignableFrom(receiver.getClass())) {
                     MethodHandle bmh = new BoundMethodHandle(dmh, receiver, 0);
                     MethodType newType = target.type().dropParameterTypes(0, 1);
                     return convertArguments(bmh, newType, bmh.type(), 0);
@@ -668,7 +581,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             if (target == null)  throw newIllegalArgumentException("cannot drop");
             oldType = target.type();
         }
-        return convertArguments(target, newType, oldType, 0);
+        target = convertArguments(target, newType, oldType, 0);
+        assert(target != null);
+        return target;
     }
 
     /*non-public*/ static
@@ -716,26 +631,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             return target;
         if (oldType.parameterCount() != newType.parameterCount())
             throw newIllegalArgumentException("mismatched parameter count", oldType, newType);
-        MethodHandle res = AdapterMethodHandle.makePairwiseConvert(newType, target, level);
-        if (res != null)
-            return res;
-        // We can come here in the case of target(int)void => (Object)void,
-        // because the unboxing logic for Object => int is complex.
-        int argc = oldType.parameterCount();
-        assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this code is deprecated
-        // The JVM can't do it directly, so fill in the gap with a Java adapter.
-        // TO DO: figure out what to put here from case-by-case experience
-        // Use a heavier method:  Convert all the arguments to Object,
-        // then back to the desired types.  We might have to use Java-based
-        // method handles to do this.
-        MethodType objType = MethodType.genericMethodType(argc);
-        MethodHandle objTarget = AdapterMethodHandle.makePairwiseConvert(objType, target, level);
-        if (objTarget == null)
-            objTarget = FromGeneric.make(target);
-        res = AdapterMethodHandle.makePairwiseConvert(newType, objTarget, level);
-        if (res != null)
-            return res;
-        return ToGeneric.make(newType, objTarget);
+        return AdapterMethodHandle.makePairwiseConvert(newType, target, level);
     }
 
     static MethodHandle spreadArguments(MethodHandle target, Class<?> arrayType, int arrayLength) {
@@ -747,7 +643,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 .insertParameterTypes(keepPosArgs, arrayType);
         return spreadArguments(target, newType, keepPosArgs, arrayType, arrayLength);
     }
-    static MethodHandle spreadArguments(MethodHandle target, MethodType newType, int spreadArgPos) {
+    // called internally only
+    static MethodHandle spreadArgumentsFromPos(MethodHandle target, MethodType newType, int spreadArgPos) {
         int arrayLength = target.type().parameterCount() - spreadArgPos;
         return spreadArguments(target, newType, spreadArgPos, Object[].class, arrayLength);
     }
@@ -761,9 +658,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         // spread the last argument of newType to oldType
         assert(arrayLength == oldType.parameterCount() - spreadArgPos);
         assert(newType.parameterType(spreadArgPos) == arrayType);
-        MethodHandle res = AdapterMethodHandle.makeSpreadArguments(newType, target, arrayType, spreadArgPos, arrayLength);
-        if (res == null)  throw new IllegalArgumentException("spread on "+target+" with "+arrayType.getSimpleName());
-        return res;
+        return AdapterMethodHandle.makeSpreadArguments(newType, target, arrayType, spreadArgPos, arrayLength);
     }
 
     static MethodHandle collectArguments(MethodHandle target,
@@ -771,6 +666,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                                                 MethodHandle collector) {
         MethodType type = target.type();
         Class<?> collectType = collector.type().returnType();
+        assert(collectType != void.class);  // else use foldArguments
         if (collectType != type.parameterType(collectArg))
             target = target.asType(type.changeParameterType(collectArg, collectType));
         MethodType newType = type
@@ -788,19 +684,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         //         oldType                      // (a..., b...)=>r
         assert(newType.parameterCount() == collectArg + colType.parameterCount());
         assert(oldType.parameterCount() == collectArg + 1);
-        MethodHandle result = null;
-        if (AdapterMethodHandle.canCollectArguments(oldType, colType, collectArg, false)) {
-            result = AdapterMethodHandle.makeCollectArguments(target, collector, collectArg, false);
-        }
-        if (result == null) {
-            assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this code is deprecated
-            MethodHandle gtarget = convertArguments(target, oldType.generic(), oldType, 0);
-            MethodHandle gcollector = convertArguments(collector, colType.generic(), colType, 0);
-            if (gtarget == null || gcollector == null)  return null;
-            MethodHandle gresult = FilterGeneric.makeArgumentCollector(gcollector, gtarget);
-            result = convertArguments(gresult, newType, gresult.type(), 0);
-        }
-        return result;
+        assert(AdapterMethodHandle.canCollectArguments(oldType, colType, collectArg, false));
+        return AdapterMethodHandle.makeCollectArguments(target, collector, collectArg, false);
     }
 
     static MethodHandle filterArgument(MethodHandle target,
@@ -809,33 +694,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         MethodType ttype = target.type();
         MethodType ftype = filter.type();
         assert(ftype.parameterCount() == 1);
-        MethodType rtype = ttype.changeParameterType(pos, ftype.parameterType(0));
-        MethodType gttype = ttype.generic();
-        if (ttype != gttype) {
-            target = convertArguments(target, gttype, ttype, 0);
-            ttype = gttype;
-        }
-        MethodType gftype = ftype.generic();
-        if (ftype != gftype) {
-            filter = convertArguments(filter, gftype, ftype, 0);
-            ftype = gftype;
-        }
-        MethodHandle result = null;
-        if (AdapterMethodHandle.canCollectArguments(ttype, ftype, pos, false)) {
-            result = AdapterMethodHandle.makeCollectArguments(target, filter, pos, false);
-        }
-        if (result == null) {
-            assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this code is deprecated
-            if (ftype == ttype) {
-            // simple unary case
-                result = FilterOneArgument.make(filter, target);
-            } else {
-                result = FilterGeneric.makeArgumentFilter(pos, filter, target);
-            }
-        }
-        if (result.type() != rtype)
-            result = result.asType(rtype);
-        return result;
+        return AdapterMethodHandle.makeCollectArguments(target, filter, pos, false);
     }
 
     static MethodHandle foldArguments(MethodHandle target,
@@ -844,156 +703,59 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                                       MethodHandle combiner) {
         MethodType oldType = target.type();
         MethodType ctype = combiner.type();
-        if (AdapterMethodHandle.canCollectArguments(oldType, ctype, foldPos, true)) {
-            MethodHandle res = AdapterMethodHandle.makeCollectArguments(target, combiner, foldPos, true);
-            if (res != null)  return res;
-        }
-        assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this code is deprecated
-        if (foldPos != 0)  return null;
-        MethodHandle gtarget = convertArguments(target, oldType.generic(), oldType, 0);
-        MethodHandle gcombiner = convertArguments(combiner, ctype.generic(), ctype, 0);
-        if (ctype.returnType() == void.class) {
-            gtarget = dropArguments(gtarget, oldType.generic().insertParameterTypes(foldPos, Object.class), foldPos);
-        }
-        if (gtarget == null || gcombiner == null)  return null;
-        MethodHandle gresult = FilterGeneric.makeArgumentFolder(gcombiner, gtarget);
-        return convertArguments(gresult, newType, gresult.type(), 0);
+        assert(AdapterMethodHandle.canCollectArguments(oldType, ctype, foldPos, true));
+        return AdapterMethodHandle.makeCollectArguments(target, combiner, foldPos, true);
     }
 
     static
     MethodHandle dropArguments(MethodHandle target,
                                MethodType newType, int argnum) {
         int drops = newType.parameterCount() - target.type().parameterCount();
-        MethodHandle res = AdapterMethodHandle.makeDropArguments(newType, target, argnum, drops);
-        if (res != null)
-            return res;
-        throw new UnsupportedOperationException("NYI");
+        return AdapterMethodHandle.makeDropArguments(newType, target, argnum, drops);
     }
 
-    private static class GuardWithTest extends BoundMethodHandle {
-        private final MethodHandle test, target, fallback;
-        private GuardWithTest(MethodHandle invoker,
-                              MethodHandle test, MethodHandle target, MethodHandle fallback) {
-            super(invoker);
-            this.test = test;
-            this.target = target;
-            this.fallback = fallback;
+    static
+    MethodHandle selectAlternative(boolean testResult, MethodHandle target, MethodHandle fallback) {
+        return testResult ? target : fallback;
+    }
+
+    static MethodHandle SELECT_ALTERNATIVE;
+    static MethodHandle selectAlternative() {
+        if (SELECT_ALTERNATIVE != null)  return SELECT_ALTERNATIVE;
+        try {
+            SELECT_ALTERNATIVE
+            = IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "selectAlternative",
+                    MethodType.methodType(MethodHandle.class, boolean.class, MethodHandle.class, MethodHandle.class));
+        } catch (ReflectiveOperationException ex) {
+            throw new RuntimeException(ex);
         }
-        // FIXME: Build the control flow out of foldArguments.
-        static MethodHandle make(MethodHandle test, MethodHandle target, MethodHandle fallback) {
-            MethodType type = target.type();
-            int nargs = type.parameterCount();
-            if (nargs < INVOKES.length) {
-                MethodHandle invoke = INVOKES[nargs];
-                MethodType gtype = type.generic();
-                assert(invoke.type().dropParameterTypes(0,1) == gtype);
-                MethodHandle gtest = convertArguments(test, gtype.changeReturnType(boolean.class), test.type(), 0);
-                MethodHandle gtarget = convertArguments(target, gtype, type, 0);
-                MethodHandle gfallback = convertArguments(fallback, gtype, type, 0);
-                if (gtest == null || gtarget == null || gfallback == null)  return null;
-                MethodHandle gguard = new GuardWithTest(invoke, gtest, gtarget, gfallback);
-                return convertArguments(gguard, type, gtype, 0);
-            } else {
-                MethodHandle invoke = VARARGS_INVOKE;
-                MethodType gtype = MethodType.genericMethodType(1);
-                assert(invoke.type().dropParameterTypes(0,1) == gtype);
-                MethodHandle gtest = spreadArguments(test, gtype.changeReturnType(boolean.class), 0);
-                MethodHandle gtarget = spreadArguments(target, gtype, 0);
-                MethodHandle gfallback = spreadArguments(fallback, gtype, 0);
-                MethodHandle gguard = new GuardWithTest(invoke, gtest, gtarget, gfallback);
-                if (gtest == null || gtarget == null || gfallback == null)  return null;
-                return collectArguments(gguard, type, 0, null);
-            }
-        }
-        @Override
-        public String toString() {
-            return addTypeString(target, this);
-        }
-        private Object invoke_V(Object... av) throws Throwable {
-            if ((boolean) test.invokeExact(av))
-                return target.invokeExact(av);
-            return fallback.invokeExact(av);
-        }
-        private Object invoke_L0() throws Throwable {
-            if ((boolean) test.invokeExact())
-                return target.invokeExact();
-            return fallback.invokeExact();
-        }
-        private Object invoke_L1(Object a0) throws Throwable {
-            if ((boolean) test.invokeExact(a0))
-                return target.invokeExact(a0);
-            return fallback.invokeExact(a0);
-        }
-        private Object invoke_L2(Object a0, Object a1) throws Throwable {
-            if ((boolean) test.invokeExact(a0, a1))
-                return target.invokeExact(a0, a1);
-            return fallback.invokeExact(a0, a1);
-        }
-        private Object invoke_L3(Object a0, Object a1, Object a2) throws Throwable {
-            if ((boolean) test.invokeExact(a0, a1, a2))
-                return target.invokeExact(a0, a1, a2);
-            return fallback.invokeExact(a0, a1, a2);
-        }
-        private Object invoke_L4(Object a0, Object a1, Object a2, Object a3) throws Throwable {
-            if ((boolean) test.invokeExact(a0, a1, a2, a3))
-                return target.invokeExact(a0, a1, a2, a3);
-            return fallback.invokeExact(a0, a1, a2, a3);
-        }
-        private Object invoke_L5(Object a0, Object a1, Object a2, Object a3, Object a4) throws Throwable {
-            if ((boolean) test.invokeExact(a0, a1, a2, a3, a4))
-                return target.invokeExact(a0, a1, a2, a3, a4);
-            return fallback.invokeExact(a0, a1, a2, a3, a4);
-        }
-        private Object invoke_L6(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5) throws Throwable {
-            if ((boolean) test.invokeExact(a0, a1, a2, a3, a4, a5))
-                return target.invokeExact(a0, a1, a2, a3, a4, a5);
-            return fallback.invokeExact(a0, a1, a2, a3, a4, a5);
-        }
-        private Object invoke_L7(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6) throws Throwable {
-            if ((boolean) test.invokeExact(a0, a1, a2, a3, a4, a5, a6))
-                return target.invokeExact(a0, a1, a2, a3, a4, a5, a6);
-            return fallback.invokeExact(a0, a1, a2, a3, a4, a5, a6);
-        }
-        private Object invoke_L8(Object a0, Object a1, Object a2, Object a3, Object a4, Object a5, Object a6, Object a7) throws Throwable {
-            if ((boolean) test.invokeExact(a0, a1, a2, a3, a4, a5, a6, a7))
-                return target.invokeExact(a0, a1, a2, a3, a4, a5, a6, a7);
-            return fallback.invokeExact(a0, a1, a2, a3, a4, a5, a6, a7);
-        }
-        static MethodHandle[] makeInvokes() {
-            ArrayList<MethodHandle> invokes = new ArrayList<MethodHandle>();
-            MethodHandles.Lookup lookup = IMPL_LOOKUP;
-            for (;;) {
-                int nargs = invokes.size();
-                String name = "invoke_L"+nargs;
-                MethodHandle invoke = null;
-                try {
-                    invoke = lookup.findVirtual(GuardWithTest.class, name, MethodType.genericMethodType(nargs));
-                } catch (ReflectiveOperationException ex) {
-                }
-                if (invoke == null)  break;
-                invokes.add(invoke);
-            }
-            assert(invokes.size() == 9);  // current number of methods
-            return invokes.toArray(new MethodHandle[0]);
-        };
-        static final MethodHandle[] INVOKES = makeInvokes();
-        // For testing use this:
-        //static final MethodHandle[] INVOKES = Arrays.copyOf(makeInvokes(), 2);
-        static final MethodHandle VARARGS_INVOKE;
-        static {
-            try {
-                VARARGS_INVOKE = IMPL_LOOKUP.findVirtual(GuardWithTest.class, "invoke_V", MethodType.genericMethodType(0, true));
-            } catch (ReflectiveOperationException ex) {
-                throw uncaughtException(ex);
-            }
-        }
+        return SELECT_ALTERNATIVE;
     }
 
     static
     MethodHandle makeGuardWithTest(MethodHandle test,
                                    MethodHandle target,
                                    MethodHandle fallback) {
-        return GuardWithTest.make(test, target, fallback);
+        // gwt(arg...)
+        // [fold]=> continueAfterTest(z=test(arg...), arg...)
+        // [filter]=> (tf=select(z))(arg...)
+        //    where select(z) = select(z, t, f).bindTo(t, f) => z ? t f
+        // [tailcall]=> tf(arg...)
+        assert(test.type().returnType() == boolean.class);
+        MethodType targetType = target.type();
+        MethodType foldTargetType = targetType.insertParameterTypes(0, boolean.class);
+        assert(AdapterMethodHandle.canCollectArguments(foldTargetType, test.type(), 0, true));
+        // working backwards, as usual:
+        assert(target.type().equals(fallback.type()));
+        MethodHandle tailcall = MethodHandles.exactInvoker(target.type());
+        MethodHandle select = selectAlternative();
+        select = bindArgument(select, 2, fallback);
+        select = bindArgument(select, 1, target);
+        // select(z: boolean) => (z ? target : fallback)
+        MethodHandle filter = filterArgument(tailcall, 0, select);
+        assert(filter.type().parameterType(0) == boolean.class);
+        MethodHandle fold = foldArguments(filter, filter.type().dropParameterTypes(0, 1), 0, test);
+        return fold;
     }
 
     private static class GuardWithCatch extends BoundMethodHandle {
@@ -1012,7 +774,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             this.catcher = catcher;
         }
         @Override
-        public String toString() {
+        String debugString() {
             return addTypeString(target, this);
         }
         private Object invoke_V(Object... av) throws Throwable {
@@ -1136,19 +898,21 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         if (nargs < GuardWithCatch.INVOKES.length) {
             MethodType gtype = type.generic();
             MethodType gcatchType = gtype.insertParameterTypes(0, Throwable.class);
-            MethodHandle gtarget = convertArguments(target, gtype, type, 0);
-            MethodHandle gcatcher = convertArguments(catcher, gcatchType, ctype, 0);
+            // Note: convertArguments(...2) avoids interface casts present in convertArguments(...0)
+            MethodHandle gtarget = convertArguments(target, gtype, type, 2);
+            MethodHandle gcatcher = convertArguments(catcher, gcatchType, ctype, 2);
             MethodHandle gguard = new GuardWithCatch(gtarget, exType, gcatcher);
             if (gtarget == null || gcatcher == null || gguard == null)  return null;
-            return convertArguments(gguard, type, gtype, 0);
+            return convertArguments(gguard, type, gtype, 2);
         } else {
             MethodType gtype = MethodType.genericMethodType(0, true);
             MethodType gcatchType = gtype.insertParameterTypes(0, Throwable.class);
-            MethodHandle gtarget = spreadArguments(target, gtype, 0);
-            MethodHandle gcatcher = spreadArguments(catcher, gcatchType, 1);
+            MethodHandle gtarget = spreadArgumentsFromPos(target, gtype, 0);
+            catcher = catcher.asType(ctype.changeParameterType(0, Throwable.class));
+            MethodHandle gcatcher = spreadArgumentsFromPos(catcher, gcatchType, 1);
             MethodHandle gguard = new GuardWithCatch(GuardWithCatch.VARARGS_INVOKE, gtarget, exType, gcatcher);
             if (gtarget == null || gcatcher == null || gguard == null)  return null;
-            return collectArguments(gguard, type, 0, null);
+            return collectArguments(gguard, type, 0, ValueConversions.varargsArray(nargs)).asType(type);
         }
     }
 
@@ -1177,9 +941,5 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     }
     static MethodHandle getBootstrap(Class<?> callerClass) {
         return MethodHandleNatives.getBootstrap(callerClass);
-    }
-
-    static MethodHandle asVarargsCollector(MethodHandle target, Class<?> arrayType) {
-        return AdapterMethodHandle.makeVarargsCollector(target, arrayType);
     }
 }

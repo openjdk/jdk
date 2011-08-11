@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
 
 /*
  * @test
- * @bug     6424358
+ * @bug     6424358 7025809
  * @summary Synthesized static enum method values() is final
  * @author  Peter von der Ah\u00e9
- * @compile T6424358.java
+ * @library ../../lib
+ * @build   JavacTestingAbstractProcessor T6424358
  * @compile -processor T6424358 -proc:only T6424358.java
  */
 
@@ -39,8 +40,7 @@ import static javax.tools.Diagnostic.Kind.*;
 
 @interface TestMe {}
 
-@SupportedAnnotationTypes("*")
-public class T6424358 extends AbstractProcessor {
+public class T6424358 extends JavacTestingAbstractProcessor {
     @TestMe enum Test { FOO; }
 
     public boolean process(Set<? extends TypeElement> annotations,
@@ -48,7 +48,7 @@ public class T6424358 extends AbstractProcessor {
         final Messager log = processingEnv.getMessager();
         final Elements elements = processingEnv.getElementUtils();
         final TypeElement testMe = elements.getTypeElement("TestMe");
-        class Scan extends ElementScanner7<Void,Void> {
+        class Scan extends ElementScanner<Void,Void> {
             @Override
             public Void visitExecutable(ExecutableElement e, Void p) {
                 System.err.println("Looking at " + e);
@@ -64,10 +64,5 @@ public class T6424358 extends AbstractProcessor {
         for (Element e : roundEnvironment.getElementsAnnotatedWith(testMe))
             scan.scan(e);
         return true;
-    }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
     }
 }

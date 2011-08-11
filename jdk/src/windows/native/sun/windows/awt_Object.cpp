@@ -69,9 +69,12 @@ void AwtObject::_Dispose(jobject self)
 
     CriticalSection::Lock l(AwtToolkit::GetInstance().GetSyncCS());
 
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    jobject selfGlobalRef = env->NewGlobalRef(self);
+
     // value 0 of lParam means that we should not attempt to enter the
     // SyncCall critical section, as it was entered someshere earlier
-    AwtToolkit::GetInstance().SendMessage(WM_AWT_DISPOSE, (WPARAM)self, (LPARAM)0);
+    AwtToolkit::GetInstance().SendMessage(WM_AWT_DISPOSE, (WPARAM)selfGlobalRef, (LPARAM)0);
 
     CATCH_BAD_ALLOC;
 }

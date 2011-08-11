@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.nio.cs;
 
-import java.lang.ref.SoftReference;
 import java.nio.charset.Charset;
 import java.nio.charset.spi.CharsetProvider;
 import java.util.Iterator;
@@ -116,17 +115,15 @@ public class FastCharsetProvider
 
         // Instantiate the charset and cache it
         try {
-            Class c = Class.forName(packagePrefix + "." + cln,
+            Class<?> c = Class.forName(packagePrefix + "." + cln,
                                     true,
                                     this.getClass().getClassLoader());
             cs = (Charset)c.newInstance();
             cache.put(csn, cs);
             return cs;
-        } catch (ClassNotFoundException x) {
-            return null;
-        } catch (IllegalAccessException x) {
-            return null;
-        } catch (InstantiationException x) {
+        } catch (ClassNotFoundException |
+                 IllegalAccessException |
+                 InstantiationException x) {
             return null;
         }
     }
