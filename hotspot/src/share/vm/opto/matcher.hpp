@@ -351,7 +351,7 @@ public:
   virtual int      regnum_to_fpu_offset(int regnum);
 
   // Is this branch offset small enough to be addressed by a short branch?
-  bool is_short_branch_offset(int rule, int offset);
+  bool is_short_branch_offset(int rule, int br_size, int offset);
 
   // Optional scaling for the parameter to the ClearArray/CopyArray node.
   static const bool init_array_count_is_in_bytes;

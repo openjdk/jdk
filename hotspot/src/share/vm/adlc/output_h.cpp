@@ -1536,12 +1536,16 @@ void ArchDesc::declareClasses(FILE *fp) {
     // Each instruction attribute results in a virtual call of same name.
     // The ins_cost is not handled here.
     Attribute *attr = instr->_attribs;
+    bool avoid_back_to_back = false;
     while (attr != NULL) {
       if (strcmp(attr->_ident,"ins_cost") &&
           strcmp(attr->_ident,"ins_short_branch")) {
         fprintf(fp,"  int             %s() const { return %s; }\n",
                 attr->_ident, attr->_val);
       }
+      // Check value for ins_avoid_back_to_back, and if it is true (1), set the flag
+      if (!strcmp(attr->_ident,"ins_avoid_back_to_back") && attr->int_val(*this) != 0)
+        avoid_back_to_back = true;
       attr = (Attribute *)attr->_next;
     }
 
@@ -1700,6 +1704,16 @@ void ArchDesc::declareClasses(FILE *fp) {
         fprintf(fp," | Flag_may_be_short_branch");
       } else {
         fprintf(fp,"init_flags(Flag_may_be_short_branch");
+        node_flags_set = true;
+      }
+    }
+
+    // flag: if this instruction should not be generated back to back.
+    if ( avoid_back_to_back ) {
+      if ( node_flags_set ) {
+        fprintf(fp," | Flag_avoid_back_to_back");
+      } else {
+        fprintf(fp,"init_flags(Flag_avoid_back_to_back");
         node_flags_set = true;
       }
     }

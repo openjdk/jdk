@@ -1966,7 +1966,12 @@ const uint Matcher::vector_ideal_reg(void) {
 //
 // NOTE: If the platform does not provide any short branch variants, then
 //       this method should return false for offset 0.
-bool Matcher::is_short_branch_offset(int rule, int offset) {
+bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
+  // The passed offset is relative to address of the branch.
+  // On 86 a branch displacement is calculated relative to address
+  // of a next instruction.
+  offset -= br_size;
+
   // the short version of jmpConUCF2 contains multiple branches,
   // making the reach slightly less
   if (rule == jmpConUCF2_rule)
@@ -2426,22 +2431,6 @@ encode %{
     }
   %}
 
-  enc_class Lbl(label labl)
-  %{
-    // GOTO
-    Label* l = $labl$$label;
-    emit_d32(cbuf, (l->loc_pos() - (cbuf.insts_size() + 4)));
-  %}
-
-  enc_class LblShort(label labl)
-  %{
-    // GOTO
-    Label* l = $labl$$label;
-    int disp = l->loc_pos() - (cbuf.insts_size() + 1);
-    assert(-128 <= disp && disp <= 127, "Displacement too large for short jmp");
-    emit_d8(cbuf, disp);
-  %}
-
   enc_class opc2_reg(rRegI dst)
   %{
     // BSWAP
@@ -2458,25 +2447,6 @@ encode %{
   %{
     // INC, DEC, IDIV, IMOD, JMP indirect, ...
     emit_rm(cbuf, 0x3, $secondary, $div$$reg & 7);
-  %}
-
-  enc_class Jcc(cmpOp cop, label labl)
-  %{
-    // JCC
-    Label* l = $labl$$label;
-    $$$emit8$primary;
-    emit_cc(cbuf, $secondary, $cop$$cmpcode);
-    emit_d32(cbuf, (l->loc_pos() - (cbuf.insts_size() + 4)));
-  %}
-
-  enc_class JccShort (cmpOp cop, label labl)
-  %{
-  // JCC
-    Label *l = $labl$$label;
-    emit_cc(cbuf, $primary, $cop$$cmpcode);
-    int disp = l->loc_pos() - (cbuf.insts_size() + 1);
-    assert(-128 <= disp && disp <= 127, "Displacement too large for short jmp");
-    emit_d8(cbuf, disp);
   %}
 
   enc_class enc_cmov(cmpOp cop)
@@ -12011,8 +11981,10 @@ instruct jmpDir(label labl)
   ins_cost(300);
   format %{ "jmp     $labl" %}
   size(5);
-  opcode(0xE9);
-  ins_encode(OpcP, Lbl(labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jmp(*L, false); // Always long jump
+  %}
   ins_pipe(pipe_jmp);
 %}
 
@@ -12025,8 +11997,10 @@ instruct jmpCon(cmpOp cop, rFlagsReg cr, label labl)
   ins_cost(300);
   format %{ "j$cop     $labl" %}
   size(6);
-  opcode(0x0F, 0x80);
-  ins_encode(Jcc(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
+  %}
   ins_pipe(pipe_jcc);
 %}
 
@@ -12039,8 +12013,10 @@ instruct jmpLoopEnd(cmpOp cop, rFlagsReg cr, label labl)
   ins_cost(300);
   format %{ "j$cop     $labl\t# loop end" %}
   size(6);
-  opcode(0x0F, 0x80);
-  ins_encode(Jcc(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
+  %}
   ins_pipe(pipe_jcc);
 %}
 
@@ -12052,8 +12028,10 @@ instruct jmpLoopEndU(cmpOpU cop, rFlagsRegU cmp, label labl) %{
   ins_cost(300);
   format %{ "j$cop,u   $labl\t# loop end" %}
   size(6);
-  opcode(0x0F, 0x80);
-  ins_encode(Jcc(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
+  %}
   ins_pipe(pipe_jcc);
 %}
 
@@ -12064,8 +12042,10 @@ instruct jmpLoopEndUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
   ins_cost(200);
   format %{ "j$cop,u   $labl\t# loop end" %}
   size(6);
-  opcode(0x0F, 0x80);
-  ins_encode(Jcc(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
+  %}
   ins_pipe(pipe_jcc);
 %}
 
@@ -12077,8 +12057,10 @@ instruct jmpConU(cmpOpU cop, rFlagsRegU cmp, label labl) %{
   ins_cost(300);
   format %{ "j$cop,u  $labl" %}
   size(6);
-  opcode(0x0F, 0x80);
-  ins_encode(Jcc(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
+  %}
   ins_pipe(pipe_jcc);
 %}
 
@@ -12089,8 +12071,10 @@ instruct jmpConUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
   ins_cost(200);
   format %{ "j$cop,u  $labl" %}
   size(6);
-  opcode(0x0F, 0x80);
-  ins_encode(Jcc(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
+  %}
   ins_pipe(pipe_jcc);
 %}
 
@@ -12109,26 +12093,19 @@ instruct jmpConUCF2(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
       $$emit$$"done:"
     }
   %}
-  size(12);
-  opcode(0x0F, 0x80);
   ins_encode %{
     Label* l = $labl$$label;
-    $$$emit8$primary;
-    emit_cc(cbuf, $secondary, Assembler::parity);
-    int parity_disp = -1;
     if ($cop$$cmpcode == Assembler::notEqual) {
-       // the two jumps 6 bytes apart so the jump distances are too
-       parity_disp = l->loc_pos() - (cbuf.insts_size() + 4);
+      __ jcc(Assembler::parity, *l, false);
+      __ jcc(Assembler::notEqual, *l, false);
     } else if ($cop$$cmpcode == Assembler::equal) {
-       parity_disp = 6;
+      Label done;
+      __ jccb(Assembler::parity, done);
+      __ jcc(Assembler::equal, *l, false);
+      __ bind(done);
     } else {
        ShouldNotReachHere();
     }
-    emit_d32(cbuf, parity_disp);
-    $$$emit8$primary;
-    emit_cc(cbuf, $secondary, $cop$$cmpcode);
-    int disp = l->loc_pos() - (cbuf.insts_size() + 4);
-    emit_d32(cbuf, disp);
   %}
   ins_pipe(pipe_jcc);
 %}
@@ -12204,8 +12181,10 @@ instruct jmpDir_short(label labl) %{
   ins_cost(300);
   format %{ "jmp,s   $labl" %}
   size(2);
-  opcode(0xEB);
-  ins_encode(OpcP, LblShort(labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jmpb(*L);
+  %}
   ins_pipe(pipe_jmp);
   ins_short_branch(1);
 %}
@@ -12218,8 +12197,10 @@ instruct jmpCon_short(cmpOp cop, rFlagsReg cr, label labl) %{
   ins_cost(300);
   format %{ "j$cop,s   $labl" %}
   size(2);
-  opcode(0x70);
-  ins_encode(JccShort(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
+  %}
   ins_pipe(pipe_jcc);
   ins_short_branch(1);
 %}
@@ -12232,8 +12213,10 @@ instruct jmpLoopEnd_short(cmpOp cop, rFlagsReg cr, label labl) %{
   ins_cost(300);
   format %{ "j$cop,s   $labl\t# loop end" %}
   size(2);
-  opcode(0x70);
-  ins_encode(JccShort(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
+  %}
   ins_pipe(pipe_jcc);
   ins_short_branch(1);
 %}
@@ -12246,8 +12229,10 @@ instruct jmpLoopEndU_short(cmpOpU cop, rFlagsRegU cmp, label labl) %{
   ins_cost(300);
   format %{ "j$cop,us  $labl\t# loop end" %}
   size(2);
-  opcode(0x70);
-  ins_encode(JccShort(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
+  %}
   ins_pipe(pipe_jcc);
   ins_short_branch(1);
 %}
@@ -12259,8 +12244,10 @@ instruct jmpLoopEndUCF_short(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
   ins_cost(300);
   format %{ "j$cop,us  $labl\t# loop end" %}
   size(2);
-  opcode(0x70);
-  ins_encode(JccShort(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
+  %}
   ins_pipe(pipe_jcc);
   ins_short_branch(1);
 %}
@@ -12273,8 +12260,10 @@ instruct jmpConU_short(cmpOpU cop, rFlagsRegU cmp, label labl) %{
   ins_cost(300);
   format %{ "j$cop,us  $labl" %}
   size(2);
-  opcode(0x70);
-  ins_encode(JccShort(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
+  %}
   ins_pipe(pipe_jcc);
   ins_short_branch(1);
 %}
@@ -12286,8 +12275,10 @@ instruct jmpConUCF_short(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
   ins_cost(300);
   format %{ "j$cop,us  $labl" %}
   size(2);
-  opcode(0x70);
-  ins_encode(JccShort(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
+  %}
   ins_pipe(pipe_jcc);
   ins_short_branch(1);
 %}
@@ -12308,24 +12299,19 @@ instruct jmpConUCF2_short(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
     }
   %}
   size(4);
-  opcode(0x70);
   ins_encode %{
     Label* l = $labl$$label;
-    emit_cc(cbuf, $primary, Assembler::parity);
-    int parity_disp = -1;
     if ($cop$$cmpcode == Assembler::notEqual) {
-      parity_disp = l->loc_pos() - (cbuf.insts_size() + 1);
+      __ jccb(Assembler::parity, *l);
+      __ jccb(Assembler::notEqual, *l);
     } else if ($cop$$cmpcode == Assembler::equal) {
-      parity_disp = 2;
+      Label done;
+      __ jccb(Assembler::parity, done);
+      __ jccb(Assembler::equal, *l);
+      __ bind(done);
     } else {
-      ShouldNotReachHere();
+       ShouldNotReachHere();
     }
-    emit_d8(cbuf, parity_disp);
-    emit_cc(cbuf, $primary, $cop$$cmpcode);
-    int disp = l->loc_pos() - (cbuf.insts_size() + 1);
-    emit_d8(cbuf, disp);
-    assert(-128 <= disp && disp <= 127, "Displacement too large for short jmp");
-    assert(-128 <= parity_disp && parity_disp <= 127, "Displacement too large for short jmp");
   %}
   ins_pipe(pipe_jcc);
   ins_short_branch(1);

@@ -188,6 +188,9 @@ public:
   virtual MachNode *short_branch_version(Compile* C) { return NULL; }
   bool may_be_short_branch() const { return (flags() & Flag_may_be_short_branch) != 0; }
 
+  // Avoid back to back some instructions on some CPUs.
+  bool avoid_back_to_back() const { return (flags() & Flag_avoid_back_to_back) != 0; }
+
   // First index in _in[] corresponding to operand, or -1 if there is none
   int  operand_index(uint operand) const;
 

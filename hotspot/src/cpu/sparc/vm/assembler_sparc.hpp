@@ -1192,6 +1192,8 @@ class Assembler : public AbstractAssembler  {
     assert(offset() == 0 || !cbcond_before(), "cbcond should not follow an other cbcond");
   }
 
+public:
+
   bool use_cbcond(Label& L) {
     if (!UseCBCond || cbcond_before()) return false;
     intptr_t x = intptr_t(target_distance(L)) - intptr_t(pc());
@@ -1199,7 +1201,6 @@ class Assembler : public AbstractAssembler  {
     return is_simm(x, 12);
   }
 
-public:
   // Tells assembler you know that next instruction is delayed
   Assembler* delayed() {
 #ifdef CHECK_DELAY
@@ -1248,6 +1249,10 @@ public:
   inline void bpr(RCondition c, bool a, Predict p, Register s1, address d, relocInfo::relocType rt = relocInfo::none);
   inline void bpr(RCondition c, bool a, Predict p, Register s1, Label& L);
 
+  // compare and branch
+  inline void cbcond(Condition c, CC cc, Register s1, Register s2, Label& L);
+  inline void cbcond(Condition c, CC cc, Register s1, int simm5, Label& L);
+
  protected: // use MacroAssembler::br instead
 
   // pp 138
@@ -1274,10 +1279,6 @@ public:
 
   inline void cb( Condition c, bool a, address d, relocInfo::relocType rt = relocInfo::none );
   inline void cb( Condition c, bool a, Label& L );
-
-  // compare and branch
-  inline void cbcond(Condition c, CC cc, Register s1, Register s2, Label& L);
-  inline void cbcond(Condition c, CC cc, Register s1, int simm5, Label& L);
 
   // pp 149
 

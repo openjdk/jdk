@@ -1339,9 +1339,8 @@ void Assembler::incl(Address dst) {
   emit_operand(rax, dst);
 }
 
-void Assembler::jcc(Condition cc, Label& L, relocInfo::relocType rtype) {
+void Assembler::jcc(Condition cc, Label& L, bool maybe_short) {
   InstructionMark im(this);
-  relocate(rtype);
   assert((0 <= cc) && (cc < 16), "illegal cc");
   if (L.is_bound()) {
     address dst = target(L);
@@ -1350,7 +1349,7 @@ void Assembler::jcc(Condition cc, Label& L, relocInfo::relocType rtype) {
     const int short_size = 2;
     const int long_size = 6;
     intptr_t offs = (intptr_t)dst - (intptr_t)_code_pos;
-    if (rtype == relocInfo::none && is8bit(offs - short_size)) {
+    if (maybe_short && is8bit(offs - short_size)) {
       // 0111 tttn #8-bit disp
       emit_byte(0x70 | cc);
       emit_byte((offs - short_size) & 0xFF);
@@ -1399,7 +1398,7 @@ void Assembler::jmp(Address adr) {
   emit_operand(rsp, adr);
 }
 
-void Assembler::jmp(Label& L, relocInfo::relocType rtype) {
+void Assembler::jmp(Label& L, bool maybe_short) {
   if (L.is_bound()) {
     address entry = target(L);
     assert(entry != NULL, "jmp most probably wrong");
@@ -1407,7 +1406,7 @@ void Assembler::jmp(Label& L, relocInfo::relocType rtype) {
     const int short_size = 2;
     const int long_size = 5;
     intptr_t offs = entry - _code_pos;
-    if (rtype == relocInfo::none && is8bit(offs - short_size)) {
+    if (maybe_short && is8bit(offs - short_size)) {
       emit_byte(0xEB);
       emit_byte((offs - short_size) & 0xFF);
     } else {
@@ -1420,7 +1419,6 @@ void Assembler::jmp(Label& L, relocInfo::relocType rtype) {
     // the forward jump will not run beyond 256 bytes, use jmpb to
     // force an 8-bit displacement.
     InstructionMark im(this);
-    relocate(rtype);
     L.add_patch_at(code(), locator());
     emit_byte(0xE9);
     emit_long(0);
