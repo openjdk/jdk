@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,15 +171,15 @@ public enum TestHelper {
         if (jarName.exists()) {
             jarName.delete();
         }
-        PrintStream ps = new PrintStream(new FileOutputStream(mainClass + ".java"));
-        ps.println("public class Foo {");
-        if (mainDefs != null) {
-            for (String x : mainDefs) {
-                ps.println(x);
+        try (PrintStream ps = new PrintStream(new FileOutputStream(mainClass + ".java"))) {
+            ps.println("public class Foo {");
+            if (mainDefs != null) {
+                for (String x : mainDefs) {
+                    ps.println(x);
+                }
             }
+            ps.println("}");
         }
-        ps.println("}");
-        ps.close();
 
         String compileArgs[] = {
             mainClass + ".java"
@@ -196,12 +196,20 @@ public enum TestHelper {
             mEntry,
             mainClass.getName() + ".class"
         };
+        createJar(jarArgs);
+    }
+
+   static void createJar(String... args) {
         sun.tools.jar.Main jarTool =
                 new sun.tools.jar.Main(System.out, System.err, "JarCreator");
-        if (!jarTool.run(jarArgs)) {
-            throw new RuntimeException("jar creation failed " + jarName);
+        if (!jarTool.run(args)) {
+            String message = "jar creation failed with command:";
+            for (String x : args) {
+                message = message.concat(" " + x);
+            }
+            throw new RuntimeException(message);
         }
-    }
+   }
 
    static void copyFile(File src, File dst) throws IOException {
         Path parent = dst.toPath().getParent();

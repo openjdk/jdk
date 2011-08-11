@@ -393,8 +393,7 @@ protected:
   // Perform finalization stuff on all allocation regions.
   void retire_all_alloc_regions();
 
-  // The number of regions allocated to hold humongous objects.
-  int         _num_humongous_regions;
+  // The young region list.
   YoungList*  _young_list;
 
   // The current policy object for the collector.

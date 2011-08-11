@@ -367,7 +367,7 @@ static double euclidianDistance(double a, double b) {
 JNIEXPORT jlong JNICALL
 Java_sun_font_FreetypeFontScaler_createScalerContextNative(
         JNIEnv *env, jobject scaler, jlong pScaler, jdoubleArray matrix,
-        jboolean ttFont, jint aa, jint fm, jfloat boldness, jfloat italic) {
+        jint aa, jint fm, jfloat boldness, jfloat italic) {
     double dmat[4], ptsz;
     FTScalerContext *context =
             (FTScalerContext*) calloc(1, sizeof(FTScalerContext));

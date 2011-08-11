@@ -50,34 +50,34 @@ import java.util.Random;
  *
  * <p>The quality of implementation specifications concern two
  * properties, accuracy of the returned result and monotonicity of the
- * method.  Accuracy of the floating-point {@code Math} methods
- * is measured in terms of <i>ulps</i>, units in the last place.  For
- * a given floating-point format, an ulp of a specific real number
- * value is the distance between the two floating-point values
- * bracketing that numerical value.  When discussing the accuracy of a
- * method as a whole rather than at a specific argument, the number of
- * ulps cited is for the worst-case error at any argument.  If a
- * method always has an error less than 0.5 ulps, the method always
- * returns the floating-point number nearest the exact result; such a
- * method is <i>correctly rounded</i>.  A correctly rounded method is
- * generally the best a floating-point approximation can be; however,
- * it is impractical for many floating-point methods to be correctly
- * rounded.  Instead, for the {@code Math} class, a larger error
- * bound of 1 or 2 ulps is allowed for certain methods.  Informally,
- * with a 1 ulp error bound, when the exact result is a representable
- * number, the exact result should be returned as the computed result;
- * otherwise, either of the two floating-point values which bracket
- * the exact result may be returned.  For exact results large in
- * magnitude, one of the endpoints of the bracket may be infinite.
- * Besides accuracy at individual arguments, maintaining proper
- * relations between the method at different arguments is also
- * important.  Therefore, most methods with more than 0.5 ulp errors
- * are required to be <i>semi-monotonic</i>: whenever the mathematical
- * function is non-decreasing, so is the floating-point approximation,
- * likewise, whenever the mathematical function is non-increasing, so
- * is the floating-point approximation.  Not all approximations that
- * have 1 ulp accuracy will automatically meet the monotonicity
- * requirements.
+ * method.  Accuracy of the floating-point {@code Math} methods is
+ * measured in terms of <i>ulps</i>, units in the last place.  For a
+ * given floating-point format, an {@linkplain #ulp(double) ulp} of a
+ * specific real number value is the distance between the two
+ * floating-point values bracketing that numerical value.  When
+ * discussing the accuracy of a method as a whole rather than at a
+ * specific argument, the number of ulps cited is for the worst-case
+ * error at any argument.  If a method always has an error less than
+ * 0.5 ulps, the method always returns the floating-point number
+ * nearest the exact result; such a method is <i>correctly
+ * rounded</i>.  A correctly rounded method is generally the best a
+ * floating-point approximation can be; however, it is impractical for
+ * many floating-point methods to be correctly rounded.  Instead, for
+ * the {@code Math} class, a larger error bound of 1 or 2 ulps is
+ * allowed for certain methods.  Informally, with a 1 ulp error bound,
+ * when the exact result is a representable number, the exact result
+ * should be returned as the computed result; otherwise, either of the
+ * two floating-point values which bracket the exact result may be
+ * returned.  For exact results large in magnitude, one of the
+ * endpoints of the bracket may be infinite.  Besides accuracy at
+ * individual arguments, maintaining proper relations between the
+ * method at different arguments is also important.  Therefore, most
+ * methods with more than 0.5 ulp errors are required to be
+ * <i>semi-monotonic</i>: whenever the mathematical function is
+ * non-decreasing, so is the floating-point approximation, likewise,
+ * whenever the mathematical function is non-increasing, so is the
+ * floating-point approximation.  Not all approximations that have 1
+ * ulp accuracy will automatically meet the monotonicity requirements.
  *
  * @author  unascribed
  * @author  Joseph D. Darcy
@@ -940,11 +940,11 @@ public final class Math {
     }
 
     /**
-     * Returns the size of an ulp of the argument.  An ulp of a
-     * {@code double} value is the positive distance between this
-     * floating-point value and the {@code double} value next
-     * larger in magnitude.  Note that for non-NaN <i>x</i>,
-     * <code>ulp(-<i>x</i>) == ulp(<i>x</i>)</code>.
+     * Returns the size of an ulp of the argument.  An ulp, unit in
+     * the last place, of a {@code double} value is the positive
+     * distance between this floating-point value and the {@code
+     * double} value next larger in magnitude.  Note that for non-NaN
+     * <i>x</i>, <code>ulp(-<i>x</i>) == ulp(<i>x</i>)</code>.
      *
      * <p>Special Cases:
      * <ul>
@@ -967,11 +967,11 @@ public final class Math {
     }
 
     /**
-     * Returns the size of an ulp of the argument.  An ulp of a
-     * {@code float} value is the positive distance between this
-     * floating-point value and the {@code float} value next
-     * larger in magnitude.  Note that for non-NaN <i>x</i>,
-     * <code>ulp(-<i>x</i>) == ulp(<i>x</i>)</code>.
+     * Returns the size of an ulp of the argument.  An ulp, unit in
+     * the last place, of a {@code float} value is the positive
+     * distance between this floating-point value and the {@code
+     * float} value next larger in magnitude.  Note that for non-NaN
+     * <i>x</i>, <code>ulp(-<i>x</i>) == ulp(<i>x</i>)</code>.
      *
      * <p>Special Cases:
      * <ul>

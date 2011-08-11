@@ -75,6 +75,94 @@ TransformInterpFunc *pBilinearFunc = BilinearInterp;
 TransformInterpFunc *pBicubicFunc = BicubicInterp;
 
 /*
+ * The dxydxy parameters of the inverse transform determine how
+ * quickly we step through the source image.  For tiny scale
+ * factors (on the order of 1E-16 or so) the stepping distances
+ * are huge.  The image has been scaled so small that stepping
+ * a single pixel in device space moves the sampling point by
+ * billions (or more) pixels in the source image space.  These
+ * huge stepping values can overflow the whole part of the longs
+ * we use for the fixed point stepping equations and so we need
+ * a more robust solution.  We could simply iterate over every
+ * device pixel, use the inverse transform to transform it back
+ * into the source image coordinate system and then test it for
+ * being in range and sample pixel-by-pixel, but that is quite
+ * a bit more expensive.  Fortunately, if the scale factors are
+ * so tiny that we overflow our long values then the number of
+ * pixels we are planning to visit should be very tiny.  The only
+ * exception to that rule is if the scale factor along one
+ * dimension is tiny (creating the huge stepping values), and
+ * the scale factor along the other dimension is fairly regular
+ * or an up-scale.  In that case we have a lot of pixels along
+ * the direction of the larger axis to sample, but few along the
+ * smaller axis.  Though, pessimally, with an added shear factor
+ * such a linearly tiny image could have bounds that cover a large
+ * number of pixels.  Such odd transformations should be very
+ * rare and the absolute limit on calculations would involve a
+ * single reverse transform of every pixel in the output image
+ * which is not fast, but it should not cause an undue stall
+ * of the rendering software.
+ *
+ * The specific test we will use is to calculate the inverse
+ * transformed values of every corner of the destination bounds
+ * (in order to be user-clip independent) and if we can
+ * perform a fixed-point-long inverse transform of all of
+ * those points without overflowing we will use the fast
+ * fixed point algorithm.  Otherwise we will use the safe
+ * per-pixel transform algorithm.
+ * The 4 corners are 0,0, 0,dsth, dstw,0, dstw,dsth
+ * Transformed they are:
+ *     tx,               ty
+ *     tx       +dxdy*H, ty       +dydy*H
+ *     tx+dxdx*W,        ty+dydx*W
+ *     tx+dxdx*W+dxdy*H, ty+dydx*W+dydy*H
+ */
+/* We reject coordinates not less than 1<<30 so that the distance between */
+/* any 2 of them is less than 1<<31 which would overflow into the sign */
+/* bit of a signed long value used to represent fixed point coordinates. */
+#define TX_FIXED_UNSAFE(v)  (fabs(v) >= (1<<30))
+static jboolean
+checkOverflow(jint dxoff, jint dyoff,
+              SurfaceDataBounds *pBounds,
+              TransformInfo *pItxInfo,
+              jdouble *retx, jdouble *rety)
+{
+    jdouble x, y;
+
+    x = dxoff+pBounds->x1+0.5; /* Center of pixel x1 */
+    y = dyoff+pBounds->y1+0.5; /* Center of pixel y1 */
+    Transform_transform(pItxInfo, &x, &y);
+    *retx = x;
+    *rety = y;
+    if (TX_FIXED_UNSAFE(x) || TX_FIXED_UNSAFE(y)) {
+        return JNI_TRUE;
+    }
+
+    x = dxoff+pBounds->x2-0.5; /* Center of pixel x2-1 */
+    y = dyoff+pBounds->y1+0.5; /* Center of pixel y1 */
+    Transform_transform(pItxInfo, &x, &y);
+    if (TX_FIXED_UNSAFE(x) || TX_FIXED_UNSAFE(y)) {
+        return JNI_TRUE;
+    }
+
+    x = dxoff+pBounds->x1+0.5; /* Center of pixel x1 */
+    y = dyoff+pBounds->y2-0.5; /* Center of pixel y2-1 */
+    Transform_transform(pItxInfo, &x, &y);
+    if (TX_FIXED_UNSAFE(x) || TX_FIXED_UNSAFE(y)) {
+        return JNI_TRUE;
+    }
+
+    x = dxoff+pBounds->x2-0.5; /* Center of pixel x2-1 */
+    y = dyoff+pBounds->y2-0.5; /* Center of pixel y2-1 */
+    Transform_transform(pItxInfo, &x, &y);
+    if (TX_FIXED_UNSAFE(x) || TX_FIXED_UNSAFE(y)) {
+        return JNI_TRUE;
+    }
+
+    return JNI_FALSE;
+}
+
+/*
  * Fill the edge buffer with pairs of coordinates representing the maximum
  * left and right pixels of the destination surface that should be processed
  * on each scanline, clipped to the bounds parameter.
@@ -82,21 +170,19 @@ TransformInterpFunc *pBicubicFunc = BicubicInterp;
  * Only pixels that map back through the specified (inverse) transform to a
  * source coordinate that falls within the (0, 0, sw, sh) bounds of the
  * source image should be processed.
- * pEdgeBuf points to an array of jints that holds MAXEDGES*2 values.
- * If more storage is needed, then this function allocates a new buffer.
- * In either case, a pointer to the buffer actually used to store the
- * results is returned.
- * The caller is responsible for freeing the buffer if the return value
- * is not the same as the original pEdgeBuf passed in.
+ * pEdges points to an array of jints that holds 2 + numedges*2 values where
+ * numedges should match (pBounds->y2 - pBounds->y1).
+ * The first two jints in pEdges should be set to y1 and y2 and every pair
+ * of jints after that represent the xmin,xmax of all pixels in range of
+ * the transformed blit for the corresponding scanline.
  */
-static jint *
-calculateEdges(jint *pEdgeBuf,
+static void
+calculateEdges(jint *pEdges,
                SurfaceDataBounds *pBounds,
                TransformInfo *pItxInfo,
                jlong xbase, jlong ybase,
                juint sw, juint sh)
 {
-    jint *pEdges;
     jlong dxdxlong, dydxlong;
     jlong dxdylong, dydylong;
     jlong drowxlong, drowylong;
@@ -111,10 +197,8 @@ calculateEdges(jint *pEdgeBuf,
     dy1 = pBounds->y1;
     dx2 = pBounds->x2;
     dy2 = pBounds->y2;
-    if ((dy2-dy1) > MAXEDGES) {
-        pEdgeBuf = malloc(2 * (dy2-dy1) * sizeof (*pEdges));
-    }
-    pEdges = pEdgeBuf;
+    *pEdges++ = dy1;
+    *pEdges++ = dy2;
 
     drowxlong = (dx2-dx1-1) * dxdxlong;
     drowylong = (dx2-dx1-1) * dydxlong;
@@ -155,9 +239,21 @@ calculateEdges(jint *pEdgeBuf,
         ybase += dydylong;
         dy1++;
     }
-
-    return pEdgeBuf;
 }
+
+static void
+Transform_SafeHelper(JNIEnv *env,
+                     SurfaceDataOps *srcOps,
+                     SurfaceDataOps *dstOps,
+                     SurfaceDataRasInfo *pSrcInfo,
+                     SurfaceDataRasInfo *pDstInfo,
+                     NativePrimitive *pMaskBlitPrim,
+                     CompositeInfo *pCompInfo,
+                     TransformHelperFunc *pHelperFunc,
+                     TransformInterpFunc *pInterpFunc,
+                     RegionData *pClipInfo, TransformInfo *pItxInfo,
+                     jint *pData, jint *pEdges,
+                     jint dxoff, jint dyoff, jint sw, jint sh);
 
 /*
  * Class:     sun_java2d_loops_TransformHelper
@@ -187,12 +283,14 @@ Java_sun_java2d_loops_TransformHelper_Transform
     jint maxlinepix;
     TransformHelperFunc *pHelperFunc;
     TransformInterpFunc *pInterpFunc;
-    jint edgebuf[MAXEDGES * 2];
+    jdouble xorig, yorig;
+    jint numedges;
     jint *pEdges;
-    jdouble x, y;
-    jlong xbase, ybase;
-    jlong dxdxlong, dydxlong;
-    jlong dxdylong, dydylong;
+    jint edgebuf[2 + MAXEDGES * 2];
+    union {
+        jlong align;
+        jint data[LINE_SIZE];
+    } rgb;
 
 #ifdef MAKE_STUBS
     static int th_initialized;
@@ -269,39 +367,62 @@ Java_sun_java2d_loops_TransformHelper_Transform
     if (srcOps->Lock(env, srcOps, &srcInfo, pHelperPrim->srcflags)
         != SD_SUCCESS)
     {
+        /* edgeArray should already contain zeros for min/maxy */
         return;
     }
     if (dstOps->Lock(env, dstOps, &dstInfo, pMaskBlitPrim->dstflags)
         != SD_SUCCESS)
     {
         SurfaceData_InvokeUnlock(env, srcOps, &srcInfo);
+        /* edgeArray should already contain zeros for min/maxy */
         return;
     }
     Region_IntersectBounds(&clipInfo, &dstInfo.bounds);
 
-    Transform_GetInfo(env, itxform, &itxInfo);
-    dxdxlong = DblToLong(itxInfo.dxdx);
-    dydxlong = DblToLong(itxInfo.dydx);
-    dxdylong = DblToLong(itxInfo.dxdy);
-    dydylong = DblToLong(itxInfo.dydy);
-    x = dxoff+dstInfo.bounds.x1+0.5; /* Center of pixel x1 */
-    y = dyoff+dstInfo.bounds.y1+0.5; /* Center of pixel y1 */
-    Transform_transform(&itxInfo, &x, &y);
-    xbase = DblToLong(x);
-    ybase = DblToLong(y);
+    numedges = (dstInfo.bounds.y2 - dstInfo.bounds.y1);
+    if (numedges > MAXEDGES) {
+        pEdges = malloc((2 + 2 * numedges) * sizeof (*pEdges));
+        if (pEdges == NULL) {
+            SurfaceData_InvokeUnlock(env, dstOps, &dstInfo);
+            SurfaceData_InvokeUnlock(env, srcOps, &srcInfo);
+            /* edgeArray should already contain zeros for min/maxy */
+            return;
+        }
+    } else {
+        pEdges = edgebuf;
+    }
 
-    pEdges = calculateEdges(edgebuf, &dstInfo.bounds, &itxInfo,
-                            xbase, ybase, sx2-sx1, sy2-sy1);
+    Transform_GetInfo(env, itxform, &itxInfo);
 
     if (!Region_IsEmpty(&clipInfo)) {
         srcOps->GetRasInfo(env, srcOps, &srcInfo);
         dstOps->GetRasInfo(env, dstOps, &dstInfo);
-        if (srcInfo.rasBase && dstInfo.rasBase) {
-            union {
-                jlong align;
-                jint data[LINE_SIZE];
-            } rgb;
+        if (srcInfo.rasBase == NULL || dstInfo.rasBase == NULL) {
+            pEdges[0] = pEdges[1] = 0;
+        } else if (checkOverflow(dxoff, dyoff, &dstInfo.bounds,
+                                 &itxInfo, &xorig, &yorig))
+        {
+            Transform_SafeHelper(env, srcOps, dstOps,
+                                 &srcInfo, &dstInfo,
+                                 pMaskBlitPrim, &compInfo,
+                                 pHelperFunc, pInterpFunc,
+                                 &clipInfo, &itxInfo, rgb.data, pEdges,
+                                 dxoff, dyoff, sx2-sx1, sy2-sy1);
+        } else {
             SurfaceDataBounds span;
+            jlong dxdxlong, dydxlong;
+            jlong dxdylong, dydylong;
+            jlong xbase, ybase;
+
+            dxdxlong = DblToLong(itxInfo.dxdx);
+            dydxlong = DblToLong(itxInfo.dydx);
+            dxdylong = DblToLong(itxInfo.dxdy);
+            dydylong = DblToLong(itxInfo.dydy);
+            xbase = DblToLong(xorig);
+            ybase = DblToLong(yorig);
+
+            calculateEdges(pEdges, &dstInfo.bounds, &itxInfo,
+                           xbase, ybase, sx2-sx1, sy2-sy1);
 
             Region_StartIteration(env, &clipInfo);
             while (Region_NextIteration(&clipInfo, &span)) {
@@ -318,8 +439,8 @@ Java_sun_java2d_loops_TransformHelper_Transform
 
                     /* Note - process at most one scanline at a time. */
 
-                    dx1 = pEdges[(dy1 - dstInfo.bounds.y1) * 2];
-                    dx2 = pEdges[(dy1 - dstInfo.bounds.y1) * 2 + 1];
+                    dx1 = pEdges[(dy1 - dstInfo.bounds.y1) * 2 + 2];
+                    dx2 = pEdges[(dy1 - dstInfo.bounds.y1) * 2 + 3];
                     if (dx1 < span.x1) dx1 = span.x1;
                     if (dx2 > span.x2) dx2 = span.x2;
 
@@ -376,19 +497,122 @@ Java_sun_java2d_loops_TransformHelper_Transform
         }
         SurfaceData_InvokeRelease(env, dstOps, &dstInfo);
         SurfaceData_InvokeRelease(env, srcOps, &srcInfo);
+    } else {
+        pEdges[0] = pEdges[1] = 0;
     }
     SurfaceData_InvokeUnlock(env, dstOps, &dstInfo);
     SurfaceData_InvokeUnlock(env, srcOps, &srcInfo);
     if (!JNU_IsNull(env, edgeArray)) {
-        (*env)->SetIntArrayRegion(env, edgeArray, 0, 1, &dstInfo.bounds.y1);
-        (*env)->SetIntArrayRegion(env, edgeArray, 1, 1, &dstInfo.bounds.y2);
-        (*env)->SetIntArrayRegion(env, edgeArray,
-                                  2, (dstInfo.bounds.y2 - dstInfo.bounds.y1)*2,
-                                  pEdges);
+        (*env)->SetIntArrayRegion(env, edgeArray, 0, 2+numedges*2, pEdges);
     }
     if (pEdges != edgebuf) {
         free(pEdges);
     }
+}
+
+static void
+Transform_SafeHelper(JNIEnv *env,
+                     SurfaceDataOps *srcOps,
+                     SurfaceDataOps *dstOps,
+                     SurfaceDataRasInfo *pSrcInfo,
+                     SurfaceDataRasInfo *pDstInfo,
+                     NativePrimitive *pMaskBlitPrim,
+                     CompositeInfo *pCompInfo,
+                     TransformHelperFunc *pHelperFunc,
+                     TransformInterpFunc *pInterpFunc,
+                     RegionData *pClipInfo, TransformInfo *pItxInfo,
+                     jint *pData, jint *pEdges,
+                     jint dxoff, jint dyoff, jint sw, jint sh)
+{
+    SurfaceDataBounds span;
+    jint dx1, dx2;
+    jint dy1, dy2;
+    jint i, iy;
+
+    dy1 = pDstInfo->bounds.y1;
+    dy2 = pDstInfo->bounds.y2;
+    dx1 = pDstInfo->bounds.x1;
+    dx2 = pDstInfo->bounds.x2;
+    pEdges[0] = dy1;
+    pEdges[1] = dy2;
+    for (iy = dy1; iy < dy2; iy++) {
+        jint i = (iy - dy1) * 2;
+        /* row spans are set to max,min until we find a pixel in range below */
+        pEdges[i + 2] = dx2;
+        pEdges[i + 3] = dx1;
+    }
+
+    Region_StartIteration(env, pClipInfo);
+    while (Region_NextIteration(pClipInfo, &span)) {
+        dy1 = span.y1;
+        dy2 = span.y2;
+        while (dy1 < dy2) {
+            dx1 = span.x1;
+            dx2 = span.x2;
+            i = (dy1 - pDstInfo->bounds.y1) * 2;
+            while (dx1 < dx2) {
+                jdouble x, y;
+                jlong xlong, ylong;
+
+                x = dxoff + dx1 + 0.5;
+                y = dyoff + dy1 + 0.5;
+                Transform_transform(pItxInfo, &x, &y);
+                xlong = DblToLong(x);
+                ylong = DblToLong(y);
+
+                /* Process only pixels with centers in bounds
+                 * Test double values to avoid overflow in conversion
+                 * to long values and then also test the long values
+                 * in case they rounded up and out of bounds during
+                 * the conversion.
+                 */
+                if (x >= 0 && y >= 0 && x < sw && y < sh &&
+                    WholeOfLong(xlong) < sw &&
+                    WholeOfLong(ylong) < sh)
+                {
+                    void *pDst;
+
+                    if (pEdges[i + 2] > dx1) {
+                        pEdges[i + 2] = dx1;
+                    }
+                    if (pEdges[i + 3] <= dx1) {
+                        pEdges[i + 3] = dx1 + 1;
+                    }
+
+                    /* Get IntArgbPre pixel data from source */
+                    (*pHelperFunc)(pSrcInfo,
+                                   pData, 1,
+                                   xlong, 0,
+                                   ylong, 0);
+
+                    /* Interpolate result pixels if needed */
+                    if (pInterpFunc) {
+                        (*pInterpFunc)(pData, 1,
+                                       FractOfLong(xlong-LongOneHalf), 0,
+                                       FractOfLong(ylong-LongOneHalf), 0);
+                    }
+
+                    /* Store/Composite interpolated pixels into dest */
+                    pDst = PtrCoord(pDstInfo->rasBase,
+                                    dx1, pDstInfo->pixelStride,
+                                    dy1, pDstInfo->scanStride);
+                    (*pMaskBlitPrim->funcs.maskblit)(pDst, pData,
+                                                     0, 0, 0,
+                                                     1, 1,
+                                                     pDstInfo, pSrcInfo,
+                                                     pMaskBlitPrim,
+                                                     pCompInfo);
+                }
+
+                /* Increment to next input pixel */
+                dx1++;
+            }
+
+            /* Increment to next scanline */
+            dy1++;
+        }
+    }
+    Region_EndIteration(env, pClipInfo);
 }
 
 #define BL_INTERP_V1_to_V2_by_F(v1, v2, f) \

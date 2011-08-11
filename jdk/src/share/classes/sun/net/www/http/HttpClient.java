@@ -301,7 +301,11 @@ public class HttpClient extends NetworkClient {
         } else {
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
-                security.checkConnect(url.getHost(), url.getPort());
+                if (ret.proxy == Proxy.NO_PROXY || ret.proxy == null) {
+                    security.checkConnect(InetAddress.getByName(url.getHost()).getHostAddress(), url.getPort());
+                } else {
+                    security.checkConnect(url.getHost(), url.getPort());
+                }
             }
             ret.url = url;
         }
@@ -457,6 +461,7 @@ public class HttpClient extends NetworkClient {
     protected synchronized void openServer() throws IOException {
 
         SecurityManager security = System.getSecurityManager();
+
         if (security != null) {
             security.checkConnect(host, port);
         }
@@ -469,6 +474,7 @@ public class HttpClient extends NetworkClient {
             url.getProtocol().equals("https") ) {
 
             if ((proxy != null) && (proxy.type() == Proxy.Type.HTTP)) {
+                sun.net.www.URLConnection.setProxiedHost(host);
                 privilegedOpenServer((InetSocketAddress) proxy.address());
                 usingProxy = true;
                 return;
@@ -484,6 +490,7 @@ public class HttpClient extends NetworkClient {
              * ftp url.
              */
             if ((proxy != null) && (proxy.type() == Proxy.Type.HTTP)) {
+                sun.net.www.URLConnection.setProxiedHost(host);
                 privilegedOpenServer((InetSocketAddress) proxy.address());
                 usingProxy = true;
                 return;
@@ -592,7 +599,9 @@ public class HttpClient extends NetworkClient {
             cachedHttpClient = false;
             if (!failedOnce && requests != null) {
                 failedOnce = true;
-                if (httpuc.getRequestMethod().equals("POST") && (!retryPostProp || streaming)) {
+                if (getRequestMethod().equals("CONNECT") ||
+                    (httpuc.getRequestMethod().equals("POST") &&
+                    (!retryPostProp || streaming))) {
                     // do not retry the request
                 }  else {
                     // try once more
@@ -699,7 +708,9 @@ public class HttpClient extends NetworkClient {
             } else if (nread != 8) {
                 if (!failedOnce && requests != null) {
                     failedOnce = true;
-                    if (httpuc.getRequestMethod().equals("POST") && (!retryPostProp || streaming)) {
+                    if (getRequestMethod().equals("CONNECT") ||
+                        (httpuc.getRequestMethod().equals("POST") &&
+                         (!retryPostProp || streaming))) {
                         // do not retry the request
                     } else {
                         closeServer();
@@ -882,6 +893,16 @@ public class HttpClient extends NetworkClient {
 
     CacheRequest getCacheRequest() {
         return cacheRequest;
+    }
+
+    String getRequestMethod() {
+        if (requests != null) {
+            String requestLine = requests.getKey(0);
+            if (requestLine != null) {
+               return requestLine.split("\\s+")[0];
+            }
+        }
+        return "";
     }
 
     @Override

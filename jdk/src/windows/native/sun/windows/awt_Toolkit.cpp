@@ -741,7 +741,9 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
           }
           if (canDispose) {
               if(wParam != NULL) {
-                  AwtObject *o = (AwtObject *) JNI_GET_PDATA((jobject)wParam);
+                  jobject self = (jobject)wParam;
+                  AwtObject *o = (AwtObject *) JNI_GET_PDATA(self);
+                  env->DeleteGlobalRef(self);
                   if(o != NULL && theAwtObjectList.Remove(o)) {
                       o->Dispose();
                   }
@@ -1442,7 +1444,6 @@ BOOL AwtToolkit::PreProcessMouseMsg(AwtComponent* p, MSG& msg)
     AwtComponent* mouseComp =
         AwtComponent::GetComponent(hWndFromPoint);
     // Need extra copies for non-client area issues
-    AwtComponent* mouseWheelComp = mouseComp;
     HWND hWndForWheel = hWndFromPoint;
 
     // If the point under the mouse isn't in the client area,
@@ -1508,9 +1509,9 @@ BOOL AwtToolkit::PreProcessMouseMsg(AwtComponent* p, MSG& msg)
      */
 
     if (msg.message == WM_MOUSEWHEEL &&
-        mouseWheelComp != NULL) { //i.e. mouse is over client area for this
-                                  //window
-        msg.hwnd = hWndForWheel;
+        AwtToolkit::MainThread() == ::GetWindowThreadProcessId(hWndForWheel, NULL)) {
+            //i.e. mouse is over client area for this window
+            msg.hwnd = hWndForWheel;
     }
 
     /*

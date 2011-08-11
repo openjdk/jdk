@@ -25,7 +25,7 @@
 
 package javax.security.auth.kerberos;
 
-import sun.misc.JavaxSecurityAuthKerberosAccess;
+import sun.security.krb5.JavaxSecurityAuthKerberosAccess;
 import sun.security.krb5.EncryptionKey;
 import sun.security.krb5.PrincipalName;
 

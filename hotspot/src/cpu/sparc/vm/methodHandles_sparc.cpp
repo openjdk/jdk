@@ -524,6 +524,30 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
 }
 #endif // ASSERT
 
+
+void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register method, Register target, Register temp) {
+  assert(method == G5_method, "interpreter calling convention");
+  __ verify_oop(method);
+  __ ld_ptr(G5_method, in_bytes(methodOopDesc::from_interpreted_offset()), target);
+  if (JvmtiExport::can_post_interpreter_events()) {
+    // JVMTI events, such as single-stepping, are implemented partly by avoiding running
+    // compiled code in threads for which the event is enabled.  Check here for
+    // interp_only_mode if these events CAN be enabled.
+    __ verify_thread();
+    Label skip_compiled_code;
+
+    const Address interp_only(G2_thread, JavaThread::interp_only_mode_offset());
+    __ ld(interp_only, temp);
+    __ tst(temp);
+    __ br(Assembler::notZero, true, Assembler::pn, skip_compiled_code);
+    __ delayed()->ld_ptr(G5_method, in_bytes(methodOopDesc::interpreter_entry_offset()), target);
+    __ bind(skip_compiled_code);
+  }
+  __ jmp(target, 0);
+  __ delayed()->nop();
+}
+
+
 // Code generation
 address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* _masm) {
   // I5_savedSP/O5_savedSP: sender SP (must preserve)
@@ -1105,9 +1129,6 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   guarantee(java_lang_invoke_MethodHandle::vmentry_offset_in_bytes() != 0, "must have offsets");
 
   // Some handy addresses:
-  Address G5_method_fie(    G5_method,        in_bytes(methodOopDesc::from_interpreted_offset()));
-  Address G5_method_fce(    G5_method,        in_bytes(methodOopDesc::from_compiled_offset()));
-
   Address G3_mh_vmtarget(   G3_method_handle, java_lang_invoke_MethodHandle::vmtarget_offset_in_bytes());
 
   Address G3_dmh_vmindex(   G3_method_handle, java_lang_invoke_DirectMethodHandle::vmindex_offset_in_bytes());
@@ -1136,24 +1157,23 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   case _raise_exception:
     {
       // Not a real MH entry, but rather shared code for raising an
-      // exception.  Since we use the compiled entry, arguments are
-      // expected in compiler argument registers.
+      // exception.  For sharing purposes the arguments are passed into registers
+      // and then placed in the intepreter calling convention here.
       assert(raise_exception_method(), "must be set");
       assert(raise_exception_method()->from_compiled_entry(), "method must be linked");
 
-      __ mov(O5_savedSP, SP);  // Cut the stack back to where the caller started.
-
-      Label L_no_method;
-      // FIXME: fill in _raise_exception_method with a suitable java.lang.invoke method
       __ set(AddressLiteral((address) &_raise_exception_method), G5_method);
       __ ld_ptr(Address(G5_method, 0), G5_method);
 
       const int jobject_oop_offset = 0;
       __ ld_ptr(Address(G5_method, jobject_oop_offset), G5_method);
 
-      __ verify_oop(G5_method);
-      __ jump_indirect_to(G5_method_fce, O3_scratch);  // jump to compiled entry
-      __ delayed()->nop();
+      adjust_SP_and_Gargs_down_by_slots(_masm, 3, noreg, noreg);
+
+      __ st_ptr(O0_code,     __ argument_address(constant(2), noreg, 0));
+      __ st_ptr(O1_actual,   __ argument_address(constant(1), noreg, 0));
+      __ st_ptr(O2_required, __ argument_address(constant(0), noreg, 0));
+      jump_from_method_handle(_masm, G5_method, O1_scratch, O2_scratch);
     }
     break;
 
@@ -1161,7 +1181,6 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   case _invokespecial_mh:
     {
       __ load_heap_oop(G3_mh_vmtarget, G5_method);  // target is a methodOop
-      __ verify_oop(G5_method);
       // Same as TemplateTable::invokestatic or invokespecial,
       // minus the CP setup and profiling:
       if (ek == _invokespecial_mh) {
@@ -1171,8 +1190,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         __ null_check(G3_method_handle);
         __ verify_oop(G3_method_handle);
       }
-      __ jump_indirect_to(G5_method_fie, O1_scratch);
-      __ delayed()->nop();
+      jump_from_method_handle(_masm, G5_method, O1_scratch, O2_scratch);
     }
     break;
 
@@ -1204,9 +1222,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       Address vtable_entry_addr(O0_klass, base + vtableEntry::method_offset_in_bytes());
       __ ld_ptr(vtable_entry_addr, G5_method);
 
-      __ verify_oop(G5_method);
-      __ jump_indirect_to(G5_method_fie, O1_scratch);
-      __ delayed()->nop();
+      jump_from_method_handle(_masm, G5_method, O1_scratch, O2_scratch);
     }
     break;
 
@@ -1237,9 +1253,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
                                  O3_scratch,
                                  no_such_interface);
 
-      __ verify_oop(G5_method);
-      __ jump_indirect_to(G5_method_fie, O1_scratch);
-      __ delayed()->nop();
+      jump_from_method_handle(_masm, G5_method, O1_scratch, O2_scratch);
 
       __ bind(no_such_interface);
       // Throw an exception.
@@ -1283,9 +1297,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       if (direct_to_method) {
         __ load_heap_oop(G3_mh_vmtarget, G5_method);  // target is a methodOop
-        __ verify_oop(G5_method);
-        __ jump_indirect_to(G5_method_fie, O1_scratch);
-        __ delayed()->nop();
+        jump_from_method_handle(_masm, G5_method, O1_scratch, O2_scratch);
       } else {
         __ load_heap_oop(G3_mh_vmtarget, G3_method_handle);  // target is a methodOop
         __ verify_oop(G3_method_handle);

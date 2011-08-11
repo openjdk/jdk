@@ -546,6 +546,28 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
 }
 #endif //ASSERT
 
+void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register method, Register temp) {
+  if (JvmtiExport::can_post_interpreter_events()) {
+    Label run_compiled_code;
+    // JVMTI events, such as single-stepping, are implemented partly by avoiding running
+    // compiled code in threads for which the event is enabled.  Check here for
+    // interp_only_mode if these events CAN be enabled.
+#ifdef _LP64
+    Register rthread = r15_thread;
+#else
+    Register rthread = temp;
+    __ get_thread(rthread);
+#endif
+    // interp_only is an int, on little endian it is sufficient to test the byte only
+    // Is a cmpl faster?
+    __ cmpb(Address(rthread, JavaThread::interp_only_mode_offset()), 0);
+    __ jccb(Assembler::zero, run_compiled_code);
+    __ jmp(Address(method, methodOopDesc::interpreter_entry_offset()));
+    __ bind(run_compiled_code);
+  }
+  __ jmp(Address(method, methodOopDesc::from_interpreted_offset()));
+}
+
 // Code generation
 address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* _masm) {
   // rbx: methodOop
@@ -1120,9 +1142,6 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   guarantee(java_lang_invoke_MethodHandle::vmentry_offset_in_bytes() != 0, "must have offsets");
 
   // some handy addresses
-  Address rbx_method_fie(     rbx,      methodOopDesc::from_interpreted_offset() );
-  Address rbx_method_fce(     rbx,      methodOopDesc::from_compiled_offset() );
-
   Address rcx_mh_vmtarget(    rcx_recv, java_lang_invoke_MethodHandle::vmtarget_offset_in_bytes() );
   Address rcx_dmh_vmindex(    rcx_recv, java_lang_invoke_DirectMethodHandle::vmindex_offset_in_bytes() );
 
@@ -1163,8 +1182,8 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       assert(raise_exception_method(), "must be set");
       assert(raise_exception_method()->from_compiled_entry(), "method must be linked");
 
-      const Register rdi_pc = rax;
-      __ pop(rdi_pc);  // caller PC
+      const Register rax_pc = rax;
+      __ pop(rax_pc);  // caller PC
       __ mov(rsp, saved_last_sp);  // cut the stack back to where the caller started
 
       Register rbx_method = rbx_temp;
@@ -1172,11 +1191,15 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       const int jobject_oop_offset = 0;
       __ movptr(rbx_method, Address(rbx_method, jobject_oop_offset));  // dereference the jobject
-      __ verify_oop(rbx_method);
 
-      NOT_LP64(__ push(rarg2_required));
-      __ push(rdi_pc);         // restore caller PC
-      __ jmp(rbx_method_fce);  // jump to compiled entry
+      __ movptr(rsi, rsp);
+      __ subptr(rsp, 3 * wordSize);
+      __ push(rax_pc);         // restore caller PC
+
+      __ movptr(__ argument_address(constant(2)), rarg0_code);
+      __ movptr(__ argument_address(constant(1)), rarg1_actual);
+      __ movptr(__ argument_address(constant(0)), rarg2_required);
+      jump_from_method_handle(_masm, rbx_method, rax);
     }
     break;
 
@@ -1195,7 +1218,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         __ null_check(rcx_recv);
         __ verify_oop(rcx_recv);
       }
-      __ jmp(rbx_method_fie);
+      jump_from_method_handle(_masm, rbx_method, rax);
     }
     break;
 
@@ -1228,7 +1251,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       __ movptr(rbx_method, vtable_entry_addr);
 
       __ verify_oop(rbx_method);
-      __ jmp(rbx_method_fie);
+      jump_from_method_handle(_masm, rbx_method, rax);
     }
     break;
 
@@ -1263,7 +1286,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
                                  no_such_interface);
 
       __ verify_oop(rbx_method);
-      __ jmp(rbx_method_fie);
+      jump_from_method_handle(_masm, rbx_method, rax);
       __ hlt();
 
       __ bind(no_such_interface);
@@ -1311,7 +1334,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         Register rbx_method = rbx_temp;
         __ load_heap_oop(rbx_method, rcx_mh_vmtarget);
         __ verify_oop(rbx_method);
-        __ jmp(rbx_method_fie);
+        jump_from_method_handle(_masm, rbx_method, rax);
       } else {
         __ load_heap_oop(rcx_recv, rcx_mh_vmtarget);
         __ verify_oop(rcx_recv);

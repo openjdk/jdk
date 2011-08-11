@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,7 @@
 
 package com.sun.tools.javadoc;
 
-import java.util.Locale;
-
 import com.sun.javadoc.*;
-
 import com.sun.tools.javac.util.ListBuffer;
 
 /**
@@ -115,7 +112,7 @@ class Comment {
                                 state = TAG_NAME;
                             }
                             break;
-                    };
+                    }
                     if (ch == '\n') {
                         newLine = true;
                     } else if (!isWhite) {
@@ -134,7 +131,7 @@ class Comment {
                     case IN_TEXT:
                         parseCommentComponent(tagName, textStart, lastNonWhite+1);
                         break;
-                };
+                }
             }
 
             /**
@@ -396,16 +393,15 @@ class Comment {
      * else
      *    return -1.
      */
-    private static int inlineTagFound(DocImpl holder,  String inlinetext, int start) {
+    private static int inlineTagFound(DocImpl holder, String inlinetext, int start) {
         DocEnv docenv = holder.env;
-        int linkstart;
-        if (start == inlinetext.length() ||
-              (linkstart = inlinetext.indexOf("{@", start)) == -1) {
+        int linkstart = inlinetext.indexOf("{@", start);
+        if (start == inlinetext.length() || linkstart == -1) {
             return -1;
-        } else if(inlinetext.indexOf('}', start) == -1) {
+        } else if (inlinetext.indexOf('}', linkstart) == -1) {
             //Missing '}'.
             docenv.warning(holder, "tag.Improper_Use_Of_Link_Tag",
-                          inlinetext.substring(linkstart, inlinetext.length()));
+                    inlinetext.substring(linkstart, inlinetext.length()));
             return -1;
         } else {
             return linkstart;
@@ -425,6 +421,7 @@ class Comment {
     /**
      * Return text for this Doc comment.
      */
+    @Override
     public String toString() {
         return text;
     }

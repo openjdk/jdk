@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.util.jar.*;
 
 public class MakeClasslist {
   public static void main(String[] args) throws IOException {
-    List/*<String>*/ classes = new ArrayList();
+    List<String> classes = new ArrayList<>();
     String origJavaHome = System.getProperty("java.home");
     String javaHome     = origJavaHome.toLowerCase();
     if (javaHome.endsWith("jre")) {
@@ -84,10 +84,9 @@ public class MakeClasslist {
       }
     }
 
-    Set/*<String>*/  seenClasses = new HashSet();
+    Set<String> seenClasses = new HashSet<>();
 
-    for (Iterator iter = classes.iterator(); iter.hasNext(); ) {
-      String str = (String) iter.next();
+    for (String str : seenClasses) {
       if (seenClasses.add(str)) {
         System.out.println(str);
       }
@@ -109,13 +108,13 @@ public class MakeClasslist {
     // completePackage(seenClasses, rtJar, "java/lang");
   }
 
-  private static void completePackage(Set seenClasses,
+  private static void completePackage(Set<String> seenClasses,
                                       JarFile jar,
                                       String packageName) {
     int len = packageName.length();
-    Enumeration entries = jar.entries();
+    Enumeration<JarEntry> entries = jar.entries();
     while (entries.hasMoreElements()) {
-      JarEntry entry = (JarEntry) entries.nextElement();
+      JarEntry entry = entries.nextElement();
       String name = entry.getName();
       if (name.startsWith(packageName) &&
           name.endsWith(".class") &&

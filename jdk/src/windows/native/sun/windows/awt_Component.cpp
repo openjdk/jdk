@@ -364,6 +364,7 @@ AwtComponent* AwtComponent::GetComponentImpl(HWND hWnd) {
     AwtComponent *component =
         (AwtComponent *)::GetWindowLongPtr(hWnd, GWLP_USERDATA);
     DASSERT(!component || !IsBadReadPtr(component, sizeof(AwtComponent)) );
+    DASSERT(!component || component->GetHWnd() == hWnd );
     return component;
 }
 
@@ -3715,7 +3716,10 @@ void AwtComponent::OpenCandidateWindow(int x, int y)
             SetCandidateWindow(iCandType, x-rc.left, y-rc.top);
     }
     if (m_bitsCandType != 0) {
-        ::DefWindowProc(GetHWnd(), WM_IME_NOTIFY, IMN_OPENCANDIDATE, m_bitsCandType);
+        HWND proxy = GetProxyFocusOwner();
+        // REMIND: is there any chance GetProxyFocusOwner() returns NULL here?
+        ::DefWindowProc((proxy != NULL) ? proxy : GetHWnd(),
+                        WM_IME_NOTIFY, IMN_OPENCANDIDATE, m_bitsCandType);
     }
 }
 

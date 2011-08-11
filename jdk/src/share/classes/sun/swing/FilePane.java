@@ -570,7 +570,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     public JPanel createList() {
         JPanel p = new JPanel(new BorderLayout());
         final JFileChooser fileChooser = getFileChooser();
-        final JList list = new JList() {
+        final JList<Object> list = new JList<Object>() {
             public int getNextMatch(String prefix, int startIndex, Position.Bias bias) {
                 ListModel model = getModel();
                 int max = model.getSize();
@@ -641,7 +641,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     /**
      * This model allows for sorting JList
      */
-    private class SortableListModel extends AbstractListModel
+    private class SortableListModel extends AbstractListModel<Object>
             implements TableModelListener, RowSorterListener {
 
         public SortableListModel() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ import javax.annotation.processing.SupportedSourceVersion;
  * @author Peter von der Ah&eacute;
  *
  * @see SimpleAnnotationValueVisitor7
+ * @see SimpleAnnotationValueVisitor8
  * @since 1.6
  */
 @SupportedSourceVersion(RELEASE_6)
