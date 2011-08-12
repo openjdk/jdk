@@ -27,6 +27,7 @@
  * @summary make sure we can access the NSS softtoken KeyStore and use a private key
  * @author Andreas Sterbenz
  * @library ..
+ * @run main/othervm GetPrivateKey
  */
 
 import java.util.*;

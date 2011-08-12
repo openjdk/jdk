@@ -25,6 +25,11 @@
  * @test
  * @bug 4480441
  * @summary startHandshake giving wrong message when unconnected.
+ * @run main/othervm UnconnectedSocketWrongExceptions
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
+ *
  * @author Brad Wetmore
  */
 

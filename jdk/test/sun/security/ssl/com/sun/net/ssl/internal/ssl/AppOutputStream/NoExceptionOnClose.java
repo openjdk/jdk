@@ -25,6 +25,10 @@
  * @test 1.3 01/03/08
  * @bug 4378397
  * @summary  JSSE socket output stream doesn't throw after socket is closed
+ * @run main/othervm NoExceptionOnClose
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  * @author Jaya Hangal
  */
 

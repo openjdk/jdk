@@ -72,10 +72,33 @@ public abstract class PKCS11Test {
     }
 
     public static void main(PKCS11Test test) throws Exception {
-        System.out.println("Beginning test run " + test.getClass().getName() + "...");
-        testDefault(test);
-        testNSS(test);
-        testDeimos(test);
+        Provider[] oldProviders = Security.getProviders();
+        try {
+            System.out.println("Beginning test run " + test.getClass().getName() + "...");
+            testDefault(test);
+            testNSS(test);
+            testDeimos(test);
+        } finally {
+            Provider[] newProviders = Security.getProviders();
+            // Do not restore providers if nothing changed. This is especailly
+            // useful for ./Provider/Login.sh, where a SecurityManager exists.
+            if (oldProviders.length == newProviders.length) {
+                boolean found = false;
+                for (int i = 0; i<oldProviders.length; i++) {
+                    if (oldProviders[i] != newProviders[i]) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) return;
+            }
+            for (Provider p: newProviders) {
+                Security.removeProvider(p.getName());
+            }
+            for (Provider p: oldProviders) {
+                Security.addProvider(p);
+            }
+        }
     }
 
     public static void testDeimos(PKCS11Test test) throws Exception {
@@ -153,21 +176,21 @@ public abstract class PKCS11Test {
         return libdir;
     }
 
+    protected static void safeReload(String lib) throws Exception {
+        try {
+            System.load(lib);
+        } catch (UnsatisfiedLinkError e) {
+            if (e.getMessage().contains("already loaded")) {
+                return;
+            }
+        }
+    }
+
     static boolean loadNSPR(String libdir) throws Exception {
         // load NSS softoken dependencies in advance to avoid resolver issues
-        try {
-            System.load(libdir + System.mapLibraryName(NSPR_PREFIX + "nspr4"));
-        } catch (UnsatisfiedLinkError e) {
-            // GLIBC problem on older linux-amd64 machines
-            if (libdir.contains("linux-amd64")) {
-                System.out.println(e);
-                System.out.println("NSS does not work on this platform, skipping.");
-                return false;
-            }
-            throw e;
-        }
-        System.load(libdir + System.mapLibraryName(NSPR_PREFIX + "plc4"));
-        System.load(libdir + System.mapLibraryName(NSPR_PREFIX + "plds4"));
+        safeReload(libdir + System.mapLibraryName(NSPR_PREFIX + "nspr4"));
+        safeReload(libdir + System.mapLibraryName(NSPR_PREFIX + "plc4"));
+        safeReload(libdir + System.mapLibraryName(NSPR_PREFIX + "plds4"));
         return true;
     }
 

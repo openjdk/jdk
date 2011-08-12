@@ -26,6 +26,10 @@
  * @bug 4387882
  * @summary Need to revisit the javadocs for JSSE, especially the
  *      promoted classes.
+ * @run main/othervm ImplicitHandshake
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  * @author Brad Wetmore
  */
 
