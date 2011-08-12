@@ -202,6 +202,9 @@ java/lang/invoke/InvokeDynamicPrintArgs.java                    generic-all
 
 # jdk_management
 
+# 7067973
+java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
+
 # Failing, bug was filed: 6959636
 javax/management/loading/LibraryLoader/LibraryLoaderTest.java	generic-all
 
