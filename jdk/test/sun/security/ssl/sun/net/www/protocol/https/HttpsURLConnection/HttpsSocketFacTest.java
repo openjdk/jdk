@@ -26,6 +26,9 @@
  * @bug 6614957
  * @summary HttpsURLConnection not using the set SSLSocketFactory for creating all its Sockets
  * @run main/othervm HttpsSocketFacTest
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  */
 
 import javax.net.SocketFactory;

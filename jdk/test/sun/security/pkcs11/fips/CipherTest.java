@@ -394,47 +394,52 @@ public class CipherTest {
 
     public static void main(PeerFactory peerFactory, KeyStore keyStore,
             String[] args) throws Exception {
+        SSLContext reservedSSLContext = SSLContext.getDefault();
+        try {
+            long time = System.currentTimeMillis();
+            String relPath;
+            if ((args != null) && (args.length > 0) && args[0].equals("sh")) {
+                relPath = pathToStoresSH;
+            } else {
+                relPath = pathToStores;
+            }
+            PATH = new File(System.getProperty("test.src", "."), relPath);
+            CipherTest.peerFactory = peerFactory;
+            System.out.print(
+                "Initializing test '" + peerFactory.getName() + "'...");
+//          secureRandom = new SecureRandom();
+//          secureRandom.nextInt();
+//          trustStore = readKeyStore(trustStoreFile);
+            CipherTest.keyStore = keyStore;
+//          keyStore = readKeyStore(keyStoreFile);
+            KeyManagerFactory keyFactory =
+                KeyManagerFactory.getInstance(
+                    KeyManagerFactory.getDefaultAlgorithm());
+            keyFactory.init(keyStore, "test12".toCharArray());
+            keyManager = (X509ExtendedKeyManager)keyFactory.getKeyManagers()[0];
 
-        long time = System.currentTimeMillis();
-        String relPath;
-        if ((args != null) && (args.length > 0) && args[0].equals("sh")) {
-            relPath = pathToStoresSH;
-        } else {
-            relPath = pathToStores;
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(keyStore);
+            trustManager = (X509TrustManager)tmf.getTrustManagers()[0];
+
+//          trustManager = new AlwaysTrustManager();
+            SSLContext context = SSLContext.getInstance("TLS");
+            context.init(new KeyManager[] {keyManager},
+                    new TrustManager[] {trustManager}, null);
+            SSLContext.setDefault(context);
+
+            CipherTest cipherTest = new CipherTest(peerFactory);
+            Thread serverThread = new Thread(peerFactory.newServer(cipherTest),
+                "Server");
+            serverThread.setDaemon(true);
+            serverThread.start();
+            System.out.println("Done");
+            cipherTest.run();
+            time = System.currentTimeMillis() - time;
+            System.out.println("Done. (" + time + " ms)");
+        } finally {
+            SSLContext.setDefault(reservedSSLContext);
         }
-        PATH = new File(System.getProperty("test.src", "."), relPath);
-        CipherTest.peerFactory = peerFactory;
-        System.out.print(
-            "Initializing test '" + peerFactory.getName() + "'...");
-//      secureRandom = new SecureRandom();
-//      secureRandom.nextInt();
-//      trustStore = readKeyStore(trustStoreFile);
-        CipherTest.keyStore = keyStore;
-//      keyStore = readKeyStore(keyStoreFile);
-        KeyManagerFactory keyFactory =
-            KeyManagerFactory.getInstance(
-                KeyManagerFactory.getDefaultAlgorithm());
-        keyFactory.init(keyStore, "test12".toCharArray());
-        keyManager = (X509ExtendedKeyManager)keyFactory.getKeyManagers()[0];
-
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        tmf.init(keyStore);
-        trustManager = (X509TrustManager)tmf.getTrustManagers()[0];
-
-//      trustManager = new AlwaysTrustManager();
-        SSLContext context = SSLContext.getInstance("TLS");
-        context.init(new KeyManager[] {keyManager}, new TrustManager[] {trustManager}, null);
-        SSLContext.setDefault(context);
-
-        CipherTest cipherTest = new CipherTest(peerFactory);
-        Thread serverThread = new Thread(peerFactory.newServer(cipherTest),
-            "Server");
-        serverThread.setDaemon(true);
-        serverThread.start();
-        System.out.println("Done");
-        cipherTest.run();
-        time = System.currentTimeMillis() - time;
-        System.out.println("Done. (" + time + " ms)");
     }
 
     static abstract class PeerFactory {
