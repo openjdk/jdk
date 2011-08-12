@@ -31,8 +31,8 @@ import org.ietf.jgss.*;
 
 public class Krb5NameEquals {
 
-    private static String NAME_STR1 = "service@host";
-    private static String NAME_STR2 = "service@host2";
+    private static String NAME_STR1 = "service@localhost";
+    private static String NAME_STR2 = "service2@localhost";
     private static final Oid MECH;
 
     static {
@@ -57,7 +57,7 @@ public class Krb5NameEquals {
         GSSName name3 = mgr.createName(NAME_STR1,
             GSSName.NT_HOSTBASED_SERVICE, MECH);
 
-        if (!name1.equals(name3) || !name1.equals(name3) ||
+        if (!name1.equals(name1) || !name1.equals(name3) ||
             !name1.equals((Object) name1) ||
             !name1.equals((Object) name3)) {
             System.out.println("Error: should be the same name");
