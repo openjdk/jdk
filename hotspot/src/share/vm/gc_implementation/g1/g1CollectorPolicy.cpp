@@ -859,14 +859,6 @@ void G1CollectorPolicy::record_full_collection_end() {
   calculate_young_list_target_length();
 }
 
-void G1CollectorPolicy::record_before_bytes(size_t bytes) {
-  _bytes_in_to_space_before_gc += bytes;
-}
-
-void G1CollectorPolicy::record_after_bytes(size_t bytes) {
-  _bytes_in_to_space_after_gc += bytes;
-}
-
 void G1CollectorPolicy::record_stop_world_start() {
   _stop_world_start = os::elapsedTime();
 }
@@ -894,9 +886,8 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
   _pending_cards = _g1->pending_card_num();
   _max_pending_cards = _g1->max_pending_card_num();
 
-  _bytes_in_to_space_before_gc = 0;
-  _bytes_in_to_space_after_gc = 0;
   _bytes_in_collection_set_before_gc = 0;
+  _bytes_copied_during_gc = 0;
 
   YoungList* young_list = _g1->young_list();
   _eden_bytes_before_gc = young_list->eden_used_bytes();
@@ -1578,8 +1569,8 @@ void G1CollectorPolicy::record_collection_pause_end() {
 
     double survival_ratio = 0.0;
     if (_bytes_in_collection_set_before_gc > 0) {
-      survival_ratio = (double) bytes_in_to_space_during_gc() /
-        (double) _bytes_in_collection_set_before_gc;
+      survival_ratio = (double) _bytes_copied_during_gc /
+                                   (double) _bytes_in_collection_set_before_gc;
     }
 
     _pending_cards_seq->add((double) _pending_cards);
