@@ -37,5 +37,9 @@ chmod 333 ${TESTDIR}
 
 $TESTJAVA/bin/java -classpath $TESTCLASSES DirPermissionDenied ${TESTDIR}
 result=$?
+
+# Add back read access for user, otherwise not removable on some systems
+chmod u+r ${TESTDIR}
+
 rm -rf ${TESTDIR}
 exit $result
