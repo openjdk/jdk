@@ -587,26 +587,6 @@ HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool do_expand) {
   return res;
 }
 
-HeapRegion* G1CollectedHeap::new_gc_alloc_region(int purpose,
-                                                 size_t word_size) {
-  HeapRegion* alloc_region = NULL;
-  if (_gc_alloc_region_counts[purpose] < g1_policy()->max_regions(purpose)) {
-    alloc_region = new_region(word_size, true /* do_expand */);
-    if (alloc_region != NULL) {
-      if (purpose == GCAllocForSurvived) {
-        _hr_printer.alloc(alloc_region, G1HRPrinter::Survivor);
-        alloc_region->set_survivor();
-      } else {
-        _hr_printer.alloc(alloc_region, G1HRPrinter::Old);
-      }
-      ++_gc_alloc_region_counts[purpose];
-    }
-  } else {
-    g1_policy()->note_alloc_region_limit_reached(purpose);
-  }
-  return alloc_region;
-}
-
 size_t G1CollectedHeap::humongous_obj_allocate_find_first(size_t num_regions,
                                                           size_t word_size) {
   assert(isHumongous(word_size), "word_size should be humongous");
@@ -1089,12 +1069,6 @@ HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
   }
 
   ShouldNotReachHere();
-}
-
-void G1CollectedHeap::abandon_gc_alloc_regions() {
-  // first, make sure that the GC alloc region list is empty (it should!)
-  assert(_gc_alloc_region_list == NULL, "invariant");
-  release_gc_alloc_regions(true /* totally */);
 }
 
 class PostMCRemSetClearClosure: public HeapRegionClosure {
@@ -1781,7 +1755,11 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
 void G1CollectedHeap::shrink(size_t shrink_bytes) {
   verify_region_sets_optional();
 
-  release_gc_alloc_regions(true /* totally */);
+  // We should only reach here at the end of a Full GC which means we
+  // should not not be holding to any GC alloc regions. The method
+  // below will make sure of that and do any remaining clean up.
+  abandon_gc_alloc_regions();
+
   // Instead of tearing down / rebuilding the free lists here, we
   // could instead use the remove_all_pending() method on free_list to
   // remove only the ones that we need to remove.
@@ -1821,6 +1799,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _free_regions_coming(false),
   _young_list(new YoungList(this)),
   _gc_time_stamp(0),
+  _retained_old_gc_alloc_region(NULL),
   _surviving_young_words(NULL),
   _full_collections_completed(0),
   _in_cset_fast_test(NULL),
@@ -1851,20 +1830,6 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
     q->initialize();
     _task_queues->register_queue(i, q);
   }
-
-  for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
-    _gc_alloc_regions[ap]          = NULL;
-    _gc_alloc_region_counts[ap]    = 0;
-    _retained_gc_alloc_regions[ap] = NULL;
-    // by default, we do not retain a GC alloc region for each ap;
-    // we'll override this, when appropriate, below
-    _retain_gc_alloc_region[ap]    = false;
-  }
-
-  // We will try to remember the last half-full tenured region we
-  // allocated to at the end of a collection so that we can re-use it
-  // during the next collection.
-  _retain_gc_alloc_region[GCAllocForTenured]  = true;
 
   guarantee(_task_queues != NULL, "task_queues allocation failure.");
 }
@@ -2083,8 +2048,6 @@ jint G1CollectedHeap::initialize() {
   // counts and that mechanism.
   SpecializationStats::clear();
 
-  _gc_alloc_region_list = NULL;
-
   // Do later initialization work for concurrent refinement.
   _cg1r->init();
 
@@ -2204,27 +2167,6 @@ size_t G1CollectedHeap::recalculate_used() const {
   heap_region_iterate(&blk);
   return blk.result();
 }
-
-#ifndef PRODUCT
-class SumUsedRegionsClosure: public HeapRegionClosure {
-  size_t _num;
-public:
-  SumUsedRegionsClosure() : _num(0) {}
-  bool doHeapRegion(HeapRegion* r) {
-    if (r->continuesHumongous() || r->used() > 0 || r->is_gc_alloc_region()) {
-      _num += 1;
-    }
-    return false;
-  }
-  size_t result() { return _num; }
-};
-
-size_t G1CollectedHeap::recalculate_used_regions() const {
-  SumUsedRegionsClosure blk;
-  heap_region_iterate(&blk);
-  return blk.result();
-}
-#endif // PRODUCT
 
 size_t G1CollectedHeap::unsafe_max_alloc() {
   if (free_regions() > 0) return HeapRegion::GrainBytes;
@@ -3408,8 +3350,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       append_secondary_free_list_if_not_empty_with_lock();
     }
 
-    increment_gc_time_stamp();
-
     if (g1_policy()->in_young_gc_mode()) {
       assert(check_young_list_well_formed(),
              "young list should be well formed");
@@ -3420,6 +3360,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
       gc_prologue(false);
       increment_total_collections(false /* full gc */);
+      increment_gc_time_stamp();
 
       if (VerifyBeforeGC && total_collections() >= VerifyGCStartAt) {
         HandleMark hm;  // Discard invalid handles created during verification
@@ -3472,7 +3413,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       if (g1_policy()->during_initial_mark_pause()) {
         concurrent_mark()->checkpointRootsInitialPre();
       }
-      save_marks();
+      perm_gen()->save_marks();
 
       // We must do this before any possible evacuation that should propagate
       // marks.
@@ -3534,8 +3475,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
       setup_surviving_young_words();
 
-      // Set up the gc allocation regions.
-      get_gc_alloc_regions();
+      // Initialize the GC alloc regions.
+      init_gc_alloc_regions();
 
       // Actually do the work...
       evacuate_collection_set();
@@ -3580,7 +3521,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       } else {
         // The "used" of the the collection set have already been subtracted
         // when they were freed.  Add in the bytes evacuated.
-        _summary_bytes_used += g1_policy()->bytes_in_to_space();
+        _summary_bytes_used += g1_policy()->bytes_copied_during_gc();
       }
 
       if (g1_policy()->in_young_gc_mode() &&
@@ -3613,6 +3554,29 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       g1_policy()->record_collection_pause_end();
 
       MemoryService::track_memory_usage();
+
+      // In prepare_for_verify() below we'll need to scan the deferred
+      // update buffers to bring the RSets up-to-date if
+      // G1HRRSFlushLogBuffersOnVerify has been set. While scanning
+      // the update buffers we'll probably need to scan cards on the
+      // regions we just allocated to (i.e., the GC alloc
+      // regions). However, during the last GC we called
+      // set_saved_mark() on all the GC alloc regions, so card
+      // scanning might skip the [saved_mark_word()...top()] area of
+      // those regions (i.e., the area we allocated objects into
+      // during the last GC). But it shouldn't. Given that
+      // saved_mark_word() is conditional on whether the GC time stamp
+      // on the region is current or not, by incrementing the GC time
+      // stamp here we invalidate all the GC time stamps on all the
+      // regions and saved_mark_word() will simply return top() for
+      // all the regions. This is a nicer way of ensuring this rather
+      // than iterating over the regions and fixing them. In fact, the
+      // GC time stamp increment here also ensures that
+      // saved_mark_word() will return top() between pauses, i.e.,
+      // during concurrent refinement. So we don't need the
+      // is_gc_active() check to decided which top to use when
+      // scanning cards (see CR 7039627).
+      increment_gc_time_stamp();
 
       if (VerifyAfterGC && total_collections() >= VerifyGCStartAt) {
         HandleMark hm;  // Discard invalid handles created during verification
@@ -3713,251 +3677,49 @@ void G1CollectedHeap::release_mutator_alloc_region() {
   assert(_mutator_alloc_region.get() == NULL, "post-condition");
 }
 
-void G1CollectedHeap::set_gc_alloc_region(int purpose, HeapRegion* r) {
-  assert(purpose >= 0 && purpose < GCAllocPurposeCount, "invalid purpose");
-  // make sure we don't call set_gc_alloc_region() multiple times on
-  // the same region
-  assert(r == NULL || !r->is_gc_alloc_region(),
-         "shouldn't already be a GC alloc region");
-  assert(r == NULL || !r->isHumongous(),
-         "humongous regions shouldn't be used as GC alloc regions");
-
-  HeapWord* original_top = NULL;
-  if (r != NULL)
-    original_top = r->top();
-
-  // We will want to record the used space in r as being there before gc.
-  // One we install it as a GC alloc region it's eligible for allocation.
-  // So record it now and use it later.
-  size_t r_used = 0;
-  if (r != NULL) {
-    r_used = r->used();
-
-    if (G1CollectedHeap::use_parallel_gc_threads()) {
-      // need to take the lock to guard against two threads calling
-      // get_gc_alloc_region concurrently (very unlikely but...)
-      MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
-      r->save_marks();
-    }
-  }
-  HeapRegion* old_alloc_region = _gc_alloc_regions[purpose];
-  _gc_alloc_regions[purpose] = r;
-  if (old_alloc_region != NULL) {
-    // Replace aliases too.
-    for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
-      if (_gc_alloc_regions[ap] == old_alloc_region) {
-        _gc_alloc_regions[ap] = r;
-      }
-    }
-  }
-  if (r != NULL) {
-    push_gc_alloc_region(r);
-    if (mark_in_progress() && original_top != r->next_top_at_mark_start()) {
-      // We are using a region as a GC alloc region after it has been used
-      // as a mutator allocation region during the current marking cycle.
-      // The mutator-allocated objects are currently implicitly marked, but
-      // when we move hr->next_top_at_mark_start() forward at the the end
-      // of the GC pause, they won't be.  We therefore mark all objects in
-      // the "gap".  We do this object-by-object, since marking densely
-      // does not currently work right with marking bitmap iteration.  This
-      // means we rely on TLAB filling at the start of pauses, and no
-      // "resuscitation" of filled TLAB's.  If we want to do this, we need
-      // to fix the marking bitmap iteration.
-      HeapWord* curhw = r->next_top_at_mark_start();
-      HeapWord* t = original_top;
-
-      while (curhw < t) {
-        oop cur = (oop)curhw;
-        // We'll assume parallel for generality.  This is rare code.
-        concurrent_mark()->markAndGrayObjectIfNecessary(cur); // can't we just mark them?
-        curhw = curhw + cur->size();
-      }
-      assert(curhw == t, "Should have parsed correctly.");
-    }
-    if (G1PolicyVerbose > 1) {
-      gclog_or_tty->print("New alloc region ["PTR_FORMAT", "PTR_FORMAT", " PTR_FORMAT") "
-                          "for survivors:", r->bottom(), original_top, r->end());
-      r->print();
-    }
-    g1_policy()->record_before_bytes(r_used);
-  }
-}
-
-void G1CollectedHeap::push_gc_alloc_region(HeapRegion* hr) {
-  assert(Thread::current()->is_VM_thread() ||
-         FreeList_lock->owned_by_self(), "Precondition");
-  assert(!hr->is_gc_alloc_region() && !hr->in_collection_set(),
-         "Precondition.");
-  hr->set_is_gc_alloc_region(true);
-  hr->set_next_gc_alloc_region(_gc_alloc_region_list);
-  _gc_alloc_region_list = hr;
-}
-
-#ifdef G1_DEBUG
-class FindGCAllocRegion: public HeapRegionClosure {
-public:
-  bool doHeapRegion(HeapRegion* r) {
-    if (r->is_gc_alloc_region()) {
-      gclog_or_tty->print_cr("Region "HR_FORMAT" is still a GC alloc region",
-                             HR_FORMAT_PARAMS(r));
-    }
-    return false;
-  }
-};
-#endif // G1_DEBUG
-
-void G1CollectedHeap::forget_alloc_region_list() {
+void G1CollectedHeap::init_gc_alloc_regions() {
   assert_at_safepoint(true /* should_be_vm_thread */);
-  while (_gc_alloc_region_list != NULL) {
-    HeapRegion* r = _gc_alloc_region_list;
-    assert(r->is_gc_alloc_region(), "Invariant.");
-    // We need HeapRegion::oops_on_card_seq_iterate_careful() to work on
-    // newly allocated data in order to be able to apply deferred updates
-    // before the GC is done for verification purposes (i.e to allow
-    // G1HRRSFlushLogBuffersOnVerify). It's safe thing to do after the
-    // collection.
-    r->ContiguousSpace::set_saved_mark();
-    _gc_alloc_region_list = r->next_gc_alloc_region();
-    r->set_next_gc_alloc_region(NULL);
-    r->set_is_gc_alloc_region(false);
-    if (r->is_survivor()) {
-      if (r->is_empty()) {
-        r->set_not_young();
-      } else {
-        _young_list->add_survivor_region(r);
-      }
-    }
-  }
-#ifdef G1_DEBUG
-  FindGCAllocRegion fa;
-  heap_region_iterate(&fa);
-#endif // G1_DEBUG
-}
 
+  _survivor_gc_alloc_region.init();
+  _old_gc_alloc_region.init();
+  HeapRegion* retained_region = _retained_old_gc_alloc_region;
+  _retained_old_gc_alloc_region = NULL;
 
-bool G1CollectedHeap::check_gc_alloc_regions() {
-  // TODO: allocation regions check
-  return true;
-}
-
-void G1CollectedHeap::get_gc_alloc_regions() {
-  // First, let's check that the GC alloc region list is empty (it should)
-  assert(_gc_alloc_region_list == NULL, "invariant");
-
-  for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
-    assert(_gc_alloc_regions[ap] == NULL, "invariant");
-    assert(_gc_alloc_region_counts[ap] == 0, "invariant");
-
-    // Create new GC alloc regions.
-    HeapRegion* alloc_region = _retained_gc_alloc_regions[ap];
-    _retained_gc_alloc_regions[ap] = NULL;
-
-    if (alloc_region != NULL) {
-      assert(_retain_gc_alloc_region[ap], "only way to retain a GC region");
-
-      // let's make sure that the GC alloc region is not tagged as such
-      // outside a GC operation
-      assert(!alloc_region->is_gc_alloc_region(), "sanity");
-
-      if (alloc_region->in_collection_set() ||
-          alloc_region->top() == alloc_region->end() ||
-          alloc_region->top() == alloc_region->bottom() ||
-          alloc_region->isHumongous()) {
-        // we will discard the current GC alloc region if
-        // * it's in the collection set (it can happen!),
-        // * it's already full (no point in using it),
-        // * it's empty (this means that it was emptied during
-        // a cleanup and it should be on the free list now), or
-        // * it's humongous (this means that it was emptied
-        // during a cleanup and was added to the free list, but
-        // has been subseqently used to allocate a humongous
-        // object that may be less than the region size).
-
-        alloc_region = NULL;
-      }
-    }
-
-    if (alloc_region == NULL) {
-      // we will get a new GC alloc region
-      alloc_region = new_gc_alloc_region(ap, HeapRegion::GrainWords);
-    } else {
-      // the region was retained from the last collection
-      ++_gc_alloc_region_counts[ap];
-
-      _hr_printer.reuse(alloc_region);
-    }
-
-    if (alloc_region != NULL) {
-      assert(_gc_alloc_regions[ap] == NULL, "pre-condition");
-      set_gc_alloc_region(ap, alloc_region);
-    }
-
-    assert(_gc_alloc_regions[ap] == NULL ||
-           _gc_alloc_regions[ap]->is_gc_alloc_region(),
-           "the GC alloc region should be tagged as such");
-    assert(_gc_alloc_regions[ap] == NULL ||
-           _gc_alloc_regions[ap] == _gc_alloc_region_list,
-           "the GC alloc region should be the same as the GC alloc list head");
-  }
-  // Set alternative regions for allocation purposes that have reached
-  // their limit.
-  for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
-    GCAllocPurpose alt_purpose = g1_policy()->alternative_purpose(ap);
-    if (_gc_alloc_regions[ap] == NULL && alt_purpose != ap) {
-      _gc_alloc_regions[ap] = _gc_alloc_regions[alt_purpose];
-    }
-  }
-  assert(check_gc_alloc_regions(), "alloc regions messed up");
-}
-
-void G1CollectedHeap::release_gc_alloc_regions(bool totally) {
-  // We keep a separate list of all regions that have been alloc regions in
-  // the current collection pause. Forget that now. This method will
-  // untag the GC alloc regions and tear down the GC alloc region
-  // list. It's desirable that no regions are tagged as GC alloc
-  // outside GCs.
-
-  forget_alloc_region_list();
-
-  // The current alloc regions contain objs that have survived
-  // collection. Make them no longer GC alloc regions.
-  for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
-    HeapRegion* r = _gc_alloc_regions[ap];
-    _retained_gc_alloc_regions[ap] = NULL;
-    _gc_alloc_region_counts[ap] = 0;
-
-    if (r != NULL) {
-      // we retain nothing on _gc_alloc_regions between GCs
-      set_gc_alloc_region(ap, NULL);
-
-      if (r->is_empty()) {
-        // We didn't actually allocate anything in it; let's just put
-        // it back on the free list.
-        _free_list.add_as_head(r);
-      } else if (_retain_gc_alloc_region[ap] && !totally) {
-        // retain it so that we can use it at the beginning of the next GC
-        _retained_gc_alloc_regions[ap] = r;
-      }
-    }
+  // We will discard the current GC alloc region if:
+  // a) it's in the collection set (it can happen!),
+  // b) it's already full (no point in using it),
+  // c) it's empty (this means that it was emptied during
+  // a cleanup and it should be on the free list now), or
+  // d) it's humongous (this means that it was emptied
+  // during a cleanup and was added to the free list, but
+  // has been subseqently used to allocate a humongous
+  // object that may be less than the region size).
+  if (retained_region != NULL &&
+      !retained_region->in_collection_set() &&
+      !(retained_region->top() == retained_region->end()) &&
+      !retained_region->is_empty() &&
+      !retained_region->isHumongous()) {
+    retained_region->set_saved_mark();
+    _old_gc_alloc_region.set(retained_region);
+    _hr_printer.reuse(retained_region);
   }
 }
 
-#ifndef PRODUCT
-// Useful for debugging
-
-void G1CollectedHeap::print_gc_alloc_regions() {
-  gclog_or_tty->print_cr("GC alloc regions");
-  for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
-    HeapRegion* r = _gc_alloc_regions[ap];
-    if (r == NULL) {
-      gclog_or_tty->print_cr("  %2d : "PTR_FORMAT, ap, NULL);
-    } else {
-      gclog_or_tty->print_cr("  %2d : "PTR_FORMAT" "SIZE_FORMAT,
-                             ap, r->bottom(), r->used());
-    }
-  }
+void G1CollectedHeap::release_gc_alloc_regions() {
+  _survivor_gc_alloc_region.release();
+  // If we have an old GC alloc region to release, we'll save it in
+  // _retained_old_gc_alloc_region. If we don't
+  // _retained_old_gc_alloc_region will become NULL. This is what we
+  // want either way so no reason to check explicitly for either
+  // condition.
+  _retained_old_gc_alloc_region = _old_gc_alloc_region.release();
 }
-#endif // PRODUCT
+
+void G1CollectedHeap::abandon_gc_alloc_regions() {
+  assert(_survivor_gc_alloc_region.get() == NULL, "pre-condition");
+  assert(_old_gc_alloc_region.get() == NULL, "pre-condition");
+  _retained_old_gc_alloc_region = NULL;
+}
 
 void G1CollectedHeap::init_for_evac_failure(OopsInHeapRegionClosure* cl) {
   _drain_in_progress = false;
@@ -3973,8 +3735,6 @@ void G1CollectedHeap::finalize_for_evac_failure() {
   delete _evac_failure_scan_stack;
   _evac_failure_scan_stack = NULL;
 }
-
-
 
 // *** Sequential G1 Evacuation
 
@@ -4287,136 +4047,32 @@ void G1CollectedHeap::preserve_mark_if_necessary(oop obj, markOop m) {
   }
 }
 
-// *** Parallel G1 Evacuation
-
 HeapWord* G1CollectedHeap::par_allocate_during_gc(GCAllocPurpose purpose,
                                                   size_t word_size) {
-  assert(!isHumongous(word_size),
-         err_msg("we should not be seeing humongous allocation requests "
-                 "during GC, word_size = "SIZE_FORMAT, word_size));
-
-  HeapRegion* alloc_region = _gc_alloc_regions[purpose];
-  // let the caller handle alloc failure
-  if (alloc_region == NULL) return NULL;
-
-  HeapWord* block = alloc_region->par_allocate(word_size);
-  if (block == NULL) {
-    block = allocate_during_gc_slow(purpose, alloc_region, true, word_size);
-  }
-  return block;
-}
-
-void G1CollectedHeap::retire_alloc_region(HeapRegion* alloc_region,
-                                            bool par) {
-  // Another thread might have obtained alloc_region for the given
-  // purpose, and might be attempting to allocate in it, and might
-  // succeed.  Therefore, we can't do the "finalization" stuff on the
-  // region below until we're sure the last allocation has happened.
-  // We ensure this by allocating the remaining space with a garbage
-  // object.
-  if (par) par_allocate_remaining_space(alloc_region);
-  // Now we can do the post-GC stuff on the region.
-  alloc_region->note_end_of_copying();
-  g1_policy()->record_after_bytes(alloc_region->used());
-  _hr_printer.retire(alloc_region);
-}
-
-HeapWord*
-G1CollectedHeap::allocate_during_gc_slow(GCAllocPurpose purpose,
-                                         HeapRegion*    alloc_region,
-                                         bool           par,
-                                         size_t         word_size) {
-  assert(!isHumongous(word_size),
-         err_msg("we should not be seeing humongous allocation requests "
-                 "during GC, word_size = "SIZE_FORMAT, word_size));
-
-  // We need to make sure we serialize calls to this method. Given
-  // that the FreeList_lock guards accesses to the free_list anyway,
-  // and we need to potentially remove a region from it, we'll use it
-  // to protect the whole call.
-  MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-
-  HeapWord* block = NULL;
-  // In the parallel case, a previous thread to obtain the lock may have
-  // already assigned a new gc_alloc_region.
-  if (alloc_region != _gc_alloc_regions[purpose]) {
-    assert(par, "But should only happen in parallel case.");
-    alloc_region = _gc_alloc_regions[purpose];
-    if (alloc_region == NULL) return NULL;
-    block = alloc_region->par_allocate(word_size);
-    if (block != NULL) return block;
-    // Otherwise, continue; this new region is empty, too.
-  }
-  assert(alloc_region != NULL, "We better have an allocation region");
-  retire_alloc_region(alloc_region, par);
-
-  if (_gc_alloc_region_counts[purpose] >= g1_policy()->max_regions(purpose)) {
-    // Cannot allocate more regions for the given purpose.
-    GCAllocPurpose alt_purpose = g1_policy()->alternative_purpose(purpose);
-    // Is there an alternative?
-    if (purpose != alt_purpose) {
-      HeapRegion* alt_region = _gc_alloc_regions[alt_purpose];
-      // Has not the alternative region been aliased?
-      if (alloc_region != alt_region && alt_region != NULL) {
-        // Try to allocate in the alternative region.
-        if (par) {
-          block = alt_region->par_allocate(word_size);
-        } else {
-          block = alt_region->allocate(word_size);
-        }
-        // Make an alias.
-        _gc_alloc_regions[purpose] = _gc_alloc_regions[alt_purpose];
-        if (block != NULL) {
-          return block;
-        }
-        retire_alloc_region(alt_region, par);
-      }
-      // Both the allocation region and the alternative one are full
-      // and aliased, replace them with a new allocation region.
-      purpose = alt_purpose;
+  if (purpose == GCAllocForSurvived) {
+    HeapWord* result = survivor_attempt_allocation(word_size);
+    if (result != NULL) {
+      return result;
     } else {
-      set_gc_alloc_region(purpose, NULL);
-      return NULL;
+      // Let's try to allocate in the old gen in case we can fit the
+      // object there.
+      return old_attempt_allocation(word_size);
     }
-  }
-
-  // Now allocate a new region for allocation.
-  alloc_region = new_gc_alloc_region(purpose, word_size);
-
-  // let the caller handle alloc failure
-  if (alloc_region != NULL) {
-
-    assert(check_gc_alloc_regions(), "alloc regions messed up");
-    assert(alloc_region->saved_mark_at_top(),
-           "Mark should have been saved already.");
-    // This must be done last: once it's installed, other regions may
-    // allocate in it (without holding the lock.)
-    set_gc_alloc_region(purpose, alloc_region);
-
-    if (par) {
-      block = alloc_region->par_allocate(word_size);
-    } else {
-      block = alloc_region->allocate(word_size);
-    }
-    // Caller handles alloc failure.
   } else {
-    // This sets other apis using the same old alloc region to NULL, also.
-    set_gc_alloc_region(purpose, NULL);
+    assert(purpose ==  GCAllocForTenured, "sanity");
+    HeapWord* result = old_attempt_allocation(word_size);
+    if (result != NULL) {
+      return result;
+    } else {
+      // Let's try to allocate in the survivors in case we can fit the
+      // object there.
+      return survivor_attempt_allocation(word_size);
+    }
   }
-  return block;  // May be NULL.
-}
 
-void G1CollectedHeap::par_allocate_remaining_space(HeapRegion* r) {
-  HeapWord* block = NULL;
-  size_t free_words;
-  do {
-    free_words = r->free()/HeapWordSize;
-    // If there's too little space, no one can allocate, so we're done.
-    if (free_words < CollectedHeap::min_fill_size()) return;
-    // Otherwise, try to claim it.
-    block = r->par_allocate(free_words);
-  } while (block == NULL);
-  fill_with_object(block, free_words);
+  ShouldNotReachHere();
+  // Trying to keep some compilers happy.
+  return NULL;
 }
 
 #ifndef PRODUCT
@@ -4956,24 +4612,6 @@ G1CollectedHeap::g1_process_weak_roots(OopClosure* root_closure,
   SharedHeap::process_weak_roots(root_closure, &roots_in_blobs, non_root_closure);
 }
 
-
-class SaveMarksClosure: public HeapRegionClosure {
-public:
-  bool doHeapRegion(HeapRegion* r) {
-    r->save_marks();
-    return false;
-  }
-};
-
-void G1CollectedHeap::save_marks() {
-  if (!CollectedHeap::use_parallel_gc_threads()) {
-    SaveMarksClosure sm;
-    heap_region_iterate(&sm);
-  }
-  // We do this even in the parallel case
-  perm_gen()->save_marks();
-}
-
 void G1CollectedHeap::evacuate_collection_set() {
   set_evacuation_failed(false);
 
@@ -5004,10 +4642,6 @@ void G1CollectedHeap::evacuate_collection_set() {
   double par_time = (os::elapsedTime() - start_par) * 1000.0;
   g1_policy()->record_par_time(par_time);
   set_par_threads(0);
-  // Is this the right thing to do here?  We don't save marks
-  // on individual heap regions when we allocate from
-  // them in parallel, so this seems like the correct place for this.
-  retire_all_alloc_regions();
 
   // Weak root processing.
   // Note: when JSR 292 is enabled and code blobs can contain
@@ -5018,7 +4652,7 @@ void G1CollectedHeap::evacuate_collection_set() {
     G1KeepAliveClosure keep_alive(this);
     JNIHandles::weak_oops_do(&is_alive, &keep_alive);
   }
-  release_gc_alloc_regions(false /* totally */);
+  release_gc_alloc_regions();
   g1_rem_set()->cleanup_after_oops_into_collection_set_do();
 
   concurrent_g1_refine()->clear_hot_cache();
@@ -5139,67 +4773,30 @@ void G1CollectedHeap::update_sets_after_freeing_regions(size_t pre_used,
   }
 }
 
-void G1CollectedHeap::dirtyCardsForYoungRegions(CardTableModRefBS* ct_bs, HeapRegion* list) {
-  while (list != NULL) {
-    guarantee( list->is_young(), "invariant" );
-
-    HeapWord* bottom = list->bottom();
-    HeapWord* end = list->end();
-    MemRegion mr(bottom, end);
-    ct_bs->dirty(mr);
-
-    list = list->get_next_young_region();
-  }
-}
-
-
 class G1ParCleanupCTTask : public AbstractGangTask {
   CardTableModRefBS* _ct_bs;
   G1CollectedHeap* _g1h;
   HeapRegion* volatile _su_head;
 public:
   G1ParCleanupCTTask(CardTableModRefBS* ct_bs,
-                     G1CollectedHeap* g1h,
-                     HeapRegion* survivor_list) :
+                     G1CollectedHeap* g1h) :
     AbstractGangTask("G1 Par Cleanup CT Task"),
-    _ct_bs(ct_bs),
-    _g1h(g1h),
-    _su_head(survivor_list)
-  { }
+    _ct_bs(ct_bs), _g1h(g1h) { }
 
   void work(int i) {
     HeapRegion* r;
     while (r = _g1h->pop_dirty_cards_region()) {
       clear_cards(r);
     }
-    // Redirty the cards of the survivor regions.
-    dirty_list(&this->_su_head);
   }
 
   void clear_cards(HeapRegion* r) {
-    // Cards for Survivor regions will be dirtied later.
+    // Cards of the survivors should have already been dirtied.
     if (!r->is_survivor()) {
       _ct_bs->clear(MemRegion(r->bottom(), r->end()));
     }
   }
-
-  void dirty_list(HeapRegion* volatile * head_ptr) {
-    HeapRegion* head;
-    do {
-      // Pop region off the list.
-      head = *head_ptr;
-      if (head != NULL) {
-        HeapRegion* r = (HeapRegion*)
-          Atomic::cmpxchg_ptr(head->get_next_young_region(), head_ptr, head);
-        if (r == head) {
-          assert(!r->isHumongous(), "Humongous regions shouldn't be on survivor list");
-          _ct_bs->dirty(MemRegion(r->bottom(), r->end()));
-        }
-      }
-    } while (*head_ptr != NULL);
-  }
 };
-
 
 #ifndef PRODUCT
 class G1VerifyCardTableCleanup: public HeapRegionClosure {
@@ -5256,8 +4853,7 @@ void G1CollectedHeap::cleanUpCardTable() {
   double start = os::elapsedTime();
 
   // Iterate over the dirty cards region list.
-  G1ParCleanupCTTask cleanup_task(ct_bs, this,
-                                  _young_list->first_survivor_region());
+  G1ParCleanupCTTask cleanup_task(ct_bs, this);
 
   if (ParallelGCThreads > 0) {
     set_par_threads(workers()->total_workers());
@@ -5274,10 +4870,6 @@ void G1CollectedHeap::cleanUpCardTable() {
       }
       r->set_next_dirty_cards_region(NULL);
     }
-    // now, redirty the cards of the survivor regions
-    // (it seemed faster to do it this way, instead of iterating over
-    // all regions and then clearing / dirtying as appropriate)
-    dirtyCardsForYoungRegions(ct_bs, _young_list->first_survivor_region());
   }
 
   double elapsed = os::elapsedTime() - start;
@@ -5504,34 +5096,6 @@ void G1CollectedHeap::empty_young_list() {
   _young_list->empty_list();
 }
 
-bool G1CollectedHeap::all_alloc_regions_no_allocs_since_save_marks() {
-  bool no_allocs = true;
-  for (int ap = 0; ap < GCAllocPurposeCount && no_allocs; ++ap) {
-    HeapRegion* r = _gc_alloc_regions[ap];
-    no_allocs = r == NULL || r->saved_mark_at_top();
-  }
-  return no_allocs;
-}
-
-void G1CollectedHeap::retire_all_alloc_regions() {
-  for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
-    HeapRegion* r = _gc_alloc_regions[ap];
-    if (r != NULL) {
-      // Check for aliases.
-      bool has_processed_alias = false;
-      for (int i = 0; i < ap; ++i) {
-        if (_gc_alloc_regions[i] == r) {
-          has_processed_alias = true;
-          break;
-        }
-      }
-      if (!has_processed_alias) {
-        retire_alloc_region(r, false /* par */);
-      }
-    }
-  }
-}
-
 // Done at the start of full GC.
 void G1CollectedHeap::tear_down_region_lists() {
   _free_list.remove_all();
@@ -5586,6 +5150,8 @@ bool G1CollectedHeap::is_in_closed_subset(const void* p) const {
   }
 }
 
+// Methods for the mutator alloc region
+
 HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
                                                       bool force) {
   assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
@@ -5626,6 +5192,69 @@ void MutatorAllocRegion::retire_region(HeapRegion* alloc_region,
   _g1h->retire_mutator_alloc_region(alloc_region, allocated_bytes);
 }
 
+// Methods for the GC alloc regions
+
+HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size,
+                                                 size_t count,
+                                                 GCAllocPurpose ap) {
+  assert(FreeList_lock->owned_by_self(), "pre-condition");
+
+  if (count < g1_policy()->max_regions(ap)) {
+    HeapRegion* new_alloc_region = new_region(word_size,
+                                              true /* do_expand */);
+    if (new_alloc_region != NULL) {
+      // We really only need to do this for old regions given that we
+      // should never scan survivors. But it doesn't hurt to do it
+      // for survivors too.
+      new_alloc_region->set_saved_mark();
+      if (ap == GCAllocForSurvived) {
+        new_alloc_region->set_survivor();
+        _hr_printer.alloc(new_alloc_region, G1HRPrinter::Survivor);
+      } else {
+        _hr_printer.alloc(new_alloc_region, G1HRPrinter::Old);
+      }
+      return new_alloc_region;
+    } else {
+      g1_policy()->note_alloc_region_limit_reached(ap);
+    }
+  }
+  return NULL;
+}
+
+void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
+                                             size_t allocated_bytes,
+                                             GCAllocPurpose ap) {
+  alloc_region->note_end_of_copying();
+  g1_policy()->record_bytes_copied_during_gc(allocated_bytes);
+  if (ap == GCAllocForSurvived) {
+    young_list()->add_survivor_region(alloc_region);
+  }
+  _hr_printer.retire(alloc_region);
+}
+
+HeapRegion* SurvivorGCAllocRegion::allocate_new_region(size_t word_size,
+                                                       bool force) {
+  assert(!force, "not supported for GC alloc regions");
+  return _g1h->new_gc_alloc_region(word_size, count(), GCAllocForSurvived);
+}
+
+void SurvivorGCAllocRegion::retire_region(HeapRegion* alloc_region,
+                                          size_t allocated_bytes) {
+  _g1h->retire_gc_alloc_region(alloc_region, allocated_bytes,
+                               GCAllocForSurvived);
+}
+
+HeapRegion* OldGCAllocRegion::allocate_new_region(size_t word_size,
+                                                  bool force) {
+  assert(!force, "not supported for GC alloc regions");
+  return _g1h->new_gc_alloc_region(word_size, count(), GCAllocForTenured);
+}
+
+void OldGCAllocRegion::retire_region(HeapRegion* alloc_region,
+                                     size_t allocated_bytes) {
+  _g1h->retire_gc_alloc_region(alloc_region, allocated_bytes,
+                               GCAllocForTenured);
+}
 // Heap region set verification
 
 class VerifyRegionListsClosure : public HeapRegionClosure {

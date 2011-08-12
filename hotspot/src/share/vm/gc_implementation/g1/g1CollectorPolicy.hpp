@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -585,13 +585,9 @@ protected:
   int _last_update_rs_processed_buffers;
   double _last_pause_time_ms;
 
-  size_t _bytes_in_to_space_before_gc;
-  size_t _bytes_in_to_space_after_gc;
-  size_t bytes_in_to_space_during_gc() {
-    return
-      _bytes_in_to_space_after_gc - _bytes_in_to_space_before_gc;
-  }
   size_t _bytes_in_collection_set_before_gc;
+  size_t _bytes_copied_during_gc;
+
   // Used to count used bytes in CS.
   friend class CountCSClosure;
 
@@ -805,10 +801,6 @@ public:
     return _bytes_in_collection_set_before_gc;
   }
 
-  size_t bytes_in_to_space() {
-    return bytes_in_to_space_during_gc();
-  }
-
   unsigned calc_gc_alloc_time_stamp() {
     return _all_pause_times_ms->num() + 1;
   }
@@ -977,9 +969,16 @@ public:
   }
 #endif
 
-  // Record the fact that "bytes" bytes allocated in a region.
-  void record_before_bytes(size_t bytes);
-  void record_after_bytes(size_t bytes);
+  // Record how much space we copied during a GC. This is typically
+  // called when a GC alloc region is being retired.
+  void record_bytes_copied_during_gc(size_t bytes) {
+    _bytes_copied_during_gc += bytes;
+  }
+
+  // The amount of space we copied during a GC.
+  size_t bytes_copied_during_gc() {
+    return _bytes_copied_during_gc;
+  }
 
   // Choose a new collection set.  Marks the chosen regions as being
   // "in_collection_set", and links them together.  The head and number of
@@ -1191,10 +1190,6 @@ public:
 
   inline bool track_object_age(GCAllocPurpose purpose) {
     return purpose == GCAllocForSurvived;
-  }
-
-  inline GCAllocPurpose alternative_purpose(int purpose) {
-    return GCAllocForTenured;
   }
 
   static const size_t REGIONS_UNLIMITED = ~(size_t)0;
