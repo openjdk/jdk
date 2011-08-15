@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ public class GenerateCurrencyData {
     private static int[] specialCaseOldCurrenciesNumericCode = new int[maxSpecialCases];
     private static int[] specialCaseNewCurrenciesNumericCode = new int[maxSpecialCases];
 
-    private static final int maxOtherCurrencies = 65;
+    private static final int maxOtherCurrencies = 70;
     private static int otherCurrenciesCount = 0;
     private static StringBuffer otherCurrencies = new StringBuffer();
     private static int[] otherCurrenciesDefaultFractionDigits = new int[maxOtherCurrencies];
