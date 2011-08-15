@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.security.rsa;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.math.BigInteger;
 import java.util.Arrays;
 
 import java.security.*;
@@ -202,8 +201,6 @@ public abstract class RSASignature extends SignatureSpi {
             // return false rather than propagating the exception for
             // compatibility/ease of use
             return false;
-        } catch (GeneralSecurityException e) {
-            throw new SignatureException("Signature verification failed", e);
         } catch (IOException e) {
             throw new SignatureException("Signature encoding error", e);
         }
@@ -235,7 +232,7 @@ public abstract class RSASignature extends SignatureSpi {
             throw new IOException("SEQUENCE length error");
         }
         AlgorithmId algId = AlgorithmId.parse(values[0]);
-        if (algId.getOID().equals(oid) == false) {
+        if (algId.getOID().equals((Object)oid) == false) {
             throw new IOException("ObjectIdentifier mismatch: "
                 + algId.getOID());
         }

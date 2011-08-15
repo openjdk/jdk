@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package javax.crypto.spec;
 
-import java.io.UnsupportedEncodingException;
-import java.security.Key;
 import java.security.spec.KeySpec;
 import javax.crypto.SecretKey;
 
@@ -95,7 +93,7 @@ public class SecretKeySpec implements KeySpec, SecretKey {
         if (key.length == 0) {
             throw new IllegalArgumentException("Empty key");
         }
-        this.key = (byte[])key.clone();
+        this.key = key.clone();
         this.algorithm = algorithm;
     }
 
@@ -181,7 +179,7 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      * each time this method is called.
      */
     public byte[] getEncoded() {
-        return (byte[])this.key.clone();
+        return this.key.clone();
     }
 
     /**

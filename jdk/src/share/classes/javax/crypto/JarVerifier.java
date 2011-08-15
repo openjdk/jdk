@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,23 +86,19 @@ final class JarVerifier {
 
             // Get a link to the Jarfile to search.
             try {
-                jf = (JarFile)
-                    AccessController.doPrivileged(
-                        new PrivilegedExceptionAction() {
-                            public Object run() throws Exception {
-                                JarURLConnection conn =
-                                    (JarURLConnection) url.openConnection();
-                                // You could do some caching here as
-                                // an optimization.
-                                conn.setUseCaches(false);
-                                return conn.getJarFile();
-                            }
-                        });
+                jf = AccessController.doPrivileged(
+                         new PrivilegedExceptionAction<JarFile>() {
+                             public JarFile run() throws Exception {
+                                 JarURLConnection conn =
+                                     (JarURLConnection) url.openConnection();
+                                 // You could do some caching here as
+                                 // an optimization.
+                                 conn.setUseCaches(false);
+                                 return conn.getJarFile();
+                             }
+                         });
             } catch (java.security.PrivilegedActionException pae) {
-                SecurityException se = new SecurityException(
-                    "Cannot load " + url.toString());
-                se.initCause(pae);
-                throw se;
+                throw new SecurityException("Cannot load " + url.toString(), pae);
             }
 
             if (jf != null) {

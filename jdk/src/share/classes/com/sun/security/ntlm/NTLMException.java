@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.security.GeneralSecurityException;
  * An NTLM-related Exception
  */
 public final class NTLMException extends GeneralSecurityException {
+    private static final long serialVersionUID = -3298539507906689430L;
 
     /**
      * If the incoming packet is invalid.

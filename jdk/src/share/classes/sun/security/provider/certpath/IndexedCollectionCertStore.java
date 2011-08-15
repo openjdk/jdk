@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,6 +185,7 @@ public class IndexedCollectionCertStore extends CertStoreSpi {
                 list.add((X509Certificate)oldEntry);
                 certSubjects.put(subject, list);
             } else {
+                @SuppressWarnings("unchecked") // See certSubjects javadoc.
                 List<X509Certificate> list = (List<X509Certificate>)oldEntry;
                 if (list.contains(cert) == false) {
                     list.add(cert);
@@ -210,6 +211,8 @@ public class IndexedCollectionCertStore extends CertStoreSpi {
                 list.add((X509CRL)oldEntry);
                 crlIssuers.put(issuer, list);
             } else {
+                // See crlIssuers javadoc.
+                @SuppressWarnings("unchecked")
                 List<X509CRL> list = (List<X509CRL>)oldEntry;
                 if (list.contains(crl) == false) {
                     list.add(crl);
@@ -279,6 +282,8 @@ public class IndexedCollectionCertStore extends CertStoreSpi {
                     return Collections.<X509Certificate>emptySet();
                 }
             } else {
+                // See certSubjects javadoc.
+                @SuppressWarnings("unchecked")
                 List<X509Certificate> list = (List<X509Certificate>)entry;
                 Set<X509Certificate> matches = new HashSet<X509Certificate>(16);
                 for (X509Certificate cert : list) {
@@ -309,6 +314,8 @@ public class IndexedCollectionCertStore extends CertStoreSpi {
                     matches.add(cert);
                 }
             } else {
+                // See certSubjects javadoc.
+                @SuppressWarnings("unchecked")
                 List<X509Certificate> list = (List<X509Certificate>)obj;
                 for (X509Certificate cert : list) {
                     if (selector.match(cert)) {
@@ -370,6 +377,8 @@ public class IndexedCollectionCertStore extends CertStoreSpi {
                         matches.add(crl);
                     }
                 } else { // List
+                    // See crlIssuers javadoc.
+                    @SuppressWarnings("unchecked")
                     List<X509CRL> list = (List<X509CRL>)entry;
                     for (X509CRL crl : list) {
                         if (x509Selector.match(crl)) {
@@ -398,6 +407,8 @@ public class IndexedCollectionCertStore extends CertStoreSpi {
                     matches.add(crl);
                 }
             } else {
+                // See crlIssuers javadoc.
+                @SuppressWarnings("unchecked")
                 List<X509CRL> list = (List<X509CRL>)obj;
                 for (X509CRL crl : list) {
                     if (selector.match(crl)) {

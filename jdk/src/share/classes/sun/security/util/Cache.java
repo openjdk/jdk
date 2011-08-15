@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,7 +251,7 @@ class MemoryCache extends Cache {
     private final Map<Object, CacheEntry> cacheMap;
     private int maxSize;
     private long lifetime;
-    private final ReferenceQueue queue;
+    private final ReferenceQueue<Object> queue;
 
     public MemoryCache(boolean soft, int maxSize) {
         this(soft, maxSize, 0);
@@ -260,7 +260,7 @@ class MemoryCache extends Cache {
     public MemoryCache(boolean soft, int maxSize, int lifetime) {
         this.maxSize = maxSize;
         this.lifetime = lifetime * 1000;
-        this.queue = soft ? new ReferenceQueue() : null;
+        this.queue = soft ? new ReferenceQueue<Object>() : null;
         int buckets = (int)(maxSize / LOAD_FACTOR) + 1;
         cacheMap = new LinkedHashMap<Object, CacheEntry>(buckets,
                                                         LOAD_FACTOR, true);
@@ -449,7 +449,7 @@ class MemoryCache extends Cache {
     }
 
     protected CacheEntry newEntry(Object key, Object value,
-            long expirationTime, ReferenceQueue queue) {
+            long expirationTime, ReferenceQueue<Object> queue) {
         if (queue != null) {
             return new SoftCacheEntry(key, value, expirationTime, queue);
         } else {
@@ -504,13 +504,13 @@ class MemoryCache extends Cache {
     }
 
     private static class SoftCacheEntry
-            extends SoftReference implements CacheEntry {
+            extends SoftReference<Object> implements CacheEntry {
 
         private Object key;
         private long expirationTime;
 
         SoftCacheEntry(Object key, Object value, long expirationTime,
-                ReferenceQueue queue) {
+                ReferenceQueue<Object> queue) {
             super(value, queue);
             this.key = key;
             this.expirationTime = expirationTime;

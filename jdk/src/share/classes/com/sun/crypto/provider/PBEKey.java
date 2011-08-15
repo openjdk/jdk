@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.crypto.provider;
 
-import java.io.UnsupportedEncodingException;
 import java.security.KeyRep;
 import java.security.spec.InvalidKeySpecException;
 import javax.crypto.SecretKey;
@@ -69,7 +68,7 @@ final class PBEKey implements SecretKey {
     }
 
     public byte[] getEncoded() {
-        return (byte[])this.key.clone();
+        return this.key.clone();
     }
 
     public String getAlgorithm() {
@@ -118,7 +117,7 @@ final class PBEKey implements SecretKey {
          throws java.io.IOException, ClassNotFoundException
     {
         s.defaultReadObject();
-        key = (byte[])key.clone();
+        key = key.clone();
     }
 
 
