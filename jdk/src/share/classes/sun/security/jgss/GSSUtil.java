@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,24 +316,25 @@ public class GSSUtil {
      * no Subject present or a Vector which contains 0 or more
      * matching GSSCredentialSpi objects.
      */
-    public static Vector searchSubject(final GSSNameSpi name,
-                                       final Oid mech,
-                                       final boolean initiate,
-                                       final Class credCls) {
+    public static <T extends GSSCredentialSpi> Vector<T>
+            searchSubject(final GSSNameSpi name,
+                          final Oid mech,
+                          final boolean initiate,
+                          final Class<? extends T> credCls) {
         debug("Search Subject for " + getMechStr(mech) +
               (initiate? " INIT" : " ACCEPT") + " cred (" +
               (name == null? "<<DEF>>" : name.toString()) + ", " +
               credCls.getName() + ")");
         final AccessControlContext acc = AccessController.getContext();
         try {
-            Vector creds =
+            Vector<T> creds =
                 AccessController.doPrivileged
-                (new PrivilegedExceptionAction<Vector>() {
-                    public Vector run() throws Exception {
+                (new PrivilegedExceptionAction<Vector<T>>() {
+                    public Vector<T> run() throws Exception {
                         Subject accSubj = Subject.getSubject(acc);
-                        Vector<GSSCredentialSpi> result = null;
+                        Vector<T> result = null;
                         if (accSubj != null) {
-                            result = new Vector<GSSCredentialSpi>();
+                            result = new Vector<T>();
                             Iterator<GSSCredentialImpl> iterator =
                                 accSubj.getPrivateCredentials
                                 (GSSCredentialImpl.class).iterator();
@@ -347,7 +348,7 @@ public class GSSUtil {
                                     if (ce.getClass().equals(credCls) &&
                                         (name == null ||
                                          name.equals((Object) ce.getName()))) {
-                                        result.add(ce);
+                                        result.add(credCls.cast(ce));
                                     } else {
                                         debug("......Discard element");
                                     }

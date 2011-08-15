@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ final class NTLMClient implements SaslClient {
      * @throws SaslException
      */
     NTLMClient(String mech, String authzid, String protocol, String serverName,
-            Map props, CallbackHandler cbh) throws SaslException {
+            Map<String, ?> props, CallbackHandler cbh) throws SaslException {
 
         this.mech = mech;
         String version = null;
@@ -194,12 +194,13 @@ final class NTLMClient implements SaslClient {
 
     @Override
     public Object getNegotiatedProperty(String propName) {
-        if (propName.equals(Sasl.QOP)) {
-            return "auth";
-        } else if (propName.equals(NTLM_DOMAIN)) {
-            return client.getDomain();
-        } else {
-            return null;
+        switch (propName) {
+            case Sasl.QOP:
+                return "auth";
+            case NTLM_DOMAIN:
+                return client.getDomain();
+            default:
+                return null;
         }
     }
 

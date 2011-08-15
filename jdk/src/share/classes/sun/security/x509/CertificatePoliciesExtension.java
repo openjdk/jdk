@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,6 +189,7 @@ implements CertAttrSet<String> {
     /**
      * Set the attribute value.
      */
+    @SuppressWarnings("unchecked") // Checked with an instanceof check
     public void set(String name, Object obj) throws IOException {
         if (name.equalsIgnoreCase(POLICIES)) {
             if (!(obj instanceof List)) {
@@ -206,7 +207,7 @@ implements CertAttrSet<String> {
     /**
      * Get the attribute value.
      */
-    public Object get(String name) throws IOException {
+    public List<PolicyInformation> get(String name) throws IOException {
         if (name.equalsIgnoreCase(POLICIES)) {
             //XXXX May want to consider cloning this
             return certPolicies;

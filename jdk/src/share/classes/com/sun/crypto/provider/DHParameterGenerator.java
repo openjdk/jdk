@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.crypto.provider;
 
-import java.math.BigInteger;
 import java.security.*;
 import java.security.spec.*;
 import javax.crypto.spec.DHParameterSpec;
@@ -141,8 +140,7 @@ extends AlgorithmParameterGeneratorSpi {
             paramGen = AlgorithmParameterGenerator.getInstance("DSA");
             paramGen.init(this.primeSize, random);
             algParams = paramGen.generateParameters();
-            dsaParamSpec = (DSAParameterSpec)
-                algParams.getParameterSpec(DSAParameterSpec.class);
+            dsaParamSpec = algParams.getParameterSpec(DSAParameterSpec.class);
 
             DHParameterSpec dhParamSpec;
             if (this.exponentSize > 0) {

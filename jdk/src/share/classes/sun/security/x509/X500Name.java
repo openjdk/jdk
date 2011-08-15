@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,12 @@ package sun.security.x509;
 
 import java.lang.reflect.*;
 import java.io.IOException;
-import java.io.StringReader;
 import java.security.PrivilegedExceptionAction;
 import java.security.AccessController;
 import java.security.Principal;
 import java.util.*;
 
 import sun.security.util.*;
-import sun.security.pkcs.PKCS9Attribute;
 import javax.security.auth.x500.X500Principal;
 
 /**
@@ -1371,7 +1369,7 @@ public class X500Name implements GeneralNameInterface, Principal {
     /**
      * Constructor object for use by asX500Principal().
      */
-    private static final Constructor principalConstructor;
+    private static final Constructor<X500Principal> principalConstructor;
 
     /**
      * Field object for use by asX500Name().
@@ -1386,9 +1384,9 @@ public class X500Name implements GeneralNameInterface, Principal {
         PrivilegedExceptionAction<Object[]> pa =
                 new PrivilegedExceptionAction<Object[]>() {
             public Object[] run() throws Exception {
-                Class pClass = X500Principal.class;
-                Class[] args = new Class[] {X500Name.class};
-                Constructor cons = ((Class<?>)pClass).getDeclaredConstructor(args);
+                Class<X500Principal> pClass = X500Principal.class;
+                Class<?>[] args = new Class<?>[] { X500Name.class };
+                Constructor<X500Principal> cons = pClass.getDeclaredConstructor(args);
                 cons.setAccessible(true);
                 Field field = pClass.getDeclaredField("thisX500Name");
                 field.setAccessible(true);
@@ -1397,7 +1395,10 @@ public class X500Name implements GeneralNameInterface, Principal {
         };
         try {
             Object[] result = AccessController.doPrivileged(pa);
-            principalConstructor = (Constructor)result[0];
+            @SuppressWarnings("unchecked")
+            Constructor<X500Principal> constr =
+                    (Constructor<X500Principal>)result[0];
+            principalConstructor = constr;
             principalField = (Field)result[1];
         } catch (Exception e) {
             throw (InternalError)new InternalError("Could not obtain "
@@ -1415,8 +1416,7 @@ public class X500Name implements GeneralNameInterface, Principal {
         if (x500Principal == null) {
             try {
                 Object[] args = new Object[] {this};
-                x500Principal =
-                        (X500Principal)principalConstructor.newInstance(args);
+                x500Principal = principalConstructor.newInstance(args);
             } catch (Exception e) {
                 throw new RuntimeException("Unexpected exception", e);
             }

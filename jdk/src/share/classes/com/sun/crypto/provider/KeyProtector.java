@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,8 @@
 
 package com.sun.crypto.provider;
 
-import java.io.UnsupportedEncodingException;
 import java.io.IOException;
 import java.io.Serializable;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream.GetField;
 import java.security.Security;
 import java.security.Key;
 import java.security.PrivateKey;
@@ -42,22 +36,14 @@ import java.security.MessageDigest;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
-import java.security.InvalidParameterException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.AlgorithmParameters;
-import java.security.spec.InvalidParameterSpecException;
-import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherSpi;
 import javax.crypto.SecretKey;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.BadPaddingException;
 import javax.crypto.SealedObject;
 import javax.crypto.spec.*;
 import sun.security.x509.AlgorithmId;
@@ -127,7 +113,7 @@ final class KeyProtector {
         PBEWithMD5AndTripleDESCipher cipher;
         cipher = new PBEWithMD5AndTripleDESCipher();
         cipher.engineInit(Cipher.ENCRYPT_MODE, sKey, pbeSpec, null);
-        byte[] plain = (byte[])key.getEncoded();
+        byte[] plain = key.getEncoded();
         byte[] encrKey = cipher.engineDoFinal(plain, 0, plain.length);
 
         // wrap encrypted private key in EncryptedPrivateKeyInfo
@@ -169,8 +155,8 @@ final class KeyProtector {
                 AlgorithmParameters pbeParams =
                     AlgorithmParameters.getInstance("PBE");
                 pbeParams.init(encodedParams);
-                PBEParameterSpec pbeSpec = (PBEParameterSpec)
-                    pbeParams.getParameterSpec(PBEParameterSpec.class);
+                PBEParameterSpec pbeSpec =
+                        pbeParams.getParameterSpec(PBEParameterSpec.class);
 
                 // create PBE key from password
                 PBEKeySpec pbeKeySpec = new PBEKeySpec(this.password);

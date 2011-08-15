@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.crypto.provider;
 
-import java.io.UnsupportedEncodingException;
 import java.security.*;
 import java.security.spec.*;
 import javax.crypto.*;
@@ -326,8 +325,7 @@ final class PBECipherCore {
         PBEParameterSpec pbeSpec = null;
         if (params != null) {
             try {
-                pbeSpec = (PBEParameterSpec) params.getParameterSpec
-                    (PBEParameterSpec.class);
+                pbeSpec = params.getParameterSpec(PBEParameterSpec.class);
             } catch (InvalidParameterSpecException ipse) {
                 throw new InvalidAlgorithmParameterException("Wrong parameter "
                                                              + "type: PBE "

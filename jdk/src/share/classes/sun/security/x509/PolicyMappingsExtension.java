@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package sun.security.x509;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.*;
-
-import java.security.cert.CertificateException;
 
 import sun.security.util.*;
 
@@ -165,6 +163,7 @@ implements CertAttrSet<String> {
     /**
      * Set the attribute value.
      */
+    @SuppressWarnings("unchecked") // Checked with instanceof
     public void set(String name, Object obj) throws IOException {
         if (name.equalsIgnoreCase(MAP)) {
             if (!(obj instanceof List)) {
@@ -182,7 +181,7 @@ implements CertAttrSet<String> {
     /**
      * Get the attribute value.
      */
-    public Object get(String name) throws IOException {
+    public List<CertificatePolicyMap> get(String name) throws IOException {
         if (name.equalsIgnoreCase(MAP)) {
             return (maps);
         } else {
