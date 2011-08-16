@@ -826,6 +826,7 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
     switch (n->Opcode()) {
     case Op_PrefetchRead:
     case Op_PrefetchWrite:
+    case Op_PrefetchAllocation:
       nidx = Compile::AliasIdxRaw;
       nat = TypeRawPtr::BOTTOM;
       break;

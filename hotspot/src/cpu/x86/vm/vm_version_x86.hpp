@@ -419,7 +419,7 @@ public:
     return result;
   }
 
-  static intx L1_data_cache_line_size()  {
+  static intx prefetch_data_size()  {
     intx result = 0;
     if (is_intel()) {
       result = (_cpuid_info.dcp_cpuid4_ebx.bits.L1_line_size + 1);
