@@ -233,6 +233,9 @@
   template(java_lang_invoke_InvokeDynamic,            "java/lang/invoke/InvokeDynamic")           \
   template(java_lang_invoke_Linkage,                  "java/lang/invoke/Linkage")                 \
   template(java_lang_invoke_CallSite,                 "java/lang/invoke/CallSite")                \
+  template(java_lang_invoke_ConstantCallSite,         "java/lang/invoke/ConstantCallSite")        \
+  template(java_lang_invoke_MutableCallSite,          "java/lang/invoke/MutableCallSite")         \
+  template(java_lang_invoke_VolatileCallSite,         "java/lang/invoke/VolatileCallSite")        \
   template(java_lang_invoke_MethodHandle,             "java/lang/invoke/MethodHandle")            \
   template(java_lang_invoke_MethodType,               "java/lang/invoke/MethodType")              \
   template(java_lang_invoke_WrongMethodTypeException, "java/lang/invoke/WrongMethodTypeException") \

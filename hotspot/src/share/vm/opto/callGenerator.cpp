@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
+#include "ci/ciCallSite.hpp"
 #include "ci/ciCPCache.hpp"
 #include "ci/ciMethodHandle.hpp"
 #include "classfile/javaClasses.hpp"
@@ -732,6 +733,34 @@ CallGenerator* CallGenerator::for_method_handle_inline(Node* method_handle, JVMS
     CallGenerator* cg2 = for_method_handle_inline(method_handle->in(2), jvms, caller, callee, profile);
     if (cg1 != NULL && cg2 != NULL) {
       return new PredictedDynamicCallGenerator(mh, cg2, cg1, PROB_FAIR);
+    }
+  }
+  return NULL;
+}
+
+
+CallGenerator* CallGenerator::for_invokedynamic_inline(ciCallSite* call_site, JVMState* jvms,
+                                                       ciMethod* caller, ciMethod* callee, ciCallProfile profile) {
+  assert(call_site->is_constant_call_site() || call_site->is_mutable_call_site(), "must be");
+  ciMethodHandle* method_handle = call_site->get_target();
+
+  // Set the callee to have access to the class and signature in the
+  // MethodHandleCompiler.
+  method_handle->set_callee(callee);
+  method_handle->set_caller(caller);
+  method_handle->set_call_profile(profile);
+
+  // Get an adapter for the MethodHandle.
+  ciMethod* target_method = method_handle->get_invokedynamic_adapter();
+  if (target_method != NULL) {
+    Compile *C = Compile::current();
+    CallGenerator* hit_cg = C->call_generator(target_method, -1, false, jvms, true, PROB_ALWAYS);
+    if (hit_cg != NULL && hit_cg->is_inline()) {
+      // Add a dependence for invalidation of the optimization.
+      if (call_site->is_mutable_call_site()) {
+        C->dependencies()->assert_call_site_target_value(C->env()->CallSite_klass(), call_site, method_handle);
+      }
+      return hit_cg;
     }
   }
   return NULL;
