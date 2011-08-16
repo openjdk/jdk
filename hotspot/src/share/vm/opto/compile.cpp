@@ -519,15 +519,18 @@ uint Compile::scratch_emit_size(const Node* n) {
   // Do the emission.
 
   Label fakeL; // Fake label for branch instructions.
-  bool is_branch = n->is_Branch() && n->as_Mach()->ideal_Opcode() != Op_Jump;
+  Label*   saveL = NULL;
+  uint save_bnum = 0;
+  bool is_branch = n->is_MachBranch();
   if (is_branch) {
     MacroAssembler masm(&buf);
     masm.bind(fakeL);
-    n->as_Mach()->label_set(&fakeL, 0);
+    n->as_MachBranch()->save_label(&saveL, &save_bnum);
+    n->as_MachBranch()->label_set(&fakeL, 0);
   }
   n->emit(buf, this->regalloc());
-  if (is_branch) // Clear the reference to fake label.
-    n->as_Mach()->label_set(NULL, 0);
+  if (is_branch) // Restore label.
+    n->as_MachBranch()->label_set(saveL, save_bnum);
 
   // End scratch_emit_size section.
   set_in_scratch_emit_size(false);

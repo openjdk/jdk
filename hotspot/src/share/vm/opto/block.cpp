@@ -839,7 +839,7 @@ void PhaseCFG::fixup_flow() {
 
       // Make sure we TRUE branch to the target
       if( proj0->Opcode() == Op_IfFalse ) {
-        iff->negate();
+        iff->as_MachIf()->negate();
       }
 
       b->_nodes.pop();          // Remove IfFalse & IfTrue projections

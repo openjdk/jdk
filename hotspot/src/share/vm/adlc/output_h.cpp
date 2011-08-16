@@ -1519,8 +1519,9 @@ void ArchDesc::declareClasses(FILE *fp) {
     // Declare Node::methods that set operand Label's contents
     int label_position = instr->label_position();
     if( label_position != -1 ) {
-      // Set the label, stored in labelOper::_branch_label
+      // Set/Save the label, stored in labelOper::_branch_label
       fprintf(fp,"  virtual void           label_set( Label* label, uint block_num );\n");
+      fprintf(fp,"  virtual void           save_label( Label** label, uint* block_num );\n");
     }
 
     // If this instruction contains a methodOper
@@ -1674,16 +1675,6 @@ void ArchDesc::declareClasses(FILE *fp) {
         fprintf(fp," | Flag_is_Con");
       } else {
         fprintf(fp,"init_flags(Flag_is_Con");
-        node_flags_set = true;
-      }
-    }
-
-    // flag: if instruction matches 'If' | 'Goto' | 'CountedLoopEnd | 'Jump'
-    if ( instr->is_ideal_branch() ) {
-      if ( node_flags_set ) {
-        fprintf(fp," | Flag_is_Branch");
-      } else {
-        fprintf(fp,"init_flags(Flag_is_Branch");
         node_flags_set = true;
       }
     }

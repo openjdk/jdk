@@ -441,9 +441,6 @@ void IdealGraphPrinter::visit_node(Node *n, void *param) {
     if (flags & Node::Flag_is_cisc_alternate) {
       print_prop("is_cisc_alternate", "true");
     }
-    if (flags & Node::Flag_is_Branch) {
-      print_prop("is_branch", "true");
-    }
     if (flags & Node::Flag_is_dead_loop_safe) {
       print_prop("is_dead_loop_safe", "true");
     }
