@@ -340,12 +340,11 @@ bool InstructForm::is_ideal_jump() const {
   return _matrule->is_ideal_jump();
 }
 
-// Return 'true' if instruction matches ideal 'If' | 'Goto' |
-//                    'CountedLoopEnd' | 'Jump'
+// Return 'true' if instruction matches ideal 'If' | 'Goto' | 'CountedLoopEnd'
 bool InstructForm::is_ideal_branch() const {
   if( _matrule == NULL ) return false;
 
-  return _matrule->is_ideal_if() || _matrule->is_ideal_goto() || _matrule->is_ideal_jump();
+  return _matrule->is_ideal_if() || _matrule->is_ideal_goto();
 }
 
 
@@ -383,7 +382,7 @@ bool InstructForm::is_ideal_nop() const {
 bool InstructForm::is_ideal_control() const {
   if ( ! _matrule)  return false;
 
-  return is_ideal_return() || is_ideal_branch() || is_ideal_halt();
+  return is_ideal_return() || is_ideal_branch() || _matrule->is_ideal_jump() || is_ideal_halt();
 }
 
 // Return 'true' if this instruction matches an ideal 'Call' node

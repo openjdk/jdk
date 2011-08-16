@@ -77,6 +77,7 @@ class LoadNode;
 class LoadStoreNode;
 class LockNode;
 class LoopNode;
+class MachBranchNode;
 class MachCallDynamicJavaNode;
 class MachCallJavaNode;
 class MachCallLeafNode;
@@ -572,13 +573,14 @@ public:
               DEFINE_CLASS_ID(MachCallDynamicJava,  MachCallJava, 1)
             DEFINE_CLASS_ID(MachCallRuntime,      MachCall, 1)
               DEFINE_CLASS_ID(MachCallLeaf,         MachCallRuntime, 0)
-      DEFINE_CLASS_ID(MachSpillCopy,    Mach, 1)
-      DEFINE_CLASS_ID(MachNullCheck,    Mach, 2)
-      DEFINE_CLASS_ID(MachIf,           Mach, 3)
-      DEFINE_CLASS_ID(MachTemp,         Mach, 4)
-      DEFINE_CLASS_ID(MachConstantBase, Mach, 5)
-      DEFINE_CLASS_ID(MachConstant,     Mach, 6)
-      DEFINE_CLASS_ID(MachGoto,         Mach, 7)
+      DEFINE_CLASS_ID(MachBranch, Mach, 1)
+        DEFINE_CLASS_ID(MachIf,         MachBranch, 0)
+        DEFINE_CLASS_ID(MachGoto,       MachBranch, 1)
+        DEFINE_CLASS_ID(MachNullCheck,  MachBranch, 2)
+      DEFINE_CLASS_ID(MachSpillCopy,    Mach, 2)
+      DEFINE_CLASS_ID(MachTemp,         Mach, 3)
+      DEFINE_CLASS_ID(MachConstantBase, Mach, 4)
+      DEFINE_CLASS_ID(MachConstant,     Mach, 5)
 
     DEFINE_CLASS_ID(Type,  Node, 2)
       DEFINE_CLASS_ID(Phi,   Type, 0)
@@ -634,8 +636,7 @@ public:
     Flag_is_macro            = Flag_needs_anti_dependence_check << 1,
     Flag_is_Con              = Flag_is_macro << 1,
     Flag_is_cisc_alternate   = Flag_is_Con << 1,
-    Flag_is_Branch           = Flag_is_cisc_alternate << 1,
-    Flag_is_dead_loop_safe   = Flag_is_Branch << 1,
+    Flag_is_dead_loop_safe   = Flag_is_cisc_alternate << 1,
     Flag_may_be_short_branch = Flag_is_dead_loop_safe << 1,
     Flag_avoid_back_to_back  = Flag_may_be_short_branch << 1,
     _max_flags = (Flag_avoid_back_to_back << 1) - 1 // allow flags combination
@@ -721,6 +722,7 @@ public:
   DEFINE_CLASS_QUERY(Lock)
   DEFINE_CLASS_QUERY(Loop)
   DEFINE_CLASS_QUERY(Mach)
+  DEFINE_CLASS_QUERY(MachBranch)
   DEFINE_CLASS_QUERY(MachCall)
   DEFINE_CLASS_QUERY(MachCallDynamicJava)
   DEFINE_CLASS_QUERY(MachCallJava)
@@ -786,9 +788,6 @@ public:
   // (In that case, hoisting to a dominating test may silently
   // skip some other important test.)
   virtual bool depends_only_on_test() const { assert(!is_CFG(), ""); return true; };
-
-  // defined for MachNodes that match 'If' | 'Goto' | 'CountedLoopEnd' | 'Jump'
-  bool is_Branch() const { return (_flags & Flag_is_Branch) != 0; }
 
   // When building basic blocks, I need to have a notion of block beginning
   // Nodes, next block selector Nodes (block enders), and next block

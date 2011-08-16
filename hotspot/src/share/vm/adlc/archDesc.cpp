@@ -331,6 +331,11 @@ void ArchDesc::inspectInstructions() {
     // Find result type for match
     const char *result  = instr->reduce_result();
 
+    if ( instr->is_ideal_branch() && instr->label_position() == -1 ||
+        !instr->is_ideal_branch() && instr->label_position() != -1) {
+      syntax_err(instr->_linenum, "%s: Only branches to a label are supported\n", rootOp);
+    }
+
     Attribute *attr = instr->_attribs;
     while (attr != NULL) {
       if (strcmp(attr->_ident,"ins_short_branch") == 0 &&

@@ -420,7 +420,7 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
           }
         }
         if (mach->may_be_short_branch()) {
-          if (!nj->is_Branch()) {
+          if (!nj->is_MachBranch()) {
 #ifndef PRODUCT
             nj->dump(3);
 #endif
@@ -473,7 +473,7 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
       MachNode* mach = (idx == -1) ? NULL: b->_nodes[idx]->as_Mach();
       if (mach != NULL && mach->may_be_short_branch()) {
 #ifdef ASSERT
-        assert(jmp_size[i] > 0 && mach->is_Branch(), "sanity");
+        assert(jmp_size[i] > 0 && mach->is_MachBranch(), "sanity");
         int j;
         // Find the branch; ignore trailing NOPs.
         for (j = b->_nodes.size()-1; j>=0; j--) {
@@ -500,7 +500,7 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
 
         if (_matcher->is_short_branch_offset(mach->rule(), br_size, offset)) {
           // We've got a winner.  Replace this branch.
-          MachNode* replacement = mach->short_branch_version(this);
+          MachNode* replacement = mach->as_MachBranch()->short_branch_version(this);
 
           // Update the jmp_size.
           int new_size = replacement->size(_regalloc);
@@ -670,7 +670,7 @@ void Compile::finalize_offsets_and_shorten(uint* blk_starts) {
 
           if (_matcher->is_short_branch_offset(mach->rule(), br_size, offset)) {
             // We've got a winner.  Replace this branch.
-            MachNode* replacement = mach->short_branch_version(this);
+            MachNode* replacement = mach->as_MachBranch()->short_branch_version(this);
 
             // Update the jmp_size.
             int new_size = replacement->size(_regalloc);
@@ -1525,25 +1525,21 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
         }
 
         // If this is a branch, then fill in the label with the target BB's label
-        else if (mach->is_Branch()) {
-
-          if (mach->ideal_Opcode() == Op_Jump) {
-            for (uint h = 0; h < b->_num_succs; h++) {
-              Block* succs_block = b->_succs[h];
-              for (uint j = 1; j < succs_block->num_preds(); j++) {
-                Node* jpn = succs_block->pred(j);
-                if (jpn->is_JumpProj() && jpn->in(0) == mach) {
-                  uint block_num = succs_block->non_connector()->_pre_order;
-                  Label *blkLabel = &blk_labels[block_num];
-                  mach->add_case_label(jpn->as_JumpProj()->proj_no(), blkLabel);
-                }
+        else if (mach->is_MachBranch()) {
+          // This requires the TRUE branch target be in succs[0]
+          uint block_num = b->non_connector_successor(0)->_pre_order;
+          mach->as_MachBranch()->label_set( &blk_labels[block_num], block_num );
+        } else if (mach->ideal_Opcode() == Op_Jump) {
+          for (uint h = 0; h < b->_num_succs; h++) {
+            Block* succs_block = b->_succs[h];
+            for (uint j = 1; j < succs_block->num_preds(); j++) {
+              Node* jpn = succs_block->pred(j);
+              if (jpn->is_JumpProj() && jpn->in(0) == mach) {
+                uint block_num = succs_block->non_connector()->_pre_order;
+                Label *blkLabel = &blk_labels[block_num];
+                mach->add_case_label(jpn->as_JumpProj()->proj_no(), blkLabel);
               }
             }
-          } else {
-            // For Branchs
-            // This requires the TRUE branch target be in succs[0]
-            uint block_num = b->non_connector_successor(0)->_pre_order;
-            mach->label_set( &blk_labels[block_num], block_num );
           }
         }
 
@@ -2229,7 +2225,7 @@ void Scheduling::AddNodeToBundle(Node *n, const Block *bb) {
     // the first instruction at the branch target is
     // copied to the delay slot, and the branch goes to
     // the instruction after that at the branch target
-    if ( n->is_Mach() && n->is_Branch() ) {
+    if ( n->is_MachBranch() ) {
 
       assert( !n->is_MachNullCheck(), "should not look for delay slot for Null Check" );
       assert( !n->is_Catch(),         "should not look for delay slot for Catch" );
@@ -2890,7 +2886,7 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
     // Kill projections on a branch should appear to occur on the
     // branch, not afterwards, so grab the masks from the projections
     // and process them.
-    if (n->is_Branch()) {
+    if (n->is_MachBranch() || n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_Jump) {
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
         Node* use = n->fast_out(i);
         if (use->is_Proj()) {

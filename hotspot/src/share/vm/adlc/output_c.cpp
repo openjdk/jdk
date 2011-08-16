@@ -3094,6 +3094,13 @@ void ArchDesc::defineClasses(FILE *fp) {
       fprintf(fp,"  oper->_label     = label;\n");
       fprintf(fp,"  oper->_block_num = block_num;\n");
       fprintf(fp,"}\n");
+      // Save the label
+      fprintf(fp,"void %sNode::save_label( Label** label, uint* block_num ) {\n", instr->_ident);
+      fprintf(fp,"  labelOper* oper  = (labelOper*)(opnd_array(%d));\n",
+              label_position );
+      fprintf(fp,"  *label = oper->_label;\n");
+      fprintf(fp,"  *block_num = oper->_block_num;\n");
+      fprintf(fp,"}\n");
     }
   }
 
