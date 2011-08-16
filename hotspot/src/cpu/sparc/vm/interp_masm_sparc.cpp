@@ -758,6 +758,20 @@ void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, Regis
 }
 
 
+void InterpreterMacroAssembler::get_cache_and_index_and_bytecode_at_bcp(Register cache,
+                                                                        Register temp,
+                                                                        Register bytecode,
+                                                                        int byte_no,
+                                                                        int bcp_offset,
+                                                                        size_t index_size) {
+  get_cache_and_index_at_bcp(cache, temp, bcp_offset, index_size);
+  ld_ptr(cache, constantPoolCacheOopDesc::base_offset() + ConstantPoolCacheEntry::indices_offset(), bytecode);
+  const int shift_count = (1 + byte_no) * BitsPerByte;
+  srl( bytecode, shift_count, bytecode);
+  and3(bytecode,        0xFF, bytecode);
+}
+
+
 void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache, Register tmp,
                                                                int bcp_offset, size_t index_size) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");

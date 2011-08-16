@@ -149,36 +149,68 @@ Address TemplateTable::at_bcp(int offset) {
 }
 
 
-void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register Rbyte_code,
-                                   Register Rscratch,
-                                   bool load_bc_into_scratch /*=true*/) {
+void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
+                                   Register temp_reg, bool load_bc_into_bc_reg/*=true*/,
+                                   int byte_no) {
   // With sharing on, may need to test methodOop flag.
-  if (!RewriteBytecodes) return;
-  if (load_bc_into_scratch) __ set(bc, Rbyte_code);
-  Label patch_done;
-  if (JvmtiExport::can_post_breakpoint()) {
-    Label fast_patch;
-    __ ldub(at_bcp(0), Rscratch);
-    __ cmp_and_br_short(Rscratch, Bytecodes::_breakpoint, Assembler::notEqual, Assembler::pt, fast_patch);
-    // perform the quickening, slowly, in the bowels of the breakpoint table
-    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::set_original_bytecode_at), Lmethod, Lbcp, Rbyte_code);
-    __ ba_short(patch_done);
-    __ bind(fast_patch);
+  if (!RewriteBytecodes)  return;
+  Label L_patch_done;
+
+  switch (bc) {
+  case Bytecodes::_fast_aputfield:
+  case Bytecodes::_fast_bputfield:
+  case Bytecodes::_fast_cputfield:
+  case Bytecodes::_fast_dputfield:
+  case Bytecodes::_fast_fputfield:
+  case Bytecodes::_fast_iputfield:
+  case Bytecodes::_fast_lputfield:
+  case Bytecodes::_fast_sputfield:
+    {
+      // We skip bytecode quickening for putfield instructions when
+      // the put_code written to the constant pool cache is zero.
+      // This is required so that every execution of this instruction
+      // calls out to InterpreterRuntime::resolve_get_put to do
+      // additional, required work.
+      assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
+      assert(load_bc_into_bc_reg, "we use bc_reg as temp");
+      __ get_cache_and_index_and_bytecode_at_bcp(bc_reg, temp_reg, temp_reg, byte_no, 1);
+      __ set(bc, bc_reg);
+      __ cmp_and_br_short(temp_reg, 0, Assembler::equal, Assembler::pn, L_patch_done);  // don't patch
+    }
+    break;
+  default:
+    assert(byte_no == -1, "sanity");
+    if (load_bc_into_bc_reg) {
+      __ set(bc, bc_reg);
+    }
   }
+
+  if (JvmtiExport::can_post_breakpoint()) {
+    Label L_fast_patch;
+    __ ldub(at_bcp(0), temp_reg);
+    __ cmp_and_br_short(temp_reg, Bytecodes::_breakpoint, Assembler::notEqual, Assembler::pt, L_fast_patch);
+    // perform the quickening, slowly, in the bowels of the breakpoint table
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::set_original_bytecode_at), Lmethod, Lbcp, bc_reg);
+    __ ba_short(L_patch_done);
+    __ bind(L_fast_patch);
+  }
+
 #ifdef ASSERT
   Bytecodes::Code orig_bytecode =  Bytecodes::java_code(bc);
-  Label okay;
-  __ ldub(at_bcp(0), Rscratch);
-  __ cmp(Rscratch, orig_bytecode);
-  __ br(Assembler::equal, false, Assembler::pt, okay);
-  __ delayed() ->cmp(Rscratch, Rbyte_code);
-  __ br(Assembler::equal, false, Assembler::pt, okay);
+  Label L_okay;
+  __ ldub(at_bcp(0), temp_reg);
+  __ cmp(temp_reg, orig_bytecode);
+  __ br(Assembler::equal, false, Assembler::pt, L_okay);
+  __ delayed()->cmp(temp_reg, bc_reg);
+  __ br(Assembler::equal, false, Assembler::pt, L_okay);
   __ delayed()->nop();
-  __ stop("Rewriting wrong bytecode location");
-  __ bind(okay);
+  __ stop("patching the wrong bytecode");
+  __ bind(L_okay);
 #endif
-  __ stb(Rbyte_code, at_bcp(0));
-  __ bind(patch_done);
+
+  // patch bytecode
+  __ stb(bc_reg, at_bcp(0));
+  __ bind(L_patch_done);
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -2061,12 +2093,12 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
   // Depends on cpCacheOop layout!
   Label resolved;
 
-  __ get_cache_and_index_at_bcp(Rcache, index, 1, index_size);
   if (byte_no == f1_oop) {
     // We are resolved if the f1 field contains a non-null object (CallSite, etc.)
     // This kind of CP cache entry does not need to match the flags byte, because
     // there is a 1-1 relation between bytecode type and CP entry type.
     assert_different_registers(result, Rcache);
+    __ get_cache_and_index_at_bcp(Rcache, index, 1, index_size);
     __ ld_ptr(Rcache, constantPoolCacheOopDesc::base_offset() +
               ConstantPoolCacheEntry::f1_offset(), result);
     __ tst(result);
@@ -2075,15 +2107,9 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
   } else {
     assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
     assert(result == noreg, "");  //else change code for setting result
-    const int shift_count = (1 + byte_no)*BitsPerByte;
-
-    __ ld_ptr(Rcache, constantPoolCacheOopDesc::base_offset() +
-              ConstantPoolCacheEntry::indices_offset(), Lbyte_code);
-
-    __ srl(  Lbyte_code, shift_count, Lbyte_code );
-    __ and3( Lbyte_code,        0xFF, Lbyte_code );
-    __ cmp(  Lbyte_code, (int)bytecode());
-    __ br(   Assembler::equal, false, Assembler::pt, resolved);
+    __ get_cache_and_index_and_bytecode_at_bcp(Rcache, index, Lbyte_code, byte_no, 1, index_size);
+    __ cmp(Lbyte_code, (int) bytecode());  // have we resolved this bytecode?
+    __ br(Assembler::equal, false, Assembler::pt, resolved);
     __ delayed()->set((int)bytecode(), O1);
   }
 
@@ -2618,150 +2644,162 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
 
   if (is_static) {
     // putstatic with object type most likely, check that first
-    __ cmp(Rflags, atos );
+    __ cmp(Rflags, atos);
     __ br(Assembler::notEqual, false, Assembler::pt, notObj);
-    __ delayed() ->cmp(Rflags, itos );
+    __ delayed()->cmp(Rflags, itos);
 
     // atos
-    __ pop_ptr();
-    __ verify_oop(Otos_i);
-
-    do_oop_store(_masm, Rclass, Roffset, 0, Otos_i, G1_scratch, _bs->kind(), false);
-
-    __ ba(checkVolatile);
-    __ delayed()->tst(Lscratch);
+    {
+      __ pop_ptr();
+      __ verify_oop(Otos_i);
+      do_oop_store(_masm, Rclass, Roffset, 0, Otos_i, G1_scratch, _bs->kind(), false);
+      __ ba(checkVolatile);
+      __ delayed()->tst(Lscratch);
+    }
 
     __ bind(notObj);
-
-    // cmp(Rflags, itos );
+    // cmp(Rflags, itos);
     __ br(Assembler::notEqual, false, Assembler::pt, notInt);
-    __ delayed() ->cmp(Rflags, btos );
+    __ delayed()->cmp(Rflags, btos);
 
     // itos
-    __ pop_i();
-    __ st(Otos_i, Rclass, Roffset);
-    __ ba(checkVolatile);
-    __ delayed()->tst(Lscratch);
+    {
+      __ pop_i();
+      __ st(Otos_i, Rclass, Roffset);
+      __ ba(checkVolatile);
+      __ delayed()->tst(Lscratch);
+    }
 
     __ bind(notInt);
-
   } else {
     // putfield with int type most likely, check that first
-    __ cmp(Rflags, itos );
+    __ cmp(Rflags, itos);
     __ br(Assembler::notEqual, false, Assembler::pt, notInt);
-    __ delayed() ->cmp(Rflags, atos );
+    __ delayed()->cmp(Rflags, atos);
 
     // itos
-    __ pop_i();
-    pop_and_check_object(Rclass);
-    __ st(Otos_i, Rclass, Roffset);
-    patch_bytecode(Bytecodes::_fast_iputfield, G3_scratch, G4_scratch);
-    __ ba(checkVolatile);
-    __ delayed()->tst(Lscratch);
+    {
+      __ pop_i();
+      pop_and_check_object(Rclass);
+      __ st(Otos_i, Rclass, Roffset);
+      patch_bytecode(Bytecodes::_fast_iputfield, G3_scratch, G4_scratch, true, byte_no);
+      __ ba(checkVolatile);
+      __ delayed()->tst(Lscratch);
+    }
 
     __ bind(notInt);
-    // cmp(Rflags, atos );
+    // cmp(Rflags, atos);
     __ br(Assembler::notEqual, false, Assembler::pt, notObj);
-    __ delayed() ->cmp(Rflags, btos );
+    __ delayed()->cmp(Rflags, btos);
 
     // atos
-    __ pop_ptr();
-    pop_and_check_object(Rclass);
-    __ verify_oop(Otos_i);
-
-    do_oop_store(_masm, Rclass, Roffset, 0, Otos_i, G1_scratch, _bs->kind(), false);
-
-    patch_bytecode(Bytecodes::_fast_aputfield, G3_scratch, G4_scratch);
-    __ ba(checkVolatile);
-    __ delayed()->tst(Lscratch);
+    {
+      __ pop_ptr();
+      pop_and_check_object(Rclass);
+      __ verify_oop(Otos_i);
+      do_oop_store(_masm, Rclass, Roffset, 0, Otos_i, G1_scratch, _bs->kind(), false);
+      patch_bytecode(Bytecodes::_fast_aputfield, G3_scratch, G4_scratch, true, byte_no);
+      __ ba(checkVolatile);
+      __ delayed()->tst(Lscratch);
+    }
 
     __ bind(notObj);
   }
 
-  // cmp(Rflags, btos );
+  // cmp(Rflags, btos);
   __ br(Assembler::notEqual, false, Assembler::pt, notByte);
-  __ delayed() ->cmp(Rflags, ltos );
+  __ delayed()->cmp(Rflags, ltos);
 
   // btos
-  __ pop_i();
-  if (!is_static) pop_and_check_object(Rclass);
-  __ stb(Otos_i, Rclass, Roffset);
-  if (!is_static) {
-    patch_bytecode(Bytecodes::_fast_bputfield, G3_scratch, G4_scratch);
+  {
+    __ pop_i();
+    if (!is_static) pop_and_check_object(Rclass);
+    __ stb(Otos_i, Rclass, Roffset);
+    if (!is_static) {
+      patch_bytecode(Bytecodes::_fast_bputfield, G3_scratch, G4_scratch, true, byte_no);
+    }
+    __ ba(checkVolatile);
+    __ delayed()->tst(Lscratch);
   }
-  __ ba(checkVolatile);
-  __ delayed()->tst(Lscratch);
 
   __ bind(notByte);
-
-  // cmp(Rflags, ltos );
+  // cmp(Rflags, ltos);
   __ br(Assembler::notEqual, false, Assembler::pt, notLong);
-  __ delayed() ->cmp(Rflags, ctos );
+  __ delayed()->cmp(Rflags, ctos);
 
   // ltos
-  __ pop_l();
-  if (!is_static) pop_and_check_object(Rclass);
-  __ st_long(Otos_l, Rclass, Roffset);
-  if (!is_static) {
-    patch_bytecode(Bytecodes::_fast_lputfield, G3_scratch, G4_scratch);
+  {
+    __ pop_l();
+    if (!is_static) pop_and_check_object(Rclass);
+    __ st_long(Otos_l, Rclass, Roffset);
+    if (!is_static) {
+      patch_bytecode(Bytecodes::_fast_lputfield, G3_scratch, G4_scratch, true, byte_no);
+    }
+    __ ba(checkVolatile);
+    __ delayed()->tst(Lscratch);
   }
-  __ ba(checkVolatile);
-  __ delayed()->tst(Lscratch);
 
   __ bind(notLong);
-
-  // cmp(Rflags, ctos );
+  // cmp(Rflags, ctos);
   __ br(Assembler::notEqual, false, Assembler::pt, notChar);
-  __ delayed() ->cmp(Rflags, stos );
+  __ delayed()->cmp(Rflags, stos);
 
   // ctos (char)
-  __ pop_i();
-  if (!is_static) pop_and_check_object(Rclass);
-  __ sth(Otos_i, Rclass, Roffset);
-  if (!is_static) {
-    patch_bytecode(Bytecodes::_fast_cputfield, G3_scratch, G4_scratch);
+  {
+    __ pop_i();
+    if (!is_static) pop_and_check_object(Rclass);
+    __ sth(Otos_i, Rclass, Roffset);
+    if (!is_static) {
+      patch_bytecode(Bytecodes::_fast_cputfield, G3_scratch, G4_scratch, true, byte_no);
+    }
+    __ ba(checkVolatile);
+    __ delayed()->tst(Lscratch);
   }
-  __ ba(checkVolatile);
-  __ delayed()->tst(Lscratch);
 
   __ bind(notChar);
-  // cmp(Rflags, stos );
+  // cmp(Rflags, stos);
   __ br(Assembler::notEqual, false, Assembler::pt, notShort);
-  __ delayed() ->cmp(Rflags, ftos );
+  __ delayed()->cmp(Rflags, ftos);
 
-  // stos (char)
-  __ pop_i();
-  if (!is_static) pop_and_check_object(Rclass);
-  __ sth(Otos_i, Rclass, Roffset);
-  if (!is_static) {
-    patch_bytecode(Bytecodes::_fast_sputfield, G3_scratch, G4_scratch);
+  // stos (short)
+  {
+    __ pop_i();
+    if (!is_static) pop_and_check_object(Rclass);
+    __ sth(Otos_i, Rclass, Roffset);
+    if (!is_static) {
+      patch_bytecode(Bytecodes::_fast_sputfield, G3_scratch, G4_scratch, true, byte_no);
+    }
+    __ ba(checkVolatile);
+    __ delayed()->tst(Lscratch);
   }
-  __ ba(checkVolatile);
-  __ delayed()->tst(Lscratch);
 
   __ bind(notShort);
-  // cmp(Rflags, ftos );
+  // cmp(Rflags, ftos);
   __ br(Assembler::notZero, false, Assembler::pt, notFloat);
   __ delayed()->nop();
 
   // ftos
-  __ pop_f();
-  if (!is_static) pop_and_check_object(Rclass);
-  __ stf(FloatRegisterImpl::S, Ftos_f, Rclass, Roffset);
-  if (!is_static) {
-    patch_bytecode(Bytecodes::_fast_fputfield, G3_scratch, G4_scratch);
+  {
+    __ pop_f();
+    if (!is_static) pop_and_check_object(Rclass);
+    __ stf(FloatRegisterImpl::S, Ftos_f, Rclass, Roffset);
+    if (!is_static) {
+      patch_bytecode(Bytecodes::_fast_fputfield, G3_scratch, G4_scratch, true, byte_no);
+    }
+    __ ba(checkVolatile);
+    __ delayed()->tst(Lscratch);
   }
-  __ ba(checkVolatile);
-  __ delayed()->tst(Lscratch);
 
   __ bind(notFloat);
 
   // dtos
-  __ pop_d();
-  if (!is_static) pop_and_check_object(Rclass);
-  __ stf(FloatRegisterImpl::D, Ftos_d, Rclass, Roffset);
-  if (!is_static) {
-    patch_bytecode(Bytecodes::_fast_dputfield, G3_scratch, G4_scratch);
+  {
+    __ pop_d();
+    if (!is_static) pop_and_check_object(Rclass);
+    __ stf(FloatRegisterImpl::D, Ftos_d, Rclass, Roffset);
+    if (!is_static) {
+      patch_bytecode(Bytecodes::_fast_dputfield, G3_scratch, G4_scratch, true, byte_no);
+    }
   }
 
   __ bind(checkVolatile);
