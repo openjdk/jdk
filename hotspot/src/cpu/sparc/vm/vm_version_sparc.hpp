@@ -121,6 +121,7 @@ public:
   // Returns true if the platform is in the niagara line (T series)
   // and newer than the niagara1.
   static bool is_niagara_plus()         { return is_T_family(_features) && !is_T1_model(_features); }
+  static bool is_T4()                   { return is_T_family(_features) && has_cbcond(); }
 
   // Fujitsu SPARC64
   static bool is_sparc64()              { return (_features & sparc64_family_m) != 0; }
@@ -130,13 +131,17 @@ public:
 
   static bool has_fast_fxtof()          { return is_niagara() || is_sparc64() || has_v9() && !is_ultra3(); }
   static bool has_fast_idiv()           { return is_niagara_plus() || is_sparc64(); }
+
   // T4 and newer Sparc have fast RDPC instruction.
-  static bool has_fast_rdpc()           { return is_niagara_plus() && has_cbcond(); }
+  static bool has_fast_rdpc()           { return is_T4(); }
+
+  // T4 and newer Sparc have Most-Recently-Used (MRU) BIS.
+  static bool has_mru_blk_init()        { return has_blk_init() && is_T4(); }
 
   static const char* cpu_features()     { return _features_str; }
 
-  static intx L1_data_cache_line_size()  {
-    return 64;  // default prefetch block size on sparc
+  static intx prefetch_data_size()  {
+    return is_T4() ? 32 : 64;  // default prefetch block size on sparc
   }
 
   // Prefetch

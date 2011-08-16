@@ -44,20 +44,31 @@ void VM_Version::initialize() {
   PrefetchScanIntervalInBytes = prefetch_scan_interval_in_bytes();
   PrefetchFieldsAhead         = prefetch_fields_ahead();
 
+  assert(0 <= AllocatePrefetchInstr && AllocatePrefetchInstr <= 1, "invalid value");
+  if( AllocatePrefetchInstr < 0 ) AllocatePrefetchInstr = 0;
+  if( AllocatePrefetchInstr > 1 ) AllocatePrefetchInstr = 0;
+
   // Allocation prefetch settings
-  intx cache_line_size = L1_data_cache_line_size();
+  intx cache_line_size = prefetch_data_size();
   if( cache_line_size > AllocatePrefetchStepSize )
     AllocatePrefetchStepSize = cache_line_size;
-  if( FLAG_IS_DEFAULT(AllocatePrefetchLines) )
-    AllocatePrefetchLines = 3; // Optimistic value
-  assert( AllocatePrefetchLines > 0, "invalid value");
-  if( AllocatePrefetchLines < 1 ) // set valid value in product VM
-    AllocatePrefetchLines = 1; // Conservative value
+
+  assert(AllocatePrefetchLines > 0, "invalid value");
+  if( AllocatePrefetchLines < 1 )     // set valid value in product VM
+    AllocatePrefetchLines = 3;
+  assert(AllocateInstancePrefetchLines > 0, "invalid value");
+  if( AllocateInstancePrefetchLines < 1 ) // set valid value in product VM
+    AllocateInstancePrefetchLines = 1;
 
   AllocatePrefetchDistance = allocate_prefetch_distance();
   AllocatePrefetchStyle    = allocate_prefetch_style();
 
-  assert(AllocatePrefetchDistance % AllocatePrefetchStepSize == 0, "invalid value");
+  assert((AllocatePrefetchDistance % AllocatePrefetchStepSize) == 0 &&
+         (AllocatePrefetchDistance > 0), "invalid value");
+  if ((AllocatePrefetchDistance % AllocatePrefetchStepSize) != 0 ||
+      (AllocatePrefetchDistance <= 0)) {
+    AllocatePrefetchDistance = AllocatePrefetchStepSize;
+  }
 
   if (AllocatePrefetchStyle == 3 && !has_blk_init()) {
     warning("BIS instructions are not available on this CPU");
@@ -66,7 +77,7 @@ void VM_Version::initialize() {
 
   UseSSE = 0; // Only on x86 and x64
 
-  _supports_cx8               = has_v9();
+  _supports_cx8 = has_v9();
 
   if (is_niagara()) {
     // Indirect branch is the same cost as direct
@@ -99,18 +110,41 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(InteriorEntryAlignment, 4);
     }
     if (is_niagara_plus()) {
-      if (has_blk_init() && AllocatePrefetchStyle > 0 &&
-          FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
-        // Use BIS instruction for allocation prefetch.
-        FLAG_SET_DEFAULT(AllocatePrefetchStyle, 3);
+      if (has_blk_init() && UseTLAB &&
+          FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
+        // Use BIS instruction for TLAB allocation prefetch.
+        FLAG_SET_ERGO(intx, AllocatePrefetchInstr, 1);
+        if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
+          FLAG_SET_ERGO(intx, AllocatePrefetchStyle, 3);
+        }
         if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
-          // Use smaller prefetch distance on N2 with BIS
+          // Use smaller prefetch distance with BIS
           FLAG_SET_DEFAULT(AllocatePrefetchDistance, 64);
+        }
+      }
+      if (is_T4()) {
+        // Double number of prefetched cache lines on T4
+        // since L2 cache line size is smaller (32 bytes).
+        if (FLAG_IS_DEFAULT(AllocatePrefetchLines)) {
+          FLAG_SET_ERGO(intx, AllocatePrefetchLines, AllocatePrefetchLines*2);
+        }
+        if (FLAG_IS_DEFAULT(AllocateInstancePrefetchLines)) {
+          FLAG_SET_ERGO(intx, AllocateInstancePrefetchLines, AllocateInstancePrefetchLines*2);
         }
       }
       if (AllocatePrefetchStyle != 3 && FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
         // Use different prefetch distance without BIS
         FLAG_SET_DEFAULT(AllocatePrefetchDistance, 256);
+      }
+      if (AllocatePrefetchInstr == 1) {
+        // Need a space at the end of TLAB for BIS since it
+        // will fault when accessing memory outside of heap.
+
+        // +1 for rounding up to next cache line, +1 to be safe
+        int lines = AllocatePrefetchLines + 2;
+        int step_size = AllocatePrefetchStepSize;
+        int distance = AllocatePrefetchDistance;
+        _reserve_for_allocation_prefetch = (distance + step_size*lines)/(int)HeapWordSize;
       }
     }
 #endif
@@ -185,14 +219,20 @@ void VM_Version::initialize() {
 
 #ifndef PRODUCT
   if (PrintMiscellaneous && Verbose) {
-    tty->print("Allocation: ");
+    tty->print("Allocation");
     if (AllocatePrefetchStyle <= 0) {
-      tty->print_cr("no prefetching");
+      tty->print_cr(": no prefetching");
     } else {
+      tty->print(" prefetching: ");
+      if (AllocatePrefetchInstr == 0) {
+          tty->print("PREFETCH");
+      } else if (AllocatePrefetchInstr == 1) {
+          tty->print("BIS");
+      }
       if (AllocatePrefetchLines > 1) {
-        tty->print_cr("PREFETCH %d, %d lines of size %d bytes", AllocatePrefetchDistance, AllocatePrefetchLines, AllocatePrefetchStepSize);
+        tty->print_cr(" at distance %d, %d lines of %d bytes", AllocatePrefetchDistance, AllocatePrefetchLines, AllocatePrefetchStepSize);
       } else {
-        tty->print_cr("PREFETCH %d, one line", AllocatePrefetchDistance);
+        tty->print_cr(" at distance %d, one line of %d bytes", AllocatePrefetchDistance, AllocatePrefetchStepSize);
       }
     }
     if (PrefetchCopyIntervalInBytes > 0) {

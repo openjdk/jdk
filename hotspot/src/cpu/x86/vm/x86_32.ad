@@ -7325,8 +7325,9 @@ instruct prefetchr( memory mem ) %{
   ins_cost(100);
 
   format %{ "PREFETCHR $mem\t! Prefetch into level 1 cache for read" %}
-  opcode(0x0F, 0x0d);     /* Opcode 0F 0d /0 */
-  ins_encode(OpcP, OpcS, RMopc_Mem(0x00,mem));
+  ins_encode %{
+    __ prefetchr($mem$$Address);
+  %}
   ins_pipe(ialu_mem);
 %}
 
@@ -7336,8 +7337,9 @@ instruct prefetchrNTA( memory mem ) %{
   ins_cost(100);
 
   format %{ "PREFETCHNTA $mem\t! Prefetch into non-temporal cache for read" %}
-  opcode(0x0F, 0x18);     /* Opcode 0F 18 /0 */
-  ins_encode(OpcP, OpcS, RMopc_Mem(0x00,mem));
+  ins_encode %{
+    __ prefetchnta($mem$$Address);
+  %}
   ins_pipe(ialu_mem);
 %}
 
@@ -7347,8 +7349,9 @@ instruct prefetchrT0( memory mem ) %{
   ins_cost(100);
 
   format %{ "PREFETCHT0 $mem\t! Prefetch into L1 and L2 caches for read" %}
-  opcode(0x0F, 0x18);     /* Opcode 0F 18 /1 */
-  ins_encode(OpcP, OpcS, RMopc_Mem(0x01,mem));
+  ins_encode %{
+    __ prefetcht0($mem$$Address);
+  %}
   ins_pipe(ialu_mem);
 %}
 
@@ -7358,8 +7361,9 @@ instruct prefetchrT2( memory mem ) %{
   ins_cost(100);
 
   format %{ "PREFETCHT2 $mem\t! Prefetch into L2 cache for read" %}
-  opcode(0x0F, 0x18);     /* Opcode 0F 18 /3 */
-  ins_encode(OpcP, OpcS, RMopc_Mem(0x03,mem));
+  ins_encode %{
+    __ prefetcht2($mem$$Address);
+  %}
   ins_pipe(ialu_mem);
 %}
 
@@ -7374,46 +7378,86 @@ instruct prefetchw0( memory mem ) %{
 %}
 
 instruct prefetchw( memory mem ) %{
-  predicate(UseSSE==0 && VM_Version::supports_3dnow_prefetch() || AllocatePrefetchInstr==3);
+  predicate(UseSSE==0 && VM_Version::supports_3dnow_prefetch());
   match( PrefetchWrite mem );
   ins_cost(100);
 
   format %{ "PREFETCHW $mem\t! Prefetch into L1 cache and mark modified" %}
-  opcode(0x0F, 0x0D);     /* Opcode 0F 0D /1 */
-  ins_encode(OpcP, OpcS, RMopc_Mem(0x01,mem));
+  ins_encode %{
+    __ prefetchw($mem$$Address);
+  %}
   ins_pipe(ialu_mem);
 %}
 
 instruct prefetchwNTA( memory mem ) %{
-  predicate(UseSSE>=1 && AllocatePrefetchInstr==0);
+  predicate(UseSSE>=1);
   match(PrefetchWrite mem);
   ins_cost(100);
 
   format %{ "PREFETCHNTA $mem\t! Prefetch into non-temporal cache for write" %}
-  opcode(0x0F, 0x18);     /* Opcode 0F 18 /0 */
-  ins_encode(OpcP, OpcS, RMopc_Mem(0x00,mem));
+  ins_encode %{
+    __ prefetchnta($mem$$Address);
+  %}
   ins_pipe(ialu_mem);
 %}
 
-instruct prefetchwT0( memory mem ) %{
+// Prefetch instructions for allocation.
+
+instruct prefetchAlloc0( memory mem ) %{
+  predicate(UseSSE==0 && AllocatePrefetchInstr!=3);
+  match(PrefetchAllocation mem);
+  ins_cost(0);
+  size(0);
+  format %{ "Prefetch allocation (non-SSE is empty encoding)" %}
+  ins_encode();
+  ins_pipe(empty);
+%}
+
+instruct prefetchAlloc( memory mem ) %{
+  predicate(AllocatePrefetchInstr==3);
+  match( PrefetchAllocation mem );
+  ins_cost(100);
+
+  format %{ "PREFETCHW $mem\t! Prefetch allocation into L1 cache and mark modified" %}
+  ins_encode %{
+    __ prefetchw($mem$$Address);
+  %}
+  ins_pipe(ialu_mem);
+%}
+
+instruct prefetchAllocNTA( memory mem ) %{
+  predicate(UseSSE>=1 && AllocatePrefetchInstr==0);
+  match(PrefetchAllocation mem);
+  ins_cost(100);
+
+  format %{ "PREFETCHNTA $mem\t! Prefetch allocation into non-temporal cache for write" %}
+  ins_encode %{
+    __ prefetchnta($mem$$Address);
+  %}
+  ins_pipe(ialu_mem);
+%}
+
+instruct prefetchAllocT0( memory mem ) %{
   predicate(UseSSE>=1 && AllocatePrefetchInstr==1);
-  match(PrefetchWrite mem);
+  match(PrefetchAllocation mem);
   ins_cost(100);
 
-  format %{ "PREFETCHT0 $mem\t! Prefetch into L1 and L2 caches for write" %}
-  opcode(0x0F, 0x18);     /* Opcode 0F 18 /1 */
-  ins_encode(OpcP, OpcS, RMopc_Mem(0x01,mem));
+  format %{ "PREFETCHT0 $mem\t! Prefetch allocation into L1 and L2 caches for write" %}
+  ins_encode %{
+    __ prefetcht0($mem$$Address);
+  %}
   ins_pipe(ialu_mem);
 %}
 
-instruct prefetchwT2( memory mem ) %{
+instruct prefetchAllocT2( memory mem ) %{
   predicate(UseSSE>=1 && AllocatePrefetchInstr==2);
-  match(PrefetchWrite mem);
+  match(PrefetchAllocation mem);
   ins_cost(100);
 
-  format %{ "PREFETCHT2 $mem\t! Prefetch into L2 cache for write" %}
-  opcode(0x0F, 0x18);     /* Opcode 0F 18 /3 */
-  ins_encode(OpcP, OpcS, RMopc_Mem(0x03,mem));
+  format %{ "PREFETCHT2 $mem\t! Prefetch allocation into L2 cache for write" %}
+  ins_encode %{
+    __ prefetcht2($mem$$Address);
+  %}
   ins_pipe(ialu_mem);
 %}
 

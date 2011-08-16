@@ -1590,7 +1590,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
         prefetch_adr = new (C, 4) AddPNode( old_pf_wm, new_pf_wmt,
                                             _igvn.MakeConX(distance) );
         transform_later(prefetch_adr);
-        prefetch = new (C, 3) PrefetchWriteNode( i_o, prefetch_adr );
+        prefetch = new (C, 3) PrefetchAllocationNode( i_o, prefetch_adr );
         transform_later(prefetch);
         distance += step_size;
         i_o = prefetch;
@@ -1611,13 +1611,14 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       contended_phi_rawmem = pf_phi_rawmem;
       i_o = pf_phi_abio;
    } else if( UseTLAB && AllocatePrefetchStyle == 3 ) {
-      // Insert a prefetch for each allocation only on the fast-path
+      // Insert a prefetch for each allocation.
+      // This code is used for Sparc with BIS.
       Node *pf_region = new (C, 3) RegionNode(3);
       Node *pf_phi_rawmem = new (C, 3) PhiNode( pf_region, Type::MEMORY,
                                                 TypeRawPtr::BOTTOM );
 
-      // Generate several prefetch instructions only for arrays.
-      uint lines = (length != NULL) ? AllocatePrefetchLines : 1;
+      // Generate several prefetch instructions.
+      uint lines = (length != NULL) ? AllocatePrefetchLines : AllocateInstancePrefetchLines;
       uint step_size = AllocatePrefetchStepSize;
       uint distance = AllocatePrefetchDistance;
 
@@ -1634,7 +1635,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       transform_later(cache_adr);
 
       // Prefetch
-      Node *prefetch = new (C, 3) PrefetchWriteNode( contended_phi_rawmem, cache_adr );
+      Node *prefetch = new (C, 3) PrefetchAllocationNode( contended_phi_rawmem, cache_adr );
       prefetch->set_req(0, needgc_false);
       transform_later(prefetch);
       contended_phi_rawmem = prefetch;
@@ -1644,7 +1645,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
         prefetch_adr = new (C, 4) AddPNode( cache_adr, cache_adr,
                                             _igvn.MakeConX(distance) );
         transform_later(prefetch_adr);
-        prefetch = new (C, 3) PrefetchWriteNode( contended_phi_rawmem, prefetch_adr );
+        prefetch = new (C, 3) PrefetchAllocationNode( contended_phi_rawmem, prefetch_adr );
         transform_later(prefetch);
         distance += step_size;
         contended_phi_rawmem = prefetch;
@@ -1653,15 +1654,15 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       // Insert a prefetch for each allocation only on the fast-path
       Node *prefetch_adr;
       Node *prefetch;
-      // Generate several prefetch instructions only for arrays.
-      uint lines = (length != NULL) ? AllocatePrefetchLines : 1;
+      // Generate several prefetch instructions.
+      uint lines = (length != NULL) ? AllocatePrefetchLines : AllocateInstancePrefetchLines;
       uint step_size = AllocatePrefetchStepSize;
       uint distance = AllocatePrefetchDistance;
       for ( uint i = 0; i < lines; i++ ) {
         prefetch_adr = new (C, 4) AddPNode( old_eden_top, new_eden_top,
                                             _igvn.MakeConX(distance) );
         transform_later(prefetch_adr);
-        prefetch = new (C, 3) PrefetchWriteNode( i_o, prefetch_adr );
+        prefetch = new (C, 3) PrefetchAllocationNode( i_o, prefetch_adr );
         // Do not let it float too high, since if eden_top == eden_end,
         // both might be null.
         if( i == 0 ) { // Set control for first prefetch, next follows it

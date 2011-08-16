@@ -2897,8 +2897,11 @@ class CommandLineFlags {
   product(intx,  AllocatePrefetchDistance, -1,                              \
           "Distance to prefetch ahead of allocation pointer")               \
                                                                             \
-  product(intx,  AllocatePrefetchLines, 1,                                  \
-          "Number of lines to prefetch ahead of allocation pointer")        \
+  product(intx,  AllocatePrefetchLines, 3,                                  \
+          "Number of lines to prefetch ahead of array allocation pointer")  \
+                                                                            \
+  product(intx,  AllocateInstancePrefetchLines, 1,                          \
+          "Number of lines to prefetch ahead of instance allocation pointer") \
                                                                             \
   product(intx,  AllocatePrefetchStepSize, 16,                              \
           "Step size in bytes of sequential prefetch instructions")         \

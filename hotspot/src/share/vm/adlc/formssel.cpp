@@ -3390,7 +3390,9 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "ClearArray"
   };
   int cnt = sizeof(needs_ideal_memory_list)/sizeof(char*);
-  if( strcmp(_opType,"PrefetchRead")==0 || strcmp(_opType,"PrefetchWrite")==0 )
+  if( strcmp(_opType,"PrefetchRead")==0 ||
+      strcmp(_opType,"PrefetchWrite")==0 ||
+      strcmp(_opType,"PrefetchAllocation")==0 )
     return 1;
   if( _lChild ) {
     const char *opType = _lChild->_opType;

@@ -886,7 +886,11 @@ class Assembler : public AbstractAssembler  {
 
   enum ASIs { // page 72, v9
     ASI_PRIMARY        = 0x80,
-    ASI_PRIMARY_LITTLE = 0x88
+    ASI_PRIMARY_LITTLE = 0x88,
+    // Block initializing store
+    ASI_ST_BLKINIT_PRIMARY = 0xE2,
+    // Most-Recently-Used (MRU) BIS variant
+    ASI_ST_BLKINIT_MRU_PRIMARY = 0xF2
     // add more from book as needed
   };
 
