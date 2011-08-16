@@ -365,6 +365,9 @@ com/sun/net/httpserver/bugs/6725892/Test.java			generic-all
 # Filed 7036666
 com/sun/net/httpserver/Test9a.java				generic-all
 
+# 7079145 java/net/ipv6tests/UdpTest.java hang at IPv6 only data exchange
+java/net/ipv6tests/UdpTest.java                                 linux-all
+
 ############################################################################
 
 # jdk_io
@@ -492,6 +495,9 @@ sun/security/ssl/sanity/ciphersuites/CheckCipherSuites.java	generic-all
 
 # Various failures on Linux Fedora 9 X64, othervm mode
 sun/security/ssl/sanity/interop/ClientJSSEServerJSSE.java	generic-all
+
+# 7079203 sun/security/tools/keytool/printssl.sh fails on solaris with timeout
+sun/security/tools/keytool/printssl.sh                          solaris-all
 
 ############################################################################
 
