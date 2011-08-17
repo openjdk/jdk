@@ -29,7 +29,8 @@
 
 BUILDDIR = ../../..
 SUBDIRS_MAKEFLAGS += JAVAC_MAX_WARNINGS=false
-SUBDIRS_MAKEFLAGS += JAVAC_LINT_OPTIONS=-Xlint:all,-deprecation
+# TODO: Workaround for CR 7063027. Remove -path eventually.
+SUBDIRS_MAKEFLAGS += JAVAC_LINT_OPTIONS=-Xlint:all,-deprecation,-path
 SUBDIRS_MAKEFLAGS += JAVAC_WARNINGS_FATAL=true
 include $(BUILDDIR)/common/Defs.gmk
 

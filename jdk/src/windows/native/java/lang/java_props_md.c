@@ -563,6 +563,18 @@ GetJavaProperties(JNIEnv* env)
         {
             char * display_encoding;
 
+            // Windows UI Language selection list only cares "language"
+            // information of the UI Language. For example, the list
+            // just lists "English" but it actually means "en_US", and
+            // the user cannot select "en_GB" (if exists) in the list.
+            // So, this hack is to use the user LCID region information
+            // for the UI Language, if the "language" portion of those
+            // two locales are the same.
+            if (PRIMARYLANGID(LANGIDFROMLCID(userDefaultLCID)) ==
+                PRIMARYLANGID(LANGIDFROMLCID(userDefaultUILang))) {
+                userDefaultUILang = userDefaultLCID;
+            }
+
             SetupI18nProps(userDefaultUILang,
                            &sprops.language,
                            &sprops.script,

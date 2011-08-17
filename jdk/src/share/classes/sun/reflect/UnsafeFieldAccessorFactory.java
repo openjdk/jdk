@@ -30,7 +30,7 @@ import java.lang.reflect.Modifier;
 
 class UnsafeFieldAccessorFactory {
     static FieldAccessor newFieldAccessor(Field field, boolean override) {
-        Class type = field.getType();
+        Class<?> type = field.getType();
         boolean isStatic = Modifier.isStatic(field.getModifiers());
         boolean isFinal = Modifier.isFinal(field.getModifiers());
         boolean isVolatile = Modifier.isVolatile(field.getModifiers());
