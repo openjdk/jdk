@@ -62,54 +62,6 @@ public class IBM964
         return new Encoder(this);
     }
 
-
-    /**
-     * These accessors are temporarily supplied while sun.io
-     * converters co-exist with the sun.nio.cs.{ext} charset coders
-     * These facilitate sharing of conversion tables between the
-     * two co-existing implementations. When sun.io converters
-     * are made extinct these will be unncessary and should be removed
-     */
-
-    public String getDecoderSingleByteMappings() {
-        return Decoder.byteToCharTable;
-    }
-
-    public String getDecoderMappingTableG1() {
-        return Decoder.mappingTableG1;
-    }
-
-    public String getDecoderMappingTableG2a2() {
-        return Decoder.mappingTableG2a2;
-    }
-
-    public String getDecoderMappingTableG2ac() {
-        return Decoder.mappingTableG2ac;
-    }
-
-    public String getDecoderMappingTableG2ad() {
-        return Decoder.mappingTableG2ad;
-    }
-
-    public short[] getEncoderIndex1() {
-        return Encoder.index1;
-
-    }
-    public String getEncoderIndex2() {
-        return Encoder.index2;
-
-    }
-    public String getEncoderIndex2a() {
-        return Encoder.index2a;
-    }
-
-    public String getEncoderIndex2b() {
-        return Encoder.index2b;
-    }
-
-    public String getEncoderIndex2c() {
-        return Encoder.index2c;
-    }
     protected static class Decoder extends CharsetDecoder {
         private final int SS2 =  0x8E;
         private final int SS3 =  0x8F;
