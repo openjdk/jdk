@@ -3672,7 +3672,7 @@ void Assembler::prefix(Address adr, Register reg, bool byteinst) {
     } else {
       if (adr.index_needs_rex()) {
         prefix(REX_X);
-      } else if (reg->encoding() >= 4 ) {
+      } else if (byteinst && reg->encoding() >= 4 ) {
         prefix(REX);
       }
     }
