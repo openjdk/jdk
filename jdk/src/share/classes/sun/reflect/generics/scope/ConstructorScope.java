@@ -32,10 +32,10 @@ import java.lang.reflect.Constructor;
  * This class represents the scope containing the type variables of
  * a constructor.
  */
-public class ConstructorScope extends AbstractScope<Constructor> {
+public class ConstructorScope extends AbstractScope<Constructor<?>> {
 
     // constructor is private to enforce use of factory method
-    private ConstructorScope(Constructor c){
+    private ConstructorScope(Constructor<?> c){
         super(c);
     }
 
@@ -61,7 +61,7 @@ public class ConstructorScope extends AbstractScope<Constructor> {
      * @param m - A Constructor whose scope we want to obtain
      * @return The type-variable scope for the constructor m
      */
-    public static ConstructorScope make(Constructor c) {
+    public static ConstructorScope make(Constructor<?> c) {
         return new ConstructorScope(c);
     }
 }
