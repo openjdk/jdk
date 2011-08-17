@@ -1589,7 +1589,7 @@ public final class Locale implements Cloneable, Serializable {
      * @since 1.7
      */
     public String getDisplayScript() {
-        return getDisplayScript(getDefault());
+        return getDisplayScript(getDefault(Category.DISPLAY));
     }
 
     /**
