@@ -6953,3 +6953,56 @@ CurrencyNames/de/mxv=Mexican Unidad de Inversion (UDI)
 CurrencyNames/de/svc=El Salvador Colon
 
 CurrencyNames/it/bob=Boliviano
+
+# bug 7066203
+CurrencyNames//CUC=CUC
+CurrencyNames//TMT=TMT
+CurrencyNames//XSU=XSU
+CurrencyNames//XUA=XUA
+CurrencyNames//ZWL=ZWL
+CurrencyNames//ZWR=ZWR
+CurrencyNames//cuc=Cuban Convertible Peso
+CurrencyNames//tmt=Turkmenistani Manat
+CurrencyNames//zwl=Zimbabwean Dollar (2009)
+CurrencyNames//zwr=Zimbabwean Dollar (2008)
+
+CurrencyNames/de/cuc=Kubanischer Peso (konvertibel)
+CurrencyNames/de/tmt=Neuer Turkmenistan-Manat
+CurrencyNames/de/zwl=Simbabwe-Dollar (2009)
+
+CurrencyNames/es/cuc=peso cubano convertible
+CurrencyNames/es/tmt=nuevo manat turcomano
+CurrencyNames/es/zwl=d\u00f3lar zimbabuense
+
+CurrencyNames/es_CU/CUP=CU$
+CurrencyNames/es_CU/CUC=CUC$
+
+CurrencyNames/et_EE/eek=Eesti kroon
+CurrencyNames/et_EE/EUR=\u20ac
+CurrencyNames/et_EE/eur=euro
+
+CurrencyNames/fr/cuc=peso cubain convertible
+CurrencyNames/fr/tmt=nouveau manat turkm\u00e8ne
+
+CurrencyNames/ja/cuc=\u30ad\u30e5\u30fc\u30d0 \u514c\u63db\u30da\u30bd
+CurrencyNames/ja/tmt=\u30c8\u30eb\u30af\u30e1\u30cb\u30b9\u30bf\u30f3 \u65b0\u30de\u30ca\u30c8
+CurrencyNames/ja/zwl=\u30b8\u30f3\u30d0\u30d6\u30a8 \u30c9\u30eb (2009)
+
+CurrencyNames/ko/cuc=\ucfe0\ubc14 \ud0dc\ud658 \ud398\uc18c
+
+CurrencyNames/pt/bob=Boliviano
+CurrencyNames/pt/cuc=Peso cubano convers\u00edvel
+CurrencyNames/pt/tmt=Novo Manat do Turcomenist\u00e3o
+CurrencyNames/pt/zwl=D\u00f3lar do Zimb\u00e1bue (2009)
+CurrencyNames/pt/zwr=D\u00f3lar do Zimb\u00e1bue (2008)
+
+CurrencyNames/sk_SK/skk=Slovensk\u00e1 koruna
+CurrencyNames/sk_SK/EUR=\u20ac
+
+CurrencyNames/zh_CN/cuc=\u53e4\u5df4\u53ef\u5151\u6362\u6bd4\u7d22
+CurrencyNames/zh_CN/tmt=\u571f\u5e93\u66fc\u65af\u5766\u65b0\u9a6c\u7eb3\u7279
+CurrencyNames/zh_CN/zwl=\u6d25\u5df4\u5e03\u97e6\u5143 (2009)
+
+CurrencyNames/zh_TW/cuc=\u53e4\u5df4\u53ef\u8f49\u63db\u62ab\u7d22
+CurrencyNames/zh_TW/tmt=\u571f\u5eab\u66fc\u65b0\u99ac\u7d0d\u7279
+CurrencyNames/zh_TW/zwl=\u8f9b\u5df4\u5a01\u5143 (2009)
