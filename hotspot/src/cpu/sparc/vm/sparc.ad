@@ -10066,7 +10066,7 @@ instruct CallStaticJavaHandle(method meth, l7RegP l7_mh_SP_save) %{
   predicate(((CallStaticJavaNode*)n)->is_method_handle_invoke());
   effect(USE meth, KILL l7_mh_SP_save);
 
-  size(8);
+  size(16);
   ins_cost(CALL_COST);
   format %{ "CALL,static/MethodHandle" %}
   ins_encode(preserve_SP, Java_Static_Call(meth), restore_SP, call_epilog);
