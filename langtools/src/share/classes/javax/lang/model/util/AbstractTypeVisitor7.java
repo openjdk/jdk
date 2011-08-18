@@ -56,6 +56,7 @@ import javax.lang.model.type.*;
  *            additional parameter.
  *
  * @see AbstractTypeVisitor6
+ * @see AbstractTypeVisitor8
  * @since 1.7
  */
 public abstract class AbstractTypeVisitor7<R, P> extends AbstractTypeVisitor6<R, P> {

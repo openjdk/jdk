@@ -2167,7 +2167,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
     /**
      * Returns a {@code LayoutStyle} implementing the Java look and feel
      * design guidelines as specified at
-     * <a href="http://java.sun.com/products/jlf/ed2/book/HIG.Visual2.html">http://java.sun.com/products/jlf/ed2/book/HIG.Visual2.html</a>.
+     * <a href="http://www.oracle.com/technetwork/java/hig-136467.html">http://www.oracle.com/technetwork/java/hig-136467.html</a>.
      *
      * @return LayoutStyle implementing the Java look and feel design
      *         guidelines

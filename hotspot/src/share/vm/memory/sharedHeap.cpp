@@ -102,6 +102,17 @@ public:
 };
 static AssertIsPermClosure assert_is_perm_closure;
 
+#ifdef ASSERT
+class AssertNonScavengableClosure: public OopClosure {
+public:
+  virtual void do_oop(oop* p) {
+    assert(!Universe::heap()->is_in_partial_collection(*p),
+      "Referent should not be scavengable.");  }
+  virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
+};
+static AssertNonScavengableClosure assert_is_non_scavengable_closure;
+#endif
+
 void SharedHeap::change_strong_roots_parity() {
   // Also set the new collection parity.
   assert(_strong_roots_parity >= 0 && _strong_roots_parity <= 2,
@@ -196,9 +207,10 @@ void SharedHeap::process_strong_roots(bool activate_scope,
         CodeCache::scavenge_root_nmethods_do(code_roots);
       }
     }
-    // Verify if the code cache contents are in the perm gen
-    NOT_PRODUCT(CodeBlobToOopClosure assert_code_is_perm(&assert_is_perm_closure, /*do_marking=*/ false));
-    NOT_PRODUCT(CodeCache::asserted_non_scavengable_nmethods_do(&assert_code_is_perm));
+    // Verify that the code cache contents are not subject to
+    // movement by a scavenging collection.
+    DEBUG_ONLY(CodeBlobToOopClosure assert_code_is_non_scavengable(&assert_is_non_scavengable_closure, /*do_marking=*/ false));
+    DEBUG_ONLY(CodeCache::asserted_non_scavengable_nmethods_do(&assert_code_is_non_scavengable));
   }
 
   if (!collecting_perm_gen) {
