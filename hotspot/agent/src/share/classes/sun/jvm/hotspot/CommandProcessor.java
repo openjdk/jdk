@@ -1028,7 +1028,12 @@ public class CommandProcessor {
                                     if (AddressOps.equal(val, value)) {
                                         if (!printed) {
                                             printed = true;
-                                            blob.printOn(out);
+                                            try {
+                                                blob.printOn(out);
+                                            } catch (Exception e) {
+                                                out.println("Exception printing blob at " + base);
+                                                e.printStackTrace();
+                                            }
                                         }
                                         out.println("found at " + base + "\n");
                                     }

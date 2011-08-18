@@ -34,11 +34,6 @@ enum platform_dependent_constants {
   code_size2 = 22000            // simply increase if too small (assembler will crash if too small)
 };
 
-// MethodHandles adapters
-enum method_handles_platform_dependent_constants {
-  method_handles_adapters_code_size = 30000 DEBUG_ONLY(+ 10000)
-};
-
 class x86 {
  friend class StubGenerator;
  friend class VMStructs;

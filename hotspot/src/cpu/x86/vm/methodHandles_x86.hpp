@@ -25,6 +25,11 @@
 // Platform-specific definitions for method handles.
 // These definitions are inlined into class MethodHandles.
 
+// Adapters
+enum /* platform_dependent_constants */ {
+  adapter_code_size = NOT_LP64(30000 DEBUG_ONLY(+ 10000)) LP64_ONLY(80000 DEBUG_ONLY(+ 120000))
+};
+
 public:
 
 // The stack just after the recursive call from a ricochet frame
@@ -188,7 +193,9 @@ class RicochetFrame {
 
   static void generate_ricochet_blob(MacroAssembler* _masm,
                                      // output params:
-                                     int* frame_size_in_words, int* bounce_offset, int* exception_offset);
+                                     int* bounce_offset,
+                                     int* exception_offset,
+                                     int* frame_size_in_words);
 
   static void enter_ricochet_frame(MacroAssembler* _masm,
                                    Register rcx_recv,
@@ -283,6 +290,10 @@ public:
     verify_klass(_masm, mh_reg, SystemDictionaryHandles::MethodHandle_klass(),
                  "reference is a MH");
   }
+
+  // Similar to InterpreterMacroAssembler::jump_from_interpreted.
+  // Takes care of special dispatch from single stepping too.
+  static void jump_from_method_handle(MacroAssembler* _masm, Register method, Register temp);
 
   static void trace_method_handle(MacroAssembler* _masm, const char* adaptername) PRODUCT_RETURN;
 

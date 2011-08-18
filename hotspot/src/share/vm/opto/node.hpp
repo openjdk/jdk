@@ -1463,6 +1463,9 @@ public:
   bool is_nonempty() const { return (_inode_top >= _inodes); }
   bool is_empty() const { return (_inode_top < _inodes); }
   void clear() { _inode_top = _inodes - 1; } // retain storage
+
+  // Node_Stack is used to map nodes.
+  Node* find(uint idx) const;
 };
 
 

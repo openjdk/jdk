@@ -425,7 +425,7 @@ reg_class dflt_reg(R_F0, R_F1, R_F2, R_F3, R_F4, R_F5, R_F6, R_F7, R_F8, R_F9, R
 // but they are used with the "Op_RegD" type, and always occur in even/odd pairs.
 // This class is usable for mis-aligned loads as happen in I2C adapters.
 reg_class dflt_low_reg(R_F0, R_F1, R_F2, R_F3, R_F4, R_F5, R_F6, R_F7, R_F8, R_F9, R_F10,R_F11,R_F12,R_F13,R_F14,R_F15,
-                   R_F16,R_F17,R_F18,R_F19,R_F20,R_F21,R_F22,R_F23,R_F24,R_F25,R_F26,R_F27,R_F28,R_F29,R_F30,R_F31 );
+                   R_F16,R_F17,R_F18,R_F19,R_F20,R_F21,R_F22,R_F23,R_F24,R_F25,R_F26,R_F27,R_F28,R_F29);
 %}
 
 //----------DEFINITION BLOCK---------------------------------------------------
@@ -1326,17 +1326,17 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
 
   // --------------------------------------
   // Check for float->int copy; requires a trip through memory
-  if( src_first_rc == rc_float && dst_first_rc == rc_int ) {
+  if (src_first_rc == rc_float && dst_first_rc == rc_int && UseVIS < 3) {
     int offset = frame::register_save_words*wordSize;
-    if( cbuf ) {
+    if (cbuf) {
       emit3_simm13( *cbuf, Assembler::arith_op, R_SP_enc, Assembler::sub_op3, R_SP_enc, 16 );
       impl_helper(this,cbuf,ra_,do_size,false,offset,src_first,Assembler::stf_op3 ,"STF ",size, st);
       impl_helper(this,cbuf,ra_,do_size,true ,offset,dst_first,Assembler::lduw_op3,"LDUW",size, st);
       emit3_simm13( *cbuf, Assembler::arith_op, R_SP_enc, Assembler::add_op3, R_SP_enc, 16 );
     }
 #ifndef PRODUCT
-    else if( !do_size ) {
-      if( size != 0 ) st->print("\n\t");
+    else if (!do_size) {
+      if (size != 0) st->print("\n\t");
       st->print(  "SUB    R_SP,16,R_SP\n");
       impl_helper(this,cbuf,ra_,do_size,false,offset,src_first,Assembler::stf_op3 ,"STF ",size, st);
       impl_helper(this,cbuf,ra_,do_size,true ,offset,dst_first,Assembler::lduw_op3,"LDUW",size, st);
@@ -1344,6 +1344,21 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
     }
 #endif
     size += 16;
+  }
+
+  // Check for float->int copy on T4
+  if (src_first_rc == rc_float && dst_first_rc == rc_int && UseVIS >= 3) {
+    // Further check for aligned-adjacent pair, so we can use a double move
+    if ((src_first&1)==0 && src_first+1 == src_second && (dst_first&1)==0 && dst_first+1 == dst_second)
+      return impl_mov_helper(cbuf,do_size,src_first,dst_first,Assembler::mftoi_op3,Assembler::mdtox_opf,"MOVDTOX",size, st);
+    size  =  impl_mov_helper(cbuf,do_size,src_first,dst_first,Assembler::mftoi_op3,Assembler::mstouw_opf,"MOVSTOUW",size, st);
+  }
+  // Check for int->float copy on T4
+  if (src_first_rc == rc_int && dst_first_rc == rc_float && UseVIS >= 3) {
+    // Further check for aligned-adjacent pair, so we can use a double move
+    if ((src_first&1)==0 && src_first+1 == src_second && (dst_first&1)==0 && dst_first+1 == dst_second)
+      return impl_mov_helper(cbuf,do_size,src_first,dst_first,Assembler::mftoi_op3,Assembler::mxtod_opf,"MOVXTOD",size, st);
+    size  =  impl_mov_helper(cbuf,do_size,src_first,dst_first,Assembler::mftoi_op3,Assembler::mwtos_opf,"MOVWTOS",size, st);
   }
 
   // --------------------------------------
@@ -8164,214 +8179,57 @@ instruct cadd_cmpLTMask( iRegI p, iRegI q, iRegI y, iRegI tmp, flagsReg ccr ) %{
   ins_pipe( cadd_cmpltmask );
 %}
 
-//----------Arithmetic Conversion Instructions---------------------------------
-// The conversions operations are all Alpha sorted.  Please keep it that way!
 
-instruct convD2F_reg(regF dst, regD src) %{
-  match(Set dst (ConvD2F src));
-  size(4);
-  format %{ "FDTOS  $src,$dst" %}
-  opcode(Assembler::fpop1_op3, Assembler::arith_op, Assembler::fdtos_opf);
-  ins_encode(form3_opf_rs2D_rdF(src, dst));
-  ins_pipe(fcvtD2F);
-%}
+//-----------------------------------------------------------------
+// Direct raw moves between float and general registers using VIS3.
 
+//  ins_pipe(faddF_reg);
+instruct MoveF2I_reg_reg(iRegI dst, regF src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (MoveF2I src));
 
-// Convert a double to an int in a float register.
-// If the double is a NAN, stuff a zero in instead.
-instruct convD2I_helper(regF dst, regD src, flagsRegF0 fcc0) %{
-  effect(DEF dst, USE src, KILL fcc0);
-  format %{ "FCMPd  fcc0,$src,$src\t! check for NAN\n\t"
-            "FBO,pt fcc0,skip\t! branch on ordered, predict taken\n\t"
-            "FDTOI  $src,$dst\t! convert in delay slot\n\t"
-            "FITOS  $dst,$dst\t! change NaN/max-int to valid float\n\t"
-            "FSUBs  $dst,$dst,$dst\t! cleared only if nan\n"
-      "skip:" %}
-  ins_encode(form_d2i_helper(src,dst));
-  ins_pipe(fcvtD2I);
-%}
-
-instruct convD2I_reg(stackSlotI dst, regD src) %{
-  match(Set dst (ConvD2I src));
-  ins_cost(DEFAULT_COST*2 + MEMORY_REF_COST*2 + BRANCH_COST);
-  expand %{
-    regF tmp;
-    convD2I_helper(tmp, src);
-    regF_to_stkI(dst, tmp);
+  format %{ "MOVSTOUW $src,$dst\t! MoveF2I" %}
+  ins_encode %{
+    __ movstouw($src$$FloatRegister, $dst$$Register);
   %}
-%}
-
-// Convert a double to a long in a double register.
-// If the double is a NAN, stuff a zero in instead.
-instruct convD2L_helper(regD dst, regD src, flagsRegF0 fcc0) %{
-  effect(DEF dst, USE src, KILL fcc0);
-  format %{ "FCMPd  fcc0,$src,$src\t! check for NAN\n\t"
-            "FBO,pt fcc0,skip\t! branch on ordered, predict taken\n\t"
-            "FDTOX  $src,$dst\t! convert in delay slot\n\t"
-            "FXTOD  $dst,$dst\t! change NaN/max-long to valid double\n\t"
-            "FSUBd  $dst,$dst,$dst\t! cleared only if nan\n"
-      "skip:" %}
-  ins_encode(form_d2l_helper(src,dst));
-  ins_pipe(fcvtD2L);
-%}
-
-
-// Double to Long conversion
-instruct convD2L_reg(stackSlotL dst, regD src) %{
-  match(Set dst (ConvD2L src));
-  ins_cost(DEFAULT_COST*2 + MEMORY_REF_COST*2 + BRANCH_COST);
-  expand %{
-    regD tmp;
-    convD2L_helper(tmp, src);
-    regD_to_stkL(dst, tmp);
-  %}
-%}
-
-
-instruct convF2D_reg(regD dst, regF src) %{
-  match(Set dst (ConvF2D src));
-  format %{ "FSTOD  $src,$dst" %}
-  opcode(Assembler::fpop1_op3, Assembler::arith_op, Assembler::fstod_opf);
-  ins_encode(form3_opf_rs2F_rdD(src, dst));
-  ins_pipe(fcvtF2D);
-%}
-
-
-instruct convF2I_helper(regF dst, regF src, flagsRegF0 fcc0) %{
-  effect(DEF dst, USE src, KILL fcc0);
-  format %{ "FCMPs  fcc0,$src,$src\t! check for NAN\n\t"
-            "FBO,pt fcc0,skip\t! branch on ordered, predict taken\n\t"
-            "FSTOI  $src,$dst\t! convert in delay slot\n\t"
-            "FITOS  $dst,$dst\t! change NaN/max-int to valid float\n\t"
-            "FSUBs  $dst,$dst,$dst\t! cleared only if nan\n"
-      "skip:" %}
-  ins_encode(form_f2i_helper(src,dst));
-  ins_pipe(fcvtF2I);
-%}
-
-instruct convF2I_reg(stackSlotI dst, regF src) %{
-  match(Set dst (ConvF2I src));
-  ins_cost(DEFAULT_COST*2 + MEMORY_REF_COST*2 + BRANCH_COST);
-  expand %{
-    regF tmp;
-    convF2I_helper(tmp, src);
-    regF_to_stkI(dst, tmp);
-  %}
-%}
-
-
-instruct convF2L_helper(regD dst, regF src, flagsRegF0 fcc0) %{
-  effect(DEF dst, USE src, KILL fcc0);
-  format %{ "FCMPs  fcc0,$src,$src\t! check for NAN\n\t"
-            "FBO,pt fcc0,skip\t! branch on ordered, predict taken\n\t"
-            "FSTOX  $src,$dst\t! convert in delay slot\n\t"
-            "FXTOD  $dst,$dst\t! change NaN/max-long to valid double\n\t"
-            "FSUBd  $dst,$dst,$dst\t! cleared only if nan\n"
-      "skip:" %}
-  ins_encode(form_f2l_helper(src,dst));
-  ins_pipe(fcvtF2L);
-%}
-
-// Float to Long conversion
-instruct convF2L_reg(stackSlotL dst, regF src) %{
-  match(Set dst (ConvF2L src));
-  ins_cost(DEFAULT_COST*2 + MEMORY_REF_COST*2 + BRANCH_COST);
-  expand %{
-    regD tmp;
-    convF2L_helper(tmp, src);
-    regD_to_stkL(dst, tmp);
-  %}
-%}
-
-
-instruct convI2D_helper(regD dst, regF tmp) %{
-  effect(USE tmp, DEF dst);
-  format %{ "FITOD  $tmp,$dst" %}
-  opcode(Assembler::fpop1_op3, Assembler::arith_op, Assembler::fitod_opf);
-  ins_encode(form3_opf_rs2F_rdD(tmp, dst));
-  ins_pipe(fcvtI2D);
-%}
-
-instruct convI2D_reg(stackSlotI src, regD dst) %{
-  match(Set dst (ConvI2D src));
-  ins_cost(DEFAULT_COST + MEMORY_REF_COST);
-  expand %{
-    regF tmp;
-    stkI_to_regF( tmp, src);
-    convI2D_helper( dst, tmp);
-  %}
-%}
-
-instruct convI2D_mem( regD_low dst, memory mem ) %{
-  match(Set dst (ConvI2D (LoadI mem)));
-  ins_cost(DEFAULT_COST + MEMORY_REF_COST);
-  size(8);
-  format %{ "LDF    $mem,$dst\n\t"
-            "FITOD  $dst,$dst" %}
-  opcode(Assembler::ldf_op3, Assembler::fitod_opf);
-  ins_encode(simple_form3_mem_reg( mem, dst ), form3_convI2F(dst, dst));
-  ins_pipe(floadF_mem);
-%}
-
-
-instruct convI2F_helper(regF dst, regF tmp) %{
-  effect(DEF dst, USE tmp);
-  format %{ "FITOS  $tmp,$dst" %}
-  opcode(Assembler::fpop1_op3, Assembler::arith_op, Assembler::fitos_opf);
-  ins_encode(form3_opf_rs2F_rdF(tmp, dst));
-  ins_pipe(fcvtI2F);
-%}
-
-instruct convI2F_reg( regF dst, stackSlotI src ) %{
-  match(Set dst (ConvI2F src));
-  ins_cost(DEFAULT_COST + MEMORY_REF_COST);
-  expand %{
-    regF tmp;
-    stkI_to_regF(tmp,src);
-    convI2F_helper(dst, tmp);
-  %}
-%}
-
-instruct convI2F_mem( regF dst, memory mem ) %{
-  match(Set dst (ConvI2F (LoadI mem)));
-  ins_cost(DEFAULT_COST + MEMORY_REF_COST);
-  size(8);
-  format %{ "LDF    $mem,$dst\n\t"
-            "FITOS  $dst,$dst" %}
-  opcode(Assembler::ldf_op3, Assembler::fitos_opf);
-  ins_encode(simple_form3_mem_reg( mem, dst ), form3_convI2F(dst, dst));
-  ins_pipe(floadF_mem);
-%}
-
-
-instruct convI2L_reg(iRegL dst, iRegI src) %{
-  match(Set dst (ConvI2L src));
-  size(4);
-  format %{ "SRA    $src,0,$dst\t! int->long" %}
-  opcode(Assembler::sra_op3, Assembler::arith_op);
-  ins_encode( form3_rs1_rs2_rd( src, R_G0, dst ) );
   ins_pipe(ialu_reg_reg);
 %}
 
-// Zero-extend convert int to long
-instruct convI2L_reg_zex(iRegL dst, iRegI src, immL_32bits mask ) %{
-  match(Set dst (AndL (ConvI2L src) mask) );
-  size(4);
-  format %{ "SRL    $src,0,$dst\t! zero-extend int to long" %}
-  opcode(Assembler::srl_op3, Assembler::arith_op);
-  ins_encode( form3_rs1_rs2_rd( src, R_G0, dst ) );
+instruct MoveI2F_reg_reg(regF dst, iRegI src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (MoveI2F src));
+
+  format %{ "MOVWTOS $src,$dst\t! MoveI2F" %}
+  ins_encode %{
+    __ movwtos($src$$Register, $dst$$FloatRegister);
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
-// Zero-extend long
-instruct zerox_long(iRegL dst, iRegL src, immL_32bits mask ) %{
-  match(Set dst (AndL src mask) );
-  size(4);
-  format %{ "SRL    $src,0,$dst\t! zero-extend long" %}
-  opcode(Assembler::srl_op3, Assembler::arith_op);
-  ins_encode( form3_rs1_rs2_rd( src, R_G0, dst ) );
+instruct MoveD2L_reg_reg(iRegL dst, regD src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (MoveD2L src));
+
+  format %{ "MOVDTOX $src,$dst\t! MoveD2L" %}
+  ins_encode %{
+    __ movdtox(as_DoubleFloatRegister($src$$reg), $dst$$Register);
+  %}
   ins_pipe(ialu_reg_reg);
 %}
+
+instruct MoveL2D_reg_reg(regD dst, iRegL src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (MoveL2D src));
+
+  format %{ "MOVXTOD $src,$dst\t! MoveL2D" %}
+  ins_encode %{
+    __ movxtod($src$$Register, as_DoubleFloatRegister($dst$$reg));
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+
+// Raw moves between float and general registers using stack.
 
 instruct MoveF2I_stack_reg(iRegI dst, stackSlotF src) %{
   match(Set dst (MoveF2I src));
@@ -8427,7 +8285,7 @@ instruct MoveF2I_reg_stack(stackSlotI dst, regF src) %{
   ins_cost(MEMORY_REF_COST);
 
   size(4);
-  format %{ "STF   $src,$dst\t!MoveF2I" %}
+  format %{ "STF   $src,$dst\t! MoveF2I" %}
   opcode(Assembler::stf_op3);
   ins_encode(simple_form3_mem_reg(dst, src));
   ins_pipe(fstoreF_stk_reg);
@@ -8439,7 +8297,7 @@ instruct MoveI2F_reg_stack(stackSlotF dst, iRegI src) %{
   ins_cost(MEMORY_REF_COST);
 
   size(4);
-  format %{ "STW    $src,$dst\t!MoveI2F" %}
+  format %{ "STW    $src,$dst\t! MoveI2F" %}
   opcode(Assembler::stw_op3);
   ins_encode(simple_form3_mem_reg( dst, src ) );
   ins_pipe(istore_mem_reg);
@@ -8451,7 +8309,7 @@ instruct MoveD2L_reg_stack(stackSlotL dst, regD src) %{
   ins_cost(MEMORY_REF_COST);
 
   size(4);
-  format %{ "STDF   $src,$dst\t!MoveD2L" %}
+  format %{ "STDF   $src,$dst\t! MoveD2L" %}
   opcode(Assembler::stdf_op3);
   ins_encode(simple_form3_mem_reg(dst, src));
   ins_pipe(fstoreD_stk_reg);
@@ -8463,10 +8321,287 @@ instruct MoveL2D_reg_stack(stackSlotD dst, iRegL src) %{
   ins_cost(MEMORY_REF_COST);
 
   size(4);
-  format %{ "STX    $src,$dst\t!MoveL2D" %}
+  format %{ "STX    $src,$dst\t! MoveL2D" %}
   opcode(Assembler::stx_op3);
   ins_encode(simple_form3_mem_reg( dst, src ) );
   ins_pipe(istore_mem_reg);
+%}
+
+
+//----------Arithmetic Conversion Instructions---------------------------------
+// The conversions operations are all Alpha sorted.  Please keep it that way!
+
+instruct convD2F_reg(regF dst, regD src) %{
+  match(Set dst (ConvD2F src));
+  size(4);
+  format %{ "FDTOS  $src,$dst" %}
+  opcode(Assembler::fpop1_op3, Assembler::arith_op, Assembler::fdtos_opf);
+  ins_encode(form3_opf_rs2D_rdF(src, dst));
+  ins_pipe(fcvtD2F);
+%}
+
+
+// Convert a double to an int in a float register.
+// If the double is a NAN, stuff a zero in instead.
+instruct convD2I_helper(regF dst, regD src, flagsRegF0 fcc0) %{
+  effect(DEF dst, USE src, KILL fcc0);
+  format %{ "FCMPd  fcc0,$src,$src\t! check for NAN\n\t"
+            "FBO,pt fcc0,skip\t! branch on ordered, predict taken\n\t"
+            "FDTOI  $src,$dst\t! convert in delay slot\n\t"
+            "FITOS  $dst,$dst\t! change NaN/max-int to valid float\n\t"
+            "FSUBs  $dst,$dst,$dst\t! cleared only if nan\n"
+      "skip:" %}
+  ins_encode(form_d2i_helper(src,dst));
+  ins_pipe(fcvtD2I);
+%}
+
+instruct convD2I_stk(stackSlotI dst, regD src) %{
+  match(Set dst (ConvD2I src));
+  ins_cost(DEFAULT_COST*2 + MEMORY_REF_COST*2 + BRANCH_COST);
+  expand %{
+    regF tmp;
+    convD2I_helper(tmp, src);
+    regF_to_stkI(dst, tmp);
+  %}
+%}
+
+instruct convD2I_reg(iRegI dst, regD src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (ConvD2I src));
+  ins_cost(DEFAULT_COST*2 + BRANCH_COST);
+  expand %{
+    regF tmp;
+    convD2I_helper(tmp, src);
+    MoveF2I_reg_reg(dst, tmp);
+  %}
+%}
+
+
+// Convert a double to a long in a double register.
+// If the double is a NAN, stuff a zero in instead.
+instruct convD2L_helper(regD dst, regD src, flagsRegF0 fcc0) %{
+  effect(DEF dst, USE src, KILL fcc0);
+  format %{ "FCMPd  fcc0,$src,$src\t! check for NAN\n\t"
+            "FBO,pt fcc0,skip\t! branch on ordered, predict taken\n\t"
+            "FDTOX  $src,$dst\t! convert in delay slot\n\t"
+            "FXTOD  $dst,$dst\t! change NaN/max-long to valid double\n\t"
+            "FSUBd  $dst,$dst,$dst\t! cleared only if nan\n"
+      "skip:" %}
+  ins_encode(form_d2l_helper(src,dst));
+  ins_pipe(fcvtD2L);
+%}
+
+instruct convD2L_stk(stackSlotL dst, regD src) %{
+  match(Set dst (ConvD2L src));
+  ins_cost(DEFAULT_COST*2 + MEMORY_REF_COST*2 + BRANCH_COST);
+  expand %{
+    regD tmp;
+    convD2L_helper(tmp, src);
+    regD_to_stkL(dst, tmp);
+  %}
+%}
+
+instruct convD2L_reg(iRegL dst, regD src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (ConvD2L src));
+  ins_cost(DEFAULT_COST*2 + BRANCH_COST);
+  expand %{
+    regD tmp;
+    convD2L_helper(tmp, src);
+    MoveD2L_reg_reg(dst, tmp);
+  %}
+%}
+
+
+instruct convF2D_reg(regD dst, regF src) %{
+  match(Set dst (ConvF2D src));
+  format %{ "FSTOD  $src,$dst" %}
+  opcode(Assembler::fpop1_op3, Assembler::arith_op, Assembler::fstod_opf);
+  ins_encode(form3_opf_rs2F_rdD(src, dst));
+  ins_pipe(fcvtF2D);
+%}
+
+
+// Convert a float to an int in a float register.
+// If the float is a NAN, stuff a zero in instead.
+instruct convF2I_helper(regF dst, regF src, flagsRegF0 fcc0) %{
+  effect(DEF dst, USE src, KILL fcc0);
+  format %{ "FCMPs  fcc0,$src,$src\t! check for NAN\n\t"
+            "FBO,pt fcc0,skip\t! branch on ordered, predict taken\n\t"
+            "FSTOI  $src,$dst\t! convert in delay slot\n\t"
+            "FITOS  $dst,$dst\t! change NaN/max-int to valid float\n\t"
+            "FSUBs  $dst,$dst,$dst\t! cleared only if nan\n"
+      "skip:" %}
+  ins_encode(form_f2i_helper(src,dst));
+  ins_pipe(fcvtF2I);
+%}
+
+instruct convF2I_stk(stackSlotI dst, regF src) %{
+  match(Set dst (ConvF2I src));
+  ins_cost(DEFAULT_COST*2 + MEMORY_REF_COST*2 + BRANCH_COST);
+  expand %{
+    regF tmp;
+    convF2I_helper(tmp, src);
+    regF_to_stkI(dst, tmp);
+  %}
+%}
+
+instruct convF2I_reg(iRegI dst, regF src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (ConvF2I src));
+  ins_cost(DEFAULT_COST*2 + BRANCH_COST);
+  expand %{
+    regF tmp;
+    convF2I_helper(tmp, src);
+    MoveF2I_reg_reg(dst, tmp);
+  %}
+%}
+
+
+// Convert a float to a long in a float register.
+// If the float is a NAN, stuff a zero in instead.
+instruct convF2L_helper(regD dst, regF src, flagsRegF0 fcc0) %{
+  effect(DEF dst, USE src, KILL fcc0);
+  format %{ "FCMPs  fcc0,$src,$src\t! check for NAN\n\t"
+            "FBO,pt fcc0,skip\t! branch on ordered, predict taken\n\t"
+            "FSTOX  $src,$dst\t! convert in delay slot\n\t"
+            "FXTOD  $dst,$dst\t! change NaN/max-long to valid double\n\t"
+            "FSUBd  $dst,$dst,$dst\t! cleared only if nan\n"
+      "skip:" %}
+  ins_encode(form_f2l_helper(src,dst));
+  ins_pipe(fcvtF2L);
+%}
+
+instruct convF2L_stk(stackSlotL dst, regF src) %{
+  match(Set dst (ConvF2L src));
+  ins_cost(DEFAULT_COST*2 + MEMORY_REF_COST*2 + BRANCH_COST);
+  expand %{
+    regD tmp;
+    convF2L_helper(tmp, src);
+    regD_to_stkL(dst, tmp);
+  %}
+%}
+
+instruct convF2L_reg(iRegL dst, regF src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (ConvF2L src));
+  ins_cost(DEFAULT_COST*2 + BRANCH_COST);
+  expand %{
+    regD tmp;
+    convF2L_helper(tmp, src);
+    MoveD2L_reg_reg(dst, tmp);
+  %}
+%}
+
+
+instruct convI2D_helper(regD dst, regF tmp) %{
+  effect(USE tmp, DEF dst);
+  format %{ "FITOD  $tmp,$dst" %}
+  opcode(Assembler::fpop1_op3, Assembler::arith_op, Assembler::fitod_opf);
+  ins_encode(form3_opf_rs2F_rdD(tmp, dst));
+  ins_pipe(fcvtI2D);
+%}
+
+instruct convI2D_stk(stackSlotI src, regD dst) %{
+  match(Set dst (ConvI2D src));
+  ins_cost(DEFAULT_COST + MEMORY_REF_COST);
+  expand %{
+    regF tmp;
+    stkI_to_regF(tmp, src);
+    convI2D_helper(dst, tmp);
+  %}
+%}
+
+instruct convI2D_reg(regD_low dst, iRegI src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (ConvI2D src));
+  expand %{
+    regF tmp;
+    MoveI2F_reg_reg(tmp, src);
+    convI2D_helper(dst, tmp);
+  %}
+%}
+
+instruct convI2D_mem(regD_low dst, memory mem) %{
+  match(Set dst (ConvI2D (LoadI mem)));
+  ins_cost(DEFAULT_COST + MEMORY_REF_COST);
+  size(8);
+  format %{ "LDF    $mem,$dst\n\t"
+            "FITOD  $dst,$dst" %}
+  opcode(Assembler::ldf_op3, Assembler::fitod_opf);
+  ins_encode(simple_form3_mem_reg( mem, dst ), form3_convI2F(dst, dst));
+  ins_pipe(floadF_mem);
+%}
+
+
+instruct convI2F_helper(regF dst, regF tmp) %{
+  effect(DEF dst, USE tmp);
+  format %{ "FITOS  $tmp,$dst" %}
+  opcode(Assembler::fpop1_op3, Assembler::arith_op, Assembler::fitos_opf);
+  ins_encode(form3_opf_rs2F_rdF(tmp, dst));
+  ins_pipe(fcvtI2F);
+%}
+
+instruct convI2F_stk(regF dst, stackSlotI src) %{
+  match(Set dst (ConvI2F src));
+  ins_cost(DEFAULT_COST + MEMORY_REF_COST);
+  expand %{
+    regF tmp;
+    stkI_to_regF(tmp,src);
+    convI2F_helper(dst, tmp);
+  %}
+%}
+
+instruct convI2F_reg(regF dst, iRegI src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (ConvI2F src));
+  ins_cost(DEFAULT_COST);
+  expand %{
+    regF tmp;
+    MoveI2F_reg_reg(tmp, src);
+    convI2F_helper(dst, tmp);
+  %}
+%}
+
+instruct convI2F_mem( regF dst, memory mem ) %{
+  match(Set dst (ConvI2F (LoadI mem)));
+  ins_cost(DEFAULT_COST + MEMORY_REF_COST);
+  size(8);
+  format %{ "LDF    $mem,$dst\n\t"
+            "FITOS  $dst,$dst" %}
+  opcode(Assembler::ldf_op3, Assembler::fitos_opf);
+  ins_encode(simple_form3_mem_reg( mem, dst ), form3_convI2F(dst, dst));
+  ins_pipe(floadF_mem);
+%}
+
+
+instruct convI2L_reg(iRegL dst, iRegI src) %{
+  match(Set dst (ConvI2L src));
+  size(4);
+  format %{ "SRA    $src,0,$dst\t! int->long" %}
+  opcode(Assembler::sra_op3, Assembler::arith_op);
+  ins_encode( form3_rs1_rs2_rd( src, R_G0, dst ) );
+  ins_pipe(ialu_reg_reg);
+%}
+
+// Zero-extend convert int to long
+instruct convI2L_reg_zex(iRegL dst, iRegI src, immL_32bits mask ) %{
+  match(Set dst (AndL (ConvI2L src) mask) );
+  size(4);
+  format %{ "SRL    $src,0,$dst\t! zero-extend int to long" %}
+  opcode(Assembler::srl_op3, Assembler::arith_op);
+  ins_encode( form3_rs1_rs2_rd( src, R_G0, dst ) );
+  ins_pipe(ialu_reg_reg);
+%}
+
+// Zero-extend long
+instruct zerox_long(iRegL dst, iRegL src, immL_32bits mask ) %{
+  match(Set dst (AndL src mask) );
+  size(4);
+  format %{ "SRL    $src,0,$dst\t! zero-extend long" %}
+  opcode(Assembler::srl_op3, Assembler::arith_op);
+  ins_encode( form3_rs1_rs2_rd( src, R_G0, dst ) );
+  ins_pipe(ialu_reg_reg);
 %}
 
 
@@ -8589,7 +8724,7 @@ instruct convL2D_helper(regD dst, regD tmp) %{
   ins_pipe(fcvtL2D);
 %}
 
-instruct convL2D_reg_fast_fxtof(regD dst, stackSlotL src) %{
+instruct convL2D_stk_fast_fxtof(regD dst, stackSlotL src) %{
   predicate(VM_Version::has_fast_fxtof());
   match(Set dst (ConvL2D src));
   ins_cost(DEFAULT_COST + 3 * MEMORY_REF_COST);
@@ -8600,10 +8735,15 @@ instruct convL2D_reg_fast_fxtof(regD dst, stackSlotL src) %{
   %}
 %}
 
-//-----------
-// Long to Float conversion using V8 opcodes.
-// Still useful because cheetah traps and becomes
-// amazingly slow for some common numbers.
+instruct convL2D_reg(regD dst, iRegL src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (ConvL2D src));
+  expand %{
+    regD tmp;
+    MoveL2D_reg_reg(tmp, src);
+    convL2D_helper(dst, tmp);
+  %}
+%}
 
 // Long to Float conversion using fast fxtof
 instruct convL2F_helper(regF dst, regD tmp) %{
@@ -8615,7 +8755,7 @@ instruct convL2F_helper(regF dst, regD tmp) %{
   ins_pipe(fcvtL2F);
 %}
 
-instruct convL2F_reg_fast_fxtof(regF dst, stackSlotL src) %{
+instruct convL2F_stk_fast_fxtof(regF dst, stackSlotL src) %{
   match(Set dst (ConvL2F src));
   ins_cost(DEFAULT_COST + MEMORY_REF_COST);
   expand %{
@@ -8624,6 +8764,18 @@ instruct convL2F_reg_fast_fxtof(regF dst, stackSlotL src) %{
     convL2F_helper(dst, tmp);
   %}
 %}
+
+instruct convL2F_reg(regF dst, iRegL src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (ConvL2F src));
+  ins_cost(DEFAULT_COST);
+  expand %{
+    regD tmp;
+    MoveL2D_reg_reg(tmp, src);
+    convL2F_helper(dst, tmp);
+  %}
+%}
+
 //-----------
 
 instruct convL2I_reg(iRegI dst, iRegL src) %{

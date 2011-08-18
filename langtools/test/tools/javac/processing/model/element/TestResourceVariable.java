@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug  6911256 6964740 6967842 6961571
+ * @bug  6911256 6964740 6967842 6961571 7025809
  * @summary Test that the resource variable kind is appropriately set
  * @author  Joseph D. Darcy
  * @library ../../../lib
@@ -44,8 +44,8 @@ import static javax.tools.Diagnostic.Kind.*;
 
 /**
  * Using the tree API, retrieve element representations of the
- * resource of an ARM block and verify their kind tags are set
- * appropriately.
+ * resource of a try-with-resources statement and verify their kind
+ * tags are set appropriately.
  */
 public class TestResourceVariable extends JavacTestingAbstractProcessor implements AutoCloseable {
     int resourceVariableCount = 0;
@@ -82,7 +82,7 @@ public class TestResourceVariable extends JavacTestingAbstractProcessor implemen
 
     /**
      * Verify that a resource variable modeled as an element behaves
-     * as expected under 6 and 7 specific visitors.
+     * as expected under 6 and latest specific visitors.
      */
     private static void testResourceVariable(Element element) {
         ElementVisitor visitor6 = new ElementKindVisitor6<Void, Void>() {};
@@ -94,7 +94,8 @@ public class TestResourceVariable extends JavacTestingAbstractProcessor implemen
             ; // Expected.
         }
 
-        ElementKindVisitor7 visitor7 = new ElementKindVisitor7<Object, Void>() {
+        ElementKindVisitor visitorLatest =
+            new ElementKindVisitor<Object, Void>() {
             @Override
             public Object visitVariableAsResourceVariable(VariableElement e,
                                                           Void p) {
@@ -102,7 +103,7 @@ public class TestResourceVariable extends JavacTestingAbstractProcessor implemen
             }
         };
 
-        if (visitor7.visit(element) == null) {
+        if (visitorLatest.visit(element) == null) {
             throw new RuntimeException("Null result of resource variable visitation.");
         }
     }

@@ -99,6 +99,18 @@ void VM_G1IncCollectionPause::doit() {
     // At this point we are supposed to start a concurrent cycle. We
     // will do so if one is not already in progress.
     bool res = g1h->g1_policy()->force_initial_mark_if_outside_cycle();
+
+    // The above routine returns true if we were able to force the
+    // next GC pause to be an initial mark; it returns false if a
+    // marking cycle is already in progress.
+    //
+    // If a marking cycle is already in progress just return and skip
+    // the pause - the requesting thread should block in doit_epilogue
+    // until the marking cycle is complete.
+    if (!res) {
+      assert(_word_size == 0, "ExplicitGCInvokesConcurrent shouldn't be allocating");
+      return;
+    }
   }
 
   _pause_succeeded =

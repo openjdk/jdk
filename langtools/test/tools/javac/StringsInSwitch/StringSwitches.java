@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6827009
+ * @bug 6827009 7071246
  * @summary Positive tests for strings in switch.
  * @author  Joseph D. Darcy
  */
@@ -36,6 +36,7 @@ public class StringSwitches {
         failures += testPileup();
         failures += testSwitchingTwoWays();
         failures += testNamedBreak();
+        failures += testExtraParens();
 
         if (failures > 0) {
             throw new RuntimeException();
@@ -259,5 +260,20 @@ public class StringSwitches {
         }
         result |= (1<<5);
         return result;
+    }
+
+    private static int testExtraParens() {
+        int failures = 1;
+        String s = "first";
+
+        switch(s) {
+        case (("first")):
+            failures = 0;
+            break;
+        case ("second"):
+            throw new RuntimeException("Should not be reached.");
+        }
+
+        return failures;
     }
 }

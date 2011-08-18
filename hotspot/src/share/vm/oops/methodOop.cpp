@@ -49,6 +49,7 @@
 #include "runtime/relocator.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "utilities/quickSort.hpp"
 #include "utilities/xmlstream.hpp"
 
 
@@ -693,7 +694,10 @@ void methodOopDesc::unlink_method() {
 // Called when the method_holder is getting linked. Setup entrypoints so the method
 // is ready to be called from interpreter, compiler, and vtables.
 void methodOopDesc::link_method(methodHandle h_method, TRAPS) {
-  assert(_i2i_entry == NULL, "should only be called once");
+  // If the code cache is full, we may reenter this function for the
+  // leftover methods that weren't linked.
+  if (_i2i_entry != NULL) return;
+
   assert(_adapter == NULL, "init'd to NULL" );
   assert( _code == NULL, "nothing compiled yet" );
 
@@ -925,14 +929,40 @@ methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
   name->increment_refcount();
   signature->increment_refcount();
 
+  // record non-BCP method types in the constant pool
+  GrowableArray<KlassHandle>* extra_klasses = NULL;
+  for (int i = -1, len = java_lang_invoke_MethodType::ptype_count(method_type()); i < len; i++) {
+    oop ptype = (i == -1
+                 ? java_lang_invoke_MethodType::rtype(method_type())
+                 : java_lang_invoke_MethodType::ptype(method_type(), i));
+    klassOop klass = check_non_bcp_klass(java_lang_Class::as_klassOop(ptype));
+    if (klass != NULL) {
+      if (extra_klasses == NULL)
+        extra_klasses = new GrowableArray<KlassHandle>(len+1);
+      bool dup = false;
+      for (int j = 0; j < extra_klasses->length(); j++) {
+        if (extra_klasses->at(j) == klass) { dup = true; break; }
+      }
+      if (!dup)
+        extra_klasses->append(KlassHandle(THREAD, klass));
+    }
+  }
+
+  int extra_klass_count = (extra_klasses == NULL ? 0 : extra_klasses->length());
+  int cp_length = _imcp_limit + extra_klass_count;
   constantPoolHandle cp;
   {
-    constantPoolOop cp_oop = oopFactory::new_constantPool(_imcp_limit, IsSafeConc, CHECK_(empty));
+    constantPoolOop cp_oop = oopFactory::new_constantPool(cp_length, IsSafeConc, CHECK_(empty));
     cp = constantPoolHandle(THREAD, cp_oop);
   }
   cp->symbol_at_put(_imcp_invoke_name,       name);
   cp->symbol_at_put(_imcp_invoke_signature,  signature);
   cp->string_at_put(_imcp_method_type_value, Universe::the_null_string());
+  for (int j = 0; j < extra_klass_count; j++) {
+    KlassHandle klass = extra_klasses->at(j);
+    cp->klass_at_put(_imcp_limit + j, klass());
+  }
+  cp->set_preresolution();
   cp->set_pool_holder(holder());
 
   // set up the fancy stuff:
@@ -981,6 +1011,14 @@ methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
   return m;
 }
 
+klassOop methodOopDesc::check_non_bcp_klass(klassOop klass) {
+  if (klass != NULL && Klass::cast(klass)->class_loader() != NULL) {
+    if (Klass::cast(klass)->oop_is_objArray())
+      klass = objArrayKlass::cast(klass)->bottom_klass();
+    return klass;
+  }
+  return NULL;
+}
 
 
 methodHandle methodOopDesc:: clone_with_new_data(methodHandle m, u_char* new_code, int new_code_length,
@@ -1204,41 +1242,6 @@ void methodOopDesc::print_short_name(outputStream* st) {
   if (WizardMode) signature()->print_symbol_on(st);
 }
 
-
-extern "C" {
-  static int method_compare(methodOop* a, methodOop* b) {
-    return (*a)->name()->fast_compare((*b)->name());
-  }
-
-  // Prevent qsort from reordering a previous valid sort by
-  // considering the address of the methodOops if two methods
-  // would otherwise compare as equal.  Required to preserve
-  // optimal access order in the shared archive.  Slower than
-  // method_compare, only used for shared archive creation.
-  static int method_compare_idempotent(methodOop* a, methodOop* b) {
-    int i = method_compare(a, b);
-    if (i != 0) return i;
-    return ( a < b ? -1 : (a == b ? 0 : 1));
-  }
-
-  // We implement special compare versions for narrow oops to avoid
-  // testing for UseCompressedOops on every comparison.
-  static int method_compare_narrow(narrowOop* a, narrowOop* b) {
-    methodOop m = (methodOop)oopDesc::load_decode_heap_oop(a);
-    methodOop n = (methodOop)oopDesc::load_decode_heap_oop(b);
-    return m->name()->fast_compare(n->name());
-  }
-
-  static int method_compare_narrow_idempotent(narrowOop* a, narrowOop* b) {
-    int i = method_compare_narrow(a, b);
-    if (i != 0) return i;
-    return ( a < b ? -1 : (a == b ? 0 : 1));
-  }
-
-  typedef int (*compareFn)(const void*, const void*);
-}
-
-
 // This is only done during class loading, so it is OK to assume method_idnum matches the methods() array
 static void reorder_based_on_method_index(objArrayOop methods,
                                           objArrayOop annotations,
@@ -1262,6 +1265,14 @@ static void reorder_based_on_method_index(objArrayOop methods,
   }
 }
 
+// Comparer for sorting an object array containing
+// methodOops.
+template <class T>
+static int method_comparator(T a, T b) {
+  methodOop m = (methodOop)oopDesc::decode_heap_oop_not_null(a);
+  methodOop n = (methodOop)oopDesc::decode_heap_oop_not_null(b);
+  return m->name()->fast_compare(n->name());
+}
 
 // This is only done during class loading, so it is OK to assume method_idnum matches the methods() array
 void methodOopDesc::sort_methods(objArrayOop methods,
@@ -1284,30 +1295,19 @@ void methodOopDesc::sort_methods(objArrayOop methods,
         m->set_method_idnum(i);
       }
     }
-
-    // Use a simple bubble sort for small number of methods since
-    // qsort requires a functional pointer call for each comparison.
-    if (length < 8) {
-      bool sorted = true;
-      for (int i=length-1; i>0; i--) {
-        for (int j=0; j<i; j++) {
-          methodOop m1 = (methodOop)methods->obj_at(j);
-          methodOop m2 = (methodOop)methods->obj_at(j+1);
-          if ((uintptr_t)m1->name() > (uintptr_t)m2->name()) {
-            methods->obj_at_put(j, m2);
-            methods->obj_at_put(j+1, m1);
-            sorted = false;
-          }
-        }
-        if (sorted) break;
-          sorted = true;
+    {
+      No_Safepoint_Verifier nsv;
+      if (UseCompressedOops) {
+        QuickSort::sort<narrowOop>((narrowOop*)(methods->base()), length, method_comparator<narrowOop>, idempotent);
+      } else {
+        QuickSort::sort<oop>((oop*)(methods->base()), length, method_comparator<oop>, idempotent);
       }
-    } else {
-      compareFn compare =
-        (UseCompressedOops ?
-         (compareFn) (idempotent ? method_compare_narrow_idempotent : method_compare_narrow):
-         (compareFn) (idempotent ? method_compare_idempotent : method_compare));
-      qsort(methods->base(), length, heapOopSize, compare);
+      if (UseConcMarkSweepGC) {
+        // For CMS we need to dirty the cards for the array
+        BarrierSet* bs = Universe::heap()->barrier_set();
+        assert(bs->has_write_ref_array_opt(), "Barrier set must have ref array opt");
+        bs->write_ref_array(methods->base(), length);
+      }
     }
 
     // Sort annotations if necessary

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,14 @@ public class Test6341798 {
             + "</java> ";
 
     public static void main(String[] args) {
-        test(ENGLISH, DATA.getBytes());
-        test(TURKISH, DATA.getBytes());
+        Locale reservedLocale = Locale.getDefault();
+        try {
+            test(ENGLISH, DATA.getBytes());
+            test(TURKISH, DATA.getBytes());
+        } finally {
+            // restore the reserved locale
+            Locale.setDefault(reservedLocale);
+        }
     }
 
     private static void test(Locale locale, byte[] data) {

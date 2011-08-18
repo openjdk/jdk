@@ -25,92 +25,143 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONSEQ_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONSEQ_HPP
 
-#include "gc_implementation/g1/heapRegion.hpp"
-#include "utilities/growableArray.hpp"
-
 class HeapRegion;
 class HeapRegionClosure;
+class FreeRegionList;
+
+#define G1_NULL_HRS_INDEX ((size_t) -1)
+
+// This class keeps track of the region metadata (i.e., HeapRegion
+// instances). They are kept in the _regions array in address
+// order. A region's index in the array corresponds to its index in
+// the heap (i.e., 0 is the region at the bottom of the heap, 1 is
+// the one after it, etc.). Two regions that are consecutive in the
+// array should also be adjacent in the address space (i.e.,
+// region(i).end() == region(i+1).bottom().
+//
+// We create a HeapRegion when we commit the region's address space
+// for the first time. When we uncommit the address space of a
+// region we retain the HeapRegion to be able to re-use it in the
+// future (in case we recommit it).
+//
+// We keep track of three lengths:
+//
+// * _length (returned by length()) is the number of currently
+//   committed regions.
+// * _allocated_length (not exposed outside this class) is the
+//   number of regions for which we have HeapRegions.
+// * _max_length (returned by max_length()) is the maximum number of
+//   regions the heap can have.
+//
+// and maintain that: _length <= _allocated_length <= _max_length
 
 class HeapRegionSeq: public CHeapObj {
 
-  // _regions is kept sorted by start address order, and no two regions are
-  // overlapping.
-  GrowableArray<HeapRegion*> _regions;
+  // The array that holds the HeapRegions.
+  HeapRegion** _regions;
 
-  // The index in "_regions" at which to start the next allocation search.
-  // (For efficiency only; private to obj_allocate after initialization.)
-  int _alloc_search_start;
+  // Version of _regions biased to address 0
+  HeapRegion** _regions_biased;
 
-  // Finds a contiguous set of empty regions of length num, starting
-  // from a given index.
-  int find_contiguous_from(int from, size_t num);
+  // The number of regions committed in the heap.
+  size_t _length;
 
-  // Currently, we're choosing collection sets in a round-robin fashion,
-  // starting here.
-  int _next_rr_candidate;
+  // The address of the first reserved word in the heap.
+  HeapWord* _heap_bottom;
 
-  // The bottom address of the bottom-most region, or else NULL if there
-  // are no regions in the sequence.
-  char* _seq_bottom;
+  // The address of the last reserved word in the heap - 1.
+  HeapWord* _heap_end;
+
+  // The log of the region byte size.
+  size_t _region_shift;
+
+  // A hint for which index to start searching from for humongous
+  // allocations.
+  size_t _next_search_index;
+
+  // The number of regions for which we have allocated HeapRegions for.
+  size_t _allocated_length;
+
+  // The maximum number of regions in the heap.
+  size_t _max_length;
+
+  // Find a contiguous set of empty regions of length num, starting
+  // from the given index.
+  size_t find_contiguous_from(size_t from, size_t num);
+
+  // Map a heap address to a biased region index. Assume that the
+  // address is valid.
+  inline size_t addr_to_index_biased(HeapWord* addr) const;
+
+  void increment_length(size_t* length) {
+    assert(*length < _max_length, "pre-condition");
+    *length += 1;
+  }
+
+  void decrement_length(size_t* length) {
+    assert(*length > 0, "pre-condition");
+    *length -= 1;
+  }
 
  public:
-  // Initializes "this" to the empty sequence of regions.
-  HeapRegionSeq(const size_t max_size);
+  // Empty contructor, we'll initialize it with the initialize() method.
+  HeapRegionSeq() { }
 
-  // Adds "hr" to "this" sequence.  Requires "hr" not to overlap with
-  // any region already in "this".  (Will perform better if regions are
-  // inserted in ascending address order.)
-  void insert(HeapRegion* hr);
+  void initialize(HeapWord* bottom, HeapWord* end, size_t max_length);
 
-  // Given a HeapRegion*, returns its index within _regions,
-  // or returns -1 if not found.
-  int find(HeapRegion* hr);
+  // Return the HeapRegion at the given index. Assume that the index
+  // is valid.
+  inline HeapRegion* at(size_t index) const;
 
-  // Requires the index to be valid, and return the region at the index.
-  HeapRegion* at(size_t i) { return _regions.at((int)i); }
+  // If addr is within the committed space return its corresponding
+  // HeapRegion, otherwise return NULL.
+  inline HeapRegion* addr_to_region(HeapWord* addr) const;
 
-  // Return the number of regions in the sequence.
-  size_t length();
+  // Return the HeapRegion that corresponds to the given
+  // address. Assume the address is valid.
+  inline HeapRegion* addr_to_region_unsafe(HeapWord* addr) const;
 
-  // Returns the number of contiguous regions at the end of the sequence
+  // Return the number of regions that have been committed in the heap.
+  size_t length() const { return _length; }
+
+  // Return the maximum number of regions in the heap.
+  size_t max_length() const { return _max_length; }
+
+  // Expand the sequence to reflect that the heap has grown from
+  // old_end to new_end. Either create new HeapRegions, or re-use
+  // existing ones, and return them in the given list. Returns the
+  // memory region that covers the newly-created regions. If a
+  // HeapRegion allocation fails, the result memory region might be
+  // smaller than the desired one.
+  MemRegion expand_by(HeapWord* old_end, HeapWord* new_end,
+                      FreeRegionList* list);
+
+  // Return the number of contiguous regions at the end of the sequence
   // that are available for allocation.
   size_t free_suffix();
 
   // Find a contiguous set of empty regions of length num and return
-  // the index of the first region or -1 if the search was unsuccessful.
-  int find_contiguous(size_t num);
+  // the index of the first region or G1_NULL_HRS_INDEX if the
+  // search was unsuccessful.
+  size_t find_contiguous(size_t num);
 
-  // Apply the "doHeapRegion" method of "blk" to all regions in "this",
-  // in address order, terminating the iteration early
-  // if the "doHeapRegion" method returns "true".
-  void iterate(HeapRegionClosure* blk);
+  // Apply blk->doHeapRegion() on all committed regions in address order,
+  // terminating the iteration early if doHeapRegion() returns true.
+  void iterate(HeapRegionClosure* blk) const;
 
-  // Apply the "doHeapRegion" method of "blk" to all regions in "this",
-  // starting at "r" (or first region, if "r" is NULL), in a circular
-  // manner, terminating the iteration early if the "doHeapRegion" method
-  // returns "true".
-  void iterate_from(HeapRegion* r, HeapRegionClosure* blk);
+  // As above, but start the iteration from hr and loop around. If hr
+  // is NULL, we start from the first region in the heap.
+  void iterate_from(HeapRegion* hr, HeapRegionClosure* blk) const;
 
-  // As above, but start from a given index in the sequence
-  // instead of a given heap region.
-  void iterate_from(int idx, HeapRegionClosure* blk);
+  // Tag as uncommitted as many regions that are completely free as
+  // possible, up to shrink_bytes, from the suffix of the committed
+  // sequence. Return a MemRegion that corresponds to the address
+  // range of the uncommitted regions. Assume shrink_bytes is page and
+  // heap region aligned.
+  MemRegion shrink_by(size_t shrink_bytes, size_t* num_regions_deleted);
 
-  // Requires "shrink_bytes" to be a multiple of the page size and heap
-  // region granularity.  Deletes as many "rightmost" completely free heap
-  // regions from the sequence as comprise shrink_bytes bytes.  Returns the
-  // MemRegion indicating the region those regions comprised, and sets
-  // "num_regions_deleted" to the number of regions deleted.
-  MemRegion shrink_by(size_t shrink_bytes, size_t& num_regions_deleted);
-
-  // If "addr" falls within a region in the sequence, return that region,
-  // or else NULL.
-  inline HeapRegion* addr_to_region(const void* addr);
-
-  void print();
-
-  // Prints out runs of empty regions.
-  void print_empty_runs();
-
+  // Do some sanity checking.
+  void verify_optional() PRODUCT_RETURN;
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONSEQ_HPP
