@@ -830,6 +830,17 @@ void encode_CopyXD( CodeBuffer &cbuf, int dst_encoding, int src_encoding ) {
   }
 }
 
+// This could be in MacroAssembler but it's fairly C2 specific
+void emit_cmpfp_fixup(MacroAssembler& _masm) {
+  Label exit;
+  __ jccb(Assembler::noParity, exit);
+  __ pushf();
+  __ andq(Address(rsp, 0), 0xffffff2b);
+  __ popf();
+  __ bind(exit);
+  __ nop(); // (target for branch to avoid branch to branch)
+}
+
 
 //=============================================================================
 const bool Matcher::constant_table_absolute_addressing = true;
@@ -2173,27 +2184,9 @@ encode %{
     emit_rm(cbuf, 0x3, $dst$$reg & 7, $src$$reg & 7);
   %}
 
-  enc_class cmpfp_fixup()
-  %{
-    // jnp,s exit
-    emit_opcode(cbuf, 0x7B);
-    emit_d8(cbuf, 0x0A);
-
-    // pushfq
-    emit_opcode(cbuf, 0x9C);
-
-    // andq $0xffffff2b, (%rsp)
-    emit_opcode(cbuf, Assembler::REX_W);
-    emit_opcode(cbuf, 0x81);
-    emit_opcode(cbuf, 0x24);
-    emit_opcode(cbuf, 0x24);
-    emit_d32(cbuf, 0xffffff2b);
-
-    // popfq
-    emit_opcode(cbuf, 0x9D);
-
-    // nop (target for branch to avoid branch to branch)
-    emit_opcode(cbuf, 0x90);
+  enc_class cmpfp_fixup() %{
+      MacroAssembler _masm(&cbuf);
+      emit_cmpfp_fixup(_masm);
   %}
 
   enc_class cmpfp3(rRegI dst)
@@ -3179,50 +3172,6 @@ encode %{
     emit_rm(cbuf, 0x3, 0x0, dstenc);
   %}
 
-  enc_class enc_cmpLTP(no_rcx_RegI p, no_rcx_RegI q, no_rcx_RegI y,
-                       rcx_RegI tmp)
-  %{
-    // cadd_cmpLT
-
-    int tmpReg = $tmp$$reg;
-
-    int penc = $p$$reg;
-    int qenc = $q$$reg;
-    int yenc = $y$$reg;
-
-    // subl $p,$q
-    if (penc < 8) {
-      if (qenc >= 8) {
-        emit_opcode(cbuf, Assembler::REX_B);
-      }
-    } else {
-      if (qenc < 8) {
-        emit_opcode(cbuf, Assembler::REX_R);
-      } else {
-        emit_opcode(cbuf, Assembler::REX_RB);
-      }
-    }
-    emit_opcode(cbuf, 0x2B);
-    emit_rm(cbuf, 0x3, penc & 7, qenc & 7);
-
-    // sbbl $tmp, $tmp
-    emit_opcode(cbuf, 0x1B);
-    emit_rm(cbuf, 0x3, tmpReg, tmpReg);
-
-    // andl $tmp, $y
-    if (yenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
-    }
-    emit_opcode(cbuf, 0x23);
-    emit_rm(cbuf, 0x3, tmpReg, yenc & 7);
-
-    // addl $p,$tmp
-    if (penc >= 8) {
-        emit_opcode(cbuf, Assembler::REX_R);
-    }
-    emit_opcode(cbuf, 0x03);
-    emit_rm(cbuf, 0x3, penc & 7, tmpReg);
-  %}
 
   // Compare the lonogs and set -1, 0, or 1 into dst
   enc_class cmpl3_flag(rRegL src1, rRegL src2, rRegI dst)
@@ -10206,9 +10155,7 @@ instruct cmpLTMask0(rRegI dst, immI0 zero, rFlagsReg cr)
 %}
 
 
-instruct cadd_cmpLTMask(rRegI p, rRegI q, rRegI y,
-                         rRegI tmp,
-                         rFlagsReg cr)
+instruct cadd_cmpLTMask(rRegI p, rRegI q, rRegI y, rRegI tmp, rFlagsReg cr)
 %{
   match(Set p (AddI (AndI (CmpLTMask p q) y) (SubI p q)));
   effect(TEMP tmp, KILL cr);
@@ -10218,24 +10165,18 @@ instruct cadd_cmpLTMask(rRegI p, rRegI q, rRegI y,
             "sbbl    $tmp, $tmp\n\t"
             "andl    $tmp, $y\n\t"
             "addl    $p, $tmp" %}
-  ins_encode(enc_cmpLTP(p, q, y, tmp));
+  ins_encode %{
+    Register Rp = $p$$Register;
+    Register Rq = $q$$Register;
+    Register Ry = $y$$Register;
+    Register Rt = $tmp$$Register;
+    __ subl(Rp, Rq);
+    __ sbbl(Rt, Rt);
+    __ andl(Rt, Ry);
+    __ addl(Rp, Rt);
+  %}
   ins_pipe(pipe_cmplt);
 %}
-
-/* If I enable this, I encourage spilling in the inner loop of compress.
-instruct cadd_cmpLTMask_mem( rRegI p, rRegI q, memory y, rRegI tmp, rFlagsReg cr )
-%{
-  match(Set p (AddI (AndI (CmpLTMask p q) (LoadI y)) (SubI p q)));
-  effect( TEMP tmp, KILL cr );
-  ins_cost(400);
-
-  format %{ "SUB    $p,$q\n\t"
-            "SBB    RCX,RCX\n\t"
-            "AND    RCX,$y\n\t"
-            "ADD    $p,RCX" %}
-  ins_encode( enc_cmpLTP_mem(p,q,y,tmp) );
-%}
-*/
 
 //---------- FP Instructions------------------------------------------------
 
@@ -10305,14 +10246,8 @@ instruct cmpF_cc_imm(rFlagsRegU cr, regF src, immF con) %{
             "popfq\n"
     "exit:   nop\t# avoid branch to branch" %}
   ins_encode %{
-    Label L_exit;
     __ ucomiss($src$$XMMRegister, $constantaddress($con));
-    __ jcc(Assembler::noParity, L_exit);
-    __ pushf();
-    __ andq(rsp, 0xffffff2b);
-    __ popf();
-    __ bind(L_exit);
-    __ nop();
+    emit_cmpfp_fixup(_masm);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10393,14 +10328,8 @@ instruct cmpD_cc_imm(rFlagsRegU cr, regD src, immD con) %{
             "popfq\n"
     "exit:   nop\t# avoid branch to branch" %}
   ins_encode %{
-    Label L_exit;
     __ ucomisd($src$$XMMRegister, $constantaddress($con));
-    __ jcc(Assembler::noParity, L_exit);
-    __ pushf();
-    __ andq(rsp, 0xffffff2b);
-    __ popf();
-    __ bind(L_exit);
-    __ nop();
+    emit_cmpfp_fixup(_masm);
   %}
   ins_pipe(pipe_slow);
 %}

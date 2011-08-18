@@ -60,6 +60,7 @@ import javax.lang.model.type.*;
  * @author Peter von der Ah&eacute;
  *
  * @see AbstractTypeVisitor7
+ * @see AbstractTypeVisitor8
  * @since 1.6
  */
 public abstract class AbstractTypeVisitor6<R, P> implements TypeVisitor<R, P> {

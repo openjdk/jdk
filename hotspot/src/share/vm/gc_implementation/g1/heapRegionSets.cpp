@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "gc_implementation/g1/heapRegionSets.hpp"
 
 //////////////////// FreeRegionList ////////////////////
@@ -37,6 +38,16 @@ const char* FreeRegionList::verify_region_extra(HeapRegion* hr) {
 }
 
 //////////////////// MasterFreeRegionList ////////////////////
+
+const char* MasterFreeRegionList::verify_region_extra(HeapRegion* hr) {
+  // We should reset the RSet for parallel iteration before we add it
+  // to the master free list so that it is ready when the region is
+  // re-allocated.
+  if (!hr->rem_set()->verify_ready_for_par_iteration()) {
+    return "the region's RSet should be ready for parallel iteration";
+  }
+  return FreeRegionList::verify_region_extra(hr);
+}
 
 bool MasterFreeRegionList::check_mt_safety() {
   // Master Free List MT safety protocol:

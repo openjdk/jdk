@@ -657,7 +657,7 @@ int CppInterpreter::method_handle_entry(methodOop method,
   if (!is_exact) {
     if (method->intrinsic_id() == vmIntrinsics::_invokeExact) {
       CALL_VM_NOCHECK_NOFIX(
-        InterpreterRuntime::throw_WrongMethodTypeException(
+        SharedRuntime::throw_WrongMethodTypeException(
           thread, method_type, mhtype));
       // NB all oops trashed!
       assert(HAS_PENDING_EXCEPTION, "should do");
@@ -673,7 +673,7 @@ int CppInterpreter::method_handle_entry(methodOop method,
     oop adapter = java_lang_invoke_MethodTypeForm::genericInvoker(form);
     if (adapter == NULL) {
       CALL_VM_NOCHECK_NOFIX(
-        InterpreterRuntime::throw_WrongMethodTypeException(
+        SharedRuntime::throw_WrongMethodTypeException(
           thread, method_type, mhtype));
       // NB all oops trashed!
       assert(HAS_PENDING_EXCEPTION, "should do");

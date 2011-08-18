@@ -1278,7 +1278,7 @@ void Universe::print_heap_after_gc(outputStream* st) {
   st->print_cr("}");
 }
 
-void Universe::verify(bool allow_dirty, bool silent, bool option) {
+void Universe::verify(bool allow_dirty, bool silent, VerifyOption option) {
   if (SharedSkipVerify) {
     return;
   }

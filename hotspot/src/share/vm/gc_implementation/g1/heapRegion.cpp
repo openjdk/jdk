@@ -60,13 +60,14 @@ private:
   oop _containing_obj;
   bool _failures;
   int _n_failures;
-  bool _use_prev_marking;
+  VerifyOption _vo;
 public:
-  // use_prev_marking == true  -> use "prev" marking information,
-  // use_prev_marking == false -> use "next" marking information
-  VerifyLiveClosure(G1CollectedHeap* g1h, bool use_prev_marking) :
+  // _vo == UsePrevMarking -> use "prev" marking information,
+  // _vo == UseNextMarking -> use "next" marking information,
+  // _vo == UseMarkWord    -> use mark word from object header.
+  VerifyLiveClosure(G1CollectedHeap* g1h, VerifyOption vo) :
     _g1h(g1h), _bs(NULL), _containing_obj(NULL),
-    _failures(false), _n_failures(0), _use_prev_marking(use_prev_marking)
+    _failures(false), _n_failures(0), _vo(vo)
   {
     BarrierSet* bs = _g1h->barrier_set();
     if (bs->is_a(BarrierSet::CardTableModRef))
@@ -95,14 +96,14 @@ public:
 
   template <class T> void do_oop_work(T* p) {
     assert(_containing_obj != NULL, "Precondition");
-    assert(!_g1h->is_obj_dead_cond(_containing_obj, _use_prev_marking),
+    assert(!_g1h->is_obj_dead_cond(_containing_obj, _vo),
            "Precondition");
     T heap_oop = oopDesc::load_heap_oop(p);
     if (!oopDesc::is_null(heap_oop)) {
       oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
       bool failed = false;
       if (!_g1h->is_in_closed_subset(obj) ||
-          _g1h->is_obj_dead_cond(obj, _use_prev_marking)) {
+          _g1h->is_obj_dead_cond(obj, _vo)) {
         if (!_failures) {
           gclog_or_tty->print_cr("");
           gclog_or_tty->print_cr("----------");
@@ -159,20 +160,16 @@ public:
               gclog_or_tty->print_cr("----------");
             }
             gclog_or_tty->print_cr("Missing rem set entry:");
-            gclog_or_tty->print_cr("Field "PTR_FORMAT
-                          " of obj "PTR_FORMAT
-                          ", in region %d ["PTR_FORMAT
-                          ", "PTR_FORMAT"),",
-                          p, (void*) _containing_obj,
-                          from->hrs_index(),
-                          from->bottom(),
-                          from->end());
+            gclog_or_tty->print_cr("Field "PTR_FORMAT" "
+                                   "of obj "PTR_FORMAT", "
+                                   "in region "HR_FORMAT,
+                                   p, (void*) _containing_obj,
+                                   HR_FORMAT_PARAMS(from));
             _containing_obj->print_on(gclog_or_tty);
-            gclog_or_tty->print_cr("points to obj "PTR_FORMAT
-                          " in region %d ["PTR_FORMAT
-                          ", "PTR_FORMAT").",
-                          (void*) obj, to->hrs_index(),
-                          to->bottom(), to->end());
+            gclog_or_tty->print_cr("points to obj "PTR_FORMAT" "
+                                   "in region "HR_FORMAT,
+                                   (void*) obj,
+                                   HR_FORMAT_PARAMS(to));
             obj->print_on(gclog_or_tty);
             gclog_or_tty->print_cr("Obj head CTE = %d, field CTE = %d.",
                           cv_obj, cv_field);
@@ -484,11 +481,10 @@ void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
 
 
 HeapRegion::
-HeapRegion(G1BlockOffsetSharedArray* sharedOffsetArray,
-                     MemRegion mr, bool is_zeroed)
+HeapRegion(size_t hrs_index, G1BlockOffsetSharedArray* sharedOffsetArray,
+           MemRegion mr, bool is_zeroed)
   : G1OffsetTableContigSpace(sharedOffsetArray, mr, is_zeroed),
-    _next_fk(HeapRegionDCTOC::NoFilterKind),
-    _hrs_index(-1),
+    _next_fk(HeapRegionDCTOC::NoFilterKind), _hrs_index(hrs_index),
     _humongous_type(NotHumongous), _humongous_start_region(NULL),
     _in_collection_set(false), _is_gc_alloc_region(false),
     _next_in_special_set(NULL), _orig_end(NULL),
@@ -740,20 +736,20 @@ void HeapRegion::print_on(outputStream* st) const {
 
 void HeapRegion::verify(bool allow_dirty) const {
   bool dummy = false;
-  verify(allow_dirty, /* use_prev_marking */ true, /* failures */ &dummy);
+  verify(allow_dirty, VerifyOption_G1UsePrevMarking, /* failures */ &dummy);
 }
 
 // This really ought to be commoned up into OffsetTableContigSpace somehow.
 // We would need a mechanism to make that code skip dead objects.
 
 void HeapRegion::verify(bool allow_dirty,
-                        bool use_prev_marking,
+                        VerifyOption vo,
                         bool* failures) const {
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
   *failures = false;
   HeapWord* p = bottom();
   HeapWord* prev_p = NULL;
-  VerifyLiveClosure vl_cl(g1, use_prev_marking);
+  VerifyLiveClosure vl_cl(g1, vo);
   bool is_humongous = isHumongous();
   bool do_bot_verify = !is_young();
   size_t object_num = 0;
@@ -778,7 +774,7 @@ void HeapRegion::verify(bool allow_dirty,
       return;
     }
 
-    if (!g1->is_obj_dead_cond(obj, this, use_prev_marking)) {
+    if (!g1->is_obj_dead_cond(obj, this, vo)) {
       if (obj->is_oop()) {
         klassOop klass = obj->klass();
         if (!klass->is_perm()) {

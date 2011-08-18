@@ -52,28 +52,33 @@ class SharedRuntime: AllStatic {
 
   // Shared stub locations
 
-  static RuntimeStub* _wrong_method_blob;
-  static RuntimeStub* _ic_miss_blob;
-  static RuntimeStub* _resolve_opt_virtual_call_blob;
-  static RuntimeStub* _resolve_virtual_call_blob;
-  static RuntimeStub* _resolve_static_call_blob;
+  static RuntimeStub*        _wrong_method_blob;
+  static RuntimeStub*        _ic_miss_blob;
+  static RuntimeStub*        _resolve_opt_virtual_call_blob;
+  static RuntimeStub*        _resolve_virtual_call_blob;
+  static RuntimeStub*        _resolve_static_call_blob;
 
-  static RicochetBlob* _ricochet_blob;
+  static DeoptimizationBlob* _deopt_blob;
+  static RicochetBlob*       _ricochet_blob;
 
-  static SafepointBlob* _polling_page_safepoint_handler_blob;
-  static SafepointBlob* _polling_page_return_handler_blob;
+  static SafepointBlob*      _polling_page_safepoint_handler_blob;
+  static SafepointBlob*      _polling_page_return_handler_blob;
+
 #ifdef COMPILER2
-  static ExceptionBlob*       _exception_blob;
-  static UncommonTrapBlob*    _uncommon_trap_blob;
+  static UncommonTrapBlob*   _uncommon_trap_blob;
 #endif // COMPILER2
 
 #ifndef PRODUCT
-
   // Counters
   static int     _nof_megamorphic_calls;         // total # of megamorphic calls (through vtable)
-
 #endif // !PRODUCT
+
+ private:
+  static SafepointBlob* generate_handler_blob(address call_ptr, bool cause_return);
+  static RuntimeStub*   generate_resolve_blob(address destination, const char* name);
+
  public:
+  static void generate_stubs(void);
 
   // max bytes for each dtrace string parameter
   enum { max_dtrace_string_size = 256 };
@@ -180,6 +185,7 @@ class SharedRuntime: AllStatic {
   static void    throw_NullPointerException(JavaThread* thread);
   static void    throw_NullPointerException_at_call(JavaThread* thread);
   static void    throw_StackOverflowError(JavaThread* thread);
+  static void    throw_WrongMethodTypeException(JavaThread* thread, oopDesc* required, oopDesc* actual);
   static address continuation_for_implicit_exception(JavaThread* thread,
                                                      address faulting_pc,
                                                      ImplicitExceptionKind exception_kind);
@@ -326,12 +332,9 @@ class SharedRuntime: AllStatic {
                                      bool is_virtual,
                                      bool is_optimized, TRAPS);
 
-  static void generate_stubs(void);
-
   private:
   // deopt blob
   static void generate_deopt_blob(void);
-  static DeoptimizationBlob* _deopt_blob;
 
   public:
   static DeoptimizationBlob* deopt_blob(void)      { return _deopt_blob; }

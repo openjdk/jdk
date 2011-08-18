@@ -31,7 +31,6 @@ compiler.err.proc.cant.access.1                         # completion failure, no
 compiler.err.proc.cant.create.loader                    # security exception from service loader
 compiler.err.proc.no.service                            # JavacProcessingEnvironment: no service loader available
 compiler.err.proc.processor.bad.option.name             # cannot happen? masked by javac.err.invalid.A.key
-compiler.err.proc.processor.constructor.error
 compiler.err.proc.service.problem                       # JavacProcessingEnvironment: catch Throwable from service loader
 compiler.err.signature.doesnt.match.intf                # UNUSED
 compiler.err.signature.doesnt.match.supertype           # UNUSED
