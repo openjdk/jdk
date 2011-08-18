@@ -794,9 +794,6 @@ class Compile : public Phase {
   // Determine which variable sized branches can be shortened
   void shorten_branches(uint* blk_starts, int& code_size, int& reloc_size, int& stub_size);
 
-  // Inserts nops where needed and final shorten branches.
-  void finalize_offsets_and_shorten(uint* blk_starts);
-
   // Compute the size of first NumberOfLoopInstrToAlign instructions
   // at the head of a loop.
   void compute_loop_first_inst_sizes();
