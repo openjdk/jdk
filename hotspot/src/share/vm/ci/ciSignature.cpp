@@ -35,7 +35,7 @@
 
 // ------------------------------------------------------------------
 // ciSignature::ciSignature
-ciSignature::ciSignature(ciKlass* accessing_klass, ciSymbol* symbol) {
+ciSignature::ciSignature(ciKlass* accessing_klass, constantPoolHandle cpool, ciSymbol* symbol) {
   ASSERT_IN_VM;
   EXCEPTION_CONTEXT;
   _accessing_klass = accessing_klass;
@@ -64,7 +64,7 @@ ciSignature::ciSignature(ciKlass* accessing_klass, ciSymbol* symbol) {
         CLEAR_PENDING_EXCEPTION;
       } else {
         ciSymbol* klass_name = env->get_symbol(name);
-        type = env->get_klass_by_name_impl(_accessing_klass, klass_name, false);
+        type = env->get_klass_by_name_impl(_accessing_klass, cpool, klass_name, false);
       }
     }
     _types->append(type);

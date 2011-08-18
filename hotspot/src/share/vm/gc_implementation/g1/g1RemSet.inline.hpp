@@ -65,12 +65,6 @@ inline void G1RemSet::par_write_ref(HeapRegion* from, T* p, int tid) {
 
   HeapRegion* to = _g1->heap_region_containing(obj);
   if (to != NULL && from != to) {
-#if G1_REM_SET_LOGGING
-    gclog_or_tty->print_cr("Adding " PTR_FORMAT " (" PTR_FORMAT ") to RS"
-                           " for region [" PTR_FORMAT ", " PTR_FORMAT ")",
-                           p, obj,
-                           to->bottom(), to->end());
-#endif
     assert(to->rem_set() != NULL, "Need per-region 'into' remsets.");
     to->rem_set()->add_reference(p, tid);
   }

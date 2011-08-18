@@ -600,6 +600,7 @@ class methodOopDesc : public oopDesc {
                                          Symbol* signature, //anything at all
                                          Handle method_type,
                                          TRAPS);
+  static klassOop check_non_bcp_klass(klassOop klass);
   // these operate only on invoke methods:
   oop method_handle_type() const;
   static jint* method_type_offsets_chain();  // series of pointer-offsets, terminated by -1

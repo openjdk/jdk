@@ -2861,6 +2861,7 @@ void JavaThread::trace_frames() {
 }
 
 
+#ifdef ASSERT
 // Print or validate the layout of stack frames
 void JavaThread::print_frame_layout(int depth, bool validate_only) {
   ResourceMark rm;
@@ -2878,7 +2879,7 @@ void JavaThread::print_frame_layout(int depth, bool validate_only) {
     values.print();
   }
 }
-
+#endif
 
 void JavaThread::trace_stack_from(vframe* start_vf) {
   ResourceMark rm;
@@ -2942,12 +2943,22 @@ CompilerThread::CompilerThread(CompileQueue* queue, CompilerCounters* counters)
   _queue = queue;
   _counters = counters;
   _buffer_blob = NULL;
+  _scanned_nmethod = NULL;
 
 #ifndef PRODUCT
   _ideal_graph_printer = NULL;
 #endif
 }
 
+void CompilerThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
+  JavaThread::oops_do(f, cf);
+  if (_scanned_nmethod != NULL && cf != NULL) {
+    // Safepoints can occur when the sweeper is scanning an nmethod so
+    // process it here to make sure it isn't unloaded in the middle of
+    // a scan.
+    cf->do_code_blob(_scanned_nmethod);
+  }
+}
 
 // ======= Threads ========
 
@@ -3336,7 +3347,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Notify JVMTI agents that VM initialization is complete - nop if no agents.
   JvmtiExport::post_vm_initialized();
 
-  Chunk::start_chunk_pool_cleaner_task();
+  if (CleanChunkPoolAsync) {
+    Chunk::start_chunk_pool_cleaner_task();
+  }
 
   // initialize compiler(s)
   CompileBroker::compilation_init();
@@ -3687,6 +3700,14 @@ bool Threads::destroy_vm() {
     // heap is unparseable if they are caught. Grab the Heap_lock
     // to prevent this. The GC vm_operations will not be able to
     // queue until after the vm thread is dead.
+    // After this point, we'll never emerge out of the safepoint before
+    // the VM exits, so concurrent GC threads do not need to be explicitly
+    // stopped; they remain inactive until the process exits.
+    // Note: some concurrent G1 threads may be running during a safepoint,
+    // but these will not be accessing the heap, just some G1-specific side
+    // data structures that are not accessed by any other threads but them
+    // after this point in a terminal safepoint.
+
     MutexLocker ml(Heap_lock);
 
     VMThread::wait_for_vm_thread_exit();

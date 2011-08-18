@@ -176,13 +176,7 @@ class DatagramSocket implements java.io.Closeable {
     public DatagramSocket() throws SocketException {
         // create a datagram socket.
         createImpl();
-        try {
-            bind(new InetSocketAddress(0));
-        } catch (SocketException se) {
-            throw se;
-        } catch(IOException e) {
-            throw new SocketException(e.getMessage());
-        }
+        bind(new InetSocketAddress(0));
     }
 
     /**

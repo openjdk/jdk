@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,17 +36,13 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.net.HttpURLConnection;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Modifier;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import sun.misc.IOUtils;
-import sun.net.www.ParseUtil;
-import sun.security.util.SecurityConstants;
 
 
 class Trampoline {
@@ -68,13 +64,13 @@ public final class MethodUtil extends SecureClassLoader {
         super();
     }
 
-    public static Method getMethod(Class<?> cls, String name, Class[] args)
+    public static Method getMethod(Class<?> cls, String name, Class<?>[] args)
         throws NoSuchMethodException {
         ReflectUtil.checkPackageAccess(cls);
         return cls.getMethod(name, args);
     }
 
-    public static Method[] getMethods(Class cls) {
+    public static Method[] getMethods(Class<?> cls) {
         ReflectUtil.checkPackageAccess(cls);
         return cls.getMethods();
     }
@@ -85,7 +81,7 @@ public final class MethodUtil extends SecureClassLoader {
      * Class.getMethods() and walking towards Object until
      * we're done.
      */
-     public static Method[] getPublicMethods(Class cls) {
+     public static Method[] getPublicMethods(Class<?> cls) {
         // compatibility for update release
         if (System.getSecurityManager() == null) {
             return cls.getMethods();
@@ -105,11 +101,11 @@ public final class MethodUtil extends SecureClassLoader {
     /*
      * Process the immediate interfaces of this class or interface.
      */
-    private static void getInterfaceMethods(Class cls,
+    private static void getInterfaceMethods(Class<?> cls,
                                             Map<Signature, Method> sigs) {
-        Class[] intfs = cls.getInterfaces();
+        Class<?>[] intfs = cls.getInterfaces();
         for (int i=0; i < intfs.length; i++) {
-            Class intf = intfs[i];
+            Class<?> intf = intfs[i];
             boolean done = getInternalPublicMethods(intf, sigs);
             if (!done) {
                 getInterfaceMethods(intf, sigs);
@@ -121,7 +117,7 @@ public final class MethodUtil extends SecureClassLoader {
      *
      * Process the methods in this class or interface
      */
-    private static boolean getInternalPublicMethods(Class cls,
+    private static boolean getInternalPublicMethods(Class<?> cls,
                                                     Map<Signature, Method> sigs) {
         Method[] methods = null;
         try {
@@ -150,7 +146,7 @@ public final class MethodUtil extends SecureClassLoader {
          */
         boolean done = true;
         for (int i=0; i < methods.length; i++) {
-            Class dc = methods[i].getDeclaringClass();
+            Class<?> dc = methods[i].getDeclaringClass();
             if (!Modifier.isPublic(dc.getModifiers())) {
                 done = false;
                 break;
@@ -171,7 +167,7 @@ public final class MethodUtil extends SecureClassLoader {
              * stripping away inherited methods.
              */
             for (int i=0; i < methods.length; i++) {
-                Class dc = methods[i].getDeclaringClass();
+                Class<?> dc = methods[i].getDeclaringClass();
                 if (cls.equals(dc)) {
                     addMethod(sigs, methods[i]);
                 }
@@ -301,12 +297,12 @@ public final class MethodUtil extends SecureClassLoader {
     }
 
 
-    protected synchronized Class loadClass(String name, boolean resolve)
+    protected synchronized Class<?> loadClass(String name, boolean resolve)
         throws ClassNotFoundException
     {
         // First, check if the class has already been loaded
         ReflectUtil.checkPackageAccess(name);
-        Class c = findLoadedClass(name);
+        Class<?> c = findLoadedClass(name);
         if (c == null) {
             try {
                 c = findClass(name);
@@ -324,7 +320,7 @@ public final class MethodUtil extends SecureClassLoader {
     }
 
 
-    protected Class findClass(final String name)
+    protected Class<?> findClass(final String name)
         throws ClassNotFoundException
     {
         if (!name.startsWith(MISC_PKG)) {
@@ -347,7 +343,7 @@ public final class MethodUtil extends SecureClassLoader {
     /*
      * Define the proxy classes
      */
-    private Class defineClass(String name, URL url) throws IOException {
+    private Class<?> defineClass(String name, URL url) throws IOException {
         byte[] b = getBytes(url);
         CodeSource cs = new CodeSource(null, (java.security.cert.Certificate[])null);
         if (!name.equals(TRAMPOLINE)) {
@@ -389,7 +385,7 @@ public final class MethodUtil extends SecureClassLoader {
         return perms;
     }
 
-    private static Class getTrampolineClass() {
+    private static Class<?> getTrampolineClass() {
         try {
             return Class.forName(TRAMPOLINE, true, new MethodUtil());
         } catch (ClassNotFoundException e) {

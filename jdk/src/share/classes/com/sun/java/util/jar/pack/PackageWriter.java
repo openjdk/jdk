@@ -720,7 +720,6 @@ class PackageWriter extends BandStructure {
             Utils.log.info("Wrote "+numFiles+" resource files");
     }
 
-    @SuppressWarnings("unchecked")
     void collectAttributeLayouts() {
         maxFlags = new int[ATTR_CONTEXT_LIMIT];
         allLayouts = new FixedList<>(ATTR_CONTEXT_LIMIT);
@@ -781,26 +780,27 @@ class PackageWriter extends BandStructure {
             avHiBits &= (1L<<attrIndexLimit[i])-1;
             int nextLoBit = 0;
             Map<Attribute.Layout, int[]> defMap = allLayouts.get(i);
-            Map.Entry[] layoutsAndCounts = new Map.Entry[defMap.size()];
+            @SuppressWarnings({ "unchecked", "rawtypes" })
+            Map.Entry<Attribute.Layout, int[]>[] layoutsAndCounts =
+                    new Map.Entry[defMap.size()];
             defMap.entrySet().toArray(layoutsAndCounts);
             // Sort by count, most frequent first.
             // Predefs. participate in this sort, though it does not matter.
-            Arrays.sort(layoutsAndCounts, new Comparator<Object>() {
-                public int compare(Object o0, Object o1) {
-                    Map.Entry e0 = (Map.Entry) o0;
-                    Map.Entry e1 = (Map.Entry) o1;
+            Arrays.sort(layoutsAndCounts,
+                        new Comparator<Map.Entry<Attribute.Layout, int[]>>() {
+                public int compare(Map.Entry<Attribute.Layout, int[]> e0,
+                                   Map.Entry<Attribute.Layout, int[]> e1) {
                     // Primary sort key is count, reversed.
-                    int r = - ( ((int[])e0.getValue())[0]
-                              - ((int[])e1.getValue())[0] );
+                    int r = -(e0.getValue()[0] - e1.getValue()[0]);
                     if (r != 0)  return r;
-                    return ((Comparable)e0.getKey()).compareTo(e1.getKey());
+                    return e0.getKey().compareTo(e1.getKey());
                 }
             });
             attrCounts[i] = new int[attrIndexLimit[i]+layoutsAndCounts.length];
             for (int j = 0; j < layoutsAndCounts.length; j++) {
-                Map.Entry e = layoutsAndCounts[j];
-                Attribute.Layout def = (Attribute.Layout) e.getKey();
-                int count = ((int[])e.getValue())[0];
+                Map.Entry<Attribute.Layout, int[]> e = layoutsAndCounts[j];
+                Attribute.Layout def = e.getKey();
+                int count = e.getValue()[0];
                 int index;
                 Integer predefIndex = attrIndexTable.get(def);
                 if (predefIndex != null) {
@@ -881,7 +881,6 @@ class PackageWriter extends BandStructure {
 
     Attribute.Layout[] attrDefsWritten;
 
-    @SuppressWarnings("unchecked")
     void writeAttrDefs() throws IOException {
         List<Object[]> defList = new ArrayList<>();
         for (int i = 0; i < ATTR_CONTEXT_LIMIT; i++) {
@@ -906,20 +905,19 @@ class PackageWriter extends BandStructure {
         int numAttrDefs = defList.size();
         Object[][] defs = new Object[numAttrDefs][];
         defList.toArray(defs);
-        Arrays.sort(defs, new Comparator() {
-            public int compare(Object o0, Object o1) {
-                Object[] a0 = (Object[]) o0;
-                Object[] a1 = (Object[]) o1;
+        Arrays.sort(defs, new Comparator<Object[]>() {
+            public int compare(Object[] a0, Object[] a1) {
                 // Primary sort key is attr def header.
+                @SuppressWarnings("unchecked")
                 int r = ((Comparable)a0[0]).compareTo(a1[0]);
                 if (r != 0)  return r;
-                Object ind0 = attrIndexTable.get(a0[1]);
-                Object ind1 = attrIndexTable.get(a1[1]);
+                Integer ind0 = attrIndexTable.get(a0[1]);
+                Integer ind1 = attrIndexTable.get(a1[1]);
                 // Secondary sort key is attribute index.
                 // (This must be so, in order to keep overflow attr order.)
                 assert(ind0 != null);
                 assert(ind1 != null);
-                return ((Comparable)ind0).compareTo(ind1);
+                return ind0.compareTo(ind1);
             }
         });
         attrDefsWritten = new Attribute.Layout[numAttrDefs];

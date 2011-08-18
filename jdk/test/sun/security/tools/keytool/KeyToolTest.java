@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1278,52 +1278,58 @@ public class KeyToolTest {
     }
 
     public static void main(String[] args) throws Exception {
-        // first test if HumanInputStream really acts like a human being
-        HumanInputStream.test();
-        KeyToolTest t = new KeyToolTest();
+        Locale reservedLocale = Locale.getDefault();
+        try {
+            // first test if HumanInputStream really acts like a human being
+            HumanInputStream.test();
+            KeyToolTest t = new KeyToolTest();
 
-        if (System.getProperty("file") != null) {
-            t.sqeTest();
-            t.testAll();
-            t.i18nTest();
-            t.v3extTest("RSA");
-            t.v3extTest("DSA");
-            boolean testEC = true;
-            try {
-                KeyPairGenerator.getInstance("EC");
-            } catch (NoSuchAlgorithmException nae) {
-                testEC = false;
+            if (System.getProperty("file") != null) {
+                t.sqeTest();
+                t.testAll();
+                t.i18nTest();
+                t.v3extTest("RSA");
+                t.v3extTest("DSA");
+                boolean testEC = true;
+                try {
+                    KeyPairGenerator.getInstance("EC");
+                } catch (NoSuchAlgorithmException nae) {
+                    testEC = false;
+                }
+                if (testEC) t.v3extTest("EC");
             }
-            if (testEC) t.v3extTest("EC");
+
+            if (System.getProperty("nss") != null) {
+                t.srcP11Arg = NSS_SRC_P11_ARG;
+                t.p11Arg = NSS_P11_ARG;
+
+                t.testPKCS11();
+
+                // FAIL:
+                // 1. we still don't have srcprovidername yet
+                // 2. cannot store privatekey into NSS keystore
+                //    java.security.KeyStoreException: sun.security.pkcs11.wrapper.PKCS11Exception: CKR_TEMPLATE_INCOMPLETE.
+                //t.testPKCS11ImportKeyStore();
+
+                t.i18nPKCS11Test();
+                //FAIL: currently PKCS11-NSS does not support 2 NSS KeyStores to be loaded at the same time
+                //t.sszzTest();
+            }
+
+            if (System.getProperty("solaris") != null) {
+                // For Solaris Cryptography Framework
+                t.srcP11Arg = SUN_SRC_P11_ARG;
+                t.p11Arg = SUN_P11_ARG;
+                t.testPKCS11();
+                t.testPKCS11ImportKeyStore();
+                t.i18nPKCS11Test();
+            }
+
+            System.out.println("Test pass!!!");
+        } finally {
+            // restore the reserved locale
+            Locale.setDefault(reservedLocale);
         }
-
-        if (System.getProperty("nss") != null) {
-            t.srcP11Arg = NSS_SRC_P11_ARG;
-            t.p11Arg = NSS_P11_ARG;
-
-            t.testPKCS11();
-
-            // FAIL:
-            // 1. we still don't have srcprovidername yet
-            // 2. cannot store privatekey into NSS keystore
-            //    java.security.KeyStoreException: sun.security.pkcs11.wrapper.PKCS11Exception: CKR_TEMPLATE_INCOMPLETE.
-            //t.testPKCS11ImportKeyStore();
-
-            t.i18nPKCS11Test();
-            //FAIL: currently PKCS11-NSS does not support 2 NSS KeyStores to be loaded at the same time
-            //t.sszzTest();
-        }
-
-        if (System.getProperty("solaris") != null) {
-            // For Solaris Cryptography Framework
-            t.srcP11Arg = SUN_SRC_P11_ARG;
-            t.p11Arg = SUN_P11_ARG;
-            t.testPKCS11();
-            t.testPKCS11ImportKeyStore();
-            t.i18nPKCS11Test();
-        }
-
-        System.out.println("Test pass!!!");
     }
 }
 
