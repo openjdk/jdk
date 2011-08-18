@@ -32,6 +32,8 @@ BUILDDIR = ../..
 PACKAGE = java.lang
 LIBRARY = java
 PRODUCT = java
+SUBDIRS_MAKEFLAGS += JAVAC_MAX_WARNINGS=true
+SUBDIRS_MAKEFLAGS += JAVAC_WARNINGS_FATAL=true
 include $(BUILDDIR)/common/Defs.gmk
 
 # windows compiler flags

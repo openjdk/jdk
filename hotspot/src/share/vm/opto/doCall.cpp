@@ -123,24 +123,9 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
       GraphKit kit(jvms);
       Node* n = kit.argument(0);
 
-      if (n->Opcode() == Op_ConP) {
-        const TypeOopPtr* oop_ptr = n->bottom_type()->is_oopptr();
-        ciObject* const_oop = oop_ptr->const_oop();
-        ciMethodHandle* method_handle = const_oop->as_method_handle();
-
-        // Set the callee to have access to the class and signature in
-        // the MethodHandleCompiler.
-        method_handle->set_callee(call_method);
-        method_handle->set_caller(caller);
-        method_handle->set_call_profile(&profile);
-
-        // Get an adapter for the MethodHandle.
-        ciMethod* target_method = method_handle->get_method_handle_adapter();
-        if (target_method != NULL) {
-          CallGenerator* hit_cg = this->call_generator(target_method, vtable_index, false, jvms, true, prof_factor);
-          if (hit_cg != NULL && hit_cg->is_inline())
-            return hit_cg;
-        }
+      CallGenerator* cg = CallGenerator::for_method_handle_inline(n, jvms, caller, call_method, profile);
+      if (cg != NULL) {
+        return cg;
       }
 
       return CallGenerator::for_direct_call(call_method);
@@ -157,7 +142,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
       // the MethodHandleCompiler.
       method_handle->set_callee(call_method);
       method_handle->set_caller(caller);
-      method_handle->set_call_profile(&profile);
+      method_handle->set_call_profile(profile);
 
       // Get an adapter for the MethodHandle.
       ciMethod* target_method = method_handle->get_invokedynamic_adapter();
@@ -198,7 +183,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
         // TO DO:  When UseOldInlining is removed, copy the ILT code elsewhere.
         float site_invoke_ratio = prof_factor;
         // Note:  ilt is for the root of this parse, not the present call site.
-        ilt = new InlineTree(this, jvms->method(), jvms->caller(), site_invoke_ratio, 0);
+        ilt = new InlineTree(this, jvms->method(), jvms->caller(), site_invoke_ratio, MaxInlineLevel);
       }
       WarmCallInfo scratch_ci;
       if (!UseOldInlining)

@@ -137,6 +137,7 @@ private:
 
   // Implementation methods for loading and constant pool access.
   ciKlass* get_klass_by_name_impl(ciKlass* accessing_klass,
+                                  constantPoolHandle cpool,
                                   ciSymbol* klass_name,
                                   bool require_local);
   ciKlass*   get_klass_by_index_impl(constantPoolHandle cpool,

@@ -349,7 +349,7 @@ char* fileStream::readln(char *data, int count ) {
 fileStream::~fileStream() {
   if (_file != NULL) {
     if (_need_close) fclose(_file);
-    _file = NULL;
+    _file      = NULL;
   }
 }
 
@@ -375,6 +375,86 @@ void fdStream::write(const char* s, size_t len) {
     size_t count = ::write(_fd, s, (int)len);
   }
   update_position(s, len);
+}
+
+rotatingFileStream::~rotatingFileStream() {
+  if (_file != NULL) {
+    if (_need_close) fclose(_file);
+    _file      = NULL;
+    FREE_C_HEAP_ARRAY(char, _file_name);
+    _file_name = NULL;
+  }
+}
+
+rotatingFileStream::rotatingFileStream(const char* file_name) {
+  _cur_file_num = 0;
+  _bytes_writen = 0L;
+  _file_name = NEW_C_HEAP_ARRAY(char, strlen(file_name)+10);
+  jio_snprintf(_file_name, strlen(file_name)+10, "%s.%d", file_name, _cur_file_num);
+  _file = fopen(_file_name, "w");
+  _need_close = true;
+}
+
+rotatingFileStream::rotatingFileStream(const char* file_name, const char* opentype) {
+  _cur_file_num = 0;
+  _bytes_writen = 0L;
+  _file_name = NEW_C_HEAP_ARRAY(char, strlen(file_name)+10);
+  jio_snprintf(_file_name, strlen(file_name)+10, "%s.%d", file_name, _cur_file_num);
+  _file = fopen(_file_name, opentype);
+  _need_close = true;
+}
+
+void rotatingFileStream::write(const char* s, size_t len) {
+  if (_file != NULL)  {
+    // Make an unused local variable to avoid warning from gcc 4.x compiler.
+    size_t count = fwrite(s, 1, len, _file);
+    Atomic::add((jlong)count, &_bytes_writen);
+  }
+  update_position(s, len);
+}
+
+// rotate_log must be called from VMThread at safepoint. In case need change parameters
+// for gc log rotation from thread other than VMThread, a sub type of VM_Operation
+// should be created and be submitted to VMThread's operation queue. DO NOT call this
+// function directly. Currently, it is safe to rotate log at safepoint through VMThread.
+// That is, no mutator threads and concurrent GC threads run parallel with VMThread to
+// write to gc log file at safepoint. If in future, changes made for mutator threads or
+// concurrent GC threads to run parallel with VMThread at safepoint, write and rotate_log
+// must be synchronized.
+void rotatingFileStream::rotate_log() {
+  if (_bytes_writen < (jlong)GCLogFileSize) return;
+#ifdef ASSERT
+  Thread *thread = Thread::current();
+  assert(thread == NULL ||
+         (thread->is_VM_thread() && SafepointSynchronize::is_at_safepoint()),
+         "Must be VMThread at safepoint");
+#endif
+  if (NumberOfGCLogFiles == 1) {
+    // rotate in same file
+    rewind();
+    _bytes_writen = 0L;
+    return;
+  }
+
+  // rotate file in names file.0, file.1, file.2, ..., file.<MaxGCLogFileNumbers-1>
+  // close current file, rotate to next file
+  if (_file != NULL) {
+    _cur_file_num ++;
+    if (_cur_file_num >= NumberOfGCLogFiles) _cur_file_num = 0;
+    jio_snprintf(_file_name, strlen(Arguments::gc_log_filename()) + 10, "%s.%d",
+             Arguments::gc_log_filename(), _cur_file_num);
+    fclose(_file);
+    _file = NULL;
+  }
+  _file = fopen(_file_name, "w");
+  if (_file != NULL) {
+    _bytes_writen = 0L;
+    _need_close = true;
+  } else {
+    tty->print_cr("failed to open rotation log file %s due to %s\n",
+                  _file_name, strerror(errno));
+    _need_close = false;
+  }
 }
 
 defaultStream* defaultStream::instance = NULL;
@@ -749,14 +829,17 @@ void ostream_init_log() {
 
   gclog_or_tty = tty; // default to tty
   if (Arguments::gc_log_filename() != NULL) {
-    fileStream * gclog = new(ResourceObj::C_HEAP)
-                           fileStream(Arguments::gc_log_filename());
+    fileStream * gclog  = UseGCLogFileRotation ?
+                          new(ResourceObj::C_HEAP)
+                             rotatingFileStream(Arguments::gc_log_filename()) :
+                          new(ResourceObj::C_HEAP)
+                             fileStream(Arguments::gc_log_filename());
     if (gclog->is_open()) {
       // now we update the time stamp of the GC log to be synced up
       // with tty.
       gclog->time_stamp().update_to(tty->time_stamp().ticks());
-      gclog_or_tty = gclog;
     }
+    gclog_or_tty = gclog;
   }
 
   // If we haven't lazily initialized the logfile yet, do it now,

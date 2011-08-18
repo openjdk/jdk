@@ -64,8 +64,11 @@ public enum Source {
     /** 1.6 reports encoding problems as errors instead of warnings. */
     JDK1_6("1.6"),
 
-    /** 1.7 covers the to be determined language features that will be added in JDK 7. */
-    JDK1_7("1.7");
+    /** 1.7 introduced try-with-resources, multi-catch, string switch, etc. */
+    JDK1_7("1.7"),
+
+    /** 1.8 covers the to be determined language features that will be added in JDK 8. */
+    JDK1_8("1.8");
 
     private static final Context.Key<Source> sourceKey
         = new Context.Key<Source>();
@@ -92,19 +95,21 @@ public enum Source {
         tab.put("5", JDK1_5); // Make 5 an alias for 1.5
         tab.put("6", JDK1_6); // Make 6 an alias for 1.6
         tab.put("7", JDK1_7); // Make 7 an alias for 1.7
+        tab.put("8", JDK1_8); // Make 8 an alias for 1.8
     }
 
     private Source(String name) {
         this.name = name;
     }
 
-    public static final Source DEFAULT = JDK1_7;
+    public static final Source DEFAULT = JDK1_8;
 
     public static Source lookup(String name) {
         return tab.get(name);
     }
 
     public Target requiredTarget() {
+        if (this.compareTo(JDK1_8) >= 0) return Target.JDK1_8;
         if (this.compareTo(JDK1_7) >= 0) return Target.JDK1_7;
         if (this.compareTo(JDK1_6) >= 0) return Target.JDK1_6;
         if (this.compareTo(JDK1_5) >= 0) return Target.JDK1_5;
@@ -203,6 +208,8 @@ public enum Source {
             return RELEASE_6;
         case JDK1_7:
             return RELEASE_7;
+        case JDK1_8:
+            return RELEASE_8;
         default:
             return null;
         }
