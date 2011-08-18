@@ -1803,7 +1803,7 @@ public class Basic {
 
             p.getInputStream().close();
             p.getErrorStream().close();
-            p.getOutputStream().close();
+            try { p.getOutputStream().close(); } catch (IOException flushFailed) { }
 
             InputStream[] streams = { p.getInputStream(), p.getErrorStream() };
             for (final InputStream in : streams) {
