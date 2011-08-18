@@ -182,12 +182,12 @@ size_t PSOldGen::contiguous_available() const {
 
 // Allocation. We report all successful allocations to the size policy
 // Note that the perm gen does not use this method, and should not!
-HeapWord* PSOldGen::allocate(size_t word_size, bool is_tlab) {
+HeapWord* PSOldGen::allocate(size_t word_size) {
   assert_locked_or_safepoint(Heap_lock);
-  HeapWord* res = allocate_noexpand(word_size, is_tlab);
+  HeapWord* res = allocate_noexpand(word_size);
 
   if (res == NULL) {
-    res = expand_and_allocate(word_size, is_tlab);
+    res = expand_and_allocate(word_size);
   }
 
   // Allocations in the old generation need to be reported
@@ -199,13 +199,12 @@ HeapWord* PSOldGen::allocate(size_t word_size, bool is_tlab) {
   return res;
 }
 
-HeapWord* PSOldGen::expand_and_allocate(size_t word_size, bool is_tlab) {
-  assert(!is_tlab, "TLAB's are not supported in PSOldGen");
+HeapWord* PSOldGen::expand_and_allocate(size_t word_size) {
   expand(word_size*HeapWordSize);
   if (GCExpandToAllocateDelayMillis > 0) {
     os::sleep(Thread::current(), GCExpandToAllocateDelayMillis, false);
   }
-  return allocate_noexpand(word_size, is_tlab);
+  return allocate_noexpand(word_size);
 }
 
 HeapWord* PSOldGen::expand_and_cas_allocate(size_t word_size) {

@@ -440,7 +440,8 @@ class StubGenerator: public StubCodeGenerator {
 #undef __
 #define __ masm->
 
-  address generate_throw_exception(const char* name, address runtime_entry, bool restore_saved_exception_pc) {
+  address generate_throw_exception(const char* name, address runtime_entry, bool restore_saved_exception_pc,
+                                   Register arg1 = noreg, Register arg2 = noreg) {
 #ifdef ASSERT
     int insts_size = VerifyThread ? 1 * K : 600;
 #else
@@ -476,6 +477,13 @@ class StubGenerator: public StubCodeGenerator {
     __ set_last_Java_frame(last_java_sp, G0);
     if (VerifyThread)  __ mov(G2_thread, O0); // about to be smashed; pass early
     __ save_thread(noreg);
+    if (arg1 != noreg) {
+      assert(arg2 != O1, "clobbered");
+      __ mov(arg1, O1);
+    }
+    if (arg2 != noreg) {
+      __ mov(arg2, O2);
+    }
     // do the call
     BLOCK_COMMENT("call runtime_entry");
     __ call(runtime_entry, relocInfo::runtime_call_type);
@@ -3240,6 +3248,14 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_atomic_cmpxchg_long_entry = generate_atomic_cmpxchg_long();
     StubRoutines::_atomic_add_ptr_entry      = StubRoutines::_atomic_add_entry;
 #endif  // COMPILER2 !=> _LP64
+
+    // Build this early so it's available for the interpreter.  The
+    // stub expects the required and actual type to already be in O1
+    // and O2 respectively.
+    StubRoutines::_throw_WrongMethodTypeException_entry =
+      generate_throw_exception("WrongMethodTypeException throw_exception",
+                               CAST_FROM_FN_PTR(address, SharedRuntime::throw_WrongMethodTypeException),
+                               false, G5_method_type, G3_method_handle);
   }
 
 

@@ -373,15 +373,17 @@ void TemplateTable::ldc(bool wide) {
     __ jcc(Assembler::equal, L);
     __ cmpl(rdx, JVM_CONSTANT_String);
     __ jcc(Assembler::equal, L);
+    __ cmpl(rdx, JVM_CONSTANT_Object);
+    __ jcc(Assembler::equal, L);
     __ stop("unexpected tag type in ldc");
     __ bind(L);
   }
 #endif
   Label isOop;
   // atos and itos
-  // String is only oop type we will see here
-  __ cmpl(rdx, JVM_CONSTANT_String);
-  __ jccb(Assembler::equal, isOop);
+  // Integer is only non-oop type we will see here
+  __ cmpl(rdx, JVM_CONSTANT_Integer);
+  __ jccb(Assembler::notEqual, isOop);
   __ movl(rax, Address(rcx, rbx, Address::times_ptr, base_offset));
   __ push(itos);
   __ jmp(Done);

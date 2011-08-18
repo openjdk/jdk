@@ -992,6 +992,9 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
     }
 
     Rewriter::rewrite(scratch_class, THREAD);
+    if (!HAS_PENDING_EXCEPTION) {
+      Rewriter::relocate_and_link(scratch_class, THREAD);
+    }
     if (HAS_PENDING_EXCEPTION) {
       Symbol* ex_name = PENDING_EXCEPTION->klass()->klass_part()->name();
       CLEAR_PENDING_EXCEPTION;

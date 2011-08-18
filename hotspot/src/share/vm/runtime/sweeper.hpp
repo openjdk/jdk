@@ -57,6 +57,13 @@ class NMethodSweeper : public AllStatic {
  public:
   static long traversal_count() { return _traversals; }
 
+#ifdef ASSERT
+  // Keep track of sweeper activity in the ring buffer
+  static void record_sweep(nmethod* nm, int line);
+  static void report_events(int id, address entry);
+  static void report_events();
+#endif
+
   static void scan_stacks();      // Invoked at the end of each safepoint
   static void sweep_code_cache(); // Concurrent part of sweep job
   static void possibly_sweep();   // Compiler threads call this to sweep

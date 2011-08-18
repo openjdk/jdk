@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,39 +35,44 @@ public class Bug4848897 {
   /********************************************************
   *********************************************************/
   public static void main (String[] args) {
+      Locale reservedLocale = Locale.getDefault();
+      try {
+          int errors=0;
+          Locale loc = new Locale ("no", "NO");   // Norwegian
 
-      int errors=0;
-      Locale loc = new Locale ("no", "NO");   // Norwegian
+          Locale.setDefault (loc);
+          Collator col = Collator.getInstance ();
 
-      Locale.setDefault (loc);
-      Collator col = Collator.getInstance ();
+          String[] data = {"wird",
+                           "vird",
+                           "verd",
+                           "werd",
+                           "vard",
+                           "ward"};
 
-      String[] data = {"wird",
-                       "vird",
-                       "verd",
-                       "werd",
-                       "vard",
-                       "ward"};
+          String[] sortedData = {"vard",
+                                 "verd",
+                                 "vird",
+                                 "ward",
+                                 "werd",
+                                 "wird"};
 
-      String[] sortedData = {"vard",
-                             "verd",
-                             "vird",
-                             "ward",
-                             "werd",
-                             "wird"};
+          Arrays.sort (data, col);
 
-      Arrays.sort (data, col);
+          System.out.println ("Using " + loc.getDisplayName());
+          for (int i = 0;  i < data.length;  i++) {
+              System.out.println(data[i] + "  :  " + sortedData[i]);
+              if (sortedData[i].compareTo(data[i]) != 0) {
+                  errors++;
+              }
+          }//end for
 
-      System.out.println ("Using " + loc.getDisplayName());
-      for (int i = 0;  i < data.length;  i++) {
-          System.out.println(data[i] + "  :  " + sortedData[i]);
-          if (sortedData[i].compareTo(data[i]) != 0) {
-              errors++;
-          }
-      }//end for
-
-      if (errors > 0)
-          throw new RuntimeException();
-  }//end main
+          if (errors > 0)
+              throw new RuntimeException();
+      } finally {
+          // restore the reserved locale
+          Locale.setDefault(reservedLocale);
+      }
+  } // end main
 
 }//end class CollatorTest

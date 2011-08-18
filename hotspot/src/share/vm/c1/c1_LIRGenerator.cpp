@@ -2799,7 +2799,7 @@ void LIRGenerator::do_Invoke(Invoke* x) {
 
       // Load CallSite object from constant pool cache.
       __ oop2reg(cpcache->constant_encoding(), tmp);
-      __ load(new LIR_Address(tmp, call_site_offset, T_OBJECT), tmp);
+      __ move_wide(new LIR_Address(tmp, call_site_offset, T_OBJECT), tmp);
 
       // Load target MethodHandle from CallSite object.
       __ load(new LIR_Address(tmp, java_lang_invoke_CallSite::target_offset_in_bytes(), T_OBJECT), receiver);
