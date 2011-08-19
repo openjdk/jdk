@@ -39,8 +39,6 @@
   develop(intx, G1MarkingOverheadPercent, 0,                                \
           "Overhead of concurrent marking")                                 \
                                                                             \
-  develop(bool, G1Gen, true,                                                \
-          "If true, it will enable the generational G1")                    \
                                                                             \
   develop(intx, G1PolicyVerbose, 0,                                         \
           "The verbosity level on G1 policy decisions")                     \

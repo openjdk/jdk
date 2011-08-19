@@ -1263,10 +1263,8 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     g1_policy()->clear_incremental_cset();
     g1_policy()->stop_incremental_cset_building();
 
-    if (g1_policy()->in_young_gc_mode()) {
-      empty_young_list();
-      g1_policy()->set_full_young_gcs(true);
-    }
+    empty_young_list();
+    g1_policy()->set_full_young_gcs(true);
 
     // See the comment in G1CollectedHeap::ref_processing_init() about
     // how reference processing currently works in G1.
@@ -1387,13 +1385,11 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
            || (G1DeferredRSUpdate && (dirty_card_queue_set().completed_buffers_num() == 0)), "Should not be any");
   }
 
-  if (g1_policy()->in_young_gc_mode()) {
-    _young_list->reset_sampled_info();
-    // At this point there should be no regions in the
-    // entire heap tagged as young.
-    assert( check_young_list_empty(true /* check_heap */),
-            "young list should be empty at this point");
-  }
+  _young_list->reset_sampled_info();
+  // At this point there should be no regions in the
+  // entire heap tagged as young.
+  assert( check_young_list_empty(true /* check_heap */),
+    "young list should be empty at this point");
 
   // Update the number of full collections that have been completed.
   increment_full_collections_completed(false /* concurrent */);
@@ -3161,12 +3157,6 @@ G1CollectedHeap::doConcurrentMark() {
   }
 }
 
-void G1CollectedHeap::do_sync_mark() {
-  _cm->checkpointRootsInitial();
-  _cm->markFromRoots();
-  _cm->checkpointRootsFinal(false);
-}
-
 // <NEW PREDICTION>
 
 double G1CollectedHeap::predict_region_elapsed_time_ms(HeapRegion *hr,
@@ -3317,11 +3307,10 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
     char verbose_str[128];
     sprintf(verbose_str, "GC pause ");
-    if (g1_policy()->in_young_gc_mode()) {
-      if (g1_policy()->full_young_gcs())
-        strcat(verbose_str, "(young)");
-      else
-        strcat(verbose_str, "(partial)");
+    if (g1_policy()->full_young_gcs()) {
+      strcat(verbose_str, "(young)");
+    } else {
+      strcat(verbose_str, "(partial)");
     }
     if (g1_policy()->during_initial_mark_pause()) {
       strcat(verbose_str, " (initial-mark)");
@@ -3350,10 +3339,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       append_secondary_free_list_if_not_empty_with_lock();
     }
 
-    if (g1_policy()->in_young_gc_mode()) {
-      assert(check_young_list_well_formed(),
-             "young list should be well formed");
-    }
+    assert(check_young_list_well_formed(),
+      "young list should be well formed");
 
     { // Call to jvmpi::post_class_unload_events must occur outside of active GC
       IsGCActiveMark x;
@@ -3494,27 +3481,25 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       // evacuation pause.
       clear_cset_fast_test();
 
-      if (g1_policy()->in_young_gc_mode()) {
-        _young_list->reset_sampled_info();
+      _young_list->reset_sampled_info();
 
-        // Don't check the whole heap at this point as the
-        // GC alloc regions from this pause have been tagged
-        // as survivors and moved on to the survivor list.
-        // Survivor regions will fail the !is_young() check.
-        assert(check_young_list_empty(false /* check_heap */),
-               "young list should be empty");
+      // Don't check the whole heap at this point as the
+      // GC alloc regions from this pause have been tagged
+      // as survivors and moved on to the survivor list.
+      // Survivor regions will fail the !is_young() check.
+      assert(check_young_list_empty(false /* check_heap */),
+        "young list should be empty");
 
 #if YOUNG_LIST_VERBOSE
-        gclog_or_tty->print_cr("Before recording survivors.\nYoung List:");
-        _young_list->print();
+      gclog_or_tty->print_cr("Before recording survivors.\nYoung List:");
+      _young_list->print();
 #endif // YOUNG_LIST_VERBOSE
 
-        g1_policy()->record_survivor_regions(_young_list->survivor_length(),
-                                          _young_list->first_survivor_region(),
-                                          _young_list->last_survivor_region());
+      g1_policy()->record_survivor_regions(_young_list->survivor_length(),
+        _young_list->first_survivor_region(),
+        _young_list->last_survivor_region());
 
-        _young_list->reset_auxilary_lists();
-      }
+      _young_list->reset_auxilary_lists();
 
       if (evacuation_failed()) {
         _summary_bytes_used = recalculate_used();
@@ -3524,8 +3509,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         _summary_bytes_used += g1_policy()->bytes_copied_during_gc();
       }
 
-      if (g1_policy()->in_young_gc_mode() &&
-          g1_policy()->during_initial_mark_pause()) {
+      if (g1_policy()->during_initial_mark_pause()) {
         concurrent_mark()->checkpointRootsInitialPost();
         set_marking_started();
         // CAUTION: after the doConcurrentMark() call below,
@@ -5091,7 +5075,6 @@ bool G1CollectedHeap::check_young_list_empty(bool check_heap, bool check_sample)
 void G1CollectedHeap::empty_young_list() {
   assert(heap_lock_held_for_gc(),
               "the heap lock should already be held by or for this thread");
-  assert(g1_policy()->in_young_gc_mode(), "should be in young GC mode");
 
   _young_list->empty_list();
 }
