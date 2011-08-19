@@ -141,7 +141,6 @@ protected:
 
   TruncatedSeq* _recent_rs_sizes;
 
-  TruncatedSeq* _concurrent_mark_init_times_ms;
   TruncatedSeq* _concurrent_mark_remark_times_ms;
   TruncatedSeq* _concurrent_mark_cleanup_times_ms;
 
@@ -177,9 +176,6 @@ protected:
   double* _par_last_termination_attempts;
   double* _par_last_gc_worker_end_times_ms;
   double* _par_last_gc_worker_times_ms;
-
-  // indicates that we are in young GC mode
-  bool _in_young_gc_mode;
 
   // indicates whether we are in full young or partially young GC mode
   bool _full_young_gcs;
@@ -527,10 +523,6 @@ public:
     return _mmu_tracker->max_gc_time() * 1000.0;
   }
 
-  double predict_init_time_ms() {
-    return get_new_prediction(_concurrent_mark_init_times_ms);
-  }
-
   double predict_remark_time_ms() {
     return get_new_prediction(_concurrent_mark_remark_times_ms);
   }
@@ -776,7 +768,6 @@ protected:
   // This set of variables tracks the collector efficiency, in order to
   // determine whether we should initiate a new marking.
   double _cur_mark_stop_world_time_ms;
-  double _mark_init_start_sec;
   double _mark_remark_start_sec;
   double _mark_cleanup_start_sec;
   double _mark_closure_time_ms;
@@ -849,9 +840,7 @@ public:
                                              size_t start_used);
 
   // Must currently be called while the world is stopped.
-  virtual void record_concurrent_mark_init_start();
-  virtual void record_concurrent_mark_init_end();
-  void record_concurrent_mark_init_end_pre(double
+  void record_concurrent_mark_init_end(double
                                            mark_init_elapsed_time_ms);
 
   void record_mark_closure_time(double mark_closure_time_ms);
@@ -1117,13 +1106,6 @@ public:
   }
 
   void update_region_num(bool young);
-
-  bool in_young_gc_mode() {
-    return _in_young_gc_mode;
-  }
-  void set_in_young_gc_mode(bool in_young_gc_mode) {
-    _in_young_gc_mode = in_young_gc_mode;
-  }
 
   bool full_young_gcs() {
     return _full_young_gcs;
