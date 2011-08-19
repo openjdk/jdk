@@ -360,7 +360,7 @@ class SuperWord : public ResourceObj {
   // Convert packs into vector node operations
   void output();
   // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
-  VectorNode* vector_opd(Node_List* p, int opd_idx);
+  Node* vector_opd(Node_List* p, int opd_idx);
   // Can code be generated for pack p?
   bool implemented(Node_List* p);
   // For pack p, are all operands and all uses (with in the block) vector?

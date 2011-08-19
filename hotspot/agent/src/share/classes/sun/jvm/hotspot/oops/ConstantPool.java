@@ -212,13 +212,60 @@ public class ConstantPool extends Oop implements ClassConstants {
   }
 
   public Symbol getNameRefAt(int which) {
-    int nameIndex = getNameAndTypeAt(getNameAndTypeRefIndexAt(which))[0];
-    return getSymbolAt(nameIndex);
+    return implGetNameRefAt(which, false);
+  }
+
+  private Symbol implGetNameRefAt(int which, boolean uncached) {
+    int signatureIndex = getNameRefIndexAt(implNameAndTypeRefIndexAt(which, uncached));
+    return getSymbolAt(signatureIndex);
   }
 
   public Symbol getSignatureRefAt(int which) {
-    int sigIndex = getNameAndTypeAt(getNameAndTypeRefIndexAt(which))[1];
-    return getSymbolAt(sigIndex);
+    return implGetSignatureRefAt(which, false);
+  }
+
+  private Symbol implGetSignatureRefAt(int which, boolean uncached) {
+    int signatureIndex = getSignatureRefIndexAt(implNameAndTypeRefIndexAt(which, uncached));
+    return getSymbolAt(signatureIndex);
+  }
+
+
+  private int implNameAndTypeRefIndexAt(int which, boolean uncached) {
+    int i = which;
+    if (!uncached && getCache() != null) {
+      if (ConstantPoolCache.isSecondaryIndex(which)) {
+        // Invokedynamic index.
+        int pool_index = getCache().getMainEntryAt(which).getConstantPoolIndex();
+        pool_index = invokeDynamicNameAndTypeRefIndexAt(pool_index);
+        // assert(tagAt(pool_index).isNameAndType(), "");
+        return pool_index;
+      }
+      // change byte-ordering and go via cache
+      i = remapInstructionOperandFromCache(which);
+    } else {
+      if (getTagAt(which).isInvokeDynamic()) {
+        int pool_index = invokeDynamicNameAndTypeRefIndexAt(which);
+        // assert(tag_at(pool_index).is_name_and_type(), "");
+        return pool_index;
+      }
+    }
+    // assert(tag_at(i).is_field_or_method(), "Corrupted constant pool");
+    // assert(!tag_at(i).is_invoke_dynamic(), "Must be handled above");
+    int ref_index = getIntAt(i);
+    return extractHighShortFromInt(ref_index);
+  }
+
+  private int remapInstructionOperandFromCache(int operand) {
+    int cpc_index = operand;
+    // DEBUG_ONLY(cpc_index -= CPCACHE_INDEX_TAG);
+    // assert((int)(u2)cpc_index == cpc_index, "clean u2");
+    int member_index = getCache().getEntryAt(cpc_index).getConstantPoolIndex();
+    return member_index;
+  }
+
+  int invokeDynamicNameAndTypeRefIndexAt(int which) {
+    // assert(tag_at(which).is_invoke_dynamic(), "Corrupted constant pool");
+    return extractHighShortFromInt(getIntAt(which));
   }
 
   // returns null, if not resolved.
@@ -253,15 +300,7 @@ public class ConstantPool extends Oop implements ClassConstants {
   }
 
   public int getNameAndTypeRefIndexAt(int index) {
-    int refIndex = getFieldOrMethodAt(index);
-    if (DEBUG) {
-      System.err.println("ConstantPool.getNameAndTypeRefIndexAt(" + index + "): refIndex = " + refIndex);
-    }
-    int i = extractHighShortFromInt(refIndex);
-    if (DEBUG) {
-      System.err.println("ConstantPool.getNameAndTypeRefIndexAt(" + index + "): result = " + i);
-    }
-    return i;
+    return implNameAndTypeRefIndexAt(index, false);
   }
 
   /** Lookup for entries consisting of (name_index, signature_index) */

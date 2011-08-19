@@ -426,9 +426,6 @@ void IdealGraphPrinter::visit_node(Node *n, void *param) {
     if (flags & Node::Flag_is_Copy) {
       print_prop("is_copy", "true");
     }
-    if (flags & Node::Flag_is_Call) {
-      print_prop("is_call", "true");
-    }
     if (flags & Node::Flag_rematerialize) {
       print_prop("rematerialize", "true");
     }
@@ -444,26 +441,11 @@ void IdealGraphPrinter::visit_node(Node *n, void *param) {
     if (flags & Node::Flag_is_cisc_alternate) {
       print_prop("is_cisc_alternate", "true");
     }
-    if (flags & Node::Flag_is_Branch) {
-      print_prop("is_branch", "true");
-    }
-    if (flags & Node::Flag_is_block_start) {
-      print_prop("is_block_start", "true");
-    }
-    if (flags & Node::Flag_is_Goto) {
-      print_prop("is_goto", "true");
-    }
     if (flags & Node::Flag_is_dead_loop_safe) {
       print_prop("is_dead_loop_safe", "true");
     }
     if (flags & Node::Flag_may_be_short_branch) {
       print_prop("may_be_short_branch", "true");
-    }
-    if (flags & Node::Flag_is_safepoint_node) {
-      print_prop("is_safepoint_node", "true");
-    }
-    if (flags & Node::Flag_is_pc_relative) {
-      print_prop("is_pc_relative", "true");
     }
 
     if (C->matcher() != NULL) {
