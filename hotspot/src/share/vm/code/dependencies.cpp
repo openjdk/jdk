@@ -113,6 +113,11 @@ void Dependencies::assert_has_no_finalizable_subclasses(ciKlass* ctxk) {
   assert_common_1(no_finalizable_subclasses, ctxk);
 }
 
+void Dependencies::assert_call_site_target_value(ciKlass* ctxk, ciCallSite* call_site, ciMethodHandle* method_handle) {
+  check_ctxk(ctxk);
+  assert_common_3(call_site_target_value, ctxk, call_site, method_handle);
+}
+
 // Helper function.  If we are adding a new dep. under ctxk2,
 // try to find an old dep. under a broader* ctxk1.  If there is
 //
@@ -341,7 +346,8 @@ const char* Dependencies::_dep_name[TYPE_LIMIT] = {
   "unique_concrete_method",
   "abstract_with_exclusive_concrete_subtypes_2",
   "exclusive_concrete_methods_2",
-  "no_finalizable_subclasses"
+  "no_finalizable_subclasses",
+  "call_site_target_value"
 };
 
 int Dependencies::_dep_args[TYPE_LIMIT] = {
@@ -354,7 +360,8 @@ int Dependencies::_dep_args[TYPE_LIMIT] = {
   2, // unique_concrete_method ctxk, m
   3, // unique_concrete_subtypes_2 ctxk, k1, k2
   3, // unique_concrete_methods_2 ctxk, m1, m2
-  1  // no_finalizable_subclasses ctxk
+  1, // no_finalizable_subclasses ctxk
+  3  // call_site_target_value ctxk, call_site, method_handle
 };
 
 const char* Dependencies::dep_name(Dependencies::DepType dept) {
@@ -365,6 +372,13 @@ const char* Dependencies::dep_name(Dependencies::DepType dept) {
 int Dependencies::dep_args(Dependencies::DepType dept) {
   if (!dept_in_mask(dept, all_types))  return -1;
   return _dep_args[dept];
+}
+
+void Dependencies::check_valid_dependency_type(DepType dept) {
+  for (int deptv = (int) FIRST_TYPE; deptv < (int) TYPE_LIMIT; deptv++) {
+    if (dept == ((DepType) deptv))  return;
+  }
+  ShouldNotReachHere();
 }
 
 // for the sake of the compiler log, print out current dependencies:
@@ -800,11 +814,11 @@ class ClassHierarchyWalker {
                                  bool participants_hide_witnesses,
                                  bool top_level_call = true);
   // the spot-checking version:
-  klassOop find_witness_in(DepChange& changes,
+  klassOop find_witness_in(KlassDepChange& changes,
                            klassOop context_type,
                            bool participants_hide_witnesses);
  public:
-  klassOop find_witness_subtype(klassOop context_type, DepChange* changes = NULL) {
+  klassOop find_witness_subtype(klassOop context_type, KlassDepChange* changes = NULL) {
     assert(doing_subtype_search(), "must set up a subtype search");
     // When looking for unexpected concrete types,
     // do not look beneath expected ones.
@@ -817,7 +831,7 @@ class ClassHierarchyWalker {
       return find_witness_anywhere(context_type, participants_hide_witnesses);
     }
   }
-  klassOop find_witness_definer(klassOop context_type, DepChange* changes = NULL) {
+  klassOop find_witness_definer(klassOop context_type, KlassDepChange* changes = NULL) {
     assert(!doing_subtype_search(), "must set up a method definer search");
     // When looking for unexpected concrete methods,
     // look beneath expected ones, to see if there are overrides.
@@ -878,7 +892,7 @@ static bool count_find_witness_calls() {
 #endif //PRODUCT
 
 
-klassOop ClassHierarchyWalker::find_witness_in(DepChange& changes,
+klassOop ClassHierarchyWalker::find_witness_in(KlassDepChange& changes,
                                                klassOop context_type,
                                                bool participants_hide_witnesses) {
   assert(changes.involves_context(context_type), "irrelevant dependency");
@@ -1137,7 +1151,7 @@ klassOop Dependencies::check_leaf_type(klassOop ctxk) {
 // when dealing with the types of actual instances.
 klassOop Dependencies::check_abstract_with_unique_concrete_subtype(klassOop ctxk,
                                                                    klassOop conck,
-                                                                   DepChange* changes) {
+                                                                   KlassDepChange* changes) {
   ClassHierarchyWalker wf(conck);
   return wf.find_witness_subtype(ctxk, changes);
 }
@@ -1146,7 +1160,7 @@ klassOop Dependencies::check_abstract_with_unique_concrete_subtype(klassOop ctxk
 // instantiatable.  This can allow the compiler to make some paths go
 // dead, if they are gated by a test of the type.
 klassOop Dependencies::check_abstract_with_no_concrete_subtype(klassOop ctxk,
-                                                               DepChange* changes) {
+                                                               KlassDepChange* changes) {
   // Find any concrete subtype, with no participants:
   ClassHierarchyWalker wf;
   return wf.find_witness_subtype(ctxk, changes);
@@ -1156,7 +1170,7 @@ klassOop Dependencies::check_abstract_with_no_concrete_subtype(klassOop ctxk,
 // If a concrete class has no concrete subtypes, it can always be
 // exactly typed.  This allows the use of a cheaper type test.
 klassOop Dependencies::check_concrete_with_no_concrete_subtype(klassOop ctxk,
-                                                               DepChange* changes) {
+                                                               KlassDepChange* changes) {
   // Find any concrete subtype, with only the ctxk as participant:
   ClassHierarchyWalker wf(ctxk);
   return wf.find_witness_subtype(ctxk, changes);
@@ -1217,7 +1231,7 @@ klassOop Dependencies::check_abstract_with_exclusive_concrete_subtypes(
                                                 klassOop ctxk,
                                                 klassOop k1,
                                                 klassOop k2,
-                                                DepChange* changes) {
+                                                KlassDepChange* changes) {
   ClassHierarchyWalker wf;
   wf.add_participant(k1);
   wf.add_participant(k2);
@@ -1278,7 +1292,7 @@ int Dependencies::find_exclusive_concrete_subtypes(klassOop ctxk,
 // If a class (or interface) has a unique concrete method uniqm, return NULL.
 // Otherwise, return a class that contains an interfering method.
 klassOop Dependencies::check_unique_concrete_method(klassOop ctxk, methodOop uniqm,
-                                                    DepChange* changes) {
+                                                    KlassDepChange* changes) {
   // Here is a missing optimization:  If uniqm->is_final(),
   // we don't really need to search beneath it for overrides.
   // This is probably not important, since we don't use dependencies
@@ -1321,7 +1335,7 @@ methodOop Dependencies::find_unique_concrete_method(klassOop ctxk, methodOop m) 
 klassOop Dependencies::check_exclusive_concrete_methods(klassOop ctxk,
                                                         methodOop m1,
                                                         methodOop m2,
-                                                        DepChange* changes) {
+                                                        KlassDepChange* changes) {
   ClassHierarchyWalker wf(m1);
   wf.add_participant(m1->method_holder());
   wf.add_participant(m2->method_holder());
@@ -1383,7 +1397,7 @@ int Dependencies::find_exclusive_concrete_methods(klassOop ctxk,
 }
 
 
-klassOop Dependencies::check_has_no_finalizable_subclasses(klassOop ctxk, DepChange* changes) {
+klassOop Dependencies::check_has_no_finalizable_subclasses(klassOop ctxk, KlassDepChange* changes) {
   Klass* search_at = ctxk->klass_part();
   if (changes != NULL)
     search_at = changes->new_type()->klass_part(); // just look at the new bit
@@ -1395,8 +1409,39 @@ klassOop Dependencies::check_has_no_finalizable_subclasses(klassOop ctxk, DepCha
 }
 
 
-klassOop Dependencies::DepStream::check_dependency_impl(DepChange* changes) {
+klassOop Dependencies::check_call_site_target_value(klassOop ctxk, oop call_site, oop method_handle, CallSiteDepChange* changes) {
+  assert(call_site    ->is_a(SystemDictionary::CallSite_klass()),     "sanity");
+  assert(method_handle->is_a(SystemDictionary::MethodHandle_klass()), "sanity");
+  if (changes == NULL) {
+    // Validate all CallSites
+    if (java_lang_invoke_CallSite::target(call_site) != method_handle)
+      return ctxk;  // assertion failed
+  } else {
+    // Validate the given CallSite
+    if (call_site == changes->call_site() && java_lang_invoke_CallSite::target(call_site) != changes->method_handle()) {
+      assert(method_handle != changes->method_handle(), "must be");
+      return ctxk;  // assertion failed
+    }
+  }
+  assert(java_lang_invoke_CallSite::target(call_site) == method_handle, "should still be valid");
+  return NULL;  // assertion still valid
+}
+
+
+void Dependencies::DepStream::trace_and_log_witness(klassOop witness) {
+  if (witness != NULL) {
+    if (TraceDependencies) {
+      print_dependency(witness, /*verbose=*/ true);
+    }
+    // The following is a no-op unless logging is enabled:
+    log_dependency(witness);
+  }
+}
+
+
+klassOop Dependencies::DepStream::check_klass_dependency(KlassDepChange* changes) {
   assert_locked_or_safepoint(Compile_lock);
+  Dependencies::check_valid_dependency_type(type());
 
   klassOop witness = NULL;
   switch (type()) {
@@ -1407,95 +1452,103 @@ klassOop Dependencies::DepStream::check_dependency_impl(DepChange* changes) {
     witness = check_leaf_type(context_type());
     break;
   case abstract_with_unique_concrete_subtype:
-    witness = check_abstract_with_unique_concrete_subtype(context_type(),
-                                                          type_argument(1),
-                                                          changes);
+    witness = check_abstract_with_unique_concrete_subtype(context_type(), type_argument(1), changes);
     break;
   case abstract_with_no_concrete_subtype:
-    witness = check_abstract_with_no_concrete_subtype(context_type(),
-                                                      changes);
+    witness = check_abstract_with_no_concrete_subtype(context_type(), changes);
     break;
   case concrete_with_no_concrete_subtype:
-    witness = check_concrete_with_no_concrete_subtype(context_type(),
-                                                      changes);
+    witness = check_concrete_with_no_concrete_subtype(context_type(), changes);
     break;
   case unique_concrete_method:
-    witness = check_unique_concrete_method(context_type(),
-                                           method_argument(1),
-                                           changes);
+    witness = check_unique_concrete_method(context_type(), method_argument(1), changes);
     break;
   case abstract_with_exclusive_concrete_subtypes_2:
-    witness = check_abstract_with_exclusive_concrete_subtypes(context_type(),
-                                                              type_argument(1),
-                                                              type_argument(2),
-                                                              changes);
+    witness = check_abstract_with_exclusive_concrete_subtypes(context_type(), type_argument(1), type_argument(2), changes);
     break;
   case exclusive_concrete_methods_2:
-    witness = check_exclusive_concrete_methods(context_type(),
-                                               method_argument(1),
-                                               method_argument(2),
-                                               changes);
+    witness = check_exclusive_concrete_methods(context_type(), method_argument(1), method_argument(2), changes);
     break;
   case no_finalizable_subclasses:
-    witness = check_has_no_finalizable_subclasses(context_type(),
-                                                  changes);
+    witness = check_has_no_finalizable_subclasses(context_type(), changes);
     break;
-          default:
+  default:
     witness = NULL;
-    ShouldNotReachHere();
     break;
   }
-  if (witness != NULL) {
-    if (TraceDependencies) {
-      print_dependency(witness, /*verbose=*/ true);
-    }
-    // The following is a no-op unless logging is enabled:
-    log_dependency(witness);
+  trace_and_log_witness(witness);
+  return witness;
+}
+
+
+klassOop Dependencies::DepStream::check_call_site_dependency(CallSiteDepChange* changes) {
+  assert_locked_or_safepoint(Compile_lock);
+  Dependencies::check_valid_dependency_type(type());
+
+  klassOop witness = NULL;
+  switch (type()) {
+  case call_site_target_value:
+    witness = check_call_site_target_value(context_type(), argument(1), argument(2), changes);
+    break;
+  default:
+    witness = NULL;
+    break;
   }
+  trace_and_log_witness(witness);
   return witness;
 }
 
 
 klassOop Dependencies::DepStream::spot_check_dependency_at(DepChange& changes) {
-  if (!changes.involves_context(context_type()))
-    // irrelevant dependency; skip it
-    return NULL;
+  // Handle klass dependency
+  if (changes.is_klass_change() && changes.as_klass_change()->involves_context(context_type()))
+    return check_klass_dependency(changes.as_klass_change());
 
-  return check_dependency_impl(&changes);
+  // Handle CallSite dependency
+  if (changes.is_call_site_change())
+    return check_call_site_dependency(changes.as_call_site_change());
+
+  // irrelevant dependency; skip it
+  return NULL;
 }
 
 
-void DepChange::initialize() {
-  // entire transaction must be under this lock:
-  assert_lock_strong(Compile_lock);
-
-  // Mark all dependee and all its superclasses
-  // Mark transitive interfaces
+void DepChange::print() {
+  int nsup = 0, nint = 0;
   for (ContextStream str(*this); str.next(); ) {
-    klassOop d = str.klass();
-    assert(!instanceKlass::cast(d)->is_marked_dependent(), "checking");
-    instanceKlass::cast(d)->set_is_marked_dependent(true);
+    klassOop k = str.klass();
+    switch (str.change_type()) {
+    case Change_new_type:
+      tty->print_cr("  dependee = %s", instanceKlass::cast(k)->external_name());
+      break;
+    case Change_new_sub:
+      if (!WizardMode) {
+        ++nsup;
+      } else {
+        tty->print_cr("  context super = %s", instanceKlass::cast(k)->external_name());
+      }
+      break;
+    case Change_new_impl:
+      if (!WizardMode) {
+        ++nint;
+      } else {
+        tty->print_cr("  context interface = %s", instanceKlass::cast(k)->external_name());
+      }
+      break;
+    }
+  }
+  if (nsup + nint != 0) {
+    tty->print_cr("  context supers = %d, interfaces = %d", nsup, nint);
   }
 }
 
-DepChange::~DepChange() {
-  // Unmark all dependee and all its superclasses
-  // Unmark transitive interfaces
-  for (ContextStream str(*this); str.next(); ) {
-    klassOop d = str.klass();
-    instanceKlass::cast(d)->set_is_marked_dependent(false);
-  }
-}
-
-bool DepChange::involves_context(klassOop k) {
-  if (k == NULL || !Klass::cast(k)->oop_is_instance()) {
-    return false;
-  }
-  instanceKlass* ik = instanceKlass::cast(k);
-  bool is_contained = ik->is_marked_dependent();
-  assert(is_contained == Klass::cast(new_type())->is_subtype_of(k),
-         "correct marking of potential context types");
-  return is_contained;
+void DepChange::ContextStream::start() {
+  klassOop new_type = _changes.is_klass_change() ? _changes.as_klass_change()->new_type() : (klassOop) NULL;
+  _change_type = (new_type == NULL ? NO_CHANGE : Start_Klass);
+  _klass = new_type;
+  _ti_base = NULL;
+  _ti_index = 0;
+  _ti_limit = 0;
 }
 
 bool DepChange::ContextStream::next() {
@@ -1534,33 +1587,37 @@ bool DepChange::ContextStream::next() {
   return false;
 }
 
-void DepChange::print() {
-  int nsup = 0, nint = 0;
+void KlassDepChange::initialize() {
+  // entire transaction must be under this lock:
+  assert_lock_strong(Compile_lock);
+
+  // Mark all dependee and all its superclasses
+  // Mark transitive interfaces
   for (ContextStream str(*this); str.next(); ) {
-    klassOop k = str.klass();
-    switch (str.change_type()) {
-    case Change_new_type:
-      tty->print_cr("  dependee = %s", instanceKlass::cast(k)->external_name());
-      break;
-    case Change_new_sub:
-      if (!WizardMode) {
-        ++nsup;
-      } else {
-        tty->print_cr("  context super = %s", instanceKlass::cast(k)->external_name());
-      }
-      break;
-    case Change_new_impl:
-      if (!WizardMode) {
-        ++nint;
-      } else {
-        tty->print_cr("  context interface = %s", instanceKlass::cast(k)->external_name());
-      }
-      break;
-    }
+    klassOop d = str.klass();
+    assert(!instanceKlass::cast(d)->is_marked_dependent(), "checking");
+    instanceKlass::cast(d)->set_is_marked_dependent(true);
   }
-  if (nsup + nint != 0) {
-    tty->print_cr("  context supers = %d, interfaces = %d", nsup, nint);
+}
+
+KlassDepChange::~KlassDepChange() {
+  // Unmark all dependee and all its superclasses
+  // Unmark transitive interfaces
+  for (ContextStream str(*this); str.next(); ) {
+    klassOop d = str.klass();
+    instanceKlass::cast(d)->set_is_marked_dependent(false);
   }
+}
+
+bool KlassDepChange::involves_context(klassOop k) {
+  if (k == NULL || !Klass::cast(k)->oop_is_instance()) {
+    return false;
+  }
+  instanceKlass* ik = instanceKlass::cast(k);
+  bool is_contained = ik->is_marked_dependent();
+  assert(is_contained == Klass::cast(new_type())->is_subtype_of(k),
+         "correct marking of potential context types");
+  return is_contained;
 }
 
 #ifndef PRODUCT

@@ -276,6 +276,34 @@ public class Bytecodes {
 
   public static final int number_of_codes       = 233;
 
+  // Flag bits derived from format strings, can_trap, can_rewrite, etc.:
+  // semantic flags:
+  static final int  _bc_can_trap      = 1<<0;     // bytecode execution can trap or block
+  static final int  _bc_can_rewrite   = 1<<1;     // bytecode execution has an alternate form
+
+  // format bits (determined only by the format string):
+  static final int  _fmt_has_c        = 1<<2;     // constant, such as sipush "bcc"
+  static final int  _fmt_has_j        = 1<<3;     // constant pool cache index, such as getfield "bjj"
+  static final int  _fmt_has_k        = 1<<4;     // constant pool index, such as ldc "bk"
+  static final int  _fmt_has_i        = 1<<5;     // local index, such as iload
+  static final int  _fmt_has_o        = 1<<6;     // offset, such as ifeq
+  static final int  _fmt_has_nbo      = 1<<7;     // contains native-order field(s)
+  static final int  _fmt_has_u2       = 1<<8;     // contains double-byte field(s)
+  static final int  _fmt_has_u4       = 1<<9;     // contains quad-byte field
+  static final int  _fmt_not_variable = 1<<10;    // not of variable length (simple or wide)
+  static final int  _fmt_not_simple   = 1<<11;    // either wide or variable length
+  static final int  _all_fmt_bits     = (_fmt_not_simple*2 - _fmt_has_c);
+
+  // Example derived format syndromes:
+  static final int  _fmt_b      = _fmt_not_variable;
+  static final int  _fmt_bc     = _fmt_b | _fmt_has_c;
+  static final int  _fmt_bi     = _fmt_b | _fmt_has_i;
+  static final int  _fmt_bkk    = _fmt_b | _fmt_has_k | _fmt_has_u2;
+  static final int  _fmt_bJJ    = _fmt_b | _fmt_has_j | _fmt_has_u2 | _fmt_has_nbo;
+  static final int  _fmt_bo2    = _fmt_b | _fmt_has_o | _fmt_has_u2;
+  static final int  _fmt_bo4    = _fmt_b | _fmt_has_o | _fmt_has_u4;
+
+
   public static int specialLengthAt(Method method, int bci) {
     int code = codeAt(method, bci);
     switch (code) {
@@ -337,18 +365,20 @@ public class Bytecodes {
   //   static Code       non_breakpoint_code_at(address bcp, methodOop method = null);
 
   // Bytecode attributes
-  public static boolean   isDefined    (int code) { return 0 <= code && code < number_of_codes && _format[code] != null; }
-  public static boolean   wideIsDefined(int code) { return isDefined(code) && _wide_format[code] != null; }
+  public static boolean   isDefined    (int code) { return 0 <= code && code < number_of_codes && flags(code, false) != 0; }
+  public static boolean   wideIsDefined(int code) { return isDefined(code) && flags(code, true) != 0; }
   public static String    name         (int code) { check(code);      return _name          [code]; }
   public static String    format       (int code) { check(code);      return _format        [code]; }
   public static String    wideFormat   (int code) { wideCheck(code);  return _wide_format   [code]; }
   public static int       resultType   (int code) { check(code);      return _result_type   [code]; }
   public static int       depth        (int code) { check(code);      return _depth         [code]; }
-  public static int       lengthFor    (int code) { check(code);      return _length        [code]; }
-  public static boolean   canTrap      (int code) { check(code);      return _can_trap      [code]; }
+  public static int       lengthFor    (int code) { check(code);      return _lengths       [code] & 0xF; }
+  public static int       wideLengthFor(int code) { check(code);      return _lengths       [code] >> 4; }
+  public static boolean   canTrap      (int code) { check(code);      return has_all_flags(code, _bc_can_trap, false); }
   public static int       javaCode     (int code) { check(code);      return _java_code     [code]; }
-  public static boolean   canRewrite   (int code) { check(code);      return _can_rewrite   [code]; }
-  public static int       wideLengthFor(int code) { wideCheck(code);  return wideFormat(code).length(); }
+  public static boolean   canRewrite   (int code) { check(code);      return has_all_flags(code, _bc_can_rewrite, false); }
+  public static boolean   native_byte_order(int code)  { check(code);      return has_all_flags(code, _fmt_has_nbo, false); }
+  public static boolean   uses_cp_cache  (int code)    { check(code);      return has_all_flags(code, _fmt_has_j, false); }
   public static int       lengthAt     (Method method, int bci) { int l = lengthFor(codeAt(method, bci)); return l > 0 ? l : specialLengthAt(method, bci); }
   public static int       javaLengthAt (Method method, int bci) { int l = lengthFor(javaCode(codeAt(method, bci))); return l > 0 ? l : specialLengthAt(method, bci); }
   public static boolean   isJavaCode   (int code) { return 0 <= code && code < number_of_java_codes; }
@@ -362,6 +392,92 @@ public class Bytecodes {
   public static boolean   isZeroConst  (int code) { return (code == _aconst_null || code == _iconst_0
                                                                                  || code == _fconst_0 || code == _dconst_0); }
 
+  static int         flags          (int code, boolean is_wide) {
+    assert code == (code & 0xff) : "must be a byte";
+    return _flags[code + (is_wide ? 256 : 0)];
+  }
+  static int         format_bits    (int code, boolean is_wide) { return flags(code, is_wide) & _all_fmt_bits; }
+  static boolean     has_all_flags  (int code, int test_flags, boolean is_wide) {
+    return (flags(code, is_wide) & test_flags) == test_flags;
+  }
+
+  static char compute_flags(String format) {
+    return compute_flags(format, 0);
+  }
+  static char compute_flags(String format, int more_flags) {
+    if (format == null)  return 0;  // not even more_flags
+    int flags = more_flags;
+    int fp = 0;
+    if (format.length() == 0) {
+      flags |= _fmt_not_simple; // but variable
+    } else {
+      switch (format.charAt(fp)) {
+      case 'b':
+        flags |= _fmt_not_variable;  // but simple
+        ++fp;  // skip 'b'
+        break;
+      case 'w':
+        flags |= _fmt_not_variable | _fmt_not_simple;
+        ++fp;  // skip 'w'
+      assert(format.charAt(fp) == 'b') : "wide format must start with 'wb'";
+        ++fp;  // skip 'b'
+        break;
+      }
+    }
+
+    boolean has_nbo = false, has_jbo = false;
+    int has_size = 0;
+    while (fp < format.length()) {
+      int this_flag = 0;
+      char fc = format.charAt(fp++);
+      switch (fc) {
+      case '_': continue;         // ignore these
+
+      case 'j': this_flag = _fmt_has_j; has_jbo = true; break;
+      case 'k': this_flag = _fmt_has_k; has_jbo = true; break;
+      case 'i': this_flag = _fmt_has_i; has_jbo = true; break;
+      case 'c': this_flag = _fmt_has_c; has_jbo = true; break;
+      case 'o': this_flag = _fmt_has_o; has_jbo = true; break;
+
+        // uppercase versions mark native byte order (from Rewriter)
+        // actually, only the 'J' case happens currently
+      case 'J': this_flag = _fmt_has_j; has_nbo = true; break;
+      case 'K': this_flag = _fmt_has_k; has_nbo = true; break;
+      case 'I': this_flag = _fmt_has_i; has_nbo = true; break;
+      case 'C': this_flag = _fmt_has_c; has_nbo = true; break;
+      case 'O': this_flag = _fmt_has_o; has_nbo = true; break;
+      default:  assert false : "bad char in format";
+      }
+
+      flags |= this_flag;
+
+      assert !(has_jbo && has_nbo) : "mixed byte orders in format";
+      if (has_nbo)
+        flags |= _fmt_has_nbo;
+
+      int this_size = 1;
+      if (fp < format.length() && format.charAt(fp) == fc) {
+        // advance beyond run of the same characters
+        this_size = 2;
+        while (fp  + 1 < format.length() && format.charAt(++fp) == fc)  this_size++;
+        switch (this_size) {
+        case 2: flags |= _fmt_has_u2; break;
+        case 4: flags |= _fmt_has_u4; break;
+        default: assert false : "bad rep count in format";
+        }
+      }
+      assert has_size == 0 ||                     // no field yet
+        this_size == has_size ||             // same size
+        this_size < has_size && fp == format.length() : // last field can be short
+             "mixed field sizes in format";
+      has_size = this_size;
+    }
+
+    assert flags == (char)flags : "change _format_flags";
+    return (char)flags;
+  }
+
+
   //----------------------------------------------------------------------
   // Internals only below this point
   //
@@ -371,10 +487,9 @@ public class Bytecodes {
   private static String[]    _wide_format;
   private static int[]       _result_type;
   private static byte[]      _depth;
-  private static byte[]      _length;
-  private static boolean[]   _can_trap;
+  private static byte[]      _lengths;
   private static int[]       _java_code;
-  private static boolean[]   _can_rewrite;
+  private static char[]      _flags;
 
   static {
     _name           = new String [number_of_codes];
@@ -382,10 +497,9 @@ public class Bytecodes {
     _wide_format    = new String [number_of_codes];
     _result_type    = new int    [number_of_codes]; // See BasicType.java
     _depth          = new byte   [number_of_codes];
-    _length         = new byte   [number_of_codes];
-    _can_trap       = new boolean[number_of_codes];
+    _lengths        = new byte   [number_of_codes];
     _java_code      = new int    [number_of_codes];
-    _can_rewrite    = new boolean[number_of_codes];
+    _flags          = new char[256 * 2]; // all second page for wide formats
 
     // In case we want to fetch this information from the VM in the
     // future
@@ -712,18 +826,19 @@ public class Bytecodes {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(wide_format == null || format != null, "short form must exist if there's a wide form");
     }
+    int len  = (format      != null ? format.length()      : 0);
+    int wlen = (wide_format != null ? wide_format.length() : 0);
     _name          [code] = name;
-    _format        [code] = format;
-    _wide_format   [code] = wide_format;
     _result_type   [code] = result_type;
     _depth         [code] = (byte) depth;
-    _can_trap      [code] = can_trap;
-    _length        [code] = (byte) (format != null ? format.length() : 0);
+    _lengths       [code] = (byte)((wlen << 4) | (len & 0xF));
     _java_code     [code] = java_code;
-    if (java_code != code) {
-      _can_rewrite[java_code] = true;
-    } else {
-      _can_rewrite[java_code] = false;
-    }
+    _format        [code] = format;
+    _wide_format   [code] = wide_format;
+    int bc_flags = 0;
+    if (can_trap)           bc_flags |= _bc_can_trap;
+    if (java_code != code)  bc_flags |= _bc_can_rewrite;
+    _flags[code+0*256] = compute_flags(format,      bc_flags);
+    _flags[code+1*256] = compute_flags(wide_format, bc_flags);
   }
 }

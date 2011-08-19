@@ -1350,13 +1350,13 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
                 _codecache_sweep_counter = 0;
               }
               // Force compilation
-              CompileBroker::compile_method(m, InvocationEntryBci, CompLevel_initial_compile,
+              CompileBroker::compile_method(m, InvocationEntryBci, CompilationPolicy::policy()->initial_compile_level(),
                                             methodHandle(), 0, "CTW", THREAD);
               if (HAS_PENDING_EXCEPTION) {
                 clear_pending_exception_if_not_oom(CHECK);
                 tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_counter, m->name()->as_C_string());
               }
-              if (TieredCompilation) {
+              if (TieredCompilation && TieredStopAtLevel >= CompLevel_full_optimization) {
                 // Clobber the first compile and force second tier compilation
                 nmethod* nm = m->code();
                 if (nm != NULL) {

@@ -124,6 +124,7 @@ EXPORT_LIST += $(EXPORT_DOCS_DIR)/platform/jvmti/jvmti.html
 # client and server subdirectories have symbolic links to ../libjsig.so
 EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.so
 EXPORT_SERVER_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/server
+EXPORT_CLIENT_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/client
 
 ifndef BUILD_CLIENT_ONLY
 EXPORT_LIST += $(EXPORT_SERVER_DIR)/Xusage.txt
@@ -132,7 +133,6 @@ endif
 
 ifneq ($(ZERO_BUILD), true)
   ifeq ($(ARCH_DATA_MODEL), 32)
-    EXPORT_CLIENT_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/client
     EXPORT_LIST += $(EXPORT_CLIENT_DIR)/Xusage.txt
     EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.so 
   endif
