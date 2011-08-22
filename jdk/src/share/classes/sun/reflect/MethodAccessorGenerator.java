@@ -401,10 +401,8 @@ class MethodAccessorGenerator extends AccessorGenerator {
                                  0,
                                  bytes.length,
                                  declaringClass.getClassLoader()).newInstance();
-                        } catch (InstantiationException |
-                                 IllegalAccessException e) {
-                            throw (InternalError)
-                                new InternalError().initCause(e);
+                        } catch (InstantiationException | IllegalAccessException e) {
+                            throw new InternalError(e);
                         }
                     }
                 });
