@@ -401,11 +401,9 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _concurrent_mark_remark_times_ms->add(0.05);
   _concurrent_mark_cleanup_times_ms->add(0.20);
   _tenuring_threshold = MaxTenuringThreshold;
-
-  // if G1FixedSurvivorSpaceSize is 0 which means the size is not
-  // fixed, then _max_survivor_regions will be calculated at
-  // calculate_young_list_target_length during initialization
-  _max_survivor_regions = G1FixedSurvivorSpaceSize / HeapRegion::GrainBytes;
+  // _max_survivor_regions will be calculated by
+  // calculate_young_list_target_length() during initialization.
+  _max_survivor_regions = 0;
 
   assert(GCTimeRatio > 0,
          "we should have set it to a default value set_g1_gc_flags() "
@@ -2290,18 +2288,9 @@ void G1CollectorPolicy::calculate_max_gc_locker_expansion() {
 // Calculates survivor space parameters.
 void G1CollectorPolicy::calculate_survivors_policy()
 {
-  if (G1FixedSurvivorSpaceSize == 0) {
-    _max_survivor_regions = _young_list_target_length / SurvivorRatio;
-  } else {
-    _max_survivor_regions = G1FixedSurvivorSpaceSize / HeapRegion::GrainBytes;
-  }
-
-  if (G1FixedTenuringThreshold) {
-    _tenuring_threshold = MaxTenuringThreshold;
-  } else {
-    _tenuring_threshold = _survivors_age_table.compute_tenuring_threshold(
+  _max_survivor_regions = _young_list_target_length / SurvivorRatio;
+  _tenuring_threshold = _survivors_age_table.compute_tenuring_threshold(
         HeapRegion::GrainWords * _max_survivor_regions);
-  }
 }
 
 #ifndef PRODUCT
