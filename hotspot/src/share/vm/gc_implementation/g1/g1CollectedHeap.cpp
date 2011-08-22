@@ -1227,6 +1227,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
                        /* option      */ VerifyOption_G1UsePrevMarking);
 
     }
+    pre_full_gc_dump();
 
     COMPILER2_PRESENT(DerivedPointerTable::clear());
 
@@ -1401,6 +1402,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     Universe::print_heap_after_gc();
   }
   g1mm()->update_counters();
+  post_full_gc_dump();
 
   return true;
 }
