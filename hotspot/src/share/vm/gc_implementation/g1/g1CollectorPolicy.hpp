@@ -1090,18 +1090,12 @@ public:
   bool is_young_list_full() {
     size_t young_list_length = _g1->young_list()->length();
     size_t young_list_target_length = _young_list_target_length;
-    if (G1FixedEdenSize) {
-      young_list_target_length -= _max_survivor_regions;
-    }
     return young_list_length >= young_list_target_length;
   }
 
   bool can_expand_young_list() {
     size_t young_list_length = _g1->young_list()->length();
     size_t young_list_max_length = _young_list_max_length;
-    if (G1FixedEdenSize) {
-      young_list_max_length -= _max_survivor_regions;
-    }
     return young_list_length < young_list_max_length;
   }
 
