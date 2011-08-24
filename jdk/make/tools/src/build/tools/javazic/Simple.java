@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,7 @@ import  java.io.BufferedWriter;
 import  java.io.File;
 import  java.io.FileWriter;
 import  java.io.IOException;
-import  java.util.ArrayList;
 import  java.util.HashMap;
-import  java.util.Iterator;
-import  java.util.LinkedList;
 import  java.util.List;
 import  java.util.Map;
 import  java.util.Set;
@@ -51,22 +48,19 @@ class Simple extends BackEnd {
     /**
      * Zone records which are applied for given year.
      */
-    private static Map<String,ZoneRec> lastZoneRecs
-        = new HashMap<String,ZoneRec>();
+    private static Map<String,ZoneRec> lastZoneRecs = new HashMap<>();
 
     /**
      * Rule records which are applied for given year.
      */
-    private static Map<String,List<RuleRec>> lastRules
-        = new TreeMap<String,List<RuleRec>>();
+    private static Map<String,List<RuleRec>> lastRules = new TreeMap<>();
 
     /**
      * zone IDs sorted by their GMT offsets. If zone's GMT
      * offset will change in the future, its last known offset is
      * used.
      */
-    private SortedMap<Integer, Set<String>> zonesByOffset
-        = new TreeMap<Integer,  Set<String>>();
+    private SortedMap<Integer, Set<String>> zonesByOffset = new TreeMap<>();
 
     /**
      * Sets last Rule records and Zone records for given timezone to
@@ -86,7 +80,7 @@ class Simple extends BackEnd {
         int lastKnownOffset = tz.getRawOffset();
         Set<String> set = zonesByOffset.get(lastKnownOffset);
         if (set == null) {
-            set = new TreeSet<String>();
+            set = new TreeSet<>();
             zonesByOffset.put(lastKnownOffset, set);
         }
         set.add(zonename);
@@ -101,16 +95,11 @@ class Simple extends BackEnd {
      */
     int generateSrc(Mappings map) {
         try {
-            String outputDir = Main.getOutputDir();
-            File outD = new File(outputDir);
-
-            if (!outputDir.endsWith(File.separator)) {
-                outputDir += outD.separator;
-            }
+            File outD = new File(Main.getOutputDir());
             outD.mkdirs();
 
             FileWriter fw =
-                new FileWriter(outputDir + "TimeZoneData.java", false);
+                new FileWriter(new File(outD, "TimeZoneData.java"), false);
             BufferedWriter out = new BufferedWriter(fw);
 
             out.write("import java.util.SimpleTimeZone;\n\n");

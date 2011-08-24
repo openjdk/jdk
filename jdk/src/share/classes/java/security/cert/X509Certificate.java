@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,15 +89,9 @@ import sun.security.x509.X509CertImpl;
  * Certificates are instantiated using a certificate factory. The following is
  * an example of how to instantiate an X.509 certificate:
  * <pre>
- * InputStream inStream = null;
- * try {
- *     inStream = new FileInputStream("fileName-of-cert");
+ * try (InputStream inStream = new FileInputStream("fileName-of-cert")) {
  *     CertificateFactory cf = CertificateFactory.getInstance("X.509");
  *     X509Certificate cert = (X509Certificate)cf.generateCertificate(inStream);
- * } finally {
- *     if (inStream != null) {
- *         inStream.close();
- *     }
  * }
  * </pre>
  *

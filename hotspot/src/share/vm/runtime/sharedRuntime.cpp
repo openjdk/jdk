@@ -80,6 +80,72 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 
+// Shared stub locations
+RuntimeStub*        SharedRuntime::_wrong_method_blob;
+RuntimeStub*        SharedRuntime::_ic_miss_blob;
+RuntimeStub*        SharedRuntime::_resolve_opt_virtual_call_blob;
+RuntimeStub*        SharedRuntime::_resolve_virtual_call_blob;
+RuntimeStub*        SharedRuntime::_resolve_static_call_blob;
+
+DeoptimizationBlob* SharedRuntime::_deopt_blob;
+RicochetBlob*       SharedRuntime::_ricochet_blob;
+
+SafepointBlob*      SharedRuntime::_polling_page_safepoint_handler_blob;
+SafepointBlob*      SharedRuntime::_polling_page_return_handler_blob;
+
+#ifdef COMPILER2
+UncommonTrapBlob*   SharedRuntime::_uncommon_trap_blob;
+#endif // COMPILER2
+
+
+//----------------------------generate_stubs-----------------------------------
+void SharedRuntime::generate_stubs() {
+  _wrong_method_blob                   = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::handle_wrong_method),         "wrong_method_stub");
+  _ic_miss_blob                        = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::handle_wrong_method_ic_miss), "ic_miss_stub");
+  _resolve_opt_virtual_call_blob       = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::resolve_opt_virtual_call_C),  "resolve_opt_virtual_call");
+  _resolve_virtual_call_blob           = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::resolve_virtual_call_C),      "resolve_virtual_call");
+  _resolve_static_call_blob            = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::resolve_static_call_C),       "resolve_static_call");
+
+  _polling_page_safepoint_handler_blob = generate_handler_blob(CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception), false);
+  _polling_page_return_handler_blob    = generate_handler_blob(CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception), true);
+
+  generate_ricochet_blob();
+  generate_deopt_blob();
+
+#ifdef COMPILER2
+  generate_uncommon_trap_blob();
+#endif // COMPILER2
+}
+
+//----------------------------generate_ricochet_blob---------------------------
+void SharedRuntime::generate_ricochet_blob() {
+  if (!EnableInvokeDynamic)  return;  // leave it as a null
+
+#ifndef TARGET_ARCH_NYI_6939861
+  // allocate space for the code
+  ResourceMark rm;
+  // setup code generation tools
+  CodeBuffer buffer("ricochet_blob", 256 LP64_ONLY(+ 256), 256);  // XXX x86 LP64L: 512, 512
+  MacroAssembler* masm = new MacroAssembler(&buffer);
+
+  int bounce_offset = -1, exception_offset = -1, frame_size_in_words = -1;
+  MethodHandles::RicochetFrame::generate_ricochet_blob(masm, &bounce_offset, &exception_offset, &frame_size_in_words);
+
+  // -------------
+  // make sure all code is generated
+  masm->flush();
+
+  // failed to generate?
+  if (bounce_offset < 0 || exception_offset < 0 || frame_size_in_words < 0) {
+    assert(false, "bad ricochet blob");
+    return;
+  }
+
+  _ricochet_blob = RicochetBlob::create(&buffer, bounce_offset, exception_offset, frame_size_in_words);
+#endif
+}
+
+
 #include <math.h>
 
 HS_DTRACE_PROBE_DECL4(hotspot, object__alloc, Thread*, char*, int, size_t);
@@ -87,8 +153,6 @@ HS_DTRACE_PROBE_DECL7(hotspot, method__entry, int,
                       char*, int, char*, int, char*, int);
 HS_DTRACE_PROBE_DECL7(hotspot, method__return, int,
                       char*, int, char*, int, char*, int);
-
-RicochetBlob*      SharedRuntime::_ricochet_blob = NULL;
 
 // Implementation of SharedRuntime
 
@@ -142,6 +206,7 @@ int SharedRuntime::_rethrow_ctr=0;
 int     SharedRuntime::_ICmiss_index                    = 0;
 int     SharedRuntime::_ICmiss_count[SharedRuntime::maxICmiss_count];
 address SharedRuntime::_ICmiss_at[SharedRuntime::maxICmiss_count];
+
 
 void SharedRuntime::trace_ic_miss(address at) {
   for (int i = 0; i < _ICmiss_index; i++) {
@@ -696,6 +761,13 @@ JRT_ENTRY(void, SharedRuntime::throw_StackOverflowError(JavaThread* thread))
     java_lang_Throwable::fill_in_stack_trace(exception);
   }
   throw_and_post_jvmti_exception(thread, exception);
+JRT_END
+
+JRT_ENTRY(void, SharedRuntime::throw_WrongMethodTypeException(JavaThread* thread, oopDesc* required, oopDesc* actual))
+  assert(thread == JavaThread::current() && required->is_oop() && actual->is_oop(), "bad args");
+  ResourceMark rm;
+  char* message = SharedRuntime::generate_wrong_method_type_message(thread, required, actual);
+  throw_and_post_jvmti_exception(thread, vmSymbols::java_lang_invoke_WrongMethodTypeException(), message);
 JRT_END
 
 address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,

@@ -56,10 +56,6 @@ class MethodTypeForm {
     /*lazy*/ MethodType primsAtEnd;     // reorder primitives to the end
 
     // Cached adapter information:
-    /*lazy*/ ToGeneric   toGeneric;     // convert cs. with prims to w/o
-    /*lazy*/ FromGeneric fromGeneric;   // convert cs. w/o prims to with
-    /*lazy*/ SpreadGeneric[] spreadGeneric; // expand one argument to many
-    /*lazy*/ FilterGeneric filterGeneric; // convert argument(s) on the fly
     /*lazy*/ MethodHandle genericInvoker; // hook for inexact invoke
 
     public MethodType erasedType() {

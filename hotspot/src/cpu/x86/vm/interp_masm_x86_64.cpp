@@ -402,7 +402,7 @@ void InterpreterMacroAssembler::jump_from_interpreted(Register method, Register 
     // interp_only is an int, on little endian it is sufficient to test the byte only
     // Is a cmpl faster?
     cmpb(Address(r15_thread, JavaThread::interp_only_mode_offset()), 0);
-    jcc(Assembler::zero, run_compiled_code);
+    jccb(Assembler::zero, run_compiled_code);
     jmp(Address(method, methodOopDesc::interpreter_entry_offset()));
     bind(run_compiled_code);
   }

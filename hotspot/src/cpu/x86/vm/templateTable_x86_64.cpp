@@ -385,6 +385,8 @@ void TemplateTable::ldc(bool wide) {
     __ jcc(Assembler::equal, L);
     __ cmpl(rdx, JVM_CONSTANT_String);
     __ jcc(Assembler::equal, L);
+    __ cmpl(rdx, JVM_CONSTANT_Object);
+    __ jcc(Assembler::equal, L);
     __ stop("unexpected tag type in ldc");
     __ bind(L);
   }

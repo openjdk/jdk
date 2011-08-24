@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,30 +29,37 @@ public class LocaleCategory {
     private static String enc = null;
 
     public static void main(String[] args) {
-        Locale.Builder builder = new Locale.Builder();
+        Locale reservedLocale = Locale.getDefault();
+        try {
+            Locale.Builder builder = new Locale.Builder();
 
-        base = builder.setLanguage(System.getProperty("user.language", ""))
-                      .setScript(System.getProperty("user.script", ""))
-                      .setRegion(System.getProperty("user.country", ""))
-                      .setVariant(System.getProperty("user.variant", "")).build();
-        disp = builder.setLanguage(System.getProperty("user.language.display",
-                                                      Locale.getDefault().getLanguage()))
-                      .setScript(System.getProperty("user.script.display",
-                                                    Locale.getDefault().getScript()))
-                      .setRegion(System.getProperty("user.country.display",
-                                                    Locale.getDefault().getCountry()))
-                      .setVariant(System.getProperty("user.variant.display",
-                                                     Locale.getDefault().getVariant())).build();
-        fmt = builder.setLanguage(System.getProperty("user.language.format",
-                                                     Locale.getDefault().getLanguage()))
-                     .setScript(System.getProperty("user.script.format",
-                                                   Locale.getDefault().getScript()))
-                     .setRegion(System.getProperty("user.country.format",
-                                                   Locale.getDefault().getCountry()))
-                     .setVariant(System.getProperty("user.variant.format",
-                                                     Locale.getDefault().getVariant())).build();
-        checkDefault();
-        testGetSetDefault();
+            base = builder.setLanguage(System.getProperty("user.language", ""))
+                  .setScript(System.getProperty("user.script", ""))
+                  .setRegion(System.getProperty("user.country", ""))
+                  .setVariant(System.getProperty("user.variant", "")).build();
+            disp = builder.setLanguage(
+                    System.getProperty("user.language.display",
+                                Locale.getDefault().getLanguage()))
+                        .setScript(System.getProperty("user.script.display",
+                                Locale.getDefault().getScript()))
+                        .setRegion(System.getProperty("user.country.display",
+                                Locale.getDefault().getCountry()))
+                        .setVariant(System.getProperty("user.variant.display",
+                                Locale.getDefault().getVariant())).build();
+            fmt = builder.setLanguage(System.getProperty("user.language.format",
+                                Locale.getDefault().getLanguage()))
+                       .setScript(System.getProperty("user.script.format",
+                                Locale.getDefault().getScript()))
+                       .setRegion(System.getProperty("user.country.format",
+                                Locale.getDefault().getCountry()))
+                       .setVariant(System.getProperty("user.variant.format",
+                                  Locale.getDefault().getVariant())).build();
+            checkDefault();
+            testGetSetDefault();
+        } finally {
+            // restore the reserved locale
+            Locale.setDefault(reservedLocale);
+        }
     }
 
     static void checkDefault() {

@@ -31,7 +31,8 @@ BUILDDIR = ../..
 PACKAGE = java.nio
 LIBRARY = nio
 PRODUCT = java
-OTHER_JAVACFLAGS += -Xmaxwarns 1000 -Xlint:serial -Werror
+JAVAC_MAX_WARNINGS = true
+JAVAC_WARNINGS_FATAL = true
 include $(BUILDDIR)/common/Defs.gmk
 
 NIO_SRC = $(SHARE_SRC)/classes/java/nio
@@ -255,7 +256,7 @@ FILES_export += \
 	sun/nio/fs/LinuxWatchService.java \
 	sun/nio/fs/UnixCopyFile.java \
 	sun/nio/fs/UnixNativeDispatcher.java
-	
+
 FILES_gen += \
 	sun/nio/fs/UnixConstants.java
 endif # PLATFORM = linux
@@ -771,7 +772,7 @@ $(CS_GEN)/CharsetEncoder.java: $(CHARSET_X_CODER_TEMPLATE) $(GEN_CODER_SH)
 #
 
 GEN_EX_SH = genExceptions.sh
- 
+
 GEN_EX_CMD = NAWK="$(NAWK)" SH="$(SH)" $(SH) $(GEN_EX_SH)
 
 $(CH_GEN)/%Exception.java: genExceptions.sh $(CH_SRC)/exceptions
@@ -820,14 +821,19 @@ $(TEMPDIR)/$(GENSOR_SRC) : $(GENSOR_SRC)
 
 $(GENSOR_EXE) : $(TEMPDIR)/$(GENSOR_SRC)
 	$(prep-target)
-	($(CD) $(TEMPDIR); $(HOST_CC) $(CPPFLAGS) $(LDDFLAGS) \
+	($(CD) $(TEMPDIR); $(CC) $(CPPFLAGS) $(LDDFLAGS) \
 	   -o genSocketOptionRegistry$(EXE_SUFFIX) $(GENSOR_SRC))
 
+ifdef NIO_PLATFORM_CLASSES_ROOT_DIR
+$(SCH_GEN)/SocketOptionRegistry.java: $(NIO_PLATFORM_CLASSES_ROOT_DIR)/sun/nio/ch/SocketOptionRegistry-$(PLATFORM)-$(ARCH).java
+	$(prep-target)
+	$(CP) $< $@
+else 
 $(SCH_GEN)/SocketOptionRegistry.java: $(GENSOR_EXE)
 	$(prep-target)
 	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e addNotices.sh "$(SOR_COPYRIGHT_YEARS)" > $@
 	$(GENSOR_EXE) >> $@
-
+endif
 #
 # Generated sun.nio.cs SingleByte classes
 #
@@ -851,12 +857,18 @@ GENUC_COPYRIGHT_YEARS = $(shell $(CAT) $(GENUC_SRC) | \
 
 $(GENUC_EXE) : $(GENUC_SRC)
 	$(prep-target)
-	$(HOST_CC) $(CPPFLAGS) -o $@ $(GENUC_SRC)
+	$(CC) $(CPPFLAGS) -o $@ $(GENUC_SRC)
 
+ifdef NIO_PLATFORM_CLASSES_ROOT_DIR
+$(SFS_GEN)/UnixConstants.java: $(NIO_PLATFORM_CLASSES_ROOT_DIR)/sun/nio/fs/UnixConstants-$(PLATFORM)-$(ARCH).java
+	$(prep-target)
+	$(CP) $< $@
+else
 $(SFS_GEN)/UnixConstants.java: $(GENUC_EXE)
 	$(prep-target)
 	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e addNotices.sh "$(GENUC_COPYRIGHT_YEARS)" > $@
 	$(GENUC_EXE) >> $@
+endif
 
 GENSC_SRC = $(PLATFORM_SRC)/native/sun/nio/fs/genSolarisConstants.c
 
@@ -867,11 +879,17 @@ GENSC_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSC_SRC) | \
 
 $(GENSC_EXE) : $(GENSC_SRC)
 	$(prep-target)
-	$(HOST_CC) $(CPPFLAGS) -o $@ $(GENSC_SRC)
+	$(CC) $(CPPFLAGS) -o $@ $(GENSC_SRC)
 
+ifdef NIO_PLATFORM_CLASSES_ROOT_DIR
+$(SFS_GEN)/SolarisConstants.java: $(NIO_PLATFORM_CLASSES_ROOT_DIR)/sun/nio/fs/SolarisConstants-$(PLATFORM)-$(ARCH).java
+	$(prep-target)
+	$(CP) $< $@
+else
 $(SFS_GEN)/SolarisConstants.java: $(GENSC_EXE)
 	$(prep-target)
 	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e addNotices.sh "$(GENSC_COPYRIGHT_YEARS)" > $@
 	$(GENSC_EXE) >> $@
+endif
 
 .PHONY: sources 

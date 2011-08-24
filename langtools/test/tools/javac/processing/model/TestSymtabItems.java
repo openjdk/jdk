@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021183
+ * @bug 7021183 7025809
  * @summary 269: assertion failure getting enclosing element of an undefined name
  */
 
@@ -37,9 +37,7 @@ import javax.lang.model.element.UnknownElementException;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.UnknownTypeException;
-import javax.lang.model.util.ElementScanner7;
-import javax.lang.model.util.SimpleTypeVisitor7;
-import javax.lang.model.util.Types;
+import javax.lang.model.util.*;
 
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symtab;
@@ -112,7 +110,7 @@ public class TestSymtabItems {
 
     int errors;
 
-    class ElemPrinter extends ElementScanner7<Void, Void> {
+    class ElemPrinter extends ElementScanner8<Void, Void> {
         @Override
         public Void visitPackage(PackageElement e, Void p) {
             show("package", e);

@@ -60,6 +60,7 @@ class PendingIoCache {
     private boolean closePending;
 
     // maps OVERLAPPED to PendingFuture
+    @SuppressWarnings("rawtypes")
     private final Map<Long,PendingFuture> pendingIoMap =
         new HashMap<Long,PendingFuture>();
 

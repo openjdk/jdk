@@ -1444,7 +1444,6 @@ BOOL AwtToolkit::PreProcessMouseMsg(AwtComponent* p, MSG& msg)
     AwtComponent* mouseComp =
         AwtComponent::GetComponent(hWndFromPoint);
     // Need extra copies for non-client area issues
-    AwtComponent* mouseWheelComp = mouseComp;
     HWND hWndForWheel = hWndFromPoint;
 
     // If the point under the mouse isn't in the client area,
@@ -1510,9 +1509,9 @@ BOOL AwtToolkit::PreProcessMouseMsg(AwtComponent* p, MSG& msg)
      */
 
     if (msg.message == WM_MOUSEWHEEL &&
-        mouseWheelComp != NULL) { //i.e. mouse is over client area for this
-                                  //window
-        msg.hwnd = hWndForWheel;
+        AwtToolkit::MainThread() == ::GetWindowThreadProcessId(hWndForWheel, NULL)) {
+            //i.e. mouse is over client area for this window
+            msg.hwnd = hWndForWheel;
     }
 
     /*

@@ -223,6 +223,9 @@ endif
 ifeq ($(JDK_MINOR_VERSION),6)
   JDK_IS_FCS = true
 endif
+ifeq ($(JDK_MINOR_VERSION),7)
+  JDK_IS_FCS = true
+endif
 ifeq ($(JDK_IS_FCS),false)
   ifneq ($(MILESTONE), fcs)
     DRAFT_HEADER = <br><strong>DRAFT&nbsp;$(MILESTONE)-$(BUILD_NUMBER)</strong>
