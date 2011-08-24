@@ -29,7 +29,6 @@
  * @compile -Xlint:all Serial.java
  * @compile -Werror Serial.java
  * @compile/fail -Werror -Xlint:serial Serial.java
- * @compile/fail -Werror -Xlint:all,-path T4994049/ Serial.java
  */
 
 import java.io.Serializable;

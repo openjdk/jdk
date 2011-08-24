@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,12 +78,12 @@ class DictionaryBasedBreakIteratorBuilder extends RuleBasedBreakIteratorBuilder 
      * contains "true" for every character category that includes a dictionary
      * character.
      */
-    protected void buildCharCategories(Vector tempRuleList) {
+    protected void buildCharCategories(Vector<String> tempRuleList) {
         super.buildCharCategories(tempRuleList);
 
         categoryFlags = new boolean[categories.size()];
         for (int i = 0; i < categories.size(); i++) {
-            CharSet cs = (CharSet)categories.elementAt(i);
+            CharSet cs = categories.elementAt(i);
             if (!(cs.intersection(dictionaryChars).empty())) {
                 categoryFlags[i] = true;
             }
@@ -95,7 +95,7 @@ class DictionaryBasedBreakIteratorBuilder extends RuleBasedBreakIteratorBuilder 
     // the function above. This gives us a way to create a separate character
     // category for the dictionary characters even when
     // RuleBasedBreakIteratorBuilder isn't making a distinction.
-    protected void mungeExpressionList(Hashtable expressions) {
+    protected void mungeExpressionList(Hashtable<String, Object> expressions) {
         expressions.put(dictionaryExpression, dictionaryChars);
     }
 

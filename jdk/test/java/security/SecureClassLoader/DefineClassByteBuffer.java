@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4894899
+ * @bug 4894899 7054428
  * @summary Test various cases of passing java.nio.ByteBuffers
  * to defineClass().
  *
@@ -46,6 +46,17 @@ public class DefineClassByteBuffer {
     }
 
     public static void main(String arg[]) throws Exception {
+
+        // Rename the compiled TestClass.class file to something else,
+        // otherwise it would be loaded by the parent class loader and
+        // DummyClassLoader will never be used, especially in /othervm mode.
+
+        File oldFile = new File(System.getProperty("test.classes", "."),
+                                  "TestClass.class");
+        File newFile = new File(System.getProperty("test.classes", "."),
+                                  "CLAZZ");
+        oldFile.renameTo(newFile);
+
         ClassLoader[] cls = new ClassLoader[DummyClassLoader.MAX_TYPE];
         for (int i = 0; i < cls.length; i++) {
             cls[i] = new DummyClassLoader(i);
@@ -54,7 +65,11 @@ public class DefineClassByteBuffer {
         /* Create several instances of the class using different classloaders,
            which are using different types of ByteBuffer. */
         for (int i = 0; i < cls.length; i++) {
-          test(cls[i]);
+            test(cls[i]);
+        }
+
+        if (DummyClassLoader.count != cls.length) {
+             throw new Exception("DummyClassLoader not always used");
         }
     }
 
@@ -75,6 +90,8 @@ public class DefineClassByteBuffer {
 
         int loaderType;
 
+        static int count = 0;
+
         DummyClassLoader(int loaderType) {
             this.loaderType = loaderType;
         }
@@ -84,10 +101,11 @@ public class DefineClassByteBuffer {
         static ByteBuffer readClassFile(String name) {
             try {
                 File f = new File(System.getProperty("test.classes", "."),
-                                  name);
-                FileInputStream fin = new FileInputStream(f);
-                FileChannel fc = fin.getChannel();
-                return fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size());
+                                  "CLAZZ");
+                try (FileInputStream fin = new FileInputStream(f);
+                        FileChannel fc = fin.getChannel()) {
+                    return fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size());
+                }
             } catch (FileNotFoundException e) {
                 throw new RuntimeException("Can't open file: " + name, e);
             } catch (IOException e) {
@@ -101,12 +119,16 @@ public class DefineClassByteBuffer {
                buffers. */
             buffers[MAPPED_BUFFER] = readClassFile(CLASS_NAME + ".class");
             byte[] array = new byte[buffers[MAPPED_BUFFER].limit()];
+            buffers[MAPPED_BUFFER].get(array);
+            buffers[MAPPED_BUFFER].flip();
 
             buffers[DIRECT_BUFFER] = ByteBuffer.allocateDirect(array.length);
             buffers[DIRECT_BUFFER].put(array);
+            buffers[DIRECT_BUFFER].flip();
 
             buffers[ARRAY_BUFFER] = ByteBuffer.allocate(array.length);
             buffers[ARRAY_BUFFER].put(array);
+            buffers[ARRAY_BUFFER].flip();
 
             buffers[WRAPPED_BUFFER] = ByteBuffer.wrap(array);
 
@@ -121,6 +143,7 @@ public class DefineClassByteBuffer {
 
          public Class findClass(String name) {
              CodeSource cs = null;
+             count++;
              return defineClass(name, buffers[loaderType], cs);
          }
     } /* DummyClassLoader */

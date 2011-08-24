@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4894151
+ * @bug 4894151 7055362
  * @summary known answer test for OAEP encryption
  * @author Andreas Sterbenz
  */
@@ -62,60 +62,62 @@ public class TestOAEP_KAT {
         System.out.println("Testing provider " + provider.getName() + "...");
         Cipher c = Cipher.getInstance("RSA/ECB/OAEPwithSHA1andMGF1Padding", provider);
         KeyFactory kf = KeyFactory.getInstance("RSA", kfProvider);
-        InputStream in = new FileInputStream(new File(BASE, "oaep-vect.txt"));
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in, "UTF8"));
-        while (true) {
-            String line = reader.readLine();
-            if (line == null) {
-                break;
-            }
-            line = line.trim();
-            if (line.length() == 0) {
-                continue;
-            }
-            if (line.equals("# RSA modulus n:")) {
-                n = parseNumber(reader);
-            } else if (line.equals("# RSA public exponent e:")) {
-                e = parseNumber(reader);
-            } else if (line.equals("# RSA private exponent d:")) {
-                d = parseNumber(reader);
-            } else if (line.equals("# Prime p:")) {
-                p = parseNumber(reader);
-            } else if (line.equals("# Prime q:")) {
-                q = parseNumber(reader);
-            } else if (line.equals("# p's CRT exponent dP:")) {
-                pe = parseNumber(reader);
-            } else if (line.equals("# q's CRT exponent dQ:")) {
-                qe = parseNumber(reader);
-            } else if (line.equals("# CRT coefficient qInv:")) {
-                coeff = parseNumber(reader);
-            } else if (line.equals("# Message to be encrypted:")) {
-                plainText = parseBytes(reader);
-            } else if (line.equals("# Seed:")) {
-                seed = parseBytes(reader);
-            } else if (line.equals("# Encryption:")) {
-                cipherText = parseBytes(reader);
-                // do encryption test first
-                KeySpec pubSpec = new RSAPublicKeySpec(n, e);
-                PublicKey pubKey = kf.generatePublic(pubSpec);
-                c.init(Cipher.ENCRYPT_MODE, pubKey, new MyRandom(seed));
-                cipherText2 = c.doFinal(plainText);
-                if (Arrays.equals(cipherText2, cipherText) == false) {
-                    throw new Exception("Encryption mismatch");
+        try (InputStream in = new FileInputStream(new File(BASE, "oaep-vect.txt"));
+                BufferedReader reader =
+                        new BufferedReader(new InputStreamReader(in, "UTF8"))) {
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
                 }
-                // followed by decryption test
-                KeySpec privSpec = new RSAPrivateCrtKeySpec(n, e, d, p, q, pe, qe, coeff);
-                PrivateKey privKey = kf.generatePrivate(privSpec);
-                c.init(Cipher.DECRYPT_MODE, privKey);
-                byte[] dec = c.doFinal(cipherText);
-                if (Arrays.equals(plainText, dec) == false) {
-                    throw new Exception("Decryption mismatch");
+                line = line.trim();
+                if (line.length() == 0) {
+                    continue;
                 }
-            } else if (line.startsWith("# ------------------------------")) {
-                // ignore, do not print
-            } else {
-                // unknown line (comment), print
-                System.out.println(": " + line);
+                if (line.equals("# RSA modulus n:")) {
+                    n = parseNumber(reader);
+                } else if (line.equals("# RSA public exponent e:")) {
+                    e = parseNumber(reader);
+                } else if (line.equals("# RSA private exponent d:")) {
+                    d = parseNumber(reader);
+                } else if (line.equals("# Prime p:")) {
+                    p = parseNumber(reader);
+                } else if (line.equals("# Prime q:")) {
+                    q = parseNumber(reader);
+                } else if (line.equals("# p's CRT exponent dP:")) {
+                    pe = parseNumber(reader);
+                } else if (line.equals("# q's CRT exponent dQ:")) {
+                    qe = parseNumber(reader);
+                } else if (line.equals("# CRT coefficient qInv:")) {
+                    coeff = parseNumber(reader);
+                } else if (line.equals("# Message to be encrypted:")) {
+                    plainText = parseBytes(reader);
+                } else if (line.equals("# Seed:")) {
+                    seed = parseBytes(reader);
+                } else if (line.equals("# Encryption:")) {
+                    cipherText = parseBytes(reader);
+                    // do encryption test first
+                    KeySpec pubSpec = new RSAPublicKeySpec(n, e);
+                    PublicKey pubKey = kf.generatePublic(pubSpec);
+                    c.init(Cipher.ENCRYPT_MODE, pubKey, new MyRandom(seed));
+                    cipherText2 = c.doFinal(plainText);
+                    if (Arrays.equals(cipherText2, cipherText) == false) {
+                        throw new Exception("Encryption mismatch");
+                    }
+                    // followed by decryption test
+                    KeySpec privSpec = new RSAPrivateCrtKeySpec(n, e, d, p, q, pe, qe, coeff);
+                    PrivateKey privKey = kf.generatePrivate(privSpec);
+                    c.init(Cipher.DECRYPT_MODE, privKey);
+                    byte[] dec = c.doFinal(cipherText);
+                    if (Arrays.equals(plainText, dec) == false) {
+                        throw new Exception("Decryption mismatch");
+                    }
+                } else if (line.startsWith("# ------------------------------")) {
+                    // ignore, do not print
+                } else {
+                    // unknown line (comment), print
+                    System.out.println(": " + line);
+                }
             }
         }
         long stop = System.currentTimeMillis();

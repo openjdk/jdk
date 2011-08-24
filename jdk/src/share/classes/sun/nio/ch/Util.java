@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,27 +355,24 @@ class Util {
         return pageSize;
     }
 
-    private static volatile Constructor directByteBufferConstructor = null;
+    private static volatile Constructor<?> directByteBufferConstructor = null;
 
     private static void initDBBConstructor() {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 public Void run() {
                     try {
                         Class<?> cl = Class.forName("java.nio.DirectByteBuffer");
-                        Constructor ctor = cl.getDeclaredConstructor(
+                        Constructor<?> ctor = cl.getDeclaredConstructor(
                             new Class[] { int.class,
                                           long.class,
                                           FileDescriptor.class,
                                           Runnable.class });
                         ctor.setAccessible(true);
                         directByteBufferConstructor = ctor;
-                    } catch (ClassNotFoundException x) {
-                        throw new InternalError();
-                    } catch (NoSuchMethodException x) {
-                        throw new InternalError();
-                    } catch (IllegalArgumentException x) {
-                        throw new InternalError();
-                    } catch (ClassCastException x) {
+                    } catch (ClassNotFoundException   |
+                             NoSuchMethodException    |
+                             IllegalArgumentException |
+                             ClassCastException x) {
                         throw new InternalError();
                     }
                     return null;
@@ -395,37 +392,32 @@ class Util {
                              new Long(addr),
                              fd,
                              unmapper });
-        } catch (InstantiationException e) {
-            throw new InternalError();
-        } catch (IllegalAccessException e) {
-            throw new InternalError();
-        } catch (InvocationTargetException e) {
+        } catch (InstantiationException |
+                 IllegalAccessException |
+                 InvocationTargetException e) {
             throw new InternalError();
         }
         return dbb;
     }
 
-    private static volatile Constructor directByteBufferRConstructor = null;
+    private static volatile Constructor<?> directByteBufferRConstructor = null;
 
     private static void initDBBRConstructor() {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 public Void run() {
                     try {
                         Class<?> cl = Class.forName("java.nio.DirectByteBufferR");
-                        Constructor ctor = cl.getDeclaredConstructor(
+                        Constructor<?> ctor = cl.getDeclaredConstructor(
                             new Class[] { int.class,
                                           long.class,
                                           FileDescriptor.class,
                                           Runnable.class });
                         ctor.setAccessible(true);
                         directByteBufferRConstructor = ctor;
-                    } catch (ClassNotFoundException x) {
-                        throw new InternalError();
-                    } catch (NoSuchMethodException x) {
-                        throw new InternalError();
-                    } catch (IllegalArgumentException x) {
-                        throw new InternalError();
-                    } catch (ClassCastException x) {
+                    } catch (ClassNotFoundException |
+                             NoSuchMethodException |
+                             IllegalArgumentException |
+                             ClassCastException x) {
                         throw new InternalError();
                     }
                     return null;
@@ -445,11 +437,9 @@ class Util {
                              new Long(addr),
                              fd,
                              unmapper });
-        } catch (InstantiationException e) {
-            throw new InternalError();
-        } catch (IllegalAccessException e) {
-            throw new InternalError();
-        } catch (InvocationTargetException e) {
+        } catch (InstantiationException |
+                 IllegalAccessException |
+                 InvocationTargetException e) {
             throw new InternalError();
         }
         return dbb;

@@ -47,18 +47,6 @@
 
 #define __ masm->
 
-#ifdef COMPILER2
-UncommonTrapBlob*   SharedRuntime::_uncommon_trap_blob;
-#endif // COMPILER2
-
-DeoptimizationBlob* SharedRuntime::_deopt_blob;
-SafepointBlob*      SharedRuntime::_polling_page_safepoint_handler_blob;
-SafepointBlob*      SharedRuntime::_polling_page_return_handler_blob;
-RuntimeStub*        SharedRuntime::_wrong_method_blob;
-RuntimeStub*        SharedRuntime::_ic_miss_blob;
-RuntimeStub*        SharedRuntime::_resolve_opt_virtual_call_blob;
-RuntimeStub*        SharedRuntime::_resolve_virtual_call_blob;
-RuntimeStub*        SharedRuntime::_resolve_static_call_blob;
 
 class RegisterSaver {
 
@@ -3492,7 +3480,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 // the 64-bit %o's, then do a save, then fixup the caller's SP (our FP).
 // Tricky, tricky, tricky...
 
-static SafepointBlob* generate_handler_blob(address call_ptr, bool cause_return) {
+SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, bool cause_return) {
   assert (StubRoutines::forward_exception_entry() != NULL, "must be generated before");
 
   // allocate space for the code
@@ -3587,7 +3575,7 @@ static SafepointBlob* generate_handler_blob(address call_ptr, bool cause_return)
 // but since this is generic code we don't know what they are and the caller
 // must do any gc of the args.
 //
-static RuntimeStub* generate_resolve_blob(address destination, const char* name) {
+RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const char* name) {
   assert (StubRoutines::forward_exception_entry() != NULL, "must be generated before");
 
   // allocate space for the code
@@ -3676,36 +3664,4 @@ static RuntimeStub* generate_resolve_blob(address destination, const char* name)
   // return the  blob
   // frame_size_words or bytes??
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_words, oop_maps, true);
-}
-
-void SharedRuntime::generate_stubs() {
-
-  _wrong_method_blob = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::handle_wrong_method),
-                                             "wrong_method_stub");
-
-  _ic_miss_blob = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::handle_wrong_method_ic_miss),
-                                        "ic_miss_stub");
-
-  _resolve_opt_virtual_call_blob = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::resolve_opt_virtual_call_C),
-                                        "resolve_opt_virtual_call");
-
-  _resolve_virtual_call_blob = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::resolve_virtual_call_C),
-                                        "resolve_virtual_call");
-
-  _resolve_static_call_blob = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::resolve_static_call_C),
-                                        "resolve_static_call");
-
-  _polling_page_safepoint_handler_blob =
-    generate_handler_blob(CAST_FROM_FN_PTR(address,
-                   SafepointSynchronize::handle_polling_page_exception), false);
-
-  _polling_page_return_handler_blob =
-    generate_handler_blob(CAST_FROM_FN_PTR(address,
-                   SafepointSynchronize::handle_polling_page_exception), true);
-
-  generate_deopt_blob();
-
-#ifdef COMPILER2
-  generate_uncommon_trap_blob();
-#endif // COMPILER2
 }

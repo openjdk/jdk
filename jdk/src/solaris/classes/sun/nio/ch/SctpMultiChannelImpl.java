@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -586,12 +586,12 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                 internalNotificationHandler, null);
     }
 
-    private class InternalNotificationHandler<T>
-            extends AbstractNotificationHandler<T>
+    private class InternalNotificationHandler
+            extends AbstractNotificationHandler<Object>
     {
         @Override
         public HandlerResult handleNotification(
-                AssociationChangeNotification not, T unused) {
+                AssociationChangeNotification not, Object unused) {
             SctpAssocChange sac = (SctpAssocChange) not;
 
             /* Update map to reflect change in association */
@@ -622,8 +622,8 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
         if (!(handler instanceof AbstractNotificationHandler)) {
             result = handler.handleNotification(notification, attachment);
         } else { /* AbstractNotificationHandler */
-            AbstractNotificationHandler absHandler =
-                    (AbstractNotificationHandler)handler;
+            AbstractNotificationHandler<T> absHandler =
+                    (AbstractNotificationHandler<T>)handler;
             switch(resultContainer.type()) {
                 case ASSOCIATION_CHANGED :
                     result = absHandler.handleNotification(
@@ -912,7 +912,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
             if (!isOpen())
                 throw new ClosedChannelException();
             if (!isBound())
-                return Collections.EMPTY_SET;
+                return Collections.emptySet();
 
             return SctpNet.getLocalAddresses(fdVal);
         }
@@ -931,7 +931,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
             } catch (SocketException se) {
                 /* a valid association should always have remote addresses */
                 Set<SocketAddress> addrs = associationMap.get(association);
-                return addrs != null ? addrs : Collections.EMPTY_SET;
+                return addrs != null ? addrs : Collections.<SocketAddress>emptySet();
             }
         }
     }

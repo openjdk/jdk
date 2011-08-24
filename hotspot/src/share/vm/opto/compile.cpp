@@ -1206,11 +1206,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     // Make sure the Bottom and NotNull variants alias the same.
     // Also, make sure exact and non-exact variants alias the same.
     if( ptr == TypePtr::NotNull || ta->klass_is_exact() ) {
-      if (ta->const_oop()) {
-        tj = ta = TypeAryPtr::make(TypePtr::Constant,ta->const_oop(),ta->ary(),ta->klass(),false,offset);
-      } else {
-        tj = ta = TypeAryPtr::make(TypePtr::BotPTR,ta->ary(),ta->klass(),false,offset);
-      }
+      tj = ta = TypeAryPtr::make(TypePtr::BotPTR,ta->ary(),ta->klass(),false,offset);
     }
   }
 

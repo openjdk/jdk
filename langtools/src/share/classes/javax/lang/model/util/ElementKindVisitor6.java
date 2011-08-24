@@ -78,6 +78,7 @@ import javax.lang.model.SourceVersion;
  * @author Peter von der Ah&eacute;
  *
  * @see ElementKindVisitor7
+ * @see ElementKindVisitor8
  * @since 1.6
  */
 @SupportedSourceVersion(RELEASE_6)

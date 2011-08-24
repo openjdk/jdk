@@ -42,6 +42,12 @@
 #include "gc_implementation/g1/heapRegion.hpp"
 #endif
 
+#ifdef PRODUCT
+#define BLOCK_COMMENT(str) /* nothing */
+#else
+#define BLOCK_COMMENT(str) block_comment(str)
+#endif
+
 // Convert the raw encoding form into the form expected by the
 // constructor for Address.
 Address Address::make_raw(int base, int index, int scale, int disp, bool disp_is_oop) {
@@ -1072,6 +1078,12 @@ void MacroAssembler::call_VM_base(
     check_and_forward_exception(Gtemp);
   }
 
+#ifdef ASSERT
+  set(badHeapWordVal, G3);
+  set(badHeapWordVal, G4);
+  set(badHeapWordVal, G5);
+#endif
+
   // get oop result if there is one and reset the value in the thread
   if (oop_result->is_valid()) {
     get_vm_result(oop_result);
@@ -1177,6 +1189,11 @@ void MacroAssembler::call_VM_leaf_base(Register thread_cache, address entry_poin
   call(entry_point, relocInfo::runtime_call_type);
   delayed()->nop();
   restore_thread(thread_cache);
+#ifdef ASSERT
+  set(badHeapWordVal, G3);
+  set(badHeapWordVal, G4);
+  set(badHeapWordVal, G5);
+#endif
 }
 
 
@@ -1518,7 +1535,7 @@ int MacroAssembler::total_frame_size_in_bytes(int extraWords) {
 // save_frame: given number of "extra" words in frame,
 // issue approp. save instruction (p 200, v8 manual)
 
-void MacroAssembler::save_frame(int extraWords = 0) {
+void MacroAssembler::save_frame(int extraWords) {
   int delta = -total_frame_size_in_bytes(extraWords);
   if (is_simm13(delta)) {
     save(SP, delta, SP);
@@ -1730,6 +1747,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* msg, const char * fil
 
   if (reg == G0)  return;       // always NULL, which is always an oop
 
+  BLOCK_COMMENT("verify_oop {");
   char buffer[64];
 #ifdef COMPILER1
   if (CommentedAssembly) {
@@ -1768,6 +1786,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* msg, const char * fil
   delayed()->nop();
   // recover frame size
   add(SP, 8*8,SP);
+  BLOCK_COMMENT("} verify_oop");
 }
 
 void MacroAssembler::_verify_oop_addr(Address addr, const char* msg, const char * file, int line) {
@@ -2040,7 +2059,7 @@ void MacroAssembler::debug(char* msg, RegistersForDebugging* regs) {
   }
   else
      ::tty->print_cr("=============== DEBUG MESSAGE: %s ================\n", msg);
-  assert(false, "error");
+  assert(false, err_msg("DEBUG MESSAGE: %s", msg));
 }
 
 
@@ -3230,6 +3249,7 @@ void MacroAssembler::jump_to_method_handle_entry(Register mh_reg, Register temp_
 
 
 RegisterOrConstant MacroAssembler::argument_offset(RegisterOrConstant arg_slot,
+                                                   Register temp_reg,
                                                    int extra_slot_offset) {
   // cf. TemplateTable::prepare_invoke(), if (load_receiver).
   int stackElementSize = Interpreter::stackElementSize;
@@ -3238,18 +3258,19 @@ RegisterOrConstant MacroAssembler::argument_offset(RegisterOrConstant arg_slot,
     offset += arg_slot.as_constant() * stackElementSize;
     return offset;
   } else {
-    Register temp = arg_slot.as_register();
-    sll_ptr(temp, exact_log2(stackElementSize), temp);
+    assert(temp_reg != noreg, "must specify");
+    sll_ptr(arg_slot.as_register(), exact_log2(stackElementSize), temp_reg);
     if (offset != 0)
-      add(temp, offset, temp);
-    return temp;
+      add(temp_reg, offset, temp_reg);
+    return temp_reg;
   }
 }
 
 
 Address MacroAssembler::argument_address(RegisterOrConstant arg_slot,
+                                         Register temp_reg,
                                          int extra_slot_offset) {
-  return Address(Gargs, argument_offset(arg_slot, extra_slot_offset));
+  return Address(Gargs, argument_offset(arg_slot, temp_reg, extra_slot_offset));
 }
 
 
@@ -4906,4 +4927,3 @@ void MacroAssembler::char_arrays_equals(Register ary1, Register ary2,
   // Caller should set it:
   // add(G0, 1, result); // equals
 }
-
