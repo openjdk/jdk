@@ -34,6 +34,8 @@ package java.lang;
  * @since   JDK1.0
  */
 abstract public class VirtualMachineError extends Error {
+    private static final long serialVersionUID = 4161983926571568670L;
+
     /**
      * Constructs a <code>VirtualMachineError</code> with no detail message.
      */
