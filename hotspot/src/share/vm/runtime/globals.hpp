@@ -1979,6 +1979,12 @@ class CommandLineFlags {
   product(bool, TLABStats, true,                                            \
           "Print various TLAB related information")                         \
                                                                             \
+  product(bool, UseBlockZeroing, false,                                     \
+          "Use special cpu instructions for block zeroing")                 \
+                                                                            \
+  product(intx, BlockZeroingLowLimit, 2048,                                 \
+          "Minimum size in bytes when block zeroing will be used")          \
+                                                                            \
   product(bool, PrintRevisitStats, false,                                   \
           "Print revisit (klass and MDO) stack related information")        \
                                                                             \

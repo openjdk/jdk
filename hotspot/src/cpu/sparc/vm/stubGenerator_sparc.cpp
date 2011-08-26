@@ -3069,6 +3069,34 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  //
+  //  Generate stub for heap zeroing.
+  //  "to" address is aligned to jlong (8 bytes).
+  //
+  // Arguments for generated stub:
+  //      to:    O0
+  //      count: O1 treated as signed (count of HeapWord)
+  //             count could be 0
+  //
+  address generate_zero_aligned_words(const char* name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    const Register to    = O0;   // source array address
+    const Register count = O1;   // HeapWords count
+    const Register temp  = O2;   // scratch
+
+    Label Ldone;
+    __ sllx(count, LogHeapWordSize, count); // to bytes count
+    // Use BIS for zeroing
+    __ bis_zeroing(to, count, temp, Ldone);
+    __ bind(Ldone);
+    __ retl();
+    __ delayed()->nop();
+    return start;
+}
+
   void generate_arraycopy_stubs() {
     address entry;
     address entry_jbyte_arraycopy;
@@ -3195,6 +3223,10 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_jbyte_fill = generate_fill(T_BYTE, true, "arrayof_jbyte_fill");
     StubRoutines::_arrayof_jshort_fill = generate_fill(T_SHORT, true, "arrayof_jshort_fill");
     StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
+
+    if (UseBlockZeroing) {
+      StubRoutines::_zero_aligned_words = generate_zero_aligned_words("zero_aligned_words");
+    }
   }
 
   void generate_initial() {

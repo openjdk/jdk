@@ -460,6 +460,8 @@ source_hpp %{
 // Must be visible to the DFA in dfa_sparc.cpp
 extern bool can_branch_register( Node *bol, Node *cmp );
 
+extern bool use_block_zeroing(Node* count);
+
 // Macros to extract hi & lo halves from a long pair.
 // G0 is not part of any long pair, so assert on that.
 // Prevents accidentally using G1 instead of G0.
@@ -519,6 +521,12 @@ bool can_branch_register( Node *bol, Node *cmp ) {
     return true;
   }
   return false;
+}
+
+bool use_block_zeroing(Node* count) {
+  // Use BIS for zeroing if count is not constant
+  // or it is >= BlockZeroingLowLimit.
+  return UseBlockZeroing && (count->find_intptr_t_con(BlockZeroingLowLimit) >= BlockZeroingLowLimit);
 }
 
 // ****************************************************************************
@@ -2808,25 +2816,6 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
 
     // Convert condition code fcc0 into -1,0,1; unordered reports less-than (-1)
     __ float_cmp( $primary, -1, Fsrc1, Fsrc2, Rdst);
-  %}
-
-  // Compiler ensures base is doubleword aligned and cnt is count of doublewords
-  enc_class enc_Clear_Array(iRegX cnt, iRegP base, iRegX temp) %{
-    MacroAssembler _masm(&cbuf);
-    Register    nof_bytes_arg   = reg_to_register_object($cnt$$reg);
-    Register    nof_bytes_tmp    = reg_to_register_object($temp$$reg);
-    Register    base_pointer_arg = reg_to_register_object($base$$reg);
-  
-    Label loop;
-    __ mov(nof_bytes_arg, nof_bytes_tmp);
-  
-    // Loop and clear, walking backwards through the array.
-    // nof_bytes_tmp (if >0) is always the number of bytes to zero
-    __ bind(loop);
-    __ deccc(nof_bytes_tmp, 8);
-    __ br(Assembler::greaterEqual, true, Assembler::pt, loop);
-    __ delayed()-> stx(G0, base_pointer_arg, nof_bytes_tmp);
-    // %%%% this mini-loop must not cross a cache boundary!
   %}
 
 
@@ -10257,9 +10246,9 @@ instruct cmpFastUnlock(flagsRegP pcc, iRegP object, iRegP box, iRegP scratch2, o
   ins_pipe(long_memory_op);
 %}
 
-// Count and Base registers are fixed because the allocator cannot
-// kill unknown registers.  The encodings are generic.
+// The encodings are generic.
 instruct clear_array(iRegX cnt, iRegP base, iRegX temp, Universe dummy, flagsReg ccr) %{
+  predicate(!use_block_zeroing(n->in(2)) );
   match(Set dummy (ClearArray cnt base));
   effect(TEMP temp, KILL ccr);
   ins_cost(300);
@@ -10267,7 +10256,71 @@ instruct clear_array(iRegX cnt, iRegP base, iRegX temp, Universe dummy, flagsReg
     "loop:   SUBcc  $temp,8,$temp\t! Count down a dword of bytes\n"
     "        BRge   loop\t\t! Clearing loop\n"
     "        STX    G0,[$base+$temp]\t! delay slot" %}
-  ins_encode( enc_Clear_Array(cnt, base, temp) );
+
+  ins_encode %{
+    // Compiler ensures base is doubleword aligned and cnt is count of doublewords
+    Register nof_bytes_arg    = $cnt$$Register;
+    Register nof_bytes_tmp    = $temp$$Register;
+    Register base_pointer_arg = $base$$Register;
+
+    Label loop;
+    __ mov(nof_bytes_arg, nof_bytes_tmp);
+
+    // Loop and clear, walking backwards through the array.
+    // nof_bytes_tmp (if >0) is always the number of bytes to zero
+    __ bind(loop);
+    __ deccc(nof_bytes_tmp, 8);
+    __ br(Assembler::greaterEqual, true, Assembler::pt, loop);
+    __ delayed()-> stx(G0, base_pointer_arg, nof_bytes_tmp);
+    // %%%% this mini-loop must not cross a cache boundary!
+  %}
+  ins_pipe(long_memory_op);
+%}
+
+instruct clear_array_bis(g1RegX cnt, o0RegP base, Universe dummy, flagsReg ccr) %{
+  predicate(use_block_zeroing(n->in(2)));
+  match(Set dummy (ClearArray cnt base));
+  effect(USE_KILL cnt, USE_KILL base, KILL ccr);
+  ins_cost(300);
+  format %{ "CLEAR  [$base, $cnt]\t! ClearArray" %}
+
+  ins_encode %{
+
+    assert(MinObjAlignmentInBytes >= BytesPerLong, "need alternate implementation");
+    Register to    = $base$$Register;
+    Register count = $cnt$$Register;
+
+    Label Ldone;
+    __ nop(); // Separate short branches
+    // Use BIS for zeroing (temp is not used).
+    __ bis_zeroing(to, count, G0, Ldone);
+    __ bind(Ldone);
+
+  %}
+  ins_pipe(long_memory_op);
+%}
+
+instruct clear_array_bis_2(g1RegX cnt, o0RegP base, iRegX tmp, Universe dummy, flagsReg ccr) %{
+  predicate(use_block_zeroing(n->in(2)) && !Assembler::is_simm13((int)BlockZeroingLowLimit));
+  match(Set dummy (ClearArray cnt base));
+  effect(TEMP tmp, USE_KILL cnt, USE_KILL base, KILL ccr);
+  ins_cost(300);
+  format %{ "CLEAR  [$base, $cnt]\t! ClearArray" %}
+
+  ins_encode %{
+
+    assert(MinObjAlignmentInBytes >= BytesPerLong, "need alternate implementation");
+    Register to    = $base$$Register;
+    Register count = $cnt$$Register;
+    Register temp  = $tmp$$Register;
+
+    Label Ldone;
+    __ nop(); // Separate short branches
+    // Use BIS for zeroing
+    __ bis_zeroing(to, count, temp, Ldone);
+    __ bind(Ldone);
+
+  %}
   ins_pipe(long_memory_op);
 %}
 
