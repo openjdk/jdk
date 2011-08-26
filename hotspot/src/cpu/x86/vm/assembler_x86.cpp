@@ -2307,7 +2307,7 @@ void Assembler::prefetch_prefix(Address src) {
 }
 
 void Assembler::prefetchnta(Address src) {
-  NOT_LP64(assert(VM_Version::supports_sse2(), "must support"));
+  NOT_LP64(assert(VM_Version::supports_sse(), "must support"));
   InstructionMark im(this);
   prefetch_prefix(src);
   emit_byte(0x18);
