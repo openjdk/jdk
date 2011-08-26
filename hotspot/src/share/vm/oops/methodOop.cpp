@@ -914,6 +914,7 @@ methodHandle methodOopDesc::make_invoke_method(KlassHandle holder,
                                                Symbol* name,
                                                Symbol* signature,
                                                Handle method_type, TRAPS) {
+  ResourceMark rm;
   methodHandle empty;
 
   assert(holder() == SystemDictionary::MethodHandle_klass(),
