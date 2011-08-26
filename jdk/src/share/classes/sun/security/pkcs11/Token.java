@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,7 +217,7 @@ class Token implements Serializable {
 
     // return whether a token is present (i.e. token not removed)
     // returns cached value if current, otherwise performs new check
-    boolean isPresent(Session session) {
+    boolean isPresent(long sessionID) {
         if (removable == false) {
             return true;
         }
@@ -238,7 +238,7 @@ class Token implements Serializable {
                             // the token should return an error
                             CK_SESSION_INFO sessInfo =
                                     provider.p11.C_GetSessionInfo
-                                    (session.idInternal());
+                                    (sessionID);
                             ok = true;
                         }
                     } catch (PKCS11Exception e) {
