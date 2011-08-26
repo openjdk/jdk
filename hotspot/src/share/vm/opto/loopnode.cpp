@@ -453,7 +453,12 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
   // Now we need to canonicalize loop condition.
   if (bt == BoolTest::ne) {
     assert(stride_con == 1 || stride_con == -1, "simple increment only");
-    bt = (stride_con > 0) ? BoolTest::lt : BoolTest::gt;
+    // 'ne' can be replaced with 'lt' only when init < limit.
+    if (stride_con > 0 && init_t->_hi < limit_t->_lo)
+      bt = BoolTest::lt;
+    // 'ne' can be replaced with 'gt' only when init > limit.
+    if (stride_con < 0 && init_t->_lo > limit_t->_hi)
+      bt = BoolTest::gt;
   }
 
   if (incl_limit) {

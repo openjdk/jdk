@@ -171,7 +171,7 @@ CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
       // If a method has been stale for some time, remove it from the queue.
       if (is_stale(t, TieredCompileTaskTimeout, method) && !is_old(method)) {
         if (PrintTieredEvents) {
-          print_event(KILL, method, method, task->osr_bci(), (CompLevel)task->comp_level());
+          print_event(REMOVE_FROM_QUEUE, method, method, task->osr_bci(), (CompLevel)task->comp_level());
         }
         CompileTaskWrapper ctw(task); // Frees the task
         compile_queue->remove(task);
@@ -192,7 +192,7 @@ CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
   if (max_task->comp_level() == CompLevel_full_profile && is_method_profiled(max_method)) {
     max_task->set_comp_level(CompLevel_limited_profile);
     if (PrintTieredEvents) {
-      print_event(UPDATE, max_method, max_method, max_task->osr_bci(), (CompLevel)max_task->comp_level());
+      print_event(UPDATE_IN_QUEUE, max_method, max_method, max_task->osr_bci(), (CompLevel)max_task->comp_level());
     }
   }
 
@@ -255,6 +255,17 @@ bool AdvancedThresholdPolicy::should_create_mdo(methodOop method, CompLevel cur_
     int b = method->backedge_count();
     double k = Tier0ProfilingStartPercentage / 100.0;
     return call_predicate_helper<CompLevel_none>(i, b, k) || loop_predicate_helper<CompLevel_none>(i, b, k);
+  }
+  return false;
+}
+
+// Inlining control: if we're compiling a profiled method with C1 and the callee
+// is known to have OSRed in a C2 version, don't inline it.
+bool AdvancedThresholdPolicy::should_not_inline(ciEnv* env, ciMethod* callee) {
+  CompLevel comp_level = (CompLevel)env->comp_level();
+  if (comp_level == CompLevel_full_profile ||
+      comp_level == CompLevel_limited_profile) {
+    return callee->highest_osr_comp_level() == CompLevel_full_optimization;
   }
   return false;
 }
@@ -378,8 +389,9 @@ CompLevel AdvancedThresholdPolicy::common(Predicate p, methodOop method, CompLev
 }
 
 // Determine if a method should be compiled with a normal entry point at a different level.
-CompLevel AdvancedThresholdPolicy::call_event(methodOop method,  CompLevel cur_level) {
-  CompLevel osr_level = (CompLevel) method->highest_osr_comp_level();
+CompLevel AdvancedThresholdPolicy::call_event(methodOop method, CompLevel cur_level) {
+  CompLevel osr_level = MIN2((CompLevel) method->highest_osr_comp_level(),
+                             common(&AdvancedThresholdPolicy::loop_predicate, method, cur_level));
   CompLevel next_level = common(&AdvancedThresholdPolicy::call_predicate, method, cur_level);
 
   // If OSR method level is greater than the regular method level, the levels should be
@@ -400,15 +412,16 @@ CompLevel AdvancedThresholdPolicy::call_event(methodOop method,  CompLevel cur_l
 
 // Determine if we should do an OSR compilation of a given method.
 CompLevel AdvancedThresholdPolicy::loop_event(methodOop method, CompLevel cur_level) {
+  CompLevel next_level = common(&AdvancedThresholdPolicy::loop_predicate, method, cur_level);
   if (cur_level == CompLevel_none) {
     // If there is a live OSR method that means that we deopted to the interpreter
     // for the transition.
-    CompLevel osr_level = (CompLevel)method->highest_osr_comp_level();
+    CompLevel osr_level = MIN2((CompLevel)method->highest_osr_comp_level(), next_level);
     if (osr_level > CompLevel_none) {
       return osr_level;
     }
   }
-  return common(&AdvancedThresholdPolicy::loop_predicate, method, cur_level);
+  return next_level;
 }
 
 // Update the rate and submit compile
@@ -418,10 +431,9 @@ void AdvancedThresholdPolicy::submit_compile(methodHandle mh, int bci, CompLevel
   CompileBroker::compile_method(mh, bci, level, mh, hot_count, "tiered", THREAD);
 }
 
-
 // Handle the invocation event.
 void AdvancedThresholdPolicy::method_invocation_event(methodHandle mh, methodHandle imh,
-                                                      CompLevel level, TRAPS) {
+                                                      CompLevel level, nmethod* nm, TRAPS) {
   if (should_create_mdo(mh(), level)) {
     create_mdo(mh, THREAD);
   }
@@ -436,32 +448,81 @@ void AdvancedThresholdPolicy::method_invocation_event(methodHandle mh, methodHan
 // Handle the back branch event. Notice that we can compile the method
 // with a regular entry from here.
 void AdvancedThresholdPolicy::method_back_branch_event(methodHandle mh, methodHandle imh,
-                                                       int bci, CompLevel level, TRAPS) {
+                                                       int bci, CompLevel level, nmethod* nm, TRAPS) {
   if (should_create_mdo(mh(), level)) {
     create_mdo(mh, THREAD);
   }
+  // Check if MDO should be created for the inlined method
+  if (should_create_mdo(imh(), level)) {
+    create_mdo(imh, THREAD);
+  }
 
-  // If the method is already compiling, quickly bail out.
-  if (is_compilation_enabled() && !CompileBroker::compilation_is_in_queue(mh, bci)) {
-    // Use loop event as an opportinity to also check there's been
-    // enough calls.
-    CompLevel cur_level = comp_level(mh());
-    CompLevel next_level = call_event(mh(), cur_level);
-    CompLevel next_osr_level = loop_event(mh(), level);
+  if (is_compilation_enabled()) {
+    CompLevel next_osr_level = loop_event(imh(), level);
+    CompLevel max_osr_level = (CompLevel)imh->highest_osr_comp_level();
     if (next_osr_level  == CompLevel_limited_profile) {
       next_osr_level = CompLevel_full_profile; // OSRs are supposed to be for very hot methods.
     }
-    next_level = MAX2(next_level,
-                      next_osr_level < CompLevel_full_optimization ? next_osr_level : cur_level);
-    bool is_compiling = false;
-    if (next_level != cur_level) {
-      compile(mh, InvocationEntryBci, next_level, THREAD);
-      is_compiling = true;
+
+    // At the very least compile the OSR version
+    if (!CompileBroker::compilation_is_in_queue(imh, bci)) {
+      // Check if there's a method like that already
+      nmethod* osr_nm = NULL;
+      if (max_osr_level >= next_osr_level) {
+        // There is an osr method already with the same
+        // or greater level, check if it has the bci we need
+        osr_nm = imh->lookup_osr_nmethod_for(bci, next_osr_level, false);
+      }
+      if (osr_nm == NULL) {
+        compile(imh, bci, next_osr_level, THREAD);
+      }
     }
 
-    // Do the OSR version
-    if (!is_compiling && next_osr_level != level) {
-      compile(mh, bci, next_osr_level, THREAD);
+    // Use loop event as an opportunity to also check if there's been
+    // enough calls.
+    CompLevel cur_level, next_level;
+    if (mh() != imh()) { // If there is an enclosing method
+      guarantee(nm != NULL, "Should have nmethod here");
+      cur_level = comp_level(mh());
+      next_level = call_event(mh(), cur_level);
+
+      if (max_osr_level == CompLevel_full_optimization) {
+        // The inlinee OSRed to full opt, we need to modify the enclosing method to avoid deopts
+        bool make_not_entrant = false;
+        if (nm->is_osr_method()) {
+          // This is an osr method, just make it not entrant and recompile later if needed
+          make_not_entrant = true;
+        } else {
+          if (next_level != CompLevel_full_optimization) {
+            // next_level is not full opt, so we need to recompile the
+            // enclosing method without the inlinee
+            cur_level = CompLevel_none;
+            make_not_entrant = true;
+          }
+        }
+        if (make_not_entrant) {
+          if (PrintTieredEvents) {
+            int osr_bci = nm->is_osr_method() ? nm->osr_entry_bci() : InvocationEntryBci;
+            print_event(MAKE_NOT_ENTRANT, mh(), mh(), osr_bci, level);
+          }
+          nm->make_not_entrant();
+        }
+      }
+      if (!CompileBroker::compilation_is_in_queue(mh, InvocationEntryBci)) {
+        // Fix up next_level if necessary to avoid deopts
+        if (next_level == CompLevel_limited_profile && max_osr_level == CompLevel_full_profile) {
+          next_level = CompLevel_full_profile;
+        }
+        if (cur_level != next_level) {
+          compile(mh, InvocationEntryBci, next_level, THREAD);
+        }
+      }
+    } else {
+      cur_level = comp_level(imh());
+      next_level = call_event(imh(), cur_level);
+      if (!CompileBroker::compilation_is_in_queue(imh, bci) && next_level != cur_level) {
+        compile(imh, InvocationEntryBci, next_level, THREAD);
+      }
     }
   }
 }

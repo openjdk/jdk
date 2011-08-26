@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -566,11 +566,17 @@ HeapWord* BlockOffsetArrayNonContigSpace::block_start_unsafe(
     q = n;
     n += _sp->block_size(n);
     assert(n > q,
-           err_msg("Looping at n = " PTR_FORMAT " with last = " PTR_FORMAT " _sp = [" PTR_FORMAT "," PTR_FORMAT ")",
-                   n, last, _sp->bottom(), _sp->end()));
+           err_msg("Looping at n = " PTR_FORMAT " with last = " PTR_FORMAT","
+                   " while querying blk_start(" PTR_FORMAT ")"
+                   " on _sp = [" PTR_FORMAT "," PTR_FORMAT ")",
+                   n, last, addr, _sp->bottom(), _sp->end()));
   }
-  assert(q <= addr, err_msg("wrong order for current (" INTPTR_FORMAT ") <= arg (" INTPTR_FORMAT ")", q, addr));
-  assert(addr <= n, err_msg("wrong order for arg (" INTPTR_FORMAT ") <= next (" INTPTR_FORMAT ")", addr, n));
+  assert(q <= addr,
+         err_msg("wrong order for current (" INTPTR_FORMAT ")" " <= arg (" INTPTR_FORMAT ")",
+                 q, addr));
+  assert(addr <= n,
+         err_msg("wrong order for arg (" INTPTR_FORMAT ") <= next (" INTPTR_FORMAT ")",
+                 addr, n));
   return q;
 }
 

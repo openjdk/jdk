@@ -2934,7 +2934,9 @@ class StubGenerator: public StubCodeGenerator {
   // caller saved registers were assumed volatile in the compiler.
   address generate_throw_exception(const char* name,
                                    address runtime_entry,
-                                   bool restore_saved_exception_pc) {
+                                   bool restore_saved_exception_pc,
+                                   Register arg1 = noreg,
+                                   Register arg2 = noreg) {
     // Information about frame layout at time of blocking runtime call.
     // Note that we only have to preserve callee-saved registers since
     // the compilers are responsible for supplying a continuation point
@@ -2980,6 +2982,13 @@ class StubGenerator: public StubCodeGenerator {
     __ set_last_Java_frame(rsp, rbp, NULL);
 
     // Call runtime
+    if (arg1 != noreg) {
+      assert(arg2 != c_rarg1, "clobbered");
+      __ movptr(c_rarg1, arg1);
+    }
+    if (arg2 != noreg) {
+      __ movptr(c_rarg2, arg2);
+    }
     __ movptr(c_rarg0, r15_thread);
     BLOCK_COMMENT("call runtime_entry");
     __ call(RuntimeAddress(runtime_entry));
@@ -3052,6 +3061,14 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::x86::_get_previous_fp_entry = generate_get_previous_fp();
 
     StubRoutines::x86::_verify_mxcsr_entry    = generate_verify_mxcsr();
+
+    // Build this early so it's available for the interpreter.  Stub
+    // expects the required and actual types as register arguments in
+    // j_rarg0 and j_rarg1 respectively.
+    StubRoutines::_throw_WrongMethodTypeException_entry =
+      generate_throw_exception("WrongMethodTypeException throw_exception",
+                               CAST_FROM_FN_PTR(address, SharedRuntime::throw_WrongMethodTypeException),
+                               false, rax, rcx);
   }
 
   void generate_all() {
