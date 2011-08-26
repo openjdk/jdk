@@ -170,6 +170,16 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCBCond, false);
   }
 
+  assert(BlockZeroingLowLimit > 0, "invalid value");
+  if (has_block_zeroing()) {
+    if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
+      FLAG_SET_DEFAULT(UseBlockZeroing, true);
+    }
+  } else if (UseBlockZeroing) {
+    warning("BIS zeroing instructions are not available on this CPU");
+    FLAG_SET_DEFAULT(UseBlockZeroing, false);
+  }
+
 #ifdef COMPILER2
   // T4 and newer Sparc cpus have fast RDPC.
   if (has_fast_rdpc() && FLAG_IS_DEFAULT(UseRDPCForConstantTableBase)) {

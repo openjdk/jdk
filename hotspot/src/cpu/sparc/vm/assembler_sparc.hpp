@@ -885,8 +885,9 @@ class Assembler : public AbstractAssembler  {
   }
 
   enum ASIs { // page 72, v9
-    ASI_PRIMARY        = 0x80,
-    ASI_PRIMARY_LITTLE = 0x88,
+    ASI_PRIMARY            = 0x80,
+    ASI_PRIMARY_NOFAULT    = 0x82,
+    ASI_PRIMARY_LITTLE     = 0x88,
     // Block initializing store
     ASI_ST_BLKINIT_PRIMARY = 0xE2,
     // Most-Recently-Used (MRU) BIS variant
@@ -1786,9 +1787,12 @@ public:
                                                                            rs1(s) |
                                                                            op3(wrreg_op3) |
                                                                            u_field(2, 29, 25) |
-                                                                           u_field(1, 13, 13) |
+                                                                           immed(true) |
                                                                            simm(simm13a, 13)); }
-  inline void wrasi(  Register d) { v9_only(); emit_long( op(arith_op) | rs1(d) | op3(wrreg_op3) | u_field(3, 29, 25)); }
+  inline void wrasi(Register d) { v9_only(); emit_long( op(arith_op) | rs1(d) | op3(wrreg_op3) | u_field(3, 29, 25)); }
+  // wrasi(d, imm) stores (d xor imm) to asi
+  inline void wrasi(Register d, int simm13a) { v9_only(); emit_long( op(arith_op) | rs1(d) | op3(wrreg_op3) |
+                                               u_field(3, 29, 25) | immed(true) | simm(simm13a, 13)); }
   inline void wrfprs( Register d) { v9_only(); emit_long( op(arith_op) | rs1(d) | op3(wrreg_op3) | u_field(6, 29, 25)); }
 
 
@@ -2631,6 +2635,8 @@ public:
   void char_arrays_equals(Register ary1, Register ary2,
                           Register limit, Register result,
                           Register chr1, Register chr2, Label& Ldone);
+  // Use BIS for zeroing
+  void bis_zeroing(Register to, Register count, Register temp, Label& Ldone);
 
 #undef VIRTUAL
 

@@ -287,7 +287,10 @@ oop CollectedHeap::permanent_obj_allocate_no_klass_install(KlassHandle klass,
   assert(size >= 0, "int won't convert to size_t");
   HeapWord* obj = common_permanent_mem_allocate_init(size, CHECK_NULL);
   post_allocation_setup_no_klass_install(klass, obj, size);
-  NOT_PRODUCT(Universe::heap()->check_for_bad_heap_word_value(obj, size));
+#ifndef PRODUCT
+  const size_t hs = oopDesc::header_size();
+  Universe::heap()->check_for_bad_heap_word_value(obj+hs, size-hs);
+#endif
   return (oop)obj;
 }
 
