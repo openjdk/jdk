@@ -50,6 +50,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oop.inline2.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/methodHandleWalk.hpp"
 #include "runtime/init.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -371,6 +372,7 @@ bool ciEnv::check_klass_accessibility(ciKlass* accessing_klass,
 // ------------------------------------------------------------------
 // ciEnv::get_klass_by_name_impl
 ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
+                                       constantPoolHandle cpool,
                                        ciSymbol* name,
                                        bool require_local) {
   ASSERT_IN_VM;
@@ -386,7 +388,7 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
                     sym->utf8_length()-2,
                     KILL_COMPILE_ON_FATAL_(_unloaded_ciinstance_klass));
     ciSymbol* strippedname = get_symbol(strippedsym);
-    return get_klass_by_name_impl(accessing_klass, strippedname, require_local);
+    return get_klass_by_name_impl(accessing_klass, cpool, strippedname, require_local);
   }
 
   // Check for prior unloaded klass.  The SystemDictionary's answers
@@ -443,11 +445,25 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
     // Get element ciKlass recursively.
     ciKlass* elem_klass =
       get_klass_by_name_impl(accessing_klass,
+                             cpool,
                              get_symbol(elem_sym),
                              require_local);
     if (elem_klass != NULL && elem_klass->is_loaded()) {
       // Now make an array for it
       return ciObjArrayKlass::make_impl(elem_klass);
+    }
+  }
+
+  if (found_klass() == NULL && !cpool.is_null() && cpool->has_preresolution()) {
+    // Look inside the constant pool for pre-resolved class entries.
+    for (int i = cpool->length() - 1; i >= 1; i--) {
+      if (cpool->tag_at(i).is_klass()) {
+        klassOop kls = cpool->resolved_klass_at(i);
+        if (Klass::cast(kls)->name() == sym) {
+          found_klass = KlassHandle(THREAD, kls);
+          break;
+        }
+      }
     }
   }
 
@@ -468,6 +484,7 @@ ciKlass* ciEnv::get_klass_by_name(ciKlass* accessing_klass,
                                   ciSymbol* klass_name,
                                   bool require_local) {
   GUARDED_VM_ENTRY(return get_klass_by_name_impl(accessing_klass,
+                                                 constantPoolHandle(),
                                                  klass_name,
                                                  require_local);)
 }
@@ -508,13 +525,14 @@ ciKlass* ciEnv::get_klass_by_index_impl(constantPoolHandle cpool,
   if (klass.is_null()) {
     // Not found in constant pool.  Use the name to do the lookup.
     ciKlass* k = get_klass_by_name_impl(accessor,
+                                        cpool,
                                         get_symbol(klass_name),
                                         false);
     // Calculate accessibility the hard way.
     if (!k->is_loaded()) {
       is_accessible = false;
     } else if (k->loader() != accessor->loader() &&
-               get_klass_by_name_impl(accessor, k->name(), true) == NULL) {
+               get_klass_by_name_impl(accessor, cpool, k->name(), true) == NULL) {
       // Loaded only remotely.  Not linked yet.
       is_accessible = false;
     } else {
@@ -565,7 +583,7 @@ ciConstant ciEnv::get_constant_by_index_impl(constantPoolHandle cpool,
     index = cpc_entry->constant_pool_index();
     oop obj = cpc_entry->f1();
     if (obj != NULL) {
-      assert(obj->is_instance(), "must be an instance");
+      assert(obj->is_instance() || obj->is_array(), "must be a Java reference");
       ciObject* ciobj = get_object(obj);
       return ciConstant(T_OBJECT, ciobj);
     }
@@ -607,7 +625,7 @@ ciConstant ciEnv::get_constant_by_index_impl(constantPoolHandle cpool,
     return ciConstant(T_OBJECT, klass->java_mirror());
   } else if (tag.is_object()) {
     oop obj = cpool->object_at(index);
-    assert(obj->is_instance(), "must be an instance");
+    assert(obj->is_instance() || obj->is_array(), "must be a Java reference");
     ciObject* ciobj = get_object(obj);
     return ciConstant(T_OBJECT, ciobj);
   } else if (tag.is_method_type()) {
@@ -729,9 +747,35 @@ ciMethod* ciEnv::get_method_by_index_impl(constantPoolHandle cpool,
   Symbol* name_sym = cpool->name_ref_at(index);
   Symbol* sig_sym  = cpool->signature_ref_at(index);
 
+  if (cpool->has_preresolution()
+      || (holder == ciEnv::MethodHandle_klass() &&
+          methodOopDesc::is_method_handle_invoke_name(name_sym))) {
+    // Short-circuit lookups for JSR 292-related call sites.
+    // That is, do not rely only on name-based lookups, because they may fail
+    // if the names are not resolvable in the boot class loader (7056328).
+    switch (bc) {
+    case Bytecodes::_invokevirtual:
+    case Bytecodes::_invokeinterface:
+    case Bytecodes::_invokespecial:
+    case Bytecodes::_invokestatic:
+      {
+        methodOop m = constantPoolOopDesc::method_at_if_loaded(cpool, index, bc);
+        if (m != NULL) {
+          return get_object(m)->as_method();
+        }
+      }
+    }
+  }
+
   if (holder_is_accessible) { // Our declared holder is loaded.
     instanceKlass* lookup = declared_holder->get_instanceKlass();
     methodOop m = lookup_method(accessor->get_instanceKlass(), lookup, name_sym, sig_sym, bc);
+    if (m != NULL &&
+        (bc == Bytecodes::_invokestatic
+         ?  instanceKlass::cast(m->method_holder())->is_not_initialized()
+         : !instanceKlass::cast(m->method_holder())->is_loaded())) {
+      m = NULL;
+    }
     if (m != NULL) {
       // We found the method.
       return get_object(m)->as_method();
@@ -1046,7 +1090,7 @@ void ciEnv::register_method(ciMethod* target,
 // ciEnv::find_system_klass
 ciKlass* ciEnv::find_system_klass(ciSymbol* klass_name) {
   VM_ENTRY_MARK;
-  return get_klass_by_name_impl(NULL, klass_name, false);
+  return get_klass_by_name_impl(NULL, constantPoolHandle(), klass_name, false);
 }
 
 // ------------------------------------------------------------------

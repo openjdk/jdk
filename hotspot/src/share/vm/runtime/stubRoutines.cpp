@@ -55,6 +55,7 @@ address StubRoutines::_throw_ArithmeticException_entry          = NULL;
 address StubRoutines::_throw_NullPointerException_entry         = NULL;
 address StubRoutines::_throw_NullPointerException_at_call_entry = NULL;
 address StubRoutines::_throw_StackOverflowError_entry           = NULL;
+address StubRoutines::_throw_WrongMethodTypeException_entry     = NULL;
 address StubRoutines::_handler_for_unsafe_access_entry          = NULL;
 jint    StubRoutines::_verify_oop_count                         = 0;
 address StubRoutines::_verify_oop_subroutine_entry              = NULL;

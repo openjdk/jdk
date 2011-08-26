@@ -44,7 +44,7 @@ private:
 
   friend class ciMethod;
 
-  ciSignature(ciKlass* accessing_klass, ciSymbol* signature);
+  ciSignature(ciKlass* accessing_klass, constantPoolHandle cpool, ciSymbol* signature);
 
   void get_all_klasses();
 

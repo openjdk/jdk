@@ -50,14 +50,17 @@ void SimpleThresholdPolicy::print_event(EventType type, methodHandle mh, methodH
   case COMPILE:
     tty->print("compile");
     break;
-  case KILL:
-    tty->print("kill");
+  case REMOVE_FROM_QUEUE:
+    tty->print("remove-from-queue");
     break;
-  case UPDATE:
-    tty->print("update");
+  case UPDATE_IN_QUEUE:
+    tty->print("update-in-queue");
     break;
   case REPROFILE:
     tty->print("reprofile");
+    break;
+  case MAKE_NOT_ENTRANT:
+    tty->print("make-not-entrant");
     break;
   default:
     tty->print("unknown");
@@ -68,7 +71,6 @@ void SimpleThresholdPolicy::print_event(EventType type, methodHandle mh, methodH
   ResourceMark rm;
   char *method_name = mh->name_and_sig_as_C_string();
   tty->print("[%s", method_name);
-  // We can have an inlinee, although currently we don't generate any notifications for the inlined methods.
   if (inlinee_event) {
     char *inlinee_name = imh->name_and_sig_as_C_string();
     tty->print(" [%s]] ", inlinee_name);
@@ -170,7 +172,7 @@ void SimpleThresholdPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
 }
 
 nmethod* SimpleThresholdPolicy::event(methodHandle method, methodHandle inlinee,
-                                      int branch_bci, int bci, CompLevel comp_level, TRAPS) {
+                                      int branch_bci, int bci, CompLevel comp_level, nmethod* nm, TRAPS) {
   if (comp_level == CompLevel_none &&
       JvmtiExport::can_post_interpreter_events()) {
     assert(THREAD->is_Java_thread(), "Should be java thread");
@@ -190,12 +192,13 @@ nmethod* SimpleThresholdPolicy::event(methodHandle method, methodHandle inlinee,
   }
 
   if (bci == InvocationEntryBci) {
-    method_invocation_event(method, inlinee, comp_level, THREAD);
+    method_invocation_event(method, inlinee, comp_level, nm, THREAD);
   } else {
-    method_back_branch_event(method, inlinee, bci, comp_level, THREAD);
-    int highest_level = method->highest_osr_comp_level();
+    method_back_branch_event(method, inlinee, bci, comp_level, nm, THREAD);
+    // method == inlinee if the event originated in the main method
+    int highest_level = inlinee->highest_osr_comp_level();
     if (highest_level > comp_level) {
-      osr_nm = method->lookup_osr_nmethod_for(bci, highest_level, false);
+      osr_nm = inlinee->lookup_osr_nmethod_for(bci, highest_level, false);
     }
   }
   return osr_nm;
@@ -323,7 +326,8 @@ CompLevel SimpleThresholdPolicy::common(Predicate p, methodOop method, CompLevel
 
 // Determine if a method should be compiled with a normal entry point at a different level.
 CompLevel SimpleThresholdPolicy::call_event(methodOop method,  CompLevel cur_level) {
-  CompLevel osr_level = (CompLevel) method->highest_osr_comp_level();
+  CompLevel osr_level = MIN2((CompLevel) method->highest_osr_comp_level(),
+                             common(&SimpleThresholdPolicy::loop_predicate, method, cur_level));
   CompLevel next_level = common(&SimpleThresholdPolicy::call_predicate, method, cur_level);
 
   // If OSR method level is greater than the regular method level, the levels should be
@@ -344,21 +348,22 @@ CompLevel SimpleThresholdPolicy::call_event(methodOop method,  CompLevel cur_lev
 
 // Determine if we should do an OSR compilation of a given method.
 CompLevel SimpleThresholdPolicy::loop_event(methodOop method, CompLevel cur_level) {
+  CompLevel next_level = common(&SimpleThresholdPolicy::loop_predicate, method, cur_level);
   if (cur_level == CompLevel_none) {
     // If there is a live OSR method that means that we deopted to the interpreter
     // for the transition.
-    CompLevel osr_level = (CompLevel)method->highest_osr_comp_level();
+    CompLevel osr_level = MIN2((CompLevel)method->highest_osr_comp_level(), next_level);
     if (osr_level > CompLevel_none) {
       return osr_level;
     }
   }
-  return common(&SimpleThresholdPolicy::loop_predicate, method, cur_level);
+  return next_level;
 }
 
 
 // Handle the invocation event.
 void SimpleThresholdPolicy::method_invocation_event(methodHandle mh, methodHandle imh,
-                                              CompLevel level, TRAPS) {
+                                              CompLevel level, nmethod* nm, TRAPS) {
   if (is_compilation_enabled() && !CompileBroker::compilation_is_in_queue(mh, InvocationEntryBci)) {
     CompLevel next_level = call_event(mh(), level);
     if (next_level != level) {
@@ -370,7 +375,7 @@ void SimpleThresholdPolicy::method_invocation_event(methodHandle mh, methodHandl
 // Handle the back branch event. Notice that we can compile the method
 // with a regular entry from here.
 void SimpleThresholdPolicy::method_back_branch_event(methodHandle mh, methodHandle imh,
-                                               int bci, CompLevel level, TRAPS) {
+                                                     int bci, CompLevel level, nmethod* nm, TRAPS) {
   // If the method is already compiling, quickly bail out.
   if (is_compilation_enabled() && !CompileBroker::compilation_is_in_queue(mh, bci)) {
     // Use loop event as an opportinity to also check there's been

@@ -51,6 +51,8 @@ class Atomic : AllStatic {
   static intptr_t add_ptr(intptr_t add_value, volatile intptr_t* dest);
   static void*    add_ptr(intptr_t add_value, volatile void*     dest);
 
+  static jlong    add    (jlong    add_value, volatile jlong*    dest);
+
   // Atomically increment location
   static void inc    (volatile jint*     dest);
   static void inc_ptr(volatile intptr_t* dest);

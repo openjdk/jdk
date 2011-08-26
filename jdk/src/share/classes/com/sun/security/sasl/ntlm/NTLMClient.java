@@ -107,7 +107,7 @@ final class NTLMClient implements SaslClient {
      * @param protocol non-null for Sasl, useless for NTLM
      * @param serverName non-null for Sasl, but can be null for NTLM
      * @param props can be null
-     * @param cbh can be null for Sasl, but will throw NPE for NTLM
+     * @param cbh can be null for Sasl, already null-checked in factory
      * @throws SaslException
      */
     NTLMClient(String mech, String authzid, String protocol, String serverName,
@@ -166,7 +166,7 @@ final class NTLMClient implements SaslClient {
                     pcb.getPassword());
         } catch (NTLMException ne) {
             throw new SaslException(
-                    "NTLM: Invalid version string: " + version, ne);
+                    "NTLM: client creation failure", ne);
         }
     }
 
@@ -183,17 +183,20 @@ final class NTLMClient implements SaslClient {
     @Override
     public byte[] unwrap(byte[] incoming, int offset, int len)
             throws SaslException {
-        throw new UnsupportedOperationException("Not supported.");
+        throw new IllegalStateException("Not supported.");
     }
 
     @Override
     public byte[] wrap(byte[] outgoing, int offset, int len)
             throws SaslException {
-        throw new UnsupportedOperationException("Not supported.");
+        throw new IllegalStateException("Not supported.");
     }
 
     @Override
     public Object getNegotiatedProperty(String propName) {
+        if (!isComplete()) {
+            throw new IllegalStateException("authentication not complete");
+        }
         switch (propName) {
             case Sasl.QOP:
                 return "auth";

@@ -51,6 +51,12 @@
 #ifdef TARGET_OS_ARCH_windows_x86
 # include "atomic_windows_x86.inline.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_linux_arm
+# include "atomic_linux_arm.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_ppc
+# include "atomic_linux_ppc.inline.hpp"
+#endif
 
 jbyte Atomic::cmpxchg(jbyte exchange_value, volatile jbyte* dest, jbyte compare_value) {
   assert(sizeof(jbyte) == 1, "assumption.");
@@ -82,4 +88,14 @@ unsigned Atomic::cmpxchg(unsigned int exchange_value,
   assert(sizeof(unsigned int) == sizeof(jint), "more work to do");
   return (unsigned int)Atomic::cmpxchg((jint)exchange_value, (volatile jint*)dest,
                                        (jint)compare_value);
+}
+
+jlong Atomic::add(jlong    add_value, volatile jlong*    dest) {
+  jlong old = load(dest);
+  jlong new_value = old + add_value;
+  while (old != cmpxchg(new_value, dest, old)) {
+    old = load(dest);
+    new_value = old + add_value;
+  }
+  return old;
 }
