@@ -144,8 +144,7 @@ class HttpsURLConnection extends HttpURLConnection
             throws SSLPeerUnverifiedException {
 
         java.security.cert.Certificate[] certs = getServerCertificates();
-        return ((X500Principal)
-                ((X509Certificate)certs[0]).getSubjectX500Principal());
+        return ((X509Certificate)certs[0]).getSubjectX500Principal();
     }
 
     /**
@@ -173,8 +172,7 @@ class HttpsURLConnection extends HttpURLConnection
 
         java.security.cert.Certificate[] certs = getLocalCertificates();
         if (certs != null) {
-            return ((X500Principal)
-                ((X509Certificate)certs[0]).getSubjectX500Principal());
+            return ((X509Certificate)certs[0]).getSubjectX500Principal();
         } else {
             return null;
         }
