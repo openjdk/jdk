@@ -500,19 +500,14 @@ void PhaseIdealLoop::do_split_if( Node *iff ) {
   region_cache.lru_insert( new_false, new_false );
   region_cache.lru_insert( new_true , new_true  );
   // Now handle all uses of the splitting block
-  for (DUIterator_Last kmin, k = region->last_outs(kmin); k >= kmin; --k) {
-    Node* phi = region->last_out(k);
-    if( !phi->in(0) ) {         // Dead phi?  Remove it
+  for (DUIterator k = region->outs(); region->has_out(k); k++) {
+    Node* phi = region->out(k);
+    if (!phi->in(0)) {         // Dead phi?  Remove it
       _igvn.remove_dead_node(phi);
-      continue;
-    }
-    assert( phi->in(0) == region, "" );
-    if( phi == region ) {       // Found the self-reference
-      phi->set_req(0, NULL);
-      continue;                 // Break the self-cycle
-    }
-    // Expected common case: Phi hanging off of Region
-    if( phi->is_Phi() ) {
+    } else if (phi == region) { // Found the self-reference
+      continue;                 // No roll-back of DUIterator
+    } else if (phi->is_Phi()) { // Expected common case: Phi hanging off of Region
+      assert(phi->in(0) == region, "Inconsistent graph");
       // Need a per-def cache.  Phi represents a def, so make a cache
       small_cache phi_cache;
 
@@ -524,22 +519,24 @@ void PhaseIdealLoop::do_split_if( Node *iff ) {
         // collection of PHI's merging values from different paths.  The Phis
         // inserted depend only on the location of the USE.  We use a
         // 2-element cache to handle multiple uses from the same block.
-        handle_use( use, phi, &phi_cache, region_dom, new_false, new_true, old_false, old_true );
+        handle_use(use, phi, &phi_cache, region_dom, new_false, new_true, old_false, old_true);
       } // End of while phi has uses
-
-      // Because handle_use might relocate region->_out,
-      // we must refresh the iterator.
-      k = region->last_outs(kmin);
-
       // Remove the dead Phi
       _igvn.remove_dead_node( phi );
-
     } else {
+      assert(phi->in(0) == region, "Inconsistent graph");
       // Random memory op guarded by Region.  Compute new DEF for USE.
-      handle_use( phi, region, &region_cache, region_dom, new_false, new_true, old_false, old_true );
+      handle_use(phi, region, &region_cache, region_dom, new_false, new_true, old_false, old_true);
     }
-
+    // Every path above deletes a use of the region, except for the region
+    // self-cycle (which is needed by handle_use calling find_use_block
+    // calling get_ctrl calling get_ctrl_no_update looking for dead
+    // regions).  So roll back the DUIterator innards.
+    --k;
   } // End of while merge point has phis
+
+  assert(region->outcnt() == 1, "Only self reference should remain"); // Just Self on the Region
+  region->set_req(0, NULL);       // Break the self-cycle
 
   // Any leftover bits in the splitting block must not have depended on local
   // Phi inputs (these have already been split-up).  Hence it's safe to hoist
