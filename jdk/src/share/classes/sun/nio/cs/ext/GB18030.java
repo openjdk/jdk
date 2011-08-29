@@ -47,30 +47,6 @@ public class GB18030
         super("GB18030", ExtendedCharsets.aliasesFor("GB18030"));
     }
 
-    public short[] getDecoderIndex1() {
-        return decoderIndex1;
-    }
-
-    public String[] getDecoderIndex2() {
-        return decoderIndex2;
-    }
-
-    public short[] getSubDecoderIndex1() {
-        return index1;
-    }
-
-    public String[] getSubDecoderIndex2() {
-        return index2;
-    }
-
-    public short[] getEncoderIndex1() {
-        return encoderIndex1;
-    }
-
-    public String[] getEncoderIndex2() {
-        return encoderIndex2;
-    }
-
     public boolean contains(Charset cs) {
         return ((cs.name().equals("US-ASCII"))
                 || (cs.name().equals("GBK"))

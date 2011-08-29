@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,8 @@ import java.io.*;
 import java.math.BigInteger;
 import java.security.KeyRep;
 import java.security.InvalidKeyException;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.ProviderException;
 import java.security.PublicKey;
-import javax.crypto.*;
 import javax.crypto.spec.DHParameterSpec;
 import sun.security.util.*;
 
@@ -174,7 +172,7 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
                 throw new InvalidKeyException("Excess key data");
             }
 
-            this.encodedKey = (byte[])encodedKey.clone();
+            this.encodedKey = encodedKey.clone();
 
         } catch (NumberFormatException e) {
             throw new InvalidKeyException("Private-value length too big");
@@ -237,7 +235,7 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
                 return null;
             }
         }
-        return (byte[])this.encodedKey.clone();
+        return this.encodedKey.clone();
     }
 
     /**

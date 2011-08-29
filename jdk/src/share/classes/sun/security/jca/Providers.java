@@ -25,10 +25,7 @@
 
 package sun.security.jca;
 
-import java.util.*;
-
 import java.security.Provider;
-import java.security.Security;
 
 /**
  * Collection of methods to get and set provider list. Also includes
@@ -97,11 +94,11 @@ public class Providers {
     // sun.security.util.ManifestEntryVerifier and java.security.SecureRandom.
     public static Provider getSunProvider() {
         try {
-            Class clazz = Class.forName(jarVerificationProviders[0]);
+            Class<?> clazz = Class.forName(jarVerificationProviders[0]);
             return (Provider)clazz.newInstance();
         } catch (Exception e) {
             try {
-                Class clazz = Class.forName(BACKUP_PROVIDER_CLASSNAME);
+                Class<?> clazz = Class.forName(BACKUP_PROVIDER_CLASSNAME);
                 return (Provider)clazz.newInstance();
             } catch (Exception ee) {
                 throw new RuntimeException("Sun provider not found", e);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,11 +106,12 @@ final class NTLMServer implements SaslServer {
      * @param serverName not null for Sasl, can be null in NTLM. If non-null,
      * might be used as domain if not provided in props
      * @param props can be null
-     * @param cbh can be null for Sasl, but will throw NPE in auth for NTLM
+     * @param cbh can be null for Sasl, already null-checked in factory
      * @throws SaslException
      */
     NTLMServer(String mech, String protocol, String serverName,
-            Map props, final CallbackHandler cbh) throws SaslException {
+            Map<String, ?> props, final CallbackHandler cbh)
+            throws SaslException {
 
         this.mech = mech;
         String version = null;
@@ -131,7 +132,7 @@ final class NTLMServer implements SaslServer {
             domain = serverName;
         }
         if (domain == null) {
-            throw new NullPointerException("Domain must be provided as"
+            throw new SaslException("Domain must be provided as"
                     + " the serverName argument or in props");
         }
 
@@ -158,7 +159,7 @@ final class NTLMServer implements SaslServer {
             };
         } catch (NTLMException ne) {
             throw new SaslException(
-                    "NTLM: Invalid version string: " + version, ne);
+                    "NTLM: server creation failure", ne);
         }
         nonce = new byte[8];
     }
@@ -181,8 +182,8 @@ final class NTLMServer implements SaslServer {
                 hostname = out[1];
                 return null;
             }
-        } catch (GeneralSecurityException ex) {
-            throw new SaslException("", ex);
+        } catch (NTLMException ex) {
+            throw new SaslException("NTLM: generate response failure", ex);
         }
     }
 
@@ -193,29 +194,36 @@ final class NTLMServer implements SaslServer {
 
     @Override
     public String getAuthorizationID() {
+        if (!isComplete()) {
+            throw new IllegalStateException("authentication not complete");
+        }
         return authzId;
     }
 
     @Override
     public byte[] unwrap(byte[] incoming, int offset, int len)
             throws SaslException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new IllegalStateException("Not supported yet.");
     }
 
     @Override
     public byte[] wrap(byte[] outgoing, int offset, int len)
             throws SaslException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new IllegalStateException("Not supported yet.");
     }
 
     @Override
     public Object getNegotiatedProperty(String propName) {
-        if (propName.equals(Sasl.QOP)) {
-            return "auth";
-        } else if (propName.equals(NTLM_HOSTNAME)) {
-            return hostname;
-        } else {
-            return null;
+        if (!isComplete()) {
+            throw new IllegalStateException("authentication not complete");
+        }
+        switch (propName) {
+            case Sasl.QOP:
+                return "auth";
+            case NTLM_HOSTNAME:
+                return hostname;
+            default:
+                return null;
         }
     }
 

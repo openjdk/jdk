@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,10 @@ package sun.security.jgss.krb5;
 
 import org.ietf.jgss.*;
 import sun.security.jgss.*;
-import sun.security.krb5.*;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.io.ByteArrayInputStream;
-import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 
 /**
@@ -184,7 +182,7 @@ abstract class MessageToken extends Krb5Token {
         try {
             gssHeader = new GSSHeader(is);
 
-            if (!gssHeader.getOid().equals(OID)) {
+            if (!gssHeader.getOid().equals((Object)OID)) {
                 throw new GSSException(GSSException.DEFECTIVE_TOKEN, -1,
                                        getTokenName(tokenId));
             }
