@@ -33,6 +33,7 @@ import javax.naming.ldap.*;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
 
+import java.util.Locale;
 import java.util.Vector;
 import java.util.Hashtable;
 import java.util.List;
@@ -2597,7 +2598,7 @@ final public class LdapCtx extends ComponentDirContext
         } else {
             binaryAttrs = new Hashtable<>(11, 0.75f);
             StringTokenizer tokens =
-                new StringTokenizer(attrIds.toLowerCase(), " ");
+                new StringTokenizer(attrIds.toLowerCase(Locale.ENGLISH), " ");
 
             while (tokens.hasMoreTokens()) {
                 binaryAttrs.put(tokens.nextToken(), Boolean.TRUE);

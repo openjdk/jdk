@@ -879,7 +879,8 @@ public class LDAPCertStore extends CertStoreSpi {
             if (hashCode == 0) {
                 int result = 17;
                 result = 37*result + getPort();
-                result = 37*result + getServerName().toLowerCase().hashCode();
+                result = 37*result +
+                    getServerName().toLowerCase(Locale.ENGLISH).hashCode();
                 hashCode = result;
             }
             return hashCode;

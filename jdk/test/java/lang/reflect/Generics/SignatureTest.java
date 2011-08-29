@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,26 +21,30 @@
  * questions.
  */
 
-package sun.reflect.annotation;
-import java.lang.annotation.*;
-
-/**
- * ExceptionProxy for TypeNotPresentException.
- *
- * @author  Josh Bloch
- * @since   1.5
+/*
+ * @test
+ * @bug 6476261
+ * @summary More testing of parsing of signatures attributes of nested classes
  */
-public class TypeNotPresentExceptionProxy extends ExceptionProxy {
-    private static final long serialVersionUID = 5565925172427947573L;
-    String typeName;
-    Throwable cause;
 
-    public TypeNotPresentExceptionProxy(String typeName, Throwable cause) {
-        this.typeName = typeName;
-        this.cause = cause;
-    }
+import java.lang.reflect.*;
 
-    protected RuntimeException generateException() {
-        return new TypeNotPresentException(typeName, cause);
-    }
+public class SignatureTest<T> {
+   class Inner1 {
+      class Inner11 {
+      }
+   }
+
+   public void f(SignatureTest<String>.Inner1.Inner11 x) {}
+   public void g(SignatureTest<String>.Inner1 x) {}
+
+   public static void main(String[] args) throws Exception {
+      Class clazz = SignatureTest.class;
+      for (Method m : clazz.getDeclaredMethods()) {
+          System.out.println();
+          System.out.println(m.toString());
+          System.out.println(m.toGenericString());
+          System.out.println(m.getGenericParameterTypes());
+      }
+   }
 }

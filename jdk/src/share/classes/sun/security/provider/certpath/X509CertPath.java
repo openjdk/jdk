@@ -105,7 +105,13 @@ public class X509CertPath extends CertPath {
         super("X.509");
 
         // Ensure that the List contains only X509Certificates
-        for (Certificate obj : certs) {
+        //
+        // Note; The certs parameter is not necessarily to be of Certificate
+        // for some old code. For compatibility, to make sure the exception
+        // is CertificateException, rather than ClassCastException, please
+        // don't use
+        //     for (Certificate obj : certs)
+        for (Object obj : certs) {
             if (obj instanceof X509Certificate == false) {
                 throw new CertificateException
                     ("List is not all X509Certificates: "
