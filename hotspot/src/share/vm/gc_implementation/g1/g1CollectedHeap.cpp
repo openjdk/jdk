@@ -4069,6 +4069,23 @@ bool GCLabBitMapClosure::do_bit(size_t offset) {
 }
 #endif // PRODUCT
 
+G1ParGCAllocBuffer::G1ParGCAllocBuffer(size_t gclab_word_size) :
+  ParGCAllocBuffer(gclab_word_size),
+  _should_mark_objects(false),
+  _bitmap(G1CollectedHeap::heap()->reserved_region().start(), gclab_word_size),
+  _retired(false)
+{
+  //_should_mark_objects is set to true when G1ParCopyHelper needs to
+  // mark the forwarded location of an evacuated object.
+  // We set _should_mark_objects to true if marking is active, i.e. when we
+  // need to propagate a mark, or during an initial mark pause, i.e. when we
+  // need to mark objects immediately reachable by the roots.
+  if (G1CollectedHeap::heap()->mark_in_progress() ||
+      G1CollectedHeap::heap()->g1_policy()->during_initial_mark_pause()) {
+    _should_mark_objects = true;
+  }
+}
+
 G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, int queue_num)
   : _g1h(g1h),
     _refs(g1h->task_queue(queue_num)),
@@ -4184,12 +4201,14 @@ void G1ParScanThreadState::trim_queue() {
 
 G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
   _g1(g1), _g1_rem(_g1->g1_rem_set()), _cm(_g1->concurrent_mark()),
-  _par_scan_state(par_scan_state) { }
+  _par_scan_state(par_scan_state),
+  _during_initial_mark(_g1->g1_policy()->during_initial_mark_pause()),
+  _mark_in_progress(_g1->mark_in_progress()) { }
 
-template <class T> void G1ParCopyHelper::mark_forwardee(T* p) {
-  // This is called _after_ do_oop_work has been called, hence after
-  // the object has been relocated to its new location and *p points
-  // to its new location.
+template <class T> void G1ParCopyHelper::mark_object(T* p) {
+  // This is called from do_oop_work for objects that are not
+  // in the collection set. Objects in the collection set
+  // are marked after they have been evacuated.
 
   T heap_oop = oopDesc::load_heap_oop(p);
   if (!oopDesc::is_null(heap_oop)) {
@@ -4201,7 +4220,7 @@ template <class T> void G1ParCopyHelper::mark_forwardee(T* p) {
   }
 }
 
-oop G1ParCopyHelper::copy_to_survivor_space(oop old) {
+oop G1ParCopyHelper::copy_to_survivor_space(oop old, bool should_mark_copy) {
   size_t    word_sz = old->size();
   HeapRegion* from_region = _g1->heap_region_containing_raw(old);
   // +1 to make the -1 indexes valid...
@@ -4257,8 +4276,8 @@ oop G1ParCopyHelper::copy_to_survivor_space(oop old) {
       obj->set_mark(m);
     }
 
-    // preserve "next" mark bit
-    if (_g1->mark_in_progress() && !_g1->is_obj_ill(old)) {
+    // Mark the evacuated object or propagate "next" mark bit
+    if (should_mark_copy) {
       if (!use_local_bitmaps ||
           !_par_scan_state->alloc_buffer(alloc_purpose)->mark(obj_ptr)) {
         // if we couldn't mark it on the local bitmap (this happens when
@@ -4266,11 +4285,12 @@ oop G1ParCopyHelper::copy_to_survivor_space(oop old) {
         // the bullet and do the standard parallel mark
         _cm->markAndGrayObjectIfNecessary(obj);
       }
-#if 1
+
       if (_g1->isMarkedNext(old)) {
+        // Unmark the object's old location so that marking
+        // doesn't think the old object is alive.
         _cm->nextMarkBitMap()->parClear((HeapWord*)old);
       }
-#endif
     }
 
     size_t* surv_young_words = _par_scan_state->surviving_young_words();
@@ -4293,25 +4313,61 @@ oop G1ParCopyHelper::copy_to_survivor_space(oop old) {
   return obj;
 }
 
-template <bool do_gen_barrier, G1Barrier barrier, bool do_mark_forwardee>
+template <bool do_gen_barrier, G1Barrier barrier, bool do_mark_object>
 template <class T>
-void G1ParCopyClosure <do_gen_barrier, barrier, do_mark_forwardee>
+void G1ParCopyClosure<do_gen_barrier, barrier, do_mark_object>
 ::do_oop_work(T* p) {
   oop obj = oopDesc::load_decode_heap_oop(p);
   assert(barrier != G1BarrierRS || obj != NULL,
          "Precondition: G1BarrierRS implies obj is nonNull");
 
+  // Marking:
+  // If the object is in the collection set, then the thread
+  // that copies the object should mark, or propagate the
+  // mark to, the evacuated object.
+  // If the object is not in the collection set then we
+  // should call the mark_object() method depending on the
+  // value of the template parameter do_mark_object (which will
+  // be true for root scanning closures during an initial mark
+  // pause).
+  // The mark_object() method first checks whether the object
+  // is marked and, if not, attempts to mark the object.
+
   // here the null check is implicit in the cset_fast_test() test
   if (_g1->in_cset_fast_test(obj)) {
     if (obj->is_forwarded()) {
       oopDesc::encode_store_heap_oop(p, obj->forwardee());
+      // If we are a root scanning closure during an initial
+      // mark pause (i.e. do_mark_object will be true) then
+      // we also need to handle marking of roots in the
+      // event of an evacuation failure. In the event of an
+      // evacuation failure, the object is forwarded to itself
+      // and not copied so let's mark it here.
+      if (do_mark_object && obj->forwardee() == obj) {
+        mark_object(p);
+      }
     } else {
-      oop copy_oop = copy_to_survivor_space(obj);
+      // We need to mark the copied object if we're a root scanning
+      // closure during an initial mark pause (i.e. do_mark_object
+      // will be true), or the object is already marked and we need
+      // to propagate the mark to the evacuated copy.
+      bool should_mark_copy = do_mark_object ||
+                              _during_initial_mark ||
+                              (_mark_in_progress && !_g1->is_obj_ill(obj));
+
+      oop copy_oop = copy_to_survivor_space(obj, should_mark_copy);
       oopDesc::encode_store_heap_oop(p, copy_oop);
     }
     // When scanning the RS, we only care about objs in CS.
     if (barrier == G1BarrierRS) {
       _par_scan_state->update_rs(_from, p, _par_scan_state->queue_num());
+    }
+  } else {
+    // The object is not in collection set. If we're a root scanning
+    // closure during an initial mark pause (i.e. do_mark_object will
+    // be true) then attempt to mark the object.
+    if (do_mark_object) {
+      mark_object(p);
     }
   }
 
