@@ -884,19 +884,31 @@ bool ciEnv::system_dictionary_modification_counter_changed() {
 }
 
 // ------------------------------------------------------------------
-// ciEnv::check_for_system_dictionary_modification
-// Check for changes to the system dictionary during compilation
-// class loads, evolution, breakpoints
-void ciEnv::check_for_system_dictionary_modification(ciMethod* target) {
+// ciEnv::validate_compile_task_dependencies
+//
+// Check for changes during compilation (e.g. class loads, evolution,
+// breakpoints, call site invalidation).
+void ciEnv::validate_compile_task_dependencies(ciMethod* target) {
   if (failing())  return;  // no need for further checks
 
-  // Dependencies must be checked when the system dictionary changes.
-  // If logging is enabled all violated dependences will be recorded in
-  // the log.  In debug mode check dependencies even if the system
-  // dictionary hasn't changed to verify that no invalid dependencies
-  // were inserted.  Any violated dependences in this case are dumped to
-  // the tty.
+  // First, check non-klass dependencies as we might return early and
+  // not check klass dependencies if the system dictionary
+  // modification counter hasn't changed (see below).
+  for (Dependencies::DepStream deps(dependencies()); deps.next(); ) {
+    if (deps.is_klass_type())  continue;  // skip klass dependencies
+    klassOop witness = deps.check_dependency();
+    if (witness != NULL) {
+      record_failure("invalid non-klass dependency");
+      return;
+    }
+  }
 
+  // Klass dependencies must be checked when the system dictionary
+  // changes.  If logging is enabled all violated dependences will be
+  // recorded in the log.  In debug mode check dependencies even if
+  // the system dictionary hasn't changed to verify that no invalid
+  // dependencies were inserted.  Any violated dependences in this
+  // case are dumped to the tty.
   bool counter_changed = system_dictionary_modification_counter_changed();
   bool test_deps = counter_changed;
   DEBUG_ONLY(test_deps = true);
@@ -904,22 +916,21 @@ void ciEnv::check_for_system_dictionary_modification(ciMethod* target) {
 
   bool print_failures = false;
   DEBUG_ONLY(print_failures = !counter_changed);
-
   bool keep_going = (print_failures || xtty != NULL);
-
-  int violated = 0;
+  int klass_violations = 0;
 
   for (Dependencies::DepStream deps(dependencies()); deps.next(); ) {
+    if (!deps.is_klass_type())  continue;  // skip non-klass dependencies
     klassOop witness = deps.check_dependency();
     if (witness != NULL) {
-      ++violated;
+      klass_violations++;
       if (print_failures)  deps.print_dependency(witness, /*verbose=*/ true);
-      // If there's no log and we're not sanity-checking, we're done.
-      if (!keep_going)     break;
     }
+    // If there's no log and we're not sanity-checking, we're done.
+    if (!keep_going)  break;
   }
 
-  if (violated != 0) {
+  if (klass_violations != 0) {
     assert(counter_changed, "failed dependencies, but counter didn't change");
     record_failure("concurrent class loading");
   }
@@ -978,8 +989,8 @@ void ciEnv::register_method(ciMethod* target,
       // Encode the dependencies now, so we can check them right away.
       dependencies()->encode_content_bytes();
 
-      // Check for {class loads, evolution, breakpoints} during compilation
-      check_for_system_dictionary_modification(target);
+      // Check for {class loads, evolution, breakpoints, ...} during compilation
+      validate_compile_task_dependencies(target);
     }
 
     methodHandle method(THREAD, target->get_methodOop());

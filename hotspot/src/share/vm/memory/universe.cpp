@@ -1203,12 +1203,12 @@ void Universe::flush_dependents_on(Handle call_site, Handle method_handle) {
   // Compute the dependent nmethods that have a reference to a
   // CallSite object.  We use instanceKlass::mark_dependent_nmethod
   // directly instead of CodeCache::mark_for_deoptimization because we
-  // want dependents on the class CallSite only not all classes in the
-  // ContextStream.
+  // want dependents on the call site class only not all classes in
+  // the ContextStream.
   int marked = 0;
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    instanceKlass* call_site_klass = instanceKlass::cast(SystemDictionary::CallSite_klass());
+    instanceKlass* call_site_klass = instanceKlass::cast(call_site->klass());
     marked = call_site_klass->mark_dependent_nmethods(changes);
   }
   if (marked > 0) {
