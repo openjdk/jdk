@@ -28,6 +28,7 @@ package com.sun.jndi.ldap;
 import java.io.PrintStream;
 import java.io.OutputStream;
 import java.util.Hashtable;
+import java.util.Locale;
 import java.util.StringTokenizer;
 
 import javax.naming.ldap.Control;
@@ -133,7 +134,7 @@ public final class LdapPoolManager {
         String mech;
         int p;
         for (int i = 0; i < count; i++) {
-            mech = parser.nextToken().toLowerCase();
+            mech = parser.nextToken().toLowerCase(Locale.ENGLISH);
             if (mech.equals("anonymous")) {
                 mech = "none";
             }

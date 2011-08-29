@@ -33,6 +33,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
+import java.util.Locale;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -410,7 +411,8 @@ class NTLM {
 
     static byte[] getP1(char[] password) {
         try {
-            return new String(password).toUpperCase().getBytes("ISO8859_1");
+            return new String(password).toUpperCase(
+                                    Locale.ENGLISH).getBytes("ISO8859_1");
         } catch (UnsupportedEncodingException ex) {
             return null;
         }
