@@ -142,9 +142,9 @@ public class X500Name implements GeneralNameInterface, Principal {
     /**
      * Constructs a name from a conventionally formatted string, such
      * as "CN=Dave, OU=JavaSoft, O=Sun Microsystems, C=US".
-     * (RFC 1779 or RFC 2253 style).
+     * (RFC 1779, 2253, or 4514 style).
      *
-     * @param DN X.500 Distinguished Name
+     * @param dname the X.500 Distinguished Name
      */
     public X500Name(String dname) throws IOException {
         this(dname, Collections.<String, String>emptyMap());
@@ -153,9 +153,9 @@ public class X500Name implements GeneralNameInterface, Principal {
     /**
      * Constructs a name from a conventionally formatted string, such
      * as "CN=Dave, OU=JavaSoft, O=Sun Microsystems, C=US".
-     * (RFC 1779 or RFC 2253 style).
+     * (RFC 1779, 2253, or 4514 style).
      *
-     * @param DN X.500 Distinguished Name
+     * @param dname the X.500 Distinguished Name
      * @param keywordMap an additional keyword/OID map
      */
     public X500Name(String dname, Map<String, String> keywordMap)
@@ -167,10 +167,11 @@ public class X500Name implements GeneralNameInterface, Principal {
      * Constructs a name from a string formatted according to format.
      * Currently, the formats DEFAULT and RFC2253 are supported.
      * DEFAULT is the default format used by the X500Name(String)
-     * constructor. RFC2253 is format strictly according to RFC2253
+     * constructor. RFC2253 is the format strictly according to RFC2253
      * without extensions.
      *
-     * @param DN X.500 Distinguished Name
+     * @param dname the X.500 Distinguished Name
+     * @param format the specified format of the String DN
      */
     public X500Name(String dname, String format) throws IOException {
         if (dname == null) {
@@ -865,8 +866,8 @@ public class X500Name implements GeneralNameInterface, Principal {
      *     O="Sue, Grabbit and Runn" or
      *     O=Sue\, Grabbit and Runn
      *
-     * This method can parse 1779 or 2253 DNs and non-standard 3280 keywords.
-     * Additional keywords can be specified in the keyword/OID map.
+     * This method can parse RFC 1779, 2253 or 4514 DNs and non-standard 3280
+     * keywords. Additional keywords can be specified in the keyword/OID map.
      */
     private void parseDN(String input, Map<String, String> keywordMap)
         throws IOException {
@@ -875,7 +876,7 @@ public class X500Name implements GeneralNameInterface, Principal {
             return;
         }
 
-        List<RDN> dnVector = new ArrayList<RDN>();
+        List<RDN> dnVector = new ArrayList<>();
         int dnOffset = 0;
         int rdnEnd;
         String rdnString;
@@ -945,52 +946,51 @@ public class X500Name implements GeneralNameInterface, Principal {
         if (dnString.length() == 0) {
             names = new RDN[0];
             return;
-        }
+         }
 
-        List<RDN> dnVector = new ArrayList<RDN>();
-        int dnOffset = 0;
-        String rdnString;
+         List<RDN> dnVector = new ArrayList<>();
+         int dnOffset = 0;
+         String rdnString;
+         int searchOffset = 0;
+         int rdnEnd = dnString.indexOf(',');
+         while (rdnEnd >=0) {
+             /*
+              * We have encountered an RDN delimiter (comma).
+              * If the comma in the RDN under consideration is
+              * preceded by a backslash (escape), it
+              * is part of the RDN. Otherwise, it is used as a separator, to
+              * delimit the RDN under consideration from any subsequent RDNs.
+              */
+             if (rdnEnd > 0 && !escaped(rdnEnd, searchOffset, dnString)) {
 
-        int searchOffset = 0;
-        int rdnEnd = dnString.indexOf(',');
-        while (rdnEnd >=0) {
-            /*
-             * We have encountered an RDN delimiter (comma).
-             * If the comma in the RDN under consideration is
-             * preceded by a backslash (escape), it
-             * is part of the RDN. Otherwise, it is used as a separator, to
-             * delimit the RDN under consideration from any subsequent RDNs.
-             */
-            if (rdnEnd > 0 && !escaped(rdnEnd, searchOffset, dnString)) {
+                 /*
+                  * Comma is a separator
+                  */
+                 rdnString = dnString.substring(dnOffset, rdnEnd);
 
-                /*
-                 * Comma is a separator
-                 */
-                rdnString = dnString.substring(dnOffset, rdnEnd);
+                 // Parse RDN, and store it in vector
+                 RDN rdn = new RDN(rdnString, "RFC2253");
+                 dnVector.add(rdn);
 
-                // Parse RDN, and store it in vector
-                RDN rdn = new RDN(rdnString, "RFC2253");
-                dnVector.add(rdn);
+                 // Increase the offset
+                 dnOffset = rdnEnd + 1;
+             }
 
-                // Increase the offset
-                dnOffset = rdnEnd + 1;
-            }
+             searchOffset = rdnEnd + 1;
+             rdnEnd = dnString.indexOf(',', searchOffset);
+         }
 
-            searchOffset = rdnEnd + 1;
-            rdnEnd = dnString.indexOf(',', searchOffset);
-        }
+         // Parse last or only RDN, and store it in vector
+         rdnString = dnString.substring(dnOffset);
+         RDN rdn = new RDN(rdnString, "RFC2253");
+         dnVector.add(rdn);
 
-        // Parse last or only RDN, and store it in vector
-        rdnString = dnString.substring(dnOffset);
-        RDN rdn = new RDN(rdnString, "RFC2253");
-        dnVector.add(rdn);
-
-        /*
-         * Store the vector elements as an array of RDNs
-         * NOTE: It's only on output that little-endian ordering is used.
-         */
-        Collections.reverse(dnVector);
-        names = dnVector.toArray(new RDN[dnVector.size()]);
+         /*
+          * Store the vector elements as an array of RDNs
+          * NOTE: It's only on output that little-endian ordering is used.
+          */
+         Collections.reverse(dnVector);
+         names = dnVector.toArray(new RDN[dnVector.size()]);
     }
 
     /*
