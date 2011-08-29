@@ -114,8 +114,8 @@ class DistributionPointFetcher {
                 }
                 return Collections.emptySet();
             }
-            List<DistributionPoint> points = (List<DistributionPoint>)ext.get(
-                                        CRLDistributionPointsExtension.POINTS);
+            List<DistributionPoint> points =
+                    ext.get(CRLDistributionPointsExtension.POINTS);
             Set<X509CRL> results = new HashSet<X509CRL>();
             for (Iterator<DistributionPoint> t = points.iterator();
                  t.hasNext() && !Arrays.equals(reasonsMask, ALL_REASONS); ) {
@@ -570,15 +570,16 @@ class DistributionPointFetcher {
             AuthorityKeyIdentifierExtension akidext =
                                             crlImpl.getAuthKeyIdExtension();
             if (akidext != null) {
-                KeyIdentifier akid = (KeyIdentifier)akidext.get(akidext.KEY_ID);
+                KeyIdentifier akid = (KeyIdentifier)akidext.get(
+                        AuthorityKeyIdentifierExtension.KEY_ID);
                 if (akid != null) {
                     DerOutputStream derout = new DerOutputStream();
                     derout.putOctetString(akid.getIdentifier());
                     certSel.setSubjectKeyIdentifier(derout.toByteArray());
                 }
 
-                SerialNumber asn =
-                    (SerialNumber)akidext.get(akidext.SERIAL_NUMBER);
+                SerialNumber asn = (SerialNumber)akidext.get(
+                        AuthorityKeyIdentifierExtension.SERIAL_NUMBER);
                 if (asn != null) {
                     certSel.setSerialNumber(asn.getNumber());
                 }

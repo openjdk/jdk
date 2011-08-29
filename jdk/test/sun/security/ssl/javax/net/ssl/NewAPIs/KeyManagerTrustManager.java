@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,10 @@
  * 4396290: Need a way to pass algorithm specific parameters to TM's and KM's
  * 4395286: The property for setting the default
  *      KeyManagerFactory/TrustManagerFactory algorithms needs real name
+ * @run main/othervm KeyManagerTrustManager
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  * @author Brad Wetmore
  */
 
@@ -77,17 +81,40 @@ public class KeyManagerTrustManager implements X509KeyManager {
         String kmfAlg = null;
         String tmfAlg = null;
 
-        Security.setProperty("ssl.KeyManagerFactory.algorithm", "hello");
-        Security.setProperty("ssl.TrustManagerFactory.algorithm", "goodbye");
+        // reserve the security properties
+        String reservedKMFacAlg =
+            Security.getProperty("ssl.KeyManagerFactory.algorithm");
+        String reservedTMFacAlg =
+            Security.getProperty("ssl.TrustManagerFactory.algorithm");
 
-        kmfAlg = KeyManagerFactory.getDefaultAlgorithm();
-        tmfAlg = TrustManagerFactory.getDefaultAlgorithm();
+        try {
+            Security.setProperty("ssl.KeyManagerFactory.algorithm", "hello");
+            Security.setProperty("ssl.TrustManagerFactory.algorithm",
+                                                                "goodbye");
 
-        if (!kmfAlg.equals("hello")) {
-            throw new Exception("ssl.KeyManagerFactory.algorithm not set");
-        }
-        if (!tmfAlg.equals("goodbye")) {
-            throw new Exception("ssl.TrustManagerFactory.algorithm not set");
+            kmfAlg = KeyManagerFactory.getDefaultAlgorithm();
+            tmfAlg = TrustManagerFactory.getDefaultAlgorithm();
+
+            if (!kmfAlg.equals("hello")) {
+                throw new Exception("ssl.KeyManagerFactory.algorithm not set");
+            }
+            if (!tmfAlg.equals("goodbye")) {
+                throw new Exception(
+                        "ssl.TrustManagerFactory.algorithm not set");
+            }
+        } finally {
+            // restore the security properties
+            if (reservedKMFacAlg == null) {
+                reservedKMFacAlg = "";
+            }
+
+            if (reservedTMFacAlg == null) {
+                reservedTMFacAlg = "";
+            }
+            Security.setProperty("ssl.KeyManagerFactory.algorithm",
+                                                            reservedKMFacAlg);
+            Security.setProperty("ssl.TrustManagerFactory.algorithm",
+                                                            reservedTMFacAlg);
         }
     }
 }

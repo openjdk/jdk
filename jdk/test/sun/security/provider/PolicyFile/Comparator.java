@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 5037004
+ * @run main/othervm Comparator
  * @summary Frivolous ClassCastExceptions thrown by SubjectCodeSource.implies
  *
  * Note:  if you want to see the java.security.debug output,

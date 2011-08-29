@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,14 +54,14 @@ final class Rfc2253Parser {
          */
         // public List<Rdn> getDN() throws InvalidNameException {
 
-        List parseDn() throws InvalidNameException {
+        List<Rdn> parseDn() throws InvalidNameException {
             cur = 0;
 
             // ArrayList<Rdn> rdns =
             //  new ArrayList<Rdn>(len / 3 + 10);  // leave room for growth
 
-            ArrayList rdns =
-                new ArrayList(len / 3 + 10);  // leave room for growth
+            ArrayList<Rdn> rdns =
+                new ArrayList<>(len / 3 + 10);  // leave room for growth
 
             if (len == 0) {
                 return rdns;

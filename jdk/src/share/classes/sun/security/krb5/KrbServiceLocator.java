@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,9 @@
 package sun.security.krb5;
 
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.StringTokenizer;
-import java.util.List;
 
 import javax.naming.*;
 import javax.naming.directory.*;
@@ -80,7 +77,7 @@ class KrbServiceLocator {
             // the initial context constructor. This avoids having the initial
             // context constructor call itself (when processing the URL
             // argument in the getAttributes call).
-            Context ctx = NamingManager.getURLContext("dns", new Hashtable(0));
+            Context ctx = NamingManager.getURLContext("dns", new Hashtable<>(0));
             if (!(ctx instanceof DirContext)) {
                 return null; // cannot create a DNS context
             }
@@ -141,7 +138,7 @@ class KrbServiceLocator {
             // the initial context constructor. This avoids having the initial
             // context constructor call itself (when processing the URL
             // argument in the getAttributes call).
-            Context ctx = NamingManager.getURLContext("dns", new Hashtable(0));
+            Context ctx = NamingManager.getURLContext("dns", new Hashtable<>(0));
             if (!(ctx instanceof DirContext)) {
                 return null; // cannot create a DNS context
             }
@@ -263,7 +260,7 @@ class KrbServiceLocator {
  * See http://www.ietf.org/rfc/rfc2782.txt
  */
 
-static class SrvRecord implements Comparable {
+static class SrvRecord implements Comparable<SrvRecord> {
 
     int priority;
     int weight;
@@ -295,8 +292,7 @@ static class SrvRecord implements Comparable {
      * Sort records in ascending order of priority value. For records with
      * equal priority move those with weight 0 to the top of the list.
      */
-    public int compareTo(Object o) {
-        SrvRecord that = (SrvRecord) o;
+    public int compareTo(SrvRecord that) {
         if (priority > that.priority) {
             return 1; // this > that
         } else if (priority < that.priority) {

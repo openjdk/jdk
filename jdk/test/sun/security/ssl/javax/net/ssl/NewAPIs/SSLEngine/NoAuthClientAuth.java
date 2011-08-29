@@ -25,6 +25,10 @@
  * @test
  * @bug 4495742
  * @summary Demonstrate SSLEngine switch from no client auth to client auth.
+ * @run main/othervm NoAuthClientAuth
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  *
  * @author Brad R. Wetmore
  */

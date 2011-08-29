@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,6 +94,6 @@ public class IvParameterSpec implements AlgorithmParameterSpec {
      * each time this method is called.
      */
     public byte[] getIV() {
-        return (byte[])this.iv.clone();
+        return this.iv.clone();
     }
 }

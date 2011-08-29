@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,10 +196,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
             parse(new DerValue(certData));
         } catch (IOException e) {
             signedCert = null;
-            CertificateException ce = new
-                CertificateException("Unable to initialize, " + e);
-            ce.initCause(e);
-            throw ce;
+            throw new CertificateException("Unable to initialize, " + e, e);
         }
     }
 
@@ -231,25 +228,19 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
                 inBuffered.reset();
                 der = new DerValue(inBuffered);
             } catch (IOException ioe1) {
-                CertificateException ce = new
-                    CertificateException("Input stream must be " +
-                                         "either DER-encoded bytes " +
-                                         "or RFC1421 hex-encoded " +
-                                         "DER-encoded bytes: " +
-                                         ioe1.getMessage());
-                ce.initCause(ioe1);
-                throw ce;
+                throw new CertificateException("Input stream must be " +
+                                               "either DER-encoded bytes " +
+                                               "or RFC1421 hex-encoded " +
+                                               "DER-encoded bytes: " +
+                                               ioe1.getMessage(), ioe1);
             }
         }
         try {
             parse(der);
         } catch (IOException ioe) {
             signedCert = null;
-            CertificateException ce = new
-                CertificateException("Unable to parse DER value of " +
-                                     "certificate, " + ioe);
-            ce.initCause(ioe);
-            throw ce;
+            throw new CertificateException("Unable to parse DER value of " +
+                                           "certificate, " + ioe, ioe);
         }
     }
 
@@ -320,10 +311,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
             parse(derVal);
         } catch (IOException e) {
             signedCert = null;
-            CertificateException ce = new
-                CertificateException("Unable to initialize, " + e);
-            ce.initCause(e);
-            throw ce;
+            throw new CertificateException("Unable to initialize, " + e, e);
         }
     }
 
@@ -1279,7 +1267,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
                 return null;
             } else {
                 for (Extension ex : extensions.getAllExtensions()) {
-                    if (ex.getExtensionId().equals(oid)) {
+                    if (ex.getExtensionId().equals((Object)oid)) {
                         //XXXX May want to consider cloning this
                         return ex;
                     }
@@ -1434,10 +1422,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
                 new ExtendedKeyUsageExtension(Boolean.FALSE, data);
             return Collections.unmodifiableList(ekuExt.getExtendedKeyUsage());
         } catch (IOException ioe) {
-            CertificateParsingException cpe =
-                new CertificateParsingException();
-            cpe.initCause(ioe);
-            throw cpe;
+            throw new CertificateParsingException(ioe);
         }
     }
 
@@ -1578,8 +1563,8 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         }
         GeneralNames names;
         try {
-            names = (GeneralNames) subjectAltNameExt.get
-                (SubjectAlternativeNameExtension.SUBJECT_NAME);
+            names = subjectAltNameExt.get(
+                    SubjectAlternativeNameExtension.SUBJECT_NAME);
         } catch (IOException ioe) {
             // should not occur
             return Collections.<List<?>>emptySet();
@@ -1610,18 +1595,15 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
 
             GeneralNames names;
             try {
-                names = (GeneralNames) subjectAltNameExt.get
-                    (SubjectAlternativeNameExtension.SUBJECT_NAME);
+                names = subjectAltNameExt.get(
+                        SubjectAlternativeNameExtension.SUBJECT_NAME);
             }  catch (IOException ioe) {
                 // should not occur
                 return Collections.<List<?>>emptySet();
             }
             return makeAltNames(names);
         } catch (IOException ioe) {
-            CertificateParsingException cpe =
-                new CertificateParsingException();
-            cpe.initCause(ioe);
-            throw cpe;
+            throw new CertificateParsingException(ioe);
         }
     }
 
@@ -1644,8 +1626,8 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         }
         GeneralNames names;
         try {
-            names = (GeneralNames) issuerAltNameExt.get
-                (IssuerAlternativeNameExtension.ISSUER_NAME);
+            names = issuerAltNameExt.get(
+                    IssuerAlternativeNameExtension.ISSUER_NAME);
         } catch (IOException ioe) {
             // should not occur
             return Collections.<List<?>>emptySet();
@@ -1676,18 +1658,15 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
                                                     data);
             GeneralNames names;
             try {
-                names = (GeneralNames) issuerAltNameExt.get
-                    (IssuerAlternativeNameExtension.ISSUER_NAME);
+                names = issuerAltNameExt.get(
+                        IssuerAlternativeNameExtension.ISSUER_NAME);
             }  catch (IOException ioe) {
                 // should not occur
                 return Collections.<List<?>>emptySet();
             }
             return makeAltNames(names);
         } catch (IOException ioe) {
-            CertificateParsingException cpe =
-                new CertificateParsingException();
-            cpe.initCause(ioe);
-            throw cpe;
+            throw new CertificateParsingException(ioe);
         }
     }
 

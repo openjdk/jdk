@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 
 package com.sun.jndi.toolkit.ctx;
-
-import java.util.Hashtable;
 
 import javax.naming.*;
 import javax.naming.spi.ResolveResult;
@@ -57,9 +55,9 @@ public abstract class ComponentContext extends PartialCompositeContext {
     protected abstract Object c_lookupLink(Name name, Continuation cont)
         throws NamingException;
 
-    protected abstract NamingEnumeration c_list(Name name,
+    protected abstract NamingEnumeration<NameClassPair> c_list(Name name,
         Continuation cont) throws NamingException;
-    protected abstract NamingEnumeration c_listBindings(Name name,
+    protected abstract NamingEnumeration<Binding> c_listBindings(Name name,
         Continuation cont) throws NamingException;
     protected abstract void c_bind(Name name, Object obj, Continuation cont)
         throws NamingException;
@@ -237,13 +235,13 @@ public abstract class ComponentContext extends PartialCompositeContext {
             return null;
         }
 
-    protected NamingEnumeration c_list_nns(Name name,
+    protected NamingEnumeration<NameClassPair> c_list_nns(Name name,
         Continuation cont) throws NamingException {
             c_processJunction_nns(name, cont);
             return null;
         }
 
-    protected NamingEnumeration c_listBindings_nns(Name name,
+    protected NamingEnumeration<Binding> c_listBindings_nns(Name name,
         Continuation cont) throws NamingException {
             c_processJunction_nns(name, cont);
             return null;
@@ -495,7 +493,7 @@ public abstract class ComponentContext extends PartialCompositeContext {
     /* implementation for Resolver method */
 
     protected ResolveResult p_resolveToClass(Name name,
-                                             Class contextType,
+                                             Class<?> contextType,
                                              Continuation cont)
             throws NamingException {
 
@@ -556,9 +554,9 @@ public abstract class ComponentContext extends PartialCompositeContext {
         return ret;
     }
 
-    protected NamingEnumeration p_list(Name name, Continuation cont)
+    protected NamingEnumeration<NameClassPair> p_list(Name name, Continuation cont)
         throws NamingException {
-        NamingEnumeration ret = null;
+        NamingEnumeration<NameClassPair> ret = null;
         HeadTail res = p_resolveIntermediate(name, cont);
         switch (res.getStatus()) {
             case TERMINAL_NNS_COMPONENT:
@@ -581,9 +579,9 @@ public abstract class ComponentContext extends PartialCompositeContext {
         return ret;
     }
 
-    protected NamingEnumeration p_listBindings(Name name, Continuation cont) throws
+    protected NamingEnumeration<Binding> p_listBindings(Name name, Continuation cont) throws
         NamingException {
-        NamingEnumeration ret = null;
+        NamingEnumeration<Binding> ret = null;
         HeadTail res = p_resolveIntermediate(name, cont);
         switch (res.getStatus()) {
             case TERMINAL_NNS_COMPONENT:

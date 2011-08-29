@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import sun.misc.JavaSecurityProtectionDomainAccess;
 import static sun.misc.JavaSecurityProtectionDomainAccess.ProtectionDomainCache;
-import sun.misc.SharedSecrets;
 import sun.security.util.Debug;
 import sun.security.util.SecurityConstants;
 import sun.misc.JavaSecurityAccess;
@@ -403,7 +402,7 @@ public class ProtectionDomain {
                 e = permissions.elements();   // domain vs policy
                 while (e.hasMoreElements()) {
                     Permission pdp = e.nextElement();
-                    Class pdpClass = pdp.getClass();
+                    Class<?> pdpClass = pdp.getClass();
                     String pdpActions = pdp.getActions();
                     String pdpName = pdp.getName();
                     for (int i = 0; i < plVector.size(); i++) {

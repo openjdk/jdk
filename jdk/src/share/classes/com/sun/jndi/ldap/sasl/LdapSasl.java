@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,9 +89,10 @@ final public class LdapSasl {
      * @param bindCtls The possibly null controls to accompany the bind
      * @return LdapResult containing status of the bind
      */
+    @SuppressWarnings("unchecked")
     public static LdapResult saslBind(LdapClient clnt, Connection conn,
         String server, String dn, Object pw,
-        String authMech, Hashtable env, Control[] bindCtls)
+        String authMech, Hashtable<?,?> env, Control[] bindCtls)
         throws IOException, NamingException {
 
         SaslClient saslClnt = null;
@@ -112,7 +113,7 @@ final public class LdapSasl {
         try {
             // Create SASL client to use using SASL package
             saslClnt = Sasl.createSaslClient(
-                mechs, authzId, "ldap", server, env, cbh);
+                mechs, authzId, "ldap", server, (Hashtable<String, ?>)env, cbh);
 
             if (saslClnt == null) {
                 throw new AuthenticationNotSupportedException(authMech);
@@ -185,13 +186,13 @@ final public class LdapSasl {
       */
     private static String[] getSaslMechanismNames(String str) {
         StringTokenizer parser = new StringTokenizer(str);
-        Vector mechs = new Vector(10);
+        Vector<String> mechs = new Vector<>(10);
         while (parser.hasMoreTokens()) {
             mechs.addElement(parser.nextToken());
         }
         String[] mechNames = new String[mechs.size()];
         for (int i = 0; i < mechs.size(); i++) {
-            mechNames[i] = (String)mechs.elementAt(i);
+            mechNames[i] = mechs.elementAt(i);
         }
         return mechNames;
     }
