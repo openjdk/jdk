@@ -336,7 +336,7 @@ CallGenerator* CallGenerator::for_direct_call(ciMethod* m, bool separate_io_proj
 }
 
 CallGenerator* CallGenerator::for_dynamic_call(ciMethod* m) {
-  assert(m->is_method_handle_invoke(), "for_dynamic_call mismatch");
+  assert(m->is_method_handle_invoke() || m->is_method_handle_adapter(), "for_dynamic_call mismatch");
   return new DynamicCallGenerator(m);
 }
 
@@ -715,9 +715,9 @@ CallGenerator* CallGenerator::for_method_handle_inline(Node* method_handle, JVMS
     // Get an adapter for the MethodHandle.
     ciMethod* target_method = method_handle->get_method_handle_adapter();
     if (target_method != NULL) {
-      CallGenerator* hit_cg = Compile::current()->call_generator(target_method, -1, false, jvms, true, 1);
-      if (hit_cg != NULL && hit_cg->is_inline())
-        return hit_cg;
+      CallGenerator* cg = Compile::current()->call_generator(target_method, -1, false, jvms, true, PROB_ALWAYS);
+      if (cg != NULL && cg->is_inline())
+        return cg;
     }
   } else if (method_handle->Opcode() == Op_Phi && method_handle->req() == 3 &&
              method_handle->in(1)->Opcode() == Op_ConP && method_handle->in(2)->Opcode() == Op_ConP) {
@@ -754,13 +754,13 @@ CallGenerator* CallGenerator::for_invokedynamic_inline(ciCallSite* call_site, JV
   ciMethod* target_method = method_handle->get_invokedynamic_adapter();
   if (target_method != NULL) {
     Compile *C = Compile::current();
-    CallGenerator* hit_cg = C->call_generator(target_method, -1, false, jvms, true, PROB_ALWAYS);
-    if (hit_cg != NULL && hit_cg->is_inline()) {
+    CallGenerator* cg = C->call_generator(target_method, -1, false, jvms, true, PROB_ALWAYS);
+    if (cg != NULL && cg->is_inline()) {
       // Add a dependence for invalidation of the optimization.
       if (call_site->is_mutable_call_site()) {
-        C->dependencies()->assert_call_site_target_value(C->env()->CallSite_klass(), call_site, method_handle);
+        C->dependencies()->assert_call_site_target_value(call_site, method_handle);
       }
-      return hit_cg;
+      return cg;
     }
   }
   return NULL;
