@@ -28,6 +28,7 @@ package javax.naming.directory;
 
 import java.util.Hashtable;
 import java.util.Enumeration;
+import java.util.Locale;
 
 import javax.naming.NamingException;
 import javax.naming.NamingEnumeration;
@@ -160,7 +161,7 @@ public class BasicAttributes implements Attributes {
 
     public Attribute get(String attrID) {
         Attribute attr = attrs.get(
-                ignoreCase ? attrID.toLowerCase() : attrID);
+                ignoreCase ? attrID.toLowerCase(Locale.ENGLISH) : attrID);
         return (attr);
     }
 
@@ -179,13 +180,13 @@ public class BasicAttributes implements Attributes {
     public Attribute put(Attribute attr) {
         String id = attr.getID();
         if (ignoreCase) {
-            id = id.toLowerCase();
+            id = id.toLowerCase(Locale.ENGLISH);
         }
         return attrs.put(id, attr);
     }
 
     public Attribute remove(String attrID) {
-        String id = (ignoreCase ? attrID.toLowerCase() : attrID);
+        String id = (ignoreCase ? attrID.toLowerCase(Locale.ENGLISH) : attrID);
         return attrs.remove(id);
     }
 

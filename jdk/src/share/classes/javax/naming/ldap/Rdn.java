@@ -28,6 +28,7 @@ package javax.naming.ldap;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Collections;
 
 import javax.naming.InvalidNameException;
@@ -434,8 +435,7 @@ public class Rdn implements Serializable, Comparable<Object> {
         }
 
         public int compareTo(RdnEntry that) {
-            int diff = type.toUpperCase().compareTo(
-                        that.type.toUpperCase());
+            int diff = type.compareToIgnoreCase(that.type);
             if (diff != 0) {
                 return diff;
             }
@@ -462,7 +462,7 @@ public class Rdn implements Serializable, Comparable<Object> {
         }
 
         public int hashCode() {
-            return (type.toUpperCase().hashCode() +
+            return (type.toUpperCase(Locale.ENGLISH).hashCode() +
                 getValueComparable().hashCode());
         }
 
@@ -479,7 +479,7 @@ public class Rdn implements Serializable, Comparable<Object> {
             if (value instanceof byte[]) {
                 comparable = escapeBinaryValue((byte[]) value);
             } else {
-                comparable = ((String) value).toUpperCase();
+                comparable = ((String) value).toUpperCase(Locale.ENGLISH);
             }
             return comparable;
         }
@@ -569,7 +569,6 @@ public class Rdn implements Serializable, Comparable<Object> {
             builder.append(Character.forDigit(0xF & b, 16));
         }
         return builder.toString();
-        // return builder.toString().toUpperCase();
     }
 
     /**

@@ -25,6 +25,7 @@
 
 package javax.naming;
 
+import java.util.Locale;
 import java.util.Vector;
 import java.util.Enumeration;
 import java.util.Properties;
@@ -216,7 +217,8 @@ class NameImpl {
     }
 
     private static boolean toBoolean(String name) {
-        return ((name != null) && name.toLowerCase().equals("true"));
+        return ((name != null) &&
+            name.toLowerCase(Locale.ENGLISH).equals("true"));
     }
 
     private final void recordNamingConvention(Properties p) {
@@ -526,11 +528,14 @@ class NameImpl {
                 comp1 = comp1.trim();
                 comp2 = comp2.trim();
             }
+
+            int local;
             if (syntaxCaseInsensitive) {
-                comp1 = comp1.toLowerCase();
-                comp2 = comp2.toLowerCase();
+                local = comp1.compareToIgnoreCase(comp2);
+            } else {
+                local = comp1.compareTo(comp2);
             }
-            int local = comp1.compareTo(comp2);
+
             if (local != 0) {
                 return local;
             }
@@ -696,7 +701,7 @@ class NameImpl {
                 comp = comp.trim();
             }
             if (syntaxCaseInsensitive) {
-                comp = comp.toLowerCase();
+                comp = comp.toLowerCase(Locale.ENGLISH);
             }
 
             hash += comp.hashCode();

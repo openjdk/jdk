@@ -29,6 +29,7 @@ import javax.naming.directory.*;
 import java.util.Enumeration;
 import java.util.StringTokenizer;
 import java.util.Vector;
+import java.util.Locale;
 
 /**
   * A class for parsing LDAP search filters (defined in RFC 1960, 2254)
@@ -395,19 +396,21 @@ public class SearchFilter implements AttrFilter {
 
             // do we need to begin with the first token?
             if(proto.charAt(0) != WILDCARD_TOKEN &&
-               !value.toString().toLowerCase().startsWith(
-                      subStrs.nextToken().toLowerCase())) {
-                if(debug) {System.out.println("faild initial test");}
+                    !value.toString().toLowerCase(Locale.ENGLISH).startsWith(
+                        subStrs.nextToken().toLowerCase(Locale.ENGLISH))) {
+                if(debug) {
+                    System.out.println("faild initial test");
+                }
                 return false;
             }
-
 
             while(subStrs.hasMoreTokens()) {
                 String currentStr = subStrs.nextToken();
                 if (debug) {System.out.println("looking for \"" +
                                                currentStr +"\"");}
-                currentPos = value.toLowerCase().indexOf(
-                       currentStr.toLowerCase(), currentPos);
+                currentPos = value.toLowerCase(Locale.ENGLISH).indexOf(
+                       currentStr.toLowerCase(Locale.ENGLISH), currentPos);
+
                 if(currentPos == -1) {
                     return false;
                 }

@@ -910,7 +910,7 @@ final class HierarchicalName extends CompoundName {
     public int hashCode() {
         if (hashValue == -1) {
 
-            String name = toString().toUpperCase();
+            String name = toString().toUpperCase(Locale.ENGLISH);
             int len = name.length();
             int off = 0;
             char val[] = new char[len];
