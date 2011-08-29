@@ -65,6 +65,11 @@ public final class NTLMException extends GeneralSecurityException {
      */
     public final static int BAD_VERSION = 5;
 
+    /**
+     * Protocol errors.
+     */
+    public final static int PROTOCOL = 6;
+
     private int errorCode;
 
     /**

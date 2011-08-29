@@ -26,6 +26,7 @@
 package com.sun.jndi.ldap;
 
 import java.io.*;
+import java.util.Locale;
 import java.util.Vector;
 import java.util.Hashtable;
 
@@ -738,14 +739,15 @@ public final class LdapClient implements PooledConnection {
         if (hasBinaryValues) {
             la.add(ber.parseOctetString(ber.peekByte(), len));
         } else {
-            la.add(ber.parseStringWithTag(Ber.ASN_SIMPLE_STRING, isLdapv3, len));
+            la.add(ber.parseStringWithTag(
+                                    Ber.ASN_SIMPLE_STRING, isLdapv3, len));
         }
         return len[0];
     }
 
     private boolean isBinaryValued(String attrid,
                                    Hashtable<String, Boolean> binaryAttrs) {
-        String id = attrid.toLowerCase();
+        String id = attrid.toLowerCase(Locale.ENGLISH);
 
         return ((id.indexOf(";binary") != -1) ||
             defaultBinaryAttrs.containsKey(id) ||
@@ -753,8 +755,8 @@ public final class LdapClient implements PooledConnection {
     }
 
     // package entry point; used by Connection
-    static void parseResult(BerDecoder replyBer, LdapResult res, boolean isLdapv3)
-        throws IOException {
+    static void parseResult(BerDecoder replyBer, LdapResult res,
+            boolean isLdapv3) throws IOException {
 
         res.status = replyBer.parseEnumeration();
         res.matchedDN = replyBer.parseString(isLdapv3);

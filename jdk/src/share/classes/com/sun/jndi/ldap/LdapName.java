@@ -28,6 +28,7 @@ package com.sun.jndi.ldap;
 
 import java.util.Enumeration;
 import java.util.Vector;
+import java.util.Locale;
 
 import javax.naming.*;
 import javax.naming.directory.Attributes;
@@ -707,7 +708,7 @@ public final class LdapName implements Name {
 
             TypeAndValue that = (TypeAndValue)obj;
 
-            int diff = type.toUpperCase().compareTo(that.type.toUpperCase());
+            int diff = type.compareToIgnoreCase(that.type);
             if (diff != 0) {
                 return diff;
             }
@@ -730,7 +731,7 @@ public final class LdapName implements Name {
 
         public int hashCode() {
             // If two objects are equal, their hash codes must match.
-            return (type.toUpperCase().hashCode() +
+            return (type.toUpperCase(Locale.ENGLISH).hashCode() +
                     getValueComparable().hashCode());
         }
 
@@ -764,11 +765,12 @@ public final class LdapName implements Name {
 
             // cache result
             if (binary) {
-                comparable = value.toUpperCase();
+                comparable = value.toUpperCase(Locale.ENGLISH);
             } else {
                 comparable = (String)unescapeValue(value);
                 if (!valueCaseSensitive) {
-                    comparable = comparable.toUpperCase(); // ignore case
+                    // ignore case
+                    comparable = comparable.toUpperCase(Locale.ENGLISH);
                 }
             }
             return comparable;
@@ -836,7 +838,7 @@ public final class LdapName implements Name {
                 buf.append(Character.forDigit(0xF & b, 16));
             }
 
-            return (new String(buf)).toUpperCase();
+            return (new String(buf)).toUpperCase(Locale.ENGLISH);
         }
 
         /*

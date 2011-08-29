@@ -748,10 +748,14 @@ public final class HttpCookie implements Cloneable {
             && (embeddedDotInDomain == -1 || embeddedDotInDomain == domain.length() - 1))
             return false;
 
-        // if the host name contains no dot and the domain name is .local
+        // if the host name contains no dot and the domain name
+        // is .local or host.local
         int firstDotInHost = host.indexOf('.');
-        if (firstDotInHost == -1 && isLocalDomain)
+        if (firstDotInHost == -1 &&
+            (isLocalDomain ||
+             domain.equalsIgnoreCase(host + ".local"))) {
             return true;
+        }
 
         int domainLength = domain.length();
         int lengthDiff = host.length() - domainLength;
