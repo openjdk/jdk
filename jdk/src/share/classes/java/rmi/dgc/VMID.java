@@ -170,7 +170,7 @@ public final class VMID implements java.io.Serializable {
             /* can't happen, but be deterministic anyway. */
             addrHash = new byte[0];
         } catch (NoSuchAlgorithmException complain) {
-            throw new InternalError(complain.toString());
+            throw new InternalError(complain.toString(), complain);
         }
         return addrHash;
     }

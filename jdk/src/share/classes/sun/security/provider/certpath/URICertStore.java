@@ -494,7 +494,7 @@ class URICertStore extends CertStoreSpi {
                 return super.clone();
             } catch (CloneNotSupportedException e) {
                 /* Cannot happen */
-                throw new InternalError(e.toString());
+                throw new InternalError(e.toString(), e);
             }
         }
     }

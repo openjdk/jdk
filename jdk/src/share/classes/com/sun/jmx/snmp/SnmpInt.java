@@ -232,7 +232,7 @@ public class SnmpInt extends SnmpValue {
             newclone = (SnmpInt) super.clone() ;
             newclone.value = value ;
         } catch (CloneNotSupportedException e) {
-            throw new InternalError() ; // vm bug.
+            throw new InternalError(e) ; // vm bug.
         }
         return newclone ;
     }

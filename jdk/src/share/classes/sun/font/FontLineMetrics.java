@@ -113,7 +113,7 @@ public final class FontLineMetrics extends LineMetrics implements Cloneable {
             return super.clone();
         }
         catch (CloneNotSupportedException e) {
-            throw new InternalError();
+            throw new InternalError(e);
         }
     }
 }
