@@ -33,7 +33,6 @@
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/reflection.hpp"
-#include "runtime/reflectionCompat.hpp"
 #include "runtime/synchronizer.hpp"
 #include "services/threadService.hpp"
 #include "utilities/copy.hpp"
