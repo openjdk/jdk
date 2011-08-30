@@ -25,6 +25,7 @@
 
 package com.sun.jndi.ldap;
 
+import java.util.Locale;
 import java.util.Arrays; // JDK 1.2
 import java.io.OutputStream;
 import javax.naming.ldap.Control;
@@ -71,7 +72,7 @@ class ClientId {
     ClientId(int version, String hostname, int port, String protocol,
             Control[] bindCtls, OutputStream trace, String socketFactory) {
         this.version = version;
-        this.hostname = hostname.toLowerCase();  // ignore case
+        this.hostname = hostname.toLowerCase(Locale.ENGLISH);  // ignore case
         this.port = port;
         this.protocol = protocol;
         this.bindCtls = (bindCtls != null ? bindCtls.clone() : null);
@@ -83,13 +84,15 @@ class ClientId {
         if ((socketFactory != null) &&
              !socketFactory.equals(LdapCtx.DEFAULT_SSL_FACTORY)) {
             try {
-                Class<?> socketFactoryClass = Obj.helper.loadClass(socketFactory);
+                Class<?> socketFactoryClass =
+                        Obj.helper.loadClass(socketFactory);
                 Class<?> objClass = Class.forName("java.lang.Object");
                 this.sockComparator = socketFactoryClass.getMethod(
                                 "compare", new Class<?>[]{objClass, objClass});
-                Method getDefault =
-                    socketFactoryClass.getMethod("getDefault", new Class<?>[]{});
-                this.factory = (SocketFactory) getDefault.invoke(null, new Object[]{});
+                Method getDefault = socketFactoryClass.getMethod(
+                                            "getDefault", new Class<?>[]{});
+                this.factory =
+                        (SocketFactory)getDefault.invoke(null, new Object[]{});
             } catch (Exception e) {
                 // Ignore it here, the same exceptions are/will be handled by
                 // LdapPoolManager and Connection classes.
