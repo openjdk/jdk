@@ -1087,8 +1087,10 @@ public final class Security {
             // Check the keys for each provider.
             for (Enumeration<Object> e = providers[i].keys();
                                                 e.hasMoreElements(); ) {
-                String currentKey = ((String)e.nextElement()).toUpperCase();
-                if (currentKey.startsWith(serviceName.toUpperCase())) {
+                String currentKey =
+                        ((String)e.nextElement()).toUpperCase(Locale.ENGLISH);
+                if (currentKey.startsWith(
+                        serviceName.toUpperCase(Locale.ENGLISH))) {
                     // We should skip the currentKey if it contains a
                     // whitespace. The reason is: such an entry in the
                     // provider property contains attributes for the
@@ -1096,7 +1098,8 @@ public final class Security {
                     // in entries which lead to the implementation
                     // classes.
                     if (currentKey.indexOf(" ") < 0) {
-                        result.add(currentKey.substring(serviceName.length() + 1));
+                        result.add(currentKey.substring(
+                                                serviceName.length() + 1));
                     }
                 }
             }

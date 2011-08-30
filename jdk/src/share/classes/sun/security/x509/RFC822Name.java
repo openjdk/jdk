@@ -153,7 +153,7 @@ public class RFC822Name implements GeneralNameInterface
      * @return a hash code value for this object.
      */
     public int hashCode() {
-        return name.toUpperCase().hashCode();
+        return name.toUpperCase(Locale.ENGLISH).hashCode();
     }
 
     /**
