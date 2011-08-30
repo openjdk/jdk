@@ -610,7 +610,7 @@ public class Proxy implements java.io.Serializable {
                  IllegalAccessException |
                  InstantiationException |
                  InvocationTargetException e) {
-            throw new InternalError(e.toString());
+            throw new InternalError(e.toString(), e);
         }
     }
 

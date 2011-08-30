@@ -131,7 +131,7 @@ public class XMenuItemPeer implements MenuItemPeer {
             try {
                 return super.clone();
             } catch (CloneNotSupportedException ex) {
-                throw new InternalError();
+                throw new InternalError(ex);
             }
         }
 

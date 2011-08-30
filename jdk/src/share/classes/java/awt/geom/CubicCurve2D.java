@@ -1569,7 +1569,7 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
             return super.clone();
         } catch (CloneNotSupportedException e) {
             // this shouldn't happen, since we are Cloneable
-            throw new InternalError();
+            throw new InternalError(e);
         }
     }
 }

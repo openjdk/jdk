@@ -292,7 +292,7 @@ public final class MethodUtil extends SecureClassLoader {
                 }
             });
         } catch (Exception e) {
-            throw new InternalError("bouncer cannot be found");
+            throw new InternalError("bouncer cannot be found", e);
         }
     }
 

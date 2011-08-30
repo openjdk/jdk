@@ -250,7 +250,7 @@ public class SnmpString extends SnmpValue {
             newclone.value = new byte[value.length] ;
             System.arraycopy(value, 0, newclone.value, 0, value.length) ;
         } catch (CloneNotSupportedException e) {
-            throw new InternalError() ; // vm bug.
+            throw new InternalError(e) ; // vm bug.
         }
         return newclone ;
     }

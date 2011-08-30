@@ -83,7 +83,7 @@ class CharacterName {
             dis.readFully(strPool);
             refStrPool = new SoftReference<>(strPool);
         } catch (Exception x) {
-            throw new InternalError(x.getMessage());
+            throw new InternalError(x.getMessage(), x);
         } finally {
             try {
                 if (dis != null)
