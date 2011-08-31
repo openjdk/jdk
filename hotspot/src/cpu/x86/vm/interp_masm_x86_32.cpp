@@ -233,11 +233,25 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register reg, int bcp_off
 
 void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, Register index,
                                                            int bcp_offset, size_t index_size) {
-  assert(cache != index, "must use different registers");
+  assert_different_registers(cache, index);
   get_cache_index_at_bcp(index, bcp_offset, index_size);
   movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
   assert(sizeof(ConstantPoolCacheEntry) == 4*wordSize, "adjust code below");
   shlptr(index, 2); // convert from field index to ConstantPoolCacheEntry index
+}
+
+
+void InterpreterMacroAssembler::get_cache_and_index_and_bytecode_at_bcp(Register cache,
+                                                                        Register index,
+                                                                        Register bytecode,
+                                                                        int byte_no,
+                                                                        int bcp_offset,
+                                                                        size_t index_size) {
+  get_cache_and_index_at_bcp(cache, index, bcp_offset, index_size);
+  movptr(bytecode, Address(cache, index, Address::times_ptr, constantPoolCacheOopDesc::base_offset() + ConstantPoolCacheEntry::indices_offset()));
+  const int shift_count = (1 + byte_no) * BitsPerByte;
+  shrptr(bytecode, shift_count);
+  andptr(bytecode, 0xFF);
 }
 
 
