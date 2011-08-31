@@ -782,13 +782,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case jvmti_exception_throw_id:
-      { // Oexception : exception
-        __ set_info("jvmti_exception_throw", dont_gc_arguments);
-        oop_maps = generate_stub_call(sasm, noreg, CAST_FROM_FN_PTR(address, Runtime1::post_jvmti_exception_throw), I0);
-      }
-      break;
-
     case dtrace_object_alloc_id:
       { // O0: object
         __ set_info("dtrace_object_alloc", dont_gc_arguments);

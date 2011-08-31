@@ -129,10 +129,6 @@ LIR_Opr LIR_Assembler::receiverOpr() {
   return FrameMap::receiver_opr;
 }
 
-LIR_Opr LIR_Assembler::incomingReceiverOpr() {
-  return receiverOpr();
-}
-
 LIR_Opr LIR_Assembler::osrBufferPointer() {
   return FrameMap::as_pointer_opr(receiverOpr()->as_register());
 }
@@ -370,55 +366,6 @@ void LIR_Assembler::jobject2reg_with_patching(Register reg, CodeEmitInfo* info) 
   patching_epilog(patch, lir_patch_normal, reg, info);
 }
 
-
-void LIR_Assembler::monitorexit(LIR_Opr obj_opr, LIR_Opr lock_opr, Register new_hdr, int monitor_no, Register exception) {
-  if (exception->is_valid()) {
-    // preserve exception
-    // note: the monitor_exit runtime call is a leaf routine
-    //       and cannot block => no GC can happen
-    // The slow case (MonitorAccessStub) uses the first two stack slots
-    // ([esp+0] and [esp+4]), therefore we store the exception at [esp+8]
-    __ movptr (Address(rsp, 2*wordSize), exception);
-  }
-
-  Register obj_reg  = obj_opr->as_register();
-  Register lock_reg = lock_opr->as_register();
-
-  // setup registers (lock_reg must be rax, for lock_object)
-  assert(obj_reg != SYNC_header && lock_reg != SYNC_header, "rax, must be available here");
-  Register hdr = lock_reg;
-  assert(new_hdr == SYNC_header, "wrong register");
-  lock_reg = new_hdr;
-  // compute pointer to BasicLock
-  Address lock_addr = frame_map()->address_for_monitor_lock(monitor_no);
-  __ lea(lock_reg, lock_addr);
-  // unlock object
-  MonitorAccessStub* slow_case = new MonitorExitStub(lock_opr, true, monitor_no);
-  // _slow_case_stubs->append(slow_case);
-  // temporary fix: must be created after exceptionhandler, therefore as call stub
-  _slow_case_stubs->append(slow_case);
-  if (UseFastLocking) {
-    // try inlined fast unlocking first, revert to slow locking if it fails
-    // note: lock_reg points to the displaced header since the displaced header offset is 0!
-    assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-    __ unlock_object(hdr, obj_reg, lock_reg, *slow_case->entry());
-  } else {
-    // always do slow unlocking
-    // note: the slow unlocking code could be inlined here, however if we use
-    //       slow unlocking, speed doesn't matter anyway and this solution is
-    //       simpler and requires less duplicated code - additionally, the
-    //       slow unlocking code is the same in either case which simplifies
-    //       debugging
-    __ jmp(*slow_case->entry());
-  }
-  // done
-  __ bind(*slow_case->continuation());
-
-  if (exception->is_valid()) {
-    // restore exception
-    __ movptr (exception, Address(rsp, 2 * wordSize));
-  }
-}
 
 // This specifies the rsp decrement needed to build the frame
 int LIR_Assembler::initial_frame_size_in_bytes() {

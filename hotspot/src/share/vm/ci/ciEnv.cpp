@@ -949,7 +949,6 @@ void ciEnv::register_method(ciMethod* target,
                             ImplicitExceptionTable* inc_table,
                             AbstractCompiler* compiler,
                             int comp_level,
-                            bool has_debug_info,
                             bool has_unsafe_access) {
   VM_ENTRY_MARK;
   nmethod* nm = NULL;
@@ -1044,7 +1043,6 @@ void ciEnv::register_method(ciMethod* target,
         CompileBroker::handle_full_code_cache();
       }
     } else {
-      NOT_PRODUCT(nm->set_has_debug_info(has_debug_info); )
       nm->set_has_unsafe_access(has_unsafe_access);
 
       // Record successful registration.

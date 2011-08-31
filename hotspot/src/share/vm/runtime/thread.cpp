@@ -1272,7 +1272,6 @@ void JavaThread::initialize() {
   _exception_oop = NULL;
   _exception_pc  = 0;
   _exception_handler_pc = 0;
-  _exception_stack_size = 0;
   _is_method_handle_return = 0;
   _jvmti_thread_state= NULL;
   _should_post_on_exceptions_flag = JNI_FALSE;

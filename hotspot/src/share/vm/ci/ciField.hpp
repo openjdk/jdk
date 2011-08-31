@@ -64,9 +64,6 @@ private:
   // shared constructor code
   void initialize_from(fieldDescriptor* fd);
 
-  // The implementation of the print method.
-  void print_impl(outputStream* st);
-
 public:
   ciFlags flags() { return _flags; }
 
