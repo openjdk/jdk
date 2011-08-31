@@ -278,7 +278,7 @@
   product(intx, CompilationRepeat, 0,                                       \
           "Number of times to recompile method before returning result")    \
                                                                             \
-  develop(intx, NMethodSizeLimit, (32*K)*wordSize,                          \
+  develop(intx, NMethodSizeLimit, (64*K)*wordSize,                          \
           "Maximum size of a compiled method.")                             \
                                                                             \
   develop(bool, TraceFPUStack, false,                                       \
