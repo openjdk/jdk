@@ -1794,7 +1794,8 @@ void MacroAssembler::_verify_oop(Register reg, const char* msg, const char * fil
   mov(reg,O0); // Move arg into O0; arg might be in O7 which is about to be crushed
   stx(O7,SP,frame::register_save_words*wordSize+STACK_BIAS+7*8);
 
-  set((intptr_t)real_msg, O1);
+  // Size of set() should stay the same
+  patchable_set((intptr_t)real_msg, O1);
   // Load address to call to into O7
   load_ptr_contents(a, O7);
   // Register call to verify_oop_subroutine
@@ -1831,7 +1832,8 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* msg, const char 
   ld_ptr(addr.base(), addr.disp() + 8*8, O0); // Load arg into O0; arg might be in O7 which is about to be crushed
   stx(O7,SP,frame::register_save_words*wordSize+STACK_BIAS+7*8);
 
-  set((intptr_t)real_msg, O1);
+  // Size of set() should stay the same
+  patchable_set((intptr_t)real_msg, O1);
   // Load address to call to into O7
   load_ptr_contents(a, O7);
   // Register call to verify_oop_subroutine
@@ -1976,7 +1978,8 @@ void MacroAssembler::stop(const char* msg) {
     save_frame(::round_to(sizeof(RegistersForDebugging) / BytesPerWord, 2));
 
     // stop_subroutine expects message pointer in I1.
-    set((intptr_t)msg, O1);
+    // Size of set() should stay the same
+    patchable_set((intptr_t)msg, O1);
 
     // factor long stop-sequence into subroutine to save space
     assert(StubRoutines::Sparc::stop_subroutine_entry_address(), "hasn't been generated yet");
@@ -1998,7 +2001,8 @@ void MacroAssembler::warn(const char* msg) {
   save_frame(::round_to(sizeof(RegistersForDebugging) / BytesPerWord, 2));
   RegistersForDebugging::save_registers(this);
   mov(O0, L0);
-  set((intptr_t)msg, O0);
+  // Size of set() should stay the same
+  patchable_set((intptr_t)msg, O0);
   call( CAST_FROM_FN_PTR(address, warning) );
   delayed()->nop();
 //  ret();
