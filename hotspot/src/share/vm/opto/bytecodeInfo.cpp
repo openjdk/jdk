@@ -45,7 +45,7 @@ InlineTree::InlineTree(Compile* c,
   _method(callee),
   _site_invoke_ratio(site_invoke_ratio),
   _max_inline_level(max_inline_level),
-  _count_inline_bcs(method()->code_size())
+  _count_inline_bcs(method()->code_size_for_inlining())
 {
   NOT_PRODUCT(_count_inlines = 0;)
   if (_caller_jvms != NULL) {
@@ -107,7 +107,7 @@ const char* InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_
 
   // positive filter: should send be inlined?  returns NULL (--> yes)
   // or rejection msg
-  int size = callee_method->code_size();
+  int size = callee_method->code_size_for_inlining();
 
   // Check for too many throws (and not too huge)
   if(callee_method->interpreter_throwout_count() > InlineThrowCount &&
@@ -244,7 +244,7 @@ const char* InlineTree::should_not_inline(ciMethod *callee_method, ciMethod* cal
   }
 
   // use frequency-based objections only for non-trivial methods
-  if (callee_method->code_size() <= MaxTrivialSize) return NULL;
+  if (callee_method->code_size_for_inlining() <= MaxTrivialSize) return NULL;
 
   // don't use counts with -Xcomp or CTW
   if (UseInterpreter && !CompileTheWorld) {
@@ -305,7 +305,7 @@ const char* InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_
   }
 
   // suppress a few checks for accessors and trivial methods
-  if (callee_method->code_size() > MaxTrivialSize) {
+  if (callee_method->code_size_for_inlining() > MaxTrivialSize) {
 
     // don't inline into giant methods
     if (C->unique() > (uint)NodeCountInliningCutoff) {
@@ -349,7 +349,7 @@ const char* InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_
     }
   }
 
-  int size = callee_method->code_size();
+  int size = callee_method->code_size_for_inlining();
 
   if (UseOldInlining && ClipInlining
       && (int)count_inline_bcs() + size >= DesiredMethodLimit) {

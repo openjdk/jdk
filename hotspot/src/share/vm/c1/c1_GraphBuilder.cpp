@@ -3430,7 +3430,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known) {
   } else {
     if (inline_level() > MaxInlineLevel                         ) INLINE_BAILOUT("too-deep inlining");
     if (recursive_inline_level(callee) > MaxRecursiveInlineLevel) INLINE_BAILOUT("too-deep recursive inlining");
-    if (callee->code_size() > max_inline_size()                 ) INLINE_BAILOUT("callee is too large");
+    if (callee->code_size_for_inlining() > max_inline_size()    ) INLINE_BAILOUT("callee is too large");
 
     // don't inline throwable methods unless the inlining tree is rooted in a throwable class
     if (callee->name() == ciSymbol::object_initializer_name() &&
