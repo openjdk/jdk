@@ -2119,6 +2119,8 @@ public class Types {
             }
         }
 
+        List<TypeSymbol> seenTypes = List.nil();
+
         /** members closure visitor methods **/
 
         public CompoundScope visitType(Type t, Boolean skipInterface) {
@@ -2127,21 +2129,33 @@ public class Types {
 
         @Override
         public CompoundScope visitClassType(ClassType t, Boolean skipInterface) {
-            ClassSymbol csym = (ClassSymbol)t.tsym;
-            Entry e = _map.get(csym);
-            if (e == null || !e.matches(skipInterface)) {
-                CompoundScope membersClosure = new CompoundScope(csym);
-                if (!skipInterface) {
-                    for (Type i : interfaces(t)) {
-                        membersClosure.addSubScope(visit(i, skipInterface));
-                    }
-                }
-                membersClosure.addSubScope(visit(supertype(t), skipInterface));
-                membersClosure.addSubScope(csym.members());
-                e = new Entry(skipInterface, membersClosure);
-                _map.put(csym, e);
+            if (seenTypes.contains(t.tsym)) {
+                //this is possible when an interface is implemented in multiple
+                //superclasses, or when a classs hierarchy is circular - in such
+                //cases we don't need to recurse (empty scope is returned)
+                return new CompoundScope(t.tsym);
             }
-            return e.compoundScope;
+            try {
+                seenTypes = seenTypes.prepend(t.tsym);
+                ClassSymbol csym = (ClassSymbol)t.tsym;
+                Entry e = _map.get(csym);
+                if (e == null || !e.matches(skipInterface)) {
+                    CompoundScope membersClosure = new CompoundScope(csym);
+                    if (!skipInterface) {
+                        for (Type i : interfaces(t)) {
+                            membersClosure.addSubScope(visit(i, skipInterface));
+                        }
+                    }
+                    membersClosure.addSubScope(visit(supertype(t), skipInterface));
+                    membersClosure.addSubScope(csym.members());
+                    e = new Entry(skipInterface, membersClosure);
+                    _map.put(csym, e);
+                }
+                return e.compoundScope;
+            }
+            finally {
+                seenTypes = seenTypes.tail;
+            }
         }
 
         @Override
