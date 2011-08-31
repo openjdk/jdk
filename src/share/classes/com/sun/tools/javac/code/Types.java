@@ -269,10 +269,12 @@ public class Types {
 
     // <editor-fold defaultstate="collapsed" desc="isConvertible">
     /**
-     * Is t a subtype of or convertiable via boxing/unboxing
-     * convertions to s?
+     * Is t a subtype of or convertible via boxing/unboxing
+     * conversion to s?
      */
     public boolean isConvertible(Type t, Type s, Warner warn) {
+        if (t.tag == ERROR)
+            return true;
         boolean tPrimitive = t.isPrimitive();
         boolean sPrimitive = s.isPrimitive();
         if (tPrimitive == sPrimitive) {
