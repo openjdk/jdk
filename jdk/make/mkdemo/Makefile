@@ -39,8 +39,13 @@ SUBDIRS_tools      = jpda jvmti
 
 include $(BUILDDIR)/common/Subdirs.gmk
 
+TOPLEVEL_FILES =							\
+	$(DEMODIR)/README
+
 all build:: nbproject
 	$(SUBDIRS-loop)
+
+all build:: $(TOPLEVEL_FILES)
 
 nbproject:
 	$(RM) -r $(DEMODIR)/nbproject
@@ -54,8 +59,10 @@ ifndef OPENJDK
 	  ( $(CD) $(DEMODIR) && $(TAR) -xf - )
 endif
 
+$(DEMODIR)/%: $(DEMOSRCDIR)/%
+	$(install-file)
+
 clean clobber::
 	$(SUBDIRS-loop)
 	$(RM) -r $(DEMODIR)
 	$(RM) -r $(DEMOCLASSDIR)
-
