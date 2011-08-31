@@ -133,7 +133,6 @@ class LIR_Assembler: public CompilationResourceObj {
   static bool is_small_constant(LIR_Opr opr);
 
   static LIR_Opr receiverOpr();
-  static LIR_Opr incomingReceiverOpr();
   static LIR_Opr osrBufferPointer();
 
   // stubs

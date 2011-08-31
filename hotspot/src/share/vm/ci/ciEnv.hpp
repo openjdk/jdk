@@ -317,8 +317,7 @@ public:
                        ImplicitExceptionTable*   inc_table,
                        AbstractCompiler*         compiler,
                        int                       comp_level,
-                       bool                      has_debug_info = true,
-                       bool                      has_unsafe_access = false);
+                       bool                      has_unsafe_access);
 
 
   // Access to certain well known ciObjects.
