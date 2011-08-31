@@ -364,7 +364,10 @@ public:
   PosParPRT** next_addr() { return &_next; }
 
   bool should_expand(int tid) {
-    return par_tables() == NULL && tid > 0 && hr()->is_gc_alloc_region();
+    // Given that we now defer RSet updates for after a GC we don't
+    // really need to expand the tables any more. This code should be
+    // cleaned up in the future (see CR 6921087).
+    return false;
   }
 
   void par_expand() {

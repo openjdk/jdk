@@ -128,6 +128,14 @@ void Compile::Output() {
   if ( ZapDeadCompiledLocals )  Insert_zap_nodes();
 # endif
 
+  uint* blk_starts = NEW_RESOURCE_ARRAY(uint,_cfg->_num_blocks+1);
+  blk_starts[0]    = 0;
+
+  // Initialize code buffer and process short branches.
+  CodeBuffer* cb = init_buffer(blk_starts);
+
+  if (cb == NULL || failing())  return;
+
   ScheduleAndBundle();
 
 #ifndef PRODUCT
@@ -152,7 +160,7 @@ void Compile::Output() {
 
   if (failing())  return;
 
-  Fill_buffer();
+  fill_buffer(cb, blk_starts);
 }
 
 bool Compile::need_stack_bang(int frame_size_in_bytes) const {
@@ -325,22 +333,22 @@ void Compile::compute_loop_first_inst_sizes() {
   } // if( MaxLoopPad < OptoLoopAlignment-1 )
 }
 
-//----------------------Shorten_branches---------------------------------------
+//----------------------shorten_branches---------------------------------------
 // The architecture description provides short branch variants for some long
 // branch instructions. Replace eligible long branches with short branches.
-void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, int& stub_size) {
-
-  // fill in the nop array for bundling computations
-  MachNode *_nop_list[Bundle::_nop_count];
-  Bundle::initialize_nops(_nop_list, this);
+void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size, int& stub_size) {
 
   // ------------------
   // Compute size of each block, method size, and relocation information size
-  uint *jmp_end    = NEW_RESOURCE_ARRAY(uint,_cfg->_num_blocks);
-  uint *blk_starts = NEW_RESOURCE_ARRAY(uint,_cfg->_num_blocks+1);
-  DEBUG_ONLY( uint *jmp_target = NEW_RESOURCE_ARRAY(uint,_cfg->_num_blocks); )
-  DEBUG_ONLY( uint *jmp_rule = NEW_RESOURCE_ARRAY(uint,_cfg->_num_blocks); )
-  blk_starts[0]    = 0;
+  uint nblocks  = _cfg->_num_blocks;
+
+  uint*      jmp_offset = NEW_RESOURCE_ARRAY(uint,nblocks);
+  uint*      jmp_size   = NEW_RESOURCE_ARRAY(uint,nblocks);
+  int*       jmp_nidx   = NEW_RESOURCE_ARRAY(int ,nblocks);
+  DEBUG_ONLY( uint *jmp_target = NEW_RESOURCE_ARRAY(uint,nblocks); )
+  DEBUG_ONLY( uint *jmp_rule = NEW_RESOURCE_ARRAY(uint,nblocks); )
+
+  bool has_short_branch_candidate = false;
 
   // Initialize the sizes to 0
   code_size  = 0;          // Size in bytes of generated code
@@ -350,28 +358,34 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
   reloc_size = 1;          // Number of relocation entries
 
   // Make three passes.  The first computes pessimistic blk_starts,
-  // relative jmp_end and reloc_size information.  The second performs
+  // relative jmp_offset and reloc_size information.  The second performs
   // short branch substitution using the pessimistic sizing.  The
   // third inserts nops where needed.
 
-  Node *nj; // tmp
-
   // Step one, perform a pessimistic sizing pass.
-  uint i;
-  uint min_offset_from_last_call = 1;  // init to a positive value
+  uint last_call_adr = max_uint;
+  uint last_avoid_back_to_back_adr = max_uint;
   uint nop_size = (new (this) MachNopNode())->size(_regalloc);
-  for( i=0; i<_cfg->_num_blocks; i++ ) { // For all blocks
+  for (uint i = 0; i < nblocks; i++) { // For all blocks
     Block *b = _cfg->_blocks[i];
+
+    // During short branch replacement, we store the relative (to blk_starts)
+    // offset of jump in jmp_offset, rather than the absolute offset of jump.
+    // This is so that we do not need to recompute sizes of all nodes when
+    // we compute correct blk_starts in our next sizing pass.
+    jmp_offset[i] = 0;
+    jmp_size[i]   = 0;
+    jmp_nidx[i]   = -1;
+    DEBUG_ONLY( jmp_target[i] = 0; )
+    DEBUG_ONLY( jmp_rule[i]   = 0; )
 
     // Sum all instruction sizes to compute block size
     uint last_inst = b->_nodes.size();
     uint blk_size = 0;
-    for( uint j = 0; j<last_inst; j++ ) {
-      nj = b->_nodes[j];
-      uint inst_size = nj->size(_regalloc);
-      blk_size += inst_size;
+    for (uint j = 0; j < last_inst; j++) {
+      Node* nj = b->_nodes[j];
       // Handle machine instruction nodes
-      if( nj->is_Mach() ) {
+      if (nj->is_Mach()) {
         MachNode *mach = nj->as_Mach();
         blk_size += (mach->alignment_required() - 1) * relocInfo::addr_unit(); // assume worst case padding
         reloc_size += mach->reloc();
@@ -388,32 +402,52 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
         } else if (mach->is_MachSafePoint()) {
           // If call/safepoint are adjacent, account for possible
           // nop to disambiguate the two safepoints.
-          if (min_offset_from_last_call == 0) {
+          // ScheduleAndBundle() can rearrange nodes in a block,
+          // check for all offsets inside this block.
+          if (last_call_adr >= blk_starts[i]) {
             blk_size += nop_size;
           }
         }
+        if (mach->avoid_back_to_back()) {
+          // Nop is inserted between "avoid back to back" instructions.
+          // ScheduleAndBundle() can rearrange nodes in a block,
+          // check for all offsets inside this block.
+          if (last_avoid_back_to_back_adr >= blk_starts[i]) {
+            blk_size += nop_size;
+          }
+        }
+        if (mach->may_be_short_branch()) {
+          if (!nj->is_MachBranch()) {
+#ifndef PRODUCT
+            nj->dump(3);
+#endif
+            Unimplemented();
+          }
+          assert(jmp_nidx[i] == -1, "block should have only one branch");
+          jmp_offset[i] = blk_size;
+          jmp_size[i]   = nj->size(_regalloc);
+          jmp_nidx[i]   = j;
+          has_short_branch_candidate = true;
+        }
       }
-      min_offset_from_last_call += inst_size;
+      blk_size += nj->size(_regalloc);
       // Remember end of call offset
-      if (nj->is_MachCall() && nj->as_MachCall()->is_safepoint_node()) {
-        min_offset_from_last_call = 0;
+      if (nj->is_MachCall() && !nj->is_MachCallLeaf()) {
+        last_call_adr = blk_starts[i]+blk_size;
+      }
+      // Remember end of avoid_back_to_back offset
+      if (nj->is_Mach() && nj->as_Mach()->avoid_back_to_back()) {
+        last_avoid_back_to_back_adr = blk_starts[i]+blk_size;
       }
     }
-
-    // During short branch replacement, we store the relative (to blk_starts)
-    // end of jump in jmp_end, rather than the absolute end of jump.  This
-    // is so that we do not need to recompute sizes of all nodes when we compute
-    // correct blk_starts in our next sizing pass.
-    jmp_end[i] = blk_size;
-    DEBUG_ONLY( jmp_target[i] = 0; )
 
     // When the next block starts a loop, we may insert pad NOP
     // instructions.  Since we cannot know our future alignment,
     // assume the worst.
-    if( i<_cfg->_num_blocks-1 ) {
+    if (i< nblocks-1) {
       Block *nb = _cfg->_blocks[i+1];
       int max_loop_pad = nb->code_alignment()-relocInfo::addr_unit();
-      if( max_loop_pad > 0 ) {
+      if (max_loop_pad > 0) {
         assert(is_power_of_2(max_loop_pad+relocInfo::addr_unit()), "");
         blk_size += max_loop_pad;
       }
@@ -424,124 +458,100 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
   }
 
   // Step two, replace eligible long jumps.
+  bool progress = true;
+  uint last_may_be_short_branch_adr = max_uint;
+  while (has_short_branch_candidate && progress) {
+    progress = false;
+    has_short_branch_candidate = false;
+    int adjust_block_start = 0;
+    for (uint i = 0; i < nblocks; i++) {
+      Block *b = _cfg->_blocks[i];
+      int idx = jmp_nidx[i];
+      MachNode* mach = (idx == -1) ? NULL: b->_nodes[idx]->as_Mach();
+      if (mach != NULL && mach->may_be_short_branch()) {
+#ifdef ASSERT
+        assert(jmp_size[i] > 0 && mach->is_MachBranch(), "sanity");
+        int j;
+        // Find the branch; ignore trailing NOPs.
+        for (j = b->_nodes.size()-1; j>=0; j--) {
+          Node* n = b->_nodes[j];
+          if (!n->is_Mach() || n->as_Mach()->ideal_Opcode() != Op_Con)
+            break;
+        }
+        assert(j >= 0 && j == idx && b->_nodes[j] == (Node*)mach, "sanity");
+#endif
+        int br_size = jmp_size[i];
+        int br_offs = blk_starts[i] + jmp_offset[i];
 
-  // Note: this will only get the long branches within short branch
-  //   range. Another pass might detect more branches that became
-  //   candidates because the shortening in the first pass exposed
-  //   more opportunities. Unfortunately, this would require
-  //   recomputing the starting and ending positions for the blocks
-  for( i=0; i<_cfg->_num_blocks; i++ ) {
-    Block *b = _cfg->_blocks[i];
-
-    int j;
-    // Find the branch; ignore trailing NOPs.
-    for( j = b->_nodes.size()-1; j>=0; j-- ) {
-      nj = b->_nodes[j];
-      if( !nj->is_Mach() || nj->as_Mach()->ideal_Opcode() != Op_Con )
-        break;
-    }
-
-    if (j >= 0) {
-      if( nj->is_Mach() && nj->as_Mach()->may_be_short_branch() ) {
-        MachNode *mach = nj->as_Mach();
         // This requires the TRUE branch target be in succs[0]
         uint bnum = b->non_connector_successor(0)->_pre_order;
-        uintptr_t target = blk_starts[bnum];
-        if( mach->is_pc_relative() ) {
-          int offset = target-(blk_starts[i] + jmp_end[i]);
-          if (_matcher->is_short_branch_offset(mach->rule(), offset)) {
-            // We've got a winner.  Replace this branch.
-            MachNode* replacement = mach->short_branch_version(this);
-            b->_nodes.map(j, replacement);
-            mach->subsume_by(replacement);
+        int offset = blk_starts[bnum] - br_offs;
+        if (bnum > i) { // adjust following block's offset
+          offset -= adjust_block_start;
+        }
+        // In the following code a nop could be inserted before
+        // the branch which will increase the backward distance.
+        bool needs_padding = ((uint)br_offs == last_may_be_short_branch_adr);
+        if (needs_padding && offset <= 0)
+          offset -= nop_size;
 
-            // Update the jmp_end size to save time in our
-            // next pass.
-            jmp_end[i] -= (mach->size(_regalloc) - replacement->size(_regalloc));
-            DEBUG_ONLY( jmp_target[i] = bnum; );
-            DEBUG_ONLY( jmp_rule[i] = mach->rule(); );
+        if (_matcher->is_short_branch_offset(mach->rule(), br_size, offset)) {
+          // We've got a winner.  Replace this branch.
+          MachNode* replacement = mach->as_MachBranch()->short_branch_version(this);
+
+          // Update the jmp_size.
+          int new_size = replacement->size(_regalloc);
+          int diff     = br_size - new_size;
+          assert(diff >= (int)nop_size, "short_branch size should be smaller");
+          // Conservatively take into accound padding between
+          // avoid_back_to_back branches. Previous branch could be
+          // converted into avoid_back_to_back branch during next
+          // rounds.
+          if (needs_padding && replacement->avoid_back_to_back()) {
+            jmp_offset[i] += nop_size;
+            diff -= nop_size;
           }
+          adjust_block_start += diff;
+          b->_nodes.map(idx, replacement);
+          mach->subsume_by(replacement);
+          mach = replacement;
+          progress = true;
+
+          jmp_size[i] = new_size;
+          DEBUG_ONLY( jmp_target[i] = bnum; );
+          DEBUG_ONLY( jmp_rule[i] = mach->rule(); );
         } else {
-#ifndef PRODUCT
-          mach->dump(3);
-#endif
-          Unimplemented();
+          // The jump distance is not short, try again during next iteration.
+          has_short_branch_candidate = true;
         }
+      } // (mach->may_be_short_branch())
+      if (mach != NULL && (mach->may_be_short_branch() ||
+                           mach->avoid_back_to_back())) {
+        last_may_be_short_branch_adr = blk_starts[i] + jmp_offset[i] + jmp_size[i];
       }
-    }
-  }
-
-  // Compute the size of first NumberOfLoopInstrToAlign instructions at head
-  // of a loop. It is used to determine the padding for loop alignment.
-  compute_loop_first_inst_sizes();
-
-  // Step 3, compute the offsets of all the labels
-  uint last_call_adr = max_uint;
-  for( i=0; i<_cfg->_num_blocks; i++ ) { // For all blocks
-    // copy the offset of the beginning to the corresponding label
-    assert(labels[i].is_unused(), "cannot patch at this point");
-    labels[i].bind_loc(blk_starts[i], CodeBuffer::SECT_INSTS);
-
-    // insert padding for any instructions that need it
-    Block *b = _cfg->_blocks[i];
-    uint last_inst = b->_nodes.size();
-    uint adr = blk_starts[i];
-    for( uint j = 0; j<last_inst; j++ ) {
-      nj = b->_nodes[j];
-      if( nj->is_Mach() ) {
-        int padding = nj->as_Mach()->compute_padding(adr);
-        // If call/safepoint are adjacent insert a nop (5010568)
-        if (padding == 0 && nj->is_MachSafePoint() && !nj->is_MachCall() &&
-            adr == last_call_adr ) {
-          padding = nop_size;
-        }
-        if(padding > 0) {
-          assert((padding % nop_size) == 0, "padding is not a multiple of NOP size");
-          int nops_cnt = padding / nop_size;
-          MachNode *nop = new (this) MachNopNode(nops_cnt);
-          b->_nodes.insert(j++, nop);
-          _cfg->_bbs.map( nop->_idx, b );
-          adr += padding;
-          last_inst++;
-        }
-      }
-      adr += nj->size(_regalloc);
-
-      // Remember end of call offset
-      if (nj->is_MachCall() && nj->as_MachCall()->is_safepoint_node()) {
-        last_call_adr = adr;
-      }
-    }
-
-    if ( i != _cfg->_num_blocks-1) {
-      // Get the size of the block
-      uint blk_size = adr - blk_starts[i];
-
-      // When the next block is the top of a loop, we may insert pad NOP
-      // instructions.
-      Block *nb = _cfg->_blocks[i+1];
-      int current_offset = blk_starts[i] + blk_size;
-      current_offset += nb->alignment_padding(current_offset);
-      // Save block size; update total method size
-      blk_starts[i+1] = current_offset;
+      blk_starts[i+1] -= adjust_block_start;
     }
   }
 
 #ifdef ASSERT
-  for( i=0; i<_cfg->_num_blocks; i++ ) { // For all blocks
-    if( jmp_target[i] != 0 ) {
-      int offset = blk_starts[jmp_target[i]]-(blk_starts[i] + jmp_end[i]);
-      if (!_matcher->is_short_branch_offset(jmp_rule[i], offset)) {
-        tty->print_cr("target (%d) - jmp_end(%d) = offset (%d), jmp_block B%d, target_block B%d", blk_starts[jmp_target[i]], blk_starts[i] + jmp_end[i], offset, i, jmp_target[i]);
+  for (uint i = 0; i < nblocks; i++) { // For all blocks
+    if (jmp_target[i] != 0) {
+      int br_size = jmp_size[i];
+      int offset = blk_starts[jmp_target[i]]-(blk_starts[i] + jmp_offset[i]);
+      if (!_matcher->is_short_branch_offset(jmp_rule[i], br_size, offset)) {
+        tty->print_cr("target (%d) - jmp_offset(%d) = offset (%d), jump_size(%d), jmp_block B%d, target_block B%d", blk_starts[jmp_target[i]], blk_starts[i] + jmp_offset[i], offset, br_size, i, jmp_target[i]);
       }
-      assert(_matcher->is_short_branch_offset(jmp_rule[i], offset), "Displacement too large for short jmp");
+      assert(_matcher->is_short_branch_offset(jmp_rule[i], br_size, offset), "Displacement too large for short jmp");
     }
   }
 #endif
 
+  // Step 3, compute the offsets of all blocks, will be done in fill_buffer()
+  // after ScheduleAndBundle().
+
   // ------------------
   // Compute size for code buffer
-  code_size   = blk_starts[i-1] + jmp_end[i-1];
+  code_size = blk_starts[nblocks];
 
   // Relocation records
   reloc_size += 1;              // Relo entry for exception handler
@@ -550,7 +560,7 @@ void Compile::Shorten_branches(Label *labels, int& code_size, int& reloc_size, i
   // Min is 2 bytes, max is probably 6 or 8, with a tax up to 25% for
   // a relocation index.
   // The CodeBuffer will expand the locs array if this estimate is too low.
-  reloc_size   *= 10 / sizeof(relocInfo);
+  reloc_size *= 10 / sizeof(relocInfo);
 }
 
 //------------------------------FillLocArray-----------------------------------
@@ -1026,7 +1036,7 @@ void NonSafepointEmitter::emit_non_safepoint() {
 
 
 
-// helper for Fill_buffer bailout logic
+// helper for fill_buffer bailout logic
 static void turn_off_compiler(Compile* C) {
   if (CodeCache::largest_free_block() >= CodeCacheMinimumFreeSpace*10) {
     // Do not turn off compilation if a single giant method has
@@ -1039,22 +1049,20 @@ static void turn_off_compiler(Compile* C) {
 }
 
 
-//------------------------------Fill_buffer------------------------------------
-void Compile::Fill_buffer() {
+//------------------------------init_buffer------------------------------------
+CodeBuffer* Compile::init_buffer(uint* blk_starts) {
 
   // Set the initially allocated size
   int  code_req   = initial_code_capacity;
   int  locs_req   = initial_locs_capacity;
   int  stub_req   = TraceJumps ? initial_stub_capacity * 10 : initial_stub_capacity;
   int  const_req  = initial_const_capacity;
-  bool labels_not_set = true;
 
   int  pad_req    = NativeCall::instruction_size;
   // The extra spacing after the code is necessary on some platforms.
   // Sometimes we need to patch in a jump after the last instruction,
   // if the nmethod has been deoptimized.  (See 4932387, 4894843.)
 
-  uint i;
   // Compute the byte offset where we can store the deopt pc.
   if (fixed_slots() != 0) {
     _orig_pc_slot_offset_in_bytes = _regalloc->reg2offset(OptoReg::stack2reg(_orig_pc_slot));
@@ -1078,19 +1086,12 @@ void Compile::Fill_buffer() {
     _frame_slots += 8*(16/BytesPerInt);
   }
 #endif
-  assert( _frame_slots >= 0 && _frame_slots < 1000000, "sanity check" );
-
-  // Create an array of unused labels, one for each basic block
-  Label *blk_labels = NEW_RESOURCE_ARRAY(Label, _cfg->_num_blocks+1);
-
-  for( i=0; i <= _cfg->_num_blocks; i++ ) {
-    blk_labels[i].init();
-  }
+  assert(_frame_slots >= 0 && _frame_slots < 1000000, "sanity check");
 
   if (has_mach_constant_base_node()) {
     // Fill the constant table.
-    // Note:  This must happen before Shorten_branches.
-    for (i = 0; i < _cfg->_num_blocks; i++) {
+    // Note:  This must happen before shorten_branches.
+    for (uint i = 0; i < _cfg->_num_blocks; i++) {
       Block* b = _cfg->_blocks[i];
 
       for (uint j = 0; j < b->_nodes.size(); j++) {
@@ -1114,14 +1115,11 @@ void Compile::Fill_buffer() {
   // Initialize the space for the BufferBlob used to find and verify
   // instruction size in MachNode::emit_size()
   init_scratch_buffer_blob(const_req);
-  if (failing())  return; // Out of memory
+  if (failing())  return NULL; // Out of memory
 
-  // If this machine supports different size branch offsets, then pre-compute
-  // the length of the blocks
-  if( _matcher->is_short_branch_offset(-1, 0) ) {
-    Shorten_branches(blk_labels, code_req, locs_req, stub_req);
-    labels_not_set = false;
-  }
+  // Pre-compute the length of blocks and replace
+  // long branches with short if machine supports it.
+  shorten_branches(blk_starts, code_req, locs_req, stub_req);
 
   // nmethod and CodeBuffer count stubs & constants as part of method's code.
   int exception_handler_req = size_exception_handler();
@@ -1151,7 +1149,7 @@ void Compile::Fill_buffer() {
   // Have we run out of code space?
   if ((cb->blob() == NULL) || (!CompileBroker::should_compile_new_jobs())) {
     turn_off_compiler(this);
-    return;
+    return NULL;
   }
   // Configure the code buffer.
   cb->initialize_consts_size(const_req);
@@ -1162,18 +1160,31 @@ void Compile::Fill_buffer() {
   MachNode *_nop_list[Bundle::_nop_count];
   Bundle::initialize_nops(_nop_list, this);
 
+  return cb;
+}
+
+//------------------------------fill_buffer------------------------------------
+void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
+  // blk_starts[] contains offsets calculated during short branches processing,
+  // offsets should not be increased during following steps.
+
+  // Compute the size of first NumberOfLoopInstrToAlign instructions at head
+  // of a loop. It is used to determine the padding for loop alignment.
+  compute_loop_first_inst_sizes();
+
   // Create oopmap set.
   _oop_map_set = new OopMapSet();
 
   // !!!!! This preserves old handling of oopmaps for now
   debug_info()->set_oopmaps(_oop_map_set);
 
+  uint nblocks  = _cfg->_num_blocks;
   // Count and start of implicit null check instructions
   uint inct_cnt = 0;
-  uint *inct_starts = NEW_RESOURCE_ARRAY(uint, _cfg->_num_blocks+1);
+  uint *inct_starts = NEW_RESOURCE_ARRAY(uint, nblocks+1);
 
   // Count and start of calls
-  uint *call_returns = NEW_RESOURCE_ARRAY(uint, _cfg->_num_blocks+1);
+  uint *call_returns = NEW_RESOURCE_ARRAY(uint, nblocks+1);
 
   uint  return_offset = 0;
   int nop_size = (new (this) MachNopNode())->size(_regalloc);
@@ -1181,14 +1192,22 @@ void Compile::Fill_buffer() {
   int previous_offset = 0;
   int current_offset  = 0;
   int last_call_offset = -1;
+  int last_avoid_back_to_back_offset = -1;
+#ifdef ASSERT
+  int block_alignment_padding = 0;
+
+  uint* jmp_target = NEW_RESOURCE_ARRAY(uint,nblocks);
+  uint* jmp_offset = NEW_RESOURCE_ARRAY(uint,nblocks);
+  uint* jmp_size   = NEW_RESOURCE_ARRAY(uint,nblocks);
+  uint* jmp_rule   = NEW_RESOURCE_ARRAY(uint,nblocks);
+#endif
 
   // Create an array of unused labels, one for each basic block, if printing is enabled
 #ifndef PRODUCT
   int *node_offsets      = NULL;
-  uint  node_offset_limit = unique();
+  uint node_offset_limit = unique();
 
-
-  if ( print_assembly() )
+  if (print_assembly())
     node_offsets         = NEW_RESOURCE_ARRAY(int, node_offset_limit);
 #endif
 
@@ -1199,11 +1218,19 @@ void Compile::Fill_buffer() {
     constant_table().emit(*cb);
   }
 
+  // Create an array of labels, one for each basic block
+  Label *blk_labels = NEW_RESOURCE_ARRAY(Label, nblocks+1);
+  for (uint i=0; i <= nblocks; i++) {
+    blk_labels[i].init();
+  }
+
   // ------------------
   // Now fill in the code buffer
   Node *delay_slot = NULL;
 
-  for( i=0; i < _cfg->_num_blocks; i++ ) {
+  for (uint i=0; i < nblocks; i++) {
+    guarantee(blk_starts[i] >= (uint)cb->insts_size(),"should not increase size");
+
     Block *b = _cfg->_blocks[i];
 
     Node *head = b->head();
@@ -1211,23 +1238,38 @@ void Compile::Fill_buffer() {
     // If this block needs to start aligned (i.e, can be reached other
     // than by falling-thru from the previous block), then force the
     // start of a new bundle.
-    if( Pipeline::requires_bundling() && starts_bundle(head) )
+    if (Pipeline::requires_bundling() && starts_bundle(head))
       cb->flush_bundle(true);
 
-    // Define the label at the beginning of the basic block
-    if (labels_not_set) {
-      MacroAssembler(cb).bind(blk_labels[b->_pre_order]);
-    } else {
-      assert(blk_labels[b->_pre_order].loc_pos() == cb->insts_size(),
-             err_msg("label position does not match code offset: %d != %d",
-                     blk_labels[b->_pre_order].loc_pos(), cb->insts_size()));
+#ifdef ASSERT
+    if (!b->is_connector()) {
+      stringStream st;
+      b->dump_head(&_cfg->_bbs, &st);
+      MacroAssembler(cb).block_comment(st.as_string());
     }
+    jmp_target[i] = 0;
+    jmp_offset[i] = 0;
+    jmp_size[i]   = 0;
+    jmp_rule[i]   = 0;
+
+    // Maximum alignment padding for loop block was used
+    // during first round of branches shortening, as result
+    // padding for nodes (sfpt after call) was not added.
+    // Take this into account for block's size change check
+    // and allow increase block's size by the difference
+    // of maximum and actual alignment paddings.
+    int orig_blk_size = blk_starts[i+1] - blk_starts[i] + block_alignment_padding;
+#endif
+    int blk_offset = current_offset;
+
+    // Define the label at the beginning of the basic block
+    MacroAssembler(cb).bind(blk_labels[b->_pre_order]);
 
     uint last_inst = b->_nodes.size();
 
     // Emit block normally, except for last instruction.
     // Emit means "dump code bits into code buffer".
-    for( uint j = 0; j<last_inst; j++ ) {
+    for (uint j = 0; j<last_inst; j++) {
 
       // Get the node
       Node* n = b->_nodes[j];
@@ -1244,7 +1286,7 @@ void Compile::Fill_buffer() {
 
       // If this starts a new instruction group, then flush the current one
       // (but allow split bundles)
-      if( Pipeline::requires_bundling() && starts_bundle(n) )
+      if (Pipeline::requires_bundling() && starts_bundle(n))
         cb->flush_bundle(false);
 
       // The following logic is duplicated in the code ifdeffed for
@@ -1253,25 +1295,32 @@ void Compile::Fill_buffer() {
 
       // Special handling for SafePoint/Call Nodes
       bool is_mcall = false;
-      if( n->is_Mach() ) {
+      if (n->is_Mach()) {
         MachNode *mach = n->as_Mach();
         is_mcall = n->is_MachCall();
         bool is_sfn = n->is_MachSafePoint();
 
         // If this requires all previous instructions be flushed, then do so
-        if( is_sfn || is_mcall || mach->alignment_required() != 1) {
+        if (is_sfn || is_mcall || mach->alignment_required() != 1) {
           cb->flush_bundle(true);
           current_offset = cb->insts_size();
         }
+
+        // A padding may be needed again since a previous instruction
+        // could be moved to delay slot.
 
         // align the instruction if necessary
         int padding = mach->compute_padding(current_offset);
         // Make sure safepoint node for polling is distinct from a call's
         // return by adding a nop if needed.
-        if (is_sfn && !is_mcall && padding == 0 && current_offset == last_call_offset ) {
+        if (is_sfn && !is_mcall && padding == 0 && current_offset == last_call_offset) {
           padding = nop_size;
         }
-        assert( labels_not_set || padding == 0, "instruction should already be aligned");
+        if (padding == 0 && mach->avoid_back_to_back() &&
+            current_offset == last_avoid_back_to_back_offset) {
+          // Avoid back to back some instructions.
+          padding = nop_size;
+        }
 
         if(padding > 0) {
           assert((padding % nop_size) == 0, "padding is not a multiple of NOP size");
@@ -1295,20 +1344,20 @@ void Compile::Fill_buffer() {
           // Save the return address
           call_returns[b->_pre_order] = current_offset + mcall->ret_addr_offset();
 
-          if (!mcall->is_safepoint_node()) {
+          if (mcall->is_MachCallLeaf()) {
             is_mcall = false;
             is_sfn = false;
           }
         }
 
         // sfn will be valid whenever mcall is valid now because of inheritance
-        if( is_sfn || is_mcall ) {
+        if (is_sfn || is_mcall) {
 
           // Handle special safepoint nodes for synchronization
-          if( !is_mcall ) {
+          if (!is_mcall) {
             MachSafePointNode *sfn = mach->as_MachSafePoint();
             // !!!!! Stubs only need an oopmap right now, so bail out
-            if( sfn->jvms()->method() == NULL) {
+            if (sfn->jvms()->method() == NULL) {
               // Write the oopmap directly to the code blob??!!
 #             ifdef ENABLE_ZAP_DEAD_LOCALS
               assert( !is_node_getting_a_safepoint(sfn),  "logic does not match; false positive");
@@ -1328,31 +1377,78 @@ void Compile::Fill_buffer() {
         }
 
         // If this is a branch, then fill in the label with the target BB's label
-        else if ( mach->is_Branch() ) {
+        else if (mach->is_MachBranch()) {
+          // This requires the TRUE branch target be in succs[0]
+          uint block_num = b->non_connector_successor(0)->_pre_order;
 
-          if ( mach->ideal_Opcode() == Op_Jump ) {
-            for (uint h = 0; h < b->_num_succs; h++ ) {
-              Block* succs_block = b->_succs[h];
-              for (uint j = 1; j < succs_block->num_preds(); j++) {
-                Node* jpn = succs_block->pred(j);
-                if ( jpn->is_JumpProj() && jpn->in(0) == mach ) {
-                  uint block_num = succs_block->non_connector()->_pre_order;
-                  Label *blkLabel = &blk_labels[block_num];
-                  mach->add_case_label(jpn->as_JumpProj()->proj_no(), blkLabel);
-                }
+          // Try to replace long branch if delay slot is not used,
+          // it is mostly for back branches since forward branch's
+          // distance is not updated yet.
+          bool delay_slot_is_used = valid_bundle_info(n) &&
+                                    node_bundling(n)->use_unconditional_delay();
+          if (!delay_slot_is_used && mach->may_be_short_branch()) {
+           assert(delay_slot == NULL, "not expecting delay slot node");
+           int br_size = n->size(_regalloc);
+            int offset = blk_starts[block_num] - current_offset;
+            if (block_num >= i) {
+              // Current and following block's offset are not
+              // finilized yet, adjust distance by the difference
+              // between calculated and final offsets of current block.
+              offset -= (blk_starts[i] - blk_offset);
+            }
+            // In the following code a nop could be inserted before
+            // the branch which will increase the backward distance.
+            bool needs_padding = (current_offset == last_avoid_back_to_back_offset);
+            if (needs_padding && offset <= 0)
+              offset -= nop_size;
+
+            if (_matcher->is_short_branch_offset(mach->rule(), br_size, offset)) {
+              // We've got a winner.  Replace this branch.
+              MachNode* replacement = mach->as_MachBranch()->short_branch_version(this);
+
+              // Update the jmp_size.
+              int new_size = replacement->size(_regalloc);
+              assert((br_size - new_size) >= (int)nop_size, "short_branch size should be smaller");
+              // Insert padding between avoid_back_to_back branches.
+              if (needs_padding && replacement->avoid_back_to_back()) {
+                MachNode *nop = new (this) MachNopNode();
+                b->_nodes.insert(j++, nop);
+                _cfg->_bbs.map(nop->_idx, b);
+                last_inst++;
+                nop->emit(*cb, _regalloc);
+                cb->flush_bundle(true);
+                current_offset = cb->insts_size();
+              }
+#ifdef ASSERT
+              jmp_target[i] = block_num;
+              jmp_offset[i] = current_offset - blk_offset;
+              jmp_size[i]   = new_size;
+              jmp_rule[i]   = mach->rule();
+#endif
+              b->_nodes.map(j, replacement);
+              mach->subsume_by(replacement);
+              n    = replacement;
+              mach = replacement;
+            }
+          }
+          mach->as_MachBranch()->label_set( &blk_labels[block_num], block_num );
+        } else if (mach->ideal_Opcode() == Op_Jump) {
+          for (uint h = 0; h < b->_num_succs; h++) {
+            Block* succs_block = b->_succs[h];
+            for (uint j = 1; j < succs_block->num_preds(); j++) {
+              Node* jpn = succs_block->pred(j);
+              if (jpn->is_JumpProj() && jpn->in(0) == mach) {
+                uint block_num = succs_block->non_connector()->_pre_order;
+                Label *blkLabel = &blk_labels[block_num];
+                mach->add_case_label(jpn->as_JumpProj()->proj_no(), blkLabel);
               }
             }
-          } else {
-            // For Branchs
-            // This requires the TRUE branch target be in succs[0]
-            uint block_num = b->non_connector_successor(0)->_pre_order;
-            mach->label_set( blk_labels[block_num], block_num );
           }
         }
 
 #ifdef ASSERT
         // Check that oop-store precedes the card-mark
-        else if( mach->ideal_Opcode() == Op_StoreCM ) {
+        else if (mach->ideal_Opcode() == Op_StoreCM) {
           uint storeCM_idx = j;
           int count = 0;
           for (uint prec = mach->req(); prec < mach->len(); prec++) {
@@ -1371,7 +1467,7 @@ void Compile::Fill_buffer() {
         }
 #endif
 
-        else if( !n->is_Proj() ) {
+        else if (!n->is_Proj()) {
           // Remember the beginning of the previous instruction, in case
           // it's followed by a flag-kill and a null-check.  Happens on
           // Intel all the time, with add-to-memory kind of opcodes.
@@ -1388,13 +1484,21 @@ void Compile::Fill_buffer() {
 
       // Save the offset for the listing
 #ifndef PRODUCT
-      if( node_offsets && n->_idx < node_offset_limit )
+      if (node_offsets && n->_idx < node_offset_limit)
         node_offsets[n->_idx] = cb->insts_size();
 #endif
 
       // "Normal" instruction case
+      DEBUG_ONLY( uint instr_offset = cb->insts_size(); )
       n->emit(*cb, _regalloc);
       current_offset  = cb->insts_size();
+
+#ifdef ASSERT
+      if (n->size(_regalloc) < (current_offset-instr_offset)) {
+        n->dump();
+        assert(false, "wrong size of mach node");
+      }
+#endif
       non_safepoints.observe_instruction(n, current_offset);
 
       // mcall is last "call" that can be a safepoint
@@ -1408,8 +1512,13 @@ void Compile::Fill_buffer() {
         last_call_offset = current_offset;
       }
 
+      if (n->is_Mach() && n->as_Mach()->avoid_back_to_back()) {
+        // Avoid back to back some instructions.
+        last_avoid_back_to_back_offset = current_offset;
+      }
+
       // See if this instruction has a delay slot
-      if ( valid_bundle_info(n) && node_bundling(n)->use_unconditional_delay()) {
+      if (valid_bundle_info(n) && node_bundling(n)->use_unconditional_delay()) {
         assert(delay_slot != NULL, "expecting delay slot node");
 
         // Back up 1 instruction
@@ -1417,15 +1526,15 @@ void Compile::Fill_buffer() {
 
         // Save the offset for the listing
 #ifndef PRODUCT
-        if( node_offsets && delay_slot->_idx < node_offset_limit )
+        if (node_offsets && delay_slot->_idx < node_offset_limit)
           node_offsets[delay_slot->_idx] = cb->insts_size();
 #endif
 
         // Support a SafePoint in the delay slot
-        if( delay_slot->is_MachSafePoint() ) {
+        if (delay_slot->is_MachSafePoint()) {
           MachNode *mach = delay_slot->as_Mach();
           // !!!!! Stubs only need an oopmap right now, so bail out
-          if( !mach->is_MachCall() && mach->as_MachSafePoint()->jvms()->method() == NULL ) {
+          if (!mach->is_MachCall() && mach->as_MachSafePoint()->jvms()->method() == NULL) {
             // Write the oopmap directly to the code blob??!!
 #           ifdef ENABLE_ZAP_DEAD_LOCALS
             assert( !is_node_getting_a_safepoint(mach),  "logic does not match; false positive");
@@ -1449,12 +1558,14 @@ void Compile::Fill_buffer() {
       }
 
     } // End for all instructions in block
+    assert((uint)blk_offset <= blk_starts[i], "shouldn't increase distance");
+    blk_starts[i] = blk_offset;
 
     // If the next block is the top of a loop, pad this block out to align
     // the loop top a little. Helps prevent pipe stalls at loop back branches.
-    if( i<_cfg->_num_blocks-1 ) {
+    if (i < nblocks-1) {
       Block *nb = _cfg->_blocks[i+1];
-      uint padding = nb->alignment_padding(current_offset);
+      int padding = nb->alignment_padding(current_offset);
       if( padding > 0 ) {
         MachNode *nop = new (this) MachNopNode(padding / nop_size);
         b->_nodes.insert( b->_nodes.size(), nop );
@@ -1462,9 +1573,18 @@ void Compile::Fill_buffer() {
         nop->emit(*cb, _regalloc);
         current_offset = cb->insts_size();
       }
+#ifdef ASSERT
+      int max_loop_pad = nb->code_alignment()-relocInfo::addr_unit();
+      block_alignment_padding = (max_loop_pad - padding);
+      assert(block_alignment_padding >= 0, "sanity");
+#endif
     }
+    // Verify that the distance for generated before forward
+    // short branches is still valid.
+    assert(orig_blk_size >= (current_offset - blk_offset), "shouldn't increase block size");
 
   } // End of for all blocks
+  blk_starts[nblocks] = current_offset;
 
   non_safepoints.flush_at_end();
 
@@ -1472,12 +1592,25 @@ void Compile::Fill_buffer() {
   if (failing())  return;
 
   // Define a pseudo-label at the end of the code
-  MacroAssembler(cb).bind( blk_labels[_cfg->_num_blocks] );
+  MacroAssembler(cb).bind( blk_labels[nblocks] );
 
   // Compute the size of the first block
   _first_block_size = blk_labels[1].loc_pos() - blk_labels[0].loc_pos();
 
   assert(cb->insts_size() < 500000, "method is unreasonably large");
+
+#ifdef ASSERT
+  for (uint i = 0; i < nblocks; i++) { // For all blocks
+    if (jmp_target[i] != 0) {
+      int br_size = jmp_size[i];
+      int offset = blk_starts[jmp_target[i]]-(blk_starts[i] + jmp_offset[i]);
+      if (!_matcher->is_short_branch_offset(jmp_rule[i], br_size, offset)) {
+        tty->print_cr("target (%d) - jmp_offset(%d) = offset (%d), jump_size(%d), jmp_block B%d, target_block B%d", blk_starts[jmp_target[i]], blk_starts[i] + jmp_offset[i], offset, br_size, i, jmp_target[i]);
+        assert(false, "Displacement too large for short jmp");
+      }
+    }
+  }
+#endif
 
   // ------------------
 
@@ -1565,8 +1698,8 @@ void Compile::FillExceptionTables(uint cnt, uint *call_returns, uint *inct_start
       uint call_return = call_returns[b->_pre_order];
 #ifdef ASSERT
       assert( call_return > 0, "no call seen for this basic block" );
-      while( b->_nodes[--j]->Opcode() == Op_MachProj ) ;
-      assert( b->_nodes[j]->is_Call(), "CatchProj must follow call" );
+      while( b->_nodes[--j]->is_MachProj() ) ;
+      assert( b->_nodes[j]->is_MachCall(), "CatchProj must follow call" );
 #endif
       // last instruction is a CatchNode, find it's CatchProjNodes
       int nof_succs = b->_num_succs;
@@ -1742,11 +1875,6 @@ void Compile::ScheduleAndBundle() {
 
   // Create a data structure for all the scheduling information
   Scheduling scheduling(Thread::current()->resource_area(), *this);
-
-  // Initialize the space for the BufferBlob used to find and verify
-  // instruction size in MachNode::emit_size()
-  init_scratch_buffer_blob(MAX_const_size);
-  if (failing())  return;  // Out of memory
 
   // Walk backwards over each basic block, computing the needed alignment
   // Walk over all the basic blocks
@@ -2028,7 +2156,7 @@ void Scheduling::AddNodeToBundle(Node *n, const Block *bb) {
     // the first instruction at the branch target is
     // copied to the delay slot, and the branch goes to
     // the instruction after that at the branch target
-    if ( n->is_Mach() && n->is_Branch() ) {
+    if ( n->is_MachBranch() ) {
 
       assert( !n->is_MachNullCheck(), "should not look for delay slot for Null Check" );
       assert( !n->is_Catch(),         "should not look for delay slot for Catch" );
@@ -2346,12 +2474,18 @@ void Scheduling::DoScheduling() {
     // have their delay slots filled in the template expansions, so we don't
     // bother scheduling them.
     Node *last = bb->_nodes[_bb_end];
+    // Ignore trailing NOPs.
+    while (_bb_end > 0 && last->is_Mach() &&
+           last->as_Mach()->ideal_Opcode() == Op_Con) {
+      last = bb->_nodes[--_bb_end];
+    }
+    assert(!last->is_Mach() || last->as_Mach()->ideal_Opcode() != Op_Con, "");
     if( last->is_Catch() ||
        // Exclude unreachable path case when Halt node is in a separate block.
        (_bb_end > 1 && last->is_Mach() && last->as_Mach()->ideal_Opcode() == Op_Halt) ) {
       // There must be a prior call.  Skip it.
-      while( !bb->_nodes[--_bb_end]->is_Call() ) {
-        assert( bb->_nodes[_bb_end]->is_Proj(), "skipping projections after expected call" );
+      while( !bb->_nodes[--_bb_end]->is_MachCall() ) {
+        assert( bb->_nodes[_bb_end]->is_MachProj(), "skipping projections after expected call" );
       }
     } else if( last->is_MachNullCheck() ) {
       // Backup so the last null-checked memory instruction is
@@ -2663,7 +2797,7 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
   for( uint i = _bb_end-1; i >= _bb_start; i-- ) {
     Node *n = b->_nodes[i];
     int is_def = n->outcnt();   // def if some uses prior to adding precedence edges
-    if( n->Opcode() == Op_MachProj && n->ideal_reg() == MachProjNode::fat_proj ) {
+    if( n->is_MachProj() && n->ideal_reg() == MachProjNode::fat_proj ) {
       // Fat-proj kills a slew of registers
       // This can add edges to 'n' and obscure whether or not it was a def,
       // hence the is_def flag.
@@ -2680,12 +2814,29 @@ void Scheduling::ComputeRegisterAntidependencies(Block *b) {
       anti_do_def( b, n, _regalloc->get_reg_second(n), is_def );
     }
 
+    // Kill projections on a branch should appear to occur on the
+    // branch, not afterwards, so grab the masks from the projections
+    // and process them.
+    if (n->is_MachBranch() || n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_Jump) {
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node* use = n->fast_out(i);
+        if (use->is_Proj()) {
+          RegMask rm = use->out_RegMask();// Make local copy
+          while( rm.is_NotEmpty() ) {
+            OptoReg::Name kill = rm.find_first_elem();
+            rm.Remove(kill);
+            anti_do_def( b, n, kill, false );
+          }
+        }
+      }
+    }
+
     // Check each register used by this instruction for a following DEF/KILL
     // that must occur afterward and requires an anti-dependence edge.
     for( uint j=0; j<n->req(); j++ ) {
       Node *def = n->in(j);
       if( def ) {
-        assert( def->Opcode() != Op_MachProj || def->ideal_reg() != MachProjNode::fat_proj, "" );
+        assert( !def->is_MachProj() || def->ideal_reg() != MachProjNode::fat_proj, "" );
         anti_do_use( b, n, _regalloc->get_reg_first(def) );
         anti_do_use( b, n, _regalloc->get_reg_second(def) );
       }

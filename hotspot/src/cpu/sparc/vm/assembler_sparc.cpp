@@ -100,12 +100,19 @@ void Assembler::print_instruction(int inst) {
   case call_op:    s = "call"; break;
   case branch_op:
     switch (inv_op2(inst)) {
-      case bpr_op2:    s = "bpr";  break;
       case fb_op2:     s = "fb";   break;
       case fbp_op2:    s = "fbp";  break;
       case br_op2:     s = "br";   break;
       case bp_op2:     s = "bp";   break;
       case cb_op2:     s = "cb";   break;
+      case bpr_op2: {
+        if (is_cbcond(inst)) {
+          s = is_cxb(inst) ? "cxb" : "cwb";
+        } else {
+          s = "bpr";
+        }
+        break;
+      }
       default:         s = "????"; break;
     }
   }
@@ -127,12 +134,21 @@ int Assembler::patched_branch(int dest_pos, int inst, int inst_pos) {
   case call_op:    m = wdisp(word_aligned_ones, 0, 30);  v = wdisp(dest_pos, inst_pos, 30); break;
   case branch_op:
     switch (inv_op2(inst)) {
-      case bpr_op2:    m = wdisp16(word_aligned_ones, 0);      v = wdisp16(dest_pos, inst_pos);     break;
       case fbp_op2:    m = wdisp(  word_aligned_ones, 0, 19);  v = wdisp(  dest_pos, inst_pos, 19); break;
       case bp_op2:     m = wdisp(  word_aligned_ones, 0, 19);  v = wdisp(  dest_pos, inst_pos, 19); break;
       case fb_op2:     m = wdisp(  word_aligned_ones, 0, 22);  v = wdisp(  dest_pos, inst_pos, 22); break;
       case br_op2:     m = wdisp(  word_aligned_ones, 0, 22);  v = wdisp(  dest_pos, inst_pos, 22); break;
       case cb_op2:     m = wdisp(  word_aligned_ones, 0, 22);  v = wdisp(  dest_pos, inst_pos, 22); break;
+      case bpr_op2: {
+        if (is_cbcond(inst)) {
+          m = wdisp10(word_aligned_ones, 0);
+          v = wdisp10(dest_pos, inst_pos);
+        } else {
+          m = wdisp16(word_aligned_ones, 0);
+          v = wdisp16(dest_pos, inst_pos);
+        }
+        break;
+      }
       default: ShouldNotReachHere();
     }
   }
@@ -149,12 +165,19 @@ int Assembler::branch_destination(int inst, int pos) {
   case call_op:        r = inv_wdisp(inst, pos, 30);  break;
   case branch_op:
     switch (inv_op2(inst)) {
-      case bpr_op2:    r = inv_wdisp16(inst, pos);    break;
       case fbp_op2:    r = inv_wdisp(  inst, pos, 19);  break;
       case bp_op2:     r = inv_wdisp(  inst, pos, 19);  break;
       case fb_op2:     r = inv_wdisp(  inst, pos, 22);  break;
       case br_op2:     r = inv_wdisp(  inst, pos, 22);  break;
       case cb_op2:     r = inv_wdisp(  inst, pos, 22);  break;
+      case bpr_op2: {
+        if (is_cbcond(inst)) {
+          r = inv_wdisp10(inst, pos);
+        } else {
+          r = inv_wdisp16(inst, pos);
+        }
+        break;
+      }
       default: ShouldNotReachHere();
     }
   }
@@ -968,13 +991,7 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp, Register last_Ja
   Label PcOk;
   save_frame(0);                // to avoid clobbering O0
   ld_ptr(pc_addr, L0);
-  tst(L0);
-#ifdef _LP64
-  brx(Assembler::zero, false, Assembler::pt, PcOk);
-#else
-  br(Assembler::zero, false, Assembler::pt, PcOk);
-#endif // _LP64
-  delayed() -> nop();
+  br_null_short(L0, Assembler::pt, PcOk);
   stop("last_Java_pc not zeroed before leaving Java");
   bind(PcOk);
 
@@ -1003,7 +1020,7 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp, Register last_Ja
   Label StackOk;
   andcc(last_java_sp, 0x01, G0);
   br(Assembler::notZero, false, Assembler::pt, StackOk);
-  delayed() -> nop();
+  delayed()->nop();
   stop("Stack Not Biased in set_last_Java_frame");
   bind(StackOk);
 #endif // ASSERT
@@ -1099,8 +1116,7 @@ void MacroAssembler::check_and_forward_exception(Register scratch_reg)
 
   Address exception_addr(G2_thread, Thread::pending_exception_offset());
   ld_ptr(exception_addr, scratch_reg);
-  br_null(scratch_reg,false,pt,L);
-  delayed()->nop();
+  br_null_short(scratch_reg, pt, L);
   // we use O7 linkage so that forward_exception_entry has the issuing PC
   call(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type);
   delayed()->nop();
@@ -1874,14 +1890,11 @@ void MacroAssembler::verify_oop_subroutine() {
 
   // assert((obj & oop_mask) == oop_bits);
   and3(O0_obj, O2_mask, O4_temp);
-  cmp(O4_temp, O3_bits);
-  brx(notEqual, false, pn, null_or_fail);
-  delayed()->nop();
+  cmp_and_brx_short(O4_temp, O3_bits, notEqual, pn, null_or_fail);
 
   if ((NULL_WORD & Universe::verify_oop_mask()) == Universe::verify_oop_bits()) {
     // the null_or_fail case is useless; must test for null separately
-    br_null(O0_obj, false, pn, succeed);
-    delayed()->nop();
+    br_null_short(O0_obj, pn, succeed);
   }
 
   // Check the klassOop of this object for being in the right area of memory.
@@ -1893,9 +1906,7 @@ void MacroAssembler::verify_oop_subroutine() {
   if( Universe::verify_klass_bits() != Universe::verify_oop_bits() )
     set(Universe::verify_klass_bits(), O3_bits);
   and3(O0_obj, O2_mask, O4_temp);
-  cmp(O4_temp, O3_bits);
-  brx(notEqual, false, pn, fail);
-  delayed()->nop();
+  cmp_and_brx_short(O4_temp, O3_bits, notEqual, pn, fail);
   // Check the klass's klass
   load_klass(O0_obj, O0_obj);
   and3(O0_obj, O2_mask, O4_temp);
@@ -2122,12 +2133,11 @@ Assembler::RCondition cond2rcond(Assembler::Condition c) {
   return Assembler::rc_z;
 }
 
-// compares register with zero and branches.  NOT FOR USE WITH 64-bit POINTERS
-void MacroAssembler::br_zero( Condition c, bool a, Predict p, Register s1, Label& L) {
+// compares (32 bit) register with zero and branches.  NOT FOR USE WITH 64-bit POINTERS
+void MacroAssembler::cmp_zero_and_br(Condition c, Register s1, Label& L, bool a, Predict p) {
   tst(s1);
   br (c, a, p, L);
 }
-
 
 // Compares a pointer register with zero and branches on null.
 // Does a test & branch on 32-bit systems and a register-branch on 64-bit.
@@ -2154,6 +2164,7 @@ void MacroAssembler::br_notnull( Register s1, bool a, Predict p, Label& L ) {
 void MacroAssembler::br_on_reg_cond( RCondition rc, bool a, Predict p,
                                      Register s1, address d,
                                      relocInfo::relocType rt ) {
+  assert_not_delayed();
   if (VM_Version::v9_instructions_work()) {
     bpr(rc, a, p, s1, d, rt);
   } else {
@@ -2164,6 +2175,7 @@ void MacroAssembler::br_on_reg_cond( RCondition rc, bool a, Predict p,
 
 void MacroAssembler::br_on_reg_cond( RCondition rc, bool a, Predict p,
                                      Register s1, Label& L ) {
+  assert_not_delayed();
   if (VM_Version::v9_instructions_work()) {
     bpr(rc, a, p, s1, L);
   } else {
@@ -2172,6 +2184,91 @@ void MacroAssembler::br_on_reg_cond( RCondition rc, bool a, Predict p,
   }
 }
 
+// Compare registers and branch with nop in delay slot or cbcond without delay slot.
+
+// Compare integer (32 bit) values (icc only).
+void MacroAssembler::cmp_and_br_short(Register s1, Register s2, Condition c,
+                                      Predict p, Label& L) {
+  assert_not_delayed();
+  if (use_cbcond(L)) {
+    Assembler::cbcond(c, icc, s1, s2, L);
+  } else {
+    cmp(s1, s2);
+    br(c, false, p, L);
+    delayed()->nop();
+  }
+}
+
+// Compare integer (32 bit) values (icc only).
+void MacroAssembler::cmp_and_br_short(Register s1, int simm13a, Condition c,
+                                      Predict p, Label& L) {
+  assert_not_delayed();
+  if (is_simm(simm13a,5) && use_cbcond(L)) {
+    Assembler::cbcond(c, icc, s1, simm13a, L);
+  } else {
+    cmp(s1, simm13a);
+    br(c, false, p, L);
+    delayed()->nop();
+  }
+}
+
+// Branch that tests xcc in LP64 and icc in !LP64
+void MacroAssembler::cmp_and_brx_short(Register s1, Register s2, Condition c,
+                                       Predict p, Label& L) {
+  assert_not_delayed();
+  if (use_cbcond(L)) {
+    Assembler::cbcond(c, ptr_cc, s1, s2, L);
+  } else {
+    cmp(s1, s2);
+    brx(c, false, p, L);
+    delayed()->nop();
+  }
+}
+
+// Branch that tests xcc in LP64 and icc in !LP64
+void MacroAssembler::cmp_and_brx_short(Register s1, int simm13a, Condition c,
+                                       Predict p, Label& L) {
+  assert_not_delayed();
+  if (is_simm(simm13a,5) && use_cbcond(L)) {
+    Assembler::cbcond(c, ptr_cc, s1, simm13a, L);
+  } else {
+    cmp(s1, simm13a);
+    brx(c, false, p, L);
+    delayed()->nop();
+  }
+}
+
+// Short branch version for compares a pointer with zero.
+
+void MacroAssembler::br_null_short(Register s1, Predict p, Label& L) {
+  assert_not_delayed();
+  if (use_cbcond(L)) {
+    Assembler::cbcond(zero, ptr_cc, s1, 0, L);
+    return;
+  }
+  br_null(s1, false, p, L);
+  delayed()->nop();
+}
+
+void MacroAssembler::br_notnull_short(Register s1, Predict p, Label& L) {
+  assert_not_delayed();
+  if (use_cbcond(L)) {
+    Assembler::cbcond(notZero, ptr_cc, s1, 0, L);
+    return;
+  }
+  br_notnull(s1, false, p, L);
+  delayed()->nop();
+}
+
+// Unconditional short branch
+void MacroAssembler::ba_short(Label& L) {
+  if (use_cbcond(L)) {
+    Assembler::cbcond(equal, icc, G0, G0, L);
+    return;
+  }
+  br(always, false, pt, L);
+  delayed()->nop();
+}
 
 // instruction sequences factored across compiler & interpreter
 
@@ -2197,11 +2294,9 @@ void MacroAssembler::lcmp( Register Ra_hi, Register Ra_low,
   // since that triplet is reached only after finding the high halves differ.
 
   if (VM_Version::v9_instructions_work()) {
-
-                                    mov  (                     -1, Rresult);
-    ba( false, done );  delayed()-> movcc(greater, false, icc,  1, Rresult);
-  }
-  else {
+    mov(-1, Rresult);
+    ba(done);  delayed()-> movcc(greater, false, icc,  1, Rresult);
+  } else {
     br(less,    true, pt, done); delayed()-> set(-1, Rresult);
     br(greater, true, pt, done); delayed()-> set( 1, Rresult);
   }
@@ -2212,9 +2307,8 @@ void MacroAssembler::lcmp( Register Ra_hi, Register Ra_low,
     mov(                               -1, Rresult);
     movcc(equal,           false, icc,  0, Rresult);
     movcc(greaterUnsigned, false, icc,  1, Rresult);
-  }
-  else {
-                                                    set(-1, Rresult);
+  } else {
+    set(-1, Rresult);
     br(equal,           true, pt, done); delayed()->set( 0, Rresult);
     br(greaterUnsigned, true, pt, done); delayed()->set( 1, Rresult);
   }
@@ -2250,11 +2344,10 @@ void MacroAssembler::lshl( Register Rin_high,  Register Rin_low,
   // This code can be optimized to use the 64 bit shifts in V9.
   // Here we use the 32 bit shifts.
 
-  and3( Rcount,         0x3f,           Rcount);     // take least significant 6 bits
-  subcc(Rcount,         31,             Ralt_count);
+  and3( Rcount, 0x3f, Rcount);     // take least significant 6 bits
+  subcc(Rcount,   31, Ralt_count);
   br(greater, true, pn, big_shift);
-  delayed()->
-  dec(Ralt_count);
+  delayed()->dec(Ralt_count);
 
   // shift < 32 bits, Ralt_count = Rcount-31
 
@@ -2263,28 +2356,27 @@ void MacroAssembler::lshl( Register Rin_high,  Register Rin_low,
   // more to take care of the special (rare) case where count is zero
   // (shifting by 32 would not work).
 
-  neg(  Ralt_count                                 );
+  neg(Ralt_count);
 
   // The order of the next two instructions is critical in the case where
   // Rin and Rout are the same and should not be reversed.
 
-  srl(  Rin_low,        Ralt_count,     Rxfer_bits ); // shift right by 31-count
+  srl(Rin_low, Ralt_count, Rxfer_bits); // shift right by 31-count
   if (Rcount != Rout_low) {
-    sll(        Rin_low,        Rcount,         Rout_low   ); // low half
+    sll(Rin_low, Rcount, Rout_low); // low half
   }
-  sll(  Rin_high,       Rcount,         Rout_high  );
+  sll(Rin_high, Rcount, Rout_high);
   if (Rcount == Rout_low) {
-    sll(        Rin_low,        Rcount,         Rout_low   ); // low half
+    sll(Rin_low, Rcount, Rout_low); // low half
   }
-  srl(  Rxfer_bits,     1,              Rxfer_bits ); // shift right by one more
-  ba (false, done);
-  delayed()->
-  or3(  Rout_high,      Rxfer_bits,     Rout_high);   // new hi value: or in shifted old hi part and xfer from low
+  srl(Rxfer_bits, 1, Rxfer_bits ); // shift right by one more
+  ba(done);
+  delayed()->or3(Rout_high, Rxfer_bits, Rout_high);   // new hi value: or in shifted old hi part and xfer from low
 
   // shift >= 32 bits, Ralt_count = Rcount-32
   bind(big_shift);
-  sll(  Rin_low,        Ralt_count,     Rout_high  );
-  clr(  Rout_low                                   );
+  sll(Rin_low, Ralt_count, Rout_high  );
+  clr(Rout_low);
 
   bind(done);
 }
@@ -2313,8 +2405,8 @@ void MacroAssembler::lshr( Register Rin_high,  Register Rin_low,
   // This code can be optimized to use the 64 bit shifts in V9.
   // Here we use the 32 bit shifts.
 
-  and3( Rcount,         0x3f,           Rcount);     // take least significant 6 bits
-  subcc(Rcount,         31,             Ralt_count);
+  and3( Rcount, 0x3f, Rcount);     // take least significant 6 bits
+  subcc(Rcount,   31, Ralt_count);
   br(greater, true, pn, big_shift);
   delayed()->dec(Ralt_count);
 
@@ -2325,29 +2417,28 @@ void MacroAssembler::lshr( Register Rin_high,  Register Rin_low,
   // more to take care of the special (rare) case where count is zero
   // (shifting by 32 would not work).
 
-  neg(  Ralt_count                                  );
+  neg(Ralt_count);
   if (Rcount != Rout_low) {
-    srl(        Rin_low,        Rcount,         Rout_low    );
+    srl(Rin_low, Rcount, Rout_low);
   }
 
   // The order of the next two instructions is critical in the case where
   // Rin and Rout are the same and should not be reversed.
 
-  sll(  Rin_high,       Ralt_count,     Rxfer_bits  ); // shift left by 31-count
-  sra(  Rin_high,       Rcount,         Rout_high   ); // high half
-  sll(  Rxfer_bits,     1,              Rxfer_bits  ); // shift left by one more
+  sll(Rin_high, Ralt_count, Rxfer_bits); // shift left by 31-count
+  sra(Rin_high,     Rcount, Rout_high ); // high half
+  sll(Rxfer_bits,        1, Rxfer_bits); // shift left by one more
   if (Rcount == Rout_low) {
-    srl(        Rin_low,        Rcount,         Rout_low    );
+    srl(Rin_low, Rcount, Rout_low);
   }
-  ba (false, done);
-  delayed()->
-  or3(  Rout_low,       Rxfer_bits,     Rout_low    ); // new low value: or shifted old low part and xfer from high
+  ba(done);
+  delayed()->or3(Rout_low, Rxfer_bits, Rout_low); // new low value: or shifted old low part and xfer from high
 
   // shift >= 32 bits, Ralt_count = Rcount-32
   bind(big_shift);
 
-  sra(  Rin_high,       Ralt_count,     Rout_low    );
-  sra(  Rin_high,       31,             Rout_high   ); // sign into hi
+  sra(Rin_high, Ralt_count, Rout_low);
+  sra(Rin_high,         31, Rout_high); // sign into hi
 
   bind( done );
 }
@@ -2377,8 +2468,8 @@ void MacroAssembler::lushr( Register Rin_high,  Register Rin_low,
   // This code can be optimized to use the 64 bit shifts in V9.
   // Here we use the 32 bit shifts.
 
-  and3( Rcount,         0x3f,           Rcount);     // take least significant 6 bits
-  subcc(Rcount,         31,             Ralt_count);
+  and3( Rcount, 0x3f, Rcount);     // take least significant 6 bits
+  subcc(Rcount,   31, Ralt_count);
   br(greater, true, pn, big_shift);
   delayed()->dec(Ralt_count);
 
@@ -2389,29 +2480,28 @@ void MacroAssembler::lushr( Register Rin_high,  Register Rin_low,
   // more to take care of the special (rare) case where count is zero
   // (shifting by 32 would not work).
 
-  neg(  Ralt_count                                  );
+  neg(Ralt_count);
   if (Rcount != Rout_low) {
-    srl(        Rin_low,        Rcount,         Rout_low    );
+    srl(Rin_low, Rcount, Rout_low);
   }
 
   // The order of the next two instructions is critical in the case where
   // Rin and Rout are the same and should not be reversed.
 
-  sll(  Rin_high,       Ralt_count,     Rxfer_bits  ); // shift left by 31-count
-  srl(  Rin_high,       Rcount,         Rout_high   ); // high half
-  sll(  Rxfer_bits,     1,              Rxfer_bits  ); // shift left by one more
+  sll(Rin_high, Ralt_count, Rxfer_bits); // shift left by 31-count
+  srl(Rin_high,     Rcount, Rout_high ); // high half
+  sll(Rxfer_bits,        1, Rxfer_bits); // shift left by one more
   if (Rcount == Rout_low) {
-    srl(        Rin_low,        Rcount,         Rout_low    );
+    srl(Rin_low, Rcount, Rout_low);
   }
-  ba (false, done);
-  delayed()->
-  or3(  Rout_low,       Rxfer_bits,     Rout_low    ); // new low value: or shifted old low part and xfer from high
+  ba(done);
+  delayed()->or3(Rout_low, Rxfer_bits, Rout_low); // new low value: or shifted old low part and xfer from high
 
   // shift >= 32 bits, Ralt_count = Rcount-32
   bind(big_shift);
 
-  srl(  Rin_high,       Ralt_count,     Rout_low    );
-  clr(  Rout_high                                   );
+  srl(Rin_high, Ralt_count, Rout_low);
+  clr(Rout_high);
 
   bind( done );
 }
@@ -2419,7 +2509,7 @@ void MacroAssembler::lushr( Register Rin_high,  Register Rin_low,
 #ifdef _LP64
 void MacroAssembler::lcmp( Register Ra, Register Rb, Register Rresult) {
   cmp(Ra, Rb);
-  mov(                       -1, Rresult);
+  mov(-1, Rresult);
   movcc(equal,   false, xcc,  0, Rresult);
   movcc(greater, false, xcc,  1, Rresult);
 }
@@ -2459,14 +2549,14 @@ void MacroAssembler::float_cmp( bool is_float, int unordered_result,
 
   if (VM_Version::v9_instructions_work()) {
 
-    mov(                   -1, Rresult );
-    movcc( eq, true, fcc0,  0, Rresult );
-    movcc( gt, true, fcc0,  1, Rresult );
+    mov(-1, Rresult);
+    movcc(eq, true, fcc0, 0, Rresult);
+    movcc(gt, true, fcc0, 1, Rresult);
 
   } else {
     Label done;
 
-                                         set( -1, Rresult );
+    set( -1, Rresult );
     //fb(lt, true, pn, done); delayed()->set( -1, Rresult );
     fb( eq, true, pn, done);  delayed()->set(  0, Rresult );
     fb( gt, true, pn, done);  delayed()->set(  1, Rresult );
@@ -2668,9 +2758,7 @@ void MacroAssembler::cas_under_lock(Register top_ptr_reg, Register top_reg, Regi
     set(StubRoutines::Sparc::locked, lock_reg);
 
     bind(retry_get_lock);
-    cmp(yield_reg, V8AtomicOperationUnderLockSpinCount);
-    br(Assembler::less, false, Assembler::pt, dont_yield);
-    delayed()->nop();
+    cmp_and_br_short(yield_reg, V8AtomicOperationUnderLockSpinCount, Assembler::less, Assembler::pt, dont_yield);
 
     if(use_call_vm) {
       Untested("Need to verify global reg consistancy");
@@ -2700,9 +2788,7 @@ void MacroAssembler::cas_under_lock(Register top_ptr_reg, Register top_reg, Regi
 
     // yes, got lock.  do we have the same top?
     ld(top_ptr_reg_after_save, 0, value_reg);
-    cmp(value_reg, top_reg_after_save);
-    br(Assembler::notEqual, false, Assembler::pn, not_same);
-    delayed()->nop();
+    cmp_and_br_short(value_reg, top_reg_after_save, Assembler::notEqual, Assembler::pn, not_same);
 
     // yes, same top.
     st(ptr_reg_after_save, top_ptr_reg_after_save, 0);
@@ -2952,8 +3038,7 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
 
   // on success:
   restore();
-  ba(false, L_success);
-  delayed()->nop();
+  ba_short(L_success);
 
   // on failure:
   bind(L_pop_to_failure);
@@ -2969,8 +3054,7 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
                                                    Label* L_success,
                                                    Label* L_failure,
                                                    Label* L_slow_path,
-                                        RegisterOrConstant super_check_offset,
-                                        Register instanceof_hack) {
+                                        RegisterOrConstant super_check_offset) {
   int sc_offset = (klassOopDesc::header_size() * HeapWordSize +
                    Klass::secondary_super_cache_offset_in_bytes());
   int sco_offset = (klassOopDesc::header_size() * HeapWordSize +
@@ -2993,28 +3077,9 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
   if (L_success == NULL)   { L_success   = &L_fallthrough; label_nulls++; }
   if (L_failure == NULL)   { L_failure   = &L_fallthrough; label_nulls++; }
   if (L_slow_path == NULL) { L_slow_path = &L_fallthrough; label_nulls++; }
-  assert(label_nulls <= 1 || instanceof_hack != noreg ||
+  assert(label_nulls <= 1 ||
          (L_slow_path == &L_fallthrough && label_nulls <= 2 && !need_slow_path),
          "at most one NULL in the batch, usually");
-
-  // Support for the instanceof hack, which uses delay slots to
-  // set a destination register to zero or one.
-  bool do_bool_sets = (instanceof_hack != noreg);
-#define BOOL_SET(bool_value)                            \
-  if (do_bool_sets && bool_value >= 0)                  \
-    set(bool_value, instanceof_hack)
-#define DELAYED_BOOL_SET(bool_value)                    \
-  if (do_bool_sets && bool_value >= 0)                  \
-    delayed()->set(bool_value, instanceof_hack);        \
-  else delayed()->nop()
-  // Hacked ba(), which may only be used just before L_fallthrough.
-#define FINAL_JUMP(label, bool_value)                   \
-  if (&(label) == &L_fallthrough) {                     \
-    BOOL_SET(bool_value);                               \
-  } else {                                              \
-    ba((do_bool_sets && bool_value >= 0), label);       \
-    DELAYED_BOOL_SET(bool_value);                       \
-  }
 
   // If the pointers are equal, we are done (e.g., String[] elements).
   // This self-check enables sharing of secondary supertype arrays among
@@ -3024,8 +3089,8 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
   // type checks are in fact trivially successful in this manner,
   // so we get a nicely predicted branch right at the start of the check.
   cmp(super_klass, sub_klass);
-  brx(Assembler::equal, do_bool_sets, Assembler::pn, *L_success);
-  DELAYED_BOOL_SET(1);
+  brx(Assembler::equal, false, Assembler::pn, *L_success);
+  delayed()->nop();
 
   // Check the supertype display:
   if (must_load_sco) {
@@ -3049,50 +3114,49 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
   // So if it was a primary super, we can just fail immediately.
   // Otherwise, it's the slow path for us (no success at this point).
 
+  // Hacked ba(), which may only be used just before L_fallthrough.
+#define FINAL_JUMP(label)            \
+  if (&(label) != &L_fallthrough) {  \
+    ba(label);  delayed()->nop();    \
+  }
+
   if (super_check_offset.is_register()) {
-    brx(Assembler::equal, do_bool_sets, Assembler::pn, *L_success);
-    delayed(); if (do_bool_sets)  BOOL_SET(1);
-    // if !do_bool_sets, sneak the next cmp into the delay slot:
-    cmp(super_check_offset.as_register(), sc_offset);
+    brx(Assembler::equal, false, Assembler::pn, *L_success);
+    delayed()->cmp(super_check_offset.as_register(), sc_offset);
 
     if (L_failure == &L_fallthrough) {
-      brx(Assembler::equal, do_bool_sets, Assembler::pt, *L_slow_path);
+      brx(Assembler::equal, false, Assembler::pt, *L_slow_path);
       delayed()->nop();
-      BOOL_SET(0);  // fallthrough on failure
     } else {
-      brx(Assembler::notEqual, do_bool_sets, Assembler::pn, *L_failure);
-      DELAYED_BOOL_SET(0);
-      FINAL_JUMP(*L_slow_path, -1);  // -1 => vanilla delay slot
+      brx(Assembler::notEqual, false, Assembler::pn, *L_failure);
+      delayed()->nop();
+      FINAL_JUMP(*L_slow_path);
     }
   } else if (super_check_offset.as_constant() == sc_offset) {
     // Need a slow path; fast failure is impossible.
     if (L_slow_path == &L_fallthrough) {
-      brx(Assembler::equal, do_bool_sets, Assembler::pt, *L_success);
-      DELAYED_BOOL_SET(1);
+      brx(Assembler::equal, false, Assembler::pt, *L_success);
+      delayed()->nop();
     } else {
       brx(Assembler::notEqual, false, Assembler::pn, *L_slow_path);
       delayed()->nop();
-      FINAL_JUMP(*L_success, 1);
+      FINAL_JUMP(*L_success);
     }
   } else {
     // No slow path; it's a fast decision.
     if (L_failure == &L_fallthrough) {
-      brx(Assembler::equal, do_bool_sets, Assembler::pt, *L_success);
-      DELAYED_BOOL_SET(1);
-      BOOL_SET(0);
+      brx(Assembler::equal, false, Assembler::pt, *L_success);
+      delayed()->nop();
     } else {
-      brx(Assembler::notEqual, do_bool_sets, Assembler::pn, *L_failure);
-      DELAYED_BOOL_SET(0);
-      FINAL_JUMP(*L_success, 1);
+      brx(Assembler::notEqual, false, Assembler::pn, *L_failure);
+      delayed()->nop();
+      FINAL_JUMP(*L_success);
     }
   }
 
   bind(L_fallthrough);
 
-#undef final_jump
-#undef bool_set
-#undef DELAYED_BOOL_SET
-#undef final_jump
+#undef FINAL_JUMP
 }
 
 
@@ -3185,7 +3249,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   st_ptr(super_klass, sub_klass, sc_offset);
 
   if (L_success != &L_fallthrough) {
-    ba(false, *L_success);
+    ba(*L_success);
     delayed()->nop();
   }
 
@@ -3200,9 +3264,7 @@ void MacroAssembler::check_method_handle_type(Register mtype_reg, Register mh_re
   // compare method type against that of the receiver
   RegisterOrConstant mhtype_offset = delayed_value(java_lang_invoke_MethodHandle::type_offset_in_bytes, temp_reg);
   load_heap_oop(mh_reg, mhtype_offset, temp_reg);
-  cmp(temp_reg, mtype_reg);
-  br(Assembler::notEqual, false, Assembler::pn, wrong_method_type);
-  delayed()->nop();
+  cmp_and_brx_short(temp_reg, mtype_reg, Assembler::notEqual, Assembler::pn, wrong_method_type);
 }
 
 
@@ -3295,9 +3357,7 @@ void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg,
   // pointers to allow age to be placed into low bits
   assert(markOopDesc::age_shift == markOopDesc::lock_bits + markOopDesc::biased_lock_bits, "biased locking makes assumptions about bit layout");
   and3(mark_reg, markOopDesc::biased_lock_mask_in_place, temp_reg);
-  cmp(temp_reg, markOopDesc::biased_lock_pattern);
-  brx(Assembler::notEqual, false, Assembler::pn, cas_label);
-  delayed()->nop();
+  cmp_and_brx_short(temp_reg, markOopDesc::biased_lock_pattern, Assembler::notEqual, Assembler::pn, cas_label);
 
   load_klass(obj_reg, temp_reg);
   ld_ptr(Address(temp_reg, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()), temp_reg);
@@ -3364,8 +3424,7 @@ void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg,
     brx(Assembler::notEqual, true, Assembler::pn, *slow_case);
     delayed()->nop();
   }
-  br(Assembler::always, false, Assembler::pt, done);
-  delayed()->nop();
+  ba_short(done);
 
   bind(try_rebias);
   // At this point we know the epoch has expired, meaning that the
@@ -3393,8 +3452,7 @@ void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg,
     brx(Assembler::notEqual, true, Assembler::pn, *slow_case);
     delayed()->nop();
   }
-  br(Assembler::always, false, Assembler::pt, done);
-  delayed()->nop();
+  ba_short(done);
 
   bind(try_revoke_bias);
   // The prototype mark in the klass doesn't have the bias bit set any
@@ -3445,7 +3503,7 @@ void MacroAssembler::biased_locking_exit (Address mark_addr, Register temp_reg, 
 // Solaris/SPARC's "as".  Another apt name would be cas_ptr()
 
 void MacroAssembler::casn (Register addr_reg, Register cmp_reg, Register set_reg ) {
-  casx_under_lock (addr_reg, cmp_reg, set_reg, (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr()) ;
+  casx_under_lock (addr_reg, cmp_reg, set_reg, (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr());
 }
 
 
@@ -3486,9 +3544,9 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
    }
 
    if (EmitSync & 1) {
-     mov    (3, Rscratch) ;
-     st_ptr (Rscratch, Rbox, BasicLock::displaced_header_offset_in_bytes());
-     cmp    (SP, G0) ;
+     mov(3, Rscratch);
+     st_ptr(Rscratch, Rbox, BasicLock::displaced_header_offset_in_bytes());
+     cmp(SP, G0);
      return ;
    }
 
@@ -3529,7 +3587,7 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
      assert(os::vm_page_size() > 0xfff, "page size too small - change the constant");
      andcc(Rscratch, 0xfffff003, Rscratch);
      st_ptr(Rscratch, Rbox, BasicLock::displaced_header_offset_in_bytes());
-     bind (done) ;
+     bind (done);
      return ;
    }
 
@@ -3538,7 +3596,7 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
    if (EmitSync & 256) {
       Label IsInflated ;
 
-      ld_ptr (mark_addr, Rmark);           // fetch obj->mark
+      ld_ptr(mark_addr, Rmark);           // fetch obj->mark
       // Triage: biased, stack-locked, neutral, inflated
       if (try_bias) {
         biased_locking_enter(Roop, Rmark, Rscratch, done, NULL, counters);
@@ -3549,49 +3607,49 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
       // Store mark into displaced mark field in the on-stack basic-lock "box"
       // Critically, this must happen before the CAS
       // Maximize the ST-CAS distance to minimize the ST-before-CAS penalty.
-      st_ptr (Rmark, Rbox, BasicLock::displaced_header_offset_in_bytes());
-      andcc  (Rmark, 2, G0) ;
-      brx    (Assembler::notZero, false, Assembler::pn, IsInflated) ;
-      delayed() ->
+      st_ptr(Rmark, Rbox, BasicLock::displaced_header_offset_in_bytes());
+      andcc(Rmark, 2, G0);
+      brx(Assembler::notZero, false, Assembler::pn, IsInflated);
+      delayed()->
 
       // Try stack-lock acquisition.
       // Beware: the 1st instruction is in a delay slot
-      mov    (Rbox,  Rscratch);
-      or3    (Rmark, markOopDesc::unlocked_value, Rmark);
-      assert (mark_addr.disp() == 0, "cas must take a zero displacement");
-      casn   (mark_addr.base(), Rmark, Rscratch) ;
-      cmp    (Rmark, Rscratch);
-      brx    (Assembler::equal, false, Assembler::pt, done);
+      mov(Rbox,  Rscratch);
+      or3(Rmark, markOopDesc::unlocked_value, Rmark);
+      assert(mark_addr.disp() == 0, "cas must take a zero displacement");
+      casn(mark_addr.base(), Rmark, Rscratch);
+      cmp(Rmark, Rscratch);
+      brx(Assembler::equal, false, Assembler::pt, done);
       delayed()->sub(Rscratch, SP, Rscratch);
 
       // Stack-lock attempt failed - check for recursive stack-lock.
       // See the comments below about how we might remove this case.
 #ifdef _LP64
-      sub    (Rscratch, STACK_BIAS, Rscratch);
+      sub(Rscratch, STACK_BIAS, Rscratch);
 #endif
       assert(os::vm_page_size() > 0xfff, "page size too small - change the constant");
-      andcc  (Rscratch, 0xfffff003, Rscratch);
-      br     (Assembler::always, false, Assembler::pt, done) ;
-      delayed()-> st_ptr (Rscratch, Rbox, BasicLock::displaced_header_offset_in_bytes());
+      andcc(Rscratch, 0xfffff003, Rscratch);
+      br(Assembler::always, false, Assembler::pt, done);
+      delayed()-> st_ptr(Rscratch, Rbox, BasicLock::displaced_header_offset_in_bytes());
 
-      bind   (IsInflated) ;
+      bind(IsInflated);
       if (EmitSync & 64) {
          // If m->owner != null goto IsLocked
          // Pessimistic form: Test-and-CAS vs CAS
          // The optimistic form avoids RTS->RTO cache line upgrades.
-         ld_ptr (Rmark, ObjectMonitor::owner_offset_in_bytes() - 2, Rscratch);
-         andcc  (Rscratch, Rscratch, G0) ;
-         brx    (Assembler::notZero, false, Assembler::pn, done) ;
-         delayed()->nop() ;
+         ld_ptr(Rmark, ObjectMonitor::owner_offset_in_bytes() - 2, Rscratch);
+         andcc(Rscratch, Rscratch, G0);
+         brx(Assembler::notZero, false, Assembler::pn, done);
+         delayed()->nop();
          // m->owner == null : it's unlocked.
       }
 
       // Try to CAS m->owner from null to Self
       // Invariant: if we acquire the lock then _recursions should be 0.
-      add    (Rmark, ObjectMonitor::owner_offset_in_bytes()-2, Rmark) ;
-      mov    (G2_thread, Rscratch) ;
-      casn   (Rmark, G0, Rscratch) ;
-      cmp    (Rscratch, G0) ;
+      add(Rmark, ObjectMonitor::owner_offset_in_bytes()-2, Rmark);
+      mov(G2_thread, Rscratch);
+      casn(Rmark, G0, Rscratch);
+      cmp(Rscratch, G0);
       // Intentional fall-through into done
    } else {
       // Aggressively avoid the Store-before-CAS penalty
@@ -3599,9 +3657,9 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
       Label IsInflated, Recursive ;
 
 // Anticipate CAS -- Avoid RTS->RTO upgrade
-// prefetch (mark_addr, Assembler::severalWritesAndPossiblyReads) ;
+// prefetch (mark_addr, Assembler::severalWritesAndPossiblyReads);
 
-      ld_ptr (mark_addr, Rmark);           // fetch obj->mark
+      ld_ptr(mark_addr, Rmark);           // fetch obj->mark
       // Triage: biased, stack-locked, neutral, inflated
 
       if (try_bias) {
@@ -3609,8 +3667,8 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
         // Invariant: if control reaches this point in the emitted stream
         // then Rmark has not been modified.
       }
-      andcc  (Rmark, 2, G0) ;
-      brx    (Assembler::notZero, false, Assembler::pn, IsInflated) ;
+      andcc(Rmark, 2, G0);
+      brx(Assembler::notZero, false, Assembler::pn, IsInflated);
       delayed()->                         // Beware - dangling delay-slot
 
       // Try stack-lock acquisition.
@@ -3620,23 +3678,21 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
       //   ST obj->mark = box    -- overwrite transient 0 value
       // This presumes TSO, of course.
 
-      mov    (0, Rscratch) ;
-      or3    (Rmark, markOopDesc::unlocked_value, Rmark);
-      assert (mark_addr.disp() == 0, "cas must take a zero displacement");
-      casn   (mark_addr.base(), Rmark, Rscratch) ;
-// prefetch (mark_addr, Assembler::severalWritesAndPossiblyReads) ;
-      cmp    (Rscratch, Rmark) ;
-      brx    (Assembler::notZero, false, Assembler::pn, Recursive) ;
-      delayed() ->
-        st_ptr (Rmark, Rbox, BasicLock::displaced_header_offset_in_bytes());
+      mov(0, Rscratch);
+      or3(Rmark, markOopDesc::unlocked_value, Rmark);
+      assert(mark_addr.disp() == 0, "cas must take a zero displacement");
+      casn(mark_addr.base(), Rmark, Rscratch);
+// prefetch (mark_addr, Assembler::severalWritesAndPossiblyReads);
+      cmp(Rscratch, Rmark);
+      brx(Assembler::notZero, false, Assembler::pn, Recursive);
+      delayed()->st_ptr(Rmark, Rbox, BasicLock::displaced_header_offset_in_bytes());
       if (counters != NULL) {
         cond_inc(Assembler::equal, (address) counters->fast_path_entry_count_addr(), Rmark, Rscratch);
       }
-      br     (Assembler::always, false, Assembler::pt, done);
-      delayed() ->
-        st_ptr (Rbox, mark_addr) ;
+      ba(done);
+      delayed()->st_ptr(Rbox, mark_addr);
 
-      bind   (Recursive) ;
+      bind(Recursive);
       // Stack-lock attempt failed - check for recursive stack-lock.
       // Tests show that we can remove the recursive case with no impact
       // on refworkload 0.83.  If we need to reduce the size of the code
@@ -3653,49 +3709,48 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
 
       // RScratch contains the fetched obj->mark value from the failed CASN.
 #ifdef _LP64
-      sub    (Rscratch, STACK_BIAS, Rscratch);
+      sub(Rscratch, STACK_BIAS, Rscratch);
 #endif
       sub(Rscratch, SP, Rscratch);
       assert(os::vm_page_size() > 0xfff, "page size too small - change the constant");
-      andcc  (Rscratch, 0xfffff003, Rscratch);
+      andcc(Rscratch, 0xfffff003, Rscratch);
       if (counters != NULL) {
         // Accounting needs the Rscratch register
-        st_ptr (Rscratch, Rbox, BasicLock::displaced_header_offset_in_bytes());
+        st_ptr(Rscratch, Rbox, BasicLock::displaced_header_offset_in_bytes());
         cond_inc(Assembler::equal, (address) counters->fast_path_entry_count_addr(), Rmark, Rscratch);
-        br     (Assembler::always, false, Assembler::pt, done) ;
-        delayed()->nop() ;
+        ba_short(done);
       } else {
-        br     (Assembler::always, false, Assembler::pt, done) ;
-        delayed()-> st_ptr (Rscratch, Rbox, BasicLock::displaced_header_offset_in_bytes());
+        ba(done);
+        delayed()->st_ptr(Rscratch, Rbox, BasicLock::displaced_header_offset_in_bytes());
       }
 
-      bind   (IsInflated) ;
+      bind   (IsInflated);
       if (EmitSync & 64) {
          // If m->owner != null goto IsLocked
          // Test-and-CAS vs CAS
          // Pessimistic form avoids futile (doomed) CAS attempts
          // The optimistic form avoids RTS->RTO cache line upgrades.
-         ld_ptr (Rmark, ObjectMonitor::owner_offset_in_bytes() - 2, Rscratch);
-         andcc  (Rscratch, Rscratch, G0) ;
-         brx    (Assembler::notZero, false, Assembler::pn, done) ;
-         delayed()->nop() ;
+         ld_ptr(Rmark, ObjectMonitor::owner_offset_in_bytes() - 2, Rscratch);
+         andcc(Rscratch, Rscratch, G0);
+         brx(Assembler::notZero, false, Assembler::pn, done);
+         delayed()->nop();
          // m->owner == null : it's unlocked.
       }
 
       // Try to CAS m->owner from null to Self
       // Invariant: if we acquire the lock then _recursions should be 0.
-      add    (Rmark, ObjectMonitor::owner_offset_in_bytes()-2, Rmark) ;
-      mov    (G2_thread, Rscratch) ;
-      casn   (Rmark, G0, Rscratch) ;
-      cmp    (Rscratch, G0) ;
+      add(Rmark, ObjectMonitor::owner_offset_in_bytes()-2, Rmark);
+      mov(G2_thread, Rscratch);
+      casn(Rmark, G0, Rscratch);
+      cmp(Rscratch, G0);
       // ST box->displaced_header = NonZero.
       // Any non-zero value suffices:
       //    unused_mark(), G2_thread, RBox, RScratch, rsp, etc.
-      st_ptr (Rbox, Rbox, BasicLock::displaced_header_offset_in_bytes());
+      st_ptr(Rbox, Rbox, BasicLock::displaced_header_offset_in_bytes());
       // Intentional fall-through into done
    }
 
-   bind   (done) ;
+   bind   (done);
 }
 
 void MacroAssembler::compiler_unlock_object(Register Roop, Register Rmark,
@@ -3706,7 +3761,7 @@ void MacroAssembler::compiler_unlock_object(Register Roop, Register Rmark,
    Label done ;
 
    if (EmitSync & 4) {
-     cmp  (SP, G0) ;
+     cmp(SP, G0);
      return ;
    }
 
@@ -3717,18 +3772,16 @@ void MacroAssembler::compiler_unlock_object(Register Roop, Register Rmark,
 
      // Test first if it is a fast recursive unlock
      ld_ptr(Rbox, BasicLock::displaced_header_offset_in_bytes(), Rmark);
-     cmp(Rmark, G0);
-     brx(Assembler::equal, false, Assembler::pt, done);
-     delayed()->nop();
+     br_null_short(Rmark, Assembler::pt, done);
 
      // Check if it is still a light weight lock, this is is true if we see
      // the stack address of the basicLock in the markOop of the object
      assert(mark_addr.disp() == 0, "cas must take a zero displacement");
      casx_under_lock(mark_addr.base(), Rbox, Rmark,
        (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr());
-     br (Assembler::always, false, Assembler::pt, done);
+     ba(done);
      delayed()->cmp(Rbox, Rmark);
-     bind (done) ;
+     bind(done);
      return ;
    }
 
@@ -3743,14 +3796,14 @@ void MacroAssembler::compiler_unlock_object(Register Roop, Register Rmark,
       biased_locking_exit(mark_addr, Rscratch, done);
    }
 
-   ld_ptr (Roop, oopDesc::mark_offset_in_bytes(), Rmark) ;
-   ld_ptr (Rbox, BasicLock::displaced_header_offset_in_bytes(), Rscratch);
-   andcc  (Rscratch, Rscratch, G0);
-   brx    (Assembler::zero, false, Assembler::pn, done);
-   delayed()-> nop() ;      // consider: relocate fetch of mark, above, into this DS
-   andcc  (Rmark, 2, G0) ;
-   brx    (Assembler::zero, false, Assembler::pt, LStacked) ;
-   delayed()-> nop() ;
+   ld_ptr(Roop, oopDesc::mark_offset_in_bytes(), Rmark);
+   ld_ptr(Rbox, BasicLock::displaced_header_offset_in_bytes(), Rscratch);
+   andcc(Rscratch, Rscratch, G0);
+   brx(Assembler::zero, false, Assembler::pn, done);
+   delayed()->nop();      // consider: relocate fetch of mark, above, into this DS
+   andcc(Rmark, 2, G0);
+   brx(Assembler::zero, false, Assembler::pt, LStacked);
+   delayed()->nop();
 
    // It's inflated
    // Conceptually we need a #loadstore|#storestore "release" MEMBAR before
@@ -3761,48 +3814,45 @@ void MacroAssembler::compiler_unlock_object(Register Roop, Register Rmark,
    // Note that we use 1-0 locking by default for the inflated case.  We
    // close the resultant (and rare) race by having contented threads in
    // monitorenter periodically poll _owner.
-   ld_ptr (Rmark, ObjectMonitor::owner_offset_in_bytes() - 2, Rscratch);
-   ld_ptr (Rmark, ObjectMonitor::recursions_offset_in_bytes() - 2, Rbox);
-   xor3   (Rscratch, G2_thread, Rscratch) ;
-   orcc   (Rbox, Rscratch, Rbox) ;
-   brx    (Assembler::notZero, false, Assembler::pn, done) ;
+   ld_ptr(Rmark, ObjectMonitor::owner_offset_in_bytes() - 2, Rscratch);
+   ld_ptr(Rmark, ObjectMonitor::recursions_offset_in_bytes() - 2, Rbox);
+   xor3(Rscratch, G2_thread, Rscratch);
+   orcc(Rbox, Rscratch, Rbox);
+   brx(Assembler::notZero, false, Assembler::pn, done);
    delayed()->
-   ld_ptr (Rmark, ObjectMonitor::EntryList_offset_in_bytes() - 2, Rscratch);
-   ld_ptr (Rmark, ObjectMonitor::cxq_offset_in_bytes() - 2, Rbox);
-   orcc   (Rbox, Rscratch, G0) ;
+   ld_ptr(Rmark, ObjectMonitor::EntryList_offset_in_bytes() - 2, Rscratch);
+   ld_ptr(Rmark, ObjectMonitor::cxq_offset_in_bytes() - 2, Rbox);
+   orcc(Rbox, Rscratch, G0);
    if (EmitSync & 65536) {
       Label LSucc ;
-      brx    (Assembler::notZero, false, Assembler::pn, LSucc) ;
-      delayed()->nop() ;
-      br     (Assembler::always, false, Assembler::pt, done) ;
-      delayed()->
-      st_ptr (G0, Rmark, ObjectMonitor::owner_offset_in_bytes() - 2);
+      brx(Assembler::notZero, false, Assembler::pn, LSucc);
+      delayed()->nop();
+      ba(done);
+      delayed()->st_ptr(G0, Rmark, ObjectMonitor::owner_offset_in_bytes() - 2);
 
-      bind   (LSucc) ;
-      st_ptr (G0, Rmark, ObjectMonitor::owner_offset_in_bytes() - 2);
-      if (os::is_MP()) { membar (StoreLoad) ; }
-      ld_ptr (Rmark, ObjectMonitor::succ_offset_in_bytes() - 2, Rscratch);
-      andcc  (Rscratch, Rscratch, G0) ;
-      brx    (Assembler::notZero, false, Assembler::pt, done) ;
-      delayed()-> andcc (G0, G0, G0) ;
-      add    (Rmark, ObjectMonitor::owner_offset_in_bytes()-2, Rmark) ;
-      mov    (G2_thread, Rscratch) ;
-      casn   (Rmark, G0, Rscratch) ;
-      cmp    (Rscratch, G0) ;
+      bind(LSucc);
+      st_ptr(G0, Rmark, ObjectMonitor::owner_offset_in_bytes() - 2);
+      if (os::is_MP()) { membar (StoreLoad); }
+      ld_ptr(Rmark, ObjectMonitor::succ_offset_in_bytes() - 2, Rscratch);
+      andcc(Rscratch, Rscratch, G0);
+      brx(Assembler::notZero, false, Assembler::pt, done);
+      delayed()->andcc(G0, G0, G0);
+      add(Rmark, ObjectMonitor::owner_offset_in_bytes()-2, Rmark);
+      mov(G2_thread, Rscratch);
+      casn(Rmark, G0, Rscratch);
       // invert icc.zf and goto done
-      brx    (Assembler::notZero, false, Assembler::pt, done) ;
-      delayed() -> cmp (G0, G0) ;
-      br     (Assembler::always, false, Assembler::pt, done);
-      delayed() -> cmp (G0, 1) ;
+      br_notnull(Rscratch, false, Assembler::pt, done);
+      delayed()->cmp(G0, G0);
+      ba(done);
+      delayed()->cmp(G0, 1);
    } else {
-      brx    (Assembler::notZero, false, Assembler::pn, done) ;
-      delayed()->nop() ;
-      br     (Assembler::always, false, Assembler::pt, done) ;
-      delayed()->
-      st_ptr (G0, Rmark, ObjectMonitor::owner_offset_in_bytes() - 2);
+      brx(Assembler::notZero, false, Assembler::pn, done);
+      delayed()->nop();
+      ba(done);
+      delayed()->st_ptr(G0, Rmark, ObjectMonitor::owner_offset_in_bytes() - 2);
    }
 
-   bind   (LStacked) ;
+   bind   (LStacked);
    // Consider: we could replace the expensive CAS in the exit
    // path with a simple ST of the displaced mark value fetched from
    // the on-stack basiclock box.  That admits a race where a thread T2
@@ -3831,11 +3881,11 @@ void MacroAssembler::compiler_unlock_object(Register Roop, Register Rmark,
    // A prototype implementation showed excellent results, although
    // the scavenger and timeout code was rather involved.
 
-   casn   (mark_addr.base(), Rbox, Rscratch) ;
-   cmp    (Rbox, Rscratch);
+   casn(mark_addr.base(), Rbox, Rscratch);
+   cmp(Rbox, Rscratch);
    // Intentional fall through into done ...
 
-   bind   (done) ;
+   bind(done);
 }
 
 
@@ -3891,9 +3941,7 @@ void MacroAssembler::verify_tlab() {
     ld_ptr(G2_thread, in_bytes(JavaThread::tlab_top_offset()), t1);
     ld_ptr(G2_thread, in_bytes(JavaThread::tlab_start_offset()), t2);
     or3(t1, t2, t3);
-    cmp(t1, t2);
-    br(Assembler::greaterEqual, false, Assembler::pn, next);
-    delayed()->nop();
+    cmp_and_br_short(t1, t2, Assembler::greaterEqual, Assembler::pn, next);
     stop("assert(top >= start)");
     should_not_reach_here();
 
@@ -3901,17 +3949,13 @@ void MacroAssembler::verify_tlab() {
     ld_ptr(G2_thread, in_bytes(JavaThread::tlab_top_offset()), t1);
     ld_ptr(G2_thread, in_bytes(JavaThread::tlab_end_offset()), t2);
     or3(t3, t2, t3);
-    cmp(t1, t2);
-    br(Assembler::lessEqual, false, Assembler::pn, next2);
-    delayed()->nop();
+    cmp_and_br_short(t1, t2, Assembler::lessEqual, Assembler::pn, next2);
     stop("assert(top <= end)");
     should_not_reach_here();
 
     bind(next2);
     and3(t3, MinObjAlignmentInBytesMask, t3);
-    cmp(t3, 0);
-    br(Assembler::lessEqual, false, Assembler::pn, ok);
-    delayed()->nop();
+    cmp_and_br_short(t3, 0, Assembler::lessEqual, Assembler::pn, ok);
     stop("assert(aligned)");
     should_not_reach_here();
 
@@ -3937,8 +3981,7 @@ void MacroAssembler::eden_allocate(
 
   if (CMSIncrementalMode || !Universe::heap()->supports_inline_contig_alloc()) {
     // No allocation in the shared eden.
-    br(Assembler::always, false, Assembler::pt, slow_case);
-    delayed()->nop();
+    ba_short(slow_case);
   } else {
     // get eden boundaries
     // note: we need both top & top_addr!
@@ -4072,8 +4115,7 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
 
   if (CMSIncrementalMode || !Universe::heap()->supports_inline_contig_alloc()) {
     // No allocation in the shared eden.
-    br(Assembler::always, false, Assembler::pt, slow_case);
-    delayed()->nop();
+    ba_short(slow_case);
   }
 
   ld_ptr(G2_thread, in_bytes(JavaThread::tlab_top_offset()), top);
@@ -4098,8 +4140,7 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
     add(t2, 1, t2);
     stw(t2, G2_thread, in_bytes(JavaThread::tlab_slow_allocations_offset()));
   }
-  br(Assembler::always, false, Assembler::pt, try_eden);
-  delayed()->nop();
+  ba_short(try_eden);
 
   bind(discard_tlab);
   if (TLABStats) {
@@ -4115,8 +4156,7 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
 
   // if tlab is currently allocated (top or end != null) then
   // fill [top, end + alignment_reserve) with array object
-  br_null(top, false, Assembler::pn, do_refill);
-  delayed()->nop();
+  br_null_short(top, Assembler::pn, do_refill);
 
   set((intptr_t)markOopDesc::prototype()->copy_set_hash(0x2), t2);
   st_ptr(t2, top, oopDesc::mark_offset_in_bytes()); // set up the mark word
@@ -4151,9 +4191,7 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
     Label ok;
     ld_ptr(G2_thread, in_bytes(JavaThread::tlab_size_offset()), t2);
     sll_ptr(t2, LogHeapWordSize, t2);
-    cmp(t1, t2);
-    br(Assembler::equal, false, Assembler::pt, ok);
-    delayed()->nop();
+    cmp_and_br_short(t1, t2, Assembler::equal, Assembler::pt, ok);
     stop("assert(t1 == tlab_size)");
     should_not_reach_here();
 
@@ -4164,8 +4202,7 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
   sub(top, ThreadLocalAllocBuffer::alignment_reserve_in_bytes(), top);
   st_ptr(top, G2_thread, in_bytes(JavaThread::tlab_end_offset()));
   verify_tlab();
-  br(Assembler::always, false, Assembler::pt, retry);
-  delayed()->nop();
+  ba_short(retry);
 }
 
 void MacroAssembler::incr_allocated_bytes(RegisterOrConstant size_in_bytes,
@@ -4290,12 +4327,15 @@ static void generate_satb_log_enqueue(bool with_frame) {
   BufferBlob* bb = BufferBlob::create("enqueue_with_frame", EnqueueCodeSize);
   CodeBuffer buf(bb);
   MacroAssembler masm(&buf);
-  address start = masm.pc();
+
+#define __ masm.
+
+  address start = __ pc();
   Register pre_val;
 
   Label refill, restart;
   if (with_frame) {
-    masm.save_frame(0);
+    __ save_frame(0);
     pre_val = I0;  // Was O0 before the save.
   } else {
     pre_val = O0;
@@ -4310,57 +4350,59 @@ static void generate_satb_log_enqueue(bool with_frame) {
          in_bytes(PtrQueue::byte_width_of_buf()) == sizeof(intptr_t),
          "check sizes in assembly below");
 
-  masm.bind(restart);
-  masm.ld_ptr(G2_thread, satb_q_index_byte_offset, L0);
+  __ bind(restart);
+  __ ld_ptr(G2_thread, satb_q_index_byte_offset, L0);
 
-  masm.br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pn, L0, refill);
+  __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pn, L0, refill);
   // If the branch is taken, no harm in executing this in the delay slot.
-  masm.delayed()->ld_ptr(G2_thread, satb_q_buf_byte_offset, L1);
-  masm.sub(L0, oopSize, L0);
+  __ delayed()->ld_ptr(G2_thread, satb_q_buf_byte_offset, L1);
+  __ sub(L0, oopSize, L0);
 
-  masm.st_ptr(pre_val, L1, L0);  // [_buf + index] := I0
+  __ st_ptr(pre_val, L1, L0);  // [_buf + index] := I0
   if (!with_frame) {
     // Use return-from-leaf
-    masm.retl();
-    masm.delayed()->st_ptr(L0, G2_thread, satb_q_index_byte_offset);
+    __ retl();
+    __ delayed()->st_ptr(L0, G2_thread, satb_q_index_byte_offset);
   } else {
     // Not delayed.
-    masm.st_ptr(L0, G2_thread, satb_q_index_byte_offset);
+    __ st_ptr(L0, G2_thread, satb_q_index_byte_offset);
   }
   if (with_frame) {
-    masm.ret();
-    masm.delayed()->restore();
+    __ ret();
+    __ delayed()->restore();
   }
-  masm.bind(refill);
+  __ bind(refill);
 
   address handle_zero =
     CAST_FROM_FN_PTR(address,
                      &SATBMarkQueueSet::handle_zero_index_for_thread);
   // This should be rare enough that we can afford to save all the
   // scratch registers that the calling context might be using.
-  masm.mov(G1_scratch, L0);
-  masm.mov(G3_scratch, L1);
-  masm.mov(G4, L2);
+  __ mov(G1_scratch, L0);
+  __ mov(G3_scratch, L1);
+  __ mov(G4, L2);
   // We need the value of O0 above (for the write into the buffer), so we
   // save and restore it.
-  masm.mov(O0, L3);
+  __ mov(O0, L3);
   // Since the call will overwrite O7, we save and restore that, as well.
-  masm.mov(O7, L4);
-  masm.call_VM_leaf(L5, handle_zero, G2_thread);
-  masm.mov(L0, G1_scratch);
-  masm.mov(L1, G3_scratch);
-  masm.mov(L2, G4);
-  masm.mov(L3, O0);
-  masm.br(Assembler::always, /*annul*/false, Assembler::pt, restart);
-  masm.delayed()->mov(L4, O7);
+  __ mov(O7, L4);
+  __ call_VM_leaf(L5, handle_zero, G2_thread);
+  __ mov(L0, G1_scratch);
+  __ mov(L1, G3_scratch);
+  __ mov(L2, G4);
+  __ mov(L3, O0);
+  __ br(Assembler::always, /*annul*/false, Assembler::pt, restart);
+  __ delayed()->mov(L4, O7);
 
   if (with_frame) {
     satb_log_enqueue_with_frame = start;
-    satb_log_enqueue_with_frame_end = masm.pc();
+    satb_log_enqueue_with_frame_end = __ pc();
   } else {
     satb_log_enqueue_frameless = start;
-    satb_log_enqueue_frameless_end = masm.pc();
+    satb_log_enqueue_frameless_end = __ pc();
   }
+
+#undef __
 }
 
 static inline void generate_satb_log_enqueue_if_necessary(bool with_frame) {
@@ -4426,7 +4468,7 @@ void MacroAssembler::g1_write_barrier_pre(Register obj,
 
   // Check on whether to annul.
   br_on_reg_cond(rc_z, /*annul*/false, Assembler::pt, tmp, filtered);
-  delayed() -> nop();
+  delayed()->nop();
 
   // Do we need to load the previous value?
   if (obj != noreg) {
@@ -4450,7 +4492,7 @@ void MacroAssembler::g1_write_barrier_pre(Register obj,
   // Is the previous value null?
   // Check on whether to annul.
   br_on_reg_cond(rc_z, /*annul*/false, Assembler::pt, pre_val, filtered);
-  delayed() -> nop();
+  delayed()->nop();
 
   // OK, it's not filtered, so we'll need to call enqueue.  In the normal
   // case, pre_val will be a scratch G-reg, but there are some cases in
@@ -4518,79 +4560,83 @@ static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
   BufferBlob* bb = BufferBlob::create("dirty_card_enqueue", EnqueueCodeSize*2);
   CodeBuffer buf(bb);
   MacroAssembler masm(&buf);
-  address start = masm.pc();
+#define __ masm.
+  address start = __ pc();
 
   Label not_already_dirty, restart, refill;
 
 #ifdef _LP64
-  masm.srlx(O0, CardTableModRefBS::card_shift, O0);
+  __ srlx(O0, CardTableModRefBS::card_shift, O0);
 #else
-  masm.srl(O0, CardTableModRefBS::card_shift, O0);
+  __ srl(O0, CardTableModRefBS::card_shift, O0);
 #endif
   AddressLiteral addrlit(byte_map_base);
-  masm.set(addrlit, O1); // O1 := <card table base>
-  masm.ldub(O0, O1, O2); // O2 := [O0 + O1]
+  __ set(addrlit, O1); // O1 := <card table base>
+  __ ldub(O0, O1, O2); // O2 := [O0 + O1]
 
-  masm.br_on_reg_cond(Assembler::rc_nz, /*annul*/false, Assembler::pt,
+  __ br_on_reg_cond(Assembler::rc_nz, /*annul*/false, Assembler::pt,
                       O2, not_already_dirty);
   // Get O1 + O2 into a reg by itself -- useful in the take-the-branch
   // case, harmless if not.
-  masm.delayed()->add(O0, O1, O3);
+  __ delayed()->add(O0, O1, O3);
 
   // We didn't take the branch, so we're already dirty: return.
   // Use return-from-leaf
-  masm.retl();
-  masm.delayed()->nop();
+  __ retl();
+  __ delayed()->nop();
 
   // Not dirty.
-  masm.bind(not_already_dirty);
+  __ bind(not_already_dirty);
   // First, dirty it.
-  masm.stb(G0, O3, G0);  // [cardPtr] := 0  (i.e., dirty).
+  __ stb(G0, O3, G0);  // [cardPtr] := 0  (i.e., dirty).
   int dirty_card_q_index_byte_offset =
     in_bytes(JavaThread::dirty_card_queue_offset() +
              PtrQueue::byte_offset_of_index());
   int dirty_card_q_buf_byte_offset =
     in_bytes(JavaThread::dirty_card_queue_offset() +
              PtrQueue::byte_offset_of_buf());
-  masm.bind(restart);
-  masm.ld_ptr(G2_thread, dirty_card_q_index_byte_offset, L0);
+  __ bind(restart);
+  __ ld_ptr(G2_thread, dirty_card_q_index_byte_offset, L0);
 
-  masm.br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pn,
+  __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pn,
                       L0, refill);
   // If the branch is taken, no harm in executing this in the delay slot.
-  masm.delayed()->ld_ptr(G2_thread, dirty_card_q_buf_byte_offset, L1);
-  masm.sub(L0, oopSize, L0);
+  __ delayed()->ld_ptr(G2_thread, dirty_card_q_buf_byte_offset, L1);
+  __ sub(L0, oopSize, L0);
 
-  masm.st_ptr(O3, L1, L0);  // [_buf + index] := I0
+  __ st_ptr(O3, L1, L0);  // [_buf + index] := I0
   // Use return-from-leaf
-  masm.retl();
-  masm.delayed()->st_ptr(L0, G2_thread, dirty_card_q_index_byte_offset);
+  __ retl();
+  __ delayed()->st_ptr(L0, G2_thread, dirty_card_q_index_byte_offset);
 
-  masm.bind(refill);
+  __ bind(refill);
   address handle_zero =
     CAST_FROM_FN_PTR(address,
                      &DirtyCardQueueSet::handle_zero_index_for_thread);
   // This should be rare enough that we can afford to save all the
   // scratch registers that the calling context might be using.
-  masm.mov(G1_scratch, L3);
-  masm.mov(G3_scratch, L5);
+  __ mov(G1_scratch, L3);
+  __ mov(G3_scratch, L5);
   // We need the value of O3 above (for the write into the buffer), so we
   // save and restore it.
-  masm.mov(O3, L6);
+  __ mov(O3, L6);
   // Since the call will overwrite O7, we save and restore that, as well.
-  masm.mov(O7, L4);
+  __ mov(O7, L4);
 
-  masm.call_VM_leaf(L7_thread_cache, handle_zero, G2_thread);
-  masm.mov(L3, G1_scratch);
-  masm.mov(L5, G3_scratch);
-  masm.mov(L6, O3);
-  masm.br(Assembler::always, /*annul*/false, Assembler::pt, restart);
-  masm.delayed()->mov(L4, O7);
+  __ call_VM_leaf(L7_thread_cache, handle_zero, G2_thread);
+  __ mov(L3, G1_scratch);
+  __ mov(L5, G3_scratch);
+  __ mov(L6, O3);
+  __ br(Assembler::always, /*annul*/false, Assembler::pt, restart);
+  __ delayed()->mov(L4, O7);
 
   dirty_card_log_enqueue = start;
-  dirty_card_log_enqueue_end = masm.pc();
+  dirty_card_log_enqueue_end = __ pc();
   // XXX Should have a guarantee here about not going off the end!
   // Does it already do so?  Do an experiment...
+
+#undef __
+
 }
 
 static inline void
@@ -4903,7 +4949,7 @@ void MacroAssembler::char_arrays_equals(Register ary1, Register ary2,
   delayed()->mov(G0, result);     // not equal
 
   // only one char ?
-  br_on_reg_cond(rc_z, true, Assembler::pn, limit, Ldone);
+  cmp_zero_and_br(zero, limit, Ldone, true, Assembler::pn);
   delayed()->add(G0, 1, result); // zero-length arrays are equal
 
   // word by word compare, dont't need alignment check

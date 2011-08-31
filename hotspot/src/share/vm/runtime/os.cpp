@@ -1232,6 +1232,17 @@ size_t os::page_size_for_region(size_t region_min_size, size_t region_max_size,
 }
 
 #ifndef PRODUCT
+void os::trace_page_sizes(const char* str, const size_t* page_sizes, int count)
+{
+  if (TracePageSizes) {
+    tty->print("%s: ", str);
+    for (int i = 0; i < count; ++i) {
+      tty->print(" " SIZE_FORMAT, page_sizes[i]);
+    }
+    tty->cr();
+  }
+}
+
 void os::trace_page_sizes(const char* str, const size_t region_min_size,
                           const size_t region_max_size, const size_t page_size,
                           const char* base, const size_t size)
@@ -1299,7 +1310,7 @@ int os::get_line_chars(int fd, char* buf, const size_t bsize){
   size_t sz, i = 0;
 
   // read until EOF, EOL or buf is full
-  while ((sz = (int) read(fd, &buf[i], 1)) == 1 && i < (bsize-1) && buf[i] != '\n') {
+  while ((sz = (int) read(fd, &buf[i], 1)) == 1 && i < (bsize-2) && buf[i] != '\n') {
      ++i;
   }
 
@@ -1320,7 +1331,7 @@ int os::get_line_chars(int fd, char* buf, const size_t bsize){
   }
 
   // line is longer than size of buf, skip to EOL
-  int ch;
+  char ch;
   while (read(fd, &ch, 1) == 1 && ch != '\n') {
     // Do nothing
   }

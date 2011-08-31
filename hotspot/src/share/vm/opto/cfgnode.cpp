@@ -1349,17 +1349,9 @@ static Node* is_absolute( PhaseGVN *phase, PhiNode *phi_root, int true_path) {
 static void split_once(PhaseIterGVN *igvn, Node *phi, Node *val, Node *n, Node *newn) {
   igvn->hash_delete(n);         // Remove from hash before hacking edges
 
-  Node* predicate_proj = NULL;
   uint j = 1;
   for (uint i = phi->req()-1; i > 0; i--) {
     if (phi->in(i) == val) {   // Found a path with val?
-      if (n->is_Region()) {
-        Node* proj = PhaseIdealLoop::find_predicate(n->in(i));
-        if (proj != NULL) {
-          assert(predicate_proj == NULL, "only one predicate entry expected");
-          predicate_proj = proj;
-        }
-      }
       // Add to NEW Region/Phi, no DU info
       newn->set_req( j++, n->in(i) );
       // Remove from OLD Region/Phi
@@ -1370,11 +1362,6 @@ static void split_once(PhaseIterGVN *igvn, Node *phi, Node *val, Node *n, Node *
   // Register the new node but do not transform it.  Cannot transform until the
   // entire Region/Phi conglomerate has been hacked as a single huge transform.
   igvn->register_new_node_with_optimizer( newn );
-
-  // Clone loop predicates
-  if (predicate_proj != NULL) {
-    newn = igvn->clone_loop_predicates(predicate_proj, newn, !n->is_CountedLoop());
-  }
 
   // Now I can point to the new node.
   n->add_req(newn);
@@ -1404,13 +1391,18 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
 
   Node *val = phi->in(i);       // Constant to split for
   uint hit = 0;                 // Number of times it occurs
+  Node *r = phi->region();
 
   for( ; i < phi->req(); i++ ){ // Count occurrences of constant
     Node *n = phi->in(i);
     if( !n ) return NULL;
     if( phase->type(n) == Type::TOP ) return NULL;
-    if( phi->in(i) == val )
+    if( phi->in(i) == val ) {
       hit++;
+      if (PhaseIdealLoop::find_predicate(r->in(i)) != NULL) {
+        return NULL;            // don't split loop entry path
+      }
+    }
   }
 
   if( hit <= 1 ||               // Make sure we find 2 or more
@@ -1420,7 +1412,6 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
   // Now start splitting out the flow paths that merge the same value.
   // Split first the RegionNode.
   PhaseIterGVN *igvn = phase->is_IterGVN();
-  Node *r = phi->region();
   RegionNode *newr = new (phase->C, hit+1) RegionNode(hit+1);
   split_once(igvn, phi, val, r, newr);
 

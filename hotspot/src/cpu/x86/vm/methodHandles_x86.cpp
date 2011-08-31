@@ -1192,11 +1192,11 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       const int jobject_oop_offset = 0;
       __ movptr(rbx_method, Address(rbx_method, jobject_oop_offset));  // dereference the jobject
 
-      __ movptr(rsi, rsp);
+      __ movptr(saved_last_sp, rsp);
       __ subptr(rsp, 3 * wordSize);
       __ push(rax_pc);         // restore caller PC
 
-      __ movptr(__ argument_address(constant(2)), rarg0_code);
+      __ movl  (__ argument_address(constant(2)), rarg0_code);
       __ movptr(__ argument_address(constant(1)), rarg1_actual);
       __ movptr(__ argument_address(constant(0)), rarg2_required);
       jump_from_method_handle(_masm, rbx_method, rax);

@@ -194,7 +194,7 @@ Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
 // Replace the dominated test with an obvious true or false.  Place it on the
 // IGVN worklist for later cleanup.  Move control-dependent data Nodes on the
 // live path up to the dominating control.
-void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip ) {
+void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exclude_loop_predicate ) {
 #ifndef PRODUCT
   if (VerifyLoopOptimizations && PrintOpto) tty->print_cr("dominating test");
 #endif
@@ -228,7 +228,16 @@ void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip ) {
   // Make control-dependent data Nodes on the live path (path that will remain
   // once the dominated IF is removed) become control-dependent on the
   // dominating projection.
-  Node* dp = ((IfNode*)iff)->proj_out(pop == Op_IfTrue);
+  Node* dp = iff->as_If()->proj_out(pop == Op_IfTrue);
+
+  // Loop predicates may have depending checks which should not
+  // be skipped. For example, range check predicate has two checks
+  // for lower and upper bounds.
+  ProjNode* unc_proj = iff->as_If()->proj_out(1 - dp->as_Proj()->_con)->as_Proj();
+  if (exclude_loop_predicate &&
+      is_uncommon_trap_proj(unc_proj, Deoptimization::Reason_predicate))
+    return; // Let IGVN transformation change control dependence.
+
   IdealLoopTree *old_loop = get_loop(dp);
 
   for (DUIterator_Fast imax, i = dp->fast_outs(imax); i < imax; i++) {
@@ -859,7 +868,7 @@ void PhaseIdealLoop::split_if_with_blocks_post( Node *n ) {
           // Replace the dominated test with an obvious true or false.
           // Place it on the IGVN worklist for later cleanup.
           C->set_major_progress();
-          dominated_by( prevdom, n );
+          dominated_by( prevdom, n, false, true );
 #ifndef PRODUCT
           if( VerifyLoopOptimizations ) verify();
 #endif
