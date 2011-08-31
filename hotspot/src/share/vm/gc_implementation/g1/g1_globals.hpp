@@ -124,9 +124,6 @@
   develop(bool, G1RSBarrierNullFilter, true,                                \
           "If true, generate null-pointer filtering code in RS barrier")    \
                                                                             \
-  develop(bool, G1PrintCTFilterStats, false,                                \
-          "If true, print stats on RS filtering effectiveness")             \
-                                                                            \
   develop(bool, G1DeferredRSUpdate, true,                                   \
           "If true, use deferred RS updates")                               \
                                                                             \

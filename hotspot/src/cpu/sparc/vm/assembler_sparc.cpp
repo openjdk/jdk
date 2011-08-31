@@ -2161,29 +2161,6 @@ void MacroAssembler::br_notnull( Register s1, bool a, Predict p, Label& L ) {
 #endif
 }
 
-void MacroAssembler::br_on_reg_cond( RCondition rc, bool a, Predict p,
-                                     Register s1, address d,
-                                     relocInfo::relocType rt ) {
-  assert_not_delayed();
-  if (VM_Version::v9_instructions_work()) {
-    bpr(rc, a, p, s1, d, rt);
-  } else {
-    tst(s1);
-    br(reg_cond_to_cc_cond(rc), a, p, d, rt);
-  }
-}
-
-void MacroAssembler::br_on_reg_cond( RCondition rc, bool a, Predict p,
-                                     Register s1, Label& L ) {
-  assert_not_delayed();
-  if (VM_Version::v9_instructions_work()) {
-    bpr(rc, a, p, s1, L);
-  } else {
-    tst(s1);
-    br(reg_cond_to_cc_cond(rc), a, p, L);
-  }
-}
-
 // Compare registers and branch with nop in delay slot or cbcond without delay slot.
 
 // Compare integer (32 bit) values (icc only).
@@ -4340,22 +4317,29 @@ static void generate_satb_log_enqueue(bool with_frame) {
   } else {
     pre_val = O0;
   }
+
   int satb_q_index_byte_offset =
     in_bytes(JavaThread::satb_mark_queue_offset() +
              PtrQueue::byte_offset_of_index());
+
   int satb_q_buf_byte_offset =
     in_bytes(JavaThread::satb_mark_queue_offset() +
              PtrQueue::byte_offset_of_buf());
+
   assert(in_bytes(PtrQueue::byte_width_of_index()) == sizeof(intptr_t) &&
          in_bytes(PtrQueue::byte_width_of_buf()) == sizeof(intptr_t),
          "check sizes in assembly below");
 
   __ bind(restart);
+
+  // Load the index into the SATB buffer. PtrQueue::_index is a size_t
+  // so ld_ptr is appropriate.
   __ ld_ptr(G2_thread, satb_q_index_byte_offset, L0);
 
-  __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pn, L0, refill);
-  // If the branch is taken, no harm in executing this in the delay slot.
-  __ delayed()->ld_ptr(G2_thread, satb_q_buf_byte_offset, L1);
+  // index == 0?
+  __ cmp_and_brx_short(L0, G0, Assembler::equal, Assembler::pn, refill);
+
+  __ ld_ptr(G2_thread, satb_q_buf_byte_offset, L1);
   __ sub(L0, oopSize, L0);
 
   __ st_ptr(pre_val, L1, L0);  // [_buf + index] := I0
@@ -4466,9 +4450,8 @@ void MacroAssembler::g1_write_barrier_pre(Register obj,
          tmp);
   }
 
-  // Check on whether to annul.
-  br_on_reg_cond(rc_z, /*annul*/false, Assembler::pt, tmp, filtered);
-  delayed()->nop();
+  // Is marking active?
+  cmp_and_br_short(tmp, G0, Assembler::equal, Assembler::pt, filtered);
 
   // Do we need to load the previous value?
   if (obj != noreg) {
@@ -4490,9 +4473,7 @@ void MacroAssembler::g1_write_barrier_pre(Register obj,
   assert(pre_val != noreg, "must have a real register");
 
   // Is the previous value null?
-  // Check on whether to annul.
-  br_on_reg_cond(rc_z, /*annul*/false, Assembler::pt, pre_val, filtered);
-  delayed()->nop();
+  cmp_and_brx_short(pre_val, G0, Assembler::equal, Assembler::pt, filtered);
 
   // OK, it's not filtered, so we'll need to call enqueue.  In the normal
   // case, pre_val will be a scratch G-reg, but there are some cases in
@@ -4519,39 +4500,6 @@ void MacroAssembler::g1_write_barrier_pre(Register obj,
   bind(filtered);
 }
 
-static jint num_ct_writes = 0;
-static jint num_ct_writes_filtered_in_hr = 0;
-static jint num_ct_writes_filtered_null = 0;
-static G1CollectedHeap* g1 = NULL;
-
-static Thread* count_ct_writes(void* filter_val, void* new_val) {
-  Atomic::inc(&num_ct_writes);
-  if (filter_val == NULL) {
-    Atomic::inc(&num_ct_writes_filtered_in_hr);
-  } else if (new_val == NULL) {
-    Atomic::inc(&num_ct_writes_filtered_null);
-  } else {
-    if (g1 == NULL) {
-      g1 = G1CollectedHeap::heap();
-    }
-  }
-  if ((num_ct_writes % 1000000) == 0) {
-    jint num_ct_writes_filtered =
-      num_ct_writes_filtered_in_hr +
-      num_ct_writes_filtered_null;
-
-    tty->print_cr("%d potential CT writes: %5.2f%% filtered\n"
-                  "   (%5.2f%% intra-HR, %5.2f%% null).",
-                  num_ct_writes,
-                  100.0*(float)num_ct_writes_filtered/(float)num_ct_writes,
-                  100.0*(float)num_ct_writes_filtered_in_hr/
-                  (float)num_ct_writes,
-                  100.0*(float)num_ct_writes_filtered_null/
-                  (float)num_ct_writes);
-  }
-  return Thread::current();
-}
-
 static address dirty_card_log_enqueue = 0;
 static u_char* dirty_card_log_enqueue_end = 0;
 
@@ -4574,11 +4522,8 @@ static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
   __ set(addrlit, O1); // O1 := <card table base>
   __ ldub(O0, O1, O2); // O2 := [O0 + O1]
 
-  __ br_on_reg_cond(Assembler::rc_nz, /*annul*/false, Assembler::pt,
-                      O2, not_already_dirty);
-  // Get O1 + O2 into a reg by itself -- useful in the take-the-branch
-  // case, harmless if not.
-  __ delayed()->add(O0, O1, O3);
+  assert(CardTableModRefBS::dirty_card_val() == 0, "otherwise check this code");
+  __ cmp_and_br_short(O2, G0, Assembler::notEqual, Assembler::pt, not_already_dirty);
 
   // We didn't take the branch, so we're already dirty: return.
   // Use return-from-leaf
@@ -4587,8 +4532,13 @@ static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
 
   // Not dirty.
   __ bind(not_already_dirty);
+
+  // Get O0 + O1 into a reg by itself
+  __ add(O0, O1, O3);
+
   // First, dirty it.
   __ stb(G0, O3, G0);  // [cardPtr] := 0  (i.e., dirty).
+
   int dirty_card_q_index_byte_offset =
     in_bytes(JavaThread::dirty_card_queue_offset() +
              PtrQueue::byte_offset_of_index());
@@ -4596,12 +4546,15 @@ static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
     in_bytes(JavaThread::dirty_card_queue_offset() +
              PtrQueue::byte_offset_of_buf());
   __ bind(restart);
+
+  // Load the index into the update buffer. PtrQueue::_index is
+  // a size_t so ld_ptr is appropriate here.
   __ ld_ptr(G2_thread, dirty_card_q_index_byte_offset, L0);
 
-  __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pn,
-                      L0, refill);
-  // If the branch is taken, no harm in executing this in the delay slot.
-  __ delayed()->ld_ptr(G2_thread, dirty_card_q_buf_byte_offset, L1);
+  // index == 0?
+  __ cmp_and_brx_short(L0, G0, Assembler::equal, Assembler::pn, refill);
+
+  __ ld_ptr(G2_thread, dirty_card_q_buf_byte_offset, L1);
   __ sub(L0, oopSize, L0);
 
   __ st_ptr(O3, L1, L0);  // [_buf + index] := I0
@@ -4664,6 +4617,7 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr, Register new_val
   G1SATBCardTableModRefBS* bs = (G1SATBCardTableModRefBS*) Universe::heap()->barrier_set();
   assert(bs->kind() == BarrierSet::G1SATBCT ||
          bs->kind() == BarrierSet::G1SATBCTLogging, "wrong barrier");
+
   if (G1RSBarrierRegionFilter) {
     xor3(store_addr, new_val, tmp);
 #ifdef _LP64
@@ -4672,33 +4626,8 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr, Register new_val
     srl(tmp, HeapRegion::LogOfHRGrainBytes, tmp);
 #endif
 
-    if (G1PrintCTFilterStats) {
-      guarantee(tmp->is_global(), "Or stats won't work...");
-      // This is a sleazy hack: I'm temporarily hijacking G2, which I
-      // promise to restore.
-      mov(new_val, G2);
-      save_frame(0);
-      mov(tmp, O0);
-      mov(G2, O1);
-      // Save G-regs that target may use.
-      mov(G1, L1);
-      mov(G2, L2);
-      mov(G3, L3);
-      mov(G4, L4);
-      mov(G5, L5);
-      call(CAST_FROM_FN_PTR(address, &count_ct_writes));
-      delayed()->nop();
-      mov(O0, G2);
-      // Restore G-regs that target may have used.
-      mov(L1, G1);
-      mov(L3, G3);
-      mov(L4, G4);
-      mov(L5, G5);
-      restore(G0, G0, G0);
-    }
-    // XXX Should I predict this taken or not?  Does it mattern?
-    br_on_reg_cond(rc_z, /*annul*/false, Assembler::pt, tmp, filtered);
-    delayed()->nop();
+    // XXX Should I predict this taken or not?  Does it matter?
+    cmp_and_brx_short(tmp, G0, Assembler::equal, Assembler::pt, filtered);
   }
 
   // If the "store_addr" register is an "in" or "local" register, move it to
@@ -4723,7 +4652,6 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr, Register new_val
   restore();
 
   bind(filtered);
-
 }
 
 #endif  // SERIALGC
