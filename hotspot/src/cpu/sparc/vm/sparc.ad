@@ -840,6 +840,7 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, const MachNode* n, int primary, int te
           !(n->ideal_Opcode()==Op_ConvI2D   && ld_op==Op_LoadF) &&
           !(n->ideal_Opcode()==Op_PrefetchRead  && ld_op==Op_LoadI) &&
           !(n->ideal_Opcode()==Op_PrefetchWrite && ld_op==Op_LoadI) &&
+          !(n->ideal_Opcode()==Op_PrefetchAllocation && ld_op==Op_LoadI) &&
           !(n->ideal_Opcode()==Op_Load2I    && ld_op==Op_LoadD) &&
           !(n->ideal_Opcode()==Op_Load4C    && ld_op==Op_LoadD) &&
           !(n->ideal_Opcode()==Op_Load4S    && ld_op==Op_LoadD) &&
