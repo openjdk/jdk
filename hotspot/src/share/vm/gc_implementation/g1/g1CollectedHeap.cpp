@@ -4613,7 +4613,6 @@ g1_process_strong_roots(bool collecting_perm_gen,
     // keep entries (which are added by the marking threads) on them
     // live until they can be processed at the end of marking.
     ref_processor()->weak_oops_do(&buf_scan_non_heap_roots);
-    ref_processor()->oops_do(&buf_scan_non_heap_roots);
   }
 
   // Finish up any enqueued closure apps (attributed as object copy time).
