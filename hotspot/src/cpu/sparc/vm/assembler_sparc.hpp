@@ -1940,12 +1940,6 @@ class MacroAssembler: public Assembler {
   void br_null   ( Register s1, bool a, Predict p, Label& L );
   void br_notnull( Register s1, bool a, Predict p, Label& L );
 
-  // These versions will do the most efficient thing on v8 and v9.  Perhaps
-  // this is what the routine above was meant to do, but it didn't (and
-  // didn't cover both target address kinds.)
-  void br_on_reg_cond( RCondition c, bool a, Predict p, Register s1, address d, relocInfo::relocType rt = relocInfo::none );
-  void br_on_reg_cond( RCondition c, bool a, Predict p, Register s1, Label& L);
-
   //
   // Compare registers and branch with nop in delay slot or cbcond without delay slot.
   //
