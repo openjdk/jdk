@@ -394,6 +394,16 @@ bool pass_initial_checks(ciMethod* caller_method, int caller_bci, ciMethod* call
   return true;
 }
 
+//------------------------------check_can_parse--------------------------------
+const char* InlineTree::check_can_parse(ciMethod* callee) {
+  // Certain methods cannot be parsed at all:
+  if ( callee->is_native())                     return "native method";
+  if (!callee->can_be_compiled())               return "not compilable (disabled)";
+  if (!callee->has_balanced_monitors())         return "not compilable (unbalanced monitors)";
+  if ( callee->get_flow_analysis()->failing())  return "not compilable (flow analysis failed)";
+  return NULL;
+}
+
 //------------------------------print_inlining---------------------------------
 // Really, the failure_msg can be a success message also.
 void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci, const char* failure_msg) const {
@@ -423,11 +433,19 @@ WarmCallInfo* InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, 
   int         caller_bci    = jvms->bci();
   ciMethod   *caller_method = jvms->method();
 
-  if( !pass_initial_checks(caller_method, caller_bci, callee_method)) {
-    if( PrintInlining ) {
+  // Do some initial checks.
+  if (!pass_initial_checks(caller_method, caller_bci, callee_method)) {
+    if (PrintInlining) {
       failure_msg = "failed_initial_checks";
-      print_inlining( callee_method, caller_bci, failure_msg);
+      print_inlining(callee_method, caller_bci, failure_msg);
     }
+    return NULL;
+  }
+
+  // Do some parse checks.
+  failure_msg = check_can_parse(callee_method);
+  if (failure_msg != NULL) {
+    if (PrintInlining)  print_inlining(callee_method, caller_bci, failure_msg);
     return NULL;
   }
 
@@ -471,7 +489,7 @@ WarmCallInfo* InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, 
     if (failure_msg == NULL)  failure_msg = "inline (hot)";
 
     // Inline!
-    if( PrintInlining ) print_inlining( callee_method, caller_bci, failure_msg);
+    if (PrintInlining)  print_inlining(callee_method, caller_bci, failure_msg);
     if (UseOldInlining)
       build_inline_tree_for_callee(callee_method, jvms, caller_bci);
     if (InlineWarmCalls && !wci.is_hot())
@@ -481,7 +499,7 @@ WarmCallInfo* InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, 
 
   // Do not inline
   if (failure_msg == NULL)  failure_msg = "too cold to inline";
-  if( PrintInlining ) print_inlining( callee_method, caller_bci, failure_msg);
+  if (PrintInlining)  print_inlining(callee_method, caller_bci, failure_msg);
   return NULL;
 }
 

@@ -28,6 +28,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/debugInfo.hpp"
 #include "code/pcDesc.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -2673,6 +2674,17 @@ void java_lang_invoke_CallSite::compute_offsets() {
   klassOop k = SystemDictionary::CallSite_klass();
   if (k != NULL) {
     compute_offset(_target_offset, k, vmSymbols::target_name(), vmSymbols::java_lang_invoke_MethodHandle_signature());
+  }
+
+  // Disallow compilation of CallSite.setTargetNormal and CallSite.setTargetVolatile
+  // (For C2:  keep this until we have throttling logic for uncommon traps.)
+  if (k != NULL) {
+    instanceKlass* ik = instanceKlass::cast(k);
+    methodOop m_normal   = ik->lookup_method(vmSymbols::setTargetNormal_name(),   vmSymbols::setTarget_signature());
+    methodOop m_volatile = ik->lookup_method(vmSymbols::setTargetVolatile_name(), vmSymbols::setTarget_signature());
+    guarantee(m_normal && m_volatile, "must exist");
+    m_normal->set_not_compilable_quietly();
+    m_volatile->set_not_compilable_quietly();
   }
 }
 
