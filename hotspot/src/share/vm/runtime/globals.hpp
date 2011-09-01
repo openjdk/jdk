@@ -475,6 +475,12 @@ class CommandLineFlags {
   product(bool, UseNUMA, false,                                             \
           "Use NUMA if available")                                          \
                                                                             \
+  product(bool, UseNUMAInterleaving, false,                                 \
+          "Interleave memory across NUMA nodes if available")               \
+                                                                            \
+  product(uintx, NUMAInterleaveGranularity, 2*M,                            \
+          "Granularity to use for NUMA interleaving on Windows OS")         \
+                                                                            \
   product(bool, ForceNUMA, false,                                           \
           "Force NUMA optimizations on single-node/UMA systems")            \
                                                                             \
