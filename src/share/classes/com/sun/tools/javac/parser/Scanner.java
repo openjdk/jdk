@@ -982,8 +982,16 @@ public class Scanner implements Lexer {
     }
 
     /** Sets the current token.
+     * This method is primarily used to update the token stream when the
+     * parser is handling the end of nested type arguments such as
+     * {@code List<List<String>>} and needs to disambiguate between
+     * repeated use of ">" and relation operators such as ">>" and ">>>". Noting
+     * that this does not handle arbitrary tokens containing Unicode escape
+     * sequences.
      */
     public void token(Token token) {
+        pos += this.token.name.length() - token.name.length();
+        prevEndPos = pos;
         this.token = token;
     }
 
