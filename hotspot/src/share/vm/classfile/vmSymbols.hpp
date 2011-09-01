@@ -258,6 +258,9 @@
   template(linkMethodHandleConstant_signature, "(Ljava/lang/Class;ILjava/lang/Class;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/invoke/MethodHandle;") \
   template(makeDynamicCallSite_name,                  "makeDynamicCallSite")                      \
   template(makeDynamicCallSite_signature, "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/Object;Ljava/lang/invoke/MemberName;I)Ljava/lang/invoke/CallSite;") \
+  template(setTargetNormal_name,                      "setTargetNormal")                          \
+  template(setTargetVolatile_name,                    "setTargetVolatile")                        \
+  template(setTarget_signature,                       "(Ljava/lang/invoke/MethodHandle;)V")       \
   NOT_LP64(  do_alias(machine_word_signature,         int_signature)  )                           \
   LP64_ONLY( do_alias(machine_word_signature,         long_signature) )                           \
                                                                                                   \

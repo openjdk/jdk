@@ -61,11 +61,8 @@ public:
   {
     _is_osr        = is_osr;
     _expected_uses = expected_uses;
-    assert(can_parse(method, is_osr), "parse must be possible");
+    assert(InlineTree::check_can_parse(method) == NULL, "parse must be possible");
   }
-
-  // Can we build either an OSR or a regular parser for this method?
-  static bool can_parse(ciMethod* method, int is_osr = false);
 
   virtual bool      is_parse() const           { return true; }
   virtual JVMState* generate(JVMState* jvms);
@@ -303,20 +300,8 @@ JVMState* VirtualCallGenerator::generate(JVMState* jvms) {
   return kit.transfer_exceptions_into_jvms();
 }
 
-bool ParseGenerator::can_parse(ciMethod* m, int entry_bci) {
-  // Certain methods cannot be parsed at all:
-  if (!m->can_be_compiled())              return false;
-  if (!m->has_balanced_monitors())        return false;
-  if (m->get_flow_analysis()->failing())  return false;
-
-  // (Methods may bail out for other reasons, after the parser is run.
-  // We try to avoid this, but if forced, we must return (Node*)NULL.
-  // The user of the CallGenerator must check for this condition.)
-  return true;
-}
-
 CallGenerator* CallGenerator::for_inline(ciMethod* m, float expected_uses) {
-  if (!ParseGenerator::can_parse(m))  return NULL;
+  if (InlineTree::check_can_parse(m) != NULL)  return NULL;
   return new ParseGenerator(m, expected_uses);
 }
 
@@ -324,7 +309,7 @@ CallGenerator* CallGenerator::for_inline(ciMethod* m, float expected_uses) {
 // for the method execution already in progress, not just the JVMS
 // of the caller.  Thus, this CallGenerator cannot be mixed with others!
 CallGenerator* CallGenerator::for_osr(ciMethod* m, int osr_bci) {
-  if (!ParseGenerator::can_parse(m, true))  return NULL;
+  if (InlineTree::check_can_parse(m) != NULL)  return NULL;
   float past_uses = m->interpreter_invocation_count();
   float expected_uses = past_uses;
   return new ParseGenerator(m, expected_uses, true);

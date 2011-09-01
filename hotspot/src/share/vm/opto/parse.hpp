@@ -78,6 +78,8 @@ protected:
   int         stack_depth()       const { return _caller_jvms ? _caller_jvms->depth() : 0; }
 
 public:
+  static const char* check_can_parse(ciMethod* callee);
+
   static InlineTree* build_inline_tree_root();
   static InlineTree* find_subtree_from_root(InlineTree* root, JVMState* jvms, ciMethod* callee, bool create_if_not_found = false);
 
