@@ -31,6 +31,7 @@ package java.math;
 
 import java.util.Random;
 import java.io.*;
+import java.util.Arrays;
 
 /**
  * Immutable arbitrary-precision integers.  All operations behave as if
@@ -1612,14 +1613,12 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         } else { // Array must be resized
             if (nBits <= (32-bitsInHighWord)) {
                 int result[] = new int[nInts+len];
-                for (int i=0; i<len; i++)
-                    result[i] = a[i];
+                System.arraycopy(a, 0, result, 0, len);
                 primitiveLeftShift(result, result.length, nBits);
                 return result;
             } else {
                 int result[] = new int[nInts+len+1];
-                for (int i=0; i<len; i++)
-                    result[i] = a[i];
+                System.arraycopy(a, 0, result, 0, len);
                 primitiveRightShift(result, result.length, 32 - nBits);
                 return result;
             }
@@ -1907,9 +1906,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         b = montReduce(b, mod, modLen, inv);
 
         // Set t to high half of b
-        int[] t = new int[modLen];
-        for(int i=0; i<modLen; i++)
-            t[i] = b[i];
+        int[] t = Arrays.copyOf(b, modLen);
 
         // Fill in the table with odd powers of the base
         for (int i=1; i<tblmask; i++) {
@@ -2006,14 +2003,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         // Convert result out of Montgomery form and return
         int[] t2 = new int[2*modLen];
-        for(int i=0; i<modLen; i++)
-            t2[i+modLen] = b[i];
+        System.arraycopy(b, 0, t2, modLen, modLen);
 
         b = montReduce(t2, mod, modLen, inv);
 
-        t2 = new int[modLen];
-        for(int i=0; i<modLen; i++)
-            t2[i] = b[i];
+        t2 = Arrays.copyOf(b, modLen);
 
         return new BigInteger(1, t2);
     }
@@ -2154,8 +2148,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // Copy remaining ints of mag
         int numInts = (p + 31) >>> 5;
         int[] mag = new int[numInts];
-        for (int i=0; i<numInts; i++)
-            mag[i] = this.mag[i + (this.mag.length - numInts)];
+        System.arraycopy(this.mag, (this.mag.length - numInts), mag, 0, numInts);
 
         // Mask out any excess bits
         int excessBits = (numInts << 5) - p;
@@ -2221,7 +2214,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 return shiftRight(-n);
             }
         }
-        int[] newMag = shiftLeft(mag,n);
+        int[] newMag = shiftLeft(mag, n);
 
         return new BigInteger(newMag, signum);
     }
@@ -2234,8 +2227,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         if (nBits == 0) {
             newMag = new int[magLen + nInts];
-            for (int i=0; i<magLen; i++)
-                newMag[i] = mag[i];
+            System.arraycopy(mag, 0, newMag, 0, magLen);
         } else {
             int i = 0;
             int nBits2 = 32 - nBits;
@@ -2288,9 +2280,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         if (nBits == 0) {
             int newMagLen = magLen - nInts;
-            newMag = new int[newMagLen];
-            for (int i=0; i<newMagLen; i++)
-                newMag[i] = mag[i];
+            newMag = Arrays.copyOf(mag, newMagLen);
         } else {
             int i = 0;
             int highBits = mag[0] >>> nBits;
@@ -2561,7 +2551,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                  if (signum < 0) {
                      // Check if magnitude is a power of two
                      boolean pow2 = (Integer.bitCount(mag[0]) == 1);
-                     for(int i=1; i< len && pow2; i++)
+                     for (int i=1; i< len && pow2; i++)
                          pow2 = (mag[i] == 0);
 
                      n = (pow2 ? magBitLength -1 : magBitLength);
