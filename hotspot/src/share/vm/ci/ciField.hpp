@@ -175,7 +175,9 @@ public:
   bool is_volatile    () { return flags().is_volatile(); }
   bool is_transient   () { return flags().is_transient(); }
 
-  bool is_call_site_target() { return ((holder() == CURRENT_ENV->CallSite_klass()) && (name() == ciSymbol::target_name())); }
+  bool is_call_site_target() {
+    return (holder()->is_subclass_of(CURRENT_ENV->CallSite_klass()) && (name() == ciSymbol::target_name()));
+  }
 
   // Debugging output
   void print();
