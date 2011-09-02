@@ -609,6 +609,10 @@ public class ClientCodeWrapper {
         public String getMessage(Locale locale) {
             return d.getMessage(locale);
         }
+
+        public String toString() {
+            return d.toString();
+        }
     }
 
     protected class WrappedTaskListener implements TaskListener {
