@@ -726,7 +726,6 @@ CallGenerator* CallGenerator::for_method_handle_inline(Node* method_handle, JVMS
 
 CallGenerator* CallGenerator::for_invokedynamic_inline(ciCallSite* call_site, JVMState* jvms,
                                                        ciMethod* caller, ciMethod* callee, ciCallProfile profile) {
-  assert(call_site->is_constant_call_site() || call_site->is_mutable_call_site(), "must be");
   ciMethodHandle* method_handle = call_site->get_target();
 
   // Set the callee to have access to the class and signature in the
@@ -742,7 +741,7 @@ CallGenerator* CallGenerator::for_invokedynamic_inline(ciCallSite* call_site, JV
     CallGenerator* cg = C->call_generator(target_method, -1, false, jvms, true, PROB_ALWAYS);
     if (cg != NULL && cg->is_inline()) {
       // Add a dependence for invalidation of the optimization.
-      if (call_site->is_mutable_call_site()) {
+      if (!call_site->is_constant_call_site()) {
         C->dependencies()->assert_call_site_target_value(call_site, method_handle);
       }
       return cg;

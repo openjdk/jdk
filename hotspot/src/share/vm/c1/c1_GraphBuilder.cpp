@@ -3744,26 +3744,20 @@ bool GraphBuilder::for_invokedynamic_inline(ciMethod* callee) {
   ciCallSite*     call_site     = stream()->get_call_site();
   ciMethodHandle* method_handle = call_site->get_target();
 
-  // Inline constant and mutable call sites.  We don't inline
-  // volatile call sites optimistically since they are specified
-  // to change their value often and that would result in a lot of
-  // deoptimizations and recompiles.
-  if (call_site->is_constant_call_site() || call_site->is_mutable_call_site()) {
-    // Set the callee to have access to the class and signature in the
-    // MethodHandleCompiler.
-    method_handle->set_callee(callee);
-    method_handle->set_caller(method());
+  // Set the callee to have access to the class and signature in the
+  // MethodHandleCompiler.
+  method_handle->set_callee(callee);
+  method_handle->set_caller(method());
 
-    // Get an adapter for the MethodHandle.
-    ciMethod* method_handle_adapter = method_handle->get_invokedynamic_adapter();
-    if (method_handle_adapter != NULL) {
-      if (try_inline(method_handle_adapter, /*holder_known=*/ true)) {
-        // Add a dependence for invalidation of the optimization.
-        if (!call_site->is_constant_call_site()) {
-          dependency_recorder()->assert_call_site_target_value(call_site, method_handle);
-        }
-        return true;
+  // Get an adapter for the MethodHandle.
+  ciMethod* method_handle_adapter = method_handle->get_invokedynamic_adapter();
+  if (method_handle_adapter != NULL) {
+    if (try_inline(method_handle_adapter, /*holder_known=*/ true)) {
+      // Add a dependence for invalidation of the optimization.
+      if (!call_site->is_constant_call_site()) {
+        dependency_recorder()->assert_call_site_target_value(call_site, method_handle);
       }
+      return true;
     }
   }
   return false;
