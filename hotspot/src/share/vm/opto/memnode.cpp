@@ -1493,6 +1493,7 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
   if (tp == NULL || tp->empty())  return Type::TOP;
   int off = tp->offset();
   assert(off != Type::OffsetTop, "case covered by TypePtr::empty");
+  Compile* C = phase->C;
 
   // Try to guess loaded type from pointer type
   if (tp->base() == Type::AryPtr) {
@@ -1536,7 +1537,7 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
           Node* base = adr->in(AddPNode::Base);
           if (base != NULL &&
               !phase->type(base)->higher_equal(TypePtr::NULL_PTR)) {
-            Compile::AliasType* atp = phase->C->alias_type(base->adr_type());
+            Compile::AliasType* atp = C->alias_type(base->adr_type());
             if (is_autobox_cache(atp)) {
               return jt->join(TypePtr::NOTNULL)->is_ptr();
             }
@@ -1546,22 +1547,23 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
       }
     }
   } else if (tp->base() == Type::InstPtr) {
+    ciEnv* env = C->env();
     const TypeInstPtr* tinst = tp->is_instptr();
     ciKlass* klass = tinst->klass();
     assert( off != Type::OffsetBot ||
             // arrays can be cast to Objects
             tp->is_oopptr()->klass()->is_java_lang_Object() ||
             // unsafe field access may not have a constant offset
-            phase->C->has_unsafe_access(),
+            C->has_unsafe_access(),
             "Field accesses must be precise" );
     // For oop loads, we expect the _type to be precise
-    if (klass == phase->C->env()->String_klass() &&
+    if (klass == env->String_klass() &&
         adr->is_AddP() && off != Type::OffsetBot) {
       // For constant Strings treat the final fields as compile time constants.
       Node* base = adr->in(AddPNode::Base);
       const TypeOopPtr* t = phase->type(base)->isa_oopptr();
       if (t != NULL && t->singleton()) {
-        ciField* field = phase->C->env()->String_klass()->get_field_by_offset(off, false);
+        ciField* field = env->String_klass()->get_field_by_offset(off, false);
         if (field != NULL && field->is_final()) {
           ciObject* string = t->const_oop();
           ciConstant constant = string->as_instance()->field_value(field);
@@ -1573,6 +1575,32 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
             } else {
               return TypeOopPtr::make_from_constant(constant.as_object(), true);
             }
+          }
+        }
+      }
+    }
+    // Optimizations for constant objects
+    ciObject* const_oop = tinst->const_oop();
+    if (const_oop != NULL) {
+      // For constant CallSites treat the target field as a compile time constant.
+      if (const_oop->is_call_site()) {
+        ciCallSite* call_site = const_oop->as_call_site();
+        ciField* field = call_site->klass()->as_instance_klass()->get_field_by_offset(off, /*is_static=*/ false);
+        if (field != NULL && field->is_call_site_target()) {
+          ciMethodHandle* target = call_site->get_target();
+          if (target != NULL) {  // just in case
+            ciConstant constant(T_OBJECT, target);
+            const Type* t;
+            if (adr->bottom_type()->is_ptr_to_narrowoop()) {
+              t = TypeNarrowOop::make_from_constant(constant.as_object(), true);
+            } else {
+              t = TypeOopPtr::make_from_constant(constant.as_object(), true);
+            }
+            // Add a dependence for invalidation of the optimization.
+            if (!call_site->is_constant_call_site()) {
+              C->dependencies()->assert_call_site_target_value(call_site, target);
+            }
+            return t;
           }
         }
       }
