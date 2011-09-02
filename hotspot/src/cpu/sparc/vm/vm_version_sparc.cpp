@@ -75,6 +75,24 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(AllocatePrefetchStyle, 1);
   }
 
+  if (has_v9()) {
+    assert(ArraycopySrcPrefetchDistance < 4096, "invalid value");
+    if (ArraycopySrcPrefetchDistance >= 4096)
+      ArraycopySrcPrefetchDistance = 4064;
+    assert(ArraycopyDstPrefetchDistance < 4096, "invalid value");
+    if (ArraycopyDstPrefetchDistance >= 4096)
+      ArraycopyDstPrefetchDistance = 4064;
+  } else {
+    if (ArraycopySrcPrefetchDistance > 0) {
+      warning("prefetch instructions are not available on this CPU");
+      FLAG_SET_DEFAULT(ArraycopySrcPrefetchDistance, 0);
+    }
+    if (ArraycopyDstPrefetchDistance > 0) {
+      warning("prefetch instructions are not available on this CPU");
+      FLAG_SET_DEFAULT(ArraycopyDstPrefetchDistance, 0);
+    }
+  }
+
   UseSSE = 0; // Only on x86 and x64
 
   _supports_cx8 = has_v9();
@@ -178,6 +196,16 @@ void VM_Version::initialize() {
   } else if (UseBlockZeroing) {
     warning("BIS zeroing instructions are not available on this CPU");
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
+  }
+
+  assert(BlockCopyLowLimit > 0, "invalid value");
+  if (has_block_zeroing()) { // has_blk_init() && is_T4(): core's local L2 cache
+    if (FLAG_IS_DEFAULT(UseBlockCopy)) {
+      FLAG_SET_DEFAULT(UseBlockCopy, true);
+    }
+  } else if (UseBlockCopy) {
+    warning("BIS instructions are not available or expensive on this CPU");
+    FLAG_SET_DEFAULT(UseBlockCopy, false);
   }
 
 #ifdef COMPILER2
