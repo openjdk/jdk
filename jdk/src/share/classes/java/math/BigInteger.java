@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -353,27 +353,17 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         mag = trustedStripLeadingZeroInts(magnitude);
     }
 
-    // Constructs a new BigInteger using a char array with radix=10
-    BigInteger(char[] val) {
+    /*
+     * Constructs a new BigInteger using a char array with radix=10.
+     * Sign is precalculated outside and not allowed in the val.
+     */
+    BigInteger(char[] val, int sign, int len) {
         int cursor = 0, numDigits;
-        int len = val.length;
-
-        // Check for leading minus sign
-        int sign = 1;
-        if (val[0] == '-') {
-            if (len == 1)
-                throw new NumberFormatException("Zero length BigInteger");
-            sign = -1;
-            cursor = 1;
-        } else if (val[0] == '+') {
-            if (len == 1)
-                throw new NumberFormatException("Zero length BigInteger");
-            cursor = 1;
-        }
 
         // Skip leading zeros and compute number of digits in magnitude
-        while (cursor < len && Character.digit(val[cursor], 10) == 0)
+        while (cursor < len && Character.digit(val[cursor], 10) == 0) {
             cursor++;
+        }
         if (cursor == len) {
             signum = 0;
             mag = ZERO.mag;
@@ -382,7 +372,6 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         numDigits = len - cursor;
         signum = sign;
-
         // Pre-allocate array of expected size
         int numWords;
         if (len < 10) {
@@ -1058,6 +1047,73 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
+     * Package private methods used by BigDecimal code to add a BigInteger
+     * with a long. Assumes val is not equal to INFLATED.
+     */
+    BigInteger add(long val) {
+        if (val == 0)
+            return this;
+        if (signum == 0)
+            return valueOf(val);
+        if (Long.signum(val) == signum)
+            return new BigInteger(add(mag, Math.abs(val)), signum);
+        int cmp = compareMagnitude(val);
+        if (cmp == 0)
+            return ZERO;
+        int[] resultMag = (cmp > 0 ? subtract(mag, Math.abs(val)) : subtract(Math.abs(val), mag));
+        resultMag = trustedStripLeadingZeroInts(resultMag);
+        return new BigInteger(resultMag, cmp == signum ? 1 : -1);
+    }
+
+    /**
+     * Adds the contents of the int array x and long value val. This
+     * method allocates a new int array to hold the answer and returns
+     * a reference to that array.  Assumes x.length &gt; 0 and val is
+     * non-negative
+     */
+    private static int[] add(int[] x, long val) {
+        int[] y;
+        long sum = 0;
+        int xIndex = x.length;
+        int[] result;
+        int highWord = (int)(val >>> 32);
+        if (highWord==0) {
+            result = new int[xIndex];
+            sum = (x[--xIndex] & LONG_MASK) + val;
+            result[xIndex] = (int)sum;
+        } else {
+            if (xIndex == 1) {
+                result = new int[2];
+                sum = val  + (x[0] & LONG_MASK);
+                result[1] = (int)sum;
+                result[0] = (int)(sum >>> 32);
+                return result;
+            } else {
+                result = new int[xIndex];
+                sum = (x[--xIndex] & LONG_MASK) + (val & LONG_MASK);
+                result[xIndex] = (int)sum;
+                sum = (x[--xIndex] & LONG_MASK) + (highWord & LONG_MASK) + (sum >>> 32);
+                result[xIndex] = (int)sum;
+            }
+        }
+        // Copy remainder of longer number while carry propagation is required
+        boolean carry = (sum >>> 32 != 0);
+        while (xIndex > 0 && carry)
+            carry = ((result[--xIndex] = x[xIndex] + 1) == 0);
+        // Copy remainder of longer number
+        while (xIndex > 0)
+            result[--xIndex] = x[xIndex];
+        // Grow result if necessary
+        if (carry) {
+            int bigger[] = new int[result.length + 1];
+            System.arraycopy(result, 0, bigger, 1, result.length);
+            bigger[0] = 0x01;
+            return bigger;
+        }
+        return result;
+    }
+
+    /**
      * Adds the contents of the int arrays x and y. This method allocates
      * a new int array to hold the answer and returns a reference to that
      * array.
@@ -1074,14 +1130,17 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         int yIndex = y.length;
         int result[] = new int[xIndex];
         long sum = 0;
-
-        // Add common parts of both numbers
-        while(yIndex > 0) {
-            sum = (x[--xIndex] & LONG_MASK) +
-                  (y[--yIndex] & LONG_MASK) + (sum >>> 32);
+        if(yIndex==1) {
+            sum = (x[--xIndex] & LONG_MASK) + (y[0] & LONG_MASK) ;
             result[xIndex] = (int)sum;
+        } else {
+            // Add common parts of both numbers
+            while(yIndex > 0) {
+                sum = (x[--xIndex] & LONG_MASK) +
+                      (y[--yIndex] & LONG_MASK) + (sum >>> 32);
+                result[xIndex] = (int)sum;
+            }
         }
-
         // Copy remainder of longer number while carry propagation is required
         boolean carry = (sum >>> 32 != 0);
         while (xIndex > 0 && carry)
@@ -1098,6 +1157,71 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             bigger[0] = 0x01;
             return bigger;
         }
+        return result;
+    }
+
+    private static int[] subtract(long val, int[] little) {
+        int highWord = (int)(val >>> 32);
+        if (highWord==0) {
+            int result[] = new int[1];
+            result[0] = (int)(val - (little[0] & LONG_MASK));
+            return result;
+        } else {
+            int result[] = new int[2];
+            if(little.length==1) {
+                long difference = ((int)val & LONG_MASK) - (little[0] & LONG_MASK);
+                result[1] = (int)difference;
+                // Subtract remainder of longer number while borrow propagates
+                boolean borrow = (difference >> 32 != 0);
+                if(borrow) {
+                    result[0] = highWord - 1;
+                } else {        // Copy remainder of longer number
+                    result[0] = highWord;
+                }
+                return result;
+            } else { // little.length==2
+                long difference = ((int)val & LONG_MASK) - (little[1] & LONG_MASK);
+                result[1] = (int)difference;
+                difference = (highWord & LONG_MASK) - (little[0] & LONG_MASK) + (difference >> 32);
+                result[0] = (int)difference;
+                return result;
+            }
+        }
+    }
+
+    /**
+     * Subtracts the contents of the second argument (val) from the
+     * first (big).  The first int array (big) must represent a larger number
+     * than the second.  This method allocates the space necessary to hold the
+     * answer.
+     * assumes val &gt;= 0
+     */
+    private static int[] subtract(int[] big, long val) {
+        int highWord = (int)(val >>> 32);
+        int bigIndex = big.length;
+        int result[] = new int[bigIndex];
+        long difference = 0;
+
+        if (highWord==0) {
+            difference = (big[--bigIndex] & LONG_MASK) - val;
+            result[bigIndex] = (int)difference;
+        } else {
+            difference = (big[--bigIndex] & LONG_MASK) - (val & LONG_MASK);
+            result[bigIndex] = (int)difference;
+            difference = (big[--bigIndex] & LONG_MASK) - (highWord & LONG_MASK) + (difference >> 32);
+            result[bigIndex] = (int)difference;
+        }
+
+
+        // Subtract remainder of longer number while borrow propagates
+        boolean borrow = (difference >> 32 != 0);
+        while (bigIndex > 0 && borrow)
+            borrow = ((result[--bigIndex] = big[bigIndex] - 1) == -1);
+
+        // Copy remainder of longer number
+        while (bigIndex > 0)
+            result[--bigIndex] = big[bigIndex];
+
         return result;
     }
 
@@ -1165,11 +1289,39 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     public BigInteger multiply(BigInteger val) {
         if (val.signum == 0 || signum == 0)
             return ZERO;
-
+        int resultSign = signum == val.signum ? 1 : -1;
+        if (val.mag.length == 1) {
+            return  multiplyByInt(mag,val.mag[0], resultSign);
+        }
+        if(mag.length == 1) {
+            return multiplyByInt(val.mag,mag[0], resultSign);
+        }
         int[] result = multiplyToLen(mag, mag.length,
                                      val.mag, val.mag.length, null);
         result = trustedStripLeadingZeroInts(result);
-        return new BigInteger(result, signum == val.signum ? 1 : -1);
+        return new BigInteger(result, resultSign);
+    }
+
+    private static BigInteger multiplyByInt(int[] x, int y, int sign) {
+        if(Integer.bitCount(y)==1) {
+            return new BigInteger(shiftLeft(x,Integer.numberOfTrailingZeros(y)), sign);
+        }
+        int xlen = x.length;
+        int[] rmag =  new int[xlen + 1];
+        long carry = 0;
+        long yl = y & LONG_MASK;
+        int rstart = rmag.length - 1;
+        for (int i = xlen - 1; i >= 0; i--) {
+            long product = (x[i] & LONG_MASK) * yl + carry;
+            rmag[rstart--] = (int)product;
+            carry = product >>> 32;
+        }
+        if (carry == 0L) {
+            rmag = java.util.Arrays.copyOfRange(rmag, 1, rmag.length);
+        } else {
+            rmag[rstart] = (int)carry;
+        }
+        return new BigInteger(rmag, sign);
     }
 
     /**
@@ -1339,8 +1491,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                           a = new MutableBigInteger(this.mag),
                           b = new MutableBigInteger(val.mag);
 
-        a.divide(b, q);
-        return q.toBigInteger(this.signum == val.signum ? 1 : -1);
+        a.divide(b, q, false);
+        return q.toBigInteger(this.signum * val.signum);
     }
 
     /**
@@ -2069,7 +2221,12 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 return shiftRight(-n);
             }
         }
+        int[] newMag = shiftLeft(mag,n);
 
+        return new BigInteger(newMag, signum);
+    }
+
+    private static int[] shiftLeft(int[] mag, int n) {
         int nInts = n >>> 5;
         int nBits = n & 0x1f;
         int magLen = mag.length;
@@ -2094,8 +2251,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 newMag[i++] = mag[j++] << nBits | mag[j] >>> nBits2;
             newMag[i] = mag[j] << nBits;
         }
-
-        return new BigInteger(newMag, signum);
+        return newMag;
     }
 
     /**
@@ -2527,6 +2683,49 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 return ((a & LONG_MASK) < (b & LONG_MASK)) ? -1 : 1;
         }
         return 0;
+    }
+
+    /**
+     * Version of compareMagnitude that compares magnitude with long value.
+     * val can't be Long.MIN_VALUE.
+     */
+    final int compareMagnitude(long val) {
+        assert val != Long.MIN_VALUE;
+        int[] m1 = mag;
+        int len = m1.length;
+        if(len > 2) {
+            return 1;
+        }
+        if (val < 0) {
+            val = -val;
+        }
+        int highWord = (int)(val >>> 32);
+        if (highWord==0) {
+            if (len < 1)
+                return -1;
+            if (len > 1)
+                return 1;
+            int a = m1[0];
+            int b = (int)val;
+            if (a != b) {
+                return ((a & LONG_MASK) < (b & LONG_MASK))? -1 : 1;
+            }
+            return 0;
+        } else {
+            if (len < 2)
+                return -1;
+            int a = m1[0];
+            int b = highWord;
+            if (a != b) {
+                return ((a & LONG_MASK) < (b & LONG_MASK))? -1 : 1;
+            }
+            a = m1[1];
+            b = (int)val;
+            if (a != b) {
+                return ((a & LONG_MASK) < (b & LONG_MASK))? -1 : 1;
+            }
+            return 0;
+        }
     }
 
     /**
