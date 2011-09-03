@@ -194,16 +194,26 @@ bool ciObject::can_be_constant() {
 // ciObject::should_be_constant()
 bool ciObject::should_be_constant() {
   if (ScavengeRootsInCode >= 2)  return true;  // force everybody to be a constant
-  if (!JavaObjectsInPerm && !is_null_object()) {
+  if (is_null_object()) return true;
+
+  ciEnv* env = CURRENT_ENV;
+  if (!JavaObjectsInPerm) {
     // We want Strings and Classes to be embeddable by default since
     // they used to be in the perm world.  Not all Strings used to be
     // embeddable but there's no easy way to distinguish the interned
     // from the regulars ones so just treat them all that way.
-    ciEnv* env = CURRENT_ENV;
     if (klass() == env->String_klass() || klass() == env->Class_klass()) {
       return true;
     }
   }
+  if (EnableInvokeDynamic &&
+      (klass()->is_subclass_of(env->MethodHandle_klass()) ||
+       klass()->is_subclass_of(env->CallSite_klass()))) {
+    assert(ScavengeRootsInCode >= 1, "must be");
+    // We want to treat these aggressively.
+    return true;
+  }
+
   return handle() == NULL || is_perm();
 }
 

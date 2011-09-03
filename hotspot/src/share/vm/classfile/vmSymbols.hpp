@@ -218,6 +218,7 @@
   template(returnType_name,                           "returnType")                               \
   template(signature_name,                            "signature")                                \
   template(slot_name,                                 "slot")                                     \
+  template(selectAlternative_name,                    "selectAlternative")                        \
                                                                                                   \
   /* Support for annotations (JDK 1.5 and above) */                                               \
                                                                                                   \
@@ -246,9 +247,11 @@
   template(java_lang_invoke_MethodTypeForm_signature, "Ljava/lang/invoke/MethodTypeForm;")        \
   template(java_lang_invoke_MemberName,               "java/lang/invoke/MemberName")              \
   template(java_lang_invoke_MethodHandleNatives,      "java/lang/invoke/MethodHandleNatives")     \
+  template(java_lang_invoke_MethodHandleImpl,         "java/lang/invoke/MethodHandleImpl")        \
   template(java_lang_invoke_AdapterMethodHandle,      "java/lang/invoke/AdapterMethodHandle")     \
   template(java_lang_invoke_BoundMethodHandle,        "java/lang/invoke/BoundMethodHandle")       \
   template(java_lang_invoke_DirectMethodHandle,       "java/lang/invoke/DirectMethodHandle")      \
+  template(java_lang_invoke_CountingMethodHandle,     "java/lang/invoke/CountingMethodHandle")    \
   /* internal up-calls made only by the JVM, via class sun.invoke.MethodHandleNatives: */         \
   template(findMethodHandleType_name,                 "findMethodHandleType")                     \
   template(findMethodHandleType_signature,       "(Ljava/lang/Class;[Ljava/lang/Class;)Ljava/lang/invoke/MethodType;") \
@@ -263,6 +266,7 @@
   template(setTarget_signature,                       "(Ljava/lang/invoke/MethodHandle;)V")       \
   NOT_LP64(  do_alias(machine_word_signature,         int_signature)  )                           \
   LP64_ONLY( do_alias(machine_word_signature,         long_signature) )                           \
+  template(selectAlternative_signature, "(ZLjava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodHandle;)Ljava/lang/invoke/MethodHandle;") \
                                                                                                   \
   /* common method and field names */                                                             \
   template(object_initializer_name,                   "<init>")                                   \
@@ -347,6 +351,7 @@
   template(vmmethod_name,                             "vmmethod")                                 \
   template(vmtarget_name,                             "vmtarget")                                 \
   template(vmentry_name,                              "vmentry")                                  \
+  template(vmcount_name,                              "vmcount")                                  \
   template(vmslots_name,                              "vmslots")                                  \
   template(vmlayout_name,                             "vmlayout")                                 \
   template(vmindex_name,                              "vmindex")                                  \
@@ -909,6 +914,8 @@
   do_intrinsic(_invokeGeneric,            java_lang_invoke_MethodHandle, invokeGeneric_name, object_array_object_signature, F_RN) \
   do_intrinsic(_invokeVarargs,            java_lang_invoke_MethodHandle, invokeVarargs_name, object_array_object_signature, F_R)  \
   do_intrinsic(_invokeDynamic,            java_lang_invoke_InvokeDynamic, star_name,         object_array_object_signature, F_SN) \
+                                                                                                                        \
+  do_intrinsic(_selectAlternative,        java_lang_invoke_MethodHandleImpl, selectAlternative_name, selectAlternative_signature, F_S)  \
                                                                                                                         \
   /* unboxing methods: */                                                                                               \
   do_intrinsic(_booleanValue,             java_lang_Boolean,      booleanValue_name, void_boolean_signature, F_R)       \
