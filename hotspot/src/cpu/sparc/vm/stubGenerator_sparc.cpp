@@ -1124,6 +1124,126 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
+  //
+  // Generate main code for disjoint arraycopy
+  //
+  typedef void (StubGenerator::*CopyLoopFunc)(Register from, Register to, Register count, int count_dec,
+                                              Label& L_loop, bool use_prefetch, bool use_bis);
+
+  void disjoint_copy_core(Register from, Register to, Register count, int log2_elem_size,
+                          int iter_size, CopyLoopFunc copy_loop_func) {
+    Label L_copy;
+
+    assert(log2_elem_size <= 3, "the following code should be changed");
+    int count_dec = 16>>log2_elem_size;
+
+    int prefetch_dist = MAX2(ArraycopySrcPrefetchDistance, ArraycopyDstPrefetchDistance);
+    assert(prefetch_dist < 4096, "invalid value");
+    prefetch_dist = (prefetch_dist + (iter_size-1)) & (-iter_size); // round up to one iteration copy size
+    int prefetch_count = (prefetch_dist >> log2_elem_size); // elements count
+
+    if (UseBlockCopy) {
+      Label L_block_copy, L_block_copy_prefetch, L_skip_block_copy;
+
+      // 64 bytes tail + bytes copied in one loop iteration
+      int tail_size = 64 + iter_size;
+      int block_copy_count = (MAX2(tail_size, (int)BlockCopyLowLimit)) >> log2_elem_size;
+      // Use BIS copy only for big arrays since it requires membar.
+      __ set(block_copy_count, O4);
+      __ cmp_and_br_short(count, O4, Assembler::lessUnsigned, Assembler::pt, L_skip_block_copy);
+      // This code is for disjoint source and destination:
+      //   to <= from || to >= from+count
+      // but BIS will stomp over 'from' if (to > from-tail_size && to <= from)
+      __ sub(from, to, O4);
+      __ srax(O4, 4, O4); // divide by 16 since following short branch have only 5 bits for imm.
+      __ cmp_and_br_short(O4, (tail_size>>4), Assembler::lessEqualUnsigned, Assembler::pn, L_skip_block_copy);
+
+      __ wrasi(G0, Assembler::ASI_ST_BLKINIT_PRIMARY);
+      // BIS should not be used to copy tail (64 bytes+iter_size)
+      // to avoid zeroing of following values.
+      __ sub(count, (tail_size>>log2_elem_size), count); // count is still positive >= 0
+
+      if (prefetch_count > 0) { // rounded up to one iteration count
+        // Do prefetching only if copy size is bigger
+        // than prefetch distance.
+        __ set(prefetch_count, O4);
+        __ cmp_and_brx_short(count, O4, Assembler::less, Assembler::pt, L_block_copy);
+        __ sub(count, prefetch_count, count);
+
+        (this->*copy_loop_func)(from, to, count, count_dec, L_block_copy_prefetch, true, true);
+        __ add(count, prefetch_count, count); // restore count
+
+      } // prefetch_count > 0
+
+      (this->*copy_loop_func)(from, to, count, count_dec, L_block_copy, false, true);
+      __ add(count, (tail_size>>log2_elem_size), count); // restore count
+
+      __ wrasi(G0, Assembler::ASI_PRIMARY_NOFAULT);
+      // BIS needs membar.
+      __ membar(Assembler::StoreLoad);
+      // Copy tail
+      __ ba_short(L_copy);
+
+      __ BIND(L_skip_block_copy);
+    } // UseBlockCopy
+
+    if (prefetch_count > 0) { // rounded up to one iteration count
+      // Do prefetching only if copy size is bigger
+      // than prefetch distance.
+      __ set(prefetch_count, O4);
+      __ cmp_and_brx_short(count, O4, Assembler::lessUnsigned, Assembler::pt, L_copy);
+      __ sub(count, prefetch_count, count);
+
+      Label L_copy_prefetch;
+      (this->*copy_loop_func)(from, to, count, count_dec, L_copy_prefetch, true, false);
+      __ add(count, prefetch_count, count); // restore count
+
+    } // prefetch_count > 0
+
+    (this->*copy_loop_func)(from, to, count, count_dec, L_copy, false, false);
+  }
+
+
+
+  //
+  // Helper methods for copy_16_bytes_forward_with_shift()
+  //
+  void copy_16_bytes_shift_loop(Register from, Register to, Register count, int count_dec,
+                                Label& L_loop, bool use_prefetch, bool use_bis) {
+
+    const Register left_shift  = G1; // left  shift bit counter
+    const Register right_shift = G5; // right shift bit counter
+
+    __ align(OptoLoopAlignment);
+    __ BIND(L_loop);
+    if (use_prefetch) {
+      if (ArraycopySrcPrefetchDistance > 0) {
+        __ prefetch(from, ArraycopySrcPrefetchDistance, Assembler::severalReads);
+      }
+      if (ArraycopyDstPrefetchDistance > 0) {
+        __ prefetch(to, ArraycopyDstPrefetchDistance, Assembler::severalWritesAndPossiblyReads);
+      }
+    }
+    __ ldx(from, 0, O4);
+    __ ldx(from, 8, G4);
+    __ inc(to, 16);
+    __ inc(from, 16);
+    __ deccc(count, count_dec); // Can we do next iteration after this one?
+    __ srlx(O4, right_shift, G3);
+    __ bset(G3, O3);
+    __ sllx(O4, left_shift,  O4);
+    __ srlx(G4, right_shift, G3);
+    __ bset(G3, O4);
+    if (use_bis) {
+      __ stxa(O3, to, -16);
+      __ stxa(O4, to, -8);
+    } else {
+      __ stx(O3, to, -16);
+      __ stx(O4, to, -8);
+    }
+    __ brx(Assembler::greaterEqual, false, Assembler::pt, L_loop);
+    __ delayed()->sllx(G4, left_shift,  O3);
+  }
 
   // Copy big chunks forward with shift
   //
@@ -1135,64 +1255,51 @@ class StubGenerator: public StubCodeGenerator {
   //   L_copy_bytes - copy exit label
   //
   void copy_16_bytes_forward_with_shift(Register from, Register to,
-                     Register count, int count_dec, Label& L_copy_bytes) {
-    Label L_loop, L_aligned_copy, L_copy_last_bytes;
+                     Register count, int log2_elem_size, Label& L_copy_bytes) {
+    Label L_aligned_copy, L_copy_last_bytes;
+    assert(log2_elem_size <= 3, "the following code should be changed");
+    int count_dec = 16>>log2_elem_size;
 
     // if both arrays have the same alignment mod 8, do 8 bytes aligned copy
-      __ andcc(from, 7, G1); // misaligned bytes
-      __ br(Assembler::zero, false, Assembler::pt, L_aligned_copy);
-      __ delayed()->nop();
+    __ andcc(from, 7, G1); // misaligned bytes
+    __ br(Assembler::zero, false, Assembler::pt, L_aligned_copy);
+    __ delayed()->nop();
 
     const Register left_shift  = G1; // left  shift bit counter
     const Register right_shift = G5; // right shift bit counter
 
-      __ sll(G1, LogBitsPerByte, left_shift);
-      __ mov(64, right_shift);
-      __ sub(right_shift, left_shift, right_shift);
+    __ sll(G1, LogBitsPerByte, left_shift);
+    __ mov(64, right_shift);
+    __ sub(right_shift, left_shift, right_shift);
 
     //
     // Load 2 aligned 8-bytes chunks and use one from previous iteration
     // to form 2 aligned 8-bytes chunks to store.
     //
-      __ deccc(count, count_dec); // Pre-decrement 'count'
-      __ andn(from, 7, from);     // Align address
-      __ ldx(from, 0, O3);
-      __ inc(from, 8);
-      __ align(OptoLoopAlignment);
-    __ BIND(L_loop);
-      __ ldx(from, 0, O4);
-      __ deccc(count, count_dec); // Can we do next iteration after this one?
-      __ ldx(from, 8, G4);
-      __ inc(to, 16);
-      __ inc(from, 16);
-      __ sllx(O3, left_shift,  O3);
-      __ srlx(O4, right_shift, G3);
-      __ bset(G3, O3);
-      __ stx(O3, to, -16);
-      __ sllx(O4, left_shift,  O4);
-      __ srlx(G4, right_shift, G3);
-      __ bset(G3, O4);
-      __ stx(O4, to, -8);
-      __ brx(Assembler::greaterEqual, false, Assembler::pt, L_loop);
-      __ delayed()->mov(G4, O3);
+    __ dec(count, count_dec);   // Pre-decrement 'count'
+    __ andn(from, 7, from);     // Align address
+    __ ldx(from, 0, O3);
+    __ inc(from, 8);
+    __ sllx(O3, left_shift,  O3);
 
-      __ inccc(count, count_dec>>1 ); // + 8 bytes
-      __ brx(Assembler::negative, true, Assembler::pn, L_copy_last_bytes);
-      __ delayed()->inc(count, count_dec>>1); // restore 'count'
+    disjoint_copy_core(from, to, count, log2_elem_size, 16, copy_16_bytes_shift_loop);
 
-      // copy 8 bytes, part of them already loaded in O3
-      __ ldx(from, 0, O4);
-      __ inc(to, 8);
-      __ inc(from, 8);
-      __ sllx(O3, left_shift,  O3);
-      __ srlx(O4, right_shift, G3);
-      __ bset(O3, G3);
-      __ stx(G3, to, -8);
+    __ inccc(count, count_dec>>1 ); // + 8 bytes
+    __ brx(Assembler::negative, true, Assembler::pn, L_copy_last_bytes);
+    __ delayed()->inc(count, count_dec>>1); // restore 'count'
+
+    // copy 8 bytes, part of them already loaded in O3
+    __ ldx(from, 0, O4);
+    __ inc(to, 8);
+    __ inc(from, 8);
+    __ srlx(O4, right_shift, G3);
+    __ bset(O3, G3);
+    __ stx(G3, to, -8);
 
     __ BIND(L_copy_last_bytes);
-      __ srl(right_shift, LogBitsPerByte, right_shift); // misaligned bytes
-      __ br(Assembler::always, false, Assembler::pt, L_copy_bytes);
-      __ delayed()->sub(from, right_shift, from);       // restore address
+    __ srl(right_shift, LogBitsPerByte, right_shift); // misaligned bytes
+    __ br(Assembler::always, false, Assembler::pt, L_copy_bytes);
+    __ delayed()->sub(from, right_shift, from);       // restore address
 
     __ BIND(L_aligned_copy);
   }
@@ -1348,7 +1455,7 @@ class StubGenerator: public StubCodeGenerator {
       // The compare above (count >= 23) guarantes 'count' >= 16 bytes.
       // Also jump over aligned copy after the copy with shift completed.
 
-      copy_16_bytes_forward_with_shift(from, to, count, 16, L_copy_byte);
+      copy_16_bytes_forward_with_shift(from, to, count, 0, L_copy_byte);
     }
 
     // Both array are 8 bytes aligned, copy 16 bytes at a time
@@ -1576,7 +1683,7 @@ class StubGenerator: public StubCodeGenerator {
       // The compare above (count >= 11) guarantes 'count' >= 16 bytes.
       // Also jump over aligned copy after the copy with shift completed.
 
-      copy_16_bytes_forward_with_shift(from, to, count, 8, L_copy_2_bytes);
+      copy_16_bytes_forward_with_shift(from, to, count, 1, L_copy_2_bytes);
     }
 
     // Both array are 8 bytes aligned, copy 16 bytes at a time
@@ -1950,6 +2057,45 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   //
+  // Helper methods for generate_disjoint_int_copy_core()
+  //
+  void copy_16_bytes_loop(Register from, Register to, Register count, int count_dec,
+                          Label& L_loop, bool use_prefetch, bool use_bis) {
+
+    __ align(OptoLoopAlignment);
+    __ BIND(L_loop);
+    if (use_prefetch) {
+      if (ArraycopySrcPrefetchDistance > 0) {
+        __ prefetch(from, ArraycopySrcPrefetchDistance, Assembler::severalReads);
+      }
+      if (ArraycopyDstPrefetchDistance > 0) {
+        __ prefetch(to, ArraycopyDstPrefetchDistance, Assembler::severalWritesAndPossiblyReads);
+      }
+    }
+    __ ldx(from, 4, O4);
+    __ ldx(from, 12, G4);
+    __ inc(to, 16);
+    __ inc(from, 16);
+    __ deccc(count, 4); // Can we do next iteration after this one?
+
+    __ srlx(O4, 32, G3);
+    __ bset(G3, O3);
+    __ sllx(O4, 32, O4);
+    __ srlx(G4, 32, G3);
+    __ bset(G3, O4);
+    if (use_bis) {
+      __ stxa(O3, to, -16);
+      __ stxa(O4, to, -8);
+    } else {
+      __ stx(O3, to, -16);
+      __ stx(O4, to, -8);
+    }
+    __ brx(Assembler::greaterEqual, false, Assembler::pt, L_loop);
+    __ delayed()->sllx(G4, 32,  O3);
+
+  }
+
+  //
   //  Generate core code for disjoint int copy (and oop copy on 32-bit).
   //  If "aligned" is true, the "from" and "to" addresses are assumed
   //  to be heapword aligned.
@@ -1962,7 +2108,7 @@ class StubGenerator: public StubCodeGenerator {
   void generate_disjoint_int_copy_core(bool aligned) {
 
     Label L_skip_alignment, L_aligned_copy;
-    Label L_copy_16_bytes,  L_copy_4_bytes, L_copy_4_bytes_loop, L_exit;
+    Label L_copy_4_bytes, L_copy_4_bytes_loop, L_exit;
 
     const Register from      = O0;   // source array address
     const Register to        = O1;   // destination array address
@@ -2013,30 +2159,16 @@ class StubGenerator: public StubCodeGenerator {
 
     // copy with shift 4 elements (16 bytes) at a time
       __ dec(count, 4);   // The cmp at the beginning guaranty count >= 4
+      __ sllx(O3, 32,  O3);
 
-      __ align(OptoLoopAlignment);
-    __ BIND(L_copy_16_bytes);
-      __ ldx(from, 4, O4);
-      __ deccc(count, 4); // Can we do next iteration after this one?
-      __ ldx(from, 12, G4);
-      __ inc(to, 16);
-      __ inc(from, 16);
-      __ sllx(O3, 32, O3);
-      __ srlx(O4, 32, G3);
-      __ bset(G3, O3);
-      __ stx(O3, to, -16);
-      __ sllx(O4, 32, O4);
-      __ srlx(G4, 32, G3);
-      __ bset(G3, O4);
-      __ stx(O4, to, -8);
-      __ brx(Assembler::greaterEqual, false, Assembler::pt, L_copy_16_bytes);
-      __ delayed()->mov(G4, O3);
+      disjoint_copy_core(from, to, count, 2, 16, copy_16_bytes_loop);
 
       __ br(Assembler::always, false, Assembler::pt, L_copy_4_bytes);
       __ delayed()->inc(count, 4); // restore 'count'
 
     __ BIND(L_aligned_copy);
-    }
+    } // !aligned
+
     // copy 4 elements (16 bytes) at a time
       __ and3(count, 1, G4); // Save
       __ srl(count, 1, count);
@@ -2223,6 +2355,38 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   //
+  // Helper methods for generate_disjoint_long_copy_core()
+  //
+  void copy_64_bytes_loop(Register from, Register to, Register count, int count_dec,
+                          Label& L_loop, bool use_prefetch, bool use_bis) {
+    __ align(OptoLoopAlignment);
+    __ BIND(L_loop);
+    for (int off = 0; off < 64; off += 16) {
+      if (use_prefetch && (off & 31) == 0) {
+        if (ArraycopySrcPrefetchDistance > 0) {
+          __ prefetch(from, ArraycopySrcPrefetchDistance, Assembler::severalReads);
+        }
+        if (ArraycopyDstPrefetchDistance > 0) {
+          __ prefetch(to, ArraycopyDstPrefetchDistance, Assembler::severalWritesAndPossiblyReads);
+        }
+      }
+      __ ldx(from,  off+0, O4);
+      __ ldx(from,  off+8, O5);
+      if (use_bis) {
+        __ stxa(O4, to,  off+0);
+        __ stxa(O5, to,  off+8);
+      } else {
+        __ stx(O4, to,  off+0);
+        __ stx(O5, to,  off+8);
+      }
+    }
+    __ deccc(count, 8);
+    __ inc(from, 64);
+    __ brx(Assembler::greaterEqual, false, Assembler::pt, L_loop);
+    __ delayed()->inc(to, 64);
+  }
+
+  //
   //  Generate core code for disjoint long copy (and oop copy on 64-bit).
   //  "aligned" is ignored, because we must make the stronger
   //  assumption that both addresses are always 64-bit aligned.
@@ -2261,38 +2425,28 @@ class StubGenerator: public StubCodeGenerator {
     const Register offset0 = O4;  // element offset
     const Register offset8 = O5;  // next element offset
 
-      __ deccc(count, 2);
-      __ mov(G0, offset0);   // offset from start of arrays (0)
-      __ brx(Assembler::negative, false, Assembler::pn, L_copy_8_bytes );
-      __ delayed()->add(offset0, 8, offset8);
+    __ deccc(count, 2);
+    __ mov(G0, offset0);   // offset from start of arrays (0)
+    __ brx(Assembler::negative, false, Assembler::pn, L_copy_8_bytes );
+    __ delayed()->add(offset0, 8, offset8);
 
     // Copy by 64 bytes chunks
-    Label L_copy_64_bytes;
+
     const Register from64 = O3;  // source address
     const Register to64   = G3;  // destination address
-      __ subcc(count, 6, O3);
-      __ brx(Assembler::negative, false, Assembler::pt, L_copy_16_bytes );
-      __ delayed()->mov(to,   to64);
-      // Now we can use O4(offset0), O5(offset8) as temps
-      __ mov(O3, count);
-      __ mov(from, from64);
+    __ subcc(count, 6, O3);
+    __ brx(Assembler::negative, false, Assembler::pt, L_copy_16_bytes );
+    __ delayed()->mov(to,   to64);
+    // Now we can use O4(offset0), O5(offset8) as temps
+    __ mov(O3, count);
+    // count >= 0 (original count - 8)
+    __ mov(from, from64);
 
-      __ align(OptoLoopAlignment);
-    __ BIND(L_copy_64_bytes);
-      for( int off = 0; off < 64; off += 16 ) {
-        __ ldx(from64,  off+0, O4);
-        __ ldx(from64,  off+8, O5);
-        __ stx(O4, to64,  off+0);
-        __ stx(O5, to64,  off+8);
-      }
-      __ deccc(count, 8);
-      __ inc(from64, 64);
-      __ brx(Assembler::greaterEqual, false, Assembler::pt, L_copy_64_bytes);
-      __ delayed()->inc(to64, 64);
+    disjoint_copy_core(from64, to64, count, 3, 64, copy_64_bytes_loop);
 
       // Restore O4(offset0), O5(offset8)
       __ sub(from64, from, offset0);
-      __ inccc(count, 6);
+      __ inccc(count, 6); // restore count
       __ brx(Assembler::negative, false, Assembler::pn, L_copy_8_bytes );
       __ delayed()->add(offset0, 8, offset8);
 
