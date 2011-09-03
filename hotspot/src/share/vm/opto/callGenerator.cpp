@@ -149,7 +149,6 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
     call->set_optimized_virtual(true);
     if (method()->is_method_handle_invoke()) {
       call->set_method_handle_invoke(true);
-      kit.C->set_has_method_handle_invokes(true);
     }
   }
   kit.set_arguments_for_java_call(call);
@@ -207,7 +206,6 @@ JVMState* DynamicCallGenerator::generate(JVMState* jvms) {
   call->set_optimized_virtual(true);
   // Take extra care (in the presence of argument motion) not to trash the SP:
   call->set_method_handle_invoke(true);
-  kit.C->set_has_method_handle_invokes(true);
 
   // Pass the target MethodHandle as first argument and shift the
   // other arguments.
@@ -706,18 +704,30 @@ CallGenerator* CallGenerator::for_method_handle_inline(Node* method_handle, JVMS
     }
   } else if (method_handle->Opcode() == Op_Phi && method_handle->req() == 3 &&
              method_handle->in(1)->Opcode() == Op_ConP && method_handle->in(2)->Opcode() == Op_ConP) {
+    float prob = PROB_FAIR;
+    Node* meth_region = method_handle->in(0);
+    if (meth_region->is_Region() &&
+        meth_region->in(1)->is_Proj() && meth_region->in(2)->is_Proj() &&
+        meth_region->in(1)->in(0) == meth_region->in(2)->in(0) &&
+        meth_region->in(1)->in(0)->is_If()) {
+      // If diamond, so grab the probability of the test to drive the inlining below
+      prob = meth_region->in(1)->in(0)->as_If()->_prob;
+      if (meth_region->in(1)->is_IfTrue()) {
+        prob = 1 - prob;
+      }
+    }
+
     // selectAlternative idiom merging two constant MethodHandles.
     // Generate a guard so that each can be inlined.  We might want to
     // do more inputs at later point but this gets the most common
     // case.
-    const TypeOopPtr* oop_ptr = method_handle->in(1)->bottom_type()->is_oopptr();
-    ciObject* const_oop = oop_ptr->const_oop();
-    ciMethodHandle* mh = const_oop->as_method_handle();
-
-    CallGenerator* cg1 = for_method_handle_inline(method_handle->in(1), jvms, caller, callee, profile);
-    CallGenerator* cg2 = for_method_handle_inline(method_handle->in(2), jvms, caller, callee, profile);
+    CallGenerator* cg1 = for_method_handle_inline(method_handle->in(1), jvms, caller, callee, profile.rescale(1.0 - prob));
+    CallGenerator* cg2 = for_method_handle_inline(method_handle->in(2), jvms, caller, callee, profile.rescale(prob));
     if (cg1 != NULL && cg2 != NULL) {
-      return new PredictedDynamicCallGenerator(mh, cg2, cg1, PROB_FAIR);
+      const TypeOopPtr* oop_ptr = method_handle->in(1)->bottom_type()->is_oopptr();
+      ciObject* const_oop = oop_ptr->const_oop();
+      ciMethodHandle* mh = const_oop->as_method_handle();
+      return new PredictedDynamicCallGenerator(mh, cg2, cg1, prob);
     }
   }
   return NULL;

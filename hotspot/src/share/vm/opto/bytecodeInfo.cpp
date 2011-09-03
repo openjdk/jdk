@@ -141,7 +141,21 @@ const char* InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_
     assert(mha_profile, "must exist");
     CounterData* cd = mha_profile->as_CounterData();
     invoke_count = cd->count();
-    call_site_count = invoke_count;  // use the same value
+    if (invoke_count == 0) {
+      return "method handle not reached";
+    }
+
+    if (_caller_jvms != NULL && _caller_jvms->method() != NULL &&
+        _caller_jvms->method()->method_data() != NULL &&
+        !_caller_jvms->method()->method_data()->is_empty()) {
+      ciMethodData* mdo = _caller_jvms->method()->method_data();
+      ciProfileData* mha_profile = mdo->bci_to_data(_caller_jvms->bci());
+      assert(mha_profile, "must exist");
+      CounterData* cd = mha_profile->as_CounterData();
+      call_site_count = cd->count();
+    } else {
+      call_site_count = invoke_count;  // use the same value
+    }
   }
 
   assert(invoke_count != 0, "require invocation count greater than zero");

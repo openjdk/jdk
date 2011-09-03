@@ -981,6 +981,34 @@ class java_lang_invoke_AdapterMethodHandle: public java_lang_invoke_BoundMethodH
 };
 
 
+// A simple class that maintains an invocation count
+class java_lang_invoke_CountingMethodHandle: public java_lang_invoke_MethodHandle {
+  friend class JavaClasses;
+
+ private:
+  static int _vmcount_offset;
+  static void compute_offsets();
+
+ public:
+  // Accessors
+  static int            vmcount(oop mh);
+  static void       set_vmcount(oop mh, int count);
+
+  // Testers
+  static bool is_subclass(klassOop klass) {
+    return SystemDictionary::CountingMethodHandle_klass() != NULL &&
+      Klass::cast(klass)->is_subclass_of(SystemDictionary::CountingMethodHandle_klass());
+  }
+  static bool is_instance(oop obj) {
+    return obj != NULL && is_subclass(obj->klass());
+  }
+
+  // Accessors for code generation:
+  static int vmcount_offset_in_bytes()          { return _vmcount_offset; }
+};
+
+
+
 // Interface to java.lang.invoke.MemberName objects
 // (These are a private interface for Java code to query the class hierarchy.)
 

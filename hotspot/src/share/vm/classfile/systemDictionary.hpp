@@ -133,14 +133,14 @@ class SymbolPropertyTable;
   template(reflect_Method_klass,         java_lang_reflect_Method,       Pre) \
   template(reflect_Constructor_klass,    java_lang_reflect_Constructor,  Pre) \
                                                                               \
-  /* NOTE: needed too early in bootstrapping process to have checks based on JDK version */ \
-  /* Universe::is_gte_jdk14x_version() is not set up by this point. */        \
-  /* It's okay if this turns out to be NULL in non-1.4 JDKs. */               \
-  template(reflect_MagicAccessorImpl_klass,          sun_reflect_MagicAccessorImpl,  Opt) \
-  template(reflect_MethodAccessorImpl_klass, sun_reflect_MethodAccessorImpl, Opt_Only_JDK14NewRef) \
-  template(reflect_ConstructorAccessorImpl_klass, sun_reflect_ConstructorAccessorImpl, Opt_Only_JDK14NewRef) \
-  template(reflect_DelegatingClassLoader_klass, sun_reflect_DelegatingClassLoader, Opt) \
-  template(reflect_ConstantPool_klass,  sun_reflect_ConstantPool,       Opt_Only_JDK15) \
+  /* NOTE: needed too early in bootstrapping process to have checks based on JDK version */                        \
+  /* Universe::is_gte_jdk14x_version() is not set up by this point. */                                             \
+  /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                    \
+  template(reflect_MagicAccessorImpl_klass,          sun_reflect_MagicAccessorImpl,  Opt)                          \
+  template(reflect_MethodAccessorImpl_klass, sun_reflect_MethodAccessorImpl, Opt_Only_JDK14NewRef)                 \
+  template(reflect_ConstructorAccessorImpl_klass, sun_reflect_ConstructorAccessorImpl, Opt_Only_JDK14NewRef)       \
+  template(reflect_DelegatingClassLoader_klass, sun_reflect_DelegatingClassLoader, Opt)                            \
+  template(reflect_ConstantPool_klass,  sun_reflect_ConstantPool,       Opt_Only_JDK15)                            \
   template(reflect_UnsafeStaticFieldAccessorImpl_klass, sun_reflect_UnsafeStaticFieldAccessorImpl, Opt_Only_JDK15) \
                                                                               \
   /* support for dynamic typing; it's OK if these are NULL in earlier JDKs */ \
@@ -155,6 +155,7 @@ class SymbolPropertyTable;
   template(BootstrapMethodError_klass,     java_lang_BootstrapMethodError,            Pre_JSR292) \
   template(WrongMethodTypeException_klass, java_lang_invoke_WrongMethodTypeException, Pre_JSR292) \
   template(CallSite_klass,                 java_lang_invoke_CallSite,                 Pre_JSR292) \
+  template(CountingMethodHandle_klass,     java_lang_invoke_CountingMethodHandle,     Opt)        \
   template(ConstantCallSite_klass,         java_lang_invoke_ConstantCallSite,         Pre_JSR292) \
   template(MutableCallSite_klass,          java_lang_invoke_MutableCallSite,          Pre_JSR292) \
   template(VolatileCallSite_klass,         java_lang_invoke_VolatileCallSite,         Pre_JSR292) \

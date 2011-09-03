@@ -1106,6 +1106,9 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       mcall_java->_optimized_virtual = call_java->is_optimized_virtual();
       is_method_handle_invoke = call_java->is_method_handle_invoke();
       mcall_java->_method_handle_invoke = is_method_handle_invoke;
+      if (is_method_handle_invoke) {
+        C->set_has_method_handle_invokes(true);
+      }
       if( mcall_java->is_MachCallStaticJava() )
         mcall_java->as_MachCallStaticJava()->_name =
          call_java->as_CallStaticJava()->_name;
