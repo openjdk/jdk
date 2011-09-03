@@ -1423,6 +1423,9 @@ void Arguments::set_parallel_gc_flags() {
     if (FLAG_IS_DEFAULT(MinHeapDeltaBytes)) {
       FLAG_SET_DEFAULT(MinHeapDeltaBytes, 64*M);
     }
+    // For those collectors or operating systems (eg, Windows) that do
+    // not support full UseNUMA, we will map to UseNUMAInterleaving for now
+    UseNUMAInterleaving = true;
   }
 }
 
