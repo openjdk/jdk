@@ -176,7 +176,10 @@ public:
   bool is_transient   () { return flags().is_transient(); }
 
   bool is_call_site_target() {
-    return (holder()->is_subclass_of(CURRENT_ENV->CallSite_klass()) && (name() == ciSymbol::target_name()));
+    ciInstanceKlass* callsite_klass = CURRENT_ENV->CallSite_klass();
+    if (callsite_klass == NULL)
+      return false;
+    return (holder()->is_subclass_of(callsite_klass) && (name() == ciSymbol::target_name()));
   }
 
   // Debugging output
