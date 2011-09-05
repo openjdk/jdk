@@ -904,12 +904,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             throw new NumberFormatException("Infinite or NaN");
         // Translate the double into sign, exponent and significand, according
         // to the formulae in JLS, Section 20.10.22.
-        int sign = (val >= 0.0 ? 1 : -1); // Preserving sign of zero doesn't matter
-        int exponent = Math.getExponent(val);
         long valBits = Double.doubleToLongBits(val);
-        long significand = (exponent == (Double.MIN_EXPONENT-1)
-                            ? (valBits & ((1L << 52) - 1)) << 1
-                            : (valBits & ((1L << 52) - 1)) | (1L << 52));
+        int sign = ((valBits >> 63) == 0 ? 1 : -1);
+        int exponent = (int) ((valBits >> 52) & 0x7ffL);
+        long significand = (exponent == 0
+                ? (valBits & ((1L << 52) - 1)) << 1
+                : (valBits & ((1L << 52) - 1)) | (1L << 52));
+        exponent -= 1075;
         // At this point, val == sign * significand * 2**exponent.
 
         /*
@@ -933,9 +934,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         BigInteger intVal;
         long compactVal = sign * significand;
         if (exponent == 0) {
-            // If the exponent is zero, the significant fits in a long
-            assert compactVal != INFLATED;
-            intVal = null;
+            intVal = (compactVal == INFLATED) ? INFLATED_BIGINT : null;
         } else {
             if (exponent < 0) {
                 intVal = BigInteger.valueOf(5).pow(-exponent).multiply(compactVal);
@@ -4162,15 +4161,30 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             return qsign < 0;
 
         default: // Some kind of half-way rounding
-            if (roundingMode == ROUND_HALF_DOWN ||
-                cmpFracHalf < 0 ) // We're closer to higher digit
+            assert roundingMode >= ROUND_HALF_UP &&
+                roundingMode <= ROUND_HALF_EVEN: "Unexpected rounding mode" + RoundingMode.valueOf(roundingMode);
+
+            if (cmpFracHalf < 0 ) // We're closer to higher digit
                 return false;
-            else if (roundingMode == ROUND_HALF_UP ||
-                     cmpFracHalf > 0 ) // We're closer to lower digit
+            else if (cmpFracHalf > 0 ) // We're closer to lower digit
                 return true;
-            else
-                // roundingMode == ROUND_HALF_EVEN, true iff quotient is odd
-                return oddQuot;
+            else { // half-way
+                assert cmpFracHalf == 0;
+
+                switch(roundingMode) {
+                case ROUND_HALF_DOWN:
+                    return false;
+
+                case ROUND_HALF_UP:
+                    return true;
+
+                case ROUND_HALF_EVEN:
+                    return oddQuot;
+
+                default:
+                    throw new AssertionError("Unexpected rounding mode" + roundingMode);
+                }
+            }
         }
     }
 
