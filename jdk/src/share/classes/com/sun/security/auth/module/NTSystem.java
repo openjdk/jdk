@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ package com.sun.security.auth.module;
 public class NTSystem {
 
     private native void getCurrent(boolean debug);
+    private native long getImpersonationToken0();
 
     private String userName;
     private String domain;
@@ -132,9 +133,13 @@ public class NTSystem {
      *
      * @return an impersonation token for the current NT user.
      */
-    public long getImpersonationToken() {
+    public synchronized long getImpersonationToken() {
+        if (impersonationToken == 0) {
+            impersonationToken = getImpersonationToken0();
+        }
         return impersonationToken;
     }
+
 
     private void loadNative() {
         System.loadLibrary("jaas_nt");
