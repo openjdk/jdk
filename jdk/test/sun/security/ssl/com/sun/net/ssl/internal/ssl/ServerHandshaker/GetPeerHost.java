@@ -22,10 +22,13 @@
  */
 
 /**
- *@test
- *@bug 4302026
- *@run main GetPeerHost
- *@summary make sure the server side doesn't do DNS lookup.
+ * @test
+ * @bug 4302026
+ * @run main/othervm GetPeerHost
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
+ * @summary make sure the server side doesn't do DNS lookup.
  */
 import javax.net.*;
 

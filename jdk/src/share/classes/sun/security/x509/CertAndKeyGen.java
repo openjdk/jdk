@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,7 +229,7 @@ public final class CertAndKeyGen {
                      new CertificateVersion(CertificateVersion.V3));
             info.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(
                     new java.util.Random().nextInt() & 0x7fffffff));
-            AlgorithmId algID = AlgorithmId.getAlgorithmId(sigAlg);
+            AlgorithmId algID = AlgorithmId.get(sigAlg);
             info.set(X509CertInfo.ALGORITHM_ID,
                      new CertificateAlgorithmId(algID));
             info.set(X509CertInfo.SUBJECT, new CertificateSubjectName(myname));

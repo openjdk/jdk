@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -406,7 +406,7 @@ public final class AccessController {
          * callerClass[2] = AccessController.doPrivileged
          * callerClass[3] = caller
          */
-        final Class callerClass = sun.reflect.Reflection.getCallerClass(3);
+        final Class<?> callerClass = sun.reflect.Reflection.getCallerClass(3);
         ProtectionDomain callerPd = doPrivileged
             (new PrivilegedAction<ProtectionDomain>() {
             public ProtectionDomain run() {
@@ -538,7 +538,7 @@ public final class AccessController {
             }
 
             if (dumpDebug && Debug.isOn("stack")) {
-                Thread.currentThread().dumpStack();
+                Thread.dumpStack();
             }
 
             if (dumpDebug && Debug.isOn("domain")) {
