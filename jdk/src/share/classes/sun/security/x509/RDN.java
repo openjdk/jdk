@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,11 @@
 
 package sun.security.x509;
 
-import java.lang.reflect.*;
 import java.io.IOException;
 import java.io.StringReader;
-import java.security.PrivilegedExceptionAction;
-import java.security.AccessController;
-import java.security.Principal;
 import java.util.*;
 
 import sun.security.util.*;
-import sun.security.pkcs.PKCS9Attribute;
-import javax.security.auth.x500.X500Principal;
 
 /**
  * RDNs are a set of {attribute = value} assertions.  Some of those
@@ -327,7 +321,7 @@ public class RDN {
      */
     DerValue findAttribute(ObjectIdentifier oid) {
         for (int i = 0; i < assertion.length; i++) {
-            if (assertion[i].oid.equals(oid)) {
+            if (assertion[i].oid.equals((Object)oid)) {
                 return assertion[i].value;
             }
         }

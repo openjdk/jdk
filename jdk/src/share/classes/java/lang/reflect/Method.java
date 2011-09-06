@@ -194,6 +194,7 @@ public final class Method extends Executable {
      * @since 1.5
      */
     @Override
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public TypeVariable<Method>[] getTypeParameters() {
         if (getGenericSignature() != null)
             return (TypeVariable<Method>[])getGenericInfo().getTypeParameters();
@@ -246,7 +247,7 @@ public final class Method extends Executable {
      */
     @Override
     public Class<?>[] getParameterTypes() {
-        return (Class<?>[]) parameterTypes.clone();
+        return parameterTypes.clone();
     }
 
     /**
@@ -266,7 +267,7 @@ public final class Method extends Executable {
      */
     @Override
     public Class<?>[] getExceptionTypes() {
-        return (Class<?>[]) exceptionTypes.clone();
+        return exceptionTypes.clone();
     }
 
     /**

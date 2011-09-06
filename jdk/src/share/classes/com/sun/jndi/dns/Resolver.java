@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,8 +125,7 @@ class Resolver {
                 }
                 // Look for an SOA record giving the zone's top node.
                 for (int i = 0; i < rrs.authority.size(); i++) {
-                    ResourceRecord rr = (ResourceRecord)
-                        rrs.authority.elementAt(i);
+                    ResourceRecord rr = rrs.authority.elementAt(i);
                     if (rr.getType() == ResourceRecord.TYPE_SOA) {
                         DnsName zone = rr.getName();
                         if (fqdn.endsWith(zone)) {
@@ -152,7 +151,7 @@ class Resolver {
         ResourceRecords rrs = query(zone, rrclass, ResourceRecord.TYPE_SOA,
                                     recursion, false);
         for (int i = 0; i < rrs.answer.size(); i++) {
-            ResourceRecord rr = (ResourceRecord) rrs.answer.elementAt(i);
+            ResourceRecord rr = rrs.answer.elementAt(i);
             if (rr.getType() == ResourceRecord.TYPE_SOA) {
                 return rr;
             }
@@ -175,8 +174,7 @@ class Resolver {
                   recursion, false);
         String[] ns = new String[rrs.answer.size()];
         for (int i = 0; i < ns.length; i++) {
-            ResourceRecord rr = (ResourceRecord)
-                rrs.answer.elementAt(i);
+            ResourceRecord rr = rrs.answer.elementAt(i);
             if (rr.getType() != ResourceRecord.TYPE_NS) {
                 throw new CommunicationException("Corrupted DNS message");
             }

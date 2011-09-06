@@ -34,8 +34,8 @@ import java.lang.reflect.*;
 public class ConstantPool {
   // Number of entries in this constant pool (= maximum valid constant pool index)
   public int      getSize()                      { return getSize0            (constantPoolOop);        }
-  public Class    getClassAt         (int index) { return getClassAt0         (constantPoolOop, index); }
-  public Class    getClassAtIfLoaded (int index) { return getClassAtIfLoaded0 (constantPoolOop, index); }
+  public Class<?> getClassAt         (int index) { return getClassAt0         (constantPoolOop, index); }
+  public Class<?> getClassAtIfLoaded (int index) { return getClassAtIfLoaded0 (constantPoolOop, index); }
   // Returns either a Method or Constructor.
   // Static initializers are returned as Method objects.
   public Member   getMethodAt        (int index) { return getMethodAt0        (constantPoolOop, index); }
@@ -64,8 +64,8 @@ public class ConstantPool {
   private Object constantPoolOop;
 
   private native int      getSize0            (Object constantPoolOop);
-  private native Class    getClassAt0         (Object constantPoolOop, int index);
-  private native Class    getClassAtIfLoaded0 (Object constantPoolOop, int index);
+  private native Class<?> getClassAt0         (Object constantPoolOop, int index);
+  private native Class<?> getClassAtIfLoaded0 (Object constantPoolOop, int index);
   private native Member   getMethodAt0        (Object constantPoolOop, int index);
   private native Member   getMethodAtIfLoaded0(Object constantPoolOop, int index);
   private native Field    getFieldAt0         (Object constantPoolOop, int index);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -524,7 +524,7 @@ public class DnsClient {
                 "\tResponse Q:" + resps);
         }
         byte[] pkt;
-        if ((pkt = (byte[]) resps.get(xid)) != null) {
+        if ((pkt = resps.get(xid)) != null) {
             checkResponseCode(new Header(pkt, pkt.length));
             synchronized (queuesLock) {
                 resps.remove(xid);
