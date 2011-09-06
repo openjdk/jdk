@@ -22,16 +22,14 @@
  *
  */
 
-package sun.jvm.hotspot.code;
+package sun.jvm.hotspot.runtime.x86;
 
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 
-/** RicochetBlob (currently only used by Compiler 2) */
-
-public class RicochetBlob extends SingletonBlob {
+public class X86RicochetFrame extends VMObject {
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -41,30 +39,43 @@ public class RicochetBlob extends SingletonBlob {
   }
 
   private static void initialize(TypeDataBase db) {
-    Type type = db.lookupType("RicochetBlob");
+    Type type = db.lookupType("MethodHandles::RicochetFrame");
 
-    bounceOffsetField                = type.getCIntegerField("_bounce_offset");
-    exceptionOffsetField             = type.getCIntegerField("_exception_offset");
+    senderLinkField    = type.getAddressField("_sender_link");
+    savedArgsBaseField = type.getAddressField("_saved_args_base");
+    exactSenderSPField = type.getAddressField("_exact_sender_sp");
+    senderPCField      = type.getAddressField("_sender_pc");
   }
 
-  private static CIntegerField bounceOffsetField;
-  private static CIntegerField exceptionOffsetField;
+  private static AddressField senderLinkField;
+  private static AddressField savedArgsBaseField;
+  private static AddressField exactSenderSPField;
+  private static AddressField senderPCField;
 
-  public RicochetBlob(Address addr) {
+  static X86RicochetFrame fromFrame(X86Frame f) {
+    return new X86RicochetFrame(f.getFP().addOffsetTo(- senderLinkField.getOffset()));
+  }
+
+  private X86RicochetFrame(Address addr) {
     super(addr);
   }
 
-  public boolean isRicochetBlob() {
-    return true;
+  public Address senderLink() {
+    return senderLinkField.getValue(addr);
   }
-
-  public Address bounceAddr() {
-    return codeBegin().addOffsetTo(bounceOffsetField.getValue(addr));
+  public Address senderLinkAddress() {
+    return addr.addOffsetTo(senderLinkField.getOffset());
   }
-
-  public boolean returnsToBounceAddr(Address pc) {
-    Address bouncePc = bounceAddr();
-    return (pc.equals(bouncePc) || pc.addOffsetTo(Frame.pcReturnOffset()).equals(bouncePc));
+  public Address savedArgsBase() {
+    return savedArgsBaseField.getValue(addr);
   }
-
+  public Address extendedSenderSP() {
+    return savedArgsBase();
+  }
+  public Address exactSenderSP() {
+    return exactSenderSPField.getValue(addr);
+  }
+  public Address senderPC() {
+    return senderPCField.getValue(addr);
+  }
 }
