@@ -3303,25 +3303,35 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         }
 
         // Commit final fields via Unsafe
-        unsafe.putIntVolatile(this, signumOffset, sign);
+        UnsafeHolder.putSign(this, sign);
 
         // Calculate mag field from magnitude and discard magnitude
-        unsafe.putObjectVolatile(this, magOffset,
-                                 stripLeadingZeroBytes(magnitude));
+        UnsafeHolder.putMag(this, stripLeadingZeroBytes(magnitude));
     }
 
     // Support for resetting final fields while deserializing
-    private static final sun.misc.Unsafe unsafe = sun.misc.Unsafe.getUnsafe();
-    private static final long signumOffset;
-    private static final long magOffset;
-    static {
-        try {
-            signumOffset = unsafe.objectFieldOffset
-                (BigInteger.class.getDeclaredField("signum"));
-            magOffset = unsafe.objectFieldOffset
-                (BigInteger.class.getDeclaredField("mag"));
-        } catch (Exception ex) {
-            throw new Error(ex);
+    private static class UnsafeHolder {
+        private static final sun.misc.Unsafe unsafe;
+        private static final long signumOffset;
+        private static final long magOffset;
+        static {
+            try {
+                unsafe = sun.misc.Unsafe.getUnsafe();
+                signumOffset = unsafe.objectFieldOffset
+                    (BigInteger.class.getDeclaredField("signum"));
+                magOffset = unsafe.objectFieldOffset
+                    (BigInteger.class.getDeclaredField("mag"));
+            } catch (Exception ex) {
+                throw new ExceptionInInitializerError(ex);
+            }
+        }
+
+        static void putSign(BigInteger bi, int sign) {
+            unsafe.putIntVolatile(bi, signumOffset, sign);
+        }
+
+        static void putMag(BigInteger bi, int[] magnitude) {
+            unsafe.putObjectVolatile(bi, magOffset, magnitude);
         }
     }
 
