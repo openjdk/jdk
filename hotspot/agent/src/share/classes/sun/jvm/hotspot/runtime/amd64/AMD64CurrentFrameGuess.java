@@ -29,6 +29,7 @@ import sun.jvm.hotspot.debugger.amd64.*;
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.runtime.x86.*;
 
 /** <P> Should be able to be used on all amd64 platforms we support
     (Linux/amd64) to implement JavaThread's
@@ -123,7 +124,7 @@ public class AMD64CurrentFrameGuess {
              offset += vm.getAddressSize()) {
           try {
             Address curSP = sp.addOffsetTo(offset);
-            Frame frame = new AMD64Frame(curSP, null, pc);
+            Frame frame = new X86Frame(curSP, null, pc);
             RegisterMap map = thread.newRegisterMap(false);
             while (frame != null) {
               if (frame.isEntryFrame() && frame.entryFrameIsFirst()) {
