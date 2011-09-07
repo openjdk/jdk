@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,37 @@
  *
  */
 
-package sun.jvm.hotspot.runtime.amd64;
+package sun.jvm.hotspot.code;
 
-import sun.jvm.hotspot.asm.amd64.*;
+import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.types.*;
 
-public class AMD64RegisterMap extends RegisterMap {
-
-  /** This is the only public constructor */
-  public AMD64RegisterMap(JavaThread thread, boolean updateMap) {
-    super(thread, updateMap);
+public class MethodHandlesAdapterBlob extends AdapterBlob {
+  static {
+    VM.registerVMInitializedObserver(new Observer() {
+        public void update(Observable o, Object data) {
+          initialize(VM.getVM().getTypeDataBase());
+        }
+      });
   }
 
-  protected AMD64RegisterMap(RegisterMap map) {
-    super(map);
+  private static void initialize(TypeDataBase db) {
+    Type type = db.lookupType("MethodHandlesAdapterBlob");
+
+    // FIXME: add any needed fields
   }
 
-  public Object clone() {
-    AMD64RegisterMap retval = new AMD64RegisterMap(this);
-    return retval;
+  public MethodHandlesAdapterBlob(Address addr) {
+    super(addr);
   }
 
-  // no PD state to clear or copy:
-  protected void clearPD() {}
-  protected void initializePD() {}
-  protected void initializeFromPD(RegisterMap map) {}
-  protected Address getLocationPD(VMReg reg) { return null; }
+  public boolean isMethodHandlesAdapterBlob() {
+    return true;
+  }
+
+  public String getName() {
+    return "MethodHandlesAdapterBlob: " + super.getName();
+  }
 }

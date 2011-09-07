@@ -26,7 +26,6 @@
 #define SHARE_VM_PRIMS_JVM_H
 
 #include "prims/jni.h"
-#include "runtime/reflectionCompat.hpp"
 #ifdef TARGET_OS_FAMILY_linux
 # include "jvm_linux.h"
 #endif
@@ -43,8 +42,7 @@
 // HotSpot integration note:
 //
 // This file and jvm.h used with the JDK are identical,
-// except for the three includes removed below and the
-// SUPPORT_OLD_REFLECTION sections cut out of the JDK's jvm.h.
+// except for the three includes removed below
 
 // #include <sys/stat.h>
 // #include "jni.h"
@@ -442,14 +440,6 @@ JVM_DefineClassWithSourceCond(JNIEnv *env, const char *name,
                               jobject loader, const jbyte *buf,
                               jsize len, jobject pd, const char *source,
                               jboolean verify);
-
-/* Define a class with a source (MLVM) */
-JNIEXPORT jclass JNICALL
-JVM_DefineClassWithCP(JNIEnv *env, const char *name, jobject loader,
-                      const jbyte *buf, jsize len, jobject pd,
-                      const char *source,
-                      // same args as JVM_DefineClassWithSource to this point
-                      jobjectArray constants);
 
 /*
  * Reflection support functions
@@ -1442,65 +1432,6 @@ JVM_RawMonitorEnter(void *mon);
 JNIEXPORT void JNICALL
 JVM_RawMonitorExit(void *mon);
 
-
-#ifdef SUPPORT_OLD_REFLECTION
-
-/*
- * Support for old native code-based (pre-JDK 1.4) reflection implementation.
- * Disabled by default in the product build.
- *
- * See reflection.hpp for information on SUPPORT_OLD_REFLECTION
- */
-
-/*
- * reflecting fields and methods.
- * which: 0 --- MEMBER_PUBLIC
- *        1 --- MEMBER_DECLARED
- * NOTE: absent in product build by default
- */
-
-JNIEXPORT jobjectArray JNICALL
-JVM_GetClassFields(JNIEnv *env, jclass cls, jint which);
-
-JNIEXPORT jobjectArray JNICALL
-JVM_GetClassMethods(JNIEnv *env, jclass cls, jint which);
-
-JNIEXPORT jobjectArray JNICALL
-JVM_GetClassConstructors(JNIEnv *env, jclass cls, jint which);
-
-JNIEXPORT jobject JNICALL
-JVM_GetClassField(JNIEnv *env, jclass cls, jstring name, jint which);
-
-JNIEXPORT jobject JNICALL
-JVM_GetClassMethod(JNIEnv *env, jclass cls, jstring name, jobjectArray types,
-                   jint which);
-JNIEXPORT jobject JNICALL
-JVM_GetClassConstructor(JNIEnv *env, jclass cls, jobjectArray types,
-                        jint which);
-
-/*
- * Implements Class.newInstance
- */
-JNIEXPORT jobject JNICALL
-JVM_NewInstance(JNIEnv *env, jclass cls);
-
-/*
- * java.lang.reflect.Field
- */
-JNIEXPORT jobject JNICALL
-JVM_GetField(JNIEnv *env, jobject field, jobject obj);
-
-JNIEXPORT jvalue JNICALL
-JVM_GetPrimitiveField(JNIEnv *env, jobject field, jobject obj,
-                      unsigned char wCode);
-
-JNIEXPORT void JNICALL
-JVM_SetField(JNIEnv *env, jobject field, jobject obj, jobject val);
-
-JNIEXPORT void JNICALL
-JVM_SetPrimitiveField(JNIEnv *env, jobject field, jobject obj, jvalue v,
-                      unsigned char vCode);
-
 /*
  * java.lang.reflect.Method
  */
@@ -1512,8 +1443,6 @@ JVM_InvokeMethod(JNIEnv *env, jobject method, jobject obj, jobjectArray args0);
  */
 JNIEXPORT jobject JNICALL
 JVM_NewInstanceFromConstructor(JNIEnv *env, jobject c, jobjectArray args0);
-
-#endif /* SUPPORT_OLD_REFLECTION */
 
 /*
  * java.lang.management support

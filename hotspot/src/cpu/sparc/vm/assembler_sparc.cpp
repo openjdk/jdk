@@ -1794,7 +1794,8 @@ void MacroAssembler::_verify_oop(Register reg, const char* msg, const char * fil
   mov(reg,O0); // Move arg into O0; arg might be in O7 which is about to be crushed
   stx(O7,SP,frame::register_save_words*wordSize+STACK_BIAS+7*8);
 
-  set((intptr_t)real_msg, O1);
+  // Size of set() should stay the same
+  patchable_set((intptr_t)real_msg, O1);
   // Load address to call to into O7
   load_ptr_contents(a, O7);
   // Register call to verify_oop_subroutine
@@ -1831,7 +1832,8 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* msg, const char 
   ld_ptr(addr.base(), addr.disp() + 8*8, O0); // Load arg into O0; arg might be in O7 which is about to be crushed
   stx(O7,SP,frame::register_save_words*wordSize+STACK_BIAS+7*8);
 
-  set((intptr_t)real_msg, O1);
+  // Size of set() should stay the same
+  patchable_set((intptr_t)real_msg, O1);
   // Load address to call to into O7
   load_ptr_contents(a, O7);
   // Register call to verify_oop_subroutine
@@ -1976,7 +1978,8 @@ void MacroAssembler::stop(const char* msg) {
     save_frame(::round_to(sizeof(RegistersForDebugging) / BytesPerWord, 2));
 
     // stop_subroutine expects message pointer in I1.
-    set((intptr_t)msg, O1);
+    // Size of set() should stay the same
+    patchable_set((intptr_t)msg, O1);
 
     // factor long stop-sequence into subroutine to save space
     assert(StubRoutines::Sparc::stop_subroutine_entry_address(), "hasn't been generated yet");
@@ -1998,7 +2001,8 @@ void MacroAssembler::warn(const char* msg) {
   save_frame(::round_to(sizeof(RegistersForDebugging) / BytesPerWord, 2));
   RegistersForDebugging::save_registers(this);
   mov(O0, L0);
-  set((intptr_t)msg, O0);
+  // Size of set() should stay the same
+  patchable_set((intptr_t)msg, O0);
   call( CAST_FROM_FN_PTR(address, warning) );
   delayed()->nop();
 //  ret();
@@ -4901,3 +4905,65 @@ void MacroAssembler::char_arrays_equals(Register ary1, Register ary2,
   // Caller should set it:
   // add(G0, 1, result); // equals
 }
+
+// Use BIS for zeroing (count is in bytes).
+void MacroAssembler::bis_zeroing(Register to, Register count, Register temp, Label& Ldone) {
+  assert(UseBlockZeroing && VM_Version::has_block_zeroing(), "only works with BIS zeroing");
+  Register end = count;
+  int cache_line_size = VM_Version::prefetch_data_size();
+  // Minimum count when BIS zeroing can be used since
+  // it needs membar which is expensive.
+  int block_zero_size  = MAX2(cache_line_size*3, (int)BlockZeroingLowLimit);
+
+  Label small_loop;
+  // Check if count is negative (dead code) or zero.
+  // Note, count uses 64bit in 64 bit VM.
+  cmp_and_brx_short(count, 0, Assembler::lessEqual, Assembler::pn, Ldone);
+
+  // Use BIS zeroing only for big arrays since it requires membar.
+  if (Assembler::is_simm13(block_zero_size)) { // < 4096
+    cmp(count, block_zero_size);
+  } else {
+    set(block_zero_size, temp);
+    cmp(count, temp);
+  }
+  br(Assembler::lessUnsigned, false, Assembler::pt, small_loop);
+  delayed()->add(to, count, end);
+
+  // Note: size is >= three (32 bytes) cache lines.
+
+  // Clean the beginning of space up to next cache line.
+  for (int offs = 0; offs < cache_line_size; offs += 8) {
+    stx(G0, to, offs);
+  }
+
+  // align to next cache line
+  add(to, cache_line_size, to);
+  and3(to, -cache_line_size, to);
+
+  // Note: size left >= two (32 bytes) cache lines.
+
+  // BIS should not be used to zero tail (64 bytes)
+  // to avoid zeroing a header of the following object.
+  sub(end, (cache_line_size*2)-8, end);
+
+  Label bis_loop;
+  bind(bis_loop);
+  stxa(G0, to, G0, Assembler::ASI_ST_BLKINIT_PRIMARY);
+  add(to, cache_line_size, to);
+  cmp_and_brx_short(to, end, Assembler::lessUnsigned, Assembler::pt, bis_loop);
+
+  // BIS needs membar.
+  membar(Assembler::StoreLoad);
+
+  add(end, (cache_line_size*2)-8, end); // restore end
+  cmp_and_brx_short(to, end, Assembler::greaterEqualUnsigned, Assembler::pn, Ldone);
+
+  // Clean the tail.
+  bind(small_loop);
+  stx(G0, to, 0);
+  add(to, 8, to);
+  cmp_and_brx_short(to, end, Assembler::lessUnsigned, Assembler::pt, small_loop);
+  nop(); // Separate short branches
+}
+

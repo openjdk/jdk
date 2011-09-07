@@ -158,6 +158,8 @@ const char*        MethodHandles::_entry_names[_EK_LIMIT+1] = {
   "adapter_fold/4/ref",
   "adapter_fold/5/ref",
 
+  "adapter_opt_profiling",
+
   NULL
 };
 
@@ -2653,6 +2655,11 @@ void MethodHandles::init_AdapterMethodHandle(Handle mh, Handle target, int argnu
   // Finalize the conversion field.  (Note that it is final to Java code.)
   java_lang_invoke_AdapterMethodHandle::set_conversion(mh(), new_conversion);
 
+  if (java_lang_invoke_CountingMethodHandle::is_instance(mh())) {
+    assert(ek_orig == _adapter_retype_only, "only one handled");
+    ek_opt = _adapter_opt_profiling;
+  }
+
   // Done!
   java_lang_invoke_MethodHandle::set_vmentry(mh(), entry(ek_opt));
 
@@ -2905,8 +2912,12 @@ JVM_ENTRY(jint, MHN_getConstant(JNIEnv *env, jobject igcls, jint which)) {
     return MethodHandles::stack_move_unit();
   case MethodHandles::GC_CONV_OP_IMPLEMENTED_MASK:
     return MethodHandles::adapter_conversion_ops_supported_mask();
-  case MethodHandles::GC_OP_ROT_ARGS_DOWN_LIMIT_BIAS:
-    return MethodHandles::OP_ROT_ARGS_DOWN_LIMIT_BIAS;
+  case MethodHandles::GC_COUNT_GWT:
+#ifdef COMPILER2
+    return true;
+#else
+    return false;
+#endif
   }
   return 0;
 }
