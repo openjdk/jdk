@@ -2531,10 +2531,14 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
       }
       return true;
     }
-    return false;
+    // Fall through and try to use small pages
   }
 
-  return commit_memory(addr, size, exec);
+  if (commit_memory(addr, size, exec)) {
+    realign_memory(addr, size, alignment_hint);
+    return true;
+  }
+  return false;
 }
 
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
