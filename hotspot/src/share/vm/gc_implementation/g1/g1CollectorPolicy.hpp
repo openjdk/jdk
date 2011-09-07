@@ -493,7 +493,6 @@ public:
 
   // </NEW PREDICTION>
 
-public:
   void cset_regions_freed() {
     bool propagate = _last_young_gc_full && !_in_marking_window;
     _short_lived_surv_rate_group->all_surviving_words_recorded(propagate);
@@ -1045,7 +1044,7 @@ public:
   // new cycle, as long as we are not already in one. It's best if it
   // is called during a safepoint when the test whether a cycle is in
   // progress or not is stable.
-  bool force_initial_mark_if_outside_cycle();
+  bool force_initial_mark_if_outside_cycle(GCCause::Cause gc_cause);
 
   // This is called at the very beginning of an evacuation pause (it
   // has to be the first thing that the pause does). If
@@ -1234,8 +1233,6 @@ public:
 
 class G1CollectorPolicy_BestRegionsFirst: public G1CollectorPolicy {
   CollectionSetChooser* _collectionSetChooser;
-  // If the estimated is less then desirable, resize if possible.
-  void expand_if_possible(size_t numRegions);
 
   virtual void choose_collection_set(double target_pause_time_ms);
   virtual void record_collection_pause_start(double start_time_sec,
@@ -1268,9 +1265,5 @@ inline double variance(int n, double sum_of_squares, double sum) {
   double avg = sum/n_d;
   return (sum_of_squares - 2.0 * avg * sum + n_d * avg * avg) / n_d;
 }
-
-// Local Variables: ***
-// c-indentation-style: gnu ***
-// End: ***
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1COLLECTORPOLICY_HPP
