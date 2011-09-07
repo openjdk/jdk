@@ -501,6 +501,12 @@ void Matcher::init_first_stack_mask() {
      idealreg2spillmask[Op_RegP]->OR(*idealreg2regmask[Op_RegD]);
 #else
      idealreg2spillmask[Op_RegP]->OR(*idealreg2regmask[Op_RegF]);
+#ifdef ARM
+     // ARM has support for moving 64bit values between a pair of
+     // integer registers and a double register
+     idealreg2spillmask[Op_RegL]->OR(*idealreg2regmask[Op_RegD]);
+     idealreg2spillmask[Op_RegD]->OR(*idealreg2regmask[Op_RegL]);
+#endif
 #endif
    }
 
