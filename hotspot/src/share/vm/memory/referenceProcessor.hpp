@@ -52,6 +52,8 @@ class DiscoveredList;
 
 class ReferenceProcessor : public CHeapObj {
  protected:
+  // Compatibility with pre-4965777 JDK's
+  static bool _pending_list_uses_discovered_field;
   MemRegion   _span; // (right-open) interval of heap
                      // subject to wkref discovery
   bool        _discovering_refs;      // true when discovery enabled
@@ -111,7 +113,6 @@ class ReferenceProcessor : public CHeapObj {
     return _current_soft_ref_policy;
   }
 
- public:
   // Process references with a certain reachability level.
   void process_discovered_reflist(DiscoveredList               refs_lists[],
                                   ReferencePolicy*             policy,
@@ -296,6 +297,13 @@ class ReferenceProcessor : public CHeapObj {
   // whether discovery is atomic wrt other collectors
   bool discovery_is_atomic() const { return _discovery_is_atomic; }
   void set_atomic_discovery(bool atomic) { _discovery_is_atomic = atomic; }
+
+  // whether the JDK in which we are embedded is a pre-4965777 JDK,
+  // and thus whether or not it uses the discovered field to chain
+  // the entries in the pending list.
+  static bool pending_list_uses_discovered_field() {
+    return _pending_list_uses_discovered_field;
+  }
 
   // whether discovery is done by multiple threads same-old-timeously
   bool discovery_is_mt() const { return _discovery_is_mt; }
