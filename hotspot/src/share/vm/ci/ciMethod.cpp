@@ -1017,6 +1017,34 @@ int ciMethod::highest_osr_comp_level() {
 }
 
 // ------------------------------------------------------------------
+// ciMethod::code_size_for_inlining
+//
+// Code size for inlining decisions.
+//
+// Don't fully count method handle adapters against inlining budgets:
+// the metric we use here is the number of call sites in the adapter
+// as they are probably the instructions which generate some code.
+int ciMethod::code_size_for_inlining() {
+  check_is_loaded();
+
+  // Method handle adapters
+  if (is_method_handle_adapter()) {
+    // Count call sites
+    int call_site_count = 0;
+    ciBytecodeStream iter(this);
+    while (iter.next() != ciBytecodeStream::EOBC()) {
+      if (Bytecodes::is_invoke(iter.cur_bc())) {
+        call_site_count++;
+      }
+    }
+    return call_site_count;
+  }
+
+  // Normal method
+  return code_size();
+}
+
+// ------------------------------------------------------------------
 // ciMethod::instructions_size
 //
 // This is a rough metric for "fat" methods, compared before inlining

@@ -1985,6 +1985,18 @@ class CommandLineFlags {
   product(bool, TLABStats, true,                                            \
           "Print various TLAB related information")                         \
                                                                             \
+  product(bool, UseBlockZeroing, false,                                     \
+          "Use special cpu instructions for block zeroing")                 \
+                                                                            \
+  product(intx, BlockZeroingLowLimit, 2048,                                 \
+          "Minimum size in bytes when block zeroing will be used")          \
+                                                                            \
+  product(bool, UseBlockCopy, false,                                        \
+          "Use special cpu instructions for block copy")                    \
+                                                                            \
+  product(intx, BlockCopyLowLimit, 2048,                                    \
+          "Minimum size in bytes when block copy will be used")             \
+                                                                            \
   product(bool, PrintRevisitStats, false,                                   \
           "Print revisit (klass and MDO) stack related information")        \
                                                                             \
@@ -2917,6 +2929,12 @@ class CommandLineFlags {
                                                                             \
   product(intx,  ReadPrefetchInstr, 0,                                      \
           "Prefetch instruction to prefetch ahead")                         \
+                                                                            \
+  product(uintx,  ArraycopySrcPrefetchDistance, 0,                          \
+          "Distance to prefetch source array in arracopy")                  \
+                                                                            \
+  product(uintx,  ArraycopyDstPrefetchDistance, 0,                          \
+          "Distance to prefetch destination array in arracopy")             \
                                                                             \
   /* deoptimization */                                                      \
   develop(bool, TraceDeoptimization, false,                                 \

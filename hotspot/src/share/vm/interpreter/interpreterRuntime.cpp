@@ -555,7 +555,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecode
     assert(method_handle->is_a(SystemDictionary::MethodHandle_klass()), "must be");
 
     {
-      // Walk all nmethods depending on CallSite
+      // Walk all nmethods depending on this call site.
       MutexLocker mu(Compile_lock, thread);
       Universe::flush_dependents_on(call_site, method_handle);
     }

@@ -187,6 +187,8 @@ class MethodHandles: AllStatic {
     _adapter_opt_fold_FIRST = _adapter_opt_fold_ref,
     _adapter_opt_fold_LAST  = _adapter_opt_fold_5_ref,
 
+    _adapter_opt_profiling,
+
     _EK_LIMIT,
     _EK_FIRST = 0
   };
@@ -266,6 +268,8 @@ class MethodHandles: AllStatic {
       return _adapter_fold_args;
     if (ek >= _adapter_opt_return_FIRST && ek <= _adapter_opt_return_LAST)
       return _adapter_opt_return_any;
+    if (ek == _adapter_opt_profiling)
+      return _adapter_retype_only;
     assert(false, "oob");
     return _EK_LIMIT;
   }
@@ -582,6 +586,7 @@ class MethodHandles: AllStatic {
     GC_JVM_STACK_MOVE_UNIT = 1,
     GC_CONV_OP_IMPLEMENTED_MASK = 2,
     GC_OP_ROT_ARGS_DOWN_LIMIT_BIAS = 3,
+    GC_COUNT_GWT = 4,
 
     // format of result from getTarget / encode_target:
     ETF_HANDLE_OR_METHOD_NAME = 0, // all available data (immediate MH or method)
