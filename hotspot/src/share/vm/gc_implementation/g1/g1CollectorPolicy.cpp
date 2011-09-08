@@ -414,13 +414,25 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _concurrent_mark_cleanup_times_ms->add(0.20);
   _tenuring_threshold = MaxTenuringThreshold;
   // _max_survivor_regions will be calculated by
-  // calculate_young_list_target_length() during initialization.
+  // update_young_list_target_length() during initialization.
   _max_survivor_regions = 0;
 
   assert(GCTimeRatio > 0,
          "we should have set it to a default value set_g1_gc_flags() "
          "if a user set it to 0");
   _gc_overhead_perc = 100.0 * (1.0 / (1.0 + GCTimeRatio));
+
+  uintx reserve_perc = G1ReservePercent;
+  // Put an artificial ceiling on this so that it's not set to a silly value.
+  if (reserve_perc > 50) {
+    reserve_perc = 50;
+    warning("G1ReservePercent is set to a value that is too large, "
+            "it's been updated to %u", reserve_perc);
+  }
+  _reserve_factor = (double) reserve_perc / 100.0;
+  // This will be set in calculate_reserve() when the heap is expanded
+  // for the first time during initialization.
+  _reserve_regions = 0;
 
   initialize_all();
 }
@@ -486,9 +498,7 @@ void G1CollectorPolicy::init() {
     _young_list_fixed_length = initial_region_num;
   }
   _free_regions_at_end_of_collection = _g1->free_regions();
-  calculate_young_list_min_length();
-  guarantee( _young_list_min_length == 0, "invariant, not enough info" );
-  calculate_young_list_target_length();
+  update_young_list_target_length();
 
   // We may immediately start allocating regions and placing them on the
   // collection set list. Initialize the per-collection set info
@@ -496,236 +506,252 @@ void G1CollectorPolicy::init() {
 }
 
 // Create the jstat counters for the policy.
-void G1CollectorPolicy::initialize_gc_policy_counters()
-{
+void G1CollectorPolicy::initialize_gc_policy_counters() {
   _gc_policy_counters = new GCPolicyCounters("GarbageFirst", 1, 3);
 }
 
-void G1CollectorPolicy::calculate_young_list_min_length() {
-  _young_list_min_length = 0;
-
-  if (!adaptive_young_list_length())
-    return;
-
-  if (_alloc_rate_ms_seq->num() > 3) {
-    double now_sec = os::elapsedTime();
-    double when_ms = _mmu_tracker->when_max_gc_sec(now_sec) * 1000.0;
-    double alloc_rate_ms = predict_alloc_rate_ms();
-    size_t min_regions = (size_t) ceil(alloc_rate_ms * when_ms);
-    size_t current_region_num = _g1->young_list()->length();
-    _young_list_min_length = min_regions + current_region_num;
-  }
-}
-
-void G1CollectorPolicy::calculate_young_list_target_length() {
-  if (adaptive_young_list_length()) {
-    size_t rs_lengths = (size_t) get_new_prediction(_rs_lengths_seq);
-    calculate_young_list_target_length(rs_lengths);
-  } else {
-    if (full_young_gcs())
-      _young_list_target_length = _young_list_fixed_length;
-    else
-      _young_list_target_length = _young_list_fixed_length / 2;
-  }
-
-  // Make sure we allow the application to allocate at least one
-  // region before we need to do a collection again.
-  size_t min_length = _g1->young_list()->length() + 1;
-  _young_list_target_length = MAX2(_young_list_target_length, min_length);
-  calculate_max_gc_locker_expansion();
-  calculate_survivors_policy();
-}
-
-void G1CollectorPolicy::calculate_young_list_target_length(size_t rs_lengths) {
-  guarantee( adaptive_young_list_length(), "pre-condition" );
-  guarantee( !_in_marking_window || !_last_full_young_gc, "invariant" );
-
-  double start_time_sec = os::elapsedTime();
-  size_t min_reserve_perc = MAX2((size_t)2, (size_t)G1ReservePercent);
-  min_reserve_perc = MIN2((size_t) 50, min_reserve_perc);
-  size_t reserve_regions =
-    (size_t) ((double) min_reserve_perc * (double) _g1->n_regions() / 100.0);
-
-  if (full_young_gcs() && _free_regions_at_end_of_collection > 0) {
-    // we are in fully-young mode and there are free regions in the heap
-
-    double survivor_regions_evac_time =
-        predict_survivor_regions_evac_time();
-
-    double target_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
-    size_t pending_cards = (size_t) get_new_prediction(_pending_cards_seq);
-    size_t adj_rs_lengths = rs_lengths + predict_rs_length_diff();
-    size_t scanned_cards = predict_young_card_num(adj_rs_lengths);
-    double base_time_ms = predict_base_elapsed_time_ms(pending_cards, scanned_cards)
-                          + survivor_regions_evac_time;
-
-    // the result
-    size_t final_young_length = 0;
-
-    size_t init_free_regions =
-      MAX2((size_t)0, _free_regions_at_end_of_collection - reserve_regions);
-
-    // if we're still under the pause target...
-    if (base_time_ms <= target_pause_time_ms) {
-      // We make sure that the shortest young length that makes sense
-      // fits within the target pause time.
-      size_t min_young_length = 1;
-
-      if (predict_will_fit(min_young_length, base_time_ms,
-                                     init_free_regions, target_pause_time_ms)) {
-        // The shortest young length will fit within the target pause time;
-        // we'll now check whether the absolute maximum number of young
-        // regions will fit in the target pause time. If not, we'll do
-        // a binary search between min_young_length and max_young_length
-        size_t abs_max_young_length = _free_regions_at_end_of_collection - 1;
-        size_t max_young_length = abs_max_young_length;
-
-        if (max_young_length > min_young_length) {
-          // Let's check if the initial max young length will fit within the
-          // target pause. If so then there is no need to search for a maximal
-          // young length - we'll return the initial maximum
-
-          if (predict_will_fit(max_young_length, base_time_ms,
-                                init_free_regions, target_pause_time_ms)) {
-            // The maximum young length will satisfy the target pause time.
-            // We are done so set min young length to this maximum length.
-            // The code after the loop will then set final_young_length using
-            // the value cached in the minimum length.
-            min_young_length = max_young_length;
-          } else {
-            // The maximum possible number of young regions will not fit within
-            // the target pause time so let's search....
-
-            size_t diff = (max_young_length - min_young_length) / 2;
-            max_young_length = min_young_length + diff;
-
-            while (max_young_length > min_young_length) {
-              if (predict_will_fit(max_young_length, base_time_ms,
-                                        init_free_regions, target_pause_time_ms)) {
-
-                // The current max young length will fit within the target
-                // pause time. Note we do not exit the loop here. By setting
-                // min = max, and then increasing the max below means that
-                // we will continue searching for an upper bound in the
-                // range [max..max+diff]
-                min_young_length = max_young_length;
-              }
-              diff = (max_young_length - min_young_length) / 2;
-              max_young_length = min_young_length + diff;
-            }
-            // the above loop found a maximal young length that will fit
-            // within the target pause time.
-          }
-          assert(min_young_length <= abs_max_young_length, "just checking");
-        }
-        final_young_length = min_young_length;
-      }
-    }
-    // and we're done!
-
-    // we should have at least one region in the target young length
-    _young_list_target_length =
-                              final_young_length + _recorded_survivor_regions;
-
-    // let's keep an eye of how long we spend on this calculation
-    // right now, I assume that we'll print it when we need it; we
-    // should really adde it to the breakdown of a pause
-    double end_time_sec = os::elapsedTime();
-    double elapsed_time_ms = (end_time_sec - start_time_sec) * 1000.0;
-
-#ifdef TRACE_CALC_YOUNG_LENGTH
-    // leave this in for debugging, just in case
-    gclog_or_tty->print_cr("target = %1.1lf ms, young = " SIZE_FORMAT ", "
-                           "elapsed %1.2lf ms, (%s%s) " SIZE_FORMAT SIZE_FORMAT,
-                           target_pause_time_ms,
-                           _young_list_target_length
-                           elapsed_time_ms,
-                           full_young_gcs() ? "full" : "partial",
-                           during_initial_mark_pause() ? " i-m" : "",
-                           _in_marking_window,
-                           _in_marking_window_im);
-#endif // TRACE_CALC_YOUNG_LENGTH
-
-    if (_young_list_target_length < _young_list_min_length) {
-      // bummer; this means that, if we do a pause when the maximal
-      // length dictates, we'll violate the pause spacing target (the
-      // min length was calculate based on the application's current
-      // alloc rate);
-
-      // so, we have to bite the bullet, and allocate the minimum
-      // number. We'll violate our target, but we just can't meet it.
-
-#ifdef TRACE_CALC_YOUNG_LENGTH
-      // leave this in for debugging, just in case
-      gclog_or_tty->print_cr("adjusted target length from "
-                             SIZE_FORMAT " to " SIZE_FORMAT,
-                             _young_list_target_length, _young_list_min_length);
-#endif // TRACE_CALC_YOUNG_LENGTH
-
-      _young_list_target_length = _young_list_min_length;
-    }
-  } else {
-    // we are in a partially-young mode or we've run out of regions (due
-    // to evacuation failure)
-
-#ifdef TRACE_CALC_YOUNG_LENGTH
-    // leave this in for debugging, just in case
-    gclog_or_tty->print_cr("(partial) setting target to " SIZE_FORMAT
-                           _young_list_min_length);
-#endif // TRACE_CALC_YOUNG_LENGTH
-    // we'll do the pause as soon as possible by choosing the minimum
-    _young_list_target_length = _young_list_min_length;
-  }
-
-  _rs_lengths_prediction = rs_lengths;
-}
-
-// This is used by: calculate_young_list_target_length(rs_length). It
-// returns true iff:
-//   the predicted pause time for the given young list will not overflow
-//   the target pause time
-// and:
-//   the predicted amount of surviving data will not overflow the
-//   the amount of free space available for survivor regions.
-//
-bool
-G1CollectorPolicy::predict_will_fit(size_t young_length,
-                                    double base_time_ms,
-                                    size_t init_free_regions,
-                                    double target_pause_time_ms) {
-
-  if (young_length >= init_free_regions)
+bool G1CollectorPolicy::predict_will_fit(size_t young_length,
+                                         double base_time_ms,
+                                         size_t base_free_regions,
+                                         double target_pause_time_ms) {
+  if (young_length >= base_free_regions) {
     // end condition 1: not enough space for the young regions
     return false;
+  }
 
-  double accum_surv_rate_adj = 0.0;
-  double accum_surv_rate =
-    accum_yg_surv_rate_pred((int)(young_length - 1)) - accum_surv_rate_adj;
-
+  double accum_surv_rate = accum_yg_surv_rate_pred((int)(young_length - 1));
   size_t bytes_to_copy =
-    (size_t) (accum_surv_rate * (double) HeapRegion::GrainBytes);
-
+               (size_t) (accum_surv_rate * (double) HeapRegion::GrainBytes);
   double copy_time_ms = predict_object_copy_time_ms(bytes_to_copy);
-
-  double young_other_time_ms =
-                       predict_young_other_time_ms(young_length);
-
-  double pause_time_ms =
-                   base_time_ms + copy_time_ms + young_other_time_ms;
-
-  if (pause_time_ms > target_pause_time_ms)
-    // end condition 2: over the target pause time
+  double young_other_time_ms = predict_young_other_time_ms(young_length);
+  double pause_time_ms = base_time_ms + copy_time_ms + young_other_time_ms;
+  if (pause_time_ms > target_pause_time_ms) {
+    // end condition 2: prediction is over the target pause time
     return false;
+  }
 
   size_t free_bytes =
-                 (init_free_regions - young_length) * HeapRegion::GrainBytes;
-
-  if ((2.0 + sigma()) * (double) bytes_to_copy > (double) free_bytes)
-    // end condition 3: out of to-space (conservatively)
+                  (base_free_regions - young_length) * HeapRegion::GrainBytes;
+  if ((2.0 * sigma()) * (double) bytes_to_copy > (double) free_bytes) {
+    // end condition 3: out-of-space (conservatively!)
     return false;
+  }
 
   // success!
   return true;
+}
+
+void G1CollectorPolicy::calculate_reserve(size_t all_regions) {
+  double reserve_regions_d = (double) all_regions * _reserve_factor;
+  // We use ceiling so that if reserve_regions_d is > 0.0 (but
+  // smaller than 1.0) we'll get 1.
+  _reserve_regions = (size_t) ceil(reserve_regions_d);
+}
+
+size_t G1CollectorPolicy::calculate_young_list_desired_min_length(
+                                                     size_t base_min_length) {
+  size_t desired_min_length = 0;
+  if (adaptive_young_list_length()) {
+    if (_alloc_rate_ms_seq->num() > 3) {
+      double now_sec = os::elapsedTime();
+      double when_ms = _mmu_tracker->when_max_gc_sec(now_sec) * 1000.0;
+      double alloc_rate_ms = predict_alloc_rate_ms();
+      desired_min_length = (size_t) ceil(alloc_rate_ms * when_ms);
+    } else {
+      // otherwise we don't have enough info to make the prediction
+    }
+  }
+  // Here, we might want to also take into account any additional
+  // constraints (i.e., user-defined minimum bound). Currently, we don't.
+  return base_min_length + desired_min_length;
+}
+
+size_t G1CollectorPolicy::calculate_young_list_desired_max_length() {
+  // Here, we might want to also take into account any additional
+  // constraints (i.e., user-defined minimum bound). Currently, we
+  // effectively don't set this bound.
+  return _g1->n_regions();
+}
+
+void G1CollectorPolicy::update_young_list_target_length(size_t rs_lengths) {
+  if (rs_lengths == (size_t) -1) {
+    // if it's set to the default value (-1), we should predict it;
+    // otherwise, use the given value.
+    rs_lengths = (size_t) get_new_prediction(_rs_lengths_seq);
+  }
+
+  // Calculate the absolute and desired min bounds.
+
+  // This is how many young regions we already have (currently: the survivors).
+  size_t base_min_length = recorded_survivor_regions();
+  // This is the absolute minimum young length, which ensures that we
+  // can allocate one eden region in the worst-case.
+  size_t absolute_min_length = base_min_length + 1;
+  size_t desired_min_length =
+                     calculate_young_list_desired_min_length(base_min_length);
+  if (desired_min_length < absolute_min_length) {
+    desired_min_length = absolute_min_length;
+  }
+
+  // Calculate the absolute and desired max bounds.
+
+  // We will try our best not to "eat" into the reserve.
+  size_t absolute_max_length = 0;
+  if (_free_regions_at_end_of_collection > _reserve_regions) {
+    absolute_max_length = _free_regions_at_end_of_collection - _reserve_regions;
+  }
+  size_t desired_max_length = calculate_young_list_desired_max_length();
+  if (desired_max_length > absolute_max_length) {
+    desired_max_length = absolute_max_length;
+  }
+
+  size_t young_list_target_length = 0;
+  if (adaptive_young_list_length()) {
+    if (full_young_gcs()) {
+      young_list_target_length =
+                        calculate_young_list_target_length(rs_lengths,
+                                                           base_min_length,
+                                                           desired_min_length,
+                                                           desired_max_length);
+      _rs_lengths_prediction = rs_lengths;
+    } else {
+      // Don't calculate anything and let the code below bound it to
+      // the desired_min_length, i.e., do the next GC as soon as
+      // possible to maximize how many old regions we can add to it.
+    }
+  } else {
+    if (full_young_gcs()) {
+      young_list_target_length = _young_list_fixed_length;
+    } else {
+      // A bit arbitrary: during partially-young GCs we allocate half
+      // the young regions to try to add old regions to the CSet.
+      young_list_target_length = _young_list_fixed_length / 2;
+      // We choose to accept that we might go under the desired min
+      // length given that we intentionally ask for a smaller young gen.
+      desired_min_length = absolute_min_length;
+    }
+  }
+
+  // Make sure we don't go over the desired max length, nor under the
+  // desired min length. In case they clash, desired_min_length wins
+  // which is why that test is second.
+  if (young_list_target_length > desired_max_length) {
+    young_list_target_length = desired_max_length;
+  }
+  if (young_list_target_length < desired_min_length) {
+    young_list_target_length = desired_min_length;
+  }
+
+  assert(young_list_target_length > recorded_survivor_regions(),
+         "we should be able to allocate at least one eden region");
+  assert(young_list_target_length >= absolute_min_length, "post-condition");
+  _young_list_target_length = young_list_target_length;
+
+  update_max_gc_locker_expansion();
+}
+
+size_t
+G1CollectorPolicy::calculate_young_list_target_length(size_t rs_lengths,
+                                                   size_t base_min_length,
+                                                   size_t desired_min_length,
+                                                   size_t desired_max_length) {
+  assert(adaptive_young_list_length(), "pre-condition");
+  assert(full_young_gcs(), "only call this for fully-young GCs");
+
+  // In case some edge-condition makes the desired max length too small...
+  if (desired_max_length <= desired_min_length) {
+    return desired_min_length;
+  }
+
+  // We'll adjust min_young_length and max_young_length not to include
+  // the already allocated young regions (i.e., so they reflect the
+  // min and max eden regions we'll allocate). The base_min_length
+  // will be reflected in the predictions by the
+  // survivor_regions_evac_time prediction.
+  assert(desired_min_length > base_min_length, "invariant");
+  size_t min_young_length = desired_min_length - base_min_length;
+  assert(desired_max_length > base_min_length, "invariant");
+  size_t max_young_length = desired_max_length - base_min_length;
+
+  double target_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
+  double survivor_regions_evac_time = predict_survivor_regions_evac_time();
+  size_t pending_cards = (size_t) get_new_prediction(_pending_cards_seq);
+  size_t adj_rs_lengths = rs_lengths + predict_rs_length_diff();
+  size_t scanned_cards = predict_young_card_num(adj_rs_lengths);
+  double base_time_ms =
+    predict_base_elapsed_time_ms(pending_cards, scanned_cards) +
+    survivor_regions_evac_time;
+  size_t available_free_regions = _free_regions_at_end_of_collection;
+  size_t base_free_regions = 0;
+  if (available_free_regions > _reserve_regions) {
+    base_free_regions = available_free_regions - _reserve_regions;
+  }
+
+  // Here, we will make sure that the shortest young length that
+  // makes sense fits within the target pause time.
+
+  if (predict_will_fit(min_young_length, base_time_ms,
+                       base_free_regions, target_pause_time_ms)) {
+    // The shortest young length will fit into the target pause time;
+    // we'll now check whether the absolute maximum number of young
+    // regions will fit in the target pause time. If not, we'll do
+    // a binary search between min_young_length and max_young_length.
+    if (predict_will_fit(max_young_length, base_time_ms,
+                         base_free_regions, target_pause_time_ms)) {
+      // The maximum young length will fit into the target pause time.
+      // We are done so set min young length to the maximum length (as
+      // the result is assumed to be returned in min_young_length).
+      min_young_length = max_young_length;
+    } else {
+      // The maximum possible number of young regions will not fit within
+      // the target pause time so we'll search for the optimal
+      // length. The loop invariants are:
+      //
+      // min_young_length < max_young_length
+      // min_young_length is known to fit into the target pause time
+      // max_young_length is known not to fit into the target pause time
+      //
+      // Going into the loop we know the above hold as we've just
+      // checked them. Every time around the loop we check whether
+      // the middle value between min_young_length and
+      // max_young_length fits into the target pause time. If it
+      // does, it becomes the new min. If it doesn't, it becomes
+      // the new max. This way we maintain the loop invariants.
+
+      assert(min_young_length < max_young_length, "invariant");
+      size_t diff = (max_young_length - min_young_length) / 2;
+      while (diff > 0) {
+        size_t young_length = min_young_length + diff;
+        if (predict_will_fit(young_length, base_time_ms,
+                             base_free_regions, target_pause_time_ms)) {
+          min_young_length = young_length;
+        } else {
+          max_young_length = young_length;
+        }
+        assert(min_young_length <  max_young_length, "invariant");
+        diff = (max_young_length - min_young_length) / 2;
+      }
+      // The results is min_young_length which, according to the
+      // loop invariants, should fit within the target pause time.
+
+      // These are the post-conditions of the binary search above:
+      assert(min_young_length < max_young_length,
+             "otherwise we should have discovered that max_young_length "
+             "fits into the pause target and not done the binary search");
+      assert(predict_will_fit(min_young_length, base_time_ms,
+                              base_free_regions, target_pause_time_ms),
+             "min_young_length, the result of the binary search, should "
+             "fit into the pause target");
+      assert(!predict_will_fit(min_young_length + 1, base_time_ms,
+                               base_free_regions, target_pause_time_ms),
+             "min_young_length, the result of the binary search, should be "
+             "optimal, so no larger length should fit into the pause target");
+    }
+  } else {
+    // Even the minimum length doesn't fit into the pause time
+    // target, return it as the result nevertheless.
+  }
+  return base_min_length + min_young_length;
 }
 
 double G1CollectorPolicy::predict_survivor_regions_evac_time() {
@@ -738,16 +764,18 @@ double G1CollectorPolicy::predict_survivor_regions_evac_time() {
   return survivor_regions_evac_time;
 }
 
-void G1CollectorPolicy::check_prediction_validity() {
+void G1CollectorPolicy::revise_young_list_target_length_if_necessary() {
   guarantee( adaptive_young_list_length(), "should not call this otherwise" );
 
   size_t rs_lengths = _g1->young_list()->sampled_rs_lengths();
   if (rs_lengths > _rs_lengths_prediction) {
     // add 10% to avoid having to recalculate often
     size_t rs_lengths_prediction = rs_lengths * 1100 / 1000;
-    calculate_young_list_target_length(rs_lengths_prediction);
+    update_young_list_target_length(rs_lengths_prediction);
   }
 }
+
+
 
 HeapWord* G1CollectorPolicy::mem_allocate_work(size_t size,
                                                bool is_tlab,
@@ -855,8 +883,7 @@ void G1CollectorPolicy::record_full_collection_end() {
   _free_regions_at_end_of_collection = _g1->free_regions();
   // Reset survivors SurvRateGroup.
   _survivor_surv_rate_group->reset();
-  calculate_young_list_min_length();
-  calculate_young_list_target_length();
+  update_young_list_target_length();
 }
 
 void G1CollectorPolicy::record_stop_world_start() {
@@ -870,6 +897,11 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
     gclog_or_tty->print("[GC pause");
     gclog_or_tty->print(" (%s)", full_young_gcs() ? "young" : "partial");
   }
+
+  // We only need to do this here as the policy will only be applied
+  // to the GC we're about to start. so, no point is calculating this
+  // every time we calculate / recalculate the target young length.
+  update_survivors_policy();
 
   assert(_g1->used() == _g1->recalculate_used(),
          err_msg("sanity, used: "SIZE_FORMAT" recalculate_used: "SIZE_FORMAT,
@@ -996,8 +1028,6 @@ G1CollectorPolicy::record_concurrent_mark_cleanup_completed() {
   _should_revert_to_full_young_gcs = false;
   _last_full_young_gc = true;
   _in_marking_window = false;
-  if (adaptive_young_list_length())
-    calculate_young_list_target_length();
 }
 
 void G1CollectorPolicy::record_concurrent_pause() {
@@ -1648,8 +1678,7 @@ void G1CollectorPolicy::record_collection_pause_end() {
   _in_marking_window = new_in_marking_window;
   _in_marking_window_im = new_in_marking_window_im;
   _free_regions_at_end_of_collection = _g1->free_regions();
-  calculate_young_list_min_length();
-  calculate_young_list_target_length();
+  update_young_list_target_length();
 
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
   double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
@@ -2324,7 +2353,7 @@ size_t G1CollectorPolicy::max_regions(int purpose) {
   };
 }
 
-void G1CollectorPolicy::calculate_max_gc_locker_expansion() {
+void G1CollectorPolicy::update_max_gc_locker_expansion() {
   size_t expansion_region_num = 0;
   if (GCLockerEdenExpansionPercent > 0) {
     double perc = (double) GCLockerEdenExpansionPercent / 100.0;
@@ -2340,9 +2369,13 @@ void G1CollectorPolicy::calculate_max_gc_locker_expansion() {
 }
 
 // Calculates survivor space parameters.
-void G1CollectorPolicy::calculate_survivors_policy()
-{
-  _max_survivor_regions = _young_list_target_length / SurvivorRatio;
+void G1CollectorPolicy::update_survivors_policy() {
+  double max_survivor_regions_d =
+                 (double) _young_list_target_length / (double) SurvivorRatio;
+  // We use ceiling so that if max_survivor_regions_d is > 0.0 (but
+  // smaller than 1.0) we'll get 1.
+  _max_survivor_regions = (size_t) ceil(max_survivor_regions_d);
+
   _tenuring_threshold = _survivors_age_table.compute_tenuring_threshold(
         HeapRegion::GrainWords * _max_survivor_regions);
 }

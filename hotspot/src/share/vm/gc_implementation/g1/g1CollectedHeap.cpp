@@ -1682,6 +1682,7 @@ bool G1CollectedHeap::expand(size_t expand_bytes) {
       }
       assert(curr == mr.end(), "post-condition");
     }
+    g1_policy()->calculate_reserve(n_regions());
   } else {
     ergo_verbose0(ErgoHeapSizing,
                   "did not expand the heap",
@@ -1732,6 +1733,7 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
     _expansion_regions += num_regions_deleted;
     update_committed_space(old_end, new_end);
     HeapRegionRemSet::shrink_heap(n_regions());
+    g1_policy()->calculate_reserve(n_regions());
   } else {
     ergo_verbose0(ErgoHeapSizing,
                   "did not shrink the heap",
