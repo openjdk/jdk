@@ -2706,11 +2706,10 @@ static void cleanup_after_large_page_init() {
 
 static bool numa_interleaving_init() {
   bool success = false;
-  bool use_numa_specified = !FLAG_IS_DEFAULT(UseNUMA);
   bool use_numa_interleaving_specified = !FLAG_IS_DEFAULT(UseNUMAInterleaving);
 
-  // print a warning if UseNUMA or UseNUMAInterleaving flag is specified on command line
-  bool warn_on_failure =  use_numa_specified || use_numa_interleaving_specified;
+  // print a warning if UseNUMAInterleaving flag is specified on command line
+  bool warn_on_failure = use_numa_interleaving_specified;
 # define WARN(msg) if (warn_on_failure) { warning(msg); }
 
   // NUMAInterleaveGranularity cannot be less than vm_allocation_granularity (or _large_page_size if using large pages)
@@ -2720,7 +2719,7 @@ static bool numa_interleaving_init() {
   if (os::Kernel32Dll::NumaCallsAvailable()) {
     if (numa_node_list_holder.build()) {
       if (PrintMiscellaneous && Verbose) {
-        tty->print("NUMA UsedNodeCount=%d, namely ", os::numa_get_groups_num());
+        tty->print("NUMA UsedNodeCount=%d, namely ", numa_node_list_holder.get_count());
         for (int i = 0; i < numa_node_list_holder.get_count(); i++) {
           tty->print("%d ", numa_node_list_holder.get_node_list_entry(i));
         }
@@ -2734,7 +2733,6 @@ static bool numa_interleaving_init() {
     WARN("NUMA Interleaving is not supported by the operating system.");
   }
   if (!success) {
-    if (use_numa_specified) WARN("...Ignoring UseNUMA flag.");
     if (use_numa_interleaving_specified) WARN("...Ignoring UseNUMAInterleaving flag.");
   }
   return success;
@@ -2816,7 +2814,8 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags, 
                                       prot);
       } else {
         // get the next node to use from the used_node_list
-        DWORD node = numa_node_list_holder.get_node_list_entry(count % os::numa_get_groups_num());
+        assert(numa_node_list_holder.get_count() > 0, "Multiple NUMA nodes expected");
+        DWORD node = numa_node_list_holder.get_node_list_entry(count % numa_node_list_holder.get_count());
         p_new = (char *)os::Kernel32Dll::VirtualAllocExNuma(hProc,
                                                             next_alloc_addr,
                                                             bytes_to_rq,
@@ -3132,15 +3131,21 @@ void os::free_memory(char *addr, size_t bytes)         { }
 void os::numa_make_global(char *addr, size_t bytes)    { }
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint)    { }
 bool os::numa_topology_changed()                       { return false; }
-size_t os::numa_get_groups_num()                       { return numa_node_list_holder.get_count(); }
+size_t os::numa_get_groups_num()                       { return MAX2(numa_node_list_holder.get_count(), 1); }
 int os::numa_get_group_id()                            { return 0; }
 size_t os::numa_get_leaf_groups(int *ids, size_t size) {
-  // check for size bigger than actual groups_num
-  size = MIN2(size, numa_get_groups_num());
-  for (int i = 0; i < (int)size; i++) {
-    ids[i] = numa_node_list_holder.get_node_list_entry(i);
+  if (numa_node_list_holder.get_count() == 0 && size > 0) {
+    // Provide an answer for UMA systems
+    ids[0] = 0;
+    return 1;
+  } else {
+    // check for size bigger than actual groups_num
+    size = MIN2(size, numa_get_groups_num());
+    for (int i = 0; i < (int)size; i++) {
+      ids[i] = numa_node_list_holder.get_node_list_entry(i);
+    }
+    return size;
   }
-  return size;
 }
 
 bool os::get_page_info(char *start, page_info* info) {
@@ -3767,6 +3772,10 @@ jint os::init_2(void) {
 
   // initialize thread priority policy
   prio_init();
+
+  if (UseNUMA && !ForceNUMA) {
+    UseNUMA = false; // We don't fully support this yet
+  }
 
   if (UseNUMAInterleaving) {
     // first check whether this Windows OS supports VirtualAllocExNuma, if not ignore this flag
