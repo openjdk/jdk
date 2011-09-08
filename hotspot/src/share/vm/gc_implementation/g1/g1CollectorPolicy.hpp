@@ -185,6 +185,7 @@ protected:
   bool _adaptive_young_list_length;
   size_t _young_list_target_length;
   size_t _young_list_fixed_length;
+  size_t _prev_eden_capacity; // used for logging
 
   // The max number of regions we can extend the eden by while the GC
   // locker is active. This should be >= _young_list_target_length;
@@ -244,6 +245,10 @@ private:
   TruncatedSeq* _young_gc_eff_seq;
 
   TruncatedSeq* _max_conc_overhead_seq;
+
+  bool   _using_new_ratio_calculations;
+  size_t _min_desired_young_length; // as set on the command line or default calculations
+  size_t _max_desired_young_length; // as set on the command line or default calculations
 
   size_t _recorded_young_regions;
   size_t _recorded_non_young_regions;
@@ -826,9 +831,8 @@ public:
     return _all_pause_times_ms->num() + 1;
   }
 
-  // Recalculate the reserve region number. This should be called
-  // after the heap is resized.
-  void calculate_reserve(size_t all_regions);
+  // This should be called after the heap is resized.
+  void record_new_heap_size(size_t new_number_of_regions);
 
 protected:
 
@@ -840,6 +844,8 @@ protected:
   void record_concurrent_mark_cleanup_end_work1(size_t freed_bytes,
                                                 size_t max_live_bytes);
   void record_concurrent_mark_cleanup_end_work2();
+
+  void update_young_list_size_using_newratio(size_t number_of_heap_regions);
 
 public:
 

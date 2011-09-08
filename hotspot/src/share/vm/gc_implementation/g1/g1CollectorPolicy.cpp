@@ -146,6 +146,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _stop_world_start(0.0),
   _all_stop_world_times_ms(new NumberSeq()),
   _all_yield_times_ms(new NumberSeq()),
+  _using_new_ratio_calculations(false),
 
   _all_mod_union_times_ms(new NumberSeq()),
 
@@ -430,7 +431,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
             "it's been updated to %u", reserve_perc);
   }
   _reserve_factor = (double) reserve_perc / 100.0;
-  // This will be set in calculate_reserve() when the heap is expanded
+  // This will be set when the heap is expanded
   // for the first time during initialization.
   _reserve_regions = 0;
 
@@ -458,16 +459,15 @@ void G1CollectorPolicy::initialize_flags() {
 // ParallelScavengeHeap::initialize()). We might change this in the
 // future, but it's a good start.
 class G1YoungGenSizer : public TwoGenerationCollectorPolicy {
-  size_t size_to_region_num(size_t byte_size) {
-    return MAX2((size_t) 1, byte_size / HeapRegion::GrainBytes);
-  }
 
 public:
   G1YoungGenSizer() {
     initialize_flags();
     initialize_size_info();
   }
-
+  size_t size_to_region_num(size_t byte_size) {
+    return MAX2((size_t) 1, byte_size / HeapRegion::GrainBytes);
+  }
   size_t min_young_region_num() {
     return size_to_region_num(_min_gen0_size);
   }
@@ -479,6 +479,13 @@ public:
   }
 };
 
+void G1CollectorPolicy::update_young_list_size_using_newratio(size_t number_of_heap_regions) {
+  assert(number_of_heap_regions > 0, "Heap must be initialized");
+  size_t young_size = number_of_heap_regions / (NewRatio + 1);
+  _min_desired_young_length = young_size;
+  _max_desired_young_length = young_size;
+}
+
 void G1CollectorPolicy::init() {
   // Set aside an initial future to_space.
   _g1 = G1CollectedHeap::heap();
@@ -489,16 +496,35 @@ void G1CollectorPolicy::init() {
 
   G1YoungGenSizer sizer;
   size_t initial_region_num = sizer.initial_young_region_num();
+  _min_desired_young_length = sizer.min_young_region_num();
+  _max_desired_young_length = sizer.max_young_region_num();
 
-  if (UseAdaptiveSizePolicy) {
-    set_adaptive_young_list_length(true);
+  if (FLAG_IS_CMDLINE(NewRatio)) {
+    if (FLAG_IS_CMDLINE(NewSize) || FLAG_IS_CMDLINE(MaxNewSize)) {
+      gclog_or_tty->print_cr("-XX:NewSize and -XX:MaxNewSize overrides -XX:NewRatio");
+    } else {
+      // Treat NewRatio as a fixed size that is only recalculated when the heap size changes
+      size_t heap_regions = sizer.size_to_region_num(_g1->n_regions());
+      update_young_list_size_using_newratio(heap_regions);
+      _using_new_ratio_calculations = true;
+    }
+  }
+
+  // GenCollectorPolicy guarantees that min <= initial <= max.
+  // Asserting here just to state that we rely on this property.
+  assert(_min_desired_young_length <= _max_desired_young_length, "Invalid min/max young gen size values");
+  assert(initial_region_num <= _max_desired_young_length, "Initial young gen size too large");
+  assert(_min_desired_young_length <= initial_region_num, "Initial young gen size too small");
+
+  set_adaptive_young_list_length(_min_desired_young_length < _max_desired_young_length);
+  if (adaptive_young_list_length()) {
     _young_list_fixed_length = 0;
   } else {
-    set_adaptive_young_list_length(false);
     _young_list_fixed_length = initial_region_num;
   }
   _free_regions_at_end_of_collection = _g1->free_regions();
   update_young_list_target_length();
+  _prev_eden_capacity = _young_list_target_length * HeapRegion::GrainBytes;
 
   // We may immediately start allocating regions and placing them on the
   // collection set list. Initialize the per-collection set info
@@ -541,11 +567,18 @@ bool G1CollectorPolicy::predict_will_fit(size_t young_length,
   return true;
 }
 
-void G1CollectorPolicy::calculate_reserve(size_t all_regions) {
-  double reserve_regions_d = (double) all_regions * _reserve_factor;
+void G1CollectorPolicy::record_new_heap_size(size_t new_number_of_regions) {
+  // re-calculate the necessary reserve
+  double reserve_regions_d = (double) new_number_of_regions * _reserve_factor;
   // We use ceiling so that if reserve_regions_d is > 0.0 (but
   // smaller than 1.0) we'll get 1.
   _reserve_regions = (size_t) ceil(reserve_regions_d);
+
+  if (_using_new_ratio_calculations) {
+    // -XX:NewRatio was specified so we need to update the
+    // young gen length when the heap size has changed.
+    update_young_list_size_using_newratio(new_number_of_regions);
+  }
 }
 
 size_t G1CollectorPolicy::calculate_young_list_desired_min_length(
@@ -561,16 +594,16 @@ size_t G1CollectorPolicy::calculate_young_list_desired_min_length(
       // otherwise we don't have enough info to make the prediction
     }
   }
-  // Here, we might want to also take into account any additional
-  // constraints (i.e., user-defined minimum bound). Currently, we don't.
-  return base_min_length + desired_min_length;
+  desired_min_length += base_min_length;
+  // make sure we don't go below any user-defined minimum bound
+  return MAX2(_min_desired_young_length, desired_min_length);
 }
 
 size_t G1CollectorPolicy::calculate_young_list_desired_max_length() {
   // Here, we might want to also take into account any additional
   // constraints (i.e., user-defined minimum bound). Currently, we
   // effectively don't set this bound.
-  return _g1->n_regions();
+  return _max_desired_young_length;
 }
 
 void G1CollectorPolicy::update_young_list_target_length(size_t rs_lengths) {
@@ -1699,20 +1732,26 @@ void G1CollectorPolicy::print_heap_transition() {
     size_t used_before_gc = _cur_collection_pause_used_at_start_bytes;
     size_t used = _g1->used();
     size_t capacity = _g1->capacity();
+    size_t eden_capacity =
+      (_young_list_target_length * HeapRegion::GrainBytes) - survivor_bytes;
 
     gclog_or_tty->print_cr(
-         "   [Eden: "EXT_SIZE_FORMAT"->"EXT_SIZE_FORMAT" "
-             "Survivors: "EXT_SIZE_FORMAT"->"EXT_SIZE_FORMAT" "
-             "Heap: "EXT_SIZE_FORMAT"("EXT_SIZE_FORMAT")->"
-                     EXT_SIZE_FORMAT"("EXT_SIZE_FORMAT")]",
-             EXT_SIZE_PARAMS(_eden_bytes_before_gc),
-               EXT_SIZE_PARAMS(eden_bytes),
-             EXT_SIZE_PARAMS(_survivor_bytes_before_gc),
-               EXT_SIZE_PARAMS(survivor_bytes),
-             EXT_SIZE_PARAMS(used_before_gc),
-             EXT_SIZE_PARAMS(_capacity_before_gc),
-               EXT_SIZE_PARAMS(used),
-               EXT_SIZE_PARAMS(capacity));
+      "   [Eden: "EXT_SIZE_FORMAT"("EXT_SIZE_FORMAT")->"EXT_SIZE_FORMAT"("EXT_SIZE_FORMAT") "
+      "Survivors: "EXT_SIZE_FORMAT"->"EXT_SIZE_FORMAT" "
+      "Heap: "EXT_SIZE_FORMAT"("EXT_SIZE_FORMAT")->"
+      EXT_SIZE_FORMAT"("EXT_SIZE_FORMAT")]",
+      EXT_SIZE_PARAMS(_eden_bytes_before_gc),
+      EXT_SIZE_PARAMS(_prev_eden_capacity),
+      EXT_SIZE_PARAMS(eden_bytes),
+      EXT_SIZE_PARAMS(eden_capacity),
+      EXT_SIZE_PARAMS(_survivor_bytes_before_gc),
+      EXT_SIZE_PARAMS(survivor_bytes),
+      EXT_SIZE_PARAMS(used_before_gc),
+      EXT_SIZE_PARAMS(_capacity_before_gc),
+      EXT_SIZE_PARAMS(used),
+      EXT_SIZE_PARAMS(capacity));
+
+    _prev_eden_capacity = eden_capacity;
   } else if (PrintGC) {
     _g1->print_size_transition(gclog_or_tty,
                                _cur_collection_pause_used_at_start_bytes,

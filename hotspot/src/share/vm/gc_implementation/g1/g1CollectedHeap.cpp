@@ -1682,7 +1682,7 @@ bool G1CollectedHeap::expand(size_t expand_bytes) {
       }
       assert(curr == mr.end(), "post-condition");
     }
-    g1_policy()->calculate_reserve(n_regions());
+    g1_policy()->record_new_heap_size(n_regions());
   } else {
     ergo_verbose0(ErgoHeapSizing,
                   "did not expand the heap",
@@ -1733,7 +1733,7 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
     _expansion_regions += num_regions_deleted;
     update_committed_space(old_end, new_end);
     HeapRegionRemSet::shrink_heap(n_regions());
-    g1_policy()->calculate_reserve(n_regions());
+    g1_policy()->record_new_heap_size(n_regions());
   } else {
     ergo_verbose0(ErgoHeapSizing,
                   "did not shrink the heap",
@@ -3524,6 +3524,19 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 #endif // YOUNG_LIST_VERBOSE
 
       init_mutator_alloc_region();
+
+      {
+        size_t expand_bytes = g1_policy()->expansion_amount();
+        if (expand_bytes > 0) {
+          size_t bytes_before = capacity();
+          if (!expand(expand_bytes)) {
+            // We failed to expand the heap so let's verify that
+            // committed/uncommitted amount match the backing store
+            assert(capacity() == _g1_storage.committed_size(), "committed size mismatch");
+            assert(max_capacity() == _g1_storage.reserved_size(), "reserved size mismatch");
+          }
+        }
+      }
 
       double end_time_sec = os::elapsedTime();
       double pause_time_ms = (end_time_sec - start_time_sec) * MILLIUNITS;
