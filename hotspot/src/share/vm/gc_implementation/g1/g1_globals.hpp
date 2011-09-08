@@ -228,7 +228,7 @@
           "the number of regions for which we'll print a surv rate "        \
           "summary.")                                                       \
                                                                             \
-  product(intx, G1ReservePercent, 10,                                       \
+  product(uintx, G1ReservePercent, 10,                                      \
           "It determines the minimum reserve we should have in the heap "   \
           "to minimize the probability of promotion failure.")              \
                                                                             \

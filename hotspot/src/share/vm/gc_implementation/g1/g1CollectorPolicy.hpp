@@ -183,7 +183,6 @@ protected:
   // if true, then it tries to dynamically adjust the length of the
   // young list
   bool _adaptive_young_list_length;
-  size_t _young_list_min_length;
   size_t _young_list_target_length;
   size_t _young_list_fixed_length;
 
@@ -206,6 +205,9 @@ protected:
   // add here any more surv rate groups
 
   double                _gc_overhead_perc;
+
+  double _reserve_factor;
+  size_t _reserve_regions;
 
   bool during_marking() {
     return _during_marking;
@@ -455,12 +457,6 @@ public:
                                       size_t scanned_cards);
   size_t predict_bytes_to_copy(HeapRegion* hr);
   double predict_region_elapsed_time_ms(HeapRegion* hr, bool young);
-
-    // for use by: calculate_young_list_target_length(rs_length)
-  bool predict_will_fit(size_t young_region_num,
-                        double base_time_ms,
-                        size_t init_free_regions,
-                        double target_pause_time_ms);
 
   void start_recording_regions();
   void record_cset_region_info(HeapRegion* hr, bool young);
@@ -771,9 +767,41 @@ protected:
   double _mark_cleanup_start_sec;
   double _mark_closure_time_ms;
 
-  void   calculate_young_list_min_length();
-  void   calculate_young_list_target_length();
-  void   calculate_young_list_target_length(size_t rs_lengths);
+  // Update the young list target length either by setting it to the
+  // desired fixed value or by calculating it using G1's pause
+  // prediction model. If no rs_lengths parameter is passed, predict
+  // the RS lengths using the prediction model, otherwise use the
+  // given rs_lengths as the prediction.
+  void update_young_list_target_length(size_t rs_lengths = (size_t) -1);
+
+  // Calculate and return the minimum desired young list target
+  // length. This is the minimum desired young list length according
+  // to the user's inputs.
+  size_t calculate_young_list_desired_min_length(size_t base_min_length);
+
+  // Calculate and return the maximum desired young list target
+  // length. This is the maximum desired young list length according
+  // to the user's inputs.
+  size_t calculate_young_list_desired_max_length();
+
+  // Calculate and return the maximum young list target length that
+  // can fit into the pause time goal. The parameters are: rs_lengths
+  // represent the prediction of how large the young RSet lengths will
+  // be, base_min_length is the alreay existing number of regions in
+  // the young list, min_length and max_length are the desired min and
+  // max young list length according to the user's inputs.
+  size_t calculate_young_list_target_length(size_t rs_lengths,
+                                            size_t base_min_length,
+                                            size_t desired_min_length,
+                                            size_t desired_max_length);
+
+  // Check whether a given young length (young_length) fits into the
+  // given target pause time and whether the prediction for the amount
+  // of objects to be copied for the given length will fit into the
+  // given free space (expressed by base_free_regions).  It is used by
+  // calculate_young_list_target_length().
+  bool predict_will_fit(size_t young_length, double base_time_ms,
+                        size_t base_free_regions, double target_pause_time_ms);
 
 public:
 
@@ -785,7 +813,10 @@ public:
     return CollectorPolicy::G1CollectorPolicyKind;
   }
 
-  void check_prediction_validity();
+  // Check the current value of the young list RSet lengths and
+  // compare it against the last prediction. If the current value is
+  // higher, recalculate the young list target length prediction.
+  void revise_young_list_target_length_if_necessary();
 
   size_t bytes_in_collection_set() {
     return _bytes_in_collection_set_before_gc;
@@ -794,6 +825,10 @@ public:
   unsigned calc_gc_alloc_time_stamp() {
     return _all_pause_times_ms->num() + 1;
   }
+
+  // Recalculate the reserve region number. This should be called
+  // after the heap is resized.
+  void calculate_reserve(size_t all_regions);
 
 protected:
 
@@ -1203,10 +1238,10 @@ public:
     _survivors_age_table.merge_par(age_table);
   }
 
-  void calculate_max_gc_locker_expansion();
+  void update_max_gc_locker_expansion();
 
   // Calculates survivor space parameters.
-  void calculate_survivors_policy();
+  void update_survivors_policy();
 
 };
 
