@@ -3018,9 +3018,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   }
 
 #ifdef JAVASE_EMBEDDED
-  #ifdef PPC
-    UNSUPPORTED_OPTION(EnableInvokeDynamic, "Invoke dynamic");
-  #endif
   UNSUPPORTED_OPTION(UseG1GC, "G1 GC");
 #endif
 
