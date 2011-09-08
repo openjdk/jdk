@@ -771,7 +771,7 @@ class java_lang_ref_Reference: AllStatic {
     ref->obj_field_put(referent_offset, value);
   }
   static void set_referent_raw(oop ref, oop value) {
-    ref->obj_field_raw_put(referent_offset, value);
+    ref->obj_field_put_raw(referent_offset, value);
   }
   static HeapWord* referent_addr(oop ref) {
     return ref->obj_field_addr<HeapWord>(referent_offset);
@@ -783,7 +783,7 @@ class java_lang_ref_Reference: AllStatic {
     ref->obj_field_put(next_offset, value);
   }
   static void set_next_raw(oop ref, oop value) {
-    ref->obj_field_raw_put(next_offset, value);
+    ref->obj_field_put_raw(next_offset, value);
   }
   static HeapWord* next_addr(oop ref) {
     return ref->obj_field_addr<HeapWord>(next_offset);
@@ -795,7 +795,7 @@ class java_lang_ref_Reference: AllStatic {
     ref->obj_field_put(discovered_offset, value);
   }
   static void set_discovered_raw(oop ref, oop value) {
-    ref->obj_field_raw_put(discovered_offset, value);
+    ref->obj_field_put_raw(discovered_offset, value);
   }
   static HeapWord* discovered_addr(oop ref) {
     return ref->obj_field_addr<HeapWord>(discovered_offset);
@@ -1163,14 +1163,17 @@ private:
 
 public:
   // Accessors
-  static oop            target(oop site);
-  static void       set_target(oop site, oop target);
+  static oop              target(         oop site)             { return site->obj_field(             _target_offset);         }
+  static void         set_target(         oop site, oop target) {        site->obj_field_put(         _target_offset, target); }
 
-  static oop            caller_method(oop site);
-  static void       set_caller_method(oop site, oop ref);
+  static volatile oop     target_volatile(oop site)             { return site->obj_field_volatile(    _target_offset);         }
+  static void         set_target_volatile(oop site, oop target) {        site->obj_field_put_volatile(_target_offset, target); }
 
-  static jint           caller_bci(oop site);
-  static void       set_caller_bci(oop site, jint bci);
+  static oop              caller_method(oop site);
+  static void         set_caller_method(oop site, oop ref);
+
+  static jint             caller_bci(oop site);
+  static void         set_caller_bci(oop site, jint bci);
 
   // Testers
   static bool is_subclass(klassOop klass) {
