@@ -120,6 +120,8 @@ class MethodHandleNatives {
 
     static final int OP_ROT_ARGS_DOWN_LIMIT_BIAS;
 
+    static final boolean COUNT_GWT;
+
     private static native void registerNatives();
     static {
         registerNatives();
@@ -131,6 +133,7 @@ class MethodHandleNatives {
         k                           = getConstant(Constants.GC_OP_ROT_ARGS_DOWN_LIMIT_BIAS);
         OP_ROT_ARGS_DOWN_LIMIT_BIAS = (k != 0) ? (byte)k : -1;
         HAVE_RICOCHET_FRAMES        = (CONV_OP_IMPLEMENTED_MASK & (1<<OP_COLLECT_ARGS)) != 0;
+        COUNT_GWT                   = getConstant(Constants.GC_COUNT_GWT) != 0;
         //sun.reflect.Reflection.registerMethodsToFilter(MethodHandleImpl.class, "init");
     }
 
@@ -143,7 +146,8 @@ class MethodHandleNatives {
                 GC_JVM_PUSH_LIMIT = 0,
                 GC_JVM_STACK_MOVE_UNIT = 1,
                 GC_CONV_OP_IMPLEMENTED_MASK = 2,
-                GC_OP_ROT_ARGS_DOWN_LIMIT_BIAS = 3;
+                GC_OP_ROT_ARGS_DOWN_LIMIT_BIAS = 3,
+                GC_COUNT_GWT = 4;
         static final int
                 ETF_HANDLE_OR_METHOD_NAME = 0, // all available data (immediate MH or method)
                 ETF_DIRECT_HANDLE         = 1, // ultimate method handle (will be a DMH, may be self)
