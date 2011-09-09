@@ -1579,7 +1579,8 @@ typedef struct {
      */
     unsigned int thread_park_blocker : 1;
     unsigned int post_vm_init_hook_enabled : 1;
-    unsigned int : 30;
+    unsigned int pending_list_uses_discovered_field : 1;
+    unsigned int : 29;
     unsigned int : 32;
     unsigned int : 32;
 } jdk_version_info;
