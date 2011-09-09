@@ -425,6 +425,10 @@ class Socket implements java.io.Closeable {
         } catch (IOException e) {
             close();
             throw e;
+        } finally {
+            // if bind() or connect threw a runtime exception
+            if ((localAddr != null && !bound) || (address != null && !connected))
+                close();
         }
     }
 
