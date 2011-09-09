@@ -31,6 +31,7 @@
 #include "gc_implementation/g1/g1AllocRegion.inline.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
+#include "gc_implementation/g1/g1ErgoVerbose.hpp"
 #include "gc_implementation/g1/g1MarkSweep.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.inline.hpp"
@@ -577,6 +578,11 @@ HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool do_expand) {
     res = new_region_try_secondary_free_list();
   }
   if (res == NULL && do_expand) {
+    ergo_verbose1(ErgoHeapSizing,
+                  "attempt heap expansion",
+                  ergo_format_reason("region allocation request failed")
+                  ergo_format_byte("allocation request"),
+                  word_size * HeapWordSize);
     if (expand(word_size * HeapWordSize)) {
       // Even though the heap was expanded, it might not have reached
       // the desired size. So, we cannot assume that the allocation
@@ -790,6 +796,11 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
       // room available.
       assert(num_regions > fs, "earlier allocation should have succeeded");
 
+      ergo_verbose1(ErgoHeapSizing,
+                    "attempt heap expansion",
+                    ergo_format_reason("humongous allocation request failed")
+                    ergo_format_byte("allocation request"),
+                    word_size * HeapWordSize);
       if (expand((num_regions - fs) * HeapRegion::GrainBytes)) {
         // Even though the heap was expanded, it might not have
         // reached the desired size. So, we cannot assume that the
@@ -906,6 +917,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
 
       if (GC_locker::is_active_and_needs_gc()) {
         if (g1_policy()->can_expand_young_list()) {
+          // No need for an ergo verbose message here,
+          // can_expand_young_list() does this when it returns true.
           result = _mutator_alloc_region.attempt_allocation_force(word_size,
                                                       false /* bot_updates */);
           if (result != NULL) {
@@ -1477,63 +1490,34 @@ resize_if_necessary_after_full_collection(size_t word_size) {
   // we'll try to make the capacity smaller than it, not greater).
   maximum_desired_capacity =  MAX2(maximum_desired_capacity, min_heap_size);
 
-  if (PrintGC && Verbose) {
-    const double free_percentage =
-      (double) free_after_gc / (double) capacity_after_gc;
-    gclog_or_tty->print_cr("Computing new size after full GC ");
-    gclog_or_tty->print_cr("  "
-                           "  minimum_free_percentage: %6.2f",
-                           minimum_free_percentage);
-    gclog_or_tty->print_cr("  "
-                           "  maximum_free_percentage: %6.2f",
-                           maximum_free_percentage);
-    gclog_or_tty->print_cr("  "
-                           "  capacity: %6.1fK"
-                           "  minimum_desired_capacity: %6.1fK"
-                           "  maximum_desired_capacity: %6.1fK",
-                           (double) capacity_after_gc / (double) K,
-                           (double) minimum_desired_capacity / (double) K,
-                           (double) maximum_desired_capacity / (double) K);
-    gclog_or_tty->print_cr("  "
-                           "  free_after_gc: %6.1fK"
-                           "  used_after_gc: %6.1fK",
-                           (double) free_after_gc / (double) K,
-                           (double) used_after_gc / (double) K);
-    gclog_or_tty->print_cr("  "
-                           "   free_percentage: %6.2f",
-                           free_percentage);
-  }
   if (capacity_after_gc < minimum_desired_capacity) {
     // Don't expand unless it's significant
     size_t expand_bytes = minimum_desired_capacity - capacity_after_gc;
-    if (expand(expand_bytes)) {
-      if (PrintGC && Verbose) {
-        gclog_or_tty->print_cr("  "
-                               "  expanding:"
-                               "  max_heap_size: %6.1fK"
-                               "  minimum_desired_capacity: %6.1fK"
-                               "  expand_bytes: %6.1fK",
-                               (double) max_heap_size / (double) K,
-                               (double) minimum_desired_capacity / (double) K,
-                               (double) expand_bytes / (double) K);
-      }
-    }
+    ergo_verbose4(ErgoHeapSizing,
+                  "attempt heap expansion",
+                  ergo_format_reason("capacity lower than "
+                                     "min desired capacity after Full GC")
+                  ergo_format_byte("capacity")
+                  ergo_format_byte("occupancy")
+                  ergo_format_byte_perc("min desired capacity"),
+                  capacity_after_gc, used_after_gc,
+                  minimum_desired_capacity, (double) MinHeapFreeRatio);
+    expand(expand_bytes);
 
     // No expansion, now see if we want to shrink
   } else if (capacity_after_gc > maximum_desired_capacity) {
     // Capacity too large, compute shrinking size
     size_t shrink_bytes = capacity_after_gc - maximum_desired_capacity;
+    ergo_verbose4(ErgoHeapSizing,
+                  "attempt heap shrinking",
+                  ergo_format_reason("capacity higher than "
+                                     "max desired capacity after Full GC")
+                  ergo_format_byte("capacity")
+                  ergo_format_byte("occupancy")
+                  ergo_format_byte_perc("max desired capacity"),
+                  capacity_after_gc, used_after_gc,
+                  maximum_desired_capacity, (double) MaxHeapFreeRatio);
     shrink(shrink_bytes);
-    if (PrintGC && Verbose) {
-      gclog_or_tty->print_cr("  "
-                             "  shrinking:"
-                             "  min_heap_size: %6.1fK"
-                             "  maximum_desired_capacity: %6.1fK"
-                             "  shrink_bytes: %6.1fK",
-                             (double) min_heap_size / (double) K,
-                             (double) maximum_desired_capacity / (double) K,
-                             (double) shrink_bytes / (double) K);
-    }
   }
 }
 
@@ -1619,6 +1603,11 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
   verify_region_sets_optional();
 
   size_t expand_bytes = MAX2(word_size * HeapWordSize, MinHeapDeltaBytes);
+  ergo_verbose1(ErgoHeapSizing,
+                "attempt heap expansion",
+                ergo_format_reason("allocation request failed")
+                ergo_format_byte("allocation request"),
+                word_size * HeapWordSize);
   if (expand(expand_bytes)) {
     _hrs.verify_optional();
     verify_region_sets_optional();
@@ -1646,11 +1635,11 @@ bool G1CollectedHeap::expand(size_t expand_bytes) {
   size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
   aligned_expand_bytes = align_size_up(aligned_expand_bytes,
                                        HeapRegion::GrainBytes);
-
-  if (Verbose && PrintGC) {
-    gclog_or_tty->print("Expanding garbage-first heap from %ldK by %ldK",
-                           old_mem_size/K, aligned_expand_bytes/K);
-  }
+  ergo_verbose2(ErgoHeapSizing,
+                "expand the heap",
+                ergo_format_byte("requested expansion amount")
+                ergo_format_byte("attempted expansion amount"),
+                expand_bytes, aligned_expand_bytes);
 
   // First commit the memory.
   HeapWord* old_end = (HeapWord*) _g1_storage.high();
@@ -1693,7 +1682,11 @@ bool G1CollectedHeap::expand(size_t expand_bytes) {
       }
       assert(curr == mr.end(), "post-condition");
     }
+    g1_policy()->record_new_heap_size(n_regions());
   } else {
+    ergo_verbose0(ErgoHeapSizing,
+                  "did not expand the heap",
+                  ergo_format_reason("heap expansion operation failed"));
     // The expansion of the virtual storage space was unsuccessful.
     // Let's see if it was because we ran out of swap.
     if (G1ExitOnExpansionFailure &&
@@ -1701,13 +1694,6 @@ bool G1CollectedHeap::expand(size_t expand_bytes) {
       // We had head room...
       vm_exit_out_of_memory(aligned_expand_bytes, "G1 heap expansion");
     }
-  }
-
-  if (Verbose && PrintGC) {
-    size_t new_mem_size = _g1_storage.committed_size();
-    gclog_or_tty->print_cr("...%s, expanded to %ldK",
-                           (successful ? "Successful" : "Failed"),
-                           new_mem_size/K);
   }
   return successful;
 }
@@ -1722,6 +1708,13 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
   MemRegion mr = _hrs.shrink_by(aligned_shrink_bytes, &num_regions_deleted);
   HeapWord* old_end = (HeapWord*) _g1_storage.high();
   assert(mr.end() == old_end, "post-condition");
+
+  ergo_verbose3(ErgoHeapSizing,
+                "shrink the heap",
+                ergo_format_byte("requested shrinking amount")
+                ergo_format_byte("aligned shrinking amount")
+                ergo_format_byte("attempted shrinking amount"),
+                shrink_bytes, aligned_shrink_bytes, mr.byte_size());
   if (mr.byte_size() > 0) {
     if (_hr_printer.is_active()) {
       HeapWord* curr = mr.end();
@@ -1740,13 +1733,11 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
     _expansion_regions += num_regions_deleted;
     update_committed_space(old_end, new_end);
     HeapRegionRemSet::shrink_heap(n_regions());
-
-    if (Verbose && PrintGC) {
-      size_t new_mem_size = _g1_storage.committed_size();
-      gclog_or_tty->print_cr("Shrinking garbage-first heap from %ldK by %ldK to %ldK",
-                             old_mem_size/K, aligned_shrink_bytes/K,
-                             new_mem_size/K);
-    }
+    g1_policy()->record_new_heap_size(n_regions());
+  } else {
+    ergo_verbose0(ErgoHeapSizing,
+                  "did not shrink the heap",
+                  ergo_format_reason("heap shrinking operation failed"));
   }
 }
 
@@ -3534,6 +3525,19 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
       init_mutator_alloc_region();
 
+      {
+        size_t expand_bytes = g1_policy()->expansion_amount();
+        if (expand_bytes > 0) {
+          size_t bytes_before = capacity();
+          if (!expand(expand_bytes)) {
+            // We failed to expand the heap so let's verify that
+            // committed/uncommitted amount match the backing store
+            assert(capacity() == _g1_storage.committed_size(), "committed size mismatch");
+            assert(max_capacity() == _g1_storage.reserved_size(), "reserved size mismatch");
+          }
+        }
+      }
+
       double end_time_sec = os::elapsedTime();
       double pause_time_ms = (end_time_sec - start_time_sec) * MILLIUNITS;
       g1_policy()->record_pause_time_ms(pause_time_ms);
@@ -3579,6 +3583,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         size_t expand_bytes = g1_policy()->expansion_amount();
         if (expand_bytes > 0) {
           size_t bytes_before = capacity();
+          // No need for an ergo verbose message here,
+          // expansion_amount() does this when it returns a value > 0.
           if (!expand(expand_bytes)) {
             // We failed to expand the heap so let's verify that
             // committed/uncommitted amount match the backing store
@@ -3732,13 +3738,6 @@ public:
   bool do_object_b(oop p) {
     // It is reachable if it is outside the collection set, or is inside
     // and forwarded.
-
-#ifdef G1_DEBUG
-    gclog_or_tty->print_cr("is alive "PTR_FORMAT" in CS %d forwarded %d overall %d",
-                           (void*) p, _g1->obj_in_cs(p), p->is_forwarded(),
-                           !_g1->obj_in_cs(p) || p->is_forwarded());
-#endif // G1_DEBUG
-
     return !_g1->obj_in_cs(p) || p->is_forwarded();
   }
 };
@@ -3750,20 +3749,9 @@ public:
   void do_oop(narrowOop* p) { guarantee(false, "Not needed"); }
   void do_oop(      oop* p) {
     oop obj = *p;
-#ifdef G1_DEBUG
-    if (PrintGC && Verbose) {
-      gclog_or_tty->print_cr("keep alive *"PTR_FORMAT" = "PTR_FORMAT" "PTR_FORMAT,
-                             p, (void*) obj, (void*) *p);
-    }
-#endif // G1_DEBUG
-
     if (_g1->obj_in_cs(obj)) {
       assert( obj->is_forwarded(), "invariant" );
       *p = obj->forwardee();
-#ifdef G1_DEBUG
-      gclog_or_tty->print_cr("     in CSet: moved "PTR_FORMAT" -> "PTR_FORMAT,
-                             (void*) obj, (void*) *p);
-#endif // G1_DEBUG
     }
   }
 };
@@ -4613,7 +4601,6 @@ g1_process_strong_roots(bool collecting_perm_gen,
     // keep entries (which are added by the marking threads) on them
     // live until they can be processed at the end of marking.
     ref_processor()->weak_oops_do(&buf_scan_non_heap_roots);
-    ref_processor()->oops_do(&buf_scan_non_heap_roots);
   }
 
   // Finish up any enqueued closure apps (attributed as object copy time).
