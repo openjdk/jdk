@@ -22,16 +22,16 @@
  *
  */
 
-package sun.jvm.hotspot.code;
+package sun.jvm.hotspot.runtime.sparc;
 
 import java.util.*;
+import sun.jvm.hotspot.asm.sparc.SPARCRegister;
+import sun.jvm.hotspot.asm.sparc.SPARCRegisters;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 
-/** RicochetBlob (currently only used by Compiler 2) */
-
-public class RicochetBlob extends SingletonBlob {
+public class SPARCRicochetFrame {
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -40,31 +40,38 @@ public class RicochetBlob extends SingletonBlob {
       });
   }
 
+  private SPARCFrame frame;
+
   private static void initialize(TypeDataBase db) {
-    Type type = db.lookupType("RicochetBlob");
+    // Type type = db.lookupType("MethodHandles::RicochetFrame");
 
-    bounceOffsetField                = type.getCIntegerField("_bounce_offset");
-    exceptionOffsetField             = type.getCIntegerField("_exception_offset");
   }
 
-  private static CIntegerField bounceOffsetField;
-  private static CIntegerField exceptionOffsetField;
-
-  public RicochetBlob(Address addr) {
-    super(addr);
+  static SPARCRicochetFrame fromFrame(SPARCFrame f) {
+    return new SPARCRicochetFrame(f);
   }
 
-  public boolean isRicochetBlob() {
-    return true;
+  private SPARCRicochetFrame(SPARCFrame f) {
+    frame = f;
   }
 
-  public Address bounceAddr() {
-    return codeBegin().addOffsetTo(bounceOffsetField.getValue(addr));
+  private Address registerValue(SPARCRegister reg) {
+    return frame.getSP().addOffsetTo(reg.spOffsetInSavedWindow()).getAddressAt(0);
   }
 
-  public boolean returnsToBounceAddr(Address pc) {
-    Address bouncePc = bounceAddr();
-    return (pc.equals(bouncePc) || pc.addOffsetTo(Frame.pcReturnOffset()).equals(bouncePc));
+  public Address savedArgsBase() {
+    return registerValue(SPARCRegisters.L4);
   }
-
+  public Address exactSenderSP() {
+    return registerValue(SPARCRegisters.I5);
+  }
+  public Address senderLink() {
+    return frame.getSenderSP();
+  }
+  public Address senderPC() {
+    return frame.getSenderPC();
+  }
+  public Address extendedSenderSP() {
+    return savedArgsBase();
+  }
 }

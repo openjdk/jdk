@@ -199,6 +199,9 @@ class StubRoutines: AllStatic {
   static address _arrayof_jshort_fill;
   static address _arrayof_jint_fill;
 
+  // zero heap space aligned to jlong (8 bytes)
+  static address _zero_aligned_words;
+
   // These are versions of the java.lang.Math methods which perform
   // the same operations as the intrinsic version.  They are used for
   // constant folding in the compiler to ensure equivalence.  If the
@@ -332,6 +335,7 @@ class StubRoutines: AllStatic {
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
 
+  static address zero_aligned_words()   { return _zero_aligned_words; }
 
   static double  intrinsic_log(double d) {
     assert(_intrinsic_log != NULL, "must be defined");

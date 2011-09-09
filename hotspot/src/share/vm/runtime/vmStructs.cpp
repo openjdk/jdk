@@ -652,6 +652,7 @@ static inline uint64_t cast_uint64_t(size_t x)
       static_field(SystemDictionary,            WK_KLASS(ThreadGroup_klass),                   klassOop)                             \
       static_field(SystemDictionary,            WK_KLASS(Properties_klass),                    klassOop)                             \
       static_field(SystemDictionary,            WK_KLASS(StringBuffer_klass),                  klassOop)                             \
+      static_field(SystemDictionary,            WK_KLASS(MethodHandle_klass),                  klassOop)                             \
       static_field(SystemDictionary,            _box_klasses[0],                               klassOop)                             \
       static_field(SystemDictionary,            _java_system_loader,                           oop)                                  \
                                                                                                                                      \
@@ -757,11 +758,18 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(PcDesc,                      _pc_offset,                                    int)                                   \
   nonstatic_field(PcDesc,                      _scope_decode_offset,                          int)                                   \
   nonstatic_field(PcDesc,                      _obj_decode_offset,                            int)                                   \
-  nonstatic_field(PcDesc,                      _flags,                        PcDesc::PcDescFlags)                                   \
+  nonstatic_field(PcDesc,                      _flags,                                        int)                                   \
                                                                                                                                      \
   /***************************************************/                                                                              \
   /* CodeBlobs (NOTE: incomplete, but only a little) */                                                                              \
   /***************************************************/                                                                              \
+                                                                                                                                     \
+  X86_ONLY(nonstatic_field(MethodHandles::RicochetFrame, _sender_pc,                                     address))                   \
+  X86_ONLY(nonstatic_field(MethodHandles::RicochetFrame, _exact_sender_sp,                              intptr_t*))                  \
+  X86_ONLY(nonstatic_field(MethodHandles::RicochetFrame, _sender_link,                                  intptr_t*))                  \
+  X86_ONLY(nonstatic_field(MethodHandles::RicochetFrame, _saved_args_base,                              intptr_t*))                  \
+                                                                                                                                     \
+     static_field(SharedRuntime,               _ricochet_blob,                                RicochetBlob*)                         \
                                                                                                                                      \
   nonstatic_field(CodeBlob,                    _name,                                         const char*)                           \
   nonstatic_field(CodeBlob,                    _size,                                         int)                                   \
@@ -773,6 +781,8 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(CodeBlob,                    _data_offset,                                  int)                                   \
   nonstatic_field(CodeBlob,                    _frame_size,                                   int)                                   \
   nonstatic_field(CodeBlob,                    _oop_maps,                                     OopMapSet*)                            \
+                                                                                                                                     \
+  nonstatic_field(RuntimeStub,                 _caller_must_gc_arguments,                     bool)                                  \
                                                                                                                                      \
   /**************************************************/                                                                               \
   /* NMethods (NOTE: incomplete, but only a little) */                                                                               \
@@ -786,6 +796,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(nmethod,             _state,                                        unsigned char)                         \
   nonstatic_field(nmethod,             _exception_offset,                             int)                                   \
   nonstatic_field(nmethod,             _deoptimize_offset,                            int)                                   \
+  nonstatic_field(nmethod,             _deoptimize_mh_offset,                         int)                                   \
   nonstatic_field(nmethod,             _orig_pc_offset,                               int)                                   \
   nonstatic_field(nmethod,             _stub_offset,                                  int)                                   \
   nonstatic_field(nmethod,             _consts_offset,                                int)                                   \
@@ -803,6 +814,9 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(nmethod,             _stack_traversal_mark,                         long)                                  \
   nonstatic_field(nmethod,             _compile_id,                                   int)                                   \
   nonstatic_field(nmethod,             _marked_for_deoptimization,                    bool)                                  \
+                                                                                                                                     \
+  nonstatic_field(RicochetBlob,        _bounce_offset,                                int)                                           \
+  nonstatic_field(RicochetBlob,        _exception_offset,                             int)                                           \
                                                                                                                                      \
   /********************************/                                                                                                 \
   /* JavaCalls (NOTE: incomplete) */                                                                                                 \
@@ -1310,24 +1324,27 @@ static inline uint64_t cast_uint64_t(size_t x)
   /* CodeBlob hierarchy (needed for run-time type information) */         \
   /*************************************************************/         \
                                                                           \
+  declare_toplevel_type(SharedRuntime)                                    \
+  X86_ONLY(declare_toplevel_type(MethodHandles::RicochetFrame))           \
+                                                                          \
   declare_toplevel_type(CodeBlob)                                         \
-  declare_type(BufferBlob,            CodeBlob)                           \
-  declare_type(AdapterBlob,           BufferBlob)                         \
-  declare_type(nmethod,               CodeBlob)                           \
-  declare_type(RuntimeStub,           CodeBlob)                           \
-  declare_type(SingletonBlob,         CodeBlob)                           \
-  declare_type(SafepointBlob,         SingletonBlob)                      \
-  declare_type(DeoptimizationBlob,    SingletonBlob)                      \
-  declare_type(RicochetBlob,          SingletonBlob)                      \
-  declare_c2_type(ExceptionBlob,      SingletonBlob)                      \
-  declare_c2_type(UncommonTrapBlob,   CodeBlob)                           \
+  declare_type(BufferBlob,               CodeBlob)                        \
+  declare_type(AdapterBlob,              BufferBlob)                      \
+  declare_type(MethodHandlesAdapterBlob, BufferBlob)                      \
+  declare_type(nmethod,                  CodeBlob)                        \
+  declare_type(RuntimeStub,              CodeBlob)                        \
+  declare_type(SingletonBlob,            CodeBlob)                        \
+  declare_type(SafepointBlob,            SingletonBlob)                   \
+  declare_type(DeoptimizationBlob,       SingletonBlob)                   \
+  declare_type(RicochetBlob,             SingletonBlob)                   \
+  declare_c2_type(ExceptionBlob,         SingletonBlob)                   \
+  declare_c2_type(UncommonTrapBlob,      CodeBlob)                        \
                                                                           \
   /***************************************/                               \
   /* PcDesc and other compiled code info */                               \
   /***************************************/                               \
                                                                           \
   declare_toplevel_type(PcDesc)                                           \
-  declare_integer_type(PcDesc::PcDescFlags)                               \
                                                                           \
   /************************/                                              \
   /* OopMap and OopMapSet */                                              \
@@ -1795,6 +1812,21 @@ static inline uint64_t cast_uint64_t(size_t x)
   /**********************/                                                \
                                                                           \
   declare_constant(ObjectSynchronizer::_BLOCKSIZE)                        \
+                                                                          \
+  /**********************/                                                \
+  /* PcDesc             */                                                \
+  /**********************/                                                \
+                                                                          \
+  declare_constant(PcDesc::PCDESC_reexecute)                              \
+  declare_constant(PcDesc::PCDESC_is_method_handle_invoke)                \
+  declare_constant(PcDesc::PCDESC_return_oop)                             \
+                                                                          \
+  /**********************/                                                \
+  /* frame              */                                                \
+  /**********************/                                                \
+                                                                          \
+  X86_ONLY(declare_constant(frame::entry_frame_call_wrapper_offset))      \
+  declare_constant(frame::pc_return_offset)                               \
                                                                           \
   /********************************/                                      \
   /* Calling convention constants */                                      \
