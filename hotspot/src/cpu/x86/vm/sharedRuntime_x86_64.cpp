@@ -2730,7 +2730,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ movl(rdx, Address(rdi, Deoptimization::UnrollBlock::number_of_frames_offset_in_bytes()));
 
   // Pick up the initial fp we should save
-  __ movptr(rbp, Address(rdi, Deoptimization::UnrollBlock::initial_fp_offset_in_bytes()));
+  __ movptr(rbp, Address(rdi, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
 
   // Now adjust the caller's stack to make up for the extra locals
   // but record the original sp so that we can save it in the skeletal interpreter
@@ -2922,7 +2922,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // Pick up the initial fp we should save
   __ movptr(rbp,
             Address(rdi,
-                    Deoptimization::UnrollBlock::initial_fp_offset_in_bytes()));
+                    Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
 
   // Now adjust the caller's stack to make up for the extra locals but
   // record the original sp so that we can save it in the skeletal
