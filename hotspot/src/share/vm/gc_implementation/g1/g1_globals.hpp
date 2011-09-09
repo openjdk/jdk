@@ -134,9 +134,9 @@
   develop(bool, G1RSCountHisto, false,                                      \
           "If true, print a histogram of RS occupancies after each pause")  \
                                                                             \
-  product(bool, G1PrintRegionLivenessInfo, false,                           \
-          "Prints the liveness information for all regions in the heap "    \
-          "at the end of a marking cycle.")                                 \
+  diagnostic(bool, G1PrintRegionLivenessInfo, false,                        \
+            "Prints the liveness information for all regions in the heap "  \
+            "at the end of a marking cycle.")                               \
                                                                             \
   develop(bool, G1PrintParCleanupStats, false,                              \
           "When true, print extra stats about parallel cleanup.")           \
