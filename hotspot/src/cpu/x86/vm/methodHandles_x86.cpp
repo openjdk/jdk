@@ -1343,6 +1343,13 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
     }
     break;
 
+  case _adapter_opt_profiling:
+    if (java_lang_invoke_CountingMethodHandle::vmcount_offset_in_bytes() != 0) {
+      Address rcx_mh_vmcount(rcx_recv, java_lang_invoke_CountingMethodHandle::vmcount_offset_in_bytes());
+      __ incrementl(rcx_mh_vmcount);
+    }
+    // fall through
+
   case _adapter_retype_only:
   case _adapter_retype_raw:
     // immediately jump to the next MH layer:

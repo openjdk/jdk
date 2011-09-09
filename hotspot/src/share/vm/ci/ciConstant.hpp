@@ -46,9 +46,6 @@ private:
     ciObject* _object;
   } _value;
 
-  // Implementation of the print method.
-  void print_impl(outputStream* st);
-
 public:
 
   ciConstant() {

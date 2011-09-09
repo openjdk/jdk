@@ -28,6 +28,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/debugInfo.hpp"
 #include "code/pcDesc.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -2323,6 +2324,8 @@ int java_lang_invoke_BoundMethodHandle::_vmargslot_offset;
 
 int java_lang_invoke_AdapterMethodHandle::_conversion_offset;
 
+int java_lang_invoke_CountingMethodHandle::_vmcount_offset;
+
 void java_lang_invoke_MethodHandle::compute_offsets() {
   klassOop k = SystemDictionary::MethodHandle_klass();
   if (k != NULL && EnableInvokeDynamic) {
@@ -2369,6 +2372,23 @@ void java_lang_invoke_AdapterMethodHandle::compute_offsets() {
   if (k != NULL && EnableInvokeDynamic) {
     compute_offset(_conversion_offset, k, vmSymbols::conversion_name(), vmSymbols::int_signature(), true);
   }
+}
+
+void java_lang_invoke_CountingMethodHandle::compute_offsets() {
+  klassOop k = SystemDictionary::CountingMethodHandle_klass();
+  if (k != NULL && EnableInvokeDynamic) {
+    compute_offset(_vmcount_offset, k, vmSymbols::vmcount_name(), vmSymbols::int_signature(), true);
+  }
+}
+
+int java_lang_invoke_CountingMethodHandle::vmcount(oop mh) {
+  assert(is_instance(mh), "CMH only");
+  return mh->int_field(_vmcount_offset);
+}
+
+void java_lang_invoke_CountingMethodHandle::set_vmcount(oop mh, int count) {
+  assert(is_instance(mh), "CMH only");
+  mh->int_field_put(_vmcount_offset, count);
 }
 
 oop java_lang_invoke_MethodHandle::type(oop mh) {
@@ -2673,6 +2693,17 @@ void java_lang_invoke_CallSite::compute_offsets() {
   klassOop k = SystemDictionary::CallSite_klass();
   if (k != NULL) {
     compute_offset(_target_offset, k, vmSymbols::target_name(), vmSymbols::java_lang_invoke_MethodHandle_signature());
+  }
+
+  // Disallow compilation of CallSite.setTargetNormal and CallSite.setTargetVolatile
+  // (For C2:  keep this until we have throttling logic for uncommon traps.)
+  if (k != NULL) {
+    instanceKlass* ik = instanceKlass::cast(k);
+    methodOop m_normal   = ik->lookup_method(vmSymbols::setTargetNormal_name(),   vmSymbols::setTarget_signature());
+    methodOop m_volatile = ik->lookup_method(vmSymbols::setTargetVolatile_name(), vmSymbols::setTarget_signature());
+    guarantee(m_normal && m_volatile, "must exist");
+    m_normal->set_not_compilable_quietly();
+    m_volatile->set_not_compilable_quietly();
   }
 }
 
@@ -3031,6 +3062,7 @@ void JavaClasses::compute_offsets() {
     java_lang_invoke_MethodType::compute_offsets();
     java_lang_invoke_MethodTypeForm::compute_offsets();
     java_lang_invoke_CallSite::compute_offsets();
+    java_lang_invoke_CountingMethodHandle::compute_offsets();
   }
   java_security_AccessControlContext::compute_offsets();
   // Initialize reflection classes. The layouts of these classes

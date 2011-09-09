@@ -2777,8 +2777,14 @@ int os::vm_allocation_granularity() {
 bool os::commit_memory(char* addr, size_t bytes, bool exec) {
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
   size_t size = bytes;
-  return
-     NULL != Solaris::mmap_chunk(addr, size, MAP_PRIVATE|MAP_FIXED, prot);
+  char *res = Solaris::mmap_chunk(addr, size, MAP_PRIVATE|MAP_FIXED, prot);
+  if (res != NULL) {
+    if (UseNUMAInterleaving) {
+      numa_make_global(addr, bytes);
+    }
+    return true;
+  }
+  return false;
 }
 
 bool os::commit_memory(char* addr, size_t bytes, size_t alignment_hint,
@@ -3389,12 +3395,11 @@ bool os::Solaris::set_mpss_range(caddr_t start, size_t bytes, size_t align) {
   return true;
 }
 
-char* os::reserve_memory_special(size_t bytes, char* addr, bool exec) {
+char* os::reserve_memory_special(size_t size, char* addr, bool exec) {
   // "exec" is passed in but not used.  Creating the shared image for
   // the code cache doesn't have an SHM_X executable permission to check.
   assert(UseLargePages && UseISM, "only for ISM large pages");
 
-  size_t size = bytes;
   char* retAddr = NULL;
   int shmid;
   key_t ismKey;
@@ -3436,7 +3441,9 @@ char* os::reserve_memory_special(size_t bytes, char* addr, bool exec) {
     }
     return NULL;
   }
-
+  if ((retAddr != NULL) && UseNUMAInterleaving) {
+    numa_make_global(retAddr, size);
+  }
   return retAddr;
 }
 
