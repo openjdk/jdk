@@ -2707,14 +2707,6 @@ void java_lang_invoke_CallSite::compute_offsets() {
   }
 }
 
-oop java_lang_invoke_CallSite::target(oop site) {
-  return site->obj_field(_target_offset);
-}
-
-void java_lang_invoke_CallSite::set_target(oop site, oop target) {
-  site->obj_field_put(_target_offset, target);
-}
-
 
 // Support for java_security_AccessControlContext
 

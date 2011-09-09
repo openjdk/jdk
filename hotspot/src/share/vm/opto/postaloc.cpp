@@ -72,7 +72,22 @@ bool PhaseChaitin::may_be_copy_of_callee( Node *def ) const {
   return i == limit;
 }
 
-
+//------------------------------yank-----------------------------------
+// Helper function for yank_if_dead
+int PhaseChaitin::yank( Node *old, Block *current_block, Node_List *value, Node_List *regnd ) {
+  int blk_adjust=0;
+  Block *oldb = _cfg._bbs[old->_idx];
+  oldb->find_remove(old);
+  // Count 1 if deleting an instruction from the current block
+  if( oldb == current_block ) blk_adjust++;
+  _cfg._bbs.map(old->_idx,NULL);
+  OptoReg::Name old_reg = lrgs(n2lidx(old)).reg();
+  if( regnd && (*regnd)[old_reg]==old ) { // Instruction is currently available?
+    value->map(old_reg,NULL);  // Yank from value/regnd maps
+    regnd->map(old_reg,NULL);  // This register's value is now unknown
+  }
+  return blk_adjust;
+}
 
 //------------------------------yank_if_dead-----------------------------------
 // Removed an edge from 'old'.  Yank if dead.  Return adjustment counts to
@@ -80,18 +95,20 @@ bool PhaseChaitin::may_be_copy_of_callee( Node *def ) const {
 int PhaseChaitin::yank_if_dead( Node *old, Block *current_block, Node_List *value, Node_List *regnd ) {
   int blk_adjust=0;
   while (old->outcnt() == 0 && old != C->top()) {
-    Block *oldb = _cfg._bbs[old->_idx];
-    oldb->find_remove(old);
-    // Count 1 if deleting an instruction from the current block
-    if( oldb == current_block ) blk_adjust++;
-    _cfg._bbs.map(old->_idx,NULL);
-    OptoReg::Name old_reg = lrgs(n2lidx(old)).reg();
-    if( regnd && (*regnd)[old_reg]==old ) { // Instruction is currently available?
-      value->map(old_reg,NULL);  // Yank from value/regnd maps
-      regnd->map(old_reg,NULL);  // This register's value is now unknown
+    blk_adjust += yank(old, current_block, value, regnd);
+
+    Node *tmp = NULL;
+    for (uint i = 1; i < old->req(); i++) {
+      if (old->in(i)->is_MachTemp()) {
+        Node* machtmp = old->in(i);
+        assert(machtmp->outcnt() == 1, "expected for a MachTemp");
+        blk_adjust += yank(machtmp, current_block, value, regnd);
+        machtmp->disconnect_inputs(NULL);
+      } else {
+        assert(tmp == NULL, "can't handle more non MachTemp inputs");
+        tmp = old->in(i);
+      }
     }
-    assert(old->req() <= 2, "can't handle more inputs");
-    Node *tmp = old->req() > 1 ? old->in(1) : NULL;
     old->disconnect_inputs(NULL);
     if( !tmp ) break;
     old = tmp;
