@@ -161,7 +161,7 @@ void MachBreakpointNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
 
 uint MachBreakpointNode::size(PhaseRegAlloc *ra_) const {
-  return 5;
+  return MachNode::size(ra_);
 }
 
 %}

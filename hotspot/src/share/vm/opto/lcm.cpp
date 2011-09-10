@@ -325,7 +325,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
       // that also need to be hoisted.
       for (DUIterator_Fast jmax, j = val->fast_outs(jmax); j < jmax; j++) {
         Node* n = val->fast_out(j);
-        if( n->Opcode() == Op_MachProj ) {
+        if( n->is_MachProj() ) {
           cfg->_bbs[n->_idx]->find_remove(n);
           this->add_inst(n);
           cfg->_bbs.map(n->_idx,this);
@@ -347,7 +347,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
   // Should be DU safe because no edge updates.
   for (DUIterator_Fast jmax, j = best->fast_outs(jmax); j < jmax; j++) {
     Node* n = best->fast_out(j);
-    if( n->Opcode() == Op_MachProj ) {
+    if( n->is_MachProj() ) {
       cfg->_bbs[n->_idx]->find_remove(n);
       add_inst(n);
       cfg->_bbs.map(n->_idx,this);
@@ -539,7 +539,7 @@ void Block::needed_for_next_call(Node *this_call, VectorSet &next_call, Block_Ar
     Node* m = this_call->fast_out(i);
     if( bbs[m->_idx] == this && // Local-block user
         m != this_call &&       // Not self-start node
-        m->is_Call() )
+        m->is_MachCall() )
       call = m;
       break;
   }
@@ -557,7 +557,7 @@ uint Block::sched_call( Matcher &matcher, Block_Array &bbs, uint node_cnt, Node_
   // Collect all the defined registers.
   for (DUIterator_Fast imax, i = mcall->fast_outs(imax); i < imax; i++) {
     Node* n = mcall->fast_out(i);
-    assert( n->Opcode()==Op_MachProj, "" );
+    assert( n->is_MachProj(), "" );
     --ready_cnt[n->_idx];
     assert( !ready_cnt[n->_idx], "" );
     // Schedule next to call
@@ -975,8 +975,8 @@ void Block::call_catch_cleanup(Block_Array &bbs) {
   if( !_nodes[end]->is_Catch() ) return;
   // Start of region to clone
   uint beg = end;
-  while( _nodes[beg-1]->Opcode() != Op_MachProj ||
-        !_nodes[beg-1]->in(0)->is_Call() ) {
+  while(!_nodes[beg-1]->is_MachProj() ||
+        !_nodes[beg-1]->in(0)->is_MachCall() ) {
     beg--;
     assert(beg > 0,"Catch cleanup walking beyond block boundary");
   }

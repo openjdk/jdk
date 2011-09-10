@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,8 +171,8 @@ final class CryptoAllPermissionCollection extends PermissionCollection
      *
      * @return an enumeration of all the CryptoAllPermission objects.
      */
-    public Enumeration elements() {
-        Vector v = new Vector(1);
+    public Enumeration<Permission> elements() {
+        Vector<Permission> v = new Vector<>(1);
         if (all_allowed) v.add(CryptoAllPermission.INSTANCE);
         return v.elements();
     }

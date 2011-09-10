@@ -26,6 +26,10 @@
  * @bug 4361124 4325806
  * @summary SSLServerSocket isn't throwing exceptions when negotiations are
  *      failing & java.net.SocketException: occures in Auth and clientmode
+ * @run main/othervm SSLSocketImplThrowsWrongExceptions
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  * @author Brad Wetmore
  */
 

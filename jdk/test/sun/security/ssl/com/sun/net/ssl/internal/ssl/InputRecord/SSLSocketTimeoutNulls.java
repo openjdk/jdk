@@ -27,7 +27,10 @@
  * @summary Setting timeouts on SSLSockets immediately return null
  *      after timeout occurs.  This bug was fixed as part of 4393337,
  *      but this is another bug we want to check regressions against.
- * @run main/timeout=140 SSLSocketTimeoutNulls
+ * @run main/othervm/timeout=140 SSLSocketTimeoutNulls
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  * @author Brad Wetmore
  */
 

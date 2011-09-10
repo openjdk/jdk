@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,7 @@ final class Obj {
     /**
      * @deprecated
      */
+    @Deprecated
     private static final int REMOTE_LOC = 7;
 
     // LDAP object classes to support Java objects
@@ -206,13 +207,13 @@ final class Obj {
         } else {
             StringTokenizer parser =
                 new StringTokenizer((String)codebaseAttr.get());
-            Vector vec = new Vector(10);
+            Vector<String> vec = new Vector<>(10);
             while (parser.hasMoreTokens()) {
                 vec.addElement(parser.nextToken());
             }
             String[] answer = new String[vec.size()];
             for (int i = 0; i < answer.length; i++) {
-                answer[i] = (String)vec.elementAt(i);
+                answer[i] = vec.elementAt(i);
             }
             return answer;
         }
@@ -410,10 +411,10 @@ final class Obj {
              * Temporary Vector for decoded RefAddr addresses - used to ensure
              * unordered addresses are correctly re-ordered.
              */
-            Vector refAddrList = new Vector();
+            Vector<RefAddr> refAddrList = new Vector<>();
             refAddrList.setSize(attr.size());
 
-            for (NamingEnumeration vals = attr.getAll(); vals.hasMore(); ) {
+            for (NamingEnumeration<?> vals = attr.getAll(); vals.hasMore(); ) {
 
                 val = (String)vals.next();
 
@@ -488,7 +489,7 @@ final class Obj {
 
             // Copy to real reference
             for (int i = 0; i < refAddrList.size(); i++) {
-                ref.add((RefAddr)refAddrList.elementAt(i));
+                ref.add(refAddrList.elementAt(i));
             }
         }
 
@@ -502,9 +503,9 @@ final class Obj {
 
         try {
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-            ObjectOutputStream serial = new ObjectOutputStream(bytes);
-            serial.writeObject(obj);
-            serial.close();
+            try (ObjectOutputStream serial = new ObjectOutputStream(bytes)) {
+                serial.writeObject(obj);
+            }
 
             return (bytes.toByteArray());
 
@@ -524,18 +525,14 @@ final class Obj {
         try {
             // Create ObjectInputStream for deserialization
             ByteArrayInputStream bytes = new ByteArrayInputStream(obj);
-            ObjectInputStream deserial = (cl == null ?
-                new ObjectInputStream(bytes) :
-                new LoaderInputStream(bytes, cl));
-
-            try {
+            try (ObjectInputStream deserial = cl == null ?
+                    new ObjectInputStream(bytes) :
+                    new LoaderInputStream(bytes, cl)) {
                 return deserial.readObject();
             } catch (ClassNotFoundException e) {
                 NamingException ne = new NamingException();
                 ne.setRootCause(e);
                 throw ne;
-            } finally {
-                deserial.close();
             }
         } catch (IOException e) {
             NamingException ne = new NamingException();
@@ -549,7 +546,7 @@ final class Obj {
       */
     static Attributes determineBindAttrs(
         char separator, Object obj, Attributes attrs, boolean cloned,
-        Name name, Context ctx, Hashtable env)
+        Name name, Context ctx, Hashtable<?,?> env)
         throws NamingException {
 
         // Call state factories to convert object and attrs
@@ -582,10 +579,10 @@ final class Obj {
 
         } else {
             // Get existing objectclass attribute
-            objectClass = (Attribute)attrs.get("objectClass");
+            objectClass = attrs.get("objectClass");
             if (objectClass == null && !attrs.isCaseIgnored()) {
                 // %%% workaround
-                objectClass = (Attribute)attrs.get("objectclass");
+                objectClass = attrs.get("objectclass");
             }
 
             // No objectclasses supplied, use "top" to start
@@ -614,8 +611,8 @@ final class Obj {
             classLoader = cl;
         }
 
-        protected Class resolveClass(ObjectStreamClass desc) throws IOException,
-            ClassNotFoundException {
+        protected Class<?> resolveClass(ObjectStreamClass desc) throws
+                IOException, ClassNotFoundException {
             try {
                 // %%% Should use Class.forName(desc.getName(), false, classLoader);
                 // except we can't because that is only available on JDK1.2
@@ -625,15 +622,15 @@ final class Obj {
             }
         }
 
-         protected Class resolveProxyClass(String[] interfaces) throws
+         protected Class<?> resolveProxyClass(String[] interfaces) throws
                 IOException, ClassNotFoundException {
              ClassLoader nonPublicLoader = null;
              boolean hasNonPublicInterface = false;
 
              // define proxy in class loader of non-public interface(s), if any
-             Class[] classObjs = new Class[interfaces.length];
+             Class<?>[] classObjs = new Class<?>[interfaces.length];
              for (int i = 0; i < interfaces.length; i++) {
-                 Class cl = Class.forName(interfaces[i], false, classLoader);
+                 Class<?> cl = Class.forName(interfaces[i], false, classLoader);
                  if ((cl.getModifiers() & Modifier.PUBLIC) == 0) {
                      if (hasNonPublicInterface) {
                          if (nonPublicLoader != cl.getClassLoader()) {

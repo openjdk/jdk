@@ -36,7 +36,6 @@ import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X500Name;
 import sun.security.x509.KeyUsageExtension;
-import sun.security.x509.PKIXExtensions;
 import sun.misc.HexDumpEncoder;
 
 /**
@@ -300,7 +299,7 @@ public class SignerInfo implements DerEncoder {
                        authenticatedAttributes.getAttributeValue(
                          PKCS9Attribute.CONTENT_TYPE_OID);
                 if (contentType == null ||
-                    !contentType.equals(content.contentType))
+                    !contentType.equals((Object)content.contentType))
                     return null;  // contentType does not match, bad SignerInfo
 
                 // now, check message digest
@@ -371,11 +370,11 @@ public class SignerInfo implements DerEncoder {
                                                  + "extension");
                 }
 
-                boolean digSigAllowed = ((Boolean)keyUsage.get(
-                        KeyUsageExtension.DIGITAL_SIGNATURE)).booleanValue();
+                boolean digSigAllowed = keyUsage.get(
+                        KeyUsageExtension.DIGITAL_SIGNATURE).booleanValue();
 
-                boolean nonRepuAllowed = ((Boolean)keyUsage.get(
-                        KeyUsageExtension.NON_REPUDIATION)).booleanValue();
+                boolean nonRepuAllowed = keyUsage.get(
+                        KeyUsageExtension.NON_REPUDIATION).booleanValue();
 
                 if (!digSigAllowed && !nonRepuAllowed) {
                     throw new SignatureException("Key usage restricted: "

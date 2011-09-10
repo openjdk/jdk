@@ -382,7 +382,7 @@ class AccessorGenerator implements ClassFileConstants {
     /** Returns class name in "internal" form (i.e., '/' separators
         instead of '.') */
     protected static String getClassName
-        (Class c, boolean addPrefixAndSuffixForNonPrimitiveTypes)
+        (Class<?> c, boolean addPrefixAndSuffixForNonPrimitiveTypes)
     {
         if (c.isPrimitive()) {
             if (c == Boolean.TYPE) {
@@ -490,7 +490,7 @@ class AccessorGenerator implements ClassFileConstants {
         }
     }
 
-    protected short indexForPrimitiveType(Class type) {
+    protected short indexForPrimitiveType(Class<?> type) {
         if (type == Boolean.TYPE) {
             return booleanIdx;
         } else if (type == Byte.TYPE) {
@@ -511,7 +511,7 @@ class AccessorGenerator implements ClassFileConstants {
         throw new InternalError("Should have found primitive type");
     }
 
-    protected short ctorIndexForPrimitiveType(Class type) {
+    protected short ctorIndexForPrimitiveType(Class<?> type) {
         if (type == Boolean.TYPE) {
             return booleanCtorIdx;
         } else if (type == Byte.TYPE) {
@@ -534,7 +534,7 @@ class AccessorGenerator implements ClassFileConstants {
 
     /** Returns true for widening or identity conversions for primitive
         types only */
-    protected static boolean canWidenTo(Class type, Class otherType) {
+    protected static boolean canWidenTo(Class<?> type, Class<?> otherType) {
         if (!type.isPrimitive()) {
             return false;
         }
@@ -609,8 +609,8 @@ class AccessorGenerator implements ClassFileConstants {
         called and returned true. */
     protected static void emitWideningBytecodeForPrimitiveConversion
         (ClassFileAssembler cb,
-         Class fromType,
-         Class toType)
+         Class<?> fromType,
+         Class<?> toType)
     {
         // Note that widening conversions for integral types (i.e., "b2s",
         // "s2i") are no-ops since values on the Java stack are
@@ -650,7 +650,7 @@ class AccessorGenerator implements ClassFileConstants {
         // Otherwise, was identity or no-op conversion. Fall through.
     }
 
-    protected short unboxingMethodForPrimitiveType(Class primType) {
+    protected short unboxingMethodForPrimitiveType(Class<?> primType) {
         if (primType == Boolean.TYPE) {
             return booleanUnboxIdx;
         } else if (primType == Byte.TYPE) {
@@ -671,7 +671,7 @@ class AccessorGenerator implements ClassFileConstants {
         throw new InternalError("Illegal primitive type " + primType.getName());
     }
 
-    protected static final Class[] primitiveTypes = new Class[] {
+    protected static final Class<?>[] primitiveTypes = new Class<?>[] {
         Boolean.TYPE,
         Byte.TYPE,
         Character.TYPE,
@@ -683,11 +683,11 @@ class AccessorGenerator implements ClassFileConstants {
     };
 
     /** We don't consider "Void" to be a primitive type */
-    protected static boolean isPrimitive(Class c) {
+    protected static boolean isPrimitive(Class<?> c) {
         return (c.isPrimitive() && c != Void.TYPE);
     }
 
-    protected int typeSizeInStackSlots(Class c) {
+    protected int typeSizeInStackSlots(Class<?> c) {
         if (c == Void.TYPE) {
             return 0;
         }

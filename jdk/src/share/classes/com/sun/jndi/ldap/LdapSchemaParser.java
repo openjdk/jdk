@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package com.sun.jndi.ldap;
 
 import javax.naming.*;
 import javax.naming.directory.*;
-import java.util.Hashtable;
 import java.util.Vector;
 
 /**
@@ -141,9 +140,9 @@ final class LdapSchemaParser {
                                                    LdapSchemaCtx schemaRoot)
         throws NamingException {
 
-        NamingEnumeration       objDescs;
-        Attributes      objDef;
-        LdapSchemaCtx   classDefTree;
+        NamingEnumeration<?> objDescs;
+        Attributes                objDef;
+        LdapSchemaCtx             classDefTree;
 
         // create the class def subtree
         Attributes attrs = new BasicAttributes(LdapClient.caseIgnore);
@@ -173,9 +172,9 @@ final class LdapSchemaParser {
                                                 LdapSchemaCtx schemaRoot)
         throws NamingException {
 
-        NamingEnumeration       attrDescs;
-        Attributes      attrDef;
-        LdapSchemaCtx   attrDefTree;
+        NamingEnumeration<?> attrDescs;
+        Attributes           attrDef;
+        LdapSchemaCtx        attrDefTree;
 
         // create the AttributeDef subtree
         Attributes attrs = new BasicAttributes(LdapClient.caseIgnore);
@@ -206,9 +205,9 @@ final class LdapSchemaParser {
                                                 LdapSchemaCtx schemaRoot)
         throws NamingException {
 
-        NamingEnumeration       syntaxDescs;
-        Attributes      syntaxDef;
-        LdapSchemaCtx   syntaxDefTree;
+        NamingEnumeration<?> syntaxDescs;
+        Attributes           syntaxDef;
+        LdapSchemaCtx        syntaxDefTree;
 
         // create the SyntaxDef subtree
         Attributes attrs = new BasicAttributes(LdapClient.caseIgnore);
@@ -239,9 +238,9 @@ final class LdapSchemaParser {
                                                 LdapSchemaCtx schemaRoot)
         throws NamingException {
 
-        NamingEnumeration       matchRuleDescs;
-        Attributes      matchRuleDef;
-        LdapSchemaCtx   matchRuleDefTree;
+        NamingEnumeration<?> matchRuleDescs;
+        Attributes           matchRuleDef;
+        LdapSchemaCtx        matchRuleDefTree;
 
         // create the MatchRuleDef subtree
         Attributes attrs = new BasicAttributes(LdapClient.caseIgnore);
@@ -519,8 +518,8 @@ final class LdapSchemaParser {
     final private static String[] readQDescrList(String string, int[] pos)
         throws NamingException {
 
-        int     begin, end;
-        Vector  values = new Vector(5);
+        int begin, end;
+        Vector<String> values = new Vector<>(5);
 
         if (debug) {
             System.err.println("ReadQDescrList: pos="+pos[0]);
@@ -553,7 +552,7 @@ final class LdapSchemaParser {
 
         String[] answer = new String[values.size()];
         for (int i = 0; i < answer.length; i++) {
-            answer[i] = (String)values.elementAt(i);
+            answer[i] = values.elementAt(i);
         }
         return answer;
     }
@@ -614,7 +613,7 @@ final class LdapSchemaParser {
 
         int     begin, cur, end;
         String  oidName = null;
-        Vector  values = new Vector(5);
+        Vector<String> values = new Vector<>(5);
 
         if (debug) {
             System.err.println("ReadOIDList: pos="+pos[0]);
@@ -663,7 +662,7 @@ final class LdapSchemaParser {
 
         String[] answer = new String[values.size()];
         for (int i = 0; i < answer.length; i++) {
-            answer[i] = (String)values.elementAt(i);
+            answer[i] = values.elementAt(i);
         }
         return answer;
     }
@@ -843,10 +842,10 @@ final class LdapSchemaParser {
             String attrId = null;
 
             // use enumeration because attribute ID is not known
-            for (NamingEnumeration ae = attrs.getAll();
+            for (NamingEnumeration<? extends Attribute> ae = attrs.getAll();
                 ae.hasMoreElements(); ) {
 
-                attr = (Attribute)ae.next();
+                attr = ae.next();
                 attrId = attr.getID();
 
                 // skip those already processed
@@ -973,10 +972,10 @@ final class LdapSchemaParser {
             String attrId = null;
 
             // use enumeration because attribute ID is not known
-            for (NamingEnumeration ae = attrs.getAll();
+            for (NamingEnumeration<? extends Attribute> ae = attrs.getAll();
                 ae.hasMoreElements(); ) {
 
-                attr = (Attribute)ae.next();
+                attr = ae.next();
                 attrId = attr.getID();
 
                 // skip those already processed
@@ -1040,10 +1039,10 @@ final class LdapSchemaParser {
             String attrId = null;
 
             // use enumeration because attribute ID is not known
-            for (NamingEnumeration ae = attrs.getAll();
+            for (NamingEnumeration<? extends Attribute> ae = attrs.getAll();
                 ae.hasMoreElements(); ) {
 
-                attr = (Attribute)ae.next();
+                attr = ae.next();
                 attrId = attr.getID();
 
                 // skip those already processed
@@ -1117,10 +1116,10 @@ final class LdapSchemaParser {
             String attrId = null;
 
             // use enumeration because attribute ID is not known
-            for (NamingEnumeration ae = attrs.getAll();
+            for (NamingEnumeration<? extends Attribute> ae = attrs.getAll();
                 ae.hasMoreElements(); ) {
 
-                attr = (Attribute)ae.next();
+                attr = ae.next();
                 attrId = attr.getID();
 
                 // skip those already processed
@@ -1201,7 +1200,7 @@ final class LdapSchemaParser {
         qdList.append(WHSP);
         qdList.append(OID_LIST_BEGIN);
 
-        NamingEnumeration values = attr.getAll();
+        NamingEnumeration<?> values = attr.getAll();
 
         while(values.hasMore()) {
             qdList.append(WHSP);
@@ -1238,7 +1237,7 @@ final class LdapSchemaParser {
         oidList.append(WHSP);
         oidList.append(OID_LIST_BEGIN);
 
-        NamingEnumeration values = oidsAttr.getAll();
+        NamingEnumeration<?> values = oidsAttr.getAll();
         oidList.append(WHSP);
         oidList.append(values.next());
 

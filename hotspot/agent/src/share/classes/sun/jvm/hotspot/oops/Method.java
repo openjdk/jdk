@@ -180,10 +180,22 @@ public class Method extends Oop {
     return getConstMethod().getBytecodeShortArg(bci);
   }
 
+  /** Fetches a 16-bit native ordered value from the
+      bytecode stream */
+  public short getNativeShortArg(int bci) {
+    return getConstMethod().getNativeShortArg(bci);
+  }
+
   /** Fetches a 32-bit big-endian ("Java ordered") value from the
       bytecode stream */
   public int getBytecodeIntArg(int bci) {
     return getConstMethod().getBytecodeIntArg(bci);
+  }
+
+  /** Fetches a 32-bit native ordered value from the
+      bytecode stream */
+  public int getNativeIntArg(int bci) {
+    return getConstMethod().getNativeIntArg(bci);
   }
 
   public byte[] getByteCode() {
