@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.security.provider;
 
-import java.util.*;
 import java.io.*;
 import java.math.BigInteger;
 import java.security.AlgorithmParametersSpi;
@@ -103,7 +102,8 @@ public class DSAParameters extends AlgorithmParametersSpi {
                 Class<?> dsaParamSpec = Class.forName
                     ("java.security.spec.DSAParameterSpec");
                 if (dsaParamSpec.isAssignableFrom(paramSpec)) {
-                    return (T)new DSAParameterSpec(this.p, this.q, this.g);
+                    return paramSpec.cast(
+                            new DSAParameterSpec(this.p, this.q, this.g));
                 } else {
                     throw new InvalidParameterSpecException
                         ("Inappropriate parameter Specification");

@@ -67,7 +67,6 @@ public:
   const TypeTuple *_domain;
   StartNode( Node *root, const TypeTuple *domain ) : MultiNode(2), _domain(domain) {
     init_class_id(Class_Start);
-    init_flags(Flag_is_block_start);
     init_req(0,this);
     init_req(1,root);
   }
@@ -513,7 +512,6 @@ public:
       _cnt(COUNT_UNKNOWN)
   {
     init_class_id(Class_Call);
-    init_flags(Flag_is_Call);
   }
 
   const TypeFunc* tf()        const { return _tf; }

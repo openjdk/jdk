@@ -26,7 +26,6 @@
    @summary Check all Cp933 SBCS characters are not supported in Cp834
  */
 
-import sun.io.*;
 import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
@@ -36,8 +35,6 @@ public class TestCp834_SBCS {
         // The correctness of 1:1 mapping is Coverted by CoderTest.java
         // and TestConv.java, we only need to verify that SBCS characters
         // are not supported by this charset.
-        CharToByteConverter cb834 = CharToByteConverter.getConverter("Cp834");
-        ByteToCharConverter bc834 = ByteToCharConverter.getConverter("Cp834");
         CharsetEncoder enc834 = Charset.forName("Cp834")
                                        .newEncoder()
                                        .onUnmappableCharacter(CodingErrorAction.REPLACE)
@@ -73,27 +70,6 @@ public class TestCp834_SBCS {
                     ByteBuffer bb = enc834.encode(CharBuffer.wrap(ca));
                     if (bb.get() != (byte)0xfe || bb.get() != (byte)0xfe)
                         throw new Exception("SBCS is supported in IBM834 encoder");
-
-                    boolean isMalformed = false;
-                    int ret = 0;
-                    bc834.reset();
-                    try {
-                        ret = bc834.convert(ba, 0, 1, ca, 0, 1);
-                    } catch (sun.io.MalformedInputException x) { isMalformed = true; }
-                    if (!isMalformed && ret != 0 && ca[0] != '\ufffd') {
-                        // three scenarios (1)malformed (2)held as an incomplete
-                        // input or (3)return replacement all mean "no sbcs"
-                        throw new Exception("SBCS is supported in Cp834 b2c");
-                    }
-
-                    if (cb834.canConvert(c))
-                        throw new Exception("SBCS can be converted in Cp834 c2b ");
-
-                    ca[0] = c;
-                    if (cb834.convert(ca, 0, 1, ba2, 0, 2) != 2 ||
-                        ba2[0] != (byte)0xfe || ba2[1] != (byte)0xfe) {
-                        throw new Exception("SBCS is supported in Cp834 c2b");
-                    }
                 }
             }
         }

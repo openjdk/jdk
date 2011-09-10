@@ -26,6 +26,7 @@
 package java.security;
 
 import java.io.*;
+import java.util.Locale;
 
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -137,7 +138,7 @@ public class KeyRep implements Serializable {
 
         this.type = type;
         this.algorithm = algorithm;
-        this.format = format.toUpperCase();
+        this.format = format.toUpperCase(Locale.ENGLISH);
         this.encoded = encoded.clone();
     }
 

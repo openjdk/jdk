@@ -474,10 +474,10 @@ class Array {
      * Private
      */
 
-    private static native Object newArray(Class componentType, int length)
+    private static native Object newArray(Class<?> componentType, int length)
         throws NegativeArraySizeException;
 
-    private static native Object multiNewArray(Class componentType,
+    private static native Object multiNewArray(Class<?> componentType,
         int[] dimensions)
         throws IllegalArgumentException, NegativeArraySizeException;
 

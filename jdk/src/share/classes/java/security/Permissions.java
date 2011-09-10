@@ -31,7 +31,6 @@ import java.util.NoSuchElementException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Collections;
 import java.io.Serializable;
@@ -238,7 +237,7 @@ implements Serializable
      */
     private PermissionCollection getPermissionCollection(Permission p,
         boolean createEmpty) {
-        Class c = p.getClass();
+        Class<?> c = p.getClass();
 
         PermissionCollection pc = permsMap.get(c);
 
@@ -390,6 +389,9 @@ implements Serializable
         allPermission = (PermissionCollection) gfields.get("allPermission", null);
 
         // Get permissions
+        // writeObject writes a Hashtable<Class<?>, PermissionCollection> for
+        // the perms key, so this cast is safe, unless the data is corrupt.
+        @SuppressWarnings("unchecked")
         Hashtable<Class<?>, PermissionCollection> perms =
             (Hashtable<Class<?>, PermissionCollection>)gfields.get("perms", null);
         permsMap = new HashMap<Class<?>, PermissionCollection>(perms.size()*2);
@@ -590,6 +592,9 @@ implements Serializable
         ObjectInputStream.GetField gfields = in.readFields();
 
         // Get permissions
+        // writeObject writes a Hashtable<Class<?>, PermissionCollection> for
+        // the perms key, so this cast is safe, unless the data is corrupt.
+        @SuppressWarnings("unchecked")
         Hashtable<Permission, Permission> perms =
                 (Hashtable<Permission, Permission>)gfields.get("perms", null);
         permsMap = new HashMap<Permission, Permission>(perms.size()*2);

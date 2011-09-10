@@ -352,7 +352,6 @@ void HeapRegion::hr_clear(bool par, bool clear_space) {
          "we should have already filtered out humongous regions");
 
   _in_collection_set = false;
-  _is_gc_alloc_region = false;
 
   set_young_index_in_cset(-1);
   uninstall_surv_rate_group();
@@ -486,7 +485,7 @@ HeapRegion(size_t hrs_index, G1BlockOffsetSharedArray* sharedOffsetArray,
   : G1OffsetTableContigSpace(sharedOffsetArray, mr, is_zeroed),
     _next_fk(HeapRegionDCTOC::NoFilterKind), _hrs_index(hrs_index),
     _humongous_type(NotHumongous), _humongous_start_region(NULL),
-    _in_collection_set(false), _is_gc_alloc_region(false),
+    _in_collection_set(false),
     _next_in_special_set(NULL), _orig_end(NULL),
     _claimed(InitialClaimValue), _evacuation_failed(false),
     _prev_marked_bytes(0), _next_marked_bytes(0), _sort_index(-1),
@@ -716,8 +715,6 @@ void HeapRegion::print_on(outputStream* st) const {
   }
   if (in_collection_set())
     st->print(" CS");
-  else if (is_gc_alloc_region())
-    st->print(" A ");
   else
     st->print("   ");
   if (is_young())

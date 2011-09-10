@@ -57,7 +57,7 @@ public class Continuation extends ResolveResult {
      * The environment used by the caller. Initialized by constructor and
      * used when filling out a CannotProceedException.
      */
-    protected Hashtable environment = null;
+    protected Hashtable<?,?> environment = null;
 
     /**
      * Indicates whether the Continuation instance indicates that the operation
@@ -94,7 +94,7 @@ public class Continuation extends ResolveResult {
      * @param environment The environment used by the caller. It is used
      * when setting the "environment" of a CannotProceedException.
      */
-    public Continuation(Name top, Hashtable environment) {
+    public Continuation(Name top, Hashtable<?,?> environment) {
         super();
         starter = top;
         this.environment = environment;
@@ -154,8 +154,8 @@ public class Continuation extends ResolveResult {
 
         if ((e instanceof CannotProceedException)) {
             CannotProceedException cpe = (CannotProceedException)e;
-            Hashtable env = (environment == null ?
-                new Hashtable(11) : (Hashtable)environment.clone());
+            Hashtable<?,?> env = (environment == null ?
+                new Hashtable<>(11) : (Hashtable<?,?>)environment.clone());
             cpe.setEnvironment(env);
             cpe.setAltNameCtx(resolvedContext);
             cpe.setAltName(relativeResolvedName);

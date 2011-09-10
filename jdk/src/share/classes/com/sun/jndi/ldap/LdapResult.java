@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.jndi.ldap;
 import java.util.Vector;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.BasicAttributes;
+import javax.naming.ldap.Control;
 
 /**
   * %%% public for use by LdapSasl %%%
@@ -37,10 +38,11 @@ public final class LdapResult {
     public int status;                  // %%% public for use by LdapSasl
     String matchedDN;
     String errorMessage;
-    Vector referrals = null;
+    // Vector<String | Vector<String>>
+    Vector<Vector<String>> referrals = null;
     LdapReferralException refEx = null;
-    Vector entries = null;
-    Vector resControls = null;
+    Vector<LdapEntry> entries = null;
+    Vector<Control> resControls = null;
     public byte[] serverCreds = null;   // %%% public for use by LdapSasl
     String extensionId = null;          // string OID
     byte[] extensionValue = null;       // BER OCTET STRING
@@ -57,7 +59,7 @@ public final class LdapResult {
         switch (status) {
             case LdapClient.LDAP_COMPARE_TRUE:
                 status = LdapClient.LDAP_SUCCESS;
-                entries = new Vector(1,1);
+                entries = new Vector<>(1,1);
                 Attributes attrs = new BasicAttributes(LdapClient.caseIgnore);
                 LdapEntry entry = new LdapEntry( name, attrs );
                 entries.addElement(entry);
@@ -66,7 +68,7 @@ public final class LdapResult {
 
             case LdapClient.LDAP_COMPARE_FALSE:
                 status = LdapClient.LDAP_SUCCESS;
-                entries = new Vector(0);
+                entries = new Vector<>(0);
                 successful = true;
                 break;
 

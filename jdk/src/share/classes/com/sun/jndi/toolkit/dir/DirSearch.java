@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import javax.naming.directory.*;
   * @author Jon Ruiz
   */
 public class DirSearch {
-   public static NamingEnumeration search(DirContext ctx,
+   public static NamingEnumeration<SearchResult> search(DirContext ctx,
        Attributes matchingAttributes,
        String[] attributesToReturn) throws NamingException {
         SearchControls cons = new SearchControls(
@@ -48,7 +48,7 @@ public class DirSearch {
             cons);
     }
 
-    public static NamingEnumeration search(DirContext ctx,
+    public static NamingEnumeration<SearchResult> search(DirContext ctx,
         String filter, SearchControls cons) throws NamingException {
 
         if (cons == null)
@@ -60,7 +60,7 @@ public class DirSearch {
             cons);
     }
 
-    public static NamingEnumeration search(DirContext ctx,
+    public static NamingEnumeration<SearchResult> search(DirContext ctx,
         String filterExpr, Object[] filterArgs, SearchControls cons)
         throws NamingException {
 

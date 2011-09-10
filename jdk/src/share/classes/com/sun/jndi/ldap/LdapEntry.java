@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package com.sun.jndi.ldap;
 
 import java.util.Vector;
 import javax.naming.directory.Attributes;
-import javax.naming.directory.Attribute;
+import javax.naming.ldap.Control;
 
 /**
   * A holder for an LDAP entry read from an LDAP server.
@@ -38,14 +38,14 @@ import javax.naming.directory.Attribute;
 final class LdapEntry {
     String DN;
     Attributes attributes;
-    Vector respCtls = null;
+    Vector<Control> respCtls = null;
 
     LdapEntry(String DN, Attributes attrs) {
         this.DN = DN;
         this.attributes = attrs;
     }
 
-    LdapEntry(String DN, Attributes attrs, Vector respCtls) {
+    LdapEntry(String DN, Attributes attrs, Vector<Control> respCtls) {
         this.DN = DN;
         this.attributes = attrs;
         this.respCtls = respCtls;

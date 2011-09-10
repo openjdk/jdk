@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -394,7 +394,7 @@ public class CompositeName implements Name {
       *         If posn is outside the specified range.
       */
     public Name getPrefix(int posn) {
-        Enumeration comps = impl.getPrefix(posn);
+        Enumeration<String> comps = impl.getPrefix(posn);
         return (new CompositeName(comps));
     }
 
@@ -412,7 +412,7 @@ public class CompositeName implements Name {
       *         If posn is outside the specified range.
       */
     public Name getSuffix(int posn) {
-        Enumeration comps = impl.getSuffix(posn);
+        Enumeration<String> comps = impl.getSuffix(posn);
         return (new CompositeName(comps));
     }
 
@@ -563,7 +563,7 @@ public class CompositeName implements Name {
     private void writeObject(java.io.ObjectOutputStream s)
             throws java.io.IOException {
         s.writeInt(size());
-        Enumeration comps = getAll();
+        Enumeration<String> comps = getAll();
         while (comps.hasMoreElements()) {
             s.writeObject(comps.nextElement());
         }

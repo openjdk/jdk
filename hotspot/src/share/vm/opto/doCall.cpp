@@ -114,7 +114,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
     if (cg != NULL)  return cg;
   }
 
-  // Do MethodHandle calls.
+  // Do method handle calls.
   // NOTE: This must happen before normal inlining logic below since
   // MethodHandle.invoke* are native methods which obviously don't
   // have bytecodes and so normal inlining fails.
@@ -127,33 +127,25 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
       if (cg != NULL) {
         return cg;
       }
-
       return CallGenerator::for_direct_call(call_method);
     }
     else {
-      // Get the MethodHandle from the CallSite.
+      // Get the CallSite object.
       ciMethod* caller_method = jvms->method();
       ciBytecodeStream str(caller_method);
       str.force_bci(jvms->bci());  // Set the stream to the invokedynamic bci.
-      ciCallSite*     call_site     = str.get_call_site();
-      ciMethodHandle* method_handle = call_site->get_target();
+      ciCallSite* call_site = str.get_call_site();
 
-      // Set the callee to have access to the class and signature in
-      // the MethodHandleCompiler.
-      method_handle->set_callee(call_method);
-      method_handle->set_caller(caller);
-      method_handle->set_call_profile(profile);
-
-      // Get an adapter for the MethodHandle.
-      ciMethod* target_method = method_handle->get_invokedynamic_adapter();
-      if (target_method != NULL) {
-        CallGenerator* hit_cg = this->call_generator(target_method, vtable_index, false, jvms, true, prof_factor);
-        if (hit_cg != NULL && hit_cg->is_inline()) {
-          CallGenerator* miss_cg = CallGenerator::for_dynamic_call(call_method);
-          return CallGenerator::for_predicted_dynamic_call(method_handle, miss_cg, hit_cg, prof_factor);
+      // Inline constant and mutable call sites.  We don't inline
+      // volatile call sites optimistically since they are specified
+      // to change their value often and that would result in a lot of
+      // deoptimizations and recompiles.
+      if (call_site->is_constant_call_site() || call_site->is_mutable_call_site()) {
+        CallGenerator* cg = CallGenerator::for_invokedynamic_inline(call_site, jvms, caller, call_method, profile);
+        if (cg != NULL) {
+          return cg;
         }
       }
-
       // If something failed, generate a normal dynamic call.
       return CallGenerator::for_dynamic_call(call_method);
     }

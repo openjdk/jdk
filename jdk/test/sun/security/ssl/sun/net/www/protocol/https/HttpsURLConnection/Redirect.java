@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,10 @@
  * @bug 4423074
  * @summary Need to rebase all the duplicated classes from Merlin.
  *          This test will check out http POST
+ * @run main/othervm Redirect
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  */
 
 import java.io.*;
@@ -139,28 +143,33 @@ public class Redirect {
      * to avoid infinite hangs.
      */
     void doClientSide() throws Exception {
-
-        /*
-         * Wait for server to get started.
-         */
-        while (!serverReady) {
-            Thread.sleep(50);
-        }
-
-        // Send HTTP POST request to server
-        URL url = new URL("https://localhost:"+serverPort);
-
-        HttpsURLConnection.setDefaultHostnameVerifier(
-                                      new NameVerifier());
-        HttpsURLConnection http = (HttpsURLConnection)url.openConnection();
+        HostnameVerifier reservedHV =
+            HttpsURLConnection.getDefaultHostnameVerifier();
         try {
-            System.out.println("response header: "+http.getHeaderField(0));
-            if (http.getResponseCode() != 200) {
-                throw new RuntimeException("test Failed");
+            /*
+             * Wait for server to get started.
+             */
+            while (!serverReady) {
+                Thread.sleep(50);
+            }
+
+            // Send HTTP POST request to server
+            URL url = new URL("https://localhost:"+serverPort);
+
+            HttpsURLConnection.setDefaultHostnameVerifier(
+                                          new NameVerifier());
+            HttpsURLConnection http = (HttpsURLConnection)url.openConnection();
+            try {
+                System.out.println("response header: "+http.getHeaderField(0));
+                if (http.getResponseCode() != 200) {
+                    throw new RuntimeException("test Failed");
+                }
+            } finally {
+                http.disconnect();
+                closeReady = true;
             }
         } finally {
-            http.disconnect();
-            closeReady = true;
+            HttpsURLConnection.setDefaultHostnameVerifier(reservedHV);
         }
     }
 

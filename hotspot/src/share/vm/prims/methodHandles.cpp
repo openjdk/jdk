@@ -1016,7 +1016,7 @@ oop MethodHandles::encode_target(Handle mh, int format, TRAPS) {
         && CompilationPolicy::can_be_compiled(m)) {
       // Force compilation
       CompileBroker::compile_method(m, InvocationEntryBci,
-                                    CompLevel_initial_compile,
+                                    CompilationPolicy::policy()->initial_compile_level(),
                                     methodHandle(), 0, "MethodHandleNatives.getTarget",
                                     CHECK_NULL);
     }
@@ -2713,7 +2713,7 @@ static void stress_method_handle_walk_impl(Handle mh, TRAPS) {
         && CompilationPolicy::can_be_compiled(m)) {
       // Force compilation
       CompileBroker::compile_method(m, InvocationEntryBci,
-                                    CompLevel_initial_compile,
+                                    CompilationPolicy::policy()->initial_compile_level(),
                                     methodHandle(), 0, "StressMethodHandleWalk",
                                     CHECK);
     }

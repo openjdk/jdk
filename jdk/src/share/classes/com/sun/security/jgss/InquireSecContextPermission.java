@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.security.BasicPermission;
  * <p>The target name is the {@link InquireType} allowed.
  */
 public final class InquireSecContextPermission extends BasicPermission {
+    private static final long serialVersionUID = -7131173349668647297L;
 
     /**
      * Constructs a new {@code InquireSecContextPermission} object with

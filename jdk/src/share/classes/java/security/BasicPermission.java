@@ -25,7 +25,6 @@
 
 package java.security;
 
-import java.security.*;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.HashMap;
@@ -333,14 +332,14 @@ implements java.io.Serializable
      *
      * @see #serialPersistentFields
      */
-    private Class permClass;
+    private Class<?> permClass;
 
     /**
      * Create an empty BasicPermissionCollection object.
      *
      */
 
-    public BasicPermissionCollection(Class clazz) {
+    public BasicPermissionCollection(Class<?> clazz) {
         perms = new HashMap<String, Permission>(11);
         all_allowed = false;
         permClass = clazz;
@@ -542,6 +541,9 @@ implements java.io.Serializable
         ObjectInputStream.GetField gfields = in.readFields();
 
         // Get permissions
+        // writeObject writes a Hashtable<String, Permission> for the
+        // permissions key, so this cast is safe, unless the data is corrupt.
+        @SuppressWarnings("unchecked")
         Hashtable<String, Permission> permissions =
                 (Hashtable<String, Permission>)gfields.get("permissions", null);
         perms = new HashMap<String, Permission>(permissions.size()*2);
@@ -551,7 +553,7 @@ implements java.io.Serializable
         all_allowed = gfields.get("all_allowed", false);
 
         // Get permClass
-        permClass = (Class) gfields.get("permClass", null);
+        permClass = (Class<?>) gfields.get("permClass", null);
 
         if (permClass == null) {
             // set permClass

@@ -49,8 +49,16 @@ endif
 
 include $(BUILDDIR)/common/Subdirs.gmk
 
+TOPLEVEL_FILES =							\
+	$(SAMPLEDIR)/README
+
 all build clean clobber::
 	$(SUBDIRS-loop)
+
+all build:: $(TOPLEVEL_FILES)
+
+$(SAMPLEDIR)/%: $(SAMPLESRCDIR)/%
+	$(install-file)
 
 clobber clean ::
 	$(RM) -r $(SAMPLEDIR)
