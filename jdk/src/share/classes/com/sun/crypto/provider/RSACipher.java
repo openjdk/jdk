@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,8 +227,8 @@ public final class RSACipher extends CipherSpi {
             init(opmode, key, random, null);
         } else {
             try {
-                OAEPParameterSpec spec = (OAEPParameterSpec)
-                    params.getParameterSpec(OAEPParameterSpec.class);
+                OAEPParameterSpec spec =
+                        params.getParameterSpec(OAEPParameterSpec.class);
                 init(opmode, key, random, spec);
             } catch (InvalidParameterSpecException ipse) {
                 InvalidAlgorithmParameterException iape =

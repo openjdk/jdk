@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,8 @@ public class CertificatePolicyId {
      */
     public boolean equals(Object other) {
         if (other instanceof CertificatePolicyId)
-            return id.equals(((CertificatePolicyId) other).getIdentifier());
+            return id.equals((Object)
+                    ((CertificatePolicyId) other).getIdentifier());
         else
             return false;
     }

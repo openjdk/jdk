@@ -37,7 +37,6 @@ import sun.security.x509.X509CertImpl;
 import sun.security.x509.NetscapeCertTypeExtension;
 import sun.security.util.DerValue;
 import sun.security.util.DerInputStream;
-import sun.security.util.DerOutputStream;
 import sun.security.util.ObjectIdentifier;
 
 import sun.security.provider.certpath.AlgorithmChecker;
@@ -275,7 +274,7 @@ public final class SimpleValidator extends Validator {
                                                                 .toByteArray();
                 ext = new NetscapeCertTypeExtension(encoded);
             }
-            Boolean val = (Boolean)ext.get(type);
+            Boolean val = ext.get(type);
             return val.booleanValue();
         } catch (IOException e) {
             return false;

@@ -56,15 +56,17 @@ class SubjectComber {
     static <T> T find(Subject subject, String serverPrincipal,
         String clientPrincipal, Class<T> credClass) {
 
-        return (T)findAux(subject, serverPrincipal, clientPrincipal, credClass,
-            true);
+        // findAux returns T if oneOnly.
+        return credClass.cast(findAux(subject, serverPrincipal,
+                                      clientPrincipal, credClass, true));
     }
 
+    @SuppressWarnings("unchecked") // findAux returns List<T> if !oneOnly.
     static <T> List<T> findMany(Subject subject, String serverPrincipal,
         String clientPrincipal, Class<T> credClass) {
 
-        return (List<T>)findAux(subject, serverPrincipal, clientPrincipal, credClass,
-            false);
+        return (List<T>)findAux(subject, serverPrincipal, clientPrincipal,
+            credClass, false);
     }
 
     /**
@@ -73,6 +75,7 @@ class SubjectComber {
      *
      * @return the private credentials
      */
+    // Returns T if oneOnly and List<T> if !oneOnly.
     private static <T> Object findAux(Subject subject, String serverPrincipal,
         String clientPrincipal, Class<T> credClass, boolean oneOnly) {
 
@@ -98,11 +101,11 @@ class SubjectComber {
                 }
             } else if (credClass == KerberosKey.class) {
                 // We are looking for credentials for the serverPrincipal
-                Iterator<T> iterator =
-                    subject.getPrivateCredentials(credClass).iterator();
+                Iterator<KerberosKey> iterator =
+                    subject.getPrivateCredentials(KerberosKey.class).iterator();
                 while (iterator.hasNext()) {
-                    T t = iterator.next();
-                    String name = ((KerberosKey)t).getPrincipal().getName();
+                    KerberosKey t = iterator.next();
+                    String name = t.getPrincipal().getName();
                     if (serverPrincipal == null || serverPrincipal.equals(name)) {
                          if (DEBUG) {
                              System.out.println("Found " +
@@ -116,7 +119,7 @@ class SubjectComber {
                                  // belong to the same principal
                                  serverPrincipal = name;
                              }
-                             answer.add(t);
+                             answer.add(credClass.cast(t));
                          }
                     }
                 }
@@ -129,6 +132,7 @@ class SubjectComber {
                     while (iterator.hasNext()) {
                         Object obj = iterator.next();
                         if (obj instanceof KerberosTicket) {
+                            @SuppressWarnings("unchecked")
                             KerberosTicket ticket = (KerberosTicket)obj;
                             if (DEBUG) {
                                 System.out.println("Found ticket for "
@@ -180,7 +184,7 @@ class SubjectComber {
                                                 serverPrincipal =
                                                 ticket.getServer().getName();
                                             }
-                                            answer.add((T)ticket);
+                                            answer.add(credClass.cast(ticket));
                                         }
                                     }
                                 }

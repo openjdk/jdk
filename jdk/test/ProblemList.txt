@@ -198,9 +198,18 @@ java/beans/XMLEncoder/6329581/Test6329581.java		 	generic-all
 # requires junit
 java/lang/invoke/InvokeDynamicPrintArgs.java                    generic-all
 
+# 7079093
+java/lang/instrument/ManifestTest.sh				windows-all
+
 ############################################################################
 
 # jdk_management
+
+# 6944188
+java/lang/management/ThreadMXBean/ThreadStateTest.java		generic-all
+
+# 7067973
+java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
 
 # Failing, bug was filed: 6959636
 javax/management/loading/LibraryLoader/LibraryLoaderTest.java	generic-all
@@ -362,6 +371,15 @@ com/sun/net/httpserver/bugs/6725892/Test.java			generic-all
 # Filed 7036666
 com/sun/net/httpserver/Test9a.java				generic-all
 
+# 7079145 java/net/ipv6tests/UdpTest.java hang at IPv6 only data exchange
+java/net/ipv6tests/UdpTest.java                                 linux-all
+
+# 7079012
+java/net/NetworkInterface/NetParamsTest.java			solaris-all
+
+# 7081476
+java/net/InetSocketAddress/B6469803.java			generic-all
+
 ############################################################################
 
 # jdk_io
@@ -369,12 +387,21 @@ com/sun/net/httpserver/Test9a.java				generic-all
 # 6962637
 java/io/File/MaxPathLength.java                                 windows-all
 
+# 6671616
+java/io/File/BlockIsDirectory.java				solaris-all
+
+# 7076644
+java/io/File/Basic.java						windows-all
+
 ############################################################################
 
 # jdk_nio
 
 # 6963118
 java/nio/channels/Selector/Wakeup.java                          windows-all
+
+# 7076700
+java/nio/channels/SocketChannel/AdaptSocket.java		generic-all
 
 ############################################################################
 
@@ -450,73 +477,20 @@ java/rmi/server/UnicastRemoteObject/unexportObject/UnexportLeak.java generic-all
 
 # jdk_security
 
-# Filed 6986868
-sun/security/tools/jarsigner/crl.sh				generic-all
-
-# Filed 6951285, not sure how often this fails, last was Linux 64bit Fedora 9
-sun/security/krb5/auto/MaxRetries.java				generic-all
-
-# Filed 6950930, fails on windows 32bit c1 and windows 64bit
-sun/security/krb5/auto/IgnoreChannelBinding.java		windows-all
-
-# Filed 6950931, failing on all windows systems
-sun/security/tools/jarsigner/crl.sh				windows-all
-
-# Filed 6950929, only seemed to fail on solaris sparcv9 (-d64)
-#   Failed on Linux -server 32bit too, making generic
-sun/security/krb5/auto/BadKdc4.java				generic-all
-
 # Failing on Solaris i586, 3/9/2010, not a -samevm issue (jdk_security3)
 sun/security/pkcs11/Secmod/AddPrivateKey.java			solaris-i586
 sun/security/pkcs11/ec/ReadCertificates.java			solaris-i586
 sun/security/pkcs11/ec/ReadPKCS12.java				solaris-i586
 sun/security/pkcs11/ec/TestCurves.java				solaris-i586
 sun/security/pkcs11/ec/TestECDSA.java				solaris-i586
-sun/security/pkcs11/ec/TestECGenSpec.java			solaris-i586
-sun/security/pkcs11/ec/TestKeyFactory.java			solaris-i586
+#sun/security/pkcs11/ec/TestECGenSpec.java			solaris-i586
+#sun/security/pkcs11/ec/TestKeyFactory.java			solaris-i586
+sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java		solaris-i586
 
-# Failing on Solaris X64 (-d64 -server) with:
-#  GSSException: Failure unspecified at GSS-API level
-#    (Mechanism level: Specified version of key is not available (44))
-sun/security/krb5/auto/BasicKrb5Test.java			generic-all
+# Directly references PKCS11 class
+sun/security/pkcs11/Provider/Absolute.java                      windows-x64
 
-# Solaris X86 failures, readjar.jks: No such file or directory
-sun/security/tools/keytool/readjar.sh				generic-all
-
-# Fails with -ea -esa, but only on Solaris sparc? Suspect it is timing out
-sun/security/tools/keytool/standard.sh				generic-all
-
-# Fails on Solaris 10 X64, address already in use
-sun/security/krb5/auto/HttpNegotiateServer.java			generic-all
-
-# Fails on almost all platforms
-#   java.lang.UnsupportedClassVersionError: SerialTest :
-#      Unsupported major.minor version 51.0
-#    at java.lang.ClassLoader.defineClass1(Native Method)
-sun/security/util/Oid/S11N.sh					generic-all
-
-# Fails on Fedora 9 32bit
-#  GSSException: Failure unspecified at GSS-API level (Mechanism level:
-#    Invalid argument (400) - Cannot find key of appropriate type to decrypt
-#    AP REP - DES CBC mode with MD5)
-#  at sun.security.jgss.krb5.Krb5Context.acceptSecContext(Krb5Context.java:778)
-sun/security/krb5/auto/NonMutualSpnego.java			generic-all
-
-# Fails on Solaris 10 sparc, GSSException: Failure unspecified at GSS-API level
-#   Also fails on Windows 2000 similar way
-sun/security/krb5/auto/ok-as-delegate.sh			generic-all
-
-# Fails on Windows 2000, GSSException: Failure unspecified at GSS-API level
-#    (Mechanism level: Request is a replay (34))
-sun/security/krb5/auto/ok-as-delegate-xrealm.sh			generic-all
-
-# Fails on Windows 2000, ExceptionInInitializerError
-sun/security/mscapi/AccessKeyStore.sh				generic-all
-
-# Fails on Solaris 10, KrbException: Additional pre-authentication required (25)
-sun/security/krb5/auto/basic.sh					generic-all
-
-# Fails on Fedora 9 64bit, PKCS11Exception: CKR_DEVICE_ERROR
+# Fails on Fedora 9/Ubuntu 10.04 64bit, PKCS11Exception: CKR_DEVICE_ERROR
 sun/security/pkcs11/KeyAgreement/TestDH.java			generic-all
 
 # Run too slow on Solaris 10 sparc
@@ -525,17 +499,9 @@ sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/ClientTimeout.java s
 sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/ServerTimeout.java solaris-sparc
 sun/security/ssl/sun/net/www/protocol/https/HttpsURLConnection/ReadTimeout.java solaris-sparc
 sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/NotifyHandshakeTest.sh solaris-sparc
-sun/security/tools/keytool/AltProviderPath.sh 			solaris-sparc
 
 # Solaris 10 sparc, passed/failed confusion? java.security.ProviderException: update() failed
 sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLSocketImpl/AsyncSSLSocketClose.java generic-all
-
-# Seem really slow on Solaris sparc, being excluded just for timing reasons
-sun/security/tools/jarsigner/AlgOptions.sh			solaris-sparc
-sun/security/tools/jarsigner/nameclash.sh			solaris-sparc
-sun/security/krb5/auto/basic.sh					solaris-sparc
-sun/security/provider/PolicyFile/getinstance/getinstance.sh	solaris-sparc
-sun/security/tools/jarsigner/samename.sh			solaris-sparc
 
 # Othervm, sparc, NoRouteToHostException: Cannot assign requested address
 sun/security/ssl/javax/net/ssl/NewAPIs/SessionCacheSizeTests.java generic-all
@@ -544,48 +510,21 @@ sun/security/ssl/javax/net/ssl/NewAPIs/SessionCacheSizeTests.java generic-all
 #    Solaris sparc and sparcv9 -server, timeout
 sun/security/ssl/javax/net/ssl/NewAPIs/SessionTimeOutTests.java	generic-all
 
-# Failed on solaris 10 sparc, othervm mode,  "js.jks: No such file or directory"
-#  Also, cannot verify signature on solaris i586 -server
-sun/security/tools/jarsigner/concise_jarsigner.sh		generic-all
-
 # Various failures on Linux Fedora 9 X64, othervm mode
-lib/security/cacerts/VerifyCACerts.java				generic-all
 sun/security/ssl/javax/net/ssl/NewAPIs/SSLEngine/TestAllSuites.java generic-all
 sun/security/ssl/sanity/ciphersuites/CheckCipherSuites.java	generic-all
-sun/security/tools/jarsigner/oldsig.sh				generic-all
 
 # Various failures on Linux Fedora 9 X64, othervm mode
 sun/security/ssl/sanity/interop/ClientJSSEServerJSSE.java	generic-all
 
-# Solaris sparcv9: Failed to parse input emptysubject.jks: No such file or directory
-sun/security/tools/keytool/emptysubject.sh			generic-all
+# 7079203 sun/security/tools/keytool/printssl.sh fails on solaris with timeout
+sun/security/tools/keytool/printssl.sh                          solaris-all
 
-# Fails on OpenSolaris, missing classes, slow on Solaris sparc
-sun/security/ec/TestEC.java					generic-all
+# 7054637
+sun/security/tools/jarsigner/ec.sh                             solaris-all
 
-# Problems with windows x64
-sun/security/mscapi/IsSunMSCAPIAvailable.sh		 	windows-x64
-sun/security/mscapi/RSAEncryptDecrypt.sh		 	windows-x64
-
-# Exception in test solaris-sparc -client -server, no windows
-sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java	        solaris-all
-
-# Solaris sparc client, fails to compile?
-sun/security/pkcs11/KeyStore/SecretKeysBasic.sh 	 	solaris-all
-
-# Fails on OpenSolaris java.net.BindException: Address already in use
-sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java		generic-all
-
-# Timeout on solaris-sparcv9 or ArrayIndexOutOfBoundsException?
-sun/security/rsa/TestKeyPairGeneratorLength.java	 	solaris-all
-sun/security/rsa/TestSignatures.java			 	solaris-all
-
-# Do not seem to run on windows machines? dll missing?
-sun/security/tools/jarsigner/emptymanifest.sh		 	windows-all
-
-# Files does not exist or no encoding? solaris-sparcv9
-sun/security/tools/keytool/importreadall.sh		 	solaris-all
-sun/security/tools/keytool/selfissued.sh		 	solaris-all
+# 7081817
+sun/security/provider/certpath/X509CertPath/IllegalCertiticates.java 	generic-all
 
 ############################################################################
 

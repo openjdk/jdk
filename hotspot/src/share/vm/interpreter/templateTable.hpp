@@ -120,8 +120,8 @@ class TemplateTable: AllStatic {
 
   // helpers
   static void unimplemented_bc();
-  static void patch_bytecode(Bytecodes::Code bc, Register scratch1,
-                             Register scratch2, bool load_bc_in_scratch = true);
+  static void patch_bytecode(Bytecodes::Code bc, Register bc_reg,
+                             Register temp_reg, bool load_bc_into_bc_reg = true, int byte_no = -1);
 
   // C calls
   static void call_VM(Register oop_result, address entry_point);

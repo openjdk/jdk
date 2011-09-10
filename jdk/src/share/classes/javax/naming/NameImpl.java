@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package javax.naming;
 
+import java.util.Locale;
 import java.util.Vector;
 import java.util.Enumeration;
 import java.util.Properties;
@@ -45,7 +46,7 @@ class NameImpl {
     private static final byte RIGHT_TO_LEFT = 2;
     private static final byte FLAT = 0;
 
-    private Vector components;
+    private Vector<String> components;
 
     private byte syntaxDirection = LEFT_TO_RIGHT;
     private String syntaxSeparator = "/";
@@ -97,7 +98,7 @@ class NameImpl {
         return (i);
     }
 
-    private final int extractComp(String name, int i, int len, Vector comps)
+    private final int extractComp(String name, int i, int len, Vector<String> comps)
     throws InvalidNameException {
         String beginQuote;
         String endQuote;
@@ -216,7 +217,8 @@ class NameImpl {
     }
 
     private static boolean toBoolean(String name) {
-        return ((name != null) && name.toLowerCase().equals("true"));
+        return ((name != null) &&
+            name.toLowerCase(Locale.ENGLISH).equals("true"));
     }
 
     private final void recordNamingConvention(Properties p) {
@@ -270,7 +272,7 @@ class NameImpl {
         if (syntax != null) {
             recordNamingConvention(syntax);
         }
-        components = new Vector();
+        components = new Vector<>();
     }
 
     NameImpl(Properties syntax, String n) throws InvalidNameException {
@@ -284,8 +286,8 @@ class NameImpl {
             i = extractComp(n, i, len, components);
 
             String comp = rToL
-                ? (String)components.firstElement()
-                : (String)components.lastElement();
+                ? components.firstElement()
+                : components.lastElement();
             if (comp.length() >= 1) {
                 compsAllEmpty = false;
             }
@@ -304,7 +306,7 @@ class NameImpl {
         }
     }
 
-    NameImpl(Properties syntax, Enumeration comps) {
+    NameImpl(Properties syntax, Enumeration<String> comps) {
         this(syntax);
 
         // %% comps could shrink in the middle.
@@ -455,9 +457,9 @@ class NameImpl {
         for (int i = 0; i < size; i++) {
             if (syntaxDirection == RIGHT_TO_LEFT) {
                 comp =
-                    stringifyComp((String) components.elementAt(size - 1 - i));
+                    stringifyComp(components.elementAt(size - 1 - i));
             } else {
-                comp = stringifyComp((String) components.elementAt(i));
+                comp = stringifyComp(components.elementAt(i));
             }
             if ((i != 0) && (syntaxSeparator != null))
                 answer.append(syntaxSeparator);
@@ -474,12 +476,12 @@ class NameImpl {
         if ((obj != null) && (obj instanceof NameImpl)) {
             NameImpl target = (NameImpl)obj;
             if (target.size() ==  this.size()) {
-                Enumeration mycomps = getAll();
-                Enumeration comps = target.getAll();
+                Enumeration<String> mycomps = getAll();
+                Enumeration<String> comps = target.getAll();
                 while (mycomps.hasMoreElements()) {
                     // %% comps could shrink in the middle.
-                    String my = (String)mycomps.nextElement();
-                    String his = (String)comps.nextElement();
+                    String my = mycomps.nextElement();
+                    String his = comps.nextElement();
                     if (syntaxTrimBlanks) {
                         my = my.trim();
                         his = his.trim();
@@ -526,11 +528,14 @@ class NameImpl {
                 comp1 = comp1.trim();
                 comp2 = comp2.trim();
             }
+
+            int local;
             if (syntaxCaseInsensitive) {
-                comp1 = comp1.toLowerCase();
-                comp2 = comp2.toLowerCase();
+                local = comp1.compareToIgnoreCase(comp2);
+            } else {
+                local = comp1.compareTo(comp2);
             }
-            int local = comp1.compareTo(comp2);
+
             if (local != 0) {
                 return local;
             }
@@ -543,22 +548,22 @@ class NameImpl {
         return (components.size());
     }
 
-    public Enumeration getAll() {
+    public Enumeration<String> getAll() {
         return components.elements();
     }
 
     public String get(int posn) {
-        return ((String) components.elementAt(posn));
+        return components.elementAt(posn);
     }
 
-    public Enumeration getPrefix(int posn) {
+    public Enumeration<String> getPrefix(int posn) {
         if (posn < 0 || posn > size()) {
             throw new ArrayIndexOutOfBoundsException(posn);
         }
         return new NameImplEnumerator(components, 0, posn);
     }
 
-    public Enumeration getSuffix(int posn) {
+    public Enumeration<String> getSuffix(int posn) {
         int cnt = size();
         if (posn < 0 || posn > cnt) {
             throw new ArrayIndexOutOfBoundsException(posn);
@@ -570,15 +575,15 @@ class NameImpl {
         return (components.isEmpty());
     }
 
-    public boolean startsWith(int posn, Enumeration prefix) {
+    public boolean startsWith(int posn, Enumeration<String> prefix) {
         if (posn < 0 || posn > size()) {
             return false;
         }
         try {
-            Enumeration mycomps = getPrefix(posn);
+            Enumeration<String> mycomps = getPrefix(posn);
             while (mycomps.hasMoreElements()) {
-                String my = (String)mycomps.nextElement();
-                String his = (String)prefix.nextElement();
+                String my = mycomps.nextElement();
+                String his = prefix.nextElement();
                 if (syntaxTrimBlanks) {
                     my = my.trim();
                     his = his.trim();
@@ -597,7 +602,7 @@ class NameImpl {
         return true;
     }
 
-    public boolean endsWith(int posn, Enumeration suffix) {
+    public boolean endsWith(int posn, Enumeration<String> suffix) {
         // posn is number of elements in suffix
         // startIndex is the starting position in this name
         // at which to start the comparison. It is calculated by
@@ -607,10 +612,10 @@ class NameImpl {
             return false;
         }
         try {
-            Enumeration mycomps = getSuffix(startIndex);
+            Enumeration<String> mycomps = getSuffix(startIndex);
             while (mycomps.hasMoreElements()) {
-                String my = (String)mycomps.nextElement();
-                String his = (String)suffix.nextElement();
+                String my = mycomps.nextElement();
+                String his = suffix.nextElement();
                 if (syntaxTrimBlanks) {
                     my = my.trim();
                     his = his.trim();
@@ -629,11 +634,11 @@ class NameImpl {
         return true;
     }
 
-    public boolean addAll(Enumeration comps) throws InvalidNameException {
+    public boolean addAll(Enumeration<String> comps) throws InvalidNameException {
         boolean added = false;
         while (comps.hasMoreElements()) {
             try {
-                Object comp = comps.nextElement();
+                String comp = comps.nextElement();
                 if (size() > 0 && syntaxDirection == FLAT) {
                     throw new InvalidNameException(
                         "A flat name can only have a single component");
@@ -647,12 +652,12 @@ class NameImpl {
         return added;
     }
 
-    public boolean addAll(int posn, Enumeration comps)
+    public boolean addAll(int posn, Enumeration<String> comps)
     throws InvalidNameException {
         boolean added = false;
         for (int i = posn; comps.hasMoreElements(); i++) {
             try {
-                Object comp = comps.nextElement();
+                String comp = comps.nextElement();
                 if (size() > 0 && syntaxDirection == FLAT) {
                     throw new InvalidNameException(
                         "A flat name can only have a single component");
@@ -690,13 +695,13 @@ class NameImpl {
 
     public int hashCode() {
         int hash = 0;
-        for (Enumeration e = getAll(); e.hasMoreElements();) {
-            String comp = (String)e.nextElement();
+        for (Enumeration<String> e = getAll(); e.hasMoreElements();) {
+            String comp = e.nextElement();
             if (syntaxTrimBlanks) {
                 comp = comp.trim();
             }
             if (syntaxCaseInsensitive) {
-                comp = comp.toLowerCase();
+                comp = comp.toLowerCase(Locale.ENGLISH);
             }
 
             hash += comp.hashCode();
@@ -706,12 +711,12 @@ class NameImpl {
 }
 
 final
-class NameImplEnumerator implements Enumeration {
-    Vector vector;
+class NameImplEnumerator implements Enumeration<String> {
+    Vector<String> vector;
     int count;
     int limit;
 
-    NameImplEnumerator(Vector v, int start, int lim) {
+    NameImplEnumerator(Vector<String> v, int start, int lim) {
         vector = v;
         count = start;
         limit = lim;
@@ -721,7 +726,7 @@ class NameImplEnumerator implements Enumeration {
         return count < limit;
     }
 
-    public Object nextElement() {
+    public String nextElement() {
         if (count < limit) {
             return vector.elementAt(count++);
         }

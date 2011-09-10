@@ -367,7 +367,7 @@ public class Krb5LoginModule implements LoginModule {
     // initial state
     private Subject subject;
     private CallbackHandler callbackHandler;
-    private Map sharedState;
+    private Map<String, Object> sharedState;
     private Map<String, ?> options;
 
     // configurable option
@@ -432,7 +432,11 @@ public class Krb5LoginModule implements LoginModule {
      *                  <code>Configuration</code> for this particular
      *                  <code>LoginModule</code>.
      */
-
+    // Unchecked warning from (Map<String, Object>)sharedState is safe
+    // since javax.security.auth.login.LoginContext passes a raw HashMap.
+    // Unchecked warnings from options.get(String) are safe since we are
+    // passing known keys.
+    @SuppressWarnings("unchecked")
     public void initialize(Subject subject,
                            CallbackHandler callbackHandler,
                            Map<String, ?> sharedState,
@@ -440,7 +444,7 @@ public class Krb5LoginModule implements LoginModule {
 
         this.subject = subject;
         this.callbackHandler = callbackHandler;
-        this.sharedState = sharedState;
+        this.sharedState = (Map<String, Object>)sharedState;
         this.options = options;
 
         // initialize any configured options

@@ -30,6 +30,15 @@
  */
 
 /*
+ * This source code is provided to illustrate the usage of a given feature
+ * or technique and has been deliberately simplified. Additional steps
+ * required for a production-quality application, such as security checks,
+ * input validation and proper error handling, might not be present in
+ * this sample code.
+ */
+
+
+/*
  * This script adds "Insert File" mode menu item to "Tools" menu.
  * When selected, this menu shows a file dialog box and inserts
  * contents of the selected file into current document (at the

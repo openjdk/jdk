@@ -1978,7 +1978,7 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
 
   // JSR 292 classes
   WKID jsr292_group_start = WK_KLASS_ENUM_NAME(MethodHandle_klass);
-  WKID jsr292_group_end   = WK_KLASS_ENUM_NAME(CallSite_klass);
+  WKID jsr292_group_end   = WK_KLASS_ENUM_NAME(VolatileCallSite_klass);
   initialize_wk_klasses_until(jsr292_group_start, scan, CHECK);
   if (EnableInvokeDynamic) {
     initialize_wk_klasses_through(jsr292_group_end, scan, CHECK);

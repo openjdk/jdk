@@ -206,11 +206,7 @@ nmethod* SimpleThresholdPolicy::event(methodHandle method, methodHandle inlinee,
 
 // Check if the method can be compiled, change level if necessary
 void SimpleThresholdPolicy::compile(methodHandle mh, int bci, CompLevel level, TRAPS) {
-  // Take the given ceiling into the account.
-  // NOTE: You can set it to 1 to get a pure C1 version.
-  if ((CompLevel)TieredStopAtLevel < level) {
-    level = (CompLevel)TieredStopAtLevel;
-  }
+  assert(level <= TieredStopAtLevel, "Invalid compilation level");
   if (level == CompLevel_none) {
     return;
   }
@@ -227,10 +223,10 @@ void SimpleThresholdPolicy::compile(methodHandle mh, int bci, CompLevel level, T
   if (bci != InvocationEntryBci && mh->is_not_osr_compilable()) {
     return;
   }
-  if (PrintTieredEvents) {
-    print_event(COMPILE, mh, mh, bci, level);
-  }
   if (!CompileBroker::compilation_is_in_queue(mh, bci)) {
+    if (PrintTieredEvents) {
+      print_event(COMPILE, mh, mh, bci, level);
+    }
     submit_compile(mh, bci, level, THREAD);
   }
 }
@@ -288,40 +284,42 @@ bool SimpleThresholdPolicy::is_mature(methodOop method) {
 
 // Common transition function. Given a predicate determines if a method should transition to another level.
 CompLevel SimpleThresholdPolicy::common(Predicate p, methodOop method, CompLevel cur_level) {
-  if (is_trivial(method)) return CompLevel_simple;
-
   CompLevel next_level = cur_level;
   int i = method->invocation_count();
   int b = method->backedge_count();
 
-  switch(cur_level) {
-  case CompLevel_none:
-    // If we were at full profile level, would we switch to full opt?
-    if (common(p, method, CompLevel_full_profile) == CompLevel_full_optimization) {
-      next_level = CompLevel_full_optimization;
-    } else if ((this->*p)(i, b, cur_level)) {
-      next_level = CompLevel_full_profile;
-    }
-    break;
-  case CompLevel_limited_profile:
-  case CompLevel_full_profile:
-    {
-      methodDataOop mdo = method->method_data();
-      if (mdo != NULL) {
-        if (mdo->would_profile()) {
-          int mdo_i = mdo->invocation_count_delta();
-          int mdo_b = mdo->backedge_count_delta();
-          if ((this->*p)(mdo_i, mdo_b, cur_level)) {
+  if (is_trivial(method)) {
+    next_level = CompLevel_simple;
+  } else {
+    switch(cur_level) {
+    case CompLevel_none:
+      // If we were at full profile level, would we switch to full opt?
+      if (common(p, method, CompLevel_full_profile) == CompLevel_full_optimization) {
+        next_level = CompLevel_full_optimization;
+      } else if ((this->*p)(i, b, cur_level)) {
+        next_level = CompLevel_full_profile;
+      }
+      break;
+    case CompLevel_limited_profile:
+    case CompLevel_full_profile:
+      {
+        methodDataOop mdo = method->method_data();
+        if (mdo != NULL) {
+          if (mdo->would_profile()) {
+            int mdo_i = mdo->invocation_count_delta();
+            int mdo_b = mdo->backedge_count_delta();
+            if ((this->*p)(mdo_i, mdo_b, cur_level)) {
+              next_level = CompLevel_full_optimization;
+            }
+          } else {
             next_level = CompLevel_full_optimization;
           }
-        } else {
-          next_level = CompLevel_full_optimization;
         }
       }
+      break;
     }
-    break;
   }
-  return next_level;
+  return MIN2(next_level, (CompLevel)TieredStopAtLevel);
 }
 
 // Determine if a method should be compiled with a normal entry point at a different level.

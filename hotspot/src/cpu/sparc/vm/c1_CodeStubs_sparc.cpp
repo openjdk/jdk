@@ -303,9 +303,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     assert(_oop_index >= 0, "must have oop index");
     __ load_heap_oop(_obj, java_lang_Class::klass_offset_in_bytes(), G3);
     __ ld_ptr(G3, instanceKlass::init_thread_offset_in_bytes() + sizeof(klassOopDesc), G3);
-    __ cmp(G2_thread, G3);
-    __ br(Assembler::notEqual, false, Assembler::pn, call_patch);
-    __ delayed()->nop();
+    __ cmp_and_brx_short(G2_thread, G3, Assembler::notEqual, Assembler::pn, call_patch);
 
     // load_klass patches may execute the patched code before it's
     // copied back into place so we need to jump back into the main
