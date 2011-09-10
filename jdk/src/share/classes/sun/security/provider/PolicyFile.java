@@ -26,27 +26,21 @@
 package sun.security.provider;
 
 import java.io.*;
-import java.lang.RuntimePermission;
 import java.lang.reflect.*;
-import java.lang.ref.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URI;
 import java.util.*;
 import java.util.Enumeration;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.StringTokenizer;
-import java.util.PropertyPermission;
 import java.util.ArrayList;
 import java.util.ListIterator;
-import java.util.WeakHashMap;
 import java.text.MessageFormat;
 import com.sun.security.auth.PrincipalComparator;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import javax.security.auth.PrivateCredentialPermission;
 import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 import java.io.FilePermission;
@@ -68,7 +62,6 @@ import javax.net.ssl.SSLPermission;
 import sun.misc.JavaSecurityProtectionDomainAccess;
 import static sun.misc.JavaSecurityProtectionDomainAccess.ProtectionDomainCache;
 import sun.misc.SharedSecrets;
-import sun.security.util.Password;
 import sun.security.util.PolicyUtil;
 import sun.security.util.PropertyExpander;
 import sun.security.util.Debug;
@@ -1006,7 +999,7 @@ public class PolicyFile extends java.security.Policy {
      * via reflection. Keep list short to not penalize non-JDK-defined
      * permissions.
      */
-    private static final Permission getKnownInstance(Class claz,
+    private static final Permission getKnownInstance(Class<?> claz,
         String name, String actions) {
         // XXX shorten list to most popular ones?
         if (claz.equals(FilePermission.class)) {
@@ -1346,7 +1339,7 @@ public class PolicyFile extends java.security.Policy {
                 "\tActive Principals: " + accPs);
         }
 
-        if (entryPs == null || entryPs.size() == 0) {
+        if (entryPs == null || entryPs.isEmpty()) {
 
             // policy entry has no principals -
             // add perms regardless of principals in current ACC
@@ -1547,7 +1540,7 @@ public class PolicyFile extends java.security.Policy {
                             Principal[] pdp,
                             Permissions perms) {
 
-        if (entryPs == null || entryPs.size() == 0) {
+        if (entryPs == null || entryPs.isEmpty()) {
             // No principals in the grant to substitute
             if (debug != null) {
                 debug.println("Ignoring permission "
@@ -1890,7 +1883,7 @@ public class PolicyFile extends java.security.Policy {
     private boolean replacePrincipals(
         List<PolicyParser.PrincipalEntry> principals, KeyStore keystore) {
 
-        if (principals == null || principals.size() == 0 || keystore == null)
+        if (principals == null || principals.isEmpty() || keystore == null)
             return true;
 
         ListIterator<PolicyParser.PrincipalEntry> i = principals.listIterator();
@@ -2403,7 +2396,7 @@ public class PolicyFile extends java.security.Policy {
         final List<PolicyEntry> identityPolicyEntries;
 
         // Maps aliases to certs
-        final Map aliasMapping;
+        final Map<Object, Object> aliasMapping;
 
         // Maps ProtectionDomain to PermissionCollection
         private final ProtectionDomainCache[] pdMapping;
@@ -2413,7 +2406,8 @@ public class PolicyFile extends java.security.Policy {
             policyEntries = new ArrayList<PolicyEntry>();
             identityPolicyEntries =
                 Collections.synchronizedList(new ArrayList<PolicyEntry>(2));
-            aliasMapping = Collections.synchronizedMap(new HashMap(11));
+            aliasMapping = Collections.synchronizedMap(
+                    new HashMap<Object, Object>(11));
 
             pdMapping = new ProtectionDomainCache[numCaches];
             JavaSecurityProtectionDomainAccess jspda

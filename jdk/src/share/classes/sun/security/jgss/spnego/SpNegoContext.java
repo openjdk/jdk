@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1016,7 +1016,7 @@ public class SpNegoContext implements GSSContextSpi {
         // get the peer name for the mechanism
         if (mechContext != null) {
             GSSNameImpl targName = (GSSNameImpl)mechContext.getTargName();
-            peerName = (GSSNameSpi) targName.getElement(internal_mech);
+            peerName = targName.getElement(internal_mech);
             return peerName;
         } else {
             if (DEBUG) {
@@ -1032,7 +1032,7 @@ public class SpNegoContext implements GSSContextSpi {
         // get the src name for the mechanism
         if (mechContext != null) {
             GSSNameImpl srcName = (GSSNameImpl)mechContext.getSrcName();
-            myName = (GSSNameSpi) srcName.getElement(internal_mech);
+            myName = srcName.getElement(internal_mech);
             return myName;
         } else {
             if (DEBUG) {
@@ -1064,8 +1064,8 @@ public class SpNegoContext implements GSSContextSpi {
             if (delegCred.getUsage() == GSSCredential.INITIATE_ONLY) {
                 initiate = true;
             }
-            GSSCredentialSpi mechCred = (GSSCredentialSpi)
-                                delegCred.getElement(internal_mech, initiate);
+            GSSCredentialSpi mechCred =
+                    delegCred.getElement(internal_mech, initiate);
             SpNegoCredElement cred = new SpNegoCredElement(mechCred);
             return cred.getInternalCred();
         } else {

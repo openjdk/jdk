@@ -123,7 +123,7 @@ public class PolicyTool {
      * set the PolicyFileName
      */
     void setPolicyFileName(String policyFileName) {
-        this.policyFileName = policyFileName;
+        PolicyTool.policyFileName = policyFileName;
     }
 
    /**
@@ -605,7 +605,7 @@ public class PolicyTool {
         if (type.equals(PolicyParser.PrincipalEntry.WILDCARD_CLASS) ||
             type.equals(PolicyParser.REPLACE_NAME)) {
             return;
-        };
+        }
         Class<?> PRIN = Class.forName("java.security.Principal");
         Class<?> pc = Class.forName(type, true,
                 Thread.currentThread().getContextClassLoader());
@@ -629,6 +629,7 @@ public class PolicyTool {
     /**
      * Check to see if the Permission contents are OK
      */
+    @SuppressWarnings("fallthrough")
     void verifyPermission(String type,
                                     String name,
                                     String actions)
@@ -655,6 +656,7 @@ public class PolicyTool {
                 // proceed to the one-param constructor
                 objects.add(null);
             }
+            /* fall through */
         case 1:
             try {
                 c = pc.getConstructor(ONEPARAMS);
@@ -663,6 +665,7 @@ public class PolicyTool {
                 // proceed to the two-param constructor
                 objects.add(null);
             }
+            /* fall through */
         case 2:
             c = pc.getConstructor(TWOPARAMS);
             break;
@@ -1553,16 +1556,15 @@ class ToolDialog extends Dialog {
         if (edit) {
             // get the selected item
             entries = tool.getEntry();
-            List policyList = (List)tw.getComponent(tw.MW_POLICY_LIST);
+            List policyList = (List)tw.getComponent(ToolWindow.MW_POLICY_LIST);
             listIndex = policyList.getSelectedIndex();
 
             // get principal list
-            LinkedList principals =
+            LinkedList<PolicyParser.PrincipalEntry> principals =
                 entries[listIndex].getGrantEntry().principals;
             for (int i = 0; i < principals.size(); i++) {
                 String prinString = null;
-                PolicyParser.PrincipalEntry nextPrin =
-                        (PolicyParser.PrincipalEntry)principals.get(i);
+                PolicyParser.PrincipalEntry nextPrin = principals.get(i);
                 prinList.addTaggedItem(PrincipalEntryToUserFriendlyString(nextPrin), nextPrin);
             }
 
@@ -1631,10 +1633,10 @@ class ToolDialog extends Dialog {
         label = new Label(PolicyTool.rb.getString("Principals."));
         tw.addNewComponent(this, label, PE_PRIN_LABEL,
                            0, 3, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                           tw.BOTTOM_PADDING);
+                           ToolWindow.BOTTOM_PADDING);
         tw.addNewComponent(this, prinList, PE_PRIN_LIST,
                            1, 3, 3, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                           tw.BOTTOM_PADDING);
+                           ToolWindow.BOTTOM_PADDING);
 
         // panel for permission buttons
         panel = new Panel();
@@ -1661,12 +1663,12 @@ class ToolDialog extends Dialog {
 
         tw.addNewComponent(this, panel, PE_PANEL1,
                 0, 4, 2, 1, 0.0, 0.0, GridBagConstraints.HORIZONTAL,
-                tw.LITE_BOTTOM_PADDING);
+                ToolWindow.LITE_BOTTOM_PADDING);
 
         // permission list
         tw.addNewComponent(this, permList, PE_PERM_LIST,
                            0, 5, 3, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                           tw.BOTTOM_PADDING);
+                           ToolWindow.BOTTOM_PADDING);
 
 
         // panel for Done and Cancel buttons
@@ -1679,14 +1681,14 @@ class ToolDialog extends Dialog {
                 (new AddEntryDoneButtonListener(tool, tw, this, edit));
         tw.addNewComponent(panel, button, PE_DONE_BUTTON,
                            0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.VERTICAL,
-                           tw.LR_PADDING);
+                           ToolWindow.LR_PADDING);
 
         // Cancel Button
         button = new Button(PolicyTool.rb.getString("Cancel"));
         button.addActionListener(new CancelButtonListener(this));
         tw.addNewComponent(panel, button, PE_CANCEL_BUTTON,
                            1, 0, 1, 1, 0.0, 0.0, GridBagConstraints.VERTICAL,
-                           tw.LR_PADDING);
+                           ToolWindow.LR_PADDING);
 
         // add the panel
         tw.addNewComponent(this, panel, PE_PANEL2,
@@ -1760,7 +1762,7 @@ class ToolDialog extends Dialog {
                         (PolicyTool.rb.getString("KeyStore.URL."));
             tw.addNewComponent(this, label, KSD_NAME_LABEL,
                                0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                               tw.BOTTOM_PADDING);
+                               ToolWindow.BOTTOM_PADDING);
             TextField tf = new TextField(tool.getKeyStoreName(), 30);
 
             // URL to U R L, so that accessibility reader will pronounce well
@@ -1768,45 +1770,45 @@ class ToolDialog extends Dialog {
                 PolicyTool.rb.getString("KeyStore.U.R.L."));
             tw.addNewComponent(this, tf, KSD_NAME_TEXTFIELD,
                                1, 0, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                               tw.BOTTOM_PADDING);
+                               ToolWindow.BOTTOM_PADDING);
 
             // KeyStore type and textfield
             label = new Label(PolicyTool.rb.getString("KeyStore.Type."));
             tw.addNewComponent(this, label, KSD_TYPE_LABEL,
                                0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                               tw.BOTTOM_PADDING);
+                               ToolWindow.BOTTOM_PADDING);
             tf = new TextField(tool.getKeyStoreType(), 30);
             tf.getAccessibleContext().setAccessibleName(
                 PolicyTool.rb.getString("KeyStore.Type."));
             tw.addNewComponent(this, tf, KSD_TYPE_TEXTFIELD,
                                1, 1, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                               tw.BOTTOM_PADDING);
+                               ToolWindow.BOTTOM_PADDING);
 
             // KeyStore provider and textfield
             label = new Label(PolicyTool.rb.getString
                                 ("KeyStore.Provider."));
             tw.addNewComponent(this, label, KSD_PROVIDER_LABEL,
                                0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                               tw.BOTTOM_PADDING);
+                               ToolWindow.BOTTOM_PADDING);
             tf = new TextField(tool.getKeyStoreProvider(), 30);
             tf.getAccessibleContext().setAccessibleName(
                 PolicyTool.rb.getString("KeyStore.Provider."));
             tw.addNewComponent(this, tf, KSD_PROVIDER_TEXTFIELD,
                                1, 2, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                               tw.BOTTOM_PADDING);
+                               ToolWindow.BOTTOM_PADDING);
 
             // KeyStore password URL and textfield
             label = new Label(PolicyTool.rb.getString
                                 ("KeyStore.Password.URL."));
             tw.addNewComponent(this, label, KSD_PWD_URL_LABEL,
                                0, 3, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                               tw.BOTTOM_PADDING);
+                               ToolWindow.BOTTOM_PADDING);
             tf = new TextField(tool.getKeyStorePwdURL(), 30);
             tf.getAccessibleContext().setAccessibleName(
                 PolicyTool.rb.getString("KeyStore.Password.U.R.L."));
             tw.addNewComponent(this, tf, KSD_PWD_URL_TEXTFIELD,
                                1, 3, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                               tw.BOTTOM_PADDING);
+                               ToolWindow.BOTTOM_PADDING);
 
             // OK button
             Button okButton = new Button(PolicyTool.rb.getString("OK"));
@@ -1862,7 +1864,7 @@ class ToolDialog extends Dialog {
                 new Label(PolicyTool.rb.getString(".Add.New.Principal.")));
         tw.addNewComponent(newTD, label, PRD_DESC_LABEL,
                            0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                           tw.TOP_BOTTOM_PADDING);
+                           ToolWindow.TOP_BOTTOM_PADDING);
 
         // principal choice
         Choice choice = new Choice();
@@ -1888,7 +1890,7 @@ class ToolDialog extends Dialog {
 
         tw.addNewComponent(newTD, choice, PRD_PRIN_CHOICE,
                            0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                           tw.LR_PADDING);
+                           ToolWindow.LR_PADDING);
 
         // principal textfield
         TextField tf;
@@ -1898,7 +1900,7 @@ class ToolDialog extends Dialog {
         tf.getAccessibleContext().setAccessibleName(PRIN_TYPE);
         tw.addNewComponent(newTD, tf, PRD_PRIN_TEXTFIELD,
                            1, 1, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                           tw.LR_PADDING);
+                           ToolWindow.LR_PADDING);
 
         // name label and textfield
         label = new Label(PRIN_NAME);
@@ -1909,10 +1911,10 @@ class ToolDialog extends Dialog {
 
         tw.addNewComponent(newTD, label, PRD_NAME_LABEL,
                            0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                           tw.LR_PADDING);
+                           ToolWindow.LR_PADDING);
         tw.addNewComponent(newTD, tf, PRD_NAME_TEXTFIELD,
                            1, 2, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                           tw.LR_PADDING);
+                           ToolWindow.LR_PADDING);
 
         // OK button
         Button okButton = new Button(PolicyTool.rb.getString("OK"));
@@ -1921,13 +1923,13 @@ class ToolDialog extends Dialog {
                                         (tool, tw, this, newTD, edit));
         tw.addNewComponent(newTD, okButton, PRD_OK_BUTTON,
                            0, 3, 1, 1, 0.0, 0.0, GridBagConstraints.VERTICAL,
-                           tw.TOP_BOTTOM_PADDING);
+                           ToolWindow.TOP_BOTTOM_PADDING);
         // cancel button
         Button cancelButton = new Button(PolicyTool.rb.getString("Cancel"));
         cancelButton.addActionListener(new CancelButtonListener(newTD));
         tw.addNewComponent(newTD, cancelButton, PRD_CANCEL_BUTTON,
                            1, 3, 1, 1, 0.0, 0.0, GridBagConstraints.VERTICAL,
-                           tw.TOP_BOTTOM_PADDING);
+                           ToolWindow.TOP_BOTTOM_PADDING);
 
         newTD.setVisible(true);
     }
@@ -1969,7 +1971,7 @@ class ToolDialog extends Dialog {
                 new Label(PolicyTool.rb.getString(".Add.New.Permission.")));
         tw.addNewComponent(newTD, label, PD_DESC_LABEL,
                            0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                           tw.TOP_BOTTOM_PADDING);
+                           ToolWindow.TOP_BOTTOM_PADDING);
 
         // permission choice (added in alphabetical order)
         Choice choice = new Choice();
@@ -1982,7 +1984,7 @@ class ToolDialog extends Dialog {
         choice.addItemListener(new PermissionMenuListener(newTD));
         tw.addNewComponent(newTD, choice, PD_PERM_CHOICE,
                            0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                           tw.LR_PADDING);
+                           ToolWindow.LR_PADDING);
 
         // permission textfield
         TextField tf;
@@ -1996,7 +1998,7 @@ class ToolDialog extends Dialog {
         }
         tw.addNewComponent(newTD, tf, PD_PERM_TEXTFIELD,
                            1, 1, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                           tw.LR_PADDING);
+                           ToolWindow.LR_PADDING);
 
         // name label and textfield
         choice = new Choice();
@@ -2010,10 +2012,10 @@ class ToolDialog extends Dialog {
         }
         tw.addNewComponent(newTD, choice, PD_NAME_CHOICE,
                            0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                           tw.LR_PADDING);
+                           ToolWindow.LR_PADDING);
         tw.addNewComponent(newTD, tf, PD_NAME_TEXTFIELD,
                            1, 2, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                           tw.LR_PADDING);
+                           ToolWindow.LR_PADDING);
 
         // actions label and textfield
         choice = new Choice();
@@ -2027,22 +2029,22 @@ class ToolDialog extends Dialog {
         }
         tw.addNewComponent(newTD, choice, PD_ACTIONS_CHOICE,
                            0, 3, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                           tw.LR_PADDING);
+                           ToolWindow.LR_PADDING);
         tw.addNewComponent(newTD, tf, PD_ACTIONS_TEXTFIELD,
                            1, 3, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                           tw.LR_PADDING);
+                           ToolWindow.LR_PADDING);
 
         // signedby label and textfield
         label = new Label(PolicyTool.rb.getString("Signed.By."));
         tw.addNewComponent(newTD, label, PD_SIGNEDBY_LABEL,
                            0, 4, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                           tw.LR_PADDING);
+                           ToolWindow.LR_PADDING);
         tf = (edit ? new TextField(editMe.signedBy, 40) : new TextField(40));
         tf.getAccessibleContext().setAccessibleName(
                 PolicyTool.rb.getString("Signed.By."));
         tw.addNewComponent(newTD, tf, PD_SIGNEDBY_TEXTFIELD,
                            1, 4, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                           tw.LR_PADDING);
+                           ToolWindow.LR_PADDING);
 
         // OK button
         Button okButton = new Button(PolicyTool.rb.getString("OK"));
@@ -2051,14 +2053,14 @@ class ToolDialog extends Dialog {
                                     (tool, tw, this, newTD, edit));
         tw.addNewComponent(newTD, okButton, PD_OK_BUTTON,
                            0, 5, 1, 1, 0.0, 0.0, GridBagConstraints.VERTICAL,
-                           tw.TOP_BOTTOM_PADDING);
+                           ToolWindow.TOP_BOTTOM_PADDING);
 
         // cancel button
         Button cancelButton = new Button(PolicyTool.rb.getString("Cancel"));
         cancelButton.addActionListener(new CancelButtonListener(newTD));
         tw.addNewComponent(newTD, cancelButton, PD_CANCEL_BUTTON,
                            1, 5, 1, 1, 0.0, 0.0, GridBagConstraints.VERTICAL,
-                           tw.TOP_BOTTOM_PADDING);
+                           ToolWindow.TOP_BOTTOM_PADDING);
 
         newTD.setVisible(true);
     }
@@ -2205,7 +2207,7 @@ class ToolDialog extends Dialog {
     void displayConfirmRemovePolicyEntry() {
 
         // find the entry to be removed
-        List list = (List)tw.getComponent(tw.MW_POLICY_LIST);
+        List list = (List)tw.getComponent(ToolWindow.MW_POLICY_LIST);
         int index = list.getSelectedIndex();
         PolicyEntry entries[] = tool.getEntry();
 
@@ -2219,7 +2221,7 @@ class ToolDialog extends Dialog {
                 (PolicyTool.rb.getString("Remove.this.Policy.Entry."));
         tw.addNewComponent(this, label, CRPE_LABEL1,
                            0, 0, 2, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                           tw.BOTTOM_PADDING);
+                           ToolWindow.BOTTOM_PADDING);
 
         // display the policy entry
         label = new Label(entries[index].codebaseToString());
@@ -2237,7 +2239,8 @@ class ToolDialog extends Dialog {
             if (i == (perms.size()-1)) {
                 tw.addNewComponent(this, label, CRPE_LABEL2 + 2 + i,
                                  1, 3 + i, 1, 1, 0.0, 0.0,
-                                 GridBagConstraints.BOTH, tw.BOTTOM_PADDING);
+                                 GridBagConstraints.BOTH,
+                                 ToolWindow.BOTTOM_PADDING);
             } else {
                 tw.addNewComponent(this, label, CRPE_LABEL2 + 2 + i,
                                  1, 3 + i, 1, 1, 0.0, 0.0,
@@ -2256,18 +2259,18 @@ class ToolDialog extends Dialog {
                 (new ConfirmRemovePolicyEntryOKButtonListener(tool, tw, this));
         tw.addNewComponent(panel, okButton, CRPE_PANEL_OK,
                            0, 0, 1, 1, 0.0, 0.0,
-                           GridBagConstraints.VERTICAL, tw.LR_PADDING);
+                           GridBagConstraints.VERTICAL, ToolWindow.LR_PADDING);
 
         // cancel button
         Button cancelButton = new Button(PolicyTool.rb.getString("Cancel"));
         cancelButton.addActionListener(new CancelButtonListener(this));
         tw.addNewComponent(panel, cancelButton, CRPE_PANEL_CANCEL,
                            1, 0, 1, 1, 0.0, 0.0,
-                           GridBagConstraints.VERTICAL, tw.LR_PADDING);
+                           GridBagConstraints.VERTICAL, ToolWindow.LR_PADDING);
 
         tw.addNewComponent(this, panel, CRPE_LABEL2 + 2 + perms.size(),
                            0, 3 + perms.size(), 2, 1, 0.0, 0.0,
-                           GridBagConstraints.VERTICAL, tw.TOP_BOTTOM_PADDING);
+                           GridBagConstraints.VERTICAL, ToolWindow.TOP_BOTTOM_PADDING);
 
         pack();
         setVisible(true);
@@ -2310,7 +2313,7 @@ class ToolDialog extends Dialog {
 
             // display the new policy filename
             TextField newFilename = (TextField)tw.getComponent
-                            (tw.MW_FILENAME_TEXTFIELD);
+                            (ToolWindow.MW_FILENAME_TEXTFIELD);
             newFilename.setText(filename);
             tw.setVisible(true);
 
@@ -2346,7 +2349,7 @@ class ToolDialog extends Dialog {
                 (PolicyTool.rb.getString("Save.changes."));
             tw.addNewComponent(this, label, USC_LABEL,
                                0, 0, 3, 1, 0.0, 0.0, GridBagConstraints.BOTH,
-                               tw.L_TOP_BOTTOM_PADDING);
+                               ToolWindow.L_TOP_BOTTOM_PADDING);
 
             Panel panel = new Panel();
             panel.setLayout(new GridBagLayout());
@@ -2357,21 +2360,21 @@ class ToolDialog extends Dialog {
             tw.addNewComponent(panel, yesButton, USC_YES_BUTTON,
                                0, 0, 1, 1, 0.0, 0.0,
                                GridBagConstraints.VERTICAL,
-                               tw.LR_BOTTOM_PADDING);
+                               ToolWindow.LR_BOTTOM_PADDING);
             Button noButton = new Button(PolicyTool.rb.getString("No"));
             noButton.addActionListener
                         (new UserSaveNoButtonListener(this, tool, tw, select));
             tw.addNewComponent(panel, noButton, USC_NO_BUTTON,
                                1, 0, 1, 1, 0.0, 0.0,
                                GridBagConstraints.VERTICAL,
-                               tw.LR_BOTTOM_PADDING);
+                               ToolWindow.LR_BOTTOM_PADDING);
             Button cancelButton = new Button(PolicyTool.rb.getString("Cancel"));
             cancelButton.addActionListener
                         (new UserSaveCancelButtonListener(this));
             tw.addNewComponent(panel, cancelButton, USC_CANCEL_BUTTON,
                                2, 0, 1, 1, 0.0, 0.0,
                                GridBagConstraints.VERTICAL,
-                               tw.LR_BOTTOM_PADDING);
+                               ToolWindow.LR_BOTTOM_PADDING);
 
             tw.addNewComponent(this, panel, USC_PANEL,
                                0, 1, 1, 1, 0.0, 0.0, GridBagConstraints.BOTH);
@@ -2391,6 +2394,7 @@ class ToolDialog extends Dialog {
      * (either QUITting, opening NEW policy file, or OPENing an existing
      * policy file.  do that now.
      */
+    @SuppressWarnings("fallthrough")
     void userSaveContinue(PolicyTool tool, ToolWindow tw,
                         ToolDialog us, int select) {
 
@@ -2417,8 +2421,8 @@ class ToolDialog extends Dialog {
             tw.replacePolicyList(list);
 
             // display null policy filename and keystore
-            TextField newFilename = (TextField)
-                                tw.getComponent(tw.MW_FILENAME_TEXTFIELD);
+            TextField newFilename = (TextField)tw.getComponent(
+                    ToolWindow.MW_FILENAME_TEXTFIELD);
             newFilename.setText("");
             tw.setVisible(true);
             break;
@@ -2459,8 +2463,8 @@ class ToolDialog extends Dialog {
                 tool.modified = false;
 
                 // display the new policy filename
-                newFilename = (TextField)
-                                tw.getComponent(tw.MW_FILENAME_TEXTFIELD);
+                newFilename = (TextField)tw.getComponent(
+                        ToolWindow.MW_FILENAME_TEXTFIELD);
                 newFilename.setText(policyFile);
                 tw.setVisible(true);
 
@@ -2479,8 +2483,8 @@ class ToolDialog extends Dialog {
                 tool.modified = false;
 
                 // display a null policy filename
-                newFilename = (TextField)
-                                tw.getComponent(tw.MW_FILENAME_TEXTFIELD);
+                newFilename = (TextField)tw.getComponent(
+                        ToolWindow.MW_FILENAME_TEXTFIELD);
                 newFilename.setText("");
                 tw.setVisible(true);
 
@@ -2658,51 +2662,52 @@ class FileMenuListener implements ActionListener {
 
     public void actionPerformed(ActionEvent e) {
 
-        if (PolicyTool.collator.compare(e.getActionCommand(), tw.QUIT) == 0) {
+        if (PolicyTool.collator.compare(e.getActionCommand(),
+                                       ToolWindow.QUIT) == 0) {
 
             // ask user if they want to save changes
             ToolDialog td = new ToolDialog
                 (PolicyTool.rb.getString("Save.Changes"), tool, tw, true);
-            td.displayUserSave(td.QUIT);
+            td.displayUserSave(ToolDialog.QUIT);
 
             // the above method will perform the QUIT as long as the
             // user does not CANCEL the request
 
         } else if (PolicyTool.collator.compare(e.getActionCommand(),
-                                        tw.NEW_POLICY_FILE) == 0) {
+                                   ToolWindow.NEW_POLICY_FILE) == 0) {
 
             // ask user if they want to save changes
             ToolDialog td = new ToolDialog
                 (PolicyTool.rb.getString("Save.Changes"), tool, tw, true);
-            td.displayUserSave(td.NEW);
+            td.displayUserSave(ToolDialog.NEW);
 
             // the above method will perform the NEW as long as the
             // user does not CANCEL the request
 
         } else if (PolicyTool.collator.compare(e.getActionCommand(),
-                                        tw.OPEN_POLICY_FILE) == 0) {
+                                  ToolWindow.OPEN_POLICY_FILE) == 0) {
 
             // ask user if they want to save changes
             ToolDialog td = new ToolDialog
                 (PolicyTool.rb.getString("Save.Changes"), tool, tw, true);
-            td.displayUserSave(td.OPEN);
+            td.displayUserSave(ToolDialog.OPEN);
 
             // the above method will perform the OPEN as long as the
             // user does not CANCEL the request
 
         } else if (PolicyTool.collator.compare(e.getActionCommand(),
-                                        tw.SAVE_POLICY_FILE) == 0) {
+                                  ToolWindow.SAVE_POLICY_FILE) == 0) {
 
             // get the previously entered filename
-            String filename = ((TextField)
-                    tw.getComponent(tw.MW_FILENAME_TEXTFIELD)).getText();
+            String filename = ((TextField)tw.getComponent(
+                    ToolWindow.MW_FILENAME_TEXTFIELD)).getText();
 
             // if there is no filename, do a SAVE_AS
             if (filename == null || filename.length() == 0) {
                 // user wants to SAVE AS
                 ToolDialog td = new ToolDialog
                         (PolicyTool.rb.getString("Save.As"), tool, tw, true);
-                td.displaySaveAsDialog(td.NOACTION);
+                td.displaySaveAsDialog(ToolDialog.NOACTION);
             } else {
                 try {
                     // save the policy entries to a file
@@ -2726,15 +2731,15 @@ class FileMenuListener implements ActionListener {
                 }
             }
         } else if (PolicyTool.collator.compare(e.getActionCommand(),
-                                                tw.SAVE_AS_POLICY_FILE) == 0) {
+                               ToolWindow.SAVE_AS_POLICY_FILE) == 0) {
 
             // user wants to SAVE AS
             ToolDialog td = new ToolDialog
                 (PolicyTool.rb.getString("Save.As"), tool, tw, true);
-            td.displaySaveAsDialog(td.NOACTION);
+            td.displaySaveAsDialog(ToolDialog.NOACTION);
 
         } else if (PolicyTool.collator.compare(e.getActionCommand(),
-                                                tw.VIEW_WARNINGS) == 0) {
+                                     ToolWindow.VIEW_WARNINGS) == 0) {
             tw.displayWarningLog(null);
         }
     }
@@ -2756,7 +2761,7 @@ class MainWindowListener implements ActionListener {
     public void actionPerformed(ActionEvent e) {
 
         if (PolicyTool.collator.compare(e.getActionCommand(),
-                                        tw.ADD_POLICY_ENTRY) == 0) {
+                           ToolWindow.ADD_POLICY_ENTRY) == 0) {
 
             // display a dialog box for the user to enter policy info
             ToolDialog td = new ToolDialog
@@ -2764,10 +2769,10 @@ class MainWindowListener implements ActionListener {
             td.displayPolicyEntryDialog(false);
 
         } else if (PolicyTool.collator.compare(e.getActionCommand(),
-                                        tw.REMOVE_POLICY_ENTRY) == 0) {
+                               ToolWindow.REMOVE_POLICY_ENTRY) == 0) {
 
             // get the selected entry
-            List list = (List)tw.getComponent(tw.MW_POLICY_LIST);
+            List list = (List)tw.getComponent(ToolWindow.MW_POLICY_LIST);
             int index = list.getSelectedIndex();
             if (index < 0) {
                 tw.displayErrorDialog(null, new Exception
@@ -2781,10 +2786,10 @@ class MainWindowListener implements ActionListener {
             td.displayConfirmRemovePolicyEntry();
 
         } else if (PolicyTool.collator.compare(e.getActionCommand(),
-                                        tw.EDIT_POLICY_ENTRY) == 0) {
+                                 ToolWindow.EDIT_POLICY_ENTRY) == 0) {
 
             // get the selected entry
-            List list = (List)tw.getComponent(tw.MW_POLICY_LIST);
+            List list = (List)tw.getComponent(ToolWindow.MW_POLICY_LIST);
             int index = list.getSelectedIndex();
             if (index < 0) {
                 tw.displayErrorDialog(null, new Exception
@@ -2798,12 +2803,12 @@ class MainWindowListener implements ActionListener {
             td.displayPolicyEntryDialog(true);
 
         } else if (PolicyTool.collator.compare(e.getActionCommand(),
-                                        tw.EDIT_KEYSTORE) == 0) {
+                                     ToolWindow.EDIT_KEYSTORE) == 0) {
 
             // display a dialog box for the user to enter keystore info
             ToolDialog td = new ToolDialog
                 (PolicyTool.rb.getString("KeyStore"), tool, tw, true);
-            td.keyStoreDialog(td.EDIT_KEYSTORE);
+            td.keyStoreDialog(ToolDialog.EDIT_KEYSTORE);
         }
     }
 }
@@ -2855,7 +2860,7 @@ class AddEntryDoneButtonListener implements ActionListener {
             }
 
             // add the entry
-            List policyList = (List)tw.getComponent(tw.MW_POLICY_LIST);
+            List policyList = (List)tw.getComponent(ToolWindow.MW_POLICY_LIST);
             if (edit) {
                 int listIndex = policyList.getSelectedIndex();
                 tool.addEntry(newEntry, listIndex);
@@ -2896,14 +2901,14 @@ class ChangeKeyStoreOKButtonListener implements ActionListener {
 
     public void actionPerformed(ActionEvent e) {
 
-        String URLString = ((TextField)
-                td.getComponent(td.KSD_NAME_TEXTFIELD)).getText().trim();
-        String type = ((TextField)
-                td.getComponent(td.KSD_TYPE_TEXTFIELD)).getText().trim();
-        String provider = ((TextField)
-                td.getComponent(td.KSD_PROVIDER_TEXTFIELD)).getText().trim();
-        String pwdURL = ((TextField)
-                td.getComponent(td.KSD_PWD_URL_TEXTFIELD)).getText().trim();
+        String URLString = ((TextField)td.getComponent(
+                ToolDialog.KSD_NAME_TEXTFIELD)).getText().trim();
+        String type = ((TextField)td.getComponent(
+                ToolDialog.KSD_TYPE_TEXTFIELD)).getText().trim();
+        String provider = ((TextField)td.getComponent(
+                ToolDialog.KSD_PROVIDER_TEXTFIELD)).getText().trim();
+        String pwdURL = ((TextField)td.getComponent(
+                ToolDialog.KSD_PWD_URL_TEXTFIELD)).getText().trim();
 
         try {
             tool.openKeyStore
@@ -3018,7 +3023,7 @@ class NewPolicyPrinOKButtonListener implements ActionListener {
 
                 // add the principal to the GUI principal list
                 TaggedList prinList =
-                    (TaggedList)listDialog.getComponent(listDialog.PE_PRIN_LIST);
+                    (TaggedList)listDialog.getComponent(ToolDialog.PE_PRIN_LIST);
 
                 String prinString = ToolDialog.PrincipalEntryToUserFriendlyString(pppe);
                 if (edit) {
@@ -3079,7 +3084,7 @@ class NewPolicyPermOKButtonListener implements ActionListener {
 
             // add the permission to the GUI permission list
             TaggedList permList =
-                (TaggedList)listDialog.getComponent(listDialog.PE_PERM_LIST);
+                (TaggedList)listDialog.getComponent(ToolDialog.PE_PERM_LIST);
 
             String permString = ToolDialog.PermissionEntryToUserFriendlyString(pppe);
             if (edit) {
@@ -3121,7 +3126,8 @@ class RemovePrinButtonListener implements ActionListener {
     public void actionPerformed(ActionEvent e) {
 
         // get the Principal selected from the Principal List
-        TaggedList prinList = (TaggedList)td.getComponent(td.PE_PRIN_LIST);
+        TaggedList prinList = (TaggedList)td.getComponent(
+                ToolDialog.PE_PRIN_LIST);
         int prinIndex = prinList.getSelectedIndex();
 
         if (prinIndex < 0) {
@@ -3155,7 +3161,8 @@ class RemovePermButtonListener implements ActionListener {
     public void actionPerformed(ActionEvent e) {
 
         // get the Permission selected from the Permission List
-        TaggedList permList = (TaggedList)td.getComponent(td.PE_PERM_LIST);
+        TaggedList permList = (TaggedList)td.getComponent(
+                ToolDialog.PE_PERM_LIST);
         int permIndex = permList.getSelectedIndex();
 
         if (permIndex < 0) {
@@ -3196,7 +3203,8 @@ class EditPrinButtonListener implements ActionListener {
     public void actionPerformed(ActionEvent e) {
 
         // get the Principal selected from the Principal List
-        TaggedList list = (TaggedList)td.getComponent(td.PE_PRIN_LIST);
+        TaggedList list = (TaggedList)td.getComponent(
+                ToolDialog.PE_PRIN_LIST);
         int prinIndex = list.getSelectedIndex();
 
         if (prinIndex < 0) {
@@ -3235,7 +3243,7 @@ class EditPermButtonListener implements ActionListener {
     public void actionPerformed(ActionEvent e) {
 
         // get the Permission selected from the Permission List
-        List list = (List)td.getComponent(td.PE_PERM_LIST);
+        List list = (List)td.getComponent(ToolDialog.PE_PERM_LIST);
         int permIndex = list.getSelectedIndex();
 
         if (permIndex < 0) {
@@ -3260,19 +3268,19 @@ class PrincipalTypeMenuListener implements ItemListener {
 
     public void itemStateChanged(ItemEvent e) {
 
-        Choice prin = (Choice)td.getComponent(td.PRD_PRIN_CHOICE);
-        TextField prinField =
-                        (TextField)td.getComponent(td.PRD_PRIN_TEXTFIELD);
-        TextField nameField =
-                        (TextField)td.getComponent(td.PRD_NAME_TEXTFIELD);
+        Choice prin = (Choice)td.getComponent(ToolDialog.PRD_PRIN_CHOICE);
+        TextField prinField = (TextField)td.getComponent(
+                ToolDialog.PRD_PRIN_TEXTFIELD);
+        TextField nameField = (TextField)td.getComponent(
+                ToolDialog.PRD_NAME_TEXTFIELD);
 
         prin.getAccessibleContext().setAccessibleName(
             PolicyTool.splitToWords((String)e.getItem()));
-        if (((String)e.getItem()).equals(td.PRIN_TYPE)) {
+        if (((String)e.getItem()).equals(ToolDialog.PRIN_TYPE)) {
             // ignore if they choose "Principal Type:" item
             if (prinField.getText() != null &&
                 prinField.getText().length() > 0) {
-                Prin inputPrin = td.getPrin(prinField.getText(), true);
+                Prin inputPrin = ToolDialog.getPrin(prinField.getText(), true);
                 prin.select(inputPrin.CLASS);
             }
             return;
@@ -3286,7 +3294,7 @@ class PrincipalTypeMenuListener implements ItemListener {
         // set the text in the textfield and also modify the
         // pull-down choice menus to reflect the correct possible
         // set of names and actions
-        Prin inputPrin = td.getPrin((String)e.getItem(), false);
+        Prin inputPrin = ToolDialog.getPrin((String)e.getItem(), false);
         if (inputPrin != null) {
             prinField.setText(inputPrin.FULL_CLASS);
         }
@@ -3306,26 +3314,31 @@ class PermissionMenuListener implements ItemListener {
 
     public void itemStateChanged(ItemEvent e) {
 
-        Choice perms = (Choice)td.getComponent(td.PD_PERM_CHOICE);
-        Choice names = (Choice)td.getComponent(td.PD_NAME_CHOICE);
-        Choice actions = (Choice)td.getComponent(td.PD_ACTIONS_CHOICE);
-        TextField nameField =
-                        (TextField)td.getComponent(td.PD_NAME_TEXTFIELD);
-        TextField actionsField =
-                        (TextField)td.getComponent(td.PD_ACTIONS_TEXTFIELD);
-        TextField permField = (TextField)td.getComponent(td.PD_PERM_TEXTFIELD);
-        TextField signedbyField =
-                        (TextField)td.getComponent(td.PD_SIGNEDBY_TEXTFIELD);
+        Choice perms = (Choice)td.getComponent(
+                ToolDialog.PD_PERM_CHOICE);
+        Choice names = (Choice)td.getComponent(
+                ToolDialog.PD_NAME_CHOICE);
+        Choice actions = (Choice)td.getComponent(
+                ToolDialog.PD_ACTIONS_CHOICE);
+        TextField nameField = (TextField)td.getComponent(
+                ToolDialog.PD_NAME_TEXTFIELD);
+        TextField actionsField = (TextField)td.getComponent(
+                ToolDialog.PD_ACTIONS_TEXTFIELD);
+        TextField permField = (TextField)td.getComponent(
+                ToolDialog.PD_PERM_TEXTFIELD);
+        TextField signedbyField = (TextField)td.getComponent(
+                ToolDialog.PD_SIGNEDBY_TEXTFIELD);
 
         perms.getAccessibleContext().setAccessibleName(
             PolicyTool.splitToWords((String)e.getItem()));
 
         // ignore if they choose the 'Permission:' item
-        if (PolicyTool.collator.compare((String)e.getItem(), td.PERM) == 0) {
+        if (PolicyTool.collator.compare((String)e.getItem(),
+                                      ToolDialog.PERM) == 0) {
             if (permField.getText() != null &&
                 permField.getText().length() > 0) {
 
-                Perm inputPerm = td.getPerm(permField.getText(), true);
+                Perm inputPerm = ToolDialog.getPerm(permField.getText(), true);
                 if (inputPerm != null) {
                     perms.select(inputPerm.CLASS);
                 }
@@ -3344,7 +3357,7 @@ class PermissionMenuListener implements ItemListener {
         // pull-down choice menus to reflect the correct possible
         // set of names and actions
 
-        Perm inputPerm = td.getPerm((String)e.getItem(), false);
+        Perm inputPerm = ToolDialog.getPerm((String)e.getItem(), false);
         if (inputPerm == null) {
             permField.setText("");
         } else {
@@ -3368,14 +3381,14 @@ class PermissionNameMenuListener implements ItemListener {
 
     public void itemStateChanged(ItemEvent e) {
 
-        Choice names = (Choice)td.getComponent(td.PD_NAME_CHOICE);
+        Choice names = (Choice)td.getComponent(ToolDialog.PD_NAME_CHOICE);
         names.getAccessibleContext().setAccessibleName(
             PolicyTool.splitToWords((String)e.getItem()));
 
-        if (((String)e.getItem()).indexOf(td.PERM_NAME) != -1)
+        if (((String)e.getItem()).indexOf(ToolDialog.PERM_NAME) != -1)
             return;
 
-        TextField tf = (TextField)td.getComponent(td.PD_NAME_TEXTFIELD);
+        TextField tf = (TextField)td.getComponent(ToolDialog.PD_NAME_TEXTFIELD);
         tf.setText((String)e.getItem());
     }
 }
@@ -3393,13 +3406,15 @@ class PermissionActionsMenuListener implements ItemListener {
 
     public void itemStateChanged(ItemEvent e) {
 
-        Choice actions = (Choice)td.getComponent(td.PD_ACTIONS_CHOICE);
+        Choice actions = (Choice)td.getComponent(
+                ToolDialog.PD_ACTIONS_CHOICE);
         actions.getAccessibleContext().setAccessibleName((String)e.getItem());
 
-        if (((String)e.getItem()).indexOf(td.PERM_ACTIONS) != -1)
+        if (((String)e.getItem()).indexOf(ToolDialog.PERM_ACTIONS) != -1)
             return;
 
-        TextField tf = (TextField)td.getComponent(td.PD_ACTIONS_TEXTFIELD);
+        TextField tf = (TextField)td.getComponent(
+                ToolDialog.PD_ACTIONS_TEXTFIELD);
         if (tf.getText() == null || tf.getText().equals("")) {
             tf.setText((String)e.getItem());
         } else {
@@ -3521,8 +3536,8 @@ class UserSaveYesButtonListener implements ActionListener {
         us.dispose();
 
         try {
-            String filename = ((TextField)
-                    tw.getComponent(tw.MW_FILENAME_TEXTFIELD)).getText();
+            String filename = ((TextField)tw.getComponent(
+                    ToolWindow.MW_FILENAME_TEXTFIELD)).getText();
             if (filename == null || filename.equals("")) {
                 us.displaySaveAsDialog(select);
 
@@ -3616,7 +3631,7 @@ class ConfirmRemovePolicyEntryOKButtonListener implements ActionListener {
 
     public void actionPerformed(ActionEvent e) {
         // remove the entry
-        List list = (List)tw.getComponent(tw.MW_POLICY_LIST);
+        List list = (List)tw.getComponent(ToolWindow.MW_POLICY_LIST);
         int index = list.getSelectedIndex();
         PolicyEntry entries[] = tool.getEntry();
         tool.removeEntry(entries[index]);
@@ -3640,13 +3655,15 @@ class ConfirmRemovePolicyEntryOKButtonListener implements ActionListener {
  * it's special, and does not pop out a warning box.
  */
 class NoDisplayException extends RuntimeException {
-
+    private static final long serialVersionUID = -4611761427108719794L;
 }
 
 /**
  * This is a java.awt.List that bind an Object to each String it holds.
  */
 class TaggedList extends List {
+    private static final long serialVersionUID = -5676238110427785853L;
+
     private java.util.List<Object> data = new LinkedList<>();
     public TaggedList(int i, boolean b) {
         super(i, b);

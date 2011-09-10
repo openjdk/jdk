@@ -29,8 +29,18 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * This source code is provided to illustrate the usage of a given feature
+ * or technique and has been deliberately simplified. Additional steps
+ * required for a production-quality application, such as security checks,
+ * input validation and proper error handling, might not be present in
+ * this sample code.
+ */
+
+
 package com.sun.nio.zipfs;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
@@ -1165,7 +1175,6 @@ public class ZipFileSystem extends FileSystem {
     // sync the zip file system, if there is any udpate
     private void sync() throws IOException {
         //System.out.printf("->sync(%s) starting....!%n", toString());
-
         // check ex-closer
         if (!exChClosers.isEmpty()) {
             for (ExChannelCloser ecc : exChClosers) {
@@ -1179,84 +1188,84 @@ public class ZipFileSystem extends FileSystem {
         if (!hasUpdate)
             return;
         Path tmpFile = createTempFileInSameDirectoryAs(zfpath);
-        OutputStream os = Files.newOutputStream(tmpFile, WRITE);
-        ArrayList<Entry> elist = new ArrayList<>(inodes.size());
-        long written = 0;
-        byte[] buf = new byte[8192];
-        Entry e = null;
+        try (OutputStream os = new BufferedOutputStream(Files.newOutputStream(tmpFile, WRITE)))
+        {
+            ArrayList<Entry> elist = new ArrayList<>(inodes.size());
+            long written = 0;
+            byte[] buf = new byte[8192];
+            Entry e = null;
 
-        // write loc
-        for (IndexNode inode : inodes.values()) {
-            if (inode instanceof Entry) {    // an updated inode
-                e = (Entry)inode;
-                try {
-                    if (e.type == Entry.COPY) {
-                        // entry copy: the only thing changed is the "name"
-                        // and "nlen" in LOC header, so we udpate/rewrite the
-                        // LOC in new file and simply copy the rest (data and
-                        // ext) without enflating/deflating from the old zip
-                        // file LOC entry.
-                        written += copyLOCEntry(e, true, os, written, buf);
-                    } else {                          // NEW, FILECH or CEN
-                        e.locoff = written;
-                        written += e.writeLOC(os);    // write loc header
-                        if (e.bytes != null) {        // in-memory, deflated
-                            os.write(e.bytes);        // already
-                            written += e.bytes.length;
-                        } else if (e.file != null) {  // tmp file
-                            try (InputStream is = Files.newInputStream(e.file)) {
-                                int n;
-                                if (e.type == Entry.NEW) {  // deflated already
-                                    while ((n = is.read(buf)) != -1) {
-                                        os.write(buf, 0, n);
-                                        written += n;
-                                    }
-                                } else if (e.type == Entry.FILECH) {
-                                    // the data are not deflated, use ZEOS
-                                    try (OutputStream os2 = new EntryOutputStream(e, os)) {
+            // write loc
+            for (IndexNode inode : inodes.values()) {
+                if (inode instanceof Entry) {    // an updated inode
+                    e = (Entry)inode;
+                    try {
+                        if (e.type == Entry.COPY) {
+                            // entry copy: the only thing changed is the "name"
+                            // and "nlen" in LOC header, so we udpate/rewrite the
+                            // LOC in new file and simply copy the rest (data and
+                            // ext) without enflating/deflating from the old zip
+                            // file LOC entry.
+                            written += copyLOCEntry(e, true, os, written, buf);
+                        } else {                          // NEW, FILECH or CEN
+                            e.locoff = written;
+                            written += e.writeLOC(os);    // write loc header
+                            if (e.bytes != null) {        // in-memory, deflated
+                                os.write(e.bytes);        // already
+                                written += e.bytes.length;
+                            } else if (e.file != null) {  // tmp file
+                                try (InputStream is = Files.newInputStream(e.file)) {
+                                    int n;
+                                    if (e.type == Entry.NEW) {  // deflated already
                                         while ((n = is.read(buf)) != -1) {
-                                            os2.write(buf, 0, n);
+                                            os.write(buf, 0, n);
+                                            written += n;
                                         }
+                                    } else if (e.type == Entry.FILECH) {
+                                        // the data are not deflated, use ZEOS
+                                        try (OutputStream os2 = new EntryOutputStream(e, os)) {
+                                            while ((n = is.read(buf)) != -1) {
+                                                os2.write(buf, 0, n);
+                                            }
+                                        }
+                                        written += e.csize;
+                                        if ((e.flag & FLAG_DATADESCR) != 0)
+                                            written += e.writeEXT(os);
                                     }
-                                    written += e.csize;
-                                    if ((e.flag & FLAG_DATADESCR) != 0)
-                                        written += e.writeEXT(os);
                                 }
+                                Files.delete(e.file);
+                                tmppaths.remove(e.file);
+                            } else {
+                                // dir, 0-length data
                             }
-                            Files.delete(e.file);
-                            tmppaths.remove(e.file);
-                        } else {
-                            // dir, 0-length data
                         }
+                        elist.add(e);
+                    } catch (IOException x) {
+                        x.printStackTrace();    // skip any in-accurate entry
                     }
-                    elist.add(e);
-                } catch (IOException x) {
-                    x.printStackTrace();    // skip any in-accurate entry
-                }
-            } else {                        // unchanged inode
-                if (inode.pos == -1) {
-                    continue;               // pseudo directory node
-                }
-                e = Entry.readCEN(this, inode.pos);
-                try {
-                    written += copyLOCEntry(e, false, os, written, buf);
-                    elist.add(e);
-                } catch (IOException x) {
-                    x.printStackTrace();    // skip any wrong entry
+                } else {                        // unchanged inode
+                    if (inode.pos == -1) {
+                        continue;               // pseudo directory node
+                    }
+                    e = Entry.readCEN(this, inode.pos);
+                    try {
+                        written += copyLOCEntry(e, false, os, written, buf);
+                        elist.add(e);
+                    } catch (IOException x) {
+                        x.printStackTrace();    // skip any wrong entry
+                    }
                 }
             }
-        }
 
-        // now write back the cen and end table
-        end.cenoff = written;
-        for (Entry entry : elist) {
-            written += entry.writeCEN(os);
+            // now write back the cen and end table
+            end.cenoff = written;
+            for (Entry entry : elist) {
+                written += entry.writeCEN(os);
+            }
+            end.centot = elist.size();
+            end.cenlen = written - end.cenoff;
+            end.write(os, written);
         }
-        end.centot = elist.size();
-        end.cenlen = written - end.cenoff;
-        end.write(os, written);
-        os.close();
-
         if (!streams.isEmpty()) {
             //
             // TBD: ExChannelCloser should not be necessary if we only
@@ -1959,7 +1968,7 @@ public class ZipFileSystem extends FileSystem {
             writeBytes(os, name);
             if (elen64 != 0) {
                 writeShort(os, EXTID_ZIP64);// Zip64 extra
-                writeShort(os, elen64);     // size of "this" extra block
+                writeShort(os, elen64 - 4); // size of "this" extra block
                 if (size0 == ZIP64_MINVAL)
                     writeLong(os, size);
                 if (csize0 == ZIP64_MINVAL)

@@ -26,6 +26,10 @@
  * @bug 4330535
  * @summary  Client should follow suite order in
  *           SSLSocket.setEnabledCipherSuites()
+ * @run main/othervm CipherSuiteOrder
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  * @author Jaya Hangal
  */
 

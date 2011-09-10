@@ -925,8 +925,9 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseTransform* phase) const {
     // a synchronized region.
     while (current->is_Proj()) {
       int opc = current->in(0)->Opcode();
-      if ((final && opc == Op_MemBarAcquire) ||
-          opc == Op_MemBarRelease || opc == Op_MemBarCPUOrder) {
+      if ((final && (opc == Op_MemBarAcquire || opc == Op_MemBarAcquireLock)) ||
+          opc == Op_MemBarRelease || opc == Op_MemBarCPUOrder ||
+          opc == Op_MemBarReleaseLock) {
         Node* mem = current->in(0)->in(TypeFunc::Memory);
         if (mem->is_MergeMem()) {
           MergeMemNode* merge = mem->as_MergeMem();
@@ -2666,6 +2667,8 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
   switch (opcode) {
   case Op_MemBarAcquire:   return new(C, len) MemBarAcquireNode(C,  atp, pn);
   case Op_MemBarRelease:   return new(C, len) MemBarReleaseNode(C,  atp, pn);
+  case Op_MemBarAcquireLock: return new(C, len) MemBarAcquireLockNode(C,  atp, pn);
+  case Op_MemBarReleaseLock: return new(C, len) MemBarReleaseLockNode(C,  atp, pn);
   case Op_MemBarVolatile:  return new(C, len) MemBarVolatileNode(C, atp, pn);
   case Op_MemBarCPUOrder:  return new(C, len) MemBarCPUOrderNode(C, atp, pn);
   case Op_Initialize:      return new(C, len) InitializeNode(C,     atp, pn);

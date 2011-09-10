@@ -1,7 +1,10 @@
 /*
  * @test
  * @build TestThread Traffic Handler ServerHandler ServerThread ClientThread
- * @run main/timeout=140 main
+ * @run main/othervm/timeout=140 main
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  * @summary Make sure that different configurations of SSL sockets work
  */
 

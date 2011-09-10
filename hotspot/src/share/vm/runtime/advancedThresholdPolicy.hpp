@@ -168,7 +168,7 @@ class AdvancedThresholdPolicy : public SimpleThresholdPolicy {
   bool call_predicate(int i, int b, CompLevel cur_level);
   bool loop_predicate(int i, int b, CompLevel cur_level);
   // Common transition function. Given a predicate determines if a method should transition to another level.
-  CompLevel common(Predicate p, methodOop method, CompLevel cur_level);
+  CompLevel common(Predicate p, methodOop method, CompLevel cur_level, bool disable_feedback = false);
   // Transition functions.
   // call_event determines if a method should be compiled at a different
   // level with a regular invocation entry.

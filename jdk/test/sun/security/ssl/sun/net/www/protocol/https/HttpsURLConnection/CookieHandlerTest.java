@@ -22,8 +22,12 @@
  */
 
 /* @test
- * @summary Unit test for java.net.CookieHandler
  * @bug 4696506 4942650
+ * @summary Unit test for java.net.CookieHandler
+ * @run main/othervm CookieHandlerTest
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  * @author Yingxian Wang
  */
 
@@ -182,26 +186,34 @@ public class CookieHandlerTest {
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + trustStoreFile;
 
-        System.setProperty("javax.net.ssl.keyStore", keyFilename);
-        System.setProperty("javax.net.ssl.keyStorePassword", passwd);
-        System.setProperty("javax.net.ssl.trustStore", trustFilename);
-        System.setProperty("javax.net.ssl.trustStorePassword", passwd);
+        CookieHandler reservedCookieHandler = CookieHandler.getDefault();
+        HostnameVerifier reservedHV =
+            HttpsURLConnection.getDefaultHostnameVerifier();
+        try {
+            System.setProperty("javax.net.ssl.keyStore", keyFilename);
+            System.setProperty("javax.net.ssl.keyStorePassword", passwd);
+            System.setProperty("javax.net.ssl.trustStore", trustFilename);
+            System.setProperty("javax.net.ssl.trustStorePassword", passwd);
 
-        if (debug)
-            System.setProperty("javax.net.debug", "all");
+            if (debug)
+                System.setProperty("javax.net.debug", "all");
 
-        /*
-         * Start the tests.
-         */
-        cookies = new HashMap<String, String>();
-        cookies.put("Cookie",
-              "$Version=\"1\"; Customer=\"WILE_E_COYOTE\"; $Path=\"/acme\"");
-        cookies.put("Set-Cookie2",
-          "$Version=\"1\"; Part_Number=\"Riding_Rocket_0023\"; " +
-          "$Path=\"/acme/ammo\"; Part_Number=\"Rocket_Launcher_0001\"; "+
-          "$Path=\"/acme\"");
-        CookieHandler.setDefault(new MyCookieHandler());
-        new CookieHandlerTest();
+            /*
+             * Start the tests.
+             */
+            cookies = new HashMap<String, String>();
+            cookies.put("Cookie",
+                "$Version=\"1\"; Customer=\"WILE_E_COYOTE\"; $Path=\"/acme\"");
+            cookies.put("Set-Cookie2",
+              "$Version=\"1\"; Part_Number=\"Riding_Rocket_0023\"; " +
+              "$Path=\"/acme/ammo\"; Part_Number=\"Rocket_Launcher_0001\"; "+
+              "$Path=\"/acme\"");
+            CookieHandler.setDefault(new MyCookieHandler());
+            new CookieHandlerTest();
+        } finally {
+            HttpsURLConnection.setDefaultHostnameVerifier(reservedHV);
+            CookieHandler.setDefault(reservedCookieHandler);
+        }
     }
 
     Thread clientThread = null;

@@ -25,7 +25,6 @@
 package sun.security.acl;
 
 import java.util.*;
-import java.io.*;
 import java.security.Principal;
 import java.security.acl.*;
 
@@ -162,6 +161,7 @@ public class AclEntryImpl implements AclEntry {
     /**
      * Clones an AclEntry.
      */
+    @SuppressWarnings("unchecked") // Safe casts assuming clone() works correctly
     public synchronized Object clone() {
         AclEntryImpl cloned;
         cloned = new AclEntryImpl(user);

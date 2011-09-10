@@ -28,6 +28,7 @@
  *   and verify their signatures
  * @author Andreas Sterbenz
  * @library ..
+ * @library ../../../../java/security/testlibrary
  */
 
 import java.io.*;
@@ -62,7 +63,7 @@ public class ReadCertificates extends PKCS11Test {
             System.out.println("Provider does not support ECDSA, skipping...");
             return;
         }
-        Security.insertProviderAt(p, 1);
+        Providers.setAt(p, 1);
 
         random = new SecureRandom();
         factory = CertificateFactory.getInstance("X.509");

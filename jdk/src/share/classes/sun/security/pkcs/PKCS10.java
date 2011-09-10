@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 
 package sun.security.pkcs;
 
-import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -225,7 +224,7 @@ public class PKCS10 {
          */
         AlgorithmId algId = null;
         try {
-            algId = AlgorithmId.getAlgorithmId(signature.getAlgorithm());
+            algId = AlgorithmId.get(signature.getAlgorithm());
         } catch (NoSuchAlgorithmException nsae) {
             throw new SignatureException(nsae);
         }

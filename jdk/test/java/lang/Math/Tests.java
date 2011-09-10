@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,18 +35,28 @@ import sun.misc.FpUtils;
 public class Tests {
     private Tests(){}; // do not instantiate
 
-    private static String toHexString(float f) {
+    public static String toHexString(float f) {
         if (!Float.isNaN(f))
             return Float.toHexString(f);
         else
             return "NaN(0x" + Integer.toHexString(Float.floatToRawIntBits(f)) + ")";
     }
 
-    private static String toHexString(double d) {
+    public static String toHexString(double d) {
         if (!Double.isNaN(d))
             return Double.toHexString(d);
         else
             return "NaN(0x" + Long.toHexString(Double.doubleToRawLongBits(d)) + ")";
+    }
+
+    /**
+     * Return the floating-point value next larger in magnitude.
+     */
+    public static double nextOut(double d) {
+        if (d > 0.0)
+            return Math.nextUp(d);
+        else
+            return -Math.nextUp(-d);
     }
 
     public static int test(String testName, float input,
@@ -337,5 +347,25 @@ public class Tests {
         }
         else
             return 0;
+    }
+
+    // For a successful test, the result must be within the upper and
+    // lower bounds.
+    public static int testBounds(String testName, double input, double result,
+                                 double bound1, double bound2) {
+        if ((result >= bound1 && result <= bound2) ||
+            (result <= bound1 && result >= bound2))
+            return 0;
+        else {
+            double lowerBound = Math.min(bound1, bound2);
+            double upperBound = Math.max(bound1, bound2);
+            System.err.println("Failure for " + testName + ":\n" +
+                               "\tFor input " + input    + "\t(" + toHexString(input) + ")\n" +
+                               "\tgot       " + result   + "\t(" + toHexString(result) + ");\n" +
+                               "\toutside of range\n" +
+                               "\t[" + lowerBound    + "\t(" + toHexString(lowerBound) + "), " +
+                               upperBound    + "\t(" + toHexString(upperBound) + ")]");
+            return 1;
+        }
     }
 }

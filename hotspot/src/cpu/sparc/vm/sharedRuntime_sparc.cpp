@@ -600,7 +600,7 @@ class AdapterGenerator {
 void AdapterGenerator::patch_callers_callsite() {
   Label L;
   __ ld_ptr(G5_method, in_bytes(methodOopDesc::code_offset()), G3_scratch);
-  __ br_null(G3_scratch, false, __ pt, L);
+  __ br_null(G3_scratch, false, Assembler::pt, L);
   // Schedule the branch target address early.
   __ delayed()->ld_ptr(G5_method, in_bytes(methodOopDesc::interpreter_entry_offset()), G3_scratch);
   // Call into the VM to patch the caller, then jump to compiled callee
@@ -1127,8 +1127,7 @@ void AdapterGenerator::gen_i2c_adapter(
       Label loop;
       __ bind(loop);
       __ sub(L0, 1, L0);
-      __ br_null(L0, false, Assembler::pt, loop);
-      __ delayed()->nop();
+      __ br_null_short(L0, Assembler::pt, loop);
 
       __ restore();
     }
@@ -1202,7 +1201,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     // the call site corrected.
     __ ld_ptr(G5_method, in_bytes(methodOopDesc::code_offset()), G3_scratch);
     __ bind(ok2);
-    __ br_null(G3_scratch, false, __ pt, skip_fixup);
+    __ br_null(G3_scratch, false, Assembler::pt, skip_fixup);
     __ delayed()->ld_ptr(G5_method, in_bytes(methodOopDesc::interpreter_entry_offset()), G3_scratch);
     __ jump_to(ic_miss, G3_scratch);
     __ delayed()->nop();
@@ -1779,9 +1778,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     AddressLiteral ic_miss(SharedRuntime::get_ic_miss_stub());
     __ verify_oop(O0);
     __ load_klass(O0, temp_reg);
-    __ cmp(temp_reg, G5_inline_cache_reg);
-    __ brx(Assembler::equal, true, Assembler::pt, L);
-    __ delayed()->nop();
+    __ cmp_and_brx_short(temp_reg, G5_inline_cache_reg, Assembler::equal, Assembler::pt, L);
 
     __ jump_to(ic_miss, temp_reg);
     __ delayed()->nop();
@@ -2182,8 +2179,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 #ifdef ASSERT
     { Label L;
     __ ld_ptr(G2_thread, in_bytes(Thread::pending_exception_offset()), O0);
-    __ br_null(O0, false, Assembler::pt, L);
-    __ delayed()->nop();
+    __ br_null_short(O0, Assembler::pt, L);
     __ stop("no pending exception allowed on exit from IR::monitorenter");
     __ bind(L);
     }
@@ -2298,9 +2294,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     Address suspend_state(G2_thread, JavaThread::suspend_flags_offset());
     __ br(Assembler::notEqual, false, Assembler::pn, L);
     __ delayed()->ld(suspend_state, G3_scratch);
-    __ cmp(G3_scratch, 0);
-    __ br(Assembler::equal, false, Assembler::pt, no_block);
-    __ delayed()->nop();
+    __ cmp_and_br_short(G3_scratch, 0, Assembler::equal, Assembler::pt, no_block);
     __ bind(L);
 
     // Block.  Save any potential method result value before the operation and
@@ -2328,9 +2322,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label no_reguard;
   __ ld(G2_thread, JavaThread::stack_guard_state_offset(), G3_scratch);
-  __ cmp(G3_scratch, JavaThread::stack_guard_yellow_disabled);
-  __ br(Assembler::notEqual, false, Assembler::pt, no_reguard);
-  __ delayed()->nop();
+  __ cmp_and_br_short(G3_scratch, JavaThread::stack_guard_yellow_disabled, Assembler::notEqual, Assembler::pt, no_reguard);
 
     save_native_result(masm, ret_type, stack_slots);
   __ call(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
@@ -2382,8 +2374,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 #ifdef ASSERT
     { Label L;
     __ ld_ptr(G2_thread, in_bytes(Thread::pending_exception_offset()), O0);
-    __ br_null(O0, false, Assembler::pt, L);
-    __ delayed()->nop();
+    __ br_null_short(O0, Assembler::pt, L);
     __ stop("no pending exception allowed on exit from IR::monitorexit");
     __ bind(L);
     }
@@ -2639,9 +2630,7 @@ nmethod *SharedRuntime::generate_dtrace_nmethod(
     AddressLiteral ic_miss(SharedRuntime::get_ic_miss_stub());
     __ verify_oop(O0);
     __ ld_ptr(O0, oopDesc::klass_offset_in_bytes(), temp_reg);
-    __ cmp(temp_reg, G5_inline_cache_reg);
-    __ brx(Assembler::equal, true, Assembler::pt, L);
-    __ delayed()->nop();
+    __ cmp_and_brx_short(temp_reg, G5_inline_cache_reg, Assembler::equal, Assembler::pt, L);
 
     __ jump_to(ic_miss, temp_reg);
     __ delayed()->nop();
@@ -3143,8 +3132,7 @@ static void make_new_frames(MacroAssembler* masm, bool deopt) {
 
   gen_new_frame(masm, deopt);        // allocate an interpreter frame
 
-  __ tst(O4array_size);
-  __ br(Assembler::notZero, false, Assembler::pn, loop);
+  __ cmp_zero_and_br(Assembler::notZero, O4array_size, loop);
   __ delayed()->add(O3array, wordSize, O3array);
   __ ld_ptr(G3pcs, 0, O7);                      // load final frame new pc
 
@@ -3221,7 +3209,7 @@ void SharedRuntime::generate_deopt_blob() {
   // pc is now in O7. Return values are still in the expected places
 
   map = RegisterSaver::save_live_registers(masm, 0, &frame_size_words);
-  __ ba(false, cont);
+  __ ba(cont);
   __ delayed()->mov(Deoptimization::Unpack_deopt, L0deopt_mode);
 
   int exception_offset = __ offset() - start;
@@ -3256,8 +3244,7 @@ void SharedRuntime::generate_deopt_blob() {
     // verify that there is really an exception oop in exception_oop
     Label has_exception;
     __ ld_ptr(G2_thread, JavaThread::exception_oop_offset(), Oexception);
-    __ br_notnull(Oexception, false, Assembler::pt, has_exception);
-    __ delayed()-> nop();
+    __ br_notnull_short(Oexception, Assembler::pt, has_exception);
     __ stop("no exception in thread");
     __ bind(has_exception);
 
@@ -3265,14 +3252,13 @@ void SharedRuntime::generate_deopt_blob() {
     Label no_pending_exception;
     Address exception_addr(G2_thread, Thread::pending_exception_offset());
     __ ld_ptr(exception_addr, Oexception);
-    __ br_null(Oexception, false, Assembler::pt, no_pending_exception);
-    __ delayed()->nop();
+    __ br_null_short(Oexception, Assembler::pt, no_pending_exception);
     __ stop("must not have pending exception here");
     __ bind(no_pending_exception);
   }
 #endif
 
-  __ ba(false, cont);
+  __ ba(cont);
   __ delayed()->mov(Deoptimization::Unpack_exception, L0deopt_mode);;
 
   //
@@ -3313,9 +3299,7 @@ void SharedRuntime::generate_deopt_blob() {
   RegisterSaver::restore_result_registers(masm);
 
   Label noException;
-  __ cmp(G4deopt_mode, Deoptimization::Unpack_exception);   // Was exception pending?
-  __ br(Assembler::notEqual, false, Assembler::pt, noException);
-  __ delayed()->nop();
+  __ cmp_and_br_short(G4deopt_mode, Deoptimization::Unpack_exception, Assembler::notEqual, Assembler::pt, noException);
 
   // Move the pending exception from exception_oop to Oexception so
   // the pending exception will be picked up the interpreter.
@@ -3359,9 +3343,7 @@ void SharedRuntime::generate_deopt_blob() {
   // In 32 bit, C2 returns longs in G1 so restore the saved G1 into
   // I0/I1 if the return value is long.
   Label not_long;
-  __ cmp(O0,T_LONG);
-  __ br(Assembler::notEqual, false, Assembler::pt, not_long);
-  __ delayed()->nop();
+  __ cmp_and_br_short(O0,T_LONG, Assembler::notEqual, Assembler::pt, not_long);
   __ ldd(saved_Greturn1_addr,I0);
   __ bind(not_long);
 #endif
@@ -3534,9 +3516,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, bool cause
   Label pending;
 
   __ ld_ptr(G2_thread, in_bytes(Thread::pending_exception_offset()), O1);
-  __ tst(O1);
-  __ brx(Assembler::notEqual, true, Assembler::pn, pending);
-  __ delayed()->nop();
+  __ br_notnull_short(O1, Assembler::pn, pending);
 
   RegisterSaver::restore_live_registers(masm);
 
@@ -3623,9 +3603,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   Label pending;
 
   __ ld_ptr(G2_thread, in_bytes(Thread::pending_exception_offset()), O1);
-  __ tst(O1);
-  __ brx(Assembler::notEqual, true, Assembler::pn, pending);
-  __ delayed()->nop();
+  __ br_notnull_short(O1, Assembler::pn, pending);
 
   // get the returned methodOop
 

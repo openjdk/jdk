@@ -230,7 +230,7 @@ checks: check_os_version check_j2se_version
 # Solaris 2.5.1, 2.6).
 # Disable this check by setting DISABLE_HOTSPOT_OS_VERSION_CHECK=ok.
 
-SUPPORTED_OS_VERSION = 2.4% 2.5% 2.6% 2.7%
+SUPPORTED_OS_VERSION = 2.4% 2.5% 2.6% 3%
 OS_VERSION := $(shell uname -r)
 EMPTY_IF_NOT_SUPPORTED = $(filter $(SUPPORTED_OS_VERSION),$(OS_VERSION))
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ final public class PoolCleaner extends Thread {
     public PoolCleaner(long period, Pool[] pools) {
         super();
         this.period = period;
-        this.pools = (Pool[]) pools.clone();
+        this.pools = pools.clone();
         setDaemon(true);
     }
 

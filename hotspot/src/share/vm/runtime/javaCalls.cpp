@@ -355,7 +355,7 @@ void JavaCalls::call_helper(JavaValue* result, methodHandle* m, JavaCallArgument
   assert(!thread->is_Compiler_thread(), "cannot compile from the compiler");
   if (CompilationPolicy::must_be_compiled(method)) {
     CompileBroker::compile_method(method, InvocationEntryBci,
-                                  CompLevel_initial_compile,
+                                  CompilationPolicy::policy()->initial_compile_level(),
                                   methodHandle(), 0, "must_be_compiled", CHECK);
   }
 

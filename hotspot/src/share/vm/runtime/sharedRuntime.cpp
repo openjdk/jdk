@@ -2130,9 +2130,9 @@ class AdapterFingerPrint : public CHeapObj {
  public:
   AdapterFingerPrint(int total_args_passed, BasicType* sig_bt) {
     // The fingerprint is based on the BasicType signature encoded
-    // into an array of ints with four entries per int.
+    // into an array of ints with eight entries per int.
     int* ptr;
-    int len = (total_args_passed + 3) >> 2;
+    int len = (total_args_passed + 7) >> 3;
     if (len <= (int)(sizeof(_value._compact) / sizeof(int))) {
       _value._compact[0] = _value._compact[1] = _value._compact[2] = 0;
       // Storing the signature encoded as signed chars hits about 98%
@@ -2145,11 +2145,11 @@ class AdapterFingerPrint : public CHeapObj {
       ptr = _value._fingerprint;
     }
 
-    // Now pack the BasicTypes with 4 per int
+    // Now pack the BasicTypes with 8 per int
     int sig_index = 0;
     for (int index = 0; index < len; index++) {
       int value = 0;
-      for (int byte = 0; byte < 4; byte++) {
+      for (int byte = 0; byte < 8; byte++) {
         if (sig_index < total_args_passed) {
           value = (value << 4) | adapter_encoding(sig_bt[sig_index++]);
         }
@@ -2190,8 +2190,9 @@ class AdapterFingerPrint : public CHeapObj {
 
   const char* as_string() {
     stringStream st;
+    st.print("0x");
     for (int i = 0; i < length(); i++) {
-      st.print(PTR_FORMAT, value(i));
+      st.print("%08x", value(i));
     }
     return st.as_string();
   }
