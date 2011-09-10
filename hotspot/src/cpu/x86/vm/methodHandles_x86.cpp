@@ -624,6 +624,11 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
 
   // error path for invokeExact (only)
   __ bind(invoke_exact_error_path);
+  // ensure that the top of stack is properly aligned.
+  __ mov(rdi, rsp);
+  __ andptr(rsp, -StackAlignmentInBytes); // Align the stack for the ABI
+  __ pushptr(Address(rdi, 0));  // Pick up the return address
+
   // Stub wants expected type in rax and the actual type in rcx
   __ jump(ExternalAddress(StubRoutines::throw_WrongMethodTypeException_entry()));
 
