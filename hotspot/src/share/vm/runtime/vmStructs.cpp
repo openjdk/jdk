@@ -261,6 +261,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(instanceKlass,               _nof_implementors,                             int)                                   \
   nonstatic_field(instanceKlass,               _implementors[0],                              klassOop)                              \
   nonstatic_field(instanceKlass,               _fields,                                       typeArrayOop)                          \
+  nonstatic_field(instanceKlass,               _java_fields_count,                             int)                                   \
   nonstatic_field(instanceKlass,               _constants,                                    constantPoolOop)                       \
   nonstatic_field(instanceKlass,               _class_loader,                                 oop)                                   \
   nonstatic_field(instanceKlass,               _protection_domain,                            oop)                                   \
@@ -967,11 +968,11 @@ static inline uint64_t cast_uint64_t(size_t x)
   /* java_lang_Class fields        */                                                                                                \
   /*********************************/                                                                                                \
                                                                                                                                      \
-  static_field(java_lang_Class,                klass_offset,                                  int)                                   \
-  static_field(java_lang_Class,                resolved_constructor_offset,                   int)                                   \
-  static_field(java_lang_Class,                array_klass_offset,                            int)                                   \
-  static_field(java_lang_Class,                oop_size_offset,                               int)                                   \
-  static_field(java_lang_Class,                static_oop_field_count_offset,                 int)                                   \
+  static_field(java_lang_Class,                _klass_offset,                                 int)                                   \
+  static_field(java_lang_Class,                _resolved_constructor_offset,                  int)                                   \
+  static_field(java_lang_Class,                _array_klass_offset,                           int)                                   \
+  static_field(java_lang_Class,                _oop_size_offset,                              int)                                   \
+  static_field(java_lang_Class,                _static_oop_field_count_offset,                int)                                   \
                                                                                                                                      \
   /************************/                                                                                                         \
   /* Miscellaneous fields */                                                                                                         \
@@ -1662,18 +1663,23 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_constant(constMethodOopDesc::_has_localvariable_table)          \
                                                                           \
   /*************************************/                                 \
-  /* instanceKlass FieldOffset enum    */                                 \
+  /* instanceKlass enum                */                                 \
   /*************************************/                                 \
                                                                           \
-  declare_constant(instanceKlass::access_flags_offset)                    \
-  declare_constant(instanceKlass::name_index_offset)                      \
-  declare_constant(instanceKlass::signature_index_offset)                 \
-  declare_constant(instanceKlass::initval_index_offset)                   \
-  declare_constant(instanceKlass::low_offset)                             \
-  declare_constant(instanceKlass::high_offset)                            \
-  declare_constant(instanceKlass::generic_signature_offset)               \
-  declare_constant(instanceKlass::next_offset)                            \
   declare_constant(instanceKlass::implementors_limit)                     \
+                                                                          \
+  /*************************************/                                 \
+  /* FieldInfo FieldOffset enum        */                                 \
+  /*************************************/                                 \
+                                                                          \
+  declare_constant(FieldInfo::access_flags_offset)                        \
+  declare_constant(FieldInfo::name_index_offset)                          \
+  declare_constant(FieldInfo::signature_index_offset)                     \
+  declare_constant(FieldInfo::initval_index_offset)                       \
+  declare_constant(FieldInfo::low_offset)                                 \
+  declare_constant(FieldInfo::high_offset)                                \
+  declare_constant(FieldInfo::generic_signature_offset)                   \
+  declare_constant(FieldInfo::field_slots)                                \
                                                                           \
   /************************************************/                      \
   /* instanceKlass InnerClassAttributeOffset enum */                      \

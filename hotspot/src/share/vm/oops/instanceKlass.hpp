@@ -27,6 +27,7 @@
 
 #include "oops/constMethodOop.hpp"
 #include "oops/constantPoolOop.hpp"
+#include "oops/fieldInfo.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klassOop.hpp"
 #include "oops/klassVtable.hpp"
@@ -228,6 +229,7 @@ class instanceKlass: public Klass {
   int             _static_field_size;    // number words used by static fields (oop and non-oop) in this klass
   int             _static_oop_field_count;// number of static oop fields in this klass
   int             _nonstatic_oop_map_size;// size in words of nonstatic oop map blocks
+  int             _java_fields_count;    // The number of declared Java fields
   bool            _is_marked_dependent;  // used for marking during flushing and deoptimization
   bool            _rewritten;            // methods rewritten.
   bool            _has_nonstatic_fields; // for sizing with UseCompressedOops
@@ -307,27 +309,28 @@ class instanceKlass: public Klass {
   objArrayOop transitive_interfaces() const     { return _transitive_interfaces; }
   void set_transitive_interfaces(objArrayOop a) { oop_store_without_check((oop*) &_transitive_interfaces, (oop) a); }
 
-  // fields
-  // Field info extracted from the class file and stored
-  // as an array of 7 shorts
-  enum FieldOffset {
-    access_flags_offset    = 0,
-    name_index_offset      = 1,
-    signature_index_offset = 2,
-    initval_index_offset   = 3,
-    low_offset             = 4,
-    high_offset            = 5,
-    generic_signature_offset = 6,
-    next_offset            = 7
-  };
+ private:
+  friend class fieldDescriptor;
+  FieldInfo* field(int index) const { return FieldInfo::from_field_array(_fields, index); }
+
+ public:
+  int     field_offset      (int index) const { return field(index)->offset(); }
+  int     field_access_flags(int index) const { return field(index)->access_flags(); }
+  Symbol* field_name        (int index) const { return field(index)->name(constants()); }
+  Symbol* field_signature   (int index) const { return field(index)->signature(constants()); }
+
+  // Number of Java declared fields
+  int java_fields_count() const           { return _java_fields_count; }
+
+  // Number of fields including any injected fields
+  int all_fields_count() const            { return _fields->length() / sizeof(FieldInfo::field_slots); }
 
   typeArrayOop fields() const              { return _fields; }
-  int offset_from_fields( int index ) const {
-    return build_int_from_shorts( fields()->ushort_at(index + low_offset),
-                                  fields()->ushort_at(index + high_offset) );
-  }
 
-  void set_fields(typeArrayOop f)          { oop_store_without_check((oop*) &_fields, (oop) f); }
+  void set_fields(typeArrayOop f, int java_fields_count) {
+    oop_store_without_check((oop*) &_fields, (oop) f);
+    _java_fields_count = java_fields_count;
+  }
 
   // inner classes
   typeArrayOop inner_classes() const       { return _inner_classes; }
@@ -842,10 +845,6 @@ public:
   // Verification
   const char* internal_name() const;
   void oop_verify_on(oop obj, outputStream* st);
-
-#ifndef PRODUCT
-  static void verify_class_klass_nonstatic_oop_maps(klassOop k) PRODUCT_RETURN;
-#endif
 };
 
 inline methodOop instanceKlass::method_at_vtable(int index)  {
