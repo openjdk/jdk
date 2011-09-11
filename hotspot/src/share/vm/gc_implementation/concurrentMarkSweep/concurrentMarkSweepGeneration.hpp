@@ -1900,7 +1900,6 @@ class TraceCMSMemoryManagerStats : public TraceMemoryManagerStats {
 
  public:
   TraceCMSMemoryManagerStats(CMSCollector::CollectorState phase, GCCause::Cause cause);
-  TraceCMSMemoryManagerStats(GCCause::Cause cause);
 };
 
 

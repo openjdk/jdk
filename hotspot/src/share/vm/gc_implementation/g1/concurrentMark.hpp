@@ -756,9 +756,6 @@ public:
   // Clear the next marking bitmap (will be called concurrently).
   void clearNextBitmap();
 
-  // main CMS steps and related support
-  void checkpointRootsInitial();
-
   // These two do the work that needs to be done before and after the
   // initial root checkpoint. Since this checkpoint can be done at two
   // different points (i.e. an explicit pause or piggy-backed on a

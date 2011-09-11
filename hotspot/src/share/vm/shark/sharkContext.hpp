@@ -171,7 +171,7 @@ class SharkContext : public llvm::LLVMContext {
                              BasicType                type) const {
     assert(type >= 0 && type < T_CONFLICT, "unhandled type");
     const llvm::Type* result = table[type];
-    assert(type != NULL, "unhandled type");
+    assert(result != NULL, "unhandled type");
     return result;
   }
 

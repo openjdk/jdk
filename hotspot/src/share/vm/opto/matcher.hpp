@@ -351,7 +351,7 @@ public:
   virtual int      regnum_to_fpu_offset(int regnum);
 
   // Is this branch offset small enough to be addressed by a short branch?
-  bool is_short_branch_offset(int rule, int offset);
+  bool is_short_branch_offset(int rule, int br_size, int offset);
 
   // Optional scaling for the parameter to the ClearArray/CopyArray node.
   static const bool init_array_count_is_in_bytes;
@@ -440,16 +440,6 @@ public:
     if( SoftMatchFailure ) return;
     else { fatal("SoftMatchFailure is not allowed except in product"); }
   }
-
-  // Used by the DFA in dfa_sparc.cpp.  Check for a prior FastLock
-  // acting as an Acquire and thus we don't need an Acquire here.  We
-  // retain the Node to act as a compiler ordering barrier.
-  static bool prior_fast_lock( const Node *acq );
-
-  // Used by the DFA in dfa_sparc.cpp.  Check for a following
-  // FastUnLock acting as a Release and thus we don't need a Release
-  // here.  We retain the Node to act as a compiler ordering barrier.
-  static bool post_fast_unlock( const Node *rel );
 
   // Check for a following volatile memory barrier without an
   // intervening load and thus we don't need a barrier here.  We

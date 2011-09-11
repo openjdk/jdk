@@ -28,6 +28,16 @@
 
 // ciCallSite
 
+bool ciCallSite::is_constant_call_site() {
+  return klass()->is_subclass_of(CURRENT_ENV->ConstantCallSite_klass());
+}
+bool ciCallSite::is_mutable_call_site() {
+  return klass()->is_subclass_of(CURRENT_ENV->MutableCallSite_klass());
+}
+bool ciCallSite::is_volatile_call_site() {
+  return klass()->is_subclass_of(CURRENT_ENV->VolatileCallSite_klass());
+}
+
 // ------------------------------------------------------------------
 // ciCallSite::get_target
 //

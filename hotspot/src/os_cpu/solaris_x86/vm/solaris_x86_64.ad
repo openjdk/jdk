@@ -180,7 +180,8 @@ void MachBreakpointNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 
 uint MachBreakpointNode::size(PhaseRegAlloc* ra_) const
 {
-  return 5;
+  // distance could be far and requires load and call through register
+  return MachNode::size(ra_);
 }
 
 %}
