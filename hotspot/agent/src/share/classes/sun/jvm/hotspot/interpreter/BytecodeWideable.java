@@ -38,7 +38,6 @@ public abstract class BytecodeWideable extends Bytecode {
 
   // the local variable index
   public int getLocalVarIndex() {
-    return (isWide()) ? (int) (0xFFFF & javaShortAt(1))
-            : (int) (0xFF & javaByteAt(1));
+    return (isWide()) ? getIndexU2(code(), true) : getIndexU1();
   }
 }

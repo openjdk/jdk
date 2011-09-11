@@ -1281,7 +1281,6 @@ static inline uint64_t cast_uint64_t(size_t x)
                                                                           \
   declare_toplevel_type(StubQueue)                                        \
   declare_toplevel_type(StubRoutines)                                     \
-  IA32_ONLY(declare_toplevel_type(StubRoutines::x86))                     \
   declare_toplevel_type(Stub)                                             \
            declare_type(InterpreterCodelet, Stub)                         \
                                                                           \

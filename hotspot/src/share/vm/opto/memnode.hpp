@@ -879,7 +879,7 @@ public:
 
 // "Acquire" - no following ref can move before (but earlier refs can
 // follow, like an early Load stalled in cache).  Requires multi-cpu
-// visibility.  Inserted after a volatile load or FastLock.
+// visibility.  Inserted after a volatile load.
 class MemBarAcquireNode: public MemBarNode {
 public:
   MemBarAcquireNode(Compile* C, int alias_idx, Node* precedent)
@@ -889,10 +889,30 @@ public:
 
 // "Release" - no earlier ref can move after (but later refs can move
 // up, like a speculative pipelined cache-hitting Load).  Requires
-// multi-cpu visibility.  Inserted before a volatile store or FastUnLock.
+// multi-cpu visibility.  Inserted before a volatile store.
 class MemBarReleaseNode: public MemBarNode {
 public:
   MemBarReleaseNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
+// "Acquire" - no following ref can move before (but earlier refs can
+// follow, like an early Load stalled in cache).  Requires multi-cpu
+// visibility.  Inserted after a FastLock.
+class MemBarAcquireLockNode: public MemBarNode {
+public:
+  MemBarAcquireLockNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
+// "Release" - no earlier ref can move after (but later refs can move
+// up, like a speculative pipelined cache-hitting Load).  Requires
+// multi-cpu visibility.  Inserted before a FastUnLock.
+class MemBarReleaseLockNode: public MemBarNode {
+public:
+  MemBarReleaseLockNode(Compile* C, int alias_idx, Node* precedent)
     : MemBarNode(C, alias_idx, precedent) {}
   virtual int Opcode() const;
 };
@@ -1255,6 +1275,16 @@ public:
 class PrefetchWriteNode : public Node {
 public:
   PrefetchWriteNode(Node *abio, Node *adr) : Node(0,abio,adr) {}
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return NotAMachineReg; }
+  virtual uint match_edge(uint idx) const { return idx==2; }
+  virtual const Type *bottom_type() const { return Type::ABIO; }
+};
+
+// Allocation prefetch which may fault, TLAB size have to be adjusted.
+class PrefetchAllocationNode : public Node {
+public:
+  PrefetchAllocationNode(Node *mem, Node *adr) : Node(0,mem,adr) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual uint match_edge(uint idx) const { return idx==2; }
