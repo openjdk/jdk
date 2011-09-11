@@ -1372,37 +1372,6 @@ int instanceKlass::cached_itable_index(size_t idnum) {
 
 
 //
-// nmethodBucket is used to record dependent nmethods for
-// deoptimization.  nmethod dependencies are actually <klass, method>
-// pairs but we really only care about the klass part for purposes of
-// finding nmethods which might need to be deoptimized.  Instead of
-// recording the method, a count of how many times a particular nmethod
-// was recorded is kept.  This ensures that any recording errors are
-// noticed since an nmethod should be removed as many times are it's
-// added.
-//
-class nmethodBucket {
- private:
-  nmethod*       _nmethod;
-  int            _count;
-  nmethodBucket* _next;
-
- public:
-  nmethodBucket(nmethod* nmethod, nmethodBucket* next) {
-    _nmethod = nmethod;
-    _next = next;
-    _count = 1;
-  }
-  int count()                             { return _count; }
-  int increment()                         { _count += 1; return _count; }
-  int decrement()                         { _count -= 1; assert(_count >= 0, "don't underflow"); return _count; }
-  nmethodBucket* next()                   { return _next; }
-  void set_next(nmethodBucket* b)         { _next = b; }
-  nmethod* get_nmethod()                  { return _nmethod; }
-};
-
-
-//
 // Walk the list of dependent nmethods searching for nmethods which
 // are dependent on the changes that were passed in and mark them for
 // deoptimization.  Returns the number of nmethods found.

@@ -80,6 +80,8 @@ class WarmCallInfo;
 // This class defines a top-level Compiler invocation.
 
 class Compile : public Phase {
+  friend class VMStructs;
+
  public:
   // Fixed alias indexes.  (See also MergeMemNode.)
   enum {

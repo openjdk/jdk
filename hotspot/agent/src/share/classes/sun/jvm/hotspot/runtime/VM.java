@@ -135,12 +135,14 @@ public class VM {
      private String name;
      private Address addr;
      private String kind;
+     private int origin;
 
-     private Flag(String type, String name, Address addr, String kind) {
+     private Flag(String type, String name, Address addr, String kind, int origin) {
         this.type = type;
         this.name = name;
         this.addr = addr;
         this.kind = kind;
+        this.origin = origin;
      }
 
      public String getType() {
@@ -157,6 +159,10 @@ public class VM {
 
      public String getKind() {
         return kind;
+     }
+
+     public int getOrigin() {
+        return origin;
      }
 
      public boolean isBool() {
@@ -804,42 +810,40 @@ public class VM {
   private void readCommandLineFlags() {
     // get command line flags
     TypeDataBase db = getTypeDataBase();
-    try {
-       Type flagType = db.lookupType("Flag");
-       int numFlags = (int) flagType.getCIntegerField("numFlags").getValue();
-       // NOTE: last flag contains null values.
-       commandLineFlags = new Flag[numFlags - 1];
+    Type flagType = db.lookupType("Flag");
+    int numFlags = (int) flagType.getCIntegerField("numFlags").getValue();
+    // NOTE: last flag contains null values.
+    commandLineFlags = new Flag[numFlags - 1];
 
-       Address flagAddr = flagType.getAddressField("flags").getValue();
+    Address flagAddr = flagType.getAddressField("flags").getValue();
 
-       AddressField typeFld = flagType.getAddressField("type");
-       AddressField nameFld = flagType.getAddressField("name");
-       AddressField addrFld = flagType.getAddressField("addr");
-       AddressField kindFld = flagType.getAddressField("kind");
+    AddressField typeFld = flagType.getAddressField("type");
+    AddressField nameFld = flagType.getAddressField("name");
+    AddressField addrFld = flagType.getAddressField("addr");
+    AddressField kindFld = flagType.getAddressField("kind");
+    CIntField originFld = new CIntField(flagType.getCIntegerField("origin"), 0);
 
-       long flagSize = flagType.getSize(); // sizeof(Flag)
+    long flagSize = flagType.getSize(); // sizeof(Flag)
 
-       // NOTE: last flag contains null values.
-       for (int f = 0; f < numFlags - 1; f++) {
-          String type = CStringUtilities.getString(typeFld.getValue(flagAddr));
-          String name = CStringUtilities.getString(nameFld.getValue(flagAddr));
-          Address addr = addrFld.getValue(flagAddr);
-          String kind = CStringUtilities.getString(kindFld.getValue(flagAddr));
-          commandLineFlags[f] = new Flag(type, name, addr, kind);
-          flagAddr = flagAddr.addOffsetTo(flagSize);
-       }
-
-       // sort flags by name
-       Arrays.sort(commandLineFlags, new Comparator() {
-                                        public int compare(Object o1, Object o2) {
-                                           Flag f1 = (Flag) o1;
-                                           Flag f2 = (Flag) o2;
-                                           return f1.getName().compareTo(f2.getName());
-                                        }
-                                     });
-    } catch (Exception exp) {
-       // ignore. may be older version. command line flags not available.
+    // NOTE: last flag contains null values.
+    for (int f = 0; f < numFlags - 1; f++) {
+      String type = CStringUtilities.getString(typeFld.getValue(flagAddr));
+      String name = CStringUtilities.getString(nameFld.getValue(flagAddr));
+      Address addr = addrFld.getValue(flagAddr);
+      String kind = CStringUtilities.getString(kindFld.getValue(flagAddr));
+      int origin = (int)originFld.getValue(flagAddr);
+      commandLineFlags[f] = new Flag(type, name, addr, kind, origin);
+      flagAddr = flagAddr.addOffsetTo(flagSize);
     }
+
+    // sort flags by name
+    Arrays.sort(commandLineFlags, new Comparator() {
+        public int compare(Object o1, Object o2) {
+          Flag f1 = (Flag) o1;
+          Flag f2 = (Flag) o2;
+          return f1.getName().compareTo(f2.getName());
+        }
+      });
   }
 
   public String getSystemProperty(String key) {

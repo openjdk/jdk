@@ -34,6 +34,8 @@ class MonitorValue;
 class ObjectValue;
 
 class Deoptimization : AllStatic {
+  friend class VMStructs;
+
  public:
   // What condition caused the deoptimization?
   enum DeoptReason {

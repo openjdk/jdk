@@ -610,3 +610,22 @@ InlineTree* InlineTree::find_subtree_from_root(InlineTree* root, JVMState* jvms,
   }
   return iltp;
 }
+
+
+
+#ifndef PRODUCT
+void InlineTree::print_impl(outputStream* st, int indent) const {
+  for (int i = 0; i < indent; i++) st->print(" ");
+  st->print(" @ %d ", caller_bci());
+  method()->print_short_name(st);
+  st->cr();
+
+  for (int i = 0 ; i < _subtrees.length(); i++) {
+    _subtrees.at(i)->print_impl(st, indent + 2);
+  }
+}
+
+void InlineTree::print_value_on(outputStream* st) const {
+  print_impl(st, 2);
+}
+#endif

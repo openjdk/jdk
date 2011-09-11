@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ class   PhaseChaitin;
 //------------------------------LRG--------------------------------------------
 // Live-RanGe structure.
 class LRG : public ResourceObj {
+  friend class VMStructs;
 public:
   enum { SPILL_REG=29999 };     // Register number of a spilled LRG
 
@@ -181,6 +182,7 @@ public:
 // Map Node indices to Live RanGe indices.
 // Array lookup in the optimized case.
 class LRG_List : public ResourceObj {
+  friend class VMStructs;
   uint _cnt, _max;
   uint* _lidxs;
   ReallocMark _nesting;         // assertion check for reallocations
@@ -211,6 +213,7 @@ public:
 // abstract!  It needs abstraction so I can fiddle with the implementation to
 // get even more speed.
 class PhaseIFG : public Phase {
+  friend class VMStructs;
   // Current implementation: a triangular adjacency list.
 
   // Array of adjacency-lists, indexed by live-range number
@@ -294,6 +297,7 @@ public:
 //------------------------------Chaitin----------------------------------------
 // Briggs-Chaitin style allocation, mostly.
 class PhaseChaitin : public PhaseRegAlloc {
+  friend class VMStructs;
 
   int _trip_cnt;
   int _alternate;
