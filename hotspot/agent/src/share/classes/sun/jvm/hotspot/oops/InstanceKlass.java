@@ -174,7 +174,7 @@ public class InstanceKlass extends Klass {
      private String value;
   }
 
-  private int  getInitStateAsInt() { return (int) initState.getValue(this); }
+  public int  getInitStateAsInt() { return (int) initState.getValue(this); }
   public ClassState getInitState() {
      int state = getInitStateAsInt();
      if (state == CLASS_STATE_UNPARSABLE_BY_GC) {
@@ -526,6 +526,16 @@ public class InstanceKlass extends Klass {
 
   public Klass getJavaSuper() {
     return getSuper();
+  }
+
+  public static class StaticField {
+    public AccessFlags flags;
+    public Field field;
+
+    StaticField(Field field, AccessFlags flags) {
+      this.field = field;
+      this.flags = flags;
+    }
   }
 
   public void iterateNonStaticFields(OopVisitor visitor, Oop obj) {
