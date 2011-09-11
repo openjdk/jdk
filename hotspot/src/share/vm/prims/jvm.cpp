@@ -32,6 +32,7 @@
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.inline.hpp"
+#include "oops/fieldStreams.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "prims/jvm.h"
@@ -1493,7 +1494,7 @@ JVM_ENTRY(jbyteArray, JVM_GetFieldAnnotations(JNIEnv *env, jobject field))
 
   fieldDescriptor fd;
   KlassHandle kh(THREAD, k);
-  intptr_t offset = instanceKlass::cast(kh())->offset_from_fields(slot);
+  intptr_t offset = instanceKlass::cast(kh())->field_offset(slot);
 
   if (modifiers & JVM_ACC_STATIC) {
     // for static fields we only look in the current class
@@ -1593,9 +1594,6 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
   // Ensure class is linked
   k->link_class(CHECK_NULL);
 
-  typeArrayHandle fields(THREAD, k->fields());
-  int fields_len = fields->length();
-
   // 4496456 We need to filter out java.lang.Throwable.backtrace
   bool skip_backtrace = false;
 
@@ -1604,12 +1602,11 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
 
   if (publicOnly) {
     num_fields = 0;
-    for (int i = 0, j = 0; i < fields_len; i += instanceKlass::next_offset, j++) {
-      int mods = fields->ushort_at(i + instanceKlass::access_flags_offset) & JVM_RECOGNIZED_FIELD_MODIFIERS;
-      if (mods & JVM_ACC_PUBLIC) ++num_fields;
+    for (JavaFieldStream fs(k()); !fs.done(); fs.next()) {
+      if (fs.access_flags().is_public()) ++num_fields;
     }
   } else {
-    num_fields = fields_len / instanceKlass::next_offset;
+    num_fields = k->java_fields_count();
 
     if (k() == SystemDictionary::Throwable_klass()) {
       num_fields--;
@@ -1622,16 +1619,15 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
 
   int out_idx = 0;
   fieldDescriptor fd;
-  for (int i = 0; i < fields_len; i += instanceKlass::next_offset) {
+  for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
     if (skip_backtrace) {
       // 4496456 skip java.lang.Throwable.backtrace
-      int offset = k->offset_from_fields(i);
+      int offset = fs.offset();
       if (offset == java_lang_Throwable::get_backtrace_offset()) continue;
     }
 
-    int mods = fields->ushort_at(i + instanceKlass::access_flags_offset) & JVM_RECOGNIZED_FIELD_MODIFIERS;
-    if (!publicOnly || (mods & JVM_ACC_PUBLIC)) {
-      fd.initialize(k(), i);
+    if (!publicOnly || fs.access_flags().is_public()) {
+      fd.initialize(k(), fs.index());
       oop field = Reflection::new_field(&fd, UseNewReflection, CHECK_NULL);
       result->obj_at_put(out_idx, field);
       ++out_idx;
@@ -2119,7 +2115,7 @@ JVM_QUICK_ENTRY(jint, JVM_GetClassFieldsCount(JNIEnv *env, jclass cls))
   k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
   if (!Klass::cast(k)->oop_is_instance())
     return 0;
-  return instanceKlass::cast(k)->fields()->length() / instanceKlass::next_offset;
+  return instanceKlass::cast(k)->java_fields_count();
 JVM_END
 
 
@@ -2215,8 +2211,7 @@ JVM_QUICK_ENTRY(jint, JVM_GetFieldIxModifiers(JNIEnv *env, jclass cls, int field
   JVMWrapper("JVM_GetFieldIxModifiers");
   klassOop k = java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(cls));
   k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  typeArrayOop fields = instanceKlass::cast(k)->fields();
-  return fields->ushort_at(field_index * instanceKlass::next_offset + instanceKlass::access_flags_offset) & JVM_RECOGNIZED_FIELD_MODIFIERS;
+  return instanceKlass::cast(k)->field_access_flags(field_index) & JVM_RECOGNIZED_FIELD_MODIFIERS;
 JVM_END
 
 
@@ -2399,7 +2394,7 @@ JVM_ENTRY(const char*, JVM_GetCPMethodClassNameUTF(JNIEnv *env, jclass cls, jint
 JVM_END
 
 
-JVM_QUICK_ENTRY(jint, JVM_GetCPFieldModifiers(JNIEnv *env, jclass cls, int cp_index, jclass called_cls))
+JVM_ENTRY(jint, JVM_GetCPFieldModifiers(JNIEnv *env, jclass cls, int cp_index, jclass called_cls))
   JVMWrapper("JVM_GetCPFieldModifiers");
   klassOop k = java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(cls));
   klassOop k_called = java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(called_cls));
@@ -2411,12 +2406,9 @@ JVM_QUICK_ENTRY(jint, JVM_GetCPFieldModifiers(JNIEnv *env, jclass cls, int cp_in
     case JVM_CONSTANT_Fieldref: {
       Symbol* name      = cp->uncached_name_ref_at(cp_index);
       Symbol* signature = cp->uncached_signature_ref_at(cp_index);
-      typeArrayOop fields = instanceKlass::cast(k_called)->fields();
-      int fields_count = fields->length();
-      for (int i = 0; i < fields_count; i += instanceKlass::next_offset) {
-        if (cp_called->symbol_at(fields->ushort_at(i + instanceKlass::name_index_offset)) == name &&
-            cp_called->symbol_at(fields->ushort_at(i + instanceKlass::signature_index_offset)) == signature) {
-          return fields->ushort_at(i + instanceKlass::access_flags_offset) & JVM_RECOGNIZED_FIELD_MODIFIERS;
+      for (JavaFieldStream fs(k_called); !fs.done(); fs.next()) {
+        if (fs.name() == name && fs.signature() == signature) {
+          return fs.access_flags().as_short() & JVM_RECOGNIZED_FIELD_MODIFIERS;
         }
       }
       return -1;

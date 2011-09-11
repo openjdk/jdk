@@ -3257,15 +3257,10 @@ void MacroAssembler::load_method_handle_vmslots(Register vmslots_reg, Register m
                                                 Register temp_reg) {
   assert_different_registers(vmslots_reg, mh_reg, temp_reg);
   // load mh.type.form.vmslots
-  if (java_lang_invoke_MethodHandle::vmslots_offset_in_bytes() != 0) {
-    // hoist vmslots into every mh to avoid dependent load chain
-    ld(           Address(mh_reg,    delayed_value(java_lang_invoke_MethodHandle::vmslots_offset_in_bytes, temp_reg)),   vmslots_reg);
-  } else {
-    Register temp2_reg = vmslots_reg;
-    load_heap_oop(Address(mh_reg,    delayed_value(java_lang_invoke_MethodHandle::type_offset_in_bytes, temp_reg)),      temp2_reg);
-    load_heap_oop(Address(temp2_reg, delayed_value(java_lang_invoke_MethodType::form_offset_in_bytes, temp_reg)),        temp2_reg);
-    ld(           Address(temp2_reg, delayed_value(java_lang_invoke_MethodTypeForm::vmslots_offset_in_bytes, temp_reg)), vmslots_reg);
-  }
+  Register temp2_reg = vmslots_reg;
+  load_heap_oop(Address(mh_reg,    delayed_value(java_lang_invoke_MethodHandle::type_offset_in_bytes, temp_reg)),      temp2_reg);
+  load_heap_oop(Address(temp2_reg, delayed_value(java_lang_invoke_MethodType::form_offset_in_bytes, temp_reg)),        temp2_reg);
+  ld(           Address(temp2_reg, delayed_value(java_lang_invoke_MethodTypeForm::vmslots_offset_in_bytes, temp_reg)), vmslots_reg);
 }
 
 
@@ -4966,4 +4961,3 @@ void MacroAssembler::bis_zeroing(Register to, Register count, Register temp, Lab
   cmp_and_brx_short(to, end, Assembler::lessUnsigned, Assembler::pt, small_loop);
   nop(); // Separate short branches
 }
-

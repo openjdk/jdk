@@ -520,7 +520,7 @@ void MethodHandles::init_MemberName(oop mname_oop, oop target_oop) {
     int slot  = java_lang_reflect_Field::slot(target_oop);  // fd.index()
     int mods  = java_lang_reflect_Field::modifiers(target_oop);
     klassOop k = java_lang_Class::as_klassOop(clazz);
-    int offset = instanceKlass::cast(k)->offset_from_fields(slot);
+    int offset = instanceKlass::cast(k)->field_offset(slot);
     init_MemberName(mname_oop, k, accessFlags_from(mods), offset);
   } else {
     KlassHandle receiver_limit; int decode_flags = 0;
@@ -1632,8 +1632,6 @@ void MethodHandles::init_DirectMethodHandle(Handle mh, methodHandle m, bool do_d
     THROW(vmSymbols::java_lang_InternalError());
   }
 
-  java_lang_invoke_MethodHandle::init_vmslots(mh());
-
   if (VerifyMethodHandles) {
     // The privileged code which invokes this routine should not make
     // a mistake about types, but it's better to verify.
@@ -1756,7 +1754,6 @@ void MethodHandles::init_BoundMethodHandle_with_receiver(Handle mh,
   if (m.is_null())      { THROW(vmSymbols::java_lang_InternalError()); }
   if (m->is_abstract()) { THROW(vmSymbols::java_lang_AbstractMethodError()); }
 
-  java_lang_invoke_MethodHandle::init_vmslots(mh());
   int vmargslot = m->size_of_parameters() - 1;
   assert(java_lang_invoke_BoundMethodHandle::vmargslot(mh()) == vmargslot, "");
 
@@ -1862,7 +1859,6 @@ void MethodHandles::init_BoundMethodHandle(Handle mh, Handle target, int argnum,
     THROW(vmSymbols::java_lang_InternalError());
   }
 
-  java_lang_invoke_MethodHandle::init_vmslots(mh());
   int argslot = java_lang_invoke_BoundMethodHandle::vmargslot(mh());
 
   if (VerifyMethodHandles) {
@@ -2686,6 +2682,7 @@ void MethodHandles::ensure_vmlayout_field(Handle target, TRAPS) {
       java_lang_invoke_MethodTypeForm::init_vmlayout(mtform(), cookie);
     }
   }
+  assert(java_lang_invoke_MethodTypeForm::vmslots(mtform()) == argument_slot_count(mtype()), "must agree");
 }
 
 #ifdef ASSERT

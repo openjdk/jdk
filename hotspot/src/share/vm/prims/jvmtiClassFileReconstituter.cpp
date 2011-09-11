@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "interpreter/bytecodeStream.hpp"
+#include "oops/fieldStreams.hpp"
 #include "prims/jvmtiClassFileReconstituter.hpp"
 #include "runtime/signature.hpp"
 #ifdef TARGET_ARCH_x86
@@ -52,25 +53,22 @@
 // JVMSpec|     field_info fields[fields_count];
 void JvmtiClassFileReconstituter::write_field_infos() {
   HandleMark hm(thread());
-  typeArrayHandle fields(thread(), ikh()->fields());
-  int fields_length = fields->length();
-  int num_fields = fields_length / instanceKlass::next_offset;
   objArrayHandle fields_anno(thread(), ikh()->fields_annotations());
 
-  write_u2(num_fields);
-  for (int index = 0; index < fields_length; index += instanceKlass::next_offset) {
-    AccessFlags access_flags;
-    int flags = fields->ushort_at(index + instanceKlass::access_flags_offset);
-    access_flags.set_flags(flags);
-    int name_index = fields->ushort_at(index + instanceKlass::name_index_offset);
-    int signature_index = fields->ushort_at(index + instanceKlass::signature_index_offset);
-    int initial_value_index = fields->ushort_at(index + instanceKlass::initval_index_offset);
+  // Compute the real number of Java fields
+  int java_fields = ikh()->java_fields_count();
+
+  write_u2(java_fields * FieldInfo::field_slots);
+  for (JavaFieldStream fs(ikh()); !fs.done(); fs.next()) {
+    AccessFlags access_flags = fs.access_flags();
+    int name_index = fs.name_index();
+    int signature_index = fs.signature_index();
+    int initial_value_index = fs.initval_index();
     guarantee(name_index != 0 && signature_index != 0, "bad constant pool index for field");
-    int offset = ikh()->offset_from_fields( index );
-    int generic_signature_index =
-                        fields->ushort_at(index + instanceKlass::generic_signature_offset);
+    // int offset = ikh()->field_offset( index );
+    int generic_signature_index = fs.generic_signature_index();
     typeArrayHandle anno(thread(), fields_anno.not_null() ?
-                                 (typeArrayOop)(fields_anno->obj_at(index / instanceKlass::next_offset)) :
+                                 (typeArrayOop)(fields_anno->obj_at(fs.index())) :
                                  (typeArrayOop)NULL);
 
     // JVMSpec|   field_info {
@@ -81,7 +79,7 @@ void JvmtiClassFileReconstituter::write_field_infos() {
     // JVMSpec|         attribute_info attributes[attributes_count];
     // JVMSpec|   }
 
-    write_u2(flags & JVM_RECOGNIZED_FIELD_MODIFIERS);
+    write_u2(access_flags.as_int() & JVM_RECOGNIZED_FIELD_MODIFIERS);
     write_u2(name_index);
     write_u2(signature_index);
     int attr_count = 0;

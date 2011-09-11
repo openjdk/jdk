@@ -380,15 +380,15 @@ public class ClassWriter implements /* imports */ ClassConstants
 
     protected void writeFields() throws IOException {
         TypeArray fields = klass.getFields();
-        final int length = (int) fields.getLength();
+        final int length = klass.getJavaFieldsCount();
 
         // write number of fields
-        dos.writeShort((short) (length / InstanceKlass.NEXT_OFFSET) );
+        dos.writeShort((short) (length / InstanceKlass.FIELD_SLOTS) );
 
         if (DEBUG) debugMessage("number of fields = "
-                                + length/InstanceKlass.NEXT_OFFSET);
+                                + length/InstanceKlass.FIELD_SLOTS);
 
-        for (int index = 0; index < length; index += InstanceKlass.NEXT_OFFSET) {
+        for (int index = 0; index < length; index += InstanceKlass.FIELD_SLOTS) {
             short accessFlags    = fields.getShortAt(index + InstanceKlass.ACCESS_FLAGS_OFFSET);
             dos.writeShort(accessFlags & (short) JVM_RECOGNIZED_FIELD_MODIFIERS);
 

@@ -264,8 +264,8 @@
   template(setTargetNormal_name,                      "setTargetNormal")                          \
   template(setTargetVolatile_name,                    "setTargetVolatile")                        \
   template(setTarget_signature,                       "(Ljava/lang/invoke/MethodHandle;)V")       \
-  NOT_LP64(  do_alias(machine_word_signature,         int_signature)  )                           \
-  LP64_ONLY( do_alias(machine_word_signature,         long_signature) )                           \
+  NOT_LP64(  do_alias(intptr_signature,               int_signature)  )                           \
+  LP64_ONLY( do_alias(intptr_signature,               long_signature) )                           \
   template(selectAlternative_signature, "(ZLjava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodHandle;)Ljava/lang/invoke/MethodHandle;") \
                                                                                                   \
   /* common method and field names */                                                             \
@@ -365,6 +365,11 @@
   template(erasedType_name,                           "erasedType")                               \
   template(genericInvoker_name,                       "genericInvoker")                           \
   template(append_name,                               "append")                                   \
+  template(klass_name,                                "klass")                                    \
+  template(resolved_constructor_name,                 "resolved_constructor")                     \
+  template(array_klass_name,                          "array_klass")                              \
+  template(oop_size_name,                             "oop_size")                                 \
+  template(static_oop_field_count_name,               "static_oop_field_count")                   \
                                                                                                   \
   /* non-intrinsic name/signature pairs: */                                                       \
   template(register_method_name,                      "register")                                 \

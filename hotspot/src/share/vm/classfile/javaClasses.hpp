@@ -156,30 +156,32 @@ class java_lang_String : AllStatic {
 
 // Interface to java.lang.Class objects
 
+#define CLASS_INJECTED_FIELDS(macro)                                       \
+  macro(java_lang_Class, klass,                  object_signature,  false) \
+  macro(java_lang_Class, resolved_constructor,   object_signature,  false) \
+  macro(java_lang_Class, array_klass,            object_signature,  false) \
+  macro(java_lang_Class, oop_size,               int_signature,     false) \
+  macro(java_lang_Class, static_oop_field_count, int_signature,     false)
+
 class java_lang_Class : AllStatic {
-   friend class VMStructs;
+  friend class VMStructs;
+
  private:
   // The fake offsets are added by the class loader when java.lang.Class is loaded
 
-  enum {
-    hc_number_of_fake_oop_fields   = 3,
-    hc_number_of_fake_int_fields   = 2
-  };
+  static int _klass_offset;
+  static int _resolved_constructor_offset;
+  static int _array_klass_offset;
 
-  static int klass_offset;
-  static int resolved_constructor_offset;
-  static int array_klass_offset;
-  static int number_of_fake_oop_fields;
+  static int _oop_size_offset;
+  static int _static_oop_field_count_offset;
 
-  static int oop_size_offset;
-  static int static_oop_field_count_offset;
-
-  static void compute_offsets();
   static bool offsets_computed;
   static int classRedefinedCount_offset;
-  static int parallelCapable_offset;
 
  public:
+  static void compute_offsets();
+
   // Instance creation
   static oop  create_mirror(KlassHandle k, TRAPS);
   static void fixup_mirror(KlassHandle k, TRAPS);
@@ -209,14 +211,12 @@ class java_lang_Class : AllStatic {
   static klassOop array_klass(oop java_class);
   static void set_array_klass(oop java_class, klassOop klass);
   // compiler support for class operations
-  static int klass_offset_in_bytes() { return klass_offset; }
-  static int resolved_constructor_offset_in_bytes() { return resolved_constructor_offset; }
-  static int array_klass_offset_in_bytes() { return array_klass_offset; }
+  static int klass_offset_in_bytes()                { return _klass_offset; }
+  static int resolved_constructor_offset_in_bytes() { return _resolved_constructor_offset; }
+  static int array_klass_offset_in_bytes()          { return _array_klass_offset; }
   // Support for classRedefinedCount field
   static int classRedefinedCount(oop the_class_mirror);
   static void set_classRedefinedCount(oop the_class_mirror, int value);
-  // Support for parallelCapable field
-  static bool parallelCapable(oop the_class_mirror);
 
   static int oop_size(oop java_class);
   static void set_oop_size(oop java_class, int size);
@@ -834,16 +834,19 @@ class java_lang_ref_SoftReference: public java_lang_ref_Reference {
 
 // Interface to java.lang.invoke.MethodHandle objects
 
+#define METHODHANDLE_INJECTED_FIELDS(macro)                               \
+  macro(java_lang_invoke_MethodHandle, vmentry,  intptr_signature, false) \
+  macro(java_lang_invoke_MethodHandle, vmtarget, object_signature, true)
+
 class MethodHandleEntry;
 
 class java_lang_invoke_MethodHandle: AllStatic {
   friend class JavaClasses;
 
  private:
-  static int _vmentry_offset;           // assembly code trampoline for MH
-  static int _vmtarget_offset;          // class-specific target reference
+  static int _vmentry_offset;            // assembly code trampoline for MH
+  static int _vmtarget_offset;           // class-specific target reference
   static int _type_offset;              // the MethodType of this MH
-  static int _vmslots_offset;           // OPTIONAL hoisted type.form.vmslots
 
   static void compute_offsets();
 
@@ -859,8 +862,6 @@ class java_lang_invoke_MethodHandle: AllStatic {
   static void       set_vmentry(oop mh, MethodHandleEntry* data);
 
   static int            vmslots(oop mh);
-  static void      init_vmslots(oop mh);
-  static int    compute_vmslots(oop mh);
 
   // Testers
   static bool is_subclass(klassOop klass) {
@@ -874,14 +875,15 @@ class java_lang_invoke_MethodHandle: AllStatic {
   static int type_offset_in_bytes()             { return _type_offset; }
   static int vmtarget_offset_in_bytes()         { return _vmtarget_offset; }
   static int vmentry_offset_in_bytes()          { return _vmentry_offset; }
-  static int vmslots_offset_in_bytes()          { return _vmslots_offset; }
 };
+
+#define DIRECTMETHODHANDLE_INJECTED_FIELDS(macro)                          \
+  macro(java_lang_invoke_DirectMethodHandle, vmindex, int_signature, true)
 
 class java_lang_invoke_DirectMethodHandle: public java_lang_invoke_MethodHandle {
   friend class JavaClasses;
 
  private:
-  //         _vmtarget_offset;          // method   or class      or interface
   static int _vmindex_offset;           // negative or vtable idx or itable idx
   static void compute_offsets();
 
@@ -1012,6 +1014,9 @@ class java_lang_invoke_CountingMethodHandle: public java_lang_invoke_MethodHandl
 // Interface to java.lang.invoke.MemberName objects
 // (These are a private interface for Java code to query the class hierarchy.)
 
+#define MEMBERNAME_INJECTED_FIELDS(macro)                              \
+  macro(java_lang_invoke_MemberName, vmtarget, object_signature, true)
+
 class java_lang_invoke_MemberName: AllStatic {
   friend class JavaClasses;
 
@@ -1121,6 +1126,10 @@ class java_lang_invoke_MethodType: AllStatic {
   static int form_offset_in_bytes()             { return _form_offset; }
 };
 
+#define METHODTYPEFORM_INJECTED_FIELDS(macro)                              \
+  macro(java_lang_invoke_MethodTypeForm, vmslots,  int_signature,    true) \
+  macro(java_lang_invoke_MethodTypeForm, vmlayout, object_signature, true)
+
 class java_lang_invoke_MethodTypeForm: AllStatic {
   friend class JavaClasses;
 
@@ -1135,6 +1144,8 @@ class java_lang_invoke_MethodTypeForm: AllStatic {
  public:
   // Accessors
   static int            vmslots(oop mtform);
+  static void       set_vmslots(oop mtform, int vmslots);
+
   static oop            erasedType(oop mtform);
   static oop            genericInvoker(oop mtform);
 
@@ -1156,8 +1167,6 @@ class java_lang_invoke_CallSite: AllStatic {
 
 private:
   static int _target_offset;
-  static int _caller_method_offset;
-  static int _caller_bci_offset;
 
   static void compute_offsets();
 
@@ -1169,12 +1178,6 @@ public:
   static volatile oop     target_volatile(oop site)             { return site->obj_field_volatile(    _target_offset);         }
   static void         set_target_volatile(oop site, oop target) {        site->obj_field_put_volatile(_target_offset, target); }
 
-  static oop              caller_method(oop site);
-  static void         set_caller_method(oop site, oop ref);
-
-  static jint             caller_bci(oop site);
-  static void         set_caller_bci(oop site, jint bci);
-
   // Testers
   static bool is_subclass(klassOop klass) {
     return Klass::cast(klass)->is_subclass_of(SystemDictionary::CallSite_klass());
@@ -1185,8 +1188,6 @@ public:
 
   // Accessors for code generation:
   static int target_offset_in_bytes()           { return _target_offset; }
-  static int caller_method_offset_in_bytes()    { return _caller_method_offset; }
-  static int caller_bci_offset_in_bytes()       { return _caller_bci_offset; }
 };
 
 
@@ -1217,10 +1218,17 @@ class java_lang_ClassLoader : AllStatic {
    hc_parent_offset = 0
   };
 
+  static bool offsets_computed;
   static int parent_offset;
+  static int parallelCapable_offset;
+
+  static void compute_offsets();
 
  public:
   static oop parent(oop loader);
+
+  // Support for parallelCapable field
+  static bool parallelCapable(oop the_class_mirror);
 
   static bool is_trusted_loader(oop loader);
 
@@ -1343,17 +1351,71 @@ class java_util_concurrent_locks_AbstractOwnableSynchronizer : AllStatic {
   static oop  get_owner_threadObj(oop obj);
 };
 
+// Use to declare fields that need to be injected into Java classes
+// for the JVM to use.  The name_index and signature_index are
+// declared in vmSymbols.  The may_be_java flag is used to declare
+// fields that might already exist in Java but should be injected if
+// they don't.  Otherwise the field is unconditionally injected and
+// the JVM uses the injected one.  This is to ensure that name
+// collisions don't occur.  In general may_be_java should be false
+// unless there's a good reason.
+
+class InjectedField {
+ public:
+  const SystemDictionary::WKID klass_id;
+  const vmSymbols::SID name_index;
+  const vmSymbols::SID signature_index;
+  const bool           may_be_java;
+
+
+  klassOop klass() const    { return SystemDictionary::well_known_klass(klass_id); }
+  Symbol* name() const      { return lookup_symbol(name_index); }
+  Symbol* signature() const { return lookup_symbol(signature_index); }
+
+  int compute_offset();
+
+  // Find the Symbol for this index
+  static Symbol* lookup_symbol(int symbol_index) {
+    return vmSymbols::symbol_at((vmSymbols::SID)symbol_index);
+  }
+};
+
+#define DECLARE_INJECTED_FIELD_ENUM(klass, name, signature, may_be_java) \
+  klass##_##name##_enum,
+
+#define ALL_INJECTED_FIELDS(macro)          \
+  CLASS_INJECTED_FIELDS(macro)              \
+  METHODHANDLE_INJECTED_FIELDS(macro)       \
+  DIRECTMETHODHANDLE_INJECTED_FIELDS(macro) \
+  MEMBERNAME_INJECTED_FIELDS(macro)         \
+  METHODTYPEFORM_INJECTED_FIELDS(macro)
+
 // Interface to hard-coded offset checking
 
 class JavaClasses : AllStatic {
  private:
+
+  static InjectedField _injected_fields[];
+
   static bool check_offset(const char *klass_name, int offset, const char *field_name, const char* field_sig) PRODUCT_RETURN0;
   static bool check_static_offset(const char *klass_name, int hardcoded_offset, const char *field_name, const char* field_sig) PRODUCT_RETURN0;
   static bool check_constant(const char *klass_name, int constant, const char *field_name, const char* field_sig) PRODUCT_RETURN0;
+
  public:
+  enum InjectedFieldID {
+    ALL_INJECTED_FIELDS(DECLARE_INJECTED_FIELD_ENUM)
+    MAX_enum
+  };
+
+  static int compute_injected_offset(InjectedFieldID id);
+
   static void compute_hard_coded_offsets();
   static void compute_offsets();
   static void check_offsets() PRODUCT_RETURN;
+
+  static InjectedField* get_injected(Symbol* class_name, int* field_count);
 };
+
+#undef DECLARE_INJECTED_FIELD_ENUM
 
 #endif // SHARE_VM_CLASSFILE_JAVACLASSES_HPP
