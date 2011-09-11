@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,15 @@
 
 package sun.reflect.generics.parser;
 
-
 import java.lang.reflect.GenericSignatureFormatError;
 import java.util.*;
 import sun.reflect.generics.tree.*;
 
-
 /**
  * Parser for type signatures, as defined in the Java Virtual
-// Machine Specification (JVMS) chapter 4.
+ * Machine Specification (JVMS) chapter 4.
  * Converts the signatures into an abstract syntax tree (AST) representation.
-// See the package sun.reflect.generics.tree for details of the AST.
+ * See the package sun.reflect.generics.tree for details of the AST.
  */
 public class SignatureParser {
     // The input is conceptually a character stream (though currently it's
@@ -58,8 +56,8 @@ public class SignatureParser {
     // if (current != x {error("expected an x");
     //
     // where x is some character constant.
-    // The assertion inidcates, that, as currently written,
-    // the code should nver reach this point unless the input is an
+    // The assertion indicates, that, as currently written,
+    // the code should never reach this point unless the input is an
     // x. On the other hand, the test is there to check the legality
     // of the input wrt to a given production. It may be that at a later
     // time the code might be called directly, and if the input is
@@ -68,7 +66,7 @@ public class SignatureParser {
 
     private char[] input; // the input signature
     private int index = 0; // index into the input
-// used to mark end of input
+    // used to mark end of input
     private static final char EOI = ':';
     private static final boolean DEBUG = false;
 
@@ -104,6 +102,11 @@ public class SignatureParser {
         index++;
     }
 
+    // For debugging, prints current character to the end of the input.
+    private String remainder() {
+        return new String(input, index, input.length-index);
+    }
+
     // Match c against a "set" of characters
     private boolean matches(char c, char... set) {
         for (char e : set) {
@@ -117,8 +120,17 @@ public class SignatureParser {
     // Currently throws a GenericSignatureFormatError.
 
     private Error error(String errorMsg) {
-        if (DEBUG) System.out.println("Parse error:" + errorMsg);
-        return new GenericSignatureFormatError();
+        return new GenericSignatureFormatError("Signature Parse error: " + errorMsg +
+                                               "\n\tRemaining input: " + remainder());
+    }
+
+    /**
+     * Verify the parse has made forward progress; throw an exception
+     * if no progress.
+     */
+    private void progress(int startingPosition) {
+        if (index <= startingPosition)
+            throw error("Failure to make progress!");
     }
 
     /**
@@ -163,6 +175,7 @@ public class SignatureParser {
     /**
      * Parses a type signature
      * and produces an abstract syntax tree representing it.
+     *
      * @param s a string representing the input type signature
      * @return An abstract syntax tree for a type signature
      * corresponding to the input string
@@ -183,38 +196,58 @@ public class SignatureParser {
     // and when it completes parsing, it leaves the input at the first
     // character after the input parses.
 
-    // parse a class signature based on the implicit input.
+    /*
+     * Note on grammar conventions: a trailing "*" matches zero or
+     * more occurrences, a trailing "+" matches one or more occurrences,
+     * "_opt" indicates an optional component.
+     */
+
+    /**
+     * ClassSignature:
+     *     FormalTypeParameters_opt SuperclassSignature SuperinterfaceSignature*
+     */
     private ClassSignature parseClassSignature() {
+        // parse a class signature based on the implicit input.
         assert(index == 0);
         return ClassSignature.make(parseZeroOrMoreFormalTypeParameters(),
-                                   parseClassTypeSignature(),
+                                   parseClassTypeSignature(), // Only rule for SuperclassSignature
                                    parseSuperInterfaces());
     }
 
     private FormalTypeParameter[] parseZeroOrMoreFormalTypeParameters(){
-        if (current() == '<') { return parseFormalTypeParameters();}
-        else {return new FormalTypeParameter[0];}
+        if (current() == '<') {
+            return parseFormalTypeParameters();
+        } else {
+            return new FormalTypeParameter[0];
+        }
     }
 
-
+    /**
+     * FormalTypeParameters:
+     *     "<" FormalTypeParameter+ ">"
+     */
     private FormalTypeParameter[] parseFormalTypeParameters(){
-        Collection<FormalTypeParameter> ftps =
-            new ArrayList<FormalTypeParameter>(3);
+        List<FormalTypeParameter> ftps =  new ArrayList<>(3);
         assert(current() == '<'); // should not have been called at all
-        if (current() != '<') { throw error("expected <");}
+        if (current() != '<') { throw error("expected '<'");}
         advance();
         ftps.add(parseFormalTypeParameter());
         while (current() != '>') {
+            int startingPosition = index;
             ftps.add(parseFormalTypeParameter());
+            progress(startingPosition);
         }
         advance();
-        FormalTypeParameter[] ftpa = new FormalTypeParameter[ftps.size()];
-        return ftps.toArray(ftpa);
+        return ftps.toArray(new FormalTypeParameter[ftps.size()]);
     }
 
+    /**
+     * FormalTypeParameter:
+     *     Identifier ClassBound InterfaceBound*
+     */
     private FormalTypeParameter parseFormalTypeParameter(){
         String id = parseIdentifier();
-        FieldTypeSignature[] bs = parseZeroOrMoreBounds();
+        FieldTypeSignature[] bs = parseBounds();
         return FormalTypeParameter.make(id, bs);
     }
 
@@ -229,7 +262,8 @@ public class SignatureParser {
             case '[':
             case ':':
             case '>':
-            case '<': return result.toString();
+            case '<':
+                return result.toString();
             default:{
                 result.append(c);
                 advance();
@@ -239,26 +273,42 @@ public class SignatureParser {
         }
         return result.toString();
     }
-
+    /**
+     * FieldTypeSignature:
+     *     ClassTypeSignature
+     *     ArrayTypeSignature
+     *     TypeVariableSignature
+     */
     private FieldTypeSignature parseFieldTypeSignature() {
+        return parseFieldTypeSignature(true);
+    }
+
+    private FieldTypeSignature parseFieldTypeSignature(boolean allowArrays) {
         switch(current()) {
         case 'L':
            return parseClassTypeSignature();
         case 'T':
             return parseTypeVariableSignature();
         case '[':
-            return parseArrayTypeSignature();
+            if (allowArrays)
+                return parseArrayTypeSignature();
+            else
+                throw error("Array signature not allowed here.");
         default: throw error("Expected Field Type Signature");
         }
     }
 
+    /**
+     * ClassTypeSignature:
+     *     "L" PackageSpecifier_opt SimpleClassTypeSignature ClassTypeSignatureSuffix* ";"
+     */
     private ClassTypeSignature parseClassTypeSignature(){
         assert(current() == 'L');
         if (current() != 'L') { throw error("expected a class type");}
         advance();
-        List<SimpleClassTypeSignature> scts =
-            new ArrayList<SimpleClassTypeSignature>(5);
-        scts.add(parseSimpleClassTypeSignature(false));
+        List<SimpleClassTypeSignature> scts = new ArrayList<>(5);
+        scts.add(parsePackageNameAndSimpleClassTypeSignature());
+
         parseClassTypeSignatureSuffix(scts);
         if (current() != ';')
             throw error("expected ';' got '" + current() + "'");
@@ -267,25 +317,65 @@ public class SignatureParser {
         return ClassTypeSignature.make(scts);
     }
 
-    private SimpleClassTypeSignature parseSimpleClassTypeSignature(boolean dollar){
-            String id = parseIdentifier();
-            char c = current();
-            switch (c) {
-            case ';':
-            case '/':
-                return SimpleClassTypeSignature.make(id, dollar, new TypeArgument[0]) ;
-            case '<': {
-                return SimpleClassTypeSignature.make(id, dollar, parseTypeArguments());
+    /**
+     * PackageSpecifier:
+     *     Identifier "/" PackageSpecifier*
+     */
+    private SimpleClassTypeSignature parsePackageNameAndSimpleClassTypeSignature() {
+        // Parse both any optional leading PackageSpecifier as well as
+        // the following SimpleClassTypeSignature.
+
+        String id = parseIdentifier();
+
+        if (current() == '/') { // package name
+            StringBuilder idBuild = new StringBuilder(id);
+
+            while(current() == '/') {
+                advance();
+                idBuild.append(".");
+                idBuild.append(parseIdentifier());
             }
-            default: {throw error("expected < or ; or /");}
-            }
+            id = idBuild.toString();
+        }
+
+        switch (current()) {
+        case ';':
+            return SimpleClassTypeSignature.make(id, false, new TypeArgument[0]); // all done!
+        case '<':
+            if (DEBUG) System.out.println("\t remainder: " + remainder());
+            return SimpleClassTypeSignature.make(id, false, parseTypeArguments());
+        default:
+            throw error("expected '<' or ';' but got " + current());
+        }
     }
 
+    /**
+     * SimpleClassTypeSignature:
+     *     Identifier TypeArguments_opt
+     */
+    private SimpleClassTypeSignature parseSimpleClassTypeSignature(boolean dollar){
+        String id = parseIdentifier();
+        char c = current();
+
+        switch (c) {
+        case ';':
+        case '.':
+            return SimpleClassTypeSignature.make(id, dollar, new TypeArgument[0]) ;
+        case '<':
+            return SimpleClassTypeSignature.make(id, dollar, parseTypeArguments());
+        default:
+            throw error("expected '<' or ';' or '.', got '" + c + "'.");
+        }
+    }
+
+    /**
+     * ClassTypeSignatureSuffix:
+     *     "." SimpleClassTypeSignature
+     */
     private void parseClassTypeSignatureSuffix(List<SimpleClassTypeSignature> scts) {
-        while (current() == '/' || current() == '.') {
-            boolean dollar = (current() == '.');
+        while (current() == '.') {
             advance();
-            scts.add(parseSimpleClassTypeSignature(dollar));
+            scts.add(parseSimpleClassTypeSignature(true));
         }
     }
 
@@ -294,10 +384,14 @@ public class SignatureParser {
         else {return new TypeArgument[0];}
     }
 
+    /**
+     * TypeArguments:
+     *     "<" TypeArgument+ ">"
+     */
     private TypeArgument[] parseTypeArguments() {
-        Collection<TypeArgument> tas = new ArrayList<TypeArgument>(3);
+        List<TypeArgument> tas = new ArrayList<>(3);
         assert(current() == '<');
-        if (current() != '<') { throw error("expected <");}
+        if (current() != '<') { throw error("expected '<'");}
         advance();
         tas.add(parseTypeArgument());
         while (current() != '>') {
@@ -305,10 +399,14 @@ public class SignatureParser {
             tas.add(parseTypeArgument());
         }
         advance();
-        TypeArgument[] taa = new TypeArgument[tas.size()];
-        return tas.toArray(taa);
+        return tas.toArray(new TypeArgument[tas.size()]);
     }
 
+    /**
+     * TypeArgument:
+     *     WildcardIndicator_opt FieldTypeSignature
+     *     "*"
+     */
     private TypeArgument parseTypeArgument() {
         FieldTypeSignature[] ub, lb;
         ub = new FieldTypeSignature[1];
@@ -334,18 +432,20 @@ public class SignatureParser {
             ub[0] = SimpleClassTypeSignature.make("java.lang.Object", false, ta);
             return Wildcard.make(ub, lb);
         }
-        default: return parseFieldTypeSignature();
+        default:
+            return parseFieldTypeSignature();
         }
     }
 
-    // TypeVariableSignature -> T identifier
-
-    private TypeVariableSignature parseTypeVariableSignature(){
+    /**
+     * TypeVariableSignature:
+     *     "T" Identifier ";"
+     */
+    private TypeVariableSignature parseTypeVariableSignature() {
         assert(current() == 'T');
         if (current() != 'T') { throw error("expected a type variable usage");}
         advance();
-        TypeVariableSignature ts =
-            TypeVariableSignature.make(parseIdentifier());
+        TypeVariableSignature ts = TypeVariableSignature.make(parseIdentifier());
         if (current() != ';') {
             throw error("; expected in signature of type variable named" +
                   ts.getIdentifier());
@@ -354,16 +454,21 @@ public class SignatureParser {
         return ts;
     }
 
-        // ArrayTypeSignature -> [ TypeSignature
-
+    /**
+     * ArrayTypeSignature:
+     *     "[" TypeSignature
+     */
     private ArrayTypeSignature parseArrayTypeSignature() {
         if (current() != '[') {throw error("expected array type signature");}
         advance();
         return ArrayTypeSignature.make(parseTypeSignature());
     }
 
-    // TypeSignature -> BaseType | FieldTypeSignature
-
+    /**
+     * TypeSignature:
+     *     FieldTypeSignature
+     *     BaseType
+     */
     private TypeSignature parseTypeSignature() {
         switch (current()) {
         case 'B':
@@ -373,8 +478,11 @@ public class SignatureParser {
         case 'I':
         case 'J':
         case 'S':
-        case 'Z':return parseBaseType();
-        default: return parseFieldTypeSignature();
+        case 'Z':
+            return parseBaseType();
+
+        default:
+            return parseFieldTypeSignature();
         }
     }
 
@@ -408,12 +516,18 @@ public class SignatureParser {
             assert(false);
             throw error("expected primitive type");
         }
-    }
+        }
     }
 
-    private FieldTypeSignature[] parseZeroOrMoreBounds() {
-        Collection<FieldTypeSignature> fts =
-            new ArrayList<FieldTypeSignature>(3);
+    /**
+     * ClassBound:
+     *     ":" FieldTypeSignature_opt
+     *
+     * InterfaceBound:
+     *     ":" FieldTypeSignature
+     */
+    private FieldTypeSignature[] parseBounds() {
+        List<FieldTypeSignature> fts = new ArrayList<>(3);
 
         if (current() == ':') {
             advance();
@@ -430,24 +544,31 @@ public class SignatureParser {
                 advance();
                 fts.add(parseFieldTypeSignature());
             }
-        }
+        } else
+            error("Bound expected");
 
-        FieldTypeSignature[] fta = new FieldTypeSignature[fts.size()];
-        return fts.toArray(fta);
+        return fts.toArray(new FieldTypeSignature[fts.size()]);
     }
 
+    /**
+     * SuperclassSignature:
+     *     ClassTypeSignature
+     */
     private ClassTypeSignature[] parseSuperInterfaces() {
-        Collection<ClassTypeSignature> cts =
-            new ArrayList<ClassTypeSignature>(5);
+        List<ClassTypeSignature> cts = new ArrayList<>(5);
         while(current() == 'L') {
             cts.add(parseClassTypeSignature());
         }
-        ClassTypeSignature[] cta = new ClassTypeSignature[cts.size()];
-        return cts.toArray(cta);
+        return cts.toArray(new ClassTypeSignature[cts.size()]);
     }
 
-    // parse a method signature based on the implicit input.
+
+    /**
+     * MethodTypeSignature:
+     *     FormalTypeParameters_opt "(" TypeSignature* ")" ReturnType ThrowsSignature*
+     */
     private MethodTypeSignature parseMethodTypeSignature() {
+        // Parse a method signature based on the implicit input.
         FieldTypeSignature[] ets;
 
         assert(index == 0);
@@ -457,19 +578,19 @@ public class SignatureParser {
                                         parseZeroOrMoreThrowsSignatures());
     }
 
-    // (TypeSignature*)
+    // "(" TypeSignature* ")"
     private TypeSignature[] parseFormalParameters() {
-        if (current() != '(') {throw error("expected (");}
+        if (current() != '(') {throw error("expected '('");}
         advance();
         TypeSignature[] pts = parseZeroOrMoreTypeSignatures();
-        if (current() != ')') {throw error("expected )");}
+        if (current() != ')') {throw error("expected ')'");}
         advance();
         return pts;
     }
 
-        // TypeSignature*
+    // TypeSignature*
     private TypeSignature[] parseZeroOrMoreTypeSignatures() {
-        Collection<TypeSignature> ts = new ArrayList<TypeSignature>();
+        List<TypeSignature> ts = new ArrayList<>();
         boolean stop = false;
         while (!stop) {
             switch(current()) {
@@ -484,47 +605,46 @@ public class SignatureParser {
             case 'L':
             case 'T':
             case '[': {
-                    ts.add(parseTypeSignature());
-                    break;
-                }
+                ts.add(parseTypeSignature());
+                break;
+            }
             default: stop = true;
             }
         }
-        /*      while( matches(current(),
-                       'B', 'C', 'D', 'F', 'I', 'J', 'S', 'Z', 'L', 'T', '[')
-               ) {
-            ts.add(parseTypeSignature());
-            }*/
-        TypeSignature[] ta = new TypeSignature[ts.size()];
-        return ts.toArray(ta);
+        return ts.toArray(new TypeSignature[ts.size()]);
     }
 
-    // ReturnType -> V | TypeSignature
-
+    /**
+     * ReturnType:
+     *     TypeSignature
+     *     VoidDescriptor
+     */
     private ReturnType parseReturnType(){
-        if  (current() == 'V') {
+        if (current() == 'V') {
             advance();
             return VoidDescriptor.make();
-        } else return parseTypeSignature();
+        } else
+            return parseTypeSignature();
     }
 
     // ThrowSignature*
     private FieldTypeSignature[] parseZeroOrMoreThrowsSignatures(){
-        Collection<FieldTypeSignature> ets =
-            new ArrayList<FieldTypeSignature>(3);
+        List<FieldTypeSignature> ets = new ArrayList<>(3);
         while( current() == '^') {
             ets.add(parseThrowsSignature());
         }
-        FieldTypeSignature[] eta = new FieldTypeSignature[ets.size()];
-        return ets.toArray(eta);
+        return ets.toArray(new FieldTypeSignature[ets.size()]);
     }
 
-    // ThrowSignature -> ^ FieldTypeSignature
-
+    /**
+     * ThrowsSignature:
+     *     "^" ClassTypeSignature
+     *     "^" TypeVariableSignature
+     */
     private FieldTypeSignature parseThrowsSignature() {
         assert(current() == '^');
         if (current() != '^') { throw error("expected throws signature");}
         advance();
-        return parseFieldTypeSignature();
+        return parseFieldTypeSignature(false);
     }
  }

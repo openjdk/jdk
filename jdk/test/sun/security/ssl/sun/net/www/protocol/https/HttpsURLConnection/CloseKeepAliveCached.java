@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,10 @@
  * @bug 6618387
  * @summary SSL client sessions do not close cleanly. A TCP reset occurs
  *      instead of a close_notify alert.
- * @run main/othervm -Djavax.net.debug=ssl CloseKeepAliveCached
+ * @run main/othervm CloseKeepAliveCached
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  *
  * @ignore
  *    After run the test manually, at the end of the debug output,
@@ -140,13 +143,15 @@ public class CloseKeepAliveCached {
      * to avoid infinite hangs.
      */
     void doClientSide() throws Exception {
-
         /*
          * Wait for server to get started.
          */
         while (!serverReady) {
             Thread.sleep(50);
         }
+
+        HostnameVerifier reservedHV =
+            HttpsURLConnection.getDefaultHostnameVerifier();
         try {
             HttpsURLConnection http = null;
 
@@ -180,6 +185,8 @@ public class CloseKeepAliveCached {
             if (sslServerSocket != null)
                 sslServerSocket.close();
             throw ioex;
+        } finally {
+            HttpsURLConnection.setDefaultHostnameVerifier(reservedHV);
         }
     }
 

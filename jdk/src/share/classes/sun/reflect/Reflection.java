@@ -26,7 +26,6 @@
 package sun.reflect;
 
 import java.lang.reflect.*;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,17 +38,17 @@ public class Reflection {
         view, where they are sensitive or they may contain VM-internal objects.
         These Maps are updated very rarely. Rather than synchronize on
         each access, we use copy-on-write */
-    private static volatile Map<Class,String[]> fieldFilterMap;
-    private static volatile Map<Class,String[]> methodFilterMap;
+    private static volatile Map<Class<?>,String[]> fieldFilterMap;
+    private static volatile Map<Class<?>,String[]> methodFilterMap;
 
     static {
-        Map<Class,String[]> map = new HashMap<Class,String[]>();
+        Map<Class<?>,String[]> map = new HashMap<Class<?>,String[]>();
         map.put(Reflection.class,
             new String[] {"fieldFilterMap", "methodFilterMap"});
         map.put(System.class, new String[] {"security"});
         fieldFilterMap = map;
 
-        methodFilterMap = new HashMap<Class,String[]>();
+        methodFilterMap = new HashMap<>();
     }
 
     /** Returns the class of the method <code>realFramesToSkip</code>
@@ -61,7 +60,7 @@ public class Reflection {
         java.lang.reflect.Method.invoke() and its implementation are
         completely ignored and do not count toward the number of "real"
         frames skipped. */
-    public static native Class getCallerClass(int realFramesToSkip);
+    public static native Class<?> getCallerClass(int realFramesToSkip);
 
     /** Retrieves the access flags written to the class file. For
         inner classes these flags may differ from those returned by
@@ -71,18 +70,18 @@ public class Reflection {
         to compatibility reasons; see 4471811. Only the values of the
         low 13 bits (i.e., a mask of 0x1FFF) are guaranteed to be
         valid. */
-    private static native int getClassAccessFlags(Class c);
+    private static native int getClassAccessFlags(Class<?> c);
 
     /** A quick "fast-path" check to try to avoid getCallerClass()
         calls. */
-    public static boolean quickCheckMemberAccess(Class memberClass,
+    public static boolean quickCheckMemberAccess(Class<?> memberClass,
                                                  int modifiers)
     {
         return Modifier.isPublic(getClassAccessFlags(memberClass) & modifiers);
     }
 
-    public static void ensureMemberAccess(Class currentClass,
-                                          Class memberClass,
+    public static void ensureMemberAccess(Class<?> currentClass,
+                                          Class<?> memberClass,
                                           Object target,
                                           int modifiers)
         throws IllegalAccessException
@@ -101,13 +100,13 @@ public class Reflection {
         }
     }
 
-    public static boolean verifyMemberAccess(Class currentClass,
+    public static boolean verifyMemberAccess(Class<?> currentClass,
                                              // Declaring class of field
                                              // or method
-                                             Class  memberClass,
+                                             Class<?> memberClass,
                                              // May be NULL in case of statics
-                                             Object target,
-                                             int    modifiers)
+                                             Object   target,
+                                             int      modifiers)
     {
         // Verify that currentClass can access a field, method, or
         // constructor of memberClass, where that member's access bits are
@@ -162,7 +161,7 @@ public class Reflection {
 
         if (Modifier.isProtected(modifiers)) {
             // Additional test for protected members: JLS 6.6.2
-            Class targetClass = (target == null ? memberClass : target.getClass());
+            Class<?> targetClass = (target == null ? memberClass : target.getClass());
             if (targetClass != currentClass) {
                 if (!gotIsSameClassPackage) {
                     isSameClassPackage = isSameClassPackage(currentClass, memberClass);
@@ -179,7 +178,7 @@ public class Reflection {
         return true;
     }
 
-    private static boolean isSameClassPackage(Class c1, Class c2) {
+    private static boolean isSameClassPackage(Class<?> c1, Class<?> c2) {
         return isSameClassPackage(c1.getClassLoader(), c1.getName(),
                                   c2.getClassLoader(), c2.getName());
     }
@@ -234,8 +233,8 @@ public class Reflection {
         }
     }
 
-    static boolean isSubclassOf(Class queryClass,
-                                Class ofClass)
+    static boolean isSubclassOf(Class<?> queryClass,
+                                Class<?> ofClass)
     {
         while (queryClass != null) {
             if (queryClass == ofClass) {
@@ -247,31 +246,31 @@ public class Reflection {
     }
 
     // fieldNames must contain only interned Strings
-    public static synchronized void registerFieldsToFilter(Class containingClass,
+    public static synchronized void registerFieldsToFilter(Class<?> containingClass,
                                               String ... fieldNames) {
         fieldFilterMap =
             registerFilter(fieldFilterMap, containingClass, fieldNames);
     }
 
     // methodNames must contain only interned Strings
-    public static synchronized void registerMethodsToFilter(Class containingClass,
+    public static synchronized void registerMethodsToFilter(Class<?> containingClass,
                                               String ... methodNames) {
         methodFilterMap =
             registerFilter(methodFilterMap, containingClass, methodNames);
     }
 
-    private static Map<Class,String[]> registerFilter(Map<Class,String[]> map,
-            Class containingClass, String ... names) {
+    private static Map<Class<?>,String[]> registerFilter(Map<Class<?>,String[]> map,
+            Class<?> containingClass, String ... names) {
         if (map.get(containingClass) != null) {
             throw new IllegalArgumentException
                             ("Filter already registered: " + containingClass);
         }
-        map = new HashMap<Class,String[]>(map);
+        map = new HashMap<Class<?>,String[]>(map);
         map.put(containingClass, names);
         return map;
     }
 
-    public static Field[] filterFields(Class containingClass,
+    public static Field[] filterFields(Class<?> containingClass,
                                        Field[] fields) {
         if (fieldFilterMap == null) {
             // Bootstrapping
@@ -280,7 +279,7 @@ public class Reflection {
         return (Field[])filter(fields, fieldFilterMap.get(containingClass));
     }
 
-    public static Method[] filterMethods(Class containingClass, Method[] methods) {
+    public static Method[] filterMethods(Class<?> containingClass, Method[] methods) {
         if (methodFilterMap == null) {
             // Bootstrapping
             return methods;

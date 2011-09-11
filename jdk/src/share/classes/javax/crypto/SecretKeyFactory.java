@@ -96,7 +96,7 @@ public class SecretKeyFactory {
 
     // remaining services to try in provider selection
     // null once provider is selected
-    private Iterator serviceIterator;
+    private Iterator<Service> serviceIterator;
 
     /**
      * Creates a SecretKeyFactory object.
@@ -114,7 +114,8 @@ public class SecretKeyFactory {
 
     private SecretKeyFactory(String algorithm) throws NoSuchAlgorithmException {
         this.algorithm = algorithm;
-        List list = GetInstance.getServices("SecretKeyFactory", algorithm);
+        List<Service> list =
+                GetInstance.getServices("SecretKeyFactory", algorithm);
         serviceIterator = list.iterator();
         // fetch and instantiate initial spi
         if (nextSpi(null) == null) {
@@ -290,7 +291,7 @@ public class SecretKeyFactory {
                 return null;
             }
             while (serviceIterator.hasNext()) {
-                Service s = (Service)serviceIterator.next();
+                Service s = serviceIterator.next();
                 if (JceSecurity.canUseProvider(s.getProvider()) == false) {
                     continue;
                 }
@@ -367,7 +368,7 @@ public class SecretKeyFactory {
      * (e.g., the given key has an algorithm or format not supported by this
      * secret-key factory).
      */
-    public final KeySpec getKeySpec(SecretKey key, Class keySpec)
+    public final KeySpec getKeySpec(SecretKey key, Class<?> keySpec)
             throws InvalidKeySpecException {
         if (serviceIterator == null) {
             return spi.engineGetKeySpec(key, keySpec);

@@ -144,18 +144,21 @@ class SymbolPropertyTable;
   template(reflect_UnsafeStaticFieldAccessorImpl_klass, sun_reflect_UnsafeStaticFieldAccessorImpl, Opt_Only_JDK15) \
                                                                               \
   /* support for dynamic typing; it's OK if these are NULL in earlier JDKs */ \
-  template(MethodHandle_klass,           java_lang_invoke_MethodHandle,     Pre_JSR292) \
-  template(MemberName_klass,             java_lang_invoke_MemberName,       Pre_JSR292) \
-  template(MethodHandleNatives_klass,    java_lang_invoke_MethodHandleNatives, Pre_JSR292) \
-  template(AdapterMethodHandle_klass,    java_lang_invoke_AdapterMethodHandle, Pre_JSR292) \
-  template(BoundMethodHandle_klass,      java_lang_invoke_BoundMethodHandle, Pre_JSR292) \
-  template(DirectMethodHandle_klass,     java_lang_invoke_DirectMethodHandle, Pre_JSR292) \
-  template(MethodType_klass,             java_lang_invoke_MethodType,       Pre_JSR292) \
-  template(MethodTypeForm_klass,         java_lang_invoke_MethodTypeForm,   Pre_JSR292) \
-  template(BootstrapMethodError_klass,   java_lang_BootstrapMethodError, Pre_JSR292) \
+  template(MethodHandle_klass,             java_lang_invoke_MethodHandle,             Pre_JSR292) \
+  template(MemberName_klass,               java_lang_invoke_MemberName,               Pre_JSR292) \
+  template(MethodHandleNatives_klass,      java_lang_invoke_MethodHandleNatives,      Pre_JSR292) \
+  template(AdapterMethodHandle_klass,      java_lang_invoke_AdapterMethodHandle,      Pre_JSR292) \
+  template(BoundMethodHandle_klass,        java_lang_invoke_BoundMethodHandle,        Pre_JSR292) \
+  template(DirectMethodHandle_klass,       java_lang_invoke_DirectMethodHandle,       Pre_JSR292) \
+  template(MethodType_klass,               java_lang_invoke_MethodType,               Pre_JSR292) \
+  template(MethodTypeForm_klass,           java_lang_invoke_MethodTypeForm,           Pre_JSR292) \
+  template(BootstrapMethodError_klass,     java_lang_BootstrapMethodError,            Pre_JSR292) \
   template(WrongMethodTypeException_klass, java_lang_invoke_WrongMethodTypeException, Pre_JSR292) \
-  template(CallSite_klass,               java_lang_invoke_CallSite,         Pre_JSR292) \
-  /* Note: MethodHandle must be first, and CallSite last in group */          \
+  template(CallSite_klass,                 java_lang_invoke_CallSite,                 Pre_JSR292) \
+  template(ConstantCallSite_klass,         java_lang_invoke_ConstantCallSite,         Pre_JSR292) \
+  template(MutableCallSite_klass,          java_lang_invoke_MutableCallSite,          Pre_JSR292) \
+  template(VolatileCallSite_klass,         java_lang_invoke_VolatileCallSite,         Pre_JSR292) \
+  /* Note: MethodHandle must be first, and VolatileCallSite last in group */  \
                                                                               \
   template(StringBuffer_klass,           java_lang_StringBuffer,         Pre) \
   template(StringBuilder_klass,          java_lang_StringBuilder,        Pre) \

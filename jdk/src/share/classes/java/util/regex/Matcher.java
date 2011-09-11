@@ -515,6 +515,7 @@ public final class Matcher implements MatchResult {
      * @throws  IllegalArgumentException
      *          If there is no capturing group in the pattern
      *          with the given name
+     * @since 1.7
      */
     public String group(String name) {
         if (name == null)

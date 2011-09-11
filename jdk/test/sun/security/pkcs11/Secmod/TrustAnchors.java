@@ -27,6 +27,7 @@
  * @summary make sure we can access the NSS trust anchor module
  * @author Andreas Sterbenz
  * @library ..
+ * @run main/othervm TrustAnchors
  */
 
 import java.util.*;

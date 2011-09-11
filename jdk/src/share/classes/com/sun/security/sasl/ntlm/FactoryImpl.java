@@ -70,6 +70,12 @@ SaslServerFactory{
             if (mechs[i].equals("NTLM") &&
                     PolicyUtils.checkPolicy(mechPolicies[0], props)) {
 
+                if (cbh == null) {
+                    throw new SaslException(
+                        "Callback handler with support for " +
+                        "RealmCallback, NameCallback, and PasswordCallback " +
+                        "required");
+                }
                 return new NTLMClient(mechs[i], authorizationId,
                     protocol, serverName, props, cbh);
             }
@@ -98,9 +104,9 @@ SaslServerFactory{
              }
              if (cbh == null) {
                  throw new SaslException(
-                        "Callback handler with support for AuthorizeCallback, "+
-                        "RealmCallback, NameCallback, and PasswordCallback " +
-                        "required");
+                     "Callback handler with support for " +
+                     "RealmCallback, NameCallback, and PasswordCallback " +
+                     "required");
              }
              return new NTLMServer(mech, protocol, serverName, props, cbh);
          }

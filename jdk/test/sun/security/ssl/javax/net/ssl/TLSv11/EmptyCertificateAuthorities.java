@@ -27,7 +27,10 @@
  * @test
  * @bug 4873188
  * @summary Support TLS 1.1
- * @run main/othervm -Djavax.net.debug=all EmptyCertificateAuthorities
+ * @run main/othervm EmptyCertificateAuthorities
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  *
  * @author Xuelei Fan
  */

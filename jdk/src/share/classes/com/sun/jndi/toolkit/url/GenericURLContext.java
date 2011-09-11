@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,11 +48,12 @@ import java.net.MalformedURLException;
  * @author Rosanna Lee
  */
 abstract public class GenericURLContext implements Context {
-    protected Hashtable myEnv = null;
+    protected Hashtable<String, Object> myEnv = null;
 
-    public GenericURLContext(Hashtable env) {
+    @SuppressWarnings("unchecked") // Expect Hashtable<String, Object>
+    public GenericURLContext(Hashtable<?,?> env) {
         // context that is not tied to any specific URL
-        myEnv = env;  // copied on write
+        myEnv = (Hashtable<String, Object>)env;  // copied on write
     }
 
     public void close() throws NamingException {
@@ -75,7 +76,7 @@ abstract public class GenericURLContext implements Context {
       * must be in sync wrt how URLs are parsed and returned.
       */
     abstract protected ResolveResult getRootURLContext(String url,
-        Hashtable env) throws NamingException;
+        Hashtable<?,?> env) throws NamingException;
 
     /**
       * Returns the suffix of the url. The result should be identical to
@@ -487,27 +488,31 @@ abstract public class GenericURLContext implements Context {
         return result;
     }
 
+    @SuppressWarnings("unchecked") // clone()
     public Object removeFromEnvironment(String propName)
         throws NamingException {
             if (myEnv == null) {
                 return null;
             }
-            myEnv = (Hashtable)myEnv.clone();
+            myEnv = (Hashtable<String, Object>)myEnv.clone();
             return myEnv.remove(propName);
     }
 
+    @SuppressWarnings("unchecked") // clone()
     public Object addToEnvironment(String propName, Object propVal)
         throws NamingException {
-            myEnv = (myEnv == null) ?
-                new Hashtable(11, 0.75f) : (Hashtable)myEnv.clone();
+            myEnv = (myEnv == null)
+                    ? new Hashtable<String, Object>(11, 0.75f)
+                    : (Hashtable<String, Object>)myEnv.clone();
             return myEnv.put(propName, propVal);
     }
 
-    public Hashtable getEnvironment() throws NamingException {
+    @SuppressWarnings("unchecked") // clone()
+    public Hashtable<String, Object> getEnvironment() throws NamingException {
         if (myEnv == null) {
-            return new Hashtable(5, 0.75f);
+            return new Hashtable<>(5, 0.75f);
         } else {
-            return (Hashtable)myEnv.clone();
+            return (Hashtable<String, Object>)myEnv.clone();
         }
     }
 
