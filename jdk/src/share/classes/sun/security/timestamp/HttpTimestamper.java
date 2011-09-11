@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,11 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.net.HttpURLConnection;
-import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.Arrays;
 
 import sun.misc.IOUtils;
-import sun.security.pkcs.*;
 
 /**
  * A timestamper that communicates with a Timestamping Authority (TSA)
@@ -95,11 +94,12 @@ public class HttpTimestamper implements Timestamper {
         connection.setConnectTimeout(CONNECT_TIMEOUT);
 
         if (DEBUG) {
-            Set headers = connection.getRequestProperties().entrySet();
+            Set<Map.Entry<String, List<String>>> headers =
+                    connection.getRequestProperties().entrySet();
             System.out.println(connection.getRequestMethod() + " " + tsaUrl +
                 " HTTP/1.1");
-            for (Iterator i = headers.iterator(); i.hasNext(); ) {
-                System.out.println("  " + i.next());
+            for (Map.Entry<String, List<String>> entry : headers) {
+                System.out.println("  " + entry);
             }
             System.out.println();
         }

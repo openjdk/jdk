@@ -826,6 +826,7 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
     switch (n->Opcode()) {
     case Op_PrefetchRead:
     case Op_PrefetchWrite:
+    case Op_PrefetchAllocation:
       nidx = Compile::AliasIdxRaw;
       nat = TypeRawPtr::BOTTOM;
       break;
@@ -2228,57 +2229,6 @@ void Matcher::validate_null_checks( ) {
       i-=2;
     }
   }
-}
-
-
-// Used by the DFA in dfa_sparc.cpp.  Check for a prior FastLock
-// acting as an Acquire and thus we don't need an Acquire here.  We
-// retain the Node to act as a compiler ordering barrier.
-bool Matcher::prior_fast_lock( const Node *acq ) {
-  Node *r = acq->in(0);
-  if( !r->is_Region() || r->req() <= 1 ) return false;
-  Node *proj = r->in(1);
-  if( !proj->is_Proj() ) return false;
-  Node *call = proj->in(0);
-  if( !call->is_Call() || call->as_Call()->entry_point() != OptoRuntime::complete_monitor_locking_Java() )
-    return false;
-
-  return true;
-}
-
-// Used by the DFA in dfa_sparc.cpp.  Check for a following FastUnLock
-// acting as a Release and thus we don't need a Release here.  We
-// retain the Node to act as a compiler ordering barrier.
-bool Matcher::post_fast_unlock( const Node *rel ) {
-  Compile *C = Compile::current();
-  assert( rel->Opcode() == Op_MemBarRelease, "" );
-  const MemBarReleaseNode *mem = (const MemBarReleaseNode*)rel;
-  DUIterator_Fast imax, i = mem->fast_outs(imax);
-  Node *ctrl = NULL;
-  while( true ) {
-    ctrl = mem->fast_out(i);            // Throw out-of-bounds if proj not found
-    assert( ctrl->is_Proj(), "only projections here" );
-    ProjNode *proj = (ProjNode*)ctrl;
-    if( proj->_con == TypeFunc::Control &&
-        !C->node_arena()->contains(ctrl) ) // Unmatched old-space only
-      break;
-    i++;
-  }
-  Node *iff = NULL;
-  for( DUIterator_Fast jmax, j = ctrl->fast_outs(jmax); j < jmax; j++ ) {
-    Node *x = ctrl->fast_out(j);
-    if( x->is_If() && x->req() > 1 &&
-        !C->node_arena()->contains(x) ) { // Unmatched old-space only
-      iff = x;
-      break;
-    }
-  }
-  if( !iff ) return false;
-  Node *bol = iff->in(1);
-  // The iff might be some random subclass of If or bol might be Con-Top
-  if (!bol->is_Bool())  return false;
-  assert( bol->req() > 1, "" );
-  return (bol->in(1)->Opcode() == Op_FastUnlock);
 }
 
 // Used by the DFA in dfa_xxx.cpp.  Check for a following barrier or

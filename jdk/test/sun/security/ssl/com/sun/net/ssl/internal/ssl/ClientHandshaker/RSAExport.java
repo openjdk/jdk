@@ -25,6 +25,10 @@
  * @test
  * @bug 6690018
  * @summary RSAClientKeyExchange NullPointerException
+ * @run main/othervm RSAExport
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  */
 
 /*

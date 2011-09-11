@@ -1065,8 +1065,7 @@ private:
   // Note: The same Label can be used for forward and backward branches
   // but it may be bound only once.
 
-  void jcc(Condition cc, Label& L,
-           relocInfo::relocType rtype = relocInfo::none);
+  void jcc(Condition cc, Label& L, bool maybe_short = true);
 
   // Conditional jump to a 8-bit offset to L.
   // WARNING: be very careful using this for forward jumps.  If the label is
@@ -1077,7 +1076,7 @@ private:
   void jmp(Address entry);    // pc <- entry
 
   // Label operations & relative jumps (PPUM Appendix D)
-  void jmp(Label& L, relocInfo::relocType rtype = relocInfo::none);   // unconditional jump to L
+  void jmp(Label& L, bool maybe_short = true);   // unconditional jump to L
 
   void jmp(Register entry); // pc <- entry
 

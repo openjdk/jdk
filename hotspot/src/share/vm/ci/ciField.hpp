@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,6 +177,8 @@ public:
   bool is_final       () { return flags().is_final(); }
   bool is_volatile    () { return flags().is_volatile(); }
   bool is_transient   () { return flags().is_transient(); }
+
+  bool is_call_site_target() { return ((holder() == CURRENT_ENV->CallSite_klass()) && (name() == ciSymbol::target_name())); }
 
   // Debugging output
   void print();

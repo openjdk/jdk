@@ -65,19 +65,11 @@ public class JIS_X_0208_Encoder extends DoubleByteEncoder
         return -1;
     }
 
-    /**
-     * These accessors are temporarily supplied while sun.io
-     * converters co-exist with the sun.nio.cs.{ext} charset coders
-     * These facilitate sharing of conversion tables between the
-     * two co-existing implementations. When sun.io converters
-     * are made extinct these will be unncessary and should be removed
-     */
-
-    public static short[] getIndex1() {
+    static short[] getIndex1() {
        return index1;
     }
 
-    public static String[] getIndex2() {
+    static String[] getIndex2() {
        return index2;
     }
 

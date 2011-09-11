@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -63,6 +63,7 @@ import java.util.*;
  * @invariants
  */
 public class PKCS11Exception extends Exception {
+    private static final long serialVersionUID = 4877072363729195L;
 
     /**
      * The code of the error which was the reason for this exception.

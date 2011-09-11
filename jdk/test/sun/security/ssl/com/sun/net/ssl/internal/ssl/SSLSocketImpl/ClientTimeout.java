@@ -25,6 +25,10 @@
  * @test
  * @bug 4836493
  * @summary Socket timeouts for SSLSockets causes data corruption.
+ * @run main/othervm ClientTimeout
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  */
 
 import java.io.*;

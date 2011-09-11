@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 
-import java.util.logging.Logger;
 import java.util.logging.Level;
 
 /**
@@ -68,7 +67,7 @@ final class CramMD5Server extends CramMD5Base implements SaslServer {
      * @param pw A non-null String or byte[]
      * containing the password. If it is an array, it is first cloned.
      */
-    CramMD5Server(String protocol, String serverFqdn, Map props,
+    CramMD5Server(String protocol, String serverFqdn, Map<String, ?> props,
         CallbackHandler cbh) throws SaslException {
         if (serverFqdn == null) {
             throw new SaslException(

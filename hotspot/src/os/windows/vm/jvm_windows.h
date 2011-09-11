@@ -30,10 +30,33 @@
  * JNI conversion, which should be sorted out later.
  */
 
-#include <windows.h>
-// #include <windef.h>
-// #include <winbase.h>
+// JDK7 requires VS2010
+#if _MSC_VER >= 1600
+// JDK7 minimum platform requirement: Windows XP
+#if _WIN32_WINNT < 0x0501
+#undef _WIN32_WINNT
+#define _WIN32_WINNT  0x0501
+#endif
+#endif
 
+#include <windows.h>
+
+#if _MSC_VER <= 1200
+// Psapi.h doesn't come with Visual Studio 6; it can be downloaded as Platform
+// SDK from Microsoft.  Here are the definitions copied from Psapi.h
+typedef struct _MODULEINFO {
+    LPVOID lpBaseOfDll;
+    DWORD SizeOfImage;
+    LPVOID EntryPoint;
+} MODULEINFO, *LPMODULEINFO;
+
+#else
+#include <Psapi.h>
+#endif
+
+
+
+#include <Tlhelp32.h>
 
 // #include "jni.h"
 

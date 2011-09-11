@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,11 +38,11 @@ import javax.naming.*;
 
 class ContinuationContext implements Context, Resolver {
     protected CannotProceedException cpe;
-    protected Hashtable env;
+    protected Hashtable<?,?> env;
     protected Context contCtx = null;
 
     protected ContinuationContext(CannotProceedException cpe,
-                        Hashtable env) {
+                        Hashtable<?,?> env) {
         this.cpe = cpe;
         this.env = env;
     }
@@ -109,24 +109,24 @@ class ContinuationContext implements Context, Resolver {
         ctx.rename(name, newName);
     }
 
-    public NamingEnumeration list(Name name) throws NamingException {
+    public NamingEnumeration<NameClassPair> list(Name name) throws NamingException {
         Context ctx = getTargetContext();
         return ctx.list(name);
     }
-    public NamingEnumeration list(String name) throws NamingException {
+    public NamingEnumeration<NameClassPair> list(String name) throws NamingException {
         Context ctx = getTargetContext();
         return ctx.list(name);
     }
 
 
-    public NamingEnumeration listBindings(Name name)
+    public NamingEnumeration<Binding> listBindings(Name name)
         throws NamingException
     {
         Context ctx = getTargetContext();
         return ctx.listBindings(name);
     }
 
-    public NamingEnumeration listBindings(String name) throws NamingException {
+    public NamingEnumeration<Binding> listBindings(String name) throws NamingException {
         Context ctx = getTargetContext();
         return ctx.listBindings(name);
     }
@@ -193,7 +193,7 @@ class ContinuationContext implements Context, Resolver {
         return ctx.removeFromEnvironment(propName);
     }
 
-    public Hashtable getEnvironment() throws NamingException {
+    public Hashtable<?,?> getEnvironment() throws NamingException {
         Context ctx = getTargetContext();
         return ctx.getEnvironment();
     }

@@ -81,7 +81,6 @@ CPP=ARCH_ERROR
 !endif
 
 CPP_FLAGS=$(CPP_FLAGS) /D "WIN32" /D "_WINDOWS"
-
 # Must specify this for sharedRuntimeTrig.cpp
 CPP_FLAGS=$(CPP_FLAGS) /D "VM_LITTLE_ENDIAN"
 
@@ -231,6 +230,11 @@ LINK_FLAGS= $(LINK_FLAGS) kernel32.lib user32.lib gdi32.lib winspool.lib \
  comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib \
  uuid.lib Wsock32.lib winmm.lib /nologo /machine:$(MACHINE) /opt:REF \
  /opt:ICF,8 /map /debug
+
+
+!if $(MSC_VER) >= 1600 
+LINK_FLAGS= $(LINK_FLAGS) psapi.lib
+!endif
 
 # Resource compiler settings
 RC=rc.exe

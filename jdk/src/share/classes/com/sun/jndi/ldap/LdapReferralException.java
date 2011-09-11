@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.jndi.ldap;
 
 import javax.naming.*;
-import javax.naming.spi.*;
 import javax.naming.ldap.Control;
 
 import java.util.Hashtable;
@@ -67,15 +66,16 @@ import java.util.Vector;
   */
 final public class LdapReferralException extends
     javax.naming.ldap.LdapReferralException {
+    private static final long serialVersionUID = 627059076356906399L;
 
         // ----------- fields initialized in constructor ---------------
     private int handleReferrals;
-    private Hashtable envprops;
+    private Hashtable<?,?> envprops;
     private String nextName;
     private Control[] reqCtls;
 
         // ----------- fields that have defaults -----------------------
-    private Vector referrals = null;    // alternatives,set by setReferralInfo()
+    private Vector<?> referrals = null; // alternatives,set by setReferralInfo()
     private int referralIndex = 0;      // index into referrals
     private int referralCount = 0;      // count of referrals
     private boolean foundEntry = false; // will stop when entry is found
@@ -98,7 +98,7 @@ final public class LdapReferralException extends
         Object resolvedObj,
         Name remainingName,
         String explanation,
-        Hashtable envprops,
+        Hashtable<?,?> envprops,
         String nextName,
         int handleReferrals,
         Control[] reqCtls) {
@@ -210,7 +210,7 @@ final public class LdapReferralException extends
     /**
      * Sets referral information.
      */
-    void setReferralInfo(Vector referrals, boolean continuationRef) {
+    void setReferralInfo(Vector<?> referrals, boolean continuationRef) {
         // %%% continuationRef is currently ignored
 
         if (debug)

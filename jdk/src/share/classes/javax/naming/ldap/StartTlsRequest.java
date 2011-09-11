@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,7 +192,7 @@ public class StartTlsRequest implements ExtendedRequest {
         }
         try {
             VersionHelper helper = VersionHelper.getVersionHelper();
-            Class clas = helper.loadClass(
+            Class<?> clas = helper.loadClass(
                 "com.sun.jndi.ldap.ext.StartTlsResponseImpl");
 
             resp = (StartTlsResponse) clas.newInstance();
@@ -226,19 +226,19 @@ public class StartTlsRequest implements ExtendedRequest {
      * Acquire the class loader associated with this thread.
      */
     private final ClassLoader getContextClassLoader() {
-        return (ClassLoader) AccessController.doPrivileged(
-            new PrivilegedAction() {
-                public Object run() {
+        return AccessController.doPrivileged(
+            new PrivilegedAction<ClassLoader>() {
+                public ClassLoader run() {
                     return Thread.currentThread().getContextClassLoader();
                 }
             }
         );
     }
 
-    private final static boolean privilegedHasNext(final Iterator iter) {
-        Boolean answer = (Boolean) AccessController.doPrivileged(
-            new PrivilegedAction() {
-            public Object run() {
+    private final static boolean privilegedHasNext(final Iterator<StartTlsResponse> iter) {
+        Boolean answer = AccessController.doPrivileged(
+            new PrivilegedAction<Boolean>() {
+            public Boolean run() {
                 return Boolean.valueOf(iter.hasNext());
             }
         });

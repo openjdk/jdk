@@ -62,12 +62,13 @@ public abstract class Server extends NTLM {
      * is selected, authentication succeeds if one of LM (or LMv2) or
      * NTLM (or NTLMv2) is verified.
      * @param domain the domain, must not be null
-     * @throws NullPointerException if {@code domain} is null.
+     * @throws NTLMException if {@code domain} is null.
      */
     public Server(String version, String domain) throws NTLMException {
         super(version);
         if (domain == null) {
-            throw new NullPointerException("domain cannot be null");
+            throw new NTLMException(NTLMException.PROTOCOL,
+                    "domain cannot be null");
         }
         this.allVersion = (version == null);
         this.domain = domain;
@@ -80,12 +81,13 @@ public abstract class Server extends NTLM {
      * @param nonce the random 8-byte array to be used in message generation,
      * must not be null
      * @return the message generated
-     * @throws NullPointerException if type1 or nonce is null
-     * @throws NTLMException if the incoming message is invalid
+     * @throws NTLMException if the incoming message is invalid, or
+     * {@code nonce} is null.
      */
-    public byte[] type2(byte[] type1, byte[] nonce) {
+    public byte[] type2(byte[] type1, byte[] nonce) throws NTLMException {
         if (nonce == null) {
-            throw new NullPointerException("nonce cannot be null");
+            throw new NTLMException(NTLMException.PROTOCOL,
+                    "nonce cannot be null");
         }
         debug("NTLM Server: Type 1 received\n");
         if (type1 != null) debug(type1);
@@ -105,13 +107,14 @@ public abstract class Server extends NTLM {
      * @param type3 the incoming Type3 message from client, must not be null
      * @param nonce the same nonce provided in {@link #type2}, must not be null
      * @return username and hostname of the client in a byte array
-     * @throws NullPointerException if {@code type3} or {@code nonce} is null
-     * @throws NTLMException if the incoming message is invalid
+     * @throws NTLMException if the incoming message is invalid, or
+     * {@code nonce} is null.
      */
     public String[] verify(byte[] type3, byte[] nonce)
             throws NTLMException {
         if (type3 == null || nonce == null) {
-            throw new NullPointerException("type1 or nonce cannot be null");
+            throw new NTLMException(NTLMException.PROTOCOL,
+                    "type1 or nonce cannot be null");
         }
         debug("NTLM Server: Type 3 received\n");
         if (type3 != null) debug(type3);

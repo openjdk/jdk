@@ -86,7 +86,9 @@ public class PKCS12SameKeyId {
 
         // Reads from JKS keystore and pre-calculate
         KeyStore ks = KeyStore.getInstance("jks");
-        ks.load(new FileInputStream(JKSFILE), PASSWORD);
+        try (FileInputStream fis = new FileInputStream(JKSFILE)) {
+            ks.load(fis, PASSWORD);
+        }
         for (int i=0; i<SIZE; i++) {
             aliases[i] = "p" + i;
             byte[] enckey = cipher.doFinal(
@@ -103,11 +105,15 @@ public class PKCS12SameKeyId {
         for (int i=0; i<SIZE; i++) {
             p12.setKeyEntry(aliases[i], keys[i], certChains[i]);
         }
-        p12.store(new FileOutputStream(P12FILE), PASSWORD);
+        try (FileOutputStream fos = new FileOutputStream(P12FILE)) {
+            p12.store(fos, PASSWORD);
+        }
 
         // Check private keys still match certs
         p12 = KeyStore.getInstance("pkcs12");
-        p12.load(new FileInputStream(P12FILE), PASSWORD);
+        try (FileInputStream fis = new FileInputStream(P12FILE)) {
+            p12.load(fis, PASSWORD);
+        }
         for (int i=0; i<SIZE; i++) {
             String a = "p" + i;
             X509Certificate x = (X509Certificate)p12.getCertificate(a);
