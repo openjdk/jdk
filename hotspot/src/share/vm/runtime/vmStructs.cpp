@@ -1341,6 +1341,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_unsigned_integer_type(unsigned int)                             \
   declare_unsigned_integer_type(uint)                                     \
   declare_unsigned_integer_type(unsigned short)                           \
+  declare_unsigned_integer_type(jushort)                                  \
   declare_unsigned_integer_type(unsigned long)                            \
   /* The compiler thinks this is a different type than */                 \
   /* unsigned short on Win32 */                                           \
@@ -3216,7 +3217,7 @@ static int recursiveFindType(VMTypeEntry* origtypes, const char* typeName, bool 
   if (!isRecurse) {
     tty->print_cr("type \"%s\" not found", typeName);
   }
-  return 2;
+  return 0;
 }
 
 
