@@ -28,11 +28,13 @@
  * @library ../pkcs11
  * @library ../pkcs11/ec
  * @library ../pkcs11/sslecc
+ * @library ../../../java/security/testlibrary
  * @compile -XDignore.symbol.file TestEC.java
  * @run main TestEC
  */
 
 import java.security.Provider;
+import java.security.Security;
 
 /*
  * Leverage the collection of EC tests used by PKCS11
@@ -51,6 +53,15 @@ import java.security.Provider;
 public class TestEC {
 
     public static void main(String[] args) throws Exception {
+        ProvidersSnapshot snapshot = ProvidersSnapshot.create();
+        try {
+            main0(args);
+        } finally {
+            snapshot.restore();
+        }
+    }
+
+    public static void main0(String[] args) throws Exception {
         Provider p = new sun.security.ec.SunEC();
         System.out.println("Running tests with " + p.getName() +
             " provider...\n");
@@ -67,6 +78,11 @@ public class TestEC {
         new TestECGenSpec().main(p);
         new ReadPKCS12().main(p);
         new ReadCertificates().main(p);
+
+        // ClientJSSEServerJSSE fails on Solaris 11 when both SunEC and
+        // SunPKCS11-Solaris providers are enabled.
+        // Workaround:
+        // Security.removeProvider("SunPKCS11-Solaris");
         new ClientJSSEServerJSSE().main(p);
 
         long stop = System.currentTimeMillis();

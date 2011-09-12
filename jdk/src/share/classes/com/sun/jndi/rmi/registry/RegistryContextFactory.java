@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ public class RegistryContextFactory
         return obj;
     }
 
-    private static Context URLToContext(String url, Hashtable env)
+    private static Context URLToContext(String url, Hashtable<?,?> env)
             throws NamingException
     {
         rmiURLContextFactory factory = new rmiURLContextFactory();
@@ -108,7 +108,7 @@ public class RegistryContextFactory
         }
     }
 
-    private static Object URLsToObject(String[] urls, Hashtable env)
+    private static Object URLsToObject(String[] urls, Hashtable<?,?> env)
             throws NamingException
     {
         rmiURLContextFactory factory = new rmiURLContextFactory();
@@ -119,7 +119,7 @@ public class RegistryContextFactory
      * Reads environment to find URL of initial context.
      * The default URL is "rmi:".
      */
-    private static String getInitCtxURL(Hashtable env) {
+    private static String getInitCtxURL(Hashtable<?,?> env) {
 
         final String defaultURL = "rmi:";
 
@@ -152,9 +152,9 @@ public class RegistryContextFactory
         int size = 0;   // number of URLs
         String[] urls = new String[ref.size()];
 
-        Enumeration addrs = ref.getAll();
+        Enumeration<RefAddr> addrs = ref.getAll();
         while (addrs.hasMoreElements()) {
-            RefAddr addr = (RefAddr)addrs.nextElement();
+            RefAddr addr = addrs.nextElement();
 
             if ((addr instanceof StringRefAddr) &&
                 addr.getType().equals(ADDRESS_TYPE)) {

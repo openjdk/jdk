@@ -208,11 +208,13 @@ class os: AllStatic {
                                      size_t region_max_size,
                                      uint min_pages);
 
-  // Method for tracing page sizes returned by the above method; enabled by
+  // Methods for tracing page sizes returned by the above method; enabled by
   // TracePageSizes.  The region_{min,max}_size parameters should be the values
   // passed to page_size_for_region() and page_size should be the result of that
   // call.  The (optional) base and size parameters should come from the
   // ReservedSpace base() and size() methods.
+  static void trace_page_sizes(const char* str, const size_t* page_sizes,
+                               int count) PRODUCT_RETURN;
   static void trace_page_sizes(const char* str, const size_t region_min_size,
                                const size_t region_max_size,
                                const size_t page_size,

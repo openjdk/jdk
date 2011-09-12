@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5003916 6704655 6873951
+ * @bug 5003916 6704655 6873951 6476261
  * @summary Testing parsing of signatures attributes of nested classes
  * @author Joseph D. Darcy
  */
@@ -38,12 +38,12 @@ import static java.util.Arrays.*;
           "java.util.concurrent.ConcurrentHashMap$KeyIterator",
           "java.util.concurrent.ConcurrentHashMap$ValueIterator",
           "java.util.AbstractList$ListItr",
-//          "java.util.EnumMap$EntryIterator",
-//          "java.util.EnumMap$KeyIterator",
-//          "java.util.EnumMap$ValueIterator",
-//          "java.util.IdentityHashMap$EntryIterator",
-//          "java.util.IdentityHashMap$KeyIterator",
-//          "java.util.IdentityHashMap$ValueIterator",
+          "java.util.EnumMap$EntryIterator",
+          "java.util.EnumMap$KeyIterator",
+          "java.util.EnumMap$ValueIterator",
+          "java.util.IdentityHashMap$EntryIterator",
+          "java.util.IdentityHashMap$KeyIterator",
+          "java.util.IdentityHashMap$ValueIterator",
           "java.util.WeakHashMap$EntryIterator",
           "java.util.WeakHashMap$KeyIterator",
           "java.util.WeakHashMap$ValueIterator",
@@ -52,12 +52,12 @@ import static java.util.Arrays.*;
           "java.util.HashMap$ValueIterator",
           "java.util.LinkedHashMap$EntryIterator",
           "java.util.LinkedHashMap$KeyIterator",
-          "java.util.LinkedHashMap$ValueIterator"})
+          "java.util.LinkedHashMap$ValueIterator",
+          "javax.swing.JComboBox$AccessibleJComboBox"})
 public class Probe {
     public static void main (String... args) throws Throwable {
         Classes classesAnnotation = (Probe.class).getAnnotation(Classes.class);
-        List<String> names =
-            new ArrayList<String>(asList(classesAnnotation.value()));
+        List<String> names = new ArrayList<>(asList(classesAnnotation.value()));
 
         int errs = 0;
         for(String name: names) {

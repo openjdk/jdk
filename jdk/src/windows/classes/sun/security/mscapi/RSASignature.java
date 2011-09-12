@@ -30,14 +30,10 @@ import java.security.PublicKey;
 import java.security.PrivateKey;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.ProviderException;
 import java.security.MessageDigest;
-import java.security.SecureRandom;
-import java.security.Signature;
-import java.security.SignatureSpi;
 import java.security.SignatureException;
 import java.math.BigInteger;
 
@@ -474,6 +470,7 @@ abstract class RSASignature extends java.security.SignatureSpi
      * #engineSetParameter(java.security.spec.AlgorithmParameterSpec)
      * engineSetParameter}.
      */
+    @Deprecated
     protected void engineSetParameter(String param, Object value)
         throws InvalidParameterException
     {
@@ -503,6 +500,7 @@ abstract class RSASignature extends java.security.SignatureSpi
      *
      * @deprecated
      */
+    @Deprecated
     protected Object engineGetParameter(String param)
         throws InvalidParameterException
     {

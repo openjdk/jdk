@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,7 +245,7 @@ final class AESCrypt extends SymmetricCipher implements AESConstants
                     for (j = 0; j < 8; j++) {
                         tmp = AA[i][j];
                         AA[i][j] = AA[t][j];
-                        AA[t][j] = (byte) tmp;
+                        AA[t][j] = tmp;
                     }
                     pivot = AA[i][i];
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ final class UnsolicitedResponseImpl implements UnsolicitedNotification {
     private NamingException exception;
     private Control[] controls;
 
-    UnsolicitedResponseImpl(String oid, byte[] berVal, Vector ref,
+    UnsolicitedResponseImpl(String oid, byte[] berVal, Vector<Vector<String>> ref,
         int status, String msg, String matchedDN, Control[] controls) {
         this.oid = oid;
         this.extensionValue = berVal;
@@ -50,7 +50,8 @@ final class UnsolicitedResponseImpl implements UnsolicitedNotification {
             int len = ref.size();
             referrals = new String[len];
             for (int i = 0; i < len; i++) {
-                referrals[i] = (String)ref.elementAt(i);
+                // ref is a list of single-String Vectors
+                referrals[i] = ref.elementAt(i).elementAt(0);
             }
         }
         exception = LdapCtx.mapErrorCode(status, msg);

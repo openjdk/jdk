@@ -46,6 +46,7 @@ const char* Abstract_VM_Version::_s_vm_release = Abstract_VM_Version::vm_release
 const char* Abstract_VM_Version::_s_internal_vm_info_string = Abstract_VM_Version::internal_vm_info_string();
 bool Abstract_VM_Version::_supports_cx8 = false;
 unsigned int Abstract_VM_Version::_logical_processors_per_package = 1U;
+int Abstract_VM_Version::_reserve_for_allocation_prefetch = 0;
 
 #ifndef HOTSPOT_RELEASE_VERSION
   #error HOTSPOT_RELEASE_VERSION must be defined

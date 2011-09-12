@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,8 @@ final class P11TlsPrfGenerator extends KeyGeneratorSpi {
 
     // SecretKeySpec does not allow zero length keys, so we define our own class.
     private static final SecretKey NULL_KEY = new SecretKey() {
+        private static final long serialVersionUID = -8090049519656411362L;
+
         public byte[] getEncoded() {
             return new byte[0];
         }

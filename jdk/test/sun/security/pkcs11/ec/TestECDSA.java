@@ -27,6 +27,7 @@
  * @summary basic test of SHA1withECDSA and NONEwithECDSA signing/verifying
  * @author Andreas Sterbenz
  * @library ..
+ * @library ../../../../java/security/testlibrary
  */
 
 import java.io.*;
@@ -115,7 +116,7 @@ public class TestECDSA extends PKCS11Test {
             System.out.println("ECDSA not supported, skipping");
             return;
         }
-        Security.insertProviderAt(provider, 1);
+        Providers.setAt(provider, 1);
 
         if (false) {
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", provider);

@@ -801,39 +801,6 @@ void ConcurrentMark::checkpointRootsInitialPre() {
   reset();
 }
 
-class CMMarkRootsClosure: public OopsInGenClosure {
-private:
-  ConcurrentMark*  _cm;
-  G1CollectedHeap* _g1h;
-  bool             _do_barrier;
-
-public:
-  CMMarkRootsClosure(ConcurrentMark* cm,
-                     G1CollectedHeap* g1h,
-                     bool do_barrier) : _cm(cm), _g1h(g1h),
-                                        _do_barrier(do_barrier) { }
-
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(      oop* p) { do_oop_work(p); }
-
-  template <class T> void do_oop_work(T* p) {
-    T heap_oop = oopDesc::load_heap_oop(p);
-    if (!oopDesc::is_null(heap_oop)) {
-      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-      assert(obj->is_oop() || obj->mark() == NULL,
-             "expected an oop, possibly with mark word displaced");
-      HeapWord* addr = (HeapWord*)obj;
-      if (_g1h->is_in_g1_reserved(addr)) {
-        _cm->grayRoot(obj);
-      }
-    }
-    if (_do_barrier) {
-      assert(!_g1h->is_in_g1_reserved(p),
-             "Should be called on external roots");
-      do_barrier(p);
-    }
-  }
-};
 
 void ConcurrentMark::checkpointRootsInitialPost() {
   G1CollectedHeap*   g1h = G1CollectedHeap::heap();
@@ -866,50 +833,6 @@ void ConcurrentMark::checkpointRootsInitialPost() {
   // when marking is on. So, it's also called at the end of the
   // initial-mark pause to update the heap end, if the heap expands
   // during it. No need to call it here.
-}
-
-// Checkpoint the roots into this generation from outside
-// this generation. [Note this initial checkpoint need only
-// be approximate -- we'll do a catch up phase subsequently.]
-void ConcurrentMark::checkpointRootsInitial() {
-  assert(SafepointSynchronize::is_at_safepoint(), "world should be stopped");
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-
-  double start = os::elapsedTime();
-
-  G1CollectorPolicy* g1p = G1CollectedHeap::heap()->g1_policy();
-  g1p->record_concurrent_mark_init_start();
-  checkpointRootsInitialPre();
-
-  // YSR: when concurrent precleaning is in place, we'll
-  // need to clear the cached card table here
-
-  ResourceMark rm;
-  HandleMark  hm;
-
-  g1h->ensure_parsability(false);
-  g1h->perm_gen()->save_marks();
-
-  CMMarkRootsClosure notOlder(this, g1h, false);
-  CMMarkRootsClosure older(this, g1h, true);
-
-  g1h->set_marking_started();
-  g1h->rem_set()->prepare_for_younger_refs_iterate(false);
-
-  g1h->process_strong_roots(true,    // activate StrongRootsScope
-                            false,   // fake perm gen collection
-                            SharedHeap::SO_AllClasses,
-                            &notOlder, // Regular roots
-                            NULL,     // do not visit active blobs
-                            &older    // Perm Gen Roots
-                            );
-  checkpointRootsInitialPost();
-
-  // Statistics.
-  double end = os::elapsedTime();
-  _init_times.add((end - start) * 1000.0);
-
-  g1p->record_concurrent_mark_init_end();
 }
 
 /*

@@ -164,6 +164,18 @@ public class ConstMethod extends Oop {
     return (short) ((hi << 8) | lo);
   }
 
+  /** Fetches a 16-bit native ordered value from the
+      bytecode stream */
+  public short getNativeShortArg(int bci) {
+    int hi = getBytecodeOrBPAt(bci);
+    int lo = getBytecodeOrBPAt(bci + 1);
+    if (VM.getVM().isBigEndian()) {
+        return (short) ((hi << 8) | lo);
+    } else {
+        return (short) ((lo << 8) | hi);
+    }
+  }
+
   /** Fetches a 32-bit big-endian ("Java ordered") value from the
       bytecode stream */
   public int getBytecodeIntArg(int bci) {
@@ -173,6 +185,21 @@ public class ConstMethod extends Oop {
     int b1 = getBytecodeOrBPAt(bci + 3);
 
     return (b4 << 24) | (b3 << 16) | (b2 << 8) | b1;
+  }
+
+  /** Fetches a 32-bit native ordered value from the
+      bytecode stream */
+  public int getNativeIntArg(int bci) {
+    int b4 = getBytecodeOrBPAt(bci);
+    int b3 = getBytecodeOrBPAt(bci + 1);
+    int b2 = getBytecodeOrBPAt(bci + 2);
+    int b1 = getBytecodeOrBPAt(bci + 3);
+
+    if (VM.getVM().isBigEndian()) {
+        return (b4 << 24) | (b3 << 16) | (b2 << 8) | b1;
+    } else {
+        return (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+    }
   }
 
   public byte[] getByteCode() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,6 @@
  */
 
 package javax.crypto.spec;
-
-import java.math.BigInteger;
-import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * This class specifies the source for encoding input P in OAEP Padding,
@@ -97,7 +94,7 @@ public class PSource {
          */
         public PSpecified(byte[] p) {
             super("PSpecified");
-            this.p = (byte[]) p.clone();
+            this.p = p.clone();
         }
         /**
          * Returns the value of encoding input P.
@@ -105,7 +102,7 @@ public class PSource {
          * returned each time this method is called.
          */
         public byte[] getValue() {
-            return (p.length==0? p: (byte[])p.clone());
+            return (p.length==0? p: p.clone());
         }
     }
 }

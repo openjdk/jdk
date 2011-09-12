@@ -251,10 +251,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // True iff the region is in current collection_set.
   bool _in_collection_set;
 
-  // Is this or has it been an allocation region in the current collection
-  // pause.
-  bool _is_gc_alloc_region;
-
   // True iff an attempt to evacuate an object in the region failed.
   bool _evacuation_failed;
 
@@ -494,27 +490,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   void set_next_in_collection_set(HeapRegion* r) {
     assert(in_collection_set(), "should only invoke on member of CS.");
     assert(r == NULL || r->in_collection_set(), "Malformed CS.");
-    _next_in_special_set = r;
-  }
-
-  // True iff it is or has been an allocation region in the current
-  // collection pause.
-  bool is_gc_alloc_region() const {
-    return _is_gc_alloc_region;
-  }
-  void set_is_gc_alloc_region(bool b) {
-    _is_gc_alloc_region = b;
-  }
-  HeapRegion* next_gc_alloc_region() {
-    assert(is_gc_alloc_region(), "should only invoke on member of CS.");
-    assert(_next_in_special_set == NULL ||
-           _next_in_special_set->is_gc_alloc_region(),
-           "Malformed CS.");
-    return _next_in_special_set;
-  }
-  void set_next_gc_alloc_region(HeapRegion* r) {
-    assert(is_gc_alloc_region(), "should only invoke on member of CS.");
-    assert(r == NULL || r->is_gc_alloc_region(), "Malformed CS.");
     _next_in_special_set = r;
   }
 

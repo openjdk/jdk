@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -365,6 +365,7 @@ class ReverseState implements State {
      * because some of them (e.g., subjKeyId) will
      * not have their contents modified by subsequent calls to updateState.
      */
+    @SuppressWarnings("unchecked") // Safe casts assuming clone() works correctly
     public Object clone() {
         try {
             ReverseState clonedState = (ReverseState) super.clone();

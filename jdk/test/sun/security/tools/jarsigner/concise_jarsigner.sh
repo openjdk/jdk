@@ -44,7 +44,10 @@ case "$OS" in
     ;;
 esac
 
-KT="$TESTJAVA${FS}bin${FS}keytool -storepass changeit -keypass changeit -keystore js.jks"
+# Choose 512-bit RSA to make sure it runs fine and fast on all platforms. In fact,
+# every keyalg/keysize combination is OK for this test.
+
+KT="$TESTJAVA${FS}bin${FS}keytool -storepass changeit -keypass changeit -keystore js.jks -keyalg rsa -keysize 512"
 JAR=$TESTJAVA${FS}bin${FS}jar
 JARSIGNER=$TESTJAVA${FS}bin${FS}jarsigner
 JAVAC=$TESTJAVA${FS}bin${FS}javac
