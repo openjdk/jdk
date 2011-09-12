@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @bug     6622366
+ * @bug     6622366 7078024
  * @summary Basic Test for ServiceTag.getJavaServiceTag()
  *          Disable creating the service tag in the system registry.
  *          Verify the existence of registration.xml file and the
@@ -86,23 +86,42 @@ public class JavaServiceTagTest {
         }
     }
 
+    /**
+     * Tests if the running platform is a JDK.
+     */
+    static boolean isJDK() {
+        // Determine the JRE path by checking the existence of
+        // <HOME>/jre/lib and <HOME>/lib.
+        String javaHome = System.getProperty("java.home");
+        String jrepath = javaHome + File.separator + "jre";
+        File f = new File(jrepath, "lib");
+        if (!f.exists()) {
+            // java.home usually points to the JRE path
+            jrepath = javaHome;
+        }
+
+        return jrepath.endsWith(File.separator + "jre");
+    }
+
     private static void checkServiceTag(ServiceTag st) throws IOException {
-        Properties props = loadSwordfishEntries();
-        if (st.getProductURN().
-                equals(props.getProperty("servicetag.jdk.urn"))) {
-            if (!st.getProductName().
-                    equals(props.getProperty("servicetag.jdk.name"))) {
-                throw new RuntimeException("Product URN and name don't match.");
-            }
-        } else if (st.getProductURN().
-                equals(props.getProperty("servicetag.jre.urn"))) {
-            if (!st.getProductName().
-                    equals(props.getProperty("servicetag.jre.name"))) {
+        Properties props = loadServiceTagProps();
+        // jdk 8 and later, JDK and JRE have the same product URN.
+        String jdkUrn = props.getProperty("servicetag.jdk.urn");
+        String jreUrn = props.getProperty("servicetag.jre.urn");
+        boolean isJdk = isJDK();
+
+        if (isJdk) {
+            if (!st.getProductURN().equals(jdkUrn) ||
+                    !st.getProductName().equals(
+                         props.getProperty("servicetag.jdk.name"))) {
                 throw new RuntimeException("Product URN and name don't match.");
             }
         } else {
-            throw new RuntimeException("Unexpected product_urn: " +
-                st.getProductURN());
+            if (!st.getProductURN().equals(jreUrn) ||
+                    !st.getProductName().equals(
+                        props.getProperty("servicetag.jre.name"))) {
+                throw new RuntimeException("Product URN and name don't match.");
+            }
         }
         if (!st.getProductVersion().
                 equals(System.getProperty("java.version"))) {
@@ -160,18 +179,13 @@ public class JavaServiceTagTest {
         }
     }
 
-    private static Properties loadSwordfishEntries()
+    private static Properties loadServiceTagProps()
            throws IOException {
-        int version = sun.misc.Version.jdkMinorVersion();
-        String filename = "/com/sun/servicetag/resources/javase_" +
-                version + "_swordfish.properties";
-        InputStream in = Installer.class.getClass().getResourceAsStream(filename);
-        Properties props = new Properties();
-        try {
+        String filename = "/com/sun/servicetag/resources/javase_servicetag.properties";
+        try (InputStream in = Installer.class.getClass().getResourceAsStream(filename)) {
+            Properties props = new Properties();
             props.load(in);
-        } finally {
-            in.close();
+            return props;
         }
-        return props;
     }
 }

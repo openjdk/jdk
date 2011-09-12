@@ -2615,7 +2615,7 @@ public class X509CertSelector implements CertSelector {
             return copy;
         } catch (CloneNotSupportedException e) {
             /* Cannot happen */
-            throw new InternalError(e.toString());
+            throw new InternalError(e.toString(), e);
         }
     }
 }
