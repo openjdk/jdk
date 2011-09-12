@@ -622,7 +622,7 @@ public class TreeMap<K,V>
         try {
             clone = (TreeMap<K,V>) super.clone();
         } catch (CloneNotSupportedException e) {
-            throw new InternalError();
+            throw new InternalError(e);
         }
 
         // Put clone into "virgin" state (except for comparator)

@@ -321,7 +321,7 @@ class ZipEntry implements ZipConstants, Cloneable {
             return e;
         } catch (CloneNotSupportedException e) {
             // This should never happen, since we are Cloneable
-            throw new InternalError();
+            throw new InternalError(e);
         }
     }
 }
