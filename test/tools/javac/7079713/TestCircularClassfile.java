@@ -149,6 +149,7 @@ public class TestCircularClassfile {
         //step 3: move a classfile from the temp folder to the test subfolder
         File fileToMove = new File(tmpDir, tk.targetClass);
         File target = new File(destDir, tk.targetClass);
+        target.delete();
         boolean success = fileToMove.renameTo(target);
 
         if (!success) {
