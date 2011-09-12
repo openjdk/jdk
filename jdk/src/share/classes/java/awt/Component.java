@@ -7910,7 +7910,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 res = toFocus.requestFocusInWindow(CausedFocusEvent.Cause.TRAVERSAL_BACKWARD);
             }
         }
-        if (!res) {
+        if (clearOnFailure && !res) {
             if (focusLog.isLoggable(PlatformLogger.FINER)) {
                 focusLog.finer("clear global focus owner");
             }

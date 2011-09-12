@@ -153,6 +153,11 @@ FileDialogHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
             break;
         }
         case WM_DESTROY: {
+            HIMC hIMC = ::ImmGetContext(hdlg);
+            if (hIMC != NULL) {
+                ::ImmNotifyIME(hIMC, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
+            }
+
             WNDPROC lpfnWndProc = (WNDPROC)(::GetProp(parent, NativeDialogWndProcProp));
             ComCtl32Util::GetInstance().UnsubclassHWND(parent,
                                                        FileDialogWndProc,
