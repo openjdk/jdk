@@ -717,7 +717,7 @@ public class URLClassPath {
             try {
                 ensureOpen();
             } catch (IOException e) {
-                throw (InternalError) new InternalError().initCause(e);
+                throw new InternalError(e);
             }
             return index;
         }
@@ -812,7 +812,7 @@ public class URLClassPath {
             try {
                 ensureOpen();
             } catch (IOException e) {
-                throw (InternalError) new InternalError().initCause(e);
+                throw new InternalError(e);
             }
             final JarEntry entry = jar.getJarEntry(name);
             if (entry != null)
@@ -900,7 +900,7 @@ public class URLClassPath {
                         try {
                             newLoader.ensureOpen();
                         } catch (IOException e) {
-                            throw (InternalError) new InternalError().initCause(e);
+                            throw new InternalError(e);
                         }
                         final JarEntry entry = newLoader.jar.getJarEntry(name);
                         if (entry != null) {

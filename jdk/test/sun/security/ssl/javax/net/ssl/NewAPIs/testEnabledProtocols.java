@@ -30,6 +30,10 @@
  *                  session
  *          4701722 protocol mismatch exceptions should be consistent between
  *                  SSLv3 and TLSv1
+ * @run main/othervm testEnabledProtocols
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  * @author Ram Marti
  */
 

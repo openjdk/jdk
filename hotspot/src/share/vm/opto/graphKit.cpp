@@ -2856,7 +2856,7 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
   // lock has no side-effects, sets few values
   set_predefined_output_for_runtime_call(lock, mem, TypeRawPtr::BOTTOM);
 
-  insert_mem_bar(Op_MemBarAcquire);
+  insert_mem_bar(Op_MemBarAcquireLock);
 
   // Add this to the worklist so that the lock can be eliminated
   record_for_igvn(lock);
@@ -2889,7 +2889,7 @@ void GraphKit::shared_unlock(Node* box, Node* obj) {
   }
 
   // Memory barrier to avoid floating things down past the locked region
-  insert_mem_bar(Op_MemBarRelease);
+  insert_mem_bar(Op_MemBarReleaseLock);
 
   const TypeFunc *tf = OptoRuntime::complete_monitor_exit_Type();
   UnlockNode *unlock = new (C, tf->domain()->cnt()) UnlockNode(C, tf);

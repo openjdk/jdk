@@ -24,8 +24,11 @@
 /*
  * @test
  * @bug 4390659
- * @run main/othervm -Djavax.net.debug=all ClientModeClientAuth
  * @summary setNeedClientAuth() isn't working after a handshaker is established
+ * @run main/othervm ClientModeClientAuth
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  * @author Brad Wetmore
  */
 

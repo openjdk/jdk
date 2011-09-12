@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,8 @@ class CallGenerator : public ResourceObj {
   static CallGenerator* for_dynamic_call(ciMethod* m);   // invokedynamic
   static CallGenerator* for_virtual_call(ciMethod* m, int vtable_index);  // virtual, interface
 
-  static CallGenerator* for_method_handle_inline(Node* method_handle, JVMState* jvms, ciMethod* caller, ciMethod* callee, ciCallProfile profile);
+  static CallGenerator* for_method_handle_inline(Node* method_handle,   JVMState* jvms, ciMethod* caller, ciMethod* callee, ciCallProfile profile);
+  static CallGenerator* for_invokedynamic_inline(ciCallSite* call_site, JVMState* jvms, ciMethod* caller, ciMethod* callee, ciCallProfile profile);
 
   // How to generate a replace a direct call with an inline version
   static CallGenerator* for_late_inline(ciMethod* m, CallGenerator* inline_cg);

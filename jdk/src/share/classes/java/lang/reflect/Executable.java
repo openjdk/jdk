@@ -29,9 +29,6 @@ import java.lang.annotation.*;
 import java.util.Map;
 import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.generics.repository.ConstructorRepository;
-import sun.reflect.generics.factory.CoreReflectionFactory;
-import sun.reflect.generics.factory.GenericsFactory;
-import sun.reflect.generics.scope.ConstructorScope;
 
 /**
  * A shared superclass for the common functionality of {@link Method}
@@ -366,8 +363,8 @@ public abstract class Executable extends AccessibleObject
      * {@inheritDoc}
      * @throws NullPointerException  {@inheritDoc}
      */
-     @SuppressWarnings("unchecked")
-     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
+    @SuppressWarnings("unchecked")
+    public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         if (annotationClass == null)
             throw new NullPointerException();
 

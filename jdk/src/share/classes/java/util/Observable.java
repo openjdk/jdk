@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ package java.util;
  * notifications on separate threads, or may guarantee that their
  * subclass follows this order, as they choose.
  * <p>
- * Note that this notification mechanism is has nothing to do with threads
+ * Note that this notification mechanism has nothing to do with threads
  * and is completely separate from the <tt>wait</tt> and <tt>notify</tt>
  * mechanism of class <tt>Object</tt>.
  * <p>

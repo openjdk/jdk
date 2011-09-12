@@ -27,6 +27,7 @@
  * @summary make sure we can add a trusted cert to the NSS KeyStore module
  * @author Andreas Sterbenz
  * @library ..
+ * @run main/othervm AddTrustedCert
  */
 
 import java.io.*;

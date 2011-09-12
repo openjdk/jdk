@@ -55,9 +55,7 @@ public class WindowsAsynchronousFileChannelImpl
             try {
                 return new Iocp(null, ThreadPool.createDefault()).start();
             } catch (IOException ioe) {
-                InternalError e = new InternalError();
-                e.initCause(ioe);
-                throw e;
+                throw new InternalError(ioe);
             }
         }
     }

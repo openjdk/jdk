@@ -24,7 +24,12 @@
 /**
  * @test
  * @bug 6771432
- * @summary createSocket() - smpatch fails using 1.6.0_10 because of "Unconnected sockets not implemented"
+ * @summary createSocket() - smpatch fails using 1.6.0_10 because of
+ *     "Unconnected sockets not implemented"
+ * @run main/othervm HttpsCreateSockTest
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  */
 
 import javax.net.SocketFactory;
