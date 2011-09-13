@@ -3042,10 +3042,10 @@ G1CollectorPolicy_BestRegionsFirst::choose_collection_set(
             should_continue = false;
           }
         } else {
-          if (_collection_set_size < _young_list_fixed_length) {
+          if (_collection_set_size >= _young_list_fixed_length) {
             ergo_verbose2(ErgoCSetConstruction,
                           "stop adding old regions to CSet",
-                          ergo_format_reason("CSet length lower than target")
+                          ergo_format_reason("CSet length reached target")
                           ergo_format_region("CSet")
                           ergo_format_region("young target"),
                           _collection_set_size, _young_list_fixed_length);

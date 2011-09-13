@@ -58,7 +58,7 @@ typedef enum {
   // ErgoLow is 0 so that we don't have to explicitly or a heuristic
   // id with ErgoLow to keep its use simpler.
   ErgoLow = 0,
-  ErgoHigh = 1 << ErgoLevelShift,
+  ErgoHigh = 1 << ErgoLevelShift
 } ErgoLevel;
 
 // The available heuristics.
