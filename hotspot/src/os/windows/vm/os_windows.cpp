@@ -2644,7 +2644,7 @@ public:
     ULONG highest_node_number;
     if (!os::Kernel32Dll::GetNumaHighestNodeNumber(&highest_node_number)) return false;
     free_node_list();
-    _numa_used_node_list = NEW_C_HEAP_ARRAY(int, highest_node_number);
+    _numa_used_node_list = NEW_C_HEAP_ARRAY(int, highest_node_number + 1);
     for (unsigned int i = 0; i <= highest_node_number; i++) {
       ULONGLONG proc_mask_numa_node;
       if (!os::Kernel32Dll::GetNumaNodeProcessorMask(i, &proc_mask_numa_node)) return false;
