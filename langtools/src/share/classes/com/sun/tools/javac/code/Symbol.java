@@ -726,6 +726,11 @@ public abstract class Symbol implements Element {
          */
         public JavaFileObject classfile;
 
+        /** the list of translated local classes (used for generating
+         * InnerClasses attribute)
+         */
+        public List<ClassSymbol> trans_local;
+
         /** the constant pool of the class
          */
         public Pool pool;
