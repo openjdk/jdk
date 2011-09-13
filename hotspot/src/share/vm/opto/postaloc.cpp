@@ -100,10 +100,13 @@ int PhaseChaitin::yank_if_dead( Node *old, Block *current_block, Node_List *valu
     Node *tmp = NULL;
     for (uint i = 1; i < old->req(); i++) {
       if (old->in(i)->is_MachTemp()) {
+        // handle TEMP inputs
         Node* machtmp = old->in(i);
-        assert(machtmp->outcnt() == 1, "expected for a MachTemp");
-        blk_adjust += yank(machtmp, current_block, value, regnd);
-        machtmp->disconnect_inputs(NULL);
+        if (machtmp->outcnt() == 1) {
+          assert(machtmp->unique_out() == old, "sanity");
+          blk_adjust += yank(machtmp, current_block, value, regnd);
+          machtmp->disconnect_inputs(NULL);
+        }
       } else {
         assert(tmp == NULL, "can't handle more non MachTemp inputs");
         tmp = old->in(i);
