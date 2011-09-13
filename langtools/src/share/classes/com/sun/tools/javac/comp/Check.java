@@ -306,7 +306,16 @@ public class Check {
      */
     void duplicateError(DiagnosticPosition pos, Symbol sym) {
         if (!sym.type.isErroneous()) {
-            log.error(pos, "already.defined", sym, sym.location());
+            Symbol location = sym.location();
+            if (location.kind == MTH &&
+                    ((MethodSymbol)location).isStaticOrInstanceInit()) {
+                log.error(pos, "already.defined.in.clinit", kindName(sym), sym,
+                        kindName(sym.location()), kindName(sym.location().enclClass()),
+                        sym.location().enclClass());
+            } else {
+                log.error(pos, "already.defined", kindName(sym), sym,
+                        kindName(sym.location()), sym.location());
+            }
         }
     }
 
