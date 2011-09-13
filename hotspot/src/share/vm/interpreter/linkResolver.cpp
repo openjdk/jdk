@@ -132,7 +132,7 @@ void CallInfo::set_common(KlassHandle resolved_klass, KlassHandle selected_klass
       return;
     }
     CompileBroker::compile_method(selected_method, InvocationEntryBci,
-                                  CompLevel_initial_compile,
+                                  CompilationPolicy::policy()->initial_compile_level(),
                                   methodHandle(), 0, "must_be_compiled", CHECK);
   }
 }

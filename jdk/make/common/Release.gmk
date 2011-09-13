@@ -60,7 +60,8 @@ EXCLUDE_PROPWARN_PKGS = com.sun.java.swing.plaf.windows  \
 # with a new module system (being discussed for JDK 8).
 #
 EXPORTED_PRIVATE_PKGS = com.sun.servicetag \
-                        com.oracle.net
+                        com.oracle.net \
+                        com.oracle.nio
 
 # 64-bit solaris has a few special cases. We define the variable
 # SOLARIS64 for use in this Makefile to easily test those cases

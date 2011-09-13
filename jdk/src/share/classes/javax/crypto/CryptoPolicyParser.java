@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.io.*;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
-import java.util.StringTokenizer;
 import static java.util.Locale.ENGLISH;
 
 import java.security.GeneralSecurityException;
@@ -64,7 +63,7 @@ import java.lang.reflect.*;
 
 final class CryptoPolicyParser {
 
-    private Vector grantEntries;
+    private Vector<GrantEntry> grantEntries;
 
     // Convenience variables for parsing
     private StreamTokenizer st;
@@ -74,7 +73,7 @@ final class CryptoPolicyParser {
      * Creates a CryptoPolicyParser object.
      */
     CryptoPolicyParser() {
-        grantEntries = new Vector();
+        grantEntries = new Vector<GrantEntry>();
     }
 
     /**
@@ -127,7 +126,7 @@ final class CryptoPolicyParser {
          * The crypto jurisdiction policy must be consistent. The
          * following hashtable is used for checking consistency.
          */
-        Hashtable processedPermissions = null;
+        Hashtable<String, Vector<String>> processedPermissions = null;
 
         /*
          * The main parsing loop.  The loop is executed once for each entry
@@ -152,7 +151,8 @@ final class CryptoPolicyParser {
     /**
      * parse a Grant entry
      */
-    private GrantEntry parseGrantEntry(Hashtable processedPermissions)
+    private GrantEntry parseGrantEntry(
+            Hashtable<String, Vector<String>> processedPermissions)
         throws ParsingException, IOException
     {
         GrantEntry e = new GrantEntry();
@@ -180,7 +180,7 @@ final class CryptoPolicyParser {
      * parse a CryptoPermission entry
      */
     private CryptoPermissionEntry parsePermissionEntry(
-                                       Hashtable processedPermissions)
+            Hashtable<String, Vector<String>> processedPermissions)
         throws ParsingException, IOException
     {
         CryptoPermissionEntry e = new CryptoPermissionEntry();
@@ -252,7 +252,7 @@ final class CryptoPolicyParser {
             // AlgorithmParameterSpec class name.
             String algParamSpecClassName = match("quoted string");
 
-            Vector paramsV = new Vector(1);
+            Vector<Integer> paramsV = new Vector<>(1);
             while (peek(",")) {
                 match(",");
                 if (peek("number")) {
@@ -285,14 +285,14 @@ final class CryptoPolicyParser {
         AlgorithmParameterSpec ret = null;
 
         try {
-            Class apsClass = Class.forName(type);
-            Class[] paramClasses = new Class[params.length];
+            Class<?> apsClass = Class.forName(type);
+            Class<?>[] paramClasses = new Class<?>[params.length];
 
             for (int i = 0; i < params.length; i++) {
                 paramClasses[i] = int.class;
             }
 
-            Constructor c = apsClass.getConstructor(paramClasses);
+            Constructor<?> c = apsClass.getConstructor(paramClasses);
             ret = (AlgorithmParameterSpec) c.newInstance((Object[]) params);
         } catch (Exception e) {
             throw new ParsingException("Cannot call the constructor of " +
@@ -456,15 +456,15 @@ final class CryptoPolicyParser {
     }
 
     CryptoPermission[] getPermissions() {
-        Vector result = new Vector();
+        Vector<CryptoPermission> result = new Vector<>();
 
-        Enumeration grantEnum = grantEntries.elements();
+        Enumeration<GrantEntry> grantEnum = grantEntries.elements();
         while (grantEnum.hasMoreElements()) {
-            GrantEntry ge = (GrantEntry)grantEnum.nextElement();
-            Enumeration permEnum = ge.permissionElements();
+            GrantEntry ge = grantEnum.nextElement();
+            Enumeration<CryptoPermissionEntry> permEnum =
+                    ge.permissionElements();
             while (permEnum.hasMoreElements()) {
-                CryptoPermissionEntry pe =
-                    (CryptoPermissionEntry)permEnum.nextElement();
+                CryptoPermissionEntry pe = permEnum.nextElement();
                 if (pe.cryptoPermission.equals(
                                         "javax.crypto.CryptoAllPermission")) {
                     result.addElement(CryptoAllPermission.INSTANCE);
@@ -491,15 +491,14 @@ final class CryptoPolicyParser {
         return ret;
     }
 
-    private boolean isConsistent(String alg,
-                                 String exemptionMechanism,
-                                 Hashtable processedPermissions) {
+    private boolean isConsistent(String alg, String exemptionMechanism,
+            Hashtable<String, Vector<String>> processedPermissions) {
         String thisExemptionMechanism =
             exemptionMechanism == null ? "none" : exemptionMechanism;
 
         if (processedPermissions == null) {
-            processedPermissions = new Hashtable();
-            Vector exemptionMechanisms = new Vector(1);
+            processedPermissions = new Hashtable<String, Vector<String>>();
+            Vector<String> exemptionMechanisms = new Vector<>(1);
             exemptionMechanisms.addElement(thisExemptionMechanism);
             processedPermissions.put(alg, exemptionMechanisms);
             return true;
@@ -509,15 +508,15 @@ final class CryptoPolicyParser {
             return false;
         }
 
-        Vector exemptionMechanisms;
+        Vector<String> exemptionMechanisms;
 
         if (processedPermissions.containsKey(alg)) {
-            exemptionMechanisms = (Vector)processedPermissions.get(alg);
+            exemptionMechanisms = processedPermissions.get(alg);
             if (exemptionMechanisms.contains(thisExemptionMechanism)) {
                 return false;
             }
         } else {
-            exemptionMechanisms = new Vector(1);
+            exemptionMechanisms = new Vector<String>(1);
         }
 
         exemptionMechanisms.addElement(thisExemptionMechanism);
@@ -556,10 +555,10 @@ final class CryptoPolicyParser {
 
     private static class GrantEntry {
 
-        private Vector permissionEntries;
+        private Vector<CryptoPermissionEntry> permissionEntries;
 
         GrantEntry() {
-            permissionEntries = new Vector();
+            permissionEntries = new Vector<CryptoPermissionEntry>();
         }
 
         void add(CryptoPermissionEntry pe)
@@ -580,7 +579,7 @@ final class CryptoPolicyParser {
         /**
          * Enumerate all the permission entries in this GrantEntry.
          */
-        Enumeration permissionElements(){
+        Enumeration<CryptoPermissionEntry> permissionElements(){
             return permissionEntries.elements();
         }
 

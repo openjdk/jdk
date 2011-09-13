@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,19 +56,19 @@ public class ContainmentFilter implements AttrFilter {
           if (subset == null)
             return true;  // an empty set is always a subset
 
-            NamingEnumeration m = subset.getAll();
+            NamingEnumeration<? extends Attribute> m = subset.getAll();
             while (m.hasMore()) {
                 if (superset == null) {
                     return false;  // contains nothing
                 }
-                Attribute target = (Attribute) m.next();
+                Attribute target = m.next();
                 Attribute fromSuper = superset.get(target.getID());
                 if (fromSuper == null) {
                     return false;
                 } else {
                     // check whether attribute values match
                     if (target.size() > 0) {
-                        NamingEnumeration vals = target.getAll();
+                        NamingEnumeration<?> vals = target.getAll();
                         while (vals.hasMore()) {
                             if (!fromSuper.contains(vals.next())) {
                                 return false;

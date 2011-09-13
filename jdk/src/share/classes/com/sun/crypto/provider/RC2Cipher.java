@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,8 +98,8 @@ public final class RC2Cipher extends CipherSpi {
             throws InvalidKeyException, InvalidAlgorithmParameterException {
         if (params != null && params.getAlgorithm().equals("RC2")) {
             try {
-                RC2ParameterSpec rc2Params = (RC2ParameterSpec)
-                    params.getParameterSpec(RC2ParameterSpec.class);
+                RC2ParameterSpec rc2Params =
+                        params.getParameterSpec(RC2ParameterSpec.class);
                 engineInit(opmode, key, rc2Params, random);
             } catch (InvalidParameterSpecException ipse) {
                 throw new InvalidAlgorithmParameterException

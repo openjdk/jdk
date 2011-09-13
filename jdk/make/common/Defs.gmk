@@ -300,6 +300,9 @@ JRE_IMAGE_DIR = $(ABS_OUTPUTDIR)/j2re-image
 #where the demo source can be found
 DEMOSRCDIR          = $(SHARE_SRC)/demo
 
+#where the sample source can be found
+SAMPLESRCDIR          = $(SHARE_SRC)/sample
+
 # An attempt is made to generate unique enough directories for the
 # generated files to not have name collisisons. Most build units
 # defines PRODUCT (except Release.gmk), but then they may or may 

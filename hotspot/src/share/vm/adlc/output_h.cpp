@@ -1519,8 +1519,9 @@ void ArchDesc::declareClasses(FILE *fp) {
     // Declare Node::methods that set operand Label's contents
     int label_position = instr->label_position();
     if( label_position != -1 ) {
-      // Set the label, stored in labelOper::_branch_label
-      fprintf(fp,"  virtual void           label_set( Label& label, uint block_num );\n");
+      // Set/Save the label, stored in labelOper::_branch_label
+      fprintf(fp,"  virtual void           label_set( Label* label, uint block_num );\n");
+      fprintf(fp,"  virtual void           save_label( Label** label, uint* block_num );\n");
     }
 
     // If this instruction contains a methodOper
@@ -1536,16 +1537,16 @@ void ArchDesc::declareClasses(FILE *fp) {
     // Each instruction attribute results in a virtual call of same name.
     // The ins_cost is not handled here.
     Attribute *attr = instr->_attribs;
-    bool is_pc_relative = false;
+    bool avoid_back_to_back = false;
     while (attr != NULL) {
       if (strcmp(attr->_ident,"ins_cost") &&
-          strcmp(attr->_ident,"ins_pc_relative")) {
+          strcmp(attr->_ident,"ins_short_branch")) {
         fprintf(fp,"  int             %s() const { return %s; }\n",
                 attr->_ident, attr->_val);
       }
-      // Check value for ins_pc_relative, and if it is true (1), set the flag
-      if (!strcmp(attr->_ident,"ins_pc_relative") && attr->int_val(*this) != 0)
-        is_pc_relative = true;
+      // Check value for ins_avoid_back_to_back, and if it is true (1), set the flag
+      if (!strcmp(attr->_ident,"ins_avoid_back_to_back") && attr->int_val(*this) != 0)
+        avoid_back_to_back = true;
       attr = (Attribute *)attr->_next;
     }
 
@@ -1657,20 +1658,10 @@ void ArchDesc::declareClasses(FILE *fp) {
     fprintf(fp," _num_opnds = %d; _opnds = _opnd_array; ", instr->num_opnds());
 
     bool node_flags_set = false;
-    // flag: if this instruction matches an ideal 'Goto' node
-    if ( instr->is_ideal_goto() ) {
-      fprintf(fp,"init_flags(Flag_is_Goto");
-      node_flags_set = true;
-    }
-
     // flag: if this instruction matches an ideal 'Copy*' node
     if ( instr->is_ideal_copy() != 0 ) {
-      if ( node_flags_set ) {
-        fprintf(fp," | Flag_is_Copy");
-      } else {
-        fprintf(fp,"init_flags(Flag_is_Copy");
-        node_flags_set = true;
-      }
+      fprintf(fp,"init_flags(Flag_is_Copy");
+      node_flags_set = true;
     }
 
     // Is an instruction is a constant?  If so, get its type
@@ -1688,16 +1679,6 @@ void ArchDesc::declareClasses(FILE *fp) {
       }
     }
 
-    // flag: if instruction matches 'If' | 'Goto' | 'CountedLoopEnd | 'Jump'
-    if ( instr->is_ideal_branch() ) {
-      if ( node_flags_set ) {
-        fprintf(fp," | Flag_is_Branch");
-      } else {
-        fprintf(fp,"init_flags(Flag_is_Branch");
-        node_flags_set = true;
-      }
-    }
-
     // flag: if this instruction is cisc alternate
     if ( can_cisc_spill() && instr->is_cisc_alternate() ) {
       if ( node_flags_set ) {
@@ -1708,22 +1689,22 @@ void ArchDesc::declareClasses(FILE *fp) {
       }
     }
 
-    // flag: if this instruction is pc relative
-    if ( is_pc_relative ) {
-      if ( node_flags_set ) {
-        fprintf(fp," | Flag_is_pc_relative");
-      } else {
-        fprintf(fp,"init_flags(Flag_is_pc_relative");
-        node_flags_set = true;
-      }
-    }
-
     // flag: if this instruction has short branch form
     if ( instr->has_short_branch_form() ) {
       if ( node_flags_set ) {
         fprintf(fp," | Flag_may_be_short_branch");
       } else {
         fprintf(fp,"init_flags(Flag_may_be_short_branch");
+        node_flags_set = true;
+      }
+    }
+
+    // flag: if this instruction should not be generated back to back.
+    if ( avoid_back_to_back ) {
+      if ( node_flags_set ) {
+        fprintf(fp," | Flag_avoid_back_to_back");
+      } else {
+        fprintf(fp,"init_flags(Flag_avoid_back_to_back");
         node_flags_set = true;
       }
     }
@@ -1741,10 +1722,6 @@ void ArchDesc::declareClasses(FILE *fp) {
 
     if ( node_flags_set ) {
       fprintf(fp,"); ");
-    }
-
-    if (instr->is_ideal_unlock() || instr->is_ideal_call_leaf()) {
-      fprintf(fp,"clear_flag(Flag_is_safepoint_node); ");
     }
 
     fprintf(fp,"}\n");

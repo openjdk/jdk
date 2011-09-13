@@ -98,6 +98,7 @@ public:
     if (is_c2_compile(comp_level)) return c2_count();
     return 0;
   }
+  virtual CompLevel initial_compile_level() { return MIN2((CompLevel)TieredStopAtLevel, CompLevel_initial_compile); }
   virtual void do_safepoint_work() { }
   virtual void delay_compilation(methodOop method) { }
   virtual void disable_compilation(methodOop method) { }

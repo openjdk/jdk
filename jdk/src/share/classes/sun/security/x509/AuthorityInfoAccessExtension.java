@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,6 +163,7 @@ public class AuthorityInfoAccessExtension extends Extension
     /**
      * Set the attribute value.
      */
+    @SuppressWarnings("unchecked") // Checked with an instanceof check
     public void set(String name, Object obj) throws IOException {
         if (name.equalsIgnoreCase(DESCRIPTIONS)) {
             if (!(obj instanceof List)) {
@@ -180,7 +181,7 @@ public class AuthorityInfoAccessExtension extends Extension
     /**
      * Get the attribute value.
      */
-    public Object get(String name) throws IOException {
+    public List<AccessDescription> get(String name) throws IOException {
         if (name.equalsIgnoreCase(DESCRIPTIONS)) {
             return accessDescriptions;
         } else {

@@ -69,7 +69,12 @@ public class bug6694823 {
 
         toolkit.realSync();
         System.out.println("Test passed!");
-        frame.dispose();
+
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                frame.dispose();
+            }
+        });
     }
 
     private static void createGui() {
@@ -88,30 +93,44 @@ public class bug6694823 {
         frame.setSize(200, 200);
     }
 
-    private static void showPopup(final boolean shouldBeShifted) {
-        SwingUtilities.invokeLater(new Runnable() {
+    private static void showPopup(final boolean shouldBeShifted) throws Exception {
+        SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 // Place frame just above the task bar
                 Dimension screenSize = toolkit.getScreenSize();
                 frame.setLocation(screenSize.width / 2,
                         screenSize.height - frame.getHeight() - screenInsets.bottom);
                 frame.setVisible(true);
+            }
+        });
 
+        // Ensure frame is visible
+        toolkit.realSync();
+
+        final Point point = new Point();
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
                 // Place popup over the task bar
-                Point frameLoc = frame.getLocationOnScreen();
-                int x = 0;
-                int y = frame.getHeight()
-                        - popup.getPreferredSize().height + screenInsets.bottom;
-                popup.show(frame, x, y);
+                point.x = 0;
+                point.y = frame.getHeight() - popup.getPreferredSize().height + screenInsets.bottom;
+                popup.show(frame, point.x, point.y);
+            }
+        });
 
+        // Ensure popup is visible
+        toolkit.realSync();
+
+        SwingUtilities.invokeAndWait(new Runnable() {
+            public void run() {
+                Point frameLoc = frame.getLocationOnScreen();
                 if (shouldBeShifted) {
                     if (popup.getLocationOnScreen()
-                            .equals(new Point(frameLoc.x, frameLoc.y + y))) {
+                            .equals(new Point(frameLoc.x, frameLoc.y + point.y))) {
                         throw new RuntimeException("Popup is not shifted");
                     }
                 } else {
                     if (!popup.getLocationOnScreen()
-                            .equals(new Point(frameLoc.x, frameLoc.y + y))) {
+                            .equals(new Point(frameLoc.x, frameLoc.y + point.y))) {
                         throw new RuntimeException("Popup is unexpectedly shifted");
                     }
                 }

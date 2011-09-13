@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public class PBEKeySpec implements KeySpec {
         if ((password == null) || (password.length == 0)) {
             this.password = new char[0];
         } else {
-            this.password = (char[])password.clone();
+            this.password = password.clone();
         }
     }
 
@@ -109,7 +109,7 @@ public class PBEKeySpec implements KeySpec {
         if ((password == null) || (password.length == 0)) {
             this.password = new char[0];
         } else {
-            this.password = (char[])password.clone();
+            this.password = password.clone();
         }
         if (salt == null) {
             throw new NullPointerException("the salt parameter " +
@@ -118,7 +118,7 @@ public class PBEKeySpec implements KeySpec {
             throw new IllegalArgumentException("the salt parameter " +
                                                 "must not be empty");
         } else {
-            this.salt = (byte[]) salt.clone();
+            this.salt = salt.clone();
         }
         if (iterationCount<=0) {
             throw new IllegalArgumentException("invalid iterationCount value");
@@ -151,7 +151,7 @@ public class PBEKeySpec implements KeySpec {
         if ((password == null) || (password.length == 0)) {
             this.password = new char[0];
         } else {
-            this.password = (char[])password.clone();
+            this.password = password.clone();
         }
         if (salt == null) {
             throw new NullPointerException("the salt parameter " +
@@ -160,7 +160,7 @@ public class PBEKeySpec implements KeySpec {
             throw new IllegalArgumentException("the salt parameter " +
                                                 "must not be empty");
         } else {
-            this.salt = (byte[]) salt.clone();
+            this.salt = salt.clone();
         }
         if (iterationCount<=0) {
             throw new IllegalArgumentException("invalid iterationCount value");
@@ -196,7 +196,7 @@ public class PBEKeySpec implements KeySpec {
         if (password == null) {
             throw new IllegalStateException("password has been cleared");
         }
-        return (char[]) password.clone();
+        return password.clone();
     }
 
     /**
@@ -210,7 +210,7 @@ public class PBEKeySpec implements KeySpec {
      */
     public final byte[] getSalt() {
         if (salt != null) {
-            return (byte[]) salt.clone();
+            return salt.clone();
         } else {
             return null;
         }

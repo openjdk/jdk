@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,9 @@ final class LdapReferralContext implements DirContext, LdapContext {
     private int hopCount = 1;
     private NamingException previousEx = null;
 
-    LdapReferralContext(LdapReferralException ex, Hashtable env,
+    @SuppressWarnings("unchecked") // clone()
+    LdapReferralContext(LdapReferralException ex,
+        Hashtable<?,?> env,
         Control[] connCtls,
         Control[] reqCtls,
         String nextName,
@@ -69,20 +71,21 @@ final class LdapReferralContext implements DirContext, LdapContext {
 
         // Make copies of environment and connect controls for our own use.
         if (env != null) {
-            env = (Hashtable) env.clone();
+            env = (Hashtable<?,?>) env.clone();
             // Remove old connect controls from environment, unless we have new
             // ones that will override them anyway.
             if (connCtls == null) {
                 env.remove(LdapCtx.BIND_CONTROLS);
             }
         } else if (connCtls != null) {
-            env = new Hashtable(5);
+            env = new Hashtable<String, Control[]>(5);
         }
         if (connCtls != null) {
             Control[] copiedCtls = new Control[connCtls.length];
             System.arraycopy(connCtls, 0, copiedCtls, 0, connCtls.length);
             // Add copied controls to environment, replacing any old ones.
-            env.put(LdapCtx.BIND_CONTROLS, copiedCtls);
+            ((Hashtable<? super String, ? super Control[]>)env)
+                    .put(LdapCtx.BIND_CONTROLS, copiedCtls);
         }
 
         while (true) {
@@ -260,24 +263,26 @@ final class LdapReferralContext implements DirContext, LdapContext {
         refCtx.rename(overrideName(oldName), toName(refEx.getNewRdn()));
     }
 
-    public NamingEnumeration list(String name) throws NamingException {
+    public NamingEnumeration<NameClassPair> list(String name) throws NamingException {
         return list(toName(name));
     }
 
-    public NamingEnumeration list(Name name) throws NamingException {
+    @SuppressWarnings("unchecked")
+    public NamingEnumeration<NameClassPair> list(Name name) throws NamingException {
         if (skipThisReferral) {
             throw (NamingException)
                 ((refEx.appendUnprocessedReferrals(null)).fillInStackTrace());
         }
         try {
-            NamingEnumeration ne = null;
+            NamingEnumeration<NameClassPair> ne = null;
 
             if (urlScope != null && urlScope.equals("base")) {
                 SearchControls cons = new SearchControls();
                 cons.setReturningObjFlag(true);
                 cons.setSearchScope(SearchControls.OBJECT_SCOPE);
 
-                ne = refCtx.search(overrideName(name), "(objectclass=*)", cons);
+                ne = (NamingEnumeration)
+                        refCtx.search(overrideName(name), "(objectclass=*)", cons);
 
             } else {
                 ne = refCtx.list(overrideName(name));
@@ -318,25 +323,29 @@ final class LdapReferralContext implements DirContext, LdapContext {
         }
     }
 
-    public NamingEnumeration listBindings(String name) throws NamingException {
+    public NamingEnumeration<Binding> listBindings(String name) throws
+            NamingException {
         return listBindings(toName(name));
     }
 
-    public NamingEnumeration listBindings(Name name) throws NamingException {
+    @SuppressWarnings("unchecked")
+    public NamingEnumeration<Binding> listBindings(Name name) throws
+            NamingException {
         if (skipThisReferral) {
             throw (NamingException)
                 ((refEx.appendUnprocessedReferrals(null)).fillInStackTrace());
         }
 
         try {
-            NamingEnumeration be = null;
+            NamingEnumeration<Binding> be = null;
 
             if (urlScope != null && urlScope.equals("base")) {
                 SearchControls cons = new SearchControls();
                 cons.setReturningObjFlag(true);
                 cons.setSearchScope(SearchControls.OBJECT_SCOPE);
 
-                be = refCtx.search(overrideName(name), "(objectclass=*)", cons);
+                be = (NamingEnumeration)refCtx.search(overrideName(name),
+                        "(objectclass=*)", cons);
 
             } else {
                 be = refCtx.listBindings(overrideName(name));
@@ -347,7 +356,7 @@ final class LdapReferralContext implements DirContext, LdapContext {
             // append (referrals from) the exception that generated this
             // context to the new search results, so that referral processing
             // can continue
-            ((ReferralEnumeration)be).appendUnprocessedReferrals(refEx);
+            ((ReferralEnumeration<Binding>)be).appendUnprocessedReferrals(refEx);
 
             return (be);
 
@@ -462,7 +471,7 @@ final class LdapReferralContext implements DirContext, LdapContext {
         return refCtx.removeFromEnvironment(propName);
     }
 
-    public Hashtable getEnvironment() throws NamingException {
+    public Hashtable<?,?> getEnvironment() throws NamingException {
         if (skipThisReferral) {
             throw (NamingException)
                 ((refEx.appendUnprocessedReferrals(null)).fillInStackTrace());
@@ -602,23 +611,23 @@ final class LdapReferralContext implements DirContext, LdapContext {
       return refCtx.getSchemaClassDefinition(overrideName(name));
     }
 
-    public NamingEnumeration search(String name,
-                                    Attributes matchingAttributes)
+    public NamingEnumeration<SearchResult> search(String name,
+                                                  Attributes matchingAttributes)
             throws NamingException {
         return search(toName(name), SearchFilter.format(matchingAttributes),
             new SearchControls());
     }
 
-    public NamingEnumeration search(Name name,
-                                    Attributes matchingAttributes)
+    public NamingEnumeration<SearchResult> search(Name name,
+                                                  Attributes matchingAttributes)
             throws NamingException {
         return search(name, SearchFilter.format(matchingAttributes),
             new SearchControls());
     }
 
-    public NamingEnumeration search(String name,
-                                    Attributes matchingAttributes,
-                                    String[] attributesToReturn)
+    public NamingEnumeration<SearchResult> search(String name,
+                                                  Attributes matchingAttributes,
+                                                  String[] attributesToReturn)
             throws NamingException {
         SearchControls cons = new SearchControls();
         cons.setReturningAttributes(attributesToReturn);
@@ -627,9 +636,9 @@ final class LdapReferralContext implements DirContext, LdapContext {
             cons);
     }
 
-    public NamingEnumeration search(Name name,
-                                    Attributes matchingAttributes,
-                                    String[] attributesToReturn)
+    public NamingEnumeration<SearchResult> search(Name name,
+                                                  Attributes matchingAttributes,
+                                                  String[] attributesToReturn)
             throws NamingException {
         SearchControls cons = new SearchControls();
         cons.setReturningAttributes(attributesToReturn);
@@ -637,15 +646,15 @@ final class LdapReferralContext implements DirContext, LdapContext {
         return search(name, SearchFilter.format(matchingAttributes), cons);
     }
 
-    public NamingEnumeration search(String name,
-                                    String filter,
-                                    SearchControls cons)
+    public NamingEnumeration<SearchResult> search(String name,
+                                                  String filter,
+                                                  SearchControls cons)
             throws NamingException {
         return search(toName(name), filter, cons);
     }
 
-    public NamingEnumeration search(Name name,
-                                    String filter,
+    public NamingEnumeration<SearchResult> search(Name name,
+                                                  String filter,
         SearchControls cons) throws NamingException {
 
         if (skipThisReferral) {
@@ -654,8 +663,10 @@ final class LdapReferralContext implements DirContext, LdapContext {
         }
 
         try {
-            NamingEnumeration se = refCtx.search(overrideName(name),
-                overrideFilter(filter), overrideAttributesAndScope(cons));
+            NamingEnumeration<SearchResult> se =
+                    refCtx.search(overrideName(name),
+                                  overrideFilter(filter),
+                                  overrideAttributesAndScope(cons));
 
             refEx.setNameResolved(true);
 
@@ -694,15 +705,15 @@ final class LdapReferralContext implements DirContext, LdapContext {
         }
     }
 
-    public NamingEnumeration search(String name,
-                                    String filterExpr,
-                                    Object[] filterArgs,
-                                    SearchControls cons)
+    public NamingEnumeration<SearchResult> search(String name,
+                                                  String filterExpr,
+                                                  Object[] filterArgs,
+                                                  SearchControls cons)
             throws NamingException {
         return search(toName(name), filterExpr, filterArgs, cons);
     }
 
-    public NamingEnumeration search(Name name,
+    public NamingEnumeration<SearchResult> search(Name name,
         String filterExpr,
         Object[] filterArgs,
         SearchControls cons) throws NamingException {
@@ -713,7 +724,7 @@ final class LdapReferralContext implements DirContext, LdapContext {
         }
 
         try {
-            NamingEnumeration se;
+            NamingEnumeration<SearchResult> se;
 
             if (urlFilter != null) {
                 se = refCtx.search(overrideName(name), urlFilter,

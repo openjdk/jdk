@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.util.Hashtable;
 
 import javax.naming.*;
 import javax.naming.directory.*;
-import javax.naming.spi.NamingManager;
 import javax.naming.spi.DirectoryManager;
 
 /*
@@ -83,23 +82,26 @@ public abstract class PartialCompositeDirContext
                                                      Continuation cont)
          throws NamingException;
 
-     protected abstract NamingEnumeration p_search(Name name,
-                                                   Attributes matchingAttributes,
-                                                   String[] attributesToReturn,
-                                                   Continuation cont)
+     protected abstract NamingEnumeration<SearchResult> p_search(
+                            Name name,
+                            Attributes matchingAttributes,
+                            String[] attributesToReturn,
+                            Continuation cont)
          throws NamingException;
 
-     protected abstract NamingEnumeration p_search(Name name,
-                                                   String filter,
-                                                   SearchControls cons,
-                                                   Continuation cont)
+     protected abstract NamingEnumeration<SearchResult> p_search(
+                            Name name,
+                            String filter,
+                            SearchControls cons,
+                            Continuation cont)
          throws NamingException;
 
-     protected abstract NamingEnumeration p_search(Name name,
-                                                   String filterExpr,
-                                                   Object[] filterArgs,
-                                                   SearchControls cons,
-                                                   Continuation cont)
+     protected abstract NamingEnumeration<SearchResult> p_search(
+                            Name name,
+                            String filterExpr,
+                            Object[] filterArgs,
+                            SearchControls cons,
+                            Continuation cont)
          throws NamingException;
 
      protected abstract DirContext p_getSchema(Name name, Continuation cont)
@@ -130,7 +132,7 @@ public abstract class PartialCompositeDirContext
     public Attributes getAttributes(Name name, String[] attrIds)
             throws NamingException {
         PartialCompositeDirContext ctx = this;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
         Attributes answer;
         Name nm = name;
@@ -157,7 +159,7 @@ public abstract class PartialCompositeDirContext
     public void modifyAttributes(Name name, int mod_op, Attributes attrs)
             throws NamingException {
         PartialCompositeDirContext ctx = this;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
         Name nm = name;
 
@@ -182,7 +184,7 @@ public abstract class PartialCompositeDirContext
     public void modifyAttributes(Name name, ModificationItem[] mods)
             throws NamingException {
         PartialCompositeDirContext ctx = this;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
         Name nm = name;
 
@@ -207,7 +209,7 @@ public abstract class PartialCompositeDirContext
     public void bind(Name name, Object obj, Attributes attrs)
             throws NamingException {
         PartialCompositeDirContext ctx = this;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
         Name nm = name;
 
@@ -232,7 +234,7 @@ public abstract class PartialCompositeDirContext
     public void rebind(Name name, Object obj, Attributes attrs)
             throws NamingException {
         PartialCompositeDirContext ctx = this;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
         Name nm = name;
 
@@ -257,7 +259,7 @@ public abstract class PartialCompositeDirContext
     public DirContext createSubcontext(Name name, Attributes attrs)
             throws NamingException {
         PartialCompositeDirContext ctx = this;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
         DirContext answer;
         Name nm = name;
@@ -308,9 +310,9 @@ public abstract class PartialCompositeDirContext
     {
 
         PartialCompositeDirContext ctx = this;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
-        NamingEnumeration answer;
+        NamingEnumeration<SearchResult> answer;
         Name nm = name;
 
         try {
@@ -347,9 +349,9 @@ public abstract class PartialCompositeDirContext
     {
 
         PartialCompositeDirContext ctx = this;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
-        NamingEnumeration answer;
+        NamingEnumeration<SearchResult> answer;
         Name nm = name;
 
         try {
@@ -385,9 +387,9 @@ public abstract class PartialCompositeDirContext
     {
 
         PartialCompositeDirContext ctx = this;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
-        NamingEnumeration answer;
+        NamingEnumeration<SearchResult> answer;
         Name nm = name;
 
         try {
@@ -411,7 +413,7 @@ public abstract class PartialCompositeDirContext
 
     public DirContext getSchema(Name name) throws NamingException {
         PartialCompositeDirContext ctx = this;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
         DirContext answer;
         Name nm = name;
@@ -438,7 +440,7 @@ public abstract class PartialCompositeDirContext
     public DirContext getSchemaClassDefinition(Name name)
             throws NamingException {
         PartialCompositeDirContext ctx = this;
-        Hashtable env = p_getEnvironment();
+        Hashtable<?,?> env = p_getEnvironment();
         Continuation cont = new Continuation(name, env);
         DirContext answer;
         Name nm = name;
@@ -509,14 +511,14 @@ public abstract class PartialCompositeDirContext
             throw cont.fillInException(e);
         }
 
-    protected NamingEnumeration a_list(
+    protected NamingEnumeration<NameClassPair> a_list(
         Continuation cont) throws NamingException {
             OperationNotSupportedException e = new
                 OperationNotSupportedException();
             throw cont.fillInException(e);
         }
 
-    protected NamingEnumeration a_listBindings(
+    protected NamingEnumeration<Binding> a_listBindings(
         Continuation cont) throws NamingException {
             OperationNotSupportedException e = new
                 OperationNotSupportedException();

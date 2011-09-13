@@ -41,7 +41,6 @@ import java.security.PublicKey;
 import java.security.cert.*;
 import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.interfaces.DSAPublicKey;
-import javax.security.auth.x500.X500Principal;
 import sun.security.util.Debug;
 import sun.security.x509.AccessDescription;
 import sun.security.x509.AuthorityInfoAccessExtension;
@@ -758,8 +757,7 @@ class CrlRevocationChecker extends PKIXCertPathChecker {
                      null, null);
                 points = Collections.singletonList(point);
             } else {
-                points = (List<DistributionPoint>)ext.get(
-                                        CRLDistributionPointsExtension.POINTS);
+                points = ext.get(CRLDistributionPointsExtension.POINTS);
             }
             Set<X509CRL> results = new HashSet<X509CRL>();
             DistributionPointFetcher dpf =

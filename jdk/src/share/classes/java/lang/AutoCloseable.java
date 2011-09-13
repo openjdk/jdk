@@ -43,6 +43,15 @@ public interface AutoCloseable {
      * throw more specific exceptions, or to throw no exception at all
      * if the close operation cannot fail.
      *
+     * <p> Cases where the close operation may fail require careful
+     * attention by implementers. It is strongly advised to relinquish
+     * the underlying resources and to internally <em>mark</em> the
+     * resource as closed, prior to throwing the exception. The {@code
+     * close} method is unlikely to be invoked more than once and so
+     * this ensures that the resources are released in a timely manner.
+     * Furthermore it reduces problems that could arise when the resource
+     * wraps, or is wrapped, by another resource.
+     *
      * <p><em>Implementers of this interface are also strongly advised
      * to not have the {@code close} method throw {@link
      * InterruptedException}.</em>
