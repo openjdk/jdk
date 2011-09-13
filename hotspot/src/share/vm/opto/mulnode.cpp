@@ -98,7 +98,7 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       const Type *t12 = phase->type( mul1->in(2) );
       if( t12->singleton() && t12 != Type::TOP) { // Left input is an add of a constant?
         // Compute new constant; check for overflow
-        const Type *tcon01 = mul1->as_Mul()->mul_ring(t2,t12);
+        const Type *tcon01 = ((MulNode*)mul1)->mul_ring(t2,t12);
         if( tcon01->singleton() ) {
           // The Mul of the flattened expression
           set_req(1, mul1->in(1));

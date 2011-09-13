@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,12 @@
  */
 
 /* @test
- * @summary Https can not retry request
  * @bug 4799427
+ * @summary Https can not retry request
+ * @run main/othervm RetryHttps
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  * @author Yingxian Wang
  */
 
@@ -129,36 +133,41 @@ public class RetryHttps {
      * to avoid infinite hangs.
      */
     void doClientSide() throws Exception {
-
-        /*
-         * Wait for server to get started.
-         */
-        while (!serverReady) {
-            Thread.sleep(50);
-        }
+        HostnameVerifier reservedHV =
+            HttpsURLConnection.getDefaultHostnameVerifier();
         try {
-        HttpsURLConnection http = null;
-        /* establish http connection to server */
-        URL url = new URL("https://localhost:" + serverPort+"/file1");
-        System.out.println("url is "+url.toString());
-        HttpsURLConnection.setDefaultHostnameVerifier(new NameVerifier());
-        http = (HttpsURLConnection)url.openConnection();
-        int respCode = http.getResponseCode();
-        int cl = http.getContentLength();
-        InputStream is = http.getInputStream ();
-        int count = 0;
-        while (is.read() != -1 && count++ < cl);
-        System.out.println("respCode1 = "+respCode);
-        Thread.sleep(2000);
-        url = new URL("https://localhost:" + serverPort+"/file2");
-        http = (HttpsURLConnection)url.openConnection();
-        respCode = http.getResponseCode();
-        System.out.println("respCode2 = "+respCode);
-
-        } catch (IOException ioex) {
-            if (sslServerSocket != null)
-                sslServerSocket.close();
-            throw ioex;
+            /*
+             * Wait for server to get started.
+             */
+            while (!serverReady) {
+                Thread.sleep(50);
+            }
+            try {
+                HttpsURLConnection http = null;
+                /* establish http connection to server */
+                URL url = new URL("https://localhost:" + serverPort+"/file1");
+                System.out.println("url is "+url.toString());
+                HttpsURLConnection.setDefaultHostnameVerifier(
+                                                        new NameVerifier());
+                http = (HttpsURLConnection)url.openConnection();
+                int respCode = http.getResponseCode();
+                int cl = http.getContentLength();
+                InputStream is = http.getInputStream ();
+                int count = 0;
+                while (is.read() != -1 && count++ < cl);
+                System.out.println("respCode1 = "+respCode);
+                Thread.sleep(2000);
+                url = new URL("https://localhost:" + serverPort+"/file2");
+                http = (HttpsURLConnection)url.openConnection();
+                respCode = http.getResponseCode();
+                System.out.println("respCode2 = "+respCode);
+            } catch (IOException ioex) {
+                if (sslServerSocket != null)
+                    sslServerSocket.close();
+                throw ioex;
+            }
+        } finally {
+            HttpsURLConnection.setDefaultHostnameVerifier(reservedHV);
         }
     }
 

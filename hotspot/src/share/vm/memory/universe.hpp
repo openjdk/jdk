@@ -439,6 +439,7 @@ class Universe: AllStatic {
 
   // Flushing and deoptimization
   static void flush_dependents_on(instanceKlassHandle dependee);
+  static void flush_dependents_on(Handle call_site, Handle method_handle);
 #ifdef HOTSWAP
   // Flushing and deoptimization in case of evolution
   static void flush_evol_dependents_on(instanceKlassHandle dependee);

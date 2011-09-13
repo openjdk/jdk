@@ -27,6 +27,9 @@
  * @summary support self-issued certificate
  * @run main/othervm SelfIssuedCert PKIX
  * @run main/othervm SelfIssuedCert SunX509
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  * @author Xuelei Fan
  */
 

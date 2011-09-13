@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@ import java.util.NoSuchElementException;
 import java.util.Hashtable;
 
 import org.omg.CosNaming.*;
-import org.omg.CosNaming.NamingContextPackage.*;
-import org.omg.CORBA.*;
 
 /**
   * Implements the JNDI NamingEnumeration interface for COS
@@ -44,7 +42,8 @@ import org.omg.CORBA.*;
   * @author Rosanna Lee
   */
 
-final class CNBindingEnumeration implements NamingEnumeration {
+final class CNBindingEnumeration
+        implements NamingEnumeration<javax.naming.Binding> {
 
     private static final int DEFAULT_BATCHSIZE = 100;
     private BindingListHolder _bindingList; // list of bindings
@@ -52,105 +51,105 @@ final class CNBindingEnumeration implements NamingEnumeration {
     private int counter;                    // pointer in _bindingList
     private int batchsize = DEFAULT_BATCHSIZE;  // how many to ask for each time
     private CNCtx _ctx;                     // ctx to list
-    private Hashtable _env;                 // environment for getObjectInstance
+    private Hashtable<?,?> _env;            // environment for getObjectInstance
     private boolean more = false;           // iterator done?
     private boolean isLookedUpCtx = false;  // iterating on a context beneath this context ?
 
-  /**
-    * Creates a CNBindingEnumeration object.
-    * @param ctx Context to enumerate
-    */
-  CNBindingEnumeration(CNCtx ctx, boolean isLookedUpCtx, Hashtable env) {
-    // Get batch size to use
-    String batch = (env != null ?
-        (String)env.get(javax.naming.Context.BATCHSIZE) : null);
-    if (batch != null) {
-        try {
-            batchsize = Integer.parseInt(batch);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Batch size not numeric: " + batch);
+    /**
+     * Creates a CNBindingEnumeration object.
+     * @param ctx Context to enumerate
+     */
+    CNBindingEnumeration(CNCtx ctx, boolean isLookedUpCtx, Hashtable<?,?> env) {
+        // Get batch size to use
+        String batch = (env != null ?
+            (String)env.get(javax.naming.Context.BATCHSIZE) : null);
+        if (batch != null) {
+            try {
+                batchsize = Integer.parseInt(batch);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Batch size not numeric: " + batch);
+            }
+        }
+        _ctx = ctx;
+        _ctx.incEnumCount();
+        this.isLookedUpCtx = isLookedUpCtx;
+        _env = env;
+        _bindingList = new BindingListHolder();
+        BindingIteratorHolder _bindingIterH = new BindingIteratorHolder();
+
+        // Perform listing and request that bindings be returned in _bindingIter
+        // Upon return,_bindingList returns a zero length list
+        _ctx._nc.list(0, _bindingList, _bindingIterH);
+
+        _bindingIter = _bindingIterH.value;
+
+        // Get first batch using _bindingIter
+        if (_bindingIter != null) {
+            more = _bindingIter.next_n(batchsize, _bindingList);
+        } else {
+            more = false;
+        }
+        counter = 0;
+    }
+
+    /**
+     * Returns the next binding in the list.
+     * @exception NamingException any naming exception.
+     */
+
+    public javax.naming.Binding next() throws NamingException {
+        if (more && counter >= _bindingList.value.length) {
+            getMore();
+        }
+        if (more && counter < _bindingList.value.length) {
+            org.omg.CosNaming.Binding bndg = _bindingList.value[counter];
+            counter++;
+            return mapBinding(bndg);
+        } else {
+            throw new NoSuchElementException();
         }
     }
-    _ctx = ctx;
-    _ctx.incEnumCount();
-    this.isLookedUpCtx = isLookedUpCtx;
-    _env = env;
-    _bindingList = new BindingListHolder();
-    BindingIteratorHolder _bindingIterH = new BindingIteratorHolder();
 
-    // Perform listing and request that bindings be returned in _bindingIter
-    // Upon return,_bindingList returns a zero length list
-    _ctx._nc.list(0, _bindingList, _bindingIterH);
 
-    _bindingIter = _bindingIterH.value;
+    /**
+    * Returns true or false depending on whether there are more bindings.
+    * @return boolean value
+    */
 
-    // Get first batch using _bindingIter
-    if (_bindingIter != null) {
-        more = _bindingIter.next_n(batchsize, _bindingList);
-    } else {
-        more = false;
+    public boolean hasMore() throws NamingException {
+        // If there's more, check whether current bindingList has been exhausted,
+        // and if so, try to get more.
+        // If no more, just say so.
+        return more ? (counter < _bindingList.value.length || getMore()) : false;
     }
-    counter = 0;
-  }
 
-  /**
-    * Returns the next binding in the list.
-    * @exception NamingException any naming exception.
-    */
+    /**
+     * Returns true or false depending on whether there are more bindings.
+     * Need to define this to satisfy the Enumeration api requirement.
+     * @return boolean value
+     */
 
-  public java.lang.Object next() throws NamingException {
-      if (more && counter >= _bindingList.value.length) {
-          getMore();
-      }
-      if (more && counter < _bindingList.value.length) {
-          org.omg.CosNaming.Binding bndg = _bindingList.value[counter];
-          counter++;
-          return mapBinding(bndg);
-      } else {
-          throw new NoSuchElementException();
-      }
-  }
+    public boolean hasMoreElements() {
+        try {
+            return hasMore();
+        } catch (NamingException e) {
+            return false;
+        }
+    }
 
-
-  /**
-    * Returns true or false depending on whether there are more bindings.
-    * @return boolean value
-    */
-
-  public boolean hasMore() throws NamingException {
-      // If there's more, check whether current bindingList has been exhausted,
-      // and if so, try to get more.
-      // If no more, just say so.
-      return more ? (counter < _bindingList.value.length || getMore()) : false;
-  }
-
-  /**
-    * Returns true or false depending on whether there are more bindings.
-    * Need to define this to satisfy the Enumeration api requirement.
-    * @return boolean value
-    */
-
-  public boolean hasMoreElements() {
-      try {
-          return hasMore();
-      } catch (NamingException e) {
-          return false;
-      }
-  }
-
-  /**
+    /**
     * Returns the next binding in the list.
     * @exception NoSuchElementException Thrown when the end of the
     * list is reached.
     */
 
-    public java.lang.Object nextElement() {
+    public javax.naming.Binding nextElement() {
         try {
             return next();
         } catch (NamingException ne) {
             throw new NoSuchElementException();
         }
-  }
+    }
 
     public void close() throws NamingException {
         more = false;
@@ -197,7 +196,7 @@ final class CNBindingEnumeration implements NamingEnumeration {
         return more;
     }
 
-  /**
+    /**
     * Constructs a JNDI Binding object from the COS Naming binding
     * object.
     * @exception NameNotFound No objects under the name.
@@ -232,5 +231,5 @@ final class CNBindingEnumeration implements NamingEnumeration {
         String fullName = CNNameParser.cosNameToInsString(comps);
         jbndg.setNameInNamespace(fullName);
         return jbndg;
-  }
+    }
 }

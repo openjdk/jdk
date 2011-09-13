@@ -56,6 +56,7 @@ public class LocaleCategory {
                                   Locale.getDefault().getVariant())).build();
             checkDefault();
             testGetSetDefault();
+            testBug7079486();
         } finally {
             // restore the reserved locale
             Locale.setDefault(reservedLocale);
@@ -80,6 +81,25 @@ public class LocaleCategory {
         if (!Locale.CHINA.equals(Locale.getDefault(Locale.Category.DISPLAY)) ||
             !Locale.CHINA.equals(Locale.getDefault(Locale.Category.FORMAT))) {
             throw new RuntimeException("setDefault() should set all default locales for all categories");
+        }
+    }
+
+    static void testBug7079486() {
+        Locale zh_Hans_CN = Locale.forLanguageTag("zh-Hans-CN");
+
+        // make sure JRE has zh_Hans_CN localized string
+        if (zh_Hans_CN.getDisplayScript(Locale.US).equals(zh_Hans_CN.getDisplayScript(zh_Hans_CN))) {
+            return;
+        }
+
+        Locale.setDefault(Locale.US);
+        String en_script = zh_Hans_CN.getDisplayScript();
+
+        Locale.setDefault(Locale.Category.DISPLAY, zh_Hans_CN);
+        String zh_script = zh_Hans_CN.getDisplayScript();
+
+        if (en_script.equals(zh_script)) {
+            throw new RuntimeException("Locale.getDisplayScript() (no args) does not honor default DISPLAY locale");
         }
     }
 }

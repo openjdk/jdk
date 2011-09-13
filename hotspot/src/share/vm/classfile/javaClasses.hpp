@@ -393,6 +393,9 @@ class java_lang_Throwable: AllStatic {
     hc_cause_offset         =  2,  // New since 1.4
     hc_stackTrace_offset    =  3   // New since 1.4
   };
+  enum {
+      hc_static_unassigned_stacktrace_offset = 0  // New since 1.7
+  };
   // Trace constants
   enum {
     trace_methods_offset = 0,
@@ -406,6 +409,7 @@ class java_lang_Throwable: AllStatic {
   static int detailMessage_offset;
   static int cause_offset;
   static int stackTrace_offset;
+  static int static_unassigned_stacktrace_offset;
 
   // Printing
   static char* print_stack_element_to_buffer(methodOop method, int bci);
@@ -414,6 +418,9 @@ class java_lang_Throwable: AllStatic {
   static void clear_stacktrace(oop throwable);
   // No stack trace available
   static const char* no_stack_trace_message();
+  // Stacktrace (post JDK 1.7.0 to allow immutability protocol to be followed)
+  static void set_stacktrace(oop throwable, oop st_element_array);
+  static oop unassigned_stacktrace();
 
  public:
   // Backtrace
@@ -438,7 +445,6 @@ class java_lang_Throwable: AllStatic {
   static void allocate_backtrace(Handle throwable, TRAPS);
   // Fill in current stack trace for throwable with preallocated backtrace (no GC)
   static void fill_in_stack_trace_of_preallocated_backtrace(Handle throwable);
-
   // Fill in current stack trace, can cause GC
   static void fill_in_stack_trace(Handle throwable, methodHandle method, TRAPS);
   static void fill_in_stack_trace(Handle throwable, methodHandle method = methodHandle());

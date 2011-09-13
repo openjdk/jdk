@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import com.sun.jndi.cosnaming.CorbanameUrl;
 public class iiopURLContext
         extends com.sun.jndi.toolkit.url.GenericURLContext {
 
-    iiopURLContext(Hashtable env) {
+    iiopURLContext(Hashtable<?,?> env) {
         super(env);
     }
 
@@ -56,7 +56,7 @@ public class iiopURLContext
       * context on for the ORB at 'localhost' on port 900,
       * and returns as the remaining name "rest/of/name".
       */
-    protected ResolveResult getRootURLContext(String name, Hashtable env)
+    protected ResolveResult getRootURLContext(String name, Hashtable<?,?> env)
     throws NamingException {
         return iiopURLContextFactory.getUsingURLIgnoreRest(name, env);
     }

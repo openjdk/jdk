@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,44 +147,50 @@ public class PostThruProxy {
     static String postMsg = "Testing HTTP post on a https server";
 
     static void doClientSide(String hostname) throws Exception {
-        /*
-         * setup up a proxy
-         */
-        setupProxy();
-
-        /*
-         * we want to avoid URLspoofCheck failures in cases where the cert
-         * DN name does not match the hostname in the URL.
-         */
-        HttpsURLConnection.setDefaultHostnameVerifier(
-                                      new NameVerifier());
-        URL url = new URL("https://" + hostname+ ":" + serverPort);
-
-        HttpsURLConnection https = (HttpsURLConnection)url.openConnection();
-        https.setDoOutput(true);
-        https.setRequestMethod("POST");
-        PrintStream ps = null;
+        HostnameVerifier reservedHV =
+            HttpsURLConnection.getDefaultHostnameVerifier();
         try {
-           ps = new PrintStream(https.getOutputStream());
-           ps.println(postMsg);
-           ps.flush();
-           if (https.getResponseCode() != 200) {
-                throw new RuntimeException("test Failed");
-           }
-           ps.close();
+            /*
+             * setup up a proxy
+             */
+            setupProxy();
 
-           // clear the pipe
-           BufferedReader in = new BufferedReader(
-                                new InputStreamReader(
-                                https.getInputStream()));
-           String inputLine;
-           while ((inputLine = in.readLine()) != null)
-                System.out.println("Client received: " + inputLine);
-           in.close();
-        } catch (SSLException e) {
-            if (ps != null)
-                ps.close();
-            throw e;
+            /*
+             * we want to avoid URLspoofCheck failures in cases where the cert
+             * DN name does not match the hostname in the URL.
+             */
+            HttpsURLConnection.setDefaultHostnameVerifier(
+                                          new NameVerifier());
+            URL url = new URL("https://" + hostname+ ":" + serverPort);
+
+            HttpsURLConnection https = (HttpsURLConnection)url.openConnection();
+            https.setDoOutput(true);
+            https.setRequestMethod("POST");
+            PrintStream ps = null;
+            try {
+               ps = new PrintStream(https.getOutputStream());
+               ps.println(postMsg);
+               ps.flush();
+               if (https.getResponseCode() != 200) {
+                    throw new RuntimeException("test Failed");
+               }
+               ps.close();
+
+               // clear the pipe
+               BufferedReader in = new BufferedReader(
+                                    new InputStreamReader(
+                                    https.getInputStream()));
+               String inputLine;
+               while ((inputLine = in.readLine()) != null)
+                    System.out.println("Client received: " + inputLine);
+               in.close();
+            } catch (SSLException e) {
+                if (ps != null)
+                    ps.close();
+                throw e;
+            }
+        } finally {
+            HttpsURLConnection.setDefaultHostnameVerifier(reservedHV);
         }
     }
 

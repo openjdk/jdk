@@ -255,7 +255,7 @@ ProjNode* PhaseIdealLoop::create_slow_version_of_loop(IdealLoopTree *loop,
   _igvn._worklist.push(head);
 
   // Slow (false) control
-  Node* ifslow_pred = move_loop_predicates(entry, ifslow, !counted_loop);
+  Node* ifslow_pred = clone_loop_predicates(entry, ifslow, !counted_loop);
   LoopNode* slow_head = old_new[head->_idx]->as_Loop();
   _igvn.hash_delete(slow_head);
   slow_head->set_req(LoopNode::EntryControl, ifslow_pred);

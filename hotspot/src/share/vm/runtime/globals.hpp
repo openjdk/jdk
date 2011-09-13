@@ -1205,6 +1205,9 @@ class CommandLineFlags {
   product(bool, UseUnalignedLoadStores, false,                              \
           "Use SSE2 MOVDQU instruction for Arraycopy")                      \
                                                                             \
+  product(bool, UseCBCond, false,                                           \
+          "Use compare and branch instruction on SPARC")                    \
+                                                                            \
   product(intx, FieldsAllocationStyle, 1,                                   \
           "0 - type based with oops first, 1 - with oops last, "            \
           "2 - oops in super and sub classes are together")                 \
@@ -2894,8 +2897,11 @@ class CommandLineFlags {
   product(intx,  AllocatePrefetchDistance, -1,                              \
           "Distance to prefetch ahead of allocation pointer")               \
                                                                             \
-  product(intx,  AllocatePrefetchLines, 1,                                  \
-          "Number of lines to prefetch ahead of allocation pointer")        \
+  product(intx,  AllocatePrefetchLines, 3,                                  \
+          "Number of lines to prefetch ahead of array allocation pointer")  \
+                                                                            \
+  product(intx,  AllocateInstancePrefetchLines, 1,                          \
+          "Number of lines to prefetch ahead of instance allocation pointer") \
                                                                             \
   product(intx,  AllocatePrefetchStepSize, 16,                              \
           "Step size in bytes of sequential prefetch instructions")         \

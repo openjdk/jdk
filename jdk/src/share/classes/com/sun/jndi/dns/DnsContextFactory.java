@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class DnsContextFactory implements InitialContextFactory {
 
     public Context getInitialContext(Hashtable<?,?> env) throws NamingException {
         if (env == null) {
-            env = new Hashtable(5);
+            env = new Hashtable<>(5);
         }
         return urlToContext(getInitCtxUrl(env), env);
     }
@@ -75,7 +75,7 @@ public class DnsContextFactory implements InitialContextFactory {
      * components are overridden by "domain".
      */
     public static DnsContext getContext(String domain,
-                                        DnsUrl[] urls, Hashtable env)
+                                        DnsUrl[] urls, Hashtable<?,?> env)
             throws NamingException {
 
         String[] servers = serversForUrls(urls);
@@ -95,7 +95,7 @@ public class DnsContextFactory implements InitialContextFactory {
                 ).isEmpty();
     }
 
-    private static Context urlToContext(String url, Hashtable env)
+    private static Context urlToContext(String url, Hashtable<?,?> env)
             throws NamingException {
 
         DnsUrl[] urls;
@@ -212,7 +212,7 @@ public class DnsContextFactory implements InitialContextFactory {
      * Reads environment to find URL(s) of initial context.
      * Default URL is "dns:".
      */
-    private static String getInitCtxUrl(Hashtable env) {
+    private static String getInitCtxUrl(Hashtable<?,?> env) {
         String url = (String) env.get(Context.PROVIDER_URL);
         return ((url != null) ? url : DEFAULT_URL);
     }
@@ -223,34 +223,31 @@ public class DnsContextFactory implements InitialContextFactory {
      * @param oneIsEnough return output once there exists one ok
      * @return the filtered list, all non-permitted input removed
      */
-    private static List filterNameServers(List input, boolean oneIsEnough) {
+    private static List<String> filterNameServers(List<String> input, boolean oneIsEnough) {
         SecurityManager security = System.getSecurityManager();
         if (security == null || input == null || input.isEmpty()) {
             return input;
         } else {
-            List output = new ArrayList();
-            for (Object o: input) {
-                if (o instanceof String) {
-                    String platformServer = (String)o;
-                    int colon = platformServer.indexOf(':',
-                            platformServer.indexOf(']') + 1);
+            List<String> output = new ArrayList<>();
+            for (String platformServer: input) {
+                int colon = platformServer.indexOf(':',
+                        platformServer.indexOf(']') + 1);
 
-                    int p = (colon < 0)
-                        ? DEFAULT_PORT
-                        : Integer.parseInt(
-                            platformServer.substring(colon + 1));
-                    String s = (colon < 0)
-                        ? platformServer
-                        : platformServer.substring(0, colon);
-                    try {
-                        security.checkConnect(s, p);
-                        output.add(platformServer);
-                        if (oneIsEnough) {
-                            return output;
-                        }
-                    } catch (SecurityException se) {
-                        continue;
+                int p = (colon < 0)
+                    ? DEFAULT_PORT
+                    : Integer.parseInt(
+                        platformServer.substring(colon + 1));
+                String s = (colon < 0)
+                    ? platformServer
+                    : platformServer.substring(0, colon);
+                try {
+                    security.checkConnect(s, p);
+                    output.add(platformServer);
+                    if (oneIsEnough) {
+                        return output;
                     }
+                } catch (SecurityException se) {
+                    continue;
                 }
             }
             return output;

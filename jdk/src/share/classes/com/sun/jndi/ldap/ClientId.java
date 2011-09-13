@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.jndi.ldap;
 
+import java.util.Locale;
 import java.util.Arrays; // JDK 1.2
 import java.io.OutputStream;
 import javax.naming.ldap.Control;
@@ -71,10 +72,10 @@ class ClientId {
     ClientId(int version, String hostname, int port, String protocol,
             Control[] bindCtls, OutputStream trace, String socketFactory) {
         this.version = version;
-        this.hostname = hostname.toLowerCase();  // ignore case
+        this.hostname = hostname.toLowerCase(Locale.ENGLISH);  // ignore case
         this.port = port;
         this.protocol = protocol;
-        this.bindCtls = (bindCtls != null ? (Control[]) bindCtls.clone() : null);
+        this.bindCtls = (bindCtls != null ? bindCtls.clone() : null);
         this.trace = trace;
         //
         // Needed for custom socket factory pooling
@@ -83,13 +84,15 @@ class ClientId {
         if ((socketFactory != null) &&
              !socketFactory.equals(LdapCtx.DEFAULT_SSL_FACTORY)) {
             try {
-                Class socketFactoryClass = Obj.helper.loadClass(socketFactory);
-                Class objClass = Class.forName("java.lang.Object");
+                Class<?> socketFactoryClass =
+                        Obj.helper.loadClass(socketFactory);
+                Class<?> objClass = Class.forName("java.lang.Object");
                 this.sockComparator = socketFactoryClass.getMethod(
-                                "compare", new Class[]{objClass, objClass});
-                Method getDefault =
-                    socketFactoryClass.getMethod("getDefault", new Class[]{});
-                this.factory = (SocketFactory) getDefault.invoke(null, new Object[]{});
+                                "compare", new Class<?>[]{objClass, objClass});
+                Method getDefault = socketFactoryClass.getMethod(
+                                            "getDefault", new Class<?>[]{});
+                this.factory =
+                        (SocketFactory)getDefault.invoke(null, new Object[]{});
             } catch (Exception e) {
                 // Ignore it here, the same exceptions are/will be handled by
                 // LdapPoolManager and Connection classes.
