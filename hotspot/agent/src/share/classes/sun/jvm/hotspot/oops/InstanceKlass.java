@@ -513,10 +513,9 @@ public class InstanceKlass extends Klass {
   void iterateStaticFieldsInternal(OopVisitor visitor) {
     TypeArray fields = getFields();
     int length = getJavaFieldsCount();
-    for (int index = 0; index < length; index += FIELD_SLOTS) {
-      short accessFlags    = fields.getShortAt(index + ACCESS_FLAGS_OFFSET);
-      short signatureIndex = fields.getShortAt(index + SIGNATURE_INDEX_OFFSET);
-      FieldType   type   = new FieldType(getConstants().getSymbolAt(signatureIndex));
+    for (int index = 0; index < length; index++) {
+      short accessFlags    = getFieldAccessFlags(index);
+      FieldType   type   = new FieldType(getFieldSignature(index));
       AccessFlags access = new AccessFlags(accessFlags);
       if (access.isStatic()) {
         visitField(visitor, type, index);
@@ -545,11 +544,9 @@ public class InstanceKlass extends Klass {
     TypeArray fields = getFields();
 
     int length = getJavaFieldsCount();
-    for (int index = 0; index < length; index += FIELD_SLOTS) {
-      short accessFlags    = fields.getShortAt(index + ACCESS_FLAGS_OFFSET);
-      short signatureIndex = fields.getShortAt(index + SIGNATURE_INDEX_OFFSET);
-
-      FieldType   type   = new FieldType(getConstants().getSymbolAt(signatureIndex));
+    for (int index = 0; index < length; index++) {
+      short accessFlags    = getFieldAccessFlags(index);
+      FieldType   type   = new FieldType(getFieldSignature(index));
       AccessFlags access = new AccessFlags(accessFlags);
       if (!access.isStatic()) {
         visitField(visitor, type, index);
@@ -562,11 +559,9 @@ public class InstanceKlass extends Klass {
     TypeArray fields = getFields();
     int length = (int) fields.getLength();
     ConstantPool cp = getConstants();
-    for (int i = 0; i < length; i += FIELD_SLOTS) {
-      int nameIndex = fields.getShortAt(i + NAME_INDEX_OFFSET);
-      int sigIndex  = fields.getShortAt(i + SIGNATURE_INDEX_OFFSET);
-      Symbol f_name = cp.getSymbolAt(nameIndex);
-      Symbol f_sig  = cp.getSymbolAt(sigIndex);
+    for (int i = 0; i < length; i++) {
+      Symbol f_name = getFieldName(i);
+      Symbol f_sig  = getFieldSignature(i);
       if (name.equals(f_name) && sig.equals(f_sig)) {
         return newField(i);
       }
@@ -641,8 +636,8 @@ public class InstanceKlass extends Klass {
 
   /** Get field by its index in the fields array. Only designed for
       use in a debugging system. */
-  public Field getFieldByIndex(int fieldArrayIndex) {
-    return newField(fieldArrayIndex);
+  public Field getFieldByIndex(int fieldIndex) {
+    return newField(fieldIndex);
   }
 
 
@@ -657,7 +652,7 @@ public class InstanceKlass extends Klass {
 
         int length = getJavaFieldsCount();
         List immediateFields = new ArrayList(length);
-        for (int index = 0; index < length; index += FIELD_SLOTS) {
+        for (int index = 0; index < length; index++) {
             immediateFields.add(getFieldByIndex(index));
         }
 
@@ -845,8 +840,7 @@ public class InstanceKlass extends Klass {
   // Creates new field from index in fields TypeArray
   private Field newField(int index) {
     TypeArray fields = getFields();
-    short signatureIndex = fields.getShortAt(index + SIGNATURE_INDEX_OFFSET);
-    FieldType type = new FieldType(getConstants().getSymbolAt(signatureIndex));
+    FieldType type = new FieldType(getFieldSignature(index));
     if (type.isOop()) {
      if (VM.getVM().isCompressedOopsEnabled()) {
         return new NarrowOopField(this, index);

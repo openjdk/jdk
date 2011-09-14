@@ -310,7 +310,7 @@ public class VM {
         usingServerCompiler = false;
       } else {
         // Determine whether C2 is present
-        if (type.getField("_interpreter_invocation_count", false, false) != null) {
+        if (db.lookupType("Matcher", false) != null) {
           usingServerCompiler = true;
         } else {
           usingClientCompiler = true;
