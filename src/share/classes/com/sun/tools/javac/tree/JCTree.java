@@ -538,21 +538,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             super.setPos(pos);
             return this;
         }
-
-        /** Convert a statement tree to a pretty-printed string. */
-        @Override
-        public String toString() {
-            StringWriter s = new StringWriter();
-            try {
-                new Pretty(s, false).printStat(this);
-            }
-            catch (IOException e) {
-                // should never happen, because StringWriter is defined
-                // never to throw any IOExceptions
-                throw new AssertionError(e);
-            }
-            return s.toString();
-        }
     }
 
     public static abstract class JCExpression extends JCTree implements ExpressionTree {
@@ -1190,6 +1175,21 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public int getTag() {
             return EXEC;
+        }
+
+        /** Convert a expression-statement tree to a pretty-printed string. */
+        @Override
+        public String toString() {
+            StringWriter s = new StringWriter();
+            try {
+                new Pretty(s, false).printStat(this);
+            }
+            catch (IOException e) {
+                // should never happen, because StringWriter is defined
+                // never to throw any IOExceptions
+                throw new AssertionError(e);
+            }
+            return s.toString();
         }
     }
 
