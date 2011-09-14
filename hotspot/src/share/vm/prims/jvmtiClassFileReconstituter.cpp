@@ -58,7 +58,7 @@ void JvmtiClassFileReconstituter::write_field_infos() {
   // Compute the real number of Java fields
   int java_fields = ikh()->java_fields_count();
 
-  write_u2(java_fields * FieldInfo::field_slots);
+  write_u2(java_fields);
   for (JavaFieldStream fs(ikh()); !fs.done(); fs.next()) {
     AccessFlags access_flags = fs.access_flags();
     int name_index = fs.name_index();
