@@ -1107,7 +1107,7 @@ static int edge_order(CFGEdge **e0, CFGEdge **e1) {
 
 //------------------------------trace_frequency_order--------------------------
 // Comparison function for edges
-static int trace_frequency_order(const void *p0, const void *p1) {
+extern "C" int trace_frequency_order(const void *p0, const void *p1) {
   Trace *tr0 = *(Trace **) p0;
   Trace *tr1 = *(Trace **) p1;
   Block *b0 = tr0->first_block();

@@ -45,7 +45,7 @@
 #endif
 
 template <class T>
-static void specialized_oop_follow_contents(instanceRefKlass* ref, oop obj) {
+void specialized_oop_follow_contents(instanceRefKlass* ref, oop obj) {
   T* referent_addr = (T*)java_lang_ref_Reference::referent_addr(obj);
   T heap_oop = oopDesc::load_heap_oop(referent_addr);
   debug_only(
@@ -99,7 +99,7 @@ static void specialized_oop_follow_contents(instanceRefKlass* ref, oop obj) {
     oop discovered = java_lang_ref_Reference::discovered(obj);
     assert(oopDesc::is_null(next) || oopDesc::is_null(discovered),
            err_msg("Found an inactive reference " PTR_FORMAT " with a non-NULL discovered field",
-                   obj));
+                   (oopDesc*)obj));
 #endif
   }
   // treat next as normal oop.  next is a link in the reference queue.
@@ -179,7 +179,7 @@ void specialized_oop_follow_contents(instanceRefKlass* ref,
     oop discovered = java_lang_ref_Reference::discovered(obj);
     assert(oopDesc::is_null(next) || oopDesc::is_null(discovered),
            err_msg("Found an inactive reference " PTR_FORMAT " with a non-NULL discovered field",
-                   obj));
+                   (oopDesc*)obj));
 #endif
   }
   PSParallelCompact::mark_and_push(cm, next_addr);
@@ -285,7 +285,7 @@ int instanceRefKlass::oop_adjust_pointers(oop obj) {
       T disc_oop = oopDesc::load_heap_oop(disc_addr);                           \
       assert(oopDesc::is_null(next_oop) || oopDesc::is_null(disc_oop),          \
            err_msg("Found an inactive reference " PTR_FORMAT " with a non-NULL" \
-                   "discovered field", obj));                                   \
+                   "discovered field", (oopDesc*)obj));                                   \
     )                                                                           \
   }                                                                             \
   /* treat next as normal oop */                                                \
@@ -403,7 +403,7 @@ void specialized_oop_push_contents(instanceRefKlass *ref,
     oop discovered = java_lang_ref_Reference::discovered(obj);
     assert(oopDesc::is_null(next) || oopDesc::is_null(discovered),
            err_msg("Found an inactive reference " PTR_FORMAT " with a non-NULL discovered field",
-                   obj));
+                   (oopDesc*)obj));
 #endif
   }
 

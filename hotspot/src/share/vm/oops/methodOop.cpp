@@ -1268,10 +1268,17 @@ static void reorder_based_on_method_index(objArrayOop methods,
 
 // Comparer for sorting an object array containing
 // methodOops.
-template <class T>
-static int method_comparator(T a, T b) {
+// Used non-template method_comparator methods since
+// Visual Studio 2003 compiler generates incorrect
+// optimized code for it.
+static int method_comparator_narrowOop(narrowOop a, narrowOop b) {
   methodOop m = (methodOop)oopDesc::decode_heap_oop_not_null(a);
   methodOop n = (methodOop)oopDesc::decode_heap_oop_not_null(b);
+  return m->name()->fast_compare(n->name());
+}
+static int method_comparator_oop(oop a, oop b) {
+  methodOop m = (methodOop)a;
+  methodOop n = (methodOop)b;
   return m->name()->fast_compare(n->name());
 }
 
@@ -1299,9 +1306,9 @@ void methodOopDesc::sort_methods(objArrayOop methods,
     {
       No_Safepoint_Verifier nsv;
       if (UseCompressedOops) {
-        QuickSort::sort<narrowOop>((narrowOop*)(methods->base()), length, method_comparator<narrowOop>, idempotent);
+        QuickSort::sort<narrowOop>((narrowOop*)(methods->base()), length, method_comparator_narrowOop, idempotent);
       } else {
-        QuickSort::sort<oop>((oop*)(methods->base()), length, method_comparator<oop>, idempotent);
+        QuickSort::sort<oop>((oop*)(methods->base()), length, method_comparator_oop, idempotent);
       }
       if (UseConcMarkSweepGC) {
         // For CMS we need to dirty the cards for the array
