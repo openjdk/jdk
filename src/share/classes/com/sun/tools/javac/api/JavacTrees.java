@@ -65,6 +65,7 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeCopier;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
+import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.List;
@@ -263,9 +264,10 @@ public class JavacTrees extends Trees {
         if (!(path.getLeaf() instanceof JCTree))  // implicit null-check
             throw new IllegalArgumentException();
 
-        // if we're being invoked via from a JSR199 client, we need to make sure
-        // all the classes have been entered; if we're being invoked from JSR269,
-        // then the classes will already have been entered.
+        // if we're being invoked from a Tree API client via parse/enter/analyze,
+        // we need to make sure all the classes have been entered;
+        // if we're being invoked from JSR 199 or JSR 269, then the classes
+        // will already have been entered.
         if (javacTaskImpl != null) {
             try {
                 javacTaskImpl.enter(null);
@@ -313,10 +315,19 @@ public class JavacTrees extends Trees {
                     break;
                 case BLOCK: {
 //                    System.err.println("BLOCK: ");
-                    if (method != null)
-                        env = memberEnter.getMethodEnv(method, env);
-                    JCTree body = copier.copy((JCTree)tree, (JCTree) path.getLeaf());
-                    env = attribStatToTree(body, env, copier.leafCopy);
+                    if (method != null) {
+                        try {
+                            Assert.check(method.body == tree);
+                            method.body = copier.copy((JCBlock)tree, (JCTree) path.getLeaf());
+                            env = memberEnter.getMethodEnv(method, env);
+                            env = attribStatToTree(method.body, env, copier.leafCopy);
+                        } finally {
+                            method.body = (JCBlock) tree;
+                        }
+                    } else {
+                        JCBlock body = copier.copy((JCBlock)tree, (JCTree) path.getLeaf());
+                        env = attribStatToTree(body, env, copier.leafCopy);
+                    }
                     return env;
                 }
                 default:
@@ -329,7 +340,7 @@ public class JavacTrees extends Trees {
                     }
             }
         }
-        return field != null ? memberEnter.getInitEnv(field, env) : env;
+        return (field != null) ? memberEnter.getInitEnv(field, env) : env;
     }
 
     private Env<AttrContext> attribStatToTree(JCTree stat, Env<AttrContext>env, JCTree tree) {
