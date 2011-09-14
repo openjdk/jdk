@@ -31,7 +31,8 @@ InstructForm::InstructForm(const char *id, bool ideal_only)
   : _ident(id), _ideal_only(ideal_only),
     _localNames(cmpstr, hashstr, Form::arena),
     _effects(cmpstr, hashstr, Form::arena),
-    _is_mach_constant(false)
+    _is_mach_constant(false),
+    _has_call(false)
 {
       _ftype = Form::INS;
 
@@ -62,7 +63,8 @@ InstructForm::InstructForm(const char *id, InstructForm *instr, MatchRule *rule)
   : _ident(id), _ideal_only(false),
     _localNames(instr->_localNames),
     _effects(instr->_effects),
-    _is_mach_constant(false)
+    _is_mach_constant(false),
+    _has_call(false)
 {
       _ftype = Form::INS;
 
@@ -1754,6 +1756,7 @@ static int effect_lookup(const char *name) {
   if(!strcmp(name, "USE_KILL")) return Component::USE_KILL;
   if(!strcmp(name, "TEMP")) return Component::TEMP;
   if(!strcmp(name, "INVALID")) return Component::INVALID;
+  if(!strcmp(name, "CALL")) return Component::CALL;
   assert( false,"Invalid effect name specified\n");
   return Component::INVALID;
 }

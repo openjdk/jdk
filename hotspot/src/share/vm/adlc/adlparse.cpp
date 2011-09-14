@@ -3818,7 +3818,7 @@ void ADLParser::effect_parse(InstructForm *instr) {
     return;
   }
   // Get list of effect-operand pairs and insert into dictionary
-  else get_effectlist(instr->_effects, instr->_localNames);
+  else get_effectlist(instr->_effects, instr->_localNames, instr->_has_call);
 
   // Debug Stuff
   if (_AD._adl_debug > 1) fprintf(stderr,"Effect description: %s\n", desc);
@@ -4596,7 +4596,7 @@ void ADLParser::get_oplist(NameList &parameters, FormDict &operands) {
 // effect, and the second must be the name of an operand defined in the
 // operand list of this instruction.  Stores the names with a pointer to the
 // effect form in a local effects table.
-void ADLParser::get_effectlist(FormDict &effects, FormDict &operands) {
+void ADLParser::get_effectlist(FormDict &effects, FormDict &operands, bool& has_call) {
   OperandForm *opForm;
   Effect      *eForm;
   char        *ident;
@@ -4629,26 +4629,31 @@ void ADLParser::get_effectlist(FormDict &effects, FormDict &operands) {
       // Debugging Stuff
     if (_AD._adl_debug > 1) fprintf(stderr, "\tEffect Type: %s\t", ident);
     skipws();
-    // Get name of operand and check that it is in the local name table
-    if( (ident = get_unique_ident(effects, "effect")) == NULL) {
-      parse_err(SYNERR, "missing operand identifier in effect list\n");
-      return;
-    }
-    const Form *form = operands[ident];
-    opForm = form ? form->is_operand() : NULL;
-    if( opForm == NULL ) {
-      if( form && form->is_opclass() ) {
-        const char* cname = form->is_opclass()->_ident;
-        parse_err(SYNERR, "operand classes are illegal in effect lists (found %s %s)\n", cname, ident);
-      } else {
-        parse_err(SYNERR, "undefined operand %s in effect list\n", ident);
+    if (eForm->is(Component::CALL)) {
+      if (_AD._adl_debug > 1) fprintf(stderr, "\n");
+      has_call = true;
+    } else {
+      // Get name of operand and check that it is in the local name table
+      if( (ident = get_unique_ident(effects, "effect")) == NULL) {
+        parse_err(SYNERR, "missing operand identifier in effect list\n");
+        return;
       }
-      return;
+      const Form *form = operands[ident];
+      opForm = form ? form->is_operand() : NULL;
+      if( opForm == NULL ) {
+        if( form && form->is_opclass() ) {
+          const char* cname = form->is_opclass()->_ident;
+          parse_err(SYNERR, "operand classes are illegal in effect lists (found %s %s)\n", cname, ident);
+        } else {
+          parse_err(SYNERR, "undefined operand %s in effect list\n", ident);
+        }
+        return;
+      }
+      // Add the pair to the effects table
+      effects.Insert(ident, eForm);
+      // Debugging Stuff
+      if (_AD._adl_debug > 1) fprintf(stderr, "\tOperand Name: %s\n", ident);
     }
-    // Add the pair to the effects table
-    effects.Insert(ident, eForm);
-    // Debugging Stuff
-    if (_AD._adl_debug > 1) fprintf(stderr, "\tOperand Name: %s\n", ident);
     skipws();
   } while(_curchar == ',');
 
