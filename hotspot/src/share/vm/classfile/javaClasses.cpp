@@ -2701,7 +2701,7 @@ void java_lang_invoke_CallSite::compute_offsets() {
     instanceKlass* ik = instanceKlass::cast(k);
     methodOop m_normal   = ik->lookup_method(vmSymbols::setTargetNormal_name(),   vmSymbols::setTarget_signature());
     methodOop m_volatile = ik->lookup_method(vmSymbols::setTargetVolatile_name(), vmSymbols::setTarget_signature());
-    guarantee(m_normal && m_volatile, "must exist");
+    guarantee(m_normal != NULL && m_volatile != NULL, "must exist");
     m_normal->set_not_compilable_quietly();
     m_volatile->set_not_compilable_quietly();
   }

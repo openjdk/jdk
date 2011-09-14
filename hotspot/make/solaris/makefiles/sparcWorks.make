@@ -148,6 +148,9 @@ endif
 # -DDONT_USE_PRECOMPILED_HEADER will exclude all includes in precompiled.hpp.
 CFLAGS += -DDONT_USE_PRECOMPILED_HEADER
 
+# Compiler warnings are treated as errors
+CFLAGS_WARN = -xwe
+
 ################################################
 # Begin current (>=5.9) Forte compiler options #
 #################################################
