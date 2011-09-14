@@ -515,11 +515,12 @@ class MethodHandles: AllStatic {
   }
   // Here is the transformation the i2i adapter must perform:
   static int truncate_subword_from_vminfo(jint value, int vminfo) {
-    jint tem = value << vminfo;
+    int shift = vminfo & ~CONV_VMINFO_SIGN_FLAG;
+    jint tem = value << shift;
     if ((vminfo & CONV_VMINFO_SIGN_FLAG) != 0) {
-      return (jint)tem >> vminfo;
+      return (jint)tem >> shift;
     } else {
-      return (juint)tem >> vminfo;
+      return (juint)tem >> shift;
     }
   }
 
