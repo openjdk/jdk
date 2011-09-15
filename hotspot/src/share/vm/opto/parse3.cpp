@@ -100,6 +100,14 @@ void Parse::do_field_access(bool is_get, bool is_field) {
     }
   }
 
+  // Deoptimize on putfield writes to CallSite.target
+  if (!is_get && field->is_call_site_target()) {
+    uncommon_trap(Deoptimization::Reason_unhandled,
+                  Deoptimization::Action_reinterpret,
+                  NULL, "put to CallSite.target field");
+    return;
+  }
+
   assert(field->will_link(method()->holder(), bc()), "getfield: typeflow responsibility");
 
   // Note:  We do not check for an unloaded field type here any more.

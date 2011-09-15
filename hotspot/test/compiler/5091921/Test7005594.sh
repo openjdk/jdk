@@ -43,6 +43,45 @@ fi
 echo "TESTCLASSES=${TESTCLASSES}"
 echo "CLASSPATH=${CLASSPATH}"
 
+# Amount of physical memory in megabytes
+MEM=0
+if [ -f "/proc/meminfo" ]; then
+  # Linux, Windows/Cygwin
+  MEM=`cat /proc/meminfo |grep ^MemTotal: | awk '{print $2}'`
+  MEM="$(($MEM / 1024))"
+elif [ -x "/usr/sbin/prtconf" ]; then
+  # Solaris
+  MEM=`/usr/sbin/prtconf | grep "^Memory size" | awk '{print $3}'`
+elif [ -x "/usr/sbin/system_profiler" ]; then
+  # MacOS
+  MEMo=`/usr/sbin/system_profiler SPHardwareDataType | grep Memory:`
+  MEM=`echo "$MEMo" | awk '{print $2}'`
+  MEMu=`echo "$MEMo" | awk '{print $3}'`
+  case $MEMu in
+  GB)
+    MEM="$(($MEM * 1024))"
+    ;;
+  MB)
+    ;;
+  *)
+    echo "Unknown memory unit in system_profile output: $MEMu"
+    ;;
+  esac
+elif [ -n "$ROOTDIR" -a -x "$ROOTDIR/mksnt/sysinf" ]; then
+  # Windows/MKS
+  MEM=`"$ROOTDIR/mksnt/sysinf" memory -v | grep "Total Physical Memory: " | sed 's/Total Physical Memory: *//g'`
+  MEM="$(($machine_memory / 1024))"
+else
+  echo "Unable to determine amount of physical memory on the machine"
+fi
+
+if [ $MEM -lt 2000 ]; then
+  echo "Test skipped due to low (or unknown) memory on the system: $MEM Mb"
+  exit 0
+fi
+
+echo "MEMORY=$MEM Mb"
+
 set -x
 
 cp ${TESTSRC}/Test7005594.java .
@@ -50,7 +89,7 @@ cp ${TESTSRC}/Test7005594.sh .
 
 ${TESTJAVA}/bin/javac -d . Test7005594.java
 
-${TESTJAVA}/bin/java ${TESTVMOPTS} -Xms1600m -Xcomp -XX:CompileOnly=Test7005594.test Test7005594 > test.out 2>&1
+${TESTJAVA}/bin/java ${TESTVMOPTS} -Xms1600m -XX:+IgnoreUnrecognizedVMOptions -XX:-ZapUnusedHeapArea -Xcomp -XX:CompileOnly=Test7005594.test Test7005594 > test.out 2>&1
 
 result=$?
 

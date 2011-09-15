@@ -2919,6 +2919,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * result with the opposite sign.
      *
      * @return this BigInteger converted to an {@code int}.
+     * @see #intValueExact()
      */
     public int intValue() {
         int result = 0;
@@ -2939,6 +2940,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * result with the opposite sign.
      *
      * @return this BigInteger converted to a {@code long}.
+     * @see #longValueExact()
      */
     public long longValue() {
         long result = 0;
@@ -3303,25 +3305,35 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         }
 
         // Commit final fields via Unsafe
-        unsafe.putIntVolatile(this, signumOffset, sign);
+        UnsafeHolder.putSign(this, sign);
 
         // Calculate mag field from magnitude and discard magnitude
-        unsafe.putObjectVolatile(this, magOffset,
-                                 stripLeadingZeroBytes(magnitude));
+        UnsafeHolder.putMag(this, stripLeadingZeroBytes(magnitude));
     }
 
     // Support for resetting final fields while deserializing
-    private static final sun.misc.Unsafe unsafe = sun.misc.Unsafe.getUnsafe();
-    private static final long signumOffset;
-    private static final long magOffset;
-    static {
-        try {
-            signumOffset = unsafe.objectFieldOffset
-                (BigInteger.class.getDeclaredField("signum"));
-            magOffset = unsafe.objectFieldOffset
-                (BigInteger.class.getDeclaredField("mag"));
-        } catch (Exception ex) {
-            throw new Error(ex);
+    private static class UnsafeHolder {
+        private static final sun.misc.Unsafe unsafe;
+        private static final long signumOffset;
+        private static final long magOffset;
+        static {
+            try {
+                unsafe = sun.misc.Unsafe.getUnsafe();
+                signumOffset = unsafe.objectFieldOffset
+                    (BigInteger.class.getDeclaredField("signum"));
+                magOffset = unsafe.objectFieldOffset
+                    (BigInteger.class.getDeclaredField("mag"));
+            } catch (Exception ex) {
+                throw new ExceptionInInitializerError(ex);
+            }
+        }
+
+        static void putSign(BigInteger bi, int sign) {
+            unsafe.putIntVolatile(bi, signumOffset, sign);
+        }
+
+        static void putMag(BigInteger bi, int[] magnitude) {
+            unsafe.putObjectVolatile(bi, magOffset, magnitude);
         }
     }
 
@@ -3371,5 +3383,85 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             result[i] = (byte)nextInt;
         }
         return result;
+    }
+
+    /**
+     * Converts this {@code BigInteger} to a {@code long}, checking
+     * for lost information.  If the value of this {@code BigInteger}
+     * is out of the range of the {@code long} type, then an
+     * {@code ArithmeticException} is thrown.
+     *
+     * @return this {@code BigInteger} converted to a {@code long}.
+     * @throws ArithmeticException if the value of {@code this} will
+     * not exactly fit in a {@code long}.
+     * @see BigInteger#longValue
+     * @since  1.8
+     */
+    public long longValueExact() {
+        if (mag.length <= 2 && bitLength() <= 63)
+            return longValue();
+        else
+            throw new ArithmeticException("BigInteger out of long range");
+    }
+
+    /**
+     * Converts this {@code BigInteger} to an {@code int}, checking
+     * for lost information.  If the value of this {@code BigInteger}
+     * is out of the range of the {@code int} type, then an
+     * {@code ArithmeticException} is thrown.
+     *
+     * @return this {@code BigInteger} converted to an {@code int}.
+     * @throws ArithmeticException if the value of {@code this} will
+     * not exactly fit in a {@code int}.
+     * @see BigInteger#intValue
+     * @since  1.8
+     */
+    public int intValueExact() {
+        if (mag.length <= 1 && bitLength() <= 31)
+            return intValue();
+        else
+            throw new ArithmeticException("BigInteger out of int range");
+    }
+
+    /**
+     * Converts this {@code BigInteger} to a {@code short}, checking
+     * for lost information.  If the value of this {@code BigInteger}
+     * is out of the range of the {@code short} type, then an
+     * {@code ArithmeticException} is thrown.
+     *
+     * @return this {@code BigInteger} converted to a {@code short}.
+     * @throws ArithmeticException if the value of {@code this} will
+     * not exactly fit in a {@code short}.
+     * @see BigInteger#shortValue
+     * @since  1.8
+     */
+    public short shortValueExact() {
+        if (mag.length <= 1 && bitLength() <= 31) {
+            int value = intValue();
+            if (value >= Short.MIN_VALUE && value <= Short.MAX_VALUE)
+                return shortValue();
+        }
+        throw new ArithmeticException("BigInteger out of short range");
+    }
+
+    /**
+     * Converts this {@code BigInteger} to a {@code byte}, checking
+     * for lost information.  If the value of this {@code BigInteger}
+     * is out of the range of the {@code byte} type, then an
+     * {@code ArithmeticException} is thrown.
+     *
+     * @return this {@code BigInteger} converted to a {@code byte}.
+     * @throws ArithmeticException if the value of {@code this} will
+     * not exactly fit in a {@code byte}.
+     * @see BigInteger#byteValue
+     * @since  1.8
+     */
+    public byte byteValueExact() {
+        if (mag.length <= 1 && bitLength() <= 31) {
+            int value = intValue();
+            if (value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE)
+                return byteValue();
+        }
+        throw new ArithmeticException("BigInteger out of byte range");
     }
 }

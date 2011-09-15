@@ -3715,26 +3715,28 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         }
     }
 
-    private static final sun.misc.Unsafe unsafe = sun.misc.Unsafe.getUnsafe();
-    private static final long intCompactOffset;
-    private static final long intValOffset;
-    static {
-        try {
-            intCompactOffset = unsafe.objectFieldOffset
-                (BigDecimal.class.getDeclaredField("intCompact"));
-            intValOffset = unsafe.objectFieldOffset
-                (BigDecimal.class.getDeclaredField("intVal"));
-        } catch (Exception ex) {
-            throw new Error(ex);
+    private static class UnsafeHolder {
+        private static final sun.misc.Unsafe unsafe;
+        private static final long intCompactOffset;
+        private static final long intValOffset;
+        static {
+            try {
+                unsafe = sun.misc.Unsafe.getUnsafe();
+                intCompactOffset = unsafe.objectFieldOffset
+                    (BigDecimal.class.getDeclaredField("intCompact"));
+                intValOffset = unsafe.objectFieldOffset
+                    (BigDecimal.class.getDeclaredField("intVal"));
+            } catch (Exception ex) {
+                throw new ExceptionInInitializerError(ex);
+            }
         }
-    }
+        static void setIntCompactVolatile(BigDecimal bd, long val) {
+            unsafe.putLongVolatile(bd, intCompactOffset, val);
+        }
 
-    private void setIntCompactVolatile(long val) {
-        unsafe.putLongVolatile(this, intCompactOffset, val);
-    }
-
-    private void setIntValVolatile(BigInteger val) {
-        unsafe.putObjectVolatile(this, intValOffset, val);
+        static void setIntValVolatile(BigDecimal bd, BigInteger val) {
+            unsafe.putObjectVolatile(bd, intValOffset, val);
+        }
     }
 
     /**
@@ -3753,7 +3755,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             throw new java.io.StreamCorruptedException(message);
         // [all values of scale are now allowed]
         }
-        setIntCompactVolatile(compactValFor(intVal));
+        UnsafeHolder.setIntCompactVolatile(this, compactValFor(intVal));
     }
 
    /**
@@ -3765,7 +3767,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
        throws java.io.IOException {
        // Must inflate to maintain compatible serial form.
        if (this.intVal == null)
-           this.setIntValVolatile(BigInteger.valueOf(this.intCompact));
+           UnsafeHolder.setIntValVolatile(this, BigInteger.valueOf(this.intCompact));
        // Could reset intVal back to null if it has to be set.
        s.defaultWriteObject();
    }

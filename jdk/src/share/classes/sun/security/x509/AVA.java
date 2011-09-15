@@ -1071,8 +1071,17 @@ public class AVA implements DerEncoder {
                  * to need quoting, or at least escaping.  So do leading or
                  * trailing spaces, and multiple internal spaces.
                  */
-                for (int i = 0; i < valStr.length(); i++) {
+                int length = valStr.length();
+                boolean alreadyQuoted =
+                    (length > 1 && valStr.charAt(0) == '\"'
+                     && valStr.charAt(length - 1) == '\"');
+
+                for (int i = 0; i < length; i++) {
                     char c = valStr.charAt(i);
+                    if (alreadyQuoted && (i == 0 || i == length - 1)) {
+                        sbuffer.append(c);
+                        continue;
+                    }
                     if (DerValue.isPrintableStringChar(c) ||
                         escapees.indexOf(c) >= 0) {
 
@@ -1136,7 +1145,8 @@ public class AVA implements DerEncoder {
                 }
 
                 // Emit the string ... quote it if needed
-                if (quoteNeeded) {
+                // if string is already quoted, don't re-quote
+                if (!alreadyQuoted && quoteNeeded) {
                     retval.append("\"" + sbuffer.toString() + "\"");
                 } else {
                     retval.append(sbuffer.toString());

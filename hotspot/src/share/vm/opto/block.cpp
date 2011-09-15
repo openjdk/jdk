@@ -80,35 +80,37 @@ void Block_List::print() {
 
 uint Block::code_alignment() {
   // Check for Root block
-  if( _pre_order == 0 ) return CodeEntryAlignment;
+  if (_pre_order == 0) return CodeEntryAlignment;
   // Check for Start block
-  if( _pre_order == 1 ) return InteriorEntryAlignment;
+  if (_pre_order == 1) return InteriorEntryAlignment;
   // Check for loop alignment
-  if (has_loop_alignment())  return loop_alignment();
+  if (has_loop_alignment()) return loop_alignment();
 
-  return 1;                     // no particular alignment
+  return relocInfo::addr_unit(); // no particular alignment
 }
 
 uint Block::compute_loop_alignment() {
   Node *h = head();
-  if( h->is_Loop() && h->as_Loop()->is_inner_loop() )  {
+  int unit_sz = relocInfo::addr_unit();
+  if (h->is_Loop() && h->as_Loop()->is_inner_loop())  {
     // Pre- and post-loops have low trip count so do not bother with
     // NOPs for align loop head.  The constants are hidden from tuning
     // but only because my "divide by 4" heuristic surely gets nearly
     // all possible gain (a "do not align at all" heuristic has a
     // chance of getting a really tiny gain).
-    if( h->is_CountedLoop() && (h->as_CountedLoop()->is_pre_loop() ||
-                                h->as_CountedLoop()->is_post_loop()) )
-      return (OptoLoopAlignment > 4) ? (OptoLoopAlignment>>2) : 1;
+    if (h->is_CountedLoop() && (h->as_CountedLoop()->is_pre_loop() ||
+                                h->as_CountedLoop()->is_post_loop())) {
+      return (OptoLoopAlignment > 4*unit_sz) ? (OptoLoopAlignment>>2) : unit_sz;
+    }
     // Loops with low backedge frequency should not be aligned.
     Node *n = h->in(LoopNode::LoopBackControl)->in(0);
-    if( n->is_MachIf() && n->as_MachIf()->_prob < 0.01 ) {
-      return 1;             // Loop does not loop, more often than not!
+    if (n->is_MachIf() && n->as_MachIf()->_prob < 0.01) {
+      return unit_sz; // Loop does not loop, more often than not!
     }
     return OptoLoopAlignment; // Otherwise align loop head
   }
 
-  return 1;                     // no particular alignment
+  return unit_sz; // no particular alignment
 }
 
 //-----------------------------------------------------------------------------
@@ -165,7 +167,7 @@ int Block::is_Empty() const {
   int end_idx = _nodes.size()-1;
 
   // Check for ending goto
-  if ((end_idx > 0) && (_nodes[end_idx]->is_Goto())) {
+  if ((end_idx > 0) && (_nodes[end_idx]->is_MachGoto())) {
     success_result = empty_with_goto;
     end_idx--;
   }
@@ -197,11 +199,11 @@ int Block::is_Empty() const {
 bool Block::has_uncommon_code() const {
   Node* en = end();
 
-  if (en->is_Goto())
+  if (en->is_MachGoto())
     en = en->in(0);
   if (en->is_Catch())
     en = en->in(0);
-  if (en->is_Proj() && en->in(0)->is_MachCall()) {
+  if (en->is_MachProj() && en->in(0)->is_MachCall()) {
     MachCallNode* call = en->in(0)->as_MachCall();
     if (call->cnt() != COUNT_UNKNOWN && call->cnt() <= PROB_UNLIKELY_MAG(4)) {
       // This is true for slow-path stubs like new_{instance,array},
@@ -271,55 +273,55 @@ bool Block::is_uncommon( Block_Array &bbs ) const {
 
 //------------------------------dump-------------------------------------------
 #ifndef PRODUCT
-void Block::dump_bidx(const Block* orig) const {
-  if (_pre_order) tty->print("B%d",_pre_order);
-  else tty->print("N%d", head()->_idx);
+void Block::dump_bidx(const Block* orig, outputStream* st) const {
+  if (_pre_order) st->print("B%d",_pre_order);
+  else st->print("N%d", head()->_idx);
 
   if (Verbose && orig != this) {
     // Dump the original block's idx
-    tty->print(" (");
-    orig->dump_bidx(orig);
-    tty->print(")");
+    st->print(" (");
+    orig->dump_bidx(orig, st);
+    st->print(")");
   }
 }
 
-void Block::dump_pred(const Block_Array *bbs, Block* orig) const {
+void Block::dump_pred(const Block_Array *bbs, Block* orig, outputStream* st) const {
   if (is_connector()) {
     for (uint i=1; i<num_preds(); i++) {
       Block *p = ((*bbs)[pred(i)->_idx]);
-      p->dump_pred(bbs, orig);
+      p->dump_pred(bbs, orig, st);
     }
   } else {
-    dump_bidx(orig);
-    tty->print(" ");
+    dump_bidx(orig, st);
+    st->print(" ");
   }
 }
 
-void Block::dump_head( const Block_Array *bbs ) const {
+void Block::dump_head( const Block_Array *bbs, outputStream* st ) const {
   // Print the basic block
-  dump_bidx(this);
-  tty->print(": #\t");
+  dump_bidx(this, st);
+  st->print(": #\t");
 
   // Print the incoming CFG edges and the outgoing CFG edges
   for( uint i=0; i<_num_succs; i++ ) {
-    non_connector_successor(i)->dump_bidx(_succs[i]);
-    tty->print(" ");
+    non_connector_successor(i)->dump_bidx(_succs[i], st);
+    st->print(" ");
   }
-  tty->print("<- ");
+  st->print("<- ");
   if( head()->is_block_start() ) {
     for (uint i=1; i<num_preds(); i++) {
       Node *s = pred(i);
       if (bbs) {
         Block *p = (*bbs)[s->_idx];
-        p->dump_pred(bbs, p);
+        p->dump_pred(bbs, p, st);
       } else {
         while (!s->is_block_start())
           s = s->in(0);
-        tty->print("N%d ", s->_idx );
+        st->print("N%d ", s->_idx );
       }
     }
   } else
-    tty->print("BLOCK HEAD IS JUNK  ");
+    st->print("BLOCK HEAD IS JUNK  ");
 
   // Print loop, if any
   const Block *bhead = this;    // Head of self-loop
@@ -330,24 +332,24 @@ void Block::dump_head( const Block_Array *bbs ) const {
     while (bx->is_connector()) {
       bx = (*bbs)[bx->pred(1)->_idx];
     }
-    tty->print("\tLoop: B%d-B%d ", bhead->_pre_order, bx->_pre_order);
+    st->print("\tLoop: B%d-B%d ", bhead->_pre_order, bx->_pre_order);
     // Dump any loop-specific bits, especially for CountedLoops.
-    loop->dump_spec(tty);
+    loop->dump_spec(st);
   } else if (has_loop_alignment()) {
-    tty->print(" top-of-loop");
+    st->print(" top-of-loop");
   }
-  tty->print(" Freq: %g",_freq);
+  st->print(" Freq: %g",_freq);
   if( Verbose || WizardMode ) {
-    tty->print(" IDom: %d/#%d", _idom ? _idom->_pre_order : 0, _dom_depth);
-    tty->print(" RegPressure: %d",_reg_pressure);
-    tty->print(" IHRP Index: %d",_ihrp_index);
-    tty->print(" FRegPressure: %d",_freg_pressure);
-    tty->print(" FHRP Index: %d",_fhrp_index);
+    st->print(" IDom: %d/#%d", _idom ? _idom->_pre_order : 0, _dom_depth);
+    st->print(" RegPressure: %d",_reg_pressure);
+    st->print(" IHRP Index: %d",_ihrp_index);
+    st->print(" FRegPressure: %d",_freg_pressure);
+    st->print(" FHRP Index: %d",_fhrp_index);
   }
-  tty->print_cr("");
+  st->print_cr("");
 }
 
-void Block::dump() const { dump(0); }
+void Block::dump() const { dump(NULL); }
 
 void Block::dump( const Block_Array *bbs ) const {
   dump_head(bbs);
@@ -441,9 +443,9 @@ uint PhaseCFG::build_cfg() {
       Block *bb = new (_bbs._arena) Block(_bbs._arena,p);
       _bbs.map(p->_idx,bb);
       _bbs.map(x->_idx,bb);
-      if( x != p )                  // Only for root is x == p
+      if( x != p ) {                // Only for root is x == p
         bb->_nodes.push((Node*)x);
-
+      }
       // Now handle predecessors
       ++sum;                        // Count 1 for self block
       uint cnt = bb->num_preds();
@@ -837,7 +839,7 @@ void PhaseCFG::fixup_flow() {
 
       // Make sure we TRUE branch to the target
       if( proj0->Opcode() == Op_IfFalse ) {
-        iff->negate();
+        iff->as_MachIf()->negate();
       }
 
       b->_nodes.pop();          // Remove IfFalse & IfTrue projections
@@ -945,8 +947,8 @@ void PhaseCFG::verify( ) const {
     assert( bp, "last instruction must be a block proj" );
     assert( bp == b->_nodes[j], "wrong number of successors for this block" );
     if( bp->is_Catch() ) {
-      while( b->_nodes[--j]->Opcode() == Op_MachProj ) ;
-      assert( b->_nodes[j]->is_Call(), "CatchProj must follow call" );
+      while( b->_nodes[--j]->is_MachProj() ) ;
+      assert( b->_nodes[j]->is_MachCall(), "CatchProj must follow call" );
     }
     else if( bp->is_Mach() && bp->as_Mach()->ideal_Opcode() == Op_If ) {
       assert( b->_num_succs == 2, "Conditional branch must have two targets");

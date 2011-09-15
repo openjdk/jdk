@@ -50,19 +50,6 @@ ConcurrentMarkThread::ConcurrentMarkThread(ConcurrentMark* cm) :
   create_and_start();
 }
 
-class CMCheckpointRootsInitialClosure: public VoidClosure {
-
-  ConcurrentMark* _cm;
-public:
-
-  CMCheckpointRootsInitialClosure(ConcurrentMark* cm) :
-    _cm(cm) {}
-
-  void do_void(){
-    _cm->checkpointRootsInitial();
-  }
-};
-
 class CMCheckpointRootsFinalClosure: public VoidClosure {
 
   ConcurrentMark* _cm;
@@ -114,27 +101,6 @@ void ConcurrentMarkThread::run() {
         gclog_or_tty->date_stamp(PrintGCDateStamps);
         gclog_or_tty->stamp(PrintGCTimeStamps);
         gclog_or_tty->print_cr("[GC concurrent-mark-start]");
-      }
-
-      if (!g1_policy->in_young_gc_mode()) {
-        // this ensures the flag is not set if we bail out of the marking
-        // cycle; normally the flag is cleared immediately after cleanup
-        g1h->set_marking_complete();
-
-        if (g1_policy->adaptive_young_list_length()) {
-          double now = os::elapsedTime();
-          double init_prediction_ms = g1_policy->predict_init_time_ms();
-          jlong sleep_time_ms = mmu_tracker->when_ms(now, init_prediction_ms);
-          os::sleep(current_thread, sleep_time_ms, false);
-        }
-
-        // We don't have to skip here if we've been asked to restart, because
-        // in the worst case we just enqueue a new VM operation to start a
-        // marking.  Note that the init operation resets has_aborted()
-        CMCheckpointRootsInitialClosure init_cl(_cm);
-        strcpy(verbose_str, "GC initial-mark");
-        VM_CGC_Operation op(&init_cl, verbose_str);
-        VMThread::execute(&op);
       }
 
       int iter = 0;

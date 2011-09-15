@@ -879,6 +879,10 @@ public class WToolkit extends SunToolkit implements Runnable {
     }
 
     public synchronized void addPropertyChangeListener(String name, PropertyChangeListener pcl) {
+        if (name == null) {
+            // See JavaDoc for the Toolkit.addPropertyChangeListener() method
+            return;
+        }
         if ( WDesktopProperties.isWindowsProperty(name)
              || name.startsWith(awtPrefix)
              || name.startsWith(dndPrefix))
