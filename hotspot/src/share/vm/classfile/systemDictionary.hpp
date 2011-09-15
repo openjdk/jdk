@@ -133,15 +133,15 @@ class SymbolPropertyTable;
   template(reflect_Method_klass,         java_lang_reflect_Method,       Pre) \
   template(reflect_Constructor_klass,    java_lang_reflect_Constructor,  Pre) \
                                                                               \
-  /* NOTE: needed too early in bootstrapping process to have checks based on JDK version */                        \
-  /* Universe::is_gte_jdk14x_version() is not set up by this point. */                                             \
-  /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                    \
-  template(reflect_MagicAccessorImpl_klass,          sun_reflect_MagicAccessorImpl,  Opt)                          \
-  template(reflect_MethodAccessorImpl_klass, sun_reflect_MethodAccessorImpl, Opt_Only_JDK14NewRef)                 \
-  template(reflect_ConstructorAccessorImpl_klass, sun_reflect_ConstructorAccessorImpl, Opt_Only_JDK14NewRef)       \
-  template(reflect_DelegatingClassLoader_klass, sun_reflect_DelegatingClassLoader, Opt)                            \
-  template(reflect_ConstantPool_klass,  sun_reflect_ConstantPool,       Opt_Only_JDK15)                            \
-  template(reflect_UnsafeStaticFieldAccessorImpl_klass, sun_reflect_UnsafeStaticFieldAccessorImpl, Opt_Only_JDK15) \
+  /* NOTE: needed too early in bootstrapping process to have checks based on JDK version */                              \
+  /* Universe::is_gte_jdk14x_version() is not set up by this point. */                                                   \
+  /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                          \
+  template(reflect_MagicAccessorImpl_klass,             sun_reflect_MagicAccessorImpl,             Opt)                  \
+  template(reflect_MethodAccessorImpl_klass,            sun_reflect_MethodAccessorImpl,            Opt_Only_JDK14NewRef) \
+  template(reflect_ConstructorAccessorImpl_klass,       sun_reflect_ConstructorAccessorImpl,       Opt_Only_JDK14NewRef) \
+  template(reflect_DelegatingClassLoader_klass,         sun_reflect_DelegatingClassLoader,         Opt)                  \
+  template(reflect_ConstantPool_klass,                  sun_reflect_ConstantPool,                  Opt_Only_JDK15)       \
+  template(reflect_UnsafeStaticFieldAccessorImpl_klass, sun_reflect_UnsafeStaticFieldAccessorImpl, Opt_Only_JDK15)       \
                                                                               \
   /* support for dynamic typing; it's OK if these are NULL in earlier JDKs */ \
   template(MethodHandle_klass,             java_lang_invoke_MethodHandle,             Pre_JSR292) \
@@ -168,14 +168,14 @@ class SymbolPropertyTable;
   template(StackTraceElement_klass,      java_lang_StackTraceElement,    Opt) \
   /* Universe::is_gte_jdk14x_version() is not set up by this point. */        \
   /* It's okay if this turns out to be NULL in non-1.4 JDKs. */               \
-  template(java_nio_Buffer_klass,        java_nio_Buffer,                Opt) \
+  template(nio_Buffer_klass,             java_nio_Buffer,                Opt) \
                                                                               \
   /* If this class isn't present, it won't be referenced. */                  \
-  template(sun_misc_AtomicLongCSImpl_klass, sun_misc_AtomicLongCSImpl,   Opt) \
+  template(AtomicLongCSImpl_klass,       sun_misc_AtomicLongCSImpl,   Opt)    \
                                                                               \
-  template(sun_jkernel_DownloadManager_klass, sun_jkernel_DownloadManager, Opt_Kernel) \
+  template(DownloadManager_klass,        sun_jkernel_DownloadManager, Opt_Kernel) \
                                                                               \
-  template(sun_misc_PostVMInitHook_klass, sun_misc_PostVMInitHook, Opt)       \
+  template(PostVMInitHook_klass,         sun_misc_PostVMInitHook, Opt)        \
                                                                               \
   /* Preload boxing klasses */                                                \
   template(Boolean_klass,                java_lang_Boolean,              Pre) \
@@ -199,7 +199,7 @@ class SystemDictionary : AllStatic {
   enum WKID {
     NO_WKID = 0,
 
-    #define WK_KLASS_ENUM(name, ignore_s, ignore_o) WK_KLASS_ENUM_NAME(name),
+    #define WK_KLASS_ENUM(name, symbol, ignore_o) WK_KLASS_ENUM_NAME(name), WK_KLASS_ENUM_NAME(symbol) = WK_KLASS_ENUM_NAME(name),
     WK_KLASSES_DO(WK_KLASS_ENUM)
     #undef WK_KLASS_ENUM
 
@@ -426,10 +426,15 @@ public:
   }
 
 public:
-  #define WK_KLASS_DECLARE(name, ignore_symbol, option) \
+  #define WK_KLASS_DECLARE(name, symbol, option) \
     static klassOop name() { return check_klass_##option(_well_known_klasses[WK_KLASS_ENUM_NAME(name)]); }
   WK_KLASSES_DO(WK_KLASS_DECLARE);
   #undef WK_KLASS_DECLARE
+
+  static klassOop well_known_klass(WKID id) {
+    assert(id >= (int)FIRST_WKID && id < (int)WKID_LIMIT, "oob");
+    return _well_known_klasses[id];
+  }
 
   // Local definition for direct access to the private array:
   #define WK_KLASS(name) _well_known_klasses[SystemDictionary::WK_KLASS_ENUM_NAME(name)]

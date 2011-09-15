@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,8 @@ import java.io.PrintStream;
 import java.net.*;
 import java.rmi.*;
 import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.debugger.dbx.*;
 import sun.jvm.hotspot.debugger.proc.*;
 import sun.jvm.hotspot.debugger.remote.*;
-import sun.jvm.hotspot.debugger.win32.*;
 import sun.jvm.hotspot.debugger.windbg.*;
 import sun.jvm.hotspot.debugger.linux.*;
 import sun.jvm.hotspot.memory.*;
@@ -436,113 +434,35 @@ public class HotSpotAgent {
 
     private void setupDebuggerSolaris() {
         setupJVMLibNamesSolaris();
-        if(System.getProperty("sun.jvm.hotspot.debugger.useProcDebugger") != null) {
-            ProcDebuggerLocal dbg = new ProcDebuggerLocal(null, true);
-            debugger = dbg;
-            attachDebugger();
+        ProcDebuggerLocal dbg = new ProcDebuggerLocal(null, true);
+        debugger = dbg;
+        attachDebugger();
 
-            // Set up CPU-dependent stuff
-            if (cpu.equals("x86")) {
-                machDesc = new MachineDescriptionIntelX86();
-            } else if (cpu.equals("sparc")) {
-                int addressSize = dbg.getRemoteProcessAddressSize();
-                if (addressSize == -1) {
-                    throw new DebuggerException("Error occurred while trying to determine the remote process's " +
-                    "address size");
-                }
-
-                if (addressSize == 32) {
-                    machDesc = new MachineDescriptionSPARC32Bit();
-                } else if (addressSize == 64) {
-                    machDesc = new MachineDescriptionSPARC64Bit();
-                } else {
-                    throw new DebuggerException("Address size " + addressSize + " is not supported on SPARC");
-                }
-            } else if (cpu.equals("amd64")) {
-                machDesc = new MachineDescriptionAMD64();
-            } else {
-                throw new DebuggerException("Solaris only supported on sparc/sparcv9/x86/amd64");
+        // Set up CPU-dependent stuff
+        if (cpu.equals("x86")) {
+            machDesc = new MachineDescriptionIntelX86();
+        } else if (cpu.equals("sparc")) {
+            int addressSize = dbg.getRemoteProcessAddressSize();
+            if (addressSize == -1) {
+                throw new DebuggerException("Error occurred while trying to determine the remote process's " +
+                                            "address size");
             }
 
-            dbg.setMachineDescription(machDesc);
-            return;
-
+            if (addressSize == 32) {
+                machDesc = new MachineDescriptionSPARC32Bit();
+            } else if (addressSize == 64) {
+                machDesc = new MachineDescriptionSPARC64Bit();
+            } else {
+                throw new DebuggerException("Address size " + addressSize + " is not supported on SPARC");
+            }
+        } else if (cpu.equals("amd64")) {
+            machDesc = new MachineDescriptionAMD64();
         } else {
-            String dbxPathName;
-            String dbxPathPrefix;
-            String dbxSvcAgentDSOPathName;
-            String dbxSvcAgentDSOPathPrefix;
-            String[] dbxSvcAgentDSOPathNames = null;
-
-            // use path names/prefixes specified on command
-            dbxPathName = System.getProperty("dbxPathName");
-            if (dbxPathName == null) {
-                dbxPathPrefix = System.getProperty("dbxPathPrefix");
-                if (dbxPathPrefix == null) {
-                    dbxPathPrefix = defaultDbxPathPrefix;
-                }
-                dbxPathName = dbxPathPrefix + fileSep + os + fileSep + cpu + fileSep + "bin" + fileSep + "dbx";
-            }
-
-            dbxSvcAgentDSOPathName = System.getProperty("dbxSvcAgentDSOPathName");
-            if (dbxSvcAgentDSOPathName != null) {
-                dbxSvcAgentDSOPathNames = new String[] { dbxSvcAgentDSOPathName } ;
-            } else {
-                dbxSvcAgentDSOPathPrefix = System.getProperty("dbxSvcAgentDSOPathPrefix");
-                if (dbxSvcAgentDSOPathPrefix == null) {
-                    dbxSvcAgentDSOPathPrefix = defaultDbxSvcAgentDSOPathPrefix;
-                }
-                if (cpu.equals("sparc")) {
-                    dbxSvcAgentDSOPathNames = new String[] {
-                        // FIXME: bad hack for SPARC v9. This is necessary because
-                        // there are two dbx executables on SPARC, one for v8 and one
-                        // for v9, and it isn't obvious how to tell the two apart
-                        // using the dbx command line. See
-                        // DbxDebuggerLocal.importDbxModule().
-                        dbxSvcAgentDSOPathPrefix + fileSep + os + fileSep + cpu + "v9" + fileSep + "lib" +
-                        fileSep + "libsvc_agent_dbx.so",
-                        dbxSvcAgentDSOPathPrefix + fileSep + os + fileSep + cpu + fileSep + "lib" +
-                        fileSep + "libsvc_agent_dbx.so",
-                    };
-                } else {
-                    dbxSvcAgentDSOPathNames = new String[] {
-                        dbxSvcAgentDSOPathPrefix + fileSep + os + fileSep + cpu + fileSep + "lib" +
-                        fileSep + "libsvc_agent_dbx.so"
-                    };
-                }
-            }
-
-            // Note we do not use a cache for the local debugger in server
-            // mode; it's taken care of on the client side
-            DbxDebuggerLocal dbg = new DbxDebuggerLocal(null, dbxPathName, dbxSvcAgentDSOPathNames, !isServer);
-            debugger = dbg;
-
-            attachDebugger();
-
-            // Set up CPU-dependent stuff
-            if (cpu.equals("x86")) {
-                machDesc = new MachineDescriptionIntelX86();
-            } else if (cpu.equals("sparc")) {
-                int addressSize = dbg.getRemoteProcessAddressSize();
-                if (addressSize == -1) {
-                    throw new DebuggerException("Error occurred while trying to determine the remote process's " +
-                    "address size. It's possible that the Serviceability Agent's dbx module failed to " +
-                    "initialize. Examine the standard output and standard error streams from the dbx " +
-                    "process for more information.");
-                }
-
-                if (addressSize == 32) {
-                    machDesc = new MachineDescriptionSPARC32Bit();
-                } else if (addressSize == 64) {
-                    machDesc = new MachineDescriptionSPARC64Bit();
-                } else {
-                    throw new DebuggerException("Address size " + addressSize + " is not supported on SPARC");
-                }
-            }
-
-            dbg.setMachineDescription(machDesc);
-
+            throw new DebuggerException("Solaris only supported on sparc/sparcv9/x86/amd64");
         }
+
+        dbg.setMachineDescription(machDesc);
+        return;
     }
 
     private void connectRemoteDebugger() throws DebuggerException {
@@ -589,11 +509,7 @@ public class HotSpotAgent {
         // mode; it will be taken care of on the client side (once remote
         // debugging is implemented).
 
-        if (System.getProperty("sun.jvm.hotspot.debugger.useWindbgDebugger") != null) {
-            debugger = new WindbgDebuggerLocal(machDesc, !isServer);
-        } else {
-            debugger = new Win32DebuggerLocal(machDesc, !isServer);
-        }
+        debugger = new WindbgDebuggerLocal(machDesc, !isServer);
 
         attachDebugger();
 

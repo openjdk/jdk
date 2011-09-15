@@ -107,10 +107,8 @@ class MethodStream : public KlassStream {
 
 class FieldStream : public KlassStream {
  private:
-  int length() const                { return fields()->length(); }
-  constantPoolOop constants() const { return _klass->constants(); }
- protected:
-  typeArrayOop fields() const       { return _klass->fields(); }
+  int length() const                { return _klass->java_fields_count(); }
+
  public:
   FieldStream(instanceKlassHandle klass, bool local_only, bool classes_only)
     : KlassStream(klass, local_only, classes_only) {
@@ -118,26 +116,23 @@ class FieldStream : public KlassStream {
     next();
   }
 
-  void next() { _index -= instanceKlass::next_offset; }
+  void next() { _index -= 1; }
 
   // Accessors for current field
   AccessFlags access_flags() const {
     AccessFlags flags;
-    flags.set_flags(fields()->ushort_at(index() + instanceKlass::access_flags_offset));
+    flags.set_flags(_klass->field_access_flags(_index));
     return flags;
   }
   Symbol* name() const {
-    int name_index = fields()->ushort_at(index() + instanceKlass::name_index_offset);
-    return constants()->symbol_at(name_index);
+    return _klass->field_name(_index);
   }
   Symbol* signature() const {
-    int signature_index = fields()->ushort_at(index() +
-                                       instanceKlass::signature_index_offset);
-    return constants()->symbol_at(signature_index);
+    return _klass->field_signature(_index);
   }
   // missing: initval()
   int offset() const {
-    return _klass->offset_from_fields( index() );
+    return _klass->field_offset( index() );
   }
 };
 
@@ -213,10 +208,10 @@ class FilteredFieldStream : public FieldStream {
   }
   int field_count();
   void next() {
-    _index -= instanceKlass::next_offset;
+    _index -= 1;
     if (has_filtered_field()) {
       while (_index >=0 && FilteredFieldsMap::is_filtered_field((klassOop)_klass(), offset())) {
-        _index -= instanceKlass::next_offset;
+        _index -= 1;
       }
     }
   }

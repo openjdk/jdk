@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,6 +190,8 @@ public class NMethod extends CodeBlob {
   public boolean handlerTableContains(Address addr) { return handlerTableBegin().lessThanOrEqual(addr) && handlerTableEnd().greaterThan(addr); }
   public boolean nulChkTableContains (Address addr) { return nulChkTableBegin() .lessThanOrEqual(addr) && nulChkTableEnd() .greaterThan(addr); }
 
+  public int getOopsLength() { return (int) (oopsSize() / VM.getVM().getOopSize()); }
+
   /** Entry points */
   public Address getEntryPoint()         { return entryPointField.getValue(addr);         }
   public Address getVerifiedEntryPoint() { return verifiedEntryPointField.getValue(addr); }
@@ -198,7 +200,7 @@ public class NMethod extends CodeBlob {
   public OopHandle getOopAt(int index) {
     if (index == 0) return null;
     if (Assert.ASSERTS_ENABLED) {
-      Assert.that(index > 0 && index <= oopsSize(), "must be a valid non-zero index");
+      Assert.that(index > 0 && index <= getOopsLength(), "must be a valid non-zero index");
     }
     return oopsBegin().getOopHandleAt((index - 1) * VM.getVM().getOopSize());
   }

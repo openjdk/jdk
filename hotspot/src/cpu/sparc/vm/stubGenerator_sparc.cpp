@@ -436,7 +436,7 @@ class StubGenerator: public StubCodeGenerator {
 #undef __
 #define __ masm->
 
-  address generate_throw_exception(const char* name, address runtime_entry, bool restore_saved_exception_pc,
+  address generate_throw_exception(const char* name, address runtime_entry,
                                    Register arg1 = noreg, Register arg2 = noreg) {
 #ifdef ASSERT
     int insts_size = VerifyThread ? 1 * K : 600;
@@ -461,11 +461,6 @@ class StubGenerator: public StubCodeGenerator {
     __ save_frame(0);
 
     int frame_complete = __ offset();
-
-    if (restore_saved_exception_pc) {
-      __ ld_ptr(G2_thread, JavaThread::saved_exception_pc_offset(), I7);
-      __ sub(I7, frame::pc_return_offset, I7);
-    }
 
     // Note that we always have a runtime stub frame on the top of stack by this point
     Register last_java_sp = SP;
@@ -3418,7 +3413,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_throw_WrongMethodTypeException_entry =
       generate_throw_exception("WrongMethodTypeException throw_exception",
                                CAST_FROM_FN_PTR(address, SharedRuntime::throw_WrongMethodTypeException),
-                               false, G5_method_type, G3_method_handle);
+                               G5_method_type, G3_method_handle);
   }
 
 
@@ -3429,12 +3424,10 @@ class StubGenerator: public StubCodeGenerator {
     // UseZeroBaseCompressedOops which is defined after heap initialization.
     StubRoutines::Sparc::_partial_subtype_check                = generate_partial_subtype_check();
     // These entry points require SharedInfo::stack0 to be set up in non-core builds
-    StubRoutines::_throw_AbstractMethodError_entry         = generate_throw_exception("AbstractMethodError throw_exception",          CAST_FROM_FN_PTR(address, SharedRuntime::throw_AbstractMethodError),  false);
-    StubRoutines::_throw_IncompatibleClassChangeError_entry= generate_throw_exception("IncompatibleClassChangeError throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_IncompatibleClassChangeError),  false);
-    StubRoutines::_throw_ArithmeticException_entry         = generate_throw_exception("ArithmeticException throw_exception",          CAST_FROM_FN_PTR(address, SharedRuntime::throw_ArithmeticException),  true);
-    StubRoutines::_throw_NullPointerException_entry        = generate_throw_exception("NullPointerException throw_exception",         CAST_FROM_FN_PTR(address, SharedRuntime::throw_NullPointerException), true);
-    StubRoutines::_throw_NullPointerException_at_call_entry= generate_throw_exception("NullPointerException at call throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_NullPointerException_at_call), false);
-    StubRoutines::_throw_StackOverflowError_entry          = generate_throw_exception("StackOverflowError throw_exception",           CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError),   false);
+    StubRoutines::_throw_AbstractMethodError_entry         = generate_throw_exception("AbstractMethodError throw_exception",          CAST_FROM_FN_PTR(address, SharedRuntime::throw_AbstractMethodError));
+    StubRoutines::_throw_IncompatibleClassChangeError_entry= generate_throw_exception("IncompatibleClassChangeError throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_IncompatibleClassChangeError));
+    StubRoutines::_throw_NullPointerException_at_call_entry= generate_throw_exception("NullPointerException at call throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_NullPointerException_at_call));
+    StubRoutines::_throw_StackOverflowError_entry          = generate_throw_exception("StackOverflowError throw_exception",           CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError));
 
     StubRoutines::_handler_for_unsafe_access_entry =
       generate_handler_for_unsafe_access();
