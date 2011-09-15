@@ -25,9 +25,11 @@
 
 package sun.reflect.generics.reflectiveObjects;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.util.Objects;
 
 import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.tree.FieldTypeSignature;
@@ -178,4 +180,27 @@ public class TypeVariableImpl<D extends GenericDeclaration>
     public int hashCode() {
         return genericDeclaration.hashCode() ^ name.hashCode();
     }
+
+    // Currently vacuous implementations of AnnotatedElement methods.
+    public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) {
+        Objects.requireNonNull(annotationClass);
+        return false;
+    }
+
+    public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
+        Objects.requireNonNull(annotationClass);
+        return null;
+    }
+
+    public Annotation[] getAnnotations() {
+        // Since zero-length, don't need defensive clone
+        return EMPTY_ANNOTATION_ARRAY;
+    }
+
+    public Annotation[] getDeclaredAnnotations() {
+        // Since zero-length, don't need defensive clone
+        return EMPTY_ANNOTATION_ARRAY;
+    }
+
+    private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
 }

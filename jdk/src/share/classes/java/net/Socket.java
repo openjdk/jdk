@@ -420,10 +420,13 @@ class Socket implements java.io.Closeable {
             createImpl(stream);
             if (localAddr != null)
                 bind(localAddr);
-            if (address != null)
-                connect(address);
-        } catch (IOException e) {
-            close();
+            connect(address);
+        } catch (IOException | IllegalArgumentException | SecurityException e) {
+            try {
+                close();
+            } catch (IOException ce) {
+                e.addSuppressed(ce);
+            }
             throw e;
         }
     }

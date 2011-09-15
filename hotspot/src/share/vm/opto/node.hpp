@@ -67,6 +67,8 @@ class EncodePNode;
 class FastLockNode;
 class FastUnlockNode;
 class IfNode;
+class IfFalseNode;
+class IfTrueNode;
 class InitializeNode;
 class JVMState;
 class JumpNode;
@@ -75,6 +77,7 @@ class LoadNode;
 class LoadStoreNode;
 class LockNode;
 class LoopNode;
+class MachBranchNode;
 class MachCallDynamicJavaNode;
 class MachCallJavaNode;
 class MachCallLeafNode;
@@ -83,9 +86,11 @@ class MachCallRuntimeNode;
 class MachCallStaticJavaNode;
 class MachConstantBaseNode;
 class MachConstantNode;
+class MachGotoNode;
 class MachIfNode;
 class MachNode;
 class MachNullCheckNode;
+class MachProjNode;
 class MachReturnNode;
 class MachSafePointNode;
 class MachSpillCopyNode;
@@ -94,7 +99,6 @@ class Matcher;
 class MemBarNode;
 class MemNode;
 class MergeMemNode;
-class MulNode;
 class MultiNode;
 class MultiBranchNode;
 class NeverBranchNode;
@@ -127,9 +131,10 @@ class SubNode;
 class Type;
 class TypeNode;
 class UnlockNode;
+class VectorNode;
+class VectorLoadNode;
+class VectorStoreNode;
 class VectorSet;
-class IfTrueNode;
-class IfFalseNode;
 typedef void (*NFunc)(Node&,void*);
 extern "C" {
   typedef int (*C_sort_func_t)(const void *, const void *);
@@ -568,31 +573,16 @@ public:
               DEFINE_CLASS_ID(MachCallDynamicJava,  MachCallJava, 1)
             DEFINE_CLASS_ID(MachCallRuntime,      MachCall, 1)
               DEFINE_CLASS_ID(MachCallLeaf,         MachCallRuntime, 0)
-      DEFINE_CLASS_ID(MachSpillCopy,    Mach, 1)
-      DEFINE_CLASS_ID(MachNullCheck,    Mach, 2)
-      DEFINE_CLASS_ID(MachIf,           Mach, 3)
-      DEFINE_CLASS_ID(MachTemp,         Mach, 4)
-      DEFINE_CLASS_ID(MachConstantBase, Mach, 5)
-      DEFINE_CLASS_ID(MachConstant,     Mach, 6)
+      DEFINE_CLASS_ID(MachBranch, Mach, 1)
+        DEFINE_CLASS_ID(MachIf,         MachBranch, 0)
+        DEFINE_CLASS_ID(MachGoto,       MachBranch, 1)
+        DEFINE_CLASS_ID(MachNullCheck,  MachBranch, 2)
+      DEFINE_CLASS_ID(MachSpillCopy,    Mach, 2)
+      DEFINE_CLASS_ID(MachTemp,         Mach, 3)
+      DEFINE_CLASS_ID(MachConstantBase, Mach, 4)
+      DEFINE_CLASS_ID(MachConstant,     Mach, 5)
 
-    DEFINE_CLASS_ID(Proj,  Node, 2)
-      DEFINE_CLASS_ID(CatchProj, Proj, 0)
-      DEFINE_CLASS_ID(JumpProj,  Proj, 1)
-      DEFINE_CLASS_ID(IfTrue,    Proj, 2)
-      DEFINE_CLASS_ID(IfFalse,   Proj, 3)
-      DEFINE_CLASS_ID(Parm,      Proj, 4)
-
-    DEFINE_CLASS_ID(Region, Node, 3)
-      DEFINE_CLASS_ID(Loop, Region, 0)
-        DEFINE_CLASS_ID(Root,        Loop, 0)
-        DEFINE_CLASS_ID(CountedLoop, Loop, 1)
-
-    DEFINE_CLASS_ID(Sub,   Node, 4)
-      DEFINE_CLASS_ID(Cmp,   Sub, 0)
-        DEFINE_CLASS_ID(FastLock,   Cmp, 0)
-        DEFINE_CLASS_ID(FastUnlock, Cmp, 1)
-
-    DEFINE_CLASS_ID(Type,  Node, 5)
+    DEFINE_CLASS_ID(Type,  Node, 2)
       DEFINE_CLASS_ID(Phi,   Type, 0)
       DEFINE_CLASS_ID(ConstraintCast, Type, 1)
       DEFINE_CLASS_ID(CheckCastPP, Type, 2)
@@ -601,17 +591,37 @@ public:
       DEFINE_CLASS_ID(DecodeN, Type, 5)
       DEFINE_CLASS_ID(EncodeP, Type, 6)
 
-    DEFINE_CLASS_ID(Mem,   Node, 6)
+    DEFINE_CLASS_ID(Proj,  Node, 3)
+      DEFINE_CLASS_ID(CatchProj, Proj, 0)
+      DEFINE_CLASS_ID(JumpProj,  Proj, 1)
+      DEFINE_CLASS_ID(IfTrue,    Proj, 2)
+      DEFINE_CLASS_ID(IfFalse,   Proj, 3)
+      DEFINE_CLASS_ID(Parm,      Proj, 4)
+      DEFINE_CLASS_ID(MachProj,  Proj, 5)
+
+    DEFINE_CLASS_ID(Mem,   Node, 4)
       DEFINE_CLASS_ID(Load,  Mem, 0)
+        DEFINE_CLASS_ID(VectorLoad,  Load, 0)
       DEFINE_CLASS_ID(Store, Mem, 1)
+        DEFINE_CLASS_ID(VectorStore, Store, 0)
       DEFINE_CLASS_ID(LoadStore, Mem, 2)
+
+    DEFINE_CLASS_ID(Region, Node, 5)
+      DEFINE_CLASS_ID(Loop, Region, 0)
+        DEFINE_CLASS_ID(Root,        Loop, 0)
+        DEFINE_CLASS_ID(CountedLoop, Loop, 1)
+
+    DEFINE_CLASS_ID(Sub,   Node, 6)
+      DEFINE_CLASS_ID(Cmp,   Sub, 0)
+        DEFINE_CLASS_ID(FastLock,   Cmp, 0)
+        DEFINE_CLASS_ID(FastUnlock, Cmp, 1)
 
     DEFINE_CLASS_ID(MergeMem, Node, 7)
     DEFINE_CLASS_ID(Bool,     Node, 8)
     DEFINE_CLASS_ID(AddP,     Node, 9)
     DEFINE_CLASS_ID(BoxLock,  Node, 10)
     DEFINE_CLASS_ID(Add,      Node, 11)
-    DEFINE_CLASS_ID(Mul,      Node, 12)
+    DEFINE_CLASS_ID(Vector,   Node, 12)
     DEFINE_CLASS_ID(ClearArray, Node, 13)
 
     _max_classes  = ClassMask_ClearArray
@@ -621,21 +631,15 @@ public:
   // Flags are sorted by usage frequency.
   enum NodeFlags {
     Flag_is_Copy             = 0x01, // should be first bit to avoid shift
-    Flag_is_Call             = Flag_is_Copy << 1,
-    Flag_rematerialize       = Flag_is_Call << 1,
+    Flag_rematerialize       = Flag_is_Copy << 1,
     Flag_needs_anti_dependence_check = Flag_rematerialize << 1,
     Flag_is_macro            = Flag_needs_anti_dependence_check << 1,
     Flag_is_Con              = Flag_is_macro << 1,
     Flag_is_cisc_alternate   = Flag_is_Con << 1,
-    Flag_is_Branch           = Flag_is_cisc_alternate << 1,
-    Flag_is_block_start      = Flag_is_Branch << 1,
-    Flag_is_Goto             = Flag_is_block_start << 1,
-    Flag_is_dead_loop_safe   = Flag_is_Goto << 1,
+    Flag_is_dead_loop_safe   = Flag_is_cisc_alternate << 1,
     Flag_may_be_short_branch = Flag_is_dead_loop_safe << 1,
-    Flag_is_safepoint_node   = Flag_may_be_short_branch << 1,
-    Flag_is_pc_relative      = Flag_is_safepoint_node << 1,
-    Flag_is_Vector           = Flag_is_pc_relative << 1,
-    _max_flags = (Flag_is_Vector << 1) - 1 // allow flags combination
+    Flag_avoid_back_to_back  = Flag_may_be_short_branch << 1,
+    _max_flags = (Flag_avoid_back_to_back << 1) - 1 // allow flags combination
   };
 
 private:
@@ -669,21 +673,6 @@ public:
   virtual uint size_of() const;
 
   // Other interesting Node properties
-
-  // Special case: is_Call() returns true for both CallNode and MachCallNode.
-  bool is_Call() const {
-    return (_flags & Flag_is_Call) != 0;
-  }
-
-  CallNode* isa_Call() const {
-    return is_Call() ? as_Call() : NULL;
-  }
-
-  CallNode *as_Call() const { // Only for CallNode (not for MachCallNode)
-    assert((_class_id & ClassMask_Call) == Class_Call, "invalid node class");
-    return (CallNode*)this;
-  }
-
   #define DEFINE_CLASS_QUERY(type)                           \
   bool is_##type() const {                                   \
     return ((_class_id & ClassMask_##type) == Class_##type); \
@@ -703,6 +692,7 @@ public:
   DEFINE_CLASS_QUERY(AllocateArray)
   DEFINE_CLASS_QUERY(Bool)
   DEFINE_CLASS_QUERY(BoxLock)
+  DEFINE_CLASS_QUERY(Call)
   DEFINE_CLASS_QUERY(CallDynamicJava)
   DEFINE_CLASS_QUERY(CallJava)
   DEFINE_CLASS_QUERY(CallLeaf)
@@ -732,6 +722,7 @@ public:
   DEFINE_CLASS_QUERY(Lock)
   DEFINE_CLASS_QUERY(Loop)
   DEFINE_CLASS_QUERY(Mach)
+  DEFINE_CLASS_QUERY(MachBranch)
   DEFINE_CLASS_QUERY(MachCall)
   DEFINE_CLASS_QUERY(MachCallDynamicJava)
   DEFINE_CLASS_QUERY(MachCallJava)
@@ -740,8 +731,10 @@ public:
   DEFINE_CLASS_QUERY(MachCallStaticJava)
   DEFINE_CLASS_QUERY(MachConstantBase)
   DEFINE_CLASS_QUERY(MachConstant)
+  DEFINE_CLASS_QUERY(MachGoto)
   DEFINE_CLASS_QUERY(MachIf)
   DEFINE_CLASS_QUERY(MachNullCheck)
+  DEFINE_CLASS_QUERY(MachProj)
   DEFINE_CLASS_QUERY(MachReturn)
   DEFINE_CLASS_QUERY(MachSafePoint)
   DEFINE_CLASS_QUERY(MachSpillCopy)
@@ -749,7 +742,6 @@ public:
   DEFINE_CLASS_QUERY(Mem)
   DEFINE_CLASS_QUERY(MemBar)
   DEFINE_CLASS_QUERY(MergeMem)
-  DEFINE_CLASS_QUERY(Mul)
   DEFINE_CLASS_QUERY(Multi)
   DEFINE_CLASS_QUERY(MultiBranch)
   DEFINE_CLASS_QUERY(Parm)
@@ -764,6 +756,9 @@ public:
   DEFINE_CLASS_QUERY(Store)
   DEFINE_CLASS_QUERY(Sub)
   DEFINE_CLASS_QUERY(Type)
+  DEFINE_CLASS_QUERY(Vector)
+  DEFINE_CLASS_QUERY(VectorLoad)
+  DEFINE_CLASS_QUERY(VectorStore)
   DEFINE_CLASS_QUERY(Unlock)
 
   #undef DEFINE_CLASS_QUERY
@@ -774,7 +769,6 @@ public:
   }
 
   bool is_Con () const { return (_flags & Flag_is_Con) != 0; }
-  bool is_Goto() const { return (_flags & Flag_is_Goto) != 0; }
   // The data node which is safe to leave in dead loop during IGVN optimization.
   bool is_dead_loop_safe() const {
     return is_Phi() || (is_Proj() && in(0) == NULL) ||
@@ -795,9 +789,6 @@ public:
   // skip some other important test.)
   virtual bool depends_only_on_test() const { assert(!is_CFG(), ""); return true; };
 
-  // defined for MachNodes that match 'If' | 'Goto' | 'CountedLoopEnd'
-  bool is_Branch() const { return (_flags & Flag_is_Branch) != 0; }
-
   // When building basic blocks, I need to have a notion of block beginning
   // Nodes, next block selector Nodes (block enders), and next block
   // projections.  These calls need to work on their machine equivalents.  The
@@ -806,7 +797,7 @@ public:
     if ( is_Region() )
       return this == (const Node*)in(0);
     else
-      return (_flags & Flag_is_block_start) != 0;
+      return is_Start();
   }
 
   // The Ideal control projection Nodes are IfTrue/IfFalse, JumpProjNode, Root,
@@ -815,9 +806,6 @@ public:
 
   // The node is a "macro" node which needs to be expanded before matching
   bool is_macro() const { return (_flags & Flag_is_macro) != 0; }
-
-  // Value is a vector of primitive values
-  bool is_Vector() const { return (_flags & Flag_is_Vector) != 0; }
 
 //----------------- Optimization
 

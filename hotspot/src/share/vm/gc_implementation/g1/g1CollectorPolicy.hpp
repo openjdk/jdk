@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,15 +129,9 @@ protected:
   jlong  _num_cc_clears;                // number of times the card count cache has been cleared
 #endif
 
-  double _cur_CH_strong_roots_end_sec;
-  double _cur_CH_strong_roots_dur_ms;
-  double _cur_G1_strong_roots_end_sec;
-  double _cur_G1_strong_roots_dur_ms;
-
   // Statistics for recent GC pauses.  See below for how indexed.
-  TruncatedSeq* _recent_CH_strong_roots_times_ms;
-  TruncatedSeq* _recent_G1_strong_roots_times_ms;
-  TruncatedSeq* _recent_evac_times_ms;
+  TruncatedSeq* _recent_rs_scan_times_ms;
+
   // These exclude marking times.
   TruncatedSeq* _recent_pause_times_ms;
   TruncatedSeq* _recent_gc_times_ms;
@@ -147,7 +141,6 @@ protected:
 
   TruncatedSeq* _recent_rs_sizes;
 
-  TruncatedSeq* _concurrent_mark_init_times_ms;
   TruncatedSeq* _concurrent_mark_remark_times_ms;
   TruncatedSeq* _concurrent_mark_cleanup_times_ms;
 
@@ -183,9 +176,6 @@ protected:
   double* _par_last_termination_attempts;
   double* _par_last_gc_worker_end_times_ms;
   double* _par_last_gc_worker_times_ms;
-
-  // indicates that we are in young GC mode
-  bool _in_young_gc_mode;
 
   // indicates whether we are in full young or partially young GC mode
   bool _full_young_gcs;
@@ -533,10 +523,6 @@ public:
     return _mmu_tracker->max_gc_time() * 1000.0;
   }
 
-  double predict_init_time_ms() {
-    return get_new_prediction(_concurrent_mark_init_times_ms);
-  }
-
   double predict_remark_time_ms() {
     return get_new_prediction(_concurrent_mark_remark_times_ms);
   }
@@ -591,13 +577,9 @@ protected:
   int _last_update_rs_processed_buffers;
   double _last_pause_time_ms;
 
-  size_t _bytes_in_to_space_before_gc;
-  size_t _bytes_in_to_space_after_gc;
-  size_t bytes_in_to_space_during_gc() {
-    return
-      _bytes_in_to_space_after_gc - _bytes_in_to_space_before_gc;
-  }
   size_t _bytes_in_collection_set_before_gc;
+  size_t _bytes_copied_during_gc;
+
   // Used to count used bytes in CS.
   friend class CountCSClosure;
 
@@ -692,17 +674,11 @@ protected:
   // The average time in ms per collection pause, averaged over recent pauses.
   double recent_avg_time_for_pauses_ms();
 
-  // The average time in ms for processing CollectedHeap strong roots, per
-  // collection pause, averaged over recent pauses.
-  double recent_avg_time_for_CH_strong_ms();
-
-  // The average time in ms for processing the G1 remembered set, per
-  // pause, averaged over recent pauses.
-  double recent_avg_time_for_G1_strong_ms();
-
-  // The average time in ms for "evacuating followers", per pause, averaged
-  // over recent pauses.
-  double recent_avg_time_for_evac_ms();
+  // The average time in ms for RS scanning, per pause, averaged
+  // over recent pauses. (Note the RS scanning time for a pause
+  // is itself an average of the RS scanning time for each worker
+  // thread.)
+  double recent_avg_time_for_rs_scan_ms();
 
   // The number of "recent" GCs recorded in the number sequences
   int number_of_recent_gcs();
@@ -792,7 +768,6 @@ protected:
   // This set of variables tracks the collector efficiency, in order to
   // determine whether we should initiate a new marking.
   double _cur_mark_stop_world_time_ms;
-  double _mark_init_start_sec;
   double _mark_remark_start_sec;
   double _mark_cleanup_start_sec;
   double _mark_closure_time_ms;
@@ -815,10 +790,6 @@ public:
 
   size_t bytes_in_collection_set() {
     return _bytes_in_collection_set_before_gc;
-  }
-
-  size_t bytes_in_to_space() {
-    return bytes_in_to_space_during_gc();
   }
 
   unsigned calc_gc_alloc_time_stamp() {
@@ -869,9 +840,7 @@ public:
                                              size_t start_used);
 
   // Must currently be called while the world is stopped.
-  virtual void record_concurrent_mark_init_start();
-  virtual void record_concurrent_mark_init_end();
-  void record_concurrent_mark_init_end_pre(double
+  void record_concurrent_mark_init_end(double
                                            mark_init_elapsed_time_ms);
 
   void record_mark_closure_time(double mark_closure_time_ms);
@@ -886,9 +855,6 @@ public:
 
   virtual void record_concurrent_pause();
   virtual void record_concurrent_pause_end();
-
-  virtual void record_collection_pause_end_CH_strong_roots();
-  virtual void record_collection_pause_end_G1_strong_roots();
 
   virtual void record_collection_pause_end();
   void print_heap_transition();
@@ -992,9 +958,16 @@ public:
   }
 #endif
 
-  // Record the fact that "bytes" bytes allocated in a region.
-  void record_before_bytes(size_t bytes);
-  void record_after_bytes(size_t bytes);
+  // Record how much space we copied during a GC. This is typically
+  // called when a GC alloc region is being retired.
+  void record_bytes_copied_during_gc(size_t bytes) {
+    _bytes_copied_during_gc += bytes;
+  }
+
+  // The amount of space we copied during a GC.
+  size_t bytes_copied_during_gc() {
+    return _bytes_copied_during_gc;
+  }
 
   // Choose a new collection set.  Marks the chosen regions as being
   // "in_collection_set", and links them together.  The head and number of
@@ -1117,29 +1090,16 @@ public:
   bool is_young_list_full() {
     size_t young_list_length = _g1->young_list()->length();
     size_t young_list_target_length = _young_list_target_length;
-    if (G1FixedEdenSize) {
-      young_list_target_length -= _max_survivor_regions;
-    }
     return young_list_length >= young_list_target_length;
   }
 
   bool can_expand_young_list() {
     size_t young_list_length = _g1->young_list()->length();
     size_t young_list_max_length = _young_list_max_length;
-    if (G1FixedEdenSize) {
-      young_list_max_length -= _max_survivor_regions;
-    }
     return young_list_length < young_list_max_length;
   }
 
   void update_region_num(bool young);
-
-  bool in_young_gc_mode() {
-    return _in_young_gc_mode;
-  }
-  void set_in_young_gc_mode(bool in_young_gc_mode) {
-    _in_young_gc_mode = in_young_gc_mode;
-  }
 
   bool full_young_gcs() {
     return _full_young_gcs;
@@ -1206,10 +1166,6 @@ public:
 
   inline bool track_object_age(GCAllocPurpose purpose) {
     return purpose == GCAllocForSurvived;
-  }
-
-  inline GCAllocPurpose alternative_purpose(int purpose) {
-    return GCAllocForTenured;
   }
 
   static const size_t REGIONS_UNLIMITED = ~(size_t)0;

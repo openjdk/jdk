@@ -1019,6 +1019,16 @@ void java_lang_ThreadGroup::compute_offsets() {
   compute_offset(_ngroups_offset,     k, vmSymbols::ngroups_name(),     vmSymbols::int_signature());
 }
 
+oop java_lang_Throwable::unassigned_stacktrace() {
+  instanceKlass* ik = instanceKlass::cast(SystemDictionary::Throwable_klass());
+  address addr = ik->static_field_addr(static_unassigned_stacktrace_offset);
+  if (UseCompressedOops) {
+    return oopDesc::load_decode_heap_oop((narrowOop *)addr);
+  } else {
+    return oopDesc::load_decode_heap_oop((oop*)addr);
+  }
+}
+
 oop java_lang_Throwable::backtrace(oop throwable) {
   return throwable->obj_field_acquire(backtrace_offset);
 }
@@ -1044,9 +1054,13 @@ void java_lang_Throwable::set_message(oop throwable, oop value) {
 }
 
 
+void java_lang_Throwable::set_stacktrace(oop throwable, oop st_element_array) {
+  throwable->obj_field_put(stackTrace_offset, st_element_array);
+}
+
 void java_lang_Throwable::clear_stacktrace(oop throwable) {
   assert(JDK_Version::is_gte_jdk14x_version(), "should only be called in >= 1.4");
-  throwable->obj_field_put(stackTrace_offset, NULL);
+  set_stacktrace(throwable, NULL);
 }
 
 
@@ -1340,6 +1354,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, methodHandle met
   if (JDK_Version::is_gte_jdk14x_version()) {
     // New since 1.4, clear lazily constructed Java level stacktrace if
     // refilling occurs
+    // This is unnecessary in 1.7+ but harmless
     clear_stacktrace(throwable());
   }
 
@@ -1541,6 +1556,15 @@ void java_lang_Throwable::fill_in_stack_trace_of_preallocated_backtrace(Handle t
     // Bail-out for deep stacks
     if (chunk_count >= max_chunks) break;
   }
+
+  // For Java 7+ we support the Throwable immutability protocol defined for Java 7. This support
+  // was missing in 7u0 so in 7u0 there is a workaround in the Throwable class. That workaround
+  // can be removed in a JDK using this JVM version
+  if (JDK_Version::is_gte_jdk17x_version()) {
+      java_lang_Throwable::set_stacktrace(throwable(), java_lang_Throwable::unassigned_stacktrace());
+      assert(java_lang_Throwable::unassigned_stacktrace() != NULL, "not initialized");
+  }
+
 }
 
 
@@ -2770,6 +2794,7 @@ int java_lang_Throwable::backtrace_offset;
 int java_lang_Throwable::detailMessage_offset;
 int java_lang_Throwable::cause_offset;
 int java_lang_Throwable::stackTrace_offset;
+int java_lang_Throwable::static_unassigned_stacktrace_offset;
 int java_lang_reflect_AccessibleObject::override_offset;
 int java_lang_reflect_Method::clazz_offset;
 int java_lang_reflect_Method::name_offset;
@@ -2947,6 +2972,7 @@ void JavaClasses::compute_hard_coded_offsets() {
   java_lang_Throwable::detailMessage_offset = java_lang_Throwable::hc_detailMessage_offset * x + header;
   java_lang_Throwable::cause_offset      = java_lang_Throwable::hc_cause_offset      * x + header;
   java_lang_Throwable::stackTrace_offset = java_lang_Throwable::hc_stackTrace_offset * x + header;
+  java_lang_Throwable::static_unassigned_stacktrace_offset = java_lang_Throwable::hc_static_unassigned_stacktrace_offset *  x;
 
   // java_lang_boxing_object
   java_lang_boxing_object::value_offset = java_lang_boxing_object::hc_value_offset + header;
