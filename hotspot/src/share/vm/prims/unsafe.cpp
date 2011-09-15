@@ -719,7 +719,7 @@ jint find_field_offset(jobject field, int must_be_static, TRAPS) {
     }
   }
 
-  int offset = instanceKlass::cast(k)->offset_from_fields(slot);
+  int offset = instanceKlass::cast(k)->field_offset(slot);
   return field_offset_from_byte_offset(offset);
 }
 

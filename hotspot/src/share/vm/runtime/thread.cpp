@@ -966,7 +966,7 @@ static void call_initializeSystemClass(TRAPS) {
 // General purpose hook into Java code, run once when the VM is initialized.
 // The Java library method itself may be changed independently from the VM.
 static void call_postVMInitHook(TRAPS) {
-  klassOop k = SystemDictionary::sun_misc_PostVMInitHook_klass();
+  klassOop k = SystemDictionary::PostVMInitHook_klass();
   instanceKlassHandle klass (THREAD, k);
   if (klass.not_null()) {
     JavaValue result(T_VOID);

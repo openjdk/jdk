@@ -520,7 +520,7 @@ void MethodHandles::init_MemberName(oop mname_oop, oop target_oop) {
     int slot  = java_lang_reflect_Field::slot(target_oop);  // fd.index()
     int mods  = java_lang_reflect_Field::modifiers(target_oop);
     klassOop k = java_lang_Class::as_klassOop(clazz);
-    int offset = instanceKlass::cast(k)->offset_from_fields(slot);
+    int offset = instanceKlass::cast(k)->field_offset(slot);
     init_MemberName(mname_oop, k, accessFlags_from(mods), offset);
   } else {
     KlassHandle receiver_limit; int decode_flags = 0;
@@ -1632,8 +1632,6 @@ void MethodHandles::init_DirectMethodHandle(Handle mh, methodHandle m, bool do_d
     THROW(vmSymbols::java_lang_InternalError());
   }
 
-  java_lang_invoke_MethodHandle::init_vmslots(mh());
-
   if (VerifyMethodHandles) {
     // The privileged code which invokes this routine should not make
     // a mistake about types, but it's better to verify.
@@ -1756,7 +1754,6 @@ void MethodHandles::init_BoundMethodHandle_with_receiver(Handle mh,
   if (m.is_null())      { THROW(vmSymbols::java_lang_InternalError()); }
   if (m->is_abstract()) { THROW(vmSymbols::java_lang_AbstractMethodError()); }
 
-  java_lang_invoke_MethodHandle::init_vmslots(mh());
   int vmargslot = m->size_of_parameters() - 1;
   assert(java_lang_invoke_BoundMethodHandle::vmargslot(mh()) == vmargslot, "");
 
@@ -1862,7 +1859,6 @@ void MethodHandles::init_BoundMethodHandle(Handle mh, Handle target, int argnum,
     THROW(vmSymbols::java_lang_InternalError());
   }
 
-  java_lang_invoke_MethodHandle::init_vmslots(mh());
   int argslot = java_lang_invoke_BoundMethodHandle::vmargslot(mh());
 
   if (VerifyMethodHandles) {
@@ -2686,6 +2682,7 @@ void MethodHandles::ensure_vmlayout_field(Handle target, TRAPS) {
       java_lang_invoke_MethodTypeForm::init_vmlayout(mtform(), cookie);
     }
   }
+  assert(java_lang_invoke_MethodTypeForm::vmslots(mtform()) == argument_slot_count(mtype()), "must agree");
 }
 
 #ifdef ASSERT
@@ -3081,6 +3078,30 @@ JVM_ENTRY(jint, MHN_getMembers(JNIEnv *env, jobject igcls,
 }
 JVM_END
 
+JVM_ENTRY(void, MHN_setCallSiteTargetNormal(JNIEnv* env, jobject igcls, jobject call_site_jh, jobject target_jh)) {
+  oop call_site = JNIHandles::resolve_non_null(call_site_jh);
+  oop target    = JNIHandles::resolve(target_jh);
+  {
+    // Walk all nmethods depending on this call site.
+    MutexLocker mu(Compile_lock, thread);
+    Universe::flush_dependents_on(call_site, target);
+  }
+  java_lang_invoke_CallSite::set_target(call_site, target);
+}
+JVM_END
+
+JVM_ENTRY(void, MHN_setCallSiteTargetVolatile(JNIEnv* env, jobject igcls, jobject call_site_jh, jobject target_jh)) {
+  oop call_site = JNIHandles::resolve_non_null(call_site_jh);
+  oop target    = JNIHandles::resolve(target_jh);
+  {
+    // Walk all nmethods depending on this call site.
+    MutexLocker mu(Compile_lock, thread);
+    Universe::flush_dependents_on(call_site, target);
+  }
+  java_lang_invoke_CallSite::set_target_volatile(call_site, target);
+}
+JVM_END
+
 methodOop MethodHandles::resolve_raise_exception_method(TRAPS) {
   if (_raise_exception_method != NULL) {
     // no need to do it twice
@@ -3137,12 +3158,15 @@ JVM_END
 
 /// JVM_RegisterMethodHandleMethods
 
+#undef CS  // Solaris builds complain
+
 #define LANG "Ljava/lang/"
 #define JLINV "Ljava/lang/invoke/"
 
 #define OBJ   LANG"Object;"
 #define CLS   LANG"Class;"
 #define STRG  LANG"String;"
+#define CS    JLINV"CallSite;"
 #define MT    JLINV"MethodType;"
 #define MH    JLINV"MethodHandle;"
 #define MEM   JLINV"MemberName;"
@@ -3153,29 +3177,34 @@ JVM_END
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 
-// These are the native methods on sun.invoke.MethodHandleNatives.
+// These are the native methods on java.lang.invoke.MethodHandleNatives.
 static JNINativeMethod methods[] = {
   // void init(MemberName self, AccessibleObject ref)
-  {CC"init",                    CC"("AMH""MH"I)V",              FN_PTR(MHN_init_AMH)},
-  {CC"init",                    CC"("BMH""OBJ"I)V",             FN_PTR(MHN_init_BMH)},
-  {CC"init",                    CC"("DMH""OBJ"Z"CLS")V",        FN_PTR(MHN_init_DMH)},
-  {CC"init",                    CC"("MT")V",                    FN_PTR(MHN_init_MT)},
-  {CC"init",                    CC"("MEM""OBJ")V",              FN_PTR(MHN_init_Mem)},
-  {CC"expand",                  CC"("MEM")V",                   FN_PTR(MHN_expand_Mem)},
-  {CC"resolve",                 CC"("MEM""CLS")V",              FN_PTR(MHN_resolve_Mem)},
-  {CC"getTarget",               CC"("MH"I)"OBJ,                 FN_PTR(MHN_getTarget)},
-  {CC"getConstant",             CC"(I)I",                       FN_PTR(MHN_getConstant)},
+  {CC"init",                      CC"("AMH""MH"I)V",                     FN_PTR(MHN_init_AMH)},
+  {CC"init",                      CC"("BMH""OBJ"I)V",                    FN_PTR(MHN_init_BMH)},
+  {CC"init",                      CC"("DMH""OBJ"Z"CLS")V",               FN_PTR(MHN_init_DMH)},
+  {CC"init",                      CC"("MT")V",                           FN_PTR(MHN_init_MT)},
+  {CC"init",                      CC"("MEM""OBJ")V",                     FN_PTR(MHN_init_Mem)},
+  {CC"expand",                    CC"("MEM")V",                          FN_PTR(MHN_expand_Mem)},
+  {CC"resolve",                   CC"("MEM""CLS")V",                     FN_PTR(MHN_resolve_Mem)},
+  {CC"getTarget",                 CC"("MH"I)"OBJ,                        FN_PTR(MHN_getTarget)},
+  {CC"getConstant",               CC"(I)I",                              FN_PTR(MHN_getConstant)},
   //  static native int getNamedCon(int which, Object[] name)
-  {CC"getNamedCon",             CC"(I["OBJ")I",                 FN_PTR(MHN_getNamedCon)},
+  {CC"getNamedCon",               CC"(I["OBJ")I",                        FN_PTR(MHN_getNamedCon)},
   //  static native int getMembers(Class<?> defc, String matchName, String matchSig,
   //          int matchFlags, Class<?> caller, int skip, MemberName[] results);
-  {CC"getMembers",              CC"("CLS""STRG""STRG"I"CLS"I["MEM")I",  FN_PTR(MHN_getMembers)}
+  {CC"getMembers",                CC"("CLS""STRG""STRG"I"CLS"I["MEM")I", FN_PTR(MHN_getMembers)}
+};
+
+static JNINativeMethod call_site_methods[] = {
+  {CC"setCallSiteTargetNormal",   CC"("CS""MH")V",                       FN_PTR(MHN_setCallSiteTargetNormal)},
+  {CC"setCallSiteTargetVolatile", CC"("CS""MH")V",                       FN_PTR(MHN_setCallSiteTargetVolatile)}
 };
 
 static JNINativeMethod invoke_methods[] = {
   // void init(MemberName self, AccessibleObject ref)
-  {CC"invoke",                  CC"(["OBJ")"OBJ,                FN_PTR(MH_invoke_UOE)},
-  {CC"invokeExact",             CC"(["OBJ")"OBJ,                FN_PTR(MH_invokeExact_UOE)}
+  {CC"invoke",                    CC"(["OBJ")"OBJ,                       FN_PTR(MH_invoke_UOE)},
+  {CC"invokeExact",               CC"(["OBJ")"OBJ,                       FN_PTR(MH_invokeExact_UOE)}
 };
 
 // This one function is exported, used by NativeLookup.
@@ -3188,11 +3217,11 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
     return;  // bind nothing
   }
 
+  assert(!MethodHandles::enabled(), "must not be enabled");
   bool enable_MH = true;
 
   {
     ThreadToNativeFromVM ttnfv(thread);
-
     int status = env->RegisterNatives(MHN_class, methods, sizeof(methods)/sizeof(JNINativeMethod));
     if (!env->ExceptionOccurred()) {
       const char* L_MH_name = (JLINV "MethodHandle");
@@ -3201,9 +3230,14 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
       status = env->RegisterNatives(MH_class, invoke_methods, sizeof(invoke_methods)/sizeof(JNINativeMethod));
     }
     if (env->ExceptionOccurred()) {
-      MethodHandles::set_enabled(false);
       warning("JSR 292 method handle code is mismatched to this JVM.  Disabling support.");
       enable_MH = false;
+      env->ExceptionClear();
+    }
+
+    status = env->RegisterNatives(MHN_class, call_site_methods, sizeof(call_site_methods)/sizeof(JNINativeMethod));
+    if (env->ExceptionOccurred()) {
+      // Exception is okay until 7087357
       env->ExceptionClear();
     }
   }

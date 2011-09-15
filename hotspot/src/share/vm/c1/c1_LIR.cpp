@@ -142,7 +142,8 @@ void LIR_Address::verify() const {
 #endif
 #ifdef ARM
   assert(disp() == 0 || index()->is_illegal(), "can't have both");
-  assert(-4096 < disp() && disp() < 4096, "architecture constraint");
+  // Note: offsets higher than 4096 must not be rejected here. They can
+  // be handled by the back-end or will be rejected if not.
 #endif
 #ifdef _LP64
   assert(base()->is_cpu_register(), "wrong base operand");
