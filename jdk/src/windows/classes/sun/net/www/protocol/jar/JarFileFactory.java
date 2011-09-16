@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,7 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
 
     private Permission getPermission(JarFile jarFile) {
         try {
-            URLConnection uc = (URLConnection)getConnection(jarFile);
+            URLConnection uc = getConnection(jarFile);
             if (uc != null)
                 return uc.getPermission();
         } catch (IOException ioe) {
