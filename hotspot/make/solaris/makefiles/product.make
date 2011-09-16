@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,8 @@ MAPFILE_DTRACE = $(GAMMADIR)/make/solaris/makefiles/mapfile-vers-$(TYPE)
 REORDERFILE = $(GAMMADIR)/make/solaris/makefiles/reorder_$(TYPE)_$(BUILDARCH)
 endif
 
-# Don't strip in VM build; JDK build will strip libraries later
+# If we can create .debuginfo files, then the VM is stripped in vm.make
+# and this macro is not used.
 # LINK_LIB.CC/POST_HOOK += $(STRIP_LIB.CC/POST_HOOK)
 
 G_SUFFIX =
