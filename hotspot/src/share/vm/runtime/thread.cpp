@@ -966,7 +966,7 @@ static void call_initializeSystemClass(TRAPS) {
 // General purpose hook into Java code, run once when the VM is initialized.
 // The Java library method itself may be changed independently from the VM.
 static void call_postVMInitHook(TRAPS) {
-  klassOop k = SystemDictionary::sun_misc_PostVMInitHook_klass();
+  klassOop k = SystemDictionary::PostVMInitHook_klass();
   instanceKlassHandle klass (THREAD, k);
   if (klass.not_null()) {
     JavaValue result(T_VOID);
@@ -1272,7 +1272,6 @@ void JavaThread::initialize() {
   _exception_oop = NULL;
   _exception_pc  = 0;
   _exception_handler_pc = 0;
-  _exception_stack_size = 0;
   _is_method_handle_return = 0;
   _jvmti_thread_state= NULL;
   _should_post_on_exceptions_flag = JNI_FALSE;
@@ -2858,6 +2857,44 @@ void JavaThread::trace_frames() {
     fst.current()->print_value_on(tty,this);
     tty->cr();
   }
+}
+
+class PrintAndVerifyOopClosure: public OopClosure {
+ protected:
+  template <class T> inline void do_oop_work(T* p) {
+    oop obj = oopDesc::load_decode_heap_oop(p);
+    if (obj == NULL) return;
+    tty->print(INTPTR_FORMAT ": ", p);
+    if (obj->is_oop_or_null()) {
+      if (obj->is_objArray()) {
+        tty->print_cr("valid objArray: " INTPTR_FORMAT, (oopDesc*) obj);
+      } else {
+        obj->print();
+      }
+    } else {
+      tty->print_cr("invalid oop: " INTPTR_FORMAT, (oopDesc*) obj);
+    }
+    tty->cr();
+  }
+ public:
+  virtual void do_oop(oop* p) { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)  { do_oop_work(p); }
+};
+
+
+static void oops_print(frame* f, const RegisterMap *map) {
+  PrintAndVerifyOopClosure print;
+  f->print_value();
+  f->oops_do(&print, NULL, (RegisterMap*)map);
+}
+
+// Print our all the locations that contain oops and whether they are
+// valid or not.  This useful when trying to find the oldest frame
+// where an oop has gone bad since the frame walk is from youngest to
+// oldest.
+void JavaThread::trace_oops() {
+  tty->print_cr("[Trace oops]");
+  frames_do(oops_print);
 }
 
 

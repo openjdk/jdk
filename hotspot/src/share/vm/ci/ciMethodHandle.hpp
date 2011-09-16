@@ -37,19 +37,23 @@ private:
   ciMethod*      _callee;
   ciMethod*      _caller;
   ciCallProfile  _profile;
+  ciMethod*      _method_handle_adapter;
+  ciMethod*      _invokedynamic_adapter;
 
   // Return an adapter for this MethodHandle.
-  ciMethod* get_adapter_impl(bool is_invokedynamic) const;
-  ciMethod* get_adapter(     bool is_invokedynamic) const;
+  ciMethod* get_adapter_impl(bool is_invokedynamic);
+  ciMethod* get_adapter(     bool is_invokedynamic);
 
 protected:
-  void print_impl(outputStream* st);
+  void print_chain_impl(outputStream* st) PRODUCT_RETURN;
 
 public:
   ciMethodHandle(instanceHandle h_i) :
     ciInstance(h_i),
     _callee(NULL),
-    _caller(NULL)
+    _caller(NULL),
+    _method_handle_adapter(NULL),
+    _invokedynamic_adapter(NULL)
   {}
 
   // What kind of ciObject is this?
@@ -60,10 +64,22 @@ public:
   void set_call_profile(ciCallProfile profile)  { _profile = profile; }
 
   // Return an adapter for a MethodHandle call.
-  ciMethod* get_method_handle_adapter() const { return get_adapter(false); }
+  ciMethod* get_method_handle_adapter() {
+    if (_method_handle_adapter == NULL) {
+      _method_handle_adapter = get_adapter(false);
+    }
+    return _method_handle_adapter;
+  }
 
   // Return an adapter for an invokedynamic call.
-  ciMethod* get_invokedynamic_adapter() const { return get_adapter(true);  }
+  ciMethod* get_invokedynamic_adapter() {
+    if (_invokedynamic_adapter == NULL) {
+      _invokedynamic_adapter = get_adapter(true);
+    }
+    return _invokedynamic_adapter;
+  }
+
+  void print_chain(outputStream* st = tty) PRODUCT_RETURN;
 };
 
 #endif // SHARE_VM_CI_CIMETHODHANDLE_HPP

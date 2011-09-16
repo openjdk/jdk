@@ -3374,7 +3374,7 @@ void TemplateTable::_new() {
 
   if(UseTLAB) {
     Register RoldTopValue = RallocatedObject;
-    Register RtopAddr = G3_scratch, RtlabWasteLimitValue = G3_scratch;
+    Register RtlabWasteLimitValue = G3_scratch;
     Register RnewTopValue = G1_scratch;
     Register RendValue = Rscratch;
     Register RfreeValue = RnewTopValue;
@@ -3455,7 +3455,11 @@ void TemplateTable::_new() {
     __ delayed()->add(RallocatedObject, sizeof(oopDesc), G3_scratch);
 
     // initialize remaining object fields
-    { Label loop;
+    if (UseBlockZeroing) {
+      // Use BIS for zeroing
+      __ bis_zeroing(G3_scratch, Roffset, G1_scratch, initialize_header);
+    } else {
+      Label loop;
       __ subcc(Roffset, wordSize, Roffset);
       __ bind(loop);
       //__ subcc(Roffset, wordSize, Roffset);      // executed above loop or in delay slot

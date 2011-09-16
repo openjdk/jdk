@@ -36,6 +36,7 @@
 #include "memory/genOopClosures.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/permGen.hpp"
+#include "oops/fieldStreams.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceOop.hpp"
@@ -782,14 +783,11 @@ void instanceKlass::mask_for(methodHandle method, int bci,
 
 
 bool instanceKlass::find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
-  const int n = fields()->length();
-  for (int i = 0; i < n; i += next_offset ) {
-    int name_index = fields()->ushort_at(i + name_index_offset);
-    int sig_index  = fields()->ushort_at(i + signature_index_offset);
-    Symbol* f_name = constants()->symbol_at(name_index);
-    Symbol* f_sig  = constants()->symbol_at(sig_index);
+  for (JavaFieldStream fs(as_klassOop()); !fs.done(); fs.next()) {
+    Symbol* f_name = fs.name();
+    Symbol* f_sig  = fs.signature();
     if (f_name == name && f_sig == sig) {
-      fd->initialize(as_klassOop(), i);
+      fd->initialize(as_klassOop(), fs.index());
       return true;
     }
   }
@@ -803,11 +801,10 @@ void instanceKlass::shared_symbols_iterate(SymbolClosure* closure) {
   closure->do_symbol(&_source_file_name);
   closure->do_symbol(&_source_debug_extension);
 
-  const int n = fields()->length();
-  for (int i = 0; i < n; i += next_offset ) {
-    int name_index = fields()->ushort_at(i + name_index_offset);
+  for (JavaFieldStream fs(this); !fs.done(); fs.next()) {
+    int name_index = fs.name_index();
     closure->do_symbol(constants()->symbol_at_addr(name_index));
-    int sig_index  = fields()->ushort_at(i + signature_index_offset);
+    int sig_index  = fs.signature_index();
     closure->do_symbol(constants()->symbol_at_addr(sig_index));
   }
 }
@@ -872,10 +869,9 @@ klassOop instanceKlass::find_field(Symbol* name, Symbol* sig, bool is_static, fi
 
 
 bool instanceKlass::find_local_field_from_offset(int offset, bool is_static, fieldDescriptor* fd) const {
-  int length = fields()->length();
-  for (int i = 0; i < length; i += next_offset) {
-    if (offset_from_fields( i ) == offset) {
-      fd->initialize(as_klassOop(), i);
+  for (JavaFieldStream fs(as_klassOop()); !fs.done(); fs.next()) {
+    if (fs.offset() == offset) {
+      fd->initialize(as_klassOop(), fs.index());
       if (fd->is_static() == is_static) return true;
     }
   }
@@ -906,11 +902,12 @@ void instanceKlass::methods_do(void f(methodOop method)) {
 
 
 void instanceKlass::do_local_static_fields(FieldClosure* cl) {
-  fieldDescriptor fd;
-  int length = fields()->length();
-  for (int i = 0; i < length; i += next_offset) {
-    fd.initialize(as_klassOop(), i);
-    if (fd.is_static()) cl->do_field(&fd);
+  for (JavaFieldStream fs(this); !fs.done(); fs.next()) {
+    if (fs.access_flags().is_static()) {
+      fieldDescriptor fd;
+      fd.initialize(as_klassOop(), fs.index());
+      cl->do_field(&fd);
+    }
   }
 }
 
@@ -922,11 +919,12 @@ void instanceKlass::do_local_static_fields(void f(fieldDescriptor*, TRAPS), TRAP
 
 
 void instanceKlass::do_local_static_fields_impl(instanceKlassHandle this_oop, void f(fieldDescriptor* fd, TRAPS), TRAPS) {
-  fieldDescriptor fd;
-  int length = this_oop->fields()->length();
-  for (int i = 0; i < length; i += next_offset) {
-    fd.initialize(this_oop(), i);
-    if (fd.is_static()) { f(&fd, CHECK); } // Do NOT remove {}! (CHECK macro expands into several statements)
+  for (JavaFieldStream fs(this_oop()); !fs.done(); fs.next()) {
+    if (fs.access_flags().is_static()) {
+      fieldDescriptor fd;
+      fd.initialize(this_oop(), fs.index());
+      f(&fd, CHECK);
+    }
   }
 }
 
@@ -941,11 +939,11 @@ void instanceKlass::do_nonstatic_fields(FieldClosure* cl) {
     super->do_nonstatic_fields(cl);
   }
   fieldDescriptor fd;
-  int length = fields()->length();
+  int length = java_fields_count();
   // In DebugInfo nonstatic fields are sorted by offset.
   int* fields_sorted = NEW_C_HEAP_ARRAY(int, 2*(length+1));
   int j = 0;
-  for (int i = 0; i < length; i += next_offset) {
+  for (int i = 0; i < length; i += 1) {
     fd.initialize(as_klassOop(), i);
     if (!fd.is_static()) {
       fields_sorted[j + 0] = fd.offset();
@@ -1371,37 +1369,6 @@ int instanceKlass::cached_itable_index(size_t idnum) {
   }
   return -1;
 }
-
-
-//
-// nmethodBucket is used to record dependent nmethods for
-// deoptimization.  nmethod dependencies are actually <klass, method>
-// pairs but we really only care about the klass part for purposes of
-// finding nmethods which might need to be deoptimized.  Instead of
-// recording the method, a count of how many times a particular nmethod
-// was recorded is kept.  This ensures that any recording errors are
-// noticed since an nmethod should be removed as many times are it's
-// added.
-//
-class nmethodBucket {
- private:
-  nmethod*       _nmethod;
-  int            _count;
-  nmethodBucket* _next;
-
- public:
-  nmethodBucket(nmethod* nmethod, nmethodBucket* next) {
-    _nmethod = nmethod;
-    _next = next;
-    _count = 1;
-  }
-  int count()                             { return _count; }
-  int increment()                         { _count += 1; return _count; }
-  int decrement()                         { _count -= 1; assert(_count >= 0, "don't underflow"); return _count; }
-  nmethodBucket* next()                   { return _next; }
-  void set_next(nmethodBucket* b)         { _next = b; }
-  nmethod* get_nmethod()                  { return _nmethod; }
-};
 
 
 //
@@ -2410,43 +2377,6 @@ void instanceKlass::oop_verify_on(oop obj, outputStream* st) {
   VerifyFieldClosure blk;
   oop_oop_iterate(obj, &blk);
 }
-
-#ifndef PRODUCT
-
-void instanceKlass::verify_class_klass_nonstatic_oop_maps(klassOop k) {
-  // This verification code is disabled.  JDK_Version::is_gte_jdk14x_version()
-  // cannot be called since this function is called before the VM is
-  // able to determine what JDK version is running with.
-  // The check below always is false since 1.4.
-  return;
-
-  // This verification code temporarily disabled for the 1.4
-  // reflection implementation since java.lang.Class now has
-  // Java-level instance fields. Should rewrite this to handle this
-  // case.
-  if (!(JDK_Version::is_gte_jdk14x_version() && UseNewReflection)) {
-    // Verify that java.lang.Class instances have a fake oop field added.
-    instanceKlass* ik = instanceKlass::cast(k);
-
-    // Check that we have the right class
-    static bool first_time = true;
-    guarantee(k == SystemDictionary::Class_klass() && first_time, "Invalid verify of maps");
-    first_time = false;
-    const int extra = java_lang_Class::number_of_fake_oop_fields;
-    guarantee(ik->nonstatic_field_size() == extra, "just checking");
-    guarantee(ik->nonstatic_oop_map_count() == 1, "just checking");
-    guarantee(ik->size_helper() == align_object_size(instanceOopDesc::header_size() + extra), "just checking");
-
-    // Check that the map is (2,extra)
-    int offset = java_lang_Class::klass_offset;
-
-    OopMapBlock* map = ik->start_of_nonstatic_oop_maps();
-    guarantee(map->offset() == offset && map->count() == (unsigned int) extra,
-              "sanity");
-  }
-}
-
-#endif // ndef PRODUCT
 
 // JNIid class for jfieldIDs only
 // Note to reviewers:

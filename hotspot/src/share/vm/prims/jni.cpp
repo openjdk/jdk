@@ -492,7 +492,7 @@ JNI_ENTRY(jfieldID, jni_FromReflectedField(JNIEnv *env, jobject field))
 
   // First check if this is a static field
   if (modifiers & JVM_ACC_STATIC) {
-    intptr_t offset = instanceKlass::cast(k1())->offset_from_fields( slot );
+    intptr_t offset = instanceKlass::cast(k1())->field_offset( slot );
     JNIid* id = instanceKlass::cast(k1())->jni_id_for(offset);
     assert(id != NULL, "corrupt Field object");
     debug_only(id->set_is_static_field_id();)
@@ -504,7 +504,7 @@ JNI_ENTRY(jfieldID, jni_FromReflectedField(JNIEnv *env, jobject field))
   // The slot is the index of the field description in the field-array
   // The jfieldID is the offset of the field within the object
   // It may also have hash bits for k, if VerifyJNIFields is turned on.
-  intptr_t offset = instanceKlass::cast(k1())->offset_from_fields( slot );
+  intptr_t offset = instanceKlass::cast(k1())->field_offset( slot );
   assert(instanceKlass::cast(k1())->contains_field_offset(offset), "stay within object");
   ret = jfieldIDWorkaround::to_instance_jfieldID(k1(), offset);
   return ret;

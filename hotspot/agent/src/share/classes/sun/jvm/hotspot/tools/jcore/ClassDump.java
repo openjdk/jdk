@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 package sun.jvm.hotspot.tools.jcore;
 
 import java.io.*;
+import java.util.jar.JarOutputStream;
+import java.util.jar.JarEntry;
+import java.util.jar.Manifest;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.debugger.*;
@@ -34,26 +37,32 @@ import sun.jvm.hotspot.tools.*;
 public class ClassDump extends Tool {
     private ClassFilter classFilter;
     private String      outputDirectory;
+    private JarOutputStream jarStream;
+
+    public void setClassFilter(ClassFilter cf) {
+        classFilter = cf;
+    }
+
+    public void setOutputDirectory(String od) {
+        outputDirectory = od;
+        if (jarStream != null) {
+            try {
+                jarStream.close();
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+            }
+        }
+        jarStream = null;
+    }
+
+    public void setJarOutput(String jarFileName) throws IOException {
+        jarStream = new JarOutputStream(new FileOutputStream(jarFileName), new Manifest());
+        outputDirectory = null;
+    }
 
     public void run() {
         // Ready to go with the database...
         try {
-
-            // load class filters
-
-            String filterClassName = System.getProperty("sun.jvm.hotspot.tools.jcore.filter");
-            if (filterClassName != null) {
-                try {
-                    Class filterClass = Class.forName(filterClassName);
-                    classFilter = (ClassFilter) filterClass.newInstance();
-                } catch(Exception exp) {
-                    System.err.println("Warning: Can not create class filter!");
-                }
-            }
-
-            outputDirectory = System.getProperty("sun.jvm.hotspot.tools.jcore.outputDir");
-            if (outputDirectory == null)
-                outputDirectory = ".";
 
             // walk through the system dictionary
             SystemDictionary dict = VM.getVM().getSystemDictionary();
@@ -75,6 +84,14 @@ public class ClassDump extends Tool {
                                + Long.toHexString(e.getAddress()));
             e.printStackTrace();
         }
+        if (jarStream != null) {
+            try {
+                jarStream.close();
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+            }
+            jarStream = null;
+        }
     }
 
     public String getName() {
@@ -88,26 +105,33 @@ public class ClassDump extends Tool {
 
         String klassName = kls.getName().asString();
         klassName = klassName.replace('/', File.separatorChar);
-        int index = klassName.lastIndexOf(File.separatorChar);
-        File dir = null;
-        if (index != -1) {
-            String dirName = klassName.substring(0, index);
-            dir =  new File(outputDirectory,  dirName);
-        } else {
-            dir = new File(outputDirectory);
-        }
-
-        dir.mkdirs();
-        File f = new File(dir, klassName.substring(klassName.lastIndexOf(File.separatorChar) + 1)
-                          + ".class");
         try {
-            f.createNewFile();
-            OutputStream os = new BufferedOutputStream(new FileOutputStream(f));
+            OutputStream os = null;
+            if (jarStream != null) {
+                jarStream.putNextEntry(new JarEntry(klassName + ".class"));
+                os = jarStream;
+            } else {
+                int index = klassName.lastIndexOf(File.separatorChar);
+                File dir = null;
+                if (index != -1) {
+                    String dirName = klassName.substring(0, index);
+                    dir = new File(outputDirectory,  dirName);
+                } else {
+                    dir = new File(outputDirectory);
+                }
+
+                dir.mkdirs();
+                File f = new File(dir, klassName.substring(index + 1) + ".class");
+                f.createNewFile();
+                os = new BufferedOutputStream(new FileOutputStream(f));
+            }
             try {
                 ClassWriter cw = new ClassWriter(kls, os);
                 cw.write();
             } finally {
-                os.close();
+                if (os != jarStream) {
+                    os.close();
+                }
             }
         } catch(IOException exp) {
             exp.printStackTrace();
@@ -115,7 +139,26 @@ public class ClassDump extends Tool {
     }
 
     public static void main(String[] args) {
+        // load class filters
+        ClassFilter classFilter = null;
+        String filterClassName = System.getProperty("sun.jvm.hotspot.tools.jcore.filter");
+        if (filterClassName != null) {
+            try {
+                Class filterClass = Class.forName(filterClassName);
+                classFilter = (ClassFilter) filterClass.newInstance();
+            } catch(Exception exp) {
+                System.err.println("Warning: Can not create class filter!");
+            }
+        }
+
+        String outputDirectory = System.getProperty("sun.jvm.hotspot.tools.jcore.outputDir");
+        if (outputDirectory == null)
+            outputDirectory = ".";
+
+
         ClassDump cd = new ClassDump();
+        cd.setClassFilter(classFilter);
+        cd.setOutputDirectory(outputDirectory);
         cd.start(args);
         cd.stop();
     }
