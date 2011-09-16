@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -481,9 +481,18 @@ CFLAGS += -DCC_INTERP
 endif
 
 # Flags for Debugging
+# The -g0 setting allows the C++ frontend to inline, which is a big win.
+# The -xs setting disables 'lazy debug info' which puts everything in
+# the .so instead of requiring the '.o' files.
+ifneq ($(OBJCOPY),)
+  OPT_CFLAGS += -g0 -xs
+endif
 DEBUG_CFLAGS = -g
 FASTDEBUG_CFLAGS = -g0
-# The -g0 setting allows the C++ frontend to inline, which is a big win.
+ifneq ($(OBJCOPY),)
+  DEBUG_CFLAGS += -xs
+  FASTDEBUG_CFLAGS += -xs
+endif
 
 # Special global options for SS12
 ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 509), 1)
@@ -502,6 +511,9 @@ endif
 # data using a unique globalization prefix. Instead force the use of
 # a static globalization prefix based on the source filepath so the
 # objects from two identical compilations are the same.
+# EXTRA_CFLAGS only covers vm_version.cpp for some reason
+#EXTRA_CFLAGS += -Qoption ccfe -xglobalstatic
+#OPT_CFLAGS += -Qoption ccfe -xglobalstatic
 #DEBUG_CFLAGS += -Qoption ccfe -xglobalstatic
 #FASTDEBUG_CFLAGS += -Qoption ccfe -xglobalstatic
 
@@ -562,6 +574,8 @@ LINK_LIB.CC/POST_HOOK += $(MCS) -c $@ || exit 1;
 # since the hook must terminate itself as a valid command.)
 
 # Also, strip debug and line number information (worth about 1.7Mb).
+# If we can create .debuginfo files, then the VM is stripped in vm.make
+# and this macro is not used.
 STRIP_LIB.CC/POST_HOOK = $(STRIP) -x $@ || exit 1;
 # STRIP_LIB.CC/POST_HOOK is incorporated into LINK_LIB.CC/POST_HOOK
 # in certain configurations, such as product.make.  Other configurations,
