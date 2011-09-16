@@ -50,6 +50,8 @@ protected:
   G1RemSet* _g1_rem;
   ConcurrentMark* _cm;
   G1ParScanThreadState* _par_scan_state;
+  bool _during_initial_mark;
+  bool _mark_in_progress;
 public:
   G1ParClosureSuper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state);
   bool apply_to_weak_ref_discovered_field() { return true; }
@@ -102,8 +104,8 @@ public:
 class G1ParCopyHelper : public G1ParClosureSuper {
   G1ParScanClosure *_scanner;
 protected:
-  template <class T> void mark_forwardee(T* p);
-  oop copy_to_survivor_space(oop obj);
+  template <class T> void mark_object(T* p);
+  oop copy_to_survivor_space(oop obj, bool should_mark_copy);
 public:
   G1ParCopyHelper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state,
                   G1ParScanClosure *scanner) :
@@ -111,7 +113,7 @@ public:
 };
 
 template<bool do_gen_barrier, G1Barrier barrier,
-         bool do_mark_forwardee>
+         bool do_mark_object>
 class G1ParCopyClosure : public G1ParCopyHelper {
   G1ParScanClosure _scanner;
   template <class T> void do_oop_work(T* p);
@@ -120,8 +122,6 @@ public:
     _scanner(g1, par_scan_state), G1ParCopyHelper(g1, par_scan_state, &_scanner) { }
   template <class T> void do_oop_nv(T* p) {
     do_oop_work(p);
-    if (do_mark_forwardee)
-      mark_forwardee(p);
   }
   virtual void do_oop(oop* p)       { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }

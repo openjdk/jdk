@@ -215,12 +215,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_throw_AbstractMethodError_entry =
       ShouldNotCallThisStub();
 
-    StubRoutines::_throw_ArithmeticException_entry =
-      ShouldNotCallThisStub();
-
-    StubRoutines::_throw_NullPointerException_entry =
-      ShouldNotCallThisStub();
-
     StubRoutines::_throw_NullPointerException_at_call_entry =
       ShouldNotCallThisStub();
 
