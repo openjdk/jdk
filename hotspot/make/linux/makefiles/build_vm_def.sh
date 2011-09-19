@@ -7,6 +7,10 @@ else
 NM=nm
 fi
 
-$NM --defined-only $* | awk '
-   { if ($3 ~ /^_ZTV/ || $3 ~ /^gHotSpotVM/) print "\t" $3 ";" }
-   '
+$NM --defined-only $* \
+    | awk '{
+              if ($3 ~ /^_ZTV/ || $3 ~ /^gHotSpotVM/) print "\t" $3 ";"
+              if ($3 ~ /^UseSharedSpaces$/) print "\t" $3 ";"
+              if ($3 ~ /^_ZN9Arguments17SharedArchivePathE$/) print "\t" $3 ";"
+          }' \
+    | sort -u
