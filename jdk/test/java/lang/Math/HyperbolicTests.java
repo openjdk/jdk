@@ -266,7 +266,7 @@ public class HyperbolicTests {
         // double significand.
 
         for(int i = DoubleConsts.MIN_SUB_EXPONENT; i < -27; i++) {
-            double d = FpUtils.scalb(2.0, i);
+            double d = Math.scalb(2.0, i);
 
             // Result and expected are the same.
             failures += testSinhCaseWithUlpDiff(d, d, 2.5);
@@ -344,7 +344,7 @@ public class HyperbolicTests {
         // sinh(x) overflows for values greater than 710; in
         // particular, it overflows for all 2^i, i > 10.
         for(int i = 10; i <= DoubleConsts.MAX_EXPONENT; i++) {
-            double d = FpUtils.scalb(2.0, i);
+            double d = Math.scalb(2.0, i);
 
             // Result and expected are the same.
             failures += testSinhCaseWithUlpDiff(d,
@@ -625,7 +625,7 @@ public class HyperbolicTests {
         // rounded.
 
         for(int i = DoubleConsts.MIN_SUB_EXPONENT; i < -27; i++) {
-            double d = FpUtils.scalb(2.0, i);
+            double d = Math.scalb(2.0, i);
 
             // Result and expected are the same.
             failures += testCoshCaseWithUlpDiff(d, 1.0, 2.5);
@@ -703,7 +703,7 @@ public class HyperbolicTests {
         // cosh(x) overflows for values greater than 710; in
         // particular, it overflows for all 2^i, i > 10.
         for(int i = 10; i <= DoubleConsts.MAX_EXPONENT; i++) {
-            double d = FpUtils.scalb(2.0, i);
+            double d = Math.scalb(2.0, i);
 
             // Result and expected are the same.
             failures += testCoshCaseWithUlpDiff(d,
@@ -984,7 +984,7 @@ public class HyperbolicTests {
         // double significand.
 
         for(int i = DoubleConsts.MIN_SUB_EXPONENT; i < -27; i++) {
-            double d = FpUtils.scalb(2.0, i);
+            double d = Math.scalb(2.0, i);
 
             // Result and expected are the same.
             failures += testTanhCaseWithUlpDiff(d, d, 2.5);
@@ -998,7 +998,7 @@ public class HyperbolicTests {
         }
 
         for(int i = 5; i <= DoubleConsts.MAX_EXPONENT; i++) {
-            double d = FpUtils.scalb(2.0, i);
+            double d = Math.scalb(2.0, i);
 
             failures += testTanhCaseWithUlpDiff(d, 1.0, 2.5);
         }

@@ -88,14 +88,14 @@ public class Log1pTests {
 
         // For |x| < 2^-54 log1p(x) ~= x
         for(int i = DoubleConsts.MIN_SUB_EXPONENT; i <= -54; i++) {
-            double d = FpUtils.scalb(2, i);
+            double d = Math.scalb(2, i);
             failures += testLog1pCase(d, d);
             failures += testLog1pCase(-d, -d);
         }
 
         // For x > 2^53 log1p(x) ~= log(x)
         for(int i = 53; i <= DoubleConsts.MAX_EXPONENT; i++) {
-            double d = FpUtils.scalb(2, i);
+            double d = Math.scalb(2, i);
             failures += testLog1pCaseWithUlpDiff(d, StrictMath.log(d), 2.001);
         }
 
@@ -105,7 +105,7 @@ public class Log1pTests {
         for(int i = 0; i < 1000; i++) {
             double d = rand.nextDouble();
 
-            d = FpUtils.scalb(d, -53 - FpUtils.ilogb(d));
+            d = Math.scalb(d, -53 - FpUtils.ilogb(d));
 
             for(int j = -53; j <= 52; j++) {
                 failures += testLog1pCaseWithUlpDiff(d, hp15cLogp(d), 5);
@@ -137,8 +137,8 @@ public class Log1pTests {
                 pcNeighbors[2] = pc;
                 pcNeighbors[1] = FpUtils.nextDown(pc);
                 pcNeighbors[0] = FpUtils.nextDown(pcNeighbors[1]);
-                pcNeighbors[3] = FpUtils.nextUp(pc);
-                pcNeighbors[4] = FpUtils.nextUp(pcNeighbors[3]);
+                pcNeighbors[3] = Math.nextUp(pc);
+                pcNeighbors[4] = Math.nextUp(pcNeighbors[3]);
 
                 for(int j = 0; j < pcNeighbors.length; j++) {
                     pcNeighborsLog1p[j]       =       Math.log1p(pcNeighbors[j]);

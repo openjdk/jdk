@@ -3423,18 +3423,18 @@ public final class Formatter implements Closeable, Flushable {
             else {
                 assert(prec >= 1 && prec <= 12);
 
-                int exponent  = FpUtils.getExponent(d);
+                int exponent  = Math.getExponent(d);
                 boolean subnormal
                     = (exponent == DoubleConsts.MIN_EXPONENT - 1);
 
                 // If this is subnormal input so normalize (could be faster to
                 // do as integer operation).
                 if (subnormal) {
-                    scaleUp = FpUtils.scalb(1.0, 54);
+                    scaleUp = Math.scalb(1.0, 54);
                     d *= scaleUp;
                     // Calculate the exponent.  This is not just exponent + 54
                     // since the former is not the normalized exponent.
-                    exponent = FpUtils.getExponent(d);
+                    exponent = Math.getExponent(d);
                     assert exponent >= DoubleConsts.MIN_EXPONENT &&
                         exponent <= DoubleConsts.MAX_EXPONENT: exponent;
                 }

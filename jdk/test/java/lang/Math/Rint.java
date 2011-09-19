@@ -48,7 +48,7 @@ public class Rint {
 
     public static void main(String args[]) {
         int failures = 0;
-        double twoToThe52 = FpUtils.scalb(1.0, 52); // 2^52
+        double twoToThe52 = Math.scalb(1.0, 52); // 2^52
 
         double [][] testCases = {
             {0.0,                               0.0},
@@ -60,16 +60,16 @@ public class Rint {
 
             {FpUtils.nextDown(0.5),             0.0},
             {                 0.5,              0.0},
-            {  FpUtils.nextUp(0.5),             1.0},
+            {  Math.nextUp(0.5),             1.0},
 
             {0.7,                               1.0},
             {FpUtils.nextDown(1.0),             1.0},
             {                 1.0,              1.0},
-            {  FpUtils.nextUp(1.0),             1.0},
+            {  Math.nextUp(1.0),             1.0},
 
             {FpUtils.nextDown(1.5),             1.0},
             {                 1.5,              2.0},
-            {  FpUtils.nextUp(1.5),             2.0},
+            {  Math.nextUp(1.5),             2.0},
 
             {4.2,                               4.0},
             {4.5,                               4.0},
@@ -81,10 +81,10 @@ public class Rint {
 
             {150000.75,                         150001.0},
             {300000.5,                          300000.0},
-            {FpUtils.nextUp(300000.5),          300001.0},
+            {Math.nextUp(300000.5),          300001.0},
             {FpUtils.nextDown(300000.75),       300001.0},
             {300000.75,                         300001.0},
-            {FpUtils.nextUp(300000.75),         300001.0},
+            {Math.nextUp(300000.75),         300001.0},
             {300000.99,                         300001.0},
             {262144.75,                         262145.0}, //(2^18 ) + 0.75
             {499998.75,                         499999.0},
@@ -93,7 +93,7 @@ public class Rint {
 
             {FpUtils.nextDown(twoToThe52),      twoToThe52},
             {twoToThe52,                        twoToThe52},
-            {FpUtils.nextUp(twoToThe52),        FpUtils.nextUp(twoToThe52)},
+            {Math.nextUp(twoToThe52),        Math.nextUp(twoToThe52)},
 
             {Double.MAX_VALUE,          Double.MAX_VALUE},
             {Double.POSITIVE_INFINITY,  Double.POSITIVE_INFINITY},
