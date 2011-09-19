@@ -233,6 +233,10 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	echo "$(call gamma-path,commonsrc,os/posix/vm)"; \
 	[ -n "$(CFLAGS_BROWSE)" ] && \
 	    echo && echo "CFLAGS_BROWSE = $(CFLAGS_BROWSE)"; \
+	[ -n "$(OBJCOPY)" ] && \
+	    echo && echo "OBJCOPY = $(OBJCOPY)"; \
+	[ -n "$(STRIP_POLICY)" ] && \
+	    echo && echo "STRIP_POLICY = $(STRIP_POLICY)"; \
 	[ -n "$(HOTSPOT_EXTRA_SYSDEFS)" ] && \
 	    echo && \
 	    echo "HOTSPOT_EXTRA_SYSDEFS\$$(HOTSPOT_EXTRA_SYSDEFS) = $(HOTSPOT_EXTRA_SYSDEFS)" && \
