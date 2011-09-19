@@ -25,7 +25,6 @@
 
 package java.lang;
 import java.util.Random;
-import sun.misc.FpUtils;
 import sun.misc.DoubleConsts;
 
 /**
@@ -428,7 +427,7 @@ public final class StrictMath {
          * 1.0, which is exact too.
          */
         double twoToThe52 = (double)(1L << 52); // 2^52
-        double sign = FpUtils.rawCopySign(1.0, a); // preserve sign info
+        double sign = Math.copySign(1.0, a); // preserve sign info
         a = Math.abs(a);
 
         if (a < twoToThe52) { // E_min <= ilogb(a) <= 51
@@ -955,7 +954,7 @@ public final class StrictMath {
      * @since 1.5
      */
     public static double ulp(double d) {
-        return sun.misc.FpUtils.ulp(d);
+        return Math.ulp(d);
     }
 
     /**
@@ -982,7 +981,7 @@ public final class StrictMath {
      * @since 1.5
      */
     public static float ulp(float f) {
-        return sun.misc.FpUtils.ulp(f);
+        return Math.ulp(f);
     }
 
     /**
@@ -1003,7 +1002,7 @@ public final class StrictMath {
      * @since 1.5
      */
     public static double signum(double d) {
-        return sun.misc.FpUtils.signum(d);
+        return Math.signum(d);
     }
 
     /**
@@ -1024,7 +1023,7 @@ public final class StrictMath {
      * @since 1.5
      */
     public static float signum(float f) {
-        return sun.misc.FpUtils.signum(f);
+        return Math.signum(f);
     }
 
     /**
@@ -1202,7 +1201,7 @@ public final class StrictMath {
      * @since 1.6
      */
     public static double copySign(double magnitude, double sign) {
-        return sun.misc.FpUtils.copySign(magnitude, sign);
+        return Math.copySign(magnitude, (Double.isNaN(sign)?1.0d:sign));
     }
 
     /**
@@ -1218,7 +1217,7 @@ public final class StrictMath {
      * @since 1.6
      */
     public static float copySign(float magnitude, float sign) {
-        return sun.misc.FpUtils.copySign(magnitude, sign);
+        return Math.copySign(magnitude, (Float.isNaN(sign)?1.0f:sign));
     }
     /**
      * Returns the unbiased exponent used in the representation of a
@@ -1234,7 +1233,7 @@ public final class StrictMath {
      * @since 1.6
      */
     public static int getExponent(float f) {
-        return sun.misc.FpUtils.getExponent(f);
+        return Math.getExponent(f);
     }
 
     /**
@@ -1251,7 +1250,7 @@ public final class StrictMath {
      * @since 1.6
      */
     public static int getExponent(double d) {
-        return sun.misc.FpUtils.getExponent(d);
+        return Math.getExponent(d);
     }
 
     /**
@@ -1294,7 +1293,7 @@ public final class StrictMath {
      * @since 1.6
      */
     public static double nextAfter(double start, double direction) {
-        return sun.misc.FpUtils.nextAfter(start, direction);
+        return Math.nextAfter(start, direction);
     }
 
     /**
@@ -1336,7 +1335,7 @@ public final class StrictMath {
      * @since 1.6
      */
     public static float nextAfter(float start, double direction) {
-        return sun.misc.FpUtils.nextAfter(start, direction);
+        return Math.nextAfter(start, direction);
     }
 
     /**
@@ -1365,7 +1364,7 @@ public final class StrictMath {
      * @since 1.6
      */
     public static double nextUp(double d) {
-        return sun.misc.FpUtils.nextUp(d);
+        return Math.nextUp(d);
     }
 
     /**
@@ -1394,9 +1393,8 @@ public final class StrictMath {
      * @since 1.6
      */
     public static float nextUp(float f) {
-        return sun.misc.FpUtils.nextUp(f);
+        return Math.nextUp(f);
     }
-
 
     /**
      * Return {@code d} &times;
@@ -1429,7 +1427,7 @@ public final class StrictMath {
      * @since 1.6
      */
     public static double scalb(double d, int scaleFactor) {
-        return sun.misc.FpUtils.scalb(d, scaleFactor);
+        return Math.scalb(d, scaleFactor);
     }
 
     /**
@@ -1463,6 +1461,6 @@ public final class StrictMath {
      * @since 1.6
      */
     public static float scalb(float f, int scaleFactor) {
-        return sun.misc.FpUtils.scalb(f, scaleFactor);
+        return Math.scalb(f, scaleFactor);
     }
 }

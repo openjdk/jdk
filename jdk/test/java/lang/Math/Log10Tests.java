@@ -153,12 +153,12 @@ public class Log10Tests {
             for(int i = 0; i < half; i++) {
                 if (i == 0) {
                     input[half] = 1.0;
-                    up   = FpUtils.nextUp(1.0);
+                    up   = Math.nextUp(1.0);
                     down = FpUtils.nextDown(1.0);
                 } else {
                     input[half + i] = up;
                     input[half - i] = down;
-                    up   = FpUtils.nextUp(up);
+                    up   = Math.nextUp(up);
                     down = FpUtils.nextDown(down);
                 }
             }

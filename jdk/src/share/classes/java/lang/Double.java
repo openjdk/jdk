@@ -283,7 +283,7 @@ public final class Double extends Number implements Comparable<Double> {
             // Initialized to maximum size of output.
             StringBuffer answer = new StringBuffer(24);
 
-            if (FpUtils.rawCopySign(1.0, d) == -1.0) // value is negative,
+            if (Math.copySign(1.0, d) == -1.0)    // value is negative,
                 answer.append("-");                  // so append sign info
 
             answer.append("0x");
@@ -322,7 +322,7 @@ public final class Double extends Number implements Comparable<Double> {
                 // E_min -1).
                 answer.append("p" + (subnormal ?
                                DoubleConsts.MIN_EXPONENT:
-                               FpUtils.getExponent(d) ));
+                               Math.getExponent(d) ));
             }
             return answer.toString();
         }

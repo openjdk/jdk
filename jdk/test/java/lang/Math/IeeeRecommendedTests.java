@@ -177,7 +177,7 @@ public class IeeeRecommendedTests {
             }
 
             if (i > FloatConsts.MIN_EXPONENT) {
-                float po2minus = FpUtils.nextAfter(po2,
+                float po2minus = Math.nextAfter(po2,
                                                  Float.NEGATIVE_INFINITY);
                 failures += testGetExponentCase(po2minus, i-1);
             }
@@ -205,7 +205,7 @@ public class IeeeRecommendedTests {
             // Test largest value in next smaller binade
             if (i >= 3) {// (i == 1) would test 0.0;
                          // (i == 2) would just retest MIN_VALUE
-                testGetExponentCase(FpUtils.nextAfter(top, 0.0f),
+                testGetExponentCase(Math.nextAfter(top, 0.0f),
                                     FloatConsts.MIN_EXPONENT - 1);
 
                 if( i >= 10) {
@@ -284,7 +284,7 @@ public class IeeeRecommendedTests {
             }
 
             if (i > DoubleConsts.MIN_EXPONENT) {
-                double po2minus = FpUtils.nextAfter(po2,
+                double po2minus = Math.nextAfter(po2,
                                                     Double.NEGATIVE_INFINITY);
                 failures += testGetExponentCase(po2minus, i-1);
             }
@@ -312,7 +312,7 @@ public class IeeeRecommendedTests {
             // Test largest value in next smaller binade
             if (i >= 3) {// (i == 1) would test 0.0;
                          // (i == 2) would just retest MIN_VALUE
-                testGetExponentCase(FpUtils.nextAfter(top, 0.0),
+                testGetExponentCase(Math.nextAfter(top, 0.0),
                                     DoubleConsts.MIN_EXPONENT - 1);
 
                 if( i >= 10) {
@@ -1061,7 +1061,7 @@ public class IeeeRecommendedTests {
                     float value = someTestCases[i];
                     failures+=testScalbCase(value,
                                             scaleFactor,
-                                            FpUtils.copySign( (scaleFactor>0?infinityF:0.0f), value) );
+                                            Math.copySign( (scaleFactor>0?infinityF:0.0f), value) );
                 }
             }
         }
@@ -1095,7 +1095,7 @@ public class IeeeRecommendedTests {
                 failures+=testScalbCase(value,
                                         scaleFactor,
                                         (FpUtils.ilogb(value) +j > FloatConsts.MAX_EXPONENT ) ?
-                                        FpUtils.copySign(infinityF, value) : // overflow
+                                        Math.copySign(infinityF, value) : // overflow
                                         // calculate right answer
                                         twoToTheMaxExp*(twoToTheMaxExp*(scale*value)) );
                 scale*=2.0f;
@@ -1268,7 +1268,7 @@ public class IeeeRecommendedTests {
                     double value = someTestCases[i];
                     failures+=testScalbCase(value,
                                             scaleFactor,
-                                            FpUtils.copySign( (scaleFactor>0?infinityD:0.0), value) );
+                                            Math.copySign( (scaleFactor>0?infinityD:0.0), value) );
                 }
             }
         }
@@ -1302,7 +1302,7 @@ public class IeeeRecommendedTests {
                 failures+=testScalbCase(value,
                                         scaleFactor,
                                         (FpUtils.ilogb(value) +j > DoubleConsts.MAX_EXPONENT ) ?
-                                        FpUtils.copySign(infinityD, value) : // overflow
+                                        Math.copySign(infinityD, value) : // overflow
                                         // calculate right answer
                                         twoToTheMaxExp*(twoToTheMaxExp*(scale*value)) );
                 scale*=2.0;
@@ -1423,7 +1423,7 @@ public class IeeeRecommendedTests {
 
             // Create power of two
             float po2 = powerOfTwoF(i);
-            expected = FpUtils.scalb(1.0f, i - (FloatConsts.SIGNIFICAND_WIDTH-1));
+            expected = Math.scalb(1.0f, i - (FloatConsts.SIGNIFICAND_WIDTH-1));
 
             failures += testUlpCase(po2, expected);
 
@@ -1443,7 +1443,7 @@ public class IeeeRecommendedTests {
             }
 
             if (i > FloatConsts.MIN_EXPONENT) {
-                float po2minus = FpUtils.nextAfter(po2,
+                float po2minus = Math.nextAfter(po2,
                                                    Float.NEGATIVE_INFINITY);
                 failures += testUlpCase(po2minus, expected/2.0f);
             }
@@ -1470,7 +1470,7 @@ public class IeeeRecommendedTests {
             // Test largest value in next smaller binade
             if (i >= 3) {// (i == 1) would test 0.0;
                          // (i == 2) would just retest MIN_VALUE
-                testUlpCase(FpUtils.nextAfter(top, 0.0f),
+                testUlpCase(Math.nextAfter(top, 0.0f),
                             Float.MIN_VALUE);
 
                 if( i >= 10) {
@@ -1528,7 +1528,7 @@ public class IeeeRecommendedTests {
 
             // Create power of two
             double po2 = powerOfTwoD(i);
-            expected = FpUtils.scalb(1.0, i - (DoubleConsts.SIGNIFICAND_WIDTH-1));
+            expected = Math.scalb(1.0, i - (DoubleConsts.SIGNIFICAND_WIDTH-1));
 
             failures += testUlpCase(po2, expected);
 
@@ -1548,7 +1548,7 @@ public class IeeeRecommendedTests {
             }
 
             if (i > DoubleConsts.MIN_EXPONENT) {
-                double po2minus = FpUtils.nextAfter(po2,
+                double po2minus = Math.nextAfter(po2,
                                                     Double.NEGATIVE_INFINITY);
                 failures += testUlpCase(po2minus, expected/2.0f);
             }
@@ -1575,7 +1575,7 @@ public class IeeeRecommendedTests {
             // Test largest value in next smaller binade
             if (i >= 3) {// (i == 1) would test 0.0;
                          // (i == 2) would just retest MIN_VALUE
-                testUlpCase(FpUtils.nextAfter(top, 0.0f),
+                testUlpCase(Math.nextAfter(top, 0.0f),
                             Double.MIN_VALUE);
 
                 if( i >= 10) {
