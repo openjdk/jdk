@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,19 @@
  * questions.
  */
 
-// key: compiler.err.empty.char.lit
-// key: compiler.err.unclosed.char.lit
-// key: compiler.err.premature.eof
+/*
+ * @test
+ * @bug 7073477
+ * @summary NPE in com.sun.tools.javac.code.Symbol$VarSymbol.getConstValue
+ * @compile T7073477.java
+ */
 
-class X {
-    char c = '';
+@SuppressWarnings(T7073477A.S)
+class T7073477 {
 }
+
+class T7073477A {
+  @SuppressWarnings("")
+  static final String S = "";
+}
+
