@@ -105,7 +105,8 @@ class G1ParCopyHelper : public G1ParClosureSuper {
   G1ParScanClosure *_scanner;
 protected:
   template <class T> void mark_object(T* p);
-  oop copy_to_survivor_space(oop obj, bool should_mark_copy);
+  oop copy_to_survivor_space(oop obj, bool should_mark_root,
+                                      bool should_mark_copy);
 public:
   G1ParCopyHelper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state,
                   G1ParScanClosure *scanner) :

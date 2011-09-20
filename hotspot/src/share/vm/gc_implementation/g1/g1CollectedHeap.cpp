@@ -3946,7 +3946,8 @@ void G1CollectedHeap::drain_evac_failure_scan_stack() {
 
 oop
 G1CollectedHeap::handle_evacuation_failure_par(OopsInHeapRegionClosure* cl,
-                                               oop old) {
+                                               oop old,
+                                               bool should_mark_root) {
   assert(obj_in_cs(old),
          err_msg("obj: "PTR_FORMAT" should still be in the CSet",
                  (HeapWord*) old));
@@ -3954,6 +3955,16 @@ G1CollectedHeap::handle_evacuation_failure_par(OopsInHeapRegionClosure* cl,
   oop forward_ptr = old->forward_to_atomic(old);
   if (forward_ptr == NULL) {
     // Forward-to-self succeeded.
+
+    // should_mark_root will be true when this routine is called
+    // from a root scanning closure during an initial mark pause.
+    // In this case the thread that succeeds in self-forwarding the
+    // object is also responsible for marking the object.
+    if (should_mark_root) {
+      assert(!oopDesc::is_null(old), "shouldn't be");
+      _cm->grayRoot(old);
+    }
+
     if (_evac_failure_closure != cl) {
       MutexLockerEx x(EvacFailureStack_lock, Mutex::_no_safepoint_check_flag);
       assert(!_drain_in_progress,
@@ -4208,7 +4219,8 @@ template <class T> void G1ParCopyHelper::mark_object(T* p) {
   }
 }
 
-oop G1ParCopyHelper::copy_to_survivor_space(oop old, bool should_mark_copy) {
+oop G1ParCopyHelper::copy_to_survivor_space(oop old, bool should_mark_root,
+                                                     bool should_mark_copy) {
   size_t    word_sz = old->size();
   HeapRegion* from_region = _g1->heap_region_containing_raw(old);
   // +1 to make the -1 indexes valid...
@@ -4228,7 +4240,7 @@ oop G1ParCopyHelper::copy_to_survivor_space(oop old, bool should_mark_copy) {
     // This will either forward-to-self, or detect that someone else has
     // installed a forwarding pointer.
     OopsInHeapRegionClosure* cl = _par_scan_state->evac_failure_closure();
-    return _g1->handle_evacuation_failure_par(cl, old);
+    return _g1->handle_evacuation_failure_par(cl, old, should_mark_root);
   }
 
   // We're going to allocate linearly, so might as well prefetch ahead.
@@ -4330,11 +4342,26 @@ void G1ParCopyClosure<do_gen_barrier, barrier, do_mark_object>
       // we also need to handle marking of roots in the
       // event of an evacuation failure. In the event of an
       // evacuation failure, the object is forwarded to itself
-      // and not copied so let's mark it here.
+      // and not copied. For root-scanning closures, the
+      // object would be marked after a successful self-forward
+      // but an object could be pointed to by both a root and non
+      // root location and be self-forwarded by a non-root-scanning
+      // closure. Therefore we also have to attempt to mark the
+      // self-forwarded root object here.
       if (do_mark_object && obj->forwardee() == obj) {
         mark_object(p);
       }
     } else {
+      // During an initial mark pause, objects that are pointed to
+      // by the roots need to be marked - even in the event of an
+      // evacuation failure. We pass the template parameter
+      // do_mark_object (which is true for root scanning closures
+      // during an initial mark pause) to copy_to_survivor_space
+      // which will pass it on to the evacuation failure handling
+      // code. The thread that successfully self-forwards a root
+      // object to itself is responsible for marking the object.
+      bool should_mark_root = do_mark_object;
+
       // We need to mark the copied object if we're a root scanning
       // closure during an initial mark pause (i.e. do_mark_object
       // will be true), or the object is already marked and we need
@@ -4343,7 +4370,8 @@ void G1ParCopyClosure<do_gen_barrier, barrier, do_mark_object>
                               _during_initial_mark ||
                               (_mark_in_progress && !_g1->is_obj_ill(obj));
 
-      oop copy_oop = copy_to_survivor_space(obj, should_mark_copy);
+      oop copy_oop = copy_to_survivor_space(obj, should_mark_root,
+                                                 should_mark_copy);
       oopDesc::encode_store_heap_oop(p, copy_oop);
     }
     // When scanning the RS, we only care about objs in CS.

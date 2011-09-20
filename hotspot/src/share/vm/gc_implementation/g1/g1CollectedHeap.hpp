@@ -822,7 +822,8 @@ protected:
   void finalize_for_evac_failure();
 
   // An attempt to evacuate "obj" has failed; take necessary steps.
-  oop handle_evacuation_failure_par(OopsInHeapRegionClosure* cl, oop obj);
+  oop handle_evacuation_failure_par(OopsInHeapRegionClosure* cl, oop obj,
+                                    bool should_mark_root);
   void handle_evacuation_failure_common(oop obj, markOop m);
 
   // Instance of the concurrent mark is_alive closure for embedding
