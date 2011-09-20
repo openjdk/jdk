@@ -1153,10 +1153,15 @@ public class BasicFileChooserUI extends FileChooserUI {
                 if (shellFolder.isLink()) {
                     File linkedTo = shellFolder.getLinkLocation();
 
-                    if (linkedTo != null && fc.isTraversable(linkedTo)) {
-                        dir = linkedTo;
+                    // If linkedTo is null we try to use dir
+                    if (linkedTo != null) {
+                        if (fc.isTraversable(linkedTo)) {
+                            dir = linkedTo;
+                        } else {
+                            return;
+                        }
                     } else {
-                        return;
+                        dir = shellFolder;
                     }
                 }
             } catch (FileNotFoundException ex) {

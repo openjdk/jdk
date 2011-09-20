@@ -653,7 +653,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
             return c;
         } catch (CloneNotSupportedException e) {
             // this shouldn't happen, since we are Cloneable
-            throw new InternalError();
+            throw new InternalError(e);
         }
     }
 
