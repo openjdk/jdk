@@ -52,7 +52,7 @@ class UTF8 {
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             throw new InternalError
-                ("Bug in sun.reflect bootstrap UTF-8 encoder");
+                ("Bug in sun.reflect bootstrap UTF-8 encoder", e);
         }
         return res;
     }

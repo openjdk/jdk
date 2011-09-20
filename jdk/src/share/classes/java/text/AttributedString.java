@@ -794,7 +794,7 @@ public class AttributedString {
                 return other;
             }
             catch (CloneNotSupportedException e) {
-                throw new InternalError();
+                throw new InternalError(e);
             }
         }
 
