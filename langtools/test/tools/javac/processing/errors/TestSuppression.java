@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.*;
 
 import com.sun.source.util.JavacTask;
+import com.sun.tools.javac.api.ClientCodeWrapper;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.util.JCDiagnostic;
 
@@ -171,7 +172,7 @@ public class TestSuppression {
 
         public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
             System.err.println((++total) + ": "
-                    + "resolveError:" + isResolveError((JCDiagnostic) diagnostic) + "\n"
+                    + "resolveError:" + isResolveError(unwrap(diagnostic)) + "\n"
                     + diagnostic);
             Diagnostic.Kind dk = diagnostic.getKind();
             Integer c = counts.get(dk);
@@ -180,6 +181,14 @@ public class TestSuppression {
 
         private static boolean isResolveError(JCDiagnostic d) {
             return d.isFlagSet(RESOLVE_ERROR);
+        }
+
+        private JCDiagnostic unwrap(Diagnostic<? extends JavaFileObject> diagnostic) {
+            if (diagnostic instanceof JCDiagnostic)
+                return (JCDiagnostic) diagnostic;
+            if (diagnostic instanceof ClientCodeWrapper.DiagnosticSourceUnwrapper)
+                return ((ClientCodeWrapper.DiagnosticSourceUnwrapper)diagnostic).d;
+            throw new IllegalArgumentException();
         }
     }
 
