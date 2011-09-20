@@ -436,7 +436,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public PackageSymbol packge;
         public ImportScope namedImportScope;
         public StarImportScope starImportScope;
-        public long flags;
         public Position.LineMap lineMap = null;
         public Map<JCTree, String> docComments = null;
         public Map<JCTree, Integer> endPositions = null;
