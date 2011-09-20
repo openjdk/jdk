@@ -21,10 +21,12 @@
  * questions.
  */
 
-import com.sun.tools.javac.file.JavacFileManager;
 import java.io.*;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.*;
 import java.util.regex.*;
+import javax.annotation.processing.Processor;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
@@ -37,12 +39,11 @@ import javax.tools.ToolProvider;
 // import com.sun.tools.javac.Main
 // import com.sun.tools.javac.main.Main
 
+import com.sun.tools.javac.api.ClientCodeWrapper;
+import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JavacMessages;
 import com.sun.tools.javac.util.JCDiagnostic;
-import java.net.URL;
-import java.net.URLClassLoader;
-import javax.annotation.processing.Processor;
 
 /**
  * Class to handle example code designed to illustrate javac diagnostic messages.
@@ -397,7 +398,7 @@ class Example implements Comparable<Example> {
 
             if (keys != null) {
                 for (Diagnostic<? extends JavaFileObject> d: dc.getDiagnostics()) {
-                    scanForKeys((JCDiagnostic) d, keys);
+                    scanForKeys(unwrap(d), keys);
                 }
             }
 
@@ -417,6 +418,14 @@ class Example implements Comparable<Example> {
             }
             for (JCDiagnostic sd: d.getSubdiagnostics())
                 scanForKeys(sd, keys);
+        }
+
+        private JCDiagnostic unwrap(Diagnostic<? extends JavaFileObject> diagnostic) {
+            if (diagnostic instanceof JCDiagnostic)
+                return (JCDiagnostic) diagnostic;
+            if (diagnostic instanceof ClientCodeWrapper.DiagnosticSourceUnwrapper)
+                return ((ClientCodeWrapper.DiagnosticSourceUnwrapper)diagnostic).d;
+            throw new IllegalArgumentException();
         }
     }
 
