@@ -418,6 +418,8 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
          */
         perms.add(new SocketPermission("*", "connect,accept"));
 
+        perms.add(new RuntimePermission("accessClassInPackage.sun.*"));
+
         // add permissions required to load from codebase URL path
         LoaderHandler.addPermissionsForURLs(urls, perms, false);
 
