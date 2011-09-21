@@ -910,27 +910,37 @@ void ciEnv::validate_compile_task_dependencies(ciMethod* target) {
   // dependencies were inserted.  Any violated dependences in this
   // case are dumped to the tty.
   bool counter_changed = system_dictionary_modification_counter_changed();
-  bool test_deps = counter_changed;
-  DEBUG_ONLY(test_deps = true);
-  if (!test_deps)  return;
 
-  bool print_failures = false;
-  DEBUG_ONLY(print_failures = !counter_changed);
-  bool keep_going = (print_failures || xtty != NULL);
+  bool verify_deps = trueInDebug;
+  if (!counter_changed && !verify_deps)  return;
+
   int klass_violations = 0;
-
   for (Dependencies::DepStream deps(dependencies()); deps.next(); ) {
     if (!deps.is_klass_type())  continue;  // skip non-klass dependencies
     klassOop witness = deps.check_dependency();
     if (witness != NULL) {
       klass_violations++;
-      if (print_failures)  deps.print_dependency(witness, /*verbose=*/ true);
+      if (!counter_changed) {
+        // Dependence failed but counter didn't change.  Log a message
+        // describing what failed and allow the assert at the end to
+        // trigger.
+        deps.print_dependency(witness);
+      } else if (xtty == NULL) {
+        // If we're not logging then a single violation is sufficient,
+        // otherwise we want to log all the dependences which were
+        // violated.
+        break;
+      }
     }
-    // If there's no log and we're not sanity-checking, we're done.
-    if (!keep_going)  break;
   }
 
   if (klass_violations != 0) {
+#ifdef ASSERT
+    if (!counter_changed && !PrintCompilation) {
+      // Print out the compile task that failed
+      _task->print_line();
+    }
+#endif
     assert(counter_changed, "failed dependencies, but counter didn't change");
     record_failure("concurrent class loading");
   }
