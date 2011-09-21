@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,13 +45,13 @@ HOSTNAME=`uname -n`
 
 JSTATD_OUT="jstatd_$$.out"
 
-${JSTATD} -J-Djava.security.policy=${TESTSRC}/all.policy 2>&1 > ${JSTATD_OUT} &
+${JSTATD} -J-XX:+UsePerfData -J-Djava.security.policy=${TESTSRC}/all.policy 2>&1 > ${JSTATD_OUT} &
 JSTATD_PID=$!
 
 echo "jstatd started as pid ${JSTATD_PID}"
 sleep 3
 
-${JPS} ${HOSTNAME} 2>&1 | awk -f ${TESTSRC}/jpsOutput1.awk
+${JPS} -J-XX:+UsePerfData ${HOSTNAME} 2>&1 | awk -f ${TESTSRC}/jpsOutput1.awk
 
 if [ $? -ne 0 ]
 then
@@ -60,7 +60,7 @@ then
     exit 1
 fi
 
-${JSTAT} -gcutil ${JSTATD_PID}@${HOSTNAME} 250 5 2>&1 | awk -f ${TESTSRC}/jstatGcutilOutput1.awk
+${JSTAT} -J-XX:+UsePerfData -gcutil ${JSTATD_PID}@${HOSTNAME} 250 5 2>&1 | awk -f ${TESTSRC}/jstatGcutilOutput1.awk
 RC=$?
 
 if [ ${RC} -ne 0 ]
