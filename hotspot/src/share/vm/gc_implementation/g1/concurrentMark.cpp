@@ -2163,70 +2163,83 @@ void G1RefProcTaskExecutor::execute(EnqueueTask& enq_task) {
 void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   ResourceMark rm;
   HandleMark   hm;
-  G1CollectedHeap* g1h   = G1CollectedHeap::heap();
-  ReferenceProcessor* rp = g1h->ref_processor();
 
-  // See the comment in G1CollectedHeap::ref_processing_init()
-  // about how reference processing currently works in G1.
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  // Process weak references.
-  rp->setup_policy(clear_all_soft_refs);
-  assert(_markStack.isEmpty(), "mark stack should be empty");
+  // Is alive closure.
+  G1CMIsAliveClosure g1_is_alive(g1h);
 
-  G1CMIsAliveClosure   g1_is_alive(g1h);
-  G1CMKeepAliveClosure g1_keep_alive(g1h, this, nextMarkBitMap());
-  G1CMDrainMarkingStackClosure
-    g1_drain_mark_stack(nextMarkBitMap(), &_markStack, &g1_keep_alive);
-  // We use the work gang from the G1CollectedHeap and we utilize all
-  // the worker threads.
-  int active_workers = g1h->workers() ? g1h->workers()->total_workers() : 1;
-  active_workers = MAX2(MIN2(active_workers, (int)_max_task_num), 1);
+  // Inner scope to exclude the cleaning of the string and symbol
+  // tables from the displayed time.
+  {
+    bool verbose = PrintGC && PrintGCDetails;
+    if (verbose) {
+      gclog_or_tty->put(' ');
+    }
+    TraceTime t("GC ref-proc", verbose, false, gclog_or_tty);
 
-  G1RefProcTaskExecutor par_task_executor(g1h, this, nextMarkBitMap(),
-                                          g1h->workers(), active_workers);
+    ReferenceProcessor* rp = g1h->ref_processor();
 
+    // See the comment in G1CollectedHeap::ref_processing_init()
+    // about how reference processing currently works in G1.
 
-  if (rp->processing_is_mt()) {
-    // Set the degree of MT here.  If the discovery is done MT, there
-    // may have been a different number of threads doing the discovery
-    // and a different number of discovered lists may have Ref objects.
-    // That is OK as long as the Reference lists are balanced (see
-    // balance_all_queues() and balance_queues()).
-    rp->set_active_mt_degree(active_workers);
+    // Process weak references.
+    rp->setup_policy(clear_all_soft_refs);
+    assert(_markStack.isEmpty(), "mark stack should be empty");
 
-    rp->process_discovered_references(&g1_is_alive,
+    G1CMKeepAliveClosure g1_keep_alive(g1h, this, nextMarkBitMap());
+    G1CMDrainMarkingStackClosure
+      g1_drain_mark_stack(nextMarkBitMap(), &_markStack, &g1_keep_alive);
+
+    // We use the work gang from the G1CollectedHeap and we utilize all
+    // the worker threads.
+    int active_workers = g1h->workers() ? g1h->workers()->total_workers() : 1;
+    active_workers = MAX2(MIN2(active_workers, (int)_max_task_num), 1);
+
+    G1RefProcTaskExecutor par_task_executor(g1h, this, nextMarkBitMap(),
+                                            g1h->workers(), active_workers);
+
+    if (rp->processing_is_mt()) {
+      // Set the degree of MT here.  If the discovery is done MT, there
+      // may have been a different number of threads doing the discovery
+      // and a different number of discovered lists may have Ref objects.
+      // That is OK as long as the Reference lists are balanced (see
+      // balance_all_queues() and balance_queues()).
+      rp->set_active_mt_degree(active_workers);
+
+      rp->process_discovered_references(&g1_is_alive,
                                       &g1_keep_alive,
                                       &g1_drain_mark_stack,
                                       &par_task_executor);
 
-    // The work routines of the parallel keep_alive and drain_marking_stack
-    // will set the has_overflown flag if we overflow the global marking
-    // stack.
-  } else {
-    rp->process_discovered_references(&g1_is_alive,
-                                      &g1_keep_alive,
-                                      &g1_drain_mark_stack,
-                                      NULL);
+      // The work routines of the parallel keep_alive and drain_marking_stack
+      // will set the has_overflown flag if we overflow the global marking
+      // stack.
+    } else {
+      rp->process_discovered_references(&g1_is_alive,
+                                        &g1_keep_alive,
+                                        &g1_drain_mark_stack,
+                                        NULL);
+    }
 
+    assert(_markStack.overflow() || _markStack.isEmpty(),
+            "mark stack should be empty (unless it overflowed)");
+    if (_markStack.overflow()) {
+      // Should have been done already when we tried to push an
+      // entry on to the global mark stack. But let's do it again.
+      set_has_overflown();
+    }
+
+    if (rp->processing_is_mt()) {
+      assert(rp->num_q() == active_workers, "why not");
+      rp->enqueue_discovered_references(&par_task_executor);
+    } else {
+      rp->enqueue_discovered_references();
+    }
+
+    rp->verify_no_references_recorded();
+    assert(!rp->discovery_enabled(), "should have been disabled");
   }
-
-  assert(_markStack.overflow() || _markStack.isEmpty(),
-      "mark stack should be empty (unless it overflowed)");
-  if (_markStack.overflow()) {
-    // Should have been done already when we tried to push an
-    // entry on to the global mark stack. But let's do it again.
-    set_has_overflown();
-  }
-
-  if (rp->processing_is_mt()) {
-    assert(rp->num_q() == active_workers, "why not");
-    rp->enqueue_discovered_references(&par_task_executor);
-  } else {
-    rp->enqueue_discovered_references();
-  }
-
-  rp->verify_no_references_recorded();
-  assert(!rp->discovery_enabled(), "should have been disabled");
 
   // Now clean up stale oops in StringTable
   StringTable::unlink(&g1_is_alive);
