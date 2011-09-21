@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,10 @@ JAVA="${TESTJAVA}/bin/java"
 # any args to Sleeper.main() or any jvm flags or options, as we
 # need to inspect jps output for the no args condition.
 #
+# Note: this test can not pass on a VM with UsePerfData disabled by default,
+# and we can not set -XX:+UsePerfData as that invalidates the test premise of
+# there being no jvm flags
+
 ${JAVA} -cp ${TESTCLASSES} Sleeper &
 SLEEPER_PID=$!
 
