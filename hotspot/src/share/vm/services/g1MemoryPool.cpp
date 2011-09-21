@@ -73,7 +73,7 @@ size_t G1MemoryPoolSuper::old_space_used(G1CollectedHeap* g1h) {
 
 G1EdenPool::G1EdenPool(G1CollectedHeap* g1h) :
   G1MemoryPoolSuper(g1h,
-                    "G1 Eden",
+                    "G1 Eden Space",
                     eden_space_committed(g1h), /* init_size */
                     false /* support_usage_threshold */) { }
 
@@ -88,7 +88,7 @@ MemoryUsage G1EdenPool::get_memory_usage() {
 
 G1SurvivorPool::G1SurvivorPool(G1CollectedHeap* g1h) :
   G1MemoryPoolSuper(g1h,
-                    "G1 Survivor",
+                    "G1 Survivor Space",
                     survivor_space_committed(g1h), /* init_size */
                     false /* support_usage_threshold */) { }
 
