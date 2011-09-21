@@ -459,14 +459,15 @@ void G1CollectorPolicy::initialize_flags() {
 // ParallelScavengeHeap::initialize()). We might change this in the
 // future, but it's a good start.
 class G1YoungGenSizer : public TwoGenerationCollectorPolicy {
+private:
+  size_t size_to_region_num(size_t byte_size) {
+    return MAX2((size_t) 1, byte_size / HeapRegion::GrainBytes);
+  }
 
 public:
   G1YoungGenSizer() {
     initialize_flags();
     initialize_size_info();
-  }
-  size_t size_to_region_num(size_t byte_size) {
-    return MAX2((size_t) 1, byte_size / HeapRegion::GrainBytes);
   }
   size_t min_young_region_num() {
     return size_to_region_num(_min_gen0_size);
@@ -501,11 +502,10 @@ void G1CollectorPolicy::init() {
 
   if (FLAG_IS_CMDLINE(NewRatio)) {
     if (FLAG_IS_CMDLINE(NewSize) || FLAG_IS_CMDLINE(MaxNewSize)) {
-      gclog_or_tty->print_cr("-XX:NewSize and -XX:MaxNewSize overrides -XX:NewRatio");
+      warning("-XX:NewSize and -XX:MaxNewSize override -XX:NewRatio");
     } else {
       // Treat NewRatio as a fixed size that is only recalculated when the heap size changes
-      size_t heap_regions = sizer.size_to_region_num(_g1->n_regions());
-      update_young_list_size_using_newratio(heap_regions);
+      update_young_list_size_using_newratio(_g1->n_regions());
       _using_new_ratio_calculations = true;
     }
   }
