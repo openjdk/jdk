@@ -31,8 +31,8 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-<source-folder style="packages">
-    <label>Closed-Source Packages</label>
+<source-folder style="tree">
+    <label>Closed Sources</label>
     <location>${root}/src/closed/share/classes</location>
     <includes>${includes}</includes>
     <excludes>${excludes}</excludes>
