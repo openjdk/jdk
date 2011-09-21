@@ -4566,7 +4566,7 @@ G1PrintRegionLivenessInfoClosure(outputStream* out, const char* phase_name)
                  G1PPRL_SUM_BYTE_FORMAT("region-size"),
                  g1_committed.start(), g1_committed.end(),
                  g1_reserved.start(), g1_reserved.end(),
-                 HeapRegion::GrainBytes);
+                 (size_t)HeapRegion::GrainBytes);
   _out->print_cr(G1PPRL_LINE_PREFIX);
   _out->print_cr(G1PPRL_LINE_PREFIX
                  G1PPRL_TYPE_H_FORMAT
@@ -4577,6 +4577,15 @@ G1PrintRegionLivenessInfoClosure(outputStream* out, const char* phase_name)
                  G1PPRL_DOUBLE_H_FORMAT,
                  "type", "address-range",
                  "used", "prev-live", "next-live", "gc-eff");
+  _out->print_cr(G1PPRL_LINE_PREFIX
+                 G1PPRL_TYPE_H_FORMAT
+                 G1PPRL_ADDR_BASE_H_FORMAT
+                 G1PPRL_BYTE_H_FORMAT
+                 G1PPRL_BYTE_H_FORMAT
+                 G1PPRL_BYTE_H_FORMAT
+                 G1PPRL_DOUBLE_H_FORMAT,
+                 "", "",
+                 "(bytes)", "(bytes)", "(bytes)", "(bytes/ms)");
 }
 
 // It takes as a parameter a reference to one of the _hum_* fields, it
