@@ -489,6 +489,7 @@ HeapRegion(size_t hrs_index, G1BlockOffsetSharedArray* sharedOffsetArray,
     _next_in_special_set(NULL), _orig_end(NULL),
     _claimed(InitialClaimValue), _evacuation_failed(false),
     _prev_marked_bytes(0), _next_marked_bytes(0), _sort_index(-1),
+    _gc_efficiency(0.0),
     _young_type(NotYoung), _next_young_region(NULL),
     _next_dirty_cards_region(NULL), _next(NULL), _pending_removal(false),
 #ifdef ASSERT
