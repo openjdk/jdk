@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,8 @@
  * @test
  * @bug 4101566 4831589
  * @summary Check for correct implementation of Math.rint(double)
- *
  */
 
-import sun.misc.FpUtils;
 import sun.misc.DoubleConsts;
 
 public class Rint {
@@ -53,22 +51,22 @@ public class Rint {
         double [][] testCases = {
             {0.0,                               0.0},
             {Double.MIN_VALUE,                  0.0},
-            {FpUtils.nextDown(DoubleConsts.MIN_NORMAL), 0.0},
+            {Math.nextDown(DoubleConsts.MIN_NORMAL), 0.0},
             {DoubleConsts.MIN_NORMAL,           0.0},
 
             {0.2,                               0.0},
 
-            {FpUtils.nextDown(0.5),             0.0},
-            {                 0.5,              0.0},
+            {Math.nextDown(0.5),             0.0},
+            {              0.5,              0.0},
             {  Math.nextUp(0.5),             1.0},
 
             {0.7,                               1.0},
-            {FpUtils.nextDown(1.0),             1.0},
-            {                 1.0,              1.0},
+            {Math.nextDown(1.0),             1.0},
+            {              1.0,              1.0},
             {  Math.nextUp(1.0),             1.0},
 
-            {FpUtils.nextDown(1.5),             1.0},
-            {                 1.5,              2.0},
+            {Math.nextDown(1.5),             1.0},
+            {              1.5,              2.0},
             {  Math.nextUp(1.5),             2.0},
 
             {4.2,                               4.0},
@@ -82,7 +80,7 @@ public class Rint {
             {150000.75,                         150001.0},
             {300000.5,                          300000.0},
             {Math.nextUp(300000.5),          300001.0},
-            {FpUtils.nextDown(300000.75),       300001.0},
+            {Math.nextDown(300000.75),       300001.0},
             {300000.75,                         300001.0},
             {Math.nextUp(300000.75),         300001.0},
             {300000.99,                         300001.0},
@@ -91,7 +89,7 @@ public class Rint {
             {524287.75,                         524288.0}, //(2^19 -1) + 0.75
             {524288.75,                         524289.0},
 
-            {FpUtils.nextDown(twoToThe52),      twoToThe52},
+            {Math.nextDown(twoToThe52),      twoToThe52},
             {twoToThe52,                        twoToThe52},
             {Math.nextUp(twoToThe52),        Math.nextUp(twoToThe52)},
 
@@ -118,5 +116,4 @@ public class Rint {
             throw new RuntimeException();
         }
     }
-
 }

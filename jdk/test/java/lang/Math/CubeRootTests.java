@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  * @author Joseph D. Darcy
  */
 
-import sun.misc.FpUtils;
 import sun.misc.DoubleConsts;
 
 public class CubeRootTests {
@@ -245,8 +244,8 @@ public class CubeRootTests {
                 double pc = Math.scalb(1.0, 3*i);
 
                 pcNeighbors[2] = pc;
-                pcNeighbors[1] = FpUtils.nextDown(pc);
-                pcNeighbors[0] = FpUtils.nextDown(pcNeighbors[1]);
+                pcNeighbors[1] = Math.nextDown(pc);
+                pcNeighbors[0] = Math.nextDown(pcNeighbors[1]);
                 pcNeighbors[3] = Math.nextUp(pc);
                 pcNeighbors[4] = Math.nextUp(pcNeighbors[3]);
 
@@ -284,8 +283,8 @@ public class CubeRootTests {
                 double pc = Math.scalb(1.0, 3*i);
 
                 pcNeighbors[2] = pc;
-                pcNeighbors[1] = FpUtils.nextDown(pc);
-                pcNeighbors[0] = FpUtils.nextDown(pcNeighbors[1]);
+                pcNeighbors[1] = Math.nextDown(pc);
+                pcNeighbors[0] = Math.nextDown(pcNeighbors[1]);
                 pcNeighbors[3] = Math.nextUp(pc);
                 pcNeighbors[4] = Math.nextUp(pcNeighbors[3]);
 

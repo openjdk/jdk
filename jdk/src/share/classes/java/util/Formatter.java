@@ -50,7 +50,6 @@ import java.text.NumberFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import sun.misc.FpUtils;
 import sun.misc.DoubleConsts;
 import sun.misc.FormattedFloatingDecimal;
 
@@ -3417,7 +3416,7 @@ public final class Formatter implements Closeable, Flushable {
         // Method assumes that d > 0.
         private String hexDouble(double d, int prec) {
             // Let Double.toHexString handle simple cases
-            if(!FpUtils.isFinite(d) || d == 0.0 || prec == 0 || prec >= 13)
+            if(!Double.isFinite(d) || d == 0.0 || prec == 0 || prec >= 13)
                 // remove "0x"
                 return Double.toHexString(d).substring(2);
             else {

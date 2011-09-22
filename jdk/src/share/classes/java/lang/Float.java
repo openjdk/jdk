@@ -459,7 +459,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @return  {@code true} if the argument is NaN;
      *          {@code false} otherwise.
      */
-    static public boolean isNaN(float v) {
+    public static boolean isNaN(float v) {
         return (v != v);
     }
 
@@ -471,8 +471,23 @@ public final class Float extends Number implements Comparable<Float> {
      * @return  {@code true} if the argument is positive infinity or
      *          negative infinity; {@code false} otherwise.
      */
-    static public boolean isInfinite(float v) {
+    public static boolean isInfinite(float v) {
         return (v == POSITIVE_INFINITY) || (v == NEGATIVE_INFINITY);
+    }
+
+
+    /**
+     * Returns {@code true} if the argument is a finite floating-point
+     * value; returns {@code false} otherwise (for NaN and infinity
+     * arguments).
+     *
+     * @param f the {@code float} value to be tested
+     * @return {@code true} if the argument is a finite
+     * floating-point value, {@code false} otherwise.
+     * @since 1.8
+     */
+     public static boolean isFinite(float f) {
+        return Math.abs(f) <= FloatConsts.MAX_VALUE;
     }
 
     /**

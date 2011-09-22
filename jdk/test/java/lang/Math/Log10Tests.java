@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  * @author Joseph D. Darcy
  */
 
-import sun.misc.FpUtils;
 import sun.misc.DoubleConsts;
 
 public class Log10Tests {
@@ -98,13 +97,13 @@ public class Log10Tests {
         // within a few ulps of log(x)/log(10)
         for(int i = 0; i < 10000; i++) {
             double input = Double.longBitsToDouble(rand.nextLong());
-            if(! FpUtils.isFinite(input))
+            if(! Double.isFinite(input))
                 continue; // avoid testing NaN and infinite values
             else {
                 input = Math.abs(input);
 
                 double expected = StrictMath.log(input)/LN_10;
-                if( ! FpUtils.isFinite(expected))
+                if( ! Double.isFinite(expected))
                     continue; // if log(input) overflowed, try again
                 else {
                     double result;
@@ -154,15 +153,15 @@ public class Log10Tests {
                 if (i == 0) {
                     input[half] = 1.0;
                     up   = Math.nextUp(1.0);
-                    down = FpUtils.nextDown(1.0);
+                    down = Math.nextDown(1.0);
                 } else {
                     input[half + i] = up;
                     input[half - i] = down;
                     up   = Math.nextUp(up);
-                    down = FpUtils.nextDown(down);
+                    down = Math.nextDown(down);
                 }
             }
-            input[0] = FpUtils.nextDown(input[1]);
+            input[0] = Math.nextDown(input[1]);
 
             for(int i = 0; i < neighbors.length; i++) {
                 neighbors[i] =          Math.log10(input[i]);

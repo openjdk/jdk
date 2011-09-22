@@ -202,9 +202,11 @@ public class FpUtils {
      * @param d the {@code double} value to be tested
      * @return {@code true} if the argument is a finite
      * floating-point value, {@code false} otherwise.
+     * @deprecated Use Double.isFinite.
      */
+    @Deprecated
     public static boolean isFinite(double d) {
-        return Math.abs(d) <= DoubleConsts.MAX_VALUE;
+        return Double.isFinite(d);
     }
 
     /**
@@ -215,9 +217,11 @@ public class FpUtils {
      * @param f the {@code float} value to be tested
      * @return {@code true} if the argument is a finite
      * floating-point value, {@code false} otherwise.
+     * @deprecated Use Float.isFinite.
      */
+     @Deprecated
      public static boolean isFinite(float f) {
-        return Math.abs(f) <= FloatConsts.MAX_VALUE;
+         return Float.isFinite(f);
     }
 
     /**
@@ -746,17 +750,11 @@ public class FpUtils {
      * @return The adjacent floating-point value closer to negative
      * infinity.
      * @author Joseph D. Darcy
+     * @deprecated Use Math.nextDown.
      */
+    @Deprecated
     public static double nextDown(double d) {
-        if( isNaN(d) || d == Double.NEGATIVE_INFINITY)
-            return d;
-        else {
-            if (d == 0.0)
-                return -Double.MIN_VALUE;
-            else
-                return Double.longBitsToDouble(Double.doubleToRawLongBits(d) +
-                                               ((d > 0.0d)?-1L:+1L));
-        }
+        return Math.nextDown(d);
     }
 
     /**
@@ -783,17 +781,11 @@ public class FpUtils {
      * @return The adjacent floating-point value closer to negative
      * infinity.
      * @author Joseph D. Darcy
+     * @deprecated Use Math.nextDown.
      */
+    @Deprecated
     public static double nextDown(float f) {
-        if( isNaN(f) || f == Float.NEGATIVE_INFINITY)
-            return f;
-        else {
-            if (f == 0.0f)
-                return -Float.MIN_VALUE;
-            else
-                return Float.intBitsToFloat(Float.floatToRawIntBits(f) +
-                                            ((f > 0.0f)?-1:+1));
-        }
+        return Math.nextDown(f);
     }
 
     /**
