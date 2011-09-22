@@ -119,6 +119,8 @@ protected:
   double _cur_satb_drain_time_ms;
   double _cur_clear_ct_time_ms;
   bool   _satb_drain_time_set;
+  double _cur_ref_proc_time_ms;
+  double _cur_ref_enq_time_ms;
 
 #ifndef PRODUCT
   // Card Table Count Cache stats
@@ -984,6 +986,14 @@ public:
     double ms = os::elapsedTime() * 1000.0 - _cur_aux_start_times_ms[i];
     _cur_aux_times_set[i] = true;
     _cur_aux_times_ms[i] += ms;
+  }
+
+  void record_ref_proc_time(double ms) {
+    _cur_ref_proc_time_ms = ms;
+  }
+
+  void record_ref_enq_time(double ms) {
+    _cur_ref_enq_time_ms = ms;
   }
 
 #ifndef PRODUCT

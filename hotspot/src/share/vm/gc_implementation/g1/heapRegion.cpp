@@ -45,7 +45,7 @@ HeapRegionDCTOC::HeapRegionDCTOC(G1CollectedHeap* g1,
                                  FilterKind fk) :
   ContiguousSpaceDCTOC(hr, cl, precision, NULL),
   _hr(hr), _fk(fk), _g1(g1)
-{}
+{ }
 
 FilterOutOfRegionClosure::FilterOutOfRegionClosure(HeapRegion* r,
                                                    OopClosure* oc) :
@@ -214,8 +214,37 @@ void HeapRegionDCTOC::walk_mem_region_with_cl(MemRegion mr,
   int oop_size;
 
   OopClosure* cl2 = cl;
-  FilterIntoCSClosure intoCSFilt(this, g1h, cl);
+
+  // If we are scanning the remembered sets looking for refs
+  // into the collection set during an evacuation pause then
+  // we will want to 'discover' reference objects that point
+  // to referents in the collection set.
+  //
+  // Unfortunately it is an instance of FilterIntoCSClosure
+  // that is iterated over the reference fields of oops in
+  // mr (and not the G1ParPushHeapRSClosure - which is the
+  // cl parameter).
+  // If we set the _ref_processor field in the FilterIntoCSClosure
+  // instance, all the reference objects that are walked
+  // (regardless of whether their referent object's are in
+  // the cset) will be 'discovered'.
+  //
+  // The G1STWIsAlive closure considers a referent object that
+  // is outside the cset as alive. The G1CopyingKeepAliveClosure
+  // skips referents that are not in the cset.
+  //
+  // Therefore reference objects in mr with a referent that is
+  // outside the cset should be OK.
+
+  ReferenceProcessor* rp = _cl->_ref_processor;
+  if (rp != NULL) {
+    assert(rp == _g1->ref_processor_stw(), "should be stw");
+    assert(_fk == IntoCSFilterKind, "should be looking for refs into CS");
+  }
+
+  FilterIntoCSClosure intoCSFilt(this, g1h, cl, rp);
   FilterOutOfRegionClosure outOfRegionFilt(_hr, cl);
+
   switch (_fk) {
   case IntoCSFilterKind:      cl2 = &intoCSFilt; break;
   case OutOfRegionFilterKind: cl2 = &outOfRegionFilt; break;
@@ -239,16 +268,19 @@ void HeapRegionDCTOC::walk_mem_region_with_cl(MemRegion mr,
     case NoFilterKind:
       bottom = walk_mem_region_loop(cl, g1h, _hr, bottom, top);
       break;
+
     case IntoCSFilterKind: {
-      FilterIntoCSClosure filt(this, g1h, cl);
+      FilterIntoCSClosure filt(this, g1h, cl, rp);
       bottom = walk_mem_region_loop(&filt, g1h, _hr, bottom, top);
       break;
     }
+
     case OutOfRegionFilterKind: {
       FilterOutOfRegionClosure filt(_hr, cl);
       bottom = walk_mem_region_loop(&filt, g1h, _hr, bottom, top);
       break;
     }
+
     default:
       ShouldNotReachHere();
     }
@@ -483,7 +515,7 @@ HeapRegion::
 HeapRegion(size_t hrs_index, G1BlockOffsetSharedArray* sharedOffsetArray,
            MemRegion mr, bool is_zeroed)
   : G1OffsetTableContigSpace(sharedOffsetArray, mr, is_zeroed),
-    _next_fk(HeapRegionDCTOC::NoFilterKind), _hrs_index(hrs_index),
+    _hrs_index(hrs_index),
     _humongous_type(NotHumongous), _humongous_start_region(NULL),
     _in_collection_set(false),
     _next_in_special_set(NULL), _orig_end(NULL),

@@ -118,7 +118,6 @@ public:
                   FilterKind fk);
 };
 
-
 // The complicating factor is that BlockOffsetTable diverged
 // significantly, and we need functionality that is only in the G1 version.
 // So I copied that code, which led to an alternate G1 version of
@@ -222,10 +221,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
     StartsHumongous,
     ContinuesHumongous
   };
-
-  // The next filter kind that should be used for a "new_dcto_cl" call with
-  // the "traditional" signature.
-  HeapRegionDCTOC::FilterKind _next_fk;
 
   // Requires that the region "mr" be dense with objects, and begin and end
   // with an object.
@@ -573,40 +568,14 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // allocated in the current region before the last call to "save_mark".
   void oop_before_save_marks_iterate(OopClosure* cl);
 
-  // This call determines the "filter kind" argument that will be used for
-  // the next call to "new_dcto_cl" on this region with the "traditional"
-  // signature (i.e., the call below.)  The default, in the absence of a
-  // preceding call to this method, is "NoFilterKind", and a call to this
-  // method is necessary for each such call, or else it reverts to the
-  // default.
-  // (This is really ugly, but all other methods I could think of changed a
-  // lot of main-line code for G1.)
-  void set_next_filter_kind(HeapRegionDCTOC::FilterKind nfk) {
-    _next_fk = nfk;
-  }
-
   DirtyCardToOopClosure*
   new_dcto_closure(OopClosure* cl,
                    CardTableModRefBS::PrecisionStyle precision,
                    HeapRegionDCTOC::FilterKind fk);
 
-#if WHASSUP
-  DirtyCardToOopClosure*
-  new_dcto_closure(OopClosure* cl,
-                   CardTableModRefBS::PrecisionStyle precision,
-                   HeapWord* boundary) {
-    assert(boundary == NULL, "This arg doesn't make sense here.");
-    DirtyCardToOopClosure* res = new_dcto_closure(cl, precision, _next_fk);
-    _next_fk = HeapRegionDCTOC::NoFilterKind;
-    return res;
-  }
-#endif
-
-  //
   // Note the start or end of marking. This tells the heap region
   // that the collector is about to start or has finished (concurrently)
   // marking the heap.
-  //
 
   // Note the start of a marking phase. Record the
   // start of the unmarked area of the region here.
