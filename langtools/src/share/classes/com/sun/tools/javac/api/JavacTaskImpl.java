@@ -78,7 +78,7 @@ public class JavacTaskImpl extends JavacTask {
     private AtomicBoolean used = new AtomicBoolean();
     private Iterable<? extends Processor> processors;
 
-    private Integer result = null;
+    private Main.Result result = null;
 
     JavacTaskImpl(Main compilerMain,
                 String[] args,
@@ -131,7 +131,7 @@ public class JavacTaskImpl extends JavacTask {
             compilerMain.setAPIMode(true);
             result = compilerMain.compile(args, context, fileObjects, processors);
             cleanup();
-            return result == 0;
+            return result.isOK();
         } else {
             throw new IllegalStateException("multiple calls to method 'call'");
         }
