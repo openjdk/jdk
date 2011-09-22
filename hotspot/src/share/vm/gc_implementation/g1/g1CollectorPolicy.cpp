@@ -152,8 +152,12 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   _summary(new Summary()),
 
-#ifndef PRODUCT
   _cur_clear_ct_time_ms(0.0),
+
+  _cur_ref_proc_time_ms(0.0),
+  _cur_ref_enq_time_ms(0.0),
+
+#ifndef PRODUCT
   _min_clear_cc_time_ms(-1.0),
   _max_clear_cc_time_ms(-1.0),
   _cur_clear_cc_time_ms(0.0),
@@ -1479,6 +1483,8 @@ void G1CollectorPolicy::record_collection_pause_end() {
 #endif
     print_stats(1, "Other", other_time_ms);
     print_stats(2, "Choose CSet", _recorded_young_cset_choice_time_ms);
+    print_stats(2, "Ref Proc", _cur_ref_proc_time_ms);
+    print_stats(2, "Ref Enq", _cur_ref_enq_time_ms);
 
     for (int i = 0; i < _aux_num; ++i) {
       if (_cur_aux_times_set[i]) {

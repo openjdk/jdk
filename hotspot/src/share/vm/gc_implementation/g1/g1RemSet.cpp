@@ -234,6 +234,7 @@ void G1RemSet::scanRS(OopsInHeapRegionClosure* oc, int worker_i) {
   HeapRegion *startRegion = calculateStartRegion(worker_i);
 
   ScanRSClosure scanRScl(oc, worker_i);
+
   _g1->collection_set_iterate_from(startRegion, &scanRScl);
   scanRScl.set_try_claimed();
   _g1->collection_set_iterate_from(startRegion, &scanRScl);
@@ -283,6 +284,7 @@ void G1RemSet::updateRS(DirtyCardQueue* into_cset_dcq, int worker_i) {
   double start = os::elapsedTime();
   // Apply the given closure to all remaining log entries.
   RefineRecordRefsIntoCSCardTableEntryClosure into_cset_update_rs_cl(_g1, into_cset_dcq);
+
   _g1->iterate_dirty_card_closure(&into_cset_update_rs_cl, into_cset_dcq, false, worker_i);
 
   // Now there should be no dirty cards.
@@ -466,7 +468,7 @@ public:
     MemRegion scanRegion(start, end);
 
     UpdateRSetImmediate update_rs_cl(_g1->g1_rem_set());
-    FilterIntoCSClosure update_rs_cset_oop_cl(NULL, _g1, &update_rs_cl);
+    FilterIntoCSClosure update_rs_cset_oop_cl(NULL, _g1, &update_rs_cl, NULL /* rp */);
     FilterOutOfRegionClosure filter_then_update_rs_cset_oop_cl(r, &update_rs_cset_oop_cl);
 
     // We can pass false as the "filter_young" parameter here as:
@@ -642,7 +644,7 @@ bool G1RemSet::concurrentRefineOneCard_impl(jbyte* card_ptr, int worker_i,
   update_rs_oop_cl.set_from(r);
 
   TriggerClosure trigger_cl;
-  FilterIntoCSClosure into_cs_cl(NULL, _g1, &trigger_cl);
+  FilterIntoCSClosure into_cs_cl(NULL, _g1, &trigger_cl, NULL /* rp */);
   InvokeIfNotTriggeredClosure invoke_cl(&trigger_cl, &into_cs_cl);
   Mux2Closure mux(&invoke_cl, &update_rs_oop_cl);
 

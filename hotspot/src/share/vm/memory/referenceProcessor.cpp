@@ -35,41 +35,7 @@
 
 ReferencePolicy* ReferenceProcessor::_always_clear_soft_ref_policy = NULL;
 ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = NULL;
-const int        subclasses_of_ref                = REF_PHANTOM - REF_OTHER;
 bool             ReferenceProcessor::_pending_list_uses_discovered_field = false;
-
-// List of discovered references.
-class DiscoveredList {
-public:
-  DiscoveredList() : _len(0), _compressed_head(0), _oop_head(NULL) { }
-  oop head() const     {
-     return UseCompressedOops ?  oopDesc::decode_heap_oop(_compressed_head) :
-                                _oop_head;
-  }
-  HeapWord* adr_head() {
-    return UseCompressedOops ? (HeapWord*)&_compressed_head :
-                               (HeapWord*)&_oop_head;
-  }
-  void   set_head(oop o) {
-    if (UseCompressedOops) {
-      // Must compress the head ptr.
-      _compressed_head = oopDesc::encode_heap_oop(o);
-    } else {
-      _oop_head = o;
-    }
-  }
-  bool   empty() const          { return head() == NULL; }
-  size_t length()               { return _len; }
-  void   set_length(size_t len) { _len = len;  }
-  void   inc_length(size_t inc) { _len += inc; assert(_len > 0, "Error"); }
-  void   dec_length(size_t dec) { _len -= dec; }
-private:
-  // Set value depending on UseCompressedOops. This could be a template class
-  // but then we have to fix all the instantiations and declarations that use this class.
-  oop       _oop_head;
-  narrowOop _compressed_head;
-  size_t _len;
-};
 
 void referenceProcessor_init() {
   ReferenceProcessor::init_statics();
@@ -112,7 +78,8 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
   _discovery_is_mt     = mt_discovery;
   _num_q               = MAX2(1, mt_processing_degree);
   _max_num_q           = MAX2(_num_q, mt_discovery_degree);
-  _discoveredSoftRefs  = NEW_C_HEAP_ARRAY(DiscoveredList, _max_num_q * subclasses_of_ref);
+  _discoveredSoftRefs  = NEW_C_HEAP_ARRAY(DiscoveredList,
+                                          _max_num_q * number_of_subclasses_of_ref());
   if (_discoveredSoftRefs == NULL) {
     vm_exit_during_initialization("Could not allocated RefProc Array");
   }
@@ -120,7 +87,7 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
   _discoveredFinalRefs   = &_discoveredWeakRefs[_max_num_q];
   _discoveredPhantomRefs = &_discoveredFinalRefs[_max_num_q];
   // Initialized all entries to NULL
-  for (int i = 0; i < _max_num_q * subclasses_of_ref; i++) {
+  for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
     _discoveredSoftRefs[i].set_head(NULL);
     _discoveredSoftRefs[i].set_length(0);
   }
@@ -134,19 +101,15 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
 #ifndef PRODUCT
 void ReferenceProcessor::verify_no_references_recorded() {
   guarantee(!_discovering_refs, "Discovering refs?");
-  for (int i = 0; i < _max_num_q * subclasses_of_ref; i++) {
-    guarantee(_discoveredSoftRefs[i].empty(),
+  for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
+    guarantee(_discoveredSoftRefs[i].is_empty(),
               "Found non-empty discovered list");
   }
 }
 #endif
 
 void ReferenceProcessor::weak_oops_do(OopClosure* f) {
-  // Should this instead be
-  // for (int i = 0; i < subclasses_of_ref; i++_ {
-  //   for (int j = 0; j < _num_q; j++) {
-  //     int index = i * _max_num_q + j;
-  for (int i = 0; i < _max_num_q * subclasses_of_ref; i++) {
+  for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
     if (UseCompressedOops) {
       f->do_oop((narrowOop*)_discoveredSoftRefs[i].adr_head());
     } else {
@@ -404,7 +367,7 @@ public:
     // allocated and are indexed into.
     assert(_n_queues == (int) _ref_processor.max_num_q(), "Different number not expected");
     for (int j = 0;
-         j < subclasses_of_ref;
+         j < ReferenceProcessor::number_of_subclasses_of_ref();
          j++, index += _n_queues) {
       _ref_processor.enqueue_discovered_reflist(
         _refs_lists[index], _pending_list_addr);
@@ -424,7 +387,7 @@ void ReferenceProcessor::enqueue_discovered_reflists(HeapWord* pending_list_addr
     task_executor->execute(tsk);
   } else {
     // Serial code: call the parent class's implementation
-    for (int i = 0; i < _max_num_q * subclasses_of_ref; i++) {
+    for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
       enqueue_discovered_reflist(_discoveredSoftRefs[i], pending_list_addr);
       _discoveredSoftRefs[i].set_head(NULL);
       _discoveredSoftRefs[i].set_length(0);
@@ -432,119 +395,7 @@ void ReferenceProcessor::enqueue_discovered_reflists(HeapWord* pending_list_addr
   }
 }
 
-// Iterator for the list of discovered references.
-class DiscoveredListIterator {
-public:
-  inline DiscoveredListIterator(DiscoveredList&    refs_list,
-                                OopClosure*        keep_alive,
-                                BoolObjectClosure* is_alive);
-
-  // End Of List.
-  inline bool has_next() const { return _ref != NULL; }
-
-  // Get oop to the Reference object.
-  inline oop obj() const { return _ref; }
-
-  // Get oop to the referent object.
-  inline oop referent() const { return _referent; }
-
-  // Returns true if referent is alive.
-  inline bool is_referent_alive() const;
-
-  // Loads data for the current reference.
-  // The "allow_null_referent" argument tells us to allow for the possibility
-  // of a NULL referent in the discovered Reference object. This typically
-  // happens in the case of concurrent collectors that may have done the
-  // discovery concurrently, or interleaved, with mutator execution.
-  inline void load_ptrs(DEBUG_ONLY(bool allow_null_referent));
-
-  // Move to the next discovered reference.
-  inline void next();
-
-  // Remove the current reference from the list
-  inline void remove();
-
-  // Make the Reference object active again.
-  inline void make_active() { java_lang_ref_Reference::set_next(_ref, NULL); }
-
-  // Make the referent alive.
-  inline void make_referent_alive() {
-    if (UseCompressedOops) {
-      _keep_alive->do_oop((narrowOop*)_referent_addr);
-    } else {
-      _keep_alive->do_oop((oop*)_referent_addr);
-    }
-  }
-
-  // Update the discovered field.
-  inline void update_discovered() {
-    // First _prev_next ref actually points into DiscoveredList (gross).
-    if (UseCompressedOops) {
-      if (!oopDesc::is_null(*(narrowOop*)_prev_next)) {
-        _keep_alive->do_oop((narrowOop*)_prev_next);
-      }
-    } else {
-      if (!oopDesc::is_null(*(oop*)_prev_next)) {
-        _keep_alive->do_oop((oop*)_prev_next);
-      }
-    }
-  }
-
-  // NULL out referent pointer.
-  inline void clear_referent() { oop_store_raw(_referent_addr, NULL); }
-
-  // Statistics
-  NOT_PRODUCT(
-  inline size_t processed() const { return _processed; }
-  inline size_t removed() const   { return _removed; }
-  )
-
-  inline void move_to_next();
-
-private:
-  DiscoveredList&    _refs_list;
-  HeapWord*          _prev_next;
-  oop                _prev;
-  oop                _ref;
-  HeapWord*          _discovered_addr;
-  oop                _next;
-  HeapWord*          _referent_addr;
-  oop                _referent;
-  OopClosure*        _keep_alive;
-  BoolObjectClosure* _is_alive;
-  DEBUG_ONLY(
-  oop                _first_seen; // cyclic linked list check
-  )
-  NOT_PRODUCT(
-  size_t             _processed;
-  size_t             _removed;
-  )
-};
-
-inline DiscoveredListIterator::DiscoveredListIterator(DiscoveredList&    refs_list,
-                                                      OopClosure*        keep_alive,
-                                                      BoolObjectClosure* is_alive)
-  : _refs_list(refs_list),
-    _prev_next(refs_list.adr_head()),
-    _prev(NULL),
-    _ref(refs_list.head()),
-#ifdef ASSERT
-    _first_seen(refs_list.head()),
-#endif
-#ifndef PRODUCT
-    _processed(0),
-    _removed(0),
-#endif
-    _next(NULL),
-    _keep_alive(keep_alive),
-    _is_alive(is_alive)
-{ }
-
-inline bool DiscoveredListIterator::is_referent_alive() const {
-  return _is_alive->do_object_b(_referent);
-}
-
-inline void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
+void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
   _discovered_addr = java_lang_ref_Reference::discovered_addr(_ref);
   oop discovered = java_lang_ref_Reference::discovered(_ref);
   assert(_discovered_addr && discovered->is_oop_or_null(),
@@ -560,13 +411,7 @@ inline void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referen
          "bad referent");
 }
 
-inline void DiscoveredListIterator::next() {
-  _prev_next = _discovered_addr;
-  _prev = _ref;
-  move_to_next();
-}
-
-inline void DiscoveredListIterator::remove() {
+void DiscoveredListIterator::remove() {
   assert(_ref->is_oop(), "Dropping a bad reference");
   oop_store_raw(_discovered_addr, NULL);
 
@@ -592,15 +437,29 @@ inline void DiscoveredListIterator::remove() {
   _refs_list.dec_length(1);
 }
 
-inline void DiscoveredListIterator::move_to_next() {
-  if (_ref == _next) {
-    // End of the list.
-    _ref = NULL;
+// Make the Reference object active again.
+void DiscoveredListIterator::make_active() {
+  // For G1 we don't want to use set_next - it
+  // will dirty the card for the next field of
+  // the reference object and will fail
+  // CT verification.
+  if (UseG1GC) {
+    BarrierSet* bs = oopDesc::bs();
+    HeapWord* next_addr = java_lang_ref_Reference::next_addr(_ref);
+
+    if (UseCompressedOops) {
+      bs->write_ref_field_pre((narrowOop*)next_addr, NULL);
+    } else {
+      bs->write_ref_field_pre((oop*)next_addr, NULL);
+    }
+    java_lang_ref_Reference::set_next_raw(_ref, NULL);
   } else {
-    _ref = _next;
+    java_lang_ref_Reference::set_next(_ref, NULL);
   }
-  assert(_ref != _first_seen, "cyclic ref_list found");
-  NOT_PRODUCT(_processed++);
+}
+
+void DiscoveredListIterator::clear_referent() {
+  oop_store_raw(_referent_addr, NULL);
 }
 
 // NOTE: process_phase*() are largely similar, and at a high level
@@ -786,10 +645,9 @@ ReferenceProcessor::abandon_partial_discovered_list(DiscoveredList& refs_list) {
 
 void ReferenceProcessor::abandon_partial_discovery() {
   // loop over the lists
-  for (int i = 0; i < _max_num_q * subclasses_of_ref; i++) {
+  for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
     if (TraceReferenceGC && PrintGCDetails && ((i % _max_num_q) == 0)) {
-      gclog_or_tty->print_cr("\nAbandoning %s discovered list",
-                             list_name(i));
+      gclog_or_tty->print_cr("\nAbandoning %s discovered list", list_name(i));
     }
     abandon_partial_discovered_list(_discoveredSoftRefs[i]);
   }
@@ -858,6 +716,14 @@ private:
   bool _clear_referent;
 };
 
+void ReferenceProcessor::set_discovered(oop ref, oop value) {
+  if (_discovered_list_needs_barrier) {
+    java_lang_ref_Reference::set_discovered(ref, value);
+  } else {
+    java_lang_ref_Reference::set_discovered_raw(ref, value);
+  }
+}
+
 // Balances reference queues.
 // Move entries from all queues[0, 1, ..., _max_num_q-1] to
 // queues[0, 1, ..., _num_q-1] because only the first _num_q
@@ -915,9 +781,9 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
         // Add the chain to the to list.
         if (ref_lists[to_idx].head() == NULL) {
           // to list is empty. Make a loop at the end.
-          java_lang_ref_Reference::set_discovered(move_tail, move_tail);
+          set_discovered(move_tail, move_tail);
         } else {
-          java_lang_ref_Reference::set_discovered(move_tail, ref_lists[to_idx].head());
+          set_discovered(move_tail, ref_lists[to_idx].head());
         }
         ref_lists[to_idx].set_head(move_head);
         ref_lists[to_idx].inc_length(refs_to_move);
@@ -1038,11 +904,7 @@ ReferenceProcessor::process_discovered_reflist(
 
 void ReferenceProcessor::clean_up_discovered_references() {
   // loop over the lists
-  // Should this instead be
-  // for (int i = 0; i < subclasses_of_ref; i++_ {
-  //   for (int j = 0; j < _num_q; j++) {
-  //     int index = i * _max_num_q + j;
-  for (int i = 0; i < _max_num_q * subclasses_of_ref; i++) {
+  for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
     if (TraceReferenceGC && PrintGCDetails && ((i % _max_num_q) == 0)) {
       gclog_or_tty->print_cr(
         "\nScrubbing %s discovered list of Null referents",
@@ -1260,6 +1122,8 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     }
   }
 
+  ResourceMark rm;      // Needed for tracing.
+
   HeapWord* const discovered_addr = java_lang_ref_Reference::discovered_addr(obj);
   const oop  discovered = java_lang_ref_Reference::discovered(obj);
   assert(discovered->is_oop_or_null(), "bad discovered field");
@@ -1472,7 +1336,9 @@ ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
 }
 
 const char* ReferenceProcessor::list_name(int i) {
-   assert(i >= 0 && i <= _max_num_q * subclasses_of_ref, "Out of bounds index");
+   assert(i >= 0 && i <= _max_num_q * number_of_subclasses_of_ref(),
+          "Out of bounds index");
+
    int j = i / _max_num_q;
    switch (j) {
      case 0: return "SoftRef";
@@ -1493,7 +1359,7 @@ void ReferenceProcessor::verify_ok_to_handle_reflists() {
 #ifndef PRODUCT
 void ReferenceProcessor::clear_discovered_references() {
   guarantee(!_discovering_refs, "Discovering refs?");
-  for (int i = 0; i < _max_num_q * subclasses_of_ref; i++) {
+  for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
     clear_discovered_references(_discoveredSoftRefs[i]);
   }
 }
