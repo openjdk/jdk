@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -623,8 +623,11 @@ public class IeeeRecommendedTests {
         };
 
         for(int i = 0; i < testCases.length; i++) {
-            failures+=Tests.test("FpUtils.nextDown(float)",
-                                 testCases[i][0], FpUtils.nextDown(testCases[i][0]), testCases[i][1]);
+            failures+=Tests.test("Math.nextDown(float)",
+                                 testCases[i][0], Math.nextDown(testCases[i][0]), testCases[i][1]);
+
+            failures+=Tests.test("StrictMath.nextDown(float)",
+                                 testCases[i][0], StrictMath.nextDown(testCases[i][0]), testCases[i][1]);
         }
 
         return failures;
@@ -659,8 +662,11 @@ public class IeeeRecommendedTests {
         };
 
         for(int i = 0; i < testCases.length; i++) {
-            failures+=Tests.test("FpUtils.nextDown(double)",
-                                 testCases[i][0], FpUtils.nextDown(testCases[i][0]), testCases[i][1]);
+            failures+=Tests.test("Math.nextDown(double)",
+                                 testCases[i][0], Math.nextDown(testCases[i][0]), testCases[i][1]);
+
+            failures+=Tests.test("StrictMath.nextDown(double)",
+                                 testCases[i][0], StrictMath.nextDown(testCases[i][0]), testCases[i][1]);
         }
 
         return failures;
@@ -706,8 +712,8 @@ public class IeeeRecommendedTests {
                                  FpUtils.isNaN(testCases[i]), (i ==0));
 
             // isFinite
-            failures+=Tests.test("FpUtils.isFinite(float)", testCases[i],
-                                 FpUtils.isFinite(testCases[i]), (i >= 3));
+            failures+=Tests.test("Float.isFinite(float)", testCases[i],
+                                 Float.isFinite(testCases[i]), (i >= 3));
 
             // isInfinite
             failures+=Tests.test("FpUtils.isInfinite(float)", testCases[i],
@@ -756,8 +762,8 @@ public class IeeeRecommendedTests {
                                  FpUtils.isNaN(testCases[i]), (i ==0));
 
             // isFinite
-            failures+=Tests.test("FpUtils.isFinite(double)", testCases[i],
-                                 FpUtils.isFinite(testCases[i]), (i >= 3));
+            failures+=Tests.test("Double.isFinite(double)", testCases[i],
+                                 Double.isFinite(testCases[i]), (i >= 3));
 
             // isInfinite
             failures+=Tests.test("FpUtils.isInfinite(double)", testCases[i],
