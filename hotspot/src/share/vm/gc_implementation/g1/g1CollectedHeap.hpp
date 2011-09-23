@@ -597,7 +597,10 @@ protected:
 
 public:
 
-  G1MonitoringSupport* g1mm() { return _g1mm; }
+  G1MonitoringSupport* g1mm() {
+    assert(_g1mm != NULL, "should have been initialized");
+    return _g1mm;
+  }
 
   // Expand the garbage-first heap by at least the given size (in bytes!).
   // Returns true if the heap was expanded by the requested amount;
