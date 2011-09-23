@@ -816,6 +816,11 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
     result =
       humongous_obj_allocate_initialize_regions(first, num_regions, word_size);
     assert(result != NULL, "it should always return a valid result");
+
+    // A successful humongous object allocation changes the used space
+    // information of the old generation so we need to recalculate the
+    // sizes and update the jstat counters here.
+    g1mm()->update_sizes();
   }
 
   verify_region_sets_optional();
@@ -1422,7 +1427,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
   }
-  g1mm()->update_counters();
+  g1mm()->update_sizes();
   post_full_gc_dump();
 
   return true;
@@ -1790,6 +1795,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _evac_failure_scan_stack(NULL) ,
   _mark_in_progress(false),
   _cg1r(NULL), _summary_bytes_used(0),
+  _g1mm(NULL),
   _refine_cte_cl(NULL),
   _full_collection(false),
   _free_list("Master Free List"),
@@ -2069,7 +2075,7 @@ jint G1CollectedHeap::initialize() {
 
   // Do create of the monitoring and management support so that
   // values in the heap have been properly initialized.
-  _g1mm = new G1MonitoringSupport(this, &_g1_storage);
+  _g1mm = new G1MonitoringSupport(this);
 
   return JNI_OK;
 }
@@ -3702,7 +3708,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
   }
-  g1mm()->update_counters();
+  g1mm()->update_sizes();
 
   if (G1SummarizeRSetStats &&
       (G1SummarizeRSetStatsPeriod > 0) &&
@@ -5815,7 +5821,6 @@ HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
       g1_policy()->update_region_num(true /* next_is_young */);
       set_region_short_lived_locked(new_alloc_region);
       _hr_printer.alloc(new_alloc_region, G1HRPrinter::Eden, young_list_full);
-      g1mm()->update_eden_counters();
       return new_alloc_region;
     }
   }
@@ -5830,6 +5835,10 @@ void G1CollectedHeap::retire_mutator_alloc_region(HeapRegion* alloc_region,
   g1_policy()->add_region_to_incremental_cset_lhs(alloc_region);
   _summary_bytes_used += allocated_bytes;
   _hr_printer.retire(alloc_region);
+  // We update the eden sizes here, when the region is retired,
+  // instead of when it's allocated, since this is the point that its
+  // used space has been recored in _summary_bytes_used.
+  g1mm()->update_eden_size();
 }
 
 HeapRegion* MutatorAllocRegion::allocate_new_region(size_t word_size,

@@ -357,6 +357,11 @@ class HeapRegion: public G1OffsetTableContigSpace {
   static int GrainWords;
   static int CardsPerRegion;
 
+  static size_t align_up_to_region_byte_size(size_t sz) {
+    return (sz + (size_t) GrainBytes - 1) &
+                                      ~((1 << (size_t) LogOfHRGrainBytes) - 1);
+  }
+
   // It sets up the heap region size (GrainBytes / GrainWords), as
   // well as other related fields that are based on the heap region
   // size (LogOfHRGrainBytes / LogOfHRGrainWords /

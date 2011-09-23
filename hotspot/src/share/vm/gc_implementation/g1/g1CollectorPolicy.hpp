@@ -1149,6 +1149,10 @@ public:
     return young_list_length < young_list_max_length;
   }
 
+  size_t young_list_max_length() {
+    return _young_list_max_length;
+  }
+
   void update_region_num(bool young);
 
   bool full_young_gcs() {
