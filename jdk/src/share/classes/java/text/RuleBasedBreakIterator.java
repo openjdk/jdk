@@ -453,7 +453,7 @@ class RuleBasedBreakIterator extends BreakIterator {
             );
         }
         catch (PrivilegedActionException e) {
-            throw new InternalError(e.toString());
+            throw new InternalError(e.toString(), e);
         }
 
         int offset = 0;

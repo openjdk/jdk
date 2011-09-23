@@ -770,9 +770,6 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
                                                                "icons/NewFolder.gif"),
             "FileChooser.useSystemExtensionHiding", Boolean.TRUE,
 
-            "FileChooser.lookInLabelMnemonic", Integer.valueOf(KeyEvent.VK_I),
-            "FileChooser.fileNameLabelMnemonic", Integer.valueOf(KeyEvent.VK_N),
-            "FileChooser.filesOfTypeLabelMnemonic", Integer.valueOf(KeyEvent.VK_T),
             "FileChooser.usesSingleFilePane", Boolean.TRUE,
             "FileChooser.noPlacesBar", new DesktopProperty("win.comdlg.noPlacesBar",
                                                            Boolean.FALSE),

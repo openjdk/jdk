@@ -1859,7 +1859,7 @@ public final class Locale implements Cloneable, Serializable {
             Locale that = (Locale)super.clone();
             return that;
         } catch (CloneNotSupportedException e) {
-            throw new InternalError();
+            throw new InternalError(e);
         }
     }
 
