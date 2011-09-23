@@ -134,7 +134,7 @@ public class SmtpClient extends TransferProtocolClient {
         try {
             message = new SmtpPrintStream(serverOutput, this);
         } catch (UnsupportedEncodingException e) {
-            throw new InternalError(encoding+" encoding not found");
+            throw new InternalError(encoding+" encoding not found", e);
         }
         return message;
     }

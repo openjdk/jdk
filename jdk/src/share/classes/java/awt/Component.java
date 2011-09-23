@@ -3776,11 +3776,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
             createBufferStrategy(numBuffers, bufferCaps);
             return; // Success
         } catch (AWTException e) {
-            // Failed
+            // Code should never reach here (an unaccelerated blitting
+            // strategy should always work)
+            throw new InternalError("Could not create a buffer strategy", e);
         }
-        // Code should never reach here (an unaccelerated blitting
-        // strategy should always work)
-        throw new InternalError("Could not create a buffer strategy");
     }
 
     /**

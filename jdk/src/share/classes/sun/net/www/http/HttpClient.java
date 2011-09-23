@@ -395,7 +395,7 @@ public class HttpClient extends NetworkClient {
                 new BufferedOutputStream(out),
                                          false, encoding);
         } catch (UnsupportedEncodingException e) {
-            throw new InternalError(encoding+" encoding not found");
+            throw new InternalError(encoding+" encoding not found", e);
         }
         serverSocket.setTcpNoDelay(true);
     }
