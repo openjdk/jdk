@@ -1,4 +1,4 @@
-TwrOnNonResource.java:12:13: compiler.err.prob.found.req: (compiler.misc.try.not.applicable.to.type), TwrOnNonResource, java.lang.AutoCloseable
-TwrOnNonResource.java:15:13: compiler.err.prob.found.req: (compiler.misc.try.not.applicable.to.type), TwrOnNonResource, java.lang.AutoCloseable
-TwrOnNonResource.java:18:13: compiler.err.prob.found.req: (compiler.misc.try.not.applicable.to.type), TwrOnNonResource, java.lang.AutoCloseable
+TwrOnNonResource.java:12:30: compiler.err.prob.found.req: (compiler.misc.try.not.applicable.to.type), TwrOnNonResource, java.lang.AutoCloseable
+TwrOnNonResource.java:15:30: compiler.err.prob.found.req: (compiler.misc.try.not.applicable.to.type), TwrOnNonResource, java.lang.AutoCloseable
+TwrOnNonResource.java:18:30: compiler.err.prob.found.req: (compiler.misc.try.not.applicable.to.type), TwrOnNonResource, java.lang.AutoCloseable
 3 errors

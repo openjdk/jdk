@@ -221,9 +221,7 @@ public final class Currency implements Serializable {
                     otherCurrenciesNumericCode = readIntArray(dis, ocCount);
                     dis.close();
                 } catch (IOException e) {
-                    InternalError ie = new InternalError();
-                    ie.initCause(e);
-                    throw ie;
+                    throw new InternalError(e);
                 }
 
                 // look for the properties file for overrides

@@ -165,7 +165,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         try {
             md = MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException nsae) {
-            throw new InternalError("MD5 not supported");
+            throw new InternalError("MD5 not supported", nsae);
         }
         byte[] md5Bytes = md.digest(name);
         md5Bytes[6]  &= 0x0f;  /* clear version        */
