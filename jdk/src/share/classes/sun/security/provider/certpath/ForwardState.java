@@ -262,7 +262,7 @@ class ForwardState implements State {
                 = (HashSet<GeneralNameInterface>)subjectNamesTraversed.clone();
             return clonedState;
         } catch (CloneNotSupportedException e) {
-            throw new InternalError(e.toString());
+            throw new InternalError(e.toString(), e);
         }
     }
 }

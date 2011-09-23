@@ -111,7 +111,7 @@ public class LiveRef implements Cloneable {
             LiveRef newRef = (LiveRef) super.clone();
             return newRef;
         } catch (CloneNotSupportedException e) {
-            throw new InternalError(e.toString());
+            throw new InternalError(e.toString(), e);
         }
     }
 

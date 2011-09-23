@@ -594,7 +594,15 @@ public class Attr extends JCTree.Visitor {
             lintEnv = lintEnv.next;
 
         // Having found the enclosing lint value, we can initialize the lint value for this class
-        env.info.lint = lintEnv.info.lint.augment(env.info.enclVar.attributes_field, env.info.enclVar.flags());
+        // ... but ...
+        // There's a problem with evaluating annotations in the right order, such that
+        // env.info.enclVar.attributes_field might not yet have been evaluated, and so might be
+        // null. In that case, calling augment will throw an NPE. To avoid this, for now we
+        // revert to the jdk 6 behavior and ignore the (unevaluated) attributes.
+        if (env.info.enclVar.attributes_field == null)
+            env.info.lint = lintEnv.info.lint;
+        else
+            env.info.lint = lintEnv.info.lint.augment(env.info.enclVar.attributes_field, env.info.enclVar.flags());
 
         Lint prevLint = chk.setLint(env.info.lint);
         JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
