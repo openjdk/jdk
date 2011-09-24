@@ -47,7 +47,7 @@ FILES_copy = $(SERVICETAG_RESOURCES_DIR)/product_registration.xsd \
 # Add all properties files to the FILES_copy list
 SWORDFISH_properties := $(shell \
        $(CD) $(SHARE_SRC)/classes/com/sun/servicetag/resources; \
-       $(FIND) . -name 'javase_*_swordfish.properties' -print ; \
+       $(FIND) . -name 'javase_*.properties' -print ; \
     )
 FILES_copy += $(shell \
    for f in $(SWORDFISH_properties) ; do \

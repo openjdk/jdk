@@ -79,7 +79,7 @@ public class ChunkedOutputStream extends PrintStream {
             return header;
         } catch (java.io.UnsupportedEncodingException e) {
             /* This should never happen */
-            throw new InternalError(e.getMessage());
+            throw new InternalError(e.getMessage(), e);
         }
     }
 
