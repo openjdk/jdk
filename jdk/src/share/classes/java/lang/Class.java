@@ -974,8 +974,7 @@ public final
                 descriptor      = (String)   enclosingInfo[2];
                 assert((name != null && descriptor != null) || name == descriptor);
             } catch (ClassCastException cce) {
-                throw (InternalError)
-                    new InternalError("Invalid type in enclosing method information").initCause(cce);
+                throw new InternalError("Invalid type in enclosing method information", cce);
             }
         }
 
@@ -1241,8 +1240,7 @@ public final
         try {
             return getName().substring(enclosingClass.getName().length());
         } catch (IndexOutOfBoundsException ex) {
-            throw (InternalError)
-                new InternalError("Malformed class name").initCause(ex);
+            throw new InternalError("Malformed class name", ex);
         }
     }
 

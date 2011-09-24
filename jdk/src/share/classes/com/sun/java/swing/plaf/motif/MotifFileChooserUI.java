@@ -529,21 +529,25 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         Locale l = fc.getLocale();
 
         enterFolderNameLabelText = UIManager.getString("FileChooser.enterFolderNameLabelText",l);
-        enterFolderNameLabelMnemonic = UIManager.getInt("FileChooser.enterFolderNameLabelMnemonic");
+        enterFolderNameLabelMnemonic = getMnemonic("FileChooser.enterFolderNameLabelMnemonic", l);
         enterFileNameLabelText = UIManager.getString("FileChooser.enterFileNameLabelText",l);
-        enterFileNameLabelMnemonic = UIManager.getInt("FileChooser.enterFileNameLabelMnemonic");
+        enterFileNameLabelMnemonic = getMnemonic("FileChooser.enterFileNameLabelMnemonic", l);
 
         filesLabelText = UIManager.getString("FileChooser.filesLabelText",l);
-        filesLabelMnemonic = UIManager.getInt("FileChooser.filesLabelMnemonic");
+        filesLabelMnemonic = getMnemonic("FileChooser.filesLabelMnemonic", l);
 
         foldersLabelText = UIManager.getString("FileChooser.foldersLabelText",l);
-        foldersLabelMnemonic = UIManager.getInt("FileChooser.foldersLabelMnemonic");
+        foldersLabelMnemonic = getMnemonic("FileChooser.foldersLabelMnemonic", l);
 
         pathLabelText = UIManager.getString("FileChooser.pathLabelText",l);
-        pathLabelMnemonic = UIManager.getInt("FileChooser.pathLabelMnemonic");
+        pathLabelMnemonic = getMnemonic("FileChooser.pathLabelMnemonic", l);
 
         filterLabelText = UIManager.getString("FileChooser.filterLabelText",l);
-        filterLabelMnemonic = UIManager.getInt("FileChooser.filterLabelMnemonic");
+        filterLabelMnemonic = getMnemonic("FileChooser.filterLabelMnemonic", l);
+    }
+
+    private Integer getMnemonic(String key, Locale l) {
+        return SwingUtilities2.getUIDefaultsInt(key, l);
     }
 
     protected void installIcons(JFileChooser fc) {
