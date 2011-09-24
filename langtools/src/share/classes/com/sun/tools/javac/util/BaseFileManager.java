@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -322,16 +322,46 @@ public abstract class BaseFileManager {
 
     // <editor-fold defaultstate="collapsed" desc="Content cache">
     public CharBuffer getCachedContent(JavaFileObject file) {
-        SoftReference<CharBuffer> r = contentCache.get(file);
-        return (r == null ? null : r.get());
+        ContentCacheEntry e = contentCache.get(file);
+        if (e == null)
+            return null;
+
+        if (!e.isValid(file)) {
+            contentCache.remove(file);
+            return null;
+        }
+
+        return e.getValue();
     }
 
     public void cache(JavaFileObject file, CharBuffer cb) {
-        contentCache.put(file, new SoftReference<CharBuffer>(cb));
+        contentCache.put(file, new ContentCacheEntry(file, cb));
     }
 
-    protected final Map<JavaFileObject, SoftReference<CharBuffer>> contentCache
-            = new HashMap<JavaFileObject, SoftReference<CharBuffer>>();
+    public void flushCache(JavaFileObject file) {
+        contentCache.remove(file);
+    }
+
+    protected final Map<JavaFileObject, ContentCacheEntry> contentCache
+            = new HashMap<JavaFileObject, ContentCacheEntry>();
+
+    protected static class ContentCacheEntry {
+        final long timestamp;
+        final SoftReference<CharBuffer> ref;
+
+        ContentCacheEntry(JavaFileObject file, CharBuffer cb) {
+            this.timestamp = file.getLastModified();
+            this.ref = new SoftReference<CharBuffer>(cb);
+        }
+
+        boolean isValid(JavaFileObject file) {
+            return timestamp == file.getLastModified();
+        }
+
+        CharBuffer getValue() {
+            return ref.get();
+        }
+    }
     // </editor-fold>
 
     public static Kind getKind(String name) {

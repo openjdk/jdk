@@ -205,6 +205,7 @@ abstract class PathFileObject implements JavaFileObject {
 
     @Override
     public OutputStream openOutputStream() throws IOException {
+        fileManager.flushCache(this);
         ensureParentDirectoriesExist();
         return Files.newOutputStream(path);
     }
@@ -241,6 +242,7 @@ abstract class PathFileObject implements JavaFileObject {
 
     @Override
     public Writer openWriter() throws IOException {
+        fileManager.flushCache(this);
         ensureParentDirectoriesExist();
         return new OutputStreamWriter(Files.newOutputStream(path), fileManager.getEncodingName());
     }

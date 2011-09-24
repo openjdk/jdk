@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,23 @@
  * questions.
  */
 
-// key: compiler.err.empty.char.lit
-// key: compiler.err.unclosed.char.lit
-// key: compiler.err.premature.eof
+/*
+ * @test
+ * @bug 7043371
+ * @summary javac7 fails with NPE during compilation
+ * @compile T7043371.java
+ */
 
-class X {
-    char c = '';
+@interface Anno {
+    String value();
+}
+
+class B {
+    @Anno(value=A.a)
+    public static final int b = 0;
+}
+
+class A {
+    @Deprecated
+    public static final String a = "a";
 }
