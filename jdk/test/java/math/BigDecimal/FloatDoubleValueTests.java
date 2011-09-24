@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6274390
+ * @bug 6274390 7082971
  * @summary Verify {float, double}Value methods work with condensed representation
  * @run main FloatDoubleValueTests
  * @run main/othervm -XX:+AggressiveOpts FloatDoubleValueTests
@@ -79,6 +79,7 @@ public class FloatDoubleValueTests {
     // and double.
     static void testFloatDoubleValue() {
         long longValues[] = {
+            Long.MIN_VALUE, // -2^63
             0,
             1,
             2,
