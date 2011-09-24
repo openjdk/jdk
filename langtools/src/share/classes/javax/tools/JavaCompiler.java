@@ -26,10 +26,8 @@
 package javax.tools;
 
 import java.io.File;
-import java.io.InputStream;
 import java.io.Writer;
 import java.nio.charset.Charset;
-import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Callable;
 import javax.annotation.processing.Processor;

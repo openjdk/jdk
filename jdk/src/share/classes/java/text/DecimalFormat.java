@@ -1891,14 +1891,10 @@ public class DecimalFormat extends NumberFormat {
      * Standard override; no change in semantics.
      */
     public Object clone() {
-        try {
-            DecimalFormat other = (DecimalFormat) super.clone();
-            other.symbols = (DecimalFormatSymbols) symbols.clone();
-            other.digitList = (DigitList) digitList.clone();
-            return other;
-        } catch (Exception e) {
-            throw new InternalError();
-        }
+        DecimalFormat other = (DecimalFormat) super.clone();
+        other.symbols = (DecimalFormatSymbols) symbols.clone();
+        other.digitList = (DigitList) digitList.clone();
+        return other;
     }
 
     /**

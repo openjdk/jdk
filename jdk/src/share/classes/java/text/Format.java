@@ -258,7 +258,7 @@ public abstract class Format implements Serializable, Cloneable {
             return super.clone();
         } catch (CloneNotSupportedException e) {
             // will never happen
-            return null;
+            throw new InternalError(e);
         }
     }
 
