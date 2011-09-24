@@ -528,16 +528,16 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
 
         Locale l = fc.getLocale();
 
-        lookInLabelMnemonic = UIManager.getInt("FileChooser.lookInLabelMnemonic");
+        lookInLabelMnemonic = getMnemonic("FileChooser.lookInLabelMnemonic", l);
         lookInLabelText = UIManager.getString("FileChooser.lookInLabelText",l);
         saveInLabelText = UIManager.getString("FileChooser.saveInLabelText",l);
 
-        fileNameLabelMnemonic = UIManager.getInt("FileChooser.fileNameLabelMnemonic");
+        fileNameLabelMnemonic = getMnemonic("FileChooser.fileNameLabelMnemonic", l);
         fileNameLabelText = UIManager.getString("FileChooser.fileNameLabelText",l);
-        folderNameLabelMnemonic = UIManager.getInt("FileChooser.folderNameLabelMnemonic");
+        folderNameLabelMnemonic = getMnemonic("FileChooser.folderNameLabelMnemonic", l);
         folderNameLabelText = UIManager.getString("FileChooser.folderNameLabelText",l);
 
-        filesOfTypeLabelMnemonic = UIManager.getInt("FileChooser.filesOfTypeLabelMnemonic");
+        filesOfTypeLabelMnemonic = getMnemonic("FileChooser.filesOfTypeLabelMnemonic", l);
         filesOfTypeLabelText = UIManager.getString("FileChooser.filesOfTypeLabelText",l);
 
         upFolderToolTipText =  UIManager.getString("FileChooser.upFolderToolTipText",l);
@@ -548,6 +548,10 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
 
         viewMenuButtonToolTipText = UIManager.getString("FileChooser.viewMenuButtonToolTipText",l);
         viewMenuButtonAccessibleName = UIManager.getString("FileChooser.viewMenuButtonAccessibleName",l);
+    }
+
+    private Integer getMnemonic(String key, Locale l) {
+        return SwingUtilities2.getUIDefaultsInt(key, l);
     }
 
     protected void installListeners(JFileChooser fc) {

@@ -1689,6 +1689,8 @@ public class Gen extends JCTree.Visitor {
         // outer instance of a super(...) call appears as first parameter).
         genArgs(tree.args,
                 TreeInfo.symbol(tree.meth).externalType(types).getParameterTypes());
+        code.statBegin(tree.pos);
+        code.markStatBegin();
         result = m.invoke();
     }
 
