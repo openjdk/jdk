@@ -118,13 +118,23 @@ endif
 # Windows should have OS predefined
 ifeq ($(OS),)
   OS   := $(shell uname -s)
+  ifneq ($(findstring BSD,$(OS)),)
+    OS=bsd
+  endif
+  ifeq ($(OS), Darwin)
+    OS=bsd
+  endif
   HOST := $(shell uname -n)
 endif
 
-# If not SunOS and not Linux, assume Windows
+# If not SunOS, not Linux and not BSD, assume Windows
 ifneq ($(OS), Linux)
   ifneq ($(OS), SunOS)
-    OSNAME=windows
+    ifneq ($(OS), bsd)
+      OSNAME=windows
+    else
+      OSNAME=bsd
+    endif
   else
     OSNAME=solaris
   endif

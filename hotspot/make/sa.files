@@ -51,6 +51,9 @@ $(AGENT_SRC_DIR)/sun/jvm/hotspot/code/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/compiler/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/amd64/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/bsd/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/bsd/amd64/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/bsd/x86/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/cdbg/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/cdbg/basic/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/cdbg/basic/x86/*.java \
@@ -94,6 +97,9 @@ $(AGENT_SRC_DIR)/sun/jvm/hotspot/prims/*.java
 AGENT_FILES2 = \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/amd64/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/bsd/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/bsd_amd64/*.java \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/bsd_x86/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/ia64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/linux/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/linux_amd64/*.java \

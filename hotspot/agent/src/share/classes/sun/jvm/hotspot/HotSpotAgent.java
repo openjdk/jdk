@@ -28,6 +28,7 @@ import java.io.PrintStream;
 import java.net.*;
 import java.rmi.*;
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.debugger.bsd.*;
 import sun.jvm.hotspot.debugger.proc.*;
 import sun.jvm.hotspot.debugger.remote.*;
 import sun.jvm.hotspot.debugger.windbg.*;
@@ -335,6 +336,8 @@ public class HotSpotAgent {
                 setupDebuggerWin32();
             } else if (os.equals("linux")) {
                 setupDebuggerLinux();
+            } else if (os.equals("bsd")) {
+                setupDebuggerBsd();
             } else {
                 // Add support for more operating systems here
                 throw new DebuggerException("Operating system " + os + " not yet supported");
@@ -389,6 +392,10 @@ public class HotSpotAgent {
             } else if (os.equals("linux")) {
                 db = new HotSpotTypeDataBase(machDesc,
                 new LinuxVtblAccess(debugger, jvmLibNames),
+                debugger, jvmLibNames);
+            } else if (os.equals("bsd")) {
+                db = new HotSpotTypeDataBase(machDesc,
+                new BsdVtblAccess(debugger, jvmLibNames),
                 debugger, jvmLibNames);
             } else {
                 throw new DebuggerException("OS \"" + os + "\" not yet supported (no VtblAccess yet)");
@@ -477,6 +484,8 @@ public class HotSpotAgent {
             setupJVMLibNamesWin32();
         } else if (os.equals("linux")) {
             setupJVMLibNamesLinux();
+        } else if (os.equals("bsd")) {
+            setupJVMLibNamesBsd();
         } else {
             throw new RuntimeException("Unknown OS type");
         }
@@ -551,6 +560,31 @@ public class HotSpotAgent {
     }
 
     private void setupJVMLibNamesLinux() {
+        jvmLibNames = new String[] { "libjvm.so", "libjvm_g.so" };
+    }
+
+    //
+    // BSD
+    //
+
+    private void setupDebuggerBsd() {
+        setupJVMLibNamesBsd();
+
+        if (cpu.equals("x86")) {
+            machDesc = new MachineDescriptionIntelX86();
+        } else if (cpu.equals("amd64")) {
+            machDesc = new MachineDescriptionAMD64();
+        } else {
+            throw new DebuggerException("BSD only supported on x86/amd64");
+        }
+
+        BsdDebuggerLocal dbg = new BsdDebuggerLocal(machDesc, !isServer);
+        debugger = dbg;
+
+        attachDebugger();
+    }
+
+    private void setupJVMLibNamesBsd() {
         jvmLibNames = new String[] { "libjvm.so", "libjvm_g.so" };
     }
 

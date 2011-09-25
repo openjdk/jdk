@@ -25,6 +25,8 @@
 #ifndef SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP
 #define SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP
 
+#define __STDC_FORMAT_MACROS
+
 #ifdef TARGET_COMPILER_gcc
 # include "utilities/globalDefinitions_gcc.hpp"
 #endif
@@ -1178,67 +1180,47 @@ inline int build_int_from_shorts( jushort low, jushort high ) {
 }
 
 // Printf-style formatters for fixed- and variable-width types as pointers and
-// integers.
-//
-// Each compiler-specific definitions file (e.g., globalDefinitions_gcc.hpp)
-// must define the macro FORMAT64_MODIFIER, which is the modifier for '%x' or
-// '%d' formats to indicate a 64-bit quantity; commonly "l" (in LP64) or "ll"
-// (in ILP32).
+// integers.  These are derived from the definitions in inttypes.h.  If the platform
+// doesn't provide appropriate definitions, they should be provided in
+// the compiler-specific definitions file (e.g., globalDefinitions_gcc.hpp)
 
 #define BOOL_TO_STR(_b_) ((_b_) ? "true" : "false")
 
 // Format 32-bit quantities.
-#define INT32_FORMAT  "%d"
-#define UINT32_FORMAT "%u"
-#define INT32_FORMAT_W(width)   "%" #width "d"
-#define UINT32_FORMAT_W(width)  "%" #width "u"
+#define INT32_FORMAT           "%" PRId32
+#define UINT32_FORMAT          "%" PRIu32
+#define INT32_FORMAT_W(width)  "%" #width PRId32
+#define UINT32_FORMAT_W(width) "%" #width PRIu32
 
-#define PTR32_FORMAT  "0x%08x"
+#define PTR32_FORMAT           "0x%08" PRIx32
 
 // Format 64-bit quantities.
-#define INT64_FORMAT  "%" FORMAT64_MODIFIER "d"
-#define UINT64_FORMAT "%" FORMAT64_MODIFIER "u"
-#define PTR64_FORMAT  "0x%016" FORMAT64_MODIFIER "x"
+#define INT64_FORMAT           "%" PRId64
+#define UINT64_FORMAT          "%" PRIu64
+#define INT64_FORMAT_W(width)  "%" #width PRId64
+#define UINT64_FORMAT_W(width) "%" #width PRIu64
 
-#define INT64_FORMAT_W(width)  "%" #width FORMAT64_MODIFIER "d"
-#define UINT64_FORMAT_W(width) "%" #width FORMAT64_MODIFIER "u"
+#define PTR64_FORMAT           "0x%016" PRIx64
 
-// Format macros that allow the field width to be specified.  The width must be
-// a string literal (e.g., "8") or a macro that evaluates to one.
-#ifdef _LP64
-#define UINTX_FORMAT_W(width)   UINT64_FORMAT_W(width)
-#define SSIZE_FORMAT_W(width)   INT64_FORMAT_W(width)
-#define SIZE_FORMAT_W(width)    UINT64_FORMAT_W(width)
-#else
-#define UINTX_FORMAT_W(width)   UINT32_FORMAT_W(width)
-#define SSIZE_FORMAT_W(width)   INT32_FORMAT_W(width)
-#define SIZE_FORMAT_W(width)    UINT32_FORMAT_W(width)
-#endif // _LP64
-
-// Format pointers and size_t (or size_t-like integer types) which change size
-// between 32- and 64-bit. The pointer format theoretically should be "%p",
-// however, it has different output on different platforms. On Windows, the data
-// will be padded with zeros automatically. On Solaris, we can use "%016p" &
-// "%08p" on 64 bit & 32 bit platforms to make the data padded with extra zeros.
-// On Linux, "%016p" or "%08p" is not be allowed, at least on the latest GCC
-// 4.3.2. So we have to use "%016x" or "%08x" to simulate the printing format.
-// GCC 4.3.2, however requires the data to be converted to "intptr_t" when
-// using "%x".
+// Format pointers which change size between 32- and 64-bit.
 #ifdef  _LP64
-#define PTR_FORMAT    PTR64_FORMAT
-#define UINTX_FORMAT  UINT64_FORMAT
-#define INTX_FORMAT   INT64_FORMAT
-#define SIZE_FORMAT   UINT64_FORMAT
-#define SSIZE_FORMAT  INT64_FORMAT
+#define INTPTR_FORMAT "0x%016" PRIxPTR
+#define PTR_FORMAT    "0x%016" PRIxPTR
 #else   // !_LP64
-#define PTR_FORMAT    PTR32_FORMAT
-#define UINTX_FORMAT  UINT32_FORMAT
-#define INTX_FORMAT   INT32_FORMAT
-#define SIZE_FORMAT   UINT32_FORMAT
-#define SSIZE_FORMAT  INT32_FORMAT
+#define INTPTR_FORMAT "0x%08"  PRIxPTR
+#define PTR_FORMAT    "0x%08"  PRIxPTR
 #endif  // _LP64
 
-#define INTPTR_FORMAT PTR_FORMAT
+#define SSIZE_FORMAT          "%" PRIdPTR
+#define SIZE_FORMAT           "%" PRIuPTR
+#define SSIZE_FORMAT_W(width) "%" #width PRIdPTR
+#define SIZE_FORMAT_W(width)  "%" #width PRIuPTR
+
+#define INTX_FORMAT           "%" PRIdPTR
+#define UINTX_FORMAT          "%" PRIuPTR
+#define INTX_FORMAT_W(width)  "%" #width PRIdPTR
+#define UINTX_FORMAT_W(width) "%" #width PRIuPTR
+
 
 // Enable zap-a-lot if in debug version.
 

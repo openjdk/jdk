@@ -47,6 +47,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "c1_globals_windows.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "c1_globals_bsd.hpp"
+#endif
 
 //
 // Defines all global flags used by the client compiler.
