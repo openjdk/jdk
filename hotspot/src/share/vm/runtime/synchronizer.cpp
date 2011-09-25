@@ -51,6 +51,10 @@
 # include "os_windows.inline.hpp"
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.inline.hpp"
+# include "thread_bsd.inline.hpp"
+#endif
 
 #if defined(__GNUC__) && !defined(IA64)
   // Need to inhibit inlining for older versions of GCC to avoid build-time failures

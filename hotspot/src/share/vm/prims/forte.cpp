@@ -621,6 +621,11 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
 // Method to let libcollector know about a dynamically loaded function.
 // Because it is weakly bound, the calls become NOP's when the library
 // isn't present.
+#ifdef __APPLE__
+// XXXDARWIN: Link errors occur even when __attribute__((weak_import))
+// is added
+#define collector_func_load(x0,x1,x2,x3,x4,x5,x6) (0)
+#else
 void    collector_func_load(char* name,
                             void* null_argument_1,
                             void* null_argument_2,
@@ -631,6 +636,7 @@ void    collector_func_load(char* name,
 #pragma weak collector_func_load
 #define collector_func_load(x0,x1,x2,x3,x4,x5,x6) \
         ( collector_func_load ? collector_func_load(x0,x1,x2,x3,x4,x5,x6),0 : 0 )
+#endif // __APPLE__
 #endif // !_WINDOWS
 
 } // end extern "C"

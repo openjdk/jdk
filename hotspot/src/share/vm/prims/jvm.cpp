@@ -73,6 +73,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "jvm_windows.h"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "jvm_bsd.h"
+#endif
 
 #include <errno.h>
 

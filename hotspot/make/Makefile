@@ -323,28 +323,28 @@ endif
 ifneq ($(OSNAME),windows)
   ifeq ($(ZERO_BUILD), true)
     ifeq ($(SHARK_BUILD), true)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.so: $(SHARK_DIR)/%.so
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(SHARK_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_SERVER_DIR)/%.so:       $(SHARK_DIR)/%.so
+$(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):       $(SHARK_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
     else
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.so: $(ZERO_DIR)/%.so
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(ZERO_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_SERVER_DIR)/%.so:       $(ZERO_DIR)/%.so
+$(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):       $(ZERO_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
     endif
   else
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.so: $(C1_DIR)/%.so
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(C1_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.so: $(C2_DIR)/%.so
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(C2_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_CLIENT_DIR)/%.so:       $(C1_DIR)/%.so
+$(EXPORT_CLIENT_DIR)/%.$(LIBRARY_SUFFIX):       $(C1_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_CLIENT_DIR)/64/%.so:    $(C1_DIR)/%.so
+$(EXPORT_CLIENT_DIR)/64/%.$(LIBRARY_SUFFIX):    $(C1_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_SERVER_DIR)/%.so:       $(C2_DIR)/%.so
+$(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):       $(C2_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
-$(EXPORT_SERVER_DIR)/64/%.so:    $(C2_DIR)/%.so
+$(EXPORT_SERVER_DIR)/64/%.$(LIBRARY_SUFFIX):    $(C2_DIR)/%.$(LIBRARY_SUFFIX)
 	$(install-file)
   endif
 endif

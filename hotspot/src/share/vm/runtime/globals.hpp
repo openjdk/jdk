@@ -50,6 +50,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "globals_windows.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "globals_bsd.hpp"
+#endif
 #ifdef TARGET_OS_ARCH_linux_x86
 # include "globals_linux_x86.hpp"
 #endif
@@ -74,6 +77,12 @@
 #ifdef TARGET_OS_ARCH_linux_ppc
 # include "globals_linux_ppc.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_bsd_x86
+# include "globals_bsd_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_bsd_zero
+# include "globals_bsd_zero.hpp"
+#endif
 #ifdef COMPILER1
 #ifdef TARGET_ARCH_x86
 # include "c1_globals_x86.hpp"
@@ -96,6 +105,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "c1_globals_windows.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "c1_globals_bsd.hpp"
+#endif
 #endif
 #ifdef COMPILER2
 #ifdef TARGET_ARCH_x86
@@ -115,6 +127,9 @@
 #endif
 #ifdef TARGET_OS_FAMILY_windows
 # include "c2_globals_windows.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "c2_globals_bsd.hpp"
 #endif
 #endif
 #ifdef SHARK
