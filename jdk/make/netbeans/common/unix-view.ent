@@ -35,7 +35,7 @@
   UNIX is a registered trademark in the United States and other countries,
   exclusively licensed through X/Open Company, Ltd.
 -->
-<source-folder style="packages">
+<source-folder style="tree">
     <label>Sources for Unix® Platform</label>
     <location>${root}/src/solaris/classes</location>
     <includes>${includes}</includes>

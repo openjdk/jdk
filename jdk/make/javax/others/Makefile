@@ -28,7 +28,6 @@
 #
 
 BUILDDIR = ../..
-JAVAC_MAX_WARNINGS = true
 include $(BUILDDIR)/common/Defs.gmk
 
 #

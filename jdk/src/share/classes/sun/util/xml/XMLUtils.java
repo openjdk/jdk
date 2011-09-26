@@ -23,9 +23,10 @@
  * questions.
  */
 
-package java.util;
+package sun.util.xml;
 
 import java.io.*;
+import java.util.*;
 import org.xml.sax.*;
 import org.xml.sax.helpers.*;
 import org.w3c.dom.*;
@@ -42,7 +43,7 @@ import javax.xml.transform.stream.*;
  * @author  Michael McCloskey
  * @since   1.3
  */
-class XMLUtils {
+public class XMLUtils {
 
     // XML loading and saving methods for Properties
 
@@ -66,7 +67,7 @@ class XMLUtils {
      */
     private static final String EXTERNAL_XML_VERSION = "1.0";
 
-    static void load(Properties props, InputStream in)
+    public static void load(Properties props, InputStream in)
         throws IOException, InvalidPropertiesFormatException
     {
         Document doc = null;
@@ -120,7 +121,7 @@ class XMLUtils {
         }
     }
 
-    static void save(Properties props, OutputStream os, String comment,
+    public static void save(Properties props, OutputStream os, String comment,
                      String encoding)
         throws IOException
     {

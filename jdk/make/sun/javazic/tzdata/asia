@@ -99,6 +99,10 @@ Rule RussiaAsia	1993	max	-	Mar	lastSun	 2:00s	1:00	S
 Rule RussiaAsia	1993	1995	-	Sep	lastSun	 2:00s	0	-
 Rule RussiaAsia	1996	max	-	Oct	lastSun	 2:00s	0	-
 
+# From Arthur David Olson (2011-06-15):
+# While Russia abandoned DST in 2011, Armenia may choose to
+# follow Russia's "old" rules.
+
 # Afghanistan
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Kabul	4:36:48 -	LMT	1890
