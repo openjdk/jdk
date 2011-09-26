@@ -10,11 +10,11 @@
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE
  *  @run compile MangleStepTest.java
  *  @run compile -g  onion/pickle/Mangle.java
- *  @run main MangleStepTest unset
- *  @run main MangleStepTest Java
- *  @run main MangleStepTest XYZ
- *  @run main MangleStepTest Rats
- *  @run main MangleStepTest bogus
+ *  @run main/othervm MangleStepTest unset
+ *  @run main/othervm MangleStepTest Java
+ *  @run main/othervm MangleStepTest XYZ
+ *  @run main/othervm MangleStepTest Rats
+ *  @run main/othervm MangleStepTest bogus
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

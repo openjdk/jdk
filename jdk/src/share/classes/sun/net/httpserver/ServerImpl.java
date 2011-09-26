@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -593,8 +593,8 @@ class ServerImpl implements TimeSource {
                         rheaders.set ("Connection", "close");
                     } else if (chdr.equalsIgnoreCase ("keep-alive")) {
                         rheaders.set ("Connection", "keep-alive");
-                        int idle=(int)ServerConfig.getIdleInterval()/1000;
-                        int max=(int)ServerConfig.getMaxIdleConnections();
+                        int idle=(int)(ServerConfig.getIdleInterval()/1000);
+                        int max=ServerConfig.getMaxIdleConnections();
                         String val = "timeout="+idle+", max="+max;
                         rheaders.set ("Keep-Alive", val);
                     }
