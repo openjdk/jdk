@@ -102,6 +102,7 @@
 // Compiled code entry points
 address OptoRuntime::_new_instance_Java                           = NULL;
 address OptoRuntime::_new_array_Java                              = NULL;
+address OptoRuntime::_new_array_nozero_Java                       = NULL;
 address OptoRuntime::_multianewarray2_Java                        = NULL;
 address OptoRuntime::_multianewarray3_Java                        = NULL;
 address OptoRuntime::_multianewarray4_Java                        = NULL;
@@ -151,6 +152,7 @@ void OptoRuntime::generate(ciEnv* env) {
   // -------------------------------------------------------------------------------------------------------------------------------
   gen(env, _new_instance_Java              , new_instance_Type            , new_instance_C                  ,    0 , true , false, false);
   gen(env, _new_array_Java                 , new_array_Type               , new_array_C                     ,    0 , true , false, false);
+  gen(env, _new_array_nozero_Java          , new_array_Type               , new_array_nozero_C              ,    0 , true , false, false);
   gen(env, _multianewarray2_Java           , multianewarray2_Type         , multianewarray2_C               ,    0 , true , false, false);
   gen(env, _multianewarray3_Java           , multianewarray3_Type         , multianewarray3_C               ,    0 , true , false, false);
   gen(env, _multianewarray4_Java           , multianewarray4_Type         , multianewarray4_C               ,    0 , true , false, false);
@@ -293,6 +295,36 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(klassOopDesc* array_type, int len
     klassOopDesc* elem_type = objArrayKlass::cast(array_type)->element_klass();
     result = oopFactory::new_objArray(elem_type, len, THREAD);
   }
+
+  // Pass oops back through thread local storage.  Our apparent type to Java
+  // is that we return an oop, but we can block on exit from this routine and
+  // a GC can trash the oop in C's return register.  The generated stub will
+  // fetch the oop from TLS after any possible GC.
+  deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
+  thread->set_vm_result(result);
+  JRT_BLOCK_END;
+
+  if (GraphKit::use_ReduceInitialCardMarks()) {
+    // inform GC that we won't do card marks for initializing writes.
+    new_store_pre_barrier(thread);
+  }
+JRT_END
+
+// array allocation without zeroing
+JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(klassOopDesc* array_type, int len, JavaThread *thread))
+  JRT_BLOCK;
+#ifndef PRODUCT
+  SharedRuntime::_new_array_ctr++;            // new array requires GC
+#endif
+  assert(check_compiled_frame(thread), "incorrect caller");
+
+  // Scavenge and allocate an instance.
+  oop result;
+
+  assert(Klass::cast(array_type)->oop_is_typeArray(), "should be called only for type array");
+  // The oopFactory likes to work with the element type.
+  BasicType elem_type = typeArrayKlass::cast(array_type)->element_type();
+  result = oopFactory::new_typeArray_nozero(elem_type, len, THREAD);
 
   // Pass oops back through thread local storage.  Our apparent type to Java
   // is that we return an oop, but we can block on exit from this routine and

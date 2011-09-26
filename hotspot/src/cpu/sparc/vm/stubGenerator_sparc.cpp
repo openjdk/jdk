@@ -2359,10 +2359,10 @@ class StubGenerator: public StubCodeGenerator {
     for (int off = 0; off < 64; off += 16) {
       if (use_prefetch && (off & 31) == 0) {
         if (ArraycopySrcPrefetchDistance > 0) {
-          __ prefetch(from, ArraycopySrcPrefetchDistance, Assembler::severalReads);
+          __ prefetch(from, ArraycopySrcPrefetchDistance+off, Assembler::severalReads);
         }
         if (ArraycopyDstPrefetchDistance > 0) {
-          __ prefetch(to, ArraycopyDstPrefetchDistance, Assembler::severalWritesAndPossiblyReads);
+          __ prefetch(to, ArraycopyDstPrefetchDistance+off, Assembler::severalWritesAndPossiblyReads);
         }
       }
       __ ldx(from,  off+0, O4);
