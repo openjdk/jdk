@@ -25,6 +25,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -33,6 +34,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -59,7 +61,7 @@ import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
  */
 public abstract class Canonicalizer11 extends CanonicalizerBase {
     boolean firstCall = true;
-    final SortedSet result = new TreeSet(COMPARE);
+    final SortedSet<Attr> result = new TreeSet<Attr>(COMPARE);
     static final String XMLNS_URI = Constants.NamespaceSpecNS;
     static final String XML_LANG_URI = Constants.XML_LANG_SPACE_SpecNS;
 
@@ -72,9 +74,9 @@ public abstract class Canonicalizer11 extends CanonicalizerBase {
         static class XmlsStackElement {
             int level;
             boolean rendered = false;
-            List nodes = new ArrayList();
+            List<Attr> nodes = new ArrayList<Attr>();
         };
-        List levels = new ArrayList();
+        List<XmlsStackElement> levels = new ArrayList<XmlsStackElement>();
         void push(int level) {
             currentLevel = level;
             if (currentLevel == -1)
@@ -86,7 +88,7 @@ public abstract class Canonicalizer11 extends CanonicalizerBase {
                     lastlevel = 0;
                     return;
                 }
-                lastlevel=((XmlsStackElement)levels.get(levels.size()-1)).level;
+                lastlevel=(levels.get(levels.size()-1)).level;
             }
         }
         void addXmlnsAttr(Attr n) {
@@ -98,7 +100,7 @@ public abstract class Canonicalizer11 extends CanonicalizerBase {
             }
             cur.nodes.add(n);
         }
-        void getXmlnsAttr(Collection col) {
+        void getXmlnsAttr(Collection<Attr> col) {
             if (cur == null) {
                 cur = new XmlsStackElement();
                 cur.level = currentLevel;
@@ -111,7 +113,7 @@ public abstract class Canonicalizer11 extends CanonicalizerBase {
             if (size == -1) {
                 parentRendered = true;
             } else {
-                e = (XmlsStackElement) levels.get(size);
+                e = levels.get(size);
                 if (e.rendered && e.level+1 == currentLevel)
                     parentRendered = true;
             }
@@ -121,17 +123,17 @@ public abstract class Canonicalizer11 extends CanonicalizerBase {
                 return;
             }
 
-            Map loa = new HashMap();
-            List baseAttrs = new ArrayList();
+            Map<String, Attr> loa = new HashMap<String, Attr>();
+            List<Attr> baseAttrs = new ArrayList<Attr>();
             boolean successiveOmitted = true;
             for (;size>=0;size--) {
-                e = (XmlsStackElement) levels.get(size);
+                e = levels.get(size);
                 if (e.rendered) {
                     successiveOmitted = false;
                 }
-                Iterator it = e.nodes.iterator();
+                Iterator<Attr> it = e.nodes.iterator();
                 while (it.hasNext() && successiveOmitted) {
-                    Attr n = (Attr) it.next();
+                    Attr n = it.next();
                     if (n.getLocalName().equals("base")) {
                         if (!e.rendered) {
                             baseAttrs.add(n);
@@ -141,11 +143,11 @@ public abstract class Canonicalizer11 extends CanonicalizerBase {
                 }
             }
             if (!baseAttrs.isEmpty()) {
-                Iterator it = cur.nodes.iterator();
+                Iterator<Attr> it = cur.nodes.iterator();
                 String base = null;
                 Attr baseAttr = null;
                 while (it.hasNext()) {
-                    Attr n = (Attr) it.next();
+                    Attr n = it.next();
                     if (n.getLocalName().equals("base")) {
                         base = n.getValue();
                         baseAttr = n;
@@ -154,7 +156,7 @@ public abstract class Canonicalizer11 extends CanonicalizerBase {
                 }
                 it = baseAttrs.iterator();
                 while (it.hasNext()) {
-                    Attr n = (Attr) it.next();
+                    Attr n = it.next();
                     if (base == null) {
                         base = n.getValue();
                         baseAttr = n;
@@ -202,13 +204,13 @@ public abstract class Canonicalizer11 extends CanonicalizerBase {
      * @return the Attr[]s to be outputted
      * @throws CanonicalizationException
      */
-    Iterator handleAttributesSubtree(Element E, NameSpaceSymbTable ns)
+    Iterator<Attr> handleAttributesSubtree(Element E, NameSpaceSymbTable ns)
         throws CanonicalizationException {
         if (!E.hasAttributes() && !firstCall) {
             return null;
         }
         // result will contain the attrs which have to be outputted
-        final SortedSet result = this.result;
+        final SortedSet<Attr> result = this.result;
         result.clear();
         NamedNodeMap attrs = E.getAttributes();
         int attrsLength = attrs.getLength();
@@ -236,7 +238,7 @@ public abstract class Canonicalizer11 extends CanonicalizerBase {
 
             if (n != null) {
                 // Render the ns definition
-                result.add(n);
+                result.add((Attr)n);
                 if (C14nHelper.namespaceIsRelative(N)) {
                     Object exArgs[] = {E.getTagName(), NName, N.getNodeValue()};
                     throw new CanonicalizationException(
@@ -251,12 +253,14 @@ public abstract class Canonicalizer11 extends CanonicalizerBase {
             // to the output.
             ns.getUnrenderedNodes(result);
             // output the attributes in the xml namespace.
-            xmlattrStack.getXmlnsAttr(result);
+            xmlattrStack.getXmlnsAttr(getSortedSetAsCollection(result));
             firstCall = false;
         }
 
         return result.iterator();
     }
+
+
 
     /**
      * Returns the Attr[]s to be outputted for the given element.
@@ -271,7 +275,7 @@ public abstract class Canonicalizer11 extends CanonicalizerBase {
      * @return the Attr[]s to be outputted
      * @throws CanonicalizationException
      */
-    Iterator handleAttributes(Element E, NameSpaceSymbTable ns)
+    Iterator<Attr> handleAttributes(Element E, NameSpaceSymbTable ns)
         throws CanonicalizationException {
         // result will contain the attrs which have to be output
         xmlattrStack.push(ns.getLevel());
@@ -283,11 +287,11 @@ public abstract class Canonicalizer11 extends CanonicalizerBase {
             attrsLength = attrs.getLength();
         }
 
-        SortedSet result = this.result;
+        SortedSet<Attr> result = this.result;
         result.clear();
 
         for (int i = 0; i < attrsLength; i++) {
-            Attr N = (Attr) attrs.item(i);
+            Attr N = (Attr)attrs.item(i);
             String NUri = N.getNamespaceURI();
 
             if (XMLNS_URI != NUri) {
@@ -332,7 +336,7 @@ public abstract class Canonicalizer11 extends CanonicalizerBase {
                 //      (NName, NValue, N, isRealVisible);
                 Node n = ns.addMappingAndRender(NName, NValue, N);
                 if (n != null) {
-                    result.add(n);
+                    result.add((Attr)n);
                     if (C14nHelper.namespaceIsRelative(N)) {
                         Object exArgs[] =
                             { E.getTagName(), NName, N.getNodeValue() };
@@ -362,7 +366,7 @@ public abstract class Canonicalizer11 extends CanonicalizerBase {
             }
             // output the xmlns def if needed.
             if (n != null) {
-                result.add(n);
+                result.add((Attr)n);
             }
             // Float all xml:* attributes of the unselected parent elements to
             // this one. addXmlAttributes(E,result);
@@ -381,7 +385,7 @@ public abstract class Canonicalizer11 extends CanonicalizerBase {
      * @return none it always fails
      * @throws CanonicalizationException always
      */
-    public byte[] engineCanonicalizeXPathNodeSet(Set xpathNodeSet,
+    public byte[] engineCanonicalizeXPathNodeSet(Set<Node> xpathNodeSet,
         String inclusiveNamespaces) throws CanonicalizationException {
         throw new CanonicalizationException(
          "c14n.Canonicalizer.UnsupportedOperation");
