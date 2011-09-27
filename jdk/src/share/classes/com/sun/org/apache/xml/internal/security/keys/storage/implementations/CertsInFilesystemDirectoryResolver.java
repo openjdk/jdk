@@ -54,10 +54,10 @@ public class CertsInFilesystemDirectoryResolver extends StorageResolverSpi {
    String _merlinsCertificatesDir = null;
 
    /** Field _certs */
-   private List _certs = new ArrayList();
+   private List<X509Certificate> _certs = new ArrayList<X509Certificate>();
 
    /** Field _iterator */
-   Iterator _iterator = null;
+   Iterator<X509Certificate> _iterator = null;
 
    /**
     *
@@ -83,7 +83,7 @@ public class CertsInFilesystemDirectoryResolver extends StorageResolverSpi {
    private void readCertsFromHarddrive() throws StorageResolverException {
 
       File certDir = new File(this._merlinsCertificatesDir);
-      ArrayList al = new ArrayList();
+      ArrayList<String> al = new ArrayList<String>();
       String[] names = certDir.list();
 
       for (int i = 0; i < names.length; i++) {
@@ -108,7 +108,7 @@ public class CertsInFilesystemDirectoryResolver extends StorageResolverSpi {
 
       for (int i = 0; i < al.size(); i++) {
          String filename = certDir.getAbsolutePath() + File.separator
-                           + (String) al.get(i);
+                           + al.get(i);
          File file = new File(filename);
          boolean added = false;
          String dn = null;
@@ -146,7 +146,7 @@ public class CertsInFilesystemDirectoryResolver extends StorageResolverSpi {
    }
 
    /** @inheritDoc */
-   public Iterator getIterator() {
+   public Iterator<X509Certificate> getIterator() {
       return this._iterator;
    }
 
@@ -156,10 +156,10 @@ public class CertsInFilesystemDirectoryResolver extends StorageResolverSpi {
     * @author $Author: mullan $
     * @version $Revision: 1.5 $
     */
-   private static class FilesystemIterator implements Iterator {
+   private static class FilesystemIterator implements Iterator<X509Certificate> {
 
       /** Field _certs */
-      List _certs = null;
+      List<X509Certificate> _certs = null;
 
       /** Field _i */
       int _i;
@@ -169,7 +169,7 @@ public class CertsInFilesystemDirectoryResolver extends StorageResolverSpi {
        *
        * @param certs
        */
-      public FilesystemIterator(List certs) {
+      public FilesystemIterator(List<X509Certificate> certs) {
          this._certs = certs;
          this._i = 0;
       }
@@ -180,7 +180,7 @@ public class CertsInFilesystemDirectoryResolver extends StorageResolverSpi {
       }
 
       /** @inheritDoc */
-      public Object next() {
+      public X509Certificate next() {
          return this._certs.get(this._i++);
       }
 
@@ -206,8 +206,8 @@ public class CertsInFilesystemDirectoryResolver extends StorageResolverSpi {
          new CertsInFilesystemDirectoryResolver(
             "data/ie/baltimore/merlin-examples/merlin-xmldsig-eighteen/certs");
 
-      for (Iterator i = krs.getIterator(); i.hasNext(); ) {
-         X509Certificate cert = (X509Certificate) i.next();
+      for (Iterator<X509Certificate> i = krs.getIterator(); i.hasNext(); ) {
+         X509Certificate cert = i.next();
          byte[] ski =
             com.sun.org.apache.xml.internal.security.keys.content.x509.XMLX509SKI
                .getSKIBytesFromCert(cert);

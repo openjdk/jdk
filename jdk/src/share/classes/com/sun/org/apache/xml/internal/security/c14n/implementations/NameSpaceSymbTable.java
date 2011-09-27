@@ -44,7 +44,7 @@ public class NameSpaceSymbTable {
         /**The level of nameSpaces (for Inclusive visibility).*/
         int nameSpaces=0;
         /**The stacks for removing the definitions when doing pop.*/
-        List level;
+        List<SymbMap> level;
     boolean cloned=true;
         static final String XMLNS="xmlns";
         final static SymbMap initialMap=new SymbMap();
@@ -57,7 +57,7 @@ public class NameSpaceSymbTable {
      * Default constractor
      **/
     public NameSpaceSymbTable() {
-        level = new ArrayList(10);
+        level = new ArrayList<SymbMap>(10);
         //Insert the default binding for xmlns.
         symb=(SymbMap) initialMap.clone();
     }
@@ -67,11 +67,11 @@ public class NameSpaceSymbTable {
          * For Inclusive rendering
      * @param result the list where to fill the unrendered xmlns definitions.
          **/
-        public  void getUnrenderedNodes(Collection result) {
+        public  void getUnrenderedNodes(Collection<Attr> result) {
            //List result=new ArrayList();
-           Iterator it=symb.entrySet().iterator();
+           Iterator<NameSpaceSymbEntry> it=symb.entrySet().iterator();
            while (it.hasNext()) {
-                        NameSpaceSymbEntry n=(NameSpaceSymbEntry)(it.next());
+                        NameSpaceSymbEntry n= it.next();
                         //put them rendered?
                         if ((!n.rendered) && (n.n!=null)) {
                                 n=(NameSpaceSymbEntry) n.clone();
@@ -339,8 +339,8 @@ class SymbMap implements Cloneable {
         }
     }
 
-    List entrySet() {
-        List a=new ArrayList();
+    List<NameSpaceSymbEntry> entrySet() {
+        List<NameSpaceSymbEntry> a=new ArrayList<NameSpaceSymbEntry>();
         for (int i=0;i<entries.length;i++) {
                 if ((entries[i]!=null) && !("".equals(entries[i].uri))) {
                         a.add(entries[i]);

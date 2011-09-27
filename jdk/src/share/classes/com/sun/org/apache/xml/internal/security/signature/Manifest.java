@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -62,17 +63,17 @@ public class Manifest extends SignatureElementProxy {
         java.util.logging.Logger.getLogger(Manifest.class.getName());
 
    /** Field _references */
-   List _references;
+   List<Reference> _references;
    Element[] _referencesEl;
 
    /** Field verificationResults[] */
    private boolean verificationResults[] = null;
 
    /** Field _resolverProperties */
-   HashMap _resolverProperties = null;
+   Map<String,String> _resolverProperties = null;
 
    /** Field _perManifestResolvers */
-   List _perManifestResolvers = null;
+   List<ResourceResolver> _perManifestResolvers = null;
 
    /**
     * Consturts {@link Manifest}
@@ -85,7 +86,7 @@ public class Manifest extends SignatureElementProxy {
 
       XMLUtils.addReturnToElement(this._constructionElement);
 
-      this._references = new ArrayList();
+      this._references = new ArrayList<Reference>();
    }
 
    /**
@@ -117,7 +118,7 @@ public class Manifest extends SignatureElementProxy {
       }
 
       // create Vector
-      this._references = new ArrayList(le);
+      this._references = new ArrayList<Reference>(le);
 
       for (int i = 0; i < le; i++) {
          this._references.add(null);
@@ -175,7 +176,7 @@ public class Manifest extends SignatureElementProxy {
          for (int i = 0; i < this.getLength(); i++) {
 
             // update the cached Reference object, the Element content is automatically updated
-            Reference currentRef = (Reference) this._references.get(i);
+            Reference currentRef = this._references.get(i);
 
             currentRef.generateDigestValue();
          }
@@ -208,7 +209,7 @@ public class Manifest extends SignatureElementProxy {
             this._references.set(i, ref);
          }
 
-         return (Reference) this._references.get(i);
+         return this._references.get(i);
 
    }
 
@@ -323,12 +324,12 @@ public class Manifest extends SignatureElementProxy {
                 try {
                   XMLSignatureInput signedManifestNodes =
                     currentRef.dereferenceURIandPerformTransforms(null);
-                  Set nl = signedManifestNodes.getNodeSet();
+                  Set<Node> nl = signedManifestNodes.getNodeSet();
                   Manifest referencedManifest = null;
-                  Iterator nlIterator = nl.iterator();
+                  Iterator<Node> nlIterator = nl.iterator();
 
                   findManifest: while (nlIterator.hasNext()) {
-                     Node n = (Node) nlIterator.next();
+                     Node n =  nlIterator.next();
 
                      if ((n.getNodeType() == Node.ELEMENT_NODE) && ((Element) n)
                              .getNamespaceURI()
@@ -449,7 +450,7 @@ public class Manifest extends SignatureElementProxy {
           return;
       }
       if (_perManifestResolvers==null)
-          _perManifestResolvers = new ArrayList();
+          _perManifestResolvers = new ArrayList<ResourceResolver>();
       this._perManifestResolvers.add(resolver);
 
    }
@@ -465,7 +466,7 @@ public class Manifest extends SignatureElementProxy {
           return;
       }
       if (_perManifestResolvers==null)
-                  _perManifestResolvers = new ArrayList();
+                  _perManifestResolvers = new ArrayList<ResourceResolver>();
       this._perManifestResolvers.add(new ResourceResolver(resolverSpi));
 
    }
@@ -479,7 +480,7 @@ public class Manifest extends SignatureElementProxy {
     */
    public void setResolverProperty(String key, String value) {
            if (_resolverProperties==null) {
-                   _resolverProperties=new HashMap(10);
+                   _resolverProperties=new HashMap<String, String>(10);
            }
       this._resolverProperties.put(key, value);
    }
@@ -491,7 +492,7 @@ public class Manifest extends SignatureElementProxy {
     * @return the value
     */
    public String getResolverProperty(String key) {
-      return (String) this._resolverProperties.get(key);
+      return this._resolverProperties.get(key);
    }
 
    /**
