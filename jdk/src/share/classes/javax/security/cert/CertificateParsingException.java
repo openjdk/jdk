@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ package javax.security.cert;
  * @author Hemma Prafullchandra
  */
 public class CertificateParsingException extends CertificateException {
+
+    private static final long serialVersionUID = -8449352422951136229L;
 
     /**
      * Constructs a CertificateParsingException with no detail message. A
