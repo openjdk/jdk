@@ -233,7 +233,6 @@ abstract class MessageToken_v2 extends Krb5Token {
             }
 
             if (tokenId == Krb5Token.WRAP_ID_v2) {
-                // Does non-confidential data needs a rotate?
                 rotate();
             }
 
@@ -421,10 +420,12 @@ abstract class MessageToken_v2 extends Krb5Token {
         int conf_flag = tokenHeaderBytes[TOKEN_FLAG_POS] &
                                 FLAG_WRAP_CONFIDENTIAL;
 
-        // clear EC in token header for checksum calculation
+        // clear EC and RRC in token header for checksum calculation
         if ((conf_flag == 0) && (tokenId == WRAP_ID_v2)) {
             tokenHeaderBytes[4] = 0;
             tokenHeaderBytes[5] = 0;
+            tokenHeaderBytes[6] = 0;
+            tokenHeaderBytes[7] = 0;
         }
         return cipherHelper.calculateChecksum(tokenHeaderBytes, data,
                                                 offset, len, key_usage);
