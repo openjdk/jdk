@@ -1337,12 +1337,7 @@ public:
   // storage in the heap comes from a young region or not.
   // See ReduceInitialCardMarks.
   virtual bool can_elide_tlab_store_barriers() const {
-    // 6920090: Temporarily disabled, because of lingering
-    // instabilities related to RICM with G1. In the
-    // interim, the option ReduceInitialCardMarksForG1
-    // below is left solely as a debugging device at least
-    // until 6920109 fixes the instabilities.
-    return ReduceInitialCardMarksForG1;
+    return true;
   }
 
   virtual bool card_mark_must_follow_store() const {
@@ -1366,8 +1361,6 @@ public:
   // update logging post-barrier, we don't maintain remembered set
   // information for young gen objects.
   virtual bool can_elide_initializing_store_barrier(oop new_obj) {
-    // Re 6920090, 6920109 above.
-    assert(ReduceInitialCardMarksForG1, "Else cannot be here");
     return is_in_young(new_obj);
   }
 
