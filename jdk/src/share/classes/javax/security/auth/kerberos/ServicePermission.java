@@ -583,6 +583,7 @@ final class KrbServicePermissionCollection extends PermissionCollection
     /*
      * Reads in a Vector of ServicePermissions and saves them in the perms field.
      */
+    @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream in) throws IOException,
     ClassNotFoundException {
         // Don't call defaultReadObject()

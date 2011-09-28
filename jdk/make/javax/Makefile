@@ -30,7 +30,7 @@
 BUILDDIR = ..
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS = others
+SUBDIRS = others security
 
 SUBDIRS_management = management
 
