@@ -3365,6 +3365,14 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     // for the duration of this pause.
     g1_policy()->decide_on_conc_mark_initiation();
 
+    // We do not allow initial-mark to be piggy-backed on a
+    // partially-young GC.
+    assert(!g1_policy()->during_initial_mark_pause() ||
+            g1_policy()->full_young_gcs(), "sanity");
+
+    // We also do not allow partially-young GCs during marking.
+    assert(!mark_in_progress() || g1_policy()->full_young_gcs(), "sanity");
+
     char verbose_str[128];
     sprintf(verbose_str, "GC pause ");
     if (g1_policy()->full_young_gcs()) {

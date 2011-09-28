@@ -1525,11 +1525,17 @@ void G1CollectorPolicy::record_collection_pause_end() {
   }
 
   if (_last_full_young_gc) {
-    ergo_verbose2(ErgoPartiallyYoungGCs,
-                  "start partially-young GCs",
-                  ergo_format_byte_perc("known garbage"),
-                  _known_garbage_bytes, _known_garbage_ratio * 100.0);
-    set_full_young_gcs(false);
+    if (!last_pause_included_initial_mark) {
+      ergo_verbose2(ErgoPartiallyYoungGCs,
+                    "start partially-young GCs",
+                    ergo_format_byte_perc("known garbage"),
+                    _known_garbage_bytes, _known_garbage_ratio * 100.0);
+      set_full_young_gcs(false);
+    } else {
+      ergo_verbose0(ErgoPartiallyYoungGCs,
+                    "do not start partially-young GCs",
+                    ergo_format_reason("concurrent cycle is about to start"));
+    }
     _last_full_young_gc = false;
   }
 
@@ -2491,6 +2497,13 @@ G1CollectorPolicy::decide_on_conc_mark_initiation() {
       // initiate a new cycle.
 
       set_during_initial_mark_pause();
+      // We do not allow non-full young GCs during marking.
+      if (!full_young_gcs()) {
+        set_full_young_gcs(true);
+        ergo_verbose0(ErgoPartiallyYoungGCs,
+                      "end partially-young GCs",
+                      ergo_format_reason("concurrent cycle is about to start"));
+      }
 
       // And we can now clear initiate_conc_mark_if_possible() as
       // we've already acted on it.
