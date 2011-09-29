@@ -36,7 +36,7 @@ AGENT_SRC_DIR = $(AGENT_DIR)/src/share/classes
 # Splitted the set of files into two sets because on linux plaform
 # listing or compiling all the files results in 'Argument list too long' error.
 
-AGENT_FILES1 = \
+AGENT_FILES = \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/asm/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/asm/amd64/*.java \
@@ -91,10 +91,7 @@ $(AGENT_SRC_DIR)/sun/jvm/hotspot/livejvm/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/memory/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/oops/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/opto/*.java \
-$(AGENT_SRC_DIR)/sun/jvm/hotspot/prims/*.java 
-
-
-AGENT_FILES2 = \
+$(AGENT_SRC_DIR)/sun/jvm/hotspot/prims/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/amd64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/bsd/*.java \
