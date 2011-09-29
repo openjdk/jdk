@@ -967,7 +967,8 @@
 // Class vmSymbols
 
 class vmSymbols: AllStatic {
- friend class vmIntrinsics;
+  friend class vmIntrinsics;
+  friend class VMStructs;
  public:
   // enum for figuring positions and size of array holding Symbol*s
   enum SID {

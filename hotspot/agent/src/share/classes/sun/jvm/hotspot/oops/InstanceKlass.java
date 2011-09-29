@@ -44,14 +44,14 @@ public class InstanceKlass extends Klass {
   }
 
   // field offset constants
-  public static int ACCESS_FLAGS_OFFSET;
-  public static int NAME_INDEX_OFFSET;
-  public static int SIGNATURE_INDEX_OFFSET;
-  public static int INITVAL_INDEX_OFFSET;
-  public static int LOW_OFFSET;
-  public static int HIGH_OFFSET;
-  public static int GENERIC_SIGNATURE_INDEX_OFFSET;
-  public static int FIELD_SLOTS;
+  private static int ACCESS_FLAGS_OFFSET;
+  private static int NAME_INDEX_OFFSET;
+  private static int SIGNATURE_INDEX_OFFSET;
+  private static int INITVAL_INDEX_OFFSET;
+  private static int LOW_OFFSET;
+  private static int HIGH_OFFSET;
+  private static int GENERIC_SIGNATURE_INDEX_OFFSET;
+  private static int FIELD_SLOTS;
   public static int IMPLEMENTORS_LIMIT;
 
   // ClassState constants
@@ -122,6 +122,13 @@ public class InstanceKlass extends Klass {
 
   InstanceKlass(OopHandle handle, ObjectHeap heap) {
     super(handle, heap);
+    if (getJavaFieldsCount() != getAllFieldsCount()) {
+      // Exercise the injected field logic
+      for (int i = getJavaFieldsCount(); i < getAllFieldsCount(); i++) {
+        getFieldName(i);
+        getFieldSignature(i);
+      }
+    }
   }
 
   private static OopField  arrayKlasses;
@@ -253,22 +260,49 @@ public class InstanceKlass extends Klass {
     return getFields().getShortAt(index * FIELD_SLOTS + ACCESS_FLAGS_OFFSET);
   }
 
+  public short getFieldNameIndex(int index) {
+    if (index >= getJavaFieldsCount()) throw new IndexOutOfBoundsException("not a Java field;");
+    return getFields().getShortAt(index * FIELD_SLOTS + NAME_INDEX_OFFSET);
+  }
+
   public Symbol getFieldName(int index) {
     int nameIndex = getFields().getShortAt(index * FIELD_SLOTS + NAME_INDEX_OFFSET);
-    return getConstants().getSymbolAt(nameIndex);
+    if (index < getJavaFieldsCount()) {
+      return getConstants().getSymbolAt(nameIndex);
+    } else {
+      return vmSymbols.symbolAt(nameIndex);
+    }
+  }
+
+  public short getFieldSignatureIndex(int index) {
+    if (index >= getJavaFieldsCount()) throw new IndexOutOfBoundsException("not a Java field;");
+    return getFields().getShortAt(index * FIELD_SLOTS + SIGNATURE_INDEX_OFFSET);
   }
 
   public Symbol getFieldSignature(int index) {
     int signatureIndex = getFields().getShortAt(index * FIELD_SLOTS + SIGNATURE_INDEX_OFFSET);
-    return getConstants().getSymbolAt(signatureIndex);
+    if (index < getJavaFieldsCount()) {
+      return getConstants().getSymbolAt(signatureIndex);
+    } else {
+      return vmSymbols.symbolAt(signatureIndex);
+    }
+  }
+
+  public short getFieldGenericSignatureIndex(int index) {
+    return getFields().getShortAt(index * FIELD_SLOTS + GENERIC_SIGNATURE_INDEX_OFFSET);
   }
 
   public Symbol getFieldGenericSignature(int index) {
-    short genericSignatureIndex = getFields().getShortAt(index * FIELD_SLOTS + GENERIC_SIGNATURE_INDEX_OFFSET);
+    short genericSignatureIndex = getFieldGenericSignatureIndex(index);
     if (genericSignatureIndex != 0)  {
       return getConstants().getSymbolAt(genericSignatureIndex);
     }
     return null;
+  }
+
+  public short getFieldInitialValueIndex(int index) {
+    if (index >= getJavaFieldsCount()) throw new IndexOutOfBoundsException("not a Java field;");
+    return getFields().getShortAt(index * FIELD_SLOTS + INITVAL_INDEX_OFFSET);
   }
 
   public int getFieldOffset(int index) {
@@ -288,7 +322,7 @@ public class InstanceKlass extends Klass {
   public Klass     getImplementor(int i)    { return (Klass)        implementors[i].getValue(this); }
   public TypeArray getFields()              { return (TypeArray)    fields.getValue(this); }
   public int       getJavaFieldsCount()     { return                (int) javaFieldsCount.getValue(this); }
-  public int       getAllFieldsCount()      { return                (int)getFields().getLength(); }
+  public int       getAllFieldsCount()      { return                (int)getFields().getLength() / FIELD_SLOTS; }
   public ConstantPool getConstants()        { return (ConstantPool) constants.getValue(this); }
   public Oop       getClassLoader()         { return                classLoader.getValue(this); }
   public Oop       getProtectionDomain()    { return                protectionDomain.getValue(this); }
@@ -511,7 +545,6 @@ public class InstanceKlass extends Klass {
   }
 
   void iterateStaticFieldsInternal(OopVisitor visitor) {
-    TypeArray fields = getFields();
     int length = getJavaFieldsCount();
     for (int index = 0; index < length; index++) {
       short accessFlags    = getFieldAccessFlags(index);
@@ -541,8 +574,6 @@ public class InstanceKlass extends Klass {
     if (getSuper() != null) {
       ((InstanceKlass) getSuper()).iterateNonStaticFields(visitor, obj);
     }
-    TypeArray fields = getFields();
-
     int length = getJavaFieldsCount();
     for (int index = 0; index < length; index++) {
       short accessFlags    = getFieldAccessFlags(index);
@@ -556,9 +587,7 @@ public class InstanceKlass extends Klass {
 
   /** Field access by name. */
   public Field findLocalField(Symbol name, Symbol sig) {
-    TypeArray fields = getFields();
-    int length = (int) fields.getLength();
-    ConstantPool cp = getConstants();
+    int length = getJavaFieldsCount();
     for (int i = 0; i < length; i++) {
       Symbol f_name = getFieldName(i);
       Symbol f_sig  = getFieldSignature(i);
@@ -648,8 +677,6 @@ public class InstanceKlass extends Klass {
     public List getImmediateFields() {
         // A list of Fields for each field declared in this class/interface,
         // not including inherited fields.
-        TypeArray fields = getFields();
-
         int length = getJavaFieldsCount();
         List immediateFields = new ArrayList(length);
         for (int index = 0; index < length; index++) {
@@ -839,7 +866,6 @@ public class InstanceKlass extends Klass {
 
   // Creates new field from index in fields TypeArray
   private Field newField(int index) {
-    TypeArray fields = getFields();
     FieldType type = new FieldType(getFieldSignature(index));
     if (type.isOop()) {
      if (VM.getVM().isCompressedOopsEnabled()) {
