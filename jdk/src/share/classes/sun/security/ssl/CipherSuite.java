@@ -420,10 +420,16 @@ final class CipherSuite implements Comparable {
         // exportable under 512/40 bit rules
         final boolean exportable;
 
+        // Is the cipher algorithm of Cipher Block Chaining (CBC) mode?
+        final boolean isCBCMode;
+
         BulkCipher(String transformation, int keySize,
                 int expandedKeySize, int ivSize, boolean allowed) {
             this.transformation = transformation;
-            this.algorithm = transformation.split("/")[0];
+            String[] splits = transformation.split("/");
+            this.algorithm = splits[0];
+            this.isCBCMode =
+                splits.length <= 1 ? false : "CBC".equalsIgnoreCase(splits[1]);
             this.description = this.algorithm + "/" + (keySize << 3);
             this.keySize = keySize;
             this.ivSize = ivSize;
@@ -436,7 +442,10 @@ final class CipherSuite implements Comparable {
         BulkCipher(String transformation, int keySize,
                 int ivSize, boolean allowed) {
             this.transformation = transformation;
-            this.algorithm = transformation.split("/")[0];
+            String[] splits = transformation.split("/");
+            this.algorithm = splits[0];
+            this.isCBCMode =
+                splits.length <= 1 ? false : "CBC".equalsIgnoreCase(splits[1]);
             this.description = this.algorithm + "/" + (keySize << 3);
             this.keySize = keySize;
             this.ivSize = ivSize;

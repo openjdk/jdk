@@ -312,6 +312,11 @@ final public class SSLEngineImpl extends SSLEngine {
     Object                      writeLock;
 
     /*
+     * Is it the first application record to write?
+     */
+    private boolean isFirstAppOutputRecord = true;
+
+    /*
      * Class and subclass dynamic debugging support
      */
     private static final Debug debug = Debug.getInstance("ssl");
@@ -617,6 +622,9 @@ final public class SSLEngineImpl extends SSLEngine {
 
         // See comment above.
         oldCipher.dispose();
+
+        // reset the flag of the first application record
+        isFirstAppOutputRecord = true;
     }
 
     /*
@@ -1295,7 +1303,33 @@ final public class SSLEngineImpl extends SSLEngine {
             }
         }
 
+        /*
+         * turn off the flag of the first application record if we really
+         * consumed at least byte.
+         */
+        if (isFirstAppOutputRecord && ea.deltaApp() > 0) {
+            isFirstAppOutputRecord = false;
+        }
+
         return hsStatus;
+    }
+
+    /*
+     * Need to split the payload except the following cases:
+     *
+     * 1. protocol version is TLS 1.1 or later;
+     * 2. bulk cipher does not use CBC mode, including null bulk cipher suites.
+     * 3. the payload is the first application record of a freshly
+     *    negotiated TLS session.
+     * 4. the CBC protection is disabled;
+     *
+     * More details, please refer to
+     * EngineOutputRecord.write(EngineArgs, MAC, CipherBox).
+     */
+    boolean needToSplitPayload(CipherBox cipher, ProtocolVersion protocol) {
+        return (protocol.v <= ProtocolVersion.TLS10.v) &&
+                cipher.isCBCMode() && !isFirstAppOutputRecord &&
+                Record.enableCBCProtection;
     }
 
     /*
