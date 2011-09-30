@@ -3521,6 +3521,9 @@ class CommandLineFlags {
           "C1 with MDO profiling (tier 3) invocation notification "         \
           "frequency.")                                                     \
                                                                             \
+  product(intx, Tier23InlineeNotifyFreqLog, 20,                             \
+          "Inlinee invocation (tiers 2 and 3) notification frequency")      \
+                                                                            \
   product(intx, Tier0BackedgeNotifyFreqLog, 10,                             \
           "Interpreter (tier 0) invocation notification frequency.")        \
                                                                             \
