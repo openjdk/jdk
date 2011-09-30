@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,11 @@ final class CipherBox {
     private SecureRandom random;
 
     /**
+     * Is the cipher of CBC mode?
+     */
+    private final boolean isCBCMode;
+
+    /**
      * Fixed masks of various block size, as the initial decryption IVs
      * for TLS 1.1 or later.
      *
@@ -128,6 +133,7 @@ final class CipherBox {
     private CipherBox() {
         this.protocolVersion = ProtocolVersion.DEFAULT;
         this.cipher = null;
+        this.isCBCMode = false;
     }
 
     /**
@@ -148,6 +154,7 @@ final class CipherBox {
                 random = JsseJce.getSecureRandom();
             }
             this.random = random;
+            this.isCBCMode = bulkCipher.isCBCMode;
 
             /*
              * RFC 4346 recommends two algorithms used to generated the
@@ -691,4 +698,12 @@ final class CipherBox {
         }
     }
 
+    /*
+     * Does the cipher use CBC mode?
+     *
+     * @return true if the cipher use CBC mode, false otherwise.
+     */
+    boolean isCBCMode() {
+        return isCBCMode;
+    }
 }
