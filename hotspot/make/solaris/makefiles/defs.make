@@ -134,13 +134,16 @@ endif
 
 JDK_INCLUDE_SUBDIR=solaris
 
+# Library suffix
+LIBRARY_SUFFIX=so
+
 # FIXUP: The subdirectory for a debug build is NOT the same on all platforms
 VM_DEBUG=jvmg
 
 EXPORT_LIST += $(EXPORT_DOCS_DIR)/platform/jvmti/jvmti.html
 
-# client and server subdirectories have symbolic links to ../libjsig.so
-EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.so
+# client and server subdirectories have symbolic links to ../libjsig.$(LIBRARY_SUFFIX)
+EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.$(LIBRARY_SUFFIX)
 ifneq ($(OBJCOPY),)
   EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.debuginfo
 endif
@@ -150,9 +153,9 @@ EXPORT_CLIENT_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/client
 
 ifneq ($(BUILD_CLIENT_ONLY),true)
 EXPORT_LIST += $(EXPORT_SERVER_DIR)/Xusage.txt
-EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.so
-EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_db.so
-EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_dtrace.so
+EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.$(LIBRARY_SUFFIX)
+EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_db.$(LIBRARY_SUFFIX)
+EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_dtrace.$(LIBRARY_SUFFIX)
   ifneq ($(OBJCOPY),)
     EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.debuginfo
     EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_db.debuginfo
@@ -161,21 +164,21 @@ EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_dtrace.so
 endif
 ifeq ($(ARCH_DATA_MODEL), 32)
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/Xusage.txt
-  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.so 
-  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_db.so 
-  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_dtrace.so
-  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/64/libjvm_db.so
-  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/64/libjvm_dtrace.so
+  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.$(LIBRARY_SUFFIX) 
+  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_db.$(LIBRARY_SUFFIX) 
+  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_dtrace.$(LIBRARY_SUFFIX)
+  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/64/libjvm_db.$(LIBRARY_SUFFIX)
+  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/64/libjvm_dtrace.$(LIBRARY_SUFFIX)
   ifneq ($(OBJCOPY),)
-    EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.debuginfo 
-    EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_db.debuginfo 
+    EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.debuginfo
+    EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_db.debuginfo
     EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_dtrace.debuginfo
     EXPORT_LIST += $(EXPORT_CLIENT_DIR)/64/libjvm_db.debuginfo
     EXPORT_LIST += $(EXPORT_CLIENT_DIR)/64/libjvm_dtrace.debuginfo
   endif
   ifneq ($(BUILD_CLIENT_ONLY), true)
-    EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_db.so
-    EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_dtrace.so
+    EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_db.$(LIBRARY_SUFFIX)
+    EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_dtrace.$(LIBRARY_SUFFIX)
     ifneq ($(OBJCOPY),)
       EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_db.debuginfo
       EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_dtrace.debuginfo
@@ -183,7 +186,7 @@ ifeq ($(ARCH_DATA_MODEL), 32)
   endif
 endif
 
-EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.so
+EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX)
 ifneq ($(OBJCOPY),)
   EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.debuginfo
 endif

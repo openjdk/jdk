@@ -379,23 +379,21 @@ public class ClassWriter implements /* imports */ ClassConstants
     }
 
     protected void writeFields() throws IOException {
-        TypeArray fields = klass.getFields();
         final int length = klass.getJavaFieldsCount();
 
         // write number of fields
-        dos.writeShort((short) (length / InstanceKlass.FIELD_SLOTS) );
+        dos.writeShort((short) length);
 
-        if (DEBUG) debugMessage("number of fields = "
-                                + length/InstanceKlass.FIELD_SLOTS);
+        if (DEBUG) debugMessage("number of fields = " + length);
 
-        for (int index = 0; index < length; index += InstanceKlass.FIELD_SLOTS) {
-            short accessFlags    = fields.getShortAt(index + InstanceKlass.ACCESS_FLAGS_OFFSET);
+        for (int index = 0; index < length; index++) {
+            short accessFlags    = klass.getFieldAccessFlags(index);
             dos.writeShort(accessFlags & (short) JVM_RECOGNIZED_FIELD_MODIFIERS);
 
-            short nameIndex    = fields.getShortAt(index + InstanceKlass.NAME_INDEX_OFFSET);
+            short nameIndex    = klass.getFieldNameIndex(index);
             dos.writeShort(nameIndex);
 
-            short signatureIndex = fields.getShortAt(index + InstanceKlass.SIGNATURE_INDEX_OFFSET);
+            short signatureIndex = klass.getFieldSignatureIndex(index);
             dos.writeShort(signatureIndex);
             if (DEBUG) debugMessage("\tfield name = " + nameIndex + ", signature = " + signatureIndex);
 
@@ -404,11 +402,11 @@ public class ClassWriter implements /* imports */ ClassConstants
             if (hasSyn)
                 fieldAttributeCount++;
 
-            short initvalIndex = fields.getShortAt(index + InstanceKlass.INITVAL_INDEX_OFFSET);
+            short initvalIndex = klass.getFieldInitialValueIndex(index);
             if (initvalIndex != 0)
                 fieldAttributeCount++;
 
-            short genSigIndex = fields.getShortAt(index + InstanceKlass.GENERIC_SIGNATURE_INDEX_OFFSET);
+            short genSigIndex = klass.getFieldGenericSignatureIndex(index);
             if (genSigIndex != 0)
                 fieldAttributeCount++;
 

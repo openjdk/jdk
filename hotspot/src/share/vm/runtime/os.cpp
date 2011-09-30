@@ -60,6 +60,10 @@
 # include "os_windows.inline.hpp"
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.inline.hpp"
+# include "thread_bsd.inline.hpp"
+#endif
 
 # include <signal.h>
 
@@ -116,7 +120,11 @@ char* os::iso8601_time(char* buffer, size_t buffer_length) {
     assert(false, "Failed localtime_pd");
     return NULL;
   }
+#if defined(_ALLBSD_SOURCE)
+  const time_t zone = (time_t) time_struct.tm_gmtoff;
+#else
   const time_t zone = timezone;
+#endif
 
   // If daylight savings time is in effect,
   // we are 1 hour East of our time zone
@@ -384,6 +392,13 @@ void* os::native_java_library() {
     if (_native_java_library == NULL) {
       vm_exit_during_initialization("Unable to load native library", ebuf);
     }
+
+#if defined(__OpenBSD__)
+    // Work-around OpenBSD's lack of $ORIGIN support by pre-loading libnet.so
+    // ignore errors
+    dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), "net");
+    dll_load(buffer, ebuf, sizeof(ebuf));
+#endif
   }
   static jboolean onLoaded = JNI_FALSE;
   if (onLoaded) {

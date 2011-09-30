@@ -58,6 +58,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 
 #define INJECTED_FIELD_COMPUTE_OFFSET(klass, name, signature, may_be_java)    \
   klass::_##name##_offset = JavaClasses::compute_injected_offset(JavaClasses::klass##_##name##_enum);
@@ -1145,7 +1148,7 @@ char* java_lang_Throwable::print_stack_element_to_buffer(methodOop method, int b
     }
     nmethod* nm = method->code();
     if (WizardMode && nm != NULL) {
-      sprintf(buf + (int)strlen(buf), "(nmethod " PTR_FORMAT ")", (intptr_t)nm);
+      sprintf(buf + (int)strlen(buf), "(nmethod " INTPTR_FORMAT ")", (intptr_t)nm);
     }
   }
 

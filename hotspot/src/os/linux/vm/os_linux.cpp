@@ -22,8 +22,6 @@
  *
  */
 
-# define __STDC_FORMAT_MACROS
-
 // no precompiled headers
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"

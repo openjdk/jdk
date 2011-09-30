@@ -133,6 +133,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 #ifdef TARGET_OS_ARCH_linux_x86
 # include "vmStructs_linux_x86.hpp"
 #endif
@@ -156,6 +159,12 @@
 #endif
 #ifdef TARGET_OS_ARCH_linux_ppc
 # include "vmStructs_linux_ppc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_bsd_x86
+# include "vmStructs_bsd_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_bsd_zero
+# include "vmStructs_bsd_zero.hpp"
 #endif
 #ifndef SERIALGC
 #include "gc_implementation/concurrentMarkSweep/cmsPermGen.hpp"
@@ -693,6 +702,12 @@ static inline uint64_t cast_uint64_t(size_t x)
       static_field(SystemDictionary,            WK_KLASS(MethodHandle_klass),                  klassOop)                             \
       static_field(SystemDictionary,            _box_klasses[0],                               klassOop)                             \
       static_field(SystemDictionary,            _java_system_loader,                           oop)                                  \
+                                                                                                                                     \
+  /*************/                                                                                                                    \
+  /* vmSymbols */                                                                                                                    \
+  /*************/                                                                                                                    \
+                                                                                                                                     \
+      static_field(vmSymbols,                   _symbols[0],                                  Symbol*)                               \
                                                                                                                                      \
   /*******************/                                                                                                              \
   /* HashtableBucket */                                                                                                              \
@@ -1539,6 +1554,7 @@ static inline uint64_t cast_uint64_t(size_t x)
     declare_type(LoaderConstraintEntry, HashtableEntry<klassOop>)         \
   declare_toplevel_type(HashtableBucket)                                  \
   declare_toplevel_type(SystemDictionary)                                 \
+  declare_toplevel_type(vmSymbols)                                        \
   declare_toplevel_type(ProtectionDomainEntry)                            \
                                                                           \
   declare_toplevel_type(GenericGrowableArray)                             \
@@ -2520,6 +2536,13 @@ static inline uint64_t cast_uint64_t(size_t x)
                                                                           \
   X86_ONLY(declare_constant(frame::entry_frame_call_wrapper_offset))      \
   declare_constant(frame::pc_return_offset)                               \
+                                                                          \
+  /*************/                                                         \
+  /* vmSymbols */                                                         \
+  /*************/                                                         \
+                                                                          \
+  declare_constant(vmSymbols::FIRST_SID)                                  \
+  declare_constant(vmSymbols::SID_LIMIT)                                  \
                                                                           \
   /********************************/                                      \
   /* Calling convention constants */                                      \
