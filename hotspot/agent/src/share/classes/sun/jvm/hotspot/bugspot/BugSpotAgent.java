@@ -29,6 +29,7 @@ import java.net.*;
 import java.rmi.*;
 import sun.jvm.hotspot.*;
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.debugger.bsd.*;
 import sun.jvm.hotspot.debugger.proc.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.windbg.*;
@@ -514,6 +515,8 @@ public class BugSpotAgent {
                 setupDebuggerWin32();
             } else if (os.equals("linux")) {
                 setupDebuggerLinux();
+            } else if (os.equals("bsd")) {
+                setupDebuggerBsd();
             } else {
                 // Add support for more operating systems here
                 throw new DebuggerException("Operating system " + os + " not yet supported");
@@ -564,6 +567,9 @@ public class BugSpotAgent {
                 debugger, jvmLibNames);
             } else if (os.equals("linux")) {
                 db = new HotSpotTypeDataBase(machDesc, new LinuxVtblAccess(debugger, jvmLibNames),
+                debugger, jvmLibNames);
+            } else if (os.equals("bsd")) {
+                db = new HotSpotTypeDataBase(machDesc, new BsdVtblAccess(debugger, jvmLibNames),
                 debugger, jvmLibNames);
             } else {
                 throw new DebuggerException("OS \"" + os + "\" not yet supported (no VtblAccess implemented yet)");
@@ -666,6 +672,8 @@ public class BugSpotAgent {
             setupJVMLibNamesWin32();
         } else if (os.equals("linux")) {
             setupJVMLibNamesLinux();
+        } else if (os.equals("bsd")) {
+            setupJVMLibNamesBsd();
         } else {
             throw new RuntimeException("Unknown OS type");
         }
@@ -741,6 +749,34 @@ public class BugSpotAgent {
     }
 
     private void setupJVMLibNamesLinux() {
+        // same as solaris
+        setupJVMLibNamesSolaris();
+    }
+
+    //
+    // BSD
+    //
+
+    private void setupDebuggerBsd() {
+        setupJVMLibNamesBsd();
+
+        if (cpu.equals("x86")) {
+            machDesc = new MachineDescriptionIntelX86();
+        } else if (cpu.equals("amd64")) {
+            machDesc = new MachineDescriptionAMD64();
+        } else {
+            throw new DebuggerException("Bsd only supported on x86/amd64");
+        }
+
+        // Note we do not use a cache for the local debugger in server
+        // mode; it will be taken care of on the client side (once remote
+        // debugging is implemented).
+
+        debugger = new BsdDebuggerLocal(machDesc, !isServer);
+        attachDebugger();
+    }
+
+    private void setupJVMLibNamesBsd() {
         // same as solaris
         setupJVMLibNamesSolaris();
     }

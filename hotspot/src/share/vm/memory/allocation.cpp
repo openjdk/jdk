@@ -39,6 +39,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "os_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.inline.hpp"
+#endif
 
 void* CHeapObj::operator new(size_t size){
   return (void *) AllocateHeap(size, "CHeapObj-new");

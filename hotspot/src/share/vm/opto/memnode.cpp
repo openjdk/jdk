@@ -2847,7 +2847,7 @@ Node *MemBarNode::match( const ProjNode *proj, const Matcher *m ) {
 
 //---------------------------InitializeNode------------------------------------
 InitializeNode::InitializeNode(Compile* C, int adr_type, Node* rawoop)
-  : _is_complete(false),
+  : _is_complete(Incomplete),
     MemBarNode(C, adr_type, rawoop)
 {
   init_class_id(Class_Initialize);
@@ -2885,7 +2885,7 @@ bool InitializeNode::is_non_zero() {
 
 void InitializeNode::set_complete(PhaseGVN* phase) {
   assert(!is_complete(), "caller responsibility");
-  _is_complete = true;
+  _is_complete = Complete;
 
   // After this node is complete, it contains a bunch of
   // raw-memory initializations.  There is no need for

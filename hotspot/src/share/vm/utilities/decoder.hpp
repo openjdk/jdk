@@ -38,6 +38,8 @@ typedef BOOL  (WINAPI *pfn_SymInitialize)(HANDLE, PCTSTR, BOOL);
 typedef BOOL  (WINAPI *pfn_SymGetSymFromAddr64)(HANDLE, DWORD64, PDWORD64, PIMAGEHLP_SYMBOL64);
 typedef DWORD (WINAPI *pfn_UndecorateSymbolName)(const char*, char*, DWORD, DWORD);
 
+#elif defined(__APPLE__)
+
 #else
 
 class ElfFile;
@@ -79,7 +81,7 @@ class Decoder: public StackObj {
 
   static decoder_status    get_status() { return _decoder_status; };
 
-#ifndef _WINDOWS
+#if !defined(_WINDOWS) && !defined(__APPLE__)
  private:
   static ElfFile*         get_elf_file(const char* filepath);
 #endif // _WINDOWS
@@ -94,6 +96,7 @@ class Decoder: public StackObj {
   static bool                      _can_decode_in_vm;
   static pfn_SymGetSymFromAddr64   _pfnSymGetSymFromAddr64;
   static pfn_UndecorateSymbolName  _pfnUndecorateSymbolName;
+#elif __APPLE__
 #else
   static ElfFile*                  _opened_elf_files;
 #endif // _WINDOWS

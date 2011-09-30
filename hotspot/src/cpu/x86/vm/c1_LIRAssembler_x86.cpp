@@ -427,8 +427,8 @@ int LIR_Assembler::emit_unwind_handler() {
   // Fetch the exception from TLS and clear out exception related thread state
   __ get_thread(rsi);
   __ movptr(rax, Address(rsi, JavaThread::exception_oop_offset()));
-  __ movptr(Address(rsi, JavaThread::exception_oop_offset()), (int32_t)NULL_WORD);
-  __ movptr(Address(rsi, JavaThread::exception_pc_offset()), (int32_t)NULL_WORD);
+  __ movptr(Address(rsi, JavaThread::exception_oop_offset()), (intptr_t)NULL_WORD);
+  __ movptr(Address(rsi, JavaThread::exception_pc_offset()), (intptr_t)NULL_WORD);
 
   __ bind(_unwind_handler_entry);
   __ verify_not_null_oop(rax);
