@@ -565,15 +565,6 @@ JvmtiEnvBase::get_JavaThread(jthread jni_thread) {
 }
 
 
-// update the access_flags for the field in the klass
-void
-JvmtiEnvBase::update_klass_field_access_flag(fieldDescriptor *fd) {
-  instanceKlass* ik = instanceKlass::cast(fd->field_holder());
-  typeArrayOop fields = ik->fields();
-  fields->ushort_at_put(fd->index(), (jushort)fd->access_flags().as_short());
-}
-
-
 // return the vframe on the specified thread and depth, NULL if no such frame
 vframe*
 JvmtiEnvBase::vframeFor(JavaThread* java_thread, jint depth) {

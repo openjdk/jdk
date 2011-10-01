@@ -129,7 +129,8 @@ public:
   // Return current ByteCode and increment PC to next bytecode, skipping all
   // intermediate constants.  Returns EOBC at end.
   // Expected usage:
-  //     while( (bc = iter.next()) != EOBC() ) { ... }
+  //     ciBytecodeStream iter(m);
+  //     while (iter.next() != ciBytecodeStream::EOBC()) { ... }
   Bytecodes::Code next() {
     _bc_start = _pc;                        // Capture start of bc
     if( _pc >= _end ) return EOBC();        // End-Of-Bytecodes

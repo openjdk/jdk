@@ -41,10 +41,14 @@ public class RicochetBlob extends SingletonBlob {
   }
 
   private static void initialize(TypeDataBase db) {
-    // Type type = db.lookupType("RicochetBlob");
+    Type type = db.lookupType("RicochetBlob");
 
-    // FIXME: add any needed fields
+    bounceOffsetField                = type.getCIntegerField("_bounce_offset");
+    exceptionOffsetField             = type.getCIntegerField("_exception_offset");
   }
+
+  private static CIntegerField bounceOffsetField;
+  private static CIntegerField exceptionOffsetField;
 
   public RicochetBlob(Address addr) {
     super(addr);
@@ -53,4 +57,14 @@ public class RicochetBlob extends SingletonBlob {
   public boolean isRicochetBlob() {
     return true;
   }
+
+  public Address bounceAddr() {
+    return codeBegin().addOffsetTo(bounceOffsetField.getValue(addr));
+  }
+
+  public boolean returnsToBounceAddr(Address pc) {
+    Address bouncePc = bounceAddr();
+    return (pc.equals(bouncePc) || pc.addOffsetTo(Frame.pcReturnOffset()).equals(bouncePc));
+  }
+
 }

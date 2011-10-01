@@ -56,6 +56,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 
 // This file contains the platform-independent parts
 // of the abstract interpreter and the abstract interpreter generator.

@@ -128,14 +128,14 @@ public abstract class JavaVFrame extends VFrame {
       }
 
       // dynamic part - we just compare the frame pointer
-      if (! getFrame().getFP().equals(other.getFrame().getFP())) {
+      if (! getFrame().equals(other.getFrame())) {
           return false;
       }
       return true;
   }
 
   public int hashCode() {
-      return getMethod().hashCode() ^ getBCI() ^ getFrame().getFP().hashCode();
+      return getMethod().hashCode() ^ getBCI() ^ getFrame().hashCode();
   }
 
   /** Structural compare */

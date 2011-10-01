@@ -28,6 +28,7 @@
 #include "gc_implementation/g1/concurrentMarkThread.inline.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
+#include "gc_implementation/g1/g1ErgoVerbose.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
@@ -1727,17 +1728,20 @@ void ConcurrentMark::cleanup() {
 
   size_t known_garbage_bytes =
     g1_par_count_task.used_bytes() - g1_par_count_task.live_bytes();
-#if 0
-  gclog_or_tty->print_cr("used %1.2lf, live %1.2lf, garbage %1.2lf",
-                         (double) g1_par_count_task.used_bytes() / (double) (1024 * 1024),
-                         (double) g1_par_count_task.live_bytes() / (double) (1024 * 1024),
-                         (double) known_garbage_bytes / (double) (1024 * 1024));
-#endif // 0
   g1p->set_known_garbage_bytes(known_garbage_bytes);
 
   size_t start_used_bytes = g1h->used();
   _at_least_one_mark_complete = true;
   g1h->set_marking_complete();
+
+  ergo_verbose4(ErgoConcCycles,
+           "finish cleanup",
+           ergo_format_byte("occupancy")
+           ergo_format_byte("capacity")
+           ergo_format_byte_perc("known garbage"),
+           start_used_bytes, g1h->capacity(),
+           known_garbage_bytes,
+           ((double) known_garbage_bytes / (double) g1h->capacity()) * 100.0);
 
   double count_end = os::elapsedTime();
   double this_final_counting_time = (count_end - start);

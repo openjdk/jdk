@@ -48,9 +48,7 @@ endif # Platform_compiler == sparcWorks
 CFLAGS$(HOTSPARC_GENERIC) += $(OPT_CFLAGS/BYFILE)
 
 # Linker mapfiles
-# NOTE: inclusion of nonproduct mapfile not necessary; read it for details
-MAPFILE = $(GAMMADIR)/make/solaris/makefiles/mapfile-vers \
-          $(GAMMADIR)/make/solaris/makefiles/mapfile-vers-nonproduct
+MAPFILE = $(GAMMADIR)/make/solaris/makefiles/mapfile-vers
 
 # This mapfile is only needed when compiling with dtrace support, 
 # and mustn't be otherwise.

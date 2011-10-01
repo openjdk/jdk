@@ -247,9 +247,9 @@ private:
   // Is this thread currently in the VM state?
   static bool is_in_vm();
 
-  // Helper routine for determining the validity of a compilation
-  // with respect to concurrent class loading.
-  void check_for_system_dictionary_modification(ciMethod* target);
+  // Helper routine for determining the validity of a compilation with
+  // respect to method dependencies (e.g. concurrent class loading).
+  void validate_compile_task_dependencies(ciMethod* target);
 
 public:
   enum {
@@ -317,8 +317,7 @@ public:
                        ImplicitExceptionTable*   inc_table,
                        AbstractCompiler*         compiler,
                        int                       comp_level,
-                       bool                      has_debug_info = true,
-                       bool                      has_unsafe_access = false);
+                       bool                      has_unsafe_access);
 
 
   // Access to certain well known ciObjects.

@@ -32,6 +32,9 @@ LIBSAPROC = lib$(SAPROC).so
 SAPROC_G = $(SAPROC)$(G_SUFFIX)
 LIBSAPROC_G = lib$(SAPROC_G).so
 
+LIBSAPROC_DEBUGINFO   = lib$(SAPROC).debuginfo
+LIBSAPROC_G_DEBUGINFO = lib$(SAPROC_G).debuginfo
+
 AGENT_DIR = $(GAMMADIR)/agent
 
 SASRCDIR = $(AGENT_DIR)/src/os/$(Platform_os_family)/proc
@@ -40,7 +43,8 @@ SASRCFILES = $(SASRCDIR)/saproc.cpp
 
 SAMAPFILE = $(SASRCDIR)/mapfile
 
-DEST_SAPROC = $(JDK_LIBDIR)/$(LIBSAPROC)
+DEST_SAPROC           = $(JDK_LIBDIR)/$(LIBSAPROC)
+DEST_SAPROC_DEBUGINFO = $(JDK_LIBDIR)/$(LIBSAPROC_DEBUGINFO)
 
 # if $(AGENT_DIR) does not exist, we don't build SA
 
@@ -101,10 +105,25 @@ $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
 	           -o $@                                                \
 	           -ldl -ldemangle -lthread -lc
 	[ -f $(LIBSAPROC_G) ] || { ln -s $@ $(LIBSAPROC_G); }
+ifneq ($(OBJCOPY),)
+	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBSAPROC_DEBUGINFO)
+	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBSAPROC_DEBUGINFO) $@
+  ifeq ($(STRIP_POLICY),all_strip)
+	$(QUIETLY) $(STRIP) $@
+  else
+    ifeq ($(STRIP_POLICY),min_strip)
+	$(QUIETLY) $(STRIP) -x $@
+    # implied else here is no stripping at all
+    endif
+  endif
+	[ -f $(LIBSAPROC_G_DEBUGINFO) ] || { ln -s $(LIBSAPROC_DEBUGINFO) $(LIBSAPROC_G_DEBUGINFO); }
+endif
 
 install_saproc: $(BULDLIBSAPROC)
 	$(QUIETLY) if [ -f $(LIBSAPROC) ] ; then             \
 	  echo "Copying $(LIBSAPROC) to $(DEST_SAPROC)";     \
+	  test -f $(LIBSAPROC_DEBUGINFO) &&             \
+	    cp -f $(LIBSAPROC_DEBUGINFO) $(DEST_SAPROC_DEBUGINFO); \
 	  cp -f $(LIBSAPROC) $(DEST_SAPROC) && echo "Done";  \
 	fi
 

@@ -67,9 +67,9 @@ typedef unsigned int uintptr_t;
 #endif
 #endif // _WIN32
 
-#ifdef LINUX
+#if defined(LINUX) || defined(_ALLBSD_SOURCE)
   #include <inttypes.h>
-#endif // LINUX
+#endif // LINUX || _ALLBSD_SOURCE
 
 // Macros
 #define uint32 unsigned int

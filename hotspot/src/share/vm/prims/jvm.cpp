@@ -32,6 +32,7 @@
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.inline.hpp"
+#include "oops/fieldStreams.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "prims/jvm.h"
@@ -71,6 +72,9 @@
 #endif
 #ifdef TARGET_OS_FAMILY_windows
 # include "jvm_windows.h"
+#endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "jvm_bsd.h"
 #endif
 
 #include <errno.h>
@@ -1493,7 +1497,7 @@ JVM_ENTRY(jbyteArray, JVM_GetFieldAnnotations(JNIEnv *env, jobject field))
 
   fieldDescriptor fd;
   KlassHandle kh(THREAD, k);
-  intptr_t offset = instanceKlass::cast(kh())->offset_from_fields(slot);
+  intptr_t offset = instanceKlass::cast(kh())->field_offset(slot);
 
   if (modifiers & JVM_ACC_STATIC) {
     // for static fields we only look in the current class
@@ -1593,9 +1597,6 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
   // Ensure class is linked
   k->link_class(CHECK_NULL);
 
-  typeArrayHandle fields(THREAD, k->fields());
-  int fields_len = fields->length();
-
   // 4496456 We need to filter out java.lang.Throwable.backtrace
   bool skip_backtrace = false;
 
@@ -1604,12 +1605,11 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
 
   if (publicOnly) {
     num_fields = 0;
-    for (int i = 0, j = 0; i < fields_len; i += instanceKlass::next_offset, j++) {
-      int mods = fields->ushort_at(i + instanceKlass::access_flags_offset) & JVM_RECOGNIZED_FIELD_MODIFIERS;
-      if (mods & JVM_ACC_PUBLIC) ++num_fields;
+    for (JavaFieldStream fs(k()); !fs.done(); fs.next()) {
+      if (fs.access_flags().is_public()) ++num_fields;
     }
   } else {
-    num_fields = fields_len / instanceKlass::next_offset;
+    num_fields = k->java_fields_count();
 
     if (k() == SystemDictionary::Throwable_klass()) {
       num_fields--;
@@ -1622,16 +1622,15 @@ JVM_ENTRY(jobjectArray, JVM_GetClassDeclaredFields(JNIEnv *env, jclass ofClass, 
 
   int out_idx = 0;
   fieldDescriptor fd;
-  for (int i = 0; i < fields_len; i += instanceKlass::next_offset) {
+  for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
     if (skip_backtrace) {
       // 4496456 skip java.lang.Throwable.backtrace
-      int offset = k->offset_from_fields(i);
+      int offset = fs.offset();
       if (offset == java_lang_Throwable::get_backtrace_offset()) continue;
     }
 
-    int mods = fields->ushort_at(i + instanceKlass::access_flags_offset) & JVM_RECOGNIZED_FIELD_MODIFIERS;
-    if (!publicOnly || (mods & JVM_ACC_PUBLIC)) {
-      fd.initialize(k(), i);
+    if (!publicOnly || fs.access_flags().is_public()) {
+      fd.initialize(k(), fs.index());
       oop field = Reflection::new_field(&fd, UseNewReflection, CHECK_NULL);
       result->obj_at_put(out_idx, field);
       ++out_idx;
@@ -2119,7 +2118,7 @@ JVM_QUICK_ENTRY(jint, JVM_GetClassFieldsCount(JNIEnv *env, jclass cls))
   k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
   if (!Klass::cast(k)->oop_is_instance())
     return 0;
-  return instanceKlass::cast(k)->fields()->length() / instanceKlass::next_offset;
+  return instanceKlass::cast(k)->java_fields_count();
 JVM_END
 
 
@@ -2215,8 +2214,7 @@ JVM_QUICK_ENTRY(jint, JVM_GetFieldIxModifiers(JNIEnv *env, jclass cls, int field
   JVMWrapper("JVM_GetFieldIxModifiers");
   klassOop k = java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(cls));
   k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  typeArrayOop fields = instanceKlass::cast(k)->fields();
-  return fields->ushort_at(field_index * instanceKlass::next_offset + instanceKlass::access_flags_offset) & JVM_RECOGNIZED_FIELD_MODIFIERS;
+  return instanceKlass::cast(k)->field_access_flags(field_index) & JVM_RECOGNIZED_FIELD_MODIFIERS;
 JVM_END
 
 
@@ -2399,7 +2397,7 @@ JVM_ENTRY(const char*, JVM_GetCPMethodClassNameUTF(JNIEnv *env, jclass cls, jint
 JVM_END
 
 
-JVM_QUICK_ENTRY(jint, JVM_GetCPFieldModifiers(JNIEnv *env, jclass cls, int cp_index, jclass called_cls))
+JVM_ENTRY(jint, JVM_GetCPFieldModifiers(JNIEnv *env, jclass cls, int cp_index, jclass called_cls))
   JVMWrapper("JVM_GetCPFieldModifiers");
   klassOop k = java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(cls));
   klassOop k_called = java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(called_cls));
@@ -2411,12 +2409,9 @@ JVM_QUICK_ENTRY(jint, JVM_GetCPFieldModifiers(JNIEnv *env, jclass cls, int cp_in
     case JVM_CONSTANT_Fieldref: {
       Symbol* name      = cp->uncached_name_ref_at(cp_index);
       Symbol* signature = cp->uncached_signature_ref_at(cp_index);
-      typeArrayOop fields = instanceKlass::cast(k_called)->fields();
-      int fields_count = fields->length();
-      for (int i = 0; i < fields_count; i += instanceKlass::next_offset) {
-        if (cp_called->symbol_at(fields->ushort_at(i + instanceKlass::name_index_offset)) == name &&
-            cp_called->symbol_at(fields->ushort_at(i + instanceKlass::signature_index_offset)) == signature) {
-          return fields->ushort_at(i + instanceKlass::access_flags_offset) & JVM_RECOGNIZED_FIELD_MODIFIERS;
+      for (JavaFieldStream fs(k_called); !fs.done(); fs.next()) {
+        if (fs.name() == name && fs.signature() == signature) {
+          return fs.access_flags().as_short() & JVM_RECOGNIZED_FIELD_MODIFIERS;
         }
       }
       return -1;
@@ -4020,249 +4015,6 @@ JVM_END
 #endif
 
 
-//---------------------------------------------------------------------------
-//
-// Support for old native code-based reflection (pre-JDK 1.4)
-// Disabled by default in the product build.
-//
-// See reflection.hpp for information on SUPPORT_OLD_REFLECTION
-//
-//---------------------------------------------------------------------------
-
-#ifdef SUPPORT_OLD_REFLECTION
-
-JVM_ENTRY(jobjectArray, JVM_GetClassFields(JNIEnv *env, jclass cls, jint which))
-  JVMWrapper("JVM_GetClassFields");
-  JvmtiVMObjectAllocEventCollector oam;
-  oop mirror = JNIHandles::resolve_non_null(cls);
-  objArrayOop result = Reflection::reflect_fields(mirror, which, CHECK_NULL);
-  return (jobjectArray) JNIHandles::make_local(env, result);
-JVM_END
-
-
-JVM_ENTRY(jobjectArray, JVM_GetClassMethods(JNIEnv *env, jclass cls, jint which))
-  JVMWrapper("JVM_GetClassMethods");
-  JvmtiVMObjectAllocEventCollector oam;
-  oop mirror = JNIHandles::resolve_non_null(cls);
-  objArrayOop result = Reflection::reflect_methods(mirror, which, CHECK_NULL);
-  //%note jvm_r4
-  return (jobjectArray) JNIHandles::make_local(env, result);
-JVM_END
-
-
-JVM_ENTRY(jobjectArray, JVM_GetClassConstructors(JNIEnv *env, jclass cls, jint which))
-  JVMWrapper("JVM_GetClassConstructors");
-  JvmtiVMObjectAllocEventCollector oam;
-  oop mirror = JNIHandles::resolve_non_null(cls);
-  objArrayOop result = Reflection::reflect_constructors(mirror, which, CHECK_NULL);
-  //%note jvm_r4
-  return (jobjectArray) JNIHandles::make_local(env, result);
-JVM_END
-
-
-JVM_ENTRY(jobject, JVM_GetClassField(JNIEnv *env, jclass cls, jstring name, jint which))
-  JVMWrapper("JVM_GetClassField");
-  JvmtiVMObjectAllocEventCollector oam;
-  if (name == NULL) return NULL;
-  Handle str (THREAD, JNIHandles::resolve_non_null(name));
-
-  const char* cstr = java_lang_String::as_utf8_string(str());
-  TempNewSymbol field_name = SymbolTable::probe(cstr, (int)strlen(cstr));
-  if (field_name == NULL) {
-    THROW_0(vmSymbols::java_lang_NoSuchFieldException());
-  }
-
-  oop mirror = JNIHandles::resolve_non_null(cls);
-  oop result = Reflection::reflect_field(mirror, field_name, which, CHECK_NULL);
-  if (result == NULL) {
-    THROW_0(vmSymbols::java_lang_NoSuchFieldException());
-  }
-  return JNIHandles::make_local(env, result);
-JVM_END
-
-
-JVM_ENTRY(jobject, JVM_GetClassMethod(JNIEnv *env, jclass cls, jstring name, jobjectArray types, jint which))
-  JVMWrapper("JVM_GetClassMethod");
-  JvmtiVMObjectAllocEventCollector oam;
-  if (name == NULL) {
-    THROW_0(vmSymbols::java_lang_NullPointerException());
-  }
-  Handle str (THREAD, JNIHandles::resolve_non_null(name));
-
-  const char* cstr = java_lang_String::as_utf8_string(str());
-  TempNewSymbol method_name = SymbolTable::probe(cstr, (int)strlen(cstr));
-  if (method_name == NULL) {
-    THROW_0(vmSymbols::java_lang_NoSuchMethodException());
-  }
-
-  oop mirror = JNIHandles::resolve_non_null(cls);
-  objArrayHandle tarray (THREAD, objArrayOop(JNIHandles::resolve(types)));
-  oop result = Reflection::reflect_method(mirror, method_name, tarray,
-                                          which, CHECK_NULL);
-  if (result == NULL) {
-    THROW_0(vmSymbols::java_lang_NoSuchMethodException());
-  }
-  return JNIHandles::make_local(env, result);
-JVM_END
-
-
-JVM_ENTRY(jobject, JVM_GetClassConstructor(JNIEnv *env, jclass cls, jobjectArray types, jint which))
-  JVMWrapper("JVM_GetClassConstructor");
-  JvmtiVMObjectAllocEventCollector oam;
-  oop mirror = JNIHandles::resolve_non_null(cls);
-  objArrayHandle tarray (THREAD, objArrayOop(JNIHandles::resolve(types)));
-  oop result = Reflection::reflect_constructor(mirror, tarray, which, CHECK_NULL);
-  if (result == NULL) {
-    THROW_0(vmSymbols::java_lang_NoSuchMethodException());
-  }
-  return (jobject) JNIHandles::make_local(env, result);
-JVM_END
-
-
-// Instantiation ///////////////////////////////////////////////////////////////////////////////
-
-JVM_ENTRY(jobject, JVM_NewInstance(JNIEnv *env, jclass cls))
-  JVMWrapper("JVM_NewInstance");
-  Handle mirror(THREAD, JNIHandles::resolve_non_null(cls));
-
-  methodOop resolved_constructor = java_lang_Class::resolved_constructor(mirror());
-  if (resolved_constructor == NULL) {
-    klassOop k = java_lang_Class::as_klassOop(mirror());
-    // The java.lang.Class object caches a resolved constructor if all the checks
-    // below were done successfully and a constructor was found.
-
-    // Do class based checks
-    if (java_lang_Class::is_primitive(mirror())) {
-      const char* msg = "";
-      if      (mirror == Universe::bool_mirror())   msg = "java/lang/Boolean";
-      else if (mirror == Universe::char_mirror())   msg = "java/lang/Character";
-      else if (mirror == Universe::float_mirror())  msg = "java/lang/Float";
-      else if (mirror == Universe::double_mirror()) msg = "java/lang/Double";
-      else if (mirror == Universe::byte_mirror())   msg = "java/lang/Byte";
-      else if (mirror == Universe::short_mirror())  msg = "java/lang/Short";
-      else if (mirror == Universe::int_mirror())    msg = "java/lang/Integer";
-      else if (mirror == Universe::long_mirror())   msg = "java/lang/Long";
-      THROW_MSG_0(vmSymbols::java_lang_NullPointerException(), msg);
-    }
-
-    // Check whether we are allowed to instantiate this class
-    Klass::cast(k)->check_valid_for_instantiation(false, CHECK_NULL); // Array classes get caught here
-    instanceKlassHandle klass(THREAD, k);
-    // Make sure class is initialized (also so all methods are rewritten)
-    klass->initialize(CHECK_NULL);
-
-    // Lookup default constructor
-    resolved_constructor = klass->find_method(vmSymbols::object_initializer_name(), vmSymbols::void_method_signature());
-    if (resolved_constructor == NULL) {
-      ResourceMark rm(THREAD);
-      THROW_MSG_0(vmSymbols::java_lang_InstantiationException(), klass->external_name());
-    }
-
-    // Cache result in java.lang.Class object. Does not have to be MT safe.
-    java_lang_Class::set_resolved_constructor(mirror(), resolved_constructor);
-  }
-
-  assert(resolved_constructor != NULL, "sanity check");
-  methodHandle constructor = methodHandle(THREAD, resolved_constructor);
-
-  // We have an initialized instanceKlass with a default constructor
-  instanceKlassHandle klass(THREAD, java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(cls)));
-  assert(klass->is_initialized() || klass->is_being_initialized(), "sanity check");
-
-  // Do security check
-  klassOop caller_klass = NULL;
-  if (UsePrivilegedStack) {
-    caller_klass = thread->security_get_caller_class(2);
-
-    if (!Reflection::verify_class_access(caller_klass, klass(), false) ||
-        !Reflection::verify_field_access(caller_klass,
-                                         klass(),
-                                         klass(),
-                                         constructor->access_flags(),
-                                         false,
-                                         true)) {
-      ResourceMark rm(THREAD);
-      THROW_MSG_0(vmSymbols::java_lang_IllegalAccessException(), klass->external_name());
-    }
-  }
-
-  // Allocate object and call constructor
-  Handle receiver = klass->allocate_instance_handle(CHECK_NULL);
-  JavaCalls::call_default_constructor(thread, constructor, receiver, CHECK_NULL);
-
-  jobject res = JNIHandles::make_local(env, receiver());
-  if (JvmtiExport::should_post_vm_object_alloc()) {
-    JvmtiExport::post_vm_object_alloc(JavaThread::current(), receiver());
-  }
-  return res;
-JVM_END
-
-
-// Field ////////////////////////////////////////////////////////////////////////////////////////////
-
-JVM_ENTRY(jobject, JVM_GetField(JNIEnv *env, jobject field, jobject obj))
-  JVMWrapper("JVM_GetField");
-  JvmtiVMObjectAllocEventCollector oam;
-  Handle field_mirror(thread, JNIHandles::resolve(field));
-  Handle receiver    (thread, JNIHandles::resolve(obj));
-  fieldDescriptor fd;
-  Reflection::resolve_field(field_mirror, receiver, &fd, false, CHECK_NULL);
-  jvalue value;
-  BasicType type = Reflection::field_get(&value, &fd, receiver);
-  oop box = Reflection::box(&value, type, CHECK_NULL);
-  return JNIHandles::make_local(env, box);
-JVM_END
-
-
-JVM_ENTRY(jvalue, JVM_GetPrimitiveField(JNIEnv *env, jobject field, jobject obj, unsigned char wCode))
-  JVMWrapper("JVM_GetPrimitiveField");
-  Handle field_mirror(thread, JNIHandles::resolve(field));
-  Handle receiver    (thread, JNIHandles::resolve(obj));
-  fieldDescriptor fd;
-  jvalue value;
-  value.j = 0;
-  Reflection::resolve_field(field_mirror, receiver, &fd, false, CHECK_(value));
-  BasicType type = Reflection::field_get(&value, &fd, receiver);
-  BasicType wide_type = (BasicType) wCode;
-  if (type != wide_type) {
-    Reflection::widen(&value, type, wide_type, CHECK_(value));
-  }
-  return value;
-JVM_END // should really be JVM_END, but that doesn't work for union types!
-
-
-JVM_ENTRY(void, JVM_SetField(JNIEnv *env, jobject field, jobject obj, jobject val))
-  JVMWrapper("JVM_SetField");
-  Handle field_mirror(thread, JNIHandles::resolve(field));
-  Handle receiver    (thread, JNIHandles::resolve(obj));
-  oop box = JNIHandles::resolve(val);
-  fieldDescriptor fd;
-  Reflection::resolve_field(field_mirror, receiver, &fd, true, CHECK);
-  BasicType field_type = fd.field_type();
-  jvalue value;
-  BasicType value_type;
-  if (field_type == T_OBJECT || field_type == T_ARRAY) {
-    // Make sure we do no unbox e.g. java/lang/Integer instances when storing into an object array
-    value_type = Reflection::unbox_for_regular_object(box, &value);
-    Reflection::field_set(&value, &fd, receiver, field_type, CHECK);
-  } else {
-    value_type = Reflection::unbox_for_primitive(box, &value, CHECK);
-    Reflection::field_set(&value, &fd, receiver, value_type, CHECK);
-  }
-JVM_END
-
-
-JVM_ENTRY(void, JVM_SetPrimitiveField(JNIEnv *env, jobject field, jobject obj, jvalue v, unsigned char vCode))
-  JVMWrapper("JVM_SetPrimitiveField");
-  Handle field_mirror(thread, JNIHandles::resolve(field));
-  Handle receiver    (thread, JNIHandles::resolve(obj));
-  fieldDescriptor fd;
-  Reflection::resolve_field(field_mirror, receiver, &fd, true, CHECK);
-  BasicType value_type = (BasicType) vCode;
-  Reflection::field_set(&v, &fd, receiver, value_type, CHECK);
-JVM_END
-
-
 // Method ///////////////////////////////////////////////////////////////////////////////////////////
 
 JVM_ENTRY(jobject, JVM_InvokeMethod(JNIEnv *env, jobject method, jobject obj, jobjectArray args0))
@@ -4301,8 +4053,6 @@ JVM_ENTRY(jobject, JVM_NewInstanceFromConstructor(JNIEnv *env, jobject c, jobjec
   }
   return res;
 JVM_END
-
-#endif /* SUPPORT_OLD_REFLECTION */
 
 // Atomic ///////////////////////////////////////////////////////////////////////////////////////////
 
