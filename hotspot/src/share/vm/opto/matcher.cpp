@@ -501,6 +501,12 @@ void Matcher::init_first_stack_mask() {
      idealreg2spillmask[Op_RegP]->OR(*idealreg2regmask[Op_RegD]);
 #else
      idealreg2spillmask[Op_RegP]->OR(*idealreg2regmask[Op_RegF]);
+#ifdef ARM
+     // ARM has support for moving 64bit values between a pair of
+     // integer registers and a double register
+     idealreg2spillmask[Op_RegL]->OR(*idealreg2regmask[Op_RegD]);
+     idealreg2spillmask[Op_RegD]->OR(*idealreg2regmask[Op_RegL]);
+#endif
 #endif
    }
 
@@ -1106,6 +1112,9 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       mcall_java->_optimized_virtual = call_java->is_optimized_virtual();
       is_method_handle_invoke = call_java->is_method_handle_invoke();
       mcall_java->_method_handle_invoke = is_method_handle_invoke;
+      if (is_method_handle_invoke) {
+        C->set_has_method_handle_invokes(true);
+      }
       if( mcall_java->is_MachCallStaticJava() )
         mcall_java->as_MachCallStaticJava()->_name =
          call_java->as_CallStaticJava()->_name;

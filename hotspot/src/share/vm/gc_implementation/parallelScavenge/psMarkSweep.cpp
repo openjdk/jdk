@@ -516,7 +516,6 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   {
     ParallelScavengeHeap::ParStrongRootsScope psrs;
     Universe::oops_do(mark_and_push_closure());
-    ReferenceProcessor::oops_do(mark_and_push_closure());
     JNIHandles::oops_do(mark_and_push_closure());   // Global (strong) JNI handles
     CodeBlobToOopClosure each_active_code_blob(mark_and_push_closure(), /*do_marking=*/ true);
     Threads::oops_do(mark_and_push_closure(), &each_active_code_blob);
@@ -623,7 +622,6 @@ void PSMarkSweep::mark_sweep_phase3() {
 
   // General strong roots.
   Universe::oops_do(adjust_root_pointer_closure());
-  ReferenceProcessor::oops_do(adjust_root_pointer_closure());
   JNIHandles::oops_do(adjust_root_pointer_closure());   // Global (strong) JNI handles
   Threads::oops_do(adjust_root_pointer_closure(), NULL);
   ObjectSynchronizer::oops_do(adjust_root_pointer_closure());

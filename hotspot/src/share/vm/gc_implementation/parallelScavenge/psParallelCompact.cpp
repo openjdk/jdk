@@ -2445,7 +2445,6 @@ void PSParallelCompact::adjust_roots() {
 
   // General strong roots.
   Universe::oops_do(adjust_root_pointer_closure());
-  ReferenceProcessor::oops_do(adjust_root_pointer_closure());
   JNIHandles::oops_do(adjust_root_pointer_closure());   // Global (strong) JNI handles
   Threads::oops_do(adjust_root_pointer_closure(), NULL);
   ObjectSynchronizer::oops_do(adjust_root_pointer_closure());

@@ -22,8 +22,6 @@
  *
  */
 
-# define __STDC_FORMAT_MACROS
-
 // no precompiled headers
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -124,10 +122,6 @@
 # include <stdint.h>
 # include <inttypes.h>
 # include <sys/ioctl.h>
-
-#ifdef AMD64
-#include <asm/vsyscall.h>
-#endif
 
 #define MAX_PATH    (2 * K)
 
@@ -2502,7 +2496,13 @@ bool os::commit_memory(char* addr, size_t size, bool exec) {
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
   uintptr_t res = (uintptr_t) ::mmap(addr, size, prot,
                                    MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
-  return res != (uintptr_t) MAP_FAILED;
+  if (res != (uintptr_t) MAP_FAILED) {
+    if (UseNUMAInterleaving) {
+      numa_make_global(addr, size);
+    }
+    return true;
+  }
+  return false;
 }
 
 // Define MAP_HUGETLB here so we can build HotSpot on old systems.
@@ -2523,10 +2523,20 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
       (uintptr_t) ::mmap(addr, size, prot,
                          MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS|MAP_HUGETLB,
                          -1, 0);
-    return res != (uintptr_t) MAP_FAILED;
+    if (res != (uintptr_t) MAP_FAILED) {
+      if (UseNUMAInterleaving) {
+        numa_make_global(addr, size);
+      }
+      return true;
+    }
+    // Fall through and try to use small pages
   }
 
-  return commit_memory(addr, size, exec);
+  if (commit_memory(addr, size, exec)) {
+    realign_memory(addr, size, alignment_hint);
+    return true;
+  }
+  return false;
 }
 
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
@@ -2588,8 +2598,17 @@ int os::Linux::sched_getcpu_syscall(void) {
   int retval = -1;
 
 #if defined(IA32)
+# ifndef SYS_getcpu
+# define SYS_getcpu 318
+# endif
   retval = syscall(SYS_getcpu, &cpu, NULL, NULL);
 #elif defined(AMD64)
+// Unfortunately we have to bring all these macros here from vsyscall.h
+// to be able to compile on old linuxes.
+# define __NR_vgetcpu 2
+# define VSYSCALL_START (-10UL << 20)
+# define VSYSCALL_SIZE 1024
+# define VSYSCALL_ADDR(vsyscall_nr) (VSYSCALL_START+VSYSCALL_SIZE*(vsyscall_nr))
   typedef long (*vgetcpu_t)(unsigned int *cpu, unsigned int *node, unsigned long *tcache);
   vgetcpu_t vgetcpu = (vgetcpu_t)VSYSCALL_ADDR(__NR_vgetcpu);
   retval = vgetcpu(&cpu, NULL, NULL);
@@ -3113,6 +3132,10 @@ char* os::reserve_memory_special(size_t bytes, char* req_addr, bool exec) {
        warning(msg);
      }
      return NULL;
+  }
+
+  if ((addr != NULL) && UseNUMAInterleaving) {
+    numa_make_global(addr, bytes);
   }
 
   return addr;
@@ -3870,14 +3893,19 @@ void os::Linux::install_signal_handlers() {
     }
 
     // We don't activate signal checker if libjsig is in place, we trust ourselves
-    // and if UserSignalHandler is installed all bets are off
+    // and if UserSignalHandler is installed all bets are off.
+    // Log that signal checking is off only if -verbose:jni is specified.
     if (CheckJNICalls) {
       if (libjsig_is_loaded) {
-        tty->print_cr("Info: libjsig is activated, all active signal checking is disabled");
+        if (PrintJNIResolving) {
+          tty->print_cr("Info: libjsig is activated, all active signal checking is disabled");
+        }
         check_signals = false;
       }
       if (AllowUserSignalHandlers) {
-        tty->print_cr("Info: AllowUserSignalHandlers is activated, all active signal checking is disabled");
+        if (PrintJNIResolving) {
+          tty->print_cr("Info: AllowUserSignalHandlers is activated, all active signal checking is disabled");
+        }
         check_signals = false;
       }
     }

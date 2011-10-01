@@ -352,6 +352,13 @@ class LinearScan : public CompilationResourceObj {
 
   MonitorValue*  location_for_monitor_index(int monitor_index);
   LocationValue* location_for_name(int name, Location::Type loc_type);
+  void set_oop(OopMap* map, VMReg name) {
+    if (map->legal_vm_reg_name(name)) {
+      map->set_oop(name);
+    } else {
+      bailout("illegal oopMap register name");
+    }
+  }
 
   int append_scope_value_for_constant(LIR_Opr opr, GrowableArray<ScopeValue*>* scope_values);
   int append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeValue*>* scope_values);

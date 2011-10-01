@@ -1269,10 +1269,6 @@ void GenCollectedHeap::verify(bool allow_dirty, bool silent, VerifyOption option
     gclog_or_tty->print("remset ");
   }
   rem_set()->verify();
-  if (!silent) {
-     gclog_or_tty->print("ref_proc ");
-  }
-  ReferenceProcessor::verify();
 }
 
 void GenCollectedHeap::print() const { print_on(tty); }

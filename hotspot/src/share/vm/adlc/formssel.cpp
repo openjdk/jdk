@@ -1225,7 +1225,7 @@ void InstructForm::rep_var_format(FILE *fp, const char *rep_var) {
   // Handle special constant table variables.
   if (strcmp(rep_var, "constanttablebase") == 0) {
     fprintf(fp, "char reg[128];  ra->dump_register(in(mach_constant_base_node_input()), reg);\n");
-    fprintf(fp, "st->print(\"%%s\");\n");
+    fprintf(fp, "    st->print(\"%%s\", reg);\n");
     return;
   }
   if (strcmp(rep_var, "constantoffset") == 0) {

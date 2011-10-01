@@ -172,11 +172,6 @@ void constMethodKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
 int constMethodKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   assert(obj->is_constMethod(), "should be constMethod");
   constMethodOop cm_oop = constMethodOop(obj);
-#if 0
-  PSParallelCompact::adjust_pointer(cm_oop->adr_method());
-  PSParallelCompact::adjust_pointer(cm_oop->adr_exception_table());
-  PSParallelCompact::adjust_pointer(cm_oop->adr_stackmap_data());
-#endif
   oop* const beg_oop = cm_oop->oop_block_beg();
   oop* const end_oop = cm_oop->oop_block_end();
   for (oop* cur_oop = beg_oop; cur_oop < end_oop; ++cur_oop) {
