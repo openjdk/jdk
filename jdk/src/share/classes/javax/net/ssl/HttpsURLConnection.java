@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -349,6 +349,9 @@ class HttpsURLConnection extends HttpURLConnection
      * @param sf the SSL socket factory
      * @throws IllegalArgumentException if the <code>SSLSocketFactory</code>
      *          parameter is null.
+     * @throws SecurityException if a security manager exists and its
+     *         <code>checkSetFactory</code> method does not allow
+     *         a socket factory to be specified.
      * @see #getSSLSocketFactory()
      */
     public void setSSLSocketFactory(SSLSocketFactory sf) {
@@ -357,6 +360,10 @@ class HttpsURLConnection extends HttpURLConnection
                 "no SSLSocketFactory specified");
         }
 
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkSetFactory();
+        }
         sslSocketFactory = sf;
     }
 
