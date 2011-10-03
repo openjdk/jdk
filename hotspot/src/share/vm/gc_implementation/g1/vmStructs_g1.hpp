@@ -39,6 +39,14 @@
   nonstatic_field(G1CollectedHeap, _hrs,                HeapRegionSeq)        \
   nonstatic_field(G1CollectedHeap, _g1_committed,       MemRegion)            \
   nonstatic_field(G1CollectedHeap, _summary_bytes_used, size_t)               \
+  nonstatic_field(G1CollectedHeap, _g1mm,               G1MonitoringSupport*) \
+                                                                              \
+  nonstatic_field(G1MonitoringSupport, _eden_committed,     size_t)           \
+  nonstatic_field(G1MonitoringSupport, _eden_used,          size_t)           \
+  nonstatic_field(G1MonitoringSupport, _survivor_committed, size_t)           \
+  nonstatic_field(G1MonitoringSupport, _survivor_used,      size_t)           \
+  nonstatic_field(G1MonitoringSupport, _old_committed,      size_t)           \
+  nonstatic_field(G1MonitoringSupport, _old_used,           size_t)           \
 
 
 #define VM_TYPES_G1(declare_type, declare_toplevel_type)                      \
@@ -47,8 +55,11 @@
                                                                               \
   declare_type(HeapRegion, ContiguousSpace)                                   \
   declare_toplevel_type(HeapRegionSeq)                                        \
+  declare_toplevel_type(G1MonitoringSupport)                                  \
                                                                               \
   declare_toplevel_type(G1CollectedHeap*)                                     \
   declare_toplevel_type(HeapRegion*)                                          \
+  declare_toplevel_type(G1MonitoringSupport*)                                 \
+
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_VMSTRUCTS_G1_HPP

@@ -35,6 +35,7 @@ import sun.jvm.hotspot.memory.SharedHeap;
 import sun.jvm.hotspot.memory.SpaceClosure;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.runtime.VMObjectFactory;
+import sun.jvm.hotspot.types.AddressField;
 import sun.jvm.hotspot.types.CIntegerField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
@@ -48,6 +49,8 @@ public class G1CollectedHeap extends SharedHeap {
     static private long g1CommittedFieldOffset;
     // size_t _summary_bytes_used;
     static private CIntegerField summaryBytesUsedField;
+    // G1MonitoringSupport* _g1mm
+    static private AddressField g1mmField;
 
     static {
         VM.registerVMInitializedObserver(new Observer() {
@@ -63,6 +66,7 @@ public class G1CollectedHeap extends SharedHeap {
         hrsFieldOffset = type.getField("_hrs").getOffset();
         g1CommittedFieldOffset = type.getField("_g1_committed").getOffset();
         summaryBytesUsedField = type.getCIntegerField("_summary_bytes_used");
+        g1mmField = type.getAddressField("_g1mm");
     }
 
     public long capacity() {
@@ -83,6 +87,11 @@ public class G1CollectedHeap extends SharedHeap {
         Address hrsAddr = addr.addOffsetTo(hrsFieldOffset);
         return (HeapRegionSeq) VMObjectFactory.newObject(HeapRegionSeq.class,
                                                          hrsAddr);
+    }
+
+    public G1MonitoringSupport g1mm() {
+        Address g1mmAddr = g1mmField.getValue(addr);
+        return (G1MonitoringSupport) VMObjectFactory.newObject(G1MonitoringSupport.class, g1mmAddr);
     }
 
     private Iterator<HeapRegion> heapRegionIterator() {
