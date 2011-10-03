@@ -98,17 +98,12 @@ public class HeapSummary extends Tool {
             }
          } else if (sharedHeap instanceof G1CollectedHeap) {
              G1CollectedHeap g1h = (G1CollectedHeap) sharedHeap;
-
-             System.out.println("Garbage-First (G1) Heap");
-             long capacityBytes = g1h.capacity();
-             long usedBytes = g1h.used();
-             long freeBytes = capacityBytes - usedBytes;
-             printValMB("region size = ", HeapRegion.grainBytes());
-             printValue("regions     = ", g1h.n_regions());
-             printValMB("capacity    = ", capacityBytes);
-             printValMB("used        = ", usedBytes);
-             printValMB("free        = ", freeBytes);
-             System.out.println(alignment + (double) usedBytes * 100.0 / capacityBytes + "% used");
+             G1MonitoringSupport g1mm = g1h.g1mm();
+             System.out.println("G1 Young Generation");
+             printG1Space("Eden Space:", g1mm.edenUsed(), g1mm.edenCommitted());
+             printG1Space("From Space:", g1mm.survivorUsed(), g1mm.survivorCommitted());
+             printG1Space("To Space:", 0, 0);
+             printG1Space("G1 Old Generation", g1mm.oldUsed(), g1mm.oldCommitted());
          } else {
              throw new RuntimeException("unknown SharedHeap type : " + heap.getClass());
          }
@@ -215,6 +210,16 @@ public class HeapSummary extends Tool {
       printValMB("used     = ", space.used());
       printValMB("free     = ", space.free());
       System.out.println(alignment +  (double)space.used() * 100.0 / space.capacity() + "% used");
+   }
+
+   private void printG1Space(String spaceName, long used, long capacity) {
+      long free = capacity - used;
+      System.out.println(spaceName);
+      printValMB("capacity = ", capacity);
+      printValMB("used     = ", used);
+      printValMB("free     = ", free);
+      double occPerc = (capacity > 0) ? (double) used * 100.0 / capacity : 0.0;
+      System.out.println(alignment + occPerc + "% used");
    }
 
    private static final double FACTOR = 1024*1024;

@@ -114,6 +114,8 @@ class G1CollectedHeap;
 // path as low-overhead as possible.
 
 class G1MonitoringSupport : public CHeapObj {
+  friend class VMStructs;
+
   G1CollectedHeap* _g1h;
 
   // jstat performance counters
