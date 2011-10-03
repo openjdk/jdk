@@ -468,7 +468,7 @@ public:
     MemRegion scanRegion(start, end);
 
     UpdateRSetImmediate update_rs_cl(_g1->g1_rem_set());
-    FilterIntoCSClosure update_rs_cset_oop_cl(NULL, _g1, &update_rs_cl, NULL /* rp */);
+    FilterIntoCSClosure update_rs_cset_oop_cl(NULL, _g1, &update_rs_cl);
     FilterOutOfRegionClosure filter_then_update_rs_cset_oop_cl(r, &update_rs_cset_oop_cl);
 
     // We can pass false as the "filter_young" parameter here as:
@@ -644,7 +644,7 @@ bool G1RemSet::concurrentRefineOneCard_impl(jbyte* card_ptr, int worker_i,
   update_rs_oop_cl.set_from(r);
 
   TriggerClosure trigger_cl;
-  FilterIntoCSClosure into_cs_cl(NULL, _g1, &trigger_cl, NULL /* rp */);
+  FilterIntoCSClosure into_cs_cl(NULL, _g1, &trigger_cl);
   InvokeIfNotTriggeredClosure invoke_cl(&trigger_cl, &into_cs_cl);
   Mux2Closure mux(&invoke_cl, &update_rs_oop_cl);
 
