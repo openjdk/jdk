@@ -61,13 +61,8 @@ public:
 class G1ParPushHeapRSClosure : public G1ParClosureSuper {
 public:
   G1ParPushHeapRSClosure(G1CollectedHeap* g1,
-                         G1ParScanThreadState* par_scan_state,
-                         ReferenceProcessor* rp) :
-    G1ParClosureSuper(g1, par_scan_state)
-  {
-    assert(_ref_processor == NULL, "sanity");
-    _ref_processor = rp;
-  }
+                         G1ParScanThreadState* par_scan_state):
+    G1ParClosureSuper(g1, par_scan_state) { }
 
   template <class T> void do_oop_nv(T* p);
   virtual void do_oop(oop* p)          { do_oop_nv(p); }
@@ -190,13 +185,8 @@ class FilterIntoCSClosure: public OopClosure {
 public:
   FilterIntoCSClosure(  DirtyCardToOopClosure* dcto_cl,
                         G1CollectedHeap* g1,
-                        OopClosure* oc,
-                        ReferenceProcessor* rp) :
-    _dcto_cl(dcto_cl), _g1(g1), _oc(oc)
-  {
-    assert(_ref_processor == NULL, "sanity");
-    _ref_processor = rp;
-  }
+                        OopClosure* oc) :
+    _dcto_cl(dcto_cl), _g1(g1), _oc(oc) { }
 
   template <class T> void do_oop_nv(T* p);
   virtual void do_oop(oop* p)        { do_oop_nv(p); }

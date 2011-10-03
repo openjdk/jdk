@@ -4618,15 +4618,7 @@ public:
       scan_perm_cl = &scan_mark_perm_cl;
     }
 
-    // The following closure is used to scan RSets looking for reference
-    // fields that point into the collection set. The actual field iteration
-    // is performed by a FilterIntoCSClosure, whose do_oop method calls the
-    // do_oop method of the following closure.
-    // Therefore we want to record the reference processor in the
-    // FilterIntoCSClosure. To do so we record the STW reference
-    // processor into the following closure and pass it to the
-    // FilterIntoCSClosure in HeapRegionDCTOC::walk_mem_region_with_cl.
-    G1ParPushHeapRSClosure          push_heap_rs_cl(_g1h, &pss, rp);
+    G1ParPushHeapRSClosure          push_heap_rs_cl(_g1h, &pss);
 
     pss.start_strong_roots();
     _g1h->g1_process_strong_roots(/* not collecting perm */ false,
