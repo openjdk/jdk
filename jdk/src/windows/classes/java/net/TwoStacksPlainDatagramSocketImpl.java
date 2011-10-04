@@ -68,7 +68,12 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
 
     protected synchronized void create() throws SocketException {
         fd1 = new FileDescriptor();
-        super.create();
+        try {
+            super.create();
+        } catch (IOException e) {
+            fd1 = null;
+            throw e;
+        }
     }
 
     protected synchronized void bind(int lport, InetAddress laddr)
@@ -133,8 +138,10 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
 
     protected native int getTimeToLive() throws IOException;
 
+    @Deprecated
     protected native void setTTL(byte ttl) throws IOException;
 
+    @Deprecated
     protected native byte getTTL() throws IOException;
 
     protected native void join(InetAddress inetaddr, NetworkInterface netIf)
