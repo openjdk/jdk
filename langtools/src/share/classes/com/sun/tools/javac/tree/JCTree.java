@@ -436,7 +436,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public PackageSymbol packge;
         public ImportScope namedImportScope;
         public StarImportScope starImportScope;
-        public long flags;
         public Position.LineMap lineMap = null;
         public Map<JCTree, String> docComments = null;
         public Map<JCTree, Integer> endPositions = null;
@@ -1175,6 +1174,21 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public int getTag() {
             return EXEC;
+        }
+
+        /** Convert a expression-statement tree to a pretty-printed string. */
+        @Override
+        public String toString() {
+            StringWriter s = new StringWriter();
+            try {
+                new Pretty(s, false).printStat(this);
+            }
+            catch (IOException e) {
+                // should never happen, because StringWriter is defined
+                // never to throw any IOExceptions
+                throw new AssertionError(e);
+            }
+            return s.toString();
         }
     }
 
