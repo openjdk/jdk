@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4380568
+ * @bug 4380568 7095949
  * @summary  HttpURLConnection does not support 307 redirects
  */
 import java.io.*;
@@ -31,10 +31,9 @@ import java.net.*;
 
 class RedirServer extends Thread {
 
-    ServerSocket s;
-    Socket   s1;
-    InputStream  is;
-    OutputStream os;
+    static final int TIMEOUT = 10 * 1000;
+
+    ServerSocket ss;
     int port;
 
     String reply1Part1 = "HTTP/1.1 307 Temporary Redirect\r\n" +
@@ -46,10 +45,10 @@ class RedirServer extends Thread {
         "Content-Type: text/html; charset=iso-8859-1\r\n\r\n" +
         "<html>Hello</html>";
 
-    RedirServer (ServerSocket y) {
-        s = y;
-        port = s.getLocalPort();
-        System.out.println("Server created listening on " + port);
+    RedirServer (ServerSocket ss) throws IOException {
+        this.ss = ss;
+        this.ss.setSoTimeout(TIMEOUT);
+        port = this.ss.getLocalPort();
     }
 
     String reply2 = "HTTP/1.1 200 Ok\r\n" +
@@ -59,74 +58,63 @@ class RedirServer extends Thread {
         "Content-Type: text/html; charset=iso-8859-1\r\n\r\n" +
         "World";
 
+    static final byte[] requestEnd = new byte[] {'\r', '\n', '\r', '\n' };
+
+    // Read until the end of a HTTP request
+    void readOneRequest(InputStream is) throws IOException {
+        int requestEndCount = 0, r;
+        while ((r = is.read()) != -1) {
+            if (r == requestEnd[requestEndCount]) {
+                requestEndCount++;
+                if (requestEndCount == 4) {
+                    break;
+                }
+            } else {
+                requestEndCount = 0;
+            }
+        }
+    }
+
     public void run () {
         try {
-            s1 = s.accept ();
-            is = s1.getInputStream ();
-            os = s1.getOutputStream ();
-            is.read ();
-            String reply = reply1Part1 + port + reply1Part2;
-            os.write (reply.getBytes());
-            os.close();
+            try (Socket s = ss.accept()) {
+                s.setSoTimeout(TIMEOUT);
+                readOneRequest(s.getInputStream());
+                String reply = reply1Part1 + port + reply1Part2;
+                s.getOutputStream().write(reply.getBytes());
+            }
+
             /* wait for redirected connection */
-            s.setSoTimeout (5000);
-            s1 = s.accept ();
-            is = s1.getInputStream ();
-            os = s1.getOutputStream ();
-            is.read();
-            os.write (reply2.getBytes());
-            os.close();
-        }
-        catch (Exception e) {
-            /* Just need thread to terminate */
-            System.out.println("Server: caught " + e);
+            try (Socket s = ss.accept()) {
+                s.setSoTimeout(TIMEOUT);
+                readOneRequest(s.getInputStream());
+                s.getOutputStream().write(reply2.getBytes());
+            }
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            try { s.close(); } catch (IOException unused) {}
+            try { ss.close(); } catch (IOException unused) {}
         }
     }
 };
 
-
 public class Redirect307Test {
-
-    public static final int DELAY = 10;
-
     public static void main(String[] args) throws Exception {
-        int port;
-        RedirServer server;
-        ServerSocket sock;
+        ServerSocket sock = new ServerSocket(0);
+        int port = sock.getLocalPort();
+        RedirServer server = new RedirServer(sock);
+        server.start();
 
-        try {
-            sock = new ServerSocket (0);
-            port = sock.getLocalPort ();
-        }
-        catch (Exception e) {
-            System.out.println ("Exception: " + e);
-            return;
-        }
+        URL url = new URL("http://localhost:" + port);
+        URLConnection conURL =  url.openConnection();
+        conURL.setDoInput(true);
+        conURL.setAllowUserInteraction(false);
+        conURL.setUseCaches(false);
 
-        server = new RedirServer(sock);
-        server.start ();
-
-        try  {
-
-            String s = "http://localhost:" + port;
-            URL url = new URL(s);
-            URLConnection conURL =  url.openConnection();
-
-            conURL.setDoInput(true);
-            conURL.setAllowUserInteraction(false);
-            conURL.setUseCaches(false);
-
-            InputStream in = conURL.getInputStream();
+        try (InputStream in = conURL.getInputStream()) {
             if ((in.read() != (int)'W') || (in.read()!=(int)'o')) {
                 throw new RuntimeException ("Unexpected string read");
             }
-        }
-        catch(IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException ("Exception caught + " + e);
         }
     }
 }

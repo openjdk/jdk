@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4458085
+ * @bug 4458085 7095949
  * @summary  Redirects Limited to 5
  */
 
@@ -57,29 +57,43 @@ class RedirLimitServer extends Thread {
     final ServerSocket ss;
     final int port;
 
-    RedirLimitServer(ServerSocket ss) {
+    RedirLimitServer(ServerSocket ss) throws IOException {
         this.ss = ss;
-        port = ss.getLocalPort();
+        port = this.ss.getLocalPort();
+        this.ss.setSoTimeout(TIMEOUT);
+    }
+
+    static final byte[] requestEnd = new byte[] {'\r', '\n', '\r', '\n' };
+
+    // Read until the end of a HTTP request
+    void readOneRequest(InputStream is) throws IOException {
+        int requestEndCount = 0, r;
+        while ((r = is.read()) != -1) {
+            if (r == requestEnd[requestEndCount]) {
+                requestEndCount++;
+                if (requestEndCount == 4) {
+                    break;
+                }
+            } else {
+                requestEndCount = 0;
+            }
+        }
     }
 
     public void run() {
         try {
-            ss.setSoTimeout(TIMEOUT);
             for (int i=0; i<NUM_REDIRECTS; i++) {
                 try (Socket s = ss.accept()) {
                     s.setSoTimeout(TIMEOUT);
-                    InputStream is = s.getInputStream();
-                    OutputStream os = s.getOutputStream();
-                    is.read();
+                    readOneRequest(s.getInputStream());
                     String reply = reply1 + port + "/redirect" + i + reply2;
-                    os.write(reply.getBytes());
+                    s.getOutputStream().write(reply.getBytes());
                 }
             }
             try (Socket s = ss.accept()) {
-                InputStream is = s.getInputStream();
-                OutputStream os = s.getOutputStream();
-                is.read();
-                os.write(reply3.getBytes());
+                s.setSoTimeout(TIMEOUT);
+                readOneRequest(s.getInputStream());
+                s.getOutputStream().write(reply3.getBytes());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -96,21 +110,17 @@ public class RedirectLimit {
         RedirLimitServer server = new RedirLimitServer(ss);
         server.start();
 
-        InputStream in = null;
-        try {
-            URL url = new URL("http://localhost:" + port);
-            URLConnection conURL =  url.openConnection();
+        URL url = new URL("http://localhost:" + port);
+        URLConnection conURL =  url.openConnection();
 
-            conURL.setDoInput(true);
-            conURL.setAllowUserInteraction(false);
-            conURL.setUseCaches(false);
+        conURL.setDoInput(true);
+        conURL.setAllowUserInteraction(false);
+        conURL.setUseCaches(false);
 
-            in = conURL.getInputStream();
+        try (InputStream in = conURL.getInputStream()) {
             if ((in.read() != (int)'W') || (in.read()!=(int)'o')) {
                 throw new RuntimeException("Unexpected string read");
             }
-        } finally {
-            if ( in != null ) { in.close(); }
         }
     }
 }
