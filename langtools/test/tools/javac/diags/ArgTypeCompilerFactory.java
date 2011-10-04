@@ -146,9 +146,9 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
             JavacFileManager.preRegister(c); // can't create it until Log has been set up
             ArgTypeJavaCompiler.preRegister(c);
             ArgTypeMessages.preRegister(c);
-            int result = main.compile(args.toArray(new String[args.size()]), c);
+            Main.Result result = main.compile(args.toArray(new String[args.size()]), c);
 
-            return (result == 0);
+            return result.isOK();
         }
     }
 
@@ -172,10 +172,10 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
             JavacFileManager.preRegister(c); // can't create it until Log has been set up
             ArgTypeJavaCompiler.preRegister(c);
             ArgTypeMessages.preRegister(c);
-            com.sun.tools.javac.main.Main m = new com.sun.tools.javac.main.Main("javac", out);
-            int rc = m.compile(args.toArray(new String[args.size()]), c);
+            Main m = new Main("javac", out);
+            Main.Result result = m.compile(args.toArray(new String[args.size()]), c);
 
-            return (rc == 0);
+            return result.isOK();
         }
 
     }

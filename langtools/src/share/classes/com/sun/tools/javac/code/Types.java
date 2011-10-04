@@ -508,8 +508,13 @@ public class Types {
             @Override
             public Boolean visitUndetVar(UndetVar t, Type s) {
                 //todo: test against origin needed? or replace with substitution?
-                if (t == s || t.qtype == s || s.tag == ERROR || s.tag == UNKNOWN)
+                if (t == s || t.qtype == s || s.tag == ERROR || s.tag == UNKNOWN) {
                     return true;
+                } else if (s.tag == BOT) {
+                    //if 's' is 'null' there's no instantiated type U for which
+                    //U <: s (but 'null' itself, which is not a valid type)
+                    return false;
+                }
 
                 if (t.inst != null)
                     return isSubtypeNoCapture(t.inst, s); // TODO: ", warn"?
