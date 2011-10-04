@@ -659,12 +659,14 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
   int scope_depth = 0;
   if (!force_unwind) {
     int bci = sd->bci();
+    bool recursive_exception = false;
     do {
       bool skip_scope_increment = false;
       // exception handler lookup
       KlassHandle ek (THREAD, exception->klass());
       handler_bci = sd->method()->fast_exception_handler_bci_for(ek, bci, THREAD);
       if (HAS_PENDING_EXCEPTION) {
+        recursive_exception = true;
         // We threw an exception while trying to find the exception handler.
         // Transfer the new exception to the exception handle which will
         // be set into thread local storage, and do another lookup for an
@@ -680,6 +682,9 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
           skip_scope_increment = true;
         }
       }
+      else {
+        recursive_exception = false;
+      }
       if (!top_frame_only && handler_bci < 0 && !skip_scope_increment) {
         sd = sd->sender();
         if (sd != NULL) {
@@ -687,7 +692,7 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
         }
         ++scope_depth;
       }
-    } while (!top_frame_only && handler_bci < 0 && sd != NULL);
+    } while (recursive_exception || (!top_frame_only && handler_bci < 0 && sd != NULL));
   }
 
   // found handling method => lookup exception handler
