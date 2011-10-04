@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ setup
 JSTAT="${TESTJAVA}/bin/jstat"
 
 rm -f jstat.out 2>/dev/null
-${JSTAT} -? > jstat.out 2>&1
+${JSTAT} -J-XX:+UsePerfData -? > jstat.out 2>&1
 
 diff -w jstat.out ${TESTSRC}/usage.out
 if [ $? != 0 ]
@@ -43,7 +43,7 @@ then
 fi
 
 rm -f jstat.out 2>/dev/null
-${JSTAT} -help > jstat.out 2>&1
+${JSTAT} -J-XX:+UsePerfData -help > jstat.out 2>&1
 
 diff -w jstat.out ${TESTSRC}/usage.out
 if [ $? != 0 ]
