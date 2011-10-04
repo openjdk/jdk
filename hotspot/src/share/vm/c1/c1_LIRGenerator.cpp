@@ -2493,7 +2493,7 @@ void LIRGenerator::do_Goto(Goto* x) {
 
     // increment backedge counter if needed
     CodeEmitInfo* info = state_for(x, state);
-    increment_backedge_counter(info, info->stack()->bci());
+    increment_backedge_counter(info, x->profiled_bci());
     CodeEmitInfo* safepoint_info = state_for(x, state);
     __ safepoint(safepoint_poll_register(), safepoint_info);
   }
