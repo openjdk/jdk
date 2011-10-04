@@ -25,7 +25,6 @@
 
 package sun.misc;
 
-import sun.misc.FpUtils;
 import sun.misc.DoubleConsts;
 import sun.misc.FloatConsts;
 import java.util.regex.*;
@@ -2297,9 +2296,9 @@ public class FloatingDecimal{
                     significand++;
                 }
 
-                FloatingDecimal fd = new FloatingDecimal(FpUtils.rawCopySign(
-                                                                 Double.longBitsToDouble(significand),
-                                                                 sign));
+                FloatingDecimal fd = new FloatingDecimal(Math.copySign(
+                                                              Double.longBitsToDouble(significand),
+                                                              sign));
 
                 /*
                  * Set roundingDir variable field of fd properly so

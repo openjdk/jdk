@@ -1298,6 +1298,14 @@ Zone	America/Curacao	-4:35:44 -	LMT	1912 Feb 12	# Willemstad
 			-4:30	-	ANT	1965 # Netherlands Antilles Time
 			-4:00	-	AST
 
+# From Arthur David Olson (2011-06-15):
+# At least for now, use links for places with new iso3166 codes.
+# The name "Lower Prince's Quarter" is both longer than fourteen charaters
+# and contains an apostrophe; use "Lower_Princes" below.
+
+Link	America/Curacao	America/Lower_Princes # Sint Maarten
+Link	America/Curacao	America/Kralendijk # Bonaire, Sint Estatius and Saba
+
 # Ecuador
 #
 # From Paul Eggert (2007-03-04):
