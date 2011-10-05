@@ -552,8 +552,7 @@ G1CollectedHeap::new_region_try_secondary_free_list() {
 }
 
 HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool do_expand) {
-  assert(!isHumongous(word_size) ||
-                                  word_size <= (size_t) HeapRegion::GrainWords,
+  assert(!isHumongous(word_size) || word_size <= HeapRegion::GrainWords,
          "the only time we use this to allocate a humongous region is "
          "when we are allocating a single humongous region");
 
@@ -1170,7 +1169,7 @@ public:
       if (!hr->isHumongous()) {
         _hr_printer->post_compaction(hr, G1HRPrinter::Old);
       } else if (hr->startsHumongous()) {
-        if (hr->capacity() == (size_t) HeapRegion::GrainBytes) {
+        if (hr->capacity() == HeapRegion::GrainBytes) {
           // single humongous region
           _hr_printer->post_compaction(hr, G1HRPrinter::SingleHumongous);
         } else {
@@ -1971,7 +1970,7 @@ jint G1CollectedHeap::initialize() {
 
   size_t max_cards_per_region = ((size_t)1 << (sizeof(CardIdx_t)*BitsPerByte-1)) - 1;
   guarantee(HeapRegion::CardsPerRegion > 0, "make sure it's initialized");
-  guarantee((size_t) HeapRegion::CardsPerRegion < max_cards_per_region,
+  guarantee(HeapRegion::CardsPerRegion < max_cards_per_region,
             "too many cards per region");
 
   HeapRegionSet::set_unrealistically_long_length(max_regions() + 1);
@@ -3051,8 +3050,7 @@ void G1CollectedHeap::print_on(outputStream* st, bool extended) const {
             _g1_storage.high(),
             _g1_storage.high_boundary());
   st->cr();
-  st->print("  region size " SIZE_FORMAT "K, ",
-            HeapRegion::GrainBytes/K);
+  st->print("  region size " SIZE_FORMAT "K, ", HeapRegion::GrainBytes / K);
   size_t young_regions = _young_list->length();
   st->print(SIZE_FORMAT " young (" SIZE_FORMAT "K), ",
             young_regions, young_regions * HeapRegion::GrainBytes / K);
