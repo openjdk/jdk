@@ -33,11 +33,11 @@
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
 
-int HeapRegion::LogOfHRGrainBytes = 0;
-int HeapRegion::LogOfHRGrainWords = 0;
-int HeapRegion::GrainBytes        = 0;
-int HeapRegion::GrainWords        = 0;
-int HeapRegion::CardsPerRegion    = 0;
+int    HeapRegion::LogOfHRGrainBytes = 0;
+int    HeapRegion::LogOfHRGrainWords = 0;
+size_t HeapRegion::GrainBytes        = 0;
+size_t HeapRegion::GrainWords        = 0;
+size_t HeapRegion::CardsPerRegion    = 0;
 
 HeapRegionDCTOC::HeapRegionDCTOC(G1CollectedHeap* g1,
                                  HeapRegion* hr, OopClosure* cl,
@@ -322,11 +322,11 @@ void HeapRegion::setup_heap_region_size(uintx min_heap_size) {
   guarantee(GrainBytes == 0, "we should only set it once");
   // The cast to int is safe, given that we've bounded region_size by
   // MIN_REGION_SIZE and MAX_REGION_SIZE.
-  GrainBytes = (int) region_size;
+  GrainBytes = (size_t)region_size;
 
   guarantee(GrainWords == 0, "we should only set it once");
   GrainWords = GrainBytes >> LogHeapWordSize;
-  guarantee(1 << LogOfHRGrainWords == GrainWords, "sanity");
+  guarantee((size_t)(1 << LogOfHRGrainWords) == GrainWords, "sanity");
 
   guarantee(CardsPerRegion == 0, "we should only set it once");
   CardsPerRegion = GrainBytes >> CardTableModRefBS::card_shift;
@@ -379,8 +379,7 @@ void HeapRegion::hr_clear(bool par, bool clear_space) {
 
 void HeapRegion::par_clear() {
   assert(used() == 0, "the region should have been already cleared");
-  assert(capacity() == (size_t) HeapRegion::GrainBytes,
-         "should be back to normal");
+  assert(capacity() == HeapRegion::GrainBytes, "should be back to normal");
   HeapRegionRemSet* hrrs = rem_set();
   hrrs->clear();
   CardTableModRefBS* ct_bs =
@@ -436,7 +435,7 @@ void HeapRegion::set_notHumongous() {
     assert(end() == _orig_end, "sanity");
   }
 
-  assert(capacity() == (size_t) HeapRegion::GrainBytes, "pre-condition");
+  assert(capacity() == HeapRegion::GrainBytes, "pre-condition");
   _humongous_type = NotHumongous;
   _humongous_start_region = NULL;
 }

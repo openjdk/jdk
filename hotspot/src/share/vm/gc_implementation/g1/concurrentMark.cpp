@@ -4573,7 +4573,7 @@ G1PrintRegionLivenessInfoClosure(outputStream* out, const char* phase_name)
                  G1PPRL_SUM_BYTE_FORMAT("region-size"),
                  g1_committed.start(), g1_committed.end(),
                  g1_reserved.start(), g1_reserved.end(),
-                 (size_t)HeapRegion::GrainBytes);
+                 HeapRegion::GrainBytes);
   _out->print_cr(G1PPRL_LINE_PREFIX);
   _out->print_cr(G1PPRL_LINE_PREFIX
                  G1PPRL_TYPE_H_FORMAT
@@ -4604,7 +4604,7 @@ size_t G1PrintRegionLivenessInfoClosure::get_hum_bytes(size_t* hum_bytes) {
   // The > 0 check is to deal with the prev and next live bytes which
   // could be 0.
   if (*hum_bytes > 0) {
-    bytes = MIN2((size_t) HeapRegion::GrainBytes, *hum_bytes);
+    bytes = MIN2(HeapRegion::GrainBytes, *hum_bytes);
     *hum_bytes -= bytes;
   }
   return bytes;

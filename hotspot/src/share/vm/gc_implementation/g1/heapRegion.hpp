@@ -346,16 +346,12 @@ class HeapRegion: public G1OffsetTableContigSpace {
              G1BlockOffsetSharedArray* sharedOffsetArray,
              MemRegion mr, bool is_zeroed);
 
-  static int LogOfHRGrainBytes;
-  static int LogOfHRGrainWords;
-  // The normal type of these should be size_t. However, they used to
-  // be members of an enum before and they are assumed by the
-  // compilers to be ints. To avoid going and fixing all their uses,
-  // I'm declaring them as ints. I'm not anticipating heap region
-  // sizes to reach anywhere near 2g, so using an int here is safe.
-  static int GrainBytes;
-  static int GrainWords;
-  static int CardsPerRegion;
+  static int    LogOfHRGrainBytes;
+  static int    LogOfHRGrainWords;
+
+  static size_t GrainBytes;
+  static size_t GrainWords;
+  static size_t CardsPerRegion;
 
   static size_t align_up_to_region_byte_size(size_t sz) {
     return (sz + (size_t) GrainBytes - 1) &
