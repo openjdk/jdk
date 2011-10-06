@@ -54,16 +54,18 @@ static int test_even_odd_comparator(int a, int b) {
   return 1;
 }
 
-static int test_stdlib_comparator(const void* a, const void* b) {
-  int ai = *(int*)a;
-  int bi = *(int*)b;
-  if (ai == bi) {
-    return 0;
+extern "C" {
+  static int test_stdlib_comparator(const void* a, const void* b) {
+    int ai = *(int*)a;
+    int bi = *(int*)b;
+    if (ai == bi) {
+      return 0;
+    }
+    if (ai < bi) {
+      return -1;
+    }
+    return 1;
   }
-  if (ai < bi) {
-    return -1;
-  }
-  return 1;
 }
 
 void QuickSort::print_array(const char* prefix, int* array, int length) {
@@ -92,7 +94,6 @@ bool QuickSort::sort_and_compare(int* arrayToSort, int* expectedResult, int leng
 }
 
 bool QuickSort::test_quick_sort() {
-#if 0
   tty->print_cr("test_quick_sort\n");
   {
     int* test_array = NULL;
@@ -213,7 +214,6 @@ bool QuickSort::test_quick_sort() {
     delete[] test_array;
     delete[] expected_array;
   }
-#endif
   return true;
 }
 
