@@ -155,6 +155,19 @@ public:
     : G1AllocRegion("Mutator Alloc Region", false /* bot_updates */) { }
 };
 
+// The G1 STW is alive closure.
+// An instance is embedded into the G1CH and used as the
+// (optional) _is_alive_non_header closure in the STW
+// reference processor. It is also extensively used during
+// refence processing during STW evacuation pauses.
+class G1STWIsAliveClosure: public BoolObjectClosure {
+  G1CollectedHeap* _g1;
+public:
+  G1STWIsAliveClosure(G1CollectedHeap* g1) : _g1(g1) {}
+  void do_object(oop p) { assert(false, "Do not call."); }
+  bool do_object_b(oop p);
+};
+
 class SurvivorGCAllocRegion : public G1AllocRegion {
 protected:
   virtual HeapRegion* allocate_new_region(size_t word_size, bool force);
@@ -174,6 +187,7 @@ public:
 };
 
 class RefineCardTableEntryClosure;
+
 class G1CollectedHeap : public SharedHeap {
   friend class VM_G1CollectForAllocation;
   friend class VM_GenCollectForPermanentAllocation;
@@ -573,9 +587,20 @@ protected:
   // allocated block, or else "NULL".
   HeapWord* expand_and_allocate(size_t word_size);
 
+  // Process any reference objects discovered during
+  // an incremental evacuation pause.
+  void process_discovered_references();
+
+  // Enqueue any remaining discovered references
+  // after processing.
+  void enqueue_discovered_references();
+
 public:
 
-  G1MonitoringSupport* g1mm() { return _g1mm; }
+  G1MonitoringSupport* g1mm() {
+    assert(_g1mm != NULL, "should have been initialized");
+    return _g1mm;
+  }
 
   // Expand the garbage-first heap by at least the given size (in bytes!).
   // Returns true if the heap was expanded by the requested amount;
@@ -822,17 +847,87 @@ protected:
   void finalize_for_evac_failure();
 
   // An attempt to evacuate "obj" has failed; take necessary steps.
-  oop handle_evacuation_failure_par(OopsInHeapRegionClosure* cl, oop obj);
+  oop handle_evacuation_failure_par(OopsInHeapRegionClosure* cl, oop obj,
+                                    bool should_mark_root);
   void handle_evacuation_failure_common(oop obj, markOop m);
 
-  // Instance of the concurrent mark is_alive closure for embedding
-  // into the reference processor as the is_alive_non_header. This
-  // prevents unnecessary additions to the discovered lists during
-  // concurrent discovery.
-  G1CMIsAliveClosure _is_alive_closure;
+  // ("Weak") Reference processing support.
+  //
+  // G1 has 2 instances of the referece processor class. One
+  // (_ref_processor_cm) handles reference object discovery
+  // and subsequent processing during concurrent marking cycles.
+  //
+  // The other (_ref_processor_stw) handles reference object
+  // discovery and processing during full GCs and incremental
+  // evacuation pauses.
+  //
+  // During an incremental pause, reference discovery will be
+  // temporarily disabled for _ref_processor_cm and will be
+  // enabled for _ref_processor_stw. At the end of the evacuation
+  // pause references discovered by _ref_processor_stw will be
+  // processed and discovery will be disabled. The previous
+  // setting for reference object discovery for _ref_processor_cm
+  // will be re-instated.
+  //
+  // At the start of marking:
+  //  * Discovery by the CM ref processor is verified to be inactive
+  //    and it's discovered lists are empty.
+  //  * Discovery by the CM ref processor is then enabled.
+  //
+  // At the end of marking:
+  //  * Any references on the CM ref processor's discovered
+  //    lists are processed (possibly MT).
+  //
+  // At the start of full GC we:
+  //  * Disable discovery by the CM ref processor and
+  //    empty CM ref processor's discovered lists
+  //    (without processing any entries).
+  //  * Verify that the STW ref processor is inactive and it's
+  //    discovered lists are empty.
+  //  * Temporarily set STW ref processor discovery as single threaded.
+  //  * Temporarily clear the STW ref processor's _is_alive_non_header
+  //    field.
+  //  * Finally enable discovery by the STW ref processor.
+  //
+  // The STW ref processor is used to record any discovered
+  // references during the full GC.
+  //
+  // At the end of a full GC we:
+  //  * Enqueue any reference objects discovered by the STW ref processor
+  //    that have non-live referents. This has the side-effect of
+  //    making the STW ref processor inactive by disabling discovery.
+  //  * Verify that the CM ref processor is still inactive
+  //    and no references have been placed on it's discovered
+  //    lists (also checked as a precondition during initial marking).
 
-  // ("Weak") Reference processing support
-  ReferenceProcessor* _ref_processor;
+  // The (stw) reference processor...
+  ReferenceProcessor* _ref_processor_stw;
+
+  // During reference object discovery, the _is_alive_non_header
+  // closure (if non-null) is applied to the referent object to
+  // determine whether the referent is live. If so then the
+  // reference object does not need to be 'discovered' and can
+  // be treated as a regular oop. This has the benefit of reducing
+  // the number of 'discovered' reference objects that need to
+  // be processed.
+  //
+  // Instance of the is_alive closure for embedding into the
+  // STW reference processor as the _is_alive_non_header field.
+  // Supplying a value for the _is_alive_non_header field is
+  // optional but doing so prevents unnecessary additions to
+  // the discovered lists during reference discovery.
+  G1STWIsAliveClosure _is_alive_closure_stw;
+
+  // The (concurrent marking) reference processor...
+  ReferenceProcessor* _ref_processor_cm;
+
+  // Instance of the concurrent mark is_alive closure for embedding
+  // into the Concurrent Marking reference processor as the
+  // _is_alive_non_header field. Supplying a value for the
+  // _is_alive_non_header field is optional but doing so prevents
+  // unnecessary additions to the discovered lists during reference
+  // discovery.
+  G1CMIsAliveClosure _is_alive_closure_cm;
 
   enum G1H_process_strong_roots_tasks {
     G1H_PS_mark_stack_oops_do,
@@ -873,6 +968,7 @@ public:
   // specified by the policy object.
   jint initialize();
 
+  // Initialize weak reference processing.
   virtual void ref_processing_init();
 
   void set_par_threads(int t) {
@@ -924,8 +1020,13 @@ public:
   // The shared block offset table array.
   G1BlockOffsetSharedArray* bot_shared() const { return _bot_shared; }
 
-  // Reference Processing accessor
-  ReferenceProcessor* ref_processor() { return _ref_processor; }
+  // Reference Processing accessors
+
+  // The STW reference processor....
+  ReferenceProcessor* ref_processor_stw() const { return _ref_processor_stw; }
+
+  // The Concurent Marking reference processor...
+  ReferenceProcessor* ref_processor_cm() const { return _ref_processor_cm; }
 
   virtual size_t capacity() const;
   virtual size_t used() const;
