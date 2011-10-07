@@ -2619,6 +2619,24 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
 
     Location::Type loc_type = float_saved_as_double ? Location::float_in_dbl : Location::normal;
     VMReg rname = frame_map()->fpu_regname(opr->fpu_regnr());
+#ifndef __SOFTFP__
+#ifndef VM_LITTLE_ENDIAN
+    if (! float_saved_as_double) {
+      // On big endian system, we may have an issue if float registers use only
+      // the low half of the (same) double registers.
+      // Both the float and the double could have the same regnr but would correspond
+      // to two different addresses once saved.
+
+      // get next safely (no assertion checks)
+      VMReg next = VMRegImpl::as_VMReg(1+rname->value());
+      if (next->is_reg() &&
+          (next->as_FloatRegister() == rname->as_FloatRegister())) {
+        // the back-end does use the same numbering for the double and the float
+        rname = next; // VMReg for the low bits, e.g. the real VMReg for the float
+      }
+    }
+#endif
+#endif
     LocationValue* sv = new LocationValue(Location::new_reg_loc(loc_type, rname));
 
     scope_values->append(sv);
