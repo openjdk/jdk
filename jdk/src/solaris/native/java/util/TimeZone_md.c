@@ -122,7 +122,8 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
         return NULL;
     }
 
-#if defined(__linux__) || (defined(__solaris__) && defined(_POSIX_PTHREAD_SEMANTICS))
+#if defined(__linux__) || (defined(__solaris__) && (defined(_POSIX_PTHREAD_SEMANTICS) || \
+                                                    defined(_LP64)))
     while (readdir_r(dirp, entry, &dp) == 0 && dp != NULL) {
 #else
     while ((dp = readdir_r(dirp, entry)) != NULL) {
