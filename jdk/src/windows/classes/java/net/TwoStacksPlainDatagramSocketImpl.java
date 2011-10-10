@@ -70,7 +70,7 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
         fd1 = new FileDescriptor();
         try {
             super.create();
-        } catch (IOException e) {
+        } catch (SocketException e) {
             fd1 = null;
             throw e;
         }
