@@ -81,7 +81,12 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
      */
     protected synchronized void create(boolean stream) throws IOException {
         fd1 = new FileDescriptor();
-        super.create(stream);
+        try {
+            super.create();
+        } catch (IOException e) {
+            fd1 = null;
+            throw e;
+        }
     }
 
      /**
