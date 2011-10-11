@@ -71,7 +71,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
 
    /* whether this Socket is a stream (TCP) socket or not (UDP)
     */
-    private boolean stream;
+    protected boolean stream;
 
     /**
      * Load net library into runtime.
