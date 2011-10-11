@@ -26,6 +26,7 @@ package java.net;
 
 import java.io.IOException;
 import java.io.FileDescriptor;
+import sun.net.ResourceManager;
 
 /*
  * This class defines the plain SocketImpl that is used for all
@@ -82,7 +83,7 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
     protected synchronized void create(boolean stream) throws IOException {
         fd1 = new FileDescriptor();
         try {
-            super.create();
+            super.create(stream);
         } catch (IOException e) {
             fd1 = null;
             throw e;
@@ -125,6 +126,9 @@ class TwoStacksPlainSocketImpl extends AbstractPlainSocketImpl
     protected void close() throws IOException {
         synchronized(fdLock) {
             if (fd != null || fd1 != null) {
+                if (!stream) {
+                    ResourceManager.afterUdpClose();
+                }
                 if (fdUseCount == 0) {
                     if (closePending) {
                         return;
