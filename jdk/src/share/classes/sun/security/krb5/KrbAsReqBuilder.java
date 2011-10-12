@@ -144,15 +144,18 @@ public final class KrbAsReqBuilder {
 
     /**
      * Retrieves an array of secret keys for the client. This is used when
-     * the client supplies password but need keys to act as an acceptor
-     * (in JAAS words, isInitiator=true and storeKey=true)
+     * the client supplies password but need keys to act as an acceptor. For
+     * an initiator, it must be called after AS-REQ is performed (state is OK).
+     * For an acceptor, it can be called when this KrbAsReqBuilder object is
+     * constructed (state is INIT).
+     * @param isInitiator if the caller is an initiator
      * @return generated keys from password. PA-DATA from server might be used.
      * All "default_tkt_enctypes" keys will be generated, Never null.
      * @throws IllegalStateException if not constructed from a password
      * @throws KrbException
      */
-    public EncryptionKey[] getKeys() throws KrbException {
-        checkState(State.REQ_OK, "Cannot get keys");
+    public EncryptionKey[] getKeys(boolean isInitiator) throws KrbException {
+        checkState(isInitiator?State.REQ_OK:State.INIT, "Cannot get keys");
         if (password != null) {
             int[] eTypes = EType.getDefaults("default_tkt_enctypes");
             EncryptionKey[] result = new EncryptionKey[eTypes.length];

@@ -820,7 +820,6 @@ GetJREPath(char *path, jint pathsize, const char * arch, jboolean speculative)
 jboolean
 LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
 {
-    Dl_info dlinfo;
     void *libjvm;
 
     JLI_TraceLauncher("JVM path is %s\n", jvmpath);
