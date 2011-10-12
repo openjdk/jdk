@@ -44,7 +44,7 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
     int timeout = 0;
     boolean connected = false;
     private int trafficClass = 0;
-    private InetAddress connectedAddress = null;
+    protected InetAddress connectedAddress = null;
     private int connectedPort = -1;
 
     /* cached socket options */

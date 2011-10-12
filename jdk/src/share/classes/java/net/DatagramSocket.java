@@ -287,7 +287,7 @@ class DatagramSocket implements java.io.Closeable {
             AccessController.doPrivileged(
                 new PrivilegedExceptionAction<Void>() {
                     public Void run() throws NoSuchMethodException {
-                        Class[] cl = new Class[1];
+                        Class<?>[] cl = new Class<?>[1];
                         cl[0] = DatagramPacket.class;
                         impl.getClass().getDeclaredMethod("peekData", cl);
                         return null;
