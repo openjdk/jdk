@@ -201,13 +201,15 @@ public:
     assert(_ref != _first_seen, "cyclic ref_list found");
     NOT_PRODUCT(_processed++);
   }
-
 };
 
 class ReferenceProcessor : public CHeapObj {
  protected:
   // Compatibility with pre-4965777 JDK's
   static bool _pending_list_uses_discovered_field;
+
+  // The SoftReference master timestamp clock
+  static jlong _soft_ref_timestamp_clock;
 
   MemRegion   _span;                    // (right-open) interval of heap
                                         // subject to wkref discovery
@@ -456,19 +458,7 @@ class ReferenceProcessor : public CHeapObj {
   void      set_span(MemRegion span) { _span = span; }
 
   // start and stop weak ref discovery
-  void enable_discovery(bool verify_disabled, bool check_no_refs) {
-#ifdef ASSERT
-    // Verify that we're not currently discovering refs
-    assert(!verify_disabled || !_discovering_refs, "nested call?");
-
-    if (check_no_refs) {
-      // Verify that the discovered lists are empty
-      verify_no_references_recorded();
-    }
-#endif // ASSERT
-    _discovering_refs = true;
-  }
-
+  void enable_discovery(bool verify_disabled, bool check_no_refs);
   void disable_discovery()  { _discovering_refs = false; }
   bool discovery_enabled()  { return _discovering_refs;  }
 

@@ -36,14 +36,19 @@
 ReferencePolicy* ReferenceProcessor::_always_clear_soft_ref_policy = NULL;
 ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = NULL;
 bool             ReferenceProcessor::_pending_list_uses_discovered_field = false;
+jlong            ReferenceProcessor::_soft_ref_timestamp_clock = 0;
 
 void referenceProcessor_init() {
   ReferenceProcessor::init_statics();
 }
 
 void ReferenceProcessor::init_statics() {
-  // Initialize the master soft ref clock.
-  java_lang_ref_SoftReference::set_clock(os::javaTimeMillis());
+  jlong now = os::javaTimeMillis();
+
+  // Initialize the soft ref timestamp clock.
+  _soft_ref_timestamp_clock = now;
+  // Also update the soft ref clock in j.l.r.SoftReference
+  java_lang_ref_SoftReference::set_clock(_soft_ref_timestamp_clock);
 
   _always_clear_soft_ref_policy = new AlwaysClearPolicy();
   _default_soft_ref_policy      = new COMPILER2_PRESENT(LRUMaxHeapPolicy())
@@ -55,6 +60,28 @@ void ReferenceProcessor::init_statics() {
             RefDiscoveryPolicy == ReferentBasedDiscovery,
             "Unrecongnized RefDiscoveryPolicy");
   _pending_list_uses_discovered_field = JDK_Version::current().pending_list_uses_discovered_field();
+}
+
+void ReferenceProcessor::enable_discovery(bool verify_disabled, bool check_no_refs) {
+#ifdef ASSERT
+  // Verify that we're not currently discovering refs
+  assert(!verify_disabled || !_discovering_refs, "nested call?");
+
+  if (check_no_refs) {
+    // Verify that the discovered lists are empty
+    verify_no_references_recorded();
+  }
+#endif // ASSERT
+
+  // Someone could have modified the value of the static
+  // field in the j.l.r.SoftReference class that holds the
+  // soft reference timestamp clock using reflection or
+  // Unsafe between GCs. Unconditionally update the static
+  // field in ReferenceProcessor here so that we use the new
+  // value during reference discovery.
+
+  _soft_ref_timestamp_clock = java_lang_ref_SoftReference::clock();
+  _discovering_refs = true;
 }
 
 ReferenceProcessor::ReferenceProcessor(MemRegion span,
@@ -122,17 +149,21 @@ void ReferenceProcessor::update_soft_ref_master_clock() {
   // Update (advance) the soft ref master clock field. This must be done
   // after processing the soft ref list.
   jlong now = os::javaTimeMillis();
-  jlong clock = java_lang_ref_SoftReference::clock();
+  jlong soft_ref_clock = java_lang_ref_SoftReference::clock();
+  assert(soft_ref_clock == _soft_ref_timestamp_clock, "soft ref clocks out of sync");
+
   NOT_PRODUCT(
-  if (now < clock) {
-    warning("time warp: %d to %d", clock, now);
+  if (now < _soft_ref_timestamp_clock) {
+    warning("time warp: "INT64_FORMAT" to "INT64_FORMAT,
+            _soft_ref_timestamp_clock, now);
   }
   )
   // In product mode, protect ourselves from system time being adjusted
   // externally and going backward; see note in the implementation of
   // GenCollectedHeap::time_since_last_gc() for the right way to fix
   // this uniformly throughout the VM; see bug-id 4741166. XXX
-  if (now > clock) {
+  if (now > _soft_ref_timestamp_clock) {
+    _soft_ref_timestamp_clock = now;
     java_lang_ref_SoftReference::set_clock(now);
   }
   // Else leave clock stalled at its old value until time progresses
@@ -149,6 +180,16 @@ void ReferenceProcessor::process_discovered_references(
   assert(!enqueuing_is_done(), "If here enqueuing should not be complete");
   // Stop treating discovered references specially.
   disable_discovery();
+
+  // If discovery was concurrent, someone could have modified
+  // the value of the static field in the j.l.r.SoftReference
+  // class that holds the soft reference timestamp clock using
+  // reflection or Unsafe between when discovery was enabled and
+  // now. Unconditionally update the static field in ReferenceProcessor
+  // here so that we use the new value during processing of the
+  // discovered soft refs.
+
+  _soft_ref_timestamp_clock = java_lang_ref_SoftReference::clock();
 
   bool trace_time = PrintGCDetails && PrintReferenceGC;
   // Soft references
@@ -486,7 +527,8 @@ ReferenceProcessor::process_phase1(DiscoveredList&    refs_list,
   while (iter.has_next()) {
     iter.load_ptrs(DEBUG_ONLY(!discovery_is_atomic() /* allow_null_referent */));
     bool referent_is_dead = (iter.referent() != NULL) && !iter.is_referent_alive();
-    if (referent_is_dead && !policy->should_clear_reference(iter.obj())) {
+    if (referent_is_dead &&
+        !policy->should_clear_reference(iter.obj(), _soft_ref_timestamp_clock)) {
       if (TraceReferenceGC) {
         gclog_or_tty->print_cr("Dropping reference (" INTPTR_FORMAT ": %s"  ") by policy",
                                iter.obj(), iter.obj()->blueprint()->internal_name());
@@ -1117,7 +1159,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     // time-stamp policies advance the soft-ref clock only
     // at a major collection cycle, this is always currently
     // accurate.
-    if (!_current_soft_ref_policy->should_clear_reference(obj)) {
+    if (!_current_soft_ref_policy->should_clear_reference(obj, _soft_ref_timestamp_clock)) {
       return false;
     }
   }
