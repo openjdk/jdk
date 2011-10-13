@@ -1387,10 +1387,8 @@ bool MethodHandleCompiler::fetch_counts(ArgToken arg1, ArgToken arg2) {
   int total = count1 + count2;
   if (count1 != -1 && count2 != -1 && total != 0) {
     // Normalize the collect counts to the invoke_count
-    tty->print("counts %d %d scaled by %d = ", count2, count1, _invoke_count);
     if (count1 != 0) _not_taken_count = (int)(_invoke_count * count1 / (double)total);
     if (count2 != 0) _taken_count = (int)(_invoke_count * count2 / (double)total);
-    tty->print_cr("%d %d", _taken_count, _not_taken_count);
     return true;
   }
   return false;
