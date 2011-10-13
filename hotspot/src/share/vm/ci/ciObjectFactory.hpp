@@ -108,7 +108,8 @@ public:
   // Get the ciMethod representing an unloaded/unfound method.
   ciMethod* get_unloaded_method(ciInstanceKlass* holder,
                                 ciSymbol*        name,
-                                ciSymbol*        signature);
+                                ciSymbol*        signature,
+                                ciInstanceKlass* accessor);
 
   // Get a ciKlass representing an unloaded klass.
   ciKlass* get_unloaded_klass(ciKlass* accessing_klass,
