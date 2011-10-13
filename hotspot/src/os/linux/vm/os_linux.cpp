@@ -4357,6 +4357,11 @@ int os::active_processor_count() {
   return online_cpus;
 }
 
+void os::set_native_thread_name(const char *name) {
+  // Not yet implemented.
+  return;
+}
+
 bool os::distribute_processes(uint length, uint* distribution) {
   // Not yet implemented.
   return false;

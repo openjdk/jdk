@@ -22,46 +22,32 @@
  *
  */
 
-#ifndef OS_CPU_BSD_ZERO_VM_BYTES_BSD_ZERO_INLINE_HPP
-#define OS_CPU_BSD_ZERO_VM_BYTES_BSD_ZERO_INLINE_HPP
 
-// Efficient swapping of data bytes from Java byte
-// ordering to native byte ordering and vice versa.
+#include "generateJvmOffsets.h"
 
-#ifdef __APPLE__
-#  include <libkern/OSByteOrder.h>
-#else
-#  include <sys/endian.h>
-#endif
+const char *HELP =
+    "HELP: generateJvmOffsets {-header | -index | -table} \n";
 
-#if defined(__APPLE__)
-#  define bswap_16(x)   OSSwapInt16(x)
-#  define bswap_32(x)   OSSwapInt32(x)
-#  define bswap_64(x)   OSSwapInt64(x)
-#elif defined(__OpenBSD__)
-#  define bswap_16(x)   swap16(x)
-#  define bswap_32(x)   swap32(x)
-#  define bswap_64(x)   swap64(x)
-#elif defined(__NetBSD__)
-#  define bswap_16(x)   bswap16(x)
-#  define bswap_32(x)   bswap32(x)
-#  define bswap_64(x)   bswap64(x)
-#else
-#  define bswap_16(x) __bswap16(x)
-#  define bswap_32(x) __bswap32(x)
-#  define bswap_64(x) __bswap64(x)
-#endif
+int main(int argc, const char *argv[]) {
+    GEN_variant gen_var;
 
-inline u2 Bytes::swap_u2(u2 x) {
-  return bswap_16(x);
+    if (argc != 2) {
+        printf("%s", HELP);
+        return 1;
+    }
+
+    if (0 == strcmp(argv[1], "-header")) {
+        gen_var = GEN_OFFSET;
+    }
+    else if (0 == strcmp(argv[1], "-index")) {
+        gen_var = GEN_INDEX;
+    }
+    else if (0 == strcmp(argv[1], "-table")) {
+        gen_var = GEN_TABLE;
+    }
+    else {
+        printf("%s", HELP);
+        return 1;
+    }
+    return generateJvmOffsets(gen_var);
 }
-
-inline u4 Bytes::swap_u4(u4 x) {
-  return bswap_32(x);
-}
-
-inline u8 Bytes::swap_u8(u8 x) {
-  return bswap_64(x);
-}
-
-#endif // OS_CPU_BSD_ZERO_VM_BYTES_BSD_ZERO_INLINE_HPP
