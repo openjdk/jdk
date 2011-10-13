@@ -517,9 +517,6 @@ sun/security/ssl/sanity/interop/ClientJSSEServerJSSE.java       generic-all
 # 7079203 sun/security/tools/keytool/printssl.sh fails on solaris with timeout
 sun/security/tools/keytool/printssl.sh                          solaris-all
 
-# 7054637
-sun/security/tools/jarsigner/ec.sh                             solaris-all
-
 # 7081817
 sun/security/provider/certpath/X509CertPath/IllegalCertiticates.java    generic-all
 
