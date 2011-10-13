@@ -41,6 +41,21 @@
  * This file is currently collecting system-specific dregs for the
  * JNI conversion, which should be sorted out later.
  */
+#ifdef __NetBSD__
+/*
+ * Since we are compiling with c++, we need the following to make c macros
+ * visible.
+ */
+# if !defined(__STDC_LIMIT_MACROS)
+#  define __STDC_LIMIT_MACROS           1
+# endif
+# if !defined(__STDC_CONSTANT_MACROS)
+#  define __STDC_CONSTANT_MACROS        1
+# endif
+# if !defined(__STDC_FORMAT_MACROS)
+#  define __STDC_FORMAT_MACROS          1
+# endif
+#endif
 
 #include <dirent.h>             /* For DIR */
 #include <sys/param.h>          /* For MAXPATHLEN */

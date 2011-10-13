@@ -110,6 +110,7 @@
 
 // Only bother with this argument setup if dtrace is available
 
+#ifndef USDT2
 HS_DTRACE_PROBE_DECL(hotspot, vm__init__begin);
 HS_DTRACE_PROBE_DECL(hotspot, vm__init__end);
 HS_DTRACE_PROBE_DECL5(hotspot, thread__start, char*, intptr_t,
@@ -129,6 +130,26 @@ HS_DTRACE_PROBE_DECL5(hotspot, thread__stop, char*, intptr_t,
       (javathread)->osthread()->thread_id(),                               \
       java_lang_Thread::is_daemon((javathread)->threadObj()));             \
   }
+
+#else /* USDT2 */
+
+#define HOTSPOT_THREAD_PROBE_start HOTSPOT_THREAD_PROBE_START
+#define HOTSPOT_THREAD_PROBE_stop HOTSPOT_THREAD_PROBE_STOP
+
+#define DTRACE_THREAD_PROBE(probe, javathread)                             \
+  {                                                                        \
+    ResourceMark rm(this);                                                 \
+    int len = 0;                                                           \
+    const char* name = (javathread)->get_thread_name();                    \
+    len = strlen(name);                                                    \
+    HOTSPOT_THREAD_PROBE_##probe(  /* probe = start, stop */               \
+      (char *) name, len,                                                           \
+      java_lang_Thread::thread_id((javathread)->threadObj()),              \
+      (uintptr_t) (javathread)->osthread()->thread_id(),                               \
+      java_lang_Thread::is_daemon((javathread)->threadObj()));             \
+  }
+
+#endif /* USDT2 */
 
 #else //  ndef DTRACE_ENABLED
 
@@ -1327,7 +1348,7 @@ SATBMarkQueueSet JavaThread::_satb_mark_queue_set;
 DirtyCardQueueSet JavaThread::_dirty_card_queue_set;
 #endif // !SERIALGC
 
-JavaThread::JavaThread(bool is_attaching) :
+JavaThread::JavaThread(bool is_attaching_via_jni) :
   Thread()
 #ifndef SERIALGC
   , _satb_mark_queue(&_satb_mark_queue_set),
@@ -1335,7 +1356,11 @@ JavaThread::JavaThread(bool is_attaching) :
 #endif // !SERIALGC
 {
   initialize();
-  _is_attaching = is_attaching;
+  if (is_attaching_via_jni) {
+    _jni_attach_state = _attaching_via_jni;
+  } else {
+    _jni_attach_state = _not_attaching_via_jni;
+  }
   assert(_deferred_card_mark.is_empty(), "Default MemRegion ctor");
 }
 
@@ -1391,7 +1416,7 @@ JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) :
     tty->print_cr("creating thread %p", this);
   }
   initialize();
-  _is_attaching = false;
+  _jni_attach_state = _not_attaching_via_jni;
   set_entry_point(entry_point);
   // Create the native thread itself.
   // %note runtime_23
@@ -1503,6 +1528,10 @@ void JavaThread::thread_main_inner() {
   // Note: Due to JVM_StopThread we can have pending exceptions already!
   if (!this->has_pending_exception() &&
       !java_lang_Thread::is_stillborn(this->threadObj())) {
+    {
+      ResourceMark rm(this);
+      this->set_native_thread_name(this->get_thread_name());
+    }
     HandleMark hm(this);
     this->entry_point()(this, this);
   }
@@ -2682,7 +2711,7 @@ const char* JavaThread::get_thread_name_string(char* buf, int buflen) const {
         name_str = UNICODE::as_utf8((jchar*) name->base(T_CHAR), name->length(), buf, buflen);
       }
     }
-    else if (is_attaching()) { // workaround for 6412693 - see 6404306
+    else if (is_attaching_via_jni()) { // workaround for 6412693 - see 6404306
       name_str = "<no-name - thread is attaching>";
     }
     else {
@@ -3078,7 +3107,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     os::pause();
   }
 
+#ifndef USDT2
   HS_DTRACE_PROBE(hotspot, vm__init__begin);
+#else /* USDT2 */
+  HOTSPOT_VM_INIT_BEGIN();
+#endif /* USDT2 */
 
   // Record VM creation timing statistics
   TraceVmCreationTime create_vm_timer;
@@ -3333,7 +3366,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // debug stuff, that does not work until all basic classes have been initialized.
   set_init_completed();
 
+#ifndef USDT2
   HS_DTRACE_PROBE(hotspot, vm__init__end);
+#else /* USDT2 */
+  HOTSPOT_VM_INIT_END();
+#endif /* USDT2 */
 
   // record VM initialization completion time
   Management::record_vm_init_completed();
