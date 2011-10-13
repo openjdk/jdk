@@ -103,7 +103,7 @@ import sun.security.action.GetPropertyAction;
  * @author      Steve Hanna
  * @author      Andreas Sterbenz
  */
-public class LDAPCertStore extends CertStoreSpi {
+public final class LDAPCertStore extends CertStoreSpi {
 
     private static final Debug debug = Debug.getInstance("certpath");
 

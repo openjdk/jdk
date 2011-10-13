@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.security.provider.certpath.ldap;
+package sun.security.provider.certpath.ssl;
 
 import java.net.URI;
 import java.util.Collection;
@@ -38,17 +38,15 @@ import java.io.IOException;
 import sun.security.provider.certpath.CertStoreHelper;
 
 /**
- * LDAP implementation of CertStoreHelper.
+ * SSL implementation of CertStoreHelper.
  */
+public final class SSLServerCertStoreHelper extends CertStoreHelper {
 
-public final class LDAPCertStoreHelper
-    extends CertStoreHelper
-{
     @Override
     public CertStore getCertStore(URI uri)
         throws NoSuchAlgorithmException, InvalidAlgorithmParameterException
     {
-        return LDAPCertStore.getInstance(LDAPCertStore.getParameters(uri));
+        return SSLServerCertStore.getInstance(uri);
     }
 
     @Override
@@ -57,7 +55,7 @@ public final class LDAPCertStoreHelper
                                  String ldapDN)
         throws IOException
     {
-        return new LDAPCertStore.LDAPCertSelector(selector, certSubject, ldapDN);
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -66,6 +64,6 @@ public final class LDAPCertStoreHelper
                                 String ldapDN)
         throws IOException
     {
-        return new LDAPCertStore.LDAPCRLSelector(selector, certIssuers, ldapDN);
+        throw new UnsupportedOperationException();
     }
 }
