@@ -2011,8 +2011,6 @@ jint G1CollectedHeap::initialize() {
   // Perform any initialization actions delegated to the policy.
   g1_policy()->init();
 
-  g1_policy()->note_start_of_mark_thread();
-
   _refine_cte_cl =
     new RefineCardTableEntryClosure(ConcurrentG1RefineThread::sts(),
                                     g1_rem_set(),
@@ -3960,9 +3958,6 @@ void G1CollectedHeap::remove_self_forwarding_pointers() {
         // _next_top_at_mark_start == top, _next_marked_bytes == 0
         // _next_marked_bytes == next_marked_bytes.
       }
-
-      // Now make sure the region has the right index in the sorted array.
-      g1_policy()->note_change_in_marked_bytes(cur);
     }
     cur = cur->next_in_collection_set();
   }
