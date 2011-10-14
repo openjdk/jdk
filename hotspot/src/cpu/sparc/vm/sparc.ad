@@ -10476,7 +10476,7 @@ instruct countTrailingZerosI(iRegI dst, iRegI src, flagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct countTrailingZerosL(iRegI dst, iRegL src, flagsReg cr) %{
+instruct countTrailingZerosL(iRegIsafe dst, iRegL src, flagsReg cr) %{
   predicate(UsePopCountInstruction);  // See Matcher::match_rule_supported
   match(Set dst (CountTrailingZerosL src));
   effect(TEMP dst, KILL cr);
