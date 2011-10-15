@@ -290,10 +290,6 @@
           "each evacuation pause in order to artificially fill up the "     \
           "heap and stress the marking implementation.")                    \
                                                                             \
-  develop(bool, ReduceInitialCardMarksForG1, false,                         \
-          "When ReduceInitialCardMarks is true, this flag setting "         \
-          " controls whether G1 allows the RICM optimization")              \
-                                                                            \
   develop(bool, G1ExitOnExpansionFailure, false,                            \
           "Raise a fatal VM exit out of memory failure in the event "       \
           " that heap expansion fails due to running out of swap.")         \
