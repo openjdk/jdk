@@ -753,8 +753,9 @@ bool Thread::claim_oops_do_par_case(int strong_roots_parity) {
   jint thread_parity = _oops_do_parity;
   if (thread_parity != strong_roots_parity) {
     jint res = Atomic::cmpxchg(strong_roots_parity, &_oops_do_parity, thread_parity);
-    if (res == thread_parity) return true;
-    else {
+    if (res == thread_parity) {
+      return true;
+    } else {
       guarantee(res == strong_roots_parity, "Or else what?");
       assert(SharedHeap::heap()->n_par_threads() > 0,
              "Should only fail when parallel.");
@@ -3909,8 +3910,9 @@ void Threads::possibly_parallel_oops_do(OopClosure* f, CodeBlobClosure* cf) {
     }
   }
   VMThread* vmt = VMThread::vm_thread();
-  if (vmt->claim_oops_do(is_par, cp))
+  if (vmt->claim_oops_do(is_par, cp)) {
     vmt->oops_do(f, cf);
+  }
 }
 
 #ifndef SERIALGC

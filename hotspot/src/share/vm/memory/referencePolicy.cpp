@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,9 @@ void LRUCurrentHeapPolicy::setup() {
 
 // The oop passed in is the SoftReference object, and not
 // the object the SoftReference points to.
-bool LRUCurrentHeapPolicy::should_clear_reference(oop p) {
-  jlong interval = java_lang_ref_SoftReference::clock() - java_lang_ref_SoftReference::timestamp(p);
+bool LRUCurrentHeapPolicy::should_clear_reference(oop p,
+                                                  jlong timestamp_clock) {
+  jlong interval = timestamp_clock - java_lang_ref_SoftReference::timestamp(p);
   assert(interval >= 0, "Sanity check");
 
   // The interval will be zero if the ref was accessed since the last scavenge/gc.
@@ -71,8 +72,9 @@ void LRUMaxHeapPolicy::setup() {
 
 // The oop passed in is the SoftReference object, and not
 // the object the SoftReference points to.
-bool LRUMaxHeapPolicy::should_clear_reference(oop p) {
-  jlong interval = java_lang_ref_SoftReference::clock() - java_lang_ref_SoftReference::timestamp(p);
+bool LRUMaxHeapPolicy::should_clear_reference(oop p,
+                                             jlong timestamp_clock) {
+  jlong interval = timestamp_clock - java_lang_ref_SoftReference::timestamp(p);
   assert(interval >= 0, "Sanity check");
 
   // The interval will be zero if the ref was accessed since the last scavenge/gc.

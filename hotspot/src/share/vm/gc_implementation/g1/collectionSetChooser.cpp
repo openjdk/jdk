@@ -118,30 +118,6 @@ HeapRegion *CSetChooserCache::remove_first() {
   }
 }
 
-// this is a bit expensive... but we expect that it should not be called
-// to often.
-void CSetChooserCache::remove(HeapRegion *hr) {
-  assert(_occupancy > 0, "cache should not be empty");
-  assert(hr->sort_index() < -1, "should already be in the cache");
-  int index = get_index(hr->sort_index());
-  assert(_cache[index] == hr, "index should be correct");
-  int next_index = trim_index(index + 1);
-  int last_index = trim_index(_first + _occupancy - 1);
-  while (index != last_index) {
-    assert(_cache[next_index] != NULL, "should not be null");
-    _cache[index] = _cache[next_index];
-    _cache[index]->set_sort_index(get_sort_index(index));
-
-    index = next_index;
-    next_index = trim_index(next_index+1);
-  }
-  assert(index == last_index, "should have reached the last one");
-  _cache[index] = NULL;
-  hr->set_sort_index(-1);
-  --_occupancy;
-  assert(verify(), "cache should be consistent");
-}
-
 static inline int orderRegions(HeapRegion* hr1, HeapRegion* hr2) {
   if (hr1 == NULL) {
     if (hr2 == NULL) return 0;
@@ -197,43 +173,34 @@ bool CollectionSetChooser::verify() {
   HeapRegion *prev = NULL;
   while (index < _numMarkedRegions) {
     HeapRegion *curr = _markedRegions.at(index++);
-    if (curr != NULL) {
-      int si = curr->sort_index();
-      guarantee(!curr->is_young(), "should not be young!");
-      guarantee(si > -1 && si == (index-1), "sort index invariant");
-      if (prev != NULL) {
-        guarantee(orderRegions(prev, curr) != 1, "regions should be sorted");
-      }
-      prev = curr;
+    guarantee(curr != NULL, "Regions in _markedRegions array cannot be NULL");
+    int si = curr->sort_index();
+    guarantee(!curr->is_young(), "should not be young!");
+    guarantee(si > -1 && si == (index-1), "sort index invariant");
+    if (prev != NULL) {
+      guarantee(orderRegions(prev, curr) != 1, "regions should be sorted");
     }
+    prev = curr;
   }
   return _cache.verify();
 }
 #endif
 
-bool
-CollectionSetChooser::addRegionToCache() {
-  assert(!_cache.is_full(), "cache should not be full");
-
-  HeapRegion *hr = NULL;
-  while (hr == NULL && _curMarkedIndex < _numMarkedRegions) {
-    hr = _markedRegions.at(_curMarkedIndex++);
-  }
-  if (hr == NULL)
-    return false;
-  assert(!hr->is_young(), "should not be young!");
-  assert(hr->sort_index() == _curMarkedIndex-1, "sort_index invariant");
-  _markedRegions.at_put(hr->sort_index(), NULL);
-  _cache.insert(hr);
-  assert(!_cache.is_empty(), "cache should not be empty");
-  assert(verify(), "cache should be consistent");
-  return false;
-}
-
 void
 CollectionSetChooser::fillCache() {
-  while (!_cache.is_full() && addRegionToCache()) {
+  while (!_cache.is_full() && (_curMarkedIndex < _numMarkedRegions)) {
+    HeapRegion* hr = _markedRegions.at(_curMarkedIndex);
+    assert(hr != NULL,
+           err_msg("Unexpected NULL hr in _markedRegions at index %d",
+                   _curMarkedIndex));
+    _curMarkedIndex += 1;
+    assert(!hr->is_young(), "should not be young!");
+    assert(hr->sort_index() == _curMarkedIndex-1, "sort_index invariant");
+    _markedRegions.at_put(hr->sort_index(), NULL);
+    _cache.insert(hr);
+    assert(!_cache.is_empty(), "cache should not be empty");
   }
+  assert(verify(), "cache should be consistent");
 }
 
 void
@@ -332,20 +299,6 @@ CollectionSetChooser::clearMarkedHeapRegions(){
 void
 CollectionSetChooser::updateAfterFullCollection() {
   clearMarkedHeapRegions();
-}
-
-void CollectionSetChooser::removeRegion(HeapRegion *hr) {
-  int si = hr->sort_index();
-  assert(si == -1 || hr->is_marked(), "Sort index not valid.");
-  if (si > -1) {
-    assert(_markedRegions.at(si) == hr, "Sort index not valid." );
-    _markedRegions.at_put(si, NULL);
-  } else if (si < -1) {
-    assert(_cache.region_in_cache(hr), "should be in the cache");
-    _cache.remove(hr);
-    assert(hr->sort_index() == -1, "sort index invariant");
-  }
-  hr->set_sort_index(-1);
 }
 
 // if time_remaining < 0.0, then this method should try to return

@@ -33,11 +33,11 @@
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
 
-int HeapRegion::LogOfHRGrainBytes = 0;
-int HeapRegion::LogOfHRGrainWords = 0;
-int HeapRegion::GrainBytes        = 0;
-int HeapRegion::GrainWords        = 0;
-int HeapRegion::CardsPerRegion    = 0;
+int    HeapRegion::LogOfHRGrainBytes = 0;
+int    HeapRegion::LogOfHRGrainWords = 0;
+size_t HeapRegion::GrainBytes        = 0;
+size_t HeapRegion::GrainWords        = 0;
+size_t HeapRegion::CardsPerRegion    = 0;
 
 HeapRegionDCTOC::HeapRegionDCTOC(G1CollectedHeap* g1,
                                  HeapRegion* hr, OopClosure* cl,
@@ -45,7 +45,7 @@ HeapRegionDCTOC::HeapRegionDCTOC(G1CollectedHeap* g1,
                                  FilterKind fk) :
   ContiguousSpaceDCTOC(hr, cl, precision, NULL),
   _hr(hr), _fk(fk), _g1(g1)
-{}
+{ }
 
 FilterOutOfRegionClosure::FilterOutOfRegionClosure(HeapRegion* r,
                                                    OopClosure* oc) :
@@ -210,15 +210,17 @@ void HeapRegionDCTOC::walk_mem_region_with_cl(MemRegion mr,
                                               HeapWord* top,
                                               OopClosure* cl) {
   G1CollectedHeap* g1h = _g1;
-
   int oop_size;
+  OopClosure* cl2 = NULL;
 
-  OopClosure* cl2 = cl;
   FilterIntoCSClosure intoCSFilt(this, g1h, cl);
   FilterOutOfRegionClosure outOfRegionFilt(_hr, cl);
+
   switch (_fk) {
+  case NoFilterKind:          cl2 = cl; break;
   case IntoCSFilterKind:      cl2 = &intoCSFilt; break;
   case OutOfRegionFilterKind: cl2 = &outOfRegionFilt; break;
+  default:                    ShouldNotReachHere();
   }
 
   // Start filtering what we add to the remembered set. If the object is
@@ -239,16 +241,19 @@ void HeapRegionDCTOC::walk_mem_region_with_cl(MemRegion mr,
     case NoFilterKind:
       bottom = walk_mem_region_loop(cl, g1h, _hr, bottom, top);
       break;
+
     case IntoCSFilterKind: {
       FilterIntoCSClosure filt(this, g1h, cl);
       bottom = walk_mem_region_loop(&filt, g1h, _hr, bottom, top);
       break;
     }
+
     case OutOfRegionFilterKind: {
       FilterOutOfRegionClosure filt(_hr, cl);
       bottom = walk_mem_region_loop(&filt, g1h, _hr, bottom, top);
       break;
     }
+
     default:
       ShouldNotReachHere();
     }
@@ -317,11 +322,11 @@ void HeapRegion::setup_heap_region_size(uintx min_heap_size) {
   guarantee(GrainBytes == 0, "we should only set it once");
   // The cast to int is safe, given that we've bounded region_size by
   // MIN_REGION_SIZE and MAX_REGION_SIZE.
-  GrainBytes = (int) region_size;
+  GrainBytes = (size_t)region_size;
 
   guarantee(GrainWords == 0, "we should only set it once");
   GrainWords = GrainBytes >> LogHeapWordSize;
-  guarantee(1 << LogOfHRGrainWords == GrainWords, "sanity");
+  guarantee((size_t)(1 << LogOfHRGrainWords) == GrainWords, "sanity");
 
   guarantee(CardsPerRegion == 0, "we should only set it once");
   CardsPerRegion = GrainBytes >> CardTableModRefBS::card_shift;
@@ -374,8 +379,7 @@ void HeapRegion::hr_clear(bool par, bool clear_space) {
 
 void HeapRegion::par_clear() {
   assert(used() == 0, "the region should have been already cleared");
-  assert(capacity() == (size_t) HeapRegion::GrainBytes,
-         "should be back to normal");
+  assert(capacity() == HeapRegion::GrainBytes, "should be back to normal");
   HeapRegionRemSet* hrrs = rem_set();
   hrrs->clear();
   CardTableModRefBS* ct_bs =
@@ -431,7 +435,7 @@ void HeapRegion::set_notHumongous() {
     assert(end() == _orig_end, "sanity");
   }
 
-  assert(capacity() == (size_t) HeapRegion::GrainBytes, "pre-condition");
+  assert(capacity() == HeapRegion::GrainBytes, "pre-condition");
   _humongous_type = NotHumongous;
   _humongous_start_region = NULL;
 }
@@ -483,12 +487,13 @@ HeapRegion::
 HeapRegion(size_t hrs_index, G1BlockOffsetSharedArray* sharedOffsetArray,
            MemRegion mr, bool is_zeroed)
   : G1OffsetTableContigSpace(sharedOffsetArray, mr, is_zeroed),
-    _next_fk(HeapRegionDCTOC::NoFilterKind), _hrs_index(hrs_index),
+    _hrs_index(hrs_index),
     _humongous_type(NotHumongous), _humongous_start_region(NULL),
     _in_collection_set(false),
     _next_in_special_set(NULL), _orig_end(NULL),
     _claimed(InitialClaimValue), _evacuation_failed(false),
     _prev_marked_bytes(0), _next_marked_bytes(0), _sort_index(-1),
+    _gc_efficiency(0.0),
     _young_type(NotYoung), _next_young_region(NULL),
     _next_dirty_cards_region(NULL), _next(NULL), _pending_removal(false),
 #ifdef ASSERT
