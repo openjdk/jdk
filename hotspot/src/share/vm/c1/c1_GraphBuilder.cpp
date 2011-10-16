@@ -1165,11 +1165,11 @@ void GraphBuilder::_goto(int from_bci, int to_bci) {
   Goto *x = new Goto(block_at(to_bci), to_bci <= from_bci);
   if (is_profiling()) {
     compilation()->set_would_profile(true);
-  }
-  if (profile_branches()) {
-    x->set_profiled_method(method());
     x->set_profiled_bci(bci());
-    x->set_should_profile(true);
+    if (profile_branches()) {
+      x->set_profiled_method(method());
+      x->set_should_profile(true);
+    }
   }
   append(x);
 }
@@ -1203,9 +1203,9 @@ void GraphBuilder::if_node(Value x, If::Condition cond, Value y, ValueStack* sta
     Goto *goto_node = i->as_Goto();
     if (goto_node != NULL) {
       compilation()->set_would_profile(true);
+      goto_node->set_profiled_bci(bci());
       if (profile_branches()) {
         goto_node->set_profiled_method(method());
-        goto_node->set_profiled_bci(bci());
         goto_node->set_should_profile(true);
         // Find out which successor is used.
         if (goto_node->default_sux() == tsux) {
