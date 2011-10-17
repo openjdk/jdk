@@ -25,7 +25,9 @@
 #ifndef SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP
 #define SHARE_VM_UTILITIES_GLOBALDEFINITIONS_HPP
 
+#ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
+#endif
 
 #ifdef TARGET_COMPILER_gcc
 # include "utilities/globalDefinitions_gcc.hpp"

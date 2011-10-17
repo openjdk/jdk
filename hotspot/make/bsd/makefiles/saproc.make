@@ -40,20 +40,29 @@ AGENT_DIR = $(GAMMADIR)/agent
 
 SASRCDIR = $(AGENT_DIR)/src/os/$(Platform_os_family)
 
-# disable building saproc until hsearch_r license issues are resolved
-#ifeq ($(OS_VENDOR), FreeBSD)
-#SASRCFILES = $(SASRCDIR)/salibelf.c                   \
-#             $(SASRCDIR)/symtab.c                     \
-#             $(SASRCDIR)/libproc_impl.c               \
-#             $(SASRCDIR)/ps_proc.c                    \
-#             $(SASRCDIR)/ps_core.c                    \
-#             $(SASRCDIR)/hsearch_r.c                  \
-#             $(SASRCDIR)/BsdDebuggerLocal.c
-#SALIBS = -lutil -lthread_db
-#else
-SASRCFILES = $(SASRCDIR)/StubDebuggerLocal.c
-SALIBS = 
-#endif
+NON_STUB_SASRCFILES = $(SASRCDIR)/salibelf.c          \
+                      $(SASRCDIR)/symtab.c            \
+                      $(SASRCDIR)/libproc_impl.c      \
+                      $(SASRCDIR)/ps_proc.c           \
+                      $(SASRCDIR)/ps_core.c           \
+                      $(SASRCDIR)/BsdDebuggerLocal.c
+
+ifeq ($(OS_VENDOR), FreeBSD)
+  SASRCFILES = $(NON_STUB_SASRCFILES)
+  SALIBS = -lutil -lthread_db
+  SAARCH = $(ARCHFLAG)
+else
+  ifeq ($(OS_VENDOR), Darwin)
+    SASRCFILES = $(SASRCDIR)/MacosxDebuggerLocal.m
+    SALIBS = -g -framework Foundation -F/System/Library/Frameworks/JavaVM.framework/Frameworks -framework JavaNativeFoundation -framework Security -framework CoreFoundation
+    #objc compiler blows up on -march=i586, perhaps it should not be included in the macosx intel 32-bit C++ compiles?
+    SAARCH = $(subst -march=i586,,$(ARCHFLAG))
+  else
+    SASRCFILES = $(SASRCDIR)/StubDebuggerLocal.c
+    SALIBS = 
+    SAARCH = $(ARCHFLAG)
+  endif
+endif
 
 SAMAPFILE = $(SASRCDIR)/mapfile
 
@@ -79,6 +88,15 @@ SA_LFLAGS = $(MAPFLAG:FILENAME=$(SAMAPFILE))
 endif
 SA_LFLAGS += $(LDFLAGS_HASH_STYLE)
 
+ifeq ($(OS_VENDOR), Darwin)
+  BOOT_JAVA_INCLUDES = -I$(BOOT_JAVA_HOME)/include \
+    -I$(BOOT_JAVA_HOME)/include/$(shell uname -s | tr "[:upper:]" "[:lower:]") \
+    -I/System/Library/Frameworks/JavaVM.framework/Headers
+else
+  BOOT_JAVA_INCLUDES = -I$(BOOT_JAVA_HOME)/include \
+    -I$(BOOT_JAVA_HOME)/include/$(shell uname -s | tr "[:upper:]" "[:lower:]")
+endif
+
 $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
 	$(QUIETLY) if [ "$(BOOT_JAVA_HOME)" = "" ]; then \
 	  echo "ALT_BOOTDIR, BOOTDIR or JAVA_HOME needs to be defined to build SA"; \
@@ -86,11 +104,10 @@ $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
 	fi
 	@echo Making SA debugger back-end...
 	$(QUIETLY) $(CC) -D$(BUILDARCH) -D_GNU_SOURCE                   \
-                   $(SYMFLAG) $(ARCHFLAG) $(SHARED_FLAG) $(PICFLAG)     \
+                   $(SYMFLAG) $(SAARCH) $(SHARED_FLAG) $(PICFLAG)     \
 	           -I$(SASRCDIR)                                        \
 	           -I$(GENERATED)                                       \
-	           -I$(BOOT_JAVA_HOME)/include                          \
-	           -I$(BOOT_JAVA_HOME)/include/$(shell uname -s | tr "[:upper:]" "[:lower:]") \
+	           $(BOOT_JAVA_INCLUDES)                                \
 	           $(SASRCFILES)                                        \
 	           $(SA_LFLAGS)                                         \
 	           $(SA_DEBUG_CFLAGS)                                   \

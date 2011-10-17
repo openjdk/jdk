@@ -50,6 +50,7 @@
 
 // Only bother with this argument setup if dtrace is available
 
+#ifndef USDT2
 HS_DTRACE_PROBE_DECL8(hotspot, compiled__method__load,
   const char*, int, const char*, int, const char*, int, void*, size_t);
 
@@ -69,6 +70,21 @@ HS_DTRACE_PROBE_DECL6(hotspot, compiled__method__unload,
         signature->bytes(), signature->utf8_length());                    \
     }                                                                     \
   }
+#else /* USDT2 */
+#define DTRACE_METHOD_UNLOAD_PROBE(method)                                \
+  {                                                                       \
+    methodOop m = (method);                                               \
+    if (m != NULL) {                                                      \
+      Symbol* klass_name = m->klass_name();                               \
+      Symbol* name = m->name();                                           \
+      Symbol* signature = m->signature();                                 \
+      HOTSPOT_COMPILED_METHOD_UNLOAD(                                     \
+        (char *) klass_name->bytes(), klass_name->utf8_length(),                   \
+        (char *) name->bytes(), name->utf8_length(),                               \
+        (char *) signature->bytes(), signature->utf8_length());                    \
+    }                                                                     \
+  }
+#endif /* USDT2 */
 
 #else //  ndef DTRACE_ENABLED
 
@@ -1473,6 +1489,7 @@ bool nmethod::can_unload(BoolObjectClosure* is_alive,
 void nmethod::post_compiled_method_load_event() {
 
   methodOop moop = method();
+#ifndef USDT2
   HS_DTRACE_PROBE8(hotspot, compiled__method__load,
       moop->klass_name()->bytes(),
       moop->klass_name()->utf8_length(),
@@ -1481,6 +1498,16 @@ void nmethod::post_compiled_method_load_event() {
       moop->signature()->bytes(),
       moop->signature()->utf8_length(),
       insts_begin(), insts_size());
+#else /* USDT2 */
+  HOTSPOT_COMPILED_METHOD_LOAD(
+      (char *) moop->klass_name()->bytes(),
+      moop->klass_name()->utf8_length(),
+      (char *) moop->name()->bytes(),
+      moop->name()->utf8_length(),
+      (char *) moop->signature()->bytes(),
+      moop->signature()->utf8_length(),
+      insts_begin(), insts_size());
+#endif /* USDT2 */
 
   if (JvmtiExport::should_post_compiled_method_load() ||
       JvmtiExport::should_post_compiled_method_unload()) {

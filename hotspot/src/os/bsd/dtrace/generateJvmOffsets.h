@@ -22,46 +22,22 @@
  *
  */
 
-#ifndef OS_CPU_BSD_ZERO_VM_BYTES_BSD_ZERO_INLINE_HPP
-#define OS_CPU_BSD_ZERO_VM_BYTES_BSD_ZERO_INLINE_HPP
+#ifndef OS_SOLARIS_DTRACE_GENERATEJVMOFFSETS_H
+#define OS_SOLARIS_DTRACE_GENERATEJVMOFFSETS_H
 
-// Efficient swapping of data bytes from Java byte
-// ordering to native byte ordering and vice versa.
+#include <stdio.h>
+#include <strings.h>
 
-#ifdef __APPLE__
-#  include <libkern/OSByteOrder.h>
-#else
-#  include <sys/endian.h>
-#endif
+typedef enum GEN_variant {
+        GEN_OFFSET = 0,
+        GEN_INDEX  = 1,
+        GEN_TABLE  = 2
+} GEN_variant;
 
-#if defined(__APPLE__)
-#  define bswap_16(x)   OSSwapInt16(x)
-#  define bswap_32(x)   OSSwapInt32(x)
-#  define bswap_64(x)   OSSwapInt64(x)
-#elif defined(__OpenBSD__)
-#  define bswap_16(x)   swap16(x)
-#  define bswap_32(x)   swap32(x)
-#  define bswap_64(x)   swap64(x)
-#elif defined(__NetBSD__)
-#  define bswap_16(x)   bswap16(x)
-#  define bswap_32(x)   bswap32(x)
-#  define bswap_64(x)   bswap64(x)
-#else
-#  define bswap_16(x) __bswap16(x)
-#  define bswap_32(x) __bswap32(x)
-#  define bswap_64(x) __bswap64(x)
-#endif
-
-inline u2 Bytes::swap_u2(u2 x) {
-  return bswap_16(x);
+extern "C" {
+        int generateJvmOffsets(GEN_variant gen_var);
+        void gen_prologue(GEN_variant gen_var);
+        void gen_epilogue(GEN_variant gen_var);
 }
 
-inline u4 Bytes::swap_u4(u4 x) {
-  return bswap_32(x);
-}
-
-inline u8 Bytes::swap_u8(u8 x) {
-  return bswap_64(x);
-}
-
-#endif // OS_CPU_BSD_ZERO_VM_BYTES_BSD_ZERO_INLINE_HPP
+#endif // OS_SOLARIS_DTRACE_GENERATEJVMOFFSETS_H
