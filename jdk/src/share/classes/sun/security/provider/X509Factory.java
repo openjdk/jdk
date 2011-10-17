@@ -669,6 +669,23 @@ public class X509Factory extends CertificateFactorySpi {
                 bout.write(midByte);
                 bout.write(lowByte);
                 length = (highByte << 16) | (midByte << 8) | lowByte;
+            } else if (n == 0x84) {
+                int highByte = is.read();
+                int nextByte = is.read();
+                int midByte = is.read();
+                int lowByte = is.read();
+                if (lowByte == -1) {
+                    throw new IOException("Incomplete BER/DER length info");
+                }
+                if (highByte > 127) {
+                    throw new IOException("Invalid BER/DER data (a little huge?)");
+                }
+                bout.write(highByte);
+                bout.write(nextByte);
+                bout.write(midByte);
+                bout.write(lowByte);
+                length = (highByte << 24 ) | (nextByte << 16) |
+                        (midByte << 8) | lowByte;
             } else { // ignore longer length forms
                 throw new IOException("Invalid BER/DER data (too huge?)");
             }
