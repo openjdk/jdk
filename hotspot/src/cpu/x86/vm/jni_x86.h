@@ -38,10 +38,14 @@
 
   #define JNICALL
   typedef int jint;
-
-#ifdef _LP64
+#if defined(_LP64) && !defined(__APPLE__)
   typedef long jlong;
 #else
+  /*
+   * On _LP64 __APPLE__ "long" and "long long" are both 64 bits,
+   * but we use the "long long" typedef to avoid complaints from
+   * the __APPLE__ compiler about fprintf formats.
+   */
   typedef long long jlong;
 #endif
 

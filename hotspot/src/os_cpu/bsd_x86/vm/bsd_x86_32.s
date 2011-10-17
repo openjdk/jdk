@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -19,9 +19,9 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-# 
+#
 
- 
+
 #ifdef __APPLE__
 # Darwin uses _ prefixed global symbols
 #define SYMBOL(s) _ ## s
@@ -31,37 +31,37 @@
 #define ELF_TYPE(name, description) .type name,description
 #endif
 
-	.globl SYMBOL(fixcw)
-	
+        .globl SYMBOL(fixcw)
+
         # NOTE WELL!  The _Copy functions are called directly
-	# from server-compiler-generated code via CallLeafNoFP,
-	# which means that they *must* either not use floating
-	# point or use it in the same manner as does the server
-	# compiler.
-	
+        # from server-compiler-generated code via CallLeafNoFP,
+        # which means that they *must* either not use floating
+        # point or use it in the same manner as does the server
+        # compiler.
+
         .globl SYMBOL(_Copy_conjoint_bytes)
         .globl SYMBOL(_Copy_arrayof_conjoint_bytes)
         .globl SYMBOL(_Copy_conjoint_jshorts_atomic)
-	.globl SYMBOL(_Copy_arrayof_conjoint_jshorts)
+        .globl SYMBOL(_Copy_arrayof_conjoint_jshorts)
         .globl SYMBOL(_Copy_conjoint_jints_atomic)
         .globl SYMBOL(_Copy_arrayof_conjoint_jints)
-	.globl SYMBOL(_Copy_conjoint_jlongs_atomic)
-	.globl SYMBOL(_mmx_Copy_arrayof_conjoint_jshorts)
+        .globl SYMBOL(_Copy_conjoint_jlongs_atomic)
+        .globl SYMBOL(_mmx_Copy_arrayof_conjoint_jshorts)
 
         .globl SYMBOL(_Atomic_cmpxchg_long)
         .globl SYMBOL(_Atomic_move_long)
 
-	.text
+        .text
 
 # Support for void os::Solaris::init_thread_fpu_state() in os_solaris_i486.cpp
 # Set fpu to 53 bit precision.  This happens too early to use a stub.
 # ported from solaris_x86_32.s
         .p2align 4,,15
 SYMBOL(fixcw):
-	pushl    $0x27f
-	fldcw    0(%esp)
-	popl     %eax
-	ret
+        pushl    $0x27f
+        fldcw    0(%esp)
+        popl     %eax
+        ret
 
         .globl  SYMBOL(SafeFetch32), SYMBOL(Fetch32PFI), SYMBOL(Fetch32Resume)
         .globl  SYMBOL(SafeFetchN)
@@ -69,7 +69,7 @@ SYMBOL(fixcw):
         ## Instead, the signal handler would call a new SafeFetchTriage(FaultingEIP)
         ## routine to vet the address.  If the address is the faulting LD then
         ## SafeFetchTriage() would return the resume-at EIP, otherwise null.
-	ELF_TYPE(SafeFetch32,@function)
+        ELF_TYPE(SafeFetch32,@function)
         .p2align 4,,15
 SYMBOL(SafeFetch32):
 SYMBOL(SafeFetchN):
@@ -82,7 +82,7 @@ SYMBOL(Fetch32Resume):
 
 
         .globl  SYMBOL(SpinPause)
-	ELF_TYPE(SpinPause,@function)
+        ELF_TYPE(SpinPause,@function)
         .p2align 4,,15
 SYMBOL(SpinPause):
         rep
@@ -94,7 +94,7 @@ SYMBOL(SpinPause):
         #                                       void* to,
         #                                       size_t count)
         .p2align 4,,15
-	ELF_TYPE(_Copy_conjoint_bytes,@function)
+        ELF_TYPE(_Copy_conjoint_bytes,@function)
 SYMBOL(_Copy_conjoint_bytes):
         pushl    %esi
         movl     4+12(%esp),%ecx      # count
@@ -188,7 +188,7 @@ cb_CopyLeft:
         addl     $3,%esi
 6:      movb     (%esi),%dl
         movb     %dl,(%edi,%esi,1)
-	subl     $1,%esi
+        subl     $1,%esi
         subl     $1,%ecx
         jnz      6b
 7:      cld
@@ -202,7 +202,7 @@ cb_CopyLeft:
         #
         # Same as _Copy_conjoint_bytes, except no source alignment check.
         .p2align 4,,15
-	ELF_TYPE(_Copy_arrayof_conjoint_bytes,@function)
+        ELF_TYPE(_Copy_arrayof_conjoint_bytes,@function)
 SYMBOL(_Copy_arrayof_conjoint_bytes):
         pushl    %esi
         movl     4+12(%esp),%ecx      # count
@@ -213,7 +213,7 @@ SYMBOL(_Copy_arrayof_conjoint_bytes):
         leal     -1(%esi,%ecx),%eax   # from + count - 1
         jbe      acb_CopyRight
         cmpl     %eax,%edi
-        jbe      acb_CopyLeft 
+        jbe      acb_CopyLeft
         # copy from low to high
 acb_CopyRight:
         cmpl     $3,%ecx
@@ -262,7 +262,7 @@ acb_CopyLeft:
         jbe      2f                   # <= 32 dwords
         rep;     smovl
         jmp      4f
-	.=.+8
+        .space 8
 2:      subl     %esi,%edi
         .p2align 4,,15
 3:      movl     (%esi),%edx
@@ -278,7 +278,7 @@ acb_CopyLeft:
         addl     $3,%esi
 6:      movb     (%esi),%dl
         movb     %dl,(%edi,%esi,1)
-	subl     $1,%esi
+        subl     $1,%esi
         subl     $1,%ecx
         jnz      6b
 7:      cld
@@ -290,7 +290,7 @@ acb_CopyLeft:
         #                                                void* to,
         #                                                size_t count)
         .p2align 4,,15
-	ELF_TYPE(_Copy_conjoint_jshorts_atomic,@function)
+        ELF_TYPE(_Copy_conjoint_jshorts_atomic,@function)
 SYMBOL(_Copy_conjoint_jshorts_atomic):
         pushl    %esi
         movl     4+12(%esp),%ecx      # count
@@ -301,7 +301,7 @@ SYMBOL(_Copy_conjoint_jshorts_atomic):
         leal     -2(%esi,%ecx,2),%eax # from + count*2 - 2
         jbe      cs_CopyRight
         cmpl     %eax,%edi
-        jbe      cs_CopyLeft 
+        jbe      cs_CopyLeft
         # copy from low to high
 cs_CopyRight:
         # align source address at dword address boundary
@@ -322,7 +322,7 @@ cs_CopyRight:
         jbe      2f                   # <= 32 dwords
         # copy aligned dwords
         rep;     smovl
-        jmp      4f 
+        jmp      4f
         # copy aligned dwords
 2:      subl     %esi,%edi
         .p2align 4,,15
@@ -377,7 +377,7 @@ cs_CopyLeft:
         #                                                 void* to,
         #                                                 size_t count)
         .p2align 4,,15
-	ELF_TYPE(_Copy_arrayof_conjoint_jshorts,@function)
+        ELF_TYPE(_Copy_arrayof_conjoint_jshorts,@function)
 SYMBOL(_Copy_arrayof_conjoint_jshorts):
         pushl    %esi
         movl     4+12(%esp),%ecx      # count
@@ -388,7 +388,7 @@ SYMBOL(_Copy_arrayof_conjoint_jshorts):
         leal     -2(%esi,%ecx,2),%eax # from + count*2 - 2
         jbe      acs_CopyRight
         cmpl     %eax,%edi
-        jbe      acs_CopyLeft 
+        jbe      acs_CopyLeft
 acs_CopyRight:
         movl     %ecx,%eax            # word count
         sarl     %ecx                 # dword count
@@ -397,10 +397,10 @@ acs_CopyRight:
         jbe      2f                   # <= 32 dwords
         # copy aligned dwords
         rep;     smovl
-        jmp      4f 
+        jmp      4f
         # copy aligned dwords
-        .=.+5
-2:      subl     %esi,%edi 
+        .space 5
+2:      subl     %esi,%edi
         .p2align 4,,15
 3:      movl     (%esi),%edx
         movl     %edx,(%edi,%esi,1)
@@ -454,8 +454,8 @@ acs_CopyLeft:
         # Equivalent to
         #   arrayof_conjoint_jints
         .p2align 4,,15
-	ELF_TYPE(_Copy_conjoint_jints_atomic,@function)
-	ELF_TYPE(_Copy_arrayof_conjoint_jints,@function)
+        ELF_TYPE(_Copy_conjoint_jints_atomic,@function)
+        ELF_TYPE(_Copy_arrayof_conjoint_jints,@function)
 SYMBOL(_Copy_conjoint_jints_atomic):
 SYMBOL(_Copy_arrayof_conjoint_jints):
         pushl    %esi
@@ -467,7 +467,7 @@ SYMBOL(_Copy_arrayof_conjoint_jints):
         leal     -4(%esi,%ecx,4),%eax # from + count*4 - 4
         jbe      ci_CopyRight
         cmpl     %eax,%edi
-        jbe      ci_CopyLeft 
+        jbe      ci_CopyLeft
 ci_CopyRight:
         cmpl     $32,%ecx
         jbe      2f                   # <= 32 dwords
@@ -475,7 +475,7 @@ ci_CopyRight:
         popl     %edi
         popl     %esi
         ret
-        .=.+10
+        .space 10
 2:      subl     %esi,%edi
         jmp      4f
         .p2align 4,,15
@@ -510,7 +510,7 @@ ci_CopyLeft:
         popl     %edi
         popl     %esi
         ret
-	
+
         # Support for void Copy::conjoint_jlongs_atomic(jlong* from,
         #                                               jlong* to,
         #                                               size_t count)
@@ -529,7 +529,7 @@ ci_CopyLeft:
         #   }
         # }
         .p2align 4,,15
-	ELF_TYPE(_Copy_conjoint_jlongs_atomic,@function)
+        ELF_TYPE(_Copy_conjoint_jlongs_atomic,@function)
 SYMBOL(_Copy_conjoint_jlongs_atomic):
         movl     4+8(%esp),%ecx       # count
         movl     4+0(%esp),%eax       # from
@@ -558,7 +558,7 @@ cla_CopyLeft:
         #                                                 void* to,
         #                                                 size_t count)
         .p2align 4,,15
-	ELF_TYPE(_mmx_Copy_arrayof_conjoint_jshorts,@function)
+        ELF_TYPE(_mmx_Copy_arrayof_conjoint_jshorts,@function)
 SYMBOL(_mmx_Copy_arrayof_conjoint_jshorts):
         pushl    %esi
         movl     4+12(%esp),%ecx
@@ -576,7 +576,7 @@ mmx_acs_CopyRight:
         je       5f
         cmpl     $33,%ecx
         jae      3f
-1:      subl     %esi,%edi 
+1:      subl     %esi,%edi
         .p2align 4,,15
 2:      movl     (%esi),%edx
         movl     %edx,(%edi,%esi,1)
@@ -584,7 +584,7 @@ mmx_acs_CopyRight:
         subl     $1,%ecx
         jnz      2b
         addl     %esi,%edi
-        jmp      5f 
+        jmp      5f
 3:      smovl # align to 8 bytes, we know we are 4 byte aligned to start
         subl     $1,%ecx
 4:      .p2align 4,,15
@@ -610,13 +610,13 @@ mmx_acs_CopyRight:
         cmpl     $16,%ecx
         jge      4b
         emms
-	testl    %ecx,%ecx
-	ja       1b
+        testl    %ecx,%ecx
+        ja       1b
 5:      andl     $1,%eax
         je       7f
 6:      movw     (%esi),%dx
         movw     %dx,(%edi)
-7:	popl     %edi
+7:      popl     %edi
         popl     %esi
         ret
 mmx_acs_CopyLeft:
@@ -657,7 +657,7 @@ mmx_acs_CopyLeft:
         #                                   bool is_MP)
         #
         .p2align 4,,15
-	ELF_TYPE(_Atomic_cmpxchg_long,@function)
+        ELF_TYPE(_Atomic_cmpxchg_long,@function)
 SYMBOL(_Atomic_cmpxchg_long):
                                    #  8(%esp) : return PC
         pushl    %ebx              #  4(%esp) : old %ebx
@@ -679,7 +679,7 @@ SYMBOL(_Atomic_cmpxchg_long):
         # Support for jlong Atomic::load and Atomic::store.
         # void _Atomic_move_long(volatile jlong* src, volatile jlong* dst)
         .p2align 4,,15
-	ELF_TYPE(_Atomic_move_long,@function)
+        ELF_TYPE(_Atomic_move_long,@function)
 SYMBOL(_Atomic_move_long):
         movl     4(%esp), %eax   # src
         fildll    (%eax)

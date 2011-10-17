@@ -116,7 +116,7 @@ struct symtab* build_symtab(int fd) {
 
     if (shdr->sh_type == symsection) {
       ELF_SYM  *syms;
-      int j, n, rslt;
+      int j, n;
       size_t size;
 
       // FIXME: there could be multiple data buffers associated with the
@@ -138,6 +138,8 @@ struct symtab* build_symtab(int fd) {
       // manipulate the hash table.
       symtab->hash_table = dbopen(NULL, O_CREAT | O_RDWR, 0600, DB_HASH, NULL);
       // guarantee(symtab->hash_table, "unexpected failure: dbopen");
+      if (symtab->hash_table == NULL)
+        goto bad;
 
       // shdr->sh_link points to the section that contains the actual strings
       // for symbol names. the st_name field in ELF_SYM is just the
@@ -145,11 +147,15 @@ struct symtab* build_symtab(int fd) {
       // strings will not be destroyed by elf_end.
       size = scn_cache[shdr->sh_link].c_shdr->sh_size;
       symtab->strs = malloc(size);
+      if (symtab->strs == NULL)
+        goto bad;
       memcpy(symtab->strs, scn_cache[shdr->sh_link].c_data, size);
 
       // allocate memory for storing symbol offset and size;
       symtab->num_symbols = n;
       symtab->symbols = calloc(n , sizeof(*symtab->symbols));
+      if (symtab->symbols == NULL)
+        goto bad;
 
       // copy symbols info our symtab and enter them info the hash table
       for (j = 0; j < n; j++, syms++) {
@@ -175,6 +181,11 @@ struct symtab* build_symtab(int fd) {
       }
     }
   }
+  goto quit;
+
+bad:
+  destroy_symtab(symtab);
+  symtab = NULL;
 
 quit:
   if (shbuf) free(shbuf);
@@ -195,7 +206,7 @@ void destroy_symtab(struct symtab* symtab) {
   if (symtab->strs) free(symtab->strs);
   if (symtab->symbols) free(symtab->symbols);
   if (symtab->hash_table) {
-    symtab->hash_table->close(symtab->hash_table);
+    (*symtab->hash_table->close)(symtab->hash_table);
   }
   free(symtab);
 }
@@ -219,7 +230,6 @@ uintptr_t search_symbol(struct symtab* symtab, uintptr_t base,
     return rslt;
   }
 
-quit:
   return 0;
 }
 
@@ -228,12 +238,12 @@ const char* nearest_symbol(struct symtab* symtab, uintptr_t offset,
   int n = 0;
   if (!symtab) return NULL;
   for (; n < symtab->num_symbols; n++) {
-     struct elf_symbol* sym = &(symtab->symbols[n]);
-     if (sym->name != NULL &&
-         offset >= sym->offset && offset < sym->offset + sym->size) {
-        if (poffset) *poffset = (offset - sym->offset);
-        return sym->name;
-     }
+    struct elf_symbol* sym = &(symtab->symbols[n]);
+    if (sym->name != NULL &&
+      offset >= sym->offset && offset < sym->offset + sym->size) {
+      if (poffset) *poffset = (offset - sym->offset);
+      return sym->name;
+    }
   }
   return NULL;
 }

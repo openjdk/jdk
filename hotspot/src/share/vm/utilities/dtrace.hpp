@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_UTILITIES_DTRACE_HPP
 #define SHARE_VM_UTILITIES_DTRACE_HPP
 
-#if defined(SOLARIS) && defined(DTRACE_ENABLED)
+#if defined(DTRACE_ENABLED)
 
 #include <sys/sdt.h>
 
@@ -36,10 +36,26 @@
 #define HS_DTRACE_WORKAROUND_TAIL_CALL_BUG() \
   do { volatile size_t dtrace_workaround_tail_call_bug = 1; } while (0)
 
-#else // ndef SOLARIS || ndef DTRACE_ENABLED
+#if defined(SOLARIS)
+#define USDT1 1
+#elif defined(__APPLE__)
+#define USDT2 1
+#include <sys/types.h>
+#include "dtracefiles/hotspot.h"
+#include "dtracefiles/hotspot_jni.h"
+#include "dtracefiles/hs_private.h"
+#else
+#error "dtrace enabled for unknown os"
+#endif /* defined(SOLARIS) */
+
+#else /* defined(DTRACE_ENABLED) */
 
 #define DTRACE_ONLY(x)
 #define NOT_DTRACE(x) x
+
+#define HS_DTRACE_WORKAROUND_TAIL_CALL_BUG()
+
+#ifndef USDT2
 
 #define DTRACE_PROBE(a,b) {;}
 #define DTRACE_PROBE1(a,b,c) {;}
@@ -48,9 +64,14 @@
 #define DTRACE_PROBE4(a,b,c,d,e,f) {;}
 #define DTRACE_PROBE5(a,b,c,d,e,f,g) {;}
 
-#define HS_DTRACE_WORKAROUND_TAIL_CALL_BUG()
+#else /* USDT2 */
 
-#endif
+#include "dtrace_usdt2_disabled.hpp"
+#endif /* USDT2 */
+
+#endif /* defined(DTRACE_ENABLED) */
+
+#ifndef USDT2
 
 #define HS_DTRACE_PROBE_FN(provider,name)\
   __dtrace_##provider##___##name
@@ -132,5 +153,7 @@
   HS_DTRACE_PROBE_N(provider,name,((uintptr_t)a0,(uintptr_t)a1,(uintptr_t)a2,\
     (uintptr_t)a3,(uintptr_t)a4,(uintptr_t)a5,(uintptr_t)a6,(uintptr_t)a7,\
     (uintptr_t)a8,(uintptr_t)a9))
+
+#endif /* !USDT2 */
 
 #endif // SHARE_VM_UTILITIES_DTRACE_HPP

@@ -105,7 +105,9 @@
 #include "opto/runtime.hpp"
 #endif
 
+#ifndef USDT2
 HS_DTRACE_PROBE_DECL(hotspot, vm__shutdown);
+#endif /* !USDT2 */
 
 #ifndef PRODUCT
 
@@ -547,8 +549,12 @@ void vm_exit(int code) {
 
 void notify_vm_shutdown() {
   // For now, just a dtrace probe.
+#ifndef USDT2
   HS_DTRACE_PROBE(hotspot, vm__shutdown);
   HS_DTRACE_WORKAROUND_TAIL_CALL_BUG();
+#else /* USDT2 */
+  HOTSPOT_VM_SHUTDOWN();
+#endif /* USDT2 */
 }
 
 void vm_direct_exit(int code) {
