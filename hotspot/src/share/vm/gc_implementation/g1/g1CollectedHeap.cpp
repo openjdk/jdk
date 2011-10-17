@@ -5068,7 +5068,7 @@ public:
 
     // Select discovered lists [i, i+stride, i+2*stride,...,limit)
     for (int idx = i; idx < limit; idx += stride) {
-      DiscoveredList& ref_list = rp->discovered_soft_refs()[idx];
+      DiscoveredList& ref_list = rp->discovered_refs()[idx];
 
       DiscoveredListIterator iter(ref_list, &keep_alive, &always_alive);
       while (iter.has_next()) {
