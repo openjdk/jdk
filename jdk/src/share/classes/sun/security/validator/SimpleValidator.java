@@ -131,6 +131,7 @@ public final class SimpleValidator extends Validator {
         // make sure chain includes a trusted cert
         chain = buildTrustedChain(chain);
 
+        @SuppressWarnings("deprecation")
         Date date = validationDate;
         if (date == null) {
             date = new Date();

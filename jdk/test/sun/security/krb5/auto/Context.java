@@ -375,6 +375,89 @@ public class Context {
         }
     }
 
+    public byte[] wrap(byte[] t, final boolean privacy)
+            throws Exception {
+        return doAs(new Action() {
+            @Override
+            public byte[] run(Context me, byte[] input) throws Exception {
+                System.out.printf("wrap %s privacy from %s: ", privacy?"with":"without", me.name);
+                MessageProp p1 = new MessageProp(0, privacy);
+                byte[] out;
+                if (usingStream) {
+                    ByteArrayOutputStream os = new ByteArrayOutputStream();
+                    me.x.wrap(new ByteArrayInputStream(input), os, p1);
+                    out = os.toByteArray();
+                } else {
+                    out = me.x.wrap(input, 0, input.length, p1);
+                }
+                System.out.println(printProp(p1));
+                return out;
+            }
+        }, t);
+    }
+
+    public byte[] unwrap(byte[] t, final boolean privacy)
+            throws Exception {
+        return doAs(new Action() {
+            @Override
+            public byte[] run(Context me, byte[] input) throws Exception {
+                System.out.printf("unwrap %s privacy from %s: ", privacy?"with":"without", me.name);
+                MessageProp p1 = new MessageProp(0, privacy);
+                byte[] bytes;
+                if (usingStream) {
+                    ByteArrayOutputStream os = new ByteArrayOutputStream();
+                    me.x.unwrap(new ByteArrayInputStream(input), os, p1);
+                    bytes = os.toByteArray();
+                } else {
+                    bytes = me.x.unwrap(input, 0, input.length, p1);
+                }
+                System.out.println(printProp(p1));
+                return bytes;
+            }
+        }, t);
+    }
+
+    public byte[] getMic(byte[] t) throws Exception {
+        return doAs(new Action() {
+            @Override
+            public byte[] run(Context me, byte[] input) throws Exception {
+                MessageProp p1 = new MessageProp(0, true);
+                byte[] bytes;
+                p1 = new MessageProp(0, true);
+                System.out.printf("getMic from %s: ", me.name);
+                if (usingStream) {
+                    ByteArrayOutputStream os = new ByteArrayOutputStream();
+                    me.x.getMIC(new ByteArrayInputStream(input), os, p1);
+                    bytes = os.toByteArray();
+                } else {
+                    bytes = me.x.getMIC(input, 0, input.length, p1);
+                }
+                System.out.println(printProp(p1));
+                return bytes;
+            }
+        }, t);
+    }
+
+    public void verifyMic(byte[] t, final byte[] msg) throws Exception {
+        doAs(new Action() {
+            @Override
+            public byte[] run(Context me, byte[] input) throws Exception {
+                MessageProp p1 = new MessageProp(0, true);
+                System.out.printf("verifyMic from %s: ", me.name);
+                if (usingStream) {
+                    me.x.verifyMIC(new ByteArrayInputStream(input),
+                            new ByteArrayInputStream(msg), p1);
+                } else {
+                    me.x.verifyMIC(input, 0, input.length,
+                            msg, 0, msg.length,
+                            p1);
+                }
+                System.out.println(printProp(p1));
+                return null;
+            }
+        }, t);
+    }
+
     /**
      * Transmits a message from one Context to another. The sender wraps the
      * message and sends it to the receiver. The receiver unwraps it, creates
@@ -390,73 +473,13 @@ public class Context {
         final byte[] messageBytes = message.getBytes();
         System.out.printf("-------------------- TRANSMIT from %s to %s------------------------\n",
                 s1.name, s2.name);
-
-        byte[] t = s1.doAs(new Action() {
-            @Override
-            public byte[] run(Context me, byte[] dummy) throws Exception {
-                System.out.println("wrap");
-                MessageProp p1 = new MessageProp(0, true);
-                byte[] out;
-                if (usingStream) {
-                    ByteArrayOutputStream os = new ByteArrayOutputStream();
-                    me.x.wrap(new ByteArrayInputStream(messageBytes), os, p1);
-                    out = os.toByteArray();
-                } else {
-                    out = me.x.wrap(messageBytes, 0, messageBytes.length, p1);
-                }
-                System.out.println(printProp(p1));
-                return out;
-            }
-        }, null);
-
-        t = s2.doAs(new Action() {
-            @Override
-            public byte[] run(Context me, byte[] input) throws Exception {
-                MessageProp p1 = new MessageProp(0, true);
-                byte[] bytes;
-                if (usingStream) {
-                    ByteArrayOutputStream os = new ByteArrayOutputStream();
-                    me.x.unwrap(new ByteArrayInputStream(input), os, p1);
-                    bytes = os.toByteArray();
-                } else {
-                    bytes = me.x.unwrap(input, 0, input.length, p1);
-                }
-                if (!Arrays.equals(messageBytes, bytes))
-                    throw new Exception("wrap/unwrap mismatch");
-                System.out.println("unwrap");
-                System.out.println(printProp(p1));
-                p1 = new MessageProp(0, true);
-                System.out.println("getMIC");
-                if (usingStream) {
-                    ByteArrayOutputStream os = new ByteArrayOutputStream();
-                    me.x.getMIC(new ByteArrayInputStream(messageBytes), os, p1);
-                    bytes = os.toByteArray();
-                } else {
-                    bytes = me.x.getMIC(messageBytes, 0, messageBytes.length, p1);
-                }
-                System.out.println(printProp(p1));
-                return bytes;
-            }
-        }, t);
-
-        // Re-unwrap should make p2.isDuplicateToken() returns true
-        s1.doAs(new Action() {
-            @Override
-            public byte[] run(Context me, byte[] input) throws Exception {
-                MessageProp p1 = new MessageProp(0, true);
-                System.out.println("verifyMIC");
-                if (usingStream) {
-                    me.x.verifyMIC(new ByteArrayInputStream(input),
-                            new ByteArrayInputStream(messageBytes), p1);
-                } else {
-                    me.x.verifyMIC(input, 0, input.length,
-                            messageBytes, 0, messageBytes.length,
-                            p1);
-                }
-                System.out.println(printProp(p1));
-                return null;
-            }
-        }, t);
+        byte[] wrapped = s1.wrap(messageBytes, true);
+        byte[] unwrapped = s2.unwrap(wrapped, true);
+        if (!Arrays.equals(messageBytes, unwrapped)) {
+            throw new Exception("wrap/unwrap mismatch");
+        }
+        byte[] mic = s2.getMic(unwrapped);
+        s1.verifyMic(mic, messageBytes);
     }
 
     /**
