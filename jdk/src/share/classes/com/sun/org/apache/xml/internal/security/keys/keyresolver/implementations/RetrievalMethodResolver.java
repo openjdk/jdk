@@ -278,18 +278,18 @@ public class RetrievalMethodResolver extends KeyResolverSpi {
       return null;
    }
 
-   static Element getDocumentElement(Set set) {
-           Iterator it=set.iterator();
+   static Element getDocumentElement(Set<Node> set) {
+           Iterator<Node> it=set.iterator();
            Element e=null;
            while (it.hasNext()) {
-                   Node currentNode=(Node)it.next();
+                   Node currentNode=it.next();
                    if (currentNode instanceof Element) {
                            e=(Element)currentNode;
                            break;
                    }
 
            }
-           List parents=new ArrayList(10);
+           List<Element> parents=new ArrayList<Element>(10);
 
                 //Obtain all the parents of the elemnt
                 do {
@@ -301,10 +301,10 @@ public class RetrievalMethodResolver extends KeyResolverSpi {
                         e=(Element)n;
                 } while (e!=null);
                 //Visit them in reverse order.
-                ListIterator it2=parents.listIterator(parents.size()-1);
+                ListIterator<Element> it2=parents.listIterator(parents.size()-1);
                 Element ele=null;
                 while (it2.hasPrevious()) {
-                        ele=(Element)it2.previous();
+                        ele=it2.previous();
                         if (set.contains(ele)) {
                                 return ele;
                         }

@@ -1323,7 +1323,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
 
                 for (Extension ex : exts.getAllExtensions()) {
                     ObjectIdentifier inCertOID = ex.getExtensionId();
-                    if (inCertOID.equals(findOID)) {
+                    if (inCertOID.equals((Object)findOID)) {
                         certExt = ex;
                         break;
                     }
