@@ -1169,11 +1169,16 @@ public class Check {
             if (lint.isEnabled(LintCategory.RAW) &&
                 tree.type.tag == CLASS &&
                 !TreeInfo.isDiamond(tree) &&
-                !env.enclClass.name.isEmpty() &&  //anonymous or intersection
+                !withinAnonConstr(env) &&
                 tree.type.isRaw()) {
                 log.warning(LintCategory.RAW,
                         tree.pos(), "raw.class.use", tree.type, tree.type.tsym.type);
             }
+        }
+
+        boolean withinAnonConstr(Env<AttrContext> env) {
+            return env.enclClass.name.isEmpty() &&
+                    env.enclMethod != null && env.enclMethod.name == names.init;
         }
     }
 
