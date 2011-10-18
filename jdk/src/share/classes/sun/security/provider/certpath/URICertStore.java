@@ -100,8 +100,7 @@ class URICertStore extends CertStoreSpi {
     private final CertificateFactory factory;
 
     // cached Collection of X509Certificates (may be empty, never null)
-    private Collection<X509Certificate> certs =
-        Collections.<X509Certificate>emptySet();
+    private Collection<X509Certificate> certs = Collections.emptySet();
 
     // cached X509CRL (may be null)
     private X509CRL crl;
@@ -157,14 +156,14 @@ class URICertStore extends CertStoreSpi {
      * Returns a URI CertStore. This method consults a cache of
      * CertStores (shared per JVM) using the URI as a key.
      */
-    private static final Cache certStoreCache =
-        Cache.newSoftMemoryCache(CACHE_SIZE);
+    private static final Cache<URICertStoreParameters, CertStore>
+        certStoreCache = Cache.newSoftMemoryCache(CACHE_SIZE);
     static synchronized CertStore getInstance(URICertStoreParameters params)
         throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         if (debug != null) {
             debug.println("CertStore URI:" + params.uri);
         }
-        CertStore ucs = (CertStore) certStoreCache.get(params);
+        CertStore ucs = certStoreCache.get(params);
         if (ucs == null) {
             ucs = new UCS(new URICertStore(params), null, "URI", params);
             certStoreCache.put(params, ucs);
@@ -287,7 +286,7 @@ class URICertStore extends CertStoreSpi {
         }
         // exception, forget previous values
         lastModified = 0;
-        certs = Collections.<X509Certificate>emptySet();
+        certs = Collections.emptySet();
         return certs;
     }
 
@@ -394,7 +393,7 @@ class URICertStore extends CertStoreSpi {
         // exception, forget previous values
         lastModified = 0;
         crl = null;
-        return Collections.<X509CRL>emptyList();
+        return Collections.emptyList();
     }
 
     /**
@@ -404,9 +403,9 @@ class URICertStore extends CertStoreSpi {
     private static Collection<X509CRL> getMatchingCRLs
         (X509CRL crl, CRLSelector selector) {
         if (selector == null || (crl != null && selector.match(crl))) {
-            return Collections.<X509CRL>singletonList(crl);
+            return Collections.singletonList(crl);
         } else {
-            return Collections.<X509CRL>emptyList();
+            return Collections.emptyList();
         }
     }
 
