@@ -28,6 +28,7 @@
 #include "gc_interface/collectedHeap.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/instanceMirrorKlass.hpp"
 #include "runtime/init.hpp"
 #include "services/heapDumper.hpp"
 #ifdef TARGET_OS_FAMILY_linux
@@ -435,4 +436,38 @@ void CollectedHeap::post_full_gc_dump() {
     VM_GC_HeapInspection inspector(gclog_or_tty, false /* ! full gc */, false /* ! prologue */);
     inspector.doit();
   }
+}
+
+oop CollectedHeap::Class_obj_allocate(KlassHandle klass, int size, KlassHandle real_klass, TRAPS) {
+  debug_only(check_for_valid_allocation_state());
+  assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
+  assert(size >= 0, "int won't convert to size_t");
+  HeapWord* obj;
+  if (JavaObjectsInPerm) {
+    obj = common_permanent_mem_allocate_init(size, CHECK_NULL);
+  } else {
+    assert(ScavengeRootsInCode > 0, "must be");
+    obj = common_mem_allocate_init(size, CHECK_NULL);
+  }
+  post_allocation_setup_common(klass, obj, size);
+  assert(Universe::is_bootstrapping() ||
+         !((oop)obj)->blueprint()->oop_is_array(), "must not be an array");
+  NOT_PRODUCT(Universe::heap()->check_for_bad_heap_word_value(obj, size));
+  oop mirror = (oop)obj;
+
+  java_lang_Class::set_oop_size(mirror, size);
+
+  // Setup indirections
+  if (!real_klass.is_null()) {
+    java_lang_Class::set_klass(mirror, real_klass());
+    real_klass->set_java_mirror(mirror);
+  }
+
+  instanceMirrorKlass* mk = instanceMirrorKlass::cast(mirror->klass());
+  assert(size == mk->instance_size(real_klass), "should have been set");
+
+  // notify jvmti and dtrace
+  post_allocation_notify(klass, (oop)obj);
+
+  return mirror;
 }
