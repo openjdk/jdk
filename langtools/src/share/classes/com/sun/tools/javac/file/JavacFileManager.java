@@ -25,7 +25,6 @@
 
 package com.sun.tools.javac.file;
 
-import java.util.Comparator;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -41,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -54,6 +54,7 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
+import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.file.RelativePath.RelativeFile;
 import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.main.OptionName;
@@ -82,10 +83,6 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         else
             return buffer.toString().toCharArray();
     }
-
-    /** Encapsulates knowledge of paths
-     */
-    private Paths paths;
 
     private FSInfo fsInfo;
 
@@ -154,13 +151,6 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     @Override
     public void setContext(Context context) {
         super.setContext(context);
-        if (paths == null) {
-            paths = Paths.instance(context);
-        } else {
-            // Reuse the Paths object as it stores the locations that
-            // have been set with setLocation, etc.
-            paths.setContext(context);
-        }
 
         fsInfo = FSInfo.instance(context);
 
@@ -179,7 +169,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     @Override
     public boolean isDefaultBootClassPath() {
-        return paths.isDefaultBootClassPath();
+        return searchPaths.isDefaultBootClassPath();
     }
 
     public JavaFileObject getFileForInput(String name) {
@@ -493,7 +483,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
      */
     private Archive openArchive(File zipFileName, boolean useOptimizedZip) throws IOException {
         File origZipFileName = zipFileName;
-        if (!ignoreSymbolFile && paths.isDefaultBootClassPathRtJar(zipFileName)) {
+        if (!ignoreSymbolFile && searchPaths.isDefaultBootClassPathRtJar(zipFileName)) {
             File file = zipFileName.getParentFile().getParentFile(); // ${java.home}
             if (new File(file.getName()).equals(new File("jre")))
                 file = file.getParentFile();
@@ -780,7 +770,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         } else if (location == SOURCE_OUTPUT) {
             dir = (getSourceOutDir() != null ? getSourceOutDir() : getClassOutDir());
         } else {
-            Iterable<? extends File> path = paths.getPathForLocation(location);
+            Iterable<? extends File> path = searchPaths.getPathForLocation(location);
             dir = null;
             for (File f: path) {
                 dir = f;
@@ -815,7 +805,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         throws IOException
     {
         nullCheck(location);
-        paths.lazy();
+        searchPaths.lazy();
 
         final File dir = location.isOutputLocation() ? getOutputDirectory(path) : null;
 
@@ -824,7 +814,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         else if (location == SOURCE_OUTPUT)
             sourceOutDir = getOutputLocation(dir, S);
         else
-            paths.setPathForLocation(location, path);
+            searchPaths.setPathForLocation(location, path);
     }
     // where
         private File getOutputDirectory(Iterable<? extends File> path) throws IOException {
@@ -854,13 +844,13 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     public Iterable<? extends File> getLocation(Location location) {
         nullCheck(location);
-        paths.lazy();
+        searchPaths.lazy();
         if (location == CLASS_OUTPUT) {
             return (getClassOutDir() == null ? null : List.of(getClassOutDir()));
         } else if (location == SOURCE_OUTPUT) {
             return (getSourceOutDir() == null ? null : List.of(getSourceOutDir()));
         } else
-            return paths.getPathForLocation(location);
+            return searchPaths.getPathForLocation(location);
     }
 
     private File getClassOutDir() {
