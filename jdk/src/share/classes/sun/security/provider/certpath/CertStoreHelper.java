@@ -59,12 +59,13 @@ public abstract class CertStoreHelper {
             "SSLServer",
             "sun.security.provider.certpath.ssl.SSLServerCertStoreHelper");
     };
-    private static Cache cache = Cache.newSoftMemoryCache(NUM_TYPES);
+    private static Cache<String, CertStoreHelper> cache
+        = Cache.newSoftMemoryCache(NUM_TYPES);
 
     public static CertStoreHelper getInstance(final String type)
         throws NoSuchAlgorithmException
     {
-        CertStoreHelper helper = (CertStoreHelper)cache.get(type);
+        CertStoreHelper helper = cache.get(type);
         if (helper != null) {
             return helper;
         }
