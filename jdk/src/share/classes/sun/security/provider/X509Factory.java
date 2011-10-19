@@ -64,8 +64,10 @@ public class X509Factory extends CertificateFactorySpi {
 
     private static final int ENC_MAX_LENGTH = 4096 * 1024; // 4 MB MAX
 
-    private static final Cache certCache = Cache.newSoftMemoryCache(750);
-    private static final Cache crlCache = Cache.newSoftMemoryCache(750);
+    private static final Cache<Object, X509CertImpl> certCache
+        = Cache.newSoftMemoryCache(750);
+    private static final Cache<Object, X509CRLImpl> crlCache
+        = Cache.newSoftMemoryCache(750);
 
     /**
      * Generates an X.509 certificate object and initializes it with
@@ -90,7 +92,7 @@ public class X509Factory extends CertificateFactorySpi {
         try {
             byte[] encoding = readOneBlock(is);
             if (encoding != null) {
-                X509CertImpl cert = (X509CertImpl)getFromCache(certCache, encoding);
+                X509CertImpl cert = getFromCache(certCache, encoding);
                 if (cert != null) {
                     return cert;
                 }
@@ -151,7 +153,7 @@ public class X509Factory extends CertificateFactorySpi {
         } else {
             encoding = c.getEncoded();
         }
-        X509CertImpl newC = (X509CertImpl)getFromCache(certCache, encoding);
+        X509CertImpl newC = getFromCache(certCache, encoding);
         if (newC != null) {
             return newC;
         }
@@ -181,7 +183,7 @@ public class X509Factory extends CertificateFactorySpi {
         } else {
             encoding = c.getEncoded();
         }
-        X509CRLImpl newC = (X509CRLImpl)getFromCache(crlCache, encoding);
+        X509CRLImpl newC = getFromCache(crlCache, encoding);
         if (newC != null) {
             return newC;
         }
@@ -198,18 +200,17 @@ public class X509Factory extends CertificateFactorySpi {
     /**
      * Get the X509CertImpl or X509CRLImpl from the cache.
      */
-    private static synchronized Object getFromCache(Cache cache,
+    private static synchronized <K,V> V getFromCache(Cache<K,V> cache,
             byte[] encoding) {
         Object key = new Cache.EqualByteArray(encoding);
-        Object value = cache.get(key);
-        return value;
+        return cache.get(key);
     }
 
     /**
      * Add the X509CertImpl or X509CRLImpl to the cache.
      */
-    private static synchronized void addToCache(Cache cache, byte[] encoding,
-            Object value) {
+    private static synchronized <V> void addToCache(Cache<Object, V> cache,
+            byte[] encoding, V value) {
         if (encoding.length > ENC_MAX_LENGTH) {
             return;
         }
@@ -361,7 +362,7 @@ public class X509Factory extends CertificateFactorySpi {
         try {
             byte[] encoding = readOneBlock(is);
             if (encoding != null) {
-                X509CRLImpl crl = (X509CRLImpl)getFromCache(crlCache, encoding);
+                X509CRLImpl crl = getFromCache(crlCache, encoding);
                 if (crl != null) {
                     return crl;
                 }
