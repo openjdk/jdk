@@ -691,6 +691,7 @@ public class Resolve {
             case ABSENT_MTH:
                 return wrongMethod.setWrongSym(sym, ex.getDiagnostic());
             case WRONG_MTH:
+                if (operator) return bestSoFar;
                 wrongMethods.addCandidate(currentStep, wrongMethod.sym, wrongMethod.explanation);
             case WRONG_MTHS:
                 return wrongMethods.addCandidate(currentStep, sym, ex.getDiagnostic());
@@ -1685,6 +1686,7 @@ public class Resolve {
      */
     Symbol resolveOperator(DiagnosticPosition pos, int optag,
                            Env<AttrContext> env, List<Type> argtypes) {
+        startResolution();
         Name name = treeinfo.operatorName(optag);
         Symbol sym = findMethod(env, syms.predefClass.type, name, argtypes,
                                 null, false, false, true);
