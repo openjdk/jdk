@@ -25,9 +25,7 @@
 
 package com.sun.tools.javac.nio;
 
-
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -60,7 +58,6 @@ import javax.tools.StandardLocation;
 import static java.nio.file.FileVisitOption.*;
 import static javax.tools.StandardLocation.*;
 
-import com.sun.tools.javac.file.Paths;
 import com.sun.tools.javac.util.BaseFileManager;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
@@ -125,9 +122,8 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
      * Set the context for JavacPathFileManager.
      */
     @Override
-    protected void setContext(Context context) {
+    public void setContext(Context context) {
         super.setContext(context);
-        searchPaths = Paths.instance(context);
     }
 
     @Override
@@ -272,7 +268,6 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
         private boolean inited = false;
 
     private Map<Location, PathsForLocation> pathsForLocation;
-    private Paths searchPaths;
 
     private static class PathsForLocation extends LinkedHashSet<Path> {
         private static final long serialVersionUID = 6788510222394486733L;

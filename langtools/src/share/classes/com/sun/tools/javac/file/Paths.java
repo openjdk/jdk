@@ -41,7 +41,6 @@ import java.util.zip.ZipFile;
 import javax.tools.JavaFileManager.Location;
 
 import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
@@ -61,21 +60,6 @@ import static com.sun.tools.javac.main.OptionName.*;
  */
 public class Paths {
 
-    /** The context key for the todo list */
-    protected static final Context.Key<Paths> pathsKey =
-        new Context.Key<Paths>();
-
-    /** Get the Paths instance for this context.
-     *  @param context the context
-     *  @return the Paths instance for this context
-     */
-    public static Paths instance(Context context) {
-        Paths instance = context.get(pathsKey);
-        if (instance == null)
-            instance = new Paths(context);
-        return instance;
-    }
-
     /** The log to use for warning output */
     private Log log;
 
@@ -88,17 +72,15 @@ public class Paths {
     /** Access to (possibly cached) file info */
     private FSInfo fsInfo;
 
-    protected Paths(Context context) {
-        context.put(pathsKey, this);
+    public Paths() {
         pathsForLocation = new HashMap<Location,Path>(16);
-        setContext(context);
     }
 
-    void setContext(Context context) {
-        log = Log.instance(context);
-        options = Options.instance(context);
-        lint = Lint.instance(context);
-        fsInfo = FSInfo.instance(context);
+    public void update(Log log, Options options, Lint lint, FSInfo fsInfo) {
+        this.log = log;
+        this.options = options;
+        this.lint = lint;
+        this.fsInfo = fsInfo;
     }
 
     /** Whether to warn about non-existent path elements */

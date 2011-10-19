@@ -25,11 +25,6 @@
 
 package com.sun.tools.javac.util;
 
-import com.sun.tools.javac.code.Source;
-import com.sun.tools.javac.main.JavacOption;
-import com.sun.tools.javac.main.OptionName;
-import com.sun.tools.javac.main.RecognizedOptions;
-import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
@@ -54,6 +49,15 @@ import java.util.Map;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 
+import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Source;
+import com.sun.tools.javac.file.FSInfo;
+import com.sun.tools.javac.file.Paths;
+import com.sun.tools.javac.main.JavacOption;
+import com.sun.tools.javac.main.OptionName;
+import com.sun.tools.javac.main.RecognizedOptions;
+import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
+
 /**
  * Utility methods for building a filemanager.
  * There are no references here to file-system specific objects such as
@@ -63,15 +67,21 @@ public abstract class BaseFileManager {
     protected BaseFileManager(Charset charset) {
         this.charset = charset;
         byteBufferCache = new ByteBufferCache();
+        searchPaths = createPaths();
     }
 
     /**
      * Set the context for JavacPathFileManager.
      */
-    protected void setContext(Context context) {
+    public void setContext(Context context) {
         log = Log.instance(context);
         options = Options.instance(context);
         classLoaderClass = options.get("procloader");
+        searchPaths.update(log, options, Lint.instance(context), FSInfo.instance(context));
+    }
+
+    protected Paths createPaths() {
+        return new Paths();
     }
 
     /**
@@ -87,6 +97,8 @@ public abstract class BaseFileManager {
     protected Options options;
 
     protected String classLoaderClass;
+
+    protected Paths searchPaths;
 
     protected Source getSource() {
         String sourceName = options.get(OptionName.SOURCE);
