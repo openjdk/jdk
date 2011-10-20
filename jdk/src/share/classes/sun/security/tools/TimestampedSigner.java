@@ -25,22 +25,14 @@
 
 package sun.security.tools;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.net.URI;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.Principal;
-import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.List;
 
 import com.sun.jarsigner.*;
-import java.util.Arrays;
-import sun.security.pkcs.*;
-import sun.security.timestamp.*;
+import sun.security.pkcs.PKCS7;
 import sun.security.util.*;
 import sun.security.x509.*;
 
@@ -57,34 +49,10 @@ import sun.security.x509.*;
 public final class TimestampedSigner extends ContentSigner {
 
     /*
-     * Random number generator for creating nonce values
-     */
-    private static final SecureRandom RANDOM;
-    static {
-        SecureRandom tmp = null;
-        try {
-            tmp = SecureRandom.getInstance("SHA1PRNG");
-        } catch (NoSuchAlgorithmException e) {
-            // should not happen
-        }
-        RANDOM = tmp;
-    }
-
-    /*
      * Object identifier for the subject information access X.509 certificate
      * extension.
      */
     private static final String SUBJECT_INFO_ACCESS_OID = "1.3.6.1.5.5.7.1.11";
-
-    /*
-     * Object identifier for the timestamping key purpose.
-     */
-    private static final String KP_TIMESTAMPING_OID = "1.3.6.1.5.5.7.3.8";
-
-    /*
-     * Object identifier for extendedKeyUsage extension
-     */
-    private static final String EXTENDED_KEY_USAGE_OID = "2.5.29.37";
 
     /*
      * Object identifier for the timestamping access descriptors.
@@ -100,26 +68,6 @@ public final class TimestampedSigner extends ContentSigner {
         AD_TIMESTAMPING_Id = tmp;
     }
 
-    /*
-     * Location of the TSA.
-     */
-    private String tsaUrl = null;
-
-    /*
-     * TSA's X.509 certificate.
-     */
-    private X509Certificate tsaCertificate = null;
-
-    /*
-     * Generates an SHA-1 hash value for the data to be timestamped.
-     */
-    private MessageDigest messageDigest = null;
-
-    /*
-     * Parameters for the timestamping protocol.
-     */
-    private boolean tsRequestCertificate = true;
-
     /**
      * Instantiates a content signer that supports timestamped signatures.
      */
@@ -134,7 +82,7 @@ public final class TimestampedSigner extends ContentSigner {
      * and optionally the content that was signed, are packaged into a PKCS #7
      * signed data message.
      *
-     * @param parameters The non-null input parameters.
+     * @param params The non-null input parameters.
      * @param omitContent true if the content should be omitted from the
      *        signed data message. Otherwise the content is included.
      * @param applyTimestamp true if the signature should be timestamped.
@@ -151,98 +99,41 @@ public final class TimestampedSigner extends ContentSigner {
      * @throws NullPointerException The exception is thrown if parameters is
      *         null.
      */
-    public byte[] generateSignedData(ContentSignerParameters parameters,
+    public byte[] generateSignedData(ContentSignerParameters params,
         boolean omitContent, boolean applyTimestamp)
             throws NoSuchAlgorithmException, CertificateException, IOException {
 
-        if (parameters == null) {
+        if (params == null) {
             throw new NullPointerException();
         }
 
-        // Parse the signature algorithm to extract the digest and key
-        // algorithms. The expected format is:
+        // Parse the signature algorithm to extract the digest
+        // algorithm. The expected format is:
         //     "<digest>with<encryption>"
         // or  "<digest>with<encryption>and<mgf>"
-        String signatureAlgorithm = parameters.getSignatureAlgorithm();
-        String keyAlgorithm =
-                AlgorithmId.getEncAlgFromSigAlg(signatureAlgorithm);
-        String digestAlgorithm =
-                AlgorithmId.getDigAlgFromSigAlg(signatureAlgorithm);
-        AlgorithmId digestAlgorithmId = AlgorithmId.get(digestAlgorithm);
+        String signatureAlgorithm = params.getSignatureAlgorithm();
 
-        // Examine signer's certificate
-        X509Certificate[] signerCertificateChain =
-            parameters.getSignerCertificateChain();
-        Principal issuerName = signerCertificateChain[0].getIssuerDN();
-        if (!(issuerName instanceof X500Name)) {
-            // must extract the original encoded form of DN for subsequent
-            // name comparison checks (converting to a String and back to
-            // an encoded DN could cause the types of String attribute
-            // values to be changed)
-            X509CertInfo tbsCert = new
-                X509CertInfo(signerCertificateChain[0].getTBSCertificate());
-            issuerName = (Principal)
-                tbsCert.get(CertificateIssuerName.NAME + "." +
-                CertificateIssuerName.DN_NAME);
-        }
-        BigInteger serialNumber = signerCertificateChain[0].getSerialNumber();
+        X509Certificate[] signerChain = params.getSignerCertificateChain();
+        byte[] signature = params.getSignature();
 
         // Include or exclude content
-        byte[] content = parameters.getContent();
-        ContentInfo contentInfo;
-        if (omitContent) {
-            contentInfo = new ContentInfo(ContentInfo.DATA_OID, null);
-        } else {
-            contentInfo = new ContentInfo(content);
-        }
+        byte[] content = (omitContent == true) ? null : params.getContent();
 
-        // Generate the timestamp token
-        byte[] signature = parameters.getSignature();
-        SignerInfo signerInfo = null;
+        URI tsaURI = null;
         if (applyTimestamp) {
-
-            tsaCertificate = parameters.getTimestampingAuthorityCertificate();
-            URI tsaUri = parameters.getTimestampingAuthority();
-            if (tsaUri != null) {
-                tsaUrl = tsaUri.toString();
-            } else {
+            tsaURI = params.getTimestampingAuthority();
+            if (tsaURI == null) {
                 // Examine TSA cert
-                String certUrl = getTimestampingUrl(tsaCertificate);
-                if (certUrl == null) {
+                tsaURI = getTimestampingURI(
+                    params.getTimestampingAuthorityCertificate());
+                if (tsaURI == null) {
                     throw new CertificateException(
                         "Subject Information Access extension not found");
                 }
-                tsaUrl = certUrl;
             }
-
-            // Timestamp the signature
-            byte[] tsToken = generateTimestampToken(signature);
-
-            // Insert the timestamp token into the PKCS #7 signer info element
-            // (as an unsigned attribute)
-            PKCS9Attributes unsignedAttrs =
-                new PKCS9Attributes(new PKCS9Attribute[]{
-                    new PKCS9Attribute(
-                        PKCS9Attribute.SIGNATURE_TIMESTAMP_TOKEN_STR,
-                        tsToken)});
-            signerInfo = new SignerInfo((X500Name)issuerName, serialNumber,
-                digestAlgorithmId, null, AlgorithmId.get(keyAlgorithm),
-                    signature, unsignedAttrs);
-        } else {
-            signerInfo = new SignerInfo((X500Name)issuerName, serialNumber,
-                digestAlgorithmId, AlgorithmId.get(keyAlgorithm), signature);
         }
-
-        SignerInfo[] signerInfos = {signerInfo};
-        AlgorithmId[] algorithms = {digestAlgorithmId};
-
-        // Create the PKCS #7 signed data message
-        PKCS7 p7 = new PKCS7(algorithms, contentInfo, signerCertificateChain,
-                null, signerInfos);
-        ByteArrayOutputStream p7out = new ByteArrayOutputStream();
-        p7.encodeSignedData(p7out);
-
-        return p7out.toByteArray();
+        return PKCS7.generateSignedData(signature, signerChain, content,
+                                        params.getSignatureAlgorithm(), tsaURI);
     }
 
     /**
@@ -253,9 +144,9 @@ public final class TimestampedSigner extends ContentSigner {
      * <tt>accessLocation</tt> field should contain an HTTP or HTTPS URL.
      *
      * @param tsaCertificate An X.509 certificate for the TSA.
-     * @return An HTTP or HTTPS URL or null if none was found.
+     * @return An HTTP or HTTPS URI or null if none was found.
      */
-    public static String getTimestampingUrl(X509Certificate tsaCertificate) {
+    public static URI getTimestampingURI(X509Certificate tsaCertificate) {
 
         if (tsaCertificate == null) {
             return null;
@@ -282,7 +173,7 @@ public final class TimestampedSigner extends ContentSigner {
                         uri = (URIName) location.getName();
                         if (uri.getScheme().equalsIgnoreCase("http") ||
                                 uri.getScheme().equalsIgnoreCase("https")) {
-                            return uri.getName();
+                            return uri.getURI();
                         }
                     }
                 }
@@ -291,98 +182,5 @@ public final class TimestampedSigner extends ContentSigner {
             // ignore
         }
         return null;
-    }
-
-    /*
-     * Returns a timestamp token from a TSA for the given content.
-     * Performs a basic check on the token to confirm that it has been signed
-     * by a certificate that is permitted to sign timestamps.
-     *
-     * @param  toBeTimestamped The data to be timestamped.
-     * @throws IOException The exception is throw if an error occurs while
-     *                     communicating with the TSA.
-     * @throws CertificateException The exception is throw if the TSA's
-     *                     certificate is not permitted for timestamping.
-     */
-    private byte[] generateTimestampToken(byte[] toBeTimestamped)
-            throws CertificateException, IOException {
-
-        // Generate hash value for the data to be timestamped
-        // SHA-1 is always used.
-        if (messageDigest == null) {
-            try {
-                messageDigest = MessageDigest.getInstance("SHA-1");
-            } catch (NoSuchAlgorithmException e) {
-                // ignore
-            }
-        }
-        byte[] digest = messageDigest.digest(toBeTimestamped);
-
-        // Generate a timestamp
-        TSRequest tsQuery = new TSRequest(digest, "SHA-1");
-        // Generate a nonce
-        BigInteger nonce = null;
-        if (RANDOM != null) {
-            nonce = new BigInteger(64, RANDOM);
-            tsQuery.setNonce(nonce);
-        }
-        tsQuery.requestCertificate(tsRequestCertificate);
-
-        Timestamper tsa = new HttpTimestamper(tsaUrl); // use supplied TSA
-        TSResponse tsReply = tsa.generateTimestamp(tsQuery);
-        int status = tsReply.getStatusCode();
-        // Handle TSP error
-        if (status != 0 && status != 1) {
-            int failureCode = tsReply.getFailureCode();
-            if (failureCode == -1) {
-                throw new IOException("Error generating timestamp: " +
-                    tsReply.getStatusCodeAsText());
-            } else {
-                throw new IOException("Error generating timestamp: " +
-                    tsReply.getStatusCodeAsText() + " " +
-                    tsReply.getFailureCodeAsText());
-            }
-        }
-        PKCS7 tsToken = tsReply.getToken();
-
-        TimestampToken tst = new TimestampToken(tsToken.getContentInfo().getData());
-        if (!tst.getHashAlgorithm().equals(
-                new AlgorithmId(new ObjectIdentifier("1.3.14.3.2.26")))) {
-            throw new IOException("Digest algorithm not SHA-1 in timestamp token");
-        }
-        if (!Arrays.equals(tst.getHashedMessage(), digest)) {
-            throw new IOException("Digest octets changed in timestamp token");
-        }
-
-        BigInteger replyNonce = tst.getNonce();
-        if (replyNonce == null && nonce != null) {
-            throw new IOException("Nonce missing in timestamp token");
-        }
-        if (replyNonce != null && !replyNonce.equals(nonce)) {
-            throw new IOException("Nonce changed in timestamp token");
-        }
-
-        // Examine the TSA's certificate (if present)
-        for (SignerInfo si: tsToken.getSignerInfos()) {
-            X509Certificate cert = si.getCertificate(tsToken);
-            if (cert == null) {
-                // Error, we've already set tsRequestCertificate = true
-                throw new CertificateException(
-                "Certificate not included in timestamp token");
-            } else {
-                if (!cert.getCriticalExtensionOIDs().contains(
-                        EXTENDED_KEY_USAGE_OID)) {
-                    throw new CertificateException(
-                    "Certificate is not valid for timestamping");
-                }
-                List<String> keyPurposes = cert.getExtendedKeyUsage();
-                if (keyPurposes == null ||
-                        ! keyPurposes.contains(KP_TIMESTAMPING_OID)) {
-                    throw new CertificateException(
-                    "Certificate is not valid for timestamping");
-                }
-            }
-        }
-        return tsReply.getEncodedToken();
     }
 }
