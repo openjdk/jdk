@@ -377,6 +377,12 @@ java/net/ipv6tests/UdpTest.java                                 linux-all
 # 7081476
 java/net/InetSocketAddress/B6469803.java                        generic-all
 
+# 7102670
+java/net/InetAddress/CheckJNI.java                              linux-all
+
+# failing on vista 32/64 on nightly
+# 7102702
+java/net/PortUnreachableException/OneExceptionOnly.java         windows-all
 ############################################################################
 
 # jdk_io
