@@ -143,7 +143,11 @@ protected:
     // If the test below fails, then this table was reused concurrently
     // with this operation.  This is OK, since the old table was coarsened,
     // and adding a bit to the new table is never incorrect.
-    if (loc_hr->is_in_reserved(from)) {
+    // If the table used to belong to a continues humongous region and is
+    // now reused for the corresponding start humongous region, we need to
+    // make sure that we detect this. Thus, we call is_in_reserved_raw()
+    // instead of just is_in_reserved() here.
+    if (loc_hr->is_in_reserved_raw(from)) {
       size_t hw_offset = pointer_delta((HeapWord*)from, loc_hr->bottom());
       CardIdx_t from_card = (CardIdx_t)
           hw_offset >> (CardTableModRefBS::card_shift - LogHeapWordSize);
