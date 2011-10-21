@@ -186,7 +186,7 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
         String SAMOA[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o de Samoa", "SST",
                                        "Hor\u00e1rio de luz natural de Samoa", "SDT"};
         String WST_SAMOA[] = new String[] {"Fuso hor\u00e1rio de Samoa Ocidental", "WST",
-                                           "Fuso hor\u00e1rio de ver\u00e3o de Samoa Ocidental", "WSST"};
+                                           "Fuso hor\u00e1rio de ver\u00e3o de Samoa Ocidental", "WSDT"};
         String ChST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o de Chamorro", "ChST",
                                       "Hor\u00e1rio de luz natural de Chamorro", "ChDT"};
         String VICTORIA[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o oriental (Victoria)", "EST",

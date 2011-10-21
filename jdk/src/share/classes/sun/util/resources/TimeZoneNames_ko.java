@@ -188,7 +188,7 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
         String SAMOA[] = new String[] {"\uc0ac\ubaa8\uc544 \ud45c\uc900\uc2dc", "SST",
                                        "\uc0ac\ubaa8\uc544 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "SDT"};
         String WST_SAMOA[] = new String[] {"\uc11c\uc0ac\ubaa8\uc544 \uc2dc\uac04", "WST",
-                                           "\uc11c\uc0ac\ubaa8\uc544 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "WSST"};
+                                           "\uc11c\uc0ac\ubaa8\uc544 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "WSDT"};
         String ChST[] = new String[] {"\ucc28\ubaa8\ub85c \ud45c\uc900\uc2dc", "ChST",
                                       "\ucc28\ubaa8\ub85c \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "ChDT"};
         String VICTORIA[] = new String[] {"\ub3d9\ubd80 \ud45c\uc900\uc2dc(\ube45\ud1a0\ub9ac\uc544)", "EST",

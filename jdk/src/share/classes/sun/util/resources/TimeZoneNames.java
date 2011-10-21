@@ -188,7 +188,7 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
         String SAMOA[] = new String[] {"Samoa Standard Time", "SST",
                                        "Samoa Daylight Time", "SDT"};
         String WST_SAMOA[] = new String[] {"West Samoa Time", "WST",
-                                           "West Samoa Summer Time", "WSST"};
+                                           "West Samoa Daylight Time", "WSDT"};
         String ChST[] = new String[] {"Chamorro Standard Time", "ChST",
                                       "Chamorro Daylight Time", "ChDT"};
         String VICTORIA[] = new String[] {"Eastern Standard Time (Victoria)", "EST",
