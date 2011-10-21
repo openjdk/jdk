@@ -319,6 +319,9 @@ class CollectedHeap : public CHeapObj {
   // VM (then terminate).
   virtual void preload_and_dump(TRAPS) { ShouldNotReachHere(); }
 
+  // Allocate and initialize instances of Class
+  static oop Class_obj_allocate(KlassHandle klass, int size, KlassHandle real_klass, TRAPS);
+
   // General obj/array allocation facilities.
   inline static oop obj_allocate(KlassHandle klass, int size, TRAPS);
   inline static oop array_allocate(KlassHandle klass, int size, int length, TRAPS);
