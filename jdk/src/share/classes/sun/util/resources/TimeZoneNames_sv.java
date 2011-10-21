@@ -188,7 +188,7 @@ public final class TimeZoneNames_sv extends TimeZoneNamesBundle {
         String SAMOA[] = new String[] {"Samoa, normaltid", "SST",
                                        "Samoa, sommartid", "SDT"};
         String WST_SAMOA[] = new String[] {"V\u00e4stsamoansk tid", "WST",
-                                           "V\u00e4stsamoansk sommartid", "WSST"};
+                                           "V\u00e4stsamoansk sommartid", "WSDT"};
         String ChST[] = new String[] {"Chamorro, normaltid", "ChST",
                                       "Chamorro, sommartid", "ChDT"};
         String VICTORIA[] = new String[] {"\u00d6stlig normaltid (Victoria)", "EST",
