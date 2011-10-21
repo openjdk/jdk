@@ -677,7 +677,7 @@ class CommandLineFlags {
   notproduct(bool, WalkStackALot, false,                                    \
           "trace stack (no print) at every exit from the runtime system")   \
                                                                             \
-  develop(bool, Debugging, false,                                           \
+  product(bool, Debugging, false,                                           \
           "set when executing debug methods in debug.ccp "                  \
           "(to prevent triggering assertions)")                             \
                                                                             \

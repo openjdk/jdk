@@ -374,20 +374,32 @@ ciObject* ciObjectFactory::create_new_object(oop o) {
 // unloaded method.  This may need to change.
 ciMethod* ciObjectFactory::get_unloaded_method(ciInstanceKlass* holder,
                                                ciSymbol*        name,
-                                               ciSymbol*        signature) {
-  for (int i=0; i<_unloaded_methods->length(); i++) {
+                                               ciSymbol*        signature,
+                                               ciInstanceKlass* accessor) {
+  ciSignature* that = NULL;
+  for (int i = 0; i < _unloaded_methods->length(); i++) {
     ciMethod* entry = _unloaded_methods->at(i);
     if (entry->holder()->equals(holder) &&
         entry->name()->equals(name) &&
         entry->signature()->as_symbol()->equals(signature)) {
-      // We've found a match.
-      return entry;
+      // Short-circuit slow resolve.
+      if (entry->signature()->accessing_klass() == accessor) {
+        // We've found a match.
+        return entry;
+      } else {
+        // Lazily create ciSignature
+        if (that == NULL)  that = new (arena()) ciSignature(accessor, constantPoolHandle(), signature);
+        if (entry->signature()->equals(that)) {
+          // We've found a match.
+          return entry;
+        }
+      }
     }
   }
 
   // This is a new unloaded method.  Create it and stick it in
   // the cache.
-  ciMethod* new_method = new (arena()) ciMethod(holder, name, signature);
+  ciMethod* new_method = new (arena()) ciMethod(holder, name, signature, accessor);
 
   init_ident_of(new_method);
   _unloaded_methods->append(new_method);

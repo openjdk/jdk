@@ -309,6 +309,11 @@ class Thread: public ThreadShadow {
   static void interrupt(Thread* thr);
   static bool is_interrupted(Thread* thr, bool clear_interrupted);
 
+  void set_native_thread_name(const char *name) {
+    assert(Thread::current() == this, "set_native_thread_name can only be called on the current thread");
+    os::set_native_thread_name(name);
+  }
+
   ObjectMonitor** omInUseList_addr()             { return (ObjectMonitor **)&omInUseList; }
   Monitor* SR_lock() const                       { return _SR_lock; }
 
@@ -818,10 +823,17 @@ class JavaThread: public Thread {
   bool                  _do_not_unlock_if_synchronized; // Do not unlock the receiver of a synchronized method (since it was
                                                  // never locked) when throwing an exception. Used by interpreter only.
 
-  //  Flag to mark a JNI thread in the process of attaching - See CR 6404306
-  //  This flag is never set true other than at construction, and in that case
-  //  is shortly thereafter set false
-  volatile bool _is_attaching;
+  // JNI attach states:
+  enum JNIAttachStates {
+    _not_attaching_via_jni = 1,  // thread is not attaching via JNI
+    _attaching_via_jni,          // thread is attaching via JNI
+    _attached_via_jni            // thread has attached via JNI
+  };
+
+  // A regular JavaThread's _jni_attach_state is _not_attaching_via_jni.
+  // A native thread that is attaching via JNI starts with a value
+  // of _attaching_via_jni and transitions to _attached_via_jni.
+  volatile JNIAttachStates _jni_attach_state;
 
  public:
   // State of the stack guard pages for this thread.
@@ -889,7 +901,7 @@ class JavaThread: public Thread {
 
  public:
   // Constructor
-  JavaThread(bool is_attaching = false); // for main thread and JNI attached threads
+  JavaThread(bool is_attaching_via_jni = false); // for main thread and JNI attached threads
   JavaThread(ThreadFunction entry_point, size_t stack_size = 0);
   ~JavaThread();
 
@@ -1641,8 +1653,9 @@ public:
   void set_cached_monitor_info(GrowableArray<MonitorInfo*>* info) { _cached_monitor_info = info; }
 
   // clearing/querying jni attach status
-  bool is_attaching() const { return _is_attaching; }
-  void set_attached() { _is_attaching = false; OrderAccess::fence(); }
+  bool is_attaching_via_jni() const { return _jni_attach_state == _attaching_via_jni; }
+  bool has_attached_via_jni() const { return is_attaching_via_jni() || _jni_attach_state == _attached_via_jni; }
+  void set_done_attaching_via_jni() { _jni_attach_state = _attached_via_jni; OrderAccess::fence(); }
 private:
   // This field is used to determine if a thread has claimed
   // a par_id: it is -1 if the thread has not claimed a par_id;
