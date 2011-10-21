@@ -431,6 +431,14 @@ class HeapRegion: public G1OffsetTableContigSpace {
     return _humongous_start_region;
   }
 
+  // Same as Space::is_in_reserved, but will use the original size of the region.
+  // The original size is different only for start humongous regions. They get
+  // their _end set up to be the end of the last continues region of the
+  // corresponding humongous object.
+  bool is_in_reserved_raw(const void* p) const {
+    return _bottom <= p && p < _orig_end;
+  }
+
   // Makes the current region be a "starts humongous" region, i.e.,
   // the first region in a series of one or more contiguous regions
   // that will contain a single "humongous" object. The two parameters
