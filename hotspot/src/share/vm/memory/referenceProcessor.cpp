@@ -105,19 +105,22 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
   _discovery_is_mt     = mt_discovery;
   _num_q               = MAX2(1, mt_processing_degree);
   _max_num_q           = MAX2(_num_q, mt_discovery_degree);
-  _discoveredSoftRefs  = NEW_C_HEAP_ARRAY(DiscoveredList,
+  _discovered_refs     = NEW_C_HEAP_ARRAY(DiscoveredList,
                                           _max_num_q * number_of_subclasses_of_ref());
-  if (_discoveredSoftRefs == NULL) {
+  if (_discovered_refs == NULL) {
     vm_exit_during_initialization("Could not allocated RefProc Array");
   }
+  _discoveredSoftRefs    = &_discovered_refs[0];
   _discoveredWeakRefs    = &_discoveredSoftRefs[_max_num_q];
   _discoveredFinalRefs   = &_discoveredWeakRefs[_max_num_q];
   _discoveredPhantomRefs = &_discoveredFinalRefs[_max_num_q];
-  // Initialized all entries to NULL
+
+  // Initialize all entries to NULL
   for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
-    _discoveredSoftRefs[i].set_head(NULL);
-    _discoveredSoftRefs[i].set_length(0);
+    _discovered_refs[i].set_head(NULL);
+    _discovered_refs[i].set_length(0);
   }
+
   // If we do barriers, cache a copy of the barrier set.
   if (discovered_list_needs_barrier) {
     _bs = Universe::heap()->barrier_set();
@@ -129,7 +132,7 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
 void ReferenceProcessor::verify_no_references_recorded() {
   guarantee(!_discovering_refs, "Discovering refs?");
   for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
-    guarantee(_discoveredSoftRefs[i].is_empty(),
+    guarantee(_discovered_refs[i].is_empty(),
               "Found non-empty discovered list");
   }
 }
@@ -138,9 +141,9 @@ void ReferenceProcessor::verify_no_references_recorded() {
 void ReferenceProcessor::weak_oops_do(OopClosure* f) {
   for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
     if (UseCompressedOops) {
-      f->do_oop((narrowOop*)_discoveredSoftRefs[i].adr_head());
+      f->do_oop((narrowOop*)_discovered_refs[i].adr_head());
     } else {
-      f->do_oop((oop*)_discoveredSoftRefs[i].adr_head());
+      f->do_oop((oop*)_discovered_refs[i].adr_head());
     }
   }
 }
@@ -423,15 +426,15 @@ void ReferenceProcessor::enqueue_discovered_reflists(HeapWord* pending_list_addr
   AbstractRefProcTaskExecutor* task_executor) {
   if (_processing_is_mt && task_executor != NULL) {
     // Parallel code
-    RefProcEnqueueTask tsk(*this, _discoveredSoftRefs,
+    RefProcEnqueueTask tsk(*this, _discovered_refs,
                            pending_list_addr, _max_num_q);
     task_executor->execute(tsk);
   } else {
     // Serial code: call the parent class's implementation
     for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
-      enqueue_discovered_reflist(_discoveredSoftRefs[i], pending_list_addr);
-      _discoveredSoftRefs[i].set_head(NULL);
-      _discoveredSoftRefs[i].set_length(0);
+      enqueue_discovered_reflist(_discovered_refs[i], pending_list_addr);
+      _discovered_refs[i].set_head(NULL);
+      _discovered_refs[i].set_length(0);
     }
   }
 }
@@ -691,7 +694,7 @@ void ReferenceProcessor::abandon_partial_discovery() {
     if (TraceReferenceGC && PrintGCDetails && ((i % _max_num_q) == 0)) {
       gclog_or_tty->print_cr("\nAbandoning %s discovered list", list_name(i));
     }
-    abandon_partial_discovered_list(_discoveredSoftRefs[i]);
+    abandon_partial_discovered_list(_discovered_refs[i]);
   }
 }
 
@@ -952,7 +955,7 @@ void ReferenceProcessor::clean_up_discovered_references() {
         "\nScrubbing %s discovered list of Null referents",
         list_name(i));
     }
-    clean_up_discovered_reflist(_discoveredSoftRefs[i]);
+    clean_up_discovered_reflist(_discovered_refs[i]);
   }
 }
 
@@ -1402,7 +1405,7 @@ void ReferenceProcessor::verify_ok_to_handle_reflists() {
 void ReferenceProcessor::clear_discovered_references() {
   guarantee(!_discovering_refs, "Discovering refs?");
   for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
-    clear_discovered_references(_discoveredSoftRefs[i]);
+    clear_discovered_references(_discovered_refs[i]);
   }
 }
 

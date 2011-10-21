@@ -80,6 +80,8 @@
 
 #ifdef DTRACE_ENABLED
 
+#ifndef USDT2
+
 HS_DTRACE_PROBE_DECL4(hotspot, class__initialization__required,
   char*, intptr_t, oop, intptr_t);
 HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__recursive,
@@ -122,6 +124,42 @@ HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
     HS_DTRACE_PROBE5(hotspot, class__initialization__##type,     \
       data, len, (clss)->class_loader(), thread_type, wait);     \
   }
+#else /* USDT2 */
+
+#define HOTSPOT_CLASS_INITIALIZATION_required HOTSPOT_CLASS_INITIALIZATION_REQUIRED
+#define HOTSPOT_CLASS_INITIALIZATION_recursive HOTSPOT_CLASS_INITIALIZATION_RECURSIVE
+#define HOTSPOT_CLASS_INITIALIZATION_concurrent HOTSPOT_CLASS_INITIALIZATION_CONCURRENT
+#define HOTSPOT_CLASS_INITIALIZATION_erroneous HOTSPOT_CLASS_INITIALIZATION_ERRONEOUS
+#define HOTSPOT_CLASS_INITIALIZATION_super__failed HOTSPOT_CLASS_INITIALIZATION_SUPER_FAILED
+#define HOTSPOT_CLASS_INITIALIZATION_clinit HOTSPOT_CLASS_INITIALIZATION_CLINIT
+#define HOTSPOT_CLASS_INITIALIZATION_error HOTSPOT_CLASS_INITIALIZATION_ERROR
+#define HOTSPOT_CLASS_INITIALIZATION_end HOTSPOT_CLASS_INITIALIZATION_END
+#define DTRACE_CLASSINIT_PROBE(type, clss, thread_type)          \
+  {                                                              \
+    char* data = NULL;                                           \
+    int len = 0;                                                 \
+    Symbol* name = (clss)->name();                               \
+    if (name != NULL) {                                          \
+      data = (char*)name->bytes();                               \
+      len = name->utf8_length();                                 \
+    }                                                            \
+    HOTSPOT_CLASS_INITIALIZATION_##type(                         \
+      data, len, (clss)->class_loader(), thread_type);           \
+  }
+
+#define DTRACE_CLASSINIT_PROBE_WAIT(type, clss, thread_type, wait) \
+  {                                                              \
+    char* data = NULL;                                           \
+    int len = 0;                                                 \
+    Symbol* name = (clss)->name();                               \
+    if (name != NULL) {                                          \
+      data = (char*)name->bytes();                               \
+      len = name->utf8_length();                                 \
+    }                                                            \
+    HOTSPOT_CLASS_INITIALIZATION_##type(                         \
+      data, len, (clss)->class_loader(), thread_type, wait);     \
+  }
+#endif /* USDT2 */
 
 #else //  ndef DTRACE_ENABLED
 

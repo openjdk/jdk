@@ -108,6 +108,7 @@ LFLAGS += $(EXTRA_CFLAGS)
 
 # Don't set excutable bit on stack segment
 # the same could be done by separate execstack command
+# Darwin is non-executable-stack by default
 ifneq ($(OS_VENDOR), Darwin)
 LFLAGS += -Xlinker -z -Xlinker noexecstack
 endif
@@ -322,7 +323,16 @@ include $(MAKEFILES_DIR)/saproc.make
 
 #----------------------------------------------------------------------
 
+ifeq ($(OS_VENDOR), Darwin)
+$(LIBJVM).dSYM: $(LIBJVM)
+	dsymutil $(LIBJVM)
+
+# no launcher or libjvm_db for macosx
+build: $(LIBJVM) $(LIBJSIG) $(BUILDLIBSAPROC) dtraceCheck $(LIBJVM).dSYM
+	echo "Doing vm.make build:"
+else
 build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC)
+endif
 
 install: install_jvm install_jsig install_saproc
 

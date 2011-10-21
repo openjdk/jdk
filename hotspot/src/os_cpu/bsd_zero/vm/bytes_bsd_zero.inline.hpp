@@ -29,7 +29,7 @@
 // ordering to native byte ordering and vice versa.
 
 #ifdef __APPLE__
-#include <libkern/OSByteOrder.h>
+#  include <libkern/OSByteOrder.h>
 #else
 #  include <sys/endian.h>
 #endif

@@ -132,7 +132,10 @@ class RicochetFrame {
   intptr_t* sender_link() const         { return _sender_link; }
   address   sender_pc() const           { return _sender_pc; }
 
-  intptr_t* extended_sender_sp() const  { return saved_args_base(); }
+  intptr_t* extended_sender_sp() const {
+    // The extended sender SP is above the current RicochetFrame.
+    return (intptr_t*) (((address) this) + sizeof(RicochetFrame));
+  }
 
   intptr_t  return_value_slot_number() const {
     return adapter_conversion_vminfo(conversion());
