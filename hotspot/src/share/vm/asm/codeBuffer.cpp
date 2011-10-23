@@ -632,7 +632,8 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
 // CodeBuffer gets the final layout (consts, insts, stubs in order of
 // ascending address).
 void CodeBuffer::relocate_code_to(CodeBuffer* dest) const {
-  DEBUG_ONLY(address dest_end = dest->_total_start + dest->_total_size);
+  address dest_end = dest->_total_start + dest->_total_size;
+  address dest_filled = NULL;
   for (int n = (int) SECT_FIRST; n < (int) SECT_LIMIT; n++) {
     // pull code out of each section
     const CodeSection* cs = code_section(n);
@@ -654,6 +655,8 @@ void CodeBuffer::relocate_code_to(CodeBuffer* dest) const {
       Copy::fill_to_bytes(dest_cs->end(), dest_cs->remaining(),
                           Assembler::code_fill_byte());
     }
+    // Keep track of the highest filled address
+    dest_filled = MAX2(dest_filled, dest_cs->end() + dest_cs->remaining());
 
     assert(cs->locs_start() != (relocInfo*)badAddress,
            "this section carries no reloc storage, but reloc was attempted");
@@ -667,6 +670,14 @@ void CodeBuffer::relocate_code_to(CodeBuffer* dest) const {
         iter.reloc()->fix_relocation_after_move(this, dest);
       }
     }
+  }
+
+  if (dest->blob() == NULL) {
+    // Destination is a final resting place, not just another buffer.
+    // Normalize uninitialized bytes in the final padding.
+    Copy::fill_to_bytes(dest_filled, dest_end - dest_filled,
+                        Assembler::code_fill_byte());
+
   }
 }
 
