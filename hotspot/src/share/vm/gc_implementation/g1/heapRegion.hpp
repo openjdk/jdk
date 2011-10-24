@@ -577,11 +577,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // allocated in the current region before the last call to "save_mark".
   void oop_before_save_marks_iterate(OopClosure* cl);
 
-  DirtyCardToOopClosure*
-  new_dcto_closure(OopClosure* cl,
-                   CardTableModRefBS::PrecisionStyle precision,
-                   HeapRegionDCTOC::FilterKind fk);
-
   // Note the start or end of marking. This tells the heap region
   // that the collector is about to start or has finished (concurrently)
   // marking the heap.
