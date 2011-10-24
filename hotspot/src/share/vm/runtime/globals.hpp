@@ -3364,7 +3364,7 @@ class CommandLineFlags {
   notproduct(bool, ExitOnFullCodeCache, false,                              \
           "Exit the VM if we fill the code cache.")                         \
                                                                             \
-  product(bool, UseCodeCacheFlushing, false,                                \
+  product(bool, UseCodeCacheFlushing, true,                                 \
           "Attempt to clean the code cache before shutting off compiler")   \
                                                                             \
   product(intx,  MinCodeCacheFlushingInterval, 30,                          \
