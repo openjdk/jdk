@@ -471,6 +471,36 @@ copy_debug_jdk:
 	   ($(CD) $(JDK_IMAGE_DIR)/debug && $(TAR) -xf -) ; \
 	fi
 
+# macosx universal builds
+
+ifeq ($(MACOSX_UNIVERSAL), true)
+$(UNIVERSAL_LIPO_LIST):
+	lipo -create -output $@ $(EXPORT_JRE_LIB_DIR)/{i386,amd64}/$(subst $(EXPORT_JRE_LIB_DIR)/,,$@)
+
+$(UNIVERSAL_COPY_LIST):
+	$(CP) $(EXPORT_JRE_LIB_DIR)/i386/$(subst $(EXPORT_JRE_LIB_DIR)/,,$@) $@
+
+universalize: $(UNIVERSAL_LIPO_LIST) $(UNIVERSAL_COPY_LIST)
+endif
+
+universal_product:
+	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=32 MACOSX_UNIVERSAL=true all_product
+	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=64 MACOSX_UNIVERSAL=true all_product
+	$(MKDIR) -p $(EXPORT_JRE_LIB_DIR)/{client,server}
+	$(QUIETLY) $(MAKE) MACOSX_UNIVERSAL=true universalize
+
+universal_fastdebug:
+	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=32 MACOSX_UNIVERSAL=true all_fastdebug
+	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=64 MACOSX_UNIVERSAL=true all_fastdebug
+	$(MKDIR) -p $(EXPORT_JRE_LIB_DIR)/{client,server}
+	$(QUIETLY) $(MAKE) MACOSX_UNIVERSAL=true universalize
+
+universal_debug:
+	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=32 MACOSX_UNIVERSAL=true all_debug
+	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=64 MACOSX_UNIVERSAL=true all_debug
+	$(MKDIR) -p $(EXPORT_JRE_LIB_DIR)/{client,server}
+	$(QUIETLY) $(MAKE) MACOSX_UNIVERSAL=true universalize
+
 #
 # Check target
 #
@@ -599,5 +629,6 @@ include $(GAMMADIR)/make/jprt.gmk
 	export_product export_fastdebug export_debug export_optimized \
 	export_jdk_product export_jdk_fastdebug export_jdk_debug \
 	create_jdk copy_jdk update_jdk test_jdk \
-	copy_product_jdk copy_fastdebug_jdk copy_debug_jdk
+	copy_product_jdk copy_fastdebug_jdk copy_debug_jdk universalize \
+	universal_product
 
