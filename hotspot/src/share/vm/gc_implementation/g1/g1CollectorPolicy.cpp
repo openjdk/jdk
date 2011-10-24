@@ -320,6 +320,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _par_last_termination_attempts = new double[_parallel_gc_threads];
   _par_last_gc_worker_end_times_ms = new double[_parallel_gc_threads];
   _par_last_gc_worker_times_ms = new double[_parallel_gc_threads];
+  _par_last_gc_worker_other_times_ms = new double[_parallel_gc_threads];
 
   // start conservatively
   _expensive_region_limit_ms = 0.5 * (double) MaxGCPauseMillis;
@@ -976,6 +977,7 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
     _par_last_termination_attempts[i] = -1234.0;
     _par_last_gc_worker_end_times_ms[i] = -1234.0;
     _par_last_gc_worker_times_ms[i] = -1234.0;
+    _par_last_gc_worker_other_times_ms[i] = -1234.0;
   }
 #endif
 
@@ -984,8 +986,10 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
     _cur_aux_times_set[i] = false;
   }
 
-  _satb_drain_time_set = false;
-  _last_satb_drain_processed_buffers = -1;
+  // These are initialized to zero here and they are set during
+  // the evacuation pause if marking is in progress.
+  _cur_satb_drain_time_ms = 0.0;
+  _last_satb_drain_processed_buffers = 0;
 
   _last_young_gc_full = false;
 
@@ -1097,61 +1101,65 @@ void G1CollectorPolicy::print_par_sizes(int level,
     (int)total, (int)avg, (int)min, (int)max, (int)max - (int)min);
 }
 
-void G1CollectorPolicy::print_stats (int level,
-                                     const char* str,
-                                     double value) {
+void G1CollectorPolicy::print_stats(int level,
+                                    const char* str,
+                                    double value) {
   LineBuffer(level).append_and_print_cr("[%s: %5.1lf ms]", str, value);
 }
 
-void G1CollectorPolicy::print_stats (int level,
-                                     const char* str,
-                                     int value) {
+void G1CollectorPolicy::print_stats(int level,
+                                    const char* str,
+                                    int value) {
   LineBuffer(level).append_and_print_cr("[%s: %d]", str, value);
 }
 
-double G1CollectorPolicy::avg_value (double* data) {
+double G1CollectorPolicy::avg_value(double* data) {
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     double ret = 0.0;
-    for (uint i = 0; i < ParallelGCThreads; ++i)
+    for (uint i = 0; i < ParallelGCThreads; ++i) {
       ret += data[i];
+    }
     return ret / (double) ParallelGCThreads;
   } else {
     return data[0];
   }
 }
 
-double G1CollectorPolicy::max_value (double* data) {
+double G1CollectorPolicy::max_value(double* data) {
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     double ret = data[0];
-    for (uint i = 1; i < ParallelGCThreads; ++i)
-      if (data[i] > ret)
+    for (uint i = 1; i < ParallelGCThreads; ++i) {
+      if (data[i] > ret) {
         ret = data[i];
+      }
+    }
     return ret;
   } else {
     return data[0];
   }
 }
 
-double G1CollectorPolicy::sum_of_values (double* data) {
+double G1CollectorPolicy::sum_of_values(double* data) {
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     double sum = 0.0;
-    for (uint i = 0; i < ParallelGCThreads; i++)
+    for (uint i = 0; i < ParallelGCThreads; i++) {
       sum += data[i];
+    }
     return sum;
   } else {
     return data[0];
   }
 }
 
-double G1CollectorPolicy::max_sum (double* data1,
-                                   double* data2) {
+double G1CollectorPolicy::max_sum(double* data1, double* data2) {
   double ret = data1[0] + data2[0];
 
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     for (uint i = 1; i < ParallelGCThreads; ++i) {
       double data = data1[i] + data2[i];
-      if (data > ret)
+      if (data > ret) {
         ret = data;
+      }
     }
   }
   return ret;
@@ -1251,6 +1259,10 @@ void G1CollectorPolicy::record_collection_pause_end() {
 
   _n_pauses++;
 
+  // These values are used to update the summary information that is
+  // displayed when TraceGen0Time is enabled, and are output as part
+  // of the PrintGCDetails output, in the non-parallel case.
+
   double ext_root_scan_time = avg_value(_par_last_ext_root_scan_times_ms);
   double mark_stack_scan_time = avg_value(_par_last_mark_stack_scan_times_ms);
   double update_rs_time = avg_value(_par_last_update_rs_times_ms);
@@ -1260,42 +1272,68 @@ void G1CollectorPolicy::record_collection_pause_end() {
   double obj_copy_time = avg_value(_par_last_obj_copy_times_ms);
   double termination_time = avg_value(_par_last_termination_times_ms);
 
-  double parallel_known_time = update_rs_time +
-                               ext_root_scan_time +
-                               mark_stack_scan_time +
-                               scan_rs_time +
-                               obj_copy_time +
-                               termination_time;
+  double known_time = ext_root_scan_time +
+                      mark_stack_scan_time +
+                      update_rs_time +
+                      scan_rs_time +
+                      obj_copy_time;
 
-  double parallel_other_time = _cur_collection_par_time_ms - parallel_known_time;
+  double other_time_ms = elapsed_ms;
 
-  PauseSummary* summary = _summary;
+  // Subtract the SATB drain time. It's initialized to zero at the
+  // start of the pause and is updated during the pause if marking
+  // is in progress.
+  other_time_ms -= _cur_satb_drain_time_ms;
+
+  if (parallel) {
+    other_time_ms -= _cur_collection_par_time_ms;
+  } else {
+    other_time_ms -= known_time;
+  }
+
+  // Subtract the time taken to clean the card table from the
+  // current value of "other time"
+  other_time_ms -= _cur_clear_ct_time_ms;
+
+  // TraceGen0Time and TraceGen1Time summary info updating.
+  _all_pause_times_ms->add(elapsed_ms);
 
   if (update_stats) {
     _recent_rs_scan_times_ms->add(scan_rs_time);
     _recent_pause_times_ms->add(elapsed_ms);
     _recent_rs_sizes->add(rs_size);
 
-    MainBodySummary* body_summary = summary->main_body_summary();
-    guarantee(body_summary != NULL, "should not be null!");
+    _summary->record_total_time_ms(elapsed_ms);
+    _summary->record_other_time_ms(other_time_ms);
 
-    if (_satb_drain_time_set)
-      body_summary->record_satb_drain_time_ms(_cur_satb_drain_time_ms);
-    else
-      body_summary->record_satb_drain_time_ms(0.0);
+    MainBodySummary* body_summary = _summary->main_body_summary();
+    assert(body_summary != NULL, "should not be null!");
+
+    // This will be non-zero iff marking is currently in progress (i.e.
+    // _g1->mark_in_progress() == true) and the currrent pause was not
+    // an initial mark pause. Since the body_summary items are NumberSeqs,
+    // however, they have to be consistent and updated in lock-step with
+    // each other. Therefore we unconditionally record the SATB drain
+    // time - even if it's zero.
+    body_summary->record_satb_drain_time_ms(_cur_satb_drain_time_ms);
 
     body_summary->record_ext_root_scan_time_ms(ext_root_scan_time);
     body_summary->record_mark_stack_scan_time_ms(mark_stack_scan_time);
     body_summary->record_update_rs_time_ms(update_rs_time);
     body_summary->record_scan_rs_time_ms(scan_rs_time);
     body_summary->record_obj_copy_time_ms(obj_copy_time);
+
     if (parallel) {
       body_summary->record_parallel_time_ms(_cur_collection_par_time_ms);
-      body_summary->record_clear_ct_time_ms(_cur_clear_ct_time_ms);
       body_summary->record_termination_time_ms(termination_time);
+
+      double parallel_known_time = known_time + termination_time;
+      double parallel_other_time = _cur_collection_par_time_ms - parallel_known_time;
       body_summary->record_parallel_other_time_ms(parallel_other_time);
     }
+
     body_summary->record_mark_closure_time_ms(_mark_closure_time_ms);
+    body_summary->record_clear_ct_time_ms(_cur_clear_ct_time_ms);
 
     // We exempt parallel collection from this check because Alloc Buffer
     // fragmentation can produce negative collections.  Same with evac
@@ -1307,6 +1345,7 @@ void G1CollectorPolicy::record_collection_pause_end() {
            || _g1->evacuation_failed()
            || surviving_bytes <= _collection_set_bytes_used_before,
            "Or else negative collection!");
+
     _recent_CS_bytes_used_before->add(_collection_set_bytes_used_before);
     _recent_CS_bytes_surviving->add(surviving_bytes);
 
@@ -1357,6 +1396,13 @@ void G1CollectorPolicy::record_collection_pause_end() {
     }
   }
 
+  for (int i = 0; i < _aux_num; ++i) {
+    if (_cur_aux_times_set[i]) {
+      _all_aux_times_ms[i].add(_cur_aux_times_ms[i]);
+    }
+  }
+
+
   if (G1PolicyVerbose > 1) {
     gclog_or_tty->print_cr("   Recording collection pause(%d)", _n_pauses);
   }
@@ -1383,61 +1429,60 @@ void G1CollectorPolicy::record_collection_pause_end() {
                            recent_avg_pause_time_ratio() * 100.0);
   }
 
-  double other_time_ms = elapsed_ms;
-
-  if (_satb_drain_time_set) {
-    other_time_ms -= _cur_satb_drain_time_ms;
-  }
-
-  if (parallel) {
-    other_time_ms -= _cur_collection_par_time_ms + _cur_clear_ct_time_ms;
-  } else {
-    other_time_ms -=
-      update_rs_time +
-      ext_root_scan_time + mark_stack_scan_time +
-      scan_rs_time + obj_copy_time;
-  }
-
+  // PrintGCDetails output
   if (PrintGCDetails) {
+    bool print_marking_info =
+      _g1->mark_in_progress() && !last_pause_included_initial_mark;
+
     gclog_or_tty->print_cr("%s, %1.8lf secs]",
                            (last_pause_included_initial_mark) ? " (initial-mark)" : "",
                            elapsed_ms / 1000.0);
 
-    if (_satb_drain_time_set) {
+    if (print_marking_info) {
       print_stats(1, "SATB Drain Time", _cur_satb_drain_time_ms);
-    }
-    if (_last_satb_drain_processed_buffers >= 0) {
       print_stats(2, "Processed Buffers", _last_satb_drain_processed_buffers);
     }
+
     if (parallel) {
       print_stats(1, "Parallel Time", _cur_collection_par_time_ms);
-      print_par_stats(2, "GC Worker Start Time", _par_last_gc_worker_start_times_ms);
+      print_par_stats(2, "GC Worker Start", _par_last_gc_worker_start_times_ms);
+      print_par_stats(2, "Ext Root Scanning", _par_last_ext_root_scan_times_ms);
+      if (print_marking_info) {
+        print_par_stats(2, "Mark Stack Scanning", _par_last_mark_stack_scan_times_ms);
+      }
       print_par_stats(2, "Update RS", _par_last_update_rs_times_ms);
       print_par_sizes(3, "Processed Buffers", _par_last_update_rs_processed_buffers);
-      print_par_stats(2, "Ext Root Scanning", _par_last_ext_root_scan_times_ms);
-      print_par_stats(2, "Mark Stack Scanning", _par_last_mark_stack_scan_times_ms);
       print_par_stats(2, "Scan RS", _par_last_scan_rs_times_ms);
       print_par_stats(2, "Object Copy", _par_last_obj_copy_times_ms);
       print_par_stats(2, "Termination", _par_last_termination_times_ms);
       print_par_sizes(3, "Termination Attempts", _par_last_termination_attempts);
-      print_par_stats(2, "GC Worker End Time", _par_last_gc_worker_end_times_ms);
+      print_par_stats(2, "GC Worker End", _par_last_gc_worker_end_times_ms);
 
       for (int i = 0; i < _parallel_gc_threads; i++) {
         _par_last_gc_worker_times_ms[i] = _par_last_gc_worker_end_times_ms[i] - _par_last_gc_worker_start_times_ms[i];
-      }
-      print_par_stats(2, "GC Worker Times", _par_last_gc_worker_times_ms);
 
-      print_stats(2, "Parallel Other", parallel_other_time);
-      print_stats(1, "Clear CT", _cur_clear_ct_time_ms);
+        double worker_known_time = _par_last_ext_root_scan_times_ms[i] +
+                                   _par_last_mark_stack_scan_times_ms[i] +
+                                   _par_last_update_rs_times_ms[i] +
+                                   _par_last_scan_rs_times_ms[i] +
+                                   _par_last_obj_copy_times_ms[i] +
+                                   _par_last_termination_times_ms[i];
+
+        _par_last_gc_worker_other_times_ms[i] = _cur_collection_par_time_ms - worker_known_time;
+      }
+      print_par_stats(2, "GC Worker", _par_last_gc_worker_times_ms);
+      print_par_stats(2, "GC Worker Other", _par_last_gc_worker_other_times_ms);
     } else {
-      print_stats(1, "Update RS", update_rs_time);
-      print_stats(2, "Processed Buffers",
-                  (int)update_rs_processed_buffers);
       print_stats(1, "Ext Root Scanning", ext_root_scan_time);
-      print_stats(1, "Mark Stack Scanning", mark_stack_scan_time);
+      if (print_marking_info) {
+        print_stats(1, "Mark Stack Scanning", mark_stack_scan_time);
+      }
+      print_stats(1, "Update RS", update_rs_time);
+      print_stats(2, "Processed Buffers", (int)update_rs_processed_buffers);
       print_stats(1, "Scan RS", scan_rs_time);
       print_stats(1, "Object Copying", obj_copy_time);
     }
+    print_stats(1, "Clear CT", _cur_clear_ct_time_ms);
 #ifndef PRODUCT
     print_stats(1, "Cur Clear CC", _cur_clear_cc_time_ms);
     print_stats(1, "Cum Clear CC", _cum_clear_cc_time_ms);
@@ -1460,16 +1505,6 @@ void G1CollectorPolicy::record_collection_pause_end() {
       }
     }
   }
-
-  _all_pause_times_ms->add(elapsed_ms);
-  if (update_stats) {
-    summary->record_total_time_ms(elapsed_ms);
-    summary->record_other_time_ms(other_time_ms);
-  }
-  for (int i = 0; i < _aux_num; ++i)
-    if (_cur_aux_times_set[i]) {
-      _all_aux_times_ms[i].add(_cur_aux_times_ms[i]);
-    }
 
   // Update the efficiency-since-mark vars.
   double proc_ms = elapsed_ms * (double) _parallel_gc_threads;
@@ -2138,17 +2173,17 @@ void G1CollectorPolicy::count_CS_bytes_used() {
   _g1->collection_set_iterate(&cs_closure);
 }
 
-void G1CollectorPolicy::print_summary (int level,
-                                       const char* str,
-                                       NumberSeq* seq) const {
+void G1CollectorPolicy::print_summary(int level,
+                                      const char* str,
+                                      NumberSeq* seq) const {
   double sum = seq->sum();
   LineBuffer(level + 1).append_and_print_cr("%-24s = %8.2lf s (avg = %8.2lf ms)",
                 str, sum / 1000.0, seq->avg());
 }
 
-void G1CollectorPolicy::print_summary_sd (int level,
-                                          const char* str,
-                                          NumberSeq* seq) const {
+void G1CollectorPolicy::print_summary_sd(int level,
+                                         const char* str,
+                                         NumberSeq* seq) const {
   print_summary(level, str, seq);
   LineBuffer(level + 6).append_and_print_cr("(num = %5d, std dev = %8.2lf ms, max = %8.2lf ms)",
                 seq->num(), seq->sd(), seq->maximum());
@@ -2211,20 +2246,18 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
       print_summary(1, "SATB Drain", body_summary->get_satb_drain_seq());
       if (parallel) {
         print_summary(1, "Parallel Time", body_summary->get_parallel_seq());
+        print_summary(2, "Ext Root Scanning", body_summary->get_ext_root_scan_seq());
+        print_summary(2, "Mark Stack Scanning", body_summary->get_mark_stack_scan_seq());
         print_summary(2, "Update RS", body_summary->get_update_rs_seq());
-        print_summary(2, "Ext Root Scanning",
-                      body_summary->get_ext_root_scan_seq());
-        print_summary(2, "Mark Stack Scanning",
-                      body_summary->get_mark_stack_scan_seq());
         print_summary(2, "Scan RS", body_summary->get_scan_rs_seq());
         print_summary(2, "Object Copy", body_summary->get_obj_copy_seq());
         print_summary(2, "Termination", body_summary->get_termination_seq());
-        print_summary(2, "Other", body_summary->get_parallel_other_seq());
+        print_summary(2, "Parallel Other", body_summary->get_parallel_other_seq());
         {
           NumberSeq* other_parts[] = {
-            body_summary->get_update_rs_seq(),
             body_summary->get_ext_root_scan_seq(),
             body_summary->get_mark_stack_scan_seq(),
+            body_summary->get_update_rs_seq(),
             body_summary->get_scan_rs_seq(),
             body_summary->get_obj_copy_seq(),
             body_summary->get_termination_seq()
@@ -2234,18 +2267,16 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
           check_other_times(2, body_summary->get_parallel_other_seq(),
                             &calc_other_times_ms);
         }
-        print_summary(1, "Mark Closure", body_summary->get_mark_closure_seq());
-        print_summary(1, "Clear CT", body_summary->get_clear_ct_seq());
       } else {
+        print_summary(1, "Ext Root Scanning", body_summary->get_ext_root_scan_seq());
+        print_summary(1, "Mark Stack Scanning", body_summary->get_mark_stack_scan_seq());
         print_summary(1, "Update RS", body_summary->get_update_rs_seq());
-        print_summary(1, "Ext Root Scanning",
-                      body_summary->get_ext_root_scan_seq());
-        print_summary(1, "Mark Stack Scanning",
-                      body_summary->get_mark_stack_scan_seq());
         print_summary(1, "Scan RS", body_summary->get_scan_rs_seq());
         print_summary(1, "Object Copy", body_summary->get_obj_copy_seq());
       }
     }
+    print_summary(1, "Mark Closure", body_summary->get_mark_closure_seq());
+    print_summary(1, "Clear CT", body_summary->get_clear_ct_seq());
     print_summary(1, "Other", summary->get_other_seq());
     {
       if (body_summary != NULL) {
