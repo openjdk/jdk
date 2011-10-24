@@ -262,7 +262,9 @@ public class MarshalInputStream extends ObjectInputStream {
      * Returns the first non-null class loader up the execution stack, or null
      * if only code from the null class loader is on the stack.
      */
-    private static native ClassLoader latestUserDefinedLoader();
+    private static ClassLoader latestUserDefinedLoader() {
+        return sun.misc.VM.latestUserDefinedLoader();
+    }
 
     /**
      * Fix for 4179055: Need to assist resolving sun stubs; resolve
