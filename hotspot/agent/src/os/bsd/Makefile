@@ -32,7 +32,6 @@ SOURCES  = salibelf.c   \
 	libproc_impl.c  \
 	ps_proc.c       \
 	ps_core.c       \
-	hsearch_r.c     \
 	BsdDebuggerLocal.c
 
 INCLUDES = -I${JAVA_HOME}/include -I${JAVA_HOME}/include/$(shell uname -s | tr "[:upper:]" "[:lower:]")
