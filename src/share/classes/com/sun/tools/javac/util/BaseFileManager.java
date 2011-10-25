@@ -52,7 +52,7 @@ import javax.tools.JavaFileObject.Kind;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.file.FSInfo;
-import com.sun.tools.javac.file.Paths;
+import com.sun.tools.javac.file.Locations;
 import com.sun.tools.javac.main.JavacOption;
 import com.sun.tools.javac.main.OptionName;
 import com.sun.tools.javac.main.RecognizedOptions;
@@ -67,7 +67,7 @@ public abstract class BaseFileManager {
     protected BaseFileManager(Charset charset) {
         this.charset = charset;
         byteBufferCache = new ByteBufferCache();
-        searchPaths = createPaths();
+        locations = createLocations();
     }
 
     /**
@@ -77,11 +77,11 @@ public abstract class BaseFileManager {
         log = Log.instance(context);
         options = Options.instance(context);
         classLoaderClass = options.get("procloader");
-        searchPaths.update(log, options, Lint.instance(context), FSInfo.instance(context));
+        locations.update(log, options, Lint.instance(context), FSInfo.instance(context));
     }
 
-    protected Paths createPaths() {
-        return new Paths();
+    protected Locations createLocations() {
+        return new Locations();
     }
 
     /**
@@ -98,7 +98,7 @@ public abstract class BaseFileManager {
 
     protected String classLoaderClass;
 
-    protected Paths searchPaths;
+    protected Locations locations;
 
     protected Source getSource() {
         String sourceName = options.get(OptionName.SOURCE);
