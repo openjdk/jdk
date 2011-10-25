@@ -817,7 +817,6 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                            &_handler_table, &_inc_table,
                            compiler,
                            env()->comp_level(),
-                           true, /*has_debug_info*/
                            has_unsafe_access()
                            );
   }

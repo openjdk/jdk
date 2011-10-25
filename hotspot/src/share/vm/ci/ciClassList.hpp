@@ -77,12 +77,14 @@ class         ciTypeArrayKlassKlass;
 
 // Everyone gives access to ciObjectFactory
 #define CI_PACKAGE_ACCESS \
-friend class ciObjectFactory;
+friend class ciObjectFactory; \
+friend class VMStructs;
 
 // These are the packages that have access to ciEnv
 // Any more access must be given explicitly.
 #define CI_PACKAGE_ACCESS_TO           \
 friend class ciObjectFactory;          \
+friend class VMStructs;                \
 friend class ciCallSite;               \
 friend class ciConstantPoolCache;      \
 friend class ciField;                  \

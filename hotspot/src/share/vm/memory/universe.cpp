@@ -89,6 +89,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 #ifndef SERIALGC
 #include "gc_implementation/concurrentMarkSweep/cmsAdaptiveSizePolicy.hpp"
 #include "gc_implementation/concurrentMarkSweep/cmsCollectorPolicy.hpp"
@@ -890,7 +893,7 @@ jint Universe::initialize_heap() {
 
   } else if (UseG1GC) {
 #ifndef SERIALGC
-    G1CollectorPolicy* g1p = new G1CollectorPolicy_BestRegionsFirst();
+    G1CollectorPolicy* g1p = new G1CollectorPolicy();
     G1CollectedHeap* g1h = new G1CollectedHeap(g1p);
     Universe::_collectedHeap = g1h;
 #else  // SERIALGC
@@ -1203,12 +1206,12 @@ void Universe::flush_dependents_on(Handle call_site, Handle method_handle) {
   // Compute the dependent nmethods that have a reference to a
   // CallSite object.  We use instanceKlass::mark_dependent_nmethod
   // directly instead of CodeCache::mark_for_deoptimization because we
-  // want dependents on the class CallSite only not all classes in the
-  // ContextStream.
+  // want dependents on the call site class only not all classes in
+  // the ContextStream.
   int marked = 0;
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    instanceKlass* call_site_klass = instanceKlass::cast(SystemDictionary::CallSite_klass());
+    instanceKlass* call_site_klass = instanceKlass::cast(call_site->klass());
     marked = call_site_klass->mark_dependent_nmethods(changes);
   }
   if (marked > 0) {

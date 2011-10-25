@@ -36,6 +36,9 @@
 // which ensures that for each oop, at most one ciObject is created.
 // This invariant allows efficient implementation of ciObject.
 class ciObjectFactory : public ResourceObj {
+  friend class VMStructs;
+  friend class ciEnv;
+
 private:
   static volatile bool _initialized;
   static GrowableArray<ciObject*>* _shared_ci_objects;
@@ -105,7 +108,8 @@ public:
   // Get the ciMethod representing an unloaded/unfound method.
   ciMethod* get_unloaded_method(ciInstanceKlass* holder,
                                 ciSymbol*        name,
-                                ciSymbol*        signature);
+                                ciSymbol*        signature,
+                                ciInstanceKlass* accessor);
 
   // Get a ciKlass representing an unloaded klass.
   ciKlass* get_unloaded_klass(ciKlass* accessing_klass,

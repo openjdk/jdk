@@ -45,6 +45,8 @@ class vframeStream;
 // information, etc.
 
 class SharedRuntime: AllStatic {
+  friend class VMStructs;
+
  private:
   static methodHandle resolve_sub_helper(JavaThread *thread,
                                      bool is_virtual,
