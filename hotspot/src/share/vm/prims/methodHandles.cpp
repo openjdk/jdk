@@ -3079,26 +3079,26 @@ JVM_ENTRY(jint, MHN_getMembers(JNIEnv *env, jobject igcls,
 JVM_END
 
 JVM_ENTRY(void, MHN_setCallSiteTargetNormal(JNIEnv* env, jobject igcls, jobject call_site_jh, jobject target_jh)) {
-  oop call_site = JNIHandles::resolve_non_null(call_site_jh);
-  oop target    = JNIHandles::resolve(target_jh);
+  Handle call_site(THREAD, JNIHandles::resolve_non_null(call_site_jh));
+  Handle target   (THREAD, JNIHandles::resolve(target_jh));
   {
     // Walk all nmethods depending on this call site.
     MutexLocker mu(Compile_lock, thread);
     Universe::flush_dependents_on(call_site, target);
   }
-  java_lang_invoke_CallSite::set_target(call_site, target);
+  java_lang_invoke_CallSite::set_target(call_site(), target());
 }
 JVM_END
 
 JVM_ENTRY(void, MHN_setCallSiteTargetVolatile(JNIEnv* env, jobject igcls, jobject call_site_jh, jobject target_jh)) {
-  oop call_site = JNIHandles::resolve_non_null(call_site_jh);
-  oop target    = JNIHandles::resolve(target_jh);
+  Handle call_site(THREAD, JNIHandles::resolve_non_null(call_site_jh));
+  Handle target   (THREAD, JNIHandles::resolve(target_jh));
   {
     // Walk all nmethods depending on this call site.
     MutexLocker mu(Compile_lock, thread);
     Universe::flush_dependents_on(call_site, target);
   }
-  java_lang_invoke_CallSite::set_target_volatile(call_site, target);
+  java_lang_invoke_CallSite::set_target_volatile(call_site(), target());
 }
 JVM_END
 
