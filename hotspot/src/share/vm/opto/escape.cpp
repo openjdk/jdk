@@ -108,14 +108,16 @@ ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn) :
   // Add ConP(#NULL) and ConN(#NULL) nodes.
   Node* oop_null = igvn->zerocon(T_OBJECT);
   _oop_null = oop_null->_idx;
-  assert(_oop_null < C->unique(), "should be created already");
+  assert(_oop_null < nodes_size(), "should be created already");
   add_node(oop_null, PointsToNode::JavaObject, PointsToNode::NoEscape, true);
 
   if (UseCompressedOops) {
     Node* noop_null = igvn->zerocon(T_NARROWOOP);
     _noop_null = noop_null->_idx;
-    assert(_noop_null < C->unique(), "should be created already");
+    assert(_noop_null < nodes_size(), "should be created already");
     add_node(noop_null, PointsToNode::JavaObject, PointsToNode::NoEscape, true);
+  } else {
+    _noop_null = _oop_null; // Should be initialized
   }
 }
 
@@ -174,6 +176,9 @@ void ConnectionGraph::add_field_edge(uint from_i, uint to_i, int offset) {
 }
 
 void ConnectionGraph::set_escape_state(uint ni, PointsToNode::EscapeState es) {
+  // Don't change non-escaping state of NULL pointer.
+  if (ni == _noop_null || ni == _oop_null)
+    return;
   PointsToNode *npt = ptnode_adr(ni);
   PointsToNode::EscapeState old_es = npt->escape_state();
   if (es > old_es)
@@ -231,8 +236,8 @@ PointsToNode::EscapeState ConnectionGraph::escape_state(Node *n) {
   }
   if (orig_es != es) {
     // cache the computed escape state
-    assert(es != PointsToNode::UnknownEscape, "should have computed an escape state");
-    ptnode_adr(idx)->set_escape_state(es);
+    assert(es > orig_es, "should have computed an escape state");
+    set_escape_state(idx, es);
   } // orig_es could be PointsToNode::UnknownEscape
   return es;
 }
@@ -334,7 +339,7 @@ void ConnectionGraph::remove_deferred(uint ni, GrowableArray<uint>* deferred_edg
         add_pointsto_edge(ni, etgt);
         if(etgt == _phantom_object) {
           // Special case - field set outside (globally escaping).
-          ptn->set_escape_state(PointsToNode::GlobalEscape);
+          set_escape_state(ni, PointsToNode::GlobalEscape);
         }
       } else if (et == PointsToNode::DeferredEdge) {
         deferred_edges->append(etgt);
@@ -1686,7 +1691,7 @@ bool ConnectionGraph::compute_escape() {
       uint npi = ptn->edge_target(ei);
       PointsToNode *np = ptnode_adr(npi);
       if (np->escape_state() < PointsToNode::GlobalEscape) {
-        np->set_escape_state(PointsToNode::GlobalEscape);
+        set_escape_state(npi, PointsToNode::GlobalEscape);
         worklist.push(npi);
       }
     }
@@ -1708,7 +1713,7 @@ bool ConnectionGraph::compute_escape() {
       uint npi = ptn->edge_target(ei);
       PointsToNode *np = ptnode_adr(npi);
       if (np->escape_state() < PointsToNode::ArgEscape) {
-        np->set_escape_state(PointsToNode::ArgEscape);
+        set_escape_state(npi, PointsToNode::ArgEscape);
         worklist.push(npi);
       }
     }
@@ -1724,9 +1729,11 @@ bool ConnectionGraph::compute_escape() {
   }
   // mark all nodes reachable from NoEscape nodes
   while(worklist.length() > 0) {
-    PointsToNode* ptn = ptnode_adr(worklist.pop());
-    if (ptn->node_type() == PointsToNode::JavaObject)
-      has_non_escaping_obj = true; // Non GlobalEscape
+    uint nk = worklist.pop();
+    PointsToNode* ptn = ptnode_adr(nk);
+    if (ptn->node_type() == PointsToNode::JavaObject &&
+        !(nk == _noop_null || nk == _oop_null))
+      has_non_escaping_obj = true; // Non Escape
     Node* n = ptn->_node;
     if (n->is_Allocate() && ptn->_scalar_replaceable ) {
       // Push scalar replaceable allocations on alloc_worklist
@@ -1738,7 +1745,7 @@ bool ConnectionGraph::compute_escape() {
       uint npi = ptn->edge_target(ei);
       PointsToNode *np = ptnode_adr(npi);
       if (np->escape_state() < PointsToNode::NoEscape) {
-        np->set_escape_state(PointsToNode::NoEscape);
+        set_escape_state(npi, PointsToNode::NoEscape);
         worklist.push(npi);
       }
     }
@@ -1746,6 +1753,11 @@ bool ConnectionGraph::compute_escape() {
 
   _collecting = false;
   assert(C->unique() == nodes_size(), "there should be no new ideal nodes during ConnectionGraph build");
+
+  assert(ptnode_adr(_oop_null)->escape_state() == PointsToNode::NoEscape, "sanity");
+  if (UseCompressedOops) {
+    assert(ptnode_adr(_noop_null)->escape_state() == PointsToNode::NoEscape, "sanity");
+  }
 
   if (EliminateLocks) {
     // Mark locks before changing ideal graph.
