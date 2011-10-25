@@ -110,14 +110,6 @@ public class MarshalInputStream extends ObjectInputStream {
     }
 
     /**
-     * Load the "rmi" native library.
-     */
-    static {
-        java.security.AccessController.doPrivileged(
-            new sun.security.action.LoadLibraryAction("rmi"));
-    }
-
-    /**
      * Create a new MarshalInputStream object.
      */
     public MarshalInputStream(InputStream in)
