@@ -166,9 +166,14 @@ class Dependencies: public ResourceObj {
     LG2_TYPE_LIMIT = 4,  // assert(TYPE_LIMIT <= (1<<LG2_TYPE_LIMIT))
 
     // handy categorizations of dependency types:
-    all_types      = ((1<<TYPE_LIMIT)-1) & ((-1)<<FIRST_TYPE),
-    non_ctxk_types = (1<<evol_method),
-    ctxk_types     = all_types & ~non_ctxk_types,
+    all_types           = ((1 << TYPE_LIMIT) - 1) & ((-1) << FIRST_TYPE),
+
+    non_klass_types     = (1 << call_site_target_value),
+    klass_types         = all_types & ~non_klass_types,
+
+    non_ctxk_types      = (1 << evol_method),
+    implicit_ctxk_types = (1 << call_site_target_value),
+    explicit_ctxk_types = all_types & ~(non_ctxk_types | implicit_ctxk_types),
 
     max_arg_count = 3,   // current maximum number of arguments (incl. ctxk)
 
@@ -184,9 +189,15 @@ class Dependencies: public ResourceObj {
 
   static const char* dep_name(DepType dept);
   static int         dep_args(DepType dept);
-  static int  dep_context_arg(DepType dept) {
-    return dept_in_mask(dept, ctxk_types)? 0: -1;
-  }
+
+  static bool is_klass_type(           DepType dept) { return dept_in_mask(dept, klass_types        ); }
+
+  static bool has_explicit_context_arg(DepType dept) { return dept_in_mask(dept, explicit_ctxk_types); }
+  static bool has_implicit_context_arg(DepType dept) { return dept_in_mask(dept, implicit_ctxk_types); }
+
+  static int           dep_context_arg(DepType dept) { return has_explicit_context_arg(dept) ? 0 : -1; }
+  static int  dep_implicit_context_arg(DepType dept) { return has_implicit_context_arg(dept) ? 0 : -1; }
+
   static void check_valid_dependency_type(DepType dept);
 
  private:
@@ -250,8 +261,8 @@ class Dependencies: public ResourceObj {
   }
 
   void assert_common_1(DepType dept, ciObject* x);
-  void assert_common_2(DepType dept, ciKlass* ctxk, ciObject* x);
-  void assert_common_3(DepType dept, ciKlass* ctxk, ciObject* x, ciObject* x2);
+  void assert_common_2(DepType dept, ciObject* x0, ciObject* x1);
+  void assert_common_3(DepType dept, ciKlass* ctxk, ciObject* x1, ciObject* x2);
 
  public:
   // Adding assertions to a new dependency set at compile time:
@@ -264,7 +275,7 @@ class Dependencies: public ResourceObj {
   void assert_abstract_with_exclusive_concrete_subtypes(ciKlass* ctxk, ciKlass* k1, ciKlass* k2);
   void assert_exclusive_concrete_methods(ciKlass* ctxk, ciMethod* m1, ciMethod* m2);
   void assert_has_no_finalizable_subclasses(ciKlass* ctxk);
-  void assert_call_site_target_value(ciKlass* ctxk, ciCallSite* call_site, ciMethodHandle* method_handle);
+  void assert_call_site_target_value(ciCallSite* call_site, ciMethodHandle* method_handle);
 
   // Define whether a given method or type is concrete.
   // These methods define the term "concrete" as used in this module.
@@ -318,7 +329,7 @@ class Dependencies: public ResourceObj {
   static klassOop check_exclusive_concrete_methods(klassOop ctxk, methodOop m1, methodOop m2,
                                                    KlassDepChange* changes = NULL);
   static klassOop check_has_no_finalizable_subclasses(klassOop ctxk, KlassDepChange* changes = NULL);
-  static klassOop check_call_site_target_value(klassOop ctxk, oop call_site, oop method_handle, CallSiteDepChange* changes = NULL);
+  static klassOop check_call_site_target_value(oop call_site, oop method_handle, CallSiteDepChange* changes = NULL);
   // A returned klassOop is NULL if the dependency assertion is still
   // valid.  A non-NULL klassOop is a 'witness' to the assertion
   // failure, a point in the class hierarchy where the assertion has
@@ -454,6 +465,8 @@ class Dependencies: public ResourceObj {
                                    return _xi[i]; }
     oop argument(int i);         // => recorded_oop_at(argument_index(i))
     klassOop context_type();
+
+    bool is_klass_type()         { return Dependencies::is_klass_type(type()); }
 
     methodOop method_argument(int i) {
       oop x = argument(i);

@@ -421,8 +421,7 @@ void G1PreBarrierStub::emit_code(LIR_Assembler* ce) {
   }
 
   if (__ is_in_wdisp16_range(_continuation)) {
-    __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pt,
-                      pre_val_reg, _continuation);
+    __ br_null(pre_val_reg, /*annul*/false, Assembler::pt, _continuation);
   } else {
     __ cmp(pre_val_reg, G0);
     __ brx(Assembler::equal, false, Assembler::pn, _continuation);
@@ -458,8 +457,7 @@ void G1UnsafeGetObjSATBBarrierStub::emit_code(LIR_Assembler* ce) {
     // The original src operand was not a constant.
     // Generate src == null?
     if (__ is_in_wdisp16_range(_continuation)) {
-      __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pt,
-                        src_reg, _continuation);
+      __ br_null(src_reg, /*annul*/false, Assembler::pt, _continuation);
     } else {
       __ cmp(src_reg, G0);
       __ brx(Assembler::equal, false, Assembler::pt, _continuation);
@@ -476,13 +474,9 @@ void G1UnsafeGetObjSATBBarrierStub::emit_code(LIR_Assembler* ce) {
   Address ref_type_adr(tmp_reg, instanceKlass::reference_type_offset_in_bytes() + sizeof(oopDesc));
   __ ld(ref_type_adr, tmp_reg);
 
-  if (__ is_in_wdisp16_range(_continuation)) {
-    __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pt,
-                      tmp_reg, _continuation);
-  } else {
-    __ cmp(tmp_reg, G0);
-    __ brx(Assembler::equal, false, Assembler::pt, _continuation);
-  }
+  // _reference_type field is of type ReferenceType (enum)
+  assert(REF_NONE == 0, "check this code");
+  __ cmp_zero_and_br(Assembler::equal, tmp_reg, _continuation, /*annul*/false, Assembler::pt);
   __ delayed()->nop();
 
   // Is marking active?
@@ -498,13 +492,8 @@ void G1UnsafeGetObjSATBBarrierStub::emit_code(LIR_Assembler* ce) {
     assert(in_bytes(PtrQueue::byte_width_of_active()) == 1, "Assumption");
     __ ldsb(in_progress, tmp_reg);
   }
-  if (__ is_in_wdisp16_range(_continuation)) {
-    __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pt,
-                      tmp_reg, _continuation);
-  } else {
-    __ cmp(tmp_reg, G0);
-    __ brx(Assembler::equal, false, Assembler::pt, _continuation);
-  }
+
+  __ cmp_zero_and_br(Assembler::equal, tmp_reg, _continuation, /*annul*/false, Assembler::pt);
   __ delayed()->nop();
 
   // val == null?
@@ -512,8 +501,7 @@ void G1UnsafeGetObjSATBBarrierStub::emit_code(LIR_Assembler* ce) {
   Register val_reg = val()->as_register();
 
   if (__ is_in_wdisp16_range(_continuation)) {
-    __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pt,
-                      val_reg, _continuation);
+    __ br_null(val_reg, /*annul*/false, Assembler::pt, _continuation);
   } else {
     __ cmp(val_reg, G0);
     __ brx(Assembler::equal, false, Assembler::pt, _continuation);
@@ -542,9 +530,9 @@ void G1PostBarrierStub::emit_code(LIR_Assembler* ce) {
   assert(new_val()->is_register(), "Precondition.");
   Register addr_reg = addr()->as_pointer_register();
   Register new_val_reg = new_val()->as_register();
+
   if (__ is_in_wdisp16_range(_continuation)) {
-    __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pt,
-                      new_val_reg, _continuation);
+    __ br_null(new_val_reg, /*annul*/false, Assembler::pt, _continuation);
   } else {
     __ cmp(new_val_reg, G0);
     __ brx(Assembler::equal, false, Assembler::pn, _continuation);

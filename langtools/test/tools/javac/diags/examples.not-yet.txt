@@ -60,7 +60,7 @@ compiler.misc.class.file.wrong.class
 compiler.misc.fatal.err.cant.locate.ctor                # Resolve, from Lower
 compiler.misc.fatal.err.cant.locate.field               # Resolve, from Lower
 compiler.misc.fatal.err.cant.locate.meth                # Resolve, from Lower
-compiler.misc.fatal.err.cant.close.loader               # JavacProcessingEnvironment
+compiler.misc.fatal.err.cant.close	                # JavaCompiler
 compiler.misc.file.does.not.contain.package
 compiler.misc.illegal.start.of.class.file
 compiler.misc.kindname.annotation

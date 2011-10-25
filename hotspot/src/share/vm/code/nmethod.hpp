@@ -191,8 +191,6 @@ class nmethod : public CodeBlob {
 
   jbyte _scavenge_root_state;
 
-  NOT_PRODUCT(bool _has_debug_info; )
-
   // Nmethod Flushing lock. If non-zero, then the nmethod is not removed
   // and is not made into a zombie. However, once the nmethod is made into
   // a zombie, it will be locked one final time if CompiledMethodUnload
@@ -328,11 +326,6 @@ class nmethod : public CodeBlob {
   // accessors
   methodOop method() const                        { return _method; }
   AbstractCompiler* compiler() const              { return _compiler; }
-
-#ifndef PRODUCT
-  bool has_debug_info() const                     { return _has_debug_info; }
-  void set_has_debug_info(bool f)                 { _has_debug_info = false; }
-#endif // NOT PRODUCT
 
   // type info
   bool is_nmethod() const                         { return true; }

@@ -98,7 +98,7 @@ void VM_G1IncCollectionPause::doit() {
 
     // At this point we are supposed to start a concurrent cycle. We
     // will do so if one is not already in progress.
-    bool res = g1h->g1_policy()->force_initial_mark_if_outside_cycle();
+    bool res = g1h->g1_policy()->force_initial_mark_if_outside_cycle(_gc_cause);
 
     // The above routine returns true if we were able to force the
     // next GC pause to be an initial mark; it returns false if a

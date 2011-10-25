@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 
-#ifndef _WINDOWS
+#if !defined(_WINDOWS) && !defined(__APPLE__)
 
 #include "memory/allocation.inline.hpp"
 #include "runtime/os.hpp"
@@ -87,4 +87,3 @@ const char* ElfStringTable::string_at(int pos) {
 }
 
 #endif // _WINDOWS
-

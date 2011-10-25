@@ -733,26 +733,13 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
           return 0;
       }
       case WM_AWT_DISPOSE: {
-          BOOL canDispose = TRUE;
-          CriticalSection &syncCS = AwtToolkit::GetInstance().GetSyncCS();
-          int shouldEnterCriticalSection = (int)lParam;
-          if (shouldEnterCriticalSection == 1) {
-              canDispose = syncCS.TryEnter();
-          }
-          if (canDispose) {
-              if(wParam != NULL) {
-                  jobject self = (jobject)wParam;
-                  AwtObject *o = (AwtObject *) JNI_GET_PDATA(self);
-                  env->DeleteGlobalRef(self);
-                  if(o != NULL && theAwtObjectList.Remove(o)) {
-                      o->Dispose();
-                  }
-                  if (shouldEnterCriticalSection) {
-                      syncCS.Leave();
-                  }
+          if(wParam != NULL) {
+              jobject self = (jobject)wParam;
+              AwtObject *o = (AwtObject *) JNI_GET_PDATA(self);
+              env->DeleteGlobalRef(self);
+              if(o != NULL && theAwtObjectList.Remove(o)) {
+                  o->Dispose();
               }
-          } else {
-              AwtToolkit::GetInstance().PostMessage(WM_AWT_DISPOSE, wParam, lParam);
           }
           return 0;
       }
@@ -1340,25 +1327,46 @@ BOOL AwtToolkit::PumpWaitingMessages(PEEKMESSAGEPROC lpPeekMessageFunc)
 
     while (!m_breakMessageLoop && (*lpPeekMessageFunc)(msg)) {
         foundOne = TRUE;
-        if (msg.message == WM_QUIT) {
-            m_breakMessageLoop = TRUE;
-            m_messageLoopResult = static_cast<UINT>(msg.wParam);
-            if (m_messageLoopResult == EXIT_ALL_ENCLOSING_LOOPS)
-                ::PostQuitMessage(static_cast<int>(msg.wParam));  // make sure all loops exit
-            break;
-        }
-        else if (msg.message != WM_NULL) {
-            /*
-             * The AWT in standalone mode (that is, dynamically loaded from the
-             * Java VM) doesn't have any translation tables to worry about, so
-             * TranslateAccelerator isn't called.
-             */
-
-            ::TranslateMessage(&msg);
-            ::DispatchMessage(&msg);
-        }
+        ProcessMsg(msg);
     }
     return foundOne;
+}
+
+void AwtToolkit::PumpToDestroy(class AwtComponent* p)
+{
+    MSG  msg;
+
+    DASSERT(AwtToolkit::PrimaryIdleFunc != NULL);
+    DASSERT(AwtToolkit::CommonPeekMessageFunc != NULL);
+
+    while (p->IsDestroyPaused() && !m_breakMessageLoop) {
+
+        PrimaryIdleFunc();
+
+        while (p->IsDestroyPaused() && !m_breakMessageLoop && CommonPeekMessageFunc(msg)) {
+            ProcessMsg(msg);
+        }
+    }
+}
+
+void AwtToolkit::ProcessMsg(MSG& msg)
+{
+    if (msg.message == WM_QUIT) {
+        m_breakMessageLoop = TRUE;
+        m_messageLoopResult = static_cast<UINT>(msg.wParam);
+        if (m_messageLoopResult == EXIT_ALL_ENCLOSING_LOOPS)
+            ::PostQuitMessage(static_cast<int>(msg.wParam));  // make sure all loops exit
+    }
+    else if (msg.message != WM_NULL) {
+        /*
+        * The AWT in standalone mode (that is, dynamically loaded from the
+        * Java VM) doesn't have any translation tables to worry about, so
+        * TranslateAccelerator isn't called.
+        */
+
+        ::TranslateMessage(&msg);
+        ::DispatchMessage(&msg);
+    }
 }
 
 VOID CALLBACK

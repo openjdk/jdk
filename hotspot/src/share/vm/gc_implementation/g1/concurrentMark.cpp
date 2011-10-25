@@ -28,6 +28,7 @@
 #include "gc_implementation/g1/concurrentMarkThread.inline.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
+#include "gc_implementation/g1/g1ErgoVerbose.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
@@ -817,10 +818,10 @@ void ConcurrentMark::checkpointRootsInitialPost() {
   NoteStartOfMarkHRClosure startcl;
   g1h->heap_region_iterate(&startcl);
 
-  // Start weak-reference discovery.
-  ReferenceProcessor* rp = g1h->ref_processor();
-  rp->verify_no_references_recorded();
-  rp->enable_discovery(); // enable ("weak") refs discovery
+  // Start Concurrent Marking weak-reference discovery.
+  ReferenceProcessor* rp = g1h->ref_processor_cm();
+  // enable ("weak") refs discovery
+  rp->enable_discovery(true /*verify_disabled*/, true /*verify_no_refs*/);
   rp->setup_policy(false); // snapshot the soft ref policy to be used in this cycle
 
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
@@ -1132,6 +1133,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
   // world is stopped at this checkpoint
   assert(SafepointSynchronize::is_at_safepoint(),
          "world should be stopped");
+
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   // If a full collection has happened, we shouldn't do this.
@@ -1727,17 +1729,20 @@ void ConcurrentMark::cleanup() {
 
   size_t known_garbage_bytes =
     g1_par_count_task.used_bytes() - g1_par_count_task.live_bytes();
-#if 0
-  gclog_or_tty->print_cr("used %1.2lf, live %1.2lf, garbage %1.2lf",
-                         (double) g1_par_count_task.used_bytes() / (double) (1024 * 1024),
-                         (double) g1_par_count_task.live_bytes() / (double) (1024 * 1024),
-                         (double) known_garbage_bytes / (double) (1024 * 1024));
-#endif // 0
   g1p->set_known_garbage_bytes(known_garbage_bytes);
 
   size_t start_used_bytes = g1h->used();
   _at_least_one_mark_complete = true;
   g1h->set_marking_complete();
+
+  ergo_verbose4(ErgoConcCycles,
+           "finish cleanup",
+           ergo_format_byte("occupancy")
+           ergo_format_byte("capacity")
+           ergo_format_byte_perc("known garbage"),
+           start_used_bytes, g1h->capacity(),
+           known_garbage_bytes,
+           ((double) known_garbage_bytes / (double) g1h->capacity()) * 100.0);
 
   double count_end = os::elapsedTime();
   double this_final_counting_time = (count_end - start);
@@ -1811,9 +1816,7 @@ void ConcurrentMark::cleanup() {
 
   // this will also free any regions totally full of garbage objects,
   // and sort the regions.
-  g1h->g1_policy()->record_concurrent_mark_cleanup_end(
-                        g1_par_note_end_task.freed_bytes(),
-                        g1_par_note_end_task.max_live_bytes());
+  g1h->g1_policy()->record_concurrent_mark_cleanup_end();
 
   // Statistics.
   double end = os::elapsedTime();
@@ -1832,6 +1835,10 @@ void ConcurrentMark::cleanup() {
 
   size_t cleaned_up_bytes = start_used_bytes - g1h->used();
   g1p->decrease_known_garbage_bytes(cleaned_up_bytes);
+
+  // Clean up will have freed any regions completely full of garbage.
+  // Update the soft reference policy with the new heap occupancy.
+  Universe::update_heap_info_at_gc();
 
   // We need to make this be a "collection" so any collection pause that
   // races with it goes around and waits for completeCleanup to finish.
@@ -2068,8 +2075,10 @@ class G1CMParDrainMarkingStackClosure: public VoidClosure {
   }
 };
 
-// Implementation of AbstractRefProcTaskExecutor for G1
-class G1RefProcTaskExecutor: public AbstractRefProcTaskExecutor {
+// Implementation of AbstractRefProcTaskExecutor for parallel
+// reference processing at the end of G1 concurrent marking
+
+class G1CMRefProcTaskExecutor: public AbstractRefProcTaskExecutor {
 private:
   G1CollectedHeap* _g1h;
   ConcurrentMark*  _cm;
@@ -2078,7 +2087,7 @@ private:
   int              _active_workers;
 
 public:
-  G1RefProcTaskExecutor(G1CollectedHeap* g1h,
+  G1CMRefProcTaskExecutor(G1CollectedHeap* g1h,
                         ConcurrentMark* cm,
                         CMBitMap* bitmap,
                         WorkGang* workers,
@@ -2092,7 +2101,7 @@ public:
   virtual void execute(EnqueueTask& task);
 };
 
-class G1RefProcTaskProxy: public AbstractGangTask {
+class G1CMRefProcTaskProxy: public AbstractGangTask {
   typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;
   ProcessTask&     _proc_task;
   G1CollectedHeap* _g1h;
@@ -2100,7 +2109,7 @@ class G1RefProcTaskProxy: public AbstractGangTask {
   CMBitMap*        _bitmap;
 
 public:
-  G1RefProcTaskProxy(ProcessTask& proc_task,
+  G1CMRefProcTaskProxy(ProcessTask& proc_task,
                      G1CollectedHeap* g1h,
                      ConcurrentMark* cm,
                      CMBitMap* bitmap) :
@@ -2118,10 +2127,10 @@ public:
   }
 };
 
-void G1RefProcTaskExecutor::execute(ProcessTask& proc_task) {
+void G1CMRefProcTaskExecutor::execute(ProcessTask& proc_task) {
   assert(_workers != NULL, "Need parallel worker threads.");
 
-  G1RefProcTaskProxy proc_task_proxy(proc_task, _g1h, _cm, _bitmap);
+  G1CMRefProcTaskProxy proc_task_proxy(proc_task, _g1h, _cm, _bitmap);
 
   // We need to reset the phase for each task execution so that
   // the termination protocol of CMTask::do_marking_step works.
@@ -2131,12 +2140,12 @@ void G1RefProcTaskExecutor::execute(ProcessTask& proc_task) {
   _g1h->set_par_threads(0);
 }
 
-class G1RefEnqueueTaskProxy: public AbstractGangTask {
+class G1CMRefEnqueueTaskProxy: public AbstractGangTask {
   typedef AbstractRefProcTaskExecutor::EnqueueTask EnqueueTask;
   EnqueueTask& _enq_task;
 
 public:
-  G1RefEnqueueTaskProxy(EnqueueTask& enq_task) :
+  G1CMRefEnqueueTaskProxy(EnqueueTask& enq_task) :
     AbstractGangTask("Enqueue reference objects in parallel"),
     _enq_task(enq_task)
   { }
@@ -2146,10 +2155,10 @@ public:
   }
 };
 
-void G1RefProcTaskExecutor::execute(EnqueueTask& enq_task) {
+void G1CMRefProcTaskExecutor::execute(EnqueueTask& enq_task) {
   assert(_workers != NULL, "Need parallel worker threads.");
 
-  G1RefEnqueueTaskProxy enq_task_proxy(enq_task);
+  G1CMRefEnqueueTaskProxy enq_task_proxy(enq_task);
 
   _g1h->set_par_threads(_active_workers);
   _workers->run_task(&enq_task_proxy);
@@ -2159,70 +2168,83 @@ void G1RefProcTaskExecutor::execute(EnqueueTask& enq_task) {
 void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   ResourceMark rm;
   HandleMark   hm;
-  G1CollectedHeap* g1h   = G1CollectedHeap::heap();
-  ReferenceProcessor* rp = g1h->ref_processor();
 
-  // See the comment in G1CollectedHeap::ref_processing_init()
-  // about how reference processing currently works in G1.
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  // Process weak references.
-  rp->setup_policy(clear_all_soft_refs);
-  assert(_markStack.isEmpty(), "mark stack should be empty");
+  // Is alive closure.
+  G1CMIsAliveClosure g1_is_alive(g1h);
 
-  G1CMIsAliveClosure   g1_is_alive(g1h);
-  G1CMKeepAliveClosure g1_keep_alive(g1h, this, nextMarkBitMap());
-  G1CMDrainMarkingStackClosure
-    g1_drain_mark_stack(nextMarkBitMap(), &_markStack, &g1_keep_alive);
-  // We use the work gang from the G1CollectedHeap and we utilize all
-  // the worker threads.
-  int active_workers = g1h->workers() ? g1h->workers()->total_workers() : 1;
-  active_workers = MAX2(MIN2(active_workers, (int)_max_task_num), 1);
+  // Inner scope to exclude the cleaning of the string and symbol
+  // tables from the displayed time.
+  {
+    bool verbose = PrintGC && PrintGCDetails;
+    if (verbose) {
+      gclog_or_tty->put(' ');
+    }
+    TraceTime t("GC ref-proc", verbose, false, gclog_or_tty);
 
-  G1RefProcTaskExecutor par_task_executor(g1h, this, nextMarkBitMap(),
-                                          g1h->workers(), active_workers);
+    ReferenceProcessor* rp = g1h->ref_processor_cm();
 
+    // See the comment in G1CollectedHeap::ref_processing_init()
+    // about how reference processing currently works in G1.
 
-  if (rp->processing_is_mt()) {
-    // Set the degree of MT here.  If the discovery is done MT, there
-    // may have been a different number of threads doing the discovery
-    // and a different number of discovered lists may have Ref objects.
-    // That is OK as long as the Reference lists are balanced (see
-    // balance_all_queues() and balance_queues()).
-    rp->set_active_mt_degree(active_workers);
+    // Process weak references.
+    rp->setup_policy(clear_all_soft_refs);
+    assert(_markStack.isEmpty(), "mark stack should be empty");
 
-    rp->process_discovered_references(&g1_is_alive,
+    G1CMKeepAliveClosure g1_keep_alive(g1h, this, nextMarkBitMap());
+    G1CMDrainMarkingStackClosure
+      g1_drain_mark_stack(nextMarkBitMap(), &_markStack, &g1_keep_alive);
+
+    // We use the work gang from the G1CollectedHeap and we utilize all
+    // the worker threads.
+    int active_workers = g1h->workers() ? g1h->workers()->total_workers() : 1;
+    active_workers = MAX2(MIN2(active_workers, (int)_max_task_num), 1);
+
+    G1CMRefProcTaskExecutor par_task_executor(g1h, this, nextMarkBitMap(),
+                                              g1h->workers(), active_workers);
+
+    if (rp->processing_is_mt()) {
+      // Set the degree of MT here.  If the discovery is done MT, there
+      // may have been a different number of threads doing the discovery
+      // and a different number of discovered lists may have Ref objects.
+      // That is OK as long as the Reference lists are balanced (see
+      // balance_all_queues() and balance_queues()).
+      rp->set_active_mt_degree(active_workers);
+
+      rp->process_discovered_references(&g1_is_alive,
                                       &g1_keep_alive,
                                       &g1_drain_mark_stack,
                                       &par_task_executor);
 
-    // The work routines of the parallel keep_alive and drain_marking_stack
-    // will set the has_overflown flag if we overflow the global marking
-    // stack.
-  } else {
-    rp->process_discovered_references(&g1_is_alive,
-                                      &g1_keep_alive,
-                                      &g1_drain_mark_stack,
-                                      NULL);
+      // The work routines of the parallel keep_alive and drain_marking_stack
+      // will set the has_overflown flag if we overflow the global marking
+      // stack.
+    } else {
+      rp->process_discovered_references(&g1_is_alive,
+                                        &g1_keep_alive,
+                                        &g1_drain_mark_stack,
+                                        NULL);
+    }
 
+    assert(_markStack.overflow() || _markStack.isEmpty(),
+            "mark stack should be empty (unless it overflowed)");
+    if (_markStack.overflow()) {
+      // Should have been done already when we tried to push an
+      // entry on to the global mark stack. But let's do it again.
+      set_has_overflown();
+    }
+
+    if (rp->processing_is_mt()) {
+      assert(rp->num_q() == active_workers, "why not");
+      rp->enqueue_discovered_references(&par_task_executor);
+    } else {
+      rp->enqueue_discovered_references();
+    }
+
+    rp->verify_no_references_recorded();
+    assert(!rp->discovery_enabled(), "Post condition");
   }
-
-  assert(_markStack.overflow() || _markStack.isEmpty(),
-      "mark stack should be empty (unless it overflowed)");
-  if (_markStack.overflow()) {
-    // Should have been done already when we tried to push an
-    // entry on to the global mark stack. But let's do it again.
-    set_has_overflown();
-  }
-
-  if (rp->processing_is_mt()) {
-    assert(rp->num_q() == active_workers, "why not");
-    rp->enqueue_discovered_references(&par_task_executor);
-  } else {
-    rp->enqueue_discovered_references();
-  }
-
-  rp->verify_no_references_recorded();
-  assert(!rp->discovery_enabled(), "should have been disabled");
 
   // Now clean up stale oops in StringTable
   StringTable::unlink(&g1_is_alive);
@@ -3325,7 +3347,7 @@ G1CMOopClosure::G1CMOopClosure(G1CollectedHeap* g1h,
   assert(_ref_processor == NULL, "should be initialized to NULL");
 
   if (G1UseConcMarkReferenceProcessing) {
-    _ref_processor = g1h->ref_processor();
+    _ref_processor = g1h->ref_processor_cm();
     assert(_ref_processor != NULL, "should not be NULL");
   }
 }
@@ -4560,6 +4582,15 @@ G1PrintRegionLivenessInfoClosure(outputStream* out, const char* phase_name)
                  G1PPRL_DOUBLE_H_FORMAT,
                  "type", "address-range",
                  "used", "prev-live", "next-live", "gc-eff");
+  _out->print_cr(G1PPRL_LINE_PREFIX
+                 G1PPRL_TYPE_H_FORMAT
+                 G1PPRL_ADDR_BASE_H_FORMAT
+                 G1PPRL_BYTE_H_FORMAT
+                 G1PPRL_BYTE_H_FORMAT
+                 G1PPRL_BYTE_H_FORMAT
+                 G1PPRL_DOUBLE_H_FORMAT,
+                 "", "",
+                 "(bytes)", "(bytes)", "(bytes)", "(bytes/ms)");
 }
 
 // It takes as a parameter a reference to one of the _hum_* fields, it
@@ -4571,7 +4602,7 @@ size_t G1PrintRegionLivenessInfoClosure::get_hum_bytes(size_t* hum_bytes) {
   // The > 0 check is to deal with the prev and next live bytes which
   // could be 0.
   if (*hum_bytes > 0) {
-    bytes = MIN2((size_t) HeapRegion::GrainBytes, *hum_bytes);
+    bytes = MIN2(HeapRegion::GrainBytes, *hum_bytes);
     *hum_bytes -= bytes;
   }
   return bytes;

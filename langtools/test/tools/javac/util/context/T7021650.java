@@ -101,13 +101,13 @@ public class T7021650 extends JavacTestingAbstractProcessor {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         Main m = new Main("javac", pw);
-        int rc = m.compile(args, context);
+        Main.Result res = m.compile(args, context);
         pw.close();
         String out = sw.toString();
         if (!out.isEmpty())
             System.err.println(out);
-        if (rc != 0)
-            throw new Exception("compilation failed unexpectedly: rc=" + rc);
+        if (!res.isOK())
+            throw new Exception("compilation failed unexpectedly: result=" + res);
     }
 
     void checkEqual(String label, int found, int expect) throws Exception {
