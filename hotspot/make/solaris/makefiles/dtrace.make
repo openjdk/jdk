@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,15 @@ JVM_DB = libjvm_db
 LIBJVM_DB = libjvm_db.so
 LIBJVM_DB_G = libjvm$(G_SUFFIX)_db.so
 
+LIBJVM_DB_DEBUGINFO = libjvm_db.debuginfo
+LIBJVM_DB_G_DEBUGINFO = libjvm$(G_SUFFIX)_db.debuginfo
+
 JVM_DTRACE = jvm_dtrace
 LIBJVM_DTRACE = libjvm_dtrace.so
 LIBJVM_DTRACE_G = libjvm$(G_SUFFIX)_dtrace.so
+
+LIBJVM_DTRACE_DEBUGINFO = libjvm_dtrace.debuginfo
+LIBJVM_DTRACE_G_DEBUGINFO = libjvm$(G_SUFFIX)_dtrace.debuginfo
 
 JVMOFFS = JvmOffsets
 JVMOFFS.o = $(JVMOFFS).o
@@ -89,12 +95,30 @@ XLIBJVM_DB_G = 64/$(LIBJVM_DB_G)
 XLIBJVM_DTRACE = 64/$(LIBJVM_DTRACE)
 XLIBJVM_DTRACE_G = 64/$(LIBJVM_DTRACE_G)
 
+XLIBJVM_DB_DEBUGINFO = 64/$(LIBJVM_DB_DEBUGINFO)
+XLIBJVM_DB_G_DEBUGINFO = 64/$(LIBJVM_DB_G_DEBUGINFO)
+XLIBJVM_DTRACE_DEBUGINFO = 64/$(LIBJVM_DTRACE_DEBUGINFO)
+XLIBJVM_DTRACE_G_DEBUGINFO = 64/$(LIBJVM_DTRACE_G_DEBUGINFO)
+
 $(XLIBJVM_DB): $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS).h $(LIBJVM_DB_MAPFILE)
 	@echo Making $@
 	$(QUIETLY) mkdir -p 64/ ; \
 	$(CC) $(SYMFLAG) $(ARCHFLAG/$(ISA)) -D$(TYPE) -I. -I$(GENERATED) \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DB) -o $@ $(DTRACE_SRCDIR)/$(JVM_DB).c -lc
 	[ -f $(XLIBJVM_DB_G) ] || { ln -s $(LIBJVM_DB) $(XLIBJVM_DB_G); }
+ifneq ($(OBJCOPY),)
+	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(XLIBJVM_DB_DEBUGINFO)
+	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(XLIBJVM_DB_DEBUGINFO) $@
+  ifeq ($(STRIP_POLICY),all_strip)
+	$(QUIETLY) $(STRIP) $@
+  else
+    ifeq ($(STRIP_POLICY),min_strip)
+	$(QUIETLY) $(STRIP) -x $@
+    # implied else here is no stripping at all
+    endif
+  endif
+	[ -f $(XLIBJVM_DB_G_DEBUGINFO) ] || { ln -s $(LIBJVM_DB_DEBUGINFO) $(XLIBJVM_DB_G_DEBUGINFO); }
+endif
 
 $(XLIBJVM_DTRACE): $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(DTRACE_SRCDIR)/$(JVM_DTRACE).h $(LIBJVM_DTRACE_MAPFILE)
 	@echo Making $@
@@ -102,6 +126,19 @@ $(XLIBJVM_DTRACE): $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(DTRACE_SRCDIR)/$(JVM_DTRAC
 	$(CC) $(SYMFLAG) $(ARCHFLAG/$(ISA)) -D$(TYPE) -I. \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c -lc -lthread -ldoor
 	[ -f $(XLIBJVM_DTRACE_G) ] || { ln -s $(LIBJVM_DTRACE) $(XLIBJVM_DTRACE_G); }
+ifneq ($(OBJCOPY),)
+	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(XLIBJVM_DTRACE_DEBUGINFO)
+	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(XLIBJVM_DTRACE_DEBUGINFO) $@
+  ifeq ($(STRIP_POLICY),all_strip)
+	$(QUIETLY) $(STRIP) $@
+  else
+    ifeq ($(STRIP_POLICY),min_strip)
+	$(QUIETLY) $(STRIP) -x $@
+    # implied else here is no stripping at all
+    endif
+  endif
+	[ -f $(XLIBJVM_DTRACE_G_DEBUGINFO) ] || { ln -s $(LIBJVM_DTRACE_DEBUGINFO) $(XLIBJVM_DTRACE_G_DEBUGINFO); }
+endif
 
 endif # ifneq ("${ISA}","${BUILDARCH}")
 
@@ -148,12 +185,38 @@ $(LIBJVM_DB): $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS.o) $(XLIBJVM_DB) $(LIBJVM_D
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) -D$(TYPE) -I. -I$(GENERATED) \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DB) -o $@ $(DTRACE_SRCDIR)/$(JVM_DB).c -lc
 	[ -f $(LIBJVM_DB_G) ] || { ln -s $@ $(LIBJVM_DB_G); }
+ifneq ($(OBJCOPY),)
+	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJVM_DB_DEBUGINFO)
+	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DB_DEBUGINFO) $@
+  ifeq ($(STRIP_POLICY),all_strip)
+	$(QUIETLY) $(STRIP) $@
+  else
+    ifeq ($(STRIP_POLICY),min_strip)
+	$(QUIETLY) $(STRIP) -x $@
+    # implied else here is no stripping at all
+    endif
+  endif
+	[ -f $(LIBJVM_DB_G_DEBUGINFO) ] || { ln -s $(LIBJVM_DB_DEBUGINFO) $(LIBJVM_DB_G_DEBUGINFO); }
+endif
 
 $(LIBJVM_DTRACE): $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(XLIBJVM_DTRACE) $(DTRACE_SRCDIR)/$(JVM_DTRACE).h $(LIBJVM_DTRACE_MAPFILE)
 	@echo Making $@
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) -D$(TYPE) -I.  \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c -lc -lthread -ldoor
 	[ -f $(LIBJVM_DTRACE_G) ] || { ln -s $@ $(LIBJVM_DTRACE_G); }
+ifneq ($(OBJCOPY),)
+	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJVM_DTRACE_DEBUGINFO)
+	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DTRACE_DEBUGINFO) $@
+  ifeq ($(STRIP_POLICY),all_strip)
+	$(QUIETLY) $(STRIP) $@
+  else
+    ifeq ($(STRIP_POLICY),min_strip)
+	$(QUIETLY) $(STRIP) -x $@
+    # implied else here is no stripping at all
+    endif
+  endif
+	[ -f $(LIBJVM_DTRACE_G_DEBUGINFO) ] || { ln -s $(LIBJVM_DTRACE_DEBUGINFO) $(LIBJVM_DTRACE_G_DEBUGINFO); }
+endif
 
 $(DTRACE).d: $(DTRACE_SRCDIR)/hotspot.d $(DTRACE_SRCDIR)/hotspot_jni.d \
              $(DTRACE_SRCDIR)/hs_private.d $(DTRACE_SRCDIR)/jhelper.d

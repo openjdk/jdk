@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,7 +192,7 @@ public class HeaderParser {
         return Default;
     }
 
-    class ParserIterator implements Iterator {
+    class ParserIterator implements Iterator<String> {
         int index;
         boolean returnsValue; // or key
 
@@ -202,7 +202,7 @@ public class HeaderParser {
         public boolean hasNext () {
             return index<nkeys;
         }
-        public Object next () {
+        public String next () {
             return tab[index++][returnsValue?1:0];
         }
         public void remove () {
@@ -210,20 +210,20 @@ public class HeaderParser {
         }
     }
 
-    public Iterator keys () {
+    public Iterator<String> keys () {
         return new ParserIterator (false);
     }
 
-    public Iterator values () {
+    public Iterator<String> values () {
         return new ParserIterator (true);
     }
 
     public String toString () {
-        Iterator k = keys();
+        Iterator<String> k = keys();
         StringBuffer sbuf = new StringBuffer();
         sbuf.append ("{size="+asize+" nkeys="+nkeys+" ");
         for (int i=0; k.hasNext(); i++) {
-            String key = (String)k.next();
+            String key = k.next();
             String val = findValue (i);
             if (val != null && "".equals (val)) {
                 val = null;

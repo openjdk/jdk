@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,6 +170,7 @@ public class CLHSDB {
             final String errMsg = formatMessage(e.getMessage(), 80);
             System.err.println("Unable to connect to process ID " + pid + ":\n\n" + errMsg);
             agent.detach();
+            e.printStackTrace();
             return;
         }
     }
@@ -191,6 +192,7 @@ public class CLHSDB {
             final String errMsg = formatMessage(e.getMessage(), 80);
             System.err.println("Unable to open core file\n" + corePath + ":\n\n" + errMsg);
             agent.detach();
+            e.printStackTrace();
             return;
         }
     }
@@ -209,6 +211,7 @@ public class CLHSDB {
             final String errMsg = formatMessage(e.getMessage(), 80);
             System.err.println("Unable to connect to machine \"" + remoteMachineName + "\":\n\n" + errMsg);
             agent.detach();
+            e.printStackTrace();
             return;
         }
     }

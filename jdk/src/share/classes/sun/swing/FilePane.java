@@ -35,6 +35,7 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import javax.accessibility.AccessibleContext;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.event.*;
@@ -81,6 +82,9 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     private JPanel[] viewPanels = new JPanel[VIEWTYPE_COUNT];
     private JPanel currentViewPanel;
     private String[] viewTypeActionNames;
+
+    private String filesListAccessibleName = null;
+    private String filesDetailsAccessibleName = null;
 
     private JPopupMenu contextMenu;
     private JMenu viewMenu;
@@ -450,6 +454,9 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         gigaByteString = UIManager.getString("FileChooser.fileSizeGigaBytes", l);
         fullRowSelection = UIManager.getBoolean("FileView.fullRowSelection");
 
+        filesListAccessibleName = UIManager.getString("FileChooser.filesListAccessibleName", l);
+        filesDetailsAccessibleName = UIManager.getString("FileChooser.filesDetailsAccessibleName", l);
+
         renameErrorTitleText = UIManager.getString("FileChooser.renameErrorTitleText", l);
         renameErrorText = UIManager.getString("FileChooser.renameErrorText", l);
         renameErrorFileExistsText = UIManager.getString("FileChooser.renameErrorFileExistsText", l);
@@ -634,6 +641,9 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         if (listViewBorder != null) {
             scrollpane.setBorder(listViewBorder);
         }
+
+        list.putClientProperty(AccessibleContext.ACCESSIBLE_NAME_PROPERTY, filesListAccessibleName);
+
         p.add(scrollpane, BorderLayout.CENTER);
         return p;
     }
@@ -1227,6 +1237,8 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         p.add(scrollpane, BorderLayout.CENTER);
 
         detailsTableModel.fireTableStructureChanged();
+
+        detailsTable.putClientProperty(AccessibleContext.ACCESSIBLE_NAME_PROPERTY, filesDetailsAccessibleName);
 
         return p;
     } // createDetailsView

@@ -56,7 +56,7 @@ public class ResourceResolver {
    static boolean _alreadyInitialized = false;
 
    /** these are the system-wide resolvers */
-   static List _resolverVector = null;
+   static List<ResourceResolver> _resolverVector = null;
 
    static boolean allThreadSafeInList=true;
 
@@ -102,7 +102,7 @@ public class ResourceResolver {
       int length=ResourceResolver._resolverVector.size();
       for (int i = 0; i < length; i++) {
                   ResourceResolver resolver =
-            (ResourceResolver) ResourceResolver._resolverVector.get(i);
+            ResourceResolver._resolverVector.get(i);
                   ResourceResolver resolverTmp=null;
                   try {
                         resolverTmp =  allThreadSafeInList || resolver._resolverSpi.engineIsThreadSafe() ? resolver :
@@ -120,7 +120,7 @@ public class ResourceResolver {
                  if (i!=0) {
                  //update resolver.
                          //System.out.println("Swaping");
-                         List resolverVector=(List)((ArrayList)_resolverVector).clone();
+                         List<ResourceResolver> resolverVector=getResolverVectorClone();
                          resolverVector.remove(i);
                          resolverVector.add(0,resolver);
                          _resolverVector=resolverVector;
@@ -139,6 +139,17 @@ public class ResourceResolver {
       throw new ResourceResolverException("utils.resolver.noClass", exArgs,
                                           uri, BaseURI);
    }
+
+   /**
+    * Method getResolverVectorClone
+    *
+    * @return clone of _resolverVector
+    */
+   @SuppressWarnings("unchecked")
+   private static List<ResourceResolver> getResolverVectorClone() {
+       return (List<ResourceResolver>)((ArrayList<ResourceResolver>)_resolverVector).clone();
+   }
+
    /**
     * Method getInstance
     *
@@ -150,7 +161,7 @@ public class ResourceResolver {
     * @throws ResourceResolverException
     */
    public static final ResourceResolver getInstance(
-           Attr uri, String BaseURI, List individualResolvers)
+           Attr uri, String BaseURI, List<ResourceResolver> individualResolvers)
               throws ResourceResolverException {
       if (log.isLoggable(java.util.logging.Level.FINE)) {
 
@@ -163,7 +174,7 @@ public class ResourceResolver {
       if ((individualResolvers != null) && ((size=individualResolvers.size()) > 0)) {
          for (int i = 0; i < size; i++) {
             ResourceResolver resolver =
-               (ResourceResolver) individualResolvers.get(i);
+               individualResolvers.get(i);
 
             if (resolver != null) {
                String currentClass = resolver._resolverSpi.getClass().getName();
@@ -186,7 +197,7 @@ public class ResourceResolver {
    public static void init() {
 
       if (!ResourceResolver._alreadyInitialized) {
-         ResourceResolver._resolverVector = new ArrayList(10);
+         ResourceResolver._resolverVector = new ArrayList<ResourceResolver>(10);
          _alreadyInitialized = true;
       }
    }
@@ -288,7 +299,7 @@ public class ResourceResolver {
     *
     * @param properties
     */
-   public void addProperties(Map properties) {
+   public void addProperties(Map<String,String> properties) {
       this._resolverSpi.engineAddProperies(properties);
    }
 

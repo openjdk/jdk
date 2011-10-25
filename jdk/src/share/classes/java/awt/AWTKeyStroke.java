@@ -777,10 +777,6 @@ public class AWTKeyStroke implements Serializable {
      */
     protected Object readResolve() throws java.io.ObjectStreamException {
         synchronized (AWTKeyStroke.class) {
-            Class newClass = getClass();
-            if (!newClass.equals(ctor.getDeclaringClass())) {
-                registerSubclass(newClass);
-            }
             return getCachedStroke(keyChar, keyCode, modifiers, onKeyRelease);
         }
     }

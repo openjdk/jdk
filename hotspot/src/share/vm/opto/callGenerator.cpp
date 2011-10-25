@@ -61,11 +61,8 @@ public:
   {
     _is_osr        = is_osr;
     _expected_uses = expected_uses;
-    assert(can_parse(method, is_osr), "parse must be possible");
+    assert(InlineTree::check_can_parse(method) == NULL, "parse must be possible");
   }
-
-  // Can we build either an OSR or a regular parser for this method?
-  static bool can_parse(ciMethod* method, int is_osr = false);
 
   virtual bool      is_parse() const           { return true; }
   virtual JVMState* generate(JVMState* jvms);
@@ -152,7 +149,6 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
     call->set_optimized_virtual(true);
     if (method()->is_method_handle_invoke()) {
       call->set_method_handle_invoke(true);
-      kit.C->set_has_method_handle_invokes(true);
     }
   }
   kit.set_arguments_for_java_call(call);
@@ -210,7 +206,6 @@ JVMState* DynamicCallGenerator::generate(JVMState* jvms) {
   call->set_optimized_virtual(true);
   // Take extra care (in the presence of argument motion) not to trash the SP:
   call->set_method_handle_invoke(true);
-  kit.C->set_has_method_handle_invokes(true);
 
   // Pass the target MethodHandle as first argument and shift the
   // other arguments.
@@ -303,20 +298,8 @@ JVMState* VirtualCallGenerator::generate(JVMState* jvms) {
   return kit.transfer_exceptions_into_jvms();
 }
 
-bool ParseGenerator::can_parse(ciMethod* m, int entry_bci) {
-  // Certain methods cannot be parsed at all:
-  if (!m->can_be_compiled())              return false;
-  if (!m->has_balanced_monitors())        return false;
-  if (m->get_flow_analysis()->failing())  return false;
-
-  // (Methods may bail out for other reasons, after the parser is run.
-  // We try to avoid this, but if forced, we must return (Node*)NULL.
-  // The user of the CallGenerator must check for this condition.)
-  return true;
-}
-
 CallGenerator* CallGenerator::for_inline(ciMethod* m, float expected_uses) {
-  if (!ParseGenerator::can_parse(m))  return NULL;
+  if (InlineTree::check_can_parse(m) != NULL)  return NULL;
   return new ParseGenerator(m, expected_uses);
 }
 
@@ -324,7 +307,7 @@ CallGenerator* CallGenerator::for_inline(ciMethod* m, float expected_uses) {
 // for the method execution already in progress, not just the JVMS
 // of the caller.  Thus, this CallGenerator cannot be mixed with others!
 CallGenerator* CallGenerator::for_osr(ciMethod* m, int osr_bci) {
-  if (!ParseGenerator::can_parse(m, true))  return NULL;
+  if (InlineTree::check_can_parse(m) != NULL)  return NULL;
   float past_uses = m->interpreter_invocation_count();
   float expected_uses = past_uses;
   return new ParseGenerator(m, expected_uses, true);
@@ -336,7 +319,7 @@ CallGenerator* CallGenerator::for_direct_call(ciMethod* m, bool separate_io_proj
 }
 
 CallGenerator* CallGenerator::for_dynamic_call(ciMethod* m) {
-  assert(m->is_method_handle_invoke(), "for_dynamic_call mismatch");
+  assert(m->is_method_handle_invoke() || m->is_method_handle_adapter(), "for_dynamic_call mismatch");
   return new DynamicCallGenerator(m);
 }
 
@@ -715,24 +698,36 @@ CallGenerator* CallGenerator::for_method_handle_inline(Node* method_handle, JVMS
     // Get an adapter for the MethodHandle.
     ciMethod* target_method = method_handle->get_method_handle_adapter();
     if (target_method != NULL) {
-      CallGenerator* hit_cg = Compile::current()->call_generator(target_method, -1, false, jvms, true, 1);
-      if (hit_cg != NULL && hit_cg->is_inline())
-        return hit_cg;
+      CallGenerator* cg = Compile::current()->call_generator(target_method, -1, false, jvms, true, PROB_ALWAYS);
+      if (cg != NULL && cg->is_inline())
+        return cg;
     }
   } else if (method_handle->Opcode() == Op_Phi && method_handle->req() == 3 &&
              method_handle->in(1)->Opcode() == Op_ConP && method_handle->in(2)->Opcode() == Op_ConP) {
+    float prob = PROB_FAIR;
+    Node* meth_region = method_handle->in(0);
+    if (meth_region->is_Region() &&
+        meth_region->in(1)->is_Proj() && meth_region->in(2)->is_Proj() &&
+        meth_region->in(1)->in(0) == meth_region->in(2)->in(0) &&
+        meth_region->in(1)->in(0)->is_If()) {
+      // If diamond, so grab the probability of the test to drive the inlining below
+      prob = meth_region->in(1)->in(0)->as_If()->_prob;
+      if (meth_region->in(1)->is_IfTrue()) {
+        prob = 1 - prob;
+      }
+    }
+
     // selectAlternative idiom merging two constant MethodHandles.
     // Generate a guard so that each can be inlined.  We might want to
     // do more inputs at later point but this gets the most common
     // case.
-    const TypeOopPtr* oop_ptr = method_handle->in(1)->bottom_type()->is_oopptr();
-    ciObject* const_oop = oop_ptr->const_oop();
-    ciMethodHandle* mh = const_oop->as_method_handle();
-
-    CallGenerator* cg1 = for_method_handle_inline(method_handle->in(1), jvms, caller, callee, profile);
-    CallGenerator* cg2 = for_method_handle_inline(method_handle->in(2), jvms, caller, callee, profile);
+    CallGenerator* cg1 = for_method_handle_inline(method_handle->in(1), jvms, caller, callee, profile.rescale(1.0 - prob));
+    CallGenerator* cg2 = for_method_handle_inline(method_handle->in(2), jvms, caller, callee, profile.rescale(prob));
     if (cg1 != NULL && cg2 != NULL) {
-      return new PredictedDynamicCallGenerator(mh, cg2, cg1, PROB_FAIR);
+      const TypeOopPtr* oop_ptr = method_handle->in(1)->bottom_type()->is_oopptr();
+      ciObject* const_oop = oop_ptr->const_oop();
+      ciMethodHandle* mh = const_oop->as_method_handle();
+      return new PredictedDynamicCallGenerator(mh, cg2, cg1, prob);
     }
   }
   return NULL;
@@ -741,7 +736,6 @@ CallGenerator* CallGenerator::for_method_handle_inline(Node* method_handle, JVMS
 
 CallGenerator* CallGenerator::for_invokedynamic_inline(ciCallSite* call_site, JVMState* jvms,
                                                        ciMethod* caller, ciMethod* callee, ciCallProfile profile) {
-  assert(call_site->is_constant_call_site() || call_site->is_mutable_call_site(), "must be");
   ciMethodHandle* method_handle = call_site->get_target();
 
   // Set the callee to have access to the class and signature in the
@@ -754,13 +748,13 @@ CallGenerator* CallGenerator::for_invokedynamic_inline(ciCallSite* call_site, JV
   ciMethod* target_method = method_handle->get_invokedynamic_adapter();
   if (target_method != NULL) {
     Compile *C = Compile::current();
-    CallGenerator* hit_cg = C->call_generator(target_method, -1, false, jvms, true, PROB_ALWAYS);
-    if (hit_cg != NULL && hit_cg->is_inline()) {
+    CallGenerator* cg = C->call_generator(target_method, -1, false, jvms, true, PROB_ALWAYS);
+    if (cg != NULL && cg->is_inline()) {
       // Add a dependence for invalidation of the optimization.
-      if (call_site->is_mutable_call_site()) {
-        C->dependencies()->assert_call_site_target_value(C->env()->CallSite_klass(), call_site, method_handle);
+      if (!call_site->is_constant_call_site()) {
+        C->dependencies()->assert_call_site_target_value(call_site, method_handle);
       }
-      return hit_cg;
+      return cg;
     }
   }
   return NULL;

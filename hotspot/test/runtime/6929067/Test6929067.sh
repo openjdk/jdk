@@ -29,7 +29,7 @@ case "$OS" in
     PS=":"
     FS="/"
     ;;
-  SunOS | Windows_* )
+  SunOS | Windows_* | *BSD)
     NULL=NUL
     PS=";"
     FS="\\"

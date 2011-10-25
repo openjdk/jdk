@@ -380,10 +380,10 @@ oop PSPromotionManager::copy_to_survivor_space(oop o) {
       // deallocate it, so we have to test.  If the deallocation fails,
       // overwrite with a filler object.
       if (new_obj_is_tenured) {
-        if (!_old_lab.unallocate_object(new_obj)) {
+        if (!_old_lab.unallocate_object((HeapWord*) new_obj, new_obj_size)) {
           CollectedHeap::fill_with_object((HeapWord*) new_obj, new_obj_size);
         }
-      } else if (!_young_lab.unallocate_object(new_obj)) {
+      } else if (!_young_lab.unallocate_object((HeapWord*) new_obj, new_obj_size)) {
         CollectedHeap::fill_with_object((HeapWord*) new_obj, new_obj_size);
       }
 

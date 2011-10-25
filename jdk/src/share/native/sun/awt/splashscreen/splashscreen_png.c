@@ -36,7 +36,7 @@ my_png_read_stream(png_structp png_ptr, png_bytep data, png_size_t length)
 {
     png_uint_32 check;
 
-    SplashStream * stream = (SplashStream*)png_ptr->io_ptr;
+    SplashStream * stream = (SplashStream*)png_get_io_ptr(png_ptr);
     check = stream->read(stream, data, length);
     if (check != length)
         png_error(png_ptr, "Read Error");
@@ -71,12 +71,11 @@ SplashDecodePng(Splash * splash, png_rw_ptr read_func, void *io_ptr)
         goto done;
     }
 
-    if (setjmp(png_ptr->jmpbuf)) {
+    if (setjmp(png_jmpbuf(png_ptr))) {
         goto done;
     }
 
-    png_ptr->io_ptr = io_ptr;
-    png_ptr->read_data_fn = read_func;
+    png_set_read_fn(png_ptr, io_ptr, read_func);
 
     png_set_sig_bytes(png_ptr, SIG_BYTES);      /* we already read the 8 signature bytes */
 

@@ -21,6 +21,7 @@
 package com.sun.org.apache.xml.internal.security.utils;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -34,7 +35,7 @@ import org.w3c.dom.NodeList;
 public class HelperNodeList implements NodeList {
 
    /** Field nodes */
-   ArrayList nodes = new ArrayList(20);
+   List<Node> nodes = new ArrayList<Node>(20);
    boolean _allNodesMustHaveSameParent = false;
 
    /**
@@ -62,7 +63,7 @@ public class HelperNodeList implements NodeList {
 
       // log.log(java.util.logging.Level.FINE, "item(" + index + ") of " + this.getLength() + " nodes");
 
-      return (Node) nodes.get(index);
+      return nodes.get(index);
    }
 
    /**
