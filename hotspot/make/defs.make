@@ -118,13 +118,23 @@ endif
 # Windows should have OS predefined
 ifeq ($(OS),)
   OS   := $(shell uname -s)
+  ifneq ($(findstring BSD,$(OS)),)
+    OS=bsd
+  endif
+  ifeq ($(OS), Darwin)
+    OS=bsd
+  endif
   HOST := $(shell uname -n)
 endif
 
-# If not SunOS and not Linux, assume Windows
+# If not SunOS, not Linux and not BSD, assume Windows
 ifneq ($(OS), Linux)
   ifneq ($(OS), SunOS)
-    OSNAME=windows
+    ifneq ($(OS), bsd)
+      OSNAME=windows
+    else
+      OSNAME=bsd
+    endif
   else
     OSNAME=solaris
   endif
@@ -270,6 +280,13 @@ EXPORT_JRE_DIR = $(EXPORT_PATH)/jre
 EXPORT_JRE_BIN_DIR = $(EXPORT_JRE_DIR)/bin
 EXPORT_JRE_LIB_DIR = $(EXPORT_JRE_DIR)/lib
 EXPORT_JRE_LIB_ARCH_DIR = $(EXPORT_JRE_LIB_DIR)/$(LIBARCH)
+
+# non-universal macosx builds need to appear universal
+ifeq ($(OS_VENDOR), Darwin)
+  ifneq ($(MACOSX_UNIVERSAL), true)
+    EXPORT_JRE_LIB_ARCH_DIR = $(EXPORT_JRE_LIB_DIR)
+  endif
+endif
 
 # Common export list of files
 EXPORT_LIST += $(EXPORT_INCLUDE_DIR)/jvmti.h

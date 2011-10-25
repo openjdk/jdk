@@ -148,11 +148,13 @@ void SharedRuntime::generate_ricochet_blob() {
 
 #include <math.h>
 
+#ifndef USDT2
 HS_DTRACE_PROBE_DECL4(hotspot, object__alloc, Thread*, char*, int, size_t);
 HS_DTRACE_PROBE_DECL7(hotspot, method__entry, int,
                       char*, int, char*, int, char*, int);
 HS_DTRACE_PROBE_DECL7(hotspot, method__return, int,
                       char*, int, char*, int, char*, int);
+#endif /* !USDT2 */
 
 // Implementation of SharedRuntime
 
@@ -659,12 +661,14 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
   int scope_depth = 0;
   if (!force_unwind) {
     int bci = sd->bci();
+    bool recursive_exception = false;
     do {
       bool skip_scope_increment = false;
       // exception handler lookup
       KlassHandle ek (THREAD, exception->klass());
       handler_bci = sd->method()->fast_exception_handler_bci_for(ek, bci, THREAD);
       if (HAS_PENDING_EXCEPTION) {
+        recursive_exception = true;
         // We threw an exception while trying to find the exception handler.
         // Transfer the new exception to the exception handle which will
         // be set into thread local storage, and do another lookup for an
@@ -680,6 +684,9 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
           skip_scope_increment = true;
         }
       }
+      else {
+        recursive_exception = false;
+      }
       if (!top_frame_only && handler_bci < 0 && !skip_scope_increment) {
         sd = sd->sender();
         if (sd != NULL) {
@@ -687,7 +694,7 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
         }
         ++scope_depth;
       }
-    } while (!top_frame_only && handler_bci < 0 && sd != NULL);
+    } while (recursive_exception || (!top_frame_only && handler_bci < 0 && sd != NULL));
   }
 
   // found handling method => lookup exception handler
@@ -954,8 +961,14 @@ int SharedRuntime::dtrace_object_alloc_base(Thread* thread, oopDesc* o) {
   Klass* klass = o->blueprint();
   int size = o->size();
   Symbol* name = klass->name();
+#ifndef USDT2
   HS_DTRACE_PROBE4(hotspot, object__alloc, get_java_tid(thread),
                    name->bytes(), name->utf8_length(), size * HeapWordSize);
+#else /* USDT2 */
+  HOTSPOT_OBJECT_ALLOC(
+                   get_java_tid(thread),
+                   (char *) name->bytes(), name->utf8_length(), size * HeapWordSize);
+#endif /* USDT2 */
   return 0;
 }
 
@@ -965,10 +978,18 @@ JRT_LEAF(int, SharedRuntime::dtrace_method_entry(
   Symbol* kname = method->klass_name();
   Symbol* name = method->name();
   Symbol* sig = method->signature();
+#ifndef USDT2
   HS_DTRACE_PROBE7(hotspot, method__entry, get_java_tid(thread),
       kname->bytes(), kname->utf8_length(),
       name->bytes(), name->utf8_length(),
       sig->bytes(), sig->utf8_length());
+#else /* USDT2 */
+  HOTSPOT_METHOD_ENTRY(
+      get_java_tid(thread),
+      (char *) kname->bytes(), kname->utf8_length(),
+      (char *) name->bytes(), name->utf8_length(),
+      (char *) sig->bytes(), sig->utf8_length());
+#endif /* USDT2 */
   return 0;
 JRT_END
 
@@ -978,10 +999,18 @@ JRT_LEAF(int, SharedRuntime::dtrace_method_exit(
   Symbol* kname = method->klass_name();
   Symbol* name = method->name();
   Symbol* sig = method->signature();
+#ifndef USDT2
   HS_DTRACE_PROBE7(hotspot, method__return, get_java_tid(thread),
       kname->bytes(), kname->utf8_length(),
       name->bytes(), name->utf8_length(),
       sig->bytes(), sig->utf8_length());
+#else /* USDT2 */
+  HOTSPOT_METHOD_RETURN(
+      get_java_tid(thread),
+      (char *) kname->bytes(), kname->utf8_length(),
+      (char *) name->bytes(), name->utf8_length(),
+      (char *) sig->bytes(), sig->utf8_length());
+#endif /* USDT2 */
   return 0;
 JRT_END
 

@@ -41,6 +41,7 @@ public abstract class TransformSpi {
      * For API compatibility not thread safe.
      * @deprecated
      */
+    @Deprecated
     protected Transform _transformObject = null;
     /**
      * Set the transform object.
@@ -48,6 +49,7 @@ public abstract class TransformSpi {
      * @param transform the Transform
      * @deprecated
      */
+    @Deprecated
     protected void setTransform(Transform transform) {
         this._transformObject = transform;
     }
@@ -120,6 +122,7 @@ public abstract class TransformSpi {
      * @throws SAXException
      * @throws TransformationException
      */
+    @Deprecated
     protected XMLSignatureInput enginePerformTransform(
         XMLSignatureInput input)
         throws IOException,

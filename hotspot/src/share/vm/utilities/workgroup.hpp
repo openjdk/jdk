@@ -35,6 +35,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 
 // Task class hierarchy:
 //   AbstractGangTask

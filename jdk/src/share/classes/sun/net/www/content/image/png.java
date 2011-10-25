@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,7 @@
 
 package sun.net.www.content.image;
 
-import java.net.URL;
-import java.net.URLConnection;
 import java.net.*;
-import java.io.InputStream;
 import java.io.IOException;
 import sun.awt.image.*;
 import java.awt.Image;
@@ -39,7 +36,7 @@ public class png extends ContentHandler {
         return new URLImageSource(urlc);
     }
 
-    public Object getContent(URLConnection urlc, Class[] classes) throws IOException {
+    public Object getContent(URLConnection urlc, Class<?>[] classes) throws IOException {
         for (int i = 0; i < classes.length; i++) {
           if (classes[i].isAssignableFrom(URLImageSource.class)) {
                 return new URLImageSource(urlc);

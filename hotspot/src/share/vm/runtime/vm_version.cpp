@@ -128,7 +128,7 @@ void Abstract_VM_Version::initialize() {
 #ifndef HOTSPOT_VM_DISTRO
   #error HOTSPOT_VM_DISTRO must be defined
 #endif
-#define VMNAME HOTSPOT_VM_DISTRO " " VMLP VMTYPE " VM"
+#define VMNAME HOTSPOT_VM_DISTRO " " VMLP EMBEDDED_ONLY("Embedded ") VMTYPE " VM"
 
 const char* Abstract_VM_Version::vm_name() {
   return VMNAME;
@@ -167,7 +167,8 @@ const char* Abstract_VM_Version::vm_release() {
 
 #define OS       LINUX_ONLY("linux")             \
                  WINDOWS_ONLY("windows")         \
-                 SOLARIS_ONLY("solaris")
+                 SOLARIS_ONLY("solaris")         \
+                 BSD_ONLY("bsd")
 
 #ifdef ZERO
 #define CPU      ZERO_LIBARCH

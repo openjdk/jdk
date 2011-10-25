@@ -2004,7 +2004,7 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
   ReferenceProcessorMTDiscoveryMutator rp_mut_discovery(ref_processor(), false);
 
   ref_processor()->set_enqueuing_is_done(false);
-  ref_processor()->enable_discovery();
+  ref_processor()->enable_discovery(false /*verify_disabled*/, false /*check_no_refs*/);
   ref_processor()->setup_policy(clear_all_soft_refs);
   // If an asynchronous collection finishes, the _modUnionTable is
   // all clear.  If we are assuming the collection from an asynchronous
@@ -3490,8 +3490,8 @@ void CMSCollector::checkpointRootsInitial(bool asynch) {
     MutexLockerEx x(bitMapLock(),
                     Mutex::_no_safepoint_check_flag);
     checkpointRootsInitialWork(asynch);
-    rp->verify_no_references_recorded();
-    rp->enable_discovery(); // enable ("weak") refs discovery
+    // enable ("weak") refs discovery
+    rp->enable_discovery(true /*verify_disabled*/, true /*check_no_refs*/);
     _collectorState = Marking;
   } else {
     // (Weak) Refs discovery: this is controlled from genCollectedHeap::do_collection
@@ -3503,7 +3503,8 @@ void CMSCollector::checkpointRootsInitial(bool asynch) {
            "ref discovery for this generation kind");
     // already have locks
     checkpointRootsInitialWork(asynch);
-    rp->enable_discovery(); // now enable ("weak") refs discovery
+    // now enable ("weak") refs discovery
+    rp->enable_discovery(true /*verify_disabled*/, false /*verify_no_refs*/);
     _collectorState = Marking;
   }
   SpecializationStats::print();

@@ -41,6 +41,8 @@ class SwitchRange;
 
 //------------------------------InlineTree-------------------------------------
 class InlineTree : public ResourceObj {
+  friend class VMStructs;
+
   Compile*    C;                  // cache
   JVMState*   _caller_jvms;       // state of caller
   ciMethod*   _method;            // method being called by the caller_jvms
@@ -54,7 +56,8 @@ class InlineTree : public ResourceObj {
   float compute_callee_frequency( int caller_bci ) const;
 
   GrowableArray<InlineTree*> _subtrees;
-  friend class Compile;
+
+  void print_impl(outputStream* stj, int indent) const PRODUCT_RETURN;
 
 protected:
   InlineTree(Compile* C,
@@ -78,6 +81,8 @@ protected:
   int         stack_depth()       const { return _caller_jvms ? _caller_jvms->depth() : 0; }
 
 public:
+  static const char* check_can_parse(ciMethod* callee);
+
   static InlineTree* build_inline_tree_root();
   static InlineTree* find_subtree_from_root(InlineTree* root, JVMState* jvms, ciMethod* callee, bool create_if_not_found = false);
 
@@ -119,6 +124,8 @@ public:
   uint        count_inlines()     const { return _count_inlines; };
 #endif
   GrowableArray<InlineTree*> subtrees() { return _subtrees; }
+
+  void print_value_on(outputStream* st) const PRODUCT_RETURN;
 };
 
 

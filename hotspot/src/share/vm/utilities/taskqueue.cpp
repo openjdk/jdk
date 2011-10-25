@@ -37,6 +37,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 
 #ifdef TRACESPINNING
 uint ParallelTaskTerminator::_total_yields = 0;
@@ -274,4 +277,3 @@ void ParallelTaskTerminator::reset_for_reuse(int n_threads) {
   reset_for_reuse();
   _n_threads = n_threads;
 }
-
