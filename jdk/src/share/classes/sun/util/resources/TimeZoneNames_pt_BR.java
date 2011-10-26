@@ -101,6 +101,8 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
                                      "Hor\u00e1rio de luz natural oriental", "EDT"};
         String EST_NSW[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o oriental (Nova Gales do Sul)", "EST",
                                          "Fuso hor\u00e1rio de ver\u00e3o oriental (Nova Gales do Sul)", "EST"};
+        String FET[] = new String[] {"Further-eastern European Time", "FET",
+                                     "Further-eastern European Summer Time", "FEST"};
         String GHMT[] = new String[] {"Fuso hor\u00e1rio do meridiano de Gana", "GMT",
                                       "Fuso hor\u00e1rio de ver\u00e3o de Gana", "GHST"};
         String GAMBIER[] =  new String[] {"Fuso hor\u00e1rio de Gambier", "GAMT",
@@ -184,7 +186,7 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
         String SAMOA[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o de Samoa", "SST",
                                        "Hor\u00e1rio de luz natural de Samoa", "SDT"};
         String WST_SAMOA[] = new String[] {"Fuso hor\u00e1rio de Samoa Ocidental", "WST",
-                                           "Fuso hor\u00e1rio de ver\u00e3o de Samoa Ocidental", "WSST"};
+                                           "Fuso hor\u00e1rio de ver\u00e3o de Samoa Ocidental", "WSDT"};
         String ChST[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o de Chamorro", "ChST",
                                       "Hor\u00e1rio de luz natural de Chamorro", "ChDT"};
         String VICTORIA[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o oriental (Victoria)", "EST",
@@ -511,6 +513,7 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
                                             "Fuso hor\u00e1rio de ver\u00e3o do Tadjiquist\u00e3o", "TJST"}},
             {"Asia/Gaza", EET},
             {"Asia/Harbin", CTT},
+            {"Asia/Hebron", EET},
             {"Asia/Ho_Chi_Minh", ICT},
             {"Asia/Hong_Kong", HKT},
             {"Asia/Hovd", new String[] {"Fuso hor\u00e1rio de Hovd", "HOVT",
@@ -674,9 +677,8 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"Europe/Isle_of_Man", GMTBST},
             {"Europe/Istanbul", EET},
             {"Europe/Jersey", GMTBST},
-            {"Europe/Kaliningrad", new String[] {"Kaliningrad Time", "KALT",
-                                                 "Kaliningrad Summer Time", "KALST"}},
-            {"Europe/Kiev", EET},
+            {"Europe/Kaliningrad", FET},
+            {"Europe/Kiev", FET},
             {"Europe/Lisbon", WET},
             {"Europe/Ljubljana", CET},
             {"Europe/London", GMTBST},
@@ -684,7 +686,7 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"Europe/Madrid", CET},
             {"Europe/Malta", CET},
             {"Europe/Mariehamn", EET},
-            {"Europe/Minsk", EET},
+            {"Europe/Minsk", FET},
             {"Europe/Monaco", CET},
             {"Europe/Moscow", MSK},
             {"Europe/Nicosia", EET},
@@ -697,14 +699,14 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
                                             "Fuso hor\u00e1rio de ver\u00e3o de Samara", "SAMST"}},
             {"Europe/San_Marino", CET},
             {"Europe/Sarajevo", CET},
-            {"Europe/Simferopol", EET},
+            {"Europe/Simferopol", FET},
             {"Europe/Skopje", CET},
             {"Europe/Sofia", EET},
             {"Europe/Stockholm", CET},
             {"Europe/Tallinn", EET},
             {"Europe/Tirane", CET},
             {"Europe/Tiraspol", EET},
-            {"Europe/Uzhgorod", EET},
+            {"Europe/Uzhgorod", FET},
             {"Europe/Vaduz", CET},
             {"Europe/Vatican", CET},
             {"Europe/Vienna", CET},
@@ -713,7 +715,7 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
                                                "Fuso hor\u00e1rio de ver\u00e3o de Volgogrado", "VOLST"}},
             {"Europe/Warsaw", CET},
             {"Europe/Zagreb", CET},
-            {"Europe/Zaporozhye", EET},
+            {"Europe/Zaporozhye", FET},
             {"Europe/Zurich", CET},
             {"GB", GMTBST},
             {"GB-Eire", GMTBST},
