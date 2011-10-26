@@ -42,7 +42,6 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.apt.comp.*;
 import com.sun.tools.apt.util.Bark;
 import com.sun.mirror.apt.AnnotationProcessorFactory;
-import com.sun.tools.javac.parser.DocCommentScanner;
 
 /**
  *  <p><b>This is NOT part of any supported API.
