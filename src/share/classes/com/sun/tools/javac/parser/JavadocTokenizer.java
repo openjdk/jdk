@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,12 @@
 
 package com.sun.tools.javac.parser;
 
+import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.parser.Tokens.Token;
+import com.sun.tools.javac.util.*;
+
 import java.nio.*;
 
-import com.sun.tools.javac.util.*;
 import static com.sun.tools.javac.util.LayoutCharacters.*;
 
 /** An extension to the base lexical analyzer that captures
@@ -40,25 +43,21 @@ import static com.sun.tools.javac.util.LayoutCharacters.*;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class DocCommentScanner extends Scanner {
+public class JavadocTokenizer extends JavaTokenizer {
 
     /** Create a scanner from the input buffer.  buffer must implement
      *  array() and compact(), and remaining() must be less than limit().
      */
-    protected DocCommentScanner(ScannerFactory fac, CharBuffer buffer) {
+    protected JavadocTokenizer(ScannerFactory fac, CharBuffer buffer) {
         super(fac, buffer);
     }
 
     /** Create a scanner from the input array.  The array must have at
      *  least a single character of extra space.
      */
-    protected DocCommentScanner(ScannerFactory fac, char[] input, int inputLength) {
+    protected JavadocTokenizer(ScannerFactory fac, char[] input, int inputLength) {
         super(fac, input, inputLength);
     }
-
-    /** Starting position of the comment in original source
-     */
-    private int pos;
 
     /** The comment input buffer, index of next chacter to be read,
      *  index of one past last character in buffer.
@@ -178,6 +177,14 @@ public class DocCommentScanner extends Scanner {
         }
     }
 
+    @Override
+    public Token readToken() {
+        docComment = null;
+        Token tk = super.readToken();
+        tk.docComment = docComment;
+        return tk;
+    }
+
     /**
      * Read next character in doc comment, skipping over double '\' characters.
      * If a double '\' is skipped, put in the buffer and update buffer count.
@@ -196,32 +203,17 @@ public class DocCommentScanner extends Scanner {
         }
     }
 
-    /* Reset doc comment before reading each new token
-     */
-    public void nextToken() {
-        docComment = null;
-        super.nextToken();
-    }
-
-    /**
-     * Returns the documentation string of the current token.
-     */
-    public String docComment() {
-        return docComment;
-    }
-
     /**
      * Process a doc comment and make the string content available.
      * Strips leading whitespace and stars.
      */
     @SuppressWarnings("fallthrough")
-    protected void processComment(CommentStyle style) {
+    protected void processComment(int pos, int endPos, CommentStyle style) {
         if (style != CommentStyle.JAVADOC) {
             return;
         }
 
-        pos = pos();
-        buf = getRawCharacters(pos, endPos());
+        buf = reader.getRawCharacters(pos, endPos);
         buflen = buf.length;
         bp = 0;
         col = 0;
@@ -414,7 +406,7 @@ public class DocCommentScanner extends Scanner {
      *
      * @return a LineMap */
     public Position.LineMap getLineMap() {
-        char[] buf = getRawCharacters();
+        char[] buf = reader.getRawCharacters();
         return Position.makeLineMap(buf, buf.length, true);
     }
 }
