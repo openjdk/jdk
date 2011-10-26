@@ -111,6 +111,11 @@ Java_sun_misc_VM_getThreadStateValues(JNIEnv *env, jclass cls,
     get_thread_state_info(env, JAVA_THREAD_STATE_TERMINATED, values, names);
 }
 
+JNIEXPORT jobject JNICALL
+Java_sun_misc_VM_latestUserDefinedLoader(JNIEnv *env, jclass cls) {
+    return JVM_LatestUserDefinedLoader(env);
+}
+
 typedef void (JNICALL *GetJvmVersionInfo_fp)(JNIEnv*, jvm_version_info*, size_t);
 
 JNIEXPORT void JNICALL
