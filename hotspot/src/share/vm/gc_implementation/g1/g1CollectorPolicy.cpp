@@ -498,7 +498,6 @@ void G1CollectorPolicy::init() {
   initialize_gc_policy_counters();
 
   G1YoungGenSizer sizer;
-  size_t initial_region_num = sizer.initial_young_region_num();
   _min_desired_young_length = sizer.min_young_region_num();
   _max_desired_young_length = sizer.max_young_region_num();
 
@@ -512,17 +511,14 @@ void G1CollectorPolicy::init() {
     }
   }
 
-  // GenCollectorPolicy guarantees that min <= initial <= max.
-  // Asserting here just to state that we rely on this property.
   assert(_min_desired_young_length <= _max_desired_young_length, "Invalid min/max young gen size values");
-  assert(initial_region_num <= _max_desired_young_length, "Initial young gen size too large");
-  assert(_min_desired_young_length <= initial_region_num, "Initial young gen size too small");
 
   set_adaptive_young_list_length(_min_desired_young_length < _max_desired_young_length);
   if (adaptive_young_list_length()) {
     _young_list_fixed_length = 0;
   } else {
-    _young_list_fixed_length = initial_region_num;
+    assert(_min_desired_young_length == _max_desired_young_length, "Min and max young size differ");
+    _young_list_fixed_length = _min_desired_young_length;
   }
   _free_regions_at_end_of_collection = _g1->free_regions();
   update_young_list_target_length();
