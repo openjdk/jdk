@@ -327,7 +327,9 @@ public class Locations {
          */
         protected LocationHandler(Location location, OptionName... options) {
             this.location = location;
-            this.options = EnumSet.copyOf(Arrays.asList(options));
+            this.options = options.length == 0 ?
+                EnumSet.noneOf(OptionName.class):
+                EnumSet.copyOf(Arrays.asList(options));
         }
 
         // TODO: TEMPORARY, while Options still used for command line options
