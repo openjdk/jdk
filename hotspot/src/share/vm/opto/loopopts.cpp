@@ -28,6 +28,7 @@
 #include "opto/connode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/loopnode.hpp"
+#include "opto/matcher.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
@@ -472,46 +473,50 @@ Node *PhaseIdealLoop::remix_address_expressions( Node *n ) {
 // 1 or 2 items with a total of 1 or 2 ops executed speculatively.
 Node *PhaseIdealLoop::conditional_move( Node *region ) {
 
-  assert( region->is_Region(), "sanity check" );
-  if( region->req() != 3 ) return NULL;
+  assert(region->is_Region(), "sanity check");
+  if (region->req() != 3) return NULL;
 
   // Check for CFG diamond
   Node *lp = region->in(1);
   Node *rp = region->in(2);
-  if( !lp || !rp ) return NULL;
+  if (!lp || !rp) return NULL;
   Node *lp_c = lp->in(0);
-  if( lp_c == NULL || lp_c != rp->in(0) || !lp_c->is_If() ) return NULL;
+  if (lp_c == NULL || lp_c != rp->in(0) || !lp_c->is_If()) return NULL;
   IfNode *iff = lp_c->as_If();
-
-  // Check for highly predictable branch.  No point in CMOV'ing if
-  // we are going to predict accurately all the time.
-  // %%% This hides patterns produced by utility methods like Math.min.
-  if( iff->_prob < PROB_UNLIKELY_MAG(3) ||
-      iff->_prob > PROB_LIKELY_MAG(3) )
-    return NULL;
 
   // Check for ops pinned in an arm of the diamond.
   // Can't remove the control flow in this case
-  if( lp->outcnt() > 1 ) return NULL;
-  if( rp->outcnt() > 1 ) return NULL;
+  if (lp->outcnt() > 1) return NULL;
+  if (rp->outcnt() > 1) return NULL;
+
+  IdealLoopTree* r_loop = get_loop(region);
+  assert(r_loop == get_loop(iff), "sanity");
+  // Always convert to CMOVE if all results are used only outside this loop.
+  bool used_inside_loop = (r_loop == _ltree_root);
 
   // Check profitability
   int cost = 0;
   int phis = 0;
   for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
     Node *out = region->fast_out(i);
-    if( !out->is_Phi() ) continue; // Ignore other control edges, etc
+    if (!out->is_Phi()) continue; // Ignore other control edges, etc
     phis++;
     PhiNode* phi = out->as_Phi();
-    switch (phi->type()->basic_type()) {
-    case T_LONG:
-      cost++;                   // Probably encodes as 2 CMOV's
-    case T_INT:                 // These all CMOV fine
+    BasicType bt = phi->type()->basic_type();
+    switch (bt) {
     case T_FLOAT:
-    case T_DOUBLE:
-    case T_ADDRESS:             // (RawPtr)
+    case T_DOUBLE: {
+      cost += Matcher::float_cmove_cost(); // Could be very expensive
+      break;
+    }
+    case T_LONG: {
+      cost += Matcher::long_cmove_cost(); // May encodes as 2 CMOV's
+    }
+    case T_INT:                 // These all CMOV fine
+    case T_ADDRESS: {           // (RawPtr)
       cost++;
       break;
+    }
     case T_NARROWOOP: // Fall through
     case T_OBJECT: {            // Base oops are OK, but not derived oops
       const TypeOopPtr *tp = phi->type()->make_ptr()->isa_oopptr();
@@ -524,7 +529,7 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
       // relevant bases.  This puts the allocator in the business of
       // manufacturing expensive instructions, generally a bad plan.
       // Just Say No to Conditionally-Moved Derived Pointers.
-      if( tp && tp->offset() != 0 )
+      if (tp && tp->offset() != 0)
         return NULL;
       cost++;
       break;
@@ -533,39 +538,64 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
       return NULL;              // In particular, can't do memory or I/O
     }
     // Add in cost any speculative ops
-    for( uint j = 1; j < region->req(); j++ ) {
+    for (uint j = 1; j < region->req(); j++) {
       Node *proj = region->in(j);
       Node *inp = phi->in(j);
       if (get_ctrl(inp) == proj) { // Found local op
         cost++;
         // Check for a chain of dependent ops; these will all become
         // speculative in a CMOV.
-        for( uint k = 1; k < inp->req(); k++ )
+        for (uint k = 1; k < inp->req(); k++)
           if (get_ctrl(inp->in(k)) == proj)
-            return NULL;        // Too much speculative goo
+            cost += ConditionalMoveLimit; // Too much speculative goo
       }
     }
     // See if the Phi is used by a Cmp or Narrow oop Decode/Encode.
     // This will likely Split-If, a higher-payoff operation.
     for (DUIterator_Fast kmax, k = phi->fast_outs(kmax); k < kmax; k++) {
       Node* use = phi->fast_out(k);
-      if( use->is_Cmp() || use->is_DecodeN() || use->is_EncodeP() )
-        return NULL;
+      if (use->is_Cmp() || use->is_DecodeN() || use->is_EncodeP())
+        cost += ConditionalMoveLimit;
+      // Is there a use inside the loop?
+      // Note: check only basic types since CMoveP is pinned.
+      if (!used_inside_loop && is_java_primitive(bt)) {
+        IdealLoopTree* u_loop = get_loop(has_ctrl(use) ? get_ctrl(use) : use);
+        if (r_loop == u_loop || r_loop->is_member(u_loop)) {
+          used_inside_loop = true;
+        }
+      }
     }
   }
-  if( cost >= ConditionalMoveLimit ) return NULL; // Too much goo
   Node* bol = iff->in(1);
-  assert( bol->Opcode() == Op_Bool, "" );
+  assert(bol->Opcode() == Op_Bool, "");
   int cmp_op = bol->in(1)->Opcode();
   // It is expensive to generate flags from a float compare.
   // Avoid duplicated float compare.
-  if( phis > 1 && (cmp_op == Op_CmpF || cmp_op == Op_CmpD)) return NULL;
+  if (phis > 1 && (cmp_op == Op_CmpF || cmp_op == Op_CmpD)) return NULL;
+
+  float infrequent_prob = PROB_UNLIKELY_MAG(3);
+  // Ignore cost and blocks frequency if CMOVE can be moved outside the loop.
+  if (used_inside_loop) {
+    if (cost >= ConditionalMoveLimit) return NULL; // Too much goo
+
+    // BlockLayoutByFrequency optimization moves infrequent branch
+    // from hot path. No point in CMOV'ing in such case (110 is used
+    // instead of 100 to take into account not exactness of float value).
+    if (BlockLayoutByFrequency) {
+      infrequent_prob = MAX2(infrequent_prob, (float)BlockLayoutMinDiamondPercentage/110.0f);
+    }
+  }
+  // Check for highly predictable branch.  No point in CMOV'ing if
+  // we are going to predict accurately all the time.
+  if (iff->_prob < infrequent_prob ||
+      iff->_prob > (1.0f - infrequent_prob))
+    return NULL;
 
   // --------------
   // Now replace all Phis with CMOV's
   Node *cmov_ctrl = iff->in(0);
   uint flip = (lp->Opcode() == Op_IfTrue);
-  while( 1 ) {
+  while (1) {
     PhiNode* phi = NULL;
     for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
       Node *out = region->fast_out(i);
@@ -576,15 +606,15 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     }
     if (phi == NULL)  break;
 #ifndef PRODUCT
-    if( PrintOpto && VerifyLoopOptimizations ) tty->print_cr("CMOV");
+    if (PrintOpto && VerifyLoopOptimizations) tty->print_cr("CMOV");
 #endif
     // Move speculative ops
-    for( uint j = 1; j < region->req(); j++ ) {
+    for (uint j = 1; j < region->req(); j++) {
       Node *proj = region->in(j);
       Node *inp = phi->in(j);
       if (get_ctrl(inp) == proj) { // Found local op
 #ifndef PRODUCT
-        if( PrintOpto && VerifyLoopOptimizations ) {
+        if (PrintOpto && VerifyLoopOptimizations) {
           tty->print("  speculate: ");
           inp->dump();
         }
@@ -596,7 +626,14 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     register_new_node( cmov, cmov_ctrl );
     _igvn.replace_node( phi, cmov );
 #ifndef PRODUCT
-    if( VerifyLoopOptimizations ) verify();
+    if (TraceLoopOpts) {
+      tty->print("CMOV  ");
+      r_loop->dump_head();
+      if (Verbose)
+        bol->in(1)->dump(1);
+        cmov->dump(1);
+    }
+    if (VerifyLoopOptimizations) verify();
 #endif
   }
 
@@ -676,14 +713,14 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
 
   // Split 'n' through the merge point if it is profitable
   Node *phi = split_thru_phi( n, n_blk, policy );
-  if( !phi ) return n;
+  if (!phi) return n;
 
   // Found a Phi to split thru!
   // Replace 'n' with the new phi
   _igvn.replace_node( n, phi );
   // Moved a load around the loop, 'en-registering' something.
-  if( n_blk->Opcode() == Op_Loop && n->is_Load() &&
-      !phi->in(LoopNode::LoopBackControl)->is_Load() )
+  if (n_blk->is_Loop() && n->is_Load() &&
+      !phi->in(LoopNode::LoopBackControl)->is_Load())
     C->set_major_progress();
 
   return phi;
