@@ -54,17 +54,14 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
-import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.file.RelativePath.RelativeFile;
 import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
-import com.sun.tools.javac.main.OptionName;
 import com.sun.tools.javac.util.BaseFileManager;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 
 import static javax.tools.StandardLocation.*;
-import static com.sun.tools.javac.main.OptionName.*;
 
 /**
  * This class provides access to the source, class and other files
@@ -89,22 +86,8 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     private boolean contextUseOptimizedZip;
     private ZipFileIndexCache zipFileIndexCache;
 
-    private final File uninited = new File("U N I N I T E D");
-
     private final Set<JavaFileObject.Kind> sourceOrClass =
         EnumSet.of(JavaFileObject.Kind.SOURCE, JavaFileObject.Kind.CLASS);
-
-    /** The standard output directory, primarily used for classes.
-     *  Initialized by the "-d" option.
-     *  If classOutDir = null, files are written into same directory as the sources
-     *  they were generated from.
-     */
-    private File classOutDir = uninited;
-
-    /** The output directory, used when generating sources while processing annotations.
-     *  Initialized by the "-s" option.
-     */
-    private File sourceOutDir = uninited;
 
     protected boolean mmappedIO;
     protected boolean ignoreSymbolFile;
@@ -169,7 +152,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     @Override
     public boolean isDefaultBootClassPath() {
-        return searchPaths.isDefaultBootClassPath();
+        return locations.isDefaultBootClassPath();
     }
 
     public JavaFileObject getFileForInput(String name) {
@@ -483,7 +466,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
      */
     private Archive openArchive(File zipFileName, boolean useOptimizedZip) throws IOException {
         File origZipFileName = zipFileName;
-        if (!ignoreSymbolFile && searchPaths.isDefaultBootClassPathRtJar(zipFileName)) {
+        if (!ignoreSymbolFile && locations.isDefaultBootClassPathRtJar(zipFileName)) {
             File file = zipFileName.getParentFile().getParentFile(); // ${java.home}
             if (new File(file.getName()).equals(new File("jre")))
                 file = file.getParentFile();
@@ -770,7 +753,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         } else if (location == SOURCE_OUTPUT) {
             dir = (getSourceOutDir() != null ? getSourceOutDir() : getClassOutDir());
         } else {
-            Iterable<? extends File> path = searchPaths.getPathForLocation(location);
+            Iterable<? extends File> path = locations.getLocation(location);
             dir = null;
             for (File f: path) {
                 dir = f;
@@ -805,64 +788,20 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         throws IOException
     {
         nullCheck(location);
-        searchPaths.lazy();
-
-        final File dir = location.isOutputLocation() ? getOutputDirectory(path) : null;
-
-        if (location == CLASS_OUTPUT)
-            classOutDir = getOutputLocation(dir, D);
-        else if (location == SOURCE_OUTPUT)
-            sourceOutDir = getOutputLocation(dir, S);
-        else
-            searchPaths.setPathForLocation(location, path);
-    }
-    // where
-        private File getOutputDirectory(Iterable<? extends File> path) throws IOException {
-            if (path == null)
-                return null;
-            Iterator<? extends File> pathIter = path.iterator();
-            if (!pathIter.hasNext())
-                throw new IllegalArgumentException("empty path for directory");
-            File dir = pathIter.next();
-            if (pathIter.hasNext())
-                throw new IllegalArgumentException("path too long for directory");
-            if (!dir.exists())
-                throw new FileNotFoundException(dir + ": does not exist");
-            else if (!dir.isDirectory())
-                throw new IOException(dir + ": not a directory");
-            return dir;
-        }
-
-    private File getOutputLocation(File dir, OptionName defaultOptionName) {
-        if (dir != null)
-            return dir;
-        String arg = options.get(defaultOptionName);
-        if (arg == null)
-            return null;
-        return new File(arg);
+        locations.setLocation(location, path);
     }
 
     public Iterable<? extends File> getLocation(Location location) {
         nullCheck(location);
-        searchPaths.lazy();
-        if (location == CLASS_OUTPUT) {
-            return (getClassOutDir() == null ? null : List.of(getClassOutDir()));
-        } else if (location == SOURCE_OUTPUT) {
-            return (getSourceOutDir() == null ? null : List.of(getSourceOutDir()));
-        } else
-            return searchPaths.getPathForLocation(location);
+        return locations.getLocation(location);
     }
 
     private File getClassOutDir() {
-        if (classOutDir == uninited)
-            classOutDir = getOutputLocation(null, D);
-        return classOutDir;
+        return locations.getOutputLocation(CLASS_OUTPUT);
     }
 
     private File getSourceOutDir() {
-        if (sourceOutDir == uninited)
-            sourceOutDir = getOutputLocation(null, S);
-        return sourceOutDir;
+        return locations.getOutputLocation(SOURCE_OUTPUT);
     }
 
     /**

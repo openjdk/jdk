@@ -169,7 +169,7 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
 
     @Override
     public boolean isDefaultBootClassPath() {
-        return searchPaths.isDefaultBootClassPath();
+        return locations.isDefaultBootClassPath();
     }
 
     // <editor-fold defaultstate="collapsed" desc="Location handling">
@@ -227,13 +227,13 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
         if (locn instanceof StandardLocation) {
             switch ((StandardLocation) locn) {
                 case CLASS_PATH:
-                    files = searchPaths.userClassPath();
+                    files = locations.userClassPath();
                     break;
                 case PLATFORM_CLASS_PATH:
-                    files = searchPaths.bootClassPath();
+                    files = locations.bootClassPath();
                     break;
                 case SOURCE_PATH:
-                    files = searchPaths.sourcePath();
+                    files = locations.sourcePath();
                     break;
                 case CLASS_OUTPUT: {
                     String arg = options.get(D);
