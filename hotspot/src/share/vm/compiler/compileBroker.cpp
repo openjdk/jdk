@@ -1722,11 +1722,11 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       if (PrintCompilation) {
         const char* reason = ci_env.failure_reason();
         if (compilable == ciEnv::MethodCompilable_not_at_tier) {
-            tty->print_cr("%3d   COMPILE SKIPPED: %s (retry at different tier)", compile_id, reason);
+          tty->print_cr("%4d   COMPILE SKIPPED: %s (retry at different tier)", compile_id, reason);
         } else if (compilable == ciEnv::MethodCompilable_never) {
-          tty->print_cr("%3d   COMPILE SKIPPED: %s (not retryable)", compile_id, reason);
+          tty->print_cr("%4d   COMPILE SKIPPED: %s (not retryable)", compile_id, reason);
         } else if (compilable == ciEnv::MethodCompilable) {
-          tty->print_cr("%3d   COMPILE SKIPPED: %s", compile_id, reason);
+          tty->print_cr("%4d   COMPILE SKIPPED: %s", compile_id, reason);
         }
       }
     } else {
@@ -1742,6 +1742,13 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   DTRACE_METHOD_COMPILE_END_PROBE(compiler(task->comp_level()), method, task->is_success());
 
   collect_statistics(thread, time, task);
+
+  if (PrintCompilation && PrintInlining) {
+    tty->print("%7d ", (int) tty->time_stamp().milliseconds());  // print timestamp
+    tty->print("%4d ", compile_id);    // print compilation number
+    tty->print("%s ", (is_osr ? "%" : " "));
+    tty->print_cr("size: %d time: %d inlined: %d bytes", task->code()->total_size(), time.milliseconds(), task->num_inlined_bytecodes());
+  }
 
   if (compilable == ciEnv::MethodCompilable_never) {
     if (is_osr) {
