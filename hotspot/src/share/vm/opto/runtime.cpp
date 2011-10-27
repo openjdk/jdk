@@ -1130,7 +1130,7 @@ void OptoRuntime::deoptimize_caller_frame(JavaThread *thread, bool doit) {
     assert(stub_frame.is_runtime_frame() || exception_blob()->contains(stub_frame.pc()), "sanity check");
     frame caller_frame = stub_frame.sender(&reg_map);
 
-    // bypass VM_DeoptimizeFrame and deoptimize the frame directly
+    // Deoptimize the caller frame.
     Deoptimization::deoptimize_frame(thread, caller_frame.id());
   }
 }
