@@ -68,6 +68,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 
 
 
@@ -2044,7 +2047,6 @@ JvmtiEnv::SetFieldAccessWatch(fieldDescriptor* fdesc_ptr) {
   // make sure we haven't set this watch before
   if (fdesc_ptr->is_field_access_watched()) return JVMTI_ERROR_DUPLICATE;
   fdesc_ptr->set_is_field_access_watched(true);
-  update_klass_field_access_flag(fdesc_ptr);
 
   JvmtiEventController::change_field_watch(JVMTI_EVENT_FIELD_ACCESS, true);
 
@@ -2057,7 +2059,6 @@ JvmtiEnv::ClearFieldAccessWatch(fieldDescriptor* fdesc_ptr) {
   // make sure we have a watch to clear
   if (!fdesc_ptr->is_field_access_watched()) return JVMTI_ERROR_NOT_FOUND;
   fdesc_ptr->set_is_field_access_watched(false);
-  update_klass_field_access_flag(fdesc_ptr);
 
   JvmtiEventController::change_field_watch(JVMTI_EVENT_FIELD_ACCESS, false);
 
@@ -2070,7 +2071,6 @@ JvmtiEnv::SetFieldModificationWatch(fieldDescriptor* fdesc_ptr) {
   // make sure we haven't set this watch before
   if (fdesc_ptr->is_field_modification_watched()) return JVMTI_ERROR_DUPLICATE;
   fdesc_ptr->set_is_field_modification_watched(true);
-  update_klass_field_access_flag(fdesc_ptr);
 
   JvmtiEventController::change_field_watch(JVMTI_EVENT_FIELD_MODIFICATION, true);
 
@@ -2083,7 +2083,6 @@ JvmtiEnv::ClearFieldModificationWatch(fieldDescriptor* fdesc_ptr) {
    // make sure we have a watch to clear
   if (!fdesc_ptr->is_field_modification_watched()) return JVMTI_ERROR_NOT_FOUND;
   fdesc_ptr->set_is_field_modification_watched(false);
-  update_klass_field_access_flag(fdesc_ptr);
 
   JvmtiEventController::change_field_watch(JVMTI_EVENT_FIELD_MODIFICATION, false);
 

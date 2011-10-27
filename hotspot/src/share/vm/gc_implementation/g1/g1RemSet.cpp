@@ -234,6 +234,7 @@ void G1RemSet::scanRS(OopsInHeapRegionClosure* oc, int worker_i) {
   HeapRegion *startRegion = calculateStartRegion(worker_i);
 
   ScanRSClosure scanRScl(oc, worker_i);
+
   _g1->collection_set_iterate_from(startRegion, &scanRScl);
   scanRScl.set_try_claimed();
   _g1->collection_set_iterate_from(startRegion, &scanRScl);
@@ -283,6 +284,7 @@ void G1RemSet::updateRS(DirtyCardQueue* into_cset_dcq, int worker_i) {
   double start = os::elapsedTime();
   // Apply the given closure to all remaining log entries.
   RefineRecordRefsIntoCSCardTableEntryClosure into_cset_update_rs_cl(_g1, into_cset_dcq);
+
   _g1->iterate_dirty_card_closure(&into_cset_update_rs_cl, into_cset_dcq, false, worker_i);
 
   // Now there should be no dirty cards.

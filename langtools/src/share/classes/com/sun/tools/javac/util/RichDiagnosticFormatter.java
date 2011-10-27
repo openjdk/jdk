@@ -412,7 +412,7 @@ public class RichDiagnosticFormatter extends
         @Override
         public String visitMethodSymbol(MethodSymbol s, Locale locale) {
             String ownerName = visit(s.owner, locale);
-            if ((s.flags() & BLOCK) != 0) {
+            if (s.isStaticOrInstanceInit()) {
                return ownerName;
             } else {
                 String ms = (s.name == s.name.table.names.init)

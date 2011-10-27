@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ public final class DNSNameService implements NameService {
             // create new soft reference to our thread context
             //
             thrCtxt = new ThreadContext(dirCtxt, nsList);
-            contextRef.set(new SoftReference(thrCtxt));
+            contextRef.set(new SoftReference<ThreadContext>(thrCtxt));
         }
 
         return thrCtxt.dirContext();
@@ -193,7 +193,7 @@ public final class DNSNameService implements NameService {
                 Attribute attr = ne.next();
                 String attrID = attr.getID();
 
-                for (NamingEnumeration e = attr.getAll(); e.hasMoreElements();) {
+                for (NamingEnumeration<?> e = attr.getAll(); e.hasMoreElements();) {
                     String addr = (String)e.next();
 
                     // for canoncical name records do recursive lookup
@@ -233,7 +233,7 @@ public final class DNSNameService implements NameService {
         String domain = AccessController.doPrivileged(
             new GetPropertyAction("sun.net.spi.nameservice.domain"));
         if (domain != null && domain.length() > 0) {
-            domainList = new LinkedList();
+            domainList = new LinkedList<String>();
             domainList.add(domain);
         }
 
@@ -282,7 +282,7 @@ public final class DNSNameService implements NameService {
             throw new Error(nx);
         }
 
-        ArrayList results = null;
+        ArrayList<String> results = null;
         UnknownHostException uhe = null;
 
         // If host already contains a domain name then just look it up
@@ -365,7 +365,7 @@ public final class DNSNameService implements NameService {
         InetAddress[] addrs = new InetAddress[results.size()];
         int count = 0;
         for (int i=0; i<results.size(); i++) {
-            String addrString = (String)results.get(i);
+            String addrString = results.get(i);
             byte addr[] = IPAddressUtil.textToNumericFormatV4(addrString);
             if (addr == null) {
                 addr = IPAddressUtil.textToNumericFormatV6(addrString);

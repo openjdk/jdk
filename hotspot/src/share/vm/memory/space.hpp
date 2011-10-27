@@ -44,6 +44,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "os_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.inline.hpp"
+#endif
 
 // A space is an abstraction for the "storage units" backing
 // up the generation abstraction. It includes specific

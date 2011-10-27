@@ -124,9 +124,6 @@
   develop(bool, G1RSBarrierNullFilter, true,                                \
           "If true, generate null-pointer filtering code in RS barrier")    \
                                                                             \
-  develop(bool, G1PrintCTFilterStats, false,                                \
-          "If true, print stats on RS filtering effectiveness")             \
-                                                                            \
   develop(bool, G1DeferredRSUpdate, true,                                   \
           "If true, use deferred RS updates")                               \
                                                                             \
@@ -137,9 +134,9 @@
   develop(bool, G1RSCountHisto, false,                                      \
           "If true, print a histogram of RS occupancies after each pause")  \
                                                                             \
-  product(bool, G1PrintRegionLivenessInfo, false,                           \
-          "Prints the liveness information for all regions in the heap "    \
-          "at the end of a marking cycle.")                                 \
+  diagnostic(bool, G1PrintRegionLivenessInfo, false,                        \
+            "Prints the liveness information for all regions in the heap "  \
+            "at the end of a marking cycle.")                               \
                                                                             \
   develop(bool, G1PrintParCleanupStats, false,                              \
           "When true, print extra stats about parallel cleanup.")           \
@@ -231,7 +228,7 @@
           "the number of regions for which we'll print a surv rate "        \
           "summary.")                                                       \
                                                                             \
-  product(intx, G1ReservePercent, 10,                                       \
+  product(uintx, G1ReservePercent, 10,                                      \
           "It determines the minimum reserve we should have in the heap "   \
           "to minimize the probability of promotion failure.")              \
                                                                             \
@@ -292,10 +289,6 @@
           "The number of dummy regions G1 will allocate at the end of "     \
           "each evacuation pause in order to artificially fill up the "     \
           "heap and stress the marking implementation.")                    \
-                                                                            \
-  develop(bool, ReduceInitialCardMarksForG1, false,                         \
-          "When ReduceInitialCardMarks is true, this flag setting "         \
-          " controls whether G1 allows the RICM optimization")              \
                                                                             \
   develop(bool, G1ExitOnExpansionFailure, false,                            \
           "Raise a fatal VM exit out of memory failure in the event "       \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,19 +31,27 @@
 
 class ReferencePolicy : public CHeapObj {
  public:
-  virtual bool should_clear_reference(oop p)       { ShouldNotReachHere(); return true; }
+  virtual bool should_clear_reference(oop p, jlong timestamp_clock) {
+    ShouldNotReachHere();
+    return true;
+  }
+
   // Capture state (of-the-VM) information needed to evaluate the policy
   virtual void setup() { /* do nothing */ }
 };
 
 class NeverClearPolicy : public ReferencePolicy {
  public:
-  bool should_clear_reference(oop p) { return false; }
+  virtual bool should_clear_reference(oop p, jlong timestamp_clock) {
+    return false;
+  }
 };
 
 class AlwaysClearPolicy : public ReferencePolicy {
  public:
-  bool should_clear_reference(oop p) { return true; }
+  virtual bool should_clear_reference(oop p, jlong timestamp_clock) {
+    return true;
+  }
 };
 
 class LRUCurrentHeapPolicy : public ReferencePolicy {
@@ -55,7 +63,7 @@ class LRUCurrentHeapPolicy : public ReferencePolicy {
 
   // Capture state (of-the-VM) information needed to evaluate the policy
   void setup();
-  bool should_clear_reference(oop p);
+  virtual bool should_clear_reference(oop p, jlong timestamp_clock);
 };
 
 class LRUMaxHeapPolicy : public ReferencePolicy {
@@ -67,7 +75,7 @@ class LRUMaxHeapPolicy : public ReferencePolicy {
 
   // Capture state (of-the-VM) information needed to evaluate the policy
   void setup();
-  bool should_clear_reference(oop p);
+  virtual bool should_clear_reference(oop p, jlong timestamp_clock);
 };
 
 #endif // SHARE_VM_MEMORY_REFERENCEPOLICY_HPP

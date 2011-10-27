@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,24 +257,15 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
         for (String p: excludedPackages)
             includedPackages.put(p, false);
 
-        if (docenv.fileManager.hasLocation(StandardLocation.SOURCE_PATH)) {
-            searchSubPackages(subPackages,
-                    includedPackages,
-                    packages, packageFiles,
-                    StandardLocation.SOURCE_PATH,
-                    EnumSet.of(JavaFileObject.Kind.SOURCE));
-            searchSubPackages(subPackages,
-                    includedPackages,
-                    packages, packageFiles,
-                    StandardLocation.CLASS_PATH,
-                    EnumSet.of(JavaFileObject.Kind.CLASS));
-        } else {
-            searchSubPackages(subPackages,
-                    includedPackages,
-                    packages, packageFiles,
-                    StandardLocation.CLASS_PATH,
-                    EnumSet.of(JavaFileObject.Kind.SOURCE, JavaFileObject.Kind.CLASS));
-        }
+        StandardLocation path = docenv.fileManager.hasLocation(StandardLocation.SOURCE_PATH)
+                ? StandardLocation.SOURCE_PATH : StandardLocation.CLASS_PATH;
+
+        searchSubPackages(subPackages,
+                includedPackages,
+                packages, packageFiles,
+                path,
+                EnumSet.of(JavaFileObject.Kind.SOURCE));
+
         return packageFiles;
     }
 

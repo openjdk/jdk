@@ -24,6 +24,7 @@ package com.sun.org.apache.xml.internal.security.utils;
 
 import java.math.BigInteger;
 import java.util.HashMap;
+import java.util.Map;
 
 import com.sun.org.apache.xml.internal.security.exceptions.Base64DecodingException;
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
@@ -370,6 +371,7 @@ public abstract class ElementProxy {
     * @return the bytes
     * @throws XMLSecurityException
     */
+   @Deprecated
    public byte[] getBytesFromChildElement(String localname, String namespace)
            throws XMLSecurityException {
 
@@ -392,14 +394,12 @@ public abstract class ElementProxy {
     */
    public String getTextFromChildElement(String localname, String namespace) {
 
-         Text t =
-             (Text) XMLUtils.selectNode(
-                        this._constructionElement.getFirstChild(),
-                        namespace,
-                        localname,
-                        0).getFirstChild();
+         return     XMLUtils.selectNode(
+                    this._constructionElement.getFirstChild(),
+                    namespace,
+                    localname,
+                    0).getFirstChild().getNodeValue();
 
-         return t.getData();
    }
 
    /**
@@ -493,8 +493,8 @@ public abstract class ElementProxy {
    }
 
    /** Field _prefixMappings */
-   static HashMap _prefixMappings = new HashMap();
-   static HashMap _prefixMappingsBindings = new HashMap();
+   static Map<String, String> _prefixMappings = new HashMap<String,String>();
+   static Map<String, String> _prefixMappingsBindings = new HashMap<String,String>();
 
     /**
      * Method setDefaultPrefix
@@ -533,10 +533,10 @@ public abstract class ElementProxy {
      * @return the default prefix bind to this element.
      */
     public static String getDefaultPrefix(String namespace) {
-        return (String) ElementProxy._prefixMappings.get(namespace);
+        return ElementProxy._prefixMappings.get(namespace);
     }
 
     public static String getDefaultPrefixBindings(String namespace) {
-        return (String) ElementProxy._prefixMappingsBindings.get(namespace);
+        return ElementProxy._prefixMappingsBindings.get(namespace);
     }
 }

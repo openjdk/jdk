@@ -942,7 +942,12 @@ public:
 class InitializeNode: public MemBarNode {
   friend class AllocateNode;
 
-  bool _is_complete;
+  enum {
+    Incomplete    = 0,
+    Complete      = 1,
+    WithArraycopy = 2
+  };
+  int _is_complete;
 
 public:
   enum {
@@ -976,10 +981,12 @@ public:
   // An InitializeNode must completed before macro expansion is done.
   // Completion requires that the AllocateNode must be followed by
   // initialization of the new memory to zero, then to any initializers.
-  bool is_complete() { return _is_complete; }
+  bool is_complete() { return _is_complete != Incomplete; }
+  bool is_complete_with_arraycopy() { return (_is_complete & WithArraycopy) != 0; }
 
   // Mark complete.  (Must not yet be complete.)
   void set_complete(PhaseGVN* phase);
+  void set_complete_with_arraycopy() { _is_complete = Complete | WithArraycopy; }
 
 #ifdef ASSERT
   // ensure all non-degenerate stores are ordered and non-overlapping

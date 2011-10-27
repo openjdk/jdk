@@ -103,6 +103,8 @@ public class Kinds {
         VAL("kindname.value"),
         METHOD("kindname.method"),
         CLASS("kindname.class"),
+        STATIC_INIT("kindname.static.init"),
+        INSTANCE_INIT("kindname.instance.init"),
         PACKAGE("kindname.package");
 
         private String name;
@@ -170,9 +172,11 @@ public class Kinds {
             return KindName.CONSTRUCTOR;
 
         case METHOD:
-        case STATIC_INIT:
-        case INSTANCE_INIT:
             return KindName.METHOD;
+        case STATIC_INIT:
+            return KindName.STATIC_INIT;
+        case INSTANCE_INIT:
+            return KindName.INSTANCE_INIT;
 
         default:
             if (sym.kind == VAL)

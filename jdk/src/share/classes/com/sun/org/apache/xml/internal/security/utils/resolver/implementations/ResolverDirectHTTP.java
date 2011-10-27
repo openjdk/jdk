@@ -289,7 +289,7 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
     * @inheritDoc
     */
    public String[] engineGetPropertyKeys() {
-      return (String[]) ResolverDirectHTTP.properties.clone();
+      return ResolverDirectHTTP.properties.clone();
    }
 
    private URI getNewURI(String uri, String BaseURI)

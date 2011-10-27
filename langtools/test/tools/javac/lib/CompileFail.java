@@ -23,6 +23,7 @@
 
 import java.io.*;
 import java.util.*;
+import com.sun.tools.javac.main.Main;
 
 /*
  * Utility class to emulate jtreg @compile/fail, but also checking the specific
@@ -58,32 +59,7 @@ public class CompileFail {
     }
 
     static int getReturnCode(String name) {
-        switch (name) {
-            case "OK":
-                return EXIT_OK;
-
-            case "ERROR":
-                return EXIT_ERROR;
-
-            case "CMDERR":
-                return EXIT_CMDERR;
-
-            case "SYSERR":
-                return EXIT_SYSERR;
-
-            case "ABNORMAL":
-                return EXIT_ABNORMAL;
-
-            default:
-                throw new IllegalArgumentException(name);
-        }
+        return Main.Result.valueOf(name).exitCode;
     }
 
-    // The following is cut-n-paste from com.sun.tools.javac.main.Main
-    static final int
-        EXIT_OK = 0,        // Compilation completed with no errors.
-        EXIT_ERROR = 1,     // Completed but reported errors.
-        EXIT_CMDERR = 2,    // Bad command-line arguments
-        EXIT_SYSERR = 3,    // System error or resource exhaustion.
-        EXIT_ABNORMAL = 4;  // Compiler terminated abnormally
 }

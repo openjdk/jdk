@@ -77,7 +77,14 @@ typeArrayOop oopFactory::new_permanent_intArray(int length, TRAPS) {
 typeArrayOop oopFactory::new_typeArray(BasicType type, int length, TRAPS) {
   klassOop type_asKlassOop = Universe::typeArrayKlassObj(type);
   typeArrayKlass* type_asArrayKlass = typeArrayKlass::cast(type_asKlassOop);
-  typeArrayOop result = type_asArrayKlass->allocate(length, THREAD);
+  typeArrayOop result = type_asArrayKlass->allocate_common(length, true, THREAD);
+  return result;
+}
+
+typeArrayOop oopFactory::new_typeArray_nozero(BasicType type, int length, TRAPS) {
+  klassOop type_asKlassOop = Universe::typeArrayKlassObj(type);
+  typeArrayKlass* type_asArrayKlass = typeArrayKlass::cast(type_asKlassOop);
+  typeArrayOop result = type_asArrayKlass->allocate_common(length, false, THREAD);
   return result;
 }
 
