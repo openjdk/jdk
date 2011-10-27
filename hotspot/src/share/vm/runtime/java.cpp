@@ -85,6 +85,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 #ifndef SERIALGC
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
@@ -102,7 +105,9 @@
 #include "opto/runtime.hpp"
 #endif
 
+#ifndef USDT2
 HS_DTRACE_PROBE_DECL(hotspot, vm__shutdown);
+#endif /* !USDT2 */
 
 #ifndef PRODUCT
 
@@ -544,8 +549,12 @@ void vm_exit(int code) {
 
 void notify_vm_shutdown() {
   // For now, just a dtrace probe.
+#ifndef USDT2
   HS_DTRACE_PROBE(hotspot, vm__shutdown);
   HS_DTRACE_WORKAROUND_TAIL_CALL_BUG();
+#else /* USDT2 */
+  HOTSPOT_VM_SHUTDOWN();
+#endif /* USDT2 */
 }
 
 void vm_direct_exit(int code) {
@@ -672,7 +681,8 @@ void JDK_Version::initialize() {
     _current = JDK_Version(major, minor, micro, info.update_version,
                            info.special_update_version, build,
                            info.thread_park_blocker == 1,
-                           info.post_vm_init_hook_enabled == 1);
+                           info.post_vm_init_hook_enabled == 1,
+                           info.pending_list_uses_discovered_field == 1);
   }
 }
 

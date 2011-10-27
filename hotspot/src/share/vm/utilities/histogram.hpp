@@ -37,6 +37,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "os_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.inline.hpp"
+#endif
 
 // This class provides a framework for collecting various statistics.
 // The current implementation is oriented towards counting invocations

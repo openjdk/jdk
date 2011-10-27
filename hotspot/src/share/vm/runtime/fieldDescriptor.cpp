@@ -42,59 +42,51 @@ typeArrayOop fieldDescriptor::annotations() const {
   objArrayOop md = ik->fields_annotations();
   if (md == NULL)
     return NULL;
-  assert((index() % instanceKlass::next_offset) == 0, "");
-  return typeArrayOop(md->obj_at(index() / instanceKlass::next_offset));
+  return typeArrayOop(md->obj_at(index()));
 }
 
 constantTag fieldDescriptor::initial_value_tag() const {
-  return constants()->tag_at(_initial_value_index);
+  return constants()->tag_at(initial_value_index());
 }
 
 jint fieldDescriptor::int_initial_value() const {
-  return constants()->int_at(_initial_value_index);
+  return constants()->int_at(initial_value_index());
 }
 
 jlong fieldDescriptor::long_initial_value() const {
-  return constants()->long_at(_initial_value_index);
+  return constants()->long_at(initial_value_index());
 }
 
 jfloat fieldDescriptor::float_initial_value() const {
-  return constants()->float_at(_initial_value_index);
+  return constants()->float_at(initial_value_index());
 }
 
 jdouble fieldDescriptor::double_initial_value() const {
-  return constants()->double_at(_initial_value_index);
+  return constants()->double_at(initial_value_index());
 }
 
 oop fieldDescriptor::string_initial_value(TRAPS) const {
-  return constants()->string_at(_initial_value_index, CHECK_0);
+  return constants()->string_at(initial_value_index(), CHECK_0);
 }
 
 void fieldDescriptor::initialize(klassOop k, int index) {
   instanceKlass* ik = instanceKlass::cast(k);
   _cp = ik->constants();
-  typeArrayOop fields = ik->fields();
+  FieldInfo* f = ik->field(index);
+  assert(!f->is_internal(), "regular Java fields only");
 
-  assert(fields->length() % instanceKlass::next_offset == 0, "Illegal size of field array");
-  assert(fields->length() >= index + instanceKlass::next_offset, "Illegal size of field array");
-
-  _access_flags.set_field_flags(fields->ushort_at(index + instanceKlass::access_flags_offset));
-  _name_index = fields->ushort_at(index + instanceKlass::name_index_offset);
-  _signature_index = fields->ushort_at(index + instanceKlass::signature_index_offset);
-  _initial_value_index = fields->ushort_at(index + instanceKlass::initval_index_offset);
-  guarantee(_name_index != 0 && _signature_index != 0, "bad constant pool index for fieldDescriptor");
-  _offset = ik->offset_from_fields( index );
-  _generic_signature_index = fields->ushort_at(index + instanceKlass::generic_signature_offset);
+  _access_flags = accessFlags_from(f->access_flags());
+  guarantee(f->name_index() != 0 && f->signature_index() != 0, "bad constant pool index for fieldDescriptor");
   _index = index;
 }
 
 #ifndef PRODUCT
 
 void fieldDescriptor::print_on(outputStream* st) const {
-  _access_flags.print_on(st);
-  constants()->symbol_at(_name_index)->print_value_on(st);
+  access_flags().print_on(st);
+  name()->print_value_on(st);
   st->print(" ");
-  constants()->symbol_at(_signature_index)->print_value_on(st);
+  signature()->print_value_on(st);
   st->print(" @%d ", offset());
   if (WizardMode && has_initial_value()) {
     st->print("(initval ");

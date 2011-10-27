@@ -269,21 +269,18 @@ public class Infer {
             // VGJ: sort of inlined maximizeInst() below.  Adding
             // bounds can cause lobounds that are above hibounds.
             List<Type> hibounds = Type.filter(that.hibounds, errorFilter);
-            if (hibounds.isEmpty())
-                return;
             Type hb = null;
-            if (hibounds.tail.isEmpty())
+            if (hibounds.isEmpty())
+                hb = syms.objectType;
+            else if (hibounds.tail.isEmpty())
                 hb = hibounds.head;
-            else for (List<Type> bs = hibounds;
-                      bs.nonEmpty() && hb == null;
-                      bs = bs.tail) {
-                if (isSubClass(bs.head, hibounds))
-                    hb = types.fromUnknownFun.apply(bs.head);
-            }
+            else
+                hb = types.glb(hibounds);
             if (hb == null ||
-                !types.isSubtypeUnchecked(hb, hibounds, warn) ||
-                !types.isSubtypeUnchecked(that.inst, hb, warn))
-                throw ambiguousNoInstanceException;
+                hb.isErroneous())
+                throw ambiguousNoInstanceException
+                        .setMessage("incompatible.upper.bounds",
+                                    that.qtype, hibounds);
         }
     }
 

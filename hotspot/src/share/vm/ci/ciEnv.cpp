@@ -473,6 +473,7 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
   }
 
   if (require_local)  return NULL;
+
   // Not yet loaded into the VM, or not governed by loader constraints.
   // Make a CI representative for it.
   return get_unloaded_klass(accessing_klass, name);
@@ -498,7 +499,7 @@ ciKlass* ciEnv::get_klass_by_index_impl(constantPoolHandle cpool,
                                         bool& is_accessible,
                                         ciInstanceKlass* accessor) {
   EXCEPTION_CONTEXT;
-  KlassHandle klass (THREAD, constantPoolOopDesc::klass_at_if_loaded(cpool, index));
+  KlassHandle klass(THREAD, constantPoolOopDesc::klass_at_if_loaded(cpool, index));
   Symbol* klass_name = NULL;
   if (klass.is_null()) {
     // The klass has not been inserted into the constant pool.
@@ -785,17 +786,17 @@ ciMethod* ciEnv::get_method_by_index_impl(constantPoolHandle cpool,
   // Either the declared holder was not loaded, or the method could
   // not be found.  Create a dummy ciMethod to represent the failed
   // lookup.
-
-  return get_unloaded_method(declared_holder,
-                             get_symbol(name_sym),
-                             get_symbol(sig_sym));
+  ciSymbol* name      = get_symbol(name_sym);
+  ciSymbol* signature = get_symbol(sig_sym);
+  return get_unloaded_method(declared_holder, name, signature, accessor);
 }
 
 
 // ------------------------------------------------------------------
 // ciEnv::get_fake_invokedynamic_method_impl
 ciMethod* ciEnv::get_fake_invokedynamic_method_impl(constantPoolHandle cpool,
-                                                    int index, Bytecodes::Code bc) {
+                                                    int index, Bytecodes::Code bc,
+                                                    ciInstanceKlass* accessor) {
   // Compare the following logic with InterpreterRuntime::resolve_invokedynamic.
   assert(bc == Bytecodes::_invokedynamic, "must be invokedynamic");
 
@@ -807,9 +808,10 @@ ciMethod* ciEnv::get_fake_invokedynamic_method_impl(constantPoolHandle cpool,
   // Call site might not be resolved yet.  We could create a real invoker method from the
   // compiler, but it is simpler to stop the code path here with an unlinked method.
   if (!is_resolved) {
-    ciInstanceKlass* mh_klass = get_object(SystemDictionary::MethodHandle_klass())->as_instance_klass();
-    ciSymbol*        sig_sym  = get_symbol(cpool->signature_ref_at(index));
-    return get_unloaded_method(mh_klass, ciSymbol::invokeExact_name(), sig_sym);
+    ciInstanceKlass* holder    = get_object(SystemDictionary::MethodHandle_klass())->as_instance_klass();
+    ciSymbol*        name      = ciSymbol::invokeExact_name();
+    ciSymbol*        signature = get_symbol(cpool->signature_ref_at(index));
+    return get_unloaded_method(holder, name, signature, accessor);
   }
 
   // Get the invoker methodOop from the constant pool.
@@ -850,9 +852,9 @@ ciMethod* ciEnv::get_method_by_index(constantPoolHandle cpool,
                                      int index, Bytecodes::Code bc,
                                      ciInstanceKlass* accessor) {
   if (bc == Bytecodes::_invokedynamic) {
-    GUARDED_VM_ENTRY(return get_fake_invokedynamic_method_impl(cpool, index, bc);)
+    GUARDED_VM_ENTRY(return get_fake_invokedynamic_method_impl(cpool, index, bc, accessor);)
   } else {
-    GUARDED_VM_ENTRY(return get_method_by_index_impl(cpool, index, bc, accessor);)
+    GUARDED_VM_ENTRY(return get_method_by_index_impl(          cpool, index, bc, accessor);)
   }
 }
 
@@ -884,42 +886,63 @@ bool ciEnv::system_dictionary_modification_counter_changed() {
 }
 
 // ------------------------------------------------------------------
-// ciEnv::check_for_system_dictionary_modification
-// Check for changes to the system dictionary during compilation
-// class loads, evolution, breakpoints
-void ciEnv::check_for_system_dictionary_modification(ciMethod* target) {
+// ciEnv::validate_compile_task_dependencies
+//
+// Check for changes during compilation (e.g. class loads, evolution,
+// breakpoints, call site invalidation).
+void ciEnv::validate_compile_task_dependencies(ciMethod* target) {
   if (failing())  return;  // no need for further checks
 
-  // Dependencies must be checked when the system dictionary changes.
-  // If logging is enabled all violated dependences will be recorded in
-  // the log.  In debug mode check dependencies even if the system
-  // dictionary hasn't changed to verify that no invalid dependencies
-  // were inserted.  Any violated dependences in this case are dumped to
-  // the tty.
-
-  bool counter_changed = system_dictionary_modification_counter_changed();
-  bool test_deps = counter_changed;
-  DEBUG_ONLY(test_deps = true);
-  if (!test_deps)  return;
-
-  bool print_failures = false;
-  DEBUG_ONLY(print_failures = !counter_changed);
-
-  bool keep_going = (print_failures || xtty != NULL);
-
-  int violated = 0;
-
+  // First, check non-klass dependencies as we might return early and
+  // not check klass dependencies if the system dictionary
+  // modification counter hasn't changed (see below).
   for (Dependencies::DepStream deps(dependencies()); deps.next(); ) {
+    if (deps.is_klass_type())  continue;  // skip klass dependencies
     klassOop witness = deps.check_dependency();
     if (witness != NULL) {
-      ++violated;
-      if (print_failures)  deps.print_dependency(witness, /*verbose=*/ true);
-      // If there's no log and we're not sanity-checking, we're done.
-      if (!keep_going)     break;
+      record_failure("invalid non-klass dependency");
+      return;
     }
   }
 
-  if (violated != 0) {
+  // Klass dependencies must be checked when the system dictionary
+  // changes.  If logging is enabled all violated dependences will be
+  // recorded in the log.  In debug mode check dependencies even if
+  // the system dictionary hasn't changed to verify that no invalid
+  // dependencies were inserted.  Any violated dependences in this
+  // case are dumped to the tty.
+  bool counter_changed = system_dictionary_modification_counter_changed();
+
+  bool verify_deps = trueInDebug;
+  if (!counter_changed && !verify_deps)  return;
+
+  int klass_violations = 0;
+  for (Dependencies::DepStream deps(dependencies()); deps.next(); ) {
+    if (!deps.is_klass_type())  continue;  // skip non-klass dependencies
+    klassOop witness = deps.check_dependency();
+    if (witness != NULL) {
+      klass_violations++;
+      if (!counter_changed) {
+        // Dependence failed but counter didn't change.  Log a message
+        // describing what failed and allow the assert at the end to
+        // trigger.
+        deps.print_dependency(witness);
+      } else if (xtty == NULL) {
+        // If we're not logging then a single violation is sufficient,
+        // otherwise we want to log all the dependences which were
+        // violated.
+        break;
+      }
+    }
+  }
+
+  if (klass_violations != 0) {
+#ifdef ASSERT
+    if (!counter_changed && !PrintCompilation) {
+      // Print out the compile task that failed
+      _task->print_line();
+    }
+#endif
     assert(counter_changed, "failed dependencies, but counter didn't change");
     record_failure("concurrent class loading");
   }
@@ -938,7 +961,6 @@ void ciEnv::register_method(ciMethod* target,
                             ImplicitExceptionTable* inc_table,
                             AbstractCompiler* compiler,
                             int comp_level,
-                            bool has_debug_info,
                             bool has_unsafe_access) {
   VM_ENTRY_MARK;
   nmethod* nm = NULL;
@@ -978,8 +1000,8 @@ void ciEnv::register_method(ciMethod* target,
       // Encode the dependencies now, so we can check them right away.
       dependencies()->encode_content_bytes();
 
-      // Check for {class loads, evolution, breakpoints} during compilation
-      check_for_system_dictionary_modification(target);
+      // Check for {class loads, evolution, breakpoints, ...} during compilation
+      validate_compile_task_dependencies(target);
     }
 
     methodHandle method(THREAD, target->get_methodOop());
@@ -1033,7 +1055,6 @@ void ciEnv::register_method(ciMethod* target,
         CompileBroker::handle_full_code_cache();
       }
     } else {
-      NOT_PRODUCT(nm->set_has_debug_info(has_debug_info); )
       nm->set_has_unsafe_access(has_unsafe_access);
 
       // Record successful registration.

@@ -62,6 +62,10 @@
 # include "os_windows.inline.hpp"
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.inline.hpp"
+# include "thread_bsd.inline.hpp"
+#endif
 
 #ifndef ASSERT
 #  ifdef _DEBUG
@@ -205,7 +209,7 @@ bool error_is_suppressed(const char* file_name, int line_no) {
 // Place-holder for non-existent suppression check:
 #define error_is_suppressed(file_name, line_no) (false)
 
-#endif //PRODUCT
+#endif // !PRODUCT
 
 void report_vm_error(const char* file, int line, const char* error_msg,
                      const char* detail_msg)
@@ -260,7 +264,7 @@ void report_unimplemented(const char* file, int line) {
 void report_untested(const char* file, int line, const char* message) {
 #ifndef PRODUCT
   warning("Untested: %s in %s: %d\n", message, file, line);
-#endif // PRODUCT
+#endif // !PRODUCT
 }
 
 void report_out_of_shared_space(SharedSpaceType shared_space) {
@@ -304,9 +308,6 @@ void report_java_out_of_memory(const char* message) {
     }
   }
 }
-
-
-extern "C" void ps();
 
 static bool error_reported = false;
 
@@ -362,11 +363,10 @@ void test_error_handler(size_t test_num)
     default: ShouldNotReachHere();
   }
 }
-#endif // #ifndef PRODUCT
+#endif // !PRODUCT
 
 // ------ helper functions for debugging go here ------------
 
-#ifndef PRODUCT
 // All debug entries should be wrapped with a stack allocated
 // Command object. It makes sure a resource mark is set and
 // flushes the logfile to prevent file sharing problems.
@@ -387,10 +387,16 @@ class Command : public StackObj {
     tty->print_cr("\"Executing %s\"", str);
   }
 
-  ~Command() { tty->flush(); Debugging = debug_save; level--; }
+  ~Command() {
+        tty->flush();
+        Debugging = debug_save;
+        level--;
+  }
 };
 
 int Command::level = 0;
+
+#ifndef PRODUCT
 
 extern "C" void blob(CodeBlob* cb) {
   Command c("blob");
@@ -474,7 +480,7 @@ extern "C" void pp(void* p) {
     oop obj = oop(p);
     obj->print();
   } else {
-    tty->print("%#p", p);
+    tty->print(PTR_FORMAT, p);
   }
 }
 
@@ -483,7 +489,10 @@ extern "C" void pp(void* p) {
 extern "C" void pa(intptr_t p)   { ((AllocatedObj*) p)->print(); }
 extern "C" void findpc(intptr_t x);
 
+#endif // !PRODUCT
+
 extern "C" void ps() { // print stack
+  if (Thread::current() == NULL) return;
   Command c("ps");
 
 
@@ -496,6 +505,11 @@ extern "C" void ps() { // print stack
   if (p->has_last_Java_frame()) {
     // If the last_Java_fp is set we are in C land and
     // can call the standard stack_trace function.
+#ifdef PRODUCT
+    p->print_stack();
+  } else {
+    tty->print_cr("Cannot find the last Java frame, printing stack disabled.");
+#else // !PRODUCT
     p->trace_stack();
   } else {
     frame f = os::current_frame();
@@ -504,6 +518,7 @@ extern "C" void ps() { // print stack
     tty->print("(guessing starting frame id=%#p based on current fp)\n", f.id());
     p->trace_stack_from(vframe::new_vframe(&f, &reg_map, p));
   pd_ps(f);
+#endif // PRODUCT
   }
 
 }
@@ -519,6 +534,8 @@ extern "C" void pfl() {
     p->print_frame_layout();
   }
 }
+
+#ifndef PRODUCT
 
 extern "C" void psf() { // print stack frames
   {
@@ -551,12 +568,15 @@ extern "C" void safepoints() {
   SafepointSynchronize::print_state();
 }
 
+#endif // !PRODUCT
 
 extern "C" void pss() { // print all stacks
+  if (Thread::current() == NULL) return;
   Command c("pss");
-  Threads::print(true, true);
+  Threads::print(true, PRODUCT_ONLY(false) NOT_PRODUCT(true));
 }
 
+#ifndef PRODUCT
 
 extern "C" void debug() {               // to set things up for compiler debugging
   Command c("debug");
@@ -907,4 +927,4 @@ void get_debug_command()
 }
 #endif
 
-#endif // PRODUCT
+#endif // !PRODUCT

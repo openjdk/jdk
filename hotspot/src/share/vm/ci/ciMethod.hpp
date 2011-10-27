@@ -88,7 +88,7 @@ class ciMethod : public ciObject {
 #endif
 
   ciMethod(methodHandle h_m);
-  ciMethod(ciInstanceKlass* holder, ciSymbol* name, ciSymbol* signature);
+  ciMethod(ciInstanceKlass* holder, ciSymbol* name, ciSymbol* signature, ciInstanceKlass* accessor);
 
   methodOop get_methodOop() const {
     methodOop m = (methodOop)get_oop();
@@ -156,6 +156,9 @@ class ciMethod : public ciObject {
   int exception_table_length() const             { check_is_loaded(); return _handler_count; }
   int interpreter_invocation_count() const       { check_is_loaded(); return _interpreter_invocation_count; }
   int interpreter_throwout_count() const         { check_is_loaded(); return _interpreter_throwout_count; }
+
+  // Code size for inlining decisions.
+  int code_size_for_inlining();
 
   int comp_level();
   int highest_osr_comp_level();
