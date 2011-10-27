@@ -1,0 +1,15 @@
+os_family = bsd
+
+arch = sparc
+
+arch_model = sparc
+
+os_arch = bsd_sparc
+
+os_arch_model = bsd_sparc
+
+lib_arch = sparcv9
+
+compiler = gcc
+
+sysdefs = -D_ALLBSD_SOURCE -D_GNU_SOURCE -DSPARC

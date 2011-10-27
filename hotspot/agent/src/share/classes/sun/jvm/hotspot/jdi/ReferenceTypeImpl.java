@@ -28,11 +28,13 @@ import java.io.*;
 
 import com.sun.jdi.*;
 
+import sun.jvm.hotspot.memory.SystemDictionary;
 import sun.jvm.hotspot.oops.Instance;
 import sun.jvm.hotspot.oops.InstanceKlass;
 import sun.jvm.hotspot.oops.ArrayKlass;
 import sun.jvm.hotspot.oops.JVMDIClassStatus;
 import sun.jvm.hotspot.oops.Klass;
+import sun.jvm.hotspot.oops.ObjArray;
 import sun.jvm.hotspot.oops.Oop;
 import sun.jvm.hotspot.oops.Symbol;
 import sun.jvm.hotspot.oops.DefaultHeapVisitor;
@@ -53,6 +55,7 @@ implements ReferenceType {
     private SoftReference methodsCache;
     private SoftReference allMethodsCache;
     private SoftReference nestedTypesCache;
+    private SoftReference methodInvokesCache;
 
     /* to mark when no info available */
     static final SDE NO_SDE_INFO_MARK = new SDE();
@@ -81,6 +84,27 @@ implements ReferenceType {
             if (ref.equals(method.ref())) {
                 return method;
             }
+        }
+        if (ref.getMethodHolder().equals(SystemDictionary.getMethodHandleKlass())) {
+          // invoke methods are generated as needed, so make mirrors as needed
+          List mis = null;
+          if (methodInvokesCache == null) {
+            mis = new ArrayList();
+            methodInvokesCache = new SoftReference(mis);
+          } else {
+            mis = (List)methodInvokesCache.get();
+          }
+          it = mis.iterator();
+          while (it.hasNext()) {
+            MethodImpl method = (MethodImpl)it.next();
+            if (ref.equals(method.ref())) {
+              return method;
+            }
+          }
+
+          MethodImpl method = MethodImpl.createMethodImpl(vm, this, ref);
+          mis.add(method);
+          return method;
         }
         throw new IllegalArgumentException("Invalid method id: " + ref);
     }

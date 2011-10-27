@@ -395,8 +395,8 @@ class HeapRegionRemSetIterator : public CHeapObj {
   // Coarse table iteration fields:
 
   // Current region index;
-  int _coarse_cur_region_index;
-  int _coarse_cur_region_cur_card;
+  int    _coarse_cur_region_index;
+  size_t _coarse_cur_region_cur_card;
 
   bool coarse_has_next(size_t& card_index);
 

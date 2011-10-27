@@ -1465,19 +1465,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case jvmti_exception_throw_id:
-      { // rax,: exception oop
-        StubFrame f(sasm, "jvmti_exception_throw", dont_gc_arguments);
-        // Preserve all registers across this potentially blocking call
-        const int num_rt_args = 2;  // thread, exception oop
-        OopMap* map = save_live_registers(sasm, num_rt_args);
-        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, Runtime1::post_jvmti_exception_throw), rax);
-        oop_maps = new OopMapSet();
-        oop_maps->add_gc_map(call_offset, map);
-        restore_live_registers(sasm);
-      }
-      break;
-
     case dtrace_object_alloc_id:
       { // rax,: object
         StubFrame f(sasm, "dtrace_object_alloc", dont_gc_arguments);

@@ -443,7 +443,7 @@ public abstract class BreakIterator implements Cloneable
 
     /**
      * Returns a new <code>BreakIterator</code> instance
-     * for <a href="#word">word breaks</a>
+     * for <a href="BreakIterator.html#word">word breaks</a>
      * for the {@linkplain Locale#getDefault() default locale}.
      * @return A break iterator for word breaks
      */
@@ -454,7 +454,7 @@ public abstract class BreakIterator implements Cloneable
 
     /**
      * Returns a new <code>BreakIterator</code> instance
-     * for <a href="#word">word breaks</a>
+     * for <a href="BreakIterator.html#word">word breaks</a>
      * for the given locale.
      * @param locale the desired locale
      * @return A break iterator for word breaks
@@ -470,7 +470,7 @@ public abstract class BreakIterator implements Cloneable
 
     /**
      * Returns a new <code>BreakIterator</code> instance
-     * for <a href="#line">line breaks</a>
+     * for <a href="BreakIterator.html#line">line breaks</a>
      * for the {@linkplain Locale#getDefault() default locale}.
      * @return A break iterator for line breaks
      */
@@ -481,7 +481,7 @@ public abstract class BreakIterator implements Cloneable
 
     /**
      * Returns a new <code>BreakIterator</code> instance
-     * for <a href="#line">line breaks</a>
+     * for <a href="BreakIterator.html#line">line breaks</a>
      * for the given locale.
      * @param locale the desired locale
      * @return A break iterator for line breaks
@@ -497,7 +497,7 @@ public abstract class BreakIterator implements Cloneable
 
     /**
      * Returns a new <code>BreakIterator</code> instance
-     * for <a href="#character">character breaks</a>
+     * for <a href="BreakIterator.html#character">character breaks</a>
      * for the {@linkplain Locale#getDefault() default locale}.
      * @return A break iterator for character breaks
      */
@@ -508,7 +508,7 @@ public abstract class BreakIterator implements Cloneable
 
     /**
      * Returns a new <code>BreakIterator</code> instance
-     * for <a href="#character">character breaks</a>
+     * for <a href="BreakIterator.html#character">character breaks</a>
      * for the given locale.
      * @param locale the desired locale
      * @return A break iterator for character breaks
@@ -524,7 +524,7 @@ public abstract class BreakIterator implements Cloneable
 
     /**
      * Returns a new <code>BreakIterator</code> instance
-     * for <a href="#sentence">sentence breaks</a>
+     * for <a href="BreakIterator.html#sentence">sentence breaks</a>
      * for the {@linkplain Locale#getDefault() default locale}.
      * @return A break iterator for sentence breaks
      */
@@ -535,7 +535,7 @@ public abstract class BreakIterator implements Cloneable
 
     /**
      * Returns a new <code>BreakIterator</code> instance
-     * for <a href="#sentence">sentence breaks</a>
+     * for <a href="BreakIterator.html#sentence">sentence breaks</a>
      * for the given locale.
      * @param locale the desired locale
      * @return A break iterator for sentence breaks

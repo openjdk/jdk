@@ -30,6 +30,7 @@
 #include "interpreter/rewriter.hpp"
 #include "memory/gcLocker.hpp"
 #include "memory/universe.inline.hpp"
+#include "oops/fieldStreams.hpp"
 #include "oops/klassVtable.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
@@ -551,39 +552,33 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
 
   // Check if the number, names, types and order of fields declared in these classes
   // are the same.
-  typeArrayOop k_old_fields = the_class->fields();
-  typeArrayOop k_new_fields = scratch_class->fields();
-  int n_fields = k_old_fields->length();
-  if (n_fields != k_new_fields->length()) {
-    return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
-  }
-
-  for (i = 0; i < n_fields; i += instanceKlass::next_offset) {
+  JavaFieldStream old_fs(the_class);
+  JavaFieldStream new_fs(scratch_class);
+  for (; !old_fs.done() && !new_fs.done(); old_fs.next(), new_fs.next()) {
     // access
-    old_flags = k_old_fields->ushort_at(i + instanceKlass::access_flags_offset);
-    new_flags = k_new_fields->ushort_at(i + instanceKlass::access_flags_offset);
+    old_flags = old_fs.access_flags().as_short();
+    new_flags = new_fs.access_flags().as_short();
     if ((old_flags ^ new_flags) & JVM_RECOGNIZED_FIELD_MODIFIERS) {
       return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
     }
     // offset
-    if (k_old_fields->short_at(i + instanceKlass::low_offset) !=
-        k_new_fields->short_at(i + instanceKlass::low_offset) ||
-        k_old_fields->short_at(i + instanceKlass::high_offset) !=
-        k_new_fields->short_at(i + instanceKlass::high_offset)) {
+    if (old_fs.offset() != new_fs.offset()) {
       return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
     }
     // name and signature
-    jshort name_index = k_old_fields->short_at(i + instanceKlass::name_index_offset);
-    jshort sig_index = k_old_fields->short_at(i +instanceKlass::signature_index_offset);
-    Symbol* name_sym1 = the_class->constants()->symbol_at(name_index);
-    Symbol* sig_sym1 = the_class->constants()->symbol_at(sig_index);
-    name_index = k_new_fields->short_at(i + instanceKlass::name_index_offset);
-    sig_index = k_new_fields->short_at(i + instanceKlass::signature_index_offset);
-    Symbol* name_sym2 = scratch_class->constants()->symbol_at(name_index);
-    Symbol* sig_sym2 = scratch_class->constants()->symbol_at(sig_index);
+    Symbol* name_sym1 = the_class->constants()->symbol_at(old_fs.name_index());
+    Symbol* sig_sym1 = the_class->constants()->symbol_at(old_fs.signature_index());
+    Symbol* name_sym2 = scratch_class->constants()->symbol_at(new_fs.name_index());
+    Symbol* sig_sym2 = scratch_class->constants()->symbol_at(new_fs.signature_index());
     if (name_sym1 != name_sym2 || sig_sym1 != sig_sym2) {
       return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
     }
+  }
+
+  // If both streams aren't done then we have a differing number of
+  // fields.
+  if (!old_fs.done() || !new_fs.done()) {
+    return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
   }
 
   // Do a parallel walk through the old and new methods. Detect
@@ -2369,38 +2364,34 @@ void VM_RedefineClasses::set_new_constant_pool(
   int i;  // for portability
 
   // update each field in klass to use new constant pool indices as needed
-  typeArrayHandle fields(THREAD, scratch_class->fields());
-  int n_fields = fields->length();
-  for (i = 0; i < n_fields; i += instanceKlass::next_offset) {
-    jshort cur_index = fields->short_at(i + instanceKlass::name_index_offset);
+  for (JavaFieldStream fs(scratch_class); !fs.done(); fs.next()) {
+    jshort cur_index = fs.name_index();
     jshort new_index = find_new_index(cur_index);
     if (new_index != 0) {
       RC_TRACE_WITH_THREAD(0x00080000, THREAD,
         ("field-name_index change: %d to %d", cur_index, new_index));
-      fields->short_at_put(i + instanceKlass::name_index_offset, new_index);
+      fs.set_name_index(new_index);
     }
-    cur_index = fields->short_at(i + instanceKlass::signature_index_offset);
+    cur_index = fs.signature_index();
     new_index = find_new_index(cur_index);
     if (new_index != 0) {
       RC_TRACE_WITH_THREAD(0x00080000, THREAD,
         ("field-signature_index change: %d to %d", cur_index, new_index));
-      fields->short_at_put(i + instanceKlass::signature_index_offset,
-        new_index);
+      fs.set_signature_index(new_index);
     }
-    cur_index = fields->short_at(i + instanceKlass::initval_index_offset);
+    cur_index = fs.initval_index();
     new_index = find_new_index(cur_index);
     if (new_index != 0) {
       RC_TRACE_WITH_THREAD(0x00080000, THREAD,
         ("field-initval_index change: %d to %d", cur_index, new_index));
-      fields->short_at_put(i + instanceKlass::initval_index_offset, new_index);
+      fs.set_initval_index(new_index);
     }
-    cur_index = fields->short_at(i + instanceKlass::generic_signature_offset);
+    cur_index = fs.generic_signature_index();
     new_index = find_new_index(cur_index);
     if (new_index != 0) {
       RC_TRACE_WITH_THREAD(0x00080000, THREAD,
         ("field-generic_signature change: %d to %d", cur_index, new_index));
-      fields->short_at_put(i + instanceKlass::generic_signature_offset,
-        new_index);
+      fs.set_generic_signature_index(new_index);
     }
   } // end for each field
 

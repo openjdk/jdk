@@ -1355,7 +1355,7 @@ static void print_cpool_bytes(jint cnt, u1 *bytes) {
       }
       case JVM_CONSTANT_Long: {
         u8 val = Bytes::get_Java_u8(bytes);
-        printf("long         "INT64_FORMAT, *(jlong *) &val);
+        printf("long         "INT64_FORMAT, (int64_t) *(jlong *) &val);
         ent_size = 8;
         idx++; // Long takes two cpool slots
         break;
