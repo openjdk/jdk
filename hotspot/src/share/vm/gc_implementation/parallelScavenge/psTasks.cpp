@@ -55,7 +55,6 @@ void ScavengeRootsTask::do_it(GCTaskManager* manager, uint which) {
   switch (_root_type) {
     case universe:
       Universe::oops_do(&roots_closure);
-      ReferenceProcessor::oops_do(&roots_closure);
       break;
 
     case jni_handles:

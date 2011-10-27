@@ -60,10 +60,16 @@ Src_Dirs_I += $(GENERATED)
 # The order is important for the precompiled headers to work.
 INCLUDES += $(PRECOMPILED_HEADER_DIR:%=-I%) $(Src_Dirs_I:%=-I%)
 
-ifeq (${VERSION}, debug)
+# SYMFLAG is used by {jsig,saproc}.make
+ifneq ($(OBJCOPY),)
+  # always build with debug info when we can create .debuginfo files
   SYMFLAG = -g
 else
-  SYMFLAG =
+  ifeq (${VERSION}, debug)
+    SYMFLAG = -g
+  else
+    SYMFLAG =
+  endif
 endif
 
 # HOTSPOT_RELEASE_VERSION and HOTSPOT_BUILD_VERSION are defined 
@@ -123,6 +129,9 @@ include $(MAKEFILES_DIR)/dtrace.make
 JVM      = jvm
 LIBJVM   = lib$(JVM).so
 LIBJVM_G = lib$(JVM)$(G_SUFFIX).so
+
+LIBJVM_DEBUGINFO   = lib$(JVM).debuginfo
+LIBJVM_G_DEBUGINFO = lib$(JVM)$(G_SUFFIX).debuginfo
 
 SPECIAL_PATHS:=adlc c1 gc_implementation opto shark libadt
 
@@ -307,11 +316,30 @@ $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
 	      fi                                                        \
             fi 								\
 	}
+ifeq ($(CROSS_COMPILE_ARCH),)
+  ifneq ($(OBJCOPY),)
+	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJVM_DEBUGINFO)
+	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DEBUGINFO) $@
+    ifeq ($(STRIP_POLICY),all_strip)
+	$(QUIETLY) $(STRIP) $@
+    else
+      ifeq ($(STRIP_POLICY),min_strip)
+	$(QUIETLY) $(STRIP) -g $@
+      # implied else here is no stripping at all
+      endif
+    endif
+	$(QUIETLY) [ -f $(LIBJVM_G_DEBUGINFO) ] || ln -s $(LIBJVM_DEBUGINFO) $(LIBJVM_G_DEBUGINFO)
+  endif
+endif
 
-DEST_JVM = $(JDK_LIBDIR)/$(VM_SUBDIR)/$(LIBJVM)
+DEST_SUBDIR        = $(JDK_LIBDIR)/$(VM_SUBDIR)
+DEST_JVM           = $(DEST_SUBDIR)/$(LIBJVM)
+DEST_JVM_DEBUGINFO = $(DEST_SUBDIR)/$(LIBJVM_DEBUGINFO)
 
 install_jvm: $(LIBJVM)
 	@echo "Copying $(LIBJVM) to $(DEST_JVM)"
+	$(QUIETLY) test -f $(LIBJVM_DEBUGINFO) && \
+	    cp -f $(LIBJVM_DEBUGINFO) $(DEST_JVM_DEBUGINFO)
 	$(QUIETLY) cp -f $(LIBJVM) $(DEST_JVM) && echo "Done"
 
 #----------------------------------------------------------------------

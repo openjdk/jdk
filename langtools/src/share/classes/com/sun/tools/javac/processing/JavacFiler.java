@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -455,9 +455,24 @@ public class JavacFiler implements Filer, Closeable {
         // TODO: Only support reading resources in selected output
         // locations?  Only allow reading of non-source, non-class
         // files from the supported input locations?
-        FileObject fileObject = fileManager.getFileForInput(location,
+
+        // In the following, getFileForInput is the "obvious" method
+        // to use, but it does not have the "obvious" semantics for
+        // SOURCE_OUTPUT and CLASS_OUTPUT. Conversely, getFileForOutput
+        // does not have the correct semantics for any "path" location
+        // with more than one component. So, for now, we use a hybrid
+        // invocation.
+        FileObject fileObject;
+        if (location.isOutputLocation()) {
+            fileObject = fileManager.getFileForOutput(location,
+                    pkg.toString(),
+                    relativeName.toString(),
+                    null);
+        } else {
+            fileObject = fileManager.getFileForInput(location,
                     pkg.toString(),
                     relativeName.toString());
+        }
         if (fileObject == null) {
             String name = (pkg.length() == 0)
                     ? relativeName.toString() : (pkg + "/" + relativeName);

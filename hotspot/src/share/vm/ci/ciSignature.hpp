@@ -43,6 +43,7 @@ private:
   int _count;
 
   friend class ciMethod;
+  friend class ciObjectFactory;
 
   ciSignature(ciKlass* accessing_klass, constantPoolHandle cpool, ciSymbol* signature);
 
@@ -52,12 +53,15 @@ private:
 
 public:
   ciSymbol* as_symbol() const                    { return _symbol; }
+  ciKlass*  accessing_klass() const              { return _accessing_klass; }
 
   ciType* return_type() const;
   ciType* type_at(int index) const;
 
   int       size() const                         { return _size; }
   int       count() const                        { return _count; }
+
+  bool equals(ciSignature* that);
 
   void print_signature();
   void print();

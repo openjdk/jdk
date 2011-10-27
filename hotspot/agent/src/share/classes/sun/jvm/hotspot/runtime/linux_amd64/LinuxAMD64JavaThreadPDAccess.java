@@ -30,6 +30,7 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.amd64.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.runtime.amd64.*;
+import sun.jvm.hotspot.runtime.x86.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
@@ -80,11 +81,11 @@ public class LinuxAMD64JavaThreadPDAccess implements JavaThreadPDAccess {
     if (fp == null) {
       return null; // no information
     }
-    return new AMD64Frame(thread.getLastJavaSP(), fp);
+    return new X86Frame(thread.getLastJavaSP(), fp);
   }
 
   public    RegisterMap newRegisterMap(JavaThread thread, boolean updateMap) {
-    return new AMD64RegisterMap(thread, updateMap);
+    return new X86RegisterMap(thread, updateMap);
   }
 
   public    Frame getCurrentFrameGuess(JavaThread thread, Address addr) {
@@ -95,9 +96,9 @@ public class LinuxAMD64JavaThreadPDAccess implements JavaThreadPDAccess {
       return null;
     }
     if (guesser.getPC() == null) {
-      return new AMD64Frame(guesser.getSP(), guesser.getFP());
+      return new X86Frame(guesser.getSP(), guesser.getFP());
     } else {
-      return new AMD64Frame(guesser.getSP(), guesser.getFP(), guesser.getPC());
+      return new X86Frame(guesser.getSP(), guesser.getFP(), guesser.getPC());
     }
   }
 

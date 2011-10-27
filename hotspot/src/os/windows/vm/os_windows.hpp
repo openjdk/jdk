@@ -173,13 +173,25 @@ public:
   static BOOL GetNativeSystemInfoAvailable();
   static void GetNativeSystemInfo(LPSYSTEM_INFO);
 
+  // NUMA calls
+  static BOOL NumaCallsAvailable();
+  static LPVOID VirtualAllocExNuma(HANDLE, LPVOID, SIZE_T, DWORD, DWORD, DWORD);
+  static BOOL GetNumaHighestNodeNumber(PULONG);
+  static BOOL GetNumaNodeProcessorMask(UCHAR, PULONGLONG);
+
 private:
   // GetLargePageMinimum available on Windows Vista/Windows Server 2003
   // and later
+  // NUMA calls available Windows Vista/WS2008 and later
+
   static SIZE_T (WINAPI *_GetLargePageMinimum)(void);
+  static LPVOID (WINAPI *_VirtualAllocExNuma) (HANDLE, LPVOID, SIZE_T, DWORD, DWORD, DWORD);
+  static BOOL (WINAPI *_GetNumaHighestNodeNumber) (PULONG);
+  static BOOL (WINAPI *_GetNumaNodeProcessorMask) (UCHAR, PULONGLONG);
   static BOOL initialized;
 
   static void initialize();
+  static void initializeCommon();
 
 #ifdef JDK6_OR_EARLIER
 private:

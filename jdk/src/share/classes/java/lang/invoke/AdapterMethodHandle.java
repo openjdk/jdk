@@ -53,7 +53,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
         // JVM might update VM-specific bits of conversion (ignore)
         MethodHandleNatives.init(this, target, convArgPos(conv));
     }
-    private AdapterMethodHandle(MethodHandle target, MethodType newType,
+    AdapterMethodHandle(MethodHandle target, MethodType newType,
                 long conv) {
         this(target, newType, conv, null);
     }
@@ -423,7 +423,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
                 insertStackMove(stackMove)
                 );
     }
-    private static long makeConv(int convOp) {
+    static long makeConv(int convOp) {
         assert(convOp == OP_RETYPE_ONLY || convOp == OP_RETYPE_RAW);
         return ((long)-1 << 32) | (convOp << CONV_OP_SHIFT);   // stackMove, src, dst all zero
     }

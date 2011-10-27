@@ -311,7 +311,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
 
     @Override
     public String visitMethodSymbol(MethodSymbol s, Locale locale) {
-        if ((s.flags() & BLOCK) != 0) {
+        if (s.isStaticOrInstanceInit()) {
             return s.owner.name.toString();
         } else {
             String ms = (s.name == s.name.table.names.init)

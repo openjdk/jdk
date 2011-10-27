@@ -25,7 +25,7 @@
 #ifndef __ELF_STRING_TABLE_HPP
 #define __ELF_STRING_TABLE_HPP
 
-#ifndef _WINDOWS
+#if !defined(_WINDOWS) && !defined(__APPLE__)
 
 #include "memory/allocation.hpp"
 #include "utilities/decoder.hpp"
@@ -79,4 +79,3 @@ class ElfStringTable: CHeapObj {
 #endif // _WINDOWS
 
 #endif // __ELF_STRING_TABLE_HPP
-

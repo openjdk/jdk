@@ -141,6 +141,7 @@ abstract class MessageToken_v2 extends Krb5Token {
     // Context properties
     private boolean confState = true;
     private boolean initiator = true;
+    private boolean have_acceptor_subkey = false;
 
     /* cipher instance used by the corresponding GSSContext */
     CipherHelper cipherHelper = null;
@@ -233,7 +234,6 @@ abstract class MessageToken_v2 extends Krb5Token {
             }
 
             if (tokenId == Krb5Token.WRAP_ID_v2) {
-                // Does non-confidential data needs a rotate?
                 rotate();
             }
 
@@ -312,8 +312,7 @@ abstract class MessageToken_v2 extends Krb5Token {
         }
 
         // Create a new gss token header as defined in RFC 4121
-        tokenHeader = new MessageTokenHeader(tokenId,
-                                prop.getPrivacy(), true);
+        tokenHeader = new MessageTokenHeader(tokenId, prop.getPrivacy());
         // debug("\n\t Message Header = " +
         // getHexBytes(tokenHeader.getBytes(), tokenHeader.getBytes().length));
 
@@ -421,10 +420,12 @@ abstract class MessageToken_v2 extends Krb5Token {
         int conf_flag = tokenHeaderBytes[TOKEN_FLAG_POS] &
                                 FLAG_WRAP_CONFIDENTIAL;
 
-        // clear EC in token header for checksum calculation
+        // clear EC and RRC in token header for checksum calculation
         if ((conf_flag == 0) && (tokenId == WRAP_ID_v2)) {
             tokenHeaderBytes[4] = 0;
             tokenHeaderBytes[5] = 0;
+            tokenHeaderBytes[6] = 0;
+            tokenHeaderBytes[7] = 0;
         }
         return cipherHelper.calculateChecksum(tokenHeaderBytes, data,
                                                 offset, len, key_usage);
@@ -459,6 +460,8 @@ abstract class MessageToken_v2 extends Krb5Token {
         this.confState = context.getConfState();
 
         this.initiator = context.isInitiator();
+
+        this.have_acceptor_subkey = context.getKeySrc() == Krb5Context.ACCEPTOR_SUBKEY;
 
         this.cipherHelper = context.getCipherHelper(null);
         //    debug("In MessageToken.Cons");
@@ -500,8 +503,7 @@ abstract class MessageToken_v2 extends Krb5Token {
          private byte[] bytes = new byte[TOKEN_HEADER_SIZE];
 
          // Writes a new token header
-         public MessageTokenHeader(int tokenId, boolean conf,
-                boolean have_acceptor_subkey) throws GSSException {
+         public MessageTokenHeader(int tokenId, boolean conf) throws GSSException {
 
             this.tokenId = tokenId;
 

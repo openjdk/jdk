@@ -39,6 +39,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "os_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.inline.hpp"
+#endif
 
 extern "C" void jio_print(const char* s); // Declarationtion of jvm method
 
@@ -992,7 +995,7 @@ bufferedStream::~bufferedStream() {
 
 #ifndef PRODUCT
 
-#if defined(SOLARIS) || defined(LINUX)
+#if defined(SOLARIS) || defined(LINUX) || defined(_ALLBSD_SOURCE)
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
