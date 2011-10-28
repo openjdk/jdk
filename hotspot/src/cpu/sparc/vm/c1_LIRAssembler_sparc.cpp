@@ -1116,7 +1116,7 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
       } else {
         __ set(value_hi, O7);
       }
-      offset = store(tmp, base, addr->disp() + hi_word_offset_in_bytes, T_INT, wide, false);
+      store(tmp, base, addr->disp() + hi_word_offset_in_bytes, T_INT, wide, false);
       break;
     }
     case T_OBJECT: {
