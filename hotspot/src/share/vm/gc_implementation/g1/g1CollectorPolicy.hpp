@@ -74,7 +74,7 @@ class MainBodySummary: public CHeapObj {
     define_num_seq(termination) // parallel only
     define_num_seq(parallel_other) // parallel only
   define_num_seq(mark_closure)
-  define_num_seq(clear_ct)  // parallel only
+  define_num_seq(clear_ct)
 };
 
 class Summary: public PauseSummary,
@@ -115,7 +115,6 @@ private:
   double _cur_collection_par_time_ms;
   double _cur_satb_drain_time_ms;
   double _cur_clear_ct_time_ms;
-  bool   _satb_drain_time_set;
   double _cur_ref_proc_time_ms;
   double _cur_ref_enq_time_ms;
 
@@ -175,6 +174,11 @@ private:
   double* _par_last_termination_attempts;
   double* _par_last_gc_worker_end_times_ms;
   double* _par_last_gc_worker_times_ms;
+
+  // Each workers 'other' time i.e. the elapsed time of the parallel
+  // phase of the pause minus the sum of the individual sub-phase
+  // times for a given worker thread.
+  double* _par_last_gc_worker_other_times_ms;
 
   // indicates whether we are in full young or partially young GC mode
   bool _full_young_gcs;
@@ -892,11 +896,12 @@ public:
   }
 
   void record_satb_drain_time(double ms) {
+    assert(_g1->mark_in_progress(), "shouldn't be here otherwise");
     _cur_satb_drain_time_ms = ms;
-    _satb_drain_time_set    = true;
   }
 
-  void record_satb_drain_processed_buffers (int processed_buffers) {
+  void record_satb_drain_processed_buffers(int processed_buffers) {
+    assert(_g1->mark_in_progress(), "shouldn't be here otherwise");
     _last_satb_drain_processed_buffers = processed_buffers;
   }
 
