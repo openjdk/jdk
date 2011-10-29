@@ -203,14 +203,20 @@ final class P11ECKeyFactory extends P11KeyFactory {
 
     private PublicKey generatePublic(ECPoint point, ECParameterSpec params) throws PKCS11Exception {
         byte[] encodedParams = ECParameters.encodeParameters(params);
-        byte[] encodedPoint = null;
-        DerValue pkECPoint = new DerValue(DerValue.tag_OctetString,
-            ECParameters.encodePoint(point, params.getCurve()));
+        byte[] encodedPoint =
+            ECParameters.encodePoint(point, params.getCurve());
 
-        try {
-            encodedPoint = pkECPoint.toByteArray();
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Could not DER encode point", e);
+        // Check whether the X9.63 encoding of an EC point shall be wrapped
+        // in an ASN.1 OCTET STRING
+        if (!token.config.getUseEcX963Encoding()) {
+            try {
+                encodedPoint =
+                    new DerValue(DerValue.tag_OctetString, encodedPoint)
+                        .toByteArray();
+            } catch (IOException e) {
+                throw new
+                    IllegalArgumentException("Could not DER encode point", e);
+            }
         }
 
         CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {

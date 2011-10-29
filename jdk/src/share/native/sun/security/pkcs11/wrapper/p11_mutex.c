@@ -92,7 +92,7 @@ CK_C_INITIALIZE_ARGS_PTR makeCKInitArgsAdapter(JNIEnv *env, jobject jInitArgs)
     /* convert the Java InitArgs object to a pointer to a CK_C_INITIALIZE_ARGS structure */
     ckpInitArgs = (CK_C_INITIALIZE_ARGS_PTR) malloc(sizeof(CK_C_INITIALIZE_ARGS));
     if (ckpInitArgs == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return NULL_PTR;
     }
 
@@ -141,7 +141,7 @@ CK_C_INITIALIZE_ARGS_PTR makeCKInitArgsAdapter(JNIEnv *env, jobject jInitArgs)
         ckpGlobalInitArgs = (CK_C_INITIALIZE_ARGS_PTR) malloc(sizeof(CK_C_INITIALIZE_ARGS));
         if (ckpGlobalInitArgs == NULL) {
             free(ckpInitArgs);
-            JNU_ThrowOutOfMemoryError(env, 0);
+            throwOutOfMemoryError(env, 0);
             return NULL_PTR;
         }
 
@@ -178,9 +178,8 @@ CK_C_INITIALIZE_ARGS_PTR makeCKInitArgsAdapter(JNIEnv *env, jobject jInitArgs)
  */
 CK_RV callJCreateMutex(CK_VOID_PTR_PTR ppMutex)
 {
-    JavaVM *jvm;
+    extern JavaVM *jvm;
     JNIEnv *env;
-    jsize actualNumberVMs;
     jint returnValue;
     jthrowable pkcs11Exception;
     jclass pkcs11ExceptionClass;
@@ -196,8 +195,7 @@ CK_RV callJCreateMutex(CK_VOID_PTR_PTR ppMutex)
 
 
     /* Get the currently running Java VM */
-    returnValue = JNI_GetCreatedJavaVMs(&jvm, (jsize) 1, &actualNumberVMs);
-    if ((returnValue != 0) || (actualNumberVMs <= 0)) { return rv ;} /* there is no VM running */
+    if (jvm == NULL) { return rv ;} /* there is no VM running */
 
     /* Determine, if current thread is already attached */
     returnValue = (*jvm)->GetEnv(jvm, (void **) &env, JNI_VERSION_1_2);
@@ -273,9 +271,8 @@ CK_RV callJCreateMutex(CK_VOID_PTR_PTR ppMutex)
  */
 CK_RV callJDestroyMutex(CK_VOID_PTR pMutex)
 {
-    JavaVM *jvm;
+    extern JavaVM *jvm;
     JNIEnv *env;
-    jsize actualNumberVMs;
     jint returnValue;
     jthrowable pkcs11Exception;
     jclass pkcs11ExceptionClass;
@@ -291,8 +288,7 @@ CK_RV callJDestroyMutex(CK_VOID_PTR pMutex)
 
 
     /* Get the currently running Java VM */
-    returnValue = JNI_GetCreatedJavaVMs(&jvm, (jsize) 1, &actualNumberVMs);
-    if ((returnValue != 0) || (actualNumberVMs <= 0)) { return rv ; } /* there is no VM running */
+    if (jvm == NULL) { return rv ; } /* there is no VM running */
 
     /* Determine, if current thread is already attached */
     returnValue = (*jvm)->GetEnv(jvm, (void **) &env, JNI_VERSION_1_2);
@@ -367,9 +363,8 @@ CK_RV callJDestroyMutex(CK_VOID_PTR pMutex)
  */
 CK_RV callJLockMutex(CK_VOID_PTR pMutex)
 {
-    JavaVM *jvm;
+    extern JavaVM *jvm;
     JNIEnv *env;
-    jsize actualNumberVMs;
     jint returnValue;
     jthrowable pkcs11Exception;
     jclass pkcs11ExceptionClass;
@@ -385,8 +380,7 @@ CK_RV callJLockMutex(CK_VOID_PTR pMutex)
 
 
     /* Get the currently running Java VM */
-    returnValue = JNI_GetCreatedJavaVMs(&jvm, (jsize) 1, &actualNumberVMs);
-    if ((returnValue != 0) || (actualNumberVMs <= 0)) { return rv ; } /* there is no VM running */
+    if (jvm == NULL) { return rv ; } /* there is no VM running */
 
     /* Determine, if current thread is already attached */
     returnValue = (*jvm)->GetEnv(jvm, (void **) &env, JNI_VERSION_1_2);
@@ -457,9 +451,8 @@ CK_RV callJLockMutex(CK_VOID_PTR pMutex)
  */
 CK_RV callJUnlockMutex(CK_VOID_PTR pMutex)
 {
-    JavaVM *jvm;
+    extern JavaVM *jvm;
     JNIEnv *env;
-    jsize actualNumberVMs;
     jint returnValue;
     jthrowable pkcs11Exception;
     jclass pkcs11ExceptionClass;
@@ -475,8 +468,7 @@ CK_RV callJUnlockMutex(CK_VOID_PTR pMutex)
 
 
     /* Get the currently running Java VM */
-    returnValue = JNI_GetCreatedJavaVMs(&jvm, (jsize) 1, &actualNumberVMs);
-    if ((returnValue != 0) || (actualNumberVMs <= 0)) { return rv ; } /* there is no VM running */
+    if (jvm == NULL) { return rv ; } /* there is no VM running */
 
     /* Determine, if current thread is already attached */
     returnValue = (*jvm)->GetEnv(jvm, (void **) &env, JNI_VERSION_1_2);
