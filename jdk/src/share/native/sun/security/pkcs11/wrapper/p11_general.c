@@ -71,7 +71,10 @@ jfieldID mech_pParameterID;
 jclass jByteArrayClass;
 jclass jLongClass;
 
+JavaVM* jvm = NULL;
+
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+    jvm = vm;
     return JNI_VERSION_1_4;
 }
 
@@ -351,7 +354,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetSlotList
 
     ckpSlotList = (CK_SLOT_ID_PTR) malloc(ckTokenNumber * sizeof(CK_SLOT_ID));
     if (ckpSlotList == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -652,7 +655,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetMechanismList
     ckpMechanismList = (CK_MECHANISM_TYPE_PTR)
       malloc(ckMechanismNumber * sizeof(CK_MECHANISM_TYPE));
     if (ckpMechanismList == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return NULL;
     }
 

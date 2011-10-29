@@ -30,8 +30,6 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URLConnection;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
@@ -102,8 +100,7 @@ class URICertStore extends CertStoreSpi {
     private final CertificateFactory factory;
 
     // cached Collection of X509Certificates (may be empty, never null)
-    private Collection<X509Certificate> certs =
-        Collections.<X509Certificate>emptySet();
+    private Collection<X509Certificate> certs = Collections.emptySet();
 
     // cached X509CRL (may be null)
     private X509CRL crl;
@@ -120,34 +117,9 @@ class URICertStore extends CertStoreSpi {
 
     // true if URI is ldap
     private boolean ldap = false;
+    private CertStoreHelper ldapHelper;
     private CertStore ldapCertStore;
     private String ldapPath;
-
-    /**
-     * Holder class to lazily load LDAPCertStoreHelper if present.
-     */
-    private static class LDAP {
-        private static final String CERT_STORE_HELPER =
-            "sun.security.provider.certpath.ldap.LDAPCertStoreHelper";
-        private static final CertStoreHelper helper =
-            AccessController.doPrivileged(
-                new PrivilegedAction<CertStoreHelper>() {
-                    public CertStoreHelper run() {
-                        try {
-                            Class<?> c = Class.forName(CERT_STORE_HELPER, true, null);
-                            return (CertStoreHelper)c.newInstance();
-                        } catch (ClassNotFoundException cnf) {
-                            return null;
-                        } catch (InstantiationException e) {
-                            throw new AssertionError(e);
-                        } catch (IllegalAccessException e) {
-                            throw new AssertionError(e);
-                        }
-                    }});
-        static CertStoreHelper helper() {
-            return helper;
-        }
-    }
 
     /**
      * Creates a URICertStore.
@@ -164,10 +136,9 @@ class URICertStore extends CertStoreSpi {
         this.uri = ((URICertStoreParameters) params).uri;
         // if ldap URI, use an LDAPCertStore to fetch certs and CRLs
         if (uri.getScheme().toLowerCase(Locale.ENGLISH).equals("ldap")) {
-            if (LDAP.helper() == null)
-                throw new NoSuchAlgorithmException("LDAP not present");
             ldap = true;
-            ldapCertStore = LDAP.helper().getCertStore(uri);
+            ldapHelper = CertStoreHelper.getInstance("LDAP");
+            ldapCertStore = ldapHelper.getCertStore(uri);
             ldapPath = uri.getPath();
             // strip off leading '/'
             if (ldapPath.charAt(0) == '/') {
@@ -185,14 +156,14 @@ class URICertStore extends CertStoreSpi {
      * Returns a URI CertStore. This method consults a cache of
      * CertStores (shared per JVM) using the URI as a key.
      */
-    private static final Cache certStoreCache =
-        Cache.newSoftMemoryCache(CACHE_SIZE);
+    private static final Cache<URICertStoreParameters, CertStore>
+        certStoreCache = Cache.newSoftMemoryCache(CACHE_SIZE);
     static synchronized CertStore getInstance(URICertStoreParameters params)
         throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         if (debug != null) {
             debug.println("CertStore URI:" + params.uri);
         }
-        CertStore ucs = (CertStore) certStoreCache.get(params);
+        CertStore ucs = certStoreCache.get(params);
         if (ucs == null) {
             ucs = new UCS(new URICertStore(params), null, "URI", params);
             certStoreCache.put(params, ucs);
@@ -251,7 +222,7 @@ class URICertStore extends CertStoreSpi {
         if (ldap) {
             X509CertSelector xsel = (X509CertSelector) selector;
             try {
-                xsel = LDAP.helper().wrap(xsel, xsel.getSubject(), ldapPath);
+                xsel = ldapHelper.wrap(xsel, xsel.getSubject(), ldapPath);
             } catch (IOException ioe) {
                 throw new CertStoreException(ioe);
             }
@@ -273,62 +244,49 @@ class URICertStore extends CertStoreSpi {
             return getMatchingCerts(certs, selector);
         }
         lastChecked = time;
-        InputStream in = null;
         try {
             URLConnection connection = uri.toURL().openConnection();
             if (lastModified != 0) {
                 connection.setIfModifiedSince(lastModified);
             }
-            in = connection.getInputStream();
             long oldLastModified = lastModified;
-            lastModified = connection.getLastModified();
-            if (oldLastModified != 0) {
-                if (oldLastModified == lastModified) {
-                    if (debug != null) {
-                        debug.println("Not modified, using cached copy");
-                    }
-                    return getMatchingCerts(certs, selector);
-                } else if (connection instanceof HttpURLConnection) {
-                    // some proxy servers omit last modified
-                    HttpURLConnection hconn = (HttpURLConnection) connection;
-                    if (hconn.getResponseCode()
-                                == HttpURLConnection.HTTP_NOT_MODIFIED) {
+            try (InputStream in = connection.getInputStream()) {
+                lastModified = connection.getLastModified();
+                if (oldLastModified != 0) {
+                    if (oldLastModified == lastModified) {
                         if (debug != null) {
                             debug.println("Not modified, using cached copy");
                         }
                         return getMatchingCerts(certs, selector);
+                    } else if (connection instanceof HttpURLConnection) {
+                        // some proxy servers omit last modified
+                        HttpURLConnection hconn = (HttpURLConnection)connection;
+                        if (hconn.getResponseCode()
+                                    == HttpURLConnection.HTTP_NOT_MODIFIED) {
+                            if (debug != null) {
+                                debug.println("Not modified, using cached copy");
+                            }
+                            return getMatchingCerts(certs, selector);
+                        }
                     }
                 }
-            }
-            if (debug != null) {
-                debug.println("Downloading new certificates...");
-            }
-            // Safe cast since factory is an X.509 certificate factory
-            certs = (Collection<X509Certificate>)
-                factory.generateCertificates(in);
-            return getMatchingCerts(certs, selector);
-        } catch (IOException e) {
-            if (debug != null) {
-                debug.println("Exception fetching certificates:");
-                e.printStackTrace();
-            }
-        } catch (CertificateException e) {
-            if (debug != null) {
-                debug.println("Exception fetching certificates:");
-                e.printStackTrace();
-            }
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    // ignore
+                if (debug != null) {
+                    debug.println("Downloading new certificates...");
                 }
+                // Safe cast since factory is an X.509 certificate factory
+                certs = (Collection<X509Certificate>)
+                    factory.generateCertificates(in);
+            }
+            return getMatchingCerts(certs, selector);
+        } catch (IOException | CertificateException e) {
+            if (debug != null) {
+                debug.println("Exception fetching certificates:");
+                e.printStackTrace();
             }
         }
         // exception, forget previous values
         lastModified = 0;
-        certs = Collections.<X509Certificate>emptySet();
+        certs = Collections.emptySet();
         return certs;
     }
 
@@ -343,8 +301,7 @@ class URICertStore extends CertStoreSpi {
         if (selector == null) {
             return certs;
         }
-        List<X509Certificate> matchedCerts =
-            new ArrayList<X509Certificate>(certs.size());
+        List<X509Certificate> matchedCerts = new ArrayList<>(certs.size());
         for (X509Certificate cert : certs) {
             if (selector.match(cert)) {
                 matchedCerts.add(cert);
@@ -374,7 +331,7 @@ class URICertStore extends CertStoreSpi {
         if (ldap) {
             X509CRLSelector xsel = (X509CRLSelector) selector;
             try {
-                xsel = LDAP.helper().wrap(xsel, null, ldapPath);
+                xsel = ldapHelper.wrap(xsel, null, ldapPath);
             } catch (IOException ioe) {
                 throw new CertStoreException(ioe);
             }
@@ -395,61 +352,48 @@ class URICertStore extends CertStoreSpi {
             return getMatchingCRLs(crl, selector);
         }
         lastChecked = time;
-        InputStream in = null;
         try {
             URLConnection connection = uri.toURL().openConnection();
             if (lastModified != 0) {
                 connection.setIfModifiedSince(lastModified);
             }
-            in = connection.getInputStream();
             long oldLastModified = lastModified;
-            lastModified = connection.getLastModified();
-            if (oldLastModified != 0) {
-                if (oldLastModified == lastModified) {
-                    if (debug != null) {
-                        debug.println("Not modified, using cached copy");
-                    }
-                    return getMatchingCRLs(crl, selector);
-                } else if (connection instanceof HttpURLConnection) {
-                    // some proxy servers omit last modified
-                    HttpURLConnection hconn = (HttpURLConnection) connection;
-                    if (hconn.getResponseCode()
-                                == HttpURLConnection.HTTP_NOT_MODIFIED) {
+            try (InputStream in = connection.getInputStream()) {
+                lastModified = connection.getLastModified();
+                if (oldLastModified != 0) {
+                    if (oldLastModified == lastModified) {
                         if (debug != null) {
                             debug.println("Not modified, using cached copy");
                         }
                         return getMatchingCRLs(crl, selector);
+                    } else if (connection instanceof HttpURLConnection) {
+                        // some proxy servers omit last modified
+                        HttpURLConnection hconn = (HttpURLConnection)connection;
+                        if (hconn.getResponseCode()
+                                    == HttpURLConnection.HTTP_NOT_MODIFIED) {
+                            if (debug != null) {
+                                debug.println("Not modified, using cached copy");
+                            }
+                            return getMatchingCRLs(crl, selector);
+                        }
                     }
                 }
-            }
-            if (debug != null) {
-                debug.println("Downloading new CRL...");
-            }
-            crl = (X509CRL) factory.generateCRL(in);
-            return getMatchingCRLs(crl, selector);
-        } catch (IOException e) {
-            if (debug != null) {
-                debug.println("Exception fetching CRL:");
-                e.printStackTrace();
-            }
-        } catch (CRLException e) {
-            if (debug != null) {
-                debug.println("Exception fetching CRL:");
-                e.printStackTrace();
-            }
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    // ignore
+                if (debug != null) {
+                    debug.println("Downloading new CRL...");
                 }
+                crl = (X509CRL) factory.generateCRL(in);
+            }
+            return getMatchingCRLs(crl, selector);
+        } catch (IOException | CRLException e) {
+            if (debug != null) {
+                debug.println("Exception fetching CRL:");
+                e.printStackTrace();
             }
         }
         // exception, forget previous values
         lastModified = 0;
         crl = null;
-        return Collections.<X509CRL>emptyList();
+        return Collections.emptyList();
     }
 
     /**
@@ -459,9 +403,9 @@ class URICertStore extends CertStoreSpi {
     private static Collection<X509CRL> getMatchingCRLs
         (X509CRL crl, CRLSelector selector) {
         if (selector == null || (crl != null && selector.match(crl))) {
-            return Collections.<X509CRL>singletonList(crl);
+            return Collections.singletonList(crl);
         } else {
-            return Collections.<X509CRL>emptyList();
+            return Collections.emptyList();
         }
     }
 
