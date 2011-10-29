@@ -35,7 +35,7 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.file.*;
 import com.sun.tools.javac.main.Main;
 import com.sun.tools.javac.main.JavaCompiler;
-import com.sun.tools.javac.parser.Token;
+import com.sun.tools.javac.parser.Tokens.TokenKind;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.AbstractDiagnosticFormatter.SimpleConfiguration;
 import javax.lang.model.SourceVersion;
@@ -319,7 +319,7 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
             return "modifier";
         if (o instanceof KindName)
             return "symbol kind";
-        if (o instanceof Token)
+        if (o instanceof TokenKind)
             return "token";
         if (o instanceof Symbol)
             return "symbol";

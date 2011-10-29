@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import com.sun.tools.apt.comp.UsageMessageNeededException;
 import com.sun.tools.apt.util.Bark;
 import com.sun.mirror.apt.AnnotationProcessorFactory;
 
-import static com.sun.tools.javac.file.Paths.pathToURLs;
+import static com.sun.tools.javac.file.Locations.pathToURLs;
 
 /** This class provides a commandline interface to the apt build-time
  *  tool.
