@@ -388,12 +388,8 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   bool caller_was_method_handle = false;
   if (deopt_sender.is_interpreted_frame()) {
     methodHandle method = deopt_sender.interpreter_frame_method();
-    Bytecode_invoke cur = Bytecode_invoke_check(method,
-                                                deopt_sender.interpreter_frame_bci());
-    if (cur.code() == Bytecodes::_invokedynamic ||
-        (cur.code() == Bytecodes::_invokevirtual &&
-         method->constants()->klass_ref_at_noresolve(cur.index()) == vmSymbols::java_lang_invoke_MethodHandle() &&
-         methodOopDesc::is_method_handle_invoke_name(cur.name()))) {
+    Bytecode_invoke cur = Bytecode_invoke_check(method, deopt_sender.interpreter_frame_bci());
+    if (cur.is_method_handle_invoke()) {
       // Method handle invokes may involve fairly arbitrary chains of
       // calls so it's impossible to know how much actual space the
       // caller has for locals.
