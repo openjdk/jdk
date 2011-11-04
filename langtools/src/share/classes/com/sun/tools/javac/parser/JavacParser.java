@@ -29,6 +29,7 @@ import java.util.*;
 
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.parser.Tokens.*;
+import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
@@ -1584,7 +1585,7 @@ public class JavacParser implements Parser {
                 break;
             case MONKEYS_AT:
             case FINAL: {
-                String dc = token.docComment;
+                String dc = token.comment(CommentStyle.JAVADOC);
                 JCModifiers mods = modifiersOpt();
                 if (token.kind == INTERFACE ||
                     token.kind == CLASS ||
@@ -1601,21 +1602,21 @@ public class JavacParser implements Parser {
                 break;
             }
             case ABSTRACT: case STRICTFP: {
-                String dc = token.docComment;
+                String dc = token.comment(CommentStyle.JAVADOC);
                 JCModifiers mods = modifiersOpt();
                 stats.append(classOrInterfaceOrEnumDeclaration(mods, dc));
                 break;
             }
             case INTERFACE:
             case CLASS:
-                String dc = token.docComment;
+                String dc = token.comment(CommentStyle.JAVADOC);
                 stats.append(classOrInterfaceOrEnumDeclaration(modifiersOpt(), dc));
                 break;
             case ENUM:
             case ASSERT:
                 if (allowEnums && token.kind == ENUM) {
                     error(token.pos, "local.enum");
-                    dc = token.docComment;
+                    dc = token.comment(CommentStyle.JAVADOC);
                     stats.append(classOrInterfaceOrEnumDeclaration(modifiersOpt(), dc));
                     break;
                 } else if (allowAsserts && token.kind == ASSERT) {
@@ -1991,7 +1992,7 @@ public class JavacParser implements Parser {
             annotations.appendList(partial.annotations);
             pos = partial.pos;
         }
-        if (token.deprecatedFlag) {
+        if (token.deprecatedFlag()) {
             flags |= Flags.DEPRECATED;
         }
         int lastPos = Position.NOPOS;
@@ -2271,9 +2272,9 @@ public class JavacParser implements Parser {
                 seenImport = true;
                 defs.append(importDeclaration());
             } else {
-                String docComment = token.docComment;
+                String docComment = token.comment(CommentStyle.JAVADOC);
                 if (firstTypeDecl && !seenImport && !seenPackage) {
-                    docComment = firstToken.docComment;
+                    docComment = firstToken.comment(CommentStyle.JAVADOC);
                     consumedToplevelDoc = true;
                 }
                 JCTree def = typeDeclaration(mods, docComment);
@@ -2288,7 +2289,7 @@ public class JavacParser implements Parser {
         }
         JCTree.JCCompilationUnit toplevel = F.at(firstToken.pos).TopLevel(packageAnnotations, pid, defs.toList());
         if (!consumedToplevelDoc)
-            attach(toplevel, firstToken.docComment);
+            attach(toplevel, firstToken.comment(CommentStyle.JAVADOC));
         if (defs.elems.isEmpty())
             storeEnd(toplevel, S.prevToken().endPos);
         if (keepDocComments)
@@ -2498,9 +2499,9 @@ public class JavacParser implements Parser {
     /** EnumeratorDeclaration = AnnotationsOpt [TypeArguments] IDENTIFIER [ Arguments ] [ "{" ClassBody "}" ]
      */
     JCTree enumeratorDeclaration(Name enumName) {
-        String dc = token.docComment;
+        String dc = token.comment(CommentStyle.JAVADOC);
         int flags = Flags.PUBLIC|Flags.STATIC|Flags.FINAL|Flags.ENUM;
-        if (token.deprecatedFlag) {
+        if (token.deprecatedFlag()) {
             flags |= Flags.DEPRECATED;
         }
         int pos = token.pos;
@@ -2587,7 +2588,7 @@ public class JavacParser implements Parser {
             nextToken();
             return List.<JCTree>nil();
         } else {
-            String dc = token.docComment;
+            String dc = token.comment(CommentStyle.JAVADOC);
             int pos = token.pos;
             JCModifiers mods = modifiersOpt();
             if (token.kind == CLASS ||
