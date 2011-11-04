@@ -30,8 +30,10 @@ import java.util.Locale;
 import com.sun.tools.javac.api.Formattable;
 import com.sun.tools.javac.api.Messages;
 import com.sun.tools.javac.parser.Tokens.Token.Tag;
+import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Names;
 
 /** A class that defines codes/utilities for Java source tokens
@@ -281,6 +283,19 @@ public class Tokens {
         }
     }
 
+    public interface Comment {
+
+        enum CommentStyle {
+            LINE,
+            BLOCK,
+            JAVADOC,
+        }
+
+        String getText();
+        CommentStyle getStyle();
+        boolean isDeprecated();
+    }
+
     /**
      * This is the class representing a javac token. Each token has several fields
      * that are set by the javac lexer (i.e. start/end position, string value, etc).
@@ -304,18 +319,14 @@ public class Tokens {
         /** The end position of this token */
         public final int endPos;
 
-        /** Is this token preceeded by a deprecated comment? */
-        public final boolean deprecatedFlag;
+        /** Comment reader associated with this token */
+        public final List<Comment> comments;
 
-        /** Is this token preceeded by a deprecated comment? */
-        public String docComment;
-
-        Token(TokenKind kind, int pos, int endPos,
-                boolean deprecatedFlag) {
+        Token(TokenKind kind, int pos, int endPos, List<Comment> comments) {
             this.kind = kind;
             this.pos = pos;
             this.endPos = endPos;
-            this.deprecatedFlag = deprecatedFlag;
+            this.comments = comments;
             checkKind();
         }
 
@@ -331,8 +342,8 @@ public class Tokens {
                 throw new AssertionError("Cant split - bad subtokens");
             }
             return new Token[] {
-                new Token(t1, pos, pos + t1.name.length(), deprecatedFlag),
-                new Token(t2, pos + t1.name.length(), endPos, false)
+                new Token(t1, pos, pos + t1.name.length(), comments),
+                new Token(t2, pos + t1.name.length(), endPos, null)
             };
         }
 
@@ -353,14 +364,52 @@ public class Tokens {
         public int radix() {
             throw new UnsupportedOperationException();
         }
+
+        /**
+         * Preserve classic semantics - if multiple javadocs are found on the token
+         * the last one is returned
+         */
+        public String comment(Comment.CommentStyle style) {
+            List<Comment> readers = getReaders(Comment.CommentStyle.JAVADOC);
+            return readers.isEmpty() ?
+                    null :
+                    readers.head.getText();
+        }
+
+        /**
+         * Preserve classic semantics - deprecated should be set if at least one
+         * javadoc comment attached to this token contains the '@deprecated' string
+         */
+        public boolean deprecatedFlag() {
+            for (Comment r : getReaders(Comment.CommentStyle.JAVADOC)) {
+                if (r.isDeprecated()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private List<Comment> getReaders(Comment.CommentStyle style) {
+            if (comments == null) {
+                return List.nil();
+            } else {
+                ListBuffer<Comment> buf = ListBuffer.lb();
+                for (Comment r : comments) {
+                    if (r.getStyle() == style) {
+                        buf.add(r);
+                    }
+                }
+                return buf.toList();
+            }
+        }
     }
 
     final static class NamedToken extends Token {
         /** The name of this token */
         public final Name name;
 
-        public NamedToken(TokenKind kind, int pos, int endPos, Name name, boolean deprecatedFlag) {
-            super(kind, pos, endPos, deprecatedFlag);
+        public NamedToken(TokenKind kind, int pos, int endPos, Name name, List<Comment> comments) {
+            super(kind, pos, endPos, comments);
             this.name = name;
         }
 
@@ -380,8 +429,8 @@ public class Tokens {
         /** The string value of this token */
         public final String stringVal;
 
-        public StringToken(TokenKind kind, int pos, int endPos, String stringVal, boolean deprecatedFlag) {
-            super(kind, pos, endPos, deprecatedFlag);
+        public StringToken(TokenKind kind, int pos, int endPos, String stringVal, List<Comment> comments) {
+            super(kind, pos, endPos, comments);
             this.stringVal = stringVal;
         }
 
@@ -401,8 +450,8 @@ public class Tokens {
         /** The 'radix' value of this token */
         public final int radix;
 
-        public NumericToken(TokenKind kind, int pos, int endPos, String stringVal, int radix, boolean deprecatedFlag) {
-            super(kind, pos, endPos, stringVal, deprecatedFlag);
+        public NumericToken(TokenKind kind, int pos, int endPos, String stringVal, int radix, List<Comment> comments) {
+            super(kind, pos, endPos, stringVal, comments);
             this.radix = radix;
         }
 
@@ -419,5 +468,5 @@ public class Tokens {
     }
 
     public static final Token DUMMY =
-                new Token(TokenKind.ERROR, 0, 0, false);
+                new Token(TokenKind.ERROR, 0, 0, null);
 }
