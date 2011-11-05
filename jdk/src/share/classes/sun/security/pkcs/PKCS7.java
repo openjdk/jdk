@@ -27,6 +27,7 @@ package sun.security.pkcs;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.net.URI;
 import java.util.*;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
@@ -35,6 +36,7 @@ import java.security.cert.CRLException;
 import java.security.cert.CertificateFactory;
 import java.security.*;
 
+import sun.security.timestamp.*;
 import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.CertificateIssuerName;
@@ -67,6 +69,30 @@ public class PKCS7 {
     private boolean oldStyle = false; // Is this JDK1.1.x-style?
 
     private Principal[] certIssuerNames;
+
+    /*
+     * Random number generator for creating nonce values
+     */
+    private static final SecureRandom RANDOM;
+    static {
+        SecureRandom tmp = null;
+        try {
+            tmp = SecureRandom.getInstance("SHA1PRNG");
+        } catch (NoSuchAlgorithmException e) {
+            // should not happen
+        }
+        RANDOM = tmp;
+    }
+
+    /*
+     * Object identifier for the timestamping key purpose.
+     */
+    private static final String KP_TIMESTAMPING_OID = "1.3.6.1.5.5.7.3.8";
+
+    /*
+     * Object identifier for extendedKeyUsage extension
+     */
+    private static final String EXTENDED_KEY_USAGE_OID = "2.5.29.37";
 
     /**
      * Unmarshals a PKCS7 block from its encoded form, parsing the
@@ -732,5 +758,165 @@ public class PKCS7 {
      */
     public boolean isOldStyle() {
         return this.oldStyle;
+    }
+
+    /**
+     * Assembles a PKCS #7 signed data message that optionally includes a
+     * signature timestamp.
+     *
+     * @param signature the signature bytes
+     * @param signerChain the signer's X.509 certificate chain
+     * @param content the content that is signed; specify null to not include
+     *        it in the PKCS7 data
+     * @param signatureAlgorithm the name of the signature algorithm
+     * @param tsaURI the URI of the Timestamping Authority; or null if no
+     *         timestamp is requested
+     * @return the bytes of the encoded PKCS #7 signed data message
+     * @throws NoSuchAlgorithmException The exception is thrown if the signature
+     *         algorithm is unrecognised.
+     * @throws CertificateException The exception is thrown if an error occurs
+     *         while processing the signer's certificate or the TSA's
+     *         certificate.
+     * @throws IOException The exception is thrown if an error occurs while
+     *         generating the signature timestamp or while generating the signed
+     *         data message.
+     */
+    public static byte[] generateSignedData(byte[] signature,
+                                            X509Certificate[] signerChain,
+                                            byte[] content,
+                                            String signatureAlgorithm,
+                                            URI tsaURI)
+        throws CertificateException, IOException, NoSuchAlgorithmException
+    {
+
+        // Generate the timestamp token
+        PKCS9Attributes unauthAttrs = null;
+        if (tsaURI != null) {
+            // Timestamp the signature
+            HttpTimestamper tsa = new HttpTimestamper(tsaURI);
+            byte[] tsToken = generateTimestampToken(tsa, signature);
+
+            // Insert the timestamp token into the PKCS #7 signer info element
+            // (as an unsigned attribute)
+            unauthAttrs =
+                new PKCS9Attributes(new PKCS9Attribute[]{
+                    new PKCS9Attribute(
+                        PKCS9Attribute.SIGNATURE_TIMESTAMP_TOKEN_STR,
+                        tsToken)});
+        }
+
+        // Create the SignerInfo
+        X500Name issuerName =
+            X500Name.asX500Name(signerChain[0].getIssuerX500Principal());
+        BigInteger serialNumber = signerChain[0].getSerialNumber();
+        String encAlg = AlgorithmId.getEncAlgFromSigAlg(signatureAlgorithm);
+        String digAlg = AlgorithmId.getDigAlgFromSigAlg(signatureAlgorithm);
+        SignerInfo signerInfo = new SignerInfo(issuerName, serialNumber,
+                                               AlgorithmId.get(digAlg), null,
+                                               AlgorithmId.get(encAlg),
+                                               signature, unauthAttrs);
+
+        // Create the PKCS #7 signed data message
+        SignerInfo[] signerInfos = {signerInfo};
+        AlgorithmId[] algorithms = {signerInfo.getDigestAlgorithmId()};
+        // Include or exclude content
+        ContentInfo contentInfo = (content == null)
+            ? new ContentInfo(ContentInfo.DATA_OID, null)
+            : new ContentInfo(content);
+        PKCS7 pkcs7 = new PKCS7(algorithms, contentInfo,
+                                signerChain, signerInfos);
+        ByteArrayOutputStream p7out = new ByteArrayOutputStream();
+        pkcs7.encodeSignedData(p7out);
+
+        return p7out.toByteArray();
+    }
+
+    /**
+     * Requests, processes and validates a timestamp token from a TSA using
+     * common defaults. Uses the following defaults in the timestamp request:
+     * SHA-1 for the hash algorithm, a 64-bit nonce, and request certificate
+     * set to true.
+     *
+     * @param tsa the timestamping authority to use
+     * @param toBeTimestamped the token that is to be timestamped
+     * @return the encoded timestamp token
+     * @throws IOException The exception is thrown if an error occurs while
+     *                     communicating with the TSA.
+     * @throws CertificateException The exception is thrown if the TSA's
+     *                     certificate is not permitted for timestamping.
+     */
+    private static byte[] generateTimestampToken(Timestamper tsa,
+                                                 byte[] toBeTimestamped)
+        throws IOException, CertificateException
+    {
+        // Generate a timestamp
+        MessageDigest messageDigest = null;
+        TSRequest tsQuery = null;
+        try {
+            // SHA-1 is always used.
+            messageDigest = MessageDigest.getInstance("SHA-1");
+            tsQuery = new TSRequest(toBeTimestamped, messageDigest);
+        } catch (NoSuchAlgorithmException e) {
+            // ignore
+        }
+
+        // Generate a nonce
+        BigInteger nonce = null;
+        if (RANDOM != null) {
+            nonce = new BigInteger(64, RANDOM);
+            tsQuery.setNonce(nonce);
+        }
+        tsQuery.requestCertificate(true);
+
+        TSResponse tsReply = tsa.generateTimestamp(tsQuery);
+        int status = tsReply.getStatusCode();
+        // Handle TSP error
+        if (status != 0 && status != 1) {
+            throw new IOException("Error generating timestamp: " +
+                tsReply.getStatusCodeAsText() + " " +
+                tsReply.getFailureCodeAsText());
+        }
+        PKCS7 tsToken = tsReply.getToken();
+
+        TimestampToken tst = tsReply.getTimestampToken();
+        if (!tst.getHashAlgorithm().getName().equals("SHA")) {
+            throw new IOException("Digest algorithm not SHA-1 in "
+                                  + "timestamp token");
+        }
+        if (!MessageDigest.isEqual(tst.getHashedMessage(),
+                                   tsQuery.getHashedMessage())) {
+            throw new IOException("Digest octets changed in timestamp token");
+        }
+
+        BigInteger replyNonce = tst.getNonce();
+        if (replyNonce == null && nonce != null) {
+            throw new IOException("Nonce missing in timestamp token");
+        }
+        if (replyNonce != null && !replyNonce.equals(nonce)) {
+            throw new IOException("Nonce changed in timestamp token");
+        }
+
+        // Examine the TSA's certificate (if present)
+        for (SignerInfo si: tsToken.getSignerInfos()) {
+            X509Certificate cert = si.getCertificate(tsToken);
+            if (cert == null) {
+                // Error, we've already set tsRequestCertificate = true
+                throw new CertificateException(
+                "Certificate not included in timestamp token");
+            } else {
+                if (!cert.getCriticalExtensionOIDs().contains(
+                        EXTENDED_KEY_USAGE_OID)) {
+                    throw new CertificateException(
+                    "Certificate is not valid for timestamping");
+                }
+                List<String> keyPurposes = cert.getExtendedKeyUsage();
+                if (keyPurposes == null ||
+                        !keyPurposes.contains(KP_TIMESTAMPING_OID)) {
+                    throw new CertificateException(
+                    "Certificate is not valid for timestamping");
+                }
+            }
+        }
+        return tsReply.getEncodedToken();
     }
 }

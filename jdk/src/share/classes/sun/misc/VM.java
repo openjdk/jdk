@@ -371,6 +371,12 @@ public class VM {
     private final static int JVMTI_THREAD_STATE_WAITING_INDEFINITELY = 0x0010;
     private final static int JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT = 0x0020;
 
+    /*
+     * Returns the first non-null class loader up the execution stack,
+     * or null if only code from the null class loader is on the stack.
+     */
+    public static native ClassLoader latestUserDefinedLoader();
+
     static {
         initialize();
     }
