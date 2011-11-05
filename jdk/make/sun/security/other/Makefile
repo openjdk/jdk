@@ -38,6 +38,7 @@ AUTO_FILES_JAVA_DIRS = \
     sun/security/acl \
     sun/security/jca \
     sun/security/pkcs \
+    sun/security/pkcs10 \
     sun/security/pkcs12 \
     sun/security/provider \
     sun/security/rsa \

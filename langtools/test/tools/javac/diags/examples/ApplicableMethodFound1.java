@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,14 @@
  * questions.
  */
 
-/*
- * @test
- * @author Gary Ellison
- * @bug 4170635
- * @summary Verify equals()/hashCode() contract honored
- */
+// key: compiler.misc.applicable.method.found.1
+// key: compiler.note.verbose.resolve.multi
+// key: compiler.misc.full.inst.sig
+// options: -XDverboseResolution=applicable,success
 
-import java.io.*;
-import sun.security.util.*;
+class ApplicableMethodFound1 {
 
+    <X> void m(X x) {}
 
-public class BigIntEqualsHashCode {
-    public static void main(String[] args) throws Exception {
-        BigInt bi1 = new BigInt(12345678);
-        BigInt bi2 = new BigInt(12345678);
-
-        if ( (bi1.equals(bi2)) == (bi1.hashCode()==bi2.hashCode()) )
-            System.out.println("PASSED");
-        else
-            throw new Exception ("FAILED equals()/hashCode() contract");
-
-    }
+    { m(1); }
 }

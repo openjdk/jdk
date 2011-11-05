@@ -55,7 +55,7 @@ public class ParserFactory {
 
     final TreeMaker F;
     final Log log;
-    final Keywords keywords;
+    final Tokens tokens;
     final Source source;
     final Names names;
     final Options options;
@@ -67,7 +67,7 @@ public class ParserFactory {
         this.F = TreeMaker.instance(context);
         this.log = Log.instance(context);
         this.names = Names.instance(context);
-        this.keywords = Keywords.instance(context);
+        this.tokens = Tokens.instance(context);
         this.source = Source.instance(context);
         this.options = Options.instance(context);
         this.scannerFactory = ScannerFactory.instance(context);
