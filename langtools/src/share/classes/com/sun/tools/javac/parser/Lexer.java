@@ -25,7 +25,7 @@
 
 package com.sun.tools.javac.parser;
 
-import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.parser.Tokens.*;
 import com.sun.tools.javac.util.Position.LineMap;
 
 /**
@@ -40,22 +40,26 @@ import com.sun.tools.javac.util.Position.LineMap;
 public interface Lexer {
 
     /**
-     * Has a @deprecated been encountered in last doc comment?
-     * This needs to be reset by client with resetDeprecatedFlag.
+     * Consume the next token.
      */
-    boolean deprecatedFlag();
-
-    void resetDeprecatedFlag();
+    void nextToken();
 
     /**
-     * Returns the documentation string of the current token.
+     * Return current token.
      */
-    String docComment();
+    Token token();
 
     /**
-     * Return the last character position of the current token.
+     * Return the last character position of the previous token.
      */
-    int endPos();
+    Token prevToken();
+
+    /**
+     * Splits the current token in two and return the first (splitted) token.
+     * For instance '<<<' is splitted into two tokens '<' and '<<' respectively,
+     * and the latter is returned.
+     */
+    Token split();
 
     /**
      * Return the position where a lexical error occurred;
@@ -74,69 +78,4 @@ public interface Lexer {
      * @return a LineMap
      */
     LineMap getLineMap();
-
-    /**
-     * Returns a copy of the input buffer, up to its inputLength.
-     * Unicode escape sequences are not translated.
-     */
-    char[] getRawCharacters();
-
-    /**
-     * Returns a copy of a character array subset of the input buffer.
-     * The returned array begins at the <code>beginIndex</code> and
-     * extends to the character at index <code>endIndex - 1</code>.
-     * Thus the length of the substring is <code>endIndex-beginIndex</code>.
-     * This behavior is like
-     * <code>String.substring(beginIndex, endIndex)</code>.
-     * Unicode escape sequences are not translated.
-     *
-     * @param beginIndex the beginning index, inclusive.
-     * @param endIndex the ending index, exclusive.
-     * @throws IndexOutOfBounds if either offset is outside of the
-     *         array bounds
-     */
-    char[] getRawCharacters(int beginIndex, int endIndex);
-
-    /**
-     * Return the name of an identifier or token for the current token.
-     */
-    Name name();
-
-    /**
-     * Read token.
-     */
-    void nextToken();
-
-    /**
-     * Return the current token's position: a 0-based
-     *  offset from beginning of the raw input stream
-     *  (before unicode translation)
-     */
-    int pos();
-
-    /**
-     * Return the last character position of the previous token.
-     */
-    int prevEndPos();
-
-    /**
-     * Return the radix of a numeric literal token.
-     */
-    int radix();
-
-    /**
-     * The value of a literal token, recorded as a string.
-     *  For integers, leading 0x and 'l' suffixes are suppressed.
-     */
-    String stringVal();
-
-    /**
-     * Return the current token, set by nextToken().
-     */
-    Token token();
-
-    /**
-     * Sets the current token.
-     */
-    void token(Token token);
 }

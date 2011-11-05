@@ -2216,7 +2216,47 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # http://www.timeanddate.com/news/time/westbank-gaza-end-dst-2010.html
 # </a>
 
+# From Steffen Thorsen (2011-08-26):
+# Gaza and the West Bank did go back to standard time in the beginning of
+# August, and will now enter daylight saving time again on 2011-08-30
+# 00:00 (so two periods of DST in 2011). The pause was because of
+# Ramadan.
+#
+# <a href="http://www.maannews.net/eng/ViewDetails.aspx?ID=416217">
+# http://www.maannews.net/eng/ViewDetails.aspx?ID=416217
+# </a>
+# Additional info:
+# <a href="http://www.timeanddate.com/news/time/palestine-dst-2011.html">
+# http://www.timeanddate.com/news/time/palestine-dst-2011.html
+# </a>
+
+# From Alexander Krivenyshev (2011-08-27):
+# According to the article in The Jerusalem Post:
+# "...Earlier this month, the Palestinian government in the West Bank decided to
+# move to standard time for 30 days, during Ramadan. The Palestinians in the
+# Gaza Strip accepted the change and also moved their clocks one hour back.
+# The Hamas government said on Saturday that it won't observe summertime after
+# the Muslim feast of Id al-Fitr, which begins on Tuesday..."
+# ...
+# <a href="http://www.jpost.com/MiddleEast/Article.aspx?id=235650">
+# http://www.jpost.com/MiddleEast/Article.aspx?id=235650
+# </a>
+# or
+# <a href="http://www.worldtimezone.com/dst_news/dst_news_gazastrip05.html">
+# http://www.worldtimezone.com/dst_news/dst_news_gazastrip05.html
+# </a>
 # The rules for Egypt are stolen from the `africa' file.
+
+# From Steffen Thorsen (2011-09-30):
+# West Bank did end Daylight Saving Time this morning/midnight (2011-09-30 
+# 00:00).
+# So West Bank and Gaza now have the same time again.
+#
+# Many sources, including:
+# <a href="http://www.maannews.net/eng/ViewDetails.aspx?ID=424808">
+# http://www.maannews.net/eng/ViewDetails.aspx?ID=424808
+# </a>
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule EgyptAsia	1957	only	-	May	10	0:00	1:00	S
 Rule EgyptAsia	1957	1958	-	Oct	 1	0:00	0	-
@@ -2232,11 +2272,14 @@ Rule Palestine	2005	only	-	Oct	 4	2:00	0	-
 Rule Palestine	2006	2008	-	Apr	 1	0:00	1:00	S
 Rule Palestine	2006	only	-	Sep	22	0:00	0	-
 Rule Palestine	2007	only	-	Sep	Thu>=8	2:00	0	-
-Rule Palestine	2008	only	-	Aug	lastFri	2:00	0	-
+Rule Palestine	2008	only	-	Aug	lastFri	0:00	0	-
 Rule Palestine	2009	only	-	Mar	lastFri	0:00	1:00	S
-Rule Palestine	2010	max	-	Mar	lastSat	0:01	1:00	S
-Rule Palestine	2009	max	-	Sep	Fri>=1	2:00	0	-
+Rule Palestine	2009	only	-	Sep	Fri>=1	2:00	0	-
+Rule Palestine	2010	only	-	Mar	lastSat	0:01	1:00	S
 Rule Palestine	2010	only	-	Aug	11	0:00	0	-
+
+# From Arthur David Olson (2011-09-20):
+# 2011 transitions per http://www.timeanddate.com as of 2011-09-20.
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Gaza	2:17:52	-	LMT	1900 Oct
@@ -2244,7 +2287,22 @@ Zone	Asia/Gaza	2:17:52	-	LMT	1900 Oct
 			2:00 EgyptAsia	EE%sT	1967 Jun  5
 			2:00	Zion	I%sT	1996
 			2:00	Jordan	EE%sT	1999
-			2:00 Palestine	EE%sT
+			2:00 Palestine	EE%sT	2011 Apr  2 12:01
+			2:00	1:00	EEST	2011 Aug  1
+			2:00	-	EET
+
+Zone	Asia/Hebron	2:20:23	-	LMT	1900 Oct
+			2:00	Zion	EET	1948 May 15
+			2:00 EgyptAsia	EE%sT	1967 Jun  5
+			2:00	Zion	I%sT	1996
+			2:00	Jordan	EE%sT	1999
+			2:00 Palestine	EE%sT	2008 Aug
+			2:00 	1:00	EEST	2008 Sep
+			2:00 Palestine	EE%sT	2011 Apr  1 12:01
+			2:00	1:00	EEST	2011 Aug  1
+			2:00	-	EET	2011 Aug 30
+			2:00	1:00	EEST	2011 Sep 30 3:00
+			2:00	-	EET
 
 # Paracel Is
 # no information

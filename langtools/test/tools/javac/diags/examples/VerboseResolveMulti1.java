@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1996, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,23 +21,15 @@
  * questions.
  */
 
-/**
- * Generic PKCS Encoding exception.
- *
- * @author Benjamin Renaud
- */
+// key: compiler.misc.not.applicable.method.found
+// key: compiler.note.verbose.resolve.multi.1
+// key: compiler.err.cant.apply.symbol.1
+// key: compiler.misc.no.conforming.assignment.exists
+// options: -XDverboseResolution=inapplicable,failure
 
-package sun.security.pkcs;
+class VerboseResolveMulti1 {
 
-public class EncodingException extends Exception {
+    void m(int i) {}
 
-    private static final long serialVersionUID = 4060198374240668325L;
-
-    public EncodingException() {
-        super();
-    }
-
-    public EncodingException(String s) {
-        super(s);
-    }
+    { m(""); }
 }

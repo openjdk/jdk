@@ -103,6 +103,8 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
                                      "Eastern Daylight Time", "EDT"};
         String EST_NSW[] = new String[] {"Eastern Standard Time (New South Wales)", "EST",
                                          "Eastern Summer Time (New South Wales)", "EST"};
+        String FET[] = new String[] {"Further-eastern European Time", "FET",
+                                     "Further-eastern European Summer Time", "FEST"};
         String GHMT[] = new String[] {"Ghana Mean Time", "GMT",
                                      "Ghana Summer Time", "GHST"};
         String GAMBIER[] =  new String[] {"Gambier Time", "GAMT",
@@ -186,7 +188,7 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
         String SAMOA[] = new String[] {"Samoa Standard Time", "SST",
                                        "Samoa Daylight Time", "SDT"};
         String WST_SAMOA[] = new String[] {"West Samoa Time", "WST",
-                                           "West Samoa Summer Time", "WSST"};
+                                           "West Samoa Daylight Time", "WSDT"};
         String ChST[] = new String[] {"Chamorro Standard Time", "ChST",
                                       "Chamorro Daylight Time", "ChDT"};
         String VICTORIA[] = new String[] {"Eastern Standard Time (Victoria)", "EST",
@@ -511,6 +513,7 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
                                             "Tajikistan Summer Time", "TJST"}},
             {"Asia/Gaza", EET},
             {"Asia/Harbin", CTT},
+            {"Asia/Hebron", EET},
             {"Asia/Ho_Chi_Minh", ICT},
             {"Asia/Hong_Kong", HKT},
             {"Asia/Hovd", new String[] {"Hovd Time", "HOVT",
@@ -674,9 +677,8 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"Europe/Isle_of_Man", GMTBST},
             {"Europe/Istanbul", EET},
             {"Europe/Jersey", GMTBST},
-            {"Europe/Kaliningrad", new String[] {"Kaliningrad Time", "KALT",
-                                                 "Kaliningrad Summer Time", "KALST"}},
-            {"Europe/Kiev", EET},
+            {"Europe/Kaliningrad", FET},
+            {"Europe/Kiev", FET},
             {"Europe/Lisbon", WET},
             {"Europe/Ljubljana", CET},
             {"Europe/London", GMTBST},
@@ -684,7 +686,7 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
             {"Europe/Madrid", CET},
             {"Europe/Malta", CET},
             {"Europe/Mariehamn", EET},
-            {"Europe/Minsk", EET},
+            {"Europe/Minsk", FET},
             {"Europe/Monaco", CET},
             {"Europe/Moscow", MSK},
             {"Europe/Nicosia", EET},
@@ -697,14 +699,14 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
                                             "Samara Summer Time", "SAMST"}},
             {"Europe/San_Marino", CET},
             {"Europe/Sarajevo", CET},
-            {"Europe/Simferopol", EET},
+            {"Europe/Simferopol", FET},
             {"Europe/Skopje", CET},
             {"Europe/Sofia", EET},
             {"Europe/Stockholm", CET},
             {"Europe/Tallinn", EET},
             {"Europe/Tirane", CET},
             {"Europe/Tiraspol", EET},
-            {"Europe/Uzhgorod", EET},
+            {"Europe/Uzhgorod", FET},
             {"Europe/Vaduz", CET},
             {"Europe/Vatican", CET},
             {"Europe/Vienna", CET},
@@ -713,7 +715,7 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
                                                "Volgograd Summer Time", "VOLST"}},
             {"Europe/Warsaw", CET},
             {"Europe/Zagreb", CET},
-            {"Europe/Zaporozhye", EET},
+            {"Europe/Zaporozhye", FET},
             {"Europe/Zurich", CET},
             {"GB", GMTBST},
             {"GB-Eire", GMTBST},
