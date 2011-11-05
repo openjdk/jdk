@@ -147,12 +147,8 @@ void ConcurrentMarkThread::run() {
           }
         }
       } while (cm()->restart_for_overflow());
+
       double counting_start_time = os::elapsedVTime();
-
-      // YSR: These look dubious (i.e. redundant) !!! FIX ME
-      slt()->manipulatePLL(SurrogateLockerThread::acquirePLL);
-      slt()->manipulatePLL(SurrogateLockerThread::releaseAndNotifyPLL);
-
       if (!cm()->has_aborted()) {
         double count_start_sec = os::elapsedTime();
         if (PrintGC) {
@@ -175,6 +171,7 @@ void ConcurrentMarkThread::run() {
           }
         }
       }
+
       double end_time = os::elapsedVTime();
       _vtime_count_accum += (end_time - counting_start_time);
       // Update the total virtual time before doing this, since it will try
@@ -335,13 +332,15 @@ void ConcurrentMarkThread::sleepBeforeNextCycle() {
   clear_started();
 }
 
-// Note: this method, although exported by the ConcurrentMarkSweepThread,
-// which is a non-JavaThread, can only be called by a JavaThread.
-// Currently this is done at vm creation time (post-vm-init) by the
-// main/Primordial (Java)Thread.
-// XXX Consider changing this in the future to allow the CMS thread
+// Note: As is the case with CMS - this method, although exported
+// by the ConcurrentMarkThread, which is a non-JavaThread, can only
+// be called by a JavaThread. Currently this is done at vm creation
+// time (post-vm-init) by the main/Primordial (Java)Thread.
+// XXX Consider changing this in the future to allow the CM thread
 // itself to create this thread?
 void ConcurrentMarkThread::makeSurrogateLockerThread(TRAPS) {
+  assert(UseG1GC, "SLT thread needed only for concurrent GC");
+  assert(THREAD->is_Java_thread(), "must be a Java thread");
   assert(_slt == NULL, "SLT already created");
   _slt = SurrogateLockerThread::make(THREAD);
 }

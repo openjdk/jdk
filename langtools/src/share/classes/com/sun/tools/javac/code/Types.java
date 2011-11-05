@@ -278,34 +278,12 @@ public class Types {
         boolean tPrimitive = t.isPrimitive();
         boolean sPrimitive = s.isPrimitive();
         if (tPrimitive == sPrimitive) {
-            checkUnsafeVarargsConversion(t, s, warn);
             return isSubtypeUnchecked(t, s, warn);
         }
         if (!allowBoxing) return false;
         return tPrimitive
             ? isSubtype(boxedClass(t).type, s)
             : isSubtype(unboxedType(t), s);
-    }
-    //where
-    private void checkUnsafeVarargsConversion(Type t, Type s, Warner warn) {
-        if (t.tag != ARRAY || isReifiable(t)) return;
-        ArrayType from = (ArrayType)t;
-        boolean shouldWarn = false;
-        switch (s.tag) {
-            case ARRAY:
-                ArrayType to = (ArrayType)s;
-                shouldWarn = from.isVarargs() &&
-                        !to.isVarargs() &&
-                        !isReifiable(from);
-                break;
-            case CLASS:
-                shouldWarn = from.isVarargs() &&
-                        isSubtype(from, s);
-                break;
-        }
-        if (shouldWarn) {
-            warn.warn(LintCategory.VARARGS);
-        }
     }
 
     /**
@@ -328,42 +306,63 @@ public class Types {
      * Is t an unchecked subtype of s?
      */
     public boolean isSubtypeUnchecked(Type t, Type s, Warner warn) {
-        if (t.tag == ARRAY && s.tag == ARRAY) {
-            if (((ArrayType)t).elemtype.tag <= lastBaseTag) {
-                return isSameType(elemtype(t), elemtype(s));
-            } else {
-                ArrayType from = (ArrayType)t;
-                ArrayType to = (ArrayType)s;
-                if (from.isVarargs() &&
-                        !to.isVarargs() &&
-                        !isReifiable(from)) {
-                    warn.warn(LintCategory.VARARGS);
+        boolean result = isSubtypeUncheckedInternal(t, s, warn);
+        if (result) {
+            checkUnsafeVarargsConversion(t, s, warn);
+        }
+        return result;
+    }
+    //where
+        private boolean isSubtypeUncheckedInternal(Type t, Type s, Warner warn) {
+            if (t.tag == ARRAY && s.tag == ARRAY) {
+                if (((ArrayType)t).elemtype.tag <= lastBaseTag) {
+                    return isSameType(elemtype(t), elemtype(s));
+                } else {
+                    return isSubtypeUnchecked(elemtype(t), elemtype(s), warn);
                 }
-                return isSubtypeUnchecked(elemtype(t), elemtype(s), warn);
-            }
-        } else if (isSubtype(t, s)) {
-            return true;
-        }
-        else if (t.tag == TYPEVAR) {
-            return isSubtypeUnchecked(t.getUpperBound(), s, warn);
-        }
-        else if (s.tag == UNDETVAR) {
-            UndetVar uv = (UndetVar)s;
-            if (uv.inst != null)
-                return isSubtypeUnchecked(t, uv.inst, warn);
-        }
-        else if (!s.isRaw()) {
-            Type t2 = asSuper(t, s.tsym);
-            if (t2 != null && t2.isRaw()) {
-                if (isReifiable(s))
-                    warn.silentWarn(LintCategory.UNCHECKED);
-                else
-                    warn.warn(LintCategory.UNCHECKED);
+            } else if (isSubtype(t, s)) {
                 return true;
             }
+            else if (t.tag == TYPEVAR) {
+                return isSubtypeUnchecked(t.getUpperBound(), s, warn);
+            }
+            else if (s.tag == UNDETVAR) {
+                UndetVar uv = (UndetVar)s;
+                if (uv.inst != null)
+                    return isSubtypeUnchecked(t, uv.inst, warn);
+            }
+            else if (!s.isRaw()) {
+                Type t2 = asSuper(t, s.tsym);
+                if (t2 != null && t2.isRaw()) {
+                    if (isReifiable(s))
+                        warn.silentWarn(LintCategory.UNCHECKED);
+                    else
+                        warn.warn(LintCategory.UNCHECKED);
+                    return true;
+                }
+            }
+            return false;
         }
-        return false;
-    }
+
+        private void checkUnsafeVarargsConversion(Type t, Type s, Warner warn) {
+            if (t.tag != ARRAY || isReifiable(t)) return;
+            ArrayType from = (ArrayType)t;
+            boolean shouldWarn = false;
+            switch (s.tag) {
+                case ARRAY:
+                    ArrayType to = (ArrayType)s;
+                    shouldWarn = from.isVarargs() &&
+                            !to.isVarargs() &&
+                            !isReifiable(from);
+                    break;
+                case CLASS:
+                    shouldWarn = from.isVarargs();
+                    break;
+            }
+            if (shouldWarn) {
+                warn.warn(LintCategory.VARARGS);
+            }
+        }
 
     /**
      * Is t a subtype of s?<br>
