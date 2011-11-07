@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,7 @@
 
 package java.net;
 
-import java.io.FileDescriptor;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.nio.channels.DatagramChannel;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
@@ -289,7 +287,7 @@ class DatagramSocket implements java.io.Closeable {
             AccessController.doPrivileged(
                 new PrivilegedExceptionAction<Void>() {
                     public Void run() throws NoSuchMethodException {
-                        Class[] cl = new Class[1];
+                        Class<?>[] cl = new Class<?>[1];
                         cl[0] = DatagramPacket.class;
                         impl.getClass().getDeclaredMethod("peekData", cl);
                         return null;
@@ -300,7 +298,7 @@ class DatagramSocket implements java.io.Closeable {
         }
     }
 
-    static Class implClass = null;
+    static Class<?> implClass = null;
 
     void createImpl() throws SocketException {
         if (impl == null) {

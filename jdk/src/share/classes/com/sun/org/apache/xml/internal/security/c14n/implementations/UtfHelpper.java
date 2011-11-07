@@ -6,8 +6,8 @@ import java.util.Map;
 
 public class UtfHelpper {
 
-        final static void writeByte(final String str,final OutputStream out,Map cache) throws IOException {
-                   byte []result=(byte[]) cache.get(str);
+        final static void writeByte(final String str,final OutputStream out,Map<String,byte[]> cache) throws IOException {
+                   byte []result= cache.get(str);
                    if (result==null) {
                            result=getStringInUtf8(str);
                            cache.put(str,result);

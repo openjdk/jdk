@@ -142,11 +142,6 @@ LIR_Opr LIR_Assembler::receiverOpr() {
 }
 
 
-LIR_Opr LIR_Assembler::incomingReceiverOpr() {
-  return FrameMap::I0_oop_opr;
-}
-
-
 LIR_Opr LIR_Assembler::osrBufferPointer() {
   return FrameMap::I0_opr;
 }

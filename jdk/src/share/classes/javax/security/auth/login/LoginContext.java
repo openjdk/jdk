@@ -214,14 +214,14 @@ public class LoginContext {
     private boolean subjectProvided = false;
     private boolean loginSucceeded = false;
     private CallbackHandler callbackHandler;
-    private Map state = new HashMap();
+    private Map<String,?> state = new HashMap<String,Object>();
 
     private Configuration config;
     private boolean configProvided = false;
     private AccessControlContext creatorAcc = null;
     private ModuleInfo[] moduleStack;
     private ClassLoader contextClassLoader = null;
-    private static final Class[] PARAMS = { };
+    private static final Class<?>[] PARAMS = { };
 
     // state saved in the event a user-specified asynchronous exception
     // was specified and thrown
@@ -306,7 +306,7 @@ public class LoginContext {
                         (DEFAULT_HANDLER);
                     if (defaultHandler == null || defaultHandler.length() == 0)
                         return null;
-                    Class c = Class.forName(defaultHandler,
+                    Class<?> c = Class.forName(defaultHandler,
                                         true,
                                         finalLoader);
                     return (CallbackHandler)c.newInstance();
@@ -743,12 +743,12 @@ public class LoginContext {
                 } else {
 
                     // instantiate the LoginModule
-                    Class c = Class.forName
+                    Class<?> c = Class.forName
                                 (moduleStack[i].entry.getLoginModuleName(),
                                 true,
                                 contextClassLoader);
 
-                    Constructor constructor = c.getConstructor(PARAMS);
+                    Constructor<?> constructor = c.getConstructor(PARAMS);
                     Object[] args = { };
 
                     // allow any object to be a LoginModule

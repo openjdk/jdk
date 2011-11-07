@@ -73,7 +73,7 @@ public class Main {
     public static int compile(String[] args) {
         com.sun.tools.javac.main.Main compiler =
             new com.sun.tools.javac.main.Main("javac");
-        return compiler.compile(args);
+        return compiler.compile(args).exitCode;
     }
 
 
@@ -91,6 +91,6 @@ public class Main {
     public static int compile(String[] args, PrintWriter out) {
         com.sun.tools.javac.main.Main compiler =
             new com.sun.tools.javac.main.Main("javac", out);
-        return compiler.compile(args);
+        return compiler.compile(args).exitCode;
     }
 }

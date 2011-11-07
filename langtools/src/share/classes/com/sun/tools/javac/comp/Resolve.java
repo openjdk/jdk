@@ -25,29 +25,33 @@
 
 package com.sun.tools.javac.comp;
 
-import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
-import com.sun.tools.javac.code.*;
-import com.sun.tools.javac.jvm.*;
-import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.api.Formattable.LocalizedString;
-import static com.sun.tools.javac.comp.Resolve.MethodResolutionPhase.*;
-
+import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.jvm.*;
+import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
+import javax.lang.model.element.ElementVisitor;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTags.*;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
-import javax.lang.model.element.ElementVisitor;
-
-import java.util.Map;
-import java.util.Set;
-import java.util.HashMap;
-import java.util.HashSet;
+import static com.sun.tools.javac.comp.Resolve.MethodResolutionPhase.*;
 
 /** Helper class for name resolution, used mostly by the attribution phase.
  *
@@ -73,8 +77,44 @@ public class Resolve {
     public final boolean varargsEnabled; // = source.allowVarargs();
     public final boolean allowMethodHandles;
     private final boolean debugResolve;
+    final EnumSet<VerboseResolutionMode> verboseResolutionMode;
 
     Scope polymorphicSignatureScope;
+
+    enum VerboseResolutionMode {
+        SUCCESS("success"),
+        FAILURE("failure"),
+        APPLICABLE("applicable"),
+        INAPPLICABLE("inapplicable"),
+        DEFERRED_INST("deferred-inference"),
+        PREDEF("predef"),
+        OBJECT_INIT("object-init"),
+        INTERNAL("internal");
+
+        String opt;
+
+        private VerboseResolutionMode(String opt) {
+            this.opt = opt;
+        }
+
+        static EnumSet<VerboseResolutionMode> getVerboseResolutionMode(Options opts) {
+            String s = opts.get("verboseResolution");
+            EnumSet<VerboseResolutionMode> res = EnumSet.noneOf(VerboseResolutionMode.class);
+            if (s == null) return res;
+            if (s.contains("all")) {
+                res = EnumSet.allOf(VerboseResolutionMode.class);
+            }
+            Collection<String> args = Arrays.asList(s.split(","));
+            for (VerboseResolutionMode mode : values()) {
+                if (args.contains(mode.opt)) {
+                    res.add(mode);
+                } else if (args.contains("-" + mode.opt)) {
+                    res.remove(mode);
+                }
+            }
+            return res;
+        }
+    }
 
     public static Resolve instance(Context context) {
         Resolve instance = context.get(resolveKey);
@@ -111,6 +151,7 @@ public class Resolve {
         varargsEnabled = source.allowVarargs();
         Options options = Options.instance(context);
         debugResolve = options.isSet("debugresolve");
+        verboseResolutionMode = VerboseResolutionMode.getVerboseResolutionMode(options);
         Target target = Target.instance(context);
         allowMethodHandles = target.hasMethodHandles();
         polymorphicSignatureScope = new Scope(syms.noSymbol);
@@ -684,13 +725,16 @@ public class Resolve {
         if (!sym.isInheritedIn(site.tsym, types)) return bestSoFar;
         Assert.check(sym.kind < AMBIGUOUS);
         try {
-            rawInstantiate(env, site, sym, argtypes, typeargtypes,
+            Type mt = rawInstantiate(env, site, sym, argtypes, typeargtypes,
                                allowBoxing, useVarargs, Warner.noWarnings);
+            if (!operator) addVerboseApplicableCandidateDiag(sym ,mt);
         } catch (InapplicableMethodException ex) {
+            if (!operator) addVerboseInapplicableCandidateDiag(sym, ex.getDiagnostic());
             switch (bestSoFar.kind) {
             case ABSENT_MTH:
                 return wrongMethod.setWrongSym(sym, ex.getDiagnostic());
             case WRONG_MTH:
+                if (operator) return bestSoFar;
                 wrongMethods.addCandidate(currentStep, wrongMethod.sym, wrongMethod.explanation);
             case WRONG_MTHS:
                 return wrongMethods.addCandidate(currentStep, sym, ex.getDiagnostic());
@@ -708,6 +752,34 @@ public class Resolve {
             : mostSpecific(sym, bestSoFar, env, site,
                            allowBoxing && operator, useVarargs);
     }
+    //where
+        void addVerboseApplicableCandidateDiag(Symbol sym, Type inst) {
+            if (!verboseResolutionMode.contains(VerboseResolutionMode.APPLICABLE))
+                return;
+
+            JCDiagnostic subDiag = null;
+            if (inst.getReturnType().tag == FORALL) {
+                Type diagType = types.createMethodTypeWithReturn(inst.asMethodType(),
+                                                                ((ForAll)inst.getReturnType()).qtype);
+                subDiag = diags.fragment("partial.inst.sig", diagType);
+            } else if (sym.type.tag == FORALL) {
+                subDiag = diags.fragment("full.inst.sig", inst.asMethodType());
+            }
+
+            String key = subDiag == null ?
+                    "applicable.method.found" :
+                    "applicable.method.found.1";
+
+            verboseResolutionCandidateDiags.put(sym,
+                    diags.fragment(key, verboseResolutionCandidateDiags.size(), sym, subDiag));
+        }
+
+        void addVerboseInapplicableCandidateDiag(Symbol sym, JCDiagnostic subDiag) {
+            if (!verboseResolutionMode.contains(VerboseResolutionMode.INAPPLICABLE))
+                return;
+            verboseResolutionCandidateDiags.put(sym,
+                    diags.fragment("not.applicable.method.found", verboseResolutionCandidateDiags.size(), sym, subDiag));
+        }
 
     /* Return the most specific of the two methods for a call,
      *  given that both are accessible and applicable.
@@ -905,8 +977,9 @@ public class Resolve {
                       boolean allowBoxing,
                       boolean useVarargs,
                       boolean operator) {
+        verboseResolutionCandidateDiags.clear();
         Symbol bestSoFar = methodNotFound;
-        return findMethod(env,
+        bestSoFar = findMethod(env,
                           site,
                           name,
                           argtypes,
@@ -918,6 +991,8 @@ public class Resolve {
                           useVarargs,
                           operator,
                           new HashSet<TypeSymbol>());
+        reportVerboseResolutionDiagnostic(env.tree.pos(), name, site, argtypes, typeargtypes, bestSoFar);
+        return bestSoFar;
     }
     // where
     private Symbol findMethod(Env<AttrContext> env,
@@ -975,6 +1050,37 @@ public class Resolve {
         }
         return bestSoFar;
     }
+    //where
+        void reportVerboseResolutionDiagnostic(DiagnosticPosition dpos, Name name, Type site, List<Type> argtypes, List<Type> typeargtypes, Symbol bestSoFar) {
+            boolean success = bestSoFar.kind < ERRONEOUS;
+
+            if (success && !verboseResolutionMode.contains(VerboseResolutionMode.SUCCESS)) {
+                return;
+            } else if (!success && !verboseResolutionMode.contains(VerboseResolutionMode.FAILURE)) {
+                return;
+            }
+
+            if (bestSoFar.name == names.init &&
+                    bestSoFar.owner == syms.objectType.tsym &&
+                    !verboseResolutionMode.contains(VerboseResolutionMode.OBJECT_INIT)) {
+                return; //skip diags for Object constructor resolution
+            } else if (site == syms.predefClass.type && !verboseResolutionMode.contains(VerboseResolutionMode.PREDEF)) {
+                return; //skip spurious diags for predef symbols (i.e. operators)
+            } else if (internalResolution && !verboseResolutionMode.contains(VerboseResolutionMode.INTERNAL)) {
+                return;
+            }
+
+            int pos = 0;
+            for (Symbol s : verboseResolutionCandidateDiags.keySet()) {
+                if (s == bestSoFar) break;
+                pos++;
+            }
+            String key = success ? "verbose.resolve.multi" : "verbose.resolve.multi.1";
+            JCDiagnostic main = diags.note(log.currentSource(), dpos, key, name, site.tsym, pos, currentStep,
+                    methodArguments(argtypes), methodArguments(typeargtypes));
+            JCDiagnostic d = new JCDiagnostic.MultilineDiagnostic(main, List.from(verboseResolutionCandidateDiags.values().toArray(new JCDiagnostic[verboseResolutionCandidateDiags.size()])));
+            log.report(d);
+        }
 
     /** Find unqualified method matching given name, type and value arguments.
      *  @param env       The current environment.
@@ -1543,12 +1649,19 @@ public class Resolve {
                                         Type site, Name name,
                                         List<Type> argtypes,
                                         List<Type> typeargtypes) {
-        Symbol sym = resolveQualifiedMethod(
-            pos, env, site.tsym, site, name, argtypes, typeargtypes);
-        if (sym.kind == MTH) return (MethodSymbol)sym;
-        else throw new FatalError(
-                 diags.fragment("fatal.err.cant.locate.meth",
-                                name));
+        boolean prevInternal = internalResolution;
+        try {
+            internalResolution = true;
+            Symbol sym = resolveQualifiedMethod(
+                pos, env, site.tsym, site, name, argtypes, typeargtypes);
+            if (sym.kind == MTH) return (MethodSymbol)sym;
+            else throw new FatalError(
+                     diags.fragment("fatal.err.cant.locate.meth",
+                                    name));
+        }
+        finally {
+            internalResolution = prevInternal;
+        }
     }
 
     /** Resolve constructor.
@@ -1685,6 +1798,7 @@ public class Resolve {
      */
     Symbol resolveOperator(DiagnosticPosition pos, int optag,
                            Env<AttrContext> env, List<Type> argtypes) {
+        startResolution();
         Name name = treeinfo.operatorName(optag);
         Symbol sym = findMethod(env, syms.predefClass.type, name, argtypes,
                                 null, false, false, true);
@@ -1828,7 +1942,7 @@ public class Resolve {
     private final LocalizedString noArgs = new LocalizedString("compiler.misc.no.args");
 
     public Object methodArguments(List<Type> argtypes) {
-        return argtypes.isEmpty() ? noArgs : argtypes;
+        return argtypes == null || argtypes.isEmpty() ? noArgs : argtypes;
     }
 
     /**
@@ -2375,9 +2489,14 @@ public class Resolve {
     private Map<MethodResolutionPhase, Symbol> methodResolutionCache =
         new HashMap<MethodResolutionPhase, Symbol>(MethodResolutionPhase.values().length);
 
+    private Map<Symbol, JCDiagnostic> verboseResolutionCandidateDiags =
+        new LinkedHashMap<Symbol, JCDiagnostic>();
+
     final List<MethodResolutionPhase> methodResolutionSteps = List.of(BASIC, BOX, VARARITY);
 
     private MethodResolutionPhase currentStep = null;
+
+    private boolean internalResolution = false;
 
     private MethodResolutionPhase firstErroneousResolutionPhase() {
         MethodResolutionPhase bestSoFar = BASIC;

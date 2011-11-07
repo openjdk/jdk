@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Set;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -199,7 +198,8 @@ class MessageHeader {
         return filterAndAddHeaders(excludeList, null);
     }
 
-    public synchronized Map<String, List<String>> filterAndAddHeaders(String[] excludeList, Map<String, List<String>>  include) {
+    public synchronized Map<String, List<String>> filterAndAddHeaders(
+            String[] excludeList, Map<String, List<String>>  include) {
         boolean skipIt = false;
         Map<String, List<String>> m = new HashMap<String, List<String>>();
         for (int i = nkeys; --i >= 0;) {
@@ -228,15 +228,13 @@ class MessageHeader {
         }
 
         if (include != null) {
-            Iterator entries = include.entrySet().iterator();
-            while (entries.hasNext()) {
-                Map.Entry entry = (Map.Entry)entries.next();
-                List l = (List)m.get(entry.getKey());
+                for (Map.Entry<String,List<String>> entry: include.entrySet()) {
+                List<String> l = m.get(entry.getKey());
                 if (l == null) {
-                    l = new ArrayList();
-                    m.put((String)entry.getKey(), l);
+                    l = new ArrayList<String>();
+                    m.put(entry.getKey(), l);
                 }
-                l.add(entry.getValue());
+                l.addAll(entry.getValue());
             }
         }
 
@@ -400,6 +398,7 @@ class MessageHeader {
     }
 
     /** Parse and merge a MIME header from an input stream. */
+    @SuppressWarnings("fallthrough")
     public void mergeHeader(InputStream is) throws java.io.IOException {
         if (is == null)
             return;
@@ -421,6 +420,7 @@ class MessageHeader {
                         break;
                       case '\t':
                         c = ' ';
+                      /*fall through*/
                       case ' ':
                         inKey = false;
                         break;

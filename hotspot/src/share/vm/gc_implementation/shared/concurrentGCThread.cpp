@@ -224,6 +224,8 @@ void SurrogateLockerThread::manipulatePLL(SLT_msg_type msg) {
   MutexLockerEx x(&_monitor, Mutex::_no_safepoint_check_flag);
   assert(_buffer == empty, "Should be empty");
   assert(msg != empty, "empty message");
+  assert(!Heap_lock->owned_by_self(), "Heap_lock owned by requesting thread");
+
   _buffer = msg;
   while (_buffer != empty) {
     _monitor.notify();

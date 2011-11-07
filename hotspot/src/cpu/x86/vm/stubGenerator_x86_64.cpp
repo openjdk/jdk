@@ -47,6 +47,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
@@ -934,6 +937,8 @@ class StubGenerator: public StubCodeGenerator {
     __ push(0);                       // hole for return address-to-be
     __ pusha();                       // push registers
     Address next_pc(rsp, RegisterImpl::number_of_registers * BytesPerWord);
+
+    // FIXME: this probably needs alignment logic
 
     __ subptr(rsp, frame::arg_reg_save_area_bytes);
     BLOCK_COMMENT("call handle_unsafe_access");
@@ -2934,7 +2939,6 @@ class StubGenerator: public StubCodeGenerator {
   // caller saved registers were assumed volatile in the compiler.
   address generate_throw_exception(const char* name,
                                    address runtime_entry,
-                                   bool restore_saved_exception_pc,
                                    Register arg1 = noreg,
                                    Register arg2 = noreg) {
     // Information about frame layout at time of blocking runtime call.
@@ -2962,12 +2966,6 @@ class StubGenerator: public StubCodeGenerator {
     // which has the ability to fetch the return PC out of
     // thread-local storage and also sets up last_Java_sp slightly
     // differently than the real call_VM
-    if (restore_saved_exception_pc) {
-      __ movptr(rax,
-                Address(r15_thread,
-                        in_bytes(JavaThread::saved_exception_pc_offset())));
-      __ push(rax);
-    }
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
@@ -3068,7 +3066,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_throw_WrongMethodTypeException_entry =
       generate_throw_exception("WrongMethodTypeException throw_exception",
                                CAST_FROM_FN_PTR(address, SharedRuntime::throw_WrongMethodTypeException),
-                               false, rax, rcx);
+                               rax, rcx);
   }
 
   void generate_all() {
@@ -3081,43 +3079,25 @@ class StubGenerator: public StubCodeGenerator {
       generate_throw_exception("AbstractMethodError throw_exception",
                                CAST_FROM_FN_PTR(address,
                                                 SharedRuntime::
-                                                throw_AbstractMethodError),
-                               false);
+                                                throw_AbstractMethodError));
 
     StubRoutines::_throw_IncompatibleClassChangeError_entry =
       generate_throw_exception("IncompatibleClassChangeError throw_exception",
                                CAST_FROM_FN_PTR(address,
                                                 SharedRuntime::
-                                                throw_IncompatibleClassChangeError),
-                               false);
-
-    StubRoutines::_throw_ArithmeticException_entry =
-      generate_throw_exception("ArithmeticException throw_exception",
-                               CAST_FROM_FN_PTR(address,
-                                                SharedRuntime::
-                                                throw_ArithmeticException),
-                               true);
-
-    StubRoutines::_throw_NullPointerException_entry =
-      generate_throw_exception("NullPointerException throw_exception",
-                               CAST_FROM_FN_PTR(address,
-                                                SharedRuntime::
-                                                throw_NullPointerException),
-                               true);
+                                                throw_IncompatibleClassChangeError));
 
     StubRoutines::_throw_NullPointerException_at_call_entry =
       generate_throw_exception("NullPointerException at call throw_exception",
                                CAST_FROM_FN_PTR(address,
                                                 SharedRuntime::
-                                                throw_NullPointerException_at_call),
-                               false);
+                                                throw_NullPointerException_at_call));
 
     StubRoutines::_throw_StackOverflowError_entry =
       generate_throw_exception("StackOverflowError throw_exception",
                                CAST_FROM_FN_PTR(address,
                                                 SharedRuntime::
-                                                throw_StackOverflowError),
-                               false);
+                                                throw_StackOverflowError));
 
     // entry points that are platform specific
     StubRoutines::x86::_f2i_fixup = generate_f2i_fixup();

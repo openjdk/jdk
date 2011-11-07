@@ -57,7 +57,7 @@ public class ScannerFactory {
     final Log log;
     final Names names;
     final Source source;
-    final Keywords keywords;
+    final Tokens tokens;
 
     /** Create a new scanner factory. */
     protected ScannerFactory(Context context) {
@@ -65,14 +65,14 @@ public class ScannerFactory {
         this.log = Log.instance(context);
         this.names = Names.instance(context);
         this.source = Source.instance(context);
-        this.keywords = Keywords.instance(context);
+        this.tokens = Tokens.instance(context);
     }
 
     public Scanner newScanner(CharSequence input, boolean keepDocComments) {
         if (input instanceof CharBuffer) {
             CharBuffer buf = (CharBuffer) input;
             if (keepDocComments)
-                return new DocCommentScanner(this, buf);
+                return new Scanner(this, new JavadocTokenizer(this, buf));
             else
                 return new Scanner(this, buf);
         } else {
@@ -83,7 +83,7 @@ public class ScannerFactory {
 
     public Scanner newScanner(char[] input, int inputLength, boolean keepDocComments) {
         if (keepDocComments)
-            return new DocCommentScanner(this, input, inputLength);
+            return new Scanner(this, new JavadocTokenizer(this, input, inputLength));
         else
             return new Scanner(this, input, inputLength);
     }

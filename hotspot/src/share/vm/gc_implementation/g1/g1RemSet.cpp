@@ -122,10 +122,10 @@ public:
   void set_try_claimed() { _try_claimed = true; }
 
   void scanCard(size_t index, HeapRegion *r) {
-    DirtyCardToOopClosure* cl =
-      r->new_dcto_closure(_oc,
-                         CardTableModRefBS::Precise,
-                         HeapRegionDCTOC::IntoCSFilterKind);
+    // Stack allocate the DirtyCardToOopClosure instance
+    HeapRegionDCTOC cl(_g1h, r, _oc,
+                       CardTableModRefBS::Precise,
+                       HeapRegionDCTOC::IntoCSFilterKind);
 
     // Set the "from" region in the closure.
     _oc->set_region(r);
@@ -140,7 +140,7 @@ public:
       // scans (the rsets of the regions in the cset can intersect).
       _ct_bs->set_card_claimed(index);
       _cards_done++;
-      cl->do_MemRegion(mr);
+      cl.do_MemRegion(mr);
     }
   }
 
@@ -234,6 +234,7 @@ void G1RemSet::scanRS(OopsInHeapRegionClosure* oc, int worker_i) {
   HeapRegion *startRegion = calculateStartRegion(worker_i);
 
   ScanRSClosure scanRScl(oc, worker_i);
+
   _g1->collection_set_iterate_from(startRegion, &scanRScl);
   scanRScl.set_try_claimed();
   _g1->collection_set_iterate_from(startRegion, &scanRScl);
@@ -283,6 +284,7 @@ void G1RemSet::updateRS(DirtyCardQueue* into_cset_dcq, int worker_i) {
   double start = os::elapsedTime();
   // Apply the given closure to all remaining log entries.
   RefineRecordRefsIntoCSCardTableEntryClosure into_cset_update_rs_cl(_g1, into_cset_dcq);
+
   _g1->iterate_dirty_card_closure(&into_cset_update_rs_cl, into_cset_dcq, false, worker_i);
 
   // Now there should be no dirty cards.

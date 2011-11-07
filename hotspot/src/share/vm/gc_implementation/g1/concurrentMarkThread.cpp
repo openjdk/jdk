@@ -147,12 +147,8 @@ void ConcurrentMarkThread::run() {
           }
         }
       } while (cm()->restart_for_overflow());
+
       double counting_start_time = os::elapsedVTime();
-
-      // YSR: These look dubious (i.e. redundant) !!! FIX ME
-      slt()->manipulatePLL(SurrogateLockerThread::acquirePLL);
-      slt()->manipulatePLL(SurrogateLockerThread::releaseAndNotifyPLL);
-
       if (!cm()->has_aborted()) {
         double count_start_sec = os::elapsedTime();
         if (PrintGC) {
@@ -175,6 +171,7 @@ void ConcurrentMarkThread::run() {
           }
         }
       }
+
       double end_time = os::elapsedVTime();
       _vtime_count_accum += (end_time - counting_start_time);
       // Update the total virtual time before doing this, since it will try
@@ -215,19 +212,19 @@ void ConcurrentMarkThread::run() {
           gclog_or_tty->print_cr("[GC concurrent-cleanup-start]");
         }
 
-        // Now do the remainder of the cleanup operation.
+        // Now do the concurrent cleanup operation.
         _cm->completeCleanup();
-        // Notify anyone who's waiting that there are no more free
-        // regions coming. We have to do this before we join the STS,
-        // otherwise we might deadlock: a GC worker could be blocked
-        // waiting for the notification whereas this thread will be
-        // blocked for the pause to finish while it's trying to join
-        // the STS, which is conditional on the GC workers finishing.
-        g1h->reset_free_regions_coming();
 
-        _sts.join();
-        g1_policy->record_concurrent_mark_cleanup_completed();
-        _sts.leave();
+        // Notify anyone who's waiting that there are no more free
+        // regions coming. We have to do this before we join the STS
+        // (in fact, we should not attempt to join the STS in the
+        // interval between finishing the cleanup pause and clearing
+        // the free_regions_coming flag) otherwise we might deadlock:
+        // a GC worker could be blocked waiting for the notification
+        // whereas this thread will be blocked for the pause to finish
+        // while it's trying to join the STS, which is conditional on
+        // the GC workers finishing.
+        g1h->reset_free_regions_coming();
 
         double cleanup_end_sec = os::elapsedTime();
         if (PrintGC) {
@@ -240,6 +237,36 @@ void ConcurrentMarkThread::run() {
       guarantee(cm()->cleanup_list_is_empty(),
                 "at this point there should be no regions on the cleanup list");
 
+      // There is a tricky race before recording that the concurrent
+      // cleanup has completed and a potential Full GC starting around
+      // the same time. We want to make sure that the Full GC calls
+      // abort() on concurrent mark after
+      // record_concurrent_mark_cleanup_completed(), since abort() is
+      // the method that will reset the concurrent mark state. If we
+      // end up calling record_concurrent_mark_cleanup_completed()
+      // after abort() then we might incorrectly undo some of the work
+      // abort() did. Checking the has_aborted() flag after joining
+      // the STS allows the correct ordering of the two methods. There
+      // are two scenarios:
+      //
+      // a) If we reach here before the Full GC, the fact that we have
+      // joined the STS means that the Full GC cannot start until we
+      // leave the STS, so record_concurrent_mark_cleanup_completed()
+      // will complete before abort() is called.
+      //
+      // b) If we reach here during the Full GC, we'll be held up from
+      // joining the STS until the Full GC is done, which means that
+      // abort() will have completed and has_aborted() will return
+      // true to prevent us from calling
+      // record_concurrent_mark_cleanup_completed() (and, in fact, it's
+      // not needed any more as the concurrent mark state has been
+      // already reset).
+      _sts.join();
+      if (!cm()->has_aborted()) {
+        g1_policy->record_concurrent_mark_cleanup_completed();
+      }
+      _sts.leave();
+
       if (cm()->has_aborted()) {
         if (PrintGC) {
           gclog_or_tty->date_stamp(PrintGCDateStamps);
@@ -248,7 +275,7 @@ void ConcurrentMarkThread::run() {
         }
       }
 
-      // we now want to allow clearing of the marking bitmap to be
+      // We now want to allow clearing of the marking bitmap to be
       // suspended by a collection pause.
       _sts.join();
       _cm->clearNextBitmap();
@@ -305,13 +332,15 @@ void ConcurrentMarkThread::sleepBeforeNextCycle() {
   clear_started();
 }
 
-// Note: this method, although exported by the ConcurrentMarkSweepThread,
-// which is a non-JavaThread, can only be called by a JavaThread.
-// Currently this is done at vm creation time (post-vm-init) by the
-// main/Primordial (Java)Thread.
-// XXX Consider changing this in the future to allow the CMS thread
+// Note: As is the case with CMS - this method, although exported
+// by the ConcurrentMarkThread, which is a non-JavaThread, can only
+// be called by a JavaThread. Currently this is done at vm creation
+// time (post-vm-init) by the main/Primordial (Java)Thread.
+// XXX Consider changing this in the future to allow the CM thread
 // itself to create this thread?
 void ConcurrentMarkThread::makeSurrogateLockerThread(TRAPS) {
+  assert(UseG1GC, "SLT thread needed only for concurrent GC");
+  assert(THREAD->is_Java_thread(), "must be a Java thread");
   assert(_slt == NULL, "SLT already created");
   _slt = SurrogateLockerThread::make(THREAD);
 }

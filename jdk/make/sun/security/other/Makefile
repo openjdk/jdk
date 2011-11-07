@@ -26,7 +26,7 @@
 BUILDDIR = ../../..
 PACKAGE = sun.security.other
 PRODUCT = sun
-JAVAC_MAX_WARNINGS=false
+JAVAC_MAX_WARNINGS=true
 JAVAC_LINT_OPTIONS=-Xlint:all,-deprecation
 JAVAC_WARNINGS_FATAL=true
 include $(BUILDDIR)/common/Defs.gmk
@@ -38,6 +38,7 @@ AUTO_FILES_JAVA_DIRS = \
     sun/security/acl \
     sun/security/jca \
     sun/security/pkcs \
+    sun/security/pkcs10 \
     sun/security/pkcs12 \
     sun/security/provider \
     sun/security/rsa \

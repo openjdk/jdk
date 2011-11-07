@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,16 +67,13 @@ public abstract class FtpClientProvider {
             return false;
         }
         try {
-            Class c = Class.forName(cm, true, null);
+            Class<?> c = Class.forName(cm, true, null);
             provider = (FtpClientProvider) c.newInstance();
             return true;
-        } catch (ClassNotFoundException x) {
-            throw new ServiceConfigurationError(x.toString());
-        } catch (IllegalAccessException x) {
-            throw new ServiceConfigurationError(x.toString());
-        } catch (InstantiationException x) {
-            throw new ServiceConfigurationError(x.toString());
-        } catch (SecurityException x) {
+        } catch (ClassNotFoundException |
+                 IllegalAccessException |
+                 InstantiationException |
+                 SecurityException x) {
             throw new ServiceConfigurationError(x.toString());
         }
     }
