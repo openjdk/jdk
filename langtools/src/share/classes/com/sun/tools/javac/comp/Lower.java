@@ -2271,6 +2271,14 @@ public class Lower extends TreeTranslator {
         tree.extending = translate(tree.extending);
         tree.implementing = translate(tree.implementing);
 
+        if (currentClass.isLocal()) {
+            ClassSymbol encl = currentClass.owner.enclClass();
+            if (encl.trans_local == null) {
+                encl.trans_local = List.nil();
+            }
+            encl.trans_local = encl.trans_local.prepend(currentClass);
+        }
+
         // Recursively translate members, taking into account that new members
         // might be created during the translation and prepended to the member
         // list `tree.defs'.

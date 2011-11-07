@@ -42,7 +42,7 @@ public class KeyStoreResolver extends StorageResolverSpi {
    KeyStore _keyStore = null;
 
    /** Field _iterator */
-   Iterator _iterator = null;
+   Iterator<X509Certificate> _iterator = null;
 
    /**
     * Constructor KeyStoreResolver
@@ -56,7 +56,7 @@ public class KeyStoreResolver extends StorageResolverSpi {
    }
 
    /** @inheritDoc */
-   public Iterator getIterator() {
+   public Iterator<X509Certificate> getIterator() {
       return this._iterator;
    }
 
@@ -66,13 +66,13 @@ public class KeyStoreResolver extends StorageResolverSpi {
     * @author $Author: mullan $
     * @version $Revision: 1.5 $
     */
-   static class KeyStoreIterator implements Iterator {
+   static class KeyStoreIterator implements Iterator<X509Certificate> {
 
       /** Field _keyStore */
       KeyStore _keyStore = null;
 
       /** Field _aliases */
-      Enumeration _aliases = null;
+      Enumeration<String> _aliases = null;
 
       /**
        * Constructor KeyStoreIterator
@@ -97,12 +97,13 @@ public class KeyStoreResolver extends StorageResolverSpi {
       }
 
       /** @inheritDoc */
-      public Object next() {
+      @SuppressWarnings("unchecked")
+      public X509Certificate next() {
 
-         String alias = (String) this._aliases.nextElement();
+         String alias = this._aliases.nextElement();
 
          try {
-            return this._keyStore.getCertificate(alias);
+            return (X509Certificate)this._keyStore.getCertificate(alias);
          } catch (KeyStoreException ex) {
             return null;
          }
@@ -135,8 +136,8 @@ public class KeyStoreResolver extends StorageResolverSpi {
 
       KeyStoreResolver krs = new KeyStoreResolver(ks);
 
-      for (Iterator i = krs.getIterator(); i.hasNext(); ) {
-         X509Certificate cert = (X509Certificate) i.next();
+      for (Iterator<X509Certificate> i = krs.getIterator(); i.hasNext(); ) {
+         X509Certificate cert = i.next();
          byte[] ski =
             com.sun.org.apache.xml.internal.security.keys.content.x509.XMLX509SKI
                .getSKIBytesFromCert(cert);

@@ -54,16 +54,18 @@ static int test_even_odd_comparator(int a, int b) {
   return 1;
 }
 
-static int test_stdlib_comparator(const void* a, const void* b) {
-  int ai = *(int*)a;
-  int bi = *(int*)b;
-  if (ai == bi) {
-    return 0;
+extern "C" {
+  static int test_stdlib_comparator(const void* a, const void* b) {
+    int ai = *(int*)a;
+    int bi = *(int*)b;
+    if (ai == bi) {
+      return 0;
+    }
+    if (ai < bi) {
+      return -1;
+    }
+    return 1;
   }
-  if (ai < bi) {
-    return -1;
-  }
-  return 1;
 }
 
 void QuickSort::print_array(const char* prefix, int* array, int length) {

@@ -26,8 +26,6 @@ package java.net;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.util.Enumeration;
 import sun.net.ResourceManager;
 
 /**
@@ -46,7 +44,7 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
     int timeout = 0;
     boolean connected = false;
     private int trafficClass = 0;
-    private InetAddress connectedAddress = null;
+    protected InetAddress connectedAddress = null;
     private int connectedPort = -1;
 
     /* cached socket options */
@@ -66,8 +64,8 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
      * Creates a datagram socket
      */
     protected synchronized void create() throws SocketException {
-        fd = new FileDescriptor();
         ResourceManager.beforeUdpCreate();
+        fd = new FileDescriptor();
         try {
             datagramSocketCreate();
         } catch (SocketException ioe) {
@@ -153,11 +151,13 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
      * Set the TTL (time-to-live) option.
      * @param TTL to be set.
      */
+    @Deprecated
     protected abstract void setTTL(byte ttl) throws IOException;
 
     /**
      * Get the TTL (time-to-live) option.
      */
+    @Deprecated
     protected abstract byte getTTL() throws IOException;
 
     /**

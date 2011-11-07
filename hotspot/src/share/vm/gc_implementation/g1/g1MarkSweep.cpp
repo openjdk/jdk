@@ -62,6 +62,8 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
   // hook up weak ref data so it can be used during Mark-Sweep
   assert(GenMarkSweep::ref_processor() == NULL, "no stomping");
   assert(rp != NULL, "should be non-NULL");
+  assert(rp == G1CollectedHeap::heap()->ref_processor_stw(), "Precondition");
+
   GenMarkSweep::_ref_processor = rp;
   rp->setup_policy(clear_all_softrefs);
 
@@ -139,6 +141,8 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
 
   // Process reference objects found during marking
   ReferenceProcessor* rp = GenMarkSweep::ref_processor();
+  assert(rp == G1CollectedHeap::heap()->ref_processor_stw(), "Sanity");
+
   rp->setup_policy(clear_all_softrefs);
   rp->process_discovered_references(&GenMarkSweep::is_alive,
                                     &GenMarkSweep::keep_alive,
@@ -165,7 +169,6 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
   // Visit memoized MDO's and clear any unmarked weak refs
   GenMarkSweep::follow_mdo_weak_refs();
   assert(GenMarkSweep::_marking_stack.is_empty(), "just drained");
-
 
   // Visit interned string tables and delete unmarked oops
   StringTable::unlink(&GenMarkSweep::is_alive);
@@ -346,7 +349,8 @@ void G1MarkSweep::mark_sweep_phase3() {
                            NULL,  // do not touch code cache here
                            &GenMarkSweep::adjust_pointer_closure);
 
-  g1h->ref_processor()->weak_oops_do(&GenMarkSweep::adjust_root_pointer_closure);
+  assert(GenMarkSweep::ref_processor() == g1h->ref_processor_stw(), "Sanity");
+  g1h->ref_processor_stw()->weak_oops_do(&GenMarkSweep::adjust_root_pointer_closure);
 
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)

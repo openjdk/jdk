@@ -709,10 +709,13 @@ bool IdealLoopTree::policy_unroll( PhaseIdealLoop *phase ) const {
 
   // Adjust body_size to determine if we unroll or not
   uint body_size = _body.size();
+  // Key test to unroll loop in CRC32 java code
+  int xors_in_loop = 0;
   // Also count ModL, DivL and MulL which expand mightly
   for (uint k = 0; k < _body.size(); k++) {
     Node* n = _body.at(k);
     switch (n->Opcode()) {
+      case Op_XorI: xors_in_loop++; break; // CRC32 java code
       case Op_ModL: body_size += 30; break;
       case Op_DivL: body_size += 30; break;
       case Op_MulL: body_size += 10; break;
@@ -729,7 +732,8 @@ bool IdealLoopTree::policy_unroll( PhaseIdealLoop *phase ) const {
 
   // Check for being too big
   if (body_size > (uint)LoopUnrollLimit) {
-     // Normal case: loop too big
+    if (xors_in_loop >= 4 && body_size < (uint)LoopUnrollLimit*4) return true;
+    // Normal case: loop too big
     return false;
   }
 

@@ -128,17 +128,13 @@ bool ConstantPoolCacheEntry::same_methodOop(oop cur_f1, oop f1) {
 void ConstantPoolCacheEntry::set_field(Bytecodes::Code get_code,
                                        Bytecodes::Code put_code,
                                        KlassHandle field_holder,
-                                       int orig_field_index,
+                                       int field_index,
                                        int field_offset,
                                        TosState field_type,
                                        bool is_final,
                                        bool is_volatile) {
   set_f1(field_holder()->java_mirror());
   set_f2(field_offset);
-  // The field index is used by jvm/ti and is the index into fields() array
-  // in holder instanceKlass.  This is scaled by instanceKlass::next_offset.
-  assert((orig_field_index % instanceKlass::next_offset) == 0, "wierd index");
-  const int field_index = orig_field_index / instanceKlass::next_offset;
   assert(field_index <= field_index_mask,
          "field index does not fit in low flag bits");
   set_flags(as_flags(field_type, is_final, false, is_volatile, false, false) |
@@ -149,7 +145,7 @@ void ConstantPoolCacheEntry::set_field(Bytecodes::Code get_code,
 }
 
 int  ConstantPoolCacheEntry::field_index() const {
-  return (_flags & field_index_mask) * instanceKlass::next_offset;
+  return (_flags & field_index_mask);
 }
 
 void ConstantPoolCacheEntry::set_method(Bytecodes::Code invoke_code,

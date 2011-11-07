@@ -1291,6 +1291,7 @@ public final class Subject implements java.io.Serializable {
             oos.writeFields();
         }
 
+        @SuppressWarnings("unchecked")
         private void readObject(ObjectInputStream ois)
             throws IOException, ClassNotFoundException
         {
@@ -1329,6 +1330,7 @@ public final class Subject implements java.io.Serializable {
             }
         }
 
+        @SuppressWarnings("unchecked")     /*To suppress warning from line 1374*/
         private void populateSet() {
             final Iterator<?> iterator;
             switch(which) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,8 @@
 
 package sun.net.www.protocol.http;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.ListIterator;
-import java.util.Enumeration;
 import java.util.HashMap;
 
 /**
@@ -38,13 +34,13 @@ import java.util.HashMap;
  */
 
 public class AuthCacheImpl implements AuthCache {
-    HashMap hashtable;
+    HashMap<String,LinkedList<AuthCacheValue>> hashtable;
 
     public AuthCacheImpl () {
-        hashtable = new HashMap ();
+        hashtable = new HashMap<String,LinkedList<AuthCacheValue>>();
     }
 
-    public void setMap (HashMap map) {
+    public void setMap (HashMap<String,LinkedList<AuthCacheValue>> map) {
         hashtable = map;
     }
 
@@ -52,21 +48,21 @@ public class AuthCacheImpl implements AuthCache {
     // is the path field of AuthenticationInfo
 
     public synchronized void put (String pkey, AuthCacheValue value) {
-        LinkedList list = (LinkedList) hashtable.get (pkey);
+        LinkedList<AuthCacheValue> list = hashtable.get (pkey);
         String skey = value.getPath();
         if (list == null) {
-            list = new LinkedList ();
-            hashtable.put (pkey, list);
+            list = new LinkedList<AuthCacheValue>();
+            hashtable.put(pkey, list);
         }
         // Check if the path already exists or a super-set of it exists
-        ListIterator iter = list.listIterator();
+        ListIterator<AuthCacheValue> iter = list.listIterator();
         while (iter.hasNext()) {
             AuthenticationInfo inf = (AuthenticationInfo)iter.next();
             if (inf.path == null || inf.path.startsWith (skey)) {
                 iter.remove ();
             }
         }
-        iter.add (value);
+        iter.add(value);
     }
 
     // get a value from map checking both primary
@@ -74,7 +70,7 @@ public class AuthCacheImpl implements AuthCache {
 
     public synchronized AuthCacheValue get (String pkey, String skey) {
         AuthenticationInfo result = null;
-        LinkedList list = (LinkedList) hashtable.get (pkey);
+        LinkedList<AuthCacheValue> list = hashtable.get (pkey);
         if (list == null || list.size() == 0) {
             return null;
         }
@@ -82,7 +78,7 @@ public class AuthCacheImpl implements AuthCache {
             // list should contain only one element
             return (AuthenticationInfo)list.get (0);
         }
-        ListIterator iter = list.listIterator();
+        ListIterator<AuthCacheValue> iter = list.listIterator();
         while (iter.hasNext()) {
             AuthenticationInfo inf = (AuthenticationInfo)iter.next();
             if (skey.startsWith (inf.path)) {
@@ -93,7 +89,7 @@ public class AuthCacheImpl implements AuthCache {
     }
 
     public synchronized void remove (String pkey, AuthCacheValue entry) {
-        LinkedList list = (LinkedList) hashtable.get (pkey);
+        LinkedList<AuthCacheValue> list = hashtable.get (pkey);
         if (list == null) {
             return;
         }
@@ -101,7 +97,7 @@ public class AuthCacheImpl implements AuthCache {
             list.clear();
             return;
         }
-        ListIterator iter = list.listIterator ();
+        ListIterator<AuthCacheValue> iter = list.listIterator ();
         while (iter.hasNext()) {
             AuthenticationInfo inf = (AuthenticationInfo)iter.next();
             if (entry.equals(inf)) {
