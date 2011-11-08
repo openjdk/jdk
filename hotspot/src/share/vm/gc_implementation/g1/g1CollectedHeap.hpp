@@ -239,6 +239,9 @@ private:
   // master free list when appropriate.
   SecondaryFreeRegionList   _secondary_free_list;
 
+  // It keeps track of the old regions.
+  MasterOldRegionSet        _old_set;
+
   // It keeps track of the humongous regions.
   MasterHumongousRegionSet  _humongous_set;
 
@@ -248,10 +251,21 @@ private:
   // The block offset table for the G1 heap.
   G1BlockOffsetSharedArray* _bot_shared;
 
-  // Move all of the regions off the free lists, then rebuild those free
-  // lists, before and after full GC.
-  void tear_down_region_lists();
-  void rebuild_region_lists();
+  // Tears down the region sets / lists so that they are empty and the
+  // regions on the heap do not belong to a region set / list. The
+  // only exception is the humongous set which we leave unaltered. If
+  // free_list_only is true, it will only tear down the master free
+  // list. It is called before a Full GC (free_list_only == false) or
+  // before heap shrinking (free_list_only == true).
+  void tear_down_region_sets(bool free_list_only);
+
+  // Rebuilds the region sets / lists so that they are repopulated to
+  // reflect the contents of the heap. The only exception is the
+  // humongous set which was not torn down in the first place. If
+  // free_list_only is true, it will only rebuild the master free
+  // list. It is called after a Full GC (free_list_only == false) or
+  // after heap shrinking (free_list_only == true).
+  void rebuild_region_sets(bool free_list_only);
 
   // The sequence of all heap regions in the heap.
   HeapRegionSeq _hrs;
@@ -1124,6 +1138,10 @@ public:
     }
   }
 
+  void old_set_remove(HeapRegion* hr) {
+    _old_set.remove(hr);
+  }
+
   void set_free_regions_coming();
   void reset_free_regions_coming();
   bool free_regions_coming() { return _free_regions_coming; }
@@ -1153,6 +1171,7 @@ public:
   void free_region_if_empty(HeapRegion* hr,
                             size_t* pre_used,
                             FreeRegionList* free_list,
+                            OldRegionSet* old_proxy_set,
                             HumongousRegionSet* humongous_proxy_set,
                             HRRSCleanupTask* hrrs_cleanup_task,
                             bool par);
@@ -1163,6 +1182,7 @@ public:
   // (if par is true, it will do so by taking the ParGCRareEvent_lock).
   void update_sets_after_freeing_regions(size_t pre_used,
                                        FreeRegionList* free_list,
+                                       OldRegionSet* old_proxy_set,
                                        HumongousRegionSet* humongous_proxy_set,
                                        bool par);
 
@@ -1451,8 +1471,6 @@ public:
   // Convenience function to be used in situations where the heap type can be
   // asserted to be this type.
   static G1CollectedHeap* heap();
-
-  void empty_young_list();
 
   void set_region_short_lived_locked(HeapRegion* hr);
   // add appropriate methods for any other surv rate groups
