@@ -3006,7 +3006,10 @@ void G1CollectedHeap::verify(bool allow_dirty,
 
     if (failures) {
       gclog_or_tty->print_cr("Heap:");
-      print_on(gclog_or_tty, true /* extended */);
+      // It helps to have the per-region information in the output to
+      // help us track down what went wrong. This is why we call
+      // print_extended_on() instead of print_on().
+      print_extended_on(gclog_or_tty);
       gclog_or_tty->print_cr("");
 #ifndef PRODUCT
       if (VerifyDuringGC && G1VerifyDuringGCPrintReachable) {
@@ -3032,13 +3035,7 @@ public:
   }
 };
 
-void G1CollectedHeap::print() const { print_on(tty); }
-
 void G1CollectedHeap::print_on(outputStream* st) const {
-  print_on(st, PrintHeapAtGCExtended);
-}
-
-void G1CollectedHeap::print_on(outputStream* st, bool extended) const {
   st->print(" %-20s", "garbage-first heap");
   st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
             capacity()/K, used_unlocked()/K);
@@ -3056,13 +3053,14 @@ void G1CollectedHeap::print_on(outputStream* st, bool extended) const {
             survivor_regions, survivor_regions * HeapRegion::GrainBytes / K);
   st->cr();
   perm()->as_gen()->print_on(st);
-  if (extended) {
-    st->cr();
-    print_on_extended(st);
-  }
 }
 
-void G1CollectedHeap::print_on_extended(outputStream* st) const {
+void G1CollectedHeap::print_extended_on(outputStream* st) const {
+  print_on(st);
+
+  // Print the per-region information.
+  st->cr();
+  st->print_cr("Heap Regions: (Y=young(eden), SU=young(survivor), HS=humongous(starts), HC=humongous(continues), CS=collection set, F=free, TS=gc time stamp, PTAMS=previous top-at-mark-start, NTAMS=next top-at-mark-start)");
   PrintRegionClosure blk(st);
   heap_region_iterate(&blk);
 }
