@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,9 +116,9 @@ public class Env<A> implements Iterable<Env<A>> {
 
     /** Return closest enclosing environment which points to a tree with given tag.
      */
-    public Env<A> enclosing(int tag) {
+    public Env<A> enclosing(JCTree.Tag tag) {
         Env<A> env1 = this;
-        while (env1 != null && env1.tree.getTag() != tag) env1 = env1.next;
+        while (env1 != null && !env1.tree.hasTag(tag)) env1 = env1.next;
         return env1;
     }
 
