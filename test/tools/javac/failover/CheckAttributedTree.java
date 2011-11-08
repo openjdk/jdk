@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import javax.lang.model.element.Element;
+
+import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /**
  * Utility and test program to check validity of tree positions for tree nodes.
@@ -289,7 +291,7 @@ public class CheckAttributedTree {
             for (CompilationUnitTree t : trees) {
                JCCompilationUnit cu = (JCCompilationUnit)t;
                for (JCTree def : cu.defs) {
-                   if (def.getTag() == JCTree.CLASSDEF &&
+                   if (def.hasTag(CLASSDEF) &&
                            analyzedElems.contains(((JCTree.JCClassDecl)def).sym)) {
                        //System.out.println("Adding pair...");
                        res.add(new Pair<>(cu, def));
@@ -373,9 +375,9 @@ public class CheckAttributedTree {
 
         private boolean mandatoryType(JCTree that) {
             return that instanceof JCTree.JCExpression ||
-                    that.getTag() == JCTree.VARDEF ||
-                    that.getTag() == JCTree.METHODDEF ||
-                    that.getTag() == JCTree.CLASSDEF;
+                    that.hasTag(VARDEF) ||
+                    that.hasTag(METHODDEF) ||
+                    that.hasTag(CLASSDEF);
         }
 
         private final List<String> excludedFields = Arrays.asList("varargsElement");
@@ -429,7 +431,7 @@ public class CheckAttributedTree {
     private class Info {
         Info() {
             tree = null;
-            tag = JCTree.ERRONEOUS;
+            tag = ERRONEOUS;
             start = 0;
             pos = 0;
             end = Integer.MAX_VALUE;
@@ -449,7 +451,7 @@ public class CheckAttributedTree {
         }
 
         final JCTree tree;
-        final int tag;
+        final JCTree.Tag tag;
         final int start;
         final int pos;
         final int end;
@@ -457,27 +459,10 @@ public class CheckAttributedTree {
 
     /**
      * Names for tree tags.
-     * javac does not provide an API to convert tag values to strings, so this class uses
-     * reflection to determine names of public static final int values in JCTree.
      */
     private static class TreeUtil {
-        String nameFromTag(int tag) {
-            if (names == null) {
-                names = new HashMap<Integer, String>();
-                Class c = JCTree.class;
-                for (Field f : c.getDeclaredFields()) {
-                    if (f.getType().equals(int.class)) {
-                        int mods = f.getModifiers();
-                        if (Modifier.isPublic(mods) && Modifier.isStatic(mods) && Modifier.isFinal(mods)) {
-                            try {
-                                names.put(f.getInt(null), f.getName());
-                            } catch (IllegalAccessException e) {
-                            }
-                        }
-                    }
-                }
-            }
-            String name = names.get(tag);
+        String nameFromTag(JCTree.Tag tag) {
+            String name = tag.name();
             return (name == null) ? "??" : name;
         }
 
@@ -496,8 +481,6 @@ public class CheckAttributedTree {
             }
             return buf;
         }
-
-        private Map<Integer, String> names;
     }
 
     /**
