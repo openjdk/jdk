@@ -577,8 +577,8 @@ class CommandLineFlags {
   develop(bool, VerifyStack, false,                                         \
           "Verify stack of each thread when it is entering a runtime call") \
                                                                             \
-  develop(bool, ForceUnreachable, false,                                    \
-          "(amd64) Make all non code cache addresses to be unreachable with rip-rel forcing use of 64bit literal fixups") \
+  diagnostic(bool, ForceUnreachable, false,                                 \
+          "Make all non code cache addresses to be unreachable with forcing use of 64bit literal fixups") \
                                                                             \
   notproduct(bool, StressDerivedPointers, false,                            \
           "Force scavenge when a derived pointers is detected on stack "    \
