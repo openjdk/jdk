@@ -60,19 +60,18 @@ public class Log extends AbstractLog {
     public static final Context.Key<PrintWriter> outKey =
         new Context.Key<PrintWriter>();
 
-    //@Deprecated
-    public final PrintWriter errWriter;
+    public enum WriterKind { NOTICE, WARNING, ERROR };
 
-    //@Deprecated
-    public final PrintWriter warnWriter;
+    protected PrintWriter errWriter;
 
-    //@Deprecated
-    public final PrintWriter noticeWriter;
+    protected PrintWriter warnWriter;
+
+    protected PrintWriter noticeWriter;
 
     /** The maximum number of errors/warnings that are reported.
      */
-    public final int MaxErrors;
-    public final int MaxWarnings;
+    protected int MaxErrors;
+    protected int MaxWarnings;
 
     /** Switch: prompt user on each error.
      */
@@ -131,28 +130,39 @@ public class Log extends AbstractLog {
         this.warnWriter = warnWriter;
         this.noticeWriter = noticeWriter;
 
-        Options options = Options.instance(context);
-        this.dumpOnError = options.isSet(DOE);
-        this.promptOnError = options.isSet(PROMPT);
-        this.emitWarnings = options.isUnset(XLINT_CUSTOM, "none");
-        this.suppressNotes = options.isSet("suppressNotes");
-        this.MaxErrors = getIntOption(options, XMAXERRS, getDefaultMaxErrors());
-        this.MaxWarnings = getIntOption(options, XMAXWARNS, getDefaultMaxWarnings());
-
-        boolean rawDiagnostics = options.isSet("rawDiagnostics");
-        messages = JavacMessages.instance(context);
-        this.diagFormatter = rawDiagnostics ? new RawDiagnosticFormatter(options) :
-                                              new BasicDiagnosticFormatter(options, messages);
         @SuppressWarnings("unchecked") // FIXME
         DiagnosticListener<? super JavaFileObject> dl =
             context.get(DiagnosticListener.class);
         this.diagListener = dl;
 
-        String ek = options.get("expectKeys");
-        if (ek != null)
-            expectDiagKeys = new HashSet<String>(Arrays.asList(ek.split(", *")));
+        messages = JavacMessages.instance(context);
+
+        final Options options = Options.instance(context);
+        initOptions(options);
+        options.addListener(new Runnable() {
+            public void run() {
+                initOptions(options);
+            }
+        });
     }
     // where
+        private void initOptions(Options options) {
+            this.dumpOnError = options.isSet(DOE);
+            this.promptOnError = options.isSet(PROMPT);
+            this.emitWarnings = options.isUnset(XLINT_CUSTOM, "none");
+            this.suppressNotes = options.isSet("suppressNotes");
+            this.MaxErrors = getIntOption(options, XMAXERRS, getDefaultMaxErrors());
+            this.MaxWarnings = getIntOption(options, XMAXWARNS, getDefaultMaxWarnings());
+
+            boolean rawDiagnostics = options.isSet("rawDiagnostics");
+            this.diagFormatter = rawDiagnostics ? new RawDiagnosticFormatter(options) :
+                                                  new BasicDiagnosticFormatter(options, messages);
+
+            String ek = options.get("expectKeys");
+            if (ek != null)
+                expectDiagKeys = new HashSet<String>(Arrays.asList(ek.split(", *")));
+        }
+
         private int getIntOption(Options options, OptionName optionName, int defaultValue) {
             String s = options.get(optionName);
             try {
@@ -180,7 +190,7 @@ public class Log extends AbstractLog {
 
     /** The default writer for diagnostics
      */
-    static final PrintWriter defaultWriter(Context context) {
+    static PrintWriter defaultWriter(Context context) {
         PrintWriter result = context.get(outKey);
         if (result == null)
             context.put(outKey, result = new PrintWriter(System.err));
@@ -248,12 +258,40 @@ public class Log extends AbstractLog {
         this.diagFormatter = diagFormatter;
     }
 
+    public PrintWriter getWriter(WriterKind kind) {
+        switch (kind) {
+            case NOTICE:    return noticeWriter;
+            case WARNING:   return warnWriter;
+            case ERROR:     return errWriter;
+            default:        throw new IllegalArgumentException();
+        }
+    }
+
+    public void setWriter(WriterKind kind, PrintWriter pw) {
+        pw.getClass();
+        switch (kind) {
+            case NOTICE:    noticeWriter = pw;  break;
+            case WARNING:   warnWriter = pw;    break;
+            case ERROR:     errWriter = pw;     break;
+            default:        throw new IllegalArgumentException();
+        }
+    }
+
+    public void setWriters(PrintWriter pw) {
+        pw.getClass();
+        noticeWriter = warnWriter = errWriter = pw;
+    }
+
     /** Flush the logs
      */
     public void flush() {
         errWriter.flush();
         warnWriter.flush();
         noticeWriter.flush();
+    }
+
+    public void flush(WriterKind kind) {
+        getWriter(kind).flush();
     }
 
     /** Returns true if an error needs to be reported for a given
@@ -308,6 +346,13 @@ public class Log extends AbstractLog {
         }
         writer.println("^");
         writer.flush();
+    }
+
+    /** Print the text of a message, translating newlines appropriately
+     *  for the platform.
+     */
+    public void printLines(WriterKind kind, String msg) {
+        printLines(getWriter(kind), msg);
     }
 
     /** Print the text of a message, translating newlines appropriately

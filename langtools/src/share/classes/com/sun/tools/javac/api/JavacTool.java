@@ -250,6 +250,8 @@ public final class JavacTool implements JavaCompiler {
                     throw new IllegalArgumentException(flag);
             }
         }
+
+        optionTable.notifyListeners();
     }
 
     public int run(InputStream in, OutputStream out, OutputStream err, String... arguments) {

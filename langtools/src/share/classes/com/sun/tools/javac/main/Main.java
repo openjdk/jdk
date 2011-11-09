@@ -67,6 +67,10 @@ public class Main {
      */
     PrintWriter out;
 
+    /** The log to use for diagnostic output.
+     */
+    Log log;
+
     /**
      * If true, certain errors will cause an exception, such as command line
      * arg errors, or exceptions in user provided code.
@@ -98,6 +102,7 @@ public class Main {
 
         public void setOut(PrintWriter out) {
             Main.this.out = out;
+            Main.this.log.setWriters(out);
         }
 
         public void error(String key, Object... args) {
@@ -307,6 +312,8 @@ public class Main {
             showClass(showClass);
         }
 
+        options.notifyListeners();
+
         return filenames;
     }
     // where
@@ -352,6 +359,9 @@ public class Main {
                        List<JavaFileObject> fileObjects,
                        Iterable<? extends Processor> processors)
     {
+        context.put(Log.outKey, out);
+        log = Log.instance(context);
+
         if (options == null)
             options = Options.instance(context); // creates a new one
 
@@ -398,11 +408,10 @@ public class Main {
 
             boolean forceStdOut = options.isSet("stdout");
             if (forceStdOut) {
-                out.flush();
+                log.flush();
                 out = new PrintWriter(System.out, true);
+                log.setWriters(out);
             }
-
-            context.put(Log.outKey, out);
 
             // allow System property in following line as a Mustang legacy
             boolean batchMode = (options.isUnset("nonBatchMode")
@@ -414,8 +423,6 @@ public class Main {
 
             comp = JavaCompiler.instance(context);
             if (comp == null) return Result.SYSERR;
-
-            Log log = Log.instance(context);
 
             if (!files.isEmpty()) {
                 // add filenames to fileObjects
@@ -433,10 +440,10 @@ public class Main {
 
             if (log.expectDiagKeys != null) {
                 if (log.expectDiagKeys.isEmpty()) {
-                    Log.printLines(log.noticeWriter, "all expected diagnostics found");
+                    log.printLines(Log.WriterKind.NOTICE, "all expected diagnostics found");
                     return Result.OK;
                 } else {
-                    Log.printLines(log.noticeWriter, "expected diagnostic keys not found: " + log.expectDiagKeys);
+                    log.printLines(Log.WriterKind.NOTICE, "expected diagnostic keys not found: " + log.expectDiagKeys);
                     return Result.ERROR;
                 }
             }
