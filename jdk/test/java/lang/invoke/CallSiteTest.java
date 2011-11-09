@@ -36,8 +36,6 @@
 
 package test.java.lang.invoke;
 
-import static org.junit.Assert.*;
-
 import java.io.*;
 
 import java.lang.invoke.*;
@@ -71,6 +69,11 @@ public class CallSiteTest {
     private final static int N = Integer.MAX_VALUE / 100;
     private final static int RESULT1 = 762786192;
     private final static int RESULT2 = -21474836;
+
+    private static void assertEquals(int expected, int actual) {
+        if (expected != actual)
+            throw new AssertionError("expected: " + expected + ", actual: " + actual);
+    }
 
     private static void testMutableCallSite() throws Throwable {
         // warm-up
