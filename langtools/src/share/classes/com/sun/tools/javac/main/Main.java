@@ -33,7 +33,6 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.util.Collection;
 import java.util.LinkedHashSet;
-import java.util.MissingResourceException;
 import java.util.Set;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
@@ -46,6 +45,8 @@ import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.main.JavacOption.Option;
 import com.sun.tools.javac.main.RecognizedOptions.OptionHelper;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.Log.WriterKind;
+import com.sun.tools.javac.util.Log.PrefixKind;
 import com.sun.tools.javac.processing.AnnotationProcessingError;
 
 import static com.sun.tools.javac.main.OptionName.*;
@@ -110,11 +111,11 @@ public class Main {
         }
 
         public void printVersion() {
-            Log.printLines(out, getLocalizedString("version", ownName,  JavaCompiler.version()));
+            log.printLines(PrefixKind.JAVAC, "version", ownName,  JavaCompiler.version());
         }
 
         public void printFullVersion() {
-            Log.printLines(out, getLocalizedString("fullVersion", ownName,  JavaCompiler.fullVersion()));
+            log.printLines(PrefixKind.JAVAC, "fullversion", ownName,  JavaCompiler.fullVersion());
         }
 
         public void printHelp() {
@@ -163,39 +164,38 @@ public class Main {
     /** Print a string that explains usage.
      */
     void help() {
-        Log.printLines(out, getLocalizedString("msg.usage.header", ownName));
+        log.printLines(PrefixKind.JAVAC, "msg.usage.header", ownName);
         for (int i=0; i<recognizedOptions.length; i++) {
-            recognizedOptions[i].help(out);
+            recognizedOptions[i].help(log);
         }
-        out.println();
+        log.printNewline();
     }
 
     /** Print a string that explains usage for X options.
      */
     void xhelp() {
         for (int i=0; i<recognizedOptions.length; i++) {
-            recognizedOptions[i].xhelp(out);
+            recognizedOptions[i].xhelp(log);
         }
-        out.println();
-        Log.printLines(out, getLocalizedString("msg.usage.nonstandard.footer"));
+        log.printNewline();
+        log.printLines(PrefixKind.JAVAC, "msg.usage.nonstandard.footer");
     }
 
     /** Report a usage error.
      */
     void error(String key, Object... args) {
         if (apiMode) {
-            String msg = getLocalizedString(key, args);
+            String msg = log.localize(PrefixKind.JAVAC, key, args);
             throw new PropagatedException(new IllegalStateException(msg));
         }
         warning(key, args);
-        Log.printLines(out, getLocalizedString("msg.usage", ownName));
+        log.printLines(PrefixKind.JAVAC, "msg.usage", ownName);
     }
 
     /** Report a warning.
      */
     void warning(String key, Object... args) {
-        Log.printLines(out, ownName + ": "
-                       + getLocalizedString(key, args));
+        log.printRawLines(ownName + ": " + log.localize(PrefixKind.JAVAC, key, args));
     }
 
     public Option getOption(String flag) {
@@ -400,9 +400,7 @@ public class Main {
                     return Result.CMDERR;
                 }
             } catch (java.io.FileNotFoundException e) {
-                Log.printLines(out, ownName + ": " +
-                               getLocalizedString("err.file.not.found",
-                                                  e.getMessage()));
+                warning("err.file.not.found", e.getMessage());
                 return Result.SYSERR;
             }
 
@@ -440,10 +438,10 @@ public class Main {
 
             if (log.expectDiagKeys != null) {
                 if (log.expectDiagKeys.isEmpty()) {
-                    log.printLines(Log.WriterKind.NOTICE, "all expected diagnostics found");
+                    log.printRawLines("all expected diagnostics found");
                     return Result.OK;
                 } else {
-                    log.printLines(Log.WriterKind.NOTICE, "expected diagnostic keys not found: " + log.expectDiagKeys);
+                    log.printRawLines("expected diagnostic keys not found: " + log.expectDiagKeys);
                     return Result.ERROR;
                 }
             }
@@ -498,52 +496,50 @@ public class Main {
     /** Print a message reporting an internal error.
      */
     void bugMessage(Throwable ex) {
-        Log.printLines(out, getLocalizedString("msg.bug",
-                                               JavaCompiler.version()));
-        ex.printStackTrace(out);
+        log.printLines(PrefixKind.JAVAC, "msg.bug", JavaCompiler.version());
+        ex.printStackTrace(log.getWriter(WriterKind.NOTICE));
     }
 
     /** Print a message reporting a fatal error.
      */
     void feMessage(Throwable ex) {
-        Log.printLines(out, ex.getMessage());
+        log.printRawLines(ex.getMessage());
         if (ex.getCause() != null && options.isSet("dev")) {
-            ex.getCause().printStackTrace(out);
+            ex.getCause().printStackTrace(log.getWriter(WriterKind.NOTICE));
         }
     }
 
     /** Print a message reporting an input/output error.
      */
     void ioMessage(Throwable ex) {
-        Log.printLines(out, getLocalizedString("msg.io"));
-        ex.printStackTrace(out);
+        log.printLines(PrefixKind.JAVAC, "msg.io");
+        ex.printStackTrace(log.getWriter(WriterKind.NOTICE));
     }
 
     /** Print a message reporting an out-of-resources error.
      */
     void resourceMessage(Throwable ex) {
-        Log.printLines(out, getLocalizedString("msg.resource"));
-//      System.out.println("(name buffer len = " + Name.names.length + " " + Name.nc);//DEBUG
-        ex.printStackTrace(out);
+        log.printLines(PrefixKind.JAVAC, "msg.resource");
+        ex.printStackTrace(log.getWriter(WriterKind.NOTICE));
     }
 
     /** Print a message reporting an uncaught exception from an
      * annotation processor.
      */
     void apMessage(AnnotationProcessingError ex) {
-        Log.printLines(out,
-                       getLocalizedString("msg.proc.annotation.uncaught.exception"));
-        ex.getCause().printStackTrace(out);
+        log.printLines("msg.proc.annotation.uncaught.exception");
+        ex.getCause().printStackTrace(log.getWriter(WriterKind.NOTICE));
     }
 
     /** Display the location and checksum of a class. */
     void showClass(String className) {
-        out.println("javac: show class: " + className);
+        PrintWriter pw = log.getWriter(WriterKind.NOTICE);
+        pw.println("javac: show class: " + className);
         URL url = getClass().getResource('/' + className.replace('.', '/') + ".class");
         if (url == null)
-            out.println("  class not found");
+            pw.println("  class not found");
         else {
-            out.println("  " + url);
+            pw.println("  " + url);
             try {
                 final String algorithm = "MD5";
                 byte[] digest;
@@ -560,9 +556,9 @@ public class Main {
                 StringBuilder sb = new StringBuilder();
                 for (byte b: digest)
                     sb.append(String.format("%02x", b));
-                out.println("  " + algorithm + " checksum: " + sb);
+                pw.println("  " + algorithm + " checksum: " + sb);
             } catch (Exception e) {
-                out.println("  cannot compute digest: " + e);
+                pw.println("  cannot compute digest: " + e);
             }
         }
     }
@@ -573,35 +569,35 @@ public class Main {
      * Internationalization
      *************************************************************************/
 
-    /** Find a localized string in the resource bundle.
-     *  @param key     The key for the localized string.
-     */
-    public static String getLocalizedString(String key, Object... args) { // FIXME sb private
-        try {
-            if (messages == null)
-                messages = new JavacMessages(javacBundleName);
-            return messages.getLocalizedString("javac." + key, args);
-        }
-        catch (MissingResourceException e) {
-            throw new Error("Fatal Error: Resource for javac is missing", e);
-        }
-    }
+//    /** Find a localized string in the resource bundle.
+//     *  @param key     The key for the localized string.
+//     */
+//    public static String getLocalizedString(String key, Object... args) { // FIXME sb private
+//        try {
+//            if (messages == null)
+//                messages = new JavacMessages(javacBundleName);
+//            return messages.getLocalizedString("javac." + key, args);
+//        }
+//        catch (MissingResourceException e) {
+//            throw new Error("Fatal Error: Resource for javac is missing", e);
+//        }
+//    }
+//
+//    public static void useRawMessages(boolean enable) {
+//        if (enable) {
+//            messages = new JavacMessages(javacBundleName) {
+//                    @Override
+//                    public String getLocalizedString(String key, Object... args) {
+//                        return key;
+//                    }
+//                };
+//        } else {
+//            messages = new JavacMessages(javacBundleName);
+//        }
+//    }
 
-    public static void useRawMessages(boolean enable) {
-        if (enable) {
-            messages = new JavacMessages(javacBundleName) {
-                    @Override
-                    public String getLocalizedString(String key, Object... args) {
-                        return key;
-                    }
-                };
-        } else {
-            messages = new JavacMessages(javacBundleName);
-        }
-    }
-
-    private static final String javacBundleName =
+    public static final String javacBundleName =
         "com.sun.tools.javac.resources.javac";
-
-    private static JavacMessages messages;
+//
+//    private static JavacMessages messages;
 }
