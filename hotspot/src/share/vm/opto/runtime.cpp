@@ -338,6 +338,24 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(klassOopDesc* array_type, 
     // inform GC that we won't do card marks for initializing writes.
     new_store_pre_barrier(thread);
   }
+
+  oop result = thread->vm_result();
+  if ((len > 0) && (result != NULL) &&
+      is_deoptimized_caller_frame(thread)) {
+    // Zero array here if the caller is deoptimized.
+    int size = ((typeArrayOop)result)->object_size();
+    BasicType elem_type = typeArrayKlass::cast(array_type)->element_type();
+    const size_t hs = arrayOopDesc::header_size(elem_type);
+    // Align to next 8 bytes to avoid trashing arrays's length.
+    const size_t aligned_hs = align_object_offset(hs);
+    HeapWord* obj = (HeapWord*)result;
+    if (aligned_hs > hs) {
+      Copy::zero_to_words(obj+hs, aligned_hs-hs);
+    }
+    // Optimized zeroing.
+    Copy::fill_to_aligned_words(obj+aligned_hs, size-aligned_hs);
+  }
+
 JRT_END
 
 // Note: multianewarray for one dimension is handled inline by GraphKit::new_array.
@@ -1133,6 +1151,16 @@ void OptoRuntime::deoptimize_caller_frame(JavaThread *thread, bool doit) {
     // Deoptimize the caller frame.
     Deoptimization::deoptimize_frame(thread, caller_frame.id());
   }
+}
+
+
+bool OptoRuntime::is_deoptimized_caller_frame(JavaThread *thread) {
+  // Called from within the owner thread, so no need for safepoint
+  RegisterMap reg_map(thread);
+  frame stub_frame = thread->last_frame();
+  assert(stub_frame.is_runtime_frame() || exception_blob()->contains(stub_frame.pc()), "sanity check");
+  frame caller_frame = stub_frame.sender(&reg_map);
+  return caller_frame.is_deoptimized_frame();
 }
 
 
