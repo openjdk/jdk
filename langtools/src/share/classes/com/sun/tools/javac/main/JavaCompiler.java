@@ -48,17 +48,18 @@ import javax.tools.DiagnosticListener;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 
-import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.comp.*;
+import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.jvm.*;
+import com.sun.tools.javac.parser.*;
+import com.sun.tools.javac.processing.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
-import com.sun.tools.javac.parser.*;
-import com.sun.tools.javac.comp.*;
-import com.sun.tools.javac.jvm.*;
-import com.sun.tools.javac.processing.*;
+import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.Log.WriterKind;
 
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 import static com.sun.tools.javac.main.OptionName.*;
@@ -1602,7 +1603,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     }
 
     protected void printNote(String lines) {
-        log.printLines(Log.WriterKind.NOTICE, lines);
+        log.printRawLines(Log.WriterKind.NOTICE, lines);
     }
 
     /** Print numbers of errors and warnings.
@@ -1614,7 +1615,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 key = "count." + kind;
             else
                 key = "count." + kind + ".plural";
-            log.printErrLines(key, String.valueOf(count));
+            log.printLines(WriterKind.ERROR, key, String.valueOf(count));
             log.flush(Log.WriterKind.ERROR);
         }
     }
