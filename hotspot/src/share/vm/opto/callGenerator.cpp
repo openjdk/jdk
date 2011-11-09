@@ -775,15 +775,15 @@ JVMState* PredictedDynamicCallGenerator::generate(JVMState* jvms) {
 
   Node* bol = NULL;
   int bc = jvms->method()->java_code_at_bci(jvms->bci());
-  if (bc == Bytecodes::_invokespecial) {
-    // This is the selectAlternative idiom for guardWithTest
+  if (bc != Bytecodes::_invokedynamic) {
+    // This is the selectAlternative idiom for guardWithTest or
+    // similar idioms.
     Node* receiver = kit.argument(0);
 
     // Check if the MethodHandle is the expected one
     Node* cmp = gvn.transform(new(kit.C, 3) CmpPNode(receiver, predicted_mh));
     bol = gvn.transform(new(kit.C, 2) BoolNode(cmp, BoolTest::eq) );
   } else {
-    assert(bc == Bytecodes::_invokedynamic, "must be");
     // Get the constant pool cache from the caller class.
     ciMethod* caller_method = jvms->method();
     ciBytecodeStream str(caller_method);
