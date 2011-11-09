@@ -1743,11 +1743,12 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
   collect_statistics(thread, time, task);
 
-  if (PrintCompilation && PrintInlining) {
+  if (PrintCompilation && PrintCompilation2) {
     tty->print("%7d ", (int) tty->time_stamp().milliseconds());  // print timestamp
     tty->print("%4d ", compile_id);    // print compilation number
     tty->print("%s ", (is_osr ? "%" : " "));
-    tty->print_cr("size: %d time: %d inlined: %d bytes", task->code()->total_size(), time.milliseconds(), task->num_inlined_bytecodes());
+    int code_size = (task->code() == NULL) ? 0 : task->code()->total_size();
+    tty->print_cr("size: %d time: %d inlined: %d bytes", code_size, time.milliseconds(), task->num_inlined_bytecodes());
   }
 
   if (compilable == ciEnv::MethodCompilable_never) {

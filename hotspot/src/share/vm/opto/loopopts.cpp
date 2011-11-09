@@ -629,9 +629,10 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     if (TraceLoopOpts) {
       tty->print("CMOV  ");
       r_loop->dump_head();
-      if (Verbose)
+      if (Verbose) {
         bol->in(1)->dump(1);
         cmov->dump(1);
+      }
     }
     if (VerifyLoopOptimizations) verify();
 #endif
