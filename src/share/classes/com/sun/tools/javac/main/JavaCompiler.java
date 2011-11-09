@@ -1602,7 +1602,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     }
 
     protected void printNote(String lines) {
-        Log.printLines(log.noticeWriter, lines);
+        log.printLines(Log.WriterKind.NOTICE, lines);
     }
 
     /** Print numbers of errors and warnings.
@@ -1615,7 +1615,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             else
                 key = "count." + kind + ".plural";
             log.printErrLines(key, String.valueOf(count));
-            log.errWriter.flush();
+            log.flush(Log.WriterKind.ERROR);
         }
     }
 

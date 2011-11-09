@@ -157,6 +157,19 @@ public class Options {
         return values.size();
     }
 
+    // light-weight notification mechanism
+
+    private List<Runnable> listeners = List.nil();
+
+    public void addListener(Runnable listener) {
+        listeners = listeners.prepend(listener);
+    }
+
+    public void notifyListeners() {
+        for (Runnable r: listeners)
+            r.run();
+    }
+
     /** Check for a lint suboption. */
     public boolean lint(String s) {
         // return true if either the specific option is enabled, or
