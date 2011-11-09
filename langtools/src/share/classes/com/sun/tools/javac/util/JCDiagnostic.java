@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,16 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
             this(JavacMessages.instance(context), "compiler");
             context.put(diagnosticFactoryKey, this);
 
-            Options options = Options.instance(context);
+            final Options options = Options.instance(context);
+            initOptions(options);
+            options.addListener(new Runnable() {
+               public void run() {
+                   initOptions(options);
+               }
+            });
+        }
+
+        private void initOptions(Options options) {
             if (options.isSet("onlySyntaxErrorsUnrecoverable"))
                 defaultErrorFlags.add(DiagnosticFlag.RECOVERABLE);
         }
