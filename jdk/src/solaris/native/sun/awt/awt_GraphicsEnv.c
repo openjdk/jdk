@@ -1434,11 +1434,17 @@ Java_sun_awt_X11GraphicsConfig_pGetBounds(JNIEnv *env, jobject this, jint screen
                                                         fbrects[screen].height);
         }
         else {
+            XWindowAttributes xwa;
+            memset(&xwa, 0, sizeof(xwa));
+
+            AWT_LOCK ();
+            XGetWindowAttributes(awt_display,
+                    RootWindow(awt_display, adata->awt_visInfo.screen),
+                    &xwa);
+            AWT_UNLOCK ();
+
             bounds = (*env)->NewObject(env, clazz, mid, 0, 0,
-                                   DisplayWidth(awt_display,
-                                                adata->awt_visInfo.screen),
-                                   DisplayHeight(awt_display,
-                                                 adata->awt_visInfo.screen));
+                    xwa.width, xwa.height);
         }
 
         if ((*env)->ExceptionOccurred(env)) {
