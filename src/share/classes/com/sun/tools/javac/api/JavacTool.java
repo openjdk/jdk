@@ -52,6 +52,7 @@ import com.sun.tools.javac.main.RecognizedOptions;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Log.PrefixKind;
 import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.Pair;
 
@@ -156,15 +157,28 @@ public final class JavacTool implements JavaCompiler {
         return new JavacFileManager(context, true, charset);
     }
 
+    @Override
     public JavacTask getTask(Writer out,
                              JavaFileManager fileManager,
                              DiagnosticListener<? super JavaFileObject> diagnosticListener,
                              Iterable<String> options,
                              Iterable<String> classes,
-                             Iterable<? extends JavaFileObject> compilationUnits)
+                             Iterable<? extends JavaFileObject> compilationUnits) {
+        Context context = new Context();
+        return getTask(out, fileManager, diagnosticListener,
+                options, classes, compilationUnits,
+                context);
+    }
+
+    public JavacTask getTask(Writer out,
+                             JavaFileManager fileManager,
+                             DiagnosticListener<? super JavaFileObject> diagnosticListener,
+                             Iterable<String> options,
+                             Iterable<String> classes,
+                             Iterable<? extends JavaFileObject> compilationUnits,
+                             Context context)
     {
         try {
-            Context context = new Context();
             ClientCodeWrapper ccw = ClientCodeWrapper.instance(context);
 
             final String kindMsg = "All compilation units must be of SOURCE kind";
@@ -212,9 +226,10 @@ public final class JavacTool implements JavaCompiler {
             return;
 
         Options optionTable = Options.instance(context);
+        Log log = Log.instance(context);
 
         JavacOption[] recognizedOptions =
-            RecognizedOptions.getJavacToolOptions(new GrumpyHelper());
+            RecognizedOptions.getJavacToolOptions(new GrumpyHelper(log));
         Iterator<String> flags = options.iterator();
         while (flags.hasNext()) {
             String flag = flags.next();
@@ -227,7 +242,7 @@ public final class JavacTool implements JavaCompiler {
                 if (fileManager.handleOption(flag, flags)) {
                     continue;
                 } else {
-                    String msg = Main.getLocalizedString("err.invalid.flag", flag);
+                    String msg = log.localize(PrefixKind.JAVAC, "err.invalid.flag", flag);
                     throw new IllegalArgumentException(msg);
                 }
             }
@@ -235,7 +250,7 @@ public final class JavacTool implements JavaCompiler {
             JavacOption option = recognizedOptions[j];
             if (option.hasArg()) {
                 if (!flags.hasNext()) {
-                    String msg = Main.getLocalizedString("err.req.arg", flag);
+                    String msg = log.localize(PrefixKind.JAVAC, "err.req.arg", flag);
                     throw new IllegalArgumentException(msg);
                 }
                 String operand = flags.next();
@@ -269,7 +284,7 @@ public final class JavacTool implements JavaCompiler {
 
     public int isSupportedOption(String option) {
         JavacOption[] recognizedOptions =
-            RecognizedOptions.getJavacToolOptions(new GrumpyHelper());
+            RecognizedOptions.getJavacToolOptions(new GrumpyHelper(null));
         for (JavacOption o : recognizedOptions) {
             if (o.matches(option))
                 return o.hasArg() ? 1 : 0;

@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.util;
 
+import com.sun.tools.javac.main.Main;
 import java.io.*;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -59,6 +60,19 @@ public class Log extends AbstractLog {
     /** The context key for the output PrintWriter. */
     public static final Context.Key<PrintWriter> outKey =
         new Context.Key<PrintWriter>();
+
+    /* TODO: Should unify this with prefix handling in JCDiagnostic.Factory. */
+    public enum PrefixKind {
+        JAVAC("javac."),
+        COMPILER_MISC("compiler.misc.");
+        PrefixKind(String v) {
+            value = v;
+        }
+        public String key(String k) {
+            return value + k;
+        }
+        final String value;
+    }
 
     public enum WriterKind { NOTICE, WARNING, ERROR };
 
@@ -136,6 +150,7 @@ public class Log extends AbstractLog {
         this.diagListener = dl;
 
         messages = JavacMessages.instance(context);
+        messages.add(Main.javacBundleName);
 
         final Options options = Options.instance(context);
         initOptions(options);
@@ -313,7 +328,6 @@ public class Log extends AbstractLog {
     public void prompt() {
         if (promptOnError) {
             System.err.println(localize("resume.abort"));
-            char ch;
             try {
                 while (true) {
                     switch (System.in.read()) {
@@ -340,7 +354,7 @@ public class Log extends AbstractLog {
             return;
         int col = source.getColumnNumber(pos, false);
 
-        printLines(writer, line);
+        printRawLines(writer, line);
         for (int i = 0; i < col - 1; i++) {
             writer.print((line.charAt(i) == '\t') ? "\t" : " ");
         }
@@ -348,17 +362,48 @@ public class Log extends AbstractLog {
         writer.flush();
     }
 
-    /** Print the text of a message, translating newlines appropriately
-     *  for the platform.
-     */
-    public void printLines(WriterKind kind, String msg) {
-        printLines(getWriter(kind), msg);
+    public void printNewline() {
+        noticeWriter.println();
+    }
+
+    public void printNewline(WriterKind wk) {
+        getWriter(wk).println();
+    }
+
+    public void printLines(String key, Object... args) {
+        printRawLines(noticeWriter, localize(key, args));
+    }
+
+    public void printLines(PrefixKind pk, String key, Object... args) {
+        printRawLines(noticeWriter, localize(pk, key, args));
+    }
+
+    public void printLines(WriterKind wk, String key, Object... args) {
+        printRawLines(getWriter(wk), localize(key, args));
+    }
+
+    public void printLines(WriterKind wk, PrefixKind pk, String key, Object... args) {
+        printRawLines(getWriter(wk), localize(pk, key, args));
     }
 
     /** Print the text of a message, translating newlines appropriately
      *  for the platform.
      */
-    public static void printLines(PrintWriter writer, String msg) {
+    public void printRawLines(String msg) {
+        printRawLines(noticeWriter, msg);
+    }
+
+    /** Print the text of a message, translating newlines appropriately
+     *  for the platform.
+     */
+    public void printRawLines(WriterKind kind, String msg) {
+        printRawLines(getWriter(kind), msg);
+    }
+
+    /** Print the text of a message, translating newlines appropriately
+     *  for the platform.
+     */
+    public static void printRawLines(PrintWriter writer, String msg) {
         int nl;
         while ((nl = msg.indexOf('\n')) != -1) {
             writer.println(msg.substring(0, nl));
@@ -367,30 +412,16 @@ public class Log extends AbstractLog {
         if (msg.length() != 0) writer.println(msg);
     }
 
-    /** Print the text of a message to the errWriter stream,
-     *  translating newlines appropriately for the platform.
-     */
-    public void printErrLines(String key, Object... args) {
-        printLines(errWriter, localize(key, args));
-    }
-
-    /** Print the text of a message to the noticeWriter stream,
-     *  translating newlines appropriately for the platform.
-     */
-    public void printNoteLines(String key, Object... args) {
-        printLines(noticeWriter, localize(key, args));
-    }
-
     /**
      * Print the localized text of a "verbose" message to the
      * noticeWriter stream.
      */
     public void printVerbose(String key, Object... args) {
-        printLines(noticeWriter, localize("verbose." + key, args));
+        printRawLines(noticeWriter, localize("verbose." + key, args));
     }
 
     protected void directError(String key, Object... args) {
-        printErrLines(key, args);
+        printRawLines(errWriter, localize(key, args));
         errWriter.flush();
     }
 
@@ -476,7 +507,7 @@ public class Log extends AbstractLog {
 
         PrintWriter writer = getWriterForDiagnosticType(diag.getType());
 
-        printLines(writer, diagFormatter.format(diag, messages.getCurrentLocale()));
+        printRawLines(writer, diagFormatter.format(diag, messages.getCurrentLocale()));
 
         if (promptOnError) {
             switch (diag.getType()) {
@@ -519,7 +550,7 @@ public class Log extends AbstractLog {
      *  @param args   Fields to substitute into the string.
      */
     public static String getLocalizedString(String key, Object ... args) {
-        return JavacMessages.getDefaultLocalizedString("compiler.misc." + key, args);
+        return JavacMessages.getDefaultLocalizedString(PrefixKind.COMPILER_MISC.key(key), args);
     }
 
     /** Find a localized string in the resource bundle.
@@ -527,8 +558,22 @@ public class Log extends AbstractLog {
      *  @param args   Fields to substitute into the string.
      */
     public String localize(String key, Object... args) {
-        return messages.getLocalizedString("compiler.misc." + key, args);
+        return localize(PrefixKind.COMPILER_MISC, key, args);
     }
+
+    /** Find a localized string in the resource bundle.
+     *  @param key    The key for the localized string.
+     *  @param args   Fields to substitute into the string.
+     */
+    public String localize(PrefixKind pk, String key, Object... args) {
+        if (useRawMessages)
+            return pk.key(key);
+        else
+            return messages.getLocalizedString(pk.key(key), args);
+    }
+    // where
+        // backdoor hook for testing, should transition to use -XDrawDiagnostics
+        private static boolean useRawMessages = false;
 
 /***************************************************************************
  * raw error messages without internationalization; used for experimentation
@@ -539,12 +584,12 @@ public class Log extends AbstractLog {
      */
     private void printRawError(int pos, String msg) {
         if (source == null || pos == Position.NOPOS) {
-            printLines(errWriter, "error: " + msg);
+            printRawLines(errWriter, "error: " + msg);
         } else {
             int line = source.getLineNumber(pos);
             JavaFileObject file = source.getFile();
             if (file != null)
-                printLines(errWriter,
+                printRawLines(errWriter,
                            file.getName() + ":" +
                            line + ": " + msg);
             printErrLine(pos, errWriter);
