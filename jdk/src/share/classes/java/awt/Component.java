@@ -1158,6 +1158,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
     boolean updateGraphicsData(GraphicsConfiguration gc) {
         checkTreeLock();
 
+        if (graphicsConfig == gc) {
+            return false;
+        }
+
         graphicsConfig = gc;
 
         ComponentPeer peer = getPeer();
