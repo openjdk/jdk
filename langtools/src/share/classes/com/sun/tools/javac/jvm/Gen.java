@@ -959,6 +959,9 @@ public class Gen extends JCTree.Visitor {
                     code.lastFrame = null;
                     code.frameBeforeLast = null;
                 }
+
+                //compress exception table
+                code.compressCatchTable();
             }
         }
 
@@ -1437,7 +1440,6 @@ public class Gen extends JCTree.Visitor {
                     code.markDead();
                 }
             }
-
             // Resolve all breaks.
             code.resolve(exitChain);
 
@@ -1496,23 +1498,21 @@ public class Gen extends JCTree.Visitor {
         void registerCatch(DiagnosticPosition pos,
                            int startpc, int endpc,
                            int handler_pc, int catch_type) {
-            if (startpc != endpc) {
-                char startpc1 = (char)startpc;
-                char endpc1 = (char)endpc;
-                char handler_pc1 = (char)handler_pc;
-                if (startpc1 == startpc &&
-                    endpc1 == endpc &&
-                    handler_pc1 == handler_pc) {
-                    code.addCatch(startpc1, endpc1, handler_pc1,
-                                  (char)catch_type);
+            char startpc1 = (char)startpc;
+            char endpc1 = (char)endpc;
+            char handler_pc1 = (char)handler_pc;
+            if (startpc1 == startpc &&
+                endpc1 == endpc &&
+                handler_pc1 == handler_pc) {
+                code.addCatch(startpc1, endpc1, handler_pc1,
+                              (char)catch_type);
+            } else {
+                if (!useJsrLocally && !target.generateStackMapTable()) {
+                    useJsrLocally = true;
+                    throw new CodeSizeOverflow();
                 } else {
-                    if (!useJsrLocally && !target.generateStackMapTable()) {
-                        useJsrLocally = true;
-                        throw new CodeSizeOverflow();
-                    } else {
-                        log.error(pos, "limit.code.too.large.for.try.stmt");
-                        nerrs++;
-                    }
+                    log.error(pos, "limit.code.too.large.for.try.stmt");
+                    nerrs++;
                 }
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,12 @@
  * questions.
  */
 
-package sun.security.pkcs;
+package sun.security.pkcs10;
 
 import java.io.OutputStream;
 import java.io.IOException;
 
+import sun.security.pkcs.PKCS9Attribute;
 import sun.security.util.*;
 
 /**

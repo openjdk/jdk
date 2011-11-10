@@ -220,14 +220,30 @@ JDK_LOCALES  = ja zh_CN
 JRE_NONEXIST_LOCALES = en en_US de_DE es_ES fr_FR it_IT ja_JP ko_KR sv_SE zh
 
 #
-# All libraries except libjava and libjvm itself link against libjvm and
-# libjava, the latter for its exported common utilities.  libjava only links
-# against libjvm.  Programs' makefiles take their own responsibility for
+# For now, most libraries except libjava and libjvm itself link against libjvm
+# and libjava, the latter for its exported common utilities. libjava only
+# links against libjvm. Programs' makefiles take their own responsibility for
 # adding other libs.
 #
+# The makefiles for these packages do not link against libjvm and libjava.
+# This list will eventually go away and each Programs' makefiles
+# will have to explicitly declare that they want to link to libjava/libjvm
+#
+NO_JAVALIB_PKGS = \
+		sun.security.mscapi \
+		sun.security.krb5 \
+		sun.security.pkcs11 \
+		sun.security.jgss \
+		sun.security.jgss.wrapper \
+		sun.security.ec \
+		sun.security.smartcardio \
+		com.sun.security.auth.module
+
 ifdef PACKAGE
 # put JAVALIB first, but do not lose any platform specific values....
-  LDLIBS_COMMON = $(JAVALIB)
+  ifeq (,$(findstring $(PACKAGE),$(NO_JAVALIB_PKGS)))
+    LDLIBS_COMMON = $(JAVALIB)
+  endif
 endif # PACKAGE
 
 #
