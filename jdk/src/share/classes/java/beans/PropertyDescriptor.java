@@ -454,10 +454,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
                     editor = ctor.newInstance(new Object[] { bean });
                 }
             } catch (Exception ex) {
-                // A serious error has occured.
-                // Proably due to an invalid property editor.
-                throw new RuntimeException("PropertyEditor not instantiated",
-                                           ex);
+                // Fall through
             }
         }
         return (PropertyEditor)editor;
