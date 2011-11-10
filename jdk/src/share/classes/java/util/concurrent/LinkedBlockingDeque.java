@@ -742,6 +742,8 @@ public class LinkedBlockingDeque<E>
             throw new NullPointerException();
         if (c == this)
             throw new IllegalArgumentException();
+        if (maxElements <= 0)
+            return 0;
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
