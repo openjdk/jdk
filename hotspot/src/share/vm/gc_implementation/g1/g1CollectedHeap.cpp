@@ -2011,8 +2011,6 @@ jint G1CollectedHeap::initialize() {
   // Perform any initialization actions delegated to the policy.
   g1_policy()->init();
 
-  g1_policy()->note_start_of_mark_thread();
-
   _refine_cte_cl =
     new RefineCardTableEntryClosure(ConcurrentG1RefineThread::sts(),
                                     g1_rem_set(),
@@ -3960,9 +3958,6 @@ void G1CollectedHeap::remove_self_forwarding_pointers() {
         // _next_top_at_mark_start == top, _next_marked_bytes == 0
         // _next_marked_bytes == next_marked_bytes.
       }
-
-      // Now make sure the region has the right index in the sorted array.
-      g1_policy()->note_change_in_marked_bytes(cur);
     }
     cur = cur->next_in_collection_set();
   }
@@ -5073,7 +5068,7 @@ public:
 
     // Select discovered lists [i, i+stride, i+2*stride,...,limit)
     for (int idx = i; idx < limit; idx += stride) {
-      DiscoveredList& ref_list = rp->discovered_soft_refs()[idx];
+      DiscoveredList& ref_list = rp->discovered_refs()[idx];
 
       DiscoveredListIterator iter(ref_list, &keep_alive, &always_alive);
       while (iter.has_next()) {
@@ -5507,34 +5502,36 @@ void G1CollectedHeap::cleanUpCardTable() {
   CardTableModRefBS* ct_bs = (CardTableModRefBS*) (barrier_set());
   double start = os::elapsedTime();
 
-  // Iterate over the dirty cards region list.
-  G1ParCleanupCTTask cleanup_task(ct_bs, this);
+  {
+    // Iterate over the dirty cards region list.
+    G1ParCleanupCTTask cleanup_task(ct_bs, this);
 
-  if (ParallelGCThreads > 0) {
-    set_par_threads(workers()->total_workers());
-    workers()->run_task(&cleanup_task);
-    set_par_threads(0);
-  } else {
-    while (_dirty_cards_region_list) {
-      HeapRegion* r = _dirty_cards_region_list;
-      cleanup_task.clear_cards(r);
-      _dirty_cards_region_list = r->get_next_dirty_cards_region();
-      if (_dirty_cards_region_list == r) {
-        // The last region.
-        _dirty_cards_region_list = NULL;
+    if (ParallelGCThreads > 0) {
+      set_par_threads(workers()->total_workers());
+      workers()->run_task(&cleanup_task);
+      set_par_threads(0);
+    } else {
+      while (_dirty_cards_region_list) {
+        HeapRegion* r = _dirty_cards_region_list;
+        cleanup_task.clear_cards(r);
+        _dirty_cards_region_list = r->get_next_dirty_cards_region();
+        if (_dirty_cards_region_list == r) {
+          // The last region.
+          _dirty_cards_region_list = NULL;
+        }
+        r->set_next_dirty_cards_region(NULL);
       }
-      r->set_next_dirty_cards_region(NULL);
     }
+#ifndef PRODUCT
+    if (G1VerifyCTCleanup || VerifyAfterGC) {
+      G1VerifyCardTableCleanup cleanup_verifier(this, ct_bs);
+      heap_region_iterate(&cleanup_verifier);
+    }
+#endif
   }
 
   double elapsed = os::elapsedTime() - start;
   g1_policy()->record_clear_ct_time(elapsed * 1000.0);
-#ifndef PRODUCT
-  if (G1VerifyCTCleanup || VerifyAfterGC) {
-    G1VerifyCardTableCleanup cleanup_verifier(this, ct_bs);
-    heap_region_iterate(&cleanup_verifier);
-  }
-#endif
 }
 
 void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {

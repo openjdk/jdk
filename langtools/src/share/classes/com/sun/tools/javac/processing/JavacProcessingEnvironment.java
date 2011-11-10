@@ -1072,9 +1072,9 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             Assert.checkNonNull(names);
             next.put(Names.namesKey, names);
 
-            Keywords keywords = Keywords.instance(context);
-            Assert.checkNonNull(keywords);
-            next.put(Keywords.keywordsKey, keywords);
+            Tokens tokens = Tokens.instance(context);
+            Assert.checkNonNull(tokens);
+            next.put(Tokens.tokensKey, tokens);
 
             JavaCompiler oldCompiler = JavaCompiler.instance(context);
             JavaCompiler nextCompiler = JavaCompiler.instance(next);

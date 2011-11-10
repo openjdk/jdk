@@ -1816,9 +1816,7 @@ void ConcurrentMark::cleanup() {
 
   // this will also free any regions totally full of garbage objects,
   // and sort the regions.
-  g1h->g1_policy()->record_concurrent_mark_cleanup_end(
-                        g1_par_note_end_task.freed_bytes(),
-                        g1_par_note_end_task.max_live_bytes());
+  g1h->g1_policy()->record_concurrent_mark_cleanup_end();
 
   // Statistics.
   double end = os::elapsedTime();

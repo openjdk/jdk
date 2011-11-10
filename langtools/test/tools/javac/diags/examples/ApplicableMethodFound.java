@@ -21,36 +21,13 @@
  * questions.
  */
 
-/* @test
- * @bug 7084030
- * @summary Tests that DatagramSocket.getLocalAddress returns the right local
- *          address after connect/disconnect.
- */
-import java.net.*;
+// key: compiler.misc.applicable.method.found
+// key: compiler.note.verbose.resolve.multi
+// options: -XDverboseResolution=applicable,success
 
-public class ChangingAddress {
+class ApplicableMethodFound {
 
-    static void check(DatagramSocket ds, InetAddress expected) {
-        InetAddress actual = ds.getLocalAddress();
-        if (!expected.equals(actual)) {
-            throw new RuntimeException("Expected:"+expected+" Actual"+
-                                       actual);
-        }
-    }
+    void m() {}
 
-    public static void main(String[] args) throws Exception {
-        InetAddress lh = InetAddress.getLocalHost();
-        SocketAddress remote = new InetSocketAddress(lh, 1234);
-        InetAddress wildcard = InetAddress.getByAddress
-                               ("localhost", new byte[]{0,0,0,0});
-        try (DatagramSocket ds = new DatagramSocket()) {
-            check(ds, wildcard);
-
-            ds.connect(remote);
-            check(ds, lh);
-
-            ds.disconnect();
-            check(ds, wildcard);
-       }
-    }
+    { m(); }
 }
