@@ -629,7 +629,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
         public static final Name IMPLEMENTATION_VENDOR_ID = new Name("Implementation-Vendor-Id");
 
        /**
-         * <code>Name</code> object for <code>Implementation-Vendor-URL</code>
+         * <code>Name</code> object for <code>Implementation-URL</code>
          * manifest attribute used for package versioning.
          * @see <a href="../../../../technotes/guides/versioning/spec/versioning2.html#wp90779">
          *      Java Product Versioning Specification</a>
