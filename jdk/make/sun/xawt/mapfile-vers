@@ -322,6 +322,8 @@ SUNWprivate_1.1 {
         Java_sun_awt_X11_XlibWrapper_XSynchronize;
         Java_java_awt_FileDialog_initIDs;
         Java_sun_awt_X11_XWindow_initIDs;
+        Java_sun_awt_X11_XWindowPeer_getLocalHostname;
+        Java_sun_awt_X11_XWindowPeer_getJvmPID;
 
         Java_sun_java2d_opengl_OGLContext_getOGLIdString;
         Java_sun_java2d_opengl_OGLMaskFill_maskFill;
