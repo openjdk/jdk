@@ -715,7 +715,6 @@ Node* PhaseIdealLoop::exact_limit( IdealLoopTree *loop ) {
     long limit_con = cl->limit()->get_int();
     julong trip_cnt = cl->trip_count();
     long final_con = init_con + trip_cnt*stride_con;
-    final_con -= stride_con;
     int final_int = (int)final_con;
     // The final value should be in integer range since the loop
     // is counted and the limit was checked for overflow.
