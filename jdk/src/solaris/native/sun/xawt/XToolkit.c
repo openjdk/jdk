@@ -47,6 +47,8 @@
 #include "java_awt_TrayIcon.h"
 #include <X11/extensions/XTest.h>
 
+#include <unistd.h>
+
 uint32_t awt_NumLockMask = 0;
 Boolean  awt_ModLockIsShiftLock = False;
 
@@ -1086,4 +1088,39 @@ int32_t getNumButtons() {
     }
 
     return local_num_buttons;
+}
+
+/*
+ * Class:     sun_awt_X11_XWindowPeer
+ * Method:    getJvmPID
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_sun_awt_X11_XWindowPeer_getJvmPID
+(JNIEnv *env, jclass cls)
+{
+    /* Return the JVM's PID. */
+    return getpid();
+}
+
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX 1024 /* Overestimated */
+#endif
+
+/*
+ * Class:     sun_awt_X11_XWindowPeer
+ * Method:    getLocalHostname
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_sun_awt_X11_XWindowPeer_getLocalHostname
+(JNIEnv *env, jclass cls)
+{
+    /* Return the machine's FQDN. */
+    char hostname[HOST_NAME_MAX + 1];
+    if (gethostname(hostname, HOST_NAME_MAX + 1) == 0) {
+        hostname[HOST_NAME_MAX] = '\0';
+        jstring res = (*env)->NewStringUTF(env, hostname);
+        return res;
+    }
+
+    return (jstring)NULL;
 }
