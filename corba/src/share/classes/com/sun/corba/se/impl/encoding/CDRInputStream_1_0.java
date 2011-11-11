@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2412,7 +2412,6 @@ public class CDRInputStream_1_0 extends CDRInputStreamBase
 
         if (bbwi != null && getByteBuffer() != null)
         {
-            int bbHash = System.identityHashCode(bbwi.byteBuffer);
             MessageMediator messageMediator = parent.getMessageMediator();
             if (messageMediator != null)
             {
@@ -2420,19 +2419,12 @@ public class CDRInputStream_1_0 extends CDRInputStreamBase
                              (CDROutputObject)messageMediator.getOutputObject();
                 if (outputObj != null)
                 {
-                    ByteBuffer outputBb = outputObj.getByteBuffer();
-
-                    int oBbHash = 0;
-                    if (outputBb != null)
+                    if (outputObj.isSharing(getByteBuffer()))
                     {
-                        oBbHash = System.identityHashCode(outputBb);
-                        if (bbHash == oBbHash)  // shared?
-                        {
-                            // Set OutputStream's ByteBuffer and bbwi to null
-                            // so its ByteBuffer cannot be released to the pool
-                            outputObj.setByteBuffer(null);
-                            outputObj.setByteBufferWithInfo(null);
-                        }
+                        // Set OutputStream's ByteBuffer and bbwi to null
+                        // so its ByteBuffer cannot be released to the pool
+                        outputObj.setByteBuffer(null);
+                        outputObj.setByteBufferWithInfo(null);
                     }
                 }
             }
