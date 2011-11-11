@@ -197,9 +197,9 @@ class FileOutputStream extends OutputStream
             throw new NullPointerException();
         }
         this.fd = new FileDescriptor();
+        fd.attach(this);
         this.append = append;
 
-        fd.incrementAndGetUseCount();
         open(name, append);
     }
 
@@ -237,12 +237,7 @@ class FileOutputStream extends OutputStream
         this.fd = fdObj;
         this.append = false;
 
-        /*
-         * FileDescriptor is being shared by streams.
-         * Ensure that it's GC'ed only when all the streams/channels are done
-         * using it.
-         */
-        fd.incrementAndGetUseCount();
+        fd.attach(this);
     }
 
     /**
@@ -331,27 +326,14 @@ class FileOutputStream extends OutputStream
         }
 
         if (channel != null) {
-            /*
-             * Decrement FD use count associated with the channel
-             * The use count is incremented whenever a new channel
-             * is obtained from this stream.
-             */
-            fd.decrementAndGetUseCount();
             channel.close();
         }
 
-        /*
-         * Decrement FD use count associated with this stream
-         */
-        int useCount = fd.decrementAndGetUseCount();
-
-        /*
-         * If FileDescriptor is still in use by another stream, we
-         * will not close it.
-         */
-        if (useCount <= 0) {
-            close0();
-        }
+        fd.closeAll(new Closeable() {
+            public void close() throws IOException {
+               close0();
+           }
+        });
     }
 
     /**
@@ -365,7 +347,9 @@ class FileOutputStream extends OutputStream
      * @see        java.io.FileDescriptor
      */
      public final FileDescriptor getFD()  throws IOException {
-        if (fd != null) return fd;
+        if (fd != null) {
+            return fd;
+        }
         throw new IOException();
      }
 
@@ -390,13 +374,6 @@ class FileOutputStream extends OutputStream
         synchronized (this) {
             if (channel == null) {
                 channel = FileChannelImpl.open(fd, false, true, append, this);
-
-                /*
-                 * Increment fd's use count. Invoking the channel's close()
-                 * method will result in decrementing the use count set for
-                 * the channel.
-                 */
-                fd.incrementAndGetUseCount();
             }
             return channel;
         }
@@ -415,7 +392,12 @@ class FileOutputStream extends OutputStream
             if (fd == FileDescriptor.out || fd == FileDescriptor.err) {
                 flush();
             } else {
-                    close();
+                /* if fd is shared, the references in FileDescriptor
+                 * will ensure that finalizer is only called when
+                 * safe to do so. All references using the fd have
+                 * become unreachable. We can call close()
+                 */
+                close();
             }
         }
     }
