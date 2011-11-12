@@ -256,8 +256,6 @@ SUNWprivate_1.1 {
 
         Java_sun_awt_X11_XToolkit_waitForEvents;
         Java_java_awt_Event_initIDs;
-        Java_sun_awt_motif_X11FontMetrics_initIDs;
-        Java_sun_awt_motif_X11FontMetrics_init;
         Java_sun_awt_X11_XWindow_x11inputMethodLookupString;
         Java_sun_awt_X11_XWindow_haveCurrentX11InputMethodInstance;
         Java_java_awt_AWTEvent_nativeSetSource;
@@ -265,7 +263,6 @@ SUNWprivate_1.1 {
         Java_sun_awt_PlatformFont_initIDs;
         Java_sun_awt_FontDescriptor_initIDs;
         Java_sun_awt_X11_XFontPeer_initIDs;
-        Java_sun_awt_motif_X11FontMetrics_getMFCharsWidth;
         Java_sun_awt_X11InputMethod_initIDs;
         Java_sun_awt_X11InputMethod_resetXIC;
         Java_sun_awt_X11InputMethod_disposeXIC;

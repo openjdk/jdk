@@ -45,8 +45,6 @@ extern GetRasInfoFunc OGLSD_GetRasInfo;
 extern UnlockFunc     OGLSD_Unlock;
 extern DisposeFunc    OGLSD_Dispose;
 
-extern struct MComponentPeerIDs mComponentPeerIDs;
-
 extern void
     OGLSD_SetNativeDimensions(JNIEnv *env, OGLSDOps *oglsdo, jint w, jint h);
 
@@ -86,34 +84,12 @@ Java_sun_java2d_opengl_GLXSurfaceData_initOps(JNIEnv *env, jobject glxsd,
     oglsdo->activeBuffer = GL_FRONT;
     oglsdo->needsInit = JNI_TRUE;
 
-#ifdef XAWT
     if (peer != NULL) {
         glxsdo->window = JNU_CallMethodByName(env, NULL, peer,
                                               "getContentWindow", "()J").j;
     } else {
         glxsdo->window = 0;
     }
-#else
-    if (peer != NULL) {
-        struct ComponentData *cdata;
-        cdata = (struct ComponentData *)
-            JNU_GetLongFieldAsPtr(env, peer, mComponentPeerIDs.pData);
-        if (cdata == NULL) {
-            free(glxsdo);
-            JNU_ThrowNullPointerException(env, "Component data missing");
-            return;
-        }
-        if (cdata->widget == NULL) {
-            free(glxsdo);
-            JNU_ThrowInternalError(env, "Widget is NULL in initOps");
-            return;
-        }
-        glxsdo->widget = cdata->widget;
-    } else {
-        glxsdo->widget = NULL;
-    }
-#endif
-
     glxsdo->configData = (AwtGraphicsConfigDataPtr)jlong_to_ptr(aData);
     if (glxsdo->configData == NULL) {
         free(glxsdo);
@@ -331,11 +307,7 @@ OGLSD_InitOGLWindow(JNIEnv *env, OGLSDOps *oglsdo)
 {
     GLXSDOps *glxsdo;
     Window window;
-#ifdef XAWT
     XWindowAttributes attr;
-#else
-    Widget widget;
-#endif
 
     J2dTraceLn(J2D_TRACE_INFO, "OGLSD_InitOGLWindow");
 
@@ -352,7 +324,6 @@ OGLSD_InitOGLWindow(JNIEnv *env, OGLSDOps *oglsdo)
         return JNI_FALSE;
     }
 
-#ifdef XAWT
     window = glxsdo->window;
     if (window == 0) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
@@ -363,22 +334,6 @@ OGLSD_InitOGLWindow(JNIEnv *env, OGLSDOps *oglsdo)
     XGetWindowAttributes(awt_display, window, &attr);
     oglsdo->width = attr.width;
     oglsdo->height = attr.height;
-#else
-    widget = glxsdo->widget;
-    if (widget == NULL) {
-        J2dTraceLn(J2D_TRACE_WARNING, "OGLSD_InitOGLWindow: widget is null");
-    }
-
-    if (!XtIsRealized(widget)) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-                      "OGLSD_InitOGLWindow: widget is unrealized");
-        return JNI_FALSE;
-    }
-
-    window = XtWindow(widget);
-    oglsdo->width = widget->core.width;
-    oglsdo->height = widget->core.height;
-#endif
 
     oglsdo->drawableType = OGLSD_WINDOW;
     oglsdo->isOpaque = JNI_TRUE;
