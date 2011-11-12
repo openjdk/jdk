@@ -29,30 +29,21 @@
 
 #include "awt_p.h"
 #include "java_awt_Component.h"
-//#include "sun_awt_motif_MComponentPeer.h"
 
 #include "awt_Component.h"
-
 
 #include <jni.h>
 #include <jni_util.h>
 #include <jawt_md.h>
 
-extern struct MComponentPeerIDs mComponentPeerIDs;
 extern struct ComponentIDs componentIDs;
-#ifndef XAWT
-extern AwtGraphicsConfigDataPtr
-getGraphicsConfigFromComponentPeer(JNIEnv *env, jobject this);
-#endif
 
-#ifdef XAWT
 #include "awt_GraphicsEnv.h"
 extern jfieldID windowID;
 extern jfieldID targetID;
 extern jfieldID graphicsConfigID;
 extern jfieldID drawStateID;
 extern struct X11GraphicsConfigIDs x11GraphicsConfigIDs;
-#endif
 
 /*
  * Lock the surface of the target component for native rendering.
@@ -109,13 +100,8 @@ JNIEXPORT jint JNICALL awt_DrawingSurface_Lock(JAWT_DrawingSurface* ds)
         return (jint)JAWT_LOCK_ERROR;
     }
 
-#ifndef XAWT
-    drawState = (*env)->GetIntField(env, peer, mComponentPeerIDs.drawState);
-    (*env)->SetIntField(env, peer, mComponentPeerIDs.drawState, 0);
-#else
    drawState = (*env)->GetIntField(env, peer, drawStateID);
     (*env)->SetIntField(env, peer, drawStateID, 0);
-#endif
     return drawState;
 }
 
@@ -127,9 +113,7 @@ JNIEXPORT int32_t JNICALL
     jclass componentClass;
     AwtGraphicsConfigDataPtr adata;
     int32_t result;
-#ifdef XAWT
      jobject gc_object;
-#endif
     if (ds == NULL) {
 #ifdef DEBUG
         fprintf(stderr, "Drawing Surface is NULL\n");
@@ -164,9 +148,6 @@ JNIEXPORT int32_t JNICALL
         AWT_UNLOCK();
         return (int32_t) 0;
     }
-#ifndef XAWT
-    adata = getGraphicsConfigFromComponentPeer(env, peer);
-#else
      /* GraphicsConfiguration object of MComponentPeer */
     gc_object = (*env)->GetObjectField(env, peer, graphicsConfigID);
 
@@ -177,7 +158,6 @@ JNIEXPORT int32_t JNICALL
     } else {
         adata = getDefaultConfig(DefaultScreen(awt_display));
     }
-#endif
 
     result = adata->AwtColorMatch(r, g, b, adata);
         AWT_UNLOCK();
@@ -201,9 +181,6 @@ awt_DrawingSurface_GetDrawingSurfaceInfo(JAWT_DrawingSurface* ds)
     jclass componentClass;
     JAWT_X11DrawingSurfaceInfo* px;
     JAWT_DrawingSurfaceInfo* p;
-#ifndef XAWT
-    struct ComponentData *cdata;
-#endif
     XWindowAttributes attrs;
 
     if (ds == NULL) {
@@ -241,31 +218,14 @@ awt_DrawingSurface_GetDrawingSurfaceInfo(JAWT_DrawingSurface* ds)
         return NULL;
     }
 
-#ifndef XAWT
-    /* Get the component data from the peer */
-    cdata = (struct ComponentData *)
-        JNU_GetLongFieldAsPtr(env, peer, mComponentPeerIDs.pData);
-    if (cdata == NULL) {
-#ifdef DEBUG
-        fprintf(stderr, "Component data is NULL\n");
-#endif
-                AWT_UNLOCK();
-        return NULL;
-    }
-#endif
-
-        AWT_UNLOCK();
+    AWT_UNLOCK();
 
     /* Allocate platform-specific data */
     px = (JAWT_X11DrawingSurfaceInfo*)
         malloc(sizeof(JAWT_X11DrawingSurfaceInfo));
 
     /* Set drawable and display */
-#ifndef XAWT
-    px->drawable = XtWindow(cdata->widget);
-#else
     px->drawable = (*env)->GetLongField(env, peer, windowID);
-#endif
     px->display = awt_display;
 
     /* Get window attributes to set other values */
@@ -392,21 +352,7 @@ JNIEXPORT jobject JNICALL
 
     AWT_LOCK();
 
-#ifndef XAWT
-    if (window != None) {
-        widget = XtWindowToWidget(awt_display, window);
-    }
-
-    if (widget != NULL) {
-        XtVaGetValues (widget, XmNuserData, &peer, NULL);
-    }
-
-    if (peer != NULL) {
-        target = (*env)->GetObjectField(env, peer, mComponentPeerIDs.target);
-    }
-#else
     target =  (*env)->GetObjectField(env, peer, targetID);
-#endif
 
     if (target == NULL) {
         JNU_ThrowNullPointerException(env, "NullPointerException");
