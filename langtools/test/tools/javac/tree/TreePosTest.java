@@ -73,6 +73,7 @@ import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.parser.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
@@ -435,7 +436,7 @@ public class TreePosTest {
         }
 
         JavaFileObject sourcefile;
-        Map<JCTree, Integer> endPosTable;
+        EndPosTable endPosTable;
         Info encl;
 
     }
@@ -452,7 +453,7 @@ public class TreePosTest {
             end = Integer.MAX_VALUE;
         }
 
-        Info(JCTree tree, Map<JCTree, Integer> endPosTable) {
+        Info(JCTree tree, EndPosTable endPosTable) {
             this.tree = tree;
             tag = tree.getTag();
             start = TreeInfo.getStartPos(tree);

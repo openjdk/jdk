@@ -35,6 +35,7 @@ import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.api.DiagnosticFormatter;
 import com.sun.tools.javac.code.Lint.LintCategory;
+import com.sun.tools.javac.parser.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticType.*;
@@ -313,7 +314,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         /** If there is a tree node, and if endPositions are available, get
          *  the end position of the tree node. Otherwise, just returns the
          *  same as getPreferredPosition(). */
-        int getEndPosition(Map<JCTree, Integer> endPosTable);
+        int getEndPosition(EndPosTable endPosTable);
     }
 
     /**
@@ -337,7 +338,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
             return pos;
         }
 
-        public int getEndPosition(Map<JCTree, Integer> endPosTable) {
+        public int getEndPosition(EndPosTable endPosTable) {
             return pos;
         }
 

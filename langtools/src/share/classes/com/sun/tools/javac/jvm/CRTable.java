@@ -31,6 +31,7 @@ import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.parser.EndPosTable;
 
 /** This class contains the CharacterRangeTable for some method
  *  and the hashtable for mapping trees or lists of trees to their
@@ -54,9 +55,9 @@ implements CRTFlags {
      */
     private Map<Object,SourceRange> positions = new HashMap<Object,SourceRange>();
 
-    /** The hashtable for ending positions stored in the parser.
+    /** The object for ending positions stored in the parser.
      */
-    private Map<JCTree, Integer> endPositions;
+    private EndPosTable endPosTable;
 
     /** The tree of the method this table is intended for.
      *  We should traverse this tree to get source ranges.
@@ -65,9 +66,9 @@ implements CRTFlags {
 
     /** Constructor
      */
-    public CRTable(JCTree.JCMethodDecl tree, Map<JCTree, Integer> endPositions) {
+    public CRTable(JCTree.JCMethodDecl tree, EndPosTable endPosTable) {
         this.methodTree = tree;
-        this.endPositions = endPositions;
+        this.endPosTable = endPosTable;
     }
 
     /** Create a new CRTEntry and add it to the entries.
@@ -534,10 +535,7 @@ implements CRTFlags {
             if (tree == null) return Position.NOPOS;
             if (tree.hasTag(JCTree.Tag.BLOCK))
                 return ((JCBlock) tree).endpos;
-            Integer endpos = endPositions.get(tree);
-            if (endpos != null)
-                return endpos.intValue();
-            return Position.NOPOS;
+            return endPosTable.getEndPos(tree);
         }
     }
 
