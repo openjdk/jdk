@@ -38,6 +38,7 @@ import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.api.DiagnosticFormatter;
 import com.sun.tools.javac.main.OptionName;
+import com.sun.tools.javac.parser.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
@@ -250,9 +251,9 @@ public class Log extends AbstractLog {
         return diagListener != null;
     }
 
-    public void setEndPosTable(JavaFileObject name, Map<JCTree, Integer> table) {
+    public void setEndPosTable(JavaFileObject name, EndPosTable endPosTable) {
         name.getClass(); // null check
-        getSource(name).setEndPosTable(table);
+        getSource(name).setEndPosTable(endPosTable);
     }
 
     /** Return current sourcefile.
