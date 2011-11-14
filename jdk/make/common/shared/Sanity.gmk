@@ -1608,6 +1608,31 @@ ifeq ($(PLATFORM), windows)
 	fi
 endif
 
+######################################################
+# SECURITY_BASELINE_170 test
+######################################################
+security_baseline_170:
+ifeq ($(PLATFORM), windows)
+	@if [ -z "$(SECURITY_BASELINE_170)" ]; then \
+	    $(ECHO) "WARNING: Your SECURITY_BASELINE_170 setting is empty.\n" \
+		"        Setting it to the default value of 1.7.0_01.\n" \
+		"        It is recommended to set SECURITY_BASELINE_170.\n" \
+		"" >> $(WARNING_FILE) ; \
+	fi
+endif
+
+######################################################
+# SECURITY_BASELINE_180 test
+######################################################
+security_baseline_180:
+ifeq ($(PLATFORM), windows)
+	@if [ -z "$(SECURITY_BASELINE_180)" ]; then \
+	    $(ECHO) "WARNING: Your SECURITY_BASELINE_180 setting is empty.\n" \
+		"        Setting it to the default value of 1.8.0.\n" \
+		"        It is recommended to set SECURITY_BASELINE_180.\n" \
+		"" >> $(WARNING_FILE) ; \
+	fi
+endif
 
 ######################################################
 # this should be the last rule in any target's sanity rule.
