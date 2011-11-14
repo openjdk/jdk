@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
  *
  * This is to test larger buffer arrays, and make sure the maximum
  * is being passed.
+ *
+ * @run main/othervm -Djsse.enableCBCProtection=false LargeBufs
  *
  * @author Brad R. Wetmore
  */

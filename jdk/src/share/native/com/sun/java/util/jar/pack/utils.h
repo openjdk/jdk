@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ void mtrace(char c, void* ptr, size_t size);
 #endif
 
 // overflow management
-#define OVERFLOW ((size_t)-1)
+#define OVERFLOW ((uint)-1)
 #define PSIZE_MAX (OVERFLOW/2)  /* normal size limit */
 
 inline size_t scale_size(size_t size, size_t scale) {
