@@ -29,6 +29,7 @@ import java.util.*;
 
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.parser.Tokens.*;
+import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
@@ -36,8 +37,16 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 
-import static com.sun.tools.javac.util.ListBuffer.lb;
 import static com.sun.tools.javac.parser.Tokens.TokenKind.*;
+import static com.sun.tools.javac.parser.Tokens.TokenKind.ASSERT;
+import static com.sun.tools.javac.parser.Tokens.TokenKind.CASE;
+import static com.sun.tools.javac.parser.Tokens.TokenKind.CATCH;
+import static com.sun.tools.javac.parser.Tokens.TokenKind.EQ;
+import static com.sun.tools.javac.parser.Tokens.TokenKind.GT;
+import static com.sun.tools.javac.parser.Tokens.TokenKind.IMPORT;
+import static com.sun.tools.javac.parser.Tokens.TokenKind.LT;
+import static com.sun.tools.javac.util.ListBuffer.lb;
+import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /** The parser maps a token sequence into an abstract syntax
  *  tree. It operates by recursive descent, with code derived
@@ -757,7 +766,7 @@ public class JavacParser implements Parser {
         Assert.check(top == 0);
         t = odStack[0];
 
-        if (t.getTag() == JCTree.PLUS) {
+        if (t.hasTag(JCTree.Tag.PLUS)) {
             StringBuffer buf = foldStrings(t);
             if (buf != null) {
                 t = toP(F.at(startPos).Literal(TypeTags.CLASS, buf.toString()));
@@ -790,7 +799,7 @@ public class JavacParser implements Parser {
                 return null;
             List<String> buf = List.nil();
             while (true) {
-                if (tree.getTag() == JCTree.LITERAL) {
+                if (tree.hasTag(LITERAL)) {
                     JCLiteral lit = (JCLiteral) tree;
                     if (lit.typetag == TypeTags.CLASS) {
                         StringBuffer sbuf =
@@ -801,9 +810,9 @@ public class JavacParser implements Parser {
                         }
                         return sbuf;
                     }
-                } else if (tree.getTag() == JCTree.PLUS) {
+                } else if (tree.hasTag(JCTree.Tag.PLUS)) {
                     JCBinary op = (JCBinary)tree;
-                    if (op.rhs.getTag() == JCTree.LITERAL) {
+                    if (op.rhs.hasTag(LITERAL)) {
                         JCLiteral lit = (JCLiteral) op.rhs;
                         if (lit.typetag == TypeTags.CLASS) {
                             buf = buf.prepend((String) lit.value);
@@ -899,7 +908,7 @@ public class JavacParser implements Parser {
                 t = term3();
                 if ((mode & TYPE) != 0 && token.kind == LT) {
                     // Could be a cast to a parameterized type
-                    int op = JCTree.LT;
+                    JCTree.Tag op = JCTree.Tag.LT;
                     int pos1 = token.pos;
                     nextToken();
                     mode &= (EXPR | TYPE);
@@ -1153,7 +1162,7 @@ public class JavacParser implements Parser {
         while ((token.kind == PLUSPLUS || token.kind == SUBSUB) && (mode & EXPR) != 0) {
             mode = EXPR;
             t = to(F.at(token.pos).Unary(
-                  token.kind == PLUSPLUS ? JCTree.POSTINC : JCTree.POSTDEC, t));
+                  token.kind == PLUSPLUS ? POSTINC : POSTDEC, t));
             nextToken();
         }
         return toP(t);
@@ -1584,7 +1593,7 @@ public class JavacParser implements Parser {
                 break;
             case MONKEYS_AT:
             case FINAL: {
-                String dc = token.docComment;
+                String dc = token.comment(CommentStyle.JAVADOC);
                 JCModifiers mods = modifiersOpt();
                 if (token.kind == INTERFACE ||
                     token.kind == CLASS ||
@@ -1601,21 +1610,21 @@ public class JavacParser implements Parser {
                 break;
             }
             case ABSTRACT: case STRICTFP: {
-                String dc = token.docComment;
+                String dc = token.comment(CommentStyle.JAVADOC);
                 JCModifiers mods = modifiersOpt();
                 stats.append(classOrInterfaceOrEnumDeclaration(mods, dc));
                 break;
             }
             case INTERFACE:
             case CLASS:
-                String dc = token.docComment;
+                String dc = token.comment(CommentStyle.JAVADOC);
                 stats.append(classOrInterfaceOrEnumDeclaration(modifiersOpt(), dc));
                 break;
             case ENUM:
             case ASSERT:
                 if (allowEnums && token.kind == ENUM) {
                     error(token.pos, "local.enum");
-                    dc = token.docComment;
+                    dc = token.comment(CommentStyle.JAVADOC);
                     stats.append(classOrInterfaceOrEnumDeclaration(modifiersOpt(), dc));
                     break;
                 } else if (allowAsserts && token.kind == ASSERT) {
@@ -1626,7 +1635,7 @@ public class JavacParser implements Parser {
             default:
                 Token prevToken = token;
                 JCExpression t = term(EXPR | TYPE);
-                if (token.kind == COLON && t.getTag() == JCTree.IDENT) {
+                if (token.kind == COLON && t.hasTag(IDENT)) {
                     nextToken();
                     JCStatement stat = parseStatement();
                     stats.append(F.at(pos).Labelled(prevToken.name(), stat));
@@ -1701,7 +1710,7 @@ public class JavacParser implements Parser {
             accept(LPAREN);
             List<JCStatement> inits = token.kind == SEMI ? List.<JCStatement>nil() : forInit();
             if (inits.length() == 1 &&
-                inits.head.getTag() == JCTree.VARDEF &&
+                inits.head.hasTag(VARDEF) &&
                 ((JCVariableDecl) inits.head).init == null &&
                 token.kind == COLON) {
                 checkForeach();
@@ -1834,7 +1843,7 @@ public class JavacParser implements Parser {
         default:
             Token prevToken = token;
             JCExpression expr = parseExpression();
-            if (token.kind == COLON && expr.getTag() == JCTree.IDENT) {
+            if (token.kind == COLON && expr.hasTag(IDENT)) {
                 nextToken();
                 JCStatement stat = parseStatement();
                 return F.at(pos).Labelled(prevToken.name(), stat);
@@ -1991,7 +2000,7 @@ public class JavacParser implements Parser {
             annotations.appendList(partial.annotations);
             pos = partial.pos;
         }
-        if (token.deprecatedFlag) {
+        if (token.deprecatedFlag()) {
             flags |= Flags.DEPRECATED;
         }
         int lastPos = Position.NOPOS;
@@ -2087,7 +2096,7 @@ public class JavacParser implements Parser {
         if (token.kind == IDENTIFIER) {
             mode = EXPR;
             JCExpression t1 = term1();
-            if (t1.getTag() == JCTree.IDENT && token.kind == EQ) {
+            if (t1.hasTag(IDENT) && token.kind == EQ) {
                 int pos = token.pos;
                 accept(EQ);
                 JCExpression v = annotationValue();
@@ -2271,9 +2280,9 @@ public class JavacParser implements Parser {
                 seenImport = true;
                 defs.append(importDeclaration());
             } else {
-                String docComment = token.docComment;
+                String docComment = token.comment(CommentStyle.JAVADOC);
                 if (firstTypeDecl && !seenImport && !seenPackage) {
-                    docComment = firstToken.docComment;
+                    docComment = firstToken.comment(CommentStyle.JAVADOC);
                     consumedToplevelDoc = true;
                 }
                 JCTree def = typeDeclaration(mods, docComment);
@@ -2288,7 +2297,7 @@ public class JavacParser implements Parser {
         }
         JCTree.JCCompilationUnit toplevel = F.at(firstToken.pos).TopLevel(packageAnnotations, pid, defs.toList());
         if (!consumedToplevelDoc)
-            attach(toplevel, firstToken.docComment);
+            attach(toplevel, firstToken.comment(CommentStyle.JAVADOC));
         if (defs.elems.isEmpty())
             storeEnd(toplevel, S.prevToken().endPos);
         if (keepDocComments)
@@ -2498,9 +2507,9 @@ public class JavacParser implements Parser {
     /** EnumeratorDeclaration = AnnotationsOpt [TypeArguments] IDENTIFIER [ Arguments ] [ "{" ClassBody "}" ]
      */
     JCTree enumeratorDeclaration(Name enumName) {
-        String dc = token.docComment;
+        String dc = token.comment(CommentStyle.JAVADOC);
         int flags = Flags.PUBLIC|Flags.STATIC|Flags.FINAL|Flags.ENUM;
-        if (token.deprecatedFlag) {
+        if (token.deprecatedFlag()) {
             flags |= Flags.DEPRECATED;
         }
         int pos = token.pos;
@@ -2587,7 +2596,7 @@ public class JavacParser implements Parser {
             nextToken();
             return List.<JCTree>nil();
         } else {
-            String dc = token.docComment;
+            String dc = token.comment(CommentStyle.JAVADOC);
             int pos = token.pos;
             JCModifiers mods = modifiersOpt();
             if (token.kind == CLASS ||
@@ -2617,7 +2626,7 @@ public class JavacParser implements Parser {
                 } else {
                     type = parseType();
                 }
-                if (token.kind == LPAREN && !isInterface && type.getTag() == JCTree.IDENT) {
+                if (token.kind == LPAREN && !isInterface && type.hasTag(IDENT)) {
                     if (isInterface || tk.name() != className)
                         error(pos, "invalid.meth.decl.ret.type.req");
                     return List.of(methodDeclaratorRest(
@@ -2814,15 +2823,15 @@ public class JavacParser implements Parser {
      */
     protected JCExpression checkExprStat(JCExpression t) {
         switch(t.getTag()) {
-        case JCTree.PREINC: case JCTree.PREDEC:
-        case JCTree.POSTINC: case JCTree.POSTDEC:
-        case JCTree.ASSIGN:
-        case JCTree.BITOR_ASG: case JCTree.BITXOR_ASG: case JCTree.BITAND_ASG:
-        case JCTree.SL_ASG: case JCTree.SR_ASG: case JCTree.USR_ASG:
-        case JCTree.PLUS_ASG: case JCTree.MINUS_ASG:
-        case JCTree.MUL_ASG: case JCTree.DIV_ASG: case JCTree.MOD_ASG:
-        case JCTree.APPLY: case JCTree.NEWCLASS:
-        case JCTree.ERRONEOUS:
+        case PREINC: case PREDEC:
+        case POSTINC: case POSTDEC:
+        case ASSIGN:
+        case BITOR_ASG: case BITXOR_ASG: case BITAND_ASG:
+        case SL_ASG: case SR_ASG: case USR_ASG:
+        case PLUS_ASG: case MINUS_ASG:
+        case MUL_ASG: case DIV_ASG: case MOD_ASG:
+        case APPLY: case NEWCLASS:
+        case ERRONEOUS:
             return t;
         default:
             JCExpression ret = F.at(t.pos).Erroneous(List.<JCTree>of(t));
@@ -2835,8 +2844,8 @@ public class JavacParser implements Parser {
      *  -1 if token is not a binary operator. @see TreeInfo.opPrec
      */
     static int prec(TokenKind token) {
-        int oc = optag(token);
-        return (oc >= 0) ? TreeInfo.opPrec(oc) : -1;
+        JCTree.Tag oc = optag(token);
+        return (oc != NO_TAG) ? TreeInfo.opPrec(oc) : -1;
     }
 
     /**
@@ -2852,96 +2861,96 @@ public class JavacParser implements Parser {
     }
 
     /** Return operation tag of binary operator represented by token,
-     *  -1 if token is not a binary operator.
+     *  No_TAG if token is not a binary operator.
      */
-    static int optag(TokenKind token) {
+    static JCTree.Tag optag(TokenKind token) {
         switch (token) {
         case BARBAR:
-            return JCTree.OR;
+            return OR;
         case AMPAMP:
-            return JCTree.AND;
+            return AND;
         case BAR:
-            return JCTree.BITOR;
+            return BITOR;
         case BAREQ:
-            return JCTree.BITOR_ASG;
+            return BITOR_ASG;
         case CARET:
-            return JCTree.BITXOR;
+            return BITXOR;
         case CARETEQ:
-            return JCTree.BITXOR_ASG;
+            return BITXOR_ASG;
         case AMP:
-            return JCTree.BITAND;
+            return BITAND;
         case AMPEQ:
-            return JCTree.BITAND_ASG;
+            return BITAND_ASG;
         case EQEQ:
-            return JCTree.EQ;
+            return JCTree.Tag.EQ;
         case BANGEQ:
-            return JCTree.NE;
+            return NE;
         case LT:
-            return JCTree.LT;
+            return JCTree.Tag.LT;
         case GT:
-            return JCTree.GT;
+            return JCTree.Tag.GT;
         case LTEQ:
-            return JCTree.LE;
+            return LE;
         case GTEQ:
-            return JCTree.GE;
+            return GE;
         case LTLT:
-            return JCTree.SL;
+            return SL;
         case LTLTEQ:
-            return JCTree.SL_ASG;
+            return SL_ASG;
         case GTGT:
-            return JCTree.SR;
+            return SR;
         case GTGTEQ:
-            return JCTree.SR_ASG;
+            return SR_ASG;
         case GTGTGT:
-            return JCTree.USR;
+            return USR;
         case GTGTGTEQ:
-            return JCTree.USR_ASG;
+            return USR_ASG;
         case PLUS:
-            return JCTree.PLUS;
+            return JCTree.Tag.PLUS;
         case PLUSEQ:
-            return JCTree.PLUS_ASG;
+            return PLUS_ASG;
         case SUB:
-            return JCTree.MINUS;
+            return MINUS;
         case SUBEQ:
-            return JCTree.MINUS_ASG;
+            return MINUS_ASG;
         case STAR:
-            return JCTree.MUL;
+            return MUL;
         case STAREQ:
-            return JCTree.MUL_ASG;
+            return MUL_ASG;
         case SLASH:
-            return JCTree.DIV;
+            return DIV;
         case SLASHEQ:
-            return JCTree.DIV_ASG;
+            return DIV_ASG;
         case PERCENT:
-            return JCTree.MOD;
+            return MOD;
         case PERCENTEQ:
-            return JCTree.MOD_ASG;
+            return MOD_ASG;
         case INSTANCEOF:
-            return JCTree.TYPETEST;
+            return TYPETEST;
         default:
-            return -1;
+            return NO_TAG;
         }
     }
 
     /** Return operation tag of unary operator represented by token,
-     *  -1 if token is not a binary operator.
+     *  No_TAG if token is not a binary operator.
      */
-    static int unoptag(TokenKind token) {
+    static JCTree.Tag unoptag(TokenKind token) {
         switch (token) {
         case PLUS:
-            return JCTree.POS;
+            return POS;
         case SUB:
-            return JCTree.NEG;
+            return NEG;
         case BANG:
-            return JCTree.NOT;
+            return NOT;
         case TILDE:
-            return JCTree.COMPL;
+            return COMPL;
         case PLUSPLUS:
-            return JCTree.PREINC;
+            return PREINC;
         case SUBSUB:
-            return JCTree.PREDEC;
+            return PREDEC;
         default:
-            return -1;
+            return NO_TAG;
         }
     }
 
