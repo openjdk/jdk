@@ -236,6 +236,8 @@ private:
                                        // are assumed to point to.
   uint                      _oop_null; // ConP(#NULL)->_idx
   uint                     _noop_null; // ConN(#NULL)->_idx
+  Node*                     _pcmp_neq; // ConI(#CC_GT)
+  Node*                      _pcmp_eq; // ConI(#CC_EQ)
 
   Compile *                  _compile; // Compile object for current compilation
   PhaseIterGVN *                _igvn; // Value numbering
@@ -350,6 +352,9 @@ private:
   bool propagate_escape_state(GrowableArray<int>* cg_worklist,
                               GrowableArray<uint>* worklist,
                               PointsToNode::EscapeState esc_state);
+
+  // Optimize objects compare.
+  Node* optimize_ptr_compare(Node* n);
 
   // Compute the escape information
   bool compute_escape();
