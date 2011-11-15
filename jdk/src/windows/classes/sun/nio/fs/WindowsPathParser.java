@@ -120,12 +120,18 @@ class WindowsPathParser {
                 off = next;
             } else {
                 if (isLetter(c0) && c1 == ':') {
-                    root = input.substring(0, 2);
-                    if (len > 2 && isSlash(input.charAt(2))) {
+                    char c2;
+                    if (len > 2 && isSlash(c2 = input.charAt(2))) {
+                        // avoid concatenation when root is "D:\"
+                        if (c2 == '\\') {
+                            root = input.substring(0, 3);
+                        } else {
+                            root = input.substring(0, 2) + '\\';
+                        }
                         off = 3;
-                        root += "\\";
                         type = WindowsPathType.ABSOLUTE;
                     } else {
+                        root = input.substring(0, 2);
                         off = 2;
                         type = WindowsPathType.DRIVE_RELATIVE;
                     }
