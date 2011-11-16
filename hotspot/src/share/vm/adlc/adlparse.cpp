@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3115,7 +3115,7 @@ void ADLParser::constant_parse_expression(EncClass* encoding, char* ec_name) {
   encoding->add_code("    _constant = C->constant_table().add");
 
   // Parse everything in ( ) expression.
-  encoding->add_code("(");
+  encoding->add_code("(this, ");
   next_char();  // Skip '('
   int parens_depth = 1;
 
@@ -3130,7 +3130,8 @@ void ADLParser::constant_parse_expression(EncClass* encoding, char* ec_name) {
     }
     else if (_curchar == ')') {
       parens_depth--;
-      encoding->add_code(")");
+      if (parens_depth > 0)
+        encoding->add_code(")");
       next_char();
     }
     else {
@@ -3157,7 +3158,7 @@ void ADLParser::constant_parse_expression(EncClass* encoding, char* ec_name) {
   }
 
   // Finish code line.
-  encoding->add_code(";");
+  encoding->add_code(");");
 
   if (_AD._adlocation_debug) {
     encoding->add_code(end_line_marker());

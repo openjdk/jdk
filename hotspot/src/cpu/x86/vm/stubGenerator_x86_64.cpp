@@ -1268,7 +1268,7 @@ class StubGenerator: public StubCodeGenerator {
            __ subptr(end, start); // number of bytes to copy
 
           intptr_t disp = (intptr_t) ct->byte_map_base;
-          if (__ is_simm32(disp)) {
+          if (Assembler::is_simm32(disp)) {
             Address cardtable(noreg, noreg, Address::no_scale, disp);
             __ lea(scratch, cardtable);
           } else {

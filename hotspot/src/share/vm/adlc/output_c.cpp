@@ -2585,9 +2585,9 @@ void ArchDesc::defineEvalConstant(FILE* fp, InstructForm& inst) {
   // Output instruction's emit prototype
   fprintf(fp, "void %sNode::eval_constant(Compile* C) {\n", inst._ident);
 
-  // For ideal jump nodes, allocate a jump table.
+  // For ideal jump nodes, add a jump-table entry.
   if (inst.is_ideal_jump()) {
-    fprintf(fp, "  _constant = C->constant_table().allocate_jump_table(this);\n");
+    fprintf(fp, "  _constant = C->constant_table().add_jump_table(this);\n");
   }
 
   // If user did not define an encode section,
