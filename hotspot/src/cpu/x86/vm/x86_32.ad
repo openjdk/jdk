@@ -507,8 +507,11 @@ void encode_CopyXD( CodeBuffer &cbuf, int dst_encoding, int src_encoding ) {
 
 
 //=============================================================================
-const bool Matcher::constant_table_absolute_addressing = true;
 const RegMask& MachConstantBaseNode::_out_RegMask = RegMask::Empty;
+
+int Compile::ConstantTable::calculate_table_base_offset() const {
+  return 0;  // absolute addressing, no offset
+}
 
 void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
   // Empty encoding
@@ -639,6 +642,12 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
 #endif
 
+  if (C->has_mach_constant_base_node()) {
+    // NOTE: We set the table base offset here because users might be
+    // emitted before MachConstantBaseNode.
+    Compile::ConstantTable& constant_table = C->constant_table();
+    constant_table.set_table_base_offset(constant_table.calculate_table_base_offset());
+  }
 }
 
 uint MachPrologNode::size(PhaseRegAlloc *ra_) const {

@@ -257,6 +257,29 @@ class AbstractAssembler : public ResourceObj  {
   // ensure buf contains all code (call this before using/copying the code)
   void flush();
 
+  // min and max values for signed immediate ranges
+  static int min_simm(int nbits) { return -(intptr_t(1) << (nbits - 1))    ; }
+  static int max_simm(int nbits) { return  (intptr_t(1) << (nbits - 1)) - 1; }
+
+  // Define some:
+  static int min_simm10() { return min_simm(10); }
+  static int min_simm13() { return min_simm(13); }
+  static int min_simm16() { return min_simm(16); }
+
+  // Test if x is within signed immediate range for nbits
+  static bool is_simm(intptr_t x, int nbits) { return min_simm(nbits) <= x && x <= max_simm(nbits); }
+
+  // Define some:
+  static bool is_simm5( intptr_t x) { return is_simm(x, 5 ); }
+  static bool is_simm8( intptr_t x) { return is_simm(x, 8 ); }
+  static bool is_simm10(intptr_t x) { return is_simm(x, 10); }
+  static bool is_simm11(intptr_t x) { return is_simm(x, 11); }
+  static bool is_simm12(intptr_t x) { return is_simm(x, 12); }
+  static bool is_simm13(intptr_t x) { return is_simm(x, 13); }
+  static bool is_simm16(intptr_t x) { return is_simm(x, 16); }
+  static bool is_simm26(intptr_t x) { return is_simm(x, 26); }
+  static bool is_simm32(intptr_t x) { return is_simm(x, 32); }
+
   // Accessors
   CodeBuffer*   code() const;          // _code_section->outer()
   CodeSection*  code_section() const   { return _code_section; }

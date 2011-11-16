@@ -566,7 +566,7 @@ int MachCallDynamicJavaNode::ret_addr_offset() {
     } else {
       klass_load_size = 1*BytesPerInstWord;
     }
-    if( Assembler::is_simm13(v_off) ) {
+    if (Assembler::is_simm13(v_off)) {
       return klass_load_size +
              (2*BytesPerInstWord +           // ld_ptr, ld_ptr
              NativeCall::instruction_size);  // call; delay slot
@@ -1019,8 +1019,21 @@ void emit_hi(CodeBuffer &cbuf, int val) {  }
 
 
 //=============================================================================
-const bool Matcher::constant_table_absolute_addressing = false;
 const RegMask& MachConstantBaseNode::_out_RegMask = PTR_REG_mask;
+
+int Compile::ConstantTable::calculate_table_base_offset() const {
+  if (UseRDPCForConstantTableBase) {
+    // The table base offset might be less but then it fits into
+    // simm13 anyway and we are good (cf. MachConstantBaseNode::emit).
+    return Assembler::min_simm13();
+  } else {
+    int offset = -(size() / 2);
+    if (!Assembler::is_simm13(offset)) {
+      offset = Assembler::min_simm13();
+    }
+    return offset;
+  }
+}
 
 void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
   Compile* C = ra_->C;
@@ -1028,8 +1041,9 @@ void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
   MacroAssembler _masm(&cbuf);
 
   Register r = as_Register(ra_->get_encode(this));
-  CodeSection* cs = __ code()->consts();
-  int consts_size = cs->align_at_start(cs->size());
+  CodeSection* consts_section = __ code()->consts();
+  int consts_size = consts_section->align_at_start(consts_section->size());
+  assert(constant_table.size() == consts_size, err_msg("must be: %d == %d", constant_table.size(), consts_size));
 
   if (UseRDPCForConstantTableBase) {
     // For the following RDPC logic to work correctly the consts
@@ -1037,30 +1051,37 @@ void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
     // assert checks for that.  The layout and the SECT_* constants
     // are defined in src/share/vm/asm/codeBuffer.hpp.
     assert(CodeBuffer::SECT_CONSTS + 1 == CodeBuffer::SECT_INSTS, "must be");
-    int offset = __ offset();
+    int insts_offset = __ offset();
+
+    // Layout:
+    //
+    // |----------- consts section ------------|----------- insts section -----------...
+    // |------ constant table -----|- padding -|------------------x----
+    //                                                            \ current PC (RDPC instruction)
+    // |<------------- consts_size ----------->|<- insts_offset ->|
+    //                                                            \ table base
+    // The table base offset is later added to the load displacement
+    // so it has to be negative.
+    int table_base_offset = -(consts_size + insts_offset);
     int disp;
 
     // If the displacement from the current PC to the constant table
     // base fits into simm13 we set the constant table base to the
     // current PC.
-    if (__ is_simm13(-(consts_size + offset))) {
-      constant_table.set_table_base_offset(-(consts_size + offset));
+    if (Assembler::is_simm13(table_base_offset)) {
+      constant_table.set_table_base_offset(table_base_offset);
       disp = 0;
     } else {
-      // If the offset of the top constant (last entry in the table)
-      // fits into simm13 we set the constant table base to the actual
-      // table base.
-      if (__ is_simm13(constant_table.top_offset())) {
-        constant_table.set_table_base_offset(0);
-        disp = consts_size + offset;
-      } else {
-        // Otherwise we set the constant table base in the middle of the
-        // constant table.
-        int half_consts_size = consts_size / 2;
-        assert(half_consts_size * 2 == consts_size, "sanity");
-        constant_table.set_table_base_offset(-half_consts_size);  // table base offset gets added to the load displacement.
-        disp = half_consts_size + offset;
-      }
+      // Otherwise we set the constant table base offset to the
+      // maximum negative displacement of load instructions to keep
+      // the disp as small as possible:
+      //
+      // |<------------- consts_size ----------->|<- insts_offset ->|
+      // |<--------- min_simm13 --------->|<-------- disp --------->|
+      //                                  \ table base
+      table_base_offset = Assembler::min_simm13();
+      constant_table.set_table_base_offset(table_base_offset);
+      disp = (consts_size + insts_offset) + table_base_offset;
     }
 
     __ rdpc(r);
@@ -1072,8 +1093,7 @@ void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
   }
   else {
     // Materialize the constant table base.
-    assert(constant_table.size() == consts_size, err_msg("must be: %d == %d", constant_table.size(), consts_size));
-    address baseaddr = cs->start() + -(constant_table.table_base_offset());
+    address baseaddr = consts_section->start() + -(constant_table.table_base_offset());
     RelocationHolder rspec = internal_word_Relocation::spec(baseaddr);
     AddressLiteral base(baseaddr, rspec);
     __ set(base, r);
@@ -1169,6 +1189,13 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     __ save(SP, G3, SP);
   }
   C->set_frame_complete( __ offset() );
+
+  if (!UseRDPCForConstantTableBase && C->has_mach_constant_base_node()) {
+    // NOTE: We set the table base offset here because users might be
+    // emitted before MachConstantBaseNode.
+    Compile::ConstantTable& constant_table = C->constant_table();
+    constant_table.set_table_base_offset(constant_table.calculate_table_base_offset());
+  }
 }
 
 uint MachPrologNode::size(PhaseRegAlloc *ra_) const {
@@ -1843,7 +1870,7 @@ const bool Matcher::convL2FSupported(void) {
 bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
   // The passed offset is relative to address of the branch.
   // Don't need to adjust the offset.
-  return UseCBCond && Assembler::is_simm(offset, 12);
+  return UseCBCond && Assembler::is_simm12(offset);
 }
 
 const bool Matcher::isSimpleConstant64(jlong value) {
@@ -2072,8 +2099,8 @@ encode %{
   %}
 
   enc_class form3_mem_reg_long_unaligned_marshal( memory mem, iRegL reg ) %{
-    assert( Assembler::is_simm13($mem$$disp  ), "need disp and disp+4" );
-    assert( Assembler::is_simm13($mem$$disp+4), "need disp and disp+4" );
+    assert(Assembler::is_simm13($mem$$disp  ), "need disp and disp+4");
+    assert(Assembler::is_simm13($mem$$disp+4), "need disp and disp+4");
     guarantee($mem$$index == R_G0_enc, "double index?");
     emit_form3_mem_reg(cbuf, this, $primary, -1, $mem$$base, $mem$$disp+4, R_G0_enc, R_O7_enc );
     emit_form3_mem_reg(cbuf, this, $primary, -1, $mem$$base, $mem$$disp,   R_G0_enc, $reg$$reg );
@@ -2082,8 +2109,8 @@ encode %{
   %}
 
   enc_class form3_mem_reg_double_unaligned( memory mem, RegD_low reg ) %{
-    assert( Assembler::is_simm13($mem$$disp  ), "need disp and disp+4" );
-    assert( Assembler::is_simm13($mem$$disp+4), "need disp and disp+4" );
+    assert(Assembler::is_simm13($mem$$disp  ), "need disp and disp+4");
+    assert(Assembler::is_simm13($mem$$disp+4), "need disp and disp+4");
     guarantee($mem$$index == R_G0_enc, "double index?");
     // Load long with 2 instructions
     emit_form3_mem_reg(cbuf, this, $primary, -1, $mem$$base, $mem$$disp,   R_G0_enc, $reg$$reg+0 );
@@ -2563,7 +2590,7 @@ encode %{
       }
       int entry_offset = instanceKlass::vtable_start_offset() + vtable_index*vtableEntry::size();
       int v_off = entry_offset*wordSize + vtableEntry::method_offset_in_bytes();
-      if( __ is_simm13(v_off) ) {
+      if (Assembler::is_simm13(v_off)) {
         __ ld_ptr(G3, v_off, G5_method);
       } else {
         // Generate 2 instructions
@@ -3336,7 +3363,7 @@ operand immI() %{
 
 // Integer Immediate: 8-bit
 operand immI8() %{
-  predicate(Assembler::is_simm(n->get_int(), 8));
+  predicate(Assembler::is_simm8(n->get_int()));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -3365,7 +3392,7 @@ operand immI13m7() %{
 
 // Integer Immediate: 16-bit
 operand immI16() %{
-  predicate(Assembler::is_simm(n->get_int(), 16));
+  predicate(Assembler::is_simm16(n->get_int()));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -3393,7 +3420,7 @@ operand immU6() %{
 
 // Integer Immediate: 11-bit
 operand immI11() %{
-  predicate(Assembler::is_simm(n->get_int(),11));
+  predicate(Assembler::is_simm11(n->get_int()));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -3402,7 +3429,7 @@ operand immI11() %{
 
 // Integer Immediate: 5-bit
 operand immI5() %{
-  predicate(Assembler::is_simm(n->get_int(), 5));
+  predicate(Assembler::is_simm5(n->get_int()));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -3634,7 +3661,7 @@ operand immL0() %{
 
 // Integer Immediate: 5-bit
 operand immL5() %{
-  predicate(n->get_long() == (int)n->get_long() && Assembler::is_simm((int)n->get_long(), 5));
+  predicate(n->get_long() == (int)n->get_long() && Assembler::is_simm5((int)n->get_long()));
   match(ConL);
   op_cost(0);
   format %{ %}
@@ -9251,13 +9278,16 @@ instruct jumpXtnd(iRegX switch_val, o7RegI table) %{
 
   format %{  "ADD    $constanttablebase, $constantoffset, O7\n\t"
              "LD     [O7 + $switch_val], O7\n\t"
-             "JUMP   O7"
-         %}
+             "JUMP   O7" %}
   ins_encode %{
     // Calculate table address into a register.
     Register table_reg;
     Register label_reg = O7;
-    if (constant_offset() == 0) {
+    // If we are calculating the size of this instruction don't trust
+    // zero offsets because they might change when
+    // MachConstantBaseNode decides to optimize the constant table
+    // base.
+    if ((constant_offset() == 0) && !Compile::current()->in_scratch_emit_size()) {
       table_reg = $constanttablebase;
     } else {
       table_reg = O7;
