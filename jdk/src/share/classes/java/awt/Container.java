@@ -1950,7 +1950,7 @@ public class Container extends Component {
      */
     public void paint(Graphics g) {
         if (isShowing()) {
-            synchronized (this) {
+            synchronized (getObjectLock()) {
                 if (printing) {
                     if (printingThreads.contains(Thread.currentThread())) {
                         return;
@@ -2004,7 +2004,7 @@ public class Container extends Component {
         if (isShowing()) {
             Thread t = Thread.currentThread();
             try {
-                synchronized (this) {
+                synchronized (getObjectLock()) {
                     if (printingThreads == null) {
                         printingThreads = new HashSet();
                     }
@@ -2013,7 +2013,7 @@ public class Container extends Component {
                 }
                 super.print(g);  // By default, Component.print() calls paint()
             } finally {
-                synchronized (this) {
+                synchronized (getObjectLock()) {
                     printingThreads.remove(t);
                     printing = !printingThreads.isEmpty();
                 }
