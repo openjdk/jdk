@@ -1946,7 +1946,7 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) 
   }
 
   // Nothing to do, so get out
-  if( !C->has_loops() && !do_split_ifs && !_verify_me && !_verify_only ) {
+  if( !C->has_loops() && !skip_loop_opts && !do_split_ifs && !_verify_me && !_verify_only ) {
     _igvn.optimize();           // Cleanup NeverBranches
     return;
   }

@@ -1711,11 +1711,22 @@ void Compile::Optimize() {
 
     if (failing())  return;
 
+    // Optimize out fields loads from scalar replaceable allocations.
     igvn.optimize();
     print_method("Iter GVN after EA", 2);
 
     if (failing())  return;
 
+    if (congraph() != NULL && macro_count() > 0) {
+      PhaseMacroExpand mexp(igvn);
+      mexp.eliminate_macro_nodes();
+      igvn.set_delay_transform(false);
+
+      igvn.optimize();
+      print_method("Iter GVN after eliminating allocations and locks", 2);
+
+      if (failing())  return;
+    }
   }
 
   // Loop transforms on the ideal graph.  Range Check Elimination,

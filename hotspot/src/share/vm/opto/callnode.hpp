@@ -440,6 +440,10 @@ class SafePointScalarObjectNode: public TypeNode {
                      // states of the scalarized object fields are collected.
   uint _n_fields;    // Number of non-static fields of the scalarized object.
   DEBUG_ONLY(AllocateNode* _alloc;)
+
+  virtual uint hash() const ; // { return NO_HASH; }
+  virtual uint cmp( const Node &n ) const;
+
 public:
   SafePointScalarObjectNode(const TypeOopPtr* tp,
 #ifdef ASSERT
@@ -454,15 +458,10 @@ public:
 
   uint first_index() const { return _first_index; }
   uint n_fields()    const { return _n_fields; }
-  DEBUG_ONLY(AllocateNode* alloc() const { return _alloc; })
 
-  // SafePointScalarObject should be always pinned to the control edge
-  // of the SafePoint node for which it was generated.
-  virtual bool pinned() const; // { return true; }
-
-  // SafePointScalarObject depends on the SafePoint node
-  // for which it was generated.
-  virtual bool depends_only_on_test() const; // { return false; }
+#ifdef ASSERT
+  AllocateNode* alloc() const { return _alloc; }
+#endif
 
   virtual uint size_of() const { return sizeof(*this); }
 
@@ -880,6 +879,7 @@ public:
 
   bool is_coarsened()  { return _coarsened; }
   void set_coarsened() { _coarsened = true; }
+  void clear_coarsened() { _coarsened = false; }
 
   // locking does not modify its arguments
   virtual bool        may_modify(const TypePtr *addr_t, PhaseTransform *phase){ return false;}
