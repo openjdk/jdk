@@ -2661,6 +2661,8 @@ uint StrIntrinsicNode::match_edge(uint idx) const {
 // control copies
 Node *StrIntrinsicNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (remove_dead_region(phase, can_reshape)) return this;
+  // Don't bother trying to transform a dead node
+  if (in(0) && in(0)->is_top())  return NULL;
 
   if (can_reshape) {
     Node* mem = phase->transform(in(MemNode::Memory));
@@ -2673,6 +2675,12 @@ Node *StrIntrinsicNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
   return NULL;
+}
+
+//------------------------------Value------------------------------------------
+const Type *StrIntrinsicNode::Value( PhaseTransform *phase ) const {
+  if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
+  return bottom_type();
 }
 
 //=============================================================================
@@ -2715,6 +2723,8 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
 // control copies
 Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (remove_dead_region(phase, can_reshape)) return this;
+  // Don't bother trying to transform a dead node
+  if (in(0) && in(0)->is_top())  return NULL;
 
   // Eliminate volatile MemBars for scalar replaced objects.
   if (can_reshape && req() == (Precedent+1) &&

@@ -1772,12 +1772,20 @@ bool ConnectionGraph::compute_escape() {
       Node *n = C->macro_node(i);
       if (n->is_AbstractLock()) { // Lock and Unlock nodes
         AbstractLockNode* alock = n->as_AbstractLock();
-        if (!alock->is_eliminated()) {
+        if (!alock->is_eliminated() || alock->is_coarsened()) {
           PointsToNode::EscapeState es = escape_state(alock->obj_node());
           assert(es != PointsToNode::UnknownEscape, "should know");
           if (es != PointsToNode::UnknownEscape && es != PointsToNode::GlobalEscape) {
-            // Mark it eliminated
-            alock->set_eliminated();
+            if (!alock->is_eliminated()) {
+              // Mark it eliminated to update any counters
+              alock->set_eliminated();
+            } else {
+              // The lock could be marked eliminated by lock coarsening
+              // code during first IGVN before EA. Clear coarsened flag
+              // to eliminate all associated locks/unlocks and relock
+              // during deoptimization.
+              alock->clear_coarsened();
+            }
           }
         }
       }
