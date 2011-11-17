@@ -246,8 +246,7 @@ CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector
   jlong millis_since_last_gc();
 
   void prepare_for_verify();
-  void print() const;
-  void print_on(outputStream* st) const;
+  virtual void print_on(outputStream* st) const;
   virtual void print_gc_threads_on(outputStream* st) const;
   virtual void gc_threads_do(ThreadClosure* tc) const;
   virtual void print_tracing_info() const;
