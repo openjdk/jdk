@@ -209,29 +209,9 @@ public:
   size_t cards_looked_up() { return _cards;}
 };
 
-// We want the parallel threads to start their scanning at
-// different collection set regions to avoid contention.
-// If we have:
-//          n collection set regions
-//          p threads
-// Then thread t will start at region t * floor (n/p)
-
-HeapRegion* G1RemSet::calculateStartRegion(int worker_i) {
-  HeapRegion* result = _g1p->collection_set();
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    size_t cs_size = _g1p->cset_region_length();
-    int n_workers = _g1->workers()->total_workers();
-    size_t cs_spans = cs_size / n_workers;
-    size_t ind      = cs_spans * worker_i;
-    for (size_t i = 0; i < ind; i++)
-      result = result->next_in_collection_set();
-  }
-  return result;
-}
-
 void G1RemSet::scanRS(OopsInHeapRegionClosure* oc, int worker_i) {
   double rs_time_start = os::elapsedTime();
-  HeapRegion *startRegion = calculateStartRegion(worker_i);
+  HeapRegion *startRegion = _g1->start_cset_region_for_worker(worker_i);
 
   ScanRSClosure scanRScl(oc, worker_i);
 

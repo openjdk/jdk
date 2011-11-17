@@ -737,7 +737,9 @@ public:
   void record_concurrent_mark_init_end(double
                                            mark_init_elapsed_time_ms);
 
-  void record_mark_closure_time(double mark_closure_time_ms);
+  void record_mark_closure_time(double mark_closure_time_ms) {
+    _mark_closure_time_ms = mark_closure_time_ms;
+  }
 
   void record_concurrent_mark_remark_start();
   void record_concurrent_mark_remark_end();

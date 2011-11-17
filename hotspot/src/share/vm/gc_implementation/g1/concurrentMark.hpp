@@ -360,7 +360,7 @@ class ConcurrentMark: public CHeapObj {
   friend class ConcurrentMarkThread;
   friend class CMTask;
   friend class CMBitMapClosure;
-  friend class CSMarkOopClosure;
+  friend class CSetMarkOopClosure;
   friend class CMGlobalObjectClosure;
   friend class CMRemarkTask;
   friend class CMConcurrentMarkingTask;

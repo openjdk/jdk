@@ -1294,7 +1294,16 @@ public:
 
 #ifdef ASSERT
   bool check_heap_region_claim_values(jint claim_value);
+
+  // Same as the routine above but only checks regions in the
+  // current collection set.
+  bool check_cset_heap_region_claim_values(jint claim_value);
 #endif // ASSERT
+
+  // Given the id of a worker, calculate a suitable
+  // starting region for iterating over the current
+  // collection set.
+  HeapRegion* start_cset_region_for_worker(int worker_i);
 
   // Iterate over the regions (if any) in the current collection set.
   void collection_set_iterate(HeapRegionClosure* blk);

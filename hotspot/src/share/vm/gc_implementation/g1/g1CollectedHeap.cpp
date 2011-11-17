@@ -2617,10 +2617,10 @@ public:
     _claim_value(claim_value), _failures(0), _sh_region(NULL) { }
   bool doHeapRegion(HeapRegion* r) {
     if (r->claim_value() != _claim_value) {
-      gclog_or_tty->print_cr("Region ["PTR_FORMAT","PTR_FORMAT"), "
+      gclog_or_tty->print_cr("Region " HR_FORMAT ", "
                              "claim value = %d, should be %d",
-                             r->bottom(), r->end(), r->claim_value(),
-                             _claim_value);
+                             HR_FORMAT_PARAMS(r),
+                             r->claim_value(), _claim_value);
       ++_failures;
     }
     if (!r->isHumongous()) {
@@ -2629,9 +2629,9 @@ public:
       _sh_region = r;
     } else if (r->continuesHumongous()) {
       if (r->humongous_start_region() != _sh_region) {
-        gclog_or_tty->print_cr("Region ["PTR_FORMAT","PTR_FORMAT"), "
+        gclog_or_tty->print_cr("Region " HR_FORMAT ", "
                                "HS = "PTR_FORMAT", should be "PTR_FORMAT,
-                               r->bottom(), r->end(),
+                               HR_FORMAT_PARAMS(r),
                                r->humongous_start_region(),
                                _sh_region);
         ++_failures;
@@ -2649,7 +2649,62 @@ bool G1CollectedHeap::check_heap_region_claim_values(jint claim_value) {
   heap_region_iterate(&cl);
   return cl.failures() == 0;
 }
+
+class CheckClaimValuesInCSetHRClosure: public HeapRegionClosure {
+  jint   _claim_value;
+  size_t _failures;
+
+public:
+  CheckClaimValuesInCSetHRClosure(jint claim_value) :
+    _claim_value(claim_value),
+    _failures(0) { }
+
+  size_t failures() {
+    return _failures;
+  }
+
+  bool doHeapRegion(HeapRegion* hr) {
+    assert(hr->in_collection_set(), "how?");
+    assert(!hr->isHumongous(), "H-region in CSet");
+    if (hr->claim_value() != _claim_value) {
+      gclog_or_tty->print_cr("CSet Region " HR_FORMAT ", "
+                             "claim value = %d, should be %d",
+                             HR_FORMAT_PARAMS(hr),
+                             hr->claim_value(), _claim_value);
+      _failures += 1;
+    }
+    return false;
+  }
+};
+
+bool G1CollectedHeap::check_cset_heap_region_claim_values(jint claim_value) {
+  CheckClaimValuesInCSetHRClosure cl(claim_value);
+  collection_set_iterate(&cl);
+  return cl.failures() == 0;
+}
 #endif // ASSERT
+
+// We want the parallel threads to start their collection
+// set iteration at different collection set regions to
+// avoid contention.
+// If we have:
+//          n collection set regions
+//          p threads
+// Then thread t will start at region t * floor (n/p)
+
+HeapRegion* G1CollectedHeap::start_cset_region_for_worker(int worker_i) {
+  HeapRegion* result = g1_policy()->collection_set();
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
+    size_t cs_size = g1_policy()->cset_region_length();
+    int n_workers = workers()->total_workers();
+    size_t cs_spans = cs_size / n_workers;
+    size_t ind      = cs_spans * worker_i;
+    for (size_t i = 0; i < ind; i++) {
+      result = result->next_in_collection_set();
+    }
+  }
+  return result;
+}
 
 void G1CollectedHeap::collection_set_iterate(HeapRegionClosure* cl) {
   HeapRegion* r = g1_policy()->collection_set();
@@ -5393,8 +5448,11 @@ void G1CollectedHeap::evacuate_collection_set() {
 
   finalize_for_evac_failure();
 
-  // Must do this before removing self-forwarding pointers, which clears
-  // the per-region evac-failure flags.
+  // Must do this before clearing the per-region evac-failure flags
+  // (which is currently done when we free the collection set).
+  // We also only do this if marking is actually in progress and so
+  // have to do this before we set the mark_in_progress flag at the
+  // end of an initial mark pause.
   concurrent_mark()->complete_marking_in_collection_set();
 
   if (evacuation_failed()) {
@@ -5656,7 +5714,6 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
 
   while (cur != NULL) {
     assert(!is_on_master_free_list(cur), "sanity");
-
     if (non_young) {
       if (cur->is_young()) {
         double end_sec = os::elapsedTime();
@@ -5667,12 +5724,14 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
         non_young = false;
       }
     } else {
-      double end_sec = os::elapsedTime();
-      double elapsed_ms = (end_sec - start_sec) * 1000.0;
-      young_time_ms += elapsed_ms;
+      if (!cur->is_young()) {
+        double end_sec = os::elapsedTime();
+        double elapsed_ms = (end_sec - start_sec) * 1000.0;
+        young_time_ms += elapsed_ms;
 
-      start_sec = os::elapsedTime();
-      non_young = true;
+        start_sec = os::elapsedTime();
+        non_young = true;
+      }
     }
 
     rs_lengths += cur->rem_set()->occupied();
@@ -5704,8 +5763,20 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
             "invariant" );
 
     if (!cur->evacuation_failed()) {
+      MemRegion used_mr = cur->used_region();
+
       // And the region is empty.
-      assert(!cur->is_empty(), "Should not have empty regions in a CS.");
+      assert(!used_mr.is_empty(), "Should not have empty regions in a CS.");
+
+      // If marking is in progress then clear any objects marked in
+      // the current region. Note mark_in_progress() returns false,
+      // even during an initial mark pause, until the set_marking_started()
+      // call which takes place later in the pause.
+      if (mark_in_progress()) {
+        assert(!g1_policy()->during_initial_mark_pause(), "sanity");
+        _cm->nextMarkBitMap()->clearRange(used_mr);
+      }
+
       free_region(cur, &pre_used, &local_free_list, false /* par */);
     } else {
       cur->uninstall_surv_rate_group();
@@ -5725,10 +5796,12 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
 
   double end_sec = os::elapsedTime();
   double elapsed_ms = (end_sec - start_sec) * 1000.0;
-  if (non_young)
+
+  if (non_young) {
     non_young_time_ms += elapsed_ms;
-  else
+  } else {
     young_time_ms += elapsed_ms;
+  }
 
   update_sets_after_freeing_regions(pre_used, &local_free_list,
                                     NULL /* old_proxy_set */,

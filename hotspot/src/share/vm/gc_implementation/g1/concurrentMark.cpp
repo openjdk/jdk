@@ -2906,8 +2906,10 @@ void ConcurrentMark::print_stats() {
   }
 }
 
-class CSMarkOopClosure: public OopClosure {
-  friend class CSMarkBitMapClosure;
+// Closures used by ConcurrentMark::complete_marking_in_collection_set().
+
+class CSetMarkOopClosure: public OopClosure {
+  friend class CSetMarkBitMapClosure;
 
   G1CollectedHeap* _g1h;
   CMBitMap*        _bm;
@@ -2917,6 +2919,7 @@ class CSMarkOopClosure: public OopClosure {
   int              _ms_size;
   int              _ms_ind;
   int              _array_increment;
+  int              _worker_i;
 
   bool push(oop obj, int arr_ind = 0) {
     if (_ms_ind == _ms_size) {
@@ -2957,7 +2960,6 @@ class CSMarkOopClosure: public OopClosure {
         for (int j = arr_ind; j < lim; j++) {
           do_oop(aobj->objArrayOopDesc::obj_at_addr<T>(j));
         }
-
       } else {
         obj->oop_iterate(this);
       }
@@ -2967,17 +2969,17 @@ class CSMarkOopClosure: public OopClosure {
   }
 
 public:
-  CSMarkOopClosure(ConcurrentMark* cm, int ms_size) :
+  CSetMarkOopClosure(ConcurrentMark* cm, int ms_size, int worker_i) :
     _g1h(G1CollectedHeap::heap()),
     _cm(cm),
     _bm(cm->nextMarkBitMap()),
     _ms_size(ms_size), _ms_ind(0),
     _ms(NEW_C_HEAP_ARRAY(oop, ms_size)),
     _array_ind_stack(NEW_C_HEAP_ARRAY(jint, ms_size)),
-    _array_increment(MAX2(ms_size/8, 16))
-  {}
+    _array_increment(MAX2(ms_size/8, 16)),
+    _worker_i(worker_i) { }
 
-  ~CSMarkOopClosure() {
+  ~CSetMarkOopClosure() {
     FREE_C_HEAP_ARRAY(oop, _ms);
     FREE_C_HEAP_ARRAY(jint, _array_ind_stack);
   }
@@ -3000,10 +3002,11 @@ public:
     if (hr != NULL) {
       if (hr->in_collection_set()) {
         if (_g1h->is_obj_ill(obj)) {
-          _bm->mark((HeapWord*)obj);
-          if (!push(obj)) {
-            gclog_or_tty->print_cr("Setting abort in CSMarkOopClosure because push failed.");
-            set_abort();
+          if (_bm->parMark((HeapWord*)obj)) {
+            if (!push(obj)) {
+              gclog_or_tty->print_cr("Setting abort in CSetMarkOopClosure because push failed.");
+              set_abort();
+            }
           }
         }
       } else {
@@ -3014,19 +3017,19 @@ public:
   }
 };
 
-class CSMarkBitMapClosure: public BitMapClosure {
-  G1CollectedHeap* _g1h;
-  CMBitMap*        _bitMap;
-  ConcurrentMark*  _cm;
-  CSMarkOopClosure _oop_cl;
+class CSetMarkBitMapClosure: public BitMapClosure {
+  G1CollectedHeap*   _g1h;
+  CMBitMap*          _bitMap;
+  ConcurrentMark*    _cm;
+  CSetMarkOopClosure _oop_cl;
+  int                _worker_i;
+
 public:
-  CSMarkBitMapClosure(ConcurrentMark* cm, int ms_size) :
+  CSetMarkBitMapClosure(ConcurrentMark* cm, int ms_size, int worker_i) :
     _g1h(G1CollectedHeap::heap()),
     _bitMap(cm->nextMarkBitMap()),
-    _oop_cl(cm, ms_size)
-  {}
-
-  ~CSMarkBitMapClosure() {}
+    _oop_cl(cm, ms_size, worker_i),
+    _worker_i(worker_i) { }
 
   bool do_bit(size_t offset) {
     // convert offset into a HeapWord*
@@ -3048,50 +3051,66 @@ public:
   }
 };
 
+class CompleteMarkingInCSetHRClosure: public HeapRegionClosure {
+  CMBitMap*             _bm;
+  CSetMarkBitMapClosure _bit_cl;
+  int                   _worker_i;
 
-class CompleteMarkingInCSHRClosure: public HeapRegionClosure {
-  CMBitMap* _bm;
-  CSMarkBitMapClosure _bit_cl;
   enum SomePrivateConstants {
     MSSize = 1000
   };
-  bool _completed;
+
 public:
-  CompleteMarkingInCSHRClosure(ConcurrentMark* cm) :
+  CompleteMarkingInCSetHRClosure(ConcurrentMark* cm, int worker_i) :
     _bm(cm->nextMarkBitMap()),
-    _bit_cl(cm, MSSize),
-    _completed(true)
-  {}
+    _bit_cl(cm, MSSize, worker_i),
+    _worker_i(worker_i) { }
 
-  ~CompleteMarkingInCSHRClosure() {}
-
-  bool doHeapRegion(HeapRegion* r) {
-    if (!r->evacuation_failed()) {
-      MemRegion mr = MemRegion(r->bottom(), r->next_top_at_mark_start());
-      if (!mr.is_empty()) {
-        if (!_bm->iterate(&_bit_cl, mr)) {
-          _completed = false;
-          return true;
+  bool doHeapRegion(HeapRegion* hr) {
+    if (hr->claimHeapRegion(HeapRegion::CompleteMarkCSetClaimValue)) {
+      // The current worker has successfully claimed the region.
+      if (!hr->evacuation_failed()) {
+        MemRegion mr = MemRegion(hr->bottom(), hr->next_top_at_mark_start());
+        if (!mr.is_empty()) {
+          bool done = false;
+          while (!done) {
+            done = _bm->iterate(&_bit_cl, mr);
+          }
         }
       }
     }
     return false;
   }
-
-  bool completed() { return _completed; }
 };
 
-class ClearMarksInHRClosure: public HeapRegionClosure {
-  CMBitMap* _bm;
-public:
-  ClearMarksInHRClosure(CMBitMap* bm): _bm(bm) { }
+class SetClaimValuesInCSetHRClosure: public HeapRegionClosure {
+  jint _claim_value;
 
-  bool doHeapRegion(HeapRegion* r) {
-    if (!r->used_region().is_empty() && !r->evacuation_failed()) {
-      MemRegion usedMR = r->used_region();
-      _bm->clearRange(r->used_region());
-    }
+public:
+  SetClaimValuesInCSetHRClosure(jint claim_value) :
+    _claim_value(claim_value) { }
+
+  bool doHeapRegion(HeapRegion* hr) {
+    hr->set_claim_value(_claim_value);
     return false;
+  }
+};
+
+class G1ParCompleteMarkInCSetTask: public AbstractGangTask {
+protected:
+  G1CollectedHeap* _g1h;
+  ConcurrentMark*  _cm;
+
+public:
+  G1ParCompleteMarkInCSetTask(G1CollectedHeap* g1h,
+                              ConcurrentMark* cm) :
+    AbstractGangTask("Complete Mark in CSet"),
+    _g1h(g1h), _cm(cm) { }
+
+  void work(int worker_i) {
+    CompleteMarkingInCSetHRClosure cmplt(_cm, worker_i);
+    HeapRegion* hr = _g1h->start_cset_region_for_worker(worker_i);
+    _g1h->collection_set_iterate_from(hr, &cmplt);
   }
 };
 
@@ -3103,17 +3122,28 @@ void ConcurrentMark::complete_marking_in_collection_set() {
     return;
   }
 
-  int i = 1;
   double start = os::elapsedTime();
-  while (true) {
-    i++;
-    CompleteMarkingInCSHRClosure cmplt(this);
-    g1h->collection_set_iterate(&cmplt);
-    if (cmplt.completed()) break;
+  int n_workers = g1h->workers()->total_workers();
+
+  G1ParCompleteMarkInCSetTask complete_mark_task(g1h, this);
+
+  assert(g1h->check_cset_heap_region_claim_values(HeapRegion::InitialClaimValue), "sanity");
+
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
+    g1h->set_par_threads(n_workers);
+    g1h->workers()->run_task(&complete_mark_task);
+    g1h->set_par_threads(0);
+  } else {
+    complete_mark_task.work(0);
   }
 
-  ClearMarksInHRClosure clr(nextMarkBitMap());
-  g1h->collection_set_iterate(&clr);
+  assert(g1h->check_cset_heap_region_claim_values(HeapRegion::CompleteMarkCSetClaimValue), "sanity");
+
+  // Now reset the claim values in the regions in the collection set.
+  SetClaimValuesInCSetHRClosure set_cv_cl(HeapRegion::InitialClaimValue);
+  g1h->collection_set_iterate(&set_cv_cl);
+
+  assert(g1h->check_cset_heap_region_claim_values(HeapRegion::InitialClaimValue), "sanity");
 
   double end_time = os::elapsedTime();
   double elapsed_time_ms = (end_time - start) * 1000.0;

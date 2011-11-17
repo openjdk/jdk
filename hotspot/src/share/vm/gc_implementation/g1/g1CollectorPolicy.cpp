@@ -141,6 +141,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _summary(new Summary()),
 
   _cur_clear_ct_time_ms(0.0),
+  _mark_closure_time_ms(0.0),
 
   _cur_ref_proc_time_ms(0.0),
   _cur_ref_enq_time_ms(0.0),
@@ -959,10 +960,6 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
   assert( verify_young_ages(), "region age verification" );
 }
 
-void G1CollectorPolicy::record_mark_closure_time(double mark_closure_time_ms) {
-  _mark_closure_time_ms = mark_closure_time_ms;
-}
-
 void G1CollectorPolicy::record_concurrent_mark_init_end(double
                                                    mark_init_elapsed_time_ms) {
   _during_marking = true;
@@ -1251,6 +1248,11 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
   // current value of "other time"
   other_time_ms -= _cur_clear_ct_time_ms;
 
+  // Subtract the time spent completing marking in the collection
+  // set. Note if marking is not in progress during the pause
+  // the value of _mark_closure_time_ms will be zero.
+  other_time_ms -= _mark_closure_time_ms;
+
   // TraceGen0Time and TraceGen1Time summary info updating.
   _all_pause_times_ms->add(elapsed_ms);
 
@@ -1407,6 +1409,9 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
       print_stats(1, "Scan RS", scan_rs_time);
       print_stats(1, "Object Copying", obj_copy_time);
     }
+    if (print_marking_info) {
+      print_stats(1, "Complete CSet Marking", _mark_closure_time_ms);
+    }
     print_stats(1, "Clear CT", _cur_clear_ct_time_ms);
 #ifndef PRODUCT
     print_stats(1, "Cur Clear CC", _cur_clear_cc_time_ms);
@@ -1418,9 +1423,14 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     }
 #endif
     print_stats(1, "Other", other_time_ms);
-    print_stats(2, "Choose CSet", _recorded_young_cset_choice_time_ms);
+    print_stats(2, "Choose CSet",
+                   (_recorded_young_cset_choice_time_ms +
+                    _recorded_non_young_cset_choice_time_ms));
     print_stats(2, "Ref Proc", _cur_ref_proc_time_ms);
     print_stats(2, "Ref Enq", _cur_ref_enq_time_ms);
+    print_stats(2, "Free CSet",
+                   (_recorded_young_free_cset_time_ms +
+                    _recorded_non_young_free_cset_time_ms));
 
     for (int i = 0; i < _aux_num; ++i) {
       if (_cur_aux_times_set[i]) {
