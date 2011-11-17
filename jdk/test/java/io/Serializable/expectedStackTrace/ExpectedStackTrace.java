@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 6317435 7068148
+ * @bug 6317435 7110700
  * @summary Verify that stack trace contains a proper cause of
  *          InvalidClassException (methods: checkSerialize,
  *          checkDeserialize or checkDefaultSerialize)
@@ -59,7 +59,7 @@ public class ExpectedStackTrace {
     private static final String SER_METHOD_NAME = "checkSerializable";
 
     public static final void main(String[] args) throws Exception {
-        System.err.println("\nRegression test for CRs 6317435, 7068148");
+        System.err.println("\nRegression test for CRs 6317435, 7110700");
         checkSerializable(getObject());
     }
 
@@ -100,8 +100,9 @@ public class ExpectedStackTrace {
             }
             if (found) {
                 if (ex.getCause() != null) {
-                    throw new Error("\nTest for CR 7068148 FAILED");
+                    throw new Error("\nTest for CR 7110700 FAILED");
                 }
+                System.err.println("\nTEST PASSED");
             } else {
                 throw new Error("\nTest for CR 6317435 FAILED");
             }
