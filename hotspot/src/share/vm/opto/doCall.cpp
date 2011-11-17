@@ -62,7 +62,6 @@ void trace_type_profile(ciMethod *method, int depth, int bci, ciMethod *prof_met
 CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, bool call_is_virtual,
                                        JVMState* jvms, bool allow_inline,
                                        float prof_factor) {
-  CallGenerator*  cg;
   ciMethod*       caller   = jvms->method();
   int             bci      = jvms->bci();
   Bytecodes::Code bytecode = caller->java_code_at_bci(bci);
@@ -110,7 +109,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
   // We do this before the strict f.p. check below because the
   // intrinsics handle strict f.p. correctly.
   if (allow_inline) {
-    cg = find_intrinsic(call_method, call_is_virtual);
+    CallGenerator* cg = find_intrinsic(call_method, call_is_virtual);
     if (cg != NULL)  return cg;
   }
 
@@ -121,33 +120,16 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
   if (call_method->is_method_handle_invoke()) {
     if (bytecode != Bytecodes::_invokedynamic) {
       GraphKit kit(jvms);
-      Node* n = kit.argument(0);
-
-      CallGenerator* cg = CallGenerator::for_method_handle_inline(n, jvms, caller, call_method, profile);
-      if (cg != NULL) {
-        return cg;
-      }
-      return CallGenerator::for_direct_call(call_method);
+      Node* method_handle = kit.argument(0);
+      return CallGenerator::for_method_handle_call(method_handle, jvms, caller, call_method, profile);
     }
     else {
-      // Get the CallSite object.
-      ciMethod* caller_method = jvms->method();
-      ciBytecodeStream str(caller_method);
-      str.force_bci(jvms->bci());  // Set the stream to the invokedynamic bci.
-      ciCallSite* call_site = str.get_call_site();
-
-      CallGenerator* cg = CallGenerator::for_invokedynamic_inline(call_site, jvms, caller, call_method, profile);
-      if (cg != NULL) {
-        return cg;
-      }
-      // If something failed, generate a normal dynamic call.
-      return CallGenerator::for_dynamic_call(call_method);
+      return CallGenerator::for_invokedynamic_call(jvms, caller, call_method, profile);
     }
   }
 
   // Do not inline strict fp into non-strict code, or the reverse
-  bool caller_method_is_strict = jvms->method()->is_strict();
-  if( caller_method_is_strict ^ call_method->is_strict() ) {
+  if (caller->is_strict() ^ call_method->is_strict()) {
     allow_inline = false;
   }
 
@@ -258,7 +240,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
             }
             if (miss_cg != NULL) {
               NOT_PRODUCT(trace_type_profile(jvms->method(), jvms->depth() - 1, jvms->bci(), receiver_method, profile.receiver(0), site_count, receiver_count));
-              cg = CallGenerator::for_predicted_call(profile.receiver(0), miss_cg, hit_cg, profile.receiver_prob(0));
+              CallGenerator* cg = CallGenerator::for_predicted_call(profile.receiver(0), miss_cg, hit_cg, profile.receiver_prob(0));
               if (cg != NULL)  return cg;
             }
           }
