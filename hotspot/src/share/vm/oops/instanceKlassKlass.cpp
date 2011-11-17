@@ -399,7 +399,7 @@ instanceKlassKlass::allocate_instance_klass(Symbol* name, int vtable_len, int it
     ik->set_inner_classes(NULL);
     ik->set_static_oop_field_count(0);
     ik->set_nonstatic_field_size(0);
-    ik->set_is_marked_dependent(false);
+    ik->clear_is_marked_dependent();
     ik->set_init_state(instanceKlass::allocated);
     ik->set_init_thread(NULL);
     ik->set_reference_type(rt);
