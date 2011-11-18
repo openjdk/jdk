@@ -1610,15 +1610,11 @@ public:
 public:
   void stop_conc_gc_threads();
 
-  // <NEW PREDICTION>
-
   double predict_region_elapsed_time_ms(HeapRegion* hr, bool young);
   void check_if_region_is_too_expensive(double predicted_time_ms);
   size_t pending_card_num();
   size_t max_pending_card_num();
   size_t cards_scanned();
-
-  // </NEW PREDICTION>
 
 protected:
   size_t _max_heap_capacity;
