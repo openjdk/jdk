@@ -228,7 +228,7 @@ public class Enter extends JCTree.Visitor {
      *  only, and members go into the class member scope.
      */
     Scope enterScope(Env<AttrContext> env) {
-        return (env.tree.getTag() == JCTree.CLASSDEF)
+        return (env.tree.hasTag(JCTree.Tag.CLASSDEF))
             ? ((JCClassDecl) env.tree).sym.members_field
             : env.info.scope;
     }

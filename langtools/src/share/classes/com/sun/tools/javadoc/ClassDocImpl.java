@@ -65,6 +65,7 @@ import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Position;
 
 import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /**
  * Represents a java class and provides access to information
@@ -1083,7 +1084,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
 
         Name asterisk = tsym.name.table.names.asterisk;
         for (JCTree t : compenv.toplevel.defs) {
-            if (t.getTag() == JCTree.IMPORT) {
+            if (t.hasTag(IMPORT)) {
                 JCTree imp = ((JCImport) t).qualid;
                 if ((TreeInfo.name(imp) != asterisk) &&
                         (imp.type.tsym.kind & Kinds.TYP) != 0) {
@@ -1124,7 +1125,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
         if (compenv == null) return new PackageDocImpl[0];
 
         for (JCTree t : compenv.toplevel.defs) {
-            if (t.getTag() == JCTree.IMPORT) {
+            if (t.hasTag(IMPORT)) {
                 JCTree imp = ((JCImport) t).qualid;
                 if (TreeInfo.name(imp) == names.asterisk) {
                     JCFieldAccess sel = (JCFieldAccess)imp;
