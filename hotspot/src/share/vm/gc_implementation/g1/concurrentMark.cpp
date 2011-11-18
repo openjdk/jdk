@@ -44,7 +44,7 @@
 //
 // CMS Bit Map Wrapper
 
-CMBitMapRO::CMBitMapRO(ReservedSpace rs, int shifter):
+CMBitMapRO::CMBitMapRO(ReservedSpace rs, int shifter) :
   _bm((uintptr_t*)NULL,0),
   _shifter(shifter) {
   _bmStartWord = (HeapWord*)(rs.base());
@@ -1530,10 +1530,42 @@ public:
                              FreeRegionList* local_cleanup_list,
                              OldRegionSet* old_proxy_set,
                              HumongousRegionSet* humongous_proxy_set,
-                             HRRSCleanupTask* hrrs_cleanup_task);
+                             HRRSCleanupTask* hrrs_cleanup_task) :
+    _g1(g1), _worker_num(worker_num),
+    _max_live_bytes(0), _regions_claimed(0),
+    _freed_bytes(0),
+    _claimed_region_time(0.0), _max_region_time(0.0),
+    _local_cleanup_list(local_cleanup_list),
+    _old_proxy_set(old_proxy_set),
+    _humongous_proxy_set(humongous_proxy_set),
+    _hrrs_cleanup_task(hrrs_cleanup_task) { }
+
   size_t freed_bytes() { return _freed_bytes; }
 
-  bool doHeapRegion(HeapRegion *r);
+  bool doHeapRegion(HeapRegion *hr) {
+    // We use a claim value of zero here because all regions
+    // were claimed with value 1 in the FinalCount task.
+    hr->reset_gc_time_stamp();
+    if (!hr->continuesHumongous()) {
+      double start = os::elapsedTime();
+      _regions_claimed++;
+      hr->note_end_of_marking();
+      _max_live_bytes += hr->max_live_bytes();
+      _g1->free_region_if_empty(hr,
+                                &_freed_bytes,
+                                _local_cleanup_list,
+                                _old_proxy_set,
+                                _humongous_proxy_set,
+                                _hrrs_cleanup_task,
+                                true /* par */);
+      double region_time = (os::elapsedTime() - start);
+      _claimed_region_time += region_time;
+      if (region_time > _max_region_time) {
+        _max_region_time = region_time;
+      }
+    }
+    return false;
+  }
 
   size_t max_live_bytes() { return _max_live_bytes; }
   size_t regions_claimed() { return _regions_claimed; }
@@ -1643,47 +1675,6 @@ public:
   }
 
 };
-
-G1NoteEndOfConcMarkClosure::
-G1NoteEndOfConcMarkClosure(G1CollectedHeap* g1,
-                           int worker_num,
-                           FreeRegionList* local_cleanup_list,
-                           OldRegionSet* old_proxy_set,
-                           HumongousRegionSet* humongous_proxy_set,
-                           HRRSCleanupTask* hrrs_cleanup_task)
-  : _g1(g1), _worker_num(worker_num),
-    _max_live_bytes(0), _regions_claimed(0),
-    _freed_bytes(0),
-    _claimed_region_time(0.0), _max_region_time(0.0),
-    _local_cleanup_list(local_cleanup_list),
-    _old_proxy_set(old_proxy_set),
-    _humongous_proxy_set(humongous_proxy_set),
-    _hrrs_cleanup_task(hrrs_cleanup_task) { }
-
-bool G1NoteEndOfConcMarkClosure::doHeapRegion(HeapRegion *hr) {
-  // We use a claim value of zero here because all regions
-  // were claimed with value 1 in the FinalCount task.
-  hr->reset_gc_time_stamp();
-  if (!hr->continuesHumongous()) {
-    double start = os::elapsedTime();
-    _regions_claimed++;
-    hr->note_end_of_marking();
-    _max_live_bytes += hr->max_live_bytes();
-    _g1->free_region_if_empty(hr,
-                              &_freed_bytes,
-                              _local_cleanup_list,
-                              _old_proxy_set,
-                              _humongous_proxy_set,
-                              _hrrs_cleanup_task,
-                              true /* par */);
-    double region_time = (os::elapsedTime() - start);
-    _claimed_region_time += region_time;
-    if (region_time > _max_region_time) {
-      _max_region_time = region_time;
-    }
-  }
-  return false;
-}
 
 void ConcurrentMark::cleanup() {
   // world is stopped at this checkpoint
@@ -1991,16 +1982,12 @@ class G1CMDrainMarkingStackClosure: public VoidClosure {
 class G1CMParKeepAliveAndDrainClosure: public OopClosure {
   ConcurrentMark*  _cm;
   CMTask*          _task;
-  CMBitMap*        _bitMap;
   int              _ref_counter_limit;
   int              _ref_counter;
  public:
-  G1CMParKeepAliveAndDrainClosure(ConcurrentMark* cm,
-                                  CMTask* task,
-                                  CMBitMap* bitMap) :
-    _cm(cm), _task(task), _bitMap(bitMap),
-    _ref_counter_limit(G1RefProcDrainInterval)
-  {
+  G1CMParKeepAliveAndDrainClosure(ConcurrentMark* cm, CMTask* task) :
+    _cm(cm), _task(task),
+    _ref_counter_limit(G1RefProcDrainInterval) {
     assert(_ref_counter_limit > 0, "sanity");
     _ref_counter = _ref_counter_limit;
   }
@@ -2091,19 +2078,16 @@ class G1CMRefProcTaskExecutor: public AbstractRefProcTaskExecutor {
 private:
   G1CollectedHeap* _g1h;
   ConcurrentMark*  _cm;
-  CMBitMap*        _bitmap;
   WorkGang*        _workers;
   int              _active_workers;
 
 public:
   G1CMRefProcTaskExecutor(G1CollectedHeap* g1h,
                         ConcurrentMark* cm,
-                        CMBitMap* bitmap,
                         WorkGang* workers,
                         int n_workers) :
-    _g1h(g1h), _cm(cm), _bitmap(bitmap),
-    _workers(workers), _active_workers(n_workers)
-  { }
+    _g1h(g1h), _cm(cm),
+    _workers(workers), _active_workers(n_workers) { }
 
   // Executes the given task using concurrent marking worker threads.
   virtual void execute(ProcessTask& task);
@@ -2115,21 +2099,18 @@ class G1CMRefProcTaskProxy: public AbstractGangTask {
   ProcessTask&     _proc_task;
   G1CollectedHeap* _g1h;
   ConcurrentMark*  _cm;
-  CMBitMap*        _bitmap;
 
 public:
   G1CMRefProcTaskProxy(ProcessTask& proc_task,
                      G1CollectedHeap* g1h,
-                     ConcurrentMark* cm,
-                     CMBitMap* bitmap) :
+                     ConcurrentMark* cm) :
     AbstractGangTask("Process reference objects in parallel"),
-    _proc_task(proc_task), _g1h(g1h), _cm(cm), _bitmap(bitmap)
-  {}
+    _proc_task(proc_task), _g1h(g1h), _cm(cm) { }
 
   virtual void work(int i) {
     CMTask* marking_task = _cm->task(i);
     G1CMIsAliveClosure g1_is_alive(_g1h);
-    G1CMParKeepAliveAndDrainClosure g1_par_keep_alive(_cm, marking_task, _bitmap);
+    G1CMParKeepAliveAndDrainClosure g1_par_keep_alive(_cm, marking_task);
     G1CMParDrainMarkingStackClosure g1_par_drain(_cm, marking_task);
 
     _proc_task.work(i, g1_is_alive, g1_par_keep_alive, g1_par_drain);
@@ -2139,7 +2120,7 @@ public:
 void G1CMRefProcTaskExecutor::execute(ProcessTask& proc_task) {
   assert(_workers != NULL, "Need parallel worker threads.");
 
-  G1CMRefProcTaskProxy proc_task_proxy(proc_task, _g1h, _cm, _bitmap);
+  G1CMRefProcTaskProxy proc_task_proxy(proc_task, _g1h, _cm);
 
   // We need to reset the phase for each task execution so that
   // the termination protocol of CMTask::do_marking_step works.
@@ -2156,8 +2137,7 @@ class G1CMRefEnqueueTaskProxy: public AbstractGangTask {
 public:
   G1CMRefEnqueueTaskProxy(EnqueueTask& enq_task) :
     AbstractGangTask("Enqueue reference objects in parallel"),
-    _enq_task(enq_task)
-  { }
+    _enq_task(enq_task) { }
 
   virtual void work(int i) {
     _enq_task.work(i);
@@ -2210,7 +2190,7 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
     int active_workers = g1h->workers() ? g1h->workers()->total_workers() : 1;
     active_workers = MAX2(MIN2(active_workers, (int)_max_task_num), 1);
 
-    G1CMRefProcTaskExecutor par_task_executor(g1h, this, nextMarkBitMap(),
+    G1CMRefProcTaskExecutor par_task_executor(g1h, this,
                                               g1h->workers(), active_workers);
 
     if (rp->processing_is_mt()) {
@@ -3064,12 +3044,13 @@ void ConcurrentMark::complete_marking_in_collection_set() {
     g1h->collection_set_iterate(&cmplt);
     if (cmplt.completed()) break;
   }
-  double end_time = os::elapsedTime();
-  double elapsed_time_ms = (end_time - start) * 1000.0;
-  g1h->g1_policy()->record_mark_closure_time(elapsed_time_ms);
 
   ClearMarksInHRClosure clr(nextMarkBitMap());
   g1h->collection_set_iterate(&clr);
+
+  double end_time = os::elapsedTime();
+  double elapsed_time_ms = (end_time - start) * 1000.0;
+  g1h->g1_policy()->record_mark_closure_time(elapsed_time_ms);
 }
 
 // The next two methods deal with the following optimisation. Some

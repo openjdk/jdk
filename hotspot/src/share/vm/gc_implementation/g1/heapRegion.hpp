@@ -416,7 +416,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   void add_to_marked_bytes(size_t incr_bytes) {
     _next_marked_bytes = _next_marked_bytes + incr_bytes;
-    guarantee( _next_marked_bytes <= used(), "invariant" );
+    assert(_next_marked_bytes <= used(), "invariant" );
   }
 
   void zero_marked_bytes()      {
