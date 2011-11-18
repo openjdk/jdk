@@ -68,8 +68,8 @@ public class KerberosTime implements Cloneable {
     private int  microSeconds; // the last three digits of the microsecond value
 
     // The time when this class is loaded. Used in setNow()
-    private static final long initMilli = System.currentTimeMillis();
-    private static final long initMicro = System.nanoTime() / 1000;
+    private static long initMilli = System.currentTimeMillis();
+    private static long initMicro = System.nanoTime() / 1000;
 
     private static long syncTime;
     private static boolean DEBUG = Krb5.DEBUG;
@@ -212,9 +212,22 @@ public class KerberosTime implements Cloneable {
     }
 
     public void setNow() {
-        long microElapsed = System.nanoTime() / 1000 - initMicro;
-        setTime(initMilli + microElapsed/1000);
-        microSeconds = (int)(microElapsed % 1000);
+        long newMilli = System.currentTimeMillis();
+        long newMicro = System.nanoTime() / 1000;
+        long microElapsed = newMicro - initMicro;
+        long calcMilli = initMilli + microElapsed/1000;
+        if (calcMilli - newMilli > 100 || newMilli - calcMilli > 100) {
+            if (DEBUG) {
+                System.out.println("System time adjusted");
+            }
+            initMilli = newMilli;
+            initMicro = newMicro;
+            setTime(newMilli);
+            microSeconds = 0;
+        } else {
+            setTime(calcMilli);
+            microSeconds = (int)(microElapsed % 1000);
+        }
     }
 
     public int getMicroSeconds() {
