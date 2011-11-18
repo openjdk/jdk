@@ -1506,20 +1506,20 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                     for (List<JCTree> it = tree.defs; it.tail != null; it = it.tail) {
                         JCTree t = it.head;
                         switch (t.getTag()) {
-                        case JCTree.CLASSDEF:
+                        case CLASSDEF:
                             if (isInterface ||
                                 (((JCClassDecl) t).mods.flags & (Flags.PROTECTED|Flags.PUBLIC)) != 0 ||
                                 (((JCClassDecl) t).mods.flags & (Flags.PRIVATE)) == 0 && ((JCClassDecl) t).sym.packge().getQualifiedName() == names.java_lang)
                                 newdefs.append(t);
                             break;
-                        case JCTree.METHODDEF:
+                        case METHODDEF:
                             if (isInterface ||
                                 (((JCMethodDecl) t).mods.flags & (Flags.PROTECTED|Flags.PUBLIC)) != 0 ||
                                 ((JCMethodDecl) t).sym.name == names.init ||
                                 (((JCMethodDecl) t).mods.flags & (Flags.PRIVATE)) == 0 && ((JCMethodDecl) t).sym.packge().getQualifiedName() == names.java_lang)
                                 newdefs.append(t);
                             break;
-                        case JCTree.VARDEF:
+                        case VARDEF:
                             if (isInterface || (((JCVariableDecl) t).mods.flags & (Flags.PROTECTED|Flags.PUBLIC)) != 0 ||
                                 (((JCVariableDecl) t).mods.flags & (Flags.PRIVATE)) == 0 && ((JCVariableDecl) t).sym.packge().getQualifiedName() == names.java_lang)
                                 newdefs.append(t);

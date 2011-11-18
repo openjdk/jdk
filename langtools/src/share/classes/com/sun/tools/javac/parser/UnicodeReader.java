@@ -26,8 +26,12 @@
 package com.sun.tools.javac.parser;
 
 import com.sun.tools.javac.file.JavacFileManager;
-import java.nio.CharBuffer;
 import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Name;
+import com.sun.tools.javac.util.Names;
+
+import java.nio.CharBuffer;
+
 import static com.sun.tools.javac.util.LayoutCharacters.*;
 
 /** The char reader used by the javac lexer/tokenizer. Returns the sequence of
@@ -58,6 +62,12 @@ public class UnicodeReader {
     protected int unicodeConversionBp = -1;
 
     protected Log log;
+    protected Names names;
+
+    /** A character buffer for saved chars.
+     */
+    protected char[] sbuf = new char[128];
+    protected int sp;
 
     /**
      * Create a scanner from the input array.  This method might
@@ -76,6 +86,7 @@ public class UnicodeReader {
 
     protected UnicodeReader(ScannerFactory sf, char[] input, int inputLength) {
         log = sf.log;
+        names = sf.names;
         if (inputLength == input.length) {
             if (input.length > 0 && Character.isWhitespace(input[input.length - 1])) {
                 inputLength--;
@@ -101,6 +112,48 @@ public class UnicodeReader {
                 convertUnicode();
             }
         }
+    }
+
+    /** Read next character in comment, skipping over double '\' characters.
+     */
+    protected void scanCommentChar() {
+        scanChar();
+        if (ch == '\\') {
+            if (peekChar() == '\\' && !isUnicode()) {
+                skipChar();
+            } else {
+                convertUnicode();
+            }
+        }
+    }
+
+    /** Append a character to sbuf.
+     */
+    protected void putChar(char ch, boolean scan) {
+        if (sp == sbuf.length) {
+            char[] newsbuf = new char[sbuf.length * 2];
+            System.arraycopy(sbuf, 0, newsbuf, 0, sbuf.length);
+            sbuf = newsbuf;
+        }
+        sbuf[sp++] = ch;
+        if (scan)
+            scanChar();
+    }
+
+    protected void putChar(char ch) {
+        putChar(ch, false);
+    }
+
+    protected void putChar(boolean scan) {
+        putChar(ch, scan);
+    }
+
+    Name name() {
+        return names.fromChars(sbuf, 0, sp);
+    }
+
+    String chars() {
+        return new String(sbuf, 0, sp);
     }
 
     /** Convert unicode escape; bp points to initial '\' character

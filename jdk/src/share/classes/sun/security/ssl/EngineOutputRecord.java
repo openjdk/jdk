@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import sun.misc.HexDumpEncoder;
  */
 final class EngineOutputRecord extends OutputRecord {
 
+    private SSLEngineImpl engine;
     private EngineWriter writer;
 
     private boolean finishedMsg = false;
@@ -62,6 +63,7 @@ final class EngineOutputRecord extends OutputRecord {
      */
     EngineOutputRecord(byte type, SSLEngineImpl engine) {
         super(type, recordSize(type));
+        this.engine = engine;
         writer = engine.writer;
     }
 
@@ -227,11 +229,50 @@ final class EngineOutputRecord extends OutputRecord {
          * implementations are fragile and don't like to see empty
          * records, so this increases robustness.
          */
-        int length = Math.min(ea.getAppRemaining(), maxDataSize);
-        if (length == 0) {
+        if (ea.getAppRemaining() == 0) {
             return;
         }
 
+        /*
+         * By default, we counter chosen plaintext issues on CBC mode
+         * ciphersuites in SSLv3/TLS1.0 by sending one byte of application
+         * data in the first record of every payload, and the rest in
+         * subsequent record(s). Note that the issues have been solved in
+         * TLS 1.1 or later.
+         *
+         * It is not necessary to split the very first application record of
+         * a freshly negotiated TLS session, as there is no previous
+         * application data to guess.  To improve compatibility, we will not
+         * split such records.
+         *
+         * Because of the compatibility, we'd better produce no more than
+         * SSLSession.getPacketBufferSize() net data for each wrap. As we
+         * need a one-byte record at first, the 2nd record size should be
+         * equal to or less than Record.maxDataSizeMinusOneByteRecord.
+         *
+         * This avoids issues in the outbound direction.  For a full fix,
+         * the peer must have similar protections.
+         */
+        int length;
+        if (engine.needToSplitPayload(writeCipher, protocolVersion)) {
+            write(ea, writeMAC, writeCipher, 0x01);
+            ea.resetLim();      // reset application data buffer limit
+            length = Math.min(ea.getAppRemaining(),
+                        maxDataSizeMinusOneByteRecord);
+        } else {
+            length = Math.min(ea.getAppRemaining(), maxDataSize);
+        }
+
+        // Don't bother to really write empty records.
+        if (length > 0) {
+            write(ea, writeMAC, writeCipher, length);
+        }
+
+        return;
+    }
+
+    void write(EngineArgs ea, MAC writeMAC, CipherBox writeCipher,
+            int length) throws IOException {
         /*
          * Copy out existing buffer values.
          */

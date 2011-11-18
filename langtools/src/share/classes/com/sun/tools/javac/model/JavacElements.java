@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Name;
 
+import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static javax.lang.model.util.ElementFilter.methodsIn;
 
 /**
@@ -288,7 +289,7 @@ public class JavacElements implements Elements {
                 }
             }
             public void visitArray(Attribute.Array array) {
-                if (tree.getTag() == JCTree.NEWARRAY &&
+                if (tree.hasTag(NEWARRAY) &&
                         types.elemtype(array.type).tsym == findme.type.tsym) {
                     List<JCExpression> elems = ((JCNewArray) tree).elems;
                     for (Attribute value : array.values) {
@@ -327,7 +328,7 @@ public class JavacElements implements Elements {
                     scan(t.args);
             }
             public void visitAssign(JCAssign t) {
-                if (t.lhs.getTag() == JCTree.IDENT) {
+                if (t.lhs.hasTag(IDENT)) {
                     JCIdent ident = (JCIdent) t.lhs;
                     if (ident.sym == sym)
                         result = t.rhs;
