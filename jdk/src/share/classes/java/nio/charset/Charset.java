@@ -435,7 +435,7 @@ public abstract class Charset
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
                 public Object run() {
                     try {
-                        Class epc
+                        Class<?> epc
                             = Class.forName("sun.nio.cs.ext.ExtendedCharsets");
                         extendedProvider = (CharsetProvider)epc.newInstance();
                     } catch (ClassNotFoundException x) {
