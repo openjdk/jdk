@@ -124,26 +124,27 @@ class WindowsDirectoryStream
         private boolean atEof;
         private String first;
         private Path nextEntry;
+        private String prefix;
 
         WindowsDirectoryIterator(String first) {
             atEof = false;
             this.first = first;
+            if (dir.needsSlashWhenResolving()) {
+                prefix = dir.toString() + "\\";
+            } else {
+                prefix = dir.toString();
+            }
+        }
+
+        // links to self and parent directories are ignored
+        private boolean isSelfOrParent(String name) {
+            return name.equals(".") || name.equals("..");
         }
 
         // applies filter and also ignores "." and ".."
         private Path acceptEntry(String s, BasicFileAttributes attrs) {
-            if (s.equals(".") || s.equals(".."))
-                return null;
-            if (dir.needsSlashWhenResolving()) {
-                StringBuilder sb = new StringBuilder(dir.toString());
-                sb.append('\\');
-                sb.append(s);
-                s = sb.toString();
-            } else {
-                s = dir + s;
-            }
             Path entry = WindowsPath
-                .createFromNormalizedPath(dir.getFileSystem(), s, attrs);
+                .createFromNormalizedPath(dir.getFileSystem(), prefix + s, attrs);
             try {
                 if (filter.accept(entry))
                     return entry;
@@ -157,7 +158,7 @@ class WindowsDirectoryStream
         private Path readNextEntry() {
             // handle first element returned by search
             if (first != null) {
-                nextEntry = acceptEntry(first, null);
+                nextEntry = isSelfOrParent(first) ? null : acceptEntry(first, null);
                 first = null;
                 if (nextEntry != null)
                     return nextEntry;
@@ -183,6 +184,10 @@ class WindowsDirectoryStream
                         atEof = true;
                         return null;
                     }
+
+                    // ignore link to self and parent directories
+                    if (isSelfOrParent(name))
+                        continue;
 
                     // grab the attributes from the WIN32_FIND_DATA structure
                     // (needs to be done while holding closeLock because close

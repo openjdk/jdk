@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ void* must_malloc(size_t size) {
   if (msize >= 0 && msize < sizeof(int))
     msize = sizeof(int);  // see 0xbaadf00d below
   #endif
-  void* ptr = (msize > PSIZE_MAX) ? null : malloc(msize);
+  void* ptr = (msize > PSIZE_MAX || msize <= 0) ? null : malloc(msize);
   if (ptr != null) {
     memset(ptr, 0, size);
   } else {
