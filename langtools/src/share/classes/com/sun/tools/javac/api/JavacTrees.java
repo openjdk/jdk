@@ -207,7 +207,7 @@ public class JavacTrees extends Trees {
         if (sym == null && TreeInfo.isDeclaration(tree)) {
             for (TreePath p = path; p != null; p = p.getParentPath()) {
                 JCTree t = (JCTree) p.getLeaf();
-                if (t.getTag() == JCTree.CLASSDEF) {
+                if (t.hasTag(JCTree.Tag.CLASSDEF)) {
                     JCClassDecl ct = (JCClassDecl) t;
                     if (ct.sym != null) {
                         if ((ct.sym.flags_field & Flags.UNATTRIBUTED) != 0) {

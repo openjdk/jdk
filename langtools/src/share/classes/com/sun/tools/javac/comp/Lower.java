@@ -42,9 +42,11 @@ import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.jvm.Target;
 
 import static com.sun.tools.javac.code.Flags.*;
+import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTags.*;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
+import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /** This pass translates away some syntactic sugar: inner classes,
  *  class literals, assertions, foreach loops, etc.
@@ -303,7 +305,7 @@ public class Lower extends TreeTranslator {
                 Symbol constructor = TreeInfo.symbol(tree.meth);
                 ClassSymbol c = (ClassSymbol)constructor.owner;
                 if (c.hasOuterInstance() &&
-                    tree.meth.getTag() != JCTree.SELECT &&
+                    !tree.meth.hasTag(SELECT) &&
                     outerThisStack.head != null)
                     visitSymbol(outerThisStack.head);
             }
@@ -508,7 +510,7 @@ public class Lower extends TreeTranslator {
      *  @param optag    The operators tree tag.
      *  @param arg      The operator's argument.
      */
-    JCUnary makeUnary(int optag, JCExpression arg) {
+    JCUnary makeUnary(JCTree.Tag optag, JCExpression arg) {
         JCUnary tree = make.Unary(optag, arg);
         tree.operator = rs.resolveUnaryOperator(
             make_pos, optag, attrEnv, arg.type);
@@ -521,7 +523,7 @@ public class Lower extends TreeTranslator {
      *  @param lhs      The operator's left argument.
      *  @param rhs      The operator's right argument.
      */
-    JCBinary makeBinary(int optag, JCExpression lhs, JCExpression rhs) {
+    JCBinary makeBinary(JCTree.Tag optag, JCExpression lhs, JCExpression rhs) {
         JCBinary tree = make.Binary(optag, lhs, rhs);
         tree.operator = rs.resolveBinaryOperator(
             make_pos, optag, attrEnv, lhs.type, rhs.type);
@@ -534,10 +536,10 @@ public class Lower extends TreeTranslator {
      *  @param lhs      The operator's left argument.
      *  @param rhs      The operator's right argument.
      */
-    JCAssignOp makeAssignop(int optag, JCTree lhs, JCTree rhs) {
+    JCAssignOp makeAssignop(JCTree.Tag optag, JCTree lhs, JCTree rhs) {
         JCAssignOp tree = make.Assignop(optag, lhs, rhs);
         tree.operator = rs.resolveBinaryOperator(
-            make_pos, tree.getTag() - JCTree.ASGOffset, attrEnv, lhs.type, rhs.type);
+            make_pos, tree.getTag().noAssignOp(), attrEnv, lhs.type, rhs.type);
         tree.type = lhs.type;
         return tree;
     }
@@ -720,7 +722,7 @@ public class Lower extends TreeTranslator {
     // where
     private boolean isTranslatedClassAvailable(ClassSymbol c) {
         for (JCTree tree: translated) {
-            if (tree.getTag() == JCTree.CLASSDEF
+            if (tree.hasTag(CLASSDEF)
                     && ((JCClassDecl) tree).sym == c) {
                 return true;
             }
@@ -802,13 +804,13 @@ public class Lower extends TreeTranslator {
     private static int accessCode(JCTree tree, JCTree enclOp) {
         if (enclOp == null)
             return DEREFcode;
-        else if (enclOp.getTag() == JCTree.ASSIGN &&
+        else if (enclOp.hasTag(ASSIGN) &&
                  tree == TreeInfo.skipParens(((JCAssign) enclOp).lhs))
             return ASSIGNcode;
-        else if (JCTree.PREINC <= enclOp.getTag() && enclOp.getTag() <= JCTree.POSTDEC &&
+        else if (enclOp.getTag().isIncOrDecUnaryOp() &&
                  tree == TreeInfo.skipParens(((JCUnary) enclOp).arg))
-            return (enclOp.getTag() - JCTree.PREINC) * 2 + PREINCcode;
-        else if (JCTree.BITOR_ASG <= enclOp.getTag() && enclOp.getTag() <= JCTree.MOD_ASG &&
+            return mapTagToUnaryOpCode(enclOp.getTag());
+        else if (enclOp.getTag().isAssignop() &&
                  tree == TreeInfo.skipParens(((JCAssignOp) enclOp).lhs))
             return accessCode(((OperatorSymbol) ((JCAssignOp) enclOp).operator).opcode);
         else
@@ -832,39 +834,39 @@ public class Lower extends TreeTranslator {
     /** Return tree tag for assignment operation corresponding
      *  to given binary operator.
      */
-    private static int treeTag(OperatorSymbol operator) {
+    private static JCTree.Tag treeTag(OperatorSymbol operator) {
         switch (operator.opcode) {
         case ByteCodes.ior: case ByteCodes.lor:
-            return JCTree.BITOR_ASG;
+            return BITOR_ASG;
         case ByteCodes.ixor: case ByteCodes.lxor:
-            return JCTree.BITXOR_ASG;
+            return BITXOR_ASG;
         case ByteCodes.iand: case ByteCodes.land:
-            return JCTree.BITAND_ASG;
+            return BITAND_ASG;
         case ByteCodes.ishl: case ByteCodes.lshl:
         case ByteCodes.ishll: case ByteCodes.lshll:
-            return JCTree.SL_ASG;
+            return SL_ASG;
         case ByteCodes.ishr: case ByteCodes.lshr:
         case ByteCodes.ishrl: case ByteCodes.lshrl:
-            return JCTree.SR_ASG;
+            return SR_ASG;
         case ByteCodes.iushr: case ByteCodes.lushr:
         case ByteCodes.iushrl: case ByteCodes.lushrl:
-            return JCTree.USR_ASG;
+            return USR_ASG;
         case ByteCodes.iadd: case ByteCodes.ladd:
         case ByteCodes.fadd: case ByteCodes.dadd:
         case ByteCodes.string_add:
-            return JCTree.PLUS_ASG;
+            return PLUS_ASG;
         case ByteCodes.isub: case ByteCodes.lsub:
         case ByteCodes.fsub: case ByteCodes.dsub:
-            return JCTree.MINUS_ASG;
+            return MINUS_ASG;
         case ByteCodes.imul: case ByteCodes.lmul:
         case ByteCodes.fmul: case ByteCodes.dmul:
-            return JCTree.MUL_ASG;
+            return MUL_ASG;
         case ByteCodes.idiv: case ByteCodes.ldiv:
         case ByteCodes.fdiv: case ByteCodes.ddiv:
-            return JCTree.DIV_ASG;
+            return DIV_ASG;
         case ByteCodes.imod: case ByteCodes.lmod:
         case ByteCodes.fmod: case ByteCodes.dmod:
-            return JCTree.MOD_ASG;
+            return MOD_ASG;
         default:
             throw new AssertionError();
         }
@@ -1003,7 +1005,7 @@ public class Lower extends TreeTranslator {
         if (!currentClass.isSubClass(sym.owner, types))
             return true;
         if ((sym.flags() & STATIC) != 0 ||
-            tree.getTag() != JCTree.SELECT ||
+            !tree.hasTag(SELECT) ||
             TreeInfo.name(((JCFieldAccess) tree).selected) == names._super)
             return false;
         return !((JCFieldAccess) tree).selected.type.tsym.isSubClass(currentClass, types);
@@ -1018,7 +1020,7 @@ public class Lower extends TreeTranslator {
         if (protAccess) {
             Symbol qualifier = null;
             ClassSymbol c = currentClass;
-            if (tree.getTag() == JCTree.SELECT && (sym.flags() & STATIC) == 0) {
+            if (tree.hasTag(SELECT) && (sym.flags() & STATIC) == 0) {
                 qualifier = ((JCFieldAccess) tree).selected.type.tsym;
                 while (!qualifier.isSubClass(c, types)) {
                     c = c.owner.enclClass();
@@ -1058,7 +1060,7 @@ public class Lower extends TreeTranslator {
             Assert.check(sym != null && (sym.flags_field & FINAL) != 0);
             tree = make.at(tree.pos).Ident(sym);
         }
-        JCExpression base = (tree.getTag() == JCTree.SELECT) ? ((JCFieldAccess) tree).selected : null;
+        JCExpression base = (tree.hasTag(SELECT)) ? ((JCFieldAccess) tree).selected : null;
         switch (sym.kind) {
         case TYP:
             if (sym.owner.kind != PCK) {
@@ -1068,11 +1070,11 @@ public class Lower extends TreeTranslator {
                 while (base != null &&
                        TreeInfo.symbol(base) != null &&
                        TreeInfo.symbol(base).kind != PCK) {
-                    base = (base.getTag() == JCTree.SELECT)
+                    base = (base.hasTag(SELECT))
                         ? ((JCFieldAccess) base).selected
                         : null;
                 }
-                if (tree.getTag() == JCTree.IDENT) {
+                if (tree.hasTag(IDENT)) {
                     ((JCIdent) tree).name = flatname;
                 } else if (base == null) {
                     tree = make.at(tree.pos).Ident(sym);
@@ -1220,6 +1222,42 @@ public class Lower extends TreeTranslator {
         }
     }
 
+    /** Maps unary operator integer codes to JCTree.Tag objects
+     *  @param unaryOpCode the unary operator code
+     */
+    private static Tag mapUnaryOpCodeToTag(int unaryOpCode){
+        switch (unaryOpCode){
+            case PREINCcode:
+                return PREINC;
+            case PREDECcode:
+                return PREDEC;
+            case POSTINCcode:
+                return POSTINC;
+            case POSTDECcode:
+                return POSTDEC;
+            default:
+                return NO_TAG;
+        }
+    }
+
+    /** Maps JCTree.Tag objects to unary operator integer codes
+     *  @param tag the JCTree.Tag
+     */
+    private static int mapTagToUnaryOpCode(Tag tag){
+        switch (tag){
+            case PREINC:
+                return PREINCcode;
+            case PREDEC:
+                return PREDECcode;
+            case POSTINC:
+                return POSTINCcode;
+            case POSTDEC:
+                return POSTDECcode;
+            default:
+                return -1;
+        }
+    }
+
     /** Construct definition of an access method.
      *  @param pos        The source code position of the definition.
      *  @param vsym       The private or protected symbol.
@@ -1259,8 +1297,7 @@ public class Lower extends TreeTranslator {
                 expr = make.Assign(ref, args.head);
                 break;
             case PREINCcode: case POSTINCcode: case PREDECcode: case POSTDECcode:
-                expr = makeUnary(
-                    ((acode1 - PREINCcode) >> 1) + JCTree.PREINC, ref);
+                expr = makeUnary(mapUnaryOpCodeToTag(acode1), ref);
                 break;
             default:
                 expr = make.Assignop(
@@ -1576,7 +1613,7 @@ public class Lower extends TreeTranslator {
     }
 
     private JCExpression makeNonNullCheck(JCExpression expression) {
-        return makeBinary(JCTree.NE, expression, makeNull());
+        return makeBinary(NE, expression, makeNull());
     }
 
     /** Construct a tree that represents the outer instance
@@ -1808,7 +1845,7 @@ public class Lower extends TreeTranslator {
             // $newcache.getClass().getComponentType().getClassLoader() : cl$"
             JCExpression clvalue =
                 make.Conditional(
-                    makeBinary(JCTree.EQ, make.Ident(clsym), makeNull()),
+                    makeBinary(EQ, make.Ident(clsym), makeNull()),
                     make.Assign(
                         make.Ident(clsym),
                         makeCall(
@@ -1976,7 +2013,7 @@ public class Lower extends TreeTranslator {
                 writer.xClassName(type).toString().replace('/', '.');
             Symbol cs = cacheSym(pos, sig);
             return make_at(pos).Conditional(
-                makeBinary(JCTree.EQ, make.Ident(cs), makeNull()),
+                makeBinary(EQ, make.Ident(cs), makeNull()),
                 make.Assign(
                     make.Ident(cs),
                     make.App(
@@ -2023,7 +2060,7 @@ public class Lower extends TreeTranslator {
                                                             List.<Type>nil());
             JCClassDecl containerDef = classDef(container);
             make_at(containerDef.pos());
-            JCExpression notStatus = makeUnary(JCTree.NOT, make.App(make.Select(
+            JCExpression notStatus = makeUnary(NOT, make.App(make.Select(
                     classOfType(types.erasure(outermostClass.type),
                                 containerDef.pos()),
                     desiredAssertionStatusSym)));
@@ -2032,7 +2069,7 @@ public class Lower extends TreeTranslator {
             containerDef.defs = containerDef.defs.prepend(assertDisabledDef);
         }
         make_at(pos);
-        return makeUnary(JCTree.NOT, make.Ident(assertDisabledSym));
+        return makeUnary(NOT, make.Ident(assertDisabledSym));
     }
 
 
@@ -2062,9 +2099,9 @@ public class Lower extends TreeTranslator {
     JCTree abstractRval(JCTree rval, Type type, TreeBuilder builder) {
         rval = TreeInfo.skipParens(rval);
         switch (rval.getTag()) {
-        case JCTree.LITERAL:
+        case LITERAL:
             return builder.build(rval);
-        case JCTree.IDENT:
+        case IDENT:
             JCIdent id = (JCIdent) rval;
             if ((id.sym.flags() & FINAL) != 0 && id.sym.owner.kind == MTH)
                 return builder.build(rval);
@@ -2097,9 +2134,9 @@ public class Lower extends TreeTranslator {
     JCTree abstractLval(JCTree lval, final TreeBuilder builder) {
         lval = TreeInfo.skipParens(lval);
         switch (lval.getTag()) {
-        case JCTree.IDENT:
+        case IDENT:
             return builder.build(lval);
-        case JCTree.SELECT: {
+        case SELECT: {
             final JCFieldAccess s = (JCFieldAccess)lval;
             JCTree selected = TreeInfo.skipParens(s.selected);
             Symbol lid = TreeInfo.symbol(s.selected);
@@ -2110,7 +2147,7 @@ public class Lower extends TreeTranslator {
                     }
                 });
         }
-        case JCTree.INDEXED: {
+        case INDEXED: {
             final JCArrayAccess i = (JCArrayAccess)lval;
             return abstractRval(i.indexed, new TreeBuilder() {
                     public JCTree build(final JCTree indexed) {
@@ -2125,7 +2162,7 @@ public class Lower extends TreeTranslator {
                     }
                 });
         }
-        case JCTree.TYPECAST: {
+        case TYPECAST: {
             return abstractLval(((JCTypeCast)lval).expr, builder);
         }
         }
@@ -2345,7 +2382,7 @@ public class Lower extends TreeTranslator {
         for (List<JCTree> defs = tree.defs;
              defs.nonEmpty();
              defs=defs.tail) {
-            if (defs.head.getTag() == JCTree.VARDEF && (((JCVariableDecl) defs.head).mods.flags & ENUM) != 0) {
+            if (defs.head.hasTag(VARDEF) && (((JCVariableDecl) defs.head).mods.flags & ENUM) != 0) {
                 JCVariableDecl var = (JCVariableDecl)defs.head;
                 visitEnumConstantDef(var, nextOrdinal++);
                 values.append(make.QualIdent(var.sym));
@@ -2757,9 +2794,9 @@ public class Lower extends TreeTranslator {
                 List.<JCExpression>nil() : List.of(translate(tree.detail));
             if (!tree.cond.type.isFalse()) {
                 cond = makeBinary
-                    (JCTree.AND,
+                    (AND,
                      cond,
-                     makeUnary(JCTree.NOT, tree.cond));
+                     makeUnary(NOT, tree.cond));
             }
             result =
                 make.If(cond,
@@ -2816,7 +2853,7 @@ public class Lower extends TreeTranslator {
             // first argument.
             if (c.hasOuterInstance()) {
                 JCExpression thisArg;
-                if (tree.meth.getTag() == JCTree.SELECT) {
+                if (tree.meth.hasTag(SELECT)) {
                     thisArg = attr.
                         makeNullCheck(translate(((JCFieldAccess) tree.meth).selected));
                     tree.meth = make.Ident(constructor);
@@ -2837,7 +2874,7 @@ public class Lower extends TreeTranslator {
             // If the translated method itself is an Apply tree, we are
             // seeing an access method invocation. In this case, append
             // the method arguments to the arguments of the access method.
-            if (tree.meth.getTag() == JCTree.APPLY) {
+            if (tree.meth.hasTag(APPLY)) {
                 JCMethodInvocation app = (JCMethodInvocation)tree.meth;
                 app.args = tree.args.prependList(app.args);
                 result = app;
@@ -2971,7 +3008,7 @@ public class Lower extends TreeTranslator {
         // If translated left hand side is an Apply, we are
         // seeing an access method invocation. In this case, append
         // right hand side as last argument of the access method.
-        if (tree.lhs.getTag() == JCTree.APPLY) {
+        if (tree.lhs.hasTag(APPLY)) {
             JCMethodInvocation app = (JCMethodInvocation)tree.lhs;
             app.args = List.of(tree.rhs).prependList(app.args);
             result = app;
@@ -2988,7 +3025,7 @@ public class Lower extends TreeTranslator {
             // (but without recomputing x)
             JCTree newTree = abstractLval(tree.lhs, new TreeBuilder() {
                     public JCTree build(final JCTree lhs) {
-                        int newTag = tree.getTag() - JCTree.ASGOffset;
+                        JCTree.Tag newTag = tree.getTag().noAssignOp();
                         // Erasure (TransTypes) can change the type of
                         // tree.lhs.  However, we can still get the
                         // unerased type of tree.lhs as it is stored
@@ -3018,7 +3055,7 @@ public class Lower extends TreeTranslator {
         // If translated left hand side is an Apply, we are
         // seeing an access method invocation. In this case, append
         // right hand side as last argument of the access method.
-        if (tree.lhs.getTag() == JCTree.APPLY) {
+        if (tree.lhs.hasTag(APPLY)) {
             JCMethodInvocation app = (JCMethodInvocation)tree.lhs;
             // if operation is a += on strings,
             // make sure to convert argument to string
@@ -3038,13 +3075,13 @@ public class Lower extends TreeTranslator {
         // or
         // translate to tmp1=lval(e); tmp2=tmp1; (typeof tree)tmp1 OP 1; tmp2
         // where OP is += or -=
-        final boolean cast = TreeInfo.skipParens(tree.arg).getTag() == JCTree.TYPECAST;
+        final boolean cast = TreeInfo.skipParens(tree.arg).hasTag(TYPECAST);
         return abstractLval(tree.arg, new TreeBuilder() {
                 public JCTree build(final JCTree tmp1) {
                     return abstractRval(tmp1, tree.arg.type, new TreeBuilder() {
                             public JCTree build(final JCTree tmp2) {
-                                int opcode = (tree.getTag() == JCTree.POSTINC)
-                                    ? JCTree.PLUS_ASG : JCTree.MINUS_ASG;
+                                JCTree.Tag opcode = (tree.hasTag(POSTINC))
+                                    ? PLUS_ASG : MINUS_ASG;
                                 JCTree lhs = cast
                                     ? make.TypeCast(tree.arg.type, (JCExpression)tmp1)
                                     : tmp1;
@@ -3059,25 +3096,24 @@ public class Lower extends TreeTranslator {
     }
 
     public void visitUnary(JCUnary tree) {
-        boolean isUpdateOperator =
-            JCTree.PREINC <= tree.getTag() && tree.getTag() <= JCTree.POSTDEC;
+        boolean isUpdateOperator = tree.getTag().isIncOrDecUnaryOp();
         if (isUpdateOperator && !tree.arg.type.isPrimitive()) {
             switch(tree.getTag()) {
-            case JCTree.PREINC:            // ++ e
+            case PREINC:            // ++ e
                     // translate to e += 1
-            case JCTree.PREDEC:            // -- e
+            case PREDEC:            // -- e
                     // translate to e -= 1
                 {
-                    int opcode = (tree.getTag() == JCTree.PREINC)
-                        ? JCTree.PLUS_ASG : JCTree.MINUS_ASG;
+                    JCTree.Tag opcode = (tree.hasTag(PREINC))
+                        ? PLUS_ASG : MINUS_ASG;
                     JCAssignOp newTree = makeAssignop(opcode,
                                                     tree.arg,
                                                     make.Literal(1));
                     result = translate(newTree, tree.type);
                     return;
                 }
-            case JCTree.POSTINC:           // e ++
-            case JCTree.POSTDEC:           // e --
+            case POSTINC:           // e ++
+            case POSTDEC:           // e --
                 {
                     result = translate(lowerBoxedPostop(tree), tree.type);
                     return;
@@ -3088,14 +3124,14 @@ public class Lower extends TreeTranslator {
 
         tree.arg = boxIfNeeded(translate(tree.arg, tree), tree.type);
 
-        if (tree.getTag() == JCTree.NOT && tree.arg.type.constValue() != null) {
+        if (tree.hasTag(NOT) && tree.arg.type.constValue() != null) {
             tree.type = cfolder.fold1(bool_not, tree.arg.type);
         }
 
         // If translated left hand side is an Apply, we are
         // seeing an access method invocation. In this case, return
         // that access method invocation as result.
-        if (isUpdateOperator && tree.arg.getTag() == JCTree.APPLY) {
+        if (isUpdateOperator && tree.arg.hasTag(APPLY)) {
             result = tree.arg;
         } else {
             result = tree;
@@ -3106,7 +3142,7 @@ public class Lower extends TreeTranslator {
         List<Type> formals = tree.operator.type.getParameterTypes();
         JCTree lhs = tree.lhs = translate(tree.lhs, formals.head);
         switch (tree.getTag()) {
-        case JCTree.OR:
+        case OR:
             if (lhs.type.isTrue()) {
                 result = lhs;
                 return;
@@ -3116,7 +3152,7 @@ public class Lower extends TreeTranslator {
                 return;
             }
             break;
-        case JCTree.AND:
+        case AND:
             if (lhs.type.isFalse()) {
                 result = lhs;
                 return;
@@ -3186,9 +3222,9 @@ public class Lower extends TreeTranslator {
             indexdef.init.type = indexdef.type = syms.intType.constType(0);
 
             List<JCStatement> loopinit = List.of(arraycachedef, lencachedef, indexdef);
-            JCBinary cond = makeBinary(JCTree.LT, make.Ident(index), make.Ident(lencache));
+            JCBinary cond = makeBinary(LT, make.Ident(index), make.Ident(lencache));
 
-            JCExpressionStatement step = make.Exec(makeUnary(JCTree.PREINC, make.Ident(index)));
+            JCExpressionStatement step = make.Exec(makeUnary(PREINC, make.Ident(index)));
 
             Type elemtype = types.elemtype(tree.expr.type);
             JCExpression loopvarinit = make.Indexed(make.Ident(arraycache),
@@ -3592,7 +3628,7 @@ public class Lower extends TreeTranslator {
         // need to special case-access of the form C.super.x
         // these will always need an access method.
         boolean qualifiedSuperAccess =
-            tree.selected.getTag() == JCTree.SELECT &&
+            tree.selected.hasTag(SELECT) &&
             TreeInfo.name(tree.selected) == names._super;
         tree.selected = translate(tree.selected);
         if (tree.name == names._class)
@@ -3642,7 +3678,7 @@ public class Lower extends TreeTranslator {
             endPositions = env.toplevel.endPositions;
             currentClass = null;
             currentMethodDef = null;
-            outermostClassDef = (cdef.getTag() == JCTree.CLASSDEF) ? (JCClassDecl)cdef : null;
+            outermostClassDef = (cdef.hasTag(CLASSDEF)) ? (JCClassDecl)cdef : null;
             outermostMemberDef = null;
             this.translated = new ListBuffer<JCTree>();
             classdefs = new HashMap<ClassSymbol,JCClassDecl>();
@@ -3838,7 +3874,7 @@ public class Lower extends TreeTranslator {
 
         JCIdent fLocUsageId = make.Ident(otherVarSym);
         JCExpression sel = make.Select(fLocUsageId, ordinalSymbol);
-        JCBinary bin = makeBinary(JCTree.MINUS, id1, sel);
+        JCBinary bin = makeBinary(MINUS, id1, sel);
         JCReturn ret = make.Return(bin);
         blockStatements.append(ret);
         JCMethodDecl compareToMethod = make.MethodDef((MethodSymbol)compareToSym,

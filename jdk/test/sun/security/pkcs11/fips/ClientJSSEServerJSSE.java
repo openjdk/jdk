@@ -26,9 +26,9 @@
  * @bug 6313675 6323647
  * @summary Verify that all ciphersuites work in FIPS mode
  * @library ..
- * @run main/othervm ClientJSSEServerJSSE
  * @ignore JSSE supported cipher suites are changed with CR 6916074,
  *     need to update this test case in JDK 7 soon
+ * @run main/othervm ClientJSSEServerJSSE
  * @author Andreas Sterbenz
  */
 
