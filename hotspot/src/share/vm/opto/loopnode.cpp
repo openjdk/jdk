@@ -1883,7 +1883,7 @@ void PhaseIdealLoop::eliminate_useless_predicates() {
 //----------------------------build_and_optimize-------------------------------
 // Create a PhaseLoop.  Build the ideal Loop tree.  Map each Ideal Node to
 // its corresponding LoopNode.  If 'optimize' is true, do some loop cleanups.
-void PhaseIdealLoop::build_and_optimize(bool do_split_ifs) {
+void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) {
   ResourceMark rm;
 
   int old_progress = C->major_progress();
@@ -2071,6 +2071,16 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs) {
     _ltree_root->dump();
   }
 #endif
+
+  if (skip_loop_opts) {
+    // Cleanup any modified bits
+    _igvn.optimize();
+
+    if (C->log() != NULL) {
+      log_loop_tree(_ltree_root, _ltree_root, C->log());
+    }
+    return;
+  }
 
   if (ReassociateInvariants) {
     // Reassociate invariants and prep for split_thru_phi
