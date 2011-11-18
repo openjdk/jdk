@@ -107,7 +107,7 @@ extern "C" {                                                             \
     if (env != xenv) {                                                   \
       NativeReportJNIFatalError(thr, warn_wrong_jnienv);                 \
     }                                                                    \
-    __ENTRY(result_type, header, thr)
+    VM_ENTRY_BASE(result_type, header, thr)
 
 
 #define UNCHECKED() (unchecked_jni_NativeInterface)
