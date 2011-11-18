@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import sun.security.util.Cache;
  */
 final class KeyCache {
 
-    private final Cache strongCache;
+    private final Cache<IdentityWrapper, P11Key> strongCache;
 
     private WeakReference<Map<Key,P11Key>> cacheReference;
 
@@ -77,7 +77,7 @@ final class KeyCache {
     }
 
     synchronized P11Key get(Key key) {
-        P11Key p11Key = (P11Key)strongCache.get(new IdentityWrapper(key));
+        P11Key p11Key = strongCache.get(new IdentityWrapper(key));
         if (p11Key != null) {
             return p11Key;
         }
@@ -94,8 +94,8 @@ final class KeyCache {
         Map<Key,P11Key> map =
                 (cacheReference == null) ? null : cacheReference.get();
         if (map == null) {
-            map = new IdentityHashMap<Key,P11Key>();
-            cacheReference = new WeakReference<Map<Key,P11Key>>(map);
+            map = new IdentityHashMap<>();
+            cacheReference = new WeakReference<>(map);
         }
         map.put(key, p11Key);
     }

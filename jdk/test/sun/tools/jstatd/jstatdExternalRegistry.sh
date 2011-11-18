@@ -22,7 +22,7 @@
 #
 
 # @test
-# @bug 4990825
+# @bug 4990825 7092186
 # @run shell/timeout=90 jstatdExternalRegistry.sh
 # @summary Test functionality of 'jstatd -p<port>&' with an external RMI registry
 
