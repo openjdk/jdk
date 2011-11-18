@@ -505,7 +505,7 @@ Zone America/Juneau	 15:02:19 -	LMT	1867 Oct 18
 			 -8:00	US	P%sT	1983 Oct 30 2:00
 			 -9:00	US	Y%sT	1983 Nov 30
 			 -9:00	US	AK%sT
-Zone America/Sitka	 -14:58:47 -	LMT	1867 Oct 18
+Zone America/Sitka	 14:58:47 -	LMT	1867 Oct 18
 			 -9:01:13 -	LMT	1900 Aug 20 12:00
 			 -8:00	-	PST	1942
 			 -8:00	US	P%sT	1946
@@ -1190,31 +1190,21 @@ Rule	StJohns	1960	1986	-	Oct	lastSun	2:00	0	S
 # INMS (2000-09-12) says that, since 1988 at least, Newfoundland switches
 # at 00:01 local time.  For now, assume it started in 1987.
 
-# From Michael Pelley (2011-08-05):
-# The Government of Newfoundland and Labrador has pending changes to
-# modify the hour for daylight savings time to come into effect in
-# November 2011. This modification would change the time from 12:01AM to
-# 2:00AM on the dates of the switches of Daylight Savings Time to/from
-# Standard Time.
-#
-# As a matter of reference, in Canada provinces have the authority of
-# setting time zone information. The legislation has passed our
-# legislative body (The House of Assembly) and is awaiting the
-# proclamation to come into effect. You may find this information at:
-# <a href="http://www.assembly.nl.ca/legislation/sr/lists/Proclamation.htm">
-# http://www.assembly.nl.ca/legislation/sr/lists/Proclamation.htm
-# </a>
-# and
-# search within that web page for Standard Time (Amendment) Act. The Act
-# may be found at:
-# <a href="http://www.assembly.nl.ca/business/bills/Bill1106.htm">
-# http://www.assembly.nl.ca/business/bills/Bill1106.htm
+# From Michael Pelley (2011-09-12):
+# We received today, Monday, September 12, 2011, notification that the
+# changes to the Newfoundland Standard Time Act have been proclaimed.
+# The change in the Act stipulates that the change from Daylight Savings
+# Time to Standard Time and from Standard Time to Daylight Savings Time
+# now occurs at 2:00AM.
+# ...
+# <a href="http://www.assembly.nl.ca/legislation/sr/annualstatutes/2011/1106.chp.htm">
+# http://www.assembly.nl.ca/legislation/sr/annualstatutes/2011/1106.chp.htm
 # </a>
 # ...
-# MICHAEL PELLEY | Manager of Enterprise Architecture - Solution Delivery
-# Office of the Chief Information Officer Executive Council Government of
-# Newfoundland & Labrador P.O. Box 8700, 40 Higgins Line, St. John's NL
-# A1B 4J6
+# MICHAEL PELLEY  |  Manager of Enterprise Architecture - Solution Delivery
+# Office of the Chief Information Officer
+# Executive Council
+# Government of Newfoundland & Labrador
 
 Rule	StJohns	1987	only	-	Apr	Sun>=1	0:01	1:00	D
 Rule	StJohns	1987	2006	-	Oct	lastSun	0:01	0	S

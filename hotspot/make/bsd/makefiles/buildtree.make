@@ -234,6 +234,8 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	echo "$(call gamma-path,commonsrc,share/vm/prims) \\"; \
 	echo "$(call gamma-path,altsrc,share/vm) \\"; \
 	echo "$(call gamma-path,commonsrc,share/vm) \\"; \
+	echo "$(call gamma-path,altsrc,share/vm/precompiled) \\"; \
+	echo "$(call gamma-path,commonsrc,share/vm/precompiled) \\"; \
 	echo "$(call gamma-path,altsrc,cpu/$(SRCARCH)/vm) \\"; \
 	echo "$(call gamma-path,commonsrc,cpu/$(SRCARCH)/vm) \\"; \
 	echo "$(call gamma-path,altsrc,os_cpu/$(OS_FAMILY)_$(SRCARCH)/vm) \\"; \

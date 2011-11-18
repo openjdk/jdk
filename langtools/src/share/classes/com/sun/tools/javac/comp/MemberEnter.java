@@ -40,8 +40,10 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
+import static com.sun.tools.javac.code.Flags.ANNOTATION;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTags.*;
+import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 /** This is the second phase of Enter, in which classes are completed
@@ -644,7 +646,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         tree.sym = v;
         if (tree.init != null) {
             v.flags_field |= HASINIT;
-            if ((v.flags_field & FINAL) != 0 && tree.init.getTag() != JCTree.NEWCLASS) {
+            if ((v.flags_field & FINAL) != 0 && !tree.init.hasTag(NEWCLASS)) {
                 Env<AttrContext> initEnv = getInitEnv(tree, env);
                 initEnv.info.enclVar = v;
                 v.setLazyConstValue(initEnv(tree, initEnv), attr, tree.init);
@@ -868,7 +870,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             // If this is a toplevel-class, make sure any preceding import
             // clauses have been seen.
             if (c.owner.kind == PCK) {
-                memberEnter(env.toplevel, env.enclosing(JCTree.TOPLEVEL));
+                memberEnter(env.toplevel, env.enclosing(TOPLEVEL));
                 todo.append(env);
             }
 

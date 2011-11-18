@@ -678,7 +678,7 @@ public class WrapperGenerator {
     public void writeToString(StructType stp, PrintWriter pw) {
         int type;
         pw.println("\n\n\tString getName() {\n\t\treturn \"" + stp.getName()+ "\"; \n\t}");
-        pw.println("\n\n\tString getFieldsAsString() {\n\t\tString ret=\"\";\n");
+        pw.println("\n\n\tString getFieldsAsString() {\n\t\tStringBuilder ret = new StringBuilder(" + stp.getNumFields() * 40 + ");\n");
 
         for (Enumeration e = stp.getMembers() ; e.hasMoreElements() ;) {
             AtomicType tp = (AtomicType) e.nextElement();
@@ -688,24 +688,24 @@ public class WrapperGenerator {
             if ((name != null) && (name.length() > 0))
             {
                 if (type == AtomicType.TYPE_ATOM) {
-                    pw.println("\t\tret += \"\"+\"" + name + " = \" + XAtom.get(get_" + name + "()) +\", \";");
+                    pw.println("\t\tret.append(\"" + name + " = \" ).append( XAtom.get(get_" + name + "()) ).append(\", \");");
                 } else if (name.equals("type")) {
-                    pw.println("\t\tret += \"\"+\"type = \" + XlibWrapper.eventToString[get_type()] +\", \";");
+                    pw.println("\t\tret.append(\"type = \").append( XlibWrapper.eventToString[get_type()] ).append(\", \");");
                 } else if (name.equals("window")){
-                    pw.println("\t\tret += \"\"+\"window = \" + getWindow(get_window()) + \", \";");
+                    pw.println("\t\tret.append(\"window = \" ).append( getWindow(get_window()) ).append(\", \");");
                 } else if (type == AtomicType.TYPE_ARRAY) {
-                    pw.print("\t\tret += \"{\"");
+                    pw.print("\t\tret.append(\"{\")");
                     for (int i = 0; i < tp.getArrayLength(); i++) {
-                        pw.print(" + get_" + name + "(" + i + ") + \" \"");
+                        pw.print("\n\t\t.append( get_" + name + "(" + i + ") ).append(\" \")");
                     }
-                    pw.println(" + \"}\";");
+                    pw.println(".append( \"}\");");
                 } else {
-                    pw.println("\t\tret += \"\"+\"" + name +" = \" + get_"+ name+"() +\", \";");
+                    pw.println("\t\tret.append(\"" + name +" = \").append( get_"+ name+"() ).append(\", \");");
                 }
             }
 
         }
-        pw.println("\t\treturn ret;\n\t}\n\n");
+        pw.println("\t\treturn ret.toString();\n\t}\n\n");
     }
 
     public void writeStubs(StructType stp, PrintWriter pw) {
