@@ -41,13 +41,14 @@ public class ResourceManager {
 
     /* default maximum number of udp sockets per VM
      * when a security manager is enabled.
-     * The default is 1024 which is high enough to be useful
+     * The default is 25 which is high enough to be useful
      * but low enough to be well below the maximum number
-     * of port numbers actually available on all OSes for
-     * such sockets (5000 on some versions of windows)
+     * of port numbers actually available on all OSes
+     * when multiplied by the maximum feasible number of VM processes
+     * that could practically be spawned.
      */
 
-    private static final int DEFAULT_MAX_SOCKETS = 1024;
+    private static final int DEFAULT_MAX_SOCKETS = 25;
     private static final int maxSockets;
     private static final AtomicInteger numSockets;
 

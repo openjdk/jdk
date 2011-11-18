@@ -63,6 +63,10 @@ charset UTF-8 UTF_8
     alias UTF8				# JDK historical
     alias unicode-1-1-utf-8
 
+charset CESU-8 CESU_8
+    alias CESU8
+    alias csCESU-8
+
 charset UTF-16 UTF_16
     alias UTF_16			# JDK historical
     alias utf16

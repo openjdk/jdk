@@ -532,7 +532,7 @@ implements CRTFlags {
          */
         public int endPos(JCTree tree) {
             if (tree == null) return Position.NOPOS;
-            if (tree.getTag() == JCTree.BLOCK)
+            if (tree.hasTag(JCTree.Tag.BLOCK))
                 return ((JCBlock) tree).endpos;
             Integer endpos = endPositions.get(tree);
             if (endpos != null)
