@@ -101,5 +101,5 @@ JDK_GetVersionInfo0(jdk_version_info* info, size_t info_size) {
     // Advertise presence of sun.misc.PostVMInitHook:
     // future optimization: detect if this is enabled.
     info->post_vm_init_hook_enabled = 1;
-
+    info->pending_list_uses_discovered_field = 1;
 }

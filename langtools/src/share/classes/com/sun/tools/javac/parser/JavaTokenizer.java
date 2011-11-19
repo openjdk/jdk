@@ -25,10 +25,11 @@
 
 package com.sun.tools.javac.parser;
 
-import java.nio.CharBuffer;
 import com.sun.tools.javac.code.Source;
+import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.util.*;
 
+import java.nio.CharBuffer;
 
 import static com.sun.tools.javac.parser.Tokens.*;
 import static com.sun.tools.javac.util.LayoutCharacters.*;
@@ -65,9 +66,6 @@ public class JavaTokenizer {
      */
     private final Log log;
 
-    /** The name table. */
-    private final Names names;
-
     /** The token factory. */
     private final Tokens tokens;
 
@@ -87,17 +85,11 @@ public class JavaTokenizer {
      */
     protected int errPos = Position.NOPOS;
 
-    /** Has a @deprecated been encountered in last doc comment?
-     *  this needs to be reset by client.
+    /** The Unicode reader (low-level stream reader).
      */
-    protected boolean deprecatedFlag = false;
-
-    /** A character buffer for saved chars.
-     */
-    protected char[] sbuf = new char[128];
-    protected int sp;
-
     protected UnicodeReader reader;
+
+    protected ScannerFactory fac;
 
     private static final boolean hexFloatsWork = hexFloatsWork();
     private static boolean hexFloatsWork() {
@@ -129,14 +121,14 @@ public class JavaTokenizer {
     }
 
     protected JavaTokenizer(ScannerFactory fac, UnicodeReader reader) {
-        log = fac.log;
-        names = fac.names;
-        tokens = fac.tokens;
-        source = fac.source;
+        this.fac = fac;
+        this.log = fac.log;
+        this.tokens = fac.tokens;
+        this.source = fac.source;
         this.reader = reader;
-        allowBinaryLiterals = source.allowBinaryLiterals();
-        allowHexFloats = source.allowHexFloats();
-        allowUnderscoresInLiterals = source.allowUnderscoresInLiterals();
+        this.allowBinaryLiterals = source.allowBinaryLiterals();
+        this.allowHexFloats = source.allowHexFloats();
+        this.allowUnderscoresInLiterals = source.allowUnderscoresInLiterals();
     }
 
     /** Report an error at the given position using the provided arguments.
@@ -147,38 +139,13 @@ public class JavaTokenizer {
         errPos = pos;
     }
 
-    /** Read next character in comment, skipping over double '\' characters.
-     */
-    protected void scanCommentChar() {
-        reader.scanChar();
-        if (reader.ch == '\\') {
-            if (reader.peekChar() == '\\' && !reader.isUnicode()) {
-                reader.skipChar();
-            } else {
-                reader.convertUnicode();
-            }
-        }
-    }
-
-    /** Append a character to sbuf.
-     */
-    private void putChar(char ch) {
-        if (sp == sbuf.length) {
-            char[] newsbuf = new char[sbuf.length * 2];
-            System.arraycopy(sbuf, 0, newsbuf, 0, sbuf.length);
-            sbuf = newsbuf;
-        }
-        sbuf[sp++] = ch;
-    }
-
     /** Read next character in character or string literal and copy into sbuf.
      */
     private void scanLitChar(int pos) {
         if (reader.ch == '\\') {
             if (reader.peekChar() == '\\' && !reader.isUnicode()) {
                 reader.skipChar();
-                putChar('\\');
-                reader.scanChar();
+                reader.putChar('\\', true);
             } else {
                 reader.scanChar();
                 switch (reader.ch) {
@@ -195,30 +162,30 @@ public class JavaTokenizer {
                             reader.scanChar();
                         }
                     }
-                    putChar((char)oct);
+                    reader.putChar((char)oct);
                     break;
                 case 'b':
-                    putChar('\b'); reader.scanChar(); break;
+                    reader.putChar('\b', true); break;
                 case 't':
-                    putChar('\t'); reader.scanChar(); break;
+                    reader.putChar('\t', true); break;
                 case 'n':
-                    putChar('\n'); reader.scanChar(); break;
+                    reader.putChar('\n', true); break;
                 case 'f':
-                    putChar('\f'); reader.scanChar(); break;
+                    reader.putChar('\f', true); break;
                 case 'r':
-                    putChar('\r'); reader.scanChar(); break;
+                    reader.putChar('\r', true); break;
                 case '\'':
-                    putChar('\''); reader.scanChar(); break;
+                    reader.putChar('\'', true); break;
                 case '\"':
-                    putChar('\"'); reader.scanChar(); break;
+                    reader.putChar('\"', true); break;
                 case '\\':
-                    putChar('\\'); reader.scanChar(); break;
+                    reader.putChar('\\', true); break;
                 default:
                     lexError(reader.bp, "illegal.esc.char");
                 }
             }
         } else if (reader.bp != reader.buflen) {
-            putChar(reader.ch); reader.scanChar();
+            reader.putChar(true);
         }
     }
 
@@ -227,7 +194,7 @@ public class JavaTokenizer {
         int savePos;
         do {
             if (reader.ch != '_') {
-                putChar(reader.ch);
+                reader.putChar(false);
             } else {
                 if (!allowUnderscoresInLiterals) {
                     lexError(pos, "unsupported.underscore.lit", source.name);
@@ -246,12 +213,10 @@ public class JavaTokenizer {
      */
     private void scanHexExponentAndSuffix(int pos) {
         if (reader.ch == 'p' || reader.ch == 'P') {
-            putChar(reader.ch);
-            reader.scanChar();
+            reader.putChar(true);
             skipIllegalUnderscores();
             if (reader.ch == '+' || reader.ch == '-') {
-                putChar(reader.ch);
-                reader.scanChar();
+                reader.putChar(true);
             }
             skipIllegalUnderscores();
             if ('0' <= reader.ch && reader.ch <= '9') {
@@ -268,14 +233,12 @@ public class JavaTokenizer {
             lexError(pos, "malformed.fp.lit");
         }
         if (reader.ch == 'f' || reader.ch == 'F') {
-            putChar(reader.ch);
-            reader.scanChar();
+            reader.putChar(true);
             tk = TokenKind.FLOATLITERAL;
             radix = 16;
         } else {
             if (reader.ch == 'd' || reader.ch == 'D') {
-                putChar(reader.ch);
-                reader.scanChar();
+                reader.putChar(true);
             }
             tk = TokenKind.DOUBLELITERAL;
             radix = 16;
@@ -289,14 +252,12 @@ public class JavaTokenizer {
         if ('0' <= reader.ch && reader.ch <= '9') {
             scanDigits(pos, 10);
         }
-        int sp1 = sp;
+        int sp1 = reader.sp;
         if (reader.ch == 'e' || reader.ch == 'E') {
-            putChar(reader.ch);
-            reader.scanChar();
+            reader.putChar(true);
             skipIllegalUnderscores();
             if (reader.ch == '+' || reader.ch == '-') {
-                putChar(reader.ch);
-                reader.scanChar();
+                reader.putChar(true);
             }
             skipIllegalUnderscores();
             if ('0' <= reader.ch && reader.ch <= '9') {
@@ -304,7 +265,7 @@ public class JavaTokenizer {
                 return;
             }
             lexError(pos, "malformed.fp.lit");
-            sp = sp1;
+            reader.sp = sp1;
         }
     }
 
@@ -314,13 +275,11 @@ public class JavaTokenizer {
         radix = 10;
         scanFraction(pos);
         if (reader.ch == 'f' || reader.ch == 'F') {
-            putChar(reader.ch);
-            reader.scanChar();
+            reader.putChar(true);
             tk = TokenKind.FLOATLITERAL;
         } else {
             if (reader.ch == 'd' || reader.ch == 'D') {
-                putChar(reader.ch);
-                reader.scanChar();
+                reader.putChar(true);
             }
             tk = TokenKind.DOUBLELITERAL;
         }
@@ -331,8 +290,7 @@ public class JavaTokenizer {
     private void scanHexFractionAndSuffix(int pos, boolean seendigit) {
         radix = 16;
         Assert.check(reader.ch == '.');
-        putChar(reader.ch);
-        reader.scanChar();
+        reader.putChar(true);
         skipIllegalUnderscores();
         if (reader.digit(pos, 16) >= 0) {
             seendigit = true;
@@ -369,8 +327,7 @@ public class JavaTokenizer {
         } else if (seendigit && radix == 16 && (reader.ch == 'p' || reader.ch == 'P')) {
             scanHexExponentAndSuffix(pos);
         } else if (digitRadix == 10 && reader.ch == '.') {
-            putChar(reader.ch);
-            reader.scanChar();
+            reader.putChar(true);
             scanFractionAndSuffix(pos);
         } else if (digitRadix == 10 &&
                    (reader.ch == 'e' || reader.ch == 'E' ||
@@ -393,10 +350,7 @@ public class JavaTokenizer {
         boolean isJavaIdentifierPart;
         char high;
         do {
-            if (sp == sbuf.length) putChar(reader.ch); else sbuf[sp++] = reader.ch;
-            // optimization, was: putChar(reader.ch);
-
-            reader.scanChar();
+            reader.putChar(true);
             switch (reader.ch) {
             case 'A': case 'B': case 'C': case 'D': case 'E':
             case 'F': case 'G': case 'H': case 'I': case 'J':
@@ -423,7 +377,7 @@ public class JavaTokenizer {
                 break;
             case '\u001A': // EOI is also a legal identifier part
                 if (reader.bp >= reader.buflen) {
-                    name = names.fromChars(sbuf, 0, sp);
+                    name = reader.name();
                     tk = tokens.lookupKind(name);
                     return;
                 }
@@ -435,11 +389,7 @@ public class JavaTokenizer {
                 } else {
                     high = reader.scanSurrogates();
                     if (high != 0) {
-                        if (sp == sbuf.length) {
-                            putChar(high);
-                        } else {
-                            sbuf[sp++] = high;
-                        }
+                        reader.putChar(high);
                         isJavaIdentifierPart = Character.isJavaIdentifierPart(
                             Character.toCodePoint(high, reader.ch));
                     } else {
@@ -447,7 +397,7 @@ public class JavaTokenizer {
                     }
                 }
                 if (!isJavaIdentifierPart) {
-                    name = names.fromChars(sbuf, 0, sp);
+                    name = reader.name();
                     tk = tokens.lookupKind(name);
                     return;
                 }
@@ -474,11 +424,11 @@ public class JavaTokenizer {
      */
     private void scanOperator() {
         while (true) {
-            putChar(reader.ch);
-            Name newname = names.fromChars(sbuf, 0, sp);
+            reader.putChar(false);
+            Name newname = reader.name();
             TokenKind tk1 = tokens.lookupKind(newname);
             if (tk1 == TokenKind.IDENTIFIER) {
-                sp--;
+                reader.sp--;
                 break;
             }
             tk = tk1;
@@ -487,111 +437,17 @@ public class JavaTokenizer {
         }
     }
 
-    /**
-     * Scan a documentation comment; determine if a deprecated tag is present.
-     * Called once the initial /, * have been skipped, positioned at the second *
-     * (which is treated as the beginning of the first line).
-     * Stops positioned at the closing '/'.
-     */
-    @SuppressWarnings("fallthrough")
-    private void scanDocComment() {
-        boolean deprecatedPrefix = false;
-
-        forEachLine:
-        while (reader.bp < reader.buflen) {
-
-            // Skip optional WhiteSpace at beginning of line
-            while (reader.bp < reader.buflen && (reader.ch == ' ' || reader.ch == '\t' || reader.ch == FF)) {
-                scanCommentChar();
-            }
-
-            // Skip optional consecutive Stars
-            while (reader.bp < reader.buflen && reader.ch == '*') {
-                scanCommentChar();
-                if (reader.ch == '/') {
-                    return;
-                }
-            }
-
-            // Skip optional WhiteSpace after Stars
-            while (reader.bp < reader.buflen && (reader.ch == ' ' || reader.ch == '\t' || reader.ch == FF)) {
-                scanCommentChar();
-            }
-
-            deprecatedPrefix = false;
-            // At beginning of line in the JavaDoc sense.
-            if (reader.bp < reader.buflen && reader.ch == '@' && !deprecatedFlag) {
-                scanCommentChar();
-                if (reader.bp < reader.buflen && reader.ch == 'd') {
-                    scanCommentChar();
-                    if (reader.bp < reader.buflen && reader.ch == 'e') {
-                        scanCommentChar();
-                        if (reader.bp < reader.buflen && reader.ch == 'p') {
-                            scanCommentChar();
-                            if (reader.bp < reader.buflen && reader.ch == 'r') {
-                                scanCommentChar();
-                                if (reader.bp < reader.buflen && reader.ch == 'e') {
-                                    scanCommentChar();
-                                    if (reader.bp < reader.buflen && reader.ch == 'c') {
-                                        scanCommentChar();
-                                        if (reader.bp < reader.buflen && reader.ch == 'a') {
-                                            scanCommentChar();
-                                            if (reader.bp < reader.buflen && reader.ch == 't') {
-                                                scanCommentChar();
-                                                if (reader.bp < reader.buflen && reader.ch == 'e') {
-                                                    scanCommentChar();
-                                                    if (reader.bp < reader.buflen && reader.ch == 'd') {
-                                                        deprecatedPrefix = true;
-                                                        scanCommentChar();
-                                                    }}}}}}}}}}}
-            if (deprecatedPrefix && reader.bp < reader.buflen) {
-                if (Character.isWhitespace(reader.ch)) {
-                    deprecatedFlag = true;
-                } else if (reader.ch == '*') {
-                    scanCommentChar();
-                    if (reader.ch == '/') {
-                        deprecatedFlag = true;
-                        return;
-                    }
-                }
-            }
-
-            // Skip rest of line
-            while (reader.bp < reader.buflen) {
-                switch (reader.ch) {
-                case '*':
-                    scanCommentChar();
-                    if (reader.ch == '/') {
-                        return;
-                    }
-                    break;
-                case CR: // (Spec 3.4)
-                    scanCommentChar();
-                    if (reader.ch != LF) {
-                        continue forEachLine;
-                    }
-                    /* fall through to LF case */
-                case LF: // (Spec 3.4)
-                    scanCommentChar();
-                    continue forEachLine;
-                default:
-                    scanCommentChar();
-                }
-            } // rest of line
-        } // forEachLine
-        return;
-    }
-
     /** Read token.
      */
     public Token readToken() {
 
-        sp = 0;
+        reader.sp = 0;
         name = null;
-        deprecatedFlag = false;
         radix = 0;
+
         int pos = 0;
         int endPos = 0;
+        List<Comment> comments = null;
 
         try {
             loop: while (true) {
@@ -656,7 +512,7 @@ public class JavaTokenizer {
                             scanNumber(pos, 2);
                         }
                     } else {
-                        putChar('0');
+                        reader.putChar('0');
                         if (reader.ch == '_') {
                             int savePos = reader.bp;
                             do {
@@ -676,14 +532,13 @@ public class JavaTokenizer {
                 case '.':
                     reader.scanChar();
                     if ('0' <= reader.ch && reader.ch <= '9') {
-                        putChar('.');
+                        reader.putChar('.');
                         scanFractionAndSuffix(pos);
                     } else if (reader.ch == '.') {
-                        putChar('.'); putChar('.');
-                        reader.scanChar();
+                        reader.putChar('.'); reader.putChar('.', true);
                         if (reader.ch == '.') {
                             reader.scanChar();
-                            putChar('.');
+                            reader.putChar('.');
                             tk = TokenKind.ELLIPSIS;
                         } else {
                             lexError(pos, "malformed.fp.lit");
@@ -712,32 +567,36 @@ public class JavaTokenizer {
                     reader.scanChar();
                     if (reader.ch == '/') {
                         do {
-                            scanCommentChar();
+                            reader.scanCommentChar();
                         } while (reader.ch != CR && reader.ch != LF && reader.bp < reader.buflen);
                         if (reader.bp < reader.buflen) {
-                            processComment(pos, reader.bp, CommentStyle.LINE);
+                            comments = addDocReader(comments, processComment(pos, reader.bp, CommentStyle.LINE));
                         }
                         break;
                     } else if (reader.ch == '*') {
+                        boolean isEmpty = false;
                         reader.scanChar();
                         CommentStyle style;
                         if (reader.ch == '*') {
                             style = CommentStyle.JAVADOC;
-                            scanDocComment();
+                            reader.scanCommentChar();
+                            if (reader.ch == '/') {
+                                isEmpty = true;
+                            }
                         } else {
                             style = CommentStyle.BLOCK;
-                            while (reader.bp < reader.buflen) {
-                                if (reader.ch == '*') {
-                                    reader.scanChar();
-                                    if (reader.ch == '/') break;
-                                } else {
-                                    scanCommentChar();
-                                }
+                        }
+                        while (!isEmpty && reader.bp < reader.buflen) {
+                            if (reader.ch == '*') {
+                                reader.scanChar();
+                                if (reader.ch == '/') break;
+                            } else {
+                                reader.scanCommentChar();
                             }
                         }
                         if (reader.ch == '/') {
                             reader.scanChar();
-                            processComment(pos, reader.bp, style);
+                            comments = addDocReader(comments, processComment(pos, reader.bp, style));
                             break;
                         } else {
                             lexError(pos, "unclosed.comment");
@@ -789,11 +648,7 @@ public class JavaTokenizer {
                         } else {
                             char high = reader.scanSurrogates();
                             if (high != 0) {
-                                if (sp == sbuf.length) {
-                                    putChar(high);
-                                } else {
-                                    sbuf[sp++] = high;
-                                }
+                                reader.putChar(high);
 
                                 isJavaIdentifierStart = Character.isJavaIdentifierStart(
                                     Character.toCodePoint(high, reader.ch));
@@ -816,10 +671,10 @@ public class JavaTokenizer {
             }
             endPos = reader.bp;
             switch (tk.tag) {
-                case DEFAULT: return new Token(tk, pos, endPos, deprecatedFlag);
-                case NAMED: return new NamedToken(tk, pos, endPos, name, deprecatedFlag);
-                case STRING: return new StringToken(tk, pos, endPos, new String(sbuf, 0, sp), deprecatedFlag);
-                case NUMERIC: return new NumericToken(tk, pos, endPos, new String(sbuf, 0, sp), radix, deprecatedFlag);
+                case DEFAULT: return new Token(tk, pos, endPos, comments);
+                case NAMED: return new NamedToken(tk, pos, endPos, name, comments);
+                case STRING: return new StringToken(tk, pos, endPos, reader.chars(), comments);
+                case NUMERIC: return new NumericToken(tk, pos, endPos, reader.chars(), radix, comments);
                 default: throw new AssertionError();
             }
         }
@@ -832,6 +687,12 @@ public class JavaTokenizer {
             }
         }
     }
+    //where
+        List<Comment> addDocReader(List<Comment> docReaders, Comment docReader) {
+            return docReaders == null ?
+                    List.of(docReader) :
+                    docReaders.prepend(docReader);
+        }
 
     /** Return the position where a lexical error occurred;
      */
@@ -845,22 +706,18 @@ public class JavaTokenizer {
         errPos = pos;
     }
 
-    public enum CommentStyle {
-        LINE,
-        BLOCK,
-        JAVADOC,
-    }
-
     /**
      * Called when a complete comment has been scanned. pos and endPos
      * will mark the comment boundary.
      */
-    protected void processComment(int pos, int endPos, CommentStyle style) {
+    protected Tokens.Comment processComment(int pos, int endPos, CommentStyle style) {
         if (scannerDebug)
             System.out.println("processComment(" + pos
                                + "," + endPos + "," + style + ")=|"
                                + new String(reader.getRawCharacters(pos, endPos))
                                + "|");
+        char[] buf = reader.getRawCharacters(pos, endPos);
+        return new BasicComment<UnicodeReader>(new UnicodeReader(fac, buf, buf.length), style);
     }
 
     /**
@@ -892,5 +749,126 @@ public class JavaTokenizer {
      * @return a LineMap */
     public Position.LineMap getLineMap() {
         return Position.makeLineMap(reader.getRawCharacters(), reader.buflen, false);
+    }
+
+
+    /**
+    * Scan a documentation comment; determine if a deprecated tag is present.
+    * Called once the initial /, * have been skipped, positioned at the second *
+    * (which is treated as the beginning of the first line).
+    * Stops positioned at the closing '/'.
+    */
+    protected class BasicComment<U extends UnicodeReader> implements Comment {
+
+        CommentStyle cs;
+        U comment_reader;
+
+        protected boolean deprecatedFlag = false;
+        protected boolean scanned = false;
+
+        protected BasicComment(U comment_reader, CommentStyle cs) {
+            this.comment_reader = comment_reader;
+            this.cs = cs;
+        }
+
+        public String getText() {
+            return null;
+        }
+
+        public CommentStyle getStyle() {
+            return cs;
+        }
+
+        public boolean isDeprecated() {
+            if (!scanned && cs == CommentStyle.JAVADOC) {
+                scanDocComment();
+            }
+            return deprecatedFlag;
+        }
+
+        @SuppressWarnings("fallthrough")
+        protected void scanDocComment() {
+            try {
+                boolean deprecatedPrefix = false;
+
+                comment_reader.bp += 3; // '/**'
+                comment_reader.ch = comment_reader.buf[comment_reader.bp];
+
+                forEachLine:
+                while (comment_reader.bp < comment_reader.buflen) {
+
+                    // Skip optional WhiteSpace at beginning of line
+                    while (comment_reader.bp < comment_reader.buflen && (comment_reader.ch == ' ' || comment_reader.ch == '\t' || comment_reader.ch == FF)) {
+                        comment_reader.scanCommentChar();
+                    }
+
+                    // Skip optional consecutive Stars
+                    while (comment_reader.bp < comment_reader.buflen && comment_reader.ch == '*') {
+                        comment_reader.scanCommentChar();
+                        if (comment_reader.ch == '/') {
+                            return;
+                        }
+                    }
+
+                    // Skip optional WhiteSpace after Stars
+                    while (comment_reader.bp < comment_reader.buflen && (comment_reader.ch == ' ' || comment_reader.ch == '\t' || comment_reader.ch == FF)) {
+                        comment_reader.scanCommentChar();
+                    }
+
+                    deprecatedPrefix = false;
+                    // At beginning of line in the JavaDoc sense.
+                    if (!deprecatedFlag) {
+                        String deprecated = "@deprecated";
+                        int i = 0;
+                        while (comment_reader.bp < comment_reader.buflen && comment_reader.ch == deprecated.charAt(i)) {
+                            comment_reader.scanCommentChar();
+                            i++;
+                            if (i == deprecated.length()) {
+                                deprecatedPrefix = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (deprecatedPrefix && comment_reader.bp < comment_reader.buflen) {
+                        if (Character.isWhitespace(comment_reader.ch)) {
+                            deprecatedFlag = true;
+                        } else if (comment_reader.ch == '*') {
+                            comment_reader.scanCommentChar();
+                            if (comment_reader.ch == '/') {
+                                deprecatedFlag = true;
+                                return;
+                            }
+                        }
+                    }
+
+                    // Skip rest of line
+                    while (comment_reader.bp < comment_reader.buflen) {
+                        switch (comment_reader.ch) {
+                            case '*':
+                                comment_reader.scanCommentChar();
+                                if (comment_reader.ch == '/') {
+                                    return;
+                                }
+                                break;
+                            case CR: // (Spec 3.4)
+                                comment_reader.scanCommentChar();
+                                if (comment_reader.ch != LF) {
+                                    continue forEachLine;
+                                }
+                            /* fall through to LF case */
+                            case LF: // (Spec 3.4)
+                                comment_reader.scanCommentChar();
+                                continue forEachLine;
+                            default:
+                                comment_reader.scanCommentChar();
+                        }
+                    } // rest of line
+                } // forEachLine
+                return;
+            } finally {
+                scanned = true;
+            }
+        }
     }
 }

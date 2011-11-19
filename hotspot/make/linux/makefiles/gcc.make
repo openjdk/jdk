@@ -52,7 +52,7 @@ ifneq "$(shell expr \( $(CC_VER_MAJOR) \> 3 \) \| \( \( $(CC_VER_MAJOR) = 3 \) \
 ifneq ($(USE_PRECOMPILED_HEADER),0)
 USE_PRECOMPILED_HEADER=1
 PRECOMPILED_HEADER_DIR=.
-PRECOMPILED_HEADER_SRC=$(GAMMADIR)/src/share/vm/precompiled.hpp
+PRECOMPILED_HEADER_SRC=$(GAMMADIR)/src/share/vm/precompiled/precompiled.hpp
 PRECOMPILED_HEADER=$(PRECOMPILED_HEADER_DIR)/precompiled.hpp.gch
 endif
 endif
