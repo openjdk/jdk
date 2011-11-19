@@ -115,7 +115,7 @@ public class Main {
         }
 
         public void printFullVersion() {
-            log.printLines(PrefixKind.JAVAC, "fullversion", ownName,  JavaCompiler.fullVersion());
+            log.printLines(PrefixKind.JAVAC, "fullVersion", ownName,  JavaCompiler.fullVersion());
         }
 
         public void printHelp() {
