@@ -27,7 +27,6 @@
  */
 import java.security.*;
 import java.lang.reflect.*;
-import sun.security.pkcs11.*;
 
 public class Absolute {
 
