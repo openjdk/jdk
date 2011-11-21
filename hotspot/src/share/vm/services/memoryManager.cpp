@@ -168,10 +168,8 @@ GCStatInfo::GCStatInfo(int num_pools) {
   // initialize the arrays for memory usage
   _before_gc_usage_array = (MemoryUsage*) NEW_C_HEAP_ARRAY(MemoryUsage, num_pools);
   _after_gc_usage_array  = (MemoryUsage*) NEW_C_HEAP_ARRAY(MemoryUsage, num_pools);
-  size_t len = num_pools * sizeof(MemoryUsage);
-  memset(_before_gc_usage_array, 0, len);
-  memset(_after_gc_usage_array, 0, len);
   _usage_array_size = num_pools;
+  clear();
 }
 
 GCStatInfo::~GCStatInfo() {
@@ -304,12 +302,8 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
       pool->set_last_collection_usage(usage);
       LowMemoryDetector::detect_after_gc_memory(pool);
     }
-    if(is_notification_enabled()) {
-      bool isMajorGC = this == MemoryService::get_major_gc_manager();
-      GCNotifier::pushNotification(this, isMajorGC ? "end of major GC" : "end of minor GC",
-                                   GCCause::to_string(cause));
-    }
   }
+
   if (countCollection) {
     _num_collections++;
     // alternately update two objects making one public when complete
@@ -320,6 +314,12 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
       _current_gc_stat = tmp;
       // reset the current stat for diagnosability purposes
       _current_gc_stat->clear();
+    }
+
+    if (is_notification_enabled()) {
+      bool isMajorGC = this == MemoryService::get_major_gc_manager();
+      GCNotifier::pushNotification(this, isMajorGC ? "end of major GC" : "end of minor GC",
+                                   GCCause::to_string(cause));
     }
   }
 }
