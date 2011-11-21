@@ -887,7 +887,7 @@ class CommandLineFlags {
   diagnostic(bool, TraceNMethodInstalls, false,                             \
              "Trace nmethod intallation")                                   \
                                                                             \
-  diagnostic(intx, ScavengeRootsInCode, 1,                                  \
+  diagnostic(intx, ScavengeRootsInCode, 2,                                  \
              "0: do not allow scavengable oops in the code cache; "         \
              "1: allow scavenging from the code cache; "                    \
              "2: emit as many constants as the compiler can see")           \
