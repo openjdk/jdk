@@ -31,14 +31,14 @@
 import java.util.*;
 
 public class KillThread {
+    static volatile Thread tdThread;
     public static void main (String[] args) throws Exception  {
-        final Thread[] tdThread = new Thread[1];
         Timer t = new Timer();
 
         // Start a mean event that kills the timer thread
         t.schedule(new TimerTask() {
             public void run() {
-                tdThread[0] = Thread.currentThread();
+                tdThread = Thread.currentThread();
                 throw new ThreadDeath();
             }
         }, 0);
@@ -47,10 +47,10 @@ public class KillThread {
         try {
             do {
                 Thread.sleep(100);
-            } while(tdThread[0] == null);
+            } while(tdThread == null);
         } catch(InterruptedException e) {
         }
-        tdThread[0].join();
+        tdThread.join();
 
         // Try to start another event
         try {
