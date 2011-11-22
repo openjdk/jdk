@@ -3582,16 +3582,6 @@ void CMSCollector::checkpointRootsInitialWork(bool asynch) {
        " or no bits are set in the gc_prologue before the start of the next "
        "subsequent marking phase.");
 
-  // Temporarily disabled, since pre/post-consumption closures don't
-  // care about precleaned cards
-  #if 0
-  {
-    MemRegion mr = MemRegion((HeapWord*)_virtual_space.low(),
-                             (HeapWord*)_virtual_space.high());
-    _ct->ct_bs()->preclean_dirty_cards(mr);
-  }
-  #endif
-
   // Save the end of the used_region of the constituent generations
   // to be used to limit the extent of sweep in each generation.
   save_sweep_limits();

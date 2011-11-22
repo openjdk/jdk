@@ -662,23 +662,6 @@ MemRegion CardTableModRefBS::dirty_card_range_after_reset(MemRegion mr,
   return MemRegion(mr.end(), mr.end());
 }
 
-// Set all the dirty cards in the given region to "precleaned" state.
-void CardTableModRefBS::preclean_dirty_cards(MemRegion mr) {
-  for (int i = 0; i < _cur_covered_regions; i++) {
-    MemRegion mri = mr.intersection(_covered[i]);
-    if (!mri.is_empty()) {
-      jbyte *cur_entry, *limit;
-      for (cur_entry = byte_for(mri.start()), limit = byte_for(mri.last());
-           cur_entry <= limit;
-           cur_entry++) {
-        if (*cur_entry == dirty_card) {
-          *cur_entry = precleaned_card;
-        }
-      }
-    }
-  }
-}
-
 uintx CardTableModRefBS::ct_max_alignment_constraint() {
   return card_size * os::vm_page_size();
 }
