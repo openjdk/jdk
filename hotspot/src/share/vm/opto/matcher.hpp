@@ -294,7 +294,6 @@ public:
   RegMask                     _return_value_mask;
   // Inline Cache Register
   static OptoReg::Name  inline_cache_reg();
-  static const RegMask &inline_cache_reg_mask();
   static int            inline_cache_reg_encode();
 
   // Register for DIVI projection of divmodI
@@ -324,7 +323,6 @@ public:
   // and then expanded into the inline_cache_reg and a method_oop register
 
   static OptoReg::Name  interpreter_method_oop_reg();
-  static const RegMask &interpreter_method_oop_reg_mask();
   static int            interpreter_method_oop_reg_encode();
 
   static OptoReg::Name  compiler_method_oop_reg();
@@ -333,7 +331,6 @@ public:
 
   // Interpreter's Frame Pointer Register
   static OptoReg::Name  interpreter_frame_pointer_reg();
-  static const RegMask &interpreter_frame_pointer_reg_mask();
 
   // Java-Native calling convention
   // (what you use when intercalling between Java and C++ code)

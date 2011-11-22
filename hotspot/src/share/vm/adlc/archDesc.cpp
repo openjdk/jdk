@@ -823,9 +823,9 @@ static const char *getRegMask(const char *reg_class_name) {
   } else {
     char       *rc_name = toUpper(reg_class_name);
     const char *mask    = "_mask";
-    int         length  = (int)strlen(rc_name) + (int)strlen(mask) + 3;
+    int         length  = (int)strlen(rc_name) + (int)strlen(mask) + 5;
     char       *regMask = new char[length];
-    sprintf(regMask,"%s%s", rc_name, mask);
+    sprintf(regMask,"%s%s()", rc_name, mask);
     return regMask;
   }
 }
