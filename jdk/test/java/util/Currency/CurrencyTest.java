@@ -128,18 +128,20 @@ public class CurrencyTest {
             checkCountryCurrency(country1[i], currency1[i]);
         }
 
-        // check currency changes
-        String[] switchOverCtry = {"DE", "FR", "ES", "IT", "NL", "BE", "TR", "RO", "AZ", "MZ", "GH", "VE"};
-        String[] switchOverOld = {"DEM", "FRF", "ESP", "ITL", "NLG", "BEF", "TRL", "ROL", "AZM", "MZM", "GHC", "VEB"};
-        String[] switchOverNew = {"EUR", "EUR", "EUR", "EUR", "EUR", "EUR", "TRY", "RON", "AZN", "MZN", "GHS", "VEF"};
-        String[] switchOverTZ = {"Europe/Paris", "Europe/Paris", "Europe/Paris", "Europe/Paris",
-                                 "Europe/Paris", "Europe/Paris", "Asia/Istanbul", "Europe/Bucharest",
-                                 "Asia/Baku", "Africa/Maputo", "Africa/Accra", "America/Caracas"};
-        int[] switchOverYear = {2002, 2002, 2002, 2002, 2002, 2002, 2005, 2005, 2006, 2006, 2007, 2008};
-        int[] switchOverMonth = {Calendar.JANUARY, Calendar.JANUARY, Calendar.JANUARY, Calendar.JANUARY,
-                                 Calendar.JANUARY, Calendar.JANUARY, Calendar.JANUARY, Calendar.JULY,
-                                 Calendar.JANUARY, Calendar.JULY, Calendar.JULY, Calendar.JANUARY};
-        int[] switchOverDay = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+        /*
+        * check currency changes
+        * In current implementation, there is no data of old currency and transition date at jdk/src/share/classes/java/util/CurrencyData.properties.
+        * So, all the switch data arrays are empty. In the future, if data of old currency and transition date are necessary for any country, the
+        * arrays here can be updated so that the program can check the currency switch.
+        */
+        String[] switchOverCtry = {};
+        String[] switchOverOld = {};
+        String[] switchOverNew = {};
+        String[] switchOverTZ = {};
+        int[] switchOverYear = {};
+        int[] switchOverMonth = {};
+        int[] switchOverDay = {};
+
         for (int i = 0; i < switchOverCtry.length; i++) {
             TimeZone.setDefault(TimeZone.getTimeZone(switchOverTZ[i]));
             Calendar date = new GregorianCalendar(switchOverYear[i], switchOverMonth[i], switchOverDay[i]);

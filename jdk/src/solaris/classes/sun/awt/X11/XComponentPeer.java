@@ -466,12 +466,16 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         if (true) {
             switch(e.getID()) {
               case PaintEvent.UPDATE:
-                  log.finer("XCP coalescePaintEvent : UPDATE : add : x = " +
+                  if (log.isLoggable(PlatformLogger.FINER)) {
+                      log.finer("XCP coalescePaintEvent : UPDATE : add : x = " +
                             r.x + ", y = " + r.y + ", width = " + r.width + ",height = " + r.height);
+                  }
                   return;
               case PaintEvent.PAINT:
-                  log.finer("XCP coalescePaintEvent : PAINT : add : x = " +
+                  if (log.isLoggable(PlatformLogger.FINER)) {
+                      log.finer("XCP coalescePaintEvent : PAINT : add : x = " +
                             r.x + ", y = " + r.y + ", width = " + r.width + ",height = " + r.height);
+                  }
                   return;
             }
         }
@@ -1248,7 +1252,9 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
      * ButtonPress, ButtonRelease, KeyPress, KeyRelease, EnterNotify, LeaveNotify, MotionNotify
      */
     protected boolean isEventDisabled(XEvent e) {
-        enableLog.finest("Component is {1}, checking for disabled event {0}", e, (isEnabled()?"enabled":"disable"));
+        if (enableLog.isLoggable(PlatformLogger.FINEST)) {
+            enableLog.finest("Component is {1}, checking for disabled event {0}", e, (isEnabled()?"enabled":"disable"));
+        }
         if (!isEnabled()) {
             switch (e.get_type()) {
               case XConstants.ButtonPress:
@@ -1258,7 +1264,9 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
               case XConstants.EnterNotify:
               case XConstants.LeaveNotify:
               case XConstants.MotionNotify:
-                  enableLog.finer("Event {0} is disable", e);
+                  if (enableLog.isLoggable(PlatformLogger.FINER)) {
+                      enableLog.finer("Event {0} is disable", e);
+                  }
                   return true;
             }
         }

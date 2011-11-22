@@ -406,7 +406,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitOther(Tree node, P p) {
         JCTree tree = (JCTree) node;
         switch (tree.getTag()) {
-            case JCTree.LETEXPR: {
+            case LETEXPR: {
                 LetExpr t = (LetExpr) node;
                 List<JCVariableDecl> defs = copy(t.defs, p);
                 JCTree expr = copy(t.expr, p);
