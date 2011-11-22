@@ -1524,12 +1524,12 @@ bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {
 
 // Register for DIVI projection of divmodI
 RegMask Matcher::divI_proj_mask() {
-  return EAX_REG_mask;
+  return EAX_REG_mask();
 }
 
 // Register for MODI projection of divmodI
 RegMask Matcher::modI_proj_mask() {
-  return EDX_REG_mask;
+  return EDX_REG_mask();
 }
 
 // Register for DIVL projection of divmodL
@@ -1545,7 +1545,7 @@ RegMask Matcher::modL_proj_mask() {
 }
 
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return EBP_REG_mask;
+  return EBP_REG_mask();
 }
 
 // Returns true if the high 32 bits of the value is known to be zero.

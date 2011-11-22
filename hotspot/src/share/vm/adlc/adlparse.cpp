@@ -982,27 +982,9 @@ void ADLParser::frame_parse(void) {
       }
       if (strcmp(token,"interpreter_frame_pointer")==0) {
         interpreter_frame_pointer_parse(frame, false);
-        // Add  reg_class interpreter_frame_pointer_reg
-        if( _AD._register != NULL ) {
-          RegClass *reg_class = _AD._register->addRegClass("interpreter_frame_pointer_reg");
-          char *interpreter_frame_pointer_reg = frame->_interpreter_frame_pointer_reg;
-          if( interpreter_frame_pointer_reg != NULL ) {
-            RegDef *regDef = _AD._register->getRegDef(interpreter_frame_pointer_reg);
-            reg_class->addReg(regDef);     // add regDef to regClass
-          }
-        }
       }
       if (strcmp(token,"inline_cache_reg")==0) {
         inline_cache_parse(frame, false);
-        // Add  reg_class inline_cache_reg
-        if( _AD._register != NULL ) {
-          RegClass *reg_class = _AD._register->addRegClass("inline_cache_reg");
-          char *inline_cache_reg = frame->_inline_cache_reg;
-          if( inline_cache_reg != NULL ) {
-            RegDef *regDef = _AD._register->getRegDef(inline_cache_reg);
-            reg_class->addReg(regDef);     // add regDef to regClass
-          }
-        }
       }
       if (strcmp(token,"compiler_method_oop_reg")==0) {
         parse_err(WARN, "Using obsolete Token, compiler_method_oop_reg");
@@ -1010,15 +992,6 @@ void ADLParser::frame_parse(void) {
       }
       if (strcmp(token,"interpreter_method_oop_reg")==0) {
         interpreter_method_oop_parse(frame, false);
-        // Add  reg_class interpreter_method_oop_reg
-        if( _AD._register != NULL ) {
-          RegClass *reg_class = _AD._register->addRegClass("interpreter_method_oop_reg");
-          char *method_oop_reg = frame->_interpreter_method_oop_reg;
-          if( method_oop_reg != NULL ) {
-            RegDef *regDef = _AD._register->getRegDef(method_oop_reg);
-            reg_class->addReg(regDef);     // add regDef to regClass
-          }
-        }
       }
       if (strcmp(token,"cisc_spilling_operand_name")==0) {
         cisc_spilling_operand_name_parse(frame, false);
@@ -2363,6 +2336,14 @@ void ADLParser::reg_class_parse(void) {
       }
     }
     next_char();                  // Skip closing ')'
+  } else if (_curchar == '%') {
+    char *code = find_cpp_block("reg class");
+    if (code == NULL) {
+      parse_err(SYNERR, "missing code declaration for reg class.\n");
+      return;
+    }
+    reg_class->_user_defined = code;
+    return;
   }
 
   // Check for terminating ';'

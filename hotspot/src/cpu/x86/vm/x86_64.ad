@@ -2089,26 +2089,26 @@ bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {
 
 // Register for DIVI projection of divmodI
 RegMask Matcher::divI_proj_mask() {
-  return INT_RAX_REG_mask;
+  return INT_RAX_REG_mask();
 }
 
 // Register for MODI projection of divmodI
 RegMask Matcher::modI_proj_mask() {
-  return INT_RDX_REG_mask;
+  return INT_RDX_REG_mask();
 }
 
 // Register for DIVL projection of divmodL
 RegMask Matcher::divL_proj_mask() {
-  return LONG_RAX_REG_mask;
+  return LONG_RAX_REG_mask();
 }
 
 // Register for MODL projection of divmodL
 RegMask Matcher::modL_proj_mask() {
-  return LONG_RDX_REG_mask;
+  return LONG_RDX_REG_mask();
 }
 
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return PTR_RBP_REG_mask;
+  return PTR_RBP_REG_mask();
 }
 
 static Address build_address(int b, int i, int s, int d) {

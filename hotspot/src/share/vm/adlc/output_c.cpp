@@ -162,11 +162,17 @@ void ArchDesc::declare_register_masks(FILE *fp_hpp) {
       RegClass   *reg_class = _register->getRegClass(rc_name);
       assert( reg_class, "Using an undefined register class");
 
-      int len = RegisterForm::RegMask_Size();
-      fprintf(fp_hpp, "extern const RegMask %s%s_mask;\n", prefix, toUpper( rc_name ) );
+      if (reg_class->_user_defined == NULL) {
+        fprintf(fp_hpp, "extern const RegMask _%s%s_mask;\n", prefix, toUpper( rc_name ) );
+        fprintf(fp_hpp, "inline const RegMask &%s%s_mask() { return _%s%s_mask; }\n", prefix, toUpper( rc_name ), prefix, toUpper( rc_name ));
+      } else {
+        fprintf(fp_hpp, "inline const RegMask &%s%s_mask() { %s }\n", prefix, toUpper( rc_name ), reg_class->_user_defined);
+      }
 
       if( reg_class->_stack_or_reg ) {
-        fprintf(fp_hpp, "extern const RegMask %sSTACK_OR_%s_mask;\n", prefix, toUpper( rc_name ) );
+        assert(reg_class->_user_defined == NULL, "no user defined reg class here");
+        fprintf(fp_hpp, "extern const RegMask _%sSTACK_OR_%s_mask;\n", prefix, toUpper( rc_name ) );
+        fprintf(fp_hpp, "inline const RegMask &%sSTACK_OR_%s_mask() { return _%sSTACK_OR_%s_mask; }\n", prefix, toUpper( rc_name ), prefix, toUpper( rc_name ) );
       }
     }
   }
@@ -188,8 +194,10 @@ void ArchDesc::build_register_masks(FILE *fp_cpp) {
       RegClass   *reg_class = _register->getRegClass(rc_name);
       assert( reg_class, "Using an undefined register class");
 
+      if (reg_class->_user_defined != NULL) continue;
+
       int len = RegisterForm::RegMask_Size();
-      fprintf(fp_cpp, "const RegMask %s%s_mask(", prefix, toUpper( rc_name ) );
+      fprintf(fp_cpp, "const RegMask _%s%s_mask(", prefix, toUpper( rc_name ) );
       { int i;
         for( i = 0; i < len-1; i++ )
           fprintf(fp_cpp," 0x%x,",reg_class->regs_in_word(i,false));
@@ -198,7 +206,7 @@ void ArchDesc::build_register_masks(FILE *fp_cpp) {
 
       if( reg_class->_stack_or_reg ) {
         int i;
-        fprintf(fp_cpp, "const RegMask %sSTACK_OR_%s_mask(", prefix, toUpper( rc_name ) );
+        fprintf(fp_cpp, "const RegMask _%sSTACK_OR_%s_mask(", prefix, toUpper( rc_name ) );
         for( i = 0; i < len-1; i++ )
           fprintf(fp_cpp," 0x%x,",reg_class->regs_in_word(i,true));
         fprintf(fp_cpp," 0x%x );\n",reg_class->regs_in_word(i,true));
@@ -2690,7 +2698,7 @@ static void defineIn_RegMask(FILE *fp, FormDict &globals, OperandForm &oper) {
       if (strcmp(first_reg_class, "stack_slots") == 0) {
         fprintf(fp,"  return &(Compile::current()->FIRST_STACK_mask());\n");
       } else {
-        fprintf(fp,"  return &%s_mask;\n", toUpper(first_reg_class));
+        fprintf(fp,"  return &%s_mask();\n", toUpper(first_reg_class));
       }
     } else {
       // Build a switch statement to return the desired mask.
@@ -2702,7 +2710,7 @@ static void defineIn_RegMask(FILE *fp, FormDict &globals, OperandForm &oper) {
         if( !strcmp(reg_class, "stack_slots") ) {
           fprintf(fp, "  case %d: return &(Compile::current()->FIRST_STACK_mask());\n", index);
         } else {
-          fprintf(fp, "  case %d: return &%s_mask;\n", index, toUpper(reg_class));
+          fprintf(fp, "  case %d: return &%s_mask();\n", index, toUpper(reg_class));
         }
       }
       fprintf(fp,"  }\n");
@@ -4080,8 +4088,6 @@ void ArchDesc::buildFrameMethods(FILE *fp_cpp) {
   fprintf(fp_cpp,"OptoReg::Name Matcher::inline_cache_reg() {");
   fprintf(fp_cpp," return OptoReg::Name(%s_num); }\n\n",
           _frame->_inline_cache_reg);
-  fprintf(fp_cpp,"const RegMask &Matcher::inline_cache_reg_mask() {");
-  fprintf(fp_cpp," return INLINE_CACHE_REG_mask; }\n\n");
   fprintf(fp_cpp,"int Matcher::inline_cache_reg_encode() {");
   fprintf(fp_cpp," return _regEncode[inline_cache_reg()]; }\n\n");
 
@@ -4089,8 +4095,6 @@ void ArchDesc::buildFrameMethods(FILE *fp_cpp) {
   fprintf(fp_cpp,"OptoReg::Name Matcher::interpreter_method_oop_reg() {");
   fprintf(fp_cpp," return OptoReg::Name(%s_num); }\n\n",
           _frame->_interpreter_method_oop_reg);
-  fprintf(fp_cpp,"const RegMask &Matcher::interpreter_method_oop_reg_mask() {");
-  fprintf(fp_cpp," return INTERPRETER_METHOD_OOP_REG_mask; }\n\n");
   fprintf(fp_cpp,"int Matcher::interpreter_method_oop_reg_encode() {");
   fprintf(fp_cpp," return _regEncode[interpreter_method_oop_reg()]; }\n\n");
 
@@ -4101,11 +4105,6 @@ void ArchDesc::buildFrameMethods(FILE *fp_cpp) {
   else
     fprintf(fp_cpp," return OptoReg::Name(%s_num); }\n\n",
             _frame->_interpreter_frame_pointer_reg);
-  fprintf(fp_cpp,"const RegMask &Matcher::interpreter_frame_pointer_reg_mask() {");
-  if (_frame->_interpreter_frame_pointer_reg == NULL)
-    fprintf(fp_cpp," static RegMask dummy; return dummy; }\n\n");
-  else
-    fprintf(fp_cpp," return INTERPRETER_FRAME_POINTER_REG_mask; }\n\n");
 
   // Frame Pointer definition
   /* CNC - I can not contemplate having a different frame pointer between

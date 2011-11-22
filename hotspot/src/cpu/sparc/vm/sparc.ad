@@ -1019,7 +1019,7 @@ void emit_hi(CodeBuffer &cbuf, int val) {  }
 
 
 //=============================================================================
-const RegMask& MachConstantBaseNode::_out_RegMask = PTR_REG_mask;
+const RegMask& MachConstantBaseNode::_out_RegMask = PTR_REG_mask();
 
 int Compile::ConstantTable::calculate_table_base_offset() const {
   if (UseRDPCForConstantTableBase) {
@@ -2024,7 +2024,7 @@ RegMask Matcher::modL_proj_mask() {
 }
 
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return L7_REGP_mask;
+  return L7_REGP_mask();
 }
 
 %}
