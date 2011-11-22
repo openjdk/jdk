@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,16 +157,6 @@ bool ParCompactionManager::should_copy() {
   return (action() == ParCompactionManager::Copy) ||
          (action() == ParCompactionManager::CopyAndUpdate) ||
          (action() == ParCompactionManager::UpdateAndCopy);
-}
-
-bool ParCompactionManager::should_verify_only() {
-  assert(action() != NotValid, "Action is not set");
-  return action() == ParCompactionManager::VerifyUpdate;
-}
-
-bool ParCompactionManager::should_reset_only() {
-  assert(action() != NotValid, "Action is not set");
-  return action() == ParCompactionManager::ResetObjects;
 }
 
 void ParCompactionManager::region_list_push(uint list_index,

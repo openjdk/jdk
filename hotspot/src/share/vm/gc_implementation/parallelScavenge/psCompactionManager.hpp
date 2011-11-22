@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,6 @@ class ParCompactionManager : public CHeapObj {
     Copy,
     UpdateAndCopy,
     CopyAndUpdate,
-    VerifyUpdate,
-    ResetObjects,
     NotValid
   };
 // ------------------------  End don't putback if not needed
@@ -176,8 +174,6 @@ private:
 
   bool should_update();
   bool should_copy();
-  bool should_verify_only();
-  bool should_reset_only();
 
   Stack<Klass*>* revisit_klass_stack() { return &_revisit_klass_stack; }
   Stack<DataLayout*>* revisit_mdo_stack() { return &_revisit_mdo_stack; }

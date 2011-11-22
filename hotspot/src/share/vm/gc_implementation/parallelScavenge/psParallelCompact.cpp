@@ -3370,20 +3370,7 @@ PSParallelCompact::move_and_update(ParCompactionManager* cm, SpaceId space_id) {
   HeapWord* beg_addr = sp->bottom();
   HeapWord* end_addr = sp->top();
 
-#ifdef ASSERT
   assert(beg_addr <= dp_addr && dp_addr <= end_addr, "bad dense prefix");
-  if (cm->should_verify_only()) {
-    VerifyUpdateClosure verify_update(cm, sp);
-    bitmap->iterate(&verify_update, beg_addr, end_addr);
-    return;
-  }
-
-  if (cm->should_reset_only()) {
-    ResetObjectsClosure reset_objects(cm);
-    bitmap->iterate(&reset_objects, beg_addr, end_addr);
-    return;
-  }
-#endif
 
   const size_t beg_region = sd.addr_to_region_idx(beg_addr);
   const size_t dp_region = sd.addr_to_region_idx(dp_addr);
@@ -3499,35 +3486,6 @@ UpdateOnlyClosure::UpdateOnlyClosure(ParMarkBitMap* mbm,
 ParMarkBitMapClosure::IterationStatus
 UpdateOnlyClosure::do_addr(HeapWord* addr, size_t words) {
   do_addr(addr);
-  return ParMarkBitMap::incomplete;
-}
-
-// Verify the new location using the forwarding pointer
-// from MarkSweep::mark_sweep_phase2().  Set the mark_word
-// to the initial value.
-ParMarkBitMapClosure::IterationStatus
-PSParallelCompact::VerifyUpdateClosure::do_addr(HeapWord* addr, size_t words) {
-  // The second arg (words) is not used.
-  oop obj = (oop) addr;
-  HeapWord* forwarding_ptr = (HeapWord*) obj->mark()->decode_pointer();
-  HeapWord* new_pointer = summary_data().calc_new_pointer(obj);
-  if (forwarding_ptr == NULL) {
-    // The object is dead or not moving.
-    assert(bitmap()->is_unmarked(obj) || (new_pointer == (HeapWord*) obj),
-           "Object liveness is wrong.");
-    return ParMarkBitMap::incomplete;
-  }
-  assert(HeapMaximumCompactionInterval > 1 || MarkSweepAlwaysCompactCount > 1 ||
-         forwarding_ptr == new_pointer, "new location is incorrect");
-  return ParMarkBitMap::incomplete;
-}
-
-// Reset objects modified for debug checking.
-ParMarkBitMapClosure::IterationStatus
-PSParallelCompact::ResetObjectsClosure::do_addr(HeapWord* addr, size_t words) {
-  // The second arg (words) is not used.
-  oop obj = (oop) addr;
-  obj->init_mark();
   return ParMarkBitMap::incomplete;
 }
 
