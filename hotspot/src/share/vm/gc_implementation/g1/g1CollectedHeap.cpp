@@ -176,8 +176,7 @@ void YoungList::push_region(HeapRegion *hr) {
   hr->set_next_young_region(_head);
   _head = hr;
 
-  hr->set_young();
-  double yg_surv_rate = _g1h->g1_policy()->predict_yg_surv_rate((int)_length);
+  _g1h->g1_policy()->set_region_eden(hr, (int) _length);
   ++_length;
 }
 
@@ -190,7 +189,6 @@ void YoungList::add_survivor_region(HeapRegion* hr) {
     _survivor_tail = hr;
   }
   _survivor_head = hr;
-
   ++_survivor_length;
 }
 
@@ -315,16 +313,20 @@ YoungList::reset_auxilary_lists() {
   _g1h->g1_policy()->note_start_adding_survivor_regions();
   _g1h->g1_policy()->finished_recalculating_age_indexes(true /* is_survivors */);
 
+  int young_index_in_cset = 0;
   for (HeapRegion* curr = _survivor_head;
        curr != NULL;
        curr = curr->get_next_young_region()) {
-    _g1h->g1_policy()->set_region_survivors(curr);
+    _g1h->g1_policy()->set_region_survivor(curr, young_index_in_cset);
 
     // The region is a non-empty survivor so let's add it to
     // the incremental collection set for the next evacuation
     // pause.
     _g1h->g1_policy()->add_region_to_incremental_cset_rhs(curr);
+    young_index_in_cset += 1;
   }
+  assert((size_t) young_index_in_cset == _survivor_length,
+         "post-condition");
   _g1h->g1_policy()->note_stop_adding_survivor_regions();
 
   _head   = _survivor_head;
@@ -3210,8 +3212,6 @@ G1CollectedHeap::doConcurrentMark() {
   }
 }
 
-// <NEW PREDICTION>
-
 double G1CollectedHeap::predict_region_elapsed_time_ms(HeapRegion *hr,
                                                        bool young) {
   return _g1_policy->predict_region_elapsed_time_ms(hr, young);
@@ -3251,7 +3251,7 @@ size_t G1CollectedHeap::cards_scanned() {
 void
 G1CollectedHeap::setup_surviving_young_words() {
   guarantee( _surviving_young_words == NULL, "pre-condition" );
-  size_t array_length = g1_policy()->young_cset_length();
+  size_t array_length = g1_policy()->young_cset_region_length();
   _surviving_young_words = NEW_C_HEAP_ARRAY(size_t, array_length);
   if (_surviving_young_words == NULL) {
     vm_exit_out_of_memory(sizeof(size_t) * array_length,
@@ -3268,7 +3268,7 @@ G1CollectedHeap::setup_surviving_young_words() {
 void
 G1CollectedHeap::update_surviving_young_words(size_t* surv_young_words) {
   MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
-  size_t array_length = g1_policy()->young_cset_length();
+  size_t array_length = g1_policy()->young_cset_region_length();
   for (size_t i = 0; i < array_length; ++i)
     _surviving_young_words[i] += surv_young_words[i];
 }
@@ -3279,8 +3279,6 @@ G1CollectedHeap::cleanup_surviving_young_words() {
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words);
   _surviving_young_words = NULL;
 }
-
-// </NEW PREDICTION>
 
 #ifdef ASSERT
 class VerifyCSetClosure: public HeapRegionClosure {
@@ -4158,7 +4156,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, int queue_num)
   // non-young regions (where the age is -1)
   // We also add a few elements at the beginning and at the end in
   // an attempt to eliminate cache contention
-  size_t real_length = 1 + _g1h->g1_policy()->young_cset_length();
+  size_t real_length = 1 + _g1h->g1_policy()->young_cset_region_length();
   size_t array_length = PADDING_ELEM_NUM +
                         real_length +
                         PADDING_ELEM_NUM;
@@ -5595,8 +5593,8 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
 
     if (cur->is_young()) {
       int index = cur->young_index_in_cset();
-      guarantee( index != -1, "invariant" );
-      guarantee( (size_t)index < policy->young_cset_length(), "invariant" );
+      assert(index != -1, "invariant");
+      assert((size_t) index < policy->young_cset_region_length(), "invariant");
       size_t words_survived = _surviving_young_words[index];
       cur->record_surv_words_in_group(words_survived);
 
@@ -5607,7 +5605,7 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
       cur->set_next_young_region(NULL);
     } else {
       int index = cur->young_index_in_cset();
-      guarantee( index == -1, "invariant" );
+      assert(index == -1, "invariant");
     }
 
     assert( (cur->is_young() && cur->young_index_in_cset() > -1) ||
@@ -5620,8 +5618,9 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
       free_region(cur, &pre_used, &local_free_list, false /* par */);
     } else {
       cur->uninstall_surv_rate_group();
-      if (cur->is_young())
+      if (cur->is_young()) {
         cur->set_young_index_in_cset(-1);
+      }
       cur->set_not_young();
       cur->set_evacuation_failed(false);
       // The region is now considered to be old.
@@ -5722,7 +5721,6 @@ void G1CollectedHeap::set_region_short_lived_locked(HeapRegion* hr) {
   assert(heap_lock_held_for_gc(),
               "the heap lock should already be held by or for this thread");
   _young_list->push_region(hr);
-  g1_policy()->set_region_short_lived(hr);
 }
 
 class NoYoungRegionsClosure: public HeapRegionClosure {
@@ -5880,7 +5878,6 @@ HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
     HeapRegion* new_alloc_region = new_region(word_size,
                                               false /* do_expand */);
     if (new_alloc_region != NULL) {
-      g1_policy()->update_region_num(true /* next_is_young */);
       set_region_short_lived_locked(new_alloc_region);
       _hr_printer.alloc(new_alloc_region, G1HRPrinter::Eden, young_list_full);
       return new_alloc_region;

@@ -219,7 +219,7 @@ public:
 HeapRegion* G1RemSet::calculateStartRegion(int worker_i) {
   HeapRegion* result = _g1p->collection_set();
   if (ParallelGCThreads > 0) {
-    size_t cs_size = _g1p->collection_set_size();
+    size_t cs_size = _g1p->cset_region_length();
     int n_workers = _g1->workers()->total_workers();
     size_t cs_spans = cs_size / n_workers;
     size_t ind      = cs_spans * worker_i;
