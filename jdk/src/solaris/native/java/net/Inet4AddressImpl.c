@@ -65,11 +65,11 @@ Java_java_net_Inet4AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
         /* Something went wrong, maybe networking is not setup? */
         strcpy(hostname, "localhost");
     } else {
-        hostname[NI_MAXHOST] = '\0';
-        struct addrinfo  hints, *res;
+        struct addrinfo hints, *res;
         int error;
 
-        bzero(&hints, sizeof(hints));
+        hostname[NI_MAXHOST] = '\0';
+        memset(&hints, 0, sizeof(hints));
         hints.ai_flags = AI_CANONNAME;
         hints.ai_family = AF_INET;
 
@@ -79,7 +79,7 @@ Java_java_net_Inet4AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
             getnameinfo(res->ai_addr,
                         res->ai_addrlen,
                         hostname,
-                        MAXHOSTNAMELEN,
+                        NI_MAXHOST,
                         NULL,
                         0,
                         NI_NAMEREQD);
@@ -141,7 +141,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
     CHECK_NULL_RETURN(hostname, NULL);
 
     /* Try once, with our static buffer. */
-    bzero(&hints, sizeof(hints));
+    memset(&hints, 0, sizeof(hints));
     hints.ai_flags = AI_CANONNAME;
     hints.ai_family = AF_INET;
 
@@ -261,10 +261,9 @@ Java_java_net_Inet4AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
     char host[NI_MAXHOST+1];
     int error = 0;
     int len = 0;
-    jbyte caddr[16];
+    jbyte caddr[4];
 
     struct sockaddr_in him4;
-    struct sockaddr_in6 him6;
     struct sockaddr *sa;
 
     jint addr;

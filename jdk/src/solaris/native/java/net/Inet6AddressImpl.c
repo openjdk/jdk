@@ -85,7 +85,7 @@ Java_java_net_Inet6AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
         struct addrinfo  hints, *res;
         int error;
 
-        bzero(&hints, sizeof(hints));
+        memset(&hints, 0, sizeof(hints));
         hints.ai_flags = AI_CANONNAME;
         hints.ai_family = AF_UNSPEC;
 
@@ -188,7 +188,7 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
         = (*env)->GetStaticBooleanField(env, ia_class, ia_preferIPv6AddressID);
 
     /* Try once, with our static buffer. */
-    bzero(&hints, sizeof(hints));
+    memset(&hints, 0, sizeof(hints));
     hints.ai_flags = AI_CANONNAME;
     hints.ai_family = AF_UNSPEC;
 
