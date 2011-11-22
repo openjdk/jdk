@@ -39,7 +39,6 @@ import javax.tools.StandardLocation;
 
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.comp.Annotate;
-import com.sun.tools.javac.parser.DocCommentScanner;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
@@ -420,7 +419,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
         ListBuffer<JCClassDecl> result = new ListBuffer<JCClassDecl>();
         for (JCCompilationUnit t : trees) {
             for (JCTree def : t.defs) {
-                if (def.getTag() == JCTree.CLASSDEF)
+                if (def.hasTag(JCTree.Tag.CLASSDEF))
                     result.append((JCClassDecl)def);
             }
         }

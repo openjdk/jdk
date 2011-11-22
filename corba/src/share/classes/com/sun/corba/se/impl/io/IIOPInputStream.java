@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2243,6 +2243,10 @@ public class IIOPInputStream
                 }
 
                 try {
+                    Class fieldCl = fields[i].getClazz();
+                    if (objectValue != null && !fieldCl.isInstance(objectValue)) {
+                        throw new IllegalArgumentException();
+                    }
                     bridge.putObject( o, fields[i].getFieldID(), objectValue ) ;
                     // reflective code: fields[i].getField().set( o, objectValue ) ;
                 } catch (IllegalArgumentException e) {
@@ -2553,6 +2557,10 @@ public class IIOPInputStream
     {
         try {
             Field fld = c.getDeclaredField( fieldName ) ;
+            Class fieldCl = fld.getType();
+            if(v != null && !fieldCl.isInstance(v)) {
+                throw new Exception();
+            }
             long key = bridge.objectFieldOffset( fld ) ;
             bridge.putObject( o, key, v ) ;
         } catch (Exception e) {

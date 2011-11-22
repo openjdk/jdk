@@ -340,14 +340,6 @@ void HeapRegion::reset_after_compaction() {
   init_top_at_mark_start();
 }
 
-DirtyCardToOopClosure*
-HeapRegion::new_dcto_closure(OopClosure* cl,
-                             CardTableModRefBS::PrecisionStyle precision,
-                             HeapRegionDCTOC::FilterKind fk) {
-  return new HeapRegionDCTOC(G1CollectedHeap::heap(),
-                             this, cl, precision, fk);
-}
-
 void HeapRegion::hr_clear(bool par, bool clear_space) {
   assert(_humongous_type == NotHumongous,
          "we should have already filtered out humongous regions");

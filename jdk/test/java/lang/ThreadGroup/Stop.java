@@ -29,37 +29,58 @@
  */
 
 public class Stop implements Runnable {
-    private static Thread first=null;
-    private static Thread second=null;
-    private static ThreadGroup group = new ThreadGroup("");
+    private static boolean groupStopped = false ;
+    private static final Object lock = new Object();
 
-    Stop() {
-        Thread thread = new Thread(group, this);
-        if (first == null)
-            first = thread;
-        else
-            second = thread;
-
-        thread.start();
-    }
+    private static final ThreadGroup group = new ThreadGroup("");
+    private static final Thread first = new Thread(group, new Stop());
+    private static final Thread second = new Thread(group, new Stop());
 
     public void run() {
         while (true) {
+            // Give the other thread a chance to start
             try {
-                Thread.sleep(1000); // Give other thread a chance to start
-                if (Thread.currentThread() == first)
-                    group.stop();
-            } catch(InterruptedException e){
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+            }
+
+            // When the first thread runs, it will stop the group.
+            if (Thread.currentThread() == first) {
+                synchronized (lock) {
+                    try {
+                        group.stop();
+                    } finally {
+                        // Signal the main thread it is time to check
+                        // that the stopped thread group was successful
+                        groupStopped = true;
+                        lock.notifyAll();
+                    }
+                }
             }
         }
     }
 
     public static void main(String[] args) throws Exception {
-        for (int i=0; i<2; i++)
-            new Stop();
-        Thread.sleep(3000);
+        // Launch two threads as part of the same thread group
+        first.start();
+        second.start();
+
+        // Wait for the thread group stop to be issued
+        synchronized(lock){
+            while (!groupStopped) {
+                lock.wait();
+                // Give the other thread a chance to stop
+                Thread.sleep(1000);
+            }
+        }
+
+        // Check that the second thread is terminated when the
+        // first thread terminates the thread group.
         boolean failed = second.isAlive();
-        first.stop(); second.stop();
+
+        // Clean up any threads that may have not been terminated
+        first.stop();
+        second.stop();
         if (failed)
             throw new RuntimeException("Failure.");
     }

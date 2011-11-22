@@ -47,7 +47,7 @@ case "$OS" in
     ;;
   CYGWIN* )
     FS="/"
-    SCR=`pwd | cygpath -d`
+    SCR=`pwd | cygpath -d -f -`
     ;;
   Windows* )
     FS="\\"

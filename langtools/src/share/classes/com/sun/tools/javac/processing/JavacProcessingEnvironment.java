@@ -1072,9 +1072,9 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             Assert.checkNonNull(names);
             next.put(Names.namesKey, names);
 
-            Keywords keywords = Keywords.instance(context);
-            Assert.checkNonNull(keywords);
-            next.put(Keywords.keywordsKey, keywords);
+            Tokens tokens = Tokens.instance(context);
+            Assert.checkNonNull(tokens);
+            next.put(Tokens.tokensKey, tokens);
 
             JavaCompiler oldCompiler = JavaCompiler.instance(context);
             JavaCompiler nextCompiler = JavaCompiler.instance(next);
@@ -1222,7 +1222,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         List<ClassSymbol> classes = List.nil();
         for (JCCompilationUnit unit : units) {
             for (JCTree node : unit.defs) {
-                if (node.getTag() == JCTree.CLASSDEF) {
+                if (node.hasTag(JCTree.Tag.CLASSDEF)) {
                     ClassSymbol sym = ((JCClassDecl) node).sym;
                     Assert.checkNonNull(sym);
                     classes = classes.prepend(sym);

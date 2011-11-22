@@ -402,10 +402,10 @@ class ServerImpl implements TimeSource {
                 } catch (IOException e) {
                     logger.log (Level.FINER, "Dispatcher (4)", e);
                 } catch (Exception e) {
-                    e.printStackTrace();
                     logger.log (Level.FINER, "Dispatcher (7)", e);
                 }
             }
+            try {selector.close(); } catch (Exception e) {}
         }
 
         private void handleException (SelectionKey key, Exception e) {
