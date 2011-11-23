@@ -209,8 +209,22 @@ public class Credentials {
     }
 
     public sun.security.krb5.Credentials setKrbCreds() {
+        // Note: We will not pass authorizationData to s.s.k.Credentials. The
+        // field in that class will be passed to Krb5Context as the return
+        // value of ExtendedGSSContext.inquireSecContext(KRB5_GET_AUTHZ_DATA),
+        // which is documented as the authData in the service ticket. That
+        // is on the acceptor side.
+        //
+        // This class is for the initiator side. Also, authdata inside a ccache
+        // is most likely to be the one in Authenticator in PA-TGS-REQ encoded
+        // in TGS-REQ, therefore only stored with a service ticket. Currently
+        // in Java, we only reads TGTs.
         return new sun.security.krb5.Credentials(ticket,
                 cname, sname, key, flags, authtime, starttime, endtime, renewTill, caddr);
+    }
+
+    public KerberosTime getStartTime() {
+        return starttime;
     }
 
     public KerberosTime getAuthTime() {
@@ -221,11 +235,19 @@ public class Credentials {
         return endtime;
     }
 
+    public KerberosTime getRenewTill() {
+        return renewTill;
+    }
+
     public TicketFlags getTicketFlags() {
         return flags;
     }
 
     public int getEType() {
         return key.getEType();
+    }
+
+    public int getTktEType() {
+        return ticket.encPart.getEType();
     }
 }
