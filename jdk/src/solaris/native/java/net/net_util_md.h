@@ -102,10 +102,6 @@ void ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
                                            const char* hostname,
                                            int gai_error);
 
-/* do we have address translation support */
-
-extern jboolean NET_addrtransAvailable();
-
 #define NET_WAIT_READ   0x01
 #define NET_WAIT_WRITE  0x02
 #define NET_WAIT_CONNECT        0x04
