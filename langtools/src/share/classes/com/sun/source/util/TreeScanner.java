@@ -339,6 +339,12 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
         return scan(node.getExpression(), p);
     }
 
+    public R visitMemberReference(MemberReferenceTree node, P p) {
+        R r = scan(node.getQualifierExpression(), p);
+        r = scanAndReduce(node.getTypeArguments(), p, r);
+        return r;
+    }
+
     public R visitIdentifier(IdentifierTree node, P p) {
         return null;
     }

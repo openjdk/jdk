@@ -28,6 +28,8 @@ package com.sun.tools.javac.tree;
 import java.io.*;
 import java.util.*;
 
+import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
+
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.code.*;
@@ -1058,6 +1060,21 @@ public class Pretty extends JCTree.Visitor {
         try {
             printExpr(tree.selected, TreeInfo.postfixPrec);
             print("." + tree.name);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public void visitReference(JCMemberReference tree) {
+        try {
+            printExpr(tree.expr);
+            print("#");
+            if (tree.typeargs != null) {
+                print("<");
+                printExprs(tree.typeargs);
+                print(">");
+            }
+            print(tree.getMode() == ReferenceMode.INVOKE ? tree.name : "new");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
