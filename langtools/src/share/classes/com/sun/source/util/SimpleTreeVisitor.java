@@ -212,6 +212,10 @@ public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
         return defaultAction(node, p);
     }
 
+    public R visitMemberReference(MemberReferenceTree node, P p) {
+        return defaultAction(node, p);
+    }
+
     public R visitIdentifier(IdentifierTree node, P p) {
         return defaultAction(node, p);
     }

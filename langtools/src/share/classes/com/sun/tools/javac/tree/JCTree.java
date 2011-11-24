@@ -42,6 +42,7 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.parser.EndPosTable;
 import com.sun.source.tree.*;
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
+import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 
 import static com.sun.tools.javac.code.BoundKind.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
@@ -226,6 +227,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         /** Selections, of type Select.
          */
         SELECT,
+
+        /** Member references, of type Reference.
+         */
+        REFERENCE,
 
         /** Simple identifiers, of type Ident.
          */
@@ -1802,6 +1807,46 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     /**
+     * Selects a member expression.
+     */
+    public static class JCMemberReference extends JCExpression implements MemberReferenceTree {
+        public ReferenceMode mode;
+        public Name name;
+        public JCExpression expr;
+        public List<JCExpression> typeargs;
+        public Type targetType;
+        public Symbol sym;
+
+        protected JCMemberReference(ReferenceMode mode, Name name, JCExpression expr, List<JCExpression> typeargs) {
+            this.mode = mode;
+            this.name = name;
+            this.expr = expr;
+            this.typeargs = typeargs;
+        }
+        @Override
+        public void accept(Visitor v) { v.visitReference(this); }
+
+        public Kind getKind() { return Kind.MEMBER_REFERENCE; }
+        @Override
+        public ReferenceMode getMode() { return mode; }
+        @Override
+        public JCExpression getQualifierExpression() { return expr; }
+        @Override
+        public Name getName() { return name; }
+        @Override
+        public List<JCExpression> getTypeArguments() { return typeargs; }
+
+        @Override
+        public <R,D> R accept(TreeVisitor<R,D> v, D d) {
+            return v.visitMemberReference(this, d);
+        }
+        @Override
+        public Tag getTag() {
+            return REFERENCE;
+        }
+    }
+
+    /**
      * An identifier
      * @param idname the name
      * @param sym the symbol
@@ -2336,6 +2381,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitTypeTest(JCInstanceOf that)         { visitTree(that); }
         public void visitIndexed(JCArrayAccess that)         { visitTree(that); }
         public void visitSelect(JCFieldAccess that)          { visitTree(that); }
+        public void visitReference(JCMemberReference that)   { visitTree(that); }
         public void visitIdent(JCIdent that)                 { visitTree(that); }
         public void visitLiteral(JCLiteral that)             { visitTree(that); }
         public void visitTypeIdent(JCPrimitiveTypeTree that) { visitTree(that); }

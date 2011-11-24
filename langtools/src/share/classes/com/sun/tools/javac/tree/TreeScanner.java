@@ -259,6 +259,11 @@ public class TreeScanner extends Visitor {
         scan(tree.selected);
     }
 
+    public void visitReference(JCMemberReference tree) {
+        scan(tree.expr);
+        scan(tree.typeargs);
+    }
+
     public void visitIdent(JCIdent tree) {
     }
 
