@@ -413,6 +413,13 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
+    public JCMemberReference Reference(JCMemberReference.ReferenceMode mode, Name name,
+            JCExpression expr, List<JCExpression> typeargs) {
+        JCMemberReference tree = new JCMemberReference(mode, name, expr, typeargs);
+        tree.pos = pos;
+        return tree;
+    }
+
     public JCIdent Ident(Name name) {
         JCIdent tree = new JCIdent(name, null);
         tree.pos = pos;

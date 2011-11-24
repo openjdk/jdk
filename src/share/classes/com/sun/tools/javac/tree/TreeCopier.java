@@ -296,6 +296,13 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).Select(selected, t.name);
     }
 
+    public JCTree visitMemberReference(MemberReferenceTree node, P p) {
+        JCMemberReference t = (JCMemberReference) node;
+        JCExpression expr = copy(t.expr, p);
+        List<JCExpression> typeargs = copy(t.typeargs, p);
+        return M.at(t.pos).Reference(t.mode, t.name, expr, typeargs);
+    }
+
     public JCTree visitEmptyStatement(EmptyStatementTree node, P p) {
         JCSkip t = (JCSkip) node;
         return M.at(t.pos).Skip();

@@ -132,6 +132,11 @@ public interface Tree {
         MEMBER_SELECT(MemberSelectTree.class),
 
         /**
+         * Used for instances of {@link MemberReferenceTree}.
+         */
+        MEMBER_REFERENCE(MemberReferenceTree.class),
+
+        /**
          * Used for instances of {@link ForLoopTree}.
          */
         FOR_LOOP(ForLoopTree.class),
