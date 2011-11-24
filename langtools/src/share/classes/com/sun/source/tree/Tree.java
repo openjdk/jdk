@@ -187,6 +187,11 @@ public interface Tree {
         NEW_CLASS(NewClassTree.class),
 
         /**
+         * Used for instances of {@link LambdaExpressionTree}.
+         */
+        LAMBDA_EXPRESSION(LambdaExpressionTree.class),
+
+        /**
          * Used for instances of {@link ParenthesizedTree}.
          */
         PARENTHESIZED(ParenthesizedTree.class),

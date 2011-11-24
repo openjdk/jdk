@@ -907,6 +907,17 @@ public class Pretty extends JCTree.Visitor {
         }
     }
 
+    public void visitLambda(JCLambda tree) {
+        try {
+            print("(");
+            printExprs(tree.params);
+            print(")->");
+            printExpr(tree.body);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     public void visitParens(JCParens tree) {
         try {
             print("(");
