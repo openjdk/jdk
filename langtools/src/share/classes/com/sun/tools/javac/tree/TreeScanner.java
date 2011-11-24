@@ -212,6 +212,11 @@ public class TreeScanner extends Visitor {
         scan(tree.elems);
     }
 
+    public void visitLambda(JCLambda tree) {
+        scan(tree.body);
+        scan(tree.params);
+    }
+
     public void visitParens(JCParens tree) {
         scan(tree.expr);
     }
