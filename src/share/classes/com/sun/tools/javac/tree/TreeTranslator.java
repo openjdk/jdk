@@ -282,6 +282,12 @@ public class TreeTranslator extends JCTree.Visitor {
         result = tree;
     }
 
+    public void visitLambda(JCLambda tree) {
+        tree.params = translate(tree.params);
+        tree.body = translate(tree.body);
+        result = tree;
+    }
+
     public void visitNewArray(JCNewArray tree) {
         tree.elemtype = translate(tree.elemtype);
         tree.dims = translate(tree.dims);

@@ -271,6 +271,13 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).NewClass(encl, typeargs, clazz, args, def);
     }
 
+    public JCTree visitLambdaExpression(LambdaExpressionTree node, P p) {
+        JCLambda t = (JCLambda) node;
+        List<JCVariableDecl> params = copy(t.params, p);
+        JCTree body = copy(t.body, p);
+        return M.at(t.pos).Lambda(params, body);
+    }
+
     public JCTree visitParenthesized(ParenthesizedTree node, P p) {
         JCParens t = (JCParens) node;
         JCExpression expr = copy(t.expr, p);

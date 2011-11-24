@@ -41,6 +41,7 @@ import com.sun.tools.javac.code.Scope.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.parser.EndPosTable;
 import com.sun.source.tree.*;
+import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 
 import static com.sun.tools.javac.code.BoundKind.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
@@ -197,6 +198,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         /** Array creation expressions, of type NewArray.
          */
         NEWARRAY,
+
+        /** Lambda expression, of type Lambda.
+         */
+        LAMBDA,
 
         /** Parenthesized subexpressions, of type Parens.
          */
@@ -1487,6 +1492,56 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     /**
+     * A lambda expression.
+     */
+    public static class JCLambda extends JCExpression implements LambdaExpressionTree {
+
+        public List<JCVariableDecl> params;
+        public JCTree body;
+        public Type targetType;
+        public boolean canCompleteNormally = true;
+        public List<Type> inferredThrownTypes;
+
+        public JCLambda(List<JCVariableDecl> params,
+                        JCTree body) {
+            this.params = params;
+            this.body = body;
+        }
+        @Override
+        public Tag getTag() {
+            return LAMBDA;
+        }
+        @Override
+        public void accept(Visitor v) {
+            v.visitLambda(this);
+        }
+        @Override
+        public <R, D> R accept(TreeVisitor<R, D> v, D d) {
+            return v.visitLambdaExpression(this, d);
+        }
+        public Kind getKind() {
+            return Kind.LAMBDA_EXPRESSION;
+        }
+        public JCTree getBody() {
+            return body;
+        }
+        public java.util.List<? extends VariableTree> getParameters() {
+            return params;
+        }
+        @Override
+        public JCLambda setType(Type type) {
+            super.setType(type);
+            return this;
+        }
+        @Override
+        public BodyKind getBodyKind() {
+            return body.hasTag(BLOCK) ?
+                    BodyKind.STATEMENT :
+                    BodyKind.EXPRESSION;
+        }
+    }
+
+    /**
      * A parenthesized subexpression ( ... )
      */
     public static class JCParens extends JCExpression implements ParenthesizedTree {
@@ -2271,6 +2326,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitApply(JCMethodInvocation that)      { visitTree(that); }
         public void visitNewClass(JCNewClass that)           { visitTree(that); }
         public void visitNewArray(JCNewArray that)           { visitTree(that); }
+        public void visitLambda(JCLambda that)               { visitTree(that); }
         public void visitParens(JCParens that)               { visitTree(that); }
         public void visitAssign(JCAssign that)               { visitTree(that); }
         public void visitAssignop(JCAssignOp that)           { visitTree(that); }

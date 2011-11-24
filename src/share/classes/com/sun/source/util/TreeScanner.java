@@ -285,6 +285,12 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
         return r;
     }
 
+    public R visitLambdaExpression(LambdaExpressionTree node, P p) {
+        R r = scan(node.getParameters(), p);
+        r = scanAndReduce(node.getBody(), p, r);
+        return r;
+    }
+
     public R visitParenthesized(ParenthesizedTree node, P p) {
         return scan(node.getExpression(), p);
     }
