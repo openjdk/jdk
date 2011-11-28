@@ -1980,6 +1980,11 @@ public class Attr extends JCTree.Visitor {
         throw new UnsupportedOperationException("Lambda expression not supported yet");
     }
 
+    @Override
+    public void visitReference(JCMemberReference that) {
+        throw new UnsupportedOperationException("Member references not supported yet");
+    }
+
     public void visitParens(JCParens tree) {
         Type owntype = attribTree(tree.expr, env, pkind, pt);
         result = check(tree, owntype, pkind, pkind, pt);

@@ -197,6 +197,9 @@ public enum Source {
     public boolean allowLambda() {
         return compareTo(JDK1_8) >= 0;
     }
+    public boolean allowMethodReferences() {
+        return compareTo(JDK1_8) >= 0;
+    }
     public static SourceVersion toSourceVersion(Source source) {
         switch(source) {
         case JDK1_2:

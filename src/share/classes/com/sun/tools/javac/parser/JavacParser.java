@@ -27,6 +27,8 @@ package com.sun.tools.javac.parser;
 
 import java.util.*;
 
+import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
+
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.parser.Tokens.*;
 import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
@@ -112,6 +114,8 @@ public class JavacParser implements Parser {
         this.allowStringFolding = fac.options.getBoolean("allowStringFolding", true);
         this.allowLambda = source.allowLambda() &&
                 fac.options.isSet("allowLambda");
+        this.allowMethodReferences = source.allowMethodReferences() &&
+                fac.options.isSet("allowMethodReferences");
         this.keepDocComments = keepDocComments;
         docComments = keepDocComments ? new HashMap<JCTree,String>() : null;
         this.keepLineMap = keepLineMap;
@@ -171,6 +175,10 @@ public class JavacParser implements Parser {
     /** Switch: should we recognize lambda expressions?
      */
     boolean allowLambda;
+
+    /** Switch: should we allow method/constructor references?
+     */
+    boolean allowMethodReferences;
 
     /** Switch: should we keep docComments?
      */
@@ -779,7 +787,7 @@ public class JavacParser implements Parser {
             top++;
             topOp = token;
             nextToken();
-            odStack[top] = (topOp.kind == INSTANCEOF) ? parseType() : term3();
+            odStack[top] = (topOp.kind == INSTANCEOF) ? parseType() : term3NoParams();
             while (top > 0 && prec(topOp.kind) >= prec(token.kind)) {
                 odStack[top-1] = makeOp(topOp.pos, topOp.kind, odStack[top-1],
                                         odStack[top]);
@@ -882,6 +890,7 @@ public class JavacParser implements Parser {
      *                 | "(" Arguments ")" "->" ( Expression | Block )
      *                 | Ident "->" ( Expression | Block )
      *                 | Ident { "." Ident }
+     *                 | Expression3 MemberReferenceSuffix
      *                   [ "[" ( "]" BracketsOpt "." CLASS | Expression "]" )
      *                   | Arguments
      *                   | "." ( CLASS | THIS | [TypeArguments] SUPER Arguments | NEW [TypeArguments] InnerCreator )
@@ -922,7 +931,7 @@ public class JavacParser implements Parser {
                     mode = EXPR;
                     t = literal(names.hyphen, pos);
                 } else {
-                    t = term3();
+                    t = term3NoParams();
                     return F.at(pos).Unary(unoptag(tk), t);
                 }
             } else return illegal();
@@ -938,8 +947,8 @@ public class JavacParser implements Parser {
                     break;
                 } else {
                     nextToken();
-                    mode = EXPR | TYPE | NOPARAMS;
-                    t = term3();
+                    mode = EXPR | TYPE;
+                    t = term3NoParams();
                     if ((mode & TYPE) != 0 && token.kind == LT) {
                         // Could be a cast to a parameterized type
                         JCTree.Tag op = JCTree.Tag.LT;
@@ -1002,7 +1011,7 @@ public class JavacParser implements Parser {
                 lastmode = mode;
                 mode = EXPR;
                 if ((lastmode & EXPR) == 0) {
-                    JCExpression t1 = term3();
+                    JCExpression t1 = term3NoParams();
                     return F.at(pos).TypeCast(t, t1);
                 } else if ((lastmode & TYPE) != 0) {
                     switch (token.kind) {
@@ -1015,7 +1024,7 @@ public class JavacParser implements Parser {
                         case NEW: case IDENTIFIER: case ASSERT: case ENUM:
                     case BYTE: case SHORT: case CHAR: case INT:
                     case LONG: case FLOAT: case DOUBLE: case BOOLEAN: case VOID:
-                        JCExpression t1 = term3();
+                        JCExpression t1 = term3NoParams();
                         return F.at(pos).TypeCast(t, t1);
                     }
                 }
@@ -1134,6 +1143,49 @@ public class JavacParser implements Parser {
                         // typeArgs saved for next loop iteration.
                         t = toP(F.at(pos).Select(t, ident()));
                         break;
+                    case LT:
+                        if ((mode & (TYPE | NOPARAMS)) == 0) {
+                            //could be an unbound method reference whose qualifier
+                            //is a generic type i.e. A<S>#m
+                            mode = EXPR | TYPE;
+                            JCTree.Tag op = JCTree.Tag.LT;
+                            int pos1 = token.pos;
+                            nextToken();
+                            mode |= EXPR | TYPE | TYPEARG;
+                            JCExpression t1 = term3();
+                            if ((mode & TYPE) != 0 &&
+                                (token.kind == COMMA || token.kind == GT)) {
+                                mode = TYPE;
+                                ListBuffer<JCExpression> args = new ListBuffer<JCExpression>();
+                                args.append(t1);
+                                while (token.kind == COMMA) {
+                                    nextToken();
+                                    args.append(typeArgument());
+                                }
+                                accept(GT);
+                                t = toP(F.at(pos1).TypeApply(t, args.toList()));
+                                checkGenerics();
+                                while (token.kind == DOT) {
+                                    nextToken();
+                                    mode = TYPE;
+                                    t = toP(F.at(token.pos).Select(t, ident()));
+                                    t = typeArgumentsOpt(t);
+                                }
+                                if (token.kind != HASH) {
+                                    //method reference expected here
+                                    t = illegal();
+                                }
+                                mode = EXPR;
+                                break;
+                            } else if ((mode & EXPR) != 0) {
+                                //rollback - it was a binary expression
+                                mode = EXPR;
+                                JCExpression e = term2Rest(t1, TreeInfo.shiftPrec);
+                                t = F.at(pos1).Binary(op, t, e);
+                                t = termRest(term1Rest(term2Rest(t, TreeInfo.orPrec)));
+                            }
+                        }
+                        break loop;
                     default:
                         break loop;
                     }
@@ -1171,6 +1223,15 @@ public class JavacParser implements Parser {
             return illegal();
         }
         return term3Rest(t, typeArgs);
+    }
+
+    JCExpression term3NoParams() {
+        try {
+            mode |= NOPARAMS;
+            return term3();
+        } finally {
+            mode &= ~NOPARAMS;
+        }
     }
 
     JCExpression term3Rest(JCExpression t, List<JCExpression> typeArgs) {
@@ -1218,6 +1279,11 @@ public class JavacParser implements Parser {
                     t = argumentsOpt(typeArgs, typeArgumentsOpt(t));
                     typeArgs = null;
                 }
+            } else if ((mode & EXPR) != 0 && token.kind == HASH) {
+                mode = EXPR;
+                if (typeArgs != null) return illegal();
+                accept(HASH);
+                t = memberReferenceSuffix(pos1, t);
             } else {
                 break;
             }
@@ -1281,6 +1347,9 @@ public class JavacParser implements Parser {
         nextToken();
         if (token.kind == LPAREN || typeArgs != null) {
             t = arguments(typeArgs, t);
+        } else if (token.kind == HASH) {
+            if (typeArgs != null) return illegal();
+            t = memberReferenceSuffix(t);
         } else {
             int pos = token.pos;
             accept(DOT);
@@ -1488,6 +1557,36 @@ public class JavacParser implements Parser {
             syntaxError(token.pos, "dot.class.expected");
         }
         return t;
+    }
+
+    /**
+     * MemberReferenceSuffix = "#" [TypeArguments] Ident
+     *                       | "#" [TypeArguments] "new"
+     */
+    JCExpression memberReferenceSuffix(JCExpression t) {
+        int pos1 = token.pos;
+        accept(HASH);
+        return memberReferenceSuffix(pos1, t);
+    }
+
+    JCExpression memberReferenceSuffix(int pos1, JCExpression t) {
+        checkMethodReferences();
+        mode = EXPR;
+        List<JCExpression> typeArgs = null;
+        if (token.kind == LT) {
+            typeArgs = typeArguments(false);
+        }
+        Name refName = null;
+        ReferenceMode refMode = null;
+        if (token.kind == NEW) {
+            refMode = ReferenceMode.NEW;
+            refName = names.init;
+            nextToken();
+        } else {
+            refMode = ReferenceMode.INVOKE;
+            refName = ident();
+        }
+        return toP(F.at(t.getStartPosition()).Reference(refMode, refName, t, typeArgs));
     }
 
     /** Creator = Qualident [TypeArguments] ( ArrayCreatorRest | ClassCreatorRest )
@@ -3164,6 +3263,12 @@ public class JavacParser implements Parser {
         if (!allowLambda) {
             log.error(token.pos, "lambda.not.supported.in.source", source.name);
             allowLambda = true;
+        }
+    }
+    void checkMethodReferences() {
+        if (!allowMethodReferences) {
+            log.error(token.pos, "method.references.not.supported.in.source", source.name);
+            allowMethodReferences = true;
         }
     }
 
