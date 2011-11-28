@@ -176,6 +176,7 @@ public class Tokens {
         TRUE("true", Tag.NAMED),
         FALSE("false", Tag.NAMED),
         NULL("null", Tag.NAMED),
+        ARROW("->"),
         LPAREN("("),
         RPAREN(")"),
         LBRACE("{"),

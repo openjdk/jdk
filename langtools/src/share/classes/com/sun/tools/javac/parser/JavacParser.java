@@ -110,6 +110,8 @@ public class JavacParser implements Parser {
         this.allowDiamond = source.allowDiamond();
         this.allowMulticatch = source.allowMulticatch();
         this.allowStringFolding = fac.options.getBoolean("allowStringFolding", true);
+        this.allowLambda = source.allowLambda() &&
+                fac.options.isSet("allowLambda");
         this.keepDocComments = keepDocComments;
         docComments = keepDocComments ? new HashMap<JCTree,String>() : null;
         this.keepLineMap = keepLineMap;
@@ -166,6 +168,10 @@ public class JavacParser implements Parser {
      */
     boolean allowStringFolding;
 
+    /** Switch: should we recognize lambda expressions?
+     */
+    boolean allowLambda;
+
     /** Switch: should we keep docComments?
      */
     boolean keepDocComments;
@@ -201,6 +207,30 @@ public class JavacParser implements Parser {
     protected void nextToken() {
         S.nextToken();
         token = S.token();
+    }
+
+    protected boolean peekToken(TokenKind tk) {
+        return S.token(1).kind == tk;
+    }
+
+    protected boolean peekToken(TokenKind tk1, TokenKind tk2) {
+        return S.token(1).kind == tk1 &&
+                S.token(2).kind == tk2;
+    }
+
+    protected boolean peekToken(TokenKind tk1, TokenKind tk2, TokenKind tk3) {
+        return S.token(1).kind == tk1 &&
+                S.token(2).kind == tk2 &&
+                S.token(3).kind == tk3;
+    }
+
+    protected boolean peekToken(TokenKind... kinds) {
+        for (int lookahead = 0 ; lookahead < kinds.length ; lookahead++) {
+            if (S.token(lookahead + 1).kind != kinds[lookahead]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /* ---------- error recovery -------------- */
@@ -849,6 +879,8 @@ public class JavacParser implements Parser {
      *                 | [TypeArguments] THIS [Arguments]
      *                 | [TypeArguments] SUPER SuperSuffix
      *                 | NEW [TypeArguments] Creator
+     *                 | "(" Arguments ")" "->" ( Expression | Block )
+     *                 | Ident "->" ( Expression | Block )
      *                 | Ident { "." Ident }
      *                   [ "[" ( "]" BracketsOpt "." CLASS | Expression "]" )
      *                   | Arguments
@@ -897,48 +929,75 @@ public class JavacParser implements Parser {
             break;
         case LPAREN:
             if (typeArgs == null && (mode & EXPR) != 0) {
-                nextToken();
-                mode = EXPR | TYPE | NOPARAMS;
-                t = term3();
-                if ((mode & TYPE) != 0 && token.kind == LT) {
-                    // Could be a cast to a parameterized type
-                    JCTree.Tag op = JCTree.Tag.LT;
-                    int pos1 = token.pos;
+                if (peekToken(FINAL) ||
+                        peekToken(RPAREN) ||
+                        peekToken(IDENTIFIER, COMMA) ||
+                        peekToken(IDENTIFIER, RPAREN, ARROW)) {
+                    //implicit n-ary lambda
+                    t = lambdaExpressionOrStatement(true, peekToken(FINAL), pos);
+                    break;
+                } else {
                     nextToken();
-                    mode &= (EXPR | TYPE);
-                    mode |= TYPEARG;
-                    JCExpression t1 = term3();
-                    if ((mode & TYPE) != 0 &&
-                        (token.kind == COMMA || token.kind == GT)) {
-                        mode = TYPE;
-                        ListBuffer<JCExpression> args = new ListBuffer<JCExpression>();
-                        args.append(t1);
-                        while (token.kind == COMMA) {
-                            nextToken();
-                            args.append(typeArgument());
-                        }
-                        accept(GT);
-                        t = toP(F.at(pos1).TypeApply(t, args.toList()));
-                        checkGenerics();
-                        while (token.kind == DOT) {
-                            nextToken();
+                    mode = EXPR | TYPE | NOPARAMS;
+                    t = term3();
+                    if ((mode & TYPE) != 0 && token.kind == LT) {
+                        // Could be a cast to a parameterized type
+                        JCTree.Tag op = JCTree.Tag.LT;
+                        int pos1 = token.pos;
+                        nextToken();
+                        mode &= (EXPR | TYPE);
+                        mode |= TYPEARG;
+                        JCExpression t1 = term3();
+                        if ((mode & TYPE) != 0 &&
+                            (token.kind == COMMA || token.kind == GT)) {
                             mode = TYPE;
-                            t = toP(F.at(token.pos).Select(t, ident()));
-                            t = typeArgumentsOpt(t);
+                            ListBuffer<JCExpression> args = new ListBuffer<JCExpression>();
+                            args.append(t1);
+                            while (token.kind == COMMA) {
+                                nextToken();
+                                args.append(typeArgument());
+                            }
+                            accept(GT);
+                            t = toP(F.at(pos1).TypeApply(t, args.toList()));
+                            checkGenerics();
+                            mode = EXPR | TYPE; //could be a lambda or a method ref or a cast to a type
+                            t = term3Rest(t, typeArgs);
+                            if (token.kind == IDENTIFIER || token.kind == ELLIPSIS) {
+                                //explicit lambda (w/ generic type)
+                                mode = EXPR;
+                                JCModifiers mods = F.at(token.pos).Modifiers(Flags.PARAMETER);
+                                if (token.kind == ELLIPSIS) {
+                                    mods.flags = Flags.VARARGS;
+                                    t = to(F.at(token.pos).TypeArray(t));
+                                    nextToken();
+                                }
+                                t = lambdaExpressionOrStatement(variableDeclaratorId(mods, t), pos);
+                                break;
+                            }
+                        } else {
+                            Assert.check((mode & EXPR) != 0);
+                            mode = EXPR;
+                            JCExpression e = term2Rest(t1, TreeInfo.shiftPrec);
+                            t = F.at(pos1).Binary(op, t, e);
+                            t = termRest(term1Rest(term2Rest(t, TreeInfo.orPrec)));
                         }
-                        t = bracketsOpt(toP(t));
-                    } else if ((mode & EXPR) != 0) {
+                    } else if ((mode & TYPE) != 0 &&
+                            (token.kind == IDENTIFIER || token.kind == ELLIPSIS)) {
+                        //explicit lambda (w/ non-generic type)
                         mode = EXPR;
-                        JCExpression e = term2Rest(t1, TreeInfo.shiftPrec);
-                        t = F.at(pos1).Binary(op, t, e);
-                        t = termRest(term1Rest(term2Rest(t, TreeInfo.orPrec)));
+                        JCModifiers mods = F.at(token.pos).Modifiers(Flags.PARAMETER);
+                        if (token.kind == ELLIPSIS) {
+                            mods.flags = Flags.VARARGS;
+                            t = to(F.at(token.pos).TypeArray(t));
+                            nextToken();
+                        }
+                        t = lambdaExpressionOrStatement(variableDeclaratorId(mods, t), pos);
+                        break;
                     } else {
-                        accept(GT);
+                        t = termRest(term1Rest(term2Rest(t, TreeInfo.orPrec)));
                     }
                 }
-                else {
-                    t = termRest(term1Rest(term2Rest(t, TreeInfo.orPrec)));
-                }
+
                 accept(RPAREN);
                 lastmode = mode;
                 mode = EXPR;
@@ -953,14 +1012,16 @@ public class JavacParser implements Parser {
                     case INTLITERAL: case LONGLITERAL: case FLOATLITERAL:
                     case DOUBLELITERAL: case CHARLITERAL: case STRINGLITERAL:
                     case TRUE: case FALSE: case NULL:
-                    case NEW: case IDENTIFIER: case ASSERT: case ENUM:
+                        case NEW: case IDENTIFIER: case ASSERT: case ENUM:
                     case BYTE: case SHORT: case CHAR: case INT:
                     case LONG: case FLOAT: case DOUBLE: case BOOLEAN: case VOID:
                         JCExpression t1 = term3();
                         return F.at(pos).TypeCast(t, t1);
                     }
                 }
-            } else return illegal();
+            } else {
+                return illegal();
+            }
             t = toP(F.at(pos).Parens(t));
             break;
         case THIS:
@@ -1003,75 +1064,79 @@ public class JavacParser implements Parser {
             break;
         case IDENTIFIER: case ASSERT: case ENUM:
             if (typeArgs != null) return illegal();
-            t = toP(F.at(token.pos).Ident(ident()));
-            loop: while (true) {
-                pos = token.pos;
-                switch (token.kind) {
-                case LBRACKET:
-                    nextToken();
-                    if (token.kind == RBRACKET) {
+            if ((mode & EXPR) != 0 && peekToken(ARROW)) {
+                t = lambdaExpressionOrStatement(false, false, pos);
+            } else {
+                t = toP(F.at(token.pos).Ident(ident()));
+                loop: while (true) {
+                    pos = token.pos;
+                    switch (token.kind) {
+                    case LBRACKET:
                         nextToken();
-                        t = bracketsOpt(t);
-                        t = toP(F.at(pos).TypeArray(t));
-                        t = bracketsSuffix(t);
-                    } else {
+                        if (token.kind == RBRACKET) {
+                            nextToken();
+                            t = bracketsOpt(t);
+                            t = toP(F.at(pos).TypeArray(t));
+                            t = bracketsSuffix(t);
+                        } else {
+                            if ((mode & EXPR) != 0) {
+                                mode = EXPR;
+                                JCExpression t1 = term();
+                                t = to(F.at(pos).Indexed(t, t1));
+                            }
+                            accept(RBRACKET);
+                        }
+                        break loop;
+                    case LPAREN:
                         if ((mode & EXPR) != 0) {
                             mode = EXPR;
-                            JCExpression t1 = term();
-                            t = to(F.at(pos).Indexed(t, t1));
-                        }
-                        accept(RBRACKET);
-                    }
-                    break loop;
-                case LPAREN:
-                    if ((mode & EXPR) != 0) {
-                        mode = EXPR;
-                        t = arguments(typeArgs, t);
-                        typeArgs = null;
-                    }
-                    break loop;
-                case DOT:
-                    nextToken();
-                    int oldmode = mode;
-                    mode &= ~NOPARAMS;
-                    typeArgs = typeArgumentsOpt(EXPR);
-                    mode = oldmode;
-                    if ((mode & EXPR) != 0) {
-                        switch (token.kind) {
-                        case CLASS:
-                            if (typeArgs != null) return illegal();
-                            mode = EXPR;
-                            t = to(F.at(pos).Select(t, names._class));
-                            nextToken();
-                            break loop;
-                        case THIS:
-                            if (typeArgs != null) return illegal();
-                            mode = EXPR;
-                            t = to(F.at(pos).Select(t, names._this));
-                            nextToken();
-                            break loop;
-                        case SUPER:
-                            mode = EXPR;
-                            t = to(F.at(pos).Select(t, names._super));
-                            t = superSuffix(typeArgs, t);
+                            t = arguments(typeArgs, t);
                             typeArgs = null;
-                            break loop;
-                        case NEW:
-                            if (typeArgs != null) return illegal();
-                            mode = EXPR;
-                            int pos1 = token.pos;
-                            nextToken();
-                            if (token.kind == LT) typeArgs = typeArguments(false);
-                            t = innerCreator(pos1, typeArgs, t);
-                            typeArgs = null;
-                            break loop;
                         }
+                        break loop;
+                    case DOT:
+                        nextToken();
+                        int oldmode = mode;
+                        mode &= ~NOPARAMS;
+                        typeArgs = typeArgumentsOpt(EXPR);
+                        mode = oldmode;
+                        if ((mode & EXPR) != 0) {
+                            switch (token.kind) {
+                            case CLASS:
+                                if (typeArgs != null) return illegal();
+                                mode = EXPR;
+                                t = to(F.at(pos).Select(t, names._class));
+                                nextToken();
+                                break loop;
+                            case THIS:
+                                if (typeArgs != null) return illegal();
+                                mode = EXPR;
+                                t = to(F.at(pos).Select(t, names._this));
+                                nextToken();
+                                break loop;
+                            case SUPER:
+                                mode = EXPR;
+                                t = to(F.at(pos).Select(t, names._super));
+                                t = superSuffix(typeArgs, t);
+                                typeArgs = null;
+                                break loop;
+                            case NEW:
+                                if (typeArgs != null) return illegal();
+                                mode = EXPR;
+                                int pos1 = token.pos;
+                                nextToken();
+                                if (token.kind == LT) typeArgs = typeArguments(false);
+                                t = innerCreator(pos1, typeArgs, t);
+                                typeArgs = null;
+                                break loop;
+                            }
+                        }
+                        // typeArgs saved for next loop iteration.
+                        t = toP(F.at(pos).Select(t, ident()));
+                        break;
+                    default:
+                        break loop;
                     }
-                    // typeArgs saved for next loop iteration.
-                    t = toP(F.at(pos).Select(t, ident()));
-                    break;
-                default:
-                    break loop;
                 }
             }
             if (typeArgs != null) illegal();
@@ -1105,6 +1170,10 @@ public class JavacParser implements Parser {
         default:
             return illegal();
         }
+        return term3Rest(t, typeArgs);
+    }
+
+    JCExpression term3Rest(JCExpression t, List<JCExpression> typeArgs) {
         if (typeArgs != null) illegal();
         while (true) {
             int pos1 = token.pos;
@@ -1160,6 +1229,50 @@ public class JavacParser implements Parser {
             nextToken();
         }
         return toP(t);
+    }
+
+    JCExpression lambdaExpressionOrStatement(JCVariableDecl firstParam, int pos) {
+        ListBuffer<JCVariableDecl> params = new ListBuffer<JCVariableDecl>();
+        params.append(firstParam);
+        JCVariableDecl lastParam = firstParam;
+        while ((lastParam.mods.flags & Flags.VARARGS) == 0 && token.kind == COMMA) {
+            nextToken();
+            params.append(lastParam = formalParameter());
+        }
+        accept(RPAREN);
+        return lambdaExpressionOrStatementRest(params.toList(), pos);
+    }
+
+    JCExpression lambdaExpressionOrStatement(boolean hasParens, boolean explicitParams, int pos) {
+        List<JCVariableDecl> params = explicitParams ?
+                formalParameters() :
+                implicitParameters(hasParens);
+
+        return lambdaExpressionOrStatementRest(params, pos);
+    }
+
+    JCExpression lambdaExpressionOrStatementRest(List<JCVariableDecl> args, int pos) {
+        if (token.kind != ARROW) {
+            //better error recovery
+            return F.at(pos).Erroneous(args);
+        }
+
+        checkLambda();
+        accept(ARROW);
+
+        return token.kind == LBRACE ?
+            lambdaStatement(args, pos, pos) :
+            lambdaExpression(args, pos);
+    }
+
+    JCExpression lambdaStatement(List<JCVariableDecl> args, int pos, int pos2) {
+        JCBlock block = block(pos2, 0);
+        return toP(F.at(pos).Lambda(args, block));
+    }
+
+    JCExpression lambdaExpression(List<JCVariableDecl> args, int pos) {
+        JCTree expr = parseExpression();
+        return toP(F.at(pos).Lambda(args, expr));
     }
 
     /** SuperSuffix = Arguments | "." [TypeArguments] Ident [Arguments]
@@ -2779,6 +2892,24 @@ public class JavacParser implements Parser {
         return params.toList();
     }
 
+    List<JCVariableDecl> implicitParameters(boolean hasParens) {
+        if (hasParens) {
+            accept(LPAREN);
+        }
+        ListBuffer<JCVariableDecl> params = new ListBuffer<JCVariableDecl>();
+        if (token.kind != RPAREN && token.kind != ARROW) {
+            params.append(implicitParameter());
+            while (token.kind == COMMA) {
+                nextToken();
+                params.append(implicitParameter());
+            }
+        }
+        if (hasParens) {
+            accept(RPAREN);
+        }
+        return params.toList();
+    }
+
     JCModifiers optFinal(long flags) {
         JCModifiers mods = modifiersOpt();
         checkNoMods(mods.flags & ~(Flags.FINAL | Flags.DEPRECATED));
@@ -2799,6 +2930,11 @@ public class JavacParser implements Parser {
             nextToken();
         }
         return variableDeclaratorId(mods, type);
+    }
+
+    protected JCVariableDecl implicitParameter() {
+        JCModifiers mods = F.at(token.pos).Modifiers(Flags.PARAMETER);
+        return variableDeclaratorId(mods, null);
     }
 
 /* ---------- auxiliary methods -------------- */
@@ -3022,6 +3158,12 @@ public class JavacParser implements Parser {
         if (!allowTWR) {
             error(token.pos, "try.with.resources.not.supported.in.source", source.name);
             allowTWR = true;
+        }
+    }
+    void checkLambda() {
+        if (!allowLambda) {
+            log.error(token.pos, "lambda.not.supported.in.source", source.name);
+            allowLambda = true;
         }
     }
 
