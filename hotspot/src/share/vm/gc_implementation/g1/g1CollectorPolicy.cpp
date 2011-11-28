@@ -946,10 +946,9 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
     _cur_aux_times_set[i] = false;
   }
 
-  // These are initialized to zero here and they are set during
+  // This is initialized to zero here and is set during
   // the evacuation pause if marking is in progress.
   _cur_satb_drain_time_ms = 0.0;
-  _last_satb_drain_processed_buffers = 0;
 
   _last_young_gc_full = false;
 
@@ -1367,7 +1366,6 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
 
     if (print_marking_info) {
       print_stats(1, "SATB Drain Time", _cur_satb_drain_time_ms);
-      print_stats(2, "Processed Buffers", _last_satb_drain_processed_buffers);
     }
 
     if (parallel) {

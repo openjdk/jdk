@@ -534,7 +534,6 @@ private:
   double sum_of_values (double* data);
   double max_sum (double* data1, double* data2);
 
-  int _last_satb_drain_processed_buffers;
   double _last_pause_time_ms;
 
   size_t _bytes_in_collection_set_before_gc;
@@ -772,11 +771,6 @@ public:
   void record_satb_drain_time(double ms) {
     assert(_g1->mark_in_progress(), "shouldn't be here otherwise");
     _cur_satb_drain_time_ms = ms;
-  }
-
-  void record_satb_drain_processed_buffers(int processed_buffers) {
-    assert(_g1->mark_in_progress(), "shouldn't be here otherwise");
-    _last_satb_drain_processed_buffers = processed_buffers;
   }
 
   void record_update_rs_time(int thread, double ms) {
