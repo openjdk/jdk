@@ -747,11 +747,11 @@ private:
     _dom_lca_tags(arena()), // Thread::resource_area
     _verify_me(NULL),
     _verify_only(true) {
-    build_and_optimize(false);
+    build_and_optimize(false, false);
   }
 
   // build the loop tree and perform any requested optimizations
-  void build_and_optimize(bool do_split_if);
+  void build_and_optimize(bool do_split_if, bool skip_loop_opts);
 
 public:
   // Dominators for the sea of nodes
@@ -762,13 +762,13 @@ public:
   Node *dom_lca_internal( Node *n1, Node *n2 ) const;
 
   // Compute the Ideal Node to Loop mapping
-  PhaseIdealLoop( PhaseIterGVN &igvn, bool do_split_ifs) :
+  PhaseIdealLoop( PhaseIterGVN &igvn, bool do_split_ifs, bool skip_loop_opts = false) :
     PhaseTransform(Ideal_Loop),
     _igvn(igvn),
     _dom_lca_tags(arena()), // Thread::resource_area
     _verify_me(NULL),
     _verify_only(false) {
-    build_and_optimize(do_split_ifs);
+    build_and_optimize(do_split_ifs, skip_loop_opts);
   }
 
   // Verify that verify_me made the same decisions as a fresh run.
@@ -778,7 +778,7 @@ public:
     _dom_lca_tags(arena()), // Thread::resource_area
     _verify_me(verify_me),
     _verify_only(false) {
-    build_and_optimize(false);
+    build_and_optimize(false, false);
   }
 
   // Build and verify the loop tree without modifying the graph.  This

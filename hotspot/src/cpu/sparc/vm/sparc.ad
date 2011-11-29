@@ -1860,6 +1860,14 @@ const bool Matcher::init_array_count_is_in_bytes = true;
 // Threshold size for cleararray.
 const int Matcher::init_array_short_size = 8 * BytesPerLong;
 
+// No additional cost for CMOVL.
+const int Matcher::long_cmove_cost() { return 0; }
+
+// CMOVF/CMOVD are expensive on T4 and on SPARC64.
+const int Matcher::float_cmove_cost() {
+  return (VM_Version::is_T4() || VM_Version::is_sparc64()) ? ConditionalMoveLimit : 0;
+}
+
 // Should the Matcher clone shifts on addressing modes, expecting them to
 // be subsumed into complex addressing expressions or compute them into
 // registers?  True for Intel but false for most RISCs

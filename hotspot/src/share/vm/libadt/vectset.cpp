@@ -350,6 +350,21 @@ int VectorSet::hash() const
   return (int)_xor;
 }
 
+//------------------------------iterate----------------------------------------
+// Used by Set::print().
+class VSetI_ : public SetI_ {
+  VectorSetI vsi;
+public:
+  VSetI_( const VectorSet *vset, uint &elem ) : vsi(vset) { elem = vsi.elem; }
+
+  uint next(void) { ++vsi; return vsi.elem; }
+  int  test(void) { return vsi.test(); }
+};
+
+SetI_ *VectorSet::iterate(uint &elem) const {
+  return new(ResourceObj::C_HEAP) VSetI_(this, elem);
+}
+
 //=============================================================================
 //------------------------------next-------------------------------------------
 // Find and return the next element of a vector set, or return garbage and

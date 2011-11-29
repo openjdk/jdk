@@ -1485,7 +1485,8 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
 
     private void closeSocket(boolean selfInitiated) throws IOException {
         if ((debug != null) && Debug.isOn("ssl")) {
-            System.out.println(threadName() + ", called closeSocket(selfInitiated)");
+            System.out.println(threadName() +
+                ", called closeSocket(" + selfInitiated + ")");
         }
         if (self == this) {
             super.close();

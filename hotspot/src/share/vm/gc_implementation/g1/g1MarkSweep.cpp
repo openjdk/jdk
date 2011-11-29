@@ -236,6 +236,7 @@ public:
     // at the end of the GC, so no point in updating those values here.
     _g1h->update_sets_after_freeing_regions(0, /* pre_used */
                                             NULL, /* free_list */
+                                            NULL, /* old_proxy_set */
                                             &_humongous_proxy_set,
                                             false /* par */);
   }

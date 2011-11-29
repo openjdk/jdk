@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,11 @@
 
 package com.sun.tools.javac.main;
 
-import java.io.PrintWriter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Log.PrefixKind;
+import com.sun.tools.javac.util.Log.WriterKind;
 import com.sun.tools.javac.util.Options;
 
 /**
@@ -177,14 +178,14 @@ public interface JavacOption {
         /** Print a line of documentation describing this option, if standard.
          * @param out the stream to which to write the documentation
          */
-        void help(PrintWriter out) {
-            String s = "  " + helpSynopsis();
-            out.print(s);
-            for (int j = Math.min(s.length(), 28); j < 29; j++) out.print(" ");
-            Log.printLines(out, Main.getLocalizedString(descrKey));
+        void help(Log log) {
+            log.printRawLines(WriterKind.NOTICE,
+                    String.format("  %-26s %s",
+                        helpSynopsis(log),
+                        log.localize(PrefixKind.JAVAC, descrKey)));
         }
 
-        String helpSynopsis() {
+        String helpSynopsis(Log log) {
             StringBuilder sb = new StringBuilder();
             sb.append(name);
             if (argsNameKey == null) {
@@ -202,7 +203,7 @@ public interface JavacOption {
             } else {
                 if (!hasSuffix)
                     sb.append(" ");
-                sb.append(Main.getLocalizedString(argsNameKey));
+                sb.append(log.localize(PrefixKind.JAVAC, argsNameKey));
             }
 
             return sb.toString();
@@ -211,7 +212,7 @@ public interface JavacOption {
         /** Print a line of documentation describing this option, if non-standard.
          *  @param out the stream to which to write the documentation
          */
-        void xhelp(PrintWriter out) {}
+        void xhelp(Log log) {}
 
         /** Process the option (with arg). Return true if error detected.
          */
@@ -271,9 +272,9 @@ public interface JavacOption {
             super(name, descrKey, kind, choices);
         }
         @Override
-        void help(PrintWriter out) {}
+        void help(Log log) {}
         @Override
-        void xhelp(PrintWriter out) { super.help(out); }
+        void xhelp(Log log) { super.help(log); }
         @Override
         public OptionKind getKind() { return OptionKind.EXTENDED; }
     };
@@ -288,9 +289,9 @@ public interface JavacOption {
             super(name, argsNameKey, null);
         }
         @Override
-        void help(PrintWriter out) {}
+        void help(Log log) {}
         @Override
-        void xhelp(PrintWriter out) {}
+        void xhelp(Log log) {}
         @Override
         public OptionKind getKind() { return OptionKind.HIDDEN; }
     };
