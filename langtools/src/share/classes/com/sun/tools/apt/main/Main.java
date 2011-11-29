@@ -205,7 +205,7 @@ public class Main {
             String s = "  " + helpSynopsis();
             out.print(s);
             for (int j = s.length(); j < 29; j++) out.print(" ");
-            Bark.printLines(out, getLocalizedString(descrKey));
+            Bark.printRawLines(out, getLocalizedString(descrKey));
         }
 
     }
@@ -227,7 +227,7 @@ public class Main {
             String s = "  " + helpSynopsis();
             out.print(s);
             for (int j = s.length(); j < 29; j++) out.print(" ");
-            Bark.printLines(out, getLocalizedString(descrKey));
+            Bark.printRawLines(out, getLocalizedString(descrKey));
         }
 
     }
@@ -259,7 +259,7 @@ public class Main {
             String s = "  " + helpSynopsis();
             out.print(s);
             for (int j = s.length(); j < 29; j++) out.print(" ");
-            Log.printLines(out, getLocalizedString(descrKey));
+            Log.printRawLines(out, getLocalizedString(descrKey));
         }
     };
 
@@ -421,7 +421,7 @@ public class Main {
         },
         new AptOption("-version",               "opt.version") {
             boolean process(String option) {
-                Bark.printLines(out, ownName + " " + AptJavaCompiler.version());
+                Bark.printRawLines(out, ownName + " " + AptJavaCompiler.version());
                 return super.process(option);
             }
         },
@@ -660,11 +660,11 @@ public class Main {
     /** Print a string that explains usage.
      */
     void help() {
-        Bark.printLines(out, getLocalizedString("msg.usage.header", ownName));
+        Bark.printRawLines(out, getLocalizedString("msg.usage.header", ownName));
         for (int i=0; i < recognizedOptions.length; i++) {
             recognizedOptions[i].help();
         }
-        Bark.printLines(out, getLocalizedString("msg.usage.footer"));
+        Bark.printRawLines(out, getLocalizedString("msg.usage.footer"));
         out.println();
     }
 
@@ -675,7 +675,7 @@ public class Main {
             recognizedOptions[i].xhelp();
         }
         out.println();
-        Bark.printLines(out, getLocalizedString("msg.usage.nonstandard.footer"));
+        Bark.printRawLines(out, getLocalizedString("msg.usage.nonstandard.footer"));
     }
 
     /** Report a usage error.
@@ -688,7 +688,7 @@ public class Main {
     /** Report a warning.
      */
     void warning(String key, Object... args) {
-        Bark.printLines(out, ownName + ": "
+        Bark.printRawLines(out, ownName + ": "
                        + getLocalizedString(key, args));
     }
 
@@ -796,7 +796,7 @@ public class Main {
             origFilenames = processArgs((args=CommandLine.parse(args)));
 
             if (options.get("suppress-tool-api-removal-message") == null) {
-                Bark.printLines(out, getLocalizedString("misc.Deprecation"));
+                Bark.printRawLines(out, getLocalizedString("misc.Deprecation"));
             }
 
             if (origFilenames == null) {
@@ -808,7 +808,7 @@ public class Main {
                     return EXIT_OK;
             }
         } catch (java.io.FileNotFoundException e) {
-            Bark.printLines(out, ownName + ": " +
+            Bark.printRawLines(out, ownName + ": " +
                            getLocalizedString("err.file.not.found",
                                               e.getMessage()));
             return EXIT_SYSERR;
@@ -1183,7 +1183,7 @@ public class Main {
     /** Print a message reporting an internal error.
      */
     void bugMessage(Throwable ex) {
-        Bark.printLines(out, getLocalizedString("msg.bug",
+        Bark.printRawLines(out, getLocalizedString("msg.bug",
                                                AptJavaCompiler.version()));
         ex.printStackTrace(out);
     }
@@ -1191,34 +1191,34 @@ public class Main {
     /** Print a message reporting an fatal error.
      */
     void apMessage(AnnotationProcessingError ex) {
-        Bark.printLines(out, getLocalizedString("misc.Problem"));
+        Bark.printRawLines(out, getLocalizedString("misc.Problem"));
         ex.getCause().printStackTrace(out);
     }
 
     /** Print a message about sun.misc.Service problem.
      */
     void sceMessage(sun.misc.ServiceConfigurationError ex) {
-        Bark.printLines(out, getLocalizedString("misc.SunMiscService"));
+        Bark.printRawLines(out, getLocalizedString("misc.SunMiscService"));
         ex.printStackTrace(out);
     }
 
     /** Print a message reporting an fatal error.
      */
     void feMessage(Throwable ex) {
-        Bark.printLines(out, ex.toString());
+        Bark.printRawLines(out, ex.toString());
     }
 
     /** Print a message reporting an input/output error.
      */
     void ioMessage(Throwable ex) {
-        Bark.printLines(out, getLocalizedString("msg.io"));
+        Bark.printRawLines(out, getLocalizedString("msg.io"));
         ex.printStackTrace(out);
     }
 
     /** Print a message reporting an out-of-resources error.
      */
     void resourceMessage(Throwable ex) {
-        Bark.printLines(out, getLocalizedString("msg.resource"));
+        Bark.printRawLines(out, getLocalizedString("msg.resource"));
         ex.printStackTrace(out);
     }
 

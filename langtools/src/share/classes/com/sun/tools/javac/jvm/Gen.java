@@ -26,8 +26,6 @@
 package com.sun.tools.javac.jvm;
 import java.util.*;
 
-import javax.lang.model.element.ElementKind;
-
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
@@ -39,6 +37,7 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.jvm.Code.*;
 import com.sun.tools.javac.jvm.Items.*;
+import com.sun.tools.javac.parser.EndPosTable;
 import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
@@ -197,9 +196,10 @@ public class Gen extends JCTree.Visitor {
      */
     private int nerrs = 0;
 
-    /** A hash table mapping syntax trees to their ending source positions.
+    /** An object containing mappings of syntax trees to their
+     *  ending source positions.
      */
-    private Map<JCTree, Integer> endPositions;
+    EndPosTable endPosTable;
 
     /** Generate code to load an integer constant.
      *  @param n     The integer to be loaded.
@@ -482,20 +482,14 @@ public class Gen extends JCTree.Visitor {
                         JCStatement init = make.at(vdef.pos()).
                             Assignment(sym, vdef.init);
                         initCode.append(init);
-                        if (endPositions != null) {
-                            Integer endPos = endPositions.remove(vdef);
-                            if (endPos != null) endPositions.put(init, endPos);
-                        }
+                        endPosTable.replaceTree(vdef, init);
                     } else if (sym.getConstValue() == null) {
                         // Initialize class (static) variables only if
                         // they are not compile-time constants.
                         JCStatement init = make.at(vdef.pos).
                             Assignment(sym, vdef.init);
                         clinitCode.append(init);
-                        if (endPositions != null) {
-                            Integer endPos = endPositions.remove(vdef);
-                            if (endPos != null) endPositions.put(init, endPos);
-                        }
+                        endPosTable.replaceTree(vdef, init);
                     } else {
                         checkStringConstant(vdef.init.pos(), sym.getConstValue());
                     }
@@ -2217,7 +2211,7 @@ public class Gen extends JCTree.Visitor {
             attrEnv = env;
             ClassSymbol c = cdef.sym;
             this.toplevel = env.toplevel;
-            this.endPositions = toplevel.endPositions;
+            this.endPosTable = toplevel.endPositions;
             // If this is a class definition requiring Miranda methods,
             // add them.
             if (generateIproxies &&
@@ -2253,7 +2247,7 @@ public class Gen extends JCTree.Visitor {
             attrEnv = null;
             this.env = null;
             toplevel = null;
-            endPositions = null;
+            endPosTable = null;
             nerrs = 0;
         }
     }

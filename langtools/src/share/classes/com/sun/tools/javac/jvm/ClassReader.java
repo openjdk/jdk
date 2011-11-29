@@ -2539,7 +2539,7 @@ public class ClassReader implements Completer {
      *  @param arg An argument for substitution into the output string.
      */
     private void printCCF(String key, Object arg) {
-        log.printNoteLines(key, arg);
+        log.printLines(key, arg);
     }
 
 

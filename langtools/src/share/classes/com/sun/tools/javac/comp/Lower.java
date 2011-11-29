@@ -40,6 +40,7 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.code.Type.*;
 
 import com.sun.tools.javac.jvm.Target;
+import com.sun.tools.javac.parser.EndPosTable;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.BLOCK;
@@ -127,7 +128,7 @@ public class Lower extends TreeTranslator {
 
     /** A hash table mapping syntax trees to their ending source positions.
      */
-    Map<JCTree, Integer> endPositions;
+    EndPosTable endPosTable;
 
 /**************************************************************************
  * Global mappings
@@ -2195,9 +2196,8 @@ public class Lower extends TreeTranslator {
         } else {
             make_at(tree.pos());
             T result = super.translate(tree);
-            if (endPositions != null && result != tree) {
-                Integer endPos = endPositions.remove(tree);
-                if (endPos != null) endPositions.put(result, endPos);
+            if (endPosTable != null && result != tree) {
+                endPosTable.replaceTree(tree, result);
             }
             return result;
         }
@@ -3675,7 +3675,7 @@ public class Lower extends TreeTranslator {
         try {
             attrEnv = env;
             this.make = make;
-            endPositions = env.toplevel.endPositions;
+            endPosTable = env.toplevel.endPositions;
             currentClass = null;
             currentMethodDef = null;
             outermostClassDef = (cdef.hasTag(CLASSDEF)) ? (JCClassDecl)cdef : null;
@@ -3704,7 +3704,7 @@ public class Lower extends TreeTranslator {
             // note that recursive invocations of this method fail hard
             attrEnv = null;
             this.make = null;
-            endPositions = null;
+            endPosTable = null;
             currentClass = null;
             currentMethodDef = null;
             outermostClassDef = null;

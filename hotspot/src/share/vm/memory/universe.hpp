@@ -414,9 +414,13 @@ class Universe: AllStatic {
   static bool verify_in_progress() { return _verify_in_progress; }
   static void verify(bool allow_dirty = true, bool silent = false,
                      VerifyOption option = VerifyOption_Default );
-  static int  verify_count()                  { return _verify_count; }
+  static int  verify_count()       { return _verify_count; }
+  // The default behavior is to call print_on() on gclog_or_tty.
   static void print();
-  static void print_on(outputStream* st);
+  // The extended parameter determines which method on the heap will
+  // be called: print_on() (extended == false) or print_extended_on()
+  // (extended == true).
+  static void print_on(outputStream* st, bool extended = false);
   static void print_heap_at_SIGBREAK();
   static void print_heap_before_gc() { print_heap_before_gc(gclog_or_tty); }
   static void print_heap_after_gc()  { print_heap_after_gc(gclog_or_tty); }

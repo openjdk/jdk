@@ -55,12 +55,8 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
@@ -72,8 +68,8 @@ import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.parser.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCImport;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -421,7 +417,7 @@ public class CheckAttributedTree {
         }
 
         JavaFileObject sourcefile;
-        Map<JCTree, Integer> endPosTable;
+        EndPosTable endPosTable;
         Info encl;
     }
 
@@ -437,7 +433,7 @@ public class CheckAttributedTree {
             end = Integer.MAX_VALUE;
         }
 
-        Info(JCTree tree, Map<JCTree, Integer> endPosTable) {
+        Info(JCTree tree, EndPosTable endPosTable) {
             this.tree = tree;
             tag = tree.getTag();
             start = TreeInfo.getStartPos(tree);

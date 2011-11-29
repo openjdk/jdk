@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.Map;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.parser.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 
 import static com.sun.tools.javac.util.LayoutCharacters.*;
@@ -128,11 +129,11 @@ public class DiagnosticSource {
         }
     }
 
-    public Map<JCTree, Integer> getEndPosTable() {
+    public EndPosTable getEndPosTable() {
         return endPosTable;
     }
 
-    public void setEndPosTable(Map<JCTree, Integer> t) {
+    public void setEndPosTable(EndPosTable t) {
         if (endPosTable != null && endPosTable != t)
             throw new IllegalStateException("endPosTable already set");
         endPosTable = t;
@@ -199,7 +200,7 @@ public class DiagnosticSource {
     /** The underlying file object. */
     protected JavaFileObject fileObject;
 
-    protected Map<JCTree, Integer> endPosTable;
+    protected EndPosTable endPosTable;
 
     /** A soft reference to the content of the file object. */
     protected SoftReference<char[]> refBuf;

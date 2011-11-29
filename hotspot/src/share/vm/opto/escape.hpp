@@ -74,7 +74,7 @@
 // C2 does not have local variables.  However for the purposes of constructing
 // the connection graph, the following IR nodes are treated as local variables:
 //     Phi    (pointer values)
-//     LoadP
+//     LoadP, LoadN
 //     Proj#5 (value returned from callnodes including allocations)
 //     CheckCastPP, CastPP
 //
@@ -84,7 +84,7 @@
 //
 // The following node types are JavaObject:
 //
-//     top()
+//     phantom_object (general globally escaped object)
 //     Allocate
 //     AllocateArray
 //     Parm  (for incoming arguments)
@@ -93,6 +93,7 @@
 //     ConP
 //     LoadKlass
 //     ThreadLocal
+//     CallStaticJava (which returns Object)
 //
 // AddP nodes are fields.
 //
@@ -130,10 +131,12 @@ public:
 
   typedef enum {
     UnknownEscape = 0,
-    NoEscape      = 1, // A scalar replaceable object with unique type.
-    ArgEscape     = 2, // An object passed as argument or referenced by
-                       // argument (and not globally escape during call).
-    GlobalEscape  = 3  // An object escapes the method and thread.
+    NoEscape      = 1, // An object does not escape method or thread and it is
+                       // not passed to call. It could be replaced with scalar.
+    ArgEscape     = 2, // An object does not escape method or thread but it is
+                       // passed as argument to call or referenced by argument
+                       // and it does not escape during call.
+    GlobalEscape  = 3  // An object escapes the method or thread.
   } EscapeState;
 
   typedef enum {
@@ -153,28 +156,25 @@ private:
 
   NodeType             _type;
   EscapeState          _escape;
-  GrowableArray<uint>* _edges;   // outgoing edges
+  GrowableArray<uint>* _edges; // outgoing edges
+  Node* _node;                 // Ideal node corresponding to this PointsTo node.
+  int   _offset;               // Object fields offsets.
+  bool  _scalar_replaceable;   // Not escaped object could be replaced with scalar
 
 public:
-  Node* _node;              // Ideal node corresponding to this PointsTo node.
-  int   _offset;            // Object fields offsets.
-  bool  _scalar_replaceable;// Not escaped object could be replaced with scalar
-  bool  _hidden_alias;      // This node is an argument to a function.
-                            // which may return it creating a hidden alias.
-
   PointsToNode():
     _type(UnknownType),
     _escape(UnknownEscape),
     _edges(NULL),
     _node(NULL),
     _offset(-1),
-    _scalar_replaceable(true),
-    _hidden_alias(false) {}
+    _scalar_replaceable(true) {}
 
 
   EscapeState escape_state() const { return _escape; }
   NodeType node_type() const { return _type;}
   int offset() { return _offset;}
+  bool scalar_replaceable() { return _scalar_replaceable;}
 
   void set_offset(int offs) { _offset = offs;}
   void set_escape_state(EscapeState state) { _escape = state; }
@@ -182,6 +182,7 @@ public:
     assert(_type == UnknownType || _type == ntype, "Can't change node type");
     _type = ntype;
   }
+  void set_scalar_replaceable(bool v) { _scalar_replaceable = v; }
 
   // count of outgoing edges
   uint edge_count() const { return (_edges == NULL) ? 0 : _edges->length(); }
@@ -233,8 +234,8 @@ private:
                                        // that pointer values loaded from
                                        // a field which has not been set
                                        // are assumed to point to.
-  uint                      _oop_null; // ConP(#NULL)
-  uint                     _noop_null; // ConN(#NULL)
+  uint                      _oop_null; // ConP(#NULL)->_idx
+  uint                     _noop_null; // ConN(#NULL)->_idx
 
   Compile *                  _compile; // Compile object for current compilation
   PhaseIterGVN *                _igvn; // Value numbering
@@ -339,8 +340,16 @@ private:
   // Set the escape state of a node
   void set_escape_state(uint ni, PointsToNode::EscapeState es);
 
+  // Find fields initializing values for allocations.
+  void find_init_values(Node* n, VectorSet* visited, PhaseTransform* phase);
+
   // Adjust escape state after Connection Graph is built.
-  void adjust_escape_state(int nidx, PhaseTransform* phase);
+  void adjust_escape_state(Node* n);
+
+  // Propagate escape states to referenced nodes.
+  bool propagate_escape_state(GrowableArray<int>* cg_worklist,
+                              GrowableArray<uint>* worklist,
+                              PointsToNode::EscapeState esc_state);
 
   // Compute the escape information
   bool compute_escape();
@@ -356,21 +365,6 @@ public:
 
   // escape state of a node
   PointsToNode::EscapeState escape_state(Node *n);
-
-  // other information we have collected
-  bool is_scalar_replaceable(Node *n) {
-    if (_collecting || (n->_idx >= nodes_size()))
-      return false;
-    PointsToNode* ptn = ptnode_adr(n->_idx);
-    return ptn->escape_state() == PointsToNode::NoEscape && ptn->_scalar_replaceable;
-  }
-
-  bool hidden_alias(Node *n) {
-    if (_collecting || (n->_idx >= nodes_size()))
-      return true;
-    PointsToNode* ptn = ptnode_adr(n->_idx);
-    return (ptn->escape_state() != PointsToNode::NoEscape) || ptn->_hidden_alias;
-  }
 
 #ifndef PRODUCT
   void dump();
