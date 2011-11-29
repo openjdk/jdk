@@ -12,5 +12,8 @@
 (4)updated zlib.h (to support > 4G zipfile):
    total_in/out: uLong -> long long
 
-(5)updated upinflate.c/inflateSync()
+(5)updated inflate.c/inflateSync()
    unsigned long in, out; -->  long long in, out;
+
+(6)updated compress.c/uncompr.c
+   *destLen = stream.total_out; --> *destLen = (uLong)stream.total_out;
