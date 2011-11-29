@@ -31,6 +31,7 @@ import com.sun.tools.javac.main.CommandLine;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
+import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
 
 import java.io.IOException;
@@ -75,9 +76,6 @@ class Start {
     String encoding = null;
 
     private DocletInvoker docletInvoker;
-
-    private static final int F_VERBOSE = 1 << 0;
-    private static final int F_WARNINGS = 1 << 2;
 
     /* Treat warnings as errors. */
     private boolean rejectWarnings = false;
@@ -171,11 +169,11 @@ class Start {
             messager.error(null, "main.out.of.memory");
             failed = true;
         } catch (Error ee) {
-            ee.printStackTrace();
+            ee.printStackTrace(System.err);
             messager.error(null, "main.fatal.error");
             failed = true;
         } catch (Exception ee) {
-            ee.printStackTrace();
+            ee.printStackTrace(System.err);
             messager.error(null, "main.fatal.exception");
             failed = true;
         } finally {
@@ -211,7 +209,7 @@ class Start {
             messager.error(null, "main.cant.read", e.getMessage());
             exit();
         } catch (IOException e) {
-            e.printStackTrace();
+            e.printStackTrace(System.err);
             exit();
         }
 
@@ -225,7 +223,9 @@ class Start {
         // options that may be set up below.
         Messager.preRegister(context,
                 messager.programName,
-                messager.errWriter, messager.warnWriter, messager.noticeWriter);
+                messager.getWriter(Log.WriterKind.ERROR),
+                messager.getWriter(Log.WriterKind.WARNING),
+                messager.getWriter(Log.WriterKind.NOTICE));
 
         Options compOpts = Options.instance(context);
         boolean docClasses = false;

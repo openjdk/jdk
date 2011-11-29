@@ -23,10 +23,9 @@
 
 /*
  * @test
- * @bug 6322678 7082769
- * @summary FileInputStream/FileOutputStream/RandomAccessFile allow file descriptor
- *          to be closed while still in use.
- * @run main/othervm FileDescriptorSharing
+ * @bug 7105952 6322678 7082769
+ * @summary Improve finalisation for FileInputStream/FileOutputStream/RandomAccessFile
+ * @run main/othervm Sharing
  */
 
 import java.io.*;
@@ -34,7 +33,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.concurrent.CountDownLatch;
 
-public class FileDescriptorSharing {
+public class Sharing {
 
     final static int numFiles = 10;
     volatile static boolean fail;
@@ -44,11 +43,12 @@ public class FileDescriptorSharing {
         TestMultipleFD();
         TestIsValid();
         MultiThreadedFD();
+        TestCloseAll();
     }
 
     /**
-     * We shouldn't discard a file descriptor until all streams have
-     * finished with it
+     * Finalizer shouldn't discard a file descriptor until all streams have
+     * finished with it.
      */
     private static void TestFinalizer() throws Exception {
         FileDescriptor fd = null;
@@ -95,9 +95,6 @@ public class FileDescriptorSharing {
                  */
                 System.out.print(".");
                 ret = fis3.read();
-            }
-            if(!fd.valid()) {
-                throw new RuntimeException("TestFinalizer() : FileDescriptor should be valid");
             }
         } finally {
             testFinalizerFile.delete();
@@ -194,23 +191,19 @@ public class FileDescriptorSharing {
         } finally {
             try {
                 if (fis != null) fis.close();
-                if (fos != null) fos.close();
-                if (!fd.valid()) {
-                    throw new RuntimeException("FileDescriptor should be valid");
-                }
-                if (raf != null) raf.close();
                 if (fd.valid()) {
-                    throw new RuntimeException("close() called and FileDescriptor still valid");
+                    throw new RuntimeException("[FIS close()] FileDescriptor shouldn't be valid");
                 }
-            } finally {
+                if (fos != null) fos.close();
                 if (raf != null) raf.close();
+            } finally {
                 test1.delete();
             }
         }
 
         /*
-         * Close out in different order to ensure FD is not
-         * closed out too early
+         * Close out in different order to ensure FD is
+         * closed correctly.
          */
         File test2 = new File("test2");
         try {
@@ -221,14 +214,11 @@ public class FileDescriptorSharing {
         } finally {
             try {
                 if (raf != null) raf.close();
-                if (fos != null) fos.close();
-                if (!fd.valid()) {
-                    throw new RuntimeException("FileDescriptor should be valid");
-                }
-                if (fis != null) fis.close();
                 if (fd.valid()) {
-                    throw new RuntimeException("close() called and FileDescriptor still valid");
+                    throw new RuntimeException("[RAF close()] FileDescriptor shouldn't be valid");
                 }
+                if (fos != null) fos.close();
+                if (fis != null) fis.close();
             } finally {
                 test2.delete();
             }
@@ -244,14 +234,11 @@ public class FileDescriptorSharing {
         } finally {
             try {
                 if (fos != null) fos.close();
-                if (raf != null) raf.close();
-                if (!fd.valid()) {
-                    throw new RuntimeException("FileDescriptor should be valid");
-                }
-                if (fis != null) fis.close();
                 if (fd.valid()) {
-                    throw new RuntimeException("close() called and FileDescriptor still valid");
+                    throw new RuntimeException("[FOS close()] FileDescriptor shouldn't be valid");
                 }
+                if (raf != null) raf.close();
+                if (fis != null) fis.close();
             } finally {
                 test3.delete();
             }
@@ -259,7 +246,7 @@ public class FileDescriptorSharing {
     }
 
     /**
-     * Test concurrent access to the same fd.useCount field
+     * Test concurrent access to the same FileDescriptor
      */
     private static void MultiThreadedFD() throws Exception {
         RandomAccessFile raf = null;
@@ -290,6 +277,68 @@ public class FileDescriptorSharing {
             } finally {
                 MultipleThreadedFD.delete();
             }
+        }
+    }
+
+    /**
+     * Test closeAll handling in FileDescriptor
+     */
+    private static void TestCloseAll() throws Exception {
+        File testFile = new File("test");
+        testFile.deleteOnExit();
+        RandomAccessFile raf = new RandomAccessFile(testFile, "rw");
+        FileInputStream fis = new FileInputStream(raf.getFD());
+        fis.close();
+        if (raf.getFD().valid()) {
+             throw new RuntimeException("FD should not be valid.");
+        }
+
+        // Test the suppressed exception handling - FileInputStream
+
+        raf = new RandomAccessFile(testFile, "rw");
+        fis = new FileInputStream(raf.getFD());
+        BadFileInputStream bfis1 = new BadFileInputStream(raf.getFD());
+        BadFileInputStream bfis2 = new BadFileInputStream(raf.getFD());
+        BadFileInputStream bfis3 = new BadFileInputStream(raf.getFD());
+        // extra test - set bfis3 to null
+        bfis3 = null;
+        try {
+            fis.close();
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+            if (ioe.getSuppressed().length != 2) {
+                throw new RuntimeException("[FIS]Incorrect number of suppressed " +
+                          "exceptions received : " + ioe.getSuppressed().length);
+            }
+        }
+        if (raf.getFD().valid()) {
+            // we should still have closed the FD
+            // even with the exception.
+            throw new RuntimeException("[FIS]TestCloseAll : FD still valid.");
+        }
+
+        // Now test with FileOutputStream
+
+        raf = new RandomAccessFile(testFile, "rw");
+        FileOutputStream fos = new FileOutputStream(raf.getFD());
+        BadFileOutputStream bfos1 = new BadFileOutputStream(raf.getFD());
+        BadFileOutputStream bfos2 = new BadFileOutputStream(raf.getFD());
+        BadFileOutputStream bfos3 = new BadFileOutputStream(raf.getFD());
+        // extra test - set bfos3 to null
+        bfos3 = null;
+        try {
+            fos.close();
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+            if (ioe.getSuppressed().length != 2) {
+                throw new RuntimeException("[FOS]Incorrect number of suppressed " +
+                          "exceptions received : " + ioe.getSuppressed().length);
+            }
+        }
+        if (raf.getFD().valid()) {
+            // we should still have closed the FD
+            // even with the exception.
+            throw new RuntimeException("[FOS]TestCloseAll : FD still valid.");
         }
     }
 
@@ -325,12 +374,35 @@ public class FileDescriptorSharing {
                  System.out.println("OpenClose encountered IO issue :" + ioe);
                  fail = true;
              } finally {
-                 if (!fd.valid()) { // fd should still be valid given RAF reference
-                     System.out.println("OpenClose: FileDescriptor should be valid");
+                 if (fd.valid()) { // fd should not be valid after first close() call
+                     System.out.println("OpenClose: FileDescriptor shouldn't be valid");
                      fail = true;
                  }
                  done.countDown();
              }
          }
     }
+
+    private static class BadFileInputStream extends FileInputStream {
+
+        BadFileInputStream(FileDescriptor fd) {
+            super(fd);
+        }
+
+        public void close() throws IOException {
+            throw new IOException("Bad close operation");
+        }
+    }
+
+    private static class BadFileOutputStream extends FileOutputStream {
+
+        BadFileOutputStream(FileDescriptor fd) {
+            super(fd);
+        }
+
+        public void close() throws IOException {
+            throw new IOException("Bad close operation");
+        }
+    }
+
 }

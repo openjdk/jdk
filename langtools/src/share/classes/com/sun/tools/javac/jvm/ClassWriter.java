@@ -892,8 +892,9 @@ public class ClassWriter extends ClassFile {
             if ((flags & INTERFACE) != 0) flags |= ABSTRACT; // Interfaces are always ABSTRACT
             if (inner.name.isEmpty()) flags &= ~FINAL; // Anonymous class: unset FINAL flag
             if (dumpInnerClassModifiers) {
-                log.errWriter.println("INNERCLASS  " + inner.name);
-                log.errWriter.println("---" + flagNames(flags));
+                PrintWriter pw = log.getWriter(Log.WriterKind.ERROR);
+                pw.println("INNERCLASS  " + inner.name);
+                pw.println("---" + flagNames(flags));
             }
             databuf.appendChar(pool.get(inner));
             databuf.appendChar(
@@ -911,8 +912,9 @@ public class ClassWriter extends ClassFile {
         int flags = adjustFlags(v.flags());
         databuf.appendChar(flags);
         if (dumpFieldModifiers) {
-            log.errWriter.println("FIELD  " + fieldName(v));
-            log.errWriter.println("---" + flagNames(v.flags()));
+            PrintWriter pw = log.getWriter(Log.WriterKind.ERROR);
+            pw.println("FIELD  " + fieldName(v));
+            pw.println("---" + flagNames(v.flags()));
         }
         databuf.appendChar(pool.put(fieldName(v)));
         databuf.appendChar(pool.put(typeSig(v.erasure(types))));
@@ -934,8 +936,9 @@ public class ClassWriter extends ClassFile {
         int flags = adjustFlags(m.flags());
         databuf.appendChar(flags);
         if (dumpMethodModifiers) {
-            log.errWriter.println("METHOD  " + fieldName(m));
-            log.errWriter.println("---" + flagNames(m.flags()));
+            PrintWriter pw = log.getWriter(Log.WriterKind.ERROR);
+            pw.println("METHOD  " + fieldName(m));
+            pw.println("---" + flagNames(m.flags()));
         }
         databuf.appendChar(pool.put(fieldName(m)));
         databuf.appendChar(pool.put(typeSig(m.externalType(types))));
@@ -1483,9 +1486,10 @@ public class ClassWriter extends ClassFile {
         if ((flags & INTERFACE) == 0) flags |= ACC_SUPER;
         if (c.isInner() && c.name.isEmpty()) flags &= ~FINAL;
         if (dumpClassModifiers) {
-            log.errWriter.println();
-            log.errWriter.println("CLASSFILE  " + c.getQualifiedName());
-            log.errWriter.println("---" + flagNames(flags));
+            PrintWriter pw = log.getWriter(Log.WriterKind.ERROR);
+            pw.println();
+            pw.println("CLASSFILE  " + c.getQualifiedName());
+            pw.println("---" + flagNames(flags));
         }
         databuf.appendChar(flags);
 

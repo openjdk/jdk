@@ -61,15 +61,6 @@ class MethodHandleNatives {
     /** Initialize a method type, once per form. */
     static native void init(MethodType self);
 
-    /** Tell the JVM about a class's bootstrap method. */
-    static native void registerBootstrap(Class<?> caller, MethodHandle bootstrapMethod);
-
-    /** Ask the JVM about a class's bootstrap method. */
-    static native MethodHandle getBootstrap(Class<?> caller);
-
-    /** Tell the JVM that we need to change the target of an invokedynamic. */
-    static native void setCallSiteTarget(CallSite site, MethodHandle target);
-
     /** Fetch the vmtarget field.
      *  It will be sanitized as necessary to avoid exposing non-Java references.
      *  This routine is for debugging and reflection.
@@ -121,6 +112,12 @@ class MethodHandleNatives {
     static final int OP_ROT_ARGS_DOWN_LIMIT_BIAS;
 
     static final boolean COUNT_GWT;
+
+    /// CallSite support
+
+    /** Tell the JVM that we need to change the target of a CallSite. */
+    static native void setCallSiteTargetNormal(CallSite site, MethodHandle target);
+    static native void setCallSiteTargetVolatile(CallSite site, MethodHandle target);
 
     private static native void registerNatives();
     static {

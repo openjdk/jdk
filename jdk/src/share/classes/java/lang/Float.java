@@ -529,8 +529,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @see        java.lang.Float#valueOf(java.lang.String)
      */
     public Float(String s) throws NumberFormatException {
-        // REMIND: this is inefficient
-        this(valueOf(s).floatValue());
+        value = parseFloat(s);
     }
 
     /**

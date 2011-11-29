@@ -166,7 +166,7 @@ public abstract class BaseFileManager {
     // where
         private static JavacOption[] javacFileManagerOptions =
             RecognizedOptions.getJavacFileManagerOptions(
-            new RecognizedOptions.GrumpyHelper());
+            new RecognizedOptions.GrumpyHelper(Log.instance(new Context())));
 
     public int isSupportedOption(String option) {
         for (JavacOption o : javacFileManagerOptions) {

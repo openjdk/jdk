@@ -27,7 +27,7 @@
 
 // Adapters
 enum /* platform_dependent_constants */ {
-  adapter_code_size = NOT_LP64(22000 DEBUG_ONLY(+ 40000)) LP64_ONLY(32000 DEBUG_ONLY(+ 80000))
+  adapter_code_size = NOT_LP64(23000 DEBUG_ONLY(+ 40000)) LP64_ONLY(35000 DEBUG_ONLY(+ 50000))
 };
 
 public:
