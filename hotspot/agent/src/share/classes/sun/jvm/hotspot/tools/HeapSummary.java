@@ -30,6 +30,7 @@ import sun.jvm.hotspot.gc_implementation.g1.*;
 import sun.jvm.hotspot.gc_implementation.parallelScavenge.*;
 import sun.jvm.hotspot.gc_implementation.shared.*;
 import sun.jvm.hotspot.memory.*;
+import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 
 public class HeapSummary extends Tool {
@@ -134,6 +135,9 @@ public class HeapSummary extends Tool {
       } else {
          throw new RuntimeException("unknown CollectedHeap type : " + heap.getClass());
       }
+
+      System.out.println();
+      printInternStringStatistics();
    }
 
    // Helper methods
@@ -247,5 +251,42 @@ public class HeapSummary extends Tool {
       } else {
          return -1;
       }
+   }
+
+   private void printInternStringStatistics() {
+      class StringStat implements StringTable.StringVisitor {
+         private int count;
+         private long size;
+         private OopField stringValueField;
+
+         StringStat() {
+            VM vm = VM.getVM();
+            SystemDictionary sysDict = vm.getSystemDictionary();
+            InstanceKlass strKlass = sysDict.getStringKlass();
+            // String has a field named 'value' of type 'char[]'.
+            stringValueField = (OopField) strKlass.findField("value", "[C");
+         }
+
+         private long stringSize(Instance instance) {
+            // We include String content in size calculation.
+            return instance.getObjectSize() +
+                   stringValueField.getValue(instance).getObjectSize();
+         }
+
+         public void visit(Instance str) {
+            count++;
+            size += stringSize(str);
+         }
+
+         public void print() {
+            System.out.println(count +
+                  " interned Strings occupying " + size + " bytes.");
+         }
+      }
+
+      StringStat stat = new StringStat();
+      StringTable strTable = VM.getVM().getStringTable();
+      strTable.stringsDo(stat);
+      stat.print();
    }
 }

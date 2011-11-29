@@ -45,7 +45,7 @@ private:
   ciMethod* get_adapter(     bool is_invokedynamic);
 
 protected:
-  void print_chain_impl(outputStream* st) PRODUCT_RETURN;
+  void print_chain_impl() NOT_DEBUG_RETURN;
 
 public:
   ciMethodHandle(instanceHandle h_i) :
@@ -79,7 +79,7 @@ public:
     return _invokedynamic_adapter;
   }
 
-  void print_chain(outputStream* st = tty) PRODUCT_RETURN;
+  void print_chain() NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_VM_CI_CIMETHODHANDLE_HPP

@@ -151,7 +151,7 @@ public:
 
 
 private:
-  SetI_ *iterate(uint&) const { ShouldNotCallThis(); return NULL; } // Removed
+  SetI_ *iterate(uint&) const;
 };
 
 //------------------------------Iteration--------------------------------------

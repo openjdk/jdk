@@ -104,8 +104,8 @@ class CompactibleFreeListSpace: public CompactibleSpace {
     SmallForDictionary  = 257,       // size < this then use _indexedFreeList
     IndexSetSize        = SmallForDictionary  // keep this odd-sized
   };
-  static int IndexSetStart;
-  static int IndexSetStride;
+  static size_t IndexSetStart;
+  static size_t IndexSetStride;
 
  private:
   enum FitStrategyOptions {
