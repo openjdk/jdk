@@ -46,8 +46,8 @@
 
 RUNTIME_FLAGS(MATERIALIZE_DEVELOPER_FLAG, MATERIALIZE_PD_DEVELOPER_FLAG, \
               MATERIALIZE_PRODUCT_FLAG, MATERIALIZE_PD_PRODUCT_FLAG, \
-              MATERIALIZE_COMMERCIAL_FLAG, MATERIALIZE_DIAGNOSTIC_FLAG, \
-              MATERIALIZE_EXPERIMENTAL_FLAG, MATERIALIZE_NOTPRODUCT_FLAG, \
+              MATERIALIZE_DIAGNOSTIC_FLAG, MATERIALIZE_EXPERIMENTAL_FLAG, \
+              MATERIALIZE_NOTPRODUCT_FLAG, \
               MATERIALIZE_MANAGEABLE_FLAG, MATERIALIZE_PRODUCT_RW_FLAG, \
               MATERIALIZE_LP64_PRODUCT_FLAG)
 
@@ -56,16 +56,13 @@ RUNTIME_OS_FLAGS(MATERIALIZE_DEVELOPER_FLAG, MATERIALIZE_PD_DEVELOPER_FLAG, \
                  MATERIALIZE_DIAGNOSTIC_FLAG, MATERIALIZE_NOTPRODUCT_FLAG)
 
 bool Flag::is_unlocker() const {
-  return strcmp(name, "UnlockCommercialVMOptions") == 0     ||
-         strcmp(name, "UnlockDiagnosticVMOptions") == 0     ||
+  return strcmp(name, "UnlockDiagnosticVMOptions") == 0     ||
          strcmp(name, "UnlockExperimentalVMOptions") == 0;
 
 }
 
 bool Flag::is_unlocked() const {
-  if (strcmp(kind, "{commercial}") == 0) {
-    return UnlockCommercialVMOptions;
-  } else if (strcmp(kind, "{diagnostic}") == 0) {
+  if (strcmp(kind, "{diagnostic}") == 0) {
     if (strcmp(name, "EnableInvokeDynamic") == 0 && UnlockExperimentalVMOptions && !UnlockDiagnosticVMOptions) {
       // transitional logic to allow tests to run until they are changed
       static int warned;
@@ -168,7 +165,6 @@ void Flag::print_as_flag(outputStream* st) {
 
 #define RUNTIME_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{product}", DEFAULT },
 #define RUNTIME_PD_PRODUCT_FLAG_STRUCT(type, name, doc)     { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{pd product}", DEFAULT },
-#define RUNTIME_COMMERCIAL_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{commercial}", DEFAULT },
 #define RUNTIME_DIAGNOSTIC_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{diagnostic}", DEFAULT },
 #define RUNTIME_EXPERIMENTAL_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{experimental}", DEFAULT },
 #define RUNTIME_MANAGEABLE_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name, NOT_PRODUCT_ARG(doc) "{manageable}", DEFAULT },
@@ -231,7 +227,7 @@ void Flag::print_as_flag(outputStream* st) {
 #endif
 
 static Flag flagTable[] = {
- RUNTIME_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, RUNTIME_PD_DEVELOP_FLAG_STRUCT, RUNTIME_PRODUCT_FLAG_STRUCT, RUNTIME_PD_PRODUCT_FLAG_STRUCT, RUNTIME_COMMERCIAL_FLAG_STRUCT, RUNTIME_DIAGNOSTIC_FLAG_STRUCT, RUNTIME_EXPERIMENTAL_FLAG_STRUCT, RUNTIME_NOTPRODUCT_FLAG_STRUCT, RUNTIME_MANAGEABLE_FLAG_STRUCT, RUNTIME_PRODUCT_RW_FLAG_STRUCT, RUNTIME_LP64_PRODUCT_FLAG_STRUCT)
+ RUNTIME_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, RUNTIME_PD_DEVELOP_FLAG_STRUCT, RUNTIME_PRODUCT_FLAG_STRUCT, RUNTIME_PD_PRODUCT_FLAG_STRUCT, RUNTIME_DIAGNOSTIC_FLAG_STRUCT, RUNTIME_EXPERIMENTAL_FLAG_STRUCT, RUNTIME_NOTPRODUCT_FLAG_STRUCT, RUNTIME_MANAGEABLE_FLAG_STRUCT, RUNTIME_PRODUCT_RW_FLAG_STRUCT, RUNTIME_LP64_PRODUCT_FLAG_STRUCT)
  RUNTIME_OS_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, RUNTIME_PD_DEVELOP_FLAG_STRUCT, RUNTIME_PRODUCT_FLAG_STRUCT, RUNTIME_PD_PRODUCT_FLAG_STRUCT, RUNTIME_DIAGNOSTIC_FLAG_STRUCT, RUNTIME_NOTPRODUCT_FLAG_STRUCT)
 #ifndef SERIALGC
  G1_FLAGS(RUNTIME_DEVELOP_FLAG_STRUCT, RUNTIME_PD_DEVELOP_FLAG_STRUCT, RUNTIME_PRODUCT_FLAG_STRUCT, RUNTIME_PD_PRODUCT_FLAG_STRUCT, RUNTIME_DIAGNOSTIC_FLAG_STRUCT, RUNTIME_EXPERIMENTAL_FLAG_STRUCT, RUNTIME_NOTPRODUCT_FLAG_STRUCT, RUNTIME_MANAGEABLE_FLAG_STRUCT, RUNTIME_PRODUCT_RW_FLAG_STRUCT)
@@ -261,8 +257,8 @@ Flag* Flag::find_flag(char* name, size_t length) {
   for (Flag* current = &flagTable[0]; current->name; current++) {
     if (str_equal(current->name, name, length)) {
       if (!(current->is_unlocked() || current->is_unlocker())) {
-        // disable use of commercial, diagnostic or experimental
-        // flags until they are explicitly unlocked
+        // disable use of diagnostic or experimental flags until they
+        // are explicitly unlocked
         return NULL;
       }
       return current;

@@ -373,7 +373,7 @@ class CommandLineFlags {
 // The type "ccstr" is an alias for "const char*" and is used
 // only in this file, because the macrology requires single-token type names.
 
-// Note: Diagnostic options are not meant for VM tuning or for product modes.
+// Note: Diagnostic options not meant for VM tuning or for product modes.
 // They are to be used for VM quality assurance or field diagnosis
 // of VM bugs.  They are hidden so that users will not be encouraged to
 // try them as if they were VM ordinary execution options.  However, they
@@ -382,12 +382,6 @@ class CommandLineFlags {
 // diagnostic information about VM problems.  To use a VM diagnostic
 // option, you must first specify +UnlockDiagnosticVMOptions.
 // (This master switch also affects the behavior of -Xprintflags.)
-//
-//
-// commercial flags support features for which Oracle charges a fee for
-//    production use, though they're free for development and/or evaluation.
-//    There's no enforcement mechanism in Hotspot other than that
-//    -XX:+UnlockCommercialVMOptions must first be specified in order to use them.
 //
 // experimental flags are in support of features that are not
 //    part of the officially supported product, but are available
@@ -434,7 +428,7 @@ class CommandLineFlags {
 // Note that when there is a need to support develop flags to be writeable,
 // it can be done in the same way as product_rw.
 
-#define RUNTIME_FLAGS(develop, develop_pd, product, product_pd, commercial, diagnostic, experimental, notproduct, manageable, product_rw, lp64_product) \
+#define RUNTIME_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw, lp64_product) \
                                                                             \
   lp64_product(bool, UseCompressedOops, false,                              \
             "Use 32-bit object references in 64-bit VM. "                   \
@@ -468,20 +462,15 @@ class CommandLineFlags {
   develop(bool, CleanChunkPoolAsync, falseInEmbedded,                       \
           "Whether to clean the chunk pool asynchronously")                 \
                                                                             \
-  /* Temporary: See 6948537 */                                              \
+  /* Temporary: See 6948537 */                                             \
   experimental(bool, UseMemSetInBOT, true,                                  \
           "(Unstable) uses memset in BOT updates in GC code")               \
-                                                                            \
-  commercial(bool, UnlockCommercialVMOptions, false,                        \
-          "Enable normal processing of flags relating to commercial "       \
-          "features")                                                       \
                                                                             \
   diagnostic(bool, UnlockDiagnosticVMOptions, trueInDebug,                  \
           "Enable normal processing of flags relating to field diagnostics")\
                                                                             \
   experimental(bool, UnlockExperimentalVMOptions, false,                    \
-          "Enable normal processing of flags relating to experimental "     \
-          "features")                                                       \
+          "Enable normal processing of flags relating to experimental features")\
                                                                             \
   product(bool, JavaMonitorsInStackTrace, true,                             \
           "Print info. about Java monitor locks when the stacks are dumped")\
@@ -589,8 +578,7 @@ class CommandLineFlags {
           "Verify stack of each thread when it is entering a runtime call") \
                                                                             \
   diagnostic(bool, ForceUnreachable, false,                                 \
-          "Make all non code cache addresses unreachable by forcing use of "\
-          "64-bit literal fixups")                                          \
+          "Make all non code cache addresses to be unreachable with forcing use of 64bit literal fixups") \
                                                                             \
   notproduct(bool, StressDerivedPointers, false,                            \
           "Force scavenge when a derived pointers is detected on stack "    \
@@ -3864,11 +3852,7 @@ class CommandLineFlags {
   product(bool, UseVMInterruptibleIO, false,                                \
           "(Unstable, Solaris-specific) Thread interrupt before or with "   \
           "EINTR for I/O operations results in OS_INTRPT. The default value"\
-          " of this flag is true for JDK 6 and earlier")                    \
-                                                                            \
-  commercial(bool, FlightRecorder, false,                                   \
-          "Enable Java Flight Recorder")
-
+          " of this flag is true for JDK 6 and earliers")
 
 /*
  *  Macros for factoring of globals
@@ -3877,7 +3861,6 @@ class CommandLineFlags {
 // Interface macros
 #define DECLARE_PRODUCT_FLAG(type, name, value, doc)    extern "C" type name;
 #define DECLARE_PD_PRODUCT_FLAG(type, name, doc)        extern "C" type name;
-#define DECLARE_COMMERCIAL_FLAG(type, name, value, doc) extern "C" type name;
 #define DECLARE_DIAGNOSTIC_FLAG(type, name, value, doc) extern "C" type name;
 #define DECLARE_EXPERIMENTAL_FLAG(type, name, value, doc) extern "C" type name;
 #define DECLARE_MANAGEABLE_FLAG(type, name, value, doc) extern "C" type name;
@@ -3901,7 +3884,6 @@ class CommandLineFlags {
 // Implementation macros
 #define MATERIALIZE_PRODUCT_FLAG(type, name, value, doc)   type name = value;
 #define MATERIALIZE_PD_PRODUCT_FLAG(type, name, doc)       type name = pd_##name;
-#define MATERIALIZE_COMMERCIAL_FLAG(type, name, value, doc) type name = value;
 #define MATERIALIZE_DIAGNOSTIC_FLAG(type, name, value, doc) type name = value;
 #define MATERIALIZE_EXPERIMENTAL_FLAG(type, name, value, doc) type name = value;
 #define MATERIALIZE_MANAGEABLE_FLAG(type, name, value, doc) type name = value;
@@ -3921,7 +3903,7 @@ class CommandLineFlags {
 #define MATERIALIZE_LP64_PRODUCT_FLAG(type, name, value, doc) /* flag is constant */
 #endif // _LP64
 
-RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_COMMERCIAL_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG, DECLARE_LP64_PRODUCT_FLAG)
+RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG, DECLARE_LP64_PRODUCT_FLAG)
 
 RUNTIME_OS_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_NOTPRODUCT_FLAG)
 
