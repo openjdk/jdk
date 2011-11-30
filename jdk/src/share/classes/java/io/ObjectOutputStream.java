@@ -1034,7 +1034,7 @@ public class ObjectOutputStream
      * "enableSubclassImplementation" SerializablePermission is checked.
      */
     private void verifySubclass() {
-        Class cl = getClass();
+        Class<?> cl = getClass();
         if (cl == ObjectOutputStream.class) {
             return;
         }
@@ -1060,17 +1060,17 @@ public class ObjectOutputStream
      * override security-sensitive non-final methods.  Returns true if subclass
      * is "safe", false otherwise.
      */
-    private static boolean auditSubclass(final Class subcl) {
+    private static boolean auditSubclass(final Class<?> subcl) {
         Boolean result = AccessController.doPrivileged(
             new PrivilegedAction<Boolean>() {
                 public Boolean run() {
-                    for (Class cl = subcl;
+                    for (Class<?> cl = subcl;
                          cl != ObjectOutputStream.class;
                          cl = cl.getSuperclass())
                     {
                         try {
                             cl.getDeclaredMethod(
-                                "writeUnshared", new Class[] { Object.class });
+                                "writeUnshared", new Class<?>[] { Object.class });
                             return Boolean.FALSE;
                         } catch (NoSuchMethodException ex) {
                         }
@@ -1122,11 +1122,11 @@ public class ObjectOutputStream
 
             // check for replacement object
             Object orig = obj;
-            Class cl = obj.getClass();
+            Class<?> cl = obj.getClass();
             ObjectStreamClass desc;
             for (;;) {
                 // REMIND: skip this check for strings/arrays?
-                Class repCl;
+                Class<?> repCl;
                 desc = ObjectStreamClass.lookup(cl, true);
                 if (!desc.hasWriteReplaceMethod() ||
                     (obj = desc.invokeWriteReplace(obj)) == null ||
@@ -1169,7 +1169,7 @@ public class ObjectOutputStream
             } else if (cl.isArray()) {
                 writeArray(obj, desc, unshared);
             } else if (obj instanceof Enum) {
-                writeEnum((Enum) obj, desc, unshared);
+                writeEnum((Enum<?>) obj, desc, unshared);
             } else if (obj instanceof Serializable) {
                 writeOrdinaryObject(obj, desc, unshared);
             } else {
@@ -1204,7 +1204,7 @@ public class ObjectOutputStream
     /**
      * Writes representation of given class to stream.
      */
-    private void writeClass(Class cl, boolean unshared) throws IOException {
+    private void writeClass(Class<?> cl, boolean unshared) throws IOException {
         bout.writeByte(TC_CLASS);
         writeClassDesc(ObjectStreamClass.lookup(cl, true), false);
         handles.assign(unshared ? null : cl);
@@ -1237,7 +1237,7 @@ public class ObjectOutputStream
         bout.writeByte(TC_PROXYCLASSDESC);
         handles.assign(unshared ? null : desc);
 
-        Class cl = desc.forClass();
+        Class<?> cl = desc.forClass();
         Class[] ifaces = cl.getInterfaces();
         bout.writeInt(ifaces.length);
         for (int i = 0; i < ifaces.length; i++) {
@@ -1269,7 +1269,7 @@ public class ObjectOutputStream
             writeClassDescriptor(desc);
         }
 
-        Class cl = desc.forClass();
+        Class<?> cl = desc.forClass();
         bout.setBlockDataMode(true);
         annotateClass(cl);
         bout.setBlockDataMode(false);
@@ -1306,7 +1306,7 @@ public class ObjectOutputStream
         writeClassDesc(desc, false);
         handles.assign(unshared ? null : array);
 
-        Class ccl = desc.forClass().getComponentType();
+        Class<?> ccl = desc.forClass().getComponentType();
         if (ccl.isPrimitive()) {
             if (ccl == Integer.TYPE) {
                 int[] ia = (int[]) array;
@@ -1377,7 +1377,7 @@ public class ObjectOutputStream
     /**
      * Writes given enum constant to stream.
      */
-    private void writeEnum(Enum en,
+    private void writeEnum(Enum<?> en,
                            ObjectStreamClass desc,
                            boolean unshared)
         throws IOException
@@ -1700,7 +1700,7 @@ public class ObjectOutputStream
          * types, and any other non-null type matches assignable types only.
          * Throws IllegalArgumentException if no matching field found.
          */
-        private int getFieldOffset(String name, Class type) {
+        private int getFieldOffset(String name, Class<?> type) {
             ObjectStreamField field = desc.getField(name, type);
             if (field == null) {
                 throw new IllegalArgumentException("no such field " + name +
