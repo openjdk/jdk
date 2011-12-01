@@ -31,7 +31,7 @@ import java.net.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Iterator;
-import sun.misc.Service;
+import java.util.ServiceLoader;
 import sun.misc.ServiceConfigurationError;
 import sun.security.action.GetPropertyAction;
 import com.sun.net.httpserver.*;
@@ -94,9 +94,10 @@ public abstract class HttpServerProvider {
     }
 
     private static boolean loadProviderAsService() {
-        @SuppressWarnings("unchecked")
-        Iterator<HttpServerProvider> i = Service.providers(HttpServerProvider.class,
-                                       ClassLoader.getSystemClassLoader());
+        Iterator<HttpServerProvider> i =
+            ServiceLoader.load(HttpServerProvider.class,
+                                ClassLoader.getSystemClassLoader())
+                .iterator();
         for (;;) {
             try {
                 if (!i.hasNext())
