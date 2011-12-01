@@ -181,9 +181,9 @@ public class Beans {
         // Try to find a serialized object with this name
         final String serName = beanName.replace('.','/').concat(".ser");
         final ClassLoader loader = cls;
-        ins = (InputStream)AccessController.doPrivileged
-            (new PrivilegedAction() {
-                public Object run() {
+        ins = AccessController.doPrivileged
+            (new PrivilegedAction<InputStream>() {
+                public InputStream run() {
                     if (loader == null)
                         return ClassLoader.getSystemResourceAsStream(serName);
                     else
@@ -213,7 +213,7 @@ public class Beans {
 
         if (result == null) {
             // No serialized object, try just instantiating the class
-            Class cl;
+            Class<?> cl;
 
             try {
                 cl = ClassFinder.findClass(beanName, cls);
@@ -278,10 +278,10 @@ public class Beans {
                     // Now get the URL correponding to the resource name.
 
                     final ClassLoader cloader = cls;
-                    objectUrl = (URL)
+                    objectUrl =
                         AccessController.doPrivileged
-                        (new PrivilegedAction() {
-                            public Object run() {
+                        (new PrivilegedAction<URL>() {
+                            public URL run() {
                                 if (cloader == null)
                                     return ClassLoader.getSystemResource
                                                                 (resourceName);
@@ -326,7 +326,7 @@ public class Beans {
                 // now, if there is a BeanContext, add the bean, if applicable.
 
                 if (beanContext != null) {
-                    beanContext.add(result);
+                    unsafeBeanContextAdd(beanContext, result);
                 }
 
                 // If it was deserialized then it was already init-ed.
@@ -344,12 +344,16 @@ public class Beans {
                   ((BeansAppletStub)stub).active = true;
                 } else initializer.activate(applet);
 
-            } else if (beanContext != null) beanContext.add(result);
+            } else if (beanContext != null) unsafeBeanContextAdd(beanContext, result);
         }
 
         return result;
     }
 
+    @SuppressWarnings("unchecked")
+    private static void unsafeBeanContextAdd(BeanContext beanContext, Object res) {
+        beanContext.add(res);
+    }
 
     /**
      * From a given bean, obtain an object representing a specified
@@ -496,6 +500,7 @@ class ObjectInputStreamWithLoader extends ObjectInputStream
     /**
      * Use the given ClassLoader rather than using the system class
      */
+    @SuppressWarnings("rawtypes")
     protected Class resolveClass(ObjectStreamClass classDesc)
         throws IOException, ClassNotFoundException {
 
@@ -511,7 +516,7 @@ class ObjectInputStreamWithLoader extends ObjectInputStream
 
 class BeansAppletContext implements AppletContext {
     Applet target;
-    Hashtable imageCache = new Hashtable();
+    Hashtable<URL,Object> imageCache = new Hashtable<>();
 
     BeansAppletContext(Applet target) {
         this.target = target;
@@ -556,8 +561,8 @@ class BeansAppletContext implements AppletContext {
         return null;
     }
 
-    public Enumeration getApplets() {
-        Vector applets = new Vector();
+    public Enumeration<Applet> getApplets() {
+        Vector<Applet> applets = new Vector<>();
         applets.addElement(target);
         return applets.elements();
     }
@@ -583,7 +588,7 @@ class BeansAppletContext implements AppletContext {
         return null;
     }
 
-    public Iterator getStreamKeys(){
+    public Iterator<String> getStreamKeys(){
         // We do nothing.
         return null;
     }
