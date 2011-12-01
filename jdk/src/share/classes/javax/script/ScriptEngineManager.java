@@ -102,7 +102,7 @@ public class ScriptEngineManager  {
     }
 
     private void initEngines(final ClassLoader loader) {
-        Iterator itr = null;
+        Iterator<ScriptEngineFactory> itr = null;
         try {
             if (loader != null) {
                 itr = Service.providers(ScriptEngineFactory.class, loader);
@@ -124,7 +124,7 @@ public class ScriptEngineManager  {
         try {
             while (itr.hasNext()) {
                 try {
-                    ScriptEngineFactory fact = (ScriptEngineFactory) itr.next();
+                    ScriptEngineFactory fact = itr.next();
                     engineSpis.add(fact);
                 } catch (ServiceConfigurationError err) {
                     System.err.println("ScriptEngineManager providers.next(): "
@@ -441,7 +441,7 @@ public class ScriptEngineManager  {
     // Note that this code is same as ClassLoader.getCallerClassLoader().
     // But, that method is package private and hence we can't call here.
     private ClassLoader getCallerClassLoader() {
-        Class caller = Reflection.getCallerClass(3);
+        Class<?> caller = Reflection.getCallerClass(3);
         if (caller == null) {
             return null;
         }
