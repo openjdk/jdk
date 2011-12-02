@@ -93,6 +93,11 @@ void GCTaskThread::print_on(outputStream* st) const {
   st->cr();
 }
 
+// GC workers get tasks from the GCTaskManager and execute
+// them in this method.  If there are no tasks to execute,
+// the GC workers wait in the GCTaskManager's get_task()
+// for tasks to be enqueued for execution.
+
 void GCTaskThread::run() {
   // Set up the thread for stack overflow support
   this->record_stack_base_and_size();
@@ -124,7 +129,6 @@ void GCTaskThread::run() {
     for (; /* break */; ) {
       // This will block until there is a task to be gotten.
       GCTask* task = manager()->get_task(which());
-
       // In case the update is costly
       if (PrintGCTaskTimeStamps) {
         timer.update();
@@ -134,18 +138,28 @@ void GCTaskThread::run() {
       char* name = task->name();
 
       task->do_it(manager(), which());
-      manager()->note_completion(which());
 
-      if (PrintGCTaskTimeStamps) {
-        assert(_time_stamps != NULL, "Sanity (PrintGCTaskTimeStamps set late?)");
+      if (!task->is_idle_task()) {
+        manager()->note_completion(which());
 
-        timer.update();
+        if (PrintGCTaskTimeStamps) {
+          assert(_time_stamps != NULL,
+            "Sanity (PrintGCTaskTimeStamps set late?)");
 
-        GCTaskTimeStamp* time_stamp = time_stamp_at(_time_stamp_index++);
+          timer.update();
 
-        time_stamp->set_name(name);
-        time_stamp->set_entry_time(entry_time);
-        time_stamp->set_exit_time(timer.ticks());
+          GCTaskTimeStamp* time_stamp = time_stamp_at(_time_stamp_index++);
+
+          time_stamp->set_name(name);
+          time_stamp->set_entry_time(entry_time);
+          time_stamp->set_exit_time(timer.ticks());
+        }
+      } else {
+        // idle tasks complete outside the normal accounting
+        // so that a task can complete without waiting for idle tasks.
+        // They have to be terminated separately.
+        IdleGCTask::destroy((IdleGCTask*)task);
+        set_is_working(true);
       }
 
       // Check if we should release our inner resources.
