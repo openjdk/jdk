@@ -198,7 +198,7 @@ public class JMap {
     }
 
     // loads the given class using the system class loader
-    private static Class loadClass(String name) {
+    private static Class<?> loadClass(String name) {
         //
         // We specify the system clas loader so as to cater for development
         // environments where this class is on the boot class path but sa-jdi.jar
@@ -336,7 +336,7 @@ public class JMap {
 
     // returns true if SA is available
     private static boolean haveSA() {
-        Class c = loadClass("sun.jvm.hotspot.tools.HeapSummary");
+        Class<?> c = loadClass("sun.jvm.hotspot.tools.HeapSummary");
         return (c != null);
     }
 
