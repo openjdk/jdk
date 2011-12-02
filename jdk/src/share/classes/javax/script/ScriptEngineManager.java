@@ -25,11 +25,9 @@
 
 package javax.script;
 import java.util.*;
-import java.net.URL;
-import java.io.*;
 import java.security.*;
-import sun.misc.Service;
-import sun.misc.ServiceConfigurationError;
+import java.util.ServiceLoader;
+import java.util.ServiceConfigurationError;
 import sun.reflect.Reflection;
 import sun.security.util.SecurityConstants;
 
@@ -104,11 +102,13 @@ public class ScriptEngineManager  {
     private void initEngines(final ClassLoader loader) {
         Iterator<ScriptEngineFactory> itr = null;
         try {
+            ServiceLoader<ScriptEngineFactory> sl;
             if (loader != null) {
-                itr = Service.providers(ScriptEngineFactory.class, loader);
+                sl = ServiceLoader.load(ScriptEngineFactory.class, loader);
             } else {
-                itr = Service.installedProviders(ScriptEngineFactory.class);
+                sl = ServiceLoader.loadInstalled(ScriptEngineFactory.class);
             }
+            itr = sl.iterator();
         } catch (ServiceConfigurationError err) {
             System.err.println("Can't find ScriptEngineFactory providers: " +
                           err.getMessage());

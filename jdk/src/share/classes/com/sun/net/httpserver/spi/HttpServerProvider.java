@@ -25,50 +25,58 @@
 
 package com.sun.net.httpserver.spi;
 
-import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.ServiceLoader;
-import sun.misc.ServiceConfigurationError;
-import sun.security.action.GetPropertyAction;
+import java.util.ServiceConfigurationError;
 import com.sun.net.httpserver.*;
 
 /**
  * Service provider class for HttpServer.
- * Sub-classes of HttpServerProvider provide an implementation of {@link HttpServer} and
- * associated classes. Applications do not normally use this class.
- * See {@link #provider()} for how providers are found and loaded.
+ * Sub-classes of HttpServerProvider provide an implementation of
+ * {@link HttpServer} and associated classes. Applications do not normally use
+ * this class. See {@link #provider()} for how providers are found and loaded.
  */
 public abstract class HttpServerProvider {
 
     /**
      * creates a HttpServer from this provider
-     * @param addr the address to bind to. May be <code>null</code>
-     * @param backlog the socket backlog. A value of <code>zero</code> means the systems default
+     *
+     * @param  addr
+     *         the address to bind to. May be {@code null}
+     *
+     * @param  backlog
+     *         the socket backlog. A value of {@code zero} means the systems default
      */
-    public abstract HttpServer createHttpServer (InetSocketAddress addr, int backlog) throws IOException;
+    public abstract HttpServer createHttpServer(InetSocketAddress addr,
+                                                int backlog)
+        throws IOException;
 
     /**
      * creates a HttpsServer from this provider
-     * @param addr the address to bind to. May be <code>null</code>
-     * @param backlog the socket backlog. A value of <code>zero</code> means the systems default
+     *
+     * @param  addr
+     *         the address to bind to. May be {@code null}
+     *
+     * @param  backlog
+     *         the socket backlog. A value of {@code zero} means the systems default
      */
-    public abstract HttpsServer createHttpsServer (InetSocketAddress addr, int backlog) throws IOException;
-
-
+    public abstract HttpsServer createHttpsServer(InetSocketAddress addr,
+                                                  int backlog)
+        throws IOException;
 
     private static final Object lock = new Object();
     private static HttpServerProvider provider = null;
 
     /**
-     * Initializes a new instance of this class.  </p>
+     * Initializes a new instance of this class.
      *
      * @throws  SecurityException
      *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}<tt>("httpServerProvider")</tt>
+     *          {@link RuntimePermission}{@code("httpServerProvider")}
      */
     protected HttpServerProvider() {
         SecurityManager sm = System.getSecurityManager();
@@ -82,21 +90,21 @@ public abstract class HttpServerProvider {
             return false;
         try {
             Class<?> c = Class.forName(cn, true,
-                                    ClassLoader.getSystemClassLoader());
+                                       ClassLoader.getSystemClassLoader());
             provider = (HttpServerProvider)c.newInstance();
             return true;
         } catch (ClassNotFoundException |
                  IllegalAccessException |
                  InstantiationException |
                  SecurityException x) {
-            throw new ServiceConfigurationError(x);
+            throw new ServiceConfigurationError(null, x);
         }
     }
 
     private static boolean loadProviderAsService() {
         Iterator<HttpServerProvider> i =
             ServiceLoader.load(HttpServerProvider.class,
-                                ClassLoader.getSystemClassLoader())
+                               ClassLoader.getSystemClassLoader())
                 .iterator();
         for (;;) {
             try {
@@ -124,19 +132,19 @@ public abstract class HttpServerProvider {
      * <ol>
      *
      *   <li><p> If the system property
-     *   <tt>com.sun.net.httpserver.HttpServerProvider</tt> is defined then it is
-     *   taken to be the fully-qualified name of a concrete provider class.
+     *   {@code com.sun.net.httpserver.HttpServerProvider} is defined then it
+     *   is taken to be the fully-qualified name of a concrete provider class.
      *   The class is loaded and instantiated; if this process fails then an
      *   unspecified unchecked error or exception is thrown.  </p></li>
      *
      *   <li><p> If a provider class has been installed in a jar file that is
      *   visible to the system class loader, and that jar file contains a
      *   provider-configuration file named
-     *   <tt>com.sun.net.httpserver.HttpServerProvider</tt> in the resource
+     *   {@code com.sun.net.httpserver.HttpServerProvider} in the resource
      *   directory <tt>META-INF/services</tt>, then the first class name
      *   specified in that file is taken.  The class is loaded and
-     *   instantiated; if this process fails then an unspecified unchecked error or exception is
-     *   thrown.  </p></li>
+     *   instantiated; if this process fails then an unspecified unchecked error
+     *   or exception is thrown.  </p></li>
      *
      *   <li><p> Finally, if no provider has been specified by any of the above
      *   means then the system-default provider class is instantiated and the
