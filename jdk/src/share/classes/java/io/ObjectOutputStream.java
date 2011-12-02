@@ -1075,7 +1075,7 @@ public class ObjectOutputStream
                         } catch (NoSuchMethodException ex) {
                         }
                         try {
-                            cl.getDeclaredMethod("putFields", (Class[]) null);
+                            cl.getDeclaredMethod("putFields", (Class<?>[]) null);
                             return Boolean.FALSE;
                         } catch (NoSuchMethodException ex) {
                         }
