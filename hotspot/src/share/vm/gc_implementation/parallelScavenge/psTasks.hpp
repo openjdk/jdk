@@ -135,16 +135,63 @@ class SerialOldToYoungRootsTask : public GCTask {
 // OldToYoungRootsTask
 //
 // This task is used to scan old to young roots in parallel
+//
+// A GC thread executing this tasks divides the generation (old gen)
+// into slices and takes a stripe in the slice as its part of the
+// work.
+//
+//      +===============+        slice 0
+//      |  stripe 0     |
+//      +---------------+
+//      |  stripe 1     |
+//      +---------------+
+//      |  stripe 2     |
+//      +---------------+
+//      |  stripe 3     |
+//      +===============+        slice 1
+//      |  stripe 0     |
+//      +---------------+
+//      |  stripe 1     |
+//      +---------------+
+//      |  stripe 2     |
+//      +---------------+
+//      |  stripe 3     |
+//      +===============+        slice 2
+//      ...
+//
+// A task is created for each stripe.  In this case there are 4 tasks
+// created.  A GC thread first works on its stripe within slice 0
+// and then moves to its stripe in the next slice until all stripes
+// exceed the top of the generation.  Note that having fewer GC threads
+// than stripes works because all the tasks are executed so all stripes
+// will be covered.  In this example if 4 tasks have been created to cover
+// all the stripes and there are only 3 threads, one of the threads will
+// get the tasks with the 4th stripe.  However, there is a dependence in
+// CardTableExtension::scavenge_contents_parallel() on the number
+// of tasks created.  In scavenge_contents_parallel the distance
+// to the next stripe is calculated based on the number of tasks.
+// If the stripe width is ssize, a task's next stripe is at
+// ssize * number_of_tasks (= slice_stride).  In this case after
+// finishing stripe 0 in slice 0, the thread finds the stripe 0 in slice1
+// by adding slice_stride to the start of stripe 0 in slice 0 to get
+// to the start of stride 0 in slice 1.
 
 class OldToYoungRootsTask : public GCTask {
  private:
   PSOldGen* _gen;
   HeapWord* _gen_top;
   uint _stripe_number;
+  uint _stripe_total;
 
  public:
-  OldToYoungRootsTask(PSOldGen *gen, HeapWord* gen_top, uint stripe_number) :
-    _gen(gen), _gen_top(gen_top), _stripe_number(stripe_number) { }
+  OldToYoungRootsTask(PSOldGen *gen,
+                      HeapWord* gen_top,
+                      uint stripe_number,
+                      uint stripe_total) :
+    _gen(gen),
+    _gen_top(gen_top),
+    _stripe_number(stripe_number),
+    _stripe_total(stripe_total) { }
 
   char* name() { return (char *)"old-to-young-roots-task"; }
 

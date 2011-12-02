@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,8 +196,6 @@ class MarkSweep : AllStatic {
   static void mark_object(oop obj);
   // Mark pointer and follow contents.  Empty marking stack afterwards.
   template <class T> static inline void follow_root(T* p);
-  // Mark pointer and follow contents.
-  template <class T> static inline void mark_and_follow(T* p);
   // Check mark and maybe push on marking stack
   template <class T> static inline void mark_and_push(T* p);
   static inline void push_objarray(oop obj, size_t index);
