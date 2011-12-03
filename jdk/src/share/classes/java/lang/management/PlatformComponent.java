@@ -314,7 +314,7 @@ enum PlatformComponent {
     private final String domain;
     private final String type;
     private final Set<String> keyProperties;
-    private final MXBeanFetcher fetcher;
+    private final MXBeanFetcher<?> fetcher;
     private final PlatformComponent[] subComponents;
     private final boolean singleton;
 
@@ -322,7 +322,7 @@ enum PlatformComponent {
                               String domain, String type,
                               Set<String> keyProperties,
                               boolean singleton,
-                              MXBeanFetcher fetcher,
+                              MXBeanFetcher<?> fetcher,
                               PlatformComponent... subComponents) {
         this.mxbeanInterfaceName = intfName;
         this.domain = domain;
@@ -373,7 +373,7 @@ enum PlatformComponent {
     <T extends PlatformManagedObject>
         List<T> getMXBeans(Class<T> mxbeanInterface)
     {
-        return fetcher.getMXBeans();
+        return (List<T>) fetcher.getMXBeans();
     }
 
     <T extends PlatformManagedObject> T getSingletonMXBean(Class<T> mxbeanInterface)
@@ -382,7 +382,7 @@ enum PlatformComponent {
             throw new IllegalArgumentException(mxbeanInterfaceName +
                 " can have zero or more than one instances");
 
-        List<T> list = fetcher.getMXBeans();
+        List<T> list = getMXBeans(mxbeanInterface);
         assert list.size() == 1;
         return list.isEmpty() ? null : list.get(0);
     }
