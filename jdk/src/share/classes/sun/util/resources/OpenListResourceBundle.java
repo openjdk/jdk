@@ -119,11 +119,12 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
      * loading.
      */
     private synchronized void loadLookup() {
-        if (lookup != null)
+        if (lookup != null) {
             return;
+        }
 
         Object[][] contents = getContents();
-        Map temp = createMap(contents.length);
+        Map<String, Object> temp = createMap(contents.length);
         for (int i = 0; i < contents.length; ++i) {
             // key must be non-null String, value must be non-null
             String key = (String) contents[i][0];
@@ -140,9 +141,9 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
      * Lets subclasses provide specialized Map implementations.
      * Default uses HashMap.
      */
-    protected Map createMap(int size) {
-        return new HashMap(size);
+    protected Map<String, Object> createMap(int size) {
+        return new HashMap<>(size);
     }
 
-    private Map lookup = null;
+    private Map<String, Object> lookup = null;
 }
