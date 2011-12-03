@@ -29,7 +29,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
@@ -124,8 +123,8 @@ public class LocalGregorianCalendar extends BaseCalendar {
                 new sun.security.action.GetPropertyAction("java.home"));
             final String fname = homeDir + File.separator + "lib" + File.separator
                                  + "calendars.properties";
-            calendarProps = (Properties) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                public Object run() throws IOException {
+            calendarProps = AccessController.doPrivileged(new PrivilegedExceptionAction<Properties>() {
+                public Properties run() throws IOException {
                     Properties props = new Properties();
                     try (FileInputStream fis = new FileInputStream(fname)) {
                         props.load(fis);
@@ -142,7 +141,7 @@ public class LocalGregorianCalendar extends BaseCalendar {
         if (props == null) {
             return null;
         }
-        List<Era> eras = new ArrayList<Era>();
+        List<Era> eras = new ArrayList<>();
         StringTokenizer eraTokens = new StringTokenizer(props, ";");
         while (eraTokens.hasMoreTokens()) {
             String items = eraTokens.nextToken().trim();
