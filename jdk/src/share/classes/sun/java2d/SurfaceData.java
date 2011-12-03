@@ -520,8 +520,8 @@ public abstract class SurfaceData
     }
 
     public boolean canRenderParallelograms(SunGraphics2D sg2d) {
-        if (sg2d.paintState <= sg2d.PAINT_ALPHACOLOR) {
-            if (sg2d.compositeState == sg2d.COMP_XOR) {
+        if (sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR) {
+            if (sg2d.compositeState == SunGraphics2D.COMP_XOR) {
                 if (havePgramXORLoop == LOOP_UNKNOWN) {
                     FillParallelogram loop =
                         FillParallelogram.locate(SurfaceType.AnyColor,
@@ -531,9 +531,9 @@ public abstract class SurfaceData
                         (loop != null) ? LOOP_FOUND : LOOP_NOTFOUND;
                 }
                 return havePgramXORLoop == LOOP_FOUND;
-            } else if (sg2d.compositeState <= sg2d.COMP_ISCOPY &&
+            } else if (sg2d.compositeState <= SunGraphics2D.COMP_ISCOPY &&
                        sg2d.antialiasHint != SunHints.INTVAL_ANTIALIAS_ON &&
-                       sg2d.clipState != sg2d.CLIP_SHAPE)
+                       sg2d.clipState != SunGraphics2D.CLIP_SHAPE)
             {
                 if (havePgramSolidLoop == LOOP_UNKNOWN) {
                     FillParallelogram loop =
@@ -551,8 +551,8 @@ public abstract class SurfaceData
 
     public void validatePipe(SunGraphics2D sg2d) {
         sg2d.imagepipe = imagepipe;
-        if (sg2d.compositeState == sg2d.COMP_XOR) {
-            if (sg2d.paintState > sg2d.PAINT_ALPHACOLOR) {
+        if (sg2d.compositeState == SunGraphics2D.COMP_XOR) {
+            if (sg2d.paintState > SunGraphics2D.PAINT_ALPHACOLOR) {
                 sg2d.drawpipe = paintViaShape;
                 sg2d.fillpipe = paintViaShape;
                 sg2d.shapepipe = paintShape;
@@ -576,7 +576,7 @@ public abstract class SurfaceData
                     converter = colorViaShape;
                     sg2d.shapepipe = colorPrimitives;
                 }
-                if (sg2d.clipState == sg2d.CLIP_SHAPE) {
+                if (sg2d.clipState == SunGraphics2D.CLIP_SHAPE) {
                     sg2d.drawpipe = converter;
                     sg2d.fillpipe = converter;
                     // REMIND: We should not be changing text strategies
@@ -589,11 +589,11 @@ public abstract class SurfaceData
                     // which is not defined for XOR.
                     sg2d.textpipe = outlineTextRenderer;
                 } else {
-                    if (sg2d.transformState >= sg2d.TRANSFORM_TRANSLATESCALE) {
+                    if (sg2d.transformState >= SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
                         sg2d.drawpipe = converter;
                         sg2d.fillpipe = converter;
                     } else {
-                        if (sg2d.strokeState != sg2d.STROKE_THIN) {
+                        if (sg2d.strokeState != SunGraphics2D.STROKE_THIN) {
                             sg2d.drawpipe = converter;
                         } else {
                             sg2d.drawpipe = colorPrimitives;
@@ -604,9 +604,9 @@ public abstract class SurfaceData
                 }
                 // assert(sg2d.surfaceData == this);
             }
-        } else if (sg2d.compositeState == sg2d.COMP_CUSTOM) {
+        } else if (sg2d.compositeState == SunGraphics2D.COMP_CUSTOM) {
             if (sg2d.antialiasHint == SunHints.INTVAL_ANTIALIAS_ON) {
-                if (sg2d.clipState == sg2d.CLIP_SHAPE) {
+                if (sg2d.clipState == SunGraphics2D.CLIP_SHAPE) {
                     sg2d.drawpipe = AAClipCompViaShape;
                     sg2d.fillpipe = AAClipCompViaShape;
                     sg2d.shapepipe = AAClipCompViaShape;
@@ -621,7 +621,7 @@ public abstract class SurfaceData
                 sg2d.drawpipe = compViaShape;
                 sg2d.fillpipe = compViaShape;
                 sg2d.shapepipe = compShape;
-                if (sg2d.clipState == sg2d.CLIP_SHAPE) {
+                if (sg2d.clipState == SunGraphics2D.CLIP_SHAPE) {
                     sg2d.textpipe = clipCompText;
                 } else {
                     sg2d.textpipe = compText;
@@ -631,7 +631,7 @@ public abstract class SurfaceData
             sg2d.alphafill = getMaskFill(sg2d);
             // assert(sg2d.surfaceData == this);
             if (sg2d.alphafill != null) {
-                if (sg2d.clipState == sg2d.CLIP_SHAPE) {
+                if (sg2d.clipState == SunGraphics2D.CLIP_SHAPE) {
                     sg2d.drawpipe = AAClipColorViaShape;
                     sg2d.fillpipe = AAClipColorViaShape;
                     sg2d.shapepipe = AAClipColorViaShape;
@@ -644,8 +644,8 @@ public abstract class SurfaceData
                     sg2d.drawpipe = converter;
                     sg2d.fillpipe = converter;
                     sg2d.shapepipe = converter;
-                    if (sg2d.paintState > sg2d.PAINT_ALPHACOLOR ||
-                        sg2d.compositeState > sg2d.COMP_ISCOPY)
+                    if (sg2d.paintState > SunGraphics2D.PAINT_ALPHACOLOR ||
+                        sg2d.compositeState > SunGraphics2D.COMP_ISCOPY)
                     {
                         sg2d.textpipe = colorText;
                     } else {
@@ -653,7 +653,7 @@ public abstract class SurfaceData
                     }
                 }
             } else {
-                if (sg2d.clipState == sg2d.CLIP_SHAPE) {
+                if (sg2d.clipState == SunGraphics2D.CLIP_SHAPE) {
                     sg2d.drawpipe = AAClipPaintViaShape;
                     sg2d.fillpipe = AAClipPaintViaShape;
                     sg2d.shapepipe = AAClipPaintViaShape;
@@ -665,9 +665,9 @@ public abstract class SurfaceData
                     sg2d.textpipe = paintText;
                 }
             }
-        } else if (sg2d.paintState > sg2d.PAINT_ALPHACOLOR ||
-                   sg2d.compositeState > sg2d.COMP_ISCOPY ||
-                   sg2d.clipState == sg2d.CLIP_SHAPE)
+        } else if (sg2d.paintState > SunGraphics2D.PAINT_ALPHACOLOR ||
+                   sg2d.compositeState > SunGraphics2D.COMP_ISCOPY ||
+                   sg2d.clipState == SunGraphics2D.CLIP_SHAPE)
         {
             sg2d.drawpipe = paintViaShape;
             sg2d.fillpipe = paintViaShape;
@@ -675,13 +675,13 @@ public abstract class SurfaceData
             sg2d.alphafill = getMaskFill(sg2d);
             // assert(sg2d.surfaceData == this);
             if (sg2d.alphafill != null) {
-                if (sg2d.clipState == sg2d.CLIP_SHAPE) {
+                if (sg2d.clipState == SunGraphics2D.CLIP_SHAPE) {
                     sg2d.textpipe = clipColorText;
                 } else {
                     sg2d.textpipe = colorText;
                 }
             } else {
-                if (sg2d.clipState == sg2d.CLIP_SHAPE) {
+                if (sg2d.clipState == SunGraphics2D.CLIP_SHAPE) {
                     sg2d.textpipe = clipPaintText;
                 } else {
                     sg2d.textpipe = paintText;
@@ -700,11 +700,11 @@ public abstract class SurfaceData
                 converter = colorViaShape;
                 sg2d.shapepipe = colorPrimitives;
             }
-            if (sg2d.transformState >= sg2d.TRANSFORM_TRANSLATESCALE) {
+            if (sg2d.transformState >= SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
                 sg2d.drawpipe = converter;
                 sg2d.fillpipe = converter;
             } else {
-                if (sg2d.strokeState != sg2d.STROKE_THIN) {
+                if (sg2d.strokeState != SunGraphics2D.STROKE_THIN) {
                     sg2d.drawpipe = converter;
                 } else {
                     sg2d.drawpipe = colorPrimitives;
@@ -817,7 +817,7 @@ public abstract class SurfaceData
 
     private static CompositeType getFillCompositeType(SunGraphics2D sg2d) {
         CompositeType compType = sg2d.imageComp;
-        if (sg2d.compositeState == sg2d.COMP_ISCOPY) {
+        if (sg2d.compositeState == SunGraphics2D.COMP_ISCOPY) {
             if (compType == CompositeType.SrcOverNoEa) {
                 compType = CompositeType.OpaqueSrcOverNoEa;
             } else {
