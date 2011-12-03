@@ -265,6 +265,13 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   if( phase->type( mem ) == Type::TOP ) return NodeSentinel; // caller will return NULL
   assert( mem != this, "dead loop in MemNode::Ideal" );
 
+  if (can_reshape && igvn != NULL && igvn->_worklist.member(mem)) {
+    // This memory slice may be dead.
+    // Delay this mem node transformation until the memory is processed.
+    phase->is_IterGVN()->_worklist.push(this);
+    return NodeSentinel; // caller will return NULL
+  }
+
   Node *address = in(MemNode::Address);
   const Type *t_adr = phase->type( address );
   if( t_adr == Type::TOP )              return NodeSentinel; // caller will return NULL
