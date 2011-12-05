@@ -836,10 +836,9 @@ public class URLClassPath {
                              Set<String> visited) {
 
             Resource res;
-            Object[] jarFiles;
-            boolean done = false;
+            String[] jarFiles;
             int count = 0;
-            LinkedList jarFilesList = null;
+            LinkedList<String> jarFilesList = null;
 
             /* If there no jar files in the index that can potential contain
              * this resource then return immediately.
@@ -848,11 +847,11 @@ public class URLClassPath {
                 return null;
 
             do {
-                jarFiles = jarFilesList.toArray();
                 int size = jarFilesList.size();
+                jarFiles = jarFilesList.toArray(new String[size]);
                 /* loop through the mapped jar file list */
                 while(count < size) {
-                    String jarName = (String)jarFiles[count++];
+                    String jarName = jarFiles[count++];
                     JarLoader newLoader;
                     final URL url;
 
