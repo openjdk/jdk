@@ -766,7 +766,22 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         __ ret();
         __ delayed()->restore();
+      }
+      break;
 
+    case deoptimize_id:
+      {
+        __ set_info("deoptimize", dont_gc_arguments);
+        OopMap* oop_map = save_live_registers(sasm);
+        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, deoptimize));
+        oop_maps = new OopMapSet();
+        oop_maps->add_gc_map(call_offset, oop_map);
+        restore_live_registers(sasm);
+        DeoptimizationBlob* deopt_blob = SharedRuntime::deopt_blob();
+        assert(deopt_blob != NULL, "deoptimization blob must have been created");
+        AddressLiteral dest(deopt_blob->unpack_with_reexecution());
+        __ jump_to(dest, O0);
+        __ delayed()->restore();
       }
       break;
 

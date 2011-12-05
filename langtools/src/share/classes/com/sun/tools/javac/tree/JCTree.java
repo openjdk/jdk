@@ -39,6 +39,7 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Scope.*;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.parser.EndPosTable;
 import com.sun.source.tree.*;
 
 import static com.sun.tools.javac.code.BoundKind.*;
@@ -450,7 +451,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     // for default DiagnosticPosition
-    public int getEndPosition(Map<JCTree, Integer> endPosTable) {
+    public int getEndPosition(EndPosTable endPosTable) {
         return TreeInfo.getEndPos(this, endPosTable);
     }
 
@@ -467,7 +468,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      * @param docComments      A hashtable that stores all documentation comments
      *                         indexed by the tree nodes they refer to.
      *                         defined only if option -s is set.
-     * @param endPositions     A hashtable that stores ending positions of source
+     * @param endPositions     An object encapsulating ending positions of source
      *                         ranges indexed by the tree nodes they belong to.
      *                         Defined only if option -Xjcov is set.
      */
@@ -481,7 +482,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public StarImportScope starImportScope;
         public Position.LineMap lineMap = null;
         public Map<JCTree, String> docComments = null;
-        public Map<JCTree, Integer> endPositions = null;
+        public EndPosTable endPositions = null;
         protected JCCompilationUnit(List<JCAnnotation> packageAnnotations,
                         JCExpression pid,
                         List<JCTree> defs,

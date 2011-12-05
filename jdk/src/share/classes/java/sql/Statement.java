@@ -991,7 +991,7 @@ public interface Statement extends Wrapper, AutoCloseable {
         /**
          * Requests that a <code>Statement</code> be pooled or not pooled.  The value
          * specified is a hint to the statement pool implementation indicating
-         * whether the applicaiton wants the statement to be pooled.  It is up to
+         * whether the application wants the statement to be pooled.  It is up to
          * the statement pool manager as to whether the hint is used.
          * <p>
          * The poolable value of a statement is applicable to both internal

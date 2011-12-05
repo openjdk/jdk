@@ -105,13 +105,11 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
 
             Iterable<? extends JavaFileObject> fos = fm.getJavaFileObjectsFromFiles(files);
 
-            JavacTaskImpl t = (JavacTaskImpl) tool.getTask(out, fm, null, opts, null, fos);
-            Context c = t.getContext();
+            Context c = new Context();
             ArgTypeMessages.preRegister(c);
             ArgTypeJavaCompiler.preRegister(c);
-            Boolean ok = t.call();
-
-            return ok;
+            JavacTaskImpl t = (JavacTaskImpl) tool.getTask(out, fm, null, opts, null, fos, c);
+            return t.call();
         }
     }
 

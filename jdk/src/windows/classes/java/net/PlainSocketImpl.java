@@ -314,7 +314,7 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
 
     void socketSetOption(int cmd, boolean on, Object value)
         throws SocketException {
-        socketSetOption(cmd, on, value);
+        impl.socketSetOption(cmd, on, value);
     }
 
     int socketGetOption(int opt, Object iaContainerObj) throws SocketException {

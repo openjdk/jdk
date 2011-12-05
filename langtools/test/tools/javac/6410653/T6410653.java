@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @author  Peter von der Ah\u00e9
  */
 
-import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 import java.io.File;
 import java.io.ByteArrayOutputStream;
 import javax.tools.*;
@@ -39,12 +39,13 @@ public class T6410653 {
         String source = new File(testSrc, "T6410653.java").getPath();
         ClassLoader cl = ToolProvider.getSystemToolClassLoader();
         Tool compiler = ToolProvider.getSystemJavaCompiler();
-        Class<?> main = Class.forName("com.sun.tools.javac.main.Main", true, cl);
-        Method useRawMessages = main.getMethod("useRawMessages", boolean.class);
-        useRawMessages.invoke(null, true);
+        Class<?> log = Class.forName("com.sun.tools.javac.util.Log", true, cl);
+        Field useRawMessages = log.getDeclaredField("useRawMessages");
+        useRawMessages.setAccessible(true);
+        useRawMessages.setBoolean(null, true);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         compiler.run(null, null, out, "-d", source, source);
-        useRawMessages.invoke(null, false);
+        useRawMessages.setBoolean(null, false);
         if (!out.toString().equals(String.format("%s%n%s%n",
                                                  "javac: javac.err.file.not.directory",
                                                  "javac.msg.usage"))) {

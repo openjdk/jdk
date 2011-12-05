@@ -607,8 +607,7 @@ public final class Double extends Number implements Comparable<Double> {
      * @see       java.lang.Double#valueOf(java.lang.String)
      */
     public Double(String s) throws NumberFormatException {
-        // REMIND: this is inefficient
-        this(valueOf(s).doubleValue());
+        value = parseDouble(s);
     }
 
     /**
