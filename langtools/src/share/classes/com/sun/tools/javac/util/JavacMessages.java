@@ -82,14 +82,14 @@ public class JavacMessages implements Messages {
     }
 
     /** Creates a JavacMessages object.
-     * @param bundleName the name to identify the resource buundle of localized messages.
+     * @param bundleName the name to identify the resource bundle of localized messages.
      */
     public JavacMessages(String bundleName) throws MissingResourceException {
         this(bundleName, null);
     }
 
     /** Creates a JavacMessages object.
-     * @param bundleName the name to identify the resource buundle of localized messages.
+     * @param bundleName the name to identify the resource bundle of localized messages.
      */
     public JavacMessages(String bundleName, Locale locale) throws MissingResourceException {
         bundleNames = List.nil();

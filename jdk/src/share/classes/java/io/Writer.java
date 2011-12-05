@@ -57,7 +57,7 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
     /**
      * Size of writeBuffer, must be >= 1
      */
-    private final int writeBufferSize = 1024;
+    private static final int WRITE_BUFFER_SIZE = 1024;
 
     /**
      * The object used to synchronize operations on this stream.  For
@@ -107,7 +107,7 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
     public void write(int c) throws IOException {
         synchronized (lock) {
             if (writeBuffer == null){
-                writeBuffer = new char[writeBufferSize];
+                writeBuffer = new char[WRITE_BUFFER_SIZE];
             }
             writeBuffer[0] = (char) c;
             write(writeBuffer, 0, 1);
@@ -180,9 +180,9 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
     public void write(String str, int off, int len) throws IOException {
         synchronized (lock) {
             char cbuf[];
-            if (len <= writeBufferSize) {
+            if (len <= WRITE_BUFFER_SIZE) {
                 if (writeBuffer == null) {
-                    writeBuffer = new char[writeBufferSize];
+                    writeBuffer = new char[WRITE_BUFFER_SIZE];
                 }
                 cbuf = writeBuffer;
             } else {    // Don't permanently allocate very large buffers.

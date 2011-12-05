@@ -1270,7 +1270,6 @@ void GenCollectedHeap::verify(bool allow_dirty, bool silent, VerifyOption option
   rem_set()->verify();
 }
 
-void GenCollectedHeap::print() const { print_on(tty); }
 void GenCollectedHeap::print_on(outputStream* st) const {
   for (int i = 0; i < _n_gens; i++) {
     _gens[i]->print_on(st);

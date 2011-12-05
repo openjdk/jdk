@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,7 +214,7 @@ public class Apt extends ListBuffer<Env<AttrContext>> {
                      AnnotationProcessorFactory providedFactory,
                      java.util.Set<Class<? extends AnnotationProcessorFactory> > productiveFactories) {
         Bark bark = Bark.instance(context);
-        java.io.PrintWriter out = bark.warnWriter;
+        java.io.PrintWriter out = bark.getWriter(Log.WriterKind.WARNING);
         Options options = Options.instance(context);
 
         Collection<TypeDeclaration> spectypedecls =     new LinkedHashSet<TypeDeclaration>();
