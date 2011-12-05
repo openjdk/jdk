@@ -243,6 +243,9 @@ struct Flag {
   bool is_writeable() const;
   bool is_external() const;
 
+  bool is_unlocker_ext() const;
+  bool is_unlocked_ext() const;
+
   void print_on(outputStream* st, bool withComments = false );
   void print_as_flag(outputStream* st);
 };
@@ -3906,5 +3909,9 @@ class CommandLineFlags {
 RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG, DECLARE_LP64_PRODUCT_FLAG)
 
 RUNTIME_OS_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_NOTPRODUCT_FLAG)
+
+// Extensions
+
+#include "runtime/globals_ext.hpp"
 
 #endif // SHARE_VM_RUNTIME_GLOBALS_HPP
