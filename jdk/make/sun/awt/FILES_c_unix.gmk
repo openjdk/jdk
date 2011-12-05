@@ -146,6 +146,7 @@ FILES_2D_c = \
 
 FILES_NO_MOTIF_c = \
 	awt_Font.c \
+	HeadlessToolkit.c \
 	fontpath.c \
 	VDrawingArea.c \
 	X11Color.c \
