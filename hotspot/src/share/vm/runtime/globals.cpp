@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,10 +55,13 @@ RUNTIME_OS_FLAGS(MATERIALIZE_DEVELOPER_FLAG, MATERIALIZE_PD_DEVELOPER_FLAG, \
                  MATERIALIZE_PRODUCT_FLAG, MATERIALIZE_PD_PRODUCT_FLAG, \
                  MATERIALIZE_DIAGNOSTIC_FLAG, MATERIALIZE_NOTPRODUCT_FLAG)
 
+MATERIALIZE_FLAGS_EXT
+
+
 bool Flag::is_unlocker() const {
   return strcmp(name, "UnlockDiagnosticVMOptions") == 0     ||
-         strcmp(name, "UnlockExperimentalVMOptions") == 0;
-
+         strcmp(name, "UnlockExperimentalVMOptions") == 0   ||
+         is_unlocker_ext();
 }
 
 bool Flag::is_unlocked() const {
@@ -74,7 +77,7 @@ bool Flag::is_unlocked() const {
              strcmp(kind, "{C2 experimental}") == 0) {
     return UnlockExperimentalVMOptions;
   } else {
-    return true;
+    return is_unlocked_ext();
   }
 }
 
@@ -241,6 +244,7 @@ static Flag flagTable[] = {
 #ifdef SHARK
  SHARK_FLAGS(SHARK_DEVELOP_FLAG_STRUCT, SHARK_PD_DEVELOP_FLAG_STRUCT, SHARK_PRODUCT_FLAG_STRUCT, SHARK_PD_PRODUCT_FLAG_STRUCT, SHARK_DIAGNOSTIC_FLAG_STRUCT, SHARK_NOTPRODUCT_FLAG_STRUCT)
 #endif
+ FLAGTABLE_EXT
  {0, NULL, NULL}
 };
 
