@@ -633,13 +633,13 @@ public class Infer {
         //the polymorphic signature call environment is nested.
 
         switch (env.next.tree.getTag()) {
-            case JCTree.TYPECAST:
+            case TYPECAST:
                 JCTypeCast castTree = (JCTypeCast)env.next.tree;
                 restype = (TreeInfo.skipParens(castTree.expr) == env.tree) ?
                     castTree.clazz.type :
                     syms.objectType;
                 break;
-            case JCTree.EXEC:
+            case EXEC:
                 JCTree.JCExpressionStatement execTree =
                         (JCTree.JCExpressionStatement)env.next.tree;
                 restype = (TreeInfo.skipParens(execTree.expr) == env.tree) ?
