@@ -310,7 +310,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(instanceKlass,               _misc_flags,                                   u1)                                    \
   nonstatic_field(instanceKlass,               _minor_version,                                u2)                                    \
   nonstatic_field(instanceKlass,               _major_version,                                u2)                                    \
-  nonstatic_field(instanceKlass,               _init_state,                                   instanceKlass::ClassState)             \
+  nonstatic_field(instanceKlass,               _init_state,                                   u1)                                    \
   nonstatic_field(instanceKlass,               _init_thread,                                  Thread*)                               \
   nonstatic_field(instanceKlass,               _vtable_len,                                   int)                                   \
   nonstatic_field(instanceKlass,               _itable_len,                                   int)                                   \
