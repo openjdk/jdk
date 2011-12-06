@@ -233,7 +233,6 @@ class instanceKlass: public Klass {
 
   u2              _minor_version;        // minor version number of class file
   u2              _major_version;        // major version number of class file
-  ClassState      _init_state;           // state of class
   Thread*         _init_thread;          // Pointer to current thread doing initialization (to handle recusive initialization)
   int             _vtable_len;           // length of Java vtable (in words)
   int             _itable_len;           // length of Java itable (in words)
@@ -256,6 +255,11 @@ class instanceKlass: public Klass {
   jint            _cached_class_file_len;         // JVMTI: length of above
   JvmtiCachedClassFieldMap* _jvmti_cached_class_field_map;  // JVMTI: used during heap iteration
   volatile u2     _idnum_allocated_count;         // JNI/JVMTI: increments with the addition of methods, old ids don't change
+
+  // Class states are defined as ClassState (see above).
+  // Place the _init_state here to utilize the unused 2-byte after
+  // _idnum_allocated_count.
+  u1              _init_state;                    // state of class
 
   // Compact the following four boolean flags into 1-bit each.  These four flags
   // were defined as separate boolean fields and each was 1-byte before. Since
@@ -393,7 +397,7 @@ class instanceKlass: public Klass {
   bool is_being_initialized() const        { return _init_state == being_initialized; }
   bool is_in_error_state() const           { return _init_state == initialization_error; }
   bool is_reentrant_initialization(Thread *thread)  { return thread == _init_thread; }
-  int  get_init_state()                    { return _init_state; } // Useful for debugging
+  ClassState  init_state()                 { return (ClassState)_init_state; }
   bool is_rewritten() const                { return (_misc_flags & REWRITTEN) != 0; }
 
   // defineClass specified verification
@@ -778,7 +782,7 @@ private:
 #ifdef ASSERT
   void set_init_state(ClassState state);
 #else
-  void set_init_state(ClassState state) { _init_state = state; }
+  void set_init_state(ClassState state) { _init_state = (u1)state; }
 #endif
   void set_rewritten()                  { _misc_flags |= REWRITTEN; }
   void set_init_thread(Thread *thread)  { _init_thread = thread; }
