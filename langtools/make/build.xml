@@ -131,8 +131,10 @@
     <property name="dist.bin.dir" location="${dist.dir}/bin"/>
     <property name="dist.coverage.dir" location="${dist.dir}/coverage"/>
     <property name="dist.findbugs.dir" location="${dist.dir}/findbugs"/>
+    <property name="dist.checkstyle.dir" location="${dist.dir}/checkstyle"/>
     <property name="dist.lib.dir" location="${dist.dir}/lib"/>
     <property name="make.dir" location="make"/>
+    <property name="make.conf.dir" location="${make.dir}/conf"/>
     <property name="make.tools.dir" location="${make.dir}/tools"/>
     <property name="src.dir" location="src"/>
     <property name="src.bin.dir" location="${src.dir}/share/bin"/>
@@ -263,6 +265,41 @@
         <jtreg-tool name="all" tests="${jtreg.tests}"/>
     </target>
 
+    <target name="checkstyle" depends="-def-checkstyle"
+        description="Generates reports for code convention violations.">
+        <mkdir dir="${dist.checkstyle.dir}"/>
+        <checkstyle config="${make.conf.dir}/checkstyle-langtools.xml"
+              failureProperty="checkstyle.failure"
+              failOnViolation="false">
+            <formatter type="xml" tofile="${dist.checkstyle.dir}/checkstyle_report.xml"/>
+            <fileset dir="src" includes="**/*.java, **/*.properties"/>
+        </checkstyle>
+        <!-- transform the output to a simple html -->
+        <xslt  in="${dist.checkstyle.dir}/checkstyle_report.xml"
+               out="${dist.checkstyle.dir}/checkstyle_report.html"
+               style="${checkstyle.home}/contrib/checkstyle-simple.xsl"/>            
+        <!-- transform the output to a very simple emacs friendly text file -->
+        <xslt  in="${dist.checkstyle.dir}/checkstyle_report.xml"
+               out="${dist.checkstyle.dir}/checkstyle_report.tmp"
+               style="${make.conf.dir}/checkstyle-emacs.xsl"/>
+        <!-- beautify remove extra lines -->
+        <move file="${dist.checkstyle.dir}/checkstyle_report.tmp"
+             toFile="${dist.checkstyle.dir}/checkstyle_report.emacs.txt">
+            <filterchain>
+                <ignoreblank/>
+                <replaceregex byline="true" pattern="^File:" replace="${line.separator}File:"/>
+            </filterchain>
+        </move>
+    </target>
+    <!-- target can be invoked from an ide, the output of which can be used
+         to access and fix the errors directly.
+     -->
+    <target name="checkstyle-ide" depends="checkstyle">
+        <concat>
+            <fileset file="${dist.checkstyle.dir}/checkstyle_report.emacs.txt"/>
+        </concat>  
+    </target>
+    
     <target name="findbugs" depends="-def-findbugs,build-all-tools">
         <property name="findbugs.reportLevel" value="medium"/>
         <mkdir dir="${dist.findbugs.dir}"/>
@@ -406,6 +443,7 @@
         <echo level="info">target.java.home = ${target.java.home}</echo>
         <echo level="info">jtreg.home = ${jtreg.home}</echo>
         <echo level="info">findbugs.home = ${findbugs.home}</echo>
+        <echo level="info">checkstyle.home = ${checkstyle.home}</echo>
     </target>
 
     <target name="post-sanity" depends="-def-jtreg,sanity,build"
@@ -690,6 +728,10 @@
         <check name="findbugs" property="findbugs.home" marker="lib/findbugs.jar"/>
     </target>
 
+    <target name="-check-checkstyle.home" depends="-def-check">
+        <check name="checkstyle" property="checkstyle.home" marker="${checkstyle.name.version}.jar"/>
+    </target>
+    
     <target name="-check-jtreg.home" depends="-def-check">
         <check name="jtreg" property="jtreg.home" marker="lib/jtreg.jar"/>
     </target>
@@ -989,6 +1031,16 @@
         <taskdef classpathref="cobertura.classpath" resource="tasks.properties"/>
     </target>
 
+    <target name="-def-checkstyle" unless="checkstyle.defined"
+        depends="-check-checkstyle.home">
+        <taskdef resource="checkstyletask.properties">
+            <classpath>
+                <pathelement location="${checkstyle.home}/${checkstyle.name.version}-all.jar"/>
+            </classpath>
+        </taskdef>
+        <property name="checkstyle.defined" value="true"/>
+    </target>
+    
     <target name="-def-findbugs" unless="findbugs.defined"
         depends="-check-findbugs.home,-check-target.java.home">
         <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask">

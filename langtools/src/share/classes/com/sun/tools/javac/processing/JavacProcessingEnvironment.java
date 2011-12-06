@@ -688,7 +688,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 ps.removeSupportedOptions(unmatchedProcessorOptions);
 
                 if (printProcessorInfo || verbose) {
-                    log.printNoteLines("x.print.processor.info",
+                    log.printLines("x.print.processor.info",
                             ps.processor.getClass().getName(),
                             matchedNames.toString(),
                             processingResult);
@@ -1014,7 +1014,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             if (printRounds || verbose) {
                 List<ClassSymbol> tlc = lastRound ? List.<ClassSymbol>nil() : topLevelClasses;
                 Set<TypeElement> ap = lastRound ? Collections.<TypeElement>emptySet() : annotationsPresent;
-                log.printNoteLines("x.print.rounds",
+                log.printLines("x.print.rounds",
                         number,
                         "{" + tlc.toString(", ") + "}",
                         ap,
@@ -1222,7 +1222,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         List<ClassSymbol> classes = List.nil();
         for (JCCompilationUnit unit : units) {
             for (JCTree node : unit.defs) {
-                if (node.getTag() == JCTree.CLASSDEF) {
+                if (node.hasTag(JCTree.Tag.CLASSDEF)) {
                     ClassSymbol sym = ((JCClassDecl) node).sym;
                     Assert.checkNonNull(sym);
                     classes = classes.prepend(sym);

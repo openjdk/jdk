@@ -48,17 +48,18 @@ import javax.tools.DiagnosticListener;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 
-import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.comp.*;
+import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.jvm.*;
+import com.sun.tools.javac.parser.*;
+import com.sun.tools.javac.processing.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
-import com.sun.tools.javac.parser.*;
-import com.sun.tools.javac.comp.*;
-import com.sun.tools.javac.jvm.*;
-import com.sun.tools.javac.processing.*;
+import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.Log.WriterKind;
 
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 import static com.sun.tools.javac.main.OptionName.*;
@@ -1506,20 +1507,20 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                     for (List<JCTree> it = tree.defs; it.tail != null; it = it.tail) {
                         JCTree t = it.head;
                         switch (t.getTag()) {
-                        case JCTree.CLASSDEF:
+                        case CLASSDEF:
                             if (isInterface ||
                                 (((JCClassDecl) t).mods.flags & (Flags.PROTECTED|Flags.PUBLIC)) != 0 ||
                                 (((JCClassDecl) t).mods.flags & (Flags.PRIVATE)) == 0 && ((JCClassDecl) t).sym.packge().getQualifiedName() == names.java_lang)
                                 newdefs.append(t);
                             break;
-                        case JCTree.METHODDEF:
+                        case METHODDEF:
                             if (isInterface ||
                                 (((JCMethodDecl) t).mods.flags & (Flags.PROTECTED|Flags.PUBLIC)) != 0 ||
                                 ((JCMethodDecl) t).sym.name == names.init ||
                                 (((JCMethodDecl) t).mods.flags & (Flags.PRIVATE)) == 0 && ((JCMethodDecl) t).sym.packge().getQualifiedName() == names.java_lang)
                                 newdefs.append(t);
                             break;
-                        case JCTree.VARDEF:
+                        case VARDEF:
                             if (isInterface || (((JCVariableDecl) t).mods.flags & (Flags.PROTECTED|Flags.PUBLIC)) != 0 ||
                                 (((JCVariableDecl) t).mods.flags & (Flags.PRIVATE)) == 0 && ((JCVariableDecl) t).sym.packge().getQualifiedName() == names.java_lang)
                                 newdefs.append(t);
@@ -1602,7 +1603,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     }
 
     protected void printNote(String lines) {
-        Log.printLines(log.noticeWriter, lines);
+        log.printRawLines(Log.WriterKind.NOTICE, lines);
     }
 
     /** Print numbers of errors and warnings.
@@ -1614,8 +1615,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 key = "count." + kind;
             else
                 key = "count." + kind + ".plural";
-            log.printErrLines(key, String.valueOf(count));
-            log.errWriter.flush();
+            log.printLines(WriterKind.ERROR, key, String.valueOf(count));
+            log.flush(Log.WriterKind.ERROR);
         }
     }
 

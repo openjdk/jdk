@@ -59,6 +59,7 @@ import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.MemberEnter;
 import com.sun.tools.javac.comp.Resolve;
 import com.sun.tools.javac.model.JavacElements;
+import com.sun.tools.javac.parser.EndPosTable;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree;
@@ -140,8 +141,8 @@ public class JavacTrees extends Trees {
                 }
 
                 public long getEndPosition(CompilationUnitTree file, Tree tree) {
-                    Map<JCTree,Integer> endPositions = ((JCCompilationUnit) file).endPositions;
-                    return TreeInfo.getEndPos((JCTree) tree, endPositions);
+                    EndPosTable endPosTable = ((JCCompilationUnit) file).endPositions;
+                    return TreeInfo.getEndPos((JCTree) tree, endPosTable);
                 }
             };
     }
@@ -207,7 +208,7 @@ public class JavacTrees extends Trees {
         if (sym == null && TreeInfo.isDeclaration(tree)) {
             for (TreePath p = path; p != null; p = p.getParentPath()) {
                 JCTree t = (JCTree) p.getLeaf();
-                if (t.getTag() == JCTree.CLASSDEF) {
+                if (t.hasTag(JCTree.Tag.CLASSDEF)) {
                     JCClassDecl ct = (JCClassDecl) t;
                     if (ct.sym != null) {
                         if ((ct.sym.flags_field & Flags.UNATTRIBUTED) != 0) {

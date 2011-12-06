@@ -49,9 +49,12 @@ import java.util.Set;
 import javax.lang.model.element.ElementVisitor;
 
 import static com.sun.tools.javac.code.Flags.*;
+import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Kinds.ERRONEOUS;
 import static com.sun.tools.javac.code.TypeTags.*;
 import static com.sun.tools.javac.comp.Resolve.MethodResolutionPhase.*;
+import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /** Helper class for name resolution, used mostly by the attribution phase.
  *
@@ -1269,7 +1272,7 @@ public class Resolve {
                 staticOnly = true;
         }
 
-        if (env.tree.getTag() != JCTree.IMPORT) {
+        if (!env.tree.hasTag(IMPORT)) {
             sym = findGlobalType(env, env.toplevel.namedImportScope, name);
             if (sym.exists()) return sym;
             else if (sym.kind < bestSoFar.kind) bestSoFar = sym;
@@ -1796,7 +1799,7 @@ public class Resolve {
      *  @param env       The environment current at the operation.
      *  @param argtypes  The types of the operands.
      */
-    Symbol resolveOperator(DiagnosticPosition pos, int optag,
+    Symbol resolveOperator(DiagnosticPosition pos, JCTree.Tag optag,
                            Env<AttrContext> env, List<Type> argtypes) {
         startResolution();
         Name name = treeinfo.operatorName(optag);
@@ -1815,7 +1818,7 @@ public class Resolve {
      *  @param env       The environment current at the operation.
      *  @param arg       The type of the operand.
      */
-    Symbol resolveUnaryOperator(DiagnosticPosition pos, int optag, Env<AttrContext> env, Type arg) {
+    Symbol resolveUnaryOperator(DiagnosticPosition pos, JCTree.Tag optag, Env<AttrContext> env, Type arg) {
         return resolveOperator(pos, optag, env, List.of(arg));
     }
 
@@ -1827,7 +1830,7 @@ public class Resolve {
      *  @param right     The types of the right operand.
      */
     Symbol resolveBinaryOperator(DiagnosticPosition pos,
-                                 int optag,
+                                 JCTree.Tag optag,
                                  Env<AttrContext> env,
                                  Type left,
                                  Type right) {

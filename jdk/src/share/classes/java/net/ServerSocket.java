@@ -267,10 +267,9 @@ class ServerSocket implements java.io.Closeable {
             AccessController.doPrivileged(
                 new PrivilegedExceptionAction<Void>() {
                     public Void run() throws NoSuchMethodException {
-                        Class[] cl = new Class[2];
-                        cl[0] = SocketAddress.class;
-                        cl[1] = Integer.TYPE;
-                        impl.getClass().getDeclaredMethod("connect", cl);
+                        impl.getClass().getDeclaredMethod("connect",
+                                                          SocketAddress.class,
+                                                          int.class);
                         return null;
                     }
                 });

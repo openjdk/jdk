@@ -38,7 +38,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.Vector;
 
@@ -955,23 +957,49 @@ public class UnixPrintJob implements CancelablePrintJob {
     private class PrinterSpooler implements java.security.PrivilegedAction {
         PrintException pex;
 
+        private void handleProcessFailure(final Process failedProcess,
+                final String[] execCmd, final int result) throws IOException {
+            try (StringWriter sw = new StringWriter();
+                    PrintWriter pw = new PrintWriter(sw)) {
+                pw.append("error=").append(Integer.toString(result));
+                pw.append(" running:");
+                for (String arg: execCmd) {
+                    pw.append(" '").append(arg).append("'");
+                }
+                try (InputStream is = failedProcess.getErrorStream();
+                        InputStreamReader isr = new InputStreamReader(is);
+                        BufferedReader br = new BufferedReader(isr)) {
+                    while (br.ready()) {
+                        pw.println();
+                        pw.append("\t\t").append(br.readLine());
+                    }
+                } finally {
+                    pw.flush();
+                    throw new IOException(sw.toString());
+                }
+            }
+        }
+
         public Object run() {
+            if (spoolFile == null || !spoolFile.exists()) {
+               pex = new PrintException("No spool file");
+               notifyEvent(PrintJobEvent.JOB_FAILED);
+               return null;
+            }
             try {
                 /**
                  * Spool to the printer.
                  */
-                if (spoolFile == null || !spoolFile.exists()) {
-                   pex = new PrintException("No spool file");
-                   notifyEvent(PrintJobEvent.JOB_FAILED);
-                   return null;
-                }
                 String fileName = spoolFile.getAbsolutePath();
                 String execCmd[] = printExecCmd(mDestination, mOptions,
                                mNoJobSheet, jobName, copies, fileName);
 
                 Process process = Runtime.getRuntime().exec(execCmd);
                 process.waitFor();
-                spoolFile.delete();
+                final int result = process.exitValue();
+                if (0 != result) {
+                    handleProcessFailure(process, execCmd, result);
+                }
                 notifyEvent(PrintJobEvent.DATA_TRANSFER_COMPLETE);
             } catch (IOException ex) {
                 notifyEvent(PrintJobEvent.JOB_FAILED);
@@ -981,6 +1009,7 @@ public class UnixPrintJob implements CancelablePrintJob {
                 notifyEvent(PrintJobEvent.JOB_FAILED);
                 pex = new PrintException(ie);
             } finally {
+                spoolFile.delete();
                 notifyEvent(PrintJobEvent.NO_MORE_EVENTS);
             }
             return null;
