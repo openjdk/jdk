@@ -1470,7 +1470,7 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
   Node* mark_node = NULL;
   // For now only enable fast locking for non-array types
   if (UseBiasedLocking && (length == NULL)) {
-    mark_node = make_load(control, rawmem, klass_node, Klass::prototype_header_offset_in_bytes() + sizeof(oopDesc), TypeRawPtr::BOTTOM, T_ADDRESS);
+    mark_node = make_load(control, rawmem, klass_node, in_bytes(Klass::prototype_header_offset()), TypeRawPtr::BOTTOM, T_ADDRESS);
   } else {
     mark_node = makecon(TypeRawPtr::make((address)markOopDesc::prototype()));
   }
@@ -1958,7 +1958,7 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
 #endif
       klass_node->init_req(0, ctrl);
     }
-    Node *proto_node = make_load(ctrl, mem, klass_node, Klass::prototype_header_offset_in_bytes() + sizeof(oopDesc), TypeX_X, TypeX_X->basic_type());
+    Node *proto_node = make_load(ctrl, mem, klass_node, in_bytes(Klass::prototype_header_offset()), TypeX_X, TypeX_X->basic_type());
 
     Node* thread = transform_later(new (C, 1) ThreadLocalNode());
     Node* cast_thread = transform_later(new (C, 2) CastP2XNode(ctrl, thread));

@@ -2304,9 +2304,9 @@ Node* GraphKit::gen_subtype_check(Node* subklass, Node* superklass) {
   // will always succeed.  We could leave a dependency behind to ensure this.
 
   // First load the super-klass's check-offset
-  Node *p1 = basic_plus_adr( superklass, superklass, sizeof(oopDesc) + Klass::super_check_offset_offset_in_bytes() );
+  Node *p1 = basic_plus_adr( superklass, superklass, in_bytes(Klass::super_check_offset_offset()) );
   Node *chk_off = _gvn.transform( new (C, 3) LoadINode( NULL, memory(p1), p1, _gvn.type(p1)->is_ptr() ) );
-  int cacheoff_con = sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes();
+  int cacheoff_con = in_bytes(Klass::secondary_super_cache_offset());
   bool might_be_cache = (find_int_con(chk_off, cacheoff_con) == cacheoff_con);
 
   // Load from the sub-klass's super-class display list, or a 1-word cache of
@@ -2934,7 +2934,7 @@ Node* GraphKit::get_layout_helper(Node* klass_node, jint& constant_value) {
     }
   }
   constant_value = Klass::_lh_neutral_value;  // put in a known value
-  Node* lhp = basic_plus_adr(klass_node, klass_node, Klass::layout_helper_offset_in_bytes() + sizeof(oopDesc));
+  Node* lhp = basic_plus_adr(klass_node, klass_node, in_bytes(Klass::layout_helper_offset()));
   return make_load(NULL, lhp, TypeInt::INT, T_INT);
 }
 

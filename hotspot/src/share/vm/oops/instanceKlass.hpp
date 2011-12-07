@@ -405,7 +405,7 @@ class instanceKlass: public Klass {
   ReferenceType reference_type() const     { return _reference_type; }
   void set_reference_type(ReferenceType t) { _reference_type = t; }
 
-  static int reference_type_offset_in_bytes() { return offset_of(instanceKlass, _reference_type); }
+  static ByteSize reference_type_offset() { return in_ByteSize(sizeof(klassOopDesc) + offset_of(instanceKlass, _reference_type)); }
 
   // find local field, returns true if found
   bool find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const;
@@ -616,8 +616,8 @@ class instanceKlass: public Klass {
   void set_breakpoints(BreakpointInfo* bps) { _breakpoints = bps; };
 
   // support for stub routines
-  static int init_state_offset_in_bytes()    { return offset_of(instanceKlass, _init_state); }
-  static int init_thread_offset_in_bytes()   { return offset_of(instanceKlass, _init_thread); }
+  static ByteSize init_state_offset()  { return in_ByteSize(sizeof(klassOopDesc) + offset_of(instanceKlass, _init_state)); }
+  static ByteSize init_thread_offset() { return in_ByteSize(sizeof(klassOopDesc) + offset_of(instanceKlass, _init_thread)); }
 
   // subclass/subinterface checks
   bool implements_interface(klassOop k) const;

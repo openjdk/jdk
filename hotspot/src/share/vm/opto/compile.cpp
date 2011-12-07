@@ -1306,12 +1306,12 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     // these 2 disparate memories into the same alias class.  Since the
     // primary supertype array is read-only, there's no chance of confusion
     // where we bypass an array load and an array store.
-    int primary_supers_offset = sizeof(klassOopDesc) + Klass::primary_supers_offset_in_bytes();
+    int primary_supers_offset = in_bytes(Klass::primary_supers_offset());
     if (offset == Type::OffsetBot ||
         (offset >= primary_supers_offset &&
          offset < (int)(primary_supers_offset + Klass::primary_super_limit() * wordSize)) ||
-        offset == (int)(sizeof(klassOopDesc) + Klass::secondary_super_cache_offset_in_bytes())) {
-      offset = sizeof(klassOopDesc) + Klass::secondary_super_cache_offset_in_bytes();
+        offset == (int)in_bytes(Klass::secondary_super_cache_offset())) {
+      offset = in_bytes(Klass::secondary_super_cache_offset());
       tj = tk = TypeKlassPtr::make( TypePtr::NotNull, tk->klass(), offset );
     }
   }
@@ -1490,13 +1490,13 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
         alias_type(idx)->set_rewritable(false);
     }
     if (flat->isa_klassptr()) {
-      if (flat->offset() == Klass::super_check_offset_offset_in_bytes() + (int)sizeof(oopDesc))
+      if (flat->offset() == in_bytes(Klass::super_check_offset_offset()))
         alias_type(idx)->set_rewritable(false);
-      if (flat->offset() == Klass::modifier_flags_offset_in_bytes() + (int)sizeof(oopDesc))
+      if (flat->offset() == in_bytes(Klass::modifier_flags_offset()))
         alias_type(idx)->set_rewritable(false);
-      if (flat->offset() == Klass::access_flags_offset_in_bytes() + (int)sizeof(oopDesc))
+      if (flat->offset() == in_bytes(Klass::access_flags_offset()))
         alias_type(idx)->set_rewritable(false);
-      if (flat->offset() == Klass::java_mirror_offset_in_bytes() + (int)sizeof(oopDesc))
+      if (flat->offset() == in_bytes(Klass::java_mirror_offset()))
         alias_type(idx)->set_rewritable(false);
     }
     // %%% (We would like to finalize JavaThread::threadObj_offset(),

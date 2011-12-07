@@ -200,7 +200,7 @@ void Parse::array_store_check() {
   // Come here for polymorphic array klasses
 
   // Extract the array element class
-  int element_klass_offset = objArrayKlass::element_klass_offset_in_bytes() + sizeof(oopDesc);
+  int element_klass_offset = in_bytes(objArrayKlass::element_klass_offset());
   Node *p2 = basic_plus_adr(array_klass, array_klass, element_klass_offset);
   Node *a_e_klass = _gvn.transform( LoadKlassNode::make(_gvn, immutable_memory(), p2, tak) );
 
@@ -220,7 +220,7 @@ void Parse::emit_guard_for_new(ciInstanceKlass* klass) {
   _gvn.set_type(merge, Type::CONTROL);
   Node* kls = makecon(TypeKlassPtr::make(klass));
 
-  Node* init_thread_offset = _gvn.MakeConX(instanceKlass::init_thread_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes());
+  Node* init_thread_offset = _gvn.MakeConX(in_bytes(instanceKlass::init_thread_offset()));
   Node* adr_node = basic_plus_adr(kls, kls, init_thread_offset);
   Node* init_thread = make_load(NULL, adr_node, TypeRawPtr::BOTTOM, T_ADDRESS);
   Node *tst   = Bool( CmpP( init_thread, cur_thread), BoolTest::eq);
@@ -228,7 +228,7 @@ void Parse::emit_guard_for_new(ciInstanceKlass* klass) {
   set_control(IfTrue(iff));
   merge->set_req(1, IfFalse(iff));
 
-  Node* init_state_offset = _gvn.MakeConX(instanceKlass::init_state_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes());
+  Node* init_state_offset = _gvn.MakeConX(in_bytes(instanceKlass::init_state_offset()));
   adr_node = basic_plus_adr(kls, kls, init_state_offset);
   Node* init_state = make_load(NULL, adr_node, TypeInt::INT, T_INT);
   Node* being_init = _gvn.intcon(instanceKlass::being_initialized);
