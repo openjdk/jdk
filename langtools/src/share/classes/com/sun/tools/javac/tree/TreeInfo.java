@@ -227,6 +227,34 @@ public class TreeInfo {
         }
     }
 
+    /**
+     * Return true if the AST corresponds to a static select of the kind A.B
+     */
+    public static boolean isStaticSelector(JCTree base, Names names) {
+        if (base == null)
+            return false;
+        switch (base.getTag()) {
+            case IDENT:
+                JCIdent id = (JCIdent)base;
+                return id.name != names._this &&
+                        id.name != names._super &&
+                        isStaticSym(base);
+            case SELECT:
+                return isStaticSym(base) &&
+                    isStaticSelector(((JCFieldAccess)base).selected, names);
+            case TYPEAPPLY:
+                return true;
+            default:
+                return false;
+        }
+    }
+    //where
+        private static boolean isStaticSym(JCTree tree) {
+            Symbol sym = symbol(tree);
+            return (sym.kind == Kinds.TYP ||
+                    sym.kind == Kinds.PCK);
+        }
+
     /** Return true if a tree represents the null literal. */
     public static boolean isNull(JCTree tree) {
         if (!tree.hasTag(LITERAL))
