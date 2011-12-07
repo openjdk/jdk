@@ -25,16 +25,6 @@
 
 package com.sun.tools.javac.main;
 
-import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.code.Source;
-import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.jvm.Target;
-import com.sun.tools.javac.main.JavacOption.HiddenOption;
-import com.sun.tools.javac.main.JavacOption.Option;
-import com.sun.tools.javac.main.JavacOption.XOption;
-import com.sun.tools.javac.util.ListBuffer;
-import com.sun.tools.javac.util.Options;
-import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
@@ -43,6 +33,19 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import javax.lang.model.SourceVersion;
+
+import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Source;
+import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.jvm.Target;
+import com.sun.tools.javac.main.JavacOption.HiddenOption;
+import com.sun.tools.javac.main.JavacOption.Option;
+import com.sun.tools.javac.main.JavacOption.XOption;
+import com.sun.tools.javac.processing.JavacProcessingEnvironment;
+import com.sun.tools.javac.util.ListBuffer;
+import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Log.PrefixKind;
+import com.sun.tools.javac.util.Options;
 
 import static com.sun.tools.javac.main.OptionName.*;
 
@@ -79,13 +82,18 @@ public class RecognizedOptions {
     }
 
     public static class GrumpyHelper implements OptionHelper {
+        private Log log;
+
+        public GrumpyHelper(Log log) {
+            this.log = log;
+        }
 
         public void setOut(PrintWriter out) {
             throw new IllegalArgumentException();
         }
 
         public void error(String key, Object... args) {
-            throw new IllegalArgumentException(Main.getLocalizedString(key, args));
+            throw new IllegalArgumentException(log.localize(PrefixKind.JAVAC, key, args));
         }
 
         public void printVersion() {
@@ -400,9 +408,9 @@ public class RecognizedOptions {
         },
         new Option(A,                "opt.arg.key.equals.value","opt.A") {
             @Override
-            String helpSynopsis() {
+            String helpSynopsis(Log log) {
                 hasSuffix = true;
-                return super.helpSynopsis();
+                return super.helpSynopsis(log);
             }
 
             @Override
@@ -444,9 +452,9 @@ public class RecognizedOptions {
         // It's actually implemented by the launcher.
         new Option(J,                   "opt.arg.flag",         "opt.J") {
             @Override
-            String helpSynopsis() {
+            String helpSynopsis(Log log) {
                 hasSuffix = true;
-                return super.helpSynopsis();
+                return super.helpSynopsis(log);
             }
             @Override
             public boolean process(Options options, String option) {
@@ -570,9 +578,9 @@ public class RecognizedOptions {
         // It's actually implemented by the CommandLine class.
         new Option(AT,                   "opt.arg.file",         "opt.AT") {
             @Override
-            String helpSynopsis() {
+            String helpSynopsis(Log log) {
                 hasSuffix = true;
-                return super.helpSynopsis();
+                return super.helpSynopsis(log);
             }
             @Override
             public boolean process(Options options, String option) {

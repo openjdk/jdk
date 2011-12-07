@@ -688,7 +688,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 ps.removeSupportedOptions(unmatchedProcessorOptions);
 
                 if (printProcessorInfo || verbose) {
-                    log.printNoteLines("x.print.processor.info",
+                    log.printLines("x.print.processor.info",
                             ps.processor.getClass().getName(),
                             matchedNames.toString(),
                             processingResult);
@@ -1014,7 +1014,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             if (printRounds || verbose) {
                 List<ClassSymbol> tlc = lastRound ? List.<ClassSymbol>nil() : topLevelClasses;
                 Set<TypeElement> ap = lastRound ? Collections.<TypeElement>emptySet() : annotationsPresent;
-                log.printNoteLines("x.print.rounds",
+                log.printLines("x.print.rounds",
                         number,
                         "{" + tlc.toString(", ") + "}",
                         ap,

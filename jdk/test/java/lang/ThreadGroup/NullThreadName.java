@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 6576763
- * @ignore until hotspot 6776144 bug is resolved
  * @summary (thread) Thread constructors throw undocumented NPE for null name
  */
 
@@ -64,8 +63,8 @@ public class NullThreadName
             try { Thread.sleep(2000); }
             catch (InterruptedException unused) {}
 
-            /* do not wait forever */
-            if (count++ > 5)
+            /* do not wait forever - allow 120 seconds same as jtreg default timeout. */
+            if (count++ > 60)
                 throw new AssertionError("GoodThread is still alive!");
         }
 

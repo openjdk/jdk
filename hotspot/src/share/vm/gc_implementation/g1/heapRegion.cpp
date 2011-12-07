@@ -722,7 +722,7 @@ void HeapRegion::print_on(outputStream* st) const {
     st->print(" F");
   else
     st->print("  ");
-  st->print(" %5d", _gc_time_stamp);
+  st->print(" TS %5d", _gc_time_stamp);
   st->print(" PTAMS "PTR_FORMAT" NTAMS "PTR_FORMAT,
             prev_top_at_mark_start(), next_top_at_mark_start());
   G1OffsetTableContigSpace::print_on(st);
