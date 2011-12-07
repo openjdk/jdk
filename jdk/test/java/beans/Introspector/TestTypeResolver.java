@@ -29,6 +29,7 @@
 
 import com.sun.beans.TypeResolver;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Method;
@@ -169,6 +170,22 @@ public class TestTypeResolver {
 
         public int hashCode() {
             return hash(name) ^ hash(gd) ^ Arrays.hashCode(bounds);
+        }
+
+        public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) {
+            return false; // not used
+        }
+
+        public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
+            return null; // not used
+        }
+
+        public Annotation[] getAnnotations() {
+            return null; // not used
+        }
+
+        public Annotation[] getDeclaredAnnotations() {
+            return null; // not used
         }
     }
 

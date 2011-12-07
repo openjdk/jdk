@@ -32,7 +32,6 @@ import java.applet.AppletContext;
 import java.applet.AppletStub;
 import java.applet.AudioClip;
 
-import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 
 import java.beans.beancontext.BeanContext;
@@ -53,15 +52,11 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Vector;
 
-import sun.awt.AppContext;
-
 /**
  * This class provides some general purpose beans control methods.
  */
 
 public class Beans {
-    private static final Object DESIGN_TIME = new Object();
-    private static final Object GUI_AVAILABLE = new Object();
 
     /**
      * <p>
@@ -395,8 +390,7 @@ public class Beans {
      * @see DesignMode
      */
     public static boolean isDesignTime() {
-        Object value = AppContext.getAppContext().get(DESIGN_TIME);
-        return (value instanceof Boolean) && (Boolean) value;
+        return ThreadGroupContext.getContext().isDesignTime();
     }
 
     /**
@@ -413,8 +407,7 @@ public class Beans {
      *
      */
     public static boolean isGuiAvailable() {
-        Object value = AppContext.getAppContext().get(GUI_AVAILABLE);
-        return (value instanceof Boolean) ? (Boolean) value : !GraphicsEnvironment.isHeadless();
+        return ThreadGroupContext.getContext().isGuiAvailable();
     }
 
     /**
@@ -440,7 +433,7 @@ public class Beans {
         if (sm != null) {
             sm.checkPropertiesAccess();
         }
-        AppContext.getAppContext().put(DESIGN_TIME, Boolean.valueOf(isDesignTime));
+        ThreadGroupContext.getContext().setDesignTime(isDesignTime);
     }
 
     /**
@@ -466,7 +459,7 @@ public class Beans {
         if (sm != null) {
             sm.checkPropertiesAccess();
         }
-        AppContext.getAppContext().put(GUI_AVAILABLE, Boolean.valueOf(isGuiAvailable));
+        ThreadGroupContext.getContext().setGuiAvailable(isGuiAvailable);
     }
 }
 
