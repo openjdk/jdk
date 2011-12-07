@@ -197,6 +197,7 @@ public abstract class SunToolkit extends Toolkit
 
     public abstract boolean isTraySupported();
 
+    @SuppressWarnings("deprecation")
     public abstract FontPeer getFontPeer(String name, int style);
 
     public abstract RobotPeer createRobot(Robot target, GraphicsDevice screen)
@@ -305,7 +306,7 @@ public abstract class SunToolkit extends Toolkit
         return appContext;
     }
 
-    public static Field getField(final Class klass, final String fieldName) {
+    public static Field getField(final Class<?> klass, final String fieldName) {
         return AccessController.doPrivileged(new PrivilegedAction<Field>() {
             public Field run() {
                 try {
@@ -325,8 +326,8 @@ public abstract class SunToolkit extends Toolkit
 
     static void wakeupEventQueue(EventQueue q, boolean isShutdown){
         if (wakeupMethod == null){
-            wakeupMethod = (Method)AccessController.doPrivileged(new PrivilegedAction(){
-                    public Object run(){
+            wakeupMethod = AccessController.doPrivileged(new PrivilegedAction<Method>() {
+                    public Method run() {
                         try {
                             Method method  = EventQueue.class.getDeclaredMethod("wakeup",new Class [] {Boolean.TYPE} );
                             if (method != null) {
@@ -386,8 +387,8 @@ public abstract class SunToolkit extends Toolkit
 
     // Maps from non-Component/MenuComponent to AppContext.
     // WeakHashMap<Component,AppContext>
-    private static final Map appContextMap =
-        Collections.synchronizedMap(new WeakHashMap());
+    private static final Map<Object, AppContext> appContextMap =
+        Collections.synchronizedMap(new WeakHashMap<Object, AppContext>());
 
     /**
      * Sets the appContext field of target. If target is not a Component or
@@ -437,7 +438,7 @@ public abstract class SunToolkit extends Toolkit
         if (context == null) {
             // target is not a Component/MenuComponent, try the
             // appContextMap.
-            context = (AppContext)appContextMap.get(target);
+            context = appContextMap.get(target);
         }
         return context;
     }
@@ -519,9 +520,9 @@ public abstract class SunToolkit extends Toolkit
     private static FocusTraversalPolicy createLayoutPolicy() {
         FocusTraversalPolicy policy = null;
         try {
-            Class layoutPolicyClass =
+            Class<?> layoutPolicyClass =
                 Class.forName("javax.swing.LayoutFocusTraversalPolicy");
-            policy = (FocusTraversalPolicy) layoutPolicyClass.newInstance();
+            policy = (FocusTraversalPolicy)layoutPolicyClass.newInstance();
         }
         catch (ClassNotFoundException e) {
             assert false;
@@ -642,11 +643,13 @@ public abstract class SunToolkit extends Toolkit
      * Fixed 5064013: the InvocationEvent time should be equals
      * the time of the ActionEvent
      */
+    @SuppressWarnings("serial")
     public static void executeOnEventHandlerThread(Object target,
                                                    Runnable runnable,
                                                    final long when) {
-        executeOnEventHandlerThread(new PeerEvent(target, runnable, PeerEvent.PRIORITY_EVENT){
-                public long getWhen(){
+        executeOnEventHandlerThread(
+            new PeerEvent(target, runnable, PeerEvent.PRIORITY_EVENT) {
+                public long getWhen() {
                     return when;
                 }
             });
@@ -727,10 +730,12 @@ public abstract class SunToolkit extends Toolkit
     protected abstract int getScreenWidth();
     protected abstract int getScreenHeight();
 
+    @SuppressWarnings("deprecation")
     public FontMetrics getFontMetrics(Font font) {
         return FontDesignMetrics.getMetrics(font);
     }
 
+    @SuppressWarnings("deprecation")
     public String[] getFontList() {
         String[] hardwiredFontList = {
             Font.DIALOG, Font.SANS_SERIF, Font.SERIF, Font.MONOSPACED,
@@ -1156,10 +1161,10 @@ public abstract class SunToolkit extends Toolkit
     public static Locale getStartupLocale() {
         if (startupLocale == null) {
             String language, region, country, variant;
-            language = (String) AccessController.doPrivileged(
+            language = AccessController.doPrivileged(
                             new GetPropertyAction("user.language", "en"));
             // for compatibility, check for old user.region property
-            region = (String) AccessController.doPrivileged(
+            region = AccessController.doPrivileged(
                             new GetPropertyAction("user.region"));
             if (region != null) {
                 // region can be of form country, country_variant, or _variant
@@ -1172,9 +1177,9 @@ public abstract class SunToolkit extends Toolkit
                     variant = "";
                 }
             } else {
-                country = (String) AccessController.doPrivileged(
+                country = AccessController.doPrivileged(
                                 new GetPropertyAction("user.country", ""));
-                variant = (String) AccessController.doPrivileged(
+                variant = AccessController.doPrivileged(
                                 new GetPropertyAction("user.variant", ""));
             }
             startupLocale = new Locale(language, country, variant);
@@ -1254,7 +1259,7 @@ public abstract class SunToolkit extends Toolkit
      * @return <code>true</code>, if XEmbed is needed, <code>false</code> otherwise
      */
     public static boolean needsXEmbed() {
-        String noxembed = (String) AccessController.
+        String noxembed = AccessController.
             doPrivileged(new GetPropertyAction("sun.awt.noxembed", "false"));
         if ("true".equals(noxembed)) {
             return false;
@@ -1466,7 +1471,7 @@ public abstract class SunToolkit extends Toolkit
             || comp instanceof Window);
     }
 
-    public static Method getMethod(final Class clz, final String methodName, final Class[] params) {
+    public static Method getMethod(final Class<?> clz, final String methodName, final Class[] params) {
         Method res = null;
         try {
             res = AccessController.doPrivileged(new PrivilegedExceptionAction<Method>() {
@@ -1482,6 +1487,7 @@ public abstract class SunToolkit extends Toolkit
         return res;
     }
 
+    @SuppressWarnings("serial")
     public static class OperationTimedOut extends RuntimeException {
         public OperationTimedOut(String msg) {
             super(msg);
@@ -1489,9 +1495,12 @@ public abstract class SunToolkit extends Toolkit
         public OperationTimedOut() {
         }
     }
+
+    @SuppressWarnings("serial")
     public static class InfiniteLoop extends RuntimeException {
     }
 
+    @SuppressWarnings("serial")
     public static class IllegalThreadException extends RuntimeException {
         public IllegalThreadException(String msg) {
             super(msg);
@@ -1648,6 +1657,7 @@ public abstract class SunToolkit extends Toolkit
      * Should return <code>true</code> if more processing is
      * necessary, <code>false</code> otherwise.
      */
+    @SuppressWarnings("serial")
     protected final boolean waitForIdle(final long timeout) {
         flushPendingEvents();
         boolean queueWasEmpty = isEQEmpty();
@@ -1831,7 +1841,7 @@ public abstract class SunToolkit extends Toolkit
             Toolkit tk = Toolkit.getDefaultToolkit();
             if (tk instanceof SunToolkit) {
                 systemAAFonts =
-                    (String)AccessController.doPrivileged(
+                    AccessController.doPrivileged(
                          new GetPropertyAction("awt.useSystemAAFontSettings"));
             }
             if (systemAAFonts != null) {
@@ -1898,7 +1908,7 @@ public abstract class SunToolkit extends Toolkit
         if (consumeNextKeyTypedMethod == null) {
             consumeNextKeyTypedMethod = getMethod(DefaultKeyboardFocusManager.class,
                                                   "consumeNextKeyTyped",
-                                                  new Class[] {KeyEvent.class});
+                                                  new Class<?>[] {KeyEvent.class});
         }
         try {
             consumeNextKeyTypedMethod.invoke(KeyboardFocusManager.getCurrentKeyboardFocusManager(),
@@ -1930,8 +1940,8 @@ public abstract class SunToolkit extends Toolkit
      * Returns the value of the system property indicated by the specified key.
      */
     public static String getSystemProperty(final String key) {
-        return (String)AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
+        return AccessController.doPrivileged(new PrivilegedAction<String>() {
+                public String run() {
                     return System.getProperty(key);
                 }
             });
@@ -1941,8 +1951,7 @@ public abstract class SunToolkit extends Toolkit
      * Returns the boolean value of the system property indicated by the specified key.
      */
     protected static Boolean getBooleanSystemProperty(String key) {
-        return Boolean.valueOf(AccessController.
-                   doPrivileged(new GetBooleanAction(key)));
+        return AccessController.doPrivileged(new GetBooleanAction(key));
     }
 
     private static Boolean sunAwtDisableMixing = null;
@@ -2015,7 +2024,7 @@ public abstract class SunToolkit extends Toolkit
      */
     public static boolean isContainingTopLevelTranslucent(Component c) {
         Window w = getContainingWindow(c);
-        return w != null && ((Window)w).getOpacity() < 1.0f;
+        return w != null && w.getOpacity() < 1.0f;
     }
 
     /**
@@ -2057,14 +2066,14 @@ public abstract class SunToolkit extends Toolkit
         return isInstanceOf(obj.getClass(), type);
     }
 
-    private static boolean isInstanceOf(Class cls, String type) {
+    private static boolean isInstanceOf(Class<?> cls, String type) {
         if (cls == null) return false;
 
         if (cls.getName().equals(type)) {
             return true;
         }
 
-        for (Class c : cls.getInterfaces()) {
+        for (Class<?> c : cls.getInterfaces()) {
             if (c.getName().equals(type)) {
                 return true;
             }
