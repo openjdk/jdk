@@ -366,7 +366,7 @@ void InterpreterGenerator::lock_method(void) {
 
   // get synchronization object to O0
   { Label done;
-    const int mirror_offset = klassOopDesc::klass_part_offset_in_bytes() + Klass::java_mirror_offset_in_bytes();
+    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     __ btst(JVM_ACC_STATIC, O0);
     __ br( Assembler::zero, true, Assembler::pt, done);
     __ delayed()->ld_ptr(Llocals, Interpreter::local_offset_in_bytes(0), O0); // get receiver for not-static case
@@ -984,7 +984,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     // get native function entry point(O0 is a good temp until the very end)
     __ delayed()->ld_ptr(Lmethod, in_bytes(methodOopDesc::native_function_offset()), O0);
     // for static methods insert the mirror argument
-    const int mirror_offset = klassOopDesc::klass_part_offset_in_bytes() + Klass::java_mirror_offset_in_bytes();
+    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
 
     __ ld_ptr(Lmethod, methodOopDesc:: constants_offset(), O1);
     __ ld_ptr(O1, constantPoolOopDesc::pool_holder_offset_in_bytes(), O1);

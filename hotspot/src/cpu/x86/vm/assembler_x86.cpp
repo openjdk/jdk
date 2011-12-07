@@ -4920,7 +4920,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
     null_check_offset = offset();
   }
   movl(tmp_reg, klass_addr);
-  xorl(swap_reg, Address(tmp_reg, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+  xorl(swap_reg, Address(tmp_reg, Klass::prototype_header_offset()));
   andl(swap_reg, ~((int) markOopDesc::age_mask_in_place));
   if (need_tmp_reg) {
     pop(tmp_reg);
@@ -5007,7 +5007,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   }
   get_thread(tmp_reg);
   movl(swap_reg, klass_addr);
-  orl(tmp_reg, Address(swap_reg, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+  orl(tmp_reg, Address(swap_reg, Klass::prototype_header_offset()));
   movl(swap_reg, saved_mark_addr);
   if (os::is_MP()) {
     lock();
@@ -5045,7 +5045,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
     push(tmp_reg);
   }
   movl(tmp_reg, klass_addr);
-  movl(tmp_reg, Address(tmp_reg, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+  movl(tmp_reg, Address(tmp_reg, Klass::prototype_header_offset()));
   if (os::is_MP()) {
     lock();
   }
@@ -8234,10 +8234,8 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
   if (L_slow_path == NULL) { L_slow_path = &L_fallthrough; label_nulls++; }
   assert(label_nulls <= 1, "at most one NULL in the batch");
 
-  int sc_offset = (klassOopDesc::header_size() * HeapWordSize +
-                   Klass::secondary_super_cache_offset_in_bytes());
-  int sco_offset = (klassOopDesc::header_size() * HeapWordSize +
-                    Klass::super_check_offset_offset_in_bytes());
+  int sc_offset = in_bytes(Klass::secondary_super_cache_offset());
+  int sco_offset = in_bytes(Klass::super_check_offset_offset());
   Address super_check_offset_addr(super_klass, sco_offset);
 
   // Hacked jcc, which "knows" that L_fallthrough, at least, is in
@@ -8335,10 +8333,8 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   assert(label_nulls <= 1, "at most one NULL in the batch");
 
   // a couple of useful fields in sub_klass:
-  int ss_offset = (klassOopDesc::header_size() * HeapWordSize +
-                   Klass::secondary_supers_offset_in_bytes());
-  int sc_offset = (klassOopDesc::header_size() * HeapWordSize +
-                   Klass::secondary_super_cache_offset_in_bytes());
+  int ss_offset = in_bytes(Klass::secondary_supers_offset());
+  int sc_offset = in_bytes(Klass::secondary_super_cache_offset());
   Address secondary_supers_addr(sub_klass, ss_offset);
   Address super_cache_addr(     sub_klass, sc_offset);
 
@@ -9010,20 +9006,20 @@ void MacroAssembler::load_prototype_header(Register dst, Register src) {
     if (Universe::narrow_oop_shift() != 0) {
       assert(LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
       if (LogMinObjAlignmentInBytes == Address::times_8) {
-        movq(dst, Address(r12_heapbase, dst, Address::times_8, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+        movq(dst, Address(r12_heapbase, dst, Address::times_8, Klass::prototype_header_offset()));
       } else {
         // OK to use shift since we don't need to preserve flags.
         shlq(dst, LogMinObjAlignmentInBytes);
-        movq(dst, Address(r12_heapbase, dst, Address::times_1, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+        movq(dst, Address(r12_heapbase, dst, Address::times_1, Klass::prototype_header_offset()));
       }
     } else {
-      movq(dst, Address(dst, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+      movq(dst, Address(dst, Klass::prototype_header_offset()));
     }
   } else
 #endif
   {
     movptr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-    movptr(dst, Address(dst, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+    movptr(dst, Address(dst, Klass::prototype_header_offset()));
   }
 }
 

@@ -3046,8 +3046,7 @@ class StubGenerator: public StubCodeGenerator {
     //   array_tag: typeArray = 0x3, objArray = 0x2, non-array = 0x0
     //
 
-    int lh_offset = klassOopDesc::header_size() * HeapWordSize +
-                    Klass::layout_helper_offset_in_bytes();
+    int lh_offset = in_bytes(Klass::layout_helper_offset());
 
     // Load 32-bits signed value. Use br() instruction with it to check icc.
     __ lduw(G3_src_klass, lh_offset, G5_lh);
@@ -3194,15 +3193,13 @@ class StubGenerator: public StubCodeGenerator {
                                  G4_dst_klass, G3_src_klass);
 
       // Generate the type check.
-      int sco_offset = (klassOopDesc::header_size() * HeapWordSize +
-                        Klass::super_check_offset_offset_in_bytes());
+      int sco_offset = in_bytes(Klass::super_check_offset_offset());
       __ lduw(G4_dst_klass, sco_offset, sco_temp);
       generate_type_check(G3_src_klass, sco_temp, G4_dst_klass,
                           O5_temp, L_plain_copy);
 
       // Fetch destination element klass from the objArrayKlass header.
-      int ek_offset = (klassOopDesc::header_size() * HeapWordSize +
-                       objArrayKlass::element_klass_offset_in_bytes());
+      int ek_offset = in_bytes(objArrayKlass::element_klass_offset());
 
       // the checkcast_copy loop needs two extra arguments:
       __ ld_ptr(G4_dst_klass, ek_offset, O4);   // dest elem klass

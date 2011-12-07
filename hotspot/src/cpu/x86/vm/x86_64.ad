@@ -11305,12 +11305,12 @@ instruct partialSubtypeCheck(rdi_RegP result,
   effect(KILL rcx, KILL cr);
 
   ins_cost(1100);  // slightly larger than the next version
-  format %{ "movq    rdi, [$sub + (sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes())]\n\t"
+  format %{ "movq    rdi, [$sub + in_bytes(Klass::secondary_supers_offset())]\n\t"
             "movl    rcx, [rdi + arrayOopDesc::length_offset_in_bytes()]\t# length to scan\n\t"
             "addq    rdi, arrayOopDex::base_offset_in_bytes(T_OBJECT)\t# Skip to start of data; set NZ in case count is zero\n\t"
             "repne   scasq\t# Scan *rdi++ for a match with rax while rcx--\n\t"
             "jne,s   miss\t\t# Missed: rdi not-zero\n\t"
-            "movq    [$sub + (sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes())], $super\t# Hit: update cache\n\t"
+            "movq    [$sub + in_bytes(Klass::secondary_super_cache_offset())], $super\t# Hit: update cache\n\t"
             "xorq    $result, $result\t\t Hit: rdi zero\n\t"
     "miss:\t" %}
 
@@ -11328,12 +11328,12 @@ instruct partialSubtypeCheck_vs_Zero(rFlagsReg cr,
   effect(KILL rcx, KILL result);
 
   ins_cost(1000);
-  format %{ "movq    rdi, [$sub + (sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes())]\n\t"
+  format %{ "movq    rdi, [$sub + in_bytes(Klass::secondary_supers_offset())]\n\t"
             "movl    rcx, [rdi + arrayOopDesc::length_offset_in_bytes()]\t# length to scan\n\t"
             "addq    rdi, arrayOopDex::base_offset_in_bytes(T_OBJECT)\t# Skip to start of data; set NZ in case count is zero\n\t"
             "repne   scasq\t# Scan *rdi++ for a match with rax while cx-- != 0\n\t"
             "jne,s   miss\t\t# Missed: flags nz\n\t"
-            "movq    [$sub + (sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes())], $super\t# Hit: update cache\n\t"
+            "movq    [$sub + in_bytes(Klass::secondary_super_cache_offset())], $super\t# Hit: update cache\n\t"
     "miss:\t" %}
 
   opcode(0x0); // No need to XOR RDI
