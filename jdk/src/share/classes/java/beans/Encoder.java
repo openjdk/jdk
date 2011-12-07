@@ -195,7 +195,13 @@ public class Encoder {
      */
     public PersistenceDelegate getPersistenceDelegate(Class<?> type) {
         PersistenceDelegate pd = this.finder.find(type);
-        return (pd != null) ? pd : MetaData.getPersistenceDelegate(type);
+        if (pd == null) {
+            pd = MetaData.getPersistenceDelegate(type);
+            if (pd != null) {
+                this.finder.register(type, pd);
+            }
+        }
+        return pd;
     }
 
     /**

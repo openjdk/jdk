@@ -208,11 +208,18 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         return name;
     }
 
+    private static native String getLocalHostname();
+    private static native int getJvmPID();
+
     void postInit(XCreateWindowParams params) {
         super.postInit(params);
 
         // Init WM_PROTOCOLS atom
         initWMProtocols();
+
+        // Set _NET_WM_PID and WM_CLIENT_MACHINE using this JVM
+        XAtom.get("WM_CLIENT_MACHINE").setProperty(getWindow(), getLocalHostname());
+        XAtom.get("_NET_WM_PID").setCard32Property(getWindow(), getJvmPID());
 
         // Set WM_TRANSIENT_FOR and group_leader
         Window t_window = (Window)target;
