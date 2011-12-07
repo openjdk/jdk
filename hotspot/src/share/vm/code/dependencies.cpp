@@ -763,9 +763,14 @@ class ClassHierarchyWalker {
       // Method m is inherited into ctxk.
       return true;
     if (lm != NULL) {
-      if (!(lm->is_public() || lm->is_protected()))
+      if (!(lm->is_public() || lm->is_protected())) {
         // Method is [package-]private, so the override story is complex.
         return true;  // Must punt the assertion to true.
+      }
+      if (lm->is_static()) {
+        // Static methods don't override non-static so punt
+        return true;
+      }
       if (   !Dependencies::is_concrete_method(lm)
           && !Dependencies::is_concrete_method(m)
           && Klass::cast(lm->method_holder())->is_subtype_of(m->method_holder()))
@@ -1091,9 +1096,11 @@ bool Dependencies::is_concrete_klass(klassOop k) {
 }
 
 bool Dependencies::is_concrete_method(methodOop m) {
-  if (m->is_abstract())  return false;
-  // %%% We could treat unexecuted methods as virtually abstract also.
-  // This would require a deoptimization barrier on first execution.
+  // Statics are irrelevant to virtual call sites.
+  if (m->is_static())  return false;
+
+  // We could also return false if m does not yet appear to be
+  // executed, if the VM version supports this distinction also.
   return !m->is_abstract();
 }
 
@@ -1113,7 +1120,7 @@ Klass* Dependencies::find_finalizable_subclass(Klass* k) {
 
 bool Dependencies::is_concrete_klass(ciInstanceKlass* k) {
   if (k->is_abstract())  return false;
-  // We could return also false if k does not yet appear to be
+  // We could also return false if k does not yet appear to be
   // instantiated, if the VM version supports this distinction also.
   //if (k->is_not_instantiated())  return false;
   return true;
@@ -1123,7 +1130,7 @@ bool Dependencies::is_concrete_method(ciMethod* m) {
   // Statics are irrelevant to virtual call sites.
   if (m->is_static())  return false;
 
-  // We could return also false if m does not yet appear to be
+  // We could also return false if m does not yet appear to be
   // executed, if the VM version supports this distinction also.
   return !m->is_abstract();
 }

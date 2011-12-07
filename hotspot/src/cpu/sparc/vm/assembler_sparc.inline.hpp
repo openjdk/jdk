@@ -597,6 +597,10 @@ inline void MacroAssembler::jmp( Register s1, Register s2 ) { jmpl( s1, s2, G0 )
 inline void MacroAssembler::jmp( Register s1, int simm13a, RelocationHolder const& rspec ) { jmpl( s1, simm13a, G0, rspec); }
 
 inline bool MacroAssembler::is_far_target(address d) {
+  if (ForceUnreachable) {
+    // References outside the code cache should be treated as far
+    return d < CodeCache::low_bound() || d > CodeCache::high_bound();
+  }
   return !is_in_wdisp30_range(d, CodeCache::low_bound()) || !is_in_wdisp30_range(d, CodeCache::high_bound());
 }
 
@@ -679,28 +683,44 @@ inline intptr_t MacroAssembler::load_pc_address( Register reg, int bytes_to_skip
 
 inline void MacroAssembler::load_contents(const AddressLiteral& addrlit, Register d, int offset) {
   assert_not_delayed();
-  sethi(addrlit, d);
+  if (ForceUnreachable) {
+    patchable_sethi(addrlit, d);
+  } else {
+    sethi(addrlit, d);
+  }
   ld(d, addrlit.low10() + offset, d);
 }
 
 
 inline void MacroAssembler::load_ptr_contents(const AddressLiteral& addrlit, Register d, int offset) {
   assert_not_delayed();
-  sethi(addrlit, d);
+  if (ForceUnreachable) {
+    patchable_sethi(addrlit, d);
+  } else {
+    sethi(addrlit, d);
+  }
   ld_ptr(d, addrlit.low10() + offset, d);
 }
 
 
 inline void MacroAssembler::store_contents(Register s, const AddressLiteral& addrlit, Register temp, int offset) {
   assert_not_delayed();
-  sethi(addrlit, temp);
+  if (ForceUnreachable) {
+    patchable_sethi(addrlit, temp);
+  } else {
+    sethi(addrlit, temp);
+  }
   st(s, temp, addrlit.low10() + offset);
 }
 
 
 inline void MacroAssembler::store_ptr_contents(Register s, const AddressLiteral& addrlit, Register temp, int offset) {
   assert_not_delayed();
-  sethi(addrlit, temp);
+  if (ForceUnreachable) {
+    patchable_sethi(addrlit, temp);
+  } else {
+    sethi(addrlit, temp);
+  }
   st_ptr(s, temp, addrlit.low10() + offset);
 }
 

@@ -516,7 +516,7 @@ class FrameValues {
   void describe(int owner, intptr_t* location, const char* description, int priority = 0);
 
   void validate();
-  void print();
+  void print(JavaThread* thread);
 };
 
 #endif

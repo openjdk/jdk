@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "utilities/quickSort.hpp"
+
+/////////////// Unit tests ///////////////
 
 #ifndef PRODUCT
 
-// Unit tests
-
 #include "runtime/os.hpp"
+#include "utilities/quickSort.hpp"
 #include <stdlib.h>
 
 static int test_comparator(int a, int b) {
@@ -94,7 +94,7 @@ bool QuickSort::sort_and_compare(int* arrayToSort, int* expectedResult, int leng
 }
 
 bool QuickSort::test_quick_sort() {
-  tty->print_cr("test_quick_sort\n");
+  tty->print_cr("test_quick_sort");
   {
     int* test_array = NULL;
     int* expected_array = NULL;
