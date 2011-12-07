@@ -207,7 +207,7 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
      */
     public java.io.InputStream getBinaryStream() throws SerialException {
          InputStream stream = new ByteArrayInputStream(buf);
-         return (java.io.InputStream)stream;
+         return stream;
     }
 
     /**

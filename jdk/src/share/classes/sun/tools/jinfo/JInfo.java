@@ -98,7 +98,7 @@ public class JInfo {
     }
 
     // loads the given class using the system class loader
-    private static Class loadClass(String name) {
+    private static Class<?> loadClass(String name) {
         //
         // We specify the system clas loader so as to cater for development
         // environments where this class is on the boot class path but sa-jdi.jar
@@ -178,7 +178,7 @@ public class JInfo {
     // print usage message
     private static void usage() {
 
-        Class c = loadClass("sun.jvm.hotspot.tools.JInfo");
+        Class<?> c = loadClass("sun.jvm.hotspot.tools.JInfo");
         boolean usageSA = (c != null);
 
         System.out.println("Usage:");

@@ -51,7 +51,7 @@ import java.util.Map.Entry;
 public class FeatureDescriptor {
     private static final String TRANSIENT = "transient";
 
-    private Reference<Class> classRef;
+    private Reference<? extends Class<?>> classRef;
 
     /**
      * Constructs a <code>FeatureDescriptor</code>.
@@ -284,7 +284,7 @@ public class FeatureDescriptor {
      */
     private Hashtable<String, Object> getTable() {
         if (this.table == null) {
-            this.table = new Hashtable<String, Object>();
+            this.table = new Hashtable<>();
         }
         return this.table;
     }
@@ -317,11 +317,11 @@ public class FeatureDescriptor {
 
     // Package private methods for recreating the weak/soft referent
 
-    void setClass0(Class cls) {
+    void setClass0(Class<?> cls) {
         this.classRef = getWeakReference(cls);
     }
 
-    Class getClass0() {
+    Class<?> getClass0() {
         return (this.classRef != null)
                 ? this.classRef.get()
                 : null;
@@ -336,7 +336,7 @@ public class FeatureDescriptor {
      */
     static <T> Reference<T> getSoftReference(T object) {
         return (object != null)
-                ? new SoftReference<T>(object)
+                ? new SoftReference<>(object)
                 : null;
     }
 
@@ -349,7 +349,7 @@ public class FeatureDescriptor {
      */
     static <T> Reference<T> getWeakReference(T object) {
         return (object != null)
-                ? new WeakReference<T>(object)
+                ? new WeakReference<>(object)
                 : null;
     }
 
@@ -363,7 +363,7 @@ public class FeatureDescriptor {
      * @see Method#getGenericReturnType
      * @see Method#getReturnType
      */
-    static Class getReturnType(Class base, Method method) {
+    static Class<?> getReturnType(Class<?> base, Method method) {
         if (base == null) {
             base = method.getDeclaringClass();
         }
@@ -380,7 +380,7 @@ public class FeatureDescriptor {
      * @see Method#getGenericParameterTypes
      * @see Method#getParameterTypes
      */
-    static Class[] getParameterTypes(Class base, Method method) {
+    static Class<?>[] getParameterTypes(Class<?> base, Method method) {
         if (base == null) {
             base = method.getDeclaringClass();
         }
@@ -425,7 +425,7 @@ public class FeatureDescriptor {
     void appendTo(StringBuilder sb) {
     }
 
-    static void appendTo(StringBuilder sb, String name, Reference reference) {
+    static void appendTo(StringBuilder sb, String name, Reference<?> reference) {
         if (reference != null) {
             appendTo(sb, name, reference.get());
         }

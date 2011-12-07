@@ -169,17 +169,15 @@ public class PerfInstrumentation {
         Matcher matcher = pattern.matcher("");
         List<Counter> matches = new ArrayList<Counter>();
 
-        Iterator iter = map.entrySet().iterator();
-        while (iter.hasNext()) {
-            Map.Entry me = (Map.Entry) iter.next();
-            String name = (String) me.getKey();
+        for (Map.Entry<String,Counter> me: map.entrySet()) {
+            String name = me.getKey();
 
             // apply pattern to counter name
             matcher.reset(name);
 
             // if the pattern matches, then add Counter to list
             if (matcher.lookingAt()) {
-                matches.add((Counter)me.getValue());
+                matches.add(me.getValue());
             }
         }
         return matches;

@@ -122,11 +122,11 @@ public final class IntHashtable {
             // this line just scrambles the bits as each value is added into the
             // has value.  This helps to make sure we affect all the bits and that
             // the same values in a different order will produce a different hash value
-            result = (int)(result * scrambler + 1);
+            result = result * scrambler + 1;
             result += keyList[i];
         }
         for (int i = 0; i < values.length; ++i) {
-            result = (int)(result * scrambler + 1);
+            result = result * scrambler + 1;
             result += values[i];
         }
         return result;
@@ -135,8 +135,8 @@ public final class IntHashtable {
     public Object clone ()
                     throws CloneNotSupportedException {
         IntHashtable result = (IntHashtable) super.clone();
-        values = (int[]) values.clone();
-        keyList = (int[])keyList.clone();
+        values = values.clone();
+        keyList = keyList.clone();
         return result;
     }
 

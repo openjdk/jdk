@@ -118,8 +118,8 @@ private static Set<String>  usStateSet = new HashSet<String>(Arrays.asList("ak",
 private static Set<String>  usSubStateSet = new HashSet<String>(Arrays.asList("state",
                 "lib", "k12", "cc", "tec", "gen", "cog", "mus", "dst"));
 
-private static Map<String,Set> topMap = new HashMap<String,Set>();
-private static Map<String,Set> top3Map = new HashMap<String,Set>();
+private static Map<String,Set<String>> topMap = new HashMap<>();
+private static Map<String,Set<String>> top3Map = new HashMap<>();
 
 static {
     /*
@@ -764,7 +764,7 @@ static {
          */
         String str = cname.substring(third + 1);
         if (third != -1) {
-            Set set = top3Map.get(s);
+            Set<String> set = top3Map.get(s);
             if (set != null) {
                 if (set.contains(str)) {
                     return cname.substring(fourth + 1);
@@ -801,7 +801,7 @@ static {
         /*
          * XX.MA.US.
          */
-        Set topSet = topMap.get(s);
+        Set<String> topSet = topMap.get(s);
         if (topSet != null) {
             if (topSet.contains(s2)) {
                 return cname.substring(third + 1);
