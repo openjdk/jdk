@@ -51,7 +51,7 @@ public class Manifest implements Cloneable {
     private Attributes attr = new Attributes();
 
     // manifest entries
-    private Map entries = new HashMap();
+    private Map<String, Attributes> entries = new HashMap<>();
 
     /**
      * Constructs a new, empty Manifest.
@@ -148,11 +148,11 @@ public class Manifest implements Cloneable {
         // Write out the main attributes for the manifest
         attr.writeMain(dos);
         // Now write out the pre-entry attributes
-        Iterator it = entries.entrySet().iterator();
+        Iterator<Map.Entry<String, Attributes>> it = entries.entrySet().iterator();
         while (it.hasNext()) {
-            Map.Entry e = (Map.Entry)it.next();
+            Map.Entry<String, Attributes> e = it.next();
             StringBuffer buffer = new StringBuffer("Name: ");
-            String value = (String)e.getKey();
+            String value = e.getKey();
             if (value != null) {
                 byte[] vb = value.getBytes("UTF8");
                 value = new String(vb, 0, 0, vb.length);
@@ -161,7 +161,7 @@ public class Manifest implements Cloneable {
             buffer.append("\r\n");
             make72Safe(buffer);
             dos.writeBytes(buffer.toString());
-            ((Attributes)e.getValue()).write(dos);
+            e.getValue().write(dos);
         }
         dos.flush();
     }
