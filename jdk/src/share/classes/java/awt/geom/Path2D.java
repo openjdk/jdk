@@ -667,7 +667,8 @@ public abstract class Path2D implements Shape, Cloneable {
                         // Collapse out initial moveto/lineto
                         break;
                     }
-                    // NO BREAK;
+                    lineTo(coords[0], coords[1]);
+                    break;
                 case SEG_LINETO:
                     lineTo(coords[0], coords[1]);
                     break;
@@ -1392,7 +1393,8 @@ public abstract class Path2D implements Shape, Cloneable {
                         // Collapse out initial moveto/lineto
                         break;
                     }
-                    // NO BREAK;
+                    lineTo(coords[0], coords[1]);
+                    break;
                 case SEG_LINETO:
                     lineTo(coords[0], coords[1]);
                     break;
@@ -2456,7 +2458,7 @@ public abstract class Path2D implements Shape, Cloneable {
                 }
             }
         }
-        s.writeByte((byte) SERIAL_PATH_END);
+        s.writeByte(SERIAL_PATH_END);
     }
 
     final void readObject(java.io.ObjectInputStream s, boolean storedbl)
