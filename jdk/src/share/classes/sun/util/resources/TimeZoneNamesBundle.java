@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,17 +80,16 @@ public abstract class TimeZoneNamesBundle extends OpenListResourceBundle {
         int clen = contents.length;
         String[] tmpobj = new String[clen+1];
         tmpobj[0] = key;
-        for (int i = 0; i < clen; i++) {
-            tmpobj[i+1] = contents[i];
-        }
+        System.arraycopy(contents, 0, tmpobj, 1, clen);
         return tmpobj;
     }
 
     /**
      * Use LinkedHashMap to preserve order of bundle entries.
      */
-    protected Map createMap(int size) {
-        return new LinkedHashMap(size);
+    @Override
+    protected Map<String, Object> createMap(int size) {
+        return new LinkedHashMap<>(size);
     }
 
     /**

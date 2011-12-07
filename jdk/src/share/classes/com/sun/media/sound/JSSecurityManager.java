@@ -34,14 +34,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+import java.util.ServiceLoader;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import javax.sound.sampled.AudioPermission;
-
-import sun.misc.Service;
-
 
 /** Managing security in the Java Sound implementation.
  * This class contains all code that uses and is used by
@@ -80,8 +78,8 @@ class JSSecurityManager {
         try {
             if (hasSecurityManager()) {
                 if(Printer.debug) Printer.debug("using security manager to load library");
-                PrivilegedAction action = new PrivilegedAction() {
-                        public Object run() {
+                PrivilegedAction<Void> action = new PrivilegedAction<Void>() {
+                        public Void run() {
                             System.loadLibrary(libName);
                             return null;
                         }
@@ -104,8 +102,8 @@ class JSSecurityManager {
         if (hasSecurityManager()) {
             if(Printer.debug) Printer.debug("using JDK 1.2 security to get property");
             try{
-                PrivilegedAction action = new PrivilegedAction() {
-                        public Object run() {
+                PrivilegedAction<String> action = new PrivilegedAction<String>() {
+                        public String run() {
                             try {
                                 return System.getProperty(propertyName);
                             } catch (Throwable t) {
@@ -113,7 +111,7 @@ class JSSecurityManager {
                             }
                         }
                     };
-                propertyValue = (String) AccessController.doPrivileged(action);
+                propertyValue = AccessController.doPrivileged(action);
             } catch( Exception e ) {
                 if(Printer.debug) Printer.debug("not using JDK 1.2 security to get properties");
                 propertyValue = System.getProperty(propertyName);
@@ -142,8 +140,8 @@ class JSSecurityManager {
         if(hasSecurityManager()) {
             try {
                 // invoke the privileged action using 1.2 security
-                PrivilegedAction action = new PrivilegedAction() {
-                        public Object run() {
+                PrivilegedAction<Void> action = new PrivilegedAction<Void>() {
+                        public Void run() {
                             loadPropertiesImpl(properties, filename);
                             return null;
                         }
@@ -197,8 +195,8 @@ class JSSecurityManager {
         if(hasSecurityManager()) {
             try {
                 // invoke the privileged action using 1.2 security
-                PrivilegedAction action = new PrivilegedAction() {
-                        public Object run() {
+                PrivilegedAction<ThreadGroup> action = new PrivilegedAction<ThreadGroup>() {
+                        public ThreadGroup run() {
                             try {
                                 return getTopmostThreadGroupImpl();
                             } catch (Throwable t) {
@@ -206,7 +204,7 @@ class JSSecurityManager {
                             }
                         }
                     };
-                topmostThreadGroup = (ThreadGroup) AccessController.doPrivileged(action);
+                topmostThreadGroup = AccessController.doPrivileged(action);
                 if(Printer.debug)Printer.debug("Got topmost thread group with JDK 1.2 security");
             } catch (Exception e) {
                 if(Printer.debug)Printer.debug("Exception getting topmost thread group with JDK 1.2 security");
@@ -240,8 +238,8 @@ class JSSecurityManager {
                                final boolean doStart) {
         Thread thread = null;
         if(hasSecurityManager()) {
-            PrivilegedAction action = new PrivilegedAction() {
-                    public Object run() {
+            PrivilegedAction<Thread> action = new PrivilegedAction<Thread>() {
+                    public Thread run() {
                         try {
                             return createThreadImpl(runnable, threadName,
                                                     isDaemon, priority,
@@ -251,7 +249,7 @@ class JSSecurityManager {
                         }
                     }
                 };
-            thread = (Thread) AccessController.doPrivileged(action);
+            thread = AccessController.doPrivileged(action);
             if(Printer.debug) Printer.debug("created thread with JDK 1.2 security");
         } else {
             if(Printer.debug)Printer.debug("not using JDK 1.2 security");
@@ -282,11 +280,11 @@ class JSSecurityManager {
     }
 
 
-    static List getProviders(final Class providerClass) {
-        List p = new ArrayList();
-        // Service.providers(Class) just creates "lazy" iterator instance,
-        // so it doesn't require do be called from privileged section
-        final Iterator ps = Service.providers(providerClass);
+    static <T> List<T> getProviders(final Class<T> providerClass) {
+        List<T> p = new ArrayList<>();
+        // ServiceLoader creates "lazy" iterator instance, so it doesn't,
+        // require do be called from privileged section
+        final Iterator<T> ps = ServiceLoader.load(providerClass).iterator();
 
         // the iterator's hasNext() method looks through classpath for
         // the provider class names, so it requires read permissions
@@ -301,7 +299,7 @@ class JSSecurityManager {
                 // the iterator's next() method creates instances of the
                 // providers and it should be called in the current security
                 // context
-                Object provider = ps.next();
+                T provider = ps.next();
                 if (providerClass.isInstance(provider)) {
                     // $$mp 2003-08-22
                     // Always adding at the beginning reverses the

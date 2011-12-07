@@ -27,7 +27,7 @@ package sun.net.ftp;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ServiceConfigurationError;
-//import sun.misc.Service;
+//import java.util.ServiceLoader;
 
 /**
  * Service provider class for FtpClient.
@@ -79,20 +79,22 @@ public abstract class FtpClientProvider {
     }
 
     private static boolean loadProviderAsService() {
-        //        Iterator i = Service.providers(FtpClientProvider.class,
-        //                ClassLoader.getSystemClassLoader());
-        //        while (i.hasNext()) {
-        //            try {
-        //                provider = (FtpClientProvider) i.next();
-        //                return true;
-        //            } catch (ServiceConfigurationError sce) {
-        //                if (sce.getCause() instanceof SecurityException) {
-        //                    // Ignore, try next provider, if any
-        //                    continue;
-        //                }
-        //                throw sce;
-        //            }
-        //        }
+//        Iterator<FtpClientProvider> i =
+//                ServiceLoader.load(FtpClientProvider.class,
+//                                   ClassLoader.getSystemClassLoader()).iterator();
+//
+//        while (i.hasNext()) {
+//            try {
+//                provider = i.next();
+//                return true;
+//            } catch (ServiceConfigurationError sce) {
+//                if (sce.getCause() instanceof SecurityException) {
+//                    // Ignore, try next provider, if any
+//                    continue;
+//                }
+//                throw sce;
+//            }
+//        }
         return false;
     }
 
