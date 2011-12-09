@@ -4052,7 +4052,7 @@ class Par_ConcMarkingClosure: public Par_KlassRememberingOopClosure {
   Par_ConcMarkingClosure(CMSCollector* collector, CMSConcMarkingTask* task, OopTaskQueue* work_queue,
                          CMSBitMap* bit_map, CMSMarkStack* overflow_stack,
                          CMSMarkStack* revisit_stack):
-    Par_KlassRememberingOopClosure(collector, NULL, revisit_stack),
+    Par_KlassRememberingOopClosure(collector, collector->ref_processor(), revisit_stack),
     _task(task),
     _span(collector->_span),
     _work_queue(work_queue),
