@@ -2604,7 +2604,7 @@ public class JavacParser implements Parser {
      *  @param mods    The modifiers starting the class declaration
      *  @param dc       The documentation comment for the class, or null.
      */
-    JCClassDecl classDeclaration(JCModifiers mods, String dc) {
+    protected JCClassDecl classDeclaration(JCModifiers mods, String dc) {
         int pos = token.pos;
         accept(CLASS);
         Name name = ident();
@@ -2633,7 +2633,7 @@ public class JavacParser implements Parser {
      *  @param mods    The modifiers starting the interface declaration
      *  @param dc       The documentation comment for the interface, or null.
      */
-    JCClassDecl interfaceDeclaration(JCModifiers mods, String dc) {
+    protected JCClassDecl interfaceDeclaration(JCModifiers mods, String dc) {
         int pos = token.pos;
         accept(INTERFACE);
         Name name = ident();
@@ -2656,7 +2656,7 @@ public class JavacParser implements Parser {
      *  @param mods    The modifiers starting the enum declaration
      *  @param dc       The documentation comment for the enum, or null.
      */
-    JCClassDecl enumDeclaration(JCModifiers mods, String dc) {
+    protected JCClassDecl enumDeclaration(JCModifiers mods, String dc) {
         int pos = token.pos;
         accept(ENUM);
         Name name = ident();
@@ -2878,7 +2878,7 @@ public class JavacParser implements Parser {
      *  ConstructorDeclaratorRest =
      *      "(" FormalParameterListOpt ")" [THROWS TypeList] MethodBody
      */
-    JCTree methodDeclaratorRest(int pos,
+    protected JCTree methodDeclaratorRest(int pos,
                               JCModifiers mods,
                               JCExpression type,
                               Name name,
