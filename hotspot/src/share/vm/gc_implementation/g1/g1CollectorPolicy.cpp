@@ -1549,9 +1549,15 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
         _partially_young_cards_per_entry_ratio_seq->add(cards_per_entry_ratio);
     }
 
-    size_t rs_length_diff = _max_rs_lengths - _recorded_rs_lengths;
-    if (rs_length_diff >= 0)
-      _rs_length_diff_seq->add((double) rs_length_diff);
+    // It turns out that, sometimes, _max_rs_lengths can get smaller
+    // than _recorded_rs_lengths which causes rs_length_diff to get
+    // very large and mess up the RSet length predictions. We'll be
+    // defensive until we work out why this happens.
+    size_t rs_length_diff = 0;
+    if (_max_rs_lengths > _recorded_rs_lengths) {
+      rs_length_diff = _max_rs_lengths - _recorded_rs_lengths;
+    }
+    _rs_length_diff_seq->add((double) rs_length_diff);
 
     size_t copied_bytes = surviving_bytes;
     double cost_per_byte_ms = 0.0;
