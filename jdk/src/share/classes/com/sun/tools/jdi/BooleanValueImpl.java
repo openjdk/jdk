@@ -78,7 +78,7 @@ public class BooleanValueImpl extends PrimitiveValueImpl
     }
 
     public int intValue() {
-        return(int)((value)?1:0);
+        return (value)?1:0;
     }
 
     public long longValue() {
@@ -90,7 +90,7 @@ public class BooleanValueImpl extends PrimitiveValueImpl
     }
 
     public double doubleValue() {
-        return(double)((value)?1.0:0.0);
+        return (value)?1.0:0.0;
     }
 
     public String toString() {

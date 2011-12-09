@@ -38,6 +38,7 @@ import java.util.Collections;
  */
 public class IllegalConnectorArgumentsException extends Exception
 {
+    private static final long serialVersionUID = -3042212603611350941L;
     List<String> names;
 
     /**

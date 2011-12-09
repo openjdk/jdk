@@ -300,9 +300,9 @@ class VirtualMachineImpl extends MirrorImpl
         if (!canRedefineClasses()) {
             throw new UnsupportedOperationException();
         }
-        Iterator it = classToBytes.entrySet().iterator();
+        Iterator<?> it = classToBytes.entrySet().iterator();
         for (int i = 0; it.hasNext(); i++) {
-            Map.Entry entry = (Map.Entry)it.next();
+            Map.Entry<?,?> entry = (Map.Entry)it.next();
             ReferenceTypeImpl refType = (ReferenceTypeImpl)entry.getKey();
             validateMirror(refType);
             defs[i] = new JDWP.VirtualMachine.RedefineClasses
@@ -801,7 +801,7 @@ class VirtualMachineImpl extends MirrorImpl
          * we can't differentiate here, we first remove all
          * matching classes from our cache...
          */
-        Iterator iter = typesBySignature.iterator();
+        Iterator<ReferenceType> iter = typesBySignature.iterator();
         int matches = 0;
         while (iter.hasNext()) {
             ReferenceTypeImpl type = (ReferenceTypeImpl)iter.next();
@@ -833,7 +833,7 @@ class VirtualMachineImpl extends MirrorImpl
         if (typesByID == null) {
             return new ArrayList<ReferenceType>(0);
         }
-        Iterator iter = typesBySignature.iterator();
+        Iterator<ReferenceType> iter = typesBySignature.iterator();
         List<ReferenceType> list = new ArrayList<ReferenceType>();
         while (iter.hasNext()) {
             ReferenceTypeImpl type = (ReferenceTypeImpl)iter.next();
@@ -1041,10 +1041,10 @@ class VirtualMachineImpl extends MirrorImpl
     }
 
     Type findBootType(String signature) throws ClassNotLoadedException {
-        List types = allClasses();
-        Iterator iter = types.iterator();
+        List<ReferenceType> types = allClasses();
+        Iterator<ReferenceType> iter = types.iterator();
         while (iter.hasNext()) {
-            ReferenceType type = (ReferenceType)iter.next();
+            ReferenceType type = iter.next();
             if ((type.classLoader() == null) &&
                 (type.signature().equals(signature))) {
                 return type;
@@ -1227,7 +1227,7 @@ class VirtualMachineImpl extends MirrorImpl
     }
 
     private void processQueue() {
-        Reference ref;
+        Reference<?> ref;
         //if ((traceFlags & TRACE_OBJREFS) != 0) {
         //    printTrace("Checking for softly reachable objects");
         //}

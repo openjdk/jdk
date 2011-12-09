@@ -79,7 +79,7 @@ public class ShortValueImpl extends PrimitiveValueImpl
     }
 
     public short shortValue() {
-        return(short)value;
+        return value;
     }
 
     public int intValue() {

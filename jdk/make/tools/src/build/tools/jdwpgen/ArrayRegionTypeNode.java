@@ -35,7 +35,7 @@ class ArrayRegionTypeNode extends AbstractSimpleTypeNode {
     }
 
     String javaType() {
-        return "List";
+        return "List<?>";
     }
 
     public void genJavaWrite(PrintWriter writer, int depth,
