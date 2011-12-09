@@ -398,7 +398,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           if (id == fast_new_instance_init_check_id) {
             // make sure the klass is initialized
-            __ ld(G5_klass, instanceKlass::init_state_offset_in_bytes() + sizeof(oopDesc), G3_t1);
+            __ ldub(G5_klass, instanceKlass::init_state_offset_in_bytes() + sizeof(oopDesc), G3_t1);
             __ cmp_and_br_short(G3_t1, instanceKlass::fully_initialized, Assembler::notEqual, Assembler::pn, slow_path);
           }
 #ifdef ASSERT

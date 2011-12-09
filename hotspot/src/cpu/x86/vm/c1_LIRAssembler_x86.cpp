@@ -1557,7 +1557,7 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
 
 void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
   if (op->init_check()) {
-    __ cmpl(Address(op->klass()->as_register(),
+    __ cmpb(Address(op->klass()->as_register(),
                     instanceKlass::init_state_offset_in_bytes() + sizeof(oopDesc)),
             instanceKlass::fully_initialized);
     add_debug_info_for_null_check_here(op->stub()->info());

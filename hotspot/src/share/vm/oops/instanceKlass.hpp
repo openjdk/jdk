@@ -230,13 +230,9 @@ class instanceKlass: public Klass {
   int             _static_oop_field_count;// number of static oop fields in this klass
   int             _nonstatic_oop_map_size;// size in words of nonstatic oop map blocks
   int             _java_fields_count;    // The number of declared Java fields
-  bool            _is_marked_dependent;  // used for marking during flushing and deoptimization
-  bool            _rewritten;            // methods rewritten.
-  bool            _has_nonstatic_fields; // for sizing with UseCompressedOops
-  bool            _should_verify_class;  // allow caching of preverification
+
   u2              _minor_version;        // minor version number of class file
   u2              _major_version;        // major version number of class file
-  ClassState      _init_state;           // state of class
   Thread*         _init_thread;          // Pointer to current thread doing initialization (to handle recusive initialization)
   int             _vtable_len;           // length of Java vtable (in words)
   int             _itable_len;           // length of Java itable (in words)
@@ -260,6 +256,24 @@ class instanceKlass: public Klass {
   JvmtiCachedClassFieldMap* _jvmti_cached_class_field_map;  // JVMTI: used during heap iteration
   volatile u2     _idnum_allocated_count;         // JNI/JVMTI: increments with the addition of methods, old ids don't change
 
+  // Class states are defined as ClassState (see above).
+  // Place the _init_state here to utilize the unused 2-byte after
+  // _idnum_allocated_count.
+  u1              _init_state;                    // state of class
+
+  // Compact the following four boolean flags into 1-bit each.  These four flags
+  // were defined as separate boolean fields and each was 1-byte before. Since
+  // there are 2 bytes unused after the _idnum_allocated_count field, place the
+  // _misc_flags field after _idnum_allocated_count to utilize the unused bits
+  // and save total 4-bytes.
+  enum {
+    IS_MARKED_DEPENDENT  = 0x1, // used for marking during flushing and deoptimization
+    REWRITTEN            = 0x2, // methods rewritten.
+    HAS_NONSTATIC_FIELDS = 0x4, // for sizing with UseCompressedOops
+    SHOULD_VERIFY_CLASS  = 0x8  // allow caching of preverification
+  };
+  u1              _misc_flags;
+
   // embedded Java vtable follows here
   // embedded Java itables follows here
   // embedded static fields follows here
@@ -269,8 +283,14 @@ class instanceKlass: public Klass {
   friend class SystemDictionary;
 
  public:
-  bool has_nonstatic_fields() const        { return _has_nonstatic_fields; }
-  void set_has_nonstatic_fields(bool b)    { _has_nonstatic_fields = b; }
+  bool has_nonstatic_fields() const        { return (_misc_flags & HAS_NONSTATIC_FIELDS) != 0; }
+  void set_has_nonstatic_fields(bool b) {
+    if (b) {
+      _misc_flags |= HAS_NONSTATIC_FIELDS;
+    } else {
+      _misc_flags &= ~HAS_NONSTATIC_FIELDS;
+    }
+  }
 
   // field sizes
   int nonstatic_field_size() const         { return _nonstatic_field_size; }
@@ -377,16 +397,24 @@ class instanceKlass: public Klass {
   bool is_being_initialized() const        { return _init_state == being_initialized; }
   bool is_in_error_state() const           { return _init_state == initialization_error; }
   bool is_reentrant_initialization(Thread *thread)  { return thread == _init_thread; }
-  int  get_init_state()                    { return _init_state; } // Useful for debugging
-  bool is_rewritten() const                { return _rewritten; }
+  ClassState  init_state()                 { return (ClassState)_init_state; }
+  bool is_rewritten() const                { return (_misc_flags & REWRITTEN) != 0; }
 
   // defineClass specified verification
-  bool should_verify_class() const         { return _should_verify_class; }
-  void set_should_verify_class(bool value) { _should_verify_class = value; }
+  bool should_verify_class() const         { return (_misc_flags & SHOULD_VERIFY_CLASS) != 0; }
+  void set_should_verify_class(bool value) {
+    if (value) {
+      _misc_flags |= SHOULD_VERIFY_CLASS;
+    } else {
+      _misc_flags &= ~SHOULD_VERIFY_CLASS;
+    }
+  }
+
 
   // marking
-  bool is_marked_dependent() const         { return _is_marked_dependent; }
-  void set_is_marked_dependent(bool value) { _is_marked_dependent = value; }
+  bool is_marked_dependent() const         { return (_misc_flags & IS_MARKED_DEPENDENT) != 0; }
+  void set_is_marked_dependent()           { _misc_flags |= IS_MARKED_DEPENDENT; }
+  void clear_is_marked_dependent()         { _misc_flags &= ~IS_MARKED_DEPENDENT; }
 
   // initialization (virtuals from Klass)
   bool should_be_initialized() const;  // means that initialize should be called
@@ -754,9 +782,9 @@ private:
 #ifdef ASSERT
   void set_init_state(ClassState state);
 #else
-  void set_init_state(ClassState state) { _init_state = state; }
+  void set_init_state(ClassState state) { _init_state = (u1)state; }
 #endif
-  void set_rewritten()                  { _rewritten = true; }
+  void set_rewritten()                  { _misc_flags |= REWRITTEN; }
   void set_init_thread(Thread *thread)  { _init_thread = thread; }
 
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }
