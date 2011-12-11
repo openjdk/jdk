@@ -25,7 +25,7 @@
  * @test
  * @bug 7073631
  * @summary tests error and diagnostics positions
- * @author  jan.lahoda@oracle.com
+ * @author  Jan Lahoda
  */
 
 import com.sun.source.tree.BinaryTree;
@@ -83,6 +83,12 @@ public class JavacParserTest extends TestCase {
             return text;
         }
     }
+    /*
+     * converts Windows to Unix style LFs for comparing strings
+     */
+    private String normalize(String in) {
+        return in.replace(System.getProperty("line.separator"), "\n");
+    }
 
     public CompilationUnitTree getCompilationUnitTree(String code) throws IOException {
 
@@ -95,9 +101,7 @@ public class JavacParserTest extends TestCase {
     public List<String> getErroneousTreeValues(ErroneousTree node) {
 
         List<String> values = new ArrayList<>();
-
         if (node.getErrorTrees() != null) {
-
             for (Tree t : node.getErrorTrees()) {
                 values.add(t.toString());
             }
@@ -786,7 +790,7 @@ public class JavacParserTest extends TestCase {
             @Override
             public Void visitErroneous(ErroneousTree node, Void p) {
 
-                values.add(getErroneousTreeValues(node).toString());
+                values.add(normalize(getErroneousTreeValues(node).toString()));
                 return null;
             }
         }.scan(cut, null);
