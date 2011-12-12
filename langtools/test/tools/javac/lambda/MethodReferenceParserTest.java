@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 7115052
+ * @ignore 7120266
  * @summary Add parser support for method references
  */
 
