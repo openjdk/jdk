@@ -35,7 +35,6 @@
 
 package java.util.concurrent;
 import java.util.*;
-import sun.misc.Unsafe;
 
 /**
  * A scalable concurrent {@link NavigableSet} implementation based on
@@ -158,15 +157,15 @@ public class ConcurrentSkipListSet<E>
      * @return a shallow copy of this set
      */
     public ConcurrentSkipListSet<E> clone() {
-        ConcurrentSkipListSet<E> clone = null;
         try {
-            clone = (ConcurrentSkipListSet<E>) super.clone();
-            clone.setMap(new ConcurrentSkipListMap(m));
+            @SuppressWarnings("unchecked")
+            ConcurrentSkipListSet<E> clone =
+                (ConcurrentSkipListSet<E>) super.clone();
+            clone.setMap(new ConcurrentSkipListMap<E,Object>(m));
+            return clone;
         } catch (CloneNotSupportedException e) {
             throw new InternalError();
         }
-
-        return clone;
     }
 
     /* ---------------- Set operations -------------- */
@@ -322,8 +321,8 @@ public class ConcurrentSkipListSet<E>
     public boolean removeAll(Collection<?> c) {
         // Override AbstractSet version to avoid unnecessary call to size()
         boolean modified = false;
-        for (Iterator<?> i = c.iterator(); i.hasNext(); )
-            if (remove(i.next()))
+        for (Object e : c)
+            if (remove(e))
                 modified = true;
         return modified;
     }
@@ -468,7 +467,7 @@ public class ConcurrentSkipListSet<E>
      * @return a reverse order view of this set
      */
     public NavigableSet<E> descendingSet() {
-        return new ConcurrentSkipListSet(m.descendingMap());
+        return new ConcurrentSkipListSet<E>(m.descendingMap());
     }
 
     // Support for resetting map in clone
@@ -481,7 +480,7 @@ public class ConcurrentSkipListSet<E>
     static {
         try {
             UNSAFE = sun.misc.Unsafe.getUnsafe();
-            Class k = ConcurrentSkipListSet.class;
+            Class<?> k = ConcurrentSkipListSet.class;
             mapOffset = UNSAFE.objectFieldOffset
                 (k.getDeclaredField("m"));
         } catch (Exception e) {

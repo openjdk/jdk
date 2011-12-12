@@ -531,7 +531,7 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
             // not just a .equals element.
             lock.lock();
             try {
-                for (Iterator it = q.iterator(); it.hasNext(); ) {
+                for (Iterator<E> it = q.iterator(); it.hasNext(); ) {
                     if (it.next() == x) {
                         it.remove();
                         return;
