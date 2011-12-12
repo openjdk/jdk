@@ -25,13 +25,14 @@
  * @test
  * @bug 7073631
  * @summary tests error and diagnostics positions
- * @author  jan.lahoda@oracle.com
+ * @author  Jan Lahoda
  */
 
 import com.sun.source.tree.BinaryTree;
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.ErroneousTree;
 import com.sun.source.tree.ExpressionStatementTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
@@ -49,6 +50,7 @@ import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.tree.JCTree;
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -81,6 +83,34 @@ public class JavacParserTest extends TestCase {
             return text;
         }
     }
+    /*
+     * converts Windows to Unix style LFs for comparing strings
+     */
+    private String normalize(String in) {
+        return in.replace(System.getProperty("line.separator"), "\n");
+    }
+
+    public CompilationUnitTree getCompilationUnitTree(String code) throws IOException {
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        return cut;
+    }
+
+    public List<String> getErroneousTreeValues(ErroneousTree node) {
+
+        List<String> values = new ArrayList<>();
+        if (node.getErrorTrees() != null) {
+            for (Tree t : node.getErrorTrees()) {
+                values.add(t.toString());
+            }
+        } else {
+            throw new RuntimeException("ERROR: No Erroneous tree "
+                    + "has been created.");
+        }
+        return values;
+    }
 
     public void testPositionForSuperConstructorCalls() throws IOException {
         assert tool != null;
@@ -97,22 +127,28 @@ public class JavacParserTest extends TestCase {
         ExpressionStatementTree es =
                 (ExpressionStatementTree) method.getBody().getStatements().get(0);
 
+        final int esStartPos = code.indexOf(es.toString());
+        final int esEndPos = esStartPos + es.toString().length();
         assertEquals("testPositionForSuperConstructorCalls",
-                72 - 24, pos.getStartPosition(cut, es));
+                esStartPos, pos.getStartPosition(cut, es));
         assertEquals("testPositionForSuperConstructorCalls",
-                80 - 24, pos.getEndPosition(cut, es));
+                esEndPos, pos.getEndPosition(cut, es));
 
         MethodInvocationTree mit = (MethodInvocationTree) es.getExpression();
 
+        final int mitStartPos = code.indexOf(mit.toString());
+        final int mitEndPos = mitStartPos + mit.toString().length();
         assertEquals("testPositionForSuperConstructorCalls",
-                72 - 24, pos.getStartPosition(cut, mit));
+                mitStartPos, pos.getStartPosition(cut, mit));
         assertEquals("testPositionForSuperConstructorCalls",
-                79 - 24, pos.getEndPosition(cut, mit));
+                mitEndPos, pos.getEndPosition(cut, mit));
 
+        final int methodStartPos = mitStartPos;
+        final int methodEndPos = methodStartPos + mit.getMethodSelect().toString().length();
         assertEquals("testPositionForSuperConstructorCalls",
-                72 - 24, pos.getStartPosition(cut, mit.getMethodSelect()));
+                methodStartPos, pos.getStartPosition(cut, mit.getMethodSelect()));
         assertEquals("testPositionForSuperConstructorCalls",
-                77 - 24, pos.getEndPosition(cut, mit.getMethodSelect()));
+                methodEndPos, pos.getEndPosition(cut, mit.getMethodSelect()));
 
     }
 
@@ -158,24 +194,21 @@ public class JavacParserTest extends TestCase {
 
     public void testPreferredPositionForBinaryOp() throws IOException {
 
-        String code = "package test; public class Test {" +
-                "private void test() {" +
-                "Object o = null; boolean b = o != null && o instanceof String;" +
-                "} private Test() {}}";
+        String code = "package test; public class Test {"
+                + "private void test() {"
+                + "Object o = null; boolean b = o != null && o instanceof String;"
+                + "} private Test() {}}";
 
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
-                null, Arrays.asList(new MyFileObject(code)));
-        CompilationUnitTree cut = ct.parse().iterator().next();
-
+        CompilationUnitTree cut = getCompilationUnitTree(code);
         ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
         MethodTree method = (MethodTree) clazz.getMembers().get(0);
         VariableTree condSt = (VariableTree) method.getBody().getStatements().get(1);
         BinaryTree cond = (BinaryTree) condSt.getInitializer();
 
         JCTree condJC = (JCTree) cond;
-
-        assertEquals("testNewClassWithEnclosing",
-                117 - 24, condJC.pos);
+        int condStartPos = code.indexOf("&&");
+        assertEquals("testPreferredPositionForBinaryOp",
+                condStartPos, condJC.pos);
     }
 
     public void testPositionBrokenSource126732a() throws IOException {
@@ -599,9 +632,7 @@ public class JavacParserTest extends TestCase {
         final String code = "package t; class Test { " +
                 "{ try (java.io.InputStream in = null) { } } }";
 
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
-                null, Arrays.asList(new MyFileObject(code)));
-        CompilationUnitTree cut = ct.parse().iterator().next();
+        CompilationUnitTree cut = getCompilationUnitTree(code);
 
         new TreeScanner<Void, Void>() {
             @Override
@@ -622,9 +653,7 @@ public class JavacParserTest extends TestCase {
         final String code = "package t; class Test { " +
                 "{ java.io.InputStream in = null; } }";
 
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
-                null, Arrays.asList(new MyFileObject(code)));
-        CompilationUnitTree cut = ct.parse().iterator().next();
+        CompilationUnitTree cut = getCompilationUnitTree(code);
 
         new TreeScanner<Void, Void>() {
 
@@ -638,6 +667,138 @@ public class JavacParserTest extends TestCase {
                 return super.visitVariable(node, p);
             }
         }.scan(cut, null);
+    }
+
+    // expected erroneous tree: int x = y;(ERROR);
+    public void testOperatorMissingError() throws IOException {
+
+        String code = "package test; public class ErrorTest { "
+                + "void method() { int x = y  z } }";
+        CompilationUnitTree cut = getCompilationUnitTree(code);
+        final List<String> values = new ArrayList<>();
+        final List<String> expectedValues =
+                new ArrayList<>(Arrays.asList("[z]"));
+
+        new TreeScanner<Void, Void>() {
+
+            @Override
+            public Void visitErroneous(ErroneousTree node, Void p) {
+
+                values.add(getErroneousTreeValues(node).toString());
+                return null;
+
+            }
+        }.scan(cut, null);
+
+        assertEquals("testSwitchError: The Erroneous tree "
+                + "error values: " + values
+                + " do not match expected error values: "
+                + expectedValues, values, expectedValues);
+    }
+
+    //expected erroneous tree:  String s = (ERROR);
+    public void testMissingParenthesisError() throws IOException {
+
+        String code = "package test; public class ErrorTest { "
+                + "void f() {String s = new String; } }";
+        CompilationUnitTree cut = getCompilationUnitTree(code);
+        final List<String> values = new ArrayList<>();
+        final List<String> expectedValues =
+                new ArrayList<>(Arrays.asList("[new String()]"));
+
+        new TreeScanner<Void, Void>() {
+
+            @Override
+            public Void visitErroneous(ErroneousTree node, Void p) {
+
+                values.add(getErroneousTreeValues(node).toString());
+                return null;
+            }
+        }.scan(cut, null);
+
+        assertEquals("testSwitchError: The Erroneous tree "
+                + "error values: " + values
+                + " do not match expected error values: "
+                + expectedValues, values, expectedValues);
+    }
+
+    //expected erroneous tree: package test; (ERROR)(ERROR)
+    public void testMissingClassError() throws IOException {
+
+        String code = "package Test; clas ErrorTest {  "
+                + "void f() {String s = new String(); } }";
+        CompilationUnitTree cut = getCompilationUnitTree(code);
+        final List<String> values = new ArrayList<>();
+        final List<String> expectedValues =
+                new ArrayList<>(Arrays.asList("[, clas]", "[]"));
+
+        new TreeScanner<Void, Void>() {
+
+            @Override
+            public Void visitErroneous(ErroneousTree node, Void p) {
+
+                values.add(getErroneousTreeValues(node).toString());
+                return null;
+            }
+        }.scan(cut, null);
+
+        assertEquals("testSwitchError: The Erroneous tree "
+                + "error values: " + values
+                + " do not match expected error values: "
+                + expectedValues, values, expectedValues);
+    }
+
+    //expected erroneous tree: void m1(int i) {(ERROR);{(ERROR);}
+    public void testSwitchError() throws IOException {
+
+        String code = "package test; public class ErrorTest { "
+                + "int numDays; void m1(int i) { switchh {i} { case 1: "
+                + "numDays = 31; break; } } }";
+        CompilationUnitTree cut = getCompilationUnitTree(code);
+        final List<String> values = new ArrayList<>();
+        final List<String> expectedValues =
+                new ArrayList<>(Arrays.asList("[switchh]", "[i]"));
+
+        new TreeScanner<Void, Void>() {
+
+            @Override
+            public Void visitErroneous(ErroneousTree node, Void p) {
+
+                values.add(getErroneousTreeValues(node).toString());
+                return null;
+            }
+        }.scan(cut, null);
+
+        assertEquals("testSwitchError: The Erroneous tree "
+                + "error values: " + values
+                + " do not match expected error values: "
+                + expectedValues, values, expectedValues);
+    }
+
+    //expected erroneous tree: class ErrorTest {(ERROR)
+    public void testMethodError() throws IOException {
+
+        String code = "package Test; class ErrorTest {  "
+                + "static final void f) {String s = new String(); } }";
+        CompilationUnitTree cut = getCompilationUnitTree(code);
+        final List<String> values = new ArrayList<>();
+        final List<String> expectedValues =
+                new ArrayList<>(Arrays.asList("[\nstatic final void f();]"));
+
+        new TreeScanner<Void, Void>() {
+
+            @Override
+            public Void visitErroneous(ErroneousTree node, Void p) {
+
+                values.add(normalize(getErroneousTreeValues(node).toString()));
+                return null;
+            }
+        }.scan(cut, null);
+
+        assertEquals("testMethodError: The Erroneous tree "
+                + "error value: " + values
+                + " does not match expected error values: "
+                + expectedValues, values, expectedValues);
     }
 
     void testsNotWorking() throws IOException {
@@ -661,7 +822,13 @@ public class JavacParserTest extends TestCase {
         testStartPositionForMethodWithoutModifiers();
         testVarPos();
         testVariableInIfThen3();
+        testMissingExponent();
         testTryResourcePos();
+        testOperatorMissingError();
+        testMissingParenthesisError();
+        testMissingClassError();
+        testSwitchError();
+        testMethodError();
     }
 
     public static void main(String... args) throws IOException {

@@ -1143,49 +1143,49 @@ public class JavacParser implements Parser {
                         // typeArgs saved for next loop iteration.
                         t = toP(F.at(pos).Select(t, ident()));
                         break;
-                    case LT:
-                        if ((mode & (TYPE | NOPARAMS)) == 0) {
-                            //could be an unbound method reference whose qualifier
-                            //is a generic type i.e. A<S>#m
-                            mode = EXPR | TYPE;
-                            JCTree.Tag op = JCTree.Tag.LT;
-                            int pos1 = token.pos;
-                            nextToken();
-                            mode |= EXPR | TYPE | TYPEARG;
-                            JCExpression t1 = term3();
-                            if ((mode & TYPE) != 0 &&
-                                (token.kind == COMMA || token.kind == GT)) {
-                                mode = TYPE;
-                                ListBuffer<JCExpression> args = new ListBuffer<JCExpression>();
-                                args.append(t1);
-                                while (token.kind == COMMA) {
-                                    nextToken();
-                                    args.append(typeArgument());
-                                }
-                                accept(GT);
-                                t = toP(F.at(pos1).TypeApply(t, args.toList()));
-                                checkGenerics();
-                                while (token.kind == DOT) {
-                                    nextToken();
-                                    mode = TYPE;
-                                    t = toP(F.at(token.pos).Select(t, ident()));
-                                    t = typeArgumentsOpt(t);
-                                }
-                                if (token.kind != HASH) {
-                                    //method reference expected here
-                                    t = illegal();
-                                }
-                                mode = EXPR;
-                                break;
-                            } else if ((mode & EXPR) != 0) {
-                                //rollback - it was a binary expression
-                                mode = EXPR;
-                                JCExpression e = term2Rest(t1, TreeInfo.shiftPrec);
-                                t = F.at(pos1).Binary(op, t, e);
-                                t = termRest(term1Rest(term2Rest(t, TreeInfo.orPrec)));
-                            }
-                        }
-                        break loop;
+//                    case LT:
+//                        if ((mode & (TYPE | NOPARAMS)) == 0) {
+//                            //could be an unbound method reference whose qualifier
+//                            //is a generic type i.e. A<S>#m
+//                            mode = EXPR | TYPE;
+//                            JCTree.Tag op = JCTree.Tag.LT;
+//                            int pos1 = token.pos;
+//                            nextToken();
+//                            mode |= EXPR | TYPE | TYPEARG;
+//                            JCExpression t1 = term3();
+//                            if ((mode & TYPE) != 0 &&
+//                                (token.kind == COMMA || token.kind == GT)) {
+//                                mode = TYPE;
+//                                ListBuffer<JCExpression> args = new ListBuffer<JCExpression>();
+//                                args.append(t1);
+//                                while (token.kind == COMMA) {
+//                                    nextToken();
+//                                    args.append(typeArgument());
+//                                }
+//                                accept(GT);
+//                                t = toP(F.at(pos1).TypeApply(t, args.toList()));
+//                                checkGenerics();
+//                                while (token.kind == DOT) {
+//                                    nextToken();
+//                                    mode = TYPE;
+//                                    t = toP(F.at(token.pos).Select(t, ident()));
+//                                    t = typeArgumentsOpt(t);
+//                                }
+//                                if (token.kind != HASH) {
+//                                    //method reference expected here
+//                                    t = illegal();
+//                                }
+//                                mode = EXPR;
+//                                break;
+//                            } else if ((mode & EXPR) != 0) {
+//                                //rollback - it was a binary expression
+//                                mode = EXPR;
+//                                JCExpression e = term2Rest(t1, TreeInfo.shiftPrec);
+//                                t = F.at(pos1).Binary(op, t, e);
+//                                t = termRest(term1Rest(term2Rest(t, TreeInfo.orPrec)));
+//                            }
+//                        }
+//                        break loop;
                     default:
                         break loop;
                     }
@@ -2604,7 +2604,7 @@ public class JavacParser implements Parser {
      *  @param mods    The modifiers starting the class declaration
      *  @param dc       The documentation comment for the class, or null.
      */
-    JCClassDecl classDeclaration(JCModifiers mods, String dc) {
+    protected JCClassDecl classDeclaration(JCModifiers mods, String dc) {
         int pos = token.pos;
         accept(CLASS);
         Name name = ident();
@@ -2633,7 +2633,7 @@ public class JavacParser implements Parser {
      *  @param mods    The modifiers starting the interface declaration
      *  @param dc       The documentation comment for the interface, or null.
      */
-    JCClassDecl interfaceDeclaration(JCModifiers mods, String dc) {
+    protected JCClassDecl interfaceDeclaration(JCModifiers mods, String dc) {
         int pos = token.pos;
         accept(INTERFACE);
         Name name = ident();
@@ -2656,7 +2656,7 @@ public class JavacParser implements Parser {
      *  @param mods    The modifiers starting the enum declaration
      *  @param dc       The documentation comment for the enum, or null.
      */
-    JCClassDecl enumDeclaration(JCModifiers mods, String dc) {
+    protected JCClassDecl enumDeclaration(JCModifiers mods, String dc) {
         int pos = token.pos;
         accept(ENUM);
         Name name = ident();
@@ -2878,7 +2878,7 @@ public class JavacParser implements Parser {
      *  ConstructorDeclaratorRest =
      *      "(" FormalParameterListOpt ")" [THROWS TypeList] MethodBody
      */
-    JCTree methodDeclaratorRest(int pos,
+    protected JCTree methodDeclaratorRest(int pos,
                               JCModifiers mods,
                               JCExpression type,
                               Name name,
