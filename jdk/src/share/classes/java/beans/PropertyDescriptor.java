@@ -174,7 +174,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
      *         or {@code null} if the type cannot be determined
      */
     public synchronized Class<?> getPropertyType() {
-        Class type = getPropertyType0();
+        Class<?> type = getPropertyType0();
         if (type  == null) {
             try {
                 type = findPropertyType(getReadMethod(), getWriteMethod());
@@ -205,13 +205,13 @@ public class PropertyDescriptor extends FeatureDescriptor {
     public synchronized Method getReadMethod() {
         Method readMethod = getReadMethod0();
         if (readMethod == null) {
-            Class cls = getClass0();
+            Class<?> cls = getClass0();
             if (cls == null || (readMethodName == null && readMethodRef == null)) {
                 // The read method was explicitly set to null.
                 return null;
             }
             if (readMethodName == null) {
-                Class type = getPropertyType0();
+                Class<?> type = getPropertyType0();
                 if (type == boolean.class || type == null) {
                     readMethodName = Introspector.IS_PREFIX + getBaseName();
                 } else {
@@ -268,14 +268,14 @@ public class PropertyDescriptor extends FeatureDescriptor {
     public synchronized Method getWriteMethod() {
         Method writeMethod = getWriteMethod0();
         if (writeMethod == null) {
-            Class cls = getClass0();
+            Class<?> cls = getClass0();
             if (cls == null || (writeMethodName == null && writeMethodRef == null)) {
                 // The write method was explicitly set to null.
                 return null;
             }
 
             // We need the type to fetch the correct method.
-            Class type = getPropertyType0();
+            Class<?> type = getPropertyType0();
             if (type == null) {
                 try {
                     // Can't use getPropertyType since it will lead to recursive loop.
@@ -292,7 +292,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
                 writeMethodName = Introspector.SET_PREFIX + getBaseName();
             }
 
-            Class[] args = (type == null) ? null : new Class[] { type };
+            Class<?>[] args = (type == null) ? null : new Class<?>[] { type };
             writeMethod = Introspector.findMethod(cls, writeMethodName, 1, args);
             if (writeMethod != null) {
                 if (!writeMethod.getReturnType().equals(void.class)) {
@@ -437,9 +437,9 @@ public class PropertyDescriptor extends FeatureDescriptor {
     public PropertyEditor createPropertyEditor(Object bean) {
         Object editor = null;
 
-        Class cls = getPropertyEditorClass();
+        Class<?> cls = getPropertyEditorClass();
         if (cls != null) {
-            Constructor ctor = null;
+            Constructor<?> ctor = null;
             if (bean != null) {
                 try {
                     ctor = cls.getConstructor(new Class[] { Object.class });
@@ -634,9 +634,9 @@ public class PropertyDescriptor extends FeatureDescriptor {
      *         read and write methods are null.
      * @throws IntrospectionException if the read or write method is invalid
      */
-    private Class findPropertyType(Method readMethod, Method writeMethod)
+    private Class<?> findPropertyType(Method readMethod, Method writeMethod)
         throws IntrospectionException {
-        Class propertyType = null;
+        Class<?> propertyType = null;
         try {
             if (readMethod != null) {
                 Class[] params = getParameterTypes(getClass0(), readMethod);

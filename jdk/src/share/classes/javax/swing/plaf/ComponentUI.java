@@ -244,6 +244,7 @@ public abstract class ComponentUI {
      * @see javax.swing.JComponent#contains
      * @see java.awt.Component#contains
      */
+    @SuppressWarnings("deprecation")
     public boolean contains(JComponent c, int x, int y) {
         return c.inside(x, y);
     }
