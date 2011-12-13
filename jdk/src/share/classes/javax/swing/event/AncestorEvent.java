@@ -43,6 +43,7 @@ import javax.swing.*;
  *
  * @author Dave Moore
  */
+@SuppressWarnings("serial")
 public class AncestorEvent extends AWTEvent {
     /**
      * An ancestor-component was added to the hierarchy of
