@@ -122,18 +122,25 @@ void CE_Eliminator::block_do(BlockBegin* block) {
   if (sux != f_goto->default_sux()) return;
 
   // check if at least one word was pushed on sux_state
+  // inlining depths must match
+  ValueStack* if_state = if_->state();
   ValueStack* sux_state = sux->state();
-  if (sux_state->stack_size() <= if_->state()->stack_size()) return;
+  while (sux_state->scope() != if_state->scope()) {
+    if_state = if_state->caller_state();
+    assert(if_state != NULL, "states do not match up");
+  }
+
+  if (sux_state->stack_size() <= if_state->stack_size()) return;
 
   // check if phi function is present at end of successor stack and that
   // only this phi was pushed on the stack
-  Value sux_phi = sux_state->stack_at(if_->state()->stack_size());
+  Value sux_phi = sux_state->stack_at(if_state->stack_size());
   if (sux_phi == NULL || sux_phi->as_Phi() == NULL || sux_phi->as_Phi()->block() != sux) return;
-  if (sux_phi->type()->size() != sux_state->stack_size() - if_->state()->stack_size()) return;
+  if (sux_phi->type()->size() != sux_state->stack_size() - if_state->stack_size()) return;
 
   // get the values that were pushed in the true- and false-branch
-  Value t_value = t_goto->state()->stack_at(if_->state()->stack_size());
-  Value f_value = f_goto->state()->stack_at(if_->state()->stack_size());
+  Value t_value = t_goto->state()->stack_at(if_state->stack_size());
+  Value f_value = f_goto->state()->stack_at(if_state->stack_size());
 
   // backend does not support floats
   assert(t_value->type()->base() == f_value->type()->base(), "incompatible types");
@@ -180,11 +187,7 @@ void CE_Eliminator::block_do(BlockBegin* block) {
   Goto* goto_ = new Goto(sux, state_before, if_->is_safepoint() || t_goto->is_safepoint() || f_goto->is_safepoint());
 
   // prepare state for Goto
-  ValueStack* goto_state = if_->state();
-  while (sux_state->scope() != goto_state->scope()) {
-    goto_state = goto_state->caller_state();
-    assert(goto_state != NULL, "states do not match up");
-  }
+  ValueStack* goto_state = if_state;
   goto_state = goto_state->copy(ValueStack::StateAfter, goto_state->bci());
   goto_state->push(result->type(), result);
   assert(goto_state->is_same(sux_state), "states must match now");
