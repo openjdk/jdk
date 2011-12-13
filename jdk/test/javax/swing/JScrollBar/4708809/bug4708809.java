@@ -44,7 +44,7 @@ public class bug4708809 {
     public static void main(String[] args) throws Exception {
         SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
-        robot.setAutoDelay(50);
+        robot.setAutoDelay(350);
 
         SwingUtilities.invokeAndWait(new Runnable() {
 
