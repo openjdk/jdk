@@ -82,7 +82,7 @@ import com.sun.tools.javac.util.Options;
 
 import static javax.tools.StandardLocation.*;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
-import static com.sun.tools.javac.main.OptionName.*;
+import static com.sun.tools.javac.main.Option.*;
 import static com.sun.tools.javac.code.Lint.LintCategory.PROCESSING;
 
 /**
