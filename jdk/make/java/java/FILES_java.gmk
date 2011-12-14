@@ -475,6 +475,7 @@ JAVA_JAVA_java = \
     sun/misc/MessageUtils.java \
     sun/misc/GC.java \
     sun/misc/Service.java \
+    sun/misc/JavaAWTAccess.java \
     sun/misc/JavaLangAccess.java \
     sun/misc/JavaIOAccess.java \
     sun/misc/JavaIOFileDescriptorAccess.java \

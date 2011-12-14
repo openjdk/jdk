@@ -777,6 +777,27 @@ public final class AppContext {
         }
         return changeSupport.getPropertyChangeListeners(propertyName);
     }
+
+    // Set up JavaAWTAccess in SharedSecrets
+    static {
+        sun.misc.SharedSecrets.setJavaAWTAccess(new sun.misc.JavaAWTAccess() {
+            public Object get(Object key) {
+                return getAppContext().get(key);
+            }
+            public void put(Object key, Object value) {
+                getAppContext().put(key, value);
+            }
+            public void remove(Object key) {
+                getAppContext().remove(key);
+            }
+            public boolean isDisposed() {
+                return getAppContext().isDisposed();
+            }
+            public boolean isMainAppContext() {
+                return (numAppContexts == 1);
+            }
+        });
+    }
 }
 
 final class MostRecentKeyValue {
