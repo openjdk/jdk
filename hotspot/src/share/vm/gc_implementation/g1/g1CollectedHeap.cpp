@@ -2411,8 +2411,11 @@ void G1CollectedHeap::collect(GCCause::Cause cause) {
 }
 
 bool G1CollectedHeap::is_in(const void* p) const {
-  HeapRegion* hr = _hrs.addr_to_region((HeapWord*) p);
-  if (hr != NULL) {
+  if (_g1_committed.contains(p)) {
+    // Given that we know that p is in the committed space,
+    // heap_region_containing_raw() should successfully
+    // return the containing region.
+    HeapRegion* hr = heap_region_containing_raw(p);
     return hr->is_in(p);
   } else {
     return _perm_gen->as_gen()->is_in(p);

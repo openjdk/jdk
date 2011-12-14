@@ -217,8 +217,8 @@ class CollectedHeap : public CHeapObj {
     return p == NULL || is_in_reserved(p);
   }
 
-  // Returns "TRUE" if "p" points to the head of an allocated object in the
-  // heap. Since this method can be expensive in general, we restrict its
+  // Returns "TRUE" iff "p" points into the committed areas of the heap.
+  // Since this method can be expensive in general, we restrict its
   // use to assertion checking only.
   virtual bool is_in(const void* p) const = 0;
 
@@ -648,6 +648,10 @@ class CollectedHeap : public CHeapObj {
   // reduce the occurrence of ParallelGCThreads to uses where the
   // actual number may be germane.
   static bool use_parallel_gc_threads() { return ParallelGCThreads > 0; }
+
+  /////////////// Unit tests ///////////////
+
+  NOT_PRODUCT(static void test_is_in();)
 };
 
 // Class to set and reset the GC cause for a CollectedHeap.

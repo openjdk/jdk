@@ -220,7 +220,7 @@ class Generation: public CHeapObj {
   MemRegion prev_used_region() const { return _prev_used_region; }
   virtual void  save_used_region()   { _prev_used_region = used_region(); }
 
-  // Returns "TRUE" iff "p" points into an allocated object in the generation.
+  // Returns "TRUE" iff "p" points into the committed areas in the generation.
   // For some kinds of generations, this may be an expensive operation.
   // To avoid performance problems stemming from its inadvertent use in
   // product jvm's, we restrict its use to assertion checking or
