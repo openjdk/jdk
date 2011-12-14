@@ -34,6 +34,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
 #include "services/attachListener.hpp"
+#include "services/diagnosticCommand.hpp"
 #include "services/heapDumper.hpp"
 
 volatile bool AttachListener::_initialized;
@@ -145,6 +146,24 @@ static jint thread_dump(AttachOperation* op, outputStream* out) {
   VM_FindDeadlocks op3(out);
   VMThread::execute(&op3);
 
+  return JNI_OK;
+}
+
+// A jcmd attach operation request was received, which will now
+// dispatch to the diagnostic commands used for serviceability functions.
+static jint jcmd(AttachOperation* op, outputStream* out) {
+  Thread* THREAD = Thread::current();
+  // All the supplied jcmd arguments are stored as a single
+  // string (op->arg(0)). This is parsed by the Dcmd framework.
+  DCmd::parse_and_execute(out, op->arg(0), ' ', THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    java_lang_Throwable::print(PENDING_EXCEPTION, out);
+    CLEAR_PENDING_EXCEPTION;
+    // The exception has been printed on the output stream
+    // If the JVM returns JNI_ERR, the attachAPI throws a generic I/O
+    // exception and the content of the output stream is not processed.
+    // By returning JNI_OK, the exception will be displayed on the client side
+  }
   return JNI_OK;
 }
 
@@ -366,6 +385,7 @@ static AttachOperationFunctionInfo funcs[] = {
   { "inspectheap",      heap_inspection },
   { "setflag",          set_flag },
   { "printflag",        print_flag },
+  { "jcmd",             jcmd },
   { NULL,               NULL }
 };
 
