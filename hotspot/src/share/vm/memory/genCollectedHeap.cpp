@@ -957,7 +957,7 @@ bool GenCollectedHeap::is_in_young(oop p) {
   return result;
 }
 
-// Returns "TRUE" iff "p" points into the allocated area of the heap.
+// Returns "TRUE" iff "p" points into the committed areas of the heap.
 bool GenCollectedHeap::is_in(const void* p) const {
   #ifndef ASSERT
   guarantee(VerifyBeforeGC   ||

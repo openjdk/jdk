@@ -1196,7 +1196,7 @@ public:
                                        HumongousRegionSet* humongous_proxy_set,
                                        bool par);
 
-  // Returns "TRUE" iff "p" points into the allocated area of the heap.
+  // Returns "TRUE" iff "p" points into the committed areas of the heap.
   virtual bool is_in(const void* p) const;
 
   // Return "TRUE" iff the given object address is within the collection
