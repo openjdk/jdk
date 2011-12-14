@@ -370,6 +370,17 @@ public final class SunGraphics2D
     }
 
     public void validatePipe() {
+        /* This workaround is for the situation when we update the Pipelines
+         * for invalid SurfaceData and run further code when the current
+         * pipeline doesn't support the type of new SurfaceData created during
+         * the current pipeline's work (in place of the invalid SurfaceData).
+         * Usually SurfaceData and Pipelines are repaired (through revalidateAll)
+         * and called again in the exception handlers */
+
+        if (!surfaceData.isValid()) {
+            throw new InvalidPipeException("attempt to validate Pipe with invalid SurfaceData");
+        }
+
         surfaceData.validatePipe(this);
     }
 
