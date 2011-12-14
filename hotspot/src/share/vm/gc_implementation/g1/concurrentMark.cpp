@@ -458,8 +458,8 @@ bool ConcurrentMark::not_yet_marked(oop obj) const {
 #pragma warning( disable:4355 ) // 'this' : used in base member initializer list
 #endif // _MSC_VER
 
-size_t ConcurrentMark::scale_parallel_threads(size_t n_par_threads) {
-  return MAX2((n_par_threads + 2) / 4, (size_t)1);
+uint ConcurrentMark::scale_parallel_threads(uint n_par_threads) {
+  return MAX2((n_par_threads + 2) / 4, 1U);
 }
 
 ConcurrentMark::ConcurrentMark(ReservedSpace rs,
@@ -486,7 +486,7 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
   _regionStack(),
   // _finger set in set_non_marking_state
 
-  _max_task_num(MAX2(ParallelGCThreads, (size_t)1)),
+  _max_task_num(MAX2((uint)ParallelGCThreads, 1U)),
   // _active_tasks set in set_non_marking_state
   // _tasks set inside the constructor
   _task_queues(new CMTaskQueueSet((int) _max_task_num)),
@@ -506,7 +506,6 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
   _cleanup_times(),
   _total_counting_time(0.0),
   _total_rs_scrub_time(0.0),
-
   _parallel_workers(NULL) {
   CMVerboseLevel verbose_level = (CMVerboseLevel) G1MarkingVerboseLevel;
   if (verbose_level < no_verbose) {
@@ -568,7 +567,7 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
       // notice that ConcGCThreads overwrites G1MarkingOverheadPercent
       // if both are set
 
-      _parallel_marking_threads = ConcGCThreads;
+      _parallel_marking_threads = (uint) ConcGCThreads;
       _max_parallel_marking_threads = _parallel_marking_threads;
       _sleep_factor             = 0.0;
       _marking_task_overhead    = 1.0;
@@ -589,12 +588,12 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
       double sleep_factor =
                          (1.0 - marking_task_overhead) / marking_task_overhead;
 
-      _parallel_marking_threads = (size_t) marking_thread_num;
+      _parallel_marking_threads = (uint) marking_thread_num;
       _max_parallel_marking_threads = _parallel_marking_threads;
       _sleep_factor             = sleep_factor;
       _marking_task_overhead    = marking_task_overhead;
     } else {
-      _parallel_marking_threads = scale_parallel_threads(ParallelGCThreads);
+      _parallel_marking_threads = scale_parallel_threads((uint)ParallelGCThreads);
       _max_parallel_marking_threads = _parallel_marking_threads;
       _sleep_factor             = 0.0;
       _marking_task_overhead    = 1.0;
@@ -618,7 +617,7 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
 
     guarantee(parallel_marking_threads() > 0, "peace of mind");
     _parallel_workers = new FlexibleWorkGang("G1 Parallel Marking Threads",
-         (int) _max_parallel_marking_threads, false, true);
+         _max_parallel_marking_threads, false, true);
     if (_parallel_workers == NULL) {
       vm_exit_during_initialization("Failed necessary allocation.");
     } else {
@@ -691,7 +690,7 @@ void ConcurrentMark::reset() {
   set_concurrent_marking_in_progress();
 }
 
-void ConcurrentMark::set_phase(size_t active_tasks, bool concurrent) {
+void ConcurrentMark::set_phase(uint active_tasks, bool concurrent) {
   assert(active_tasks <= _max_task_num, "we should not have more");
 
   _active_tasks = active_tasks;
@@ -1048,7 +1047,7 @@ private:
   ConcurrentMarkThread* _cmt;
 
 public:
-  void work(int worker_i) {
+  void work(uint worker_id) {
     assert(Thread::current()->is_ConcurrentGC_thread(),
            "this should only be done by a conc GC thread");
     ResourceMark rm;
@@ -1057,8 +1056,8 @@ public:
 
     ConcurrentGCThread::stsJoin();
 
-    assert((size_t) worker_i < _cm->active_tasks(), "invariant");
-    CMTask* the_task = _cm->task(worker_i);
+    assert(worker_id < _cm->active_tasks(), "invariant");
+    CMTask* the_task = _cm->task(worker_id);
     the_task->record_start_time();
     if (!_cm->has_aborted()) {
       do {
@@ -1076,7 +1075,7 @@ public:
         double elapsed_time_sec = end_time_sec - start_time_sec;
         _cm->clear_has_overflown();
 
-        bool ret = _cm->do_yield_check(worker_i);
+        bool ret = _cm->do_yield_check(worker_id);
 
         jlong sleep_time_ms;
         if (!_cm->has_aborted() && the_task->has_aborted()) {
@@ -1105,7 +1104,7 @@ public:
     ConcurrentGCThread::stsLeave();
 
     double end_vtime = os::elapsedVTime();
-    _cm->update_accum_task_vtime(worker_i, end_vtime - start_vtime);
+    _cm->update_accum_task_vtime(worker_id, end_vtime - start_vtime);
   }
 
   CMConcurrentMarkingTask(ConcurrentMark* cm,
@@ -1117,9 +1116,9 @@ public:
 
 // Calculates the number of active workers for a concurrent
 // phase.
-size_t ConcurrentMark::calc_parallel_marking_threads() {
+uint ConcurrentMark::calc_parallel_marking_threads() {
   if (G1CollectedHeap::use_parallel_gc_threads()) {
-    size_t n_conc_workers = 0;
+    uint n_conc_workers = 0;
     if (!UseDynamicNumberOfGCThreads ||
         (!FLAG_IS_DEFAULT(ConcGCThreads) &&
          !ForceDynamicNumberOfGCThreads)) {
@@ -1159,7 +1158,7 @@ void ConcurrentMark::markFromRoots() {
   assert(parallel_marking_threads() <= max_parallel_marking_threads(),
     "Maximum number of marking threads exceeded");
 
-  size_t active_workers = MAX2((size_t) 1, parallel_marking_threads());
+  uint active_workers = MAX2(1U, parallel_marking_threads());
 
   // Parallel task terminator is set in "set_phase()"
   set_phase(active_workers, true /* concurrent */);
@@ -1503,7 +1502,7 @@ class G1ParFinalCountTask: public AbstractGangTask {
 protected:
   G1CollectedHeap* _g1h;
   CMBitMap* _bm;
-  size_t _n_workers;
+  uint    _n_workers;
   size_t *_live_bytes;
   size_t *_used_bytes;
   BitMap* _region_bm;
@@ -1535,13 +1534,13 @@ public:
     FREE_C_HEAP_ARRAY(size_t, _used_bytes);
   }
 
-  void work(int i) {
+  void work(uint worker_id) {
     CalcLiveObjectsClosure calccl(true /*final*/,
                                   _bm, _g1h->concurrent_mark(),
                                   _region_bm, _card_bm);
     calccl.no_yield();
     if (G1CollectedHeap::use_parallel_gc_threads()) {
-      _g1h->heap_region_par_iterate_chunked(&calccl, i,
+      _g1h->heap_region_par_iterate_chunked(&calccl, worker_id,
                                             (int) _n_workers,
                                             HeapRegion::FinalCountClaimValue);
     } else {
@@ -1549,19 +1548,19 @@ public:
     }
     assert(calccl.complete(), "Shouldn't have yielded!");
 
-    assert((size_t) i < _n_workers, "invariant");
-    _live_bytes[i] = calccl.tot_live();
-    _used_bytes[i] = calccl.tot_used();
+    assert(worker_id < _n_workers, "invariant");
+    _live_bytes[worker_id] = calccl.tot_live();
+    _used_bytes[worker_id] = calccl.tot_used();
   }
   size_t live_bytes()  {
     size_t live_bytes = 0;
-    for (size_t i = 0; i < _n_workers; ++i)
+    for (uint i = 0; i < _n_workers; ++i)
       live_bytes += _live_bytes[i];
     return live_bytes;
   }
   size_t used_bytes()  {
     size_t used_bytes = 0;
-    for (size_t i = 0; i < _n_workers; ++i)
+    for (uint i = 0; i < _n_workers; ++i)
       used_bytes += _used_bytes[i];
     return used_bytes;
   }
@@ -1646,18 +1645,18 @@ public:
     AbstractGangTask("G1 note end"), _g1h(g1h),
     _max_live_bytes(0), _freed_bytes(0), _cleanup_list(cleanup_list) { }
 
-  void work(int i) {
+  void work(uint worker_id) {
     double start = os::elapsedTime();
     FreeRegionList local_cleanup_list("Local Cleanup List");
     OldRegionSet old_proxy_set("Local Cleanup Old Proxy Set");
     HumongousRegionSet humongous_proxy_set("Local Cleanup Humongous Proxy Set");
     HRRSCleanupTask hrrs_cleanup_task;
-    G1NoteEndOfConcMarkClosure g1_note_end(_g1h, i, &local_cleanup_list,
+    G1NoteEndOfConcMarkClosure g1_note_end(_g1h, worker_id, &local_cleanup_list,
                                            &old_proxy_set,
                                            &humongous_proxy_set,
                                            &hrrs_cleanup_task);
     if (G1CollectedHeap::use_parallel_gc_threads()) {
-      _g1h->heap_region_par_iterate_chunked(&g1_note_end, i,
+      _g1h->heap_region_par_iterate_chunked(&g1_note_end, worker_id,
                                             _g1h->workers()->active_workers(),
                                             HeapRegion::NoteEndClaimValue);
     } else {
@@ -1701,8 +1700,8 @@ public:
     double end = os::elapsedTime();
     if (G1PrintParCleanupStats) {
       gclog_or_tty->print("     Worker thread %d [%8.3f..%8.3f = %8.3f ms] "
-                          "claimed %d regions (tot = %8.3f ms, max = %8.3f ms).\n",
-                          i, start, end, (end-start)*1000.0,
+                          "claimed %u regions (tot = %8.3f ms, max = %8.3f ms).\n",
+                          worker_id, start, end, (end-start)*1000.0,
                           g1_note_end.regions_claimed(),
                           g1_note_end.claimed_region_time_sec()*1000.0,
                           g1_note_end.max_region_time_sec()*1000.0);
@@ -1724,9 +1723,9 @@ public:
     _region_bm(region_bm), _card_bm(card_bm)
   {}
 
-  void work(int i) {
+  void work(uint worker_id) {
     if (G1CollectedHeap::use_parallel_gc_threads()) {
-      _g1rs->scrub_par(_region_bm, _card_bm, i,
+      _g1rs->scrub_par(_region_bm, _card_bm, worker_id,
                        HeapRegion::ScrubRemSetClaimValue);
     } else {
       _g1rs->scrub(_region_bm, _card_bm);
@@ -1766,7 +1765,7 @@ void ConcurrentMark::cleanup() {
 
   HeapRegionRemSet::reset_for_cleanup_tasks();
 
-  size_t n_workers;
+  uint n_workers;
 
   // Do counting once more with the world stopped for good measure.
   G1ParFinalCountTask g1_par_count_task(g1h, nextMarkBitMap(),
@@ -1778,7 +1777,7 @@ void ConcurrentMark::cleanup() {
 
     g1h->set_par_threads();
     n_workers = g1h->n_par_threads();
-    assert(g1h->n_par_threads() == (int) n_workers,
+    assert(g1h->n_par_threads() == n_workers,
            "Should not have been reset");
     g1h->workers()->run_task(&g1_par_count_task);
     // Done with the parallel phase so reset to 0.
@@ -2169,13 +2168,13 @@ public:
     AbstractGangTask("Process reference objects in parallel"),
     _proc_task(proc_task), _g1h(g1h), _cm(cm) { }
 
-  virtual void work(int i) {
-    CMTask* marking_task = _cm->task(i);
+  virtual void work(uint worker_id) {
+    CMTask* marking_task = _cm->task(worker_id);
     G1CMIsAliveClosure g1_is_alive(_g1h);
     G1CMParKeepAliveAndDrainClosure g1_par_keep_alive(_cm, marking_task);
     G1CMParDrainMarkingStackClosure g1_par_drain(_cm, marking_task);
 
-    _proc_task.work(i, g1_is_alive, g1_par_keep_alive, g1_par_drain);
+    _proc_task.work(worker_id, g1_is_alive, g1_par_keep_alive, g1_par_drain);
   }
 };
 
@@ -2201,8 +2200,8 @@ public:
     AbstractGangTask("Enqueue reference objects in parallel"),
     _enq_task(enq_task) { }
 
-  virtual void work(int i) {
-    _enq_task.work(i);
+  virtual void work(uint worker_id) {
+    _enq_task.work(worker_id);
   }
 };
 
@@ -2249,8 +2248,8 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
 
     // We use the work gang from the G1CollectedHeap and we utilize all
     // the worker threads.
-    int active_workers = g1h->workers() ? g1h->workers()->active_workers() : 1;
-    active_workers = MAX2(MIN2(active_workers, (int)_max_task_num), 1);
+    uint active_workers = g1h->workers() ? g1h->workers()->active_workers() : 1U;
+    active_workers = MAX2(MIN2(active_workers, _max_task_num), 1U);
 
     G1CMRefProcTaskExecutor par_task_executor(g1h, this,
                                               g1h->workers(), active_workers);
@@ -2314,11 +2313,11 @@ private:
   ConcurrentMark *_cm;
 
 public:
-  void work(int worker_i) {
+  void work(uint worker_id) {
     // Since all available tasks are actually started, we should
     // only proceed if we're supposed to be actived.
-    if ((size_t)worker_i < _cm->active_tasks()) {
-      CMTask* task = _cm->task(worker_i);
+    if (worker_id < _cm->active_tasks()) {
+      CMTask* task = _cm->task(worker_id);
       task->record_start_time();
       do {
         task->do_marking_step(1000000000.0 /* something very large */,
@@ -2347,10 +2346,10 @@ void ConcurrentMark::checkpointRootsFinalWork() {
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     G1CollectedHeap::StrongRootsScope srs(g1h);
     // this is remark, so we'll use up all active threads
-    int active_workers = g1h->workers()->active_workers();
+    uint active_workers = g1h->workers()->active_workers();
     if (active_workers == 0) {
       assert(active_workers > 0, "Should have been set earlier");
-      active_workers = ParallelGCThreads;
+      active_workers = (uint) ParallelGCThreads;
       g1h->workers()->set_active_workers(active_workers);
     }
     set_phase(active_workers, false /* concurrent */);
@@ -2366,7 +2365,7 @@ void ConcurrentMark::checkpointRootsFinalWork() {
   } else {
     G1CollectedHeap::StrongRootsScope srs(g1h);
     // this is remark, so we'll use up all available threads
-    int active_workers = 1;
+    uint active_workers = 1;
     set_phase(active_workers, false /* concurrent */);
 
     CMRemarkTask remarkTask(this, active_workers);
@@ -2921,7 +2920,7 @@ class CSetMarkOopClosure: public OopClosure {
   int              _ms_size;
   int              _ms_ind;
   int              _array_increment;
-  int              _worker_i;
+  uint             _worker_id;
 
   bool push(oop obj, int arr_ind = 0) {
     if (_ms_ind == _ms_size) {
@@ -2971,7 +2970,7 @@ class CSetMarkOopClosure: public OopClosure {
   }
 
 public:
-  CSetMarkOopClosure(ConcurrentMark* cm, int ms_size, int worker_i) :
+  CSetMarkOopClosure(ConcurrentMark* cm, int ms_size, uint worker_id) :
     _g1h(G1CollectedHeap::heap()),
     _cm(cm),
     _bm(cm->nextMarkBitMap()),
@@ -2979,7 +2978,7 @@ public:
     _ms(NEW_C_HEAP_ARRAY(oop, ms_size)),
     _array_ind_stack(NEW_C_HEAP_ARRAY(jint, ms_size)),
     _array_increment(MAX2(ms_size/8, 16)),
-    _worker_i(worker_i) { }
+    _worker_id(worker_id) { }
 
   ~CSetMarkOopClosure() {
     FREE_C_HEAP_ARRAY(oop, _ms);
@@ -3024,14 +3023,14 @@ class CSetMarkBitMapClosure: public BitMapClosure {
   CMBitMap*          _bitMap;
   ConcurrentMark*    _cm;
   CSetMarkOopClosure _oop_cl;
-  int                _worker_i;
+  uint               _worker_id;
 
 public:
-  CSetMarkBitMapClosure(ConcurrentMark* cm, int ms_size, int worker_i) :
+  CSetMarkBitMapClosure(ConcurrentMark* cm, int ms_size, int worker_id) :
     _g1h(G1CollectedHeap::heap()),
     _bitMap(cm->nextMarkBitMap()),
-    _oop_cl(cm, ms_size, worker_i),
-    _worker_i(worker_i) { }
+    _oop_cl(cm, ms_size, worker_id),
+    _worker_id(worker_id) { }
 
   bool do_bit(size_t offset) {
     // convert offset into a HeapWord*
@@ -3056,17 +3055,17 @@ public:
 class CompleteMarkingInCSetHRClosure: public HeapRegionClosure {
   CMBitMap*             _bm;
   CSetMarkBitMapClosure _bit_cl;
-  int                   _worker_i;
+  uint                  _worker_id;
 
   enum SomePrivateConstants {
     MSSize = 1000
   };
 
 public:
-  CompleteMarkingInCSetHRClosure(ConcurrentMark* cm, int worker_i) :
+  CompleteMarkingInCSetHRClosure(ConcurrentMark* cm, int worker_id) :
     _bm(cm->nextMarkBitMap()),
-    _bit_cl(cm, MSSize, worker_i),
-    _worker_i(worker_i) { }
+    _bit_cl(cm, MSSize, worker_id),
+    _worker_id(worker_id) { }
 
   bool doHeapRegion(HeapRegion* hr) {
     if (hr->claimHeapRegion(HeapRegion::CompleteMarkCSetClaimValue)) {
@@ -3109,9 +3108,9 @@ public:
     AbstractGangTask("Complete Mark in CSet"),
     _g1h(g1h), _cm(cm) { }
 
-  void work(int worker_i) {
-    CompleteMarkingInCSetHRClosure cmplt(_cm, worker_i);
-    HeapRegion* hr = _g1h->start_cset_region_for_worker(worker_i);
+  void work(uint worker_id) {
+    CompleteMarkingInCSetHRClosure cmplt(_cm, worker_id);
+    HeapRegion* hr = _g1h->start_cset_region_for_worker(worker_id);
     _g1h->collection_set_iterate_from(hr, &cmplt);
   }
 };
@@ -3307,13 +3306,13 @@ void ConcurrentMark::print_worker_threads_on(outputStream* st) const {
 // the CMS bit map. Called at the first checkpoint.
 
 // We take a break if someone is trying to stop the world.
-bool ConcurrentMark::do_yield_check(int worker_i) {
+bool ConcurrentMark::do_yield_check(uint worker_id) {
   if (should_yield()) {
-    if (worker_i == 0) {
+    if (worker_id == 0) {
       _g1h->g1_policy()->record_concurrent_pause();
     }
     cmThread()->yield();
-    if (worker_i == 0) {
+    if (worker_id == 0) {
       _g1h->g1_policy()->record_concurrent_pause_end();
     }
     return true;

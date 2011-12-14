@@ -2332,17 +2332,19 @@ public:
     _g1(G1CollectedHeap::heap())
   {}
 
-  void work(int i) {
-    ParKnownGarbageHRClosure parKnownGarbageCl(_hrSorted, _chunk_size, i);
+  void work(uint worker_id) {
+    ParKnownGarbageHRClosure parKnownGarbageCl(_hrSorted,
+                                               _chunk_size,
+                                               worker_id);
     // Back to zero for the claim value.
-    _g1->heap_region_par_iterate_chunked(&parKnownGarbageCl, i,
+    _g1->heap_region_par_iterate_chunked(&parKnownGarbageCl, worker_id,
                                          _g1->workers()->active_workers(),
                                          HeapRegion::InitialClaimValue);
     jint regions_added = parKnownGarbageCl.marked_regions_added();
     _hrSorted->incNumMarkedHeapRegions(regions_added);
     if (G1PrintParCleanupStats) {
       gclog_or_tty->print_cr("     Thread %d called %d times, added %d regions to list.",
-                 i, parKnownGarbageCl.invokes(), regions_added);
+                 worker_id, parKnownGarbageCl.invokes(), regions_added);
     }
   }
 };
