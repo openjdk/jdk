@@ -78,7 +78,10 @@ public:
                sse4_2   : 1,
                         : 2,
                popcnt   : 1,
-                        : 8;
+                        : 3,
+               osxsave  : 1,
+               avx      : 1,
+                        : 3;
     } bits;
   };
 
@@ -176,6 +179,34 @@ public:
     } bits;
   };
 
+  union SefCpuid7Eax {
+    uint32_t value;
+  };
+
+  union SefCpuid7Ebx {
+    uint32_t value;
+    struct {
+      uint32_t fsgsbase : 1,
+                        : 2,
+                   bmi1 : 1,
+                        : 1,
+                   avx2 : 1,
+                        : 2,
+                   bmi2 : 1,
+                        : 23;
+    } bits;
+  };
+
+  union XemXcr0Eax {
+    uint32_t value;
+    struct {
+      uint32_t x87 : 1,
+               sse : 1,
+               ymm : 1,
+                   : 29;
+    } bits;
+  };
+
 protected:
    static int _cpu;
    static int _model;
@@ -200,7 +231,9 @@ protected:
      CPU_SSE4_1 = (1 << 11),
      CPU_SSE4_2 = (1 << 12),
      CPU_POPCNT = (1 << 13),
-     CPU_LZCNT  = (1 << 14)
+     CPU_LZCNT  = (1 << 14),
+     CPU_AVX    = (1 << 15),
+     CPU_AVX2   = (1 << 16)
    } cpuFeatureFlags;
 
   // cpuid information block.  All info derived from executing cpuid with
@@ -227,6 +260,12 @@ protected:
     DcpCpuid4Ebx dcp_cpuid4_ebx;
     uint32_t     dcp_cpuid4_ecx; // unused currently
     uint32_t     dcp_cpuid4_edx; // unused currently
+
+    // cpuid function 7 (structured extended features)
+    SefCpuid7Eax sef_cpuid7_eax;
+    SefCpuid7Ebx sef_cpuid7_ebx;
+    uint32_t     sef_cpuid7_ecx; // unused currently
+    uint32_t     sef_cpuid7_edx; // unused currently
 
     // cpuid function 0xB (processor topology)
     // ecx = 0
@@ -275,6 +314,10 @@ protected:
     uint32_t     ext_cpuid8_ebx; // reserved
     ExtCpuid8Ecx ext_cpuid8_ecx;
     uint32_t     ext_cpuid8_edx; // reserved
+
+    // extended control register XCR0 (the XFEATURE_ENABLED_MASK register)
+    XemXcr0Eax   xem_xcr0_eax;
+    uint32_t     xem_xcr0_edx; // reserved
   };
 
   // The actual cpuid info block
@@ -328,6 +371,14 @@ protected:
       result |= CPU_SSE4_2;
     if (_cpuid_info.std_cpuid1_ecx.bits.popcnt != 0)
       result |= CPU_POPCNT;
+    if (_cpuid_info.std_cpuid1_ecx.bits.avx != 0 &&
+        _cpuid_info.std_cpuid1_ecx.bits.osxsave != 0 &&
+        _cpuid_info.xem_xcr0_eax.bits.sse != 0 &&
+        _cpuid_info.xem_xcr0_eax.bits.ymm != 0) {
+      result |= CPU_AVX;
+      if (_cpuid_info.sef_cpuid7_ebx.bits.avx2 != 0)
+        result |= CPU_AVX2;
+    }
 
     // AMD features.
     if (is_amd()) {
@@ -350,12 +401,14 @@ public:
   static ByteSize std_cpuid0_offset() { return byte_offset_of(CpuidInfo, std_max_function); }
   static ByteSize std_cpuid1_offset() { return byte_offset_of(CpuidInfo, std_cpuid1_eax); }
   static ByteSize dcp_cpuid4_offset() { return byte_offset_of(CpuidInfo, dcp_cpuid4_eax); }
+  static ByteSize sef_cpuid7_offset() { return byte_offset_of(CpuidInfo, sef_cpuid7_eax); }
   static ByteSize ext_cpuid1_offset() { return byte_offset_of(CpuidInfo, ext_cpuid1_eax); }
   static ByteSize ext_cpuid5_offset() { return byte_offset_of(CpuidInfo, ext_cpuid5_eax); }
   static ByteSize ext_cpuid8_offset() { return byte_offset_of(CpuidInfo, ext_cpuid8_eax); }
   static ByteSize tpl_cpuidB0_offset() { return byte_offset_of(CpuidInfo, tpl_cpuidB0_eax); }
   static ByteSize tpl_cpuidB1_offset() { return byte_offset_of(CpuidInfo, tpl_cpuidB1_eax); }
   static ByteSize tpl_cpuidB2_offset() { return byte_offset_of(CpuidInfo, tpl_cpuidB2_eax); }
+  static ByteSize xem_xcr0_offset() { return byte_offset_of(CpuidInfo, xem_xcr0_eax); }
 
   // Initialization
   static void initialize();
@@ -447,6 +500,8 @@ public:
   static bool supports_sse4_1()   { return (_cpuFeatures & CPU_SSE4_1) != 0; }
   static bool supports_sse4_2()   { return (_cpuFeatures & CPU_SSE4_2) != 0; }
   static bool supports_popcnt()   { return (_cpuFeatures & CPU_POPCNT) != 0; }
+  static bool supports_avx()      { return (_cpuFeatures & CPU_AVX) != 0; }
+  static bool supports_avx2()     { return (_cpuFeatures & CPU_AVX2) != 0; }
   //
   // AMD features
   //
