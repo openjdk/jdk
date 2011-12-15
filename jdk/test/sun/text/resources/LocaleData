@@ -7010,3 +7010,12 @@ CurrencyNames/zh_TW/zwl=\u8f9b\u5df4\u5a01\u5143 (2009)
 # bug 7101495
 CalendarData/lv/firstDayOfWeek=2
 CalendarData/lv/minimalDaysInFirstWeek=4
+
+# bug 7003124
+FormatData/bg/DateTimePatterns/0=HH:mm:ss zzzz
+FormatData/bg/DateTimePatterns/2=HH:mm:ss
+FormatData/bg/DateTimePatterns/3=HH:mm
+FormatData/bg/DateTimePatterns/4=dd MMMM y, EEEE
+FormatData/bg/DateTimePatterns/5=dd MMMM y
+FormatData/bg/DateTimePatterns/6=dd.MM.yyyy
+FormatData/bg/DateTimePatterns/7=dd.MM.yy
