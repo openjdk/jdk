@@ -608,5 +608,5 @@ public class Package implements java.lang.reflect.AnnotatedElement {
     private final String implVendor;
     private final URL sealBase;
     private transient final ClassLoader loader;
-    private transient Class packageInfo;
+    private transient Class<?> packageInfo;
 }

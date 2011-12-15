@@ -295,7 +295,7 @@ public class Launcher {
         /**
          * Override loadClass so we can checkPackageAccess.
          */
-        public Class loadClass(String name, boolean resolve)
+        public Class<?> loadClass(String name, boolean resolve)
             throws ClassNotFoundException
         {
             int i = name.lastIndexOf('.');
@@ -473,7 +473,7 @@ public class Launcher {
         public URLStreamHandler createURLStreamHandler(String protocol) {
             String name = PREFIX + "." + protocol + ".Handler";
             try {
-                Class c = Class.forName(name);
+                Class<?> c = Class.forName(name);
                 return (URLStreamHandler)c.newInstance();
             } catch (ReflectiveOperationException e) {
                 throw new InternalError("could not load " + protocol +

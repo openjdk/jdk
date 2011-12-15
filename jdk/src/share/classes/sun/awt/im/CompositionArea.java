@@ -313,4 +313,7 @@ public final class CompositionArea extends JPanel implements InputMethodListener
           compositionWindow.pack();
     }
 
+    // Proclaim serial compatibility with 1.7.0
+    private static final long serialVersionUID = -1057247068746557444L;
+
 }

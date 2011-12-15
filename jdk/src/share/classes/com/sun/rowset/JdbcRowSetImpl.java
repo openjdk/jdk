@@ -695,6 +695,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
         return ps;
     }
 
+    @SuppressWarnings("deprecation")
     private void decodeParams(Object[] params, PreparedStatement ps)
     throws SQLException {
 
@@ -761,14 +762,17 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
                             ps.setUnicodeStream(i + 1,
                                                 (java.io.InputStream)param[0],
                                                 ((Integer)param[1]).intValue());
+                            break;
                         case JdbcRowSetImpl.BINARY_STREAM_PARAM:
                             ps.setBinaryStream(i + 1,
                                                (java.io.InputStream)param[0],
                                                ((Integer)param[1]).intValue());
+                            break;
                         case JdbcRowSetImpl.ASCII_STREAM_PARAM:
                             ps.setAsciiStream(i + 1,
                                               (java.io.InputStream)param[0],
                                               ((Integer)param[1]).intValue());
+                            break;
                         default:
                             throw new SQLException(resBundle.handleGetObject("jdbcrowsetimpl.paramtype").toString());
                         }
@@ -3822,7 +3826,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
         int [] i_temp = new int[iMatchColumns.size()];
         int i_val;
 
-        i_val = ((Integer)iMatchColumns.get(0)).intValue();
+        i_val = iMatchColumns.get(0);
 
         if( i_val == -1 ) {
            throw new SQLException(resBundle.handleGetObject("jdbcrowsetimpl.setmatchcols").toString());
@@ -3996,7 +4000,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
 
         if(!((strMatchColumns.get(0)).equals(columnName))) {
             throw new SQLException(resBundle.handleGetObject("jdbcrowsetimpl.unsetmatch").toString());
-        } else if( ((Integer)(iMatchColumns.get(0))).intValue() > 0) {
+        } else if(iMatchColumns.get(0) > 0) {
             throw new SQLException(resBundle.handleGetObject("jdbcrowsetimpl.usecolid").toString());
         } else {
             strMatchColumns.set(0, null);   // that is, we are unsetting it.

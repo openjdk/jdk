@@ -98,6 +98,7 @@ public class SerialVer extends Applet {
         classname_t.requestFocus();
     }
 
+    @SuppressWarnings("deprecation")
     public boolean action(Event ev, Object obj) {
         if (ev.target == classname_t) {
             show((String)ev.arg);
@@ -110,6 +111,7 @@ public class SerialVer extends Applet {
     }
 
 
+    @SuppressWarnings("deprecation")
     public boolean handleEvent(Event ev) {
         boolean rc = super.handleEvent(ev);
         return rc;
@@ -206,7 +208,7 @@ public class SerialVer extends Applet {
     }
 
     static String resolveClass(String classname) throws ClassNotFoundException {
-        Class cl = Class.forName(classname, false, loader);
+        Class<?> cl = Class.forName(classname, false, loader);
         ObjectStreamClass desc = ObjectStreamClass.lookup(cl);
         if (desc != null) {
             return "    static final long serialVersionUID = " +
@@ -216,6 +218,10 @@ public class SerialVer extends Applet {
         }
     }
 
+    @SuppressWarnings("deprecation")
+    private static void showWindow(Window w) {
+        w.show();
+    }
 
     public static void main(String[] args) {
         boolean show = false;
@@ -316,7 +322,7 @@ public class SerialVer extends Applet {
 
             f.add("Center", sv);
             f.pack();
-            f.show();
+            showWindow(f);
         }
     }
 
@@ -362,6 +368,7 @@ class SerialVerFrame extends Frame {
     /*
      * Handle a window destroy event by exiting.
      */
+    @SuppressWarnings("deprecation")
     public boolean handleEvent(Event e) {
         if (e.id == Event.WINDOW_DESTROY) {
             exit(0);
@@ -371,6 +378,7 @@ class SerialVerFrame extends Frame {
     /*
      * Handle an Exit event by exiting.
      */
+    @SuppressWarnings("deprecation")
     public boolean action(Event ev, Object obj) {
         if (ev.target == exit_i) {
             exit(0);
@@ -455,11 +463,7 @@ class Res {
         }
         try {
             String message = messageRB.getString(key);
-            String[] args = new String[3];
-            args[0] = a1;
-            args[1] = a2;
-            args[2] = a3;
-            return MessageFormat.format(message, args);
+            return MessageFormat.format(message, a1, a2, a3);
         } catch (MissingResourceException e) {
             throw new Error("Fatal: Resource for serialver is broken. There is no " + key + " key in resource.");
         }

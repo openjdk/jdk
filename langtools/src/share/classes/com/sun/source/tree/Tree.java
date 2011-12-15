@@ -132,6 +132,11 @@ public interface Tree {
         MEMBER_SELECT(MemberSelectTree.class),
 
         /**
+         * Used for instances of {@link MemberReferenceTree}.
+         */
+        MEMBER_REFERENCE(MemberReferenceTree.class),
+
+        /**
          * Used for instances of {@link ForLoopTree}.
          */
         FOR_LOOP(ForLoopTree.class),
@@ -185,6 +190,11 @@ public interface Tree {
          * Used for instances of {@link NewClassTree}.
          */
         NEW_CLASS(NewClassTree.class),
+
+        /**
+         * Used for instances of {@link LambdaExpressionTree}.
+         */
+        LAMBDA_EXPRESSION(LambdaExpressionTree.class),
 
         /**
          * Used for instances of {@link ParenthesizedTree}.

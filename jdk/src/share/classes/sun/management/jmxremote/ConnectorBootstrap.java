@@ -233,16 +233,14 @@ public final class ConnectorBootstrap {
                         "the access file [" + accessFile + "] as the " +
                         "authenticated Subject is null");
             }
-            final Set principals = subject.getPrincipals();
-            for (Iterator i = principals.iterator(); i.hasNext();) {
-                final Principal p = (Principal) i.next();
+            final Set<Principal> principals = subject.getPrincipals();
+            for (Principal p: principals) {
                 if (properties.containsKey(p.getName())) {
                     return;
                 }
             }
             final Set<String> principalsStr = new HashSet<String>();
-            for (Iterator i = principals.iterator(); i.hasNext();) {
-                final Principal p = (Principal) i.next();
+            for (Principal p: principals) {
                 principalsStr.add(p.getName());
             }
             throw new SecurityException(
@@ -653,7 +651,7 @@ public final class ConnectorBootstrap {
                 }
                 TrustManagerFactory tmf = TrustManagerFactory.getInstance(
                         TrustManagerFactory.getDefaultAlgorithm());
-                tmf.init((KeyStore) ts);
+                tmf.init(ts);
 
                 SSLContext ctx = SSLContext.getInstance("SSL");
                 ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
