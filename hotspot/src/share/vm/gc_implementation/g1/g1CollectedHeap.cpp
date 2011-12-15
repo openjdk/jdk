@@ -1842,7 +1842,9 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _full_collections_completed(0),
   _in_cset_fast_test(NULL),
   _in_cset_fast_test_base(NULL),
-  _dirty_cards_region_list(NULL) {
+  _dirty_cards_region_list(NULL),
+  _worker_cset_start_region(NULL),
+  _worker_cset_start_region_time_stamp(NULL) {
   _g1h = this; // To catch bugs.
   if (_process_strong_tasks == NULL || !_process_strong_tasks->valid()) {
     vm_exit_during_initialization("Failed necessary allocation.");
@@ -1863,11 +1865,16 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   }
   _rem_set_iterator = iter_arr;
 
+  _worker_cset_start_region = NEW_C_HEAP_ARRAY(HeapRegion*, n_queues);
+  _worker_cset_start_region_time_stamp = NEW_C_HEAP_ARRAY(unsigned int, n_queues);
+
   for (int i = 0; i < n_queues; i++) {
     RefToScanQueue* q = new RefToScanQueue();
     q->initialize();
     _task_queues->register_queue(i, q);
   }
+
+  clear_cset_start_regions();
 
   guarantee(_task_queues != NULL, "task_queues allocation failure.");
 }
@@ -2687,25 +2694,80 @@ bool G1CollectedHeap::check_cset_heap_region_claim_values(jint claim_value) {
 }
 #endif // ASSERT
 
-// We want the parallel threads to start their collection
-// set iteration at different collection set regions to
-// avoid contention.
-// If we have:
-//          n collection set regions
-//          p threads
-// Then thread t will start at region t * floor (n/p)
+// Clear the cached CSet starting regions and (more importantly)
+// the time stamps. Called when we reset the GC time stamp.
+void G1CollectedHeap::clear_cset_start_regions() {
+  assert(_worker_cset_start_region != NULL, "sanity");
+  assert(_worker_cset_start_region_time_stamp != NULL, "sanity");
 
+  int n_queues = MAX2((int)ParallelGCThreads, 1);
+  for (int i = 0; i < n_queues; i++) {
+    _worker_cset_start_region[i] = NULL;
+    _worker_cset_start_region_time_stamp[i] = 0;
+  }
+}
+
+// Given the id of a worker, obtain or calculate a suitable
+// starting region for iterating over the current collection set.
 HeapRegion* G1CollectedHeap::start_cset_region_for_worker(int worker_i) {
-  HeapRegion* result = g1_policy()->collection_set();
+  assert(get_gc_time_stamp() > 0, "should have been updated by now");
+
+  HeapRegion* result = NULL;
+  unsigned gc_time_stamp = get_gc_time_stamp();
+
+  if (_worker_cset_start_region_time_stamp[worker_i] == gc_time_stamp) {
+    // Cached starting region for current worker was set
+    // during the current pause - so it's valid.
+    // Note: the cached starting heap region may be NULL
+    // (when the collection set is empty).
+    result = _worker_cset_start_region[worker_i];
+    assert(result == NULL || result->in_collection_set(), "sanity");
+    return result;
+  }
+
+  // The cached entry was not valid so let's calculate
+  // a suitable starting heap region for this worker.
+
+  // We want the parallel threads to start their collection
+  // set iteration at different collection set regions to
+  // avoid contention.
+  // If we have:
+  //          n collection set regions
+  //          p threads
+  // Then thread t will start at region floor ((t * n) / p)
+
+  result = g1_policy()->collection_set();
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     size_t cs_size = g1_policy()->cset_region_length();
-    int n_workers = workers()->total_workers();
-    size_t cs_spans = cs_size / n_workers;
-    size_t ind      = cs_spans * worker_i;
-    for (size_t i = 0; i < ind; i++) {
+    int active_workers = workers()->active_workers();
+    assert(UseDynamicNumberOfGCThreads ||
+             active_workers == workers()->total_workers(),
+             "Unless dynamic should use total workers");
+
+    size_t end_ind   = (cs_size * worker_i) / active_workers;
+    size_t start_ind = 0;
+
+    if (worker_i > 0 &&
+        _worker_cset_start_region_time_stamp[worker_i - 1] == gc_time_stamp) {
+      // Previous workers starting region is valid
+      // so let's iterate from there
+      start_ind = (cs_size * (worker_i - 1)) / active_workers;
+      result = _worker_cset_start_region[worker_i - 1];
+    }
+
+    for (size_t i = start_ind; i < end_ind; i++) {
       result = result->next_in_collection_set();
     }
   }
+
+  // Note: the calculated starting heap region may be NULL
+  // (when the collection set is empty).
+  assert(result == NULL || result->in_collection_set(), "sanity");
+  assert(_worker_cset_start_region_time_stamp[worker_i] != gc_time_stamp,
+         "should be updated only once per pause");
+  _worker_cset_start_region[worker_i] = result;
+  OrderAccess::storestore();
+  _worker_cset_start_region_time_stamp[worker_i] = gc_time_stamp;
   return result;
 }
 
