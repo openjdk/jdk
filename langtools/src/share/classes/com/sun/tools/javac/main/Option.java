@@ -360,7 +360,7 @@ public enum Option {
 
     XMAXWARNS("-Xmaxwarns", "opt.arg.number", "opt.maxwarns", EXTENDED, BASIC),
 
-    XSTDOUT("Xstdout", "opt.arg.file", "opt.Xstdout", EXTENDED, INFO) {
+    XSTDOUT("-Xstdout", "opt.arg.file", "opt.Xstdout", EXTENDED, INFO) {
         @Override
         public boolean process(OptionHelper helper, String option, String arg) {
             try {
