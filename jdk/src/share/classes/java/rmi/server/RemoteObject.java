@@ -436,7 +436,7 @@ public abstract class RemoteObject implements Remote, java.io.Serializable {
              */
             String internalRefClassName =
                 RemoteRef.packagePrefix + "." + refClassName;
-            Class refClass = Class.forName(internalRefClassName);
+            Class<?> refClass = Class.forName(internalRefClassName);
             try {
                 ref = (RemoteRef) refClass.newInstance();
 

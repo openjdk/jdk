@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ abstract class AbstractFinder<T> {
 
     /**
      * Returns an array of {@code Class} objects
-     * that represent the formal parameter types of the method
+     * that represent the formal parameter types of the method.
      * Returns an empty array if the method takes no parameters.
      *
      * @param method  the object that represents method

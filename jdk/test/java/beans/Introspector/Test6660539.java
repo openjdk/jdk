@@ -28,8 +28,6 @@
  * @author Sergey Malenkov
  */
 
-import sun.awt.SunToolkit;
-
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
@@ -49,7 +47,6 @@ public class Test6660539 implements Runnable {
     }
 
     public void run() {
-        SunToolkit.createNewAppContext();
         for (PropertyDescriptor pd : getPropertyDescriptors()) {
             if (pd.getDisplayName().equals(NAME))
                 throw new Error("shared BeanInfo cache");

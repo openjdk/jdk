@@ -72,8 +72,8 @@ import java.util.Hashtable;
  * @since    1.2
  */
 public final class Signal {
-    private static Hashtable handlers = new Hashtable(4);
-    private static Hashtable signals = new Hashtable(4);
+    private static Hashtable<Signal,SignalHandler> handlers = new Hashtable<>(4);
+    private static Hashtable<Integer,Signal> signals = new Hashtable<>(4);
 
     private int number;
     private String name;
@@ -166,9 +166,9 @@ public final class Signal {
             throw new IllegalArgumentException
                 ("Signal already used by VM or OS: " + sig);
         }
-        signals.put(new Integer(sig.number), sig);
+        signals.put(sig.number, sig);
         synchronized (handlers) {
-            SignalHandler oldHandler = (SignalHandler)handlers.get(sig);
+            SignalHandler oldHandler = handlers.get(sig);
             handlers.remove(sig);
             if (newH == 2) {
                 handlers.put(sig, handler);
@@ -200,8 +200,8 @@ public final class Signal {
 
     /* Called by the VM to execute Java signal handlers. */
     private static void dispatch(final int number) {
-        final Signal sig = (Signal)signals.get(new Integer(number));
-        final SignalHandler handler = (SignalHandler)handlers.get(sig);
+        final Signal sig = signals.get(number);
+        final SignalHandler handler = handlers.get(sig);
 
         Runnable runnable = new Runnable () {
             public void run() {

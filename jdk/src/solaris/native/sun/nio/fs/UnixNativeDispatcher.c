@@ -996,7 +996,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_getpwnam0(JNIEnv* env, jclass this,
 
         if (res != 0 || p == NULL || p->pw_name == NULL || *(p->pw_name) == '\0') {
             /* not found or error */
-            if (errno != 0 && errno != ENOENT)
+            if (errno != 0 && errno != ENOENT && errno != ESRCH)
                 throwUnixException(env, errno);
         } else {
             uid = p->pw_uid;
@@ -1042,7 +1042,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_getgrnam0(JNIEnv* env, jclass this,
         retry = 0;
         if (res != 0 || g == NULL || g->gr_name == NULL || *(g->gr_name) == '\0') {
             /* not found or error */
-            if (errno != 0 && errno != ENOENT) {
+            if (errno != 0 && errno != ENOENT && errno != ESRCH) {
                 if (errno == ERANGE) {
                     /* insufficient buffer size so need larger buffer */
                     buflen += ENT_BUF_SIZE;
