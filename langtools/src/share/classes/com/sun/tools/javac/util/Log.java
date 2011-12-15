@@ -135,7 +135,6 @@ public class Log extends AbstractLog {
 
     /** Construct a log with given I/O redirections.
      */
-    @Deprecated
     protected Log(Context context, PrintWriter errWriter, PrintWriter warnWriter, PrintWriter noticeWriter) {
         super(JCDiagnostic.Factory.instance(context));
         context.put(logKey, this);
@@ -294,6 +293,12 @@ public class Log extends AbstractLog {
     public void setWriters(PrintWriter pw) {
         pw.getClass();
         noticeWriter = warnWriter = errWriter = pw;
+    }
+
+    public void setWriters(Log other) {
+        this.noticeWriter = other.noticeWriter;
+        this.warnWriter = other.warnWriter;
+        this.errWriter = other.errWriter;
     }
 
     /** Flush the logs
