@@ -305,7 +305,7 @@ public final class PropertyPermission extends BasicPermission {
                 switch(a[i-matchlen]) {
                 case ',':
                     seencomma = true;
-                    /*FALLTHROUGH*/
+                    break;
                 case ' ': case '\r': case '\n':
                 case '\f': case '\t':
                     break;
@@ -442,7 +442,7 @@ implements Serializable
      * Key is property name; value is PropertyPermission.
      * Not serialized; see serialization section at end of class.
      */
-    private transient Map perms;
+    private transient Map<String, Permission> perms;
 
     /**
      * Boolean saying if "*" is in the collection.
@@ -458,7 +458,7 @@ implements Serializable
      */
 
     public PropertyPermissionCollection() {
-        perms = new HashMap(32);     // Capacity for default policy
+        perms = new HashMap<>(32);     // Capacity for default policy
         all_allowed = false;
     }
 
@@ -593,7 +593,7 @@ implements Serializable
      * @return an enumeration of all the PropertyPermission objects.
      */
 
-    public Enumeration elements() {
+    public Enumeration<Permission> elements() {
         // Convert Iterator of Map values into an Enumeration
         synchronized (this) {
             return Collections.enumeration(perms.values());
@@ -633,7 +633,7 @@ implements Serializable
         // Don't call out.defaultWriteObject()
 
         // Copy perms into a Hashtable
-        Hashtable permissions = new Hashtable(perms.size()*2);
+        Hashtable<String, Permission> permissions = new Hashtable<>(perms.size()*2);
         synchronized (this) {
             permissions.putAll(perms);
         }
@@ -660,8 +660,10 @@ implements Serializable
         all_allowed = gfields.get("all_allowed", false);
 
         // Get permissions
-        Hashtable permissions = (Hashtable)gfields.get("permissions", null);
-        perms = new HashMap(permissions.size()*2);
+        @SuppressWarnings("unchecked")
+        Hashtable<String, Permission> permissions =
+            (Hashtable<String, Permission>)gfields.get("permissions", null);
+        perms = new HashMap<>(permissions.size()*2);
         perms.putAll(permissions);
     }
 }

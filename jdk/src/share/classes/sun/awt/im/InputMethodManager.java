@@ -270,7 +270,7 @@ class ExecutableInputMethodManager extends InputMethodManager
     // IM preference stuff
     private static final String preferredIMNode = "/sun/awt/im/preferredInputMethod";
     private static final String descriptorKey = "descriptor";
-    private Hashtable preferredLocatorCache = new Hashtable();
+    private Hashtable<String, InputMethodLocator> preferredLocatorCache = new Hashtable<>();
     private Preferences userRoot;
 
     ExecutableInputMethodManager() {
@@ -430,7 +430,7 @@ class ExecutableInputMethodManager extends InputMethodManager
         synchronized (javaInputMethodLocatorList) {
             javaInputMethodLocatorList.clear();
             try {
-                AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
                     public Object run() {
                         for (InputMethodDescriptor descriptor :
                             ServiceLoader.loadInstalled(InputMethodDescriptor.class)) {
@@ -611,7 +611,7 @@ class ExecutableInputMethodManager extends InputMethodManager
         }
 
         // look for the cached preference first.
-        preferredLocator = (InputMethodLocator)preferredLocatorCache.get(locale.toString().intern());
+        preferredLocator = preferredLocatorCache.get(locale.toString().intern());
         if (preferredLocator != null) {
             return preferredLocator;
         }
@@ -767,8 +767,8 @@ class ExecutableInputMethodManager extends InputMethodManager
     }
 
     private Preferences getUserRoot() {
-        return (Preferences)AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
+        return AccessController.doPrivileged(new PrivilegedAction<Preferences>() {
+            public Preferences run() {
                 return Preferences.userRoot();
             }
         });

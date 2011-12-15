@@ -90,7 +90,7 @@ class JarVerifier {
     private Object csdomain = new Object();
 
     /** collect -DIGEST-MANIFEST values for blacklist */
-    private List manifestDigests;
+    private List<Object> manifestDigests;
 
     public JarVerifier(byte rawBytes[]) {
         manifestRawBytes = rawBytes;
@@ -99,7 +99,7 @@ class JarVerifier {
         sigFileData = new Hashtable(11);
         pendingBlocks = new ArrayList();
         baos = new ByteArrayOutputStream();
-        manifestDigests = new ArrayList();
+        manifestDigests = new ArrayList<>();
     }
 
     /**
@@ -872,7 +872,7 @@ class JarVerifier {
         eagerValidation = eager;
     }
 
-    public synchronized List getManifestDigests() {
+    public synchronized List<Object> getManifestDigests() {
         return Collections.unmodifiableList(manifestDigests);
     }
 

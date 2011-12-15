@@ -90,73 +90,11 @@ extern void awt_output_flush();
  * Unfortunately AWT_LOCK debugging does not work with XAWT due to mixed
  * Java/C use of AWT lock.
  */
-#if defined(DEBUG_AWT_LOCK) && !defined(XAWT)
-extern int awt_locked;
-extern char *lastF;
-extern int lastL;
-
-#define AWT_LOCK() do {                                                 \
-    if (!awtLockInited) {                                               \
-        jio_fprintf(stderr, "AWT lock error, awt_lock is null\n");      \
-    }                                                                   \
-    if (awt_locked < 0) {                                               \
-        jio_fprintf(stderr,                                             \
-                    "AWT lock error (%s,%d) (last held by %s,%d) %d\n", \
-                    __FILE__, __LINE__, lastF, lastL, awt_locked);      \
-    }                                                                   \
-    lastF = __FILE__;                                                   \
-    lastL = __LINE__;                                                   \
-    AWT_LOCK_IMPL();                                                    \
-    ++awt_locked;                                                       \
-} while (0)
-
-#define AWT_NOFLUSH_UNLOCK() do {                               \
-    lastF = "";                                                 \
-    lastL = -1;                                                 \
-    if (awt_locked < 1) {                                       \
-        jio_fprintf(stderr, "AWT unlock error (%s,%d,%d)\n",    \
-                    __FILE__, __LINE__, awt_locked);            \
-    }                                                           \
-    --awt_locked;                                               \
-    AWT_NOFLUSH_UNLOCK_IMPL();                                  \
-} while (0)
-
-#define AWT_WAIT(tm) do {                                       \
-    int old_lockcount = awt_locked;                             \
-    if (awt_locked < 1) {                                       \
-        jio_fprintf(stderr, "AWT wait error (%s,%d,%d)\n",      \
-                    __FILE__, __LINE__, awt_locked);            \
-    }                                                           \
-    awt_locked = 0;                                             \
-    AWT_WAIT_IMPL(tm);                                          \
-    awt_locked = old_lockcount;                                 \
-} while (0)
-
-#define AWT_NOTIFY() do {                                       \
-    if (awt_locked < 1) {                                       \
-        jio_fprintf(stderr, "AWT notify error (%s,%d,%d)\n",    \
-                    __FILE__, __LINE__, awt_locked);            \
-    }                                                           \
-    AWT_NOTIFY_IMPL();                                          \
-} while(0)
-
-#define AWT_NOTIFY_ALL() do {                                           \
-    if (awt_locked < 1) {                                               \
-        jio_fprintf(stderr, "AWT notify all error (%s,%d,%d)\n",        \
-                    __FILE__, __LINE__, awt_locked);                    \
-    }                                                                   \
-    AWT_NOTIFY_ALL_IMPL();                                              \
-} while (0)
-
-#else
-
 #define AWT_LOCK()           AWT_LOCK_IMPL()
 #define AWT_NOFLUSH_UNLOCK() AWT_NOFLUSH_UNLOCK_IMPL()
 #define AWT_WAIT(tm)         AWT_WAIT_IMPL(tm)
 #define AWT_NOTIFY()         AWT_NOTIFY_IMPL()
 #define AWT_NOTIFY_ALL()     AWT_NOTIFY_ALL_IMPL()
-
-#endif /* DEBUG_AWT_LOCK && !XAWT */
 
 #ifndef HEADLESS
 extern Display         *awt_display; /* awt_GraphicsEnv.c */

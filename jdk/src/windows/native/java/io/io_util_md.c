@@ -478,7 +478,7 @@ handleSetLength(jlong fd, jlong length) {
 }
 
 JNIEXPORT
-size_t
+jint
 handleRead(jlong fd, void *buf, jint len)
 {
     DWORD read = 0;
@@ -499,10 +499,10 @@ handleRead(jlong fd, void *buf, jint len)
         }
         return -1;
     }
-    return read;
+    return (jint)read;
 }
 
-static size_t writeInternal(jlong fd, const void *buf, jint len, jboolean append)
+static jint writeInternal(jlong fd, const void *buf, jint len, jboolean append)
 {
     BOOL result = 0;
     DWORD written = 0;
@@ -527,16 +527,16 @@ static size_t writeInternal(jlong fd, const void *buf, jint len, jboolean append
     if ((h == INVALID_HANDLE_VALUE) || (result == 0)) {
         return -1;
     }
-    return (size_t)written;
+    return (jint)written;
 }
 
 JNIEXPORT
-size_t handleWrite(jlong fd, const void *buf, jint len) {
+jint handleWrite(jlong fd, const void *buf, jint len) {
     return writeInternal(fd, buf, len, JNI_FALSE);
 }
 
 JNIEXPORT
-size_t handleAppend(jlong fd, const void *buf, jint len) {
+jint handleAppend(jlong fd, const void *buf, jint len) {
     return writeInternal(fd, buf, len, JNI_TRUE);
 }
 

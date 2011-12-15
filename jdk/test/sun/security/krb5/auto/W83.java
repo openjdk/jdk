@@ -52,8 +52,6 @@ public class W83 {
         Config.refresh();
 
         kdc.writeKtab(OneKDC.KTAB);
-        new File(OneKDC.KRB5_CONF).deleteOnExit();
-        new File(OneKDC.KTAB).deleteOnExit();
 
         KeyTab ktab = KeyTab.getInstance(OneKDC.KTAB);
         for (int etype: EType.getBuiltInDefaults()) {

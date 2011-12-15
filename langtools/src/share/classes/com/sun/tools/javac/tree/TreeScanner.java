@@ -212,6 +212,11 @@ public class TreeScanner extends Visitor {
         scan(tree.elems);
     }
 
+    public void visitLambda(JCLambda tree) {
+        scan(tree.body);
+        scan(tree.params);
+    }
+
     public void visitParens(JCParens tree) {
         scan(tree.expr);
     }
@@ -252,6 +257,11 @@ public class TreeScanner extends Visitor {
 
     public void visitSelect(JCFieldAccess tree) {
         scan(tree.selected);
+    }
+
+    public void visitReference(JCMemberReference tree) {
+        scan(tree.expr);
+        scan(tree.typeargs);
     }
 
     public void visitIdent(JCIdent tree) {
