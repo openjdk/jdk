@@ -210,7 +210,7 @@ public enum Option {
         public boolean process(OptionHelper helper, String option) {
             Log log = helper.getLog();
             String ownName = helper.getOwnName();
-            log.printLines(PrefixKind.JAVAC, "fullversion", ownName,  JavaCompiler.fullVersion());
+            log.printLines(PrefixKind.JAVAC, "fullVersion", ownName,  JavaCompiler.fullVersion());
             return super.process(helper, option);
         }
     },
