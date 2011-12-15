@@ -1245,6 +1245,9 @@ public final class String
             }
             return n1 - n2;
         }
+
+        /** Replaces the de-serialized object. */
+        private Object readResolve() { return CASE_INSENSITIVE_ORDER; }
     }
 
     /**

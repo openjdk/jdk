@@ -385,14 +385,14 @@ public class EventHandler implements InvocationHandler {
             if (target != null) {
                 getter = Statement.getMethod(target.getClass(),
                                       "get" + NameGenerator.capitalize(first),
-                                      new Class[]{});
+                                      new Class<?>[]{});
                 if (getter == null) {
                     getter = Statement.getMethod(target.getClass(),
                                    "is" + NameGenerator.capitalize(first),
-                                   new Class[]{});
+                                   new Class<?>[]{});
                 }
                 if (getter == null) {
-                    getter = Statement.getMethod(target.getClass(), first, new Class[]{});
+                    getter = Statement.getMethod(target.getClass(), first, new Class<?>[]{});
                 }
             }
             if (getter == null) {
@@ -450,12 +450,12 @@ public class EventHandler implements InvocationHandler {
 
             if (eventPropertyName == null) {     // Nullary method.
                 newArgs = new Object[]{};
-                argTypes = new Class[]{};
+                argTypes = new Class<?>[]{};
             }
             else {
                 Object input = applyGetters(arguments[0], getEventPropertyName());
                 newArgs = new Object[]{input};
-                argTypes = new Class[]{input == null ? null :
+                argTypes = new Class<?>[]{input == null ? null :
                                        input.getClass()};
             }
             try {
@@ -674,6 +674,7 @@ public class EventHandler implements InvocationHandler {
      *
      * @see EventHandler
      */
+    @SuppressWarnings("unchecked")
     public static <T> T create(Class<T> listenerInterface,
                                Object target, String action,
                                String eventPropertyName,
@@ -688,7 +689,7 @@ public class EventHandler implements InvocationHandler {
                           "listenerInterface must be non-null");
         }
         return (T)Proxy.newProxyInstance(target.getClass().getClassLoader(),
-                                         new Class[] {listenerInterface},
+                                         new Class<?>[] {listenerInterface},
                                          eventHandler);
     }
 }

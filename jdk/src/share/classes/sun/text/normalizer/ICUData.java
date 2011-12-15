@@ -48,12 +48,12 @@ import java.util.MissingResourceException;
  */
 public final class ICUData {
 
-    private static InputStream getStream(final Class root, final String resourceName, boolean required) {
+    private static InputStream getStream(final Class<ICUData> root, final String resourceName, boolean required) {
         InputStream i = null;
 
         if (System.getSecurityManager() != null) {
-            i = (InputStream)AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
+            i = AccessController.doPrivileged(new PrivilegedAction<InputStream>() {
+                    public InputStream run() {
                         return root.getResourceAsStream(resourceName);
                     }
                 });
