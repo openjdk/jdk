@@ -65,5 +65,12 @@ ifdef CROSS_COMPILE_ARCH
   NIO_PLATFORM_CLASSES_ROOT_DIR = $(CLOSED_PLATFORM_SRC)/classes/
 endif
 
+# For ARM sflt we need to link to a library with improved FP accuracy
+# and it must be linked after fdlibm - this places it at the end after libc
+# -z muldefs avoids linker errors for duplicate symbols.
+ifeq ($(CROSS_COMPILE_ARCH), arm)
+  EXTRA_LIBS +=  $(EXT_LIBS_PATH)/sflt_glibc_jdk.a -Xlinker -z -Xlinker muldefs
+endif
+
 endif # JAVASE_EMBEDDED
 

@@ -39,9 +39,9 @@ void fileOpen(JNIEnv *env, jobject this, jstring path, jfieldID fid, int flags);
 int handleAvailable(jlong fd, jlong *pbytes);
 JNIEXPORT int handleSync(jlong fd);
 int handleSetLength(jlong fd, jlong length);
-JNIEXPORT size_t handleRead(jlong fd, void *buf, jint len);
-JNIEXPORT size_t handleWrite(jlong fd, const void *buf, jint len);
-JNIEXPORT size_t handleAppend(jlong fd, const void *buf, jint len);
+JNIEXPORT jint handleRead(jlong fd, void *buf, jint len);
+JNIEXPORT jint handleWrite(jlong fd, const void *buf, jint len);
+JNIEXPORT jint handleAppend(jlong fd, const void *buf, jint len);
 jint handleClose(JNIEnv *env, jobject this, jfieldID fid);
 jlong handleLseek(jlong fd, jlong offset, jint whence);
 

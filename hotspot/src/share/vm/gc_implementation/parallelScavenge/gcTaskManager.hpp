@@ -45,6 +45,7 @@ class BarrierGCTask;
 class ReleasingBarrierGCTask;
 class NotifyingBarrierGCTask;
 class WaitForBarrierGCTask;
+class IdleGCTask;
 // A free list of Monitor*'s.
 class MonitorSupply;
 
@@ -64,7 +65,8 @@ public:
       unknown_task,
       ordinary_task,
       barrier_task,
-      noop_task
+      noop_task,
+      idle_task
     };
     static const char* to_string(kind value);
   };
@@ -107,6 +109,9 @@ public:
   }
   bool is_noop_task() const {
     return kind()==Kind::noop_task;
+  }
+  bool is_idle_task() const {
+    return kind()==Kind::idle_task;
   }
   void print(const char* message) const PRODUCT_RETURN;
 protected:
@@ -153,6 +158,7 @@ public:
     assert(((insert_end() == NULL && remove_end() == NULL) ||
             (insert_end() != NULL && remove_end() != NULL)),
            "insert_end and remove_end don't match");
+    assert((insert_end() != NULL) || (_length == 0), "Not empty");
     return insert_end() == NULL;
   }
   uint length() const {
@@ -204,6 +210,8 @@ protected:
   GCTask* remove();                     // Remove from remove end.
   GCTask* remove(GCTask* task);         // Remove from the middle.
   void print(const char* message) const PRODUCT_RETURN;
+  // Debug support
+  void verify_length() const PRODUCT_RETURN;
 };
 
 // A GCTaskQueue that can be synchronized.
@@ -285,12 +293,76 @@ protected:
   }
 };
 
+// Dynamic number of GC threads
+//
+//  GC threads wait in get_task() for work (i.e., a task) to perform.
+// When the number of GC threads was static, the number of tasks
+// created to do a job was equal to or greater than the maximum
+// number of GC threads (ParallelGCThreads).  The job might be divided
+// into a number of tasks greater than the number of GC threads for
+// load balancing (i.e., over partitioning).  The last task to be
+// executed by a GC thread in a job is a work stealing task.  A
+// GC  thread that gets a work stealing task continues to execute
+// that task until the job is done.  In the static number of GC theads
+// case, tasks are added to a queue (FIFO).  The work stealing tasks are
+// the last to be added.  Once the tasks are added, the GC threads grab
+// a task and go.  A single thread can do all the non-work stealing tasks
+// and then execute a work stealing and wait for all the other GC threads
+// to execute their work stealing task.
+//  In the dynamic number of GC threads implementation, idle-tasks are
+// created to occupy the non-participating or "inactive" threads.  An
+// idle-task makes the GC thread wait on a barrier that is part of the
+// GCTaskManager.  The GC threads that have been "idled" in a IdleGCTask
+// are released once all the active GC threads have finished their work
+// stealing tasks.  The GCTaskManager does not wait for all the "idled"
+// GC threads to resume execution. When those GC threads do resume
+// execution in the course of the thread scheduling, they call get_tasks()
+// as all the other GC threads do.  Because all the "idled" threads are
+// not required to execute in order to finish a job, it is possible for
+// a GC thread to still be "idled" when the next job is started.  Such
+// a thread stays "idled" for the next job.  This can result in a new
+// job not having all the expected active workers.  For example if on
+// job requests 4 active workers out of a total of 10 workers so the
+// remaining 6 are "idled", if the next job requests 6 active workers
+// but all 6 of the "idled" workers are still idle, then the next job
+// will only get 4 active workers.
+//  The implementation for the parallel old compaction phase has an
+// added complication.  In the static case parold partitions the chunks
+// ready to be filled into stacks, one for each GC thread.  A GC thread
+// executing a draining task (drains the stack of ready chunks)
+// claims a stack according to it's id (the unique ordinal value assigned
+// to each GC thread).  In the dynamic case not all GC threads will
+// actively participate so stacks with ready to fill chunks can only be
+// given to the active threads.  An initial implementation chose stacks
+// number 1-n to get the ready chunks and required that GC threads
+// 1-n be the active workers.  This was undesirable because it required
+// certain threads to participate.  In the final implementation a
+// list of stacks equal in number to the active workers are filled
+// with ready chunks.  GC threads that participate get a stack from
+// the task (DrainStacksCompactionTask), empty the stack, and then add it to a
+// recycling list at the end of the task.  If the same GC thread gets
+// a second task, it gets a second stack to drain and returns it.  The
+// stacks are added to a recycling list so that later stealing tasks
+// for this tasks can get a stack from the recycling list.  Stealing tasks
+// use the stacks in its work in a way similar to the draining tasks.
+// A thread is not guaranteed to get anything but a stealing task and
+// a thread that only gets a stealing task has to get a stack. A failed
+// implementation tried to have the GC threads keep the stack they used
+// during a draining task for later use in the stealing task but that didn't
+// work because as noted a thread is not guaranteed to get a draining task.
+//
+// For PSScavenge and ParCompactionManager the GC threads are
+// held in the GCTaskThread** _thread array in GCTaskManager.
+
+
 class GCTaskManager : public CHeapObj {
  friend class ParCompactionManager;
  friend class PSParallelCompact;
  friend class PSScavenge;
  friend class PSRefProcTaskExecutor;
  friend class RefProcTaskExecutor;
+ friend class GCTaskThread;
+ friend class IdleGCTask;
 private:
   // Instance state.
   NotifyDoneClosure*        _ndc;               // Notify on completion.
@@ -298,6 +370,7 @@ private:
   Monitor*                  _monitor;           // Notification of changes.
   SynchronizedGCTaskQueue*  _queue;             // Queue of tasks.
   GCTaskThread**            _thread;            // Array of worker threads.
+  uint                      _active_workers;    // Number of active workers.
   uint                      _busy_workers;      // Number of busy workers.
   uint                      _blocking_worker;   // The worker that's blocking.
   bool*                     _resource_flag;     // Array of flag per threads.
@@ -307,6 +380,8 @@ private:
   uint                      _emptied_queue;     // Times we emptied the queue.
   NoopGCTask*               _noop_task;         // The NoopGCTask instance.
   uint                      _noop_tasks;        // Count of noop tasks.
+  WaitForBarrierGCTask*     _idle_inactive_task;// Task for inactive workers
+  volatile uint             _idle_workers;      // Number of idled workers
 public:
   // Factory create and destroy methods.
   static GCTaskManager* create(uint workers) {
@@ -324,12 +399,18 @@ public:
   uint busy_workers() const {
     return _busy_workers;
   }
+  volatile uint idle_workers() const {
+    return _idle_workers;
+  }
   //     Pun between Monitor* and Mutex*
   Monitor* monitor() const {
     return _monitor;
   }
   Monitor * lock() const {
     return _monitor;
+  }
+  WaitForBarrierGCTask* idle_inactive_task() {
+    return _idle_inactive_task;
   }
   // Methods.
   //     Add the argument task to be run.
@@ -350,6 +431,10 @@ public:
   bool should_release_resources(uint which); // Predicate.
   //     Note the release of resources by the argument worker.
   void note_release(uint which);
+  //     Create IdleGCTasks for inactive workers and start workers
+  void task_idle_workers();
+  //     Release the workers in IdleGCTasks
+  void release_idle_workers();
   // Constants.
   //     A sentinel worker identifier.
   static uint sentinel_worker() {
@@ -375,6 +460,15 @@ protected:
   uint workers() const {
     return _workers;
   }
+  void set_active_workers(uint v) {
+    assert(v <= _workers, "Trying to set more workers active than there are");
+    _active_workers = MIN2(v, _workers);
+    assert(v != 0, "Trying to set active workers to 0");
+    _active_workers = MAX2(1U, _active_workers);
+  }
+  // Sets the number of threads that will be used in a collection
+  void set_active_gang();
+
   NotifyDoneClosure* notify_done_closure() const {
     return _ndc;
   }
@@ -457,8 +551,21 @@ protected:
   void reset_noop_tasks() {
     _noop_tasks = 0;
   }
+  void increment_idle_workers() {
+    _idle_workers++;
+  }
+  void decrement_idle_workers() {
+    _idle_workers--;
+  }
   // Other methods.
   void initialize();
+
+ public:
+  // Return true if all workers are currently active.
+  bool all_workers_active() { return workers() == active_workers(); }
+  uint active_workers() const {
+    return _active_workers;
+  }
 };
 
 //
@@ -475,6 +582,8 @@ public:
   static NoopGCTask* create();
   static NoopGCTask* create_on_c_heap();
   static void destroy(NoopGCTask* that);
+
+  virtual char* name() { return (char *)"noop task"; }
   // Methods from GCTask.
   void do_it(GCTaskManager* manager, uint which) {
     // Nothing to do.
@@ -518,6 +627,8 @@ protected:
   }
   // Destructor-like method.
   void destruct();
+
+  virtual char* name() { return (char *)"barrier task"; }
   // Methods.
   //     Wait for this to be the only task running.
   void do_it_internal(GCTaskManager* manager, uint which);
@@ -586,11 +697,13 @@ protected:
 // the BarrierGCTask is done.
 // This may cover many of the uses of NotifyingBarrierGCTasks.
 class WaitForBarrierGCTask : public BarrierGCTask {
+  friend class GCTaskManager;
+  friend class IdleGCTask;
 private:
   // Instance state.
-  Monitor*   _monitor;                  // Guard and notify changes.
-  bool       _should_wait;              // true=>wait, false=>proceed.
-  const bool _is_c_heap_obj;            // Was allocated on the heap.
+  Monitor*      _monitor;                  // Guard and notify changes.
+  volatile bool _should_wait;              // true=>wait, false=>proceed.
+  const bool    _is_c_heap_obj;            // Was allocated on the heap.
 public:
   virtual char* name() { return (char *) "waitfor-barrier-task"; }
 
@@ -600,7 +713,10 @@ public:
   static void destroy(WaitForBarrierGCTask* that);
   // Methods.
   void     do_it(GCTaskManager* manager, uint which);
-  void     wait_for();
+  void     wait_for(bool reset);
+  void set_should_wait(bool value) {
+    _should_wait = value;
+  }
 protected:
   // Constructor.  Clients use factory, but there might be subclasses.
   WaitForBarrierGCTask(bool on_c_heap);
@@ -613,12 +729,36 @@ protected:
   bool should_wait() const {
     return _should_wait;
   }
-  void set_should_wait(bool value) {
-    _should_wait = value;
-  }
   bool is_c_heap_obj() {
     return _is_c_heap_obj;
   }
+};
+
+// Task that is used to idle a GC task when fewer than
+// the maximum workers are wanted.
+class IdleGCTask : public GCTask {
+  const bool    _is_c_heap_obj;            // Was allocated on the heap.
+ public:
+  bool is_c_heap_obj() {
+    return _is_c_heap_obj;
+  }
+  // Factory create and destroy methods.
+  static IdleGCTask* create();
+  static IdleGCTask* create_on_c_heap();
+  static void destroy(IdleGCTask* that);
+
+  virtual char* name() { return (char *)"idle task"; }
+  // Methods from GCTask.
+  virtual void do_it(GCTaskManager* manager, uint which);
+protected:
+  // Constructor.
+  IdleGCTask(bool on_c_heap) :
+    GCTask(GCTask::Kind::idle_task),
+    _is_c_heap_obj(on_c_heap) {
+    // Nothing to do.
+  }
+  // Destructor-like method.
+  void destruct();
 };
 
 class MonitorSupply : public AllStatic {
