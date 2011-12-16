@@ -35,7 +35,6 @@ import java.awt.image.ImageProducer;
 import java.awt.image.VolatileImage;
 import java.awt.peer.*;
 import sun.awt.*;
-import sun.awt.motif.X11FontMetrics;
 import java.lang.reflect.*;
 import sun.util.logging.PlatformLogger;
 import java.util.*;
