@@ -32,6 +32,7 @@ import java.net.ProtocolException;
 import java.net.HttpRetryException;
 import java.net.PasswordAuthentication;
 import java.net.Authenticator;
+import java.net.HttpCookie;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.net.SocketTimeoutException;
@@ -46,6 +47,8 @@ import java.net.SecureCacheResponse;
 import java.net.CacheRequest;
 import java.net.Authenticator.RequestorType;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 import java.util.List;
@@ -2580,6 +2583,80 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         return false;
     }
 
+    // constant strings represent set-cookie header names
+    private final static String SET_COOKIE = "set-cookie";
+    private final static String SET_COOKIE2 = "set-cookie2";
+
+    /**
+     * Returns a filtered version of the given headers value.
+     *
+     * Note: The implementation currently only filters out HttpOnly cookies
+     *       from Set-Cookie and Set-Cookie2 headers.
+     */
+    private String filterHeaderField(String name, String value) {
+        if (value == null)
+            return null;
+
+        if (SET_COOKIE.equalsIgnoreCase(name) ||
+            SET_COOKIE2.equalsIgnoreCase(name)) {
+            // Filtering only if there is a cookie handler. [Assumption: the
+            // cookie handler will store/retrieve the HttpOnly cookies]
+            if (cookieHandler == null)
+                return value;
+
+            sun.misc.JavaNetHttpCookieAccess access =
+                    sun.misc.SharedSecrets.getJavaNetHttpCookieAccess();
+            StringBuilder retValue = new StringBuilder();
+            List<HttpCookie> cookies = access.parse(value);
+            boolean multipleCookies = false;
+            for (HttpCookie cookie : cookies) {
+                // skip HttpOnly cookies
+                if (cookie.isHttpOnly())
+                    continue;
+                if (multipleCookies)
+                    retValue.append(',');  // RFC 2965, comma separated
+                retValue.append(access.header(cookie));
+                multipleCookies = true;
+            }
+
+            return retValue.length() == 0 ? null : retValue.toString();
+        }
+
+        return value;
+    }
+
+    // Cache the filtered response headers so that they don't need
+    // to be generated for every getHeaderFields() call.
+    private Map<String, List<String>> filteredHeaders;  // null
+
+    private Map<String, List<String>> getFilteredHeaderFields() {
+        if (filteredHeaders != null)
+            return filteredHeaders;
+
+        filteredHeaders = new HashMap<>();
+        Map<String, List<String>> headers;
+
+        if (cachedHeaders != null)
+            headers = cachedHeaders.getHeaders();
+        else
+            headers = responses.getHeaders();
+
+        for (Map.Entry<String, List<String>> e: headers.entrySet()) {
+            String key = e.getKey();
+            List<String> values = e.getValue(), filteredVals = new ArrayList<>();
+            for (String value : values) {
+                String fVal = filterHeaderField(key, value);
+                if (fVal != null)
+                    filteredVals.add(fVal);
+            }
+            if (!filteredVals.isEmpty())
+                filteredHeaders.put(key,
+                                    Collections.unmodifiableList(filteredVals));
+        }
+
+        return filteredHeaders;
+    }
+
     /**
      * Gets a header field by name. Returns null if not known.
      * @param name the name of the header field
@@ -2591,10 +2668,10 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         } catch (IOException e) {}
 
         if (cachedHeaders != null) {
-            return cachedHeaders.findValue(name);
+            return filterHeaderField(name, cachedHeaders.findValue(name));
         }
 
-        return responses.findValue(name);
+        return filterHeaderField(name, responses.findValue(name));
     }
 
     /**
@@ -2613,11 +2690,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             getInputStream();
         } catch (IOException e) {}
 
-        if (cachedHeaders != null) {
-            return cachedHeaders.getHeaders();
-        }
-
-        return responses.getHeaders();
+        return getFilteredHeaderFields();
     }
 
     /**
@@ -2631,9 +2704,10 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         } catch (IOException e) {}
 
         if (cachedHeaders != null) {
-           return cachedHeaders.getValue(n);
+           return filterHeaderField(cachedHeaders.getKey(n),
+                                    cachedHeaders.getValue(n));
         }
-        return responses.getValue(n);
+        return filterHeaderField(responses.getKey(n), responses.getValue(n));
     }
 
     /**
