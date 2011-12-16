@@ -351,6 +351,14 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
+    public JCLambda Lambda(List<JCVariableDecl> params,
+                           JCTree body)
+    {
+        JCLambda tree = new JCLambda(params, body);
+        tree.pos = pos;
+        return tree;
+    }
+
     public JCParens Parens(JCExpression expr) {
         JCParens tree = new JCParens(expr);
         tree.pos = pos;
@@ -401,6 +409,13 @@ public class TreeMaker implements JCTree.Factory {
 
     public JCFieldAccess Select(JCExpression selected, Name selector) {
         JCFieldAccess tree = new JCFieldAccess(selected, selector, null);
+        tree.pos = pos;
+        return tree;
+    }
+
+    public JCMemberReference Reference(JCMemberReference.ReferenceMode mode, Name name,
+            JCExpression expr, List<JCExpression> typeargs) {
+        JCMemberReference tree = new JCMemberReference(mode, name, expr, typeargs);
         tree.pos = pos;
         return tree;
     }

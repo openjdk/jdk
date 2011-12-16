@@ -150,11 +150,23 @@ void BCEscapeAnalyzer::set_method_escape(ArgumentMap vars) {
   clear_bits(vars, _arg_local);
 }
 
-void BCEscapeAnalyzer::set_global_escape(ArgumentMap vars) {
+void BCEscapeAnalyzer::set_global_escape(ArgumentMap vars, bool merge) {
   clear_bits(vars, _arg_local);
   clear_bits(vars, _arg_stack);
   if (vars.contains_allocated())
     _allocated_escapes = true;
+
+  if (merge && !vars.is_empty()) {
+    // Merge new state into already processed block.
+    // New state is not taken into account and
+    // it may invalidate set_returned() result.
+    if (vars.contains_unknown() || vars.contains_allocated()) {
+      _return_local = false;
+    }
+    if (vars.contains_unknown() || vars.contains_vars()) {
+      _return_allocated = false;
+    }
+  }
 }
 
 void BCEscapeAnalyzer::set_dirty(ArgumentMap vars) {
@@ -999,7 +1011,7 @@ void BCEscapeAnalyzer::merge_block_states(StateInfo *blockstates, ciBlock *dest,
       t.set_difference(d_state->_stack[i]);
       extra_vars.set_union(t);
     }
-    set_global_escape(extra_vars);
+    set_global_escape(extra_vars, true);
   }
 }
 

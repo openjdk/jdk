@@ -2879,7 +2879,7 @@ public final class Formatter implements Closeable, Flushable {
         }
 
         public String toString() {
-            StringBuilder sb = new StringBuilder('%');
+            StringBuilder sb = new StringBuilder("%");
             // Flags.UPPERCASE is set internally for legal conversions.
             Flags dupf = f.dup().remove(Flags.UPPERCASE);
             sb.append(dupf.toString());
