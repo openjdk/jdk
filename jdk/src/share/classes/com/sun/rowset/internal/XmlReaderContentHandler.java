@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,14 +71,14 @@ import java.text.MessageFormat;
 
 public class XmlReaderContentHandler extends DefaultHandler {
 
-    private HashMap propMap;
-    private HashMap colDefMap;
-    private HashMap dataMap;
+    private HashMap <String, Integer> propMap;
+    private HashMap <String, Integer> colDefMap;
+    private HashMap <String, Integer> dataMap;
 
-    private HashMap typeMap;
+    private HashMap<String,Class<?>> typeMap;
 
-    private Vector updates;
-    private Vector keyCols;
+    private Vector<Object[]> updates;
+    private Vector<String> keyCols;
 
     private String columnValue;
     private String propertyValue;
@@ -438,7 +438,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
         initMaps();
 
         // allocate the collection for the updates
-        updates = new Vector();
+        updates = new Vector<>();
 
         // start out with the empty string
         columnValue = "";
@@ -477,21 +477,21 @@ public class XmlReaderContentHandler extends DefaultHandler {
     private void initMaps() {
         int items, i;
 
-        propMap = new HashMap();
+        propMap = new HashMap<>();
         items = properties.length;
 
         for (i=0;i<items;i++) {
             propMap.put(properties[i], Integer.valueOf(i));
         }
 
-        colDefMap = new HashMap();
+        colDefMap = new HashMap<>();
         items = colDef.length;
 
         for (i=0;i<items;i++) {
             colDefMap.put(colDef[i], Integer.valueOf(i));
         }
 
-        dataMap = new HashMap();
+        dataMap = new HashMap<>();
         items = data.length;
 
         for (i=0;i<items;i++) {
@@ -499,7 +499,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
         }
 
         //Initialize connection map here
-        typeMap = new HashMap();
+        typeMap = new HashMap<>();
     }
 
     public void startDocument() throws SAXException {
@@ -549,14 +549,14 @@ public class XmlReaderContentHandler extends DefaultHandler {
         case PROPERTIES:
 
             tempCommand = "";
-            tag = ((Integer)propMap.get(name)).intValue();
+            tag = propMap.get(name);
             if (tag == PropNullTag)
                setNullValue(true);
             else
                 setTag(tag);
             break;
         case METADATA:
-            tag = ((Integer)colDefMap.get(name)).intValue();
+            tag = colDefMap.get(name);
 
             if (tag == MetaNullTag)
                 setNullValue(true);
@@ -573,10 +573,10 @@ public class XmlReaderContentHandler extends DefaultHandler {
             tempUpdate = "";
             if(dataMap.get(name) == null) {
                 tag = NullTag;
-            } else if(((Integer)dataMap.get(name)).intValue() == EmptyStringTag) {
+            } else if(dataMap.get(name) == EmptyStringTag) {
                 tag = EmptyStringTag;
             } else {
-                 tag = ((Integer)dataMap.get(name)).intValue();
+                 tag = dataMap.get(name);
             }
 
             if (tag == NullTag) {
@@ -630,6 +630,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
      *
      * @exception SAXException if a general SAX error occurs
      */
+    @SuppressWarnings("fallthrough")
     public void endElement(String uri, String lName, String qName) throws SAXException {
         int tag;
 
@@ -644,13 +645,13 @@ public class XmlReaderContentHandler extends DefaultHandler {
             }
 
             try {
-                tag = ((Integer)propMap.get(name)).intValue();
+                tag = propMap.get(name);
                 switch (tag) {
                 case KeycolsTag:
                     if (keyCols != null) {
                         int i[] = new int[keyCols.size()];
                         for (int j = 0; j < i.length; j++)
-                            i[j] = Integer.parseInt((String)keyCols.elementAt(j));
+                            i[j] = Integer.parseInt(keyCols.elementAt(j));
                         rs.setKeyColumns(i);
                     }
                     break;
@@ -723,7 +724,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
             if(dataMap.get(name) == null) {
                 tag = NullTag;
             } else {
-                 tag = ((Integer)dataMap.get(name)).intValue();
+                 tag = dataMap.get(name);
             }
             switch (tag) {
             case ColTag:
@@ -820,7 +821,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
         if (updates.size() > 0) {
             try {
                 Object upd[];
-                Iterator i = updates.iterator();
+                Iterator<?> i = updates.iterator();
                 while (i.hasNext()) {
                     upd = (Object [])i.next();
                     idx = ((Integer)upd[0]).intValue();
@@ -1075,7 +1076,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
             break;
         case PropColumnTag:
             if (keyCols == null)
-                keyCols = new Vector();
+                keyCols = new Vector<>();
             keyCols.add(s);
             break;
         case MapTag:

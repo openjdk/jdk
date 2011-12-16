@@ -668,12 +668,16 @@ public:
 
 // We de-virtualize the block-related calls below, since we know that our
 // space is a CompactibleFreeListSpace.
+
 #define FreeListSpace_DCTOC__walk_mem_region_with_cl_DEFN(ClosureType)          \
 void FreeListSpace_DCTOC::walk_mem_region_with_cl(MemRegion mr,                 \
                                                  HeapWord* bottom,              \
                                                  HeapWord* top,                 \
                                                  ClosureType* cl) {             \
-   if (SharedHeap::heap()->n_par_threads() > 0) {                               \
+   bool is_par = SharedHeap::heap()->n_par_threads() > 0;                       \
+   if (is_par) {                                                                \
+     assert(SharedHeap::heap()->n_par_threads() ==                              \
+            SharedHeap::heap()->workers()->active_workers(), "Mismatch");       \
      walk_mem_region_with_cl_par(mr, bottom, top, cl);                          \
    } else {                                                                     \
      walk_mem_region_with_cl_nopar(mr, bottom, top, cl);                        \
@@ -1925,6 +1929,9 @@ CompactibleFreeListSpace::splitChunkAndReturnRemainder(FreeChunk* chunk,
   if (rem_size < SmallForDictionary) {
     bool is_par = (SharedHeap::heap()->n_par_threads() > 0);
     if (is_par) _indexedFreeListParLocks[rem_size]->lock();
+    assert(!is_par ||
+           (SharedHeap::heap()->n_par_threads() ==
+            SharedHeap::heap()->workers()->active_workers()), "Mismatch");
     returnChunkToFreeList(ffc);
     split(size, rem_size);
     if (is_par) _indexedFreeListParLocks[rem_size]->unlock();

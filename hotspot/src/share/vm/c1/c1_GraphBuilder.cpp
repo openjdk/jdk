@@ -3495,9 +3495,6 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBeg
     if (profile_calls()) {
       profile_call(recv, holder_known ? callee->holder() : NULL);
     }
-    if (profile_inlined_calls()) {
-      profile_invocation(callee, copy_state_before());
-    }
   }
 
   // Introduce a new callee continuation point - if the callee has
@@ -3569,6 +3566,10 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBeg
     Values* args = new Values(1);
     args->push(append(new Constant(new ObjectConstant(method()))));
     append(new RuntimeCall(voidType, "dtrace_method_entry", CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry), args));
+  }
+
+  if (profile_inlined_calls()) {
+    profile_invocation(callee, copy_state_before_with_bci(SynchronizationEntryBCI));
   }
 
   BlockBegin* callee_start_block = block_at(0);

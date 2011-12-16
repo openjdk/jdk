@@ -298,7 +298,7 @@ public class UnicodeSet implements UnicodeMatcher {
 
     // NOTE: normally the field should be of type SortedSet; but that is missing a public clone!!
     // is not private so that UnicodeSetIterator can get access
-    TreeSet strings = new TreeSet();
+    TreeSet<String> strings = new TreeSet<>();
 
     /**
      * The pattern representation of this set.  This may not be the
@@ -368,7 +368,7 @@ public class UnicodeSet implements UnicodeMatcher {
      * @stable ICU 2.0
      */
     public UnicodeSet set(UnicodeSet other) {
-        list = (int[]) other.list.clone();
+        list = other.list.clone();
         len = other.len;
         pat = other.pat;
         strings = (TreeSet)other.strings.clone();
@@ -524,10 +524,10 @@ public class UnicodeSet implements UnicodeMatcher {
         }
 
         if (includeStrings && strings.size() > 0) {
-            Iterator it = strings.iterator();
+            Iterator<String> it = strings.iterator();
             while (it.hasNext()) {
                 result.append('{');
-                _appendToPat(result, (String) it.next(), escapeUnprintable);
+                _appendToPat(result, it.next(), escapeUnprintable);
                 result.append('}');
             }
         }
@@ -1180,14 +1180,17 @@ public class UnicodeSet implements UnicodeMatcher {
                         }
                     }
                     syntaxError(chars, "'-' not after char or set");
+                    break;
                 case '&':
                     if (lastItem == 2 && op == 0) {
                         op = (char) c;
                         continue;
                     }
                     syntaxError(chars, "'&' not after set");
+                    break;
                 case '^':
                     syntaxError(chars, "'^' not after '['");
+                    break;
                 case '{':
                     if (op != 0) {
                         syntaxError(chars, "Missing operand after operator");
@@ -1251,6 +1254,7 @@ public class UnicodeSet implements UnicodeMatcher {
                         continue;
                     }
                     syntaxError(chars, "Unquoted '$'");
+                    break;
                 default:
                     break;
                 }

@@ -81,7 +81,7 @@ public final class Unsafe {
      *             access to the system properties.
      */
     public static Unsafe getUnsafe() {
-        Class cc = sun.reflect.Reflection.getCallerClass(2);
+        Class<?> cc = sun.reflect.Reflection.getCallerClass(2);
         if (cc.getClassLoader() != null)
             throw new SecurityException("Unsafe");
         return theUnsafe;
@@ -616,7 +616,7 @@ public final class Unsafe {
      * for a given class in one place.
      */
     @Deprecated
-    public Object staticFieldBase(Class c) {
+    public Object staticFieldBase(Class<?> c) {
         Field[] fields = c.getDeclaredFields();
         for (int i = 0; i < fields.length; i++) {
             if (Modifier.isStatic(fields[i].getModifiers())) {
@@ -682,7 +682,7 @@ public final class Unsafe {
      * needed in conjunction with obtaining the static field base of a
      * class.
      */
-    public native void ensureClassInitialized(Class c);
+    public native void ensureClassInitialized(Class<?> c);
 
     /**
      * Report the offset of the first element in the storage allocation of a
@@ -694,7 +694,7 @@ public final class Unsafe {
      * @see #getInt(Object, long)
      * @see #putInt(Object, long, int)
      */
-    public native int arrayBaseOffset(Class arrayClass);
+    public native int arrayBaseOffset(Class<?> arrayClass);
 
     /** The value of {@code arrayBaseOffset(boolean[].class)} */
     public static final int ARRAY_BOOLEAN_BASE_OFFSET
@@ -743,7 +743,7 @@ public final class Unsafe {
      * @see #getInt(Object, long)
      * @see #putInt(Object, long, int)
      */
-    public native int arrayIndexScale(Class arrayClass);
+    public native int arrayIndexScale(Class<?> arrayClass);
 
     /** The value of {@code arrayIndexScale(boolean[].class)} */
     public static final int ARRAY_BOOLEAN_INDEX_SCALE
@@ -805,11 +805,11 @@ public final class Unsafe {
      * Tell the VM to define a class, without security checks.  By default, the
      * class loader and protection domain come from the caller's class.
      */
-    public native Class defineClass(String name, byte[] b, int off, int len,
-                                    ClassLoader loader,
-                                    ProtectionDomain protectionDomain);
+    public native Class<?> defineClass(String name, byte[] b, int off, int len,
+                                       ClassLoader loader,
+                                       ProtectionDomain protectionDomain);
 
-    public native Class defineClass(String name, byte[] b, int off, int len);
+    public native Class<?> defineClass(String name, byte[] b, int off, int len);
 
     /**
      * Define a class but do not make it known to the class loader or system dictionary.
@@ -827,12 +827,12 @@ public final class Unsafe {
      * @params data      bytes of a class file
      * @params cpPatches where non-null entries exist, they replace corresponding CP entries in data
      */
-    public native Class defineAnonymousClass(Class hostClass, byte[] data, Object[] cpPatches);
+    public native Class<?> defineAnonymousClass(Class<?> hostClass, byte[] data, Object[] cpPatches);
 
 
     /** Allocate an instance but do not run any constructor.
         Initializes the class if it has not yet been. */
-    public native Object allocateInstance(Class cls)
+    public native Object allocateInstance(Class<?> cls)
         throws InstantiationException;
 
     /** Lock the object.  It must get unlocked via {@link #monitorExit}. */

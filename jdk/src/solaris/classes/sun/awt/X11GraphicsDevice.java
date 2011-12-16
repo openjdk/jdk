@@ -487,14 +487,9 @@ public class X11GraphicsDevice
      * X11GraphicsEnvironment when the display mode has been changed.
      */
     public synchronized void displayChanged() {
-        // reset the list of configs (and default config)
-        defaultConfig = null;
-        configs = null;
-        doubleBufferVisuals = null;
-
-        // reset the native data structures associated with this device (they
-        // will be reinitialized when the GraphicsConfigs are configured)
-        resetNativeData(screen);
+        // On X11 the visuals do not change, and therefore we don't need
+        // to reset the defaultConfig, config, doubleBufferVisuals,
+        // neither do we need to reset the native data.
 
         // pass on to all top-level windows on this screen
         topLevels.notifyListeners();
