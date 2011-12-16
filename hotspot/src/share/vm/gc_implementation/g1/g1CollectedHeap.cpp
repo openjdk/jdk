@@ -1294,7 +1294,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     g1_policy()->stop_incremental_cset_building();
 
     tear_down_region_sets(false /* free_list_only */);
-    g1_policy()->set_full_young_gcs(true);
+    g1_policy()->set_gcs_are_young(true);
 
     // See the comments in g1CollectedHeap.hpp and
     // G1CollectedHeap::ref_processing_init() about
@@ -3526,20 +3526,19 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     // for the duration of this pause.
     g1_policy()->decide_on_conc_mark_initiation();
 
-    // We do not allow initial-mark to be piggy-backed on a
-    // partially-young GC.
+    // We do not allow initial-mark to be piggy-backed on a mixed GC.
     assert(!g1_policy()->during_initial_mark_pause() ||
-            g1_policy()->full_young_gcs(), "sanity");
+            g1_policy()->gcs_are_young(), "sanity");
 
-    // We also do not allow partially-young GCs during marking.
-    assert(!mark_in_progress() || g1_policy()->full_young_gcs(), "sanity");
+    // We also do not allow mixed GCs during marking.
+    assert(!mark_in_progress() || g1_policy()->gcs_are_young(), "sanity");
 
     char verbose_str[128];
     sprintf(verbose_str, "GC pause ");
-    if (g1_policy()->full_young_gcs()) {
+    if (g1_policy()->gcs_are_young()) {
       strcat(verbose_str, "(young)");
     } else {
-      strcat(verbose_str, "(partial)");
+      strcat(verbose_str, "(mixed)");
     }
     if (g1_policy()->during_initial_mark_pause()) {
       strcat(verbose_str, " (initial-mark)");
