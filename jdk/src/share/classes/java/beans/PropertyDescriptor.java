@@ -35,10 +35,10 @@ import java.lang.reflect.Constructor;
  */
 public class PropertyDescriptor extends FeatureDescriptor {
 
-    private Reference<Class> propertyTypeRef;
+    private Reference<? extends Class<?>> propertyTypeRef;
     private Reference<Method> readMethodRef;
     private Reference<Method> writeMethodRef;
-    private Reference<Class> propertyEditorClassRef;
+    private Reference<? extends Class<?>> propertyEditorClassRef;
 
     private boolean bound;
     private boolean constrained;
@@ -186,11 +186,11 @@ public class PropertyDescriptor extends FeatureDescriptor {
         return type;
     }
 
-    private void setPropertyType(Class type) {
+    private void setPropertyType(Class<?> type) {
         this.propertyTypeRef = getWeakReference(type);
     }
 
-    private Class getPropertyType0() {
+    private Class<?> getPropertyType0() {
         return (this.propertyTypeRef != null)
                 ? this.propertyTypeRef.get()
                 : null;
@@ -344,7 +344,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
     /**
      * Overridden to ensure that a super class doesn't take precedent
      */
-    void setClass0(Class clz) {
+    void setClass0(Class<?> clz) {
         if (getClass0() != null && clz.isAssignableFrom(getClass0())) {
             // dont replace a subclass with a superclass
             return;
@@ -402,7 +402,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
      * @param propertyEditorClass  The Class for the desired PropertyEditor.
      */
     public void setPropertyEditorClass(Class<?> propertyEditorClass) {
-        this.propertyEditorClassRef = getWeakReference((Class)propertyEditorClass);
+        this.propertyEditorClassRef = getWeakReference(propertyEditorClass);
     }
 
     /**
@@ -442,7 +442,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
             Constructor<?> ctor = null;
             if (bean != null) {
                 try {
-                    ctor = cls.getConstructor(new Class[] { Object.class });
+                    ctor = cls.getConstructor(new Class<?>[] { Object.class });
                 } catch (Exception ex) {
                     // Fall through
                 }
@@ -639,7 +639,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
         Class<?> propertyType = null;
         try {
             if (readMethod != null) {
-                Class[] params = getParameterTypes(getClass0(), readMethod);
+                Class<?>[] params = getParameterTypes(getClass0(), readMethod);
                 if (params.length != 0) {
                     throw new IntrospectionException("bad read method arg count: "
                                                      + readMethod);
@@ -651,7 +651,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
                 }
             }
             if (writeMethod != null) {
-                Class params[] = getParameterTypes(getClass0(), writeMethod);
+                Class<?>[] params = getParameterTypes(getClass0(), writeMethod);
                 if (params.length != 1) {
                     throw new IntrospectionException("bad write method arg count: "
                                                      + writeMethod);
