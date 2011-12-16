@@ -2807,7 +2807,9 @@ bool LibraryCallKit::inline_unsafe_allocate() {
   // Serializable.class or Object[].class.   The runtime will handle it.
   // But we must make an explicit check for initialization.
   Node* insp = basic_plus_adr(kls, instanceKlass::init_state_offset_in_bytes() + sizeof(oopDesc));
-  Node* inst = make_load(NULL, insp, TypeInt::INT, T_INT);
+  // Use T_BOOLEAN for instanceKlass::_init_state so the compiler
+  // can generate code to load it as unsigned byte.
+  Node* inst = make_load(NULL, insp, TypeInt::UBYTE, T_BOOLEAN);
   Node* bits = intcon(instanceKlass::fully_initialized);
   Node* test = _gvn.transform( new (C, 3) SubINode(inst, bits) );
   // The 'test' is non-zero if we need to take a slow path.
