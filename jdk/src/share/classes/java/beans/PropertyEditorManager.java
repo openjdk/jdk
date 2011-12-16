@@ -25,9 +25,6 @@
 
 package java.beans;
 
-import com.sun.beans.finder.PropertyEditorFinder;
-import sun.awt.AppContext;
-
 /**
  * The PropertyEditorManager can be used to locate a property editor for
  * any given type name.  This property editor must support the
@@ -55,8 +52,6 @@ import sun.awt.AppContext;
 
 public class PropertyEditorManager {
 
-    private static final Object FINDER_KEY = new Object();
-
     /**
      * Registers an editor class to edit values of the given target class.
      * If the editor class is {@code null},
@@ -81,7 +76,7 @@ public class PropertyEditorManager {
         if (sm != null) {
             sm.checkPropertiesAccess();
         }
-        getFinder().register(targetType, editorClass);
+        ThreadGroupContext.getContext().getPropertyEditorFinder().register(targetType, editorClass);
     }
 
     /**
@@ -92,7 +87,7 @@ public class PropertyEditorManager {
      * The result is null if no suitable editor can be found.
      */
     public static PropertyEditor findEditor(Class<?> targetType) {
-        return getFinder().find(targetType);
+        return ThreadGroupContext.getContext().getPropertyEditorFinder().find(targetType);
     }
 
     /**
@@ -104,7 +99,7 @@ public class PropertyEditorManager {
      *         e.g. Sun implementation initially sets to  {"sun.beans.editors"}.
      */
     public static String[] getEditorSearchPath() {
-        return getFinder().getPackages();
+        return ThreadGroupContext.getContext().getPropertyEditorFinder().getPackages();
     }
 
     /**
@@ -125,17 +120,6 @@ public class PropertyEditorManager {
         if (sm != null) {
             sm.checkPropertiesAccess();
         }
-        getFinder().setPackages(path);
-    }
-
-    private static PropertyEditorFinder getFinder() {
-        AppContext context = AppContext.getAppContext();
-        Object object = context.get(FINDER_KEY);
-        if (object instanceof PropertyEditorFinder) {
-            return (PropertyEditorFinder) object;
-        }
-        PropertyEditorFinder finder = new PropertyEditorFinder();
-        context.put(FINDER_KEY, finder);
-        return finder;
+        ThreadGroupContext.getContext().getPropertyEditorFinder().setPackages(path);
     }
 }

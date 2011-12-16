@@ -318,15 +318,15 @@ CallGenerator* CallGenerator::for_direct_call(ciMethod* m, bool separate_io_proj
   return new DirectCallGenerator(m, separate_io_proj);
 }
 
-CallGenerator* CallGenerator::for_dynamic_call(ciMethod* m) {
-  assert(m->is_method_handle_invoke() || m->is_method_handle_adapter(), "for_dynamic_call mismatch");
-  return new DynamicCallGenerator(m);
-}
-
 CallGenerator* CallGenerator::for_virtual_call(ciMethod* m, int vtable_index) {
   assert(!m->is_static(), "for_virtual_call mismatch");
   assert(!m->is_method_handle_invoke(), "should be a direct call");
   return new VirtualCallGenerator(m, vtable_index);
+}
+
+CallGenerator* CallGenerator::for_dynamic_call(ciMethod* m) {
+  assert(m->is_method_handle_invoke() || m->is_method_handle_adapter(), "for_dynamic_call mismatch");
+  return new DynamicCallGenerator(m);
 }
 
 // Allow inlining decisions to be delayed
@@ -576,7 +576,9 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
     kit.set_control(slow_ctl);
     if (!kit.stopped()) {
       slow_jvms = _if_missed->generate(kit.sync_jvms());
-      assert(slow_jvms != NULL, "miss path must not fail to generate");
+      if (kit.failing())
+        return NULL;  // might happen because of NodeCountInliningCutoff
+      assert(slow_jvms != NULL, "must be");
       kit.add_exception_states_from(slow_jvms);
       kit.set_map(slow_jvms->map());
       if (!kit.stopped())
@@ -682,6 +684,15 @@ CallGenerator* CallGenerator::for_predicted_dynamic_call(ciMethodHandle* predict
 }
 
 
+CallGenerator* CallGenerator::for_method_handle_call(Node* method_handle, JVMState* jvms,
+                                                     ciMethod* caller, ciMethod* callee, ciCallProfile profile) {
+  assert(callee->is_method_handle_invoke() || callee->is_method_handle_adapter(), "for_method_handle_call mismatch");
+  CallGenerator* cg = CallGenerator::for_method_handle_inline(method_handle, jvms, caller, callee, profile);
+  if (cg != NULL)
+    return cg;
+  return CallGenerator::for_direct_call(callee);
+}
+
 CallGenerator* CallGenerator::for_method_handle_inline(Node* method_handle, JVMState* jvms,
                                                        ciMethod* caller, ciMethod* callee, ciCallProfile profile) {
   if (method_handle->Opcode() == Op_ConP) {
@@ -721,8 +732,8 @@ CallGenerator* CallGenerator::for_method_handle_inline(Node* method_handle, JVMS
     // Generate a guard so that each can be inlined.  We might want to
     // do more inputs at later point but this gets the most common
     // case.
-    CallGenerator* cg1 = for_method_handle_inline(method_handle->in(1), jvms, caller, callee, profile.rescale(1.0 - prob));
-    CallGenerator* cg2 = for_method_handle_inline(method_handle->in(2), jvms, caller, callee, profile.rescale(prob));
+    CallGenerator* cg1 = for_method_handle_call(method_handle->in(1), jvms, caller, callee, profile.rescale(1.0 - prob));
+    CallGenerator* cg2 = for_method_handle_call(method_handle->in(2), jvms, caller, callee, profile.rescale(prob));
     if (cg1 != NULL && cg2 != NULL) {
       const TypeOopPtr* oop_ptr = method_handle->in(1)->bottom_type()->is_oopptr();
       ciObject* const_oop = oop_ptr->const_oop();
@@ -733,6 +744,17 @@ CallGenerator* CallGenerator::for_method_handle_inline(Node* method_handle, JVMS
   return NULL;
 }
 
+CallGenerator* CallGenerator::for_invokedynamic_call(JVMState* jvms, ciMethod* caller, ciMethod* callee, ciCallProfile profile) {
+  assert(callee->is_method_handle_invoke() || callee->is_method_handle_adapter(), "for_invokedynamic_call mismatch");
+  // Get the CallSite object.
+  ciBytecodeStream str(caller);
+  str.force_bci(jvms->bci());  // Set the stream to the invokedynamic bci.
+  ciCallSite* call_site = str.get_call_site();
+  CallGenerator* cg = CallGenerator::for_invokedynamic_inline(call_site, jvms, caller, callee, profile);
+  if (cg != NULL)
+    return cg;
+  return CallGenerator::for_dynamic_call(callee);
+}
 
 CallGenerator* CallGenerator::for_invokedynamic_inline(ciCallSite* call_site, JVMState* jvms,
                                                        ciMethod* caller, ciMethod* callee, ciCallProfile profile) {
@@ -819,7 +841,9 @@ JVMState* PredictedDynamicCallGenerator::generate(JVMState* jvms) {
     kit.set_control(slow_ctl);
     if (!kit.stopped()) {
       slow_jvms = _if_missed->generate(kit.sync_jvms());
-      assert(slow_jvms != NULL, "miss path must not fail to generate");
+      if (kit.failing())
+        return NULL;  // might happen because of NodeCountInliningCutoff
+      assert(slow_jvms != NULL, "must be");
       kit.add_exception_states_from(slow_jvms);
       kit.set_map(slow_jvms->map());
       if (!kit.stopped())

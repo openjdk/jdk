@@ -117,7 +117,7 @@ public class Applet extends Panel {
                 s.checkPermission(new AWTPermission("setAppletStub"));
             }
         }
-        this.stub = (AppletStub)stub;
+        this.stub = stub;
     }
 
     /**
@@ -210,6 +210,7 @@ public class Applet extends Panel {
      * @param   width    the new requested width for the applet.
      * @param   height   the new requested height for the applet.
      */
+    @SuppressWarnings("deprecation")
     public void resize(int width, int height) {
         Dimension d = size();
         if ((d.width != width) || (d.height != height)) {
@@ -225,6 +226,7 @@ public class Applet extends Panel {
      *
      * @param   d   an object giving the new width and height.
      */
+    @SuppressWarnings("deprecation")
     public void resize(Dimension d) {
         resize(d.width, d.height);
     }

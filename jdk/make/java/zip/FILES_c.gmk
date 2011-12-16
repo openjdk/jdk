@@ -32,7 +32,10 @@ FILES_c = \
 	zip_util.c \
 	compress.c \
 	deflate.c \
-	gzio.c \
+	gzclose.c \
+	gzlib.c \
+	gzread.c \
+	gzwrite.c \
 	infback.c \
 	inffast.c \
 	inflate.c \

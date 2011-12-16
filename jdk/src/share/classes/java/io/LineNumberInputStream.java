@@ -87,6 +87,7 @@ class LineNumberInputStream extends FilterInputStream {
      * @see        java.io.FilterInputStream#in
      * @see        java.io.LineNumberInputStream#getLineNumber()
      */
+    @SuppressWarnings("fallthrough")
     public int read() throws IOException {
         int c = pushBack;
 

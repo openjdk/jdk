@@ -47,10 +47,10 @@ import java.util.Map;
 
 public class Encoder {
     private final PersistenceDelegateFinder finder = new PersistenceDelegateFinder();
-    private Map bindings = new IdentityHashMap();
+    private Map<Object, Expression> bindings = new IdentityHashMap<>();
     private ExceptionListener exceptionListener;
     boolean executeStatements = true;
-    private Map attributes;
+    private Map<Object, Object> attributes;
 
     /**
      * Write the specified object to the output stream.
@@ -195,7 +195,13 @@ public class Encoder {
      */
     public PersistenceDelegate getPersistenceDelegate(Class<?> type) {
         PersistenceDelegate pd = this.finder.find(type);
-        return (pd != null) ? pd : MetaData.getPersistenceDelegate(type);
+        if (pd == null) {
+            pd = MetaData.getPersistenceDelegate(type);
+            if (pd != null) {
+                this.finder.register(type, pd);
+            }
+        }
+        return pd;
     }
 
     /**
@@ -221,7 +227,7 @@ public class Encoder {
      * @see #get
      */
     public Object remove(Object oldInstance) {
-        Expression exp = (Expression)bindings.remove(oldInstance);
+        Expression exp = bindings.remove(oldInstance);
         return getValue(exp);
     }
 
@@ -242,7 +248,7 @@ public class Encoder {
             oldInstance.getClass() == String.class) {
             return oldInstance;
         }
-        Expression exp = (Expression)bindings.get(oldInstance);
+        Expression exp = bindings.get(oldInstance);
         return getValue(exp);
     }
 
@@ -331,7 +337,7 @@ public class Encoder {
     // Package private method for setting an attributes table for the encoder
     void setAttribute(Object key, Object value) {
         if (attributes == null) {
-            attributes = new HashMap();
+            attributes = new HashMap<>();
         }
         attributes.put(key, value);
     }

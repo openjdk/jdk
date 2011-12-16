@@ -61,4 +61,7 @@ public class SimpleInputMethodWindow
             return super.getInputContext();
         }
     }
+
+    // Proclaim serial compatibility with 1.7.0
+    private static final long serialVersionUID = 5093376647036461555L;
 }
