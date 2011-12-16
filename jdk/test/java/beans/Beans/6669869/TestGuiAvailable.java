@@ -30,7 +30,6 @@
 
 import java.awt.GraphicsEnvironment;
 import java.beans.Beans;
-import sun.awt.SunToolkit;
 
 public class TestGuiAvailable implements Runnable {
     public static void main(String[] args) throws InterruptedException {
@@ -45,7 +44,6 @@ public class TestGuiAvailable implements Runnable {
     }
 
     public void run() {
-        SunToolkit.createNewAppContext();
         if (Beans.isGuiAvailable() == GraphicsEnvironment.isHeadless()) {
             throw new Error("shared GuiAvailable property");
         }

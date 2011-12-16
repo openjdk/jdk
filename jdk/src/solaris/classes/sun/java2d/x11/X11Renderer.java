@@ -299,7 +299,7 @@ public class X11Renderer implements
     private void doPath(SunGraphics2D sg2d, Shape s, boolean isFill) {
         Path2D.Float p2df;
         int transx, transy;
-        if (sg2d.transformState <= sg2d.TRANSFORM_INT_TRANSLATE) {
+        if (sg2d.transformState <= SunGraphics2D.TRANSFORM_INT_TRANSLATE) {
             if (s instanceof Path2D.Float) {
                 p2df = (Path2D.Float)s;
             } else {
@@ -323,10 +323,10 @@ public class X11Renderer implements
     }
 
     public void draw(SunGraphics2D sg2d, Shape s) {
-        if (sg2d.strokeState == sg2d.STROKE_THIN) {
+        if (sg2d.strokeState == SunGraphics2D.STROKE_THIN) {
             // Delegate to drawPolygon() if possible...
             if (s instanceof Polygon &&
-                sg2d.transformState < sg2d.TRANSFORM_TRANSLATESCALE)
+                sg2d.transformState < SunGraphics2D.TRANSFORM_TRANSLATESCALE)
             {
                 Polygon p = (Polygon) s;
                 drawPolygon(sg2d, p.xpoints, p.ypoints, p.npoints);
@@ -336,7 +336,7 @@ public class X11Renderer implements
             // Otherwise we will use drawPath() for
             // high-quality thin paths.
             doPath(sg2d, s, false);
-        } else if (sg2d.strokeState < sg2d.STROKE_CUSTOM) {
+        } else if (sg2d.strokeState < SunGraphics2D.STROKE_CUSTOM) {
             // REMIND: X11 can handle uniform scaled wide lines
             // and dashed lines itself if we set the appropriate
             // XGC attributes (TBD).
@@ -360,10 +360,10 @@ public class X11Renderer implements
     }
 
     public void fill(SunGraphics2D sg2d, Shape s) {
-        if (sg2d.strokeState == sg2d.STROKE_THIN) {
+        if (sg2d.strokeState == SunGraphics2D.STROKE_THIN) {
             // Delegate to fillPolygon() if possible...
             if (s instanceof Polygon &&
-                sg2d.transformState < sg2d.TRANSFORM_TRANSLATESCALE)
+                sg2d.transformState < SunGraphics2D.TRANSFORM_TRANSLATESCALE)
             {
                 Polygon p = (Polygon) s;
                 fillPolygon(sg2d, p.xpoints, p.ypoints, p.npoints);
@@ -378,7 +378,7 @@ public class X11Renderer implements
 
         AffineTransform at;
         int transx, transy;
-        if (sg2d.transformState < sg2d.TRANSFORM_TRANSLATESCALE) {
+        if (sg2d.transformState < SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
             // Transform (translation) will be done by XFillSpans
             at = null;
             transx = sg2d.transX;
