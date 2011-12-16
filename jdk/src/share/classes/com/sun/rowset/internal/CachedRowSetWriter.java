@@ -183,7 +183,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
 /**
  * This <code>ArrayList<code> will hold the values of SyncResolver.*
  */
-    private ArrayList status;
+    private ArrayList<Integer> status;
 
 /**
  * This will check whether the same field value has changed both
@@ -305,7 +305,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
 
         iColCount = rsmdWrite.getColumnCount();
         int sz= crs.size()+1;
-        status = new ArrayList(sz);
+        status = new ArrayList<>(sz);
 
         status.add(0,null);
         rsmdResolv.setColumnCount(iColCount);
@@ -338,11 +338,11 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
             if (crs.rowDeleted()) {
                 // The row has been deleted.
                 if (conflict = (deleteOriginalRow(crs, this.crsResolve)) == true) {
-                       status.add(rows, Integer.valueOf(SyncResolver.DELETE_ROW_CONFLICT));
+                       status.add(rows, SyncResolver.DELETE_ROW_CONFLICT);
                 } else {
                       // delete happened without any occurrence of conflicts
                       // so update status accordingly
-                       status.add(rows, Integer.valueOf(SyncResolver.NO_ROW_CONFLICT));
+                       status.add(rows, SyncResolver.NO_ROW_CONFLICT);
                 }
 
            } else if (crs.rowInserted()) {
@@ -350,20 +350,20 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
 
                 pstmtIns = con.prepareStatement(insertCmd);
                 if ( (conflict = insertNewRow(crs, pstmtIns, this.crsResolve)) == true) {
-                          status.add(rows, Integer.valueOf(SyncResolver.INSERT_ROW_CONFLICT));
+                          status.add(rows, SyncResolver.INSERT_ROW_CONFLICT);
                 } else {
                       // insert happened without any occurrence of conflicts
                       // so update status accordingly
-                       status.add(rows, Integer.valueOf(SyncResolver.NO_ROW_CONFLICT));
+                       status.add(rows, SyncResolver.NO_ROW_CONFLICT);
                 }
             } else  if (crs.rowUpdated()) {
                   // The row has been updated.
                        if ( conflict = (updateOriginalRow(crs)) == true) {
-                             status.add(rows, Integer.valueOf(SyncResolver.UPDATE_ROW_CONFLICT));
+                             status.add(rows, SyncResolver.UPDATE_ROW_CONFLICT);
                } else {
                       // update happened without any occurrence of conflicts
                       // so update status accordingly
-                      status.add(rows, Integer.valueOf(SyncResolver.NO_ROW_CONFLICT));
+                      status.add(rows, SyncResolver.NO_ROW_CONFLICT);
                }
 
             } else {
@@ -375,7 +375,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
                 *  that is fine.
                 **/
                 int icolCount = crs.getMetaData().getColumnCount();
-                status.add(rows, Integer.valueOf(SyncResolver.NO_ROW_CONFLICT));
+                status.add(rows, SyncResolver.NO_ROW_CONFLICT);
 
                 this.crsResolve.moveToInsertRow();
                 for(int cols=0;cols<iColCount;cols++) {
@@ -398,7 +398,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
       boolean boolConf = false;
       for (int j=1;j<status.size();j++){
           // ignore status for index = 0 which is set to null
-          if(! ((status.get(j)).equals(Integer.valueOf(SyncResolver.NO_ROW_CONFLICT)))) {
+          if(! ((status.get(j)).equals(SyncResolver.NO_ROW_CONFLICT))) {
               // there is at least one conflict which needs to be resolved
               boolConf = true;
              break;
@@ -540,7 +540,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
 
                 // how many fields need to be updated
                 int colsNotChanged = 0;
-                Vector cols = new Vector();
+                Vector<Integer> cols = new Vector<>();
                 String updateExec = updateCmd;
                 Object orig;
                 Object curr;
@@ -566,14 +566,14 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
                  * into a CachedRowSet so that comparison of the column values
                  * from the ResultSet and CachedRowSet are possible
                  */
-                Map map = (crs.getTypeMap() == null)?con.getTypeMap():crs.getTypeMap();
+                Map<String, Class<?>> map = (crs.getTypeMap() == null)?con.getTypeMap():crs.getTypeMap();
                 if (rsval instanceof Struct) {
 
                     Struct s = (Struct)rsval;
 
                     // look up the class in the map
-                    Class c = null;
-                    c = (Class)map.get(s.getSQLTypeName());
+                    Class<?> c = null;
+                    c = map.get(s.getSQLTypeName());
                     if (c != null) {
                         // create new instance of the class
                         SQLData obj = null;
@@ -652,7 +652,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
                           updateExec += ", ";
                          }
                         updateExec += crs.getMetaData().getColumnName(i);
-                        cols.add(Integer.valueOf(i));
+                        cols.add(i);
                         updateExec += " = ? ";
                         first = false;
 
@@ -698,7 +698,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
                                     updateExec += ", ";
                                  }
                                 updateExec += crs.getMetaData().getColumnName(i);
-                                cols.add(Integer.valueOf(i));
+                                cols.add(i);
                                 updateExec += " = ? ";
                                 flag = false;
                              } else {
@@ -749,7 +749,7 @@ public class CachedRowSetWriter implements TransactionalWriter, Serializable {
 
                 // Comments needed here
                 for (i = 0; i < cols.size(); i++) {
-                    Object obj = crs.getObject(((Integer)cols.get(i)).intValue());
+                    Object obj = crs.getObject(cols.get(i));
                     if (obj != null)
                         pstmt.setObject(i + 1, obj);
                     else

@@ -41,6 +41,8 @@ import com.sun.tools.javac.code.Scope.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.parser.EndPosTable;
 import com.sun.source.tree.*;
+import com.sun.source.tree.LambdaExpressionTree.BodyKind;
+import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 
 import static com.sun.tools.javac.code.BoundKind.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
@@ -198,6 +200,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
          */
         NEWARRAY,
 
+        /** Lambda expression, of type Lambda.
+         */
+        LAMBDA,
+
         /** Parenthesized subexpressions, of type Parens.
          */
         PARENS,
@@ -221,6 +227,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         /** Selections, of type Select.
          */
         SELECT,
+
+        /** Member references, of type Reference.
+         */
+        REFERENCE,
 
         /** Simple identifiers, of type Ident.
          */
@@ -1487,6 +1497,56 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     /**
+     * A lambda expression.
+     */
+    public static class JCLambda extends JCExpression implements LambdaExpressionTree {
+
+        public List<JCVariableDecl> params;
+        public JCTree body;
+        public Type targetType;
+        public boolean canCompleteNormally = true;
+        public List<Type> inferredThrownTypes;
+
+        public JCLambda(List<JCVariableDecl> params,
+                        JCTree body) {
+            this.params = params;
+            this.body = body;
+        }
+        @Override
+        public Tag getTag() {
+            return LAMBDA;
+        }
+        @Override
+        public void accept(Visitor v) {
+            v.visitLambda(this);
+        }
+        @Override
+        public <R, D> R accept(TreeVisitor<R, D> v, D d) {
+            return v.visitLambdaExpression(this, d);
+        }
+        public Kind getKind() {
+            return Kind.LAMBDA_EXPRESSION;
+        }
+        public JCTree getBody() {
+            return body;
+        }
+        public java.util.List<? extends VariableTree> getParameters() {
+            return params;
+        }
+        @Override
+        public JCLambda setType(Type type) {
+            super.setType(type);
+            return this;
+        }
+        @Override
+        public BodyKind getBodyKind() {
+            return body.hasTag(BLOCK) ?
+                    BodyKind.STATEMENT :
+                    BodyKind.EXPRESSION;
+        }
+    }
+
+    /**
      * A parenthesized subexpression ( ... )
      */
     public static class JCParens extends JCExpression implements ParenthesizedTree {
@@ -1743,6 +1803,46 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public Tag getTag() {
             return SELECT;
+        }
+    }
+
+    /**
+     * Selects a member expression.
+     */
+    public static class JCMemberReference extends JCExpression implements MemberReferenceTree {
+        public ReferenceMode mode;
+        public Name name;
+        public JCExpression expr;
+        public List<JCExpression> typeargs;
+        public Type targetType;
+        public Symbol sym;
+
+        protected JCMemberReference(ReferenceMode mode, Name name, JCExpression expr, List<JCExpression> typeargs) {
+            this.mode = mode;
+            this.name = name;
+            this.expr = expr;
+            this.typeargs = typeargs;
+        }
+        @Override
+        public void accept(Visitor v) { v.visitReference(this); }
+
+        public Kind getKind() { return Kind.MEMBER_REFERENCE; }
+        @Override
+        public ReferenceMode getMode() { return mode; }
+        @Override
+        public JCExpression getQualifierExpression() { return expr; }
+        @Override
+        public Name getName() { return name; }
+        @Override
+        public List<JCExpression> getTypeArguments() { return typeargs; }
+
+        @Override
+        public <R,D> R accept(TreeVisitor<R,D> v, D d) {
+            return v.visitMemberReference(this, d);
+        }
+        @Override
+        public Tag getTag() {
+            return REFERENCE;
         }
     }
 
@@ -2271,6 +2371,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitApply(JCMethodInvocation that)      { visitTree(that); }
         public void visitNewClass(JCNewClass that)           { visitTree(that); }
         public void visitNewArray(JCNewArray that)           { visitTree(that); }
+        public void visitLambda(JCLambda that)               { visitTree(that); }
         public void visitParens(JCParens that)               { visitTree(that); }
         public void visitAssign(JCAssign that)               { visitTree(that); }
         public void visitAssignop(JCAssignOp that)           { visitTree(that); }
@@ -2280,6 +2381,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitTypeTest(JCInstanceOf that)         { visitTree(that); }
         public void visitIndexed(JCArrayAccess that)         { visitTree(that); }
         public void visitSelect(JCFieldAccess that)          { visitTree(that); }
+        public void visitReference(JCMemberReference that)   { visitTree(that); }
         public void visitIdent(JCIdent that)                 { visitTree(that); }
         public void visitLiteral(JCLiteral that)             { visitTree(that); }
         public void visitTypeIdent(JCPrimitiveTypeTree that) { visitTree(that); }

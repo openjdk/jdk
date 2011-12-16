@@ -79,9 +79,9 @@ public class ClassLoaderUtil {
 
             URLClassPath ucp = SharedSecrets.getJavaNetAccess()
                                                 .getURLClassPath(classLoader);
-            ArrayList loaders = ucp.loaders;
-            Stack urls = ucp.urls;
-            HashMap lmap = ucp.lmap;
+            ArrayList<?> loaders = ucp.loaders;
+            Stack<?> urls = ucp.urls;
+            HashMap<?,?> lmap = ucp.lmap;
 
             /*
              *The urls variable in the URLClassPath object holds URLs that have not yet
