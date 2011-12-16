@@ -164,7 +164,13 @@ inline bool ClearNoncleanCardWrapper::clear_card_serial(jbyte* entry) {
 ClearNoncleanCardWrapper::ClearNoncleanCardWrapper(
   DirtyCardToOopClosure* dirty_card_closure, CardTableRS* ct) :
     _dirty_card_closure(dirty_card_closure), _ct(ct) {
+    // Cannot yet substitute active_workers for n_par_threads
+    // in the case where parallelism is being turned off by
+    // setting n_par_threads to 0.
     _is_par = (SharedHeap::heap()->n_par_threads() > 0);
+    assert(!_is_par ||
+           (SharedHeap::heap()->n_par_threads() ==
+            SharedHeap::heap()->workers()->active_workers()), "Mismatch");
 }
 
 void ClearNoncleanCardWrapper::do_MemRegion(MemRegion mr) {

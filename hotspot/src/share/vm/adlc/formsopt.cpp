@@ -219,7 +219,9 @@ void RegDef::output(FILE *fp) {         // Write info to output files
 
 //------------------------------RegClass---------------------------------------
 // Construct a register class into which registers will be inserted
-RegClass::RegClass(const char *classid) : _stack_or_reg(false), _classid(classid), _regDef(cmpstr,hashstr, Form::arena) {
+RegClass::RegClass(const char *classid) : _stack_or_reg(false), _classid(classid), _regDef(cmpstr,hashstr, Form::arena),
+                                          _user_defined(NULL)
+{
 }
 
 // record a register in this class

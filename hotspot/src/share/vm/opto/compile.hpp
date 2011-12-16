@@ -150,14 +150,16 @@ class Compile : public Phase {
     BasicType _type;
     jvalue    _value;
     int       _offset;         // offset of this constant (in bytes) relative to the constant table base.
+    float     _freq;
     bool      _can_be_reused;  // true (default) if the value can be shared with other users.
 
   public:
-    Constant() : _type(T_ILLEGAL), _offset(-1), _can_be_reused(true) { _value.l = 0; }
-    Constant(BasicType type, jvalue value, bool can_be_reused = true) :
+    Constant() : _type(T_ILLEGAL), _offset(-1), _freq(0.0f), _can_be_reused(true) { _value.l = 0; }
+    Constant(BasicType type, jvalue value, float freq = 0.0f, bool can_be_reused = true) :
       _type(type),
       _value(value),
       _offset(-1),
+      _freq(freq),
       _can_be_reused(can_be_reused)
     {}
 
@@ -173,6 +175,9 @@ class Compile : public Phase {
     int         offset()  const    { return _offset; }
     void    set_offset(int offset) {        _offset = offset; }
 
+    float       freq()    const    { return _freq;         }
+    void    inc_freq(float freq)   {        _freq += freq; }
+
     bool    can_be_reused() const  { return _can_be_reused; }
   };
 
@@ -182,41 +187,51 @@ class Compile : public Phase {
     GrowableArray<Constant> _constants;          // Constants of this table.
     int                     _size;               // Size in bytes the emitted constant table takes (including padding).
     int                     _table_base_offset;  // Offset of the table base that gets added to the constant offsets.
+    int                     _nof_jump_tables;    // Number of jump-tables in this constant table.
+
+    static int qsort_comparator(Constant* a, Constant* b);
+
+    // We use negative frequencies to keep the order of the
+    // jump-tables in which they were added.  Otherwise we get into
+    // trouble with relocation.
+    float next_jump_table_freq() { return -1.0f * (++_nof_jump_tables); }
 
   public:
     ConstantTable() :
       _size(-1),
-      _table_base_offset(-1)  // We can use -1 here since the constant table is always bigger than 2 bytes (-(size / 2), see MachConstantBaseNode::emit).
+      _table_base_offset(-1),  // We can use -1 here since the constant table is always bigger than 2 bytes (-(size / 2), see MachConstantBaseNode::emit).
+      _nof_jump_tables(0)
     {}
 
-    int size() const { assert(_size != -1, "size not yet calculated"); return _size; }
+    int size() const { assert(_size != -1, "not calculated yet"); return _size; }
 
-    void set_table_base_offset(int x)  { assert(_table_base_offset == -1, "set only once");                        _table_base_offset = x; }
-    int      table_base_offset() const { assert(_table_base_offset != -1, "table base offset not yet set"); return _table_base_offset; }
+    int calculate_table_base_offset() const;  // AD specific
+    void set_table_base_offset(int x)  { assert(_table_base_offset == -1 || x == _table_base_offset, "can't change"); _table_base_offset = x; }
+    int      table_base_offset() const { assert(_table_base_offset != -1, "not set yet");                      return _table_base_offset; }
 
     void emit(CodeBuffer& cb);
 
     // Returns the offset of the last entry (the top) of the constant table.
-    int  top_offset() const { assert(_constants.top().offset() != -1, "constant not yet bound"); return _constants.top().offset(); }
+    int  top_offset() const { assert(_constants.top().offset() != -1, "not bound yet"); return _constants.top().offset(); }
 
     void calculate_offsets_and_size();
     int  find_offset(Constant& con) const;
 
     void     add(Constant& con);
-    Constant add(BasicType type, jvalue value);
-    Constant add(MachOper* oper);
-    Constant add(jfloat f) {
+    Constant add(MachConstantNode* n, BasicType type, jvalue value);
+    Constant add(MachConstantNode* n, MachOper* oper);
+    Constant add(MachConstantNode* n, jfloat f) {
       jvalue value; value.f = f;
-      return add(T_FLOAT, value);
+      return add(n, T_FLOAT, value);
     }
-    Constant add(jdouble d) {
+    Constant add(MachConstantNode* n, jdouble d) {
       jvalue value; value.d = d;
-      return add(T_DOUBLE, value);
+      return add(n, T_DOUBLE, value);
     }
 
-    // Jump table
-    Constant allocate_jump_table(MachConstantNode* n);
-    void         fill_jump_table(CodeBuffer& cb, MachConstantNode* n, GrowableArray<Label*> labels) const;
+    // Jump-table
+    Constant  add_jump_table(MachConstantNode* n);
+    void     fill_jump_table(CodeBuffer& cb, MachConstantNode* n, GrowableArray<Label*> labels) const;
   };
 
  private:

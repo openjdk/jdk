@@ -113,6 +113,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
         return getRaw(checkedByteOffset(i));
     }
 
+    @SuppressWarnings("unchecked")
     private E getRaw(long offset) {
         return (E) unsafe.getObjectVolatile(array, offset);
     }
@@ -150,7 +151,7 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
     public final E getAndSet(int i, E newValue) {
         long offset = checkedByteOffset(i);
         while (true) {
-            E current = (E) getRaw(offset);
+            E current = getRaw(offset);
             if (compareAndSetRaw(offset, current, newValue))
                 return current;
         }

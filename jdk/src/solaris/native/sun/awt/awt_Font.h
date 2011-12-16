@@ -34,8 +34,8 @@ struct FontIDs {
     jmethodID getFamily;
 };
 
-/* fieldIDs for MFontPeer fields that may be accessed from C */
-struct MFontPeerIDs {
+/* fieldIDs for XFontPeer fields that may be accessed from C */
+struct XFontPeerIDs {
     jfieldID xfsname;
 };
 

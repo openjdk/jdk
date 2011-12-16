@@ -202,7 +202,8 @@ void OldToYoungRootsTask::do_it(GCTaskManager* manager, uint which) {
                                            _gen->object_space(),
                                            _gen_top,
                                            pm,
-                                           _stripe_number);
+                                           _stripe_number,
+                                           _stripe_total);
 
     // Do the real work
     pm->drain_stacks(false);
