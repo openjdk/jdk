@@ -1049,6 +1049,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @param      s   a string of bytes to be written.
      * @exception  IOException  if an I/O error occurs.
      */
+    @SuppressWarnings("deprecation")
     public final void writeBytes(String s) throws IOException {
         int len = s.length();
         byte[] b = new byte[len];

@@ -26,8 +26,9 @@
 package com.sun.tools.javac.parser;
 
 import java.nio.*;
+import java.util.List;
+import java.util.ArrayList;
 
-import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Position.LineMap;
 import com.sun.tools.javac.parser.JavaTokenizer.*;
 
@@ -52,6 +53,10 @@ public class Scanner implements Lexer {
     /** The previous token, set by nextToken().
      */
     private Token prevToken;
+
+    /** Buffer of saved tokens (used during lookahead)
+     */
+    private List<Token> savedTokens = new ArrayList<Token>();
 
     private JavaTokenizer tokenizer;
     /**
@@ -80,8 +85,23 @@ public class Scanner implements Lexer {
     }
 
     public Token token() {
-        return token;
+        return token(0);
     }
+
+    public Token token(int lookahead) {
+        if (lookahead == 0) {
+            return token;
+        } else {
+            ensureLookahead(lookahead);
+            return savedTokens.get(lookahead - 1);
+        }
+    }
+    //where
+        private void ensureLookahead(int lookahead) {
+            for (int i = savedTokens.size() ; i < lookahead ; i ++) {
+                savedTokens.add(tokenizer.readToken());
+            }
+        }
 
     public Token prevToken() {
         return prevToken;
@@ -89,7 +109,11 @@ public class Scanner implements Lexer {
 
     public void nextToken() {
         prevToken = token;
-        token = tokenizer.readToken();
+        if (!savedTokens.isEmpty()) {
+            token = savedTokens.remove(0);
+        } else {
+            token = tokenizer.readToken();
+        }
     }
 
     public Token split() {

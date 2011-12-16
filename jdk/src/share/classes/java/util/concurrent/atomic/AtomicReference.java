@@ -51,10 +51,10 @@ public class AtomicReference<V>  implements java.io.Serializable {
     private static final long valueOffset;
 
     static {
-      try {
-        valueOffset = unsafe.objectFieldOffset
-            (AtomicReference.class.getDeclaredField("value"));
-      } catch (Exception ex) { throw new Error(ex); }
+        try {
+            valueOffset = unsafe.objectFieldOffset
+                (AtomicReference.class.getDeclaredField("value"));
+        } catch (Exception ex) { throw new Error(ex); }
     }
 
     private volatile V value;

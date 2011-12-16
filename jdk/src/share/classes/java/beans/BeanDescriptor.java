@@ -37,8 +37,8 @@ import java.lang.ref.Reference;
 
 public class BeanDescriptor extends FeatureDescriptor {
 
-    private Reference<Class> beanClassRef;
-    private Reference<Class> customizerClassRef;
+    private Reference<? extends Class<?>> beanClassRef;
+    private Reference<? extends Class<?>> customizerClassRef;
 
     /**
      * Create a BeanDescriptor for a bean that doesn't have a customizer.
@@ -59,8 +59,8 @@ public class BeanDescriptor extends FeatureDescriptor {
      *          the bean's Customizer.  For example sun.beans.OurButtonCustomizer.class.
      */
     public BeanDescriptor(Class<?> beanClass, Class<?> customizerClass) {
-        this.beanClassRef = getWeakReference((Class)beanClass);
-        this.customizerClassRef = getWeakReference((Class)customizerClass);
+        this.beanClassRef = getWeakReference(beanClass);
+        this.customizerClassRef = getWeakReference(customizerClass);
 
         String name = beanClass.getName();
         while (name.indexOf('.') >= 0) {

@@ -447,6 +447,9 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     if (flags & Node::Flag_may_be_short_branch) {
       print_prop("may_be_short_branch", "true");
     }
+    if (flags & Node::Flag_has_call) {
+      print_prop("has_call", "true");
+    }
 
     if (C->matcher() != NULL) {
       if (C->matcher()->is_shared(node)) {

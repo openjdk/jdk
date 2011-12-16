@@ -1720,6 +1720,16 @@ void ArchDesc::declareClasses(FILE *fp) {
       }
     }
 
+    // flag: if this instruction is implemented with a call
+    if ( instr->_has_call ) {
+      if ( node_flags_set ) {
+        fprintf(fp," | Flag_has_call");
+      } else {
+        fprintf(fp,"init_flags(Flag_has_call");
+        node_flags_set = true;
+      }
+    }
+
     if ( node_flags_set ) {
       fprintf(fp,"); ");
     }
