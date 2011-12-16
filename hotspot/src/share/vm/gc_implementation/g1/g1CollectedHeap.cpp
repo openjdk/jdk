@@ -3787,8 +3787,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         double end_time_sec = os::elapsedTime();
         double pause_time_ms = (end_time_sec - start_time_sec) * MILLIUNITS;
         g1_policy()->record_pause_time_ms(pause_time_ms);
-        int active_gc_threads = workers()->active_workers();
-        g1_policy()->record_collection_pause_end(active_gc_threads);
+        int active_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
+                                workers()->active_workers() : 1);
+        g1_policy()->record_collection_pause_end(active_workers);
 
         MemoryService::track_memory_usage();
 
@@ -5312,8 +5313,10 @@ void G1CollectedHeap::process_discovered_references() {
   int active_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
                         workers()->active_workers() : 1);
 
-  assert(active_workers == workers()->active_workers(),
-         "Need to reset active_workers");
+  assert(!G1CollectedHeap::use_parallel_gc_threads() ||
+           active_workers == workers()->active_workers(),
+           "Need to reset active_workers");
+
   set_par_threads(active_workers);
   G1ParPreserveCMReferentsTask keep_cm_referents(this, active_workers, _task_queues);
 
@@ -5451,13 +5454,13 @@ void G1CollectedHeap::evacuate_collection_set() {
     assert(UseDynamicNumberOfGCThreads ||
            n_workers == workers()->total_workers(),
            "If not dynamic should be using all the  workers");
+    workers()->set_active_workers(n_workers);
     set_par_threads(n_workers);
   } else {
     assert(n_par_threads() == 0,
            "Should be the original non-parallel value");
     n_workers = 1;
   }
-  workers()->set_active_workers(n_workers);
 
   G1ParTask g1_par_task(this, _task_queues);
 
@@ -5479,6 +5482,7 @@ void G1CollectedHeap::evacuate_collection_set() {
     workers()->run_task(&g1_par_task);
   } else {
     StrongRootsScope srs(this);
+    g1_par_task.set_for_termination(n_workers);
     g1_par_task.work(0);
   }
 
@@ -5727,8 +5731,8 @@ void G1CollectedHeap::cleanUpCardTable() {
     // Iterate over the dirty cards region list.
     G1ParCleanupCTTask cleanup_task(ct_bs, this);
 
-    if (ParallelGCThreads > 0) {
-      set_par_threads(workers()->total_workers());
+    if (G1CollectedHeap::use_parallel_gc_threads()) {
+      set_par_threads();
       workers()->run_task(&cleanup_task);
       set_par_threads(0);
     } else {
@@ -6136,8 +6140,9 @@ HeapRegion* MutatorAllocRegion::allocate_new_region(size_t word_size,
 void G1CollectedHeap::set_par_threads() {
   // Don't change the number of workers.  Use the value previously set
   // in the workgroup.
+  assert(G1CollectedHeap::use_parallel_gc_threads(), "shouldn't be here otherwise");
   int n_workers = workers()->active_workers();
-    assert(UseDynamicNumberOfGCThreads ||
+  assert(UseDynamicNumberOfGCThreads ||
            n_workers == workers()->total_workers(),
       "Otherwise should be using the total number of workers");
   if (n_workers == 0) {
