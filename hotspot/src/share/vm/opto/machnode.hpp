@@ -190,6 +190,9 @@ public:
   // Avoid back to back some instructions on some CPUs.
   bool avoid_back_to_back() const { return (flags() & Flag_avoid_back_to_back) != 0; }
 
+  // instruction implemented with a call
+  bool has_call() const { return (flags() & Flag_has_call) != 0; }
+
   // First index in _in[] corresponding to operand, or -1 if there is none
   int  operand_index(uint operand) const;
 

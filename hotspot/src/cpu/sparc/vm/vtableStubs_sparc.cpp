@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   }
 #endif
   int v_off = entry_offset*wordSize + vtableEntry::method_offset_in_bytes();
-  if( __ is_simm13(v_off) ) {
+  if (Assembler::is_simm13(v_off)) {
     __ ld_ptr(G3, v_off, G5_method);
   } else {
     __ set(v_off,G5);

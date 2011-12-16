@@ -25,26 +25,19 @@
 
 package sun.awt.motif;
 
-import java.awt.Font;
-import java.io.BufferedReader;
+import sun.awt.FontConfiguration;
+import sun.awt.X11FontManager;
+import sun.font.FontUtilities;
+import sun.font.SunFontManager;
+import sun.util.logging.PlatformLogger;
+
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Properties;
 import java.util.Scanner;
-import sun.awt.FontConfiguration;
-import sun.awt.X11FontManager;
-import sun.awt.X11GraphicsEnvironment;
-import sun.font.FontManager;
-import sun.font.SunFontManager;
-import sun.font.FontManagerFactory;
-import sun.font.FontUtilities;
-import sun.java2d.SunGraphicsEnvironment;
-import sun.util.logging.PlatformLogger;
 
 public class MFontConfiguration extends FontConfiguration {
 
@@ -258,47 +251,6 @@ public class MFontConfiguration extends FontConfiguration {
         return Charset.forName("ISO8859_1");
     }
 
-    /* methods for Motif support *********************************************/
-
-    private String[][] motifFontSets = new String[NUM_FONTS][NUM_STYLES];
-
-    public String getMotifFontSet(String fontName, int style) {
-        assert isLogicalFontFamilyName(fontName);
-        fontName = fontName.toLowerCase(Locale.ENGLISH);
-        int fontIndex = getFontIndex(fontName);
-        int styleIndex = getStyleIndex(style);
-        return getMotifFontSet(fontIndex, styleIndex);
-    }
-
-    private String getMotifFontSet(int fontIndex, int styleIndex) {
-        String fontSet = motifFontSets[fontIndex][styleIndex];
-        if (fontSet == null) {
-            fontSet = buildMotifFontSet(fontIndex, styleIndex);
-            motifFontSets[fontIndex][styleIndex] = fontSet;
-        }
-        return fontSet;
-    }
-
-    private String buildMotifFontSet(int fontIndex, int styleIndex) {
-        StringBuilder buffer = new StringBuilder();
-        short[] scripts = getCoreScripts(fontIndex);
-        for (int i = 0; i < scripts.length; i++) {
-            short nameID = getComponentFontIDMotif(scripts[i], fontIndex, styleIndex);
-            if (nameID == 0) {
-                nameID = getComponentFontID(scripts[i], fontIndex, styleIndex);
-            }
-            String name = getComponentFontName(nameID);
-            if (name == null || name.endsWith("fontspecific")) {
-                continue;
-            }
-            if (buffer.length() > 0) {
-                buffer.append(',');
-            }
-            buffer.append(name);
-        }
-        return buffer.toString();
-    }
-
     protected String getFaceNameFromComponentFontName(String componentFontName) {
         return null;
     }
@@ -313,36 +265,6 @@ public class MFontConfiguration extends FontConfiguration {
             return fileName;
         }
         return ((X11FontManager) fontManager).getFileNameFromXLFD(componentFontName);
-    }
-
-    /**
-     * Get default font for Motif widgets to use, preventing them from
-     * wasting time accessing inappropriate X resources.  This is called
-     * only from native code.
-     *
-     * This is part of a Motif specific performance enhancement.  By
-     * default, when Motif widgets are created and initialized, Motif will
-     * set up default fonts for the widgets, which we ALWAYS override.
-     * This set up includes finding the default font in the widget's X
-     * resources and fairly expensive requests of the X server to identify
-     * the specific font or fontset.  We avoid all of this overhead by
-     * providing a well known font to use at the creation of widgets, where
-     * possible.
-     *
-     * The X11 fonts are specified by XLFD strings which have %d as a
-     * marker to indicate where the fontsize should be substituted.  [The
-     * libc function sprintf() is used to replace it.]  The value 140
-     * specifies a font size of 14 points.
-     */
-    private static String getDefaultMotifFontSet() {
-        String font = ((MFontConfiguration) getFontConfiguration()).getMotifFontSet("sansserif", Font.PLAIN);
-        if (font != null) {
-            int i;
-            while ((i = font.indexOf("%d")) >= 0) {
-                font = font.substring(0, i) + "140" + font.substring(i+2);
-            }
-        }
-        return font;
     }
 
     public HashSet<String> getAWTFontPathSet() {

@@ -29,13 +29,8 @@
 #define _MULTI_FONT_H_
 
 #ifndef HEADLESS
-jobject awtJNI_GetFont(JNIEnv *env,jobject this);
 jboolean awtJNI_IsMultiFont(JNIEnv *env,jobject this);
 jboolean awtJNI_IsMultiFontMetrics(JNIEnv *env,jobject this);
-#ifndef XAWT
-XmString awtJNI_MakeMultiFontString(JNIEnv *env,jstring s,jobject font);
-XmFontList awtJNI_GetFontList(JNIEnv *env,jobject font);
-#endif
 XFontSet awtJNI_MakeFontSet(JNIEnv *env,jobject font);
 struct FontData *awtJNI_GetFontData(JNIEnv *env,jobject font, char **errmsg);
 int32_t awtJNI_GetMFStringWidth(JNIEnv * env, jcharArray s, int32_t offset,

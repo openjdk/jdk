@@ -281,6 +281,8 @@ class Block : public CFGElement {
   // Find and remove n from block list
   void find_remove( const Node *n );
 
+  // helper function that adds caller save registers to MachProjNode
+  void add_call_kills(MachProjNode *proj, RegMask& regs, const char* save_policy, bool exclude_soe);
   // Schedule a call next in the block
   uint sched_call(Matcher &matcher, Block_Array &bbs, uint node_cnt, Node_List &worklist, int *ready_cnt, MachCallNode *mcall, VectorSet &next_call);
 

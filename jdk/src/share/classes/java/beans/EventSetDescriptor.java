@@ -45,7 +45,7 @@ public class EventSetDescriptor extends FeatureDescriptor {
     private MethodDescriptor getMethodDescriptor;
 
     private Reference<Method[]> listenerMethodsRef;
-    private Reference<Class> listenerTypeRef;
+    private Reference<? extends Class<?>> listenerTypeRef;
 
     private boolean unicast;
     private boolean inDefaultEventSet = true;
@@ -91,7 +91,7 @@ public class EventSetDescriptor extends FeatureDescriptor {
         }
     }
 
-    private static String getListenerClassName(Class cls) {
+    private static String getListenerClassName(Class<?> cls) {
         String className = cls.getName();
         return className.substring(className.lastIndexOf('.') + 1);
     }
@@ -182,7 +182,7 @@ public class EventSetDescriptor extends FeatureDescriptor {
         }
     }
 
-    private static Method getMethod(Class cls, String name, int args)
+    private static Method getMethod(Class<?> cls, String name, int args)
         throws IntrospectionException {
         if (name == null) {
             return null;
@@ -295,7 +295,7 @@ public class EventSetDescriptor extends FeatureDescriptor {
                 : null;
     }
 
-    private void setListenerType(Class cls) {
+    private void setListenerType(Class<?> cls) {
         this.listenerTypeRef = getWeakReference(cls);
     }
 

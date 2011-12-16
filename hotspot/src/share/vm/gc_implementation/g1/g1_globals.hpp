@@ -39,10 +39,6 @@
   develop(intx, G1MarkingOverheadPercent, 0,                                \
           "Overhead of concurrent marking")                                 \
                                                                             \
-                                                                            \
-  develop(intx, G1PolicyVerbose, 0,                                         \
-          "The verbosity level on G1 policy decisions")                     \
-                                                                            \
   develop(intx, G1MarkingVerboseLevel, 0,                                   \
           "Level (0-4) of verboseness of the marking code")                 \
                                                                             \
@@ -57,9 +53,6 @@
                                                                             \
   develop(bool, G1TraceMarkStackOverflow, false,                            \
           "If true, extra debugging code for CM restart for ovflw.")        \
-                                                                            \
-  develop(intx, G1PausesBtwnConcMark, -1,                                   \
-          "If positive, fixed number of pauses between conc markings")      \
                                                                             \
   diagnostic(bool, G1SummarizeConcMark, false,                              \
           "Summarize concurrent mark info")                                 \

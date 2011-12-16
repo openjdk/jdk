@@ -778,12 +778,12 @@ bool Thread::claim_oops_do_par_case(int strong_roots_parity) {
       return true;
     } else {
       guarantee(res == strong_roots_parity, "Or else what?");
-      assert(SharedHeap::heap()->n_par_threads() > 0,
-             "Should only fail when parallel.");
+      assert(SharedHeap::heap()->workers()->active_workers() > 0,
+         "Should only fail when parallel.");
       return false;
     }
   }
-  assert(SharedHeap::heap()->n_par_threads() > 0,
+  assert(SharedHeap::heap()->workers()->active_workers() > 0,
          "Should only fail when parallel.");
   return false;
 }
@@ -3939,7 +3939,15 @@ void Threads::possibly_parallel_oops_do(OopClosure* f, CodeBlobClosure* cf) {
   // root groups.  Overhead should be small enough to use all the time,
   // even in sequential code.
   SharedHeap* sh = SharedHeap::heap();
-  bool is_par = (sh->n_par_threads() > 0);
+  // Cannot yet substitute active_workers for n_par_threads
+  // because of G1CollectedHeap::verify() use of
+  // SharedHeap::process_strong_roots().  n_par_threads == 0 will
+  // turn off parallelism in process_strong_roots while active_workers
+  // is being used for parallelism elsewhere.
+  bool is_par = sh->n_par_threads() > 0;
+  assert(!is_par ||
+         (SharedHeap::heap()->n_par_threads() ==
+          SharedHeap::heap()->workers()->active_workers()), "Mismatch");
   int cp = SharedHeap::heap()->strong_roots_parity();
   ALL_JAVA_THREADS(p) {
     if (p->claim_oops_do(is_par, cp)) {
