@@ -693,17 +693,6 @@ private:
   static address locate_next_instruction(address inst);
 
   // Utilities
-
-#ifdef _LP64
- static bool is_simm(int64_t x, int nbits) { return -(CONST64(1) << (nbits-1)) <= x &&
-                                                    x < (CONST64(1) << (nbits-1)); }
- static bool is_simm32(int64_t x) { return x == (int64_t)(int32_t)x; }
-#else
- static bool is_simm(int32_t x, int nbits) { return -(1 << (nbits-1)) <= x &&
-                                                    x < (1 << (nbits-1)); }
- static bool is_simm32(int32_t x) { return true; }
-#endif // _LP64
-
   static bool is_polling_page_far() NOT_LP64({ return false;});
 
   // Generic instructions

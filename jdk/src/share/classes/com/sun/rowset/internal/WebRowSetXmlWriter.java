@@ -55,7 +55,7 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
      * object will use for storing the tags to be used for writing the calling
      * <code>WebRowSet</code> object as an XML document.
      */
-    private java.util.Stack stack;
+    private java.util.Stack<String> stack;
 
     private  JdbcRowSetResourceBundle resBundle;
 
@@ -94,7 +94,7 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
     throws SQLException {
 
         // create a new stack for tag checking.
-        stack = new java.util.Stack();
+        stack = new java.util.Stack<>();
         writer = wrt;
         writeRowSet(caller);
     }
@@ -127,7 +127,7 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
     throws SQLException {
 
         // create a new stack for tag checking.
-        stack = new java.util.Stack();
+        stack = new java.util.Stack<>();
         writer = new OutputStreamWriter(oStream);
         writeRowSet(caller);
     }
@@ -205,10 +205,10 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
 
             //Changed to beginSection and endSection for maps for proper indentation
             beginSection("map");
-            java.util.Map typeMap = caller.getTypeMap();
+            java.util.Map<?,?> typeMap = caller.getTypeMap();
             if (typeMap != null) {
-                Iterator i = typeMap.keySet().iterator();
-                Class c;
+                Iterator<?> i = typeMap.keySet().iterator();
+                Class<?> c;
                 String type;
                 while (i.hasNext()) {
                     type = (String)i.next();
@@ -532,7 +532,7 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
     }
 
     private String getTag() {
-        return (String)stack.pop();
+        return stack.pop();
     }
 
     private void writeNull() throws java.io.IOException {

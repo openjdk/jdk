@@ -428,18 +428,18 @@ public abstract class OGLSurfaceData extends SurfaceData
         // by the CompositeType.SrcNoEa (any color) test below.)
 
         if (/* CompositeType.SrcNoEa (any color) */
-            (sg2d.compositeState <= sg2d.COMP_ISCOPY &&
-             sg2d.paintState <= sg2d.PAINT_ALPHACOLOR)        ||
+            (sg2d.compositeState <= SunGraphics2D.COMP_ISCOPY &&
+             sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR)         ||
 
             /* CompositeType.SrcOver (any color) */
-            (sg2d.compositeState == sg2d.COMP_ALPHA    &&
-             sg2d.paintState <= sg2d.PAINT_ALPHACOLOR &&
+            (sg2d.compositeState == SunGraphics2D.COMP_ALPHA   &&
+             sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR &&
              (((AlphaComposite)sg2d.composite).getRule() ==
-              AlphaComposite.SRC_OVER))                       ||
+              AlphaComposite.SRC_OVER))                                 ||
 
             /* CompositeType.Xor (any color) */
-            (sg2d.compositeState == sg2d.COMP_XOR &&
-             sg2d.paintState <= sg2d.PAINT_ALPHACOLOR))
+            (sg2d.compositeState == SunGraphics2D.COMP_XOR &&
+             sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR))
         {
             textpipe = oglTextPipe;
         } else {
@@ -454,12 +454,12 @@ public abstract class OGLSurfaceData extends SurfaceData
         OGLRenderer nonTxPipe = null;
 
         if (sg2d.antialiasHint != SunHints.INTVAL_ANTIALIAS_ON) {
-            if (sg2d.paintState <= sg2d.PAINT_ALPHACOLOR) {
-                if (sg2d.compositeState <= sg2d.COMP_XOR) {
+            if (sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR) {
+                if (sg2d.compositeState <= SunGraphics2D.COMP_XOR) {
                     txPipe = oglTxRenderPipe;
                     nonTxPipe = oglRenderPipe;
                 }
-            } else if (sg2d.compositeState <= sg2d.COMP_ALPHA) {
+            } else if (sg2d.compositeState <= SunGraphics2D.COMP_ALPHA) {
                 if (OGLPaints.isValid(sg2d)) {
                     txPipe = oglTxRenderPipe;
                     nonTxPipe = oglRenderPipe;
@@ -467,7 +467,7 @@ public abstract class OGLSurfaceData extends SurfaceData
                 // custom paints handled by super.validatePipe() below
             }
         } else {
-            if (sg2d.paintState <= sg2d.PAINT_ALPHACOLOR) {
+            if (sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR) {
                 if (graphicsConfig.isCapPresent(CAPS_PS30) &&
                     (sg2d.imageComp == CompositeType.SrcOverNoEa ||
                      sg2d.imageComp == CompositeType.SrcOver))
@@ -484,7 +484,7 @@ public abstract class OGLSurfaceData extends SurfaceData
                     sg2d.drawpipe = aaConverter;
                     sg2d.fillpipe = aaConverter;
                     sg2d.shapepipe = aaConverter;
-                } else if (sg2d.compositeState == sg2d.COMP_XOR) {
+                } else if (sg2d.compositeState == SunGraphics2D.COMP_XOR) {
                     // install the solid pipes when AA and XOR are both enabled
                     txPipe = oglTxRenderPipe;
                     nonTxPipe = oglRenderPipe;
@@ -494,10 +494,10 @@ public abstract class OGLSurfaceData extends SurfaceData
         }
 
         if (txPipe != null) {
-            if (sg2d.transformState >= sg2d.TRANSFORM_TRANSLATESCALE) {
+            if (sg2d.transformState >= SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
                 sg2d.drawpipe = txPipe;
                 sg2d.fillpipe = txPipe;
-            } else if (sg2d.strokeState != sg2d.STROKE_THIN) {
+            } else if (sg2d.strokeState != SunGraphics2D.STROKE_THIN) {
                 sg2d.drawpipe = txPipe;
                 sg2d.fillpipe = nonTxPipe;
             } else {
@@ -524,7 +524,7 @@ public abstract class OGLSurfaceData extends SurfaceData
 
     @Override
     protected MaskFill getMaskFill(SunGraphics2D sg2d) {
-        if (sg2d.paintState > sg2d.PAINT_ALPHACOLOR) {
+        if (sg2d.paintState > SunGraphics2D.PAINT_ALPHACOLOR) {
             /*
              * We can only accelerate non-Color MaskFill operations if
              * all of the following conditions hold true:
@@ -548,8 +548,8 @@ public abstract class OGLSurfaceData extends SurfaceData
     public boolean copyArea(SunGraphics2D sg2d,
                             int x, int y, int w, int h, int dx, int dy)
     {
-        if (sg2d.transformState < sg2d.TRANSFORM_TRANSLATESCALE &&
-            sg2d.compositeState < sg2d.COMP_XOR)
+        if (sg2d.transformState < SunGraphics2D.TRANSFORM_TRANSLATESCALE &&
+            sg2d.compositeState < SunGraphics2D.COMP_XOR)
         {
             x += sg2d.transX;
             y += sg2d.transY;

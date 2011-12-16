@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,7 @@ typedef enum {
 #ifdef COMPILER2
  C2_FLAGS(C2_DEVELOP_FLAG_MEMBER, C2_PD_DEVELOP_FLAG_MEMBER, C2_PRODUCT_FLAG_MEMBER, C2_PD_PRODUCT_FLAG_MEMBER, C2_DIAGNOSTIC_FLAG_MEMBER, C2_EXPERIMENTAL_FLAG_MEMBER, C2_NOTPRODUCT_FLAG_MEMBER)
 #endif
+ COMMANDLINEFLAG_EXT
  NUM_CommandLineFlag
 } CommandLineFlag;
 
@@ -192,6 +193,7 @@ typedef enum {
           C2_EXPERIMENTAL_FLAG_MEMBER_WITH_TYPE,
           C2_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE)
 #endif
+ COMMANDLINEFLAGWITHTYPE_EXT
  NUM_CommandLineFlagWithType
 } CommandLineFlagWithType;
 

@@ -42,6 +42,7 @@ import java.util.EventObject;
  */
 public class StatementEvent extends EventObject {
 
+        static final long serialVersionUID = -8089573731826608315L;
         private SQLException            exception;
         private PreparedStatement       statement;
 
