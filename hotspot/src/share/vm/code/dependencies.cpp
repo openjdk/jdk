@@ -1631,7 +1631,7 @@ void KlassDepChange::initialize() {
   for (ContextStream str(*this); str.next(); ) {
     klassOop d = str.klass();
     assert(!instanceKlass::cast(d)->is_marked_dependent(), "checking");
-    instanceKlass::cast(d)->set_is_marked_dependent(true);
+    instanceKlass::cast(d)->set_is_marked_dependent();
   }
 }
 
@@ -1640,7 +1640,7 @@ KlassDepChange::~KlassDepChange() {
   // Unmark transitive interfaces
   for (ContextStream str(*this); str.next(); ) {
     klassOop d = str.klass();
-    instanceKlass::cast(d)->set_is_marked_dependent(false);
+    instanceKlass::cast(d)->clear_is_marked_dependent();
   }
 }
 
