@@ -35,6 +35,7 @@ class GCTaskTimeStamp;
 class GCTaskManager;
 
 class GCTaskThread : public WorkerThread {
+  friend class GCTaskManager;
 private:
   // Instance state.
   GCTaskManager* _manager;              // Manager for worker.
@@ -44,6 +45,8 @@ private:
   uint _time_stamp_index;
 
   GCTaskTimeStamp* time_stamp_at(uint index);
+
+  bool _is_working;                     // True if participating in GC tasks
 
  public:
   // Factory create and destroy methods.
@@ -84,6 +87,7 @@ protected:
   uint processor_id() const {
     return _processor_id;
   }
+  void set_is_working(bool v) { _is_working = v; }
 };
 
 class GCTaskTimeStamp : public CHeapObj

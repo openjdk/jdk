@@ -71,10 +71,10 @@ public class AtomicLong extends Number implements java.io.Serializable {
     private static native boolean VMSupportsCS8();
 
     static {
-      try {
-        valueOffset = unsafe.objectFieldOffset
-            (AtomicLong.class.getDeclaredField("value"));
-      } catch (Exception ex) { throw new Error(ex); }
+        try {
+            valueOffset = unsafe.objectFieldOffset
+                (AtomicLong.class.getDeclaredField("value"));
+        } catch (Exception ex) { throw new Error(ex); }
     }
 
     private volatile long value;
@@ -270,8 +270,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
     }
 
     /**
-     * Returns the value of this {@code AtomicLong} as a {@code long}
-     * value.
+     * Returns the value of this {@code AtomicLong} as a {@code long}.
      */
     public long longValue() {
         return get();
@@ -287,8 +286,8 @@ public class AtomicLong extends Number implements java.io.Serializable {
     }
 
     /**
-     * Returns the value of this {@code AtomicLong} as a {@code
-     * double} after a widening primitive conversion.
+     * Returns the value of this {@code AtomicLong} as a {@code double}
+     * after a widening primitive conversion.
      * @jls 5.1.2 Widening Primitive Conversions
      */
     public double doubleValue() {

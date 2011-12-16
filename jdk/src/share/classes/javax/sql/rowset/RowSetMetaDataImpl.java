@@ -97,7 +97,7 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
      */
     private void checkColType(int SQLType) throws SQLException {
         try {
-            Class c = java.sql.Types.class;
+            Class<?> c = java.sql.Types.class;
             Field[] publicFields = c.getFields();
             int fieldValue = 0;
             for (int i = 0; i < publicFields.length; i++) {
@@ -1091,5 +1091,7 @@ public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
          *@serial
          */
         public boolean writable = true;
+
+        static final long serialVersionUID = 5490834817919311283L;
     }
 }
