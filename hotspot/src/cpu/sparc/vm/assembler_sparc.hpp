@@ -855,12 +855,6 @@ class Assembler : public AbstractAssembler  {
     Lookaside  = 1 << 4
   };
 
-  // test if x is within signed immediate range for nbits
-  static bool is_simm(intptr_t x, int nbits) { return -( intptr_t(1) << nbits-1 )  <= x   &&   x  <  ( intptr_t(1) << nbits-1 ); }
-
-  // test if -4096 <= x <= 4095
-  static bool is_simm13(intptr_t x) { return is_simm(x, 13); }
-
   static bool is_in_wdisp_range(address a, address b, int nbits) {
     intptr_t d = intptr_t(b) - intptr_t(a);
     return is_simm(d, nbits + 2);
@@ -1203,7 +1197,7 @@ public:
     if (!UseCBCond || cbcond_before()) return false;
     intptr_t x = intptr_t(target_distance(L)) - intptr_t(pc());
     assert( (x & 3) == 0, "not word aligned");
-    return is_simm(x, 12);
+    return is_simm12(x);
   }
 
   // Tells assembler you know that next instruction is delayed

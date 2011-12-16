@@ -104,8 +104,6 @@ public:
   void scanRS(OopsInHeapRegionClosure* oc, int worker_i);
   void updateRS(DirtyCardQueue* into_cset_dcq, int worker_i);
 
-  HeapRegion* calculateStartRegion(int i);
-
   CardTableModRefBS* ct_bs() { return _ct_bs; }
   size_t cardsScanned() { return _total_cards_scanned; }
 
