@@ -39,7 +39,7 @@ import java.util.*;
 public class LogStream extends PrintStream {
 
     /** table mapping known log names to log stream objects */
-    private static Hashtable    known = new Hashtable(5);
+    private static Map<String,LogStream> known = new HashMap<>(5);
     /** default output stream for new logs */
     private static PrintStream  defaultStream = System.err;
 
@@ -90,7 +90,7 @@ public class LogStream extends PrintStream {
     public static LogStream log(String name) {
         LogStream stream;
         synchronized (known) {
-            stream = (LogStream)known.get(name);
+            stream = known.get(name);
             if (stream == null) {
                 stream = new LogStream(name, defaultStream);
             }

@@ -420,7 +420,7 @@ public class VetoableChangeSupport implements Serializable {
                     listeners = entry.getValue();
                 } else {
                     if (children == null) {
-                        children = new Hashtable<String, VetoableChangeSupport>();
+                        children = new Hashtable<>();
                     }
                     VetoableChangeSupport vcs = new VetoableChangeSupport(this.source);
                     vcs.map.set(null, entry.getValue());
@@ -449,7 +449,8 @@ public class VetoableChangeSupport implements Serializable {
 
         ObjectInputStream.GetField fields = s.readFields();
 
-        Hashtable<String, VetoableChangeSupport> children = (Hashtable<String, VetoableChangeSupport>) fields.get("children", null);
+        @SuppressWarnings("unchecked")
+        Hashtable<String, VetoableChangeSupport> children = (Hashtable<String, VetoableChangeSupport>)fields.get("children", null);
         this.source = fields.get("source", null);
         fields.get("vetoableChangeSupportSerializedDataVersion", 2);
 

@@ -33,10 +33,10 @@ import java.util.NoSuchElementException;
  * enumerations.
  */
 public class CompoundEnumeration<E> implements Enumeration<E> {
-    private Enumeration[] enums;
+    private Enumeration<E>[] enums;
     private int index = 0;
 
-    public CompoundEnumeration(Enumeration[] enums) {
+    public CompoundEnumeration(Enumeration<E>[] enums) {
         this.enums = enums;
     }
 
@@ -58,6 +58,6 @@ public class CompoundEnumeration<E> implements Enumeration<E> {
         if (!next()) {
             throw new NoSuchElementException();
         }
-        return (E)enums[index].nextElement();
+        return enums[index].nextElement();
     }
 }

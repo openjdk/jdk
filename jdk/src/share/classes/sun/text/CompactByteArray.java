@@ -264,9 +264,9 @@ public final class CompactByteArray implements Cloneable {
     {
         try {
             CompactByteArray other = (CompactByteArray) super.clone();
-            other.values = (byte[])values.clone();
-            other.indices = (short[])indices.clone();
-            if (hashes != null) other.hashes = (int[])hashes.clone();
+            other.values = values.clone();
+            other.indices = indices.clone();
+            if (hashes != null) other.hashes = hashes.clone();
             return other;
         } catch (CloneNotSupportedException e) {
             throw new InternalError(e);
