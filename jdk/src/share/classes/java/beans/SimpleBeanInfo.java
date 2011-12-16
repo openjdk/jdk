@@ -116,10 +116,10 @@ public class SimpleBeanInfo implements BeanInfo {
      */
     public java.awt.Image loadImage(final String resourceName) {
         try {
-            final Class c = getClass();
+            final Class<?> c = getClass();
             java.awt.image.ImageProducer ip = (java.awt.image.ImageProducer)
                 java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction() {
+                new java.security.PrivilegedAction<Object>() {
                     public Object run() {
                         java.net.URL url;
                         if ((url = c.getResource(resourceName)) == null) {

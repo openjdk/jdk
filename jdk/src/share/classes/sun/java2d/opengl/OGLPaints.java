@@ -123,14 +123,16 @@ abstract class OGLPaints {
             }
 
             SurfaceData srcData =
-                dstData.getSourceSurfaceData(bi, sg2d.TRANSFORM_ISIDENT,
+                dstData.getSourceSurfaceData(bi,
+                                             SunGraphics2D.TRANSFORM_ISIDENT,
                                              CompositeType.SrcOver, null);
             if (!(srcData instanceof OGLSurfaceData)) {
                 // REMIND: this is a hack that attempts to cache the system
                 //         memory image from the TexturePaint instance into an
                 //         OpenGL texture...
                 srcData =
-                    dstData.getSourceSurfaceData(bi, sg2d.TRANSFORM_ISIDENT,
+                    dstData.getSourceSurfaceData(bi,
+                                                 SunGraphics2D.TRANSFORM_ISIDENT,
                                                  CompositeType.SrcOver, null);
                 if (!(srcData instanceof OGLSurfaceData)) {
                     return false;

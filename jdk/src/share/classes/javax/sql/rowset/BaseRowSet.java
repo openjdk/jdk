@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -619,8 +619,8 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
         checkforRowSetInterface();
         if (listeners.isEmpty() == false) {
             RowSetEvent event = new RowSetEvent((RowSet)this);
-            for (Iterator i = listeners.iterator(); i.hasNext(); ) {
-                ((RowSetListener)i.next()).cursorMoved(event);
+            for (RowSetListener rsl : listeners) {
+                rsl.cursorMoved(event);
             }
         }
     }
@@ -644,8 +644,8 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
         checkforRowSetInterface();
         if (listeners.isEmpty() == false) {
                 RowSetEvent event = new RowSetEvent((RowSet)this);
-                for (Iterator i = listeners.iterator(); i.hasNext(); ) {
-                        ((RowSetListener)i.next()).rowChanged(event);
+                for (RowSetListener rsl : listeners) {
+                    rsl.rowChanged(event);
                 }
         }
     }
@@ -669,8 +669,8 @@ public abstract class BaseRowSet implements Serializable, Cloneable {
         checkforRowSetInterface();
         if (listeners.isEmpty() == false) {
                 RowSetEvent event = new RowSetEvent((RowSet)this);
-                for (Iterator i = listeners.iterator(); i.hasNext(); ) {
-                        ((RowSetListener)i.next()).rowSetChanged(event);
+                for (RowSetListener rsl : listeners) {
+                    rsl.rowSetChanged(event);
                 }
         }
 }

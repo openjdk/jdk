@@ -169,7 +169,7 @@ public class TransformerManager
     public byte[]
     transform(  ClassLoader         loader,
                 String              classname,
-                Class               classBeingRedefined,
+                Class<?>            classBeingRedefined,
                 ProtectionDomain    protectionDomain,
                 byte[]              classfileBuffer) {
         boolean someoneTouchedTheBytecode = false;

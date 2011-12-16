@@ -369,7 +369,7 @@ public final class ServicePermission extends Permission
                 switch(a[i-matchlen]) {
                 case ',':
                     seencomma = true;
-                    /*FALLTHROUGH*/
+                    break;
                 case ' ': case '\r': case '\n':
                 case '\f': case '\t':
                     break;
