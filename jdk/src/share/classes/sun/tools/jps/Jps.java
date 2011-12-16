@@ -59,13 +59,13 @@ public class Jps {
                     MonitoredHost.getMonitoredHost(hostId);
 
             // get the set active JVMs on the specified host.
-            Set jvms = monitoredHost.activeVms();
+            Set<Integer> jvms = monitoredHost.activeVms();
 
-            for (Iterator j = jvms.iterator(); j.hasNext(); /* empty */ ) {
+            for (Integer jvm: jvms) {
                 StringBuilder output = new StringBuilder();
                 Throwable lastError = null;
 
-                int lvmid = ((Integer)j.next()).intValue();
+                int lvmid = jvm;
 
                 output.append(String.valueOf(lvmid));
 

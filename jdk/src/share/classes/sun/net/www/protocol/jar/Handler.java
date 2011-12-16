@@ -123,6 +123,7 @@ public class Handler extends java.net.URLStreamHandler {
 
 
     @Override
+    @SuppressWarnings("deprecation")
     protected void parseURL(URL url, String spec,
                             int start, int limit) {
         String file = null;

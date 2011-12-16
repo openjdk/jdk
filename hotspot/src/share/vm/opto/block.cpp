@@ -898,45 +898,41 @@ void PhaseCFG::dump_headers() {
 void PhaseCFG::verify( ) const {
 #ifdef ASSERT
   // Verify sane CFG
-  for( uint i = 0; i < _num_blocks; i++ ) {
+  for (uint i = 0; i < _num_blocks; i++) {
     Block *b = _blocks[i];
     uint cnt = b->_nodes.size();
     uint j;
-    for( j = 0; j < cnt; j++ ) {
+    for (j = 0; j < cnt; j++)  {
       Node *n = b->_nodes[j];
       assert( _bbs[n->_idx] == b, "" );
-      if( j >= 1 && n->is_Mach() &&
-          n->as_Mach()->ideal_Opcode() == Op_CreateEx ) {
-        assert( j == 1 || b->_nodes[j-1]->is_Phi(),
-                "CreateEx must be first instruction in block" );
+      if (j >= 1 && n->is_Mach() &&
+          n->as_Mach()->ideal_Opcode() == Op_CreateEx) {
+        assert(j == 1 || b->_nodes[j-1]->is_Phi(),
+               "CreateEx must be first instruction in block");
       }
-      for( uint k = 0; k < n->req(); k++ ) {
+      for (uint k = 0; k < n->req(); k++) {
         Node *def = n->in(k);
-        if( def && def != n ) {
-          assert( _bbs[def->_idx] || def->is_Con(),
-                  "must have block; constants for debug info ok" );
+        if (def && def != n) {
+          assert(_bbs[def->_idx] || def->is_Con(),
+                 "must have block; constants for debug info ok");
           // Verify that instructions in the block is in correct order.
           // Uses must follow their definition if they are at the same block.
           // Mostly done to check that MachSpillCopy nodes are placed correctly
           // when CreateEx node is moved in build_ifg_physical().
-          if( _bbs[def->_idx] == b &&
+          if (_bbs[def->_idx] == b &&
               !(b->head()->is_Loop() && n->is_Phi()) &&
               // See (+++) comment in reg_split.cpp
-              !(n->jvms() != NULL && n->jvms()->is_monitor_use(k)) ) {
+              !(n->jvms() != NULL && n->jvms()->is_monitor_use(k))) {
             bool is_loop = false;
             if (n->is_Phi()) {
-              for( uint l = 1; l < def->req(); l++ ) {
+              for (uint l = 1; l < def->req(); l++) {
                 if (n == def->in(l)) {
                   is_loop = true;
                   break; // Some kind of loop
                 }
               }
             }
-            assert( is_loop || b->find_node(def) < j, "uses must follow definitions" );
-          }
-          if( def->is_SafePointScalarObject() ) {
-            assert(_bbs[def->_idx] == b, "SafePointScalarObject Node should be at the same block as its SafePoint node");
-            assert(_bbs[def->_idx] == _bbs[def->in(0)->_idx], "SafePointScalarObject Node should be at the same block as its control edge");
+            assert(is_loop || b->find_node(def) < j, "uses must follow definitions");
           }
         }
       }
@@ -946,12 +942,11 @@ void PhaseCFG::verify( ) const {
     Node *bp = (Node*)b->_nodes[b->_nodes.size()-1]->is_block_proj();
     assert( bp, "last instruction must be a block proj" );
     assert( bp == b->_nodes[j], "wrong number of successors for this block" );
-    if( bp->is_Catch() ) {
-      while( b->_nodes[--j]->is_MachProj() ) ;
-      assert( b->_nodes[j]->is_MachCall(), "CatchProj must follow call" );
-    }
-    else if( bp->is_Mach() && bp->as_Mach()->ideal_Opcode() == Op_If ) {
-      assert( b->_num_succs == 2, "Conditional branch must have two targets");
+    if (bp->is_Catch()) {
+      while (b->_nodes[--j]->is_MachProj()) ;
+      assert(b->_nodes[j]->is_MachCall(), "CatchProj must follow call");
+    } else if (bp->is_Mach() && bp->as_Mach()->ideal_Opcode() == Op_If) {
+      assert(b->_num_succs == 2, "Conditional branch must have two targets");
     }
   }
 #endif

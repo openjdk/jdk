@@ -832,31 +832,6 @@ class PSParallelCompact : AllStatic {
     virtual void do_code_blob(CodeBlob* cb) const { }
   };
 
-  // Closure for verifying update of pointers.  Does not
-  // have any side effects.
-  class VerifyUpdateClosure: public ParMarkBitMapClosure {
-    const MutableSpace* _space; // Is this ever used?
-
-   public:
-    VerifyUpdateClosure(ParCompactionManager* cm, const MutableSpace* sp) :
-      ParMarkBitMapClosure(PSParallelCompact::mark_bitmap(), cm), _space(sp)
-    { }
-
-    virtual IterationStatus do_addr(HeapWord* addr, size_t words);
-
-    const MutableSpace* space() { return _space; }
-  };
-
-  // Closure for updating objects altered for debug checking
-  class ResetObjectsClosure: public ParMarkBitMapClosure {
-   public:
-    ResetObjectsClosure(ParCompactionManager* cm):
-      ParMarkBitMapClosure(PSParallelCompact::mark_bitmap(), cm)
-    { }
-
-    virtual IterationStatus do_addr(HeapWord* addr, size_t words);
-  };
-
   friend class KeepAliveClosure;
   friend class FollowStackClosure;
   friend class AdjustPointerClosure;
@@ -1183,10 +1158,6 @@ class PSParallelCompact : AllStatic {
   // Update the deferred objects in the space.
   static void update_deferred_objects(ParCompactionManager* cm, SpaceId id);
 
-  // Mark pointer and follow contents.
-  template <class T>
-  static inline void mark_and_follow(ParCompactionManager* cm, T* p);
-
   static ParMarkBitMap* mark_bitmap() { return &_mark_bitmap; }
   static ParallelCompactData& summary_data() { return _summary_data; }
 
@@ -1280,20 +1251,6 @@ inline void PSParallelCompact::follow_root(ParCompactionManager* cm, T* p) {
     }
   }
   cm->follow_marking_stacks();
-}
-
-template <class T>
-inline void PSParallelCompact::mark_and_follow(ParCompactionManager* cm,
-                                               T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop)) {
-    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-    if (mark_bitmap()->is_unmarked(obj)) {
-      if (mark_obj(obj)) {
-        obj->follow_contents(cm);
-      }
-    }
-  }
 }
 
 template <class T>

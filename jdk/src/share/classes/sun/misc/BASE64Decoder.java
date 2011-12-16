@@ -102,6 +102,7 @@ public class BASE64Decoder extends CharacterDecoder {
     /**
      * Decode one BASE64 atom into 1, 2, or 3 bytes of data.
      */
+    @SuppressWarnings("fallthrough")
     protected void decodeAtom(PushbackInputStream inStream, OutputStream outStream, int rem)
         throws java.io.IOException
     {

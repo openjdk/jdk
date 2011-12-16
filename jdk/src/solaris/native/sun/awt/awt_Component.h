@@ -42,25 +42,3 @@ struct ComponentIDs {
     jmethodID getParent;
     jmethodID getLocationOnScreen;
 };
-
-/* field and method IDs for Container */
-struct ContainerIDs {
-    jfieldID layoutMgr;
-    jmethodID getComponents;
-    jmethodID findComponentAt;
-};
-
-/* fieldIDs for MComponentPeer fields that may be accessed from C */
-struct MComponentPeerIDs {
-    jfieldID pData;
-    jfieldID target;
-    jfieldID jniGlobalRef;
-    jfieldID graphicsConfig;
-    jfieldID drawState;
-    jmethodID isFocusableMID;
-};
-
-#ifndef HEADLESS
-extern void processTree(Widget from, Widget to, Boolean action);
-#endif // HEADLESS
-
