@@ -58,11 +58,14 @@ public class TestWithXstdout {
         if (javaHome.getName().equals("jre"))
             javaHome = javaHome.getParentFile();
         File javac = new File(new File(javaHome, "bin"), "javac");
-        String toolOpts = System.getProperty("test.tool.vm.opts");
 
         List<String> opts = new ArrayList<>();
         opts.add(javac.getPath());
-        opts.addAll(Arrays.asList(toolOpts.trim().split("[\\s]+")));
+
+        String toolOpts = System.getProperty("test.tool.vm.opts");
+        if (toolOpts != null && !"".equals(toolOpts.trim())) {
+            opts.addAll(Arrays.asList(toolOpts.trim().split("[\\s]+")));
+        }
         opts.addAll(Arrays.asList(args));
         System.out.println("exec: " + opts);
         ProcessBuilder pb = new ProcessBuilder(opts);
