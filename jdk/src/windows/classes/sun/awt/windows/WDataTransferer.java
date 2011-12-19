@@ -107,13 +107,15 @@ public class WDataTransferer extends DataTransferer {
         "DIBV5"
     };
 
-    private static final Map predefinedClipboardNameMap;
+    private static final Map <String, Long> predefinedClipboardNameMap;
     static {
-        Map tempMap = new HashMap(predefinedClipboardNames.length, 1.0f);
+        Map <String,Long> tempMap =
+            new HashMap <> (predefinedClipboardNames.length, 1.0f);
         for (int i = 1; i < predefinedClipboardNames.length; i++) {
             tempMap.put(predefinedClipboardNames[i], Long.valueOf(i));
         }
-        predefinedClipboardNameMap = Collections.synchronizedMap(tempMap);
+        predefinedClipboardNameMap =
+            Collections.synchronizedMap(tempMap);
     }
 
     /**
@@ -135,7 +137,7 @@ public class WDataTransferer extends DataTransferer {
     public static final long CF_FILEGROUPDESCRIPTORA = registerClipboardFormat("FileGroupDescriptor");
     //CF_FILECONTENTS supported as mandatory associated clipboard
 
-    private static final Long L_CF_LOCALE = (Long)
+    private static final Long L_CF_LOCALE =
       predefinedClipboardNameMap.get(predefinedClipboardNames[CF_LOCALE]);
 
     private static final DirectColorModel directColorModel =
@@ -168,8 +170,11 @@ public class WDataTransferer extends DataTransferer {
         return transferer;
     }
 
-    public SortedMap getFormatsForFlavors(DataFlavor[] flavors, FlavorTable map) {
-        SortedMap retval = super.getFormatsForFlavors(flavors, map);
+    public SortedMap <Long, DataFlavor> getFormatsForFlavors(
+        DataFlavor[] flavors, FlavorTable map)
+    {
+        SortedMap <Long, DataFlavor> retval =
+            super.getFormatsForFlavors(flavors, map);
 
         // The Win32 native code does not support exporting LOCALE data, nor
         // should it.
@@ -266,7 +271,7 @@ public class WDataTransferer extends DataTransferer {
     }
 
     protected Long getFormatForNativeAsLong(String str) {
-        Long format = (Long)predefinedClipboardNameMap.get(str);
+        Long format = predefinedClipboardNameMap.get(str);
         if (format == null) {
             format = Long.valueOf(registerClipboardFormat(str));
         }
