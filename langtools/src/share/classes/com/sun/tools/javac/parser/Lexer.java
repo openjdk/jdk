@@ -50,6 +50,11 @@ public interface Lexer {
     Token token();
 
     /**
+     * Return token with given lookahead.
+     */
+    Token token(int lookahead);
+
+    /**
      * Return the last character position of the previous token.
      */
     Token prevToken();

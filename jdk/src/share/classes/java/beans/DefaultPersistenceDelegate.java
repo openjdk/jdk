@@ -95,7 +95,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
         this.constructor = constructorPropertyNames;
     }
 
-    private static boolean definesEquals(Class type) {
+    private static boolean definesEquals(Class<?> type) {
         try {
             return type == type.getMethod("equals", Object.class).getDeclaringClass();
         }
@@ -153,7 +153,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
      */
     protected Expression instantiate(Object oldInstance, Encoder out) {
         int nArgs = constructor.length;
-        Class type = oldInstance.getClass();
+        Class<?> type = oldInstance.getClass();
         Object[] constructorArgs = new Object[nArgs];
         for(int i = 0; i < nArgs; i++) {
             try {
@@ -167,7 +167,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
         return new Expression(oldInstance, oldInstance.getClass(), "new", constructorArgs);
     }
 
-    private Method findMethod(Class type, String property) {
+    private Method findMethod(Class<?> type, String property) {
         if (property == null) {
             throw new IllegalArgumentException("Property name is null");
         }
@@ -182,7 +182,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
         return method;
     }
 
-    private void doProperty(Class type, PropertyDescriptor pd, Object oldInstance, Object newInstance, Encoder out) throws Exception {
+    private void doProperty(Class<?> type, PropertyDescriptor pd, Object oldInstance, Object newInstance, Encoder out) throws Exception {
         Method getter = pd.getReadMethod();
         Method setter = pd.getWriteMethod();
 
@@ -218,7 +218,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
     }
 
     // Write out the properties of this instance.
-    private void initBean(Class type, Object oldInstance, Object newInstance, Encoder out) {
+    private void initBean(Class<?> type, Object oldInstance, Object newInstance, Encoder out) {
         for (Field field : type.getFields()) {
             int mod = field.getModifiers();
             if (Modifier.isFinal(mod) || Modifier.isStatic(mod) || Modifier.isTransient(mod)) {
@@ -288,7 +288,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
             if (d.isTransient()) {
                 continue;
             }
-            Class listenerType = d.getListenerType();
+            Class<?> listenerType = d.getListenerType();
 
 
             // The ComponentListener is added automatically, when
@@ -318,7 +318,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
             }
             catch (Exception e2) {
                 try {
-                    Method m = type.getMethod("getListeners", new Class[]{Class.class});
+                    Method m = type.getMethod("getListeners", new Class<?>[]{Class.class});
                     oldL = (EventListener[])MethodUtil.invoke(m, oldInstance, new Object[]{listenerType});
                     newL = (EventListener[])MethodUtil.invoke(m, newInstance, new Object[]{listenerType});
                 }
@@ -401,7 +401,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
         }
     }
 
-    private static PropertyDescriptor getPropertyDescriptor(Class type, String property) {
+    private static PropertyDescriptor getPropertyDescriptor(Class<?> type, String property) {
         try {
             for (PropertyDescriptor pd : Introspector.getBeanInfo(type).getPropertyDescriptors()) {
                 if (property.equals(pd.getName()))

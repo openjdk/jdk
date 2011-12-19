@@ -207,7 +207,7 @@ public abstract class PersistenceDelegate {
                               Object oldInstance, Object newInstance,
                               Encoder out)
     {
-        Class superType = type.getSuperclass();
+        Class<?> superType = type.getSuperclass();
         PersistenceDelegate info = out.getPersistenceDelegate(superType);
         info.initialize(superType, oldInstance, newInstance, out);
     }
