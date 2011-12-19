@@ -413,10 +413,13 @@ class Generation: public CHeapObj {
   // Time (in ms) when we were last collected or now if a collection is
   // in progress.
   virtual jlong time_of_last_gc(jlong now) {
-    // XXX See note in genCollectedHeap::millis_since_last_gc()
+    // Both _time_of_last_gc and now are set using a time source
+    // that guarantees monotonically non-decreasing values provided
+    // the underlying platform provides such a source. So we still
+    // have to guard against non-monotonicity.
     NOT_PRODUCT(
       if (now < _time_of_last_gc) {
-        warning("time warp: %d to %d", _time_of_last_gc, now);
+        warning("time warp: "INT64_FORMAT" to "INT64_FORMAT, _time_of_last_gc, now);
       }
     )
     return _time_of_last_gc;

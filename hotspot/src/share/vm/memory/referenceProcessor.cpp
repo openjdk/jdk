@@ -43,7 +43,9 @@ void referenceProcessor_init() {
 }
 
 void ReferenceProcessor::init_statics() {
-  jlong now = os::javaTimeMillis();
+  // We need a monotonically non-deccreasing time in ms but
+  // os::javaTimeMillis() does not guarantee monotonicity.
+  jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
 
   // Initialize the soft ref timestamp clock.
   _soft_ref_timestamp_clock = now;
@@ -151,7 +153,10 @@ void ReferenceProcessor::weak_oops_do(OopClosure* f) {
 void ReferenceProcessor::update_soft_ref_master_clock() {
   // Update (advance) the soft ref master clock field. This must be done
   // after processing the soft ref list.
-  jlong now = os::javaTimeMillis();
+
+  // We need a monotonically non-deccreasing time in ms but
+  // os::javaTimeMillis() does not guarantee monotonicity.
+  jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
   jlong soft_ref_clock = java_lang_ref_SoftReference::clock();
   assert(soft_ref_clock == _soft_ref_timestamp_clock, "soft ref clocks out of sync");
 
@@ -161,10 +166,11 @@ void ReferenceProcessor::update_soft_ref_master_clock() {
             _soft_ref_timestamp_clock, now);
   }
   )
-  // In product mode, protect ourselves from system time being adjusted
-  // externally and going backward; see note in the implementation of
-  // GenCollectedHeap::time_since_last_gc() for the right way to fix
-  // this uniformly throughout the VM; see bug-id 4741166. XXX
+  // The values of now and _soft_ref_timestamp_clock are set using
+  // javaTimeNanos(), which is guaranteed to be monotonically
+  // non-decreasing provided the underlying platform provides such
+  // a time source (and it is bug free).
+  // In product mode, however, protect ourselves from non-monotonicty.
   if (now > _soft_ref_timestamp_clock) {
     _soft_ref_timestamp_clock = now;
     java_lang_ref_SoftReference::set_clock(now);

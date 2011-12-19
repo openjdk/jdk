@@ -1674,7 +1674,6 @@ void* os::thread_local_storage_at(int index) {
 }
 
 
-const int NANOSECS_PER_MILLISECS = 1000000;
 // gethrtime can move backwards if read from one cpu and then a different cpu
 // getTimeNanos is guaranteed to not move backward on Solaris
 // local spinloop created as faster for a CAS on an int than
@@ -1803,7 +1802,7 @@ double os::elapsedVTime() {
 // getTimeMillis guaranteed to not move backwards on Solaris
 jlong getTimeMillis() {
   jlong nanotime = getTimeNanos();
-  return (jlong)(nanotime / NANOSECS_PER_MILLISECS);
+  return (jlong)(nanotime / NANOSECS_PER_MILLISEC);
 }
 
 // Must return millis since Jan 1 1970 for JVM_CurrentTimeMillis
@@ -6064,10 +6063,7 @@ void os::PlatformEvent::unpark() {
  * is no need to track notifications.
  */
 
-#define NANOSECS_PER_SEC 1000000000
-#define NANOSECS_PER_MILLISEC 1000000
 #define MAX_SECS 100000000
-
 /*
  * This code is common to linux and solaris and will be moved to a
  * common place in dolphin.
