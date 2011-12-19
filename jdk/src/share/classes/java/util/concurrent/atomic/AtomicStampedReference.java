@@ -155,7 +155,6 @@ public class AtomicStampedReference<V> {
              casPair(current, Pair.of(newReference, newStamp)));
     }
 
-
     /**
      * Unconditionally sets the value of both the reference and stamp.
      *

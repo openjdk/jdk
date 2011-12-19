@@ -137,8 +137,8 @@ public class LocaleData {
     }
 
     private static ResourceBundle getBundle(final String baseName, final Locale locale) {
-        return (ResourceBundle) AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
+        return AccessController.doPrivileged(new PrivilegedAction<ResourceBundle>() {
+                public ResourceBundle run() {
                     return ResourceBundle.
                         getBundle(baseName, locale,
                                   LocaleDataResourceBundleControl.getRBControlInstance());

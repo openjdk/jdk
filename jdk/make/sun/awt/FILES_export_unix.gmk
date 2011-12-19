@@ -61,11 +61,8 @@ FILES_export = \
 	sun/awt/image/BufImgSurfaceData.java \
 	sun/awt/image/DataBufferNative.java \
 	\
-	sun/awt/motif/X11FontMetrics.java \
 	sun/awt/X11InputMethod.java \
 	sun/awt/motif/MFontConfiguration.java \
-	sun/awt/motif/MFontPeer.java \
-	sun/awt/motif/MToolkit.java \
         sun/awt/DebugSettings.java \
 	sun/awt/EmbeddedFrame.java \
 	sun/awt/PlatformFont.java \
@@ -93,7 +90,6 @@ FILES_export = \
         sun/java2d/cmm/ColorTransform.java \
         sun/awt/datatransfer/DataTransferer.java \
 	sun/awt/dnd/SunDragSourceContextPeer.java \
-	sun/awt/motif/MToolkitThreadBlockedHandler.java \
 	sun/java2d/opengl/OGLBlitLoops.java \
 	sun/java2d/opengl/OGLContext.java \
 	sun/java2d/opengl/OGLMaskFill.java \

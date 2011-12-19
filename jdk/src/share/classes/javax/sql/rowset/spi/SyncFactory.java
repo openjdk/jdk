@@ -257,7 +257,7 @@ public class SyncFactory {
      * See section 2.0 of the class comment for <code>SyncFactory</code> for an
      * explanation of how a provider can be added to this registry.
      */
-    private static Hashtable implementations;
+    private static Hashtable<String, SyncProvider> implementations;
     /**
      * Internal sync object used to maintain the SPI as a singleton
      */
@@ -344,7 +344,7 @@ public class SyncFactory {
         Properties properties = new Properties();
 
         if (implementations == null) {
-            implementations = new Hashtable();
+            implementations = new Hashtable<>();
 
             try {
 
@@ -445,7 +445,7 @@ public class SyncFactory {
         String key = null;
         String[] propertyNames = null;
 
-        for (Enumeration e = p.propertyNames(); e.hasMoreElements();) {
+        for (Enumeration<?> e = p.propertyNames(); e.hasMoreElements();) {
 
             String str = (String) e.nextElement();
 
@@ -541,7 +541,7 @@ public class SyncFactory {
         }
 
         // Attempt to invoke classname from registered SyncProvider list
-        Class c = null;
+        Class<?> c = null;
         try {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
 
@@ -740,7 +740,7 @@ public class SyncFactory {
      */
     private static Properties parseJNDIContext() throws NamingException {
 
-        NamingEnumeration bindings = ic.listBindings("");
+        NamingEnumeration<?> bindings = ic.listBindings("");
         Properties properties = new Properties();
 
         // Hunt one level below context for available SyncProvider objects
@@ -755,7 +755,7 @@ public class SyncFactory {
      * scan the current context using a re-entrant call to this method until all
      * bindings have been enumerated.
      */
-    private static void enumerateBindings(NamingEnumeration bindings,
+    private static void enumerateBindings(NamingEnumeration<?> bindings,
             Properties properties) throws NamingException {
 
         boolean syncProviderObj = false; // move to parameters ?
