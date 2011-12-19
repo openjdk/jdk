@@ -1282,12 +1282,11 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
   if( tk ) {
     // If we are referencing a field within a Klass, we need
     // to assume the worst case of an Object.  Both exact and
-    // inexact types must flatten to the same alias class.
-    // Since the flattened result for a klass is defined to be
-    // precisely java.lang.Object, use a constant ptr.
+    // inexact types must flatten to the same alias class so
+    // use NotNull as the PTR.
     if ( offset == Type::OffsetBot || (offset >= 0 && (size_t)offset < sizeof(Klass)) ) {
 
-      tj = tk = TypeKlassPtr::make(TypePtr::Constant,
+      tj = tk = TypeKlassPtr::make(TypePtr::NotNull,
                                    TypeKlassPtr::OBJECT->klass(),
                                    offset);
     }
@@ -1307,10 +1306,12 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     // these 2 disparate memories into the same alias class.  Since the
     // primary supertype array is read-only, there's no chance of confusion
     // where we bypass an array load and an array store.
-    uint off2 = offset - Klass::primary_supers_offset_in_bytes();
-    if( offset == Type::OffsetBot ||
-        off2 < Klass::primary_super_limit()*wordSize ) {
-      offset = sizeof(oopDesc) +Klass::secondary_super_cache_offset_in_bytes();
+    int primary_supers_offset = sizeof(klassOopDesc) + Klass::primary_supers_offset_in_bytes();
+    if (offset == Type::OffsetBot ||
+        (offset >= primary_supers_offset &&
+         offset < (int)(primary_supers_offset + Klass::primary_super_limit() * wordSize)) ||
+        offset == (int)(sizeof(klassOopDesc) + Klass::secondary_super_cache_offset_in_bytes())) {
+      offset = sizeof(klassOopDesc) + Klass::secondary_super_cache_offset_in_bytes();
       tj = tk = TypeKlassPtr::make( TypePtr::NotNull, tk->klass(), offset );
     }
   }
