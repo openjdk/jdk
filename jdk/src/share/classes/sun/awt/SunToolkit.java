@@ -101,30 +101,28 @@ public abstract class SunToolkit extends Toolkit
      */
     public final static int MAX_BUTTONS_SUPPORTED = 20;
 
+    private static void initEQ(AppContext appContext) {
+        EventQueue eventQueue;
+
+        String eqName = System.getProperty("AWT.EventQueueClass",
+                "java.awt.EventQueue");
+
+        try {
+            eventQueue = (EventQueue)Class.forName(eqName).newInstance();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Failed loading " + eqName + ": " + e);
+            eventQueue = new EventQueue();
+        }
+        appContext.put(AppContext.EVENT_QUEUE_KEY, eventQueue);
+
+        PostEventQueue postEventQueue = new PostEventQueue(eventQueue);
+        appContext.put(POST_EVENT_QUEUE_KEY, postEventQueue);
+    }
+
     public SunToolkit() {
-        Runnable initEQ = new Runnable() {
-            public void run () {
-                EventQueue eventQueue;
-
-                String eqName = System.getProperty("AWT.EventQueueClass",
-                                                   "java.awt.EventQueue");
-
-                try {
-                    eventQueue = (EventQueue)Class.forName(eqName).newInstance();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    System.err.println("Failed loading " + eqName + ": " + e);
-                    eventQueue = new EventQueue();
-                }
-                AppContext appContext = AppContext.getAppContext();
-                appContext.put(AppContext.EVENT_QUEUE_KEY, eventQueue);
-
-                PostEventQueue postEventQueue = new PostEventQueue(eventQueue);
-                appContext.put(POST_EVENT_QUEUE_KEY, postEventQueue);
-            }
-        };
-
-        initEQ.run();
+        // 7122796: Always create an EQ for the main AppContext
+        initEQ(AppContext.getMainAppContext());
     }
 
     public boolean useBufferPerWindow() {
@@ -289,19 +287,7 @@ public abstract class SunToolkit extends Toolkit
         // return correct values
         AppContext appContext = new AppContext(threadGroup);
 
-        EventQueue eventQueue;
-        String eqName = System.getProperty("AWT.EventQueueClass",
-                                           "java.awt.EventQueue");
-        try {
-            eventQueue = (EventQueue)Class.forName(eqName).newInstance();
-        } catch (Exception e) {
-            System.err.println("Failed loading " + eqName + ": " + e);
-            eventQueue = new EventQueue();
-        }
-        appContext.put(AppContext.EVENT_QUEUE_KEY, eventQueue);
-
-        PostEventQueue postEventQueue = new PostEventQueue(eventQueue);
-        appContext.put(POST_EVENT_QUEUE_KEY, postEventQueue);
+        initEQ(appContext);
 
         return appContext;
     }
