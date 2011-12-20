@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,9 @@ const char* GCTask::Kind::to_string(kind value) {
     break;
   case noop_task:
     result = "noop task";
+    break;
+  case idle_task:
+    result = "idle task";
     break;
   }
   return result;
@@ -782,6 +785,12 @@ void GCTaskManager::note_release(uint which) {
 void GCTaskManager::execute_and_wait(GCTaskQueue* list) {
   WaitForBarrierGCTask* fin = WaitForBarrierGCTask::create();
   list->enqueue(fin);
+  // The barrier task will be read by one of the GC
+  // workers once it is added to the list of tasks.
+  // Be sure that is globally visible before the
+  // GC worker reads it (which is after the task is added
+  // to the list of tasks below).
+  OrderAccess::storestore();
   add_list(list);
   fin->wait_for(true /* reset */);
   // We have to release the barrier tasks!
@@ -833,11 +842,15 @@ void NoopGCTask::destruct() {
 
 IdleGCTask* IdleGCTask::create() {
   IdleGCTask* result = new IdleGCTask(false);
+  assert(UseDynamicNumberOfGCThreads,
+    "Should only be used with dynamic GC thread");
   return result;
 }
 
 IdleGCTask* IdleGCTask::create_on_c_heap() {
   IdleGCTask* result = new(ResourceObj::C_HEAP) IdleGCTask(true);
+  assert(UseDynamicNumberOfGCThreads,
+    "Should only be used with dynamic GC thread");
   return result;
 }
 
