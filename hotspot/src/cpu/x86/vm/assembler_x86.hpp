@@ -589,10 +589,21 @@ private:
                   VexSimdPrefix pre, VexOpcode opc,
                   bool vex_w, bool vector256);
 
+  void vex_prefix(XMMRegister dst, XMMRegister nds, Address src,
+                  VexSimdPrefix pre, bool vector256 = false) {
+     vex_prefix(src, nds->encoding(), dst->encoding(),
+                pre, VEX_OPCODE_0F, false, vector256);
+  }
+
   int  vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc,
                              VexSimdPrefix pre, VexOpcode opc,
                              bool vex_w, bool vector256);
 
+  int  vex_prefix_and_encode(XMMRegister dst, XMMRegister nds, XMMRegister src,
+                             VexSimdPrefix pre, bool vector256 = false) {
+     return vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(),
+                                  pre, VEX_OPCODE_0F, false, vector256);
+  }
 
   void simd_prefix(XMMRegister xreg, XMMRegister nds, Address adr,
                    VexSimdPrefix pre, VexOpcode opc = VEX_OPCODE_0F,
@@ -1574,6 +1585,29 @@ private:
 
   void set_byte_if_not_zero(Register dst); // sets reg to 1 if not zero, otherwise 0
 
+  // AVX 3-operands instructions (encoded with VEX prefix)
+  void vaddsd(XMMRegister dst, XMMRegister nds, Address src);
+  void vaddsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vaddss(XMMRegister dst, XMMRegister nds, Address src);
+  void vaddss(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vandpd(XMMRegister dst, XMMRegister nds, Address src);
+  void vandps(XMMRegister dst, XMMRegister nds, Address src);
+  void vdivsd(XMMRegister dst, XMMRegister nds, Address src);
+  void vdivsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vdivss(XMMRegister dst, XMMRegister nds, Address src);
+  void vdivss(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vmulsd(XMMRegister dst, XMMRegister nds, Address src);
+  void vmulsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vmulss(XMMRegister dst, XMMRegister nds, Address src);
+  void vmulss(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vsubsd(XMMRegister dst, XMMRegister nds, Address src);
+  void vsubsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vsubss(XMMRegister dst, XMMRegister nds, Address src);
+  void vsubss(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vxorpd(XMMRegister dst, XMMRegister nds, Address src);
+  void vxorps(XMMRegister dst, XMMRegister nds, Address src);
+
+
  protected:
   // Next instructions require address alignment 16 bytes SSE mode.
   // They should be called only from corresponding MacroAssembler instructions.
@@ -2421,6 +2455,53 @@ public:
   void xorps(XMMRegister dst, XMMRegister src) { Assembler::xorps(dst, src); }
   void xorps(XMMRegister dst, Address src)     { Assembler::xorps(dst, src); }
   void xorps(XMMRegister dst, AddressLiteral src);
+
+  // AVX 3-operands instructions
+
+  void vaddsd(XMMRegister dst, XMMRegister nds, XMMRegister src) { Assembler::vaddsd(dst, nds, src); }
+  void vaddsd(XMMRegister dst, XMMRegister nds, Address src)     { Assembler::vaddsd(dst, nds, src); }
+  void vaddsd(XMMRegister dst, XMMRegister nds, AddressLiteral src);
+
+  void vaddss(XMMRegister dst, XMMRegister nds, XMMRegister src) { Assembler::vaddss(dst, nds, src); }
+  void vaddss(XMMRegister dst, XMMRegister nds, Address src)     { Assembler::vaddss(dst, nds, src); }
+  void vaddss(XMMRegister dst, XMMRegister nds, AddressLiteral src);
+
+  void vandpd(XMMRegister dst, XMMRegister nds, Address src)     { Assembler::vandpd(dst, nds, src); }
+  void vandpd(XMMRegister dst, XMMRegister nds, AddressLiteral src);
+
+  void vandps(XMMRegister dst, XMMRegister nds, Address src)     { Assembler::vandps(dst, nds, src); }
+  void vandps(XMMRegister dst, XMMRegister nds, AddressLiteral src);
+
+  void vdivsd(XMMRegister dst, XMMRegister nds, XMMRegister src) { Assembler::vdivsd(dst, nds, src); }
+  void vdivsd(XMMRegister dst, XMMRegister nds, Address src)     { Assembler::vdivsd(dst, nds, src); }
+  void vdivsd(XMMRegister dst, XMMRegister nds, AddressLiteral src);
+
+  void vdivss(XMMRegister dst, XMMRegister nds, XMMRegister src) { Assembler::vdivss(dst, nds, src); }
+  void vdivss(XMMRegister dst, XMMRegister nds, Address src)     { Assembler::vdivss(dst, nds, src); }
+  void vdivss(XMMRegister dst, XMMRegister nds, AddressLiteral src);
+
+  void vmulsd(XMMRegister dst, XMMRegister nds, XMMRegister src) { Assembler::vmulsd(dst, nds, src); }
+  void vmulsd(XMMRegister dst, XMMRegister nds, Address src)     { Assembler::vmulsd(dst, nds, src); }
+  void vmulsd(XMMRegister dst, XMMRegister nds, AddressLiteral src);
+
+  void vmulss(XMMRegister dst, XMMRegister nds, XMMRegister src) { Assembler::vmulss(dst, nds, src); }
+  void vmulss(XMMRegister dst, XMMRegister nds, Address src)     { Assembler::vmulss(dst, nds, src); }
+  void vmulss(XMMRegister dst, XMMRegister nds, AddressLiteral src);
+
+  void vsubsd(XMMRegister dst, XMMRegister nds, XMMRegister src) { Assembler::vsubsd(dst, nds, src); }
+  void vsubsd(XMMRegister dst, XMMRegister nds, Address src)     { Assembler::vsubsd(dst, nds, src); }
+  void vsubsd(XMMRegister dst, XMMRegister nds, AddressLiteral src);
+
+  void vsubss(XMMRegister dst, XMMRegister nds, XMMRegister src) { Assembler::vsubss(dst, nds, src); }
+  void vsubss(XMMRegister dst, XMMRegister nds, Address src)     { Assembler::vsubss(dst, nds, src); }
+  void vsubss(XMMRegister dst, XMMRegister nds, AddressLiteral src);
+
+  void vxorpd(XMMRegister dst, XMMRegister nds, Address src) { Assembler::vxorpd(dst, nds, src); }
+  void vxorpd(XMMRegister dst, XMMRegister nds, AddressLiteral src);
+
+  void vxorps(XMMRegister dst, XMMRegister nds, Address src) { Assembler::vxorps(dst, nds, src); }
+  void vxorps(XMMRegister dst, XMMRegister nds, AddressLiteral src);
+
 
   // Data
 
