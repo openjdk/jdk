@@ -2932,6 +2932,161 @@ void Assembler::xorps(XMMRegister dst, Address src) {
   emit_operand(dst, src);
 }
 
+// AVX 3-operands non destructive source instructions (encoded with VEX prefix)
+
+void Assembler::vaddsd(XMMRegister dst, XMMRegister nds, Address src) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionMark im(this);
+  vex_prefix(dst, nds, src, VEX_SIMD_F2);
+  emit_byte(0x58);
+  emit_operand(dst, src);
+}
+
+void Assembler::vaddsd(XMMRegister dst, XMMRegister nds, XMMRegister src) {
+  assert(VM_Version::supports_avx(), "");
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_F2);
+  emit_byte(0x58);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::vaddss(XMMRegister dst, XMMRegister nds, Address src) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionMark im(this);
+  vex_prefix(dst, nds, src, VEX_SIMD_F3);
+  emit_byte(0x58);
+  emit_operand(dst, src);
+}
+
+void Assembler::vaddss(XMMRegister dst, XMMRegister nds, XMMRegister src) {
+  assert(VM_Version::supports_avx(), "");
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_F3);
+  emit_byte(0x58);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::vandpd(XMMRegister dst, XMMRegister nds, Address src) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionMark im(this);
+  vex_prefix(dst, nds, src, VEX_SIMD_66); // 128-bit vector
+  emit_byte(0x54);
+  emit_operand(dst, src);
+}
+
+void Assembler::vandps(XMMRegister dst, XMMRegister nds, Address src) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionMark im(this);
+  vex_prefix(dst, nds, src, VEX_SIMD_NONE); // 128-bit vector
+  emit_byte(0x54);
+  emit_operand(dst, src);
+}
+
+void Assembler::vdivsd(XMMRegister dst, XMMRegister nds, Address src) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionMark im(this);
+  vex_prefix(dst, nds, src, VEX_SIMD_F2);
+  emit_byte(0x5E);
+  emit_operand(dst, src);
+}
+
+void Assembler::vdivsd(XMMRegister dst, XMMRegister nds, XMMRegister src) {
+  assert(VM_Version::supports_avx(), "");
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_F2);
+  emit_byte(0x5E);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::vdivss(XMMRegister dst, XMMRegister nds, Address src) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionMark im(this);
+  vex_prefix(dst, nds, src, VEX_SIMD_F3);
+  emit_byte(0x5E);
+  emit_operand(dst, src);
+}
+
+void Assembler::vdivss(XMMRegister dst, XMMRegister nds, XMMRegister src) {
+  assert(VM_Version::supports_avx(), "");
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_F3);
+  emit_byte(0x5E);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::vmulsd(XMMRegister dst, XMMRegister nds, Address src) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionMark im(this);
+  vex_prefix(dst, nds, src, VEX_SIMD_F2);
+  emit_byte(0x59);
+  emit_operand(dst, src);
+}
+
+void Assembler::vmulsd(XMMRegister dst, XMMRegister nds, XMMRegister src) {
+  assert(VM_Version::supports_avx(), "");
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_F2);
+  emit_byte(0x59);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::vmulss(XMMRegister dst, XMMRegister nds, Address src) {
+  InstructionMark im(this);
+  vex_prefix(dst, nds, src, VEX_SIMD_F3);
+  emit_byte(0x59);
+  emit_operand(dst, src);
+}
+
+void Assembler::vmulss(XMMRegister dst, XMMRegister nds, XMMRegister src) {
+  assert(VM_Version::supports_avx(), "");
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_F3);
+  emit_byte(0x59);
+  emit_byte(0xC0 | encode);
+}
+
+
+void Assembler::vsubsd(XMMRegister dst, XMMRegister nds, Address src) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionMark im(this);
+  vex_prefix(dst, nds, src, VEX_SIMD_F2);
+  emit_byte(0x5C);
+  emit_operand(dst, src);
+}
+
+void Assembler::vsubsd(XMMRegister dst, XMMRegister nds, XMMRegister src) {
+  assert(VM_Version::supports_avx(), "");
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_F2);
+  emit_byte(0x5C);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::vsubss(XMMRegister dst, XMMRegister nds, Address src) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionMark im(this);
+  vex_prefix(dst, nds, src, VEX_SIMD_F3);
+  emit_byte(0x5C);
+  emit_operand(dst, src);
+}
+
+void Assembler::vsubss(XMMRegister dst, XMMRegister nds, XMMRegister src) {
+  assert(VM_Version::supports_avx(), "");
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_F3);
+  emit_byte(0x5C);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::vxorpd(XMMRegister dst, XMMRegister nds, Address src) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionMark im(this);
+  vex_prefix(dst, nds, src, VEX_SIMD_66); // 128-bit vector
+  emit_byte(0x57);
+  emit_operand(dst, src);
+}
+
+void Assembler::vxorps(XMMRegister dst, XMMRegister nds, Address src) {
+  assert(VM_Version::supports_avx(), "");
+  InstructionMark im(this);
+  vex_prefix(dst, nds, src, VEX_SIMD_NONE); // 128-bit vector
+  emit_byte(0x57);
+  emit_operand(dst, src);
+}
+
+
 #ifndef _LP64
 // 32bit only pieces of the assembler
 
@@ -7235,6 +7390,157 @@ void MacroAssembler::subss(XMMRegister dst, AddressLiteral src) {
   }
 }
 
+void MacroAssembler::ucomisd(XMMRegister dst, AddressLiteral src) {
+  if (reachable(src)) {
+    Assembler::ucomisd(dst, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    Assembler::ucomisd(dst, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::ucomiss(XMMRegister dst, AddressLiteral src) {
+  if (reachable(src)) {
+    Assembler::ucomiss(dst, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    Assembler::ucomiss(dst, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::xorpd(XMMRegister dst, AddressLiteral src) {
+  // Used in sign-bit flipping with aligned address.
+  assert((UseAVX > 0) || (((intptr_t)src.target() & 15) == 0), "SSE mode requires address alignment 16 bytes");
+  if (reachable(src)) {
+    Assembler::xorpd(dst, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    Assembler::xorpd(dst, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::xorps(XMMRegister dst, AddressLiteral src) {
+  // Used in sign-bit flipping with aligned address.
+  assert((UseAVX > 0) || (((intptr_t)src.target() & 15) == 0), "SSE mode requires address alignment 16 bytes");
+  if (reachable(src)) {
+    Assembler::xorps(dst, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    Assembler::xorps(dst, Address(rscratch1, 0));
+  }
+}
+
+// AVX 3-operands instructions
+
+void MacroAssembler::vaddsd(XMMRegister dst, XMMRegister nds, AddressLiteral src) {
+  if (reachable(src)) {
+    vaddsd(dst, nds, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    vaddsd(dst, nds, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::vaddss(XMMRegister dst, XMMRegister nds, AddressLiteral src) {
+  if (reachable(src)) {
+    vaddss(dst, nds, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    vaddss(dst, nds, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::vandpd(XMMRegister dst, XMMRegister nds, AddressLiteral src) {
+  if (reachable(src)) {
+    vandpd(dst, nds, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    vandpd(dst, nds, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::vandps(XMMRegister dst, XMMRegister nds, AddressLiteral src) {
+  if (reachable(src)) {
+    vandps(dst, nds, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    vandps(dst, nds, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::vdivsd(XMMRegister dst, XMMRegister nds, AddressLiteral src) {
+  if (reachable(src)) {
+    vdivsd(dst, nds, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    vdivsd(dst, nds, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::vdivss(XMMRegister dst, XMMRegister nds, AddressLiteral src) {
+  if (reachable(src)) {
+    vdivss(dst, nds, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    vdivss(dst, nds, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::vmulsd(XMMRegister dst, XMMRegister nds, AddressLiteral src) {
+  if (reachable(src)) {
+    vmulsd(dst, nds, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    vmulsd(dst, nds, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::vmulss(XMMRegister dst, XMMRegister nds, AddressLiteral src) {
+  if (reachable(src)) {
+    vmulss(dst, nds, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    vmulss(dst, nds, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::vsubsd(XMMRegister dst, XMMRegister nds, AddressLiteral src) {
+  if (reachable(src)) {
+    vsubsd(dst, nds, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    vsubsd(dst, nds, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::vsubss(XMMRegister dst, XMMRegister nds, AddressLiteral src) {
+  if (reachable(src)) {
+    vsubss(dst, nds, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    vsubss(dst, nds, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::vxorpd(XMMRegister dst, XMMRegister nds, AddressLiteral src) {
+  if (reachable(src)) {
+    vxorpd(dst, nds, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    vxorpd(dst, nds, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::vxorps(XMMRegister dst, XMMRegister nds, AddressLiteral src) {
+  if (reachable(src)) {
+    vxorps(dst, nds, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    vxorps(dst, nds, Address(rscratch1, 0));
+  }
+}
+
+
 //////////////////////////////////////////////////////////////////////////////////
 #ifndef SERIALGC
 
@@ -8118,46 +8424,6 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   bind(L_fallthrough);
 }
 
-
-void MacroAssembler::ucomisd(XMMRegister dst, AddressLiteral src) {
-  if (reachable(src)) {
-    Assembler::ucomisd(dst, as_Address(src));
-  } else {
-    lea(rscratch1, src);
-    Assembler::ucomisd(dst, Address(rscratch1, 0));
-  }
-}
-
-void MacroAssembler::ucomiss(XMMRegister dst, AddressLiteral src) {
-  if (reachable(src)) {
-    Assembler::ucomiss(dst, as_Address(src));
-  } else {
-    lea(rscratch1, src);
-    Assembler::ucomiss(dst, Address(rscratch1, 0));
-  }
-}
-
-void MacroAssembler::xorpd(XMMRegister dst, AddressLiteral src) {
-  // Used in sign-bit flipping with aligned address.
-  assert((UseAVX > 0) || (((intptr_t)src.target() & 15) == 0), "SSE mode requires address alignment 16 bytes");
-  if (reachable(src)) {
-    Assembler::xorpd(dst, as_Address(src));
-  } else {
-    lea(rscratch1, src);
-    Assembler::xorpd(dst, Address(rscratch1, 0));
-  }
-}
-
-void MacroAssembler::xorps(XMMRegister dst, AddressLiteral src) {
-  // Used in sign-bit flipping with aligned address.
-  assert((UseAVX > 0) || (((intptr_t)src.target() & 15) == 0), "SSE mode requires address alignment 16 bytes");
-  if (reachable(src)) {
-    Assembler::xorps(dst, as_Address(src));
-  } else {
-    lea(rscratch1, src);
-    Assembler::xorps(dst, Address(rscratch1, 0));
-  }
-}
 
 void MacroAssembler::cmov32(Condition cc, Register dst, Address src) {
   if (VM_Version::supports_cmov()) {
