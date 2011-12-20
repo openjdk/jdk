@@ -2721,6 +2721,7 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
   case Op_MemBarVolatile:  return new(C, len) MemBarVolatileNode(C, atp, pn);
   case Op_MemBarCPUOrder:  return new(C, len) MemBarCPUOrderNode(C, atp, pn);
   case Op_Initialize:      return new(C, len) InitializeNode(C,     atp, pn);
+  case Op_MemBarStoreStore: return new(C, len) MemBarStoreStoreNode(C,  atp, pn);
   default:                 ShouldNotReachHere(); return NULL;
   }
 }
@@ -2870,7 +2871,7 @@ Node *MemBarNode::match( const ProjNode *proj, const Matcher *m ) {
 
 //---------------------------InitializeNode------------------------------------
 InitializeNode::InitializeNode(Compile* C, int adr_type, Node* rawoop)
-  : _is_complete(Incomplete),
+  : _is_complete(Incomplete), _does_not_escape(false),
     MemBarNode(C, adr_type, rawoop)
 {
   init_class_id(Class_Initialize);

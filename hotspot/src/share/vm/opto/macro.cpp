@@ -1088,6 +1088,12 @@ void PhaseMacroExpand::expand_allocate_common(
   Node* klass_node        = alloc->in(AllocateNode::KlassNode);
   Node* initial_slow_test = alloc->in(AllocateNode::InitialTest);
 
+  Node* storestore = alloc->storestore();
+  if (storestore != NULL) {
+    // Break this link that is no longer useful and confuses register allocation
+    storestore->set_req(MemBarNode::Precedent, top());
+  }
+
   assert(ctrl != NULL, "must have control");
   // We need a Region and corresponding Phi's to merge the slow-path and fast-path results.
   // they will not be used if "always_slow" is set
@@ -1289,9 +1295,65 @@ void PhaseMacroExpand::expand_allocate_common(
                                    0, new_alloc_bytes, T_LONG);
     }
 
+    InitializeNode* init = alloc->initialization();
     fast_oop_rawmem = initialize_object(alloc,
                                         fast_oop_ctrl, fast_oop_rawmem, fast_oop,
                                         klass_node, length, size_in_bytes);
+
+    // If initialization is performed by an array copy, any required
+    // MemBarStoreStore was already added. If the object does not
+    // escape no need for a MemBarStoreStore. Otherwise we need a
+    // MemBarStoreStore so that stores that initialize this object
+    // can't be reordered with a subsequent store that makes this
+    // object accessible by other threads.
+    if (init == NULL || (!init->is_complete_with_arraycopy() && !init->does_not_escape())) {
+      if (init == NULL || init->req() < InitializeNode::RawStores) {
+        // No InitializeNode or no stores captured by zeroing
+        // elimination. Simply add the MemBarStoreStore after object
+        // initialization.
+        MemBarNode* mb = MemBarNode::make(C, Op_MemBarStoreStore, Compile::AliasIdxBot, fast_oop_rawmem);
+        transform_later(mb);
+
+        mb->init_req(TypeFunc::Memory, fast_oop_rawmem);
+        mb->init_req(TypeFunc::Control, fast_oop_ctrl);
+        fast_oop_ctrl = new (C, 1) ProjNode(mb,TypeFunc::Control);
+        transform_later(fast_oop_ctrl);
+        fast_oop_rawmem = new (C, 1) ProjNode(mb,TypeFunc::Memory);
+        transform_later(fast_oop_rawmem);
+      } else {
+        // Add the MemBarStoreStore after the InitializeNode so that
+        // all stores performing the initialization that were moved
+        // before the InitializeNode happen before the storestore
+        // barrier.
+
+        Node* init_ctrl = init->proj_out(TypeFunc::Control);
+        Node* init_mem = init->proj_out(TypeFunc::Memory);
+
+        MemBarNode* mb = MemBarNode::make(C, Op_MemBarStoreStore, Compile::AliasIdxBot);
+        transform_later(mb);
+
+        Node* ctrl = new (C, 1) ProjNode(init,TypeFunc::Control);
+        transform_later(ctrl);
+        Node* mem = new (C, 1) ProjNode(init,TypeFunc::Memory);
+        transform_later(mem);
+
+        // The MemBarStoreStore depends on control and memory coming
+        // from the InitializeNode
+        mb->init_req(TypeFunc::Memory, mem);
+        mb->init_req(TypeFunc::Control, ctrl);
+
+        ctrl = new (C, 1) ProjNode(mb,TypeFunc::Control);
+        transform_later(ctrl);
+        mem = new (C, 1) ProjNode(mb,TypeFunc::Memory);
+        transform_later(mem);
+
+        // All nodes that depended on the InitializeNode for control
+        // and memory must now depend on the MemBarNode that itself
+        // depends on the InitializeNode
+        _igvn.replace_node(init_ctrl, ctrl);
+        _igvn.replace_node(init_mem, mem);
+      }
+    }
 
     if (C->env()->dtrace_extended_probes()) {
       // Slow-path call

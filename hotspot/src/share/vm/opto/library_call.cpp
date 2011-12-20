@@ -4193,12 +4193,17 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
   Node* raw_obj = alloc_obj->in(1);
   assert(alloc_obj->is_CheckCastPP() && raw_obj->is_Proj() && raw_obj->in(0)->is_Allocate(), "");
 
+  AllocateNode* alloc = NULL;
   if (ReduceBulkZeroing) {
     // We will be completely responsible for initializing this object -
     // mark Initialize node as complete.
-    AllocateNode* alloc = AllocateNode::Ideal_allocation(alloc_obj, &_gvn);
+    alloc = AllocateNode::Ideal_allocation(alloc_obj, &_gvn);
     // The object was just allocated - there should be no any stores!
     guarantee(alloc != NULL && alloc->maybe_set_complete(&_gvn), "");
+    // Mark as complete_with_arraycopy so that on AllocateNode
+    // expansion, we know this AllocateNode is initialized by an array
+    // copy and a StoreStore barrier exists after the array copy.
+    alloc->initialization()->set_complete_with_arraycopy();
   }
 
   // Copy the fastest available way.
@@ -4260,7 +4265,18 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
   }
 
   // Do not let reads from the cloned object float above the arraycopy.
-  insert_mem_bar(Op_MemBarCPUOrder);
+  if (alloc != NULL) {
+    // Do not let stores that initialize this object be reordered with
+    // a subsequent store that would make this object accessible by
+    // other threads.
+    // Record what AllocateNode this StoreStore protects so that
+    // escape analysis can go from the MemBarStoreStoreNode to the
+    // AllocateNode and eliminate the MemBarStoreStoreNode if possible
+    // based on the escape status of the AllocateNode.
+    insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out(AllocateNode::RawAddress));
+  } else {
+    insert_mem_bar(Op_MemBarCPUOrder);
+  }
 }
 
 //------------------------inline_native_clone----------------------------
@@ -5003,7 +5019,16 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
   // the membar also.
   //
   // Do not let reads from the cloned object float above the arraycopy.
-  if (InsertMemBarAfterArraycopy || alloc != NULL)
+  if (alloc != NULL) {
+    // Do not let stores that initialize this object be reordered with
+    // a subsequent store that would make this object accessible by
+    // other threads.
+    // Record what AllocateNode this StoreStore protects so that
+    // escape analysis can go from the MemBarStoreStoreNode to the
+    // AllocateNode and eliminate the MemBarStoreStoreNode if possible
+    // based on the escape status of the AllocateNode.
+    insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out(AllocateNode::RawAddress));
+  } else if (InsertMemBarAfterArraycopy)
     insert_mem_bar(Op_MemBarCPUOrder);
 }
 
