@@ -3337,6 +3337,19 @@ InitializeNode* AllocateNode::initialization() {
   return NULL;
 }
 
+// Trace Allocate -> Proj[Parm] -> MemBarStoreStore
+MemBarStoreStoreNode* AllocateNode::storestore() {
+  ProjNode* rawoop = proj_out(AllocateNode::RawAddress);
+  if (rawoop == NULL)  return NULL;
+  for (DUIterator_Fast imax, i = rawoop->fast_outs(imax); i < imax; i++) {
+    Node* storestore = rawoop->fast_out(i);
+    if (storestore->is_MemBarStoreStore()) {
+      return storestore->as_MemBarStoreStore();
+    }
+  }
+  return NULL;
+}
+
 //----------------------------- loop predicates ---------------------------
 
 //------------------------------add_predicate_impl----------------------------

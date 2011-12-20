@@ -6773,6 +6773,16 @@ instruct unnecessary_membar_volatile() %{
   ins_pipe(empty);
 %}
 
+instruct membar_storestore() %{
+  match(MemBarStoreStore);
+  ins_cost(0);
+
+  size(0);
+  format %{ "!MEMBAR-storestore (empty encoding)" %}
+  ins_encode( );
+  ins_pipe(empty);
+%}
+
 //----------Register Move Instructions-----------------------------------------
 instruct roundDouble_nop(regD dst) %{
   match(Set dst (RoundDouble dst));
