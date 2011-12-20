@@ -128,9 +128,9 @@ public class InterfaceTypeImpl extends ReferenceTypeImpl
          * list being built.
          */
         List<InterfaceType> immediate = new ArrayList<InterfaceType>(superinterfaces());
-        Iterator iter = immediate.iterator();
+        Iterator<InterfaceType> iter = immediate.iterator();
         while (iter.hasNext()) {
-            InterfaceType interfaze = (InterfaceType)iter.next();
+            InterfaceType interfaze = iter.next();
             if (list.contains(interfaze)) {
                 iter.remove();
             }

@@ -33,6 +33,7 @@ package com.sun.jdi;
  * @since  1.3
  */
 public class VMOutOfMemoryException extends RuntimeException {
+    private static final long serialVersionUID = 71504228548910686L;
     public VMOutOfMemoryException() {
         super();
     }

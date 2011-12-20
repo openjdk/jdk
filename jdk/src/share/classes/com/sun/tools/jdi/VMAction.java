@@ -33,6 +33,8 @@ import java.util.EventObject;
  * with JDI events.
  */
 class VMAction extends EventObject {
+    private static final long serialVersionUID = -1701944679310296090L;
+
     // Event ids
     static final int VM_SUSPENDED = 1;
     static final int VM_NOT_SUSPENDED = 2;

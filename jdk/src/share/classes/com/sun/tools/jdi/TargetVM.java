@@ -178,7 +178,7 @@ public class TargetVM implements Runnable {
         // Closing a queue causes a VMDisconnectEvent to
         // be put onto the queue.
         synchronized(eventQueues) {
-            Iterator iter = eventQueues.iterator();
+            Iterator<EventQueue> iter = eventQueues.iterator();
             while (iter.hasNext()) {
                 ((EventQueueImpl)iter.next()).close();
             }
@@ -187,9 +187,9 @@ public class TargetVM implements Runnable {
         // indirectly throw VMDisconnectedException to
         // command requesters.
         synchronized(waitingQueue) {
-            Iterator iter = waitingQueue.values().iterator();
+            Iterator<Packet> iter = waitingQueue.values().iterator();
             while (iter.hasNext()) {
-                Packet packet = (Packet)iter.next();
+                Packet packet = iter.next();
                 synchronized(packet) {
                     packet.notify();
                 }
@@ -252,7 +252,7 @@ public class TargetVM implements Runnable {
     void notifyDequeueEventSet() {
         int maxQueueSize = 0;
         synchronized(eventQueues) {
-            Iterator iter = eventQueues.iterator();
+            Iterator<EventQueue> iter = eventQueues.iterator();
             while (iter.hasNext()) {
                 EventQueueImpl queue = (EventQueueImpl)iter.next();
                 maxQueueSize = Math.max(maxQueueSize, queue.size());
@@ -265,7 +265,7 @@ public class TargetVM implements Runnable {
         int maxQueueSize = 0;
 
         synchronized(eventQueues) {
-            Iterator iter = eventQueues.iterator();
+            Iterator<EventQueue> iter = eventQueues.iterator();
             while (iter.hasNext()) {
                 EventQueueImpl queue = (EventQueueImpl)iter.next();
                 queue.enqueue(eventSet);

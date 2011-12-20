@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,22 @@
  * questions.
  */
 
-package build.tools.jdwpgen;
+package sun.misc;
 
-import java.util.*;
-import java.io.*;
+import java.net.HttpCookie;
+import java.util.List;
 
-class ArrayRegionTypeNode extends AbstractSimpleTypeNode {
+public interface JavaNetHttpCookieAccess {
+    /*
+     * Constructs cookies from Set-Cookie or Set-Cookie2 header string,
+     * retaining the original header String in the cookie itself.
+     */
+    public List<HttpCookie> parse(String header);
 
-    String docType() {
-        return "arrayregion";
-    }
-
-    String javaType() {
-        return "List<?>";
-    }
-
-    public void genJavaWrite(PrintWriter writer, int depth,
-                             String writeLabel) {
-        error("Not implemented");
-    }
-
-    String javaRead() {
-        return "ps.readArrayRegion()";
-    }
+    /*
+     * Returns the original header this cookie was consructed from, if it was
+     * constructed by parsing a header, otherwise null.
+     */
+    public String header(HttpCookie cookie);
 }
+

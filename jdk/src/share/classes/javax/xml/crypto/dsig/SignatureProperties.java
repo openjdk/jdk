@@ -87,5 +87,6 @@ public interface SignatureProperties extends XMLStructure {
      * @return an unmodifiable list of one or more
      *    <code>SignatureProperty</code>s
      */
+    @SuppressWarnings("rawtypes")
     List getProperties();
 }

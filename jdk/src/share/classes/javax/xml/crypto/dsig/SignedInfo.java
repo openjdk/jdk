@@ -80,6 +80,7 @@ public interface SignedInfo extends XMLStructure {
      *
      * @return an unmodifiable list of one or more {@link Reference}s
      */
+    @SuppressWarnings("rawtypes")
     List getReferences();
 
     /**
