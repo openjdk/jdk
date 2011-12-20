@@ -322,8 +322,8 @@ BUNDLE_UP_AND_EXIT = \
 
 ################################################################
 
-# Default make rule (runs jtreg_tests)
-all: jtreg_tests
+# Default make rule (runs default jdk tests)
+all: jdk_default
 	@$(ECHO) "Testing completed successfully"
 
 # Prep for output
@@ -422,6 +422,7 @@ endef
 # ------------------------------------------------------------------
 
 # Batches of tests (somewhat arbitrary assigments to jdk_* targets)
+JDK_DEFAULT_TARGETS =
 JDK_ALL_TARGETS =
 
 # Stable othervm testruns (minus items from PROBLEM_LIST)
@@ -433,6 +434,7 @@ jdk_awt: $(call TestDirs, com/sun/awt java/awt sun/awt \
 
 # Stable agentvm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_beans1
+JDK_DEFAULT_TARGETS += jdk_beans1
 jdk_beans1: $(call TestDirs, \
             java/beans/beancontext java/beans/PropertyChangeSupport \
             java/beans/Introspector java/beans/Performance \
@@ -459,11 +461,13 @@ jdk_beans: jdk_beans1 jdk_beans2 jdk_beans3
 
 # Stable agentvm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_io
+JDK_DEFAULT_TARGETS += jdk_io
 jdk_io: $(call TestDirs, java/io)
 	$(call RunAgentvmBatch)
 
 # Stable agentvm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_lang
+JDK_DEFAULT_TARGETS += jdk_lang
 jdk_lang: $(call TestDirs, java/lang)
 	$(call RunAgentvmBatch)
 
@@ -485,11 +489,13 @@ jdk_management: jdk_management1 jdk_management2
 
 # Stable agentvm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_math
+JDK_DEFAULT_TARGETS += jdk_math
 jdk_math: $(call TestDirs, java/math)
 	$(call RunAgentvmBatch)
 
 # Stable agentvm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_misc
+JDK_DEFAULT_TARGETS += jdk_misc
 jdk_misc: $(call TestDirs, \
           demo/jvmti demo/zipfs javax/naming javax/script \
           javax/smartcardio com/sun/jndi com/sun/xml sun/misc)
@@ -497,16 +503,19 @@ jdk_misc: $(call TestDirs, \
 
 # Stable agentvm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_net
+JDK_DEFAULT_TARGETS += jdk_net
 jdk_net: $(call TestDirs, com/sun/net java/net sun/net)
 	$(call RunAgentvmBatch)
 
 # Stable agentvm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_nio1
+JDK_DEFAULT_TARGETS += jdk_nio1
 jdk_nio1: $(call TestDirs, java/nio/file)
 	$(call RunAgentvmBatch)
 
 # Stable agentvm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_nio2
+JDK_DEFAULT_TARGETS += jdk_nio2
 jdk_nio2: $(call TestDirs, java/nio/Buffer java/nio/ByteOrder \
           java/nio/channels java/nio/MappedByteBuffer)
 	$(call SharedLibraryPermissions,java/nio/channels)
@@ -514,6 +523,7 @@ jdk_nio2: $(call TestDirs, java/nio/Buffer java/nio/ByteOrder \
 
 # Stable agentvm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_nio3
+JDK_DEFAULT_TARGETS += jdk_nio3
 jdk_nio3: $(call TestDirs, sun/nio)
 	$(call RunAgentvmBatch)
 
@@ -533,6 +543,7 @@ jdk_rmi: $(call TestDirs, java/rmi javax/rmi sun/rmi)
 
 # Stable agentvm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_security1
+JDK_DEFAULT_TARGETS += jdk_security1
 jdk_security1: $(call TestDirs, java/security)
 	$(call RunAgentvmBatch)
 
@@ -566,6 +577,7 @@ jdk_swing: $(call TestDirs, javax/swing sun/java2d \
 
 # Stable agentvm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_text
+JDK_DEFAULT_TARGETS += jdk_text
 jdk_text: $(call TestDirs, java/text sun/text)
 	$(call RunAgentvmBatch)
 
@@ -589,15 +601,18 @@ jdk_tools: jdk_tools1 jdk_tools2
 
 # Stable agentvm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_util
+JDK_DEFAULT_TARGETS += jdk_util
 jdk_util: $(call TestDirs, java/util sun/util)
 	$(call RunAgentvmBatch)
 
 # ------------------------------------------------------------------
 
+# Run default tests
+jdk_default: $(JDK_DEFAULT_TARGETS)
+	@$(SummaryInfo)
+
 # Run all tests
-FILTER_OUT_LIST=jdk_awt jdk_rmi jdk_swing
-JDK_ALL_STABLE_TARGETS := $(filter-out $(FILTER_OUT_LIST), $(JDK_ALL_TARGETS))
-jdk_all: $(JDK_ALL_STABLE_TARGETS)
+jdk_all: $(JDK_ALL_TARGETS)
 	@$(SummaryInfo)
 
 # These are all phony targets

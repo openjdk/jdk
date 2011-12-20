@@ -93,7 +93,7 @@ public class LongValueImpl extends PrimitiveValueImpl
     }
 
     public long longValue() {
-        return(long)value;
+        return value;
     }
 
     public float floatValue() {

@@ -112,5 +112,6 @@ public interface PGPData extends XMLStructure {
      * @return an unmodifiable list of <code>XMLStructure</code>s (may be
      *    empty, but never <code>null</code>)
      */
+    @SuppressWarnings("rawtypes")
     List getExternalElements();
 }

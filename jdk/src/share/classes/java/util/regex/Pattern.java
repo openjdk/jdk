@@ -1583,13 +1583,26 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             return;
         int j = i;
         i += 2;
-        int[] newtemp = new int[j + 2*(pLen-i) + 2];
+        int[] newtemp = new int[j + 3*(pLen-i) + 2];
         System.arraycopy(temp, 0, newtemp, 0, j);
 
         boolean inQuote = true;
+        boolean beginQuote = true;
         while (i < pLen) {
             int c = temp[i++];
-            if (! ASCII.isAscii(c) || ASCII.isAlnum(c)) {
+            if (!ASCII.isAscii(c) || ASCII.isAlpha(c)) {
+                newtemp[j++] = c;
+            } else if (ASCII.isDigit(c)) {
+                if (beginQuote) {
+                    /*
+                     * A unicode escape \[0xu] could be before this quote,
+                     * and we don't want this numeric char to processed as
+                     * part of the escape.
+                     */
+                    newtemp[j++] = '\\';
+                    newtemp[j++] = 'x';
+                    newtemp[j++] = '3';
+                }
                 newtemp[j++] = c;
             } else if (c != '\\') {
                 if (inQuote) newtemp[j++] = '\\';
@@ -1606,12 +1619,16 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 if (temp[i] == 'Q') {
                     i++;
                     inQuote = true;
+                    beginQuote = true;
+                    continue;
                 } else {
                     newtemp[j++] = c;
                     if (i != pLen)
                         newtemp[j++] = temp[i++];
                 }
             }
+
+            beginQuote = false;
         }
 
         patternLength = j;

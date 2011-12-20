@@ -33,6 +33,7 @@ package com.sun.jdi;
  * @since  1.5
  */
 public class VMCannotBeModifiedException extends UnsupportedOperationException {
+    private static final long serialVersionUID = -4063879815130164009L;
     public VMCannotBeModifiedException() {
         super();
     }
