@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,6 +129,8 @@ void GCTaskThread::run() {
     for (; /* break */; ) {
       // This will block until there is a task to be gotten.
       GCTask* task = manager()->get_task(which());
+      // Record if this is an idle task for later use.
+      bool is_idle_task = task->is_idle_task();
       // In case the update is costly
       if (PrintGCTaskTimeStamps) {
         timer.update();
@@ -137,9 +139,13 @@ void GCTaskThread::run() {
       jlong entry_time = timer.ticks();
       char* name = task->name();
 
+      // If this is the barrier task, it can be destroyed
+      // by the GC task manager once the do_it() executes.
       task->do_it(manager(), which());
 
-      if (!task->is_idle_task()) {
+      // Use the saved value of is_idle_task because references
+      // using "task" are not reliable for the barrier task.
+      if (!is_idle_task) {
         manager()->note_completion(which());
 
         if (PrintGCTaskTimeStamps) {

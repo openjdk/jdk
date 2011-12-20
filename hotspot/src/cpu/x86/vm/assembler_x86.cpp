@@ -5968,7 +5968,9 @@ void MacroAssembler::call_VM_base(Register oop_result,
   assert(number_of_arguments >= 0   , "cannot have negative number of arguments");
   LP64_ONLY(assert(java_thread == r15_thread, "unexpected register"));
 #ifdef ASSERT
-  LP64_ONLY(if (UseCompressedOops) verify_heapbase("call_VM_base");)
+  // TraceBytecodes does not use r12 but saves it over the call, so don't verify
+  // r12 is the heapbase.
+  LP64_ONLY(if (UseCompressedOops && !TraceBytecodes) verify_heapbase("call_VM_base");)
 #endif // ASSERT
 
   assert(java_thread != oop_result  , "cannot use the same register for java_thread & oop_result");
