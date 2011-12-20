@@ -718,7 +718,7 @@ public:
   size_t scale_parallel_threads(size_t n_par_threads);
 
   // Calculates the number of GC threads to be used in a concurrent phase.
-  int calc_parallel_marking_threads();
+  size_t calc_parallel_marking_threads();
 
   // The following three are interaction between CM and
   // G1CollectedHeap

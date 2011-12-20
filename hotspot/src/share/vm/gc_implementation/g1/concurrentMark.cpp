@@ -1117,12 +1117,9 @@ public:
 
 // Calculates the number of active workers for a concurrent
 // phase.
-int ConcurrentMark::calc_parallel_marking_threads() {
-
-  size_t n_conc_workers;
-  if (!G1CollectedHeap::use_parallel_gc_threads()) {
-    n_conc_workers = 1;
-  } else {
+size_t ConcurrentMark::calc_parallel_marking_threads() {
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
+    size_t n_conc_workers = 0;
     if (!UseDynamicNumberOfGCThreads ||
         (!FLAG_IS_DEFAULT(ConcGCThreads) &&
          !ForceDynamicNumberOfGCThreads)) {
@@ -1137,9 +1134,13 @@ int ConcurrentMark::calc_parallel_marking_threads() {
       // Don't scale down "n_conc_workers" by scale_parallel_threads() because
       // that scaling has already gone into "_max_parallel_marking_threads".
     }
+    assert(n_conc_workers > 0, "Always need at least 1");
+    return n_conc_workers;
   }
-  assert(n_conc_workers > 0, "Always need at least 1");
-  return (int) MAX2(n_conc_workers, (size_t) 1);
+  // If we are not running with any parallel GC threads we will not
+  // have spawned any marking threads either. Hence the number of
+  // concurrent workers should be 0.
+  return 0;
 }
 
 void ConcurrentMark::markFromRoots() {
@@ -1151,24 +1152,24 @@ void ConcurrentMark::markFromRoots() {
   // stop-the-world GC happens even as we mark in this generation.
 
   _restart_for_overflow = false;
-
-  // Parallel task terminator is set in "set_phase()".
   force_overflow_conc()->init();
 
   // _g1h has _n_par_threads
-
   _parallel_marking_threads = calc_parallel_marking_threads();
   assert(parallel_marking_threads() <= max_parallel_marking_threads(),
     "Maximum number of marking threads exceeded");
-  _parallel_workers->set_active_workers((int)_parallel_marking_threads);
-  // Don't set _n_par_threads because it affects MT in proceess_strong_roots()
-  // and the decisions on that MT processing is made elsewhere.
 
-  assert( _parallel_workers->active_workers() > 0, "Should have been set");
-  set_phase(_parallel_workers->active_workers(), true /* concurrent */);
+  size_t active_workers = MAX2((size_t) 1, parallel_marking_threads());
+
+  // Parallel task terminator is set in "set_phase()"
+  set_phase(active_workers, true /* concurrent */);
 
   CMConcurrentMarkingTask markingTask(this, cmThread());
   if (parallel_marking_threads() > 0) {
+    _parallel_workers->set_active_workers((int)active_workers);
+    // Don't set _n_par_threads because it affects MT in proceess_strong_roots()
+    // and the decisions on that MT processing is made elsewhere.
+    assert(_parallel_workers->active_workers() > 0, "Should have been set");
     _parallel_workers->run_task(&markingTask);
   } else {
     markingTask.work(0);
@@ -1765,8 +1766,7 @@ void ConcurrentMark::cleanup() {
 
   HeapRegionRemSet::reset_for_cleanup_tasks();
 
-  g1h->set_par_threads();
-  size_t n_workers = g1h->n_par_threads();
+  size_t n_workers;
 
   // Do counting once more with the world stopped for good measure.
   G1ParFinalCountTask g1_par_count_task(g1h, nextMarkBitMap(),
@@ -1776,8 +1776,10 @@ void ConcurrentMark::cleanup() {
                                                HeapRegion::InitialClaimValue),
            "sanity check");
 
+    g1h->set_par_threads();
+    n_workers = g1h->n_par_threads();
     assert(g1h->n_par_threads() == (int) n_workers,
-      "Should not have been reset");
+           "Should not have been reset");
     g1h->workers()->run_task(&g1_par_count_task);
     // Done with the parallel phase so reset to 0.
     g1h->set_par_threads(0);
@@ -1786,6 +1788,7 @@ void ConcurrentMark::cleanup() {
                                              HeapRegion::FinalCountClaimValue),
            "sanity check");
   } else {
+    n_workers = 1;
     g1_par_count_task.work(0);
   }
 
@@ -1850,7 +1853,6 @@ void ConcurrentMark::cleanup() {
     gclog_or_tty->print_cr("  note end of marking: %8.3f ms.",
                            (note_end_end - note_end_start)*1000.0);
   }
-
 
   // call below, since it affects the metric by which we sort the heap
   // regions.
@@ -2329,9 +2331,9 @@ public:
     }
   }
 
-  CMRemarkTask(ConcurrentMark* cm) :
+  CMRemarkTask(ConcurrentMark* cm, int active_workers) :
     AbstractGangTask("Par Remark"), _cm(cm) {
-    _cm->terminator()->reset_for_reuse(cm->_g1h->workers()->active_workers());
+    _cm->terminator()->reset_for_reuse(active_workers);
   }
 };
 
@@ -2357,7 +2359,7 @@ void ConcurrentMark::checkpointRootsFinalWork() {
     // constructor and pass values of the active workers
     // through the gang in the task.
 
-    CMRemarkTask remarkTask(this);
+    CMRemarkTask remarkTask(this, active_workers);
     g1h->set_par_threads(active_workers);
     g1h->workers()->run_task(&remarkTask);
     g1h->set_par_threads(0);
@@ -2367,7 +2369,7 @@ void ConcurrentMark::checkpointRootsFinalWork() {
     int active_workers = 1;
     set_phase(active_workers, false /* concurrent */);
 
-    CMRemarkTask remarkTask(this);
+    CMRemarkTask remarkTask(this, active_workers);
     // We will start all available threads, even if we decide that the
     // active_workers will be fewer. The extra ones will just bail out
     // immediately.
@@ -3123,13 +3125,12 @@ void ConcurrentMark::complete_marking_in_collection_set() {
   }
 
   double start = os::elapsedTime();
-  int n_workers = g1h->workers()->total_workers();
-
   G1ParCompleteMarkInCSetTask complete_mark_task(g1h, this);
 
   assert(g1h->check_cset_heap_region_claim_values(HeapRegion::InitialClaimValue), "sanity");
 
   if (G1CollectedHeap::use_parallel_gc_threads()) {
+    int n_workers = g1h->workers()->active_workers();
     g1h->set_par_threads(n_workers);
     g1h->workers()->run_task(&complete_mark_task);
     g1h->set_par_threads(0);
