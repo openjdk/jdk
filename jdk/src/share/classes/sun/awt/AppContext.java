@@ -342,6 +342,16 @@ public final class AppContext {
         return appContext;
     }
 
+    /**
+     * Returns the main ("system") AppContext.
+     *
+     * @return  the main AppContext
+     * @since   1.8
+     */
+    final static AppContext getMainAppContext() {
+        return mainAppContext;
+    }
+
     private long DISPOSAL_TIMEOUT = 5000;  // Default to 5-second timeout
                                            // for disposal of all Frames
                                            // (we wait for this time twice,
