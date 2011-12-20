@@ -135,6 +135,7 @@ import java.io.PrintStream;
  *
  * @author   Timothy Prinzing
  */
+@SuppressWarnings("serial")
 public class BoxLayout implements LayoutManager2, Serializable {
 
     /**

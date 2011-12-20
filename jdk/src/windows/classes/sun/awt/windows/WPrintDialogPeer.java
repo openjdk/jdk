@@ -73,7 +73,7 @@ public class WPrintDialogPeer extends WWindowPeer implements DialogPeer {
                     // but if it is we need to trap it so the thread does
                     // not hide is called and the thread doesn't hang.
                 }
-                ((WPrintDialog)target).hide();
+                ((WPrintDialog)target).setVisible(false);
             }
         }).start();
     }

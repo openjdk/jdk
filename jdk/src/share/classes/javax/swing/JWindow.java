@@ -89,6 +89,7 @@ import javax.accessibility.*;
  *
  * @author David Kloba
  */
+@SuppressWarnings("serial")
 public class JWindow extends Window implements Accessible,
                                                RootPaneContainer,
                                TransferHandler.HasGetTransferHandler
@@ -663,6 +664,7 @@ public class JWindow extends Window implements Accessible,
      * Java Accessibility API appropriate to window user-interface
      * elements.
      */
+    @SuppressWarnings("serial")
     protected class AccessibleJWindow extends AccessibleAWTWindow {
         // everything is in the new parent, AccessibleAWTWindow
     }
