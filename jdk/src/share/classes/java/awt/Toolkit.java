@@ -706,9 +706,9 @@ public abstract class Toolkit {
         final Properties properties = new Properties();
 
 
-        atNames = (String)java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
-            public Object run() {
+        atNames = java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<String>() {
+            public String run() {
 
                 // Try loading the per-user accessibility properties file.
                 try {
@@ -798,7 +798,7 @@ public abstract class Toolkit {
             while (parser.hasMoreTokens()) {
                 atName = parser.nextToken();
                 try {
-                    Class clazz;
+                    Class<?> clazz;
                     if (cl != null) {
                         clazz = cl.loadClass(atName);
                     } else {
@@ -860,8 +860,8 @@ public abstract class Toolkit {
                 java.lang.Compiler.disable();
 
                 java.security.AccessController.doPrivileged(
-                        new java.security.PrivilegedAction() {
-                    public Object run() {
+                        new java.security.PrivilegedAction<Void>() {
+                    public Void run() {
                         String nm = null;
                         Class cls = null;
                         try {
@@ -1653,8 +1653,8 @@ public abstract class Toolkit {
 
     static {
         java.security.AccessController.doPrivileged(
-                                 new java.security.PrivilegedAction() {
-            public Object run() {
+                                 new java.security.PrivilegedAction<Void>() {
+            public Void run() {
                 try {
                     resources =
                         ResourceBundle.getBundle("sun.awt.resources.awt",
@@ -1984,7 +1984,7 @@ public abstract class Toolkit {
     private int[] calls = new int[LONG_BITS];
     private static volatile long enabledOnToolkitMask;
     private AWTEventListener eventListener = null;
-    private WeakHashMap listener2SelectiveListener = new WeakHashMap();
+    private WeakHashMap<AWTEventListener, SelectiveAWTEventListener> listener2SelectiveListener = new WeakHashMap<>();
 
     /*
      * Extracts a "pure" AWTEventListener from a AWTEventListenerProxy,
@@ -2051,7 +2051,7 @@ public abstract class Toolkit {
         }
         synchronized (this) {
             SelectiveAWTEventListener selectiveListener =
-            (SelectiveAWTEventListener)listener2SelectiveListener.get(localL);
+                listener2SelectiveListener.get(localL);
 
             if (selectiveListener == null) {
                 // Create a new selectiveListener.
@@ -2121,7 +2121,7 @@ public abstract class Toolkit {
 
         synchronized (this) {
             SelectiveAWTEventListener selectiveListener =
-            (SelectiveAWTEventListener)listener2SelectiveListener.get(localL);
+                listener2SelectiveListener.get(localL);
 
             if (selectiveListener != null) {
                 listener2SelectiveListener.remove(localL);
@@ -2244,7 +2244,7 @@ public abstract class Toolkit {
         synchronized (this) {
             EventListener[] la = ToolkitEventMulticaster.getListeners(eventListener,AWTEventListener.class);
 
-            java.util.List list = new ArrayList(la.length);
+            java.util.List<AWTEventListenerProxy> list = new ArrayList<>(la.length);
 
             for (int i = 0; i < la.length; i++) {
                 SelectiveAWTEventListener sael = (SelectiveAWTEventListener)la[i];
@@ -2254,7 +2254,7 @@ public abstract class Toolkit {
                                                        sael.getListener()));
                 }
             }
-            return (AWTEventListener[])list.toArray(new AWTEventListener[0]);
+            return list.toArray(new AWTEventListener[0]);
         }
     }
 
@@ -2457,7 +2457,9 @@ public abstract class Toolkit {
         }
     }
 
+    @SuppressWarnings("serial")
     private static class DesktopPropertyChangeSupport extends PropertyChangeSupport {
+
         private static final StringBuilder PROP_CHANGE_SUPPORT_KEY =
                 new StringBuilder("desktop property change support key");
         private final Object source;

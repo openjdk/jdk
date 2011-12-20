@@ -109,6 +109,7 @@ import java.lang.ref.WeakReference;
  * @see JMenuBar
  * @see JPopupMenu
  */
+@SuppressWarnings("serial")
 public class JMenu extends JMenuItem implements Accessible,MenuElement
 {
     /**
@@ -133,13 +134,6 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * generated is always "this".  Default is <code>null</code>.
      */
     private MenuEvent menuEvent = null;
-
-    /* Registry of listeners created for <code>Action-JMenuItem</code>
-     * linkage.  This is needed so that references can
-     * be cleaned up at remove time to allow garbage collection
-     * Default is <code>null</code>.
-     */
-    private static Hashtable listenerRegistry = null;
 
     /*
      * Used by the look and feel (L&F) code to handle
@@ -1111,6 +1105,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
     void configureAcceleratorFromAction(Action a) {
     }
 
+    @SuppressWarnings("serial")
     class MenuChangeListener implements ChangeListener, Serializable {
         boolean isSelected = false;
         public void stateChanged(ChangeEvent e) {
@@ -1158,6 +1153,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial")
     protected class WinListener extends WindowAdapter implements Serializable {
         JPopupMenu popupMenu;
         /**
@@ -1394,6 +1390,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial")
     protected class AccessibleJMenu extends AccessibleJMenuItem
         implements AccessibleSelection {
 

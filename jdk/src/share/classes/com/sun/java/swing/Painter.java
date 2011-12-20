@@ -29,5 +29,5 @@ package com.sun.java.swing;
  *
  * @deprecated Use {@link javax.swing.Painter} instead.
  */
-public interface Painter<T> extends javax.swing.Painter {
+public interface Painter<T> extends javax.swing.Painter<T> {
 }

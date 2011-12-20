@@ -53,20 +53,15 @@ public class EventListenerAggregate {
      * @throws ClassCastException if <code>listenerClass</code> is not
      *         assignable to <code>java.util.EventListener</code>
      */
-    public EventListenerAggregate(Class listenerClass) {
+    public EventListenerAggregate(Class<? extends EventListener> listenerClass) {
         if (listenerClass == null) {
             throw new NullPointerException("listener class is null");
-        }
-
-        if (!EventListener.class.isAssignableFrom(listenerClass)) {
-            throw new ClassCastException("listener class " + listenerClass +
-                                         " is not assignable to EventListener");
         }
 
         listenerList = (EventListener[])Array.newInstance(listenerClass, 0);
     }
 
-    private Class getListenerClass() {
+    private Class<?> getListenerClass() {
         return listenerList.getClass().getComponentType();
     }
 
@@ -80,7 +75,7 @@ public class EventListenerAggregate {
      *         in the constructor
      */
     public synchronized void add(EventListener listener) {
-        Class listenerClass = getListenerClass();
+        Class<?> listenerClass = getListenerClass();
 
         if (!listenerClass.isInstance(listener)) { // null is not an instance of any class
             throw new ClassCastException("listener " + listener + " is not " +
@@ -107,7 +102,7 @@ public class EventListenerAggregate {
      *         in the constructor
      */
     public synchronized boolean remove(EventListener listener) {
-        Class listenerClass = getListenerClass();
+        Class<?> listenerClass = getListenerClass();
 
         if (!listenerClass.isInstance(listener)) { // null is not an instance of any class
             throw new ClassCastException("listener " + listener + " is not " +
@@ -155,7 +150,7 @@ public class EventListenerAggregate {
      *         array if there are no listeners)
      */
     public synchronized EventListener[] getListenersCopy() {
-        return (listenerList.length == 0) ? listenerList : (EventListener[])listenerList.clone();
+        return (listenerList.length == 0) ? listenerList : listenerList.clone();
     }
 
     /**
