@@ -588,15 +588,28 @@ private:
   // Used to record the highest end of heap region in collection set
   HeapWord* _inc_cset_max_finger;
 
-  // The RSet lengths recorded for regions in the collection set
-  // (updated by the periodic sampling of the regions in the
-  // young list/collection set).
+  // The RSet lengths recorded for regions in the CSet. It is updated
+  // by the thread that adds a new region to the CSet. We assume that
+  // only one thread can be allocating a new CSet region (currently,
+  // it does so after taking the Heap_lock) hence no need to
+  // synchronize updates to this field.
   size_t _inc_cset_recorded_rs_lengths;
 
-  // The predicted elapsed time it will take to collect the regions
-  // in the collection set (updated by the periodic sampling of the
-  // regions in the young list/collection set).
+  // A concurrent refinement thread periodcially samples the young
+  // region RSets and needs to update _inc_cset_recorded_rs_lengths as
+  // the RSets grow. Instead of having to syncronize updates to that
+  // field we accumulate them in this field and add it to
+  // _inc_cset_recorded_rs_lengths_diffs at the start of a GC.
+  ssize_t _inc_cset_recorded_rs_lengths_diffs;
+
+  // The predicted elapsed time it will take to collect the regions in
+  // the CSet. This is updated by the thread that adds a new region to
+  // the CSet. See the comment for _inc_cset_recorded_rs_lengths about
+  // MT-safety assumptions.
   double _inc_cset_predicted_elapsed_time_ms;
+
+  // See the comment for _inc_cset_recorded_rs_lengths_diffs.
+  double _inc_cset_predicted_elapsed_time_ms_diffs;
 
   // Stash a pointer to the g1 heap.
   G1CollectedHeap* _g1;
@@ -894,6 +907,10 @@ public:
   // Initialize incremental collection set info.
   void start_incremental_cset_building();
 
+  // Perform any final calculations on the incremental CSet fields
+  // before we can use them.
+  void finalize_incremental_cset_building();
+
   void clear_incremental_cset() {
     _inc_cset_head = NULL;
     _inc_cset_tail = NULL;
@@ -902,10 +919,9 @@ public:
   // Stop adding regions to the incremental collection set
   void stop_incremental_cset_building() { _inc_cset_build_state = Inactive; }
 
-  // Add/remove information about hr to the aggregated information
-  // for the incrementally built collection set.
+  // Add information about hr to the aggregated information for the
+  // incrementally built collection set.
   void add_to_incremental_cset_info(HeapRegion* hr, size_t rs_length);
-  void remove_from_incremental_cset_info(HeapRegion* hr);
 
   // Update information about hr in the aggregated information for
   // the incrementally built collection set.

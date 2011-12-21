@@ -230,7 +230,9 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _inc_cset_bytes_used_before(0),
   _inc_cset_max_finger(NULL),
   _inc_cset_recorded_rs_lengths(0),
+  _inc_cset_recorded_rs_lengths_diffs(0),
   _inc_cset_predicted_elapsed_time_ms(0.0),
+  _inc_cset_predicted_elapsed_time_ms_diffs(0.0),
 
 #ifdef _MSC_VER // the use of 'this' below gets a warning, make it go away
 #pragma warning( disable:4355 ) // 'this' : used in base member initializer list
@@ -1551,10 +1553,19 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
       }
     }
 
-    // It turns out that, sometimes, _max_rs_lengths can get smaller
-    // than _recorded_rs_lengths which causes rs_length_diff to get
-    // very large and mess up the RSet length predictions. We'll be
-    // defensive until we work out why this happens.
+    // This is defensive. For a while _max_rs_lengths could get
+    // smaller than _recorded_rs_lengths which was causing
+    // rs_length_diff to get very large and mess up the RSet length
+    // predictions. The reason was unsafe concurrent updates to the
+    // _inc_cset_recorded_rs_lengths field which the code below guards
+    // against (see CR 7118202). This bug has now been fixed (see CR
+    // 7119027). However, I'm still worried that
+    // _inc_cset_recorded_rs_lengths might still end up somewhat
+    // inaccurate. The concurrent refinement thread calculates an
+    // RSet's length concurrently with other CR threads updating it
+    // which might cause it to calculate the length incorrectly (if,
+    // say, it's in mid-coarsening). So I'll leave in the defensive
+    // conditional below just in case.
     size_t rs_length_diff = 0;
     if (_max_rs_lengths > _recorded_rs_lengths) {
       rs_length_diff = _max_rs_lengths - _recorded_rs_lengths;
@@ -2436,8 +2447,43 @@ void G1CollectorPolicy::start_incremental_cset_building() {
 
   _inc_cset_max_finger = 0;
   _inc_cset_recorded_rs_lengths = 0;
-  _inc_cset_predicted_elapsed_time_ms = 0;
+  _inc_cset_recorded_rs_lengths_diffs = 0;
+  _inc_cset_predicted_elapsed_time_ms = 0.0;
+  _inc_cset_predicted_elapsed_time_ms_diffs = 0.0;
   _inc_cset_build_state = Active;
+}
+
+void G1CollectorPolicy::finalize_incremental_cset_building() {
+  assert(_inc_cset_build_state == Active, "Precondition");
+  assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
+
+  // The two "main" fields, _inc_cset_recorded_rs_lengths and
+  // _inc_cset_predicted_elapsed_time_ms, are updated by the thread
+  // that adds a new region to the CSet. Further updates by the
+  // concurrent refinement thread that samples the young RSet lengths
+  // are accumulated in the *_diffs fields. Here we add the diffs to
+  // the "main" fields.
+
+  if (_inc_cset_recorded_rs_lengths_diffs >= 0) {
+    _inc_cset_recorded_rs_lengths += _inc_cset_recorded_rs_lengths_diffs;
+  } else {
+    // This is defensive. The diff should in theory be always positive
+    // as RSets can only grow between GCs. However, given that we
+    // sample their size concurrently with other threads updating them
+    // it's possible that we might get the wrong size back, which
+    // could make the calculations somewhat inaccurate.
+    size_t diffs = (size_t) (-_inc_cset_recorded_rs_lengths_diffs);
+    if (_inc_cset_recorded_rs_lengths >= diffs) {
+      _inc_cset_recorded_rs_lengths -= diffs;
+    } else {
+      _inc_cset_recorded_rs_lengths = 0;
+    }
+  }
+  _inc_cset_predicted_elapsed_time_ms +=
+                                     _inc_cset_predicted_elapsed_time_ms_diffs;
+
+  _inc_cset_recorded_rs_lengths_diffs = 0;
+  _inc_cset_predicted_elapsed_time_ms_diffs = 0.0;
 }
 
 void G1CollectorPolicy::add_to_incremental_cset_info(HeapRegion* hr, size_t rs_length) {
@@ -2455,10 +2501,8 @@ void G1CollectorPolicy::add_to_incremental_cset_info(HeapRegion* hr, size_t rs_l
 
   double region_elapsed_time_ms = predict_region_elapsed_time_ms(hr, true);
   size_t used_bytes = hr->used();
-
   _inc_cset_recorded_rs_lengths += rs_length;
   _inc_cset_predicted_elapsed_time_ms += region_elapsed_time_ms;
-
   _inc_cset_bytes_used_before += used_bytes;
 
   // Cache the values we have added to the aggregated informtion
@@ -2469,37 +2513,33 @@ void G1CollectorPolicy::add_to_incremental_cset_info(HeapRegion* hr, size_t rs_l
   hr->set_predicted_elapsed_time_ms(region_elapsed_time_ms);
 }
 
-void G1CollectorPolicy::remove_from_incremental_cset_info(HeapRegion* hr) {
-  // This routine is currently only called as part of the updating of
-  // existing policy information for regions in the incremental cset that
-  // is performed by the concurrent refine thread(s) as part of young list
-  // RSet sampling. Therefore we should not be at a safepoint.
-
-  assert(!SafepointSynchronize::is_at_safepoint(), "should not be at safepoint");
-  assert(hr->is_young(), "it should be");
-
-  size_t used_bytes = hr->used();
-  size_t old_rs_length = hr->recorded_rs_length();
-  double old_elapsed_time_ms = hr->predicted_elapsed_time_ms();
-
-  // Subtract the old recorded/predicted policy information for
-  // the given heap region from the collection set info.
-  _inc_cset_recorded_rs_lengths -= old_rs_length;
-  _inc_cset_predicted_elapsed_time_ms -= old_elapsed_time_ms;
-
-  _inc_cset_bytes_used_before -= used_bytes;
-
-  // Clear the values cached in the heap region
-  hr->set_recorded_rs_length(0);
-  hr->set_predicted_elapsed_time_ms(0);
-}
-
-void G1CollectorPolicy::update_incremental_cset_info(HeapRegion* hr, size_t new_rs_length) {
-  // Update the collection set information that is dependent on the new RS length
+void G1CollectorPolicy::update_incremental_cset_info(HeapRegion* hr,
+                                                     size_t new_rs_length) {
+  // Update the CSet information that is dependent on the new RS length
   assert(hr->is_young(), "Precondition");
+  assert(!SafepointSynchronize::is_at_safepoint(),
+                                               "should not be at a safepoint");
 
-  remove_from_incremental_cset_info(hr);
-  add_to_incremental_cset_info(hr, new_rs_length);
+  // We could have updated _inc_cset_recorded_rs_lengths and
+  // _inc_cset_predicted_elapsed_time_ms directly but we'd need to do
+  // that atomically, as this code is executed by a concurrent
+  // refinement thread, potentially concurrently with a mutator thread
+  // allocating a new region and also updating the same fields. To
+  // avoid the atomic operations we accumulate these updates on two
+  // separate fields (*_diffs) and we'll just add them to the "main"
+  // fields at the start of a GC.
+
+  ssize_t old_rs_length = (ssize_t) hr->recorded_rs_length();
+  ssize_t rs_lengths_diff = (ssize_t) new_rs_length - old_rs_length;
+  _inc_cset_recorded_rs_lengths_diffs += rs_lengths_diff;
+
+  double old_elapsed_time_ms = hr->predicted_elapsed_time_ms();
+  double new_region_elapsed_time_ms = predict_region_elapsed_time_ms(hr, true);
+  double elapsed_ms_diff = new_region_elapsed_time_ms - old_elapsed_time_ms;
+  _inc_cset_predicted_elapsed_time_ms_diffs += elapsed_ms_diff;
+
+  hr->set_recorded_rs_length(new_rs_length);
+  hr->set_predicted_elapsed_time_ms(new_region_elapsed_time_ms);
 }
 
 void G1CollectorPolicy::add_region_to_incremental_cset_common(HeapRegion* hr) {
@@ -2591,6 +2631,7 @@ void G1CollectorPolicy::choose_collection_set(double target_pause_time_ms) {
   double non_young_start_time_sec = os::elapsedTime();
 
   YoungList* young_list = _g1->young_list();
+  finalize_incremental_cset_building();
 
   guarantee(target_pause_time_ms > 0.0,
             err_msg("target_pause_time_ms = %1.6lf should be positive",
