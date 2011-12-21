@@ -33,7 +33,6 @@
 // All local includes have been commented out.
 */
 
-
 #ifndef JVM_MD_H
 #define JVM_MD_H
 
@@ -44,6 +43,7 @@
 
 #include <dirent.h>             /* For DIR */
 #include <sys/param.h>          /* For MAXPATHLEN */
+#include <sys/socket.h>         /* For socklen_t */
 #include <unistd.h>             /* For F_OK, R_OK, W_OK */
 #include <sys/int_types.h>      /* for intptr_t types (64 Bit cleanliness) */
 
@@ -81,7 +81,6 @@
 #define JVM_O_O_APPEND   O_APPEND
 #define JVM_O_EXCL       O_EXCL
 #define JVM_O_CREAT      O_CREAT
-
 
 /* Signal definitions */
 
