@@ -4851,7 +4851,7 @@ static void initSock() {
   ::mutexUnlock(&sockFnTableMutex);
 }
 
-struct hostent*  os::get_host_by_name(char* name) {
+struct hostent* os::get_host_by_name(char* name) {
   if (!sock_initialized) {
     initSock();
   }
@@ -4882,39 +4882,39 @@ int os::listen(int fd, int count) {
   return 0;
 }
 
-int os::connect(int fd, struct sockaddr *him, int len) {
+int os::connect(int fd, struct sockaddr* him, socklen_t len) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::accept(int fd, struct sockaddr *him, int *len) {
+int os::accept(int fd, struct sockaddr* him, socklen_t* len) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::sendto(int fd, char *buf, int len, int flags,
-                        struct sockaddr *to, int tolen) {
+int os::sendto(int fd, char* buf, size_t len, uint flags,
+               struct sockaddr* to, socklen_t tolen) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::recvfrom(int fd, char *buf, int nBytes, int flags,
-                         sockaddr *from, int *fromlen) {
+int os::recvfrom(int fd, char *buf, size_t nBytes, uint flags,
+                 sockaddr* from, socklen_t* fromlen) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::recv(int fd, char *buf, int nBytes, int flags) {
+int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::send(int fd, char *buf, int nBytes, int flags) {
+int os::send(int fd, char* buf, size_t nBytes, uint flags) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::raw_send(int fd, char *buf, int nBytes, int flags) {
+int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
   ShouldNotReachHere();
   return 0;
 }
@@ -4934,24 +4934,24 @@ int os::socket_shutdown(int fd, int howto) {
   return 0;
 }
 
-int os::bind(int fd, struct sockaddr *him, int len) {
+int os::bind(int fd, struct sockaddr* him, socklen_t len) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::get_sock_name(int fd, struct sockaddr *him, int *len) {
+int os::get_sock_name(int fd, struct sockaddr* him, socklen_t* len) {
   ShouldNotReachHere();
   return 0;
 }
 
 int os::get_sock_opt(int fd, int level, int optname,
-                             char *optval, int* optlen) {
+                     char* optval, socklen_t* optlen) {
   ShouldNotReachHere();
   return 0;
 }
 
 int os::set_sock_opt(int fd, int level, int optname,
-                             const char *optval, int optlen) {
+                     const char* optval, socklen_t optlen) {
   ShouldNotReachHere();
   return 0;
 }
