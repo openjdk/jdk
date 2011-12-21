@@ -289,7 +289,15 @@
                                                                             \
   develop(uintx, G1ConcMarkForceOverflow, 0,                                \
           "The number of times we'll force an overflow during "             \
-          "concurrent marking")
+          "concurrent marking")                                             \
+                                                                            \
+  develop(uintx, G1DefaultMinNewGenPercent, 20,                             \
+          "Percentage (0-100) of the heap size to use as minimum "          \
+          "young gen size.")                                                \
+                                                                            \
+  develop(uintx, G1DefaultMaxNewGenPercent, 50,                             \
+          "Percentage (0-100) of the heap size to use as maximum "          \
+          "young gen size.")
 
 G1_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG)
 
