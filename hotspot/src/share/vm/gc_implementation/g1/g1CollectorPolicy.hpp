@@ -83,6 +83,72 @@ public:
   virtual MainBodySummary*    main_body_summary()    { return this; }
 };
 
+// There are three command line options related to the young gen size:
+// NewSize, MaxNewSize and NewRatio (There is also -Xmn, but that is
+// just a short form for NewSize==MaxNewSize). G1 will use its internal
+// heuristics to calculate the actual young gen size, so these options
+// basically only limit the range within which G1 can pick a young gen
+// size. Also, these are general options taking byte sizes. G1 will
+// internally work with a number of regions instead. So, some rounding
+// will occur.
+//
+// If nothing related to the the young gen size is set on the command
+// line we should allow the young gen to be between
+// G1DefaultMinNewGenPercent and G1DefaultMaxNewGenPercent of the
+// heap size. This means that every time the heap size changes the
+// limits for the young gen size will be updated.
+//
+// If only -XX:NewSize is set we should use the specified value as the
+// minimum size for young gen. Still using G1DefaultMaxNewGenPercent
+// of the heap as maximum.
+//
+// If only -XX:MaxNewSize is set we should use the specified value as the
+// maximum size for young gen. Still using G1DefaultMinNewGenPercent
+// of the heap as minimum.
+//
+// If -XX:NewSize and -XX:MaxNewSize are both specified we use these values.
+// No updates when the heap size changes. There is a special case when
+// NewSize==MaxNewSize. This is interpreted as "fixed" and will use a
+// different heuristic for calculating the collection set when we do mixed
+// collection.
+//
+// If only -XX:NewRatio is set we should use the specified ratio of the heap
+// as both min and max. This will be interpreted as "fixed" just like the
+// NewSize==MaxNewSize case above. But we will update the min and max
+// everytime the heap size changes.
+//
+// NewSize and MaxNewSize override NewRatio. So, NewRatio is ignored if it is
+// combined with either NewSize or MaxNewSize. (A warning message is printed.)
+class G1YoungGenSizer : public CHeapObj {
+private:
+  enum SizerKind {
+    SizerDefaults,
+    SizerNewSizeOnly,
+    SizerMaxNewSizeOnly,
+    SizerMaxAndNewSize,
+    SizerNewRatio
+  };
+  SizerKind _sizer_kind;
+  size_t _min_desired_young_length;
+  size_t _max_desired_young_length;
+  bool _adaptive_size;
+  size_t calculate_default_min_length(size_t new_number_of_heap_regions);
+  size_t calculate_default_max_length(size_t new_number_of_heap_regions);
+
+public:
+  G1YoungGenSizer();
+  void heap_size_changed(size_t new_number_of_heap_regions);
+  size_t min_desired_young_length() {
+    return _min_desired_young_length;
+  }
+  size_t max_desired_young_length() {
+    return _max_desired_young_length;
+  }
+  bool adaptive_young_list_length() {
+    return _adaptive_size;
+  }
+};
+
 class G1CollectorPolicy: public CollectorPolicy {
 private:
   // either equal to the number of parallel threads, if ParallelGCThreads
@@ -167,9 +233,6 @@ private:
   // indicates whether we are in young or mixed GC mode
   bool _gcs_are_young;
 
-  // if true, then it tries to dynamically adjust the length of the
-  // young list
-  bool _adaptive_young_list_length;
   size_t _young_list_target_length;
   size_t _young_list_fixed_length;
   size_t _prev_eden_capacity; // used for logging
@@ -227,9 +290,7 @@ private:
 
   TruncatedSeq* _young_gc_eff_seq;
 
-  bool   _using_new_ratio_calculations;
-  size_t _min_desired_young_length; // as set on the command line or default calculations
-  size_t _max_desired_young_length; // as set on the command line or default calculations
+  G1YoungGenSizer* _young_gen_sizer;
 
   size_t _eden_cset_region_length;
   size_t _survivor_cset_region_length;
@@ -695,8 +756,6 @@ private:
   // Count the number of bytes used in the CS.
   void count_CS_bytes_used();
 
-  void update_young_list_size_using_newratio(size_t number_of_heap_regions);
-
 public:
 
   G1CollectorPolicy();
@@ -722,8 +781,6 @@ public:
 
   // This should be called after the heap is resized.
   void record_new_heap_size(size_t new_number_of_regions);
-
-public:
 
   void init();
 
@@ -1014,10 +1071,7 @@ public:
   }
 
   bool adaptive_young_list_length() {
-    return _adaptive_young_list_length;
-  }
-  void set_adaptive_young_list_length(bool adaptive_young_list_length) {
-    _adaptive_young_list_length = adaptive_young_list_length;
+    return _young_gen_sizer->adaptive_young_list_length();
   }
 
   inline double get_gc_eff_factor() {
