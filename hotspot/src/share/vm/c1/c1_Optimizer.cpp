@@ -125,9 +125,16 @@ void CE_Eliminator::block_do(BlockBegin* block) {
   // inlining depths must match
   ValueStack* if_state = if_->state();
   ValueStack* sux_state = sux->state();
-  while (sux_state->scope() != if_state->scope()) {
-    if_state = if_state->caller_state();
-    assert(if_state != NULL, "states do not match up");
+  if (if_state->scope()->level() > sux_state->scope()->level()) {
+    while (sux_state->scope() != if_state->scope()) {
+      if_state = if_state->caller_state();
+      assert(if_state != NULL, "states do not match up");
+    }
+  } else if (if_state->scope()->level() < sux_state->scope()->level()) {
+    while (sux_state->scope() != if_state->scope()) {
+      sux_state = sux_state->caller_state();
+      assert(sux_state != NULL, "states do not match up");
+    }
   }
 
   if (sux_state->stack_size() <= if_state->stack_size()) return;
