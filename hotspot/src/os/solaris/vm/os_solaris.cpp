@@ -6359,17 +6359,16 @@ int os::socket_close(int fd) {
   RESTARTABLE_RETURN_INT(::close(fd));
 }
 
-int os::recv(int fd, char *buf, int nBytes, int flags) {
-  INTERRUPTIBLE_RETURN_INT(::recv(fd, buf, nBytes, flags), os::Solaris::clear_interrupted);
+int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
+  INTERRUPTIBLE_RETURN_INT((int)::recv(fd, buf, nBytes, flags), os::Solaris::clear_interrupted);
 }
 
-
-int os::send(int fd, char *buf, int nBytes, int flags) {
-  INTERRUPTIBLE_RETURN_INT(::send(fd, buf, nBytes, flags), os::Solaris::clear_interrupted);
+int os::send(int fd, char* buf, size_t nBytes, uint flags) {
+  INTERRUPTIBLE_RETURN_INT((int)::send(fd, buf, nBytes, flags), os::Solaris::clear_interrupted);
 }
 
-int os::raw_send(int fd, char *buf, int nBytes, int flags) {
-  RESTARTABLE_RETURN_INT(::send(fd, buf, nBytes, flags));
+int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
+  RESTARTABLE_RETURN_INT((int)::send(fd, buf, nBytes, flags));
 }
 
 // As both poll and select can be interrupted by signals, we have to be
@@ -6404,19 +6403,19 @@ int os::timeout(int fd, long timeout) {
   }
 }
 
-int os::connect(int fd, struct sockaddr *him, int len) {
+int os::connect(int fd, struct sockaddr *him, socklen_t len) {
   int _result;
-  INTERRUPTIBLE_NORESTART(::connect(fd, him, len), _result,
+  INTERRUPTIBLE_NORESTART(::connect(fd, him, len), _result,\
                           os::Solaris::clear_interrupted);
 
   // Depending on when thread interruption is reset, _result could be
   // one of two values when errno == EINTR
 
   if (((_result == OS_INTRPT) || (_result == OS_ERR))
-                                        && (errno == EINTR)) {
+      && (errno == EINTR)) {
      /* restarting a connect() changes its errno semantics */
-     INTERRUPTIBLE(::connect(fd, him, len), _result,
-                     os::Solaris::clear_interrupted);
+     INTERRUPTIBLE(::connect(fd, him, len), _result,\
+                   os::Solaris::clear_interrupted);
      /* undo these changes */
      if (_result == OS_ERR) {
        if (errno == EALREADY) {
@@ -6430,43 +6429,38 @@ int os::connect(int fd, struct sockaddr *him, int len) {
    return _result;
  }
 
-int os::accept(int fd, struct sockaddr *him, int *len) {
-  if (fd < 0)
-   return OS_ERR;
-  INTERRUPTIBLE_RETURN_INT((int)::accept(fd, him,\
-    (socklen_t*) len), os::Solaris::clear_interrupted);
- }
-
-int os::recvfrom(int fd, char *buf, int nBytes, int flags,
-                             sockaddr *from, int *fromlen) {
-   //%%note jvm_r11
-  INTERRUPTIBLE_RETURN_INT((int)::recvfrom(fd, buf, nBytes,\
-    flags, from, fromlen), os::Solaris::clear_interrupted);
+int os::accept(int fd, struct sockaddr* him, socklen_t* len) {
+  if (fd < 0) {
+    return OS_ERR;
+  }
+  INTERRUPTIBLE_RETURN_INT((int)::accept(fd, him, len),\
+                           os::Solaris::clear_interrupted);
 }
 
-int os::sendto(int fd, char *buf, int len, int flags,
-                           struct sockaddr *to, int tolen) {
-  //%%note jvm_r11
-  INTERRUPTIBLE_RETURN_INT((int)::sendto(fd, buf, len, flags,\
-    to, tolen), os::Solaris::clear_interrupted);
+int os::recvfrom(int fd, char* buf, size_t nBytes, uint flags,
+                 sockaddr* from, socklen_t* fromlen) {
+  INTERRUPTIBLE_RETURN_INT((int)::recvfrom(fd, buf, nBytes, flags, from, fromlen),\
+                           os::Solaris::clear_interrupted);
+}
+
+int os::sendto(int fd, char* buf, size_t len, uint flags,
+               struct sockaddr* to, socklen_t tolen) {
+  INTERRUPTIBLE_RETURN_INT((int)::sendto(fd, buf, len, flags, to, tolen),\
+                           os::Solaris::clear_interrupted);
 }
 
 int os::socket_available(int fd, jint *pbytes) {
-   if (fd < 0)
-     return OS_OK;
-
-   int ret;
-
-   RESTARTABLE(::ioctl(fd, FIONREAD, pbytes), ret);
-
-   //%% note ioctl can return 0 when successful, JVM_SocketAvailable
-   // is expected to return 0 on failure and 1 on success to the jdk.
-
-   return (ret == OS_ERR) ? 0 : 1;
+  if (fd < 0) {
+    return OS_OK;
+  }
+  int ret;
+  RESTARTABLE(::ioctl(fd, FIONREAD, pbytes), ret);
+  // note: ioctl can return 0 when successful, JVM_SocketAvailable
+  // is expected to return 0 on failure and 1 on success to the jdk.
+  return (ret == OS_ERR) ? 0 : 1;
 }
 
-
-int os::bind(int fd, struct sockaddr *him, int len) {
+int os::bind(int fd, struct sockaddr* him, socklen_t len) {
    INTERRUPTIBLE_RETURN_INT_NORESTART(::bind(fd, him, len),\
-     os::Solaris::clear_interrupted);
+                                      os::Solaris::clear_interrupted);
 }
