@@ -471,3 +471,26 @@ oop CollectedHeap::Class_obj_allocate(KlassHandle klass, int size, KlassHandle r
 
   return mirror;
 }
+
+/////////////// Unit tests ///////////////
+
+#ifndef PRODUCT
+void CollectedHeap::test_is_in() {
+  CollectedHeap* heap = Universe::heap();
+
+  // Test that NULL is not in the heap.
+  assert(!heap->is_in(NULL), "NULL is unexpectedly in the heap");
+
+  // Test that a pointer to before the heap start is reported as outside the heap.
+  assert(heap->_reserved.start() >= (void*)MinObjAlignment, "sanity");
+  void* before_heap = (void*)((intptr_t)heap->_reserved.start() - MinObjAlignment);
+  assert(!heap->is_in(before_heap),
+      err_msg("before_heap: " PTR_FORMAT " is unexpectedly in the heap", before_heap));
+
+  // Test that a pointer to after the heap end is reported as outside the heap.
+  assert(heap->_reserved.end() <= (void*)(uintptr_t(-1) - (uint)MinObjAlignment), "sanity");
+  void* after_heap = (void*)((intptr_t)heap->_reserved.end() + MinObjAlignment);
+  assert(!heap->is_in(after_heap),
+      err_msg("after_heap: " PTR_FORMAT " is unexpectedly in the heap", after_heap));
+}
+#endif
