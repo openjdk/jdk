@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -533,7 +533,8 @@ protected:
    * by the MarkSweepAlwaysCompactCount parameter.                           \
    */                                                                        \
   int invocations = SharedHeap::heap()->perm_gen()->stat_record()->invocations;\
-  bool skip_dead = ((invocations % MarkSweepAlwaysCompactCount) != 0);       \
+  bool skip_dead = (MarkSweepAlwaysCompactCount < 1)                         \
+    ||((invocations % MarkSweepAlwaysCompactCount) != 0);                    \
                                                                              \
   size_t allowed_deadspace = 0;                                              \
   if (skip_dead) {                                                           \

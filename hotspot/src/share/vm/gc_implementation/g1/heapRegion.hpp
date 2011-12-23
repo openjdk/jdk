@@ -367,12 +367,13 @@ class HeapRegion: public G1OffsetTableContigSpace {
   static void setup_heap_region_size(uintx min_heap_size);
 
   enum ClaimValues {
-    InitialClaimValue     = 0,
-    FinalCountClaimValue  = 1,
-    NoteEndClaimValue     = 2,
-    ScrubRemSetClaimValue = 3,
-    ParVerifyClaimValue   = 4,
-    RebuildRSClaimValue   = 5
+    InitialClaimValue          = 0,
+    FinalCountClaimValue       = 1,
+    NoteEndClaimValue          = 2,
+    ScrubRemSetClaimValue      = 3,
+    ParVerifyClaimValue        = 4,
+    RebuildRSClaimValue        = 5,
+    CompleteMarkCSetClaimValue = 6
   };
 
   inline HeapWord* par_allocate_no_bot_updates(size_t word_size) {
@@ -416,7 +417,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   void add_to_marked_bytes(size_t incr_bytes) {
     _next_marked_bytes = _next_marked_bytes + incr_bytes;
-    guarantee( _next_marked_bytes <= used(), "invariant" );
+    assert(_next_marked_bytes <= used(), "invariant" );
   }
 
   void zero_marked_bytes()      {

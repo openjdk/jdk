@@ -191,7 +191,11 @@ void ConcurrentMarkThread::run() {
         VM_CGC_Operation op(&cl_cl, verbose_str);
         VMThread::execute(&op);
       } else {
+        // We don't want to update the marking status if a GC pause
+        // is already underway.
+        _sts.join();
         g1h->set_marking_complete();
+        _sts.leave();
       }
 
       // Check if cleanup set the free_regions_coming flag. If it
