@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3080,19 +3080,6 @@ public:
   }
 };
 
-class SetClaimValuesInCSetHRClosure: public HeapRegionClosure {
-  jint _claim_value;
-
-public:
-  SetClaimValuesInCSetHRClosure(jint claim_value) :
-    _claim_value(claim_value) { }
-
-  bool doHeapRegion(HeapRegion* hr) {
-    hr->set_claim_value(_claim_value);
-    return false;
-  }
-};
-
 class G1ParCompleteMarkInCSetTask: public AbstractGangTask {
 protected:
   G1CollectedHeap* _g1h;
@@ -3135,9 +3122,8 @@ void ConcurrentMark::complete_marking_in_collection_set() {
 
   assert(g1h->check_cset_heap_region_claim_values(HeapRegion::CompleteMarkCSetClaimValue), "sanity");
 
-  // Now reset the claim values in the regions in the collection set.
-  SetClaimValuesInCSetHRClosure set_cv_cl(HeapRegion::InitialClaimValue);
-  g1h->collection_set_iterate(&set_cv_cl);
+  // Reset the claim values in the regions in the collection set.
+  g1h->reset_cset_heap_region_claim_values();
 
   assert(g1h->check_cset_heap_region_claim_values(HeapRegion::InitialClaimValue), "sanity");
 

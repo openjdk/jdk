@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1312,6 +1312,10 @@ public:
 
   // It resets all the region claim values to the default.
   void reset_heap_region_claim_values();
+
+  // Resets the claim values of regions in the current
+  // collection set to the default.
+  void reset_cset_heap_region_claim_values();
 
 #ifdef ASSERT
   bool check_heap_region_claim_values(jint claim_value);

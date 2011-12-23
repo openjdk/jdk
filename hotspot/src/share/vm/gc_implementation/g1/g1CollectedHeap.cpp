@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/g1/g1ErgoVerbose.hpp"
+#include "gc_implementation/g1/g1EvacFailure.hpp"
 #include "gc_implementation/g1/g1MarkSweep.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.inline.hpp"
@@ -2618,10 +2619,14 @@ public:
   }
 };
 
-void
-G1CollectedHeap::reset_heap_region_claim_values() {
+void G1CollectedHeap::reset_heap_region_claim_values() {
   ResetClaimValuesClosure blk;
   heap_region_iterate(&blk);
+}
+
+void G1CollectedHeap::reset_cset_heap_region_claim_values() {
+  ResetClaimValuesClosure blk;
+  collection_set_iterate(&blk);
 }
 
 #ifdef ASSERT
@@ -3998,157 +4003,26 @@ void G1CollectedHeap::finalize_for_evac_failure() {
   _evac_failure_scan_stack = NULL;
 }
 
-class UpdateRSetDeferred : public OopsInHeapRegionClosure {
-private:
-  G1CollectedHeap* _g1;
-  DirtyCardQueue *_dcq;
-  CardTableModRefBS* _ct_bs;
-
-public:
-  UpdateRSetDeferred(G1CollectedHeap* g1, DirtyCardQueue* dcq) :
-    _g1(g1), _ct_bs((CardTableModRefBS*)_g1->barrier_set()), _dcq(dcq) {}
-
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(      oop* p) { do_oop_work(p); }
-  template <class T> void do_oop_work(T* p) {
-    assert(_from->is_in_reserved(p), "paranoia");
-    if (!_from->is_in_reserved(oopDesc::load_decode_heap_oop(p)) &&
-        !_from->is_survivor()) {
-      size_t card_index = _ct_bs->index_for(p);
-      if (_ct_bs->mark_card_deferred(card_index)) {
-        _dcq->enqueue((jbyte*)_ct_bs->byte_for_index(card_index));
-      }
-    }
-  }
-};
-
-class RemoveSelfPointerClosure: public ObjectClosure {
-private:
-  G1CollectedHeap* _g1;
-  ConcurrentMark* _cm;
-  HeapRegion* _hr;
-  size_t _prev_marked_bytes;
-  size_t _next_marked_bytes;
-  OopsInHeapRegionClosure *_cl;
-public:
-  RemoveSelfPointerClosure(G1CollectedHeap* g1, HeapRegion* hr,
-                           OopsInHeapRegionClosure* cl) :
-    _g1(g1), _hr(hr), _cm(_g1->concurrent_mark()),  _prev_marked_bytes(0),
-    _next_marked_bytes(0), _cl(cl) {}
-
-  size_t prev_marked_bytes() { return _prev_marked_bytes; }
-  size_t next_marked_bytes() { return _next_marked_bytes; }
-
-  // <original comment>
-  // The original idea here was to coalesce evacuated and dead objects.
-  // However that caused complications with the block offset table (BOT).
-  // In particular if there were two TLABs, one of them partially refined.
-  // |----- TLAB_1--------|----TLAB_2-~~~(partially refined part)~~~|
-  // The BOT entries of the unrefined part of TLAB_2 point to the start
-  // of TLAB_2. If the last object of the TLAB_1 and the first object
-  // of TLAB_2 are coalesced, then the cards of the unrefined part
-  // would point into middle of the filler object.
-  // The current approach is to not coalesce and leave the BOT contents intact.
-  // </original comment>
-  //
-  // We now reset the BOT when we start the object iteration over the
-  // region and refine its entries for every object we come across. So
-  // the above comment is not really relevant and we should be able
-  // to coalesce dead objects if we want to.
-  void do_object(oop obj) {
-    HeapWord* obj_addr = (HeapWord*) obj;
-    assert(_hr->is_in(obj_addr), "sanity");
-    size_t obj_size = obj->size();
-    _hr->update_bot_for_object(obj_addr, obj_size);
-    if (obj->is_forwarded() && obj->forwardee() == obj) {
-      // The object failed to move.
-      assert(!_g1->is_obj_dead(obj), "We should not be preserving dead objs.");
-      _cm->markPrev(obj);
-      assert(_cm->isPrevMarked(obj), "Should be marked!");
-      _prev_marked_bytes += (obj_size * HeapWordSize);
-      if (_g1->mark_in_progress() && !_g1->is_obj_ill(obj)) {
-        _cm->markAndGrayObjectIfNecessary(obj);
-      }
-      obj->set_mark(markOopDesc::prototype());
-      // While we were processing RSet buffers during the
-      // collection, we actually didn't scan any cards on the
-      // collection set, since we didn't want to update remebered
-      // sets with entries that point into the collection set, given
-      // that live objects fromthe collection set are about to move
-      // and such entries will be stale very soon. This change also
-      // dealt with a reliability issue which involved scanning a
-      // card in the collection set and coming across an array that
-      // was being chunked and looking malformed. The problem is
-      // that, if evacuation fails, we might have remembered set
-      // entries missing given that we skipped cards on the
-      // collection set. So, we'll recreate such entries now.
-      obj->oop_iterate(_cl);
-      assert(_cm->isPrevMarked(obj), "Should be marked!");
-    } else {
-      // The object has been either evacuated or is dead. Fill it with a
-      // dummy object.
-      MemRegion mr((HeapWord*)obj, obj_size);
-      CollectedHeap::fill_with_object(mr);
-      _cm->clearRangeBothMaps(mr);
-    }
-  }
-};
-
 void G1CollectedHeap::remove_self_forwarding_pointers() {
-  UpdateRSetImmediate immediate_update(_g1h->g1_rem_set());
-  DirtyCardQueue dcq(&_g1h->dirty_card_queue_set());
-  UpdateRSetDeferred deferred_update(_g1h, &dcq);
-  OopsInHeapRegionClosure *cl;
-  if (G1DeferredRSUpdate) {
-    cl = &deferred_update;
+  assert(check_cset_heap_region_claim_values(HeapRegion::InitialClaimValue), "sanity");
+  assert(g1_policy()->assertMarkedBytesDataOK(), "Should be!");
+
+  G1ParRemoveSelfForwardPtrsTask rsfp_task(this);
+
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
+    set_par_threads();
+    workers()->run_task(&rsfp_task);
+    set_par_threads(0);
   } else {
-    cl = &immediate_update;
+    rsfp_task.work(0);
   }
-  HeapRegion* cur = g1_policy()->collection_set();
-  while (cur != NULL) {
-    assert(g1_policy()->assertMarkedBytesDataOK(), "Should be!");
-    assert(!cur->isHumongous(), "sanity");
 
-    if (cur->evacuation_failed()) {
-      assert(cur->in_collection_set(), "bad CS");
-      RemoveSelfPointerClosure rspc(_g1h, cur, cl);
+  assert(check_cset_heap_region_claim_values(HeapRegion::ParEvacFailureClaimValue), "sanity");
 
-      // In the common case we make sure that this is done when the
-      // region is freed so that it is "ready-to-go" when it's
-      // re-allocated. However, when evacuation failure happens, a
-      // region will remain in the heap and might ultimately be added
-      // to a CSet in the future. So we have to be careful here and
-      // make sure the region's RSet is ready for parallel iteration
-      // whenever this might be required in the future.
-      cur->rem_set()->reset_for_par_iteration();
-      cur->reset_bot();
-      cl->set_region(cur);
-      cur->object_iterate(&rspc);
+  // Reset the claim values in the regions in the collection set.
+  reset_cset_heap_region_claim_values();
 
-      // A number of manipulations to make the TAMS be the current top,
-      // and the marked bytes be the ones observed in the iteration.
-      if (_g1h->concurrent_mark()->at_least_one_mark_complete()) {
-        // The comments below are the postconditions achieved by the
-        // calls.  Note especially the last such condition, which says that
-        // the count of marked bytes has been properly restored.
-        cur->note_start_of_marking(false);
-        // _next_top_at_mark_start == top, _next_marked_bytes == 0
-        cur->add_to_marked_bytes(rspc.prev_marked_bytes());
-        // _next_marked_bytes == prev_marked_bytes.
-        cur->note_end_of_marking();
-        // _prev_top_at_mark_start == top(),
-        // _prev_marked_bytes == prev_marked_bytes
-      }
-      // If there is no mark in progress, we modified the _next variables
-      // above needlessly, but harmlessly.
-      if (_g1h->mark_in_progress()) {
-        cur->note_start_of_marking(false);
-        // _next_top_at_mark_start == top, _next_marked_bytes == 0
-        // _next_marked_bytes == next_marked_bytes.
-      }
-    }
-    cur = cur->next_in_collection_set();
-  }
+  assert(check_cset_heap_region_claim_values(HeapRegion::InitialClaimValue), "sanity");
   assert(g1_policy()->assertMarkedBytesDataOK(), "Should be!");
 
   // Now restore saved marks, if any.
@@ -4161,6 +4035,7 @@ void G1CollectedHeap::remove_self_forwarding_pointers() {
       markOop m = _preserved_marks_of_objs->at(i);
       obj->set_mark(m);
     }
+
     // Delete the preserved marks growable arrays (allocated on the C heap).
     delete _objs_with_preserved_marks;
     delete _preserved_marks_of_objs;
