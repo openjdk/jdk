@@ -57,7 +57,6 @@ WorkGang::WorkGang(const char* name,
                    bool        are_GC_task_threads,
                    bool        are_ConcurrentGC_threads) :
   AbstractWorkGang(name, are_GC_task_threads, are_ConcurrentGC_threads) {
-  // Save arguments.
   _total_workers = workers;
 }
 
@@ -127,6 +126,12 @@ GangWorker* AbstractWorkGang::gang_worker(int i) const {
 }
 
 void WorkGang::run_task(AbstractGangTask* task) {
+  run_task(task, total_workers());
+}
+
+void WorkGang::run_task(AbstractGangTask* task, uint no_of_parallel_workers) {
+  task->set_for_termination(no_of_parallel_workers);
+
   // This thread is executed by the VM thread which does not block
   // on ordinary MutexLocker's.
   MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
@@ -143,20 +148,30 @@ void WorkGang::run_task(AbstractGangTask* task) {
   // Tell the workers to get to work.
   monitor()->notify_all();
   // Wait for them to be finished
-  while (finished_workers() < total_workers()) {
+  while (finished_workers() < (int) no_of_parallel_workers) {
     if (TraceWorkGang) {
       tty->print_cr("Waiting in work gang %s: %d/%d finished sequence %d",
-                    name(), finished_workers(), total_workers(),
+                    name(), finished_workers(), no_of_parallel_workers,
                     _sequence_number);
     }
     monitor()->wait(/* no_safepoint_check */ true);
   }
   _task = NULL;
   if (TraceWorkGang) {
-    tty->print_cr("/nFinished work gang %s: %d/%d sequence %d",
-                  name(), finished_workers(), total_workers(),
+    tty->print_cr("\nFinished work gang %s: %d/%d sequence %d",
+                  name(), finished_workers(), no_of_parallel_workers,
                   _sequence_number);
+    Thread* me = Thread::current();
+    tty->print_cr("  T: 0x%x  VM_thread: %d", me, me->is_VM_thread());
   }
+}
+
+void FlexibleWorkGang::run_task(AbstractGangTask* task) {
+  // If active_workers() is passed, _finished_workers
+  // must only be incremented for workers that find non_null
+  // work (as opposed to all those that just check that the
+  // task is not null).
+  WorkGang::run_task(task, (uint) active_workers());
 }
 
 void AbstractWorkGang::stop() {
@@ -168,10 +183,10 @@ void AbstractWorkGang::stop() {
   _task = NULL;
   _terminate = true;
   monitor()->notify_all();
-  while (finished_workers() < total_workers()) {
+  while (finished_workers() < active_workers()) {
     if (TraceWorkGang) {
       tty->print_cr("Waiting in work gang %s: %d/%d finished",
-                    name(), finished_workers(), total_workers());
+                    name(), finished_workers(), active_workers());
     }
     monitor()->wait(/* no_safepoint_check */ true);
   }
@@ -275,10 +290,12 @@ void GangWorker::loop() {
         // Check for new work.
         if ((data.task() != NULL) &&
             (data.sequence_number() != previous_sequence_number)) {
-          gang()->internal_note_start();
-          gang_monitor->notify_all();
-          part = gang()->started_workers() - 1;
-          break;
+          if (gang()->needs_more_workers()) {
+            gang()->internal_note_start();
+            gang_monitor->notify_all();
+            part = gang()->started_workers() - 1;
+            break;
+          }
         }
         // Nothing to do.
         gang_monitor->wait(/* no_safepoint_check */ true);
@@ -350,6 +367,9 @@ const char* AbstractGangTask::name() const {
 
 #endif /* PRODUCT */
 
+// FlexibleWorkGang
+
+
 // *** WorkGangBarrierSync
 
 WorkGangBarrierSync::WorkGangBarrierSync()
@@ -411,10 +431,8 @@ bool SubTasksDone::valid() {
 }
 
 void SubTasksDone::set_n_threads(int t) {
-#ifdef ASSERT
   assert(_claimed == 0 || _threads_completed == _n_threads,
          "should not be called while tasks are being processed!");
-#endif
   _n_threads = (t == 0 ? 1 : t);
 }
 
