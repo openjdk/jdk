@@ -1465,8 +1465,14 @@ void Assembler::jccb(Condition cc, Label& L) {
   if (L.is_bound()) {
     const int short_size = 2;
     address entry = target(L);
-    assert(is8bit((intptr_t)entry - ((intptr_t)_code_pos + short_size)),
-           "Dispacement too large for a short jmp");
+#ifdef ASSERT
+    intptr_t dist = (intptr_t)entry - ((intptr_t)_code_pos + short_size);
+    intptr_t delta = short_branch_delta();
+    if (delta != 0) {
+      dist += (dist < 0 ? (-delta) :delta);
+    }
+    assert(is8bit(dist), "Dispacement too large for a short jmp");
+#endif
     intptr_t offs = (intptr_t)entry - (intptr_t)_code_pos;
     // 0111 tttn #8-bit disp
     emit_byte(0x70 | cc);
@@ -1532,9 +1538,15 @@ void Assembler::jmpb(Label& L) {
   if (L.is_bound()) {
     const int short_size = 2;
     address entry = target(L);
-    assert(is8bit((entry - _code_pos) + short_size),
-           "Dispacement too large for a short jmp");
     assert(entry != NULL, "jmp most probably wrong");
+#ifdef ASSERT
+    intptr_t dist = (intptr_t)entry - ((intptr_t)_code_pos + short_size);
+    intptr_t delta = short_branch_delta();
+    if (delta != 0) {
+      dist += (dist < 0 ? (-delta) :delta);
+    }
+    assert(is8bit(dist), "Dispacement too large for a short jmp");
+#endif
     intptr_t offs = entry - _code_pos;
     emit_byte(0xEB);
     emit_byte((offs - short_size) & 0xFF);
@@ -9280,6 +9292,7 @@ void MacroAssembler::string_indexofC8(Register str1, Register str2,
                                       Register cnt1, Register cnt2,
                                       int int_cnt2,  Register result,
                                       XMMRegister vec, Register tmp) {
+  ShortBranchVerifier sbv(this);
   assert(UseSSE42Intrinsics, "SSE4.2 is required");
 
   // This method uses pcmpestri inxtruction with bound registers
@@ -9409,9 +9422,9 @@ void MacroAssembler::string_indexofC8(Register str1, Register str2,
       pcmpestri(vec, Address(result, tmp, Address::times_2, 0), 0x0d);
     }
     // Need to reload strings pointers if not matched whole vector
-    jccb(Assembler::noOverflow, RELOAD_SUBSTR); // OF == 0
+    jcc(Assembler::noOverflow, RELOAD_SUBSTR); // OF == 0
     addptr(cnt2, 8);
-    jccb(Assembler::negative, SCAN_SUBSTR);
+    jcc(Assembler::negative, SCAN_SUBSTR);
     // Fall through if found full substring
 
   } // (int_cnt2 > 8)
@@ -9430,6 +9443,7 @@ void MacroAssembler::string_indexof(Register str1, Register str2,
                                     Register cnt1, Register cnt2,
                                     int int_cnt2,  Register result,
                                     XMMRegister vec, Register tmp) {
+  ShortBranchVerifier sbv(this);
   assert(UseSSE42Intrinsics, "SSE4.2 is required");
   //
   // int_cnt2 is length of small (< 8 chars) constant substring
@@ -9691,6 +9705,7 @@ void MacroAssembler::string_indexof(Register str1, Register str2,
 void MacroAssembler::string_compare(Register str1, Register str2,
                                     Register cnt1, Register cnt2, Register result,
                                     XMMRegister vec1) {
+  ShortBranchVerifier sbv(this);
   Label LENGTH_DIFF_LABEL, POP_LABEL, DONE_LABEL, WHILE_HEAD_LABEL;
 
   // Compute the minimum of the string lengths and the
@@ -9827,6 +9842,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
 void MacroAssembler::char_arrays_equals(bool is_array_equ, Register ary1, Register ary2,
                                         Register limit, Register result, Register chr,
                                         XMMRegister vec1, XMMRegister vec2) {
+  ShortBranchVerifier sbv(this);
   Label TRUE_LABEL, FALSE_LABEL, DONE, COMPARE_VECTORS, COMPARE_CHAR;
 
   int length_offset  = arrayOopDesc::length_offset_in_bytes();
@@ -9946,6 +9962,7 @@ void MacroAssembler::char_arrays_equals(bool is_array_equ, Register ary1, Regist
 void MacroAssembler::generate_fill(BasicType t, bool aligned,
                                    Register to, Register value, Register count,
                                    Register rtmp, XMMRegister xtmp) {
+  ShortBranchVerifier sbv(this);
   assert_different_registers(to, value, count, rtmp);
   Label L_exit, L_skip_align1, L_skip_align2, L_fill_byte;
   Label L_fill_2_bytes, L_fill_4_bytes;
