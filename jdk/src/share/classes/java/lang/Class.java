@@ -631,6 +631,7 @@ public final
      *     <cite>The Java&trade; Virtual Machine Specification</cite>
      * @since 1.5
      */
+    @SuppressWarnings("unchecked")
     public TypeVariable<Class<T>>[] getTypeParameters() {
         if (getGenericSignature() != null)
             return (TypeVariable<Class<T>>[])getGenericInfo().getTypeParameters();
@@ -1303,7 +1304,7 @@ public final
 
         return java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Class<?>[]>() {
-                public Class[] run() {
+                public Class<?>[] run() {
                     List<Class<?>> list = new ArrayList<>();
                     Class<?> currentClass = Class.this;
                     while (currentClass != null) {
@@ -1315,7 +1316,7 @@ public final
                         }
                         currentClass = currentClass.getSuperclass();
                     }
-                    return list.toArray(new Class[0]);
+                    return list.toArray(new Class<?>[0]);
                 }
             });
     }
@@ -2150,7 +2151,7 @@ public final
      * Return the Virtual Machine's Class object for the named
      * primitive type.
      */
-    static native Class getPrimitiveClass(String name);
+    static native Class<?> getPrimitiveClass(String name);
 
 
     /*
@@ -2395,7 +2396,9 @@ public final
         }
         // No cached value available; request value from VM
         if (isInterface()) {
-            res = new Constructor[0];
+            @SuppressWarnings("unchecked")
+            Constructor<T>[] temporaryRes = (Constructor<T>[]) new Constructor<?>[0];
+            res = temporaryRes;
         } else {
             res = getDeclaredConstructors0(publicOnly);
         }
@@ -2951,7 +2954,9 @@ public final
                                 return null;
                             }
                         });
-                enumConstants = (T[])values.invoke(null);
+                @SuppressWarnings("unchecked")
+                T[] temporaryConstants = (T[])values.invoke(null);
+                enumConstants = temporaryConstants;
             }
             // These can happen when users concoct enum-like classes
             // that don't comply with the enum spec.
@@ -2996,6 +3001,7 @@ public final
      *
      * @since 1.5
      */
+    @SuppressWarnings("unchecked")
     public T cast(Object obj) {
         if (obj != null && !isInstance(obj))
             throw new ClassCastException(cannotCastMsg(obj));
@@ -3026,6 +3032,7 @@ public final
      *    the class itself).
      * @since 1.5
      */
+    @SuppressWarnings("unchecked")
     public <U> Class<? extends U> asSubclass(Class<U> clazz) {
         if (clazz.isAssignableFrom(this))
             return (Class<? extends U>) this;
@@ -3037,6 +3044,7 @@ public final
      * @throws NullPointerException {@inheritDoc}
      * @since 1.5
      */
+    @SuppressWarnings("unchecked")
     public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
         if (annotationClass == null)
             throw new NullPointerException();

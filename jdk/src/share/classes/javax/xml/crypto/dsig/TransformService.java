@@ -157,9 +157,9 @@ public abstract class TransformService implements Transform {
         if (mechanismType.equals("DOM")) {
             dom = true;
         }
-        List services = GetInstance.getServices("TransformService", algorithm);
-        for (Iterator t = services.iterator(); t.hasNext(); ) {
-            Service s = (Service)t.next();
+        List<Service> services = GetInstance.getServices("TransformService", algorithm);
+        for (Iterator<Service> t = services.iterator(); t.hasNext(); ) {
+            Service s = t.next();
             String value = s.getAttribute("MechanismType");
             if ((value == null && dom) ||
                 (value != null && value.equals(mechanismType))) {
@@ -277,7 +277,7 @@ public abstract class TransformService implements Transform {
                  + " mechanism not available");
     }
 
-    private static class MechanismMapEntry implements Map.Entry {
+    private static class MechanismMapEntry implements Map.Entry<String,String> {
         private final String mechanism;
         private final String algorithm;
         private final String key;
@@ -290,19 +290,19 @@ public abstract class TransformService implements Transform {
             if (!(o instanceof Map.Entry)) {
                 return false;
             }
-            Map.Entry e = (Map.Entry) o;
+            Map.Entry<?,?> e = (Map.Entry<?,?>) o;
             return (getKey()==null ?
                     e.getKey()==null : getKey().equals(e.getKey())) &&
                    (getValue()==null ?
                     e.getValue()==null : getValue().equals(e.getValue()));
         }
-        public Object getKey() {
+        public String getKey() {
             return key;
         }
-        public Object getValue() {
+        public String getValue() {
             return mechanism;
         }
-        public Object setValue(Object value) {
+        public String setValue(String value) {
             throw new UnsupportedOperationException();
         }
         public int hashCode() {

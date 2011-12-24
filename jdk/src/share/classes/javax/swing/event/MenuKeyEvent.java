@@ -47,6 +47,7 @@ import java.awt.Component;
  *
  * @author Georges Saab
  */
+@SuppressWarnings("serial")
 public class MenuKeyEvent extends KeyEvent {
     private MenuElement path[];
     private MenuSelectionManager manager;

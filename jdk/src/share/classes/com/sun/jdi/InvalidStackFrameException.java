@@ -33,6 +33,7 @@ package com.sun.jdi;
  * @since  1.3
  */
 public class InvalidStackFrameException extends RuntimeException {
+    private static final long serialVersionUID = -1919378296505827922L;
     public InvalidStackFrameException() {
         super();
     }

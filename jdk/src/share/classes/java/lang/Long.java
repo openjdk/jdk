@@ -66,6 +66,7 @@ public final class Long extends Number implements Comparable<Long> {
      *
      * @since   JDK1.1
      */
+    @SuppressWarnings("unchecked")
     public static final Class<Long>     TYPE = (Class<Long>) Class.getPrimitiveClass("long");
 
     /**
@@ -734,7 +735,7 @@ public final class Long extends Number implements Comparable<Long> {
      * {@code long} value.
      */
     public long longValue() {
-        return (long)value;
+        return value;
     }
 
     /**

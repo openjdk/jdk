@@ -98,6 +98,8 @@ public class Popup {
      * Makes the <code>Popup</code> visible. If the <code>Popup</code> is
      * currently visible, this has no effect.
      */
+
+    @SuppressWarnings("deprecation")
     public void show() {
         Component component = getComponent();
 
@@ -114,6 +116,8 @@ public class Popup {
      * on a <code>disposed</code> <code>Popup</code>, indeterminate
      * behavior will result.
      */
+
+    @SuppressWarnings("deprecation")
     public void hide() {
         Component component = getComponent();
 

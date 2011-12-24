@@ -77,7 +77,7 @@ public class PaintEventDispatcher {
     public PaintEvent createPaintEvent(Component target, int x, int y, int w,
                                        int h) {
 
-        return new PaintEvent((Component)target, PaintEvent.PAINT,
+        return new PaintEvent(target, PaintEvent.PAINT,
                               new Rectangle(x, y, w, h));
     }
 
