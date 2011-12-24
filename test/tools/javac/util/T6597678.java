@@ -41,6 +41,7 @@ import javax.tools.Diagnostic;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JavacMessages;
+import com.sun.tools.javac.util.Log;
 
 @SupportedOptions("WriterString")
 public class T6597678 extends JavacTestingAbstractProcessor {
@@ -78,7 +79,10 @@ public class T6597678 extends JavacTestingAbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         Context context = ((JavacProcessingEnvironment) processingEnv).getContext();
-        PrintWriter out = ((JavacProcessingEnvironment) processingEnv).getWriter();
+        Log log = Log.instance(context);
+        PrintWriter noteOut = log.getWriter(Log.WriterKind.NOTICE);
+        PrintWriter warnOut = log.getWriter(Log.WriterKind.WARNING);
+        PrintWriter errOut  = log.getWriter(Log.WriterKind.ERROR);
         Locale locale = context.get(Locale.class);
         JavacMessages messages = context.get(JavacMessages.messagesKey);
 
@@ -86,13 +90,20 @@ public class T6597678 extends JavacTestingAbstractProcessor {
         if (round == 1) {
             initialLocale = locale;
             initialMessages = messages;
-            initialWriter = out;
+            initialNoteWriter = noteOut;
+            initialWarnWriter = warnOut;
+            initialErrWriter  = errOut;
 
-            checkEqual("writerString", out.toString().intern(), options.get("WriterString").intern());
+            String writerStringOpt = options.get("WriterString").intern();
+            checkEqual("noteWriterString", noteOut.toString().intern(), writerStringOpt);
+            checkEqual("warnWriterString", warnOut.toString().intern(), writerStringOpt);
+            checkEqual("errWriterString",  errOut.toString().intern(),  writerStringOpt);
         } else {
             checkEqual("locale", locale, initialLocale);
             checkEqual("messages", messages, initialMessages);
-            checkEqual("writer", out, initialWriter);
+            checkEqual("noteWriter", noteOut, initialNoteWriter);
+            checkEqual("warnWriter", warnOut, initialWarnWriter);
+            checkEqual("errWriter",  errOut,  initialErrWriter);
         }
 
         return true;
@@ -109,5 +120,7 @@ public class T6597678 extends JavacTestingAbstractProcessor {
     int round = 0;
     Locale initialLocale;
     JavacMessages initialMessages;
-    PrintWriter initialWriter;
+    PrintWriter initialNoteWriter;
+    PrintWriter initialWarnWriter;
+    PrintWriter initialErrWriter;
 }
