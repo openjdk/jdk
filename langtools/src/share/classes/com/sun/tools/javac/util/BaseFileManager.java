@@ -46,6 +46,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 
@@ -53,9 +54,9 @@ import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.file.FSInfo;
 import com.sun.tools.javac.file.Locations;
-import com.sun.tools.javac.main.JavacOption;
-import com.sun.tools.javac.main.OptionName;
-import com.sun.tools.javac.main.RecognizedOptions;
+import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.main.OptionHelper;
+import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
 import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 
 /**
@@ -101,7 +102,7 @@ public abstract class BaseFileManager {
     protected Locations locations;
 
     protected Source getSource() {
-        String sourceName = options.get(OptionName.SOURCE);
+        String sourceName = options.get(Option.SOURCE);
         Source source = null;
         if (sourceName != null)
             source = Source.lookup(sourceName);
@@ -145,15 +146,31 @@ public abstract class BaseFileManager {
 
     // <editor-fold defaultstate="collapsed" desc="Option handling">
     public boolean handleOption(String current, Iterator<String> remaining) {
-        for (JavacOption o: javacFileManagerOptions) {
+        OptionHelper helper = new GrumpyHelper(log) {
+            @Override
+            public String get(Option option) {
+                return options.get(option.getText());
+            }
+
+            @Override
+            public void put(String name, String value) {
+                options.put(name, value);
+            }
+
+            @Override
+            public void remove(String name) {
+                options.remove(name);
+            }
+        };
+        for (Option o: javacFileManagerOptions) {
             if (o.matches(current))  {
                 if (o.hasArg()) {
                     if (remaining.hasNext()) {
-                        if (!o.process(options, current, remaining.next()))
+                        if (!o.process(helper, current, remaining.next()))
                             return true;
                     }
                 } else {
-                    if (!o.process(options, current))
+                    if (!o.process(helper, current))
                         return true;
                 }
                 // operand missing, or process returned false
@@ -164,12 +181,11 @@ public abstract class BaseFileManager {
         return false;
     }
     // where
-        private static JavacOption[] javacFileManagerOptions =
-            RecognizedOptions.getJavacFileManagerOptions(
-            new RecognizedOptions.GrumpyHelper(Log.instance(new Context())));
+        private static Set<Option> javacFileManagerOptions =
+            Option.getJavacFileManagerOptions();
 
     public int isSupportedOption(String option) {
-        for (JavacOption o : javacFileManagerOptions) {
+        for (Option o : javacFileManagerOptions) {
             if (o.matches(option))
                 return o.hasArg() ? 1 : 0;
         }
@@ -191,7 +207,7 @@ public abstract class BaseFileManager {
     }
 
     public String getEncodingName() {
-        String encName = options.get(OptionName.ENCODING);
+        String encName = options.get(Option.ENCODING);
         if (encName == null)
             return getDefaultEncodingName();
         else
