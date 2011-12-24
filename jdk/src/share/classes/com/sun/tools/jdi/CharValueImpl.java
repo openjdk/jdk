@@ -75,7 +75,7 @@ public class CharValueImpl extends PrimitiveValueImpl
     }
 
     public char charValue() {
-        return(char)value;
+        return value;
     }
 
     public short shortValue() {

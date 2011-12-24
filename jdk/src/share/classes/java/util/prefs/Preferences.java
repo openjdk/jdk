@@ -413,7 +413,7 @@ public abstract class Preferences {
      * @throws IllegalArgumentException if the package has node preferences
      *         node associated with it.
      */
-    private static String nodeName(Class c) {
+    private static String nodeName(Class<?> c) {
         if (c.isArray())
             throw new IllegalArgumentException(
                 "Arrays have no associated preferences node.");

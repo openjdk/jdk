@@ -1032,7 +1032,7 @@ public final class System {
      */
     @Deprecated
     public static void runFinalizersOnExit(boolean value) {
-        Runtime.getRuntime().runFinalizersOnExit(value);
+        Runtime.runFinalizersOnExit(value);
     }
 
     /**

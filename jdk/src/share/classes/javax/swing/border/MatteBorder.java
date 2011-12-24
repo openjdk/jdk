@@ -46,6 +46,7 @@ import javax.swing.Icon;
  *
  * @author Amy Fowler
  */
+@SuppressWarnings("serial")
 public class MatteBorder extends EmptyBorder
 {
     protected Color color;

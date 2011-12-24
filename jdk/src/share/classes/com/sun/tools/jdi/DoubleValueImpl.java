@@ -101,7 +101,7 @@ public class DoubleValueImpl extends PrimitiveValueImpl
     }
 
     public double doubleValue() {
-        return(double)value;
+        return value;
     }
 
     byte checkedByteValue() throws InvalidTypeException {
