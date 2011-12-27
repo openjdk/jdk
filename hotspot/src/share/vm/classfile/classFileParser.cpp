@@ -45,6 +45,7 @@
 #include "oops/methodOop.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiThreadState.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/reflection.hpp"
@@ -2639,8 +2640,11 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
                                                     TempNewSymbol& parsed_name,
                                                     bool verify,
                                                     TRAPS) {
-  // So that JVMTI can cache class file in the state before retransformable agents
-  // have modified it
+  // When a retransformable agent is attached, JVMTI caches the
+  // class bytes that existed before the first retransformation.
+  // If RedefineClasses() was used before the retransformable
+  // agent attached, then the cached class bytes may not be the
+  // original class bytes.
   unsigned char *cached_class_file_bytes = NULL;
   jint cached_class_file_length;
 
@@ -2660,6 +2664,20 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   _max_bootstrap_specifier_index = -1;
 
   if (JvmtiExport::should_post_class_file_load_hook()) {
+    // Get the cached class file bytes (if any) from the
+    // class that is being redefined.
+    JvmtiThreadState *state = JvmtiThreadState::state_for(jt);
+    KlassHandle      *h_class_being_redefined =
+                        state->get_class_being_redefined();
+    if (h_class_being_redefined != NULL) {
+      instanceKlassHandle ikh_class_being_redefined =
+        instanceKlassHandle(THREAD, (*h_class_being_redefined)());
+      cached_class_file_bytes =
+        ikh_class_being_redefined->get_cached_class_file_bytes();
+      cached_class_file_length =
+        ikh_class_being_redefined->get_cached_class_file_len();
+    }
+
     unsigned char* ptr = cfs->buffer();
     unsigned char* end_ptr = cfs->buffer() + cfs->length();
 
