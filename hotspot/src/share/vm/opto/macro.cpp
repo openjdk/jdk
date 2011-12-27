@@ -1388,6 +1388,7 @@ void PhaseMacroExpand::expand_allocate_common(
     result_phi_rawmem->init_req(fast_result_path, fast_oop_rawmem);
   } else {
     slow_region = ctrl;
+    result_phi_i_o = i_o; // Rename it to use in the following code.
   }
 
   // Generate slow-path call
@@ -1412,6 +1413,10 @@ void PhaseMacroExpand::expand_allocate_common(
   copy_call_debug_info((CallNode *) alloc,  call);
   if (!always_slow) {
     call->set_cnt(PROB_UNLIKELY_MAG(4));  // Same effect as RC_UNCOMMON.
+  } else {
+    // Hook i_o projection to avoid its elimination during allocation
+    // replacement (when only a slow call is generated).
+    call->set_req(TypeFunc::I_O, result_phi_i_o);
   }
   _igvn.replace_node(alloc, call);
   transform_later(call);
@@ -1428,8 +1433,10 @@ void PhaseMacroExpand::expand_allocate_common(
   //
   extract_call_projections(call);
 
-  // An allocate node has separate memory projections for the uses on the control and i_o paths
-  // Replace uses of the control memory projection with result_phi_rawmem (unless we are only generating a slow call)
+  // An allocate node has separate memory projections for the uses on
+  // the control and i_o paths. Replace the control memory projection with
+  // result_phi_rawmem (unless we are only generating a slow call when
+  // both memory projections are combined)
   if (!always_slow && _memproj_fallthrough != NULL) {
     for (DUIterator_Fast imax, i = _memproj_fallthrough->fast_outs(imax); i < imax; i++) {
       Node *use = _memproj_fallthrough->fast_out(i);
@@ -1440,8 +1447,8 @@ void PhaseMacroExpand::expand_allocate_common(
       --i;
     }
   }
-  // Now change uses of _memproj_catchall to use _memproj_fallthrough and delete _memproj_catchall so
-  // we end up with a call that has only 1 memory projection
+  // Now change uses of _memproj_catchall to use _memproj_fallthrough and delete
+  // _memproj_catchall so we end up with a call that has only 1 memory projection.
   if (_memproj_catchall != NULL ) {
     if (_memproj_fallthrough == NULL) {
       _memproj_fallthrough = new (C, 1) ProjNode(call, TypeFunc::Memory);
@@ -1455,17 +1462,18 @@ void PhaseMacroExpand::expand_allocate_common(
       // back up iterator
       --i;
     }
+    assert(_memproj_catchall->outcnt() == 0, "all uses must be deleted");
+    _igvn.remove_dead_node(_memproj_catchall);
   }
 
-  // An allocate node has separate i_o projections for the uses on the control and i_o paths
-  // Replace uses of the control i_o projection with result_phi_i_o (unless we are only generating a slow call)
-  if (_ioproj_fallthrough == NULL) {
-    _ioproj_fallthrough = new (C, 1) ProjNode(call, TypeFunc::I_O);
-    transform_later(_ioproj_fallthrough);
-  } else if (!always_slow) {
+  // An allocate node has separate i_o projections for the uses on the control
+  // and i_o paths. Always replace the control i_o projection with result i_o
+  // otherwise incoming i_o become dead when only a slow call is generated
+  // (it is different from memory projections where both projections are
+  // combined in such case).
+  if (_ioproj_fallthrough != NULL) {
     for (DUIterator_Fast imax, i = _ioproj_fallthrough->fast_outs(imax); i < imax; i++) {
       Node *use = _ioproj_fallthrough->fast_out(i);
-
       _igvn.hash_delete(use);
       imax -= replace_input(use, _ioproj_fallthrough, result_phi_i_o);
       _igvn._worklist.push(use);
@@ -1473,9 +1481,13 @@ void PhaseMacroExpand::expand_allocate_common(
       --i;
     }
   }
-  // Now change uses of _ioproj_catchall to use _ioproj_fallthrough and delete _ioproj_catchall so
-  // we end up with a call that has only 1 control projection
+  // Now change uses of _ioproj_catchall to use _ioproj_fallthrough and delete
+  // _ioproj_catchall so we end up with a call that has only 1 i_o projection.
   if (_ioproj_catchall != NULL ) {
+    if (_ioproj_fallthrough == NULL) {
+      _ioproj_fallthrough = new (C, 1) ProjNode(call, TypeFunc::I_O);
+      transform_later(_ioproj_fallthrough);
+    }
     for (DUIterator_Fast imax, i = _ioproj_catchall->fast_outs(imax); i < imax; i++) {
       Node *use = _ioproj_catchall->fast_out(i);
       _igvn.hash_delete(use);
@@ -1484,11 +1496,18 @@ void PhaseMacroExpand::expand_allocate_common(
       // back up iterator
       --i;
     }
+    assert(_ioproj_catchall->outcnt() == 0, "all uses must be deleted");
+    _igvn.remove_dead_node(_ioproj_catchall);
   }
 
   // if we generated only a slow call, we are done
-  if (always_slow)
+  if (always_slow) {
+    // Now we can unhook i_o.
+    call->set_req(TypeFunc::I_O, top());
+    if (result_phi_i_o->outcnt() == 0)
+      _igvn.remove_dead_node(result_phi_i_o);
     return;
+  }
 
 
   if (_fallthroughcatchproj != NULL) {

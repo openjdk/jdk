@@ -2522,7 +2522,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
             break;
           }
         }
-        assert(p != NULL, "must be found");
+        assert(proj != NULL, "must be found");
         p->subsume_by(proj);
       }
     }
