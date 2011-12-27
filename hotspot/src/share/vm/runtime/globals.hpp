@@ -1553,7 +1553,7 @@ class CommandLineFlags {
   product(uintx, ParGCDesiredObjsFromOverflowList, 20,                      \
           "The desired number of objects to claim from the overflow list")  \
                                                                             \
-  diagnostic(intx, ParGCStridesPerThread, 2,                                \
+  diagnostic(uintx, ParGCStridesPerThread, 2,                               \
           "The number of strides per worker thread that we divide up the "  \
           "card table scanning work into")                                  \
                                                                             \

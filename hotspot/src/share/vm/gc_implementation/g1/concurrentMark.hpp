@@ -374,9 +374,9 @@ class ConcurrentMark: public CHeapObj {
 protected:
   ConcurrentMarkThread* _cmThread;   // the thread doing the work
   G1CollectedHeap*      _g1h;        // the heap.
-  size_t                _parallel_marking_threads; // the number of marking
+  uint                  _parallel_marking_threads; // the number of marking
                                                    // threads we're use
-  size_t                _max_parallel_marking_threads; // max number of marking
+  uint                  _max_parallel_marking_threads; // max number of marking
                                                    // threads we'll ever use
   double                _sleep_factor; // how much we have to sleep, with
                                        // respect to the work we just did, to
@@ -412,8 +412,8 @@ protected:
                                     // last claimed region
 
   // marking tasks
-  size_t                  _max_task_num; // maximum task number
-  size_t                  _active_tasks; // task num currently active
+  uint                    _max_task_num; // maximum task number
+  uint                    _active_tasks; // task num currently active
   CMTask**                _tasks;        // task queue array (max_task_num len)
   CMTaskQueueSet*         _task_queues;  // task queue set
   ParallelTaskTerminator  _terminator;   // for termination
@@ -492,7 +492,7 @@ protected:
 
   // It should be called to indicate which phase we're in (concurrent
   // mark or remark) and how many threads are currently active.
-  void set_phase(size_t active_tasks, bool concurrent);
+  void set_phase(uint active_tasks, bool concurrent);
   // We do this after we're done with marking so that the marking data
   // structures are initialised to a sensible and predictable state.
   void set_non_marking_state();
@@ -505,8 +505,8 @@ protected:
   }
 
   // accessor methods
-  size_t parallel_marking_threads() { return _parallel_marking_threads; }
-  size_t max_parallel_marking_threads() { return _max_parallel_marking_threads;}
+  uint parallel_marking_threads() { return _parallel_marking_threads; }
+  uint max_parallel_marking_threads() { return _max_parallel_marking_threads;}
   double sleep_factor()             { return _sleep_factor; }
   double marking_task_overhead()    { return _marking_task_overhead;}
   double cleanup_sleep_factor()     { return _cleanup_sleep_factor; }
@@ -514,7 +514,7 @@ protected:
 
   HeapWord*               finger()        { return _finger;   }
   bool                    concurrent()    { return _concurrent; }
-  size_t                  active_tasks()  { return _active_tasks; }
+  uint                    active_tasks()  { return _active_tasks; }
   ParallelTaskTerminator* terminator()    { return &_terminator; }
 
   // It claims the next available region to be scanned by a marking
@@ -715,10 +715,10 @@ public:
   // Returns the number of GC threads to be used in a concurrent
   // phase based on the number of GC threads being used in a STW
   // phase.
-  size_t scale_parallel_threads(size_t n_par_threads);
+  uint scale_parallel_threads(uint n_par_threads);
 
   // Calculates the number of GC threads to be used in a concurrent phase.
-  size_t calc_parallel_marking_threads();
+  uint calc_parallel_marking_threads();
 
   // The following three are interaction between CM and
   // G1CollectedHeap
@@ -873,7 +873,7 @@ public:
     return _prevMarkBitMap->isMarked(addr);
   }
 
-  inline bool do_yield_check(int worker_i = 0);
+  inline bool do_yield_check(uint worker_i = 0);
   inline bool should_yield();
 
   // Called to abort the marking cycle after a Full GC takes palce.
