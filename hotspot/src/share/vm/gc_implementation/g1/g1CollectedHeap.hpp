@@ -995,7 +995,7 @@ public:
   // Initialize weak reference processing.
   virtual void ref_processing_init();
 
-  void set_par_threads(int t) {
+  void set_par_threads(uint t) {
     SharedHeap::set_par_threads(t);
     // Done in SharedHeap but oddly there are
     // two _process_strong_tasks's in a G1CollectedHeap
@@ -1298,8 +1298,8 @@ public:
   // chunk.)  For now requires that "doHeapRegion" always returns "false",
   // i.e., that a closure never attempt to abort a traversal.
   void heap_region_par_iterate_chunked(HeapRegionClosure* blk,
-                                       int worker,
-                                       int no_of_par_workers,
+                                       uint worker,
+                                       uint no_of_par_workers,
                                        jint claim_value);
 
   // It resets all the region claim values to the default.
