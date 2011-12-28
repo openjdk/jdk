@@ -80,6 +80,7 @@ public interface RetrievalMethod extends URIReference, XMLStructure {
      * @return an unmodifiable list of <code>Transform</code> objects (may be
      *    empty but never <code>null</code>).
      */
+    @SuppressWarnings("rawtypes")
     List getTransforms();
 
     /**

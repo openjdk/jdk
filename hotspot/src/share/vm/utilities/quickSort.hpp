@@ -130,7 +130,7 @@ class QuickSort : AllStatic {
   static void print_array(const char* prefix, int* array, int length);
   static bool compare_arrays(int* actual, int* expected, int length);
   template <class C> static bool sort_and_compare(int* arrayToSort, int* expectedResult, int length, C comparator, bool idempotent = false);
-  static bool test_quick_sort();
+  static void test_quick_sort();
 #endif
 };
 

@@ -1294,7 +1294,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     g1_policy()->stop_incremental_cset_building();
 
     tear_down_region_sets(false /* free_list_only */);
-    g1_policy()->set_full_young_gcs(true);
+    g1_policy()->set_gcs_are_young(true);
 
     // See the comments in g1CollectedHeap.hpp and
     // G1CollectedHeap::ref_processing_init() about
@@ -1842,7 +1842,9 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _full_collections_completed(0),
   _in_cset_fast_test(NULL),
   _in_cset_fast_test_base(NULL),
-  _dirty_cards_region_list(NULL) {
+  _dirty_cards_region_list(NULL),
+  _worker_cset_start_region(NULL),
+  _worker_cset_start_region_time_stamp(NULL) {
   _g1h = this; // To catch bugs.
   if (_process_strong_tasks == NULL || !_process_strong_tasks->valid()) {
     vm_exit_during_initialization("Failed necessary allocation.");
@@ -1863,11 +1865,16 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   }
   _rem_set_iterator = iter_arr;
 
+  _worker_cset_start_region = NEW_C_HEAP_ARRAY(HeapRegion*, n_queues);
+  _worker_cset_start_region_time_stamp = NEW_C_HEAP_ARRAY(unsigned int, n_queues);
+
   for (int i = 0; i < n_queues; i++) {
     RefToScanQueue* q = new RefToScanQueue();
     q->initialize();
     _task_queues->register_queue(i, q);
   }
+
+  clear_cset_start_regions();
 
   guarantee(_task_queues != NULL, "task_queues allocation failure.");
 }
@@ -2411,8 +2418,11 @@ void G1CollectedHeap::collect(GCCause::Cause cause) {
 }
 
 bool G1CollectedHeap::is_in(const void* p) const {
-  HeapRegion* hr = _hrs.addr_to_region((HeapWord*) p);
-  if (hr != NULL) {
+  if (_g1_committed.contains(p)) {
+    // Given that we know that p is in the committed space,
+    // heap_region_containing_raw() should successfully
+    // return the containing region.
+    HeapRegion* hr = heap_region_containing_raw(p);
     return hr->is_in(p);
   } else {
     return _perm_gen->as_gen()->is_in(p);
@@ -2684,25 +2694,80 @@ bool G1CollectedHeap::check_cset_heap_region_claim_values(jint claim_value) {
 }
 #endif // ASSERT
 
-// We want the parallel threads to start their collection
-// set iteration at different collection set regions to
-// avoid contention.
-// If we have:
-//          n collection set regions
-//          p threads
-// Then thread t will start at region t * floor (n/p)
+// Clear the cached CSet starting regions and (more importantly)
+// the time stamps. Called when we reset the GC time stamp.
+void G1CollectedHeap::clear_cset_start_regions() {
+  assert(_worker_cset_start_region != NULL, "sanity");
+  assert(_worker_cset_start_region_time_stamp != NULL, "sanity");
 
+  int n_queues = MAX2((int)ParallelGCThreads, 1);
+  for (int i = 0; i < n_queues; i++) {
+    _worker_cset_start_region[i] = NULL;
+    _worker_cset_start_region_time_stamp[i] = 0;
+  }
+}
+
+// Given the id of a worker, obtain or calculate a suitable
+// starting region for iterating over the current collection set.
 HeapRegion* G1CollectedHeap::start_cset_region_for_worker(int worker_i) {
-  HeapRegion* result = g1_policy()->collection_set();
+  assert(get_gc_time_stamp() > 0, "should have been updated by now");
+
+  HeapRegion* result = NULL;
+  unsigned gc_time_stamp = get_gc_time_stamp();
+
+  if (_worker_cset_start_region_time_stamp[worker_i] == gc_time_stamp) {
+    // Cached starting region for current worker was set
+    // during the current pause - so it's valid.
+    // Note: the cached starting heap region may be NULL
+    // (when the collection set is empty).
+    result = _worker_cset_start_region[worker_i];
+    assert(result == NULL || result->in_collection_set(), "sanity");
+    return result;
+  }
+
+  // The cached entry was not valid so let's calculate
+  // a suitable starting heap region for this worker.
+
+  // We want the parallel threads to start their collection
+  // set iteration at different collection set regions to
+  // avoid contention.
+  // If we have:
+  //          n collection set regions
+  //          p threads
+  // Then thread t will start at region floor ((t * n) / p)
+
+  result = g1_policy()->collection_set();
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     size_t cs_size = g1_policy()->cset_region_length();
-    int n_workers = workers()->total_workers();
-    size_t cs_spans = cs_size / n_workers;
-    size_t ind      = cs_spans * worker_i;
-    for (size_t i = 0; i < ind; i++) {
+    int active_workers = workers()->active_workers();
+    assert(UseDynamicNumberOfGCThreads ||
+             active_workers == workers()->total_workers(),
+             "Unless dynamic should use total workers");
+
+    size_t end_ind   = (cs_size * worker_i) / active_workers;
+    size_t start_ind = 0;
+
+    if (worker_i > 0 &&
+        _worker_cset_start_region_time_stamp[worker_i - 1] == gc_time_stamp) {
+      // Previous workers starting region is valid
+      // so let's iterate from there
+      start_ind = (cs_size * (worker_i - 1)) / active_workers;
+      result = _worker_cset_start_region[worker_i - 1];
+    }
+
+    for (size_t i = start_ind; i < end_ind; i++) {
       result = result->next_in_collection_set();
     }
   }
+
+  // Note: the calculated starting heap region may be NULL
+  // (when the collection set is empty).
+  assert(result == NULL || result->in_collection_set(), "sanity");
+  assert(_worker_cset_start_region_time_stamp[worker_i] != gc_time_stamp,
+         "should be updated only once per pause");
+  _worker_cset_start_region[worker_i] = result;
+  OrderAccess::storestore();
+  _worker_cset_start_region_time_stamp[worker_i] = gc_time_stamp;
   return result;
 }
 
@@ -3461,20 +3526,19 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     // for the duration of this pause.
     g1_policy()->decide_on_conc_mark_initiation();
 
-    // We do not allow initial-mark to be piggy-backed on a
-    // partially-young GC.
+    // We do not allow initial-mark to be piggy-backed on a mixed GC.
     assert(!g1_policy()->during_initial_mark_pause() ||
-            g1_policy()->full_young_gcs(), "sanity");
+            g1_policy()->gcs_are_young(), "sanity");
 
-    // We also do not allow partially-young GCs during marking.
-    assert(!mark_in_progress() || g1_policy()->full_young_gcs(), "sanity");
+    // We also do not allow mixed GCs during marking.
+    assert(!mark_in_progress() || g1_policy()->gcs_are_young(), "sanity");
 
     char verbose_str[128];
     sprintf(verbose_str, "GC pause ");
-    if (g1_policy()->full_young_gcs()) {
+    if (g1_policy()->gcs_are_young()) {
       strcat(verbose_str, "(young)");
     } else {
-      strcat(verbose_str, "(partial)");
+      strcat(verbose_str, "(mixed)");
     }
     if (g1_policy()->during_initial_mark_pause()) {
       strcat(verbose_str, " (initial-mark)");
@@ -3723,8 +3787,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         double end_time_sec = os::elapsedTime();
         double pause_time_ms = (end_time_sec - start_time_sec) * MILLIUNITS;
         g1_policy()->record_pause_time_ms(pause_time_ms);
-        int active_gc_threads = workers()->active_workers();
-        g1_policy()->record_collection_pause_end(active_gc_threads);
+        int active_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
+                                workers()->active_workers() : 1);
+        g1_policy()->record_collection_pause_end(active_workers);
 
         MemoryService::track_memory_usage();
 
@@ -5248,8 +5313,10 @@ void G1CollectedHeap::process_discovered_references() {
   int active_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
                         workers()->active_workers() : 1);
 
-  assert(active_workers == workers()->active_workers(),
-         "Need to reset active_workers");
+  assert(!G1CollectedHeap::use_parallel_gc_threads() ||
+           active_workers == workers()->active_workers(),
+           "Need to reset active_workers");
+
   set_par_threads(active_workers);
   G1ParPreserveCMReferentsTask keep_cm_referents(this, active_workers, _task_queues);
 
@@ -5387,13 +5454,13 @@ void G1CollectedHeap::evacuate_collection_set() {
     assert(UseDynamicNumberOfGCThreads ||
            n_workers == workers()->total_workers(),
            "If not dynamic should be using all the  workers");
+    workers()->set_active_workers(n_workers);
     set_par_threads(n_workers);
   } else {
     assert(n_par_threads() == 0,
            "Should be the original non-parallel value");
     n_workers = 1;
   }
-  workers()->set_active_workers(n_workers);
 
   G1ParTask g1_par_task(this, _task_queues);
 
@@ -5415,6 +5482,7 @@ void G1CollectedHeap::evacuate_collection_set() {
     workers()->run_task(&g1_par_task);
   } else {
     StrongRootsScope srs(this);
+    g1_par_task.set_for_termination(n_workers);
     g1_par_task.work(0);
   }
 
@@ -5663,8 +5731,8 @@ void G1CollectedHeap::cleanUpCardTable() {
     // Iterate over the dirty cards region list.
     G1ParCleanupCTTask cleanup_task(ct_bs, this);
 
-    if (ParallelGCThreads > 0) {
-      set_par_threads(workers()->total_workers());
+    if (G1CollectedHeap::use_parallel_gc_threads()) {
+      set_par_threads();
       workers()->run_task(&cleanup_task);
       set_par_threads(0);
     } else {
@@ -6072,8 +6140,9 @@ HeapRegion* MutatorAllocRegion::allocate_new_region(size_t word_size,
 void G1CollectedHeap::set_par_threads() {
   // Don't change the number of workers.  Use the value previously set
   // in the workgroup.
+  assert(G1CollectedHeap::use_parallel_gc_threads(), "shouldn't be here otherwise");
   int n_workers = workers()->active_workers();
-    assert(UseDynamicNumberOfGCThreads ||
+  assert(UseDynamicNumberOfGCThreads ||
            n_workers == workers()->total_workers(),
       "Otherwise should be using the total number of workers");
   if (n_workers == 0) {
