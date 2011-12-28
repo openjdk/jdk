@@ -30,6 +30,7 @@ import java.awt.*;
 /**
  * Event object describing changes in AWT modality
  */
+@SuppressWarnings("serial")
 public class ModalityEvent extends AWTEvent implements ActiveEvent {
 
     public static final int MODALITY_PUSHED = 1300;

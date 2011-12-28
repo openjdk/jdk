@@ -53,7 +53,7 @@ public class RawCommandLineLauncher extends AbstractLauncher implements Launchin
         super();
 
         try {
-            Class c = Class.forName("com.sun.tools.jdi.SharedMemoryTransportService");
+            Class<?> c = Class.forName("com.sun.tools.jdi.SharedMemoryTransportService");
             transportService = (TransportService)c.newInstance();
             transport = new Transport() {
                 public String name() {

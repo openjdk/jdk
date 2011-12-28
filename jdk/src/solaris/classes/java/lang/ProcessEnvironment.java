@@ -91,6 +91,7 @@ final class ProcessEnvironment
     }
 
     /* Only for use by ProcessBuilder.environment() */
+    @SuppressWarnings("unchecked")
     static Map<String,String> environment() {
         return new StringEnvironment
             ((Map<Variable,Value>)(theEnvironment.clone()));

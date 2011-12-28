@@ -154,6 +154,7 @@ import javax.accessibility.*;
  *
  * @author David Kloba
  */
+@SuppressWarnings("serial")
 public class JLayeredPane extends JComponent implements Accessible {
     /// Watch the values in getObjectForLayer()
     /** Convenience object defining the Default layer. Equivalent to new Integer(0).*/
@@ -256,7 +257,7 @@ public class JLayeredPane extends JComponent implements Accessible {
      */
     public void removeAll() {
         Component[] children = getComponents();
-        Hashtable cToL = getComponentToLayer();
+        Hashtable<Component, Integer> cToL = getComponentToLayer();
         for (int counter = children.length - 1; counter >= 0; counter--) {
             Component c = children[counter];
             if (c != null && !(c instanceof JComponent)) {
@@ -768,6 +769,7 @@ public class JLayeredPane extends JComponent implements Accessible {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial")
     protected class AccessibleJLayeredPane extends AccessibleJComponent {
 
         /**

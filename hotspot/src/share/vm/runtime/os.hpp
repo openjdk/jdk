@@ -584,28 +584,28 @@ class os: AllStatic {
   static int socket(int domain, int type, int protocol);
   static int socket_close(int fd);
   static int socket_shutdown(int fd, int howto);
-  static int recv(int fd, char *buf, int nBytes, int flags);
-  static int send(int fd, char *buf, int nBytes, int flags);
-  static int raw_send(int fd, char *buf, int nBytes, int flags);
+  static int recv(int fd, char* buf, size_t nBytes, uint flags);
+  static int send(int fd, char* buf, size_t nBytes, uint flags);
+  static int raw_send(int fd, char* buf, size_t nBytes, uint flags);
   static int timeout(int fd, long timeout);
   static int listen(int fd, int count);
-  static int connect(int fd, struct sockaddr *him, int len);
-  static int bind(int fd, struct sockaddr *him, int len);
-  static int accept(int fd, struct sockaddr *him, int *len);
-  static int recvfrom(int fd, char *buf, int nbytes, int flags,
-                             struct sockaddr *from, int *fromlen);
-  static int get_sock_name(int fd, struct sockaddr *him, int *len);
-  static int sendto(int fd, char *buf, int len, int flags,
-                           struct sockaddr *to, int tolen);
-  static int socket_available(int fd, jint *pbytes);
+  static int connect(int fd, struct sockaddr* him, socklen_t len);
+  static int bind(int fd, struct sockaddr* him, socklen_t len);
+  static int accept(int fd, struct sockaddr* him, socklen_t* len);
+  static int recvfrom(int fd, char* buf, size_t nbytes, uint flags,
+                      struct sockaddr* from, socklen_t* fromlen);
+  static int get_sock_name(int fd, struct sockaddr* him, socklen_t* len);
+  static int sendto(int fd, char* buf, size_t len, uint flags,
+                    struct sockaddr* to, socklen_t tolen);
+  static int socket_available(int fd, jint* pbytes);
 
   static int get_sock_opt(int fd, int level, int optname,
-                           char *optval, int* optlen);
+                          char* optval, socklen_t* optlen);
   static int set_sock_opt(int fd, int level, int optname,
-                           const char *optval, int optlen);
+                          const char* optval, socklen_t optlen);
   static int get_host_name(char* name, int namelen);
 
-  static struct hostent*  get_host_by_name(char* name);
+  static struct hostent* get_host_by_name(char* name);
 
   // Printing 64 bit integers
   static const char* jlong_format_specifier();
@@ -714,7 +714,6 @@ class os: AllStatic {
 #ifdef TARGET_OS_ARCH_bsd_zero
 # include "os_bsd_zero.hpp"
 #endif
-
 
   // debugging support (mostly used by debug.cpp but also fatal error handler)
   static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address

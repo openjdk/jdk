@@ -821,17 +821,15 @@ jlong os::javaTimeMillis() {
   }
 }
 
-#define NANOS_PER_SEC         CONST64(1000000000)
-#define NANOS_PER_MILLISEC    1000000
 jlong os::javaTimeNanos() {
   if (!has_performance_count) {
-    return javaTimeMillis() * NANOS_PER_MILLISEC; // the best we can do.
+    return javaTimeMillis() * NANOSECS_PER_MILLISEC; // the best we can do.
   } else {
     LARGE_INTEGER current_count;
     QueryPerformanceCounter(&current_count);
     double current = as_long(current_count);
     double freq = performance_frequency;
-    jlong time = (jlong)((current/freq) * NANOS_PER_SEC);
+    jlong time = (jlong)((current/freq) * NANOSECS_PER_SEC);
     return time;
   }
 }
@@ -847,15 +845,15 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
     info_ptr->may_skip_forward = true;
   } else {
     jlong freq = performance_frequency;
-    if (freq < NANOS_PER_SEC) {
+    if (freq < NANOSECS_PER_SEC) {
       // the performance counter is 64 bits and we will
       // be multiplying it -- so no wrap in 64 bits
       info_ptr->max_value = ALL_64_BITS;
-    } else if (freq > NANOS_PER_SEC) {
+    } else if (freq > NANOSECS_PER_SEC) {
       // use the max value the counter can reach to
       // determine the max value which could be returned
       julong max_counter = (julong)ALL_64_BITS;
-      info_ptr->max_value = (jlong)(max_counter / (freq / NANOS_PER_SEC));
+      info_ptr->max_value = (jlong)(max_counter / (freq / NANOSECS_PER_SEC));
     } else {
       // the performance counter is 64 bits and we will
       // be using it directly -- so no wrap in 64 bits
@@ -4851,7 +4849,7 @@ static void initSock() {
   ::mutexUnlock(&sockFnTableMutex);
 }
 
-struct hostent*  os::get_host_by_name(char* name) {
+struct hostent* os::get_host_by_name(char* name) {
   if (!sock_initialized) {
     initSock();
   }
@@ -4882,39 +4880,39 @@ int os::listen(int fd, int count) {
   return 0;
 }
 
-int os::connect(int fd, struct sockaddr *him, int len) {
+int os::connect(int fd, struct sockaddr* him, socklen_t len) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::accept(int fd, struct sockaddr *him, int *len) {
+int os::accept(int fd, struct sockaddr* him, socklen_t* len) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::sendto(int fd, char *buf, int len, int flags,
-                        struct sockaddr *to, int tolen) {
+int os::sendto(int fd, char* buf, size_t len, uint flags,
+               struct sockaddr* to, socklen_t tolen) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::recvfrom(int fd, char *buf, int nBytes, int flags,
-                         sockaddr *from, int *fromlen) {
+int os::recvfrom(int fd, char *buf, size_t nBytes, uint flags,
+                 sockaddr* from, socklen_t* fromlen) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::recv(int fd, char *buf, int nBytes, int flags) {
+int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::send(int fd, char *buf, int nBytes, int flags) {
+int os::send(int fd, char* buf, size_t nBytes, uint flags) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::raw_send(int fd, char *buf, int nBytes, int flags) {
+int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
   ShouldNotReachHere();
   return 0;
 }
@@ -4934,24 +4932,24 @@ int os::socket_shutdown(int fd, int howto) {
   return 0;
 }
 
-int os::bind(int fd, struct sockaddr *him, int len) {
+int os::bind(int fd, struct sockaddr* him, socklen_t len) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::get_sock_name(int fd, struct sockaddr *him, int *len) {
+int os::get_sock_name(int fd, struct sockaddr* him, socklen_t* len) {
   ShouldNotReachHere();
   return 0;
 }
 
 int os::get_sock_opt(int fd, int level, int optname,
-                             char *optval, int* optlen) {
+                     char* optval, socklen_t* optlen) {
   ShouldNotReachHere();
   return 0;
 }
 
 int os::set_sock_opt(int fd, int level, int optname,
-                             const char *optval, int optlen) {
+                     const char* optval, socklen_t optlen) {
   ShouldNotReachHere();
   return 0;
 }

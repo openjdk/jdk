@@ -164,8 +164,8 @@ private:
   // times for a given worker thread.
   double* _par_last_gc_worker_other_times_ms;
 
-  // indicates whether we are in full young or partially young GC mode
-  bool _full_young_gcs;
+  // indicates whether we are in young or mixed GC mode
+  bool _gcs_are_young;
 
   // if true, then it tries to dynamically adjust the length of the
   // young list
@@ -178,10 +178,10 @@ private:
   // locker is active. This should be >= _young_list_target_length;
   size_t _young_list_max_length;
 
-  bool   _last_young_gc_full;
+  bool                  _last_gc_was_young;
 
-  unsigned              _full_young_pause_num;
-  unsigned              _partial_young_pause_num;
+  unsigned              _young_pause_num;
+  unsigned              _mixed_pause_num;
 
   bool                  _during_marking;
   bool                  _in_marking_window;
@@ -211,10 +211,10 @@ private:
   TruncatedSeq* _pending_card_diff_seq;
   TruncatedSeq* _rs_length_diff_seq;
   TruncatedSeq* _cost_per_card_ms_seq;
-  TruncatedSeq* _fully_young_cards_per_entry_ratio_seq;
-  TruncatedSeq* _partially_young_cards_per_entry_ratio_seq;
+  TruncatedSeq* _young_cards_per_entry_ratio_seq;
+  TruncatedSeq* _mixed_cards_per_entry_ratio_seq;
   TruncatedSeq* _cost_per_entry_ms_seq;
-  TruncatedSeq* _partially_young_cost_per_entry_ms_seq;
+  TruncatedSeq* _mixed_cost_per_entry_ms_seq;
   TruncatedSeq* _cost_per_byte_ms_seq;
   TruncatedSeq* _constant_other_time_ms_seq;
   TruncatedSeq* _young_other_cost_per_region_ms_seq;
@@ -322,20 +322,22 @@ public:
 
   size_t predict_pending_card_diff() {
     double prediction = get_new_neg_prediction(_pending_card_diff_seq);
-    if (prediction < 0.00001)
+    if (prediction < 0.00001) {
       return 0;
-    else
+    } else {
       return (size_t) prediction;
+    }
   }
 
   size_t predict_pending_cards() {
     size_t max_pending_card_num = _g1->max_pending_card_num();
     size_t diff = predict_pending_card_diff();
     size_t prediction;
-    if (diff > max_pending_card_num)
+    if (diff > max_pending_card_num) {
       prediction = max_pending_card_num;
-    else
+    } else {
       prediction = max_pending_card_num - diff;
+    }
 
     return prediction;
   }
@@ -356,57 +358,62 @@ public:
     return (double) pending_cards * predict_cost_per_card_ms();
   }
 
-  double predict_fully_young_cards_per_entry_ratio() {
-    return get_new_prediction(_fully_young_cards_per_entry_ratio_seq);
+  double predict_young_cards_per_entry_ratio() {
+    return get_new_prediction(_young_cards_per_entry_ratio_seq);
   }
 
-  double predict_partially_young_cards_per_entry_ratio() {
-    if (_partially_young_cards_per_entry_ratio_seq->num() < 2)
-      return predict_fully_young_cards_per_entry_ratio();
-    else
-      return get_new_prediction(_partially_young_cards_per_entry_ratio_seq);
+  double predict_mixed_cards_per_entry_ratio() {
+    if (_mixed_cards_per_entry_ratio_seq->num() < 2) {
+      return predict_young_cards_per_entry_ratio();
+    } else {
+      return get_new_prediction(_mixed_cards_per_entry_ratio_seq);
+    }
   }
 
   size_t predict_young_card_num(size_t rs_length) {
     return (size_t) ((double) rs_length *
-                     predict_fully_young_cards_per_entry_ratio());
+                     predict_young_cards_per_entry_ratio());
   }
 
   size_t predict_non_young_card_num(size_t rs_length) {
     return (size_t) ((double) rs_length *
-                     predict_partially_young_cards_per_entry_ratio());
+                     predict_mixed_cards_per_entry_ratio());
   }
 
   double predict_rs_scan_time_ms(size_t card_num) {
-    if (full_young_gcs())
+    if (gcs_are_young()) {
       return (double) card_num * get_new_prediction(_cost_per_entry_ms_seq);
-    else
-      return predict_partially_young_rs_scan_time_ms(card_num);
+    } else {
+      return predict_mixed_rs_scan_time_ms(card_num);
+    }
   }
 
-  double predict_partially_young_rs_scan_time_ms(size_t card_num) {
-    if (_partially_young_cost_per_entry_ms_seq->num() < 3)
+  double predict_mixed_rs_scan_time_ms(size_t card_num) {
+    if (_mixed_cost_per_entry_ms_seq->num() < 3) {
       return (double) card_num * get_new_prediction(_cost_per_entry_ms_seq);
-    else
-      return (double) card_num *
-        get_new_prediction(_partially_young_cost_per_entry_ms_seq);
+    } else {
+      return (double) (card_num *
+                       get_new_prediction(_mixed_cost_per_entry_ms_seq));
+    }
   }
 
   double predict_object_copy_time_ms_during_cm(size_t bytes_to_copy) {
-    if (_cost_per_byte_ms_during_cm_seq->num() < 3)
-      return 1.1 * (double) bytes_to_copy *
-        get_new_prediction(_cost_per_byte_ms_seq);
-    else
+    if (_cost_per_byte_ms_during_cm_seq->num() < 3) {
+      return (1.1 * (double) bytes_to_copy) *
+              get_new_prediction(_cost_per_byte_ms_seq);
+    } else {
       return (double) bytes_to_copy *
-        get_new_prediction(_cost_per_byte_ms_during_cm_seq);
+             get_new_prediction(_cost_per_byte_ms_during_cm_seq);
+    }
   }
 
   double predict_object_copy_time_ms(size_t bytes_to_copy) {
-    if (_in_marking_window && !_in_marking_window_im)
+    if (_in_marking_window && !_in_marking_window_im) {
       return predict_object_copy_time_ms_during_cm(bytes_to_copy);
-    else
+    } else {
       return (double) bytes_to_copy *
-        get_new_prediction(_cost_per_byte_ms_seq);
+              get_new_prediction(_cost_per_byte_ms_seq);
+    }
   }
 
   double predict_constant_other_time_ms() {
@@ -414,15 +421,13 @@ public:
   }
 
   double predict_young_other_time_ms(size_t young_num) {
-    return
-      (double) young_num *
-      get_new_prediction(_young_other_cost_per_region_ms_seq);
+    return (double) young_num *
+           get_new_prediction(_young_other_cost_per_region_ms_seq);
   }
 
   double predict_non_young_other_time_ms(size_t non_young_num) {
-    return
-      (double) non_young_num *
-      get_new_prediction(_non_young_other_cost_per_region_ms_seq);
+    return (double) non_young_num *
+           get_new_prediction(_non_young_other_cost_per_region_ms_seq);
   }
 
   void check_if_region_is_too_expensive(double predicted_time_ms);
@@ -456,7 +461,7 @@ public:
   double predict_survivor_regions_evac_time();
 
   void cset_regions_freed() {
-    bool propagate = _last_young_gc_full && !_in_marking_window;
+    bool propagate = _last_gc_was_young && !_in_marking_window;
     _short_lived_surv_rate_group->all_surviving_words_recorded(propagate);
     _survivor_surv_rate_group->all_surviving_words_recorded(propagate);
     // also call it on any more surv rate groups
@@ -628,8 +633,8 @@ private:
   // initial-mark work.
   volatile bool _during_initial_mark_pause;
 
-  bool _should_revert_to_full_young_gcs;
-  bool _last_full_young_gc;
+  bool _should_revert_to_young_gcs;
+  bool _last_young_gc;
 
   // This set of variables tracks the collector efficiency, in order to
   // determine whether we should initiate a new marking.
@@ -985,11 +990,11 @@ public:
     return _young_list_max_length;
   }
 
-  bool full_young_gcs() {
-    return _full_young_gcs;
+  bool gcs_are_young() {
+    return _gcs_are_young;
   }
-  void set_full_young_gcs(bool full_young_gcs) {
-    _full_young_gcs = full_young_gcs;
+  void set_gcs_are_young(bool gcs_are_young) {
+    _gcs_are_young = gcs_are_young;
   }
 
   bool adaptive_young_list_length() {

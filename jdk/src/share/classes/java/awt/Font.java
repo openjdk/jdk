@@ -254,7 +254,7 @@ public class Font implements java.io.Serializable
      * @serial
      * @see #getAttributes()
      */
-    private Hashtable fRequestedAttributes;
+    private Hashtable<Object, Object> fRequestedAttributes;
 
     /*
      * Constants to be used for logical font family names.
@@ -446,6 +446,7 @@ public class Font implements java.io.Serializable
     //       We implement this functionality in a package-private method
     //       to insure that it cannot be overridden by client subclasses.
     //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
+    @SuppressWarnings("deprecation")
     final FontPeer getPeer_NoClientCode() {
         if(peer == null) {
             Toolkit tk = Toolkit.getDefaultToolkit();
@@ -907,11 +908,11 @@ public class Font implements java.io.Serializable
                             break;
                         }
                         if (tracker != null) {
-                            if (totalSize+bytesRead > tracker.MAX_FILE_SIZE) {
+                            if (totalSize+bytesRead > CreatedFontTracker.MAX_FILE_SIZE) {
                                 throw new IOException("File too big.");
                             }
                             if (totalSize+tracker.getNumBytes() >
-                                tracker.MAX_TOTAL_BYTES)
+                                CreatedFontTracker.MAX_TOTAL_BYTES)
                               {
                                 throw new IOException("Total files too big.");
                             }
@@ -2126,11 +2127,11 @@ public class Font implements java.io.Serializable
         return false;   // REMIND always safe, but prevents caller optimize
     }
 
-    private transient SoftReference flmref;
+    private transient SoftReference<FontLineMetrics> flmref;
     private FontLineMetrics defaultLineMetrics(FontRenderContext frc) {
         FontLineMetrics flm = null;
         if (flmref == null
-            || (flm = (FontLineMetrics)flmref.get()) == null
+            || (flm = flmref.get()) == null
             || !flm.frc.equals(frc)) {
 
             /* The device transform in the frc is not used in obtaining line
@@ -2194,7 +2195,7 @@ public class Font implements java.io.Serializable
                                              ssOffset, italicAngle);
 
             flm = new FontLineMetrics(0, cm, frc);
-            flmref = new SoftReference(flm);
+            flmref = new SoftReference<FontLineMetrics>(flm);
         }
 
         return (FontLineMetrics)flm.clone();
