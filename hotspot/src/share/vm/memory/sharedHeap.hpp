@@ -49,6 +49,62 @@ class FlexibleWorkGang;
 class CollectorPolicy;
 class KlassHandle;
 
+// Note on use of FlexibleWorkGang's for GC.
+// There are three places where task completion is determined.
+// In
+//    1) ParallelTaskTerminator::offer_termination() where _n_threads
+//    must be set to the correct value so that count of workers that
+//    have offered termination will exactly match the number
+//    working on the task.  Tasks such as those derived from GCTask
+//    use ParallelTaskTerminator's.  Tasks that want load balancing
+//    by work stealing use this method to gauge completion.
+//    2) SubTasksDone has a variable _n_threads that is used in
+//    all_tasks_completed() to determine completion.  all_tasks_complete()
+//    counts the number of tasks that have been done and then reset
+//    the SubTasksDone so that it can be used again.  When the number of
+//    tasks is set to the number of GC workers, then _n_threads must
+//    be set to the number of active GC workers. G1CollectedHeap,
+//    HRInto_G1RemSet, GenCollectedHeap and SharedHeap have SubTasksDone.
+//    This seems too many.
+//    3) SequentialSubTasksDone has an _n_threads that is used in
+//    a way similar to SubTasksDone and has the same dependency on the
+//    number of active GC workers.  CompactibleFreeListSpace and Space
+//    have SequentialSubTasksDone's.
+// Example of using SubTasksDone and SequentialSubTasksDone
+// G1CollectedHeap::g1_process_strong_roots() calls
+//  process_strong_roots(false, // no scoping; this is parallel code
+//                       collecting_perm_gen, so,
+//                       &buf_scan_non_heap_roots,
+//                       &eager_scan_code_roots,
+//                       &buf_scan_perm);
+//  which delegates to SharedHeap::process_strong_roots() and uses
+//  SubTasksDone* _process_strong_tasks to claim tasks.
+//  process_strong_roots() calls
+//      rem_set()->younger_refs_iterate(perm_gen(), perm_blk);
+//  to scan the card table and which eventually calls down into
+//  CardTableModRefBS::par_non_clean_card_iterate_work().  This method
+//  uses SequentialSubTasksDone* _pst to claim tasks.
+//  Both SubTasksDone and SequentialSubTasksDone call their method
+//  all_tasks_completed() to count the number of GC workers that have
+//  finished their work.  That logic is "when all the workers are
+//  finished the tasks are finished".
+//
+//  The pattern that appears  in the code is to set _n_threads
+//  to a value > 1 before a task that you would like executed in parallel
+//  and then to set it to 0 after that task has completed.  A value of
+//  0 is a "special" value in set_n_threads() which translates to
+//  setting _n_threads to 1.
+//
+//  Some code uses _n_terminiation to decide if work should be done in
+//  parallel.  The notorious possibly_parallel_oops_do() in threads.cpp
+//  is an example of such code.  Look for variable "is_par" for other
+//  examples.
+//
+//  The active_workers is not reset to 0 after a parallel phase.  It's
+//  value may be used in later phases and in one instance at least
+//  (the parallel remark) it has to be used (the parallel remark depends
+//  on the partitioning done in the previous parallel scavenge).
+
 class SharedHeap : public CollectedHeap {
   friend class VMStructs;
 
@@ -84,11 +140,6 @@ protected:
   // If we're doing parallel GC, use this gang of threads.
   FlexibleWorkGang* _workers;
 
-  // Number of parallel threads currently working on GC tasks.
-  // O indicates use sequential code; 1 means use parallel code even with
-  // only one thread, for performance testing purposes.
-  int _n_par_threads;
-
   // Full initialization is done in a concrete subtype's "initialize"
   // function.
   SharedHeap(CollectorPolicy* policy_);
@@ -107,6 +158,7 @@ public:
   CollectorPolicy *collector_policy() const { return _collector_policy; }
 
   void set_barrier_set(BarrierSet* bs);
+  SubTasksDone* process_strong_tasks() { return _process_strong_tasks; }
 
   // Does operations required after initialization has been done.
   virtual void post_initialize();
@@ -198,13 +250,6 @@ public:
 
   FlexibleWorkGang* workers() const { return _workers; }
 
-  // Sets the number of parallel threads that will be doing tasks
-  // (such as process strong roots) subsequently.
-  virtual void set_par_threads(int t);
-
-  // Number of threads currently working on GC tasks.
-  int n_par_threads() { return _n_par_threads; }
-
   // Invoke the "do_oop" method the closure "roots" on all root locations.
   // If "collecting_perm_gen" is false, then roots that may only contain
   // references to permGen objects are not scanned; instead, in that case,
@@ -239,6 +284,13 @@ public:
   // Do anything common to GC's.
   virtual void gc_prologue(bool full) = 0;
   virtual void gc_epilogue(bool full) = 0;
+
+  // Sets the number of parallel threads that will be doing tasks
+  // (such as process strong roots) subsequently.
+  virtual void set_par_threads(int t);
+
+  int n_termination();
+  void set_n_termination(int t);
 
   //
   // New methods from CollectedHeap

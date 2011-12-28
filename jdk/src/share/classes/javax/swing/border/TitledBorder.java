@@ -67,6 +67,7 @@ import javax.swing.plaf.basic.BasicHTML;
  * @author David Kloba
  * @author Amy Fowler
  */
+@SuppressWarnings("serial")
 public class TitledBorder extends AbstractBorder
 {
     protected String title;

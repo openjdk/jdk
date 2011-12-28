@@ -209,29 +209,9 @@ public:
   size_t cards_looked_up() { return _cards;}
 };
 
-// We want the parallel threads to start their scanning at
-// different collection set regions to avoid contention.
-// If we have:
-//          n collection set regions
-//          p threads
-// Then thread t will start at region t * floor (n/p)
-
-HeapRegion* G1RemSet::calculateStartRegion(int worker_i) {
-  HeapRegion* result = _g1p->collection_set();
-  if (ParallelGCThreads > 0) {
-    size_t cs_size = _g1p->collection_set_size();
-    int n_workers = _g1->workers()->total_workers();
-    size_t cs_spans = cs_size / n_workers;
-    size_t ind      = cs_spans * worker_i;
-    for (size_t i = 0; i < ind; i++)
-      result = result->next_in_collection_set();
-  }
-  return result;
-}
-
 void G1RemSet::scanRS(OopsInHeapRegionClosure* oc, int worker_i) {
   double rs_time_start = os::elapsedTime();
-  HeapRegion *startRegion = calculateStartRegion(worker_i);
+  HeapRegion *startRegion = _g1->start_cset_region_for_worker(worker_i);
 
   ScanRSClosure scanRScl(oc, worker_i);
 
@@ -430,8 +410,10 @@ void G1RemSet::prepare_for_oops_into_collection_set_do() {
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   dcqs.concatenate_logs();
 
-  if (ParallelGCThreads > 0) {
-    _seq_task->set_n_threads((int)n_workers());
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
+    // Don't set the number of workers here.  It will be set
+    // when the task is run
+    // _seq_task->set_n_termination((int)n_workers());
   }
   guarantee( _cards_scanned == NULL, "invariant" );
   _cards_scanned = NEW_C_HEAP_ARRAY(size_t, n_workers());
@@ -578,7 +560,10 @@ void G1RemSet::scrub(BitMap* region_bm, BitMap* card_bm) {
 void G1RemSet::scrub_par(BitMap* region_bm, BitMap* card_bm,
                                 int worker_num, int claim_val) {
   ScrubRSClosure scrub_cl(region_bm, card_bm);
-  _g1->heap_region_par_iterate_chunked(&scrub_cl, worker_num, claim_val);
+  _g1->heap_region_par_iterate_chunked(&scrub_cl,
+                                       worker_num,
+                                       (int) n_workers(),
+                                       claim_val);
 }
 
 

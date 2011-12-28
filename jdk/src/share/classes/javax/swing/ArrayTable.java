@@ -133,7 +133,7 @@ class ArrayTable implements Cloneable {
                 if ((size==ARRAY_BOUNDARY) && isArray()) {
                     grow();
                 }
-                ((Hashtable)table).put(key, value);
+                ((Hashtable<Object,Object>)table).put(key, value);
             }
         }
     }
@@ -259,8 +259,8 @@ class ArrayTable implements Cloneable {
                 newArrayTable.put(array[i], array[i+1]);
             }
         } else {
-            Hashtable tmp = (Hashtable)table;
-            Enumeration keys = tmp.keys();
+            Hashtable<?,?> tmp = (Hashtable)table;
+            Enumeration<?> keys = tmp.keys();
             while (keys.hasMoreElements()) {
                 Object o = keys.nextElement();
                 newArrayTable.put(o,tmp.get(o));
@@ -289,8 +289,8 @@ class ArrayTable implements Cloneable {
                 keys[index] = array[i];
             }
         } else {
-            Hashtable tmp = (Hashtable)table;
-            Enumeration enum_ = tmp.keys();
+            Hashtable<?,?> tmp = (Hashtable)table;
+            Enumeration<?> enum_ = tmp.keys();
             int counter = tmp.size();
             if (keys == null) {
                 keys = new Object[counter];
@@ -326,9 +326,9 @@ class ArrayTable implements Cloneable {
      * Shrinks the storage from a hashtable to an array.
      */
     private void shrink() {
-        Hashtable tmp = (Hashtable)table;
+        Hashtable<?,?> tmp = (Hashtable)table;
         Object[] array = new Object[tmp.size()*2];
-        Enumeration keys = tmp.keys();
+        Enumeration<?> keys = tmp.keys();
         int j = 0;
 
         while (keys.hasMoreElements()) {
