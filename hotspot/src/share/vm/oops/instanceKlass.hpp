@@ -227,9 +227,9 @@ class instanceKlass: public Klass {
   // (including inherited fields but after header_size()).
   int             _nonstatic_field_size;
   int             _static_field_size;    // number words used by static fields (oop and non-oop) in this klass
-  int             _static_oop_field_count;// number of static oop fields in this klass
+  u2              _static_oop_field_count;// number of static oop fields in this klass
+  u2              _java_fields_count;    // The number of declared Java fields
   int             _nonstatic_oop_map_size;// size in words of nonstatic oop map blocks
-  int             _java_fields_count;    // The number of declared Java fields
 
   u2              _minor_version;        // minor version number of class file
   u2              _major_version;        // major version number of class file
@@ -299,8 +299,8 @@ class instanceKlass: public Klass {
   int static_field_size() const            { return _static_field_size; }
   void set_static_field_size(int size)     { _static_field_size = size; }
 
-  int static_oop_field_count() const        { return _static_oop_field_count; }
-  void set_static_oop_field_count(int size) { _static_oop_field_count = size; }
+  int static_oop_field_count() const       { return (int)_static_oop_field_count; }
+  void set_static_oop_field_count(u2 size) { _static_oop_field_count = size; }
 
   // Java vtable
   int  vtable_length() const               { return _vtable_len; }
@@ -340,14 +340,14 @@ class instanceKlass: public Klass {
   Symbol* field_signature   (int index) const { return field(index)->signature(constants()); }
 
   // Number of Java declared fields
-  int java_fields_count() const           { return _java_fields_count; }
+  int java_fields_count() const           { return (int)_java_fields_count; }
 
   // Number of fields including any injected fields
   int all_fields_count() const            { return _fields->length() / sizeof(FieldInfo::field_slots); }
 
   typeArrayOop fields() const              { return _fields; }
 
-  void set_fields(typeArrayOop f, int java_fields_count) {
+  void set_fields(typeArrayOop f, u2 java_fields_count) {
     oop_store_without_check((oop*) &_fields, (oop) f);
     _java_fields_count = java_fields_count;
   }

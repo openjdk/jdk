@@ -295,7 +295,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(instanceKlass,               _nof_implementors,                             int)                                   \
   nonstatic_field(instanceKlass,               _implementors[0],                              klassOop)                              \
   nonstatic_field(instanceKlass,               _fields,                                       typeArrayOop)                          \
-  nonstatic_field(instanceKlass,               _java_fields_count,                             int)                                   \
+  nonstatic_field(instanceKlass,               _java_fields_count,                            u2)                                    \
   nonstatic_field(instanceKlass,               _constants,                                    constantPoolOop)                       \
   nonstatic_field(instanceKlass,               _class_loader,                                 oop)                                   \
   nonstatic_field(instanceKlass,               _protection_domain,                            oop)                                   \
@@ -305,7 +305,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(instanceKlass,               _inner_classes,                                typeArrayOop)                          \
   nonstatic_field(instanceKlass,               _nonstatic_field_size,                         int)                                   \
   nonstatic_field(instanceKlass,               _static_field_size,                            int)                                   \
-  nonstatic_field(instanceKlass,               _static_oop_field_count,                       int)                                   \
+  nonstatic_field(instanceKlass,               _static_oop_field_count,                       u2)                                   \
   nonstatic_field(instanceKlass,               _nonstatic_oop_map_size,                       int)                                   \
   nonstatic_field(instanceKlass,               _misc_flags,                                   u1)                                    \
   nonstatic_field(instanceKlass,               _minor_version,                                u2)                                    \
