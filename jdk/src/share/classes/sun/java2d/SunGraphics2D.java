@@ -1815,7 +1815,12 @@ public final class SunGraphics2D
             width += x;
             height += y;
         }
-        if (!getCompClip().intersectsQuickCheckXYXY(x, y, width, height)) {
+
+        try {
+            if (!getCompClip().intersectsQuickCheckXYXY(x, y, width, height)) {
+                return false;
+            }
+        } catch (InvalidPipeException e) {
             return false;
         }
         // REMIND: We could go one step further here and examine the
@@ -1999,8 +2004,8 @@ public final class SunGraphics2D
         try {
             doCopyArea(x, y, w, h, dx, dy);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 doCopyArea(x, y, w, h, dx, dy);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -2131,8 +2136,8 @@ public final class SunGraphics2D
         try {
             drawpipe.drawLine(this, x1, y1, x2, y2);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 drawpipe.drawLine(this, x1, y1, x2, y2);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -2148,8 +2153,8 @@ public final class SunGraphics2D
         try {
             drawpipe.drawRoundRect(this, x, y, w, h, arcW, arcH);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 drawpipe.drawRoundRect(this, x, y, w, h, arcW, arcH);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -2165,8 +2170,8 @@ public final class SunGraphics2D
         try {
             fillpipe.fillRoundRect(this, x, y, w, h, arcW, arcH);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 fillpipe.fillRoundRect(this, x, y, w, h, arcW, arcH);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -2182,8 +2187,8 @@ public final class SunGraphics2D
         try {
             drawpipe.drawOval(this, x, y, w, h);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 drawpipe.drawOval(this, x, y, w, h);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -2199,8 +2204,8 @@ public final class SunGraphics2D
         try {
             fillpipe.fillOval(this, x, y, w, h);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 fillpipe.fillOval(this, x, y, w, h);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -2217,8 +2222,8 @@ public final class SunGraphics2D
         try {
             drawpipe.drawArc(this, x, y, w, h, startAngl, arcAngl);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 drawpipe.drawArc(this, x, y, w, h, startAngl, arcAngl);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -2235,8 +2240,8 @@ public final class SunGraphics2D
         try {
             fillpipe.fillArc(this, x, y, w, h, startAngl, arcAngl);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 fillpipe.fillArc(this, x, y, w, h, startAngl, arcAngl);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -2252,8 +2257,8 @@ public final class SunGraphics2D
         try {
             drawpipe.drawPolyline(this, xPoints, yPoints, nPoints);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 drawpipe.drawPolyline(this, xPoints, yPoints, nPoints);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -2269,8 +2274,8 @@ public final class SunGraphics2D
         try {
             drawpipe.drawPolygon(this, xPoints, yPoints, nPoints);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 drawpipe.drawPolygon(this, xPoints, yPoints, nPoints);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -2286,8 +2291,8 @@ public final class SunGraphics2D
         try {
             fillpipe.fillPolygon(this, xPoints, yPoints, nPoints);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 fillpipe.fillPolygon(this, xPoints, yPoints, nPoints);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -2303,8 +2308,8 @@ public final class SunGraphics2D
         try {
             drawpipe.drawRect(this, x, y, w, h);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 drawpipe.drawRect(this, x, y, w, h);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -2320,8 +2325,8 @@ public final class SunGraphics2D
         try {
             fillpipe.fillRect(this, x, y, w, h);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 fillpipe.fillRect(this, x, y, w, h);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -2369,7 +2374,6 @@ public final class SunGraphics2D
         Paint p = paint;
         setComposite(AlphaComposite.Src);
         setColor(getBackground());
-        validatePipe();
         fillRect(x, y, w, h);
         setPaint(p);
         setComposite(c);
@@ -2393,8 +2397,8 @@ public final class SunGraphics2D
         try {
             shapepipe.draw(this, s);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 shapepipe.draw(this, s);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -2423,8 +2427,8 @@ public final class SunGraphics2D
         try {
             shapepipe.fill(this, s);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 shapepipe.fill(this, s);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -2571,10 +2575,17 @@ public final class SunGraphics2D
         // Include padding for interpolation/antialiasing if necessary
         int pad = isIntegerTranslate ? 0 : 3;
 
+        Region clip;
+        try {
+            clip = getCompClip();
+        } catch (InvalidPipeException e) {
+            return;
+        }
+
         // Determine the region of the image that may contribute to
         // the clipped drawing area
         Rectangle region = getImageRegion(img,
-                                          getCompClip(),
+                                          clip,
                                           transform,
                                           xform,
                                           pad, pad);
@@ -2817,8 +2828,8 @@ public final class SunGraphics2D
         try {
             textpipe.drawString(this, str, x, y);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 textpipe.drawString(this, str, x, y);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -2846,8 +2857,8 @@ public final class SunGraphics2D
         try {
             textpipe.drawString(this, str, x, y);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 textpipe.drawString(this, str, x, y);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -2892,8 +2903,8 @@ public final class SunGraphics2D
         try {
             textpipe.drawGlyphVector(this, gv, x, y);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 textpipe.drawGlyphVector(this, gv, x, y);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -2925,8 +2936,8 @@ public final class SunGraphics2D
         try {
             textpipe.drawChars(this, data, offset, length, x, y);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 textpipe.drawChars(this, data, offset, length, x, y);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -2962,8 +2973,8 @@ public final class SunGraphics2D
         try {
             textpipe.drawChars(this, chData, 0, length, x, y);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 textpipe.drawChars(this, chData, 0, length, x, y);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -2999,8 +3010,8 @@ public final class SunGraphics2D
             return imagepipe.copyImage(this, img, dx, dy, sx, sy,
                                        width, height, bgcolor, observer);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 return imagepipe.copyImage(this, img, dx, dy, sx, sy,
                                            width, height, bgcolor, observer);
             } catch (InvalidPipeException e2) {
@@ -3036,8 +3047,8 @@ public final class SunGraphics2D
             return imagepipe.scaleImage(this, img, x, y, width, height,
                                         bg, observer);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 return imagepipe.scaleImage(this, img, x, y, width, height,
                                             bg, observer);
             } catch (InvalidPipeException e2) {
@@ -3072,8 +3083,8 @@ public final class SunGraphics2D
         try {
             return imagepipe.copyImage(this, img, x, y, bg, observer);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 return imagepipe.copyImage(this, img, x, y, bg, observer);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -3149,8 +3160,8 @@ public final class SunGraphics2D
                                           sx1, sy1, sx2, sy2, bgcolor,
                                           observer);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 return imagepipe.scaleImage(this, img, dx1, dy1, dx2, dy2,
                                               sx1, sy1, sx2, sy2, bgcolor,
                                               observer);
@@ -3198,8 +3209,8 @@ public final class SunGraphics2D
         try {
             return imagepipe.transformImage(this, img, xform, observer);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 return imagepipe.transformImage(this, img, xform, observer);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
@@ -3224,8 +3235,8 @@ public final class SunGraphics2D
         try {
             imagepipe.transformImage(this, bImg, op, x, y);
         } catch (InvalidPipeException e) {
-            revalidateAll();
             try {
+                revalidateAll();
                 imagepipe.transformImage(this, bImg, op, x, y);
             } catch (InvalidPipeException e2) {
                 // Still catching the exception; we are not yet ready to
