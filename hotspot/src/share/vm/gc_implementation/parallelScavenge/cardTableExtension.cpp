@@ -223,7 +223,8 @@ void CardTableExtension::scavenge_contents_parallel(ObjectStartArray* start_arra
                                                     MutableSpace* sp,
                                                     HeapWord* space_top,
                                                     PSPromotionManager* pm,
-                                                    uint stripe_number) {
+                                                    uint stripe_number,
+                                                    uint stripe_total) {
   int ssize = 128; // Naked constant!  Work unit = 64k.
   int dirty_card_count = 0;
 
@@ -231,7 +232,11 @@ void CardTableExtension::scavenge_contents_parallel(ObjectStartArray* start_arra
   jbyte* start_card = byte_for(sp->bottom());
   jbyte* end_card   = byte_for(sp_top - 1) + 1;
   oop* last_scanned = NULL; // Prevent scanning objects more than once
-  for (jbyte* slice = start_card; slice < end_card; slice += ssize*ParallelGCThreads) {
+  // The width of the stripe ssize*stripe_total must be
+  // consistent with the number of stripes so that the complete slice
+  // is covered.
+  size_t slice_width = ssize * stripe_total;
+  for (jbyte* slice = start_card; slice < end_card; slice += slice_width) {
     jbyte* worker_start_card = slice + stripe_number * ssize;
     if (worker_start_card >= end_card)
       return; // We're done.

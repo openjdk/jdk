@@ -429,7 +429,7 @@ CodeEmitInfo* LIRGenerator::state_for(Instruction* x, ValueStack* state, bool ig
         // all locals are dead on exit from the synthetic unlocker
         liveness.clear();
       } else {
-        assert(x->as_MonitorEnter(), "only other case is MonitorEnter");
+        assert(x->as_MonitorEnter() || x->as_ProfileInvoke(), "only other cases are MonitorEnter and ProfileInvoke");
       }
     }
     if (!liveness.is_valid()) {

@@ -82,6 +82,7 @@ import javax.accessibility.*;
  * @see JPopupMenu
  * @see JMenuItem
  */
+@SuppressWarnings("serial")
 public class JMenuBar extends JComponent implements Accessible,MenuElement
 {
     /**
@@ -498,6 +499,7 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial")
     protected class AccessibleJMenuBar extends AccessibleJComponent
         implements AccessibleSelection {
 

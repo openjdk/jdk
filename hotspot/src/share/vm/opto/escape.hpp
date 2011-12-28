@@ -160,6 +160,7 @@ private:
   Node* _node;                 // Ideal node corresponding to this PointsTo node.
   int   _offset;               // Object fields offsets.
   bool  _scalar_replaceable;   // Not escaped object could be replaced with scalar
+  bool  _has_unknown_ptr;      // Has edge to phantom_object
 
 public:
   PointsToNode():
@@ -168,6 +169,7 @@ public:
     _edges(NULL),
     _node(NULL),
     _offset(-1),
+    _has_unknown_ptr(false),
     _scalar_replaceable(true) {}
 
 
@@ -175,6 +177,7 @@ public:
   NodeType node_type() const { return _type;}
   int offset() { return _offset;}
   bool scalar_replaceable() { return _scalar_replaceable;}
+  bool has_unknown_ptr()    { return _has_unknown_ptr;}
 
   void set_offset(int offs) { _offset = offs;}
   void set_escape_state(EscapeState state) { _escape = state; }
@@ -183,6 +186,7 @@ public:
     _type = ntype;
   }
   void set_scalar_replaceable(bool v) { _scalar_replaceable = v; }
+  void set_has_unknown_ptr()          { _has_unknown_ptr = true; }
 
   // count of outgoing edges
   uint edge_count() const { return (_edges == NULL) ? 0 : _edges->length(); }
@@ -236,6 +240,8 @@ private:
                                        // are assumed to point to.
   uint                      _oop_null; // ConP(#NULL)->_idx
   uint                     _noop_null; // ConN(#NULL)->_idx
+  Node*                     _pcmp_neq; // ConI(#CC_GT)
+  Node*                      _pcmp_eq; // ConI(#CC_EQ)
 
   Compile *                  _compile; // Compile object for current compilation
   PhaseIterGVN *                _igvn; // Value numbering
@@ -247,6 +253,8 @@ private:
     return _nodes.adr_at(idx);
   }
   uint nodes_size() const { return _nodes.length(); }
+
+  bool is_null_ptr(uint idx) const { return (idx == _noop_null || idx == _oop_null); }
 
   // Add node to ConnectionGraph.
   void add_node(Node *n, PointsToNode::NodeType nt, PointsToNode::EscapeState es, bool done);
@@ -331,10 +339,9 @@ private:
   }
 
   // Notify optimizer that a node has been modified
-  // Node:  This assumes that escape analysis is run before
-  //        PhaseIterGVN creation
   void record_for_optimizer(Node *n) {
     _igvn->_worklist.push(n);
+    _igvn->add_users_to_worklist(n);
   }
 
   // Set the escape state of a node
@@ -350,6 +357,9 @@ private:
   bool propagate_escape_state(GrowableArray<int>* cg_worklist,
                               GrowableArray<uint>* worklist,
                               PointsToNode::EscapeState esc_state);
+
+  // Optimize objects compare.
+  Node* optimize_ptr_compare(Node* n);
 
   // Compute the escape information
   bool compute_escape();
