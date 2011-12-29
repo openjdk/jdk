@@ -1595,6 +1595,7 @@ bool ConnectionGraph::compute_escape() {
   GrowableArray<Node*> alloc_worklist;
   GrowableArray<Node*> addp_worklist;
   GrowableArray<Node*> ptr_cmp_worklist;
+  GrowableArray<Node*> storestore_worklist;
   PhaseGVN* igvn = _igvn;
 
   // Push all useful nodes onto CG list and set their type.
@@ -1618,6 +1619,11 @@ bool ConnectionGraph::compute_escape() {
                (n->Opcode() == Op_CmpP || n->Opcode() == Op_CmpN)) {
       // Compare pointers nodes
       ptr_cmp_worklist.append(n);
+    } else if (n->is_MemBarStoreStore()) {
+      // Collect all MemBarStoreStore nodes so that depending on the
+      // escape status of the associated Allocate node some of them
+      // may be eliminated.
+      storestore_worklist.append(n);
     }
     for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
       Node* m = n->fast_out(i);   // Get user
@@ -1724,11 +1730,20 @@ bool ConnectionGraph::compute_escape() {
   uint alloc_length = alloc_worklist.length();
   for (uint next = 0; next < alloc_length; ++next) {
     Node* n = alloc_worklist.at(next);
-    if (ptnode_adr(n->_idx)->escape_state() == PointsToNode::NoEscape) {
+    PointsToNode::EscapeState es = ptnode_adr(n->_idx)->escape_state();
+    if (es == PointsToNode::NoEscape) {
       has_non_escaping_obj = true;
       if (n->is_Allocate()) {
         find_init_values(n, &visited, igvn);
+        // The object allocated by this Allocate node will never be
+        // seen by an other thread. Mark it so that when it is
+        // expanded no MemBarStoreStore is added.
+        n->as_Allocate()->initialization()->set_does_not_escape();
       }
+    } else if ((es == PointsToNode::ArgEscape) && n->is_Allocate()) {
+      // Same as above. Mark this Allocate node so that when it is
+      // expanded no MemBarStoreStore is added.
+      n->as_Allocate()->initialization()->set_does_not_escape();
     }
   }
 
@@ -1872,6 +1887,25 @@ bool ConnectionGraph::compute_escape() {
       igvn->hash_delete(_pcmp_neq);
     if (_pcmp_eq->outcnt()  == 0)
       igvn->hash_delete(_pcmp_eq);
+  }
+
+  // For MemBarStoreStore nodes added in library_call.cpp, check
+  // escape status of associated AllocateNode and optimize out
+  // MemBarStoreStore node if the allocated object never escapes.
+  while (storestore_worklist.length() != 0) {
+    Node *n = storestore_worklist.pop();
+    MemBarStoreStoreNode *storestore = n ->as_MemBarStoreStore();
+    Node *alloc = storestore->in(MemBarNode::Precedent)->in(0);
+    assert (alloc->is_Allocate(), "storestore should point to AllocateNode");
+    PointsToNode::EscapeState es = ptnode_adr(alloc->_idx)->escape_state();
+    if (es == PointsToNode::NoEscape || es == PointsToNode::ArgEscape) {
+      MemBarNode* mb = MemBarNode::make(C, Op_MemBarCPUOrder, Compile::AliasIdxBot);
+      mb->init_req(TypeFunc::Memory, storestore->in(TypeFunc::Memory));
+      mb->init_req(TypeFunc::Control, storestore->in(TypeFunc::Control));
+
+      _igvn->register_new_node_with_optimizer(mb);
+      _igvn->replace_node(storestore, mb);
+    }
   }
 
 #ifndef PRODUCT
