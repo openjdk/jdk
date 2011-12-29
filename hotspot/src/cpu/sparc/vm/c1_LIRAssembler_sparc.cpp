@@ -2202,8 +2202,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
           } else if (!(flags & LIR_OpArrayCopy::dst_objarray)) {
             __ load_klass(dst, tmp);
           }
-          int lh_offset = klassOopDesc::header_size() * HeapWordSize +
-            Klass::layout_helper_offset_in_bytes();
+          int lh_offset = in_bytes(Klass::layout_helper_offset());
 
           __ lduw(tmp, lh_offset, tmp2);
 
@@ -2238,12 +2237,10 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
         __ mov(length, len);
         __ load_klass(dst, tmp);
 
-        int ek_offset = (klassOopDesc::header_size() * HeapWordSize +
-                         objArrayKlass::element_klass_offset_in_bytes());
+        int ek_offset = in_bytes(objArrayKlass::element_klass_offset());
         __ ld_ptr(tmp, ek_offset, super_k);
 
-        int sco_offset = (klassOopDesc::header_size() * HeapWordSize +
-                          Klass::super_check_offset_offset_in_bytes());
+        int sco_offset = in_bytes(Klass::super_check_offset_offset());
         __ lduw(super_k, sco_offset, chk_off);
 
         __ call_VM_leaf(tmp, copyfunc_addr);
@@ -2456,7 +2453,7 @@ void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
          op->klass()->as_register() == G5, "must be");
   if (op->init_check()) {
     __ ld(op->klass()->as_register(),
-          instanceKlass::init_state_offset_in_bytes() + sizeof(oopDesc),
+          in_bytes(instanceKlass::init_state_offset()),
           op->tmp1()->as_register());
     add_debug_info_for_null_check_here(op->stub()->info());
     __ cmp(op->tmp1()->as_register(), instanceKlass::fully_initialized);
@@ -2627,7 +2624,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   } else {
     bool need_slow_path = true;
     if (k->is_loaded()) {
-      if (k->super_check_offset() != sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes())
+      if ((int) k->super_check_offset() != in_bytes(Klass::secondary_super_cache_offset()))
         need_slow_path = false;
       // perform the fast part of the checking logic
       __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, noreg,
@@ -2731,7 +2728,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     __ load_klass(value, klass_RInfo);
 
     // get instance klass
-    __ ld_ptr(Address(k_RInfo, objArrayKlass::element_klass_offset_in_bytes() + sizeof(oopDesc)), k_RInfo);
+    __ ld_ptr(Address(k_RInfo, objArrayKlass::element_klass_offset()), k_RInfo);
     // perform the fast part of the checking logic
     __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, O7, success_target, failure_target, NULL);
 

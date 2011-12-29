@@ -2261,8 +2261,7 @@ class StubGenerator: public StubCodeGenerator {
     // The ckoff and ckval must be mutually consistent,
     // even though caller generates both.
     { Label L;
-      int sco_offset = (klassOopDesc::header_size() * HeapWordSize +
-                        Klass::super_check_offset_offset_in_bytes());
+      int sco_offset = in_bytes(Klass::super_check_offset_offset());
       __ cmpl(ckoff, Address(ckval, sco_offset));
       __ jcc(Assembler::equal, L);
       __ stop("super_check_offset inconsistent");
@@ -2572,8 +2571,7 @@ class StubGenerator: public StubCodeGenerator {
     //   array_tag: typeArray = 0x3, objArray = 0x2, non-array = 0x0
     //
 
-    const int lh_offset = klassOopDesc::header_size() * HeapWordSize +
-                          Klass::layout_helper_offset_in_bytes();
+    const int lh_offset = in_bytes(Klass::layout_helper_offset());
 
     // Handle objArrays completely differently...
     const jint objArray_lh = Klass::array_layout_helper(T_OBJECT);
@@ -2722,15 +2720,13 @@ class StubGenerator: public StubCodeGenerator {
       assert_clean_int(count, sco_temp);
 
       // Generate the type check.
-      const int sco_offset = (klassOopDesc::header_size() * HeapWordSize +
-                              Klass::super_check_offset_offset_in_bytes());
+      const int sco_offset = in_bytes(Klass::super_check_offset_offset());
       __ movl(sco_temp, Address(r11_dst_klass, sco_offset));
       assert_clean_int(sco_temp, rax);
       generate_type_check(r10_src_klass, sco_temp, r11_dst_klass, L_plain_copy);
 
       // Fetch destination element klass from the objArrayKlass header.
-      int ek_offset = (klassOopDesc::header_size() * HeapWordSize +
-                       objArrayKlass::element_klass_offset_in_bytes());
+      int ek_offset = in_bytes(objArrayKlass::element_klass_offset());
       __ movptr(r11_dst_klass, Address(r11_dst_klass, ek_offset));
       __ movl(  sco_temp,      Address(r11_dst_klass, sco_offset));
       assert_clean_int(sco_temp, rax);

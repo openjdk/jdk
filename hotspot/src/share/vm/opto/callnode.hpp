@@ -791,6 +791,10 @@ public:
   // are defined in graphKit.cpp, which sets up the bidirectional relation.)
   InitializeNode* initialization();
 
+  // Return the corresponding storestore barrier (or null if none).
+  // Walks out edges to find it...
+  MemBarStoreStoreNode* storestore();
+
   // Convenience for initialization->maybe_set_complete(phase)
   bool maybe_set_complete(PhaseGVN* phase);
 };
