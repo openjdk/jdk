@@ -1503,9 +1503,16 @@ void PhaseMacroExpand::expand_allocate_common(
   // if we generated only a slow call, we are done
   if (always_slow) {
     // Now we can unhook i_o.
-    call->set_req(TypeFunc::I_O, top());
-    if (result_phi_i_o->outcnt() == 0)
-      _igvn.remove_dead_node(result_phi_i_o);
+    if (result_phi_i_o->outcnt() > 1) {
+      call->set_req(TypeFunc::I_O, top());
+    } else {
+      assert(result_phi_i_o->unique_ctrl_out() == call, "");
+      // Case of new array with negative size known during compilation.
+      // AllocateArrayNode::Ideal() optimization disconnect unreachable
+      // following code since call to runtime will throw exception.
+      // As result there will be no users of i_o after the call.
+      // Leave i_o attached to this call to avoid problems in preceding graph.
+    }
     return;
   }
 
