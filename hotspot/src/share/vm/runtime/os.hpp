@@ -99,9 +99,11 @@ class os: AllStatic {
   }
 
  public:
-
   static void init(void);                      // Called before command line parsing
   static jint init_2(void);                    // Called after command line parsing
+  static void init_globals(void) {             // Called from init_globals() in init.cpp
+    init_globals_ext();
+  }
   static void init_3(void);                    // Called at the end of vm init
 
   // File names are case-insensitive on windows only
@@ -671,6 +673,11 @@ class os: AllStatic {
   // rest of line is skipped. Returns number of bytes read or -1 on EOF
   static int get_line_chars(int fd, char *buf, const size_t bsize);
 
+  // Extensions
+#include "runtime/os_ext.hpp"
+
+ public:
+
   // Platform dependent stuff
 #ifdef TARGET_OS_FAMILY_linux
 # include "os_linux.hpp"
@@ -715,6 +722,7 @@ class os: AllStatic {
 # include "os_bsd_zero.hpp"
 #endif
 
+ public:
   // debugging support (mostly used by debug.cpp but also fatal error handler)
   static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address
 

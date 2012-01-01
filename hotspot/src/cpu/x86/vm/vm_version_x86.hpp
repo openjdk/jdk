@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,32 +176,54 @@ public:
     } bits;
   };
 
-protected:
-   static int _cpu;
-   static int _model;
-   static int _stepping;
-   static int _cpuFeatures;     // features returned by the "cpuid" instruction
-                                // 0 if this instruction is not available
-   static const char* _features_str;
+  union ExtCpuid7Edx {
+    uint32_t value;
+    struct {
+      uint32_t               : 8,
+              tsc_invariance : 1,
+                             : 23;
+    } bits;
+  };
 
-   enum {
-     CPU_CX8    = (1 << 0), // next bits are from cpuid 1 (EDX)
-     CPU_CMOV   = (1 << 1),
-     CPU_FXSR   = (1 << 2),
-     CPU_HT     = (1 << 3),
-     CPU_MMX    = (1 << 4),
-     CPU_3DNOW_PREFETCH  = (1 << 5), // Processor supports 3dnow prefetch and prefetchw instructions
-                                     // may not necessarily support other 3dnow instructions
-     CPU_SSE    = (1 << 6),
-     CPU_SSE2   = (1 << 7),
-     CPU_SSE3   = (1 << 8), // SSE3 comes from cpuid 1 (ECX)
-     CPU_SSSE3  = (1 << 9),
-     CPU_SSE4A  = (1 << 10),
-     CPU_SSE4_1 = (1 << 11),
-     CPU_SSE4_2 = (1 << 12),
-     CPU_POPCNT = (1 << 13),
-     CPU_LZCNT  = (1 << 14)
-   } cpuFeatureFlags;
+protected:
+  static int _cpu;
+  static int _model;
+  static int _stepping;
+  static int _cpuFeatures;     // features returned by the "cpuid" instruction
+                               // 0 if this instruction is not available
+  static const char* _features_str;
+
+  enum {
+    CPU_CX8    = (1 << 0), // next bits are from cpuid 1 (EDX)
+    CPU_CMOV   = (1 << 1),
+    CPU_FXSR   = (1 << 2),
+    CPU_HT     = (1 << 3),
+    CPU_MMX    = (1 << 4),
+    CPU_3DNOW_PREFETCH  = (1 << 5), // Processor supports 3dnow prefetch and prefetchw instructions
+                                    // may not necessarily support other 3dnow instructions
+    CPU_SSE    = (1 << 6),
+    CPU_SSE2   = (1 << 7),
+    CPU_SSE3   = (1 << 8), // SSE3 comes from cpuid 1 (ECX)
+    CPU_SSSE3  = (1 << 9),
+    CPU_SSE4A  = (1 << 10),
+    CPU_SSE4_1 = (1 << 11),
+    CPU_SSE4_2 = (1 << 12),
+    CPU_POPCNT = (1 << 13),
+    CPU_LZCNT  = (1 << 14),
+    CPU_TSC    = (1 << 15),
+    CPU_TSCINV = (1 << 16)
+  } cpuFeatureFlags;
+
+  enum {
+    // AMD
+    CPU_FAMILY_AMD_11H       = 17,
+    // Intel
+    CPU_FAMILY_INTEL_CORE    = 6,
+    CPU_MODEL_NEHALEM_EP     = 26,
+    CPU_MODEL_WESTMERE_EP    = 44,
+//  CPU_MODEL_IVYBRIDGE_EP   = ??, TODO - get real value
+    CPU_MODEL_SANDYBRIDGE_EP = 45
+  } cpuExtendedFamily;
 
   // cpuid information block.  All info derived from executing cpuid with
   // various function numbers is stored here.  Intel and AMD info is
@@ -270,6 +292,12 @@ protected:
     ExtCpuid5Ex  ext_cpuid5_ecx; // L1 data cache info (AMD)
     ExtCpuid5Ex  ext_cpuid5_edx; // L1 instruction cache info (AMD)
 
+    // cpuid function 0x80000007
+    uint32_t     ext_cpuid7_eax; // reserved
+    uint32_t     ext_cpuid7_ebx; // reserved
+    uint32_t     ext_cpuid7_ecx; // reserved
+    ExtCpuid7Edx ext_cpuid7_edx; // tscinv
+
     // cpuid function 0x80000008
     uint32_t     ext_cpuid8_eax; // unused currently
     uint32_t     ext_cpuid8_ebx; // reserved
@@ -286,19 +314,23 @@ protected:
     result += _cpuid_info.std_cpuid1_eax.bits.ext_family;
     return result;
   }
+
   static uint32_t extended_cpu_model() {
     uint32_t result = _cpuid_info.std_cpuid1_eax.bits.model;
     result |= _cpuid_info.std_cpuid1_eax.bits.ext_model << 4;
     return result;
   }
+
   static uint32_t cpu_stepping() {
     uint32_t result = _cpuid_info.std_cpuid1_eax.bits.stepping;
     return result;
   }
+
   static uint logical_processor_count() {
     uint result = threads_per_core();
     return result;
   }
+
   static uint32_t feature_flags() {
     uint32_t result = 0;
     if (_cpuid_info.std_cpuid1_edx.bits.cmpxchg8 != 0)
@@ -328,6 +360,10 @@ protected:
       result |= CPU_SSE4_2;
     if (_cpuid_info.std_cpuid1_ecx.bits.popcnt != 0)
       result |= CPU_POPCNT;
+    if (_cpuid_info.std_cpuid1_edx.bits.tsc != 0)
+      result |= CPU_TSC;
+    if (_cpuid_info.ext_cpuid7_edx.bits.tsc_invariance != 0)
+      result |= CPU_TSCINV;
 
     // AMD features.
     if (is_amd()) {
@@ -352,6 +388,7 @@ public:
   static ByteSize dcp_cpuid4_offset() { return byte_offset_of(CpuidInfo, dcp_cpuid4_eax); }
   static ByteSize ext_cpuid1_offset() { return byte_offset_of(CpuidInfo, ext_cpuid1_eax); }
   static ByteSize ext_cpuid5_offset() { return byte_offset_of(CpuidInfo, ext_cpuid5_eax); }
+  static ByteSize ext_cpuid7_offset() { return byte_offset_of(CpuidInfo, ext_cpuid7_eax); }
   static ByteSize ext_cpuid8_offset() { return byte_offset_of(CpuidInfo, ext_cpuid8_eax); }
   static ByteSize tpl_cpuidB0_offset() { return byte_offset_of(CpuidInfo, tpl_cpuidB0_eax); }
   static ByteSize tpl_cpuidB1_offset() { return byte_offset_of(CpuidInfo, tpl_cpuidB1_eax); }
@@ -382,7 +419,6 @@ public:
   //
   static int  cpu_family()        { return _cpu;}
   static bool is_P6()             { return cpu_family() >= 6; }
-
   static bool is_amd()            { assert_is_initialized(); return _cpuid_info.std_vendor_name_0 == 0x68747541; } // 'htuA'
   static bool is_intel()          { assert_is_initialized(); return _cpuid_info.std_vendor_name_0 == 0x756e6547; } // 'uneG'
 
@@ -447,13 +483,48 @@ public:
   static bool supports_sse4_1()   { return (_cpuFeatures & CPU_SSE4_1) != 0; }
   static bool supports_sse4_2()   { return (_cpuFeatures & CPU_SSE4_2) != 0; }
   static bool supports_popcnt()   { return (_cpuFeatures & CPU_POPCNT) != 0; }
-  //
+  static bool supports_tsc()      { return (_cpuFeatures & CPU_TSC)    != 0; }
+
+  // Intel features
+  static bool is_intel_family_core() { return is_intel() &&
+                                       extended_cpu_family() == CPU_FAMILY_INTEL_CORE; }
+
+  static bool is_intel_tsc_synched_at_init()  {
+    if (is_intel_family_core()) {
+      uint32_t ext_model = extended_cpu_model();
+      if (ext_model == CPU_MODEL_NEHALEM_EP   ||
+          ext_model == CPU_MODEL_WESTMERE_EP  ||
+// TODO   ext_model == CPU_MODEL_IVYBRIDGE_EP ||
+          ext_model == CPU_MODEL_SANDYBRIDGE_EP) {
+        // 2-socket invtsc support. EX versions with 4 sockets are not
+        // guaranteed to synchronize tscs at initialization via a double
+        // handshake. The tscs can be explicitly set in software.  Code
+        // that uses tsc values must be prepared for them to arbitrarily
+        // jump backward or forward.
+        return true;
+      }
+    }
+    return false;
+  }
+
   // AMD features
-  //
   static bool supports_3dnow_prefetch()    { return (_cpuFeatures & CPU_3DNOW_PREFETCH) != 0; }
   static bool supports_mmx_ext()  { return is_amd() && _cpuid_info.ext_cpuid1_edx.bits.mmx_amd != 0; }
   static bool supports_lzcnt()    { return (_cpuFeatures & CPU_LZCNT) != 0; }
   static bool supports_sse4a()    { return (_cpuFeatures & CPU_SSE4A) != 0; }
+
+  static bool is_amd_Barcelona()  { return is_amd() &&
+                                           extended_cpu_family() == CPU_FAMILY_AMD_11H; }
+
+  // Intel and AMD newer cores support fast timestamps well
+  static bool supports_tscinv_bit() {
+    return (_cpuFeatures & CPU_TSCINV) != 0;
+  }
+  static bool supports_tscinv() {
+    return supports_tscinv_bit() &&
+           ( (is_amd() && !is_amd_Barcelona()) ||
+             is_intel_tsc_synched_at_init() );
+  }
 
   // Intel Core and newer cpus have fast IDIV instruction (excluding Atom).
   static bool has_fast_idiv()     { return is_intel() && cpu_family() == 6 &&

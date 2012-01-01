@@ -50,7 +50,7 @@ const char*           VM_Version::_features_str = "";
 VM_Version::CpuidInfo VM_Version::_cpuid_info   = { 0, };
 
 static BufferBlob* stub_blob;
-static const int stub_size = 400;
+static const int stub_size = 500;
 
 extern "C" {
   typedef void (*getPsrInfo_stub_t)(void*);
@@ -73,7 +73,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     const uint32_t CPU_FAMILY_486   = (4 << CPU_FAMILY_SHIFT);
 
     Label detect_486, cpu486, detect_586, std_cpuid1, std_cpuid4;
-    Label ext_cpuid1, ext_cpuid5, done;
+    Label ext_cpuid1, ext_cpuid5, ext_cpuid7, done;
 
     StubCodeMark mark(this, "VM_Version", "getPsrInfo_stub");
 #   define __ _masm->
@@ -235,14 +235,28 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ jcc(Assembler::belowEqual, done);
     __ cmpl(rax, 0x80000004);     // Is cpuid(0x80000005) supported?
     __ jccb(Assembler::belowEqual, ext_cpuid1);
-    __ cmpl(rax, 0x80000007);     // Is cpuid(0x80000008) supported?
+    __ cmpl(rax, 0x80000006);     // Is cpuid(0x80000007) supported?
     __ jccb(Assembler::belowEqual, ext_cpuid5);
+    __ cmpl(rax, 0x80000007);     // Is cpuid(0x80000008) supported?
+    __ jccb(Assembler::belowEqual, ext_cpuid7);
     //
     // Extended cpuid(0x80000008)
     //
     __ movl(rax, 0x80000008);
     __ cpuid();
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::ext_cpuid8_offset())));
+    __ movl(Address(rsi, 0), rax);
+    __ movl(Address(rsi, 4), rbx);
+    __ movl(Address(rsi, 8), rcx);
+    __ movl(Address(rsi,12), rdx);
+
+    //
+    // Extended cpuid(0x80000007)
+    //
+    __ bind(ext_cpuid7);
+    __ movl(rax, 0x80000007);
+    __ cpuid();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::ext_cpuid7_offset())));
     __ movl(Address(rsi, 0), rax);
     __ movl(Address(rsi, 4), rbx);
     __ movl(Address(rsi, 8), rcx);
@@ -365,7 +379,7 @@ void VM_Version::get_processor_features() {
   }
 
   char buf[256];
-  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                cores_per_cpu(), threads_per_core(),
                cpu_family(), _model, _stepping,
                (supports_cmov() ? ", cmov" : ""),
@@ -383,7 +397,10 @@ void VM_Version::get_processor_features() {
                (supports_3dnow_prefetch() ? ", 3dnowpref" : ""),
                (supports_lzcnt()   ? ", lzcnt": ""),
                (supports_sse4a()   ? ", sse4a": ""),
-               (supports_ht() ? ", ht": ""));
+               (supports_ht() ? ", ht": ""),
+               (supports_tsc() ? ", tsc": ""),
+               (supports_tscinv_bit() ? ", tscinvbit": ""),
+               (supports_tscinv() ? ", tscinv": ""));
   _features_str = strdup(buf);
 
   // UseSSE is set to the smaller of what hardware supports and what

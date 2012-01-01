@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,15 +47,16 @@ void bytecodes_init();
 void classLoader_init();
 void codeCache_init();
 void VM_Version_init();
+void os_init_globals();        // depends on VM_Version_init, before universe_init
 void stubRoutines_init1();
-jint universe_init();  // dependent on codeCache_init and stubRoutines_init
-void interpreter_init();  // before any methods loaded
-void invocationCounter_init();  // before any methods loaded
+jint universe_init();          // depends on codeCache_init and stubRoutines_init
+void interpreter_init();       // before any methods loaded
+void invocationCounter_init(); // before any methods loaded
 void marksweep_init();
 void accessFlags_init();
 void templateTable_init();
 void InterfaceSupport_init();
-void universe2_init();  // dependent on codeCache_init and stubRoutines_init
+void universe2_init();  // dependent on codeCache_init and stubRoutines_init, loads primordial classes
 void referenceProcessor_init();
 void jni_handles_init();
 void vmStructs_init();
@@ -94,8 +95,10 @@ jint init_globals() {
   classLoader_init();
   codeCache_init();
   VM_Version_init();
+  os_init_globals();
   stubRoutines_init1();
-  jint status = universe_init();  // dependent on codeCache_init and stubRoutines_init
+  jint status = universe_init();  // dependent on codeCache_init and
+                                  // stubRoutines_init1
   if (status != JNI_OK)
     return status;
 
@@ -106,7 +109,7 @@ jint init_globals() {
   templateTable_init();
   InterfaceSupport_init();
   SharedRuntime::generate_stubs();
-  universe2_init();  // dependent on codeCache_init and stubRoutines_init
+  universe2_init();  // dependent on codeCache_init and stubRoutines_init1
   referenceProcessor_init();
   jni_handles_init();
 #ifndef VM_STRUCTS_KERNEL
@@ -122,7 +125,7 @@ jint init_globals() {
   if (!universe_post_init()) {
     return JNI_ERR;
   }
-  javaClasses_init();  // must happen after vtable initialization
+  javaClasses_init();   // must happen after vtable initialization
   stubRoutines_init2(); // note: StubRoutines need 2-phase init
 
   // Although we'd like to, we can't easily do a heap verify
