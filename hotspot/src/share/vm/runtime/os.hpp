@@ -502,6 +502,7 @@ class os: AllStatic {
 
   static void print_location(outputStream* st, intptr_t x, bool verbose = false);
   static size_t lasterror(char *buf, size_t len);
+  static int get_last_error();
 
   // Determines whether the calling process is being debugged by a user-mode debugger.
   static bool is_debugger_attached();
