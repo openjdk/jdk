@@ -726,12 +726,8 @@ void ConcurrentMark::set_non_marking_state() {
 }
 
 ConcurrentMark::~ConcurrentMark() {
-  for (int i = 0; i < (int) _max_task_num; ++i) {
-    delete _task_queues->queue(i);
-    delete _tasks[i];
-  }
-  delete _task_queues;
-  FREE_C_HEAP_ARRAY(CMTask*, _max_task_num);
+  // The ConcurrentMark instance is never freed.
+  ShouldNotReachHere();
 }
 
 // This closure is used to mark refs into the g1 generation

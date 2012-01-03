@@ -2821,7 +2821,7 @@ bool os::commit_memory(char* addr, size_t bytes, size_t alignment_hint,
 }
 
 // Uncommit the pages in a specified region.
-void os::free_memory(char* addr, size_t bytes) {
+void os::free_memory(char* addr, size_t bytes, size_t alignment_hint) {
   if (madvise(addr, bytes, MADV_FREE) < 0) {
     debug_only(warning("MADV_FREE failed."));
     return;
