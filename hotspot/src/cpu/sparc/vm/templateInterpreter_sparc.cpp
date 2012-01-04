@@ -396,7 +396,6 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rframe
                                                          Register Rscratch,
                                                          Register Rscratch2) {
   const int page_size = os::vm_page_size();
-  Address saved_exception_pc(G2_thread, JavaThread::saved_exception_pc_offset());
   Label after_frame_check;
 
   assert_different_registers(Rframe_size, Rscratch, Rscratch2);
@@ -436,11 +435,19 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rframe
   // the bottom of the stack
   __ cmp_and_brx_short(SP, Rscratch, Assembler::greater, Assembler::pt, after_frame_check);
 
-  // Save the return address as the exception pc
-  __ st_ptr(O7, saved_exception_pc);
-
   // the stack will overflow, throw an exception
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_StackOverflowError));
+
+  // Note that SP is restored to sender's sp (in the delay slot). This
+  // is necessary if the sender's frame is an extended compiled frame
+  // (see gen_c2i_adapter()) and safer anyway in case of JSR292
+  // adaptations.
+
+  // Note also that the restored frame is not necessarily interpreted.
+  // Use the shared runtime version of the StackOverflowError.
+  assert(StubRoutines::throw_StackOverflowError_entry() != NULL, "stub not yet generated");
+  AddressLiteral stub(StubRoutines::throw_StackOverflowError_entry());
+  __ jump_to(stub, Rscratch);
+  __ delayed()->mov(O5_savedSP, SP);
 
   // if you get to here, then there is enough stack space
   __ bind( after_frame_check );
