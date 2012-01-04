@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,18 @@
 
 package com.sun.management;
 
+import java.util.List;
 import java.lang.management.PlatformManagedObject;
 
 /**
  * Diagnostic management interface for the HotSpot Virtual Machine.
- * The diagnostic MBean is registered to the platform MBeanServer
+ *
+ * <p>{@linkplain #getDiagnosticCommands Diagnostic commands}
+ * are actions that can be invoked dynamically and
+ * executed in a target Java virtual machine, mainly for troubleshooting
+ * and diagnosis.
+ *
+ * <p>The diagnostic MBean is registered to the platform MBeanServer
  * as are other platform MBeans.
  *
  * <p>The <tt>ObjectName</tt> for uniquely identifying the diagnostic
@@ -40,6 +47,9 @@ import java.lang.management.PlatformManagedObject;
 .*
  * It can be obtained by calling the
  * {@link PlatformManagedObject#getObjectName} method.
+ *
+ * All methods throw a {@code NullPointerException} if any input argument is
+ * {@code null} unless it's stated otherwise.
  *
  * @see ManagementFactory#getPlatformMXBeans(Class)
  */
@@ -101,9 +111,113 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      * @throws IllegalArgumentException if the VM option is not writeable.
      * @throws NullPointerException if name or value is <tt>null</tt>.
      *
-     * @throws  java.security.SecurityException
+     * @throws  java.lang.SecurityException
      *     if a security manager exists and the caller does not have
      *     ManagementPermission("control").
      */
     public void setVMOption(String name, String value);
+
+    /**
+     * Returns the {@linkplain DiagnosticCommandInfo#getName() names}
+     * of all diagnostic commands.
+     * A diagnostic command is an action that can be invoked dynamically
+     * mainly for troubleshooting and diagnosis.  The list of diagnostic
+     * commands may change at runtime.  A diagnostic command may be
+     * {@linkplain DiagnosticCommandInfo#isEnabled disabled} but will
+     * not be removed from a previously returned list.
+     *
+     * @return the names of all diagnostic commands.
+     *
+     * @since 7u4
+     */
+    public List<String> getDiagnosticCommands();
+
+    /**
+     * Returns a {@code DiagnosticCommandInfo} object describing the
+     * diagnostic command of the specified name {@code command}
+     *
+     * @param command a diagnostic command name
+     * @return a {@code DiagnosticCommandInfo} object
+     * @throws java.lang.IllegalArgumentException if the {@code command}
+     *         doesn't match any diagnostic command registered in the
+     *         targeted Java virtual machine.
+     *
+     * @since 7u4
+     */
+    public DiagnosticCommandInfo getDiagnosticCommandInfo(String command);
+
+    /**
+     * Returns a list of {@code DiagnosticCommandInfo} object describing
+     * all diagnostic commands available on the targeted Java virtual machine
+     *
+     * @return a list of {@code DiagnosticCommandInfo} objects
+     *
+     * @since 7u4
+     */
+    public List<DiagnosticCommandInfo> getDiagnosticCommandInfo();
+
+    /**
+     * Returns a list of {@code DiagnosticCommandInfo} object describing
+     * all diagnostic commands specified in the {@code commands} list.
+     *
+     * @param commands {@code List} of {@code String} containing diagnostic
+     *        command names
+     * @return a {@code List} of {@code DiagnosticCommandInfo} objects
+     *
+     * @throws java.lang.IllegalArgumentException if at least one
+     *         command specified in the {@code commands } list
+     *         doesn't match any diagnostic command registered in the
+     *         targeted Java virtual machine.
+     *
+     * @since 7u4
+     */
+    public List<DiagnosticCommandInfo> getDiagnosticCommandInfo(List<String> commands);
+
+    /**
+     * Executes the command line {@code commandLine}. The command line must
+     * start with a diagnostic command name, optionally followed by parameters.
+     * Each command has its own syntax but the generic syntax for a diagnostic
+     * command line is:
+     * <blockquote>
+     *    &lt;command name&gt; [&lt;option&gt;=&lt;value&gt;] [&lt;argument_value&gt;]
+     * </blockquote>
+     *
+     * @param commandLine command line to execute
+     * @return a {@code String} object containing the diagnostic command
+     *         output.
+     *
+     * @throws java.lang.IllegalArgumentException if the command line doesn't
+     *         match any diagnostic command registered in the virtual machine
+     *         of if the parameters don't match the diagnostic command syntax.
+     * @throws java.lang.SecurityException
+     *         if a security manager exists and the caller does not have
+     *         ManagementPermission("control").
+     *
+     * @since 7u4
+     */
+    public String execute(String commandLine);
+
+    /**
+     * Invokes the diagnostic command named {@code cmd} with the parameters
+     * specified in {@code args}. Each command has its own syntax but
+     * the generic syntax for parameters is:
+     * <blockquote>
+     *    [&lt;option&gt;=&lt;value&gt;] [&lt;argument_value&gt;]
+     * </blockquote>
+     *
+     * @param cmd a diagnostic command name
+     * @param args the command parameters
+     * @return a {@code String} object containing the diagnostic command
+     *         output.
+     *
+     * @throws java.lang.IllegalArgumentException if the command line doesn't
+     *         match any diagnostic command registered in the virtual machine
+     *         of if the parameters don't match the diagnostic command syntax.
+     * @throws java.lang.SecurityException
+     *         if a security manager exists and the caller does not have
+     *         ManagementPermission("control").
+     *
+     * @since 7u4
+     */
+    public String execute(String cmd, String... args);
 }
