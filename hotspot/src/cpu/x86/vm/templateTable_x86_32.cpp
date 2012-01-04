@@ -3188,7 +3188,7 @@ void TemplateTable::_new() {
 
   // make sure klass is initialized & doesn't have finalizer
   // make sure klass is fully initialized
-  __ cmpl(Address(rcx, instanceKlass::init_state_offset_in_bytes() + sizeof(oopDesc)), instanceKlass::fully_initialized);
+  __ cmpb(Address(rcx, instanceKlass::init_state_offset_in_bytes() + sizeof(oopDesc)), instanceKlass::fully_initialized);
   __ jcc(Assembler::notEqual, slow_case);
 
   // get instance_size in instanceKlass (scaled to a count of bytes)

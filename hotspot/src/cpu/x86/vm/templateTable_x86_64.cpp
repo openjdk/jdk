@@ -3235,7 +3235,7 @@ void TemplateTable::_new() {
 
   // make sure klass is initialized & doesn't have finalizer
   // make sure klass is fully initialized
-  __ cmpl(Address(rsi,
+  __ cmpb(Address(rsi,
                   instanceKlass::init_state_offset_in_bytes() +
                   sizeof(oopDesc)),
           instanceKlass::fully_initialized);
