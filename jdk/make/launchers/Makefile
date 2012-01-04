@@ -64,6 +64,7 @@ $(call make-launcher, javac, com.sun.tools.javac.Main, , )
 $(call make-launcher, javadoc, com.sun.tools.javadoc.Main, , )
 $(call make-launcher, javah, com.sun.tools.javah.Main, , )
 $(call make-launcher, javap, com.sun.tools.javap.Main, , )
+$(call make-launcher, jcmd, sun.tools.jcmd.JCmd, , )
 $(call make-launcher, jconsole, sun.tools.jconsole.JConsole, \
   -J-Djconsole.showOutputViewer, )
 $(call make-launcher, jdb, com.sun.tools.example.debug.tty.TTY, , )
