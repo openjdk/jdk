@@ -591,17 +591,29 @@ HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool do_expand) {
     }
     res = new_region_try_secondary_free_list();
   }
-  if (res == NULL && do_expand) {
+  if (res == NULL && do_expand && _expand_heap_after_alloc_failure) {
+    // Currently, only attempts to allocate GC alloc regions set
+    // do_expand to true. So, we should only reach here during a
+    // safepoint. If this assumption changes we might have to
+    // reconsider the use of _expand_heap_after_alloc_failure.
+    assert(SafepointSynchronize::is_at_safepoint(), "invariant");
+
     ergo_verbose1(ErgoHeapSizing,
                   "attempt heap expansion",
                   ergo_format_reason("region allocation request failed")
                   ergo_format_byte("allocation request"),
                   word_size * HeapWordSize);
     if (expand(word_size * HeapWordSize)) {
-      // Even though the heap was expanded, it might not have reached
-      // the desired size. So, we cannot assume that the allocation
-      // will succeed.
+      // Given that expand() succeeded in expanding the heap, and we
+      // always expand the heap by an amount aligned to the heap
+      // region size, the free list should in theory not be empty. So
+      // it would probably be OK to use remove_head(). But the extra
+      // check for NULL is unlikely to be a performance issue here (we
+      // just expanded the heap!) so let's just be conservative and
+      // use remove_head_or_null().
       res = _free_list.remove_head_or_null();
+    } else {
+      _expand_heap_after_alloc_failure = false;
     }
   }
   return res;
@@ -1838,6 +1850,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _young_list(new YoungList(this)),
   _gc_time_stamp(0),
   _retained_old_gc_alloc_region(NULL),
+  _expand_heap_after_alloc_failure(true),
   _surviving_young_words(NULL),
   _full_collections_completed(0),
   _in_cset_fast_test(NULL),
@@ -5439,6 +5452,7 @@ void G1CollectedHeap::enqueue_discovered_references() {
 }
 
 void G1CollectedHeap::evacuate_collection_set() {
+  _expand_heap_after_alloc_failure = true;
   set_evacuation_failed(false);
 
   g1_rem_set()->prepare_for_oops_into_collection_set_do();
