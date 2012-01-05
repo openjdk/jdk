@@ -2664,18 +2664,23 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   _max_bootstrap_specifier_index = -1;
 
   if (JvmtiExport::should_post_class_file_load_hook()) {
-    // Get the cached class file bytes (if any) from the
-    // class that is being redefined.
-    JvmtiThreadState *state = JvmtiThreadState::state_for(jt);
-    KlassHandle      *h_class_being_redefined =
-                        state->get_class_being_redefined();
-    if (h_class_being_redefined != NULL) {
-      instanceKlassHandle ikh_class_being_redefined =
-        instanceKlassHandle(THREAD, (*h_class_being_redefined)());
-      cached_class_file_bytes =
-        ikh_class_being_redefined->get_cached_class_file_bytes();
-      cached_class_file_length =
-        ikh_class_being_redefined->get_cached_class_file_len();
+    // Get the cached class file bytes (if any) from the class that
+    // is being redefined or retransformed. We use jvmti_thread_state()
+    // instead of JvmtiThreadState::state_for(jt) so we don't allocate
+    // a JvmtiThreadState any earlier than necessary. This will help
+    // avoid the bug described by 7126851.
+    JvmtiThreadState *state = jt->jvmti_thread_state();
+    if (state != NULL) {
+      KlassHandle *h_class_being_redefined =
+                     state->get_class_being_redefined();
+      if (h_class_being_redefined != NULL) {
+        instanceKlassHandle ikh_class_being_redefined =
+          instanceKlassHandle(THREAD, (*h_class_being_redefined)());
+        cached_class_file_bytes =
+          ikh_class_being_redefined->get_cached_class_file_bytes();
+        cached_class_file_length =
+          ikh_class_being_redefined->get_cached_class_file_len();
+      }
     }
 
     unsigned char* ptr = cfs->buffer();
