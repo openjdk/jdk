@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,8 @@ SUNWprivate_1.1 {
 		Java_sun_security_pkcs11_wrapper_PKCS11_C_1CloseSession;
 #		Java_sun_security_pkcs11_wrapper_PKCS11_C_1CloseAllSessions;
 		Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetSessionInfo;
-#		Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetOperationState;
-#		Java_sun_security_pkcs11_wrapper_PKCS11_C_1SetOperationState;
+		Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetOperationState;
+		Java_sun_security_pkcs11_wrapper_PKCS11_C_1SetOperationState;
 		Java_sun_security_pkcs11_wrapper_PKCS11_C_1Login;
 		Java_sun_security_pkcs11_wrapper_PKCS11_C_1Logout;
 		Java_sun_security_pkcs11_wrapper_PKCS11_C_1CreateObject;
