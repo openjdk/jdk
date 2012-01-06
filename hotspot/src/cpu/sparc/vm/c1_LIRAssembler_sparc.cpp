@@ -2455,7 +2455,7 @@ void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
          op->obj()->as_register()   == O0 &&
          op->klass()->as_register() == G5, "must be");
   if (op->init_check()) {
-    __ ld(op->klass()->as_register(),
+    __ ldub(op->klass()->as_register(),
           instanceKlass::init_state_offset_in_bytes() + sizeof(oopDesc),
           op->tmp1()->as_register());
     add_debug_info_for_null_check_here(op->stub()->info());
