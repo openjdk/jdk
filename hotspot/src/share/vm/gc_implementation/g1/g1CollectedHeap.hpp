@@ -285,6 +285,14 @@ private:
   // Typically, it is not full so we should re-use it during the next GC.
   HeapRegion* _retained_old_gc_alloc_region;
 
+  // It specifies whether we should attempt to expand the heap after a
+  // region allocation failure. If heap expansion fails we set this to
+  // false so that we don't re-attempt the heap expansion (it's likely
+  // that subsequent expansion attempts will also fail if one fails).
+  // Currently, it is only consulted during GC and it's reset at the
+  // start of each GC.
+  bool _expand_heap_after_alloc_failure;
+
   // It resets the mutator alloc region before new allocations can take place.
   void init_mutator_alloc_region();
 
