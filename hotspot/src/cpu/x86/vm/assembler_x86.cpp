@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -7993,6 +7993,16 @@ void MacroAssembler::incr_allocated_bytes(Register thread,
                                           Register var_size_in_bytes,
                                           int con_size_in_bytes,
                                           Register t1) {
+  if (!thread->is_valid()) {
+#ifdef _LP64
+    thread = r15_thread;
+#else
+    assert(t1->is_valid(), "need temp reg");
+    thread = t1;
+    get_thread(thread);
+#endif
+  }
+
 #ifdef _LP64
   if (var_size_in_bytes->is_valid()) {
     addq(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())), var_size_in_bytes);
@@ -8000,12 +8010,6 @@ void MacroAssembler::incr_allocated_bytes(Register thread,
     addq(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())), con_size_in_bytes);
   }
 #else
-  if (!thread->is_valid()) {
-    assert(t1->is_valid(), "need temp reg");
-    thread = t1;
-    get_thread(thread);
-  }
-
   if (var_size_in_bytes->is_valid()) {
     addl(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())), var_size_in_bytes);
   } else {
