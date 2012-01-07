@@ -1004,8 +1004,7 @@ void TemplateTable::aastore() {
   // Move superklass into rax
   __ load_klass(rax, rdx);
   __ movptr(rax, Address(rax,
-                         sizeof(oopDesc) +
-                         objArrayKlass::element_klass_offset_in_bytes()));
+                         objArrayKlass::element_klass_offset()));
   // Compress array + index*oopSize + 12 into a single register.  Frees rcx.
   __ lea(rdx, element_address);
 
@@ -2067,7 +2066,7 @@ void TemplateTable::_return(TosState state) {
     assert(state == vtos, "only valid state");
     __ movptr(c_rarg1, aaddress(0));
     __ load_klass(rdi, c_rarg1);
-    __ movl(rdi, Address(rdi, Klass::access_flags_offset_in_bytes() + sizeof(oopDesc)));
+    __ movl(rdi, Address(rdi, Klass::access_flags_offset()));
     __ testl(rdi, JVM_ACC_HAS_FINALIZER);
     Label skip_register_finalizer;
     __ jcc(Assembler::zero, skip_register_finalizer);
@@ -3236,15 +3235,14 @@ void TemplateTable::_new() {
   // make sure klass is initialized & doesn't have finalizer
   // make sure klass is fully initialized
   __ cmpb(Address(rsi,
-                  instanceKlass::init_state_offset_in_bytes() +
-                  sizeof(oopDesc)),
+                  instanceKlass::init_state_offset()),
           instanceKlass::fully_initialized);
   __ jcc(Assembler::notEqual, slow_case);
 
   // get instance_size in instanceKlass (scaled to a count of bytes)
   __ movl(rdx,
           Address(rsi,
-                  Klass::layout_helper_offset_in_bytes() + sizeof(oopDesc)));
+                  Klass::layout_helper_offset()));
   // test to see if it has a finalizer or is malformed in some way
   __ testl(rdx, Klass::_lh_instance_slow_path_bit);
   __ jcc(Assembler::notZero, slow_case);
@@ -3337,7 +3335,7 @@ void TemplateTable::_new() {
     // initialize object header only.
     __ bind(initialize_header);
     if (UseBiasedLocking) {
-      __ movptr(rscratch1, Address(rsi, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+      __ movptr(rscratch1, Address(rsi, Klass::prototype_header_offset()));
       __ movptr(Address(rax, oopDesc::mark_offset_in_bytes()), rscratch1);
     } else {
       __ movptr(Address(rax, oopDesc::mark_offset_in_bytes()),

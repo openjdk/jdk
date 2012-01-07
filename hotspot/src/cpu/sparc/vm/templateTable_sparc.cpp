@@ -888,7 +888,7 @@ void TemplateTable::aastore() {
 
   // do fast instanceof cache test
 
-  __ ld_ptr(O4,     sizeof(oopDesc) + objArrayKlass::element_klass_offset_in_bytes(),  O4);
+  __ ld_ptr(O4,     in_bytes(objArrayKlass::element_klass_offset()),  O4);
 
   assert(Otos_i == O0, "just checking");
 
@@ -2031,7 +2031,7 @@ void TemplateTable::_return(TosState state) {
     __ access_local_ptr(G3_scratch, Otos_i);
     __ load_klass(Otos_i, O2);
     __ set(JVM_ACC_HAS_FINALIZER, G3);
-    __ ld(O2, Klass::access_flags_offset_in_bytes() + sizeof(oopDesc), O2);
+    __ ld(O2, in_bytes(Klass::access_flags_offset()), O2);
     __ andcc(G3, O2, G0);
     Label skip_register_finalizer;
     __ br(Assembler::zero, false, Assembler::pn, skip_register_finalizer);
@@ -3350,13 +3350,13 @@ void TemplateTable::_new() {
   __ ld_ptr(Rscratch, Roffset, RinstanceKlass);
 
   // make sure klass is fully initialized:
-  __ ldub(RinstanceKlass, instanceKlass::init_state_offset_in_bytes() + sizeof(oopDesc), G3_scratch);
+  __ ldub(RinstanceKlass, in_bytes(instanceKlass::init_state_offset()), G3_scratch);
   __ cmp(G3_scratch, instanceKlass::fully_initialized);
   __ br(Assembler::notEqual, false, Assembler::pn, slow_case);
-  __ delayed()->ld(RinstanceKlass, Klass::layout_helper_offset_in_bytes() + sizeof(oopDesc), Roffset);
+  __ delayed()->ld(RinstanceKlass, in_bytes(Klass::layout_helper_offset()), Roffset);
 
   // get instance_size in instanceKlass (already aligned)
-  //__ ld(RinstanceKlass, Klass::layout_helper_offset_in_bytes() + sizeof(oopDesc), Roffset);
+  //__ ld(RinstanceKlass, in_bytes(Klass::layout_helper_offset()), Roffset);
 
   // make sure klass does not have has_finalizer, or is abstract, or interface or java/lang/Class
   __ btst(Klass::_lh_instance_slow_path_bit, Roffset);
@@ -3483,7 +3483,7 @@ void TemplateTable::_new() {
   __ bind(initialize_header);
 
   if (UseBiasedLocking) {
-    __ ld_ptr(RinstanceKlass, Klass::prototype_header_offset_in_bytes() + sizeof(oopDesc), G4_scratch);
+    __ ld_ptr(RinstanceKlass, in_bytes(Klass::prototype_header_offset()), G4_scratch);
   } else {
     __ set((intptr_t)markOopDesc::prototype(), G4_scratch);
   }

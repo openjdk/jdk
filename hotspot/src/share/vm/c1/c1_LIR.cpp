@@ -854,6 +854,9 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       if (opTypeCheck->_info_for_exception)       do_info(opTypeCheck->_info_for_exception);
       if (opTypeCheck->_info_for_patch)           do_info(opTypeCheck->_info_for_patch);
       if (opTypeCheck->_object->is_valid())       do_input(opTypeCheck->_object);
+      if (op->code() == lir_store_check && opTypeCheck->_object->is_valid()) {
+        do_temp(opTypeCheck->_object);
+      }
       if (opTypeCheck->_array->is_valid())        do_input(opTypeCheck->_array);
       if (opTypeCheck->_tmp1->is_valid())         do_temp(opTypeCheck->_tmp1);
       if (opTypeCheck->_tmp2->is_valid())         do_temp(opTypeCheck->_tmp2);

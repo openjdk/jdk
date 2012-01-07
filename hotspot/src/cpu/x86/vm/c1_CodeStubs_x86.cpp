@@ -320,7 +320,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     // begin_initialized_entry_offset has to fit in a byte. Also, we know it's not null.
     __ load_heap_oop_not_null(tmp2, Address(_obj, java_lang_Class::klass_offset_in_bytes()));
     __ get_thread(tmp);
-    __ cmpptr(tmp, Address(tmp2, instanceKlass::init_thread_offset_in_bytes() + sizeof(klassOopDesc)));
+    __ cmpptr(tmp, Address(tmp2, instanceKlass::init_thread_offset()));
     __ pop(tmp2);
     __ pop(tmp);
     __ jcc(Assembler::notEqual, call_patch);
@@ -519,7 +519,7 @@ void G1UnsafeGetObjSATBBarrierStub::emit_code(LIR_Assembler* ce) {
 
   __ load_klass(tmp_reg, src_reg);
 
-  Address ref_type_adr(tmp_reg, instanceKlass::reference_type_offset_in_bytes() + sizeof(oopDesc));
+  Address ref_type_adr(tmp_reg, instanceKlass::reference_type_offset());
   __ cmpl(ref_type_adr, REF_NONE);
   __ jcc(Assembler::equal, _continuation);
 

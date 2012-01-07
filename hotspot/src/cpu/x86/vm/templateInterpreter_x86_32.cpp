@@ -561,7 +561,7 @@ void InterpreterGenerator::lock_method(void) {
   #endif // ASSERT
   // get synchronization object
   { Label done;
-    const int mirror_offset = klassOopDesc::klass_part_offset_in_bytes() + Klass::java_mirror_offset_in_bytes();
+    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     __ movl(rax, access_flags);
     __ testl(rax, JVM_ACC_STATIC);
     __ movptr(rax, Address(rdi, Interpreter::local_offset_in_bytes(0)));  // get receiver (assume this is frequent case)
@@ -1021,7 +1021,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // pass mirror handle if static call
   { Label L;
-    const int mirror_offset = klassOopDesc::klass_part_offset_in_bytes() + Klass::java_mirror_offset_in_bytes();
+    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     __ movl(t, Address(method, methodOopDesc::access_flags_offset()));
     __ testl(t, JVM_ACC_STATIC);
     __ jcc(Assembler::zero, L);

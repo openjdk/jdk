@@ -1911,7 +1911,7 @@ void Parse::call_register_finalizer() {
   Node* klass_addr = basic_plus_adr( receiver, receiver, oopDesc::klass_offset_in_bytes() );
   Node* klass = _gvn.transform( LoadKlassNode::make(_gvn, immutable_memory(), klass_addr, TypeInstPtr::KLASS) );
 
-  Node* access_flags_addr = basic_plus_adr(klass, klass, Klass::access_flags_offset_in_bytes() + sizeof(oopDesc));
+  Node* access_flags_addr = basic_plus_adr(klass, klass, in_bytes(Klass::access_flags_offset()));
   Node* access_flags = make_load(NULL, access_flags_addr, TypeInt::INT, T_INT);
 
   Node* mask  = _gvn.transform(new (C, 3) AndINode(access_flags, intcon(JVM_ACC_HAS_FINALIZER)));
