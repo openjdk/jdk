@@ -4416,7 +4416,10 @@ oop G1ParCopyHelper::copy_to_survivor_space(oop old, bool should_mark_root,
     surv_young_words[young_index] += word_sz;
 
     if (obj->is_objArray() && arrayOop(obj)->length() >= ParGCArrayScanChunk) {
-      arrayOop(old)->set_length(0);
+      // We keep track of the next start index in the length field of
+      // the to-space object. The actual length can be found in the
+      // length field of the from-space object.
+      arrayOop(obj)->set_length(0);
       oop* old_p = set_partial_array_mask(old);
       _par_scan_state->push_on_queue(old_p);
     } else {
@@ -4520,35 +4523,51 @@ template void G1ParCopyClosure<false, G1BarrierEvac, false>::do_oop_work(narrowO
 
 template <class T> void G1ParScanPartialArrayClosure::do_oop_nv(T* p) {
   assert(has_partial_array_mask(p), "invariant");
-  oop old = clear_partial_array_mask(p);
-  assert(old->is_objArray(), "must be obj array");
-  assert(old->is_forwarded(), "must be forwarded");
-  assert(Universe::heap()->is_in_reserved(old), "must be in heap.");
+  oop from_obj = clear_partial_array_mask(p);
 
-  objArrayOop obj = objArrayOop(old->forwardee());
-  assert((void*)old != (void*)old->forwardee(), "self forwarding here?");
-  // Process ParGCArrayScanChunk elements now
-  // and push the remainder back onto queue
-  int start     = arrayOop(old)->length();
-  int end       = obj->length();
-  int remainder = end - start;
-  assert(start <= end, "just checking");
+  assert(Universe::heap()->is_in_reserved(from_obj), "must be in heap.");
+  assert(from_obj->is_objArray(), "must be obj array");
+  objArrayOop from_obj_array = objArrayOop(from_obj);
+  // The from-space object contains the real length.
+  int length                 = from_obj_array->length();
+
+  assert(from_obj->is_forwarded(), "must be forwarded");
+  oop to_obj                 = from_obj->forwardee();
+  assert(from_obj != to_obj, "should not be chunking self-forwarded objects");
+  objArrayOop to_obj_array   = objArrayOop(to_obj);
+  // We keep track of the next start index in the length field of the
+  // to-space object.
+  int next_index             = to_obj_array->length();
+  assert(0 <= next_index && next_index < length,
+         err_msg("invariant, next index: %d, length: %d", next_index, length));
+
+  int start                  = next_index;
+  int end                    = length;
+  int remainder              = end - start;
+  // We'll try not to push a range that's smaller than ParGCArrayScanChunk.
   if (remainder > 2 * ParGCArrayScanChunk) {
-    // Test above combines last partial chunk with a full chunk
     end = start + ParGCArrayScanChunk;
-    arrayOop(old)->set_length(end);
-    // Push remainder.
-    oop* old_p = set_partial_array_mask(old);
-    assert(arrayOop(old)->length() < obj->length(), "Empty push?");
-    _par_scan_state->push_on_queue(old_p);
+    to_obj_array->set_length(end);
+    // Push the remainder before we process the range in case another
+    // worker has run out of things to do and can steal it.
+    oop* from_obj_p = set_partial_array_mask(from_obj);
+    _par_scan_state->push_on_queue(from_obj_p);
   } else {
-    // Restore length so that the heap remains parsable in
-    // case of evacuation failure.
-    arrayOop(old)->set_length(end);
+    assert(length == end, "sanity");
+    // We'll process the final range for this object. Restore the length
+    // so that the heap remains parsable in case of evacuation failure.
+    to_obj_array->set_length(end);
   }
-  _scanner.set_region(_g1->heap_region_containing_raw(obj));
-  // process our set of indices (include header in first chunk)
-  obj->oop_iterate_range(&_scanner, start, end);
+  _scanner.set_region(_g1->heap_region_containing_raw(to_obj));
+  // Process indexes [start,end). It will also process the header
+  // along with the first chunk (i.e., the chunk with start == 0).
+  // Note that at this point the length field of to_obj_array is not
+  // correct given that we are using it to keep track of the next
+  // start index. oop_iterate_range() (thankfully!) ignores the length
+  // field and only relies on the start / end parameters.  It does
+  // however return the size of the object which will be incorrect. So
+  // we have to ignore it even if we wanted to use it.
+  to_obj_array->oop_iterate_range(&_scanner, start, end);
 }
 
 class G1ParEvacuateFollowersClosure : public VoidClosure {
