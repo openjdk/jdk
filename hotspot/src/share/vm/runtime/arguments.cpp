@@ -3160,6 +3160,9 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   if (!UseBiasedLocking || EmitSync != 0) {
     UseOptoBiasInlining = false;
   }
+  if (!EliminateLocks) {
+    EliminateNestedLocks = false;
+  }
 #endif
 
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {
