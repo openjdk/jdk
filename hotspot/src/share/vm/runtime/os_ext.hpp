@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,13 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_X86_VM_OS_LINUX_X86_HPP
-#define OS_CPU_LINUX_X86_VM_OS_LINUX_X86_HPP
+#ifndef SHARE_VM_RUNTIME_OS_EXT_HPP
+#define SHARE_VM_RUNTIME_OS_EXT_HPP
 
-  static void setup_fpu();
-  static bool supports_sse();
+ public:
+  static void init_globals_ext() {} // Run from init_globals().
+                                    // See os.hpp/cpp and init.cpp.
 
-  static jlong rdtsc();
+ private:
 
-  static bool is_allocatable(size_t bytes);
-
-  // Used to register dynamic code cache area with the OS
-  // Note: Currently only used in 64 bit Windows implementations
-  static bool register_code_area(char *low, char *high) { return true; }
-
-#endif // OS_CPU_LINUX_X86_VM_OS_LINUX_X86_HPP
+#endif // SHARE_VM_RUNTIME_OS_EXT_HPP
