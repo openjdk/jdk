@@ -1900,7 +1900,7 @@ public final class Math {
     /**
      * Returns a floating-point power of two in the normal range.
      */
-    public static float powerOfTwoF(int n) {
+    static float powerOfTwoF(int n) {
         assert(n >= FloatConsts.MIN_EXPONENT && n <= FloatConsts.MAX_EXPONENT);
         return Float.intBitsToFloat(((n + FloatConsts.EXP_BIAS) <<
                                      (FloatConsts.SIGNIFICAND_WIDTH-1))
