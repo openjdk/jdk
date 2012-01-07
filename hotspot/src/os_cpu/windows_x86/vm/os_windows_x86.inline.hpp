@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,17 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_X86_VM_OS_LINUX_X86_HPP
-#define OS_CPU_LINUX_X86_VM_OS_LINUX_X86_HPP
+#ifndef OS_CPU_WINDOWS_X86_VM_OS_WINDOWS_X86_INLINE_HPP
+#define OS_CPU_WINDOWS_X86_VM_OS_WINDOWS_X86_INLINE_HPP
 
-  static void setup_fpu();
-  static bool supports_sse();
+#include "runtime/os.hpp"
 
-  static jlong rdtsc();
+inline jlong os::rdtsc() {
+  // 32 bit: 64 bit result in edx:eax
+  // 64 bit: 64 bit value in rax
+  uint64_t res;
+  res = (uint64_t)__rdtsc();
+  return (jlong)res;
+}
 
-  static bool is_allocatable(size_t bytes);
-
-  // Used to register dynamic code cache area with the OS
-  // Note: Currently only used in 64 bit Windows implementations
-  static bool register_code_area(char *low, char *high) { return true; }
-
-#endif // OS_CPU_LINUX_X86_VM_OS_LINUX_X86_HPP
+#endif // OS_CPU_WINDOWS_X86_VM_OS_WINDOWS_X86_INLINE_HPP
