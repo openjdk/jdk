@@ -2165,8 +2165,7 @@ void LibraryCallKit::insert_g1_pre_barrier(Node* base_oop, Node* offset, Node* p
   IdealKit ideal(this);
 #define __ ideal.
 
-  const int reference_type_offset = instanceKlass::reference_type_offset_in_bytes() +
-                                        sizeof(oopDesc);
+  const int reference_type_offset = in_bytes(instanceKlass::reference_type_offset());
 
   Node* referent_off = __ ConX(java_lang_ref_Reference::referent_offset);
 
@@ -2806,7 +2805,7 @@ bool LibraryCallKit::inline_unsafe_allocate() {
   // Note:  The argument might still be an illegal value like
   // Serializable.class or Object[].class.   The runtime will handle it.
   // But we must make an explicit check for initialization.
-  Node* insp = basic_plus_adr(kls, instanceKlass::init_state_offset_in_bytes() + sizeof(oopDesc));
+  Node* insp = basic_plus_adr(kls, in_bytes(instanceKlass::init_state_offset()));
   // Use T_BOOLEAN for instanceKlass::_init_state so the compiler
   // can generate code to load it as unsigned byte.
   Node* inst = make_load(NULL, insp, TypeInt::UBYTE, T_BOOLEAN);
@@ -2956,7 +2955,7 @@ bool LibraryCallKit::inline_native_isInterrupted() {
 //---------------------------load_mirror_from_klass----------------------------
 // Given a klass oop, load its java mirror (a java.lang.Class oop).
 Node* LibraryCallKit::load_mirror_from_klass(Node* klass) {
-  Node* p = basic_plus_adr(klass, Klass::java_mirror_offset_in_bytes() + sizeof(oopDesc));
+  Node* p = basic_plus_adr(klass, in_bytes(Klass::java_mirror_offset()));
   return make_load(NULL, p, TypeInstPtr::MIRROR, T_OBJECT);
 }
 
@@ -2996,7 +2995,7 @@ Node* LibraryCallKit::load_klass_from_mirror_common(Node* mirror,
 Node* LibraryCallKit::generate_access_flags_guard(Node* kls, int modifier_mask, int modifier_bits, RegionNode* region) {
   // Branch around if the given klass has the given modifier bit set.
   // Like generate_guard, adds a new path onto the region.
-  Node* modp = basic_plus_adr(kls, Klass::access_flags_offset_in_bytes() + sizeof(oopDesc));
+  Node* modp = basic_plus_adr(kls, in_bytes(Klass::access_flags_offset()));
   Node* mods = make_load(NULL, modp, TypeInt::INT, T_INT);
   Node* mask = intcon(modifier_mask);
   Node* bits = intcon(modifier_bits);
@@ -3117,7 +3116,7 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
     break;
 
   case vmIntrinsics::_getModifiers:
-    p = basic_plus_adr(kls, Klass::modifier_flags_offset_in_bytes() + sizeof(oopDesc));
+    p = basic_plus_adr(kls, in_bytes(Klass::modifier_flags_offset()));
     query_value = make_load(NULL, p, TypeInt::INT, T_INT);
     break;
 
@@ -3157,7 +3156,7 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
       // A guard was added.  If the guard is taken, it was an array.
       phi->add_req(makecon(TypeInstPtr::make(env()->Object_klass()->java_mirror())));
     // If we fall through, it's a plain class.  Get its _super.
-    p = basic_plus_adr(kls, Klass::super_offset_in_bytes() + sizeof(oopDesc));
+    p = basic_plus_adr(kls, in_bytes(Klass::super_offset()));
     kls = _gvn.transform( LoadKlassNode::make(_gvn, immutable_memory(), p, TypeRawPtr::BOTTOM, TypeKlassPtr::OBJECT_OR_NULL) );
     null_ctl = top();
     kls = null_check_oop(kls, &null_ctl);
@@ -3175,7 +3174,7 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
     if (generate_array_guard(kls, region) != NULL) {
       // Be sure to pin the oop load to the guard edge just created:
       Node* is_array_ctrl = region->in(region->req()-1);
-      Node* cma = basic_plus_adr(kls, in_bytes(arrayKlass::component_mirror_offset()) + sizeof(oopDesc));
+      Node* cma = basic_plus_adr(kls, in_bytes(arrayKlass::component_mirror_offset()));
       Node* cmo = make_load(is_array_ctrl, cma, TypeInstPtr::MIRROR, T_OBJECT);
       phi->add_req(cmo);
     }
@@ -3183,7 +3182,7 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
     break;
 
   case vmIntrinsics::_getClassAccessFlags:
-    p = basic_plus_adr(kls, Klass::access_flags_offset_in_bytes() + sizeof(oopDesc));
+    p = basic_plus_adr(kls, in_bytes(Klass::access_flags_offset()));
     query_value = make_load(NULL, p, TypeInt::INT, T_INT);
     break;
 
@@ -4196,12 +4195,17 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
   Node* raw_obj = alloc_obj->in(1);
   assert(alloc_obj->is_CheckCastPP() && raw_obj->is_Proj() && raw_obj->in(0)->is_Allocate(), "");
 
+  AllocateNode* alloc = NULL;
   if (ReduceBulkZeroing) {
     // We will be completely responsible for initializing this object -
     // mark Initialize node as complete.
-    AllocateNode* alloc = AllocateNode::Ideal_allocation(alloc_obj, &_gvn);
+    alloc = AllocateNode::Ideal_allocation(alloc_obj, &_gvn);
     // The object was just allocated - there should be no any stores!
     guarantee(alloc != NULL && alloc->maybe_set_complete(&_gvn), "");
+    // Mark as complete_with_arraycopy so that on AllocateNode
+    // expansion, we know this AllocateNode is initialized by an array
+    // copy and a StoreStore barrier exists after the array copy.
+    alloc->initialization()->set_complete_with_arraycopy();
   }
 
   // Copy the fastest available way.
@@ -4263,7 +4267,18 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
   }
 
   // Do not let reads from the cloned object float above the arraycopy.
-  insert_mem_bar(Op_MemBarCPUOrder);
+  if (alloc != NULL) {
+    // Do not let stores that initialize this object be reordered with
+    // a subsequent store that would make this object accessible by
+    // other threads.
+    // Record what AllocateNode this StoreStore protects so that
+    // escape analysis can go from the MemBarStoreStoreNode to the
+    // AllocateNode and eliminate the MemBarStoreStoreNode if possible
+    // based on the escape status of the AllocateNode.
+    insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out(AllocateNode::RawAddress));
+  } else {
+    insert_mem_bar(Op_MemBarCPUOrder);
+  }
 }
 
 //------------------------inline_native_clone----------------------------
@@ -4859,7 +4874,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
       PreserveJVMState pjvms(this);
       set_control(not_subtype_ctrl);
       // (At this point we can assume disjoint_bases, since types differ.)
-      int ek_offset = objArrayKlass::element_klass_offset_in_bytes() + sizeof(oopDesc);
+      int ek_offset = in_bytes(objArrayKlass::element_klass_offset());
       Node* p1 = basic_plus_adr(dest_klass, ek_offset);
       Node* n1 = LoadKlassNode::make(_gvn, immutable_memory(), p1, TypeRawPtr::BOTTOM);
       Node* dest_elem_klass = _gvn.transform(n1);
@@ -5006,7 +5021,16 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
   // the membar also.
   //
   // Do not let reads from the cloned object float above the arraycopy.
-  if (InsertMemBarAfterArraycopy || alloc != NULL)
+  if (alloc != NULL) {
+    // Do not let stores that initialize this object be reordered with
+    // a subsequent store that would make this object accessible by
+    // other threads.
+    // Record what AllocateNode this StoreStore protects so that
+    // escape analysis can go from the MemBarStoreStoreNode to the
+    // AllocateNode and eliminate the MemBarStoreStoreNode if possible
+    // based on the escape status of the AllocateNode.
+    insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out(AllocateNode::RawAddress));
+  } else if (InsertMemBarAfterArraycopy)
     insert_mem_bar(Op_MemBarCPUOrder);
 }
 
@@ -5310,7 +5334,7 @@ LibraryCallKit::generate_checkcast_arraycopy(const TypePtr* adr_type,
   // for the target array.  This is an optimistic check.  It will
   // look in each non-null element's class, at the desired klass's
   // super_check_offset, for the desired klass.
-  int sco_offset = Klass::super_check_offset_offset_in_bytes() + sizeof(oopDesc);
+  int sco_offset = in_bytes(Klass::super_check_offset_offset());
   Node* p3 = basic_plus_adr(dest_elem_klass, sco_offset);
   Node* n3 = new(C, 3) LoadINode(NULL, memory(p3), p3, _gvn.type(p3)->is_ptr());
   Node* check_offset = ConvI2X(_gvn.transform(n3));

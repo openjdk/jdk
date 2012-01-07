@@ -38,14 +38,8 @@
 
 class klassOopDesc : public oopDesc {
  public:
-  // size operation
-  static int header_size()                       { return sizeof(klassOopDesc)/HeapWordSize; }
-
-  // support for code generation
-  static int klass_part_offset_in_bytes()        { return sizeof(klassOopDesc); }
-
   // returns the Klass part containing dispatching behavior
-  Klass* klass_part() const                      { return (Klass*)((address)this + klass_part_offset_in_bytes()); }
+  Klass* klass_part() const                      { return (Klass*)((address)this + sizeof(klassOopDesc)); }
 
   // Convenience wrapper
   inline oop java_mirror() const;

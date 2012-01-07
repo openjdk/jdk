@@ -527,6 +527,9 @@ class CommandLineFlags {
   product(intx, UseSSE, 99,                                                 \
           "Highest supported SSE instructions set on x86/x64")              \
                                                                             \
+  product(intx, UseAVX, 99,                                                 \
+          "Highest supported AVX instructions set on x86/x64")              \
+                                                                            \
   product(intx, UseVIS, 99,                                                 \
           "Highest supported VIS instructions set on Sparc")                \
                                                                             \
