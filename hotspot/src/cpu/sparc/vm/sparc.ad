@@ -9283,6 +9283,7 @@ instruct cmpD_reg(iRegI dst, regD src1, regD src2, flagsRegF0 fcc0) %{
 // (compare 'operand indIndex' and 'instruct addP_reg_reg' above)
 instruct jumpXtnd(iRegX switch_val, o7RegI table) %{
   match(Jump switch_val);
+  effect(TEMP table);
 
   ins_cost(350);
 
