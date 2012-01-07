@@ -840,8 +840,12 @@ public:
 //------------------------------AbstractLockNode-----------------------------------
 class AbstractLockNode: public CallNode {
 private:
-  bool _eliminate;    // indicates this lock can be safely eliminated
-  bool _coarsened;    // indicates this lock was coarsened
+  enum {
+    Regular = 0,  // Normal lock
+    NonEscObj,    // Lock is used for non escaping object
+    Coarsened,    // Lock was coarsened
+    Nested        // Nested lock
+  } _kind;
 #ifndef PRODUCT
   NamedCounter* _counter;
 #endif
@@ -858,12 +862,13 @@ protected:
                                GrowableArray<AbstractLockNode*> &lock_ops);
   LockNode *find_matching_lock(UnlockNode* unlock);
 
+  // Update the counter to indicate that this lock was eliminated.
+  void set_eliminated_lock_counter() PRODUCT_RETURN;
 
 public:
   AbstractLockNode(const TypeFunc *tf)
     : CallNode(tf, NULL, TypeRawPtr::BOTTOM),
-      _coarsened(false),
-      _eliminate(false)
+      _kind(Regular)
   {
 #ifndef PRODUCT
     _counter = NULL;
@@ -873,20 +878,23 @@ public:
   Node *   obj_node() const       {return in(TypeFunc::Parms + 0); }
   Node *   box_node() const       {return in(TypeFunc::Parms + 1); }
   Node *   fastlock_node() const  {return in(TypeFunc::Parms + 2); }
+  void     set_box_node(Node* box) { set_req(TypeFunc::Parms + 1, box); }
+
   const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
 
   virtual uint size_of() const { return sizeof(*this); }
 
-  bool is_eliminated()         {return _eliminate; }
-  // mark node as eliminated and update the counter if there is one
-  void set_eliminated();
+  bool is_eliminated()  const { return (_kind != Regular); }
+  bool is_non_esc_obj() const { return (_kind == NonEscObj); }
+  bool is_coarsened()   const { return (_kind == Coarsened); }
+  bool is_nested()      const { return (_kind == Nested); }
 
-  bool is_coarsened()  { return _coarsened; }
-  void set_coarsened() { _coarsened = true; }
-  void clear_coarsened() { _coarsened = false; }
+  void set_non_esc_obj() { _kind = NonEscObj; set_eliminated_lock_counter(); }
+  void set_coarsened()   { _kind = Coarsened; set_eliminated_lock_counter(); }
+  void set_nested()      { _kind = Nested; set_eliminated_lock_counter(); }
 
   // locking does not modify its arguments
-  virtual bool        may_modify(const TypePtr *addr_t, PhaseTransform *phase){ return false;}
+  virtual bool may_modify(const TypePtr *addr_t, PhaseTransform *phase){ return false;}
 
 #ifndef PRODUCT
   void create_lock_counter(JVMState* s);
@@ -936,6 +944,8 @@ public:
   virtual void  clone_jvms() {
     set_jvms(jvms()->clone_deep(Compile::current()));
   }
+
+  bool is_nested_lock_region(); // Is this Lock nested?
 };
 
 //------------------------------Unlock---------------------------------------

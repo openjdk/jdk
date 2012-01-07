@@ -1819,8 +1819,12 @@ PhiNode *Parse::ensure_phi(int idx, bool nocreate) {
   } else if (jvms->is_stk(idx)) {
     t = block()->stack_type_at(idx - jvms->stkoff());
   } else if (jvms->is_mon(idx)) {
-    assert(!jvms->is_monitor_box(idx), "no phis for boxes");
-    t = TypeInstPtr::BOTTOM; // this is sufficient for a lock object
+    if (EliminateNestedLocks && jvms->is_monitor_box(idx)) {
+      // BoxLock nodes are not commoning. Create Phi.
+      t = o->bottom_type(); // TypeRawPtr::BOTTOM
+    } else {
+      t = TypeInstPtr::BOTTOM; // this is sufficient for a lock object
+    }
   } else if ((uint)idx < TypeFunc::Parms) {
     t = o->bottom_type();  // Type::RETURN_ADDRESS or such-like.
   } else {
