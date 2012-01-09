@@ -326,9 +326,9 @@ class CommandLineFlags {
 
   // Returns false if name is not a command line flag.
   static bool wasSetOnCmdline(const char* name, bool* value);
-  static void printSetFlags();
+  static void printSetFlags(outputStream* out);
 
-  static void printFlags(bool withComments = false );
+  static void printFlags(outputStream* out, bool withComments);
 
   static void verify() PRODUCT_RETURN;
 };
