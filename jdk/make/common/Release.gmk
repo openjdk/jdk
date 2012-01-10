@@ -323,6 +323,7 @@ TOOLS = \
 	sun/tools/jar		\
 	sun/tools/java		\
 	sun/tools/javac		\
+	sun/tools/jcmd		\
 	sun/tools/jps		\
 	sun/tools/jstat		\
 	sun/tools/jstatd	\
@@ -435,6 +436,7 @@ NOTJRETOOLS = \
 	apt$(EXE_SUFFIX) \
 	javah$(EXE_SUFFIX) \
 	javap$(EXE_SUFFIX) \
+	jcmd$(EXE_SUFFIX) \
 	jdb$(EXE_SUFFIX) \
 	jps$(EXE_SUFFIX) \
 	jrunscript$(EXE_SUFFIX) \
@@ -544,6 +546,7 @@ $(NOT_RT_JAR_LIST): FRC
 	$(ECHO) "sun/tools/javac/" >> $@
 	$(ECHO) "com/sun/tools/classfile/" >> $@
 	$(ECHO) "com/sun/tools/javap/" >> $@
+	$(ECHO) "sun/tools/jcmd/" >> $@
 	$(ECHO) "sun/tools/jconsole/" >> $@
 	$(ECHO) "sun/tools/jps/" >> $@
 	$(ECHO) "sun/tools/jstat/" >> $@
