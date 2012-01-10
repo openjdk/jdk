@@ -295,7 +295,7 @@
           "Percentage (0-100) of the heap size to use as minimum "          \
           "young gen size.")                                                \
                                                                             \
-  develop(uintx, G1DefaultMaxNewGenPercent, 50,                             \
+  develop(uintx, G1DefaultMaxNewGenPercent, 80,                             \
           "Percentage (0-100) of the heap size to use as maximum "          \
           "young gen size.")
 
