@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,9 @@ class ReverseState implements State {
 
     /* the algorithm checker */
     AlgorithmChecker algorithmChecker;
+
+    /* the untrusted certificates checker */
+    UntrustedChecker untrustedChecker;
 
     /* the trust anchor used to validate the path */
     TrustAnchor trustAnchor;
