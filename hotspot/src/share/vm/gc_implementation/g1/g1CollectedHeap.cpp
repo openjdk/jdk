@@ -3793,6 +3793,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
           size_t expand_bytes = g1_policy()->expansion_amount();
           if (expand_bytes > 0) {
             size_t bytes_before = capacity();
+            // No need for an ergo verbose message here,
+            // expansion_amount() does this when it returns a value > 0.
             if (!expand(expand_bytes)) {
               // We failed to expand the heap so let's verify that
               // committed/uncommitted amount match the backing store
@@ -3847,21 +3849,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         ref_processor_stw()->verify_no_references_recorded();
 
         // CM reference discovery will be re-enabled if necessary.
-      }
-
-      {
-        size_t expand_bytes = g1_policy()->expansion_amount();
-        if (expand_bytes > 0) {
-          size_t bytes_before = capacity();
-          // No need for an ergo verbose message here,
-          // expansion_amount() does this when it returns a value > 0.
-          if (!expand(expand_bytes)) {
-            // We failed to expand the heap so let's verify that
-            // committed/uncommitted amount match the backing store
-            assert(capacity() == _g1_storage.committed_size(), "committed size mismatch");
-            assert(max_capacity() == _g1_storage.reserved_size(), "reserved size mismatch");
-          }
-        }
       }
 
       // We should do this after we potentially expand the heap so
