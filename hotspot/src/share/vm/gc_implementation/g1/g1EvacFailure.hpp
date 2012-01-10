@@ -66,19 +66,22 @@ private:
   G1CollectedHeap* _g1;
   ConcurrentMark* _cm;
   HeapRegion* _hr;
-  size_t _prev_marked_bytes;
-  size_t _next_marked_bytes;
+  size_t _marked_bytes;
   OopsInHeapRegionClosure *_update_rset_cl;
+  bool _during_initial_mark;
+  bool _during_conc_mark;
 public:
   RemoveSelfForwardPtrObjClosure(G1CollectedHeap* g1, ConcurrentMark* cm,
                                  HeapRegion* hr,
-                                 OopsInHeapRegionClosure* update_rset_cl) :
-    _g1(g1), _cm(cm), _hr(hr),
+                                 OopsInHeapRegionClosure* update_rset_cl,
+                                 bool during_initial_mark,
+                                 bool during_conc_mark) :
+    _g1(g1), _cm(cm), _hr(hr), _marked_bytes(0),
     _update_rset_cl(update_rset_cl),
-    _prev_marked_bytes(0), _next_marked_bytes(0) {}
+    _during_initial_mark(during_initial_mark),
+    _during_conc_mark(during_conc_mark) { }
 
-  size_t prev_marked_bytes() { return _prev_marked_bytes; }
-  size_t next_marked_bytes() { return _next_marked_bytes; }
+  size_t marked_bytes() { return _marked_bytes; }
 
   // <original comment>
   // The original idea here was to coalesce evacuated and dead objects.
@@ -100,18 +103,29 @@ public:
     HeapWord* obj_addr = (HeapWord*) obj;
     assert(_hr->is_in(obj_addr), "sanity");
     size_t obj_size = obj->size();
-
     _hr->update_bot_for_object(obj_addr, obj_size);
 
     if (obj->is_forwarded() && obj->forwardee() == obj) {
       // The object failed to move.
-      assert(!_g1->is_obj_dead(obj), "We should not be preserving dead objs.");
+
+      // We consider all objects that we find self-forwarded to be
+      // live. What we'll do is that we'll update the prev marking
+      // info so that they are all under PTAMS and explicitly marked.
       _cm->markPrev(obj);
-      assert(_cm->isPrevMarked(obj), "Should be marked!");
-      _prev_marked_bytes += (obj_size * HeapWordSize);
-      if (_g1->mark_in_progress() && !_g1->is_obj_ill(obj)) {
-        _cm->markAndGrayObjectIfNecessary(obj);
+      if (_during_initial_mark) {
+        // For the next marking info we'll only mark the
+        // self-forwarded objects explicitly if we are during
+        // initial-mark (since, normally, we only mark objects pointed
+        // to by roots if we succeed in copying them). By marking all
+        // self-forwarded objects we ensure that we mark any that are
+        // still pointed to be roots. During concurrent marking, and
+        // after initial-mark, we don't need to mark any objects
+        // explicitly and all objects in the CSet are considered
+        // (implicitly) live. So, we won't mark them explicitly and
+        // we'll leave them over NTAMS.
+        _cm->markNext(obj);
       }
+      _marked_bytes += (obj_size * HeapWordSize);
       obj->set_mark(markOopDesc::prototype());
 
       // While we were processing RSet buffers during the collection,
@@ -126,15 +140,13 @@ public:
       // The problem is that, if evacuation fails, we might have
       // remembered set entries missing given that we skipped cards on
       // the collection set. So, we'll recreate such entries now.
-
       obj->oop_iterate(_update_rset_cl);
       assert(_cm->isPrevMarked(obj), "Should be marked!");
     } else {
       // The object has been either evacuated or is dead. Fill it with a
       // dummy object.
-      MemRegion mr((HeapWord*)obj, obj_size);
+      MemRegion mr((HeapWord*) obj, obj_size);
       CollectedHeap::fill_with_object(mr);
-      _cm->clearRangeBothMaps(mr);
     }
   }
 };
@@ -151,12 +163,27 @@ public:
     _cm(_g1h->concurrent_mark()) { }
 
   bool doHeapRegion(HeapRegion *hr) {
+    bool during_initial_mark = _g1h->g1_policy()->during_initial_mark_pause();
+    bool during_conc_mark = _g1h->mark_in_progress();
+
     assert(!hr->isHumongous(), "sanity");
     assert(hr->in_collection_set(), "bad CS");
 
     if (hr->claimHeapRegion(HeapRegion::ParEvacFailureClaimValue)) {
       if (hr->evacuation_failed()) {
-        RemoveSelfForwardPtrObjClosure rspc(_g1h, _cm, hr, _update_rset_cl);
+        RemoveSelfForwardPtrObjClosure rspc(_g1h, _cm, hr, _update_rset_cl,
+                                            during_initial_mark,
+                                            during_conc_mark);
+
+        MemRegion mr(hr->bottom(), hr->end());
+        // We'll recreate the prev marking info so we'll first clear
+        // the prev bitmap range for this region. We never mark any
+        // CSet objects explicitly so the next bitmap range should be
+        // cleared anyway.
+        _cm->clearRangePrevBitmap(mr);
+
+        hr->note_self_forwarding_removal_start(during_initial_mark,
+                                               during_conc_mark);
 
         // In the common case (i.e. when there is no evacuation
         // failure) we make sure that the following is done when
@@ -171,28 +198,9 @@ public:
         _update_rset_cl->set_region(hr);
         hr->object_iterate(&rspc);
 
-        // A number of manipulations to make the TAMS for this region
-        // be the current top, and the marked bytes be the ones observed
-        // in the iteration.
-        if (_cm->at_least_one_mark_complete()) {
-          // The comments below are the postconditions achieved by the
-          // calls.  Note especially the last such condition, which says that
-          // the count of marked bytes has been properly restored.
-          hr->note_start_of_marking(false);
-          // _next_top_at_mark_start == top, _next_marked_bytes == 0
-          hr->add_to_marked_bytes(rspc.prev_marked_bytes());
-          // _next_marked_bytes == prev_marked_bytes.
-          hr->note_end_of_marking();
-          // _prev_top_at_mark_start == top(),
-          // _prev_marked_bytes == prev_marked_bytes
-        }
-        // If there is no mark in progress, we modified the _next variables
-        // above needlessly, but harmlessly.
-        if (_g1h->mark_in_progress()) {
-          hr->note_start_of_marking(false);
-          // _next_top_at_mark_start == top, _next_marked_bytes == 0
-          // _next_marked_bytes == next_marked_bytes.
-        }
+        hr->note_self_forwarding_removal_end(during_initial_mark,
+                                             during_conc_mark,
+                                             rspc.marked_bytes());
       }
     }
     return false;

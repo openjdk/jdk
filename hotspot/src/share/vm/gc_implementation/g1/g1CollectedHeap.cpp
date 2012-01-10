@@ -36,6 +36,7 @@
 #include "gc_implementation/g1/g1MarkSweep.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.inline.hpp"
+#include "gc_implementation/g1/heapRegion.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "gc_implementation/g1/heapRegionSeq.inline.hpp"
 #include "gc_implementation/g1/vm_operations_g1.hpp"
@@ -3018,14 +3019,20 @@ public:
       } else {
         VerifyObjsInRegionClosure not_dead_yet_cl(r, _vo);
         r->object_iterate(&not_dead_yet_cl);
-        if (r->max_live_bytes() < not_dead_yet_cl.live_bytes()) {
-          gclog_or_tty->print_cr("["PTR_FORMAT","PTR_FORMAT"] "
-                                 "max_live_bytes "SIZE_FORMAT" "
-                                 "< calculated "SIZE_FORMAT,
-                                 r->bottom(), r->end(),
-                                 r->max_live_bytes(),
+        if (_vo != VerifyOption_G1UseNextMarking) {
+          if (r->max_live_bytes() < not_dead_yet_cl.live_bytes()) {
+            gclog_or_tty->print_cr("["PTR_FORMAT","PTR_FORMAT"] "
+                                   "max_live_bytes "SIZE_FORMAT" "
+                                   "< calculated "SIZE_FORMAT,
+                                   r->bottom(), r->end(),
+                                   r->max_live_bytes(),
                                  not_dead_yet_cl.live_bytes());
-          _failures = true;
+            _failures = true;
+          }
+        } else {
+          // When vo == UseNextMarking we cannot currently do a sanity
+          // check on the live bytes as the calculation has not been
+          // finalized yet.
         }
       }
     }
@@ -3659,25 +3666,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         }
         perm_gen()->save_marks();
 
-        // We must do this before any possible evacuation that should propagate
-        // marks.
-        if (mark_in_progress()) {
-          double start_time_sec = os::elapsedTime();
-
-          _cm->drainAllSATBBuffers();
-          double finish_mark_ms = (os::elapsedTime() - start_time_sec) * 1000.0;
-          g1_policy()->record_satb_drain_time(finish_mark_ms);
-        }
-        // Record the number of elements currently on the mark stack, so we
-        // only iterate over these.  (Since evacuation may add to the mark
-        // stack, doing more exposes race conditions.)  If no mark is in
-        // progress, this will be zero.
-        _cm->set_oops_do_bound();
-
-        if (mark_in_progress()) {
-          concurrent_mark()->newCSet();
-        }
-
 #if YOUNG_LIST_VERBOSE
         gclog_or_tty->print_cr("\nBefore choosing collection set.\nYoung_list:");
         _young_list->print();
@@ -3685,6 +3673,16 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 #endif // YOUNG_LIST_VERBOSE
 
         g1_policy()->choose_collection_set(target_pause_time_ms);
+
+        _cm->note_start_of_gc();
+        // We should not verify the per-thread SATB buffers given that
+        // we have not filtered them yet (we'll do so during the
+        // GC). We also call this after choose_collection_set() to
+        // ensure that the CSet has been finalized.
+        _cm->verify_no_cset_oops(true  /* verify_stacks */,
+                                 true  /* verify_enqueued_buffers */,
+                                 false /* verify_thread_buffers */,
+                                 true  /* verify_fingers */);
 
         if (_hr_printer.is_active()) {
           HeapRegion* hr = g1_policy()->collection_set();
@@ -3702,16 +3700,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
           }
         }
 
-        // We have chosen the complete collection set. If marking is
-        // active then, we clear the region fields of any of the
-        // concurrent marking tasks whose region fields point into
-        // the collection set as these values will become stale. This
-        // will cause the owning marking threads to claim a new region
-        // when marking restarts.
-        if (mark_in_progress()) {
-          concurrent_mark()->reset_active_task_region_fields_in_cset();
-        }
-
 #ifdef ASSERT
         VerifyCSetClosure cl;
         collection_set_iterate(&cl);
@@ -3724,6 +3712,16 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
         // Actually do the work...
         evacuate_collection_set();
+
+        // We do this to mainly verify the per-thread SATB buffers
+        // (which have been filtered by now) since we didn't verify
+        // them earlier. No point in re-checking the stacks / enqueued
+        // buffers given that the CSet has not changed since last time
+        // we checked.
+        _cm->verify_no_cset_oops(false /* verify_stacks */,
+                                 false /* verify_enqueued_buffers */,
+                                 true  /* verify_thread_buffers */,
+                                 true  /* verify_fingers */);
 
         free_collection_set(g1_policy()->collection_set());
         g1_policy()->clear_collection_set();
@@ -3803,6 +3801,14 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
             }
           }
         }
+
+        // We redo the verificaiton but now wrt to the new CSet which
+        // has just got initialized after the previous CSet was freed.
+        _cm->verify_no_cset_oops(true  /* verify_stacks */,
+                                 true  /* verify_enqueued_buffers */,
+                                 true  /* verify_thread_buffers */,
+                                 true  /* verify_fingers */);
+        _cm->note_end_of_gc();
 
         double end_time_sec = os::elapsedTime();
         double pause_time_ms = (end_time_sec - start_time_sec) * MILLIUNITS;
@@ -3954,6 +3960,8 @@ void G1CollectedHeap::init_gc_alloc_regions() {
     // we allocate to in the region sets. We'll re-add it later, when
     // it's retired again.
     _old_set.remove(retained_region);
+    bool during_im = g1_policy()->during_initial_mark_pause();
+    retained_region->note_start_of_copying(during_im);
     _old_gc_alloc_region.set(retained_region);
     _hr_printer.reuse(retained_region);
   }
@@ -4047,8 +4055,7 @@ void G1CollectedHeap::drain_evac_failure_scan_stack() {
 
 oop
 G1CollectedHeap::handle_evacuation_failure_par(OopsInHeapRegionClosure* cl,
-                                               oop old,
-                                               bool should_mark_root) {
+                                               oop old) {
   assert(obj_in_cs(old),
          err_msg("obj: "PTR_FORMAT" should still be in the CSet",
                  (HeapWord*) old));
@@ -4056,15 +4063,6 @@ G1CollectedHeap::handle_evacuation_failure_par(OopsInHeapRegionClosure* cl,
   oop forward_ptr = old->forward_to_atomic(old);
   if (forward_ptr == NULL) {
     // Forward-to-self succeeded.
-
-    // should_mark_root will be true when this routine is called
-    // from a root scanning closure during an initial mark pause.
-    // In this case the thread that succeeds in self-forwarding the
-    // object is also responsible for marking the object.
-    if (should_mark_root) {
-      assert(!oopDesc::is_null(old), "shouldn't be");
-      _cm->grayRoot(old);
-    }
 
     if (_evac_failure_closure != cl) {
       MutexLockerEx x(EvacFailureStack_lock, Mutex::_no_safepoint_check_flag);
@@ -4161,30 +4159,8 @@ HeapWord* G1CollectedHeap::par_allocate_during_gc(GCAllocPurpose purpose,
   return NULL;
 }
 
-#ifndef PRODUCT
-bool GCLabBitMapClosure::do_bit(size_t offset) {
-  HeapWord* addr = _bitmap->offsetToHeapWord(offset);
-  guarantee(_cm->isMarked(oop(addr)), "it should be!");
-  return true;
-}
-#endif // PRODUCT
-
 G1ParGCAllocBuffer::G1ParGCAllocBuffer(size_t gclab_word_size) :
-  ParGCAllocBuffer(gclab_word_size),
-  _should_mark_objects(false),
-  _bitmap(G1CollectedHeap::heap()->reserved_region().start(), gclab_word_size),
-  _retired(false)
-{
-  //_should_mark_objects is set to true when G1ParCopyHelper needs to
-  // mark the forwarded location of an evacuated object.
-  // We set _should_mark_objects to true if marking is active, i.e. when we
-  // need to propagate a mark, or during an initial mark pause, i.e. when we
-  // need to mark objects immediately reachable by the roots.
-  if (G1CollectedHeap::heap()->mark_in_progress() ||
-      G1CollectedHeap::heap()->g1_policy()->during_initial_mark_pause()) {
-    _should_mark_objects = true;
-  }
-}
+  ParGCAllocBuffer(gclab_word_size), _retired(false) { }
 
 G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, int queue_num)
   : _g1h(g1h),
@@ -4198,8 +4174,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, int queue_num)
     _tenured_alloc_buffer(g1h->desired_plab_sz(GCAllocForTenured)),
     _age_table(false),
     _strong_roots_time(0), _term_time(0),
-    _alloc_buffer_waste(0), _undo_waste(0)
-{
+    _alloc_buffer_waste(0), _undo_waste(0) {
   // we allocate G1YoungSurvRateNumRegions plus one entries, since
   // we "sacrifice" entry 0 to keep track of surviving bytes for
   // non-young regions (where the age is -1)
@@ -4304,35 +4279,53 @@ void G1ParScanThreadState::trim_queue() {
   } while (!refs()->is_empty());
 }
 
-G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
+G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1,
+                                     G1ParScanThreadState* par_scan_state) :
   _g1(g1), _g1_rem(_g1->g1_rem_set()), _cm(_g1->concurrent_mark()),
   _par_scan_state(par_scan_state),
   _during_initial_mark(_g1->g1_policy()->during_initial_mark_pause()),
   _mark_in_progress(_g1->mark_in_progress()) { }
 
-template <class T> void G1ParCopyHelper::mark_object(T* p) {
-  // This is called from do_oop_work for objects that are not
-  // in the collection set. Objects in the collection set
-  // are marked after they have been evacuated.
+void G1ParCopyHelper::mark_object(oop obj) {
+#ifdef ASSERT
+  HeapRegion* hr = _g1->heap_region_containing(obj);
+  assert(hr != NULL, "sanity");
+  assert(!hr->in_collection_set(), "should not mark objects in the CSet");
+#endif // ASSERT
 
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop)) {
-    oop obj = oopDesc::decode_heap_oop(heap_oop);
-    HeapWord* addr = (HeapWord*)obj;
-    if (_g1->is_in_g1_reserved(addr)) {
-      _cm->grayRoot(oop(addr));
-    }
-  }
+  // We know that the object is not moving so it's safe to read its size.
+  _cm->grayRoot(obj, (size_t) obj->size());
 }
 
-oop G1ParCopyHelper::copy_to_survivor_space(oop old, bool should_mark_root,
-                                                     bool should_mark_copy) {
+void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
+#ifdef ASSERT
+  assert(from_obj->is_forwarded(), "from obj should be forwarded");
+  assert(from_obj->forwardee() == to_obj, "to obj should be the forwardee");
+  assert(from_obj != to_obj, "should not be self-forwarded");
+
+  HeapRegion* from_hr = _g1->heap_region_containing(from_obj);
+  assert(from_hr != NULL, "sanity");
+  assert(from_hr->in_collection_set(), "from obj should be in the CSet");
+
+  HeapRegion* to_hr = _g1->heap_region_containing(to_obj);
+  assert(to_hr != NULL, "sanity");
+  assert(!to_hr->in_collection_set(), "should not mark objects in the CSet");
+#endif // ASSERT
+
+  // The object might be in the process of being copied by another
+  // worker so we cannot trust that its to-space image is
+  // well-formed. So we have to read its size from its from-space
+  // image which we know should not be changing.
+  _cm->grayRoot(to_obj, (size_t) from_obj->size());
+}
+
+oop G1ParCopyHelper::copy_to_survivor_space(oop old) {
   size_t    word_sz = old->size();
   HeapRegion* from_region = _g1->heap_region_containing_raw(old);
   // +1 to make the -1 indexes valid...
   int       young_index = from_region->young_index_in_cset()+1;
-  assert( (from_region->is_young() && young_index > 0) ||
-          (!from_region->is_young() && young_index == 0), "invariant" );
+  assert( (from_region->is_young() && young_index >  0) ||
+         (!from_region->is_young() && young_index == 0), "invariant" );
   G1CollectorPolicy* g1p = _g1->g1_policy();
   markOop m = old->mark();
   int age = m->has_displaced_mark_helper() ? m->displaced_mark_helper()->age()
@@ -4346,7 +4339,7 @@ oop G1ParCopyHelper::copy_to_survivor_space(oop old, bool should_mark_root,
     // This will either forward-to-self, or detect that someone else has
     // installed a forwarding pointer.
     OopsInHeapRegionClosure* cl = _par_scan_state->evac_failure_closure();
-    return _g1->handle_evacuation_failure_par(cl, old, should_mark_root);
+    return _g1->handle_evacuation_failure_par(cl, old);
   }
 
   // We're going to allocate linearly, so might as well prefetch ahead.
@@ -4382,23 +4375,6 @@ oop G1ParCopyHelper::copy_to_survivor_space(oop old, bool should_mark_root,
       obj->set_mark(m);
     }
 
-    // Mark the evacuated object or propagate "next" mark bit
-    if (should_mark_copy) {
-      if (!use_local_bitmaps ||
-          !_par_scan_state->alloc_buffer(alloc_purpose)->mark(obj_ptr)) {
-        // if we couldn't mark it on the local bitmap (this happens when
-        // the object was not allocated in the GCLab), we have to bite
-        // the bullet and do the standard parallel mark
-        _cm->markAndGrayObjectIfNecessary(obj);
-      }
-
-      if (_g1->isMarkedNext(old)) {
-        // Unmark the object's old location so that marking
-        // doesn't think the old object is alive.
-        _cm->nextMarkBitMap()->parClear((HeapWord*)old);
-      }
-    }
-
     size_t* surv_young_words = _par_scan_state->surviving_young_words();
     surv_young_words[young_index] += word_sz;
 
@@ -4428,61 +4404,24 @@ void G1ParCopyClosure<do_gen_barrier, barrier, do_mark_object>
 ::do_oop_work(T* p) {
   oop obj = oopDesc::load_decode_heap_oop(p);
   assert(barrier != G1BarrierRS || obj != NULL,
-         "Precondition: G1BarrierRS implies obj is nonNull");
-
-  // Marking:
-  // If the object is in the collection set, then the thread
-  // that copies the object should mark, or propagate the
-  // mark to, the evacuated object.
-  // If the object is not in the collection set then we
-  // should call the mark_object() method depending on the
-  // value of the template parameter do_mark_object (which will
-  // be true for root scanning closures during an initial mark
-  // pause).
-  // The mark_object() method first checks whether the object
-  // is marked and, if not, attempts to mark the object.
+         "Precondition: G1BarrierRS implies obj is non-NULL");
 
   // here the null check is implicit in the cset_fast_test() test
   if (_g1->in_cset_fast_test(obj)) {
+    oop forwardee;
     if (obj->is_forwarded()) {
-      oopDesc::encode_store_heap_oop(p, obj->forwardee());
-      // If we are a root scanning closure during an initial
-      // mark pause (i.e. do_mark_object will be true) then
-      // we also need to handle marking of roots in the
-      // event of an evacuation failure. In the event of an
-      // evacuation failure, the object is forwarded to itself
-      // and not copied. For root-scanning closures, the
-      // object would be marked after a successful self-forward
-      // but an object could be pointed to by both a root and non
-      // root location and be self-forwarded by a non-root-scanning
-      // closure. Therefore we also have to attempt to mark the
-      // self-forwarded root object here.
-      if (do_mark_object && obj->forwardee() == obj) {
-        mark_object(p);
-      }
+      forwardee = obj->forwardee();
     } else {
-      // During an initial mark pause, objects that are pointed to
-      // by the roots need to be marked - even in the event of an
-      // evacuation failure. We pass the template parameter
-      // do_mark_object (which is true for root scanning closures
-      // during an initial mark pause) to copy_to_survivor_space
-      // which will pass it on to the evacuation failure handling
-      // code. The thread that successfully self-forwards a root
-      // object to itself is responsible for marking the object.
-      bool should_mark_root = do_mark_object;
-
-      // We need to mark the copied object if we're a root scanning
-      // closure during an initial mark pause (i.e. do_mark_object
-      // will be true), or the object is already marked and we need
-      // to propagate the mark to the evacuated copy.
-      bool should_mark_copy = do_mark_object ||
-                              _during_initial_mark ||
-                              (_mark_in_progress && !_g1->is_obj_ill(obj));
-
-      oop copy_oop = copy_to_survivor_space(obj, should_mark_root,
-                                                 should_mark_copy);
-      oopDesc::encode_store_heap_oop(p, copy_oop);
+      forwardee = copy_to_survivor_space(obj);
     }
+    assert(forwardee != NULL, "forwardee should not be NULL");
+    oopDesc::encode_store_heap_oop(p, forwardee);
+    if (do_mark_object && forwardee != obj) {
+      // If the object is self-forwarded we don't need to explicitly
+      // mark it, the evacuation failure protocol will do so.
+      mark_forwarded_object(obj, forwardee);
+    }
+
     // When scanning the RS, we only care about objs in CS.
     if (barrier == G1BarrierRS) {
       _par_scan_state->update_rs(_from, p, _par_scan_state->queue_num());
@@ -4491,8 +4430,8 @@ void G1ParCopyClosure<do_gen_barrier, barrier, do_mark_object>
     // The object is not in collection set. If we're a root scanning
     // closure during an initial mark pause (i.e. do_mark_object will
     // be true) then attempt to mark the object.
-    if (do_mark_object) {
-      mark_object(p);
+    if (do_mark_object && _g1->is_in_g1_reserved(obj)) {
+      mark_object(obj);
     }
   }
 
@@ -4787,12 +4726,16 @@ g1_process_strong_roots(bool collecting_perm_gen,
 
   g1_policy()->record_ext_root_scan_time(worker_i, ext_root_time_ms);
 
-  // Scan strong roots in mark stack.
-  if (!_process_strong_tasks->is_task_claimed(G1H_PS_mark_stack_oops_do)) {
-    concurrent_mark()->oops_do(scan_non_heap_roots);
+  // During conc marking we have to filter the per-thread SATB buffers
+  // to make sure we remove any oops into the CSet (which will show up
+  // as implicitly live).
+  if (!_process_strong_tasks->is_task_claimed(G1H_PS_filter_satb_buffers)) {
+    if (mark_in_progress()) {
+      JavaThread::satb_mark_queue_set().filter_thread_buffers();
+    }
   }
-  double mark_stack_scan_ms = (os::elapsedTime() - ext_roots_end) * 1000.0;
-  g1_policy()->record_mark_stack_scan_time(worker_i, mark_stack_scan_ms);
+  double satb_filtering_ms = (os::elapsedTime() - ext_roots_end) * 1000.0;
+  g1_policy()->record_satb_filtering_time(worker_i, satb_filtering_ms);
 
   // Now scan the complement of the collection set.
   if (scan_rs != NULL) {
@@ -5410,13 +5353,6 @@ void G1CollectedHeap::evacuate_collection_set() {
   concurrent_g1_refine()->set_use_cache(true);
 
   finalize_for_evac_failure();
-
-  // Must do this before clearing the per-region evac-failure flags
-  // (which is currently done when we free the collection set).
-  // We also only do this if marking is actually in progress and so
-  // have to do this before we set the mark_in_progress flag at the
-  // end of an initial mark pause.
-  concurrent_mark()->complete_marking_in_collection_set();
 
   if (evacuation_failed()) {
     remove_self_forwarding_pointers();
@@ -6074,6 +6010,8 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size,
       } else {
         _hr_printer.alloc(new_alloc_region, G1HRPrinter::Old);
       }
+      bool during_im = g1_policy()->during_initial_mark_pause();
+      new_alloc_region->note_start_of_copying(during_im);
       return new_alloc_region;
     } else {
       g1_policy()->note_alloc_region_limit_reached(ap);
@@ -6085,7 +6023,8 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size,
 void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
                                              size_t allocated_bytes,
                                              GCAllocPurpose ap) {
-  alloc_region->note_end_of_copying();
+  bool during_im = g1_policy()->during_initial_mark_pause();
+  alloc_region->note_end_of_copying(during_im);
   g1_policy()->record_bytes_copied_during_gc(allocated_bytes);
   if (ap == GCAllocForSurvived) {
     young_list()->add_survivor_region(alloc_region);

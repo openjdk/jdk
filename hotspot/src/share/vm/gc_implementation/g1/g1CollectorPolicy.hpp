@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ class MainBodySummary: public CHeapObj {
   define_num_seq(satb_drain) // optional
   define_num_seq(parallel) // parallel only
     define_num_seq(ext_root_scan)
-    define_num_seq(mark_stack_scan)
+    define_num_seq(satb_filtering)
     define_num_seq(update_rs)
     define_num_seq(scan_rs)
     define_num_seq(obj_copy)
@@ -215,7 +215,7 @@ private:
 
   double* _par_last_gc_worker_start_times_ms;
   double* _par_last_ext_root_scan_times_ms;
-  double* _par_last_mark_stack_scan_times_ms;
+  double* _par_last_satb_filtering_times_ms;
   double* _par_last_update_rs_times_ms;
   double* _par_last_update_rs_processed_buffers;
   double* _par_last_scan_rs_times_ms;
@@ -841,8 +841,8 @@ public:
     _par_last_ext_root_scan_times_ms[worker_i] = ms;
   }
 
-  void record_mark_stack_scan_time(int worker_i, double ms) {
-    _par_last_mark_stack_scan_times_ms[worker_i] = ms;
+  void record_satb_filtering_time(int worker_i, double ms) {
+    _par_last_satb_filtering_times_ms[worker_i] = ms;
   }
 
   void record_satb_drain_time(double ms) {
@@ -1144,6 +1144,11 @@ public:
 
   void note_stop_adding_survivor_regions() {
     _survivor_surv_rate_group->stop_adding_regions();
+  }
+
+  void tenure_all_objects() {
+    _max_survivor_regions = 0;
+    _tenuring_threshold = 0;
   }
 
   void record_survivor_regions(size_t      regions,

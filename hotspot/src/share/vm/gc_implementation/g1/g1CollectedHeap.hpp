@@ -869,8 +869,7 @@ protected:
   void finalize_for_evac_failure();
 
   // An attempt to evacuate "obj" has failed; take necessary steps.
-  oop handle_evacuation_failure_par(OopsInHeapRegionClosure* cl, oop obj,
-                                    bool should_mark_root);
+  oop handle_evacuation_failure_par(OopsInHeapRegionClosure* cl, oop obj);
   void handle_evacuation_failure_common(oop obj, markOop m);
 
   // ("Weak") Reference processing support.
@@ -962,7 +961,7 @@ protected:
   unsigned int* _worker_cset_start_region_time_stamp;
 
   enum G1H_process_strong_roots_tasks {
-    G1H_PS_mark_stack_oops_do,
+    G1H_PS_filter_satb_buffers,
     G1H_PS_refProcessor_oops_do,
     // Leave this one last.
     G1H_PS_NumElements
@@ -1752,10 +1751,8 @@ public:
       _gclab_word_size(gclab_word_size),
       _real_start_word(NULL),
       _real_end_word(NULL),
-      _start_word(NULL)
-  {
-    guarantee( size_in_words() >= bitmap_size_in_words(),
-               "just making sure");
+      _start_word(NULL) {
+    guarantee(false, "GCLabBitMap::GCLabBitmap(): don't call this any more");
   }
 
   inline unsigned heapWordToOffset(HeapWord* addr) {
@@ -1809,6 +1806,8 @@ public:
   }
 
   void set_buffer(HeapWord* start) {
+    guarantee(false, "set_buffer(): don't call this any more");
+
     guarantee(use_local_bitmaps, "invariant");
     clear();
 
@@ -1832,6 +1831,8 @@ public:
 #endif // PRODUCT
 
   void retire() {
+    guarantee(false, "retire(): don't call this any more");
+
     guarantee(use_local_bitmaps, "invariant");
     assert(fields_well_formed(), "invariant");
 
@@ -1865,32 +1866,18 @@ public:
 class G1ParGCAllocBuffer: public ParGCAllocBuffer {
 private:
   bool        _retired;
-  bool        _should_mark_objects;
-  GCLabBitMap _bitmap;
 
 public:
   G1ParGCAllocBuffer(size_t gclab_word_size);
 
-  inline bool mark(HeapWord* addr) {
-    guarantee(use_local_bitmaps, "invariant");
-    assert(_should_mark_objects, "invariant");
-    return _bitmap.mark(addr);
-  }
-
-  inline void set_buf(HeapWord* buf) {
-    if (use_local_bitmaps && _should_mark_objects) {
-      _bitmap.set_buffer(buf);
-    }
+  void set_buf(HeapWord* buf) {
     ParGCAllocBuffer::set_buf(buf);
     _retired = false;
   }
 
-  inline void retire(bool end_of_gc, bool retain) {
+  void retire(bool end_of_gc, bool retain) {
     if (_retired)
       return;
-    if (use_local_bitmaps && _should_mark_objects) {
-      _bitmap.retire();
-    }
     ParGCAllocBuffer::retire(end_of_gc, retain);
     _retired = true;
   }
