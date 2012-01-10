@@ -31,6 +31,7 @@
 #include "gc_implementation/g1/g1ErgoVerbose.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
+#include "gc_implementation/g1/heapRegion.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "gc_implementation/g1/heapRegionSeq.inline.hpp"
 #include "gc_implementation/shared/vmGCOperations.hpp"
@@ -183,12 +184,11 @@ CMMarkStack::CMMarkStack(ConcurrentMark* cm) :
 void CMMarkStack::allocate(size_t size) {
   _base = NEW_C_HEAP_ARRAY(oop, size);
   if (_base == NULL) {
-    vm_exit_during_initialization("Failed to allocate "
-                                  "CM region mark stack");
+    vm_exit_during_initialization("Failed to allocate CM region mark stack");
   }
   _index = 0;
   _capacity = (jint) size;
-  _oops_do_bound = -1;
+  _saved_index = -1;
   NOT_PRODUCT(_max_depth = 0);
 }
 
@@ -283,7 +283,6 @@ bool CMMarkStack::par_pop_arr(oop* ptr_arr, int max, int* n) {
   }
 }
 
-
 CMRegionStack::CMRegionStack() : _base(NULL) {}
 
 void CMRegionStack::allocate(size_t size) {
@@ -302,6 +301,8 @@ CMRegionStack::~CMRegionStack() {
 }
 
 void CMRegionStack::push_lock_free(MemRegion mr) {
+  guarantee(false, "push_lock_free(): don't call this any more");
+
   assert(mr.word_size() > 0, "Precondition");
   while (true) {
     jint index = _index;
@@ -325,6 +326,8 @@ void CMRegionStack::push_lock_free(MemRegion mr) {
 // marking / remark phases. Should only be called in tandem with
 // other lock-free pops.
 MemRegion CMRegionStack::pop_lock_free() {
+  guarantee(false, "pop_lock_free(): don't call this any more");
+
   while (true) {
     jint index = _index;
 
@@ -390,6 +393,8 @@ MemRegion CMRegionStack::pop_with_lock() {
 #endif
 
 bool CMRegionStack::invalidate_entries_into_cset() {
+  guarantee(false, "invalidate_entries_into_cset(): don't call this any more");
+
   bool result = false;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   for (int i = 0; i < _oops_do_bound; ++i) {
@@ -438,14 +443,29 @@ bool CMMarkStack::drain(OopClosureClass* cl, CMBitMap* bm, bool yield_after) {
   return res;
 }
 
+void CMMarkStack::note_start_of_gc() {
+  assert(_saved_index == -1,
+         "note_start_of_gc()/end_of_gc() bracketed incorrectly");
+  _saved_index = _index;
+}
+
+void CMMarkStack::note_end_of_gc() {
+  // This is intentionally a guarantee, instead of an assert. If we
+  // accidentally add something to the mark stack during GC, it
+  // will be a correctness issue so it's better if we crash. we'll
+  // only check this once per GC anyway, so it won't be a performance
+  // issue in any way.
+  guarantee(_saved_index == _index,
+            err_msg("saved index: %d index: %d", _saved_index, _index));
+  _saved_index = -1;
+}
+
 void CMMarkStack::oops_do(OopClosure* f) {
-  if (_index == 0) return;
-  assert(_oops_do_bound != -1 && _oops_do_bound <= _index,
-         "Bound must be set.");
-  for (int i = 0; i < _oops_do_bound; i++) {
+  assert(_saved_index == _index,
+         err_msg("saved index: %d index: %d", _saved_index, _index));
+  for (int i = 0; i < _index; i += 1) {
     f->do_oop(&_base[i]);
   }
-  _oops_do_bound = -1;
 }
 
 bool ConcurrentMark::not_yet_marked(oop obj) const {
@@ -783,7 +803,7 @@ class NoteStartOfMarkHRClosure: public HeapRegionClosure {
 public:
   bool doHeapRegion(HeapRegion* r) {
     if (!r->continuesHumongous()) {
-      r->note_start_of_marking(true);
+      r->note_start_of_marking();
     }
     return false;
   }
@@ -804,6 +824,10 @@ void ConcurrentMark::checkpointRootsInitialPre() {
 
   // Initialise marking structures. This has to be done in a STW phase.
   reset();
+
+  // For each region note start of marking.
+  NoteStartOfMarkHRClosure startcl;
+  g1h->heap_region_iterate(&startcl);
 }
 
 
@@ -817,10 +841,6 @@ void ConcurrentMark::checkpointRootsInitialPost() {
   // cycle, so that at the remaining overflow number will decrease at
   // every remark and we'll eventually not need to cause one.
   force_overflow_stw()->init();
-
-  // For each region note start of marking.
-  NoteStartOfMarkHRClosure startcl;
-  g1h->heap_region_iterate(&startcl);
 
   // Start Concurrent Marking weak-reference discovery.
   ReferenceProcessor* rp = g1h->ref_processor_cm();
@@ -946,22 +966,9 @@ bool ForceOverflowSettings::should_force() {
 }
 #endif // !PRODUCT
 
-void ConcurrentMark::grayRoot(oop p) {
-  HeapWord* addr = (HeapWord*) p;
-  // We can't really check against _heap_start and _heap_end, since it
-  // is possible during an evacuation pause with piggy-backed
-  // initial-mark that the committed space is expanded during the
-  // pause without CM observing this change. So the assertions below
-  // is a bit conservative; but better than nothing.
-  assert(_g1h->g1_committed().contains(addr),
-         "address should be within the heap bounds");
-
-  if (!_nextMarkBitMap->isMarked(addr)) {
-    _nextMarkBitMap->parMark(addr);
-  }
-}
-
 void ConcurrentMark::grayRegionIfNecessary(MemRegion mr) {
+  guarantee(false, "grayRegionIfNecessary(): don't call this any more");
+
   // The objects on the region have already been marked "in bulk" by
   // the caller. We only need to decide whether to push the region on
   // the region stack or not.
@@ -1007,6 +1014,8 @@ void ConcurrentMark::grayRegionIfNecessary(MemRegion mr) {
 }
 
 void ConcurrentMark::markAndGrayObjectIfNecessary(oop p) {
+  guarantee(false, "markAndGrayObjectIfNecessary(): don't call this any more");
+
   // The object is not marked by the caller. We need to at least mark
   // it and maybe push in on the stack.
 
@@ -1224,7 +1233,6 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
                                        true /* expected_active */);
 
     if (VerifyDuringGC) {
-
       HandleMark hm;  // handle scope
       gclog_or_tty->print(" VerifyDuringGC:(after)");
       Universe::heap()->prepare_for_verify();
@@ -1878,10 +1886,6 @@ void ConcurrentMark::cleanup() {
   // Statistics.
   double end = os::elapsedTime();
   _cleanup_times.add((end - start) * 1000.0);
-
-  // G1CollectedHeap::heap()->print();
-  // gclog_or_tty->print_cr("HEAP GC TIME STAMP : %d",
-  // G1CollectedHeap::heap()->get_gc_time_stamp());
 
   if (PrintGC || PrintGCDetails) {
     g1h->print_size_transition(gclog_or_tty,
@@ -2669,6 +2673,8 @@ void ConcurrentMark::deal_with_reference(oop obj) {
 }
 
 void ConcurrentMark::drainAllSATBBuffers() {
+  guarantee(false, "drainAllSATBBuffers(): don't call this any more");
+
   CMGlobalObjectClosure oc(this);
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
   satb_mq_set.set_closure(&oc);
@@ -2687,12 +2693,6 @@ void ConcurrentMark::drainAllSATBBuffers() {
   assert(satb_mq_set.completed_buffers_num() == 0, "invariant");
 }
 
-void ConcurrentMark::markPrev(oop p) {
-  // Note we are overriding the read-only view of the prev map here, via
-  // the cast.
-  ((CMBitMap*)_prevMarkBitMap)->mark((HeapWord*)p);
-}
-
 void ConcurrentMark::clear(oop p) {
   assert(p != NULL && p->is_oop(), "expected an oop");
   HeapWord* addr = (HeapWord*)p;
@@ -2702,11 +2702,19 @@ void ConcurrentMark::clear(oop p) {
   _nextMarkBitMap->clear(addr);
 }
 
-void ConcurrentMark::clearRangeBothMaps(MemRegion mr) {
+void ConcurrentMark::clearRangePrevBitmap(MemRegion mr) {
   // Note we are overriding the read-only view of the prev map here, via
   // the cast.
   ((CMBitMap*)_prevMarkBitMap)->clearRange(mr);
+}
+
+void ConcurrentMark::clearRangeNextBitmap(MemRegion mr) {
   _nextMarkBitMap->clearRange(mr);
+}
+
+void ConcurrentMark::clearRangeBothBitmaps(MemRegion mr) {
+  clearRangePrevBitmap(mr);
+  clearRangeNextBitmap(mr);
 }
 
 HeapRegion*
@@ -2803,6 +2811,9 @@ ConcurrentMark::claim_region(int task_num) {
 }
 
 bool ConcurrentMark::invalidate_aborted_regions_in_cset() {
+  guarantee(false, "invalidate_aborted_regions_in_cset(): "
+                   "don't call this any more");
+
   bool result = false;
   for (int i = 0; i < (int)_max_task_num; ++i) {
     CMTask* the_task = _tasks[i];
@@ -2854,24 +2865,135 @@ void ConcurrentMark::oops_do(OopClosure* cl) {
     // ...then over the contents of the all the task queues.
     queue->oops_do(cl);
   }
-
-  // Invalidate any entries, that are in the region stack, that
-  // point into the collection set
-  if (_regionStack.invalidate_entries_into_cset()) {
-    // otherwise, any gray objects copied during the evacuation pause
-    // might not be visited.
-    assert(_should_gray_objects, "invariant");
-  }
-
-  // Invalidate any aborted regions, recorded in the individual CM
-  // tasks, that point into the collection set.
-  if (invalidate_aborted_regions_in_cset()) {
-    // otherwise, any gray objects copied during the evacuation pause
-    // might not be visited.
-    assert(_should_gray_objects, "invariant");
-  }
-
 }
+
+#ifndef PRODUCT
+enum VerifyNoCSetOopsPhase {
+  VerifyNoCSetOopsStack,
+  VerifyNoCSetOopsQueues,
+  VerifyNoCSetOopsSATBCompleted,
+  VerifyNoCSetOopsSATBThread
+};
+
+class VerifyNoCSetOopsClosure : public OopClosure, public ObjectClosure  {
+private:
+  G1CollectedHeap* _g1h;
+  VerifyNoCSetOopsPhase _phase;
+  int _info;
+
+  const char* phase_str() {
+    switch (_phase) {
+    case VerifyNoCSetOopsStack:         return "Stack";
+    case VerifyNoCSetOopsQueues:        return "Queue";
+    case VerifyNoCSetOopsSATBCompleted: return "Completed SATB Buffers";
+    case VerifyNoCSetOopsSATBThread:    return "Thread SATB Buffers";
+    default:                            ShouldNotReachHere();
+    }
+    return NULL;
+  }
+
+  void do_object_work(oop obj) {
+    guarantee(!_g1h->obj_in_cs(obj),
+              err_msg("obj: "PTR_FORMAT" in CSet, phase: %s, info: %d",
+                      (void*) obj, phase_str(), _info));
+  }
+
+public:
+  VerifyNoCSetOopsClosure() : _g1h(G1CollectedHeap::heap()) { }
+
+  void set_phase(VerifyNoCSetOopsPhase phase, int info = -1) {
+    _phase = phase;
+    _info = info;
+  }
+
+  virtual void do_oop(oop* p) {
+    oop obj = oopDesc::load_decode_heap_oop(p);
+    do_object_work(obj);
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    // We should not come across narrow oops while scanning marking
+    // stacks and SATB buffers.
+    ShouldNotReachHere();
+  }
+
+  virtual void do_object(oop obj) {
+    do_object_work(obj);
+  }
+};
+
+void ConcurrentMark::verify_no_cset_oops(bool verify_stacks,
+                                         bool verify_enqueued_buffers,
+                                         bool verify_thread_buffers,
+                                         bool verify_fingers) {
+  assert(SafepointSynchronize::is_at_safepoint(), "should be at a safepoint");
+  if (!G1CollectedHeap::heap()->mark_in_progress()) {
+    return;
+  }
+
+  VerifyNoCSetOopsClosure cl;
+
+  if (verify_stacks) {
+    // Verify entries on the global mark stack
+    cl.set_phase(VerifyNoCSetOopsStack);
+    _markStack.oops_do(&cl);
+
+    // Verify entries on the task queues
+    for (int i = 0; i < (int) _max_task_num; i += 1) {
+      cl.set_phase(VerifyNoCSetOopsQueues, i);
+      OopTaskQueue* queue = _task_queues->queue(i);
+      queue->oops_do(&cl);
+    }
+  }
+
+  SATBMarkQueueSet& satb_qs = JavaThread::satb_mark_queue_set();
+
+  // Verify entries on the enqueued SATB buffers
+  if (verify_enqueued_buffers) {
+    cl.set_phase(VerifyNoCSetOopsSATBCompleted);
+    satb_qs.iterate_completed_buffers_read_only(&cl);
+  }
+
+  // Verify entries on the per-thread SATB buffers
+  if (verify_thread_buffers) {
+    cl.set_phase(VerifyNoCSetOopsSATBThread);
+    satb_qs.iterate_thread_buffers_read_only(&cl);
+  }
+
+  if (verify_fingers) {
+    // Verify the global finger
+    HeapWord* global_finger = finger();
+    if (global_finger != NULL && global_finger < _heap_end) {
+      // The global finger always points to a heap region boundary. We
+      // use heap_region_containing_raw() to get the containing region
+      // given that the global finger could be pointing to a free region
+      // which subsequently becomes continues humongous. If that
+      // happens, heap_region_containing() will return the bottom of the
+      // corresponding starts humongous region and the check below will
+      // not hold any more.
+      HeapRegion* global_hr = _g1h->heap_region_containing_raw(global_finger);
+      guarantee(global_finger == global_hr->bottom(),
+                err_msg("global finger: "PTR_FORMAT" region: "HR_FORMAT,
+                        global_finger, HR_FORMAT_PARAMS(global_hr)));
+    }
+
+    // Verify the task fingers
+    assert(parallel_marking_threads() <= _max_task_num, "sanity");
+    for (int i = 0; i < (int) parallel_marking_threads(); i += 1) {
+      CMTask* task = _tasks[i];
+      HeapWord* task_finger = task->finger();
+      if (task_finger != NULL && task_finger < _heap_end) {
+        // See above note on the global finger verification.
+        HeapRegion* task_hr = _g1h->heap_region_containing_raw(task_finger);
+        guarantee(task_finger == task_hr->bottom() ||
+                  !task_hr->in_collection_set(),
+                  err_msg("task finger: "PTR_FORMAT" region: "HR_FORMAT,
+                          task_finger, HR_FORMAT_PARAMS(task_hr)));
+      }
+    }
+  }
+}
+#endif // PRODUCT
 
 void ConcurrentMark::clear_marking_state(bool clear_overflow) {
   _markStack.setEmpty();
@@ -3099,6 +3221,9 @@ public:
 };
 
 void ConcurrentMark::complete_marking_in_collection_set() {
+  guarantee(false, "complete_marking_in_collection_set(): "
+                   "don't call this any more");
+
   G1CollectedHeap* g1h =  G1CollectedHeap::heap();
 
   if (!g1h->mark_in_progress()) {
@@ -3146,6 +3271,8 @@ void ConcurrentMark::complete_marking_in_collection_set() {
 // newCSet().
 
 void ConcurrentMark::newCSet() {
+  guarantee(false, "newCSet(): don't call this any more");
+
   if (!concurrent_marking_in_progress()) {
     // nothing to do if marking is not in progress
     return;
@@ -3184,6 +3311,8 @@ void ConcurrentMark::newCSet() {
 }
 
 void ConcurrentMark::registerCSetRegion(HeapRegion* hr) {
+  guarantee(false, "registerCSetRegion(): don't call this any more");
+
   if (!concurrent_marking_in_progress()) return;
 
   HeapWord* region_end = hr->end();
@@ -3195,6 +3324,9 @@ void ConcurrentMark::registerCSetRegion(HeapRegion* hr) {
 // Resets the region fields of active CMTasks whose values point
 // into the collection set.
 void ConcurrentMark::reset_active_task_region_fields_in_cset() {
+  guarantee(false, "reset_active_task_region_fields_in_cset(): "
+                   "don't call this any more");
+
   assert(SafepointSynchronize::is_at_safepoint(), "should be in STW");
   assert(parallel_marking_threads() <= _max_task_num, "sanity");
 
@@ -3905,6 +4037,10 @@ void CMTask::drain_satb_buffers() {
 }
 
 void CMTask::drain_region_stack(BitMapClosure* bc) {
+  assert(_cm->region_stack_empty(), "region stack should be empty");
+  assert(_aborted_region.is_empty(), "aborted region should be empty");
+  return;
+
   if (has_aborted()) return;
 
   assert(_region_finger == NULL,
