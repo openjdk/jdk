@@ -146,7 +146,7 @@ public class T7086601b {
         try {
             ct.analyze();
         } catch (Throwable ex) {
-            throw new AssertionError("Error thron when compiling the following code:\n" + source.getCharContent(true));
+            throw new AssertionError("Error thrown when compiling the following code:\n" + source.getCharContent(true));
         }
         check();
     }
