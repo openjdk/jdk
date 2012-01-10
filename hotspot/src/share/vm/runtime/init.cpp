@@ -140,7 +140,7 @@ jint init_globals() {
   // All the flags that get adjusted by VM_Version_init and os::init_2
   // have been set so dump the flags now.
   if (PrintFlagsFinal) {
-    CommandLineFlags::printFlags();
+    CommandLineFlags::printFlags(tty, false);
   }
 
   return JNI_OK;
