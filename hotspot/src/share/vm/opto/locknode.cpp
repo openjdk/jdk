@@ -100,7 +100,7 @@ bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj) {
       AbstractLockNode* alock = n->as_AbstractLock();
       // Check lock's box since box could be referenced by Lock's debug info.
       if (alock->box_node() == this) {
-        if (alock->obj_node() == obj) {
+        if (alock->obj_node()->eqv_uncast(obj)) {
           if ((unique_lock != NULL) && alock->is_Lock()) {
             if (lock == NULL) {
               lock = alock->as_Lock();
@@ -121,7 +121,7 @@ bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj) {
     Node* n = this->raw_out(i);
     if (n->is_FastLock()) {
       FastLockNode* flock = n->as_FastLock();
-      assert((flock->box_node() == this) && (flock->obj_node() == obj),"");
+      assert((flock->box_node() == this) && flock->obj_node()->eqv_uncast(obj),"");
     }
     if (n->is_SafePoint() && n->as_SafePoint()->jvms()) {
       SafePointNode* sfn = n->as_SafePoint();
@@ -135,7 +135,7 @@ bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj) {
           Node* obj_node = sfn->monitor_obj(jvms, idx);
           Node* box_node = sfn->monitor_box(jvms, idx);
           if (box_node == this) {
-            assert(obj_node == obj,"");
+            assert(obj_node->eqv_uncast(obj),"");
           }
         }
       }
