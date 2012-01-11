@@ -429,6 +429,10 @@ protected:
 
   // Strip away casting.  (It is depth-limited.)
   Node* uncast() const;
+  // Return whether two Nodes are equivalent, after stripping casting.
+  bool eqv_uncast(const Node* n) const {
+    return (this->uncast() == n->uncast());
+  }
 
 private:
   static Node* uncast_helper(const Node* n);

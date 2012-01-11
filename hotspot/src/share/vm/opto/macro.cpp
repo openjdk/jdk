@@ -1818,7 +1818,7 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
         AbstractLockNode* alock = u->as_AbstractLock();
         // Check lock's box since box could be referenced by Lock's debug info.
         if (alock->box_node() == oldbox) {
-          assert(alock->obj_node() == obj, "");
+          assert(alock->obj_node()->eqv_uncast(obj), "");
           // Mark eliminated all related locks and unlocks.
           alock->set_non_esc_obj();
         }
@@ -1845,7 +1845,7 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
     Node* u = oldbox->raw_out(i);
     if (u->is_AbstractLock()) {
       AbstractLockNode* alock = u->as_AbstractLock();
-      if (alock->obj_node() == obj && alock->box_node() == oldbox) {
+      if (alock->box_node() == oldbox && alock->obj_node()->eqv_uncast(obj)) {
         // Replace Box and mark eliminated all related locks and unlocks.
         alock->set_non_esc_obj();
         _igvn.hash_delete(alock);
@@ -1854,7 +1854,7 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
         next_edge = false;
       }
     }
-    if (u->is_FastLock() && u->as_FastLock()->obj_node() == obj) {
+    if (u->is_FastLock() && u->as_FastLock()->obj_node()->eqv_uncast(obj)) {
       FastLockNode* flock = u->as_FastLock();
       assert(flock->box_node() == oldbox, "sanity");
       _igvn.hash_delete(flock);
@@ -1875,7 +1875,7 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
         for (int idx = 0; idx < num_mon; idx++) {
           Node* obj_node = sfn->monitor_obj(jvms, idx);
           Node* box_node = sfn->monitor_box(jvms, idx);
-          if (box_node == oldbox && obj_node == obj) {
+          if (box_node == oldbox && obj_node->eqv_uncast(obj)) {
             int j = jvms->monitor_box_offset(idx);
             _igvn.hash_delete(u);
             u->set_req(j, newbox);
@@ -1912,7 +1912,7 @@ void PhaseMacroExpand::mark_eliminated_locking_nodes(AbstractLockNode *alock) {
             alock = u->as_AbstractLock();
             if (alock->box_node() == box_node) {
               // Verify that this Box is referenced only by related locks.
-              assert(alock->obj_node() == obj, "");
+              assert(alock->obj_node()->eqv_uncast(obj), "");
               // Mark all related locks and unlocks.
               alock->set_nested();
             }
@@ -1931,7 +1931,8 @@ void PhaseMacroExpand::mark_eliminated_locking_nodes(AbstractLockNode *alock) {
     Node* obj = alock->obj_node();
     for (uint j = 0; j < obj->outcnt(); j++) {
       Node* o = obj->raw_out(j);
-      if (o->is_AbstractLock() && o->as_AbstractLock()->obj_node() == obj) {
+      if (o->is_AbstractLock() &&
+          o->as_AbstractLock()->obj_node()->eqv_uncast(obj)) {
         alock = o->as_AbstractLock();
         Node* box = alock->box_node();
         // Replace old box node with new eliminated box for all users

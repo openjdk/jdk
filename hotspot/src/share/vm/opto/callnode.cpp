@@ -1386,7 +1386,7 @@ bool AbstractLockNode::find_matching_unlock(const Node* ctrl, LockNode* lock,
     Node *n = ctrl_proj->in(0);
     if (n != NULL && n->is_Unlock()) {
       UnlockNode *unlock = n->as_Unlock();
-      if ((lock->obj_node() == unlock->obj_node()) &&
+      if (lock->obj_node()->eqv_uncast(unlock->obj_node()) &&
           BoxLockNode::same_slot(lock->box_node(), unlock->box_node()) &&
           !unlock->is_eliminated()) {
         lock_ops.append(unlock);
@@ -1431,7 +1431,7 @@ LockNode *AbstractLockNode::find_matching_lock(UnlockNode* unlock) {
   }
   if (ctrl->is_Lock()) {
     LockNode *lock = ctrl->as_Lock();
-    if ((lock->obj_node() == unlock->obj_node()) &&
+    if (lock->obj_node()->eqv_uncast(unlock->obj_node()) &&
         BoxLockNode::same_slot(lock->box_node(), unlock->box_node())) {
       lock_result = lock;
     }
@@ -1462,7 +1462,7 @@ bool AbstractLockNode::find_lock_and_unlock_through_if(Node* node, LockNode* loc
       }
       if (lock1_node != NULL && lock1_node->is_Lock()) {
         LockNode *lock1 = lock1_node->as_Lock();
-        if ((lock->obj_node() == lock1->obj_node()) &&
+        if (lock->obj_node()->eqv_uncast(lock1->obj_node()) &&
             BoxLockNode::same_slot(lock->box_node(), lock1->box_node()) &&
             !lock1->is_eliminated()) {
           lock_ops.append(lock1);
@@ -1650,7 +1650,7 @@ bool LockNode::is_nested_lock_region() {
     for (int idx = 0; idx < num_mon; idx++) {
       Node* obj_node = sfn->monitor_obj(jvms, idx);
       BoxLockNode* box_node = BoxLockNode::box_node(sfn->monitor_box(jvms, idx));
-      if ((obj_node == obj) && (box_node->stack_slot() < stk_slot)) {
+      if ((box_node->stack_slot() < stk_slot) && obj_node->eqv_uncast(obj)) {
         return true;
       }
     }
