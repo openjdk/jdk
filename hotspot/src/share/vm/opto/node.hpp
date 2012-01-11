@@ -97,6 +97,7 @@ class MachSpillCopyNode;
 class MachTempNode;
 class Matcher;
 class MemBarNode;
+class MemBarStoreStoreNode;
 class MemNode;
 class MergeMemNode;
 class MultiNode;
@@ -564,7 +565,8 @@ public:
         DEFINE_CLASS_ID(NeverBranch, MultiBranch, 2)
       DEFINE_CLASS_ID(Start,       Multi, 2)
       DEFINE_CLASS_ID(MemBar,      Multi, 3)
-        DEFINE_CLASS_ID(Initialize,    MemBar, 0)
+        DEFINE_CLASS_ID(Initialize,       MemBar, 0)
+        DEFINE_CLASS_ID(MemBarStoreStore, MemBar, 1)
 
     DEFINE_CLASS_ID(Mach,  Node, 1)
       DEFINE_CLASS_ID(MachReturn, Mach, 0)
@@ -744,6 +746,7 @@ public:
   DEFINE_CLASS_QUERY(MachTemp)
   DEFINE_CLASS_QUERY(Mem)
   DEFINE_CLASS_QUERY(MemBar)
+  DEFINE_CLASS_QUERY(MemBarStoreStore)
   DEFINE_CLASS_QUERY(MergeMem)
   DEFINE_CLASS_QUERY(Multi)
   DEFINE_CLASS_QUERY(MultiBranch)

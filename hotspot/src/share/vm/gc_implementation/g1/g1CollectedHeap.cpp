@@ -1165,9 +1165,9 @@ public:
       _g1(g1)
   { }
 
-  void work(int i) {
-    RebuildRSOutOfRegionClosure rebuild_rs(_g1, i);
-    _g1->heap_region_par_iterate_chunked(&rebuild_rs, i,
+  void work(uint worker_id) {
+    RebuildRSOutOfRegionClosure rebuild_rs(_g1, worker_id);
+    _g1->heap_region_par_iterate_chunked(&rebuild_rs, worker_id,
                                           _g1->workers()->active_workers(),
                                          HeapRegion::RebuildRSClaimValue);
   }
@@ -1374,7 +1374,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
     // Rebuild remembered sets of all regions.
     if (G1CollectedHeap::use_parallel_gc_threads()) {
-      int n_workers =
+      uint n_workers =
         AdaptiveSizePolicy::calc_active_workers(workers()->total_workers(),
                                        workers()->active_workers(),
                                        Threads::number_of_non_daemon_threads());
@@ -2519,11 +2519,11 @@ void G1CollectedHeap::heap_region_iterate_from(HeapRegion* r,
 
 void
 G1CollectedHeap::heap_region_par_iterate_chunked(HeapRegionClosure* cl,
-                                                 int worker,
-                                                 int no_of_par_workers,
+                                                 uint worker,
+                                                 uint no_of_par_workers,
                                                  jint claim_value) {
   const size_t regions = n_regions();
-  const size_t max_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
+  const uint max_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
                              no_of_par_workers :
                              1);
   assert(UseDynamicNumberOfGCThreads ||
@@ -2739,7 +2739,7 @@ HeapRegion* G1CollectedHeap::start_cset_region_for_worker(int worker_i) {
   result = g1_policy()->collection_set();
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     size_t cs_size = g1_policy()->cset_region_length();
-    int active_workers = workers()->active_workers();
+    uint active_workers = workers()->active_workers();
     assert(UseDynamicNumberOfGCThreads ||
              active_workers == workers()->total_workers(),
              "Unless dynamic should use total workers");
@@ -3075,10 +3075,10 @@ public:
     return _failures;
   }
 
-  void work(int worker_i) {
+  void work(uint worker_id) {
     HandleMark hm;
     VerifyRegionClosure blk(_allow_dirty, true, _vo);
-    _g1h->heap_region_par_iterate_chunked(&blk, worker_i,
+    _g1h->heap_region_par_iterate_chunked(&blk, worker_id,
                                           _g1h->workers()->active_workers(),
                                           HeapRegion::ParVerifyClaimValue);
     if (blk.failures()) {
@@ -4725,7 +4725,7 @@ protected:
   G1CollectedHeap*       _g1h;
   RefToScanQueueSet      *_queues;
   ParallelTaskTerminator _terminator;
-  int _n_workers;
+  uint _n_workers;
 
   Mutex _stats_lock;
   Mutex* stats_lock() { return &_stats_lock; }
@@ -4765,18 +4765,18 @@ public:
     _n_workers = active_workers;
   }
 
-  void work(int i) {
-    if (i >= _n_workers) return;  // no work needed this round
+  void work(uint worker_id) {
+    if (worker_id >= _n_workers) return;  // no work needed this round
 
     double start_time_ms = os::elapsedTime() * 1000.0;
-    _g1h->g1_policy()->record_gc_worker_start_time(i, start_time_ms);
+    _g1h->g1_policy()->record_gc_worker_start_time(worker_id, start_time_ms);
 
     ResourceMark rm;
     HandleMark   hm;
 
     ReferenceProcessor*             rp = _g1h->ref_processor_stw();
 
-    G1ParScanThreadState            pss(_g1h, i);
+    G1ParScanThreadState            pss(_g1h, worker_id);
     G1ParScanHeapEvacClosure        scan_evac_cl(_g1h, &pss, rp);
     G1ParScanHeapEvacFailureClosure evac_failure_cl(_g1h, &pss, rp);
     G1ParScanPartialArrayClosure    partial_scan_cl(_g1h, &pss, rp);
@@ -4808,7 +4808,7 @@ public:
                                   scan_root_cl,
                                   &push_heap_rs_cl,
                                   scan_perm_cl,
-                                  i);
+                                  worker_id);
     pss.end_strong_roots();
 
     {
@@ -4817,8 +4817,8 @@ public:
       evac.do_void();
       double elapsed_ms = (os::elapsedTime()-start)*1000.0;
       double term_ms = pss.term_time()*1000.0;
-      _g1h->g1_policy()->record_obj_copy_time(i, elapsed_ms-term_ms);
-      _g1h->g1_policy()->record_termination(i, term_ms, pss.term_attempts());
+      _g1h->g1_policy()->record_obj_copy_time(worker_id, elapsed_ms-term_ms);
+      _g1h->g1_policy()->record_termination(worker_id, term_ms, pss.term_attempts());
     }
     _g1h->g1_policy()->record_thread_age_table(pss.age_table());
     _g1h->update_surviving_young_words(pss.surviving_young_words()+1);
@@ -4828,12 +4828,12 @@ public:
 
     if (ParallelGCVerbose) {
       MutexLocker x(stats_lock());
-      pss.print_termination_stats(i);
+      pss.print_termination_stats(worker_id);
     }
 
     assert(pss.refs()->is_empty(), "should be empty");
     double end_time_ms = os::elapsedTime() * 1000.0;
-    _g1h->g1_policy()->record_gc_worker_end_time(i, end_time_ms);
+    _g1h->g1_policy()->record_gc_worker_end_time(worker_id, end_time_ms);
   }
 };
 
@@ -5091,14 +5091,14 @@ public:
     _terminator(terminator)
   {}
 
-  virtual void work(int i) {
+  virtual void work(uint worker_id) {
     // The reference processing task executed by a single worker.
     ResourceMark rm;
     HandleMark   hm;
 
     G1STWIsAliveClosure is_alive(_g1h);
 
-    G1ParScanThreadState pss(_g1h, i);
+    G1ParScanThreadState pss(_g1h, worker_id);
 
     G1ParScanHeapEvacClosure        scan_evac_cl(_g1h, &pss, NULL);
     G1ParScanHeapEvacFailureClosure evac_failure_cl(_g1h, &pss, NULL);
@@ -5130,7 +5130,7 @@ public:
     G1ParEvacuateFollowersClosure drain_queue(_g1h, &pss, _task_queues, _terminator);
 
     // Call the reference processing task's work routine.
-    _proc_task.work(i, is_alive, keep_alive, drain_queue);
+    _proc_task.work(worker_id, is_alive, keep_alive, drain_queue);
 
     // Note we cannot assert that the refs array is empty here as not all
     // of the processing tasks (specifically phase2 - pp2_work) execute
@@ -5165,8 +5165,8 @@ public:
     _enq_task(enq_task)
   { }
 
-  virtual void work(int i) {
-    _enq_task.work(i);
+  virtual void work(uint worker_id) {
+    _enq_task.work(worker_id);
   }
 };
 
@@ -5195,7 +5195,7 @@ protected:
   G1CollectedHeap* _g1h;
   RefToScanQueueSet      *_queues;
   ParallelTaskTerminator _terminator;
-  int _n_workers;
+  uint _n_workers;
 
 public:
   G1ParPreserveCMReferentsTask(G1CollectedHeap* g1h,int workers, RefToScanQueueSet *task_queues) :
@@ -5206,11 +5206,11 @@ public:
     _n_workers(workers)
   { }
 
-  void work(int i) {
+  void work(uint worker_id) {
     ResourceMark rm;
     HandleMark   hm;
 
-    G1ParScanThreadState            pss(_g1h, i);
+    G1ParScanThreadState            pss(_g1h, worker_id);
     G1ParScanHeapEvacClosure        scan_evac_cl(_g1h, &pss, NULL);
     G1ParScanHeapEvacFailureClosure evac_failure_cl(_g1h, &pss, NULL);
     G1ParScanPartialArrayClosure    partial_scan_cl(_g1h, &pss, NULL);
@@ -5246,17 +5246,17 @@ public:
 
     ReferenceProcessor* rp = _g1h->ref_processor_cm();
 
-    int limit = ReferenceProcessor::number_of_subclasses_of_ref() * rp->max_num_q();
-    int stride = MIN2(MAX2(_n_workers, 1), limit);
+    uint limit = ReferenceProcessor::number_of_subclasses_of_ref() * rp->max_num_q();
+    uint stride = MIN2(MAX2(_n_workers, 1U), limit);
 
     // limit is set using max_num_q() - which was set using ParallelGCThreads.
     // So this must be true - but assert just in case someone decides to
     // change the worker ids.
-    assert(0 <= i && i < limit, "sanity");
+    assert(0 <= worker_id && worker_id < limit, "sanity");
     assert(!rp->discovery_is_atomic(), "check this code");
 
     // Select discovered lists [i, i+stride, i+2*stride,...,limit)
-    for (int idx = i; idx < limit; idx += stride) {
+    for (uint idx = worker_id; idx < limit; idx += stride) {
       DiscoveredList& ref_list = rp->discovered_refs()[idx];
 
       DiscoveredListIterator iter(ref_list, &keep_alive, &always_alive);
@@ -5310,7 +5310,7 @@ void G1CollectedHeap::process_discovered_references() {
   // referents points to another object which is also referenced by an
   // object discovered by the STW ref processor.
 
-  int active_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
+  uint active_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
                         workers()->active_workers() : 1);
 
   assert(!G1CollectedHeap::use_parallel_gc_threads() ||
@@ -5416,7 +5416,7 @@ void G1CollectedHeap::enqueue_discovered_references() {
   } else {
     // Parallel reference enqueuing
 
-    int active_workers = (ParallelGCThreads > 0 ? workers()->active_workers() : 1);
+    uint active_workers = (ParallelGCThreads > 0 ? workers()->active_workers() : 1);
     assert(active_workers == workers()->active_workers(),
            "Need to reset active_workers");
     assert(rp->num_q() == active_workers, "sanity");
@@ -5445,7 +5445,7 @@ void G1CollectedHeap::evacuate_collection_set() {
   concurrent_g1_refine()->set_use_cache(false);
   concurrent_g1_refine()->clear_hot_cache_claimed_index();
 
-  int n_workers;
+  uint n_workers;
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     n_workers =
       AdaptiveSizePolicy::calc_active_workers(workers()->total_workers(),
@@ -5658,7 +5658,7 @@ public:
     AbstractGangTask("G1 Par Cleanup CT Task"),
     _ct_bs(ct_bs), _g1h(g1h) { }
 
-  void work(int i) {
+  void work(uint worker_id) {
     HeapRegion* r;
     while (r = _g1h->pop_dirty_cards_region()) {
       clear_cards(r);
@@ -6141,7 +6141,7 @@ void G1CollectedHeap::set_par_threads() {
   // Don't change the number of workers.  Use the value previously set
   // in the workgroup.
   assert(G1CollectedHeap::use_parallel_gc_threads(), "shouldn't be here otherwise");
-  int n_workers = workers()->active_workers();
+  uint n_workers = workers()->active_workers();
   assert(UseDynamicNumberOfGCThreads ||
            n_workers == workers()->total_workers(),
       "Otherwise should be using the total number of workers");

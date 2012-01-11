@@ -1473,19 +1473,19 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 const Type*
 LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
                                  ciKlass* klass) const {
-  if (tkls->offset() == Klass::modifier_flags_offset_in_bytes() + (int)sizeof(oopDesc)) {
+  if (tkls->offset() == in_bytes(Klass::modifier_flags_offset())) {
     // The field is Klass::_modifier_flags.  Return its (constant) value.
     // (Folds up the 2nd indirection in aClassConstant.getModifiers().)
     assert(this->Opcode() == Op_LoadI, "must load an int from _modifier_flags");
     return TypeInt::make(klass->modifier_flags());
   }
-  if (tkls->offset() == Klass::access_flags_offset_in_bytes() + (int)sizeof(oopDesc)) {
+  if (tkls->offset() == in_bytes(Klass::access_flags_offset())) {
     // The field is Klass::_access_flags.  Return its (constant) value.
     // (Folds up the 2nd indirection in Reflection.getClassAccessFlags(aClassConstant).)
     assert(this->Opcode() == Op_LoadI, "must load an int from _access_flags");
     return TypeInt::make(klass->access_flags());
   }
-  if (tkls->offset() == Klass::layout_helper_offset_in_bytes() + (int)sizeof(oopDesc)) {
+  if (tkls->offset() == in_bytes(Klass::layout_helper_offset())) {
     // The field is Klass::_layout_helper.  Return its constant value if known.
     assert(this->Opcode() == Op_LoadI, "must load an int from _layout_helper");
     return TypeInt::make(klass->layout_helper());
@@ -1636,14 +1636,14 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
       // We are loading a field from a Klass metaobject whose identity
       // is known at compile time (the type is "exact" or "precise").
       // Check for fields we know are maintained as constants by the VM.
-      if (tkls->offset() == Klass::super_check_offset_offset_in_bytes() + (int)sizeof(oopDesc)) {
+      if (tkls->offset() == in_bytes(Klass::super_check_offset_offset())) {
         // The field is Klass::_super_check_offset.  Return its (constant) value.
         // (Folds up type checking code.)
         assert(Opcode() == Op_LoadI, "must load an int from _super_check_offset");
         return TypeInt::make(klass->super_check_offset());
       }
       // Compute index into primary_supers array
-      juint depth = (tkls->offset() - (Klass::primary_supers_offset_in_bytes() + (int)sizeof(oopDesc))) / sizeof(klassOop);
+      juint depth = (tkls->offset() - in_bytes(Klass::primary_supers_offset())) / sizeof(klassOop);
       // Check for overflowing; use unsigned compare to handle the negative case.
       if( depth < ciKlass::primary_super_limit() ) {
         // The field is an element of Klass::_primary_supers.  Return its (constant) value.
@@ -1654,14 +1654,14 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
       }
       const Type* aift = load_array_final_field(tkls, klass);
       if (aift != NULL)  return aift;
-      if (tkls->offset() == in_bytes(arrayKlass::component_mirror_offset()) + (int)sizeof(oopDesc)
+      if (tkls->offset() == in_bytes(arrayKlass::component_mirror_offset())
           && klass->is_array_klass()) {
         // The field is arrayKlass::_component_mirror.  Return its (constant) value.
         // (Folds up aClassConstant.getComponentType, common in Arrays.copyOf.)
         assert(Opcode() == Op_LoadP, "must load an oop from _component_mirror");
         return TypeInstPtr::make(klass->as_array_klass()->component_mirror());
       }
-      if (tkls->offset() == Klass::java_mirror_offset_in_bytes() + (int)sizeof(oopDesc)) {
+      if (tkls->offset() == in_bytes(Klass::java_mirror_offset())) {
         // The field is Klass::_java_mirror.  Return its (constant) value.
         // (Folds up the 2nd indirection in anObjConstant.getClass().)
         assert(Opcode() == Op_LoadP, "must load an oop from _java_mirror");
@@ -1679,7 +1679,7 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
       if( inner->is_instance_klass() &&
           !inner->as_instance_klass()->flags().is_interface() ) {
         // Compute index into primary_supers array
-        juint depth = (tkls->offset() - (Klass::primary_supers_offset_in_bytes() + (int)sizeof(oopDesc))) / sizeof(klassOop);
+        juint depth = (tkls->offset() - in_bytes(Klass::primary_supers_offset())) / sizeof(klassOop);
         // Check for overflowing; use unsigned compare to handle the negative case.
         if( depth < ciKlass::primary_super_limit() &&
             depth <= klass->super_depth() ) { // allow self-depth checks to handle self-check case
@@ -1695,7 +1695,7 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
     // If the type is enough to determine that the thing is not an array,
     // we can give the layout_helper a positive interval type.
     // This will help short-circuit some reflective code.
-    if (tkls->offset() == Klass::layout_helper_offset_in_bytes() + (int)sizeof(oopDesc)
+    if (tkls->offset() == in_bytes(Klass::layout_helper_offset())
         && !klass->is_array_klass() // not directly typed as an array
         && !klass->is_interface()  // specifically not Serializable & Cloneable
         && !klass->is_java_lang_Object()   // not the supertype of all T[]
@@ -1938,7 +1938,7 @@ const Type *LoadNode::klass_value_common( PhaseTransform *phase ) const {
     if( !klass->is_loaded() )
       return _type;             // Bail out if not loaded
     if( klass->is_obj_array_klass() &&
-        (uint)tkls->offset() == objArrayKlass::element_klass_offset_in_bytes() + sizeof(oopDesc)) {
+        tkls->offset() == in_bytes(objArrayKlass::element_klass_offset())) {
       ciKlass* elem = klass->as_obj_array_klass()->element_klass();
       // // Always returning precise element type is incorrect,
       // // e.g., element type could be object and array may contain strings
@@ -1949,7 +1949,7 @@ const Type *LoadNode::klass_value_common( PhaseTransform *phase ) const {
       return TypeKlassPtr::make(tkls->ptr(), elem, 0/*offset*/);
     }
     if( klass->is_instance_klass() && tkls->klass_is_exact() &&
-        (uint)tkls->offset() == Klass::super_offset_in_bytes() + sizeof(oopDesc)) {
+        tkls->offset() == in_bytes(Klass::super_offset())) {
       ciKlass* sup = klass->as_instance_klass()->super();
       // The field is Klass::_super.  Return its (constant) value.
       // (Folds up the 2nd indirection in aClassConstant.getSuperClass().)
@@ -2013,11 +2013,11 @@ Node* LoadNode::klass_identity_common(PhaseTransform *phase ) {
               tkls->klass()->is_array_klass())
           && adr2->is_AddP()
           ) {
-        int mirror_field = Klass::java_mirror_offset_in_bytes();
+        int mirror_field = in_bytes(Klass::java_mirror_offset());
         if (offset == java_lang_Class::array_klass_offset_in_bytes()) {
           mirror_field = in_bytes(arrayKlass::component_mirror_offset());
         }
-        if (tkls->offset() == mirror_field + (int)sizeof(oopDesc)) {
+        if (tkls->offset() == mirror_field) {
           return adr2->in(AddPNode::Base);
         }
       }
@@ -2721,6 +2721,7 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
   case Op_MemBarVolatile:  return new(C, len) MemBarVolatileNode(C, atp, pn);
   case Op_MemBarCPUOrder:  return new(C, len) MemBarCPUOrderNode(C, atp, pn);
   case Op_Initialize:      return new(C, len) InitializeNode(C,     atp, pn);
+  case Op_MemBarStoreStore: return new(C, len) MemBarStoreStoreNode(C,  atp, pn);
   default:                 ShouldNotReachHere(); return NULL;
   }
 }
@@ -2870,7 +2871,7 @@ Node *MemBarNode::match( const ProjNode *proj, const Matcher *m ) {
 
 //---------------------------InitializeNode------------------------------------
 InitializeNode::InitializeNode(Compile* C, int adr_type, Node* rawoop)
-  : _is_complete(Incomplete),
+  : _is_complete(Incomplete), _does_not_escape(false),
     MemBarNode(C, adr_type, rawoop)
 {
   init_class_id(Class_Initialize);

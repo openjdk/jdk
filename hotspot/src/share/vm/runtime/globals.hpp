@@ -527,6 +527,9 @@ class CommandLineFlags {
   product(intx, UseSSE, 99,                                                 \
           "Highest supported SSE instructions set on x86/x64")              \
                                                                             \
+  product(intx, UseAVX, 99,                                                 \
+          "Highest supported AVX instructions set on x86/x64")              \
+                                                                            \
   product(intx, UseVIS, 99,                                                 \
           "Highest supported VIS instructions set on Sparc")                \
                                                                             \
@@ -1553,7 +1556,7 @@ class CommandLineFlags {
   product(uintx, ParGCDesiredObjsFromOverflowList, 20,                      \
           "The desired number of objects to claim from the overflow list")  \
                                                                             \
-  diagnostic(intx, ParGCStridesPerThread, 2,                                \
+  diagnostic(uintx, ParGCStridesPerThread, 2,                               \
           "The number of strides per worker thread that we divide up the "  \
           "card table scanning work into")                                  \
                                                                             \
