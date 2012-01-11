@@ -69,7 +69,7 @@ class CollectedHeap : public CHeapObj {
   MemRegion _reserved;
   BarrierSet* _barrier_set;
   bool _is_gc_active;
-  int _n_par_threads;
+  uint _n_par_threads;
 
   unsigned int _total_collections;          // ... started
   unsigned int _total_full_collections;     // ... started
@@ -309,10 +309,10 @@ class CollectedHeap : public CHeapObj {
   GCCause::Cause gc_cause() { return _gc_cause; }
 
   // Number of threads currently working on GC tasks.
-  int n_par_threads() { return _n_par_threads; }
+  uint n_par_threads() { return _n_par_threads; }
 
   // May be overridden to set additional parallelism.
-  virtual void set_par_threads(int t) { _n_par_threads = t; };
+  virtual void set_par_threads(uint t) { _n_par_threads = t; };
 
   // Preload classes into the shared portion of the heap, and then dump
   // that data to a file so that it can be loaded directly by another

@@ -1011,7 +1011,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           if (id == fast_new_instance_init_check_id) {
             // make sure the klass is initialized
-            __ cmpl(Address(klass, instanceKlass::init_state_offset_in_bytes() + sizeof(oopDesc)), instanceKlass::fully_initialized);
+            __ cmpb(Address(klass, instanceKlass::init_state_offset()), instanceKlass::fully_initialized);
             __ jcc(Assembler::notEqual, slow_path);
           }
 
@@ -1019,7 +1019,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           // assert object can be fast path allocated
           {
             Label ok, not_ok;
-            __ movl(obj_size, Address(klass, Klass::layout_helper_offset_in_bytes() + sizeof(oopDesc)));
+            __ movl(obj_size, Address(klass, Klass::layout_helper_offset()));
             __ cmpl(obj_size, 0);  // make sure it's an instance (LH > 0)
             __ jcc(Assembler::lessEqual, not_ok);
             __ testl(obj_size, Klass::_lh_instance_slow_path_bit);
@@ -1040,7 +1040,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ bind(retry_tlab);
 
           // get the instance size (size is postive so movl is fine for 64bit)
-          __ movl(obj_size, Address(klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes()));
+          __ movl(obj_size, Address(klass, Klass::layout_helper_offset()));
 
           __ tlab_allocate(obj, obj_size, 0, t1, t2, slow_path);
 
@@ -1052,7 +1052,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           __ bind(try_eden);
           // get the instance size (size is postive so movl is fine for 64bit)
-          __ movl(obj_size, Address(klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes()));
+          __ movl(obj_size, Address(klass, Klass::layout_helper_offset()));
 
           __ eden_allocate(obj, obj_size, 0, t1, slow_path);
           __ incr_allocated_bytes(thread, obj_size, 0);
@@ -1119,7 +1119,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         {
           Label ok;
           Register t0 = obj;
-          __ movl(t0, Address(klass, Klass::layout_helper_offset_in_bytes() + sizeof(oopDesc)));
+          __ movl(t0, Address(klass, Klass::layout_helper_offset()));
           __ sarl(t0, Klass::_lh_array_tag_shift);
           int tag = ((id == new_type_array_id)
                      ? Klass::_lh_array_tag_type_value
@@ -1153,7 +1153,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           // get the allocation size: round_up(hdr + length << (layout_helper & 0x1F))
           // since size is positive movl does right thing on 64bit
-          __ movl(t1, Address(klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes()));
+          __ movl(t1, Address(klass, Klass::layout_helper_offset()));
           // since size is postive movl does right thing on 64bit
           __ movl(arr_size, length);
           assert(t1 == rcx, "fixed register usage");
@@ -1167,7 +1167,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ tlab_allocate(obj, arr_size, 0, t1, t2, slow_path);  // preserves arr_size
 
           __ initialize_header(obj, klass, length, t1, t2);
-          __ movb(t1, Address(klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes() + (Klass::_lh_header_size_shift / BitsPerByte)));
+          __ movb(t1, Address(klass, in_bytes(Klass::layout_helper_offset()) + (Klass::_lh_header_size_shift / BitsPerByte)));
           assert(Klass::_lh_header_size_shift % BitsPerByte == 0, "bytewise");
           assert(Klass::_lh_header_size_mask <= 0xFF, "bytewise");
           __ andptr(t1, Klass::_lh_header_size_mask);
@@ -1180,7 +1180,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ bind(try_eden);
           // get the allocation size: round_up(hdr + length << (layout_helper & 0x1F))
           // since size is positive movl does right thing on 64bit
-          __ movl(t1, Address(klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes()));
+          __ movl(t1, Address(klass, Klass::layout_helper_offset()));
           // since size is postive movl does right thing on 64bit
           __ movl(arr_size, length);
           assert(t1 == rcx, "fixed register usage");
@@ -1195,7 +1195,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ incr_allocated_bytes(thread, arr_size, 0);
 
           __ initialize_header(obj, klass, length, t1, t2);
-          __ movb(t1, Address(klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes() + (Klass::_lh_header_size_shift / BitsPerByte)));
+          __ movb(t1, Address(klass, in_bytes(Klass::layout_helper_offset()) + (Klass::_lh_header_size_shift / BitsPerByte)));
           assert(Klass::_lh_header_size_shift % BitsPerByte == 0, "bytewise");
           assert(Klass::_lh_header_size_mask <= 0xFF, "bytewise");
           __ andptr(t1, Klass::_lh_header_size_mask);
@@ -1267,7 +1267,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Label register_finalizer;
         Register t = rsi;
         __ load_klass(t, rax);
-        __ movl(t, Address(t, Klass::access_flags_offset_in_bytes() + sizeof(oopDesc)));
+        __ movl(t, Address(t, Klass::access_flags_offset()));
         __ testl(t, JVM_ACC_HAS_FINALIZER);
         __ jcc(Assembler::notZero, register_finalizer);
         __ ret(0);

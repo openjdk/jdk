@@ -1088,6 +1088,12 @@ void PhaseMacroExpand::expand_allocate_common(
   Node* klass_node        = alloc->in(AllocateNode::KlassNode);
   Node* initial_slow_test = alloc->in(AllocateNode::InitialTest);
 
+  Node* storestore = alloc->storestore();
+  if (storestore != NULL) {
+    // Break this link that is no longer useful and confuses register allocation
+    storestore->set_req(MemBarNode::Precedent, top());
+  }
+
   assert(ctrl != NULL, "must have control");
   // We need a Region and corresponding Phi's to merge the slow-path and fast-path results.
   // they will not be used if "always_slow" is set
@@ -1289,9 +1295,65 @@ void PhaseMacroExpand::expand_allocate_common(
                                    0, new_alloc_bytes, T_LONG);
     }
 
+    InitializeNode* init = alloc->initialization();
     fast_oop_rawmem = initialize_object(alloc,
                                         fast_oop_ctrl, fast_oop_rawmem, fast_oop,
                                         klass_node, length, size_in_bytes);
+
+    // If initialization is performed by an array copy, any required
+    // MemBarStoreStore was already added. If the object does not
+    // escape no need for a MemBarStoreStore. Otherwise we need a
+    // MemBarStoreStore so that stores that initialize this object
+    // can't be reordered with a subsequent store that makes this
+    // object accessible by other threads.
+    if (init == NULL || (!init->is_complete_with_arraycopy() && !init->does_not_escape())) {
+      if (init == NULL || init->req() < InitializeNode::RawStores) {
+        // No InitializeNode or no stores captured by zeroing
+        // elimination. Simply add the MemBarStoreStore after object
+        // initialization.
+        MemBarNode* mb = MemBarNode::make(C, Op_MemBarStoreStore, Compile::AliasIdxBot, fast_oop_rawmem);
+        transform_later(mb);
+
+        mb->init_req(TypeFunc::Memory, fast_oop_rawmem);
+        mb->init_req(TypeFunc::Control, fast_oop_ctrl);
+        fast_oop_ctrl = new (C, 1) ProjNode(mb,TypeFunc::Control);
+        transform_later(fast_oop_ctrl);
+        fast_oop_rawmem = new (C, 1) ProjNode(mb,TypeFunc::Memory);
+        transform_later(fast_oop_rawmem);
+      } else {
+        // Add the MemBarStoreStore after the InitializeNode so that
+        // all stores performing the initialization that were moved
+        // before the InitializeNode happen before the storestore
+        // barrier.
+
+        Node* init_ctrl = init->proj_out(TypeFunc::Control);
+        Node* init_mem = init->proj_out(TypeFunc::Memory);
+
+        MemBarNode* mb = MemBarNode::make(C, Op_MemBarStoreStore, Compile::AliasIdxBot);
+        transform_later(mb);
+
+        Node* ctrl = new (C, 1) ProjNode(init,TypeFunc::Control);
+        transform_later(ctrl);
+        Node* mem = new (C, 1) ProjNode(init,TypeFunc::Memory);
+        transform_later(mem);
+
+        // The MemBarStoreStore depends on control and memory coming
+        // from the InitializeNode
+        mb->init_req(TypeFunc::Memory, mem);
+        mb->init_req(TypeFunc::Control, ctrl);
+
+        ctrl = new (C, 1) ProjNode(mb,TypeFunc::Control);
+        transform_later(ctrl);
+        mem = new (C, 1) ProjNode(mb,TypeFunc::Memory);
+        transform_later(mem);
+
+        // All nodes that depended on the InitializeNode for control
+        // and memory must now depend on the MemBarNode that itself
+        // depends on the InitializeNode
+        _igvn.replace_node(init_ctrl, ctrl);
+        _igvn.replace_node(init_mem, mem);
+      }
+    }
 
     if (C->env()->dtrace_extended_probes()) {
       // Slow-path call
@@ -1326,6 +1388,7 @@ void PhaseMacroExpand::expand_allocate_common(
     result_phi_rawmem->init_req(fast_result_path, fast_oop_rawmem);
   } else {
     slow_region = ctrl;
+    result_phi_i_o = i_o; // Rename it to use in the following code.
   }
 
   // Generate slow-path call
@@ -1350,6 +1413,10 @@ void PhaseMacroExpand::expand_allocate_common(
   copy_call_debug_info((CallNode *) alloc,  call);
   if (!always_slow) {
     call->set_cnt(PROB_UNLIKELY_MAG(4));  // Same effect as RC_UNCOMMON.
+  } else {
+    // Hook i_o projection to avoid its elimination during allocation
+    // replacement (when only a slow call is generated).
+    call->set_req(TypeFunc::I_O, result_phi_i_o);
   }
   _igvn.replace_node(alloc, call);
   transform_later(call);
@@ -1366,8 +1433,10 @@ void PhaseMacroExpand::expand_allocate_common(
   //
   extract_call_projections(call);
 
-  // An allocate node has separate memory projections for the uses on the control and i_o paths
-  // Replace uses of the control memory projection with result_phi_rawmem (unless we are only generating a slow call)
+  // An allocate node has separate memory projections for the uses on
+  // the control and i_o paths. Replace the control memory projection with
+  // result_phi_rawmem (unless we are only generating a slow call when
+  // both memory projections are combined)
   if (!always_slow && _memproj_fallthrough != NULL) {
     for (DUIterator_Fast imax, i = _memproj_fallthrough->fast_outs(imax); i < imax; i++) {
       Node *use = _memproj_fallthrough->fast_out(i);
@@ -1378,8 +1447,8 @@ void PhaseMacroExpand::expand_allocate_common(
       --i;
     }
   }
-  // Now change uses of _memproj_catchall to use _memproj_fallthrough and delete _memproj_catchall so
-  // we end up with a call that has only 1 memory projection
+  // Now change uses of _memproj_catchall to use _memproj_fallthrough and delete
+  // _memproj_catchall so we end up with a call that has only 1 memory projection.
   if (_memproj_catchall != NULL ) {
     if (_memproj_fallthrough == NULL) {
       _memproj_fallthrough = new (C, 1) ProjNode(call, TypeFunc::Memory);
@@ -1393,17 +1462,18 @@ void PhaseMacroExpand::expand_allocate_common(
       // back up iterator
       --i;
     }
+    assert(_memproj_catchall->outcnt() == 0, "all uses must be deleted");
+    _igvn.remove_dead_node(_memproj_catchall);
   }
 
-  // An allocate node has separate i_o projections for the uses on the control and i_o paths
-  // Replace uses of the control i_o projection with result_phi_i_o (unless we are only generating a slow call)
-  if (_ioproj_fallthrough == NULL) {
-    _ioproj_fallthrough = new (C, 1) ProjNode(call, TypeFunc::I_O);
-    transform_later(_ioproj_fallthrough);
-  } else if (!always_slow) {
+  // An allocate node has separate i_o projections for the uses on the control
+  // and i_o paths. Always replace the control i_o projection with result i_o
+  // otherwise incoming i_o become dead when only a slow call is generated
+  // (it is different from memory projections where both projections are
+  // combined in such case).
+  if (_ioproj_fallthrough != NULL) {
     for (DUIterator_Fast imax, i = _ioproj_fallthrough->fast_outs(imax); i < imax; i++) {
       Node *use = _ioproj_fallthrough->fast_out(i);
-
       _igvn.hash_delete(use);
       imax -= replace_input(use, _ioproj_fallthrough, result_phi_i_o);
       _igvn._worklist.push(use);
@@ -1411,9 +1481,13 @@ void PhaseMacroExpand::expand_allocate_common(
       --i;
     }
   }
-  // Now change uses of _ioproj_catchall to use _ioproj_fallthrough and delete _ioproj_catchall so
-  // we end up with a call that has only 1 control projection
+  // Now change uses of _ioproj_catchall to use _ioproj_fallthrough and delete
+  // _ioproj_catchall so we end up with a call that has only 1 i_o projection.
   if (_ioproj_catchall != NULL ) {
+    if (_ioproj_fallthrough == NULL) {
+      _ioproj_fallthrough = new (C, 1) ProjNode(call, TypeFunc::I_O);
+      transform_later(_ioproj_fallthrough);
+    }
     for (DUIterator_Fast imax, i = _ioproj_catchall->fast_outs(imax); i < imax; i++) {
       Node *use = _ioproj_catchall->fast_out(i);
       _igvn.hash_delete(use);
@@ -1422,11 +1496,25 @@ void PhaseMacroExpand::expand_allocate_common(
       // back up iterator
       --i;
     }
+    assert(_ioproj_catchall->outcnt() == 0, "all uses must be deleted");
+    _igvn.remove_dead_node(_ioproj_catchall);
   }
 
   // if we generated only a slow call, we are done
-  if (always_slow)
+  if (always_slow) {
+    // Now we can unhook i_o.
+    if (result_phi_i_o->outcnt() > 1) {
+      call->set_req(TypeFunc::I_O, top());
+    } else {
+      assert(result_phi_i_o->unique_ctrl_out() == call, "");
+      // Case of new array with negative size known during compilation.
+      // AllocateArrayNode::Ideal() optimization disconnect unreachable
+      // following code since call to runtime will throw exception.
+      // As result there will be no users of i_o after the call.
+      // Leave i_o attached to this call to avoid problems in preceding graph.
+    }
     return;
+  }
 
 
   if (_fallthroughcatchproj != NULL) {
@@ -1470,7 +1558,7 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
   Node* mark_node = NULL;
   // For now only enable fast locking for non-array types
   if (UseBiasedLocking && (length == NULL)) {
-    mark_node = make_load(control, rawmem, klass_node, Klass::prototype_header_offset_in_bytes() + sizeof(oopDesc), TypeRawPtr::BOTTOM, T_ADDRESS);
+    mark_node = make_load(control, rawmem, klass_node, in_bytes(Klass::prototype_header_offset()), TypeRawPtr::BOTTOM, T_ADDRESS);
   } else {
     mark_node = makecon(TypeRawPtr::make((address)markOopDesc::prototype()));
   }
@@ -1958,7 +2046,7 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
 #endif
       klass_node->init_req(0, ctrl);
     }
-    Node *proto_node = make_load(ctrl, mem, klass_node, Klass::prototype_header_offset_in_bytes() + sizeof(oopDesc), TypeX_X, TypeX_X->basic_type());
+    Node *proto_node = make_load(ctrl, mem, klass_node, in_bytes(Klass::prototype_header_offset()), TypeX_X, TypeX_X->basic_type());
 
     Node* thread = transform_later(new (C, 1) ThreadLocalNode());
     Node* cast_thread = transform_later(new (C, 2) CastP2XNode(ctrl, thread));

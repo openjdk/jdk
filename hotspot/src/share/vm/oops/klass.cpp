@@ -144,7 +144,7 @@ klassOop Klass::base_create_klass_oop(KlassHandle& klass, int size,
     }
     kl->set_secondary_supers(NULL);
     oop_store_without_check((oop*) &kl->_primary_supers[0], k);
-    kl->set_super_check_offset(primary_supers_offset_in_bytes() + sizeof(oopDesc));
+    kl->set_super_check_offset(in_bytes(primary_supers_offset()));
   }
 
   kl->set_java_mirror(NULL);

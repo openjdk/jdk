@@ -1051,7 +1051,7 @@ static FieldAllocationType basic_type_to_atype(bool is_static, BasicType type) {
 
 class FieldAllocationCount: public ResourceObj {
  public:
-  unsigned int count[MAX_FIELD_ALLOCATION_TYPE];
+  u2 count[MAX_FIELD_ALLOCATION_TYPE];
 
   FieldAllocationCount() {
     for (int i = 0; i < MAX_FIELD_ALLOCATION_TYPE; i++) {
@@ -1061,6 +1061,8 @@ class FieldAllocationCount: public ResourceObj {
 
   FieldAllocationType update(bool is_static, BasicType type) {
     FieldAllocationType atype = basic_type_to_atype(is_static, type);
+    // Make sure there is no overflow with injected fields.
+    assert(count[atype] < 0xFFFF, "More than 65535 fields");
     count[atype]++;
     return atype;
   }
@@ -1071,7 +1073,7 @@ typeArrayHandle ClassFileParser::parse_fields(Symbol* class_name,
                                               constantPoolHandle cp, bool is_interface,
                                               FieldAllocationCount *fac,
                                               objArrayHandle* fields_annotations,
-                                              int* java_fields_count_ptr, TRAPS) {
+                                              u2* java_fields_count_ptr, TRAPS) {
   ClassFileStream* cfs = stream();
   typeArrayHandle nullHandle;
   cfs->guarantee_more(2, CHECK_(nullHandle));  // length
@@ -2866,7 +2868,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       local_interfaces = parse_interfaces(cp, itfs_len, class_loader, protection_domain, _class_name, CHECK_(nullHandle));
     }
 
-    int java_fields_count = 0;
+    u2 java_fields_count = 0;
     // Fields (offsets are filled in later)
     FieldAllocationCount fac;
     objArrayHandle fields_annotations;

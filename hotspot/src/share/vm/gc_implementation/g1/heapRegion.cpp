@@ -94,7 +94,8 @@ public:
 #endif // PRODUCT
   }
 
-  template <class T> void do_oop_work(T* p) {
+  template <class T>
+  void do_oop_work(T* p) {
     assert(_containing_obj != NULL, "Precondition");
     assert(!_g1h->is_obj_dead_cond(_containing_obj, _vo),
            "Precondition");
@@ -102,8 +103,10 @@ public:
     if (!oopDesc::is_null(heap_oop)) {
       oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
       bool failed = false;
-      if (!_g1h->is_in_closed_subset(obj) ||
-          _g1h->is_obj_dead_cond(obj, _vo)) {
+      if (!_g1h->is_in_closed_subset(obj) || _g1h->is_obj_dead_cond(obj, _vo)) {
+        MutexLockerEx x(ParGCRareEvent_lock,
+                        Mutex::_no_safepoint_check_flag);
+
         if (!_failures) {
           gclog_or_tty->print_cr("");
           gclog_or_tty->print_cr("----------");
@@ -133,6 +136,7 @@ public:
           print_object(gclog_or_tty, obj);
         }
         gclog_or_tty->print_cr("----------");
+        gclog_or_tty->flush();
         _failures = true;
         failed = true;
         _n_failures++;
@@ -155,6 +159,9 @@ public:
                                   cv_field == dirty
                                : cv_obj == dirty || cv_field == dirty));
           if (is_bad) {
+            MutexLockerEx x(ParGCRareEvent_lock,
+                            Mutex::_no_safepoint_check_flag);
+
             if (!_failures) {
               gclog_or_tty->print_cr("");
               gclog_or_tty->print_cr("----------");
@@ -174,6 +181,7 @@ public:
             gclog_or_tty->print_cr("Obj head CTE = %d, field CTE = %d.",
                           cv_obj, cv_field);
             gclog_or_tty->print_cr("----------");
+            gclog_or_tty->flush();
             _failures = true;
             if (!failed) _n_failures++;
           }

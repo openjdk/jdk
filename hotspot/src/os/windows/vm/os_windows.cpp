@@ -3137,7 +3137,7 @@ bool os::unguard_memory(char* addr, size_t bytes) {
 }
 
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }
-void os::free_memory(char *addr, size_t bytes)         { }
+void os::free_memory(char *addr, size_t bytes, size_t alignment_hint)    { }
 void os::numa_make_global(char *addr, size_t bytes)    { }
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint)    { }
 bool os::numa_topology_changed()                       { return false; }

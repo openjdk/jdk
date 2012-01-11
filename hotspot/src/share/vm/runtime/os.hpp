@@ -258,7 +258,7 @@ class os: AllStatic {
                              char *addr, size_t bytes, bool read_only,
                              bool allow_exec);
   static bool   unmap_memory(char *addr, size_t bytes);
-  static void   free_memory(char *addr, size_t bytes);
+  static void   free_memory(char *addr, size_t bytes, size_t alignment_hint);
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
   // NUMA-specific interface

@@ -918,6 +918,15 @@ public:
   virtual int Opcode() const;
 };
 
+class MemBarStoreStoreNode: public MemBarNode {
+public:
+  MemBarStoreStoreNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {
+    init_class_id(Class_MemBarStoreStore);
+  }
+  virtual int Opcode() const;
+};
+
 // Ordering between a volatile store and a following volatile load.
 // Requires multi-CPU visibility?
 class MemBarVolatileNode: public MemBarNode {
@@ -949,6 +958,8 @@ class InitializeNode: public MemBarNode {
     WithArraycopy = 2
   };
   int _is_complete;
+
+  bool _does_not_escape;
 
 public:
   enum {
@@ -988,6 +999,9 @@ public:
   // Mark complete.  (Must not yet be complete.)
   void set_complete(PhaseGVN* phase);
   void set_complete_with_arraycopy() { _is_complete = Complete | WithArraycopy; }
+
+  bool does_not_escape() { return _does_not_escape; }
+  void set_does_not_escape() { _does_not_escape = true; }
 
 #ifdef ASSERT
   // ensure all non-degenerate stores are ordered and non-overlapping
