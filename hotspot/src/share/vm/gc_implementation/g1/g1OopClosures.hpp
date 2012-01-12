@@ -51,6 +51,7 @@ protected:
   G1RemSet* _g1_rem;
   ConcurrentMark* _cm;
   G1ParScanThreadState* _par_scan_state;
+  uint _worker_id;
   bool _during_initial_mark;
   bool _mark_in_progress;
 public:

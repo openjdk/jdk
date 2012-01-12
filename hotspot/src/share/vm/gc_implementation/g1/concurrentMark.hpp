@@ -426,7 +426,6 @@ protected:
   WorkGangBarrierSync     _first_overflow_barrier_sync;
   WorkGangBarrierSync     _second_overflow_barrier_sync;
 
-
   // this is set by any task, when an overflow on the global data
   // structures is detected.
   volatile bool           _has_overflown;
@@ -578,6 +577,27 @@ protected:
     }
   }
 
+  // Live Data Counting data structures...
+  // These data structures are initialized at the start of
+  // marking. They are written to while marking is active.
+  // They are aggregated during remark; the aggregated values
+  // are then used to populate the _region_bm, _card_bm, and
+  // the total live bytes, which are then subsequently updated
+  // during cleanup.
+
+  // An array of bitmaps (one bit map per task). Each bitmap
+  // is used to record the cards spanned by the live objects
+  // marked by that task/worker.
+  BitMap*  _count_card_bitmaps;
+
+  // Used to record the number of marked live bytes
+  // (for each region, by worker thread).
+  size_t** _count_marked_bytes;
+
+  // Card index of the bottom of the G1 heap. Used for biasing indices into
+  // the card bitmaps.
+  intptr_t _heap_bottom_card_num;
+
 public:
   // Manipulation of the global mark stack.
   // Notice that the first mark_stack_push is CAS-based, whereas the
@@ -703,6 +723,7 @@ public:
 
   ConcurrentMark(ReservedSpace rs, int max_regions);
   ~ConcurrentMark();
+
   ConcurrentMarkThread* cmThread() { return _cmThread; }
 
   CMBitMapRO* prevMarkBitMap() const { return _prevMarkBitMap; }
@@ -721,7 +742,7 @@ public:
 
   // This notifies CM that a root during initial-mark needs to be
   // grayed. It is MT-safe.
-  inline void grayRoot(oop obj, size_t word_size);
+  inline void grayRoot(oop obj, size_t word_size, uint worker_id);
 
   // It's used during evacuation pauses to gray a region, if
   // necessary, and it's MT-safe. It assumes that the caller has
@@ -781,15 +802,13 @@ public:
 
   void checkpointRootsFinal(bool clear_all_soft_refs);
   void checkpointRootsFinalWork();
-  void calcDesiredRegions();
   void cleanup();
   void completeCleanup();
 
   // Mark in the previous bitmap.  NB: this is usually read-only, so use
   // this carefully!
   inline void markPrev(oop p);
-  inline void markNext(oop p);
-  void clear(oop p);
+
   // Clears marks for all objects in the given range, for the prev,
   // next, or both bitmaps.  NB: the previous bitmap is usually
   // read-only, so use this carefully!
@@ -913,6 +932,104 @@ public:
   bool verbose_high() {
     return _MARKING_VERBOSE_ && _verbose_level >= high_verbose;
   }
+
+  // Counting data structure accessors
+
+  // Returns the card number of the bottom of the G1 heap.
+  // Used in biasing indices into accounting card bitmaps.
+  intptr_t heap_bottom_card_num() const {
+    return _heap_bottom_card_num;
+  }
+
+  // Returns the card bitmap for a given task or worker id.
+  BitMap* count_card_bitmap_for(uint worker_id) {
+    assert(0 <= worker_id && worker_id < _max_task_num, "oob");
+    assert(_count_card_bitmaps != NULL, "uninitialized");
+    BitMap* task_card_bm = &_count_card_bitmaps[worker_id];
+    assert(task_card_bm->size() == _card_bm.size(), "size mismatch");
+    return task_card_bm;
+  }
+
+  // Returns the array containing the marked bytes for each region,
+  // for the given worker or task id.
+  size_t* count_marked_bytes_array_for(uint worker_id) {
+    assert(0 <= worker_id && worker_id < _max_task_num, "oob");
+    assert(_count_marked_bytes != NULL, "uninitialized");
+    size_t* marked_bytes_array = _count_marked_bytes[worker_id];
+    assert(marked_bytes_array != NULL, "uninitialized");
+    return marked_bytes_array;
+  }
+
+  // Returns the index in the liveness accounting card table bitmap
+  // for the given address
+  inline BitMap::idx_t card_bitmap_index_for(HeapWord* addr);
+
+  // Counts the size of the given memory region in the the given
+  // marked_bytes array slot for the given HeapRegion.
+  // Sets the bits in the given card bitmap that are associated with the
+  // cards that are spanned by the memory region.
+  inline void count_region(MemRegion mr, HeapRegion* hr,
+                           size_t* marked_bytes_array,
+                           BitMap* task_card_bm);
+
+  // Counts the given memory region in the task/worker counting
+  // data structures for the given worker id.
+  inline void count_region(MemRegion mr, uint worker_id);
+
+  // Counts the given object in the given task/worker counting
+  // data structures.
+  inline void count_object(oop obj, HeapRegion* hr,
+                           size_t* marked_bytes_array,
+                           BitMap* task_card_bm);
+
+  // Counts the given object in the task/worker counting data
+  // structures for the given worker id.
+  inline void count_object(oop obj, HeapRegion* hr, uint worker_id);
+
+  // Attempts to mark the given object and, if successful, counts
+  // the object in the given task/worker counting structures.
+  inline bool par_mark_and_count(oop obj, HeapRegion* hr,
+                                 size_t* marked_bytes_array,
+                                 BitMap* task_card_bm);
+
+  // Attempts to mark the given object and, if successful, counts
+  // the object in the task/worker counting structures for the
+  // given worker id.
+  inline bool par_mark_and_count(oop obj, HeapRegion* hr, uint worker_id);
+
+  // Similar to the above routine but we don't know the heap region that
+  // contains the object to be marked/counted, which this routine looks up.
+  inline bool par_mark_and_count(oop obj, uint worker_id);
+
+  // Similar to the above routine but there are times when we cannot
+  // safely calculate the size of obj due to races and we, therefore,
+  // pass the size in as a parameter. It is the caller's reponsibility
+  // to ensure that the size passed in for obj is valid.
+  inline bool par_mark_and_count(oop obj, size_t word_size, uint worker_id);
+
+  // Unconditionally mark the given object, and unconditinally count
+  // the object in the counting structures for worker id 0.
+  // Should *not* be called from parallel code.
+  inline bool mark_and_count(oop obj, HeapRegion* hr);
+
+  // Similar to the above routine but we don't know the heap region that
+  // contains the object to be marked/counted, which this routine looks up.
+  // Should *not* be called from parallel code.
+  inline bool mark_and_count(oop obj);
+
+protected:
+  // Clear all the per-task bitmaps and arrays used to store the
+  // counting data.
+  void clear_all_count_data();
+
+  // Aggregates the counting data for each worker/task
+  // that was constructed while marking. Also sets
+  // the amount of marked bytes for each region and
+  // the top at concurrent mark count.
+  void aggregate_count_data();
+
+  // Verification routine
+  void verify_count_data();
 };
 
 // A class representing a marking task.
@@ -1030,6 +1147,12 @@ private:
   bool                        _concurrent;
 
   TruncatedSeq                _marking_step_diffs_ms;
+
+  // Counting data structures. Embedding the task's marked_bytes_array
+  // and card bitmap into the actual task saves having to go through
+  // the ConcurrentMark object.
+  size_t*                     _marked_bytes_array;
+  BitMap*                     _card_bm;
 
   // LOTS of statistics related with this task
 #if _MARKING_STATS_
@@ -1196,6 +1319,7 @@ public:
   }
 
   CMTask(int task_num, ConcurrentMark *cm,
+         size_t* marked_bytes, BitMap* card_bm,
          CMTaskQueue* task_queue, CMTaskQueueSet* task_queues);
 
   // it prints statistics associated with this task

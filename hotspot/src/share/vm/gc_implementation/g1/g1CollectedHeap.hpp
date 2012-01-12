@@ -1909,7 +1909,7 @@ protected:
   G1ParScanPartialArrayClosure* _partial_scan_cl;
 
   int _hash_seed;
-  int _queue_num;
+  uint _queue_num;
 
   size_t _term_attempts;
 
@@ -1953,7 +1953,7 @@ protected:
   }
 
 public:
-  G1ParScanThreadState(G1CollectedHeap* g1h, int queue_num);
+  G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num);
 
   ~G1ParScanThreadState() {
     FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base);
@@ -2045,7 +2045,7 @@ public:
   }
 
   int* hash_seed() { return &_hash_seed; }
-  int  queue_num() { return _queue_num; }
+  uint queue_num() { return _queue_num; }
 
   size_t term_attempts() const  { return _term_attempts; }
   void note_term_attempt() { _term_attempts++; }
