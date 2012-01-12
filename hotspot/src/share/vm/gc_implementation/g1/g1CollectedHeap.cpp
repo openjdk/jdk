@@ -4200,7 +4200,7 @@ HeapWord* G1CollectedHeap::par_allocate_during_gc(GCAllocPurpose purpose,
 G1ParGCAllocBuffer::G1ParGCAllocBuffer(size_t gclab_word_size) :
   ParGCAllocBuffer(gclab_word_size), _retired(false) { }
 
-G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, int queue_num)
+G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num)
   : _g1h(g1h),
     _refs(g1h->task_queue(queue_num)),
     _dcq(&g1h->dirty_card_queue_set()),
@@ -4321,6 +4321,7 @@ G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1,
                                      G1ParScanThreadState* par_scan_state) :
   _g1(g1), _g1_rem(_g1->g1_rem_set()), _cm(_g1->concurrent_mark()),
   _par_scan_state(par_scan_state),
+  _worker_id(par_scan_state->queue_num()),
   _during_initial_mark(_g1->g1_policy()->during_initial_mark_pause()),
   _mark_in_progress(_g1->mark_in_progress()) { }
 
@@ -4332,7 +4333,7 @@ void G1ParCopyHelper::mark_object(oop obj) {
 #endif // ASSERT
 
   // We know that the object is not moving so it's safe to read its size.
-  _cm->grayRoot(obj, (size_t) obj->size());
+  _cm->grayRoot(obj, (size_t) obj->size(), _worker_id);
 }
 
 void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
@@ -4354,7 +4355,7 @@ void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
   // worker so we cannot trust that its to-space image is
   // well-formed. So we have to read its size from its from-space
   // image which we know should not be changing.
-  _cm->grayRoot(to_obj, (size_t) from_obj->size());
+  _cm->grayRoot(to_obj, (size_t) from_obj->size(), _worker_id);
 }
 
 oop G1ParCopyHelper::copy_to_survivor_space(oop old) {
@@ -4444,6 +4445,8 @@ void G1ParCopyClosure<do_gen_barrier, barrier, do_mark_object>
   assert(barrier != G1BarrierRS || obj != NULL,
          "Precondition: G1BarrierRS implies obj is non-NULL");
 
+  assert(_worker_id == _par_scan_state->queue_num(), "sanity");
+
   // here the null check is implicit in the cset_fast_test() test
   if (_g1->in_cset_fast_test(obj)) {
     oop forwardee;
@@ -4462,7 +4465,7 @@ void G1ParCopyClosure<do_gen_barrier, barrier, do_mark_object>
 
     // When scanning the RS, we only care about objs in CS.
     if (barrier == G1BarrierRS) {
-      _par_scan_state->update_rs(_from, p, _par_scan_state->queue_num());
+      _par_scan_state->update_rs(_from, p, _worker_id);
     }
   } else {
     // The object is not in collection set. If we're a root scanning
@@ -4474,7 +4477,7 @@ void G1ParCopyClosure<do_gen_barrier, barrier, do_mark_object>
   }
 
   if (barrier == G1BarrierEvac && obj != NULL) {
-    _par_scan_state->update_rs(_from, p, _par_scan_state->queue_num());
+    _par_scan_state->update_rs(_from, p, _worker_id);
   }
 
   if (do_gen_barrier && obj != NULL) {
@@ -5704,16 +5707,6 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
 
       // And the region is empty.
       assert(!used_mr.is_empty(), "Should not have empty regions in a CS.");
-
-      // If marking is in progress then clear any objects marked in
-      // the current region. Note mark_in_progress() returns false,
-      // even during an initial mark pause, until the set_marking_started()
-      // call which takes place later in the pause.
-      if (mark_in_progress()) {
-        assert(!g1_policy()->during_initial_mark_pause(), "sanity");
-        _cm->nextMarkBitMap()->clearRange(used_mr);
-      }
-
       free_region(cur, &pre_used, &local_free_list, false /* par */);
     } else {
       cur->uninstall_surv_rate_group();

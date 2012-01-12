@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,7 @@ ConcurrentMarkThread::ConcurrentMarkThread(ConcurrentMark* cm) :
   _started(false),
   _in_progress(false),
   _vtime_accum(0.0),
-  _vtime_mark_accum(0.0),
-  _vtime_count_accum(0.0)
-{
+  _vtime_mark_accum(0.0) {
   create_and_start();
 }
 
@@ -148,36 +146,12 @@ void ConcurrentMarkThread::run() {
         }
       } while (cm()->restart_for_overflow());
 
-      double counting_start_time = os::elapsedVTime();
-      if (!cm()->has_aborted()) {
-        double count_start_sec = os::elapsedTime();
-        if (PrintGC) {
-          gclog_or_tty->date_stamp(PrintGCDateStamps);
-          gclog_or_tty->stamp(PrintGCTimeStamps);
-          gclog_or_tty->print_cr("[GC concurrent-count-start]");
-        }
-
-        _sts.join();
-        _cm->calcDesiredRegions();
-        _sts.leave();
-
-        if (!cm()->has_aborted()) {
-          double count_end_sec = os::elapsedTime();
-          if (PrintGC) {
-            gclog_or_tty->date_stamp(PrintGCDateStamps);
-            gclog_or_tty->stamp(PrintGCTimeStamps);
-            gclog_or_tty->print_cr("[GC concurrent-count-end, %1.7lf]",
-                                   count_end_sec - count_start_sec);
-          }
-        }
-      }
-
       double end_time = os::elapsedVTime();
-      _vtime_count_accum += (end_time - counting_start_time);
       // Update the total virtual time before doing this, since it will try
       // to measure it to get the vtime for this marking.  We purposely
       // neglect the presumably-short "completeCleanup" phase here.
       _vtime_accum = (end_time - _vtime_start);
+
       if (!cm()->has_aborted()) {
         if (g1_policy->adaptive_young_list_length()) {
           double now = os::elapsedTime();
