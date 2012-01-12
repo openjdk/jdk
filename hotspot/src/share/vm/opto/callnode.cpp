@@ -1625,21 +1625,20 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //=============================================================================
 bool LockNode::is_nested_lock_region() {
-  Node* box = box_node();
-  if (!box->is_BoxLock() || box->as_BoxLock()->stack_slot() <= 0)
+  BoxLockNode* box = box_node()->as_BoxLock();
+  int stk_slot = box->stack_slot();
+  if (stk_slot <= 0)
     return false; // External lock or it is not Box (Phi node).
 
   // Ignore complex cases: merged locks or multiple locks.
-  BoxLockNode* box_lock = box->as_BoxLock();
   Node* obj = obj_node();
   LockNode* unique_lock = NULL;
-  if (!box_lock->is_simple_lock_region(&unique_lock, obj) ||
+  if (!box->is_simple_lock_region(&unique_lock, obj) ||
       (unique_lock != this)) {
     return false;
   }
 
   // Look for external lock for the same object.
-  int stk_slot = box_lock->stack_slot();
   SafePointNode* sfn = this->as_SafePoint();
   JVMState* youngest_jvms = sfn->jvms();
   int max_depth = youngest_jvms->depth();
@@ -1649,7 +1648,7 @@ bool LockNode::is_nested_lock_region() {
     // Loop over monitors
     for (int idx = 0; idx < num_mon; idx++) {
       Node* obj_node = sfn->monitor_obj(jvms, idx);
-      BoxLockNode* box_node = BoxLockNode::box_node(sfn->monitor_box(jvms, idx));
+      BoxLockNode* box_node = sfn->monitor_box(jvms, idx)->as_BoxLock();
       if ((box_node->stack_slot() < stk_slot) && obj_node->eqv_uncast(obj)) {
         return true;
       }
