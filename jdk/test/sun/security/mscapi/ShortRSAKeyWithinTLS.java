@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,22 +29,15 @@ import javax.net.*;
 import javax.net.ssl.*;
 import java.lang.reflect.*;
 
-public class ClientAuth extends PKCS11Test {
+import sun.security.util.KeyLength;
+
+public class ShortRSAKeyWithinTLS {
 
     /*
      * =============================================================
      * Set the various variables needed for the tests, then
      * specify what tests to run on each side.
      */
-
-    private static Provider provider;
-    private static final String NSS_PWD = "test12";
-    private static final String JKS_PWD = "passphrase";
-    private static final String SERVER_KS = "server.keystore";
-    private static final String TS = "truststore";
-    private static String p11config;
-
-    private static String DIR = System.getProperty("DIR");
 
     /*
      * Should we run the client or server in a separate thread?
@@ -80,26 +73,24 @@ public class ClientAuth extends PKCS11Test {
      */
     void doServerSide() throws Exception {
 
-        SSLContext ctx = SSLContext.getInstance("TLS");
-        char[] passphrase = JKS_PWD.toCharArray();
+        // load the key store
+        KeyStore ks = KeyStore.getInstance("Windows-MY", "SunMSCAPI");
+        ks.load(null, null);
+        System.out.println("Loaded keystore: Windows-MY");
 
-        // server gets KeyStore from JKS keystore
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(new FileInputStream(new File(DIR, SERVER_KS)), passphrase);
+        // check key size
+        checkKeySize(ks);
+
+        // initialize the SSLContext
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, passphrase);
+        kmf.init(ks, null);
 
-        // server gets TrustStore from PKCS#11 token
-/*
-        passphrase = NSS_PWD.toCharArray();
-        KeyStore ts = KeyStore.getInstance("PKCS11", "SunPKCS11-nss");
-        ts.load(null, passphrase);
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        tmf.init(ts);
-*/
+        tmf.init(ks);
 
-        //ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-        ctx.init(kmf.getKeyManagers(), null, null);
+        SSLContext ctx = SSLContext.getInstance("TLS");
+        ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+
         ServerSocketFactory ssf = ctx.getServerSocketFactory();
         SSLServerSocket sslServerSocket = (SSLServerSocket)
                                 ssf.createServerSocket(serverPort);
@@ -138,18 +129,20 @@ public class ClientAuth extends PKCS11Test {
             Thread.sleep(50);
         }
 
-        SSLContext ctx = SSLContext.getInstance("TLS");
+        // load the key store
+        KeyStore ks = KeyStore.getInstance("Windows-MY", "SunMSCAPI");
+        ks.load(null, null);
+        System.out.println("Loaded keystore: Windows-MY");
+
+        // initialize the SSLContext
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        kmf.init(ks, null);
 
-        // client gets KeyStore from PKCS#11 token,
-        // and gets TrustStore from JKS KeyStore (using system properties)
-        char[] passphrase = NSS_PWD.toCharArray();
-        KeyStore ks = KeyStore.getInstance("PKCS11", "SunPKCS11-nss");
-        ks.load(null, passphrase);
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+        tmf.init(ks);
 
-        kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, passphrase);
-        ctx.init(kmf.getKeyManagers(), null, null);
+        SSLContext ctx = SSLContext.getInstance("TLS");
+        ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
         SSLSocketFactory sslsf = ctx.getSocketFactory();
         SSLSocket sslSocket = (SSLSocket)
@@ -173,6 +166,29 @@ public class ClientAuth extends PKCS11Test {
         sslSocket.close();
     }
 
+    private void checkKeySize(KeyStore ks) throws Exception {
+        PrivateKey privateKey = null;
+        PublicKey publicKey = null;
+
+        if (ks.containsAlias(keyAlias)) {
+            System.out.println("Loaded entry: " + keyAlias);
+            privateKey = (PrivateKey)ks.getKey(keyAlias, null);
+            publicKey = (PublicKey)ks.getCertificate(keyAlias).getPublicKey();
+
+            int privateKeySize = KeyLength.getKeySize(privateKey);
+            if (privateKeySize != keySize) {
+                throw new Exception("Expected key size is " + keySize +
+                        ", but the private key size is " + privateKeySize);
+            }
+
+            int publicKeySize = KeyLength.getKeySize(publicKey);
+            if (publicKeySize != keySize) {
+                throw new Exception("Expected key size is " + keySize +
+                        ", but the public key size is " + publicKeySize);
+            }
+        }
+    }
+
     /*
      * =============================================================
      * The remainder is just support stuff
@@ -184,64 +200,44 @@ public class ClientAuth extends PKCS11Test {
     volatile Exception serverException = null;
     volatile Exception clientException = null;
 
+    private static String keyAlias;
+    private static int keySize;
     private static String clientProtocol = null;
     private static String clientCiperSuite = null;
 
     private static void parseArguments(String[] args) {
-        if (args.length > 0) {
-            clientProtocol = args[0];
+        keyAlias = args[0];
+        keySize = Integer.parseInt(args[1]);
+
+        if (args.length > 2) {
+            clientProtocol = args[2];
         }
 
-        if (args.length > 1) {
-            clientCiperSuite = args[1];
+        if (args.length > 3) {
+            clientCiperSuite = args[3];
         }
     }
 
     public static void main(String[] args) throws Exception {
-        // Get the customized arguments.
-        parseArguments(args);
-        main(new ClientAuth());
-    }
-
-    public void main(Provider p) throws Exception {
-        // SSL RSA client auth currently needs an RSA cipher
-        // (cf. NONEwithRSA hack), which is currently not available in
-        // open builds.
-        try {
-            javax.crypto.Cipher.getInstance("RSA/ECB/PKCS1Padding", p);
-        } catch (GeneralSecurityException e) {
-            System.out.println("Not supported by provider, skipping");
-            return;
-        }
-
-        this.provider = p;
-
-        System.setProperty("javax.net.ssl.trustStore",
-                                        new File(DIR, TS).toString());
-        System.setProperty("javax.net.ssl.trustStoreType", "JKS");
-        System.setProperty("javax.net.ssl.trustStoreProvider", "SUN");
-        System.setProperty("javax.net.ssl.trustStorePassword", JKS_PWD);
-
-        // perform Security.addProvider of P11 provider
-        ProviderLoader.go(System.getProperty("CUSTOM_P11_CONFIG"));
-
         if (debug) {
             System.setProperty("javax.net.debug", "all");
         }
 
-        /*
-         * Start the tests.
-         */
-        go();
+        // Get the customized arguments.
+        parseArguments(args);
+
+        new ShortRSAKeyWithinTLS();
     }
 
     Thread clientThread = null;
     Thread serverThread = null;
 
     /*
+     * Primary constructor, used to drive remainder of the test.
+     *
      * Fork off the other side, then do your work.
      */
-    private void go() throws Exception {
+    ShortRSAKeyWithinTLS() throws Exception {
         try {
             if (separateServerThread) {
                 startServer(true);
@@ -251,7 +247,7 @@ public class ClientAuth extends PKCS11Test {
                 startServer(false);
             }
         } catch (Exception e) {
-            //swallow for now.  Show later
+            // swallow for now.  Show later
         }
 
         /*
@@ -356,3 +352,4 @@ public class ClientAuth extends PKCS11Test {
         }
     }
 }
+
