@@ -307,7 +307,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(instanceKlass,               _static_field_size,                            int)                                   \
   nonstatic_field(instanceKlass,               _static_oop_field_count,                       u2)                                   \
   nonstatic_field(instanceKlass,               _nonstatic_oop_map_size,                       int)                                   \
-  nonstatic_field(instanceKlass,               _misc_flags,                                   u1)                                    \
+  nonstatic_field(instanceKlass,               _is_marked_dependent,                          bool)                                  \
   nonstatic_field(instanceKlass,               _minor_version,                                u2)                                    \
   nonstatic_field(instanceKlass,               _major_version,                                u2)                                    \
   nonstatic_field(instanceKlass,               _init_state,                                   u1)                                    \
@@ -2386,7 +2386,6 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_constant(instanceKlass::being_initialized)                      \
   declare_constant(instanceKlass::fully_initialized)                      \
   declare_constant(instanceKlass::initialization_error)                   \
-  declare_constant(instanceKlass::IS_MARKED_DEPENDENT)                    \
                                                                           \
   /*********************************/                                     \
   /* Symbol* - symbol max length */                                     \
