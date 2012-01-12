@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package sun.security.mscapi;
 
+import sun.security.util.Length;
+
 /**
  * The handle for an RSA or DSA key using the Microsoft Crypto API.
  *
@@ -35,7 +37,7 @@ package sun.security.mscapi;
  * @since 1.6
  * @author  Stanley Man-Kit Ho
  */
-abstract class Key implements java.security.Key
+abstract class Key implements java.security.Key, Length
 {
 
     // Native handle
@@ -81,7 +83,8 @@ abstract class Key implements java.security.Key
     /**
      * Return bit length of the key.
      */
-    public int bitLength()
+    @Override
+    public int length()
     {
         return keyLength;
     }
