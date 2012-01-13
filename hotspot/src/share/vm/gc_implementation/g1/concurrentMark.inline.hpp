@@ -28,6 +28,35 @@
 #include "gc_implementation/g1/concurrentMark.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 
+inline bool CMBitMapRO::iterate(BitMapClosure* cl, MemRegion mr) {
+  HeapWord* start_addr = MAX2(startWord(), mr.start());
+  HeapWord* end_addr = MIN2(endWord(), mr.end());
+
+  if (end_addr > start_addr) {
+    // Right-open interval [start-offset, end-offset).
+    BitMap::idx_t start_offset = heapWordToOffset(start_addr);
+    BitMap::idx_t end_offset = heapWordToOffset(end_addr);
+
+    start_offset = _bm.get_next_one_offset(start_offset, end_offset);
+    while (start_offset < end_offset) {
+      HeapWord* obj_addr = offsetToHeapWord(start_offset);
+      oop obj = (oop) obj_addr;
+      if (!cl->do_bit(start_offset)) {
+        return false;
+      }
+      HeapWord* next_addr = MIN2(obj_addr + obj->size(), end_addr);
+      BitMap::idx_t next_offset = heapWordToOffset(next_addr);
+      start_offset = _bm.get_next_one_offset(next_offset, end_offset);
+    }
+  }
+  return true;
+}
+
+inline bool CMBitMapRO::iterate(BitMapClosure* cl) {
+  MemRegion mr(startWord(), sizeInWords());
+  return iterate(cl, mr);
+}
+
 inline void CMTask::push(oop obj) {
   HeapWord* objAddr = (HeapWord*) obj;
   assert(_g1h->is_in_g1_reserved(objAddr), "invariant");
