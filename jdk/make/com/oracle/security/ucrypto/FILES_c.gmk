@@ -23,26 +23,8 @@
 # questions.
 #
 
-BUILDDIR = ../..
-PRODUCT = oracle
-#SUBDIRS_MAKEFLAGS += JAVAC_MAX_WARNINGS=true
-#SUBDIRS_MAKEFLAGS += JAVAC_WARNINGS_FATAL=true
-#SUBDIRS_MAKEFLAGS += JAVAC_LINT_OPTIONS=-Xlint:all,-deprecation,-path
-include $(BUILDDIR)/common/Defs.gmk
-
-# build com/oracle/security/ucrypto on Solaris platform for non-OpenJDK builds
-UCRYPTO =
 ifndef OPENJDK
-  ifeq ($(PLATFORM), solaris)
-    UCRYPTO = security/ucrypto
-  endif
+FILES_c = \
+        nativeFunc.c \
+	nativeCrypto.c
 endif
-
-
-SUBDIRS = net nio util $(UCRYPTO)
-
-include $(BUILDDIR)/common/Subdirs.gmk
-
-all build clean clobber::
-	$(SUBDIRS-loop)
-
