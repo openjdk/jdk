@@ -23,26 +23,18 @@
 # questions.
 #
 
-BUILDDIR = ../..
+BUILDDIR = ../../..
+PACKAGE = com.oracle.nio
 PRODUCT = oracle
-#SUBDIRS_MAKEFLAGS += JAVAC_MAX_WARNINGS=true
-#SUBDIRS_MAKEFLAGS += JAVAC_WARNINGS_FATAL=true
-#SUBDIRS_MAKEFLAGS += JAVAC_LINT_OPTIONS=-Xlint:all,-deprecation,-path
 include $(BUILDDIR)/common/Defs.gmk
 
-# build com/oracle/security/ucrypto on Solaris platform for non-OpenJDK builds
-UCRYPTO =
-ifndef OPENJDK
-  ifeq ($(PLATFORM), solaris)
-    UCRYPTO = security/ucrypto
-  endif
-endif
+#
+# Files
+#
+AUTO_FILES_JAVA_DIRS = com/oracle/nio
 
-
-SUBDIRS = net nio util $(UCRYPTO)
-
-include $(BUILDDIR)/common/Subdirs.gmk
-
-all build clean clobber::
-	$(SUBDIRS-loop)
+#
+# Rules
+#
+include $(BUILDDIR)/common/Classes.gmk
 
