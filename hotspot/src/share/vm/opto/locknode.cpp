@@ -118,35 +118,12 @@ bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj) {
       FastLockNode* flock = n->as_FastLock();
       assert((flock->box_node() == this) && flock->obj_node()->eqv_uncast(obj),"");
     }
-    if (n->is_SafePoint() && n->as_SafePoint()->jvms()) {
-      SafePointNode* sfn = n->as_SafePoint();
-      JVMState* youngest_jvms = sfn->jvms();
-      int max_depth = youngest_jvms->depth();
-      for (int depth = 1; depth <= max_depth; depth++) {
-        JVMState* jvms = youngest_jvms->of_depth(depth);
-        int num_mon  = jvms->nof_monitors();
-        // Loop over monitors
-        for (int idx = 0; idx < num_mon; idx++) {
-          Node* obj_node = sfn->monitor_obj(jvms, idx);
-          Node* box_node = sfn->monitor_box(jvms, idx);
-          if (box_node == this) {
-            if (!obj_node->eqv_uncast(obj)) {
-              tty->cr();
-              tty->print_cr("=====monitor info has different obj=====");
-              tty->print_cr("obj:");
-              obj->dump(1); tty->cr();
-              tty->print_cr("obj uncast:");
-              obj->uncast()->dump(); tty->cr();
-              tty->print_cr("obj_node:");
-              obj_node->dump(1); tty->cr();
-              tty->print_cr("obj_node uncast:");
-              obj_node->uncast()->dump();
-            }
-            assert(obj_node->eqv_uncast(obj),"monitor info has different obj");
-          }
-        }
-      }
-    }
+    // Don't check monitor info in safepoints since the referenced object could
+    // be different from the locked object. It could be Phi node of different
+    // cast nodes which point to this locked object.
+    // We assume that no other objects could be referenced in monitor info
+    // associated with this BoxLock node because all associated locks and
+    // unlocks are reference only this one object.
   }
 #endif
   if (unique_lock != NULL && has_one_lock) {

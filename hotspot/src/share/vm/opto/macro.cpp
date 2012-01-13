@@ -1802,10 +1802,14 @@ void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
 // Mark all associated (same box and obj) lock and unlock nodes for
 // elimination if some of them marked already.
 void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
-  if (oldbox->is_BoxLock() && oldbox->as_BoxLock()->is_eliminated())
-    return;
+  if (oldbox->as_BoxLock()->is_eliminated())
+    return; // This BoxLock node was processed already.
 
-  if (oldbox->is_BoxLock() &&
+  // New implementation (EliminateNestedLocks) has separate BoxLock
+  // node for each locked region so mark all associated locks/unlocks as
+  // eliminated even if different objects are referenced in one locked region
+  // (for example, OSR compilation of nested loop inside locked scope).
+  if (EliminateNestedLocks ||
       oldbox->as_BoxLock()->is_simple_lock_region(NULL, obj)) {
     // Box is used only in one lock region. Mark this box as eliminated.
     _igvn.hash_delete(oldbox);
@@ -1818,7 +1822,6 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
         AbstractLockNode* alock = u->as_AbstractLock();
         // Check lock's box since box could be referenced by Lock's debug info.
         if (alock->box_node() == oldbox) {
-          assert(alock->obj_node()->eqv_uncast(obj), "");
           // Mark eliminated all related locks and unlocks.
           alock->set_non_esc_obj();
         }
