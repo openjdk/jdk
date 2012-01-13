@@ -2330,7 +2330,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
 #ifndef PRODUCT
     // -Xprintflags
     } else if (match_option(option, "-Xprintflags", &tail)) {
-      CommandLineFlags::printFlags();
+      CommandLineFlags::printFlags(tty, false);
       vm_exit(0);
 #endif
     // -D
@@ -2978,13 +2978,13 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
       IgnoreUnrecognizedVMOptions = false;
     }
     if (match_option(option, "-XX:+PrintFlagsInitial", &tail)) {
-      CommandLineFlags::printFlags();
+      CommandLineFlags::printFlags(tty, false);
       vm_exit(0);
     }
 
 #ifndef PRODUCT
     if (match_option(option, "-XX:+PrintFlagsWithComments", &tail)) {
-      CommandLineFlags::printFlags(true);
+      CommandLineFlags::printFlags(tty, true);
       vm_exit(0);
     }
 #endif
@@ -3180,7 +3180,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
 #endif
 
   if (PrintCommandLineFlags) {
-    CommandLineFlags::printSetFlags();
+    CommandLineFlags::printSetFlags(tty);
   }
 
   // Apply CPU specific policy for the BiasedLocking

@@ -35,9 +35,8 @@
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
 
-class HelpDCmd : public DCmd {
+class HelpDCmd : public DCmdWithParser {
 protected:
-  DCmdParser _dcmdparser;
   DCmdArgument<bool> _all;
   DCmdArgument<char*> _cmd;
 public:
@@ -50,13 +49,7 @@ public:
   }
   static const char* impact() { return "Low: "; }
   static int num_arguments();
-  virtual void parse(CmdLine* line, char delim, TRAPS);
   virtual void execute(TRAPS);
-  virtual void reset(TRAPS);
-  virtual void cleanup();
-  virtual void print_help(outputStream* out);
-  virtual GrowableArray<const char*>* argument_name_array();
-  virtual GrowableArray<DCmdArgumentInfo*>* argument_info_array();
 };
 
 class VersionDCmd : public DCmd {
@@ -68,9 +61,156 @@ public:
   }
   static const char* impact() { return "Low: "; }
   static int num_arguments() { return 0; }
-  virtual void parse(CmdLine* line, char delim, TRAPS) { }
   virtual void execute(TRAPS);
-  virtual void print_help(outputStream* out) { }
+};
+
+class CommandLineDCmd : public DCmd {
+public:
+  CommandLineDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }
+  static const char* name() { return "VM.command_line"; }
+  static const char* description() {
+    return "Print the command line used to start this VM instance.";
+  }
+  static const char* impact() { return "Low: "; }
+  static int num_arguments() { return 0; }
+  virtual void execute(TRAPS) {
+    Arguments::print_on(_output);
+  }
+};
+
+// See also: get_system_properties in attachListener.cpp
+class PrintSystemPropertiesDCmd : public DCmd {
+public:
+  PrintSystemPropertiesDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }
+    static const char* name() { return "VM.system_properties"; }
+    static const char* description() {
+      return "Print system properties.";
+    }
+    static const char* impact() {
+      return "Low: ";
+    }
+    static int num_arguments() { return 0; }
+    virtual void execute(TRAPS);
+};
+
+// See also: print_flag in attachListener.cpp
+class PrintVMFlagsDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<bool> _all;
+public:
+  PrintVMFlagsDCmd(outputStream* output, bool heap);
+  static const char* name() { return "VM.flags"; }
+  static const char* description() {
+    return "Print VM flag options and their current values.";
+  }
+  static const char* impact() {
+    return "Low: ";
+  }
+  static int num_arguments();
+  virtual void execute(TRAPS);
+};
+
+class VMUptimeDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<bool> _date;
+public:
+  VMUptimeDCmd(outputStream* output, bool heap);
+  static const char* name() { return "VM.uptime"; }
+  static const char* description() {
+    return "Print VM uptime.";
+  }
+  static const char* impact() {
+    return "Low: ";
+  }
+  static int num_arguments();
+  virtual void execute(TRAPS);
+};
+
+class SystemGCDCmd : public DCmd {
+public:
+  SystemGCDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }
+    static const char* name() { return "GC.run"; }
+    static const char* description() {
+      return "Call java.lang.System.gc().";
+    }
+    static const char* impact() {
+      return "Medium: Depends on Java heap size and content.";
+    }
+    static int num_arguments() { return 0; }
+    virtual void execute(TRAPS);
+};
+
+class RunFinalizationDCmd : public DCmd {
+public:
+  RunFinalizationDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }
+    static const char* name() { return "GC.run_finalization"; }
+    static const char* description() {
+      return "Call java.lang.System.runFinalization().";
+    }
+    static const char* impact() {
+      return "Medium: Depends on Java content.";
+    }
+    static int num_arguments() { return 0; }
+    virtual void execute(TRAPS);
+};
+
+#ifndef SERVICES_KERNEL   // Heap dumping not supported
+// See also: dump_heap in attachListener.cpp
+class HeapDumpDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<char*> _filename;
+  DCmdArgument<bool>  _all;
+public:
+  HeapDumpDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "GC.heap_dump";
+  }
+  static const char* description() {
+    return "Generate a HPROF format dump of the Java heap.";
+  }
+  static const char* impact() {
+    return "High: Depends on Java heap size and content. "
+           "Request a full GC unless the '-all' option is specified.";
+  }
+  static int num_arguments();
+  virtual void execute(TRAPS);
+};
+#endif // SERVICES_KERNEL
+
+// See also: inspeactheap in attachListener.cpp
+class ClassHistogramDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<bool> _all;
+public:
+  ClassHistogramDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "GC.class_histogram";
+  }
+  static const char* description() {
+    return "Provide statistics about the Java heap usage.";
+  }
+  static const char* impact() {
+    return "High: Depends on Java heap size and content.";
+  }
+  static int num_arguments();
+  virtual void execute(TRAPS);
+};
+
+// See also: thread_dump in attachListener.cpp
+class ThreadDumpDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<bool> _locks;
+public:
+  ThreadDumpDCmd(outputStream* output, bool heap);
+  static const char* name() { return "Thread.print"; }
+  static const char* description() {
+    return "Print all threads with stacktraces.";
+  }
+  static const char* impact() {
+    return "Medium: Depends on the number of threads.";
+  }
+  static int num_arguments();
+  virtual void execute(TRAPS);
 };
 
 #endif // SHARE_VM_SERVICES_DIAGNOSTICCOMMAND_HPP
