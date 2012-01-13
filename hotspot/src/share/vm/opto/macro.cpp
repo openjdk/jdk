@@ -1802,10 +1802,14 @@ void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
 // Mark all associated (same box and obj) lock and unlock nodes for
 // elimination if some of them marked already.
 void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
-  if (oldbox->is_BoxLock() && oldbox->as_BoxLock()->is_eliminated())
-    return;
+  if (oldbox->as_BoxLock()->is_eliminated())
+    return; // This BoxLock node was processed already.
 
-  if (oldbox->is_BoxLock() &&
+  // New implementation (EliminateNestedLocks) has separate BoxLock
+  // node for each locked region so mark all associated locks/unlocks as
+  // eliminated even if different objects are referenced in one locked region
+  // (for example, OSR compilation of nested loop inside locked scope).
+  if (EliminateNestedLocks ||
       oldbox->as_BoxLock()->is_simple_lock_region(NULL, obj)) {
     // Box is used only in one lock region. Mark this box as eliminated.
     _igvn.hash_delete(oldbox);
@@ -1818,7 +1822,6 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
         AbstractLockNode* alock = u->as_AbstractLock();
         // Check lock's box since box could be referenced by Lock's debug info.
         if (alock->box_node() == oldbox) {
-          assert(alock->obj_node()->eqv_uncast(obj), "");
           // Mark eliminated all related locks and unlocks.
           alock->set_non_esc_obj();
         }
@@ -1829,8 +1832,7 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
 
   // Create new "eliminated" BoxLock node and use it in monitor debug info
   // instead of oldbox for the same object.
-  BoxLockNode* box = BoxLockNode::box_node(oldbox);
-  BoxLockNode* newbox = box->clone()->as_BoxLock();
+  BoxLockNode* newbox = oldbox->clone()->as_BoxLock();
 
   // Note: BoxLock node is marked eliminated only here and it is used
   // to indicate that all associated lock and unlock nodes are marked
@@ -2047,7 +2049,7 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   Node* box = lock->box_node();
   Node* flock = lock->fastlock_node();
 
-  assert(!BoxLockNode::box_node(box)->is_eliminated(), "sanity");
+  assert(!box->as_BoxLock()->is_eliminated(), "sanity");
 
   // Make the merge point
   Node *region;
@@ -2283,7 +2285,7 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   Node* obj = unlock->obj_node();
   Node* box = unlock->box_node();
 
-  assert(!BoxLockNode::box_node(box)->is_eliminated(), "sanity");
+  assert(!box->as_BoxLock()->is_eliminated(), "sanity");
 
   // No need for a null check on unlock
 

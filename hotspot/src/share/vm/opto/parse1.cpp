@@ -1604,7 +1604,16 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
           continue;
         default:                // All normal stuff
           if (phi == NULL) {
-            if (!check_elide_phi || !target->can_elide_SEL_phi(j)) {
+            const JVMState* jvms = map()->jvms();
+            if (EliminateNestedLocks &&
+                jvms->is_mon(j) && jvms->is_monitor_box(j)) {
+              // BoxLock nodes are not commoning.
+              // Use old BoxLock node as merged box.
+              assert(newin->jvms()->is_monitor_box(j), "sanity");
+              // This assert also tests that nodes are BoxLock.
+              assert(BoxLockNode::same_slot(n, m), "sanity");
+              C->gvn_replace_by(n, m);
+            } else if (!check_elide_phi || !target->can_elide_SEL_phi(j)) {
               phi = ensure_phi(j, nophi);
             }
           }
@@ -1819,12 +1828,8 @@ PhiNode *Parse::ensure_phi(int idx, bool nocreate) {
   } else if (jvms->is_stk(idx)) {
     t = block()->stack_type_at(idx - jvms->stkoff());
   } else if (jvms->is_mon(idx)) {
-    if (EliminateNestedLocks && jvms->is_monitor_box(idx)) {
-      // BoxLock nodes are not commoning. Create Phi.
-      t = o->bottom_type(); // TypeRawPtr::BOTTOM
-    } else {
-      t = TypeInstPtr::BOTTOM; // this is sufficient for a lock object
-    }
+    assert(!jvms->is_monitor_box(idx), "no phis for boxes");
+    t = TypeInstPtr::BOTTOM; // this is sufficient for a lock object
   } else if ((uint)idx < TypeFunc::Parms) {
     t = o->bottom_type();  // Type::RETURN_ADDRESS or such-like.
   } else {
