@@ -104,17 +104,6 @@ int CMBitMapRO::heapWordDiffToOffsetDiff(size_t diff) const {
   return (int) (diff >> _shifter);
 }
 
-bool CMBitMapRO::iterate(BitMapClosure* cl, MemRegion mr) {
-  HeapWord* left  = MAX2(_bmStartWord, mr.start());
-  HeapWord* right = MIN2(_bmStartWord + _bmWordSize, mr.end());
-  if (right > left) {
-    // Right-open interval [leftOffset, rightOffset).
-    return _bm.iterate(cl, heapWordToOffset(left), heapWordToOffset(right));
-  } else {
-    return true;
-  }
-}
-
 void CMBitMapRO::mostly_disjoint_range_union(BitMap*   from_bitmap,
                                              size_t    from_start_index,
                                              HeapWord* to_start_word,

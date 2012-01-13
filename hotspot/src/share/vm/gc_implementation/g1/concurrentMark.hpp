@@ -84,8 +84,8 @@ class CMBitMapRO VALUE_OBJ_CLASS_SPEC {
   }
 
   // iteration
-  bool iterate(BitMapClosure* cl) { return _bm.iterate(cl); }
-  bool iterate(BitMapClosure* cl, MemRegion mr);
+  inline bool iterate(BitMapClosure* cl, MemRegion mr);
+  inline bool iterate(BitMapClosure* cl);
 
   // Return the address corresponding to the next marked bit at or after
   // "addr", and before "limit", if "limit" is non-NULL.  If there is no
