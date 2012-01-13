@@ -63,7 +63,7 @@ uint BoxLockNode::cmp( const Node &n ) const {
 }
 
 BoxLockNode* BoxLockNode::box_node(Node* box) {
-  // Chase down the BoxNode
+  // Chase down the BoxNode after RA which may spill box nodes.
   while (!box->is_BoxLock()) {
     //    if (box_node->is_SpillCopy()) {
     //      Node *m = box_node->in(1);
@@ -84,18 +84,13 @@ OptoReg::Name BoxLockNode::reg(Node* box) {
   return box_node(box)->in_RegMask(0).find_first_elem();
 }
 
-bool BoxLockNode::same_slot(Node* box1, Node* box2) {
-  return box_node(box1)->_slot == box_node(box2)->_slot;
-}
-
 // Is BoxLock node used for one simple lock region (same box and obj)?
 bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj) {
   LockNode* lock = NULL;
   bool has_one_lock = false;
   for (uint i = 0; i < this->outcnt(); i++) {
     Node* n = this->raw_out(i);
-    if (n->is_Phi())
-      return false; // Merged regions
+    assert(!n->is_Phi(), "should not merge BoxLock nodes");
     if (n->is_AbstractLock()) {
       AbstractLockNode* alock = n->as_AbstractLock();
       // Check lock's box since box could be referenced by Lock's debug info.
@@ -123,23 +118,12 @@ bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj) {
       FastLockNode* flock = n->as_FastLock();
       assert((flock->box_node() == this) && flock->obj_node()->eqv_uncast(obj),"");
     }
-    if (n->is_SafePoint() && n->as_SafePoint()->jvms()) {
-      SafePointNode* sfn = n->as_SafePoint();
-      JVMState* youngest_jvms = sfn->jvms();
-      int max_depth = youngest_jvms->depth();
-      for (int depth = 1; depth <= max_depth; depth++) {
-        JVMState* jvms = youngest_jvms->of_depth(depth);
-        int num_mon  = jvms->nof_monitors();
-        // Loop over monitors
-        for (int idx = 0; idx < num_mon; idx++) {
-          Node* obj_node = sfn->monitor_obj(jvms, idx);
-          Node* box_node = sfn->monitor_box(jvms, idx);
-          if (box_node == this) {
-            assert(obj_node->eqv_uncast(obj),"");
-          }
-        }
-      }
-    }
+    // Don't check monitor info in safepoints since the referenced object could
+    // be different from the locked object. It could be Phi node of different
+    // cast nodes which point to this locked object.
+    // We assume that no other objects could be referenced in monitor info
+    // associated with this BoxLock node because all associated locks and
+    // unlocks are reference only this one object.
   }
 #endif
   if (unique_lock != NULL && has_one_lock) {
