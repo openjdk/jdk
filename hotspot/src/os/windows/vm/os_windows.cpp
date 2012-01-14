@@ -132,7 +132,6 @@ PVOID  topLevelVectoredExceptionHandler = NULL;
 // save DLL module handle, used by GetModuleFileName
 
 HINSTANCE vm_lib_handle;
-static int getLastErrorString(char *buf, size_t len);
 
 BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
   switch (reason) {
@@ -1452,7 +1451,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen)
     return result;
   }
 
-  long errcode = GetLastError();
+  DWORD errcode = GetLastError();
   if (errcode == ERROR_MOD_NOT_FOUND) {
     strncpy(ebuf, "Can't find dependent libraries", ebuflen-1);
     ebuf[ebuflen-1]='\0';
@@ -1463,11 +1462,11 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen)
   // If we can read dll-info and find that dll was built
   // for an architecture other than Hotspot is running in
   // - then print to buffer "DLL was built for a different architecture"
-  // else call getLastErrorString to obtain system error message
+  // else call os::lasterror to obtain system error message
 
   // Read system error message into ebuf
   // It may or may not be overwritten below (in the for loop and just above)
-  getLastErrorString(ebuf, (size_t) ebuflen);
+  lasterror(ebuf, (size_t) ebuflen);
   ebuf[ebuflen-1]='\0';
   int file_descriptor=::open(name, O_RDONLY | O_BINARY, 0);
   if (file_descriptor<0)
@@ -1500,7 +1499,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen)
   ::close(file_descriptor);
   if (failed_to_get_lib_arch)
   {
-    // file i/o error - report getLastErrorString(...) msg
+    // file i/o error - report os::lasterror(...) msg
     return NULL;
   }
 
@@ -1543,7 +1542,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen)
     "Didn't find runing architecture code in arch_array");
 
   // If the architure is right
-  // but some other error took place - report getLastErrorString(...) msg
+  // but some other error took place - report os::lasterror(...) msg
   if (lib_arch == running_arch)
   {
     return NULL;
@@ -1775,12 +1774,12 @@ void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
 // This method is a copy of JDK's sysGetLastErrorString
 // from src/windows/hpi/src/system_md.c
 
-size_t os::lasterror(char *buf, size_t len) {
-  long errval;
+size_t os::lasterror(char* buf, size_t len) {
+  DWORD errval;
 
   if ((errval = GetLastError()) != 0) {
-      /* DOS error */
-    int n = (int)FormatMessage(
+    // DOS error
+    size_t n = (size_t)FormatMessage(
           FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
           NULL,
           errval,
@@ -1789,7 +1788,7 @@ size_t os::lasterror(char *buf, size_t len) {
           (DWORD)len,
           NULL);
     if (n > 3) {
-      /* Drop final '.', CR, LF */
+      // Drop final '.', CR, LF
       if (buf[n - 1] == '\n') n--;
       if (buf[n - 1] == '\r') n--;
       if (buf[n - 1] == '.') n--;
@@ -1799,15 +1798,23 @@ size_t os::lasterror(char *buf, size_t len) {
   }
 
   if (errno != 0) {
-    /* C runtime error that has no corresponding DOS error code */
-    const char *s = strerror(errno);
+    // C runtime error that has no corresponding DOS error code
+    const char* s = strerror(errno);
     size_t n = strlen(s);
     if (n >= len) n = len - 1;
     strncpy(buf, s, n);
     buf[n] = '\0';
     return n;
   }
+
   return 0;
+}
+
+int os::get_last_error() {
+  DWORD error = GetLastError();
+  if (error == 0)
+    error = errno;
+  return (int)error;
 }
 
 // sun.misc.Signal
@@ -3130,7 +3137,7 @@ bool os::unguard_memory(char* addr, size_t bytes) {
 }
 
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }
-void os::free_memory(char *addr, size_t bytes)         { }
+void os::free_memory(char *addr, size_t bytes, size_t alignment_hint)    { }
 void os::numa_make_global(char *addr, size_t bytes)    { }
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint)    { }
 bool os::numa_topology_changed()                       { return false; }
@@ -4746,7 +4753,7 @@ bool os::check_heap(bool force) {
           fatal("corrupted C heap");
         }
       }
-      int err = GetLastError();
+      DWORD err = GetLastError();
       if (err != ERROR_NO_MORE_ITEMS && err != ERROR_CALL_NOT_IMPLEMENTED) {
         fatal(err_msg("heap walk aborted with error %d", err));
       }
@@ -4777,45 +4784,6 @@ LONG WINAPI os::win32::serialize_fault_filter(struct _EXCEPTION_POINTERS* e) {
 
   return EXCEPTION_CONTINUE_SEARCH;
 }
-
-static int getLastErrorString(char *buf, size_t len)
-{
-    long errval;
-
-    if ((errval = GetLastError()) != 0)
-    {
-      /* DOS error */
-      size_t n = (size_t)FormatMessage(
-            FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
-            NULL,
-            errval,
-            0,
-            buf,
-            (DWORD)len,
-            NULL);
-      if (n > 3) {
-        /* Drop final '.', CR, LF */
-        if (buf[n - 1] == '\n') n--;
-        if (buf[n - 1] == '\r') n--;
-        if (buf[n - 1] == '.') n--;
-        buf[n] = '\0';
-      }
-      return (int)n;
-    }
-
-    if (errno != 0)
-    {
-      /* C runtime error that has no corresponding DOS error code */
-      const char *s = strerror(errno);
-      size_t n = strlen(s);
-      if (n >= len) n = len - 1;
-      strncpy(buf, s, n);
-      buf[n] = '\0';
-      return (int)n;
-    }
-    return 0;
-}
-
 
 // We don't build a headless jre for Windows
 bool os::is_headless_jre() { return false; }

@@ -2546,8 +2546,8 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   }
 }
 
-void os::free_memory(char *addr, size_t bytes) {
-  commit_memory(addr, bytes, false);
+void os::free_memory(char *addr, size_t bytes, size_t alignment_hint) {
+  commit_memory(addr, bytes, alignment_hint, false);
 }
 
 void os::numa_make_global(char *addr, size_t bytes) {
