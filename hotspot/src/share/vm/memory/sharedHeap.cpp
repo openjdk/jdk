@@ -94,7 +94,7 @@ bool SharedHeap::heap_lock_held_for_gc() {
              && _thread_holds_heap_lock_for_gc);
 }
 
-void SharedHeap::set_par_threads(int t) {
+void SharedHeap::set_par_threads(uint t) {
   assert(t == 0 || !UseSerialGC, "Cannot have parallel threads");
   _n_par_threads = t;
   _process_strong_tasks->set_n_threads(t);

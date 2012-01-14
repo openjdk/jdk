@@ -3779,7 +3779,7 @@ class CMSConcMarkingTask: public YieldingFlexibleGangTask {
     terminator()->reset_for_reuse(active_workers);
   }
 
-  void work(int i);
+  void work(uint worker_id);
   bool should_yield() {
     return    ConcurrentMarkSweepThread::should_yield()
            && !_collector->foregroundGCIsActive()
@@ -3852,7 +3852,7 @@ void CMSConcMarkingTerminator::yield() {
 //    . if neither is available, offer termination
 // -- Terminate and return result
 //
-void CMSConcMarkingTask::work(int i) {
+void CMSConcMarkingTask::work(uint worker_id) {
   elapsedTimer _timer;
   ResourceMark rm;
   HandleMark hm;
@@ -3860,37 +3860,40 @@ void CMSConcMarkingTask::work(int i) {
   DEBUG_ONLY(_collector->verify_overflow_empty();)
 
   // Before we begin work, our work queue should be empty
-  assert(work_queue(i)->size() == 0, "Expected to be empty");
+  assert(work_queue(worker_id)->size() == 0, "Expected to be empty");
   // Scan the bitmap covering _cms_space, tracing through grey objects.
   _timer.start();
-  do_scan_and_mark(i, _cms_space);
+  do_scan_and_mark(worker_id, _cms_space);
   _timer.stop();
   if (PrintCMSStatistics != 0) {
     gclog_or_tty->print_cr("Finished cms space scanning in %dth thread: %3.3f sec",
-      i, _timer.seconds()); // XXX: need xxx/xxx type of notation, two timers
+      worker_id, _timer.seconds());
+      // XXX: need xxx/xxx type of notation, two timers
   }
 
   // ... do the same for the _perm_space
   _timer.reset();
   _timer.start();
-  do_scan_and_mark(i, _perm_space);
+  do_scan_and_mark(worker_id, _perm_space);
   _timer.stop();
   if (PrintCMSStatistics != 0) {
     gclog_or_tty->print_cr("Finished perm space scanning in %dth thread: %3.3f sec",
-      i, _timer.seconds()); // XXX: need xxx/xxx type of notation, two timers
+      worker_id, _timer.seconds());
+      // XXX: need xxx/xxx type of notation, two timers
   }
 
   // ... do work stealing
   _timer.reset();
   _timer.start();
-  do_work_steal(i);
+  do_work_steal(worker_id);
   _timer.stop();
   if (PrintCMSStatistics != 0) {
     gclog_or_tty->print_cr("Finished work stealing in %dth thread: %3.3f sec",
-      i, _timer.seconds()); // XXX: need xxx/xxx type of notation, two timers
+      worker_id, _timer.seconds());
+      // XXX: need xxx/xxx type of notation, two timers
   }
   assert(_collector->_markStack.isEmpty(), "Should have been emptied");
-  assert(work_queue(i)->size() == 0, "Should have been emptied");
+  assert(work_queue(worker_id)->size() == 0, "Should have been emptied");
   // Note that under the current task protocol, the
   // following assertion is true even of the spaces
   // expanded since the completion of the concurrent
@@ -3946,7 +3949,7 @@ void CMSConcMarkingTask::do_scan_and_mark(int i, CompactibleFreeListSpace* sp) {
   // We allow that there may be no tasks to do here because
   // we are restarting after a stack overflow.
   assert(pst->valid() || n_tasks == 0, "Uninitialized use?");
-  int nth_task = 0;
+  uint nth_task = 0;
 
   HeapWord* aligned_start = sp->bottom();
   if (sp->used_region().contains(_restart_addr)) {
@@ -5075,7 +5078,7 @@ class CMSParRemarkTask: public AbstractGangTask {
   ParallelTaskTerminator* terminator() { return &_term; }
   int n_workers() { return _n_workers; }
 
-  void work(int i);
+  void work(uint worker_id);
 
  private:
   // Work method in support of parallel rescan ... of young gen spaces
@@ -5096,7 +5099,7 @@ class CMSParRemarkTask: public AbstractGangTask {
 // also is passed to do_dirty_card_rescan_tasks() and to
 // do_work_steal() to select the i-th task_queue.
 
-void CMSParRemarkTask::work(int i) {
+void CMSParRemarkTask::work(uint worker_id) {
   elapsedTimer _timer;
   ResourceMark rm;
   HandleMark   hm;
@@ -5107,7 +5110,7 @@ void CMSParRemarkTask::work(int i) {
   Par_MarkRefsIntoAndScanClosure par_mrias_cl(_collector,
     _collector->_span, _collector->ref_processor(),
     &(_collector->_markBitMap),
-    work_queue(i), &(_collector->_revisitStack));
+    work_queue(worker_id), &(_collector->_revisitStack));
 
   // Rescan young gen roots first since these are likely
   // coarsely partitioned and may, on that account, constitute
@@ -5128,15 +5131,15 @@ void CMSParRemarkTask::work(int i) {
     assert(ect <= _collector->_eden_chunk_capacity, "out of bounds");
     assert(sct <= _collector->_survivor_chunk_capacity, "out of bounds");
 
-    do_young_space_rescan(i, &par_mrias_cl, to_space, NULL, 0);
-    do_young_space_rescan(i, &par_mrias_cl, from_space, sca, sct);
-    do_young_space_rescan(i, &par_mrias_cl, eden_space, eca, ect);
+    do_young_space_rescan(worker_id, &par_mrias_cl, to_space, NULL, 0);
+    do_young_space_rescan(worker_id, &par_mrias_cl, from_space, sca, sct);
+    do_young_space_rescan(worker_id, &par_mrias_cl, eden_space, eca, ect);
 
     _timer.stop();
     if (PrintCMSStatistics != 0) {
       gclog_or_tty->print_cr(
         "Finished young gen rescan work in %dth thread: %3.3f sec",
-        i, _timer.seconds());
+        worker_id, _timer.seconds());
     }
   }
 
@@ -5158,7 +5161,7 @@ void CMSParRemarkTask::work(int i) {
   if (PrintCMSStatistics != 0) {
     gclog_or_tty->print_cr(
       "Finished remaining root rescan work in %dth thread: %3.3f sec",
-      i, _timer.seconds());
+      worker_id, _timer.seconds());
   }
 
   // ---------- rescan dirty cards ------------
@@ -5167,26 +5170,26 @@ void CMSParRemarkTask::work(int i) {
 
   // Do the rescan tasks for each of the two spaces
   // (cms_space and perm_space) in turn.
-  // "i" is passed to select the "i-th" task_queue
-  do_dirty_card_rescan_tasks(_cms_space, i, &par_mrias_cl);
-  do_dirty_card_rescan_tasks(_perm_space, i, &par_mrias_cl);
+  // "worker_id" is passed to select the task_queue for "worker_id"
+  do_dirty_card_rescan_tasks(_cms_space, worker_id, &par_mrias_cl);
+  do_dirty_card_rescan_tasks(_perm_space, worker_id, &par_mrias_cl);
   _timer.stop();
   if (PrintCMSStatistics != 0) {
     gclog_or_tty->print_cr(
       "Finished dirty card rescan work in %dth thread: %3.3f sec",
-      i, _timer.seconds());
+      worker_id, _timer.seconds());
   }
 
   // ---------- steal work from other threads ...
   // ---------- ... and drain overflow list.
   _timer.reset();
   _timer.start();
-  do_work_steal(i, &par_mrias_cl, _collector->hash_seed(i));
+  do_work_steal(worker_id, &par_mrias_cl, _collector->hash_seed(worker_id));
   _timer.stop();
   if (PrintCMSStatistics != 0) {
     gclog_or_tty->print_cr(
       "Finished work stealing in %dth thread: %3.3f sec",
-      i, _timer.seconds());
+      worker_id, _timer.seconds());
   }
 }
 
@@ -5207,8 +5210,8 @@ CMSParRemarkTask::do_young_space_rescan(int i,
   SequentialSubTasksDone* pst = space->par_seq_tasks();
   assert(pst->valid(), "Uninitialized use?");
 
-  int nth_task = 0;
-  int n_tasks  = pst->n_tasks();
+  uint nth_task = 0;
+  uint n_tasks  = pst->n_tasks();
 
   HeapWord *start, *end;
   while (!pst->is_task_claimed(/* reference */ nth_task)) {
@@ -5220,12 +5223,12 @@ CMSParRemarkTask::do_young_space_rescan(int i,
     } else if (nth_task == 0) {
       start = space->bottom();
       end   = chunk_array[nth_task];
-    } else if (nth_task < (jint)chunk_top) {
+    } else if (nth_task < (uint)chunk_top) {
       assert(nth_task >= 1, "Control point invariant");
       start = chunk_array[nth_task - 1];
       end   = chunk_array[nth_task];
     } else {
-      assert(nth_task == (jint)chunk_top, "Control point invariant");
+      assert(nth_task == (uint)chunk_top, "Control point invariant");
       start = chunk_array[chunk_top - 1];
       end   = space->top();
     }
@@ -5288,7 +5291,7 @@ CMSParRemarkTask::do_dirty_card_rescan_tasks(
 
   SequentialSubTasksDone* pst = sp->conc_par_seq_tasks();
   assert(pst->valid(), "Uninitialized use?");
-  int nth_task = 0;
+  uint nth_task = 0;
   const int alignment = CardTableModRefBS::card_size * BitsPerWord;
   MemRegion span = sp->used_region();
   HeapWord* start_addr = span.start();
@@ -5736,26 +5739,26 @@ public:
                      CMSParKeepAliveClosure* keep_alive,
                      int* seed);
 
-  virtual void work(int i);
+  virtual void work(uint worker_id);
 };
 
-void CMSRefProcTaskProxy::work(int i) {
+void CMSRefProcTaskProxy::work(uint worker_id) {
   assert(_collector->_span.equals(_span), "Inconsistency in _span");
   CMSParKeepAliveClosure par_keep_alive(_collector, _span,
                                         _mark_bit_map,
                                         &_collector->_revisitStack,
-                                        work_queue(i));
+                                        work_queue(worker_id));
   CMSParDrainMarkingStackClosure par_drain_stack(_collector, _span,
                                                  _mark_bit_map,
                                                  &_collector->_revisitStack,
-                                                 work_queue(i));
+                                                 work_queue(worker_id));
   CMSIsAliveClosure is_alive_closure(_span, _mark_bit_map);
-  _task.work(i, is_alive_closure, par_keep_alive, par_drain_stack);
+  _task.work(worker_id, is_alive_closure, par_keep_alive, par_drain_stack);
   if (_task.marks_oops_alive()) {
-    do_work_steal(i, &par_drain_stack, &par_keep_alive,
-                  _collector->hash_seed(i));
+    do_work_steal(worker_id, &par_drain_stack, &par_keep_alive,
+                  _collector->hash_seed(worker_id));
   }
-  assert(work_queue(i)->size() == 0, "work_queue should be empty");
+  assert(work_queue(worker_id)->size() == 0, "work_queue should be empty");
   assert(_collector->_overflow_list == NULL, "non-empty _overflow_list");
 }
 
@@ -5769,9 +5772,9 @@ public:
       _task(task)
   { }
 
-  virtual void work(int i)
+  virtual void work(uint worker_id)
   {
-    _task.work(i);
+    _task.work(worker_id);
   }
 };
 
