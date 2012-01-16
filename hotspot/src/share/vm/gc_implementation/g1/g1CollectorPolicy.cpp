@@ -213,8 +213,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _survivor_bytes_before_gc(0),
   _capacity_before_gc(0),
 
-  _prev_collection_pause_used_at_end_bytes(0),
-
   _eden_cset_region_length(0),
   _survivor_cset_region_length(0),
   _old_cset_region_length(0),
@@ -1140,6 +1138,45 @@ double G1CollectorPolicy::max_sum(double* data1, double* data2) {
   return ret;
 }
 
+bool G1CollectorPolicy::need_to_start_conc_mark(const char* source) {
+  if (_g1->mark_in_progress()) {
+    return false;
+  }
+
+  size_t marking_initiating_used_threshold =
+    (_g1->capacity() / 100) * InitiatingHeapOccupancyPercent;
+  size_t cur_used_bytes = _g1->non_young_capacity_bytes();
+
+  if (cur_used_bytes > marking_initiating_used_threshold) {
+    if (gcs_are_young()) {
+      ergo_verbose4(ErgoConcCycles,
+        "request concurrent cycle initiation",
+        ergo_format_reason("occupancy higher than threshold")
+        ergo_format_byte("occupancy")
+        ergo_format_byte_perc("threshold")
+        ergo_format_str("source"),
+        cur_used_bytes,
+        marking_initiating_used_threshold,
+        (double) InitiatingHeapOccupancyPercent,
+        source);
+      return true;
+    } else {
+      ergo_verbose4(ErgoConcCycles,
+        "do not request concurrent cycle initiation",
+        ergo_format_reason("still doing mixed collections")
+        ergo_format_byte("occupancy")
+        ergo_format_byte_perc("threshold")
+        ergo_format_str("source"),
+        cur_used_bytes,
+        marking_initiating_used_threshold,
+        (double) InitiatingHeapOccupancyPercent,
+        source);
+    }
+  }
+
+  return false;
+}
+
 // Anything below that is considered to be zero
 #define MIN_TIMER_GRANULARITY 0.0000001
 
@@ -1166,44 +1203,16 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
 #endif // PRODUCT
 
   last_pause_included_initial_mark = during_initial_mark_pause();
-  if (last_pause_included_initial_mark)
+  if (last_pause_included_initial_mark) {
     record_concurrent_mark_init_end(0.0);
-
-  size_t marking_initiating_used_threshold =
-    (_g1->capacity() / 100) * InitiatingHeapOccupancyPercent;
-
-  if (!_g1->mark_in_progress() && !_last_young_gc) {
-    assert(!last_pause_included_initial_mark, "invariant");
-    if (cur_used_bytes > marking_initiating_used_threshold) {
-      if (cur_used_bytes > _prev_collection_pause_used_at_end_bytes) {
-        assert(!during_initial_mark_pause(), "we should not see this here");
-
-        ergo_verbose3(ErgoConcCycles,
-                      "request concurrent cycle initiation",
-                      ergo_format_reason("occupancy higher than threshold")
-                      ergo_format_byte("occupancy")
-                      ergo_format_byte_perc("threshold"),
-                      cur_used_bytes,
-                      marking_initiating_used_threshold,
-                      (double) InitiatingHeapOccupancyPercent);
-
-        // Note: this might have already been set, if during the last
-        // pause we decided to start a cycle but at the beginning of
-        // this pause we decided to postpone it. That's OK.
-        set_initiate_conc_mark_if_possible();
-      } else {
-        ergo_verbose2(ErgoConcCycles,
-                  "do not request concurrent cycle initiation",
-                  ergo_format_reason("occupancy lower than previous occupancy")
-                  ergo_format_byte("occupancy")
-                  ergo_format_byte("previous occupancy"),
-                  cur_used_bytes,
-                  _prev_collection_pause_used_at_end_bytes);
-      }
-    }
   }
 
-  _prev_collection_pause_used_at_end_bytes = cur_used_bytes;
+  if (!_last_young_gc && need_to_start_conc_mark("end of GC")) {
+    // Note: this might have already been set, if during the last
+    // pause we decided to start a cycle but at the beginning of
+    // this pause we decided to postpone it. That's OK.
+    set_initiate_conc_mark_if_possible();
+  }
 
   _mmu_tracker->add_pause(end_time_sec - elapsed_ms/1000.0,
                           end_time_sec, false);
