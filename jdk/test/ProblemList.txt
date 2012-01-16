@@ -195,18 +195,21 @@ java/beans/XMLEncoder/6329581/Test6329581.java                  generic-all
 
 # jdk_lang
 
+# 7123972
+java/lang/annotation/loaderLeak/Main.java			generic-all
+
 # 7079093
 java/lang/instrument/ManifestTest.sh                            windows-all
-
-############################################################################
-
-# jdk_management
 
 # 6944188
 java/lang/management/ThreadMXBean/ThreadStateTest.java          generic-all
 
 # 7067973
 java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
+
+############################################################################
+
+# jdk_management
 
 # Failing, bug was filed: 6959636
 javax/management/loading/LibraryLoader/LibraryLoaderTest.java   generic-all
@@ -288,6 +291,9 @@ javax/management/monitor/AttributeArbitraryDataTypeTest.java    generic-all
 ############################################################################
 
 # jdk_misc
+
+# 6988950
+demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
 
 # Need to be marked othervm, or changed to be samevm safe
 com/sun/jndi/rmi/registry/RegistryContext/UnbindIdempotent.java generic-all
