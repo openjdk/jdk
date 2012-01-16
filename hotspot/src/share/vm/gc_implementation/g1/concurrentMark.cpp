@@ -42,8 +42,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 
-//
-// CMS Bit Map Wrapper
+// Concurrent marking bit map wrapper
 
 CMBitMapRO::CMBitMapRO(ReservedSpace rs, int shifter) :
   _bm((uintptr_t*)NULL,0),
@@ -53,13 +52,13 @@ CMBitMapRO::CMBitMapRO(ReservedSpace rs, int shifter) :
   ReservedSpace brs(ReservedSpace::allocation_align_size_up(
                      (_bmWordSize >> (_shifter + LogBitsPerByte)) + 1));
 
-  guarantee(brs.is_reserved(), "couldn't allocate CMS bit map");
+  guarantee(brs.is_reserved(), "couldn't allocate concurrent marking bit map");
   // For now we'll just commit all of the bit map up fromt.
   // Later on we'll try to be more parsimonious with swap.
   guarantee(_virtual_space.initialize(brs, brs.size()),
-            "couldn't reseve backing store for CMS bit map");
+            "couldn't reseve backing store for concurrent marking bit map");
   assert(_virtual_space.committed_size() == brs.size(),
-         "didn't reserve backing store for all of CMS bit map?");
+         "didn't reserve backing store for all of concurrent marking bit map?");
   _bm.set_map((uintptr_t*)_virtual_space.low());
   assert(_virtual_space.committed_size() << (_shifter + LogBitsPerByte) >=
          _bmWordSize, "inconsistency in bit map sizing");
@@ -420,8 +419,6 @@ bool CMMarkStack::drain(OopClosureClass* cl, CMBitMap* bm, bool yield_after) {
     assert(newOop->is_oop(), "Expected an oop");
     assert(bm == NULL || bm->isMarked((HeapWord*)newOop),
            "only grey objects on this stack");
-    // iterate over the oops in this oop, marking and pushing
-    // the ones in CMS generation.
     newOop->oop_iterate(cl);
     if (yield_after && _cm->do_yield_check()) {
       res = false;
@@ -738,11 +735,6 @@ ConcurrentMark::~ConcurrentMark() {
   // The ConcurrentMark instance is never freed.
   ShouldNotReachHere();
 }
-
-// This closure is used to mark refs into the g1 generation
-// from external roots in the CMS bit map.
-// Called at the first checkpoint.
-//
 
 void ConcurrentMark::clearNextBitmap() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -3400,13 +3392,6 @@ void ConcurrentMark::print_summary_info() {
 void ConcurrentMark::print_worker_threads_on(outputStream* st) const {
   _parallel_workers->print_worker_threads_on(st);
 }
-
-// Closures
-// XXX: there seems to be a lot of code  duplication here;
-// should refactor and consolidate the shared code.
-
-// This closure is used to mark refs into the CMS generation in
-// the CMS bit map. Called at the first checkpoint.
 
 // We take a break if someone is trying to stop the world.
 bool ConcurrentMark::do_yield_check(uint worker_id) {

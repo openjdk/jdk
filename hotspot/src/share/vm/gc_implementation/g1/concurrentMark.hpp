@@ -386,7 +386,7 @@ protected:
 
   FreeRegionList        _cleanup_list;
 
-  // CMS marking support structures
+  // Concurrent marking support structures
   CMBitMap                _markBitMap1;
   CMBitMap                _markBitMap2;
   CMBitMapRO*             _prevMarkBitMap; // completed mark bitmap
