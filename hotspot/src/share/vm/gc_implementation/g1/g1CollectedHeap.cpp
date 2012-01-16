@@ -1045,17 +1045,24 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
       // regions, we'll first try to do the allocation without doing a
       // collection hoping that there's enough space in the heap.
       result = humongous_obj_allocate(word_size);
-      if (result != NULL) {
-        return result;
-      }
 
-      if (GC_locker::is_active_and_needs_gc()) {
-        should_try_gc = false;
-      } else {
-        // Read the GC count while still holding the Heap_lock.
-        gc_count_before = SharedHeap::heap()->total_collections();
-        should_try_gc = true;
+      if (result == NULL) {
+        if (GC_locker::is_active_and_needs_gc()) {
+          should_try_gc = false;
+        } else {
+          // Read the GC count while still holding the Heap_lock.
+          gc_count_before = SharedHeap::heap()->total_collections();
+          should_try_gc = true;
+        }
       }
+    }
+
+    if (result != NULL) {
+      if (g1_policy()->need_to_start_conc_mark("concurrent humongous allocation")) {
+        // We need to release the Heap_lock before we try to call collect
+        collect(GCCause::_g1_humongous_allocation);
+      }
+      return result;
     }
 
     if (should_try_gc) {
@@ -1111,7 +1118,11 @@ HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
     return _mutator_alloc_region.attempt_allocation_locked(word_size,
                                                       false /* bot_updates */);
   } else {
-    return humongous_obj_allocate(word_size);
+    HeapWord* result = humongous_obj_allocate(word_size);
+    if (result != NULL && g1_policy()->need_to_start_conc_mark("STW humongous allocation")) {
+      g1_policy()->set_initiate_conc_mark_if_possible();
+    }
+    return result;
   }
 
   ShouldNotReachHere();
@@ -2295,7 +2306,8 @@ size_t G1CollectedHeap::unsafe_max_alloc() {
 bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
   return
     ((cause == GCCause::_gc_locker           && GCLockerInvokesConcurrent) ||
-     (cause == GCCause::_java_lang_system_gc && ExplicitGCInvokesConcurrent));
+     (cause == GCCause::_java_lang_system_gc && ExplicitGCInvokesConcurrent) ||
+      cause == GCCause::_g1_humongous_allocation);
 }
 
 #ifndef PRODUCT

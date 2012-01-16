@@ -355,6 +355,7 @@ private:
   // explicitly started if:
   // (a) cause == _gc_locker and +GCLockerInvokesConcurrent, or
   // (b) cause == _java_lang_system_gc and +ExplicitGCInvokesConcurrent.
+  // (c) cause == _g1_humongous_allocation
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
 
   // Keeps track of how many "full collections" (i.e., Full GCs or
@@ -1170,6 +1171,10 @@ public:
 
   void old_set_remove(HeapRegion* hr) {
     _old_set.remove(hr);
+  }
+
+  size_t non_young_capacity_bytes() {
+    return _old_set.total_capacity_bytes() + _humongous_set.total_capacity_bytes();
   }
 
   void set_free_regions_coming();

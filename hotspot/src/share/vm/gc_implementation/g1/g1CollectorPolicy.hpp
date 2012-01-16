@@ -177,7 +177,6 @@ private:
   double _cur_collection_start_sec;
   size_t _cur_collection_pause_used_at_start_bytes;
   size_t _cur_collection_pause_used_regions_at_start;
-  size_t _prev_collection_pause_used_at_end_bytes;
   double _cur_collection_par_time_ms;
   double _cur_satb_drain_time_ms;
   double _cur_clear_ct_time_ms;
@@ -799,6 +798,8 @@ public:
   BarrierSet::Name barrier_set_name() { return BarrierSet::G1SATBCTLogging; }
 
   GenRemSet::Name  rem_set_name()     { return GenRemSet::CardTable; }
+
+  bool need_to_start_conc_mark(const char* source);
 
   // Update the heuristic info to record a collection pause of the given
   // start time, where the given number of bytes were used at the start.
