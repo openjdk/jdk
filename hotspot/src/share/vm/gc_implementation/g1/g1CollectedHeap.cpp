@@ -3557,19 +3557,25 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   verify_region_sets_optional();
   verify_dirty_young_regions();
 
+  // This call will decide whether this pause is an initial-mark
+  // pause. If it is, during_initial_mark_pause() will return true
+  // for the duration of this pause.
+  g1_policy()->decide_on_conc_mark_initiation();
+
+  // We do not allow initial-mark to be piggy-backed on a mixed GC.
+  assert(!g1_policy()->during_initial_mark_pause() ||
+          g1_policy()->gcs_are_young(), "sanity");
+
+  // We also do not allow mixed GCs during marking.
+  assert(!mark_in_progress() || g1_policy()->gcs_are_young(), "sanity");
+
+  // Record whether this pause is an initial mark. When the current
+  // thread has completed its logging output and it's safe to signal
+  // the CM thread, the flag's value in the policy has been reset.
+  bool should_start_conc_mark = g1_policy()->during_initial_mark_pause();
+
+  // Inner scope for scope based logging, timers, and stats collection
   {
-    // This call will decide whether this pause is an initial-mark
-    // pause. If it is, during_initial_mark_pause() will return true
-    // for the duration of this pause.
-    g1_policy()->decide_on_conc_mark_initiation();
-
-    // We do not allow initial-mark to be piggy-backed on a mixed GC.
-    assert(!g1_policy()->during_initial_mark_pause() ||
-            g1_policy()->gcs_are_young(), "sanity");
-
-    // We also do not allow mixed GCs during marking.
-    assert(!mark_in_progress() || g1_policy()->gcs_are_young(), "sanity");
-
     char verbose_str[128];
     sprintf(verbose_str, "GC pause ");
     if (g1_policy()->gcs_are_young()) {
@@ -3625,7 +3631,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         Universe::verify(/* allow dirty */ false,
                          /* silent      */ false,
                          /* option      */ VerifyOption_G1UsePrevMarking);
-
       }
 
       COMPILER2_PRESENT(DerivedPointerTable::clear());
@@ -3779,14 +3784,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         if (g1_policy()->during_initial_mark_pause()) {
           concurrent_mark()->checkpointRootsInitialPost();
           set_marking_started();
-          // CAUTION: after the doConcurrentMark() call below,
-          // the concurrent marking thread(s) could be running
-          // concurrently with us. Make sure that anything after
-          // this point does not assume that we are the only GC thread
-          // running. Note: of course, the actual marking work will
-          // not start until the safepoint itself is released in
-          // ConcurrentGCThread::safepoint_desynchronize().
-          doConcurrentMark();
+          // Note that we don't actually trigger the CM thread at
+          // this point. We do that later when we're sure that
+          // the current thread has completed its logging output.
         }
 
         allocate_dummy_regions();
@@ -3896,6 +3896,15 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     }
   }
 
+  // The closing of the inner scope, immediately above, will complete
+  // the PrintGC logging output. The record_collection_pause_end() call
+  // above will complete the logging output of PrintGCDetails.
+  //
+  // It is not yet to safe, however, to tell the concurrent mark to
+  // start as we have some optional output below. We don't want the
+  // output from the concurrent mark thread interfering with this
+  // logging output either.
+
   _hrs.verify_optional();
   verify_region_sets_optional();
 
@@ -3911,6 +3920,21 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       (G1SummarizeRSetStatsPeriod > 0) &&
       (total_collections() % G1SummarizeRSetStatsPeriod == 0)) {
     g1_rem_set()->print_summary_info();
+  }
+
+  // It should now be safe to tell the concurrent mark thread to start
+  // without its logging output interfering with the logging output
+  // that came from the pause.
+
+  if (should_start_conc_mark) {
+    // CAUTION: after the doConcurrentMark() call below,
+    // the concurrent marking thread(s) could be running
+    // concurrently with us. Make sure that anything after
+    // this point does not assume that we are the only GC thread
+    // running. Note: of course, the actual marking work will
+    // not start until the safepoint itself is released in
+    // ConcurrentGCThread::safepoint_desynchronize().
+    doConcurrentMark();
   }
 
   return true;
