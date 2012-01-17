@@ -393,9 +393,6 @@ java/net/PortUnreachableException/OneExceptionOnly.java         windows-all
 # 6962637
 java/io/File/MaxPathLength.java                                 windows-all
 
-# 6671616
-java/io/File/BlockIsDirectory.java                              solaris-all
-
 # 7076644
 java/io/File/Basic.java                                         windows-all
 
