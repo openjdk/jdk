@@ -71,6 +71,7 @@ import com.sun.jmx.snmp.SnmpDefinitions;
 public class JvmRTInputArgsEntryMeta extends SnmpMibEntry
      implements Serializable, SnmpStandardMetaServer {
 
+    static final long serialVersionUID = -7729576810347358025L;
     /**
      * Constructor for the metadata associated to "JvmRTInputArgsEntry".
      */

@@ -68,6 +68,7 @@ import com.sun.jmx.snmp.agent.SnmpStandardObjectServer;
  */
 public class JvmMemGCTableMeta extends SnmpMibTable implements Serializable {
 
+    static final long serialVersionUID = -8843296871149264612L;
     /**
      * Constructor for the table. Initialize metadata for "JvmMemGCTableMeta".
      * The reference on the MBean server is updated so the entries created through an SNMP SET will be AUTOMATICALLY REGISTERED in Java DMK.
