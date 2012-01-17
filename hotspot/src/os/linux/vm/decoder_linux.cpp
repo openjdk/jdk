@@ -23,11 +23,11 @@
  */
 
 #include "prims/jvm.h"
-#include "utilities/decoder.hpp"
+#include "utilities/decoder_elf.hpp"
 
 #include <cxxabi.h>
 
-bool Decoder::demangle(const char* symbol, char *buf, int buflen) {
+bool ElfDecoder::demangle(const char* symbol, char *buf, int buflen) {
   int   status;
   char* result;
   size_t size = (size_t)buflen;
@@ -43,3 +43,4 @@ bool Decoder::demangle(const char* symbol, char *buf, int buflen) {
   }
   return false;
 }
+

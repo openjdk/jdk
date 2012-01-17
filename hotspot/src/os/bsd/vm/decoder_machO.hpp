@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,21 @@
  *
  */
 
-#include "utilities/decoder_elf.hpp"
+#ifndef OS_BSD_VM_DECODER_MACHO_HPP
+#define OS_BSD_VM_DECODER_MACHO_HPP
 
-#include <demangle.h>
+#ifdef __APPLE__
 
-bool ElfDecoder::demangle(const char* symbol, char *buf, int buflen) {
-  return !cplus_demangle(symbol, buf, (size_t)buflen);
-}
+#include "utilities/decoder.hpp"
+
+// Just a placehold for now
+class MachODecoder: public NullDecoder {
+public:
+  MachODecoder() { }
+  ~MachODecoder() { }
+};
+
+#endif
+
+#endif // OS_BSD_VM_DECODER_MACHO_HPP
 
