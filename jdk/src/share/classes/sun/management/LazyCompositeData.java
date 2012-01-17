@@ -81,7 +81,7 @@ public abstract class LazyCompositeData
         return compositeData().toString();
     }
 
-    public Collection values() {
+    public Collection<?> values() {
         return compositeData().values();
     }
 
@@ -153,16 +153,15 @@ public abstract class LazyCompositeData
 
         // We can't use CompositeType.isValue() since it returns false
         // if the type name doesn't match.
-        Set allItems = type1.keySet();
+        Set<String> allItems = type1.keySet();
 
         // Check all items in the type1 exist in type2
         if (!type2.keySet().containsAll(allItems))
             return false;
 
-        for (Iterator iter = allItems.iterator(); iter.hasNext(); ) {
-            String item = (String) iter.next();
-            OpenType ot1 = type1.getType(item);
-            OpenType ot2 = type2.getType(item);
+        for (String item: allItems) {
+            OpenType<?> ot1 = type1.getType(item);
+            OpenType<?> ot2 = type2.getType(item);
             if (ot1 instanceof CompositeType) {
                 if (! (ot2 instanceof CompositeType))
                     return false;
@@ -183,8 +182,8 @@ public abstract class LazyCompositeData
     protected static boolean isTypeMatched(TabularType type1, TabularType type2) {
         if (type1 == type2) return true;
 
-        List list1 = type1.getIndexNames();
-        List list2 = type2.getIndexNames();
+        List<String> list1 = type1.getIndexNames();
+        List<String> list2 = type2.getIndexNames();
 
         // check if the list of index names are the same
         if (!list1.equals(list2))
