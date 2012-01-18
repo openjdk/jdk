@@ -535,13 +535,14 @@ public class JavaTokenizer {
                         reader.putChar('.');
                         scanFractionAndSuffix(pos);
                     } else if (reader.ch == '.') {
+                        int savePos = reader.bp;
                         reader.putChar('.'); reader.putChar('.', true);
                         if (reader.ch == '.') {
                             reader.scanChar();
                             reader.putChar('.');
                             tk = TokenKind.ELLIPSIS;
                         } else {
-                            lexError(pos, "malformed.fp.lit");
+                            lexError(savePos, "illegal.dot");
                         }
                     } else {
                         tk = TokenKind.DOT;

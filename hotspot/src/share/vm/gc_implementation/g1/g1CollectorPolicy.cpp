@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,7 +281,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   _par_last_gc_worker_start_times_ms = new double[_parallel_gc_threads];
   _par_last_ext_root_scan_times_ms = new double[_parallel_gc_threads];
-  _par_last_mark_stack_scan_times_ms = new double[_parallel_gc_threads];
+  _par_last_satb_filtering_times_ms = new double[_parallel_gc_threads];
 
   _par_last_update_rs_times_ms = new double[_parallel_gc_threads];
   _par_last_update_rs_processed_buffers = new double[_parallel_gc_threads];
@@ -905,10 +905,19 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
     gclog_or_tty->print(" (%s)", gcs_are_young() ? "young" : "mixed");
   }
 
-  // We only need to do this here as the policy will only be applied
-  // to the GC we're about to start. so, no point is calculating this
-  // every time we calculate / recalculate the target young length.
-  update_survivors_policy();
+  if (!during_initial_mark_pause()) {
+    // We only need to do this here as the policy will only be applied
+    // to the GC we're about to start. so, no point is calculating this
+    // every time we calculate / recalculate the target young length.
+    update_survivors_policy();
+  } else {
+    // The marking phase has a "we only copy implicitly live
+    // objects during marking" invariant. The easiest way to ensure it
+    // holds is not to allocate any survivor regions and tenure all
+    // objects. In the future we might change this and handle survivor
+    // regions specially during marking.
+    tenure_all_objects();
+  }
 
   assert(_g1->used() == _g1->recalculate_used(),
          err_msg("sanity, used: "SIZE_FORMAT" recalculate_used: "SIZE_FORMAT,
@@ -939,7 +948,7 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
   for (int i = 0; i < _parallel_gc_threads; ++i) {
     _par_last_gc_worker_start_times_ms[i] = -1234.0;
     _par_last_ext_root_scan_times_ms[i] = -1234.0;
-    _par_last_mark_stack_scan_times_ms[i] = -1234.0;
+    _par_last_satb_filtering_times_ms[i] = -1234.0;
     _par_last_update_rs_times_ms[i] = -1234.0;
     _par_last_update_rs_processed_buffers[i] = -1234.0;
     _par_last_scan_rs_times_ms[i] = -1234.0;
@@ -1227,7 +1236,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
   // of the PrintGCDetails output, in the non-parallel case.
 
   double ext_root_scan_time = avg_value(_par_last_ext_root_scan_times_ms);
-  double mark_stack_scan_time = avg_value(_par_last_mark_stack_scan_times_ms);
+  double satb_filtering_time = avg_value(_par_last_satb_filtering_times_ms);
   double update_rs_time = avg_value(_par_last_update_rs_times_ms);
   double update_rs_processed_buffers =
     sum_of_values(_par_last_update_rs_processed_buffers);
@@ -1236,7 +1245,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
   double termination_time = avg_value(_par_last_termination_times_ms);
 
   double known_time = ext_root_scan_time +
-                      mark_stack_scan_time +
+                      satb_filtering_time +
                       update_rs_time +
                       scan_rs_time +
                       obj_copy_time;
@@ -1282,7 +1291,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     body_summary->record_satb_drain_time_ms(_cur_satb_drain_time_ms);
 
     body_summary->record_ext_root_scan_time_ms(ext_root_scan_time);
-    body_summary->record_mark_stack_scan_time_ms(mark_stack_scan_time);
+    body_summary->record_satb_filtering_time_ms(satb_filtering_time);
     body_summary->record_update_rs_time_ms(update_rs_time);
     body_summary->record_scan_rs_time_ms(scan_rs_time);
     body_summary->record_obj_copy_time_ms(obj_copy_time);
@@ -1376,16 +1385,12 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
                            (last_pause_included_initial_mark) ? " (initial-mark)" : "",
                            elapsed_ms / 1000.0);
 
-    if (print_marking_info) {
-      print_stats(1, "SATB Drain Time", _cur_satb_drain_time_ms);
-    }
-
     if (parallel) {
       print_stats(1, "Parallel Time", _cur_collection_par_time_ms);
       print_par_stats(2, "GC Worker Start", _par_last_gc_worker_start_times_ms);
       print_par_stats(2, "Ext Root Scanning", _par_last_ext_root_scan_times_ms);
       if (print_marking_info) {
-        print_par_stats(2, "Mark Stack Scanning", _par_last_mark_stack_scan_times_ms);
+        print_par_stats(2, "SATB Filtering", _par_last_satb_filtering_times_ms);
       }
       print_par_stats(2, "Update RS", _par_last_update_rs_times_ms);
       print_par_sizes(3, "Processed Buffers", _par_last_update_rs_processed_buffers);
@@ -1399,7 +1404,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
         _par_last_gc_worker_times_ms[i] = _par_last_gc_worker_end_times_ms[i] - _par_last_gc_worker_start_times_ms[i];
 
         double worker_known_time = _par_last_ext_root_scan_times_ms[i] +
-                                   _par_last_mark_stack_scan_times_ms[i] +
+                                   _par_last_satb_filtering_times_ms[i] +
                                    _par_last_update_rs_times_ms[i] +
                                    _par_last_scan_rs_times_ms[i] +
                                    _par_last_obj_copy_times_ms[i] +
@@ -1412,7 +1417,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     } else {
       print_stats(1, "Ext Root Scanning", ext_root_scan_time);
       if (print_marking_info) {
-        print_stats(1, "Mark Stack Scanning", mark_stack_scan_time);
+        print_stats(1, "SATB Filtering", satb_filtering_time);
       }
       print_stats(1, "Update RS", update_rs_time);
       print_stats(2, "Processed Buffers", (int)update_rs_processed_buffers);
@@ -1983,11 +1988,10 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
   if (summary->get_total_seq()->num() > 0) {
     print_summary_sd(0, "Evacuation Pauses", summary->get_total_seq());
     if (body_summary != NULL) {
-      print_summary(1, "SATB Drain", body_summary->get_satb_drain_seq());
       if (parallel) {
         print_summary(1, "Parallel Time", body_summary->get_parallel_seq());
         print_summary(2, "Ext Root Scanning", body_summary->get_ext_root_scan_seq());
-        print_summary(2, "Mark Stack Scanning", body_summary->get_mark_stack_scan_seq());
+        print_summary(2, "SATB Filtering", body_summary->get_satb_filtering_seq());
         print_summary(2, "Update RS", body_summary->get_update_rs_seq());
         print_summary(2, "Scan RS", body_summary->get_scan_rs_seq());
         print_summary(2, "Object Copy", body_summary->get_obj_copy_seq());
@@ -1996,7 +2000,7 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
         {
           NumberSeq* other_parts[] = {
             body_summary->get_ext_root_scan_seq(),
-            body_summary->get_mark_stack_scan_seq(),
+            body_summary->get_satb_filtering_seq(),
             body_summary->get_update_rs_seq(),
             body_summary->get_scan_rs_seq(),
             body_summary->get_obj_copy_seq(),
@@ -2009,7 +2013,7 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
         }
       } else {
         print_summary(1, "Ext Root Scanning", body_summary->get_ext_root_scan_seq());
-        print_summary(1, "Mark Stack Scanning", body_summary->get_mark_stack_scan_seq());
+        print_summary(1, "SATB Filtering", body_summary->get_satb_filtering_seq());
         print_summary(1, "Update RS", body_summary->get_update_rs_seq());
         print_summary(1, "Scan RS", body_summary->get_scan_rs_seq());
         print_summary(1, "Object Copy", body_summary->get_obj_copy_seq());
@@ -2036,7 +2040,7 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
             body_summary->get_satb_drain_seq(),
             body_summary->get_update_rs_seq(),
             body_summary->get_ext_root_scan_seq(),
-            body_summary->get_mark_stack_scan_seq(),
+            body_summary->get_satb_filtering_seq(),
             body_summary->get_scan_rs_seq(),
             body_summary->get_obj_copy_seq()
           };
@@ -2433,9 +2437,6 @@ void G1CollectorPolicy::add_old_region_to_cset(HeapRegion* hr) {
   assert(_inc_cset_build_state == Active, "Precondition");
   assert(!hr->is_young(), "non-incremental add of young region");
 
-  if (_g1->mark_in_progress())
-    _g1->concurrent_mark()->registerCSetRegion(hr);
-
   assert(!hr->in_collection_set(), "should not already be in the CSet");
   hr->set_in_collection_set(true);
   hr->set_next_in_collection_set(_collection_set);
@@ -2704,9 +2705,6 @@ void G1CollectorPolicy::choose_collection_set(double target_pause_time_ms) {
 
   // Clear the fields that point to the survivor list - they are all young now.
   young_list->clear_survivors();
-
-  if (_g1->mark_in_progress())
-    _g1->concurrent_mark()->register_collection_set_finger(_inc_cset_max_finger);
 
   _collection_set = _inc_cset_head;
   _collection_set_bytes_used_before = _inc_cset_bytes_used_before;

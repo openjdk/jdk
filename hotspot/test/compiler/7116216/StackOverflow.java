@@ -30,7 +30,7 @@
  * @run main/othervm -Xcomp -Xbatch StackOverflow
  */
 
-class StackOverflow {
+public class StackOverflow {
     static String stackOverflow_largeFrame_liveOopForGC;
 
     public static int stackOverflow_largeFrame(int call_count, String liveOopForGC) {
