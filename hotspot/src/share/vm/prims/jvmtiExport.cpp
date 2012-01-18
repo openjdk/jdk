@@ -538,8 +538,6 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     _curr_env = NULL;
     _cached_length_ptr = cached_length_ptr;
     _cached_data_ptr = cached_data_ptr;
-    *_cached_length_ptr = 0;
-    *_cached_data_ptr = NULL;
 
     _state = _thread->jvmti_thread_state();
     if (_state != NULL) {

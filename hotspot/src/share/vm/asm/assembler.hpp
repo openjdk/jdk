@@ -241,6 +241,33 @@ class AbstractAssembler : public ResourceObj  {
   // Make it return true on platforms which need to verify
   // instruction boundaries for some operations.
   inline static bool pd_check_instruction_mark();
+
+  // Add delta to short branch distance to verify that it still fit into imm8.
+  int _short_branch_delta;
+
+  int  short_branch_delta() const { return _short_branch_delta; }
+  void set_short_branch_delta()   { _short_branch_delta = 32; }
+  void clear_short_branch_delta() { _short_branch_delta = 0; }
+
+  class ShortBranchVerifier: public StackObj {
+   private:
+    AbstractAssembler* _assm;
+
+   public:
+    ShortBranchVerifier(AbstractAssembler* assm) : _assm(assm) {
+      assert(assm->short_branch_delta() == 0, "overlapping instructions");
+      _assm->set_short_branch_delta();
+    }
+    ~ShortBranchVerifier() {
+      _assm->clear_short_branch_delta();
+    }
+  };
+  #else
+  // Dummy in product.
+  class ShortBranchVerifier: public StackObj {
+   public:
+    ShortBranchVerifier(AbstractAssembler* assm) {}
+  };
   #endif
 
   // Label functions

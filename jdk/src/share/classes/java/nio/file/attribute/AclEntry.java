@@ -175,9 +175,15 @@ public final class AclEntry {
          *          AclEntryPermission}
          */
         public Builder setPermissions(Set<AclEntryPermission> perms) {
-            // copy and check for erroneous elements
-            perms = EnumSet.copyOf(perms);
-            checkSet(perms, AclEntryPermission.class);
+            if (perms.isEmpty()) {
+                // EnumSet.copyOf does not allow empty set
+                perms = Collections.emptySet();
+            } else {
+                // copy and check for erroneous elements
+                perms = EnumSet.copyOf(perms);
+                checkSet(perms, AclEntryPermission.class);
+            }
+
             this.perms = perms;
             return this;
         }
@@ -212,9 +218,15 @@ public final class AclEntry {
          *          AclEntryFlag}
          */
         public Builder setFlags(Set<AclEntryFlag> flags) {
-            // copy and check for erroneous elements
-            flags = EnumSet.copyOf(flags);
-            checkSet(flags, AclEntryFlag.class);
+            if (flags.isEmpty()) {
+                // EnumSet.copyOf does not allow empty set
+                flags = Collections.emptySet();
+            } else {
+                // copy and check for erroneous elements
+                flags = EnumSet.copyOf(flags);
+                checkSet(flags, AclEntryFlag.class);
+            }
+
             this.flags = flags;
             return this;
         }

@@ -54,7 +54,7 @@ ciInstanceKlass::ciInstanceKlass(KlassHandle h_k) :
   _flags = ciFlags(access_flags);
   _has_finalizer = access_flags.has_finalizer();
   _has_subklass = ik->subklass() != NULL;
-  _init_state = (instanceKlass::ClassState)ik->get_init_state();
+  _init_state = ik->init_state();
   _nonstatic_field_size = ik->nonstatic_field_size();
   _has_nonstatic_fields = ik->has_nonstatic_fields();
   _nonstatic_fields = NULL; // initialized lazily by compute_nonstatic_fields:
@@ -118,7 +118,7 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
 void ciInstanceKlass::compute_shared_init_state() {
   GUARDED_VM_ENTRY(
     instanceKlass* ik = get_instanceKlass();
-    _init_state = (instanceKlass::ClassState)ik->get_init_state();
+    _init_state = ik->init_state();
   )
 }
 

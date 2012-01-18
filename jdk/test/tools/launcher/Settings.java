@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ import java.io.IOException;
 
 /*
  * @test
- * @bug 6994753
+ * @bug 6994753 7123582
  * @summary tests -XshowSettings options
  * @compile -XDignore.symbol.file Settings.java TestHelper.java
  * @run main Settings
@@ -129,6 +129,17 @@ public class Settings {
         checkNoContains(tr, LOCALE_SETTINGS);
         checkContains(tr, "Unrecognized option: -XshowSettingsBadOption");
     }
+
+    static void runTest7123582() throws IOException {
+        TestHelper.TestResult tr = null;
+        tr = TestHelper.doExec(TestHelper.javaCmd, "-XshowSettings", "-version");
+        if (!tr.isOK()) {
+            System.out.println(tr.status);
+            throw new RuntimeException("test fails");
+        }
+        containsAllOptions(tr);
+    }
+
     public static void main(String... args) {
         try {
             runTestOptionAll();
@@ -137,6 +148,7 @@ public class Settings {
             runTestOptionProperty();
             runTestOptionLocale();
             runTestBadOptions();
+            runTest7123582();
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
