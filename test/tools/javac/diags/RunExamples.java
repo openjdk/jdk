@@ -23,10 +23,13 @@
 
 /**
  * @test
- * @bug 6968063
+ * @bug 6968063, 7127924
  * @summary provide examples of code that generate diagnostics
  * @build ArgTypeCompilerFactory Example HTMLWriter RunExamples
- * @run main RunExamples
+ * @run main/othervm RunExamples
+ */
+/*
+ *      See CR 7127924 for info on why othervm is used.
  */
 
 import java.io.*;
