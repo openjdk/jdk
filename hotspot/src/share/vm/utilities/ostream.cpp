@@ -1021,7 +1021,7 @@ int networkStream::read(char *buf, size_t len) {
 
 void networkStream::flush() {
   if (size() != 0) {
-    int result = os::raw_send(_socket, (char *)base(), (int)size(), 0);
+    int result = os::raw_send(_socket, (char *)base(), size(), 0);
     assert(result != -1, "connection error");
     assert(result == (int)size(), "didn't send enough data");
   }

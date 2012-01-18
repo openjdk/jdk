@@ -282,7 +282,7 @@ void MutableNUMASpace::bias_region(MemRegion mr, int lgrp_id) {
     // large page can be broken down if we require small pages.
     os::realign_memory((char*)aligned_region.start(), aligned_region.byte_size(), page_size());
     // Then we uncommit the pages in the range.
-    os::free_memory((char*)aligned_region.start(), aligned_region.byte_size());
+    os::free_memory((char*)aligned_region.start(), aligned_region.byte_size(), page_size());
     // And make them local/first-touch biased.
     os::numa_make_local((char*)aligned_region.start(), aligned_region.byte_size(), lgrp_id);
   }
@@ -297,7 +297,7 @@ void MutableNUMASpace::free_region(MemRegion mr) {
     assert((intptr_t)aligned_region.start()     % page_size() == 0 &&
            (intptr_t)aligned_region.byte_size() % page_size() == 0, "Bad alignment");
     assert(region().contains(aligned_region), "Sanity");
-    os::free_memory((char*)aligned_region.start(), aligned_region.byte_size());
+    os::free_memory((char*)aligned_region.start(), aligned_region.byte_size(), page_size());
   }
 }
 
@@ -954,7 +954,7 @@ void MutableNUMASpace::LGRPSpace::scan_pages(size_t page_size, size_t page_count
     if (e != scan_end) {
       if ((page_expected.size != page_size || page_expected.lgrp_id != lgrp_id())
           && page_expected.size != 0) {
-        os::free_memory(s, pointer_delta(e, s, sizeof(char)));
+        os::free_memory(s, pointer_delta(e, s, sizeof(char)), page_size);
       }
       page_expected = page_found;
     }

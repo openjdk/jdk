@@ -245,6 +245,8 @@ struct Flag {
 
   bool is_unlocker_ext() const;
   bool is_unlocked_ext() const;
+  bool is_writeable_ext() const;
+  bool is_external_ext() const;
 
   void print_on(outputStream* st, bool withComments = false );
   void print_as_flag(outputStream* st);
@@ -324,9 +326,9 @@ class CommandLineFlags {
 
   // Returns false if name is not a command line flag.
   static bool wasSetOnCmdline(const char* name, bool* value);
-  static void printSetFlags();
+  static void printSetFlags(outputStream* out);
 
-  static void printFlags(bool withComments = false );
+  static void printFlags(outputStream* out, bool withComments);
 
   static void verify() PRODUCT_RETURN;
 };
@@ -524,6 +526,9 @@ class CommandLineFlags {
                                                                             \
   product(intx, UseSSE, 99,                                                 \
           "Highest supported SSE instructions set on x86/x64")              \
+                                                                            \
+  product(intx, UseAVX, 99,                                                 \
+          "Highest supported AVX instructions set on x86/x64")              \
                                                                             \
   product(intx, UseVIS, 99,                                                 \
           "Highest supported VIS instructions set on Sparc")                \
@@ -1551,7 +1556,7 @@ class CommandLineFlags {
   product(uintx, ParGCDesiredObjsFromOverflowList, 20,                      \
           "The desired number of objects to claim from the overflow list")  \
                                                                             \
-  diagnostic(intx, ParGCStridesPerThread, 2,                                \
+  diagnostic(uintx, ParGCStridesPerThread, 2,                               \
           "The number of strides per worker thread that we divide up the "  \
           "card table scanning work into")                                  \
                                                                             \

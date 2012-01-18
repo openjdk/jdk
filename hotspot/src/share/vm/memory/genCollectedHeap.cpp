@@ -703,7 +703,7 @@ HeapWord* GenCollectedHeap::satisfy_failed_allocation(size_t size, bool is_tlab)
   return collector_policy()->satisfy_failed_allocation(size, is_tlab);
 }
 
-void GenCollectedHeap::set_par_threads(int t) {
+void GenCollectedHeap::set_par_threads(uint t) {
   SharedHeap::set_par_threads(t);
   _gen_process_strong_tasks->set_n_threads(t);
 }
@@ -957,7 +957,7 @@ bool GenCollectedHeap::is_in_young(oop p) {
   return result;
 }
 
-// Returns "TRUE" iff "p" points into the allocated area of the heap.
+// Returns "TRUE" iff "p" points into the committed areas of the heap.
 bool GenCollectedHeap::is_in(const void* p) const {
   #ifndef ASSERT
   guarantee(VerifyBeforeGC   ||
@@ -1460,26 +1460,22 @@ class GenTimeOfLastGCClosure: public GenCollectedHeap::GenClosure {
 };
 
 jlong GenCollectedHeap::millis_since_last_gc() {
-  jlong now = os::javaTimeMillis();
+  // We need a monotonically non-deccreasing time in ms but
+  // os::javaTimeMillis() does not guarantee monotonicity.
+  jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
   GenTimeOfLastGCClosure tolgc_cl(now);
   // iterate over generations getting the oldest
   // time that a generation was collected
   generation_iterate(&tolgc_cl, false);
   tolgc_cl.do_generation(perm_gen());
-  // XXX Despite the assert above, since javaTimeMillis()
-  // doesnot guarantee monotonically increasing return
-  // values (note, i didn't say "strictly monotonic"),
-  // we need to guard against getting back a time
-  // later than now. This should be fixed by basing
-  // on someting like gethrtime() which guarantees
-  // monotonicity. Note that cond_wait() is susceptible
-  // to a similar problem, because its interface is
-  // based on absolute time in the form of the
-  // system time's notion of UCT. See also 4506635
-  // for yet another problem of similar nature. XXX
+
+  // javaTimeNanos() is guaranteed to be monotonically non-decreasing
+  // provided the underlying platform provides such a time source
+  // (and it is bug free). So we still have to guard against getting
+  // back a time later than 'now'.
   jlong retVal = now - tolgc_cl.time();
   if (retVal < 0) {
-    NOT_PRODUCT(warning("time warp: %d", retVal);)
+    NOT_PRODUCT(warning("time warp: "INT64_FORMAT, retVal);)
     return 0;
   }
   return retVal;
