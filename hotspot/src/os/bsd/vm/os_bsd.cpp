@@ -2835,7 +2835,7 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 #endif
 }
 
-void os::free_memory(char *addr, size_t bytes) {
+void os::free_memory(char *addr, size_t bytes, size_t alignment_hint) {
   ::madvise(addr, bytes, MADV_DONTNEED);
 }
 
