@@ -267,7 +267,10 @@ JvmtiEnv::RetransformClasses(jint class_count, const jclass* classes) {
 
     instanceKlassHandle ikh(current_thread, k_oop);
     if (ikh->get_cached_class_file_bytes() == NULL) {
-      // not cached, we need to reconstitute the class file from VM representation
+      // Not cached, we need to reconstitute the class file from the
+      // VM representation. We don't attach the reconstituted class
+      // bytes to the instanceKlass here because they have not been
+      // validated and we're not at a safepoint.
       constantPoolHandle  constants(current_thread, ikh->constants());
       ObjectLocker ol(constants, current_thread);    // lock constant pool while we query it
 

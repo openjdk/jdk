@@ -119,7 +119,7 @@ class G1MonitoringSupport : public CHeapObj {
   G1CollectedHeap* _g1h;
 
   // jstat performance counters
-  //  incremental collections both fully and partially young
+  //  incremental collections both young and mixed
   CollectorCounters*   _incremental_collection_counters;
   //  full stop-the-world collections
   CollectorCounters*   _full_collection_counters;

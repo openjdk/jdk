@@ -53,14 +53,14 @@ AbstractWorkGang::AbstractWorkGang(const char* name,
 }
 
 WorkGang::WorkGang(const char* name,
-                   int         workers,
+                   uint        workers,
                    bool        are_GC_task_threads,
                    bool        are_ConcurrentGC_threads) :
   AbstractWorkGang(name, are_GC_task_threads, are_ConcurrentGC_threads) {
   _total_workers = workers;
 }
 
-GangWorker* WorkGang::allocate_worker(int which) {
+GangWorker* WorkGang::allocate_worker(uint which) {
   GangWorker* new_worker = new GangWorker(this, which);
   return new_worker;
 }
@@ -88,7 +88,7 @@ bool WorkGang::initialize_workers() {
   } else {
     worker_type = os::pgc_thread;
   }
-  for (int worker = 0; worker < total_workers(); worker += 1) {
+  for (uint worker = 0; worker < total_workers(); worker += 1) {
     GangWorker* new_worker = allocate_worker(worker);
     assert(new_worker != NULL, "Failed to allocate GangWorker");
     _gang_workers[worker] = new_worker;
@@ -108,14 +108,14 @@ AbstractWorkGang::~AbstractWorkGang() {
     tty->print_cr("Destructing work gang %s", name());
   }
   stop();   // stop all the workers
-  for (int worker = 0; worker < total_workers(); worker += 1) {
+  for (uint worker = 0; worker < total_workers(); worker += 1) {
     delete gang_worker(worker);
   }
   delete gang_workers();
   delete monitor();
 }
 
-GangWorker* AbstractWorkGang::gang_worker(int i) const {
+GangWorker* AbstractWorkGang::gang_worker(uint i) const {
   // Array index bounds checking.
   GangWorker* result = NULL;
   assert(gang_workers() != NULL, "No workers for indexing");
@@ -148,7 +148,7 @@ void WorkGang::run_task(AbstractGangTask* task, uint no_of_parallel_workers) {
   // Tell the workers to get to work.
   monitor()->notify_all();
   // Wait for them to be finished
-  while (finished_workers() < (int) no_of_parallel_workers) {
+  while (finished_workers() < no_of_parallel_workers) {
     if (TraceWorkGang) {
       tty->print_cr("Waiting in work gang %s: %d/%d finished sequence %d",
                     name(), finished_workers(), no_of_parallel_workers,
@@ -377,12 +377,12 @@ WorkGangBarrierSync::WorkGangBarrierSync()
     _n_workers(0), _n_completed(0), _should_reset(false) {
 }
 
-WorkGangBarrierSync::WorkGangBarrierSync(int n_workers, const char* name)
+WorkGangBarrierSync::WorkGangBarrierSync(uint n_workers, const char* name)
   : _monitor(Mutex::safepoint, name, true),
     _n_workers(n_workers), _n_completed(0), _should_reset(false) {
 }
 
-void WorkGangBarrierSync::set_n_workers(int n_workers) {
+void WorkGangBarrierSync::set_n_workers(uint n_workers) {
   _n_workers   = n_workers;
   _n_completed = 0;
   _should_reset = false;
@@ -419,9 +419,9 @@ void WorkGangBarrierSync::enter() {
 
 // SubTasksDone functions.
 
-SubTasksDone::SubTasksDone(int n) :
+SubTasksDone::SubTasksDone(uint n) :
   _n_tasks(n), _n_threads(1), _tasks(NULL) {
-  _tasks = NEW_C_HEAP_ARRAY(jint, n);
+  _tasks = NEW_C_HEAP_ARRAY(uint, n);
   guarantee(_tasks != NULL, "alloc failure");
   clear();
 }
@@ -430,14 +430,14 @@ bool SubTasksDone::valid() {
   return _tasks != NULL;
 }
 
-void SubTasksDone::set_n_threads(int t) {
+void SubTasksDone::set_n_threads(uint t) {
   assert(_claimed == 0 || _threads_completed == _n_threads,
          "should not be called while tasks are being processed!");
   _n_threads = (t == 0 ? 1 : t);
 }
 
 void SubTasksDone::clear() {
-  for (int i = 0; i < _n_tasks; i++) {
+  for (uint i = 0; i < _n_tasks; i++) {
     _tasks[i] = 0;
   }
   _threads_completed = 0;
@@ -446,9 +446,9 @@ void SubTasksDone::clear() {
 #endif
 }
 
-bool SubTasksDone::is_task_claimed(int t) {
+bool SubTasksDone::is_task_claimed(uint t) {
   assert(0 <= t && t < _n_tasks, "bad task id.");
-  jint old = _tasks[t];
+  uint old = _tasks[t];
   if (old == 0) {
     old = Atomic::cmpxchg(1, &_tasks[t], 0);
   }
@@ -457,7 +457,7 @@ bool SubTasksDone::is_task_claimed(int t) {
 #ifdef ASSERT
   if (!res) {
     assert(_claimed < _n_tasks, "Too many tasks claimed; missing clear?");
-    Atomic::inc(&_claimed);
+    Atomic::inc((volatile jint*) &_claimed);
   }
 #endif
   return res;
@@ -471,7 +471,7 @@ void SubTasksDone::all_tasks_completed() {
     observed = Atomic::cmpxchg(old+1, &_threads_completed, old);
   } while (observed != old);
   // If this was the last thread checking in, clear the tasks.
-  if (observed+1 == _n_threads) clear();
+  if (observed+1 == (jint)_n_threads) clear();
 }
 
 
@@ -490,12 +490,12 @@ bool SequentialSubTasksDone::valid() {
   return _n_threads > 0;
 }
 
-bool SequentialSubTasksDone::is_task_claimed(int& t) {
-  jint* n_claimed_ptr = &_n_claimed;
+bool SequentialSubTasksDone::is_task_claimed(uint& t) {
+  uint* n_claimed_ptr = &_n_claimed;
   t = *n_claimed_ptr;
   while (t < _n_tasks) {
     jint res = Atomic::cmpxchg(t+1, n_claimed_ptr, t);
-    if (res == t) {
+    if (res == (jint)t) {
       return false;
     }
     t = *n_claimed_ptr;
@@ -504,10 +504,10 @@ bool SequentialSubTasksDone::is_task_claimed(int& t) {
 }
 
 bool SequentialSubTasksDone::all_tasks_completed() {
-  jint* n_completed_ptr = &_n_completed;
-  jint  complete        = *n_completed_ptr;
+  uint* n_completed_ptr = &_n_completed;
+  uint  complete        = *n_completed_ptr;
   while (true) {
-    jint res = Atomic::cmpxchg(complete+1, n_completed_ptr, complete);
+    uint res = Atomic::cmpxchg(complete+1, n_completed_ptr, complete);
     if (res == complete) {
       break;
     }

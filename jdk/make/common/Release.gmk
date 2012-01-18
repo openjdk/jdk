@@ -82,11 +82,13 @@ ifdef OPENJDK
   SHARE_JRE_DOC_SRC = $(JDK_TOPDIR)
   # Same files for jdk and jre, no name changes
   IMAGE_DOCLIST_JDK = LICENSE ASSEMBLY_EXCEPTION THIRD_PARTY_README
+  IMAGE_DOCLIST_JDK_DEMOS_AND_SAMPLES =
   IMAGE_DOCLIST_JRE = LICENSE ASSEMBLY_EXCEPTION THIRD_PARTY_README
 else
   # make/closed/common/Defs.gmk for closed location of SHARE_JDK_DOC_SRC
 
   IMAGE_DOCLIST_JDK = COPYRIGHT README.html  LICENSE THIRDPARTYLICENSEREADME.txt
+  IMAGE_DOCLIST_JDK_DEMOS_AND_SAMPLES = demo/DEMOS_LICENSE sample/SAMPLES_LICENSE
   IMAGE_DOCLIST_JRE = COPYRIGHT Welcome.html LICENSE THIRDPARTYLICENSEREADME.txt
   ifeq ($(PLATFORM), windows)
     IMAGE_DOCLIST_JRE += README.txt
@@ -98,6 +100,7 @@ endif
 # Paths to these files we need
 JDK_DOCFILES   = $(IMAGE_DOCLIST_JDK:%=$(JDK_IMAGE_DIR)/%)
 JRE_DOCFILES   = $(IMAGE_DOCLIST_JRE:%=$(JRE_IMAGE_DIR)/%)
+JDK_DEMOS_AND_SAMPLES_DOCFILES = $(IMAGE_DOCLIST_JDK_DEMOS_AND_SAMPLES:%=$(JDK_IMAGE_DIR)/%)
 
 # absolute directory names: note, these must exist prior to build
 # time - they are created in the main Makefile.
@@ -484,6 +487,12 @@ endef
 
 # JDK files
 $(JDK_IMAGE_DIR)/%: $(SHARE_JDK_DOC_SRC)/%
+	$(process-doc-file)
+
+$(JDK_IMAGE_DIR)/demo/DEMOS_LICENSE: $(SHARE_JDK_DOC_SRC)/DEMOS_LICENSE
+	$(process-doc-file)
+
+$(JDK_IMAGE_DIR)/sample/SAMPLES_LICENSE: $(SHARE_JDK_DOC_SRC)/SAMPLES_LICENSE
 	$(process-doc-file)
 
 # JRE files 
@@ -914,7 +923,8 @@ endif
 # Standard jdk image
 initial-image-jdk:: initial-image-jdk-setup \
 		    initial-image-jdk-db \
-		    $(JDK_DOCFILES)
+		    $(JDK_DOCFILES) \
+		    $(JDK_DEMOS_AND_SAMPLES_DOCFILES)
 	$(MKDIR) $(JDK_IMAGE_DIR)/lib
 	@#
 	@# Copy in the jars in lib that only belong in the JDK

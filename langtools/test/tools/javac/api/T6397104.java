@@ -26,10 +26,10 @@
  * @bug     6397104
  * @summary JSR 199: JavaFileManager.getFileForOutput should have sibling argument
  * @author  Peter von der Ah\u00e9
- * @ignore  this test should be rewritten when fixing 6473901
  */
 
 import java.io.File;
+import java.net.URI;
 import java.util.Arrays;
 import javax.tools.*;
 import javax.tools.JavaFileManager.Location;
@@ -52,10 +52,14 @@ public class T6397104 {
             : fm.getJavaFileObjectsFromFiles(Arrays.asList(siblingFile)).iterator().next();
         FileObject fileObject =
             fm.getFileForOutput(location, "java.lang", relName, sibling);
-        if (!fileObject.toUri().getPath().equals(expectedPath))
-            throw new AssertionError("Expected " + expectedPath +
-                                     ", got " + fileObject.toUri().getPath());
-        System.out.format("OK: (%s, %s) => %s%n", siblingFile, relName, fileObject.toUri());
+
+        File expectedFile = new File(expectedPath).getCanonicalFile();
+        File fileObjectFile = new File(fileObject.toUri()).getCanonicalFile();
+
+        if (!fileObjectFile.equals(expectedFile))
+            throw new AssertionError("Expected " + expectedFile +
+                                     ", got " + fileObjectFile);
+        System.out.format("OK: (%s, %s) => %s%n", siblingFile, relName, fileObjectFile);
     }
 
     void test(boolean hasLocation, File siblingFile, String relName, String expectedPath)

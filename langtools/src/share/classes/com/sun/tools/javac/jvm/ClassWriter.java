@@ -45,7 +45,7 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTags.*;
 import static com.sun.tools.javac.jvm.UninitializedType.*;
-import static com.sun.tools.javac.main.OptionName.*;
+import static com.sun.tools.javac.main.Option.*;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 

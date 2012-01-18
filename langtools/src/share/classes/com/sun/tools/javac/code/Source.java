@@ -32,7 +32,7 @@ import static javax.lang.model.SourceVersion.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.jvm.Target;
 
-import static com.sun.tools.javac.main.OptionName.*;
+import static com.sun.tools.javac.main.Option.*;
 
 /** The source language version accepted.
  *

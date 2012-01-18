@@ -32,7 +32,6 @@ import java.util.*;
 import java.util.zip.*;
 import javax.tools.*;
 import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.main.OptionName;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Options;
 

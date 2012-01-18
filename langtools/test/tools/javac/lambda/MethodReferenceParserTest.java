@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 7115052
- * @ignore 7120266
  * @summary Add parser support for method references
  */
 
@@ -45,6 +44,7 @@ public class MethodReferenceParserTest {
     enum ReferenceKind {
         METHOD_REF("#Q##Gm"),
         CONSTRUCTOR_REF("#Q##Gnew"),
+        FALSE_REF("min < max"),
         ERR_SUPER("#Q##Gsuper"),
         ERR_METH0("#Q##Gm()"),
         ERR_METH1("#Q##Gm(X)"),
@@ -76,6 +76,21 @@ public class MethodReferenceParserTest {
         }
     }
 
+    enum ContextKind {
+        ASSIGN("SAM s = #E;"),
+        METHOD("m(#E, i);");
+
+        String contextTemplate;
+
+        ContextKind(String contextTemplate) {
+            this.contextTemplate = contextTemplate;
+        }
+
+        String contextString(ExprKind ek, ReferenceKind rk, QualifierKind qk, GenericKind gk, SubExprKind sk) {
+            return contextTemplate.replaceAll("#E", ek.expressionString(rk, qk, gk, sk));
+        }
+    }
+
     enum GenericKind {
         NONE(""),
         ONE("<X>"),
@@ -97,7 +112,10 @@ public class MethodReferenceParserTest {
         UBOUND_SIMPLE("A"),
         UNBOUND_GENERIC1("A<X>"),
         UNBOUND_GENERIC2("A<X, Y>"),
-        UNBOUND_GENERIC3("A<? extends X, ? super Y>");
+        UNBOUND_GENERIC3("A<? extends X, ? super Y>"),
+        UNBOUND_GENERIC4("A<int[], short[][]>"),
+        NESTED_GENERIC1("A<A<X,Y>, A<X,Y>>"),
+        NESTED_GENERIC2("A<A<A<X,Y>,A<X,Y>>, A<A<X,Y>,A<X,Y>>>");
 
         String qualifier;
 
@@ -153,7 +171,9 @@ public class MethodReferenceParserTest {
                 for (GenericKind gk : GenericKind.values()) {
                     for (SubExprKind sk : SubExprKind.values()) {
                         for (ExprKind ek : ExprKind.values()) {
-                            new MethodReferenceParserTest(rk, qk, gk, sk, ek).run(comp, fm);
+                            for (ContextKind ck : ContextKind.values()) {
+                                new MethodReferenceParserTest(rk, qk, gk, sk, ek, ck).run(comp, fm);
+                            }
                         }
                     }
                 }
@@ -167,15 +187,17 @@ public class MethodReferenceParserTest {
     GenericKind gk;
     SubExprKind sk;
     ExprKind ek;
+    ContextKind ck;
     JavaSource source;
     DiagnosticChecker diagChecker;
 
-    MethodReferenceParserTest(ReferenceKind rk, QualifierKind qk, GenericKind gk, SubExprKind sk, ExprKind ek) {
+    MethodReferenceParserTest(ReferenceKind rk, QualifierKind qk, GenericKind gk, SubExprKind sk, ExprKind ek, ContextKind ck) {
         this.rk = rk;
         this.qk = qk;
         this.gk = gk;
         this.sk = sk;
         this.ek = ek;
+        this.ck = ck;
         this.source = new JavaSource();
         this.diagChecker = new DiagnosticChecker();
     }
@@ -183,14 +205,16 @@ public class MethodReferenceParserTest {
     class JavaSource extends SimpleJavaFileObject {
 
         String template = "class Test {\n" +
-                          "   SAM s = #E;\n" +
+                          "   void test() {\n" +
+                          "      #C\n" +
+                          "   }" +
                           "}";
 
         String source;
 
         public JavaSource() {
             super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
-            source = template.replaceAll("#E", ek.expressionString(rk, qk, gk, sk));
+            source = template.replaceAll("#C", ck.contextString(ek, rk, qk, gk, sk));
         }
 
         @Override

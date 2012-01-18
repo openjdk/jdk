@@ -48,7 +48,6 @@ import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTags.*;
 import static com.sun.tools.javac.code.TypeTags.WILDCARD;
 
-import static com.sun.tools.javac.main.OptionName.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /** Type checking helper class for the attribution phase.
@@ -110,7 +109,7 @@ public class Check {
         allowAnnotations = source.allowAnnotations();
         allowCovariantReturns = source.allowCovariantReturns();
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
-        complexInference = options.isSet(COMPLEXINFERENCE);
+        complexInference = options.isSet("complexinference");
         skipAnnotations = options.isSet("skipAnnotations");
         warnOnSyntheticConflicts = options.isSet("warnOnSyntheticConflicts");
         suppressAbortOnBadClassFile = options.isSet("suppressAbortOnBadClassFile");
@@ -2482,7 +2481,7 @@ public class Check {
                     warnDeprecated(pos, s);
                 }
             });
-        };
+        }
     }
 
     void checkSunAPI(final DiagnosticPosition pos, final Symbol s) {
