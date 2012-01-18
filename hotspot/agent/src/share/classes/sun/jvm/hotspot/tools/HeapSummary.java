@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ public class HeapSummary extends Tool {
       printValue("SurvivorRatio    = ", getFlagValue("SurvivorRatio", flagMap));
       printValMB("PermSize         = ", getFlagValue("PermSize", flagMap));
       printValMB("MaxPermSize      = ", getFlagValue("MaxPermSize", flagMap));
+      printValMB("G1HeapRegionSize = ", HeapRegion.grainBytes());
 
       System.out.println();
       System.out.println("Heap Usage:");
@@ -100,11 +101,20 @@ public class HeapSummary extends Tool {
          } else if (sharedHeap instanceof G1CollectedHeap) {
              G1CollectedHeap g1h = (G1CollectedHeap) sharedHeap;
              G1MonitoringSupport g1mm = g1h.g1mm();
-             System.out.println("G1 Young Generation");
-             printG1Space("Eden Space:", g1mm.edenUsed(), g1mm.edenCommitted());
-             printG1Space("From Space:", g1mm.survivorUsed(), g1mm.survivorCommitted());
-             printG1Space("To Space:", 0, 0);
-             printG1Space("G1 Old Generation", g1mm.oldUsed(), g1mm.oldCommitted());
+             long edenRegionNum = g1mm.edenRegionNum();
+             long survivorRegionNum = g1mm.survivorRegionNum();
+             HeapRegionSetBase oldSet = g1h.oldSet();
+             HeapRegionSetBase humongousSet = g1h.humongousSet();
+             long oldRegionNum = oldSet.regionNum() + humongousSet.regionNum();
+             printG1Space("G1 Heap:", g1h.n_regions(),
+                          g1h.used(), g1h.capacity());
+             System.out.println("G1 Young Generation:");
+             printG1Space("Eden Space:", edenRegionNum,
+                          g1mm.edenUsed(), g1mm.edenCommitted());
+             printG1Space("Survivor Space:", survivorRegionNum,
+                          g1mm.survivorUsed(), g1mm.survivorCommitted());
+             printG1Space("G1 Old Generation:", oldRegionNum,
+                          g1mm.oldUsed(), g1mm.oldCommitted());
          } else {
              throw new RuntimeException("unknown SharedHeap type : " + heap.getClass());
          }
@@ -216,9 +226,11 @@ public class HeapSummary extends Tool {
       System.out.println(alignment +  (double)space.used() * 100.0 / space.capacity() + "% used");
    }
 
-   private void printG1Space(String spaceName, long used, long capacity) {
+   private void printG1Space(String spaceName, long regionNum,
+                             long used, long capacity) {
       long free = capacity - used;
       System.out.println(spaceName);
+      printValue("regions  = ", regionNum);
       printValMB("capacity = ", capacity);
       printValMB("used     = ", used);
       printValMB("free     = ", free);

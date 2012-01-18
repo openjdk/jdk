@@ -1886,6 +1886,10 @@ void ConcurrentMark::cleanup() {
   // races with it goes around and waits for completeCleanup to finish.
   g1h->increment_total_collections();
 
+  // We reclaimed old regions so we should calculate the sizes to make
+  // sure we update the old gen/space data.
+  g1h->g1mm()->update_sizes();
+
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
     gclog_or_tty->print(" VerifyDuringGC:(after)");

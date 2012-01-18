@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@
   nonstatic_field(G1CollectedHeap, _g1_committed,       MemRegion)            \
   nonstatic_field(G1CollectedHeap, _summary_bytes_used, size_t)               \
   nonstatic_field(G1CollectedHeap, _g1mm,               G1MonitoringSupport*) \
+  nonstatic_field(G1CollectedHeap, _old_set,            HeapRegionSetBase)    \
+  nonstatic_field(G1CollectedHeap, _humongous_set,      HeapRegionSetBase)    \
                                                                               \
   nonstatic_field(G1MonitoringSupport, _eden_committed,     size_t)           \
   nonstatic_field(G1MonitoringSupport, _eden_used,          size_t)           \
@@ -47,6 +49,10 @@
   nonstatic_field(G1MonitoringSupport, _survivor_used,      size_t)           \
   nonstatic_field(G1MonitoringSupport, _old_committed,      size_t)           \
   nonstatic_field(G1MonitoringSupport, _old_used,           size_t)           \
+                                                                              \
+  nonstatic_field(HeapRegionSetBase,   _length,             size_t)           \
+  nonstatic_field(HeapRegionSetBase,   _region_num,         size_t)           \
+  nonstatic_field(HeapRegionSetBase,   _total_used_bytes,   size_t)           \
 
 
 #define VM_TYPES_G1(declare_type, declare_toplevel_type)                      \
@@ -55,6 +61,7 @@
                                                                               \
   declare_type(HeapRegion, ContiguousSpace)                                   \
   declare_toplevel_type(HeapRegionSeq)                                        \
+  declare_toplevel_type(HeapRegionSetBase)                                    \
   declare_toplevel_type(G1MonitoringSupport)                                  \
                                                                               \
   declare_toplevel_type(G1CollectedHeap*)                                     \
