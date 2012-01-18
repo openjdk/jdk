@@ -49,6 +49,7 @@ public enum TestHelper {
     static final String JAVAHOME = System.getProperty("java.home");
     static final boolean isSDK = JAVAHOME.endsWith("jre");
     static final String javaCmd;
+    static final String javawCmd;
     static final String java64Cmd;
     static final String javacCmd;
     static final JavaCompiler compiler;
@@ -84,15 +85,29 @@ public enum TestHelper {
                 : new File(binDir, "java");
         javaCmd = javaCmdFile.getAbsolutePath();
         if (!javaCmdFile.canExecute()) {
-            throw new RuntimeException("java <" + TestHelper.javaCmd + "> must exist");
+            throw new RuntimeException("java <" + TestHelper.javaCmd +
+                    "> must exist and should be executable");
         }
 
         File javacCmdFile = (isWindows)
                 ? new File(binDir, "javac.exe")
                 : new File(binDir, "javac");
         javacCmd = javacCmdFile.getAbsolutePath();
+
+        if (isWindows) {
+            File javawCmdFile = new File(binDir, "javaw.exe");
+            javawCmd = javawCmdFile.getAbsolutePath();
+            if (!javawCmdFile.canExecute()) {
+                throw new RuntimeException("java <" + javawCmd +
+                        "> must exist and should be executable");
+            }
+        } else {
+            javawCmd = null;
+        }
+
         if (!javacCmdFile.canExecute()) {
-            throw new RuntimeException("java <" + javacCmd + "> must exist");
+            throw new RuntimeException("java <" + javacCmd +
+                    "> must exist and should be executable");
         }
         if (isSolaris) {
             File sparc64BinDir = new File(binDir,isSparc ? "sparcv9" : "amd64");

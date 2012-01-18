@@ -485,7 +485,11 @@ private:
     return yank_if_dead(old, current_block, &value, &regnd);
   }
 
-  int yank_if_dead( Node *old, Block *current_block, Node_List *value, Node_List *regnd );
+  int yank_if_dead( Node *old, Block *current_block, Node_List *value, Node_List *regnd ) {
+    return yank_if_dead_recurse(old, old, current_block, value, regnd);
+  }
+  int yank_if_dead_recurse(Node *old, Node *orig_old, Block *current_block,
+                           Node_List *value, Node_List *regnd);
   int yank( Node *old, Block *current_block, Node_List *value, Node_List *regnd );
   int elide_copy( Node *n, int k, Block *current_block, Node_List &value, Node_List &regnd, bool can_change_regs );
   int use_prior_register( Node *copy, uint idx, Node *def, Block *current_block, Node_List &value, Node_List &regnd );

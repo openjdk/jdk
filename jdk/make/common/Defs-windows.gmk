@@ -36,7 +36,6 @@ include $(JDK_MAKE_SHARED_DIR)/Defs.gmk
 
 # CC compiler object code output directive flag value
 CC_OBJECT_OUTPUT_FLAG = -Fo
-CC_PROGRAM_OUTPUT_FLAG = -Fe
 
 # The suffix applied to the library name for FDLIBM
 FDDLIBM_SUFFIX = lib

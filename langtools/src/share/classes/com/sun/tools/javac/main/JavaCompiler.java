@@ -62,7 +62,7 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Log.WriterKind;
 
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
-import static com.sun.tools.javac.main.OptionName.*;
+import static com.sun.tools.javac.main.Option.*;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 import static com.sun.tools.javac.util.ListBuffer.lb;
 
@@ -817,8 +817,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
         // forcibly set the equivalent of -Xlint:-options, so that no further
         // warnings about command line options are generated from this point on
-        options.put(XLINT_CUSTOM + "-" + LintCategory.OPTIONS.option, "true");
-        options.remove(XLINT_CUSTOM + LintCategory.OPTIONS.option);
+        options.put(XLINT_CUSTOM.text + "-" + LintCategory.OPTIONS.option, "true");
+        options.remove(XLINT_CUSTOM.text + LintCategory.OPTIONS.option);
 
         start_msec = now();
 

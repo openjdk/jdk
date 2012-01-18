@@ -127,7 +127,6 @@
 
 // for timer info max values which include all bits
 #define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
-#define SEC_IN_NANOSECS  1000000000LL
 
 #define LARGEPAGES_BIT (1 << 6)
 ////////////////////////////////////////////////////////////////////////////////
@@ -2547,8 +2546,8 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   }
 }
 
-void os::free_memory(char *addr, size_t bytes) {
-  commit_memory(addr, bytes, false);
+void os::free_memory(char *addr, size_t bytes, size_t alignment_hint) {
+  commit_memory(addr, bytes, alignment_hint, false);
 }
 
 void os::numa_make_global(char *addr, size_t bytes) {
@@ -3259,8 +3258,6 @@ size_t os::read(int fd, void *buf, unsigned int nBytes) {
 // generates a SIGUSRx signal. Note that SIGUSR1 can interfere with
 // SIGSEGV, see 4355769.
 
-const int NANOSECS_PER_MILLISECS = 1000000;
-
 int os::sleep(Thread* thread, jlong millis, bool interruptible) {
   assert(thread == Thread::current(),  "thread consistency check");
 
@@ -3283,7 +3280,7 @@ int os::sleep(Thread* thread, jlong millis, bool interruptible) {
         // not a guarantee() because JVM should not abort on kernel/glibc bugs
         assert(!Linux::supports_monotonic_clock(), "time moving backwards");
       } else {
-        millis -= (newtime - prevtime) / NANOSECS_PER_MILLISECS;
+        millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
       }
 
       if(millis <= 0) {
@@ -3322,7 +3319,7 @@ int os::sleep(Thread* thread, jlong millis, bool interruptible) {
         // not a guarantee() because JVM should not abort on kernel/glibc bugs
         assert(!Linux::supports_monotonic_clock(), "time moving backwards");
       } else {
-        millis -= (newtime - prevtime) / NANOSECS_PER_MILLISECS;
+        millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
       }
 
       if(millis <= 0) break ;
@@ -3924,7 +3921,7 @@ jlong os::Linux::fast_thread_cpu_time(clockid_t clockid) {
   int rc = os::Linux::clock_gettime(clockid, &tp);
   assert(rc == 0, "clock_gettime is expected to return 0 code");
 
-  return (tp.tv_sec * SEC_IN_NANOSECS) + tp.tv_nsec;
+  return (tp.tv_sec * NANOSECS_PER_SEC) + tp.tv_nsec;
 }
 
 /////
@@ -5165,9 +5162,6 @@ void os::PlatformEvent::unpark() {
  * is no need to track notifications.
  */
 
-
-#define NANOSECS_PER_SEC 1000000000
-#define NANOSECS_PER_MILLISEC 1000000
 #define MAX_SECS 100000000
 /*
  * This code is common to linux and solaris and will be moved to a

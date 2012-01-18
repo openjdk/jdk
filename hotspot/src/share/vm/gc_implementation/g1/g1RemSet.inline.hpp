@@ -29,7 +29,7 @@
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "oops/oop.inline.hpp"
 
-inline size_t G1RemSet::n_workers() {
+inline uint G1RemSet::n_workers() {
   if (_g1->workers() != NULL) {
     return _g1->workers()->total_workers();
   } else {

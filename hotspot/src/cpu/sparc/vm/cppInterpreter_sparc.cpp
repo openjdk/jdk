@@ -766,7 +766,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
       // get native function entry point(O0 is a good temp until the very end)
        ld_ptr(Address(G5_method, 0, in_bytes(methodOopDesc::native_function_offset())), O0);
     // for static methods insert the mirror argument
-    const int mirror_offset = klassOopDesc::klass_part_offset_in_bytes() + Klass::java_mirror_offset_in_bytes();
+    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
 
     __ ld_ptr(Address(G5_method, 0, in_bytes(methodOopDesc:: constants_offset())), O1);
     __ ld_ptr(Address(O1, 0, constantPoolOopDesc::pool_holder_offset_in_bytes()), O1);
@@ -1173,7 +1173,7 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
     __ btst(JVM_ACC_SYNCHRONIZED, O1);
     __ br( Assembler::zero, false, Assembler::pt, done);
 
-    const int mirror_offset = klassOopDesc::klass_part_offset_in_bytes() + Klass::java_mirror_offset_in_bytes();
+    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     __ delayed()->btst(JVM_ACC_STATIC, O1);
     __ ld_ptr(XXX_STATE(_locals), O1);
     __ br( Assembler::zero, true, Assembler::pt, got_obj);
