@@ -238,7 +238,7 @@ public class LambdaParserTest {
         try {
             ct.parse();
         } catch (Throwable ex) {
-            throw new AssertionError("Error thron when parsing the following source:\n" + source.getCharContent(true));
+            throw new AssertionError("Error thrown when parsing the following source:\n" + source.getCharContent(true));
         }
         check();
     }

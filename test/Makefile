@@ -53,36 +53,45 @@ endef
 LANGTOOLS_TEST_LIST = langtools_jtreg
 
 # Test target list for jdk repository
-JDK_TEST_LIST = \
-	jdk_beans1 jdk_beans2 jdk_beans3  \
+JDK_DEFAULT_TEST_LIST = \
+	jdk_beans1 \
 	jdk_io  \
 	jdk_lang  \
-	jdk_management1 jdk_management2  \
 	jdk_math  \
 	jdk_misc  \
 	jdk_net  \
 	jdk_nio1 jdk_nio2 jdk_nio3  \
-	jdk_security1 jdk_security2 jdk_security3  \
+	jdk_security1 \
 	jdk_text  \
-	jdk_tools1 jdk_tools2  \
 	jdk_util
 
-# These tests need a DISPLAY and can create window interaction complications
-JDK_TEST_LIST2 = \
+# These tests are not part of the default testing list
+JDK_NONDEFAULT_TEST_LIST = \
 	jdk_awt \
+	jdk_beans2 jdk_beans3  \
+	jdk_management1 jdk_management2  \
+	jdk_security2 jdk_security3  \
 	jdk_rmi \
-	jdk_swing
+	jdk_sound \
+	jdk_swing \
+	jdk_tools1 jdk_tools2
+
+# All jdk tests
+JDK_ALL_TEST_LIST = $(JDK_DEFAULT_TEST_LIST) $(JDK_NONDEFAULT_TEST_LIST)
 
 # These are the current jck test targets in the jdk repository
 JDK_JCK7_LIST = jck7devtools jck7compiler jck7runtime
 
 # Default test target (everything)
-all: $(JDK_TEST_LIST) $(LANGTOOLS_TEST_LIST)
+default: $(JDK_DEFAULT_TEST_LIST) $(LANGTOOLS_TEST_LIST)
+
+# All testing
+all: $(JDK_ALL_TEST_LIST) $(LANGTOOLS_TEST_LIST)
 
 # Test targets
 $(LANGTOOLS_TEST_LIST):
 	@$(NO_STOPPING)$(call SUBDIR_TEST, $(LANGTOOLS_DIR), $(subst langtools_,,$@))
-$(JDK_TEST_LIST) $(JDK_TEST_LIST2) $(JDK_JCK7_LIST):
+$(JDK_ALL_TEST_LIST) $(JDK_JCK7_LIST):
 	@$(NO_STOPPING)$(call SUBDIR_TEST, $(JDK_DIR), $@)
 
 clean:
@@ -91,7 +100,7 @@ clean:
 
 # Phony targets (e.g. these are not filenames)
 .PHONY: all clean \
-        $(JDK_TEST_LIST) $(JDK_TEST_LIST2) $(JDK_JCK7_LIST) \
+        $(JDK_ALL_TEST_LIST) $(JDK_JCK7_LIST) \
         $(LANGTOOLS_TEST_LIST)
 
 ################################################################

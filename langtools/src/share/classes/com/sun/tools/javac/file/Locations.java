@@ -47,14 +47,14 @@ import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
 import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.main.OptionName;
+import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
 
 import javax.tools.JavaFileManager;
 import static javax.tools.StandardLocation.*;
-import static com.sun.tools.javac.main.OptionName.*;
+import static com.sun.tools.javac.main.Option.*;
 
 /** This class converts command line arguments, environment variables
  *  and system properties (in File.pathSeparator-separated String form)
@@ -318,23 +318,23 @@ public class Locations {
      */
     protected abstract class LocationHandler {
         final Location location;
-        final Set<OptionName> options;
+        final Set<Option> options;
 
         /**
          * Create a handler. The location and options provide a way to map
          * from a location or an option to the corresponding handler.
          * @see #initHandlers
          */
-        protected LocationHandler(Location location, OptionName... options) {
+        protected LocationHandler(Location location, Option... options) {
             this.location = location;
             this.options = options.length == 0 ?
-                EnumSet.noneOf(OptionName.class):
+                EnumSet.noneOf(Option.class):
                 EnumSet.copyOf(Arrays.asList(options));
         }
 
         // TODO: TEMPORARY, while Options still used for command line options
         void update(Options optionTable) {
-            for (OptionName o: options) {
+            for (Option o: options) {
                 String v = optionTable.get(o);
                 if (v != null) {
                     handleOption(o, v);
@@ -343,7 +343,7 @@ public class Locations {
         }
 
         /** @see JavaFileManager#handleOption. */
-        abstract boolean handleOption(OptionName option, String value);
+        abstract boolean handleOption(Option option, String value);
         /** @see JavaFileManager#getLocation. */
         abstract Collection<File> getLocation();
         /** @see JavaFileManager#setLocation. */
@@ -359,12 +359,12 @@ public class Locations {
     private class OutputLocationHandler extends LocationHandler {
         private File outputDir;
 
-        OutputLocationHandler(Location location, OptionName... options) {
+        OutputLocationHandler(Location location, Option... options) {
             super(location, options);
         }
 
         @Override
-        boolean handleOption(OptionName option, String value) {
+        boolean handleOption(Option option, String value) {
             if (!options.contains(option))
                 return false;
 
@@ -410,12 +410,12 @@ public class Locations {
     private class SimpleLocationHandler extends LocationHandler {
         protected Collection<File> searchPath;
 
-        SimpleLocationHandler(Location location, OptionName... options) {
+        SimpleLocationHandler(Location location, Option... options) {
             super(location, options);
         }
 
         @Override
-        boolean handleOption(OptionName option, String value) {
+        boolean handleOption(Option option, String value) {
             if (!options.contains(option))
                 return false;
             searchPath = value == null ? null :
@@ -452,7 +452,7 @@ public class Locations {
     private class ClassPathLocationHandler extends SimpleLocationHandler {
         ClassPathLocationHandler() {
             super(StandardLocation.CLASS_PATH,
-                    OptionName.CLASSPATH, OptionName.CP);
+                    Option.CLASSPATH, Option.CP);
         }
 
         @Override
@@ -500,7 +500,7 @@ public class Locations {
      */
     private class BootClassPathLocationHandler extends LocationHandler {
         private Collection<File> searchPath;
-        final Map<OptionName, String> optionValues = new EnumMap<OptionName,String>(OptionName.class);
+        final Map<Option, String> optionValues = new EnumMap<Option,String>(Option.class);
 
         /**
          * rt.jar as found on the default bootclasspath.
@@ -515,11 +515,11 @@ public class Locations {
 
         BootClassPathLocationHandler() {
             super(StandardLocation.PLATFORM_CLASS_PATH,
-                    OptionName.BOOTCLASSPATH, OptionName.XBOOTCLASSPATH,
-                    OptionName.XBOOTCLASSPATH_PREPEND,
-                    OptionName.XBOOTCLASSPATH_APPEND,
-                    OptionName.ENDORSEDDIRS, OptionName.DJAVA_ENDORSED_DIRS,
-                    OptionName.EXTDIRS, OptionName.DJAVA_EXT_DIRS);
+                    Option.BOOTCLASSPATH, Option.XBOOTCLASSPATH,
+                    Option.XBOOTCLASSPATH_PREPEND,
+                    Option.XBOOTCLASSPATH_APPEND,
+                    Option.ENDORSEDDIRS, Option.DJAVA_ENDORSED_DIRS,
+                    Option.EXTDIRS, Option.DJAVA_EXT_DIRS);
         }
 
         boolean isDefault() {
@@ -533,7 +533,7 @@ public class Locations {
         }
 
         @Override
-        boolean handleOption(OptionName option, String value) {
+        boolean handleOption(Option option, String value) {
             if (!options.contains(option))
                 return false;
 
@@ -549,14 +549,14 @@ public class Locations {
         // where
             // TODO: would be better if option aliasing was handled at a higher
             // level
-            private OptionName canonicalize(OptionName option) {
+            private Option canonicalize(Option option) {
                 switch (option) {
                     case XBOOTCLASSPATH:
-                        return OptionName.BOOTCLASSPATH;
+                        return Option.BOOTCLASSPATH;
                     case DJAVA_ENDORSED_DIRS:
-                        return OptionName.ENDORSEDDIRS;
+                        return Option.ENDORSEDDIRS;
                     case DJAVA_EXT_DIRS:
-                        return OptionName.EXTDIRS;
+                        return Option.EXTDIRS;
                     default:
                         return option;
                 }
@@ -636,29 +636,29 @@ public class Locations {
     }
 
     Map<Location, LocationHandler> handlersForLocation;
-    Map<OptionName, LocationHandler> handlersForOption;
+    Map<Option, LocationHandler> handlersForOption;
 
     void initHandlers() {
         handlersForLocation = new HashMap<Location, LocationHandler>();
-        handlersForOption = new EnumMap<OptionName, LocationHandler>(OptionName.class);
+        handlersForOption = new EnumMap<Option, LocationHandler>(Option.class);
 
         LocationHandler[] handlers = {
             new BootClassPathLocationHandler(),
             new ClassPathLocationHandler(),
-            new SimpleLocationHandler(StandardLocation.SOURCE_PATH, OptionName.SOURCEPATH),
-            new SimpleLocationHandler(StandardLocation.ANNOTATION_PROCESSOR_PATH, OptionName.PROCESSORPATH),
-            new OutputLocationHandler((StandardLocation.CLASS_OUTPUT), OptionName.D),
-            new OutputLocationHandler((StandardLocation.SOURCE_OUTPUT), OptionName.S)
+            new SimpleLocationHandler(StandardLocation.SOURCE_PATH, Option.SOURCEPATH),
+            new SimpleLocationHandler(StandardLocation.ANNOTATION_PROCESSOR_PATH, Option.PROCESSORPATH),
+            new OutputLocationHandler((StandardLocation.CLASS_OUTPUT), Option.D),
+            new OutputLocationHandler((StandardLocation.SOURCE_OUTPUT), Option.S)
         };
 
         for (LocationHandler h: handlers) {
             handlersForLocation.put(h.location, h);
-            for (OptionName o: h.options)
+            for (Option o: h.options)
                 handlersForOption.put(o, h);
         }
     }
 
-    boolean handleOption(OptionName option, String value) {
+    boolean handleOption(Option option, String value) {
         LocationHandler h = handlersForOption.get(option);
         return (h == null ? false : h.handleOption(option, value));
     }

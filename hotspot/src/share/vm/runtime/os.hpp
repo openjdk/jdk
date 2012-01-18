@@ -99,9 +99,11 @@ class os: AllStatic {
   }
 
  public:
-
   static void init(void);                      // Called before command line parsing
   static jint init_2(void);                    // Called after command line parsing
+  static void init_globals(void) {             // Called from init_globals() in init.cpp
+    init_globals_ext();
+  }
   static void init_3(void);                    // Called at the end of vm init
 
   // File names are case-insensitive on windows only
@@ -256,7 +258,7 @@ class os: AllStatic {
                              char *addr, size_t bytes, bool read_only,
                              bool allow_exec);
   static bool   unmap_memory(char *addr, size_t bytes);
-  static void   free_memory(char *addr, size_t bytes);
+  static void   free_memory(char *addr, size_t bytes, size_t alignment_hint);
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
   // NUMA-specific interface
@@ -500,6 +502,7 @@ class os: AllStatic {
 
   static void print_location(outputStream* st, intptr_t x, bool verbose = false);
   static size_t lasterror(char *buf, size_t len);
+  static int get_last_error();
 
   // Determines whether the calling process is being debugged by a user-mode debugger.
   static bool is_debugger_attached();
@@ -584,28 +587,28 @@ class os: AllStatic {
   static int socket(int domain, int type, int protocol);
   static int socket_close(int fd);
   static int socket_shutdown(int fd, int howto);
-  static int recv(int fd, char *buf, int nBytes, int flags);
-  static int send(int fd, char *buf, int nBytes, int flags);
-  static int raw_send(int fd, char *buf, int nBytes, int flags);
+  static int recv(int fd, char* buf, size_t nBytes, uint flags);
+  static int send(int fd, char* buf, size_t nBytes, uint flags);
+  static int raw_send(int fd, char* buf, size_t nBytes, uint flags);
   static int timeout(int fd, long timeout);
   static int listen(int fd, int count);
-  static int connect(int fd, struct sockaddr *him, int len);
-  static int bind(int fd, struct sockaddr *him, int len);
-  static int accept(int fd, struct sockaddr *him, int *len);
-  static int recvfrom(int fd, char *buf, int nbytes, int flags,
-                             struct sockaddr *from, int *fromlen);
-  static int get_sock_name(int fd, struct sockaddr *him, int *len);
-  static int sendto(int fd, char *buf, int len, int flags,
-                           struct sockaddr *to, int tolen);
-  static int socket_available(int fd, jint *pbytes);
+  static int connect(int fd, struct sockaddr* him, socklen_t len);
+  static int bind(int fd, struct sockaddr* him, socklen_t len);
+  static int accept(int fd, struct sockaddr* him, socklen_t* len);
+  static int recvfrom(int fd, char* buf, size_t nbytes, uint flags,
+                      struct sockaddr* from, socklen_t* fromlen);
+  static int get_sock_name(int fd, struct sockaddr* him, socklen_t* len);
+  static int sendto(int fd, char* buf, size_t len, uint flags,
+                    struct sockaddr* to, socklen_t tolen);
+  static int socket_available(int fd, jint* pbytes);
 
   static int get_sock_opt(int fd, int level, int optname,
-                           char *optval, int* optlen);
+                          char* optval, socklen_t* optlen);
   static int set_sock_opt(int fd, int level, int optname,
-                           const char *optval, int optlen);
+                          const char* optval, socklen_t optlen);
   static int get_host_name(char* name, int namelen);
 
-  static struct hostent*  get_host_by_name(char* name);
+  static struct hostent* get_host_by_name(char* name);
 
   // Printing 64 bit integers
   static const char* jlong_format_specifier();
@@ -671,6 +674,11 @@ class os: AllStatic {
   // rest of line is skipped. Returns number of bytes read or -1 on EOF
   static int get_line_chars(int fd, char *buf, const size_t bsize);
 
+  // Extensions
+#include "runtime/os_ext.hpp"
+
+ public:
+
   // Platform dependent stuff
 #ifdef TARGET_OS_FAMILY_linux
 # include "os_linux.hpp"
@@ -715,7 +723,7 @@ class os: AllStatic {
 # include "os_bsd_zero.hpp"
 #endif
 
-
+ public:
   // debugging support (mostly used by debug.cpp but also fatal error handler)
   static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address
 

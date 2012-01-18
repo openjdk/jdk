@@ -63,7 +63,7 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 
-import static com.sun.tools.javac.main.OptionName.*;
+import static com.sun.tools.javac.main.Option.*;
 
 
 // NOTE the imports carefully for this compilation unit.

@@ -1597,7 +1597,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       bool is_loop = (r->is_Loop() && r->req() == 3);
       // Then, check if there is a data loop when phi references itself directly
       // or through other data nodes.
-      if (is_loop && !phase->eqv_uncast(uin, in(LoopNode::EntryControl)) ||
+      if (is_loop && !uin->eqv_uncast(in(LoopNode::EntryControl)) ||
          !is_loop && is_unsafe_data_reference(uin)) {
         // Break this data loop to avoid creation of a dead loop.
         if (can_reshape) {

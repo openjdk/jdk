@@ -82,6 +82,12 @@ julong os::num_frees = 0;           // # of calls to free
 julong os::free_bytes = 0;          // # of bytes freed
 #endif
 
+void os_init_globals() {
+  // Called from init_globals().
+  // See Threads::create_vm() in thread.cpp, and init.cpp.
+  os::init_globals();
+}
+
 // Fill in buffer with current local time as an ISO-8601 string.
 // E.g., yyyy-mm-ddThh:mm:ss-zzzz.
 // Returns buffer, or NULL if it failed.

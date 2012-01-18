@@ -42,6 +42,7 @@ AUTO_FILES_JAVA_DIRS = \
   sun/tools/jstack \
   sun/tools/jstat \
   sun/tools/jstatd \
+  sun/tools/jcmd \
   com/sun/tools/hat \
   com/sun/tools/script/shell \
   sun/jvmstat
