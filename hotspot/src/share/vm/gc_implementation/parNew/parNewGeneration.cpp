@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1042,7 +1042,11 @@ void ParNewGeneration::collect(bool   full,
     size_policy->avg_survived()->sample(from()->used());
   }
 
-  update_time_of_last_gc(os::javaTimeMillis());
+  // We need to use a monotonically non-deccreasing time in ms
+  // or we will see time-warp warnings and os::javaTimeMillis()
+  // does not guarantee monotonicity.
+  jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
+  update_time_of_last_gc(now);
 
   SpecializationStats::print();
 
