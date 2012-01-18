@@ -1604,7 +1604,16 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
           continue;
         default:                // All normal stuff
           if (phi == NULL) {
-            if (!check_elide_phi || !target->can_elide_SEL_phi(j)) {
+            const JVMState* jvms = map()->jvms();
+            if (EliminateNestedLocks &&
+                jvms->is_mon(j) && jvms->is_monitor_box(j)) {
+              // BoxLock nodes are not commoning.
+              // Use old BoxLock node as merged box.
+              assert(newin->jvms()->is_monitor_box(j), "sanity");
+              // This assert also tests that nodes are BoxLock.
+              assert(BoxLockNode::same_slot(n, m), "sanity");
+              C->gvn_replace_by(n, m);
+            } else if (!check_elide_phi || !target->can_elide_SEL_phi(j)) {
               phi = ensure_phi(j, nophi);
             }
           }

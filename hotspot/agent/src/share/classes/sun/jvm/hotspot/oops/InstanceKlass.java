@@ -63,8 +63,6 @@ public class InstanceKlass extends Klass {
   private static int CLASS_STATE_FULLY_INITIALIZED;
   private static int CLASS_STATE_INITIALIZATION_ERROR;
 
-  private static int IS_MARKED_DEPENDENT_MASK;
-
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type            = db.lookupType("instanceKlass");
     arrayKlasses         = new OopField(type.getOopField("_array_klasses"), Oop.getHeaderSize());
@@ -92,7 +90,7 @@ public class InstanceKlass extends Klass {
     staticFieldSize      = new CIntField(type.getCIntegerField("_static_field_size"), Oop.getHeaderSize());
     staticOopFieldCount   = new CIntField(type.getCIntegerField("_static_oop_field_count"), Oop.getHeaderSize());
     nonstaticOopMapSize  = new CIntField(type.getCIntegerField("_nonstatic_oop_map_size"), Oop.getHeaderSize());
-    miscFlags            = new CIntField(type.getCIntegerField("_misc_flags"), Oop.getHeaderSize());
+    isMarkedDependent    = new CIntField(type.getCIntegerField("_is_marked_dependent"), Oop.getHeaderSize());
     initState            = new CIntField(type.getCIntegerField("_init_state"), Oop.getHeaderSize());
     vtableLen            = new CIntField(type.getCIntegerField("_vtable_len"), Oop.getHeaderSize());
     itableLen            = new CIntField(type.getCIntegerField("_itable_len"), Oop.getHeaderSize());
@@ -119,8 +117,6 @@ public class InstanceKlass extends Klass {
     CLASS_STATE_BEING_INITIALIZED = db.lookupIntConstant("instanceKlass::being_initialized").intValue();
     CLASS_STATE_FULLY_INITIALIZED = db.lookupIntConstant("instanceKlass::fully_initialized").intValue();
     CLASS_STATE_INITIALIZATION_ERROR = db.lookupIntConstant("instanceKlass::initialization_error").intValue();
-
-    IS_MARKED_DEPENDENT_MASK = db.lookupIntConstant("instanceKlass::IS_MARKED_DEPENDENT").intValue();
 
   }
 
@@ -155,7 +151,7 @@ public class InstanceKlass extends Klass {
   private static CIntField staticFieldSize;
   private static CIntField staticOopFieldCount;
   private static CIntField nonstaticOopMapSize;
-  private static CIntField miscFlags;
+  private static CIntField isMarkedDependent;
   private static CIntField initState;
   private static CIntField vtableLen;
   private static CIntField itableLen;
@@ -337,7 +333,7 @@ public class InstanceKlass extends Klass {
   public long      getNonstaticFieldSize()  { return                nonstaticFieldSize.getValue(this); }
   public long      getStaticOopFieldCount() { return                staticOopFieldCount.getValue(this); }
   public long      getNonstaticOopMapSize() { return                nonstaticOopMapSize.getValue(this); }
-  public boolean   getIsMarkedDependent()   { return                (miscFlags.getValue(this) & IS_MARKED_DEPENDENT_MASK) != 0; }
+  public boolean   getIsMarkedDependent()   { return                isMarkedDependent.getValue(this) != 0; }
   public long      getVtableLen()           { return                vtableLen.getValue(this); }
   public long      getItableLen()           { return                itableLen.getValue(this); }
   public Symbol    getGenericSignature()    { return getSymbol(genericSignature); }
@@ -528,7 +524,7 @@ public class InstanceKlass extends Klass {
       visitor.doCInt(staticFieldSize, true);
       visitor.doCInt(staticOopFieldCount, true);
       visitor.doCInt(nonstaticOopMapSize, true);
-      visitor.doCInt(miscFlags, true);
+      visitor.doCInt(isMarkedDependent, true);
       visitor.doCInt(initState, true);
       visitor.doCInt(vtableLen, true);
       visitor.doCInt(itableLen, true);

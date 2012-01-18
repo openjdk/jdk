@@ -400,10 +400,10 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
       Node *box = mcall->monitor_box(this, i);
       Node *obj = mcall->monitor_obj(this, i);
       if ( OptoReg::is_valid(regalloc->get_reg_first(box)) ) {
-        while( !box->is_BoxLock() )  box = box->in(1);
+        box = BoxLockNode::box_node(box);
         format_helper( regalloc, st, box, "MON-BOX[", i, &scobjs );
       } else {
-        OptoReg::Name box_reg = BoxLockNode::stack_slot(box);
+        OptoReg::Name box_reg = BoxLockNode::reg(box);
         st->print(" MON-BOX%d=%s+%d",
                    i,
                    OptoReg::regname(OptoReg::c_frame_pointer),
@@ -411,8 +411,7 @@ void JVMState::format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) 
       }
       const char* obj_msg = "MON-OBJ[";
       if (EliminateLocks) {
-        while( !box->is_BoxLock() )  box = box->in(1);
-        if (box->as_BoxLock()->is_eliminated())
+        if (BoxLockNode::box_node(box)->is_eliminated())
           obj_msg = "MON-OBJ(LOCK ELIMINATED)[";
       }
       format_helper( regalloc, st, obj, obj_msg, i, &scobjs );
@@ -1387,8 +1386,9 @@ bool AbstractLockNode::find_matching_unlock(const Node* ctrl, LockNode* lock,
     Node *n = ctrl_proj->in(0);
     if (n != NULL && n->is_Unlock()) {
       UnlockNode *unlock = n->as_Unlock();
-      if ((lock->obj_node() == unlock->obj_node()) &&
-          (lock->box_node() == unlock->box_node()) && !unlock->is_eliminated()) {
+      if (lock->obj_node()->eqv_uncast(unlock->obj_node()) &&
+          BoxLockNode::same_slot(lock->box_node(), unlock->box_node()) &&
+          !unlock->is_eliminated()) {
         lock_ops.append(unlock);
         return true;
       }
@@ -1431,8 +1431,8 @@ LockNode *AbstractLockNode::find_matching_lock(UnlockNode* unlock) {
   }
   if (ctrl->is_Lock()) {
     LockNode *lock = ctrl->as_Lock();
-    if ((lock->obj_node() == unlock->obj_node()) &&
-            (lock->box_node() == unlock->box_node())) {
+    if (lock->obj_node()->eqv_uncast(unlock->obj_node()) &&
+        BoxLockNode::same_slot(lock->box_node(), unlock->box_node())) {
       lock_result = lock;
     }
   }
@@ -1462,8 +1462,9 @@ bool AbstractLockNode::find_lock_and_unlock_through_if(Node* node, LockNode* loc
       }
       if (lock1_node != NULL && lock1_node->is_Lock()) {
         LockNode *lock1 = lock1_node->as_Lock();
-        if ((lock->obj_node() == lock1->obj_node()) &&
-            (lock->box_node() == lock1->box_node()) && !lock1->is_eliminated()) {
+        if (lock->obj_node()->eqv_uncast(lock1->obj_node()) &&
+            BoxLockNode::same_slot(lock->box_node(), lock1->box_node()) &&
+            !lock1->is_eliminated()) {
           lock_ops.append(lock1);
           return true;
         }
@@ -1507,19 +1508,16 @@ bool AbstractLockNode::find_unlocks_for_region(const RegionNode* region, LockNod
 void AbstractLockNode::create_lock_counter(JVMState* state) {
   _counter = OptoRuntime::new_named_counter(state, NamedCounter::LockCounter);
 }
-#endif
 
-void AbstractLockNode::set_eliminated() {
-  _eliminate = true;
-#ifndef PRODUCT
+void AbstractLockNode::set_eliminated_lock_counter() {
   if (_counter) {
     // Update the counter to indicate that this lock was eliminated.
     // The counter update code will stay around even though the
     // optimizer will eliminate the lock operation itself.
     _counter->set_tag(NamedCounter::EliminatedLockCounter);
   }
-#endif
 }
+#endif
 
 //=============================================================================
 Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -1535,7 +1533,7 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // prevents macro expansion from expanding the lock.  Since we don't
   // modify the graph, the value returned from this function is the
   // one computed above.
-  if (can_reshape && EliminateLocks && (!is_eliminated() || is_coarsened())) {
+  if (can_reshape && EliminateLocks && !is_non_esc_obj()) {
     //
     // If we are locking an unescaped object, the lock/unlock is unnecessary
     //
@@ -1544,16 +1542,11 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if (cgr != NULL)
       es = cgr->escape_state(obj_node());
     if (es != PointsToNode::UnknownEscape && es != PointsToNode::GlobalEscape) {
-      if (!is_eliminated()) {
-        // Mark it eliminated to update any counters
-        this->set_eliminated();
-      } else {
-        assert(is_coarsened(), "sanity");
-        // The lock could be marked eliminated by lock coarsening
-        // code during first IGVN before EA. Clear coarsened flag
-        // to eliminate all associated locks/unlocks.
-        this->clear_coarsened();
-      }
+      assert(!is_eliminated() || is_coarsened(), "sanity");
+      // The lock could be marked eliminated by lock coarsening
+      // code during first IGVN before EA. Replace coarsened flag
+      // to eliminate all associated locks/unlocks.
+      this->set_non_esc_obj();
       return result;
     }
 
@@ -1613,8 +1606,7 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         for (int i = 0; i < lock_ops.length(); i++) {
           AbstractLockNode* lock = lock_ops.at(i);
 
-          // Mark it eliminated to update any counters
-          lock->set_eliminated();
+          // Mark it eliminated by coarsening and update any counters
           lock->set_coarsened();
         }
       } else if (ctrl->is_Region() &&
@@ -1629,6 +1621,40 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   return result;
+}
+
+//=============================================================================
+bool LockNode::is_nested_lock_region() {
+  BoxLockNode* box = box_node()->as_BoxLock();
+  int stk_slot = box->stack_slot();
+  if (stk_slot <= 0)
+    return false; // External lock or it is not Box (Phi node).
+
+  // Ignore complex cases: merged locks or multiple locks.
+  Node* obj = obj_node();
+  LockNode* unique_lock = NULL;
+  if (!box->is_simple_lock_region(&unique_lock, obj) ||
+      (unique_lock != this)) {
+    return false;
+  }
+
+  // Look for external lock for the same object.
+  SafePointNode* sfn = this->as_SafePoint();
+  JVMState* youngest_jvms = sfn->jvms();
+  int max_depth = youngest_jvms->depth();
+  for (int depth = 1; depth <= max_depth; depth++) {
+    JVMState* jvms = youngest_jvms->of_depth(depth);
+    int num_mon  = jvms->nof_monitors();
+    // Loop over monitors
+    for (int idx = 0; idx < num_mon; idx++) {
+      Node* obj_node = sfn->monitor_obj(jvms, idx);
+      BoxLockNode* box_node = sfn->monitor_box(jvms, idx)->as_BoxLock();
+      if ((box_node->stack_slot() < stk_slot) && obj_node->eqv_uncast(obj)) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 //=============================================================================
@@ -1649,7 +1675,7 @@ Node *UnlockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // modify the graph, the value returned from this function is the
   // one computed above.
   // Escape state is defined after Parse phase.
-  if (can_reshape && EliminateLocks && (!is_eliminated() || is_coarsened())) {
+  if (can_reshape && EliminateLocks && !is_non_esc_obj()) {
     //
     // If we are unlocking an unescaped object, the lock/unlock is unnecessary.
     //
@@ -1658,16 +1684,11 @@ Node *UnlockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if (cgr != NULL)
       es = cgr->escape_state(obj_node());
     if (es != PointsToNode::UnknownEscape && es != PointsToNode::GlobalEscape) {
-      if (!is_eliminated()) {
-        // Mark it eliminated to update any counters
-        this->set_eliminated();
-      } else {
-        assert(is_coarsened(), "sanity");
-        // The lock could be marked eliminated by lock coarsening
-        // code during first IGVN before EA. Clear coarsened flag
-        // to eliminate all associated locks/unlocks.
-        this->clear_coarsened();
-      }
+      assert(!is_eliminated() || is_coarsened(), "sanity");
+      // The lock could be marked eliminated by lock coarsening
+      // code during first IGVN before EA. Replace coarsened flag
+      // to eliminate all associated locks/unlocks.
+      this->set_non_esc_obj();
     }
   }
   return result;

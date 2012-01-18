@@ -1789,7 +1789,8 @@ void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
                          slow_call_address);
 }
 
-//-----------------------mark_eliminated_locking_nodes-----------------------
+//-------------------mark_eliminated_box----------------------------------
+//
 // During EA obj may point to several objects but after few ideal graph
 // transformations (CCP) it may point to only one non escaping object
 // (but still using phi), corresponding locks and unlocks will be marked
@@ -1800,62 +1801,148 @@ void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
 // marked for elimination since new obj has no escape information.
 // Mark all associated (same box and obj) lock and unlock nodes for
 // elimination if some of them marked already.
-void PhaseMacroExpand::mark_eliminated_locking_nodes(AbstractLockNode *alock) {
-  if (!alock->is_eliminated()) {
+void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
+  if (oldbox->as_BoxLock()->is_eliminated())
+    return; // This BoxLock node was processed already.
+
+  // New implementation (EliminateNestedLocks) has separate BoxLock
+  // node for each locked region so mark all associated locks/unlocks as
+  // eliminated even if different objects are referenced in one locked region
+  // (for example, OSR compilation of nested loop inside locked scope).
+  if (EliminateNestedLocks ||
+      oldbox->as_BoxLock()->is_simple_lock_region(NULL, obj)) {
+    // Box is used only in one lock region. Mark this box as eliminated.
+    _igvn.hash_delete(oldbox);
+    oldbox->as_BoxLock()->set_eliminated(); // This changes box's hash value
+    _igvn.hash_insert(oldbox);
+
+    for (uint i = 0; i < oldbox->outcnt(); i++) {
+      Node* u = oldbox->raw_out(i);
+      if (u->is_AbstractLock() && !u->as_AbstractLock()->is_non_esc_obj()) {
+        AbstractLockNode* alock = u->as_AbstractLock();
+        // Check lock's box since box could be referenced by Lock's debug info.
+        if (alock->box_node() == oldbox) {
+          // Mark eliminated all related locks and unlocks.
+          alock->set_non_esc_obj();
+        }
+      }
+    }
     return;
   }
-  if (!alock->is_coarsened()) { // Eliminated by EA
-      // Create new "eliminated" BoxLock node and use it
-      // in monitor debug info for the same object.
-      BoxLockNode* oldbox = alock->box_node()->as_BoxLock();
-      Node* obj = alock->obj_node();
-      if (!oldbox->is_eliminated()) {
-        BoxLockNode* newbox = oldbox->clone()->as_BoxLock();
+
+  // Create new "eliminated" BoxLock node and use it in monitor debug info
+  // instead of oldbox for the same object.
+  BoxLockNode* newbox = oldbox->clone()->as_BoxLock();
+
+  // Note: BoxLock node is marked eliminated only here and it is used
+  // to indicate that all associated lock and unlock nodes are marked
+  // for elimination.
+  newbox->set_eliminated();
+  transform_later(newbox);
+
+  // Replace old box node with new box for all users of the same object.
+  for (uint i = 0; i < oldbox->outcnt();) {
+    bool next_edge = true;
+
+    Node* u = oldbox->raw_out(i);
+    if (u->is_AbstractLock()) {
+      AbstractLockNode* alock = u->as_AbstractLock();
+      if (alock->box_node() == oldbox && alock->obj_node()->eqv_uncast(obj)) {
+        // Replace Box and mark eliminated all related locks and unlocks.
+        alock->set_non_esc_obj();
+        _igvn.hash_delete(alock);
+        alock->set_box_node(newbox);
+        _igvn._worklist.push(alock);
+        next_edge = false;
+      }
+    }
+    if (u->is_FastLock() && u->as_FastLock()->obj_node()->eqv_uncast(obj)) {
+      FastLockNode* flock = u->as_FastLock();
+      assert(flock->box_node() == oldbox, "sanity");
+      _igvn.hash_delete(flock);
+      flock->set_box_node(newbox);
+      _igvn._worklist.push(flock);
+      next_edge = false;
+    }
+
+    // Replace old box in monitor debug info.
+    if (u->is_SafePoint() && u->as_SafePoint()->jvms()) {
+      SafePointNode* sfn = u->as_SafePoint();
+      JVMState* youngest_jvms = sfn->jvms();
+      int max_depth = youngest_jvms->depth();
+      for (int depth = 1; depth <= max_depth; depth++) {
+        JVMState* jvms = youngest_jvms->of_depth(depth);
+        int num_mon  = jvms->nof_monitors();
+        // Loop over monitors
+        for (int idx = 0; idx < num_mon; idx++) {
+          Node* obj_node = sfn->monitor_obj(jvms, idx);
+          Node* box_node = sfn->monitor_box(jvms, idx);
+          if (box_node == oldbox && obj_node->eqv_uncast(obj)) {
+            int j = jvms->monitor_box_offset(idx);
+            _igvn.hash_delete(u);
+            u->set_req(j, newbox);
+            _igvn._worklist.push(u);
+            next_edge = false;
+          }
+        }
+      }
+    }
+    if (next_edge) i++;
+  }
+}
+
+//-----------------------mark_eliminated_locking_nodes-----------------------
+void PhaseMacroExpand::mark_eliminated_locking_nodes(AbstractLockNode *alock) {
+  if (EliminateNestedLocks) {
+    if (alock->is_nested()) {
+       assert(alock->box_node()->as_BoxLock()->is_eliminated(), "sanity");
+       return;
+    } else if (!alock->is_non_esc_obj()) { // Not eliminated or coarsened
+      // Only Lock node has JVMState needed here.
+      if (alock->jvms() != NULL && alock->as_Lock()->is_nested_lock_region()) {
+        // Mark eliminated related nested locks and unlocks.
+        Node* obj = alock->obj_node();
+        BoxLockNode* box_node = alock->box_node()->as_BoxLock();
+        assert(!box_node->is_eliminated(), "should not be marked yet");
         // Note: BoxLock node is marked eliminated only here
         // and it is used to indicate that all associated lock
         // and unlock nodes are marked for elimination.
-        newbox->set_eliminated();
-        transform_later(newbox);
-        // Replace old box node with new box for all users
-        // of the same object.
-        for (uint i = 0; i < oldbox->outcnt();) {
-
-          bool next_edge = true;
-          Node* u = oldbox->raw_out(i);
-          if (u->is_AbstractLock() &&
-              u->as_AbstractLock()->obj_node() == obj &&
-              u->as_AbstractLock()->box_node() == oldbox) {
-            // Mark all associated locks and unlocks.
-            u->as_AbstractLock()->set_eliminated();
-            _igvn.hash_delete(u);
-            u->set_req(TypeFunc::Parms + 1, newbox);
-            next_edge = false;
+        box_node->set_eliminated(); // Box's hash is always NO_HASH here
+        for (uint i = 0; i < box_node->outcnt(); i++) {
+          Node* u = box_node->raw_out(i);
+          if (u->is_AbstractLock()) {
+            alock = u->as_AbstractLock();
+            if (alock->box_node() == box_node) {
+              // Verify that this Box is referenced only by related locks.
+              assert(alock->obj_node()->eqv_uncast(obj), "");
+              // Mark all related locks and unlocks.
+              alock->set_nested();
+            }
           }
-          // Replace old box in monitor debug info.
-          if (u->is_SafePoint() && u->as_SafePoint()->jvms()) {
-            SafePointNode* sfn = u->as_SafePoint();
-            JVMState* youngest_jvms = sfn->jvms();
-            int max_depth = youngest_jvms->depth();
-            for (int depth = 1; depth <= max_depth; depth++) {
-              JVMState* jvms = youngest_jvms->of_depth(depth);
-              int num_mon  = jvms->nof_monitors();
-              // Loop over monitors
-              for (int idx = 0; idx < num_mon; idx++) {
-                Node* obj_node = sfn->monitor_obj(jvms, idx);
-                Node* box_node = sfn->monitor_box(jvms, idx);
-                if (box_node == oldbox && obj_node == obj) {
-                  int j = jvms->monitor_box_offset(idx);
-                  _igvn.hash_delete(u);
-                  u->set_req(j, newbox);
-                  next_edge = false;
-                }
-              } // for (int idx = 0;
-            } // for (int depth = 1;
-          } // if (u->is_SafePoint()
-          if (next_edge) i++;
-        } // for (uint i = 0; i < oldbox->outcnt();)
-      } // if (!oldbox->is_eliminated())
-  } // if (!alock->is_coarsened())
+        }
+      }
+      return;
+    }
+    // Process locks for non escaping object
+    assert(alock->is_non_esc_obj(), "");
+  } // EliminateNestedLocks
+
+  if (alock->is_non_esc_obj()) { // Lock is used for non escaping object
+    // Look for all locks of this object and mark them and
+    // corresponding BoxLock nodes as eliminated.
+    Node* obj = alock->obj_node();
+    for (uint j = 0; j < obj->outcnt(); j++) {
+      Node* o = obj->raw_out(j);
+      if (o->is_AbstractLock() &&
+          o->as_AbstractLock()->obj_node()->eqv_uncast(obj)) {
+        alock = o->as_AbstractLock();
+        Node* box = alock->box_node();
+        // Replace old box node with new eliminated box for all users
+        // of the same object and mark related locks as eliminated.
+        mark_eliminated_box(box, obj);
+      }
+    }
+  }
 }
 
 // we have determined that this lock/unlock can be eliminated, we simply
@@ -1870,7 +1957,7 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
     return false;
   }
 #ifdef ASSERT
-  if (alock->is_Lock() && !alock->is_coarsened()) {
+  if (!alock->is_coarsened()) {
     // Check that new "eliminated" BoxLock node is created.
     BoxLockNode* oldbox = alock->box_node()->as_BoxLock();
     assert(oldbox->is_eliminated(), "should be done already");
@@ -1961,6 +2048,8 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   Node* obj = lock->obj_node();
   Node* box = lock->box_node();
   Node* flock = lock->fastlock_node();
+
+  assert(!box->as_BoxLock()->is_eliminated(), "sanity");
 
   // Make the merge point
   Node *region;
@@ -2195,6 +2284,8 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   Node* mem = unlock->in(TypeFunc::Memory);
   Node* obj = unlock->obj_node();
   Node* box = unlock->box_node();
+
+  assert(!box->as_BoxLock()->is_eliminated(), "sanity");
 
   // No need for a null check on unlock
 
