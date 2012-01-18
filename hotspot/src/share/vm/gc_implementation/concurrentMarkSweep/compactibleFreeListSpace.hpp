@@ -336,12 +336,6 @@ class CompactibleFreeListSpace: public CompactibleSpace {
                      unallocated_block() : end());
   }
 
-  // This is needed because the default implementation uses block_start()
-  // which can;t be used at certain times (for example phase 3 of mark-sweep).
-  // A better fix is to change the assertions in phase 3 of mark-sweep to
-  // use is_in_reserved(), but that is deferred since the is_in() assertions
-  // are buried through several layers of callers and are used elsewhere
-  // as well.
   bool is_in(const void* p) const {
     return used_region().contains(p);
   }
@@ -637,7 +631,7 @@ class CFLS_LAB : public CHeapObj {
   static AdaptiveWeightedAverage
                  _blocks_to_claim  [CompactibleFreeListSpace::IndexSetSize];
   static size_t _global_num_blocks [CompactibleFreeListSpace::IndexSetSize];
-  static int    _global_num_workers[CompactibleFreeListSpace::IndexSetSize];
+  static uint   _global_num_workers[CompactibleFreeListSpace::IndexSetSize];
   size_t        _num_blocks        [CompactibleFreeListSpace::IndexSetSize];
 
   // Internal work method

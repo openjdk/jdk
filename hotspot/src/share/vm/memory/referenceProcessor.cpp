@@ -43,7 +43,9 @@ void referenceProcessor_init() {
 }
 
 void ReferenceProcessor::init_statics() {
-  jlong now = os::javaTimeMillis();
+  // We need a monotonically non-deccreasing time in ms but
+  // os::javaTimeMillis() does not guarantee monotonicity.
+  jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
 
   // Initialize the soft ref timestamp clock.
   _soft_ref_timestamp_clock = now;
@@ -86,9 +88,9 @@ void ReferenceProcessor::enable_discovery(bool verify_disabled, bool check_no_re
 
 ReferenceProcessor::ReferenceProcessor(MemRegion span,
                                        bool      mt_processing,
-                                       int       mt_processing_degree,
+                                       uint      mt_processing_degree,
                                        bool      mt_discovery,
-                                       int       mt_discovery_degree,
+                                       uint      mt_discovery_degree,
                                        bool      atomic_discovery,
                                        BoolObjectClosure* is_alive_non_header,
                                        bool      discovered_list_needs_barrier)  :
@@ -103,7 +105,7 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
   _span = span;
   _discovery_is_atomic = atomic_discovery;
   _discovery_is_mt     = mt_discovery;
-  _num_q               = MAX2(1, mt_processing_degree);
+  _num_q               = MAX2(1U, mt_processing_degree);
   _max_num_q           = MAX2(_num_q, mt_discovery_degree);
   _discovered_refs     = NEW_C_HEAP_ARRAY(DiscoveredList,
                                           _max_num_q * number_of_subclasses_of_ref());
@@ -116,7 +118,7 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
   _discoveredPhantomRefs = &_discoveredFinalRefs[_max_num_q];
 
   // Initialize all entries to NULL
-  for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
+  for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
     _discovered_refs[i].set_head(NULL);
     _discovered_refs[i].set_length(0);
   }
@@ -131,7 +133,7 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
 #ifndef PRODUCT
 void ReferenceProcessor::verify_no_references_recorded() {
   guarantee(!_discovering_refs, "Discovering refs?");
-  for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
+  for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
     guarantee(_discovered_refs[i].is_empty(),
               "Found non-empty discovered list");
   }
@@ -139,7 +141,7 @@ void ReferenceProcessor::verify_no_references_recorded() {
 #endif
 
 void ReferenceProcessor::weak_oops_do(OopClosure* f) {
-  for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
+  for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
     if (UseCompressedOops) {
       f->do_oop((narrowOop*)_discovered_refs[i].adr_head());
     } else {
@@ -151,7 +153,10 @@ void ReferenceProcessor::weak_oops_do(OopClosure* f) {
 void ReferenceProcessor::update_soft_ref_master_clock() {
   // Update (advance) the soft ref master clock field. This must be done
   // after processing the soft ref list.
-  jlong now = os::javaTimeMillis();
+
+  // We need a monotonically non-deccreasing time in ms but
+  // os::javaTimeMillis() does not guarantee monotonicity.
+  jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
   jlong soft_ref_clock = java_lang_ref_SoftReference::clock();
   assert(soft_ref_clock == _soft_ref_timestamp_clock, "soft ref clocks out of sync");
 
@@ -161,10 +166,11 @@ void ReferenceProcessor::update_soft_ref_master_clock() {
             _soft_ref_timestamp_clock, now);
   }
   )
-  // In product mode, protect ourselves from system time being adjusted
-  // externally and going backward; see note in the implementation of
-  // GenCollectedHeap::time_since_last_gc() for the right way to fix
-  // this uniformly throughout the VM; see bug-id 4741166. XXX
+  // The values of now and _soft_ref_timestamp_clock are set using
+  // javaTimeNanos(), which is guaranteed to be monotonically
+  // non-decreasing provided the underlying platform provides such
+  // a time source (and it is bug free).
+  // In product mode, however, protect ourselves from non-monotonicty.
   if (now > _soft_ref_timestamp_clock) {
     _soft_ref_timestamp_clock = now;
     java_lang_ref_SoftReference::set_clock(now);
@@ -431,7 +437,7 @@ void ReferenceProcessor::enqueue_discovered_reflists(HeapWord* pending_list_addr
     task_executor->execute(tsk);
   } else {
     // Serial code: call the parent class's implementation
-    for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
+    for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
       enqueue_discovered_reflist(_discovered_refs[i], pending_list_addr);
       _discovered_refs[i].set_head(NULL);
       _discovered_refs[i].set_length(0);
@@ -690,7 +696,7 @@ ReferenceProcessor::abandon_partial_discovered_list(DiscoveredList& refs_list) {
 
 void ReferenceProcessor::abandon_partial_discovery() {
   // loop over the lists
-  for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
+  for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
     if (TraceReferenceGC && PrintGCDetails && ((i % _max_num_q) == 0)) {
       gclog_or_tty->print_cr("\nAbandoning %s discovered list", list_name(i));
     }
@@ -781,7 +787,7 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
     gclog_or_tty->print_cr("\nBalance ref_lists ");
   }
 
-  for (int i = 0; i < _max_num_q; ++i) {
+  for (uint i = 0; i < _max_num_q; ++i) {
     total_refs += ref_lists[i].length();
     if (TraceReferenceGC && PrintGCDetails) {
       gclog_or_tty->print("%d ", ref_lists[i].length());
@@ -791,8 +797,8 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
     gclog_or_tty->print_cr(" = %d", total_refs);
   }
   size_t avg_refs = total_refs / _num_q + 1;
-  int to_idx = 0;
-  for (int from_idx = 0; from_idx < _max_num_q; from_idx++) {
+  uint to_idx = 0;
+  for (uint from_idx = 0; from_idx < _max_num_q; from_idx++) {
     bool move_all = false;
     if (from_idx >= _num_q) {
       move_all = ref_lists[from_idx].length() > 0;
@@ -851,7 +857,7 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
   }
 #ifdef ASSERT
   size_t balanced_total_refs = 0;
-  for (int i = 0; i < _max_num_q; ++i) {
+  for (uint i = 0; i < _max_num_q; ++i) {
     balanced_total_refs += ref_lists[i].length();
     if (TraceReferenceGC && PrintGCDetails) {
       gclog_or_tty->print("%d ", ref_lists[i].length());
@@ -897,7 +903,7 @@ ReferenceProcessor::process_discovered_reflist(
   }
   if (PrintReferenceGC && PrintGCDetails) {
     size_t total = 0;
-    for (int i = 0; i < _max_num_q; ++i) {
+    for (uint i = 0; i < _max_num_q; ++i) {
       total += refs_lists[i].length();
     }
     gclog_or_tty->print(", %u refs", total);
@@ -913,7 +919,7 @@ ReferenceProcessor::process_discovered_reflist(
       RefProcPhase1Task phase1(*this, refs_lists, policy, true /*marks_oops_alive*/);
       task_executor->execute(phase1);
     } else {
-      for (int i = 0; i < _max_num_q; i++) {
+      for (uint i = 0; i < _max_num_q; i++) {
         process_phase1(refs_lists[i], policy,
                        is_alive, keep_alive, complete_gc);
       }
@@ -929,7 +935,7 @@ ReferenceProcessor::process_discovered_reflist(
     RefProcPhase2Task phase2(*this, refs_lists, !discovery_is_atomic() /*marks_oops_alive*/);
     task_executor->execute(phase2);
   } else {
-    for (int i = 0; i < _max_num_q; i++) {
+    for (uint i = 0; i < _max_num_q; i++) {
       process_phase2(refs_lists[i], is_alive, keep_alive, complete_gc);
     }
   }
@@ -940,7 +946,7 @@ ReferenceProcessor::process_discovered_reflist(
     RefProcPhase3Task phase3(*this, refs_lists, clear_referent, true /*marks_oops_alive*/);
     task_executor->execute(phase3);
   } else {
-    for (int i = 0; i < _max_num_q; i++) {
+    for (uint i = 0; i < _max_num_q; i++) {
       process_phase3(refs_lists[i], clear_referent,
                      is_alive, keep_alive, complete_gc);
     }
@@ -949,7 +955,7 @@ ReferenceProcessor::process_discovered_reflist(
 
 void ReferenceProcessor::clean_up_discovered_references() {
   // loop over the lists
-  for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
+  for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
     if (TraceReferenceGC && PrintGCDetails && ((i % _max_num_q) == 0)) {
       gclog_or_tty->print_cr(
         "\nScrubbing %s discovered list of Null referents",
@@ -994,7 +1000,7 @@ void ReferenceProcessor::clean_up_discovered_reflist(DiscoveredList& refs_list) 
 }
 
 inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt) {
-  int id = 0;
+  uint id = 0;
   // Determine the queue index to use for this object.
   if (_discovery_is_mt) {
     // During a multi-threaded discovery phase,
@@ -1276,7 +1282,7 @@ void ReferenceProcessor::preclean_discovered_references(
   {
     TraceTime tt("Preclean SoftReferences", PrintGCDetails && PrintReferenceGC,
               false, gclog_or_tty);
-    for (int i = 0; i < _max_num_q; i++) {
+    for (uint i = 0; i < _max_num_q; i++) {
       if (yield->should_return()) {
         return;
       }
@@ -1289,7 +1295,7 @@ void ReferenceProcessor::preclean_discovered_references(
   {
     TraceTime tt("Preclean WeakReferences", PrintGCDetails && PrintReferenceGC,
               false, gclog_or_tty);
-    for (int i = 0; i < _max_num_q; i++) {
+    for (uint i = 0; i < _max_num_q; i++) {
       if (yield->should_return()) {
         return;
       }
@@ -1302,7 +1308,7 @@ void ReferenceProcessor::preclean_discovered_references(
   {
     TraceTime tt("Preclean FinalReferences", PrintGCDetails && PrintReferenceGC,
               false, gclog_or_tty);
-    for (int i = 0; i < _max_num_q; i++) {
+    for (uint i = 0; i < _max_num_q; i++) {
       if (yield->should_return()) {
         return;
       }
@@ -1315,7 +1321,7 @@ void ReferenceProcessor::preclean_discovered_references(
   {
     TraceTime tt("Preclean PhantomReferences", PrintGCDetails && PrintReferenceGC,
               false, gclog_or_tty);
-    for (int i = 0; i < _max_num_q; i++) {
+    for (uint i = 0; i < _max_num_q; i++) {
       if (yield->should_return()) {
         return;
       }
@@ -1380,7 +1386,7 @@ ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
   )
 }
 
-const char* ReferenceProcessor::list_name(int i) {
+const char* ReferenceProcessor::list_name(uint i) {
    assert(i >= 0 && i <= _max_num_q * number_of_subclasses_of_ref(),
           "Out of bounds index");
 
@@ -1404,7 +1410,7 @@ void ReferenceProcessor::verify_ok_to_handle_reflists() {
 #ifndef PRODUCT
 void ReferenceProcessor::clear_discovered_references() {
   guarantee(!_discovering_refs, "Discovering refs?");
-  for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
+  for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
     clear_discovered_references(_discovered_refs[i]);
   }
 }

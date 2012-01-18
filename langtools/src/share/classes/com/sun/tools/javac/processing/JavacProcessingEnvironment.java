@@ -82,7 +82,7 @@ import com.sun.tools.javac.util.Options;
 
 import static javax.tools.StandardLocation.*;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
-import static com.sun.tools.javac.main.OptionName.*;
+import static com.sun.tools.javac.main.Option.*;
 import static com.sun.tools.javac.code.Lint.LintCategory.PROCESSING;
 
 /**
@@ -1033,12 +1033,10 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             Assert.checkNonNull(options);
             next.put(Options.optionsKey, options);
 
-            PrintWriter out = context.get(Log.outKey);
-            Assert.checkNonNull(out);
-            next.put(Log.outKey, out);
             Locale locale = context.get(Locale.class);
             if (locale != null)
                 next.put(Locale.class, locale);
+
             Assert.checkNonNull(messages);
             next.put(JavacMessages.messagesKey, messages);
 
@@ -1075,6 +1073,9 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             Tokens tokens = Tokens.instance(context);
             Assert.checkNonNull(tokens);
             next.put(Tokens.tokensKey, tokens);
+
+            // propogate the log's writers directly, instead of going through context
+            Log.instance(next).setWriters(log);
 
             JavaCompiler oldCompiler = JavaCompiler.instance(context);
             JavaCompiler nextCompiler = JavaCompiler.instance(next);
@@ -1470,14 +1471,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      */
     public Context getContext() {
         return context;
-    }
-
-    /**
-     * Internal use method to return the writer being used by the
-     * processing environment.
-     */
-    public PrintWriter getWriter() {
-        return context.get(Log.outKey);
     }
 
     public String toString() {

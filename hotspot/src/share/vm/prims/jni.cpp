@@ -5037,15 +5037,24 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetDefaultJavaVMInitArgs(void *args_) {
 
 #ifndef PRODUCT
 
+#include "gc_interface/collectedHeap.hpp"
 #include "utilities/quickSort.hpp"
+
+#define run_unit_test(unit_test_function_call)              \
+  tty->print_cr("Running test: " #unit_test_function_call); \
+  unit_test_function_call
 
 void execute_internal_vm_tests() {
   if (ExecuteInternalVMTests) {
-    assert(QuickSort::test_quick_sort(), "test_quick_sort failed");
-    assert(arrayOopDesc::test_max_array_length(), "test_max_array_length failed");
+    tty->print_cr("Running internal VM tests");
+    run_unit_test(arrayOopDesc::test_max_array_length());
+    run_unit_test(CollectedHeap::test_is_in());
+    run_unit_test(QuickSort::test_quick_sort());
     tty->print_cr("All internal VM tests passed");
   }
 }
+
+#undef run_unit_test
 
 #endif
 

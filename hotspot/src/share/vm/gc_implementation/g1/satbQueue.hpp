@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,26 @@
 
 class ObjectClosure;
 class JavaThread;
+class SATBMarkQueueSet;
 
 // A ptrQueue whose elements are "oops", pointers to object heads.
 class ObjPtrQueue: public PtrQueue {
+  friend class SATBMarkQueueSet;
+
+private:
+  // Filter out unwanted entries from the buffer.
+  void filter();
+
+  // Apply the closure to all elements.
+  void apply_closure(ObjectClosure* cl);
+
+  // Apply the closure to all elements and empty the buffer;
+  void apply_closure_and_empty(ObjectClosure* cl);
+
+  // Apply the closure to all elements of "buf", down to "index" (inclusive.)
+  static void apply_closure_to_buffer(ObjectClosure* cl,
+                                      void** buf, size_t index, size_t sz);
+
 public:
   ObjPtrQueue(PtrQueueSet* qset, bool perm = false) :
     // SATB queues are only active during marking cycles. We create
@@ -41,22 +58,22 @@ public:
     // field to true. This is done in JavaThread::initialize_queues().
     PtrQueue(qset, perm, false /* active */) { }
 
+  // Overrides PtrQueue::flush() so that it can filter the buffer
+  // before it is flushed.
+  virtual void flush();
+
   // Overrides PtrQueue::should_enqueue_buffer(). See the method's
   // definition for more information.
   virtual bool should_enqueue_buffer();
 
-  // Apply the closure to all elements, and reset the index to make the
-  // buffer empty.
-  void apply_closure(ObjectClosure* cl);
-
-  // Apply the closure to all elements of "buf", down to "index" (inclusive.)
-  static void apply_closure_to_buffer(ObjectClosure* cl,
-                                      void** buf, size_t index, size_t sz);
+#ifndef PRODUCT
+  // Helpful for debugging
+  void print(const char* name);
+  static void print(const char* name, void** buf, size_t index, size_t sz);
+#endif // PRODUCT
 
   void verify_oops_in_buffer() NOT_DEBUG_RETURN;
 };
-
-
 
 class SATBMarkQueueSet: public PtrQueueSet {
   ObjectClosure* _closure;
@@ -88,6 +105,9 @@ public:
   // set itself, has an active value same as expected_active.
   void set_active_all_threads(bool b, bool expected_active);
 
+  // Filter all the currently-active SATB buffers.
+  void filter_thread_buffers();
+
   // Register "blk" as "the closure" for all queues.  Only one such closure
   // is allowed.  The "apply_closure_to_completed_buffer" method will apply
   // this closure to a completed buffer, and "iterate_closure_all_threads"
@@ -98,10 +118,9 @@ public:
   // closures, one for each parallel GC thread.
   void set_par_closure(int i, ObjectClosure* closure);
 
-  // If there is a registered closure for buffers, apply it to all entries
-  // in all currently-active buffers.  This should only be applied at a
-  // safepoint.  (Currently must not be called in parallel; this should
-  // change in the future.)
+  // Apply the registered closure to all entries on each
+  // currently-active buffer and then empty the buffer. It should only
+  // be called serially and at a safepoint.
   void iterate_closure_all_threads();
   // Parallel version of the above.
   void par_iterate_closure_all_threads(int worker);
@@ -117,11 +136,21 @@ public:
     return apply_closure_to_completed_buffer_work(true, worker);
   }
 
+  // Apply the given closure on enqueued and currently-active buffers
+  // respectively. Both methods are read-only, i.e., they do not
+  // modify any of the buffers.
+  void iterate_completed_buffers_read_only(ObjectClosure* cl);
+  void iterate_thread_buffers_read_only(ObjectClosure* cl);
+
+#ifndef PRODUCT
+  // Helpful for debugging
+  void print_all(const char* msg);
+#endif // PRODUCT
+
   ObjPtrQueue* shared_satb_queue() { return &_shared_satb_queue; }
 
   // If a marking is being abandoned, reset any unprocessed log buffers.
   void abandon_partial_marking();
-
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_SATBQUEUE_HPP

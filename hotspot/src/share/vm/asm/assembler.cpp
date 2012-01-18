@@ -61,6 +61,7 @@ AbstractAssembler::AbstractAssembler(CodeBuffer* code) {
   _code_limit  = cs->limit();
   _code_pos    = cs->end();
   _oop_recorder= code->oop_recorder();
+  DEBUG_ONLY( _short_branch_delta = 0; )
   if (_code_begin == NULL)  {
     vm_exit_out_of_memory(0, err_msg("CodeCache: no room for %s",
                                      code->name()));

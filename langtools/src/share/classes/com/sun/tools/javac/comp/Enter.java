@@ -34,7 +34,7 @@ import com.sun.tools.javac.code.Scope.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.jvm.*;
-import com.sun.tools.javac.main.RecognizedOptions.PkgInfo;
+import com.sun.tools.javac.main.Option.PkgInfo;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;

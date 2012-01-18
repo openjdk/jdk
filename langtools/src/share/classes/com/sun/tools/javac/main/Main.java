@@ -42,14 +42,12 @@ import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.file.CacheFSInfo;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Target;
-import com.sun.tools.javac.main.JavacOption.Option;
-import com.sun.tools.javac.main.RecognizedOptions.OptionHelper;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Log.WriterKind;
 import com.sun.tools.javac.util.Log.PrefixKind;
 import com.sun.tools.javac.processing.AnnotationProcessingError;
 
-import static com.sun.tools.javac.main.OptionName.*;
+import static com.sun.tools.javac.main.Option.*;
 
 /** This class provides a commandline interface to the GJC compiler.
  *
@@ -99,42 +97,51 @@ public class Main {
         public final int exitCode;
     }
 
-    private Option[] recognizedOptions = RecognizedOptions.getJavaCompilerOptions(new OptionHelper() {
+    private Option[] recognizedOptions =
+            Option.getJavaCompilerOptions().toArray(new Option[0]);
 
-        public void setOut(PrintWriter out) {
-            Main.this.out = out;
-            Main.this.log.setWriters(out);
+    private OptionHelper optionHelper = new OptionHelper() {
+        @Override
+        public String get(Option option) {
+            return options.get(option);
         }
 
+        @Override
+        public void put(String name, String value) {
+            options.put(name, value);
+        }
+
+        @Override
+        public void remove(String name) {
+            options.remove(name);
+        }
+
+        @Override
+        public Log getLog() {
+            return log;
+        }
+
+        @Override
+        public String getOwnName() {
+            return ownName;
+        }
+
+        @Override
         public void error(String key, Object... args) {
             Main.this.error(key, args);
         }
 
-        public void printVersion() {
-            log.printLines(PrefixKind.JAVAC, "version", ownName,  JavaCompiler.version());
-        }
-
-        public void printFullVersion() {
-            log.printLines(PrefixKind.JAVAC, "fullVersion", ownName,  JavaCompiler.fullVersion());
-        }
-
-        public void printHelp() {
-            help();
-        }
-
-        public void printXhelp() {
-            xhelp();
-        }
-
+        @Override
         public void addFile(File f) {
             filenames.add(f);
         }
 
+        @Override
         public void addClassName(String s) {
             classnames.append(s);
         }
 
-    });
+    };
 
     /**
      * Construct a compiler instance.
@@ -160,26 +167,6 @@ public class Main {
     /** List of class files names passed on the command line
      */
     public ListBuffer<String> classnames = null; // XXX sb protected
-
-    /** Print a string that explains usage.
-     */
-    void help() {
-        log.printLines(PrefixKind.JAVAC, "msg.usage.header", ownName);
-        for (int i=0; i<recognizedOptions.length; i++) {
-            recognizedOptions[i].help(log);
-        }
-        log.printNewline();
-    }
-
-    /** Print a string that explains usage for X options.
-     */
-    void xhelp() {
-        for (int i=0; i<recognizedOptions.length; i++) {
-            recognizedOptions[i].xhelp(log);
-        }
-        log.printNewline();
-        log.printLines(PrefixKind.JAVAC, "msg.usage.nonstandard.footer");
-    }
 
     /** Report a usage error.
      */
@@ -253,10 +240,10 @@ public class Main {
                 }
                 String operand = flags[ac];
                 ac++;
-                if (option.process(options, flag, operand))
+                if (option.process(optionHelper, flag, operand))
                     return null;
             } else {
-                if (option.process(options, flag))
+                if (option.process(optionHelper, flag))
                     return null;
             }
         }
@@ -317,8 +304,8 @@ public class Main {
         return filenames;
     }
     // where
-        private boolean checkDirectory(OptionName optName) {
-            String value = options.get(optName);
+        private boolean checkDirectory(Option option) {
+            String value = options.get(option);
             if (value == null)
                 return true;
             File file = new File(value);
@@ -375,7 +362,7 @@ public class Main {
          */
         try {
             if (args.length == 0 && fileObjects.isEmpty()) {
-                help();
+                Option.HELP.process(optionHelper, "-help");
                 return Result.CMDERR;
             }
 
@@ -407,8 +394,7 @@ public class Main {
             boolean forceStdOut = options.isSet("stdout");
             if (forceStdOut) {
                 log.flush();
-                out = new PrintWriter(System.out, true);
-                log.setWriters(out);
+                log.setWriters(new PrintWriter(System.out, true));
             }
 
             // allow System property in following line as a Mustang legacy

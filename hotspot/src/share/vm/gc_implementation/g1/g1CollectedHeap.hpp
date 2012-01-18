@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,6 +284,14 @@ private:
   // The last old region we allocated to during the last GC.
   // Typically, it is not full so we should re-use it during the next GC.
   HeapRegion* _retained_old_gc_alloc_region;
+
+  // It specifies whether we should attempt to expand the heap after a
+  // region allocation failure. If heap expansion fails we set this to
+  // false so that we don't re-attempt the heap expansion (it's likely
+  // that subsequent expansion attempts will also fail if one fails).
+  // Currently, it is only consulted during GC and it's reset at the
+  // start of each GC.
+  bool _expand_heap_after_alloc_failure;
 
   // It resets the mutator alloc region before new allocations can take place.
   void init_mutator_alloc_region();
@@ -861,8 +869,7 @@ protected:
   void finalize_for_evac_failure();
 
   // An attempt to evacuate "obj" has failed; take necessary steps.
-  oop handle_evacuation_failure_par(OopsInHeapRegionClosure* cl, oop obj,
-                                    bool should_mark_root);
+  oop handle_evacuation_failure_par(OopsInHeapRegionClosure* cl, oop obj);
   void handle_evacuation_failure_common(oop obj, markOop m);
 
   // ("Weak") Reference processing support.
@@ -943,8 +950,18 @@ protected:
   // discovery.
   G1CMIsAliveClosure _is_alive_closure_cm;
 
+  // Cache used by G1CollectedHeap::start_cset_region_for_worker().
+  HeapRegion** _worker_cset_start_region;
+
+  // Time stamp to validate the regions recorded in the cache
+  // used by G1CollectedHeap::start_cset_region_for_worker().
+  // The heap region entry for a given worker is valid iff
+  // the associated time stamp value matches the current value
+  // of G1CollectedHeap::_gc_time_stamp.
+  unsigned int* _worker_cset_start_region_time_stamp;
+
   enum G1H_process_strong_roots_tasks {
-    G1H_PS_mark_stack_oops_do,
+    G1H_PS_filter_satb_buffers,
     G1H_PS_refProcessor_oops_do,
     // Leave this one last.
     G1H_PS_NumElements
@@ -985,7 +1002,7 @@ public:
   // Initialize weak reference processing.
   virtual void ref_processing_init();
 
-  void set_par_threads(int t) {
+  void set_par_threads(uint t) {
     SharedHeap::set_par_threads(t);
     // Done in SharedHeap but oddly there are
     // two _process_strong_tasks's in a G1CollectedHeap
@@ -1030,6 +1047,9 @@ public:
   void reset_gc_time_stamp() {
     _gc_time_stamp = 0;
     OrderAccess::fence();
+    // Clear the cached CSet starting regions and time stamps.
+    // Their validity is dependent on the GC timestamp.
+    clear_cset_start_regions();
   }
 
   void increment_gc_time_stamp() {
@@ -1196,7 +1216,7 @@ public:
                                        HumongousRegionSet* humongous_proxy_set,
                                        bool par);
 
-  // Returns "TRUE" iff "p" points into the allocated area of the heap.
+  // Returns "TRUE" iff "p" points into the committed areas of the heap.
   virtual bool is_in(const void* p) const;
 
   // Return "TRUE" iff the given object address is within the collection
@@ -1285,12 +1305,16 @@ public:
   // chunk.)  For now requires that "doHeapRegion" always returns "false",
   // i.e., that a closure never attempt to abort a traversal.
   void heap_region_par_iterate_chunked(HeapRegionClosure* blk,
-                                       int worker,
-                                       int no_of_par_workers,
+                                       uint worker,
+                                       uint no_of_par_workers,
                                        jint claim_value);
 
   // It resets all the region claim values to the default.
   void reset_heap_region_claim_values();
+
+  // Resets the claim values of regions in the current
+  // collection set to the default.
+  void reset_cset_heap_region_claim_values();
 
 #ifdef ASSERT
   bool check_heap_region_claim_values(jint claim_value);
@@ -1300,9 +1324,12 @@ public:
   bool check_cset_heap_region_claim_values(jint claim_value);
 #endif // ASSERT
 
-  // Given the id of a worker, calculate a suitable
-  // starting region for iterating over the current
-  // collection set.
+  // Clear the cached cset start regions and (more importantly)
+  // the time stamps. Called when we reset the GC time stamp.
+  void clear_cset_start_regions();
+
+  // Given the id of a worker, obtain or calculate a suitable
+  // starting region for iterating over the current collection set.
   HeapRegion* start_cset_region_for_worker(int worker_i);
 
   // Iterate over the regions (if any) in the current collection set.
@@ -1724,10 +1751,8 @@ public:
       _gclab_word_size(gclab_word_size),
       _real_start_word(NULL),
       _real_end_word(NULL),
-      _start_word(NULL)
-  {
-    guarantee( size_in_words() >= bitmap_size_in_words(),
-               "just making sure");
+      _start_word(NULL) {
+    guarantee(false, "GCLabBitMap::GCLabBitmap(): don't call this any more");
   }
 
   inline unsigned heapWordToOffset(HeapWord* addr) {
@@ -1781,6 +1806,8 @@ public:
   }
 
   void set_buffer(HeapWord* start) {
+    guarantee(false, "set_buffer(): don't call this any more");
+
     guarantee(use_local_bitmaps, "invariant");
     clear();
 
@@ -1804,6 +1831,8 @@ public:
 #endif // PRODUCT
 
   void retire() {
+    guarantee(false, "retire(): don't call this any more");
+
     guarantee(use_local_bitmaps, "invariant");
     assert(fields_well_formed(), "invariant");
 
@@ -1837,32 +1866,18 @@ public:
 class G1ParGCAllocBuffer: public ParGCAllocBuffer {
 private:
   bool        _retired;
-  bool        _should_mark_objects;
-  GCLabBitMap _bitmap;
 
 public:
   G1ParGCAllocBuffer(size_t gclab_word_size);
 
-  inline bool mark(HeapWord* addr) {
-    guarantee(use_local_bitmaps, "invariant");
-    assert(_should_mark_objects, "invariant");
-    return _bitmap.mark(addr);
-  }
-
-  inline void set_buf(HeapWord* buf) {
-    if (use_local_bitmaps && _should_mark_objects) {
-      _bitmap.set_buffer(buf);
-    }
+  void set_buf(HeapWord* buf) {
     ParGCAllocBuffer::set_buf(buf);
     _retired = false;
   }
 
-  inline void retire(bool end_of_gc, bool retain) {
+  void retire(bool end_of_gc, bool retain) {
     if (_retired)
       return;
-    if (use_local_bitmaps && _should_mark_objects) {
-      _bitmap.retire();
-    }
     ParGCAllocBuffer::retire(end_of_gc, retain);
     _retired = true;
   }

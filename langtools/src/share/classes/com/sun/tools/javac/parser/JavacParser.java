@@ -787,7 +787,7 @@ public class JavacParser implements Parser {
             top++;
             topOp = token;
             nextToken();
-            odStack[top] = (topOp.kind == INSTANCEOF) ? parseType() : term3NoParams();
+            odStack[top] = (topOp.kind == INSTANCEOF) ? parseType() : term3();
             while (top > 0 && prec(topOp.kind) >= prec(token.kind)) {
                 odStack[top-1] = makeOp(topOp.pos, topOp.kind, odStack[top-1],
                                         odStack[top]);
@@ -931,7 +931,7 @@ public class JavacParser implements Parser {
                     mode = EXPR;
                     t = literal(names.hyphen, pos);
                 } else {
-                    t = term3NoParams();
+                    t = term3();
                     return F.at(pos).Unary(unoptag(tk), t);
                 }
             } else return illegal();
@@ -947,8 +947,8 @@ public class JavacParser implements Parser {
                     break;
                 } else {
                     nextToken();
-                    mode = EXPR | TYPE;
-                    t = term3NoParams();
+                    mode = EXPR | TYPE | NOPARAMS;
+                    t = term3();
                     if ((mode & TYPE) != 0 && token.kind == LT) {
                         // Could be a cast to a parameterized type
                         JCTree.Tag op = JCTree.Tag.LT;
@@ -1011,7 +1011,7 @@ public class JavacParser implements Parser {
                 lastmode = mode;
                 mode = EXPR;
                 if ((lastmode & EXPR) == 0) {
-                    JCExpression t1 = term3NoParams();
+                    JCExpression t1 = term3();
                     return F.at(pos).TypeCast(t, t1);
                 } else if ((lastmode & TYPE) != 0) {
                     switch (token.kind) {
@@ -1024,7 +1024,7 @@ public class JavacParser implements Parser {
                         case NEW: case IDENTIFIER: case ASSERT: case ENUM:
                     case BYTE: case SHORT: case CHAR: case INT:
                     case LONG: case FLOAT: case DOUBLE: case BOOLEAN: case VOID:
-                        JCExpression t1 = term3NoParams();
+                        JCExpression t1 = term3();
                         return F.at(pos).TypeCast(t, t1);
                     }
                 }
@@ -1143,49 +1143,35 @@ public class JavacParser implements Parser {
                         // typeArgs saved for next loop iteration.
                         t = toP(F.at(pos).Select(t, ident()));
                         break;
-//                    case LT:
-//                        if ((mode & (TYPE | NOPARAMS)) == 0) {
-//                            //could be an unbound method reference whose qualifier
-//                            //is a generic type i.e. A<S>#m
-//                            mode = EXPR | TYPE;
-//                            JCTree.Tag op = JCTree.Tag.LT;
-//                            int pos1 = token.pos;
-//                            nextToken();
-//                            mode |= EXPR | TYPE | TYPEARG;
-//                            JCExpression t1 = term3();
-//                            if ((mode & TYPE) != 0 &&
-//                                (token.kind == COMMA || token.kind == GT)) {
-//                                mode = TYPE;
-//                                ListBuffer<JCExpression> args = new ListBuffer<JCExpression>();
-//                                args.append(t1);
-//                                while (token.kind == COMMA) {
-//                                    nextToken();
-//                                    args.append(typeArgument());
-//                                }
-//                                accept(GT);
-//                                t = toP(F.at(pos1).TypeApply(t, args.toList()));
-//                                checkGenerics();
-//                                while (token.kind == DOT) {
-//                                    nextToken();
-//                                    mode = TYPE;
-//                                    t = toP(F.at(token.pos).Select(t, ident()));
-//                                    t = typeArgumentsOpt(t);
-//                                }
-//                                if (token.kind != HASH) {
-//                                    //method reference expected here
-//                                    t = illegal();
-//                                }
-//                                mode = EXPR;
-//                                break;
-//                            } else if ((mode & EXPR) != 0) {
-//                                //rollback - it was a binary expression
-//                                mode = EXPR;
-//                                JCExpression e = term2Rest(t1, TreeInfo.shiftPrec);
-//                                t = F.at(pos1).Binary(op, t, e);
-//                                t = termRest(term1Rest(term2Rest(t, TreeInfo.orPrec)));
-//                            }
-//                        }
-//                        break loop;
+                    case LT:
+                        if ((mode & TYPE) == 0 && isUnboundMemberRef()) {
+                            //this is an unbound method reference whose qualifier
+                            //is a generic type i.e. A<S>#m
+                            int pos1 = token.pos;
+                            accept(LT);
+                            ListBuffer<JCExpression> args = new ListBuffer<JCExpression>();
+                            args.append(typeArgument());
+                            while (token.kind == COMMA) {
+                                nextToken();
+                                args.append(typeArgument());
+                            }
+                            accept(GT);
+                            t = toP(F.at(pos1).TypeApply(t, args.toList()));
+                            checkGenerics();
+                            while (token.kind == DOT) {
+                                nextToken();
+                                mode = TYPE;
+                                t = toP(F.at(token.pos).Select(t, ident()));
+                                t = typeArgumentsOpt(t);
+                            }
+                            if (token.kind != HASH) {
+                                //method reference expected here
+                                t = illegal();
+                            }
+                            mode = EXPR;
+                            return term3Rest(t, typeArgs);
+                        }
+                        break loop;
                     default:
                         break loop;
                     }
@@ -1223,15 +1209,6 @@ public class JavacParser implements Parser {
             return illegal();
         }
         return term3Rest(t, typeArgs);
-    }
-
-    JCExpression term3NoParams() {
-        try {
-            mode |= NOPARAMS;
-            return term3();
-        } finally {
-            mode &= ~NOPARAMS;
-        }
     }
 
     JCExpression term3Rest(JCExpression t, List<JCExpression> typeArgs) {
@@ -1295,6 +1272,41 @@ public class JavacParser implements Parser {
             nextToken();
         }
         return toP(t);
+    }
+
+    /**
+     * If we see an identifier followed by a '&lt;' it could be an unbound
+     * method reference or a binary expression. To disambiguate, look for a
+     * matching '&gt;' and see if the subsequent terminal is either '.' or '#'.
+     */
+    @SuppressWarnings("fallthrough")
+    boolean isUnboundMemberRef() {
+        int pos = 0, depth = 0;
+        for (Token t = S.token(pos) ; ; t = S.token(++pos)) {
+            switch (t.kind) {
+                case IDENTIFIER: case QUES: case EXTENDS: case SUPER:
+                case DOT: case RBRACKET: case LBRACKET: case COMMA:
+                case BYTE: case SHORT: case INT: case LONG: case FLOAT:
+                case DOUBLE: case BOOLEAN: case CHAR:
+                    break;
+                case LT:
+                    depth++; break;
+                case GTGTGT:
+                    depth--;
+                case GTGT:
+                    depth--;
+                case GT:
+                    depth--;
+                    if (depth == 0) {
+                        return
+                            S.token(pos + 1).kind == TokenKind.DOT ||
+                            S.token(pos + 1).kind == TokenKind.HASH;
+                    }
+                    break;
+                default:
+                    return false;
+            }
+        }
     }
 
     JCExpression lambdaExpressionOrStatement(JCVariableDecl firstParam, int pos) {
