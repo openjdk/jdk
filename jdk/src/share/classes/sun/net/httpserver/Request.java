@@ -203,6 +203,13 @@ class Request {
                 v = new String();
             else
                 v = String.copyValueOf(s, keyend, len - keyend);
+
+            if (hdrs.size() >= ServerConfig.getMaxReqHeaders()) {
+                throw new IOException("Maximum number of request headers (" +
+                        "sun.net.httpserver.maxReqHeaders) exceeded, " +
+                        ServerConfig.getMaxReqHeaders() + ".");
+            }
+
             hdrs.add (k,v);
             len = 0;
         }
