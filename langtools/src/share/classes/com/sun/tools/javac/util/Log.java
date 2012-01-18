@@ -25,25 +25,23 @@
 
 package com.sun.tools.javac.util;
 
-import com.sun.tools.javac.main.Main;
 import java.io.*;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.api.DiagnosticFormatter;
-import com.sun.tools.javac.main.OptionName;
+import com.sun.tools.javac.main.Main;
+import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.parser.EndPosTable;
-import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 
-import static com.sun.tools.javac.main.OptionName.*;
+import static com.sun.tools.javac.main.Option.*;
 
 /** A class for error logs. Reports errors and warnings, and
  *  keeps track of error numbers and positions.
@@ -137,7 +135,6 @@ public class Log extends AbstractLog {
 
     /** Construct a log with given I/O redirections.
      */
-    @Deprecated
     protected Log(Context context, PrintWriter errWriter, PrintWriter warnWriter, PrintWriter noticeWriter) {
         super(JCDiagnostic.Factory.instance(context));
         context.put(logKey, this);
@@ -179,8 +176,8 @@ public class Log extends AbstractLog {
                 expectDiagKeys = new HashSet<String>(Arrays.asList(ek.split(", *")));
         }
 
-        private int getIntOption(Options options, OptionName optionName, int defaultValue) {
-            String s = options.get(optionName);
+        private int getIntOption(Options options, Option option, int defaultValue) {
+            String s = options.get(option);
             try {
                 if (s != null) {
                     int n = Integer.parseInt(s);
@@ -296,6 +293,12 @@ public class Log extends AbstractLog {
     public void setWriters(PrintWriter pw) {
         pw.getClass();
         noticeWriter = warnWriter = errWriter = pw;
+    }
+
+    public void setWriters(Log other) {
+        this.noticeWriter = other.noticeWriter;
+        this.warnWriter = other.warnWriter;
+        this.errWriter = other.errWriter;
     }
 
     /** Flush the logs

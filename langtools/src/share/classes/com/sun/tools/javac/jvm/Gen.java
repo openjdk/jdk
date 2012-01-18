@@ -45,7 +45,7 @@ import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTags.*;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 import static com.sun.tools.javac.jvm.CRTFlags.*;
-import static com.sun.tools.javac.main.OptionName.*;
+import static com.sun.tools.javac.main.Option.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.BLOCK;
 

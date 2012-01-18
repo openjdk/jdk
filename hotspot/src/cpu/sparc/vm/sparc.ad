@@ -6773,6 +6773,16 @@ instruct unnecessary_membar_volatile() %{
   ins_pipe(empty);
 %}
 
+instruct membar_storestore() %{
+  match(MemBarStoreStore);
+  ins_cost(0);
+
+  size(0);
+  format %{ "!MEMBAR-storestore (empty encoding)" %}
+  ins_encode( );
+  ins_pipe(empty);
+%}
+
 //----------Register Move Instructions-----------------------------------------
 instruct roundDouble_nop(regD dst) %{
   match(Set dst (RoundDouble dst));
@@ -9273,6 +9283,7 @@ instruct cmpD_reg(iRegI dst, regD src1, regD src2, flagsRegF0 fcc0) %{
 // (compare 'operand indIndex' and 'instruct addP_reg_reg' above)
 instruct jumpXtnd(iRegX switch_val, o7RegI table) %{
   match(Jump switch_val);
+  effect(TEMP table);
 
   ins_cost(350);
 
@@ -10263,24 +10274,24 @@ instruct partialSubtypeCheck_vs_zero( flagsRegP pcc, o1RegP sub, o2RegP super, i
 // ============================================================================
 // inlined locking and unlocking
 
-instruct cmpFastLock(flagsRegP pcc, iRegP object, iRegP box, iRegP scratch2, o7RegP scratch ) %{
+instruct cmpFastLock(flagsRegP pcc, iRegP object, o1RegP box, iRegP scratch2, o7RegP scratch ) %{
   match(Set pcc (FastLock object box));
 
-  effect(KILL scratch, TEMP scratch2);
+  effect(TEMP scratch2, USE_KILL box, KILL scratch);
   ins_cost(100);
 
-  format %{ "FASTLOCK  $object, $box; KILL $scratch, $scratch2, $box" %}
+  format %{ "FASTLOCK  $object,$box\t! kills $box,$scratch,$scratch2" %}
   ins_encode( Fast_Lock(object, box, scratch, scratch2) );
   ins_pipe(long_memory_op);
 %}
 
 
-instruct cmpFastUnlock(flagsRegP pcc, iRegP object, iRegP box, iRegP scratch2, o7RegP scratch ) %{
+instruct cmpFastUnlock(flagsRegP pcc, iRegP object, o1RegP box, iRegP scratch2, o7RegP scratch ) %{
   match(Set pcc (FastUnlock object box));
-  effect(KILL scratch, TEMP scratch2);
+  effect(TEMP scratch2, USE_KILL box, KILL scratch);
   ins_cost(100);
 
-  format %{ "FASTUNLOCK  $object, $box; KILL $scratch, $scratch2, $box" %}
+  format %{ "FASTUNLOCK  $object,$box\t! kills $box,$scratch,$scratch2" %}
   ins_encode( Fast_Unlock(object, box, scratch, scratch2) );
   ins_pipe(long_memory_op);
 %}

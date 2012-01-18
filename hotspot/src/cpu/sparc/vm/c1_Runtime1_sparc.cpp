@@ -398,14 +398,14 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           if (id == fast_new_instance_init_check_id) {
             // make sure the klass is initialized
-            __ ld(G5_klass, instanceKlass::init_state_offset_in_bytes() + sizeof(oopDesc), G3_t1);
+            __ ldub(G5_klass, in_bytes(instanceKlass::init_state_offset()), G3_t1);
             __ cmp_and_br_short(G3_t1, instanceKlass::fully_initialized, Assembler::notEqual, Assembler::pn, slow_path);
           }
 #ifdef ASSERT
           // assert object can be fast path allocated
           {
             Label ok, not_ok;
-          __ ld(G5_klass, Klass::layout_helper_offset_in_bytes() + sizeof(oopDesc), G1_obj_size);
+          __ ld(G5_klass, in_bytes(Klass::layout_helper_offset()), G1_obj_size);
           // make sure it's an instance (LH > 0)
           __ cmp_and_br_short(G1_obj_size, 0, Assembler::lessEqual, Assembler::pn, not_ok);
           __ btst(Klass::_lh_instance_slow_path_bit, G1_obj_size);
@@ -425,7 +425,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ bind(retry_tlab);
 
           // get the instance size
-          __ ld(G5_klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes(), G1_obj_size);
+          __ ld(G5_klass, in_bytes(Klass::layout_helper_offset()), G1_obj_size);
 
           __ tlab_allocate(O0_obj, G1_obj_size, 0, G3_t1, slow_path);
 
@@ -437,7 +437,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           __ bind(try_eden);
           // get the instance size
-          __ ld(G5_klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes(), G1_obj_size);
+          __ ld(G5_klass, in_bytes(Klass::layout_helper_offset()), G1_obj_size);
           __ eden_allocate(O0_obj, G1_obj_size, 0, G3_t1, G4_t2, slow_path);
           __ incr_allocated_bytes(G1_obj_size, G3_t1, G4_t2);
 
@@ -471,8 +471,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Register G4_length = G4; // Incoming
         Register O0_obj   = O0; // Outgoing
 
-        Address klass_lh(G5_klass, ((klassOopDesc::header_size() * HeapWordSize)
-                                    + Klass::layout_helper_offset_in_bytes()));
+        Address klass_lh(G5_klass, Klass::layout_helper_offset());
         assert(Klass::_lh_header_size_shift % BitsPerByte == 0, "bytewise");
         assert(Klass::_lh_header_size_mask == 0xFF, "bytewise");
         // Use this offset to pick out an individual byte of the layout_helper:
@@ -592,7 +591,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Label register_finalizer;
         Register t = O1;
         __ load_klass(O0, t);
-        __ ld(t, Klass::access_flags_offset_in_bytes() + sizeof(oopDesc), t);
+        __ ld(t, in_bytes(Klass::access_flags_offset()), t);
         __ set(JVM_ACC_HAS_FINALIZER, G3);
         __ andcc(G3, t, G0);
         __ br(Assembler::notZero, false, Assembler::pt, register_finalizer);

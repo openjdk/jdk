@@ -544,15 +544,19 @@ public:
     // Has this block been cloned for a loop backedge?
     bool                             _backedge_copy;
 
+    // This block is entry to irreducible loop.
+    bool                             _irreducible_entry;
+
+    // This block has monitor entry point.
+    bool                             _has_monitorenter;
+
     // A pointer used for our internal work list
-    Block*                           _next;
     bool                             _on_work_list;      // on the work list
+    Block*                           _next;
     Block*                           _rpo_next;          // Reverse post order list
 
     // Loop info
     Loop*                            _loop;              // nearest loop
-    bool                             _irreducible_entry; // entry to irreducible loop
-    bool                             _exception_entry;   // entry to exception handler
 
     ciBlock*     ciblock() const     { return _ciblock; }
     StateVector* state() const     { return _state; }
@@ -689,6 +693,8 @@ public:
     bool   is_loop_head() const          { return _loop && _loop->head() == this; }
     void   set_irreducible_entry(bool c) { _irreducible_entry = c; }
     bool   is_irreducible_entry() const  { return _irreducible_entry; }
+    void   set_has_monitorenter()        { _has_monitorenter = true; }
+    bool   has_monitorenter() const      { return _has_monitorenter; }
     bool   is_visited() const            { return has_pre_order(); }
     bool   is_post_visited() const       { return has_post_order(); }
     bool   is_clonable_exit(Loop* lp);
