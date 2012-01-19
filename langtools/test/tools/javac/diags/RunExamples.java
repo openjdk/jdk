@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6968063, 7127924
+ * @bug 6968063 7127924
  * @summary provide examples of code that generate diagnostics
  * @build ArgTypeCompilerFactory Example HTMLWriter RunExamples
  * @run main/othervm RunExamples
