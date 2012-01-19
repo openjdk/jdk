@@ -38,10 +38,6 @@
 
 package test.java.lang.invoke;
 
-import java.util.*;
-
-import java.lang.invoke.*;
-
 import org.junit.*;
 import static org.junit.Assert.*;
 
