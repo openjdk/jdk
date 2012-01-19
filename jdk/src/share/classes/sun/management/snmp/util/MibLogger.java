@@ -32,7 +32,7 @@ public class MibLogger {
     final Logger logger;
     final String className;
 
-    static String getClassName(Class clazz) {
+    static String getClassName(Class<?> clazz) {
         if (clazz == null) return null;
         if (clazz.isArray())
             return getClassName(clazz.getComponentType()) + "[]";
@@ -44,7 +44,7 @@ public class MibLogger {
         else return fullname.substring(lastpoint+1,len);
     }
 
-    static String getLoggerName(Class clazz) {
+    static String getLoggerName(Class<?> clazz) {
         if (clazz == null) return "sun.management.snmp.jvminstr";
         Package p = clazz.getPackage();
         if (p == null) return "sun.management.snmp.jvminstr";
@@ -53,11 +53,11 @@ public class MibLogger {
         else return pname;
     }
 
-    public MibLogger(Class clazz) {
+    public MibLogger(Class<?> clazz) {
         this(getLoggerName(clazz),getClassName(clazz));
     }
 
-    public MibLogger(Class clazz, String postfix) {
+    public MibLogger(Class<?> clazz, String postfix) {
         this(getLoggerName(clazz)+((postfix==null)?"":"."+postfix),
              getClassName(clazz));
     }

@@ -66,6 +66,8 @@ import sun.management.snmp.jvmmib.JvmThreadInstanceTableMeta;
  */
 public class JvmThreadingMetaImpl extends JvmThreadingMeta {
 
+    static final long serialVersionUID = -2104788458393251457L;
+
     /**
      * Constructor for the metadata associated to "JvmThreading".
      */
