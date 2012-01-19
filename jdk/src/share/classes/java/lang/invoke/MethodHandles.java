@@ -1006,6 +1006,7 @@ return mh1;
          *                                is set and {@code asVarargsCollector} fails
          * @throws NullPointerException if the argument is null
          */
+        @SuppressWarnings("rawtypes")  // Will be Constructor<?> after JSR 292 MR
         public MethodHandle unreflectConstructor(Constructor c) throws IllegalAccessException {
             MemberName ctor = new MemberName(c);
             assert(ctor.isConstructor());
