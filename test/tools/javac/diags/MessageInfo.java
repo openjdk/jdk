@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 7013272, 7127924
+ * @bug 7013272 7127924
  * @summary Automatically generate info about how compiler resource keys are used
  * @build Example ArgTypeCompilerFactory MessageFile MessageInfo
  * @run main/othervm MessageInfo
