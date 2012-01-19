@@ -948,10 +948,11 @@ return mh1;
         public MethodHandle unreflect(Method m) throws IllegalAccessException {
             MemberName method = new MemberName(m);
             assert(method.isMethod());
-            if (!m.isAccessible())  checkMethod(method.getDeclaringClass(), method, method.isStatic());
+            if (m.isAccessible())
+                return MethodHandleImpl.findMethod(method, true, /*no lookupClass*/ null);
+            checkMethod(method.getDeclaringClass(), method, method.isStatic());
             MethodHandle mh = MethodHandleImpl.findMethod(method, true, lookupClassOrNull());
-            if (!m.isAccessible())  mh = restrictProtectedReceiver(method, mh);
-            return mh;
+            return restrictProtectedReceiver(method, mh);
         }
 
         /**
@@ -1010,8 +1011,13 @@ return mh1;
         public MethodHandle unreflectConstructor(Constructor c) throws IllegalAccessException {
             MemberName ctor = new MemberName(c);
             assert(ctor.isConstructor());
-            if (!c.isAccessible())  checkAccess(c.getDeclaringClass(), ctor);
-            MethodHandle rawCtor = MethodHandleImpl.findMethod(ctor, false, lookupClassOrNull());
+            MethodHandle rawCtor;
+            if (c.isAccessible()) {
+                rawCtor = MethodHandleImpl.findMethod(ctor, false, /*no lookupClass*/ null);
+            } else {
+                checkAccess(c.getDeclaringClass(), ctor);
+                rawCtor = MethodHandleImpl.findMethod(ctor, false, lookupClassOrNull());
+            }
             MethodHandle allocator = MethodHandleImpl.makeAllocator(rawCtor);
             return fixVarargs(allocator, rawCtor);
         }
@@ -1226,7 +1232,7 @@ return mh1;
                                                 ? "expected a static field"
                                                 : "expected a non-static field", this);
             if (trusted)
-                return MethodHandleImpl.accessField(field, isSetter, lookupClassOrNull());
+                return MethodHandleImpl.accessField(field, isSetter, /*no lookupClass*/ null);
             checkAccess(refc, field);
             MethodHandle mh = MethodHandleImpl.accessField(field, isSetter, lookupClassOrNull());
             return restrictProtectedReceiver(field, mh);
