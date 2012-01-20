@@ -1045,7 +1045,7 @@ int MethodHandles::adapter_conversion_ops_supported_mask() {
          |(1<<java_lang_invoke_AdapterMethodHandle::OP_DROP_ARGS)
           // OP_COLLECT_ARGS is below...
          |(1<<java_lang_invoke_AdapterMethodHandle::OP_SPREAD_ARGS)
-         |(!UseRicochetFrames ? 0 :
+         |(
            java_lang_invoke_MethodTypeForm::vmlayout_offset_in_bytes() <= 0 ? 0 :
            ((1<<java_lang_invoke_AdapterMethodHandle::OP_PRIM_TO_REF)
            |(1<<java_lang_invoke_AdapterMethodHandle::OP_COLLECT_ARGS)
