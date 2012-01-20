@@ -1059,8 +1059,14 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
 
     if (result != NULL) {
       if (g1_policy()->need_to_start_conc_mark("concurrent humongous allocation")) {
-        // We need to release the Heap_lock before we try to call collect
+        // We need to release the Heap_lock before we try to call collect().
+        // The result will not be stored in any object before this method
+        // returns, so the GC might miss it. Thus, we create a handle to the result
+        // and fake an object at that place.
+        CollectedHeap::fill_with_object(result, word_size, false);
+        Handle h((oop)result);
         collect(GCCause::_g1_humongous_allocation);
+        assert(result == (HeapWord*)h(), "Humongous objects should not be moved by collections");
       }
       return result;
     }
