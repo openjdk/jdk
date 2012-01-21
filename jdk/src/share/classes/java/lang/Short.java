@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -467,6 +467,47 @@ public final class Short extends Number implements Comparable<Short> {
      */
     public static short reverseBytes(short i) {
         return (short) (((i & 0xFF00) >> 8) | (i << 8));
+    }
+
+
+    /**
+     * Converts the argument to an {@code int} by an unsigned
+     * conversion.  In an unsigned conversion to an {@code int}, the
+     * high-order 16 bits of the {@code int} are zero and the
+     * low-order 16 bits are equal to the bits of the {@code short} argument.
+     *
+     * Consequently, zero and positive {@code short} values are mapped
+     * to a numerically equal {@code int} value and negative {@code
+     * short} values are mapped to an {@code int} value equal to the
+     * input plus 2<sup>16</sup>.
+     *
+     * @param  x the value to convert to an unsigned {@code int}
+     * @return the argument converted to {@code int} by an unsigned
+     *         conversion
+     * @since 1.8
+     */
+    public static int toUnsignedInt(short x) {
+        return ((int) x) & 0xffff;
+    }
+
+    /**
+     * Converts the argument to a {@code long} by an unsigned
+     * conversion.  In an unsigned conversion to a {@code long}, the
+     * high-order 48 bits of the {@code long} are zero and the
+     * low-order 16 bits are equal to the bits of the {@code short} argument.
+     *
+     * Consequently, zero and positive {@code short} values are mapped
+     * to a numerically equal {@code long} value and negative {@code
+     * short} values are mapped to a {@code long} value equal to the
+     * input plus 2<sup>16</sup>.
+     *
+     * @param  x the value to convert to an unsigned {@code long}
+     * @return the argument converted to {@code long} by an unsigned
+     *         conversion
+     * @since 1.8
+     */
+    public static long toUnsignedLong(short x) {
+        return ((long) x) & 0xffffL;
     }
 
     /** use serialVersionUID from JDK 1.1. for interoperability */
