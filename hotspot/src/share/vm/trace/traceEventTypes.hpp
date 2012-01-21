@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2011 Red Hat, Inc.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +22,9 @@
  *
  */
 
+#ifndef SHARE_VM_TRACE_TRACE_EVENT_TYPES_HPP
+#define SHARE_VM_TRACE_TRACE_EVENT_TYPES_HPP
 
-// Adapters
-enum /* platform_dependent_constants */ {
-  adapter_code_size = 0
-};
+/* Empty, just a placeholder for tracing events */
 
+#endif

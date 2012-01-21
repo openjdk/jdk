@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2011 Red Hat, Inc.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +22,22 @@
  *
  */
 
+#ifndef SHARE_VM_TRACE_TRACE_MACRO_HPP
+#define SHARE_VM_TRACE_TRACE_MACRO_HPP
 
-// Adapters
-enum /* platform_dependent_constants */ {
-  adapter_code_size = 0
-};
+#define EVENT_BEGIN(type, name)
+#define EVENT_SET(name, field, value)
+#define EVENT_COMMIT(name, ...)
+#define EVENT_STARTED(name, time)
+#define EVENT_ENDED(name, time)
+#define EVENT_THREAD_EXIT(thread)
 
+#define TRACE_ENABLED 0
+
+#define TRACE_INIT_ID(k)
+#define TRACE_BUFFER void*
+
+#define TRACE_START() true
+#define TRACE_INITIALIZE() 0
+
+#endif
