@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,6 @@ public final class Integer extends Number implements Comparable<Integer> {
      * @see     java.lang.Character#MIN_RADIX
      */
     public static String toString(int i, int radix) {
-
         if (radix < Character.MIN_RADIX || radix > Character.MAX_RADIX)
             radix = 10;
 
@@ -159,6 +158,36 @@ public final class Integer extends Number implements Comparable<Integer> {
     }
 
     /**
+     * Returns a string representation of the first argument as an
+     * unsigned integer value in the radix specified by the second
+     * argument.
+     *
+     * <p>If the radix is smaller than {@code Character.MIN_RADIX}
+     * or larger than {@code Character.MAX_RADIX}, then the radix
+     * {@code 10} is used instead.
+     *
+     * <p>Note that since the first argument is treated as an unsigned
+     * value, no leading sign character is printed.
+     *
+     * <p>If the magnitude is zero, it is represented by a single zero
+     * character {@code '0'} (<code>'&#92;u0030'</code>); otherwise,
+     * the first character of the representation of the magnitude will
+     * not be the zero character.
+     *
+     * <p>The behavior of radixes and the characters used as digits
+     * are the same as {@link #toString(int, int) toString}.
+     *
+     * @param   i       an integer to be converted to an unsigned string.
+     * @param   radix   the radix to use in the string representation.
+     * @return  an unsigned string representation of the argument in the specified radix.
+     * @see     #toString(int, int)
+     * @since 1.8
+     */
+    public static String toUnsignedString(int i, int radix) {
+        return Long.toString(toUnsignedLong(i), radix);
+    }
+
+    /**
      * Returns a string representation of the integer argument as an
      * unsigned integer in base&nbsp;16.
      *
@@ -166,12 +195,18 @@ public final class Integer extends Number implements Comparable<Integer> {
      * if the argument is negative; otherwise, it is equal to the
      * argument.  This value is converted to a string of ASCII digits
      * in hexadecimal (base&nbsp;16) with no extra leading
-     * {@code 0}s. If the unsigned magnitude is zero, it is
-     * represented by a single zero character {@code '0'}
-     * (<code>'&#92;u0030'</code>); otherwise, the first character of
-     * the representation of the unsigned magnitude will not be the
-     * zero character. The following characters are used as
-     * hexadecimal digits:
+     * {@code 0}s.
+     *
+     * <p>The value of the argument can be recovered from the returned
+     * string {@code s} by calling {@link
+     * Integer#parseUnsignedInt(String, int)
+     * Integer.parseUnsignedInt(s, 16)}.
+     *
+     * <p>If the unsigned magnitude is zero, it is represented by a
+     * single zero character {@code '0'} (<code>'&#92;u0030'</code>);
+     * otherwise, the first character of the representation of the
+     * unsigned magnitude will not be the zero character. The
+     * following characters are used as hexadecimal digits:
      *
      * <blockquote>
      *  {@code 0123456789abcdef}
@@ -190,10 +225,12 @@ public final class Integer extends Number implements Comparable<Integer> {
      * @param   i   an integer to be converted to a string.
      * @return  the string representation of the unsigned integer value
      *          represented by the argument in hexadecimal (base&nbsp;16).
+     * @see #parseUnsignedInt(String, int)
+     * @see #toUnsignedString(int, int)
      * @since   JDK1.0.2
      */
     public static String toHexString(int i) {
-        return toUnsignedString(i, 4);
+        return toUnsignedString0(i, 4);
     }
 
     /**
@@ -205,12 +242,16 @@ public final class Integer extends Number implements Comparable<Integer> {
      * argument.  This value is converted to a string of ASCII digits
      * in octal (base&nbsp;8) with no extra leading {@code 0}s.
      *
+     * <p>The value of the argument can be recovered from the returned
+     * string {@code s} by calling {@link
+     * Integer#parseUnsignedInt(String, int)
+     * Integer.parseUnsignedInt(s, 8)}.
+     *
      * <p>If the unsigned magnitude is zero, it is represented by a
-     * single zero character {@code '0'}
-     * (<code>'&#92;u0030'</code>); otherwise, the first character of
-     * the representation of the unsigned magnitude will not be the
-     * zero character. The following characters are used as octal
-     * digits:
+     * single zero character {@code '0'} (<code>'&#92;u0030'</code>);
+     * otherwise, the first character of the representation of the
+     * unsigned magnitude will not be the zero character. The
+     * following characters are used as octal digits:
      *
      * <blockquote>
      * {@code 01234567}
@@ -222,10 +263,12 @@ public final class Integer extends Number implements Comparable<Integer> {
      * @param   i   an integer to be converted to a string.
      * @return  the string representation of the unsigned integer value
      *          represented by the argument in octal (base&nbsp;8).
+     * @see #parseUnsignedInt(String, int)
+     * @see #toUnsignedString(int, int)
      * @since   JDK1.0.2
      */
     public static String toOctalString(int i) {
-        return toUnsignedString(i, 3);
+        return toUnsignedString0(i, 3);
     }
 
     /**
@@ -236,27 +279,34 @@ public final class Integer extends Number implements Comparable<Integer> {
      * if the argument is negative; otherwise it is equal to the
      * argument.  This value is converted to a string of ASCII digits
      * in binary (base&nbsp;2) with no extra leading {@code 0}s.
-     * If the unsigned magnitude is zero, it is represented by a
-     * single zero character {@code '0'}
-     * (<code>'&#92;u0030'</code>); otherwise, the first character of
-     * the representation of the unsigned magnitude will not be the
-     * zero character. The characters {@code '0'}
-     * (<code>'&#92;u0030'</code>) and {@code '1'}
-     * (<code>'&#92;u0031'</code>) are used as binary digits.
+     *
+     * <p>The value of the argument can be recovered from the returned
+     * string {@code s} by calling {@link
+     * Integer#parseUnsignedInt(String, int)
+     * Integer.parseUnsignedInt(s, 2)}.
+     *
+     * <p>If the unsigned magnitude is zero, it is represented by a
+     * single zero character {@code '0'} (<code>'&#92;u0030'</code>);
+     * otherwise, the first character of the representation of the
+     * unsigned magnitude will not be the zero character. The
+     * characters {@code '0'} (<code>'&#92;u0030'</code>) and {@code
+     * '1'} (<code>'&#92;u0031'</code>) are used as binary digits.
      *
      * @param   i   an integer to be converted to a string.
      * @return  the string representation of the unsigned integer value
      *          represented by the argument in binary (base&nbsp;2).
+     * @see #parseUnsignedInt(String, int)
+     * @see #toUnsignedString(int, int)
      * @since   JDK1.0.2
      */
     public static String toBinaryString(int i) {
-        return toUnsignedString(i, 1);
+        return toUnsignedString0(i, 1);
     }
 
     /**
      * Convert the integer to an unsigned number.
      */
-    private static String toUnsignedString(int i, int shift) {
+    private static String toUnsignedString0(int i, int shift) {
         char[] buf = new char[32];
         int charPos = 32;
         int radix = 1 << shift;
@@ -332,6 +382,24 @@ public final class Integer extends Number implements Comparable<Integer> {
         char[] buf = new char[size];
         getChars(i, size, buf);
         return new String(0, size, buf);
+    }
+
+    /**
+     * Returns a string representation of the argument as an unsigned
+     * decimal value.
+     *
+     * The argument is converted to unsigned decimal representation
+     * and returned as a string exactly as if the argument and radix
+     * 10 were given as arguments to the {@link #toUnsignedString(int,
+     * int)} method.
+     *
+     * @param   i  an integer to be converted to an unsigned string.
+     * @return  an unsigned string representation of the argument.
+     * @see     #toUnsignedString(int, int)
+     * @since 1.8
+     */
+    public static String toUnsignedString(int i) {
+        return Long.toString(toUnsignedLong(i));
     }
 
     /**
@@ -526,6 +594,102 @@ public final class Integer extends Number implements Comparable<Integer> {
      */
     public static int parseInt(String s) throws NumberFormatException {
         return parseInt(s,10);
+    }
+
+    /**
+     * Parses the string argument as an unsigned integer in the radix
+     * specified by the second argument.  An unsigned integer maps the
+     * values usually associated with negative numbers to positive
+     * numbers larger than {@code MAX_VALUE}.
+     *
+     * The characters in the string must all be digits of the
+     * specified radix (as determined by whether {@link
+     * java.lang.Character#digit(char, int)} returns a nonnegative
+     * value), except that the first character may be an ASCII plus
+     * sign {@code '+'} (<code>'&#92;u002B'</code>). The resulting
+     * integer value is returned.
+     *
+     * <p>An exception of type {@code NumberFormatException} is
+     * thrown if any of the following situations occurs:
+     * <ul>
+     * <li>The first argument is {@code null} or is a string of
+     * length zero.
+     *
+     * <li>The radix is either smaller than
+     * {@link java.lang.Character#MIN_RADIX} or
+     * larger than {@link java.lang.Character#MAX_RADIX}.
+     *
+     * <li>Any character of the string is not a digit of the specified
+     * radix, except that the first character may be a plus sign
+     * {@code '+'} (<code>'&#92;u002B'</code>) provided that the
+     * string is longer than length 1.
+     *
+     * <li>The value represented by the string is larger than the
+     * largest unsigned {@code int}, 2<sup>32</sup>-1.
+     *
+     * </ul>
+     *
+     *
+     * @param      s   the {@code String} containing the unsigned integer
+     *                  representation to be parsed
+     * @param      radix   the radix to be used while parsing {@code s}.
+     * @return     the integer represented by the string argument in the
+     *             specified radix.
+     * @throws     NumberFormatException if the {@code String}
+     *             does not contain a parsable {@code int}.
+     * @since 1.8
+     */
+    public static int parseUnsignedInt(String s, int radix)
+                throws NumberFormatException {
+        if (s == null)  {
+            throw new NumberFormatException("null");
+        }
+
+        int len = s.length();
+        if (len > 0) {
+            char firstChar = s.charAt(0);
+            if (firstChar == '-') {
+                throw new
+                    NumberFormatException(String.format("Illegal leading minus sign " +
+                                                       "on unsigned string %s.", s));
+            } else {
+                if (len <= 5 || // Integer.MAX_VALUE in Character.MAX_RADIX is 6 digits
+                    (radix == 10 && len <= 9) ) { // Integer.MAX_VALUE in base 10 is 10 digits
+                    return parseInt(s, radix);
+                } else {
+                    long ell = Long.parseLong(s, radix);
+                    if ((ell & 0xffff_ffff_0000_0000L) == 0) {
+                        return (int) ell;
+                    } else {
+                        throw new
+                            NumberFormatException(String.format("String value %s exceeds " +
+                                                                "range of unsigned int.", s));
+                    }
+                }
+            }
+        } else {
+            throw NumberFormatException.forInputString(s);
+        }
+    }
+
+    /**
+     * Parses the string argument as an unsigned decimal integer. The
+     * characters in the string must all be decimal digits, except
+     * that the first character may be an an ASCII plus sign {@code
+     * '+'} (<code>'&#92;u002B'</code>). The resulting integer value
+     * is returned, exactly as if the argument and the radix 10 were
+     * given as arguments to the {@link
+     * #parseUnsignedInt(java.lang.String, int)} method.
+     *
+     * @param s   a {@code String} containing the unsigned {@code int}
+     *            representation to be parsed
+     * @return    the unsigned integer value represented by the argument in decimal.
+     * @throws    NumberFormatException  if the string does not contain a
+     *            parsable unsigned integer.
+     * @since 1.8
+     */
+    public static int parseUnsignedInt(String s) throws NumberFormatException {
+        return parseUnsignedInt(s, 10);
     }
 
     /**
@@ -1028,6 +1192,83 @@ public final class Integer extends Number implements Comparable<Integer> {
      */
     public static int compare(int x, int y) {
         return (x < y) ? -1 : ((x == y) ? 0 : 1);
+    }
+
+    /**
+     * Compares two {@code int} values numerically treating the values
+     * as unsigned.
+     *
+     * @param  x the first {@code int} to compare
+     * @param  y the second {@code int} to compare
+     * @return the value {@code 0} if {@code x == y}; a value less
+     *         than {@code 0} if {@code x < y} as unsigned values; and
+     *         a value greater than {@code 0} if {@code x > y} as
+     *         unsigned values
+     * @since 1.8
+     */
+    public static int compareUnsigned(int x, int y) {
+        return compare(x + MIN_VALUE, y + MIN_VALUE);
+    }
+
+    /**
+     * Converts the argument to a {@code long} by an unsigned
+     * conversion.  In an unsigned conversion to a {@code long}, the
+     * high-order 32 bits of the {@code long} are zero and the
+     * low-order 32 bits are equal to the bits of the integer
+     * argument.
+     *
+     * Consequently, zero and positive {@code int} values are mapped
+     * to a numerically equal {@code long} value and negative {@code
+     * int} values are mapped to a {@code long} value equal to the
+     * input plus 2<sup>32</sup>.
+     *
+     * @param  x the value to convert to an unsigned {@code long}
+     * @return the argument converted to {@code long} by an unsigned
+     *         conversion
+     * @since 1.8
+     */
+    public static long toUnsignedLong(int x) {
+        return ((long) x) & 0xffffffffL;
+    }
+
+    /**
+     * Returns the unsigned quotient of dividing the first argument by
+     * the second where each argument and the result is interpreted as
+     * an unsigned value.
+     *
+     * <p>Note that in two's complement arithmetic, the three other
+     * basic arithmetic operations of add, subtract, and multiply are
+     * bit-wise identical if the two operands are regarded as both
+     * being signed or both being unsigned.  Therefore separate {@code
+     * addUnsigned}, etc. methods are not provided.
+     *
+     * @param dividend the value to be divided
+     * @param divisor the value doing the dividing
+     * @return the unsigned quotient of the first argument divided by
+     * the second argument
+     * @see #remainderUnsigned
+     * @since 1.8
+     */
+    public static int divideUnsigned(int dividend, int divisor) {
+        // In lieu of tricky code, for now just use long arithmetic.
+        return (int)(toUnsignedLong(dividend) / toUnsignedLong(divisor));
+    }
+
+    /**
+     * Returns the unsigned remainder from dividing the first argument
+     * by the second where each argument and the result is interpreted
+     * as an unsigned value.
+     *
+     * @param dividend the value to be divided
+     * @param divisor the value doing the dividing
+     * @return the unsigned remainder of the first argument divided by
+     * the second argument
+     * @see #divideUnsigned
+     * @since 1.8
+     */
+    public static int remainderUnsigned(int dividend, int divisor) {
+        // In lieu of tricky code, for now just use long arithmetic.
+        return (int)(toUnsignedLong(dividend) % toUnsignedLong(divisor));
     }
 
 
