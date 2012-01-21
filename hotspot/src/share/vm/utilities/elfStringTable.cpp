@@ -38,7 +38,7 @@ ElfStringTable::ElfStringTable(FILE* file, Elf_Shdr shdr, int index) {
   m_index = index;
   m_next = NULL;
   m_file = file;
-  m_status = Decoder::no_error;
+  m_status = NullDecoder::no_error;
 
   // try to load the string table
   long cur_offset = ftell(file);
@@ -48,7 +48,7 @@ ElfStringTable::ElfStringTable(FILE* file, Elf_Shdr shdr, int index) {
     if (fseek(file, shdr.sh_offset, SEEK_SET) ||
       fread((void*)m_table, shdr.sh_size, 1, file) != 1 ||
       fseek(file, cur_offset, SEEK_SET)) {
-      m_status = Decoder::file_invalid;
+      m_status = NullDecoder::file_invalid;
       os::free((void*)m_table);
       m_table = NULL;
     }
@@ -67,22 +67,23 @@ ElfStringTable::~ElfStringTable() {
   }
 }
 
-const char* ElfStringTable::string_at(int pos) {
-  if (m_status != Decoder::no_error) {
-    return NULL;
+bool ElfStringTable::string_at(int pos, char* buf, int buflen) {
+  if (NullDecoder::is_error(m_status)) {
+    return false;
   }
   if (m_table != NULL) {
-    return (const char*)(m_table + pos);
+    jio_snprintf(buf, buflen, "%s", (const char*)(m_table + pos));
+    return true;
   } else {
     long cur_pos = ftell(m_file);
     if (cur_pos == -1 ||
       fseek(m_file, m_shdr.sh_offset + pos, SEEK_SET) ||
-      fread(m_symbol, 1, MAX_SYMBOL_LEN, m_file) <= 0 ||
+      fread(buf, 1, buflen, m_file) <= 0 ||
       fseek(m_file, cur_pos, SEEK_SET)) {
-      m_status = Decoder::file_invalid;
-      return NULL;
+      m_status = NullDecoder::file_invalid;
+      return false;
     }
-    return (const char*)m_symbol;
+    return true;
   }
 }
 

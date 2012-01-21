@@ -73,6 +73,13 @@ done
 
 BASE_PATHS="${BASE_PATHS} ${GENERATED}/jvmtifiles"
 
+if [ -d "${ALTSRC}/share/vm/jfr" ]; then
+  BASE_PATHS="${BASE_PATHS} ${ALTSRC}/share/vm/jfr/agent"
+  BASE_PATHS="${BASE_PATHS} ${ALTSRC}/share/vm/jfr/agent/isolated_deps/util"
+  BASE_PATHS="${BASE_PATHS} ${ALTSRC}/share/vm/jfr/jvm"
+  BASE_PATHS="${BASE_PATHS} ${ALTSRC}/share/vm/jfr"
+fi
+
 CORE_PATHS="${BASE_PATHS}"
 # shared is already in BASE_PATHS. Should add vm/memory but that one is also in BASE_PATHS.
 if [ -d "${ALTSRC}/share/vm/gc_implementation" ]; then
