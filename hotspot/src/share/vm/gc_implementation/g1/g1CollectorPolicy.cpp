@@ -1138,36 +1138,41 @@ double G1CollectorPolicy::max_sum(double* data1, double* data2) {
   return ret;
 }
 
-bool G1CollectorPolicy::need_to_start_conc_mark(const char* source) {
-  if (_g1->mark_in_progress()) {
+bool G1CollectorPolicy::need_to_start_conc_mark(const char* source, size_t alloc_word_size) {
+  if (_g1->concurrent_mark()->cmThread()->during_cycle()) {
     return false;
   }
 
   size_t marking_initiating_used_threshold =
     (_g1->capacity() / 100) * InitiatingHeapOccupancyPercent;
   size_t cur_used_bytes = _g1->non_young_capacity_bytes();
+  size_t alloc_byte_size = alloc_word_size * HeapWordSize;
 
-  if (cur_used_bytes > marking_initiating_used_threshold) {
+  if ((cur_used_bytes + alloc_byte_size) > marking_initiating_used_threshold) {
     if (gcs_are_young()) {
-      ergo_verbose4(ErgoConcCycles,
+      ergo_verbose5(ErgoConcCycles,
         "request concurrent cycle initiation",
         ergo_format_reason("occupancy higher than threshold")
         ergo_format_byte("occupancy")
+        ergo_format_byte("allocation request")
         ergo_format_byte_perc("threshold")
         ergo_format_str("source"),
         cur_used_bytes,
+        alloc_byte_size,
         marking_initiating_used_threshold,
         (double) InitiatingHeapOccupancyPercent,
         source);
       return true;
     } else {
-      ergo_verbose4(ErgoConcCycles,
+      ergo_verbose5(ErgoConcCycles,
         "do not request concurrent cycle initiation",
         ergo_format_reason("still doing mixed collections")
         ergo_format_byte("occupancy")
+        ergo_format_byte("allocation request")
         ergo_format_byte_perc("threshold")
         ergo_format_str("source"),
         cur_used_bytes,
+        alloc_byte_size,
         marking_initiating_used_threshold,
         (double) InitiatingHeapOccupancyPercent,
         source);

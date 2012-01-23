@@ -1029,6 +1029,15 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
   assert(isHumongous(word_size), "attempt_allocation_humongous() "
          "should only be called for humongous allocations");
 
+  // Humongous objects can exhaust the heap quickly, so we should check if we
+  // need to start a marking cycle at each humongous object allocation. We do
+  // the check before we do the actual allocation. The reason for doing it
+  // before the allocation is that we avoid having to keep track of the newly
+  // allocated memory while we do a GC.
+  if (g1_policy()->need_to_start_conc_mark("concurrent humongous allocation", word_size)) {
+    collect(GCCause::_g1_humongous_allocation);
+  }
+
   // We will loop until a) we manage to successfully perform the
   // allocation or b) we successfully schedule a collection which
   // fails to perform the allocation. b) is the only case when we'll
@@ -1045,30 +1054,17 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
       // regions, we'll first try to do the allocation without doing a
       // collection hoping that there's enough space in the heap.
       result = humongous_obj_allocate(word_size);
-
-      if (result == NULL) {
-        if (GC_locker::is_active_and_needs_gc()) {
-          should_try_gc = false;
-        } else {
-          // Read the GC count while still holding the Heap_lock.
-          gc_count_before = SharedHeap::heap()->total_collections();
-          should_try_gc = true;
-        }
+      if (result != NULL) {
+        return result;
       }
-    }
 
-    if (result != NULL) {
-      if (g1_policy()->need_to_start_conc_mark("concurrent humongous allocation")) {
-        // We need to release the Heap_lock before we try to call collect().
-        // The result will not be stored in any object before this method
-        // returns, so the GC might miss it. Thus, we create a handle to the result
-        // and fake an object at that place.
-        CollectedHeap::fill_with_object(result, word_size, false);
-        Handle h((oop)result);
-        collect(GCCause::_g1_humongous_allocation);
-        assert(result == (HeapWord*)h(), "Humongous objects should not be moved by collections");
+      if (GC_locker::is_active_and_needs_gc()) {
+        should_try_gc = false;
+      } else {
+        // Read the GC count while still holding the Heap_lock.
+        gc_count_before = SharedHeap::heap()->total_collections();
+        should_try_gc = true;
       }
-      return result;
     }
 
     if (should_try_gc) {

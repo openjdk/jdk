@@ -799,7 +799,7 @@ public:
 
   GenRemSet::Name  rem_set_name()     { return GenRemSet::CardTable; }
 
-  bool need_to_start_conc_mark(const char* source);
+  bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
 
   // Update the heuristic info to record a collection pause of the given
   // start time, where the given number of bytes were used at the start.
