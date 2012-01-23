@@ -110,8 +110,8 @@ public final class Byte extends Number implements Comparable<Byte> {
      * determined by whether {@link java.lang.Character#digit(char,
      * int)} returns a nonnegative value) except that the first
      * character may be an ASCII minus sign {@code '-'}
-     * (<code>'&#92;u002D'</code>) to indicate a negative value or an
-     * ASCII plus sign {@code '+'} (<code>'&#92;u002B'</code>) to
+     * ({@code '\u005Cu002D'}) to indicate a negative value or an
+     * ASCII plus sign {@code '+'} ({@code '\u005Cu002B'}) to
      * indicate a positive value.  The resulting {@code byte} value is
      * returned.
      *
@@ -127,8 +127,8 @@ public final class Byte extends Number implements Comparable<Byte> {
      *
      * <li> Any character of the string is not a digit of the
      * specified radix, except that the first character may be a minus
-     * sign {@code '-'} (<code>'&#92;u002D'</code>) or plus sign
-     * {@code '+'} (<code>'&#92;u002B'</code>) provided that the
+     * sign {@code '-'} ({@code '\u005Cu002D'}) or plus sign
+     * {@code '+'} ({@code '\u005Cu002B'}) provided that the
      * string is longer than length 1.
      *
      * <li> The value represented by the string is not a value of type
@@ -157,9 +157,9 @@ public final class Byte extends Number implements Comparable<Byte> {
      * Parses the string argument as a signed decimal {@code
      * byte}. The characters in the string must all be decimal digits,
      * except that the first character may be an ASCII minus sign
-     * {@code '-'} (<code>'&#92;u002D'</code>) to indicate a negative
+     * {@code '-'} ({@code '\u005Cu002D'}) to indicate a negative
      * value or an ASCII plus sign {@code '+'}
-     * (<code>'&#92;u002B'</code>) to indicate a positive value. The
+     * ({@code '\u005Cu002B'}) to indicate a positive value. The
      * resulting {@code byte} value is returned, exactly as if the
      * argument and the radix 10 were given as arguments to the {@link
      * #parseByte(java.lang.String, int)} method.

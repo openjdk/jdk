@@ -93,13 +93,13 @@ public final class Integer extends Number implements Comparable<Integer> {
      *
      * <p>If the first argument is negative, the first element of the
      * result is the ASCII minus character {@code '-'}
-     * (<code>'&#92;u002D'</code>). If the first argument is not
+     * ({@code '\u005Cu002D'}). If the first argument is not
      * negative, no sign character appears in the result.
      *
      * <p>The remaining characters of the result represent the magnitude
      * of the first argument. If the magnitude is zero, it is
      * represented by a single zero character {@code '0'}
-     * (<code>'&#92;u0030'</code>); otherwise, the first character of
+     * ({@code '\u005Cu0030'}); otherwise, the first character of
      * the representation of the magnitude will not be the zero
      * character.  The following ASCII characters are used as digits:
      *
@@ -107,9 +107,9 @@ public final class Integer extends Number implements Comparable<Integer> {
      *   {@code 0123456789abcdefghijklmnopqrstuvwxyz}
      * </blockquote>
      *
-     * These are <code>'&#92;u0030'</code> through
-     * <code>'&#92;u0039'</code> and <code>'&#92;u0061'</code> through
-     * <code>'&#92;u007A'</code>. If {@code radix} is
+     * These are {@code '\u005Cu0030'} through
+     * {@code '\u005Cu0039'} and {@code '\u005Cu0061'} through
+     * {@code '\u005Cu007A'}. If {@code radix} is
      * <var>N</var>, then the first <var>N</var> of these characters
      * are used as radix-<var>N</var> digits in the order shown. Thus,
      * the digits for hexadecimal (radix 16) are
@@ -170,7 +170,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      * value, no leading sign character is printed.
      *
      * <p>If the magnitude is zero, it is represented by a single zero
-     * character {@code '0'} (<code>'&#92;u0030'</code>); otherwise,
+     * character {@code '0'} ({@code '\u005Cu0030'}); otherwise,
      * the first character of the representation of the magnitude will
      * not be the zero character.
      *
@@ -203,7 +203,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      * Integer.parseUnsignedInt(s, 16)}.
      *
      * <p>If the unsigned magnitude is zero, it is represented by a
-     * single zero character {@code '0'} (<code>'&#92;u0030'</code>);
+     * single zero character {@code '0'} ({@code '\u005Cu0030'});
      * otherwise, the first character of the representation of the
      * unsigned magnitude will not be the zero character. The
      * following characters are used as hexadecimal digits:
@@ -212,9 +212,9 @@ public final class Integer extends Number implements Comparable<Integer> {
      *  {@code 0123456789abcdef}
      * </blockquote>
      *
-     * These are the characters <code>'&#92;u0030'</code> through
-     * <code>'&#92;u0039'</code> and <code>'&#92;u0061'</code> through
-     * <code>'&#92;u0066'</code>. If uppercase letters are
+     * These are the characters {@code '\u005Cu0030'} through
+     * {@code '\u005Cu0039'} and {@code '\u005Cu0061'} through
+     * {@code '\u005Cu0066'}. If uppercase letters are
      * desired, the {@link java.lang.String#toUpperCase()} method may
      * be called on the result:
      *
@@ -248,7 +248,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      * Integer.parseUnsignedInt(s, 8)}.
      *
      * <p>If the unsigned magnitude is zero, it is represented by a
-     * single zero character {@code '0'} (<code>'&#92;u0030'</code>);
+     * single zero character {@code '0'} ({@code '\u005Cu0030'});
      * otherwise, the first character of the representation of the
      * unsigned magnitude will not be the zero character. The
      * following characters are used as octal digits:
@@ -257,8 +257,8 @@ public final class Integer extends Number implements Comparable<Integer> {
      * {@code 01234567}
      * </blockquote>
      *
-     * These are the characters <code>'&#92;u0030'</code> through
-     * <code>'&#92;u0037'</code>.
+     * These are the characters {@code '\u005Cu0030'} through
+     * {@code '\u005Cu0037'}.
      *
      * @param   i   an integer to be converted to a string.
      * @return  the string representation of the unsigned integer value
@@ -286,11 +286,11 @@ public final class Integer extends Number implements Comparable<Integer> {
      * Integer.parseUnsignedInt(s, 2)}.
      *
      * <p>If the unsigned magnitude is zero, it is represented by a
-     * single zero character {@code '0'} (<code>'&#92;u0030'</code>);
+     * single zero character {@code '0'} ({@code '\u005Cu0030'});
      * otherwise, the first character of the representation of the
      * unsigned magnitude will not be the zero character. The
-     * characters {@code '0'} (<code>'&#92;u0030'</code>) and {@code
-     * '1'} (<code>'&#92;u0031'</code>) are used as binary digits.
+     * characters {@code '0'} ({@code '\u005Cu0030'}) and {@code
+     * '1'} ({@code '\u005Cu0031'}) are used as binary digits.
      *
      * @param   i   an integer to be converted to a string.
      * @return  the string representation of the unsigned integer value
@@ -461,9 +461,9 @@ public final class Integer extends Number implements Comparable<Integer> {
      * must all be digits of the specified radix (as determined by
      * whether {@link java.lang.Character#digit(char, int)} returns a
      * nonnegative value), except that the first character may be an
-     * ASCII minus sign {@code '-'} (<code>'&#92;u002D'</code>) to
+     * ASCII minus sign {@code '-'} ({@code '\u005Cu002D'}) to
      * indicate a negative value or an ASCII plus sign {@code '+'}
-     * (<code>'&#92;u002B'</code>) to indicate a positive value. The
+     * ({@code '\u005Cu002B'}) to indicate a positive value. The
      * resulting integer value is returned.
      *
      * <p>An exception of type {@code NumberFormatException} is
@@ -478,8 +478,8 @@ public final class Integer extends Number implements Comparable<Integer> {
      *
      * <li>Any character of the string is not a digit of the specified
      * radix, except that the first character may be a minus sign
-     * {@code '-'} (<code>'&#92;u002D'</code>) or plus sign
-     * {@code '+'} (<code>'&#92;u002B'</code>) provided that the
+     * {@code '-'} ({@code '\u005Cu002D'}) or plus sign
+     * {@code '+'} ({@code '\u005Cu002B'}) provided that the
      * string is longer than length 1.
      *
      * <li>The value represented by the string is not a value of type
@@ -579,8 +579,8 @@ public final class Integer extends Number implements Comparable<Integer> {
      * Parses the string argument as a signed decimal integer. The
      * characters in the string must all be decimal digits, except
      * that the first character may be an ASCII minus sign {@code '-'}
-     * (<code>'&#92;u002D'</code>) to indicate a negative value or an
-     * ASCII plus sign {@code '+'} (<code>'&#92;u002B'</code>) to
+     * ({@code '\u005Cu002D'}) to indicate a negative value or an
+     * ASCII plus sign {@code '+'} ({@code '\u005Cu002B'}) to
      * indicate a positive value. The resulting integer value is
      * returned, exactly as if the argument and the radix 10 were
      * given as arguments to the {@link #parseInt(java.lang.String,
@@ -606,7 +606,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      * specified radix (as determined by whether {@link
      * java.lang.Character#digit(char, int)} returns a nonnegative
      * value), except that the first character may be an ASCII plus
-     * sign {@code '+'} (<code>'&#92;u002B'</code>). The resulting
+     * sign {@code '+'} ({@code '\u005Cu002B'}). The resulting
      * integer value is returned.
      *
      * <p>An exception of type {@code NumberFormatException} is
@@ -621,7 +621,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      *
      * <li>Any character of the string is not a digit of the specified
      * radix, except that the first character may be a plus sign
-     * {@code '+'} (<code>'&#92;u002B'</code>) provided that the
+     * {@code '+'} ({@code '\u005Cu002B'}) provided that the
      * string is longer than length 1.
      *
      * <li>The value represented by the string is larger than the
@@ -676,7 +676,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      * Parses the string argument as an unsigned decimal integer. The
      * characters in the string must all be decimal digits, except
      * that the first character may be an an ASCII plus sign {@code
-     * '+'} (<code>'&#92;u002B'</code>). The resulting integer value
+     * '+'} ({@code '\u005Cu002B'}). The resulting integer value
      * is returned, exactly as if the argument and the radix 10 were
      * given as arguments to the {@link
      * #parseUnsignedInt(java.lang.String, int)} method.
