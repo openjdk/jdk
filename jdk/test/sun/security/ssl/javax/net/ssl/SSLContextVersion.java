@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ public class SSLContextVersion {
             ciphers = parameters.getCipherSuites();
 
             if (protocols.length == 0 || ciphers.length == 0) {
-                throw new Exception("No default protocols or cipher suites");
+                throw new Exception("No supported protocols or cipher suites");
             }
 
             isMatch = false;
@@ -104,7 +104,7 @@ public class SSLContextVersion {
             }
 
             if (!isMatch) {
-                throw new Exception("No matched default protocol");
+                throw new Exception("No matched supported protocol");
             }
             System.out.println("\t... Success");
         }

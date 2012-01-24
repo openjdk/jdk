@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -606,24 +606,32 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_DES_CBC));
         d(CIP, "DES/CBC/PKCS5Padding",          P11Cipher,
                 m(CKM_DES_CBC_PAD, CKM_DES_CBC));
-        d(CIP, "DES/ECB",                       P11Cipher,      s("DES"),
+        d(CIP, "DES/ECB/NoPadding",             P11Cipher,
+                m(CKM_DES_ECB));
+        d(CIP, "DES/ECB/PKCS5Padding",          P11Cipher,      s("DES"),
                 m(CKM_DES_ECB));
 
         d(CIP, "DESede/CBC/NoPadding",          P11Cipher,
                 m(CKM_DES3_CBC));
         d(CIP, "DESede/CBC/PKCS5Padding",       P11Cipher,
                 m(CKM_DES3_CBC_PAD, CKM_DES3_CBC));
-        d(CIP, "DESede/ECB",                    P11Cipher,      s("DESede"),
+        d(CIP, "DESede/ECB/NoPadding",          P11Cipher,
+                m(CKM_DES3_ECB));
+        d(CIP, "DESede/ECB/PKCS5Padding",       P11Cipher,      s("DESede"),
                 m(CKM_DES3_ECB));
         d(CIP, "AES/CBC/NoPadding",             P11Cipher,
                 m(CKM_AES_CBC));
         d(CIP, "AES/CBC/PKCS5Padding",          P11Cipher,
                 m(CKM_AES_CBC_PAD, CKM_AES_CBC));
-        d(CIP, "AES/ECB",                       P11Cipher,      s("AES"),
+        d(CIP, "AES/ECB/NoPadding",             P11Cipher,
+                m(CKM_AES_ECB));
+        d(CIP, "AES/ECB/PKCS5Padding",          P11Cipher,      s("AES"),
                 m(CKM_AES_ECB));
         d(CIP, "AES/CTR/NoPadding",             P11Cipher,
                 m(CKM_AES_CTR));
-        d(CIP, "Blowfish/CBC",                  P11Cipher,
+        d(CIP, "Blowfish/CBC/NoPadding",        P11Cipher,
+                m(CKM_BLOWFISH_CBC));
+        d(CIP, "Blowfish/CBC/PKCS5Padding",     P11Cipher,
                 m(CKM_BLOWFISH_CBC));
 
         // XXX RSA_X_509, RSA_OAEP not yet supported
