@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -990,6 +990,26 @@ void MethodHandles::move_return_value(MacroAssembler* _masm, BasicType type,
   BLOCK_COMMENT("} move_return_value");
 }
 
+#ifdef ASSERT
+#define DESCRIBE_RICOCHET_OFFSET(rf, name) \
+  values.describe(frame_no, (intptr_t *) (((uintptr_t)rf) + MethodHandles::RicochetFrame::name##_offset_in_bytes()), #name)
+
+void MethodHandles::RicochetFrame::describe(const frame* fr, FrameValues& values, int frame_no)  {
+    address bp = (address) fr->fp();
+    RicochetFrame* rf = (RicochetFrame*)(bp - sender_link_offset_in_bytes());
+
+    // ricochet slots
+    DESCRIBE_RICOCHET_OFFSET(rf, exact_sender_sp);
+    DESCRIBE_RICOCHET_OFFSET(rf, conversion);
+    DESCRIBE_RICOCHET_OFFSET(rf, saved_args_base);
+    DESCRIBE_RICOCHET_OFFSET(rf, saved_args_layout);
+    DESCRIBE_RICOCHET_OFFSET(rf, saved_target);
+    DESCRIBE_RICOCHET_OFFSET(rf, continuation);
+
+    // relevant ricochet targets (in caller frame)
+    values.describe(-1, rf->saved_args_base(),  err_msg("*saved_args_base for #%d", frame_no));
+}
+#endif // ASSERT
 
 #ifndef PRODUCT
 extern "C" void print_method_handle(oop mh);

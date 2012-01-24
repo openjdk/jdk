@@ -1334,21 +1334,31 @@ void frame::interpreter_frame_verify_monitor(BasicObjectLock* value) const {
 
 
 void frame::describe(FrameValues& values, int frame_no) {
-  intptr_t* frame_pointer = real_fp();
+  // boundaries: sp and the 'real' frame pointer
+  values.describe(-1, sp(), err_msg("sp for #%d", frame_no), 1);
+  intptr_t* frame_pointer = real_fp(); // Note: may differ from fp()
+
+  // print frame info at the highest boundary
+  intptr_t* info_address = MAX2(sp(), frame_pointer);
+
+  if (info_address != frame_pointer) {
+    // print frame_pointer explicitly if not marked by the frame info
+    values.describe(-1, frame_pointer, err_msg("frame pointer for #%d", frame_no), 1);
+  }
+
   if (is_entry_frame() || is_compiled_frame() || is_interpreted_frame() || is_native_frame()) {
     // Label values common to most frames
     values.describe(-1, unextended_sp(), err_msg("unextended_sp for #%d", frame_no));
-    values.describe(-1, sp(), err_msg("sp for #%d", frame_no));
-    values.describe(-1, frame_pointer, err_msg("frame pointer for #%d", frame_no));
   }
+
   if (is_interpreted_frame()) {
     methodOop m = interpreter_frame_method();
     int bci = interpreter_frame_bci();
 
     // Label the method and current bci
-    values.describe(-1, MAX2(sp(), frame_pointer),
+    values.describe(-1, info_address,
                     FormatBuffer<1024>("#%d method %s @ %d", frame_no, m->name_and_sig_as_C_string(), bci), 2);
-    values.describe(-1, MAX2(sp(), frame_pointer),
+    values.describe(-1, info_address,
                     err_msg("- %d locals %d max stack", m->max_locals(), m->max_stack()), 1);
     if (m->max_locals() > 0) {
       intptr_t* l0 = interpreter_frame_local_at(0);
@@ -1380,21 +1390,36 @@ void frame::describe(FrameValues& values, int frame_no) {
     }
   } else if (is_entry_frame()) {
     // For now just label the frame
-    values.describe(-1, MAX2(sp(), frame_pointer), err_msg("#%d entry frame", frame_no), 2);
+    values.describe(-1, info_address, err_msg("#%d entry frame", frame_no), 2);
   } else if (is_compiled_frame()) {
     // For now just label the frame
     nmethod* nm = cb()->as_nmethod_or_null();
-    values.describe(-1, MAX2(sp(), frame_pointer),
+    values.describe(-1, info_address,
                     FormatBuffer<1024>("#%d nmethod " INTPTR_FORMAT " for method %s%s", frame_no,
                                        nm, nm->method()->name_and_sig_as_C_string(),
-                                       is_deoptimized_frame() ? " (deoptimized" : ""), 2);
+                                       (_deopt_state == is_deoptimized) ?
+                                       " (deoptimized)" :
+                                       ((_deopt_state == unknown) ? " (state unknown)" : "")),
+                    2);
   } else if (is_native_frame()) {
     // For now just label the frame
     nmethod* nm = cb()->as_nmethod_or_null();
-    values.describe(-1, MAX2(sp(), frame_pointer),
+    values.describe(-1, info_address,
                     FormatBuffer<1024>("#%d nmethod " INTPTR_FORMAT " for native method %s", frame_no,
                                        nm, nm->method()->name_and_sig_as_C_string()), 2);
+  } else if (is_ricochet_frame()) {
+      values.describe(-1, info_address, err_msg("#%d ricochet frame", frame_no), 2);
+  } else {
+    // provide default info if not handled before
+    char *info = (char *) "special frame";
+    if ((_cb != NULL) &&
+        (_cb->name() != NULL)) {
+      info = (char *)_cb->name();
+    }
+    values.describe(-1, info_address, err_msg("#%d <%s>", frame_no, info), 2);
   }
+
+  // platform dependent additional data
   describe_pd(values, frame_no);
 }
 
