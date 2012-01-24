@@ -1391,7 +1391,7 @@ bool os::dll_address_to_library_name(address addr, char* buf,
 
 bool os::dll_address_to_function_name(address addr, char *buf,
                                       int buflen, int *offset) {
-  if (Decoder::decode(addr, buf, buflen, offset) == Decoder::no_error) {
+  if (Decoder::decode(addr, buf, buflen, offset)) {
     return true;
   }
   if (offset != NULL)  *offset  = -1;

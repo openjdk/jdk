@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,14 @@
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 
+void ObjPtrQueue::flush() {
+  // The buffer might contain refs into the CSet. We have to filter it
+  // first before we flush it, otherwise we might end up with an
+  // enqueued buffer with refs into the CSet which breaks our invariants.
+  filter();
+  PtrQueue::flush();
+}
+
 // This method removes entries from an SATB buffer that will not be
 // useful to the concurrent marking threads. An entry is removed if it
 // satisfies one of the following conditions:
@@ -44,28 +52,20 @@
 //     process it again).
 //
 // The rest of the entries will be retained and are compacted towards
-// the top of the buffer. If with this filtering we clear a large
-// enough chunk of the buffer we can re-use it (instead of enqueueing
-// it) and we can just allow the mutator to carry on executing.
+// the top of the buffer. Note that, because we do not allow old
+// regions in the CSet during marking, all objects on the CSet regions
+// are young (eden or survivors) and therefore implicitly live. So any
+// references into the CSet will be removed during filtering.
 
-bool ObjPtrQueue::should_enqueue_buffer() {
-  assert(_lock == NULL || _lock->owned_by_self(),
-         "we should have taken the lock before calling this");
-
-  // A value of 0 means "don't filter SATB buffers".
-  if (G1SATBBufferEnqueueingThresholdPercent == 0) {
-    return true;
-  }
-
+void ObjPtrQueue::filter() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-
-  // This method should only be called if there is a non-NULL buffer
-  // that is full.
-  assert(_index == 0, "pre-condition");
-  assert(_buf != NULL, "pre-condition");
-
   void** buf = _buf;
   size_t sz = _sz;
+
+  if (buf == NULL) {
+    // nothing to do
+    return;
+  }
 
   // Used for sanity checking at the end of the loop.
   debug_only(size_t entries = 0; size_t retained = 0;)
@@ -73,9 +73,6 @@ bool ObjPtrQueue::should_enqueue_buffer() {
   size_t i = sz;
   size_t new_index = sz;
 
-  // Given that we are expecting _index == 0, we could have changed
-  // the loop condition to (i > 0). But we are using _index for
-  // generality.
   while (i > _index) {
     assert(i > 0, "we should have at least one more entry to process");
     i -= oopSize;
@@ -103,20 +100,56 @@ bool ObjPtrQueue::should_enqueue_buffer() {
       debug_only(retained += 1;)
     }
   }
+
+#ifdef ASSERT
   size_t entries_calc = (sz - _index) / oopSize;
   assert(entries == entries_calc, "the number of entries we counted "
          "should match the number of entries we calculated");
   size_t retained_calc = (sz - new_index) / oopSize;
   assert(retained == retained_calc, "the number of retained entries we counted "
          "should match the number of retained entries we calculated");
-  size_t perc = retained_calc * 100 / entries_calc;
-  bool should_enqueue = perc > (size_t) G1SATBBufferEnqueueingThresholdPercent;
-  _index = new_index;
+#endif // ASSERT
 
+  _index = new_index;
+}
+
+// This method will first apply the above filtering to the buffer. If
+// post-filtering a large enough chunk of the buffer has been cleared
+// we can re-use the buffer (instead of enqueueing it) and we can just
+// allow the mutator to carry on executing using the same buffer
+// instead of replacing it.
+
+bool ObjPtrQueue::should_enqueue_buffer() {
+  assert(_lock == NULL || _lock->owned_by_self(),
+         "we should have taken the lock before calling this");
+
+  // Even if G1SATBBufferEnqueueingThresholdPercent == 0 we have to
+  // filter the buffer given that this will remove any references into
+  // the CSet as we currently assume that no such refs will appear in
+  // enqueued buffers.
+
+  // This method should only be called if there is a non-NULL buffer
+  // that is full.
+  assert(_index == 0, "pre-condition");
+  assert(_buf != NULL, "pre-condition");
+
+  filter();
+
+  size_t sz = _sz;
+  size_t all_entries = sz / oopSize;
+  size_t retained_entries = (sz - _index) / oopSize;
+  size_t perc = retained_entries * 100 / all_entries;
+  bool should_enqueue = perc > (size_t) G1SATBBufferEnqueueingThresholdPercent;
   return should_enqueue;
 }
 
 void ObjPtrQueue::apply_closure(ObjectClosure* cl) {
+  if (_buf != NULL) {
+    apply_closure_to_buffer(cl, _buf, _index, _sz);
+  }
+}
+
+void ObjPtrQueue::apply_closure_and_empty(ObjectClosure* cl) {
   if (_buf != NULL) {
     apply_closure_to_buffer(cl, _buf, _index, _sz);
     _index = _sz;
@@ -135,6 +168,21 @@ void ObjPtrQueue::apply_closure_to_buffer(ObjectClosure* cl,
   }
 }
 
+#ifndef PRODUCT
+// Helpful for debugging
+
+void ObjPtrQueue::print(const char* name) {
+  print(name, _buf, _index, _sz);
+}
+
+void ObjPtrQueue::print(const char* name,
+                        void** buf, size_t index, size_t sz) {
+  gclog_or_tty->print_cr("  SATB BUFFER [%s] buf: "PTR_FORMAT" "
+                         "index: "SIZE_FORMAT" sz: "SIZE_FORMAT,
+                         name, buf, index, sz);
+}
+#endif // PRODUCT
+
 #ifdef ASSERT
 void ObjPtrQueue::verify_oops_in_buffer() {
   if (_buf == NULL) return;
@@ -150,12 +198,9 @@ void ObjPtrQueue::verify_oops_in_buffer() {
 #pragma warning( disable:4355 ) // 'this' : used in base member initializer list
 #endif // _MSC_VER
 
-
 SATBMarkQueueSet::SATBMarkQueueSet() :
-  PtrQueueSet(),
-  _closure(NULL), _par_closures(NULL),
-  _shared_satb_queue(this, true /*perm*/)
-{}
+  PtrQueueSet(), _closure(NULL), _par_closures(NULL),
+  _shared_satb_queue(this, true /*perm*/) { }
 
 void SATBMarkQueueSet::initialize(Monitor* cbl_mon, Mutex* fl_lock,
                                   int process_completed_threshold,
@@ -166,7 +211,6 @@ void SATBMarkQueueSet::initialize(Monitor* cbl_mon, Mutex* fl_lock,
     _par_closures = NEW_C_HEAP_ARRAY(ObjectClosure*, ParallelGCThreads);
   }
 }
-
 
 void SATBMarkQueueSet::handle_zero_index_for_thread(JavaThread* t) {
   DEBUG_ONLY(t->satb_mark_queue().verify_oops_in_buffer();)
@@ -228,6 +272,13 @@ void SATBMarkQueueSet::set_active_all_threads(bool b,
   }
 }
 
+void SATBMarkQueueSet::filter_thread_buffers() {
+  for(JavaThread* t = Threads::first(); t; t = t->next()) {
+    t->satb_mark_queue().filter();
+  }
+  shared_satb_queue()->filter();
+}
+
 void SATBMarkQueueSet::set_closure(ObjectClosure* closure) {
   _closure = closure;
 }
@@ -239,9 +290,9 @@ void SATBMarkQueueSet::set_par_closure(int i, ObjectClosure* par_closure) {
 
 void SATBMarkQueueSet::iterate_closure_all_threads() {
   for(JavaThread* t = Threads::first(); t; t = t->next()) {
-    t->satb_mark_queue().apply_closure(_closure);
+    t->satb_mark_queue().apply_closure_and_empty(_closure);
   }
-  shared_satb_queue()->apply_closure(_closure);
+  shared_satb_queue()->apply_closure_and_empty(_closure);
 }
 
 void SATBMarkQueueSet::par_iterate_closure_all_threads(int worker) {
@@ -250,7 +301,7 @@ void SATBMarkQueueSet::par_iterate_closure_all_threads(int worker) {
 
   for(JavaThread* t = Threads::first(); t; t = t->next()) {
     if (t->claim_oops_do(true, parity)) {
-      t->satb_mark_queue().apply_closure(_par_closures[worker]);
+      t->satb_mark_queue().apply_closure_and_empty(_par_closures[worker]);
     }
   }
 
@@ -264,7 +315,7 @@ void SATBMarkQueueSet::par_iterate_closure_all_threads(int worker) {
 
   VMThread* vmt = VMThread::vm_thread();
   if (vmt->claim_oops_do(true, parity)) {
-    shared_satb_queue()->apply_closure(_par_closures[worker]);
+    shared_satb_queue()->apply_closure_and_empty(_par_closures[worker]);
   }
 }
 
@@ -292,6 +343,61 @@ bool SATBMarkQueueSet::apply_closure_to_completed_buffer_work(bool par,
   }
 }
 
+void SATBMarkQueueSet::iterate_completed_buffers_read_only(ObjectClosure* cl) {
+  assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
+  assert(cl != NULL, "pre-condition");
+
+  BufferNode* nd = _completed_buffers_head;
+  while (nd != NULL) {
+    void** buf = BufferNode::make_buffer_from_node(nd);
+    ObjPtrQueue::apply_closure_to_buffer(cl, buf, 0, _sz);
+    nd = nd->next();
+  }
+}
+
+void SATBMarkQueueSet::iterate_thread_buffers_read_only(ObjectClosure* cl) {
+  assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
+  assert(cl != NULL, "pre-condition");
+
+  for (JavaThread* t = Threads::first(); t; t = t->next()) {
+    t->satb_mark_queue().apply_closure(cl);
+  }
+  shared_satb_queue()->apply_closure(cl);
+}
+
+#ifndef PRODUCT
+// Helpful for debugging
+
+#define SATB_PRINTER_BUFFER_SIZE 256
+
+void SATBMarkQueueSet::print_all(const char* msg) {
+  char buffer[SATB_PRINTER_BUFFER_SIZE];
+  assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
+
+  gclog_or_tty->cr();
+  gclog_or_tty->print_cr("SATB BUFFERS [%s]", msg);
+
+  BufferNode* nd = _completed_buffers_head;
+  int i = 0;
+  while (nd != NULL) {
+    void** buf = BufferNode::make_buffer_from_node(nd);
+    jio_snprintf(buffer, SATB_PRINTER_BUFFER_SIZE, "Enqueued: %d", i);
+    ObjPtrQueue::print(buffer, buf, 0, _sz);
+    nd = nd->next();
+    i += 1;
+  }
+
+  for (JavaThread* t = Threads::first(); t; t = t->next()) {
+    jio_snprintf(buffer, SATB_PRINTER_BUFFER_SIZE, "Thread: %s", t->name());
+    t->satb_mark_queue().print(buffer);
+  }
+
+  shared_satb_queue()->print("Shared");
+
+  gclog_or_tty->cr();
+}
+#endif // PRODUCT
+
 void SATBMarkQueueSet::abandon_partial_marking() {
   BufferNode* buffers_to_delete = NULL;
   {
@@ -316,5 +422,5 @@ void SATBMarkQueueSet::abandon_partial_marking() {
   for (JavaThread* t = Threads::first(); t; t = t->next()) {
     t->satb_mark_queue().reset();
   }
-  shared_satb_queue()->reset();
+ shared_satb_queue()->reset();
 }
