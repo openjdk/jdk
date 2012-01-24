@@ -47,6 +47,10 @@ import static java.nio.file.StandardCopyOption.*;
  */
 public enum TestHelper {
     INSTANCE;
+    // commonly used jtreg constants
+    static final File TEST_CLASSES_DIR;
+    static final File TEST_SOURCES_DIR;
+
     static final String JAVAHOME = System.getProperty("java.home");
     static final boolean isSDK = JAVAHOME.endsWith("jre");
     static final String javaCmd;
@@ -76,6 +80,18 @@ public enum TestHelper {
     static int testExitValue = 0;
 
     static {
+        String tmp = System.getProperty("test.classes", null);
+        if (tmp == null) {
+            throw new Error("property test.classes not defined ??");
+        }
+        TEST_CLASSES_DIR = new File(tmp).getAbsoluteFile();
+
+        tmp = System.getProperty("test.src", null);
+        if (tmp == null) {
+            throw new Error("property test.src not defined ??");
+        }
+        TEST_SOURCES_DIR = new File(tmp).getAbsoluteFile();
+
         if (is64Bit && is32Bit) {
             throw new RuntimeException("arch model cannot be both 32 and 64 bit");
         }
