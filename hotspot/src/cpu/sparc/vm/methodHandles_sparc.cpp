@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -999,6 +999,24 @@ void MethodHandles::move_return_value(MacroAssembler* _masm, BasicType type,
   }
   BLOCK_COMMENT("} move_return_value");
 }
+
+#ifdef ASSERT
+void MethodHandles::RicochetFrame::describe(const frame* fr, FrameValues& values, int frame_no)  {
+    RicochetFrame* rf = new RicochetFrame(*fr);
+
+    // ricochet slots (kept in registers for sparc)
+    values.describe(frame_no, rf->register_addr(I5_savedSP), err_msg("exact_sender_sp reg for #%d", frame_no));
+    values.describe(frame_no, rf->register_addr(L5_conversion), err_msg("conversion reg for #%d", frame_no));
+    values.describe(frame_no, rf->register_addr(L4_saved_args_base), err_msg("saved_args_base reg for #%d", frame_no));
+    values.describe(frame_no, rf->register_addr(L3_saved_args_layout), err_msg("saved_args_layout reg for #%d", frame_no));
+    values.describe(frame_no, rf->register_addr(L2_saved_target), err_msg("saved_target reg for #%d", frame_no));
+    values.describe(frame_no, rf->register_addr(L1_continuation), err_msg("continuation reg for #%d", frame_no));
+
+    // relevant ricochet targets (in caller frame)
+    values.describe(-1, rf->saved_args_base(),  err_msg("*saved_args_base for #%d", frame_no));
+    values.describe(-1, (intptr_t *)(STACK_BIAS+(uintptr_t)rf->exact_sender_sp()),  err_msg("*exact_sender_sp+STACK_BIAS for #%d", frame_no));
+}
+#endif // ASSERT
 
 #ifndef PRODUCT
 extern "C" void print_method_handle(oop mh);
