@@ -284,6 +284,9 @@ sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh       generic-all
 # Windows X64, java.lang.IllegalStateException
 javax/management/monitor/AttributeArbitraryDataTypeTest.java    generic-all
 
+# 7132199
+sun/management/jmxremote/bootstrap/JvmstatCountersTest.java	generic-all
+
 ############################################################################
 
 # jdk_math
@@ -476,6 +479,9 @@ java/rmi/server/RMISocketFactory/useSocketFactory/activatable/UseCustomSocketFac
 java/rmi/server/RMISocketFactory/useSocketFactory/registry/UseCustomSocketFactory.java generic-all
 java/rmi/server/UnicastRemoteObject/unexportObject/UnexportLeak.java generic-all
 
+# 7132247
+java/rmi/registry/readTest/readTest.sh				windows-all
+
 ############################################################################
 
 # jdk_security
@@ -575,12 +581,12 @@ sun/tools/jps/jps-Vvml.sh                                       generic-all
 # Filed 6979016
 sun/tools/jconsole/ResourceCheckTest.sh                         generic-all
 
+# 7132203
+sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
+
 ############################################################################
 
 # jdk_util
-
-# Filed 7027061
-java/util/Locale/Bug6989440.java                                windows-all
 
 # Filed 6933803
 java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all
