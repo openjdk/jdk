@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -96,8 +96,8 @@
 #define P11_ENABLE_C_CLOSESESSION
 #undef  P11_ENABLE_C_CLOSEALLSESSIONS
 #define P11_ENABLE_C_GETSESSIONINFO
-#undef  P11_ENABLE_C_GETOPERATIONSTATE
-#undef  P11_ENABLE_C_SETOPERATIONSTATE
+#define P11_ENABLE_C_GETOPERATIONSTATE
+#define P11_ENABLE_C_SETOPERATIONSTATE
 #define P11_ENABLE_C_LOGIN
 #define P11_ENABLE_C_LOGOUT
 #define P11_ENABLE_C_CREATEOBJECT
