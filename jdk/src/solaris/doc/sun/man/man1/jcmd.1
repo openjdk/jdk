@@ -1,0 +1,124 @@
+." Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+." or visit www.oracle.com if you need additional information or have any
+." questions.
+."
+.TH jcmd 1 "22 Novembre 2011"
+
+.LP
+.SH "Name"
+jcmd \- Diagnostic Command
+.br
+
+.LP
+.SH "SYNOPSIS"
+.LP
+.nf
+\f3
+.fl
+\fP\f3jcmd\fP [ option ]
+.fl
+\f3jcmd\fP <\fIpid\fR | \fImain class\fR> PerfCounter.print
+.fl
+\f3jcmd\fP <\fIpid\fR | \fImain class\fR> \fIcommand\fR [\fIarguments\fR]
+.fl
+\f3jcmd\fP <\fIpid\fR | \fImain class\fR> -f \fIfile\fR
+.fl
+.fl
+.fi
+
+.LP
+.SH "DESCRIPTION"
+.LP
+.LP
+\f3jcmd\fP is a utility to send diagnostic command requests to a Java 
+Virtual Machine supporting this feature. Used without arguments or with the \-l option, jcmd prints the list of running Java processes with their process id, their main class and their command line arguments. When a process id is specified on the command line, jcmd sends the diagnostic command request to the process with this id. When a main class is specified on the command line, jcmd sends the diagnostic command request to all Java processes with this main class. With the PerfCounter.print argument, jcmd prints the performance counters available on the targeted Java process(es). With the \-f option, jcmd sends to the targeted Java process(es) the diagnostic commands stored in the file \fIfile\fR.
+.LP
+\fP
+.fi
+
+.SH "OPTIONS"
+.LP
+.LP
+Options are mutually exclusive. Options, if used, should follow immediately after the command name.
+.LP
+.RS 3
+.TP 3
+\-l 
+prints the list of running Java processes with their process id, their
+main class and their command line arguments. 
+.TP 3
+\-h 
+prints a help message.
+.br
+.br
+.TP 3
+\-help 
+prints a help message
+.br
+.RE
+
+.LP
+.SH "PARAMETERS"
+.LP
+.RS 3
+.TP 3
+\fIpid\fR
+Identifies the process which will receive the diagnostic command requests. The process must be a Java process. To get a list of Java processes running on a machine, jps(1) or jcmd(1) may be used. 
+.RE
+.LP
+.RS 3
+.TP 3
+\fImain class\fR
+Main class of the process which will receive the diagnostic command requests. If several running Java processes share this main class, the diagnostic command request will be sent to all these processes. To get a list of Java processes running on a machine, jps(1) or jcmd(1) may be used. 
+.RE
+.RS 3
+.TP 3
+\fIcommand\fR [\fIarguments\fR]
+Invoke the diagnostic command called \fIcommand\fR on the targeted Java
+process(es). The list of available diagnostic commands for a given
+process can be obtained by invoking the 'help' command on this process.
+Each diagnostic command has its own set of \fIarguments\fR which can be 
+obtained by invoking the 'help' command followed by the command name.
+.RE
+.RS 3
+.TP 3
+\fIPerfCounter.print\fR
+Print the performance counters available on the targeted Java
+process(es). The list of performance counters may vary with the Java
+process.
+.RE
+.RS 3
+.TP 3
+\fI-f file\fR
+Read commands from \fIfile\fR and invoke them on the targeted Java
+process(es). In  \fIfile\fR, each command must be written on a single line. 
+Lines starting with # are ignored. Processing of \fIfile\fR ends when
+all lines have been invoked or when a line containing the 'stop' keyword
+is read.
+.LP
+.SH "SEE ALSO"
+.LP
+.RS 3
+.TP 2
+o
+jps(1) 
+.RE
+
+ 

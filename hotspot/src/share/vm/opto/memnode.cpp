@@ -2201,7 +2201,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // unsafe if I have intervening uses...  Also disallowed for StoreCM
   // since they must follow each StoreP operation.  Redundant StoreCMs
   // are eliminated just before matching in final_graph_reshape.
-  if (mem->is_Store() && phase->eqv_uncast(mem->in(MemNode::Address), address) &&
+  if (mem->is_Store() && mem->in(MemNode::Address)->eqv_uncast(address) &&
       mem->Opcode() != Op_StoreCM) {
     // Looking at a dead closed cycle of memory?
     assert(mem != mem->in(MemNode::Memory), "dead loop in StoreNode::Ideal");
@@ -2274,16 +2274,16 @@ Node *StoreNode::Identity( PhaseTransform *phase ) {
 
   // Load then Store?  Then the Store is useless
   if (val->is_Load() &&
-      phase->eqv_uncast( val->in(MemNode::Address), adr ) &&
-      phase->eqv_uncast( val->in(MemNode::Memory ), mem ) &&
+      val->in(MemNode::Address)->eqv_uncast(adr) &&
+      val->in(MemNode::Memory )->eqv_uncast(mem) &&
       val->as_Load()->store_Opcode() == Opcode()) {
     return mem;
   }
 
   // Two stores in a row of the same value?
   if (mem->is_Store() &&
-      phase->eqv_uncast( mem->in(MemNode::Address), adr ) &&
-      phase->eqv_uncast( mem->in(MemNode::ValueIn), val ) &&
+      mem->in(MemNode::Address)->eqv_uncast(adr) &&
+      mem->in(MemNode::ValueIn)->eqv_uncast(val) &&
       mem->Opcode() == Opcode()) {
     return mem;
   }

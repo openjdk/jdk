@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 6952519
- * @run main/timeout=40/othervm TcpTimeout
+ * @run main/othervm TcpTimeout
  * @summary kdc_timeout is not being honoured when using TCP
  */
 
@@ -36,30 +36,19 @@ public class TcpTimeout {
     public static void main(String[] args)
             throws Exception {
 
+        // Set debug to grab debug output like ">>> KDCCommunication"
         System.setProperty("sun.security.krb5.debug", "true");
-        final int p1 = 10000 + new java.util.Random().nextInt(10000);
-        final int p2 = 20000 + new java.util.Random().nextInt(10000);
-        final int p3 = 30000 + new java.util.Random().nextInt(10000);
 
-        KDC k = new KDC(OneKDC.REALM, OneKDC.KDCHOST, p3, true);
+        // Called before new ServerSocket on p1 and p2 to make sure
+        // customized nameservice is used
+        KDC k = new KDC(OneKDC.REALM, OneKDC.KDCHOST, 0, true);
+        int p3 = k.getPort();
         k.addPrincipal(OneKDC.USER, OneKDC.PASS);
         k.addPrincipalRandKey("krbtgt/" + OneKDC.REALM);
 
         // Start two listener that does not communicate, simulate timeout
-        new Thread() {
-            public void run() {
-                try {
-                    new ServerSocket(p1).accept();
-                } catch (Exception e) {
-                }}
-        }.start();
-        new Thread() {
-            public void run() {
-                try {
-                    new ServerSocket(p2).accept();
-                } catch (Exception e) {
-                }}
-        }.start();
+        int p1 = new ServerSocket(0).getLocalPort();
+        int p2 = new ServerSocket(0).getLocalPort();
 
         FileWriter fw = new FileWriter("alternative-krb5.conf");
 
@@ -78,13 +67,15 @@ public class TcpTimeout {
         System.setProperty("java.security.krb5.conf", "alternative-krb5.conf");
         Config.refresh();
 
+        System.out.println("Ports opened on " + p1 + ", " + p2 + ", " + p3);
+
         // The correct behavior should be:
         // 5 sec on p1, 5 sec on p1, fail
         // 5 sec on p2, 5 sec on p2, fail
         // p3 ok, p3 ok again for preauth.
         // The total time should be 20sec + 2x. x is processing time for AS-REQ.
         int count = 6;
-        long start = System.nanoTime();
+        long start = System.currentTimeMillis();
 
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
         PrintStream oldout = System.out;
@@ -103,36 +94,9 @@ public class TcpTimeout {
             throw new Exception("Retry count is " + count + " less");
         }
 
-        long end = System.nanoTime();
-        if ((end - start)/1000000000L < 20) {
-            throw new Exception("Too fast? " + (end - start)/1000000000L);
+        long end = System.currentTimeMillis();
+        if ((end - start)/1000L < 20) {
+            throw new Exception("Too fast? " + (end - start)/1000L);
         }
-    }
-
-    private static KDC on(int p) throws Exception {
-        KDC k = new KDC(OneKDC.REALM, OneKDC.KDCHOST, p, true);
-        k.addPrincipal(OneKDC.USER, OneKDC.PASS);
-        k.addPrincipalRandKey("krbtgt/" + OneKDC.REALM);
-        return k;
-    }
-
-    private static void addFakeKDCs()
-            throws Exception {
-        BufferedReader fr = new BufferedReader(new FileReader(OneKDC.KRB5_CONF));
-        FileWriter fw = new FileWriter("alternative-krb5.conf");
-        while (true) {
-            String s = fr.readLine();
-            if (s == null) {
-                break;
-            }
-            if (s.trim().startsWith("kdc = ")) {
-                fw.write("    kdc = localhost:33333\n");
-                fw.write("    kdc = localhost:22222\n");
-            }
-            fw.write(s + "\n");
-        }
-        fr.close();
-        fw.close();
-        sun.security.krb5.Config.refresh();
     }
 }
