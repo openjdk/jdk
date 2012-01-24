@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@
  * @compile -XDignore.symbol.file DefaultLocaleTest.java TestHelper.java
  * @run main DefaultLocaleTestRun
  */
-import java.io.File;
 
 public class DefaultLocaleTestRun {
     public static void main(String... args) {
@@ -43,11 +42,13 @@ public class DefaultLocaleTestRun {
             return;
         }
         TestHelper.TestResult tr = null;
-        tr = TestHelper.doExec(TestHelper.javaCmd,  "DefaultLocaleTest", "-w",
-                "x.out");
+        tr = TestHelper.doExec(TestHelper.javaCmd,
+                "-cp", TestHelper.TEST_CLASSES_DIR.getAbsolutePath(),
+                "DefaultLocaleTest", "-w", "x.out");
         System.out.println(tr.testOutput);
-        tr = TestHelper.doExec(TestHelper.javawCmd, "DefaultLocaleTest", "-r",
-                "x.out");
+        tr = TestHelper.doExec(TestHelper.javawCmd,
+                "-cp", TestHelper.TEST_CLASSES_DIR.getAbsolutePath(),
+                "DefaultLocaleTest", "-r", "x.out");
         System.out.println(tr.testOutput);
         if (!tr.isOK()) {
             throw new RuntimeException("Test failed");
