@@ -701,6 +701,14 @@ GetJREPath(char *path, jint pathsize, char * arch, jboolean speculative)
     char libjava[MAXPATHLEN];
 
     if (GetApplicationHome(path, pathsize)) {
+
+        /* Is the JRE universal, i.e. no arch dir? */
+        sprintf(libjava, "%s/jre/lib/" JAVA_DLL, path);
+        if (access(libjava, F_OK) == 0) {
+            strcat(path, "/jre");
+            goto found;
+        }
+
         /* Is JRE co-located with the application? */
         sprintf(libjava, "%s/lib/%s/" JAVA_DLL, path, arch);
         if (access(libjava, F_OK) == 0) {
@@ -734,7 +742,7 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
     ifn->GetDefaultJavaVMInitArgs = JNI_GetDefaultJavaVMInitArgs;
     return JNI_TRUE;
 #else
-   Dl_info dlinfo;
+    Dl_info dlinfo;
     void *libjvm;
 
     if (_launcher_debug) {
