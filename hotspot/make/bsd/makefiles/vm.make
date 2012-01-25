@@ -337,8 +337,8 @@ ifeq ($(OS_VENDOR), Darwin)
 $(LIBJVM).dSYM: $(LIBJVM)
 	dsymutil $(LIBJVM)
 
-# no launcher or libjvm_db for macosx
-build: $(LIBJVM) $(LIBJSIG) $(BUILDLIBSAPROC) dtraceCheck $(LIBJVM).dSYM
+# no libjvm_db for macosx
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(BUILDLIBSAPROC) dtraceCheck $(LIBJVM).dSYM
 	echo "Doing vm.make build:"
 else
 build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC)
