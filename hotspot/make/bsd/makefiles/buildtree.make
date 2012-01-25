@@ -162,20 +162,6 @@ ifndef HOTSPOT_VM_DISTRO
   endif
 endif
 
-ifeq ($(OS_VENDOR), Darwin)
-  # MACOSX FIXME: we should be able to run test_gamma (see MACOSX_PORT-214)
-  ifeq ($(ALWAYS_PASS_TEST_GAMMA),)
-    # ALWAYS_PASS_TEST_GAMMA wasn't set so we default to true on MacOS X
-    # until MACOSX_PORT-214 is fixed
-    ALWAYS_PASS_TEST_GAMMA=true
-  endif
-endif
-ifeq ($(ALWAYS_PASS_TEST_GAMMA), true)
-  TEST_GAMMA_STATUS= echo 'exit 0';
-else
-  TEST_GAMMA_STATUS=
-endif
-
 BUILDTREE_VARS += HOTSPOT_RELEASE_VERSION=$(HS_BUILD_VER) HOTSPOT_BUILD_VERSION=  JRE_RELEASE_VERSION=$(JRE_RELEASE_VERSION)
 
 BUILDTREE	= \
@@ -353,12 +339,10 @@ env.sh: $(BUILDTREE_MAKE)
 	$(BUILDTREE_COMMENT); \
 	[ -n "$$JAVA_HOME" ] && { echo ": \$${JAVA_HOME:=$${JAVA_HOME}}"; }; \
 	{ \
-	echo "LD_LIBRARY_PATH=.:$${LD_LIBRARY_PATH:+$$LD_LIBRARY_PATH:}\$${JAVA_HOME}/jre/lib/${LIBARCH}/native_threads:\$${JAVA_HOME}/jre/lib/${LIBARCH}:${GCC_LIB}"; \
-	echo "DYLD_LIBRARY_PATH=.:$${DYLD_LIBRARY_PATH:+$$DYLD_LIBRARY_PATH:}\$${JAVA_HOME}/jre/lib/${LIBARCH}/native_threads:\$${JAVA_HOME}/jre/lib/${LIBARCH}:${GCC_LIB}"; \
 	echo "CLASSPATH=$${CLASSPATH:+$$CLASSPATH:}.:\$${JAVA_HOME}/jre/lib/rt.jar:\$${JAVA_HOME}/jre/lib/i18n.jar"; \
 	} | sed s:$${JAVA_HOME:--------}:\$${JAVA_HOME}:g; \
 	echo "HOTSPOT_BUILD_USER=\"$${LOGNAME:-$$USER} in `basename $(GAMMADIR)`\""; \
-	echo "export JAVA_HOME LD_LIBRARY_PATH DYLD_LIBRARY_PATH CLASSPATH HOTSPOT_BUILD_USER"; \
+	echo "export JAVA_HOME CLASSPATH HOTSPOT_BUILD_USER"; \
 	) > $@
 
 env.csh: env.sh
@@ -412,7 +396,7 @@ JAVA_FLAG/32 = -d32
 JAVA_FLAG/64 = -d64
 
 WRONG_DATA_MODE_MSG = \
-	echo "JAVA_HOME must point to $(DATA_MODE)bit JDK."
+	echo "JAVA_HOME must point to a $(DATA_MODE)-bit OpenJDK."
 
 CROSS_COMPILING_MSG = \
 	echo "Cross compiling for ARCH $(CROSS_COMPILE_ARCH), skipping gamma run."
@@ -420,20 +404,78 @@ CROSS_COMPILING_MSG = \
 test_gamma:  $(BUILDTREE_MAKE) $(GAMMADIR)/make/test/Queens.java
 	@echo Creating $@ ...
 	$(QUIETLY) ( \
-	echo '#!/bin/sh'; \
+	echo "#!/bin/sh"; \
+	echo ""; \
 	$(BUILDTREE_COMMENT); \
-	echo '. ./env.sh'; \
-	echo "if [ \"$(CROSS_COMPILE_ARCH)\" != \"\" ]; then { $(CROSS_COMPILING_MSG); exit 0; }; fi"; \
-	echo "if [ -z \$$JAVA_HOME ]; then { $(NO_JAVA_HOME_MSG); exit 0; }; fi"; \
-	echo "if ! \$${JAVA_HOME}/bin/java $(JAVA_FLAG) -fullversion 2>&1 > /dev/null"; \
-	echo "then"; \
-	echo "  $(WRONG_DATA_MODE_MSG); exit 0;"; \
+	echo ""; \
+	echo "# Include environment settings for gamma run"; \
+	echo ""; \
+	echo ". ./env.sh"; \
+	echo ""; \
+	echo "# Do not run gamma test for cross compiles"; \
+	echo ""; \
+	echo "if [ -n \"$(CROSS_COMPILE_ARCH)\" ]; then "; \
+	echo "  $(CROSS_COMPILING_MSG)"; \
+	echo "  exit 0"; \
 	echo "fi"; \
+	echo ""; \
+	echo "# Make sure JAVA_HOME is set as it is required for gamma"; \
+	echo ""; \
+	echo "if [ -z \"\$${JAVA_HOME}\" ]; then "; \
+	echo "  $(NO_JAVA_HOME_MSG)"; \
+	echo "  exit 0"; \
+	echo "fi"; \
+	echo ""; \
+	echo "# Check JAVA_HOME version to be used for the test"; \
+	echo ""; \
+	echo "\$${JAVA_HOME}/bin/java $(JAVA_FLAG) -fullversion > /dev/null 2>&1"; \
+	echo "if [ \$$? -ne 0 ]; then "; \
+	echo "  $(WRONG_DATA_MODE_MSG)"; \
+	echo "  exit 0"; \
+	echo "fi"; \
+	echo ""; \
+	echo "# Use gamma_g if it exists"; \
+	echo ""; \
+	echo "GAMMA_PROG=gamma"; \
+	echo "if [ -f gamma_g ]; then "; \
+	echo "  GAMMA_PROG=gamma_g"; \
+	echo "fi"; \
+	echo ""; \
+	echo "if [ \"$(OS_VENDOR)\" = \"Darwin\" ]; then "; \
+	echo "  # Ensure architecture for gamma and JAVA_HOME is the same."; \
+	echo "  # NOTE: gamma assumes the OpenJDK directory layout."; \
+	echo ""; \
+	echo "  GAMMA_ARCH=\"\`file \$${GAMMA_PROG} | awk '{print \$$NF}'\`\""; \
+	echo "  JVM_LIB=\"\$${JAVA_HOME}/jre/lib/libjava.$(LIBRARY_SUFFIX)\""; \
+	echo "  if [ ! -f \$${JVM_LIB} ]; then"; \
+	echo "    JVM_LIB=\"\$${JAVA_HOME}/jre/lib/$${LIBARCH}/libjava.$(LIBRARY_SUFFIX)\""; \
+	echo "  fi"; \
+	echo "  if [ ! -f \$${JVM_LIB} ] || [ -z \"\`file \$${JVM_LIB} | grep \$${GAMMA_ARCH}\`\" ]; then "; \
+	echo "    $(WRONG_DATA_MODE_MSG)"; \
+	echo "    exit 0"; \
+	echo "  fi"; \
+	echo "fi"; \
+	echo ""; \
+	echo "# Compile Queens program for test"; \
+	echo ""; \
 	echo "rm -f Queens.class"; \
 	echo "\$${JAVA_HOME}/bin/javac -d . $(GAMMADIR)/make/test/Queens.java"; \
-	echo '[ -f gamma_g ] && { gamma=gamma_g; }'; \
-	echo './$${gamma:-gamma} $(TESTFLAGS) Queens < /dev/null'; \
-	$(TEST_GAMMA_STATUS) \
+	echo ""; \
+	echo "# Set library path solely for gamma launcher test run"; \
+	echo ""; \
+	echo "LD_LIBRARY_PATH=.:$${LD_LIBRARY_PATH:+$$LD_LIBRARY_PATH:}\$${JAVA_HOME}/jre/lib/${LIBARCH}/native_threads:\$${JAVA_HOME}/jre/lib/${LIBARCH}:${GCC_LIB}"; \
+	echo "export LD_LIBRARY_PATH"; \
+	echo "unset LD_LIBRARY_PATH_32"; \
+	echo "unset LD_LIBRARY_PATH_64"; \
+	echo ""; \
+	echo "if [ \"$(OS_VENDOR)\" = \"Darwin\" ]; then "; \
+	echo "  DYLD_LIBRARY_PATH=.:$${DYLD_LIBRARY_PATH:+$$DYLD_LIBRARY_PATH:}\$${JAVA_HOME}/jre/lib/native_threads:\$${JAVA_HOME}/jre/lib:$${DYLD_LIBRARY_PATH:+$$DYLD_LIBRARY_PATH:}\$${JAVA_HOME}/jre/lib/${LIBARCH}/native_threads:\$${JAVA_HOME}/jre/lib/${LIBARCH}:${GCC_LIB}"; \
+	echo "  export DYLD_LIBRARY_PATH"; \
+	echo "fi"; \
+	echo ""; \
+	echo "# Use the gamma launcher and JAVA_HOME to run the test"; \
+	echo ""; \
+	echo "./\$${GAMMA_PROG} $(TESTFLAGS) Queens < /dev/null"; \
 	) > $@
 	$(QUIETLY) chmod +x $@
 
