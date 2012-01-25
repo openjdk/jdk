@@ -127,7 +127,7 @@ public:
         // explicitly and all objects in the CSet are considered
         // (implicitly) live. So, we won't mark them explicitly and
         // we'll leave them over NTAMS.
-        _cm->grayRoot(obj, obj_size, _worker_id);
+        _cm->grayRoot(obj, obj_size, _worker_id, _hr);
       }
       _marked_bytes += (obj_size * HeapWordSize);
       obj->set_mark(markOopDesc::prototype());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,8 @@
 // perf-critical inner loop.
 #define FILTERINTOCSCLOSURE_DOHISTOGRAMCOUNT 0
 
-template <class T> inline void FilterIntoCSClosure::do_oop_nv(T* p) {
+template <class T>
+inline void FilterIntoCSClosure::do_oop_nv(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
   if (!oopDesc::is_null(heap_oop) &&
       _g1->obj_in_cs(oopDesc::decode_heap_oop_not_null(heap_oop))) {
@@ -53,7 +54,8 @@ template <class T> inline void FilterIntoCSClosure::do_oop_nv(T* p) {
 
 #define FILTEROUTOFREGIONCLOSURE_DOHISTOGRAMCOUNT 0
 
-template <class T> inline void FilterOutOfRegionClosure::do_oop_nv(T* p) {
+template <class T>
+inline void FilterOutOfRegionClosure::do_oop_nv(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
   if (!oopDesc::is_null(heap_oop)) {
     HeapWord* obj_hw = (HeapWord*)oopDesc::decode_heap_oop_not_null(heap_oop);
@@ -67,7 +69,8 @@ template <class T> inline void FilterOutOfRegionClosure::do_oop_nv(T* p) {
 }
 
 // This closure is applied to the fields of the objects that have just been copied.
-template <class T> inline void G1ParScanClosure::do_oop_nv(T* p) {
+template <class T>
+inline void G1ParScanClosure::do_oop_nv(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
 
   if (!oopDesc::is_null(heap_oop)) {
@@ -96,7 +99,8 @@ template <class T> inline void G1ParScanClosure::do_oop_nv(T* p) {
   }
 }
 
-template <class T> inline void G1ParPushHeapRSClosure::do_oop_nv(T* p) {
+template <class T>
+inline void G1ParPushHeapRSClosure::do_oop_nv(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
 
   if (!oopDesc::is_null(heap_oop)) {
@@ -111,7 +115,8 @@ template <class T> inline void G1ParPushHeapRSClosure::do_oop_nv(T* p) {
   }
 }
 
-template <class T> inline void G1CMOopClosure::do_oop_nv(T* p) {
+template <class T>
+inline void G1CMOopClosure::do_oop_nv(T* p) {
   assert(_g1h->is_in_g1_reserved((HeapWord*) p), "invariant");
   assert(!_g1h->is_on_master_free_list(
                     _g1h->heap_region_containing((HeapWord*) p)), "invariant");
@@ -123,6 +128,18 @@ template <class T> inline void G1CMOopClosure::do_oop_nv(T* p) {
                            _task->task_id(), p, (void*) obj);
   }
   _task->deal_with_reference(obj);
+}
+
+template <class T>
+inline void G1RootRegionScanClosure::do_oop_nv(T* p) {
+  T heap_oop = oopDesc::load_heap_oop(p);
+  if (!oopDesc::is_null(heap_oop)) {
+    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+    HeapRegion* hr = _g1h->heap_region_containing((HeapWord*) obj);
+    if (hr != NULL) {
+      _cm->grayRoot(obj, obj->size(), _worker_id, hr);
+    }
+  }
 }
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1OOPCLOSURES_INLINE_HPP

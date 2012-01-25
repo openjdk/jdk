@@ -220,11 +220,27 @@ public:
 
 // Closure for iterating over object fields during concurrent marking
 class G1CMOopClosure : public OopClosure {
+private:
   G1CollectedHeap*   _g1h;
   ConcurrentMark*    _cm;
   CMTask*            _task;
 public:
   G1CMOopClosure(G1CollectedHeap* g1h, ConcurrentMark* cm, CMTask* task);
+  template <class T> void do_oop_nv(T* p);
+  virtual void do_oop(      oop* p) { do_oop_nv(p); }
+  virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
+};
+
+// Closure to scan the root regions during concurrent marking
+class G1RootRegionScanClosure : public OopClosure {
+private:
+  G1CollectedHeap* _g1h;
+  ConcurrentMark*  _cm;
+  uint _worker_id;
+public:
+  G1RootRegionScanClosure(G1CollectedHeap* g1h, ConcurrentMark* cm,
+                          uint worker_id) :
+    _g1h(g1h), _cm(cm), _worker_id(worker_id) { }
   template <class T> void do_oop_nv(T* p);
   virtual void do_oop(      oop* p) { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }

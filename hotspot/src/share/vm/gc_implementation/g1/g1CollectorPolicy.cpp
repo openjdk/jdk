@@ -141,6 +141,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   _cur_clear_ct_time_ms(0.0),
   _mark_closure_time_ms(0.0),
+  _root_region_scan_wait_time_ms(0.0),
 
   _cur_ref_proc_time_ms(0.0),
   _cur_ref_enq_time_ms(0.0),
@@ -903,19 +904,10 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
     gclog_or_tty->print(" (%s)", gcs_are_young() ? "young" : "mixed");
   }
 
-  if (!during_initial_mark_pause()) {
-    // We only need to do this here as the policy will only be applied
-    // to the GC we're about to start. so, no point is calculating this
-    // every time we calculate / recalculate the target young length.
-    update_survivors_policy();
-  } else {
-    // The marking phase has a "we only copy implicitly live
-    // objects during marking" invariant. The easiest way to ensure it
-    // holds is not to allocate any survivor regions and tenure all
-    // objects. In the future we might change this and handle survivor
-    // regions specially during marking.
-    tenure_all_objects();
-  }
+  // We only need to do this here as the policy will only be applied
+  // to the GC we're about to start. so, no point is calculating this
+  // every time we calculate / recalculate the target young length.
+  update_survivors_policy();
 
   assert(_g1->used() == _g1->recalculate_used(),
          err_msg("sanity, used: "SIZE_FORMAT" recalculate_used: "SIZE_FORMAT,
@@ -967,6 +959,9 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
   // This is initialized to zero here and is set during
   // the evacuation pause if marking is in progress.
   _cur_satb_drain_time_ms = 0.0;
+  // This is initialized to zero here and is set during the evacuation
+  // pause if we actually waited for the root region scanning to finish.
+  _root_region_scan_wait_time_ms = 0.0;
 
   _last_gc_was_young = false;
 
@@ -1271,6 +1266,10 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
   // is in progress.
   other_time_ms -= _cur_satb_drain_time_ms;
 
+  // Subtract the root region scanning wait time. It's initialized to
+  // zero at the start of the pause.
+  other_time_ms -= _root_region_scan_wait_time_ms;
+
   if (parallel) {
     other_time_ms -= _cur_collection_par_time_ms;
   } else {
@@ -1303,6 +1302,8 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     // each other. Therefore we unconditionally record the SATB drain
     // time - even if it's zero.
     body_summary->record_satb_drain_time_ms(_cur_satb_drain_time_ms);
+    body_summary->record_root_region_scan_wait_time_ms(
+                                               _root_region_scan_wait_time_ms);
 
     body_summary->record_ext_root_scan_time_ms(ext_root_scan_time);
     body_summary->record_satb_filtering_time_ms(satb_filtering_time);
@@ -1399,6 +1400,9 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
                            (last_pause_included_initial_mark) ? " (initial-mark)" : "",
                            elapsed_ms / 1000.0);
 
+    if (_root_region_scan_wait_time_ms > 0.0) {
+      print_stats(1, "Root Region Scan Waiting", _root_region_scan_wait_time_ms);
+    }
     if (parallel) {
       print_stats(1, "Parallel Time", _cur_collection_par_time_ms);
       print_par_stats(2, "GC Worker Start", _par_last_gc_worker_start_times_ms);
@@ -2002,6 +2006,7 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
   if (summary->get_total_seq()->num() > 0) {
     print_summary_sd(0, "Evacuation Pauses", summary->get_total_seq());
     if (body_summary != NULL) {
+      print_summary(1, "Root Region Scan Wait", body_summary->get_root_region_scan_wait_seq());
       if (parallel) {
         print_summary(1, "Parallel Time", body_summary->get_parallel_seq());
         print_summary(2, "Ext Root Scanning", body_summary->get_ext_root_scan_seq());
@@ -2043,15 +2048,17 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
           // parallel
           NumberSeq* other_parts[] = {
             body_summary->get_satb_drain_seq(),
+            body_summary->get_root_region_scan_wait_seq(),
             body_summary->get_parallel_seq(),
             body_summary->get_clear_ct_seq()
           };
           calc_other_times_ms = NumberSeq(summary->get_total_seq(),
-                                                3, other_parts);
+                                          4, other_parts);
         } else {
           // serial
           NumberSeq* other_parts[] = {
             body_summary->get_satb_drain_seq(),
+            body_summary->get_root_region_scan_wait_seq(),
             body_summary->get_update_rs_seq(),
             body_summary->get_ext_root_scan_seq(),
             body_summary->get_satb_filtering_seq(),
@@ -2059,7 +2066,7 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
             body_summary->get_obj_copy_seq()
           };
           calc_other_times_ms = NumberSeq(summary->get_total_seq(),
-                                                6, other_parts);
+                                          7, other_parts);
         }
         check_other_times(1,  summary->get_other_seq(), &calc_other_times_ms);
       }

@@ -81,14 +81,22 @@ inline void ConcurrentMark::count_region(MemRegion mr, HeapRegion* hr,
   }
 }
 
+// Counts the given memory region in the task/worker counting
+// data structures for the given worker id.
+inline void ConcurrentMark::count_region(MemRegion mr,
+                                         HeapRegion* hr,
+                                         uint worker_id) {
+  size_t* marked_bytes_array = count_marked_bytes_array_for(worker_id);
+  BitMap* task_card_bm = count_card_bitmap_for(worker_id);
+  count_region(mr, hr, marked_bytes_array, task_card_bm);
+}
+
 // Counts the given memory region, which may be a single object, in the
 // task/worker counting data structures for the given worker id.
 inline void ConcurrentMark::count_region(MemRegion mr, uint worker_id) {
-  size_t* marked_bytes_array = count_marked_bytes_array_for(worker_id);
-  BitMap* task_card_bm = count_card_bitmap_for(worker_id);
   HeapWord* addr = mr.start();
   HeapRegion* hr = _g1h->heap_region_containing_raw(addr);
-  count_region(mr, hr, marked_bytes_array, task_card_bm);
+  count_region(mr, hr, worker_id);
 }
 
 // Counts the given object in the given task/worker counting data structures.
@@ -102,7 +110,9 @@ inline void ConcurrentMark::count_object(oop obj,
 
 // Counts the given object in the task/worker counting data
 // structures for the given worker id.
-inline void ConcurrentMark::count_object(oop obj, HeapRegion* hr, uint worker_id) {
+inline void ConcurrentMark::count_object(oop obj,
+                                         HeapRegion* hr,
+                                         uint worker_id) {
   size_t* marked_bytes_array = count_marked_bytes_array_for(worker_id);
   BitMap* task_card_bm = count_card_bitmap_for(worker_id);
   HeapWord* addr = (HeapWord*) obj;
@@ -119,6 +129,22 @@ inline bool ConcurrentMark::par_mark_and_count(oop obj,
   if (_nextMarkBitMap->parMark(addr)) {
     // Update the task specific count data for the object.
     count_object(obj, hr, marked_bytes_array, task_card_bm);
+    return true;
+  }
+  return false;
+}
+
+// Attempts to mark the given object and, if successful, counts
+// the object in the task/worker counting structures for the
+// given worker id.
+inline bool ConcurrentMark::par_mark_and_count(oop obj,
+                                               size_t word_size,
+                                               HeapRegion* hr,
+                                               uint worker_id) {
+  HeapWord* addr = (HeapWord*)obj;
+  if (_nextMarkBitMap->parMark(addr)) {
+    MemRegion mr(addr, word_size);
+    count_region(mr, hr, worker_id);
     return true;
   }
   return false;
@@ -342,20 +368,20 @@ inline void ConcurrentMark::markPrev(oop p) {
   ((CMBitMap*)_prevMarkBitMap)->mark((HeapWord*) p);
 }
 
-inline void ConcurrentMark::grayRoot(oop obj, size_t word_size, uint worker_id) {
+inline void ConcurrentMark::grayRoot(oop obj, size_t word_size,
+                                     uint worker_id, HeapRegion* hr) {
+  assert(obj != NULL, "pre-condition");
   HeapWord* addr = (HeapWord*) obj;
-
-  // Currently we don't do anything with word_size but we will use it
-  // in the very near future in the liveness calculation piggy-backing
-  // changes.
-
-#ifdef ASSERT
-  HeapRegion* hr = _g1h->heap_region_containing(addr);
+  if (hr == NULL) {
+    hr = _g1h->heap_region_containing_raw(addr);
+  } else {
+    assert(hr->is_in(addr), "pre-condition");
+  }
   assert(hr != NULL, "sanity");
-  assert(!hr->is_survivor(), "should not allocate survivors during IM");
-  assert(addr < hr->next_top_at_mark_start(),
-         err_msg("addr: "PTR_FORMAT" hr: "HR_FORMAT" NTAMS: "PTR_FORMAT,
-                 addr, HR_FORMAT_PARAMS(hr), hr->next_top_at_mark_start()));
+  // Given that we're looking for a region that contains an object
+  // header it's impossible to get back a HC region.
+  assert(!hr->continuesHumongous(), "sanity");
+
   // We cannot assert that word_size == obj->size() given that obj
   // might not be in a consistent state (another thread might be in
   // the process of copying it). So the best thing we can do is to
@@ -365,10 +391,11 @@ inline void ConcurrentMark::grayRoot(oop obj, size_t word_size, uint worker_id) 
          err_msg("size: "SIZE_FORMAT" capacity: "SIZE_FORMAT" "HR_FORMAT,
                  word_size * HeapWordSize, hr->capacity(),
                  HR_FORMAT_PARAMS(hr)));
-#endif // ASSERT
 
-  if (!_nextMarkBitMap->isMarked(addr)) {
-    par_mark_and_count(obj, word_size, worker_id);
+  if (addr < hr->next_top_at_mark_start()) {
+    if (!_nextMarkBitMap->isMarked(addr)) {
+      par_mark_and_count(obj, word_size, hr, worker_id);
+    }
   }
 }
 
