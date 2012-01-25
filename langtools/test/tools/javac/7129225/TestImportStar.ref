@@ -1,3 +1,3 @@
-RUNNING...
-RUNNING...
-TestImportStar.java:37:1: compiler.err.doesnt.exist: xxx
+- compiler.note.proc.messager: RUNNING - lastRound = false
+TestImportStar.java:39:1: compiler.err.doesnt.exist: xxx
+- compiler.note.proc.messager: RUNNING - lastRound = true
