@@ -1764,7 +1764,8 @@ Node *LoadBNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 const Type* LoadBNode::Value(PhaseTransform *phase) const {
   Node* mem = in(MemNode::Memory);
   Node* value = can_see_stored_value(mem,phase);
-  if (value != NULL && value->is_Con()) {
+  if (value != NULL && value->is_Con() &&
+      !value->bottom_type()->higher_equal(_type)) {
     // If the input to the store does not fit with the load's result type,
     // it must be truncated. We can't delay until Ideal call since
     // a singleton Value is needed for split_thru_phi optimization.
@@ -1793,7 +1794,8 @@ Node* LoadUBNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 const Type* LoadUBNode::Value(PhaseTransform *phase) const {
   Node* mem = in(MemNode::Memory);
   Node* value = can_see_stored_value(mem,phase);
-  if (value != NULL && value->is_Con()) {
+  if (value != NULL && value->is_Con() &&
+      !value->bottom_type()->higher_equal(_type)) {
     // If the input to the store does not fit with the load's result type,
     // it must be truncated. We can't delay until Ideal call since
     // a singleton Value is needed for split_thru_phi optimization.
@@ -1822,7 +1824,8 @@ Node *LoadUSNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 const Type* LoadUSNode::Value(PhaseTransform *phase) const {
   Node* mem = in(MemNode::Memory);
   Node* value = can_see_stored_value(mem,phase);
-  if (value != NULL && value->is_Con()) {
+  if (value != NULL && value->is_Con() &&
+      !value->bottom_type()->higher_equal(_type)) {
     // If the input to the store does not fit with the load's result type,
     // it must be truncated. We can't delay until Ideal call since
     // a singleton Value is needed for split_thru_phi optimization.
@@ -1853,7 +1856,8 @@ Node *LoadSNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 const Type* LoadSNode::Value(PhaseTransform *phase) const {
   Node* mem = in(MemNode::Memory);
   Node* value = can_see_stored_value(mem,phase);
-  if (value != NULL && value->is_Con()) {
+  if (value != NULL && value->is_Con() &&
+      !value->bottom_type()->higher_equal(_type)) {
     // If the input to the store does not fit with the load's result type,
     // it must be truncated. We can't delay until Ideal call since
     // a singleton Value is needed for split_thru_phi optimization.
