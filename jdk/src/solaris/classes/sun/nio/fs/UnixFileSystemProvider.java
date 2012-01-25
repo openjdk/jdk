@@ -395,7 +395,7 @@ public abstract class UnixFileSystemProvider
 
         // can't return SecureDirectoryStream on kernels that don't support
         // openat, etc.
-        if (!supportsAtSysCalls()) {
+        if (!supportsAtSysCalls() || !supportsNoFollowLinks()) {
             try {
                 long ptr = opendir(dir);
                 return new UnixDirectoryStream(dir, ptr, filter);

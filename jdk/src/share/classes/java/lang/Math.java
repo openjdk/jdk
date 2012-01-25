@@ -818,8 +818,9 @@ public final class Math {
         return (a >= b) ? a : b;
     }
 
-    private static long negativeZeroFloatBits = Float.floatToIntBits(-0.0f);
-    private static long negativeZeroDoubleBits = Double.doubleToLongBits(-0.0d);
+    // Use raw bit-wise conversions on guaranteed non-NaN arguments.
+    private static long negativeZeroFloatBits  = Float.floatToRawIntBits(-0.0f);
+    private static long negativeZeroDoubleBits = Double.doubleToRawLongBits(-0.0d);
 
     /**
      * Returns the greater of two {@code float} values.  That is,
@@ -836,9 +837,12 @@ public final class Math {
      * @return  the larger of {@code a} and {@code b}.
      */
     public static float max(float a, float b) {
-        if (a != a) return a;   // a is NaN
-        if ((a == 0.0f) && (b == 0.0f)
-            && (Float.floatToIntBits(a) == negativeZeroFloatBits)) {
+        if (a != a)
+            return a;   // a is NaN
+        if ((a == 0.0f) &&
+            (b == 0.0f) &&
+            (Float.floatToRawIntBits(a) == negativeZeroFloatBits)) {
+            // Raw conversion ok since NaN can't map to -0.0.
             return b;
         }
         return (a >= b) ? a : b;
@@ -859,9 +863,12 @@ public final class Math {
      * @return  the larger of {@code a} and {@code b}.
      */
     public static double max(double a, double b) {
-        if (a != a) return a;   // a is NaN
-        if ((a == 0.0d) && (b == 0.0d)
-            && (Double.doubleToLongBits(a) == negativeZeroDoubleBits)) {
+        if (a != a)
+            return a;   // a is NaN
+        if ((a == 0.0d) &&
+            (b == 0.0d) &&
+            (Double.doubleToRawLongBits(a) == negativeZeroDoubleBits)) {
+            // Raw conversion ok since NaN can't map to -0.0.
             return b;
         }
         return (a >= b) ? a : b;
@@ -910,9 +917,12 @@ public final class Math {
      * @return  the smaller of {@code a} and {@code b}.
      */
     public static float min(float a, float b) {
-        if (a != a) return a;   // a is NaN
-        if ((a == 0.0f) && (b == 0.0f)
-            && (Float.floatToIntBits(b) == negativeZeroFloatBits)) {
+        if (a != a)
+            return a;   // a is NaN
+        if ((a == 0.0f) &&
+            (b == 0.0f) &&
+            (Float.floatToRawIntBits(b) == negativeZeroFloatBits)) {
+            // Raw conversion ok since NaN can't map to -0.0.
             return b;
         }
         return (a <= b) ? a : b;
@@ -933,9 +943,12 @@ public final class Math {
      * @return  the smaller of {@code a} and {@code b}.
      */
     public static double min(double a, double b) {
-        if (a != a) return a;   // a is NaN
-        if ((a == 0.0d) && (b == 0.0d)
-            && (Double.doubleToLongBits(b) == negativeZeroDoubleBits)) {
+        if (a != a)
+            return a;   // a is NaN
+        if ((a == 0.0d) &&
+            (b == 0.0d) &&
+            (Double.doubleToRawLongBits(b) == negativeZeroDoubleBits)) {
+            // Raw conversion ok since NaN can't map to -0.0.
             return b;
         }
         return (a <= b) ? a : b;
@@ -1900,7 +1913,7 @@ public final class Math {
     /**
      * Returns a floating-point power of two in the normal range.
      */
-    public static float powerOfTwoF(int n) {
+    static float powerOfTwoF(int n) {
         assert(n >= FloatConsts.MIN_EXPONENT && n <= FloatConsts.MAX_EXPONENT);
         return Float.intBitsToFloat(((n + FloatConsts.EXP_BIAS) <<
                                      (FloatConsts.SIGNIFICAND_WIDTH-1))

@@ -625,7 +625,7 @@ public class Throwable implements Serializable {
      *          at Resource2.close(Resource2.java:20)
      *          at Foo4.main(Foo4.java:5)
      *  Caused by: java.lang.Exception: Rats, you caught me
-     *          at Resource2$CloseFailException.<init>(Resource2.java:45)
+     *          at Resource2$CloseFailException.&lt;init&gt;(Resource2.java:45)
      *          ... 2 more
      * </pre>
      */

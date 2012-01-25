@@ -43,7 +43,7 @@ import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 
 public class CallSiteTest {
-    private final static Class CLASS = CallSiteTest.class;
+    private final static Class<?> CLASS = CallSiteTest.class;
 
     private static CallSite mcs;
     private static CallSite vcs;

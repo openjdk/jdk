@@ -154,7 +154,7 @@ public final class TypeResolver {
      * @see #resolve(Type)
      */
     public static Type resolve(Type actual, Type formal) {
-        return new TypeResolver(actual).resolve(formal);
+        return getTypeResolver(actual).resolve(formal);
     }
 
     /**
@@ -169,7 +169,7 @@ public final class TypeResolver {
      * @see #resolve(Type[])
      */
     public static Type[] resolve(Type actual, Type[] formals) {
-        return new TypeResolver(actual).resolve(formals);
+        return getTypeResolver(actual).resolve(formals);
     }
 
     /**
@@ -228,9 +228,20 @@ public final class TypeResolver {
         return classes;
     }
 
+    public static TypeResolver getTypeResolver(Type type) {
+        synchronized (CACHE) {
+            TypeResolver resolver = CACHE.get(type);
+            if (resolver == null) {
+                resolver = new TypeResolver(type);
+                CACHE.put(type, resolver);
+            }
+            return resolver;
+        }
+    }
 
-    private final Map<TypeVariable<?>, Type> map
-        = new HashMap<TypeVariable<?>, Type>();
+    private static final WeakCache<Type, TypeResolver> CACHE = new WeakCache<>();
+
+    private final Map<TypeVariable<?>, Type> map = new HashMap<>();
 
     /**
      * Constructs the type resolver for the given actual type.
