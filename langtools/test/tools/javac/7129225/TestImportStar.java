@@ -26,6 +26,8 @@
 /* @test
  * @bug 7129225
  * @summary import xxx.* isn't handled correctly by annotation processing
+ * @library ../lib
+ * @build JavacTestingAbstractProcessor
  * @compile/fail/ref=NegTest.ref -XDrawDiagnostics TestImportStar.java
  * @compile Anno.java AnnoProcessor.java
  * @compile/ref=TestImportStar.ref -XDrawDiagnostics -processor AnnoProcessor -proc:only TestImportStar.java
