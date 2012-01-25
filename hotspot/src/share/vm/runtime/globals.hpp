@@ -3826,10 +3826,6 @@ class CommandLineFlags {
   develop(bool, StressMethodHandleWalk, false,                              \
           "Process all method handles with MethodHandleWalk")               \
                                                                             \
-  diagnostic(bool, UseRicochetFrames, true,                                 \
-          "use ricochet stack frames for method handle combination, "       \
-          "if the platform supports them")                                  \
-                                                                            \
   experimental(bool, TrustFinalNonStaticFields, false,                      \
           "trust final non-static declarations for constant folding")       \
                                                                             \
