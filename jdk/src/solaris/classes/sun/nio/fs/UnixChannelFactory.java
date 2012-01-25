@@ -36,8 +36,6 @@ import sun.nio.ch.SimpleAsynchronousFileChannelImpl;
 import sun.misc.SharedSecrets;
 import sun.misc.JavaIOFileDescriptorAccess;
 
-import com.sun.nio.file.ExtendedOpenOption;
-
 import static sun.nio.fs.UnixNativeDispatcher.*;
 import static sun.nio.fs.UnixConstants.*;
 
@@ -86,13 +84,13 @@ class UnixChannelFactory {
                     }
                     continue;
                 }
-                if (option == LinkOption.NOFOLLOW_LINKS) {
+                if (option == LinkOption.NOFOLLOW_LINKS && supportsNoFollowLinks()) {
                     flags.noFollowLinks = true;
                     continue;
                 }
                 if (option == null)
                     throw new NullPointerException();
-               throw new UnsupportedOperationException();
+               throw new UnsupportedOperationException(option + " not supported");
             }
             return flags;
         }
@@ -220,6 +218,15 @@ class UnixChannelFactory {
         // follow links by default
         boolean followLinks = true;
         if (!flags.createNew && (flags.noFollowLinks || flags.deleteOnClose)) {
+            if (flags.deleteOnClose && !supportsNoFollowLinks()) {
+                try {
+                    if (UnixFileAttributes.get(path, false).isSymbolicLink())
+                        throw new UnixException("DELETE_ON_CLOSE specified and file is a symbolic link");
+                } catch (UnixException x) {
+                    if (!flags.create || x.errno() != ENOENT)
+                        throw x;
+                }
+            }
             followLinks = false;
             oflags |= O_NOFOLLOW;
         }

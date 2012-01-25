@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,10 @@ public class DefaultPKCS11 {
             System.out.println("Test only applies to Solaris 10 and later, skipping");
             return;
         }
-        if (ps[0].getName().equals("SunPKCS11-Solaris") == false) {
+        // SunPKCS11-Solaris provider should be either the first one or
+        // the second one
+        if (ps[0].getName().equals("SunPKCS11-Solaris") == false &&
+            ps[1].getName().equals("SunPKCS11-Solaris") == false) {
             throw new Exception("SunPKCS11-Solaris provider not installed");
         }
         System.out.println("OK");

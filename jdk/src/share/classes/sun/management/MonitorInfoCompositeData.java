@@ -92,7 +92,7 @@ public class MonitorInfoCompositeData extends LazyCompositeData {
             monitorInfoCompositeType = (CompositeType)
                 MappedMXBeanType.toOpenType(MonitorInfo.class);
             Set<String> s = monitorInfoCompositeType.keySet();
-            monitorInfoItemNames = (String[]) s.toArray(new String[0]);
+            monitorInfoItemNames =  s.toArray(new String[0]);
         } catch (OpenDataException e) {
             // Should never reach here
             throw new AssertionError(e);
