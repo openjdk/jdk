@@ -460,6 +460,84 @@ bool ConcurrentMark::not_yet_marked(oop obj) const {
               && !nextMarkBitMap()->isMarked((HeapWord*)obj)));
 }
 
+CMRootRegions::CMRootRegions() :
+  _young_list(NULL), _cm(NULL), _scan_in_progress(false),
+  _should_abort(false),  _next_survivor(NULL) { }
+
+void CMRootRegions::init(G1CollectedHeap* g1h, ConcurrentMark* cm) {
+  _young_list = g1h->young_list();
+  _cm = cm;
+}
+
+void CMRootRegions::prepare_for_scan() {
+  assert(!scan_in_progress(), "pre-condition");
+
+  // Currently, only survivors can be root regions.
+  assert(_next_survivor == NULL, "pre-condition");
+  _next_survivor = _young_list->first_survivor_region();
+  _scan_in_progress = (_next_survivor != NULL);
+  _should_abort = false;
+}
+
+HeapRegion* CMRootRegions::claim_next() {
+  if (_should_abort) {
+    // If someone has set the should_abort flag, we return NULL to
+    // force the caller to bail out of their loop.
+    return NULL;
+  }
+
+  // Currently, only survivors can be root regions.
+  HeapRegion* res = _next_survivor;
+  if (res != NULL) {
+    MutexLockerEx x(RootRegionScan_lock, Mutex::_no_safepoint_check_flag);
+    // Read it again in case it changed while we were waiting for the lock.
+    res = _next_survivor;
+    if (res != NULL) {
+      if (res == _young_list->last_survivor_region()) {
+        // We just claimed the last survivor so store NULL to indicate
+        // that we're done.
+        _next_survivor = NULL;
+      } else {
+        _next_survivor = res->get_next_young_region();
+      }
+    } else {
+      // Someone else claimed the last survivor while we were trying
+      // to take the lock so nothing else to do.
+    }
+  }
+  assert(res == NULL || res->is_survivor(), "post-condition");
+
+  return res;
+}
+
+void CMRootRegions::scan_finished() {
+  assert(scan_in_progress(), "pre-condition");
+
+  // Currently, only survivors can be root regions.
+  if (!_should_abort) {
+    assert(_next_survivor == NULL, "we should have claimed all survivors");
+  }
+  _next_survivor = NULL;
+
+  {
+    MutexLockerEx x(RootRegionScan_lock, Mutex::_no_safepoint_check_flag);
+    _scan_in_progress = false;
+    RootRegionScan_lock->notify_all();
+  }
+}
+
+bool CMRootRegions::wait_until_scan_finished() {
+  if (!scan_in_progress()) return false;
+
+  {
+    MutexLockerEx x(RootRegionScan_lock, Mutex::_no_safepoint_check_flag);
+    while (scan_in_progress()) {
+      RootRegionScan_lock->wait(Mutex::_no_safepoint_check_flag);
+    }
+  }
+  return true;
+}
+
 #ifdef _MSC_VER // the use of 'this' below gets a warning, make it go away
 #pragma warning( disable:4355 ) // 'this' : used in base member initializer list
 #endif // _MSC_VER
@@ -547,6 +625,8 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
 
   SATBMarkQueueSet& satb_qs = JavaThread::satb_mark_queue_set();
   satb_qs.set_buffer_size(G1SATBBufferSize);
+
+  _root_regions.init(_g1h, this);
 
   _tasks = NEW_C_HEAP_ARRAY(CMTask*, _max_task_num);
   _accum_task_vtime = NEW_C_HEAP_ARRAY(double, _max_task_num);
@@ -864,6 +944,8 @@ void ConcurrentMark::checkpointRootsInitialPost() {
   satb_mq_set.set_active_all_threads(true, /* new active value */
                                      false /* expected_active */);
 
+  _root_regions.prepare_for_scan();
+
   // update_g1_committed() will be called at the end of an evac pause
   // when marking is on. So, it's also called at the end of the
   // initial-mark pause to update the heap end, if the heap expands
@@ -1155,6 +1237,69 @@ uint ConcurrentMark::calc_parallel_marking_threads() {
   // have spawned any marking threads either. Hence the number of
   // concurrent workers should be 0.
   return 0;
+}
+
+void ConcurrentMark::scanRootRegion(HeapRegion* hr, uint worker_id) {
+  // Currently, only survivors can be root regions.
+  assert(hr->next_top_at_mark_start() == hr->bottom(), "invariant");
+  G1RootRegionScanClosure cl(_g1h, this, worker_id);
+
+  const uintx interval = PrefetchScanIntervalInBytes;
+  HeapWord* curr = hr->bottom();
+  const HeapWord* end = hr->top();
+  while (curr < end) {
+    Prefetch::read(curr, interval);
+    oop obj = oop(curr);
+    int size = obj->oop_iterate(&cl);
+    assert(size == obj->size(), "sanity");
+    curr += size;
+  }
+}
+
+class CMRootRegionScanTask : public AbstractGangTask {
+private:
+  ConcurrentMark* _cm;
+
+public:
+  CMRootRegionScanTask(ConcurrentMark* cm) :
+    AbstractGangTask("Root Region Scan"), _cm(cm) { }
+
+  void work(uint worker_id) {
+    assert(Thread::current()->is_ConcurrentGC_thread(),
+           "this should only be done by a conc GC thread");
+
+    CMRootRegions* root_regions = _cm->root_regions();
+    HeapRegion* hr = root_regions->claim_next();
+    while (hr != NULL) {
+      _cm->scanRootRegion(hr, worker_id);
+      hr = root_regions->claim_next();
+    }
+  }
+};
+
+void ConcurrentMark::scanRootRegions() {
+  // scan_in_progress() will have been set to true only if there was
+  // at least one root region to scan. So, if it's false, we
+  // should not attempt to do any further work.
+  if (root_regions()->scan_in_progress()) {
+    _parallel_marking_threads = calc_parallel_marking_threads();
+    assert(parallel_marking_threads() <= max_parallel_marking_threads(),
+           "Maximum number of marking threads exceeded");
+    uint active_workers = MAX2(1U, parallel_marking_threads());
+
+    CMRootRegionScanTask task(this);
+    if (parallel_marking_threads() > 0) {
+      _parallel_workers->set_active_workers((int) active_workers);
+      _parallel_workers->run_task(&task);
+    } else {
+      task.work(0);
+    }
+
+    // It's possible that has_aborted() is true here without actually
+    // aborting the survivor scan earlier. This is OK as it's
+    // mainly used for sanity checking.
+    root_regions()->scan_finished();
+  }
 }
 
 void ConcurrentMark::markFromRoots() {

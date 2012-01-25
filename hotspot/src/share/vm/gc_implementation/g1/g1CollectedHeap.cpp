@@ -174,13 +174,10 @@ public:
   }
 };
 
-YoungList::YoungList(G1CollectedHeap* g1h)
-  : _g1h(g1h), _head(NULL),
-    _length(0),
-    _last_sampled_rs_lengths(0),
-    _survivor_head(NULL), _survivor_tail(NULL), _survivor_length(0)
-{
-  guarantee( check_list_empty(false), "just making sure..." );
+YoungList::YoungList(G1CollectedHeap* g1h) :
+    _g1h(g1h), _head(NULL), _length(0), _last_sampled_rs_lengths(0),
+    _survivor_head(NULL), _survivor_tail(NULL), _survivor_length(0) {
+  guarantee(check_list_empty(false), "just making sure...");
 }
 
 void YoungList::push_region(HeapRegion *hr) {
@@ -1270,7 +1267,18 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     double start = os::elapsedTime();
     g1_policy()->record_full_collection_start();
 
+    // Note: When we have a more flexible GC logging framework that
+    // allows us to add optional attributes to a GC log record we
+    // could consider timing and reporting how long we wait in the
+    // following two methods.
     wait_while_free_regions_coming();
+    // If we start the compaction before the CM threads finish
+    // scanning the root regions we might trip them over as we'll
+    // be moving objects / updating references. So let's wait until
+    // they are done. By telling them to abort, they should complete
+    // early.
+    _cm->root_regions()->abort();
+    _cm->root_regions()->wait_until_scan_finished();
     append_secondary_free_list_if_not_empty_with_lock();
 
     gc_prologue(true);
@@ -1299,7 +1307,8 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     ref_processor_cm()->verify_no_references_recorded();
 
     // Abandon current iterations of concurrent marking and concurrent
-    // refinement, if any are in progress.
+    // refinement, if any are in progress. We have to do this before
+    // wait_until_scan_finished() below.
     concurrent_mark()->abort();
 
     // Make sure we'll choose a new allocation region afterwards.
@@ -3675,6 +3684,18 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         g1_policy()->record_collection_pause_start(start_time_sec,
                                                    start_used_bytes);
 
+        double scan_wait_start = os::elapsedTime();
+        // We have to wait until the CM threads finish scanning the
+        // root regions as it's the only way to ensure that all the
+        // objects on them have been correctly scanned before we start
+        // moving them during the GC.
+        bool waited = _cm->root_regions()->wait_until_scan_finished();
+        if (waited) {
+          double scan_wait_end = os::elapsedTime();
+          double wait_time_ms = (scan_wait_end - scan_wait_start) * 1000.0;
+          g1_policy()->record_root_region_scan_wait_time(wait_time_ms);
+        }
+
 #if YOUNG_LIST_VERBOSE
         gclog_or_tty->print_cr("\nAfter recording pause start.\nYoung_list:");
         _young_list->print();
@@ -3784,6 +3805,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         }
 
         if (g1_policy()->during_initial_mark_pause()) {
+          // We have to do this before we notify the CM threads that
+          // they can start working to make sure that all the
+          // appropriate initialization is done on the CM object.
           concurrent_mark()->checkpointRootsInitialPost();
           set_marking_started();
           // Note that we don't actually trigger the CM thread at
@@ -5773,8 +5797,9 @@ void G1CollectedHeap::set_free_regions_coming() {
 }
 
 void G1CollectedHeap::reset_free_regions_coming() {
+  assert(free_regions_coming(), "pre-condition");
+
   {
-    assert(free_regions_coming(), "pre-condition");
     MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
     _free_regions_coming = false;
     SecondaryFreeList_lock->notify_all();

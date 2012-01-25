@@ -349,10 +349,62 @@ typedef enum {
   high_verbose       // per object verbose
 } CMVerboseLevel;
 
+class YoungList;
+
+// Root Regions are regions that are not empty at the beginning of a
+// marking cycle and which we might collect during an evacuation pause
+// while the cycle is active. Given that, during evacuation pauses, we
+// do not copy objects that are explicitly marked, what we have to do
+// for the root regions is to scan them and mark all objects reachable
+// from them. According to the SATB assumptions, we only need to visit
+// each object once during marking. So, as long as we finish this scan
+// before the next evacuation pause, we can copy the objects from the
+// root regions without having to mark them or do anything else to them.
+//
+// Currently, we only support root region scanning once (at the start
+// of the marking cycle) and the root regions are all the survivor
+// regions populated during the initial-mark pause.
+class CMRootRegions VALUE_OBJ_CLASS_SPEC {
+private:
+  YoungList*           _young_list;
+  ConcurrentMark*      _cm;
+
+  volatile bool        _scan_in_progress;
+  volatile bool        _should_abort;
+  HeapRegion* volatile _next_survivor;
+
+public:
+  CMRootRegions();
+  // We actually do most of the initialization in this method.
+  void init(G1CollectedHeap* g1h, ConcurrentMark* cm);
+
+  // Reset the claiming / scanning of the root regions.
+  void prepare_for_scan();
+
+  // Forces get_next() to return NULL so that the iteration aborts early.
+  void abort() { _should_abort = true; }
+
+  // Return true if the CM thread are actively scanning root regions,
+  // false otherwise.
+  bool scan_in_progress() { return _scan_in_progress; }
+
+  // Claim the next root region to scan atomically, or return NULL if
+  // all have been claimed.
+  HeapRegion* claim_next();
+
+  // Flag that we're done with root region scanning and notify anyone
+  // who's waiting on it. If aborted is false, assume that all regions
+  // have been claimed.
+  void scan_finished();
+
+  // If CM threads are still scanning root regions, wait until they
+  // are done. Return true if we had to wait, false otherwise.
+  bool wait_until_scan_finished();
+};
 
 class ConcurrentMarkThread;
 
-class ConcurrentMark: public CHeapObj {
+class ConcurrentMark : public CHeapObj {
   friend class ConcurrentMarkThread;
   friend class CMTask;
   friend class CMBitMapClosure;
@@ -399,6 +451,9 @@ protected:
   // Heap bounds
   HeapWord*               _heap_start;
   HeapWord*               _heap_end;
+
+  // Root region tracking and claiming.
+  CMRootRegions           _root_regions;
 
   // For gray objects
   CMMarkStack             _markStack; // Grey objects behind global finger.
@@ -553,9 +608,9 @@ protected:
   bool has_overflown()           { return _has_overflown; }
   void set_has_overflown()       { _has_overflown = true; }
   void clear_has_overflown()     { _has_overflown = false; }
+  bool restart_for_overflow()    { return _restart_for_overflow; }
 
   bool has_aborted()             { return _has_aborted; }
-  bool restart_for_overflow()    { return _restart_for_overflow; }
 
   // Methods to enter the two overflow sync barriers
   void enter_first_sync_barrier(int task_num);
@@ -691,6 +746,8 @@ public:
   // Returns true if there are any aborted memory regions.
   bool has_aborted_regions();
 
+  CMRootRegions* root_regions() { return &_root_regions; }
+
   bool concurrent_marking_in_progress() {
     return _concurrent_marking_in_progress;
   }
@@ -741,8 +798,17 @@ public:
   // G1CollectedHeap
 
   // This notifies CM that a root during initial-mark needs to be
-  // grayed. It is MT-safe.
-  inline void grayRoot(oop obj, size_t word_size, uint worker_id);
+  // grayed. It is MT-safe. word_size is the size of the object in
+  // words. It is passed explicitly as sometimes we cannot calculate
+  // it from the given object because it might be in an inconsistent
+  // state (e.g., in to-space and being copied). So the caller is
+  // responsible for dealing with this issue (e.g., get the size from
+  // the from-space image when the to-space image might be
+  // inconsistent) and always passing the size. hr is the region that
+  // contains the object and it's passed optionally from callers who
+  // might already have it (no point in recalculating it).
+  inline void grayRoot(oop obj, size_t word_size,
+                       uint worker_id, HeapRegion* hr = NULL);
 
   // It's used during evacuation pauses to gray a region, if
   // necessary, and it's MT-safe. It assumes that the caller has
@@ -792,6 +858,13 @@ public:
   // the post method. TP
   void checkpointRootsInitialPre();
   void checkpointRootsInitialPost();
+
+  // Scan all the root regions and mark everything reachable from
+  // them.
+  void scanRootRegions();
+
+  // Scan a single root region and mark everything reachable from it.
+  void scanRootRegion(HeapRegion* hr, uint worker_id);
 
   // Do concurrent phase of marking, to a tentative transitive closure.
   void markFromRoots();
@@ -974,6 +1047,10 @@ public:
 
   // Counts the given memory region in the task/worker counting
   // data structures for the given worker id.
+  inline void count_region(MemRegion mr, HeapRegion* hr, uint worker_id);
+
+  // Counts the given memory region in the task/worker counting
+  // data structures for the given worker id.
   inline void count_region(MemRegion mr, uint worker_id);
 
   // Counts the given object in the given task/worker counting
@@ -991,6 +1068,12 @@ public:
   inline bool par_mark_and_count(oop obj, HeapRegion* hr,
                                  size_t* marked_bytes_array,
                                  BitMap* task_card_bm);
+
+  // Attempts to mark the given object and, if successful, counts
+  // the object in the task/worker counting structures for the
+  // given worker id.
+  inline bool par_mark_and_count(oop obj, size_t word_size,
+                                 HeapRegion* hr, uint worker_id);
 
   // Attempts to mark the given object and, if successful, counts
   // the object in the task/worker counting structures for the

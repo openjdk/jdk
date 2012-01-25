@@ -65,6 +65,7 @@ public:
 
 class MainBodySummary: public CHeapObj {
   define_num_seq(satb_drain) // optional
+  define_num_seq(root_region_scan_wait)
   define_num_seq(parallel) // parallel only
     define_num_seq(ext_root_scan)
     define_num_seq(satb_filtering)
@@ -715,6 +716,7 @@ private:
   double _mark_remark_start_sec;
   double _mark_cleanup_start_sec;
   double _mark_closure_time_ms;
+  double _root_region_scan_wait_time_ms;
 
   // Update the young list target length either by setting it to the
   // desired fixed value or by calculating it using G1's pause
@@ -815,6 +817,10 @@ public:
 
   void record_mark_closure_time(double mark_closure_time_ms) {
     _mark_closure_time_ms = mark_closure_time_ms;
+  }
+
+  void record_root_region_scan_wait_time(double time_ms) {
+    _root_region_scan_wait_time_ms = time_ms;
   }
 
   void record_concurrent_mark_remark_start();
@@ -1145,11 +1151,6 @@ public:
 
   void note_stop_adding_survivor_regions() {
     _survivor_surv_rate_group->stop_adding_regions();
-  }
-
-  void tenure_all_objects() {
-    _max_survivor_regions = 0;
-    _tenuring_threshold = 0;
   }
 
   void record_survivor_regions(size_t      regions,

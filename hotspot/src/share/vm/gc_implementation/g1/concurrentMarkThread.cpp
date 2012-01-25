@@ -92,9 +92,36 @@ void ConcurrentMarkThread::run() {
       ResourceMark rm;
       HandleMark   hm;
       double cycle_start = os::elapsedVTime();
-      double mark_start_sec = os::elapsedTime();
       char verbose_str[128];
 
+      // We have to ensure that we finish scanning the root regions
+      // before the next GC takes place. To ensure this we have to
+      // make sure that we do not join the STS until the root regions
+      // have been scanned. If we did then it's possible that a
+      // subsequent GC could block us from joining the STS and proceed
+      // without the root regions have been scanned which would be a
+      // correctness issue.
+
+      double scan_start = os::elapsedTime();
+      if (!cm()->has_aborted()) {
+        if (PrintGC) {
+          gclog_or_tty->date_stamp(PrintGCDateStamps);
+          gclog_or_tty->stamp(PrintGCTimeStamps);
+          gclog_or_tty->print_cr("[GC concurrent-root-region-scan-start]");
+        }
+
+        _cm->scanRootRegions();
+
+        double scan_end = os::elapsedTime();
+        if (PrintGC) {
+          gclog_or_tty->date_stamp(PrintGCDateStamps);
+          gclog_or_tty->stamp(PrintGCTimeStamps);
+          gclog_or_tty->print_cr("[GC concurrent-root-region-scan-end, %1.7lf]",
+                                 scan_end - scan_start);
+        }
+      }
+
+      double mark_start_sec = os::elapsedTime();
       if (PrintGC) {
         gclog_or_tty->date_stamp(PrintGCDateStamps);
         gclog_or_tty->stamp(PrintGCTimeStamps);
