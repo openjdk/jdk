@@ -70,14 +70,11 @@ class GarbageCollectorImpl extends MemoryManagerImpl
     private String[] poolNames = null;
     synchronized String[] getAllPoolNames() {
         if (poolNames == null) {
-            List pools = ManagementFactory.getMemoryPoolMXBeans();
+            List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
             poolNames = new String[pools.size()];
             int i = 0;
-            for (ListIterator iter = pools.listIterator();
-                 iter.hasNext();
-                 i++) {
-                MemoryPoolMXBean p = (MemoryPoolMXBean) iter.next();
-                poolNames[i] = p.getName();
+            for (MemoryPoolMXBean m : pools) {
+                poolNames[i++] = m.getName();
             }
         }
         return poolNames;

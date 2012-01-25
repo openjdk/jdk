@@ -1,0 +1,69 @@
+#
+# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Define public interface.
+
+SUNWprivate_1.1 {
+	global:
+                JNI_OnLoad;
+                Java_com_oracle_security_ucrypto_UcryptoProvider_loadLibraries;
+                Java_com_oracle_security_ucrypto_UcryptoProvider_getMechList;
+		Java_com_oracle_security_ucrypto_NativeDigest_nativeInit;
+                Java_com_oracle_security_ucrypto_NativeDigest_nativeUpdate;
+                Java_com_oracle_security_ucrypto_NativeDigest_nativeDigest;
+                Java_com_oracle_security_ucrypto_NativeDigest_nativeClone;
+                Java_com_oracle_security_ucrypto_NativeDigest_nativeFree;
+		Java_com_oracle_security_ucrypto_NativeCipher_nativeInit;
+		Java_com_oracle_security_ucrypto_NativeCipher_nativeUpdate;
+		Java_com_oracle_security_ucrypto_NativeCipher_nativeFinal;
+                Java_com_oracle_security_ucrypto_NativeKey_nativeFree;
+                Java_com_oracle_security_ucrypto_NativeKey_00024RSAPrivateCrt_nativeInit;
+                Java_com_oracle_security_ucrypto_NativeKey_00024RSAPublic_nativeInit;
+		Java_com_oracle_security_ucrypto_NativeRSASignature_nativeInit;
+		Java_com_oracle_security_ucrypto_NativeRSASignature_nativeUpdate__JZ_3BII;
+		Java_com_oracle_security_ucrypto_NativeRSASignature_nativeUpdate__JZJI;
+		Java_com_oracle_security_ucrypto_NativeRSASignature_nativeFinal;
+		Java_com_oracle_security_ucrypto_NativeRSACipher_nativeAtomic;
+
+                JavaCritical_com_oracle_security_ucrypto_NativeDigest_nativeInit;
+                JavaCritical_com_oracle_security_ucrypto_NativeDigest_nativeUpdate;
+                JavaCritical_com_oracle_security_ucrypto_NativeDigest_nativeDigest;
+                JavaCritical_com_oracle_security_ucrypto_NativeDigest_nativeClone;
+                JavaCritical_com_oracle_security_ucrypto_NativeDigest_nativeFree;
+                JavaCritical_com_oracle_security_ucrypto_NativeCipher_nativeInit;
+                JavaCritical_com_oracle_security_ucrypto_NativeCipher_nativeUpdate;
+                JavaCritical_com_oracle_security_ucrypto_NativeCipher_nativeFinal;
+                JavaCritical_com_oracle_security_ucrypto_NativeKey_nativeFree;
+                JavaCritical_com_oracle_security_ucrypto_NativeKey_00024RSAPrivateCrt_nativeInit;
+                JavaCritical_com_oracle_security_ucrypto_NativeKey_00024RSAPublic_nativeInit;
+		JavaCritical_com_oracle_security_ucrypto_NativeRSASignature_nativeInit;
+		JavaCritical_com_oracle_security_ucrypto_NativeRSASignature_nativeUpdate__JZ_3BII;
+		JavaCritical_com_oracle_security_ucrypto_NativeRSASignature_nativeUpdate__JZJI;
+		JavaCritical_com_oracle_security_ucrypto_NativeRSASignature_nativeFinal;
+                JavaCritical_com_oracle_security_ucrypto_NativeRSACipher_nativeAtomic;
+
+	local:
+		*;
+};

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,13 +49,12 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  * @author  Andreas Sterbenz
  * @since   1.5
  */
-final class P11Digest extends MessageDigestSpi {
+final class P11Digest extends MessageDigestSpi implements Cloneable {
 
-    /* unitialized, fields uninitialized, no session acquired */
+    /* fields initialized, no session acquired */
     private final static int S_BLANK    = 1;
 
-    // data in buffer, all fields valid, session acquired
-    // but digest not initialized
+    /* data in buffer, session acquired, but digest not initialized */
     private final static int S_BUFFERED = 2;
 
     /* session initialized for digesting */
@@ -69,8 +68,8 @@ final class P11Digest extends MessageDigestSpi {
     // algorithm name
     private final String algorithm;
 
-    // mechanism id
-    private final long mechanism;
+    // mechanism id object
+    private final CK_MECHANISM mechanism;
 
     // length of the digest in bytes
     private final int digestLength;
@@ -81,11 +80,8 @@ final class P11Digest extends MessageDigestSpi {
     // current state, one of S_* above
     private int state;
 
-    // one byte buffer for the update(byte) method, initialized on demand
-    private byte[] oneByte;
-
     // buffer to reduce number of JNI calls
-    private final byte[] buffer;
+    private byte[] buffer;
 
     // offset into the buffer
     private int bufOfs;
@@ -94,7 +90,7 @@ final class P11Digest extends MessageDigestSpi {
         super();
         this.token = token;
         this.algorithm = algorithm;
-        this.mechanism = mechanism;
+        this.mechanism = new CK_MECHANISM(mechanism);
         switch ((int)mechanism) {
         case (int)CKM_MD2:
         case (int)CKM_MD5:
@@ -117,7 +113,6 @@ final class P11Digest extends MessageDigestSpi {
         }
         buffer = new byte[BUFFER_SIZE];
         state = S_BLANK;
-        engineReset();
     }
 
     // see JCA spec
@@ -125,44 +120,31 @@ final class P11Digest extends MessageDigestSpi {
         return digestLength;
     }
 
-    private void cancelOperation() {
-        token.ensureValid();
-        if (session == null) {
-            return;
-        }
-        if ((state != S_INIT) || (token.explicitCancel == false)) {
-            return;
-        }
-        // need to explicitly "cancel" active op by finishing it
-        try {
-            token.p11.C_DigestFinal(session.id(), buffer, 0, buffer.length);
-        } catch (PKCS11Exception e) {
-            throw new ProviderException("cancel() failed", e);
-        } finally {
-            state = S_BUFFERED;
-        }
-    }
-
     private void fetchSession() {
         token.ensureValid();
         if (state == S_BLANK) {
-            engineReset();
+            try {
+                session = token.getOpSession();
+                state = S_BUFFERED;
+            } catch (PKCS11Exception e) {
+                throw new ProviderException("No more session available", e);
+            }
         }
     }
 
     // see JCA spec
     protected void engineReset() {
-        try {
-            cancelOperation();
-            bufOfs = 0;
-            if (session == null) {
-                session = token.getOpSession();
+        token.ensureValid();
+
+        if (session != null) {
+            if (state == S_INIT && token.explicitCancel == true) {
+                session = token.killSession(session);
+            } else {
+                session = token.releaseSession(session);
             }
-            state = S_BUFFERED;
-        } catch (PKCS11Exception e) {
-            state = S_BLANK;
-            throw new ProviderException("reset() failed, ", e);
         }
+        state = S_BLANK;
+        bufOfs = 0;
     }
 
     // see JCA spec
@@ -180,18 +162,22 @@ final class P11Digest extends MessageDigestSpi {
     protected int engineDigest(byte[] digest, int ofs, int len)
             throws DigestException {
         if (len < digestLength) {
-            throw new DigestException("Length must be at least " + digestLength);
+            throw new DigestException("Length must be at least " +
+                    digestLength);
         }
+
         fetchSession();
         try {
             int n;
             if (state == S_BUFFERED) {
-                n = token.p11.C_DigestSingle(session.id(),
-                        new CK_MECHANISM(mechanism),
-                        buffer, 0, bufOfs, digest, ofs, len);
+                n = token.p11.C_DigestSingle(session.id(), mechanism, buffer, 0,
+                        bufOfs, digest, ofs, len);
+                bufOfs = 0;
             } else {
                 if (bufOfs != 0) {
-                    doUpdate(buffer, 0, bufOfs);
+                    token.p11.C_DigestUpdate(session.id(), 0, buffer, 0,
+                            bufOfs);
+                    bufOfs = 0;
                 }
                 n = token.p11.C_DigestFinal(session.id(), digest, ofs, len);
             }
@@ -202,36 +188,44 @@ final class P11Digest extends MessageDigestSpi {
         } catch (PKCS11Exception e) {
             throw new ProviderException("digest() failed", e);
         } finally {
-            state = S_BLANK;
-            bufOfs = 0;
-            session = token.releaseSession(session);
+            engineReset();
         }
     }
 
     // see JCA spec
     protected void engineUpdate(byte in) {
-        if (oneByte == null) {
-            oneByte = new byte[1];
-        }
-        oneByte[0] = in;
-        engineUpdate(oneByte, 0, 1);
+        byte[] temp = { in };
+        engineUpdate(temp, 0, 1);
     }
 
     // see JCA spec
     protected void engineUpdate(byte[] in, int ofs, int len) {
-        fetchSession();
         if (len <= 0) {
             return;
         }
-        if ((bufOfs != 0) && (bufOfs + len > buffer.length)) {
-            doUpdate(buffer, 0, bufOfs);
-            bufOfs = 0;
-        }
-        if (bufOfs + len > buffer.length) {
-            doUpdate(in, ofs, len);
-        } else {
-            System.arraycopy(in, ofs, buffer, bufOfs, len);
-            bufOfs += len;
+
+        fetchSession();
+        try {
+            if (state == S_BUFFERED) {
+                token.p11.C_DigestInit(session.id(), mechanism);
+                state = S_INIT;
+            }
+            if ((bufOfs != 0) && (bufOfs + len > buffer.length)) {
+                // process the buffered data
+                token.p11.C_DigestUpdate(session.id(), 0, buffer, 0, bufOfs);
+                bufOfs = 0;
+            }
+            if (bufOfs + len > buffer.length) {
+                // process the new data
+                token.p11.C_DigestUpdate(session.id(), 0, in, ofs, len);
+             } else {
+                // buffer the new data
+                System.arraycopy(in, ofs, buffer, bufOfs, len);
+                bufOfs += len;
+            }
+        } catch (PKCS11Exception e) {
+            engineReset();
+            throw new ProviderException("update() failed", e);
         }
     }
 
@@ -239,11 +233,7 @@ final class P11Digest extends MessageDigestSpi {
     // the master secret is sensitive. We may want to consider making this
     // method public in a future release.
     protected void implUpdate(SecretKey key) throws InvalidKeyException {
-        fetchSession();
-        if (bufOfs != 0) {
-            doUpdate(buffer, 0, bufOfs);
-            bufOfs = 0;
-        }
+
         // SunJSSE calls this method only if the key does not have a RAW
         // encoding, i.e. if it is sensitive. Therefore, no point in calling
         // SecretKeyFactory to try to convert it. Just verify it ourselves.
@@ -252,60 +242,77 @@ final class P11Digest extends MessageDigestSpi {
         }
         P11Key p11Key = (P11Key)key;
         if (p11Key.token != token) {
-            throw new InvalidKeyException("Not a P11Key of this provider: " + key);
+            throw new InvalidKeyException("Not a P11Key of this provider: " +
+                    key);
         }
+
+        fetchSession();
         try {
             if (state == S_BUFFERED) {
-                token.p11.C_DigestInit(session.id(), new CK_MECHANISM(mechanism));
+                token.p11.C_DigestInit(session.id(), mechanism);
                 state = S_INIT;
+            }
+
+            if (bufOfs != 0) {
+                token.p11.C_DigestUpdate(session.id(), 0, buffer, 0, bufOfs);
+                bufOfs = 0;
             }
             token.p11.C_DigestKey(session.id(), p11Key.keyID);
         } catch (PKCS11Exception e) {
+            engineReset();
             throw new ProviderException("update(SecretKey) failed", e);
         }
     }
 
     // see JCA spec
     protected void engineUpdate(ByteBuffer byteBuffer) {
-        fetchSession();
         int len = byteBuffer.remaining();
         if (len <= 0) {
             return;
         }
+
         if (byteBuffer instanceof DirectBuffer == false) {
             super.engineUpdate(byteBuffer);
             return;
         }
+
+        fetchSession();
         long addr = ((DirectBuffer)byteBuffer).address();
         int ofs = byteBuffer.position();
         try {
             if (state == S_BUFFERED) {
-                token.p11.C_DigestInit(session.id(), new CK_MECHANISM(mechanism));
+                token.p11.C_DigestInit(session.id(), mechanism);
                 state = S_INIT;
-                if (bufOfs != 0) {
-                    doUpdate(buffer, 0, bufOfs);
-                    bufOfs = 0;
-                }
+            }
+            if (bufOfs != 0) {
+                token.p11.C_DigestUpdate(session.id(), 0, buffer, 0, bufOfs);
+                bufOfs = 0;
             }
             token.p11.C_DigestUpdate(session.id(), addr + ofs, null, 0, len);
             byteBuffer.position(ofs + len);
         } catch (PKCS11Exception e) {
+            engineReset();
             throw new ProviderException("update() failed", e);
         }
     }
 
-    private void doUpdate(byte[] in, int ofs, int len) {
-        if (len <= 0) {
-            return;
-        }
+    public Object clone() throws CloneNotSupportedException {
+        P11Digest copy = (P11Digest) super.clone();
+        copy.buffer = buffer.clone();
         try {
-            if (state == S_BUFFERED) {
-                token.p11.C_DigestInit(session.id(), new CK_MECHANISM(mechanism));
-                state = S_INIT;
+            if (session != null) {
+                copy.session = copy.token.getOpSession();
             }
-            token.p11.C_DigestUpdate(session.id(), 0, in, ofs, len);
+            if (state == S_INIT) {
+                byte[] stateValues =
+                    token.p11.C_GetOperationState(session.id());
+                token.p11.C_SetOperationState(copy.session.id(),
+                                              stateValues, 0, 0);
+            }
         } catch (PKCS11Exception e) {
-            throw new ProviderException("update() failed", e);
+            throw (CloneNotSupportedException)
+                (new CloneNotSupportedException(algorithm).initCause(e));
         }
+        return copy;
     }
 }
