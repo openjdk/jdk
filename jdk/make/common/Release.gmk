@@ -384,18 +384,7 @@ TOOLS = \
 # classes that go into jfr.jar
 JFR_CLASSES_DIRS= \
 	com/oracle/jrockit/jfr \
-	com/oracle/jrockit/jfr/client \
-	com/oracle/jrockit/jfr/management \
-	oracle/jrockit/jfr \
-	oracle/jrockit/jfr/events \
-	oracle/jrockit/jfr/openmbean \
-	oracle/jrockit/jfr/parser \
-	oracle/jrockit/jfr/settings \
-	oracle/jrockit/jfr/tools \
-	oracle/jrockit/jfr/util \
-	oracle/jrockit/jfr/util/log \
-	oracle/jrockit/jfr/util/os \
-	oracle/jrockit/jfr/util/text
+	oracle/jrockit/jfr
 
 # classes that go into jsse.jar
 JSSE_CLASSES_DIRS = \
