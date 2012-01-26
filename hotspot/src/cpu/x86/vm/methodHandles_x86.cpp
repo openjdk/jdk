@@ -279,14 +279,16 @@ void MethodHandles::RicochetFrame::leave_ricochet_frame(MacroAssembler* _masm,
 }
 
 // Emit code to verify that RBP is pointing at a valid ricochet frame.
-#ifdef ASSERT
+#ifndef PRODUCT
 enum {
   ARG_LIMIT = 255, SLOP = 4,
   // use this parameter for checking for garbage stack movements:
   UNREASONABLE_STACK_MOVE = (ARG_LIMIT + SLOP)
   // the slop defends against false alarms due to fencepost errors
 };
+#endif
 
+#ifdef ASSERT
 void MethodHandles::RicochetFrame::verify_clean(MacroAssembler* _masm) {
   // The stack should look like this:
   //    ... keep1 | dest=42 | keep2 | RF | magic | handler | magic | recursive args |
@@ -990,7 +992,7 @@ void MethodHandles::move_return_value(MacroAssembler* _masm, BasicType type,
   BLOCK_COMMENT("} move_return_value");
 }
 
-#ifdef ASSERT
+#ifndef PRODUCT
 #define DESCRIBE_RICOCHET_OFFSET(rf, name) \
   values.describe(frame_no, (intptr_t *) (((uintptr_t)rf) + MethodHandles::RicochetFrame::name##_offset_in_bytes()), #name)
 
@@ -1021,6 +1023,7 @@ void trace_method_handle_stub(const char* adaptername,
                               intptr_t* saved_bp) {
   // called as a leaf from native code: do not block the JVM!
   bool has_mh = (strstr(adaptername, "return/") == NULL);  // return adapters don't have rcx_mh
+
   intptr_t* last_sp = (intptr_t*) saved_bp[frame::interpreter_frame_last_sp_offset];
   intptr_t* base_sp = last_sp;
   typedef MethodHandles::RicochetFrame RicochetFrame;
@@ -1050,13 +1053,64 @@ void trace_method_handle_stub(const char* adaptername,
     tty->cr();
     if (last_sp != saved_sp && last_sp != NULL)
       tty->print_cr("*** last_sp="PTR_FORMAT, (intptr_t)last_sp);
-    int stack_dump_count = 16;
-    if (stack_dump_count < (int)(saved_bp + 2 - saved_sp))
-      stack_dump_count = (int)(saved_bp + 2 - saved_sp);
-    if (stack_dump_count > 64)  stack_dump_count = 48;
-    for (i = 0; i < stack_dump_count; i += 4) {
-      tty->print_cr(" dump at SP[%d] "PTR_FORMAT": "PTR_FORMAT" "PTR_FORMAT" "PTR_FORMAT" "PTR_FORMAT,
-                    i, (intptr_t) &entry_sp[i+0], entry_sp[i+0], entry_sp[i+1], entry_sp[i+2], entry_sp[i+3]);
+
+    {
+     // dumping last frame with frame::describe
+
+      JavaThread* p = JavaThread::active();
+
+      ResourceMark rm;
+      PRESERVE_EXCEPTION_MARK; // may not be needed by safer and unexpensive here
+      FrameValues values;
+
+      // Note: We want to allow trace_method_handle from any call site.
+      // While trace_method_handle creates a frame, it may be entered
+      // without a PC on the stack top (e.g. not just after a call).
+      // Walking that frame could lead to failures due to that invalid PC.
+      // => carefully detect that frame when doing the stack walking
+
+      // Current C frame
+      frame cur_frame = os::current_frame();
+
+      // Robust search of trace_calling_frame (independant of inlining).
+      // Assumes saved_regs comes from a pusha in the trace_calling_frame.
+      assert(cur_frame.sp() < saved_regs, "registers not saved on stack ?");
+      frame trace_calling_frame = os::get_sender_for_C_frame(&cur_frame);
+      while (trace_calling_frame.fp() < saved_regs) {
+        trace_calling_frame = os::get_sender_for_C_frame(&trace_calling_frame);
+      }
+
+      // safely create a frame and call frame::describe
+      intptr_t *dump_sp = trace_calling_frame.sender_sp();
+      intptr_t *dump_fp = trace_calling_frame.link();
+
+      bool walkable = has_mh; // whether the traced frame shoud be walkable
+
+      if (walkable) {
+        // The previous definition of walkable may have to be refined
+        // if new call sites cause the next frame constructor to start
+        // failing. Alternatively, frame constructors could be
+        // modified to support the current or future non walkable
+        // frames (but this is more intrusive and is not considered as
+        // part of this RFE, which will instead use a simpler output).
+        frame dump_frame = frame(dump_sp, dump_fp);
+        dump_frame.describe(values, 1);
+      } else {
+        // Stack may not be walkable (invalid PC above FP):
+        // Add descriptions without building a Java frame to avoid issues
+        values.describe(-1, dump_fp, "fp for #1 <not parsed, cannot trust pc>");
+        values.describe(-1, dump_sp, "sp for #1");
+      }
+
+      // mark saved_sp if seems valid
+      if (has_mh) {
+        if ((saved_sp >= dump_sp - UNREASONABLE_STACK_MOVE) && (saved_sp < dump_fp)) {
+          values.describe(-1, saved_sp, "*saved_sp");
+        }
+      }
+
+      tty->print_cr("  stack layout:");
+      values.print(p);
     }
     if (has_mh)
       print_method_handle(mh);
@@ -1086,26 +1140,49 @@ void trace_method_handle_stub_wrapper(MethodHandleStubArguments* args) {
 void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adaptername) {
   if (!TraceMethodHandles)  return;
   BLOCK_COMMENT("trace_method_handle {");
-  __ push(rax);
-  __ lea(rax, Address(rsp, wordSize * NOT_LP64(6) LP64_ONLY(14))); // entry_sp  __ pusha();
-  __ pusha();
-  __ mov(rbx, rsp);
   __ enter();
+  __ andptr(rsp, -16); // align stack if needed for FPU state
+  __ pusha();
+  __ mov(rbx, rsp); // for retreiving saved_regs
+  // Note: saved_regs must be in the entered frame for the
+  // robust stack walking implemented in trace_method_handle_stub.
+
+  // save FP result, valid at some call sites (adapter_opt_return_float, ...)
+  __ increment(rsp, -2 * wordSize);
+  if  (UseSSE >= 2) {
+    __ movdbl(Address(rsp, 0), xmm0);
+  } else if (UseSSE == 1) {
+    __ movflt(Address(rsp, 0), xmm0);
+  } else {
+    __ fst_d(Address(rsp, 0));
+  }
+
   // incoming state:
   // rcx: method handle
   // r13 or rsi: saved sp
   // To avoid calling convention issues, build a record on the stack and pass the pointer to that instead.
+  // Note: fix the increment below if pushing more arguments
   __ push(rbp);               // saved_bp
-  __ push(rsi);               // saved_sp
-  __ push(rax);               // entry_sp
+  __ push(saved_last_sp_register()); // saved_sp
+  __ push(rbp);               // entry_sp (with extra align space)
   __ push(rbx);               // pusha saved_regs
   __ push(rcx);               // mh
-  __ push(rcx);               // adaptername
+  __ push(rcx);               // slot for adaptername
   __ movptr(Address(rsp, 0), (intptr_t) adaptername);
   __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, trace_method_handle_stub_wrapper), rsp);
-  __ leave();
+  __ increment(rsp, 6 * wordSize); // MethodHandleStubArguments
+
+  if  (UseSSE >= 2) {
+    __ movdbl(xmm0, Address(rsp, 0));
+  } else if (UseSSE == 1) {
+    __ movflt(xmm0, Address(rsp, 0));
+  } else {
+    __ fld_d(Address(rsp, 0));
+  }
+  __ increment(rsp, 2 * wordSize);
+
   __ popa();
-  __ pop(rax);
+  __ leave();
   BLOCK_COMMENT("} trace_method_handle");
 }
 #endif //PRODUCT

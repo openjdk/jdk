@@ -146,7 +146,7 @@ class RicochetFrame : public ResourceObj {
 
   static void verify_clean(MacroAssembler* _masm) NOT_DEBUG_RETURN;
 
-  static void describe(const frame* fr, FrameValues& values, int frame_no) NOT_DEBUG_RETURN;
+  static void describe(const frame* fr, FrameValues& values, int frame_no) PRODUCT_RETURN;
 };
 
 // Additional helper methods for MethodHandles code generation:

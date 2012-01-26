@@ -1315,7 +1315,6 @@ bool frame::verify_return_pc(address x) {
 }
 #endif
 
-
 #ifdef ASSERT
 void frame::interpreter_frame_verify_monitor(BasicObjectLock* value) const {
   assert(is_interpreted_frame(), "Not an interpreted frame");
@@ -1331,8 +1330,9 @@ void frame::interpreter_frame_verify_monitor(BasicObjectLock* value) const {
   guarantee((current - low_mark) % monitor_size  ==  0         , "Misaligned bottom of BasicObjectLock*");
   guarantee( current >= low_mark                               , "Current BasicObjectLock* below than low_mark");
 }
+#endif
 
-
+#ifndef PRODUCT
 void frame::describe(FrameValues& values, int frame_no) {
   // boundaries: sp and the 'real' frame pointer
   values.describe(-1, sp(), err_msg("sp for #%d", frame_no), 1);
@@ -1436,7 +1436,7 @@ StackFrameStream::StackFrameStream(JavaThread *thread, bool update) : _reg_map(t
 }
 
 
-#ifdef ASSERT
+#ifndef PRODUCT
 
 void FrameValues::describe(int owner, intptr_t* location, const char* description, int priority) {
   FrameValue fv;
@@ -1449,6 +1449,7 @@ void FrameValues::describe(int owner, intptr_t* location, const char* descriptio
 }
 
 
+#ifdef ASSERT
 void FrameValues::validate() {
   _values.sort(compare);
   bool error = false;
@@ -1474,7 +1475,7 @@ void FrameValues::validate() {
   }
   assert(!error, "invalid layout");
 }
-
+#endif // ASSERT
 
 void FrameValues::print(JavaThread* thread) {
   _values.sort(compare);
@@ -1523,4 +1524,4 @@ void FrameValues::print(JavaThread* thread) {
   }
 }
 
-#endif
+#endif // ndef PRODUCT

@@ -810,7 +810,7 @@ intptr_t* frame::interpreter_frame_tos_at(jint offset) const {
 }
 
 
-#ifdef ASSERT
+#ifndef PRODUCT
 
 #define DESCRIBE_FP_OFFSET(name) \
   values.describe(frame_no, fp() + frame::name##_offset, #name)
