@@ -961,7 +961,7 @@ void CompileBroker::compile_method_base(methodHandle method,
                                         methodHandle hot_method,
                                         int hot_count,
                                         const char* comment,
-                                        TRAPS) {
+                                        Thread* thread) {
   // do nothing if compiler thread(s) is not available
   if (!_initialized ) {
     return;
@@ -1037,7 +1037,7 @@ void CompileBroker::compile_method_base(methodHandle method,
 
   // Acquire our lock.
   {
-    MutexLocker locker(queue->lock(), THREAD);
+    MutexLocker locker(queue->lock(), thread);
 
     // Make sure the method has not slipped into the queues since
     // last we checked; note that those checks were "fast bail-outs".
@@ -1119,7 +1119,7 @@ void CompileBroker::compile_method_base(methodHandle method,
 nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
                                        int comp_level,
                                        methodHandle hot_method, int hot_count,
-                                       const char* comment, TRAPS) {
+                                       const char* comment, Thread* THREAD) {
   // make sure arguments make sense
   assert(method->method_holder()->klass_part()->oop_is_instance(), "not an instance method");
   assert(osr_bci == InvocationEntryBci || (0 <= osr_bci && osr_bci < method->code_size()), "bci out of range");
@@ -1173,10 +1173,10 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
   assert(!HAS_PENDING_EXCEPTION, "No exception should be present");
   // some prerequisites that are compiler specific
   if (compiler(comp_level)->is_c2() || compiler(comp_level)->is_shark()) {
-    method->constants()->resolve_string_constants(CHECK_0);
+    method->constants()->resolve_string_constants(CHECK_AND_CLEAR_NULL);
     // Resolve all classes seen in the signature of the method
     // we are compiling.
-    methodOopDesc::load_signature_classes(method, CHECK_0);
+    methodOopDesc::load_signature_classes(method, CHECK_AND_CLEAR_NULL);
   }
 
   // If the method is native, do the lookup in the thread requesting
@@ -1230,7 +1230,7 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
       return NULL;
     }
   } else {
-    compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, comment, CHECK_0);
+    compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, comment, THREAD);
   }
 
   // return requested nmethod
