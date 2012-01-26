@@ -240,7 +240,6 @@ class instanceKlass: public Klass {
   Thread*         _init_thread;          // Pointer to current thread doing initialization (to handle recusive initialization)
   int             _vtable_len;           // length of Java vtable (in words)
   int             _itable_len;           // length of Java itable (in words)
-  ReferenceType   _reference_type;       // reference type
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
   JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
   jmethodID*      _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or NULL if none
@@ -264,6 +263,8 @@ class instanceKlass: public Klass {
   // Place the _init_state here to utilize the unused 2-byte after
   // _idnum_allocated_count.
   u1              _init_state;                    // state of class
+
+  u1              _reference_type;                // reference type
 
   // embedded Java vtable follows here
   // embedded Java itables follows here
@@ -407,8 +408,11 @@ class instanceKlass: public Klass {
   void eager_initialize(Thread *thread);
 
   // reference type
-  ReferenceType reference_type() const     { return _reference_type; }
-  void set_reference_type(ReferenceType t) { _reference_type = t; }
+  ReferenceType reference_type() const     { return (ReferenceType)_reference_type; }
+  void set_reference_type(ReferenceType t) {
+    assert(t == (u1)t, "overflow");
+    _reference_type = (u1)t;
+  }
 
   static ByteSize reference_type_offset() { return in_ByteSize(sizeof(klassOopDesc) + offset_of(instanceKlass, _reference_type)); }
 
