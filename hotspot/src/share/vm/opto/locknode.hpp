@@ -49,9 +49,9 @@
 
 //------------------------------BoxLockNode------------------------------------
 class BoxLockNode : public Node {
-  const int _slot;
-  RegMask   _inmask;
-  bool _is_eliminated;    // indicates this lock was safely eliminated
+  const int     _slot; // stack slot
+  RegMask     _inmask; // OptoReg corresponding to stack slot
+  bool _is_eliminated; // Associated locks were safely eliminated
 
 public:
   BoxLockNode( int lock );
@@ -68,7 +68,9 @@ public:
 
   static OptoReg::Name reg(Node* box_node);
   static BoxLockNode* box_node(Node* box_node);
-  static bool same_slot(Node* box1, Node* box2);
+  static bool same_slot(Node* box1, Node* box2) {
+    return box1->as_BoxLock()->_slot == box2->as_BoxLock()->_slot;
+  }
   int stack_slot() const { return _slot; }
 
   bool is_eliminated() const { return _is_eliminated; }

@@ -71,7 +71,7 @@ abstract class NotificationEmitterSupport implements NotificationEmitter {
            efficient solution would be to clone the listener list
            every time a notification is sent.  */
         synchronized (listenerLock) {
-            List<ListenerInfo> newList = new ArrayList<ListenerInfo>(listenerList.size() + 1);
+            List<ListenerInfo> newList = new ArrayList<>(listenerList.size() + 1);
             newList.addAll(listenerList);
             newList.add(new ListenerInfo(listener, filter, handback));
             listenerList = newList;
@@ -82,12 +82,12 @@ abstract class NotificationEmitterSupport implements NotificationEmitter {
         throws ListenerNotFoundException {
 
         synchronized (listenerLock) {
-            List<ListenerInfo> newList = new ArrayList<ListenerInfo>(listenerList);
+            List<ListenerInfo> newList = new ArrayList<>(listenerList);
             /* We scan the list of listeners in reverse order because
                in forward order we would have to repeat the loop with
                the same index after a remove.  */
             for (int i=newList.size()-1; i>=0; i--) {
-                ListenerInfo li = (ListenerInfo)newList.get(i);
+                ListenerInfo li = newList.get(i);
 
                 if (li.listener == listener)
                     newList.remove(i);
@@ -106,10 +106,10 @@ abstract class NotificationEmitterSupport implements NotificationEmitter {
         boolean found = false;
 
         synchronized (listenerLock) {
-            List<ListenerInfo> newList = new ArrayList<ListenerInfo>(listenerList);
+            List<ListenerInfo> newList = new ArrayList<>(listenerList);
             final int size = newList.size();
             for (int i = 0; i < size; i++) {
-                ListenerInfo li = (ListenerInfo) newList.get(i);
+                ListenerInfo li =  newList.get(i);
 
                 if (li.listener == listener) {
                     found = true;
@@ -148,7 +148,7 @@ abstract class NotificationEmitterSupport implements NotificationEmitter {
 
         final int size = currentList.size();
         for (int i = 0; i < size; i++) {
-            ListenerInfo li = (ListenerInfo) currentList.get(i);
+            ListenerInfo li =  currentList.get(i);
 
             if (li.filter == null
                 || li.filter.isNotificationEnabled(notification)) {

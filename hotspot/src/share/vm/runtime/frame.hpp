@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,6 +220,15 @@ class frame VALUE_OBJ_CLASS_SPEC {
 
   // returns the stack pointer of the calling frame
   intptr_t* sender_sp() const;
+
+  // Returns the real 'frame pointer' for the current frame.
+  // This is the value expected by the platform ABI when it defines a
+  // frame pointer register. It may differ from the effective value of
+  // the FP register when that register is used in the JVM for other
+  // purposes (like compiled frames on some platforms).
+  // On other platforms, it is defined so that the stack area used by
+  // this frame goes from real_fp() to sp().
+  intptr_t* real_fp() const;
 
   // Deoptimization info, if needed (platform dependent).
   // Stored in the initial_info field of the unroll info, to be used by

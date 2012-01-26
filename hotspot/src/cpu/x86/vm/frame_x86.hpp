@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,6 +188,7 @@
   frame(intptr_t* sp, intptr_t* fp);
 
   // accessors for the instance variables
+  // Note: not necessarily the real 'frame pointer' (see real_fp)
   intptr_t*   fp() const { return _fp; }
 
   inline address* sender_pc_addr() const;
