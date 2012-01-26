@@ -246,4 +246,77 @@ public:
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
 };
 
+// Closure that applies the given two closures in sequence.
+// Used by the RSet refinement code (when updating RSets
+// during an evacuation pause) to record cards containing
+// pointers into the collection set.
+
+class G1Mux2Closure : public OopClosure {
+  OopClosure* _c1;
+  OopClosure* _c2;
+public:
+  G1Mux2Closure(OopClosure *c1, OopClosure *c2);
+  template <class T> void do_oop_nv(T* p);
+  virtual void do_oop(oop* p)        { do_oop_nv(p); }
+  virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
+};
+
+// A closure that returns true if it is actually applied
+// to a reference
+
+class G1TriggerClosure : public OopClosure {
+  bool _triggered;
+public:
+  G1TriggerClosure();
+  bool triggered() const { return _triggered; }
+  template <class T> void do_oop_nv(T* p);
+  virtual void do_oop(oop* p)        { do_oop_nv(p); }
+  virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
+};
+
+// A closure which uses a triggering closure to determine
+// whether to apply an oop closure.
+
+class G1InvokeIfNotTriggeredClosure: public OopClosure {
+  G1TriggerClosure* _trigger_cl;
+  OopClosure* _oop_cl;
+public:
+  G1InvokeIfNotTriggeredClosure(G1TriggerClosure* t, OopClosure* oc);
+  template <class T> void do_oop_nv(T* p);
+  virtual void do_oop(oop* p)        { do_oop_nv(p); }
+  virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
+};
+
+class G1UpdateRSOrPushRefOopClosure: public OopClosure {
+  G1CollectedHeap* _g1;
+  G1RemSet* _g1_rem_set;
+  HeapRegion* _from;
+  OopsInHeapRegionClosure* _push_ref_cl;
+  bool _record_refs_into_cset;
+  int _worker_i;
+
+public:
+  G1UpdateRSOrPushRefOopClosure(G1CollectedHeap* g1h,
+                                G1RemSet* rs,
+                                OopsInHeapRegionClosure* push_ref_cl,
+                                bool record_refs_into_cset,
+                                int worker_i = 0);
+
+  void set_from(HeapRegion* from) {
+    assert(from != NULL, "from region must be non-NULL");
+    _from = from;
+  }
+
+  bool self_forwarded(oop obj) {
+    bool result = (obj->is_forwarded() && (obj->forwardee()== obj));
+    return result;
+  }
+
+  bool apply_to_weak_ref_discovered_field() { return true; }
+
+  template <class T> void do_oop_nv(T* p);
+  virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
+  virtual void do_oop(oop* p)       { do_oop_nv(p); }
+};
+
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1OOPCLOSURES_HPP
