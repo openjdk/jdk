@@ -128,7 +128,7 @@ class RuntimeImpl implements RuntimeMXBean {
 
     public Map<String,String> getSystemProperties() {
         Properties sysProps = System.getProperties();
-        Map<String,String> map = new HashMap<String, String>();
+        Map<String,String> map = new HashMap<>();
 
         // Properties.entrySet() does not include the entries in
         // the default properties.  So use Properties.stringPropertyNames()

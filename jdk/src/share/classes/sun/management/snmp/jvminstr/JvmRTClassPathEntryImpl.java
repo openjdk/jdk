@@ -44,6 +44,7 @@ import sun.management.snmp.jvmmib.JvmRTClassPathEntryMBean;
 public class JvmRTClassPathEntryImpl implements JvmRTClassPathEntryMBean,
                                                 Serializable {
 
+    static final long serialVersionUID = 8524792845083365742L;
     private final String item;
     private final int index;
 

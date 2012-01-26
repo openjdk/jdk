@@ -71,6 +71,7 @@ import com.sun.jmx.snmp.SnmpDefinitions;
 public class JvmMemPoolEntryMeta extends SnmpMibEntry
      implements Serializable, SnmpStandardMetaServer {
 
+    static final long serialVersionUID = 7220682779249102830L;
     /**
      * Constructor for the metadata associated to "JvmMemPoolEntry".
      */

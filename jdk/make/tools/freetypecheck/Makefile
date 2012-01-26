@@ -40,18 +40,19 @@ ifeq ($(PLATFORM), windows)
   FT_OPTIONS  = /nologo /c
   FREETYPE_DLL = $(FREETYPE_LIB_PATH)/freetype.dll
   FT_LD_OPTIONS  = $(FREETYPE_LIB_PATH)/freetype.lib
-ifdef MT
-  FT_LD_OPTIONS += /manifest
-endif
+  ifdef MT
+    FT_LD_OPTIONS += /manifest
+  endif
 else
   FT_OPTIONS  = $(CFLAGS)
   FT_LD_OPTIONS = -L$(FREETYPE_LIB_PATH)
   # Add runtime lib search path to ensure test will be runnable
-  ifeq ($(PLATFORM), solaris)
-    FT_LD_OPTIONS += -R $(FREETYPE_LIB_PATH) -lfreetype
-  else #linux
-      FT_LD_OPTIONS += -Wl,-rpath -Wl,$(FREETYPE_LIB_PATH) -lfreetype
+  ifeq ($(PLATFORM), linux)
+    FT_LD_OPTIONS += -Wl,-rpath -Wl,$(FREETYPE_LIB_PATH)
+  else # other unix
+    FT_LD_OPTIONS += -R $(FREETYPE_LIB_PATH)
   endif
+  FT_LD_OPTIONS += -lfreetype
 endif
 FT_OPTIONS += -I$(FREETYPE_HEADERS_PATH)
 FT_OPTIONS += -I$(FREETYPE_HEADERS_PATH)/freetype2
@@ -70,12 +71,12 @@ ifeq ($(PLATFORM), windows)
 	$(CC) $(FT_OPTIONS) $(CC_OBJECT_OUTPUT_FLAG)$(FT_OBJ) $<
 	$(LINK) $(FT_LD_OPTIONS) /OUT:$(FT_TEST) $(FT_OBJ)
 	$(CP) $(FREETYPE_DLL) $(@D)/
-ifdef MT
+  ifdef MT
 	$(CP) $(MSVCRNN_DLL_PATH)/$(MSVCRNN_DLL) $(@D)/
 	$(MT) /manifest $(FT_TEST).manifest /outputresource:$(FT_TEST);#1
-endif
+  endif
 else
-	@$(CC) $(FT_OPTIONS) $(CC_PROGRAM_OUTPUT_FLAG)$@ $< $(FT_LD_OPTIONS)
+	@$(CC) $(FT_OPTIONS) -o $@ $< $(FT_LD_OPTIONS)
 endif
 
 else

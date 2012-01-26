@@ -32,6 +32,9 @@
 BUILDDIR = ../../../../..
 PACKAGE = com.sun.demo.jvmti.hprof
 PRODUCT = sun
+JAVAC_MAX_WARNINGS = true
+JAVAC_WARNINGS_FATAL = true
+
 include $(BUILDDIR)/common/Defs.gmk
 
 #

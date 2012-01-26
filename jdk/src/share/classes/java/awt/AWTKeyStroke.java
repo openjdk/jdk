@@ -802,8 +802,11 @@ public class AWTKeyStroke implements Serializable {
      */
     protected Object readResolve() throws java.io.ObjectStreamException {
         synchronized (AWTKeyStroke.class) {
-            return getCachedStroke(keyChar, keyCode, modifiers, onKeyRelease);
+            if (getClass().equals(getAWTKeyStrokeClass())) {
+                return  getCachedStroke(keyChar, keyCode, modifiers, onKeyRelease);
+            }
         }
+        return this;
     }
 
     private static int mapOldModifiers(int modifiers) {
