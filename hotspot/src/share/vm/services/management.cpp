@@ -119,21 +119,8 @@ void Management::init() {
   _optional_support.isThreadAllocatedMemorySupported = 1;
 
   // Registration of the diagnostic commands
-  // First boolean argument specifies if the command is enabled
-  // Second boolean argument specifies if the command is hidden
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HelpDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VersionDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CommandLineDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintSystemPropertiesDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintVMFlagsDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMUptimeDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemGCDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(true, false));
-#ifndef SERVICES_KERNEL   // Heap dumping not supported
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(true, false));
-#endif // SERVICES_KERNEL
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(true, false));
+  DCmdRegistrant::register_dcmds();
+  DCmdRegistrant::register_dcmds_ext();
 }
 
 void Management::initialize(TRAPS) {
