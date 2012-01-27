@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,12 +59,13 @@ template <> void DCmdArgument<jlong>::destroy_value() { }
 
 template <> void DCmdArgument<bool>::parse_value(const char* str,
                                                  size_t len, TRAPS) {
+  // len is the length of the current token starting at str
   if (len == 0) {
     set_value(true);
   } else {
-    if (strcasecmp(str, "true") == 0) {
+    if (len == strlen("true") && strncasecmp(str, "true", len) == 0) {
        set_value(true);
-    } else if (strcasecmp(str, "false") == 0) {
+    } else if (len == strlen("false") && strncasecmp(str, "false", len) == 0) {
        set_value(false);
     } else {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),

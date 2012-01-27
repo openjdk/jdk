@@ -651,13 +651,15 @@ intptr_t* frame::interpreter_frame_tos_at(jint offset) const {
   return &interpreter_frame_tos_address()[index];
 }
 
-#ifdef ASSERT
+#ifndef PRODUCT
 
 #define DESCRIBE_FP_OFFSET(name) \
   values.describe(frame_no, fp() + frame::name##_offset, #name)
 
 void frame::describe_pd(FrameValues& values, int frame_no) {
-  if (is_interpreted_frame()) {
+  if (is_ricochet_frame()) {
+    MethodHandles::RicochetFrame::describe(this, values, frame_no);
+  } else if (is_interpreted_frame()) {
     DESCRIBE_FP_OFFSET(interpreter_frame_sender_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_last_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_method);
@@ -667,7 +669,6 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     DESCRIBE_FP_OFFSET(interpreter_frame_bcx);
     DESCRIBE_FP_OFFSET(interpreter_frame_initial_sp);
   }
-
 }
 #endif
 
