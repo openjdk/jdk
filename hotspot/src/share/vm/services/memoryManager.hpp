@@ -108,7 +108,7 @@ public:
   const char* name()         { return "CodeCacheManager"; }
 };
 
-class GCStatInfo : public CHeapObj {
+class GCStatInfo : public ResourceObj {
 private:
   size_t _index;
   jlong  _start_time;
