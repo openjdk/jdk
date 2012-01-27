@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3589,26 +3589,28 @@ void os::loop_breaker(int attempts) {
 // It is only used when ThreadPriorityPolicy=1 and requires root privilege.
 
 #if defined(_ALLBSD_SOURCE) && !defined(__APPLE__)
-int os::java_to_os_priority[MaxPriority + 1] = {
+int os::java_to_os_priority[CriticalPriority + 1] = {
   19,              // 0 Entry should never be used
 
    0,              // 1 MinPriority
    3,              // 2
    6,              // 3
 
-   10,              // 4
-   15,              // 5 NormPriority
-   18,              // 6
+  10,              // 4
+  15,              // 5 NormPriority
+  18,              // 6
 
-   21,              // 7
-   25,              // 8
-   28,              // 9 NearMaxPriority
+  21,              // 7
+  25,              // 8
+  28,              // 9 NearMaxPriority
 
-   31              // 10 MaxPriority
+  31,              // 10 MaxPriority
+
+  31               // 11 CriticalPriority
 };
 #elif defined(__APPLE__)
 /* Using Mach high-level priority assignments */
-int os::java_to_os_priority[MaxPriority + 1] = {
+int os::java_to_os_priority[CriticalPriority + 1] = {
    0,              // 0 Entry should never be used (MINPRI_USER)
 
   27,              // 1 MinPriority
@@ -3623,10 +3625,12 @@ int os::java_to_os_priority[MaxPriority + 1] = {
   34,              // 8
   35,              // 9 NearMaxPriority
 
-  36               // 10 MaxPriority
+  36,              // 10 MaxPriority
+
+  36               // 11 CriticalPriority
 };
 #else
-int os::java_to_os_priority[MaxPriority + 1] = {
+int os::java_to_os_priority[CriticalPriority + 1] = {
   19,              // 0 Entry should never be used
 
    4,              // 1 MinPriority
@@ -3641,7 +3645,9 @@ int os::java_to_os_priority[MaxPriority + 1] = {
   -3,              // 8
   -4,              // 9 NearMaxPriority
 
-  -5               // 10 MaxPriority
+  -5,              // 10 MaxPriority
+
+  -5               // 11 CriticalPriority
 };
 #endif
 
@@ -3656,6 +3662,9 @@ static int prio_init() {
       }
       ThreadPriorityPolicy = 0;
     }
+  }
+  if (UseCriticalJavaThreadPriority) {
+    os::java_to_os_priority[MaxPriority] = os::java_to_os_priority[CriticalPriority];
   }
   return 0;
 }
