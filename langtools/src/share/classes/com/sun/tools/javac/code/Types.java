@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3600,39 +3600,44 @@ public class Types {
 
         @Override
         public Type visitCapturedType(CapturedType t, Void s) {
-            Type bound = visitWildcardType(t.wildcard, null);
-            return (bound.contains(t)) ?
-                    erasure(bound) :
-                    bound;
+            Type w_bound = t.wildcard.type;
+            Type bound = w_bound.contains(t) ?
+                        erasure(w_bound) :
+                        visit(w_bound);
+            return rewriteAsWildcardType(visit(bound), t.wildcard.bound, t.wildcard.kind);
         }
 
         @Override
         public Type visitTypeVar(TypeVar t, Void s) {
             if (rewriteTypeVars) {
-                Type bound = high ?
-                    (t.bound.contains(t) ?
+                Type bound = t.bound.contains(t) ?
                         erasure(t.bound) :
-                        visit(t.bound)) :
-                    syms.botType;
-                return rewriteAsWildcardType(bound, t);
-            }
-            else
+                        visit(t.bound);
+                return rewriteAsWildcardType(bound, t, EXTENDS);
+            } else {
                 return t;
+            }
         }
 
         @Override
         public Type visitWildcardType(WildcardType t, Void s) {
-            Type bound = high ? t.getExtendsBound() :
-                                t.getSuperBound();
-            if (bound == null)
-            bound = high ? syms.objectType : syms.botType;
-            return rewriteAsWildcardType(visit(bound), t.bound);
+            Type bound2 = visit(t.type);
+            return t.type == bound2 ? t : rewriteAsWildcardType(bound2, t.bound, t.kind);
         }
 
-        private Type rewriteAsWildcardType(Type bound, TypeVar formal) {
-            return high ?
-                makeExtendsWildcard(B(bound), formal) :
-                makeSuperWildcard(B(bound), formal);
+        private Type rewriteAsWildcardType(Type bound, TypeVar formal, BoundKind bk) {
+            switch (bk) {
+               case EXTENDS: return high ?
+                       makeExtendsWildcard(B(bound), formal) :
+                       makeExtendsWildcard(syms.objectType, formal);
+               case SUPER: return high ?
+                       makeSuperWildcard(syms.botType, formal) :
+                       makeSuperWildcard(B(bound), formal);
+               case UNBOUND: return makeExtendsWildcard(syms.objectType, formal);
+               default:
+                   Assert.error("Invalid bound kind " + bk);
+                   return null;
+            }
         }
 
         Type B(Type t) {

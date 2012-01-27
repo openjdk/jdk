@@ -98,7 +98,7 @@ public abstract class SnmpTableCache implements Serializable {
         final SnmpCachedData cached   = getCachedDatas();
         if (cached != null) return cached;
         final SnmpCachedData computedDatas = updateCachedDatas(context);
-        if (validity != 0) datas = new WeakReference<SnmpCachedData>(computedDatas);
+        if (validity != 0) datas = new WeakReference<>(computedDatas);
         return computedDatas;
     }
 

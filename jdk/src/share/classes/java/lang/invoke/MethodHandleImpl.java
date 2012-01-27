@@ -112,7 +112,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         assert(cookedConstructor.type().equals(ctype));
         ctype = ctype.dropParameterTypes(0, 1);
         cookedConstructor = AdapterMethodHandle.makeCollectArguments(cookedConstructor, returner, 0, true);
-        MethodHandle allocator = new AllocateObject(allocateClass);
+        AllocateObject allocator = new AllocateObject(allocateClass);
         // allocate() => new C(void)
         assert(allocator.type().equals(MethodType.methodType(allocateClass)));
         ctype = ctype.dropParameterTypes(0, 1);
@@ -120,19 +120,19 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         return fold;
     }
 
-    static final class AllocateObject<C> extends BoundMethodHandle {
+    static final class AllocateObject /*<C>*/ extends BoundMethodHandle {
         private static final Unsafe unsafe = Unsafe.getUnsafe();
 
-        private final Class<C> allocateClass;
+        private final Class<?> /*<C>*/ allocateClass;
 
         // for allocation only:
-        private AllocateObject(Class<C> allocateClass) {
+        private AllocateObject(Class<?> /*<C>*/ allocateClass) {
             super(ALLOCATE.asType(MethodType.methodType(allocateClass, AllocateObject.class)));
             this.allocateClass = allocateClass;
         }
         @SuppressWarnings("unchecked")
-        private C allocate() throws InstantiationException {
-            return (C) unsafe.allocateInstance(allocateClass);
+        private Object /*C*/ allocate() throws InstantiationException {
+            return unsafe.allocateInstance(allocateClass);
         }
         static final MethodHandle ALLOCATE;
         static {
@@ -148,8 +148,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     MethodHandle accessField(MemberName member, boolean isSetter,
                              Class<?> lookupClass) {
         // Use sun. misc.Unsafe to dig up the dirt on the field.
-        MethodHandle mh = new FieldAccessor(member, isSetter);
-        return mh;
+        FieldAccessor accessor = new FieldAccessor(member, isSetter);
+        return accessor;
     }
 
     static
@@ -175,7 +175,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         return mhs[isSetter ? 1 : 0];
     }
 
-    static final class FieldAccessor<C,V> extends BoundMethodHandle {
+    static final class FieldAccessor /*<C,V>*/ extends BoundMethodHandle {
         private static final Unsafe unsafe = Unsafe.getUnsafe();
         final Object base;  // for static refs only
         final long offset;
@@ -190,26 +190,24 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         @Override
         String debugString() { return addTypeString(name, this); }
 
-        int getFieldI(C obj) { return unsafe.getInt(obj, offset); }
-        void setFieldI(C obj, int x) { unsafe.putInt(obj, offset, x); }
-        long getFieldJ(C obj) { return unsafe.getLong(obj, offset); }
-        void setFieldJ(C obj, long x) { unsafe.putLong(obj, offset, x); }
-        float getFieldF(C obj) { return unsafe.getFloat(obj, offset); }
-        void setFieldF(C obj, float x) { unsafe.putFloat(obj, offset, x); }
-        double getFieldD(C obj) { return unsafe.getDouble(obj, offset); }
-        void setFieldD(C obj, double x) { unsafe.putDouble(obj, offset, x); }
-        boolean getFieldZ(C obj) { return unsafe.getBoolean(obj, offset); }
-        void setFieldZ(C obj, boolean x) { unsafe.putBoolean(obj, offset, x); }
-        byte getFieldB(C obj) { return unsafe.getByte(obj, offset); }
-        void setFieldB(C obj, byte x) { unsafe.putByte(obj, offset, x); }
-        short getFieldS(C obj) { return unsafe.getShort(obj, offset); }
-        void setFieldS(C obj, short x) { unsafe.putShort(obj, offset, x); }
-        char getFieldC(C obj) { return unsafe.getChar(obj, offset); }
-        void setFieldC(C obj, char x) { unsafe.putChar(obj, offset, x); }
-        @SuppressWarnings("unchecked")
-        V getFieldL(C obj) { return (V) unsafe.getObject(obj, offset); }
-        @SuppressWarnings("unchecked")
-        void setFieldL(C obj, V x) { unsafe.putObject(obj, offset, x); }
+        int getFieldI(Object /*C*/ obj) { return unsafe.getInt(obj, offset); }
+        void setFieldI(Object /*C*/ obj, int x) { unsafe.putInt(obj, offset, x); }
+        long getFieldJ(Object /*C*/ obj) { return unsafe.getLong(obj, offset); }
+        void setFieldJ(Object /*C*/ obj, long x) { unsafe.putLong(obj, offset, x); }
+        float getFieldF(Object /*C*/ obj) { return unsafe.getFloat(obj, offset); }
+        void setFieldF(Object /*C*/ obj, float x) { unsafe.putFloat(obj, offset, x); }
+        double getFieldD(Object /*C*/ obj) { return unsafe.getDouble(obj, offset); }
+        void setFieldD(Object /*C*/ obj, double x) { unsafe.putDouble(obj, offset, x); }
+        boolean getFieldZ(Object /*C*/ obj) { return unsafe.getBoolean(obj, offset); }
+        void setFieldZ(Object /*C*/ obj, boolean x) { unsafe.putBoolean(obj, offset, x); }
+        byte getFieldB(Object /*C*/ obj) { return unsafe.getByte(obj, offset); }
+        void setFieldB(Object /*C*/ obj, byte x) { unsafe.putByte(obj, offset, x); }
+        short getFieldS(Object /*C*/ obj) { return unsafe.getShort(obj, offset); }
+        void setFieldS(Object /*C*/ obj, short x) { unsafe.putShort(obj, offset, x); }
+        char getFieldC(Object /*C*/ obj) { return unsafe.getChar(obj, offset); }
+        void setFieldC(Object /*C*/ obj, char x) { unsafe.putChar(obj, offset, x); }
+        Object /*V*/ getFieldL(Object /*C*/ obj) { return unsafe.getObject(obj, offset); }
+        void setFieldL(Object /*C*/ obj, Object /*V*/ x) { unsafe.putObject(obj, offset, x); }
         // cast (V) is OK here, since we wrap convertArguments around the MH.
 
         static Object staticBase(final MemberName field) {
@@ -244,8 +242,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         void setStaticS(short x) { unsafe.putShort(base, offset, x); }
         char getStaticC() { return unsafe.getChar(base, offset); }
         void setStaticC(char x) { unsafe.putChar(base, offset, x); }
-        V getStaticL() { return (V) unsafe.getObject(base, offset); }
-        void setStaticL(V x) { unsafe.putObject(base, offset, x); }
+        @SuppressWarnings("unchecked")  // (V) is for internal clarity but triggers warning
+        Object /*V*/ getStaticL() { return unsafe.getObject(base, offset); }
+        void setStaticL(Object /*V*/ x) { unsafe.putObject(base, offset, x); }
 
         static String fname(Class<?> vclass, boolean isSetter, boolean isStatic) {
             String stem;
