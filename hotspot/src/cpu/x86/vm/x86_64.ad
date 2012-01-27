@@ -11511,13 +11511,13 @@ instruct jmpConUCF2_short(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
 // inlined locking and unlocking
 
 instruct cmpFastLock(rFlagsReg cr,
-                     rRegP object, rRegP box, rax_RegI tmp, rRegP scr)
+                     rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr)
 %{
   match(Set cr (FastLock object box));
-  effect(TEMP tmp, TEMP scr);
+  effect(TEMP tmp, TEMP scr, USE_KILL box);
 
   ins_cost(300);
-  format %{ "fastlock $object,$box,$tmp,$scr" %}
+  format %{ "fastlock $object,$box\t! kills $box,$tmp,$scr" %}
   ins_encode(Fast_Lock(object, box, tmp, scr));
   ins_pipe(pipe_slow);
 %}
@@ -11526,10 +11526,10 @@ instruct cmpFastUnlock(rFlagsReg cr,
                        rRegP object, rax_RegP box, rRegP tmp)
 %{
   match(Set cr (FastUnlock object box));
-  effect(TEMP tmp);
+  effect(TEMP tmp, USE_KILL box);
 
   ins_cost(300);
-  format %{ "fastunlock $object, $box, $tmp" %}
+  format %{ "fastunlock $object,$box\t! kills $box,$tmp" %}
   ins_encode(Fast_Unlock(object, box, tmp));
   ins_pipe(pipe_slow);
 %}

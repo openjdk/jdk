@@ -819,7 +819,7 @@ inline Node* LibraryCallKit::generate_limit_guard(Node* offset,
   if (stopped())
     return NULL;                // already stopped
   bool zero_offset = _gvn.type(offset) == TypeInt::ZERO;
-  if (zero_offset && _gvn.eqv_uncast(subseq_length, array_length))
+  if (zero_offset && subseq_length->eqv_uncast(array_length))
     return NULL;                // common case of whole-array copy
   Node* last = subseq_length;
   if (!zero_offset)             // last += offset
@@ -4667,7 +4667,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
   if (ReduceBulkZeroing
       && !ZeroTLAB              // pointless if already zeroed
       && basic_elem_type != T_CONFLICT // avoid corner case
-      && !_gvn.eqv_uncast(src, dest)
+      && !src->eqv_uncast(dest)
       && ((alloc = tightly_coupled_allocation(dest, slow_region))
           != NULL)
       && _gvn.find_int_con(alloc->in(AllocateNode::ALength), 1) > 0
@@ -4745,7 +4745,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
     // copy_length is 0.
     if (!stopped() && dest_uninitialized) {
       Node* dest_length = alloc->in(AllocateNode::ALength);
-      if (_gvn.eqv_uncast(copy_length, dest_length)
+      if (copy_length->eqv_uncast(dest_length)
           || _gvn.find_int_con(dest_length, 1) <= 0) {
         // There is no zeroing to do. No need for a secondary raw memory barrier.
       } else {
@@ -4791,7 +4791,7 @@ LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
     // with its attendant messy index arithmetic, and upgrade
     // the copy to a more hardware-friendly word size of 64 bits.
     Node* tail_ctl = NULL;
-    if (!stopped() && !_gvn.eqv_uncast(dest_tail, dest_length)) {
+    if (!stopped() && !dest_tail->eqv_uncast(dest_length)) {
       Node* cmp_lt   = _gvn.transform( new(C,3) CmpINode(dest_tail, dest_length) );
       Node* bol_lt   = _gvn.transform( new(C,2) BoolNode(cmp_lt, BoolTest::lt) );
       tail_ctl = generate_slow_guard(bol_lt, NULL);

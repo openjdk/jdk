@@ -3574,7 +3574,7 @@ class CommandLineFlags {
           "Threshold at which tier 3 compilation is invoked (invocation "   \
           "minimum must be satisfied.")                                     \
                                                                             \
-  product(intx, Tier3BackEdgeThreshold,  7000,                              \
+  product(intx, Tier3BackEdgeThreshold,  60000,                             \
           "Back edge threshold at which tier 3 OSR compilation is invoked") \
                                                                             \
   product(intx, Tier4InvocationThreshold, 5000,                             \
@@ -3825,10 +3825,6 @@ class CommandLineFlags {
                                                                             \
   develop(bool, StressMethodHandleWalk, false,                              \
           "Process all method handles with MethodHandleWalk")               \
-                                                                            \
-  diagnostic(bool, UseRicochetFrames, true,                                 \
-          "use ricochet stack frames for method handle combination, "       \
-          "if the platform supports them")                                  \
                                                                             \
   experimental(bool, TrustFinalNonStaticFields, false,                      \
           "trust final non-static declarations for constant folding")       \

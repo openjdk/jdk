@@ -738,46 +738,6 @@ public:
 #ifdef TARGET_ARCH_ppc
 # include "methodHandles_ppc.hpp"
 #endif
-
-#ifdef TARGET_ARCH_NYI_6939861
-  // Here are some backward compatible declarations until the 6939861 ports are updated.
-  #define _adapter_flyby    (_EK_LIMIT + 10)
-  #define _adapter_ricochet (_EK_LIMIT + 11)
-  #define _adapter_opt_spread_1    _adapter_opt_spread_1_ref
-  #define _adapter_opt_spread_more _adapter_opt_spread_ref
-  enum {
-    _INSERT_NO_MASK   = -1,
-    _INSERT_REF_MASK  = 0,
-    _INSERT_INT_MASK  = 1,
-    _INSERT_LONG_MASK = 3
-  };
-  static void get_ek_bound_mh_info(EntryKind ek, BasicType& arg_type, int& arg_mask, int& arg_slots) {
-    arg_type = ek_bound_mh_arg_type(ek);
-    arg_mask = 0;
-    arg_slots = type2size[arg_type];;
-  }
-  static void get_ek_adapter_opt_swap_rot_info(EntryKind ek, int& swap_bytes, int& rotate) {
-    int swap_slots = ek_adapter_opt_swap_slots(ek);
-    rotate = ek_adapter_opt_swap_mode(ek);
-    swap_bytes = swap_slots * Interpreter::stackElementSize;
-  }
-  static int get_ek_adapter_opt_spread_info(EntryKind ek) {
-    return ek_adapter_opt_spread_count(ek);
-  }
-
-  static void insert_arg_slots(MacroAssembler* _masm,
-                               RegisterOrConstant arg_slots,
-                               int arg_mask,
-                               Register argslot_reg,
-                               Register temp_reg, Register temp2_reg, Register temp3_reg = noreg);
-
-  static void remove_arg_slots(MacroAssembler* _masm,
-                               RegisterOrConstant arg_slots,
-                               Register argslot_reg,
-                               Register temp_reg, Register temp2_reg, Register temp3_reg = noreg);
-
-  static void trace_method_handle(MacroAssembler* _masm, const char* adaptername) PRODUCT_RETURN;
-#endif //TARGET_ARCH_NYI_6939861
 };
 
 
