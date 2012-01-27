@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,12 +77,20 @@ public class G1MonitoringSupport extends VMObject {
         return edenUsedField.getValue(addr);
     }
 
+    public long edenRegionNum() {
+        return edenUsed() / HeapRegion.grainBytes();
+    }
+
     public long survivorCommitted() {
         return survivorCommittedField.getValue(addr);
     }
 
     public long survivorUsed() {
         return survivorUsedField.getValue(addr);
+    }
+
+    public long survivorRegionNum() {
+        return survivorUsed() / HeapRegion.grainBytes();
     }
 
     public long oldCommitted() {
