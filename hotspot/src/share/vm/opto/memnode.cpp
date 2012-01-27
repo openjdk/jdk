@@ -1718,8 +1718,10 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
   bool is_instance = (tinst != NULL) && tinst->is_known_instance_field();
   if (ReduceFieldZeroing || is_instance) {
     Node* value = can_see_stored_value(mem,phase);
-    if (value != NULL && value->is_Con())
+    if (value != NULL && value->is_Con()) {
+      assert(value->bottom_type()->higher_equal(_type),"sanity");
       return value->bottom_type();
+    }
   }
 
   if (is_instance) {
@@ -1759,6 +1761,20 @@ Node *LoadBNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return LoadNode::Ideal(phase, can_reshape);
 }
 
+const Type* LoadBNode::Value(PhaseTransform *phase) const {
+  Node* mem = in(MemNode::Memory);
+  Node* value = can_see_stored_value(mem,phase);
+  if (value != NULL && value->is_Con() &&
+      !value->bottom_type()->higher_equal(_type)) {
+    // If the input to the store does not fit with the load's result type,
+    // it must be truncated. We can't delay until Ideal call since
+    // a singleton Value is needed for split_thru_phi optimization.
+    int con = value->get_int();
+    return TypeInt::make((con << 24) >> 24);
+  }
+  return LoadNode::Value(phase);
+}
+
 //--------------------------LoadUBNode::Ideal-------------------------------------
 //
 //  If the previous store is to the same address as this load,
@@ -1773,6 +1789,20 @@ Node* LoadUBNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return new (phase->C, 3) AndINode(value, phase->intcon(0xFF));
   // Identity call will handle the case where truncation is not needed.
   return LoadNode::Ideal(phase, can_reshape);
+}
+
+const Type* LoadUBNode::Value(PhaseTransform *phase) const {
+  Node* mem = in(MemNode::Memory);
+  Node* value = can_see_stored_value(mem,phase);
+  if (value != NULL && value->is_Con() &&
+      !value->bottom_type()->higher_equal(_type)) {
+    // If the input to the store does not fit with the load's result type,
+    // it must be truncated. We can't delay until Ideal call since
+    // a singleton Value is needed for split_thru_phi optimization.
+    int con = value->get_int();
+    return TypeInt::make(con & 0xFF);
+  }
+  return LoadNode::Value(phase);
 }
 
 //--------------------------LoadUSNode::Ideal-------------------------------------
@@ -1791,6 +1821,20 @@ Node *LoadUSNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return LoadNode::Ideal(phase, can_reshape);
 }
 
+const Type* LoadUSNode::Value(PhaseTransform *phase) const {
+  Node* mem = in(MemNode::Memory);
+  Node* value = can_see_stored_value(mem,phase);
+  if (value != NULL && value->is_Con() &&
+      !value->bottom_type()->higher_equal(_type)) {
+    // If the input to the store does not fit with the load's result type,
+    // it must be truncated. We can't delay until Ideal call since
+    // a singleton Value is needed for split_thru_phi optimization.
+    int con = value->get_int();
+    return TypeInt::make(con & 0xFFFF);
+  }
+  return LoadNode::Value(phase);
+}
+
 //--------------------------LoadSNode::Ideal--------------------------------------
 //
 //  If the previous store is to the same address as this load,
@@ -1807,6 +1851,20 @@ Node *LoadSNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
   // Identity call will handle the case where truncation is not needed.
   return LoadNode::Ideal(phase, can_reshape);
+}
+
+const Type* LoadSNode::Value(PhaseTransform *phase) const {
+  Node* mem = in(MemNode::Memory);
+  Node* value = can_see_stored_value(mem,phase);
+  if (value != NULL && value->is_Con() &&
+      !value->bottom_type()->higher_equal(_type)) {
+    // If the input to the store does not fit with the load's result type,
+    // it must be truncated. We can't delay until Ideal call since
+    // a singleton Value is needed for split_thru_phi optimization.
+    int con = value->get_int();
+    return TypeInt::make((con << 16) >> 16);
+  }
+  return LoadNode::Value(phase);
 }
 
 //=============================================================================
@@ -2201,7 +2259,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // unsafe if I have intervening uses...  Also disallowed for StoreCM
   // since they must follow each StoreP operation.  Redundant StoreCMs
   // are eliminated just before matching in final_graph_reshape.
-  if (mem->is_Store() && phase->eqv_uncast(mem->in(MemNode::Address), address) &&
+  if (mem->is_Store() && mem->in(MemNode::Address)->eqv_uncast(address) &&
       mem->Opcode() != Op_StoreCM) {
     // Looking at a dead closed cycle of memory?
     assert(mem != mem->in(MemNode::Memory), "dead loop in StoreNode::Ideal");
@@ -2274,16 +2332,16 @@ Node *StoreNode::Identity( PhaseTransform *phase ) {
 
   // Load then Store?  Then the Store is useless
   if (val->is_Load() &&
-      phase->eqv_uncast( val->in(MemNode::Address), adr ) &&
-      phase->eqv_uncast( val->in(MemNode::Memory ), mem ) &&
+      val->in(MemNode::Address)->eqv_uncast(adr) &&
+      val->in(MemNode::Memory )->eqv_uncast(mem) &&
       val->as_Load()->store_Opcode() == Opcode()) {
     return mem;
   }
 
   // Two stores in a row of the same value?
   if (mem->is_Store() &&
-      phase->eqv_uncast( mem->in(MemNode::Address), adr ) &&
-      phase->eqv_uncast( mem->in(MemNode::ValueIn), val ) &&
+      mem->in(MemNode::Address)->eqv_uncast(adr) &&
+      mem->in(MemNode::ValueIn)->eqv_uncast(val) &&
       mem->Opcode() == Opcode()) {
     return mem;
   }

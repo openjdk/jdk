@@ -13435,20 +13435,20 @@ instruct RethrowException()
 // inlined locking and unlocking
 
 
-instruct cmpFastLock( eFlagsReg cr, eRegP object, eRegP box, eAXRegI tmp, eRegP scr) %{
+instruct cmpFastLock( eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eRegP scr) %{
   match( Set cr (FastLock object box) );
-  effect( TEMP tmp, TEMP scr );
+  effect( TEMP tmp, TEMP scr, USE_KILL box );
   ins_cost(300);
-  format %{ "FASTLOCK $object, $box KILLS $tmp,$scr" %}
+  format %{ "FASTLOCK $object,$box\t! kills $box,$tmp,$scr" %}
   ins_encode( Fast_Lock(object,box,tmp,scr) );
   ins_pipe( pipe_slow );
 %}
 
 instruct cmpFastUnlock( eFlagsReg cr, eRegP object, eAXRegP box, eRegP tmp ) %{
   match( Set cr (FastUnlock object box) );
-  effect( TEMP tmp );
+  effect( TEMP tmp, USE_KILL box );
   ins_cost(300);
-  format %{ "FASTUNLOCK $object, $box, $tmp" %}
+  format %{ "FASTUNLOCK $object,$box\t! kills $box,$tmp" %}
   ins_encode( Fast_Unlock(object,box,tmp) );
   ins_pipe( pipe_slow );
 %}
