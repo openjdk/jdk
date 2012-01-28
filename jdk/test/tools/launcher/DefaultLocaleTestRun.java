@@ -31,23 +31,23 @@
           Following 2 testing scenarios are recommended
           (1)systemLocale=Japanese, userLocale=English
           (2)systemLocale=English, userLocale=Japanese
- * @compile -XDignore.symbol.file DefaultLocaleTest.java TestHelper.java
+ * @compile -XDignore.symbol.file DefaultLocaleTest.java
  * @run main DefaultLocaleTestRun
  */
 
-public class DefaultLocaleTestRun {
+public class DefaultLocaleTestRun extends TestHelper {
     public static void main(String... args) {
-        if (!TestHelper.isWindows) {
+        if (!isWindows) {
             System.out.println("Test passes vacuously on non-windows");
             return;
         }
-        TestHelper.TestResult tr = null;
-        tr = TestHelper.doExec(TestHelper.javaCmd,
-                "-cp", TestHelper.TEST_CLASSES_DIR.getAbsolutePath(),
+        TestResult tr = null;
+        tr = doExec(javaCmd,
+                "-cp", TEST_CLASSES_DIR.getAbsolutePath(),
                 "DefaultLocaleTest", "-w", "x.out");
         System.out.println(tr.testOutput);
-        tr = TestHelper.doExec(TestHelper.javawCmd,
-                "-cp", TestHelper.TEST_CLASSES_DIR.getAbsolutePath(),
+        tr = doExec(javawCmd,
+                "-cp", TEST_CLASSES_DIR.getAbsolutePath(),
                 "DefaultLocaleTest", "-r", "x.out");
         System.out.println(tr.testOutput);
         if (!tr.isOK()) {
