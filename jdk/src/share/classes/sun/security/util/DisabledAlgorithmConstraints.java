@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,6 @@ import java.security.Key;
 import java.security.Security;
 import java.security.PrivilegedAction;
 import java.security.AccessController;
-import java.security.interfaces.ECKey;
-import java.security.interfaces.RSAKey;
-import java.security.interfaces.DSAKey;
-import javax.crypto.SecretKey;
-import javax.crypto.interfaces.DHKey;
 
 import java.util.Locale;
 import java.util.Set;
@@ -443,40 +438,15 @@ public class DisabledAlgorithmConstraints implements AlgorithmConstraints {
 
         // Does this key constraint disable the specified key?
         public boolean disables(Key key) {
-            int size = -1;
-
-            // it is a SecretKey
-            if (key instanceof SecretKey) {
-                SecretKey sk = (SecretKey)key;
-                if (sk.getFormat().equals("RAW") && sk.getEncoded() != null) {
-                    size = sk.getEncoded().length * 8;
-
-                }
-            }
-
-            // it is an asymmetric key
-            if (key instanceof RSAKey) {
-                RSAKey pubk = (RSAKey)key;
-                size = pubk.getModulus().bitLength();
-            } else if (key instanceof ECKey) {
-                ECKey pubk = (ECKey)key;
-                size = pubk.getParams().getOrder().bitLength();
-            } else if (key instanceof DSAKey) {
-                DSAKey pubk = (DSAKey)key;
-                size = pubk.getParams().getP().bitLength();
-            } else if (key instanceof DHKey) {
-                DHKey pubk = (DHKey)key;
-                size = pubk.getParams().getP().bitLength();
-            } // else, it is not a key we know.
+            int size = KeyLength.getKeySize(key);
 
             if (size == 0) {
                 return true;    // we don't allow any key of size 0.
-            }
-
-            if (size >= 0) {
+            } else if (size > 0) {
                 return ((size < minSize) || (size > maxSize) ||
                     (prohibitedSize == size));
-            }
+            }   // Otherwise, the key size is not accessible. Conservatively,
+                // please don't disable such keys.
 
             return false;
         }

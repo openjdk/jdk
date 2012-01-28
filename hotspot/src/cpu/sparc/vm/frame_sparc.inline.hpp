@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,8 @@ inline address* frame::O7_addr() const  { return (address*) &younger_sp()[ I7->s
 inline address* frame::O0_addr() const  { return (address*) &younger_sp()[ I0->sp_offset_in_saved_window()]; }
 
 inline intptr_t*    frame::sender_sp() const  { return fp(); }
+
+inline intptr_t* frame::real_fp() const { return fp(); }
 
 // Used only in frame::oopmapreg_to_location
 // This return a value in VMRegImpl::slot_size

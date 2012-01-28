@@ -64,7 +64,12 @@ int main(int argc, const char* argv[]) {
     DEFX(O_TRUNC);
     DEFX(O_SYNC);
     DEFX(O_DSYNC);
+#ifdef O_NOFOLLOW
     DEFX(O_NOFOLLOW);
+#else
+    // not supported (dummy values will not be used at runtime).
+    emitX("O_NOFOLLOW", 0x0);
+#endif
 
     // mode masks
     emitX("S_IAMB",

@@ -54,6 +54,7 @@ import static org.junit.Assert.*;
 /**
  * @author jrose
  */
+@SuppressWarnings("LocalVariableHidesMemberVariable")
 public class JavaDocExamplesTest {
     /** Wrapper for running the JUnit tests in this module.
      *  Put JUnit on the classpath!
@@ -336,6 +337,7 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
             }}
     }
 
+    @SuppressWarnings("rawtypes")
     @Test public void testAsVarargsCollector() throws Throwable {
         {{
 {} /// JAVADOC

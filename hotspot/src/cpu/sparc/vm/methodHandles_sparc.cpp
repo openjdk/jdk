@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,7 @@ void MethodHandles::RicochetFrame::generate_ricochet_blob(MacroAssembler* _masm,
   BLOCK_COMMENT("ricochet_blob.bounce");
 
   if (VerifyMethodHandles)  RicochetFrame::verify_clean(_masm);
-  trace_method_handle(_masm, "ricochet_blob.bounce");
+  trace_method_handle(_masm, "return/ricochet_blob.bounce");
 
   __ JMP(L1_continuation, 0);
   __ delayed()->nop();
@@ -268,14 +268,16 @@ void MethodHandles::RicochetFrame::leave_ricochet_frame(MacroAssembler* _masm,
 }
 
 // Emit code to verify that FP is pointing at a valid ricochet frame.
-#ifdef ASSERT
+#ifndef PRODUCT
 enum {
   ARG_LIMIT = 255, SLOP = 45,
   // use this parameter for checking for garbage stack movements:
   UNREASONABLE_STACK_MOVE = (ARG_LIMIT + SLOP)
   // the slop defends against false alarms due to fencepost errors
 };
+#endif
 
+#ifdef ASSERT
 void MethodHandles::RicochetFrame::verify_clean(MacroAssembler* _masm) {
   // The stack should look like this:
   //    ... keep1 | dest=42 | keep2 | magic | handler | magic | recursive args | [RF]
@@ -1001,31 +1003,142 @@ void MethodHandles::move_return_value(MacroAssembler* _masm, BasicType type,
 }
 
 #ifndef PRODUCT
+void MethodHandles::RicochetFrame::describe(const frame* fr, FrameValues& values, int frame_no)  {
+    RicochetFrame* rf = new RicochetFrame(*fr);
+
+    // ricochet slots (kept in registers for sparc)
+    values.describe(frame_no, rf->register_addr(I5_savedSP), err_msg("exact_sender_sp reg for #%d", frame_no));
+    values.describe(frame_no, rf->register_addr(L5_conversion), err_msg("conversion reg for #%d", frame_no));
+    values.describe(frame_no, rf->register_addr(L4_saved_args_base), err_msg("saved_args_base reg for #%d", frame_no));
+    values.describe(frame_no, rf->register_addr(L3_saved_args_layout), err_msg("saved_args_layout reg for #%d", frame_no));
+    values.describe(frame_no, rf->register_addr(L2_saved_target), err_msg("saved_target reg for #%d", frame_no));
+    values.describe(frame_no, rf->register_addr(L1_continuation), err_msg("continuation reg for #%d", frame_no));
+
+    // relevant ricochet targets (in caller frame)
+    values.describe(-1, rf->saved_args_base(),  err_msg("*saved_args_base for #%d", frame_no));
+    values.describe(-1, (intptr_t *)(STACK_BIAS+(uintptr_t)rf->exact_sender_sp()),  err_msg("*exact_sender_sp+STACK_BIAS for #%d", frame_no));
+}
+#endif // ASSERT
+
+#ifndef PRODUCT
 extern "C" void print_method_handle(oop mh);
 void trace_method_handle_stub(const char* adaptername,
                               oopDesc* mh,
-                              intptr_t* saved_sp) {
+                              intptr_t* saved_sp,
+                              intptr_t* args,
+                              intptr_t* tracing_fp) {
   bool has_mh = (strstr(adaptername, "return/") == NULL);  // return adapters don't have mh
-  tty->print_cr("MH %s mh="INTPTR_FORMAT " saved_sp=" INTPTR_FORMAT, adaptername, (intptr_t) mh, saved_sp);
-  if (has_mh)
+
+  tty->print_cr("MH %s mh="INTPTR_FORMAT " saved_sp=" INTPTR_FORMAT " args=" INTPTR_FORMAT, adaptername, (intptr_t) mh, saved_sp, args);
+
+  if (Verbose) {
+    // dumping last frame with frame::describe
+
+    JavaThread* p = JavaThread::active();
+
+    ResourceMark rm;
+    PRESERVE_EXCEPTION_MARK; // may not be needed by safer and unexpensive here
+    FrameValues values;
+
+    // Note: We want to allow trace_method_handle from any call site.
+    // While trace_method_handle creates a frame, it may be entered
+    // without a valid return PC in O7 (e.g. not just after a call).
+    // Walking that frame could lead to failures due to that invalid PC.
+    // => carefully detect that frame when doing the stack walking
+
+    // walk up to the right frame using the "tracing_fp" argument
+    intptr_t* cur_sp = StubRoutines::Sparc::flush_callers_register_windows_func()();
+    frame cur_frame(cur_sp, frame::unpatchable, NULL);
+
+    while (cur_frame.fp() != (intptr_t *)(STACK_BIAS+(uintptr_t)tracing_fp)) {
+      cur_frame = os::get_sender_for_C_frame(&cur_frame);
+    }
+
+    // safely create a frame and call frame::describe
+    intptr_t *dump_sp = cur_frame.sender_sp();
+    intptr_t *dump_fp = cur_frame.link();
+
+    bool walkable = has_mh; // whether the traced frame shoud be walkable
+
+    // the sender for cur_frame is the caller of trace_method_handle
+    if (walkable) {
+      // The previous definition of walkable may have to be refined
+      // if new call sites cause the next frame constructor to start
+      // failing. Alternatively, frame constructors could be
+      // modified to support the current or future non walkable
+      // frames (but this is more intrusive and is not considered as
+      // part of this RFE, which will instead use a simpler output).
+      frame dump_frame = frame(dump_sp,
+                               cur_frame.sp(), // younger_sp
+                               false); // no adaptation
+      dump_frame.describe(values, 1);
+    } else {
+      // Robust dump for frames which cannot be constructed from sp/younger_sp
+      // Add descriptions without building a Java frame to avoid issues
+      values.describe(-1, dump_fp, "fp for #1 <not parsed, cannot trust pc>");
+      values.describe(-1, dump_sp, "sp");
+    }
+
+    bool has_args = has_mh; // whether Gargs is meaningful
+
+    // mark args, if seems valid (may not be valid for some adapters)
+    if (has_args) {
+      if ((args >= dump_sp) && (args < dump_fp)) {
+        values.describe(-1, args, "*G4_args");
+      }
+    }
+
+    // mark saved_sp, if seems valid (may not be valid for some adapters)
+    intptr_t *unbiased_sp = (intptr_t *)(STACK_BIAS+(uintptr_t)saved_sp);
+    if ((unbiased_sp >= dump_sp - UNREASONABLE_STACK_MOVE) && (unbiased_sp < dump_fp)) {
+      values.describe(-1, unbiased_sp, "*saved_sp+STACK_BIAS");
+    }
+
+    // Note: the unextended_sp may not be correct
+    tty->print_cr("  stack layout:");
+    values.print(p);
+  }
+
+  if (has_mh) {
     print_method_handle(mh);
+  }
 }
+
 void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adaptername) {
   if (!TraceMethodHandles)  return;
   BLOCK_COMMENT("trace_method_handle {");
   // save: Gargs, O5_savedSP
-  __ save_frame(16);
+  __ save_frame(16); // need space for saving required FPU state
+
   __ set((intptr_t) adaptername, O0);
   __ mov(G3_method_handle, O1);
   __ mov(I5_savedSP, O2);
+  __ mov(Gargs, O3);
+  __ mov(I6, O4); // frame identifier for safe stack walking
+
+  // Save scratched registers that might be needed. Robustness is more
+  // important than optimizing the saves for this debug only code.
+
+  // save FP result, valid at some call sites (adapter_opt_return_float, ...)
+  Address d_save(FP, -sizeof(jdouble) + STACK_BIAS);
+  __ stf(FloatRegisterImpl::D, Ftos_d, d_save);
+  // Safely save all globals but G2 (handled by call_VM_leaf) and G7
+  // (OS reserved).
   __ mov(G3_method_handle, L3);
   __ mov(Gargs, L4);
   __ mov(G5_method_type, L5);
-  __ call_VM_leaf(L7, CAST_FROM_FN_PTR(address, trace_method_handle_stub));
+  __ mov(G6, L6);
+  __ mov(G1, L1);
+
+  __ call_VM_leaf(L2 /* for G2 */, CAST_FROM_FN_PTR(address, trace_method_handle_stub));
 
   __ mov(L3, G3_method_handle);
   __ mov(L4, Gargs);
   __ mov(L5, G5_method_type);
+  __ mov(L6, G6);
+  __ mov(L1, G1);
+  __ ldf(FloatRegisterImpl::D, d_save, Ftos_d);
+
   __ restore();
   BLOCK_COMMENT("} trace_method_handle");
 }
@@ -1045,7 +1158,7 @@ int MethodHandles::adapter_conversion_ops_supported_mask() {
          |(1<<java_lang_invoke_AdapterMethodHandle::OP_DROP_ARGS)
           // OP_COLLECT_ARGS is below...
          |(1<<java_lang_invoke_AdapterMethodHandle::OP_SPREAD_ARGS)
-         |(!UseRicochetFrames ? 0 :
+         |(
            java_lang_invoke_MethodTypeForm::vmlayout_offset_in_bytes() <= 0 ? 0 :
            ((1<<java_lang_invoke_AdapterMethodHandle::OP_PRIM_TO_REF)
            |(1<<java_lang_invoke_AdapterMethodHandle::OP_COLLECT_ARGS)
@@ -1250,7 +1363,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         move_typed_arg(_masm, arg_type, false,
                        prim_value_addr,
                        Address(O0_argslot, 0),
-                       O2_scratch);  // must be an even register for !_LP64 long moves (uses O2/O3)
+                      O2_scratch);  // must be an even register for !_LP64 long moves (uses O2/O3)
       }
 
       if (direct_to_method) {

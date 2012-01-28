@@ -118,21 +118,22 @@ public final class AdaptorBootstrap {
     /**
      * Retrieve the Trap Target List from the ACL file.
      **/
+    @SuppressWarnings("unchecked")
     private static List<NotificationTarget> getTargetList(InetAddressAcl acl,
                                                           int defaultTrapPort) {
         final ArrayList<NotificationTarget> result =
-                new ArrayList<NotificationTarget>();
+                new ArrayList<>();
         if (acl != null) {
             if (log.isDebugOn())
                 log.debug("getTargetList",Agent.getText("jmxremote.AdaptorBootstrap.getTargetList.processing"));
 
-            final Enumeration td=acl.getTrapDestinations();
+            final Enumeration td = acl.getTrapDestinations();
             for (; td.hasMoreElements() ;) {
                 final InetAddress targetAddr = (InetAddress)td.nextElement();
                 final Enumeration tc =
                     acl.getTrapCommunities(targetAddr);
                 for (;tc.hasMoreElements() ;) {
-                    final String community = (String) tc.nextElement();
+                    final String community = (String)tc.nextElement();
                     final NotificationTarget target =
                         new NotificationTargetImpl(targetAddr,
                                                    defaultTrapPort,

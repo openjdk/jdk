@@ -1344,8 +1344,8 @@ void PhaseCFG::GlobalCodeMotion( Matcher &matcher, uint unique, Node_List &proj_
 
   // Schedule locally.  Right now a simple topological sort.
   // Later, do a real latency aware scheduler.
-  int *ready_cnt = NEW_RESOURCE_ARRAY(int,C->unique());
-  memset( ready_cnt, -1, C->unique() * sizeof(int) );
+  uint max_idx = C->unique();
+  GrowableArray<int> ready_cnt(max_idx, max_idx, -1);
   visited.Clear();
   for (i = 0; i < _num_blocks; i++) {
     if (!_blocks[i]->schedule_local(this, matcher, ready_cnt, visited)) {
