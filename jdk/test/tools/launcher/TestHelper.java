@@ -29,6 +29,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.Files;
 import java.nio.file.FileVisitResult;
@@ -36,17 +37,18 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 
 import static java.nio.file.StandardCopyOption.*;
+import static java.nio.file.StandardOpenOption.*;
 
 /**
  * This class provides some common utilities for the launcher tests.
  */
-public enum TestHelper {
-    INSTANCE;
+public class TestHelper {
     // commonly used jtreg constants
     static final File TEST_CLASSES_DIR;
     static final File TEST_SOURCES_DIR;
@@ -73,9 +75,14 @@ public enum TestHelper {
     static final boolean isDualMode = isSolaris;
     static final boolean isSparc = System.getProperty("os.arch").startsWith("sparc");
 
+    // make a note of the golden default locale
+    static final Locale DefaultLocale = Locale.getDefault();
+
     static final String JAVA_FILE_EXT  = ".java";
     static final String CLASS_FILE_EXT = ".class";
     static final String JAR_FILE_EXT   = ".jar";
+    static final String JLDEBUG_KEY     = "_JAVA_LAUNCHER_DEBUG";
+    static final String EXPECTED_MARKER = "TRACER_MARKER:About to EXEC";
 
     static int testExitValue = 0;
 
@@ -197,6 +204,19 @@ public enum TestHelper {
     }
 
     /*
+     * A convenience method to compile java files.
+     */
+    static void compile(String... compilerArgs) {
+        if (compiler.run(null, null, null, compilerArgs) != 0) {
+            String sarg = "";
+            for (String x : compilerArgs) {
+                sarg.concat(x + " ");
+            }
+            throw new Error("compilation failed: " + sarg);
+        }
+    }
+
+    /*
      * A generic jar file creator to create a java file, compile it
      * and jar it up, a specific Main-Class entry name in the
      * manifest can be specified or a null to use the sole class file name
@@ -253,6 +273,11 @@ public enum TestHelper {
             Files.createDirectories(parent);
         }
         Files.copy(src.toPath(), dst.toPath(), COPY_ATTRIBUTES, REPLACE_EXISTING);
+    }
+
+    static void createFile(File outFile, List<String> content) throws IOException {
+        Files.write(outFile.getAbsoluteFile().toPath(), content,
+                Charset.defaultCharset(), CREATE_NEW);
     }
 
     static void recursiveDelete(File target) throws IOException {
@@ -335,6 +360,10 @@ public enum TestHelper {
                 return false;
             }
         };
+    }
+
+    static boolean isEnglishLocale() {
+        return Locale.getDefault().getLanguage().equals("en");
     }
 
     /*

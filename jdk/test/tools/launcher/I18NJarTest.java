@@ -26,7 +26,7 @@
  * @bug 7125442
  * @summary ensures a jar path as well as a class located in a path containing
  *          unicode characters are launched.
- * @compile -XDignore.symbol.file I18NJarTest.java TestHelper.java
+ * @compile -XDignore.symbol.file I18NJarTest.java
  * @run main/othervm I18NJarTest
  */
 import java.io.File;
@@ -48,7 +48,7 @@ import java.util.Locale;
  * in its own VM (othervm mode), such that the ensuing tests can run unperturbed,
  * regardless of the outcome.
  */
-public class I18NJarTest {
+public class I18NJarTest extends TestHelper {
     private static final File cwd = new File(".");
     private static final File dir = new File("\uFF66\uFF67\uFF68\uFF69");
     private static final String encoding = System.getProperty("sun.jnu.encoding", "");
@@ -78,7 +78,7 @@ public class I18NJarTest {
         }
         dir.mkdir();
         File dirfile = new File(dir, "foo.jar");
-        TestHelper.createJar(dirfile,
+        createJar(dirfile,
                 "public static void main(String... args) {",
                 "System.out.println(\"Hello World\");",
                 "System.exit(0);",
@@ -86,22 +86,20 @@ public class I18NJarTest {
 
         // remove the class files, to ensure that the class is indeed picked up
         // from the jar file and not from ambient classpath.
-        File[] classFiles = cwd.listFiles(TestHelper.createFilter(TestHelper.CLASS_FILE_EXT));
+        File[] classFiles = cwd.listFiles(createFilter(CLASS_FILE_EXT));
         for (File f : classFiles) {
             f.delete();
         }
 
         // test with a jar file
-        TestHelper.TestResult tr = TestHelper.doExec(TestHelper.javaCmd,
-                "-jar", dirfile.getAbsolutePath());
+        TestResult tr = doExec(javaCmd, "-jar", dirfile.getAbsolutePath());
         System.out.println(tr);
         if (!tr.isOK()) {
             throw new RuntimeException("TEST FAILED");
         }
 
         // test the same class but by specifying it as a classpath
-        tr = TestHelper.doExec(TestHelper.javaCmd, "-cp",
-                dirfile.getAbsolutePath(), "Foo");
+        tr = doExec(javaCmd, "-cp", dirfile.getAbsolutePath(), "Foo");
         System.out.println(tr);
         if (!tr.isOK()) {
             throw new RuntimeException("TEST FAILED");
