@@ -659,7 +659,7 @@ oops_on_card_seq_iterate_careful(MemRegion mr,
   // If we're within a stop-world GC, then we might look at a card in a
   // GC alloc region that extends onto a GC LAB, which may not be
   // parseable.  Stop such at the "saved_mark" of the region.
-  if (G1CollectedHeap::heap()->is_gc_active()) {
+  if (g1h->is_gc_active()) {
     mr = mr.intersection(used_region_at_save_marks());
   } else {
     mr = mr.intersection(used_region());
@@ -688,53 +688,63 @@ oops_on_card_seq_iterate_careful(MemRegion mr,
     OrderAccess::storeload();
   }
 
+  // Cache the boundaries of the memory region in some const locals
+  HeapWord* const start = mr.start();
+  HeapWord* const end = mr.end();
+
   // We used to use "block_start_careful" here.  But we're actually happy
   // to update the BOT while we do this...
-  HeapWord* cur = block_start(mr.start());
-  assert(cur <= mr.start(), "Postcondition");
+  HeapWord* cur = block_start(start);
+  assert(cur <= start, "Postcondition");
 
-  while (cur <= mr.start()) {
-    if (oop(cur)->klass_or_null() == NULL) {
+  oop obj;
+
+  HeapWord* next = cur;
+  while (next <= start) {
+    cur = next;
+    obj = oop(cur);
+    if (obj->klass_or_null() == NULL) {
       // Ran into an unparseable point.
       return cur;
     }
     // Otherwise...
-    int sz = oop(cur)->size();
-    if (cur + sz > mr.start()) break;
-    // Otherwise, go on.
-    cur = cur + sz;
+    next = (cur + obj->size());
   }
-  oop obj;
-  obj = oop(cur);
-  // If we finish this loop...
-  assert(cur <= mr.start()
-         && obj->klass_or_null() != NULL
-         && cur + obj->size() > mr.start(),
+
+  // If we finish the above loop...We have a parseable object that
+  // begins on or before the start of the memory region, and ends
+  // inside or spans the entire region.
+
+  assert(obj == oop(cur), "sanity");
+  assert(cur <= start &&
+         obj->klass_or_null() != NULL &&
+         (cur + obj->size()) > start,
          "Loop postcondition");
+
   if (!g1h->is_obj_dead(obj)) {
     obj->oop_iterate(cl, mr);
   }
 
-  HeapWord* next;
-  while (cur < mr.end()) {
+  while (cur < end) {
     obj = oop(cur);
     if (obj->klass_or_null() == NULL) {
       // Ran into an unparseable point.
       return cur;
     };
+
     // Otherwise:
     next = (cur + obj->size());
+
     if (!g1h->is_obj_dead(obj)) {
-      if (next < mr.end()) {
+      if (next < end || !obj->is_objArray()) {
+        // This object either does not span the MemRegion
+        // boundary, or if it does it's not an array.
+        // Apply closure to whole object.
         obj->oop_iterate(cl);
       } else {
-        // this obj spans the boundary.  If it's an array, stop at the
-        // boundary.
-        if (obj->is_objArray()) {
-          obj->oop_iterate(cl, mr);
-        } else {
-          obj->oop_iterate(cl);
-        }
+        // This obj is an array that spans the boundary.
+        // Stop at the boundary.
+        obj->oop_iterate(cl, mr);
       }
     }
     cur = next;

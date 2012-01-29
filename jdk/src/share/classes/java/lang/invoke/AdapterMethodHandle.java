@@ -378,6 +378,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
     }
 
     /** Construct an adapter conversion descriptor for a single-argument conversion. */
+    @SuppressWarnings("cast")  // some (int) casts below provide clarity but trigger warnings
     private static long makeConv(int convOp, int argnum, int src, int dest) {
         assert(src  == (src  & CONV_TYPE_MASK));
         assert(dest == (dest & CONV_TYPE_MASK));
@@ -390,6 +391,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
                 insertStackMove(stackMove)
                 );
     }
+    @SuppressWarnings("cast")  // some (int) casts below provide clarity but trigger warnings
     private static long makeDupConv(int convOp, int argnum, int stackMove) {
         // simple argument motion, requiring one slot to specify
         assert(convOp == OP_DUP_ARGS || convOp == OP_DROP_ARGS);
@@ -401,6 +403,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
                 insertStackMove(stackMove)
                 );
     }
+    @SuppressWarnings("cast")  // some (int) casts below provide clarity but trigger warnings
     private static long makeSwapConv(int convOp, int srcArg, byte srcType, int destSlot, byte destType) {
         // more complex argument motion, requiring two slots to specify
         assert(convOp == OP_SWAP_ARGS || convOp == OP_ROT_ARGS);
@@ -411,6 +414,7 @@ class AdapterMethodHandle extends BoundMethodHandle {
                 (int)  destSlot << CONV_VMINFO_SHIFT
                 );
     }
+    @SuppressWarnings("cast")  // some (int) casts below provide clarity but trigger warnings
     private static long makeSpreadConv(int convOp, int argnum, int src, int dest, int stackMove) {
         // spreading or collecting, at a particular slot location
         assert(convOp == OP_SPREAD_ARGS || convOp == OP_COLLECT_ARGS || convOp == OP_FOLD_ARGS);

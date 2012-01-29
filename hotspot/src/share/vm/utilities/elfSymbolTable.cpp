@@ -34,7 +34,7 @@ ElfSymbolTable::ElfSymbolTable(FILE* file, Elf_Shdr shdr) {
   m_symbols = NULL;
   m_next = NULL;
   m_file = file;
-  m_status = Decoder::no_error;
+  m_status = NullDecoder::no_error;
 
   // try to load the string table
   long cur_offset = ftell(file);
@@ -45,16 +45,16 @@ ElfSymbolTable::ElfSymbolTable(FILE* file, Elf_Shdr shdr) {
       if (fseek(file, shdr.sh_offset, SEEK_SET) ||
         fread((void*)m_symbols, shdr.sh_size, 1, file) != 1 ||
         fseek(file, cur_offset, SEEK_SET)) {
-        m_status = Decoder::file_invalid;
+        m_status = NullDecoder::file_invalid;
         os::free(m_symbols);
         m_symbols = NULL;
       }
     }
-    if (m_status == Decoder::no_error) {
+    if (!NullDecoder::is_error(m_status)) {
       memcpy(&m_shdr, &shdr, sizeof(Elf_Shdr));
     }
   } else {
-    m_status = Decoder::file_invalid;
+    m_status = NullDecoder::file_invalid;
   }
 }
 
@@ -68,13 +68,13 @@ ElfSymbolTable::~ElfSymbolTable() {
   }
 }
 
-Decoder::decoder_status ElfSymbolTable::lookup(address addr, int* stringtableIndex, int* posIndex, int* offset) {
+bool ElfSymbolTable::lookup(address addr, int* stringtableIndex, int* posIndex, int* offset) {
   assert(stringtableIndex, "null string table index pointer");
   assert(posIndex, "null string table offset pointer");
   assert(offset, "null offset pointer");
 
-  if (m_status != Decoder::no_error) {
-    return m_status;
+  if (NullDecoder::is_error(m_status)) {
+    return false;
   }
 
   address pc = 0;
@@ -97,8 +97,8 @@ Decoder::decoder_status ElfSymbolTable::lookup(address addr, int* stringtableInd
     long cur_pos;
     if ((cur_pos = ftell(m_file)) == -1 ||
       fseek(m_file, m_shdr.sh_offset, SEEK_SET)) {
-      m_status = Decoder::file_invalid;
-      return m_status;
+      m_status = NullDecoder::file_invalid;
+      return false;
     }
 
     Elf_Sym sym;
@@ -114,13 +114,13 @@ Decoder::decoder_status ElfSymbolTable::lookup(address addr, int* stringtableInd
           }
         }
       } else {
-        m_status = Decoder::file_invalid;
-        return m_status;
+        m_status = NullDecoder::file_invalid;
+        return false;
       }
     }
     fseek(m_file, cur_pos, SEEK_SET);
   }
-  return m_status;
+  return true;
 }
 
 #endif // _WINDOWS

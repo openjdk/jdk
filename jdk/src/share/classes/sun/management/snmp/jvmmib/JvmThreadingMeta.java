@@ -70,6 +70,7 @@ import com.sun.jmx.snmp.SnmpDefinitions;
 public class JvmThreadingMeta extends SnmpMibGroup
      implements Serializable, SnmpStandardMetaServer {
 
+    static final long serialVersionUID = 5223833578005322854L;
     /**
      * Constructor for the metadata associated to "JvmThreading".
      */
