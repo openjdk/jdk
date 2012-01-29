@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.security.ssl;
 
 import java.security.AlgorithmConstraints;
 import java.security.CryptoPrimitive;
+import java.security.PrivateKey;
 
 import java.util.Set;
 import java.util.HashSet;
@@ -36,6 +37,8 @@ import java.util.TreeMap;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.ArrayList;
+
+import sun.security.util.KeyLength;
 
 /**
  * Signature and hash algorithm.
@@ -231,6 +234,14 @@ final class SignatureAndHashAlgorithm {
     static SignatureAndHashAlgorithm getPreferableAlgorithm(
         Collection<SignatureAndHashAlgorithm> algorithms, String expected) {
 
+        return SignatureAndHashAlgorithm.getPreferableAlgorithm(
+                algorithms, expected, null);
+    }
+
+    static SignatureAndHashAlgorithm getPreferableAlgorithm(
+        Collection<SignatureAndHashAlgorithm> algorithms,
+        String expected, PrivateKey signingKey) {
+
         if (expected == null && !algorithms.isEmpty()) {
             for (SignatureAndHashAlgorithm sigAlg : algorithms) {
                 if (sigAlg.priority <= SUPPORTED_ALG_PRIORITY_MAX_NUM) {
@@ -241,17 +252,58 @@ final class SignatureAndHashAlgorithm {
             return null;  // no supported algorithm
         }
 
+        if (expected == null ) {
+            return null;  // no expected algorithm, no supported algorithm
+        }
+
+        /*
+         * Need to check RSA key length to match the length of hash value
+         */
+        int maxDigestLength = Integer.MAX_VALUE;
+        if (signingKey != null &&
+                "rsa".equalsIgnoreCase(signingKey.getAlgorithm()) &&
+                expected.equalsIgnoreCase("rsa")) {
+            /*
+             * RSA keys of 512 bits have been shown to be practically
+             * breakable, it does not make much sense to use the strong
+             * hash algorithm for keys whose key size less than 512 bits.
+             * So it is not necessary to caculate the required max digest
+             * length exactly.
+             *
+             * If key size is greater than or equals to 768, there is no max
+             * digest length limitation in currect implementation.
+             *
+             * If key size is greater than or equals to 512, but less than
+             * 768, the digest length should be less than or equal to 32 bytes.
+             *
+             * If key size is less than 512, the  digest length should be
+             * less than or equal to 20 bytes.
+             */
+            int keySize = KeyLength.getKeySize(signingKey);
+            if (keySize >= 768) {
+                maxDigestLength = HashAlgorithm.SHA512.length;
+            } else if ((keySize >= 512) && (keySize < 768)) {
+                maxDigestLength = HashAlgorithm.SHA256.length;
+            } else if ((keySize > 0) && (keySize < 512)) {
+                maxDigestLength = HashAlgorithm.SHA1.length;
+            }   // Otherwise, cannot determine the key size, prefer the most
+                // perferable hash algorithm.
+        }
 
         for (SignatureAndHashAlgorithm algorithm : algorithms) {
             int signValue = algorithm.id & 0xFF;
-            if ((expected.equalsIgnoreCase("dsa") &&
-                    signValue == SignatureAlgorithm.DSA.value) ||
-                (expected.equalsIgnoreCase("rsa") &&
-                    signValue == SignatureAlgorithm.RSA.value) ||
-                (expected.equalsIgnoreCase("ecdsa") &&
-                    signValue == SignatureAlgorithm.ECDSA.value) ||
-                (expected.equalsIgnoreCase("ec") &&
-                    signValue == SignatureAlgorithm.ECDSA.value)) {
+            if (expected.equalsIgnoreCase("rsa") &&
+                    signValue == SignatureAlgorithm.RSA.value) {
+                if (algorithm.hash.length <= maxDigestLength) {
+                    return algorithm;
+                }
+            } else if (
+                    (expected.equalsIgnoreCase("dsa") &&
+                        signValue == SignatureAlgorithm.DSA.value) ||
+                    (expected.equalsIgnoreCase("ecdsa") &&
+                        signValue == SignatureAlgorithm.ECDSA.value) ||
+                    (expected.equalsIgnoreCase("ec") &&
+                        signValue == SignatureAlgorithm.ECDSA.value)) {
                 return algorithm;
             }
         }
@@ -260,25 +312,28 @@ final class SignatureAndHashAlgorithm {
     }
 
     static enum HashAlgorithm {
-        UNDEFINED("undefined",        "", -1),
-        NONE(          "none",    "NONE",  0),
-        MD5(            "md5",     "MD5",  1),
-        SHA1(          "sha1",   "SHA-1",  2),
-        SHA224(      "sha224", "SHA-224",  3),
-        SHA256(      "sha256", "SHA-256",  4),
-        SHA384(      "sha384", "SHA-384",  5),
-        SHA512(      "sha512", "SHA-512",  6);
+        UNDEFINED("undefined",        "", -1, -1),
+        NONE(          "none",    "NONE",  0, -1),
+        MD5(            "md5",     "MD5",  1, 16),
+        SHA1(          "sha1",   "SHA-1",  2, 20),
+        SHA224(      "sha224", "SHA-224",  3, 28),
+        SHA256(      "sha256", "SHA-256",  4, 32),
+        SHA384(      "sha384", "SHA-384",  5, 48),
+        SHA512(      "sha512", "SHA-512",  6, 64);
 
         final String name;  // not the standard signature algorithm name
                             // except the UNDEFINED, other names are defined
                             // by TLS 1.2 protocol
         final String standardName; // the standard MessageDigest algorithm name
         final int value;
+        final int length;   // digest length in bytes, -1 means not applicable
 
-        private HashAlgorithm(String name, String standardName, int value) {
+        private HashAlgorithm(String name, String standardName,
+                int value, int length) {
             this.name = name;
             this.standardName = standardName;
             this.value = value;
+            this.length = length;
         }
 
         static HashAlgorithm valueOf(int value) {

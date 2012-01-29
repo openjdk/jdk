@@ -38,10 +38,6 @@
 
 package test.java.lang.invoke;
 
-import java.util.*;
-
-import java.lang.invoke.*;
-
 import org.junit.*;
 import static org.junit.Assert.*;
 
@@ -61,7 +57,7 @@ public class ClassValueTest {
         }
     }
 
-    static final Class[] CLASSES = {
+    static final Class<?>[] CLASSES = {
         String.class,
         Integer.class,
         int.class,
@@ -73,11 +69,11 @@ public class ClassValueTest {
     @Test
     public void testGet() {
         countForCV1 = 0;
-        for (Class c : CLASSES) {
+        for (Class<?> c : CLASSES) {
             assertEquals(nameForCV1(c), CV1.get(c));
         }
         assertEquals(CLASSES.length, countForCV1);
-        for (Class c : CLASSES) {
+        for (Class<?> c : CLASSES) {
             assertEquals(nameForCV1(c), CV1.get(c));
         }
         assertEquals(CLASSES.length, countForCV1);
@@ -85,7 +81,7 @@ public class ClassValueTest {
 
     @Test
     public void testRemove() {
-        for (Class c : CLASSES) {
+        for (Class<?> c : CLASSES) {
             CV1.get(c);
         }
         countForCV1 = 0;
@@ -94,7 +90,7 @@ public class ClassValueTest {
             CV1.remove(CLASSES[i]);
         }
         assertEquals(0, countForCV1);  // no change
-        for (Class c : CLASSES) {
+        for (Class<?> c : CLASSES) {
             assertEquals(nameForCV1(c), CV1.get(c));
         }
         assertEquals(REMCOUNT, countForCV1);
@@ -124,7 +120,7 @@ public class ClassValueTest {
         for (int pass = 0; pass <= 2; pass++) {
             for (int i1 = 0; i1 < CVN_COUNT1; i1++) {
                 eachClass:
-                for (Class c : CLASSES) {
+                for (Class<?> c : CLASSES) {
                     for (int i2 = 0; i2 < CVN_COUNT2; i2++) {
                         int n = i1*CVN_COUNT2 + i2;
                         assertEquals(0, countForCVN);
@@ -156,8 +152,10 @@ public class ClassValueTest {
             }
         }
         assertEquals(countForCVN, 0);
-        for (int n = 0; n < cvns.length; n++) {
-            for (Class c : CLASSES) {
+        System.out.println("[rechecking values]");
+        for (int i = 0; i < cvns.length * 10; i++) {
+            int n = i % cvns.length;
+            for (Class<?> c : CLASSES) {
                 assertEquals(nameForCVN(c, n), cvns[n].get(c));
             }
         }
