@@ -31,8 +31,6 @@
 
 package sun.security.krb5.internal.rcache;
 
-import sun.security.krb5.KrbException;
-import sun.security.krb5.Config;
 import sun.security.krb5.internal.Krb5;
 import java.util.LinkedList;
 import java.util.ListIterator;
@@ -48,10 +46,13 @@ public class ReplayCache extends LinkedList<AuthTime> {
 
     private static final long serialVersionUID = 2997933194993803994L;
 
+    // These 3 fields are now useless, keep for serialization compatibility
     private String principal;
     private CacheTable table;
     private int nap = 10 * 60 * 1000; //10 minutes break
+
     private boolean DEBUG = Krb5.DEBUG;
+
     /**
      * Constructs a ReplayCache for a client principal in specified <code>CacheTable</code>.
      * @param p client principal name.
@@ -125,20 +126,11 @@ public class ReplayCache extends LinkedList<AuthTime> {
         if (DEBUG) {
             printList();
         }
-
-        // if there are no entries in the replay cache,
-        // remove the replay cache from the table.
-        if (this.size() == 0) {
-            table.remove(principal);
-        }
-        if (DEBUG) {
-            printList();
-        }
     }
 
 
     /**
-     * Printes out the debug message.
+     * Prints out the debug message.
      */
     private void printList() {
         Object[] total = toArray();

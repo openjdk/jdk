@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,9 @@ const char* GCCause::to_string(GCCause::Cause cause) {
 
     case _g1_inc_collection_pause:
       return "G1 Evacuation Pause";
+
+    case _g1_humongous_allocation:
+      return "G1 Humongous Allocation";
 
     case _last_ditch_collection:
       return "Last ditch collection";

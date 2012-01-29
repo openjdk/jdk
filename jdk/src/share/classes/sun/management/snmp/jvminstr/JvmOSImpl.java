@@ -47,6 +47,8 @@ import sun.management.snmp.jvmmib.JvmOSMBean;
  */
 public class JvmOSImpl implements JvmOSMBean, Serializable {
 
+     static final long serialVersionUID = 1839834731763310809L;
+
     /**
      * Constructor for the "JvmOS" group.
      * If the group contains a table, the entries created through an

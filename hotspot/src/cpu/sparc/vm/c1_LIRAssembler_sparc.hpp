@@ -69,7 +69,7 @@ enum {
 #else
          call_stub_size = 20,
 #endif // _LP64
-         exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(10*4),
-         deopt_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(10*4) };
+         exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(128),
+         deopt_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(64)  };
 
 #endif // CPU_SPARC_VM_C1_LIRASSEMBLER_SPARC_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,22 +24,24 @@
 
 #include "precompiled.hpp"
 #include "prims/jvm.h"
-#include "runtime/os.hpp"
-#include "utilities/decoder.hpp"
+#include "decoder_windows.hpp"
 
-HMODULE                   Decoder::_dbghelp_handle = NULL;
-bool                      Decoder::_can_decode_in_vm = false;
-pfn_SymGetSymFromAddr64   Decoder::_pfnSymGetSymFromAddr64 = NULL;
-pfn_UndecorateSymbolName  Decoder::_pfnUndecorateSymbolName = NULL;
+WindowsDecoder::WindowsDecoder() {
+  _dbghelp_handle = NULL;
+  _can_decode_in_vm = false;
+  _pfnSymGetSymFromAddr64 = NULL;
+  _pfnUndecorateSymbolName = NULL;
 
-void Decoder::initialize() {
-  if (!_initialized) {
-    _initialized = true;
+  _decoder_status = no_error;
+  initialize();
+}
 
-    HINSTANCE handle = os::win32::load_Windows_dll("dbghelp.dll", NULL, 0);
+void WindowsDecoder::initialize() {
+  if (!has_error() && _dbghelp_handle == NULL) {
+    HMODULE handle = ::LoadLibrary("dbghelp.dll");
     if (!handle) {
       _decoder_status = helper_not_found;
-        return;
+      return;
     }
 
     _dbghelp_handle = handle;
@@ -70,32 +72,29 @@ void Decoder::initialize() {
 
      // find out if jvm.dll contains private symbols, by decoding
      // current function and comparing the result
-     address addr = (address)Decoder::initialize;
+     address addr = (address)Decoder::decode;
      char buf[MAX_PATH];
-     if (decode(addr, buf, sizeof(buf), NULL) == no_error) {
-       _can_decode_in_vm = !strcmp(buf, "Decoder::initialize");
+     if (decode(addr, buf, sizeof(buf), NULL)) {
+       _can_decode_in_vm = !strcmp(buf, "Decoder::decode");
      }
   }
 }
 
-void Decoder::uninitialize() {
-  assert(_initialized, "Decoder not yet initialized");
+void WindowsDecoder::uninitialize() {
   _pfnSymGetSymFromAddr64 = NULL;
   _pfnUndecorateSymbolName = NULL;
   if (_dbghelp_handle != NULL) {
     ::FreeLibrary(_dbghelp_handle);
   }
-  _initialized = false;
+  _dbghelp_handle = NULL;
 }
 
-bool Decoder::can_decode_C_frame_in_vm() {
-  initialize();
-  return  _can_decode_in_vm;
+bool WindowsDecoder::can_decode_C_frame_in_vm() const {
+  return  (!has_error() && _can_decode_in_vm);
 }
 
 
-Decoder::decoder_status Decoder::decode(address addr, char *buf, int buflen, int *offset) {
-  assert(_initialized, "Decoder not yet initialized");
+bool WindowsDecoder::decode(address addr, char *buf, int buflen, int* offset, const char* modulepath)  {
   if (_pfnSymGetSymFromAddr64 != NULL) {
     PIMAGEHLP_SYMBOL64 pSymbol;
     char symbolInfo[MAX_PATH + sizeof(IMAGEHLP_SYMBOL64)];
@@ -105,19 +104,20 @@ Decoder::decoder_status Decoder::decode(address addr, char *buf, int buflen, int
     DWORD64 displacement;
     if (_pfnSymGetSymFromAddr64(::GetCurrentProcess(), (DWORD64)addr, &displacement, pSymbol)) {
       if (buf != NULL) {
-        if (!demangle(pSymbol->Name, buf, buflen)) {
+        if (demangle(pSymbol->Name, buf, buflen)) {
           jio_snprintf(buf, buflen, "%s", pSymbol->Name);
         }
       }
-      if (offset != NULL) *offset = (int)displacement;
-      return no_error;
+      if(offset != NULL) *offset = (int)displacement;
+      return true;
     }
   }
-  return helper_not_found;
+  if (buf != NULL && buflen > 0) buf[0] = '\0';
+  if (offset != NULL) *offset = -1;
+  return false;
 }
 
-bool Decoder::demangle(const char* symbol, char *buf, int buflen) {
-  assert(_initialized, "Decoder not yet initialized");
+bool WindowsDecoder::demangle(const char* symbol, char *buf, int buflen) {
   return _pfnUndecorateSymbolName != NULL &&
          _pfnUndecorateSymbolName(symbol, buf, buflen, UNDNAME_COMPLETE);
 }

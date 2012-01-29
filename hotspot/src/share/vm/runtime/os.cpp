@@ -1101,6 +1101,7 @@ bool os::set_boot_path(char fileSep, char pathSep) {
         "%/lib/jsse.jar:"
         "%/lib/jce.jar:"
         "%/lib/charsets.jar:"
+        "%/lib/jfr.jar:"
 #ifdef __APPLE__
         "%/lib/JObjC.jar:"
 #endif
