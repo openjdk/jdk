@@ -91,7 +91,7 @@ class Flag {
         Flag[] flags = new Flag[numFlags];
         int count = getFlags(names, flags, numFlags);
 
-        List<Flag> result = new ArrayList<Flag>();
+        List<Flag> result = new ArrayList<>();
         for (Flag f : flags) {
             if (f != null) {
                 result.add(f);

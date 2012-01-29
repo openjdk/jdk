@@ -387,4 +387,17 @@ public:
   }
 };
 
+// This class provides a convenient way to register Dcmds, without a need to change
+// management.cpp every time. Body of these two methods resides in
+// diagnosticCommand.cpp
+
+class DCmdRegistrant : public AllStatic {
+
+private:
+    static void register_dcmds();
+    static void register_dcmds_ext();
+
+    friend class Management;
+};
+
 #endif // SHARE_VM_SERVICES_DIAGNOSTICFRAMEWORK_HPP

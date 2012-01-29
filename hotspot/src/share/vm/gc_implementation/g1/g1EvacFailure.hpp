@@ -70,16 +70,20 @@ private:
   OopsInHeapRegionClosure *_update_rset_cl;
   bool _during_initial_mark;
   bool _during_conc_mark;
+  uint _worker_id;
+
 public:
   RemoveSelfForwardPtrObjClosure(G1CollectedHeap* g1, ConcurrentMark* cm,
                                  HeapRegion* hr,
                                  OopsInHeapRegionClosure* update_rset_cl,
                                  bool during_initial_mark,
-                                 bool during_conc_mark) :
+                                 bool during_conc_mark,
+                                 uint worker_id) :
     _g1(g1), _cm(cm), _hr(hr), _marked_bytes(0),
     _update_rset_cl(update_rset_cl),
     _during_initial_mark(during_initial_mark),
-    _during_conc_mark(during_conc_mark) { }
+    _during_conc_mark(during_conc_mark),
+    _worker_id(worker_id) { }
 
   size_t marked_bytes() { return _marked_bytes; }
 
@@ -123,7 +127,7 @@ public:
         // explicitly and all objects in the CSet are considered
         // (implicitly) live. So, we won't mark them explicitly and
         // we'll leave them over NTAMS.
-        _cm->markNext(obj);
+        _cm->grayRoot(obj, obj_size, _worker_id, _hr);
       }
       _marked_bytes += (obj_size * HeapWordSize);
       obj->set_mark(markOopDesc::prototype());
@@ -155,12 +159,14 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   ConcurrentMark* _cm;
   OopsInHeapRegionClosure *_update_rset_cl;
+  uint _worker_id;
 
 public:
   RemoveSelfForwardPtrHRClosure(G1CollectedHeap* g1h,
-                                OopsInHeapRegionClosure* update_rset_cl) :
+                                OopsInHeapRegionClosure* update_rset_cl,
+                                uint worker_id) :
     _g1h(g1h), _update_rset_cl(update_rset_cl),
-    _cm(_g1h->concurrent_mark()) { }
+    _worker_id(worker_id), _cm(_g1h->concurrent_mark()) { }
 
   bool doHeapRegion(HeapRegion *hr) {
     bool during_initial_mark = _g1h->g1_policy()->during_initial_mark_pause();
@@ -173,7 +179,8 @@ public:
       if (hr->evacuation_failed()) {
         RemoveSelfForwardPtrObjClosure rspc(_g1h, _cm, hr, _update_rset_cl,
                                             during_initial_mark,
-                                            during_conc_mark);
+                                            during_conc_mark,
+                                            _worker_id);
 
         MemRegion mr(hr->bottom(), hr->end());
         // We'll recreate the prev marking info so we'll first clear
@@ -226,7 +233,7 @@ public:
       update_rset_cl = &immediate_update;
     }
 
-    RemoveSelfForwardPtrHRClosure rsfp_cl(_g1h, update_rset_cl);
+    RemoveSelfForwardPtrHRClosure rsfp_cl(_g1h, update_rset_cl, worker_id);
 
     HeapRegion* hr = _g1h->start_cset_region_for_worker(worker_id);
     _g1h->collection_set_iterate_from(hr, &rsfp_cl);

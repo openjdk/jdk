@@ -43,10 +43,11 @@ import com.sun.jmx.snmp.Enumerated;
  */
 public class EnumJvmMemoryGCVerboseLevel extends Enumerated implements Serializable {
 
+    static final long serialVersionUID = 1362427628755978190L;
     protected static Hashtable<Integer, String> intTable =
-            new Hashtable<Integer, String>();
+            new Hashtable<>();
     protected static Hashtable<String, Integer> stringTable =
-            new Hashtable<String, Integer>();
+            new Hashtable<>();
     static  {
         intTable.put(new Integer(2), "verbose");
         intTable.put(new Integer(1), "silent");
@@ -70,11 +71,11 @@ public class EnumJvmMemoryGCVerboseLevel extends Enumerated implements Serializa
         super(x);
     }
 
-    protected Hashtable getIntTable() {
+    protected Hashtable<Integer,String> getIntTable() {
         return intTable ;
     }
 
-    protected Hashtable getStringTable() {
+    protected Hashtable<String,Integer> getStringTable() {
         return stringTable ;
     }
 

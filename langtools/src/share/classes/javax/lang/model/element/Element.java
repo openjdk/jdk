@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,14 +214,13 @@ public interface Element {
      * Returns the elements that are, loosely speaking, directly
      * enclosed by this element.
      *
-     * A class or interface is considered to enclose the fields,
-     * methods, constructors, and member types that it directly
-     * declares.  This includes any (implicit) default constructor and
-     * the implicit {@code values} and {@code valueOf} methods of an
-     * enum type.
+     * A {@linkplain TypeElement#getEnclosedElements class or
+     * interface} is considered to enclose the fields, methods,
+     * constructors, and member types that it directly declares.
      *
-     * A package encloses the top-level classes and interfaces within
-     * it, but is not considered to enclose subpackages.
+     * A {@linkplain PackageElement#getEnclosedElements package}
+     * encloses the top-level classes and interfaces within it, but is
+     * not considered to enclose subpackages.
      *
      * Other kinds of elements are not currently considered to enclose
      * any elements; however, that may change as this API or the
@@ -231,6 +230,8 @@ public interface Element {
      * methods in {@link ElementFilter}.
      *
      * @return the enclosed elements, or an empty list if none
+     * @see PackageElement#getEnclosedElements
+     * @see TypeElement#getEnclosedElements
      * @see Elements#getAllMembers
      * @jls 8.8.9 Default Constructor
      * @jls 8.9 Enums
