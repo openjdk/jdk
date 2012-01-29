@@ -73,6 +73,7 @@
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
 #include "services/threadService.hpp"
+#include "trace/traceEventTypes.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -232,6 +233,7 @@ Thread::Thread() {
   CHECK_UNHANDLED_OOPS_ONLY(_gc_locked_out_count = 0;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
+  set_trace_buffer(NULL);
   _vm_operation_started_count = 0;
   _vm_operation_completed_count = 0;
   _current_pending_monitor = NULL;
@@ -1512,6 +1514,10 @@ void JavaThread::run() {
     JvmtiExport::post_thread_start(this);
   }
 
+  EVENT_BEGIN(TraceEventThreadStart, event);
+  EVENT_COMMIT(event,
+     EVENT_SET(event, javalangthread, java_lang_Thread::thread_id(this->threadObj())));
+
   // We call another function to do the rest so we are sure that the stack addresses used
   // from there will be lower than the stack base just computed
   thread_main_inner();
@@ -1640,6 +1646,15 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
         }
       }
     }
+
+    // Called before the java thread exit since we want to read info
+    // from java_lang_Thread object
+    EVENT_BEGIN(TraceEventThreadEnd, event);
+    EVENT_COMMIT(event,
+        EVENT_SET(event, javalangthread, java_lang_Thread::thread_id(this->threadObj())));
+
+    // Call after last event on thread
+    EVENT_THREAD_EXIT(this);
 
     // Call Thread.exit(). We try 3 times in case we got another Thread.stop during
     // the execution of the method. If that is not enough, then we don't really care. Thread.stop
@@ -3186,6 +3201,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     return status;
   }
 
+  // Must be run after init_ft which initializes ft_enabled
+  if (TRACE_INITIALIZE() != JNI_OK) {
+    vm_exit_during_initialization("Failed to initialize tracing backend");
+  }
+
   // Should be done after the heap is fully created
   main_thread->cache_global_variables();
 
@@ -3421,6 +3441,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // back-end can launch with -Xdebug -Xrunjdwp.
   if (!EagerXrunInit && Arguments::init_libraries_at_startup()) {
     create_vm_init_libraries();
+  }
+
+  if (!TRACE_START()) {
+    vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));
   }
 
   // Notify JVMTI agents that VM initialization is complete - nop if no agents.

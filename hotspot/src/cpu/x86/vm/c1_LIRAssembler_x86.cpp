@@ -406,7 +406,7 @@ int LIR_Assembler::emit_exception_handler() {
   // search an exception handler (rax: exception oop, rdx: throwing pc)
   __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::handle_exception_from_callee_id)));
   __ should_not_reach_here();
-  assert(code_offset() - offset <= exception_handler_size, "overflow");
+  guarantee(code_offset() - offset <= exception_handler_size, "overflow");
   __ end_a_stub();
 
   return offset;
@@ -490,8 +490,7 @@ int LIR_Assembler::emit_deopt_handler() {
 
   __ pushptr(here.addr());
   __ jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
-
-  assert(code_offset() - offset <= deopt_handler_size, "overflow");
+  guarantee(code_offset() - offset <= deopt_handler_size, "overflow");
   __ end_a_stub();
 
   return offset;

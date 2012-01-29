@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,13 +126,20 @@ Mutex*   OopMapCacheAlloc_lock        = NULL;
 Mutex*   FreeList_lock                = NULL;
 Monitor* SecondaryFreeList_lock       = NULL;
 Mutex*   OldSets_lock                 = NULL;
+Monitor* RootRegionScan_lock          = NULL;
 Mutex*   MMUTracker_lock              = NULL;
 Mutex*   HotCardCache_lock            = NULL;
 
 Monitor* GCTaskManager_lock           = NULL;
 
 Mutex*   Management_lock              = NULL;
-Monitor* Service_lock               = NULL;
+Monitor* Service_lock                 = NULL;
+Mutex*   Stacktrace_lock              = NULL;
+
+Monitor* JfrQuery_lock                = NULL;
+Monitor* JfrMsg_lock                  = NULL;
+Mutex*   JfrBuffer_lock               = NULL;
+Mutex*   JfrStream_lock               = NULL;
 
 #define MAX_NUM_MUTEX 128
 static Monitor * _mutex_array[MAX_NUM_MUTEX];
@@ -193,6 +200,7 @@ void mutex_init() {
     def(FreeList_lock              , Mutex,   leaf     ,   true );
     def(SecondaryFreeList_lock     , Monitor, leaf     ,   true );
     def(OldSets_lock               , Mutex  , leaf     ,   true );
+    def(RootRegionScan_lock        , Monitor, leaf     ,   true );
     def(MMUTracker_lock            , Mutex  , leaf     ,   true );
     def(HotCardCache_lock          , Mutex  , special  ,   true );
     def(EvacFailureStack_lock      , Mutex  , nonleaf  ,   true );
@@ -207,6 +215,7 @@ void mutex_init() {
   def(Patching_lock                , Mutex  , special,     true ); // used for safepointing and code patching.
   def(ObjAllocPost_lock            , Monitor, special,     false);
   def(Service_lock                 , Monitor, special,     true ); // used for service thread operations
+  def(Stacktrace_lock              , Mutex,   special,     true ); // used for JFR stacktrace database
   def(JmethodIdCreation_lock       , Mutex  , leaf,        true ); // used for creating jmethodIDs.
 
   def(SystemDictionary_lock        , Monitor, leaf,        true ); // lookups done by VM thread
@@ -271,6 +280,11 @@ void mutex_init() {
   def(Debug3_lock                  , Mutex  , nonleaf+4,   true );
   def(ProfileVM_lock               , Monitor, nonleaf+4,   false); // used for profiling of the VMThread
   def(CompileThread_lock           , Monitor, nonleaf+5,   false );
+
+  def(JfrQuery_lock                , Monitor, nonleaf,     true);  // JFR locks, keep these in consecutive order
+  def(JfrMsg_lock                  , Monitor, nonleaf+2,   true);
+  def(JfrBuffer_lock               , Mutex,   nonleaf+3,   true);
+  def(JfrStream_lock               , Mutex,   nonleaf+4,   true);
 }
 
 GCMutexLocker::GCMutexLocker(Monitor * mutex) {
