@@ -61,11 +61,16 @@ import sun.management.snmp.util.JvmContextFactory;
  */
 public class JvmMemPoolTableMetaImpl extends JvmMemPoolTableMeta {
 
+    static final long serialVersionUID = -2525820976094284957L;
+
     /**
      * A concrete implementation of {@link SnmpNamedListTableCache}, for the
      * jvmMemPoolTable.
      **/
     private static class JvmMemPoolTableCache extends SnmpNamedListTableCache {
+
+        static final long serialVersionUID = -1755520683086760574L;
+
         /**
          * Create a weak cache for the jvmMemPoolTable.
          * @param validity validity of the cached data, in ms.
@@ -86,7 +91,7 @@ public class JvmMemPoolTableMetaImpl extends JvmMemPoolTableMeta {
          *        <code>MemoryPoolMXBean</code> in the list.
          * @return  <code>((MemoryPoolMXBean)item).getName()</code>
          **/
-        protected String getKey(Object context, List rawDatas,
+        protected String getKey(Object context, List<?> rawDatas,
                                 int rank, Object item) {
             if (item == null) return null;
             final String name = ((MemoryPoolMXBean)item).getName();
@@ -98,7 +103,7 @@ public class JvmMemPoolTableMetaImpl extends JvmMemPoolTableMeta {
          * Call <code>getTableDatas(JvmContextFactory.getUserData())</code>.
          **/
         public SnmpTableHandler getTableHandler() {
-            final Map userData = JvmContextFactory.getUserData();
+            final Map<Object, Object> userData = JvmContextFactory.getUserData();
             return getTableDatas(userData);
         }
 
@@ -113,7 +118,7 @@ public class JvmMemPoolTableMetaImpl extends JvmMemPoolTableMeta {
          * Call ManagementFactory.getMemoryPoolMXBeans() to
          * load the raw data of this table.
          **/
-        protected List   loadRawDatas(Map userData) {
+        protected List<MemoryPoolMXBean> loadRawDatas(Map<Object, Object> userData) {
             return ManagementFactory.getMemoryPoolMXBeans();
         }
     }

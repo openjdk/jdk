@@ -161,6 +161,8 @@ public final class StrictMath {
      *          in radians.
      */
     public static strictfp double toRadians(double angdeg) {
+        // Do not delegate to Math.toRadians(angdeg) because
+        // this method has the strictfp modifier.
         return angdeg / 180.0 * PI;
     }
 
@@ -176,6 +178,8 @@ public final class StrictMath {
      *          in degrees.
      */
     public static strictfp double toDegrees(double angrad) {
+        // Do not delegate to Math.toDegrees(angrad) because
+        // this method has the strictfp modifier.
         return angrad * 180.0 / PI;
     }
 
@@ -708,7 +712,7 @@ public final class StrictMath {
      * @return  the absolute value of the argument.
      */
     public static int abs(int a) {
-        return (a < 0) ? -a : a;
+        return Math.abs(a);
     }
 
     /**
@@ -725,7 +729,7 @@ public final class StrictMath {
      * @return  the absolute value of the argument.
      */
     public static long abs(long a) {
-        return (a < 0) ? -a : a;
+        return Math.abs(a);
     }
 
     /**
@@ -744,7 +748,7 @@ public final class StrictMath {
      * @return  the absolute value of the argument.
      */
     public static float abs(float a) {
-        return (a <= 0.0F) ? 0.0F - a : a;
+        return Math.abs(a);
     }
 
     /**
@@ -763,7 +767,7 @@ public final class StrictMath {
      * @return  the absolute value of the argument.
      */
     public static double abs(double a) {
-        return (a <= 0.0D) ? 0.0D - a : a;
+        return Math.abs(a);
     }
 
     /**
@@ -777,7 +781,7 @@ public final class StrictMath {
      * @return  the larger of {@code a} and {@code b}.
      */
     public static int max(int a, int b) {
-        return (a >= b) ? a : b;
+        return Math.max(a, b);
     }
 
     /**
@@ -791,12 +795,8 @@ public final class StrictMath {
      * @return  the larger of {@code a} and {@code b}.
         */
     public static long max(long a, long b) {
-        return (a >= b) ? a : b;
+        return Math.max(a, b);
     }
-
-    // Use raw bit-wise conversions on guaranteed non-NaN arguments.
-    private static long negativeZeroFloatBits  = Float.floatToRawIntBits(-0.0f);
-    private static long negativeZeroDoubleBits = Double.doubleToRawLongBits(-0.0d);
 
     /**
      * Returns the greater of two {@code float} values.  That is,
@@ -813,15 +813,7 @@ public final class StrictMath {
      * @return  the larger of {@code a} and {@code b}.
      */
     public static float max(float a, float b) {
-        if (a != a)
-            return a;   // a is NaN
-        if ((a == 0.0f) &&
-            (b == 0.0f) &&
-            (Float.floatToRawIntBits(a) == negativeZeroFloatBits)) {
-            // Raw conversion ok since NaN can't map to -0.0.
-            return b;
-        }
-        return (a >= b) ? a : b;
+        return Math.max(a, b);
     }
 
     /**
@@ -839,15 +831,7 @@ public final class StrictMath {
      * @return  the larger of {@code a} and {@code b}.
      */
     public static double max(double a, double b) {
-        if (a != a)
-            return a;   // a is NaN
-        if ((a == 0.0d) &&
-            (b == 0.0d) &&
-            (Double.doubleToRawLongBits(a) == negativeZeroDoubleBits)) {
-            // Raw conversion ok since NaN can't map to -0.0.
-            return b;
-        }
-        return (a >= b) ? a : b;
+        return Math.max(a, b);
     }
 
     /**
@@ -861,7 +845,7 @@ public final class StrictMath {
      * @return  the smaller of {@code a} and {@code b}.
      */
     public static int min(int a, int b) {
-        return (a <= b) ? a : b;
+        return Math.min(a, b);
     }
 
     /**
@@ -875,7 +859,7 @@ public final class StrictMath {
      * @return  the smaller of {@code a} and {@code b}.
      */
     public static long min(long a, long b) {
-        return (a <= b) ? a : b;
+        return Math.min(a, b);
     }
 
     /**
@@ -893,15 +877,7 @@ public final class StrictMath {
      * @return  the smaller of {@code a} and {@code b.}
      */
     public static float min(float a, float b) {
-        if (a != a)
-            return a;   // a is NaN
-        if ((a == 0.0f) &&
-            (b == 0.0f) &&
-            (Float.floatToRawIntBits(b) == negativeZeroFloatBits)) {
-            // Raw conversion ok since NaN can't map to -0.0.
-            return b;
-        }
-        return (a <= b) ? a : b;
+        return Math.min(a, b);
     }
 
     /**
@@ -919,15 +895,7 @@ public final class StrictMath {
      * @return  the smaller of {@code a} and {@code b}.
      */
     public static double min(double a, double b) {
-        if (a != a)
-            return a;   // a is NaN
-        if ((a == 0.0d) &&
-            (b == 0.0d) &&
-            (Double.doubleToRawLongBits(b) == negativeZeroDoubleBits)) {
-            // Raw conversion ok since NaN can't map to -0.0.
-            return b;
-        }
-        return (a <= b) ? a : b;
+        return Math.min(a, b);
     }
 
     /**

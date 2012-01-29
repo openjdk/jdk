@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,6 +224,8 @@ class RicochetFrame {
   }
 
   static void verify_clean(MacroAssembler* _masm) NOT_DEBUG_RETURN;
+
+  static void describe(const frame* fr, FrameValues& values, int frame_no) PRODUCT_RETURN;
 };
 
 // Additional helper methods for MethodHandles code generation:

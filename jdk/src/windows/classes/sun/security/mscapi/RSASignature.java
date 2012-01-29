@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -290,7 +290,7 @@ abstract class RSASignature extends java.security.SignatureSpi
 
         // Check against the local and global values to make sure
         // the sizes are ok.  Round up to nearest byte.
-        RSAKeyFactory.checkKeyLengths(((privateKey.bitLength() + 7) & ~7),
+        RSAKeyFactory.checkKeyLengths(((privateKey.length() + 7) & ~7),
             null, RSAKeyPairGenerator.KEY_SIZE_MIN,
             RSAKeyPairGenerator.KEY_SIZE_MAX);
 

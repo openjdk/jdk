@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -855,23 +855,23 @@ CompilerThread* CompileBroker::make_compiler_thread(const char* name, CompileQue
     // Note that this only sets the JavaThread _priority field, which by
     // definition is limited to Java priorities and not OS priorities.
     // The os-priority is set in the CompilerThread startup code itself
+
     java_lang_Thread::set_priority(thread_oop(), NearMaxPriority);
-    // CLEANUP PRIORITIES: This -if- statement hids a bug whereby the compiler
-    // threads never have their OS priority set.  The assumption here is to
-    // enable the Performance group to do flag tuning, figure out a suitable
-    // CompilerThreadPriority, and then remove this 'if' statement (and
-    // comment) and unconditionally set the priority.
 
-    // Compiler Threads should be at the highest Priority
-    if ( CompilerThreadPriority != -1 )
-      os::set_native_priority( compiler_thread, CompilerThreadPriority );
-    else
-      os::set_native_priority( compiler_thread, os::java_to_os_priority[NearMaxPriority]);
+    // Note that we cannot call os::set_priority because it expects Java
+    // priorities and we are *explicitly* using OS priorities so that it's
+    // possible to set the compiler thread priority higher than any Java
+    // thread.
 
-      // Note that I cannot call os::set_priority because it expects Java
-      // priorities and I am *explicitly* using OS priorities so that it's
-      // possible to set the compiler thread priority higher than any Java
-      // thread.
+    int native_prio = CompilerThreadPriority;
+    if (native_prio == -1) {
+      if (UseCriticalCompilerThreadPriority) {
+        native_prio = os::java_to_os_priority[CriticalPriority];
+      } else {
+        native_prio = os::java_to_os_priority[NearMaxPriority];
+      }
+    }
+    os::set_native_priority(compiler_thread, native_prio);
 
     java_lang_Thread::set_daemon(thread_oop());
 
@@ -879,6 +879,7 @@ CompilerThread* CompileBroker::make_compiler_thread(const char* name, CompileQue
     Threads::add(compiler_thread);
     Thread::start(compiler_thread);
   }
+
   // Let go of Threads_lock before yielding
   os::yield(); // make sure that the compiler thread is started early (especially helpful on SOLARIS)
 
@@ -961,7 +962,7 @@ void CompileBroker::compile_method_base(methodHandle method,
                                         methodHandle hot_method,
                                         int hot_count,
                                         const char* comment,
-                                        TRAPS) {
+                                        Thread* thread) {
   // do nothing if compiler thread(s) is not available
   if (!_initialized ) {
     return;
@@ -1037,7 +1038,7 @@ void CompileBroker::compile_method_base(methodHandle method,
 
   // Acquire our lock.
   {
-    MutexLocker locker(queue->lock(), THREAD);
+    MutexLocker locker(queue->lock(), thread);
 
     // Make sure the method has not slipped into the queues since
     // last we checked; note that those checks were "fast bail-outs".
@@ -1119,7 +1120,7 @@ void CompileBroker::compile_method_base(methodHandle method,
 nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
                                        int comp_level,
                                        methodHandle hot_method, int hot_count,
-                                       const char* comment, TRAPS) {
+                                       const char* comment, Thread* THREAD) {
   // make sure arguments make sense
   assert(method->method_holder()->klass_part()->oop_is_instance(), "not an instance method");
   assert(osr_bci == InvocationEntryBci || (0 <= osr_bci && osr_bci < method->code_size()), "bci out of range");
@@ -1173,10 +1174,10 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
   assert(!HAS_PENDING_EXCEPTION, "No exception should be present");
   // some prerequisites that are compiler specific
   if (compiler(comp_level)->is_c2() || compiler(comp_level)->is_shark()) {
-    method->constants()->resolve_string_constants(CHECK_0);
+    method->constants()->resolve_string_constants(CHECK_AND_CLEAR_NULL);
     // Resolve all classes seen in the signature of the method
     // we are compiling.
-    methodOopDesc::load_signature_classes(method, CHECK_0);
+    methodOopDesc::load_signature_classes(method, CHECK_AND_CLEAR_NULL);
   }
 
   // If the method is native, do the lookup in the thread requesting
@@ -1230,7 +1231,7 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
       return NULL;
     }
   } else {
-    compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, comment, CHECK_0);
+    compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, comment, THREAD);
   }
 
   // return requested nmethod
