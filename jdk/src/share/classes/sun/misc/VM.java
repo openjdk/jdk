@@ -168,7 +168,7 @@ public class VM {
     //
     // The initial value of this field is arbitrary; during JRE initialization
     // it will be reset to the value specified on the command line, if any,
-    // otherwise to Runtime.getRuntime.maxDirectMemory().
+    // otherwise to Runtime.getRuntime().maxMemory().
     //
     private static long directMemory = 64 * 1024 * 1024;
 

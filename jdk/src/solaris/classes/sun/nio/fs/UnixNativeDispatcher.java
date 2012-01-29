@@ -548,6 +548,10 @@ class UnixNativeDispatcher {
         return hasAtSysCalls;
     }
 
+    static boolean supportsNoFollowLinks() {
+        return UnixConstants.O_NOFOLLOW != 0;
+    }
+
     // initialize syscalls and fieldIDs
     private static native int init();
 

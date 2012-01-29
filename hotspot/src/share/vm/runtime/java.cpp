@@ -57,6 +57,8 @@
 #include "runtime/task.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_operations.hpp"
+#include "trace/tracing.hpp"
+#include "trace/traceEventTypes.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/histogram.hpp"
@@ -502,6 +504,11 @@ void before_exit(JavaThread * thread) {
   if (JvmtiExport::should_post_thread_life()) {
     JvmtiExport::post_thread_end(thread);
   }
+
+  EVENT_BEGIN(TraceEventThreadEnd, event);
+  EVENT_COMMIT(event,
+      EVENT_SET(event, javalangthread, java_lang_Thread::thread_id(thread->threadObj())));
+
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution
   JvmtiExport::post_vm_death();

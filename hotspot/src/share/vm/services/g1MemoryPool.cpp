@@ -78,7 +78,7 @@ G1OldGenPool::G1OldGenPool(G1CollectedHeap* g1h) :
   G1MemoryPoolSuper(g1h,
                     "G1 Old Gen",
                     g1h->g1mm()->old_space_committed(), /* init_size */
-                    _undefined_max,
+                    g1h->g1mm()->old_gen_max(),
                     true /* support_usage_threshold */) { }
 
 MemoryUsage G1OldGenPool::get_memory_usage() {
