@@ -2131,6 +2131,12 @@ void SystemDictionary::update_dictionary(int d_index, unsigned int d_hash,
     }
   }
 
+  // Assign a classid if one has not already been assigned.  The
+  // counter does not need to be atomically incremented since this
+  // is only done while holding the SystemDictionary_lock.
+  // All loaded classes get a unique ID.
+  TRACE_INIT_ID(k);
+
   // Check for a placeholder. If there, remove it and make a
   // new system dictionary entry.
   placeholders()->find_and_remove(p_index, p_hash, name, class_loader, THREAD);

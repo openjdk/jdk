@@ -64,7 +64,7 @@ public:
   virtual int compiler_count(CompLevel comp_level) = 0;
   // main notification entry, return a pointer to an nmethod if the OSR is required,
   // returns NULL otherwise.
-  virtual nmethod* event(methodHandle method, methodHandle inlinee, int branch_bci, int bci, CompLevel comp_level, nmethod* nm, TRAPS) = 0;
+  virtual nmethod* event(methodHandle method, methodHandle inlinee, int branch_bci, int bci, CompLevel comp_level, nmethod* nm, JavaThread* thread) = 0;
   // safepoint() is called at the end of the safepoint
   virtual void do_safepoint_work() = 0;
   // reprofile request
@@ -105,15 +105,15 @@ public:
   virtual bool is_mature(methodOop method);
   virtual void initialize();
   virtual CompileTask* select_task(CompileQueue* compile_queue);
-  virtual nmethod* event(methodHandle method, methodHandle inlinee, int branch_bci, int bci, CompLevel comp_level, nmethod* nm, TRAPS);
-  virtual void method_invocation_event(methodHandle m, TRAPS) = 0;
-  virtual void method_back_branch_event(methodHandle m, int bci, TRAPS) = 0;
+  virtual nmethod* event(methodHandle method, methodHandle inlinee, int branch_bci, int bci, CompLevel comp_level, nmethod* nm, JavaThread* thread);
+  virtual void method_invocation_event(methodHandle m, JavaThread* thread) = 0;
+  virtual void method_back_branch_event(methodHandle m, int bci, JavaThread* thread) = 0;
 };
 
 class SimpleCompPolicy : public NonTieredCompPolicy {
  public:
-  virtual void method_invocation_event(methodHandle m, TRAPS);
-  virtual void method_back_branch_event(methodHandle m, int bci, TRAPS);
+  virtual void method_invocation_event(methodHandle m, JavaThread* thread);
+  virtual void method_back_branch_event(methodHandle m, int bci, JavaThread* thread);
 };
 
 // StackWalkCompPolicy - existing C2 policy
@@ -121,8 +121,8 @@ class SimpleCompPolicy : public NonTieredCompPolicy {
 #ifdef COMPILER2
 class StackWalkCompPolicy : public NonTieredCompPolicy {
  public:
-  virtual void method_invocation_event(methodHandle m, TRAPS);
-  virtual void method_back_branch_event(methodHandle m, int bci, TRAPS);
+  virtual void method_invocation_event(methodHandle m, JavaThread* thread);
+  virtual void method_back_branch_event(methodHandle m, int bci, JavaThread* thread);
 
  private:
   RFrame* findTopInlinableFrame(GrowableArray<RFrame*>* stack);

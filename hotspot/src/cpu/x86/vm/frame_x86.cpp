@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -651,13 +651,15 @@ intptr_t* frame::interpreter_frame_tos_at(jint offset) const {
   return &interpreter_frame_tos_address()[index];
 }
 
-#ifdef ASSERT
+#ifndef PRODUCT
 
 #define DESCRIBE_FP_OFFSET(name) \
   values.describe(frame_no, fp() + frame::name##_offset, #name)
 
 void frame::describe_pd(FrameValues& values, int frame_no) {
-  if (is_interpreted_frame()) {
+  if (is_ricochet_frame()) {
+    MethodHandles::RicochetFrame::describe(this, values, frame_no);
+  } else if (is_interpreted_frame()) {
     DESCRIBE_FP_OFFSET(interpreter_frame_sender_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_last_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_method);
@@ -667,11 +669,28 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     DESCRIBE_FP_OFFSET(interpreter_frame_bcx);
     DESCRIBE_FP_OFFSET(interpreter_frame_initial_sp);
   }
-
 }
 #endif
 
 intptr_t *frame::initial_deoptimization_info() {
   // used to reset the saved FP
+  return fp();
+}
+
+intptr_t* frame::real_fp() const {
+  if (_cb != NULL) {
+    // use the frame size if valid
+    int size = _cb->frame_size();
+    if ((size > 0) &&
+        (! is_ricochet_frame())) {
+      // Work-around: ricochet explicitly excluded because frame size is not
+      // constant for the ricochet blob but its frame_size could not, for
+      // some reasons, be declared as <= 0. This potentially confusing
+      // size declaration should be fixed as another CR.
+      return unextended_sp() + size;
+    }
+  }
+  // else rely on fp()
+  assert(! is_compiled_frame(), "unknown compiled frame size");
   return fp();
 }

@@ -31,6 +31,33 @@
 #include "services/heapDumper.hpp"
 #include "services/management.hpp"
 
+void DCmdRegistrant::register_dcmds(){
+  // Registration of the diagnostic commands
+  // First boolean argument specifies if the command is enabled
+  // Second boolean argument specifies if the command is hidden
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HelpDCmd>(true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VersionDCmd>(true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CommandLineDCmd>(true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintSystemPropertiesDCmd>(true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintVMFlagsDCmd>(true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMUptimeDCmd>(true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemGCDCmd>(true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(true, false));
+#ifndef SERVICES_KERNEL   // Heap dumping not supported
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(true, false));
+#endif // SERVICES_KERNEL
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(true, false));
+
+}
+
+#ifndef HAVE_EXTRA_DCMD
+void DCmdRegistrant::register_dcmds_ext(){
+   // Do nothing here
+}
+#endif
+
+
 HelpDCmd::HelpDCmd(outputStream* output, bool heap) : DCmdWithParser(output, heap),
   _all("-all", "Show help for all commands", "BOOLEAN", false, "false"),
   _cmd("command name", "The name of the command for which we want help",
