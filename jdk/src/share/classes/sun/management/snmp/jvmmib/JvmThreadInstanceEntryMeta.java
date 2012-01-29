@@ -71,6 +71,7 @@ import com.sun.jmx.snmp.SnmpDefinitions;
 public class JvmThreadInstanceEntryMeta extends SnmpMibEntry
      implements Serializable, SnmpStandardMetaServer {
 
+    static final long serialVersionUID = -2015330111801477399L;
     /**
      * Constructor for the metadata associated to "JvmThreadInstanceEntry".
      */

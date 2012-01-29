@@ -121,7 +121,6 @@ void SharedRuntime::generate_stubs() {
 void SharedRuntime::generate_ricochet_blob() {
   if (!EnableInvokeDynamic)  return;  // leave it as a null
 
-#ifndef TARGET_ARCH_NYI_6939861
   // allocate space for the code
   ResourceMark rm;
   // setup code generation tools
@@ -142,7 +141,6 @@ void SharedRuntime::generate_ricochet_blob() {
   }
 
   _ricochet_blob = RicochetBlob::create(&buffer, bounce_offset, exception_offset, frame_size_in_words);
-#endif
 }
 
 

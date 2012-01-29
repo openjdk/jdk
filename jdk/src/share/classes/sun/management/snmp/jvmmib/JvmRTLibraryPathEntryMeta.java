@@ -71,6 +71,7 @@ import com.sun.jmx.snmp.SnmpDefinitions;
 public class JvmRTLibraryPathEntryMeta extends SnmpMibEntry
      implements Serializable, SnmpStandardMetaServer {
 
+    static final long serialVersionUID = -5851555586263475792L;
     /**
      * Constructor for the metadata associated to "JvmRTLibraryPathEntry".
      */

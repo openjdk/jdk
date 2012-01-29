@@ -1347,7 +1347,13 @@ class BacktraceBuilder: public StackObj {
     return _backtrace();
   }
 
-  inline void push(methodOop method, short bci, TRAPS) {
+  inline void push(methodOop method, int bci, TRAPS) {
+    // Smear the -1 bci to 0 since the array only holds unsigned
+    // shorts.  The later line number lookup would just smear the -1
+    // to a 0 even if it could be recorded.
+    if (bci == SynchronizationEntryBCI) bci = 0;
+    assert(bci == (jushort)bci, "doesn't fit");
+
     if (_index >= trace_chunk_size) {
       methodHandle mhandle(THREAD, method);
       expand(CHECK);
@@ -1574,8 +1580,13 @@ void java_lang_Throwable::fill_in_stack_trace_of_preallocated_backtrace(Handle t
   int chunk_count = 0;
 
   for (;!st.at_end(); st.next()) {
-    // add element
-    bcis->ushort_at_put(chunk_count, st.bci());
+    // Add entry and smear the -1 bci to 0 since the array only holds
+    // unsigned shorts.  The later line number lookup would just smear
+    // the -1 to a 0 even if it could be recorded.
+    int bci = st.bci();
+    if (bci == SynchronizationEntryBCI) bci = 0;
+    assert(bci == (jushort)bci, "doesn't fit");
+    bcis->ushort_at_put(chunk_count, bci);
     methods->obj_at_put(chunk_count, st.method());
 
     chunk_count++;
