@@ -119,21 +119,8 @@ void Management::init() {
   _optional_support.isThreadAllocatedMemorySupported = 1;
 
   // Registration of the diagnostic commands
-  // First boolean argument specifies if the command is enabled
-  // Second boolean argument specifies if the command is hidden
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HelpDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VersionDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CommandLineDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintSystemPropertiesDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PrintVMFlagsDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VMUptimeDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemGCDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RunFinalizationDCmd>(true, false));
-#ifndef SERVICES_KERNEL   // Heap dumping not supported
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<HeapDumpDCmd>(true, false));
-#endif // SERVICES_KERNEL
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(true, false));
+  DCmdRegistrant::register_dcmds();
+  DCmdRegistrant::register_dcmds_ext();
 }
 
 void Management::initialize(TRAPS) {
@@ -2047,15 +2034,15 @@ JVM_ENTRY(void, jmm_GetLastGCStat(JNIEnv *env, jobject obj, jmmGCStat *gc_stat))
   // Make a copy of the last GC statistics
   // GC may occur while constructing the last GC information
   int num_pools = MemoryService::num_memory_pools();
-  GCStatInfo* stat = new GCStatInfo(num_pools);
-  if (mgr->get_last_gc_stat(stat) == 0) {
+  GCStatInfo stat(num_pools);
+  if (mgr->get_last_gc_stat(&stat) == 0) {
     gc_stat->gc_index = 0;
     return;
   }
 
-  gc_stat->gc_index = stat->gc_index();
-  gc_stat->start_time = Management::ticks_to_ms(stat->start_time());
-  gc_stat->end_time = Management::ticks_to_ms(stat->end_time());
+  gc_stat->gc_index = stat.gc_index();
+  gc_stat->start_time = Management::ticks_to_ms(stat.start_time());
+  gc_stat->end_time = Management::ticks_to_ms(stat.end_time());
 
   // Current implementation does not have GC extension attributes
   gc_stat->num_gc_ext_attributes = 0;
@@ -2073,17 +2060,17 @@ JVM_ENTRY(void, jmm_GetLastGCStat(JNIEnv *env, jobject obj, jmmGCStat *gc_stat))
   objArrayHandle usage_after_gc_ah(THREAD, au);
 
   for (int i = 0; i < num_pools; i++) {
-    Handle before_usage = MemoryService::create_MemoryUsage_obj(stat->before_gc_usage_for_pool(i), CHECK);
+    Handle before_usage = MemoryService::create_MemoryUsage_obj(stat.before_gc_usage_for_pool(i), CHECK);
     Handle after_usage;
 
-    MemoryUsage u = stat->after_gc_usage_for_pool(i);
+    MemoryUsage u = stat.after_gc_usage_for_pool(i);
     if (u.max_size() == 0 && u.used() > 0) {
       // If max size == 0, this pool is a survivor space.
       // Set max size = -1 since the pools will be swapped after GC.
       MemoryUsage usage(u.init_size(), u.used(), u.committed(), (size_t)-1);
       after_usage = MemoryService::create_MemoryUsage_obj(usage, CHECK);
     } else {
-      after_usage = MemoryService::create_MemoryUsage_obj(stat->after_gc_usage_for_pool(i), CHECK);
+      after_usage = MemoryService::create_MemoryUsage_obj(stat.after_gc_usage_for_pool(i), CHECK);
     }
     usage_before_gc_ah->obj_at_put(i, before_usage());
     usage_after_gc_ah->obj_at_put(i, after_usage());

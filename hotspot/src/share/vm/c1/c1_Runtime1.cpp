@@ -413,8 +413,9 @@ static nmethod* counter_overflow_helper(JavaThread* THREAD, int branch_bci, meth
     }
     bci = branch_bci + offset;
   }
-
+  assert(!HAS_PENDING_EXCEPTION, "Should not have any exceptions pending");
   osr_nm = CompilationPolicy::policy()->event(enclosing_method, method, branch_bci, bci, level, nm, THREAD);
+  assert(!HAS_PENDING_EXCEPTION, "Event handler should not throw any exceptions");
   return osr_nm;
 }
 
