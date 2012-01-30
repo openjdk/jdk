@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1310,6 +1310,7 @@ class JavaThread: public Thread {
 
   // JNI critical regions. These can nest.
   bool in_critical()    { return _jni_active_critical > 0; }
+  bool in_last_critical()  { return _jni_active_critical == 1; }
   void enter_critical() { assert(Thread::current() == this,
                                  "this must be current thread");
                           _jni_active_critical++; }

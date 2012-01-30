@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,7 @@
 SafepointSynchronize::SynchronizeState volatile SafepointSynchronize::_state = SafepointSynchronize::_not_synchronized;
 volatile int  SafepointSynchronize::_waiting_to_block = 0;
 volatile int SafepointSynchronize::_safepoint_counter = 0;
+int SafepointSynchronize::_current_jni_active_count = 0;
 long  SafepointSynchronize::_end_of_last_safepoint = 0;
 static volatile int PageArmed = 0 ;        // safepoint polling page is RO|RW vs PROT_NONE
 static volatile int TryingToBlock = 0 ;    // proximate value -- for advisory use only
@@ -137,6 +138,9 @@ void SafepointSynchronize::begin() {
 
   {
   MutexLocker mu(Safepoint_lock);
+
+  // Reset the count of active JNI critical threads
+  _current_jni_active_count = 0;
 
   // Set number of threads to wait for, before we initiate the callbacks
   _waiting_to_block = nof_threads;
@@ -375,6 +379,9 @@ void SafepointSynchronize::begin() {
 
   OrderAccess::fence();
 
+  // Update the count of active JNI critical regions
+  GC_locker::set_jni_lock_count(_current_jni_active_count);
+
   if (TraceSafepoint) {
     VM_Operation *op = VMThread::vm_operation();
     tty->print_cr("Entering safepoint region: %s", (op != NULL) ? op->name() : "no vm operation");
@@ -584,6 +591,11 @@ void SafepointSynchronize::block(JavaThread *thread) {
         assert(_waiting_to_block > 0, "sanity check");
         _waiting_to_block--;
         thread->safepoint_state()->set_has_called_back(true);
+
+        if (thread->in_critical()) {
+          // Notice that this thread is in a critical section
+          increment_jni_active_count();
+        }
 
         // Consider (_waiting_to_block < 2) to pipeline the wakeup of the VM thread
         if (_waiting_to_block == 0) {
@@ -861,8 +873,12 @@ void ThreadSafepointState::examine_state_of_thread() {
   // running, but are actually at a safepoint. We will happily
   // agree and update the safepoint state here.
   if (SafepointSynchronize::safepoint_safe(_thread, state)) {
-      roll_forward(_at_safepoint);
-      return;
+    roll_forward(_at_safepoint);
+    if (_thread->in_critical()) {
+      // Notice that this thread is in a critical section
+      SafepointSynchronize::increment_jni_active_count();
+    }
+    return;
   }
 
   if (state == _thread_in_vm) {

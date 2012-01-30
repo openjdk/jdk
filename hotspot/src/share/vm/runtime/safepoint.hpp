@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "code/nmethod.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/extendedPC.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/ostream.hpp"
 
@@ -92,6 +93,7 @@ class SafepointSynchronize : AllStatic {
  private:
   static volatile SynchronizeState _state;     // Threads might read this flag directly, without acquireing the Threads_lock
   static volatile int _waiting_to_block;       // number of threads we are waiting for to block
+  static int _current_jni_active_count;        // Counts the number of active critical natives during the safepoint
 
   // This counter is used for fast versions of jni_Get<Primitive>Field.
   // An even value means there is no ongoing safepoint operations.
@@ -144,6 +146,11 @@ public:
 
   inline static bool do_call_back() {
     return (_state != _not_synchronized);
+  }
+
+  inline static void increment_jni_active_count() {
+    assert_locked_or_safepoint(Safepoint_lock);
+    _current_jni_active_count++;
   }
 
   // Called when a thread volantary blocks
