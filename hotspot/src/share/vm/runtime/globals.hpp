@@ -1042,6 +1042,9 @@ class CommandLineFlags {
   notproduct(bool, PrintSystemDictionaryAtExit, false,                      \
           "Prints the system dictionary at exit")                           \
                                                                             \
+  experimental(intx, PredictedLoadedClassCount, 0,                          \
+          "Experimental: Tune loaded class cache starting size.")           \
+                                                                            \
   diagnostic(bool, UnsyncloadClass, false,                                  \
           "Unstable: VM calls loadClass unsynchronized. Custom "            \
           "class loader  must call VM synchronized for findClass "          \
