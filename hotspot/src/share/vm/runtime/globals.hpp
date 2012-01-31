@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,17 @@
 #define SHARE_VM_RUNTIME_GLOBALS_HPP
 
 #include "utilities/debug.hpp"
+
+// use this for flags that are true per default in the tiered build
+// but false in non-tiered builds, and vice versa
+#ifdef TIERED
+#define  trueInTiered true
+#define falseInTiered false
+#else
+#define  trueInTiered false
+#define falseInTiered true
+#endif
+
 #ifdef TARGET_ARCH_x86
 # include "globals_x86.hpp"
 #endif
@@ -351,16 +362,6 @@ class CommandLineFlags {
 #else
 #define trueInProduct  false
 #define falseInProduct true
-#endif
-
-// use this for flags that are true per default in the tiered build
-// but false in non-tiered builds, and vice versa
-#ifdef TIERED
-#define  trueInTiered true
-#define falseInTiered false
-#else
-#define  trueInTiered false
-#define falseInTiered true
 #endif
 
 #ifdef JAVASE_EMBEDDED
