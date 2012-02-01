@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2088,7 +2088,6 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #elif _M_AMD64
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Rip;
-  NOT_PRODUCT(Events::log("idiv overflow exception at " INTPTR_FORMAT , pc));
   assert(pc[0] == 0xF7, "not an idiv opcode");
   assert((pc[1] & ~0x7) == 0xF8, "cannot handle non-register operands");
   assert(ctx->Rax == min_jint, "unexpected idiv exception");
@@ -2100,7 +2099,6 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #else
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Eip;
-  NOT_PRODUCT(Events::log("idiv overflow exception at " INTPTR_FORMAT , pc));
   assert(pc[0] == 0xF7, "not an idiv opcode");
   assert((pc[1] & ~0x7) == 0xF8, "cannot handle non-register operands");
   assert(ctx->Eax == min_jint, "unexpected idiv exception");
@@ -5331,4 +5329,3 @@ BOOL os::Advapi32Dll::AdvapiAvailable() {
 }
 
 #endif
-

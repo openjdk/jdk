@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -598,18 +598,6 @@ extern "C" void ndebug() {              // undo debug()
 extern "C" void flush()  {
   Command c("flush");
   tty->flush();
-}
-
-
-extern "C" void events() {
-  Command c("events");
-  Events::print_last(tty, 50);
-}
-
-
-extern "C" void nevents(int n) {
-  Command c("events");
-  Events::print_last(tty, n);
 }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -704,7 +704,6 @@ nmethod::nmethod(
       xtty->tail("print_native_nmethod");
     }
   }
-  Events::log("Create nmethod " INTPTR_FORMAT, this);
 }
 
 // For dtrace wrappers
@@ -781,7 +780,6 @@ nmethod::nmethod(
       xtty->tail("print_dtrace_nmethod");
     }
   }
-  Events::log("Create nmethod " INTPTR_FORMAT, this);
 }
 #endif // def HAVE_DTRACE_H
 
@@ -889,13 +887,6 @@ nmethod::nmethod(
   if (printnmethods || PrintDebugInfo || PrintRelocations || PrintDependencies || PrintExceptionHandlers) {
     print_nmethod(printnmethods);
   }
-
-  // Note: Do not verify in here as the CodeCache_lock is
-  //       taken which would conflict with the CompiledIC_lock
-  //       which taken during the verification of call sites.
-  //       (was bug - gri 10/25/99)
-
-  Events::log("Create nmethod " INTPTR_FORMAT, this);
 }
 
 
@@ -1386,7 +1377,7 @@ void nmethod::flush() {
   assert_locked_or_safepoint(CodeCache_lock);
 
   // completely deallocate this method
-  EventMark m("flushing nmethod " INTPTR_FORMAT " %s", this, "");
+  Events::log(JavaThread::current(), "flushing nmethod " INTPTR_FORMAT, this);
   if (PrintMethodFlushing) {
     tty->print_cr("*flushing nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT "/Free CodeCache:" SIZE_FORMAT "Kb",
         _compile_id, this, CodeCache::nof_blobs(), CodeCache::unallocated_capacity()/1024);
