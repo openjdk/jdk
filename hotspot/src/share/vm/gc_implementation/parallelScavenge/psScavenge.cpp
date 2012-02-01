@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,9 +295,7 @@ bool PSScavenge::invoke_no_policy() {
     heap->record_gen_tops_before_GC();
   }
 
-  if (PrintHeapAtGC) {
-    Universe::print_heap_before_gc();
-  }
+  heap->print_heap_before_gc();
 
   assert(!NeverTenure || _tenuring_threshold == markOopDesc::max_age + 1, "Sanity");
   assert(!AlwaysTenure || _tenuring_threshold == 0, "Sanity");
@@ -643,9 +641,7 @@ bool PSScavenge::invoke_no_policy() {
     Universe::verify(false);
   }
 
-  if (PrintHeapAtGC) {
-    Universe::print_heap_after_gc();
-  }
+  heap->print_heap_after_gc();
 
   if (ZapUnusedHeapArea) {
     young_gen->eden_space()->check_mangled_unused_area_complete();

@@ -736,8 +736,11 @@ class CommandLineFlags {
   product(bool, MaxFDLimit, true,                                           \
           "Bump the number of file descriptors to max in solaris.")         \
                                                                             \
-  notproduct(bool, LogEvents, trueInDebug,                                  \
-          "Enable Event log")                                               \
+  diagnostic(bool, LogEvents, true,                                         \
+             "Enable the various ring buffer event logs")                   \
+                                                                            \
+  diagnostic(intx, LogEventsBufferEntries, 10,                              \
+             "Enable the various ring buffer event logs")                   \
                                                                             \
   product(bool, BytecodeVerificationRemote, true,                           \
           "Enables the Java bytecode verifier for remote classes")          \

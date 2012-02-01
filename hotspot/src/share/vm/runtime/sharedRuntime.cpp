@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -886,9 +886,9 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
     // for AbortVMOnException flag
     NOT_PRODUCT(Exceptions::debug_check_abort("java.lang.NullPointerException"));
     if (exception_kind == IMPLICIT_NULL) {
-      Events::log("Implicit null exception at " INTPTR_FORMAT " to " INTPTR_FORMAT, pc, target_pc);
+      Events::log_exception(thread, "Implicit null exception at " INTPTR_FORMAT " to " INTPTR_FORMAT, pc, target_pc);
     } else {
-      Events::log("Implicit division by zero exception at " INTPTR_FORMAT " to " INTPTR_FORMAT, pc, target_pc);
+      Events::log_exception(thread, "Implicit division by zero exception at " INTPTR_FORMAT " to " INTPTR_FORMAT, pc, target_pc);
     }
     return target_pc;
   }
@@ -1541,7 +1541,6 @@ methodHandle SharedRuntime::reresolve_call_site(JavaThread *thread, TRAPS) {
   if (caller.is_compiled_frame() && !caller.is_deoptimized_frame()) {
 
     address pc = caller.pc();
-    Events::log("update call-site at pc " INTPTR_FORMAT, pc);
 
     // Default call_addr is the location of the "basic" call.
     // Determine the address of the call we a reresolving. With

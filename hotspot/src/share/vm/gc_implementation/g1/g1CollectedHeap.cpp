@@ -1228,9 +1228,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
   SvcGCMarker sgcm(SvcGCMarker::FULL);
   ResourceMark rm;
 
-  if (PrintHeapAtGC) {
-    Universe::print_heap_before_gc();
-  }
+  print_heap_before_gc();
 
   HRSPhaseSetter x(HRSPhaseFullGC);
   verify_region_sets_optional();
@@ -1470,9 +1468,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
   _hrs.verify_optional();
   verify_region_sets_optional();
 
-  if (PrintHeapAtGC) {
-    Universe::print_heap_after_gc();
-  }
+  print_heap_after_gc();
   g1mm()->update_sizes();
   post_full_gc_dump();
 
@@ -3537,9 +3533,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   SvcGCMarker sgcm(SvcGCMarker::MINOR);
   ResourceMark rm;
 
-  if (PrintHeapAtGC) {
-    Universe::print_heap_before_gc();
-  }
+  print_heap_before_gc();
 
   HRSPhaseSetter x(HRSPhaseEvacuation);
   verify_region_sets_optional();
@@ -3890,9 +3884,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   TASKQUEUE_STATS_ONLY(if (ParallelGCVerbose) print_taskqueue_stats());
   TASKQUEUE_STATS_ONLY(reset_taskqueue_stats());
 
-  if (PrintHeapAtGC) {
-    Universe::print_heap_after_gc();
-  }
+  print_heap_after_gc();
   g1mm()->update_sizes();
 
   if (G1SummarizeRSetStats &&

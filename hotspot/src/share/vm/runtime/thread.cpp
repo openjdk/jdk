@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1600,8 +1600,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     // java.lang.Thread.dispatchUncaughtException
     if (uncaught_exception.not_null()) {
       Handle group(this, java_lang_Thread::threadGroup(threadObj()));
-      Events::log("uncaught exception INTPTR_FORMAT " " INTPTR_FORMAT " " INTPTR_FORMAT",
-        (address)uncaught_exception(), (address)threadObj(), (address)group());
       {
         EXCEPTION_MARK;
         // Check if the method Thread.dispatchUncaughtException() exists. If so
@@ -3885,7 +3883,7 @@ void Threads::add(JavaThread* p, bool force_daemon) {
   ThreadService::add_thread(p, daemon);
 
   // Possible GC point.
-  Events::log("Thread added: " INTPTR_FORMAT, p);
+  Events::log(p, "Thread added: " INTPTR_FORMAT, p);
 }
 
 void Threads::remove(JavaThread* p) {
@@ -3930,7 +3928,7 @@ void Threads::remove(JavaThread* p) {
   } // unlock Threads_lock
 
   // Since Events::log uses a lock, we grab it outside the Threads_lock
-  Events::log("Thread exited: " INTPTR_FORMAT, p);
+  Events::log(p, "Thread exited: " INTPTR_FORMAT, p);
 }
 
 // Threads_lock must be held when this is called (or must be called during a safepoint)
