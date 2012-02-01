@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -89,19 +89,31 @@ KERNEL_VM_TARGETS=productkernel fastdebugkernel optimizedkernel jvmgkernel
 ZERO_VM_TARGETS=productzero fastdebugzero optimizedzero jvmgzero
 SHARK_VM_TARGETS=productshark fastdebugshark optimizedshark jvmgshark
 
+COMMON_VM_PRODUCT_TARGETS=product product1 productkernel docs export_product
+COMMON_VM_FASTDEBUG_TARGETS=fastdebug fastdebug1 fastdebugkernel docs export_fastdebug
+COMMON_VM_DEBUG_TARGETS=jvmg jvmg1 jvmgkernel docs export_debug
+
 # JDK directory list
 JDK_DIRS=bin include jre lib demo
 
 all:           all_product all_fastdebug
-ifndef BUILD_CLIENT_ONLY
-all_product:   product product1 productkernel docs export_product
-all_fastdebug: fastdebug fastdebug1 fastdebugkernel docs export_fastdebug
-all_debug:     jvmg jvmg1 jvmgkernel docs export_debug
-else
+
+ifdef BUILD_CLIENT_ONLY
 all_product:   product1 docs export_product
 all_fastdebug: fastdebug1 docs export_fastdebug
 all_debug:     jvmg1 docs export_debug
+else
+ifeq ($(MACOSX_UNIVERSAL),true)
+all_product:   universal_product
+all_fastdebug: universal_fastdebug
+all_debug:     universal_debug
+else
+all_product:   $(COMMON_VM_PRODUCT_TARGETS)
+all_fastdebug: $(COMMON_VM_FASTDEBUG_TARGETS)
+all_debug:     $(COMMON_VM_DEBUG_TARGETS)
 endif
+endif
+
 all_optimized: optimized optimized1 optimizedkernel docs export_optimized
 
 allzero:           all_productzero all_fastdebugzero
@@ -232,19 +244,18 @@ export_debug:
 	$(MAKE) VM_SUBDIR=${VM_DEBUG} EXPORT_SUBDIR=/debug   generic_export
 export_optimized:
 	$(MAKE) VM_SUBDIR=optimized EXPORT_SUBDIR=/optimized generic_export
-export_product_jdk:
+export_product_jdk::
 	$(MAKE) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR) \
 		VM_SUBDIR=product                            generic_export
-export_optimized_jdk:
+export_optimized_jdk::
 	$(MAKE) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR) \
 		VM_SUBDIR=optimized                          generic_export
-export_fastdebug_jdk:
+export_fastdebug_jdk::
 	$(MAKE) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR)/fastdebug \
 		VM_SUBDIR=fastdebug                          generic_export
-export_debug_jdk:
+export_debug_jdk::
 	$(MAKE) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR)/debug \
 		VM_SUBDIR=${VM_DEBUG}                        generic_export
-
 
 # Export file copy rules
 XUSAGE=$(HS_SRC_DIR)/share/vm/Xusage.txt
@@ -444,14 +455,14 @@ test_jdk:
   endif
 	$(JDK_IMAGE_DIR)/bin/java -server -version
 
-copy_product_jdk:
+copy_product_jdk::
 	$(RM) -r $(JDK_IMAGE_DIR)
 	$(MKDIR) -p $(JDK_IMAGE_DIR)
 	($(CD) $(JDK_IMPORT_PATH) && \
 	 $(TAR) -cf - $(JDK_DIRS)) | \
 	 ($(CD) $(JDK_IMAGE_DIR) && $(TAR) -xf -)
 
-copy_fastdebug_jdk:
+copy_fastdebug_jdk::
 	$(RM) -r $(JDK_IMAGE_DIR)/fastdebug
 	$(MKDIR) -p $(JDK_IMAGE_DIR)/fastdebug
 	if [ -d $(JDK_IMPORT_PATH)/fastdebug ] ; then \
@@ -464,7 +475,7 @@ copy_fastdebug_jdk:
 	   ($(CD) $(JDK_IMAGE_DIR)/fastdebug && $(TAR) -xf -) ; \
 	fi
 
-copy_debug_jdk:
+copy_debug_jdk::
 	$(RM) -r $(JDK_IMAGE_DIR)/debug
 	$(MKDIR) -p $(JDK_IMAGE_DIR)/debug
 	if [ -d $(JDK_IMPORT_PATH)/debug ] ; then \
@@ -480,36 +491,6 @@ copy_debug_jdk:
 	   $(TAR) -cf - $(JDK_DIRS)) | \
 	   ($(CD) $(JDK_IMAGE_DIR)/debug && $(TAR) -xf -) ; \
 	fi
-
-# macosx universal builds
-
-ifeq ($(MACOSX_UNIVERSAL), true)
-$(UNIVERSAL_LIPO_LIST):
-	lipo -create -output $@ $(EXPORT_JRE_LIB_DIR)/{i386,amd64}/$(subst $(EXPORT_JRE_LIB_DIR)/,,$@)
-
-$(UNIVERSAL_COPY_LIST):
-	$(CP) $(EXPORT_JRE_LIB_DIR)/i386/$(subst $(EXPORT_JRE_LIB_DIR)/,,$@) $@
-
-universalize: $(UNIVERSAL_LIPO_LIST) $(UNIVERSAL_COPY_LIST)
-endif
-
-universal_product:
-	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=32 MACOSX_UNIVERSAL=true all_product
-	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=64 MACOSX_UNIVERSAL=true all_product
-	$(MKDIR) -p $(EXPORT_JRE_LIB_DIR)/{client,server}
-	$(QUIETLY) $(MAKE) MACOSX_UNIVERSAL=true universalize
-
-universal_fastdebug:
-	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=32 MACOSX_UNIVERSAL=true all_fastdebug
-	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=64 MACOSX_UNIVERSAL=true all_fastdebug
-	$(MKDIR) -p $(EXPORT_JRE_LIB_DIR)/{client,server}
-	$(QUIETLY) $(MAKE) MACOSX_UNIVERSAL=true universalize
-
-universal_debug:
-	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=32 MACOSX_UNIVERSAL=true all_debug
-	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=64 MACOSX_UNIVERSAL=true all_debug
-	$(MKDIR) -p $(EXPORT_JRE_LIB_DIR)/{client,server}
-	$(QUIETLY) $(MAKE) MACOSX_UNIVERSAL=true universalize
 
 #
 # Check target
@@ -630,6 +611,13 @@ examples_help:
 	@$(ECHO) \
 "  $(MAKE) ALT_JDK_IMPORT_PATH=/opt/java/jdk$(JDK_VERSION)"
 
+# Universal build support
+ifeq ($(OS_VENDOR), Darwin)
+ifeq ($(MACOSX_UNIVERSAL),true)
+include $(GAMMADIR)/make/$(OSNAME)/makefiles/universal.gmk
+endif
+endif
+
 # JPRT rule to build this workspace
 include $(GAMMADIR)/make/jprt.gmk
 
@@ -639,6 +627,4 @@ include $(GAMMADIR)/make/jprt.gmk
 	export_product export_fastdebug export_debug export_optimized \
 	export_jdk_product export_jdk_fastdebug export_jdk_debug \
 	create_jdk copy_jdk update_jdk test_jdk \
-	copy_product_jdk copy_fastdebug_jdk copy_debug_jdk universalize \
-	universal_product
-
+	copy_product_jdk copy_fastdebug_jdk copy_debug_jdk 
