@@ -337,9 +337,9 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   void fill_sync_handler(Value lock, BlockBegin* sync_handler, bool default_handler = false);
 
   // inliners
-  bool try_inline(           ciMethod* callee, bool holder_known);
+  bool try_inline(           ciMethod* callee, bool holder_known, Value receiver = NULL);
   bool try_inline_intrinsics(ciMethod* callee);
-  bool try_inline_full(      ciMethod* callee, bool holder_known, BlockBegin* cont_block = NULL);
+  bool try_inline_full(      ciMethod* callee, bool holder_known, BlockBegin* cont_block, Value receiver);
   bool try_inline_jsr(int jsr_dest_bci);
 
   // JSR 292 support
