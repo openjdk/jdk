@@ -1592,6 +1592,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   // this happened while running the JCK invokevirtual tests under doit.  TKR
   ciMethod* cha_monomorphic_target = NULL;
   ciMethod* exact_target = NULL;
+  Value better_receiver = NULL;
   if (UseCHA && DeoptC1 && klass->is_loaded() && target->is_loaded() &&
       !target->is_method_handle_invoke()) {
     Value receiver = NULL;
@@ -1653,6 +1654,18 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       ciInstanceKlass* singleton = NULL;
       if (target->holder()->nof_implementors() == 1) {
         singleton = target->holder()->implementor(0);
+
+        assert(holder->is_interface(), "invokeinterface to non interface?");
+        ciInstanceKlass* decl_interface = (ciInstanceKlass*)holder;
+        // the number of implementors for decl_interface is less or
+        // equal to the number of implementors for target->holder() so
+        // if number of implementors of target->holder() == 1 then
+        // number of implementors for decl_interface is 0 or 1. If
+        // it's 0 then no class implements decl_interface and there's
+        // no point in inlining.
+        if (!holder->is_loaded() || decl_interface->nof_implementors() != 1) {
+          singleton = NULL;
+        }
       }
       if (singleton) {
         cha_monomorphic_target = target->find_monomorphic_target(calling_klass, target->holder(), singleton);
@@ -1667,7 +1680,9 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
           CheckCast* c = new CheckCast(klass, receiver, copy_state_for_exception());
           c->set_incompatible_class_change_check();
           c->set_direct_compare(klass->is_final());
-          append_split(c);
+          // pass the result of the checkcast so that the compiler has
+          // more accurate type info in the inlinee
+          better_receiver = append_split(c);
         }
       }
     }
@@ -1709,7 +1724,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       }
       if (!success) {
         // static binding => check if callee is ok
-        success = try_inline(inline_target, (cha_monomorphic_target != NULL) || (exact_target != NULL));
+        success = try_inline(inline_target, (cha_monomorphic_target != NULL) || (exact_target != NULL), better_receiver);
       }
       CHECK_BAILOUT();
 
@@ -3034,7 +3049,7 @@ int GraphBuilder::recursive_inline_level(ciMethod* cur_callee) const {
 }
 
 
-bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known) {
+bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, Value receiver) {
   // Clear out any existing inline bailout condition
   clear_inline_bailout();
 
@@ -3056,7 +3071,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known) {
   } else if (callee->is_abstract()) {
     INLINE_BAILOUT("abstract")
   } else {
-    return try_inline_full(callee, holder_known);
+    return try_inline_full(callee, holder_known, NULL, receiver);
   }
 }
 
@@ -3405,7 +3420,7 @@ void GraphBuilder::fill_sync_handler(Value lock, BlockBegin* sync_handler, bool 
 }
 
 
-bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBegin* cont_block) {
+bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBegin* cont_block, Value receiver) {
   assert(!callee->is_native(), "callee must not be native");
   if (CompilationPolicy::policy()->should_not_inline(compilation()->env(), callee)) {
     INLINE_BAILOUT("inlining prohibited by policy");
@@ -3541,6 +3556,9 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBeg
       Value  arg = caller_state->stack_at_inc(i);
       // NOTE: take base() of arg->type() to avoid problems storing
       // constants
+      if (receiver != NULL && par_no == 0) {
+        arg = receiver;
+      }
       store_local(callee_state, arg, arg->type()->base(), par_no);
     }
   }
@@ -3720,7 +3738,7 @@ bool GraphBuilder::for_method_handle_inline(ciMethod* callee) {
 
           // Parse first adapter
           _last = _block = one;
-          if (!try_inline_full(mh1_adapter, /*holder_known=*/ true, end)) {
+          if (!try_inline_full(mh1_adapter, /*holder_known=*/ true, end, NULL)) {
             restore_inline_cleanup_info();
             block()->clear_end();  // remove appended iff
             return false;
@@ -3729,7 +3747,7 @@ bool GraphBuilder::for_method_handle_inline(ciMethod* callee) {
           // Parse second adapter
           _last = _block = two;
           _state = state_before;
-          if (!try_inline_full(mh2_adapter, /*holder_known=*/ true, end)) {
+          if (!try_inline_full(mh2_adapter, /*holder_known=*/ true, end, NULL)) {
             restore_inline_cleanup_info();
             block()->clear_end();  // remove appended iff
             return false;
