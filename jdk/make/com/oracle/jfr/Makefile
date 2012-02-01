@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,32 +23,51 @@
 # questions.
 #
 
-BUILDDIR = ../..
+BUILDDIR = ../../..
+PACKAGE = oracle.jrockit.jfr
+LIBRARY = jfr
 PRODUCT = oracle
-#SUBDIRS_MAKEFLAGS += JAVAC_MAX_WARNINGS=true
-#SUBDIRS_MAKEFLAGS += JAVAC_WARNINGS_FATAL=true
-#SUBDIRS_MAKEFLAGS += JAVAC_LINT_OPTIONS=-Xlint:all,-deprecation,-path
 include $(BUILDDIR)/common/Defs.gmk
 
-# build com/oracle/security/ucrypto on Solaris platform for non-OpenJDK builds
-UCRYPTO =
-ifndef OPENJDK
-  ifeq ($(PLATFORM), solaris)
-    UCRYPTO = security/ucrypto
-  endif
-endif
+#
+# Use mapfile
+#
+FILES_m = $(CLOSED_SHARE_SRC)/native/oracle/jfr/mapfile-vers
+include $(BUILDDIR)/common/Mapfile-vers.gmk
 
-JFR =
-ifndef OPENJDK
-ifndef JAVASE_EMBEDDED
-	JFR = jfr
-endif
-endif
+#
+# Files to compile
+#
+FILES_c = VMJFR.c
 
-SUBDIRS = $(JFR) net nio util $(UCRYPTO)
+AUTO_FILES_JAVA_DIRS = com/oracle/jrockit/jfr oracle/jrockit/jfr
 
-include $(BUILDDIR)/common/Subdirs.gmk
+# Find C source files
+#
+vpath %.c $(CLOSED_SHARE_SRC)/native/oracle/jfr
 
-all build clean clobber::
-	$(SUBDIRS-loop)
+#
+# Library to compile.
+#
+include $(BUILDDIR)/common/Library.gmk
+
+JVMLIB =
+JAVALIB =
+OTHER_LDLIBS =
+
+clean clobber::
+	$(RM) -r $(CLASSDESTDIR)/com/oracle/jrockit/jfr
+	$(RM) -r $(CLASSDESTDIR)/oracle/jrockit/jfr
+
+
+# Copy pre-shipped .jfs files
+JFR_LIBDIR = $(LIBDIR)/jfr
+JFR_SRCDIR = $(CLOSED_SHARE_SRC)/lib/jfr
+
+$(JFR_LIBDIR)/%.jfs: $(JFR_SRCDIR)/%.jfs
+	$(install-file)
+
+JFS_FILES := $(subst $(JFR_SRCDIR),$(JFR_LIBDIR),$(wildcard $(JFR_SRCDIR)/*.jfs))
+
+all build : $(JFS_FILES)
 
