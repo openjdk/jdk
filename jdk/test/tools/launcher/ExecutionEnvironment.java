@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4780570 4731671 6354700 6367077 6670965 4882974
  * @summary Checks for LD_LIBRARY_PATH and execution  on *nixes
- * @compile -XDignore.symbol.file ExecutionEnvironment.java TestHelper.java
+ * @compile -XDignore.symbol.file ExecutionEnvironment.java
  * @run main ExecutionEnvironment
  */
 
@@ -60,7 +60,7 @@ import java.util.List;
 import java.util.Map;
 
 
-public class ExecutionEnvironment {
+public class ExecutionEnvironment extends TestHelper {
     static final String LD_LIBRARY_PATH    = "LD_LIBRARY_PATH";
     static final String LD_LIBRARY_PATH_32 = LD_LIBRARY_PATH + "_32";
     static final String LD_LIBRARY_PATH_64 = LD_LIBRARY_PATH + "_64";
@@ -69,9 +69,6 @@ public class ExecutionEnvironment {
     static final String LD_LIBRARY_PATH_VALUE    = "/Bridge/On/The/River/Kwai";
     static final String LD_LIBRARY_PATH_32_VALUE = "/Lawrence/Of/Arabia";
     static final String LD_LIBRARY_PATH_64_VALUE = "/A/Passage/To/India";
-
-    static final String JLDEBUG_KEY = "_JAVA_LAUNCHER_DEBUG";
-    static final String EXPECTED_MARKER = "TRACER_MARKER:About to EXEC";
 
     static final String[] LD_PATH_STRINGS = {
         LD_LIBRARY_PATH + "=" + LD_LIBRARY_PATH_VALUE,
@@ -84,11 +81,11 @@ public class ExecutionEnvironment {
     static int errors = 0;
     static int passes = 0;
 
-    static final String LIBJVM = TestHelper.isWindows ? "jvm.dll" : "libjvm.so";
+    static final String LIBJVM = isWindows ? "jvm.dll" : "libjvm.so";
 
     static void createTestJar() {
         try {
-            List<String> codeList = new ArrayList<String>();
+            List<String> codeList = new ArrayList<>();
             codeList.add("static void printValue(String name, boolean property) {\n");
             codeList.add("    String value = (property) ? System.getProperty(name) : System.getenv(name);\n");
             codeList.add("    System.out.println(name + \"=\" + value);\n");
@@ -105,7 +102,7 @@ public class ExecutionEnvironment {
             codeList.add("    printValue(\"" + LD_LIBRARY_PATH_64 + "\", false);\n");
             codeList.add("}\n");
             String[] clist = new String[codeList.size()];
-            TestHelper.createJar(testJarFile, codeList.toArray(clist));
+            createJar(testJarFile, codeList.toArray(clist));
         } catch (FileNotFoundException fnfe) {
             throw new RuntimeException(fnfe);
         }
@@ -117,16 +114,15 @@ public class ExecutionEnvironment {
      * environment should be pristine.
      */
     private static void ensureEcoFriendly() {
-        TestHelper.TestResult tr = null;
+        TestResult tr = null;
 
-        Map<String, String> env = new HashMap<String, String>();
+        Map<String, String> env = new HashMap<>();
         for (String x : LD_PATH_STRINGS) {
             String pairs[] = x.split("=");
             env.put(pairs[0], pairs[1]);
         }
 
-        tr = TestHelper.doExec(env, TestHelper.javaCmd, "-jar",
-                testJarFile.getAbsolutePath());
+        tr = doExec(env, javaCmd, "-jar", testJarFile.getAbsolutePath());
 
         if (!tr.isNotZeroOutput()) {
             System.out.println(tr);
@@ -149,10 +145,9 @@ public class ExecutionEnvironment {
      * data model
      */
     static void ensureNoExec() {
-        Map<String, String> env = new HashMap<String, String>();
+        Map<String, String> env = new HashMap<>();
         env.put(JLDEBUG_KEY, "true");
-        TestHelper.TestResult tr =
-                TestHelper.doExec(env, TestHelper.javaCmd, "-version");
+        TestResult tr = doExec(env, javaCmd, "-version");
         if (tr.testOutput.contains(EXPECTED_MARKER)) {
             System.out.println("FAIL: EnsureNoExecs: found expected warning <" +
                     EXPECTED_MARKER +
@@ -176,25 +171,23 @@ public class ExecutionEnvironment {
      */
 
     static void verifyJavaLibraryPath() {
-        TestHelper.TestResult tr = null;
+        TestResult tr = null;
 
-        Map<String, String> env = new HashMap<String, String>();
+        Map<String, String> env = new HashMap<>();
 
-        if (TestHelper.isLinux) {
+        if (isLinux) {
             for (String x : LD_PATH_STRINGS) {
                 String pairs[] = x.split("=");
                 env.put(pairs[0], pairs[1]);
             }
 
-            tr = TestHelper.doExec(env, TestHelper.javaCmd, "-jar",
-                    testJarFile.getAbsolutePath());
+            tr = doExec(env, javaCmd, "-jar", testJarFile.getAbsolutePath());
             verifyJavaLibraryPathGeneric(tr);
         } else {
             // no override
             env.clear();
             env.put(LD_LIBRARY_PATH, LD_LIBRARY_PATH_VALUE);
-            tr = TestHelper.doExec(env, TestHelper.javaCmd, "-jar",
-                    testJarFile.getAbsolutePath());
+            tr = doExec(env, javaCmd, "-jar", testJarFile.getAbsolutePath());
             verifyJavaLibraryPathGeneric(tr);
 
             env.clear();
@@ -206,53 +199,52 @@ public class ExecutionEnvironment {
             // verify the override occurs, since we know the invocation always
             // uses by default is 32-bit, therefore we also set the test
             // expectation to be the same.
-            tr = TestHelper.doExec(env, TestHelper.javaCmd, "-jar",
-                    testJarFile.getAbsolutePath());
+            tr = doExec(env, javaCmd, "-jar", testJarFile.getAbsolutePath());
             verifyJavaLibraryPathOverride(tr, true);
 
             // try changing the model from 32 to 64 bit
-            if (TestHelper.dualModePresent() && TestHelper.is32Bit) {
+            if (dualModePresent() && is32Bit) {
                 // verify the override occurs
                 env.clear();
                 for (String x : LD_PATH_STRINGS) {
                     String pairs[] = x.split("=");
                     env.put(pairs[0], pairs[1]);
                 }
-                tr = TestHelper.doExec(env, TestHelper.javaCmd, "-d64", "-jar",
+                tr = doExec(env, javaCmd, "-d64", "-jar",
                     testJarFile.getAbsolutePath());
                 verifyJavaLibraryPathOverride(tr, false);
 
                 // no override
                 env.clear();
                 env.put(LD_LIBRARY_PATH, LD_LIBRARY_PATH_VALUE);
-                tr = TestHelper.doExec(env, TestHelper.javaCmd, "-jar",
+                tr = doExec(env, javaCmd, "-jar",
                         testJarFile.getAbsolutePath());
                 verifyJavaLibraryPathGeneric(tr);
             }
 
             // try changing the model from 64 to 32 bit
-            if (TestHelper.java64Cmd != null && TestHelper.is64Bit) {
+            if (java64Cmd != null && is64Bit) {
                 // verify the override occurs
                 env.clear();
                 for (String x : LD_PATH_STRINGS) {
                     String pairs[] = x.split("=");
                     env.put(pairs[0], pairs[1]);
                 }
-                tr = TestHelper.doExec(env, TestHelper.java64Cmd, "-d32", "-jar",
+                tr = doExec(env, java64Cmd, "-d32", "-jar",
                     testJarFile.getAbsolutePath());
                 verifyJavaLibraryPathOverride(tr, true);
 
                 // no override
                 env.clear();
                 env.put(LD_LIBRARY_PATH, LD_LIBRARY_PATH_VALUE);
-                tr = TestHelper.doExec(env, TestHelper.java64Cmd, "-d32", "-jar",
+                tr = doExec(env, java64Cmd, "-d32", "-jar",
                         testJarFile.getAbsolutePath());
                 verifyJavaLibraryPathGeneric(tr);
             }
         }
     }
 
-    private static void verifyJavaLibraryPathGeneric(TestHelper.TestResult tr) {
+    private static void verifyJavaLibraryPathGeneric(TestResult tr) {
         if (!tr.matches("java.library.path=.*" + LD_LIBRARY_PATH_VALUE + ".*")) {
             System.out.print("FAIL: verifyJavaLibraryPath: ");
             System.out.println(" java.library.path does not contain " +
@@ -264,7 +256,7 @@ public class ExecutionEnvironment {
         }
     }
 
-    private static void verifyJavaLibraryPathOverride(TestHelper.TestResult tr,
+    private static void verifyJavaLibraryPathOverride(TestResult tr,
             boolean is32Bit) {
         // make sure the 32/64 bit value exists
         if (!tr.matches("java.library.path=.*" +
@@ -295,10 +287,10 @@ public class ExecutionEnvironment {
      */
     static void verifyVmSelection() {
 
-        TestHelper.TestResult tr = null;
+        TestResult tr = null;
 
-        if (TestHelper.is32Bit) {
-            tr = TestHelper.doExec(TestHelper.javaCmd, "-client", "-version");
+        if (is32Bit) {
+            tr = doExec(javaCmd, "-client", "-version");
             if (!tr.matches(".*Client VM.*")) {
                 System.out.println("FAIL: the expected vm -client did not launch");
                 System.out.println(tr);
@@ -307,7 +299,7 @@ public class ExecutionEnvironment {
                 passes++;
             }
         }
-        tr = TestHelper.doExec(TestHelper.javaCmd, "-server", "-version");
+        tr = doExec(javaCmd, "-server", "-version");
         if (!tr.matches(".*Server VM.*")) {
             System.out.println("FAIL: the expected vm -server did not launch");
             System.out.println(tr);
@@ -321,14 +313,14 @@ public class ExecutionEnvironment {
      * checks to see there is no extra libjvm.so than needed
      */
     static void verifyNoSymLink() {
-        if (TestHelper.is64Bit) {
+        if (is64Bit) {
             return;
         }
 
         File symLink = null;
-        String libPathPrefix = TestHelper.isSDK ? "jre/lib" : "/lib";
-        symLink = new File(TestHelper.JAVAHOME, libPathPrefix +
-                TestHelper.getJreArch() + "/" + LIBJVM);
+        String libPathPrefix = isSDK ? "jre/lib" : "/lib";
+        symLink = new File(JAVAHOME, libPathPrefix +
+                getJreArch() + "/" + LIBJVM);
         if (symLink.exists()) {
             System.out.println("FAIL: The symlink exists " +
                     symLink.getAbsolutePath());
@@ -339,7 +331,7 @@ public class ExecutionEnvironment {
     }
 
     public static void main(String... args) throws Exception {
-        if (TestHelper.isWindows) {
+        if (isWindows) {
             System.out.println("Warning: noop on windows");
             return;
         }
