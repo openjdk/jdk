@@ -33,6 +33,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "memory/gcLocker.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
@@ -2275,6 +2276,26 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
     // We are in _thread_in_native_trans state, don't handle unsafe
     // access error since that may block.
     thread->check_and_handle_async_exceptions(false);
+  }
+}
+
+// This is a variant of the normal
+// check_special_condition_for_native_trans with slightly different
+// semantics for use by critical native wrappers.  It does all the
+// normal checks but also performs the transition back into
+// thread_in_Java state.  This is required so that critical natives
+// can potentially block and perform a GC if they are the last thread
+// exiting the GC_locker.
+void JavaThread::check_special_condition_for_native_trans_and_transition(JavaThread *thread) {
+  check_special_condition_for_native_trans(thread);
+
+  // Finish the transition
+  thread->set_thread_state(_thread_in_Java);
+
+  if (thread->do_critical_native_unlock()) {
+    ThreadInVMfromJavaNoAsyncException tiv(thread);
+    GC_locker::unlock_critical(thread);
+    thread->clear_critical_native_unlock();
   }
 }
 

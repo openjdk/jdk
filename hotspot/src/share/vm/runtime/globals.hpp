@@ -659,6 +659,12 @@ class CommandLineFlags {
   develop(bool, SpecialArraysEquals, true,                                  \
           "special version of Arrays.equals(char[],char[])")                \
                                                                             \
+  product(bool, CriticalJNINatives, true,                                   \
+          "check for critical JNI entry points")                            \
+                                                                            \
+  notproduct(bool, StressCriticalJNINatives, false,                         \
+            "Exercise register saving code in critical natives")            \
+                                                                            \
   product(bool, UseSSE42Intrinsics, false,                                  \
           "SSE4.2 versions of intrinsics")                                  \
                                                                             \

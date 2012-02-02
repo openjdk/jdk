@@ -136,7 +136,6 @@ void SafepointSynchronize::begin() {
 
   RuntimeService::record_safepoint_begin();
 
-  {
   MutexLocker mu(Safepoint_lock);
 
   // Reset the count of active JNI critical threads
@@ -399,7 +398,6 @@ void SafepointSynchronize::begin() {
     // Record how much time spend on the above cleanup tasks
     update_statistics_on_cleanup_end(os::javaTimeNanos());
   }
-  }
 }
 
 // Wake up all threads, so they are ready to resume execution after the safepoint
@@ -544,6 +542,42 @@ bool SafepointSynchronize::safepoint_safe(JavaThread *thread, JavaThreadState st
     return false;
   }
 }
+
+
+// See if the thread is running inside a lazy critical native and
+// update the thread critical count if so.  Also set a suspend flag to
+// cause the native wrapper to return into the JVM to do the unlock
+// once the native finishes.
+void SafepointSynchronize::check_for_lazy_critical_native(JavaThread *thread, JavaThreadState state) {
+  if (state == _thread_in_native &&
+      thread->has_last_Java_frame() &&
+      thread->frame_anchor()->walkable()) {
+    // This thread might be in a critical native nmethod so look at
+    // the top of the stack and increment the critical count if it
+    // is.
+    frame wrapper_frame = thread->last_frame();
+    CodeBlob* stub_cb = wrapper_frame.cb();
+    if (stub_cb != NULL &&
+        stub_cb->is_nmethod() &&
+        stub_cb->as_nmethod_or_null()->is_lazy_critical_native()) {
+      // A thread could potentially be in a critical native across
+      // more than one safepoint, so only update the critical state on
+      // the first one.  When it returns it will perform the unlock.
+      if (!thread->do_critical_native_unlock()) {
+#ifdef ASSERT
+        if (!thread->in_critical()) {
+          GC_locker::increment_debug_jni_lock_count();
+        }
+#endif
+        thread->enter_critical();
+        // Make sure the native wrapper calls back on return to
+        // perform the needed critical unlock.
+        thread->set_critical_native_unlock();
+      }
+    }
+  }
+}
+
 
 
 // -------------------------------------------------------------------------------------------------------
@@ -874,6 +908,7 @@ void ThreadSafepointState::examine_state_of_thread() {
   // agree and update the safepoint state here.
   if (SafepointSynchronize::safepoint_safe(_thread, state)) {
     roll_forward(_at_safepoint);
+    SafepointSynchronize::check_for_lazy_critical_native(_thread, state);
     if (_thread->in_critical()) {
       // Notice that this thread is in a critical section
       SafepointSynchronize::increment_jni_active_count();

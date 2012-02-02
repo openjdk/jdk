@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -689,6 +689,17 @@ inline void MacroAssembler::load_contents(const AddressLiteral& addrlit, Registe
     sethi(addrlit, d);
   }
   ld(d, addrlit.low10() + offset, d);
+}
+
+
+inline void MacroAssembler::load_bool_contents(const AddressLiteral& addrlit, Register d, int offset) {
+  assert_not_delayed();
+  if (ForceUnreachable) {
+    patchable_sethi(addrlit, d);
+  } else {
+    sethi(addrlit, d);
+  }
+  ldub(d, addrlit.low10() + offset, d);
 }
 
 

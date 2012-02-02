@@ -140,6 +140,8 @@ public:
 
   static bool safepoint_safe(JavaThread *thread, JavaThreadState state);
 
+  static void check_for_lazy_critical_native(JavaThread *thread, JavaThreadState state);
+
   // Query
   inline static bool is_at_safepoint()   { return _state == _synchronized;  }
   inline static bool is_synchronizing()  { return _state == _synchronizing;  }

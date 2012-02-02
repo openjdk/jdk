@@ -2678,6 +2678,20 @@ nmethod *AdapterHandlerLibrary::create_native_wrapper(methodHandle method, int c
   return nm;
 }
 
+JRT_ENTRY_NO_ASYNC(void, SharedRuntime::block_for_jni_critical(JavaThread* thread))
+  assert(thread == JavaThread::current(), "must be");
+  // The code is about to enter a JNI lazy critical native method and
+  // _needs_gc is true, so if this thread is already in a critical
+  // section then just return, otherwise this thread should block
+  // until needs_gc has been cleared.
+  if (thread->in_critical()) {
+    return;
+  }
+  // Lock and unlock a critical section to give the system a chance to block
+  GC_locker::lock_critical(thread);
+  GC_locker::unlock_critical(thread);
+JRT_END
+
 #ifdef HAVE_DTRACE_H
 // Create a dtrace nmethod for this method.  The wrapper converts the
 // java compiled calling convention to the native convention, makes a dummy call
