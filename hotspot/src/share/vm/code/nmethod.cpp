@@ -462,6 +462,7 @@ void nmethod::init_defaults() {
   _speculatively_disconnected = 0;
   _has_unsafe_access          = 0;
   _has_method_handle_invokes  = 0;
+  _lazy_critical_native       = 0;
   _marked_for_deoptimization  = 0;
   _lock_count                 = 0;
   _stack_traversal_mark       = 0;

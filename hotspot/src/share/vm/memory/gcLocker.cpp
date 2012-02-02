@@ -69,7 +69,7 @@ bool GC_locker::check_active_before_gc() {
     _needs_gc = true;
     if (PrintJNIGCStalls && PrintGCDetails) {
       ResourceMark rm; // JavaThread::name() allocates to convert to UTF8
-      _wait_begin = tty->time_stamp().milliseconds();
+      _wait_begin = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
       gclog_or_tty->print_cr(INT64_FORMAT ": Setting _needs_gc. Thread \"%s\" %d locked.",
                              _wait_begin, Thread::current()->name(), _jni_lock_count);
     }
@@ -86,7 +86,7 @@ void GC_locker::stall_until_clear() {
     if (PrintJNIGCStalls && PrintGCDetails) {
       ResourceMark rm; // JavaThread::name() allocates to convert to UTF8
       gclog_or_tty->print_cr(INT64_FORMAT ": Allocation failed. Thread \"%s\" is stalled by JNI critical section, %d locked.",
-                             tty->time_stamp().milliseconds() - _wait_begin, Thread::current()->name(), _jni_lock_count);
+                             (os::javaTimeNanos() / NANOSECS_PER_MILLISEC) - _wait_begin, Thread::current()->name(), _jni_lock_count);
     }
   }
 
@@ -132,7 +132,7 @@ void GC_locker::jni_unlock(JavaThread* thread) {
         if (PrintJNIGCStalls && PrintGCDetails) {
           ResourceMark rm; // JavaThread::name() allocates to convert to UTF8
           gclog_or_tty->print_cr(INT64_FORMAT ": Thread \"%s\" is performing GC after exiting critical section, %d locked",
-                                 tty->time_stamp().milliseconds() - _wait_begin, Thread::current()->name(), _jni_lock_count);
+                                 (os::javaTimeNanos() / NANOSECS_PER_MILLISEC) - _wait_begin, Thread::current()->name(), _jni_lock_count);
         }
         Universe::heap()->collect(GCCause::_gc_locker);
       }

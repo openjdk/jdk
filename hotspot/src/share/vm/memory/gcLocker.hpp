@@ -164,6 +164,8 @@ class GC_locker: public AllStatic {
   // is set, the slow path is always taken, till _needs_gc is cleared.
   static void lock_critical(JavaThread* thread);
   static void unlock_critical(JavaThread* thread);
+
+  static address needs_gc_address() { return (address) &_needs_gc; }
 };
 
 
