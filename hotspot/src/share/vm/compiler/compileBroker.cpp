@@ -44,6 +44,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
 #include "utilities/dtrace.hpp"
+#include "utilities/events.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
@@ -189,6 +190,43 @@ CompileTask*  CompileBroker::_task_free_list = NULL;
 GrowableArray<CompilerThread*>* CompileBroker::_method_threads = NULL;
 
 
+class CompilationLog : public StringEventLog {
+ public:
+  CompilationLog() : StringEventLog("Compilation events") {
+  }
+
+  void log_compile(JavaThread* thread, CompileTask* task) {
+    StringLogMessage lm;
+    stringStream msg = lm.stream();
+    // msg.time_stamp().update_to(tty->time_stamp().ticks());
+    task->print_compilation(&msg, true);
+    log(thread, "%s", (const char*)lm);
+  }
+
+  void log_nmethod(JavaThread* thread, nmethod* nm) {
+    log(thread, "nmethod " INTPTR_FORMAT " code ["INTPTR_FORMAT ", " INTPTR_FORMAT "]",
+        nm, nm->code_begin(), nm->code_end());
+  }
+
+  void log_failure(JavaThread* thread, CompileTask* task, const char* reason, const char* retry_message) {
+    StringLogMessage lm;
+    lm.print("%4d   COMPILE SKIPPED: %s", task->compile_id(), reason);
+    if (retry_message != NULL) {
+      lm.append(" (%s)", retry_message);
+    }
+    lm.print("\n");
+    log(thread, "%s", (const char*)lm);
+  }
+};
+
+static CompilationLog* _compilation_log = NULL;
+
+void compileBroker_init() {
+  if (LogEvents) {
+    _compilation_log = new CompilationLog();
+  }
+}
+
 CompileTaskWrapper::CompileTaskWrapper(CompileTask* task) {
   CompilerThread* thread = CompilerThread::current();
   thread->set_task(task);
@@ -326,8 +364,12 @@ void CompileTask::print_line() {
 
 // ------------------------------------------------------------------
 // CompileTask::print_compilation_impl
-void CompileTask::print_compilation_impl(outputStream* st, methodOop method, int compile_id, int comp_level, bool is_osr_method, int osr_bci, bool is_blocking, const char* msg) {
-  st->print("%7d ", (int) st->time_stamp().milliseconds());  // print timestamp
+void CompileTask::print_compilation_impl(outputStream* st, methodOop method, int compile_id, int comp_level,
+                                         bool is_osr_method, int osr_bci, bool is_blocking,
+                                         const char* msg, bool short_form) {
+  if (!short_form) {
+    st->print("%7d ", (int) st->time_stamp().milliseconds());  // print timestamp
+  }
   st->print("%4d ", compile_id);    // print compilation number
 
   // For unloaded methods the transition to zombie occurs after the
@@ -370,7 +412,9 @@ void CompileTask::print_compilation_impl(outputStream* st, methodOop method, int
   if (msg != NULL) {
     st->print("   %s", msg);
   }
-  st->cr();
+  if (!short_form) {
+    st->cr();
+  }
 }
 
 // ------------------------------------------------------------------
@@ -426,12 +470,12 @@ void CompileTask::print_inline_indent(int inline_level, outputStream* st) {
 
 // ------------------------------------------------------------------
 // CompileTask::print_compilation
-void CompileTask::print_compilation(outputStream* st) {
+void CompileTask::print_compilation(outputStream* st, bool short_form) {
   oop rem = JNIHandles::resolve(method_handle());
   assert(rem != NULL && rem->is_method(), "must be");
   methodOop method = (methodOop) rem;
   bool is_osr_method = osr_bci() != InvocationEntryBci;
-  print_compilation_impl(st, method, compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking());
+  print_compilation_impl(st, method, compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), NULL, short_form);
 }
 
 // ------------------------------------------------------------------
@@ -1649,6 +1693,10 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   CompilerThread* thread = CompilerThread::current();
   ResourceMark rm(thread);
 
+  if (LogEvents) {
+    _compilation_log->log_compile(thread, task);
+  }
+
   // Common flags.
   uint compile_id = task->compile_id();
   int osr_bci = task->osr_bci();
@@ -1717,22 +1765,30 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       ci_env.record_method_not_compilable("compile failed", !TieredCompilation);
     }
 
+    // Copy this bit to the enclosing block:
+    compilable = ci_env.compilable();
+
     if (ci_env.failing()) {
-      // Copy this bit to the enclosing block:
-      compilable = ci_env.compilable();
+      const char* retry_message = ci_env.retry_message();
+      if (_compilation_log != NULL) {
+        _compilation_log->log_failure(thread, task, ci_env.failure_reason(), retry_message);
+      }
       if (PrintCompilation) {
-        const char* reason = ci_env.failure_reason();
-        if (compilable == ciEnv::MethodCompilable_not_at_tier) {
-          tty->print_cr("%4d   COMPILE SKIPPED: %s (retry at different tier)", compile_id, reason);
-        } else if (compilable == ciEnv::MethodCompilable_never) {
-          tty->print_cr("%4d   COMPILE SKIPPED: %s (not retryable)", compile_id, reason);
-        } else if (compilable == ciEnv::MethodCompilable) {
-          tty->print_cr("%4d   COMPILE SKIPPED: %s", compile_id, reason);
+        tty->print("%4d   COMPILE SKIPPED: %s", compile_id, ci_env.failure_reason());
+        if (retry_message != NULL) {
+          tty->print(" (%s)", retry_message);
         }
+        tty->cr();
       }
     } else {
       task->mark_success();
       task->set_num_inlined_bytecodes(ci_env.num_inlined_bytecodes());
+      if (_compilation_log != NULL) {
+        nmethod* code = task->code();
+        if (code != NULL) {
+          _compilation_log->log_nmethod(thread, code);
+        }
+      }
     }
   }
   pop_jni_handle_block();
