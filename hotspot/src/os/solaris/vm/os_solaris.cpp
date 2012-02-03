@@ -4007,7 +4007,6 @@ int set_lwp_class_and_priority(int ThreadID, int lwpid,
     iaInfo->ia_uprilim = cur_class == new_class
                            ? IA_NOCHANGE : (pri_t)iaLimits.maxPrio;
     iaInfo->ia_mode    = IA_NOCHANGE;
-    iaInfo->ia_nice    = cur_class == new_class ? IA_NOCHANGE : NZERO;
     if (ThreadPriorityVerbose) {
       tty->print_cr("IA: [%d...%d] %d->%d\n",
                     iaLimits.minPrio, maxClamped, newPrio, iaInfo->ia_upri);
