@@ -306,29 +306,27 @@ bool NonTieredCompPolicy::is_mature(methodOop method) {
   return (current >= initial + target);
 }
 
-nmethod* NonTieredCompPolicy::event(methodHandle method, methodHandle inlinee, int branch_bci, int bci, CompLevel comp_level, nmethod* nm, TRAPS) {
+nmethod* NonTieredCompPolicy::event(methodHandle method, methodHandle inlinee, int branch_bci,
+                                    int bci, CompLevel comp_level, nmethod* nm, JavaThread* thread) {
   assert(comp_level == CompLevel_none, "This should be only called from the interpreter");
   NOT_PRODUCT(trace_frequency_counter_overflow(method, branch_bci, bci));
-  if (JvmtiExport::can_post_interpreter_events()) {
-    assert(THREAD->is_Java_thread(), "Wrong type of thread");
-    if (((JavaThread*)THREAD)->is_interp_only_mode()) {
-      // If certain JVMTI events (e.g. frame pop event) are requested then the
-      // thread is forced to remain in interpreted code. This is
-      // implemented partly by a check in the run_compiled_code
-      // section of the interpreter whether we should skip running
-      // compiled code, and partly by skipping OSR compiles for
-      // interpreted-only threads.
-      if (bci != InvocationEntryBci) {
-        reset_counter_for_back_branch_event(method);
-        return NULL;
-      }
+  if (JvmtiExport::can_post_interpreter_events() && thread->is_interp_only_mode()) {
+    // If certain JVMTI events (e.g. frame pop event) are requested then the
+    // thread is forced to remain in interpreted code. This is
+    // implemented partly by a check in the run_compiled_code
+    // section of the interpreter whether we should skip running
+    // compiled code, and partly by skipping OSR compiles for
+    // interpreted-only threads.
+    if (bci != InvocationEntryBci) {
+      reset_counter_for_back_branch_event(method);
+      return NULL;
     }
   }
   if (bci == InvocationEntryBci) {
     // when code cache is full, compilation gets switched off, UseCompiler
     // is set to false
     if (!method->has_compiled_code() && UseCompiler) {
-      method_invocation_event(method, CHECK_NULL);
+      method_invocation_event(method, thread);
     } else {
       // Force counter overflow on method entry, even if no compilation
       // happened.  (The method_invocation_event call does this also.)
@@ -344,7 +342,7 @@ nmethod* NonTieredCompPolicy::event(methodHandle method, methodHandle inlinee, i
     NOT_PRODUCT(trace_osr_request(method, osr_nm, bci));
     // when code cache is full, we should not compile any more...
     if (osr_nm == NULL && UseCompiler) {
-      method_back_branch_event(method, bci, CHECK_NULL);
+      method_back_branch_event(method, bci, thread);
       osr_nm = method->lookup_osr_nmethod_for(bci, CompLevel_highest_tier, true);
     }
     if (osr_nm == NULL) {
@@ -395,7 +393,7 @@ void NonTieredCompPolicy::trace_osr_request(methodHandle method, nmethod* osr, i
 
 // SimpleCompPolicy - compile current method
 
-void SimpleCompPolicy::method_invocation_event( methodHandle m, TRAPS) {
+void SimpleCompPolicy::method_invocation_event(methodHandle m, JavaThread* thread) {
   int hot_count = m->invocation_count();
   reset_counter_for_invocation_event(m);
   const char* comment = "count";
@@ -405,18 +403,18 @@ void SimpleCompPolicy::method_invocation_event( methodHandle m, TRAPS) {
     if (nm == NULL ) {
       const char* comment = "count";
       CompileBroker::compile_method(m, InvocationEntryBci, CompLevel_highest_tier,
-                                    m, hot_count, comment, CHECK);
+                                    m, hot_count, comment, thread);
     }
   }
 }
 
-void SimpleCompPolicy::method_back_branch_event(methodHandle m, int bci, TRAPS) {
+void SimpleCompPolicy::method_back_branch_event(methodHandle m, int bci, JavaThread* thread) {
   int hot_count = m->backedge_count();
   const char* comment = "backedge_count";
 
   if (is_compilation_enabled() && !m->is_not_osr_compilable() && can_be_compiled(m)) {
     CompileBroker::compile_method(m, bci, CompLevel_highest_tier,
-                                  m, hot_count, comment, CHECK);
+                                  m, hot_count, comment, thread);
     NOT_PRODUCT(trace_osr_completion(m->lookup_osr_nmethod_for(bci, CompLevel_highest_tier, true));)
   }
 }
@@ -427,14 +425,13 @@ const char* StackWalkCompPolicy::_msg = NULL;
 
 
 // Consider m for compilation
-void StackWalkCompPolicy::method_invocation_event(methodHandle m, TRAPS) {
+void StackWalkCompPolicy::method_invocation_event(methodHandle m, JavaThread* thread) {
   int hot_count = m->invocation_count();
   reset_counter_for_invocation_event(m);
   const char* comment = "count";
 
   if (is_compilation_enabled() && m->code() == NULL && can_be_compiled(m)) {
-    ResourceMark rm(THREAD);
-    JavaThread *thread = (JavaThread*)THREAD;
+    ResourceMark rm(thread);
     frame       fr     = thread->last_frame();
     assert(fr.is_interpreted_frame(), "must be interpreted");
     assert(fr.interpreter_frame_method() == m(), "bad method");
@@ -461,17 +458,17 @@ void StackWalkCompPolicy::method_invocation_event(methodHandle m, TRAPS) {
       assert(top != NULL, "findTopInlinableFrame returned null");
       if (TraceCompilationPolicy) top->print();
       CompileBroker::compile_method(top->top_method(), InvocationEntryBci, CompLevel_highest_tier,
-                                    m, hot_count, comment, CHECK);
+                                    m, hot_count, comment, thread);
     }
   }
 }
 
-void StackWalkCompPolicy::method_back_branch_event(methodHandle m, int bci, TRAPS) {
+void StackWalkCompPolicy::method_back_branch_event(methodHandle m, int bci, JavaThread* thread) {
   int hot_count = m->backedge_count();
   const char* comment = "backedge_count";
 
   if (is_compilation_enabled() && !m->is_not_osr_compilable() && can_be_compiled(m)) {
-    CompileBroker::compile_method(m, bci, CompLevel_highest_tier, m, hot_count, comment, CHECK);
+    CompileBroker::compile_method(m, bci, CompLevel_highest_tier, m, hot_count, comment, thread);
 
     NOT_PRODUCT(trace_osr_completion(m->lookup_osr_nmethod_for(bci, CompLevel_highest_tier, true));)
   }
