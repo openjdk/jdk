@@ -71,14 +71,14 @@ void Parse::do_checkcast() {
   // Throw uncommon trap if class is not loaded or the value we are casting
   // _from_ is not loaded, and value is not null.  If the value _is_ NULL,
   // then the checkcast does nothing.
-  const TypeInstPtr *tp = _gvn.type(obj)->isa_instptr();
-  if (!will_link || (tp && !tp->is_loaded())) {
+  const TypeOopPtr *tp = _gvn.type(obj)->isa_oopptr();
+  if (!will_link || (tp && tp->klass() && !tp->klass()->is_loaded())) {
     if (C->log() != NULL) {
       if (!will_link) {
         C->log()->elem("assert_null reason='checkcast' klass='%d'",
                        C->log()->identify(klass));
       }
-      if (tp && !tp->is_loaded()) {
+      if (tp && tp->klass() && !tp->klass()->is_loaded()) {
         // %%% Cannot happen?
         C->log()->elem("assert_null reason='checkcast source' klass='%d'",
                        C->log()->identify(tp->klass()));
