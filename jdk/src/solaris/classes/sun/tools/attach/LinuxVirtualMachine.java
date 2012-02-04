@@ -37,8 +37,12 @@ import java.util.Properties;
  * Linux implementation of HotSpotVirtualMachine
  */
 public class LinuxVirtualMachine extends HotSpotVirtualMachine {
-    // temp directory for socket file
-    private static final String tmpdir = System.getProperty("java.io.tmpdir");
+    // "/tmp" is used as a global well-known location for the files
+    // .java_pid<pid>. and .attach_pid<pid>. It is important that this
+    // location is the same for all processes, otherwise the tools
+    // will not be able to find all Hotspot processes.
+    // Any changes to this needs to be synchronized with HotSpot.
+    private static final String tmpdir = "/tmp";
 
     // Indicates if this machine uses the old LinuxThreads
     static boolean isLinuxThreads;
@@ -261,20 +265,12 @@ public class LinuxVirtualMachine extends HotSpotVirtualMachine {
     }
 
     // Return the socket file for the given process.
-    // Checks working directory of process for .java_pid<pid>. If not
-    // found it looks in temp directory.
     private String findSocketFile(int pid) {
-        // First check for a .java_pid<pid> file in the working directory
-        // of the target process
-        String fn = ".java_pid" + pid;
-        String path = "/proc/" + pid + "/cwd/" + fn;
-        File f = new File(path);
+        File f = new File(tmpdir, ".java_pid" + pid);
         if (!f.exists()) {
-            // Not found, so try temp directory
-            f = new File(tmpdir, fn);
-            path = f.exists() ? f.getPath() : null;
+            return null;
         }
-        return path;
+        return f.getPath();
     }
 
     // On Solaris/Linux a simple handshake is used to start the attach mechanism

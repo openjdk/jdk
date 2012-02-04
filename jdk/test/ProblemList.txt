@@ -284,9 +284,6 @@ sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh       generic-all
 # Windows X64, java.lang.IllegalStateException
 javax/management/monitor/AttributeArbitraryDataTypeTest.java    generic-all
 
-# 7132199
-sun/management/jmxremote/bootstrap/JvmstatCountersTest.java	generic-all
-
 ############################################################################
 
 # jdk_math
