@@ -1,0 +1,109 @@
+#
+# Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#  
+#
+
+# macosx universal builds
+universal_product:
+	$(MAKE) MACOSX_UNIVERSAL=true all_product_universal
+universal_fastdebug:
+	$(MAKE) MACOSX_UNIVERSAL=true all_fastdebug_universal
+universal_debug:
+	$(MAKE) MACOSX_UNIVERSAL=true all_debug_universal
+
+
+# Universal builds include 1 or more architectures in a single binary
+all_product_universal:
+#	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=32 $(COMMON_VM_PRODUCT_TARGETS)
+	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=64 $(COMMON_VM_PRODUCT_TARGETS)
+	$(QUIETLY) $(MAKE) EXPORT_SUBDIR= universalize
+all_fastdebug_universal:
+#	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=32 $(COMMON_VM_FASTDEBUG_TARGETS)
+	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=64 $(COMMON_VM_FASTDEBUG_TARGETS)
+	$(QUIETLY) $(MAKE) EXPORT_SUBDIR=/fastdebug universalize
+all_debug_universal:
+#	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=32 $(COMMON_VM_DEBUG_TARGETS)
+	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=64 $(COMMON_VM_DEBUG_TARGETS)
+	$(QUIETLY) $(MAKE) EXPORT_SUBDIR=/debug universalize
+
+
+# Consolidate architecture builds into a single Universal binary
+universalize: $(UNIVERSAL_LIPO_LIST) $(UNIVERSAL_COPY_LIST)
+	$(RM) -r $(EXPORT_PATH)/jre/lib/{i386,amd64}
+
+
+# Package built libraries in a universal binary
+$(UNIVERSAL_LIPO_LIST):
+	BUILT_LIPO_FILES="`find $(EXPORT_JRE_LIB_DIR)/{i386,amd64}/$(subst $(EXPORT_JRE_LIB_DIR)/,,$@) 2>/dev/null`"; \
+	if [ -n "$${BUILT_LIPO_FILES}" ]; then \
+	  $(MKDIR) -p $(shell dirname $@); \
+	  lipo -create -output $@ $${BUILT_LIPO_FILES}; \
+	fi	
+
+
+# Copy built non-universal binaries in place
+$(UNIVERSAL_COPY_LIST):
+	BUILT_COPY_FILE="$(EXPORT_JRE_LIB_DIR)/i386/$(subst $(EXPORT_JRE_LIB_DIR)/,,$@)"; \
+	if [ -f $${BUILT_COPY_FILE} ]; then \
+	  $(MKDIR) -p $(shell dirname $@); \
+	  $(CP) $${BUILT_COPY_FILE} $@; \
+	fi
+
+
+# Replace arch specific binaries with universal binaries
+export_universal:
+	$(RM) -r $(EXPORT_PATH)/jre/lib/{i386,amd64}
+	$(RM) -r $(JDK_IMAGE_DIR)/jre/lib/{i386,amd64}
+	$(RM) $(JDK_IMAGE_DIR)/jre/lib/{client,server}/libjsig.$(LIBRARY_SUFFIX)
+	($(CD) $(EXPORT_PATH) && \
+	  $(TAR) -cf - *) | \
+	  ($(CD) $(JDK_IMAGE_DIR) && $(TAR) -xpf -)
+
+
+# Overlay universal binaries
+copy_universal:
+	$(RM) -r $(JDK_IMAGE_DIR)$(COPY_SUBDIR)/jre/lib/{i386,amd64}
+	$(RM) $(JDK_IMAGE_DIR)$(COPY_SUBDIR)/jre/lib/{client,server}/libjsig.$(LIBRARY_SUFFIX)
+	($(CD) $(EXPORT_PATH)$(COPY_SUBDIR) && \
+	  $(TAR) -cf - *) | \
+	  ($(CD) $(JDK_IMAGE_DIR)$(COPY_SUBDIR) && $(TAR) -xpf -)
+
+
+# Additional processing for universal builds
+export_product_jdk::
+	$(MAKE) EXPORT_SUBDIR=           export_universal
+export_optimized_jdk::
+	$(MAKE) EXPORT_SUBDIR=           export_universal
+export_fastdebug_jdk::
+	$(MAKE) EXPORT_SUBDIR=/fastdebug export_universal
+export_debug_jdk::
+	$(MAKE) EXPORT_SUBDIR=/debug     export_universal
+copy_product_jdk::
+	$(MAKE) COPY_SUBDIR=             copy_universal
+copy_fastdebug_jdk::
+	$(MAKE) COPY_SUBDIR=/fastdebug   copy_universal
+copy_debug_jdk::
+	$(MAKE) COPY_SUBDIR=/debug       copy_universal
+
+.PHONY:	universal_product universal_fastdebug universal_debug \
+	all_product_universal all_fastdebug_universal all_debug_universal \
+	universalize export_universal copy_universal
