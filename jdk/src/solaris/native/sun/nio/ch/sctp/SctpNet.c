@@ -34,8 +34,8 @@
 #include "nio.h"
 #include "net_util.h"
 #include "net_util_md.h"
-#include "sun_nio_ch_SctpNet.h"
-#include "sun_nio_ch_SctpStdSocketOption.h"
+#include "sun_nio_ch_sctp_SctpNet.h"
+#include "sun_nio_ch_sctp_SctpStdSocketOption.h"
 
 static jclass isaCls = 0;
 static jmethodID isaCtrID = 0;
@@ -143,12 +143,12 @@ handleSocketError(JNIEnv *env, jint errorValue)
 }
 
 /*
- * Class:     sun_nio_ch_SctpNet
+ * Class:     sun_nio_ch_sctp_SctpNet
  * Method:    init
  * Signature: ()V
  */
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_SctpNet_init
+Java_sun_nio_ch_sctp_SctpNet_init
   (JNIEnv *env, jclass cl) {
     int sp[2];
     if (socketpair(PF_UNIX, SOCK_STREAM, 0, sp) < 0) {
@@ -160,11 +160,11 @@ Java_sun_nio_ch_SctpNet_init
 }
 
 /*
- * Class:     sun_nio_ch_SctpNet
+ * Class:     sun_nio_ch_sctp_SctpNet
  * Method:    socket0
  * Signature: (Z)I
  */
-JNIEXPORT jint JNICALL Java_sun_nio_ch_SctpNet_socket0
+JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpNet_socket0
   (JNIEnv *env, jclass klass, jboolean oneToOne) {
     int fd;
     struct sctp_event_subscribe event;
@@ -202,11 +202,11 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_SctpNet_socket0
 }
 
 /*
- * Class:     sun_nio_ch_SctpNet
+ * Class:     sun_nio_ch_sctp_SctpNet
  * Method:    bindx
  * Signature: (I[Ljava/net/InetAddress;IIZ)V
  */
-JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_bindx
+JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpNet_bindx
   (JNIEnv *env, jclass klass, jint fd, jobjectArray addrs, jint port,
    jint addrsLength, jboolean add, jboolean preferIPv6) {
     SOCKADDR *sap, *tmpSap;
@@ -241,24 +241,24 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_bindx
 }
 
 /*
- * Class:     sun_nio_ch_SctpNet
+ * Class:     sun_nio_ch_sctp_SctpNet
  * Method:    listen0
  * Signature: (II)V
  */
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_SctpNet_listen0
+Java_sun_nio_ch_sctp_SctpNet_listen0
   (JNIEnv *env, jclass cl, jint fd, jint backlog) {
     if (listen(fd, backlog) < 0)
         handleSocketError(env, errno);
 }
 
 /*
- * Class:     sun_nio_ch_SctpNet
+ * Class:     sun_nio_ch_sctp_SctpNet
  * Method:    connect0
  * Signature: (ILjava/net/InetAddress;I)I
  */
 JNIEXPORT jint JNICALL
-Java_sun_nio_ch_SctpNet_connect0
+Java_sun_nio_ch_sctp_SctpNet_connect0
   (JNIEnv *env, jclass clazz, int fd, jobject iao, jint port) {
     SOCKADDR sa;
     int sa_len = SOCKADDR_LEN;
@@ -282,12 +282,12 @@ Java_sun_nio_ch_SctpNet_connect0
 }
 
 /*
- * Class:     sun_nio_ch_SctpNet
+ * Class:     sun_nio_ch_sctp_SctpNet
  * Method:    close0
  * Signature: (I)V
  */
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_SctpNet_close0
+Java_sun_nio_ch_sctp_SctpNet_close0
   (JNIEnv *env, jclass clazz, jint fd) {
     if (fd != -1) {
         int rv = close(fd);
@@ -297,12 +297,12 @@ Java_sun_nio_ch_SctpNet_close0
 }
 
 /*
- * Class:     sun_nio_ch_SctpNet
+ * Class:     sun_nio_ch_sctp_SctpNet
  * Method:    preClose0
  * Signature: (I)V
  */
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_SctpNet_preClose0
+Java_sun_nio_ch_sctp_SctpNet_preClose0
   (JNIEnv *env, jclass clazz, jint fd) {
     if (preCloseFD >= 0) {
         if (dup2(preCloseFD, fd) < 0)
@@ -340,11 +340,11 @@ jobject SockAddrToInetSocketAddress
 }
 
 /*
- * Class:     sun_nio_ch_SctpNet
+ * Class:     sun_nio_ch_sctp_SctpNet
  * Method:    getLocalAddresses0
  * Signature: (I)[Ljava/net/SocketAddress;
  */
-JNIEXPORT jobjectArray JNICALL Java_sun_nio_ch_SctpNet_getLocalAddresses0
+JNIEXPORT jobjectArray JNICALL Java_sun_nio_ch_sctp_SctpNet_getLocalAddresses0
   (JNIEnv *env, jclass klass, jint fd) {
     void *addr_buf, *laddr;
     struct sockaddr* sap;
@@ -448,11 +448,11 @@ jobjectArray getRemoteAddresses
 }
 
  /*
- * Class:     sun_nio_ch_SctpNet
+ * Class:     sun_nio_ch_sctp_SctpNet
  * Method:    getRemoteAddresses0
  * Signature: (II)[Ljava/net/SocketAddress;
  */
-JNIEXPORT jobjectArray JNICALL Java_sun_nio_ch_SctpNet_getRemoteAddresses0
+JNIEXPORT jobjectArray JNICALL Java_sun_nio_ch_sctp_SctpNet_getRemoteAddresses0
   (JNIEnv *env, jclass klass, jint fd, jint assocId) {
     return getRemoteAddresses(env, fd, assocId);
 }
@@ -465,13 +465,13 @@ int mapSocketOption
         int level;
         int optname;
     } const opts[] = {
-        { sun_nio_ch_SctpStdSocketOption_SCTP_DISABLE_FRAGMENTS,   IPPROTO_SCTP, SCTP_DISABLE_FRAGMENTS },
-        { sun_nio_ch_SctpStdSocketOption_SCTP_EXPLICIT_COMPLETE,   IPPROTO_SCTP, SCTP_EXPLICIT_EOR },
-        { sun_nio_ch_SctpStdSocketOption_SCTP_FRAGMENT_INTERLEAVE, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE },
-        { sun_nio_ch_SctpStdSocketOption_SCTP_NODELAY,             IPPROTO_SCTP, SCTP_NODELAY },
-        { sun_nio_ch_SctpStdSocketOption_SO_SNDBUF,                SOL_SOCKET,   SO_SNDBUF },
-        { sun_nio_ch_SctpStdSocketOption_SO_RCVBUF,                SOL_SOCKET,   SO_RCVBUF },
-        { sun_nio_ch_SctpStdSocketOption_SO_LINGER,                SOL_SOCKET,   SO_LINGER } };
+        { sun_nio_ch_sctp_SctpStdSocketOption_SCTP_DISABLE_FRAGMENTS,   IPPROTO_SCTP, SCTP_DISABLE_FRAGMENTS },
+        { sun_nio_ch_sctp_SctpStdSocketOption_SCTP_EXPLICIT_COMPLETE,   IPPROTO_SCTP, SCTP_EXPLICIT_EOR },
+        { sun_nio_ch_sctp_SctpStdSocketOption_SCTP_FRAGMENT_INTERLEAVE, IPPROTO_SCTP, SCTP_FRAGMENT_INTERLEAVE },
+        { sun_nio_ch_sctp_SctpStdSocketOption_SCTP_NODELAY,             IPPROTO_SCTP, SCTP_NODELAY },
+        { sun_nio_ch_sctp_SctpStdSocketOption_SO_SNDBUF,                SOL_SOCKET,   SO_SNDBUF },
+        { sun_nio_ch_sctp_SctpStdSocketOption_SO_RCVBUF,                SOL_SOCKET,   SO_RCVBUF },
+        { sun_nio_ch_sctp_SctpStdSocketOption_SO_LINGER,                SOL_SOCKET,   SO_LINGER } };
 
     int i;
     for (i=0; i<(int)(sizeof(opts) / sizeof(opts[0])); i++) {
@@ -487,11 +487,11 @@ int mapSocketOption
 }
 
 /*
- * Class:     sun_nio_ch_SctpNet
+ * Class:     sun_nio_ch_sctp_SctpNet
  * Method:    setIntOption0
  * Signature: (III)V
  */
-JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_setIntOption0
+JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpNet_setIntOption0
   (JNIEnv *env, jclass klass, jint fd, jint opt, int arg) {
     int klevel, kopt;
     int result;
@@ -505,7 +505,7 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_setIntOption0
         return;
     }
 
-    if (opt == sun_nio_ch_SctpStdSocketOption_SO_LINGER) {
+    if (opt == sun_nio_ch_sctp_SctpStdSocketOption_SO_LINGER) {
         parg = (void *)&linger;
         arglen = sizeof(linger);
         if (arg >= 0) {
@@ -522,16 +522,16 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_setIntOption0
 
     if (NET_SetSockOpt(fd, klevel, kopt, parg, arglen) < 0) {
         JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                     "sun_nio_ch_SctpNet.setIntOption0");
+                                     "sun_nio_ch_sctp_SctpNet.setIntOption0");
     }
 }
 
 /*
- * Class:     sun_nio_ch_SctpNet
+ * Class:     sun_nio_ch_sctp_SctpNet
  * Method:    getIntOption0
  * Signature: (II)I
  */
-JNIEXPORT int JNICALL Java_sun_nio_ch_SctpNet_getIntOption0
+JNIEXPORT int JNICALL Java_sun_nio_ch_sctp_SctpNet_getIntOption0
   (JNIEnv *env, jclass klass, jint fd, jint opt) {
     int klevel, kopt;
     int result;
@@ -545,7 +545,7 @@ JNIEXPORT int JNICALL Java_sun_nio_ch_SctpNet_getIntOption0
         return -1;
     }
 
-    if (opt == sun_nio_ch_SctpStdSocketOption_SO_LINGER) {
+    if (opt == sun_nio_ch_sctp_SctpStdSocketOption_SO_LINGER) {
         arg = (void *)&linger;
         arglen = sizeof(linger);
     } else {
@@ -559,18 +559,18 @@ JNIEXPORT int JNICALL Java_sun_nio_ch_SctpNet_getIntOption0
         return -1;
     }
 
-    if (opt == sun_nio_ch_SctpStdSocketOption_SO_LINGER)
+    if (opt == sun_nio_ch_sctp_SctpStdSocketOption_SO_LINGER)
         return linger.l_onoff ? linger.l_linger : -1;
     else
         return result;
 }
 
 /*
- * Class:     sun_nio_ch_SctpNet
+ * Class:     sun_nio_ch_sctp_SctpNet
  * Method:    getPrimAddrOption0
  * Signature: (II)Ljava/net/SocketAddress;
  */
-JNIEXPORT jobject JNICALL Java_sun_nio_ch_SctpNet_getPrimAddrOption0
+JNIEXPORT jobject JNICALL Java_sun_nio_ch_sctp_SctpNet_getPrimAddrOption0
   (JNIEnv *env, jclass klass, jint fd, jint assocId) {
     struct sctp_setprim prim;
     unsigned int prim_len = sizeof(prim);
@@ -588,11 +588,11 @@ JNIEXPORT jobject JNICALL Java_sun_nio_ch_SctpNet_getPrimAddrOption0
 }
 
 /*
- * Class:     sun_nio_ch_SctpNet
+ * Class:     sun_nio_ch_sctp_SctpNet
  * Method:    setPrimAddrOption0
  * Signature: (IILjava/net/InetAddress;I)V
  */
-JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_setPrimAddrOption0
+JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpNet_setPrimAddrOption0
   (JNIEnv *env, jclass klass, jint fd, jint assocId, jobject iaObj, jint port) {
     struct sctp_setprim prim;
     struct sockaddr* sap = (struct sockaddr*)&prim.ssp_addr;
@@ -612,11 +612,11 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_setPrimAddrOption0
 }
 
 /*
- * Class:     sun_nio_ch_SctpNet
+ * Class:     sun_nio_ch_sctp_SctpNet
  * Method:    setPeerPrimAddrOption0
  * Signature: (IILjava/net/InetAddress;I)V
  */
-JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_setPeerPrimAddrOption0
+JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpNet_setPeerPrimAddrOption0
   (JNIEnv *env, jclass klass, jint fd, jint assocId,
    jobject iaObj, jint port, jboolean preferIPv6) {
     struct sctp_setpeerprim prim;
@@ -638,11 +638,11 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_setPeerPrimAddrOption0
 }
 
 /*
- * Class:     sun_nio_ch_SctpNet
+ * Class:     sun_nio_ch_sctp_SctpNet
  * Method:    getInitMsgOption0
  * Signature: (I[I)V
  */
-JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_getInitMsgOption0
+JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpNet_getInitMsgOption0
   (JNIEnv *env, jclass klass, jint fd, jintArray retVal) {
     struct sctp_initmsg sctp_initmsg;
     unsigned int sim_len = sizeof(sctp_initmsg);
@@ -661,11 +661,11 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_getInitMsgOption0
 }
 
 /*
- * Class:     sun_nio_ch_SctpNet
+ * Class:     sun_nio_ch_sctp_SctpNet
  * Method:    setInitMsgOption0
  * Signature: (III)V
  */
-JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_setInitMsgOption0
+JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpNet_setInitMsgOption0
   (JNIEnv *env, jclass klass, jint fd, jint inArg, jint outArg) {
     struct sctp_initmsg sctp_initmsg;
 
@@ -682,11 +682,11 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_setInitMsgOption0
 }
 
 /*
- * Class:     sun_nio_ch_SctpNet
+ * Class:     sun_nio_ch_sctp_SctpNet
  * Method:    shutdown0
  * Signature: (II)V
  */
-JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_shutdown0
+JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpNet_shutdown0
   (JNIEnv *env, jclass klass, jint fd, jint assocId) {
     int rv;
     struct msghdr msg[1];
@@ -738,11 +738,11 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_shutdown0
 }
 
 /*
- * Class:     sun_nio_ch_SctpNet
+ * Class:     sun_nio_ch_sctp_SctpNet
  * Method:    branch
  * Signature: (II)I
  */
-JNIEXPORT int JNICALL Java_sun_nio_ch_SctpNet_branch0
+JNIEXPORT int JNICALL Java_sun_nio_ch_sctp_SctpNet_branch0
   (JNIEnv *env, jclass klass, jint fd, jint assocId) {
     int newfd = 0;
     if ((newfd = nio_sctp_peeloff(fd, assocId)) < 0) {

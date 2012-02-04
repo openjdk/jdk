@@ -22,60 +22,39 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.nio.ch;
+package sun.nio.ch.sctp;
 
+import java.nio.ByteBuffer;
 import java.net.SocketAddress;
 import com.sun.nio.sctp.Association;
-import com.sun.nio.sctp.PeerAddressChangeNotification;
+import com.sun.nio.sctp.SendFailedNotification;
 
 /**
- * An implementation of PeerAddressChangeNotification
+ * An implementation of SendFailedNotification
  */
-public class SctpPeerAddrChange extends PeerAddressChangeNotification
+public class SendFailed extends SendFailedNotification
     implements SctpNotification
 {
-    /* static final ints so that they can be referenced from native */
-    private final static int SCTP_ADDR_AVAILABLE = 1;
-    private final static int SCTP_ADDR_UNREACHABLE = 2;
-    private final static int SCTP_ADDR_REMOVED = 3;
-    private final static int SCTP_ADDR_ADDED = 4;
-    private final static int SCTP_ADDR_MADE_PRIM = 5;
-    private final static int SCTP_ADDR_CONFIRMED =6;
-
     private Association association;
-
     /* assocId is used to lookup the association before the notification is
      * returned to user code */
     private int assocId;
     private SocketAddress address;
-    private AddressChangeEvent event;
+    private ByteBuffer buffer;
+    private int errorCode;
+    private int streamNumber;
 
     /* Invoked from native */
-    private SctpPeerAddrChange(int assocId, SocketAddress address, int intEvent) {
-        switch (intEvent) {
-            case SCTP_ADDR_AVAILABLE :
-                this.event = AddressChangeEvent.ADDR_AVAILABLE;
-                break;
-            case SCTP_ADDR_UNREACHABLE :
-                this.event = AddressChangeEvent.ADDR_UNREACHABLE;
-                break;
-            case SCTP_ADDR_REMOVED :
-                this.event = AddressChangeEvent.ADDR_REMOVED;
-                break;
-            case SCTP_ADDR_ADDED :
-                this.event = AddressChangeEvent.ADDR_ADDED;
-                break;
-            case SCTP_ADDR_MADE_PRIM :
-                this.event = AddressChangeEvent.ADDR_MADE_PRIMARY;
-                break;
-            case SCTP_ADDR_CONFIRMED :
-                this.event = AddressChangeEvent.ADDR_CONFIRMED;
-                break;
-            default:
-                throw new AssertionError("Unknown event type");
-        }
+    private SendFailed(int assocId,
+                       SocketAddress address,
+                       ByteBuffer buffer,
+                       int errorCode,
+                       int streamNumber) {
         this.assocId = assocId;
+        this.errorCode = errorCode;
+        this.streamNumber = streamNumber;
         this.address = address;
+        this.buffer = buffer;
     }
 
     @Override
@@ -89,31 +68,43 @@ public class SctpPeerAddrChange extends PeerAddressChangeNotification
     }
 
     @Override
+    public Association association() {
+        /* may be null */
+        return association;
+    }
+
+    @Override
     public SocketAddress address() {
         assert address != null;
         return address;
     }
 
     @Override
-    public Association association() {
-        assert association != null;
-        return association;
+    public ByteBuffer buffer() {
+        assert buffer != null;
+        return buffer;
     }
 
     @Override
-    public AddressChangeEvent event() {
-        assert event != null;
-        return event;
+    public int errorCode() {
+        return errorCode;
+    }
+
+    @Override
+    public int streamNumber() {
+        return streamNumber;
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(super.toString()).append(" [");
-        sb.append("Address: ").append(address);
-        sb.append(", Association:").append(association);
-        sb.append(", Event: ").append(event).append("]");
+        sb.append("Association:").append(association);
+        sb.append(", Address: ").append(address);
+        sb.append(", buffer: ").append(buffer);
+        sb.append(", errorCode: ").append(errorCode);
+        sb.append(", streamNumber: ").append(streamNumber);
+        sb.append("]");
         return sb.toString();
     }
 }
-

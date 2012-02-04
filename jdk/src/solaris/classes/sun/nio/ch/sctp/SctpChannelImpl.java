@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.nio.ch;
+package sun.nio.ch.sctp;
 
 import java.net.InetAddress;
 import java.net.SocketAddress;
@@ -53,11 +53,20 @@ import com.sun.nio.sctp.MessageInfo;
 import com.sun.nio.sctp.NotificationHandler;
 import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpSocketOption;
+import sun.nio.ch.DirectBuffer;
+import sun.nio.ch.IOStatus;
+import sun.nio.ch.IOUtil;
+import sun.nio.ch.NativeThread;
+import sun.nio.ch.Net;
+import sun.nio.ch.PollArrayWrapper;
+import sun.nio.ch.SelChImpl;
+import sun.nio.ch.SelectionKeyImpl;
+import sun.nio.ch.Util;
 import static com.sun.nio.sctp.SctpStandardSocketOptions.*;
-import static sun.nio.ch.SctpResultContainer.SEND_FAILED;
-import static sun.nio.ch.SctpResultContainer.ASSOCIATION_CHANGED;
-import static sun.nio.ch.SctpResultContainer.PEER_ADDRESS_CHANGED;
-import static sun.nio.ch.SctpResultContainer.SHUTDOWN;
+import static sun.nio.ch.sctp.ResultContainer.SEND_FAILED;
+import static sun.nio.ch.sctp.ResultContainer.ASSOCIATION_CHANGED;
+import static sun.nio.ch.sctp.ResultContainer.PEER_ADDRESS_CHANGED;
+import static sun.nio.ch.sctp.ResultContainer.SHUTDOWN;
 
 /**
  * An implementation of an SctpChannel
@@ -745,7 +754,7 @@ public class SctpChannelImpl extends SctpChannel
         receiveInvoked.set(Boolean.TRUE);
 
         try {
-            SctpResultContainer resultContainer = new SctpResultContainer();
+            ResultContainer resultContainer = new ResultContainer();
             do {
                 resultContainer.clear();
                 synchronized (receiveLock) {
@@ -775,7 +784,7 @@ public class SctpChannelImpl extends SctpChannel
                         /* message or nothing */
                         if (resultContainer.hasSomething()) {
                             /* Set the association before returning */
-                            SctpMessageInfoImpl info =
+                            MessageInfoImpl info =
                                     resultContainer.getMessageInfo();
                             synchronized (stateLock) {
                                 assert association != null;
@@ -812,7 +821,7 @@ public class SctpChannelImpl extends SctpChannel
 
     private int receive(int fd,
                         ByteBuffer dst,
-                        SctpResultContainer resultContainer,
+                        ResultContainer resultContainer,
                         boolean peek)
             throws IOException {
         int pos = dst.position();
@@ -837,7 +846,7 @@ public class SctpChannelImpl extends SctpChannel
     }
 
     private int receiveIntoNativeBuffer(int fd,
-                                        SctpResultContainer resultContainer,
+                                        ResultContainer resultContainer,
                                         ByteBuffer bb,
                                         int rem,
                                         int pos,
@@ -854,7 +863,7 @@ public class SctpChannelImpl extends SctpChannel
     private InternalNotificationHandler internalNotificationHandler =
             new InternalNotificationHandler();
 
-    private void handleNotificationInternal(SctpResultContainer resultContainer)
+    private void handleNotificationInternal(ResultContainer resultContainer)
     {
         invokeNotificationHandler(resultContainer,
                 internalNotificationHandler, null);
@@ -869,8 +878,8 @@ public class SctpChannelImpl extends SctpChannel
             if (not.event().equals(
                     AssociationChangeNotification.AssocChangeEvent.COMM_UP) &&
                     association == null) {
-                SctpAssocChange sac = (SctpAssocChange) not;
-                association = new SctpAssociationImpl
+                AssociationChange sac = (AssociationChange) not;
+                association = new AssociationImpl
                        (sac.assocId(), sac.maxInStreams(), sac.maxOutStreams());
             }
             return HandlerResult.CONTINUE;
@@ -878,7 +887,7 @@ public class SctpChannelImpl extends SctpChannel
     }
 
     private <T> HandlerResult invokeNotificationHandler
-                                 (SctpResultContainer resultContainer,
+                                 (ResultContainer resultContainer,
                                   NotificationHandler<T> handler,
                                   T attachment) {
         SctpNotification notification = resultContainer.notification();
@@ -1078,7 +1087,7 @@ public class SctpChannelImpl extends SctpChannel
     /* Native */
     private static native void initIDs();
 
-    static native int receive0(int fd, SctpResultContainer resultContainer,
+    static native int receive0(int fd, ResultContainer resultContainer,
             long address, int length, boolean peek) throws IOException;
 
     static native int send0(int fd, long address, int length,

@@ -41,9 +41,9 @@ import sun.misc.*;
  * @since 1.4
  */
 
-class PollArrayWrapper extends AbstractPollArrayWrapper {
+public class PollArrayWrapper extends AbstractPollArrayWrapper {
 
-    static final short POLLCONN = POLLOUT;
+    public static final short POLLCONN = POLLOUT;
 
     // File descriptor to write for interrupt
     int interruptFD;

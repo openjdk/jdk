@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.nio.ch;
+package sun.nio.ch.sctp;
 
 import java.net.InetAddress;
 import java.net.SocketAddress;
@@ -53,8 +53,17 @@ import com.sun.nio.sctp.MessageInfo;
 import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpMultiChannel;
 import com.sun.nio.sctp.SctpSocketOption;
+import sun.nio.ch.DirectBuffer;
+import sun.nio.ch.NativeThread;
+import sun.nio.ch.IOStatus;
+import sun.nio.ch.IOUtil;
+import sun.nio.ch.Net;
+import sun.nio.ch.PollArrayWrapper;
+import sun.nio.ch.SelChImpl;
+import sun.nio.ch.SelectionKeyImpl;
+import sun.nio.ch.Util;
 import static com.sun.nio.sctp.SctpStandardSocketOptions.*;
-import static sun.nio.ch.SctpResultContainer.*;
+import static sun.nio.ch.sctp.ResultContainer.*;
 
 /**
  * An implementation of SctpMultiChannel
@@ -466,7 +475,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
         receiveInvoked.set(Boolean.TRUE);
 
         try {
-            SctpResultContainer resultContainer = new SctpResultContainer();
+            ResultContainer resultContainer = new ResultContainer();
             do {
                 resultContainer.clear();
                 synchronized (receiveLock) {
@@ -498,7 +507,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
                         /* message or nothing */
                         if (resultContainer.hasSomething()) {
                             /* Set the association before returning */
-                            SctpMessageInfoImpl info =
+                            MessageInfoImpl info =
                                     resultContainer.getMessageInfo();
                             info.setAssociation(lookupAssociation(info.
                                     associationID()));
@@ -542,7 +551,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
 
     private int receive(int fd,
                         ByteBuffer dst,
-                        SctpResultContainer resultContainer)
+                        ResultContainer resultContainer)
             throws IOException {
         int pos = dst.position();
         int lim = dst.limit();
@@ -566,7 +575,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
     }
 
     private int receiveIntoNativeBuffer(int fd,
-                                        SctpResultContainer resultContainer,
+                                        ResultContainer resultContainer,
                                         ByteBuffer bb,
                                         int rem,
                                         int pos)
@@ -580,7 +589,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
     private InternalNotificationHandler internalNotificationHandler =
             new InternalNotificationHandler();
 
-    private void handleNotificationInternal(SctpResultContainer resultContainer)
+    private void handleNotificationInternal(ResultContainer resultContainer)
     {
         invokeNotificationHandler(resultContainer,
                 internalNotificationHandler, null);
@@ -592,12 +601,12 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
         @Override
         public HandlerResult handleNotification(
                 AssociationChangeNotification not, Object unused) {
-            SctpAssocChange sac = (SctpAssocChange) not;
+            AssociationChange sac = (AssociationChange) not;
 
             /* Update map to reflect change in association */
             switch (not.event()) {
                 case COMM_UP :
-                    Association newAssociation = new SctpAssociationImpl
+                    Association newAssociation = new AssociationImpl
                        (sac.assocId(), sac.maxInStreams(), sac.maxOutStreams());
                     addAssociation(newAssociation);
                     break;
@@ -612,7 +621,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
     }
 
     private <T> HandlerResult invokeNotificationHandler(
-                                   SctpResultContainer resultContainer,
+                                   ResultContainer resultContainer,
                                    NotificationHandler<T> handler,
                                    T attachment) {
         HandlerResult result;
@@ -956,7 +965,7 @@ public class SctpMultiChannelImpl extends SctpMultiChannel
     /* Use common native implementation shared between
      * one-to-one and one-to-many */
     private static int receive0(int fd,
-                                SctpResultContainer resultContainer,
+                                ResultContainer resultContainer,
                                 long address,
                                 int length)
             throws IOException{

@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.nio.ch;
+package sun.nio.ch.sctp;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -34,6 +34,8 @@ import java.util.Set;
 import java.util.HashSet;
 import java.security.AccessController;
 import sun.security.action.GetPropertyAction;
+import sun.nio.ch.IOUtil;
+import sun.nio.ch.Net;
 import com.sun.nio.sctp.SctpSocketOption;
 import static com.sun.nio.sctp.SctpStandardSocketOptions.*;
 
