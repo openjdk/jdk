@@ -22,48 +22,32 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.nio.ch;
 
-import com.sun.nio.sctp.Association;
-import com.sun.nio.sctp.ShutdownNotification;
+#include "sun_nio_ch_sctp_SctpServerChannelImpl.h"
 
-/**
- * An implementation of ShutdownNotification
+extern void Java_sun_nio_ch_ServerSocketChannelImpl_initIDs(JNIEnv* env,
+    jclass c);
+
+extern jint Java_sun_nio_ch_ServerSocketChannelImpl_accept0(JNIEnv* env,
+    jobject this, jobject ssfdo, jobject newfdo, jobjectArray isaa);
+
+/*
+ * Class:     sun_nio_ch_sctp_SctpServerChannelImpl
+ * Method:    initIDs
+ * Signature: ()V
  */
-public class SctpShutdown extends ShutdownNotification
-    implements SctpNotification
-{
-    private Association association;
-    /* assocId is used to lookup the association before the notification is
-     * returned to user code */
-    private int assocId;
+JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpServerChannelImpl_initIDs
+  (JNIEnv* env, jclass c) {
+    Java_sun_nio_ch_ServerSocketChannelImpl_initIDs(env, c);
+}
 
-    /* Invoked from native */
-    private SctpShutdown(int assocId) {
-        this.assocId = assocId;
-    }
-
-    @Override
-    public int assocId() {
-        return assocId;
-    }
-
-    @Override
-    public void setAssociation(Association association) {
-        this.association = association;
-    }
-
-    @Override
-    public Association association() {
-        assert association != null;
-        return association;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(super.toString()).append(" [");
-        sb.append("Association:").append(association).append("]");
-        return sb.toString();
-    }
+/*
+ * Class:     sun_nio_ch_sctp_SctpServerChannelImpl
+ * Method:    accept0
+ * Signature: (Ljava/io/FileDescriptor;Ljava/io/FileDescriptor;[Ljava/net/InetSocketAddress;)I
+ */
+JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpServerChannelImpl_accept0
+  (JNIEnv* env, jobject this, jobject ssfdo, jobject newfdo, jobjectArray isaa) {
+    return Java_sun_nio_ch_ServerSocketChannelImpl_accept0(env, this,
+                                                           ssfdo, newfdo, isaa);
 }

@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.nio.ch;
+package sun.nio.ch.sctp;
 
 import java.net.SocketAddress;
 import java.net.InetSocketAddress;
@@ -41,6 +41,15 @@ import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpServerChannel;
 import com.sun.nio.sctp.SctpSocketOption;
 import com.sun.nio.sctp.SctpStandardSocketOptions;
+import sun.nio.ch.DirectBuffer;
+import sun.nio.ch.NativeThread;
+import sun.nio.ch.IOStatus;
+import sun.nio.ch.IOUtil;
+import sun.nio.ch.Net;
+import sun.nio.ch.PollArrayWrapper;
+import sun.nio.ch.SelChImpl;
+import sun.nio.ch.SelectionKeyImpl;
+import sun.nio.ch.Util;
 
 /**
  * An implementation of SctpServerChannel

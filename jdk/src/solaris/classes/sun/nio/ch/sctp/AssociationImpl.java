@@ -22,32 +22,31 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package sun.nio.ch.sctp;
 
-#include "sun_nio_ch_SctpServerChannelImpl.h"
+import com.sun.nio.sctp.Association;
 
-extern void Java_sun_nio_ch_ServerSocketChannelImpl_initIDs(JNIEnv* env,
-    jclass c);
-
-extern jint Java_sun_nio_ch_ServerSocketChannelImpl_accept0(JNIEnv* env,
-    jobject this, jobject ssfdo, jobject newfdo, jobjectArray isaa);
-
-/*
- * Class:     sun_nio_ch_SctpServerChannelImpl
- * Method:    initIDs
- * Signature: ()V
+/**
+ * An implementation of Association
  */
-JNIEXPORT void JNICALL Java_sun_nio_ch_SctpServerChannelImpl_initIDs
-  (JNIEnv* env, jclass c) {
-    Java_sun_nio_ch_ServerSocketChannelImpl_initIDs(env, c);
+public class AssociationImpl extends Association {
+    public AssociationImpl(int associationID,
+                           int maxInStreams,
+                           int maxOutStreams) {
+        super(associationID, maxInStreams, maxOutStreams);
+    }
+
+    @Override
+    public String toString() {
+        StringBuffer sb = new StringBuffer(super.toString());
+        return sb.append("[associationID:")
+                 .append(associationID())
+                 .append(", maxIn:")
+                 .append(maxInboundStreams())
+                 .append(", maxOut:")
+                 .append(maxOutboundStreams())
+                 .append("]")
+                 .toString();
+    }
 }
 
-/*
- * Class:     sun_nio_ch_SctpServerChannelImpl
- * Method:    accept0
- * Signature: (Ljava/io/FileDescriptor;Ljava/io/FileDescriptor;[Ljava/net/InetSocketAddress;)I
- */
-JNIEXPORT jint JNICALL Java_sun_nio_ch_SctpServerChannelImpl_accept0
-  (JNIEnv* env, jobject this, jobject ssfdo, jobject newfdo, jobjectArray isaa) {
-    return Java_sun_nio_ch_ServerSocketChannelImpl_accept0(env, this,
-                                                           ssfdo, newfdo, isaa);
-}
