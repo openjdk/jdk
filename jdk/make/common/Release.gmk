@@ -362,10 +362,11 @@ TOOLS = \
 	com/sun/tools/corba     \
 	com/sun/tools/internal/xjc       \
 	com/sun/tools/internal/ws       \
-	META-INF/services/com.sun.mirror.apt.AnnotationProcessorFactory \
-	META-INF/services/com.sun.tools.xjc.Plugin \
+	META-INF/services/com.sun.tools.internal.ws.wscompile.Plugin \
+	META-INF/services/com.sun.tools.internal.xjc.Plugin \
 	com/sun/istack/internal/tools       \
-	com/sun/istack/internal/ws       \
+	com/sun/tools/internal/jxc/ap   \
+	com/sun/tools/internal/ws/wscompile/plugin/at_generated \
         com/sun/codemodel       \
         com/sun/tools/internal/jxc             \
         com/sun/xml/internal/rngom       \
@@ -528,10 +529,8 @@ $(NOT_RT_JAR_LIST): FRC
 	$(ECHO) "com/sun/mirror/" >> $@
 	$(ECHO) "com/sun/source/" >> $@
 	$(ECHO) "com/sun/istack/internal/tools/" >> $@
-	$(ECHO) "com/sun/istack/internal/ws/" >> $@
 	$(ECHO) "META-INF/services/com.sun.jdi.connect.Connector" >> $@
 	$(ECHO) "META-INF/services/com.sun.jdi.connect.spi.TransportService" >> $@
-	$(ECHO) "META-INF/services/com.sun.mirror.apt.AnnotationProcessorFactory" >> $@
 	$(ECHO) "META-INF/services/com.sun.tools.xjc.Plugin" >> $@
 	$(ECHO) "com/sun/tools/" >> $@
 	$(ECHO) "sun/jvmstat/" >> $@
@@ -1000,7 +999,7 @@ initial-image-jdk:: initial-image-jdk-setup \
 	@#
 	@# files that might not exist need to be touched.
 	@#
-	$(TOUCH) $(CLASSBINDIR)/META-INF/services/com.sun.tools.xjc.Plugin
+	$(TOUCH) $(CLASSBINDIR)/META-INF/services/com.sun.tools.internal.xjc.Plugin
 	@#
 	@# lib/tools.jar
 	@#
