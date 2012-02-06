@@ -76,7 +76,7 @@ BUILD_TARGET  = -DHOTSPOT_BUILD_TARGET="\"$(TARGET)\""
 BUILD_USER    = -DHOTSPOT_BUILD_USER="\"$(HOTSPOT_BUILD_USER)\""
 VM_DISTRO     = -DHOTSPOT_VM_DISTRO="\"$(HOTSPOT_VM_DISTRO)\""
 
-CPPFLAGS =           \
+CXXFLAGS =           \
   ${SYSDEFS}         \
   ${INCLUDES}        \
   ${BUILD_VERSION}   \
@@ -88,7 +88,7 @@ CPPFLAGS =           \
 # This is VERY important! The version define must only be supplied to vm_version.o
 # If not, ccache will not re-use the cache at all, since the version string might contain
 # a time and date. 
-vm_version.o: CPPFLAGS += ${JRE_VERSION} 
+vm_version.o: CXXFLAGS += ${JRE_VERSION} 
 
 # CFLAGS_WARN holds compiler options to suppress/enable warnings.
 CFLAGS += $(CFLAGS_WARN)
@@ -269,17 +269,17 @@ endif
 endif
 
 ifdef USE_GCC
-LINK_VM = $(LINK_LIB.c)
-else
 LINK_VM = $(LINK_LIB.CC)
+else
+LINK_VM = $(LINK_LIB.CXX)
 endif
 # making the library:
 $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) 
 ifeq ($(filter -sbfast -xsbfast, $(CFLAGS_BROWSE)),)
 	@echo Linking vm...
-	$(QUIETLY) $(LINK_LIB.CC/PRE_HOOK)
+	$(QUIETLY) $(LINK_LIB.CXX/PRE_HOOK)
 	$(QUIETLY) $(LINK_VM) $(LFLAGS_VM) -o $@ $(LIBJVM.o) $(LIBS_VM)
-	$(QUIETLY) $(LINK_LIB.CC/POST_HOOK)
+	$(QUIETLY) $(LINK_LIB.CXX/POST_HOOK)
 	$(QUIETLY) rm -f $@.1 && ln -s $@ $@.1
 	$(QUIETLY) [ -f $(LIBJVM_G) ] || ln -s $@ $(LIBJVM_G)
 	$(QUIETLY) [ -f $(LIBJVM_G).1 ] || ln -s $@.1 $(LIBJVM_G).1
