@@ -62,10 +62,14 @@ $(UNIVERSAL_LIPO_LIST):
 
 # Copy built non-universal binaries in place
 $(UNIVERSAL_COPY_LIST):
-	BUILT_COPY_FILE="$(EXPORT_JRE_LIB_DIR)/i386/$(subst $(EXPORT_JRE_LIB_DIR)/,,$@)"; \
-	if [ -f $${BUILT_COPY_FILE} ]; then \
-	  $(MKDIR) -p $(shell dirname $@); \
-	  $(CP) $${BUILT_COPY_FILE} $@; \
+	BUILT_COPY_FILES="`find $(EXPORT_JRE_LIB_DIR)/{i386,amd64}/$(subst $(EXPORT_JRE_LIB_DIR)/,,$@) 2>/dev/null`"; \
+	if [ -n "$${BUILT_COPY_FILES}" ]; then \
+	  for i in $${BUILT_COPY_FILES}; do \
+	    if [ -f $${i} ]; then \
+	      $(MKDIR) -p $(shell dirname $@); \
+	      $(CP) $${i} $@; \
+	    fi; \
+	  done; \
 	fi
 
 
