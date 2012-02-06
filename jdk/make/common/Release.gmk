@@ -132,7 +132,6 @@ endif
 JDK_MAN_PAGES =            \
 	$(JRE_MAN_PAGES)   \
 	appletviewer.1     \
-        apt.1              \
 	extcheck.1         \
 	idlj.1             \
 	jar.1              \
@@ -264,7 +263,6 @@ SOURCES = \
 	com/sun/java/swing		\
 	com/sun/javadoc			\
 	com/sun/jmx			\
-	com/sun/mirror			\
 	com/sun/source			\
 	com/sun/naming			\
 	com/sun/security/auth		\
@@ -346,7 +344,6 @@ TOOLS = \
 	com/sun/javadoc		\
 	com/sun/jdi		\
 	com/sun/jarsigner	\
-	com/sun/mirror		\
 	com/sun/source          \
 	com/sun/tools/classfile \
 	com/sun/tools/doclets   \
@@ -356,7 +353,6 @@ TOOLS = \
 	com/sun/tools/hat       \
 	com/sun/tools/javac     \
 	com/sun/tools/javadoc   \
-	com/sun/tools/apt       \
 	com/sun/tools/javah     \
 	com/sun/tools/javap     \
 	com/sun/tools/corba     \
@@ -439,7 +435,6 @@ NOTJRETOOLS = \
 	java-rmi.cgi \
 	javac$(EXE_SUFFIX) \
 	javadoc$(EXE_SUFFIX) \
-	apt$(EXE_SUFFIX) \
 	javah$(EXE_SUFFIX) \
 	javap$(EXE_SUFFIX) \
 	jcmd$(EXE_SUFFIX) \
@@ -526,7 +521,6 @@ $(NOT_RT_JAR_LIST): FRC
 	$(ECHO) "com/sun/javadoc/" >> $@
 	$(ECHO) "com/sun/jdi/" >> $@
 	$(ECHO) "com/sun/jarsigner/" >> $@
-	$(ECHO) "com/sun/mirror/" >> $@
 	$(ECHO) "com/sun/source/" >> $@
 	$(ECHO) "com/sun/istack/internal/tools/" >> $@
 	$(ECHO) "META-INF/services/com.sun.jdi.connect.Connector" >> $@
