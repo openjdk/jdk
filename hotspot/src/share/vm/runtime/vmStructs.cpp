@@ -314,7 +314,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(instanceKlass,               _init_thread,                                  Thread*)                               \
   nonstatic_field(instanceKlass,               _vtable_len,                                   int)                                   \
   nonstatic_field(instanceKlass,               _itable_len,                                   int)                                   \
-  nonstatic_field(instanceKlass,               _reference_type,                               ReferenceType)                         \
+  nonstatic_field(instanceKlass,               _reference_type,                               u1)                                    \
   volatile_nonstatic_field(instanceKlass,      _oop_map_cache,                                OopMapCache*)                          \
   nonstatic_field(instanceKlass,               _jni_ids,                                      JNIid*)                                \
   nonstatic_field(instanceKlass,               _osr_nmethods_head,                            nmethod*)                              \
