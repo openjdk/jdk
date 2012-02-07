@@ -39,8 +39,8 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 /**
- * The <code>String</code> class represents character strings. All
- * string literals in Java programs, such as <code>"abc"</code>, are
+ * The {@code String} class represents character strings. All
+ * string literals in Java programs, such as {@code "abc"}, are
  * implemented as instances of this class.
  * <p>
  * Strings are constant; their values cannot be changed after they
@@ -63,7 +63,7 @@ import java.util.regex.PatternSyntaxException;
  *     String d = cde.substring(1, 2);
  * </pre></blockquote>
  * <p>
- * The class <code>String</code> includes methods for examining
+ * The class {@code String} includes methods for examining
  * individual characters of the sequence, for comparing strings, for
  * searching strings, for extracting substrings, and for creating a
  * copy of a string with all characters translated to uppercase or to
@@ -73,10 +73,10 @@ import java.util.regex.PatternSyntaxException;
  * The Java language provides special support for the string
  * concatenation operator (&nbsp;+&nbsp;), and for conversion of
  * other objects to strings. String concatenation is implemented
- * through the <code>StringBuilder</code>(or <code>StringBuffer</code>)
- * class and its <code>append</code> method.
+ * through the {@code StringBuilder}(or {@code StringBuffer})
+ * class and its {@code append} method.
  * String conversions are implemented through the method
- * <code>toString</code>, defined by <code>Object</code> and
+ * {@code toString}, defined by {@code Object} and
  * inherited by all classes in Java. For additional information on
  * string concatenation and conversion, see Gosling, Joy, and Steele,
  * <i>The Java Language Specification</i>.
@@ -85,16 +85,16 @@ import java.util.regex.PatternSyntaxException;
  * or method in this class will cause a {@link NullPointerException} to be
  * thrown.
  *
- * <p>A <code>String</code> represents a string in the UTF-16 format
+ * <p>A {@code String} represents a string in the UTF-16 format
  * in which <em>supplementary characters</em> are represented by <em>surrogate
  * pairs</em> (see the section <a href="Character.html#unicode">Unicode
- * Character Representations</a> in the <code>Character</code> class for
+ * Character Representations</a> in the {@code Character} class for
  * more information).
- * Index values refer to <code>char</code> code units, so a supplementary
- * character uses two positions in a <code>String</code>.
- * <p>The <code>String</code> class provides methods for dealing with
+ * Index values refer to {@code char} code units, so a supplementary
+ * character uses two positions in a {@code String}.
+ * <p>The {@code String} class provides methods for dealing with
  * Unicode code points (i.e., characters), in addition to those for
- * dealing with Unicode code units (i.e., <code>char</code> values).
+ * dealing with Unicode code units (i.e., {@code char} values).
  *
  * @author  Lee Boynton
  * @author  Arthur van Hoff
@@ -131,9 +131,9 @@ public final class String
      * A String instance is written initially into an ObjectOutputStream in the
      * following format:
      * <pre>
-     *      <code>TC_STRING</code> (utf String)
+     *      {@code TC_STRING} (utf String)
      * </pre>
-     * The String is written by method <code>DataOutput.writeUTF</code>.
+     * The String is written by method {@code DataOutput.writeUTF}.
      * A new handle is generated to  refer to all future references to the
      * string instance within the stream.
      */
@@ -673,20 +673,20 @@ public final class String
     }
 
     /**
-     * Returns the <code>char</code> value at the
-     * specified index. An index ranges from <code>0</code> to
-     * <code>length() - 1</code>. The first <code>char</code> value of the sequence
-     * is at index <code>0</code>, the next at index <code>1</code>,
+     * Returns the {@code char} value at the
+     * specified index. An index ranges from {@code 0} to
+     * {@code length() - 1}. The first {@code char} value of the sequence
+     * is at index {@code 0}, the next at index {@code 1},
      * and so on, as for array indexing.
      *
-     * <p>If the <code>char</code> value specified by the index is a
+     * <p>If the {@code char} value specified by the index is a
      * <a href="Character.html#unicode">surrogate</a>, the surrogate
      * value is returned.
      *
-     * @param      index   the index of the <code>char</code> value.
-     * @return     the <code>char</code> value at the specified index of this string.
-     *             The first <code>char</code> value is at index <code>0</code>.
-     * @exception  IndexOutOfBoundsException  if the <code>index</code>
+     * @param      index   the index of the {@code char} value.
+     * @return     the {@code char} value at the specified index of this string.
+     *             The first {@code char} value is at index {@code 0}.
+     * @exception  IndexOutOfBoundsException  if the {@code index}
      *             argument is negative or not less than the length of this
      *             string.
      */
@@ -699,22 +699,22 @@ public final class String
 
     /**
      * Returns the character (Unicode code point) at the specified
-     * index. The index refers to <code>char</code> values
-     * (Unicode code units) and ranges from <code>0</code> to
-     * {@link #length()}<code> - 1</code>.
+     * index. The index refers to {@code char} values
+     * (Unicode code units) and ranges from {@code 0} to
+     * {@link #length()}{@code  - 1}.
      *
-     * <p> If the <code>char</code> value specified at the given index
+     * <p> If the {@code char} value specified at the given index
      * is in the high-surrogate range, the following index is less
-     * than the length of this <code>String</code>, and the
-     * <code>char</code> value at the following index is in the
+     * than the length of this {@code String}, and the
+     * {@code char} value at the following index is in the
      * low-surrogate range, then the supplementary code point
      * corresponding to this surrogate pair is returned. Otherwise,
-     * the <code>char</code> value at the given index is returned.
+     * the {@code char} value at the given index is returned.
      *
-     * @param      index the index to the <code>char</code> values
+     * @param      index the index to the {@code char} values
      * @return     the code point value of the character at the
-     *             <code>index</code>
-     * @exception  IndexOutOfBoundsException  if the <code>index</code>
+     *             {@code index}
+     * @exception  IndexOutOfBoundsException  if the {@code index}
      *             argument is negative or not less than the length of this
      *             string.
      * @since      1.5
@@ -728,22 +728,22 @@ public final class String
 
     /**
      * Returns the character (Unicode code point) before the specified
-     * index. The index refers to <code>char</code> values
-     * (Unicode code units) and ranges from <code>1</code> to {@link
+     * index. The index refers to {@code char} values
+     * (Unicode code units) and ranges from {@code 1} to {@link
      * CharSequence#length() length}.
      *
-     * <p> If the <code>char</code> value at <code>(index - 1)</code>
-     * is in the low-surrogate range, <code>(index - 2)</code> is not
-     * negative, and the <code>char</code> value at <code>(index -
-     * 2)</code> is in the high-surrogate range, then the
+     * <p> If the {@code char} value at {@code (index - 1)}
+     * is in the low-surrogate range, {@code (index - 2)} is not
+     * negative, and the {@code char} value at {@code (index -
+     * 2)} is in the high-surrogate range, then the
      * supplementary code point value of the surrogate pair is
-     * returned. If the <code>char</code> value at <code>index -
-     * 1</code> is an unpaired low-surrogate or a high-surrogate, the
+     * returned. If the {@code char} value at {@code index -
+     * 1} is an unpaired low-surrogate or a high-surrogate, the
      * surrogate value is returned.
      *
      * @param     index the index following the code point that should be returned
      * @return    the Unicode code point value before the given index.
-     * @exception IndexOutOfBoundsException if the <code>index</code>
+     * @exception IndexOutOfBoundsException if the {@code index}
      *            argument is less than 1 or greater than the length
      *            of this string.
      * @since     1.5
@@ -758,23 +758,23 @@ public final class String
 
     /**
      * Returns the number of Unicode code points in the specified text
-     * range of this <code>String</code>. The text range begins at the
-     * specified <code>beginIndex</code> and extends to the
-     * <code>char</code> at index <code>endIndex - 1</code>. Thus the
-     * length (in <code>char</code>s) of the text range is
-     * <code>endIndex-beginIndex</code>. Unpaired surrogates within
+     * range of this {@code String}. The text range begins at the
+     * specified {@code beginIndex} and extends to the
+     * {@code char} at index {@code endIndex - 1}. Thus the
+     * length (in {@code char}s) of the text range is
+     * {@code endIndex-beginIndex}. Unpaired surrogates within
      * the text range count as one code point each.
      *
-     * @param beginIndex the index to the first <code>char</code> of
+     * @param beginIndex the index to the first {@code char} of
      * the text range.
-     * @param endIndex the index after the last <code>char</code> of
+     * @param endIndex the index after the last {@code char} of
      * the text range.
      * @return the number of Unicode code points in the specified text
      * range
      * @exception IndexOutOfBoundsException if the
-     * <code>beginIndex</code> is negative, or <code>endIndex</code>
-     * is larger than the length of this <code>String</code>, or
-     * <code>beginIndex</code> is larger than <code>endIndex</code>.
+     * {@code beginIndex} is negative, or {@code endIndex}
+     * is larger than the length of this {@code String}, or
+     * {@code beginIndex} is larger than {@code endIndex}.
      * @since  1.5
      */
     public int codePointCount(int beginIndex, int endIndex) {
@@ -785,23 +785,23 @@ public final class String
     }
 
     /**
-     * Returns the index within this <code>String</code> that is
-     * offset from the given <code>index</code> by
-     * <code>codePointOffset</code> code points. Unpaired surrogates
-     * within the text range given by <code>index</code> and
-     * <code>codePointOffset</code> count as one code point each.
+     * Returns the index within this {@code String} that is
+     * offset from the given {@code index} by
+     * {@code codePointOffset} code points. Unpaired surrogates
+     * within the text range given by {@code index} and
+     * {@code codePointOffset} count as one code point each.
      *
      * @param index the index to be offset
      * @param codePointOffset the offset in code points
-     * @return the index within this <code>String</code>
-     * @exception IndexOutOfBoundsException if <code>index</code>
+     * @return the index within this {@code String}
+     * @exception IndexOutOfBoundsException if {@code index}
      *   is negative or larger then the length of this
-     *   <code>String</code>, or if <code>codePointOffset</code> is positive
-     *   and the substring starting with <code>index</code> has fewer
-     *   than <code>codePointOffset</code> code points,
-     *   or if <code>codePointOffset</code> is negative and the substring
-     *   before <code>index</code> has fewer than the absolute value
-     *   of <code>codePointOffset</code> code points.
+     *   {@code String}, or if {@code codePointOffset} is positive
+     *   and the substring starting with {@code index} has fewer
+     *   than {@code codePointOffset} code points,
+     *   or if {@code codePointOffset} is negative and the substring
+     *   before {@code index} has fewer than the absolute value
+     *   of {@code codePointOffset} code points.
      * @since 1.5
      */
     public int offsetByCodePoints(int index, int codePointOffset) {
@@ -824,11 +824,11 @@ public final class String
      * Copies characters from this string into the destination character
      * array.
      * <p>
-     * The first character to be copied is at index <code>srcBegin</code>;
-     * the last character to be copied is at index <code>srcEnd-1</code>
+     * The first character to be copied is at index {@code srcBegin};
+     * the last character to be copied is at index {@code srcEnd-1}
      * (thus the total number of characters to be copied is
-     * <code>srcEnd-srcBegin</code>). The characters are copied into the
-     * subarray of <code>dst</code> starting at index <code>dstBegin</code>
+     * {@code srcEnd-srcBegin}). The characters are copied into the
+     * subarray of {@code dst} starting at index {@code dstBegin}
      * and ending at index:
      * <p><blockquote><pre>
      *     dstbegin + (srcEnd-srcBegin) - 1
@@ -842,13 +842,13 @@ public final class String
      * @param      dstBegin   the start offset in the destination array.
      * @exception IndexOutOfBoundsException If any of the following
      *            is true:
-     *            <ul><li><code>srcBegin</code> is negative.
-     *            <li><code>srcBegin</code> is greater than <code>srcEnd</code>
-     *            <li><code>srcEnd</code> is greater than the length of this
+     *            <ul><li>{@code srcBegin} is negative.
+     *            <li>{@code srcBegin} is greater than {@code srcEnd}
+     *            <li>{@code srcEnd} is greater than the length of this
      *                string
-     *            <li><code>dstBegin</code> is negative
-     *            <li><code>dstBegin+(srcEnd-srcBegin)</code> is larger than
-     *                <code>dst.length</code></ul>
+     *            <li>{@code dstBegin} is negative
+     *            <li>{@code dstBegin+(srcEnd-srcBegin)} is larger than
+     *                {@code dst.length}</ul>
      */
     public void getChars(int srcBegin, int srcEnd, char dst[], int dstBegin) {
         if (srcBegin < 0) {
@@ -1135,14 +1135,14 @@ public final class String
      * Compares two strings lexicographically.
      * The comparison is based on the Unicode value of each character in
      * the strings. The character sequence represented by this
-     * <code>String</code> object is compared lexicographically to the
+     * {@code String} object is compared lexicographically to the
      * character sequence represented by the argument string. The result is
-     * a negative integer if this <code>String</code> object
+     * a negative integer if this {@code String} object
      * lexicographically precedes the argument string. The result is a
-     * positive integer if this <code>String</code> object lexicographically
+     * positive integer if this {@code String} object lexicographically
      * follows the argument string. The result is zero if the strings
-     * are equal; <code>compareTo</code> returns <code>0</code> exactly when
-     * the {@link #equals(Object)} method would return <code>true</code>.
+     * are equal; {@code compareTo} returns {@code 0} exactly when
+     * the {@link #equals(Object)} method would return {@code true}.
      * <p>
      * This is the definition of lexicographic ordering. If two strings are
      * different, then either they have different characters at some index
@@ -1151,25 +1151,25 @@ public final class String
      * positions, let <i>k</i> be the smallest such index; then the string
      * whose character at position <i>k</i> has the smaller value, as
      * determined by using the &lt; operator, lexicographically precedes the
-     * other string. In this case, <code>compareTo</code> returns the
-     * difference of the two character values at position <code>k</code> in
+     * other string. In this case, {@code compareTo} returns the
+     * difference of the two character values at position {@code k} in
      * the two string -- that is, the value:
      * <blockquote><pre>
      * this.charAt(k)-anotherString.charAt(k)
      * </pre></blockquote>
      * If there is no index position at which they differ, then the shorter
      * string lexicographically precedes the longer string. In this case,
-     * <code>compareTo</code> returns the difference of the lengths of the
+     * {@code compareTo} returns the difference of the lengths of the
      * strings -- that is, the value:
      * <blockquote><pre>
      * this.length()-anotherString.length()
      * </pre></blockquote>
      *
-     * @param   anotherString   the <code>String</code> to be compared.
-     * @return  the value <code>0</code> if the argument string is equal to
-     *          this string; a value less than <code>0</code> if this string
+     * @param   anotherString   the {@code String} to be compared.
+     * @return  the value {@code 0} if the argument string is equal to
+     *          this string; a value less than {@code 0} if this string
      *          is lexicographically less than the string argument; and a
-     *          value greater than <code>0</code> if this string is
+     *          value greater than {@code 0} if this string is
      *          lexicographically greater than the string argument.
      */
     public int compareTo(String anotherString) {
@@ -1205,8 +1205,8 @@ public final class String
     }
 
     /**
-     * A Comparator that orders <code>String</code> objects as by
-     * <code>compareToIgnoreCase</code>. This comparator is serializable.
+     * A Comparator that orders {@code String} objects as by
+     * {@code compareToIgnoreCase}. This comparator is serializable.
      * <p>
      * Note that this Comparator does <em>not</em> take locale into account,
      * and will result in an unsatisfactory ordering for certain locales.
@@ -1253,9 +1253,9 @@ public final class String
     /**
      * Compares two strings lexicographically, ignoring case
      * differences. This method returns an integer whose sign is that of
-     * calling <code>compareTo</code> with normalized versions of the strings
+     * calling {@code compareTo} with normalized versions of the strings
      * where case differences have been eliminated by calling
-     * <code>Character.toLowerCase(Character.toUpperCase(character))</code> on
+     * {@code Character.toLowerCase(Character.toUpperCase(character))} on
      * each character.
      * <p>
      * Note that this method does <em>not</em> take locale into account,
@@ -1263,7 +1263,7 @@ public final class String
      * The java.text package provides <em>collators</em> to allow
      * locale-sensitive ordering.
      *
-     * @param   str   the <code>String</code> to be compared.
+     * @param   str   the {@code String} to be compared.
      * @return  a negative integer, zero, or a positive integer as the
      *          specified String is greater than, equal to, or less
      *          than this String, ignoring case considerations.
@@ -1301,9 +1301,9 @@ public final class String
      * @param   ooffset   the starting offset of the subregion in the string
      *                    argument.
      * @param   len       the number of characters to compare.
-     * @return  <code>true</code> if the specified subregion of this string
+     * @return  {@code true} if the specified subregion of this string
      *          exactly matches the specified subregion of the string argument;
-     *          <code>false</code> otherwise.
+     *          {@code false} otherwise.
      */
     public boolean regionMatches(int toffset, String other, int ooffset,
                                  int len) {
@@ -1360,7 +1360,7 @@ public final class String
      * </pre></blockquote>
      * </ul>
      *
-     * @param   ignoreCase   if <code>true</code>, ignore case when comparing
+     * @param   ignoreCase   if {@code true}, ignore case when comparing
      *                       characters.
      * @param   toffset      the starting offset of the subregion in this
      *                       string.
@@ -1368,10 +1368,10 @@ public final class String
      * @param   ooffset      the starting offset of the subregion in the string
      *                       argument.
      * @param   len          the number of characters to compare.
-     * @return  <code>true</code> if the specified subregion of this string
+     * @return  {@code true} if the specified subregion of this string
      *          matches the specified subregion of the string argument;
-     *          <code>false</code> otherwise. Whether the matching is exact
-     *          or case insensitive depends on the <code>ignoreCase</code>
+     *          {@code false} otherwise. Whether the matching is exact
+     *          or case insensitive depends on the {@code ignoreCase}
      *          argument.
      */
     public boolean regionMatches(boolean ignoreCase, int toffset,
@@ -1420,12 +1420,12 @@ public final class String
      *
      * @param   prefix    the prefix.
      * @param   toffset   where to begin looking in this string.
-     * @return  <code>true</code> if the character sequence represented by the
+     * @return  {@code true} if the character sequence represented by the
      *          argument is a prefix of the substring of this object starting
-     *          at index <code>toffset</code>; <code>false</code> otherwise.
-     *          The result is <code>false</code> if <code>toffset</code> is
+     *          at index {@code toffset}; {@code false} otherwise.
+     *          The result is {@code false} if {@code toffset} is
      *          negative or greater than the length of this
-     *          <code>String</code> object; otherwise the result is the same
+     *          {@code String} object; otherwise the result is the same
      *          as the result of the expression
      *          <pre>
      *          this.substring(toffset).startsWith(prefix)
@@ -1453,12 +1453,12 @@ public final class String
      * Tests if this string starts with the specified prefix.
      *
      * @param   prefix   the prefix.
-     * @return  <code>true</code> if the character sequence represented by the
+     * @return  {@code true} if the character sequence represented by the
      *          argument is a prefix of the character sequence represented by
-     *          this string; <code>false</code> otherwise.
-     *          Note also that <code>true</code> will be returned if the
+     *          this string; {@code false} otherwise.
+     *          Note also that {@code true} will be returned if the
      *          argument is an empty string or is equal to this
-     *          <code>String</code> object as determined by the
+     *          {@code String} object as determined by the
      *          {@link #equals(Object)} method.
      * @since   1. 0
      */
@@ -1470,11 +1470,11 @@ public final class String
      * Tests if this string ends with the specified suffix.
      *
      * @param   suffix   the suffix.
-     * @return  <code>true</code> if the character sequence represented by the
+     * @return  {@code true} if the character sequence represented by the
      *          argument is a suffix of the character sequence represented by
-     *          this object; <code>false</code> otherwise. Note that the
-     *          result will be <code>true</code> if the argument is the
-     *          empty string or is equal to this <code>String</code> object
+     *          this object; {@code false} otherwise. Note that the
+     *          result will be {@code true} if the argument is the
+     *          empty string or is equal to this {@code String} object
      *          as determined by the {@link #equals(Object)} method.
      */
     public boolean endsWith(String suffix) {
@@ -1483,13 +1483,13 @@ public final class String
 
     /**
      * Returns a hash code for this string. The hash code for a
-     * <code>String</code> object is computed as
+     * {@code String} object is computed as
      * <blockquote><pre>
      * s[0]*31^(n-1) + s[1]*31^(n-2) + ... + s[n-1]
      * </pre></blockquote>
-     * using <code>int</code> arithmetic, where <code>s[i]</code> is the
-     * <i>i</i>th character of the string, <code>n</code> is the length of
-     * the string, and <code>^</code> indicates exponentiation.
+     * using {@code int} arithmetic, where {@code s[i]} is the
+     * <i>i</i>th character of the string, {@code n} is the length of
+     * the string, and {@code ^} indicates exponentiation.
      * (The hash value of the empty string is zero.)
      *
      * @return  a hash code value for this object.
@@ -1512,26 +1512,26 @@ public final class String
     /**
      * Returns the index within this string of the first occurrence of
      * the specified character. If a character with value
-     * <code>ch</code> occurs in the character sequence represented by
-     * this <code>String</code> object, then the index (in Unicode
+     * {@code ch} occurs in the character sequence represented by
+     * this {@code String} object, then the index (in Unicode
      * code units) of the first such occurrence is returned. For
-     * values of <code>ch</code> in the range from 0 to 0xFFFF
+     * values of {@code ch} in the range from 0 to 0xFFFF
      * (inclusive), this is the smallest value <i>k</i> such that:
      * <blockquote><pre>
      * this.charAt(<i>k</i>) == ch
      * </pre></blockquote>
-     * is true. For other values of <code>ch</code>, it is the
+     * is true. For other values of {@code ch}, it is the
      * smallest value <i>k</i> such that:
      * <blockquote><pre>
      * this.codePointAt(<i>k</i>) == ch
      * </pre></blockquote>
      * is true. In either case, if no such character occurs in this
-     * string, then <code>-1</code> is returned.
+     * string, then {@code -1} is returned.
      *
      * @param   ch   a character (Unicode code point).
      * @return  the index of the first occurrence of the character in the
      *          character sequence represented by this object, or
-     *          <code>-1</code> if the character does not occur.
+     *          {@code -1} if the character does not occur.
      */
     public int indexOf(int ch) {
         return indexOf(ch, 0);
@@ -1541,39 +1541,39 @@ public final class String
      * Returns the index within this string of the first occurrence of the
      * specified character, starting the search at the specified index.
      * <p>
-     * If a character with value <code>ch</code> occurs in the
-     * character sequence represented by this <code>String</code>
-     * object at an index no smaller than <code>fromIndex</code>, then
+     * If a character with value {@code ch} occurs in the
+     * character sequence represented by this {@code String}
+     * object at an index no smaller than {@code fromIndex}, then
      * the index of the first such occurrence is returned. For values
-     * of <code>ch</code> in the range from 0 to 0xFFFF (inclusive),
+     * of {@code ch} in the range from 0 to 0xFFFF (inclusive),
      * this is the smallest value <i>k</i> such that:
      * <blockquote><pre>
      * (this.charAt(<i>k</i>) == ch) && (<i>k</i> &gt;= fromIndex)
      * </pre></blockquote>
-     * is true. For other values of <code>ch</code>, it is the
+     * is true. For other values of {@code ch}, it is the
      * smallest value <i>k</i> such that:
      * <blockquote><pre>
      * (this.codePointAt(<i>k</i>) == ch) && (<i>k</i> &gt;= fromIndex)
      * </pre></blockquote>
      * is true. In either case, if no such character occurs in this
-     * string at or after position <code>fromIndex</code>, then
-     * <code>-1</code> is returned.
+     * string at or after position {@code fromIndex}, then
+     * {@code -1} is returned.
      *
      * <p>
-     * There is no restriction on the value of <code>fromIndex</code>. If it
+     * There is no restriction on the value of {@code fromIndex}. If it
      * is negative, it has the same effect as if it were zero: this entire
      * string may be searched. If it is greater than the length of this
      * string, it has the same effect as if it were equal to the length of
-     * this string: <code>-1</code> is returned.
+     * this string: {@code -1} is returned.
      *
-     * <p>All indices are specified in <code>char</code> values
+     * <p>All indices are specified in {@code char} values
      * (Unicode code units).
      *
      * @param   ch          a character (Unicode code point).
      * @param   fromIndex   the index to start the search from.
      * @return  the index of the first occurrence of the character in the
      *          character sequence represented by this object that is greater
-     *          than or equal to <code>fromIndex</code>, or <code>-1</code>
+     *          than or equal to {@code fromIndex}, or {@code -1}
      *          if the character does not occur.
      */
     public int indexOf(int ch, int fromIndex) {
@@ -1622,26 +1622,26 @@ public final class String
 
     /**
      * Returns the index within this string of the last occurrence of
-     * the specified character. For values of <code>ch</code> in the
+     * the specified character. For values of {@code ch} in the
      * range from 0 to 0xFFFF (inclusive), the index (in Unicode code
      * units) returned is the largest value <i>k</i> such that:
      * <blockquote><pre>
      * this.charAt(<i>k</i>) == ch
      * </pre></blockquote>
-     * is true. For other values of <code>ch</code>, it is the
+     * is true. For other values of {@code ch}, it is the
      * largest value <i>k</i> such that:
      * <blockquote><pre>
      * this.codePointAt(<i>k</i>) == ch
      * </pre></blockquote>
      * is true.  In either case, if no such character occurs in this
-     * string, then <code>-1</code> is returned.  The
-     * <code>String</code> is searched backwards starting at the last
+     * string, then {@code -1} is returned.  The
+     * {@code String} is searched backwards starting at the last
      * character.
      *
      * @param   ch   a character (Unicode code point).
      * @return  the index of the last occurrence of the character in the
      *          character sequence represented by this object, or
-     *          <code>-1</code> if the character does not occur.
+     *          {@code -1} if the character does not occur.
      */
     public int lastIndexOf(int ch) {
         return lastIndexOf(ch, count - 1);
@@ -1650,27 +1650,27 @@ public final class String
     /**
      * Returns the index within this string of the last occurrence of
      * the specified character, searching backward starting at the
-     * specified index. For values of <code>ch</code> in the range
+     * specified index. For values of {@code ch} in the range
      * from 0 to 0xFFFF (inclusive), the index returned is the largest
      * value <i>k</i> such that:
      * <blockquote><pre>
      * (this.charAt(<i>k</i>) == ch) && (<i>k</i> &lt;= fromIndex)
      * </pre></blockquote>
-     * is true. For other values of <code>ch</code>, it is the
+     * is true. For other values of {@code ch}, it is the
      * largest value <i>k</i> such that:
      * <blockquote><pre>
      * (this.codePointAt(<i>k</i>) == ch) && (<i>k</i> &lt;= fromIndex)
      * </pre></blockquote>
      * is true. In either case, if no such character occurs in this
-     * string at or before position <code>fromIndex</code>, then
-     * <code>-1</code> is returned.
+     * string at or before position {@code fromIndex}, then
+     * {@code -1} is returned.
      *
-     * <p>All indices are specified in <code>char</code> values
+     * <p>All indices are specified in {@code char} values
      * (Unicode code units).
      *
      * @param   ch          a character (Unicode code point).
      * @param   fromIndex   the index to start the search from. There is no
-     *          restriction on the value of <code>fromIndex</code>. If it is
+     *          restriction on the value of {@code fromIndex}. If it is
      *          greater than or equal to the length of this string, it has
      *          the same effect as if it were equal to one less than the
      *          length of this string: this entire string may be searched.
@@ -1678,7 +1678,7 @@ public final class String
      *          -1 is returned.
      * @return  the index of the last occurrence of the character in the
      *          character sequence represented by this object that is less
-     *          than or equal to <code>fromIndex</code>, or <code>-1</code>
+     *          than or equal to {@code fromIndex}, or {@code -1}
      *          if the character does not occur before that point.
      */
     public int lastIndexOf(int ch, int fromIndex) {
@@ -1921,8 +1921,8 @@ public final class String
      * @param      beginIndex   the beginning index, inclusive.
      * @return     the specified substring.
      * @exception  IndexOutOfBoundsException  if
-     *             <code>beginIndex</code> is negative or larger than the
-     *             length of this <code>String</code> object.
+     *             {@code beginIndex} is negative or larger than the
+     *             length of this {@code String} object.
      */
     public String substring(int beginIndex) {
         return substring(beginIndex, count);
@@ -1930,9 +1930,9 @@ public final class String
 
     /**
      * Returns a new string that is a substring of this string. The
-     * substring begins at the specified <code>beginIndex</code> and
-     * extends to the character at index <code>endIndex - 1</code>.
-     * Thus the length of the substring is <code>endIndex-beginIndex</code>.
+     * substring begins at the specified {@code beginIndex} and
+     * extends to the character at index {@code endIndex - 1}.
+     * Thus the length of the substring is {@code endIndex-beginIndex}.
      * <p>
      * Examples:
      * <blockquote><pre>
@@ -1944,11 +1944,11 @@ public final class String
      * @param      endIndex     the ending index, exclusive.
      * @return     the specified substring.
      * @exception  IndexOutOfBoundsException  if the
-     *             <code>beginIndex</code> is negative, or
-     *             <code>endIndex</code> is larger than the length of
-     *             this <code>String</code> object, or
-     *             <code>beginIndex</code> is larger than
-     *             <code>endIndex</code>.
+     *             {@code beginIndex} is negative, or
+     *             {@code endIndex} is larger than the length of
+     *             this {@code String} object, or
+     *             {@code beginIndex} is larger than
+     *             {@code endIndex}.
      */
     public String substring(int beginIndex, int endIndex) {
         if (beginIndex < 0) {
@@ -1999,11 +1999,11 @@ public final class String
     /**
      * Concatenates the specified string to the end of this string.
      * <p>
-     * If the length of the argument string is <code>0</code>, then this
-     * <code>String</code> object is returned. Otherwise, a new
-     * <code>String</code> object is created, representing a character
+     * If the length of the argument string is {@code 0}, then this
+     * {@code String} object is returned. Otherwise, a new
+     * {@code String} object is created, representing a character
      * sequence that is the concatenation of the character sequence
-     * represented by this <code>String</code> object and the character
+     * represented by this {@code String} object and the character
      * sequence represented by the argument string.<p>
      * Examples:
      * <blockquote><pre>
@@ -2011,8 +2011,8 @@ public final class String
      * "to".concat("get").concat("her") returns "together"
      * </pre></blockquote>
      *
-     * @param   str   the <code>String</code> that is concatenated to the end
-     *                of this <code>String</code>.
+     * @param   str   the {@code String} that is concatenated to the end
+     *                of this {@code String}.
      * @return  a string that represents the concatenation of this object's
      *          characters followed by the string argument's characters.
      */
@@ -2029,16 +2029,16 @@ public final class String
 
     /**
      * Returns a new string resulting from replacing all occurrences of
-     * <code>oldChar</code> in this string with <code>newChar</code>.
+     * {@code oldChar} in this string with {@code newChar}.
      * <p>
-     * If the character <code>oldChar</code> does not occur in the
-     * character sequence represented by this <code>String</code> object,
-     * then a reference to this <code>String</code> object is returned.
-     * Otherwise, a new <code>String</code> object is created that
+     * If the character {@code oldChar} does not occur in the
+     * character sequence represented by this {@code String} object,
+     * then a reference to this {@code String} object is returned.
+     * Otherwise, a new {@code String} object is created that
      * represents a character sequence identical to the character sequence
-     * represented by this <code>String</code> object, except that every
-     * occurrence of <code>oldChar</code> is replaced by an occurrence
-     * of <code>newChar</code>.
+     * represented by this {@code String} object, except that every
+     * occurrence of {@code oldChar} is replaced by an occurrence
+     * of {@code newChar}.
      * <p>
      * Examples:
      * <blockquote><pre>
@@ -2054,7 +2054,7 @@ public final class String
      * @param   oldChar   the old character.
      * @param   newChar   the new character.
      * @return  a string derived from this string by replacing every
-     *          occurrence of <code>oldChar</code> with <code>newChar</code>.
+     *          occurrence of {@code oldChar} with {@code newChar}.
      */
     public String replace(char oldChar, char newChar) {
         if (oldChar != newChar) {
@@ -2119,8 +2119,8 @@ public final class String
      * sequence of char values.
      *
      * @param s the sequence to search for
-     * @return true if this string contains <code>s</code>, false otherwise
-     * @throws NullPointerException if <code>s</code> is <code>null</code>
+     * @return true if this string contains {@code s}, false otherwise
+     * @throws NullPointerException if {@code s} is {@code null}
      * @since 1.5
      */
     public boolean contains(CharSequence s) {
@@ -2223,8 +2223,8 @@ public final class String
      * @param  target The sequence of char values to be replaced
      * @param  replacement The replacement sequence of char values
      * @return  The resulting string
-     * @throws NullPointerException if <code>target</code> or
-     *         <code>replacement</code> is <code>null</code>.
+     * @throws NullPointerException if {@code target} or
+     *         {@code replacement} is {@code null}.
      * @since 1.5
      */
     public String replace(CharSequence target, CharSequence replacement) {
@@ -2407,11 +2407,11 @@ public final class String
     }
 
     /**
-     * Converts all of the characters in this <code>String</code> to lower
-     * case using the rules of the given <code>Locale</code>.  Case mapping is based
+     * Converts all of the characters in this {@code String} to lower
+     * case using the rules of the given {@code Locale}.  Case mapping is based
      * on the Unicode Standard version specified by the {@link java.lang.Character Character}
      * class. Since case mappings are not always 1:1 char mappings, the resulting
-     * <code>String</code> may be a different length than the original <code>String</code>.
+     * {@code String} may be a different length than the original {@code String}.
      * <p>
      * Examples of lowercase  mappings are in the following table:
      * <table border="1" summary="Lowercase mapping examples showing language code of locale, upper case, lower case, and description">
@@ -2452,7 +2452,7 @@ public final class String
      * </table>
      *
      * @param locale use the case transformation rules for this locale
-     * @return the <code>String</code>, converted to lowercase.
+     * @return the {@code String}, converted to lowercase.
      * @see     java.lang.String#toLowerCase()
      * @see     java.lang.String#toUpperCase()
      * @see     java.lang.String#toUpperCase(Locale)
@@ -2553,22 +2553,22 @@ public final class String
     }
 
     /**
-     * Converts all of the characters in this <code>String</code> to lower
+     * Converts all of the characters in this {@code String} to lower
      * case using the rules of the default locale. This is equivalent to calling
-     * <code>toLowerCase(Locale.getDefault())</code>.
+     * {@code toLowerCase(Locale.getDefault())}.
      * <p>
      * <b>Note:</b> This method is locale sensitive, and may produce unexpected
      * results if used for strings that are intended to be interpreted locale
      * independently.
      * Examples are programming language identifiers, protocol keys, and HTML
      * tags.
-     * For instance, <code>"TITLE".toLowerCase()</code> in a Turkish locale
-     * returns <code>"t\u005Cu0131tle"</code>, where '\u005Cu0131' is the
+     * For instance, {@code "TITLE".toLowerCase()} in a Turkish locale
+     * returns {@code "t\u005Cu0131tle"}, where '\u005Cu0131' is the
      * LATIN SMALL LETTER DOTLESS I character.
      * To obtain correct results for locale insensitive strings, use
-     * <code>toLowerCase(Locale.ENGLISH)</code>.
+     * {@code toLowerCase(Locale.ENGLISH)}.
      * <p>
-     * @return  the <code>String</code>, converted to lowercase.
+     * @return  the {@code String}, converted to lowercase.
      * @see     java.lang.String#toLowerCase(Locale)
      */
     public String toLowerCase() {
@@ -2576,11 +2576,11 @@ public final class String
     }
 
     /**
-     * Converts all of the characters in this <code>String</code> to upper
-     * case using the rules of the given <code>Locale</code>. Case mapping is based
+     * Converts all of the characters in this {@code String} to upper
+     * case using the rules of the given {@code Locale}. Case mapping is based
      * on the Unicode Standard version specified by the {@link java.lang.Character Character}
      * class. Since case mappings are not always 1:1 char mappings, the resulting
-     * <code>String</code> may be a different length than the original <code>String</code>.
+     * {@code String} may be a different length than the original {@code String}.
      * <p>
      * Examples of locale-sensitive and 1:M case mappings are in the following table.
      * <p>
@@ -2617,7 +2617,7 @@ public final class String
      * </tr>
      * </table>
      * @param locale use the case transformation rules for this locale
-     * @return the <code>String</code>, converted to uppercase.
+     * @return the {@code String}, converted to uppercase.
      * @see     java.lang.String#toUpperCase()
      * @see     java.lang.String#toLowerCase()
      * @see     java.lang.String#toLowerCase(Locale)
@@ -2716,22 +2716,22 @@ public final class String
     }
 
     /**
-     * Converts all of the characters in this <code>String</code> to upper
+     * Converts all of the characters in this {@code String} to upper
      * case using the rules of the default locale. This method is equivalent to
-     * <code>toUpperCase(Locale.getDefault())</code>.
+     * {@code toUpperCase(Locale.getDefault())}.
      * <p>
      * <b>Note:</b> This method is locale sensitive, and may produce unexpected
      * results if used for strings that are intended to be interpreted locale
      * independently.
      * Examples are programming language identifiers, protocol keys, and HTML
      * tags.
-     * For instance, <code>"title".toUpperCase()</code> in a Turkish locale
-     * returns <code>"T\u005Cu0130TLE"</code>, where '\u005Cu0130' is the
+     * For instance, {@code "title".toUpperCase()} in a Turkish locale
+     * returns {@code "T\u005Cu0130TLE"}, where '\u005Cu0130' is the
      * LATIN CAPITAL LETTER I WITH DOT ABOVE character.
      * To obtain correct results for locale insensitive strings, use
-     * <code>toUpperCase(Locale.ENGLISH)</code>.
+     * {@code toUpperCase(Locale.ENGLISH)}.
      * <p>
-     * @return  the <code>String</code>, converted to uppercase.
+     * @return  the {@code String}, converted to uppercase.
      * @see     java.lang.String#toUpperCase(Locale)
      */
     public String toUpperCase() {
@@ -2742,21 +2742,21 @@ public final class String
      * Returns a copy of the string, with leading and trailing whitespace
      * omitted.
      * <p>
-     * If this <code>String</code> object represents an empty character
+     * If this {@code String} object represents an empty character
      * sequence, or the first and last characters of character sequence
-     * represented by this <code>String</code> object both have codes
-     * greater than <code>'&#92;u0020'</code> (the space character), then a
-     * reference to this <code>String</code> object is returned.
+     * represented by this {@code String} object both have codes
+     * greater than {@code '\u005Cu0020'} (the space character), then a
+     * reference to this {@code String} object is returned.
      * <p>
      * Otherwise, if there is no character with a code greater than
-     * <code>'&#92;u0020'</code> in the string, then a new
-     * <code>String</code> object representing an empty string is created
+     * {@code '\u005Cu0020'} in the string, then a new
+     * {@code String} object representing an empty string is created
      * and returned.
      * <p>
      * Otherwise, let <i>k</i> be the index of the first character in the
-     * string whose code is greater than <code>'&#92;u0020'</code>, and let
+     * string whose code is greater than {@code '\u005Cu0020'}, and let
      * <i>m</i> be the index of the last character in the string whose code
-     * is greater than <code>'&#92;u0020'</code>. A new <code>String</code>
+     * is greater than {@code '\u005Cu0020'}. A new {@code String}
      * object is created, representing the substring of this string that
      * begins with the character at index <i>k</i> and ends with the
      * character at index <i>m</i>-that is, the result of
@@ -2893,12 +2893,12 @@ public final class String
     }
 
     /**
-     * Returns the string representation of the <code>Object</code> argument.
+     * Returns the string representation of the {@code Object} argument.
      *
-     * @param   obj   an <code>Object</code>.
-     * @return  if the argument is <code>null</code>, then a string equal to
-     *          <code>"null"</code>; otherwise, the value of
-     *          <code>obj.toString()</code> is returned.
+     * @param   obj   an {@code Object}.
+     * @return  if the argument is {@code null}, then a string equal to
+     *          {@code "null"}; otherwise, the value of
+     *          {@code obj.toString()} is returned.
      * @see     java.lang.Object#toString()
      */
     public static String valueOf(Object obj) {
@@ -2906,12 +2906,12 @@ public final class String
     }
 
     /**
-     * Returns the string representation of the <code>char</code> array
+     * Returns the string representation of the {@code char} array
      * argument. The contents of the character array are copied; subsequent
      * modification of the character array does not affect the newly
      * created string.
      *
-     * @param   data   a <code>char</code> array.
+     * @param   data   a {@code char} array.
      * @return  a newly allocated string representing the same sequence of
      *          characters contained in the character array argument.
      */
@@ -2921,24 +2921,24 @@ public final class String
 
     /**
      * Returns the string representation of a specific subarray of the
-     * <code>char</code> array argument.
+     * {@code char} array argument.
      * <p>
-     * The <code>offset</code> argument is the index of the first
-     * character of the subarray. The <code>count</code> argument
+     * The {@code offset} argument is the index of the first
+     * character of the subarray. The {@code count} argument
      * specifies the length of the subarray. The contents of the subarray
      * are copied; subsequent modification of the character array does not
      * affect the newly created string.
      *
      * @param   data     the character array.
      * @param   offset   the initial offset into the value of the
-     *                  <code>String</code>.
-     * @param   count    the length of the value of the <code>String</code>.
+     *                  {@code String}.
+     * @param   count    the length of the value of the {@code String}.
      * @return  a string representing the sequence of characters contained
      *          in the subarray of the character array argument.
-     * @exception IndexOutOfBoundsException if <code>offset</code> is
-     *          negative, or <code>count</code> is negative, or
-     *          <code>offset+count</code> is larger than
-     *          <code>data.length</code>.
+     * @exception IndexOutOfBoundsException if {@code offset} is
+     *          negative, or {@code count} is negative, or
+     *          {@code offset+count} is larger than
+     *          {@code data.length}.
      */
     public static String valueOf(char data[], int offset, int count) {
         return new String(data, offset, count);
@@ -2951,7 +2951,7 @@ public final class String
      * @param   data     the character array.
      * @param   offset   initial offset of the subarray.
      * @param   count    length of the subarray.
-     * @return  a <code>String</code> that contains the characters of the
+     * @return  a {@code String} that contains the characters of the
      *          specified subarray of the character array.
      */
     public static String copyValueOf(char data[], int offset, int count) {
@@ -2964,7 +2964,7 @@ public final class String
      * array specified.
      *
      * @param   data   the character array.
-     * @return  a <code>String</code> that contains the characters of the
+     * @return  a {@code String} that contains the characters of the
      *          character array.
      */
     public static String copyValueOf(char data[]) {
@@ -2972,24 +2972,24 @@ public final class String
     }
 
     /**
-     * Returns the string representation of the <code>boolean</code> argument.
+     * Returns the string representation of the {@code boolean} argument.
      *
-     * @param   b   a <code>boolean</code>.
-     * @return  if the argument is <code>true</code>, a string equal to
-     *          <code>"true"</code> is returned; otherwise, a string equal to
-     *          <code>"false"</code> is returned.
+     * @param   b   a {@code boolean}.
+     * @return  if the argument is {@code true}, a string equal to
+     *          {@code "true"} is returned; otherwise, a string equal to
+     *          {@code "false"} is returned.
      */
     public static String valueOf(boolean b) {
         return b ? "true" : "false";
     }
 
     /**
-     * Returns the string representation of the <code>char</code>
+     * Returns the string representation of the {@code char}
      * argument.
      *
-     * @param   c   a <code>char</code>.
-     * @return  a string of length <code>1</code> containing
-     *          as its single character the argument <code>c</code>.
+     * @param   c   a {@code char}.
+     * @return  a string of length {@code 1} containing
+     *          as its single character the argument {@code c}.
      */
     public static String valueOf(char c) {
         char data[] = {c};
@@ -2997,13 +2997,13 @@ public final class String
     }
 
     /**
-     * Returns the string representation of the <code>int</code> argument.
+     * Returns the string representation of the {@code int} argument.
      * <p>
      * The representation is exactly the one returned by the
-     * <code>Integer.toString</code> method of one argument.
+     * {@code Integer.toString} method of one argument.
      *
-     * @param   i   an <code>int</code>.
-     * @return  a string representation of the <code>int</code> argument.
+     * @param   i   an {@code int}.
+     * @return  a string representation of the {@code int} argument.
      * @see     java.lang.Integer#toString(int, int)
      */
     public static String valueOf(int i) {
@@ -3011,13 +3011,13 @@ public final class String
     }
 
     /**
-     * Returns the string representation of the <code>long</code> argument.
+     * Returns the string representation of the {@code long} argument.
      * <p>
      * The representation is exactly the one returned by the
-     * <code>Long.toString</code> method of one argument.
+     * {@code Long.toString} method of one argument.
      *
-     * @param   l   a <code>long</code>.
-     * @return  a string representation of the <code>long</code> argument.
+     * @param   l   a {@code long}.
+     * @return  a string representation of the {@code long} argument.
      * @see     java.lang.Long#toString(long)
      */
     public static String valueOf(long l) {
@@ -3025,13 +3025,13 @@ public final class String
     }
 
     /**
-     * Returns the string representation of the <code>float</code> argument.
+     * Returns the string representation of the {@code float} argument.
      * <p>
      * The representation is exactly the one returned by the
-     * <code>Float.toString</code> method of one argument.
+     * {@code Float.toString} method of one argument.
      *
-     * @param   f   a <code>float</code>.
-     * @return  a string representation of the <code>float</code> argument.
+     * @param   f   a {@code float}.
+     * @return  a string representation of the {@code float} argument.
      * @see     java.lang.Float#toString(float)
      */
     public static String valueOf(float f) {
@@ -3039,13 +3039,13 @@ public final class String
     }
 
     /**
-     * Returns the string representation of the <code>double</code> argument.
+     * Returns the string representation of the {@code double} argument.
      * <p>
      * The representation is exactly the one returned by the
-     * <code>Double.toString</code> method of one argument.
+     * {@code Double.toString} method of one argument.
      *
-     * @param   d   a <code>double</code>.
-     * @return  a  string representation of the <code>double</code> argument.
+     * @param   d   a {@code double}.
+     * @return  a  string representation of the {@code double} argument.
      * @see     java.lang.Double#toString(double)
      */
     public static String valueOf(double d) {
@@ -3056,17 +3056,17 @@ public final class String
      * Returns a canonical representation for the string object.
      * <p>
      * A pool of strings, initially empty, is maintained privately by the
-     * class <code>String</code>.
+     * class {@code String}.
      * <p>
      * When the intern method is invoked, if the pool already contains a
-     * string equal to this <code>String</code> object as determined by
+     * string equal to this {@code String} object as determined by
      * the {@link #equals(Object)} method, then the string from the pool is
-     * returned. Otherwise, this <code>String</code> object is added to the
-     * pool and a reference to this <code>String</code> object is returned.
+     * returned. Otherwise, this {@code String} object is added to the
+     * pool and a reference to this {@code String} object is returned.
      * <p>
-     * It follows that for any two strings <code>s</code> and <code>t</code>,
-     * <code>s.intern()&nbsp;==&nbsp;t.intern()</code> is <code>true</code>
-     * if and only if <code>s.equals(t)</code> is <code>true</code>.
+     * It follows that for any two strings {@code s} and {@code t},
+     * {@code s.intern() == t.intern()} is {@code true}
+     * if and only if {@code s.equals(t)} is {@code true}.
      * <p>
      * All literal strings and string-valued constant expressions are
      * interned. String literals are defined in section 3.10.5 of the
