@@ -57,10 +57,10 @@ DUMPBIN="link.exe /dump"
 
 # When called from IDE the first param should contain the link version, otherwise may be nill
 if [ "x$1" != "x" ]; then
-LINK_VER="$1"
+LD_VER="$1"
 fi
 
-if [ "x$LINK_VER" != "x800" -a  "x$LINK_VER" != "x900" -a "x$LINK_VER" != "x1000" ]; then
+if [ "x$LD_VER" != "x800" -a  "x$LD_VER" != "x900" -a "x$LD_VER" != "x1000" ]; then
 $DUMPBIN /symbols *.obj | "$GREP" "??_7.*@@6B@" | "$GREP" -v "type_info" | "$AWK" '{print $7}' | "$SORT" | "$UNIQ" > vm2.def
 else
 # Can't use pipes when calling cl.exe or link.exe from IDE. Using transit file vm3.def
