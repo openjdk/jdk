@@ -30,6 +30,7 @@ import java.io.ObjectOutput;
 import java.io.ObjectInput;
 import java.io.IOException;
 import java.util.Enumeration;
+import java.util.Locale;
 
 
 /**
@@ -93,14 +94,14 @@ class MimeType implements Externalizable, Cloneable {
 MimeTypeParseException {
         //    check to see if primary is valid
         if(isValidToken(primary)) {
-            primaryType = primary.toLowerCase();
+            primaryType = primary.toLowerCase(Locale.ENGLISH);
         } else {
             throw new MimeTypeParseException("Primary type is invalid.");
         }
 
         //    check to see if sub is valid
         if(isValidToken(sub)) {
-            subType = sub.toLowerCase();
+            subType = sub.toLowerCase(Locale.ENGLISH);
         } else {
             throw new MimeTypeParseException("Sub type is invalid.");
         }
@@ -158,17 +159,17 @@ MimeTypeParseException {
             throw new MimeTypeParseException("Unable to find a sub type.");
         } else if((slashIndex >= 0) && (semIndex < 0)) {
             //    we have a primary and sub type but no parameter list
-            primaryType = rawdata.substring(0,
-slashIndex).trim().toLowerCase();
-            subType = rawdata.substring(slashIndex +
-1).trim().toLowerCase();
+            primaryType = rawdata.substring(0,slashIndex).
+                trim().toLowerCase(Locale.ENGLISH);
+            subType = rawdata.substring(slashIndex + 1).
+                trim().toLowerCase(Locale.ENGLISH);
             parameters = new MimeTypeParameterList();
         } else if (slashIndex < semIndex) {
             //    we have all three items in the proper sequence
-            primaryType = rawdata.substring(0,
-slashIndex).trim().toLowerCase();
+            primaryType = rawdata.substring(0, slashIndex).
+                trim().toLowerCase(Locale.ENGLISH);
             subType = rawdata.substring(slashIndex + 1,
-semIndex).trim().toLowerCase();
+                semIndex).trim().toLowerCase(Locale.ENGLISH);
             parameters = new
 MimeTypeParameterList(rawdata.substring(semIndex));
         } else {
