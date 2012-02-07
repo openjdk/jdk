@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -474,52 +474,126 @@ public class Resolve {
             return false;
         }
     }
+    /**
+     * A check handler is used by the main method applicability routine in order
+     * to handle specific method applicability failures. It is assumed that a class
+     * implementing this interface should throw exceptions that are a subtype of
+     * InapplicableMethodException (see below). Such exception will terminate the
+     * method applicability check and propagate important info outwards (for the
+     * purpose of generating better diagnostics).
+     */
+    interface MethodCheckHandler {
+        /* The number of actuals and formals differ */
+        InapplicableMethodException arityMismatch();
+        /* An actual argument type does not conform to the corresponding formal type */
+        InapplicableMethodException argumentMismatch(boolean varargs, Type found, Type expected);
+        /* The element type of a varargs is not accessible in the current context */
+        InapplicableMethodException inaccessibleVarargs(Symbol location, Type expected);
+    }
+
+    /**
+     * Basic method check handler used within Resolve - all methods end up
+     * throwing InapplicableMethodException; a diagnostic fragment that describes
+     * the cause as to why the method is not applicable is set on the exception
+     * before it is thrown.
+     */
+    MethodCheckHandler resolveHandler = new MethodCheckHandler() {
+            public InapplicableMethodException arityMismatch() {
+                return inapplicableMethodException.setMessage("arg.length.mismatch");
+            }
+            public InapplicableMethodException argumentMismatch(boolean varargs, Type found, Type expected) {
+                String key = varargs ?
+                        "varargs.argument.mismatch" :
+                        "no.conforming.assignment.exists";
+                return inapplicableMethodException.setMessage(key,
+                        found, expected);
+            }
+            public InapplicableMethodException inaccessibleVarargs(Symbol location, Type expected) {
+                return inapplicableMethodException.setMessage("inaccessible.varargs.type",
+                        expected, Kinds.kindName(location), location);
+            }
+    };
+
     void checkRawArgumentsAcceptable(Env<AttrContext> env,
                                 List<Type> argtypes,
                                 List<Type> formals,
                                 boolean allowBoxing,
                                 boolean useVarargs,
                                 Warner warn) {
+        checkRawArgumentsAcceptable(env, List.<Type>nil(), argtypes, formals,
+                allowBoxing, useVarargs, warn, resolveHandler);
+    }
+
+    /**
+     * Main method applicability routine. Given a list of actual types A,
+     * a list of formal types F, determines whether the types in A are
+     * compatible (by method invocation conversion) with the types in F.
+     *
+     * Since this routine is shared between overload resolution and method
+     * type-inference, it is crucial that actual types are converted to the
+     * corresponding 'undet' form (i.e. where inference variables are replaced
+     * with undetvars) so that constraints can be propagated and collected.
+     *
+     * Moreover, if one or more types in A is a poly type, this routine calls
+     * Infer.instantiateArg in order to complete the poly type (this might involve
+     * deferred attribution).
+     *
+     * A method check handler (see above) is used in order to report errors.
+     */
+    List<Type> checkRawArgumentsAcceptable(Env<AttrContext> env,
+                                List<Type> undetvars,
+                                List<Type> argtypes,
+                                List<Type> formals,
+                                boolean allowBoxing,
+                                boolean useVarargs,
+                                Warner warn,
+                                MethodCheckHandler handler) {
         Type varargsFormal = useVarargs ? formals.last() : null;
+        ListBuffer<Type> checkedArgs = ListBuffer.lb();
+
         if (varargsFormal == null &&
                 argtypes.size() != formals.size()) {
-            throw inapplicableMethodException.setMessage("arg.length.mismatch"); // not enough args
+            throw handler.arityMismatch(); // not enough args
         }
 
         while (argtypes.nonEmpty() && formals.head != varargsFormal) {
-            boolean works = allowBoxing
-                ? types.isConvertible(argtypes.head, formals.head, warn)
-                : types.isSubtypeUnchecked(argtypes.head, formals.head, warn);
-            if (!works)
-                throw inapplicableMethodException.setMessage("no.conforming.assignment.exists",
-                        argtypes.head,
-                        formals.head);
+            Type undetFormal = infer.asUndetType(formals.head, undetvars);
+            Type capturedActual = types.capture(argtypes.head);
+            boolean works = allowBoxing ?
+                    types.isConvertible(capturedActual, undetFormal, warn) :
+                    types.isSubtypeUnchecked(capturedActual, undetFormal, warn);
+            if (!works) {
+                throw handler.argumentMismatch(false, argtypes.head, formals.head);
+            }
+            checkedArgs.append(capturedActual);
             argtypes = argtypes.tail;
             formals = formals.tail;
         }
 
-        if (formals.head != varargsFormal)
-            throw inapplicableMethodException.setMessage("arg.length.mismatch"); // not enough args
+        if (formals.head != varargsFormal) {
+            throw handler.arityMismatch(); // not enough args
+        }
 
         if (useVarargs) {
+            //note: if applicability check is triggered by most specific test,
+            //the last argument of a varargs is _not_ an array type (see JLS 15.12.2.5)
             Type elt = types.elemtype(varargsFormal);
+            Type eltUndet = infer.asUndetType(elt, undetvars);
             while (argtypes.nonEmpty()) {
-                if (!types.isConvertible(argtypes.head, elt, warn))
-                    throw inapplicableMethodException.setMessage("varargs.argument.mismatch",
-                            argtypes.head,
-                            elt);
+                Type capturedActual = types.capture(argtypes.head);
+                if (!types.isConvertible(capturedActual, eltUndet, warn)) {
+                    throw handler.argumentMismatch(true, argtypes.head, elt);
+                }
+                checkedArgs.append(capturedActual);
                 argtypes = argtypes.tail;
             }
             //check varargs element type accessibility
-            if (!isAccessible(env, elt)) {
+            if (undetvars.isEmpty() && !isAccessible(env, elt)) {
                 Symbol location = env.enclClass.sym;
-                throw inapplicableMethodException.setMessage("inaccessible.varargs.type",
-                            elt,
-                            Kinds.kindName(location),
-                            location);
+                throw handler.inaccessibleVarargs(location, elt);
             }
         }
-        return;
+        return checkedArgs.toList();
     }
     // where
         public static class InapplicableMethodException extends RuntimeException {
