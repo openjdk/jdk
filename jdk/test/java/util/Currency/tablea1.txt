@@ -1,12 +1,12 @@
 #
 #
-# Based on BSi's ISO4217 data - "TABLE A1.doc" + amendments up until MA151.doc
-#   (As of 7 April 2011)
+# Based on BSi's ISO4217 data - "TABLE A1.doc" + amendments up until MA153.doc
+#   (As of 12 January 2012)
 #
 
 # Version
 FILEVERSION=1
-DATAVERSION=151
+DATAVERSION=153
 
 # ISO 4217 currency data
 AF	AFN	971	2
@@ -267,7 +267,7 @@ UY	UYU	858	2
 UZ	UZS	860	2
 VU	VUV	548	0
 VE	VEF	937	2
-VN	VND	704	2
+VN	VND	704	0
 VG	USD	840	2
 VI	USD	840	2
 WF	XPF	953	0
