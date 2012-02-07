@@ -23,9 +23,9 @@
 
 /* @test
  * @bug 4313887
- * @summary Sanity test for Sun-specific sensitivyt level watch event modifier
+ * @summary Sanity test for Sun-specific sensitivity level watch event modifier
  * @library ..
- * @run main/timeout=330 Basic
+ * @run main/timeout=240 SensitivityModifier
  */
 
 import java.nio.file.*;
