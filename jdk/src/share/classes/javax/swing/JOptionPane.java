@@ -34,7 +34,6 @@ import java.awt.KeyboardFocusManager;
 import java.awt.Frame;
 import java.awt.Point;
 import java.awt.HeadlessException;
-import java.awt.Toolkit;
 import java.awt.Window;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -994,8 +993,7 @@ public class JOptionPane extends JComponent implements Accessible
                 // if the user closed the window without selecting a button
                 // (newValue = null in that case).  Otherwise, close the dialog.
                 if (dialog.isVisible() && event.getSource() == JOptionPane.this &&
-                        (event.getPropertyName().equals(VALUE_PROPERTY) ||
-                                event.getPropertyName().equals(INPUT_VALUE_PROPERTY)) &&
+                        (event.getPropertyName().equals(VALUE_PROPERTY)) &&
                         event.getNewValue() != null &&
                         event.getNewValue() != JOptionPane.UNINITIALIZED_VALUE) {
                     dialog.setVisible(false);
