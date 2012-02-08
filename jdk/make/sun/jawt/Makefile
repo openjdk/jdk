@@ -113,17 +113,17 @@ CPPFLAGS += -I$(OPENWIN_HOME)/include \
 #
 ifeq ($(PLATFORM), solaris)
   ifndef BUILD_HEADLESS_ONLY
-    OTHER_LDLIBS = -L$(LIBDIR)/$(LIBARCH) -L$(OPENWIN_LIB) -L$(LIBDIR)/$(LIBARCH)/xawt -lmawt -L/usr/openwin/sfw/lib$(ISA_DIR) -lXrender
+    OTHER_LDLIBS = -L$(LIBDIR)/$(LIBARCH) -L$(OPENWIN_LIB) -lawt_xawt -L/usr/openwin/sfw/lib$(ISA_DIR) -lXrender
   else
-    OTHER_LDLIBS = -L$(LIBDIR)/$(LIBARCH) -L$(OPENWIN_LIB) -L$(LIBDIR)/$(LIBARCH)/headless -lmawt -L/usr/openwin/sfw/lib$(ISA_DIR) -lXrender
+    OTHER_LDLIBS = -L$(LIBDIR)/$(LIBARCH) -L$(OPENWIN_LIB) -lawt_headless -L/usr/openwin/sfw/lib$(ISA_DIR) -lXrender
   endif
 endif # PLATFORM
 
 ifeq ($(PLATFORM), linux)
   ifndef BUILD_HEADLESS_ONLY
-    OTHER_LDLIBS = -L$(LIBDIR)/$(LIBARCH) -lawt -L$(LIBDIR)/$(LIBARCH)/xawt -lmawt
+    OTHER_LDLIBS = -L$(LIBDIR)/$(LIBARCH) -lawt -lawt_xawt
   else
-    OTHER_LDLIBS = -L$(LIBDIR)/$(LIBARCH) -lawt -L$(LIBDIR)/$(LIBARCH)/headless -lmawt
+    OTHER_LDLIBS = -L$(LIBDIR)/$(LIBARCH) -lawt -lawt_headless
     CFLAGS += -DHEADLESS
   endif
 endif # PLATFORM

@@ -185,6 +185,12 @@ static int CALLBACK CheckFontFamilyProcW(
     return 0;
 }
 
+/* This HDC is initialised and released in the populate family map
+ * JNI entry point, and used within the call which would otherwise
+ * create many DCs.
+ */
+static HDC screenDC = NULL;
+
 static int DifferentFamily(wchar_t *family, wchar_t* fullName) {
     LOGFONTW lfw;
     CheckFamilyInfo info;
@@ -202,7 +208,7 @@ static int DifferentFamily(wchar_t *family, wchar_t* fullName) {
     memset(&lfw, 0, sizeof(lfw));
     wcscpy(lfw.lfFaceName, fullName);
     lfw.lfCharSet = DEFAULT_CHARSET;
-    EnumFontFamiliesExW(GetDC(NULL), &lfw,
+    EnumFontFamiliesExW(screenDC, &lfw,
                         (FONTENUMPROCW)CheckFontFamilyProcW,
                         (LPARAM)(&info), 0L);
 
@@ -299,7 +305,7 @@ static int CALLBACK EnumFamilyNamesA(
     memset(&lfa, 0, sizeof(lfa));
     strcpy(lfa.lfFaceName, lpelfe->elfLogFont.lfFaceName);
     lfa.lfCharSet = lpelfe->elfLogFont.lfCharSet;
-    EnumFontFamiliesExA(GetDC(NULL), &lfa,
+    EnumFontFamiliesExA(screenDC, &lfa,
                         (FONTENUMPROCA)EnumFontFacesInFamilyProcA,
                         lParam, 0L);
     return 1;
@@ -353,7 +359,7 @@ static int CALLBACK EnumFamilyNamesW(
     memset(&lfw, 0, sizeof(lfw));
     wcscpy(lfw.lfFaceName, lpelfe->elfLogFont.lfFaceName);
     lfw.lfCharSet = lpelfe->elfLogFont.lfCharSet;
-    EnumFontFamiliesExW(GetDC(NULL), &lfw,
+    EnumFontFamiliesExW(screenDC, &lfw,
                         (FONTENUMPROCW)EnumFontFacesInFamilyProcW,
                         lParam, 0L);
     return 1;
@@ -613,13 +619,17 @@ Java_sun_awt_Win32FontManager_populateFontFileNameMap0
         return;
     }
 
+    screenDC = GetDC(NULL);
+    if (screenDC == NULL) {
+        return;
+    }
     /* Enumerate fonts via GDI to build maps of fonts and families */
     if (IS_NT) {
         LOGFONTW lfw;
         memset(&lfw, 0, sizeof(lfw));
         lfw.lfCharSet = DEFAULT_CHARSET;  /* all charsets */
         wcscpy(lfw.lfFaceName, L"");      /* one face per family (CHECK) */
-        EnumFontFamiliesExW(GetDC(NULL), &lfw,
+        EnumFontFamiliesExW(screenDC, &lfw,
                             (FONTENUMPROCW)EnumFamilyNamesW,
                             (LPARAM)(&fmi), 0L);
     } else {
@@ -627,7 +637,7 @@ Java_sun_awt_Win32FontManager_populateFontFileNameMap0
         memset(&lfa, 0, sizeof(lfa));
         lfa.lfCharSet = DEFAULT_CHARSET; /* all charsets */
         strcpy(lfa.lfFaceName, "");      /* one face per family */
-        ret = EnumFontFamiliesExA(GetDC(NULL), &lfa,
+        ret = EnumFontFamiliesExA(screenDC, &lfa,
                             (FONTENUMPROCA)EnumFamilyNamesA,
                             (LPARAM)(&fmi), 0L);
     }
@@ -637,6 +647,8 @@ Java_sun_awt_Win32FontManager_populateFontFileNameMap0
     ret = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
                        fontKeyName, 0L, KEY_READ, &hkeyFonts);
     if (ret != ERROR_SUCCESS) {
+        ReleaseDC(NULL, screenDC);
+        screenDC = NULL;
         return;
     }
 
@@ -653,6 +665,8 @@ Java_sun_awt_Win32FontManager_populateFontFileNameMap0
         dwMaxValueNameLen >= MAX_BUFFER ||
         dwMaxValueDataLen >= MAX_BUFFER) {
         RegCloseKey(hkeyFonts);
+        ReleaseDC(NULL, screenDC);
+        screenDC = NULL;
         return;
     }
     for (nval = 0; nval < dwNumValues; nval++ ) {
@@ -692,4 +706,6 @@ Java_sun_awt_Win32FontManager_populateFontFileNameMap0
         }
     }
     RegCloseKey(hkeyFonts);
+    ReleaseDC(NULL, screenDC);
+    screenDC = NULL;
 }
