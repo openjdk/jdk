@@ -859,7 +859,9 @@ IRT_ENTRY(nmethod*,
   const int branch_bci = branch_bcp != NULL ? method->bci_from(branch_bcp) : InvocationEntryBci;
   const int bci = branch_bcp != NULL ? method->bci_from(fr.interpreter_frame_bcp()) : InvocationEntryBci;
 
+  assert(!HAS_PENDING_EXCEPTION, "Should not have any exceptions pending");
   nmethod* osr_nm = CompilationPolicy::policy()->event(method, method, branch_bci, bci, CompLevel_none, NULL, thread);
+  assert(!HAS_PENDING_EXCEPTION, "Event handler should not throw any exceptions");
 
   if (osr_nm != NULL) {
     // We may need to do on-stack replacement which requires that no

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,23 +31,24 @@
           Following 2 testing scenarios are recommended
           (1)systemLocale=Japanese, userLocale=English
           (2)systemLocale=English, userLocale=Japanese
- * @compile -XDignore.symbol.file DefaultLocaleTest.java TestHelper.java
+ * @compile -XDignore.symbol.file DefaultLocaleTest.java
  * @run main DefaultLocaleTestRun
  */
-import java.io.File;
 
-public class DefaultLocaleTestRun {
+public class DefaultLocaleTestRun extends TestHelper {
     public static void main(String... args) {
-        if (!TestHelper.isWindows) {
+        if (!isWindows) {
             System.out.println("Test passes vacuously on non-windows");
             return;
         }
-        TestHelper.TestResult tr = null;
-        tr = TestHelper.doExec(TestHelper.javaCmd,  "DefaultLocaleTest", "-w",
-                "x.out");
+        TestResult tr = null;
+        tr = doExec(javaCmd,
+                "-cp", TEST_CLASSES_DIR.getAbsolutePath(),
+                "DefaultLocaleTest", "-w", "x.out");
         System.out.println(tr.testOutput);
-        tr = TestHelper.doExec(TestHelper.javawCmd, "DefaultLocaleTest", "-r",
-                "x.out");
+        tr = doExec(javawCmd,
+                "-cp", TEST_CLASSES_DIR.getAbsolutePath(),
+                "DefaultLocaleTest", "-r", "x.out");
         System.out.println(tr.testOutput);
         if (!tr.isOK()) {
             throw new RuntimeException("Test failed");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "oops/markOop.hpp"
 #include "oops/methodOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -810,7 +811,7 @@ intptr_t* frame::interpreter_frame_tos_at(jint offset) const {
 }
 
 
-#ifdef ASSERT
+#ifndef PRODUCT
 
 #define DESCRIBE_FP_OFFSET(name) \
   values.describe(frame_no, fp() + frame::name##_offset, #name)
@@ -820,11 +821,19 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     values.describe(frame_no, sp() + w, err_msg("register save area word %d", w), 1);
   }
 
-  if (is_interpreted_frame()) {
+  if (is_ricochet_frame()) {
+    MethodHandles::RicochetFrame::describe(this, values, frame_no);
+  } else if (is_interpreted_frame()) {
     DESCRIBE_FP_OFFSET(interpreter_frame_d_scratch_fp);
     DESCRIBE_FP_OFFSET(interpreter_frame_l_scratch_fp);
     DESCRIBE_FP_OFFSET(interpreter_frame_padding);
     DESCRIBE_FP_OFFSET(interpreter_frame_oop_temp);
+
+    // esp, according to Lesp (e.g. not depending on bci), if seems valid
+    intptr_t* esp = *interpreter_frame_esp_addr();
+    if ((esp >= sp()) && (esp < fp())) {
+      values.describe(-1, esp, "*Lesp");
+    }
   }
 
   if (!is_compiled_frame()) {
@@ -844,4 +853,3 @@ intptr_t *frame::initial_deoptimization_info() {
   // unused... but returns fp() to minimize changes introduced by 7087445
   return fp();
 }
-

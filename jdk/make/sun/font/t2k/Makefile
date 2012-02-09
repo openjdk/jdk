@@ -99,7 +99,7 @@ ifneq ($(PLATFORM), windows)
     endif                           
   else
     ifeq ($(PLATFORM), solaris)
-      OTHER_LDLIBS += -lawt -L$(LIBDIR)/$(LIBARCH)/xawt -lmawt
+      OTHER_LDLIBS += -lawt -lawt_xawt
     endif
   endif
 endif
