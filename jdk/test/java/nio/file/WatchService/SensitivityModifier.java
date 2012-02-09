@@ -96,6 +96,7 @@ public class SensitivityModifier {
 
             // drain events (to avoid interference)
             do {
+                key.pollEvents();
                 key.reset();
                 key = watcher.poll(1, TimeUnit.SECONDS);
             } while (key != null);
