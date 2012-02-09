@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1040,6 +1040,16 @@ void Arguments::set_tiered_flags() {
 }
 
 #ifndef KERNEL
+static void disable_adaptive_size_policy(const char* collector_name) {
+  if (UseAdaptiveSizePolicy) {
+    if (FLAG_IS_CMDLINE(UseAdaptiveSizePolicy)) {
+      warning("disabling UseAdaptiveSizePolicy; it is incompatible with %s.",
+              collector_name);
+    }
+    FLAG_SET_DEFAULT(UseAdaptiveSizePolicy, false);
+  }
+}
+
 // If the user has chosen ParallelGCThreads > 0, we set UseParNewGC
 // if it's not explictly set or unset. If the user has chosen
 // UseParNewGC and not explicitly set ParallelGCThreads we
@@ -1049,11 +1059,8 @@ void Arguments::set_parnew_gc_flags() {
          "control point invariant");
   assert(UseParNewGC, "Error");
 
-  // Turn off AdaptiveSizePolicy by default for parnew until it is
-  // complete.
-  if (FLAG_IS_DEFAULT(UseAdaptiveSizePolicy)) {
-    FLAG_SET_DEFAULT(UseAdaptiveSizePolicy, false);
-  }
+  // Turn off AdaptiveSizePolicy for parnew until it is complete.
+  disable_adaptive_size_policy("UseParNewGC");
 
   if (ParallelGCThreads == 0) {
     FLAG_SET_DEFAULT(ParallelGCThreads,
@@ -1110,11 +1117,8 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     FLAG_SET_ERGO(bool, UseParNewGC, true);
   }
 
-  // Turn off AdaptiveSizePolicy by default for cms until it is
-  // complete.
-  if (FLAG_IS_DEFAULT(UseAdaptiveSizePolicy)) {
-    FLAG_SET_DEFAULT(UseAdaptiveSizePolicy, false);
-  }
+  // Turn off AdaptiveSizePolicy for CMS until it is complete.
+  disable_adaptive_size_policy("UseConcMarkSweepGC");
 
   // In either case, adjust ParallelGCThreads and/or UseParNewGC
   // as needed.
@@ -1396,10 +1400,11 @@ void Arguments::set_ergonomics_flags() {
 
 void Arguments::set_parallel_gc_flags() {
   assert(UseParallelGC || UseParallelOldGC, "Error");
-  // If parallel old was requested, automatically enable parallel scavenge.
-  if (UseParallelOldGC && !UseParallelGC && FLAG_IS_DEFAULT(UseParallelGC)) {
-    FLAG_SET_DEFAULT(UseParallelGC, true);
+  // Enable ParallelOld unless it was explicitly disabled (cmd line or rc file).
+  if (FLAG_IS_DEFAULT(UseParallelOldGC)) {
+    FLAG_SET_DEFAULT(UseParallelOldGC, true);
   }
+  FLAG_SET_DEFAULT(UseParallelGC, true);
 
   // If no heap maximum was requested explicitly, use some reasonable fraction
   // of the physical memory, up to a maximum of 1GB.

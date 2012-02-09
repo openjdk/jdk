@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,12 +23,21 @@
  * questions.
  */
 
-/*
- *
- *
- * Used by unresolvedExceptions.sh
+/* @test
+ * @bug 7129225
+ * @summary import xxx.* isn't handled correctly by annotation processing
+ * @library ../lib
+ * @build JavacTestingAbstractProcessor
+ * @compile/fail/ref=NegTest.ref -XDrawDiagnostics TestImportStar.java
+ * @compile Anno.java AnnoProcessor.java
+ * @compile/ref=TestImportStar.ref -XDrawDiagnostics -processor AnnoProcessor -proc:only TestImportStar.java
  */
 
-public class SomeException extends RuntimeException {
+ //The @compile/fail... verifies that the fix doesn't break the normal compilation of import xxx.*
+ //The @comple/ref... verifies the fix fixes the bug
 
+import xxx.*;
+
+@Anno
+public class TestImportStar {
 }

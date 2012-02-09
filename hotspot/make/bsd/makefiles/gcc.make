@@ -25,20 +25,19 @@
 OS_VENDOR = $(shell uname -s)
 
 #------------------------------------------------------------------------
-# CC, CPP & AS
+# CC, CXX & AS
 
 # When cross-compiling the ALT_COMPILER_PATH points
 # to the cross-compilation toolset
 ifdef CROSS_COMPILE_ARCH
- CPP = $(ALT_COMPILER_PATH)/g++
+ CXX = $(ALT_COMPILER_PATH)/g++
  CC  = $(ALT_COMPILER_PATH)/gcc
- HOSTCPP = g++
+ HOSTCXX = g++
  HOSTCC  = gcc
 else ifneq ($(OS_VENDOR), Darwin)
  CXX = g++
- CPP = $(CXX)
  CC  = gcc
- HOSTCPP = $(CPP)
+ HOSTCXX = $(CXX)
  HOSTCC  = $(CC)
 endif
 
@@ -53,7 +52,6 @@ ifeq ($(OS_VENDOR), Darwin)
   ifeq ($(origin CC), default)
    CC  = llvm-gcc
   endif
-  CPP  = $(CXX)
 
   ifeq ($(ARCH), i486)
   LLVM_SUPPORTS_STACKREALIGN := $(shell \
@@ -67,11 +65,11 @@ ifeq ($(OS_VENDOR), Darwin)
     CXX32 ?= g++-4.0
     CC32  ?= gcc-4.0
   endif
-  CPP = $(CXX32)
+  CXX = $(CXX32)
   CC  = $(CC32)
   endif
 
-  HOSTCPP = $(CPP)
+  HOSTCXX = $(CXX)
   HOSTCC  = $(CC)
 endif
 

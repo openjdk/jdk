@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -569,40 +569,26 @@ void G1RemSet::scrub_par(BitMap* region_bm, BitMap* card_bm,
 
 static IntHistogram out_of_histo(50, 50);
 
-class TriggerClosure : public OopClosure {
-  bool _trigger;
-public:
-  TriggerClosure() : _trigger(false) { }
-  bool value() const { return _trigger; }
-  template <class T> void do_oop_nv(T* p) { _trigger = true; }
-  virtual void do_oop(oop* p)        { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
-};
 
-class InvokeIfNotTriggeredClosure: public OopClosure {
-  TriggerClosure* _t;
-  OopClosure* _oc;
-public:
-  InvokeIfNotTriggeredClosure(TriggerClosure* t, OopClosure* oc):
-    _t(t), _oc(oc) { }
-  template <class T> void do_oop_nv(T* p) {
-    if (!_t->value()) _oc->do_oop(p);
-  }
-  virtual void do_oop(oop* p)        { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
-};
+G1TriggerClosure::G1TriggerClosure() :
+  _triggered(false) { }
 
-class Mux2Closure : public OopClosure {
-  OopClosure* _c1;
-  OopClosure* _c2;
-public:
-  Mux2Closure(OopClosure *c1, OopClosure *c2) : _c1(c1), _c2(c2) { }
-  template <class T> void do_oop_nv(T* p) {
-    _c1->do_oop(p); _c2->do_oop(p);
-  }
-  virtual void do_oop(oop* p)        { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
-};
+G1InvokeIfNotTriggeredClosure::G1InvokeIfNotTriggeredClosure(G1TriggerClosure* t_cl,
+                                                             OopClosure* oop_cl)  :
+  _trigger_cl(t_cl), _oop_cl(oop_cl) { }
+
+G1Mux2Closure::G1Mux2Closure(OopClosure *c1, OopClosure *c2) :
+  _c1(c1), _c2(c2) { }
+
+G1UpdateRSOrPushRefOopClosure::
+G1UpdateRSOrPushRefOopClosure(G1CollectedHeap* g1h,
+                              G1RemSet* rs,
+                              OopsInHeapRegionClosure* push_ref_cl,
+                              bool record_refs_into_cset,
+                              int worker_i) :
+  _g1(g1h), _g1_rem_set(rs), _from(NULL),
+  _record_refs_into_cset(record_refs_into_cset),
+  _push_ref_cl(push_ref_cl), _worker_i(worker_i) { }
 
 bool G1RemSet::concurrentRefineOneCard_impl(jbyte* card_ptr, int worker_i,
                                                    bool check_for_refs_into_cset) {
@@ -629,17 +615,17 @@ bool G1RemSet::concurrentRefineOneCard_impl(jbyte* card_ptr, int worker_i,
     assert((size_t)worker_i < n_workers(), "index of worker larger than _cset_rs_update_cl[].length");
     oops_in_heap_closure = _cset_rs_update_cl[worker_i];
   }
-  UpdateRSOrPushRefOopClosure update_rs_oop_cl(_g1,
-                                               _g1->g1_rem_set(),
-                                               oops_in_heap_closure,
-                                               check_for_refs_into_cset,
-                                               worker_i);
+  G1UpdateRSOrPushRefOopClosure update_rs_oop_cl(_g1,
+                                                 _g1->g1_rem_set(),
+                                                 oops_in_heap_closure,
+                                                 check_for_refs_into_cset,
+                                                 worker_i);
   update_rs_oop_cl.set_from(r);
 
-  TriggerClosure trigger_cl;
+  G1TriggerClosure trigger_cl;
   FilterIntoCSClosure into_cs_cl(NULL, _g1, &trigger_cl);
-  InvokeIfNotTriggeredClosure invoke_cl(&trigger_cl, &into_cs_cl);
-  Mux2Closure mux(&invoke_cl, &update_rs_oop_cl);
+  G1InvokeIfNotTriggeredClosure invoke_cl(&trigger_cl, &into_cs_cl);
+  G1Mux2Closure mux(&invoke_cl, &update_rs_oop_cl);
 
   FilterOutOfRegionClosure filter_then_update_rs_oop_cl(r,
                         (check_for_refs_into_cset ?
@@ -688,7 +674,7 @@ bool G1RemSet::concurrentRefineOneCard_impl(jbyte* card_ptr, int worker_i,
     _conc_refine_cards++;
   }
 
-  return trigger_cl.value();
+  return trigger_cl.triggered();
 }
 
 bool G1RemSet::concurrentRefineOneCard(jbyte* card_ptr, int worker_i,

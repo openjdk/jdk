@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -461,6 +461,9 @@ class SharedRuntime: AllStatic {
                                           BasicType *sig_bt,
                                           VMRegPair *regs,
                                           BasicType ret_type );
+
+  // Block before entering a JNI critical method
+  static void block_for_jni_critical(JavaThread* thread);
 
 #ifdef HAVE_DTRACE_H
   // Generate a dtrace wrapper for a given method.  The method takes arguments

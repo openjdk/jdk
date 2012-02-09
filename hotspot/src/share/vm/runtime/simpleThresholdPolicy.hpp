@@ -67,9 +67,9 @@ protected:
   // Print policy-specific information if necessary
   virtual void print_specific(EventType type, methodHandle mh, methodHandle imh, int bci, CompLevel level) { }
   // Check if the method can be compiled, change level if necessary
-  void compile(methodHandle mh, int bci, CompLevel level, TRAPS);
+  void compile(methodHandle mh, int bci, CompLevel level, JavaThread* thread);
   // Submit a given method for compilation
-  virtual void submit_compile(methodHandle mh, int bci, CompLevel level, TRAPS);
+  virtual void submit_compile(methodHandle mh, int bci, CompLevel level, JavaThread* thread);
   // Simple methods are as good being compiled with C1 as C2.
   // This function tells if it's such a function.
   inline bool is_trivial(methodOop method);
@@ -88,9 +88,9 @@ protected:
     return CompLevel_none;
   }
   virtual void method_invocation_event(methodHandle method, methodHandle inlinee,
-                                       CompLevel level, nmethod* nm, TRAPS);
+                                       CompLevel level, nmethod* nm, JavaThread* thread);
   virtual void method_back_branch_event(methodHandle method, methodHandle inlinee,
-                                        int bci, CompLevel level, nmethod* nm, TRAPS);
+                                        int bci, CompLevel level, nmethod* nm, JavaThread* thread);
 public:
   SimpleThresholdPolicy() : _c1_count(0), _c2_count(0) { }
   virtual int compiler_count(CompLevel comp_level) {
@@ -104,7 +104,7 @@ public:
   virtual void disable_compilation(methodOop method) { }
   virtual void reprofile(ScopeDesc* trap_scope, bool is_osr);
   virtual nmethod* event(methodHandle method, methodHandle inlinee,
-                         int branch_bci, int bci, CompLevel comp_level, nmethod* nm, TRAPS);
+                         int branch_bci, int bci, CompLevel comp_level, nmethod* nm, JavaThread* thread);
   // Select task is called by CompileBroker. We should return a task or NULL.
   virtual CompileTask* select_task(CompileQueue* compile_queue);
   // Tell the runtime if we think a given method is adequately profiled.
