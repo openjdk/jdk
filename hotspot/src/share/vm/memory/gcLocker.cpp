@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,38 +31,93 @@ volatile jint GC_locker::_jni_lock_count = 0;
 volatile jint GC_locker::_lock_count     = 0;
 volatile bool GC_locker::_needs_gc       = false;
 volatile bool GC_locker::_doing_gc       = false;
+jlong GC_locker::_wait_begin = 0;
+
+#ifdef ASSERT
+volatile jint GC_locker::_debug_jni_lock_count = 0;
+#endif
+
+
+#ifdef ASSERT
+void GC_locker::verify_critical_count() {
+  if (SafepointSynchronize::is_at_safepoint()) {
+    assert(!needs_gc() || _debug_jni_lock_count == _jni_lock_count, "must agree");
+    int count = 0;
+    // Count the number of threads with critical operations in progress
+    for (JavaThread* thr = Threads::first(); thr; thr = thr->next()) {
+      if (thr->in_critical()) {
+        count++;
+      }
+    }
+    if (_jni_lock_count != count) {
+      tty->print_cr("critical counts don't match: %d != %d", _jni_lock_count, count);
+      for (JavaThread* thr = Threads::first(); thr; thr = thr->next()) {
+        if (thr->in_critical()) {
+          tty->print_cr(INTPTR_FORMAT " in_critical %d", thr, thr->in_critical());
+        }
+      }
+    }
+    assert(_jni_lock_count == count, "must be equal");
+  }
+}
+#endif
+
+bool GC_locker::check_active_before_gc() {
+  assert(SafepointSynchronize::is_at_safepoint(), "only read at safepoint");
+  if (is_active() && !_needs_gc) {
+    verify_critical_count();
+    _needs_gc = true;
+    if (PrintJNIGCStalls && PrintGCDetails) {
+      ResourceMark rm; // JavaThread::name() allocates to convert to UTF8
+      _wait_begin = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
+      gclog_or_tty->print_cr(INT64_FORMAT ": Setting _needs_gc. Thread \"%s\" %d locked.",
+                             _wait_begin, Thread::current()->name(), _jni_lock_count);
+    }
+
+  }
+  return is_active();
+}
 
 void GC_locker::stall_until_clear() {
   assert(!JavaThread::current()->in_critical(), "Would deadlock");
-  if (PrintJNIGCStalls && PrintGCDetails) {
-    ResourceMark rm; // JavaThread::name() allocates to convert to UTF8
-    gclog_or_tty->print_cr(
-      "Allocation failed. Thread \"%s\" is stalled by JNI critical section.",
-      JavaThread::current()->name());
-  }
   MutexLocker   ml(JNICritical_lock);
+
+  if (needs_gc()) {
+    if (PrintJNIGCStalls && PrintGCDetails) {
+      ResourceMark rm; // JavaThread::name() allocates to convert to UTF8
+      gclog_or_tty->print_cr(INT64_FORMAT ": Allocation failed. Thread \"%s\" is stalled by JNI critical section, %d locked.",
+                             (os::javaTimeNanos() / NANOSECS_PER_MILLISEC) - _wait_begin, Thread::current()->name(), _jni_lock_count);
+    }
+  }
+
   // Wait for _needs_gc  to be cleared
-  while (GC_locker::needs_gc()) {
+  while (needs_gc()) {
     JNICritical_lock->wait();
   }
 }
 
-void GC_locker::jni_lock_slow() {
+void GC_locker::jni_lock(JavaThread* thread) {
+  assert(!thread->in_critical(), "shouldn't currently be in a critical region");
   MutexLocker mu(JNICritical_lock);
   // Block entering threads if we know at least one thread is in a
   // JNI critical region and we need a GC.
   // We check that at least one thread is in a critical region before
   // blocking because blocked threads are woken up by a thread exiting
   // a JNI critical region.
-  while ((is_jni_active() && needs_gc()) || _doing_gc) {
+  while ((needs_gc() && is_jni_active()) || _doing_gc) {
     JNICritical_lock->wait();
   }
-  jni_lock();
+  thread->enter_critical();
+  _jni_lock_count++;
+  increment_debug_jni_lock_count();
 }
 
-void GC_locker::jni_unlock_slow() {
+void GC_locker::jni_unlock(JavaThread* thread) {
+  assert(thread->in_last_critical(), "should be exiting critical region");
   MutexLocker mu(JNICritical_lock);
-  jni_unlock();
+  _jni_lock_count--;
+  decrement_debug_jni_lock_count();
+  thread->exit_critical();
   if (needs_gc() && !is_jni_active()) {
     // We're the last thread out. Cause a GC to occur.
     // GC will also check is_active, so this check is not
@@ -74,11 +129,17 @@ void GC_locker::jni_unlock_slow() {
       {
         // Must give up the lock while at a safepoint
         MutexUnlocker munlock(JNICritical_lock);
+        if (PrintJNIGCStalls && PrintGCDetails) {
+          ResourceMark rm; // JavaThread::name() allocates to convert to UTF8
+          gclog_or_tty->print_cr(INT64_FORMAT ": Thread \"%s\" is performing GC after exiting critical section, %d locked",
+                                 (os::javaTimeNanos() / NANOSECS_PER_MILLISEC) - _wait_begin, Thread::current()->name(), _jni_lock_count);
+        }
         Universe::heap()->collect(GCCause::_gc_locker);
       }
       _doing_gc = false;
     }
-    clear_needs_gc();
+
+    _needs_gc = false;
     JNICritical_lock->notify_all();
   }
 }

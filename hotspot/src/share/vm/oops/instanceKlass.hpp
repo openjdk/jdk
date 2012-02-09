@@ -570,9 +570,9 @@ class instanceKlass: public Klass {
   void set_method_annotations_of(int idnum, typeArrayOop anno)
                                                 { set_methods_annotations_of(idnum, anno, &_methods_annotations); }
   void set_method_parameter_annotations_of(int idnum, typeArrayOop anno)
-                                                { set_methods_annotations_of(idnum, anno, &_methods_annotations); }
+                                                { set_methods_annotations_of(idnum, anno, &_methods_parameter_annotations); }
   void set_method_default_annotations_of(int idnum, typeArrayOop anno)
-                                                { set_methods_annotations_of(idnum, anno, &_methods_annotations); }
+                                                { set_methods_annotations_of(idnum, anno, &_methods_default_annotations); }
 
   // allocation
   DEFINE_ALLOCATE_PERMANENT(instanceKlass);

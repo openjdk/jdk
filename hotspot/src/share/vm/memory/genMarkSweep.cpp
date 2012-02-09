@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -254,7 +254,6 @@ void GenMarkSweep::deallocate_stacks() {
 void GenMarkSweep::mark_sweep_phase1(int level,
                                   bool clear_all_softrefs) {
   // Recursively traverse all live objects and mark them
-  EventMark m("1 mark object");
   TraceTime tm("phase 1", PrintGC && Verbose, true, gclog_or_tty);
   trace(" 1");
 
@@ -325,7 +324,6 @@ void GenMarkSweep::mark_sweep_phase2() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   Generation* pg = gch->perm_gen();
 
-  EventMark m("2 compute new addresses");
   TraceTime tm("phase 2", PrintGC && Verbose, true, gclog_or_tty);
   trace("2");
 
@@ -350,7 +348,6 @@ void GenMarkSweep::mark_sweep_phase3(int level) {
   Generation* pg = gch->perm_gen();
 
   // Adjust the pointers to reflect the new locations
-  EventMark m("3 adjust pointers");
   TraceTime tm("phase 3", PrintGC && Verbose, true, gclog_or_tty);
   trace("3");
 
@@ -411,7 +408,6 @@ void GenMarkSweep::mark_sweep_phase4() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   Generation* pg = gch->perm_gen();
 
-  EventMark m("4 compact heap");
   TraceTime tm("phase 4", PrintGC && Verbose, true, gclog_or_tty);
   trace("4");
 
