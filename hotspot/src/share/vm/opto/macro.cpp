@@ -234,10 +234,19 @@ void PhaseMacroExpand::eliminate_card_mark(Node* p2x) {
     }
   } else {
     // G1 pre/post barriers
-    assert(p2x->outcnt() == 2, "expects 2 users: Xor and URShift nodes");
+    assert(p2x->outcnt() <= 2, "expects 1 or 2 users: Xor and URShift nodes");
     // It could be only one user, URShift node, in Object.clone() instrinsic
     // but the new allocation is passed to arraycopy stub and it could not
     // be scalar replaced. So we don't check the case.
+
+    // An other case of only one user (Xor) is when the value check for NULL
+    // in G1 post barrier is folded after CCP so the code which used URShift
+    // is removed.
+
+    // Take Region node before eliminating post barrier since it also
+    // eliminates CastP2X node when it has only one user.
+    Node* this_region = p2x->in(0);
+    assert(this_region != NULL, "");
 
     // Remove G1 post barrier.
 
@@ -263,8 +272,6 @@ void PhaseMacroExpand::eliminate_card_mark(Node* p2x) {
     // Remove G1 pre barrier.
 
     // Search "if (marking != 0)" check and set it to "false".
-    Node* this_region = p2x->in(0);
-    assert(this_region != NULL, "");
     // There is no G1 pre barrier if previous stored value is NULL
     // (for example, after initialization).
     if (this_region->is_Region() && this_region->req() == 3) {
@@ -292,7 +299,7 @@ void PhaseMacroExpand::eliminate_card_mark(Node* p2x) {
     }
     // Now CastP2X can be removed since it is used only on dead path
     // which currently still alive until igvn optimize it.
-    assert(p2x->unique_out()->Opcode() == Op_URShiftX, "");
+    assert(p2x->outcnt() == 0 || p2x->unique_out()->Opcode() == Op_URShiftX, "");
     _igvn.replace_node(p2x, top());
   }
 }

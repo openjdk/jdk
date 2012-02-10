@@ -55,4 +55,4 @@ STRIP_LIBJVM = $(STRIP) -g $@ || exit 1;
 STRIP_AOUT   = $(STRIP) -x $@ || exit 1;
 
 # Don't strip in VM build; JDK build will strip libraries later
-# LINK_LIB.CC/POST_HOOK += $(STRIP_$(LINK_INTO))
+# LINK_LIB.CXX/POST_HOOK += $(STRIP_$(LINK_INTO))
