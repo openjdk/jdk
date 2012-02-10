@@ -52,4 +52,4 @@ STRIP_AOUT   = $(STRIP) -x $@ || exit 1;
 
 # If we can create .debuginfo files, then the VM is stripped in vm.make
 # and this macro is not used.
-# LINK_LIB.CC/POST_HOOK += $(STRIP_$(LINK_INTO))
+# LINK_LIB.CXX/POST_HOOK += $(STRIP_$(LINK_INTO))

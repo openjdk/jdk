@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #ifndef PRODUCT
 
 #include "oops/arrayOop.hpp"
+#include "oops/oop.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 bool arrayOopDesc::check_max_length_overflow(BasicType type) {

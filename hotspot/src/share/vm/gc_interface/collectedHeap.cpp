@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,31 @@ int CollectedHeap::_fire_out_of_memory_count = 0;
 
 size_t CollectedHeap::_filler_array_max_size = 0;
 
+template <>
+void EventLogBase<GCMessage>::print(outputStream* st, GCMessage& m) {
+  st->print_cr("GC heap %s", m.is_before ? "before" : "after");
+  st->print_raw(m);
+}
+
+void GCHeapLog::log_heap(bool before) {
+  if (!should_log()) {
+    return;
+  }
+
+  jlong timestamp = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
+  MutexLockerEx ml(&_mutex, Mutex::_no_safepoint_check_flag);
+  int index = compute_log_index();
+  _records[index].thread = NULL; // Its the GC thread so it's not that interesting.
+  _records[index].timestamp = timestamp;
+  _records[index].data.is_before = before;
+  stringStream st(_records[index].data.buffer(), _records[index].data.size());
+  if (before) {
+    Universe::print_heap_before_gc(&st);
+  } else {
+    Universe::print_heap_after_gc(&st);
+  }
+}
+
 // Memory state functions.
 
 
@@ -81,6 +106,12 @@ CollectedHeap::CollectedHeap() : _n_par_threads(0)
                              80, GCCause::to_string(_gc_lastcause), CHECK);
   }
   _defer_initial_card_mark = false; // strengthened by subclass in pre_initialize() below.
+  // Create the ring log
+  if (LogEvents) {
+    _gc_heap_log = new GCHeapLog();
+  } else {
+    _gc_heap_log = NULL;
+  }
 }
 
 void CollectedHeap::pre_initialize() {
