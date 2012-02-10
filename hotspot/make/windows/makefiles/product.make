@@ -37,7 +37,7 @@ default:: $(BUILD_PCH_FILE) $(AOUT) launcher checkAndBuildSA
 !include ../local.make
 !include compile.make
 
-CPP_FLAGS=$(CPP_FLAGS) $(PRODUCT_OPT_OPTION)
+CXX_FLAGS=$(CXX_FLAGS) $(PRODUCT_OPT_OPTION)
 
 RELEASE=
 
@@ -54,16 +54,16 @@ $(Res_Files): FORCE
 # Kernel doesn't need exported vtbl symbols.
 !if "$(Variant)" == "kernel"
 $(AOUT): $(Res_Files) $(Obj_Files)
-	$(LINK) @<<
-  $(LINK_FLAGS) /out:$@ /implib:$*.lib $(Obj_Files) $(Res_Files)
+	$(LD) @<<
+  $(LD_FLAGS) /out:$@ /implib:$*.lib $(Obj_Files) $(Res_Files)
 <<
 !else
 vm.def: $(Obj_Files)
 	sh $(WorkSpace)/make/windows/build_vm_def.sh
 
 $(AOUT): $(Res_Files) $(Obj_Files) vm.def
-	$(LINK) @<<
-  $(LINK_FLAGS) /out:$@ /implib:$*.lib /def:vm.def $(Obj_Files) $(Res_Files)
+	$(LD) @<<
+  $(LD_FLAGS) /out:$@ /implib:$*.lib /def:vm.def $(Obj_Files) $(Res_Files)
 <<
 !endif
 !if "$(MT)" != ""

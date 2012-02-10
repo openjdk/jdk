@@ -105,11 +105,11 @@ LFLAGS_GENOFFS += -L.
 
 lib$(GENOFFS).dylib: $(DTRACE_SRCDIR)/$(GENOFFS).cpp $(DTRACE_SRCDIR)/$(GENOFFS).h \
                   $(LIBJVM.o)
-	$(QUIETLY) $(CCC) $(CPPFLAGS) $(GENOFFS_CFLAGS) $(SHARED_FLAG) $(PICFLAG) \
+	$(QUIETLY) $(CXX) $(CXXFLAGS) $(GENOFFS_CFLAGS) $(SHARED_FLAG) $(PICFLAG) \
 		 $(LFLAGS_GENOFFS) -o $@ $(DTRACE_SRCDIR)/$(GENOFFS).cpp -ljvm
 
 $(GENOFFS): $(DTRACE_SRCDIR)/$(GENOFFS)Main.c lib$(GENOFFS).dylib
-	$(QUIETLY) $(LINK.CC) -o $@ $(DTRACE_SRCDIR)/$(GENOFFS)Main.c \
+	$(QUIETLY) $(LINK.CXX) -o $@ $(DTRACE_SRCDIR)/$(GENOFFS)Main.c \
 		./lib$(GENOFFS).dylib
 
 # $@.tmp is created first to avoid an empty $(JVMOFFS).h if an error occurs.
@@ -135,7 +135,7 @@ $(JVMOFFS).cpp: $(GENOFFS) $(JVMOFFS).h $(JVMOFFS)Index.h
 	fi
 
 $(JVMOFFS.o): $(JVMOFFS).h $(JVMOFFS).cpp 
-	$(QUIETLY) $(CCC) -c -I. -o $@ $(ARCHFLAG) -D$(TYPE) $(JVMOFFS).cpp
+	$(QUIETLY) $(CXX) -c -I. -o $@ $(ARCHFLAG) -D$(TYPE) $(JVMOFFS).cpp
 
 $(LIBJVM_DB): $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS.o) $(XLIBJVM_DB) $(LIBJVM_DB_MAPFILE)
 	@echo Making $@
