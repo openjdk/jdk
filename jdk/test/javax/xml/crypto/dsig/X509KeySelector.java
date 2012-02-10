@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,9 +205,9 @@ class X509KeySelector extends KeySelector {
      */
     private KeySelectorResult keyStoreSelect(CertSelector cs)
         throws KeyStoreException {
-        Enumeration aliases = ks.aliases();
+        Enumeration<String> aliases = ks.aliases();
         while (aliases.hasMoreElements()) {
-            String alias = (String) aliases.nextElement();
+            String alias = aliases.nextElement();
             Certificate cert = ks.getCertificate(alias);
             if (cert != null && cs.match(cert)) {
                 return new SimpleKeySelectorResult(cert.getPublicKey());
@@ -301,7 +301,7 @@ class X509KeySelector extends KeySelector {
         } catch (IOException ioe) {
             throw new KeySelectorException(ioe);
         }
-        Collection certs = new ArrayList();
+        Collection<X509Certificate> certs = new ArrayList<>();
 
         Iterator xi = xd.getContent().iterator();
         while (xi.hasNext()) {
@@ -345,7 +345,7 @@ class X509KeySelector extends KeySelector {
                 System.arraycopy(ski, 0, encodedSki, 2, ski.length);
                 subjectcs.setSubjectKeyIdentifier(encodedSki);
             } else if (o instanceof X509Certificate) {
-                certs.add((X509Certificate) o);
+                certs.add((X509Certificate)o);
             // check X509CRL
             // not supported: should use CertPath API
             } else {
@@ -359,9 +359,7 @@ class X509KeySelector extends KeySelector {
         }
         if (!certs.isEmpty() && !trusted) {
             // try to find public key in certs in X509Data
-            Iterator i = certs.iterator();
-            while (i.hasNext()) {
-                X509Certificate cert = (X509Certificate) i.next();
+            for (X509Certificate cert : certs) {
                 if (subjectcs.match(cert)) {
                     return new SimpleKeySelectorResult(cert.getPublicKey());
                 }

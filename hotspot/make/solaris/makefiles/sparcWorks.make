@@ -26,7 +26,7 @@
 
 # tell make which C and C++ compilers to use
 CC	= cc
-CPP	= CC
+CXX	= CC
 
 # Note that this 'as' is an older version of the Sun Studio 'fbe', and will
 #   use the older style options. The 'fbe' options will match 'cc' and 'CC'.
@@ -37,23 +37,23 @@ NAWK    = /bin/nawk
 
 REORDER_FLAG = -xF
 
-# Check for the versions of C++ and C compilers ($CPP and $CC) used. 
+# Check for the versions of C++ and C compilers ($CXX and $CC) used. 
 
 # Get the last thing on the line that looks like x.x+ (x is a digit).
 COMPILER_REV := \
-$(shell $(CPP) -V 2>&1 | sed -n 's/^.*[ ,\t]C++[ ,\t]\([1-9]\.[0-9][0-9]*\).*/\1/p')
-C_COMPILER_REV := \
+$(shell $(CXX) -V 2>&1 | sed -n 's/^.*[ ,\t]C++[ ,\t]\([1-9]\.[0-9][0-9]*\).*/\1/p')
+CC_COMPILER_REV := \
 $(shell $(CC) -V 2>&1 | sed -n 's/^.*[ ,\t]C[ ,\t]\([1-9]\.[0-9][0-9]*\).*/\1/p')
 
 # Pick which compiler is validated
 ifeq ($(JRE_RELEASE_VER),1.6.0)
   # Validated compiler for JDK6 is SS11 (5.8)
   VALIDATED_COMPILER_REVS   := 5.8
-  VALIDATED_C_COMPILER_REVS := 5.8
+  VALIDATED_CC_COMPILER_REVS := 5.8
 else
   # Validated compiler for JDK7 is SS12 update 1 + patches (5.10)
   VALIDATED_COMPILER_REVS   := 5.10
-  VALIDATED_C_COMPILER_REVS := 5.10
+  VALIDATED_CC_COMPILER_REVS := 5.10
 endif
 
 # Warning messages about not using the above validated versions
@@ -67,13 +67,13 @@ dummy_var_to_enforce_compiler_rev := $(shell \
 	warning.)
 endif
 
-ENFORCE_C_COMPILER_REV${ENFORCE_C_COMPILER_REV} := $(strip ${VALIDATED_C_COMPILER_REVS})
-ifeq ($(filter ${ENFORCE_C_COMPILER_REV},${C_COMPILER_REV}),)
-PRINTABLE_C_REVS := $(subst $(shell echo ' '), or ,${ENFORCE_C_COMPILER_REV})
+ENFORCE_CC_COMPILER_REV${ENFORCE_CC_COMPILER_REV} := $(strip ${VALIDATED_CC_COMPILER_REVS})
+ifeq ($(filter ${ENFORCE_CC_COMPILER_REV},${CC_COMPILER_REV}),)
+PRINTABLE_C_REVS := $(subst $(shell echo ' '), or ,${ENFORCE_CC_COMPILER_REV})
 dummy_var_to_enforce_c_compiler_rev := $(shell \
-	echo >&2 WARNING: You are using cc version ${C_COMPILER_REV} and \
+	echo >&2 WARNING: You are using cc version ${CC_COMPILER_REV} and \
 	should be using version ${PRINTABLE_C_REVS}.; \
-	echo >&2 Set ENFORCE_C_COMPILER_REV=${C_COMPILER_REV} to avoid this \
+	echo >&2 Set ENFORCE_CC_COMPILER_REV=${CC_COMPILER_REV} to avoid this \
 	warning.)
 endif
 
@@ -98,7 +98,7 @@ JVM_CHECK_SYMBOLS = $(NM) -u -p $(LIBJVM.o) | \
                        } \
 	      END      { exit rc; }'
 
-LINK_LIB.CC/PRE_HOOK += $(JVM_CHECK_SYMBOLS) || exit 1;
+LINK_LIB.CXX/PRE_HOOK += $(JVM_CHECK_SYMBOLS) || exit 1;
 
 # New architecture options started in SS12 (5.9), we need both styles to build.
 #   The older arch options for SS11 (5.8) or older and also for /usr/ccs/bin/as.
@@ -518,7 +518,7 @@ endif
 #FASTDEBUG_CFLAGS += -Qoption ccfe -xglobalstatic
 
 ifeq	(${COMPILER_REV_NUMERIC}, 502)
-COMPILER_DATE := $(shell $(CPP) -V 2>&1 | sed -n '/^.*[ ]C++[ ]\([1-9]\.[0-9][0-9]*\)/p' | awk '{ print $$NF; }')
+COMPILER_DATE := $(shell $(CXX) -V 2>&1 | sed -n '/^.*[ ]C++[ ]\([1-9]\.[0-9][0-9]*\)/p' | awk '{ print $$NF; }')
 ifeq	(${COMPILER_DATE}, 2001/01/31)
 # disable -g0 in fastdebug since SC6.1 dated 2001/01/31 seems to be buggy
 # use an innocuous value because it will get -g if it's empty
@@ -568,7 +568,7 @@ STRIP	= /usr/ccs/bin/strip
 # removing repeated lines.  The data can be extracted from
 # binaries in the field by using "mcs -p libjvm.so" or the older
 # command "what libjvm.so".
-LINK_LIB.CC/POST_HOOK += $(MCS) -c $@ || exit 1;
+LINK_LIB.CXX/POST_HOOK += $(MCS) -c $@ || exit 1;
 # (The exit 1 is necessary to cause a build failure if the command fails and
 # multiple commands are strung together, and the final semicolon is necessary
 # since the hook must terminate itself as a valid command.)
@@ -576,7 +576,7 @@ LINK_LIB.CC/POST_HOOK += $(MCS) -c $@ || exit 1;
 # Also, strip debug and line number information (worth about 1.7Mb).
 # If we can create .debuginfo files, then the VM is stripped in vm.make
 # and this macro is not used.
-STRIP_LIB.CC/POST_HOOK = $(STRIP) -x $@ || exit 1;
-# STRIP_LIB.CC/POST_HOOK is incorporated into LINK_LIB.CC/POST_HOOK
+STRIP_LIB.CXX/POST_HOOK = $(STRIP) -x $@ || exit 1;
+# STRIP_LIB.CXX/POST_HOOK is incorporated into LINK_LIB.CXX/POST_HOOK
 # in certain configurations, such as product.make.  Other configurations,
 # such as debug.make, do not include the strip operation.

@@ -23,13 +23,13 @@
 #
 
 #------------------------------------------------------------------------
-# CC, CPP & AS
+# CC, CXX & AS
 
-CPP = CC
+CXX = CC
 CC  = cc
 AS  = $(CC) -c
 
-HOSTCPP = $(CPP)
+HOSTCXX = $(CXX)
 HOSTCC  = $(CC)
 
 ARCHFLAG = $(ARCHFLAG/$(BUILDARCH))
