@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/errorReporter.hpp"
+#include "utilities/events.hpp"
 #include "utilities/top.hpp"
 #include "utilities/vmError.hpp"
 
@@ -693,7 +694,14 @@ void VMError::report(outputStream* st) {
        st->cr();
      }
 
-  STEP(200, "(printing dynamic libraries)" )
+  STEP(200, "(printing ring buffers)" )
+
+     if (_verbose) {
+       Events::print_all(st);
+       st->cr();
+     }
+
+  STEP(205, "(printing dynamic libraries)" )
 
      if (_verbose) {
        // dynamic libraries, or memory map

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,6 +175,7 @@ class nmethod : public CodeBlob {
   // set during construction
   unsigned int _has_unsafe_access:1;         // May fault due to unsafe access.
   unsigned int _has_method_handle_invokes:1; // Has this method MethodHandle invokes?
+  unsigned int _lazy_critical_native:1;      // Lazy JNI critical native
 
   // Protected by Patching_lock
   unsigned char _state;                      // {alive, not_entrant, zombie, unloaded}
@@ -430,7 +431,10 @@ class nmethod : public CodeBlob {
   void  set_has_method_handle_invokes(bool z)     { _has_method_handle_invokes = z; }
 
   bool  is_speculatively_disconnected() const     { return _speculatively_disconnected; }
-  void  set_speculatively_disconnected(bool z)     { _speculatively_disconnected = z; }
+  void  set_speculatively_disconnected(bool z)    { _speculatively_disconnected = z; }
+
+  bool  is_lazy_critical_native() const           { return _lazy_critical_native; }
+  void  set_lazy_critical_native(bool z)          { _lazy_critical_native = z; }
 
   int   comp_level() const                        { return _comp_level; }
 

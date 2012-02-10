@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/safepoint.hpp"
+#include "utilities/events.hpp"
 
 // A "CollectedHeap" is an implementation of a java heap for HotSpot.  This
 // is an abstract class: there may be many different kinds of heaps.  This
@@ -42,6 +43,29 @@ class ThreadClosure;
 class AdaptiveSizePolicy;
 class Thread;
 class CollectorPolicy;
+
+class GCMessage : public FormatBuffer<1024> {
+ public:
+  bool is_before;
+
+ public:
+  GCMessage() {}
+};
+
+class GCHeapLog : public EventLogBase<GCMessage> {
+ private:
+  void log_heap(bool before);
+
+ public:
+  GCHeapLog() : EventLogBase<GCMessage>("GC Heap History") {}
+
+  void log_heap_before() {
+    log_heap(true);
+  }
+  void log_heap_after() {
+    log_heap(false);
+  }
+};
 
 //
 // CollectedHeap
@@ -61,6 +85,8 @@ class CollectedHeap : public CHeapObj {
 
   // Used for filler objects (static, but initialized in ctor).
   static size_t _filler_array_max_size;
+
+  GCHeapLog* _gc_heap_log;
 
   // Used in support of ReduceInitialCardMarks; only consulted if COMPILER2 is being used
   bool _defer_initial_card_mark;
@@ -617,6 +643,27 @@ class CollectedHeap : public CHeapObj {
   // Print any relevant tracing info that flags imply.
   // Default implementation does nothing.
   virtual void print_tracing_info() const = 0;
+
+  // If PrintHeapAtGC is set call the appropriate routi
+  void print_heap_before_gc() {
+    if (PrintHeapAtGC) {
+      Universe::print_heap_before_gc();
+    }
+    if (_gc_heap_log != NULL) {
+      _gc_heap_log->log_heap_before();
+    }
+  }
+  void print_heap_after_gc() {
+    if (PrintHeapAtGC) {
+      Universe::print_heap_after_gc();
+    }
+    if (_gc_heap_log != NULL) {
+      _gc_heap_log->log_heap_after();
+    }
+  }
+
+  // Allocate GCHeapLog during VM startup
+  static void initialize_heap_log();
 
   // Heap verification
   virtual void verify(bool allow_dirty, bool silent, VerifyOption option) = 0;
