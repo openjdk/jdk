@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,9 @@
  */
 
 import java.io.*;
-import java.security.*;
+import java.security.Key;
+import java.security.KeyException;
+import java.security.PublicKey;
 import java.security.cert.*;
 import java.util.*;
 import javax.crypto.SecretKey;
@@ -76,7 +78,7 @@ class KeySelectors {
                 }
 
                 public byte[] getEncoded() {
-                    return (byte[]) bytes.clone();
+                    return bytes.clone();
                 }
             };
         }
@@ -196,9 +198,9 @@ class KeySelectors {
      * matching public key.
      */
     static class CollectionKeySelector extends KeySelector {
-        private CertificateFactory certFac;
+        private CertificateFactory cf;
         private File certDir;
-        private Vector certs;
+        private Vector<X509Certificate> certs;
         private static final int MATCH_SUBJECT = 0;
         private static final int MATCH_ISSUER = 1;
         private static final int MATCH_SERIAL = 2;
@@ -208,24 +210,24 @@ class KeySelectors {
         CollectionKeySelector(File dir) {
             certDir = dir;
             try {
-                certFac = CertificateFactory.getInstance("X509");
+                cf = CertificateFactory.getInstance("X509");
             } catch (CertificateException ex) {
                 // not going to happen
             }
-            certs = new Vector();
+            certs = new Vector<X509Certificate>();
             File[] files = new File(certDir, "certs").listFiles();
             for (int i = 0; i < files.length; i++) {
-                try {
-                    certs.add(certFac.generateCertificate
-                              (new FileInputStream(files[i])));
+                try (FileInputStream fis = new FileInputStream(files[i])) {
+                    certs.add((X509Certificate)cf.generateCertificate(fis));
                 } catch (Exception ex) { }
             }
         }
 
-        Vector match(int matchType, Object value, Vector pool) {
-            Vector matchResult = new Vector();
+        Vector<X509Certificate> match(int matchType, Object value,
+                                      Vector<X509Certificate> pool) {
+            Vector<X509Certificate> matchResult = new Vector<>();
             for (int j=0; j < pool.size(); j++) {
-                X509Certificate c = (X509Certificate) pool.get(j);
+                X509Certificate c = pool.get(j);
                 switch (matchType) {
                 case MATCH_SUBJECT:
                     try {
@@ -286,19 +288,18 @@ class KeySelectors {
                     if (xmlStructure instanceof KeyName) {
                         String name = ((KeyName)xmlStructure).getName();
                         PublicKey pk = null;
-                        try {
+                        File certFile = new File(new File(certDir, "certs"),
+                                                 name.toLowerCase() + ".crt");
+                        try (FileInputStream fis = new FileInputStream(certFile)) {
                             // Lookup the public key using the key name 'Xxx',
                             // i.e. the public key is in "certs/xxx.crt".
-                            File certFile = new File(new File(certDir, "certs"),
-                                name.toLowerCase()+".crt");
                             X509Certificate cert = (X509Certificate)
-                                certFac.generateCertificate
-                                (new FileInputStream(certFile));
+                                cf.generateCertificate(fis);
                             pk = cert.getPublicKey();
                         } catch (FileNotFoundException e) {
                             // assume KeyName contains subject DN and search
                             // collection of certs for match
-                            Vector result =
+                            Vector<X509Certificate> result =
                                 match(MATCH_SUBJECT, name, certs);
                             int numOfMatches = (result==null? 0:result.size());
                             if (numOfMatches != 1) {
@@ -306,7 +307,7 @@ class KeySelectors {
                                     ((numOfMatches==0?"No":"More than one") +
                                      " match found");
                             }
-                            pk =((X509Certificate)result.get(0)).getPublicKey();
+                            pk = result.get(0).getPublicKey();
                         }
                         return new SimpleKSResult(pk);
                     } else if (xmlStructure instanceof RetrievalMethod) {
@@ -316,10 +317,12 @@ class KeySelectors {
                         String type = rm.getType();
                         if (type.equals(X509Data.RAW_X509_CERTIFICATE_TYPE)) {
                             String uri = rm.getURI();
-                            X509Certificate cert = (X509Certificate)
-                                certFac.generateCertificate
-                                (new FileInputStream(new File(certDir, uri)));
-                            return new SimpleKSResult(cert.getPublicKey());
+                            try (FileInputStream fis =
+                                 new FileInputStream(new File(certDir, uri))) {
+                                X509Certificate cert = (X509Certificate)
+                                    cf.generateCertificate(fis);
+                                return new SimpleKSResult(cert.getPublicKey());
+                            }
                         } else {
                             throw new KeySelectorException
                                 ("Unsupported RetrievalMethod type");
@@ -327,7 +330,7 @@ class KeySelectors {
                     } else if (xmlStructure instanceof X509Data) {
                         List content = ((X509Data)xmlStructure).getContent();
                         int size = content.size();
-                        Vector result = null;
+                        Vector<X509Certificate> result = null;
                         // Lookup the public key using the information
                         // specified in X509Data element, i.e. searching
                         // over the collection of certificate files under
@@ -357,8 +360,7 @@ class KeySelectors {
                                 ((numOfMatches==0?"No":"More than one") +
                                  " match found");
                         }
-                        return new SimpleKSResult(((X509Certificate)
-                                          result.get(0)).getPublicKey());
+                        return new SimpleKSResult(result.get(0).getPublicKey());
                     }
                 } catch (Exception ex) {
                     throw new KeySelectorException(ex);
