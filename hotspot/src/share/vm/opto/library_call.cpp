@@ -2153,7 +2153,7 @@ void LibraryCallKit::insert_g1_pre_barrier(Node* base_oop, Node* offset, Node* p
   //
   // if (offset == java_lang_ref_Reference::_reference_offset) {
   //   if (base != null) {
-  //     if (klass(base)->reference_type() != REF_NONE)) {
+  //     if (instance_of(base, java.lang.ref.Reference)) {
   //       pre_barrier(_, pre_val, ...);
   //     }
   //   }
@@ -2164,8 +2164,6 @@ void LibraryCallKit::insert_g1_pre_barrier(Node* base_oop, Node* offset, Node* p
 
   IdealKit ideal(this);
 #define __ ideal.
-
-  const int reference_type_offset = in_bytes(instanceKlass::reference_type_offset());
 
   Node* referent_off = __ ConX(java_lang_ref_Reference::referent_offset);
 
