@@ -758,7 +758,6 @@ public class MouseEvent extends InputEvent {
 
             if (getModifiersEx() != 0) { //There is at least one more button in a pressed state.
                 if (id == MouseEvent.MOUSE_RELEASED || id == MouseEvent.MOUSE_CLICKED){
-                    System.out.println("MEvent. CASE!");
                     shouldExcludeButtonFromExtModifiers = true;
                 }
             }

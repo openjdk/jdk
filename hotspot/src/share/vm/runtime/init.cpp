@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ void vtableStubs_init();
 void InlineCacheBuffer_init();
 void compilerOracle_init();
 void compilationPolicy_init();
-
+void compileBroker_init();
 
 // Initialization after compiler initialization
 bool universe_post_init();  // must happen after compiler_init
@@ -120,6 +120,7 @@ jint init_globals() {
   InlineCacheBuffer_init();
   compilerOracle_init();
   compilationPolicy_init();
+  compileBroker_init();
   VMRegImpl::set_regName();
 
   if (!universe_post_init()) {

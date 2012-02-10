@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,24 @@
  */
 
 /*
- *
- *
- * Used by unresolvedExceptions.sh
+ * @test
+ * @bug 7122138
+ * @summary Tests generic methods reflection
+ * @author Sergey Malenkov
+ * @library ..
  */
 
-public class SomeException extends RuntimeException {
+import pack.Sub;
 
+public class Test7122138 {
+
+    public static void main(String[] args) throws Exception {
+        Class<Sub> type = Sub.class;
+        Sub object = type.newInstance();
+        String name = "name";
+        BeanUtils.getPropertyDescriptor(type, name).getWriteMethod().invoke(object, name);
+        if (!name.equals(object.getName())) {
+            throw new Error("name is not set");
+        }
+    }
 }
