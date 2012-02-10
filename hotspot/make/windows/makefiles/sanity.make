@@ -31,5 +31,5 @@ checkCL:
 	echo *** WARNING *** unrecognized cl.exe version $(MSC_VER) ($(RAW_MSC_VER)).  Use FORCE_MSC_VER to override automatic detection.
 
 checkLink:
-	@ if "$(LINK_VER)" NEQ "710" if "$(LINK_VER)" NEQ "800" if "$(LINK_VER)" NEQ "900" if "$(LINK_VER)" NEQ "1000" \
-	echo *** WARNING *** unrecognized link.exe version $(LINK_VER) ($(RAW_LINK_VER)).  Use FORCE_LINK_VER to override automatic detection.
+	@ if "$(LD_VER)" NEQ "710" if "$(LD_VER)" NEQ "800" if "$(LD_VER)" NEQ "900" if "$(LD_VER)" NEQ "1000" \
+	echo *** WARNING *** unrecognized link.exe version $(LD_VER) ($(RAW_LD_VER)).  Use FORCE_LD_VER to override automatic detection.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4635230 6365103 6366054 6824440
+ * @bug 4635230 6365103 6366054 6824440 7131084
  * @summary Basic unit tests for validating XML Signatures with JSR 105
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java ValidationTests.java
@@ -43,10 +43,6 @@ import javax.xml.crypto.XMLCryptoContext;
 import javax.xml.crypto.dsig.XMLSignatureException;
 import javax.xml.crypto.dsig.XMLSignatureFactory;
 
-/**
- * This is a testcase to validate all "merlin-xmldsig-twenty-three"
- * testcases from Baltimore
- */
 public class ValidationTests {
 
     private static SignatureValidator validator;
@@ -61,25 +57,14 @@ public class ValidationTests {
     private final static String STYLESHEET_B64 =
         "http://www.w3.org/Signature/2002/04/xml-stylesheet.b64";
 
-    private final static String[] FILES = {
-        "signature-enveloped-dsa.xml",
-        "signature-enveloping-b64-dsa.xml",
-        "signature-enveloping-dsa.xml",
-        "signature-enveloping-rsa.xml",
-        "signature-enveloping-hmac-sha1.xml",
-        "signature-external-dsa.xml",
-        "signature-external-b64-dsa.xml",
-        "signature-retrievalmethod-rawx509crt.xml",
-        "signature-keyname.xml",
-        "signature-x509-crt-crl.xml",
-        "signature-x509-crt.xml",
-        "signature-x509-is.xml",
-        "signature-x509-ski.xml",
-        "signature-x509-sn.xml",
-//      "signature.xml",
-        "exc-signature.xml",
-        "sign-spec.xml"
-    };
+    static class Test {
+        String file;
+        KeySelector ks;
+        Test(String file, KeySelector ks) {
+            this.file = file;
+            this.ks = ks;
+        }
+    }
 
     static KeySelector skks;
     static {
@@ -98,26 +83,34 @@ public class ValidationTests {
     private final static KeySelector RXKS =
         new KeySelectors.RawX509KeySelector();
     private final static KeySelector XKS = null;
-    private final static KeySelector[] KEY_SELECTORS = {
-        KVKS,
-        KVKS,
-        KVKS,
-        KVKS,
-        SKKS,
-        KVKS,
-        KVKS,
-        CKS,
-        CKS,
-        RXKS,
-        RXKS,
-        CKS,
-        CKS,
-        CKS,
-//        XKS,
-        KVKS,
-        RXKS
-    };
     private static URIDereferencer httpUd = null;
+
+    private final static Test[] VALID_TESTS = {
+        new Test("signature-enveloped-dsa.xml", KVKS),
+        new Test("signature-enveloping-b64-dsa.xml", KVKS),
+        new Test("signature-enveloping-dsa.xml", KVKS),
+        new Test("signature-enveloping-rsa.xml", KVKS),
+        new Test("signature-enveloping-hmac-sha1.xml", SKKS),
+        new Test("signature-external-dsa.xml", KVKS),
+        new Test("signature-external-b64-dsa.xml", KVKS),
+        new Test("signature-retrievalmethod-rawx509crt.xml", CKS),
+        new Test("signature-keyname.xml", CKS),
+        new Test("signature-x509-crt-crl.xml", RXKS),
+        new Test("signature-x509-crt.xml", RXKS),
+        new Test("signature-x509-is.xml", CKS),
+        new Test("signature-x509-ski.xml", CKS),
+        new Test("signature-x509-sn.xml", CKS),
+        new Test("signature.xml", XKS),
+        new Test("exc-signature.xml", KVKS),
+        new Test("sign-spec.xml", RXKS),
+        new Test("xmldsig-xfilter2.xml", KVKS)
+    };
+
+    private final static Test[] INVALID_TESTS = {
+        new Test("signature-enveloping-hmac-sha1-40.xml", SKKS),
+        new Test("signature-enveloping-hmac-sha1-trunclen-0-attack.xml", SKKS),
+        new Test("signature-enveloping-hmac-sha1-trunclen-8-attack.xml", SKKS)
+    };
 
     public static void main(String args[]) throws Exception {
         httpUd = new HttpURIDereferencer();
@@ -125,9 +118,9 @@ public class ValidationTests {
         validator = new SignatureValidator(new File(DATA_DIR));
 
         boolean atLeastOneFailed = false;
-        for (int i=0; i < FILES.length; i++) {
-            System.out.println("Validating " + FILES[i]);
-            if (test_signature(FILES[i], KEY_SELECTORS[i])) {
+        for (Test test : VALID_TESTS) {
+            System.out.println("Validating " + test.file);
+            if (test_signature(test)) {
                 System.out.println("PASSED");
             } else {
                 System.out.println("FAILED");
@@ -136,41 +129,23 @@ public class ValidationTests {
         }
         // test with reference caching enabled
         System.out.println("Validating sign-spec.xml with caching enabled");
-        if (test_signature("sign-spec.xml", RXKS, true)) {
+        if (test_signature(new Test("sign-spec.xml", RXKS), true)) {
             System.out.println("PASSED");
         } else {
             System.out.println("FAILED");
             atLeastOneFailed = true;
         }
 
-        System.out.println("Validating signature-enveloping-hmac-sha1-40.xml");
-        try {
-            test_signature("signature-enveloping-hmac-sha1-40.xml", SKKS, false);
-            System.out.println("FAILED");
-            atLeastOneFailed = true;
-        } catch (XMLSignatureException xse) {
-            System.out.println(xse.getMessage());
-            System.out.println("PASSED");
-        }
-
-        System.out.println("Validating signature-enveloping-hmac-sha1-trunclen-0-attack.xml");
-        try {
-            test_signature("signature-enveloping-hmac-sha1-trunclen-0-attack.xml", SKKS, false);
-            System.out.println("FAILED");
-            atLeastOneFailed = true;
-        } catch (XMLSignatureException xse) {
-            System.out.println(xse.getMessage());
-            System.out.println("PASSED");
-        }
-
-        System.out.println("Validating signature-enveloping-hmac-sha1-trunclen-8-attack.xml");
-        try {
-            test_signature("signature-enveloping-hmac-sha1-trunclen-8-attack.xml", SKKS, false);
-            System.out.println("FAILED");
-            atLeastOneFailed = true;
-        } catch (XMLSignatureException xse) {
-            System.out.println(xse.getMessage());
-            System.out.println("PASSED");
+        for (Test test : INVALID_TESTS) {
+            System.out.println("Validating " + test.file);
+            try {
+                test_signature(test);
+                System.out.println("FAILED");
+                atLeastOneFailed = true;
+            } catch (XMLSignatureException xse) {
+                System.out.println(xse.getMessage());
+                System.out.println("PASSED");
+            }
         }
 
         if (atLeastOneFailed) {
@@ -179,20 +154,21 @@ public class ValidationTests {
         }
     }
 
-    public static boolean test_signature(String file, KeySelector ks)
-        throws Exception {
-        return test_signature(file, ks, false);
+    public static boolean test_signature(Test test) throws Exception {
+        return test_signature(test, false);
     }
 
-    public static boolean test_signature(String file, KeySelector ks,
-        boolean cache) throws Exception {
-        if (ks == null) {
+    public static boolean test_signature(Test test, boolean cache)
+        throws Exception
+    {
+        if (test.ks == null) {
             KeyStore keystore = KeyStore.getInstance("JKS");
-            keystore.load
-                (new FileInputStream(KEYSTORE), "changeit".toCharArray());
-            ks = new X509KeySelector(keystore, false);
+            try (FileInputStream fis = new FileInputStream(KEYSTORE)) {
+                keystore.load(fis, "changeit".toCharArray());
+                test.ks = new X509KeySelector(keystore, false);
+            }
         }
-        return validator.validate(file, ks, httpUd, cache);
+        return validator.validate(test.file, test.ks, httpUd, cache);
     }
 
     /**

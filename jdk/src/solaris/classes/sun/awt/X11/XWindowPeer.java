@@ -255,6 +255,21 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             }
         }
 
+        if (owner != null || isSimpleWindow()) {
+            XNETProtocol protocol = XWM.getWM().getNETProtocol();
+            if (protocol != null && protocol.active()) {
+                XToolkit.awtLock();
+                try {
+                    XAtomList net_wm_state = getNETWMState();
+                    net_wm_state.add(protocol.XA_NET_WM_STATE_SKIP_TASKBAR);
+                    setNETWMState(net_wm_state);
+                } finally {
+                    XToolkit.awtUnlock();
+                }
+
+            }
+        }
+
          // Init warning window(for applets)
         if (((Window)target).getWarningString() != null) {
             // accessSystemTray permission allows to display TrayIcon, TrayIcon tooltip
@@ -479,14 +494,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             setSizeHints(hints.get_flags() | XUtilConstants.PPosition | XUtilConstants.PSize,
                              bounds.x, bounds.y, bounds.width, bounds.height);
             XWM.setMotifDecor(this, false, 0, 0);
-
-            XNETProtocol protocol = XWM.getWM().getNETProtocol();
-            if (protocol != null && protocol.active()) {
-                XAtomList net_wm_state = getNETWMState();
-                net_wm_state.add(protocol.XA_NET_WM_STATE_SKIP_TASKBAR);
-                setNETWMState(net_wm_state);
-            }
-
 
             boolean isResized = !bounds.getSize().equals(oldBounds.getSize());
             boolean isMoved = !bounds.getLocation().equals(oldBounds.getLocation());
