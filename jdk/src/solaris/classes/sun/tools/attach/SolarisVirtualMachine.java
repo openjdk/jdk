@@ -38,11 +38,12 @@ import java.util.Properties;
  * Solaris implementation of HotSpotVirtualMachine.
  */
 public class SolarisVirtualMachine extends HotSpotVirtualMachine {
-    // Use /tmp instead of /var/tmp on Solaris as /tmp is the default used by
-    // HotSpot when the property is not set on the command line.
-    private static final String tmpdir1 = System.getProperty("java.io.tmpdir");
-    private static final String tmpdir =
-        (tmpdir1.equals("/var/tmp") || tmpdir1.equals("/var/tmp/")) ? "/tmp" : tmpdir1;
+    // "/tmp" is used as a global well-known location for the files
+    // .java_pid<pid>. and .attach_pid<pid>. It is important that this
+    // location is the same for all processes, otherwise the tools
+    // will not be able to find all Hotspot processes.
+    // Any changes to this needs to be synchronized with HotSpot.
+    private static final String tmpdir = "/tmp";
 
     // door descriptor;
     private int fd = -1;
@@ -191,19 +192,10 @@ public class SolarisVirtualMachine extends HotSpotVirtualMachine {
         }
     }
 
-    // The door is attached to .java_pid<pid> in the target VM's working
-    // directory or temporary directory.
+    // The door is attached to .java_pid<pid> in the temporary directory.
     private int openDoor(int pid) throws IOException {
-        // First check for a .java_pid<pid> file in the working directory
-        // of the target process
-        String fn = ".java_pid" + pid;
-        String path = "/proc/" + pid + "/cwd/" + fn;
-        try {
-            fd = open(path);
-        } catch (FileNotFoundException fnf) {
-            path = tmpdir + "/" + fn;
-            fd = open(path);
-        }
+        String path = tmpdir + "/.java_pid" + pid;;
+        fd = open(path);
 
         // Check that the file owner/permission to avoid attaching to
         // bogus process

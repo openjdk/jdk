@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,7 +314,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(instanceKlass,               _init_thread,                                  Thread*)                               \
   nonstatic_field(instanceKlass,               _vtable_len,                                   int)                                   \
   nonstatic_field(instanceKlass,               _itable_len,                                   int)                                   \
-  nonstatic_field(instanceKlass,               _reference_type,                               ReferenceType)                         \
+  nonstatic_field(instanceKlass,               _reference_type,                               u1)                                    \
   volatile_nonstatic_field(instanceKlass,      _oop_map_cache,                                OopMapCache*)                          \
   nonstatic_field(instanceKlass,               _jni_ids,                                      JNIid*)                                \
   nonstatic_field(instanceKlass,               _osr_nmethods_head,                            nmethod*)                              \
@@ -2260,13 +2260,6 @@ static inline uint64_t cast_uint64_t(size_t x)
   /***************/                                                       \
                                                                           \
   declare_constant(SymbolTable::symbol_table_size)                        \
-                                                                          \
-  /********************/                                                  \
-  /* SystemDictionary */                                                  \
-  /********************/                                                  \
-                                                                          \
-  declare_constant(SystemDictionary::_loader_constraint_size)             \
-  declare_constant(SystemDictionary::_nof_buckets)                        \
                                                                           \
   /***********************************/                                   \
   /* LoaderConstraintTable constants */                                   \

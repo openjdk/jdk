@@ -70,7 +70,7 @@ endif
 
 # If we can create .debuginfo files, then the VM is stripped in vm.make
 # and this macro is not used.
-# LINK_LIB.CC/POST_HOOK += $(STRIP_LIB.CC/POST_HOOK)
+# LINK_LIB.CXX/POST_HOOK += $(STRIP_LIB.CXX/POST_HOOK)
 
 G_SUFFIX =
 SYSDEFS += -DPRODUCT

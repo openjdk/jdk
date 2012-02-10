@@ -2153,7 +2153,7 @@ void LibraryCallKit::insert_g1_pre_barrier(Node* base_oop, Node* offset, Node* p
   //
   // if (offset == java_lang_ref_Reference::_reference_offset) {
   //   if (base != null) {
-  //     if (klass(base)->reference_type() != REF_NONE)) {
+  //     if (instance_of(base, java.lang.ref.Reference)) {
   //       pre_barrier(_, pre_val, ...);
   //     }
   //   }
@@ -2164,8 +2164,6 @@ void LibraryCallKit::insert_g1_pre_barrier(Node* base_oop, Node* offset, Node* p
 
   IdealKit ideal(this);
 #define __ ideal.
-
-  const int reference_type_offset = in_bytes(instanceKlass::reference_type_offset());
 
   Node* referent_off = __ ConX(java_lang_ref_Reference::referent_offset);
 
@@ -2678,7 +2676,13 @@ bool LibraryCallKit::inline_unsafe_CAS(BasicType type) {
     cas = _gvn.transform(new (C, 5) CompareAndSwapLNode(control(), mem, adr, newval, oldval));
     break;
   case T_OBJECT:
-     // reference stores need a store barrier.
+    // Transformation of a value which could be NULL pointer (CastPP #NULL)
+    // could be delayed during Parse (for example, in adjust_map_after_if()).
+    // Execute transformation here to avoid barrier generation in such case.
+    if (_gvn.type(newval) == TypePtr::NULL_PTR)
+      newval = _gvn.makecon(TypePtr::NULL_PTR);
+
+    // Reference stores need a store barrier.
     // (They don't if CAS fails, but it isn't worth checking.)
     pre_barrier(true /* do_load*/,
                 control(), base, adr, alias_idx, newval, value_type->make_oopptr(),
