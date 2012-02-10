@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -346,6 +346,8 @@ public:
   // loaders.  Returns "true" iff something was unloaded.
   static bool do_unloading(BoolObjectClosure* is_alive);
 
+  static int calculate_systemdictionary_size(int loadedclasses);
+
   // Applies "f->do_oop" to all root oops in the system dictionary.
   static void oops_do(OopClosure* f);
 
@@ -538,11 +540,19 @@ public:
     _loader_constraint_size = 107,                     // number of entries in constraint table
     _resolution_error_size  = 107,                     // number of entries in resolution error table
     _invoke_method_size     = 139,                     // number of entries in invoke method table
-    _nof_buckets            = 1009                     // number of buckets in hash table
+    _nof_buckets            = 1009,                    // number of buckets in hash table for placeholders
+    _old_default_sdsize     = 1009,                    // backward compat for system dictionary size
+    _prime_array_size       = 8,                       // array of primes for system dictionary size
+    _average_depth_goal     = 3                        // goal for lookup length
   };
 
 
   // Static variables
+
+  // hashtable sizes for system dictionary to allow growth
+  // prime numbers for system dictionary size
+  static int                     _sdgeneration;
+  static const int               _primelist[_prime_array_size];
 
   // Hashtable holding loaded classes.
   static Dictionary*            _dictionary;
