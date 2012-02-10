@@ -2978,7 +2978,9 @@ class StubGenerator: public StubCodeGenerator {
     int frame_complete = __ pc() - start;
 
     // Set up last_Java_sp and last_Java_fp
-    __ set_last_Java_frame(rsp, rbp, NULL);
+    address the_pc = __ pc();
+    __ set_last_Java_frame(rsp, rbp, the_pc);
+    __ andptr(rsp, -(StackAlignmentInBytes));    // Align stack
 
     // Call runtime
     if (arg1 != noreg) {
@@ -2997,7 +2999,7 @@ class StubGenerator: public StubCodeGenerator {
 
     oop_maps->add_gc_map(__ pc() - start, map);
 
-    __ reset_last_Java_frame(true, false);
+    __ reset_last_Java_frame(true, true);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
 
