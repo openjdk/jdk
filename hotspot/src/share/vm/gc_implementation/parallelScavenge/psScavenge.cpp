@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
+#include "code/codeCache.hpp"
 #include "gc_implementation/parallelScavenge/cardTableExtension.hpp"
 #include "gc_implementation/parallelScavenge/gcTaskManager.hpp"
 #include "gc_implementation/parallelScavenge/generationSizer.hpp"
@@ -100,7 +101,7 @@ public:
 
     // Weak refs may be visited more than once.
     if (PSScavenge::should_scavenge(p, _to_space)) {
-      PSScavenge::copy_and_push_safe_barrier(_promotion_manager, p);
+      PSScavenge::copy_and_push_safe_barrier<T, /*promote_immediately=*/false>(_promotion_manager, p);
     }
   }
   virtual void do_oop(oop* p)       { PSKeepAliveClosure::do_oop_work(p); }
@@ -601,6 +602,8 @@ bool PSScavenge::invoke_no_policy() {
     COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
 
     NOT_PRODUCT(reference_processor()->verify_no_references_recorded());
+
+    CodeCache::prune_scavenge_root_nmethods();
 
     // Re-verify object start arrays
     if (VerifyObjectStartArray &&
