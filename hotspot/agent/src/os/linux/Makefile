@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ OBJS     = $(SOURCES:.c=.o)
 
 LIBS     = -lthread_db
 
-CFLAGS   = -c -fPIC -g -D_GNU_SOURCE -D$(ARCH) $(INCLUDES)
+CFLAGS   = -c -fPIC -g -D_GNU_SOURCE -D$(ARCH) $(INCLUDES) -D_FILE_OFFSET_BITS=64
 
 LIBSA = $(ARCH)/libsaproc.so
 
