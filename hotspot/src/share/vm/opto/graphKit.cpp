@@ -1522,6 +1522,11 @@ Node* GraphKit::store_oop(Node* ctl,
                           const TypeOopPtr* val_type,
                           BasicType bt,
                           bool use_precise) {
+  // Transformation of a value which could be NULL pointer (CastPP #NULL)
+  // could be delayed during Parse (for example, in adjust_map_after_if()).
+  // Execute transformation here to avoid barrier generation in such case.
+  if (_gvn.type(val) == TypePtr::NULL_PTR)
+    val = _gvn.makecon(TypePtr::NULL_PTR);
 
   set_control(ctl);
   if (stopped()) return top(); // Dead path ?

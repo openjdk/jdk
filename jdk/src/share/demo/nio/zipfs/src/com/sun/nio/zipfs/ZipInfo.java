@@ -78,12 +78,12 @@ public class ZipInfo {
                 // twice
                 long len = LOCHDR + CENNAM(cen, pos) + CENEXT(cen, pos) + CENHDR;
                 if (zfs.readFullyAt(buf, 0, len, locoff(cen, pos)) != len)
-                    zfs.zerror("read loc header failed");
+                    ZipFileSystem.zerror("read loc header failed");
                 if (LOCEXT(buf) > CENEXT(cen, pos) + CENHDR) {
                     // have to read the second time;
                     len = LOCHDR + LOCNAM(buf) + LOCEXT(buf);
                     if (zfs.readFullyAt(buf, 0, len, locoff(cen, pos)) != len)
-                        zfs.zerror("read loc header failed");
+                        ZipFileSystem.zerror("read loc header failed");
                 }
                 printLOC(buf);
                 pos += CENHDR + CENNAM(cen, pos) + CENEXT(cen, pos) + CENCOM(cen, pos);

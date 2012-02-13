@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -775,7 +775,7 @@ public abstract class CipherSpi {
             int outOfs = output.arrayOffset() + outPos;
             byte[] inArray = new byte[getTempArraySize(inLen)];
             int total = 0;
-            while (inLen > 0) {
+            do {
                 int chunk = Math.min(inLen, inArray.length);
                 input.get(inArray, 0, chunk);
                 int n;
@@ -787,7 +787,7 @@ public abstract class CipherSpi {
                 total += n;
                 outOfs += n;
                 inLen -= chunk;
-            }
+            } while (inLen > 0);
             output.position(outPos + total);
             return total;
         } else { // output is not backed by an accessible byte[]
@@ -804,7 +804,7 @@ public abstract class CipherSpi {
             int outSize = outArray.length;
             int total = 0;
             boolean resized = false;
-            while (inLen > 0) {
+            do {
                 int chunk = Math.min(inLen, outSize);
                 if ((a1 == false) && (resized == false)) {
                     input.get(inArray, 0, chunk);
@@ -834,7 +834,7 @@ public abstract class CipherSpi {
                     int newOut = engineGetOutputSize(chunk);
                     outArray = new byte[newOut];
                 }
-            }
+            } while (inLen > 0);
             input.position(inLimit);
             return total;
         }

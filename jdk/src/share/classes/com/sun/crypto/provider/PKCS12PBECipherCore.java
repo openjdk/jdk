@@ -60,11 +60,16 @@ final class PKCS12PBECipherCore {
 
     static byte[] derive(char[] chars, byte[] salt,
                          int ic, int n, int type) {
-        // Add in trailing NULL terminator.
+        // Add in trailing NULL terminator.  Special case:
+        // no terminator if password is "\0".
         int length = chars.length*2;
-        if (length != 0) {
+        if (length == 2 && chars[0] == 0) {
+            chars = new char[0];
+            length = 0;
+        } else {
             length += 2;
         }
+
         byte[] passwd = new byte[length];
         for (int i = 0, j = 0; i < chars.length; i++, j+=2) {
             passwd[j] = (byte) ((chars[i] >>> 8) & 0xFF);
@@ -133,6 +138,9 @@ final class PKCS12PBECipherCore {
     }
 
     private static void concat(byte[] src, byte[] dst, int start, int len) {
+        if (src.length == 0) {
+            return;
+        }
         int loop = len / src.length;
         int off, i;
         for (i = 0, off = 0; i < loop; i++, off += src.length)
