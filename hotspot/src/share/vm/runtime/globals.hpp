@@ -26,6 +26,17 @@
 #define SHARE_VM_RUNTIME_GLOBALS_HPP
 
 #include "utilities/debug.hpp"
+
+// use this for flags that are true per default in the tiered build
+// but false in non-tiered builds, and vice versa
+#ifdef TIERED
+#define  trueInTiered true
+#define falseInTiered false
+#else
+#define  trueInTiered false
+#define falseInTiered true
+#endif
+
 #ifdef TARGET_ARCH_x86
 # include "globals_x86.hpp"
 #endif
@@ -353,16 +364,6 @@ class CommandLineFlags {
 #define falseInProduct true
 #endif
 
-// use this for flags that are true per default in the tiered build
-// but false in non-tiered builds, and vice versa
-#ifdef TIERED
-#define  trueInTiered true
-#define falseInTiered false
-#else
-#define  trueInTiered false
-#define falseInTiered true
-#endif
-
 #ifdef JAVASE_EMBEDDED
 #define falseInEmbedded false
 #else
@@ -658,6 +659,12 @@ class CommandLineFlags {
   develop(bool, SpecialArraysEquals, true,                                  \
           "special version of Arrays.equals(char[],char[])")                \
                                                                             \
+  product(bool, CriticalJNINatives, true,                                   \
+          "check for critical JNI entry points")                            \
+                                                                            \
+  notproduct(bool, StressCriticalJNINatives, false,                         \
+            "Exercise register saving code in critical natives")            \
+                                                                            \
   product(bool, UseSSE42Intrinsics, false,                                  \
           "SSE4.2 versions of intrinsics")                                  \
                                                                             \
@@ -735,8 +742,11 @@ class CommandLineFlags {
   product(bool, MaxFDLimit, true,                                           \
           "Bump the number of file descriptors to max in solaris.")         \
                                                                             \
-  notproduct(bool, LogEvents, trueInDebug,                                  \
-          "Enable Event log")                                               \
+  diagnostic(bool, LogEvents, true,                                         \
+             "Enable the various ring buffer event logs")                   \
+                                                                            \
+  diagnostic(intx, LogEventsBufferEntries, 10,                              \
+             "Enable the various ring buffer event logs")                   \
                                                                             \
   product(bool, BytecodeVerificationRemote, true,                           \
           "Enables the Java bytecode verifier for remote classes")          \
@@ -1041,6 +1051,9 @@ class CommandLineFlags {
                                                                             \
   notproduct(bool, PrintSystemDictionaryAtExit, false,                      \
           "Prints the system dictionary at exit")                           \
+                                                                            \
+  experimental(intx, PredictedLoadedClassCount, 0,                          \
+          "Experimental: Tune loaded class cache starting size.")           \
                                                                             \
   diagnostic(bool, UnsyncloadClass, false,                                  \
           "Unstable: VM calls loadClass unsynchronized. Custom "            \

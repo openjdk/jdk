@@ -211,78 +211,9 @@ java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
 
 # jdk_management
 
-# Failing, bug was filed: 6959636
-javax/management/loading/LibraryLoader/LibraryLoaderTest.java   generic-all
-
-# Access denied messages on windows/mks, filed 6954450
-sun/management/jmxremote/bootstrap/RmiSslNoKeyStoreTest.sh      windows-all
-
-# Fails on linux: KO: StringMonitor notification missed or not emitted
-javax/management/monitor/NonComparableAttributeValueTest.java   generic-all
-
-# Port conflict? Fails with communication error
-sun/management/jmxremote/bootstrap/PasswordFilePermissionTest.sh generic-all
-
-# Fails on Windows 2000, Test failed for iiop java.lang.NullPointerException
-#  at org.omg.stub.javax.management.remote.rmi._RMIConnectionImpl_Tie._invoke(Unknown Source)
-#  at com.sun.corba.se.impl.protocol.CorbaServerRequestDispatcherImpl.dispatchToServant(CorbaServerRequestDispatcherImpl.java:653)
-javax/management/remote/mandatory/connection/ReconnectTest.java generic-all
-
-# Solaris 10 sparc, NPE from org.omg.stub.javax.management.remote.rmi._RMIConnectionImpl_Tie._invoke
-javax/management/remote/mandatory/threads/ExecutorTest.java     generic-all
-
-# Linux 32bit Fedora 9, IllegalStateException
-javax/management/monitor/RuntimeExceptionTest.java              generic-all
-
-# Problems with rmi connection, othervm
-javax/management/remote/mandatory/subjectDelegation/SubjectDelegation2Test.java generic-all
-
-# Fails with port already in use
-sun/management/jmxremote/bootstrap/SSLConfigFilePermissionTest.sh generic-all
-
-# Fails with port already in use
-sun/management/jmxremote/bootstrap/RmiRegistrySslTest.sh        generic-all
-
-# Windows, connection can't last that long
-javax/management/eventService/LeaseTest.java                    generic-all
-
-# Linux othervm, X64, java.lang.Exception: Failed: ratio=102.4027795593753
-javax/management/remote/mandatory/notif/ListenerScaleTest.java  generic-all
-
-# Windows run seems to have triggered a hotspot gc error (see 6801625)
-com/sun/management/HotSpotDiagnosticMXBean/DumpHeap.sh          generic-all
-
-# rmi problem? othervm, java.lang.reflect.UndeclaredThrowableException
-javax/management/remote/mandatory/subjectDelegation/SubjectDelegation3Test.java generic-all
-
-# Linux Fedora 9 32bit NPE in rmi server somehere??? othervm
-javax/management/remote/mandatory/notif/NotificationBufferDeadlockTest.java generic-all
-
-# Times out on solaris sparc, with othervm
-javax/management/eventService/AddRemoveListenerTest.java        generic-all
-
-# Linux i586 and x64 -server, timed out waiting for threads to expire? othervm
-javax/management/eventService/EventClientThreadTest.java        generic-all
-
-# Linux i586 -server, Expected to receive 20, but got 21, othervm
-#   Fails on Linux X64 -server 20!=21
-javax/management/eventService/FetchingTest.java                 generic-all
-
-# NPE on windows 2000 i586 -client and -server
-javax/management/eventService/CustomForwarderTest.java          windows-all
-
-# Windows i586 failure, callback did not complete
-javax/management/eventService/LeaseManagerDeadlockTest.java     windows-all
-
-# Port already in use
-sun/management/jmxremote/bootstrap/LocalManagementTest.sh       generic-all
-
-# Failed to initialize connector (also overflowing jtreg io buffers)
-sun/management/jmxremote/bootstrap/RmiBootstrapTest.sh          generic-all
-sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh       generic-all
-
-# Windows X64, java.lang.IllegalStateException
-javax/management/monitor/AttributeArbitraryDataTypeTest.java    generic-all
+# 7073626
+sun/management/jmxremote/bootstrap/RmiBootstrapTest.sh          windows-all
+sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh       windows-all
 
 ############################################################################
 
@@ -410,71 +341,11 @@ java/nio/channels/FileChannel/ReleaseOnCloseDeadlock.java 	windows-all
 
 # jdk_rmi
 
-# Port already in use, fails on sparc, othervm
-java/rmi/reliability/benchmark/runRmiBench.sh                   generic-all
-
-# Already in use port issues? othervm solaris
-java/rmi/activation/rmidViaInheritedChannel/InheritedChannelNotServerSocket.java generic-all
-java/rmi/activation/rmidViaInheritedChannel/RmidViaInheritedChannel.java generic-all
-
-java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java         generic-all
-java/rmi/transport/dgcDeadLock/TestImpl_Stub.java                       generic-all
-
-# Address already in use, othervm mode, solaris
-java/rmi/activation/Activatable/elucidateNoSuchMethod/ElucidateNoSuchMethod.java        generic-all
-java/rmi/activation/Activatable/forceLogSnapshot/ForceLogSnapshot.java  generic-all
-
-# Registry already running on port, solaris
-java/rmi/Naming/legalRegistryNames/LegalRegistryNames.java      generic-all
-
-# Fails on Linux 32 and 64bit -server?, impl not garbage collected???
-java/rmi/transport/pinLastArguments/PinLastArguments.java       generic-all
-
-# Times out on solaris sparc
-java/rmi/server/RemoteServer/AddrInUse.java                     generic-all
-
-# Connection error on Windows i586 -server
-#  Also connection errors in othervm on Solaris 10 sparc, same port???
-sun/rmi/transport/tcp/DeadCachedConnection.java                 generic-all
-
-# Connection errors in othervm on Solaris 10 sparc, same port???
-java/rmi/activation/Activatable/checkActivateRef/CheckActivateRef.java generic-all
-java/rmi/activation/Activatable/checkAnnotations/CheckAnnotations.java generic-all
-java/rmi/activation/Activatable/checkImplClassLoader/CheckImplClassLoader.java generic-all
-java/rmi/activation/Activatable/checkRegisterInLog/CheckRegisterInLog.java generic-all
-java/rmi/activation/Activatable/createPrivateActivable/CreatePrivateActivatable.java generic-all
-java/rmi/activation/Activatable/downloadParameterClass/DownloadParameterClass.java generic-all
-java/rmi/activation/Activatable/extLoadedImpl/ext.sh generic-all
-java/rmi/activation/Activatable/inactiveGroup/InactiveGroup.java generic-all
-java/rmi/activation/Activatable/lookupActivationSystem/LookupActivationSystem.java generic-all
-java/rmi/activation/Activatable/nestedActivate/NestedActivate.java generic-all
-java/rmi/activation/Activatable/restartCrashedService/RestartCrashedService.java generic-all
-java/rmi/activation/Activatable/restartLatecomer/RestartLatecomer.java generic-all
-java/rmi/activation/Activatable/shutdownGracefully/ShutdownGracefully.java generic-all
-java/rmi/activation/Activatable/unregisterInactive/UnregisterInactive.java generic-all
-java/rmi/activation/ActivateFailedException/activateFails/ActivateFails.java generic-all
-java/rmi/activation/ActivationGroup/downloadActivationGroup/DownloadActivationGroup.java generic-all
-java/rmi/activation/ActivationSystem/activeGroup/IdempotentActiveGroup.java generic-all
-java/rmi/reliability/juicer/AppleUserImpl.java generic-all
-java/rmi/server/RMISocketFactory/useSocketFactory/unicast/UseCustomSocketFactory.java generic-all
-java/rmi/server/UnicastRemoteObject/keepAliveDuringCall/KeepAliveDuringCall.java generic-all
-java/rmi/transport/handshakeTimeout/HandshakeTimeout.java generic-all
-java/rmi/activation/Activatable/restartService/RestartService.java generic-all
-java/rmi/activation/ActivationSystem/modifyDescriptor/ModifyDescriptor.java generic-all
-java/rmi/activation/ActivationSystem/stubClassesPermitted/StubClassesPermitted.java generic-all
-java/rmi/activation/ActivationSystem/unregisterGroup/UnregisterGroup.java generic-all
-java/rmi/activation/CommandEnvironment/SetChildEnv.java generic-all
-java/rmi/registry/classPathCodebase/ClassPathCodebase.java generic-all
-java/rmi/registry/reexport/Reexport.java generic-all
+# 7140992
 java/rmi/server/Unreferenced/finiteGCLatency/FiniteGCLatency.java generic-all
-java/rmi/server/Unreferenced/leaseCheckInterval/LeaseCheckInterval.java generic-all
-java/rmi/server/Unreferenced/unreferencedContext/UnreferencedContext.java generic-all
-java/rmi/server/useCustomRef/UseCustomRef.java generic-all
-java/rmi/transport/checkFQDN/CheckFQDN.java generic-all
-java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java generic-all
-java/rmi/server/RMISocketFactory/useSocketFactory/activatable/UseCustomSocketFactory.java generic-all
-java/rmi/server/RMISocketFactory/useSocketFactory/registry/UseCustomSocketFactory.java generic-all
-java/rmi/server/UnicastRemoteObject/unexportObject/UnexportLeak.java generic-all
+
+# 6948101
+java/rmi/transport/pinLastArguments/PinLastArguments.java	generic-all
 
 # 7132247
 java/rmi/registry/readTest/readTest.sh				windows-all
@@ -557,6 +428,9 @@ java/text/Bidi/Bug6665028.java                                  linux-x64
 
 # jdk_tools
 
+# 6461635
+com/sun/tools/attach/BasicTests.sh                              generic-all
+
 # Filed 6952105
 com/sun/jdi/SuspendThreadTest.java                              generic-all
 
@@ -572,6 +446,9 @@ com/sun/jdi/FieldWatchpoints.java                               generic-all
 # Filed 6402201
 com/sun/jdi/ProcessAttachTest.sh                                generic-all
 
+# 7144833
+sun/tools/jcmd/jcmd-Defaults.sh                                 generic-all
+
 # Filed 6986875
 sun/tools/jps/jps-Vvml.sh                                       generic-all
 
@@ -581,17 +458,16 @@ sun/tools/jconsole/ResourceCheckTest.sh                         generic-all
 # 7132203
 sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
 
+# Tests take too long
+tools/pack200/CommandLineTests.java                         	generic-all
+tools/pack200/Pack200Test.java                              	generic-all
+
 ############################################################################
 
 # jdk_util
 
 # Filed 6933803
 java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java  generic-all
-
-# Filed 7022325
-# Fails with assertion error on windows
-#   11 separate stacktraces created... file reuse problem?
-java/util/zip/ZipFile/ReadLongZipFileName.java                  generic-all
 
 # Filed 6772009
 java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all

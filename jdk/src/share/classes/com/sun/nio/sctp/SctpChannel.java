@@ -162,7 +162,7 @@ public abstract class SctpChannel
      */
     public static SctpChannel open() throws
         IOException {
-        return new sun.nio.ch.SctpChannelImpl((SelectorProvider)null);
+        return new sun.nio.ch.sctp.SctpChannelImpl((SelectorProvider)null);
     }
 
     /**
