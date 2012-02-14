@@ -28,6 +28,6 @@
 
 JCMD="${TESTJAVA}/bin/jcmd"
 
-${JCMD} 2>&1 | awk -f ${TESTSRC}/jcmd_Output1.awk
+${JCMD} -J-XX:+UsePerfData 2>&1 | awk -f ${TESTSRC}/jcmd_Output1.awk
 
-${JCMD} -l 2>&1 | awk -f ${TESTSRC}/jcmd_Output1.awk
+${JCMD} -J-XX:+UsePerfData -l 2>&1 | awk -f ${TESTSRC}/jcmd_Output1.awk

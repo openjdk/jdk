@@ -45,11 +45,11 @@ set +e
 failed=0
 
 # help command 
-${JCMD} $appJavaPid help 2>&1 | awk -f ${TESTSRC}/jcmd_pid_Output1.awk
+${JCMD} -J-XX:+UsePerfData $appJavaPid help 2>&1 | awk -f ${TESTSRC}/jcmd_pid_Output1.awk
 if [ $? != 0 ]; then failed=1; fi
 
 # PerfCounter.list option
-${JCMD} $appJavaPid PerfCounter.print 2>&1 | awk -f ${TESTSRC}/jcmd_pid_Output2.awk
+${JCMD} -J-XX:+UsePerfData $appJavaPid PerfCounter.print 2>&1 | awk -f ${TESTSRC}/jcmd_pid_Output2.awk
 if [ $? != 0 ]; then failed=1; fi
 
 set -e
