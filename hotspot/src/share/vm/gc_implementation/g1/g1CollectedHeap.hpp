@@ -770,7 +770,7 @@ protected:
   // the "i" of the calling parallel worker thread's work(i) function.
   // In the sequential case this param will be ignored.
   void g1_process_strong_roots(bool collecting_perm_gen,
-                               SharedHeap::ScanningOption so,
+                               ScanningOption so,
                                OopClosure* scan_non_heap_roots,
                                OopsInHeapRegionClosure* scan_rs,
                                OopsInGenClosure* scan_perm,
