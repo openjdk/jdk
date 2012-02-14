@@ -38,7 +38,7 @@ import com.sun.tools.javac.tree.JCTree.*;
  *  done by javac.
  *  @author Neal Gafter
  */
-class JavadocMemberEnter extends MemberEnter {
+public class JavadocMemberEnter extends MemberEnter {
     public static JavadocMemberEnter instance0(Context context) {
         MemberEnter instance = context.get(memberEnterKey);
         if (instance == null)

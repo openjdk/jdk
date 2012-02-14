@@ -32,6 +32,7 @@
 
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.parser.*;
+import com.sun.tools.javac.parser.Tokens.Token;
 import com.sun.tools.javac.util.*;
 import java.io.*;
 import java.net.*;
@@ -93,7 +94,7 @@ public class TestJavacTaskScanner extends ToolTester {
 
         check(numTokens, "#Tokens", 1222);
         check(numParseTypeElements, "#parseTypeElements", 136);
-        check(numAllMembers, "#allMembers", 67);
+        check(numAllMembers, "#allMembers", 52);
     }
 
     void check(int value, String name, int expected) {
@@ -206,7 +207,8 @@ class MyScanner extends Scanner {
 
     public void nextToken() {
         super.nextToken();
-        System.err.format("Saw token %s (%s)%n", token(), name());
+        Token tk = token();
+        System.err.format("Saw token %s %n", tk.kind);
         test.numTokens++;
     }
 

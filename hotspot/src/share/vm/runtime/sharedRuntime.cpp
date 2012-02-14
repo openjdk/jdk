@@ -80,15 +80,81 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 
+// Shared stub locations
+RuntimeStub*        SharedRuntime::_wrong_method_blob;
+RuntimeStub*        SharedRuntime::_ic_miss_blob;
+RuntimeStub*        SharedRuntime::_resolve_opt_virtual_call_blob;
+RuntimeStub*        SharedRuntime::_resolve_virtual_call_blob;
+RuntimeStub*        SharedRuntime::_resolve_static_call_blob;
+
+DeoptimizationBlob* SharedRuntime::_deopt_blob;
+RicochetBlob*       SharedRuntime::_ricochet_blob;
+
+SafepointBlob*      SharedRuntime::_polling_page_safepoint_handler_blob;
+SafepointBlob*      SharedRuntime::_polling_page_return_handler_blob;
+
+#ifdef COMPILER2
+UncommonTrapBlob*   SharedRuntime::_uncommon_trap_blob;
+#endif // COMPILER2
+
+
+//----------------------------generate_stubs-----------------------------------
+void SharedRuntime::generate_stubs() {
+  _wrong_method_blob                   = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::handle_wrong_method),         "wrong_method_stub");
+  _ic_miss_blob                        = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::handle_wrong_method_ic_miss), "ic_miss_stub");
+  _resolve_opt_virtual_call_blob       = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::resolve_opt_virtual_call_C),  "resolve_opt_virtual_call");
+  _resolve_virtual_call_blob           = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::resolve_virtual_call_C),      "resolve_virtual_call");
+  _resolve_static_call_blob            = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::resolve_static_call_C),       "resolve_static_call");
+
+  _polling_page_safepoint_handler_blob = generate_handler_blob(CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception), false);
+  _polling_page_return_handler_blob    = generate_handler_blob(CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception), true);
+
+  generate_ricochet_blob();
+  generate_deopt_blob();
+
+#ifdef COMPILER2
+  generate_uncommon_trap_blob();
+#endif // COMPILER2
+}
+
+//----------------------------generate_ricochet_blob---------------------------
+void SharedRuntime::generate_ricochet_blob() {
+  if (!EnableInvokeDynamic)  return;  // leave it as a null
+
+#ifndef TARGET_ARCH_NYI_6939861
+  // allocate space for the code
+  ResourceMark rm;
+  // setup code generation tools
+  CodeBuffer buffer("ricochet_blob", 256 LP64_ONLY(+ 256), 256);  // XXX x86 LP64L: 512, 512
+  MacroAssembler* masm = new MacroAssembler(&buffer);
+
+  int bounce_offset = -1, exception_offset = -1, frame_size_in_words = -1;
+  MethodHandles::RicochetFrame::generate_ricochet_blob(masm, &bounce_offset, &exception_offset, &frame_size_in_words);
+
+  // -------------
+  // make sure all code is generated
+  masm->flush();
+
+  // failed to generate?
+  if (bounce_offset < 0 || exception_offset < 0 || frame_size_in_words < 0) {
+    assert(false, "bad ricochet blob");
+    return;
+  }
+
+  _ricochet_blob = RicochetBlob::create(&buffer, bounce_offset, exception_offset, frame_size_in_words);
+#endif
+}
+
+
 #include <math.h>
 
+#ifndef USDT2
 HS_DTRACE_PROBE_DECL4(hotspot, object__alloc, Thread*, char*, int, size_t);
 HS_DTRACE_PROBE_DECL7(hotspot, method__entry, int,
                       char*, int, char*, int, char*, int);
 HS_DTRACE_PROBE_DECL7(hotspot, method__return, int,
                       char*, int, char*, int, char*, int);
-
-RicochetBlob*      SharedRuntime::_ricochet_blob = NULL;
+#endif /* !USDT2 */
 
 // Implementation of SharedRuntime
 
@@ -142,6 +208,7 @@ int SharedRuntime::_rethrow_ctr=0;
 int     SharedRuntime::_ICmiss_index                    = 0;
 int     SharedRuntime::_ICmiss_count[SharedRuntime::maxICmiss_count];
 address SharedRuntime::_ICmiss_at[SharedRuntime::maxICmiss_count];
+
 
 void SharedRuntime::trace_ic_miss(address at) {
   for (int i = 0; i < _ICmiss_index; i++) {
@@ -594,12 +661,14 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
   int scope_depth = 0;
   if (!force_unwind) {
     int bci = sd->bci();
+    bool recursive_exception = false;
     do {
       bool skip_scope_increment = false;
       // exception handler lookup
       KlassHandle ek (THREAD, exception->klass());
       handler_bci = sd->method()->fast_exception_handler_bci_for(ek, bci, THREAD);
       if (HAS_PENDING_EXCEPTION) {
+        recursive_exception = true;
         // We threw an exception while trying to find the exception handler.
         // Transfer the new exception to the exception handle which will
         // be set into thread local storage, and do another lookup for an
@@ -615,6 +684,9 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
           skip_scope_increment = true;
         }
       }
+      else {
+        recursive_exception = false;
+      }
       if (!top_frame_only && handler_bci < 0 && !skip_scope_increment) {
         sd = sd->sender();
         if (sd != NULL) {
@@ -622,7 +694,7 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
         }
         ++scope_depth;
       }
-    } while (!top_frame_only && handler_bci < 0 && sd != NULL);
+    } while (recursive_exception || (!top_frame_only && handler_bci < 0 && sd != NULL));
   }
 
   // found handling method => lookup exception handler
@@ -696,6 +768,13 @@ JRT_ENTRY(void, SharedRuntime::throw_StackOverflowError(JavaThread* thread))
     java_lang_Throwable::fill_in_stack_trace(exception);
   }
   throw_and_post_jvmti_exception(thread, exception);
+JRT_END
+
+JRT_ENTRY(void, SharedRuntime::throw_WrongMethodTypeException(JavaThread* thread, oopDesc* required, oopDesc* actual))
+  assert(thread == JavaThread::current() && required->is_oop() && actual->is_oop(), "bad args");
+  ResourceMark rm;
+  char* message = SharedRuntime::generate_wrong_method_type_message(thread, required, actual);
+  throw_and_post_jvmti_exception(thread, vmSymbols::java_lang_invoke_WrongMethodTypeException(), message);
 JRT_END
 
 address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
@@ -882,8 +961,14 @@ int SharedRuntime::dtrace_object_alloc_base(Thread* thread, oopDesc* o) {
   Klass* klass = o->blueprint();
   int size = o->size();
   Symbol* name = klass->name();
+#ifndef USDT2
   HS_DTRACE_PROBE4(hotspot, object__alloc, get_java_tid(thread),
                    name->bytes(), name->utf8_length(), size * HeapWordSize);
+#else /* USDT2 */
+  HOTSPOT_OBJECT_ALLOC(
+                   get_java_tid(thread),
+                   (char *) name->bytes(), name->utf8_length(), size * HeapWordSize);
+#endif /* USDT2 */
   return 0;
 }
 
@@ -893,10 +978,18 @@ JRT_LEAF(int, SharedRuntime::dtrace_method_entry(
   Symbol* kname = method->klass_name();
   Symbol* name = method->name();
   Symbol* sig = method->signature();
+#ifndef USDT2
   HS_DTRACE_PROBE7(hotspot, method__entry, get_java_tid(thread),
       kname->bytes(), kname->utf8_length(),
       name->bytes(), name->utf8_length(),
       sig->bytes(), sig->utf8_length());
+#else /* USDT2 */
+  HOTSPOT_METHOD_ENTRY(
+      get_java_tid(thread),
+      (char *) kname->bytes(), kname->utf8_length(),
+      (char *) name->bytes(), name->utf8_length(),
+      (char *) sig->bytes(), sig->utf8_length());
+#endif /* USDT2 */
   return 0;
 JRT_END
 
@@ -906,10 +999,18 @@ JRT_LEAF(int, SharedRuntime::dtrace_method_exit(
   Symbol* kname = method->klass_name();
   Symbol* name = method->name();
   Symbol* sig = method->signature();
+#ifndef USDT2
   HS_DTRACE_PROBE7(hotspot, method__return, get_java_tid(thread),
       kname->bytes(), kname->utf8_length(),
       name->bytes(), name->utf8_length(),
       sig->bytes(), sig->utf8_length());
+#else /* USDT2 */
+  HOTSPOT_METHOD_RETURN(
+      get_java_tid(thread),
+      (char *) kname->bytes(), kname->utf8_length(),
+      (char *) name->bytes(), name->utf8_length(),
+      (char *) sig->bytes(), sig->utf8_length());
+#endif /* USDT2 */
   return 0;
 JRT_END
 
@@ -2058,9 +2159,9 @@ class AdapterFingerPrint : public CHeapObj {
  public:
   AdapterFingerPrint(int total_args_passed, BasicType* sig_bt) {
     // The fingerprint is based on the BasicType signature encoded
-    // into an array of ints with four entries per int.
+    // into an array of ints with eight entries per int.
     int* ptr;
-    int len = (total_args_passed + 3) >> 2;
+    int len = (total_args_passed + 7) >> 3;
     if (len <= (int)(sizeof(_value._compact) / sizeof(int))) {
       _value._compact[0] = _value._compact[1] = _value._compact[2] = 0;
       // Storing the signature encoded as signed chars hits about 98%
@@ -2073,11 +2174,11 @@ class AdapterFingerPrint : public CHeapObj {
       ptr = _value._fingerprint;
     }
 
-    // Now pack the BasicTypes with 4 per int
+    // Now pack the BasicTypes with 8 per int
     int sig_index = 0;
     for (int index = 0; index < len; index++) {
       int value = 0;
-      for (int byte = 0; byte < 4; byte++) {
+      for (int byte = 0; byte < 8; byte++) {
         if (sig_index < total_args_passed) {
           value = (value << 4) | adapter_encoding(sig_bt[sig_index++]);
         }
@@ -2118,8 +2219,9 @@ class AdapterFingerPrint : public CHeapObj {
 
   const char* as_string() {
     stringStream st;
+    st.print("0x");
     for (int i = 0; i < length(); i++) {
-      st.print(PTR_FORMAT, value(i));
+      st.print("%08x", value(i));
     }
     return st.as_string();
   }

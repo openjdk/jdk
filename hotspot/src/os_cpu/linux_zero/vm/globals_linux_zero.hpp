@@ -38,7 +38,6 @@ define_pd_global(intx,  VMThreadStackSize,       1024);
 #else
 define_pd_global(intx,  VMThreadStackSize,       512);
 #endif // _LP64
-define_pd_global(intx,  SurvivorRatio,           8);
 define_pd_global(intx,  CompilerThreadStackSize, 0);
 define_pd_global(uintx, JVMInvokeMethodSlack,    8192);
 

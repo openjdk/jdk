@@ -75,6 +75,7 @@ import static javax.lang.model.SourceVersion.*;
  * @author Peter von der Ah&eacute;
  *
  * @see SimpleTypeVisitor7
+ * @see SimpleTypeVisitor8
  * @since 1.6
  */
 @SupportedSourceVersion(RELEASE_6)

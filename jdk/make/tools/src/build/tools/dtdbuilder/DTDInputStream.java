@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import java.net.URL;
 public final
 class DTDInputStream extends FilterReader implements DTDConstants {
     public DTD dtd;
-    public Stack stack = new Stack();
+    public Stack<Object> stack = new Stack<>();
     public char str[] = new char[64];
     public int replace = 0;
     public int ln = 1;
@@ -105,6 +105,7 @@ class DTDInputStream extends FilterReader implements DTDConstants {
      * parameter entities.
      * [60] 350:22
      */
+    @SuppressWarnings("fallthrough")
     public int read() throws IOException {
         switch (ch) {
           case '%': {
@@ -134,6 +135,7 @@ class DTDInputStream extends FilterReader implements DTDConstants {
             switch (ch) {
               case '\r':
                 ln++;
+                /* fall through */
               case ';':
                 ch = in.read();
                 break;

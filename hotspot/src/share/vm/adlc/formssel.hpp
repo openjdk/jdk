@@ -145,8 +145,6 @@ public:
   virtual int         is_empty_encoding() const; // _size=0 and/or _insencode empty
   virtual int         is_tls_instruction() const; // tlsLoadP rule or ideal ThreadLocal
   virtual int         is_ideal_copy() const;    // node matches ideal 'Copy*'
-  virtual bool        is_ideal_unlock() const;  // node matches ideal 'Unlock'
-  virtual bool        is_ideal_call_leaf() const; // node matches ideal 'CallLeaf'
   virtual bool        is_ideal_if()   const;    // node matches ideal 'If'
   virtual bool        is_ideal_fastlock() const; // node matches 'FastLock'
   virtual bool        is_ideal_membar() const;  // node matches ideal 'MemBarXXX'
@@ -857,7 +855,6 @@ public:
   int  type() { return id;}        // return this object's "id"
 
   static const char* _ins_cost;        // "ins_cost"
-  static const char* _ins_pc_relative; // "ins_pc_relative"
   static const char* _op_cost;         // "op_cost"
 
   void dump();                     // Debug printer
@@ -1002,8 +999,6 @@ public:
   bool       is_chain_rule(FormDict &globals) const;
   int        is_ideal_copy() const;
   int        is_expensive() const;     // node matches ideal 'CosD'
-  bool       is_ideal_unlock() const;
-  bool       is_ideal_call_leaf() const;
   bool       is_ideal_if()   const;    // node matches ideal 'If'
   bool       is_ideal_fastlock() const; // node matches ideal 'FastLock'
   bool       is_ideal_jump()   const;  // node matches ideal 'Jump'

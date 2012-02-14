@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,10 @@
 
 package com.sun.crypto.provider;
 
-import java.util.*;
 import java.io.*;
-import sun.security.util.*;
 import java.security.AlgorithmParametersSpi;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
-import javax.crypto.spec.IvParameterSpec;
 
 /**
  * This class implements the parameter (IV) used with the DES algorithm in
@@ -68,9 +65,15 @@ public final class DESParameters extends AlgorithmParametersSpi {
         core.init(encoded, decodingMethod);
     }
 
-    protected AlgorithmParameterSpec engineGetParameterSpec(Class paramSpec)
+    protected <T extends AlgorithmParameterSpec>
+        T engineGetParameterSpec(Class<T> paramSpec)
         throws InvalidParameterSpecException {
-        return core.getParameterSpec(paramSpec);
+        if (AlgorithmParameterSpec.class.isAssignableFrom(paramSpec)) {
+            return core.getParameterSpec(paramSpec);
+        } else {
+            throw new InvalidParameterSpecException
+                ("Inappropriate parameter Specification");
+        }
     }
 
     protected byte[] engineGetEncoded() throws IOException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,16 +47,17 @@ import javax.naming.spi.DirectoryManager;
 import java.util.NoSuchElementException;
 import java.util.Hashtable;
 
-final public class LazySearchEnumerationImpl implements NamingEnumeration {
-    private NamingEnumeration candidates;
+final public class LazySearchEnumerationImpl
+        implements NamingEnumeration<SearchResult> {
+    private NamingEnumeration<Binding> candidates;
     private SearchResult nextMatch = null;
     private SearchControls cons;
     private AttrFilter filter;
     private Context context;
-    private Hashtable env;
+    private Hashtable<String, Object> env;
     private boolean useFactory = true;
 
-    public LazySearchEnumerationImpl(NamingEnumeration candidates,
+    public LazySearchEnumerationImpl(NamingEnumeration<Binding> candidates,
         AttrFilter filter, SearchControls cons) throws NamingException {
             this.candidates = candidates;
             this.filter = filter;
@@ -68,9 +69,10 @@ final public class LazySearchEnumerationImpl implements NamingEnumeration {
             }
     }
 
-    public LazySearchEnumerationImpl(NamingEnumeration candidates,
+    public LazySearchEnumerationImpl(NamingEnumeration<Binding> candidates,
         AttrFilter filter, SearchControls cons,
-        Context ctx, Hashtable env, boolean useFactory) throws NamingException {
+        Context ctx, Hashtable<String, Object> env, boolean useFactory)
+        throws NamingException {
 
             this.candidates = candidates;
             this.filter = filter;
@@ -86,9 +88,9 @@ final public class LazySearchEnumerationImpl implements NamingEnumeration {
     }
 
 
-    public LazySearchEnumerationImpl(NamingEnumeration candidates,
+    public LazySearchEnumerationImpl(NamingEnumeration<Binding> candidates,
         AttrFilter filter, SearchControls cons,
-        Context ctx, Hashtable env) throws NamingException {
+        Context ctx, Hashtable<String, Object> env) throws NamingException {
             this(candidates, filter, cons, ctx, env, true);
     }
 
@@ -105,7 +107,7 @@ final public class LazySearchEnumerationImpl implements NamingEnumeration {
         }
     }
 
-    public Object nextElement() {
+    public SearchResult nextElement() {
         try {
             return findNextMatch(true);
         } catch (NamingException e) {
@@ -113,7 +115,7 @@ final public class LazySearchEnumerationImpl implements NamingEnumeration {
         }
     }
 
-    public Object next() throws NamingException {
+    public SearchResult next() throws NamingException {
         // find and remove from list
         return (findNextMatch(true));
     }
@@ -138,7 +140,7 @@ final public class LazySearchEnumerationImpl implements NamingEnumeration {
             Object obj;
             Attributes targetAttrs;
             while (candidates.hasMore()) {
-                next = (Binding)candidates.next();
+                next = candidates.next();
                 obj = next.getObject();
                 if (obj instanceof DirContext) {
                     targetAttrs = ((DirContext)(obj)).getAttributes("");

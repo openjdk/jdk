@@ -74,8 +74,25 @@
 # ifdef SOLARIS_MUTATOR_LIBTHREAD
 # include <sys/procfs.h>
 # endif
+
+#include <inttypes.h>
+
+// Solaris 8 doesn't provide definitions of these
+#ifdef SOLARIS
+#ifndef PRIdPTR
+#if defined(_LP64)
+#define PRIdPTR                 "ld"
+#define PRIuPTR                 "lu"
+#define PRIxPTR                 "lx"
+#else
+#define PRIdPTR                 "d"
+#define PRIuPTR                 "u"
+#define PRIxPTR                 "x"
+#endif
+#endif
+#endif
+
 #ifdef LINUX
-# include <inttypes.h>
 # include <signal.h>
 # include <ucontext.h>
 # include <sys/time.h>

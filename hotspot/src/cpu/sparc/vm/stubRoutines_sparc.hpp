@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,11 +42,6 @@ enum /* platform_dependent_constants */ {
   // %%%%%%%% May be able to shrink this a lot
   code_size1 = 20000,           // simply increase if too small (assembler will crash if too small)
   code_size2 = 20000            // simply increase if too small (assembler will crash if too small)
-};
-
-// MethodHandles adapters
-enum method_handles_platform_dependent_constants {
-  method_handles_adapters_code_size = 15000
 };
 
 class Sparc {

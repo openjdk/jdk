@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,9 @@
 package sun.security.timestamp;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import sun.security.pkcs.PKCS7;
-import sun.security.pkcs.PKCS9Attribute;
-import sun.security.pkcs.PKCS9Attributes;
-import sun.security.pkcs.ParsingException;
-import sun.security.pkcs.SignerInfo;
+import sun.security.util.Debug;
 import sun.security.util.DerValue;
-import sun.security.x509.AlgorithmId;
-import sun.security.x509.X500Name;
 
 /**
  * This class provides the response corresponding to a timestamp request,
@@ -182,17 +176,19 @@ public class TSResponse {
      */
     public static final int SYSTEM_FAILURE = 25;
 
-    private static final boolean DEBUG = false;
+    private static final Debug debug = Debug.getInstance("ts");
 
     private int status;
 
     private String[] statusString = null;
 
-    private int failureInfo = -1;
+    private boolean[] failureInfo = null;
 
     private byte[] encodedTsToken = null;
 
     private PKCS7 tsToken = null;
+
+    private TimestampToken tstInfo;
 
     /**
      * Constructs an object to store the response to a timestamp request.
@@ -222,11 +218,11 @@ public class TSResponse {
     }
 
     /**
-     * Retrieve the failure code returned by the TSA.
+     * Retrieve the failure info returned by the TSA.
      *
-     * @return If -1 then no failure code was received.
+     * @return the failure info, or null if no failure code was received.
      */
-    public int getFailureCode() {
+    public boolean[] getFailureInfo() {
         return failureInfo;
     }
 
@@ -257,42 +253,38 @@ public class TSResponse {
         }
     }
 
+    private boolean isSet(int position) {
+        return failureInfo[position];
+    }
+
     public String getFailureCodeAsText() {
 
-        if (failureInfo == -1) {
-            return null;
+        if (failureInfo == null) {
+            return "";
         }
 
-        switch (failureInfo)  {
+        try {
+            if (isSet(BAD_ALG))
+                return "Unrecognized or unsupported algorithm identifier.";
+            if (isSet(BAD_REQUEST))
+                return "The requested transaction is not permitted or " +
+                       "supported.";
+            if (isSet(BAD_DATA_FORMAT))
+                return "The data submitted has the wrong format.";
+            if (isSet(TIME_NOT_AVAILABLE))
+                return "The TSA's time source is not available.";
+            if (isSet(UNACCEPTED_POLICY))
+                return "The requested TSA policy is not supported by the TSA.";
+            if (isSet(UNACCEPTED_EXTENSION))
+                return "The requested extension is not supported by the TSA.";
+            if (isSet(ADD_INFO_NOT_AVAILABLE))
+                return "The additional information requested could not be " +
+                       "understood or is not available.";
+            if (isSet(SYSTEM_FAILURE))
+                return "The request cannot be handled due to system failure.";
+        } catch (ArrayIndexOutOfBoundsException ex) {}
 
-        case BAD_ALG:
-            return "Unrecognized or unsupported alrorithm identifier.";
-
-        case BAD_REQUEST:
-            return "The requested transaction is not permitted or supported.";
-
-        case BAD_DATA_FORMAT:
-            return "The data submitted has the wrong format.";
-
-        case TIME_NOT_AVAILABLE:
-            return "The TSA's time source is not available.";
-
-        case UNACCEPTED_POLICY:
-            return "The requested TSA policy is not supported by the TSA.";
-
-        case UNACCEPTED_EXTENSION:
-            return "The requested extension is not supported by the TSA.";
-
-        case ADD_INFO_NOT_AVAILABLE:
-            return "The additional information requested could not be " +
-                "understood or is not available.";
-
-        case SYSTEM_FAILURE:
-            return "The request cannot be handled due to system failure.";
-
-        default:
-            return ("unknown status code " + status);
-        }
+        return ("unknown failure code");
     }
 
     /**
@@ -302,6 +294,10 @@ public class TSResponse {
      */
     public PKCS7 getToken() {
         return tsToken;
+    }
+
+    public TimestampToken getTimestampToken() {
+        return tstInfo;
     }
 
     /**
@@ -330,29 +326,30 @@ public class TSResponse {
 
         // Parse status
 
-        DerValue status = derValue.data.getDerValue();
-        // Parse status
-        this.status = status.data.getInteger();
-        if (DEBUG) {
-            System.out.println("timestamp response: status=" + this.status);
+        DerValue statusInfo = derValue.data.getDerValue();
+        this.status = statusInfo.data.getInteger();
+        if (debug != null) {
+            debug.println("timestamp response: status=" + this.status);
         }
         // Parse statusString, if present
-        if (status.data.available() > 0) {
-            DerValue[] strings = status.data.getSequence(1);
-            statusString = new String[strings.length];
-            for (int i = 0; i < strings.length; i++) {
-                statusString[i] = strings[i].data.getUTF8String();
+        if (statusInfo.data.available() > 0) {
+            byte tag = (byte)statusInfo.data.peekByte();
+            if (tag == DerValue.tag_SequenceOf) {
+                DerValue[] strings = statusInfo.data.getSequence(1);
+                statusString = new String[strings.length];
+                for (int i = 0; i < strings.length; i++) {
+                    statusString[i] = strings[i].getUTF8String();
+                    if (debug != null) {
+                        debug.println("timestamp response: statusString=" +
+                                      statusString[i]);
+                    }
+                }
             }
         }
         // Parse failInfo, if present
-        if (status.data.available() > 0) {
-            byte[] failInfo = status.data.getBitString();
-            int failureInfo = (new Byte(failInfo[0])).intValue();
-            if (failureInfo < 0 || failureInfo > 25 || failInfo.length != 1) {
-                throw new IOException("Bad encoding for timestamp response: " +
-                    "unrecognized value for the failInfo element");
-            }
-            this.failureInfo = failureInfo;
+        if (statusInfo.data.available() > 0) {
+            this.failureInfo
+                = statusInfo.data.getUnalignedBitString().toBooleanArray();
         }
 
         // Parse timeStampToken, if present
@@ -360,6 +357,7 @@ public class TSResponse {
             DerValue timestampToken = derValue.data.getDerValue();
             encodedTsToken = timestampToken.toByteArray();
             tsToken = new PKCS7(encodedTsToken);
+            tstInfo = new TimestampToken(tsToken.getContentInfo().getData());
         }
 
         // Check the format of the timestamp response
@@ -376,9 +374,11 @@ public class TSResponse {
         }
     }
 
-final static class TimestampException extends IOException {
-    TimestampException(String message) {
-        super(message);
+    final static class TimestampException extends IOException {
+        private static final long serialVersionUID = -1631631794891940953L;
+
+        TimestampException(String message) {
+            super(message);
+        }
     }
-}
 }

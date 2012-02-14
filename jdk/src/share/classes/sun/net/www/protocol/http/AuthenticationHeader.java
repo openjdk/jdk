@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ public class AuthenticationHeader {
         this.dontUseNegotiate = dontUseNegotiate;
         rsp = response;
         this.hdrname = hdrname;
-        schemes = new HashMap();
+        schemes = new HashMap<String,SchemeMapValue>();
         parse();
     }
 
@@ -136,7 +136,7 @@ public class AuthenticationHeader {
         HeaderParser parser;
     }
 
-    HashMap schemes;
+    HashMap<String, SchemeMapValue> schemes;
 
     /* Iterate through each header line, and then within each line.
      * If multiple entries exist for a particular scheme (unlikely)
@@ -144,11 +144,11 @@ public class AuthenticationHeader {
      * preferred scheme that we support will be used.
      */
     private void parse () {
-        Iterator iter = rsp.multiValueIterator (hdrname);
+        Iterator<String> iter = rsp.multiValueIterator(hdrname);
         while (iter.hasNext()) {
-            String raw = (String)iter.next();
-            HeaderParser hp = new HeaderParser (raw);
-            Iterator keys = hp.keys();
+            String raw = iter.next();
+            HeaderParser hp = new HeaderParser(raw);
+            Iterator<String> keys = hp.keys();
             int i, lastSchemeIndex;
             for (i=0, lastSchemeIndex = -1; keys.hasNext(); i++) {
                 keys.next();
@@ -164,7 +164,7 @@ public class AuthenticationHeader {
             if (i > lastSchemeIndex) {
                 HeaderParser hpn = hp.subsequence (lastSchemeIndex, i);
                 String scheme = hpn.findKey(0);
-                schemes.put (scheme, new SchemeMapValue (hpn, raw));
+                schemes.put(scheme, new SchemeMapValue (hpn, raw));
             }
         }
 
@@ -172,10 +172,10 @@ public class AuthenticationHeader {
          * negotiate -> kerberos -> digest -> ntlm -> basic
          */
         SchemeMapValue v = null;
-        if (authPref == null || (v=(SchemeMapValue)schemes.get (authPref)) == null) {
+        if (authPref == null || (v=schemes.get (authPref)) == null) {
 
             if(v == null && !dontUseNegotiate) {
-                SchemeMapValue tmp = (SchemeMapValue)schemes.get("negotiate");
+                SchemeMapValue tmp = schemes.get("negotiate");
                 if(tmp != null) {
                     if(hci == null || !NegotiateAuthentication.isSupported(new HttpCallerInfo(hci, "Negotiate"))) {
                         tmp = null;
@@ -185,7 +185,7 @@ public class AuthenticationHeader {
             }
 
             if(v == null && !dontUseNegotiate) {
-                SchemeMapValue tmp = (SchemeMapValue)schemes.get("kerberos");
+                SchemeMapValue tmp = schemes.get("kerberos");
                 if(tmp != null) {
                     // the Kerberos scheme is only observed in MS ISA Server. In
                     // fact i think it's a Kerberos-mechnism-only Negotiate.
@@ -205,9 +205,9 @@ public class AuthenticationHeader {
             }
 
             if(v == null) {
-                if ((v=(SchemeMapValue)schemes.get ("digest")) == null) {
-                    if (((v=(SchemeMapValue)schemes.get("ntlm"))==null)) {
-                        v = (SchemeMapValue)schemes.get ("basic");
+                if ((v=schemes.get ("digest")) == null) {
+                    if (((v=schemes.get("ntlm"))==null)) {
+                        v = schemes.get ("basic");
                     }
                 }
             }

@@ -186,7 +186,7 @@ public class SnmpCounter64 extends SnmpValue {
             newclone = (SnmpCounter64) super.clone() ;
             newclone.value = value ;
         } catch (CloneNotSupportedException e) {
-            throw new InternalError() ; // vm bug.
+            throw new InternalError(e) ; // vm bug.
         }
         return newclone ;
     }

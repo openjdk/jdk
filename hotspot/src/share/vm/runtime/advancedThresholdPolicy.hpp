@@ -168,7 +168,7 @@ class AdvancedThresholdPolicy : public SimpleThresholdPolicy {
   bool call_predicate(int i, int b, CompLevel cur_level);
   bool loop_predicate(int i, int b, CompLevel cur_level);
   // Common transition function. Given a predicate determines if a method should transition to another level.
-  CompLevel common(Predicate p, methodOop method, CompLevel cur_level);
+  CompLevel common(Predicate p, methodOop method, CompLevel cur_level, bool disable_feedback = false);
   // Transition functions.
   // call_event determines if a method should be compiled at a different
   // level with a regular invocation entry.
@@ -211,14 +211,16 @@ protected:
   virtual void submit_compile(methodHandle mh, int bci, CompLevel level, TRAPS);
   // event() from SimpleThresholdPolicy would call these.
   virtual void method_invocation_event(methodHandle method, methodHandle inlinee,
-                                       CompLevel level, TRAPS);
+                                       CompLevel level, nmethod* nm, TRAPS);
   virtual void method_back_branch_event(methodHandle method, methodHandle inlinee,
-                                        int bci, CompLevel level, TRAPS);
+                                        int bci, CompLevel level, nmethod* nm, TRAPS);
 public:
   AdvancedThresholdPolicy() : _start_time(0) { }
   // Select task is called by CompileBroker. We should return a task or NULL.
   virtual CompileTask* select_task(CompileQueue* compile_queue);
   virtual void initialize();
+  virtual bool should_not_inline(ciEnv* env, ciMethod* callee);
+
 };
 
 #endif // TIERED

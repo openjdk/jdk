@@ -44,6 +44,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 
 // Wrapper for all entry points to the virtual machine.
 // The HandleMarkCleaner is a faster version of HandleMark.
@@ -114,6 +117,9 @@ class InterfaceSupport: AllStatic {
 #endif
 #ifdef TARGET_OS_FAMILY_windows
 # include "interfaceSupport_windows.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "interfaceSupport_bsd.hpp"
 #endif
 
 };

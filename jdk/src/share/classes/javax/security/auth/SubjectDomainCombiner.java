@@ -56,6 +56,7 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
         sun.security.util.Debug.getInstance("combiner",
                                         "\t[SubjectDomainCombiner]");
 
+    @SuppressWarnings("deprecation")
     // Note: check only at classloading time, not dynamically during combine()
     private static final boolean useJavaxPolicy =
         javax.security.auth.Policy.isCustomPolicySet(debug);
@@ -300,6 +301,7 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
         if (!allowCaching) {
             java.security.AccessController.doPrivileged
                 (new PrivilegedAction<Void>() {
+                    @SuppressWarnings("deprecation")
                     public Void run() {
                         // Call refresh only caching is disallowed
                         javax.security.auth.Policy.getPolicy().refresh();
@@ -307,6 +309,7 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
                     }
                 });
         }
+
 
         int cLen = (currentDomains == null ? 0 : currentDomains.length);
         int aLen = (assignedDomains == null ? 0 : assignedDomains.length);
@@ -348,13 +351,13 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
                     // get the original perms
                     Permissions perms = new Permissions();
                     PermissionCollection coll = pd.getPermissions();
-                    java.util.Enumeration e;
+                    java.util.Enumeration<Permission> e;
                     if (coll != null) {
                         synchronized (coll) {
                             e = coll.elements();
                             while (e.hasMoreElements()) {
                                 Permission newPerm =
-                                        (Permission)e.nextElement();
+                                        e.nextElement();
                                  perms.add(newPerm);
                             }
                         }
@@ -367,6 +370,7 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
                     PermissionCollection newPerms =
                         java.security.AccessController.doPrivileged
                         (new PrivilegedAction<PermissionCollection>() {
+                        @SuppressWarnings("deprecation")
                         public PermissionCollection run() {
                           return
                           javax.security.auth.Policy.getPolicy().getPermissions
@@ -379,7 +383,7 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
                     synchronized (newPerms) {
                         e = newPerms.elements();
                         while (e.hasMoreElements()) {
-                            Permission newPerm = (Permission)e.nextElement();
+                            Permission newPerm = e.nextElement();
                             if (!perms.implies(newPerm)) {
                                 perms.add(newPerm);
                                 if (debug != null)

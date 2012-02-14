@@ -45,9 +45,19 @@ fi
 JAVA=$TESTJAVA/bin/java
 JAR=$TESTJAVA/bin/jar
 
-JARD=`pwd`/x.jar
-EXTD=`pwd`/x.ext
-TESTD=`pwd`/x.test
+DIR=`pwd`
+case `uname` in
+  SunOS | Linux ) CPS=':' ;;
+  Windows* )      CPS=';' ;;
+  CYGWIN*  )
+    DIR=`/usr/bin/cygpath -a -s -m $DIR`
+    CPS=";";;
+  *)              echo "Unknown platform: `uname`"; exit 1 ;;
+esac
+
+JARD=$DIR/x.jar
+EXTD=$DIR/x.ext
+TESTD=$DIR/x.test
 
 CSS='US-ASCII 8859_1 iso-ir-6 UTF-16 windows-1252 !BAR cp1252'
 
@@ -83,12 +93,6 @@ fi
 
 TMP=${TMP:-$TEMP}; TMP=${TMP:-/tmp}
 cd $TMP
-
-case `uname` in
-  SunOS | Linux ) CPS=':' ;;
-  Windows* )      CPS=';' ;;
-  *)              echo "Unknown platform: `uname`"; exit 1 ;;
-esac
 
 failures=0
 for where in ext app; do

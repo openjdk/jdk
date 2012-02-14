@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.jndi.ldap;
 
 import java.util.Enumeration;
 import java.util.Vector;
+import java.util.Locale;
 
 import javax.naming.*;
 import javax.naming.directory.Attributes;
@@ -78,7 +79,7 @@ import javax.naming.directory.BasicAttributes;
 public final class LdapName implements Name {
 
     private transient String unparsed;  // if non-null, the DN in unparsed form
-    private transient Vector rdns;      // parsed name components
+    private transient Vector<Rdn> rdns;      // parsed name components
     private transient boolean valuesCaseSensitive = false;
 
     /**
@@ -97,9 +98,10 @@ public final class LdapName implements Name {
      * Constructs an LDAP name given its parsed components and, optionally
      * (if "name" is not null), the unparsed DN.
      */
-    private LdapName(String name, Vector rdns) {
+    @SuppressWarnings("unchecked") // clone()
+    private LdapName(String name, Vector<Rdn> rdns) {
         unparsed = name;
-        this.rdns = (Vector)rdns.clone();
+        this.rdns = (Vector<Rdn>)rdns.clone();
     }
 
     /*
@@ -107,9 +109,9 @@ public final class LdapName implements Name {
      * of "rdns" in the range [beg,end)) and, optionally
      * (if "name" is not null), the unparsed DN.
      */
-    private LdapName(String name, Vector rdns, int beg, int end) {
+    private LdapName(String name, Vector<Rdn> rdns, int beg, int end) {
         unparsed = name;
-        this.rdns = new Vector();
+        this.rdns = new Vector<>();
         for (int i = beg; i < end; i++) {
             this.rdns.addElement(rdns.elementAt(i));
         }
@@ -130,7 +132,7 @@ public final class LdapName implements Name {
             if (i < rdns.size() - 1) {
                 buf.append(',');
             }
-            Rdn rdn = (Rdn)rdns.elementAt(i);
+            Rdn rdn = rdns.elementAt(i);
             buf.append(rdn);
         }
 
@@ -155,8 +157,8 @@ public final class LdapName implements Name {
         int minSize = Math.min(rdns.size(), that.rdns.size());
         for (int i = 0 ; i < minSize; i++) {
             // Compare a single pair of RDNs.
-            Rdn rdn1 = (Rdn)rdns.elementAt(i);
-            Rdn rdn2 = (Rdn)that.rdns.elementAt(i);
+            Rdn rdn1 = rdns.elementAt(i);
+            Rdn rdn2 = that.rdns.elementAt(i);
 
             int diff = rdn1.compareTo(rdn2);
             if (diff != 0) {
@@ -172,7 +174,7 @@ public final class LdapName implements Name {
 
         // For each RDN...
         for (int i = 0; i < rdns.size(); i++) {
-            Rdn rdn = (Rdn)rdns.elementAt(i);
+            Rdn rdn = rdns.elementAt(i);
             hash += rdn.hashCode();
         }
         return hash;
@@ -186,14 +188,14 @@ public final class LdapName implements Name {
         return rdns.isEmpty();
     }
 
-    public Enumeration getAll() {
-        final Enumeration enum_ = rdns.elements();
+    public Enumeration<String> getAll() {
+        final Enumeration<Rdn> enum_ = rdns.elements();
 
-        return new Enumeration () {
+        return new Enumeration<String>() {
             public boolean hasMoreElements() {
                 return enum_.hasMoreElements();
             }
-            public Object nextElement() {
+            public String nextElement() {
                 return enum_.nextElement().toString();
             }
         };
@@ -254,7 +256,7 @@ public final class LdapName implements Name {
             Rdn rdn;
             if (n instanceof LdapName) {
                 LdapName ln = (LdapName)n;
-                rdn = (Rdn)ln.rdns.elementAt(i - beg);
+                rdn = ln.rdns.elementAt(i - beg);
             } else {
                 String rdnString = n.get(i - beg);
                 try {
@@ -286,9 +288,9 @@ public final class LdapName implements Name {
                 rdns.insertElementAt(s.rdns.elementAt(i), pos++);
             }
         } else {
-            Enumeration comps = suffix.getAll();
+            Enumeration<String> comps = suffix.getAll();
             while (comps.hasMoreElements()) {
-                DnParser p = new DnParser((String)comps.nextElement(),
+                DnParser p = new DnParser(comps.nextElement(),
                     valuesCaseSensitive);
                 rdns.insertElementAt(p.getRdn(), pos++);
             }
@@ -406,9 +408,9 @@ public final class LdapName implements Name {
         /*
          * Parses the DN, returning a Vector of its RDNs.
          */
-        Vector getDn() throws InvalidNameException {
+        Vector<Rdn> getDn() throws InvalidNameException {
             cur = 0;
-            Vector rdns = new Vector(len / 3 + 10);  // leave room for growth
+            Vector<Rdn> rdns = new Vector<>(len / 3 + 10);  // leave room for growth
 
             if (len == 0) {
                 return rdns;
@@ -595,7 +597,7 @@ public final class LdapName implements Name {
          * A vector of the TypeAndValue elements of this Rdn.
          * It is sorted to facilitate set operations.
          */
-        private final Vector tvs = new Vector();
+        private final Vector<TypeAndValue> tvs = new Vector<>();
 
         void add(TypeAndValue tv) {
 
@@ -636,7 +638,7 @@ public final class LdapName implements Name {
             int minSize = Math.min(tvs.size(), that.tvs.size());
             for (int i = 0; i < minSize; i++) {
                 // Compare a single pair of type/value pairs.
-                TypeAndValue tv = (TypeAndValue)tvs.elementAt(i);
+                TypeAndValue tv = tvs.elementAt(i);
                 int diff = tv.compareTo(that.tvs.elementAt(i));
                 if (diff != 0) {
                     return diff;
@@ -662,7 +664,7 @@ public final class LdapName implements Name {
             Attribute attr;
 
             for (int i = 0; i < tvs.size(); i++) {
-                tv = (TypeAndValue) tvs.elementAt(i);
+                tv = tvs.elementAt(i);
                 if ((attr = attrs.get(tv.getType())) == null) {
                     attrs.put(tv.getType(), tv.getUnescapedValue());
                 } else {
@@ -706,7 +708,7 @@ public final class LdapName implements Name {
 
             TypeAndValue that = (TypeAndValue)obj;
 
-            int diff = type.toUpperCase().compareTo(that.type.toUpperCase());
+            int diff = type.compareToIgnoreCase(that.type);
             if (diff != 0) {
                 return diff;
             }
@@ -729,7 +731,7 @@ public final class LdapName implements Name {
 
         public int hashCode() {
             // If two objects are equal, their hash codes must match.
-            return (type.toUpperCase().hashCode() +
+            return (type.toUpperCase(Locale.ENGLISH).hashCode() +
                     getValueComparable().hashCode());
         }
 
@@ -763,11 +765,12 @@ public final class LdapName implements Name {
 
             // cache result
             if (binary) {
-                comparable = value.toUpperCase();
+                comparable = value.toUpperCase(Locale.ENGLISH);
             } else {
                 comparable = (String)unescapeValue(value);
                 if (!valueCaseSensitive) {
-                    comparable = comparable.toUpperCase(); // ignore case
+                    // ignore case
+                    comparable = comparable.toUpperCase(Locale.ENGLISH);
                 }
             }
             return comparable;
@@ -835,7 +838,7 @@ public final class LdapName implements Name {
                 buf.append(Character.forDigit(0xF & b, 16));
             }
 
-            return (new String(buf)).toUpperCase();
+            return (new String(buf)).toUpperCase(Locale.ENGLISH);
         }
 
         /*

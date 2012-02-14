@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -324,40 +324,45 @@ public final class Byte extends Number implements Comparable<Byte> {
     }
 
     /**
-     * Returns the value of this {@code Byte} as a
-     * {@code short}.
+     * Returns the value of this {@code Byte} as a {@code short} after
+     * a widening primitive conversion.
+     * @jls 5.1.2 Widening Primitive Conversions
      */
     public short shortValue() {
         return (short)value;
     }
 
     /**
-     * Returns the value of this {@code Byte} as an
-     * {@code int}.
+     * Returns the value of this {@code Byte} as an {@code int} after
+     * a widening primitive conversion.
+     * @jls 5.1.2 Widening Primitive Conversions
      */
     public int intValue() {
         return (int)value;
     }
 
     /**
-     * Returns the value of this {@code Byte} as a
-     * {@code long}.
+     * Returns the value of this {@code Byte} as a {@code long} after
+     * a widening primitive conversion.
+     * @jls 5.1.2 Widening Primitive Conversions
      */
     public long longValue() {
         return (long)value;
     }
 
     /**
-     * Returns the value of this {@code Byte} as a
-     * {@code float}.
+     * Returns the value of this {@code Byte} as a {@code float} after
+     * a widening primitive conversion.
+     * @jls 5.1.2 Widening Primitive Conversions
      */
     public float floatValue() {
         return (float)value;
     }
 
     /**
-     * Returns the value of this {@code Byte} as a
-     * {@code double}.
+     * Returns the value of this {@code Byte} as a {@code double}
+     * after a widening primitive conversion.
+     * @jls 5.1.2 Widening Primitive Conversions
      */
     public double doubleValue() {
         return (double)value;

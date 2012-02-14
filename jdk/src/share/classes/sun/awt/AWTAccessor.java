@@ -25,15 +25,12 @@
 
 package sun.awt;
 
+import sun.misc.Unsafe;
+
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.geom.Point2D;
-import java.awt.image.BufferedImage;
-
-import sun.misc.Unsafe;
 import java.awt.peer.ComponentPeer;
-
-import java.security.AccessController;
 import java.security.AccessControlContext;
 
 /**
@@ -471,6 +468,17 @@ public final class AWTAccessor {
     }
 
     /*
+     * An accessor for the ScrollPaneAdjustable class.
+     */
+    public interface ScrollPaneAdjustableAccessor {
+        /*
+         * Sets the value of this scrollbar to the specified value.
+         */
+        void setTypedValue(final ScrollPaneAdjustable adj, final int v,
+                           final int type);
+    }
+
+    /*
      * Accessor instances are initialized in the static initializers of
      * corresponding AWT classes by using setters defined below.
      */
@@ -485,6 +493,7 @@ public final class AWTAccessor {
     private static EventQueueAccessor eventQueueAccessor;
     private static PopupMenuAccessor popupMenuAccessor;
     private static FileDialogAccessor fileDialogAccessor;
+    private static ScrollPaneAdjustableAccessor scrollPaneAdjustableAccessor;
 
     /*
      * Set an accessor object for the java.awt.Component class.
@@ -675,4 +684,21 @@ public final class AWTAccessor {
         return fileDialogAccessor;
     }
 
+    /*
+     * Set an accessor object for the java.awt.ScrollPaneAdjustable class.
+     */
+    public static void setScrollPaneAdjustableAccessor(ScrollPaneAdjustableAccessor adj) {
+        scrollPaneAdjustableAccessor = adj;
+    }
+
+    /*
+     * Retrieve the accessor object for the java.awt.ScrollPaneAdjustable
+     * class.
+     */
+    public static ScrollPaneAdjustableAccessor getScrollPaneAdjustableAccessor() {
+        if (scrollPaneAdjustableAccessor == null) {
+            unsafe.ensureClassInitialized(ScrollPaneAdjustable.class);
+        }
+        return scrollPaneAdjustableAccessor;
+    }
 }

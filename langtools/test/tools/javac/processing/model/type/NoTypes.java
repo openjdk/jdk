@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     6418666 6423973 6453386
+ * @bug     6418666 6423973 6453386 7025809
  * @summary Test the NoTypes: VOID, PACKAGE, NONE
  * @author  Scott Seligman
  * @library ../../../lib
@@ -75,7 +75,7 @@ public class NoTypes extends JavacTestingAbstractProcessor {
         verifyKind(NONE, types.getNoType(NONE));
 
         // The return type of a constructor or void method is VOID.
-        class Scanner extends ElementScanner7<Void, Void> {
+        class Scanner extends ElementScanner<Void, Void> {
             @Override
             public Void visitExecutable(ExecutableElement e, Void p) {
                 verifyKind(VOID, e.getReturnType());
@@ -89,11 +89,11 @@ public class NoTypes extends JavacTestingAbstractProcessor {
     }
 
     /**
-     * Verify that a NoType instance is of a particular kind,
-     * and that TypeKindVisitor7 properly dispatches on it.
+     * Verify that a NoType instance is of a particular kind, and that
+     * the latest TypeKindVisitor properly dispatches on it.
      */
     private void verifyKind(TypeKind kind, TypeMirror type) {
-        class Vis extends TypeKindVisitor7<TypeKind, Void> {
+        class Vis extends TypeKindVisitor<TypeKind, Void> {
             @Override
             public TypeKind visitNoTypeAsVoid(NoType t, Void p) {
                 return VOID;
@@ -111,9 +111,7 @@ public class NoTypes extends JavacTestingAbstractProcessor {
             throw new AssertionError();
     }
 
-
     // Fodder for the tests
-
     interface I {
     }
 

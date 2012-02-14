@@ -25,6 +25,10 @@
  * @test
  * @bug 4919147
  * @summary Support for token-based KeyStores
+ * @run main/othervm BadKSProvider
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  */
 
 import java.io.*;

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc_implementation/g1/concurrentMarkThread.inline.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/g1/vm_operations_g1.hpp"
@@ -98,7 +99,19 @@ void VM_G1IncCollectionPause::doit() {
 
     // At this point we are supposed to start a concurrent cycle. We
     // will do so if one is not already in progress.
-    bool res = g1h->g1_policy()->force_initial_mark_if_outside_cycle();
+    bool res = g1h->g1_policy()->force_initial_mark_if_outside_cycle(_gc_cause);
+
+    // The above routine returns true if we were able to force the
+    // next GC pause to be an initial mark; it returns false if a
+    // marking cycle is already in progress.
+    //
+    // If a marking cycle is already in progress just return and skip
+    // the pause - the requesting thread should block in doit_epilogue
+    // until the marking cycle is complete.
+    if (!res) {
+      assert(_word_size == 0, "ExplicitGCInvokesConcurrent shouldn't be allocating");
+      return;
+    }
   }
 
   _pause_succeeded =
@@ -153,6 +166,20 @@ void VM_G1IncCollectionPause::doit_epilogue() {
   }
 }
 
+void VM_CGC_Operation::acquire_pending_list_lock() {
+  // The caller may block while communicating
+  // with the SLT thread in order to acquire/release the PLL.
+  ConcurrentMarkThread::slt()->
+    manipulatePLL(SurrogateLockerThread::acquirePLL);
+}
+
+void VM_CGC_Operation::release_and_notify_pending_list_lock() {
+  // The caller may block while communicating
+  // with the SLT thread in order to acquire/release the PLL.
+  ConcurrentMarkThread::slt()->
+    manipulatePLL(SurrogateLockerThread::releaseAndNotifyPLL);
+}
+
 void VM_CGC_Operation::doit() {
   gclog_or_tty->date_stamp(PrintGC && PrintGCDateStamps);
   TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
@@ -168,12 +195,19 @@ void VM_CGC_Operation::doit() {
 }
 
 bool VM_CGC_Operation::doit_prologue() {
+  // Note the relative order of the locks must match that in
+  // VM_GC_Operation::doit_prologue() or deadlocks can occur
+  acquire_pending_list_lock();
+
   Heap_lock->lock();
   SharedHeap::heap()->_thread_holds_heap_lock_for_gc = true;
   return true;
 }
 
 void VM_CGC_Operation::doit_epilogue() {
+  // Note the relative order of the unlocks must match that in
+  // VM_GC_Operation::doit_epilogue()
   SharedHeap::heap()->_thread_holds_heap_lock_for_gc = false;
   Heap_lock->unlock();
+  release_and_notify_pending_list_lock();
 }

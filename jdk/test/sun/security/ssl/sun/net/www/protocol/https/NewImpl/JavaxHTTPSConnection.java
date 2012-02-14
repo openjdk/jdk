@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,10 @@
  * @test
  * @bug 4474255
  * @summary Can no longer obtain a com.sun.net.ssl.HttpsURLConnection
+ * @run main/othervm JavaxHTTPSConnection
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  * @author Brad Wetmore
  */
 
@@ -189,47 +193,53 @@ public class JavaxHTTPSConnection {
      * to avoid infinite hangs.
      */
     void doClientSide() throws Exception {
-        /*
-         * Wait for server to get started.
-         */
-        while (!serverReady) {
-            Thread.sleep(50);
-        }
-
-        HttpsURLConnection.setDefaultHostnameVerifier(new NameVerifier());
-        URL url = new URL("https://" + "localhost:" + serverPort +
-                                "/etc/hosts");
-        URLConnection urlc = url.openConnection();
-
-        if (!(urlc instanceof javax.net.ssl.HttpsURLConnection)) {
-            throw new Exception(
-                "URLConnection ! instanceof javax.net.ssl.HttpsURLConnection");
-        }
-
-        BufferedReader in = null;
+        HostnameVerifier reservedHV =
+            HttpsURLConnection.getDefaultHostnameVerifier();
         try {
-            in = new BufferedReader(new InputStreamReader(
-                               urlc.getInputStream()));
-            String inputLine;
-            System.out.print("Client reading... ");
-            while ((inputLine = in.readLine()) != null)
-                System.out.println(inputLine);
-
-            System.out.println("Cipher Suite: " +
-                ((HttpsURLConnection)urlc).getCipherSuite());
-            Certificate[] certs =
-                ((HttpsURLConnection)urlc).getServerCertificates();
-            for (int i = 0; i < certs.length; i++) {
-                System.out.println(certs[0]);
+            /*
+             * Wait for server to get started.
+             */
+            while (!serverReady) {
+                Thread.sleep(50);
             }
 
-            in.close();
-        } catch (SSLException e) {
-            if (in != null)
+            HttpsURLConnection.setDefaultHostnameVerifier(new NameVerifier());
+            URL url = new URL("https://" + "localhost:" + serverPort +
+                                    "/etc/hosts");
+            URLConnection urlc = url.openConnection();
+
+            if (!(urlc instanceof javax.net.ssl.HttpsURLConnection)) {
+                throw new Exception("URLConnection ! instanceof " +
+                                    "javax.net.ssl.HttpsURLConnection");
+            }
+
+            BufferedReader in = null;
+            try {
+                in = new BufferedReader(new InputStreamReader(
+                                   urlc.getInputStream()));
+                String inputLine;
+                System.out.print("Client reading... ");
+                while ((inputLine = in.readLine()) != null)
+                    System.out.println(inputLine);
+
+                System.out.println("Cipher Suite: " +
+                    ((HttpsURLConnection)urlc).getCipherSuite());
+                Certificate[] certs =
+                    ((HttpsURLConnection)urlc).getServerCertificates();
+                for (int i = 0; i < certs.length; i++) {
+                    System.out.println(certs[0]);
+                }
+
                 in.close();
-            throw e;
+            } catch (SSLException e) {
+                if (in != null)
+                    in.close();
+                throw e;
+            }
+            System.out.println("Client reports:  SUCCESS");
+        } finally {
+            HttpsURLConnection.setDefaultHostnameVerifier(reservedHV);
         }
-        System.out.println("Client reports:  SUCCESS");
     }
 
     static class NameVerifier implements HostnameVerifier {

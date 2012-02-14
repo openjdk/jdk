@@ -135,22 +135,10 @@ extern double fabs __P((double));
 extern double floor __P((double));
 extern double fmod __P((double, double));
 
-extern double erf __P((double));
-extern double erfc __P((double));
-extern double gamma __P((double));
 extern double hypot __P((double, double));
 extern int isnan __P((double));
 extern int finite __P((double));
-extern double j0 __P((double));
-extern double j1 __P((double));
-extern double jn __P((int, double));
-extern double lgamma __P((double));
-extern double y0 __P((double));
-extern double y1 __P((double));
-extern double yn __P((int, double));
 
-extern double acosh __P((double));
-extern double asinh __P((double));
 extern double atanh __P((double));
 extern double cbrt __P((double));
 extern double logb __P((double));
@@ -183,19 +171,9 @@ extern double scalbn __P((double, int));
 extern double expm1 __P((double));
 extern double log1p __P((double));
 
-/*
- * Reentrant version of gamma & lgamma; passes signgam back by reference
- * as the second argument; user must allocate space for signgam.
- */
-#ifdef _REENTRANT
-extern double gamma_r __P((double, int *));
-extern double lgamma_r __P((double, int *));
-#endif  /* _REENTRANT */
-
 /* ieee style elementary functions */
 extern double __ieee754_sqrt __P((double));
 extern double __ieee754_acos __P((double));
-extern double __ieee754_acosh __P((double));
 extern double __ieee754_log __P((double));
 extern double __ieee754_atanh __P((double));
 extern double __ieee754_asin __P((double));
@@ -204,19 +182,9 @@ extern double __ieee754_exp __P((double));
 extern double __ieee754_cosh __P((double));
 extern double __ieee754_fmod __P((double,double));
 extern double __ieee754_pow __P((double,double));
-extern double __ieee754_lgamma_r __P((double,int *));
-extern double __ieee754_gamma_r __P((double,int *));
-extern double __ieee754_lgamma __P((double));
-extern double __ieee754_gamma __P((double));
 extern double __ieee754_log10 __P((double));
 extern double __ieee754_sinh __P((double));
 extern double __ieee754_hypot __P((double,double));
-extern double __ieee754_j0 __P((double));
-extern double __ieee754_j1 __P((double));
-extern double __ieee754_y0 __P((double));
-extern double __ieee754_y1 __P((double));
-extern double __ieee754_jn __P((int,double));
-extern double __ieee754_yn __P((int,double));
 extern double __ieee754_remainder __P((double,double));
 extern int    __ieee754_rem_pio2 __P((double,double*));
 #ifdef _SCALB_INT

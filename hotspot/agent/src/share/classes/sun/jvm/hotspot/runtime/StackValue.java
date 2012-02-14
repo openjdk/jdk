@@ -100,7 +100,7 @@ public class StackValue {
 
   public int hashCode() {
     if (type == BasicType.getTObject()) {
-      return handleValue.hashCode();
+      return handleValue != null ? handleValue.hashCode() : 5;
     } else {
       // Returns 0 for conflict type
       return (int) integerValue;

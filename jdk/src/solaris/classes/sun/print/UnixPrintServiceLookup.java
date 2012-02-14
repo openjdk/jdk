@@ -189,7 +189,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         if (printServices == null) {
             return new PrintService[0];
         } else {
-            return printServices;
+            return (PrintService[])printServices.clone();
         }
     }
 

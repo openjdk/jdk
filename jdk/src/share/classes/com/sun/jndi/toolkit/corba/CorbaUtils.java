@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ public class CorbaUtils {
      *               Use all String properties from env for initializing ORB
      * @return A non-null ORB.
      */
-    public static ORB getOrb(String server, int port, Hashtable env) {
+    public static ORB getOrb(String server, int port, Hashtable<?,?> env) {
         // See if we can get info from environment
         Properties orbProp;
 
@@ -169,7 +169,7 @@ public class CorbaUtils {
                 orbProp = (Properties) env.clone();
             } else {
                 // Get all String properties
-                Enumeration envProp;
+                Enumeration<?> envProp;
                 orbProp = new Properties();
                 for (envProp = env.keys(); envProp.hasMoreElements();) {
                     String key = (String)envProp.nextElement();
@@ -239,7 +239,7 @@ public class CorbaUtils {
     // Fields used for reflection of RMI-IIOP
     private static Method toStubMethod = null;
     private static Method connectMethod = null;
-    private static Class corbaStubClass = null;
+    private static Class<?> corbaStubClass = null;
     /**
      * Initializes reflection method handles for RMI-IIOP.
      * @exception ClassNotFoundException javax.rmi.CORBA.* not available
@@ -252,19 +252,19 @@ public class CorbaUtils {
 
         try {
             connectMethod = corbaStubClass.getMethod("connect",
-                new Class[] {org.omg.CORBA.ORB.class});
+                new Class<?>[] {org.omg.CORBA.ORB.class});
         } catch (NoSuchMethodException e) {
             throw new IllegalStateException(
         "No method definition for javax.rmi.CORBA.Stub.connect(org.omg.CORBA.ORB)");
         }
 
-        // Get javax.rmi.PortableRemoteObject method
-        Class proClass = Class.forName("javax.rmi.PortableRemoteObject");
+        // Get javax.rmi.PortableRemoteObject class
+        Class<?> proClass = Class.forName("javax.rmi.PortableRemoteObject");
 
-        // Get javax.rmi.PortableRemoteObject(java.rmi.Remote) method
+        // Get javax.rmi.PortableRemoteObject.toStub(java.rmi.Remote) method
         try {
             toStubMethod = proClass.getMethod("toStub",
-                new Class[] {java.rmi.Remote.class});
+                new Class<?>[] {java.rmi.Remote.class});
 
         } catch (NoSuchMethodException e) {
             throw new IllegalStateException(
