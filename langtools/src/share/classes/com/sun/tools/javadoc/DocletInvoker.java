@@ -80,7 +80,7 @@ public class DocletInvoker {
         cpString = appendPath(System.getProperty("env.class.path"), cpString);
         cpString = appendPath(System.getProperty("java.class.path"), cpString);
         cpString = appendPath(docletPath, cpString);
-        URL[] urls = com.sun.tools.javac.file.Paths.pathToURLs(cpString);
+        URL[] urls = com.sun.tools.javac.file.Locations.pathToURLs(cpString);
         if (docletParentClassLoader == null)
             appClassLoader = new URLClassLoader(urls, getDelegationClassLoader(docletClassName));
         else

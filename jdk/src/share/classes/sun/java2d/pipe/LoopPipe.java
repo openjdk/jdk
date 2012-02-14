@@ -281,9 +281,8 @@ public class LoopPipe
         } catch (Throwable t) {
             sr.dispose();
             sr = null;
-            t.printStackTrace();
             throw new InternalError("Unable to Stroke shape ("+
-                                    t.getMessage()+")");
+                                    t.getMessage()+")", t);
         }
         return sr;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,8 @@ import javax.naming.NamingException;
 
 // no need to implement Enumeration since this is only for internal use
 public final class FactoryEnumeration {
-    private List factories;
+    // List<NamedWeakReference<Class | Object>>
+    private List<NamedWeakReference<Object>> factories;
     private int posn = 0;
     private ClassLoader loader;
 
@@ -59,7 +60,8 @@ public final class FactoryEnumeration {
      * @param factories A non-null list
      * @param loader    The class loader of the list's contents
      */
-    FactoryEnumeration(List factories, ClassLoader loader) {
+    FactoryEnumeration(List<NamedWeakReference<Object>> factories,
+                       ClassLoader loader) {
         this.factories = factories;
         this.loader = loader;
     }
@@ -67,7 +69,7 @@ public final class FactoryEnumeration {
     public Object next() throws NamingException {
         synchronized (factories) {
 
-            NamedWeakReference ref = (NamedWeakReference) factories.get(posn++);
+            NamedWeakReference<Object> ref = factories.get(posn++);
             Object answer = ref.get();
             if ((answer != null) && !(answer instanceof Class)) {
                 return answer;
@@ -81,7 +83,7 @@ public final class FactoryEnumeration {
                 }
                 // Instantiate Class to get factory
                 answer = ((Class) answer).newInstance();
-                ref = new NamedWeakReference(answer, className);
+                ref = new NamedWeakReference<>(answer, className);
                 factories.set(posn-1, ref);  // replace Class object or null
                 return answer;
             } catch (ClassNotFoundException e) {

@@ -35,62 +35,21 @@
 
 ReferencePolicy* ReferenceProcessor::_always_clear_soft_ref_policy = NULL;
 ReferencePolicy* ReferenceProcessor::_default_soft_ref_policy      = NULL;
-oop              ReferenceProcessor::_sentinelRef = NULL;
-const int        subclasses_of_ref                = REF_PHANTOM - REF_OTHER;
-
-// List of discovered references.
-class DiscoveredList {
-public:
-  DiscoveredList() : _len(0), _compressed_head(0), _oop_head(NULL) { }
-  oop head() const     {
-     return UseCompressedOops ?  oopDesc::decode_heap_oop_not_null(_compressed_head) :
-                                _oop_head;
-  }
-  HeapWord* adr_head() {
-    return UseCompressedOops ? (HeapWord*)&_compressed_head :
-                               (HeapWord*)&_oop_head;
-  }
-  void   set_head(oop o) {
-    if (UseCompressedOops) {
-      // Must compress the head ptr.
-      _compressed_head = oopDesc::encode_heap_oop_not_null(o);
-    } else {
-      _oop_head = o;
-    }
-  }
-  bool   empty() const          { return head() == ReferenceProcessor::sentinel_ref(); }
-  size_t length()               { return _len; }
-  void   set_length(size_t len) { _len = len;  }
-  void   inc_length(size_t inc) { _len += inc; assert(_len > 0, "Error"); }
-  void   dec_length(size_t dec) { _len -= dec; }
-private:
-  // Set value depending on UseCompressedOops. This could be a template class
-  // but then we have to fix all the instantiations and declarations that use this class.
-  oop       _oop_head;
-  narrowOop _compressed_head;
-  size_t _len;
-};
+bool             ReferenceProcessor::_pending_list_uses_discovered_field = false;
+jlong            ReferenceProcessor::_soft_ref_timestamp_clock = 0;
 
 void referenceProcessor_init() {
   ReferenceProcessor::init_statics();
 }
 
 void ReferenceProcessor::init_statics() {
-  assert(_sentinelRef == NULL, "should be initialized precisely once");
-  EXCEPTION_MARK;
-  _sentinelRef = instanceKlass::cast(
-                    SystemDictionary::Reference_klass())->
-                      allocate_permanent_instance(THREAD);
+  jlong now = os::javaTimeMillis();
 
-  // Initialize the master soft ref clock.
-  java_lang_ref_SoftReference::set_clock(os::javaTimeMillis());
+  // Initialize the soft ref timestamp clock.
+  _soft_ref_timestamp_clock = now;
+  // Also update the soft ref clock in j.l.r.SoftReference
+  java_lang_ref_SoftReference::set_clock(_soft_ref_timestamp_clock);
 
-  if (HAS_PENDING_EXCEPTION) {
-      Handle ex(THREAD, PENDING_EXCEPTION);
-      vm_exit_during_initialization(ex);
-  }
-  assert(_sentinelRef != NULL && _sentinelRef->is_oop(),
-         "Just constructed it!");
   _always_clear_soft_ref_policy = new AlwaysClearPolicy();
   _default_soft_ref_policy      = new COMPILER2_PRESENT(LRUMaxHeapPolicy())
                                       NOT_COMPILER2(LRUCurrentHeapPolicy());
@@ -100,6 +59,29 @@ void ReferenceProcessor::init_statics() {
   guarantee(RefDiscoveryPolicy == ReferenceBasedDiscovery ||
             RefDiscoveryPolicy == ReferentBasedDiscovery,
             "Unrecongnized RefDiscoveryPolicy");
+  _pending_list_uses_discovered_field = JDK_Version::current().pending_list_uses_discovered_field();
+}
+
+void ReferenceProcessor::enable_discovery(bool verify_disabled, bool check_no_refs) {
+#ifdef ASSERT
+  // Verify that we're not currently discovering refs
+  assert(!verify_disabled || !_discovering_refs, "nested call?");
+
+  if (check_no_refs) {
+    // Verify that the discovered lists are empty
+    verify_no_references_recorded();
+  }
+#endif // ASSERT
+
+  // Someone could have modified the value of the static
+  // field in the j.l.r.SoftReference class that holds the
+  // soft reference timestamp clock using reflection or
+  // Unsafe between GCs. Unconditionally update the static
+  // field in ReferenceProcessor here so that we use the new
+  // value during reference discovery.
+
+  _soft_ref_timestamp_clock = java_lang_ref_SoftReference::clock();
+  _discovering_refs = true;
 }
 
 ReferenceProcessor::ReferenceProcessor(MemRegion span,
@@ -123,20 +105,23 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
   _discovery_is_mt     = mt_discovery;
   _num_q               = MAX2(1, mt_processing_degree);
   _max_num_q           = MAX2(_num_q, mt_discovery_degree);
-  _discoveredSoftRefs  = NEW_C_HEAP_ARRAY(DiscoveredList, _max_num_q * subclasses_of_ref);
-  if (_discoveredSoftRefs == NULL) {
+  _discovered_refs     = NEW_C_HEAP_ARRAY(DiscoveredList,
+                                          _max_num_q * number_of_subclasses_of_ref());
+  if (_discovered_refs == NULL) {
     vm_exit_during_initialization("Could not allocated RefProc Array");
   }
+  _discoveredSoftRefs    = &_discovered_refs[0];
   _discoveredWeakRefs    = &_discoveredSoftRefs[_max_num_q];
   _discoveredFinalRefs   = &_discoveredWeakRefs[_max_num_q];
   _discoveredPhantomRefs = &_discoveredFinalRefs[_max_num_q];
-  assert(sentinel_ref() != NULL, "_sentinelRef is NULL");
-  // Initialized all entries to _sentinelRef
-  for (int i = 0; i < _max_num_q * subclasses_of_ref; i++) {
-        _discoveredSoftRefs[i].set_head(sentinel_ref());
-    _discoveredSoftRefs[i].set_length(0);
+
+  // Initialize all entries to NULL
+  for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
+    _discovered_refs[i].set_head(NULL);
+    _discovered_refs[i].set_length(0);
   }
-  // If we do barreirs, cache a copy of the barrier set.
+
+  // If we do barriers, cache a copy of the barrier set.
   if (discovered_list_needs_barrier) {
     _bs = Universe::heap()->barrier_set();
   }
@@ -146,46 +131,42 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
 #ifndef PRODUCT
 void ReferenceProcessor::verify_no_references_recorded() {
   guarantee(!_discovering_refs, "Discovering refs?");
-  for (int i = 0; i < _max_num_q * subclasses_of_ref; i++) {
-    guarantee(_discoveredSoftRefs[i].empty(),
+  for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
+    guarantee(_discovered_refs[i].is_empty(),
               "Found non-empty discovered list");
   }
 }
 #endif
 
 void ReferenceProcessor::weak_oops_do(OopClosure* f) {
-  // Should this instead be
-  // for (int i = 0; i < subclasses_of_ref; i++_ {
-  //   for (int j = 0; j < _num_q; j++) {
-  //     int index = i * _max_num_q + j;
-  for (int i = 0; i < _max_num_q * subclasses_of_ref; i++) {
+  for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
     if (UseCompressedOops) {
-      f->do_oop((narrowOop*)_discoveredSoftRefs[i].adr_head());
+      f->do_oop((narrowOop*)_discovered_refs[i].adr_head());
     } else {
-      f->do_oop((oop*)_discoveredSoftRefs[i].adr_head());
+      f->do_oop((oop*)_discovered_refs[i].adr_head());
     }
   }
-}
-
-void ReferenceProcessor::oops_do(OopClosure* f) {
-  f->do_oop(adr_sentinel_ref());
 }
 
 void ReferenceProcessor::update_soft_ref_master_clock() {
   // Update (advance) the soft ref master clock field. This must be done
   // after processing the soft ref list.
   jlong now = os::javaTimeMillis();
-  jlong clock = java_lang_ref_SoftReference::clock();
+  jlong soft_ref_clock = java_lang_ref_SoftReference::clock();
+  assert(soft_ref_clock == _soft_ref_timestamp_clock, "soft ref clocks out of sync");
+
   NOT_PRODUCT(
-  if (now < clock) {
-    warning("time warp: %d to %d", clock, now);
+  if (now < _soft_ref_timestamp_clock) {
+    warning("time warp: "INT64_FORMAT" to "INT64_FORMAT,
+            _soft_ref_timestamp_clock, now);
   }
   )
   // In product mode, protect ourselves from system time being adjusted
   // externally and going backward; see note in the implementation of
   // GenCollectedHeap::time_since_last_gc() for the right way to fix
   // this uniformly throughout the VM; see bug-id 4741166. XXX
-  if (now > clock) {
+  if (now > _soft_ref_timestamp_clock) {
+    _soft_ref_timestamp_clock = now;
     java_lang_ref_SoftReference::set_clock(now);
   }
   // Else leave clock stalled at its old value until time progresses
@@ -202,6 +183,16 @@ void ReferenceProcessor::process_discovered_references(
   assert(!enqueuing_is_done(), "If here enqueuing should not be complete");
   // Stop treating discovered references specially.
   disable_discovery();
+
+  // If discovery was concurrent, someone could have modified
+  // the value of the static field in the j.l.r.SoftReference
+  // class that holds the soft reference timestamp clock using
+  // reflection or Unsafe between when discovery was enabled and
+  // now. Unconditionally update the static field in ReferenceProcessor
+  // here so that we use the new value during processing of the
+  // discovered soft refs.
+
+  _soft_ref_timestamp_clock = java_lang_ref_SoftReference::clock();
 
   bool trace_time = PrintGCDetails && PrintReferenceGC;
   // Soft references
@@ -283,8 +274,6 @@ void ReferenceProcessor::process_phaseJNI(BoolObjectClosure* is_alive,
   }
 #endif
   JNIHandles::weak_oops_do(is_alive, keep_alive);
-  // Finally remember to keep sentinel around
-  keep_alive->do_oop(adr_sentinel_ref());
   complete_gc->do_void();
 }
 
@@ -327,46 +316,77 @@ bool ReferenceProcessor::enqueue_discovered_references(AbstractRefProcTaskExecut
 void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list,
                                                     HeapWord* pending_list_addr) {
   // Given a list of refs linked through the "discovered" field
-  // (java.lang.ref.Reference.discovered) chain them through the
-  // "next" field (java.lang.ref.Reference.next) and prepend
-  // to the pending list.
+  // (java.lang.ref.Reference.discovered), self-loop their "next" field
+  // thus distinguishing them from active References, then
+  // prepend them to the pending list.
+  // BKWRD COMPATIBILITY NOTE: For older JDKs (prior to the fix for 4956777),
+  // the "next" field is used to chain the pending list, not the discovered
+  // field.
+
   if (TraceReferenceGC && PrintGCDetails) {
     gclog_or_tty->print_cr("ReferenceProcessor::enqueue_discovered_reflist list "
                            INTPTR_FORMAT, (address)refs_list.head());
   }
-  oop obj = refs_list.head();
-  // Walk down the list, copying the discovered field into
-  // the next field and clearing it (except for the last
-  // non-sentinel object which is treated specially to avoid
-  // confusion with an active reference).
-  while (obj != sentinel_ref()) {
-    assert(obj->is_instanceRef(), "should be reference object");
-    oop next = java_lang_ref_Reference::discovered(obj);
-    if (TraceReferenceGC && PrintGCDetails) {
-      gclog_or_tty->print_cr("        obj " INTPTR_FORMAT "/next " INTPTR_FORMAT,
-                             obj, next);
-    }
-    assert(java_lang_ref_Reference::next(obj) == NULL,
-           "The reference should not be enqueued");
-    if (next == sentinel_ref()) {  // obj is last
-      // Swap refs_list into pendling_list_addr and
-      // set obj's next to what we read from pending_list_addr.
-      oop old = oopDesc::atomic_exchange_oop(refs_list.head(), pending_list_addr);
-      // Need oop_check on pending_list_addr above;
-      // see special oop-check code at the end of
-      // enqueue_discovered_reflists() further below.
-      if (old == NULL) {
-        // obj should be made to point to itself, since
-        // pending list was empty.
-        java_lang_ref_Reference::set_next(obj, obj);
-      } else {
-        java_lang_ref_Reference::set_next(obj, old);
+
+  oop obj = NULL;
+  oop next_d = refs_list.head();
+  if (pending_list_uses_discovered_field()) { // New behaviour
+    // Walk down the list, self-looping the next field
+    // so that the References are not considered active.
+    while (obj != next_d) {
+      obj = next_d;
+      assert(obj->is_instanceRef(), "should be reference object");
+      next_d = java_lang_ref_Reference::discovered(obj);
+      if (TraceReferenceGC && PrintGCDetails) {
+        gclog_or_tty->print_cr("        obj " INTPTR_FORMAT "/next_d " INTPTR_FORMAT,
+                               obj, next_d);
       }
-    } else {
-      java_lang_ref_Reference::set_next(obj, next);
+      assert(java_lang_ref_Reference::next(obj) == NULL,
+             "Reference not active; should not be discovered");
+      // Self-loop next, so as to make Ref not active.
+      java_lang_ref_Reference::set_next(obj, obj);
+      if (next_d == obj) {  // obj is last
+        // Swap refs_list into pendling_list_addr and
+        // set obj's discovered to what we read from pending_list_addr.
+        oop old = oopDesc::atomic_exchange_oop(refs_list.head(), pending_list_addr);
+        // Need oop_check on pending_list_addr above;
+        // see special oop-check code at the end of
+        // enqueue_discovered_reflists() further below.
+        java_lang_ref_Reference::set_discovered(obj, old); // old may be NULL
+      }
     }
-    java_lang_ref_Reference::set_discovered(obj, (oop) NULL);
-    obj = next;
+  } else { // Old behaviour
+    // Walk down the list, copying the discovered field into
+    // the next field and clearing the discovered field.
+    while (obj != next_d) {
+      obj = next_d;
+      assert(obj->is_instanceRef(), "should be reference object");
+      next_d = java_lang_ref_Reference::discovered(obj);
+      if (TraceReferenceGC && PrintGCDetails) {
+        gclog_or_tty->print_cr("        obj " INTPTR_FORMAT "/next_d " INTPTR_FORMAT,
+                               obj, next_d);
+      }
+      assert(java_lang_ref_Reference::next(obj) == NULL,
+             "The reference should not be enqueued");
+      if (next_d == obj) {  // obj is last
+        // Swap refs_list into pendling_list_addr and
+        // set obj's next to what we read from pending_list_addr.
+        oop old = oopDesc::atomic_exchange_oop(refs_list.head(), pending_list_addr);
+        // Need oop_check on pending_list_addr above;
+        // see special oop-check code at the end of
+        // enqueue_discovered_reflists() further below.
+        if (old == NULL) {
+          // obj should be made to point to itself, since
+          // pending list was empty.
+          java_lang_ref_Reference::set_next(obj, obj);
+        } else {
+          java_lang_ref_Reference::set_next(obj, old);
+        }
+      } else {
+        java_lang_ref_Reference::set_next(obj, next_d);
+      }
+      java_lang_ref_Reference::set_discovered(obj, (oop) NULL);
+    }
   }
 }
 
@@ -376,10 +396,9 @@ public:
   RefProcEnqueueTask(ReferenceProcessor& ref_processor,
                      DiscoveredList      discovered_refs[],
                      HeapWord*           pending_list_addr,
-                     oop                 sentinel_ref,
                      int                 n_queues)
     : EnqueueTask(ref_processor, discovered_refs,
-                  pending_list_addr, sentinel_ref, n_queues)
+                  pending_list_addr, n_queues)
   { }
 
   virtual void work(unsigned int work_id) {
@@ -392,11 +411,11 @@ public:
     // allocated and are indexed into.
     assert(_n_queues == (int) _ref_processor.max_num_q(), "Different number not expected");
     for (int j = 0;
-         j < subclasses_of_ref;
+         j < ReferenceProcessor::number_of_subclasses_of_ref();
          j++, index += _n_queues) {
       _ref_processor.enqueue_discovered_reflist(
         _refs_lists[index], _pending_list_addr);
-      _refs_lists[index].set_head(_sentinel_ref);
+      _refs_lists[index].set_head(NULL);
       _refs_lists[index].set_length(0);
     }
   }
@@ -407,126 +426,20 @@ void ReferenceProcessor::enqueue_discovered_reflists(HeapWord* pending_list_addr
   AbstractRefProcTaskExecutor* task_executor) {
   if (_processing_is_mt && task_executor != NULL) {
     // Parallel code
-    RefProcEnqueueTask tsk(*this, _discoveredSoftRefs,
-                           pending_list_addr, sentinel_ref(), _max_num_q);
+    RefProcEnqueueTask tsk(*this, _discovered_refs,
+                           pending_list_addr, _max_num_q);
     task_executor->execute(tsk);
   } else {
     // Serial code: call the parent class's implementation
-    for (int i = 0; i < _max_num_q * subclasses_of_ref; i++) {
-      enqueue_discovered_reflist(_discoveredSoftRefs[i], pending_list_addr);
-      _discoveredSoftRefs[i].set_head(sentinel_ref());
-      _discoveredSoftRefs[i].set_length(0);
+    for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
+      enqueue_discovered_reflist(_discovered_refs[i], pending_list_addr);
+      _discovered_refs[i].set_head(NULL);
+      _discovered_refs[i].set_length(0);
     }
   }
 }
 
-// Iterator for the list of discovered references.
-class DiscoveredListIterator {
-public:
-  inline DiscoveredListIterator(DiscoveredList&    refs_list,
-                                OopClosure*        keep_alive,
-                                BoolObjectClosure* is_alive);
-
-  // End Of List.
-  inline bool has_next() const { return _next != ReferenceProcessor::sentinel_ref(); }
-
-  // Get oop to the Reference object.
-  inline oop obj() const { return _ref; }
-
-  // Get oop to the referent object.
-  inline oop referent() const { return _referent; }
-
-  // Returns true if referent is alive.
-  inline bool is_referent_alive() const;
-
-  // Loads data for the current reference.
-  // The "allow_null_referent" argument tells us to allow for the possibility
-  // of a NULL referent in the discovered Reference object. This typically
-  // happens in the case of concurrent collectors that may have done the
-  // discovery concurrently, or interleaved, with mutator execution.
-  inline void load_ptrs(DEBUG_ONLY(bool allow_null_referent));
-
-  // Move to the next discovered reference.
-  inline void next();
-
-  // Remove the current reference from the list
-  inline void remove();
-
-  // Make the Reference object active again.
-  inline void make_active() { java_lang_ref_Reference::set_next(_ref, NULL); }
-
-  // Make the referent alive.
-  inline void make_referent_alive() {
-    if (UseCompressedOops) {
-      _keep_alive->do_oop((narrowOop*)_referent_addr);
-    } else {
-      _keep_alive->do_oop((oop*)_referent_addr);
-    }
-  }
-
-  // Update the discovered field.
-  inline void update_discovered() {
-    // First _prev_next ref actually points into DiscoveredList (gross).
-    if (UseCompressedOops) {
-      _keep_alive->do_oop((narrowOop*)_prev_next);
-    } else {
-      _keep_alive->do_oop((oop*)_prev_next);
-    }
-  }
-
-  // NULL out referent pointer.
-  inline void clear_referent() { oop_store_raw(_referent_addr, NULL); }
-
-  // Statistics
-  NOT_PRODUCT(
-  inline size_t processed() const { return _processed; }
-  inline size_t removed() const   { return _removed; }
-  )
-
-  inline void move_to_next();
-
-private:
-  DiscoveredList&    _refs_list;
-  HeapWord*          _prev_next;
-  oop                _ref;
-  HeapWord*          _discovered_addr;
-  oop                _next;
-  HeapWord*          _referent_addr;
-  oop                _referent;
-  OopClosure*        _keep_alive;
-  BoolObjectClosure* _is_alive;
-  DEBUG_ONLY(
-  oop                _first_seen; // cyclic linked list check
-  )
-  NOT_PRODUCT(
-  size_t             _processed;
-  size_t             _removed;
-  )
-};
-
-inline DiscoveredListIterator::DiscoveredListIterator(DiscoveredList&    refs_list,
-                                                      OopClosure*        keep_alive,
-                                                      BoolObjectClosure* is_alive)
-  : _refs_list(refs_list),
-    _prev_next(refs_list.adr_head()),
-    _ref(refs_list.head()),
-#ifdef ASSERT
-    _first_seen(refs_list.head()),
-#endif
-#ifndef PRODUCT
-    _processed(0),
-    _removed(0),
-#endif
-    _next(refs_list.head()),
-    _keep_alive(keep_alive),
-    _is_alive(is_alive)
-{ }
-
-inline bool DiscoveredListIterator::is_referent_alive() const {
-  return _is_alive->do_object_b(_referent);
-}
-
-inline void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
+void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
   _discovered_addr = java_lang_ref_Reference::discovered_addr(_ref);
   oop discovered = java_lang_ref_Reference::discovered(_ref);
   assert(_discovered_addr && discovered->is_oop_or_null(),
@@ -542,30 +455,55 @@ inline void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referen
          "bad referent");
 }
 
-inline void DiscoveredListIterator::next() {
-  _prev_next = _discovered_addr;
-  move_to_next();
-}
-
-inline void DiscoveredListIterator::remove() {
+void DiscoveredListIterator::remove() {
   assert(_ref->is_oop(), "Dropping a bad reference");
   oop_store_raw(_discovered_addr, NULL);
+
   // First _prev_next ref actually points into DiscoveredList (gross).
+  oop new_next;
+  if (_next == _ref) {
+    // At the end of the list, we should make _prev point to itself.
+    // If _ref is the first ref, then _prev_next will be in the DiscoveredList,
+    // and _prev will be NULL.
+    new_next = _prev;
+  } else {
+    new_next = _next;
+  }
+
   if (UseCompressedOops) {
     // Remove Reference object from list.
-    oopDesc::encode_store_heap_oop_not_null((narrowOop*)_prev_next, _next);
+    oopDesc::encode_store_heap_oop((narrowOop*)_prev_next, new_next);
   } else {
     // Remove Reference object from list.
-    oopDesc::store_heap_oop((oop*)_prev_next, _next);
+    oopDesc::store_heap_oop((oop*)_prev_next, new_next);
   }
   NOT_PRODUCT(_removed++);
   _refs_list.dec_length(1);
 }
 
-inline void DiscoveredListIterator::move_to_next() {
-  _ref = _next;
-  assert(_ref != _first_seen, "cyclic ref_list found");
-  NOT_PRODUCT(_processed++);
+// Make the Reference object active again.
+void DiscoveredListIterator::make_active() {
+  // For G1 we don't want to use set_next - it
+  // will dirty the card for the next field of
+  // the reference object and will fail
+  // CT verification.
+  if (UseG1GC) {
+    BarrierSet* bs = oopDesc::bs();
+    HeapWord* next_addr = java_lang_ref_Reference::next_addr(_ref);
+
+    if (UseCompressedOops) {
+      bs->write_ref_field_pre((narrowOop*)next_addr, NULL);
+    } else {
+      bs->write_ref_field_pre((oop*)next_addr, NULL);
+    }
+    java_lang_ref_Reference::set_next_raw(_ref, NULL);
+  } else {
+    java_lang_ref_Reference::set_next(_ref, NULL);
+  }
+}
+
+void DiscoveredListIterator::clear_referent() {
+  oop_store_raw(_referent_addr, NULL);
 }
 
 // NOTE: process_phase*() are largely similar, and at a high level
@@ -592,7 +530,8 @@ ReferenceProcessor::process_phase1(DiscoveredList&    refs_list,
   while (iter.has_next()) {
     iter.load_ptrs(DEBUG_ONLY(!discovery_is_atomic() /* allow_null_referent */));
     bool referent_is_dead = (iter.referent() != NULL) && !iter.is_referent_alive();
-    if (referent_is_dead && !policy->should_clear_reference(iter.obj())) {
+    if (referent_is_dead &&
+        !policy->should_clear_reference(iter.obj(), _soft_ref_timestamp_clock)) {
       if (TraceReferenceGC) {
         gclog_or_tty->print_cr("Dropping reference (" INTPTR_FORMAT ": %s"  ") by policy",
                                iter.obj(), iter.obj()->blueprint()->internal_name());
@@ -613,7 +552,7 @@ ReferenceProcessor::process_phase1(DiscoveredList&    refs_list,
   NOT_PRODUCT(
     if (PrintGCDetails && TraceReferenceGC) {
       gclog_or_tty->print_cr(" Dropped %d dead Refs out of %d "
-        "discovered Refs by policy  list " INTPTR_FORMAT,
+        "discovered Refs by policy, from list " INTPTR_FORMAT,
         iter.removed(), iter.processed(), (address)refs_list.head());
     }
   )
@@ -725,32 +664,37 @@ ReferenceProcessor::process_phase3(DiscoveredList&    refs_list,
     assert(iter.obj()->is_oop(UseConcMarkSweepGC), "Adding a bad reference");
     iter.next();
   }
-  // Remember to keep sentinel pointer around
+  // Remember to update the next pointer of the last ref.
   iter.update_discovered();
   // Close the reachable set
   complete_gc->do_void();
 }
 
 void
-ReferenceProcessor::abandon_partial_discovered_list(DiscoveredList& refs_list) {
-  oop obj = refs_list.head();
-  while (obj != sentinel_ref()) {
-    oop discovered = java_lang_ref_Reference::discovered(obj);
+ReferenceProcessor::clear_discovered_references(DiscoveredList& refs_list) {
+  oop obj = NULL;
+  oop next = refs_list.head();
+  while (next != obj) {
+    obj = next;
+    next = java_lang_ref_Reference::discovered(obj);
     java_lang_ref_Reference::set_discovered_raw(obj, NULL);
-    obj = discovered;
   }
-  refs_list.set_head(sentinel_ref());
+  refs_list.set_head(NULL);
   refs_list.set_length(0);
+}
+
+void
+ReferenceProcessor::abandon_partial_discovered_list(DiscoveredList& refs_list) {
+  clear_discovered_references(refs_list);
 }
 
 void ReferenceProcessor::abandon_partial_discovery() {
   // loop over the lists
-  for (int i = 0; i < _max_num_q * subclasses_of_ref; i++) {
+  for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
     if (TraceReferenceGC && PrintGCDetails && ((i % _max_num_q) == 0)) {
-      gclog_or_tty->print_cr("\nAbandoning %s discovered list",
-                             list_name(i));
+      gclog_or_tty->print_cr("\nAbandoning %s discovered list", list_name(i));
     }
-    abandon_partial_discovered_list(_discoveredSoftRefs[i]);
+    abandon_partial_discovered_list(_discovered_refs[i]);
   }
 }
 
@@ -817,6 +761,14 @@ private:
   bool _clear_referent;
 };
 
+void ReferenceProcessor::set_discovered(oop ref, oop value) {
+  if (_discovered_list_needs_barrier) {
+    java_lang_ref_Reference::set_discovered(ref, value);
+  } else {
+    java_lang_ref_Reference::set_discovered_raw(ref, value);
+  }
+}
+
 // Balances reference queues.
 // Move entries from all queues[0, 1, ..., _max_num_q-1] to
 // queues[0, 1, ..., _num_q-1] because only the first _num_q
@@ -859,6 +811,9 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
           refs_to_move = MIN2(ref_lists[from_idx].length() - avg_refs,
                               avg_refs - ref_lists[to_idx].length());
         }
+
+        assert(refs_to_move > 0, "otherwise the code below will fail");
+
         oop move_head = ref_lists[from_idx].head();
         oop move_tail = move_head;
         oop new_head  = move_head;
@@ -867,10 +822,24 @@ void ReferenceProcessor::balance_queues(DiscoveredList ref_lists[])
           move_tail = new_head;
           new_head = java_lang_ref_Reference::discovered(new_head);
         }
-        java_lang_ref_Reference::set_discovered(move_tail, ref_lists[to_idx].head());
+
+        // Add the chain to the to list.
+        if (ref_lists[to_idx].head() == NULL) {
+          // to list is empty. Make a loop at the end.
+          set_discovered(move_tail, move_tail);
+        } else {
+          set_discovered(move_tail, ref_lists[to_idx].head());
+        }
         ref_lists[to_idx].set_head(move_head);
         ref_lists[to_idx].inc_length(refs_to_move);
-        ref_lists[from_idx].set_head(new_head);
+
+        // Remove the chain from the from list.
+        if (move_tail == new_head) {
+          // We found the end of the from list.
+          ref_lists[from_idx].set_head(NULL);
+        } else {
+          ref_lists[from_idx].set_head(new_head);
+        }
         ref_lists[from_idx].dec_length(refs_to_move);
         if (ref_lists[from_idx].length() == 0) {
           break;
@@ -980,17 +949,13 @@ ReferenceProcessor::process_discovered_reflist(
 
 void ReferenceProcessor::clean_up_discovered_references() {
   // loop over the lists
-  // Should this instead be
-  // for (int i = 0; i < subclasses_of_ref; i++_ {
-  //   for (int j = 0; j < _num_q; j++) {
-  //     int index = i * _max_num_q + j;
-  for (int i = 0; i < _max_num_q * subclasses_of_ref; i++) {
+  for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
     if (TraceReferenceGC && PrintGCDetails && ((i % _max_num_q) == 0)) {
       gclog_or_tty->print_cr(
         "\nScrubbing %s discovered list of Null referents",
         list_name(i));
     }
-    clean_up_discovered_reflist(_discoveredSoftRefs[i]);
+    clean_up_discovered_reflist(_discovered_refs[i]);
   }
 }
 
@@ -1082,42 +1047,40 @@ ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
   // First we must make sure this object is only enqueued once. CAS in a non null
   // discovered_addr.
   oop current_head = refs_list.head();
+  // The last ref must have its discovered field pointing to itself.
+  oop next_discovered = (current_head != NULL) ? current_head : obj;
 
   // Note: In the case of G1, this specific pre-barrier is strictly
   // not necessary because the only case we are interested in
   // here is when *discovered_addr is NULL (see the CAS further below),
   // so this will expand to nothing. As a result, we have manually
   // elided this out for G1, but left in the test for some future
-  // collector that might have need for a pre-barrier here.
-  if (_discovered_list_needs_barrier && !UseG1GC) {
-    if (UseCompressedOops) {
-      _bs->write_ref_field_pre((narrowOop*)discovered_addr, current_head);
-    } else {
-      _bs->write_ref_field_pre((oop*)discovered_addr, current_head);
-    }
-    guarantee(false, "Need to check non-G1 collector");
-  }
-  oop retest = oopDesc::atomic_compare_exchange_oop(current_head, discovered_addr,
+  // collector that might have need for a pre-barrier here, e.g.:-
+  // _bs->write_ref_field_pre((oop* or narrowOop*)discovered_addr, next_discovered);
+  assert(!_discovered_list_needs_barrier || UseG1GC,
+         "Need to check non-G1 collector: "
+         "may need a pre-write-barrier for CAS from NULL below");
+  oop retest = oopDesc::atomic_compare_exchange_oop(next_discovered, discovered_addr,
                                                     NULL);
   if (retest == NULL) {
     // This thread just won the right to enqueue the object.
-    // We have separate lists for enqueueing so no synchronization
+    // We have separate lists for enqueueing, so no synchronization
     // is necessary.
     refs_list.set_head(obj);
     refs_list.inc_length(1);
     if (_discovered_list_needs_barrier) {
-      _bs->write_ref_field((void*)discovered_addr, current_head);
+      _bs->write_ref_field((void*)discovered_addr, next_discovered);
     }
 
     if (TraceReferenceGC) {
-      gclog_or_tty->print_cr("Enqueued reference (mt) (" INTPTR_FORMAT ": %s)",
+      gclog_or_tty->print_cr("Discovered reference (mt) (" INTPTR_FORMAT ": %s)",
                              obj, obj->blueprint()->internal_name());
     }
   } else {
     // If retest was non NULL, another thread beat us to it:
     // The reference has already been discovered...
     if (TraceReferenceGC) {
-      gclog_or_tty->print_cr("Already enqueued reference (" INTPTR_FORMAT ": %s)",
+      gclog_or_tty->print_cr("Already discovered reference (" INTPTR_FORMAT ": %s)",
                              obj, obj->blueprint()->internal_name());
     }
   }
@@ -1142,7 +1105,7 @@ void ReferenceProcessor::verify_referent(oop obj) {
 //     (or part of the heap being collected, indicated by our "span"
 //     we don't treat it specially (i.e. we scan it as we would
 //     a normal oop, treating its references as strong references).
-//     This means that references can't be enqueued unless their
+//     This means that references can't be discovered unless their
 //     referent is also in the same span. This is the simplest,
 //     most "local" and most conservative approach, albeit one
 //     that may cause weak references to be enqueued least promptly.
@@ -1164,14 +1127,13 @@ void ReferenceProcessor::verify_referent(oop obj) {
 //     and complexity in processing these references.
 //     We call this choice the "RefeferentBasedDiscovery" policy.
 bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
-  // We enqueue references only if we are discovering refs
-  // (rather than processing discovered refs).
+  // Make sure we are discovering refs (rather than processing discovered refs).
   if (!_discovering_refs || !RegisterReferences) {
     return false;
   }
-  // We only enqueue active references.
+  // We only discover active references.
   oop next = java_lang_ref_Reference::next(obj);
-  if (next != NULL) {
+  if (next != NULL) {   // Ref is no longer active
     return false;
   }
 
@@ -1184,8 +1146,8 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     return false;
   }
 
-  // We only enqueue references whose referents are not (yet) strongly
-  // reachable.
+  // We only discover references whose referents are not (yet)
+  // known to be strongly reachable.
   if (is_alive_non_header() != NULL) {
     verify_referent(obj);
     if (is_alive_non_header()->do_object_b(java_lang_ref_Reference::referent(obj))) {
@@ -1200,10 +1162,12 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     // time-stamp policies advance the soft-ref clock only
     // at a major collection cycle, this is always currently
     // accurate.
-    if (!_current_soft_ref_policy->should_clear_reference(obj)) {
+    if (!_current_soft_ref_policy->should_clear_reference(obj, _soft_ref_timestamp_clock)) {
       return false;
     }
   }
+
+  ResourceMark rm;      // Needed for tracing.
 
   HeapWord* const discovered_addr = java_lang_ref_Reference::discovered_addr(obj);
   const oop  discovered = java_lang_ref_Reference::discovered(obj);
@@ -1211,7 +1175,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   if (discovered != NULL) {
     // The reference has already been discovered...
     if (TraceReferenceGC) {
-      gclog_or_tty->print_cr("Already enqueued reference (" INTPTR_FORMAT ": %s)",
+      gclog_or_tty->print_cr("Already discovered reference (" INTPTR_FORMAT ": %s)",
                              obj, obj->blueprint()->internal_name());
     }
     if (RefDiscoveryPolicy == ReferentBasedDiscovery) {
@@ -1233,9 +1197,9 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
 
   if (RefDiscoveryPolicy == ReferentBasedDiscovery) {
     verify_referent(obj);
-    // enqueue if and only if either:
-    // reference is in our span or
-    // we are an atomic collector and referent is in our span
+    // Discover if and only if EITHER:
+    // .. reference is in our span, OR
+    // .. we are an atomic collector and referent is in our span
     if (_span.contains(obj_addr) ||
         (discovery_is_atomic() &&
          _span.contains(java_lang_ref_Reference::referent(obj)))) {
@@ -1262,30 +1226,28 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     // here: the field will be visited later when processing the discovered
     // references.
     oop current_head = list->head();
+    // The last ref must have its discovered field pointing to itself.
+    oop next_discovered = (current_head != NULL) ? current_head : obj;
+
     // As in the case further above, since we are over-writing a NULL
     // pre-value, we can safely elide the pre-barrier here for the case of G1.
+    // e.g.:- _bs->write_ref_field_pre((oop* or narrowOop*)discovered_addr, next_discovered);
     assert(discovered == NULL, "control point invariant");
-    if (_discovered_list_needs_barrier && !UseG1GC) { // safe to elide for G1
-      if (UseCompressedOops) {
-        _bs->write_ref_field_pre((narrowOop*)discovered_addr, current_head);
-      } else {
-        _bs->write_ref_field_pre((oop*)discovered_addr, current_head);
-      }
-      guarantee(false, "Need to check non-G1 collector");
-    }
-    oop_store_raw(discovered_addr, current_head);
+    assert(!_discovered_list_needs_barrier || UseG1GC,
+           "For non-G1 collector, may need a pre-write-barrier for CAS from NULL below");
+    oop_store_raw(discovered_addr, next_discovered);
     if (_discovered_list_needs_barrier) {
-      _bs->write_ref_field((void*)discovered_addr, current_head);
+      _bs->write_ref_field((void*)discovered_addr, next_discovered);
     }
     list->set_head(obj);
     list->inc_length(1);
 
     if (TraceReferenceGC) {
-      gclog_or_tty->print_cr("Enqueued reference (" INTPTR_FORMAT ": %s)",
+      gclog_or_tty->print_cr("Discovered reference (" INTPTR_FORMAT ": %s)",
                                 obj, obj->blueprint()->internal_name());
     }
   }
-  assert(obj->is_oop(), "Enqueued a bad reference");
+  assert(obj->is_oop(), "Discovered a bad reference");
   verify_referent(obj);
   return true;
 }
@@ -1419,7 +1381,9 @@ ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
 }
 
 const char* ReferenceProcessor::list_name(int i) {
-   assert(i >= 0 && i <= _max_num_q * subclasses_of_ref, "Out of bounds index");
+   assert(i >= 0 && i <= _max_num_q * number_of_subclasses_of_ref(),
+          "Out of bounds index");
+
    int j = i / _max_num_q;
    switch (j) {
      case 0: return "SoftRef";
@@ -1437,22 +1401,12 @@ void ReferenceProcessor::verify_ok_to_handle_reflists() {
 }
 #endif
 
-void ReferenceProcessor::verify() {
-  guarantee(sentinel_ref() != NULL && sentinel_ref()->is_oop(), "Lost _sentinelRef");
-}
-
 #ifndef PRODUCT
 void ReferenceProcessor::clear_discovered_references() {
   guarantee(!_discovering_refs, "Discovering refs?");
-  for (int i = 0; i < _max_num_q * subclasses_of_ref; i++) {
-    oop obj = _discoveredSoftRefs[i].head();
-    while (obj != sentinel_ref()) {
-      oop next = java_lang_ref_Reference::discovered(obj);
-      java_lang_ref_Reference::set_discovered(obj, (oop) NULL);
-      obj = next;
-    }
-    _discoveredSoftRefs[i].set_head(sentinel_ref());
-    _discoveredSoftRefs[i].set_length(0);
+  for (int i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
+    clear_discovered_references(_discovered_refs[i]);
   }
 }
+
 #endif // PRODUCT

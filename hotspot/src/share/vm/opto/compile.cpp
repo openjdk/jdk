@@ -517,7 +517,20 @@ uint Compile::scratch_emit_size(const Node* n) {
   buf.stubs()->initialize_shared_locs( &locs_buf[lsize * 2], lsize);
 
   // Do the emission.
+
+  Label fakeL; // Fake label for branch instructions.
+  Label*   saveL = NULL;
+  uint save_bnum = 0;
+  bool is_branch = n->is_MachBranch();
+  if (is_branch) {
+    MacroAssembler masm(&buf);
+    masm.bind(fakeL);
+    n->as_MachBranch()->save_label(&saveL, &save_bnum);
+    n->as_MachBranch()->label_set(&fakeL, 0);
+  }
   n->emit(buf, this->regalloc());
+  if (is_branch) // Restore label.
+    n->as_MachBranch()->label_set(saveL, save_bnum);
 
   // End scratch_emit_size section.
   set_in_scratch_emit_size(false);
@@ -804,7 +817,6 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                            &_handler_table, &_inc_table,
                            compiler,
                            env()->comp_level(),
-                           true, /*has_debug_info*/
                            has_unsafe_access()
                            );
   }
@@ -1206,11 +1218,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     // Make sure the Bottom and NotNull variants alias the same.
     // Also, make sure exact and non-exact variants alias the same.
     if( ptr == TypePtr::NotNull || ta->klass_is_exact() ) {
-      if (ta->const_oop()) {
-        tj = ta = TypeAryPtr::make(TypePtr::Constant,ta->const_oop(),ta->ary(),ta->klass(),false,offset);
-      } else {
-        tj = ta = TypeAryPtr::make(TypePtr::BotPTR,ta->ary(),ta->klass(),false,offset);
-      }
+      tj = ta = TypeAryPtr::make(TypePtr::BotPTR,ta->ary(),ta->klass(),false,offset);
     }
   }
 

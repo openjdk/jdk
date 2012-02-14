@@ -69,6 +69,7 @@ public class JavaDocExamplesTest {
         testDropArguments();
         testFilterArguments();
         testFoldArguments();
+        testFoldArguments2();
         testMethodHandlesSummary();
         testAsSpreader();
         testAsCollector();
@@ -487,6 +488,47 @@ SwitchPoint.invalidateAll(new SwitchPoint[]{ spt });
 assert(spt.hasBeenInvalidated());
 assertEquals("hodmet", (String) worker.invokeExact("met", "hod"));
 {}
+            }}
+    }
+
+    @Test public void testFoldArguments2() throws Throwable {
+        {{
+{} /// JAVADOC
+// argument-based dispatch for methods of the form boolean x.___(y: String)
+Lookup lookup = publicLookup();
+// first, a tracing hack:
+MethodHandle println = lookup.findVirtual(java.io.PrintStream.class, "println", methodType(void.class, String.class));
+MethodHandle arrayToString = lookup.findStatic(Arrays.class, "toString", methodType(String.class, Object[].class));
+MethodHandle concat = lookup.findVirtual(String.class, "concat", methodType(String.class, String.class));
+MethodHandle arrayToString_DIS = filterReturnValue(arrayToString, concat.bindTo("DIS:"));
+MethodHandle arrayToString_INV = filterReturnValue(arrayToString, concat.bindTo("INV:"));
+MethodHandle printArgs_DIS = filterReturnValue(arrayToString_DIS, println.bindTo(System.out)).asVarargsCollector(Object[].class);
+MethodHandle printArgs_INV = filterReturnValue(arrayToString_INV, println.bindTo(System.out)).asVarargsCollector(Object[].class);
+// metaobject protocol:
+MethodType mtype = methodType(boolean.class, String.class);
+MethodHandle findVirtual = lookup.findVirtual(Lookup.class,
+  "findVirtual", methodType(MethodHandle.class, Class.class, String.class, MethodType.class));
+MethodHandle getClass = lookup.findVirtual(Object.class,
+  "getClass", methodType(Class.class));
+MethodHandle dispatch = findVirtual;
+dispatch = filterArguments(dispatch, 1, getClass);
+dispatch = insertArguments(dispatch, 3, mtype);
+dispatch = dispatch.bindTo(lookup);
+assertEquals(methodType(MethodHandle.class, Object.class, String.class), dispatch.type());
+MethodHandle invoker = invoker(mtype.insertParameterTypes(0, Object.class));
+// wrap tracing around the dispatch and invoke steps:
+dispatch = foldArguments(dispatch, printArgs_DIS.asType(dispatch.type().changeReturnType(void.class)));
+invoker = foldArguments(invoker, printArgs_INV.asType(invoker.type().changeReturnType(void.class)));
+invoker = dropArguments(invoker, 2, String.class);  // ignore selector
+// compose the dispatcher and the invoker:
+MethodHandle invokeDispatched = foldArguments(invoker, dispatch);
+Object x = "football", y = new java.util.Scanner("bar");
+assert( (boolean) invokeDispatched.invokeExact(x, "startsWith", "foo"));
+assert(!(boolean) invokeDispatched.invokeExact(x, "startsWith", "#"));
+assert( (boolean) invokeDispatched.invokeExact(x, "endsWith", "all"));
+assert(!(boolean) invokeDispatched.invokeExact(x, "endsWith", "foo"));
+assert( (boolean) invokeDispatched.invokeExact(y, "hasNext", "[abc]+[rst]"));
+assert(!(boolean) invokeDispatched.invokeExact(y, "hasNext", "[123]+[789]"));
             }}
     }
 

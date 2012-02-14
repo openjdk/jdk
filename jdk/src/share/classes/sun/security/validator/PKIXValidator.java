@@ -327,6 +327,7 @@ public final class PKIXValidator extends Validator {
      * Set the check date (for debugging).
      */
     private void setDate(PKIXBuilderParameters params) {
+        @SuppressWarnings("deprecation")
         Date date = validationDate;
         if (date != null) {
             params.setDate(date);

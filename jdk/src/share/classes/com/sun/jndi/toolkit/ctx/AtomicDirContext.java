@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package com.sun.jndi.toolkit.ctx;
 
 import javax.naming.*;
 import javax.naming.directory.*;
-import javax.naming.spi.ResolveResult;
 
 /**
  * Direct subclasses of AtomicDirContext must provide implementations for
@@ -79,20 +78,25 @@ public abstract class AtomicDirContext extends ComponentDirContext {
                                                     Continuation cont)
         throws NamingException;
 
-    protected abstract NamingEnumeration a_search(Attributes matchingAttributes,
+    protected abstract NamingEnumeration<SearchResult> a_search(
+                                                  Attributes matchingAttributes,
                                                   String[] attributesToReturn,
                                                   Continuation cont)
         throws NamingException;
 
-    protected abstract NamingEnumeration a_search(String name,
+    protected abstract NamingEnumeration<SearchResult> a_search(
+                                                  String name,
                                                   String filterExpr,
                                                   Object[] filterArgs,
-                                                  SearchControls cons, Continuation cont)
+                                                  SearchControls cons,
+                                                  Continuation cont)
         throws NamingException;
 
-    protected abstract NamingEnumeration a_search(String name,
+    protected abstract NamingEnumeration<SearchResult> a_search(
+                                                  String name,
                                                   String filter,
-                                                  SearchControls cons, Continuation cont)
+                                                  SearchControls cons,
+                                                  Continuation cont)
         throws NamingException;
 
     protected abstract DirContext a_getSchema(Continuation cont)
@@ -163,7 +167,8 @@ public abstract class AtomicDirContext extends ComponentDirContext {
             return null;
         }
 
-    protected NamingEnumeration a_search_nns(Attributes matchingAttributes,
+    protected NamingEnumeration<SearchResult> a_search_nns(
+                                             Attributes matchingAttributes,
                                              String[] attributesToReturn,
                                              Continuation cont)
         throws NamingException {
@@ -171,20 +176,20 @@ public abstract class AtomicDirContext extends ComponentDirContext {
             return null;
         }
 
-    protected NamingEnumeration a_search_nns(String name,
-                                             String filterExpr,
-                                             Object[] filterArgs,
-                                             SearchControls cons,
-                                             Continuation cont)
+    protected NamingEnumeration<SearchResult> a_search_nns(String name,
+                                                           String filterExpr,
+                                                           Object[] filterArgs,
+                                                           SearchControls cons,
+                                                           Continuation cont)
         throws NamingException {
             a_processJunction_nns(name, cont);
             return null;
         }
 
-    protected NamingEnumeration a_search_nns(String name,
-                                             String filter,
-                                             SearchControls cons,
-                                             Continuation cont)
+    protected NamingEnumeration<SearchResult> a_search_nns(String name,
+                                                           String filter,
+                                                           SearchControls cons,
+                                                           Continuation cont)
         throws NamingException  {
             a_processJunction_nns(name, cont);
             return null;
@@ -250,7 +255,7 @@ public abstract class AtomicDirContext extends ComponentDirContext {
             return null;
         }
 
-    protected NamingEnumeration c_search(Name name,
+    protected NamingEnumeration<SearchResult> c_search(Name name,
                                          Attributes matchingAttributes,
                                          String[] attributesToReturn,
                                          Continuation cont)
@@ -260,19 +265,21 @@ public abstract class AtomicDirContext extends ComponentDirContext {
             return null;
         }
 
-    protected NamingEnumeration c_search(Name name,
-                                         String filter,
-                                         SearchControls cons, Continuation cont)
+    protected NamingEnumeration<SearchResult> c_search(Name name,
+                                                       String filter,
+                                                       SearchControls cons,
+                                                       Continuation cont)
         throws NamingException {
             if (resolve_to_penultimate_context(name, cont))
                 return a_search(name.toString(), filter, cons, cont);
             return null;
         }
 
-    protected NamingEnumeration c_search(Name name,
-                                         String filterExpr,
-                                         Object[] filterArgs,
-                                         SearchControls cons, Continuation cont)
+    protected NamingEnumeration<SearchResult> c_search(Name name,
+                                                       String filterExpr,
+                                                       Object[] filterArgs,
+                                                       SearchControls cons,
+                                                       Continuation cont)
         throws NamingException  {
             if (resolve_to_penultimate_context(name, cont))
                 return a_search(name.toString(), filterExpr, filterArgs, cons, cont);
@@ -340,7 +347,8 @@ public abstract class AtomicDirContext extends ComponentDirContext {
             return null;
         }
 
-    protected NamingEnumeration c_search_nns(Name name,
+    protected NamingEnumeration<SearchResult> c_search_nns(
+                                         Name name,
                                          Attributes matchingAttributes,
                                          String[] attributesToReturn,
                                          Continuation cont)
@@ -349,20 +357,21 @@ public abstract class AtomicDirContext extends ComponentDirContext {
             return null;
         }
 
-    protected NamingEnumeration c_search_nns(Name name,
-                                         String filter,
-                                         SearchControls cons, Continuation cont)
+    protected NamingEnumeration<SearchResult> c_search_nns(Name name,
+                                                           String filter,
+                                                           SearchControls cons,
+                                                           Continuation cont)
         throws NamingException {
             if (resolve_to_penultimate_context_nns(name, cont))
                 return a_search_nns(name.toString(), filter, cons, cont);
             return null;
         }
 
-    protected NamingEnumeration c_search_nns(Name name,
-                                             String filterExpr,
-                                             Object[] filterArgs,
-                                             SearchControls cons,
-                                             Continuation cont)
+    protected NamingEnumeration<SearchResult> c_search_nns(Name name,
+                                                           String filterExpr,
+                                                           Object[] filterArgs,
+                                                           SearchControls cons,
+                                                           Continuation cont)
         throws NamingException  {
             if (resolve_to_penultimate_context_nns(name, cont))
                 return a_search_nns(name.toString(), filterExpr, filterArgs,

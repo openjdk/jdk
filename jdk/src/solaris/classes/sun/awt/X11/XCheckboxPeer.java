@@ -297,40 +297,33 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
 
         double fsize = (double) checkBoxSize;
         myCheckMark = AffineTransform.getScaleInstance(fsize / MASTER_SIZE, fsize / MASTER_SIZE).createTransformedShape(MASTER_CHECKMARK);
-
     }
+    @Override
+    void paintPeer(final Graphics g) {
+        //layout();
+        Dimension size = getPeerSize();
+        Font f = getPeerFont();
+        flush();
+        g.setColor(getPeerBackground());   // erase the existing button
+        g.fillRect(0,0, size.width, size.height);
+        if (label != null) {
+            g.setFont(f);
+            paintText(g, textRect, label);
+        }
 
-    public void paint(Graphics g) {
-        if (g != null) {
-            //layout();
-            Dimension size = getPeerSize();
-            Font f = getPeerFont();
-
-            flush();
-            g.setColor(getPeerBackground());   // erase the existing button
-            g.fillRect(0,0, size.width, size.height);
-
-            if (label != null) {
-                g.setFont(f);
-                paintText(g, textRect, label);
-            }
-
-            if (hasFocus()) {
-                paintFocus(g,
-                           focusRect.x,
-                           focusRect.y,
-                           focusRect.width,
-                           focusRect.height);
-            }
-
-            // Paint the checkbox or radio button
-            if (checkBoxGroup == null) {
-                paintCheckbox(g, cbX, cbY, checkBoxSize, checkBoxSize);
-            }
-            else {
-                paintRadioButton(g, cbX, cbY, checkBoxSize, checkBoxSize);
-            }
-
+        if (hasFocus()) {
+            paintFocus(g,
+                       focusRect.x,
+                       focusRect.y,
+                       focusRect.width,
+                       focusRect.height);
+        }
+        // Paint the checkbox or radio button
+        if (checkBoxGroup == null) {
+            paintCheckbox(g, cbX, cbY, checkBoxSize, checkBoxSize);
+        }
+        else {
+            paintRadioButton(g, cbX, cbY, checkBoxSize, checkBoxSize);
         }
         flush();
     }

@@ -768,6 +768,7 @@ bool StringConcat::validate_control_flow() {
         tty->cr();
       }
 #endif
+      fail = true;
       break;
     } else if (ptr->is_Proj() && ptr->in(0)->is_Initialize()) {
       ptr = ptr->in(0)->in(0);

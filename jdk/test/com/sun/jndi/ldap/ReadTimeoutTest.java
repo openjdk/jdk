@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6176036
+ * @bug 6176036 7056489
  * @summary Read-timeout specification for LDAP operations
  */
 
@@ -37,40 +37,37 @@ import java.util.Hashtable;
 public class ReadTimeoutTest {
 
     public static void main(String[] args) throws Exception {
-
         boolean passed = false;
 
-        // Set up the environment for creating the initial context
-        Hashtable env = new Hashtable(11);
-        env.put(Context.INITIAL_CONTEXT_FACTORY,
-            "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put("com.sun.jndi.ldap.read.timeout", "1000");
-        env.put(Context.PROVIDER_URL, "ldap://localhost:2001");
+        // create the server
+        try (Server server = Server.create()) {
+            // Set up the environment for creating the initial context
+            Hashtable<String,Object> env = new Hashtable<>(11);
+            env.put(Context.INITIAL_CONTEXT_FACTORY,
+                "com.sun.jndi.ldap.LdapCtxFactory");
+            env.put("com.sun.jndi.ldap.read.timeout", "1000");
+            env.put(Context.PROVIDER_URL, "ldap://localhost:" + server.port());
 
-        Server s = new Server();
-
-        try {
-
-            // start the server
-            s.start();
 
             // Create initial context
             DirContext ctx = new InitialDirContext(env);
-            System.out.println("LDAP Client: Connected to the Server");
+            try {
+                System.out.println("LDAP Client: Connected to the Server");
 
-            SearchControls scl = new SearchControls();
-            scl.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            System.out.println("Performing Search");
-            NamingEnumeration answer =
-                ctx.search("ou=People,o=JNDITutorial", "(objectClass=*)", scl);
-
-            // Close the context when we're done
-            ctx.close();
+                SearchControls scl = new SearchControls();
+                scl.setSearchScope(SearchControls.SUBTREE_SCOPE);
+                System.out.println("Performing Search");
+                NamingEnumeration<SearchResult> answer =
+                    ctx.search("ou=People,o=JNDITutorial", "(objectClass=*)", scl);
+            } finally {
+                // Close the context when we're done
+                ctx.close();
+            }
         } catch (NamingException e) {
             passed = true;
             e.printStackTrace();
         }
-        s.interrupt();
+
         if (!passed) {
             throw new Exception("Read timeout test failed," +
                          " read timeout exception not thrown");
@@ -78,27 +75,39 @@ public class ReadTimeoutTest {
         System.out.println("The test PASSED");
     }
 
-    static class Server extends Thread {
+    static class Server implements Runnable, Closeable {
+        private final ServerSocket ss;
 
-        static int serverPort = 2001;
+        private Server(ServerSocket ss) {
+            this.ss = ss;
+        }
 
-        Server() {
+        static Server create() throws IOException {
+            Server server = new Server(new ServerSocket(0));
+            new Thread(server).start();
+            return server;
+        }
+
+        int port() {
+            return ss.getLocalPort();
         }
 
         public void run() {
-            try {
-                ServerSocket serverSock = new ServerSocket(serverPort);
-                Socket socket = serverSock.accept();
+            try (Socket s = ss.accept()) {
                 System.out.println("Server: Connection accepted");
-
-                BufferedInputStream bin = new BufferedInputStream(socket.
-                                getInputStream());
-                while (true) {
-                    bin.read();
-                }
+                BufferedInputStream bis = new BufferedInputStream(s.getInputStream());
+                byte[] buf = new byte[100];
+                int n;
+                do {
+                    n = bis.read(buf);
+                } while (n > 0);
             } catch (IOException e) {
                 // ignore
             }
+        }
+
+        public void close() throws IOException {
+            ss.close();
+        }
     }
-}
 }

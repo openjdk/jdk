@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,13 +319,6 @@ public class DistributionPoint {
     }
 
     /**
-     * Utility function for a.equals(b) where both a and b may be null.
-     */
-    private static boolean equals(Object a, Object b) {
-        return (a == null) ? (b == null) : a.equals(b);
-    }
-
-    /**
      * Compare an object to this DistributionPoint for equality.
      *
      * @param obj Object to be compared to this
@@ -340,9 +333,9 @@ public class DistributionPoint {
         }
         DistributionPoint other = (DistributionPoint)obj;
 
-        boolean equal = equals(this.fullName, other.fullName)
-                     && equals(this.relativeName, other.relativeName)
-                     && equals(this.crlIssuer, other.crlIssuer)
+        boolean equal = Objects.equals(this.fullName, other.fullName)
+                     && Objects.equals(this.relativeName, other.relativeName)
+                     && Objects.equals(this.crlIssuer, other.crlIssuer)
                      && Arrays.equals(this.reasonFlags, other.reasonFlags);
         return equal;
     }

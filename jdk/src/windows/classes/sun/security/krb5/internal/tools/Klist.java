@@ -95,14 +95,17 @@ public class Klist {
             }
             break;
         case 'k':
-            try {
-                KeyTab ktab = KeyTab.getInstance(klist.name);
-                klist.target = ktab;
-                klist.name = ktab.tabName();
-            } catch (Exception e) {
-                klist.displayMessage("KeyTab");
+            KeyTab ktab = KeyTab.getInstance(klist.name);
+            if (ktab.isMissing()) {
+                System.out.println("KeyTab " + klist.name + " not found.");
+                System.exit(-1);
+            } else if (!ktab.isValid()) {
+                System.out.println("KeyTab " + klist.name
+                        + " format not supported.");
                 System.exit(-1);
             }
+            klist.target = ktab;
+            klist.name = ktab.tabName();
             klist.displayTab();
             break;
         default:

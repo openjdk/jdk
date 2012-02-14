@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package javax.crypto.spec;
 
-import java.math.BigInteger;
 import java.security.spec.AlgorithmParameterSpec;
 
 /**
@@ -53,7 +52,7 @@ public class PBEParameterSpec implements AlgorithmParameterSpec {
      * @exception NullPointerException if <code>salt</code> is null.
      */
     public PBEParameterSpec(byte[] salt, int iterationCount) {
-        this.salt = (byte[])salt.clone();
+        this.salt = salt.clone();
         this.iterationCount = iterationCount;
     }
 
@@ -64,7 +63,7 @@ public class PBEParameterSpec implements AlgorithmParameterSpec {
      * each time this method is called.
      */
     public byte[] getSalt() {
-        return (byte[])this.salt.clone();
+        return this.salt.clone();
     }
 
     /**

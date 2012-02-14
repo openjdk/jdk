@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,6 @@ import sun.security.util.*;
  * @author Sean Mullan
  * @since 1.5
  */
-
 public final class RC2Parameters extends AlgorithmParametersSpi {
 
     // TABLE[EKB] from section 6 of RFC 2268, used to convert effective key
@@ -177,13 +176,14 @@ public final class RC2Parameters extends AlgorithmParametersSpi {
         engineInit(encoded);
     }
 
-    protected AlgorithmParameterSpec engineGetParameterSpec(Class paramSpec)
+    protected <T extends AlgorithmParameterSpec>
+            T engineGetParameterSpec(Class<T> paramSpec)
         throws InvalidParameterSpecException {
 
         if (RC2ParameterSpec.class.isAssignableFrom(paramSpec)) {
-            return (iv == null ?
-                    new RC2ParameterSpec(effectiveKeySize) :
-                    new RC2ParameterSpec(effectiveKeySize, iv));
+            return paramSpec.cast((iv == null ?
+                                   new RC2ParameterSpec(effectiveKeySize) :
+                                   new RC2ParameterSpec(effectiveKeySize, iv)));
         } else {
             throw new InvalidParameterSpecException
                 ("Inappropriate parameter specification");

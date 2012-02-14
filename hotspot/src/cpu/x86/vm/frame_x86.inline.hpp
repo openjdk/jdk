@@ -45,6 +45,7 @@ inline frame::frame(intptr_t* sp, intptr_t* fp, address pc) {
   _pc = pc;
   assert(pc != NULL, "no pc?");
   _cb = CodeCache::find_blob(pc);
+  adjust_unextended_sp();
 
   address original_pc = nmethod::get_deopt_original_pc(this);
   if (original_pc != NULL) {
@@ -92,6 +93,7 @@ inline frame::frame(intptr_t* sp, intptr_t* fp) {
   // assert(_pc != NULL, "no pc?");
 
   _cb = CodeCache::find_blob(_pc);
+  adjust_unextended_sp();
 
   address original_pc = nmethod::get_deopt_original_pc(this);
   if (original_pc != NULL) {

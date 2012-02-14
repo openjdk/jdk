@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package build.tools.jdwpgen;
 
-import java.util.*;
 import java.io.*;
 
 class CommandSetNode extends AbstractNamedNode {
@@ -43,8 +42,8 @@ class CommandSetNode extends AbstractNamedNode {
                        " Command Set</a> (" +
                        nameNode.value() + ")</h4>");
         writer.println(comment());
-        for (Iterator it = components.iterator(); it.hasNext();) {
-            ((Node)it.next()).document(writer);
+        for (Node node : components) {
+            node.document(writer);
         }
     }
 
@@ -53,8 +52,8 @@ class CommandSetNode extends AbstractNamedNode {
         writer.println(name() + "</a> Command Set (" +
                        nameNode.value() + ")");
         writer.println("<ul>");
-        for (Iterator it = components.iterator(); it.hasNext();) {
-            ((Node)it.next()).documentIndex(writer);
+        for (Node node : components) {
+            node.documentIndex(writer);
         }
         writer.println("</ul>");
     }

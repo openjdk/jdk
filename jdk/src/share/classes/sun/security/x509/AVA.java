@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import sun.security.pkcs.PKCS9Attribute;
  * X.500 Attribute-Value-Assertion (AVA):  an attribute, as identified by
  * some attribute ID, has some particular value.  Values are as a rule ASN.1
  * printable strings.  A conventional set of type IDs is recognized when
- * parsing (and generating) RFC 1779 or RFC 2253 syntax strings.
+ * parsing (and generating) RFC 1779, 2253 or 4514 syntax strings.
  *
  * <P>AVAs are components of X.500 relative names.  Think of them as being
  * individual fields of a database record.  The attribute ID is how you
@@ -92,18 +92,20 @@ public class AVA implements DerEncoder {
      * Leading and trailing spaces, also multiple internal spaces, also
      * call for quoting the whole string.
      */
-    private static final String specialChars = ",+=\n<>#;";
+    private static final String specialChars1779 = ",=\n+<>#;\\\"";
 
     /*
      * In RFC2253, if the value has any of these characters in it, it
      * must be quoted by a preceding \.
      */
-    private static final String specialChars2253 = ",+\"\\<>;";
+    private static final String specialChars2253 = ",=+<>#;\\\"";
 
     /*
-     * includes special chars from RFC1779 and RFC2253, as well as ' '
+     * includes special chars from RFC1779 and RFC2253, as well as ' ' from
+     * RFC 4514.
      */
-    private static final String specialCharsAll = ",=\n+<>#;\\\" ";
+    private static final String specialCharsDefault = ",=\n+<>#;\\\" ";
+    private static final String escapedDefault = ",+<>;\"";
 
     /*
      * Values that aren't printable strings are emitted as BER-encoded
@@ -120,26 +122,26 @@ public class AVA implements DerEncoder {
     }
 
     /**
-     * Parse an RFC 1779 or RFC 2253 style AVA string:  CN=fee fie foe fum
+     * Parse an RFC 1779, 2253 or 4514 style AVA string:  CN=fee fie foe fum
      * or perhaps with quotes.  Not all defined AVA tags are supported;
      * of current note are X.400 related ones (PRMD, ADMD, etc).
      *
      * This terminates at unescaped AVA separators ("+") or RDN
-     * separators (",", ";"), or DN terminators (">"), and removes
-     * cosmetic whitespace at the end of values.
+     * separators (",", ";"), and removes cosmetic whitespace at the end of
+     * values.
      */
     AVA(Reader in) throws IOException {
         this(in, DEFAULT);
     }
 
     /**
-     * Parse an RFC 1779 or RFC 2253 style AVA string:  CN=fee fie foe fum
+     * Parse an RFC 1779, 2253 or 4514 style AVA string:  CN=fee fie foe fum
      * or perhaps with quotes. Additional keywords can be specified in the
      * keyword/OID map.
      *
      * This terminates at unescaped AVA separators ("+") or RDN
-     * separators (",", ";"), or DN terminators (">"), and removes
-     * cosmetic whitespace at the end of values.
+     * separators (",", ";"), and removes cosmetic whitespace at the end of
+     * values.
      */
     AVA(Reader in, Map<String, String> keywordMap) throws IOException {
         this(in, DEFAULT, keywordMap);
@@ -147,9 +149,6 @@ public class AVA implements DerEncoder {
 
     /**
      * Parse an AVA string formatted according to format.
-     *
-     * XXX format RFC1779 should only allow RFC1779 syntax but is
-     * actually DEFAULT with RFC1779 keywords.
      */
     AVA(Reader in, int format) throws IOException {
         this(in, format, Collections.<String, String>emptyMap());
@@ -158,9 +157,6 @@ public class AVA implements DerEncoder {
     /**
      * Parse an AVA string formatted according to format.
      *
-     * XXX format RFC1779 should only allow RFC1779 syntax but is
-     * actually DEFAULT with RFC1779 keywords.
-     *
      * @param in Reader containing AVA String
      * @param format parsing format
      * @param keywordMap a Map where a keyword String maps to a corresponding
@@ -168,11 +164,11 @@ public class AVA implements DerEncoder {
      *   If an entry does not exist, it will fallback to the builtin
      *   keyword/OID mapping.
      * @throws IOException if the AVA String is not valid in the specified
-     *   standard or an OID String from the keywordMap is improperly formatted
+     *   format or an OID String from the keywordMap is improperly formatted
      */
     AVA(Reader in, int format, Map<String, String> keywordMap)
         throws IOException {
-        // assume format is one of DEFAULT, RFC1779, RFC2253
+        // assume format is one of DEFAULT or RFC2253
 
         StringBuilder   temp = new StringBuilder();
         int             c;
@@ -193,7 +189,7 @@ public class AVA implements DerEncoder {
 
         /*
          * Now parse the value.  "#hex", a quoted string, or a string
-         * terminated by "+", ",", ";", ">".  Whitespace before or after
+         * terminated by "+", ",", ";".  Whitespace before or after
          * the value is stripped away unless format is RFC2253.
          */
         temp.setLength(0);
@@ -202,7 +198,7 @@ public class AVA implements DerEncoder {
             c = in.read();
             if (c == ' ') {
                 throw new IOException("Incorrect AVA RFC2253 format - " +
-                                        "leading space must be escaped");
+                                      "leading space must be escaped");
             }
         } else {
             // read next character skipping whitespace
@@ -331,8 +327,7 @@ public class AVA implements DerEncoder {
                     continue;
                 }
 
-                if (c != '\\' && c != '"' &&
-                    specialChars.indexOf((char)c) < 0) {
+                if (specialChars1779.indexOf((char)c) < 0) {
                     throw new IOException
                         ("Invalid escaped character in AVA: " +
                         (char)c);
@@ -369,8 +364,8 @@ public class AVA implements DerEncoder {
 
         // encode as PrintableString unless value contains
         // non-PrintableString chars
-        if (this.oid.equals(PKCS9Attribute.EMAIL_ADDRESS_OID) ||
-            (this.oid.equals(X500Name.DOMAIN_COMPONENT_OID) &&
+        if (this.oid.equals((Object)PKCS9Attribute.EMAIL_ADDRESS_OID) ||
+            (this.oid.equals((Object)X500Name.DOMAIN_COMPONENT_OID) &&
                 PRESERVE_OLD_DC_ENCODING == false)) {
             // EmailAddress and DomainComponent must be IA5String
             return new DerValue(DerValue.tag_IA5String,
@@ -386,7 +381,7 @@ public class AVA implements DerEncoder {
     private DerValue parseString
         (Reader in, int c, int format, StringBuilder temp) throws IOException {
 
-        List<Byte> embeddedHex = new ArrayList<Byte>();
+        List<Byte> embeddedHex = new ArrayList<>();
         boolean isPrintableString = true;
         boolean escape = false;
         boolean leadingChar = true;
@@ -413,24 +408,19 @@ public class AVA implements DerEncoder {
                 }
 
                 // check if character was improperly escaped
-                if ((format == DEFAULT &&
-                        specialCharsAll.indexOf((char)c) == -1) ||
-                    (format == RFC1779  &&
-                        specialChars.indexOf((char)c) == -1 &&
-                        c != '\\' && c != '\"')) {
-
+                if (format == DEFAULT &&
+                       specialCharsDefault.indexOf((char)c) == -1) {
                     throw new IOException
                         ("Invalid escaped character in AVA: '" +
                         (char)c + "'");
-
                 } else if (format == RFC2253) {
                     if (c == ' ') {
                         // only leading/trailing space can be escaped
                         if (!leadingChar && !trailingSpace(in)) {
-                                throw new IOException
-                                        ("Invalid escaped space character " +
-                                        "in AVA.  Only a leading or trailing " +
-                                        "space character can be escaped.");
+                            throw new IOException
+                                    ("Invalid escaped space character " +
+                                    "in AVA.  Only a leading or trailing " +
+                                    "space character can be escaped.");
                         }
                     } else if (c == '#') {
                         // only leading '#' can be escaped
@@ -443,18 +433,20 @@ public class AVA implements DerEncoder {
                         throw new IOException
                                 ("Invalid escaped character in AVA: '" +
                                 (char)c + "'");
-
                     }
                 }
-
             } else {
                 // check if character should have been escaped
                 if (format == RFC2253) {
                     if (specialChars2253.indexOf((char)c) != -1) {
                         throw new IOException
                                 ("Character '" + (char)c +
-                                "' in AVA appears without escape");
+                                 "' in AVA appears without escape");
                     }
+                } else if (escapedDefault.indexOf((char)c) != -1) {
+                    throw new IOException
+                            ("Character '" + (char)c +
+                            "' in AVA appears without escape");
                 }
             }
 
@@ -503,8 +495,8 @@ public class AVA implements DerEncoder {
 
         // encode as PrintableString unless value contains
         // non-PrintableString chars
-        if (this.oid.equals(PKCS9Attribute.EMAIL_ADDRESS_OID) ||
-            (this.oid.equals(X500Name.DOMAIN_COMPONENT_OID) &&
+        if (this.oid.equals((Object)PKCS9Attribute.EMAIL_ADDRESS_OID) ||
+            (this.oid.equals((Object)X500Name.DOMAIN_COMPONENT_OID) &&
                 PRESERVE_OLD_DC_ENCODING == false)) {
             // EmailAddress and DomainComponent must be IA5String
             return new DerValue(DerValue.tag_IA5String, temp.toString());
@@ -551,7 +543,6 @@ public class AVA implements DerEncoder {
         case ',':
             return true;
         case ';':
-        case '>':
             return format != RFC2253;
         default:
             return false;
@@ -1080,8 +1071,17 @@ public class AVA implements DerEncoder {
                  * to need quoting, or at least escaping.  So do leading or
                  * trailing spaces, and multiple internal spaces.
                  */
-                for (int i = 0; i < valStr.length(); i++) {
+                int length = valStr.length();
+                boolean alreadyQuoted =
+                    (length > 1 && valStr.charAt(0) == '\"'
+                     && valStr.charAt(length - 1) == '\"');
+
+                for (int i = 0; i < length; i++) {
                     char c = valStr.charAt(i);
+                    if (alreadyQuoted && (i == 0 || i == length - 1)) {
+                        sbuffer.append(c);
+                        continue;
+                    }
                     if (DerValue.isPrintableStringChar(c) ||
                         escapees.indexOf(c) >= 0) {
 
@@ -1145,7 +1145,8 @@ public class AVA implements DerEncoder {
                 }
 
                 // Emit the string ... quote it if needed
-                if (quoteNeeded) {
+                // if string is already quoted, don't re-quote
+                if (!alreadyQuoted && quoteNeeded) {
                     retval.append("\"" + sbuffer.toString() + "\"");
                 } else {
                     retval.append(sbuffer.toString());
@@ -1204,18 +1205,6 @@ class AVAKeyword {
      * Get an object identifier representing the specified keyword (or
      * string encoded object identifier) in the given standard.
      *
-     * @throws IOException If the keyword is not valid in the specified standard
-     */
-    static ObjectIdentifier getOID(String keyword, int standard)
-            throws IOException {
-        return getOID
-            (keyword, standard, Collections.<String, String>emptyMap());
-    }
-
-    /**
-     * Get an object identifier representing the specified keyword (or
-     * string encoded object identifier) in the given standard.
-     *
      * @param keywordMap a Map where a keyword String maps to a corresponding
      *   OID String. Each AVA keyword will be mapped to the corresponding OID.
      *   If an entry does not exist, it will fallback to the builtin
@@ -1249,19 +1238,11 @@ class AVAKeyword {
             return new ObjectIdentifier(oidString);
         }
 
-        // no keyword found or not standard compliant, check if OID string
-
-        // RFC1779 requires, DEFAULT allows OID. prefix
-        if (standard == AVA.RFC1779) {
-            if (keyword.startsWith("OID.") == false) {
-                throw new IOException("Invalid RFC1779 keyword: " + keyword);
-            }
+        // no keyword found, check if OID string
+        if (standard == AVA.DEFAULT && keyword.startsWith("OID.")) {
             keyword = keyword.substring(4);
-        } else if (standard == AVA.DEFAULT) {
-            if (keyword.startsWith("OID.")) {
-                keyword = keyword.substring(4);
-            }
         }
+
         boolean number = false;
         if (keyword.length() != 0) {
             char ch = keyword.charAt(0);

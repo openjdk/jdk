@@ -94,7 +94,7 @@ class AcceptSecContextToken extends InitialToken {
          */
         EncryptionKey subKey = apRep.getSubKey();
         if (subKey != null) {
-            context.setKey(subKey);
+            context.setKey(Krb5Context.ACCEPTOR_SUBKEY, subKey);
             /*
             System.out.println("\n\nSub-Session key from AP-REP is: " +
                                getHexBytes(subKey.getBytes()) + "\n");

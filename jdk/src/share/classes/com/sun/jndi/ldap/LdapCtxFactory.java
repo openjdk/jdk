@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package com.sun.jndi.ldap;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.Enumeration;
-import java.net.MalformedURLException;
 
 import javax.naming.*;
 import javax.naming.directory.*;
@@ -119,9 +118,9 @@ final public class LdapCtxFactory implements ObjectFactory, InitialContextFactor
         int size = 0;   // number of URLs
         String[] urls = new String[ref.size()];
 
-        Enumeration addrs = ref.getAll();
+        Enumeration<RefAddr> addrs = ref.getAll();
         while (addrs.hasMoreElements()) {
-            RefAddr addr = (RefAddr)addrs.nextElement();
+            RefAddr addr = addrs.nextElement();
 
             if ((addr instanceof StringRefAddr) &&
                 addr.getType().equals(ADDRESS_TYPE)) {
@@ -145,7 +144,7 @@ final public class LdapCtxFactory implements ObjectFactory, InitialContextFactor
 
     // ------------ Utilities used by other classes ----------------
 
-    public static DirContext getLdapCtxInstance(Object urlInfo, Hashtable env)
+    public static DirContext getLdapCtxInstance(Object urlInfo, Hashtable<?,?> env)
             throws NamingException {
 
         if (urlInfo instanceof String) {
@@ -158,7 +157,7 @@ final public class LdapCtxFactory implements ObjectFactory, InitialContextFactor
         }
     }
 
-    private static DirContext getUsingURL(String url, Hashtable env)
+    private static DirContext getUsingURL(String url, Hashtable<?,?> env)
             throws NamingException {
         DirContext ctx = null;
         LdapURL ldapUrl = new LdapURL(url);
@@ -202,7 +201,7 @@ final public class LdapCtxFactory implements ObjectFactory, InitialContextFactor
      * If all URLs fail, throw one of the exceptions arbitrarily.
      * Not pretty, but potentially more informative than returning null.
      */
-    private static DirContext getUsingURLs(String[] urls, Hashtable env)
+    private static DirContext getUsingURLs(String[] urls, Hashtable<?,?> env)
             throws NamingException {
         NamingException ne = null;
         DirContext ctx = null;
@@ -221,8 +220,8 @@ final public class LdapCtxFactory implements ObjectFactory, InitialContextFactor
     /**
      * Used by Obj and obj/RemoteToAttrs too so must be public
      */
-    public static Attribute createTypeNameAttr(Class cl) {
-        Vector v = new Vector(10);
+    public static Attribute createTypeNameAttr(Class<?> cl) {
+        Vector<String> v = new Vector<>(10);
         String[] types = getTypeNames(cl, v);
         if (types.length > 0) {
             BasicAttribute tAttr =
@@ -235,7 +234,7 @@ final public class LdapCtxFactory implements ObjectFactory, InitialContextFactor
         return null;
     }
 
-    private static String[] getTypeNames(Class currentClass, Vector v) {
+    private static String[] getTypeNames(Class<?> currentClass, Vector<String> v) {
 
         getClassesAux(currentClass, v);
         Class[] members = currentClass.getInterfaces();
@@ -244,13 +243,14 @@ final public class LdapCtxFactory implements ObjectFactory, InitialContextFactor
         }
         String[] ret = new String[v.size()];
         int i = 0;
-        for (java.util.Enumeration e = v.elements(); e.hasMoreElements();) {
-            ret[i++] = (String)e.nextElement();
+
+        for (String name : v) {
+            ret[i++] = name;
         }
         return ret;
     }
 
-    private static void getClassesAux(Class currentClass, Vector v) {
+    private static void getClassesAux(Class<?> currentClass, Vector<String> v) {
         if (!v.contains(currentClass.getName())) {
             v.addElement(currentClass.getName());
         }

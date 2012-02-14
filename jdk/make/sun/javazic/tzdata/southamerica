@@ -819,6 +819,26 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 # <a href="http://www.timeanddate.com/news/time/brazil-dst-2008-2009.html">
 # http://www.timeanddate.com/news/time/brazil-dst-2008-2009.html
 # </a>
+#
+# From Alexander Krivenyshev (2011-10-04):
+# State Bahia will return to Daylight savings time this year after 8 years off.
+# The announcement was made by Governor Jaques Wagner in an interview to a 
+# television station in Salvador. 
+
+# In Portuguese:
+# <a href="http://g1.globo.com/bahia/noticia/2011/10/governador-jaques-wagner-confirma-horario-de-verao-na-bahia.html">
+# http://g1.globo.com/bahia/noticia/2011/10/governador-jaques-wagner-confirma-horario-de-verao-na-bahia.html
+# </a> and
+# <a href="http://noticias.terra.com.br/brasil/noticias/0,,OI5390887-EI8139,00-Bahia+volta+a+ter+horario+de+verao+apos+oito+anos.html">
+# http://noticias.terra.com.br/brasil/noticias/0,,OI5390887-EI8139,00-Bahia+volta+a+ter+horario+de+verao+apos+oito+anos.html
+# </a>
+
+# From Guilherme Bernardes Rodrigues (2011-10-07):
+# There is news in the media, however there is still no decree about it.
+# I just send a e-mail to Zulmira Brandão at
+# <a href="http://pcdsh01.on.br/">http://pcdsh01.on.br/</a> the
+# oficial agency about time in Brazil, and she confirmed that the old rule is
+# still in force.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 # Decree <a href="http://pcdsh01.on.br/HV20466.htm">20,466</a> (1931-10-01)
@@ -1057,6 +1077,9 @@ Zone America/Maceio	-2:22:52 -	LMT	1914
 Zone America/Bahia	-2:34:04 -	LMT	1914
 			-3:00	Brazil	BR%sT	2003 Sep 24
 			-3:00	-	BRT
+# as noted above, not yet in operation.
+#			-3:00	-	BRT	2011 Oct 16
+#			-3:00	Brazil	BR%sT
 #
 # Goias (GO), Distrito Federal (DF), Minas Gerais (MG),
 # Espirito Santo (ES), Rio de Janeiro (RJ), Sao Paulo (SP), Parana (PR),
@@ -1297,6 +1320,14 @@ Zone	America/Bogota	-4:56:20 -	LMT	1884 Mar 13
 Zone	America/Curacao	-4:35:44 -	LMT	1912 Feb 12	# Willemstad
 			-4:30	-	ANT	1965 # Netherlands Antilles Time
 			-4:00	-	AST
+
+# From Arthur David Olson (2011-06-15):
+# At least for now, use links for places with new iso3166 codes.
+# The name "Lower Prince's Quarter" is both longer than fourteen charaters
+# and contains an apostrophe; use "Lower_Princes" below.
+
+Link	America/Curacao	America/Lower_Princes # Sint Maarten
+Link	America/Curacao	America/Kralendijk # Bonaire, Sint Estatius and Saba
 
 # Ecuador
 #

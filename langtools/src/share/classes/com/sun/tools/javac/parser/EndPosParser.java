@@ -67,14 +67,14 @@ public class EndPosParser extends JavacParser {
     /** {@inheritDoc} */
     @Override
     protected <T extends JCTree> T to(T t) {
-        storeEnd(t, S.endPos());
+        storeEnd(t, token.endPos);
         return t;
     }
 
     /** {@inheritDoc} */
     @Override
     protected <T extends JCTree> T toP(T t) {
-        storeEnd(t, S.prevEndPos());
+        storeEnd(t, S.prevToken().endPos);
         return t;
     }
 
@@ -88,7 +88,7 @@ public class EndPosParser extends JavacParser {
     /** {@inheritDoc} */
     @Override
     JCExpression parExpression() {
-        int pos = S.pos();
+        int pos = token.pos;
         JCExpression t = super.parExpression();
         return toP(F.at(pos).Parens(t));
     }

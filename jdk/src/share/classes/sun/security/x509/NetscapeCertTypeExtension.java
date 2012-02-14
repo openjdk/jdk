@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,7 +220,7 @@ implements CertAttrSet<String> {
     /**
      * Get the attribute value.
      */
-    public Object get(String name) throws IOException {
+    public Boolean get(String name) throws IOException {
         return Boolean.valueOf(isSet(getPosition(name)));
     }
 
@@ -306,15 +306,15 @@ implements CertAttrSet<String> {
             if (isSet(getPosition(SSL_CLIENT)) ||
                 isSet(getPosition(S_MIME)) ||
                 isSet(getPosition(OBJECT_SIGNING)))
-                keyUsage.set(keyUsage.DIGITAL_SIGNATURE, val);
+                keyUsage.set(KeyUsageExtension.DIGITAL_SIGNATURE, val);
 
             if (isSet(getPosition(SSL_SERVER)))
-                keyUsage.set(keyUsage.KEY_ENCIPHERMENT, val);
+                keyUsage.set(KeyUsageExtension.KEY_ENCIPHERMENT, val);
 
             if (isSet(getPosition(SSL_CA)) ||
                 isSet(getPosition(S_MIME_CA)) ||
                 isSet(getPosition(OBJECT_SIGNING_CA)))
-                keyUsage.set(keyUsage.KEY_CERTSIGN, val);
+                keyUsage.set(KeyUsageExtension.KEY_CERTSIGN, val);
         } catch (IOException e) { }
         return keyUsage.getBits();
     }

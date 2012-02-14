@@ -33,6 +33,22 @@
 //          - copy this file from icu4jsrc_3_2/src/com/ibm/icu/lang/UCharacterEnums.java
 //          - move from package com.ibm.icu.lang to package sun.net.idn
 //
+//      2011-09-06 Kurchi Subhra Hazra
+//          - Added @Deprecated tag to the following:
+//            - class UCharacterEnums
+//            - interfaces ECharacterCategory, ECharacterDirection
+//            - fields INITIAL_QUOTE_PUNCTUATION, FINAL_QUOTE_PUNCTUATION,
+//              DIRECTIONALITY_LEFT_TO_RIGHT, DIRECTIONALITY_RIGHT_TO_LEFT,
+//              DIRECTIONALITY_EUROPEAN_NUMBER, DIRECTIONALITY_EUROPEAN_NUMBER_SEPARATOR
+//              DIRECTIONALITY_EUROPEAN_NUMBER_TERMINATOR, DIRECTIONALITY_ARABIC_NUMBER,
+//              DIRECTIONALITY_COMMON_NUMBER_SEPARATOR, DIRECTIONALITY_PARAGRAPH_SEPARATOR,
+//              DIRECTIONALITY_SEGMENT_SEPARATOR, DIRECTIONALITY_WHITESPACE,
+//              DIRECTIONALITY_OTHER_NEUTRALS, DIRECTIONALITY_LEFT_TO_RIGHT_EMBEDDING,
+//              DIRECTIONALITY_LEFT_TO_RIGHT_OVERRIDE, DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC,
+//              DIRECTIONALITY_RIGHT_TO_LEFT_EMBEDDING, DIRECTIONALITY_RIGHT_TO_LEFT_OVERRIDE,
+//              DIRECTIONALITY_POP_DIRECTIONAL_FORMAT, DIRECTIONALITY_NON_SPACING_MARK,
+//              DIRECTIONALITY_BOUNDARY_NEUTRAL, DIRECTIONALITY_UNDEFINED
+//
 
 package sun.net.idn;
 
@@ -41,6 +57,8 @@ package sun.net.idn;
  * @draft ICU 3.0
  * @deprecated This is a draft API and might change in a future release of ICU.
  */
+
+@Deprecated
 class UCharacterEnums {
 
     /** This is just a namespace, it is not instantiatable. */
@@ -54,6 +72,7 @@ class UCharacterEnums {
      * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
      */
+    @Deprecated
     public static interface ECharacterCategory {
         /**
          * Unassigned character type
@@ -245,6 +264,7 @@ class UCharacterEnums {
          * @draft ICU 2.8
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final int INITIAL_QUOTE_PUNCTUATION = 28;
 
         /**
@@ -261,6 +281,7 @@ class UCharacterEnums {
          * @draft ICU 2.8
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final int FINAL_QUOTE_PUNCTUATION   = 29;
 
         /**
@@ -279,6 +300,8 @@ class UCharacterEnums {
      * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
      */
+
+    @Deprecated
     public static interface ECharacterDirection {
         /**
          * Directional type L
@@ -291,6 +314,7 @@ class UCharacterEnums {
          * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final byte DIRECTIONALITY_LEFT_TO_RIGHT = (byte)LEFT_TO_RIGHT;
 
         /**
@@ -304,6 +328,7 @@ class UCharacterEnums {
          * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final byte DIRECTIONALITY_RIGHT_TO_LEFT = (byte)RIGHT_TO_LEFT;
 
         /**
@@ -317,6 +342,7 @@ class UCharacterEnums {
          * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final byte DIRECTIONALITY_EUROPEAN_NUMBER = (byte)EUROPEAN_NUMBER;
 
         /**
@@ -330,6 +356,7 @@ class UCharacterEnums {
          * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final byte DIRECTIONALITY_EUROPEAN_NUMBER_SEPARATOR = (byte)EUROPEAN_NUMBER_SEPARATOR;
 
         /**
@@ -343,6 +370,7 @@ class UCharacterEnums {
          * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final byte DIRECTIONALITY_EUROPEAN_NUMBER_TERMINATOR = (byte)EUROPEAN_NUMBER_TERMINATOR;
 
         /**
@@ -356,6 +384,7 @@ class UCharacterEnums {
          * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final byte DIRECTIONALITY_ARABIC_NUMBER = (byte)ARABIC_NUMBER;
 
         /**
@@ -369,6 +398,7 @@ class UCharacterEnums {
          * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final byte DIRECTIONALITY_COMMON_NUMBER_SEPARATOR = (byte)COMMON_NUMBER_SEPARATOR;
 
         /**
@@ -382,6 +412,7 @@ class UCharacterEnums {
          * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final byte DIRECTIONALITY_PARAGRAPH_SEPARATOR = (byte)BLOCK_SEPARATOR;
 
         /**
@@ -395,6 +426,7 @@ class UCharacterEnums {
          * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final byte DIRECTIONALITY_SEGMENT_SEPARATOR = (byte)SEGMENT_SEPARATOR;
 
         /**
@@ -408,6 +440,7 @@ class UCharacterEnums {
          * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final byte DIRECTIONALITY_WHITESPACE = (byte)WHITE_SPACE_NEUTRAL;
 
         /**
@@ -421,6 +454,7 @@ class UCharacterEnums {
          * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final byte DIRECTIONALITY_OTHER_NEUTRALS = (byte)OTHER_NEUTRAL;
 
         /**
@@ -434,6 +468,7 @@ class UCharacterEnums {
          * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final byte DIRECTIONALITY_LEFT_TO_RIGHT_EMBEDDING = (byte)LEFT_TO_RIGHT_EMBEDDING;
 
         /**
@@ -447,6 +482,7 @@ class UCharacterEnums {
          * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final byte DIRECTIONALITY_LEFT_TO_RIGHT_OVERRIDE = (byte)LEFT_TO_RIGHT_OVERRIDE;
 
         /**
@@ -460,6 +496,7 @@ class UCharacterEnums {
          * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final byte DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC = (byte)RIGHT_TO_LEFT_ARABIC;
 
         /**
@@ -473,6 +510,7 @@ class UCharacterEnums {
          * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final byte DIRECTIONALITY_RIGHT_TO_LEFT_EMBEDDING = (byte)RIGHT_TO_LEFT_EMBEDDING;
 
         /**
@@ -486,6 +524,7 @@ class UCharacterEnums {
          * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final byte DIRECTIONALITY_RIGHT_TO_LEFT_OVERRIDE = (byte)RIGHT_TO_LEFT_OVERRIDE;
 
         /**
@@ -499,6 +538,7 @@ class UCharacterEnums {
          * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final byte DIRECTIONALITY_POP_DIRECTIONAL_FORMAT = (byte)POP_DIRECTIONAL_FORMAT;
 
         /**
@@ -512,6 +552,7 @@ class UCharacterEnums {
          * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final byte DIRECTIONALITY_NON_SPACING_MARK = (byte)DIR_NON_SPACING_MARK;
 
         /**
@@ -525,6 +566,7 @@ class UCharacterEnums {
          * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final byte DIRECTIONALITY_BOUNDARY_NEUTRAL = (byte)BOUNDARY_NEUTRAL;
 
         /**
@@ -539,6 +581,7 @@ class UCharacterEnums {
      * @draft ICU 3.0
      * @deprecated This is a draft API and might change in a future release of ICU.
          */
+        @Deprecated
         public static final byte DIRECTIONALITY_UNDEFINED = -1;
     }
 }
