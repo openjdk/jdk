@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug     6194785
  * @summary ParameterDeclaration.getSimpleName does not return actual name from class files
@@ -40,9 +40,8 @@ import static javax.tools.Diagnostic.Kind.*;
 
 public class T6194785 extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations,
-                           RoundEnvironment roundEnvironment)
-    {
-        class Scan extends ElementScanner7<Void,Void> {
+                           RoundEnvironment roundEnvironment) {
+        class Scan extends ElementScanner<Void,Void> {
             @Override
             public Void visitExecutable(ExecutableElement e, Void ignored) {
                 for (VariableElement p : e.getParameters())

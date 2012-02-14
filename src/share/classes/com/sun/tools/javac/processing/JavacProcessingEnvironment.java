@@ -225,6 +225,11 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                     ? fileManager.getClassLoader(ANNOTATION_PROCESSOR_PATH)
                     : fileManager.getClassLoader(CLASS_PATH);
 
+                if (processorClassLoader != null && processorClassLoader instanceof Closeable) {
+                    JavaCompiler compiler = JavaCompiler.instance(context);
+                    compiler.closeables = compiler.closeables.prepend((Closeable) processorClassLoader);
+                }
+
                 /*
                  * If the "-processor" option is used, search the appropriate
                  * path for the named class.  Otherwise, use a service
@@ -720,7 +725,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      * Leave class public for external testing purposes.
      */
     public static class ComputeAnnotationSet extends
-        ElementScanner7<Set<TypeElement>, Set<TypeElement>> {
+        ElementScanner8<Set<TypeElement>, Set<TypeElement>> {
         final Elements elements;
 
         public ComputeAnnotationSet(Elements elements) {
@@ -1211,14 +1216,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         if (discoveredProcs != null) // Make calling close idempotent
             discoveredProcs.close();
         discoveredProcs = null;
-        if (processorClassLoader != null && processorClassLoader instanceof Closeable) {
-            try {
-                ((Closeable) processorClassLoader).close();
-            } catch (IOException e) {
-                JCDiagnostic msg = diags.fragment("fatal.err.cant.close.loader");
-                throw new FatalError(msg, e);
-            }
-        }
     }
 
     private List<ClassSymbol> getTopLevelClasses(List<? extends JCCompilationUnit> units) {

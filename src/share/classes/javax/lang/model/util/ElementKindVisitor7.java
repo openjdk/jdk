@@ -73,6 +73,7 @@ import javax.lang.model.SourceVersion;
  *            additional parameter.
  *
  * @see ElementKindVisitor6
+ * @see ElementKindVisitor8
  * @since 1.7
  */
 @SupportedSourceVersion(RELEASE_7)

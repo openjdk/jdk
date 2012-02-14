@@ -744,17 +744,16 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
         // search inner classes
         //### Add private entry point to avoid creating array?
         //### Replicate code in innerClasses here to avoid consing?
-        ClassDoc innerClasses[] = innerClasses();
-        for (int i = 0; i < innerClasses.length; i++) {
-            if (innerClasses[i].name().equals(className) ||
-                //### This is from original javadoc but it looks suspicious to me...
-                //### I believe it is attempting to compensate for the confused
-                //### convention of including the nested class qualifiers in the
-                //### 'name' of the inner class, rather than the true simple name.
-                innerClasses[i].name().endsWith(className)) {
-                return innerClasses[i];
+        for (ClassDoc icd : innerClasses()) {
+            if (icd.name().equals(className) ||
+                    //### This is from original javadoc but it looks suspicious to me...
+                    //### I believe it is attempting to compensate for the confused
+                    //### convention of including the nested class qualifiers in the
+                    //### 'name' of the inner class, rather than the true simple name.
+                    icd.name().endsWith("." + className)) {
+                return icd;
             } else {
-                ClassDoc innercd = ((ClassDocImpl) innerClasses[i]).searchClass(className);
+                ClassDoc innercd = ((ClassDocImpl) icd).searchClass(className);
                 if (innercd != null) {
                     return innercd;
                 }

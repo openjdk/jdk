@@ -1,5 +1,5 @@
-Neg09.java:17:34: compiler.err.cant.apply.diamond.1: Neg09.Member, (compiler.misc.diamond.and.anon.class: Neg09.Member)
-Neg09.java:18:34: compiler.err.cant.apply.diamond.1: Neg09.Nested, (compiler.misc.diamond.and.anon.class: Neg09.Nested)
-Neg09.java:22:39: compiler.err.cant.apply.diamond.1: Neg09.Member, (compiler.misc.diamond.and.anon.class: Neg09.Member)
-Neg09.java:23:40: compiler.err.cant.apply.diamond.1: Neg09.Nested, (compiler.misc.diamond.and.anon.class: Neg09.Nested)
+Neg09.java:17:34: compiler.err.cant.apply.diamond.1: Neg09.Member<X>, (compiler.misc.diamond.and.anon.class: Neg09.Member<X>)
+Neg09.java:18:34: compiler.err.cant.apply.diamond.1: Neg09.Nested<X>, (compiler.misc.diamond.and.anon.class: Neg09.Nested<X>)
+Neg09.java:22:39: compiler.err.cant.apply.diamond.1: Neg09.Member<X>, (compiler.misc.diamond.and.anon.class: Neg09.Member<X>)
+Neg09.java:23:40: compiler.err.cant.apply.diamond.1: Neg09.Nested<X>, (compiler.misc.diamond.and.anon.class: Neg09.Nested<X>)
 4 errors

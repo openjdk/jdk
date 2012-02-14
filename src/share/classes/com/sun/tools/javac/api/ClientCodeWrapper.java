@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -51,6 +52,7 @@ import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.JCDiagnostic;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -146,7 +148,7 @@ public class ClientCodeWrapper {
             return fo;
     }
 
-    <T> DiagnosticListener<T> wrap(DiagnosticListener<T> dl) {
+    <T /*super JavaFileOject*/> DiagnosticListener<T> wrap(DiagnosticListener<T> dl) {
         if (isTrusted(dl))
             return dl;
         return new WrappedDiagnosticListener<T>(dl);
@@ -156,6 +158,16 @@ public class ClientCodeWrapper {
         if (isTrusted(tl))
             return tl;
         return new WrappedTaskListener(tl);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> Diagnostic<T> unwrap(final Diagnostic<T> diagnostic) {
+        if (diagnostic instanceof JCDiagnostic) {
+            JCDiagnostic d = (JCDiagnostic) diagnostic;
+            return (Diagnostic<T>) new DiagnosticSourceUnwrapper(d);
+        } else {
+            return diagnostic;
+        }
     }
 
     protected boolean isTrusted(Object o) {
@@ -534,7 +546,7 @@ public class ClientCodeWrapper {
         }
     }
 
-    protected class WrappedDiagnosticListener<T> implements DiagnosticListener<T> {
+    protected class WrappedDiagnosticListener<T /*super JavaFileObject*/> implements DiagnosticListener<T> {
         protected DiagnosticListener<T> clientDiagnosticListener;
         WrappedDiagnosticListener(DiagnosticListener<T> clientDiagnosticListener) {
             clientDiagnosticListener.getClass(); // null check
@@ -544,7 +556,7 @@ public class ClientCodeWrapper {
         @Override
         public void report(Diagnostic<? extends T> diagnostic) {
             try {
-                clientDiagnosticListener.report(diagnostic);
+                clientDiagnosticListener.report(unwrap(diagnostic));
             } catch (ClientCodeException e) {
                 throw e;
             } catch (RuntimeException e) {
@@ -552,6 +564,54 @@ public class ClientCodeWrapper {
             } catch (Error e) {
                 throw new ClientCodeException(e);
             }
+        }
+    }
+
+    public class DiagnosticSourceUnwrapper implements Diagnostic<JavaFileObject> {
+        public final JCDiagnostic d;
+
+        DiagnosticSourceUnwrapper(JCDiagnostic d) {
+            this.d = d;
+        }
+
+        public Diagnostic.Kind getKind() {
+            return d.getKind();
+        }
+
+        public JavaFileObject getSource() {
+            return unwrap(d.getSource());
+        }
+
+        public long getPosition() {
+            return d.getPosition();
+        }
+
+        public long getStartPosition() {
+            return d.getStartPosition();
+        }
+
+        public long getEndPosition() {
+            return d.getEndPosition();
+        }
+
+        public long getLineNumber() {
+            return d.getLineNumber();
+        }
+
+        public long getColumnNumber() {
+            return d.getColumnNumber();
+        }
+
+        public String getCode() {
+            return d.getCode();
+        }
+
+        public String getMessage(Locale locale) {
+            return d.getMessage(locale);
+        }
+
+        public String toString() {
+            return d.toString();
         }
     }
 
