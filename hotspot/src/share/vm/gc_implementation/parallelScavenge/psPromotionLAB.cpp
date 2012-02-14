@@ -102,17 +102,15 @@ void PSPromotionLAB::flush() {
   _state = flushed;
 }
 
-bool PSPromotionLAB::unallocate_object(oop obj) {
+bool PSPromotionLAB::unallocate_object(HeapWord* obj, size_t obj_size) {
   assert(Universe::heap()->is_in(obj), "Object outside heap");
 
   if (contains(obj)) {
-    HeapWord* object_end = (HeapWord*)obj + obj->size();
-    assert(object_end <= top(), "Object crosses promotion LAB boundary");
+    HeapWord* object_end = obj + obj_size;
+    assert(object_end == top(), "Not matching last allocation");
 
-    if (object_end == top()) {
-      set_top((HeapWord*)obj);
-      return true;
-    }
+    set_top(obj);
+    return true;
   }
 
   return false;

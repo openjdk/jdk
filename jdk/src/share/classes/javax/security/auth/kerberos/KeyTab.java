@@ -27,8 +27,8 @@ package javax.security.auth.kerberos;
 
 import java.io.File;
 import java.util.Objects;
-import sun.misc.SharedSecrets;
 import sun.security.krb5.EncryptionKey;
+import sun.security.krb5.KerberosSecrets;
 import sun.security.krb5.PrincipalName;
 import sun.security.krb5.RealmException;
 
@@ -74,9 +74,9 @@ public final class KeyTab {
     // is maintained in snapshot, this field is never "resolved".
     private final File file;
 
-    // Set up JavaxSecurityAuthKerberosAccess in SharedSecrets
+    // Set up JavaxSecurityAuthKerberosAccess in KerberosSecrets
     static {
-        SharedSecrets.setJavaxSecurityAuthKerberosAccess(
+        KerberosSecrets.setJavaxSecurityAuthKerberosAccess(
                 new JavaxSecurityAuthKerberosAccessImpl());
     }
 

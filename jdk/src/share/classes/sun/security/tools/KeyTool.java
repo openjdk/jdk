@@ -1141,17 +1141,14 @@ public final class KeyTool {
             if (token) {
                 keyStore.store(null, null);
             } else {
-                FileOutputStream fout = null;
-                try {
-                    fout = (nullStream ?
-                                        (FileOutputStream)null :
-                                        new FileOutputStream(ksfname));
-                    keyStore.store
-                        (fout,
-                        (storePassNew!=null) ? storePassNew : storePass);
-                } finally {
-                    if (fout != null) {
-                        fout.close();
+                char[] pass = (storePassNew!=null) ? storePassNew : storePass;
+                if (nullStream) {
+                    keyStore.store(null, pass);
+                } else {
+                    ByteArrayOutputStream bout = new ByteArrayOutputStream();
+                    keyStore.store(bout, pass);
+                    try (FileOutputStream fout = new FileOutputStream(ksfname)) {
+                        fout.write(bout.toByteArray());
                     }
                 }
             }
@@ -1197,7 +1194,7 @@ public final class KeyTool {
                     new CertificateVersion(CertificateVersion.V3));
         info.set(X509CertInfo.ALGORITHM_ID,
                     new CertificateAlgorithmId(
-                        AlgorithmId.getAlgorithmId(sigAlgName)));
+                        AlgorithmId.get(sigAlgName)));
         info.set(X509CertInfo.ISSUER, new CertificateIssuerName(issuer));
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
@@ -1227,7 +1224,7 @@ public final class KeyTool {
         Iterator<PKCS10Attribute> attrs = req.getAttributes().getAttributes().iterator();
         while (attrs.hasNext()) {
             PKCS10Attribute attr = attrs.next();
-            if (attr.getAttributeId().equals(PKCS9Attribute.EXTENSION_REQUEST_OID)) {
+            if (attr.getAttributeId().equals((Object)PKCS9Attribute.EXTENSION_REQUEST_OID)) {
                 reqex = (CertificateExtensions)attr.getAttributeValue();
             }
         }
@@ -1266,7 +1263,7 @@ public final class KeyTool {
 
         Date firstDate = getStartDate(startDate);
         Date lastDate = (Date) firstDate.clone();
-        lastDate.setTime(lastDate.getTime() + (long)validity*1000*24*60*60);
+        lastDate.setTime(lastDate.getTime() + validity*1000*24*60*60);
         CertificateValidity interval = new CertificateValidity(firstDate,
                                                                lastDate);
 
@@ -1399,7 +1396,7 @@ public final class KeyTool {
     private char[] promptForKeyPass(String alias, String orig, char[] origPass) throws Exception{
         if (P12KEYSTORE.equalsIgnoreCase(storetype)) {
             return origPass;
-        } else if (!token) {
+        } else if (!token && !protectedPath) {
             // Prompt for key password
             int count;
             for (count = 0; count < 3; count++) {
@@ -1446,7 +1443,7 @@ public final class KeyTool {
                 }
             }
         }
-        return null;    // PKCS11
+        return null;    // PKCS11, MSCAPI, or -protected
     }
     /**
      * Creates a new secret key.
@@ -2093,8 +2090,9 @@ public final class KeyTool {
         CRLDistributionPointsExtension ext =
                 X509CertImpl.toImpl(cert).getCRLDistributionPointsExtension();
         if (ext == null) return crls;
-        for (DistributionPoint o: (List<DistributionPoint>)
-                ext.get(CRLDistributionPointsExtension.POINTS)) {
+        List<DistributionPoint> distPoints =
+                ext.get(CRLDistributionPointsExtension.POINTS);
+        for (DistributionPoint o: distPoints) {
             GeneralNames names = o.getFullName();
             if (names != null) {
                 for (GeneralName name: names.names()) {
@@ -2199,7 +2197,7 @@ public final class KeyTool {
                 req.getSubjectName(), pkey.getFormat(), pkey.getAlgorithm());
         for (PKCS10Attribute attr: req.getAttributes().getAttributes()) {
             ObjectIdentifier oid = attr.getAttributeId();
-            if (oid.equals(PKCS9Attribute.EXTENSION_REQUEST_OID)) {
+            if (oid.equals((Object)PKCS9Attribute.EXTENSION_REQUEST_OID)) {
                 CertificateExtensions exts = (CertificateExtensions)attr.getAttributeValue();
                 if (exts != null) {
                     printExtensions(rb.getString("Extension.Request."), exts, out);
@@ -2314,7 +2312,7 @@ public final class KeyTool {
                 }
             }
             jf.close();
-            if (ss.size() == 0) {
+            if (ss.isEmpty()) {
                 out.println(rb.getString("Not.a.signed.jar.file"));
             }
         } else if (sslserver != null) {
@@ -3745,7 +3743,7 @@ public final class KeyTool {
                             }
                             String n = reqex.getNameByOid(findOidForExtName(type));
                             if (add) {
-                                Extension e = (Extension)reqex.get(n);
+                                Extension e = reqex.get(n);
                                 if (!e.isCritical() && action == 0
                                         || e.isCritical() && action == 1) {
                                     e = Extension.newExtension(
@@ -4193,15 +4191,11 @@ class Pair<A, B> {
         return "Pair[" + fst + "," + snd + "]";
     }
 
-    private static boolean equals(Object x, Object y) {
-        return (x == null && y == null) || (x != null && x.equals(y));
-    }
-
     public boolean equals(Object other) {
         return
             other instanceof Pair &&
-            equals(fst, ((Pair)other).fst) &&
-            equals(snd, ((Pair)other).snd);
+            Objects.equals(fst, ((Pair)other).fst) &&
+            Objects.equals(snd, ((Pair)other).snd);
     }
 
     public int hashCode() {

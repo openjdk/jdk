@@ -53,6 +53,9 @@ public class TypeArray extends Array {
   public boolean isTypeArray()         { return true; }
 
   public byte getByteAt(long index) {
+    if (index < 0 || index >= getLength()) {
+      throw new ArrayIndexOutOfBoundsException(index + " " + getLength());
+    }
     long offset = baseOffsetInBytes(BasicType.T_BYTE) + index * getHeap().getByteSize();
     return getHandle().getJByteAt(offset);
   }

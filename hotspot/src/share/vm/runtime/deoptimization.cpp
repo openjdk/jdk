@@ -103,7 +103,7 @@ Deoptimization::UnrollBlock::UnrollBlock(int  size_of_deoptimized_frame,
   _frame_pcs                 = frame_pcs;
   _register_block            = NEW_C_HEAP_ARRAY(intptr_t, RegisterMap::reg_count * 2);
   _return_type               = return_type;
-  _initial_fp                = 0;
+  _initial_info              = 0;
   // PD (x86 only)
   _counter_temp              = 0;
   _unpack_kind               = 0;
@@ -486,9 +486,10 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
                                       frame_sizes,
                                       frame_pcs,
                                       return_type);
-  // On some platforms, we need a way to pass fp to the unpacking code
-  // so the skeletal frames come out correct.
-  info->set_initial_fp((intptr_t) array->sender().fp());
+  // On some platforms, we need a way to pass some platform dependent
+  // information to the unpacking code so the skeletal frames come out
+  // correct (initial fp value, unextended sp, ...)
+  info->set_initial_info((intptr_t) array->sender().initial_deoptimization_info());
 
   if (array->frames() > 1) {
     if (VerifyStack && TraceDeoptimization) {

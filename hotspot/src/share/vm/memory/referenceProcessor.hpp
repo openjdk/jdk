@@ -48,18 +48,177 @@
 // forward references
 class ReferencePolicy;
 class AbstractRefProcTaskExecutor;
-class DiscoveredList;
+
+// List of discovered references.
+class DiscoveredList {
+public:
+  DiscoveredList() : _len(0), _compressed_head(0), _oop_head(NULL) { }
+  oop head() const     {
+     return UseCompressedOops ?  oopDesc::decode_heap_oop(_compressed_head) :
+                                _oop_head;
+  }
+  HeapWord* adr_head() {
+    return UseCompressedOops ? (HeapWord*)&_compressed_head :
+                               (HeapWord*)&_oop_head;
+  }
+  void set_head(oop o) {
+    if (UseCompressedOops) {
+      // Must compress the head ptr.
+      _compressed_head = oopDesc::encode_heap_oop(o);
+    } else {
+      _oop_head = o;
+    }
+  }
+  bool   is_empty() const       { return head() == NULL; }
+  size_t length()               { return _len; }
+  void   set_length(size_t len) { _len = len;  }
+  void   inc_length(size_t inc) { _len += inc; assert(_len > 0, "Error"); }
+  void   dec_length(size_t dec) { _len -= dec; }
+private:
+  // Set value depending on UseCompressedOops. This could be a template class
+  // but then we have to fix all the instantiations and declarations that use this class.
+  oop       _oop_head;
+  narrowOop _compressed_head;
+  size_t _len;
+};
+
+// Iterator for the list of discovered references.
+class DiscoveredListIterator {
+private:
+  DiscoveredList&    _refs_list;
+  HeapWord*          _prev_next;
+  oop                _prev;
+  oop                _ref;
+  HeapWord*          _discovered_addr;
+  oop                _next;
+  HeapWord*          _referent_addr;
+  oop                _referent;
+  OopClosure*        _keep_alive;
+  BoolObjectClosure* _is_alive;
+
+  DEBUG_ONLY(
+  oop                _first_seen; // cyclic linked list check
+  )
+
+  NOT_PRODUCT(
+  size_t             _processed;
+  size_t             _removed;
+  )
+
+public:
+  inline DiscoveredListIterator(DiscoveredList&    refs_list,
+                                OopClosure*        keep_alive,
+                                BoolObjectClosure* is_alive):
+    _refs_list(refs_list),
+    _prev_next(refs_list.adr_head()),
+    _prev(NULL),
+    _ref(refs_list.head()),
+#ifdef ASSERT
+    _first_seen(refs_list.head()),
+#endif
+#ifndef PRODUCT
+    _processed(0),
+    _removed(0),
+#endif
+    _next(NULL),
+    _keep_alive(keep_alive),
+    _is_alive(is_alive)
+{ }
+
+  // End Of List.
+  inline bool has_next() const { return _ref != NULL; }
+
+  // Get oop to the Reference object.
+  inline oop obj() const { return _ref; }
+
+  // Get oop to the referent object.
+  inline oop referent() const { return _referent; }
+
+  // Returns true if referent is alive.
+  inline bool is_referent_alive() const {
+    return _is_alive->do_object_b(_referent);
+  }
+
+  // Loads data for the current reference.
+  // The "allow_null_referent" argument tells us to allow for the possibility
+  // of a NULL referent in the discovered Reference object. This typically
+  // happens in the case of concurrent collectors that may have done the
+  // discovery concurrently, or interleaved, with mutator execution.
+  void load_ptrs(DEBUG_ONLY(bool allow_null_referent));
+
+  // Move to the next discovered reference.
+  inline void next() {
+    _prev_next = _discovered_addr;
+    _prev = _ref;
+    move_to_next();
+  }
+
+  // Remove the current reference from the list
+  void remove();
+
+  // Make the Reference object active again.
+  void make_active();
+
+  // Make the referent alive.
+  inline void make_referent_alive() {
+    if (UseCompressedOops) {
+      _keep_alive->do_oop((narrowOop*)_referent_addr);
+    } else {
+      _keep_alive->do_oop((oop*)_referent_addr);
+    }
+  }
+
+  // Update the discovered field.
+  inline void update_discovered() {
+    // First _prev_next ref actually points into DiscoveredList (gross).
+    if (UseCompressedOops) {
+      if (!oopDesc::is_null(*(narrowOop*)_prev_next)) {
+        _keep_alive->do_oop((narrowOop*)_prev_next);
+      }
+    } else {
+      if (!oopDesc::is_null(*(oop*)_prev_next)) {
+        _keep_alive->do_oop((oop*)_prev_next);
+      }
+    }
+  }
+
+  // NULL out referent pointer.
+  void clear_referent();
+
+  // Statistics
+  NOT_PRODUCT(
+  inline size_t processed() const { return _processed; }
+  inline size_t removed() const   { return _removed; }
+  )
+
+  inline void move_to_next() {
+    if (_ref == _next) {
+      // End of the list.
+      _ref = NULL;
+    } else {
+      _ref = _next;
+    }
+    assert(_ref != _first_seen, "cyclic ref_list found");
+    NOT_PRODUCT(_processed++);
+  }
+};
 
 class ReferenceProcessor : public CHeapObj {
  protected:
-  // End of list marker
-  static oop  _sentinelRef;
-  MemRegion   _span; // (right-open) interval of heap
-                     // subject to wkref discovery
-  bool        _discovering_refs;      // true when discovery enabled
-  bool        _discovery_is_atomic;   // if discovery is atomic wrt
-                                      // other collectors in configuration
-  bool        _discovery_is_mt;       // true if reference discovery is MT.
+  // Compatibility with pre-4965777 JDK's
+  static bool _pending_list_uses_discovered_field;
+
+  // The SoftReference master timestamp clock
+  static jlong _soft_ref_timestamp_clock;
+
+  MemRegion   _span;                    // (right-open) interval of heap
+                                        // subject to wkref discovery
+
+  bool        _discovering_refs;        // true when discovery enabled
+  bool        _discovery_is_atomic;     // if discovery is atomic wrt
+                                        // other collectors in configuration
+  bool        _discovery_is_mt;         // true if reference discovery is MT.
+
   // If true, setting "next" field of a discovered refs list requires
   // write barrier(s).  (Must be true if used in a collector in which
   // elements of a discovered list may be moved during discovery: for
@@ -67,18 +226,19 @@ class ReferenceProcessor : public CHeapObj {
   // long-term concurrent marking phase that does weak reference
   // discovery.)
   bool        _discovered_list_needs_barrier;
-  BarrierSet* _bs;                    // Cached copy of BarrierSet.
-  bool        _enqueuing_is_done;     // true if all weak references enqueued
-  bool        _processing_is_mt;      // true during phases when
-                                      // reference processing is MT.
-  int         _next_id;               // round-robin mod _num_q counter in
-                                      // support of work distribution
 
-  // For collectors that do not keep GC marking information
+  BarrierSet* _bs;                      // Cached copy of BarrierSet.
+  bool        _enqueuing_is_done;       // true if all weak references enqueued
+  bool        _processing_is_mt;        // true during phases when
+                                        // reference processing is MT.
+  int         _next_id;                 // round-robin mod _num_q counter in
+                                        // support of work distribution
+
+  // For collectors that do not keep GC liveness information
   // in the object header, this field holds a closure that
   // helps the reference processor determine the reachability
-  // of an oop (the field is currently initialized to NULL for
-  // all collectors but the CMS collector).
+  // of an oop. It is currently initialized to NULL for all
+  // collectors except for CMS and G1.
   BoolObjectClosure* _is_alive_non_header;
 
   // Soft ref clearing policies
@@ -95,19 +255,25 @@ class ReferenceProcessor : public CHeapObj {
   int             _num_q;
   // The maximum MT'ness degree of the queues below
   int             _max_num_q;
-  // Arrays of lists of oops, one per thread
+
+  // Master array of discovered oops
+  DiscoveredList* _discovered_refs;
+
+  // Arrays of lists of oops, one per thread (pointers into master array above)
   DiscoveredList* _discoveredSoftRefs;
   DiscoveredList* _discoveredWeakRefs;
   DiscoveredList* _discoveredFinalRefs;
   DiscoveredList* _discoveredPhantomRefs;
 
  public:
-  int num_q()                            { return _num_q; }
-  int max_num_q()                        { return _max_num_q; }
-  void set_active_mt_degree(int v)       { _num_q = v; }
-  DiscoveredList* discovered_soft_refs() { return _discoveredSoftRefs; }
-  static oop  sentinel_ref()             { return _sentinelRef; }
-  static oop* adr_sentinel_ref()         { return &_sentinelRef; }
+  static int number_of_subclasses_of_ref() { return (REF_PHANTOM - REF_OTHER); }
+
+  int num_q()                              { return _num_q; }
+  int max_num_q()                          { return _max_num_q; }
+  void set_active_mt_degree(int v)         { _num_q = v; }
+
+  DiscoveredList* discovered_refs()        { return _discovered_refs; }
+
   ReferencePolicy* setup_policy(bool always_clear) {
     _current_soft_ref_policy = always_clear ?
       _always_clear_soft_ref_policy : _default_soft_ref_policy;
@@ -115,7 +281,6 @@ class ReferenceProcessor : public CHeapObj {
     return _current_soft_ref_policy;
   }
 
- public:
   // Process references with a certain reachability level.
   void process_discovered_reflist(DiscoveredList               refs_lists[],
                                   ReferencePolicy*             policy,
@@ -208,6 +373,11 @@ class ReferenceProcessor : public CHeapObj {
   void enqueue_discovered_reflists(HeapWord* pending_list_addr, AbstractRefProcTaskExecutor* task_executor);
 
  protected:
+  // Set the 'discovered' field of the given reference to
+  // the given value - emitting barriers depending upon
+  // the value of _discovered_list_needs_barrier.
+  void set_discovered(oop ref, oop value);
+
   // "Preclean" the given discovered reference list
   // by removing references with strongly reachable referents.
   // Currently used in support of CMS only.
@@ -230,6 +400,7 @@ class ReferenceProcessor : public CHeapObj {
                                         HeapWord* discovered_addr);
   void verify_ok_to_handle_reflists() PRODUCT_RETURN;
 
+  void clear_discovered_references(DiscoveredList& refs_list);
   void abandon_partial_discovered_list(DiscoveredList& refs_list);
 
   // Calculate the number of jni handles.
@@ -245,6 +416,7 @@ class ReferenceProcessor : public CHeapObj {
   // constructor
   ReferenceProcessor():
     _span((HeapWord*)NULL, (HeapWord*)NULL),
+    _discovered_refs(NULL),
     _discoveredSoftRefs(NULL),  _discoveredWeakRefs(NULL),
     _discoveredFinalRefs(NULL), _discoveredPhantomRefs(NULL),
     _discovering_refs(false),
@@ -292,13 +464,20 @@ class ReferenceProcessor : public CHeapObj {
   void      set_span(MemRegion span) { _span = span; }
 
   // start and stop weak ref discovery
-  void enable_discovery()   { _discovering_refs = true;  }
+  void enable_discovery(bool verify_disabled, bool check_no_refs);
   void disable_discovery()  { _discovering_refs = false; }
   bool discovery_enabled()  { return _discovering_refs;  }
 
   // whether discovery is atomic wrt other collectors
   bool discovery_is_atomic() const { return _discovery_is_atomic; }
   void set_atomic_discovery(bool atomic) { _discovery_is_atomic = atomic; }
+
+  // whether the JDK in which we are embedded is a pre-4965777 JDK,
+  // and thus whether or not it uses the discovered field to chain
+  // the entries in the pending list.
+  static bool pending_list_uses_discovered_field() {
+    return _pending_list_uses_discovered_field;
+  }
 
   // whether discovery is done by multiple threads same-old-timeously
   bool discovery_is_mt() const { return _discovery_is_mt; }
@@ -314,7 +493,6 @@ class ReferenceProcessor : public CHeapObj {
 
   // iterate over oops
   void weak_oops_do(OopClosure* f);       // weak roots
-  static void oops_do(OopClosure* f);     // strong root(s)
 
   // Balance each of the discovered lists.
   void balance_all_queues();
@@ -340,7 +518,6 @@ class ReferenceProcessor : public CHeapObj {
   // debugging
   void verify_no_references_recorded() PRODUCT_RETURN;
   void verify_referent(oop obj)        PRODUCT_RETURN;
-  static void verify();
 
   // clear the discovered lists (unlinking each entry).
   void clear_discovered_references() PRODUCT_RETURN;
@@ -362,7 +539,7 @@ class NoRefDiscovery: StackObj {
 
   ~NoRefDiscovery() {
     if (_was_discovering_refs) {
-      _rp->enable_discovery();
+      _rp->enable_discovery(true /*verify_disabled*/, false /*check_no_refs*/);
     }
   }
 };
@@ -524,12 +701,10 @@ protected:
   EnqueueTask(ReferenceProcessor& ref_processor,
               DiscoveredList      refs_lists[],
               HeapWord*           pending_list_addr,
-              oop                 sentinel_ref,
               int                 n_queues)
     : _ref_processor(ref_processor),
       _refs_lists(refs_lists),
       _pending_list_addr(pending_list_addr),
-      _sentinel_ref(sentinel_ref),
       _n_queues(n_queues)
   { }
 
@@ -540,7 +715,6 @@ protected:
   ReferenceProcessor& _ref_processor;
   DiscoveredList*     _refs_lists;
   HeapWord*           _pending_list_addr;
-  oop                 _sentinel_ref;
   int                 _n_queues;
 };
 

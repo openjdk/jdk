@@ -1101,6 +1101,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( cmp2_type == TypeInt::ZERO &&
       cmp1_op == Op_XorI &&
       j_xor->in(1) != j_xor &&          // An xor of itself is dead
+      phase->type( j_xor->in(1) ) == TypeInt::BOOL &&
       phase->type( j_xor->in(2) ) == TypeInt::ONE &&
       (_test._test == BoolTest::eq ||
        _test._test == BoolTest::ne) ) {

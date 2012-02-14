@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,11 @@ package sun.jvm.hotspot.tools;
 
 import java.util.*;
 import sun.jvm.hotspot.gc_interface.*;
+import sun.jvm.hotspot.gc_implementation.g1.*;
 import sun.jvm.hotspot.gc_implementation.parallelScavenge.*;
 import sun.jvm.hotspot.gc_implementation.shared.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.tools.*;
 
 public class HeapSummary extends Tool {
 
@@ -70,32 +70,45 @@ public class HeapSummary extends Tool {
       System.out.println();
       System.out.println("Heap Usage:");
 
-      if (heap instanceof GenCollectedHeap) {
-         GenCollectedHeap genHeap = (GenCollectedHeap) heap;
-         for (int n = 0; n < genHeap.nGens(); n++) {
-            Generation gen = genHeap.getGen(n);
-            if (gen instanceof sun.jvm.hotspot.memory.DefNewGeneration) {
-               System.out.println("New Generation (Eden + 1 Survivor Space):");
-               printGen(gen);
+      if (heap instanceof SharedHeap) {
+         SharedHeap sharedHeap = (SharedHeap) heap;
+         if (sharedHeap instanceof GenCollectedHeap) {
+            GenCollectedHeap genHeap = (GenCollectedHeap) sharedHeap;
+            for (int n = 0; n < genHeap.nGens(); n++) {
+               Generation gen = genHeap.getGen(n);
+               if (gen instanceof sun.jvm.hotspot.memory.DefNewGeneration) {
+                  System.out.println("New Generation (Eden + 1 Survivor Space):");
+                  printGen(gen);
 
-               ContiguousSpace eden = ((DefNewGeneration)gen).eden();
-               System.out.println("Eden Space:");
-               printSpace(eden);
+                  ContiguousSpace eden = ((DefNewGeneration)gen).eden();
+                  System.out.println("Eden Space:");
+                  printSpace(eden);
 
-               ContiguousSpace from = ((DefNewGeneration)gen).from();
-               System.out.println("From Space:");
-               printSpace(from);
+                  ContiguousSpace from = ((DefNewGeneration)gen).from();
+                  System.out.println("From Space:");
+                  printSpace(from);
 
-               ContiguousSpace to = ((DefNewGeneration)gen).to();
-               System.out.println("To Space:");
-               printSpace(to);
-            } else {
-               System.out.println(gen.name() + ":");
-               printGen(gen);
+                  ContiguousSpace to = ((DefNewGeneration)gen).to();
+                  System.out.println("To Space:");
+                  printSpace(to);
+               } else {
+                  System.out.println(gen.name() + ":");
+                  printGen(gen);
+               }
             }
+         } else if (sharedHeap instanceof G1CollectedHeap) {
+             G1CollectedHeap g1h = (G1CollectedHeap) sharedHeap;
+             G1MonitoringSupport g1mm = g1h.g1mm();
+             System.out.println("G1 Young Generation");
+             printG1Space("Eden Space:", g1mm.edenUsed(), g1mm.edenCommitted());
+             printG1Space("From Space:", g1mm.survivorUsed(), g1mm.survivorCommitted());
+             printG1Space("To Space:", 0, 0);
+             printG1Space("G1 Old Generation", g1mm.oldUsed(), g1mm.oldCommitted());
+         } else {
+             throw new RuntimeException("unknown SharedHeap type : " + heap.getClass());
          }
-         // Perm generation
-         Generation permGen = genHeap.permGen();
+         // Perm generation shared by the above
+         Generation permGen = sharedHeap.permGen();
          System.out.println("Perm Generation:");
          printGen(permGen);
       } else if (heap instanceof ParallelScavengeHeap) {
@@ -119,7 +132,7 @@ public class HeapSummary extends Tool {
          printValMB("free     = ", permFree);
          System.out.println(alignment + (double)permGen.used() * 100.0 / permGen.capacity() + "% used");
       } else {
-         throw new RuntimeException("unknown heap type : " + heap.getClass());
+         throw new RuntimeException("unknown CollectedHeap type : " + heap.getClass());
       }
    }
 
@@ -149,6 +162,14 @@ public class HeapSummary extends Tool {
           l = getFlagValue("ParallelGCThreads", flagMap);
           System.out.println("with " + l + " thread(s)");
           return;
+       }
+
+       l = getFlagValue("UseG1GC", flagMap);
+       if (l == 1L) {
+           System.out.print("Garbage-First (G1) GC ");
+           l = getFlagValue("ParallelGCThreads", flagMap);
+           System.out.println("with " + l + " thread(s)");
+           return;
        }
 
        System.out.println("Mark Sweep Compact GC");
@@ -189,6 +210,16 @@ public class HeapSummary extends Tool {
       printValMB("used     = ", space.used());
       printValMB("free     = ", space.free());
       System.out.println(alignment +  (double)space.used() * 100.0 / space.capacity() + "% used");
+   }
+
+   private void printG1Space(String spaceName, long used, long capacity) {
+      long free = capacity - used;
+      System.out.println(spaceName);
+      printValMB("capacity = ", capacity);
+      printValMB("used     = ", used);
+      printValMB("free     = ", free);
+      double occPerc = (capacity > 0) ? (double) used * 100.0 / capacity : 0.0;
+      System.out.println(alignment + occPerc + "% used");
    }
 
    private static final double FACTOR = 1024*1024;

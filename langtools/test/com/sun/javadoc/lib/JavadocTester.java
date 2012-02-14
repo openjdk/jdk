@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,8 +197,13 @@ public abstract class JavadocTester {
         initOutputBuffers();
 
         ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-        PrintStream prev = System.out;
+        PrintStream prevOut = System.out;
         System.setOut(new PrintStream(stdout));
+
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+        PrintStream prevErr = System.err;
+        System.setErr(new PrintStream(stderr));
+
         int returnCode = com.sun.tools.javadoc.Main.execute(
                 getBugName(),
                 new PrintWriter(errors, true),
@@ -207,8 +212,11 @@ public abstract class JavadocTester {
                 docletClass,
                 getClass().getClassLoader(),
                 args);
-        System.setOut(prev);
+        System.setOut(prevOut);
         standardOut = new StringBuffer(stdout.toString());
+        System.setErr(prevErr);
+        errors.write(NL + stderr.toString());
+
         printJavadocOutput();
         return returnCode;
     }

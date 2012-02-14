@@ -33,10 +33,9 @@
 
 // The following methods are used by the parallel scavenge collector
 VM_ParallelGCFailedAllocation::VM_ParallelGCFailedAllocation(size_t size,
-  bool is_tlab, unsigned int gc_count) :
+                                                      unsigned int gc_count) :
   VM_GC_Operation(gc_count, GCCause::_allocation_failure),
   _size(size),
-  _is_tlab(is_tlab),
   _result(NULL)
 {
 }
@@ -48,7 +47,7 @@ void VM_ParallelGCFailedAllocation::doit() {
   assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "must be a ParallelScavengeHeap");
 
   GCCauseSetter gccs(heap, _gc_cause);
-  _result = heap->failed_mem_allocate(_size, _is_tlab);
+  _result = heap->failed_mem_allocate(_size);
 
   if (_result == NULL && GC_locker::is_active_and_needs_gc()) {
     set_gc_locked();

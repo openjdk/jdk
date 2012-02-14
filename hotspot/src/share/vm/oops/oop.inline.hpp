@@ -321,14 +321,24 @@ inline oop oopDesc::obj_field(int offset) const {
     load_decode_heap_oop(obj_field_addr<narrowOop>(offset)) :
     load_decode_heap_oop(obj_field_addr<oop>(offset));
 }
+inline volatile oop oopDesc::obj_field_volatile(int offset) const {
+  volatile oop value = obj_field(offset);
+  OrderAccess::acquire();
+  return value;
+}
 inline void oopDesc::obj_field_put(int offset, oop value) {
   UseCompressedOops ? oop_store(obj_field_addr<narrowOop>(offset), value) :
                       oop_store(obj_field_addr<oop>(offset),       value);
 }
-inline void oopDesc::obj_field_raw_put(int offset, oop value) {
+inline void oopDesc::obj_field_put_raw(int offset, oop value) {
   UseCompressedOops ?
     encode_store_heap_oop(obj_field_addr<narrowOop>(offset), value) :
     encode_store_heap_oop(obj_field_addr<oop>(offset),       value);
+}
+inline void oopDesc::obj_field_put_volatile(int offset, oop value) {
+  OrderAccess::release();
+  obj_field_put(offset, value);
+  OrderAccess::fence();
 }
 
 inline jbyte oopDesc::byte_field(int offset) const                  { return (jbyte) *byte_field_addr(offset);    }

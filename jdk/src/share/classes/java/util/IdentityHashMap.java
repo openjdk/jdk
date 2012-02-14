@@ -703,7 +703,7 @@ public class IdentityHashMap<K,V>
             m.table = table.clone();
             return m;
         } catch (CloneNotSupportedException e) {
-            throw new InternalError();
+            throw new InternalError(e);
         }
     }
 

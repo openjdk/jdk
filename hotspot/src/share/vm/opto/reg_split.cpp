@@ -984,7 +984,7 @@ uint PhaseChaitin::Split( uint maxlrg ) {
               continue;
             }
 
-            if (UseFPUForSpilling && n->is_Call() && !uup && !dup ) {
+            if (UseFPUForSpilling && n->is_MachCall() && !uup && !dup ) {
               // The use at the call can force the def down so insert
               // a split before the use to allow the def more freedom.
               maxlrg = split_USE(def,b,n,inpidx,maxlrg,dup,false, splits,slidx);

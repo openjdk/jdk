@@ -994,7 +994,7 @@ public class LinkedList<E>
         try {
             return (LinkedList<E>) super.clone();
         } catch (CloneNotSupportedException e) {
-            throw new InternalError();
+            throw new InternalError(e);
         }
     }
 

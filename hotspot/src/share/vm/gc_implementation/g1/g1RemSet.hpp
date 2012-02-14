@@ -142,8 +142,6 @@ public:
   virtual void prepare_for_verify();
 };
 
-#define G1_REM_SET_LOGGING 0
-
 class CountNonCleanMemRegionClosure: public MemRegionClosure {
   G1CollectedHeap* _g1;
   int _n;

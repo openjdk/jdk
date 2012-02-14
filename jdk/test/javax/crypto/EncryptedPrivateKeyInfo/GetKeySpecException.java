@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 /**
  * @test
- * @bug 4508341
+ * @bug 4508341 7055362
+ * @library ../../../java/security/testlibrary
  * @summary Test the error conditions of
  * EncryptedPrivateKeyInfo.getKeySpec(...) methods.
  * @author Valerie Peng
@@ -97,7 +98,16 @@ public class GetKeySpecException {
         }
     }
 
-    public static void main(String[] argv) throws Exception {
+    public static void main(String[] args) throws Exception {
+        ProvidersSnapshot snapshot = ProvidersSnapshot.create();
+        try {
+            main0(args);
+        } finally {
+            snapshot.restore();
+        }
+    }
+
+    public static void main0(String[] args) throws Exception {
         if ((GOOD_PARAMS == null) || (BAD_PARAMS == null)) {
             throw new Exception("Static parameter generation failed");
         }

@@ -1833,8 +1833,6 @@ CompactibleFreeListSpace::removeChunkFromIndexedFreeList(FreeChunk* fc) {
     }
   )
   _indexedFreeList[size].removeChunk(fc);
-  debug_only(fc->clearNext());
-  debug_only(fc->clearPrev());
   NOT_PRODUCT(
     if (FLSVerifyIndexTable) {
       verifyIndexedFreeList(size);

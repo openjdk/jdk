@@ -45,6 +45,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 
 
 // Implementation of InterpreterMacroAssembler
@@ -233,12 +236,28 @@ void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache,
                                                            Register index,
                                                            int bcp_offset,
                                                            size_t index_size) {
-  assert(cache != index, "must use different registers");
+  assert_different_registers(cache, index);
   get_cache_index_at_bcp(index, bcp_offset, index_size);
   movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
   assert(sizeof(ConstantPoolCacheEntry) == 4 * wordSize, "adjust code below");
   // convert from field index to ConstantPoolCacheEntry index
   shll(index, 2);
+}
+
+
+void InterpreterMacroAssembler::get_cache_and_index_and_bytecode_at_bcp(Register cache,
+                                                                        Register index,
+                                                                        Register bytecode,
+                                                                        int byte_no,
+                                                                        int bcp_offset,
+                                                                        size_t index_size) {
+  get_cache_and_index_at_bcp(cache, index, bcp_offset, index_size);
+  // We use a 32-bit load here since the layout of 64-bit words on
+  // little-endian machines allow us that.
+  movl(bytecode, Address(cache, index, Address::times_ptr, constantPoolCacheOopDesc::base_offset() + ConstantPoolCacheEntry::indices_offset()));
+  const int shift_count = (1 + byte_no) * BitsPerByte;
+  shrl(bytecode, shift_count);
+  andl(bytecode, 0xFF);
 }
 
 
@@ -402,7 +421,7 @@ void InterpreterMacroAssembler::jump_from_interpreted(Register method, Register 
     // interp_only is an int, on little endian it is sufficient to test the byte only
     // Is a cmpl faster?
     cmpb(Address(r15_thread, JavaThread::interp_only_mode_offset()), 0);
-    jcc(Assembler::zero, run_compiled_code);
+    jccb(Assembler::zero, run_compiled_code);
     jmp(Address(method, methodOopDesc::interpreter_entry_offset()));
     bind(run_compiled_code);
   }

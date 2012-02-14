@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -262,7 +262,7 @@ implements CertAttrSet<String> {
      * Get the attribute value.
      * @exception CertificateException on attribute handling errors.
      */
-    public Object get(String name) throws CertificateException {
+    public Date get(String name) throws CertificateException {
       if (name.equalsIgnoreCase(NOT_BEFORE)) {
           return (new Date(notBefore.getTime()));
       } else if (name.equalsIgnoreCase(NOT_AFTER)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ public class GetInstance {
      * There are overloaded methods for all the permutations.
      */
 
-    public static Instance getInstance(String type, Class clazz,
+    public static Instance getInstance(String type, Class<?> clazz,
             String algorithm) throws NoSuchAlgorithmException {
         // in the almost all cases, the first service will work
         // avoid taking long path if so
@@ -181,7 +181,7 @@ public class GetInstance {
         throw failure;
     }
 
-    public static Instance getInstance(String type, Class clazz,
+    public static Instance getInstance(String type, Class<?> clazz,
             String algorithm, Object param) throws NoSuchAlgorithmException {
         List<Service> services = getServices(type, algorithm);
         NoSuchAlgorithmException failure = null;
@@ -200,25 +200,25 @@ public class GetInstance {
         }
     }
 
-    public static Instance getInstance(String type, Class clazz,
+    public static Instance getInstance(String type, Class<?> clazz,
             String algorithm, String provider) throws NoSuchAlgorithmException,
             NoSuchProviderException {
         return getInstance(getService(type, algorithm, provider), clazz);
     }
 
-    public static Instance getInstance(String type, Class clazz,
+    public static Instance getInstance(String type, Class<?> clazz,
             String algorithm, Object param, String provider)
             throws NoSuchAlgorithmException, NoSuchProviderException {
         return getInstance(getService(type, algorithm, provider), clazz, param);
     }
 
-    public static Instance getInstance(String type, Class clazz,
+    public static Instance getInstance(String type, Class<?> clazz,
             String algorithm, Provider provider)
             throws NoSuchAlgorithmException {
         return getInstance(getService(type, algorithm, provider), clazz);
     }
 
-    public static Instance getInstance(String type, Class clazz,
+    public static Instance getInstance(String type, Class<?> clazz,
             String algorithm, Object param, Provider provider)
             throws NoSuchAlgorithmException {
         return getInstance(getService(type, algorithm, provider), clazz, param);
@@ -231,14 +231,14 @@ public class GetInstance {
      * Signature class.
      */
 
-    public static Instance getInstance(Service s, Class clazz)
+    public static Instance getInstance(Service s, Class<?> clazz)
             throws NoSuchAlgorithmException {
         Object instance = s.newInstance(null);
         checkSuperClass(s, instance.getClass(), clazz);
         return new Instance(s.getProvider(), instance);
     }
 
-    public static Instance getInstance(Service s, Class clazz,
+    public static Instance getInstance(Service s, Class<?> clazz,
             Object param) throws NoSuchAlgorithmException {
         Object instance = s.newInstance(param);
         checkSuperClass(s, instance.getClass(), clazz);
@@ -249,8 +249,8 @@ public class GetInstance {
      * Check is subClass is a subclass of superClass. If not,
      * throw a NoSuchAlgorithmException.
      */
-    public static void checkSuperClass(Service s, Class subClass,
-            Class superClass) throws NoSuchAlgorithmException {
+    public static void checkSuperClass(Service s, Class<?> subClass,
+            Class<?> superClass) throws NoSuchAlgorithmException {
         if (superClass == null) {
             return;
         }

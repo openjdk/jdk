@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,8 @@
 
 package sun.security.ec;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.math.BigInteger;
-import java.util.Arrays;
 
 import java.security.*;
 import java.security.interfaces.*;
@@ -36,7 +34,6 @@ import java.security.spec.*;
 
 import sun.security.jca.JCAUtil;
 import sun.security.util.*;
-import sun.security.x509.AlgorithmId;
 
 /**
  * ECDSA signature implementation. This class currently supports the

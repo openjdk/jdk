@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,23 +34,29 @@ import java.util.Locale;
 public class Bug4651568 {
 
     public static void main (String argv[] )  {
-        String expectedCurrencyPattern = "\u00A4 #.##0,00";
+        Locale reservedLocale = Locale.getDefault();
+        try {
+            String expectedCurrencyPattern = "\u00A4 #.##0,00";
 
-        Locale locale = new Locale ("pt", "BR");
-        Locale.setDefault(locale);
+            Locale locale = new Locale ("pt", "BR");
+            Locale.setDefault(locale);
 
-        DecimalFormat formatter =
-            (DecimalFormat) NumberFormat.getCurrencyInstance(locale);
+            DecimalFormat formatter =
+                (DecimalFormat) NumberFormat.getCurrencyInstance(locale);
 
-        if (formatter.toLocalizedPattern().equals(expectedCurrencyPattern))
-{
-            System.out.println ("Passed.");
-        } else {
-             System.out.println ("Failed Currency pattern." +
-                    "  Expected:  " + expectedCurrencyPattern +
-                    "  Received:  " + formatter.toLocalizedPattern() );
-             throw new RuntimeException();
+            if (formatter.toLocalizedPattern().equals(
+                        expectedCurrencyPattern)) {
+                System.out.println ("Passed.");
+            } else {
+                 System.out.println ("Failed Currency pattern." +
+                        "  Expected:  " + expectedCurrencyPattern +
+                        "  Received:  " + formatter.toLocalizedPattern() );
+                 throw new RuntimeException();
 
- }
+            }
+        } finally {
+            // restore the reserved locale
+            Locale.setDefault(reservedLocale);
+        }
     }
 }

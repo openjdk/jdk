@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates.  All Rights Reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,9 @@
 #endif
 #ifdef TARGET_OS_FAMILY_windows
 # include "os_windows.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.inline.hpp"
 #endif
 
 
@@ -321,6 +324,20 @@ void VM_Version::get_processor_features() {
   if (UseSSE < 2) UseSSE = 2;
 #endif
 
+#ifdef AMD64
+  // flush_icache_stub have to be generated first.
+  // That is why Icache line size is hard coded in ICache class,
+  // see icache_x86.hpp. It is also the reason why we can't use
+  // clflush instruction in 32-bit VM since it could be running
+  // on CPU which does not support it.
+  //
+  // The only thing we can do is to verify that flushed
+  // ICache::line_size has correct value.
+  guarantee(_cpuid_info.std_cpuid1_edx.bits.clflush != 0, "clflush is not supported");
+  // clflush_size is size in quadwords (8 bytes).
+  guarantee(_cpuid_info.std_cpuid1_ebx.bits.clflush_size == 8, "such clflush size is not supported");
+#endif
+
   // If the OS doesn't support SSE, we can't use this feature even if the HW does
   if (!os::supports_sse())
     _cpuFeatures &= ~(CPU_SSE|CPU_SSE2|CPU_SSE3|CPU_SSSE3|CPU_SSE4A|CPU_SSE4_1|CPU_SSE4_2);
@@ -543,14 +560,16 @@ void VM_Version::get_processor_features() {
   if( !supports_sse() && supports_3dnow_prefetch() ) AllocatePrefetchInstr = 3;
 
   // Allocation prefetch settings
-  intx cache_line_size = L1_data_cache_line_size();
+  intx cache_line_size = prefetch_data_size();
   if( cache_line_size > AllocatePrefetchStepSize )
     AllocatePrefetchStepSize = cache_line_size;
-  if( FLAG_IS_DEFAULT(AllocatePrefetchLines) )
-    AllocatePrefetchLines = 3; // Optimistic value
+
   assert(AllocatePrefetchLines > 0, "invalid value");
-  if( AllocatePrefetchLines < 1 ) // set valid value in product VM
-    AllocatePrefetchLines = 1; // Conservative value
+  if( AllocatePrefetchLines < 1 )     // set valid value in product VM
+    AllocatePrefetchLines = 3;
+  assert(AllocateInstancePrefetchLines > 0, "invalid value");
+  if( AllocateInstancePrefetchLines < 1 ) // set valid value in product VM
+    AllocateInstancePrefetchLines = 1;
 
   AllocatePrefetchDistance = allocate_prefetch_distance();
   AllocatePrefetchStyle    = allocate_prefetch_style();
@@ -587,10 +606,11 @@ void VM_Version::get_processor_features() {
     tty->print_cr("Logical CPUs per core: %u",
                   logical_processors_per_package());
     tty->print_cr("UseSSE=%d",UseSSE);
-    tty->print("Allocation: ");
+    tty->print("Allocation");
     if (AllocatePrefetchStyle <= 0 || UseSSE == 0 && !supports_3dnow_prefetch()) {
-      tty->print_cr("no prefetching");
+      tty->print_cr(": no prefetching");
     } else {
+      tty->print(" prefetching: ");
       if (UseSSE == 0 && supports_3dnow_prefetch()) {
         tty->print("PREFETCHW");
       } else if (UseSSE >= 1) {
@@ -605,9 +625,9 @@ void VM_Version::get_processor_features() {
         }
       }
       if (AllocatePrefetchLines > 1) {
-        tty->print_cr(" %d, %d lines with step %d bytes", AllocatePrefetchDistance, AllocatePrefetchLines, AllocatePrefetchStepSize);
+        tty->print_cr(" at distance %d, %d lines of %d bytes", AllocatePrefetchDistance, AllocatePrefetchLines, AllocatePrefetchStepSize);
       } else {
-        tty->print_cr(" %d, one line", AllocatePrefetchDistance);
+        tty->print_cr(" at distance %d, one line of %d bytes", AllocatePrefetchDistance, AllocatePrefetchStepSize);
       }
     }
 

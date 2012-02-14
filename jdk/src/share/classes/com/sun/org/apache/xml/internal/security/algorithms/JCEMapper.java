@@ -45,9 +45,9 @@ public class JCEMapper {
 
 
 
-   private static Map uriToJCEName;
+   private static Map<String, String> uriToJCEName;
 
-   private static Map algorithmsMap;
+   private static Map<String, Algorithm> algorithmsMap;
 
    private static String providerName = null;
    /**
@@ -63,8 +63,8 @@ public class JCEMapper {
 
    static void loadAlgorithms( Element algorithmsEl) {
        Element[] algorithms = XMLUtils.selectNodes(algorithmsEl.getFirstChild(),Init.CONF_NS,"Algorithm");
-       uriToJCEName = new HashMap( algorithms.length * 2);
-       algorithmsMap = new HashMap( algorithms.length * 2);
+       uriToJCEName = new HashMap<String, String>( algorithms.length * 2);
+       algorithmsMap = new HashMap<String, Algorithm>( algorithms.length * 2);
        for (int i = 0 ;i < algorithms.length ;i ++) {
            Element el = algorithms[i];
            String id = el.getAttribute("URI");
@@ -76,7 +76,7 @@ public class JCEMapper {
    }
 
    static Algorithm getAlgorithmMapping(String algoURI) {
-           return ((Algorithm)algorithmsMap.get(algoURI));
+           return algorithmsMap.get(algoURI);
    }
 
    /**
@@ -90,7 +90,7 @@ public class JCEMapper {
       if (log.isLoggable(java.util.logging.Level.FINE))
           log.log(java.util.logging.Level.FINE, "Request for URI " + AlgorithmURI);
 
-      String jceName = (String) uriToJCEName.get(AlgorithmURI);
+      String jceName = uriToJCEName.get(AlgorithmURI);
       return jceName;
    }
 
@@ -106,7 +106,7 @@ public class JCEMapper {
        if (log.isLoggable(java.util.logging.Level.FINE))
            log.log(java.util.logging.Level.FINE, "Request for URI " + AlgorithmURI);
 
-       return ((Algorithm) algorithmsMap.get(AlgorithmURI)).algorithmClass;
+       return (algorithmsMap.get(AlgorithmURI)).algorithmClass;
    }
 
    /**
@@ -116,7 +116,7 @@ public class JCEMapper {
     * @return The length of the key used in the alogrithm
     */
    public static int getKeyLengthFromURI(String AlgorithmURI) {
-       return Integer.parseInt(((Algorithm) algorithmsMap.get(AlgorithmURI)).keyLength);
+       return Integer.parseInt((algorithmsMap.get(AlgorithmURI)).keyLength);
    }
 
    /**
@@ -128,7 +128,7 @@ public class JCEMapper {
     */
    public static String getJCEKeyAlgorithmFromURI(String AlgorithmURI) {
 
-        return  ((Algorithm) algorithmsMap.get(AlgorithmURI)).requiredKey;
+        return  (algorithmsMap.get(AlgorithmURI)).requiredKey;
 
    }
 

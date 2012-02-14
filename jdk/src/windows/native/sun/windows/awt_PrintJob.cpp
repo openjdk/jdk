@@ -4137,7 +4137,7 @@ Java_sun_awt_windows_WPrinterJob_initIDs(JNIEnv *env, jclass cls)
 
     AwtPrintDialog::controlID =
       env->GetFieldID(cls, "pjob", "Ljava/awt/print/PrinterJob;");
-    jclass printDialogPeerClass = env->FindClass("Lsun/awt/windows/WPrintDialogPeer;");
+    jclass printDialogPeerClass = env->FindClass("sun/awt/windows/WPrintDialogPeer");
     AwtPrintDialog::setHWndMID =
       env->GetMethodID(printDialogPeerClass, "setHWnd", "(J)V");
 

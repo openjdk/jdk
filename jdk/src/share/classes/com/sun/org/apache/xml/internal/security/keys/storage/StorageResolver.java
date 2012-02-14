@@ -42,10 +42,10 @@ public class StorageResolver {
         java.util.logging.Logger.getLogger(StorageResolver.class.getName());
 
    /** Field _storageResolvers */
-   List _storageResolvers = null;
+   List<Object> _storageResolvers = null;
 
    /** Field _iterator */
-   Iterator _iterator = null;
+   Iterator<Object> _iterator = null;
 
    /**
     * Constructor StorageResolver
@@ -69,7 +69,7 @@ public class StorageResolver {
     */
    public void add(StorageResolverSpi resolver) {
            if (_storageResolvers==null)
-                   _storageResolvers=new ArrayList();
+                   _storageResolvers=new ArrayList<Object>();
       this._storageResolvers.add(resolver);
 
       this._iterator = null;
@@ -121,11 +121,11 @@ public class StorageResolver {
     * @return the iterator for the resolvers.
     *
     */
-   public Iterator getIterator() {
+   public Iterator<Object> getIterator() {
 
       if (this._iterator == null) {
          if (_storageResolvers==null)
-                   _storageResolvers=new ArrayList();
+                   _storageResolvers=new ArrayList<Object>();
          this._iterator = new StorageResolverIterator(this._storageResolvers.iterator());
       }
 
@@ -141,7 +141,7 @@ public class StorageResolver {
 
       if (this._iterator == null) {
           if (_storageResolvers==null)
-                   _storageResolvers=new ArrayList();
+                   _storageResolvers=new ArrayList<Object>();
          this._iterator = new StorageResolverIterator(this._storageResolvers.iterator());
       }
 
@@ -163,17 +163,17 @@ public class StorageResolver {
     * @author $Author: mullan $
     * @version $Revision: 1.5 $
     */
-   static class StorageResolverIterator implements Iterator {
+   static class StorageResolverIterator implements Iterator<Object> {
 
       /** Field _resolvers */
-      Iterator _resolvers = null;
+      Iterator<Object> _resolvers = null;
 
       /**
        * Constructor FilesystemIterator
        *
        * @param resolvers
        */
-      public StorageResolverIterator(Iterator resolvers) {
+      public StorageResolverIterator(Iterator<Object> resolvers) {
          this._resolvers = resolvers;
       }
 

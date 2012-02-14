@@ -76,7 +76,7 @@ klassOop typeArrayKlass::create_klass(BasicType type, int scale,
   return k();
 }
 
-typeArrayOop typeArrayKlass::allocate(int length, TRAPS) {
+typeArrayOop typeArrayKlass::allocate_common(int length, bool do_zero, TRAPS) {
   assert(log2_element_size() >= 0, "bad scale");
   if (length >= 0) {
     if (length <= max_length()) {
@@ -84,10 +84,10 @@ typeArrayOop typeArrayKlass::allocate(int length, TRAPS) {
       KlassHandle h_k(THREAD, as_klassOop());
       typeArrayOop t;
       CollectedHeap* ch = Universe::heap();
-      if (size < ch->large_typearray_limit()) {
+      if (do_zero) {
         t = (typeArrayOop)CollectedHeap::array_allocate(h_k, (int)size, length, CHECK_NULL);
       } else {
-        t = (typeArrayOop)CollectedHeap::large_typearray_allocate(h_k, (int)size, length, CHECK_NULL);
+        t = (typeArrayOop)CollectedHeap::array_allocate_nozero(h_k, (int)size, length, CHECK_NULL);
       }
       assert(t->is_parsable(), "Don't publish unless parsable");
       return t;

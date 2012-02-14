@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.io.Writer;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 
@@ -223,18 +222,16 @@ public class CompileProperties {
         if ( ok ) {
             String packageName = inferPackageName(propertiesPath, outputPath);
             System.out.println("inferred package name: " + packageName);
-            List<String> sortedKeys = new ArrayList<String>();
+            List<String> sortedKeys = new ArrayList<>();
             for ( Object key : p.keySet() ) {
                 sortedKeys.add((String)key);
             }
             Collections.sort(sortedKeys);
-            Iterator keys = sortedKeys.iterator();
 
             StringBuffer data = new StringBuffer();
 
-            while (keys.hasNext()) {
-                Object key = keys.next();
-                data.append("            { \"" + escape((String)key) + "\", \"" +
+            for (String key : sortedKeys) {
+                data.append("            { \"" + escape(key) + "\", \"" +
                         escape((String)p.get(key)) + "\" },\n");
             }
 

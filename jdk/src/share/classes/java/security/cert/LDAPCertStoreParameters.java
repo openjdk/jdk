@@ -128,7 +128,7 @@ public class LDAPCertStoreParameters implements CertStoreParameters {
             return super.clone();
         } catch (CloneNotSupportedException e) {
             /* Cannot happen */
-            throw new InternalError(e.toString());
+            throw new InternalError(e.toString(), e);
         }
     }
 

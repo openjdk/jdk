@@ -375,16 +375,10 @@ JRT_ENTRY(void, Runtime1::throw_array_store_exception(JavaThread* thread, oopDes
 JRT_END
 
 
-JRT_ENTRY(void, Runtime1::post_jvmti_exception_throw(JavaThread* thread))
-  if (JvmtiExport::can_post_on_exceptions()) {
-    vframeStream vfst(thread, true);
-    address bcp = vfst.method()->bcp_from(vfst.bci());
-    JvmtiExport::post_exception_throw(thread, vfst.method(), bcp, thread->exception_oop());
-  }
-JRT_END
-
-// This is a helper to allow us to safepoint but allow the outer entry
-// to be safepoint free if we need to do an osr
+// counter_overflow() is called from within C1-compiled methods. The enclosing method is the method
+// associated with the top activation record. The inlinee (that is possibly included in the enclosing
+// method) method oop is passed as an argument. In order to do that it is embedded in the code as
+// a constant.
 static nmethod* counter_overflow_helper(JavaThread* THREAD, int branch_bci, methodOopDesc* m) {
   nmethod* osr_nm = NULL;
   methodHandle method(THREAD, m);
@@ -420,7 +414,7 @@ static nmethod* counter_overflow_helper(JavaThread* THREAD, int branch_bci, meth
     bci = branch_bci + offset;
   }
 
-  osr_nm = CompilationPolicy::policy()->event(enclosing_method, method, branch_bci, bci, level, THREAD);
+  osr_nm = CompilationPolicy::policy()->event(enclosing_method, method, branch_bci, bci, level, nm, THREAD);
   return osr_nm;
 }
 

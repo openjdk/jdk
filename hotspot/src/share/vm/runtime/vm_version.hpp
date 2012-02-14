@@ -44,6 +44,7 @@ class Abstract_VM_Version: AllStatic {
   static bool         _initialized;
   static int          _parallel_worker_threads;
   static bool         _parallel_worker_threads_initialized;
+  static int          _reserve_for_allocation_prefetch;
 
   static unsigned int nof_parallel_worker_threads(unsigned int num,
                                                   unsigned int dem,
@@ -75,6 +76,12 @@ class Abstract_VM_Version: AllStatic {
   static bool supports_cx8()  {return _supports_cx8;}
   static unsigned int logical_processors_per_package() {
     return _logical_processors_per_package;
+  }
+
+  // Need a space at the end of TLAB for prefetch instructions
+  // which may fault when accessing memory outside of heap.
+  static int reserve_for_allocation_prefetch() {
+    return _reserve_for_allocation_prefetch;
   }
 
   // ARCH specific policy for the BiasedLocking

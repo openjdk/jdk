@@ -25,6 +25,7 @@ import java.util.*;
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.util.*;
+import static javax.lang.model.SourceVersion.*;
 
 /**
  * An abstract annotation processor tailored to javac regression testing.
@@ -94,5 +95,165 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         filer     = processingEnv.getFiler();
         messager  = processingEnv.getMessager();
         options   = processingEnv.getOptions();
+    }
+
+    /*
+     * The set of visitors below will directly extend the most recent
+     * corresponding platform visitor type.
+     */
+
+    @SupportedSourceVersion(RELEASE_8)
+    public static abstract class AbstractAnnotationValueVisitor<R, P> extends AbstractAnnotationValueVisitor8<R, P> {
+
+        /**
+         * Constructor for concrete subclasses to call.
+         */
+        protected AbstractAnnotationValueVisitor() {
+            super();
+        }
+    }
+
+    @SupportedSourceVersion(RELEASE_8)
+    public static abstract class AbstractElementVisitor<R, P> extends AbstractElementVisitor8<R, P> {
+        /**
+         * Constructor for concrete subclasses to call.
+         */
+        protected AbstractElementVisitor(){
+            super();
+        }
+    }
+
+    @SupportedSourceVersion(RELEASE_8)
+    public static abstract class AbstractTypeVisitor<R, P> extends AbstractTypeVisitor8<R, P> {
+        /**
+         * Constructor for concrete subclasses to call.
+         */
+        protected AbstractTypeVisitor() {
+            super();
+        }
+    }
+
+    @SupportedSourceVersion(RELEASE_8)
+    public static class ElementKindVisitor<R, P> extends ElementKindVisitor8<R, P> {
+        /**
+         * Constructor for concrete subclasses; uses {@code null} for the
+         * default value.
+         */
+        protected ElementKindVisitor() {
+            super(null);
+        }
+
+        /**
+         * Constructor for concrete subclasses; uses the argument for the
+         * default value.
+         *
+         * @param defaultValue the value to assign to {@link #DEFAULT_VALUE}
+         */
+        protected ElementKindVisitor(R defaultValue) {
+            super(defaultValue);
+        }
+    }
+
+    @SupportedSourceVersion(RELEASE_8)
+    public static class ElementScanner<R, P> extends ElementScanner8<R, P> {
+        /**
+         * Constructor for concrete subclasses; uses {@code null} for the
+         * default value.
+         */
+        protected ElementScanner(){
+            super(null);
+        }
+
+        /**
+         * Constructor for concrete subclasses; uses the argument for the
+         * default value.
+         */
+        protected ElementScanner(R defaultValue){
+            super(defaultValue);
+        }
+    }
+
+    @SupportedSourceVersion(RELEASE_8)
+    public static class SimpleAnnotationValueVisitor<R, P> extends SimpleAnnotationValueVisitor8<R, P> {
+        /**
+         * Constructor for concrete subclasses; uses {@code null} for the
+         * default value.
+         */
+        protected SimpleAnnotationValueVisitor() {
+            super(null);
+        }
+
+        /**
+         * Constructor for concrete subclasses; uses the argument for the
+         * default value.
+         *
+         * @param defaultValue the value to assign to {@link #DEFAULT_VALUE}
+         */
+        protected SimpleAnnotationValueVisitor(R defaultValue) {
+            super(defaultValue);
+        }
+    }
+
+    @SupportedSourceVersion(RELEASE_8)
+    public static class SimpleElementVisitor<R, P> extends SimpleElementVisitor8<R, P> {
+        /**
+         * Constructor for concrete subclasses; uses {@code null} for the
+         * default value.
+         */
+        protected SimpleElementVisitor(){
+            super(null);
+        }
+
+        /**
+         * Constructor for concrete subclasses; uses the argument for the
+         * default value.
+         *
+         * @param defaultValue the value to assign to {@link #DEFAULT_VALUE}
+         */
+        protected SimpleElementVisitor(R defaultValue){
+            super(defaultValue);
+        }
+    }
+
+    @SupportedSourceVersion(RELEASE_8)
+    public static class SimpleTypeVisitor<R, P> extends SimpleTypeVisitor8<R, P> {
+        /**
+         * Constructor for concrete subclasses; uses {@code null} for the
+         * default value.
+         */
+        protected SimpleTypeVisitor(){
+            super(null);
+        }
+
+        /**
+         * Constructor for concrete subclasses; uses the argument for the
+         * default value.
+         *
+         * @param defaultValue the value to assign to {@link #DEFAULT_VALUE}
+         */
+        protected SimpleTypeVisitor(R defaultValue){
+            super(defaultValue);
+        }
+    }
+
+    @SupportedSourceVersion(RELEASE_8)
+    public static class TypeKindVisitor<R, P> extends TypeKindVisitor8<R, P> {
+        /**
+         * Constructor for concrete subclasses to call; uses {@code null}
+         * for the default value.
+         */
+        protected TypeKindVisitor() {
+            super(null);
+        }
+
+        /**
+         * Constructor for concrete subclasses to call; uses the argument
+         * for the default value.
+         *
+         * @param defaultValue the value to assign to {@link #DEFAULT_VALUE}
+         */
+        protected TypeKindVisitor(R defaultValue) {
+            super(defaultValue);
+        }
     }
 }
