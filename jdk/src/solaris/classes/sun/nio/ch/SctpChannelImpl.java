@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,6 @@ import com.sun.nio.sctp.MessageInfo;
 import com.sun.nio.sctp.NotificationHandler;
 import com.sun.nio.sctp.SctpChannel;
 import com.sun.nio.sctp.SctpSocketOption;
-import sun.nio.ch.PollArrayWrapper;
-import sun.nio.ch.SelChImpl;
 import static com.sun.nio.sctp.SctpStandardSocketOptions.*;
 import static sun.nio.ch.SctpResultContainer.SEND_FAILED;
 import static sun.nio.ch.SctpResultContainer.ASSOCIATION_CHANGED;
@@ -118,7 +116,7 @@ public class SctpChannelImpl extends SctpChannel
 
     private Association association;
 
-    private Set<SocketAddress> remoteAddresses = Collections.EMPTY_SET;
+    private Set<SocketAddress> remoteAddresses = Collections.emptySet();
 
     /* -- End of fields protected by stateLock -- */
 
@@ -853,7 +851,7 @@ public class SctpChannelImpl extends SctpChannel
         return n;
     }
 
-    private InternalNotificationHandler<?> internalNotificationHandler =
+    private InternalNotificationHandler internalNotificationHandler =
             new InternalNotificationHandler();
 
     private void handleNotificationInternal(SctpResultContainer resultContainer)
@@ -862,12 +860,12 @@ public class SctpChannelImpl extends SctpChannel
                 internalNotificationHandler, null);
     }
 
-    private class InternalNotificationHandler<T>
-            extends AbstractNotificationHandler<T>
+    private class InternalNotificationHandler
+            extends AbstractNotificationHandler<Object>
     {
         @Override
         public HandlerResult handleNotification(
-                AssociationChangeNotification not, T unused) {
+                AssociationChangeNotification not, Object unused) {
             if (not.event().equals(
                     AssociationChangeNotification.AssocChangeEvent.COMM_UP) &&
                     association == null) {
@@ -893,8 +891,8 @@ public class SctpChannelImpl extends SctpChannel
         }
 
         /* AbstractNotificationHandler */
-        AbstractNotificationHandler absHandler =
-                (AbstractNotificationHandler)handler;
+        AbstractNotificationHandler<T> absHandler =
+                (AbstractNotificationHandler<T>)handler;
         switch(resultContainer.type()) {
             case ASSOCIATION_CHANGED :
                 return absHandler.handleNotification(
@@ -1053,7 +1051,7 @@ public class SctpChannelImpl extends SctpChannel
             if (!isOpen())
                 throw new ClosedChannelException();
             if (!isBound())
-                return Collections.EMPTY_SET;
+                return Collections.emptySet();
 
             return SctpNet.getLocalAddresses(fdVal);
         }
@@ -1066,7 +1064,7 @@ public class SctpChannelImpl extends SctpChannel
             if (!isOpen())
                 throw new ClosedChannelException();
             if (!isConnected() || isShutdown)
-                return Collections.EMPTY_SET;
+                return Collections.emptySet();
 
             try {
                 return SctpNet.getRemoteAddresses(fdVal, 0/*unused*/);

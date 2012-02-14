@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,7 @@ import java.security.KeyStoreException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
-import java.security.spec.InvalidKeySpecException;
 import javax.crypto.SealedObject;
 
 /**
@@ -87,7 +85,7 @@ public final class JceKeyStore extends KeyStoreSpi {
      * Private keys and certificates are stored in a hashtable.
      * Hash entries are keyed by alias names.
      */
-    private Hashtable entries = new Hashtable();
+    private Hashtable<String, Object> entries = new Hashtable<String, Object>();
 
     /**
      * Returns the key associated with the given alias, using the given
@@ -156,7 +154,7 @@ public final class JceKeyStore extends KeyStoreSpi {
 
         if ((entry instanceof PrivateKeyEntry)
             && (((PrivateKeyEntry)entry).chain != null)) {
-            chain = (Certificate[])((PrivateKeyEntry)entry).chain.clone();
+            chain = ((PrivateKeyEntry)entry).chain.clone();
         }
 
         return chain;
@@ -262,7 +260,7 @@ public final class JceKeyStore extends KeyStoreSpi {
                     // clone the chain
                     if ((chain != null) &&
                         (chain.length !=0)) {
-                        entry.chain = (Certificate[])chain.clone();
+                        entry.chain = chain.clone();
                     } else {
                         entry.chain = null;
                     }
@@ -316,10 +314,10 @@ public final class JceKeyStore extends KeyStoreSpi {
             PrivateKeyEntry entry = new PrivateKeyEntry();
             entry.date = new Date();
 
-            entry.protectedKey = (byte[])key.clone();
+            entry.protectedKey = key.clone();
             if ((chain != null) &&
                 (chain.length != 0)) {
-                entry.chain = (Certificate[])chain.clone();
+                entry.chain = chain.clone();
             } else {
                 entry.chain = null;
             }
@@ -384,7 +382,7 @@ public final class JceKeyStore extends KeyStoreSpi {
      *
      * @return enumeration of the alias names
      */
-    public Enumeration engineAliases() {
+    public Enumeration<String> engineAliases() {
         return entries.keys();
     }
 
@@ -462,9 +460,9 @@ public final class JceKeyStore extends KeyStoreSpi {
     public String engineGetCertificateAlias(Certificate cert) {
         Certificate certElem;
 
-        Enumeration e = entries.keys();
+        Enumeration<String> e = entries.keys();
         while (e.hasMoreElements()) {
-            String alias = (String)e.nextElement();
+            String alias = e.nextElement();
             Object entry = entries.get(alias);
             if (entry instanceof TrustedCertEntry) {
                 certElem = ((TrustedCertEntry)entry).cert;
@@ -560,10 +558,10 @@ public final class JceKeyStore extends KeyStoreSpi {
 
                 dos.writeInt(entries.size());
 
-                Enumeration e = entries.keys();
+                Enumeration<String> e = entries.keys();
                 while (e.hasMoreElements()) {
 
-                    String alias = (String)e.nextElement();
+                    String alias = e.nextElement();
                     Object entry = entries.get(alias);
 
                     if (entry instanceof PrivateKeyEntry) {
@@ -677,7 +675,7 @@ public final class JceKeyStore extends KeyStoreSpi {
             DataInputStream dis;
             MessageDigest md = null;
             CertificateFactory cf = null;
-            Hashtable cfs = null;
+            Hashtable<String, CertificateFactory> cfs = null;
             ByteArrayInputStream bais = null;
             byte[] encoded = null;
 
@@ -713,7 +711,7 @@ public final class JceKeyStore extends KeyStoreSpi {
                     cf = CertificateFactory.getInstance("X509");
                 } else {
                     // version 2
-                    cfs = new Hashtable(3);
+                    cfs = new Hashtable<String, CertificateFactory>(3);
                 }
 
                 entries.clear();
@@ -761,7 +759,7 @@ public final class JceKeyStore extends KeyStoreSpi {
                                 String certType = dis.readUTF();
                                 if (cfs.containsKey(certType)) {
                                 // reuse certificate factory
-                                    cf = (CertificateFactory)cfs.get(certType);
+                                    cf = cfs.get(certType);
                                 } else {
                                 // create new certificate factory
                                     cf = CertificateFactory.getInstance(
@@ -803,7 +801,7 @@ public final class JceKeyStore extends KeyStoreSpi {
                             String certType = dis.readUTF();
                             if (cfs.containsKey(certType)) {
                                 // reuse certificate factory
-                                cf = (CertificateFactory)cfs.get(certType);
+                                cf = cfs.get(certType);
                             } else {
                                 // create new certificate factory
                                 cf = CertificateFactory.getInstance(certType);

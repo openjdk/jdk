@@ -52,6 +52,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 
 //------------------------------------------------------------------------------------------------------------------------
 // Implementation of FieldAccessInfo
@@ -132,7 +135,7 @@ void CallInfo::set_common(KlassHandle resolved_klass, KlassHandle selected_klass
       return;
     }
     CompileBroker::compile_method(selected_method, InvocationEntryBci,
-                                  CompLevel_initial_compile,
+                                  CompilationPolicy::policy()->initial_compile_level(),
                                   methodHandle(), 0, "must_be_compiled", CHECK);
   }
 }
@@ -293,6 +296,16 @@ void LinkResolver::resolve_method(methodHandle& resolved_method, KlassHandle& re
   Symbol*  method_name       = pool->name_ref_at(index);
   Symbol*  method_signature  = pool->signature_ref_at(index);
   KlassHandle  current_klass(THREAD, pool->pool_holder());
+
+  if (pool->has_preresolution()
+      || (resolved_klass() == SystemDictionary::MethodHandle_klass() &&
+          methodOopDesc::is_method_handle_invoke_name(method_name))) {
+    methodOop result_oop = constantPoolOopDesc::method_at_if_loaded(pool, index);
+    if (result_oop != NULL) {
+      resolved_method = methodHandle(THREAD, result_oop);
+      return;
+    }
+  }
 
   resolve_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, true, CHECK);
 }
@@ -1117,7 +1130,24 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, constantPoolHandle po
   // The extra MH receiver will be inserted into the stack on every call.
   methodHandle resolved_method;
   KlassHandle current_klass(THREAD, pool->pool_holder());
-  lookup_implicit_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, CHECK);
+  lookup_implicit_method(resolved_method, resolved_klass, method_name, method_signature, current_klass, THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    if (PENDING_EXCEPTION->is_a(SystemDictionary::BootstrapMethodError_klass())) {
+      // throw these guys, since they are already wrapped
+      return;
+    }
+    if (!PENDING_EXCEPTION->is_a(SystemDictionary::LinkageError_klass())) {
+      // intercept only LinkageErrors which might have failed to wrap
+      return;
+    }
+    // See the "Linking Exceptions" section for the invokedynamic instruction in the JVMS.
+    Handle ex(THREAD, PENDING_EXCEPTION);
+    CLEAR_PENDING_EXCEPTION;
+    oop bsme = Klass::cast(SystemDictionary::BootstrapMethodError_klass())->java_mirror();
+    MethodHandles::raise_exception(Bytecodes::_athrow, ex(), bsme, CHECK);
+    // java code should not return, but if it does throw out anyway
+    THROW(vmSymbols::java_lang_InternalError());
+  }
   if (resolved_method.is_null()) {
     THROW(vmSymbols::java_lang_InternalError());
   }

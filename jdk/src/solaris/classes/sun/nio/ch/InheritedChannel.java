@@ -64,7 +64,7 @@ class InheritedChannel {
             dup2(devnull, 2);
         } catch (IOException ioe) {
             // this shouldn't happen
-            throw new InternalError();
+            throw new InternalError(ioe);
         }
     }
 
@@ -166,8 +166,8 @@ class InheritedChannel {
         // is implemented.
 
         Class paramTypes[] = { int.class };
-        Constructor ctr = Reflect.lookupConstructor("java.io.FileDescriptor",
-                                                    paramTypes);
+        Constructor<?> ctr = Reflect.lookupConstructor("java.io.FileDescriptor",
+                                                       paramTypes);
         Object args[] = { new Integer(fdVal) };
         FileDescriptor fd = (FileDescriptor)Reflect.invoke(ctr, args);
 

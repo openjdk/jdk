@@ -53,9 +53,9 @@ class XRepaintArea extends RepaintArea {
      */
     protected void updateComponent(Component comp, Graphics g) {
         if (comp != null) {
-            ComponentPeer peer = comp.getPeer();
+            final XComponentPeer peer = (XComponentPeer) comp.getPeer();
             if (peer != null) {
-                peer.paint(g);
+                peer.paintPeer(g);
             }
             super.updateComponent(comp, g);
         }
@@ -66,9 +66,9 @@ class XRepaintArea extends RepaintArea {
      */
     protected void paintComponent(Component comp, Graphics g) {
         if (comp != null) {
-            ComponentPeer peer = comp.getPeer();
+            final XComponentPeer peer = (XComponentPeer) comp.getPeer();
             if (peer != null) {
-                peer.paint(g);
+                peer.paintPeer(g);
             }
             super.paintComponent(comp, g);
         }

@@ -225,6 +225,26 @@ ifeq ($(DEBUG_CFLAGS/$(BUILDARCH)),)
 DEBUG_CFLAGS += -gstabs
 endif
 
+ifneq ($(OBJCOPY),)
+  FASTDEBUG_CFLAGS/ia64  = -g
+  FASTDEBUG_CFLAGS/amd64 = -g
+  FASTDEBUG_CFLAGS/arm   = -g
+  FASTDEBUG_CFLAGS/ppc   = -g
+  FASTDEBUG_CFLAGS += $(DEBUG_CFLAGS/$(BUILDARCH))
+  ifeq ($(FASTDEBUG_CFLAGS/$(BUILDARCH)),)
+    FASTDEBUG_CFLAGS += -gstabs
+  endif
+
+  OPT_CFLAGS/ia64  = -g
+  OPT_CFLAGS/amd64 = -g
+  OPT_CFLAGS/arm   = -g
+  OPT_CFLAGS/ppc   = -g
+  OPT_CFLAGS += $(OPT_CFLAGS/$(BUILDARCH))
+  ifeq ($(OPT_CFLAGS/$(BUILDARCH)),)
+    OPT_CFLAGS += -gstabs
+  endif
+endif
+
 # DEBUG_BINARIES overrides everything, use full -g debug information
 ifeq ($(DEBUG_BINARIES), true)
   DEBUG_CFLAGS = -g
@@ -241,4 +261,10 @@ endif
 # favor code space over speed
 ifdef MINIMIZE_RAM_USAGE
 CFLAGS += -DMINIMIZE_RAM_USAGE
+endif
+
+ifdef CROSS_COMPILE_ARCH
+  STRIP = $(ALT_COMPILER_PATH)/strip
+else
+  STRIP = strip
 endif

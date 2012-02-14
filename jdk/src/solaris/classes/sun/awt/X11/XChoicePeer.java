@@ -550,10 +550,10 @@ public class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelS
     /**
      * Paint the choice
      */
-    public void paint(Graphics g) {
+    @Override
+    void paintPeer(final Graphics g) {
         flush();
         Dimension size = getPeerSize();
-
         // TODO: when mouse is down over button, widget should be drawn depressed
         g.setColor(getPeerBackground());
         g.fillRect(0, 0, width, height);
@@ -912,16 +912,22 @@ public class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelS
         /*
          * fillRect with current Background color on the whole dropdown list.
          */
-        public void paintBackground(){
-            Graphics g = getGraphics();
-            g.setColor(getPeerBackground());
-            g.fillRect(0, 0, width, height);
+        public void paintBackground() {
+            final Graphics g = getGraphics();
+            if (g != null) {
+                try {
+                    g.setColor(getPeerBackground());
+                    g.fillRect(0, 0, width, height);
+                } finally {
+                    g.dispose();
+                }
+            }
         }
-
         /*
          * 6405689. In some cases we should erase background to eliminate painting
          * artefacts.
          */
+        @Override
         public void repaint() {
             if (!isVisible()) {
                 return;
@@ -931,8 +937,8 @@ public class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelS
             }
             super.repaint();
         }
-
-        public void paint(Graphics g) {
+        @Override
+        public void paintPeer(Graphics g) {
             //System.out.println("UC.paint()");
             Choice choice = (Choice)target;
             Color colors[] = XChoicePeer.this.getGUIcolors();

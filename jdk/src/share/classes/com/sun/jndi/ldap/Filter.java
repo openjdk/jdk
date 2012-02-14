@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -632,14 +632,16 @@ final class Filter {
         }
     }
 
+    // The complex filter types look like:
+    //     "&(type=val)(type=val)"
+    //     "|(type=val)(type=val)"
+    //     "!(type=val)"
+    //
+    // The filtOffset[0] pointing to the '&', '|', or '!'.
+    //
     private static void encodeComplexFilter(BerEncoder ber, byte[] filter,
         int filterType, int filtOffset[], int filtEnd)
         throws IOException, NamingException {
-
-        //
-        // We have a complex filter of type "&(type=val)(type=val)"
-        // with filtOffset[0] pointing to the &
-        //
 
         if (dbg) {
             dprint("encComplexFilter: ", filter, filtOffset[0], filtEnd);
@@ -652,7 +654,7 @@ final class Filter {
         ber.beginSeq(filterType);
 
             int[] parens = findRightParen(filter, filtOffset, filtEnd);
-            encodeFilterList(ber, filter, parens[0], parens[1]);
+            encodeFilterList(ber, filter, filterType, parens[0], parens[1]);
 
         ber.endSeq();
 
@@ -706,7 +708,7 @@ final class Filter {
     // Encode filter list of type "(filter1)(filter2)..."
     //
     private static void encodeFilterList(BerEncoder ber, byte[] filter,
-        int start, int end) throws IOException, NamingException {
+        int filterType, int start, int end) throws IOException, NamingException {
 
         if (dbg) {
             dprint("encFilterList: ", filter, start, end);
@@ -714,11 +716,15 @@ final class Filter {
         }
 
         int filtOffset[] = new int[1];
-
-        for (filtOffset[0] = start; filtOffset[0] < end;
-                                                            filtOffset[0]++) {
+        int listNumber = 0;
+        for (filtOffset[0] = start; filtOffset[0] < end; filtOffset[0]++) {
             if (Character.isSpaceChar((char)filter[filtOffset[0]]))
                 continue;
+
+            if ((filterType == LDAP_FILTER_NOT) && (listNumber > 0)) {
+                throw new InvalidSearchFilterException(
+                    "Filter (!) cannot be followed by more than one filters");
+            }
 
             if (filter[filtOffset[0]] == '(') {
                 continue;
@@ -733,6 +739,8 @@ final class Filter {
             newfilter[0] = (byte)'(';
             newfilter[len+1] = (byte)')';
             encodeFilter(ber, newfilter, 0, newfilter.length);
+
+            listNumber++;
         }
 
         if (dbg) {

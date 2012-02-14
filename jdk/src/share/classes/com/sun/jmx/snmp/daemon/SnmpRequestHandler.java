@@ -921,7 +921,7 @@ class SnmpRequestHandler extends ClientHandler implements SnmpDefinitions {
                 SNMP_ADAPTOR_LOGGER.logp(Level.FINEST, dbgTag,
                    "newTooBigMessage", "Internal error", x);
             }
-            throw new InternalError() ;
+            throw new InternalError(x) ;
         }
 
         return result ;

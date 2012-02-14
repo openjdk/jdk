@@ -26,6 +26,10 @@
  * @bug 6388456
  * @summary Need adjustable TLS max record size for interoperability
  *      with non-compliant stacks
+ * @run main/othervm AcceptLargeFragments
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  *
  * Check the system property "jsse.SSLEngine.acceptLargeFragments"
  *

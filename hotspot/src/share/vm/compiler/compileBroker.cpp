@@ -58,6 +58,7 @@
 
 // Only bother with this argument setup if dtrace is available
 
+#ifndef USDT2
 HS_DTRACE_PROBE_DECL8(hotspot, method__compile__begin,
   char*, intptr_t, char*, intptr_t, char*, intptr_t, char*, intptr_t);
 HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
@@ -88,6 +89,35 @@ HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
       name->bytes(), name->utf8_length(),                                \
       signature->bytes(), signature->utf8_length(), (success));          \
   }
+
+#else /* USDT2 */
+
+#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(compiler, method)              \
+  {                                                                      \
+    char* comp_name = (char*)(compiler)->name();                         \
+    Symbol* klass_name = (method)->klass_name();                         \
+    Symbol* name = (method)->name();                                     \
+    Symbol* signature = (method)->signature();                           \
+    HOTSPOT_METHOD_COMPILE_BEGIN(                                       \
+      comp_name, strlen(comp_name),                                      \
+      (char *) klass_name->bytes(), klass_name->utf8_length(),          \
+      (char *) name->bytes(), name->utf8_length(),                       \
+      (char *) signature->bytes(), signature->utf8_length());            \
+  }
+
+#define DTRACE_METHOD_COMPILE_END_PROBE(compiler, method, success)       \
+  {                                                                      \
+    char* comp_name = (char*)(compiler)->name();                         \
+    Symbol* klass_name = (method)->klass_name();                         \
+    Symbol* name = (method)->name();                                     \
+    Symbol* signature = (method)->signature();                           \
+    HOTSPOT_METHOD_COMPILE_END(                                          \
+      comp_name, strlen(comp_name),                                      \
+      (char *) klass_name->bytes(), klass_name->utf8_length(),           \
+      (char *) name->bytes(), name->utf8_length(),                       \
+      (char *) signature->bytes(), signature->utf8_length(), (success)); \
+  }
+#endif /* USDT2 */
 
 #else //  ndef DTRACE_ENABLED
 
@@ -300,12 +330,23 @@ void CompileTask::print_compilation_impl(outputStream* st, methodOop method, int
   st->print("%7d ", (int) st->time_stamp().milliseconds());  // print timestamp
   st->print("%4d ", compile_id);    // print compilation number
 
+  // For unloaded methods the transition to zombie occurs after the
+  // method is cleared so it's impossible to report accurate
+  // information for that case.
+  bool is_synchronized = false;
+  bool has_exception_handler = false;
+  bool is_native = false;
+  if (method != NULL) {
+    is_synchronized       = method->is_synchronized();
+    has_exception_handler = method->has_exception_handler();
+    is_native             = method->is_native();
+  }
   // method attributes
   const char compile_type   = is_osr_method                   ? '%' : ' ';
-  const char sync_char      = method->is_synchronized()       ? 's' : ' ';
-  const char exception_char = method->has_exception_handler() ? '!' : ' ';
+  const char sync_char      = is_synchronized                 ? 's' : ' ';
+  const char exception_char = has_exception_handler           ? '!' : ' ';
   const char blocking_char  = is_blocking                     ? 'b' : ' ';
-  const char native_char    = method->is_native()             ? 'n' : ' ';
+  const char native_char    = is_native                       ? 'n' : ' ';
 
   // print method attributes
   st->print("%c%c%c%c%c ", compile_type, sync_char, exception_char, blocking_char, native_char);
@@ -316,11 +357,15 @@ void CompileTask::print_compilation_impl(outputStream* st, methodOop method, int
   }
   st->print("     ");  // more indent
 
-  method->print_short_name(st);
-  if (is_osr_method) {
-    st->print(" @ %d", osr_bci);
+  if (method == NULL) {
+    st->print("(method)");
+  } else {
+    method->print_short_name(st);
+    if (is_osr_method) {
+      st->print(" @ %d", osr_bci);
+    }
+    st->print(" (%d bytes)", method->code_size());
   }
-  st->print(" (%d bytes)", method->code_size());
 
   if (msg != NULL) {
     st->print("   %s", msg);

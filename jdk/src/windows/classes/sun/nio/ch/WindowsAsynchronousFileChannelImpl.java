@@ -55,9 +55,7 @@ public class WindowsAsynchronousFileChannelImpl
             try {
                 return new Iocp(null, ThreadPool.createDefault()).start();
             } catch (IOException ioe) {
-                InternalError e = new InternalError();
-                e.initCause(ioe);
-                throw e;
+                throw new InternalError(ioe);
             }
         }
     }
@@ -314,7 +312,7 @@ public class WindowsAsynchronousFileChannelImpl
         // create Future and task that will be invoked to acquire lock
         PendingFuture<FileLock,A> result =
             new PendingFuture<FileLock,A>(this, handler, attachment);
-        LockTask lockTask = new LockTask<A>(position, fli, result);
+        LockTask<A> lockTask = new LockTask<A>(position, fli, result);
         result.setContext(lockTask);
 
         // initiate I/O
@@ -552,7 +550,7 @@ public class WindowsAsynchronousFileChannelImpl
         // create Future and task that initiates read
         PendingFuture<Integer,A> result =
             new PendingFuture<Integer,A>(this, handler, attachment);
-        ReadTask readTask = new ReadTask<A>(dst, pos, rem, position, result);
+        ReadTask<A> readTask = new ReadTask<A>(dst, pos, rem, position, result);
         result.setContext(readTask);
 
         // initiate I/O
@@ -726,7 +724,7 @@ public class WindowsAsynchronousFileChannelImpl
         // create Future and task to initiate write
         PendingFuture<Integer,A> result =
             new PendingFuture<Integer,A>(this, handler, attachment);
-        WriteTask writeTask = new WriteTask<A>(src, pos, rem, position, result);
+        WriteTask<A> writeTask = new WriteTask<A>(src, pos, rem, position, result);
         result.setContext(writeTask);
 
         // initiate I/O

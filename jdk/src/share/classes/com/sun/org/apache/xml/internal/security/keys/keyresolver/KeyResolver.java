@@ -52,7 +52,7 @@ public class KeyResolver {
    static boolean _alreadyInitialized = false;
 
    /** Field _resolverVector */
-   static List _resolverVector = null;
+   static List<KeyResolver> _resolverVector = null;
 
    /** Field _resolverSpi */
    protected KeyResolverSpi _resolverSpi = null;
@@ -85,12 +85,12 @@ public class KeyResolver {
       return KeyResolver._resolverVector.size();
    }
 
-   public static void hit(Iterator hintI) {
+   public static void hit(Iterator<KeyResolverSpi> hintI) {
            ResolverIterator hint = (ResolverIterator) hintI;
            int i = hint.i;
            if (i!=1 && hint.res ==_resolverVector) {
-                   List resolverVector=(List)((ArrayList)_resolverVector).clone();
-                Object ob=resolverVector.remove(i-1);
+                   List<KeyResolver> resolverVector=getResolverVectorClone();
+                KeyResolver ob=resolverVector.remove(i-1);
                 resolverVector.add(0,ob);
                  _resolverVector=resolverVector;
          } else {
@@ -113,12 +113,9 @@ public class KeyResolver {
               throws KeyResolverException {
 
           // use the old vector to not be hit by updates
-          List resolverVector = KeyResolver._resolverVector;
-      for (int i = 0; i < resolverVector.size(); i++) {
-                  KeyResolver resolver=
-            (KeyResolver) resolverVector.get(i);
-
-                  if (resolver==null) {
+          List<KeyResolver> resolverVector = KeyResolver._resolverVector;
+      for (KeyResolver resolver : resolverVector) {
+         if (resolver==null) {
             Object exArgs[] = {
                (((element != null)
                  && (element.getNodeType() == Node.ELEMENT_NODE))
@@ -157,10 +154,8 @@ public class KeyResolver {
            Element element, String BaseURI, StorageResolver storage)
               throws KeyResolverException {
 
-          List resolverVector = KeyResolver._resolverVector;
-      for (int i = 0; i < resolverVector.size(); i++) {
-                  KeyResolver resolver=
-            (KeyResolver) resolverVector.get(i);
+          List<KeyResolver> resolverVector = KeyResolver._resolverVector;
+      for (KeyResolver resolver : resolverVector) {
 
                   if (resolver==null) {
             Object exArgs[] = {
@@ -176,11 +171,11 @@ public class KeyResolver {
 
          PublicKey cert=resolver.resolvePublicKey(element, BaseURI, storage);
          if (cert!=null) {
-                 if (i!=0 && resolverVector==_resolverVector) {
+                 if (resolverVector.indexOf(resolver)!=0 && resolverVector==_resolverVector) {
                          //update resolver.
-                         resolverVector=(List)((ArrayList)_resolverVector).clone();
-                                 Object ob=resolverVector.remove(i);
-                                 resolverVector.add(0,ob);
+                         resolverVector=getResolverVectorClone();
+                                 resolverVector.remove(resolver);
+                                 resolverVector.add(0,resolver);
                                  _resolverVector=resolverVector;
                  }
                  return cert;
@@ -195,13 +190,19 @@ public class KeyResolver {
       throw new KeyResolverException("utils.resolver.noClass", exArgs);
    }
 
+
+   @SuppressWarnings("unchecked")
+   private static List<KeyResolver> getResolverVectorClone() {
+       return (List<KeyResolver>)((ArrayList<KeyResolver>)_resolverVector).clone();
+   }
+
    /**
     * The init() function is called by com.sun.org.apache.xml.internal.security.Init.init()
     */
    public static void init() {
 
       if (!KeyResolver._alreadyInitialized) {
-         KeyResolver._resolverVector = new ArrayList(10);
+         KeyResolver._resolverVector = new ArrayList<KeyResolver>(10);
          _alreadyInitialized = true;
       }
    }
@@ -230,8 +231,8 @@ public class KeyResolver {
     *
     * @param className
     */
-   public static void registerAtStart(String className) {
-      KeyResolver._resolverVector.add(0, className);
+   public static void registerAtStart(String className) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+       register(className);
    }
 
    /**
@@ -322,11 +323,11 @@ public class KeyResolver {
       return this._resolverSpi.getClass().getName();
    }
 
-   static class ResolverIterator implements Iterator {
-           List res;
-                Iterator it;
+   static class ResolverIterator implements Iterator<KeyResolverSpi> {
+                List<KeyResolver> res;
+                Iterator<KeyResolver> it;
                 int i;
-           public ResolverIterator(List list) {
+           public ResolverIterator(List<KeyResolver> list) {
                 res = list;
                 it = res.iterator();
         }
@@ -335,9 +336,9 @@ public class KeyResolver {
                         return it.hasNext();
                 }
 
-                public Object next() {
+                public KeyResolverSpi next() {
                         i++;
-                        KeyResolver resolver = (KeyResolver) it.next();
+                        KeyResolver resolver =  it.next();
                       if (resolver==null) {
                          throw new RuntimeException("utils.resolver.noClass");
                       }
@@ -351,7 +352,7 @@ public class KeyResolver {
                 }
 
         };
-        public static Iterator iterator() {
+        public static Iterator<KeyResolverSpi> iterator() {
                 return new ResolverIterator(_resolverVector);
    }
 }

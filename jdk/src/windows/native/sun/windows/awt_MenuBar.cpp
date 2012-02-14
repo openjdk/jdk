@@ -198,7 +198,15 @@ void AwtMenuBar::DeleteItem(UINT index)
     if (hOwnerWnd != NULL) {
         VERIFY(::InvalidateRect(hOwnerWnd,0,TRUE));
     }
-    ::DrawMenuBar(GetOwnerHWnd());
+    RedrawMenuBar();
+}
+
+/**
+ * If the menu changes after the system has created the window,
+ * this function must be called to draw the changed menu bar.
+ */
+void AwtMenuBar::RedrawMenuBar() {
+    VERIFY(::DrawMenuBar(GetOwnerHWnd()));
 }
 
 LRESULT AwtMenuBar::WinThreadExecProc(ExecuteArgs * args)
@@ -232,7 +240,7 @@ void AwtMenuBar::_AddMenu(void *param)
     if (::IsWindow(m->GetOwnerHWnd()))
     {
         /* The menu was already created and added during peer creation -- redraw */
-        ::DrawMenuBar(m->GetOwnerHWnd());
+        m->RedrawMenuBar();
     }
 ret:
     env->DeleteGlobalRef(self);

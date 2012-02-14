@@ -594,7 +594,15 @@ public class Attr extends JCTree.Visitor {
             lintEnv = lintEnv.next;
 
         // Having found the enclosing lint value, we can initialize the lint value for this class
-        env.info.lint = lintEnv.info.lint.augment(env.info.enclVar.attributes_field, env.info.enclVar.flags());
+        // ... but ...
+        // There's a problem with evaluating annotations in the right order, such that
+        // env.info.enclVar.attributes_field might not yet have been evaluated, and so might be
+        // null. In that case, calling augment will throw an NPE. To avoid this, for now we
+        // revert to the jdk 6 behavior and ignore the (unevaluated) attributes.
+        if (env.info.enclVar.attributes_field == null)
+            env.info.lint = lintEnv.info.lint;
+        else
+            env.info.lint = lintEnv.info.lint.augment(env.info.enclVar.attributes_field, env.info.enclVar.flags());
 
         Lint prevLint = chk.setLint(env.info.lint);
         JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
@@ -1837,7 +1845,7 @@ public class Attr extends JCTree.Visitor {
         try {
             constructor = rs.resolveDiamond(tree.pos(),
                     localEnv,
-                    clazztype.tsym.type,
+                    clazztype,
                     argtypes,
                     typeargtypes);
         } finally {
@@ -2872,8 +2880,10 @@ public class Attr extends JCTree.Visitor {
 
         if (clazztype.tag == CLASS) {
             List<Type> formals = clazztype.tsym.type.getTypeArguments();
+            if (actuals.isEmpty()) //diamond
+                actuals = formals;
 
-            if (actuals.length() == formals.length() || actuals.length() == 0) {
+            if (actuals.length() == formals.length()) {
                 List<Type> a = actuals;
                 List<Type> f = formals;
                 while (a.nonEmpty()) {
@@ -3385,6 +3395,13 @@ public class Attr extends JCTree.Visitor {
                 that.constructorType = syms.unknownType;
             }
             super.visitNewClass(that);
+        }
+
+        @Override
+        public void visitAssignop(JCAssignOp that) {
+            if (that.operator == null)
+                that.operator = new OperatorSymbol(names.empty, syms.unknownType, -1, syms.noSymbol);
+            super.visitAssignop(that);
         }
 
         @Override

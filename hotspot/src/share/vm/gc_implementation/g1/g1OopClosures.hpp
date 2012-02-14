@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ class DirtyCardToOopClosure;
 class CMBitMap;
 class CMMarkStack;
 class G1ParScanThreadState;
+class CMTask;
+class ReferenceProcessor;
 
 // A class that scans oops in a given heap region (much as OopsInGenClosure
 // scans oops in a generation.)
@@ -40,7 +42,7 @@ class OopsInHeapRegionClosure: public OopsInGenClosure {
 protected:
   HeapRegion* _from;
 public:
-  virtual void set_region(HeapRegion* from) { _from = from; }
+  void set_region(HeapRegion* from) { _from = from; }
 };
 
 class G1ParClosureSuper : public OopsInHeapRegionClosure {
@@ -49,6 +51,8 @@ protected:
   G1RemSet* _g1_rem;
   ConcurrentMark* _cm;
   G1ParScanThreadState* _par_scan_state;
+  bool _during_initial_mark;
+  bool _mark_in_progress;
 public:
   G1ParClosureSuper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state);
   bool apply_to_weak_ref_discovered_field() { return true; }
@@ -56,8 +60,10 @@ public:
 
 class G1ParPushHeapRSClosure : public G1ParClosureSuper {
 public:
-  G1ParPushHeapRSClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
+  G1ParPushHeapRSClosure(G1CollectedHeap* g1,
+                         G1ParScanThreadState* par_scan_state):
     G1ParClosureSuper(g1, par_scan_state) { }
+
   template <class T> void do_oop_nv(T* p);
   virtual void do_oop(oop* p)          { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p)    { do_oop_nv(p); }
@@ -65,8 +71,13 @@ public:
 
 class G1ParScanClosure : public G1ParClosureSuper {
 public:
-  G1ParScanClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
-    G1ParClosureSuper(g1, par_scan_state) { }
+  G1ParScanClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state, ReferenceProcessor* rp) :
+    G1ParClosureSuper(g1, par_scan_state)
+  {
+    assert(_ref_processor == NULL, "sanity");
+    _ref_processor = rp;
+  }
+
   template <class T> void do_oop_nv(T* p);
   virtual void do_oop(oop* p)          { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p)    { do_oop_nv(p); }
@@ -89,9 +100,18 @@ template <class T> inline oop clear_partial_array_mask(T* ref) {
 
 class G1ParScanPartialArrayClosure : public G1ParClosureSuper {
   G1ParScanClosure _scanner;
+
 public:
-  G1ParScanPartialArrayClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
-    G1ParClosureSuper(g1, par_scan_state), _scanner(g1, par_scan_state) { }
+  G1ParScanPartialArrayClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state, ReferenceProcessor* rp) :
+    G1ParClosureSuper(g1, par_scan_state), _scanner(g1, par_scan_state, rp)
+  {
+    assert(_ref_processor == NULL, "sanity");
+  }
+
+  G1ParScanClosure* scanner() {
+    return &_scanner;
+  }
+
   template <class T> void do_oop_nv(T* p);
   virtual void do_oop(oop* p)       { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
@@ -101,8 +121,9 @@ public:
 class G1ParCopyHelper : public G1ParClosureSuper {
   G1ParScanClosure *_scanner;
 protected:
-  template <class T> void mark_forwardee(T* p);
-  oop copy_to_survivor_space(oop obj);
+  template <class T> void mark_object(T* p);
+  oop copy_to_survivor_space(oop obj, bool should_mark_root,
+                                      bool should_mark_copy);
 public:
   G1ParCopyHelper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state,
                   G1ParScanClosure *scanner) :
@@ -110,17 +131,25 @@ public:
 };
 
 template<bool do_gen_barrier, G1Barrier barrier,
-         bool do_mark_forwardee>
+         bool do_mark_object>
 class G1ParCopyClosure : public G1ParCopyHelper {
   G1ParScanClosure _scanner;
+
   template <class T> void do_oop_work(T* p);
+
 public:
-  G1ParCopyClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
-    _scanner(g1, par_scan_state), G1ParCopyHelper(g1, par_scan_state, &_scanner) { }
+  G1ParCopyClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state,
+                   ReferenceProcessor* rp) :
+    _scanner(g1, par_scan_state, rp),
+    G1ParCopyHelper(g1, par_scan_state, &_scanner)
+  {
+    assert(_ref_processor == NULL, "sanity");
+  }
+
+  G1ParScanClosure* scanner() { return &_scanner; }
+
   template <class T> void do_oop_nv(T* p) {
     do_oop_work(p);
-    if (do_mark_forwardee)
-      mark_forwardee(p);
   }
   virtual void do_oop(oop* p)       { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
@@ -128,21 +157,25 @@ public:
 
 typedef G1ParCopyClosure<false, G1BarrierNone, false> G1ParScanExtRootClosure;
 typedef G1ParCopyClosure<true,  G1BarrierNone, false> G1ParScanPermClosure;
-typedef G1ParCopyClosure<false, G1BarrierRS,   false> G1ParScanHeapRSClosure;
+
 typedef G1ParCopyClosure<false, G1BarrierNone, true> G1ParScanAndMarkExtRootClosure;
 typedef G1ParCopyClosure<true,  G1BarrierNone, true> G1ParScanAndMarkPermClosure;
-typedef G1ParCopyClosure<false, G1BarrierRS,   true> G1ParScanAndMarkHeapRSClosure;
 
-// This is the only case when we set skip_cset_test. Basically, this
-// closure is (should?) only be called directly while we're draining
-// the overflow and task queues. In that case we know that the
-// reference in question points into the collection set, otherwise we
-// would not have pushed it on the queue. The following is defined in
-// g1_specialized_oop_closures.hpp.
-// typedef G1ParCopyClosure<false, G1BarrierEvac, false, true> G1ParScanHeapEvacClosure;
-// We need a separate closure to handle references during evacuation
-// failure processing, as we cannot asume that the reference already
-// points into the collection set (like G1ParScanHeapEvacClosure does).
+// The following closure types are no longer used but are retained
+// for historical reasons:
+// typedef G1ParCopyClosure<false, G1BarrierRS,   false> G1ParScanHeapRSClosure;
+// typedef G1ParCopyClosure<false, G1BarrierRS,   true> G1ParScanAndMarkHeapRSClosure;
+
+// The following closure type is defined in g1_specialized_oop_closures.hpp:
+//
+// typedef G1ParCopyClosure<false, G1BarrierEvac, false> G1ParScanHeapEvacClosure;
+
+// We use a separate closure to handle references during evacuation
+// failure processing.
+// We could have used another instance of G1ParScanHeapEvacClosure
+// (since that closure no longer assumes that the references it
+// handles point into the collection set).
+
 typedef G1ParCopyClosure<false, G1BarrierEvac, false> G1ParScanHeapEvacFailureClosure;
 
 class FilterIntoCSClosure: public OopClosure {
@@ -151,52 +184,15 @@ class FilterIntoCSClosure: public OopClosure {
   DirtyCardToOopClosure* _dcto_cl;
 public:
   FilterIntoCSClosure(  DirtyCardToOopClosure* dcto_cl,
-                        G1CollectedHeap* g1, OopClosure* oc) :
-    _dcto_cl(dcto_cl), _g1(g1), _oc(oc)
-  {}
+                        G1CollectedHeap* g1,
+                        OopClosure* oc) :
+    _dcto_cl(dcto_cl), _g1(g1), _oc(oc) { }
+
   template <class T> void do_oop_nv(T* p);
   virtual void do_oop(oop* p)        { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
   bool apply_to_weak_ref_discovered_field() { return true; }
   bool do_header() { return false; }
-};
-
-class FilterInHeapRegionAndIntoCSClosure : public OopsInHeapRegionClosure {
-  G1CollectedHeap* _g1;
-  OopsInHeapRegionClosure* _oc;
-public:
-  FilterInHeapRegionAndIntoCSClosure(G1CollectedHeap* g1,
-                                     OopsInHeapRegionClosure* oc) :
-    _g1(g1), _oc(oc)
-  {}
-  template <class T> void do_oop_nv(T* p);
-  virtual void do_oop(oop* p) { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
-  bool apply_to_weak_ref_discovered_field() { return true; }
-  bool do_header() { return false; }
-  void set_region(HeapRegion* from) {
-    _oc->set_region(from);
-  }
-};
-
-class FilterAndMarkInHeapRegionAndIntoCSClosure : public OopsInHeapRegionClosure {
-  G1CollectedHeap* _g1;
-  ConcurrentMark* _cm;
-  OopsInHeapRegionClosure* _oc;
-public:
-  FilterAndMarkInHeapRegionAndIntoCSClosure(G1CollectedHeap* g1,
-                                            OopsInHeapRegionClosure* oc,
-                                            ConcurrentMark* cm)
-  : _g1(g1), _oc(oc), _cm(cm) { }
-
-  template <class T> void do_oop_nv(T* p);
-  virtual void do_oop(oop* p) { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
-  bool apply_to_weak_ref_discovered_field() { return true; }
-  bool do_header() { return false; }
-  void set_region(HeapRegion* from) {
-    _oc->set_region(from);
-  }
 };
 
 class FilterOutOfRegionClosure: public OopClosure {
@@ -212,6 +208,18 @@ public:
   bool apply_to_weak_ref_discovered_field() { return true; }
   bool do_header() { return false; }
   int out_of_region() { return _out_of_region; }
+};
+
+// Closure for iterating over object fields during concurrent marking
+class G1CMOopClosure : public OopClosure {
+  G1CollectedHeap*   _g1h;
+  ConcurrentMark*    _cm;
+  CMTask*            _task;
+public:
+  G1CMOopClosure(G1CollectedHeap* g1h, ConcurrentMark* cm, CMTask* task);
+  template <class T> void do_oop_nv(T* p);
+  virtual void do_oop(      oop* p) { do_oop_nv(p); }
+  virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1OOPCLOSURES_HPP

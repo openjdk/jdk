@@ -149,7 +149,7 @@ OTHER_INCLUDES += \
 # Rules
 #
 CLASSDESTDIR = $(TEMPDIR)/classes
-JAVAHFLAGS += -classpath $(CLASSDESTDIR)
+JAVAHFLAGS += -Xbootclasspath/p:$(CLASSDESTDIR)
 
 include $(BUILDDIR)/common/Mapfile-vers.gmk
 
@@ -159,7 +159,7 @@ include $(BUILDDIR)/common/Library.gmk
 # Libraries to link
 #
 ifeq ($(PLATFORM), windows)
-  OTHER_LDLIBS += $(JVMLIB) Crypt32.Lib
+  OTHER_LDLIBS += Crypt32.Lib
 endif
 
 #

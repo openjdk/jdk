@@ -27,6 +27,10 @@
  * @summary Need to revisit the javadocs for JSSE, especially the
  *      promoted classes.  This test checks to see if the settings
  *      on the server sockets get propagated to the sockets.
+ * @run main/othervm SSLSocketInherit
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  * @author Brad Wetmore
  */
 

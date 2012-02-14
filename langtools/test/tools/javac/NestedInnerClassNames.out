@@ -1,18 +1,18 @@
-NestedInnerClassNames.java:16:5: compiler.err.already.defined: NestedInnerClassNames, compiler.misc.unnamed.package
-NestedInnerClassNames.java:23:9: compiler.err.already.defined: NestedInnerClassNames.foo, NestedInnerClassNames
-NestedInnerClassNames.java:34:9: compiler.err.already.defined: NestedInnerClassNames, compiler.misc.unnamed.package
-NestedInnerClassNames.java:45:9: compiler.err.already.defined: NestedInnerClassNames.baz, NestedInnerClassNames
-NestedInnerClassNames.java:46:13: compiler.err.already.defined: NestedInnerClassNames.baz.baz, NestedInnerClassNames.baz
-NestedInnerClassNames.java:59:9: compiler.err.already.defined: NestedInnerClassNames.foo$bar, NestedInnerClassNames
-NestedInnerClassNames.java:76:13: compiler.err.already.defined: NestedInnerClassNames.$bar, NestedInnerClassNames
-NestedInnerClassNames.java:90:13: compiler.err.already.defined: NestedInnerClassNames.bar$bar.bar, NestedInnerClassNames.bar$bar
+NestedInnerClassNames.java:16:5: compiler.err.already.defined: kindname.class, NestedInnerClassNames, kindname.package, compiler.misc.unnamed.package
+NestedInnerClassNames.java:23:9: compiler.err.already.defined: kindname.class, NestedInnerClassNames.foo, kindname.class, NestedInnerClassNames
+NestedInnerClassNames.java:34:9: compiler.err.already.defined: kindname.class, NestedInnerClassNames, kindname.package, compiler.misc.unnamed.package
+NestedInnerClassNames.java:45:9: compiler.err.already.defined: kindname.class, NestedInnerClassNames.baz, kindname.class, NestedInnerClassNames
+NestedInnerClassNames.java:46:13: compiler.err.already.defined: kindname.class, NestedInnerClassNames.baz.baz, kindname.class, NestedInnerClassNames.baz
+NestedInnerClassNames.java:59:9: compiler.err.already.defined: kindname.class, NestedInnerClassNames.foo$bar, kindname.class, NestedInnerClassNames
+NestedInnerClassNames.java:76:13: compiler.err.already.defined: kindname.class, NestedInnerClassNames.$bar, kindname.class, NestedInnerClassNames
+NestedInnerClassNames.java:90:13: compiler.err.already.defined: kindname.class, NestedInnerClassNames.bar$bar.bar, kindname.class, NestedInnerClassNames.bar$bar
 NestedInnerClassNames.java:109:5: compiler.err.duplicate.class: NestedInnerClassNames.foo.foo
-NestedInnerClassNames.java:19:9: compiler.err.already.defined: NestedInnerClassNames, compiler.misc.unnamed.package
-NestedInnerClassNames.java:28:13: compiler.err.already.defined: foo, m2()
-NestedInnerClassNames.java:40:13: compiler.err.already.defined: NestedInnerClassNames, compiler.misc.unnamed.package
-NestedInnerClassNames.java:52:13: compiler.err.already.defined: baz, m4()
-NestedInnerClassNames.java:53:17: compiler.err.already.defined: baz.baz, baz
-NestedInnerClassNames.java:67:13: compiler.err.already.defined: foo$bar, m5()
-NestedInnerClassNames.java:83:17: compiler.err.already.defined: $bar, m6()
-NestedInnerClassNames.java:97:17: compiler.err.already.defined: bar$bar.bar, bar$bar
+NestedInnerClassNames.java:19:9: compiler.err.already.defined: kindname.class, NestedInnerClassNames, kindname.package, compiler.misc.unnamed.package
+NestedInnerClassNames.java:28:13: compiler.err.already.defined: kindname.class, foo, kindname.method, m2()
+NestedInnerClassNames.java:40:13: compiler.err.already.defined: kindname.class, NestedInnerClassNames, kindname.package, compiler.misc.unnamed.package
+NestedInnerClassNames.java:52:13: compiler.err.already.defined: kindname.class, baz, kindname.method, m4()
+NestedInnerClassNames.java:53:17: compiler.err.already.defined: kindname.class, baz.baz, kindname.class, baz
+NestedInnerClassNames.java:67:13: compiler.err.already.defined: kindname.class, foo$bar, kindname.method, m5()
+NestedInnerClassNames.java:83:17: compiler.err.already.defined: kindname.class, $bar, kindname.method, m6()
+NestedInnerClassNames.java:97:17: compiler.err.already.defined: kindname.class, bar$bar.bar, kindname.class, bar$bar
 17 errors

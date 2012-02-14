@@ -758,6 +758,11 @@ public class RepaintManager
             for(i=0 ; i < count ; i++) {
                 dirtyComponent = roots.get(i);
                 rect = tmpDirtyComponents.get(dirtyComponent);
+                // Sometimes when RepaintManager is changed during the painting
+                // we may get null here, see #6995769 for details
+                if (rect == null) {
+                    continue;
+                }
                 localBoundsH = dirtyComponent.getHeight();
                 localBoundsW = dirtyComponent.getWidth();
 
