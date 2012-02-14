@@ -33,6 +33,28 @@ void MacroAssembler::int3() {
   call(RuntimeAddress(CAST_FROM_FN_PTR(address, os::breakpoint)));
 }
 
+#ifdef MINIMIZE_RAM_USAGE
+
+void MacroAssembler::get_thread(Register thread) {
+  // call pthread_getspecific
+  // void * pthread_getspecific(pthread_key_t key);
+  if (thread != rax) push(rax);
+  push(rcx);
+  push(rdx);
+
+  push(ThreadLocalStorage::thread_index());
+  call(RuntimeAddress(CAST_FROM_FN_PTR(address, pthread_getspecific)));
+  increment(rsp, wordSize);
+
+  pop(rdx);
+  pop(rcx);
+  if (thread != rax) {
+    mov(thread, rax);
+    pop(rax);
+  }
+}
+
+#else
 void MacroAssembler::get_thread(Register thread) {
   movl(thread, rsp);
   shrl(thread, PAGE_SHIFT);
@@ -43,6 +65,7 @@ void MacroAssembler::get_thread(Register thread) {
 
   movptr(thread, tls);
 }
+#endif // MINIMIZE_RAM_USAGE
 #else
 void MacroAssembler::int3() {
   call(RuntimeAddress(CAST_FROM_FN_PTR(address, os::breakpoint)));

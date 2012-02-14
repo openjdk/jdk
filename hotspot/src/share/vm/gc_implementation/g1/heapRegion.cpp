@@ -33,11 +33,11 @@
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
 
-int HeapRegion::LogOfHRGrainBytes = 0;
-int HeapRegion::LogOfHRGrainWords = 0;
-int HeapRegion::GrainBytes        = 0;
-int HeapRegion::GrainWords        = 0;
-int HeapRegion::CardsPerRegion    = 0;
+int    HeapRegion::LogOfHRGrainBytes = 0;
+int    HeapRegion::LogOfHRGrainWords = 0;
+size_t HeapRegion::GrainBytes        = 0;
+size_t HeapRegion::GrainWords        = 0;
+size_t HeapRegion::CardsPerRegion    = 0;
 
 HeapRegionDCTOC::HeapRegionDCTOC(G1CollectedHeap* g1,
                                  HeapRegion* hr, OopClosure* cl,
@@ -45,7 +45,7 @@ HeapRegionDCTOC::HeapRegionDCTOC(G1CollectedHeap* g1,
                                  FilterKind fk) :
   ContiguousSpaceDCTOC(hr, cl, precision, NULL),
   _hr(hr), _fk(fk), _g1(g1)
-{}
+{ }
 
 FilterOutOfRegionClosure::FilterOutOfRegionClosure(HeapRegion* r,
                                                    OopClosure* oc) :
@@ -60,13 +60,14 @@ private:
   oop _containing_obj;
   bool _failures;
   int _n_failures;
-  bool _use_prev_marking;
+  VerifyOption _vo;
 public:
-  // use_prev_marking == true  -> use "prev" marking information,
-  // use_prev_marking == false -> use "next" marking information
-  VerifyLiveClosure(G1CollectedHeap* g1h, bool use_prev_marking) :
+  // _vo == UsePrevMarking -> use "prev" marking information,
+  // _vo == UseNextMarking -> use "next" marking information,
+  // _vo == UseMarkWord    -> use mark word from object header.
+  VerifyLiveClosure(G1CollectedHeap* g1h, VerifyOption vo) :
     _g1h(g1h), _bs(NULL), _containing_obj(NULL),
-    _failures(false), _n_failures(0), _use_prev_marking(use_prev_marking)
+    _failures(false), _n_failures(0), _vo(vo)
   {
     BarrierSet* bs = _g1h->barrier_set();
     if (bs->is_a(BarrierSet::CardTableModRef))
@@ -95,14 +96,14 @@ public:
 
   template <class T> void do_oop_work(T* p) {
     assert(_containing_obj != NULL, "Precondition");
-    assert(!_g1h->is_obj_dead_cond(_containing_obj, _use_prev_marking),
+    assert(!_g1h->is_obj_dead_cond(_containing_obj, _vo),
            "Precondition");
     T heap_oop = oopDesc::load_heap_oop(p);
     if (!oopDesc::is_null(heap_oop)) {
       oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
       bool failed = false;
       if (!_g1h->is_in_closed_subset(obj) ||
-          _g1h->is_obj_dead_cond(obj, _use_prev_marking)) {
+          _g1h->is_obj_dead_cond(obj, _vo)) {
         if (!_failures) {
           gclog_or_tty->print_cr("");
           gclog_or_tty->print_cr("----------");
@@ -159,20 +160,16 @@ public:
               gclog_or_tty->print_cr("----------");
             }
             gclog_or_tty->print_cr("Missing rem set entry:");
-            gclog_or_tty->print_cr("Field "PTR_FORMAT
-                          " of obj "PTR_FORMAT
-                          ", in region %d ["PTR_FORMAT
-                          ", "PTR_FORMAT"),",
-                          p, (void*) _containing_obj,
-                          from->hrs_index(),
-                          from->bottom(),
-                          from->end());
+            gclog_or_tty->print_cr("Field "PTR_FORMAT" "
+                                   "of obj "PTR_FORMAT", "
+                                   "in region "HR_FORMAT,
+                                   p, (void*) _containing_obj,
+                                   HR_FORMAT_PARAMS(from));
             _containing_obj->print_on(gclog_or_tty);
-            gclog_or_tty->print_cr("points to obj "PTR_FORMAT
-                          " in region %d ["PTR_FORMAT
-                          ", "PTR_FORMAT").",
-                          (void*) obj, to->hrs_index(),
-                          to->bottom(), to->end());
+            gclog_or_tty->print_cr("points to obj "PTR_FORMAT" "
+                                   "in region "HR_FORMAT,
+                                   (void*) obj,
+                                   HR_FORMAT_PARAMS(to));
             obj->print_on(gclog_or_tty);
             gclog_or_tty->print_cr("Obj head CTE = %d, field CTE = %d.",
                           cv_obj, cv_field);
@@ -213,15 +210,17 @@ void HeapRegionDCTOC::walk_mem_region_with_cl(MemRegion mr,
                                               HeapWord* top,
                                               OopClosure* cl) {
   G1CollectedHeap* g1h = _g1;
-
   int oop_size;
+  OopClosure* cl2 = NULL;
 
-  OopClosure* cl2 = cl;
   FilterIntoCSClosure intoCSFilt(this, g1h, cl);
   FilterOutOfRegionClosure outOfRegionFilt(_hr, cl);
+
   switch (_fk) {
+  case NoFilterKind:          cl2 = cl; break;
   case IntoCSFilterKind:      cl2 = &intoCSFilt; break;
   case OutOfRegionFilterKind: cl2 = &outOfRegionFilt; break;
+  default:                    ShouldNotReachHere();
   }
 
   // Start filtering what we add to the remembered set. If the object is
@@ -242,16 +241,19 @@ void HeapRegionDCTOC::walk_mem_region_with_cl(MemRegion mr,
     case NoFilterKind:
       bottom = walk_mem_region_loop(cl, g1h, _hr, bottom, top);
       break;
+
     case IntoCSFilterKind: {
       FilterIntoCSClosure filt(this, g1h, cl);
       bottom = walk_mem_region_loop(&filt, g1h, _hr, bottom, top);
       break;
     }
+
     case OutOfRegionFilterKind: {
       FilterOutOfRegionClosure filt(_hr, cl);
       bottom = walk_mem_region_loop(&filt, g1h, _hr, bottom, top);
       break;
     }
+
     default:
       ShouldNotReachHere();
     }
@@ -320,11 +322,11 @@ void HeapRegion::setup_heap_region_size(uintx min_heap_size) {
   guarantee(GrainBytes == 0, "we should only set it once");
   // The cast to int is safe, given that we've bounded region_size by
   // MIN_REGION_SIZE and MAX_REGION_SIZE.
-  GrainBytes = (int) region_size;
+  GrainBytes = (size_t)region_size;
 
   guarantee(GrainWords == 0, "we should only set it once");
   GrainWords = GrainBytes >> LogHeapWordSize;
-  guarantee(1 << LogOfHRGrainWords == GrainWords, "sanity");
+  guarantee((size_t)(1 << LogOfHRGrainWords) == GrainWords, "sanity");
 
   guarantee(CardsPerRegion == 0, "we should only set it once");
   CardsPerRegion = GrainBytes >> CardTableModRefBS::card_shift;
@@ -355,7 +357,6 @@ void HeapRegion::hr_clear(bool par, bool clear_space) {
          "we should have already filtered out humongous regions");
 
   _in_collection_set = false;
-  _is_gc_alloc_region = false;
 
   set_young_index_in_cset(-1);
   uninstall_surv_rate_group();
@@ -378,8 +379,7 @@ void HeapRegion::hr_clear(bool par, bool clear_space) {
 
 void HeapRegion::par_clear() {
   assert(used() == 0, "the region should have been already cleared");
-  assert(capacity() == (size_t) HeapRegion::GrainBytes,
-         "should be back to normal");
+  assert(capacity() == HeapRegion::GrainBytes, "should be back to normal");
   HeapRegionRemSet* hrrs = rem_set();
   hrrs->clear();
   CardTableModRefBS* ct_bs =
@@ -435,7 +435,7 @@ void HeapRegion::set_notHumongous() {
     assert(end() == _orig_end, "sanity");
   }
 
-  assert(capacity() == (size_t) HeapRegion::GrainBytes, "pre-condition");
+  assert(capacity() == HeapRegion::GrainBytes, "pre-condition");
   _humongous_type = NotHumongous;
   _humongous_start_region = NULL;
 }
@@ -484,16 +484,16 @@ void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
 
 
 HeapRegion::
-HeapRegion(G1BlockOffsetSharedArray* sharedOffsetArray,
-                     MemRegion mr, bool is_zeroed)
+HeapRegion(size_t hrs_index, G1BlockOffsetSharedArray* sharedOffsetArray,
+           MemRegion mr, bool is_zeroed)
   : G1OffsetTableContigSpace(sharedOffsetArray, mr, is_zeroed),
-    _next_fk(HeapRegionDCTOC::NoFilterKind),
-    _hrs_index(-1),
+    _hrs_index(hrs_index),
     _humongous_type(NotHumongous), _humongous_start_region(NULL),
-    _in_collection_set(false), _is_gc_alloc_region(false),
+    _in_collection_set(false),
     _next_in_special_set(NULL), _orig_end(NULL),
     _claimed(InitialClaimValue), _evacuation_failed(false),
     _prev_marked_bytes(0), _next_marked_bytes(0), _sort_index(-1),
+    _gc_efficiency(0.0),
     _young_type(NotYoung), _next_young_region(NULL),
     _next_dirty_cards_region(NULL), _next(NULL), _pending_removal(false),
 #ifdef ASSERT
@@ -720,8 +720,6 @@ void HeapRegion::print_on(outputStream* st) const {
   }
   if (in_collection_set())
     st->print(" CS");
-  else if (is_gc_alloc_region())
-    st->print(" A ");
   else
     st->print("   ");
   if (is_young())
@@ -740,20 +738,20 @@ void HeapRegion::print_on(outputStream* st) const {
 
 void HeapRegion::verify(bool allow_dirty) const {
   bool dummy = false;
-  verify(allow_dirty, /* use_prev_marking */ true, /* failures */ &dummy);
+  verify(allow_dirty, VerifyOption_G1UsePrevMarking, /* failures */ &dummy);
 }
 
 // This really ought to be commoned up into OffsetTableContigSpace somehow.
 // We would need a mechanism to make that code skip dead objects.
 
 void HeapRegion::verify(bool allow_dirty,
-                        bool use_prev_marking,
+                        VerifyOption vo,
                         bool* failures) const {
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
   *failures = false;
   HeapWord* p = bottom();
   HeapWord* prev_p = NULL;
-  VerifyLiveClosure vl_cl(g1, use_prev_marking);
+  VerifyLiveClosure vl_cl(g1, vo);
   bool is_humongous = isHumongous();
   bool do_bot_verify = !is_young();
   size_t object_num = 0;
@@ -778,7 +776,7 @@ void HeapRegion::verify(bool allow_dirty,
       return;
     }
 
-    if (!g1->is_obj_dead_cond(obj, this, use_prev_marking)) {
+    if (!g1->is_obj_dead_cond(obj, this, vo)) {
       if (obj->is_oop()) {
         klassOop klass = obj->klass();
         if (!klass->is_perm()) {

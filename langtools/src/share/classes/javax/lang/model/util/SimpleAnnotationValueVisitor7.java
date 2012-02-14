@@ -66,6 +66,7 @@ import javax.annotation.processing.SupportedSourceVersion;
  * @param <P> the type of the additional parameter to this visitor's methods.
  *
  * @see SimpleAnnotationValueVisitor6
+ * @see SimpleAnnotationValueVisitor8
  * @since 1.7
  */
 @SupportedSourceVersion(RELEASE_7)

@@ -808,29 +808,4 @@ Java_sun_awt_windows_WScrollPanePeer_setSpans(JNIEnv *env, jobject self,
     CATCH_BAD_ALLOC;
 }
 
-/*
- * Class:     sun_awt_windows_WScrollPanePeer
- * Method:    setTypedValue
- * Signature: (Ljava/awt/ScrollPaneAdjustable;II)V
- */
-JNIEXPORT void JNICALL
-Java_sun_awt_windows_WScrollPanePeer_setTypedValue(JNIEnv *env, jobject peer, jobject adjustable, jint value, jint type)
-{
-    // need this global ref to make the class unloadable (see 6500204)
-    static jclass scrollPaneAdj;
-    static jmethodID setTypedValueMID = 0;
-    if (setTypedValueMID == NULL) {
-        jclass clazz = env->FindClass("java/awt/ScrollPaneAdjustable");
-        if (safe_ExceptionOccurred(env)) {
-            env->ExceptionDescribe();
-            env->ExceptionClear();
-        }
-        setTypedValueMID = env->GetMethodID(clazz, "setTypedValue", "(II)V");
-        scrollPaneAdj = (jclass) env->NewGlobalRef(clazz);
-        env->DeleteLocalRef(clazz);
-        DASSERT(setTypedValueMID != NULL);
-    }
-    env->CallVoidMethod(adjustable, setTypedValueMID, value, type);
-}
-
 } /* extern "C" */

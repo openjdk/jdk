@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ final class SSLSecurity {
     {
         Provider provider = service.getProvider();
         String className = service.getClassName();
-        Class implClass;
+        Class<?> implClass;
         try {
             ClassLoader cl = provider.getClass().getClassLoader();
             if (cl == null) {
@@ -133,8 +133,8 @@ final class SSLSecurity {
              * or someone has removed classes from the jsse.jar file.
              */
 
-            Class typeClassJavax;
-            Class typeClassCom;
+            Class<?> typeClassJavax;
+            Class<?> typeClassCom;
             Object obj = null;
 
             /*
@@ -237,7 +237,7 @@ final class SSLSecurity {
     /*
      * Checks whether one class is the superclass of another
      */
-    private static boolean checkSuperclass(Class subclass, Class superclass) {
+    private static boolean checkSuperclass(Class<?> subclass, Class<?> superclass) {
         if ((subclass == null) || (superclass == null))
                 return false;
 
@@ -276,7 +276,6 @@ final class SSLSecurity {
  * object.  This also mean that anything going down into the SPI
  * needs to be wrapped, as well as anything coming back up.
  */
-
 final class SSLContextSpiWrapper extends SSLContextSpi {
 
     private javax.net.ssl.SSLContext theSSLContext;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,7 +300,7 @@ class OCSPChecker extends PKIXCertPathChecker {
                 if (filter != null) {
                     List<CertStore> certStores = pkixParams.getCertStores();
                     for (CertStore certStore : certStores) {
-                        Iterator i = null;
+                        Iterator<? extends Certificate> i = null;
                         try {
                             i = certStore.getCertificates(filter).iterator();
                         } catch (CertStoreException cse) {
@@ -392,7 +392,7 @@ class OCSPChecker extends PKIXCertPathChecker {
 
         List<AccessDescription> descriptions = aia.getAccessDescriptions();
         for (AccessDescription description : descriptions) {
-            if (description.getAccessMethod().equals(
+            if (description.getAccessMethod().equals((Object)
                 AccessDescription.Ad_OCSP_Id)) {
 
                 GeneralName generalName = description.getAccessLocation();

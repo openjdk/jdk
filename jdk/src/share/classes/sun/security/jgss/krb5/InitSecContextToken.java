@@ -74,9 +74,9 @@ class InitSecContextToken extends InitialToken {
 
         EncryptionKey subKey = apReq.getSubKey();
         if (subKey != null)
-            context.setKey(subKey);
+            context.setKey(Krb5Context.INITIATOR_SUBKEY, subKey);
         else
-            context.setKey(serviceTicket.getSessionKey());
+            context.setKey(Krb5Context.SESSION_KEY, serviceTicket.getSessionKey());
 
         if (!mutualRequired)
             context.resetPeerSequenceNumber(0);
@@ -117,13 +117,13 @@ class InitSecContextToken extends InitialToken {
 
         EncryptionKey subKey = apReq.getSubKey();
         if (subKey != null) {
-            context.setKey(subKey);
+            context.setKey(Krb5Context.INITIATOR_SUBKEY, subKey);
             /*
               System.out.println("Sub-Session key from authenticator is: " +
               getHexBytes(subKey.getBytes()) + "\n");
             */
         } else {
-            context.setKey(sessionKey);
+            context.setKey(Krb5Context.SESSION_KEY, sessionKey);
             //System.out.println("Sub-Session Key Missing in Authenticator.\n");
         }
 

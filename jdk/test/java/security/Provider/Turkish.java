@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,8 @@
 
 /**
  * @test
- * @bug 6220064
+ * @bug 6220064 7054918
  * @summary make sure everything works ok in the Turkish local (dotted/dotless i problem)
- * @run main/othervm Turkish
  * @author Andreas Sterbenz
  */
 
@@ -41,54 +40,59 @@ public class Turkish {
         Provider p1 = new TProvider("T1");
         System.out.println(p1.getServices()); // trigger service parsing
 
-        Locale.setDefault(new Locale("tr", "TR"));
+        Locale loc = Locale.getDefault();
+        try {
+            Locale.setDefault(new Locale("tr", "TR"));
 
-        Provider p2 = new TProvider("T2");
-        System.out.println(p2.getServices()); // trigger service parsing
+            Provider p2 = new TProvider("T2");
+            System.out.println(p2.getServices()); // trigger service parsing
 
-        System.out.println(Signature.getInstance("MD5withRSA"));
-        System.out.println(Signature.getInstance("md5withrsa"));
-        System.out.println(Signature.getInstance("MD5WITHRSA"));
-        Service s1, s2;
-        s1 = p1.getService("Signature", "MD5withRSA");
-        check(s1, null);
-        check(s1, p1.getService("Signature", "md5withrsa"));
-        check(s1, p1.getService("Signature", "MD5WITHRSA"));
-        check(s1, p1.getService("Signature", "MD5RSA"));
-        check(s1, p1.getService("Signature", "md5rsa"));
-        check(s1, p1.getService("Signature", "MD5rsa"));
+            System.out.println(Signature.getInstance("MD5withRSA"));
+            System.out.println(Signature.getInstance("md5withrsa"));
+            System.out.println(Signature.getInstance("MD5WITHRSA"));
+            Service s1, s2;
+            s1 = p1.getService("Signature", "MD5withRSA");
+            check(s1, null);
+            check(s1, p1.getService("Signature", "md5withrsa"));
+            check(s1, p1.getService("Signature", "MD5WITHRSA"));
+            check(s1, p1.getService("Signature", "MD5RSA"));
+            check(s1, p1.getService("Signature", "md5rsa"));
+            check(s1, p1.getService("Signature", "MD5rsa"));
 
-        s1 = p1.getService("Signature", "SHAwithRSA");
-        check(s1, null);
-        check(s1, p1.getService("Signature", "shawithrsa"));
-        check(s1, p1.getService("Signature", "SHAWITHRSA"));
-        check(s1, p1.getService("Signature", "SHARSA"));
-        check(s1, p1.getService("Signature", "sharsa"));
-        check(s1, p1.getService("Signature", "SHArsa"));
-        check(s1, p1.getService("Signature", "SHA1RSA"));
-        check(s1, p1.getService("Signature", "sha1rsa"));
-        check(s1, p1.getService("Signature", "SHA1rsa"));
+            s1 = p1.getService("Signature", "SHAwithRSA");
+            check(s1, null);
+            check(s1, p1.getService("Signature", "shawithrsa"));
+            check(s1, p1.getService("Signature", "SHAWITHRSA"));
+            check(s1, p1.getService("Signature", "SHARSA"));
+            check(s1, p1.getService("Signature", "sharsa"));
+            check(s1, p1.getService("Signature", "SHArsa"));
+            check(s1, p1.getService("Signature", "SHA1RSA"));
+            check(s1, p1.getService("Signature", "sha1rsa"));
+            check(s1, p1.getService("Signature", "SHA1rsa"));
 
-        s1 = p2.getService("Signature", "MD5withRSA");
-        check(s1, null);
-        check(s1, p2.getService("Signature", "md5withrsa"));
-        check(s1, p2.getService("Signature", "MD5WITHRSA"));
-        check(s1, p2.getService("Signature", "MD5RSA"));
-        check(s1, p2.getService("Signature", "md5rsa"));
-        check(s1, p2.getService("Signature", "MD5rsa"));
+            s1 = p2.getService("Signature", "MD5withRSA");
+            check(s1, null);
+            check(s1, p2.getService("Signature", "md5withrsa"));
+            check(s1, p2.getService("Signature", "MD5WITHRSA"));
+            check(s1, p2.getService("Signature", "MD5RSA"));
+            check(s1, p2.getService("Signature", "md5rsa"));
+            check(s1, p2.getService("Signature", "MD5rsa"));
 
-        s1 = p2.getService("Signature", "SHAwithRSA");
-        check(s1, null);
-        check(s1, p2.getService("Signature", "shawithrsa"));
-        check(s1, p2.getService("Signature", "SHAWITHRSA"));
-        check(s1, p2.getService("Signature", "SHARSA"));
-        check(s1, p2.getService("Signature", "sharsa"));
-        check(s1, p2.getService("Signature", "SHArsa"));
-        check(s1, p2.getService("Signature", "SHA1RSA"));
-        check(s1, p2.getService("Signature", "sha1rsa"));
-        check(s1, p2.getService("Signature", "SHA1rsa"));
+            s1 = p2.getService("Signature", "SHAwithRSA");
+            check(s1, null);
+            check(s1, p2.getService("Signature", "shawithrsa"));
+            check(s1, p2.getService("Signature", "SHAWITHRSA"));
+            check(s1, p2.getService("Signature", "SHARSA"));
+            check(s1, p2.getService("Signature", "sharsa"));
+            check(s1, p2.getService("Signature", "SHArsa"));
+            check(s1, p2.getService("Signature", "SHA1RSA"));
+            check(s1, p2.getService("Signature", "sha1rsa"));
+            check(s1, p2.getService("Signature", "SHA1rsa"));
 
-        System.out.println("OK");
+            System.out.println("OK");
+        } finally {
+            Locale.setDefault(loc);
+        }
     }
 
     private static void check(Service s1, Service s2) throws Exception {

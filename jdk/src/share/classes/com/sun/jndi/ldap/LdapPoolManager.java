@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.jndi.ldap;
 import java.io.PrintStream;
 import java.io.OutputStream;
 import java.util.Hashtable;
+import java.util.Locale;
 import java.util.StringTokenizer;
 
 import javax.naming.ldap.Control;
@@ -133,7 +134,7 @@ public final class LdapPoolManager {
         String mech;
         int p;
         for (int i = 0; i < count; i++) {
-            mech = parser.nextToken().toLowerCase();
+            mech = parser.nextToken().toLowerCase(Locale.ENGLISH);
             if (mech.equals("anonymous")) {
                 mech = "none";
             }
@@ -214,7 +215,7 @@ public final class LdapPoolManager {
      *
      */
     static boolean isPoolingAllowed(String socketFactory, OutputStream trace,
-        String authMech, String protocol, Hashtable env)
+        String authMech, String protocol, Hashtable<?,?> env)
                 throws NamingException {
 
         if (trace != null && !debug
@@ -235,7 +236,7 @@ public final class LdapPoolManager {
         if ((socketFactory != null) &&
              !socketFactory.equals(LdapCtx.DEFAULT_SSL_FACTORY)) {
             try {
-                Class socketFactoryClass = Obj.helper.loadClass(socketFactory);
+                Class<?> socketFactoryClass = Obj.helper.loadClass(socketFactory);
                 Class[] interfaces = socketFactoryClass.getInterfaces();
                 for (int i = 0; i < interfaces.length; i++) {
                     if (interfaces[i].getCanonicalName().equals(COMPARATOR)) {
@@ -294,7 +295,7 @@ public final class LdapPoolManager {
     static LdapClient getLdapClient(String host, int port, String socketFactory,
         int connTimeout, int readTimeout, OutputStream trace, int version,
         String authMech, Control[] ctls, String protocol, String user,
-        Object passwd, Hashtable env) throws NamingException {
+        Object passwd, Hashtable<?,?> env) throws NamingException {
 
         // Create base identity for LdapClient
         ClientId id = null;
@@ -385,9 +386,9 @@ public final class LdapPoolManager {
 
     private static final String getProperty(final String propName,
         final String defVal) {
-        return (String) AccessController.doPrivileged(
-            new PrivilegedAction() {
-            public Object run() {
+        return AccessController.doPrivileged(
+            new PrivilegedAction<String>() {
+            public String run() {
                 try {
                     return System.getProperty(propName, defVal);
                 } catch (SecurityException e) {
@@ -399,9 +400,9 @@ public final class LdapPoolManager {
 
     private static final int getInteger(final String propName,
         final int defVal) {
-        Integer val = (Integer) AccessController.doPrivileged(
-            new PrivilegedAction() {
-            public Object run() {
+        Integer val = AccessController.doPrivileged(
+            new PrivilegedAction<Integer>() {
+            public Integer run() {
                 try {
                     return Integer.getInteger(propName, defVal);
                 } catch (SecurityException e) {
@@ -414,9 +415,9 @@ public final class LdapPoolManager {
 
     private static final long getLong(final String propName,
         final long defVal) {
-        Long val = (Long) AccessController.doPrivileged(
-            new PrivilegedAction() {
-            public Object run() {
+        Long val = AccessController.doPrivileged(
+            new PrivilegedAction<Long>() {
+            public Long run() {
                 try {
                     return Long.getLong(propName, defVal);
                 } catch (SecurityException e) {

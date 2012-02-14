@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,27 +32,34 @@ import java.util.*;
 public class Bug6190861 {
 
     static public void main(String[] args) {
-        Locale.setDefault(new Locale("en", "US"));
+        Locale reservedLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(new Locale("en", "US"));
 
-        List localeList = new ArrayList();
-        localeList.add(Locale.ENGLISH);
-        localeList.add(Locale.KOREA);
-        localeList.add(Locale.UK);
-        localeList.add(new Locale("en", "CA"));
-        localeList.add(Locale.ENGLISH);
+            List localeList = new ArrayList();
+            localeList.add(Locale.ENGLISH);
+            localeList.add(Locale.KOREA);
+            localeList.add(Locale.UK);
+            localeList.add(new Locale("en", "CA"));
+            localeList.add(Locale.ENGLISH);
 
-        Iterator iter = localeList.iterator();
-        while (iter.hasNext()){
-            Locale currentLocale = (Locale) iter.next();
-            System.out.println("\ncurrentLocale = "
+            Iterator iter = localeList.iterator();
+            while (iter.hasNext()){
+                Locale currentLocale = (Locale) iter.next();
+                System.out.println("\ncurrentLocale = "
                                + currentLocale.getDisplayName());
 
-            ResourceBundle messages = ResourceBundle.getBundle("Bug6190861Data",currentLocale);
+                ResourceBundle messages =
+                    ResourceBundle.getBundle("Bug6190861Data",currentLocale);
 
-            Locale messagesLocale = messages.getLocale();
-            System.out.println("messagesLocale = "
+                Locale messagesLocale = messages.getLocale();
+                System.out.println("messagesLocale = "
                                + messagesLocale.getDisplayName());
-            checkMessages(messages);
+                checkMessages(messages);
+            }
+        } finally {
+            // restore the reserved locale
+            Locale.setDefault(reservedLocale);
         }
     }
 

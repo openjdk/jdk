@@ -2012,6 +2012,16 @@ void Node_Stack::grow() {
   _inode_top = _inodes + old_top;        // restore _top
 }
 
+// Node_Stack is used to map nodes.
+Node* Node_Stack::find(uint idx) const {
+  uint sz = size();
+  for (uint i=0; i < sz; i++) {
+    if (idx == index_at(i) )
+      return node_at(i);
+  }
+  return NULL;
+}
+
 //=============================================================================
 uint TypeNode::size_of() const { return sizeof(*this); }
 #ifndef PRODUCT

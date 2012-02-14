@@ -126,38 +126,15 @@
             <a href="http://openjdk.java.net/guide/repositories.html#installConfig">
                 Developer Guide: Installing and Configuring Mercurial</a>
             section for more information.
-            The Forest Extension is not part of the Mercurial install,
-            and is optional,
-            but can be obtained with the following commands:
-            <blockquote>
-                <tt>
-                    hg clone https://bitbucket.org/pmezard/hgforest-crew/overview/ <i>YourHgForest</i>
-                </tt>
-            </blockquote>
-            Once you have the file <tt>forest.py</tt>, you need to add these
-            lines to your <tt>${HOME}/.hgrc</tt> file:
-            <blockquote>
-                <tt>
-                    [extensions]
-                    <br>forest = <i>YourHgForest</i>/forest.py
-                </tt>
-            </blockquote>
 
             <!-- ------------------------------------------------------ -->
             <h3><a name="get_source">Getting the Source</a></h3>
             <blockquote>
                 To get the entire set of OpenJDK Mercurial repositories
-                using the Forest Extension:
+                use the script <code>get_source.sh</code> located in the root repository:
                 <blockquote>
                     <tt>
-                        hg fclone http://hg.openjdk.java.net/jdk7/jdk7 <i>YourOpenJDK</i>
-                    </tt>
-                </blockquote>
-                To get the entire set of OpenJDK Mercurial repositories
-                without using the Forest Extension:
-                <blockquote>
-                    <tt>
-                        hg clone http://hg.openjdk.java.net/jdk7/jdk7 <i>YourOpenJDK</i>
+                        hg clone http://hg.openjdk.java.net/jdk8/jdk8 <i>YourOpenJDK</i>
                         <br>cd <i>YourOpenJDK</i>
                         <br>sh ./get_source.sh
                     </tt>
@@ -172,9 +149,6 @@
                         <br>sh ./make/scripts/hgforest.sh pull -u
                     </tt>
                 </blockquote>
-                You may find this script <tt>make/scripts/hgforest.sh</tt> faster
-                than the <tt>hg</tt> forest commands provided by the
-                Forest Extension.
             </blockquote>
 
         </blockquote>
@@ -558,7 +532,7 @@
                     understood that this is not ideal for the open source community.
                     It is possible this process could change in the future.
                     <br>
-                    <b>NOTE:</b> The <a href="http://download.java.net/openjdk/jdk7/">
+                    <b>NOTE:</b> The <a href="http://download.java.net/openjdk/jdk8/">
                         Complete OpenJDK Source Bundles</a> <u>will</u> contain the JAXP and
                     JAX-WS sources.
                 </p>
@@ -578,7 +552,7 @@
                         </li>
                         <li>
                             The OpenJDK team copies this new bundle into shared
-                            area (e.g. <tt>/java/devtools/share/jdk7-drops</tt>).
+                            area (e.g. <tt>/java/devtools/share/jdk8-drops</tt>).
                             Older bundles are never deleted so we retain the history.
                         </li>
                         <li>
@@ -1726,7 +1700,7 @@
                     The location of any source drop bundles
                     (see <a href="#drops">Managing the Source Drops</a>).
                     The default will be
-                    <tt>$(ALT_JDK_DEVTOOLS_PATH)/share/jdk7-drops</tt>.
+                    <tt>$(ALT_JDK_DEVTOOLS_PATH)/share/jdk8-drops</tt>.
                 </dd>
                 <dt><a name="ALT_UNIXCCS_PATH"><tt>ALT_UNIXCCS_PATH</tt></a></dt>
                 <dd>
@@ -1931,7 +1905,7 @@
                             PATH, INCLUDE, LIB, LIBPATH, and WINDOWSSDKDIR
                             variables set in your shell environment.
                             These bat files are not easy to use from a shell environment.
-                            However, there is a script placed in the root jdk7 repository called
+                            However, there is a script placed in the root jdk8 repository called
                             vsvars.sh that can help, it should only be done once in a shell
                             that will be doing the build, e.g.<br>
                             <tt>sh ./make/scripts/vsvars.sh -v10 > settings<br>

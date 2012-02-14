@@ -66,41 +66,6 @@ void ct_freq_update_histo_and_reset() {
 }
 #endif
 
-
-class IntoCSOopClosure: public OopsInHeapRegionClosure {
-  OopsInHeapRegionClosure* _blk;
-  G1CollectedHeap* _g1;
-public:
-  IntoCSOopClosure(G1CollectedHeap* g1, OopsInHeapRegionClosure* blk) :
-    _g1(g1), _blk(blk) {}
-  void set_region(HeapRegion* from) {
-    _blk->set_region(from);
-  }
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(      oop* p) { do_oop_work(p); }
-  template <class T> void do_oop_work(T* p) {
-    oop obj = oopDesc::load_decode_heap_oop(p);
-    if (_g1->obj_in_cs(obj)) _blk->do_oop(p);
-  }
-  bool apply_to_weak_ref_discovered_field() { return true; }
-  bool idempotent() { return true; }
-};
-
-class VerifyRSCleanCardOopClosure: public OopClosure {
-  G1CollectedHeap* _g1;
-public:
-  VerifyRSCleanCardOopClosure(G1CollectedHeap* g1) : _g1(g1) {}
-
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(      oop* p) { do_oop_work(p); }
-  template <class T> void do_oop_work(T* p) {
-    oop obj = oopDesc::load_decode_heap_oop(p);
-    HeapRegion* to = _g1->heap_region_containing(obj);
-    guarantee(to == NULL || !to->in_collection_set(),
-              "Missed a rem set member.");
-  }
-};
-
 G1RemSet::G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs)
   : _g1(g1), _conc_refine_cards(0),
     _ct_bs(ct_bs), _g1p(_g1->g1_policy()),
@@ -269,6 +234,7 @@ void G1RemSet::scanRS(OopsInHeapRegionClosure* oc, int worker_i) {
   HeapRegion *startRegion = calculateStartRegion(worker_i);
 
   ScanRSClosure scanRScl(oc, worker_i);
+
   _g1->collection_set_iterate_from(startRegion, &scanRScl);
   scanRScl.set_try_claimed();
   _g1->collection_set_iterate_from(startRegion, &scanRScl);
@@ -318,6 +284,7 @@ void G1RemSet::updateRS(DirtyCardQueue* into_cset_dcq, int worker_i) {
   double start = os::elapsedTime();
   // Apply the given closure to all remaining log entries.
   RefineRecordRefsIntoCSCardTableEntryClosure into_cset_update_rs_cl(_g1, into_cset_dcq);
+
   _g1->iterate_dirty_card_closure(&into_cset_update_rs_cl, into_cset_dcq, false, worker_i);
 
   // Now there should be no dirty cards.
@@ -331,31 +298,6 @@ void G1RemSet::updateRS(DirtyCardQueue* into_cset_dcq, int worker_i) {
 
   _g1p->record_update_rs_time(worker_i, (os::elapsedTime() - start) * 1000.0);
 }
-
-#ifndef PRODUCT
-class PrintRSClosure : public HeapRegionClosure {
-  int _count;
-public:
-  PrintRSClosure() : _count(0) {}
-  bool doHeapRegion(HeapRegion* r) {
-    HeapRegionRemSet* hrrs = r->rem_set();
-    _count += (int) hrrs->occupied();
-    if (hrrs->occupied() == 0) {
-      gclog_or_tty->print("Heap Region [" PTR_FORMAT ", " PTR_FORMAT ") "
-                          "has no remset entries\n",
-                          r->bottom(), r->end());
-    } else {
-      gclog_or_tty->print("Printing rem set for heap region [" PTR_FORMAT ", " PTR_FORMAT ")\n",
-                          r->bottom(), r->end());
-      r->print();
-      hrrs->print();
-      gclog_or_tty->print("\nDone printing rem set\n");
-    }
-    return false;
-  }
-  int occupied() {return _count;}
-};
-#endif
 
 class CountRSSizeClosure: public HeapRegionClosure {
   size_t _n;
@@ -482,10 +424,6 @@ void G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
 }
 
 void G1RemSet::prepare_for_oops_into_collection_set_do() {
-#if G1_REM_SET_LOGGING
-  PrintRSClosure cl;
-  _g1->collection_set_iterate(&cl);
-#endif
   cleanupHRRS();
   ConcurrentG1Refine* cg1r = _g1->concurrent_g1_refine();
   _g1->set_refine_cte_cl_concurrency(false);
@@ -503,14 +441,6 @@ void G1RemSet::prepare_for_oops_into_collection_set_do() {
   _total_cards_scanned = 0;
 }
 
-
-class cleanUpIteratorsClosure : public HeapRegionClosure {
-  bool doHeapRegion(HeapRegion *r) {
-    HeapRegionRemSet* hrrs = r->rem_set();
-    hrrs->init_for_par_iteration();
-    return false;
-  }
-};
 
 // This closure, applied to a DirtyCardQueueSet, is used to immediately
 // update the RSets for the regions in the CSet. For each card it iterates
@@ -572,18 +502,13 @@ public:
 void G1RemSet::cleanup_after_oops_into_collection_set_do() {
   guarantee( _cards_scanned != NULL, "invariant" );
   _total_cards_scanned = 0;
-  for (uint i = 0; i < n_workers(); ++i)
+  for (uint i = 0; i < n_workers(); ++i) {
     _total_cards_scanned += _cards_scanned[i];
+  }
   FREE_C_HEAP_ARRAY(size_t, _cards_scanned);
   _cards_scanned = NULL;
   // Cleanup after copy
-#if G1_REM_SET_LOGGING
-  PrintRSClosure cl;
-  _g1->heap_region_iterate(&cl);
-#endif
   _g1->set_refine_cte_cl_concurrency(true);
-  cleanUpIteratorsClosure iterClosure;
-  _g1->collection_set_iterate(&iterClosure);
   // Set all cards back to clean.
   _g1->cleanUpCardTable();
 

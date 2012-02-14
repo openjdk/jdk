@@ -48,6 +48,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 
 //
 // DefNewGeneration functions.
@@ -903,6 +906,10 @@ void DefNewGeneration::gc_epilogue(bool full) {
     eden()->check_mangled_unused_area_complete();
     from()->check_mangled_unused_area_complete();
     to()->check_mangled_unused_area_complete();
+  }
+
+  if (!CleanChunkPoolAsync) {
+    Chunk::clean_chunk_pool();
   }
 
   // update the generation and space performance counters

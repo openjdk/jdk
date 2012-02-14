@@ -25,6 +25,10 @@
  * @test
  * @bug 4429176
  * @summary need to sync up SSL sockets with merlin java.net changes
+ * @run main/othervm NewSocketMethods
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  */
 
 import java.io.*;

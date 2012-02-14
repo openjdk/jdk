@@ -60,6 +60,10 @@
 # include "os_windows.inline.hpp"
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.inline.hpp"
+# include "thread_bsd.inline.hpp"
+#endif
 
 # include <signal.h>
 
@@ -116,7 +120,11 @@ char* os::iso8601_time(char* buffer, size_t buffer_length) {
     assert(false, "Failed localtime_pd");
     return NULL;
   }
+#if defined(_ALLBSD_SOURCE)
+  const time_t zone = (time_t) time_struct.tm_gmtoff;
+#else
   const time_t zone = timezone;
+#endif
 
   // If daylight savings time is in effect,
   // we are 1 hour East of our time zone
@@ -384,6 +392,13 @@ void* os::native_java_library() {
     if (_native_java_library == NULL) {
       vm_exit_during_initialization("Unable to load native library", ebuf);
     }
+
+#if defined(__OpenBSD__)
+    // Work-around OpenBSD's lack of $ORIGIN support by pre-loading libnet.so
+    // ignore errors
+    dll_build_name(buffer, sizeof(buffer), Arguments::get_dll_dir(), "net");
+    dll_load(buffer, ebuf, sizeof(ebuf));
+#endif
   }
   static jboolean onLoaded = JNI_FALSE;
   if (onLoaded) {
@@ -761,6 +776,7 @@ void os::print_cpu_info(outputStream* st) {
   // st->print("(active %d)", os::active_processor_count());
   st->print(" %s", VM_Version::cpu_features());
   st->cr();
+  pd_print_cpu_info(st);
 }
 
 void os::print_date_and_time(outputStream *st) {
@@ -1079,6 +1095,9 @@ bool os::set_boot_path(char fileSep, char pathSep) {
         "%/lib/jsse.jar:"
         "%/lib/jce.jar:"
         "%/lib/charsets.jar:"
+#ifdef __APPLE__
+        "%/lib/JObjC.jar:"
+#endif
         "%/classes";
     char* sysclasspath = format_boot_path(classpath_format, home, home_len, fileSep, pathSep);
     if (sysclasspath == NULL) return false;
@@ -1231,6 +1250,17 @@ size_t os::page_size_for_region(size_t region_min_size, size_t region_max_size,
 }
 
 #ifndef PRODUCT
+void os::trace_page_sizes(const char* str, const size_t* page_sizes, int count)
+{
+  if (TracePageSizes) {
+    tty->print("%s: ", str);
+    for (int i = 0; i < count; ++i) {
+      tty->print(" " SIZE_FORMAT, page_sizes[i]);
+    }
+    tty->cr();
+  }
+}
+
 void os::trace_page_sizes(const char* str, const size_t region_min_size,
                           const size_t region_max_size, const size_t page_size,
                           const char* base, const size_t size)
@@ -1298,7 +1328,7 @@ int os::get_line_chars(int fd, char* buf, const size_t bsize){
   size_t sz, i = 0;
 
   // read until EOF, EOL or buf is full
-  while ((sz = (int) read(fd, &buf[i], 1)) == 1 && i < (bsize-1) && buf[i] != '\n') {
+  while ((sz = (int) read(fd, &buf[i], 1)) == 1 && i < (bsize-2) && buf[i] != '\n') {
      ++i;
   }
 
@@ -1319,7 +1349,7 @@ int os::get_line_chars(int fd, char* buf, const size_t bsize){
   }
 
   // line is longer than size of buf, skip to EOL
-  int ch;
+  char ch;
   while (read(fd, &ch, 1) == 1 && ch != '\n') {
     // Do nothing
   }

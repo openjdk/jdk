@@ -425,7 +425,7 @@ reg_class dflt_reg(R_F0, R_F1, R_F2, R_F3, R_F4, R_F5, R_F6, R_F7, R_F8, R_F9, R
 // but they are used with the "Op_RegD" type, and always occur in even/odd pairs.
 // This class is usable for mis-aligned loads as happen in I2C adapters.
 reg_class dflt_low_reg(R_F0, R_F1, R_F2, R_F3, R_F4, R_F5, R_F6, R_F7, R_F8, R_F9, R_F10,R_F11,R_F12,R_F13,R_F14,R_F15,
-                   R_F16,R_F17,R_F18,R_F19,R_F20,R_F21,R_F22,R_F23,R_F24,R_F25,R_F26,R_F27,R_F28,R_F29,R_F30,R_F31 );
+                   R_F16,R_F17,R_F18,R_F19,R_F20,R_F21,R_F22,R_F23,R_F24,R_F25,R_F26,R_F27,R_F28,R_F29);
 %}
 
 //----------DEFINITION BLOCK---------------------------------------------------
@@ -460,6 +460,8 @@ source_hpp %{
 // Must be visible to the DFA in dfa_sparc.cpp
 extern bool can_branch_register( Node *bol, Node *cmp );
 
+extern bool use_block_zeroing(Node* count);
+
 // Macros to extract hi & lo halves from a long pair.
 // G0 is not part of any long pair, so assert on that.
 // Prevents accidentally using G1 instead of G0.
@@ -470,9 +472,6 @@ extern bool can_branch_register( Node *bol, Node *cmp );
 
 source %{
 #define __ _masm.
-
-// Block initializing store
-#define ASI_BLK_INIT_QUAD_LDD_P    0xE2
 
 // tertiary op of a LoadP or StoreP encoding
 #define REGP_OP true
@@ -522,6 +521,12 @@ bool can_branch_register( Node *bol, Node *cmp ) {
     return true;
   }
   return false;
+}
+
+bool use_block_zeroing(Node* count) {
+  // Use BIS for zeroing if count is not constant
+  // or it is >= BlockZeroingLowLimit.
+  return UseBlockZeroing && (count->find_intptr_t_con(BlockZeroingLowLimit) >= BlockZeroingLowLimit);
 }
 
 // ****************************************************************************
@@ -835,6 +840,7 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, const MachNode* n, int primary, int te
           !(n->ideal_Opcode()==Op_ConvI2D   && ld_op==Op_LoadF) &&
           !(n->ideal_Opcode()==Op_PrefetchRead  && ld_op==Op_LoadI) &&
           !(n->ideal_Opcode()==Op_PrefetchWrite && ld_op==Op_LoadI) &&
+          !(n->ideal_Opcode()==Op_PrefetchAllocation && ld_op==Op_LoadI) &&
           !(n->ideal_Opcode()==Op_Load2I    && ld_op==Op_LoadD) &&
           !(n->ideal_Opcode()==Op_Load4C    && ld_op==Op_LoadD) &&
           !(n->ideal_Opcode()==Op_Load4S    && ld_op==Op_LoadD) &&
@@ -1326,17 +1332,17 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
 
   // --------------------------------------
   // Check for float->int copy; requires a trip through memory
-  if( src_first_rc == rc_float && dst_first_rc == rc_int ) {
+  if (src_first_rc == rc_float && dst_first_rc == rc_int && UseVIS < 3) {
     int offset = frame::register_save_words*wordSize;
-    if( cbuf ) {
+    if (cbuf) {
       emit3_simm13( *cbuf, Assembler::arith_op, R_SP_enc, Assembler::sub_op3, R_SP_enc, 16 );
       impl_helper(this,cbuf,ra_,do_size,false,offset,src_first,Assembler::stf_op3 ,"STF ",size, st);
       impl_helper(this,cbuf,ra_,do_size,true ,offset,dst_first,Assembler::lduw_op3,"LDUW",size, st);
       emit3_simm13( *cbuf, Assembler::arith_op, R_SP_enc, Assembler::add_op3, R_SP_enc, 16 );
     }
 #ifndef PRODUCT
-    else if( !do_size ) {
-      if( size != 0 ) st->print("\n\t");
+    else if (!do_size) {
+      if (size != 0) st->print("\n\t");
       st->print(  "SUB    R_SP,16,R_SP\n");
       impl_helper(this,cbuf,ra_,do_size,false,offset,src_first,Assembler::stf_op3 ,"STF ",size, st);
       impl_helper(this,cbuf,ra_,do_size,true ,offset,dst_first,Assembler::lduw_op3,"LDUW",size, st);
@@ -1344,6 +1350,21 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
     }
 #endif
     size += 16;
+  }
+
+  // Check for float->int copy on T4
+  if (src_first_rc == rc_float && dst_first_rc == rc_int && UseVIS >= 3) {
+    // Further check for aligned-adjacent pair, so we can use a double move
+    if ((src_first&1)==0 && src_first+1 == src_second && (dst_first&1)==0 && dst_first+1 == dst_second)
+      return impl_mov_helper(cbuf,do_size,src_first,dst_first,Assembler::mftoi_op3,Assembler::mdtox_opf,"MOVDTOX",size, st);
+    size  =  impl_mov_helper(cbuf,do_size,src_first,dst_first,Assembler::mftoi_op3,Assembler::mstouw_opf,"MOVSTOUW",size, st);
+  }
+  // Check for int->float copy on T4
+  if (src_first_rc == rc_int && dst_first_rc == rc_float && UseVIS >= 3) {
+    // Further check for aligned-adjacent pair, so we can use a double move
+    if ((src_first&1)==0 && src_first+1 == src_second && (dst_first&1)==0 && dst_first+1 == dst_second)
+      return impl_mov_helper(cbuf,do_size,src_first,dst_first,Assembler::mftoi_op3,Assembler::mxtod_opf,"MOVXTOD",size, st);
+    size  =  impl_mov_helper(cbuf,do_size,src_first,dst_first,Assembler::mftoi_op3,Assembler::mwtos_opf,"MOVWTOS",size, st);
   }
 
   // --------------------------------------
@@ -1678,7 +1699,6 @@ void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 
 void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   MacroAssembler _masm(&cbuf);
-  Label L;
   Register G5_ic_reg  = reg_to_register_object(Matcher::inline_cache_reg_encode());
   Register temp_reg   = G3;
   assert( G5_ic_reg != temp_reg, "conflicting registers" );
@@ -1820,8 +1840,10 @@ const bool Matcher::convL2FSupported(void) {
 //
 // NOTE: If the platform does not provide any short branch variants, then
 //       this method should return false for offset 0.
-bool Matcher::is_short_branch_offset(int rule, int offset) {
-  return false;
+bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
+  // The passed offset is relative to address of the branch.
+  // Don't need to adjust the offset.
+  return UseCBCond && Assembler::is_simm(offset, 12);
 }
 
 const bool Matcher::isSimpleConstant64(jlong value) {
@@ -2300,60 +2322,23 @@ encode %{
     __ delayed()->nop();
   %}
 
-  enc_class enc_bp( Label labl, cmpOp cmp, flagsReg cc ) %{
+  enc_class enc_bp( label labl, cmpOp cmp, flagsReg cc ) %{
     MacroAssembler _masm(&cbuf);
-    Label &L = *($labl$$label);
+    Label* L = $labl$$label;
     Assembler::Predict predict_taken =
-      cbuf.is_backward_branch(L) ? Assembler::pt : Assembler::pn;
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
 
-    __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, L);
+    __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, *L);
     __ delayed()->nop();
   %}
 
-  enc_class enc_bpl( Label labl, cmpOp cmp, flagsRegL cc ) %{
+  enc_class enc_bpr( label labl, cmpOp_reg cmp, iRegI op1 ) %{
     MacroAssembler _masm(&cbuf);
-    Label &L = *($labl$$label);
+    Label* L = $labl$$label;
     Assembler::Predict predict_taken =
-      cbuf.is_backward_branch(L) ? Assembler::pt : Assembler::pn;
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
 
-    __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::xcc, predict_taken, L);
-    __ delayed()->nop();
-  %}
-
-  enc_class enc_bpx( Label labl, cmpOp cmp, flagsRegP cc ) %{
-    MacroAssembler _masm(&cbuf);
-    Label &L = *($labl$$label);
-    Assembler::Predict predict_taken =
-      cbuf.is_backward_branch(L) ? Assembler::pt : Assembler::pn;
-
-    __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::ptr_cc, predict_taken, L);
-    __ delayed()->nop();
-  %}
-
-  enc_class enc_fbp( Label labl, cmpOpF cmp, flagsRegF cc ) %{
-    MacroAssembler _masm(&cbuf);
-    Label &L = *($labl$$label);
-    Assembler::Predict predict_taken =
-      cbuf.is_backward_branch(L) ? Assembler::pt : Assembler::pn;
-
-    __ fbp( (Assembler::Condition)($cmp$$cmpcode), false, (Assembler::CC)($cc$$reg), predict_taken, L);
-    __ delayed()->nop();
-  %}
-
-  enc_class enc_ba( Label labl ) %{
-    MacroAssembler _masm(&cbuf);
-    Label &L = *($labl$$label);
-    __ ba(false, L);
-    __ delayed()->nop();
-  %}
-
-  enc_class enc_bpr( Label labl, cmpOp_reg cmp, iRegI op1 ) %{
-    MacroAssembler _masm(&cbuf);
-    Label &L = *$labl$$label;
-    Assembler::Predict predict_taken =
-      cbuf.is_backward_branch(L) ? Assembler::pt : Assembler::pn;
-
-    __ bpr( (Assembler::RCondition)($cmp$$cmpcode), false, predict_taken, as_Register($op1$$reg), L);
+    __ bpr( (Assembler::RCondition)($cmp$$cmpcode), false, predict_taken, as_Register($op1$$reg), *L);
     __ delayed()->nop();
   %}
 
@@ -2834,25 +2819,6 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
     __ float_cmp( $primary, -1, Fsrc1, Fsrc2, Rdst);
   %}
 
-  // Compiler ensures base is doubleword aligned and cnt is count of doublewords
-  enc_class enc_Clear_Array(iRegX cnt, iRegP base, iRegX temp) %{
-    MacroAssembler _masm(&cbuf);
-    Register    nof_bytes_arg   = reg_to_register_object($cnt$$reg);
-    Register    nof_bytes_tmp    = reg_to_register_object($temp$$reg);
-    Register    base_pointer_arg = reg_to_register_object($base$$reg);
-
-    Label loop;
-    __ mov(nof_bytes_arg, nof_bytes_tmp);
-
-    // Loop and clear, walking backwards through the array.
-    // nof_bytes_tmp (if >0) is always the number of bytes to zero
-    __ bind(loop);
-    __ deccc(nof_bytes_tmp, 8);
-    __ br(Assembler::greaterEqual, true, Assembler::pt, loop);
-    __ delayed()-> stx(G0, base_pointer_arg, nof_bytes_tmp);
-    // %%%% this mini-loop must not cross a cache boundary!
-  %}
-
 
   enc_class enc_String_Compare(o0RegP str1, o1RegP str2, g3RegI cnt1, g4RegI cnt2, notemp_iRegI result) %{
     Label Ldone, Lloop;
@@ -2971,7 +2937,7 @@ enc_class enc_String_Equals(o0RegP str1, o1RegP str2, g3RegI cnt, notemp_iRegI r
     __ brx(Assembler::equal, true, Assembler::pn, Ldone);
     __ delayed()->add(G0, 1, result_reg);
 
-    __ br_on_reg_cond(Assembler::rc_z, true, Assembler::pn, cnt_reg, Ldone);
+    __ cmp_zero_and_br(Assembler::zero, cnt_reg, Ldone, true, Assembler::pn);
     __ delayed()->add(G0, 1, result_reg); // count == 0
 
     //rename registers
@@ -2991,7 +2957,7 @@ enc_class enc_String_Equals(o0RegP str1, o1RegP str2, g3RegI cnt, notemp_iRegI r
     // Compare char[] arrays aligned to 4 bytes.
     __ char_arrays_equals(str1_reg, str2_reg, limit_reg, result_reg,
                           chr1_reg, chr2_reg, Ldone);
-    __ ba(false,Ldone);
+    __ ba(Ldone);
     __ delayed()->add(G0, 1, result_reg);
 
     // char by char compare
@@ -3050,7 +3016,7 @@ enc_class enc_Array_Equals(o0RegP ary1, o1RegP ary2, g3RegP tmp1, notemp_iRegI r
     __ br(Assembler::notEqual, true, Assembler::pn, Ldone);
     __ delayed()->mov(G0, result_reg);     // not equal
 
-    __ br_on_reg_cond(Assembler::rc_z, true, Assembler::pn, tmp1_reg, Ldone);
+    __ cmp_zero_and_br(Assembler::zero, tmp1_reg, Ldone, true, Assembler::pn);
     __ delayed()->add(G0, 1, result_reg); // zero-length arrays are equal
 
     // load array addresses
@@ -3337,10 +3303,10 @@ op_attrib op_cost(1);          // Required cost attribute
 
 //----------Instruction Attributes---------------------------------------------
 ins_attrib ins_cost(DEFAULT_COST); // Required cost attribute
-ins_attrib ins_size(32);       // Required size attribute (in bits)
-ins_attrib ins_pc_relative(0); // Required PC Relative flag
-ins_attrib ins_short_branch(0); // Required flag: is this instruction a
-                                // non-matching short branch variant of some
+ins_attrib ins_size(32);           // Required size attribute (in bits)
+ins_attrib ins_avoid_back_to_back(0); // instruction should not be generated back to back
+ins_attrib ins_short_branch(0);    // Required flag: is this instruction a
+                                   // non-matching short branch variant of some
                                                             // long branch?
 
 //----------OPERANDS-----------------------------------------------------------
@@ -3420,6 +3386,15 @@ operand immU6() %{
 // Integer Immediate: 11-bit
 operand immI11() %{
   predicate(Assembler::is_simm(n->get_int(),11));
+  match(ConI);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Integer Immediate: 5-bit
+operand immI5() %{
+  predicate(Assembler::is_simm(n->get_int(), 5));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -3645,6 +3620,15 @@ operand immL0() %{
   match(ConL);
   op_cost(0);
   // formats are generated automatically for constants and base registers
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Integer Immediate: 5-bit
+operand immL5() %{
+  predicate(n->get_long() == (int)n->get_long() && Assembler::is_simm((int)n->get_long(), 5));
+  match(ConL);
+  op_cost(0);
   format %{ %}
   interface(CONST_INTER);
 %}
@@ -5181,6 +5165,42 @@ pipe_class br_reg(Universe br, cmpOp cmp, iRegI op1, label labl) %{
     MS  : R;
 %}
 
+// Compare and branch
+pipe_class cmp_br_reg_reg(Universe br, cmpOp cmp, iRegI src1, iRegI src2, label labl, flagsReg cr) %{
+    instruction_count(2); has_delay_slot;
+    cr    : E(write);
+    src1  : R(read);
+    src2  : R(read);
+    IALU  : R;
+    BR    : R;
+%}
+
+// Compare and branch
+pipe_class cmp_br_reg_imm(Universe br, cmpOp cmp, iRegI src1, immI13 src2, label labl, flagsReg cr) %{
+    instruction_count(2); has_delay_slot;
+    cr    : E(write);
+    src1  : R(read);
+    IALU  : R;
+    BR    : R;
+%}
+
+// Compare and branch using cbcond
+pipe_class cbcond_reg_reg(Universe br, cmpOp cmp, iRegI src1, iRegI src2, label labl) %{
+    single_instruction;
+    src1  : E(read);
+    src2  : E(read);
+    IALU  : R;
+    BR    : R;
+%}
+
+// Compare and branch using cbcond
+pipe_class cbcond_reg_imm(Universe br, cmpOp cmp, iRegI src1, immI5 src2, label labl) %{
+    single_instruction;
+    src1  : E(read);
+    IALU  : R;
+    BR    : R;
+%}
+
 pipe_class br_fcc(Universe br, cmpOpF cc, flagsReg cr, label labl) %{
     single_instruction_with_delay_slot;
     cr    : E(read);
@@ -6236,6 +6256,7 @@ instruct loadConD(regD dst, immD con, o7RegI tmp) %{
 instruct prefetchr( memory mem ) %{
   match( PrefetchRead mem );
   ins_cost(MEMORY_REF_COST);
+  size(4);
 
   format %{ "PREFETCH $mem,0\t! Prefetch read-many" %}
   opcode(Assembler::prefetch_op3);
@@ -6244,9 +6265,9 @@ instruct prefetchr( memory mem ) %{
 %}
 
 instruct prefetchw( memory mem ) %{
-  predicate(AllocatePrefetchStyle != 3 );
   match( PrefetchWrite mem );
   ins_cost(MEMORY_REF_COST);
+  size(4);
 
   format %{ "PREFETCH $mem,2\t! Prefetch write-many (and read)" %}
   opcode(Assembler::prefetch_op3);
@@ -6254,23 +6275,61 @@ instruct prefetchw( memory mem ) %{
   ins_pipe(iload_mem);
 %}
 
-// Use BIS instruction to prefetch.
-instruct prefetchw_bis( memory mem ) %{
-  predicate(AllocatePrefetchStyle == 3);
-  match( PrefetchWrite mem );
-  ins_cost(MEMORY_REF_COST);
+// Prefetch instructions for allocation.
 
-  format %{ "STXA   G0,$mem\t! // Block initializing store" %}
+instruct prefetchAlloc( memory mem ) %{
+  predicate(AllocatePrefetchInstr == 0);
+  match( PrefetchAllocation mem );
+  ins_cost(MEMORY_REF_COST);
+  size(4);
+
+  format %{ "PREFETCH $mem,2\t! Prefetch allocation" %}
+  opcode(Assembler::prefetch_op3);
+  ins_encode( form3_mem_prefetch_write( mem ) );
+  ins_pipe(iload_mem);
+%}
+
+// Use BIS instruction to prefetch for allocation.
+// Could fault, need space at the end of TLAB.
+instruct prefetchAlloc_bis( iRegP dst ) %{
+  predicate(AllocatePrefetchInstr == 1);
+  match( PrefetchAllocation dst );
+  ins_cost(MEMORY_REF_COST);
+  size(4);
+
+  format %{ "STXA   [$dst]\t! // Prefetch allocation using BIS" %}
   ins_encode %{
-     Register base = as_Register($mem$$base);
-     int disp = $mem$$disp;
-     if (disp != 0) {
-       __ add(base, AllocatePrefetchStepSize, base);
-     }
-     __ stxa(G0, base, G0, ASI_BLK_INIT_QUAD_LDD_P);
+    __ stxa(G0, $dst$$Register, G0, Assembler::ASI_ST_BLKINIT_PRIMARY);
   %}
   ins_pipe(istore_mem_reg);
 %}
+
+// Next code is used for finding next cache line address to prefetch.
+#ifndef _LP64
+instruct cacheLineAdr( iRegP dst, iRegP src, immI13 mask ) %{
+  match(Set dst (CastX2P (AndI (CastP2X src) mask)));
+  ins_cost(DEFAULT_COST);
+  size(4);
+
+  format %{ "AND    $src,$mask,$dst\t! next cache line address" %}
+  ins_encode %{
+    __ and3($src$$Register, $mask$$constant, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg_imm);
+%}
+#else
+instruct cacheLineAdr( iRegP dst, iRegP src, immL13 mask ) %{
+  match(Set dst (CastX2P (AndL (CastP2X src) mask)));
+  ins_cost(DEFAULT_COST);
+  size(4);
+
+  format %{ "AND    $src,$mask,$dst\t! next cache line address" %}
+  ins_encode %{
+    __ and3($src$$Register, $mask$$constant, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg_imm);
+%}
+#endif
 
 //----------Store Instructions-------------------------------------------------
 // Store Byte
@@ -6629,8 +6688,7 @@ instruct membar_acquire() %{
 %}
 
 instruct membar_acquire_lock() %{
-  match(MemBarAcquire);
-  predicate(Matcher::prior_fast_lock(n));
+  match(MemBarAcquireLock);
   ins_cost(0);
 
   size(0);
@@ -6650,8 +6708,7 @@ instruct membar_release() %{
 %}
 
 instruct membar_release_lock() %{
-  match(MemBarRelease);
-  predicate(Matcher::post_fast_unlock(n));
+  match(MemBarReleaseLock);
   ins_cost(0);
 
   size(0);
@@ -8164,214 +8221,57 @@ instruct cadd_cmpLTMask( iRegI p, iRegI q, iRegI y, iRegI tmp, flagsReg ccr ) %{
   ins_pipe( cadd_cmpltmask );
 %}
 
-//----------Arithmetic Conversion Instructions---------------------------------
-// The conversions operations are all Alpha sorted.  Please keep it that way!
 
-instruct convD2F_reg(regF dst, regD src) %{
-  match(Set dst (ConvD2F src));
-  size(4);
-  format %{ "FDTOS  $src,$dst" %}
-  opcode(Assembler::fpop1_op3, Assembler::arith_op, Assembler::fdtos_opf);
-  ins_encode(form3_opf_rs2D_rdF(src, dst));
-  ins_pipe(fcvtD2F);
-%}
+//-----------------------------------------------------------------
+// Direct raw moves between float and general registers using VIS3.
 
+//  ins_pipe(faddF_reg);
+instruct MoveF2I_reg_reg(iRegI dst, regF src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (MoveF2I src));
 
-// Convert a double to an int in a float register.
-// If the double is a NAN, stuff a zero in instead.
-instruct convD2I_helper(regF dst, regD src, flagsRegF0 fcc0) %{
-  effect(DEF dst, USE src, KILL fcc0);
-  format %{ "FCMPd  fcc0,$src,$src\t! check for NAN\n\t"
-            "FBO,pt fcc0,skip\t! branch on ordered, predict taken\n\t"
-            "FDTOI  $src,$dst\t! convert in delay slot\n\t"
-            "FITOS  $dst,$dst\t! change NaN/max-int to valid float\n\t"
-            "FSUBs  $dst,$dst,$dst\t! cleared only if nan\n"
-      "skip:" %}
-  ins_encode(form_d2i_helper(src,dst));
-  ins_pipe(fcvtD2I);
-%}
-
-instruct convD2I_reg(stackSlotI dst, regD src) %{
-  match(Set dst (ConvD2I src));
-  ins_cost(DEFAULT_COST*2 + MEMORY_REF_COST*2 + BRANCH_COST);
-  expand %{
-    regF tmp;
-    convD2I_helper(tmp, src);
-    regF_to_stkI(dst, tmp);
+  format %{ "MOVSTOUW $src,$dst\t! MoveF2I" %}
+  ins_encode %{
+    __ movstouw($src$$FloatRegister, $dst$$Register);
   %}
-%}
-
-// Convert a double to a long in a double register.
-// If the double is a NAN, stuff a zero in instead.
-instruct convD2L_helper(regD dst, regD src, flagsRegF0 fcc0) %{
-  effect(DEF dst, USE src, KILL fcc0);
-  format %{ "FCMPd  fcc0,$src,$src\t! check for NAN\n\t"
-            "FBO,pt fcc0,skip\t! branch on ordered, predict taken\n\t"
-            "FDTOX  $src,$dst\t! convert in delay slot\n\t"
-            "FXTOD  $dst,$dst\t! change NaN/max-long to valid double\n\t"
-            "FSUBd  $dst,$dst,$dst\t! cleared only if nan\n"
-      "skip:" %}
-  ins_encode(form_d2l_helper(src,dst));
-  ins_pipe(fcvtD2L);
-%}
-
-
-// Double to Long conversion
-instruct convD2L_reg(stackSlotL dst, regD src) %{
-  match(Set dst (ConvD2L src));
-  ins_cost(DEFAULT_COST*2 + MEMORY_REF_COST*2 + BRANCH_COST);
-  expand %{
-    regD tmp;
-    convD2L_helper(tmp, src);
-    regD_to_stkL(dst, tmp);
-  %}
-%}
-
-
-instruct convF2D_reg(regD dst, regF src) %{
-  match(Set dst (ConvF2D src));
-  format %{ "FSTOD  $src,$dst" %}
-  opcode(Assembler::fpop1_op3, Assembler::arith_op, Assembler::fstod_opf);
-  ins_encode(form3_opf_rs2F_rdD(src, dst));
-  ins_pipe(fcvtF2D);
-%}
-
-
-instruct convF2I_helper(regF dst, regF src, flagsRegF0 fcc0) %{
-  effect(DEF dst, USE src, KILL fcc0);
-  format %{ "FCMPs  fcc0,$src,$src\t! check for NAN\n\t"
-            "FBO,pt fcc0,skip\t! branch on ordered, predict taken\n\t"
-            "FSTOI  $src,$dst\t! convert in delay slot\n\t"
-            "FITOS  $dst,$dst\t! change NaN/max-int to valid float\n\t"
-            "FSUBs  $dst,$dst,$dst\t! cleared only if nan\n"
-      "skip:" %}
-  ins_encode(form_f2i_helper(src,dst));
-  ins_pipe(fcvtF2I);
-%}
-
-instruct convF2I_reg(stackSlotI dst, regF src) %{
-  match(Set dst (ConvF2I src));
-  ins_cost(DEFAULT_COST*2 + MEMORY_REF_COST*2 + BRANCH_COST);
-  expand %{
-    regF tmp;
-    convF2I_helper(tmp, src);
-    regF_to_stkI(dst, tmp);
-  %}
-%}
-
-
-instruct convF2L_helper(regD dst, regF src, flagsRegF0 fcc0) %{
-  effect(DEF dst, USE src, KILL fcc0);
-  format %{ "FCMPs  fcc0,$src,$src\t! check for NAN\n\t"
-            "FBO,pt fcc0,skip\t! branch on ordered, predict taken\n\t"
-            "FSTOX  $src,$dst\t! convert in delay slot\n\t"
-            "FXTOD  $dst,$dst\t! change NaN/max-long to valid double\n\t"
-            "FSUBd  $dst,$dst,$dst\t! cleared only if nan\n"
-      "skip:" %}
-  ins_encode(form_f2l_helper(src,dst));
-  ins_pipe(fcvtF2L);
-%}
-
-// Float to Long conversion
-instruct convF2L_reg(stackSlotL dst, regF src) %{
-  match(Set dst (ConvF2L src));
-  ins_cost(DEFAULT_COST*2 + MEMORY_REF_COST*2 + BRANCH_COST);
-  expand %{
-    regD tmp;
-    convF2L_helper(tmp, src);
-    regD_to_stkL(dst, tmp);
-  %}
-%}
-
-
-instruct convI2D_helper(regD dst, regF tmp) %{
-  effect(USE tmp, DEF dst);
-  format %{ "FITOD  $tmp,$dst" %}
-  opcode(Assembler::fpop1_op3, Assembler::arith_op, Assembler::fitod_opf);
-  ins_encode(form3_opf_rs2F_rdD(tmp, dst));
-  ins_pipe(fcvtI2D);
-%}
-
-instruct convI2D_reg(stackSlotI src, regD dst) %{
-  match(Set dst (ConvI2D src));
-  ins_cost(DEFAULT_COST + MEMORY_REF_COST);
-  expand %{
-    regF tmp;
-    stkI_to_regF( tmp, src);
-    convI2D_helper( dst, tmp);
-  %}
-%}
-
-instruct convI2D_mem( regD_low dst, memory mem ) %{
-  match(Set dst (ConvI2D (LoadI mem)));
-  ins_cost(DEFAULT_COST + MEMORY_REF_COST);
-  size(8);
-  format %{ "LDF    $mem,$dst\n\t"
-            "FITOD  $dst,$dst" %}
-  opcode(Assembler::ldf_op3, Assembler::fitod_opf);
-  ins_encode(simple_form3_mem_reg( mem, dst ), form3_convI2F(dst, dst));
-  ins_pipe(floadF_mem);
-%}
-
-
-instruct convI2F_helper(regF dst, regF tmp) %{
-  effect(DEF dst, USE tmp);
-  format %{ "FITOS  $tmp,$dst" %}
-  opcode(Assembler::fpop1_op3, Assembler::arith_op, Assembler::fitos_opf);
-  ins_encode(form3_opf_rs2F_rdF(tmp, dst));
-  ins_pipe(fcvtI2F);
-%}
-
-instruct convI2F_reg( regF dst, stackSlotI src ) %{
-  match(Set dst (ConvI2F src));
-  ins_cost(DEFAULT_COST + MEMORY_REF_COST);
-  expand %{
-    regF tmp;
-    stkI_to_regF(tmp,src);
-    convI2F_helper(dst, tmp);
-  %}
-%}
-
-instruct convI2F_mem( regF dst, memory mem ) %{
-  match(Set dst (ConvI2F (LoadI mem)));
-  ins_cost(DEFAULT_COST + MEMORY_REF_COST);
-  size(8);
-  format %{ "LDF    $mem,$dst\n\t"
-            "FITOS  $dst,$dst" %}
-  opcode(Assembler::ldf_op3, Assembler::fitos_opf);
-  ins_encode(simple_form3_mem_reg( mem, dst ), form3_convI2F(dst, dst));
-  ins_pipe(floadF_mem);
-%}
-
-
-instruct convI2L_reg(iRegL dst, iRegI src) %{
-  match(Set dst (ConvI2L src));
-  size(4);
-  format %{ "SRA    $src,0,$dst\t! int->long" %}
-  opcode(Assembler::sra_op3, Assembler::arith_op);
-  ins_encode( form3_rs1_rs2_rd( src, R_G0, dst ) );
   ins_pipe(ialu_reg_reg);
 %}
 
-// Zero-extend convert int to long
-instruct convI2L_reg_zex(iRegL dst, iRegI src, immL_32bits mask ) %{
-  match(Set dst (AndL (ConvI2L src) mask) );
-  size(4);
-  format %{ "SRL    $src,0,$dst\t! zero-extend int to long" %}
-  opcode(Assembler::srl_op3, Assembler::arith_op);
-  ins_encode( form3_rs1_rs2_rd( src, R_G0, dst ) );
+instruct MoveI2F_reg_reg(regF dst, iRegI src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (MoveI2F src));
+
+  format %{ "MOVWTOS $src,$dst\t! MoveI2F" %}
+  ins_encode %{
+    __ movwtos($src$$Register, $dst$$FloatRegister);
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
-// Zero-extend long
-instruct zerox_long(iRegL dst, iRegL src, immL_32bits mask ) %{
-  match(Set dst (AndL src mask) );
-  size(4);
-  format %{ "SRL    $src,0,$dst\t! zero-extend long" %}
-  opcode(Assembler::srl_op3, Assembler::arith_op);
-  ins_encode( form3_rs1_rs2_rd( src, R_G0, dst ) );
+instruct MoveD2L_reg_reg(iRegL dst, regD src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (MoveD2L src));
+
+  format %{ "MOVDTOX $src,$dst\t! MoveD2L" %}
+  ins_encode %{
+    __ movdtox(as_DoubleFloatRegister($src$$reg), $dst$$Register);
+  %}
   ins_pipe(ialu_reg_reg);
 %}
+
+instruct MoveL2D_reg_reg(regD dst, iRegL src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (MoveL2D src));
+
+  format %{ "MOVXTOD $src,$dst\t! MoveL2D" %}
+  ins_encode %{
+    __ movxtod($src$$Register, as_DoubleFloatRegister($dst$$reg));
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+
+// Raw moves between float and general registers using stack.
 
 instruct MoveF2I_stack_reg(iRegI dst, stackSlotF src) %{
   match(Set dst (MoveF2I src));
@@ -8427,7 +8327,7 @@ instruct MoveF2I_reg_stack(stackSlotI dst, regF src) %{
   ins_cost(MEMORY_REF_COST);
 
   size(4);
-  format %{ "STF   $src,$dst\t!MoveF2I" %}
+  format %{ "STF   $src,$dst\t! MoveF2I" %}
   opcode(Assembler::stf_op3);
   ins_encode(simple_form3_mem_reg(dst, src));
   ins_pipe(fstoreF_stk_reg);
@@ -8439,7 +8339,7 @@ instruct MoveI2F_reg_stack(stackSlotF dst, iRegI src) %{
   ins_cost(MEMORY_REF_COST);
 
   size(4);
-  format %{ "STW    $src,$dst\t!MoveI2F" %}
+  format %{ "STW    $src,$dst\t! MoveI2F" %}
   opcode(Assembler::stw_op3);
   ins_encode(simple_form3_mem_reg( dst, src ) );
   ins_pipe(istore_mem_reg);
@@ -8451,7 +8351,7 @@ instruct MoveD2L_reg_stack(stackSlotL dst, regD src) %{
   ins_cost(MEMORY_REF_COST);
 
   size(4);
-  format %{ "STDF   $src,$dst\t!MoveD2L" %}
+  format %{ "STDF   $src,$dst\t! MoveD2L" %}
   opcode(Assembler::stdf_op3);
   ins_encode(simple_form3_mem_reg(dst, src));
   ins_pipe(fstoreD_stk_reg);
@@ -8463,10 +8363,287 @@ instruct MoveL2D_reg_stack(stackSlotD dst, iRegL src) %{
   ins_cost(MEMORY_REF_COST);
 
   size(4);
-  format %{ "STX    $src,$dst\t!MoveL2D" %}
+  format %{ "STX    $src,$dst\t! MoveL2D" %}
   opcode(Assembler::stx_op3);
   ins_encode(simple_form3_mem_reg( dst, src ) );
   ins_pipe(istore_mem_reg);
+%}
+
+
+//----------Arithmetic Conversion Instructions---------------------------------
+// The conversions operations are all Alpha sorted.  Please keep it that way!
+
+instruct convD2F_reg(regF dst, regD src) %{
+  match(Set dst (ConvD2F src));
+  size(4);
+  format %{ "FDTOS  $src,$dst" %}
+  opcode(Assembler::fpop1_op3, Assembler::arith_op, Assembler::fdtos_opf);
+  ins_encode(form3_opf_rs2D_rdF(src, dst));
+  ins_pipe(fcvtD2F);
+%}
+
+
+// Convert a double to an int in a float register.
+// If the double is a NAN, stuff a zero in instead.
+instruct convD2I_helper(regF dst, regD src, flagsRegF0 fcc0) %{
+  effect(DEF dst, USE src, KILL fcc0);
+  format %{ "FCMPd  fcc0,$src,$src\t! check for NAN\n\t"
+            "FBO,pt fcc0,skip\t! branch on ordered, predict taken\n\t"
+            "FDTOI  $src,$dst\t! convert in delay slot\n\t"
+            "FITOS  $dst,$dst\t! change NaN/max-int to valid float\n\t"
+            "FSUBs  $dst,$dst,$dst\t! cleared only if nan\n"
+      "skip:" %}
+  ins_encode(form_d2i_helper(src,dst));
+  ins_pipe(fcvtD2I);
+%}
+
+instruct convD2I_stk(stackSlotI dst, regD src) %{
+  match(Set dst (ConvD2I src));
+  ins_cost(DEFAULT_COST*2 + MEMORY_REF_COST*2 + BRANCH_COST);
+  expand %{
+    regF tmp;
+    convD2I_helper(tmp, src);
+    regF_to_stkI(dst, tmp);
+  %}
+%}
+
+instruct convD2I_reg(iRegI dst, regD src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (ConvD2I src));
+  ins_cost(DEFAULT_COST*2 + BRANCH_COST);
+  expand %{
+    regF tmp;
+    convD2I_helper(tmp, src);
+    MoveF2I_reg_reg(dst, tmp);
+  %}
+%}
+
+
+// Convert a double to a long in a double register.
+// If the double is a NAN, stuff a zero in instead.
+instruct convD2L_helper(regD dst, regD src, flagsRegF0 fcc0) %{
+  effect(DEF dst, USE src, KILL fcc0);
+  format %{ "FCMPd  fcc0,$src,$src\t! check for NAN\n\t"
+            "FBO,pt fcc0,skip\t! branch on ordered, predict taken\n\t"
+            "FDTOX  $src,$dst\t! convert in delay slot\n\t"
+            "FXTOD  $dst,$dst\t! change NaN/max-long to valid double\n\t"
+            "FSUBd  $dst,$dst,$dst\t! cleared only if nan\n"
+      "skip:" %}
+  ins_encode(form_d2l_helper(src,dst));
+  ins_pipe(fcvtD2L);
+%}
+
+instruct convD2L_stk(stackSlotL dst, regD src) %{
+  match(Set dst (ConvD2L src));
+  ins_cost(DEFAULT_COST*2 + MEMORY_REF_COST*2 + BRANCH_COST);
+  expand %{
+    regD tmp;
+    convD2L_helper(tmp, src);
+    regD_to_stkL(dst, tmp);
+  %}
+%}
+
+instruct convD2L_reg(iRegL dst, regD src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (ConvD2L src));
+  ins_cost(DEFAULT_COST*2 + BRANCH_COST);
+  expand %{
+    regD tmp;
+    convD2L_helper(tmp, src);
+    MoveD2L_reg_reg(dst, tmp);
+  %}
+%}
+
+
+instruct convF2D_reg(regD dst, regF src) %{
+  match(Set dst (ConvF2D src));
+  format %{ "FSTOD  $src,$dst" %}
+  opcode(Assembler::fpop1_op3, Assembler::arith_op, Assembler::fstod_opf);
+  ins_encode(form3_opf_rs2F_rdD(src, dst));
+  ins_pipe(fcvtF2D);
+%}
+
+
+// Convert a float to an int in a float register.
+// If the float is a NAN, stuff a zero in instead.
+instruct convF2I_helper(regF dst, regF src, flagsRegF0 fcc0) %{
+  effect(DEF dst, USE src, KILL fcc0);
+  format %{ "FCMPs  fcc0,$src,$src\t! check for NAN\n\t"
+            "FBO,pt fcc0,skip\t! branch on ordered, predict taken\n\t"
+            "FSTOI  $src,$dst\t! convert in delay slot\n\t"
+            "FITOS  $dst,$dst\t! change NaN/max-int to valid float\n\t"
+            "FSUBs  $dst,$dst,$dst\t! cleared only if nan\n"
+      "skip:" %}
+  ins_encode(form_f2i_helper(src,dst));
+  ins_pipe(fcvtF2I);
+%}
+
+instruct convF2I_stk(stackSlotI dst, regF src) %{
+  match(Set dst (ConvF2I src));
+  ins_cost(DEFAULT_COST*2 + MEMORY_REF_COST*2 + BRANCH_COST);
+  expand %{
+    regF tmp;
+    convF2I_helper(tmp, src);
+    regF_to_stkI(dst, tmp);
+  %}
+%}
+
+instruct convF2I_reg(iRegI dst, regF src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (ConvF2I src));
+  ins_cost(DEFAULT_COST*2 + BRANCH_COST);
+  expand %{
+    regF tmp;
+    convF2I_helper(tmp, src);
+    MoveF2I_reg_reg(dst, tmp);
+  %}
+%}
+
+
+// Convert a float to a long in a float register.
+// If the float is a NAN, stuff a zero in instead.
+instruct convF2L_helper(regD dst, regF src, flagsRegF0 fcc0) %{
+  effect(DEF dst, USE src, KILL fcc0);
+  format %{ "FCMPs  fcc0,$src,$src\t! check for NAN\n\t"
+            "FBO,pt fcc0,skip\t! branch on ordered, predict taken\n\t"
+            "FSTOX  $src,$dst\t! convert in delay slot\n\t"
+            "FXTOD  $dst,$dst\t! change NaN/max-long to valid double\n\t"
+            "FSUBd  $dst,$dst,$dst\t! cleared only if nan\n"
+      "skip:" %}
+  ins_encode(form_f2l_helper(src,dst));
+  ins_pipe(fcvtF2L);
+%}
+
+instruct convF2L_stk(stackSlotL dst, regF src) %{
+  match(Set dst (ConvF2L src));
+  ins_cost(DEFAULT_COST*2 + MEMORY_REF_COST*2 + BRANCH_COST);
+  expand %{
+    regD tmp;
+    convF2L_helper(tmp, src);
+    regD_to_stkL(dst, tmp);
+  %}
+%}
+
+instruct convF2L_reg(iRegL dst, regF src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (ConvF2L src));
+  ins_cost(DEFAULT_COST*2 + BRANCH_COST);
+  expand %{
+    regD tmp;
+    convF2L_helper(tmp, src);
+    MoveD2L_reg_reg(dst, tmp);
+  %}
+%}
+
+
+instruct convI2D_helper(regD dst, regF tmp) %{
+  effect(USE tmp, DEF dst);
+  format %{ "FITOD  $tmp,$dst" %}
+  opcode(Assembler::fpop1_op3, Assembler::arith_op, Assembler::fitod_opf);
+  ins_encode(form3_opf_rs2F_rdD(tmp, dst));
+  ins_pipe(fcvtI2D);
+%}
+
+instruct convI2D_stk(stackSlotI src, regD dst) %{
+  match(Set dst (ConvI2D src));
+  ins_cost(DEFAULT_COST + MEMORY_REF_COST);
+  expand %{
+    regF tmp;
+    stkI_to_regF(tmp, src);
+    convI2D_helper(dst, tmp);
+  %}
+%}
+
+instruct convI2D_reg(regD_low dst, iRegI src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (ConvI2D src));
+  expand %{
+    regF tmp;
+    MoveI2F_reg_reg(tmp, src);
+    convI2D_helper(dst, tmp);
+  %}
+%}
+
+instruct convI2D_mem(regD_low dst, memory mem) %{
+  match(Set dst (ConvI2D (LoadI mem)));
+  ins_cost(DEFAULT_COST + MEMORY_REF_COST);
+  size(8);
+  format %{ "LDF    $mem,$dst\n\t"
+            "FITOD  $dst,$dst" %}
+  opcode(Assembler::ldf_op3, Assembler::fitod_opf);
+  ins_encode(simple_form3_mem_reg( mem, dst ), form3_convI2F(dst, dst));
+  ins_pipe(floadF_mem);
+%}
+
+
+instruct convI2F_helper(regF dst, regF tmp) %{
+  effect(DEF dst, USE tmp);
+  format %{ "FITOS  $tmp,$dst" %}
+  opcode(Assembler::fpop1_op3, Assembler::arith_op, Assembler::fitos_opf);
+  ins_encode(form3_opf_rs2F_rdF(tmp, dst));
+  ins_pipe(fcvtI2F);
+%}
+
+instruct convI2F_stk(regF dst, stackSlotI src) %{
+  match(Set dst (ConvI2F src));
+  ins_cost(DEFAULT_COST + MEMORY_REF_COST);
+  expand %{
+    regF tmp;
+    stkI_to_regF(tmp,src);
+    convI2F_helper(dst, tmp);
+  %}
+%}
+
+instruct convI2F_reg(regF dst, iRegI src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (ConvI2F src));
+  ins_cost(DEFAULT_COST);
+  expand %{
+    regF tmp;
+    MoveI2F_reg_reg(tmp, src);
+    convI2F_helper(dst, tmp);
+  %}
+%}
+
+instruct convI2F_mem( regF dst, memory mem ) %{
+  match(Set dst (ConvI2F (LoadI mem)));
+  ins_cost(DEFAULT_COST + MEMORY_REF_COST);
+  size(8);
+  format %{ "LDF    $mem,$dst\n\t"
+            "FITOS  $dst,$dst" %}
+  opcode(Assembler::ldf_op3, Assembler::fitos_opf);
+  ins_encode(simple_form3_mem_reg( mem, dst ), form3_convI2F(dst, dst));
+  ins_pipe(floadF_mem);
+%}
+
+
+instruct convI2L_reg(iRegL dst, iRegI src) %{
+  match(Set dst (ConvI2L src));
+  size(4);
+  format %{ "SRA    $src,0,$dst\t! int->long" %}
+  opcode(Assembler::sra_op3, Assembler::arith_op);
+  ins_encode( form3_rs1_rs2_rd( src, R_G0, dst ) );
+  ins_pipe(ialu_reg_reg);
+%}
+
+// Zero-extend convert int to long
+instruct convI2L_reg_zex(iRegL dst, iRegI src, immL_32bits mask ) %{
+  match(Set dst (AndL (ConvI2L src) mask) );
+  size(4);
+  format %{ "SRL    $src,0,$dst\t! zero-extend int to long" %}
+  opcode(Assembler::srl_op3, Assembler::arith_op);
+  ins_encode( form3_rs1_rs2_rd( src, R_G0, dst ) );
+  ins_pipe(ialu_reg_reg);
+%}
+
+// Zero-extend long
+instruct zerox_long(iRegL dst, iRegL src, immL_32bits mask ) %{
+  match(Set dst (AndL src mask) );
+  size(4);
+  format %{ "SRL    $src,0,$dst\t! zero-extend long" %}
+  opcode(Assembler::srl_op3, Assembler::arith_op);
+  ins_encode( form3_rs1_rs2_rd( src, R_G0, dst ) );
+  ins_pipe(ialu_reg_reg);
 %}
 
 
@@ -8589,7 +8766,7 @@ instruct convL2D_helper(regD dst, regD tmp) %{
   ins_pipe(fcvtL2D);
 %}
 
-instruct convL2D_reg_fast_fxtof(regD dst, stackSlotL src) %{
+instruct convL2D_stk_fast_fxtof(regD dst, stackSlotL src) %{
   predicate(VM_Version::has_fast_fxtof());
   match(Set dst (ConvL2D src));
   ins_cost(DEFAULT_COST + 3 * MEMORY_REF_COST);
@@ -8600,10 +8777,15 @@ instruct convL2D_reg_fast_fxtof(regD dst, stackSlotL src) %{
   %}
 %}
 
-//-----------
-// Long to Float conversion using V8 opcodes.
-// Still useful because cheetah traps and becomes
-// amazingly slow for some common numbers.
+instruct convL2D_reg(regD dst, iRegL src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (ConvL2D src));
+  expand %{
+    regD tmp;
+    MoveL2D_reg_reg(tmp, src);
+    convL2D_helper(dst, tmp);
+  %}
+%}
 
 // Long to Float conversion using fast fxtof
 instruct convL2F_helper(regF dst, regD tmp) %{
@@ -8615,7 +8797,7 @@ instruct convL2F_helper(regF dst, regD tmp) %{
   ins_pipe(fcvtL2F);
 %}
 
-instruct convL2F_reg_fast_fxtof(regF dst, stackSlotL src) %{
+instruct convL2F_stk_fast_fxtof(regF dst, stackSlotL src) %{
   match(Set dst (ConvL2F src));
   ins_cost(DEFAULT_COST + MEMORY_REF_COST);
   expand %{
@@ -8624,6 +8806,18 @@ instruct convL2F_reg_fast_fxtof(regF dst, stackSlotL src) %{
     convL2F_helper(dst, tmp);
   %}
 %}
+
+instruct convL2F_reg(regF dst, iRegL src) %{
+  predicate(UseVIS >= 3);
+  match(Set dst (ConvL2F src));
+  ins_cost(DEFAULT_COST);
+  expand %{
+    regD tmp;
+    MoveL2D_reg_reg(tmp, src);
+    convL2F_helper(dst, tmp);
+  %}
+%}
+
 //-----------
 
 instruct convL2I_reg(iRegI dst, iRegL src) %{
@@ -9068,7 +9262,6 @@ instruct jumpXtnd(iRegX switch_val, o7RegI table) %{
     __ jmp(label_reg, G0);
     __ delayed()->nop();
   %}
-  ins_pc_relative(1);
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -9080,11 +9273,31 @@ instruct branch(label labl) %{
   size(8);
   ins_cost(BRANCH_COST);
   format %{ "BA     $labl" %}
-  // Prim = bits 24-22, Secnd = bits 31-30, Tert = cond
-  opcode(Assembler::br_op2, Assembler::branch_op, Assembler::always);
-  ins_encode( enc_ba( labl ) );
-  ins_pc_relative(1);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ ba(*L);
+    __ delayed()->nop();
+  %}
   ins_pipe(br);
+%}
+
+// Direct Branch, short with no delay slot
+instruct branch_short(label labl) %{
+  match(Goto);
+  predicate(UseCBCond);
+  effect(USE labl);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "BA     $labl\t! short branch" %}
+  ins_encode %{ 
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ ba_short(*L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_imm);
 %}
 
 // Conditional Direct Branch
@@ -9097,8 +9310,537 @@ instruct branchCon(cmpOp cmp, flagsReg icc, label labl) %{
   format %{ "BP$cmp   $icc,$labl" %}
   // Prim = bits 24-22, Secnd = bits 31-30
   ins_encode( enc_bp( labl, cmp, icc ) );
-  ins_pc_relative(1);
   ins_pipe(br_cc);
+%}
+
+instruct branchConU(cmpOpU cmp, flagsRegU icc, label labl) %{
+  match(If cmp icc);
+  effect(USE labl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "BP$cmp  $icc,$labl" %}
+  // Prim = bits 24-22, Secnd = bits 31-30
+  ins_encode( enc_bp( labl, cmp, icc ) );
+  ins_pipe(br_cc);
+%}
+
+instruct branchConP(cmpOpP cmp, flagsRegP pcc, label labl) %{
+  match(If cmp pcc);
+  effect(USE labl);
+
+  size(8);
+  ins_cost(BRANCH_COST);
+  format %{ "BP$cmp  $pcc,$labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+
+    __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::ptr_cc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(br_cc);
+%}
+
+instruct branchConF(cmpOpF cmp, flagsRegF fcc, label labl) %{
+  match(If cmp fcc);
+  effect(USE labl);
+
+  size(8);
+  ins_cost(BRANCH_COST);
+  format %{ "FBP$cmp $fcc,$labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+
+    __ fbp( (Assembler::Condition)($cmp$$cmpcode), false, (Assembler::CC)($fcc$$reg), predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(br_fcc);
+%}
+
+instruct branchLoopEnd(cmpOp cmp, flagsReg icc, label labl) %{
+  match(CountedLoopEnd cmp icc);
+  effect(USE labl);
+
+  size(8);
+  ins_cost(BRANCH_COST);
+  format %{ "BP$cmp   $icc,$labl\t! Loop end" %}
+  // Prim = bits 24-22, Secnd = bits 31-30
+  ins_encode( enc_bp( labl, cmp, icc ) );
+  ins_pipe(br_cc);
+%}
+
+instruct branchLoopEndU(cmpOpU cmp, flagsRegU icc, label labl) %{
+  match(CountedLoopEnd cmp icc);
+  effect(USE labl);
+
+  size(8);
+  ins_cost(BRANCH_COST);
+  format %{ "BP$cmp  $icc,$labl\t! Loop end" %}
+  // Prim = bits 24-22, Secnd = bits 31-30
+  ins_encode( enc_bp( labl, cmp, icc ) );
+  ins_pipe(br_cc);
+%}
+
+// Compare and branch instructions
+instruct cmpI_reg_branch(cmpOp cmp, iRegI op1, iRegI op2, label labl, flagsReg icc) %{
+  match(If cmp (CmpI op1 op2));
+  effect(USE labl, KILL icc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! int\n\t"
+            "BP$cmp   $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$Register);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_reg);
+%}
+
+instruct cmpI_imm_branch(cmpOp cmp, iRegI op1, immI5 op2, label labl, flagsReg icc) %{
+  match(If cmp (CmpI op1 op2));
+  effect(USE labl, KILL icc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! int\n\t"
+            "BP$cmp   $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$constant);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_imm);
+%}
+
+instruct cmpU_reg_branch(cmpOpU cmp, iRegI op1, iRegI op2, label labl, flagsRegU icc) %{
+  match(If cmp (CmpU op1 op2));
+  effect(USE labl, KILL icc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! unsigned\n\t"
+            "BP$cmp  $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$Register);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_reg);
+%}
+
+instruct cmpU_imm_branch(cmpOpU cmp, iRegI op1, immI5 op2, label labl, flagsRegU icc) %{
+  match(If cmp (CmpU op1 op2));
+  effect(USE labl, KILL icc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! unsigned\n\t"
+            "BP$cmp  $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$constant);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_imm);
+%}
+
+instruct cmpL_reg_branch(cmpOp cmp, iRegL op1, iRegL op2, label labl, flagsRegL xcc) %{
+  match(If cmp (CmpL op1 op2));
+  effect(USE labl, KILL xcc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! long\n\t"
+            "BP$cmp   $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$Register);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::xcc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_reg);
+%}
+
+instruct cmpL_imm_branch(cmpOp cmp, iRegL op1, immL5 op2, label labl, flagsRegL xcc) %{
+  match(If cmp (CmpL op1 op2));
+  effect(USE labl, KILL xcc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! long\n\t"
+            "BP$cmp   $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$constant);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::xcc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_imm);
+%}
+
+// Compare Pointers and branch
+instruct cmpP_reg_branch(cmpOpP cmp, iRegP op1, iRegP op2, label labl, flagsRegP pcc) %{
+  match(If cmp (CmpP op1 op2));
+  effect(USE labl, KILL pcc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! ptr\n\t"
+            "B$cmp   $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$Register);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::ptr_cc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_reg);
+%}
+
+instruct cmpP_null_branch(cmpOpP cmp, iRegP op1, immP0 null, label labl, flagsRegP pcc) %{
+  match(If cmp (CmpP op1 null));
+  effect(USE labl, KILL pcc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,0\t! ptr\n\t"
+            "B$cmp   $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, G0);
+    // bpr() is not used here since it has shorter distance.
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::ptr_cc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_reg);
+%}
+
+instruct cmpN_reg_branch(cmpOp cmp, iRegN op1, iRegN op2, label labl, flagsReg icc) %{
+  match(If cmp (CmpN op1 op2));
+  effect(USE labl, KILL icc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! compressed ptr\n\t"
+            "BP$cmp   $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$Register);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_reg);
+%}
+
+instruct cmpN_null_branch(cmpOp cmp, iRegN op1, immN0 null, label labl, flagsReg icc) %{
+  match(If cmp (CmpN op1 null));
+  effect(USE labl, KILL icc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,0\t! compressed ptr\n\t"
+            "BP$cmp   $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, G0);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_reg);
+%}
+
+// Loop back branch
+instruct cmpI_reg_branchLoopEnd(cmpOp cmp, iRegI op1, iRegI op2, label labl, flagsReg icc) %{
+  match(CountedLoopEnd cmp (CmpI op1 op2));
+  effect(USE labl, KILL icc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! int\n\t"
+            "BP$cmp   $labl\t! Loop end" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$Register);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_reg);
+%}
+
+instruct cmpI_imm_branchLoopEnd(cmpOp cmp, iRegI op1, immI5 op2, label labl, flagsReg icc) %{
+  match(CountedLoopEnd cmp (CmpI op1 op2));
+  effect(USE labl, KILL icc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! int\n\t"
+            "BP$cmp   $labl\t! Loop end" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$constant);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_imm);
+%}
+
+// Short compare and branch instructions
+instruct cmpI_reg_branch_short(cmpOp cmp, iRegI op1, iRegI op2, label labl, flagsReg icc) %{
+  match(If cmp (CmpI op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL icc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CWB$cmp  $op1,$op2,$labl\t! int" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$Register, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_reg);
+%}
+
+instruct cmpI_imm_branch_short(cmpOp cmp, iRegI op1, immI5 op2, label labl, flagsReg icc) %{
+  match(If cmp (CmpI op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL icc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CWB$cmp  $op1,$op2,$labl\t! int" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$constant, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_imm);
+%}
+
+instruct cmpU_reg_branch_short(cmpOpU cmp, iRegI op1, iRegI op2, label labl, flagsRegU icc) %{
+  match(If cmp (CmpU op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL icc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CWB$cmp $op1,$op2,$labl\t! unsigned" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$Register, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_reg);
+%}
+
+instruct cmpU_imm_branch_short(cmpOpU cmp, iRegI op1, immI5 op2, label labl, flagsRegU icc) %{
+  match(If cmp (CmpU op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL icc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CWB$cmp $op1,$op2,$labl\t! unsigned" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$constant, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_imm);
+%}
+
+instruct cmpL_reg_branch_short(cmpOp cmp, iRegL op1, iRegL op2, label labl, flagsRegL xcc) %{
+  match(If cmp (CmpL op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL xcc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CXB$cmp  $op1,$op2,$labl\t! long" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::xcc, $op1$$Register, $op2$$Register, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_reg);
+%}
+
+instruct cmpL_imm_branch_short(cmpOp cmp, iRegL op1, immL5 op2, label labl, flagsRegL xcc) %{
+  match(If cmp (CmpL op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL xcc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CXB$cmp  $op1,$op2,$labl\t! long" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::xcc, $op1$$Register, $op2$$constant, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_imm);
+%}
+
+// Compare Pointers and branch
+instruct cmpP_reg_branch_short(cmpOpP cmp, iRegP op1, iRegP op2, label labl, flagsRegP pcc) %{
+  match(If cmp (CmpP op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL pcc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+#ifdef _LP64
+  format %{ "CXB$cmp $op1,$op2,$labl\t! ptr" %}
+#else
+  format %{ "CWB$cmp $op1,$op2,$labl\t! ptr" %}
+#endif
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::ptr_cc, $op1$$Register, $op2$$Register, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_reg);
+%}
+
+instruct cmpP_null_branch_short(cmpOpP cmp, iRegP op1, immP0 null, label labl, flagsRegP pcc) %{
+  match(If cmp (CmpP op1 null));
+  predicate(UseCBCond);
+  effect(USE labl, KILL pcc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+#ifdef _LP64
+  format %{ "CXB$cmp $op1,0,$labl\t! ptr" %}
+#else
+  format %{ "CWB$cmp $op1,0,$labl\t! ptr" %}
+#endif
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::ptr_cc, $op1$$Register, G0, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_reg);
+%}
+
+instruct cmpN_reg_branch_short(cmpOp cmp, iRegN op1, iRegN op2, label labl, flagsReg icc) %{
+  match(If cmp (CmpN op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL icc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CWB$cmp  $op1,op2,$labl\t! compressed ptr" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$Register, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_reg);
+%}
+
+instruct cmpN_null_branch_short(cmpOp cmp, iRegN op1, immN0 null, label labl, flagsReg icc) %{
+  match(If cmp (CmpN op1 null));
+  predicate(UseCBCond);
+  effect(USE labl, KILL icc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CWB$cmp  $op1,0,$labl\t! compressed ptr" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, G0, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_reg);
+%}
+
+// Loop back branch
+instruct cmpI_reg_branchLoopEnd_short(cmpOp cmp, iRegI op1, iRegI op2, label labl, flagsReg icc) %{
+  match(CountedLoopEnd cmp (CmpI op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL icc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CWB$cmp  $op1,$op2,$labl\t! Loop end" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$Register, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_reg);
+%}
+
+instruct cmpI_imm_branchLoopEnd_short(cmpOp cmp, iRegI op1, immI5 op2, label labl, flagsReg icc) %{
+  match(CountedLoopEnd cmp (CmpI op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL icc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CWB$cmp  $op1,$op2,$labl\t! Loop end" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$constant, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_imm);
 %}
 
 // Branch-on-register tests all 64 bits.  We assume that values
@@ -9114,7 +9856,6 @@ instruct branchCon_regI(cmpOp_reg cmp, iRegI op1, immI0 zero, label labl) %{
   ins_cost(BRANCH_COST);
   format %{ "BR$cmp   $op1,$labl" %}
   ins_encode( enc_bpr( labl, cmp, op1 ) );
-  ins_pc_relative(1);
   ins_pipe(br_reg);
 %}
 
@@ -9127,7 +9868,6 @@ instruct branchCon_regP(cmpOp_reg cmp, iRegP op1, immP0 null, label labl) %{
   ins_cost(BRANCH_COST);
   format %{ "BR$cmp   $op1,$labl" %}
   ins_encode( enc_bpr( labl, cmp, op1 ) );
-  ins_pc_relative(1);
   ins_pipe(br_reg);
 %}
 
@@ -9140,72 +9880,9 @@ instruct branchCon_regL(cmpOp_reg cmp, iRegL op1, immL0 zero, label labl) %{
   ins_cost(BRANCH_COST);
   format %{ "BR$cmp   $op1,$labl" %}
   ins_encode( enc_bpr( labl, cmp, op1 ) );
-  ins_pc_relative(1);
   ins_pipe(br_reg);
 %}
 
-instruct branchConU(cmpOpU cmp, flagsRegU icc, label labl) %{
-  match(If cmp icc);
-  effect(USE labl);
-
-  format %{ "BP$cmp  $icc,$labl" %}
-  // Prim = bits 24-22, Secnd = bits 31-30
-  ins_encode( enc_bp( labl, cmp, icc ) );
-  ins_pc_relative(1);
-  ins_pipe(br_cc);
-%}
-
-instruct branchConP(cmpOpP cmp, flagsRegP pcc, label labl) %{
-  match(If cmp pcc);
-  effect(USE labl);
-
-  size(8);
-  ins_cost(BRANCH_COST);
-  format %{ "BP$cmp  $pcc,$labl" %}
-  // Prim = bits 24-22, Secnd = bits 31-30
-  ins_encode( enc_bpx( labl, cmp, pcc ) );
-  ins_pc_relative(1);
-  ins_pipe(br_cc);
-%}
-
-instruct branchConF(cmpOpF cmp, flagsRegF fcc, label labl) %{
-  match(If cmp fcc);
-  effect(USE labl);
-
-  size(8);
-  ins_cost(BRANCH_COST);
-  format %{ "FBP$cmp $fcc,$labl" %}
-  // Prim = bits 24-22, Secnd = bits 31-30
-  ins_encode( enc_fbp( labl, cmp, fcc ) );
-  ins_pc_relative(1);
-  ins_pipe(br_fcc);
-%}
-
-instruct branchLoopEnd(cmpOp cmp, flagsReg icc, label labl) %{
-  match(CountedLoopEnd cmp icc);
-  effect(USE labl);
-
-  size(8);
-  ins_cost(BRANCH_COST);
-  format %{ "BP$cmp   $icc,$labl\t! Loop end" %}
-  // Prim = bits 24-22, Secnd = bits 31-30
-  ins_encode( enc_bp( labl, cmp, icc ) );
-  ins_pc_relative(1);
-  ins_pipe(br_cc);
-%}
-
-instruct branchLoopEndU(cmpOpU cmp, flagsRegU icc, label labl) %{
-  match(CountedLoopEnd cmp icc);
-  effect(USE labl);
-
-  size(8);
-  ins_cost(BRANCH_COST);
-  format %{ "BP$cmp  $icc,$labl\t! Loop end" %}
-  // Prim = bits 24-22, Secnd = bits 31-30
-  ins_encode( enc_bp( labl, cmp, icc ) );
-  ins_pc_relative(1);
-  ins_pipe(br_cc);
-%}
 
 // ============================================================================
 // Long Compare
@@ -9235,9 +9912,14 @@ instruct branchCon_long(cmpOp cmp, flagsRegL xcc, label labl) %{
   size(8);
   ins_cost(BRANCH_COST);
   format %{ "BP$cmp   $xcc,$labl" %}
-  // Prim = bits 24-22, Secnd = bits 31-30
-  ins_encode( enc_bpl( labl, cmp, xcc ) );
-  ins_pc_relative(1);
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+
+    __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::xcc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
   ins_pipe(br_cc);
 %}
 
@@ -9365,7 +10047,6 @@ instruct CallStaticJavaDirect( method meth ) %{
   ins_cost(CALL_COST);
   format %{ "CALL,static  ; NOP ==> " %}
   ins_encode( Java_Static_Call( meth ), call_epilog );
-  ins_pc_relative(1);
   ins_pipe(simple_call);
 %}
 
@@ -9375,11 +10056,10 @@ instruct CallStaticJavaHandle(method meth, l7RegP l7_mh_SP_save) %{
   predicate(((CallStaticJavaNode*)n)->is_method_handle_invoke());
   effect(USE meth, KILL l7_mh_SP_save);
 
-  size(8);
+  size(16);
   ins_cost(CALL_COST);
   format %{ "CALL,static/MethodHandle" %}
   ins_encode(preserve_SP, Java_Static_Call(meth), restore_SP, call_epilog);
-  ins_pc_relative(1);
   ins_pipe(simple_call);
 %}
 
@@ -9392,7 +10072,6 @@ instruct CallDynamicJavaDirect( method meth ) %{
   format %{ "SET    (empty),R_G5\n\t"
             "CALL,dynamic  ; NOP ==> " %}
   ins_encode( Java_Dynamic_Call( meth ), call_epilog );
-  ins_pc_relative(1);
   ins_pipe(call);
 %}
 
@@ -9404,7 +10083,6 @@ instruct CallRuntimeDirect(method meth, l7RegP l7) %{
   format %{ "CALL,runtime" %}
   ins_encode( Java_To_Runtime( meth ),
               call_epilog, adjust_long_from_native_call );
-  ins_pc_relative(1);
   ins_pipe(simple_call);
 %}
 
@@ -9417,7 +10095,6 @@ instruct CallLeafDirect(method meth, l7RegP l7) %{
   ins_encode( Java_To_Runtime( meth ),
               call_epilog,
               adjust_long_from_native_call );
-  ins_pc_relative(1);
   ins_pipe(simple_call);
 %}
 
@@ -9430,7 +10107,6 @@ instruct CallLeafNoFPDirect(method meth, l7RegP l7) %{
   ins_encode( Java_To_Runtime( meth ),
               call_epilog,
               adjust_long_from_native_call );
-  ins_pc_relative(1);
   ins_pipe(simple_call);
 %}
 
@@ -9555,7 +10231,6 @@ instruct cmpFastLock(flagsRegP pcc, iRegP object, iRegP box, iRegP scratch2, o7R
   effect(KILL scratch, TEMP scratch2);
   ins_cost(100);
 
-  size(4*112);       // conservative overestimation ...
   format %{ "FASTLOCK  $object, $box; KILL $scratch, $scratch2, $box" %}
   ins_encode( Fast_Lock(object, box, scratch, scratch2) );
   ins_pipe(long_memory_op);
@@ -9567,15 +10242,14 @@ instruct cmpFastUnlock(flagsRegP pcc, iRegP object, iRegP box, iRegP scratch2, o
   effect(KILL scratch, TEMP scratch2);
   ins_cost(100);
 
-  size(4*120);       // conservative overestimation ...
   format %{ "FASTUNLOCK  $object, $box; KILL $scratch, $scratch2, $box" %}
   ins_encode( Fast_Unlock(object, box, scratch, scratch2) );
   ins_pipe(long_memory_op);
 %}
 
-// Count and Base registers are fixed because the allocator cannot
-// kill unknown registers.  The encodings are generic.
+// The encodings are generic.
 instruct clear_array(iRegX cnt, iRegP base, iRegX temp, Universe dummy, flagsReg ccr) %{
+  predicate(!use_block_zeroing(n->in(2)) );
   match(Set dummy (ClearArray cnt base));
   effect(TEMP temp, KILL ccr);
   ins_cost(300);
@@ -9583,7 +10257,71 @@ instruct clear_array(iRegX cnt, iRegP base, iRegX temp, Universe dummy, flagsReg
     "loop:   SUBcc  $temp,8,$temp\t! Count down a dword of bytes\n"
     "        BRge   loop\t\t! Clearing loop\n"
     "        STX    G0,[$base+$temp]\t! delay slot" %}
-  ins_encode( enc_Clear_Array(cnt, base, temp) );
+
+  ins_encode %{
+    // Compiler ensures base is doubleword aligned and cnt is count of doublewords
+    Register nof_bytes_arg    = $cnt$$Register;
+    Register nof_bytes_tmp    = $temp$$Register;
+    Register base_pointer_arg = $base$$Register;
+
+    Label loop;
+    __ mov(nof_bytes_arg, nof_bytes_tmp);
+
+    // Loop and clear, walking backwards through the array.
+    // nof_bytes_tmp (if >0) is always the number of bytes to zero
+    __ bind(loop);
+    __ deccc(nof_bytes_tmp, 8);
+    __ br(Assembler::greaterEqual, true, Assembler::pt, loop);
+    __ delayed()-> stx(G0, base_pointer_arg, nof_bytes_tmp);
+    // %%%% this mini-loop must not cross a cache boundary!
+  %}
+  ins_pipe(long_memory_op);
+%}
+
+instruct clear_array_bis(g1RegX cnt, o0RegP base, Universe dummy, flagsReg ccr) %{
+  predicate(use_block_zeroing(n->in(2)));
+  match(Set dummy (ClearArray cnt base));
+  effect(USE_KILL cnt, USE_KILL base, KILL ccr);
+  ins_cost(300);
+  format %{ "CLEAR  [$base, $cnt]\t! ClearArray" %}
+
+  ins_encode %{
+
+    assert(MinObjAlignmentInBytes >= BytesPerLong, "need alternate implementation");
+    Register to    = $base$$Register;
+    Register count = $cnt$$Register;
+
+    Label Ldone;
+    __ nop(); // Separate short branches
+    // Use BIS for zeroing (temp is not used).
+    __ bis_zeroing(to, count, G0, Ldone);
+    __ bind(Ldone);
+
+  %}
+  ins_pipe(long_memory_op);
+%}
+
+instruct clear_array_bis_2(g1RegX cnt, o0RegP base, iRegX tmp, Universe dummy, flagsReg ccr) %{
+  predicate(use_block_zeroing(n->in(2)) && !Assembler::is_simm13((int)BlockZeroingLowLimit));
+  match(Set dummy (ClearArray cnt base));
+  effect(TEMP tmp, USE_KILL cnt, USE_KILL base, KILL ccr);
+  ins_cost(300);
+  format %{ "CLEAR  [$base, $cnt]\t! ClearArray" %}
+
+  ins_encode %{
+
+    assert(MinObjAlignmentInBytes >= BytesPerLong, "need alternate implementation");
+    Register to    = $base$$Register;
+    Register count = $cnt$$Register;
+    Register temp  = $tmp$$Register;
+
+    Label Ldone;
+    __ nop(); // Separate short branches
+    // Use BIS for zeroing
+    __ bis_zeroing(to, count, temp, Ldone);
+    __ bind(Ldone);
+
+  %}
   ins_pipe(long_memory_op);
 %}
 
@@ -9738,7 +10476,7 @@ instruct countTrailingZerosI(iRegI dst, iRegI src, flagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct countTrailingZerosL(iRegI dst, iRegL src, flagsReg cr) %{
+instruct countTrailingZerosL(iRegIsafe dst, iRegL src, flagsReg cr) %{
   predicate(UsePopCountInstruction);  // See Matcher::match_rule_supported
   match(Set dst (CountTrailingZerosL src));
   effect(TEMP dst, KILL cr);

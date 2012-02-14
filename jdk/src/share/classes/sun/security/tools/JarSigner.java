@@ -1425,6 +1425,7 @@ public class JarSigner {
      * lines of attributes plus an empty line. The empty line is included
      * in the header.
      */
+    @SuppressWarnings("fallthrough")
     private int findHeaderEnd(byte[] bs) {
         // Initial state true to deal with empty header
         boolean newline = true;     // just met a newline
@@ -1505,6 +1506,9 @@ public class JarSigner {
             CertPath cp = certificateFactory.generateCertPath(certs);
             validator.validate(cp, pkixParameters);
         } catch (Exception e) {
+            if (debug) {
+                e.printStackTrace();
+            }
             chainNotValidated = true;
             s.append(tab + rb.getString(".CertPath.not.validated.") +
                     e.getLocalizedMessage() + "]\n");   // TODO
@@ -1561,6 +1565,27 @@ public class JarSigner {
         }
 
         try {
+
+            certificateFactory = CertificateFactory.getInstance("X.509");
+            validator = CertPathValidator.getInstance("PKIX");
+            Set<TrustAnchor> tas = new HashSet<>();
+            try {
+                KeyStore caks = KeyTool.getCacertsKeyStore();
+                if (caks != null) {
+                    Enumeration<String> aliases = caks.aliases();
+                    while (aliases.hasMoreElements()) {
+                        String a = aliases.nextElement();
+                        try {
+                            tas.add(new TrustAnchor((X509Certificate)caks.getCertificate(a), null));
+                        } catch (Exception e2) {
+                            // ignore, when a SecretkeyEntry does not include a cert
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // Ignore, if cacerts cannot be loaded
+            }
+
             if (providerName == null) {
                 store = KeyStore.getInstance(storetype);
             } else {
@@ -1579,45 +1604,28 @@ public class JarSigner {
                         (rb.getString("Enter.Passphrase.for.keystore."));
             }
 
-            if (nullStream) {
-                store.load(null, storepass);
-            } else {
-                keyStoreName = keyStoreName.replace(File.separatorChar, '/');
-                URL url = null;
-                try {
-                    url = new URL(keyStoreName);
-                } catch (java.net.MalformedURLException e) {
-                    // try as file
-                    url = new File(keyStoreName).toURI().toURL();
-                }
-                InputStream is = null;
-                try {
-                    is = url.openStream();
-                    store.load(is, storepass);
-                } finally {
-                    if (is != null) {
-                        is.close();
-                    }
-                }
-            }
-            Set<TrustAnchor> tas = new HashSet<>();
             try {
-                KeyStore caks = KeyTool.getCacertsKeyStore();
-                if (caks != null) {
-                    Enumeration<String> aliases = caks.aliases();
-                    while (aliases.hasMoreElements()) {
-                        String a = aliases.nextElement();
-                        try {
-                            tas.add(new TrustAnchor((X509Certificate)caks.getCertificate(a), null));
-                        } catch (Exception e2) {
-                            // ignore, when a SecretkeyEntry does not include a cert
+                if (nullStream) {
+                    store.load(null, storepass);
+                } else {
+                    keyStoreName = keyStoreName.replace(File.separatorChar, '/');
+                    URL url = null;
+                    try {
+                        url = new URL(keyStoreName);
+                    } catch (java.net.MalformedURLException e) {
+                        // try as file
+                        url = new File(keyStoreName).toURI().toURL();
+                    }
+                    InputStream is = null;
+                    try {
+                        is = url.openStream();
+                        store.load(is, storepass);
+                    } finally {
+                        if (is != null) {
+                            is.close();
                         }
                     }
                 }
-            } catch (Exception e) {
-                // Ignore, if cacerts cannot be loaded
-            }
-            if (store != null) {
                 Enumeration<String> aliases = store.aliases();
                 while (aliases.hasMoreElements()) {
                     String a = aliases.nextElement();
@@ -1633,14 +1641,13 @@ public class JarSigner {
                         // ignore, when a SecretkeyEntry does not include a cert
                     }
                 }
-            }
-            certificateFactory = CertificateFactory.getInstance("X.509");
-            validator = CertPathValidator.getInstance("PKIX");
-            try {
-                pkixParameters = new PKIXParameters(tas);
-                pkixParameters.setRevocationEnabled(false);
-            } catch (InvalidAlgorithmParameterException ex) {
-                // Only if tas is empty
+            } finally {
+                try {
+                    pkixParameters = new PKIXParameters(tas);
+                    pkixParameters.setRevocationEnabled(false);
+                } catch (InvalidAlgorithmParameterException ex) {
+                    // Only if tas is empty
+                }
             }
         } catch (IOException ioe) {
             throw new RuntimeException(rb.getString("keystore.load.") +
@@ -1739,8 +1746,7 @@ public class JarSigner {
                 NetscapeCertTypeExtension extn =
                         new NetscapeCertTypeExtension(encoded);
 
-                Boolean val = (Boolean)extn.get(
-                        NetscapeCertTypeExtension.OBJECT_SIGNING);
+                Boolean val = extn.get(NetscapeCertTypeExtension.OBJECT_SIGNING);
                 if (!val) {
                     if (bad != null) {
                         bad[2] = true;
@@ -1805,6 +1811,9 @@ public class JarSigner {
                 CertPath cp = certificateFactory.generateCertPath(Arrays.asList(certChain));
                 validator.validate(cp, pkixParameters);
             } catch (Exception e) {
+                if (debug) {
+                    e.printStackTrace();
+                }
                 chainNotValidated = true;
             }
 
@@ -2054,7 +2063,7 @@ public class JarSigner {
         ClassLoader appClassLoader = new URLClassLoader(urls);
 
         // attempt to find signer
-        Class signerClass = appClassLoader.loadClass(signerClassName);
+        Class<?> signerClass = appClassLoader.loadClass(signerClassName);
 
         // Check that it implements ContentSigner
         Object signer = signerClass.newInstance();
@@ -2297,9 +2306,7 @@ class SignatureFile {
                     tsaUri = new URI(tsaUrl);
                 }
             } catch (URISyntaxException e) {
-                IOException ioe = new IOException();
-                ioe.initCause(e);
-                throw ioe;
+                throw new IOException(e);
             }
 
             // Assemble parameters for the signing mechanism

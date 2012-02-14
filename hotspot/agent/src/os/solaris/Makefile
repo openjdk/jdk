@@ -24,9 +24,7 @@
 
 
 all:
-	cd dbx; $(MAKE) all
 	cd proc; $(MAKE) all
 
 clean:
-	cd dbx; $(MAKE) clean
 	cd proc; $(MAKE) clean

@@ -91,8 +91,10 @@ class InMemoryCookieStore implements CookieStore {
                 if (cookie.getDomain() != null) {
                     addIndex(domainIndex, cookie.getDomain(), cookie);
                 }
-                // add it to uri index, too
-                addIndex(uriIndex, getEffectiveURI(uri), cookie);
+                if (uri != null) {
+                    // add it to uri index, too
+                    addIndex(uriIndex, getEffectiveURI(uri), cookie);
+                }
             }
         } finally {
             lock.unlock();

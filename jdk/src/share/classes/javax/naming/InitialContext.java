@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,10 +232,12 @@ public class InitialContext implements Context {
      * @see #InitialContext(boolean)
      * @since 1.3
      */
+    @SuppressWarnings("unchecked")
     protected void init(Hashtable<?,?> environment)
         throws NamingException
     {
-        myProps = ResourceManager.getInitialEnvironment(environment);
+        myProps = (Hashtable<Object,Object>)
+                ResourceManager.getInitialEnvironment(environment);
 
         if (myProps.get(Context.INITIAL_CONTEXT_FACTORY) != null) {
             // user has specified initial context factory; try to get it
@@ -265,6 +267,7 @@ public class InitialContext implements Context {
      * @see #lookup(Name)
      * @since 1.6
      */
+    @SuppressWarnings("unchecked")
     public static <T> T doLookup(Name name)
         throws NamingException {
         return (T) (new InitialContext()).lookup(name);
@@ -279,6 +282,7 @@ public class InitialContext implements Context {
      * @throws  NamingException if a naming exception is encountered
       * @since 1.6
      */
+    @SuppressWarnings("unchecked")
     public static <T> T doLookup(String name)
         throws NamingException {
         return (T) (new InitialContext()).lookup(name);

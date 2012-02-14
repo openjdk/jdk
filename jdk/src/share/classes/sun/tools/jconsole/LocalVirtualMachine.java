@@ -135,10 +135,8 @@ public class LocalVirtualMachine {
         try {
             host = MonitoredHost.getMonitoredHost(new HostIdentifier((String)null));
             vms = host.activeVms();
-        } catch (java.net.URISyntaxException sx) {
-            throw new InternalError(sx.getMessage());
-        } catch (MonitorException mx) {
-            throw new InternalError(mx.getMessage());
+        } catch (java.net.URISyntaxException | MonitorException x) {
+            throw new InternalError(x.getMessage(), x);
         }
         for (Object vmid: vms) {
             if (vmid instanceof Integer) {

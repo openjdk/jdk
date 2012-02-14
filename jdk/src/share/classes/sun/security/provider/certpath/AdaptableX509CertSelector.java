@@ -101,7 +101,8 @@ class AdaptableX509CertSelector extends X509CertSelector {
     void parseAuthorityKeyIdentifierExtension(
             AuthorityKeyIdentifierExtension akidext) throws IOException {
         if (akidext != null) {
-            KeyIdentifier akid = (KeyIdentifier)akidext.get(akidext.KEY_ID);
+            KeyIdentifier akid = (KeyIdentifier)akidext.get(
+                    AuthorityKeyIdentifierExtension.KEY_ID);
             if (akid != null) {
                 // Do not override the previous setting for initial selection.
                 if (isSKIDSensitive || getSubjectKeyIdentifier() == null) {
@@ -113,8 +114,8 @@ class AdaptableX509CertSelector extends X509CertSelector {
                 }
             }
 
-            SerialNumber asn =
-                (SerialNumber)akidext.get(akidext.SERIAL_NUMBER);
+            SerialNumber asn = (SerialNumber)akidext.get(
+                    AuthorityKeyIdentifierExtension.SERIAL_NUMBER);
             if (asn != null) {
                 // Do not override the previous setting for initial selection.
                 if (isSNSensitive || getSerialNumber() == null) {

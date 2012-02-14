@@ -27,6 +27,8 @@
 #define _JLI_UTIL_H
 
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 #include <jni.h>
 
 void *JLI_MemAlloc(size_t size);
@@ -58,6 +60,7 @@ int   JLI_StrCCmp(const char *s1, const char* s2);
 #define JLI_Snprintf                    _snprintf
 #else
 #include <unistd.h>
+#include <strings.h>
 #define JLI_StrCaseCmp(p1, p2)          strcasecmp((p1), (p2))
 #define JLI_StrNCaseCmp(p1, p2, p3)     strncasecmp((p1), (p2), (p3))
 #define JLI_Snprintf                    snprintf

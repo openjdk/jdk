@@ -91,6 +91,8 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
     // LinkedHashMap with a max size of 10
     // see LinkedHashMap JavaDocs
     private static class SizedMap<K,V> extends LinkedHashMap<K,V> {
+        private static final long serialVersionUID = -8211222668790986062L;
+
         @Override protected boolean removeEldestEntry(Map.Entry<K,V> eldest) {
             return size() > 10;
         }
@@ -247,7 +249,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                 return null;
             }
             entry = (PrivateKeyEntry)newEntry;
-            entryCacheMap.put(alias, new SoftReference(entry));
+            entryCacheMap.put(alias, new SoftReference<PrivateKeyEntry>(entry));
             return entry;
         } catch (Exception e) {
             // ignore
@@ -329,7 +331,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
      */
     private String chooseAlias(List<KeyType> keyTypeList, Principal[] issuers,
             CheckType checkType, AlgorithmConstraints constraints) {
-        if (keyTypeList == null || keyTypeList.size() == 0) {
+        if (keyTypeList == null || keyTypeList.isEmpty()) {
             return null;
         }
 
@@ -403,7 +405,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                 // ignore
             }
         }
-        if (allResults == null || allResults.size() == 0) {
+        if (allResults == null || allResults.isEmpty()) {
             if (useDebug) {
                 debug.println("KeyMgr: no matching alias found");
             }
@@ -523,38 +525,43 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                 if (ku != null) {
                     String algorithm = cert.getPublicKey().getAlgorithm();
                     boolean kuSignature = getBit(ku, 0);
-                    if (algorithm.equals("RSA")) {
-                        // require either signature bit
-                        // or if server also allow key encipherment bit
-                        if (kuSignature == false) {
-                            if ((this == CLIENT) || (getBit(ku, 2) == false)) {
+                    switch (algorithm) {
+                        case "RSA":
+                            // require either signature bit
+                            // or if server also allow key encipherment bit
+                            if (kuSignature == false) {
+                                if ((this == CLIENT) || (getBit(ku, 2) == false)) {
+                                    return CheckResult.EXTENSION_MISMATCH;
+                                }
+                            }
+                            break;
+                        case "DSA":
+                            // require signature bit
+                            if (kuSignature == false) {
                                 return CheckResult.EXTENSION_MISMATCH;
                             }
-                        }
-                    } else if (algorithm.equals("DSA")) {
-                        // require signature bit
-                        if (kuSignature == false) {
-                            return CheckResult.EXTENSION_MISMATCH;
-                        }
-                    } else if (algorithm.equals("DH")) {
-                        // require keyagreement bit
-                        if (getBit(ku, 4) == false) {
-                            return CheckResult.EXTENSION_MISMATCH;
-                        }
-                    } else if (algorithm.equals("EC")) {
-                        // require signature bit
-                        if (kuSignature == false) {
-                            return CheckResult.EXTENSION_MISMATCH;
-                        }
-                        // For servers, also require key agreement.
-                        // This is not totally accurate as the keyAgreement bit
-                        // is only necessary for static ECDH key exchange and
-                        // not ephemeral ECDH. We leave it in for now until
-                        // there are signs that this check causes problems
-                        // for real world EC certificates.
-                        if ((this == SERVER) && (getBit(ku, 4) == false)) {
-                            return CheckResult.EXTENSION_MISMATCH;
-                        }
+                            break;
+                        case "DH":
+                            // require keyagreement bit
+                            if (getBit(ku, 4) == false) {
+                                return CheckResult.EXTENSION_MISMATCH;
+                            }
+                            break;
+                        case "EC":
+                            // require signature bit
+                            if (kuSignature == false) {
+                                return CheckResult.EXTENSION_MISMATCH;
+                            }
+                            // For servers, also require key agreement.
+                            // This is not totally accurate as the keyAgreement bit
+                            // is only necessary for static ECDH key exchange and
+                            // not ephemeral ECDH. We leave it in for now until
+                            // there are signs that this check causes problems
+                            // for real world EC certificates.
+                            if ((this == SERVER) && (getBit(ku, 4) == false)) {
+                                return CheckResult.EXTENSION_MISMATCH;
+                            }
+                            break;
                     }
                 }
             } catch (CertificateException e) {

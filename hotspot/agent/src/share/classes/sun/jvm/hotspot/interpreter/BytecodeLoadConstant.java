@@ -28,29 +28,25 @@ import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.utilities.*;
 
-public class BytecodeLoadConstant extends BytecodeWithCPIndex {
+public class BytecodeLoadConstant extends Bytecode {
   BytecodeLoadConstant(Method method, int bci) {
     super(method, bci);
   }
 
   public boolean hasCacheIndex() {
     // normal ldc uses CP index, but fast_aldc uses swapped CP cache index
-    return javaCode() != code();
+    return code() >= Bytecodes.number_of_java_codes;
   }
 
-  public int index() {
-    int i = javaCode() == Bytecodes._ldc ?
-                 (int) (0xFF & javaByteAt(1))
-               : (int) (0xFFFF & javaShortAt(1));
-    if (hasCacheIndex()) {
-      return (0xFFFF & VM.getVM().getBytes().swapShort((short) i));
-    } else {
-      return i;
-    }
+  int rawIndex() {
+    if (javaCode() == Bytecodes._ldc)
+      return getIndexU1();
+    else
+      return getIndexU2(code(), false);
   }
 
   public int poolIndex() {
-    int i = index();
+    int i = rawIndex();
     if (hasCacheIndex()) {
       ConstantPoolCache cpCache = method().getConstants().getCache();
       return cpCache.getEntryAt(i).getConstantPoolIndex();
@@ -61,10 +57,16 @@ public class BytecodeLoadConstant extends BytecodeWithCPIndex {
 
   public int cacheIndex() {
     if (hasCacheIndex()) {
-      return index();
+      return rawIndex();
     } else {
       return -1;  // no cache index
     }
+  }
+
+  public BasicType resultType() {
+    int index = poolIndex();
+    ConstantTag tag = method().getConstants().getTagAt(index);
+    return tag.basicType();
   }
 
   private Oop getCachedConstant() {
@@ -88,7 +90,7 @@ public class BytecodeLoadConstant extends BytecodeWithCPIndex {
            jcode == Bytecodes._ldc2_w;
     if (! codeOk) return false;
 
-    ConstantTag ctag = method().getConstants().getTagAt(index());
+    ConstantTag ctag = method().getConstants().getTagAt(poolIndex());
     if (jcode == Bytecodes._ldc2_w) {
        // has to be double or long
        return (ctag.isDouble() || ctag.isLong()) ? true: false;
@@ -107,7 +109,7 @@ public class BytecodeLoadConstant extends BytecodeWithCPIndex {
        return false;
     }
 
-    ConstantTag ctag = method().getConstants().getTagAt(index());
+    ConstantTag ctag = method().getConstants().getTagAt(poolIndex());
     return ctag.isKlass() || ctag.isUnresolvedKlass();
   }
 
@@ -120,7 +122,7 @@ public class BytecodeLoadConstant extends BytecodeWithCPIndex {
     // We just look at the object at the corresponding index and
     // decide based on the oop type.
     ConstantPool cpool = method().getConstants();
-    int cpIndex = index();
+    int cpIndex = poolIndex();
     ConstantPool.CPSlot oop = cpool.getSlotAt(cpIndex);
     if (oop.isOop()) {
       return (Klass) oop.getOop();

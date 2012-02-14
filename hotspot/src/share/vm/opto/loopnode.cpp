@@ -453,7 +453,12 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
   // Now we need to canonicalize loop condition.
   if (bt == BoolTest::ne) {
     assert(stride_con == 1 || stride_con == -1, "simple increment only");
-    bt = (stride_con > 0) ? BoolTest::lt : BoolTest::gt;
+    // 'ne' can be replaced with 'lt' only when init < limit.
+    if (stride_con > 0 && init_t->_hi < limit_t->_lo)
+      bt = BoolTest::lt;
+    // 'ne' can be replaced with 'gt' only when init > limit.
+    if (stride_con < 0 && init_t->_lo > limit_t->_hi)
+      bt = BoolTest::gt;
   }
 
   if (incl_limit) {
@@ -577,20 +582,25 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
 
   // Build a canonical trip test.
   // Clone code, as old values may be in use.
-  Node* nphi = PhiNode::make(x, init_trip, TypeInt::INT);
-  nphi = _igvn.register_new_node_with_optimizer(nphi);
-  set_ctrl(nphi, get_ctrl(phi));
-
   incr = incr->clone();
-  incr->set_req(1,nphi);
+  incr->set_req(1,phi);
   incr->set_req(2,stride);
   incr = _igvn.register_new_node_with_optimizer(incr);
   set_early_ctrl( incr );
+  _igvn.hash_delete(phi);
+  phi->set_req_X( LoopNode::LoopBackControl, incr, &_igvn );
 
-  nphi->set_req(LoopNode::LoopBackControl, incr);
-  _igvn.replace_node(phi, nphi);
-  phi = nphi->as_Phi();
-
+  // If phi type is more restrictive than Int, raise to
+  // Int to prevent (almost) infinite recursion in igvn
+  // which can only handle integer types for constants or minint..maxint.
+  if (!TypeInt::INT->higher_equal(phi->bottom_type())) {
+    Node* nphi = PhiNode::make(phi->in(0), phi->in(LoopNode::EntryControl), TypeInt::INT);
+    nphi->set_req(LoopNode::LoopBackControl, phi->in(LoopNode::LoopBackControl));
+    nphi = _igvn.register_new_node_with_optimizer(nphi);
+    set_ctrl(nphi, get_ctrl(phi));
+    _igvn.replace_node(phi, nphi);
+    phi = nphi->as_Phi();
+  }
   cmp = cmp->clone();
   cmp->set_req(1,incr);
   cmp->set_req(2,limit);
@@ -684,6 +694,7 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
 Node* PhaseIdealLoop::exact_limit( IdealLoopTree *loop ) {
   assert(loop->_head->is_CountedLoop(), "");
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
+  assert(cl->is_valid_counted_loop(), "");
 
   if (!LoopLimitCheck || ABS(cl->stride_con()) == 1 ||
       cl->limit()->Opcode() == Op_LoopLimit) {
@@ -1162,9 +1173,8 @@ void IdealLoopTree::split_outer_loop( PhaseIdealLoop *phase ) {
   outer = igvn.register_new_node_with_optimizer(outer, _head);
   phase->set_created_loop_node();
 
-  Node* pred = phase->clone_loop_predicates(ctl, outer, true);
   // Outermost loop falls into '_head' loop
-  _head->set_req(LoopNode::EntryControl, pred);
+  _head->set_req(LoopNode::EntryControl, outer);
   _head->del_req(outer_idx);
   // Split all the Phis up between '_head' loop and 'outer' loop.
   for (DUIterator_Fast jmax, j = _head->fast_outs(jmax); j < jmax; j++) {
@@ -1604,17 +1614,14 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   assert(loop->_head->is_CountedLoop(), "");
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
+  if (!cl->is_valid_counted_loop())
+    return;         // skip malformed counted loop
   Node *incr = cl->incr();
   if (incr == NULL)
     return;         // Dead loop?
   Node *init = cl->init_trip();
   Node *phi  = cl->phi();
-  // protect against stride not being a constant
-  if (!cl->stride_is_con())
-    return;
   int stride_con = cl->stride_con();
-
-  PhaseGVN *gvn = &_igvn;
 
   // Visit all children, looking for Phis
   for (DUIterator i = cl->outs(); cl->has_out(i); i++) {
@@ -1651,25 +1658,31 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     int ratio_con = stride_con2/stride_con;
 
     if ((ratio_con * stride_con) == stride_con2) { // Check for exact
+#ifndef PRODUCT
+      if (TraceLoopOpts) {
+        tty->print("Parallel IV: %d ", phi2->_idx);
+        loop->dump_head();
+      }
+#endif
       // Convert to using the trip counter.  The parallel induction
       // variable differs from the trip counter by a loop-invariant
       // amount, the difference between their respective initial values.
       // It is scaled by the 'ratio_con'.
-      // Perform local Ideal transformation since in most cases ratio == 1.
       Node* ratio = _igvn.intcon(ratio_con);
       set_ctrl(ratio, C->root());
-      Node* hook = new (C, 3) Node(3);
-      Node* ratio_init = gvn->transform(new (C, 3) MulINode(init, ratio));
-      hook->init_req(0, ratio_init);
-      Node* diff = gvn->transform(new (C, 3) SubINode(init2, ratio_init));
-      hook->init_req(1, diff);
-      Node* ratio_idx = gvn->transform(new (C, 3) MulINode(phi, ratio));
-      hook->init_req(2, ratio_idx);
-      Node* add  = gvn->transform(new (C, 3) AddINode(ratio_idx, diff));
-      set_subtree_ctrl(add);
+      Node* ratio_init = new (C, 3) MulINode(init, ratio);
+      _igvn.register_new_node_with_optimizer(ratio_init, init);
+      set_early_ctrl(ratio_init);
+      Node* diff = new (C, 3) SubINode(init2, ratio_init);
+      _igvn.register_new_node_with_optimizer(diff, init2);
+      set_early_ctrl(diff);
+      Node* ratio_idx = new (C, 3) MulINode(phi, ratio);
+      _igvn.register_new_node_with_optimizer(ratio_idx, phi);
+      set_ctrl(ratio_idx, cl);
+      Node* add = new (C, 3) AddINode(ratio_idx, diff);
+      _igvn.register_new_node_with_optimizer(add);
+      set_ctrl(add, cl);
       _igvn.replace_node( phi2, add );
-      // Free up intermediate goo
-      _igvn.remove_dead_node(hook);
       // Sometimes an induction variable is unused
       if (add->outcnt() == 0) {
         _igvn.remove_dead_node(add);
