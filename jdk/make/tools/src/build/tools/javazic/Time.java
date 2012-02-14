@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,16 +268,16 @@ class Time {
         if (index < time.length()) {
             char c = time.charAt(index++);
             if (c == 's') {
-                tm.setType(tm.STD);
+                tm.setType(Time.STD);
             } else if (c == 'u' || c == 'g' || c == 'z') {
-                tm.setType(tm.UTC);
+                tm.setType(Time.UTC);
             } else if (c == 'w') {
-                tm.setType(tm.WALL);
+                tm.setType(Time.WALL);
             } else {
                 Main.panic("unknown time mode: "+c);
             }
         } else {
-            tm.setType(tm.WALL);
+            tm.setType(Time.WALL);
         }
         return tm;
     }

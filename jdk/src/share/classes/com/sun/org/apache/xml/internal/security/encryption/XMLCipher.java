@@ -2772,7 +2772,7 @@ public class XMLCipher {
         // </complexType>
         private class AgreementMethodImpl implements AgreementMethod {
             private byte[] kaNonce = null;
-            private List agreementMethodInformation = null;
+            private List<Element> agreementMethodInformation = null;
             private KeyInfo originatorKeyInfo = null;
             private KeyInfo recipientKeyInfo = null;
             private String algorithmURI = null;
@@ -2781,7 +2781,7 @@ public class XMLCipher {
              * @param algorithm
              */
             public AgreementMethodImpl(String algorithm) {
-                agreementMethodInformation = new LinkedList();
+                agreementMethodInformation = new LinkedList<Element>();
                 URI tmpAlgorithm = null;
                 try {
                     tmpAlgorithm = new URI(algorithm);
@@ -2802,7 +2802,7 @@ public class XMLCipher {
             }
 
             /** @inheritDoc */
-            public Iterator getAgreementMethodInformation() {
+            public Iterator<Element> getAgreementMethodInformation() {
                 return (agreementMethodInformation.iterator());
             }
 
@@ -2879,9 +2879,9 @@ public class XMLCipher {
                             _contextDocument.createTextNode(new String(kaNonce)));
                 }
                 if (!agreementMethodInformation.isEmpty()) {
-                    Iterator itr = agreementMethodInformation.iterator();
+                    Iterator<Element> itr = agreementMethodInformation.iterator();
                     while (itr.hasNext()) {
-                        result.appendChild((Element) itr.next());
+                        result.appendChild(itr.next());
                     }
                 }
                 if (null != originatorKeyInfo) {
@@ -3486,7 +3486,7 @@ public class XMLCipher {
             private String algorithm = null;
             private int keySize = Integer.MIN_VALUE;
             private byte[] oaepParams = null;
-            private List encryptionMethodInformation = null;
+            private List<Element> encryptionMethodInformation = null;
             /**
              *
              * @param algorithm
@@ -3499,7 +3499,7 @@ public class XMLCipher {
                     // complain
                 }
                 this.algorithm = tmpAlgorithm.toString();
-                encryptionMethodInformation = new LinkedList();
+                encryptionMethodInformation = new LinkedList<Element>();
             }
             /** @inheritDoc */
             public String getAlgorithm() {
@@ -3522,7 +3522,7 @@ public class XMLCipher {
                 oaepParams = params;
             }
             /** @inheritDoc */
-            public Iterator getEncryptionMethodInformation() {
+            public Iterator<Element> getEncryptionMethodInformation() {
                 return (encryptionMethodInformation.iterator());
             }
             /** @inheritDoc */
@@ -3565,8 +3565,8 @@ public class XMLCipher {
                                 new String(oaepParams))));
                 }
                 if (!encryptionMethodInformation.isEmpty()) {
-                    Iterator itr = encryptionMethodInformation.iterator();
-                    result.appendChild((Element) itr.next());
+                    Iterator<Element> itr = encryptionMethodInformation.iterator();
+                    result.appendChild(itr.next());
                 }
 
                 return (result);
@@ -3582,13 +3582,13 @@ public class XMLCipher {
         // </complexType>
         private class EncryptionPropertiesImpl implements EncryptionProperties {
             private String id = null;
-            private List encryptionProperties = null;
+            private List<EncryptionProperty> encryptionProperties = null;
             /**
              *
              *
              */
             public EncryptionPropertiesImpl() {
-                encryptionProperties = new LinkedList();
+                encryptionProperties = new LinkedList<EncryptionProperty>();
             }
             /** @inheritDoc */
             public String getId() {
@@ -3599,7 +3599,7 @@ public class XMLCipher {
                 this.id = id;
             }
             /** @inheritDoc */
-            public Iterator getEncryptionProperties() {
+            public Iterator<EncryptionProperty> getEncryptionProperties() {
                 return (encryptionProperties.iterator());
             }
             /** @inheritDoc */
@@ -3625,7 +3625,7 @@ public class XMLCipher {
                 if (null != id) {
                     result.setAttributeNS(null, EncryptionConstants._ATT_ID, id);
                 }
-                Iterator itr = getEncryptionProperties();
+                Iterator<EncryptionProperty> itr = getEncryptionProperties();
                 while (itr.hasNext()) {
                     result.appendChild(((EncryptionPropertyImpl)
                         itr.next()).toElement());
@@ -3647,15 +3647,15 @@ public class XMLCipher {
         private class EncryptionPropertyImpl implements EncryptionProperty {
             private String target = null;
             private String id = null;
-            private HashMap attributeMap = new HashMap();
-            private List encryptionInformation = null;
+            private HashMap<String,String> attributeMap = new HashMap<String,String>();
+            private List<Element> encryptionInformation = null;
 
             /**
              *
              *
              */
             public EncryptionPropertyImpl() {
-                encryptionInformation = new LinkedList();
+                encryptionInformation = new LinkedList<Element>();
             }
             /** @inheritDoc */
             public String getTarget() {
@@ -3692,14 +3692,14 @@ public class XMLCipher {
             }
             /** @inheritDoc */
             public String getAttribute(String attribute) {
-                return (String) attributeMap.get(attribute);
+                return attributeMap.get(attribute);
             }
             /** @inheritDoc */
             public void setAttribute(String attribute, String value) {
                 attributeMap.put(attribute, value);
             }
             /** @inheritDoc */
-            public Iterator getEncryptionInformation() {
+            public Iterator<Element> getEncryptionInformation() {
                 return (encryptionInformation.iterator());
             }
             /** @inheritDoc */
@@ -3821,8 +3821,8 @@ public class XMLCipher {
         //    </complexType>
         //</element>
         private class ReferenceListImpl implements ReferenceList {
-            private Class sentry;
-            private List references;
+            private Class<?> sentry;
+            private List<Reference> references;
             /**
              *
              * @param type
@@ -3835,7 +3835,7 @@ public class XMLCipher {
                 } else {
                     throw new IllegalArgumentException();
                 }
-                references = new LinkedList();
+                references = new LinkedList<Reference>();
             }
             /** @inheritDoc */
             public void add(Reference reference) {
@@ -3860,7 +3860,7 @@ public class XMLCipher {
                 return (references.isEmpty());
             }
             /** @inheritDoc */
-            public Iterator getReferences() {
+            public Iterator<Reference> getReferences() {
                 return (references.iterator());
             }
 
@@ -3869,9 +3869,9 @@ public class XMLCipher {
                     _contextDocument,
                     EncryptionConstants.EncryptionSpecNS,
                     EncryptionConstants._TAG_REFERENCELIST);
-                Iterator eachReference = references.iterator();
+                Iterator<Reference> eachReference = references.iterator();
                 while (eachReference.hasNext()) {
-                    Reference reference = (Reference) eachReference.next();
+                    Reference reference = eachReference.next();
                     result.appendChild(
                         ((ReferenceImpl) reference).toElement());
                 }
@@ -3894,18 +3894,18 @@ public class XMLCipher {
              */
             private abstract class ReferenceImpl implements Reference {
                 private String uri;
-                private List referenceInformation;
+                private List<Element> referenceInformation;
 
                 ReferenceImpl(String _uri) {
                     this.uri = _uri;
-                    referenceInformation = new LinkedList();
+                    referenceInformation = new LinkedList<Element>();
                 }
                 /** @inheritDoc */
                 public String getURI() {
                     return (uri);
                 }
                 /** @inheritDoc */
-                public Iterator getElementRetrievalInformation() {
+                public Iterator<Element> getElementRetrievalInformation() {
                     return (referenceInformation.iterator());
                 }
                 /** @inheritDoc */

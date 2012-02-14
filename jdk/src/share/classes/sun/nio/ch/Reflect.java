@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,29 +50,25 @@ class Reflect {                                 // package-private
                 }});
     }
 
-    static Constructor lookupConstructor(String className,
-                                         Class[] paramTypes)
+    static Constructor<?> lookupConstructor(String className,
+                                            Class<?>[] paramTypes)
     {
         try {
             Class<?> cl = Class.forName(className);
             Constructor<?> c = cl.getDeclaredConstructor(paramTypes);
             setAccessible(c);
             return c;
-        } catch (ClassNotFoundException x) {
-            throw new ReflectionError(x);
-        } catch (NoSuchMethodException x) {
+        } catch (ClassNotFoundException | NoSuchMethodException x) {
             throw new ReflectionError(x);
         }
     }
 
-    static Object invoke(Constructor c, Object[] args) {
+    static Object invoke(Constructor<?> c, Object[] args) {
         try {
             return c.newInstance(args);
-        } catch (InstantiationException x) {
-            throw new ReflectionError(x);
-        } catch (IllegalAccessException x) {
-            throw new ReflectionError(x);
-        } catch (InvocationTargetException x) {
+        } catch (InstantiationException |
+                 IllegalAccessException |
+                 InvocationTargetException x) {
             throw new ReflectionError(x);
         }
     }
@@ -86,9 +82,7 @@ class Reflect {                                 // package-private
             Method m = cl.getDeclaredMethod(methodName, paramTypes);
             setAccessible(m);
             return m;
-        } catch (ClassNotFoundException x) {
-            throw new ReflectionError(x);
-        } catch (NoSuchMethodException x) {
+        } catch (ClassNotFoundException | NoSuchMethodException x) {
             throw new ReflectionError(x);
         }
     }
@@ -96,9 +90,7 @@ class Reflect {                                 // package-private
     static Object invoke(Method m, Object ob, Object[] args) {
         try {
             return m.invoke(ob, args);
-        } catch (IllegalAccessException x) {
-            throw new ReflectionError(x);
-        } catch (InvocationTargetException x) {
+        } catch (IllegalAccessException | InvocationTargetException x) {
             throw new ReflectionError(x);
         }
     }
@@ -119,13 +111,11 @@ class Reflect {                                 // package-private
 
     static Field lookupField(String className, String fieldName) {
         try {
-            Class cl = Class.forName(className);
+            Class<?> cl = Class.forName(className);
             Field f = cl.getDeclaredField(fieldName);
             setAccessible(f);
             return f;
-        } catch (ClassNotFoundException x) {
-            throw new ReflectionError(x);
-        } catch (NoSuchFieldException x) {
+        } catch (ClassNotFoundException | NoSuchFieldException x) {
             throw new ReflectionError(x);
         }
     }

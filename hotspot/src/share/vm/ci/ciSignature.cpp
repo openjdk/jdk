@@ -35,7 +35,7 @@
 
 // ------------------------------------------------------------------
 // ciSignature::ciSignature
-ciSignature::ciSignature(ciKlass* accessing_klass, ciSymbol* symbol) {
+ciSignature::ciSignature(ciKlass* accessing_klass, constantPoolHandle cpool, ciSymbol* symbol) {
   ASSERT_IN_VM;
   EXCEPTION_CONTEXT;
   _accessing_klass = accessing_klass;
@@ -64,7 +64,7 @@ ciSignature::ciSignature(ciKlass* accessing_klass, ciSymbol* symbol) {
         CLEAR_PENDING_EXCEPTION;
       } else {
         ciSymbol* klass_name = env->get_symbol(name);
-        type = env->get_klass_by_name_impl(_accessing_klass, klass_name, false);
+        type = env->get_klass_by_name_impl(_accessing_klass, cpool, klass_name, false);
       }
     }
     _types->append(type);
@@ -80,7 +80,7 @@ ciSignature::ciSignature(ciKlass* accessing_klass, ciSymbol* symbol) {
 }
 
 // ------------------------------------------------------------------
-// ciSignature::return_ciType
+// ciSignature::return_type
 //
 // What is the return type of this signature?
 ciType* ciSignature::return_type() const {
@@ -88,7 +88,7 @@ ciType* ciSignature::return_type() const {
 }
 
 // ------------------------------------------------------------------
-// ciSignature::ciType_at
+// ciSignature::type_at
 //
 // What is the type of the index'th element of this
 // signature?
@@ -96,6 +96,24 @@ ciType* ciSignature::type_at(int index) const {
   assert(index < _count, "out of bounds");
   // The first _klasses element holds the return klass.
   return _types->at(index);
+}
+
+// ------------------------------------------------------------------
+// ciSignature::equals
+//
+// Compare this signature to another one.  Signatures with different
+// accessing classes but with signature-types resolved to the same
+// types are defined to be equal.
+bool ciSignature::equals(ciSignature* that) {
+  // Compare signature
+  if (!this->as_symbol()->equals(that->as_symbol()))  return false;
+  // Compare all types of the arguments
+  for (int i = 0; i < _count; i++) {
+    if (this->type_at(i) != that->type_at(i))         return false;
+  }
+  // Compare the return type
+  if (this->return_type() != that->return_type())     return false;
+  return true;
 }
 
 // ------------------------------------------------------------------

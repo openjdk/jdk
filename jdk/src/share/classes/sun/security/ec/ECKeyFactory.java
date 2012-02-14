@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,9 @@ public final class ECKeyFactory extends KeyFactorySpi {
     public final static Provider ecInternalProvider;
 
     static {
-        final Provider p = new Provider("SunEC-Internal", 1.0d, null) {};
+        final Provider p = new Provider("SunEC-Internal", 1.0d, null) {
+            private static final long serialVersionUID = 970685700309471261L;
+        };
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
                 p.put("KeyFactory.EC", "sun.security.ec.ECKeyFactory");
@@ -262,12 +264,12 @@ public final class ECKeyFactory extends KeyFactorySpi {
         if (key instanceof ECPublicKey) {
             ECPublicKey ecKey = (ECPublicKey)key;
             if (ECPublicKeySpec.class.isAssignableFrom(keySpec)) {
-                return (T) new ECPublicKeySpec(
+                return keySpec.cast(new ECPublicKeySpec(
                     ecKey.getW(),
                     ecKey.getParams()
-                );
+                ));
             } else if (X509EncodedKeySpec.class.isAssignableFrom(keySpec)) {
-                return (T) new X509EncodedKeySpec(key.getEncoded());
+                return keySpec.cast(new X509EncodedKeySpec(key.getEncoded()));
             } else {
                 throw new InvalidKeySpecException
                         ("KeySpec must be ECPublicKeySpec or "
@@ -275,13 +277,13 @@ public final class ECKeyFactory extends KeyFactorySpi {
             }
         } else if (key instanceof ECPrivateKey) {
             if (PKCS8EncodedKeySpec.class.isAssignableFrom(keySpec)) {
-                return (T) new PKCS8EncodedKeySpec(key.getEncoded());
+                return keySpec.cast(new PKCS8EncodedKeySpec(key.getEncoded()));
             } else if (ECPrivateKeySpec.class.isAssignableFrom(keySpec)) {
                 ECPrivateKey ecKey = (ECPrivateKey)key;
-                return (T) new ECPrivateKeySpec(
+                return keySpec.cast(new ECPrivateKeySpec(
                     ecKey.getS(),
                     ecKey.getParams()
-                );
+                ));
             } else {
                 throw new InvalidKeySpecException
                         ("KeySpec must be ECPrivateKeySpec or "

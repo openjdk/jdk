@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,12 +94,14 @@ public abstract class Ber {
     public static final int ASN_ENUMERATED      = 0x0a;
 
     final static class EncodeException extends IOException {
+        private static final long serialVersionUID = -5247359637775781768L;
         EncodeException(String msg) {
             super(msg);
         }
     }
 
     final static class DecodeException extends IOException {
+        private static final long serialVersionUID = 8735036969244425583L;
         DecodeException(String msg) {
             super(msg);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Enumeration;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
@@ -78,13 +77,13 @@ public abstract class VersionHelper {
         return helper;
     }
 
-    public abstract Class loadClass(String className)
+    public abstract Class<?> loadClass(String className)
         throws ClassNotFoundException;
 
-    abstract Class loadClass(String className, ClassLoader cl)
+    abstract Class<?> loadClass(String className, ClassLoader cl)
         throws ClassNotFoundException;
 
-    public abstract Class loadClass(String className, String codebase)
+    public abstract Class<?> loadClass(String className, String codebase)
         throws ClassNotFoundException, MalformedURLException;
 
     /*
@@ -106,7 +105,7 @@ public abstract class VersionHelper {
      * Returns the resource of a given name associated with a particular
      * class (never null), or null if none can be found.
      */
-    abstract InputStream getResourceAsStream(Class c, String name);
+    abstract InputStream getResourceAsStream(Class<?> c, String name);
 
     /*
      * Returns an input stream for a file in <java.home>/lib,
@@ -122,7 +121,8 @@ public abstract class VersionHelper {
      * loader.  Null represents the bootstrap class loader in some
      * Java implementations.
      */
-    abstract NamingEnumeration getResources(ClassLoader cl, String name)
+    abstract NamingEnumeration<InputStream> getResources(
+            ClassLoader cl, String name)
         throws IOException;
 
     /*
@@ -137,13 +137,13 @@ public abstract class VersionHelper {
         throws MalformedURLException {
         // Parse codebase into separate URLs
         StringTokenizer parser = new StringTokenizer(codebase);
-        Vector vec = new Vector(10);
+        Vector<String> vec = new Vector<>(10);
         while (parser.hasMoreTokens()) {
             vec.addElement(parser.nextToken());
         }
         String[] url = new String[vec.size()];
         for (int i = 0; i < url.length; i++) {
-            url[i] = (String)vec.elementAt(i);
+            url[i] = vec.elementAt(i);
         }
 
         URL[] urlArray = new URL[url.length];

@@ -112,32 +112,6 @@ address TemplateInterpreterGenerator::generate_ClassCastException_handler() {
   return entry;
 }
 
-// Arguments are: required type at TOS+4, failing object (or NULL) at TOS.
-address TemplateInterpreterGenerator::generate_WrongMethodType_handler() {
-  address entry = __ pc();
-
-  __ pop(rbx);                  // actual failing object is at TOS
-  __ pop(rax);                  // required type is at TOS+4
-
-  __ verify_oop(rbx);
-  __ verify_oop(rax);
-
-  // Various method handle types use interpreter registers as temps.
-  __ restore_bcp();
-  __ restore_locals();
-
-  // Expression stack must be empty before entering the VM for an exception.
-  __ empty_expression_stack();
-  __ empty_FPU_stack();
-  __ call_VM(noreg,
-             CAST_FROM_FN_PTR(address,
-                              InterpreterRuntime::throw_WrongMethodTypeException),
-             // pass required type, failing object (or NULL)
-             rax, rbx);
-  return entry;
-}
-
-
 address TemplateInterpreterGenerator::generate_exception_handler_common(const char* name, const char* message, bool pass_oop) {
   assert(!pass_oop || message == NULL, "either oop or message but not both");
   address entry = __ pc();

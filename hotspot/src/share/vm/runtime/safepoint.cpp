@@ -78,6 +78,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 #ifndef SERIALGC
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
 #include "gc_implementation/shared/concurrentGCThread.hpp"
@@ -511,6 +514,11 @@ void SafepointSynchronize::do_cleanup_tasks() {
 
   TraceTime t4("sweeping nmethods", TraceSafepointCleanupTime);
   NMethodSweeper::scan_stacks();
+
+  // rotate log files?
+  if (UseGCLogFileRotation) {
+    gclog_or_tty->rotate_log();
+  }
 }
 
 

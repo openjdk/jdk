@@ -481,8 +481,9 @@ size_t SparsePRT::mem_size() const {
 
 bool SparsePRT::add_card(RegionIdx_t region_id, CardIdx_t card_index) {
 #if SPARSE_PRT_VERBOSE
-  gclog_or_tty->print_cr("  Adding card %d from region %d to region %d sparse.",
-                card_index, region_id, _hr->hrs_index());
+  gclog_or_tty->print_cr("  Adding card %d from region %d to region "
+                         SIZE_FORMAT" sparse.",
+                         card_index, region_id, _hr->hrs_index());
 #endif
   if (_next->occupied_entries() * 2 > _next->capacity()) {
     expand();
@@ -533,8 +534,8 @@ void SparsePRT::expand() {
   _next = new RSHashTable(last->capacity() * 2);
 
 #if SPARSE_PRT_VERBOSE
-  gclog_or_tty->print_cr("  Expanded sparse table for %d to %d.",
-                _hr->hrs_index(), _next->capacity());
+  gclog_or_tty->print_cr("  Expanded sparse table for "SIZE_FORMAT" to %d.",
+                         _hr->hrs_index(), _next->capacity());
 #endif
   for (size_t i = 0; i < last->capacity(); i++) {
     SparsePRTEntry* e = last->entry((int)i);

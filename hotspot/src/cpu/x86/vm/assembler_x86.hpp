@@ -779,6 +779,7 @@ private:
   void andl(Register dst, Address src);
   void andl(Register dst, Register src);
 
+  void andq(Address  dst, int32_t imm32);
   void andq(Register dst, int32_t imm32);
   void andq(Register dst, Address src);
   void andq(Register dst, Register src);
@@ -1064,8 +1065,7 @@ private:
   // Note: The same Label can be used for forward and backward branches
   // but it may be bound only once.
 
-  void jcc(Condition cc, Label& L,
-           relocInfo::relocType rtype = relocInfo::none);
+  void jcc(Condition cc, Label& L, bool maybe_short = true);
 
   // Conditional jump to a 8-bit offset to L.
   // WARNING: be very careful using this for forward jumps.  If the label is
@@ -1076,7 +1076,7 @@ private:
   void jmp(Address entry);    // pc <- entry
 
   // Label operations & relative jumps (PPUM Appendix D)
-  void jmp(Label& L, relocInfo::relocType rtype = relocInfo::none);   // unconditional jump to L
+  void jmp(Label& L, bool maybe_short = true);   // unconditional jump to L
 
   void jmp(Register entry); // pc <- entry
 
@@ -1659,6 +1659,14 @@ class MacroAssembler: public Assembler {
                address entry_point,
                Register arg_1, Register arg_2, Register arg_3,
                bool check_exceptions = true);
+
+  // These always tightly bind to MacroAssembler::call_VM_base
+  // bypassing the virtual implementation
+  void super_call_VM(Register oop_result, Register last_java_sp, address entry_point, int number_of_arguments = 0, bool check_exceptions = true);
+  void super_call_VM(Register oop_result, Register last_java_sp, address entry_point, Register arg_1, bool check_exceptions = true);
+  void super_call_VM(Register oop_result, Register last_java_sp, address entry_point, Register arg_1, Register arg_2, bool check_exceptions = true);
+  void super_call_VM(Register oop_result, Register last_java_sp, address entry_point, Register arg_1, Register arg_2, Register arg_3, bool check_exceptions = true);
+  void super_call_VM(Register oop_result, Register last_java_sp, address entry_point, Register arg_1, Register arg_2, Register arg_3, Register arg_4, bool check_exceptions = true);
 
   void call_VM_leaf(address entry_point,
                     int number_of_arguments = 0);

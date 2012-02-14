@@ -82,6 +82,7 @@ public class RicochetTest {
         testLongSpreads();
         testIntCollects();
         testReturns();
+        testRecursion();
     }
 
     @Test
@@ -371,6 +372,61 @@ public class RicochetTest {
         //System.out.println("faultCount="+faultCount);
     }
 
+    @Test
+    public void testRecursion() throws Throwable {
+        if (!startTest("testRecursion"))  return;
+        final int LIMIT = 10;
+        for (int i = 0; i < LIMIT; i++) {
+            RFCB rfcb = new RFCB(i);
+            Object x = "x", y = "y";
+            Object result = rfcb.recursiveFunction(x, y);
+            verbose(1, result);
+        }
+    }
+    /** Recursive Function Control Block */
+    private static class RFCB {
+        java.util.Random random;
+        final MethodHandle[] fns;
+        int depth;
+        RFCB(int seed) throws Throwable {
+            this.random = new java.util.Random(seed);
+            this.fns = new MethodHandle[Math.max(29, (1 << MAX_DEPTH-2)/3)];
+            java.util.Arrays.fill(fns, lookup().bind(this, "recursiveFunction", genericMethodType(2)));
+            for (int i = 5; i < fns.length; i++) {
+                switch (i % 4) {
+                case 0: fns[i] = filterArguments(fns[i - 5], 0, insertArguments(fns[i - 4], 1, ".")); break;
+                case 1: fns[i] = filterArguments(fns[i - 5], 1, insertArguments(fns[i - 3], 1, ".")); break;
+                case 2: fns[i] = filterReturnValue(fns[i - 5], insertArguments(fns[i - 2], 1, ".")); break;
+                }
+            }
+        }
+        Object recursiveFunction(Object x, Object y) throws Throwable {
+            depth++;
+            try {
+                final int ACTION_COUNT = 11;
+                switch (random.nextInt(ACTION_COUNT)) {
+                case 1:
+                    Throwable ex = new RuntimeException();
+                    ex.fillInStackTrace();
+                    if (VERBOSITY >= 2) ex.printStackTrace();
+                    x = "ST; " + x;
+                    break;
+                case 2:
+                    System.gc();
+                    x = "GC; " + x;
+                    break;
+                }
+                boolean isLeaf = (depth >= MAX_DEPTH);
+                if (isLeaf) {
+                    return Arrays.asList(x, y).toString();
+                }
+                return fns[random.nextInt(fns.length)].invokeExact(x, y);
+            } finally {
+                depth--;
+            }
+        }
+    }
+
     private static MethodHandle sequence(MethodHandle mh1, MethodHandle... mhs) {
         MethodHandle res = mh1;
         for (MethodHandle mh2 : mhs)
@@ -536,6 +592,7 @@ public class RicochetTest {
     }
 
     // stress modes:
+    private static final int MAX_DEPTH = getProperty("MAX_DEPTH", 5);
     private static final int REPEAT = getProperty("REPEAT", 0);
     private static final int STRESS = getProperty("STRESS", 0);
     private static /*v*/ int STRESS_COUNT;

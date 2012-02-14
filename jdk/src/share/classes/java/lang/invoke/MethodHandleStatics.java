@@ -108,9 +108,7 @@ import java.security.PrivilegedAction;
         return new IllegalArgumentException(message(message, obj, obj2));
     }
     /*non-public*/ static Error uncaughtException(Exception ex) {
-        Error err = new InternalError("uncaught exception");
-        err.initCause(ex);
-        return err;
+        throw new InternalError("uncaught exception", ex);
     }
     private static String message(String message, Object obj) {
         if (obj != null)  message = message + ": " + obj;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ final class DefaultCallbackHandler implements CallbackHandler {
         if (cred instanceof String) {
             passwd = ((String)cred).toCharArray();
         } else if (cred instanceof char[]) {
-            passwd = (char[])((char[])cred).clone();
+            passwd = ((char[])cred).clone();
         } else if (cred != null) {
             // assume UTF-8 encoding
             String orig = new String((byte[])cred, "UTF8");

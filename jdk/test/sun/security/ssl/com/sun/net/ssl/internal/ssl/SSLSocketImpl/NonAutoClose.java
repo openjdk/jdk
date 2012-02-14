@@ -25,6 +25,10 @@
  * @test
  * @bug 4404399
  * @summary When a layered SSL socket is closed, it should wait for close_notify
+ * @run main/othervm NonAutoClose
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  * @author Brad Wetmore
  */
 

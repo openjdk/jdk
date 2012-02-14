@@ -27,6 +27,7 @@
  * @summary Verify that all ciphersuites work (incl. ECC using NSS crypto)
  * @author Andreas Sterbenz
  * @library ..
+ * @library ../../../../java/security/testlibrary
  */
 
 import java.security.*;
@@ -45,7 +46,7 @@ public class ClientJSSEServerJSSE extends PKCS11Test {
             System.out.println("Provider does not support EC, skipping");
             return;
         }
-        Security.insertProviderAt(p, 1);
+        Providers.setAt(p, 1);
         CipherTest.main(new JSSEFactory(), cmdArgs);
         Security.removeProvider(p.getName());
     }

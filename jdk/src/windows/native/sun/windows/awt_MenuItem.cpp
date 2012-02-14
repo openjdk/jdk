@@ -626,7 +626,7 @@ void AwtMenuItem::SetLabel(LPCTSTR sb)
     mii.dwTypeData = (LPTSTR)(*sb);
 
     // find index by menu item id
-    int nMenuItemCount = ::GetMenuItemCount(hMenu);;
+    int nMenuItemCount = ::GetMenuItemCount(hMenu);
     int idx;
     for (idx = 0; (idx < nMenuItemCount); idx++) {
         memset(&mii1, 0, sizeof(MENUITEMINFO));
@@ -639,10 +639,7 @@ void AwtMenuItem::SetLabel(LPCTSTR sb)
     ::RemoveMenu(hMenu, idx, MF_BYPOSITION);
     ::InsertMenuItem(hMenu, idx, TRUE, &mii);
 
-    // Redraw menu bar if it was affected.
-    if (menu->GetMenuBar() == menu) {
-        ::DrawMenuBar(menu->GetOwnerHWnd());
-    }
+    RedrawMenuBar();
 }
 
 void AwtMenuItem::Enable(BOOL isEnabled)
@@ -658,10 +655,7 @@ void AwtMenuItem::Enable(BOOL isEnabled)
                             MF_BYCOMMAND | (isEnabled ? MF_ENABLED : MF_GRAYED))
            != 0xFFFFFFFF);
 
-    // Redraw menu bar if it was affected.
-    if (menu->GetMenuBar() == menu) {
-        ::DrawMenuBar(menu->GetOwnerHWnd());
-    }
+    RedrawMenuBar();
 }
 
 void AwtMenuItem::SetState(BOOL isChecked)
@@ -676,23 +670,31 @@ void AwtMenuItem::SetState(BOOL isChecked)
                            MF_BYCOMMAND | (isChecked ? MF_CHECKED : MF_UNCHECKED))
            != 0xFFFFFFFF);
 
-    // Redraw menu bar if it was affected.
-    if (menu->GetMenuBar() == menu) {
-        ::DrawMenuBar(menu->GetOwnerHWnd());
+    RedrawMenuBar();
+}
+
+/**
+ * If the menu changes after the system has created the window,
+ * this function must be called to draw the changed menu bar.
+ */
+void AwtMenuItem::RedrawMenuBar() {
+    AwtMenu* menu = GetMenuContainer();
+    if (menu != NULL && menu->GetMenuBar() == menu){
+        menu->RedrawMenuBar();
+    }
+}
+
+void AwtMenuItem::UpdateContainerLayout() {
+    AwtMenu* menu = GetMenuContainer();
+    if (menu != NULL) {
+        DASSERT(menu != NULL && GetID() >= 0);
+        menu->UpdateLayout();
     }
 }
 
 LRESULT AwtMenuItem::WinThreadExecProc(ExecuteArgs * args)
 {
     switch( args->cmdId ) {
-        case MENUITEM_SETLABEL:
-        {
-            LPCTSTR sb = (LPCTSTR)args->param1;
-            DASSERT(!IsBadStringPtr(sb, 20));
-            this->SetLabel(sb);
-        }
-        break;
-
         case MENUITEM_ENABLE:
         {
             BOOL        isEnabled = (BOOL)args->param1;
@@ -714,75 +716,98 @@ LRESULT AwtMenuItem::WinThreadExecProc(ExecuteArgs * args)
     return 0L;
 }
 
-void AwtMenuItem::_SetLabel(void *param)
-{
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+void AwtMenuItem::_SetLabel(void *param) {
+    if (AwtToolkit::IsMainThread()) {
+        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    SetLabelStruct *sls = (SetLabelStruct *)param;
-    jobject self = sls->menuitem;
-    jstring label = sls->label;
+        SetLabelStruct *sls = (SetLabelStruct *)param;
+        jobject self = sls->menuitem;
+        jstring label = sls->label;
 
-    int badAlloc = 0;
-    AwtMenuItem *m = NULL;
+        int badAlloc = 0;
+        AwtMenuItem *m = NULL;
 
-    PDATA pData;
-    JNI_CHECK_PEER_GOTO(self, ret);
-    m = (AwtMenuItem *)pData;
+        PDATA pData;
+        JNI_CHECK_PEER_GOTO(self, ret);
+        m = (AwtMenuItem *)pData;
 //    if (::IsWindow(m->GetOwnerHWnd()))
-    {
-        // fix for bug 4251036 MenuItem setLabel(null/"") behaves differently
-        // under Win32 and Solaris
-        jstring empty = NULL;
-        if (JNU_IsNull(env, label))
         {
-            empty = JNU_NewStringPlatform(env, TEXT(""));
-        }
-        LPCTSTR labelPtr;
-        if (empty != NULL)
-        {
-            labelPtr = JNU_GetStringPlatformChars(env, empty, 0);
-        }
-        else
-        {
-            labelPtr = JNU_GetStringPlatformChars(env, label, 0);
-        }
-        if (labelPtr == NULL)
-        {
-            badAlloc = 1;
-        }
-        else
-        {
-            ExecuteArgs args;
-            args.cmdId = MENUITEM_SETLABEL;
-            args.param1 = (LPARAM)labelPtr;
-            m->WinThreadExecProc(&args);
+            // fix for bug 4251036 MenuItem setLabel(null/"") behaves differently
+            // under Win32 and Solaris
+            jstring empty = NULL;
+            if (JNU_IsNull(env, label))
+            {
+                empty = JNU_NewStringPlatform(env, TEXT(""));
+            }
+            LPCTSTR labelPtr;
             if (empty != NULL)
             {
-                JNU_ReleaseStringPlatformChars(env, empty, labelPtr);
+                labelPtr = JNU_GetStringPlatformChars(env, empty, 0);
             }
             else
             {
-                JNU_ReleaseStringPlatformChars(env, label, labelPtr);
+                labelPtr = JNU_GetStringPlatformChars(env, label, 0);
+            }
+            if (labelPtr == NULL)
+            {
+                badAlloc = 1;
+            }
+            else
+            {
+                DASSERT(!IsBadStringPtr(labelPtr, 20));
+                m->SetLabel(labelPtr);
+                if (empty != NULL)
+                {
+                    JNU_ReleaseStringPlatformChars(env, empty, labelPtr);
+                }
+                else
+                {
+                    JNU_ReleaseStringPlatformChars(env, label, labelPtr);
+                }
+            }
+            if (empty != NULL)
+            {
+                env->DeleteLocalRef(empty);
             }
         }
-        if (empty != NULL)
-        {
-            env->DeleteLocalRef(empty);
-        }
-    }
 
 ret:
-    env->DeleteGlobalRef(self);
-    if (label != NULL)
-    {
-        env->DeleteGlobalRef(label);
+        env->DeleteGlobalRef(self);
+        if (label != NULL)
+        {
+            env->DeleteGlobalRef(label);
+        }
+
+        delete sls;
+
+        if (badAlloc)
+        {
+            throw std::bad_alloc();
+        }
+    } else {
+        AwtToolkit::GetInstance().InvokeFunction(AwtMenuItem::_SetLabel, param);
     }
+}
 
-    delete sls;
+void AwtMenuItem::_UpdateLayout(void *param)
+{
+    if (AwtToolkit::IsMainThread()) {
+        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
-    if (badAlloc)
-    {
-        throw std::bad_alloc();
+        jobject self = (jobject)param;
+
+        AwtMenuItem *m = NULL;
+
+        PDATA pData;
+        JNI_CHECK_PEER_GOTO(self, ret);
+
+        m = (AwtMenuItem *)pData;
+
+        m->UpdateContainerLayout();
+ret:
+        env->DeleteGlobalRef(self);
+    } else {
+        AwtToolkit::GetInstance().InvokeFunction(AwtMenuItem::_UpdateLayout, param);
     }
 }
 
@@ -883,8 +908,8 @@ extern "C" {
 
 /*
  * Class:     sun_awt_windows_WMenuItemPeer
- * Method:    _setLabel
- * Signature: (Ljava/lang/String;)V
+ * Method:    initIDs
+ * Signature: ()V
  */
 JNIEXPORT void JNICALL
 Java_sun_awt_windows_WMenuItemPeer_initIDs(JNIEnv *env, jclass cls)
@@ -921,6 +946,26 @@ Java_sun_awt_windows_WMenuItemPeer__1setLabel(JNIEnv *env, jobject self,
 
     AwtToolkit::GetInstance().SyncCall(AwtMenuItem::_SetLabel, sls);
     // global refs and sls are deleted in _SetLabel
+
+    CATCH_BAD_ALLOC;
+}
+
+/*
+ * Class:     sun_awt_windows_WMenuItemPeer
+ * Method:    _setFont
+ * Signature: (Ljava/awt/Font;)V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WMenuItemPeer__1setFont(JNIEnv *env, jobject self, jobject)
+{
+    TRY;
+
+    jobject selfGlobalRef = env->NewGlobalRef(self);
+
+    // Current implementation of AwtMenuItem get font attribute from the peer
+    // directly, so we ignore it here, but update current menu layout.
+    AwtToolkit::GetInstance().SyncCall(AwtMenuItem::_UpdateLayout, selfGlobalRef);
+    // selfGlobalRef is deleted in _UpdateLayout
 
     CATCH_BAD_ALLOC;
 }

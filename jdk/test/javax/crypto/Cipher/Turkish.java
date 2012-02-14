@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,15 +35,21 @@ import javax.crypto.Cipher;
 public class Turkish {
 
     public static void main(String[] args) throws Exception {
-        Locale.setDefault(new Locale("tr", "TR"));
+        Locale reservedLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(new Locale("tr", "TR"));
 
-        System.out.println(Cipher.getInstance("RSA/ECB/PKCS1Padding"));
-        System.out.println(Cipher.getInstance("RSA/ECB/PKCS1PADDING"));
-        System.out.println(Cipher.getInstance("rsa/ecb/pkcs1padding"));
-        System.out.println(Cipher.getInstance("Blowfish"));
-        System.out.println(Cipher.getInstance("blowfish"));
-        System.out.println(Cipher.getInstance("BLOWFISH"));
+            System.out.println(Cipher.getInstance("RSA/ECB/PKCS1Padding"));
+            System.out.println(Cipher.getInstance("RSA/ECB/PKCS1PADDING"));
+            System.out.println(Cipher.getInstance("rsa/ecb/pkcs1padding"));
+            System.out.println(Cipher.getInstance("Blowfish"));
+            System.out.println(Cipher.getInstance("blowfish"));
+            System.out.println(Cipher.getInstance("BLOWFISH"));
 
-        System.out.println("OK");
+            System.out.println("OK");
+        } finally {
+            // restore the default locale
+            Locale.setDefault(reservedLocale);
+        }
     }
 }

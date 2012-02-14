@@ -44,6 +44,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "c2_globals_windows.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "c2_globals_bsd.hpp"
+#endif
 
 //
 // Defines all globals flags used by the server compiler.

@@ -45,9 +45,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Arrive {
     void test(String[] args) throws Throwable {
+        for (int i = 0; i < 100; ++i)
+            doTest(args);
+    }
+    void doTest(String[] args) throws Throwable {
         final int n = ThreadLocalRandom.current().nextInt(1, 10);
-        final int nthreads = n*3/2;
-        final Phaser startingGate = new Phaser(nthreads);
+        final Phaser startingGate = new Phaser(n);
         final Phaser phaser = new Phaser(n);
         final List<Thread> threads = new ArrayList<Thread>();
         final AtomicInteger count0 = new AtomicInteger(0);
@@ -64,14 +67,14 @@ public class Arrive {
             else
                 fail();
         }};
-        for (int i = 0; i < nthreads; i++)
+        for (int i = 0; i < n; i++)
             threads.add(new Thread(task));
         for (Thread thread : threads)
             thread.start();
         for (Thread thread : threads)
             thread.join();
         equal(count0.get(), n);
-        equal(count1.get(), nthreads-n);
+        equal(count1.get(), 0);
         equal(phaser.getPhase(), 1);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,9 @@ import  java.io.File;
 import  java.io.FileOutputStream;
 import  java.io.DataOutputStream;
 import  java.io.RandomAccessFile;
-import  java.util.ArrayList;
-import  java.util.Iterator;
-import  java.util.LinkedList;
 import  java.util.List;
 import  java.util.Map;
 import  java.util.Set;
-import  java.util.TreeMap;
-import  java.util.TreeSet;
 import  sun.util.calendar.ZoneInfoFile;
 
 /**
@@ -105,14 +100,13 @@ class Gen extends BackEnd {
                     /* if DST offset is 0, this means DST isn't used.
                      * (NOT: offset's index is 0.)
                      */
-                    if ((dstoffset =
-                         ((Integer)dstOffsets.get(i)).intValue()) == -1) {
+                    if ((dstoffset = dstOffsets.get(i).intValue()) == -1) {
                         dstoffset = 0;
                     }
 
-                    dos.writeLong((((Long)transitions.get(i)).longValue() << 12)
+                    dos.writeLong((transitions.get(i).longValue() << 12)
                                   | (dstoffset << 4)
-                                  | ((Integer)offsets.get(i)).intValue());
+                                  | offsets.get(i).intValue());
 
                 }
 

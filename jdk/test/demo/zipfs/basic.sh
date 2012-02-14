@@ -39,7 +39,7 @@ fi
 
 OS=`uname -s`
 case "$OS" in
-    Windows_* )
+    Windows_* | CYGWIN* )
         CLASSPATH="${TESTCLASSES};${ZIPFS}"
         ;;
     * )

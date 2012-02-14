@@ -34,6 +34,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.io.OutputStreamWriter;
 import java.io.BufferedWriter;
+import java.lang.reflect.*;
 
 /**
  * The <code>Properties</code> class represents a persistent set of
@@ -1111,4 +1112,60 @@ class Properties extends Hashtable<Object,Object> {
     private static final char[] hexDigit = {
         '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'
     };
+
+
+    private static class XMLUtils {
+        private static Method load = null;
+        private static Method save = null;
+        static {
+            try {
+                // reference sun.util.xml.Utils reflectively
+                // to allow the Properties class be compiled in
+                // the absence of XML
+                Class<?> c = Class.forName("sun.util.xml.XMLUtils", true, null);
+                load = c.getMethod("load", Properties.class, InputStream.class);
+                save = c.getMethod("save", Properties.class, OutputStream.class,
+                                   String.class, String.class);
+            } catch (ClassNotFoundException cnf) {
+                throw new AssertionError(cnf);
+            } catch (NoSuchMethodException e) {
+                throw new AssertionError(e);
+            }
+        }
+
+        static void invoke(Method m, Object... args) throws IOException {
+            try {
+                m.invoke(null, args);
+            } catch (IllegalAccessException e) {
+                throw new AssertionError(e);
+            } catch (InvocationTargetException e) {
+                Throwable t = e.getCause();
+                if (t instanceof RuntimeException)
+                    throw (RuntimeException)t;
+
+                if (t instanceof IOException) {
+                    throw (IOException)t;
+                } else {
+                    throw new AssertionError(t);
+                }
+            }
+        }
+
+        static void load(Properties props, InputStream in)
+            throws IOException, InvalidPropertiesFormatException
+        {
+            if (load == null)
+                throw new InternalError("sun.util.xml.XMLUtils not found");
+            invoke(load, props, in);
+        }
+
+        static void save(Properties props, OutputStream os, String comment,
+                         String encoding)
+            throws IOException
+        {
+            if (save == null)
+                throw new InternalError("sun.util.xml.XMLUtils not found");
+            invoke(save, props, os, comment, encoding);
+        }
+    }
 }

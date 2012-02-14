@@ -1092,7 +1092,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
             result.checkInvariants();
             return result;
         } catch (CloneNotSupportedException e) {
-            throw new InternalError();
+            throw new InternalError(e);
         }
     }
 

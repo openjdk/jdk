@@ -39,8 +39,6 @@
   develop(intx, G1MarkingOverheadPercent, 0,                                \
           "Overhead of concurrent marking")                                 \
                                                                             \
-  develop(bool, G1Gen, true,                                                \
-          "If true, it will enable the generational G1")                    \
                                                                             \
   develop(intx, G1PolicyVerbose, 0,                                         \
           "The verbosity level on G1 policy decisions")                     \
@@ -126,9 +124,6 @@
   develop(bool, G1RSBarrierNullFilter, true,                                \
           "If true, generate null-pointer filtering code in RS barrier")    \
                                                                             \
-  develop(bool, G1PrintCTFilterStats, false,                                \
-          "If true, print stats on RS filtering effectiveness")             \
-                                                                            \
   develop(bool, G1DeferredRSUpdate, true,                                   \
           "If true, use deferred RS updates")                               \
                                                                             \
@@ -139,9 +134,9 @@
   develop(bool, G1RSCountHisto, false,                                      \
           "If true, print a histogram of RS occupancies after each pause")  \
                                                                             \
-  product(bool, G1PrintRegionLivenessInfo, false,                           \
-          "Prints the liveness information for all regions in the heap "    \
-          "at the end of a marking cycle.")                                 \
+  diagnostic(bool, G1PrintRegionLivenessInfo, false,                        \
+            "Prints the liveness information for all regions in the heap "  \
+            "at the end of a marking cycle.")                               \
                                                                             \
   develop(bool, G1PrintParCleanupStats, false,                              \
           "When true, print extra stats about parallel cleanup.")           \
@@ -233,7 +228,7 @@
           "the number of regions for which we'll print a surv rate "        \
           "summary.")                                                       \
                                                                             \
-  product(intx, G1ReservePercent, 10,                                       \
+  product(uintx, G1ReservePercent, 10,                                      \
           "It determines the minimum reserve we should have in the heap "   \
           "to minimize the probability of promotion failure.")              \
                                                                             \
@@ -250,16 +245,6 @@
   develop(bool, G1FailOnFPError, false,                                     \
           "When set, G1 will fail when it encounters an FP 'error', "       \
           "so as to allow debugging")                                       \
-                                                                            \
-  develop(bool, G1FixedTenuringThreshold, false,                            \
-          "When set, G1 will not adjust the tenuring threshold")            \
-                                                                            \
-  develop(bool, G1FixedEdenSize, false,                                     \
-          "When set, G1 will not allocate unused survivor space regions")   \
-                                                                            \
-  develop(uintx, G1FixedSurvivorSpaceSize, 0,                               \
-          "If non-0 is the size of the G1 survivor space, "                 \
-          "otherwise SurvivorRatio is used to determine the size")          \
                                                                             \
   product(uintx, G1HeapRegionSize, 0,                                       \
           "Size of the G1 regions.")                                        \
@@ -304,10 +289,6 @@
           "The number of dummy regions G1 will allocate at the end of "     \
           "each evacuation pause in order to artificially fill up the "     \
           "heap and stress the marking implementation.")                    \
-                                                                            \
-  develop(bool, ReduceInitialCardMarksForG1, false,                         \
-          "When ReduceInitialCardMarks is true, this flag setting "         \
-          " controls whether G1 allows the RICM optimization")              \
                                                                             \
   develop(bool, G1ExitOnExpansionFailure, false,                            \
           "Raise a fatal VM exit out of memory failure in the event "       \

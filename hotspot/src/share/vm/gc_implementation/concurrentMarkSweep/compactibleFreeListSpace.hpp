@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -407,6 +407,11 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   void save_sweep_limit() {
     _sweep_limit = BlockOffsetArrayUseUnallocatedBlock ?
                    unallocated_block() : end();
+    if (CMSTraceSweeper) {
+      gclog_or_tty->print_cr(">>>>> Saving sweep limit " PTR_FORMAT
+                             "  for space [" PTR_FORMAT "," PTR_FORMAT ") <<<<<<",
+                             _sweep_limit, bottom(), end());
+    }
   }
   NOT_PRODUCT(
     void clear_sweep_limit() { _sweep_limit = NULL; }
@@ -497,10 +502,14 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   void verifyFreeLists()                  const PRODUCT_RETURN;
   void verifyIndexedFreeLists()           const;
   void verifyIndexedFreeList(size_t size) const;
-  // verify that the given chunk is in the free lists.
+  // Verify that the given chunk is in the free lists:
+  // i.e. either the binary tree dictionary, the indexed free lists
+  // or the linear allocation block.
   bool verifyChunkInFreeLists(FreeChunk* fc) const;
+  // Verify that the given chunk is the linear allocation block
+  bool verify_chunk_is_linear_alloc_block(FreeChunk* fc) const;
   // Do some basic checks on the the free lists.
-  void checkFreeListConsistency()         const PRODUCT_RETURN;
+  void check_free_list_consistency()      const PRODUCT_RETURN;
 
   // Printing support
   void dump_at_safepoint_with_locks(CMSCollector* c, outputStream* st);

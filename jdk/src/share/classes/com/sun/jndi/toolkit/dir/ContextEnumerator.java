@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,10 @@ import java.util.*;
   *
   * @author Jon Ruiz
   */
-public class ContextEnumerator implements NamingEnumeration {
+public class ContextEnumerator implements NamingEnumeration<Binding> {
 
     private static boolean debug = false;
-    private NamingEnumeration children = null;
+    private NamingEnumeration<Binding> children = null;
     private Binding currentChild = null;
     private boolean currentReturned = false;
     private Context root;
@@ -77,7 +77,7 @@ public class ContextEnumerator implements NamingEnumeration {
     }
 
     // Subclass should override if it wants to avoid calling obj factory
-    protected NamingEnumeration getImmediateChildren(Context ctx)
+    protected NamingEnumeration<Binding> getImmediateChildren(Context ctx)
         throws NamingException {
             return ctx.listBindings("");
     }
@@ -101,7 +101,7 @@ public class ContextEnumerator implements NamingEnumeration {
         }
     }
 
-    public Object nextElement() {
+    public Binding nextElement() {
         try {
             return next();
         } catch (NamingException e) {
@@ -109,7 +109,7 @@ public class ContextEnumerator implements NamingEnumeration {
         }
     }
 
-    public Object next() throws NamingException {
+    public Binding next() throws NamingException {
         if (!rootProcessed) {
             rootProcessed = true;
             return new Binding("", root.getClass().getName(),
@@ -132,7 +132,7 @@ public class ContextEnumerator implements NamingEnumeration {
     }
 
     private Binding getNextChild() throws NamingException {
-        Binding oldBinding = ((Binding)children.next());
+        Binding oldBinding = children.next();
         Binding newBinding = null;
 
         // if the name is relative, we need to add it to the name of this
@@ -192,7 +192,7 @@ public class ContextEnumerator implements NamingEnumeration {
             if(debug) {System.out.println("getNextDescedant: expanded case");}
 
             // if the current child is expanded, use it's enumerator
-            return (Binding)currentChildEnum.next();
+            return currentChildEnum.next();
 
         } else {
 

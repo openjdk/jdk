@@ -74,7 +74,7 @@ public interface Reference {
      *
      * @return child elements.
      */
-    Iterator getElementRetrievalInformation();
+    Iterator<Element> getElementRetrievalInformation();
 
     /**
      * Adds retrieval information.

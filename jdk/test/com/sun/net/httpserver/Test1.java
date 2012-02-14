@@ -26,6 +26,7 @@
  * @bug 6270015
  * @run main/othervm Test1
  * @run main/othervm -Dsun.net.httpserver.maxReqTime=10 Test1
+ * @run main/othervm -Dsun.net.httpserver.nodelay=true Test1
  * @summary  Light weight HTTP server
  */
 
@@ -42,6 +43,10 @@ import javax.net.ssl.*;
  *      - send/receive large/small file
  *      - chunked encoding
  *      - via http and https
+ *
+ * The test is also run with sun.net.httpserver.nodelay simply to exercise
+ * this option. There is no specific pass or failure related to running with
+ * this option.
  */
 
 public class Test1 extends Test {

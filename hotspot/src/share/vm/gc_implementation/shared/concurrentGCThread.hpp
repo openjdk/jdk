@@ -95,8 +95,6 @@ protected:
   static int set_CGC_flag(int b)           { return _CGC_flag |= b; }
   static int reset_CGC_flag(int b)         { return _CGC_flag &= ~b; }
 
-  void stopWorldAndDo(VoidClosure* op);
-
   // All instances share this one set.
   static SuspendibleThreadSet _sts;
 

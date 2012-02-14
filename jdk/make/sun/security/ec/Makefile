@@ -109,6 +109,9 @@ ifndef OPENJDK
   endif
 endif
 
+JAVAC_MAX_WARNINGS=false
+JAVAC_LINT_OPTIONS=-Xlint:all,-deprecation
+JAVAC_WARNINGS_FATAL=true
 include $(BUILDDIR)/common/Defs.gmk
 
 #
@@ -156,7 +159,7 @@ ifeq ($(NATIVE_ECC_AVAILABLE), true)
       $(PKGDIR)/ECDSASignature.java \
       $(PKGDIR)/ECKeyPairGenerator.java
 
-  JAVAHFLAGS += -classpath $(CLASSDESTDIR)
+  JAVAHFLAGS += -Xbootclasspath/p:$(CLASSDESTDIR)
 
   #
   # C and C++ files
@@ -189,10 +192,8 @@ ifeq ($(NATIVE_ECC_AVAILABLE), true)
   #
   # Libraries to link
   #
-  ifeq ($(PLATFORM), windows)
-    OTHER_LDLIBS += $(JVMLIB)
-  else
-    OTHER_LDLIBS = -ldl $(JVMLIB) $(LIBCXX)
+  ifneq ($(PLATFORM), windows)
+    OTHER_LDLIBS = $(LIBCXX)
   endif
 
   include $(BUILDDIR)/common/Mapfile-vers.gmk

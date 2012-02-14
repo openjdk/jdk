@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -678,16 +678,18 @@ public final class Integer extends Number implements Comparable<Integer> {
     }
 
     /**
-     * Returns the value of this {@code Integer} as a
-     * {@code byte}.
+     * Returns the value of this {@code Integer} as a {@code byte}
+     * after a narrowing primitive conversion.
+     * @jls 5.1.3 Narrowing Primitive Conversions
      */
     public byte byteValue() {
         return (byte)value;
     }
 
     /**
-     * Returns the value of this {@code Integer} as a
-     * {@code short}.
+     * Returns the value of this {@code Integer} as a {@code short}
+     * after a narrowing primitive conversion.
+     * @jls 5.1.3 Narrowing Primitive Conversions
      */
     public short shortValue() {
         return (short)value;
@@ -702,24 +704,27 @@ public final class Integer extends Number implements Comparable<Integer> {
     }
 
     /**
-     * Returns the value of this {@code Integer} as a
-     * {@code long}.
+     * Returns the value of this {@code Integer} as a {@code long}
+     * after a widening primitive conversion.
+     * @jls 5.1.2 Widening Primitive Conversions
      */
     public long longValue() {
         return (long)value;
     }
 
     /**
-     * Returns the value of this {@code Integer} as a
-     * {@code float}.
+     * Returns the value of this {@code Integer} as a {@code float}
+     * after a widening primitive conversion.
+     * @jls 5.1.2 Widening Primitive Conversions
      */
     public float floatValue() {
         return (float)value;
     }
 
     /**
-     * Returns the value of this {@code Integer} as a
-     * {@code double}.
+     * Returns the value of this {@code Integer} as a {@code double}
+     * after a widening primitive conversion.
+     * @jls 5.1.2 Widening Primitive Conversions
      */
     public double doubleValue() {
         return (double)value;
@@ -771,17 +776,17 @@ public final class Integer extends Number implements Comparable<Integer> {
      * Determines the integer value of the system property with the
      * specified name.
      *
-     * <p>The first argument is treated as the name of a system property.
-     * System properties are accessible through the
-     * {@link java.lang.System#getProperty(java.lang.String)} method. The
+     * <p>The first argument is treated as the name of a system
+     * property.  System properties are accessible through the {@link
+     * java.lang.System#getProperty(java.lang.String)} method. The
      * string value of this property is then interpreted as an integer
-     * value and an {@code Integer} object representing this value is
-     * returned. Details of possible numeric formats can be found with
-     * the definition of {@code getProperty}.
+     * value using the grammar supported by {@link Integer#decode decode} and
+     * an {@code Integer} object representing this value is returned.
      *
-     * <p>If there is no property with the specified name, if the specified name
-     * is empty or {@code null}, or if the property does not have
-     * the correct numeric format, then {@code null} is returned.
+     * <p>If there is no property with the specified name, if the
+     * specified name is empty or {@code null}, or if the property
+     * does not have the correct numeric format, then {@code null} is
+     * returned.
      *
      * <p>In other words, this method returns an {@code Integer}
      * object equal to the value of:
@@ -792,6 +797,8 @@ public final class Integer extends Number implements Comparable<Integer> {
      *
      * @param   nm   property name.
      * @return  the {@code Integer} value of the property.
+     * @throws  SecurityException for the same reasons as
+     *          {@link System#getProperty(String) System.getProperty}
      * @see     java.lang.System#getProperty(java.lang.String)
      * @see     java.lang.System#getProperty(java.lang.String, java.lang.String)
      */
@@ -803,13 +810,12 @@ public final class Integer extends Number implements Comparable<Integer> {
      * Determines the integer value of the system property with the
      * specified name.
      *
-     * <p>The first argument is treated as the name of a system property.
-     * System properties are accessible through the {@link
+     * <p>The first argument is treated as the name of a system
+     * property.  System properties are accessible through the {@link
      * java.lang.System#getProperty(java.lang.String)} method. The
      * string value of this property is then interpreted as an integer
-     * value and an {@code Integer} object representing this value is
-     * returned. Details of possible numeric formats can be found with
-     * the definition of {@code getProperty}.
+     * value using the grammar supported by {@link Integer#decode decode} and
+     * an {@code Integer} object representing this value is returned.
      *
      * <p>The second argument is the default value. An {@code Integer} object
      * that represents the value of the second argument is returned if there
@@ -837,6 +843,8 @@ public final class Integer extends Number implements Comparable<Integer> {
      * @param   nm   property name.
      * @param   val   default value.
      * @return  the {@code Integer} value of the property.
+     * @throws  SecurityException for the same reasons as
+     *          {@link System#getProperty(String) System.getProperty}
      * @see     java.lang.System#getProperty(java.lang.String)
      * @see     java.lang.System#getProperty(java.lang.String, java.lang.String)
      */
@@ -851,9 +859,9 @@ public final class Integer extends Number implements Comparable<Integer> {
      * system property.  System properties are accessible through the
      * {@link java.lang.System#getProperty(java.lang.String)} method.
      * The string value of this property is then interpreted as an
-     * integer value, as per the {@code Integer.decode} method,
+     * integer value, as per the {@link Integer#decode decode} method,
      * and an {@code Integer} object representing this value is
-     * returned.
+     * returned; in summary:
      *
      * <ul><li>If the property value begins with the two ASCII characters
      *         {@code 0x} or the ASCII character {@code #}, not
@@ -877,16 +885,16 @@ public final class Integer extends Number implements Comparable<Integer> {
      * @param   nm   property name.
      * @param   val   default value.
      * @return  the {@code Integer} value of the property.
-     * @see     java.lang.System#getProperty(java.lang.String)
-     * @see java.lang.System#getProperty(java.lang.String, java.lang.String)
-     * @see java.lang.Integer#decode
+     * @throws  SecurityException for the same reasons as
+     *          {@link System#getProperty(String) System.getProperty}
+     * @see     System#getProperty(java.lang.String)
+     * @see     System#getProperty(java.lang.String, java.lang.String)
      */
     public static Integer getInteger(String nm, Integer val) {
         String v = null;
         try {
             v = System.getProperty(nm);
-        } catch (IllegalArgumentException e) {
-        } catch (NullPointerException e) {
+        } catch (IllegalArgumentException | NullPointerException e) {
         }
         if (v != null) {
             try {

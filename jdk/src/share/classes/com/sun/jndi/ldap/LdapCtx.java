@@ -33,6 +33,7 @@ import javax.naming.ldap.*;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
 
+import java.util.Locale;
 import java.util.Vector;
 import java.util.Hashtable;
 import java.util.List;
@@ -223,7 +224,7 @@ final public class LdapCtx extends ComponentDirContext
     String hostname = null;             // host name of server (no brackets
                                         //   for IPv6 literals)
     LdapClient clnt = null;             // connection handle
-    Hashtable envprops = null;          // environment properties of context
+    Hashtable<String, java.lang.Object> envprops = null; // environment properties of context
     int handleReferrals = DEFAULT_REFERRAL_MODE; // how referral is handled
     boolean hasLdapsScheme = false;     // true if the context was created
                                         //  using an LDAPS URL.
@@ -232,7 +233,7 @@ final public class LdapCtx extends ComponentDirContext
 
     String currentDN;                   // DN of this context
     Name currentParsedDN;               // DN of this context
-    Vector respCtls = null;             // Response controls read
+    Vector<Control> respCtls = null;    // Response controls read
     Control[] reqCtls = null;           // Controls to be sent with each request
 
 
@@ -244,14 +245,14 @@ final public class LdapCtx extends ComponentDirContext
     private boolean netscapeSchemaBug = false;       // workaround
     private Control[] bindCtls = null;  // Controls to be sent with LDAP "bind"
     private int referralHopLimit = DEFAULT_REFERRAL_LIMIT;  // max referral
-    private Hashtable schemaTrees = null; // schema root of this context
+    private Hashtable<String, DirContext> schemaTrees = null; // schema root of this context
     private int batchSize = DEFAULT_BATCH_SIZE;      // batch size for search results
     private boolean deleteRDN = DEFAULT_DELETE_RDN;  // delete the old RDN when modifying DN
     private boolean typesOnly = DEFAULT_TYPES_ONLY;  // return attribute types (no values)
     private int derefAliases = DEFAULT_DEREF_ALIASES;// de-reference alias entries during searching
     private char addrEncodingSeparator = DEFAULT_REF_SEPARATOR;  // encoding RefAddr
 
-    private Hashtable binaryAttrs = null;    // attr values returned as byte[]
+    private Hashtable<String, Boolean> binaryAttrs = null; // attr values returned as byte[]
     private int connectTimeout = -1;         // no timeout value
     private int readTimeout = -1;            // no timeout value
     private boolean waitForReply = true;     // wait for search response
@@ -272,13 +273,15 @@ final public class LdapCtx extends ComponentDirContext
 
     // -------------- Constructors  -----------------------------------
 
-    public LdapCtx(String dn, String host, int port_number, Hashtable props,
+    @SuppressWarnings("unchecked")
+    public LdapCtx(String dn, String host, int port_number,
+            Hashtable<?,?> props,
             boolean useSsl) throws NamingException {
 
         this.useSsl = this.hasLdapsScheme = useSsl;
 
         if (props != null) {
-            envprops = (Hashtable) props.clone();
+            envprops = (Hashtable<String, java.lang.Object>) props.clone();
 
             // SSL env prop overrides the useSsl argument
             if ("ssl".equals(envprops.get(Context.SECURITY_PROTOCOL))) {
@@ -310,7 +313,7 @@ final public class LdapCtx extends ComponentDirContext
             this.useDefaultPortNumber = true;
         }
 
-        schemaTrees = new Hashtable(11, 0.75f);
+        schemaTrees = new Hashtable<>(11, 0.75f);
         initEnv();
         try {
             connect(false);
@@ -557,9 +560,7 @@ final public class LdapCtx extends ComponentDirContext
                 if (answer.resControls != null) {
                     respCtls = appendVector(respCtls, answer.resControls);
                 }
-            } catch (NamingException ae) {
-                addEx = ae;
-            } catch (IOException ae) {
+            } catch (NamingException | IOException ae) {
                 addEx = ae;
             }
 
@@ -918,19 +919,17 @@ final public class LdapCtx extends ComponentDirContext
             }
 
             // Parse string name into list of RDNs
-            //List<Rdn> rdnList = (new LdapName(dn)).rdns();
-            List rdnList = (new LdapName(dn)).getRdns();
+            List<Rdn> rdnList = (new LdapName(dn)).getRdns();
 
             // Get leaf RDN
-            //Rdn rdn = rdnList.get(rdnList.size() - 1);
-            Rdn rdn = (Rdn) rdnList.get(rdnList.size() - 1);
+            Rdn rdn = rdnList.get(rdnList.size() - 1);
             Attributes nameAttrs = rdn.toAttributes();
 
             // Add attributes of RDN to attrs if not already there
-            NamingEnumeration enum_ = nameAttrs.getAll();
+            NamingEnumeration<? extends Attribute> enum_ = nameAttrs.getAll();
             Attribute nameAttr;
             while (enum_.hasMore()) {
-                nameAttr = (Attribute) enum_.next();
+                nameAttr = enum_.next();
 
                 // If attrs already has the attribute, don't change or add to it
                 if (attrs.get(nameAttr.getID()) ==  null) {
@@ -961,12 +960,12 @@ final public class LdapCtx extends ComponentDirContext
     }
 
 
-    private static boolean containsIgnoreCase(NamingEnumeration enumStr,
+    private static boolean containsIgnoreCase(NamingEnumeration<String> enumStr,
                                 String str) throws NamingException {
         String strEntry;
 
         while (enumStr.hasMore()) {
-             strEntry = (String) enumStr.next();
+             strEntry = enumStr.next();
              if (strEntry.equalsIgnoreCase(str)) {
                 return true;
              }
@@ -993,7 +992,7 @@ final public class LdapCtx extends ComponentDirContext
      * Append the the second Vector onto the first Vector
      * (v2 must be non-null)
      */
-    private static Vector appendVector(Vector v1, Vector v2) {
+    private static <T> Vector<T> appendVector(Vector<T> v1, Vector<T> v2) {
         if (v1 == null) {
             v1 = v2;
         } else {
@@ -1038,10 +1037,10 @@ final public class LdapCtx extends ComponentDirContext
                 // found it but got no attributes
                 attrs = new BasicAttributes(LdapClient.caseIgnore);
             } else {
-                LdapEntry entry = (LdapEntry)answer.entries.elementAt(0);
+                LdapEntry entry = answer.entries.elementAt(0);
                 attrs = entry.attributes;
 
-                Vector entryCtls = entry.respCtls; // retrieve entry controls
+                Vector<Control> entryCtls = entry.respCtls; // retrieve entry controls
                 if (entryCtls != null) {
                     appendVector(respCtls, entryCtls); // concatenate controls
                 }
@@ -1097,7 +1096,7 @@ final public class LdapCtx extends ComponentDirContext
         }
     }
 
-    protected NamingEnumeration c_list(Name name, Continuation cont)
+    protected NamingEnumeration<NameClassPair> c_list(Name name, Continuation cont)
             throws NamingException {
         SearchControls cons = new SearchControls();
         String[] classAttrs = new String[2];
@@ -1170,7 +1169,7 @@ final public class LdapCtx extends ComponentDirContext
         }
     }
 
-    protected NamingEnumeration c_listBindings(Name name, Continuation cont)
+    protected NamingEnumeration<Binding> c_listBindings(Name name, Continuation cont)
             throws NamingException {
 
         SearchControls cons = new SearchControls();
@@ -1198,7 +1197,7 @@ final public class LdapCtx extends ComponentDirContext
 
             // process the referrals sequentially
             while (true) {
-
+                @SuppressWarnings("unchecked")
                 LdapReferralContext refCtx =
                     (LdapReferralContext)e.getReferralContext(envprops, bindCtls);
 
@@ -1220,16 +1219,14 @@ final public class LdapCtx extends ComponentDirContext
             LdapBindingEnumeration res =
                 new LdapBindingEnumeration(this, answer, name, cont);
 
-            res.setNamingException(
-                    (LimitExceededException)cont.fillInException(e));
+            res.setNamingException(cont.fillInException(e));
             return res;
 
         } catch (PartialResultException e) {
             LdapBindingEnumeration res =
                 new LdapBindingEnumeration(this, answer, name, cont);
 
-            res.setNamingException(
-                    (PartialResultException)cont.fillInException(e));
+            res.setNamingException(cont.fillInException(e));
             return res;
 
         } catch (NamingException e) {
@@ -1337,9 +1334,9 @@ final public class LdapCtx extends ComponentDirContext
             }
 
             // get attributes from result
-            LdapEntry entry = (LdapEntry) answer.entries.elementAt(0);
+            LdapEntry entry = answer.entries.elementAt(0);
 
-            Vector entryCtls = entry.respCtls; // retrieve entry controls
+            Vector<Control> entryCtls = entry.respCtls; // retrieve entry controls
             if (entryCtls != null) {
                 appendVector(respCtls, entryCtls); // concatenate controls
             }
@@ -1398,10 +1395,10 @@ final public class LdapCtx extends ComponentDirContext
             int[] jmods = new int[attrs.size()];
             Attribute[] jattrs = new Attribute[attrs.size()];
 
-            NamingEnumeration ae = attrs.getAll();
+            NamingEnumeration<? extends Attribute> ae = attrs.getAll();
             for(int i = 0; i < jmods.length && ae.hasMore(); i++) {
                 jmods[i] = jmod_op;
-                jattrs[i] = (Attribute)ae.next();
+                jattrs[i] = ae.next();
             }
 
             LdapResult answer = clnt.modify(newDN, jmods, jattrs, reqCtls);
@@ -1565,7 +1562,7 @@ final public class LdapCtx extends ComponentDirContext
             HierMemDirCtx objectClassCtx = new HierMemDirCtx();
             DirContext objectClassDef;
             String objectClassName;
-            for (Enumeration objectClasses = objectClassAttr.getAll();
+            for (Enumeration<?> objectClasses = objectClassAttr.getAll();
                 objectClasses.hasMoreElements(); ) {
                 objectClassName = (String)objectClasses.nextElement();
                 // %%% Should we fail if not found, or just continue?
@@ -1591,7 +1588,7 @@ final public class LdapCtx extends ComponentDirContext
     private DirContext getSchemaTree(Name name) throws NamingException {
         String subschemasubentry = getSchemaEntry(name, true);
 
-        DirContext schemaTree = (DirContext)schemaTrees.get(subschemasubentry);
+        DirContext schemaTree = schemaTrees.get(subschemasubentry);
 
         if(schemaTree==null) {
             if(debug){System.err.println("LdapCtx: building new schema tree " + this);}
@@ -1621,7 +1618,7 @@ final public class LdapCtx extends ComponentDirContext
                 false /*deref link */ );
 
         Name sse = (new CompositeName()).add(subschemasubentry);
-        NamingEnumeration results =
+        NamingEnumeration<SearchResult> results =
             searchAux(sse, "(objectClass=subschema)", constraints,
             false, true, new Continuation());
 
@@ -1629,7 +1626,7 @@ final public class LdapCtx extends ComponentDirContext
             throw new OperationNotSupportedException(
                 "Cannot get read subschemasubentry: " + subschemasubentry);
         }
-        SearchResult result = (SearchResult)results.next();
+        SearchResult result = results.next();
         results.close();
 
         Object obj = result.getObject();
@@ -1674,7 +1671,7 @@ final public class LdapCtx extends ComponentDirContext
             false /* returning obj */,
             false /* deref link */);
 
-        NamingEnumeration results;
+        NamingEnumeration<SearchResult> results;
         try {
             results = searchAux(name, "objectclass=*", constraints, relative,
                 true, new Continuation());
@@ -1695,7 +1692,7 @@ final public class LdapCtx extends ComponentDirContext
                 "Requesting schema of nonexistent entry: " + name);
         }
 
-        SearchResult result = (SearchResult) results.next();
+        SearchResult result = results.next();
         results.close();
 
         Attribute schemaEntryAttr =
@@ -1720,7 +1717,7 @@ final public class LdapCtx extends ComponentDirContext
     // Set attributes to point to this context in case some one
     // asked for their schema
     void setParents(Attributes attrs, Name name) throws NamingException {
-        NamingEnumeration ae = attrs.getAll();
+        NamingEnumeration<? extends Attribute> ae = attrs.getAll();
         while(ae.hasMore()) {
             ((LdapAttribute) ae.next()).setParent(this, name);
         }
@@ -1740,14 +1737,14 @@ final public class LdapCtx extends ComponentDirContext
     }
 
    // --------------------- Searches -----------------------------
-    protected NamingEnumeration c_search(Name name,
+    protected NamingEnumeration<SearchResult> c_search(Name name,
                                          Attributes matchingAttributes,
                                          Continuation cont)
             throws NamingException {
         return c_search(name, matchingAttributes, null, cont);
     }
 
-    protected NamingEnumeration c_search(Name name,
+    protected NamingEnumeration<SearchResult> c_search(Name name,
                                          Attributes matchingAttributes,
                                          String[] attributesToReturn,
                                          Continuation cont)
@@ -1764,7 +1761,7 @@ final public class LdapCtx extends ComponentDirContext
         return c_search(name, filter, cons, cont);
     }
 
-    protected NamingEnumeration c_search(Name name,
+    protected NamingEnumeration<SearchResult> c_search(Name name,
                                          String filter,
                                          SearchControls cons,
                                          Continuation cont)
@@ -1773,7 +1770,7 @@ final public class LdapCtx extends ComponentDirContext
                  waitForReply, cont);
     }
 
-    protected NamingEnumeration c_search(Name name,
+    protected NamingEnumeration<SearchResult> c_search(Name name,
                                          String filterExpr,
                                          Object[] filterArgs,
                                          SearchControls cons,
@@ -1790,7 +1787,7 @@ final public class LdapCtx extends ComponentDirContext
     }
 
         // Used by NamingNotifier
-    NamingEnumeration searchAux(Name name,
+    NamingEnumeration<SearchResult> searchAux(Name name,
         String filter,
         SearchControls cons,
         boolean relative,
@@ -1849,7 +1846,8 @@ final public class LdapCtx extends ComponentDirContext
                 processReturnCode(answer, name);
             }
             return new LdapSearchEnumeration(this, answer,
-                fullyQualifiedName(name), args, cont);
+                                             fullyQualifiedName(name),
+                                             args, cont);
 
         } catch (LdapReferralException e) {
             if (handleReferrals == LdapClient.LDAP_REF_THROW)
@@ -1858,8 +1856,9 @@ final public class LdapCtx extends ComponentDirContext
             // process the referrals sequentially
             while (true) {
 
-                LdapReferralContext refCtx =
-                    (LdapReferralContext)e.getReferralContext(envprops, bindCtls);
+                @SuppressWarnings("unchecked")
+                LdapReferralContext refCtx = (LdapReferralContext)
+                        e.getReferralContext(envprops, bindCtls);
 
                 // repeat the original operation at the new context
                 try {
@@ -2143,16 +2142,18 @@ final public class LdapCtx extends ComponentDirContext
     /**
      * Override with noncloning version.
      */
-    protected Hashtable p_getEnvironment() {
+    protected Hashtable<String, Object> p_getEnvironment() {
         return envprops;
     }
 
-    public Hashtable getEnvironment() throws NamingException {
+    @SuppressWarnings("unchecked") // clone()
+    public Hashtable<String, Object> getEnvironment() throws NamingException {
         return (envprops == null
-                ? new Hashtable(5, 0.75f)
-                : (Hashtable)envprops.clone());
+                ? new Hashtable<String, Object>(5, 0.75f)
+                : (Hashtable<String, Object>)envprops.clone());
     }
 
+    @SuppressWarnings("unchecked") // clone()
     public Object removeFromEnvironment(String propName)
         throws NamingException {
 
@@ -2160,58 +2161,74 @@ final public class LdapCtx extends ComponentDirContext
         if (envprops == null || envprops.get(propName) == null) {
             return null;
         }
+        switch (propName) {
+            case REF_SEPARATOR:
+                addrEncodingSeparator = DEFAULT_REF_SEPARATOR;
+                break;
+            case TYPES_ONLY:
+                typesOnly = DEFAULT_TYPES_ONLY;
+                break;
+            case DELETE_RDN:
+                deleteRDN = DEFAULT_DELETE_RDN;
+                break;
+            case DEREF_ALIASES:
+                derefAliases = DEFAULT_DEREF_ALIASES;
+                break;
+            case Context.BATCHSIZE:
+                batchSize = DEFAULT_BATCH_SIZE;
+                break;
+            case REFERRAL_LIMIT:
+                referralHopLimit = DEFAULT_REFERRAL_LIMIT;
+                break;
+            case Context.REFERRAL:
+                setReferralMode(null, true);
+                break;
+            case BINARY_ATTRIBUTES:
+                setBinaryAttributes(null);
+                break;
+            case CONNECT_TIMEOUT:
+                connectTimeout = -1;
+                break;
+            case READ_TIMEOUT:
+                readTimeout = -1;
+                break;
+            case WAIT_FOR_REPLY:
+                waitForReply = true;
+                break;
+            case REPLY_QUEUE_SIZE:
+                replyQueueSize = -1;
+                break;
 
-        if (propName.equals(REF_SEPARATOR)) {
-            addrEncodingSeparator = DEFAULT_REF_SEPARATOR;
-        } else if (propName.equals(TYPES_ONLY)) {
-            typesOnly = DEFAULT_TYPES_ONLY;
-        } else if (propName.equals(DELETE_RDN)) {
-            deleteRDN = DEFAULT_DELETE_RDN;
-        } else if (propName.equals(DEREF_ALIASES)) {
-            derefAliases = DEFAULT_DEREF_ALIASES;
-        } else if (propName.equals(Context.BATCHSIZE)) {
-            batchSize = DEFAULT_BATCH_SIZE;
-        } else if (propName.equals(REFERRAL_LIMIT)) {
-            referralHopLimit = DEFAULT_REFERRAL_LIMIT;
-        } else if (propName.equals(Context.REFERRAL)) {
-            setReferralMode(null, true);
-        } else if (propName.equals(BINARY_ATTRIBUTES)) {
-            setBinaryAttributes(null);
-        } else if (propName.equals(CONNECT_TIMEOUT)) {
-            connectTimeout = -1;
-        } else if (propName.equals(READ_TIMEOUT)) {
-            readTimeout = -1;
-        } else if (propName.equals(WAIT_FOR_REPLY)) {
-            waitForReply = true;
-        } else if (propName.equals(REPLY_QUEUE_SIZE)) {
-            replyQueueSize = -1;
+            // The following properties affect the connection
 
-// The following properties affect the connection
-
-        } else if (propName.equals(Context.SECURITY_PROTOCOL)) {
-            closeConnection(SOFT_CLOSE);
-            // De-activate SSL and reset the context's url and port number
-            if (useSsl && !hasLdapsScheme) {
-                useSsl = false;
-                url = null;
-                if (useDefaultPortNumber) {
-                    port_number = DEFAULT_PORT;
+            case Context.SECURITY_PROTOCOL:
+                closeConnection(SOFT_CLOSE);
+                // De-activate SSL and reset the context's url and port number
+                if (useSsl && !hasLdapsScheme) {
+                    useSsl = false;
+                    url = null;
+                    if (useDefaultPortNumber) {
+                        port_number = DEFAULT_PORT;
+                    }
                 }
-            }
-        } else if (propName.equals(VERSION) ||
-            propName.equals(SOCKET_FACTORY)) {
-            closeConnection(SOFT_CLOSE);
-        } else if(propName.equals(Context.SECURITY_AUTHENTICATION) ||
-            propName.equals(Context.SECURITY_PRINCIPAL) ||
-            propName.equals(Context.SECURITY_CREDENTIALS)) {
-            sharable = false;
+                break;
+            case VERSION:
+            case SOCKET_FACTORY:
+                closeConnection(SOFT_CLOSE);
+                break;
+            case Context.SECURITY_AUTHENTICATION:
+            case Context.SECURITY_PRINCIPAL:
+            case Context.SECURITY_CREDENTIALS:
+                sharable = false;
+                break;
         }
 
         // Update environment; reconnection will use new props
-        envprops = (Hashtable)envprops.clone();
+        envprops = (Hashtable<String, Object>)envprops.clone();
         return envprops.remove(propName);
     }
 
+    @SuppressWarnings("unchecked") // clone()
     public Object addToEnvironment(String propName, Object propVal)
         throws NamingException {
 
@@ -2219,57 +2236,72 @@ final public class LdapCtx extends ComponentDirContext
             if (propVal == null) {
                 return removeFromEnvironment(propName);
             }
+            switch (propName) {
+                case REF_SEPARATOR:
+                    setRefSeparator((String)propVal);
+                    break;
+                case TYPES_ONLY:
+                    setTypesOnly((String)propVal);
+                    break;
+                case DELETE_RDN:
+                    setDeleteRDN((String)propVal);
+                    break;
+                case DEREF_ALIASES:
+                    setDerefAliases((String)propVal);
+                    break;
+                case Context.BATCHSIZE:
+                    setBatchSize((String)propVal);
+                    break;
+                case REFERRAL_LIMIT:
+                    setReferralLimit((String)propVal);
+                    break;
+                case Context.REFERRAL:
+                    setReferralMode((String)propVal, true);
+                    break;
+                case BINARY_ATTRIBUTES:
+                    setBinaryAttributes((String)propVal);
+                    break;
+                case CONNECT_TIMEOUT:
+                    setConnectTimeout((String)propVal);
+                    break;
+                case READ_TIMEOUT:
+                    setReadTimeout((String)propVal);
+                    break;
+                case WAIT_FOR_REPLY:
+                    setWaitForReply((String)propVal);
+                    break;
+                case REPLY_QUEUE_SIZE:
+                    setReplyQueueSize((String)propVal);
+                    break;
 
-            if (propName.equals(REF_SEPARATOR)) {
-                setRefSeparator((String)propVal);
-            } else if (propName.equals(TYPES_ONLY)) {
-                setTypesOnly((String)propVal);
-            } else if (propName.equals(DELETE_RDN)) {
-                setDeleteRDN((String)propVal);
-            } else if (propName.equals(DEREF_ALIASES)) {
-                setDerefAliases((String)propVal);
-            } else if (propName.equals(Context.BATCHSIZE)) {
-                setBatchSize((String)propVal);
-            } else if (propName.equals(REFERRAL_LIMIT)) {
-                setReferralLimit((String)propVal);
-            } else if (propName.equals(Context.REFERRAL)) {
-                setReferralMode((String)propVal, true);
-            } else if (propName.equals(BINARY_ATTRIBUTES)) {
-                setBinaryAttributes((String)propVal);
-            } else if (propName.equals(CONNECT_TIMEOUT)) {
-                setConnectTimeout((String)propVal);
-            } else if (propName.equals(READ_TIMEOUT)) {
-                setReadTimeout((String)propVal);
-            } else if (propName.equals(WAIT_FOR_REPLY)) {
-                setWaitForReply((String)propVal);
-            } else if (propName.equals(REPLY_QUEUE_SIZE)) {
-                setReplyQueueSize((String)propVal);
+            // The following properties affect the connection
 
-// The following properties affect the connection
-
-            } else if (propName.equals(Context.SECURITY_PROTOCOL)) {
-                closeConnection(SOFT_CLOSE);
-                // Activate SSL and reset the context's url and port number
-                if ("ssl".equals(propVal)) {
-                    useSsl = true;
-                    url = null;
-                    if (useDefaultPortNumber) {
-                        port_number = DEFAULT_SSL_PORT;
+                case Context.SECURITY_PROTOCOL:
+                    closeConnection(SOFT_CLOSE);
+                    // Activate SSL and reset the context's url and port number
+                    if ("ssl".equals(propVal)) {
+                        useSsl = true;
+                        url = null;
+                        if (useDefaultPortNumber) {
+                            port_number = DEFAULT_SSL_PORT;
+                        }
                     }
-                }
-            } else if (propName.equals(VERSION) ||
-                propName.equals(SOCKET_FACTORY)) {
-                closeConnection(SOFT_CLOSE);
-            } else if (propName.equals(Context.SECURITY_AUTHENTICATION) ||
-                propName.equals(Context.SECURITY_PRINCIPAL) ||
-                propName.equals(Context.SECURITY_CREDENTIALS)) {
-                sharable = false;
+                    break;
+                case VERSION:
+                case SOCKET_FACTORY:
+                    closeConnection(SOFT_CLOSE);
+                    break;
+                case Context.SECURITY_AUTHENTICATION:
+                case Context.SECURITY_PRINCIPAL:
+                case Context.SECURITY_CREDENTIALS:
+                    sharable = false;
+                    break;
             }
 
             // Update environment; reconnection will use new props
             envprops = (envprops == null
-                ? new Hashtable(5, 0.75f)
-                : (Hashtable)envprops.clone());
+                ? new Hashtable<String, Object>(5, 0.75f)
+                : (Hashtable<String, Object>)envprops.clone());
             return envprops.put(propName, propVal);
     }
 
@@ -2380,15 +2412,19 @@ final public class LdapCtx extends ComponentDirContext
     private void setReferralMode(String ref, boolean update) {
         // First determine the referral mode
         if (ref != null) {
-            if (ref.equals("follow")) {
-                handleReferrals = LdapClient.LDAP_REF_FOLLOW;
-            } else if (ref.equals("throw")) {
-                handleReferrals = LdapClient.LDAP_REF_THROW;
-            } else if (ref.equals("ignore")) {
-                handleReferrals = LdapClient.LDAP_REF_IGNORE;
-            } else {
-                throw new IllegalArgumentException(
-                    "Illegal value for " + Context.REFERRAL + " property.");
+            switch (ref) {
+                case "follow":
+                    handleReferrals = LdapClient.LDAP_REF_FOLLOW;
+                    break;
+                case "throw":
+                    handleReferrals = LdapClient.LDAP_REF_THROW;
+                    break;
+                case "ignore":
+                    handleReferrals = LdapClient.LDAP_REF_IGNORE;
+                    break;
+                default:
+                    throw new IllegalArgumentException(
+                        "Illegal value for " + Context.REFERRAL + " property.");
             }
         } else {
             handleReferrals = DEFAULT_REFERRAL_MODE;
@@ -2411,17 +2447,22 @@ final public class LdapCtx extends ComponentDirContext
      */
     private void setDerefAliases(String deref) {
         if (deref != null) {
-            if (deref.equals("never")) {
-                derefAliases = 0; // never de-reference aliases
-            } else if (deref.equals("searching")) {
-                derefAliases = 1; // de-reference aliases during searching
-            } else if (deref.equals("finding")) {
-                derefAliases = 2; // de-reference during name resolution
-            } else if (deref.equals("always")) {
-                derefAliases = 3; // always de-reference aliases
-            } else {
-                throw new IllegalArgumentException("Illegal value for " +
-                    DEREF_ALIASES + " property.");
+            switch (deref) {
+                case "never":
+                    derefAliases = 0; // never de-reference aliases
+                    break;
+                case "searching":
+                    derefAliases = 1; // de-reference aliases during searching
+                    break;
+                case "finding":
+                    derefAliases = 2; // de-reference during name resolution
+                    break;
+                case "always":
+                    derefAliases = 3; // always de-reference aliases
+                    break;
+                default:
+                    throw new IllegalArgumentException("Illegal value for " +
+                        DEREF_ALIASES + " property.");
             }
         } else {
             derefAliases = DEFAULT_DEREF_ALIASES;
@@ -2514,8 +2555,10 @@ final public class LdapCtx extends ComponentDirContext
      *     <ldapurls>   ::= <separator> <ldapurl> | <ldapurls>
      *     <separator>  ::= ASCII linefeed character (0x0a)
      *     <ldapurl>    ::= LDAP URL format (RFC 1959)
+     *
+     * Returns a Vector of single-String Vectors.
      */
-    private static Vector extractURLs(String refString) {
+    private static Vector<Vector<String>> extractURLs(String refString) {
 
         int separator = 0;
         int urlCount = 0;
@@ -2526,17 +2569,21 @@ final public class LdapCtx extends ComponentDirContext
             urlCount++;
         }
 
-        Vector referrals = new Vector(urlCount);
+        Vector<Vector<String>> referrals = new Vector<>(urlCount);
         int iURL;
         int i = 0;
 
         separator = refString.indexOf('\n');
         iURL = separator + 1;
         while ((separator = refString.indexOf('\n', iURL)) >= 0) {
-            referrals.addElement(refString.substring(iURL, separator));
+            Vector<String> referral = new Vector<>(1);
+            referral.addElement(refString.substring(iURL, separator));
+            referrals.addElement(referral);
             iURL = separator + 1;
         }
-        referrals.addElement(refString.substring(iURL));
+        Vector<String> referral = new Vector<>(1);
+        referral.addElement(refString.substring(iURL));
+        referrals.addElement(referral);
 
         return referrals;
     }
@@ -2549,9 +2596,9 @@ final public class LdapCtx extends ComponentDirContext
         if (attrIds == null) {
             binaryAttrs = null;
         } else {
-            binaryAttrs = new Hashtable(11, 0.75f);
+            binaryAttrs = new Hashtable<>(11, 0.75f);
             StringTokenizer tokens =
-                new StringTokenizer(attrIds.toLowerCase(), " ");
+                new StringTokenizer(attrIds.toLowerCase(Locale.ENGLISH), " ");
 
             while (tokens.hasMoreTokens()) {
                 binaryAttrs.put(tokens.nextToken(), Boolean.TRUE);
@@ -2601,11 +2648,12 @@ final public class LdapCtx extends ComponentDirContext
 */
     }
 
+    @SuppressWarnings("unchecked") // clone()
     public void reconnect(Control[] connCtls) throws NamingException {
         // Update environment
         envprops = (envprops == null
-                ? new Hashtable(5, 0.75f)
-                : (Hashtable)envprops.clone());
+                ? new Hashtable<String, Object>(5, 0.75f)
+                : (Hashtable<String, Object>)envprops.clone());
 
         if (connCtls == null) {
             envprops.remove(BIND_CONTROLS);
@@ -2631,7 +2679,7 @@ final public class LdapCtx extends ComponentDirContext
                 }
 
                 // reset the cache before a new connection is established
-                schemaTrees = new Hashtable(11, 0.75f);
+                schemaTrees = new Hashtable<>(11, 0.75f);
                 connect(startTLS);
 
             } else if (!sharable || startTLS) {
@@ -2644,7 +2692,7 @@ final public class LdapCtx extends ComponentDirContext
                     }
                 }
                 // reset the cache before a new connection is established
-                schemaTrees = new Hashtable(11, 0.75f);
+                schemaTrees = new Hashtable<>(11, 0.75f);
                 connect(startTLS);
             }
 
@@ -2846,7 +2894,7 @@ final public class LdapCtx extends ComponentDirContext
     }
 
     protected void processReturnCode(LdapResult res, Name resolvedName,
-        Object resolvedObj, Name remainName, Hashtable envprops, String fullDN)
+        Object resolvedObj, Name remainName, Hashtable<?,?> envprops, String fullDN)
     throws NamingException {
 
         String msg = LdapClient.getErrorMessage(res.status, res.errorMessage);
@@ -2880,7 +2928,7 @@ final public class LdapCtx extends ComponentDirContext
                     r = new LdapReferralException(resolvedName, resolvedObj,
                         remainName, msg, envprops, fullDN, handleReferrals,
                         reqCtls);
-                    r.setReferralInfo((Vector)res.referrals.elementAt(i), true);
+                    r.setReferralInfo(res.referrals.elementAt(i), true);
 
                     if (hopCount > 1) {
                         r.setHopCount(hopCount);
@@ -2927,7 +2975,7 @@ final public class LdapCtx extends ComponentDirContext
             r = new LdapReferralException(resolvedName, resolvedObj, remainName,
                 msg, envprops, fullDN, handleReferrals, reqCtls);
             // only one set of URLs is present
-            r.setReferralInfo((Vector)res.referrals.elementAt(0), false);
+            r.setReferralInfo(res.referrals.elementAt(0), false);
 
             if (hopCount > 1) {
                 r.setHopCount(hopCount);
@@ -2995,10 +3043,10 @@ final public class LdapCtx extends ComponentDirContext
              *     If 1 referral and 0 entries is received then
              *     assume name resolution has not yet completed.
              */
-            if (((res.entries == null) || (res.entries.size() == 0)) &&
+            if (((res.entries == null) || (res.entries.isEmpty())) &&
                 (res.referrals.size() == 1)) {
 
-                r.setReferralInfo((Vector)res.referrals, false);
+                r.setReferralInfo(res.referrals, false);
 
                 // check the hop limit
                 if (hopCount > referralHopLimit) {
@@ -3284,9 +3332,9 @@ final public class LdapCtx extends ComponentDirContext
 
     /**
      * Narrow controls using own default factory and ControlFactory.
-     * @param ctls A non-null Vector
+     * @param ctls A non-null Vector<Control>
      */
-    Control[] convertControls(Vector ctls) throws NamingException {
+    Control[] convertControls(Vector<Control> ctls) throws NamingException {
         int count = ctls.size();
 
         if (count == 0) {
@@ -3298,12 +3346,12 @@ final public class LdapCtx extends ComponentDirContext
         for (int i = 0; i < count; i++) {
             // Try own factory first
             controls[i] = myResponseControlFactory.getControlInstance(
-                (Control)ctls.elementAt(i));
+                ctls.elementAt(i));
 
             // Try assigned factories if own produced null
             if (controls[i] == null) {
                 controls[i] = ControlFactory.getControlInstance(
-                (Control)ctls.elementAt(i), this, envprops);
+                ctls.elementAt(i), this, envprops);
             }
         }
         return controls;
@@ -3448,7 +3496,7 @@ final public class LdapCtx extends ComponentDirContext
             if (nm.size() > 1) {
                 throw new InvalidNameException(
                     "Target cannot span multiple namespaces: " + nm);
-            } else if (nm.size() == 0) {
+            } else if (nm.isEmpty()) {
                 return "";
             } else {
                 return nm.get(0);

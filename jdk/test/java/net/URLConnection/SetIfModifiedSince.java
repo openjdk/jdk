@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ public class SetIfModifiedSince {
     }
 
     public static void main (String[] args) {
+        Locale reservedLocale = Locale.getDefault();
         try {
             Locale.setDefault(Locale.JAPAN);
             ServerSocket serversocket = new ServerSocket (0);
@@ -87,6 +88,10 @@ public class SetIfModifiedSince {
             int i=0, c;
             Thread.sleep (5000);
         } catch (Exception e) {
+        } finally {
+            // restore the reserved locale
+            Locale.setDefault(reservedLocale);
         }
+
     }
 }

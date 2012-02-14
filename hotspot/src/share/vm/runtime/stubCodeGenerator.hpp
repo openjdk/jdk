@@ -98,9 +98,10 @@ class StubCodeGenerator: public StackObj {
 
   StubCodeDesc* _first_stub;
   StubCodeDesc* _last_stub;
+  bool _print_code;
 
  public:
-  StubCodeGenerator(CodeBuffer* code);
+  StubCodeGenerator(CodeBuffer* code, bool print_code = false);
   ~StubCodeGenerator();
 
   MacroAssembler* assembler() const              { return _masm; }

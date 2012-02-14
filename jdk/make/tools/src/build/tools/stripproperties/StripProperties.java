@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,7 +246,7 @@ public class StripProperties {
     throws IOException {
         BufferedWriter awriter;
         awriter = new BufferedWriter(new OutputStreamWriter(out, "8859_1"));
-        for (Enumeration e = properties.keys(); e.hasMoreElements();) {
+        for (Enumeration<Object> e = properties.keys(); e.hasMoreElements();) {
             String key = (String)e.nextElement();
             String val = (String)properties.get(key);
             key = saveConvert(key, true);
