@@ -47,7 +47,7 @@
 static jlong* double_quadword(jlong *adr, jlong lo, jlong hi) {
   // Use the expression (adr)&(~0xF) to provide 128-bits aligned address
   // of 128-bits operands for SSE instructions.
-  jlong *operand = (jlong*)(((long)adr)&((long)(~0xF)));
+  jlong *operand = (jlong*)(((intptr_t)adr) & ((intptr_t)(~0xF)));
   // Store the value to a 128-bits operand.
   operand[0] = lo;
   operand[1] = hi;
@@ -127,10 +127,6 @@ bool LIR_Assembler::is_small_constant(LIR_Opr opr) {
 
 LIR_Opr LIR_Assembler::receiverOpr() {
   return FrameMap::receiver_opr;
-}
-
-LIR_Opr LIR_Assembler::incomingReceiverOpr() {
-  return receiverOpr();
 }
 
 LIR_Opr LIR_Assembler::osrBufferPointer() {
@@ -371,55 +367,6 @@ void LIR_Assembler::jobject2reg_with_patching(Register reg, CodeEmitInfo* info) 
 }
 
 
-void LIR_Assembler::monitorexit(LIR_Opr obj_opr, LIR_Opr lock_opr, Register new_hdr, int monitor_no, Register exception) {
-  if (exception->is_valid()) {
-    // preserve exception
-    // note: the monitor_exit runtime call is a leaf routine
-    //       and cannot block => no GC can happen
-    // The slow case (MonitorAccessStub) uses the first two stack slots
-    // ([esp+0] and [esp+4]), therefore we store the exception at [esp+8]
-    __ movptr (Address(rsp, 2*wordSize), exception);
-  }
-
-  Register obj_reg  = obj_opr->as_register();
-  Register lock_reg = lock_opr->as_register();
-
-  // setup registers (lock_reg must be rax, for lock_object)
-  assert(obj_reg != SYNC_header && lock_reg != SYNC_header, "rax, must be available here");
-  Register hdr = lock_reg;
-  assert(new_hdr == SYNC_header, "wrong register");
-  lock_reg = new_hdr;
-  // compute pointer to BasicLock
-  Address lock_addr = frame_map()->address_for_monitor_lock(monitor_no);
-  __ lea(lock_reg, lock_addr);
-  // unlock object
-  MonitorAccessStub* slow_case = new MonitorExitStub(lock_opr, true, monitor_no);
-  // _slow_case_stubs->append(slow_case);
-  // temporary fix: must be created after exceptionhandler, therefore as call stub
-  _slow_case_stubs->append(slow_case);
-  if (UseFastLocking) {
-    // try inlined fast unlocking first, revert to slow locking if it fails
-    // note: lock_reg points to the displaced header since the displaced header offset is 0!
-    assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-    __ unlock_object(hdr, obj_reg, lock_reg, *slow_case->entry());
-  } else {
-    // always do slow unlocking
-    // note: the slow unlocking code could be inlined here, however if we use
-    //       slow unlocking, speed doesn't matter anyway and this solution is
-    //       simpler and requires less duplicated code - additionally, the
-    //       slow unlocking code is the same in either case which simplifies
-    //       debugging
-    __ jmp(*slow_case->entry());
-  }
-  // done
-  __ bind(*slow_case->continuation());
-
-  if (exception->is_valid()) {
-    // restore exception
-    __ movptr (exception, Address(rsp, 2 * wordSize));
-  }
-}
-
 // This specifies the rsp decrement needed to build the frame
 int LIR_Assembler::initial_frame_size_in_bytes() {
   // if rounding, must let FrameMap know!
@@ -480,8 +427,8 @@ int LIR_Assembler::emit_unwind_handler() {
   // Fetch the exception from TLS and clear out exception related thread state
   __ get_thread(rsi);
   __ movptr(rax, Address(rsi, JavaThread::exception_oop_offset()));
-  __ movptr(Address(rsi, JavaThread::exception_oop_offset()), (int32_t)NULL_WORD);
-  __ movptr(Address(rsi, JavaThread::exception_pc_offset()), (int32_t)NULL_WORD);
+  __ movptr(Address(rsi, JavaThread::exception_oop_offset()), (intptr_t)NULL_WORD);
+  __ movptr(Address(rsi, JavaThread::exception_pc_offset()), (intptr_t)NULL_WORD);
 
   __ bind(_unwind_handler_entry);
   __ verify_not_null_oop(rax);
@@ -3113,7 +3060,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // reload the register args properly if we go slow path. Yuck
 
     // These are proper for the calling convention
-
     store_parameter(length, 2);
     store_parameter(dst_pos, 1);
     store_parameter(dst, 0);
@@ -3351,12 +3297,15 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
           __ jcc(Assembler::notEqual, *stub->entry());
         }
 
-#ifndef _LP64
-        // save caller save registers
-        store_parameter(rax, 2);
-        store_parameter(rcx, 1);
-        store_parameter(rdx, 0);
+       // Spill because stubs can use any register they like and it's
+       // easier to restore just those that we care about.
+       store_parameter(dst, 0);
+       store_parameter(dst_pos, 1);
+       store_parameter(length, 2);
+       store_parameter(src_pos, 3);
+       store_parameter(src, 4);
 
+#ifndef _LP64
         __ movptr(tmp, dst_klass_addr);
         __ movptr(tmp, Address(tmp, objArrayKlass::element_klass_offset_in_bytes() + sizeof(oopDesc)));
         __ push(tmp);
@@ -3371,17 +3320,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
         __ call_VM_leaf(copyfunc_addr, 5);
 #else
         __ movl2ptr(length, length); //higher 32bits must be null
-
-        // save caller save registers: copy them to callee save registers
-        __ mov(rbx, rdx);
-        __ mov(r13, r8);
-        __ mov(r14, r9);
-#ifndef _WIN64
-        store_parameter(rsi, 1);
-        store_parameter(rcx, 0);
-        // on WIN64 other incoming parameters are in rdi and rsi saved
-        // across the call
-#endif
 
         __ lea(c_rarg0, Address(src, src_pos, scale, arrayOopDesc::base_offset_in_bytes(basic_type)));
         assert_different_registers(c_rarg0, dst, dst_pos, length);
@@ -3432,25 +3370,13 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
         __ xorl(tmp, -1);
 
-#ifndef _LP64
-        // restore caller save registers
-        assert_different_registers(tmp, rdx, rcx, rax); // result of stub will be lost
-        __ movptr(rdx, Address(rsp, 0*BytesPerWord));
-        __ movptr(rcx, Address(rsp, 1*BytesPerWord));
-        __ movptr(rax, Address(rsp, 2*BytesPerWord));
-#else
-        // restore caller save registers
-        __ mov(rdx, rbx);
-        __ mov(r8, r13);
-        __ mov(r9, r14);
-#ifndef _WIN64
-        assert_different_registers(tmp, rdx, r8, r9, rcx, rsi); // result of stub will be lost
-        __ movptr(rcx, Address(rsp, 0*BytesPerWord));
-        __ movptr(rsi, Address(rsp, 1*BytesPerWord));
-#else
-        assert_different_registers(tmp, rdx, r8, r9); // result of stub will be lost
-#endif
-#endif
+        // Restore previously spilled arguments
+        __ movptr   (dst,     Address(rsp, 0*BytesPerWord));
+        __ movptr   (dst_pos, Address(rsp, 1*BytesPerWord));
+        __ movptr   (length,  Address(rsp, 2*BytesPerWord));
+        __ movptr   (src_pos, Address(rsp, 3*BytesPerWord));
+        __ movptr   (src,     Address(rsp, 4*BytesPerWord));
+
 
         __ subl(length, tmp);
         __ addl(src_pos, tmp);

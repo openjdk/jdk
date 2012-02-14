@@ -90,18 +90,12 @@ class XScrollbarPeer extends XComponentPeer implements ScrollbarPeer, XScrollbar
             ? new Dimension(getDefaultDimension(), DEFAULT_LENGTH)
                 : new Dimension(DEFAULT_LENGTH, getDefaultDimension());
     }
-
-    public void repaint() {
-        Graphics g = getGraphics();
-        if (g != null) paint(g);
-    }
-
     /**
      * Paint the scrollbar.
      */
-    public void paint(Graphics g) {
-        Scrollbar sb = (Scrollbar)target;
-        Color colors[] = getGUIcolors();
+    @Override
+    void paintPeer(final Graphics g) {
+        final Color[] colors = getGUIcolors();
         g.setColor(colors[BACKGROUND_COLOR]);
         tsb.paint(g, colors, true);
         // paint the whole scrollbar

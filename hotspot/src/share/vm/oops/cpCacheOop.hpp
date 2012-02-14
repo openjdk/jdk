@@ -194,6 +194,8 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
     methodHandle signature_invoker               // determines signature information
   );
 
+  methodOop get_method_if_resolved(Bytecodes::Code invoke_code, constantPoolHandle cpool);
+
   // For JVM_CONSTANT_InvokeDynamic cache entries:
   void initialize_bootstrap_method_index_in_cache(int bsm_cache_index);
   int  bootstrap_method_index_in_cache();

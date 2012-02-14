@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,6 @@ public class LogCompilation extends DefaultHandler implements ErrorHandler, Cons
                 maxattempts = Math.max(maxattempts,c.getAttempts());
                 elapsed += c.getElapsedTime();
                 for (Phase phase : c.getPhases()) {
-                    out.printf("\t%s %6.4f\n", phase.getName(), phase.getElapsedTime());
                     Double v = phaseTime.get(phase.getName());
                     if (v == null) {
                         v = Double.valueOf(0.0);
@@ -138,6 +137,7 @@ public class LogCompilation extends DefaultHandler implements ErrorHandler, Cons
                         v2 = Integer.valueOf(0);
                     }
                     phaseNodes.put(phase.getName(), Integer.valueOf(v2.intValue() + phase.getNodes()));
+                    out.printf("\t%s %6.4f %d %d\n", phase.getName(), phase.getElapsedTime(), phase.getStartNodes(), phase.getNodes());
                 }
             } else if (e instanceof MakeNotEntrantEvent) {
                 MakeNotEntrantEvent mne = (MakeNotEntrantEvent) e;

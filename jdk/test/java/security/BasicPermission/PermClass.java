@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4511601
+ * @bug 4511601 7054918
  * @summary BasicPermissionCollection does not set permClass
  *              during deserialization
  */
@@ -55,59 +55,66 @@ public class PermClass {
 
         // read in a 1.2.1 BasicPermissionCollection
         File sFile = new File(dir, "PermClass.1.2.1");
-        ObjectInputStream ois = new ObjectInputStream
-                (new FileInputStream(sFile));
-        PermissionCollection pc = (PermissionCollection)ois.readObject();
-        System.out.println("1.2.1 collection = " + pc);
+        try (FileInputStream fis = new FileInputStream(sFile);
+                ObjectInputStream ois = new ObjectInputStream(fis)) {
+            PermissionCollection pc = (PermissionCollection)ois.readObject();
+            System.out.println("1.2.1 collection = " + pc);
 
-        if (pc.implies(mp)) {
-            System.out.println("JDK 1.2.1 test passed");
-        } else {
-            throw new Exception("JDK 1.2.1 test failed");
+            if (pc.implies(mp)) {
+                System.out.println("JDK 1.2.1 test passed");
+            } else {
+                throw new Exception("JDK 1.2.1 test failed");
+            }
         }
 
         // read in a 1.3.1 BasicPermissionCollection
         sFile = new File(dir, "PermClass.1.3.1");
-        ois = new ObjectInputStream(new FileInputStream(sFile));
-        pc = (PermissionCollection)ois.readObject();
-        System.out.println("1.3.1 collection = " + pc);
+        try (FileInputStream fis = new FileInputStream(sFile);
+                ObjectInputStream ois = new ObjectInputStream(fis)) {
+            PermissionCollection pc = (PermissionCollection)ois.readObject();
+            System.out.println("1.3.1 collection = " + pc);
 
-        if (pc.implies(mp)) {
-            System.out.println("JDK 1.3.1 test passed");
-        } else {
-            throw new Exception("JDK 1.3.1 test failed");
+            if (pc.implies(mp)) {
+                System.out.println("JDK 1.3.1 test passed");
+            } else {
+                throw new Exception("JDK 1.3.1 test failed");
+            }
         }
 
         // read in a 1.4 BasicPermissionCollection
         sFile = new File(dir, "PermClass.1.4");
-        ois = new ObjectInputStream(new FileInputStream(sFile));
-        pc = (PermissionCollection)ois.readObject();
-        System.out.println("1.4 collection = " + pc);
+        try (FileInputStream fis = new FileInputStream(sFile);
+                ObjectInputStream ois = new ObjectInputStream(fis)) {
+            PermissionCollection pc = (PermissionCollection)ois.readObject();
+            System.out.println("1.4 collection = " + pc);
 
-        if (pc.implies(mp)) {
-            System.out.println("JDK 1.4 test 1 passed");
-        } else {
-            throw new Exception("JDK 1.4 test 1 failed");
+            if (pc.implies(mp)) {
+                System.out.println("JDK 1.4 test 1 passed");
+            } else {
+                throw new Exception("JDK 1.4 test 1 failed");
+            }
         }
 
         // write out current BasicPermissionCollection
         PermissionCollection bpc = mp.newPermissionCollection();
         bpc.add(mp);
         sFile = new File(dir, "PermClass.current");
-        ObjectOutputStream oos = new ObjectOutputStream
-                (new FileOutputStream("PermClass.current"));
-        oos.writeObject(bpc);
-        oos.close();
+        try (FileOutputStream fos = new FileOutputStream("PermClass.current");
+                ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+            oos.writeObject(bpc);
+        }
 
         // read in current BasicPermissionCollection
-        ois = new ObjectInputStream(new FileInputStream("PermClass.current"));
-        pc = (PermissionCollection)ois.readObject();
-        System.out.println("current collection = " + pc);
+        try (FileInputStream fis = new FileInputStream("PermClass.current");
+                ObjectInputStream ois = new ObjectInputStream(fis)) {
+            PermissionCollection pc = (PermissionCollection)ois.readObject();
+            System.out.println("current collection = " + pc);
 
-        if (pc.implies(mp)) {
-            System.out.println("JDK 1.4 test 2 passed");
-        } else {
-            throw new Exception("JDK 1.4 test 2 failed");
+            if (pc.implies(mp)) {
+                System.out.println("JDK 1.4 test 2 passed");
+            } else {
+                throw new Exception("JDK 1.4 test 2 failed");
+            }
         }
     }
 }

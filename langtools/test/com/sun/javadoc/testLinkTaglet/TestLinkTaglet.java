@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug      4732864 6280605
+ * @bug      4732864 6280605 7064544
  * @summary  Make sure that you can link from one member to another using
- *           non-qualified name.
+ *           non-qualified name, furthermore, ensure the right one is linked.
  * @author   jamieh
  * @library  ../lib/
  * @build    JavadocTester
@@ -36,7 +36,7 @@
 public class TestLinkTaglet extends JavadocTester {
 
     //Test information.
-    private static final String BUG_ID = "4732864-6280605";
+    private static final String BUG_ID = "4732864-6280605-7064544";
 
     //Javadoc arguments.
     private static final String[] ARGS = new String[] {

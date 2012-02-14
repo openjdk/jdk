@@ -37,6 +37,94 @@
 #include "utilities/events.hpp"
 #include "utilities/xmlstream.hpp"
 
+#ifdef ASSERT
+
+#define SWEEP(nm) record_sweep(nm, __LINE__)
+// Sweeper logging code
+class SweeperRecord {
+ public:
+  int traversal;
+  int invocation;
+  int compile_id;
+  long traversal_mark;
+  int state;
+  const char* kind;
+  address vep;
+  address uep;
+  int line;
+
+  void print() {
+      tty->print_cr("traversal = %d invocation = %d compile_id = %d %s uep = " PTR_FORMAT " vep = "
+                    PTR_FORMAT " state = %d traversal_mark %d line = %d",
+                    traversal,
+                    invocation,
+                    compile_id,
+                    kind == NULL ? "" : kind,
+                    uep,
+                    vep,
+                    state,
+                    traversal_mark,
+                    line);
+  }
+};
+
+static int _sweep_index = 0;
+static SweeperRecord* _records = NULL;
+
+void NMethodSweeper::report_events(int id, address entry) {
+  if (_records != NULL) {
+    for (int i = _sweep_index; i < SweeperLogEntries; i++) {
+      if (_records[i].uep == entry ||
+          _records[i].vep == entry ||
+          _records[i].compile_id == id) {
+        _records[i].print();
+      }
+    }
+    for (int i = 0; i < _sweep_index; i++) {
+      if (_records[i].uep == entry ||
+          _records[i].vep == entry ||
+          _records[i].compile_id == id) {
+        _records[i].print();
+      }
+    }
+  }
+}
+
+void NMethodSweeper::report_events() {
+  if (_records != NULL) {
+    for (int i = _sweep_index; i < SweeperLogEntries; i++) {
+      // skip empty records
+      if (_records[i].vep == NULL) continue;
+      _records[i].print();
+    }
+    for (int i = 0; i < _sweep_index; i++) {
+      // skip empty records
+      if (_records[i].vep == NULL) continue;
+      _records[i].print();
+    }
+  }
+}
+
+void NMethodSweeper::record_sweep(nmethod* nm, int line) {
+  if (_records != NULL) {
+    _records[_sweep_index].traversal = _traversals;
+    _records[_sweep_index].traversal_mark = nm->_stack_traversal_mark;
+    _records[_sweep_index].invocation = _invocations;
+    _records[_sweep_index].compile_id = nm->compile_id();
+    _records[_sweep_index].kind = nm->compile_kind();
+    _records[_sweep_index].state = nm->_state;
+    _records[_sweep_index].vep = nm->verified_entry_point();
+    _records[_sweep_index].uep = nm->entry_point();
+    _records[_sweep_index].line = line;
+
+    _sweep_index = (_sweep_index + 1) % SweeperLogEntries;
+  }
+}
+#else
+#define SWEEP(nm)
+#endif
+
+
 long      NMethodSweeper::_traversals = 0;   // No. of stack traversals performed
 nmethod*  NMethodSweeper::_current = NULL;   // Current nmethod
 int       NMethodSweeper::_seen = 0 ;        // No. of nmethods we have currently processed in current pass of CodeCache
@@ -137,6 +225,13 @@ void NMethodSweeper::possibly_sweep() {
     if (old != 0) {
       return;
     }
+#ifdef ASSERT
+    if (LogSweeper && _records == NULL) {
+      // Create the ring buffer for the logging code
+      _records = NEW_C_HEAP_ARRAY(SweeperRecord, SweeperLogEntries);
+      memset(_records, 0, sizeof(SweeperRecord) * SweeperLogEntries);
+    }
+#endif
     if (_invocations > 0) {
       sweep_code_cache();
       _invocations--;
@@ -213,9 +308,28 @@ void NMethodSweeper::sweep_code_cache() {
   }
 }
 
+class NMethodMarker: public StackObj {
+ private:
+  CompilerThread* _thread;
+ public:
+  NMethodMarker(nmethod* nm) {
+    _thread = CompilerThread::current();
+    _thread->set_scanned_nmethod(nm);
+  }
+  ~NMethodMarker() {
+    _thread->set_scanned_nmethod(NULL);
+  }
+};
+
 
 void NMethodSweeper::process_nmethod(nmethod *nm) {
   assert(!CodeCache_lock->owned_by_self(), "just checking");
+
+  // Make sure this nmethod doesn't get unloaded during the scan,
+  // since the locks acquired below might safepoint.
+  NMethodMarker nmm(nm);
+
+  SWEEP(nm);
 
   // Skip methods that are currently referenced by the VM
   if (nm->is_locked_by_vm()) {
@@ -224,8 +338,10 @@ void NMethodSweeper::process_nmethod(nmethod *nm) {
       // Clean-up all inline caches that points to zombie/non-reentrant methods
       MutexLocker cl(CompiledIC_lock);
       nm->cleanup_inline_caches();
+      SWEEP(nm);
     } else {
       _locked_seen++;
+      SWEEP(nm);
     }
     return;
   }
@@ -247,6 +363,7 @@ void NMethodSweeper::process_nmethod(nmethod *nm) {
       }
       nm->mark_for_reclamation();
       _rescan = true;
+      SWEEP(nm);
     }
   } else if (nm->is_not_entrant()) {
     // If there is no current activations of this method on the
@@ -257,6 +374,7 @@ void NMethodSweeper::process_nmethod(nmethod *nm) {
       }
       nm->make_zombie();
       _rescan = true;
+      SWEEP(nm);
     } else {
       // Still alive, clean up its inline caches
       MutexLocker cl(CompiledIC_lock);
@@ -265,6 +383,7 @@ void NMethodSweeper::process_nmethod(nmethod *nm) {
       // request a rescan.  If this method stays on the stack for a
       // long time we don't want to keep rescanning the code cache.
       _not_entrant_seen_on_stack++;
+      SWEEP(nm);
     }
   } else if (nm->is_unloaded()) {
     // Unloaded code, just make it a zombie
@@ -273,10 +392,12 @@ void NMethodSweeper::process_nmethod(nmethod *nm) {
     if (nm->is_osr_method()) {
       // No inline caches will ever point to osr methods, so we can just remove it
       MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      SWEEP(nm);
       nm->flush();
     } else {
       nm->make_zombie();
       _rescan = true;
+      SWEEP(nm);
     }
   } else {
     assert(nm->is_alive(), "should be alive");
@@ -293,6 +414,7 @@ void NMethodSweeper::process_nmethod(nmethod *nm) {
     // Clean-up all inline caches that points to zombie/non-reentrant methods
     MutexLocker cl(CompiledIC_lock);
     nm->cleanup_inline_caches();
+    SWEEP(nm);
   }
 }
 

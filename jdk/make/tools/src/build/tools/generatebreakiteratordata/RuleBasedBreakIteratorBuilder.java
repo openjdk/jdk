@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,13 +110,13 @@ class RuleBasedBreakIteratorBuilder {
      * A temporary holding place used for calculating the character categories.
      * This object contains CharSet objects.
      */
-    protected Vector categories = null;
+    protected Vector<CharSet> categories = null;
 
     /**
      * A table used to map parts of regexp text to lists of character
      * categories, rather than having to figure them out from scratch each time
      */
-    protected Hashtable expressions = null;
+    protected Hashtable<String, Object> expressions = null;
 
     /**
      * A temporary holding place for the list of ignore characters
@@ -126,32 +126,32 @@ class RuleBasedBreakIteratorBuilder {
     /**
      * A temporary holding place where the forward state table is built
      */
-    protected Vector tempStateTable = null;
+    protected Vector<short[]> tempStateTable = null;
 
     /**
      * A list of all the states that have to be filled in with transitions to
      * the next state that is created.  Used when building the state table from
      * the regular expressions.
      */
-    protected Vector decisionPointList = null;
+    protected Vector<Integer> decisionPointList = null;
 
     /**
      * A stack for holding decision point lists.  This is used to handle nested
      * parentheses and braces in regexps.
      */
-    protected Stack decisionPointStack = null;
+    protected Stack<Vector<Integer>> decisionPointStack = null;
 
     /**
      * A list of states that loop back on themselves.  Used to handle .*?
      */
-    protected Vector loopingStates = null;
+    protected Vector<Integer> loopingStates = null;
 
     /**
      * Looping states actually have to be backfilled later in the process
      * than everything else.  This is where a the list of states to backfill
      * is accumulated.  This is also used to handle .*?
      */
-    protected Vector statesToBackfill = null;
+    protected Vector<Integer> statesToBackfill = null;
 
     /**
      * A list mapping pairs of state numbers for states that are to be combined
@@ -159,7 +159,7 @@ class RuleBasedBreakIteratorBuilder {
      * in the process of making the state table deterministic to prevent
      * infinite recursion.
      */
-    protected Vector mergeList = null;
+    protected Vector<int[]> mergeList = null;
 
     /**
      * A flag that is used to indicate when the list of looping states can
@@ -198,7 +198,7 @@ class RuleBasedBreakIteratorBuilder {
      * just vectors different parts of the job off to other functions.
      */
     public RuleBasedBreakIteratorBuilder(String description) {
-        Vector tempRuleList = buildRuleList(description);
+        Vector<String> tempRuleList = buildRuleList(description);
         buildCharCategories(tempRuleList);
         buildStateTable(tempRuleList);
         buildBackwardsStateTable(tempRuleList);
@@ -213,7 +213,7 @@ class RuleBasedBreakIteratorBuilder {
      * variable names)
      * </ul>
      */
-    private Vector buildRuleList(String description) {
+    private Vector<String> buildRuleList(String description) {
         // invariants:
         // - parentheses must be balanced: ()[]{}<>
         // - nothing can be nested inside <>
@@ -240,8 +240,8 @@ class RuleBasedBreakIteratorBuilder {
         // set up a vector to contain the broken-up description (each entry in the
         // vector is a separate rule) and a stack for keeping track of opening
         // punctuation
-        Vector tempRuleList = new Vector();
-        Stack parenStack = new Stack();
+        Vector<String> tempRuleList = new Vector<>();
+        Stack<Character> parenStack = new Stack<>();
 
         int p = 0;
         int ruleStart = 0;
@@ -326,7 +326,7 @@ class RuleBasedBreakIteratorBuilder {
                     }
                     parenStack.pop();
                     if (!parenStack.empty()) {
-                        lastOpen = ((Character)(parenStack.peek())).charValue();
+                        lastOpen = parenStack.peek().charValue();
                     }
                     else {
                         lastOpen = '\u0000';
@@ -552,7 +552,8 @@ class RuleBasedBreakIteratorBuilder {
      * character category numbers everywhere a literal character or a [] expression
      * originally occurred.
      */
-    protected void buildCharCategories(Vector tempRuleList) {
+    @SuppressWarnings("fallthrough")
+    protected void buildCharCategories(Vector<String> tempRuleList) {
         int bracketLevel = 0;
         int p = 0;
         int lineNum = 0;
@@ -560,9 +561,9 @@ class RuleBasedBreakIteratorBuilder {
         // build hash table of every literal character or [] expression in the rule list
         // and use CharSet.parseString() to derive a CharSet object representing the
         // characters each refers to
-        expressions = new Hashtable();
+        expressions = new Hashtable<>();
         while (lineNum < tempRuleList.size()) {
-            String line = (String)(tempRuleList.elementAt(lineNum));
+            String line = tempRuleList.elementAt(lineNum);
             p = 0;
             while (p < line.length()) {
                 int c = line.codePointAt(p);
@@ -618,7 +619,7 @@ class RuleBasedBreakIteratorBuilder {
         CharSet.releaseExpressionCache();
 
         // create the temporary category table (which is a vector of CharSet objects)
-        categories = new Vector();
+        categories = new Vector<>();
         if (ignoreChars != null) {
             categories.addElement(ignoreChars);
         }
@@ -643,8 +644,7 @@ class RuleBasedBreakIteratorBuilder {
         // At no time should a character ever occur in more than one character category.
 
         // for each expression in the expressions list, do...
-        Enumeration iter = expressions.elements();
-        while (iter.hasMoreElements()) {
+        for (Enumeration<Object> iter = expressions.elements(); iter.hasMoreElements(); ) {
             // initialize the working char set to the chars in the current expression
             CharSet e = (CharSet)iter.nextElement();
 
@@ -653,7 +653,7 @@ class RuleBasedBreakIteratorBuilder {
 
                 // if there's overlap between the current working set of chars
                 // and the current category...
-                CharSet that = (CharSet)(categories.elementAt(j));
+                CharSet that = categories.elementAt(j);
                 if (!that.intersection(e).empty()) {
 
                     // add a new category for the characters that were in the
@@ -686,9 +686,9 @@ class RuleBasedBreakIteratorBuilder {
         // up in some other category
         CharSet allChars = new CharSet();
         for (int i = 1; i < categories.size(); i++) {
-            allChars = allChars.union((CharSet)(categories.elementAt(i)));
+            allChars = allChars.union(categories.elementAt(i));
         }
-        CharSet ignoreChars = (CharSet)(categories.elementAt(0));
+        CharSet ignoreChars = categories.elementAt(0);
         ignoreChars = ignoreChars.difference(allChars);
         categories.setElementAt(ignoreChars, 0);
 
@@ -697,9 +697,9 @@ class RuleBasedBreakIteratorBuilder {
         // character categories that expression refers to.  The String is encoded: each
         // character is a character category number (plus 0x100 to avoid confusing them
         // with syntax characters in the rule grammar)
-        iter = expressions.keys();
-        while (iter.hasMoreElements()) {
-            String key = (String)iter.nextElement();
+
+        for (Enumeration<String> iter = expressions.keys(); iter.hasMoreElements(); ) {
+            String key = iter.nextElement();
             CharSet cs = (CharSet)expressions.get(key);
             StringBuffer cats = new StringBuffer();
 
@@ -707,7 +707,7 @@ class RuleBasedBreakIteratorBuilder {
             for (int j = 0; j < categories.size(); j++) {
 
                 // if the current expression contains characters in that category...
-                CharSet temp = cs.intersection((CharSet)(categories.elementAt(j)));
+                CharSet temp = cs.intersection(categories.elementAt(j));
                 if (!temp.empty()) {
 
                     // then add the encoded category number to the String for this
@@ -732,12 +732,12 @@ class RuleBasedBreakIteratorBuilder {
 
         // for each category...
         for (int i = 0; i < categories.size(); i++) {
-            CharSet chars = (CharSet)(categories.elementAt(i));
+            CharSet chars = categories.elementAt(i);
 
             // go through the character ranges in the category one by one...
-            Enumeration enum_ = chars.getChars();
+            Enumeration<int[]> enum_ = chars.getChars();
             while (enum_.hasMoreElements()) {
-                int[] range = (int[])(enum_.nextElement());
+                int[] range = enum_.nextElement();
 
                 // and set the corresponding elements in the CompactArray accordingly
                 if (i != 0) {
@@ -782,7 +782,7 @@ class RuleBasedBreakIteratorBuilder {
         numCategories = categories.size();
     }
 
-    protected void mungeExpressionList(Hashtable expressions) {
+    protected void mungeExpressionList(Hashtable<String, Object> expressions) {
         // empty in the parent class.  This function provides a hook for subclasses
         // to mess with the character category table.
     }
@@ -792,19 +792,19 @@ class RuleBasedBreakIteratorBuilder {
      * work is done in parseRule(), which is called once for each rule in the
      * description.
      */
-    private void buildStateTable(Vector tempRuleList) {
+    private void buildStateTable(Vector<String> tempRuleList) {
         // initialize our temporary state table, and fill it with two states:
         // state 0 is a dummy state that allows state 1 to be the starting state
         // and 0 to represent "stop".  State 1 is added here to seed things
         // before we start parsing
-        tempStateTable = new Vector();
+        tempStateTable = new Vector<>();
         tempStateTable.addElement(new short[numCategories + 1]);
         tempStateTable.addElement(new short[numCategories + 1]);
 
         // call parseRule() for every rule in the rule list (except those which
         // start with !, which are actually backwards-iteration rules)
         for (int i = 0; i < tempRuleList.size(); i++) {
-            String rule = (String)tempRuleList.elementAt(i);
+            String rule = tempRuleList.elementAt(i);
             if (rule.charAt(0) != '!') {
                 parseRule(rule, true);
             }
@@ -891,10 +891,10 @@ class RuleBasedBreakIteratorBuilder {
         int lastState = currentState;
         String pendingChars = "";
 
-        decisionPointStack = new Stack();
-        decisionPointList = new Vector();
-        loopingStates = new Vector();
-        statesToBackfill = new Vector();
+        decisionPointStack = new Stack<>();
+        decisionPointList = new Vector<>();
+        loopingStates = new Vector<>();
+        statesToBackfill = new Vector<>();
 
         short[] state;
         boolean sawEarlyBreak = false;
@@ -972,8 +972,8 @@ class RuleBasedBreakIteratorBuilder {
 
                 // if the character we're on is a period, we end up down here
                 else {
-                    int rowNum = ((Integer)decisionPointList.lastElement()).intValue();
-                    state = (short[])tempStateTable.elementAt(rowNum);
+                    int rowNum = decisionPointList.lastElement().intValue();
+                    state = tempStateTable.elementAt(rowNum);
 
                     // if the period is followed by an asterisk, then just set the current
                     // state to loop back on itself
@@ -1001,7 +1001,9 @@ class RuleBasedBreakIteratorBuilder {
                     // of the current desicion point list onto the stack (this is
                     // the same thing we do on an opening brace)
                     if (p + 1 < rule.length() && rule.charAt(p + 1) == '*') {
-                        decisionPointStack.push(decisionPointList.clone());
+                        @SuppressWarnings("unchecked")
+                        Vector<Integer> clone = (Vector<Integer>)decisionPointList.clone();
+                        decisionPointStack.push(clone);
                     }
 
                     // create a new state, add it to the list of states to backfill
@@ -1040,7 +1042,9 @@ class RuleBasedBreakIteratorBuilder {
             // it, preventing it from being affected by whatever's inside the parentheses.
             // This decision point list is restored when a } is encountered.
             else if (c == '{') {
-                decisionPointStack.push(decisionPointList.clone());
+                @SuppressWarnings("unchecked")
+                Vector<Integer> clone = (Vector<Integer>)decisionPointList.clone();
+                decisionPointStack.push(clone);
             }
 
             // a } marks the end of an optional run of characters.  Pop the last decision
@@ -1053,7 +1057,7 @@ class RuleBasedBreakIteratorBuilder {
                 // on the character categories that caused us to enter this state
                 if (c == '*') {
                     for (int i = lastState + 1; i < tempStateTable.size(); i++) {
-                        Vector temp = new Vector();
+                        Vector<Integer> temp = new Vector<>();
                         temp.addElement(new Integer(i));
                         updateStateTable(temp, pendingChars, (short)(lastState + 1));
                     }
@@ -1063,7 +1067,7 @@ class RuleBasedBreakIteratorBuilder {
                 // it with the current decision point list (this causes the divergent
                 // paths through the state table to come together again on the next
                 // new state)
-                Vector temp = (Vector)decisionPointStack.pop();
+                Vector<Integer> temp = decisionPointStack.pop();
                 for (int i = 0; i < decisionPointList.size(); i++)
                     temp.addElement(decisionPointList.elementAt(i));
                 decisionPointList = temp;
@@ -1123,8 +1127,10 @@ class RuleBasedBreakIteratorBuilder {
                 // stack (this keeps track of the active decision point list before
                 // the () expression), followed by an empty decision point list
                 // (this will hold the exit points)
-                decisionPointStack.push(decisionPointList.clone());
-                decisionPointStack.push(new Vector());
+                @SuppressWarnings("unchecked")
+                Vector<Integer> clone = (Vector<Integer>)decisionPointList.clone();
+                decisionPointStack.push(clone);
+                decisionPointStack.push(new Vector<Integer>());
             }
 
             // a | separates alternative character sequences in a () expression.  When
@@ -1133,8 +1139,8 @@ class RuleBasedBreakIteratorBuilder {
             else if (c == '|') {
 
                 // pick out the top two decision point lists on the stack
-                Vector oneDown = (Vector)decisionPointStack.pop();
-                Vector twoDown = (Vector)decisionPointStack.peek();
+                Vector<Integer> oneDown = decisionPointStack.pop();
+                Vector<Integer> twoDown = decisionPointStack.peek();
                 decisionPointStack.push(oneDown);
 
                 // append the current decision point list to the list below it
@@ -1142,7 +1148,9 @@ class RuleBasedBreakIteratorBuilder {
                 // current decision point list to its state before the () expression
                 for (int i = 0; i < decisionPointList.size(); i++)
                     oneDown.addElement(decisionPointList.elementAt(i));
-                decisionPointList = (Vector)twoDown.clone();
+                @SuppressWarnings("unchecked")
+                Vector<Integer> clone = (Vector<Integer>)twoDown.clone();
+                decisionPointList = clone;
             }
 
             // a ) marks the end of a sequence of characters.  We do one of two things
@@ -1160,7 +1168,7 @@ class RuleBasedBreakIteratorBuilder {
                 // pull the exit point list off the stack, merge it with the current
                 // decision point list, and make the merged version the current
                 // decision point list
-                Vector exitPoints = (Vector)decisionPointStack.pop();
+                Vector<Integer> exitPoints = decisionPointStack.pop();
                 for (int i = 0; i < decisionPointList.size(); i++)
                     exitPoints.addElement(decisionPointList.elementAt(i));
                 decisionPointList = exitPoints;
@@ -1176,16 +1184,18 @@ class RuleBasedBreakIteratorBuilder {
 
                     // now exitPoints and decisionPointList have to point to equivalent
                     // vectors, but not the SAME vector
-                    exitPoints = (Vector)decisionPointList.clone();
+                    @SuppressWarnings("unchecked")
+                    Vector<Integer> clone = (Vector<Integer>)decisionPointList.clone();
+                    exitPoints = clone;
 
                     // pop the original decision point list off the stack
-                    Vector temp = (Vector)decisionPointStack.pop();
+                    Vector<Integer> temp = decisionPointStack.pop();
 
                     // we squirreled away the row number of our entry point list
                     // at the beginning of the original decision point list.  Fish
                     // that state number out and retrieve the entry point list
-                    int tempStateNum = ((Integer)temp.firstElement()).intValue();
-                    short[] tempState = (short[])tempStateTable.elementAt(tempStateNum);
+                    int tempStateNum = temp.firstElement().intValue();
+                    short[] tempState = tempStateTable.elementAt(tempStateNum);
 
                     // merge the original decision point list with the current
                     // decision point list
@@ -1217,8 +1227,8 @@ class RuleBasedBreakIteratorBuilder {
             else if (c == '/') {
                 sawEarlyBreak = true;
                 for (int i = 0; i < decisionPointList.size(); i++) {
-                    state = (short[])tempStateTable.elementAt(((Integer)decisionPointList.
-                                    elementAt(i)).intValue());
+                    state = tempStateTable.elementAt(decisionPointList.
+                                    elementAt(i).intValue());
                     state[numCategories] |= LOOKAHEAD_STATE_FLAG;
                 }
             }
@@ -1261,8 +1271,8 @@ class RuleBasedBreakIteratorBuilder {
         // signals that these states cause the break position to be updated to the
         // position of the slash rather than the current break position.
         for (int i = 0; i < decisionPointList.size(); i++) {
-            int rowNum = ((Integer)decisionPointList.elementAt(i)).intValue();
-            state = (short[])tempStateTable.elementAt(rowNum);
+            int rowNum = decisionPointList.elementAt(i).intValue();
+            state = tempStateTable.elementAt(rowNum);
             state[numCategories] |= END_STATE_FLAG;
             if (sawEarlyBreak) {
                 state[numCategories] |= LOOKAHEAD_STATE_FLAG;
@@ -1279,7 +1289,7 @@ class RuleBasedBreakIteratorBuilder {
      * list of the columns that need updating.
      * @param newValue Update the cells specfied above to contain this value
      */
-    private void updateStateTable(Vector rows,
+    private void updateStateTable(Vector<Integer> rows,
                                   String pendingChars,
                                   short newValue) {
         // create a dummy state that has the specified row number (newValue) in
@@ -1292,7 +1302,7 @@ class RuleBasedBreakIteratorBuilder {
         // go through the list of rows to update, and update them by calling
         // mergeStates() to merge them the the dummy state we created
         for (int i = 0; i < rows.size(); i++) {
-            mergeStates(((Integer)rows.elementAt(i)).intValue(), newValues, rows);
+            mergeStates(rows.elementAt(i).intValue(), newValues, rows);
         }
     }
 
@@ -1318,8 +1328,8 @@ class RuleBasedBreakIteratorBuilder {
      */
     private void mergeStates(int rowNum,
                              short[] newValues,
-                             Vector rowsBeingUpdated) {
-        short[] oldValues = (short[])(tempStateTable.elementAt(rowNum));
+                             Vector<Integer> rowsBeingUpdated) {
+        short[] oldValues = tempStateTable.elementAt(rowNum);
         boolean isLoopingState = loopingStates.contains(new Integer(rowNum));
 
         // for each of the cells in the rows we're reconciling, do...
@@ -1375,7 +1385,7 @@ class RuleBasedBreakIteratorBuilder {
                     // add this pair of row numbers to the merge list (create it first
                     // if we haven't created the merge list yet)
                     if (mergeList == null) {
-                        mergeList = new Vector();
+                        mergeList = new Vector<>();
                     }
                     mergeList.addElement(new int[] { oldRowNum, newRowNum, combinedRowNum });
 
@@ -1384,7 +1394,7 @@ class RuleBasedBreakIteratorBuilder {
                     // state table and update the original row (oldValues) to point
                     // to the new, merged, state
                     short[] newRow = new short[numCategories + 1];
-                    short[] oldRow = (short[])(tempStateTable.elementAt(oldRowNum));
+                    short[] oldRow = tempStateTable.elementAt(oldRowNum);
                     System.arraycopy(oldRow, 0, newRow, 0, numCategories + 1);
                     tempStateTable.addElement(newRow);
                     oldValues[i] = (short)combinedRowNum;
@@ -1408,7 +1418,7 @@ class RuleBasedBreakIteratorBuilder {
                     // now (groan) do the same thing for all the entries on the
                     // decision point stack
                     for (int k = 0; k < decisionPointStack.size(); k++) {
-                        Vector dpl = (Vector)decisionPointStack.elementAt(k);
+                        Vector<Integer> dpl = decisionPointStack.elementAt(k);
                         if ((dpl.contains(new Integer(oldRowNum))
                                 || dpl.contains(new Integer(newRowNum)))
                             && !dpl.contains(new Integer(combinedRowNum))
@@ -1420,8 +1430,8 @@ class RuleBasedBreakIteratorBuilder {
                     // FINALLY (puff puff puff), call mergeStates() recursively to copy
                     // the row referred to by newValues into the new row and resolve any
                     // conflicts that come up at that level
-                    mergeStates(combinedRowNum, (short[])(tempStateTable.elementAt(
-                                    newValues[i])), rowsBeingUpdated);
+                    mergeStates(combinedRowNum, tempStateTable.elementAt(
+                                    newValues[i]), rowsBeingUpdated);
                 }
             }
         }
@@ -1445,7 +1455,7 @@ class RuleBasedBreakIteratorBuilder {
         else {
             int[] entry;
             for (int i = 0; i < mergeList.size(); i++) {
-                entry = (int[])(mergeList.elementAt(i));
+                entry = mergeList.elementAt(i);
 
                 // we have a hit if the two row numbers match the two row numbers
                 // in the beginning of the entry (the two that combine), in either
@@ -1477,20 +1487,21 @@ class RuleBasedBreakIteratorBuilder {
      * @param endStates The list of states to treat as end states (states that
      * can exit the loop).
      */
-    private void setLoopingStates(Vector newLoopingStates, Vector endStates) {
+    private void setLoopingStates(Vector<Integer> newLoopingStates,
+                                  Vector<Integer> endStates) {
 
         // if the current list of looping states isn't empty, we have to backfill
         // values from the looping states into the states that are waiting to be
         // backfilled
         if (!loopingStates.isEmpty()) {
-            int loopingState = ((Integer)loopingStates.lastElement()).intValue();
+            int loopingState = loopingStates.lastElement().intValue();
             int rowNum;
 
             // don't backfill into an end state OR any state reachable from an end state
             // (since the search for reachable states is recursive, it's split out into
             // a separate function, eliminateBackfillStates(), below)
             for (int i = 0; i < endStates.size(); i++) {
-                eliminateBackfillStates(((Integer)endStates.elementAt(i)).intValue());
+                eliminateBackfillStates(endStates.elementAt(i).intValue());
             }
 
             // we DON'T actually backfill the states that need to be backfilled here.
@@ -1501,8 +1512,8 @@ class RuleBasedBreakIteratorBuilder {
             // for backfilling by putting the row number of the state to copy from
             // into the flag cell at the end of the row
             for (int i = 0; i < statesToBackfill.size(); i++) {
-                rowNum = ((Integer)statesToBackfill.elementAt(i)).intValue();
-                short[] state = (short[])tempStateTable.elementAt(rowNum);
+                rowNum = statesToBackfill.elementAt(i).intValue();
+                short[] state = tempStateTable.elementAt(rowNum);
                 state[numCategories] =
                     (short)((state[numCategories] & ALL_FLAGS) | loopingState);
             }
@@ -1511,7 +1522,9 @@ class RuleBasedBreakIteratorBuilder {
         }
 
         if (newLoopingStates != null) {
-            loopingStates = (Vector)newLoopingStates.clone();
+            @SuppressWarnings("unchecked")
+            Vector<Integer> clone = (Vector<Integer>)newLoopingStates.clone();
+            loopingStates = clone;
         }
     }
 
@@ -1530,7 +1543,7 @@ class RuleBasedBreakIteratorBuilder {
 
             // then go through and recursively call this function for every
             // state that the base state points to
-            short[] state = (short[])tempStateTable.elementAt(baseState);
+            short[] state = tempStateTable.elementAt(baseState);
             for (int i = 0; i < numCategories; i++) {
                 if (state[i] != 0) {
                     eliminateBackfillStates(state[i]);
@@ -1551,7 +1564,7 @@ class RuleBasedBreakIteratorBuilder {
 
         // for each state in the state table...
         for (int i = 0; i < tempStateTable.size(); i++) {
-            state = (short[])tempStateTable.elementAt(i);
+            state = tempStateTable.elementAt(i);
 
             // check the state's flag word to see if it's marked for backfilling
             // (it's marked for backfilling if any bits other than the two high-order
@@ -1563,7 +1576,7 @@ class RuleBasedBreakIteratorBuilder {
                 // load up the state to copy from (if we haven't already)
                 if (fromState != loopingStateRowNum) {
                     loopingStateRowNum = fromState;
-                    loopingState = (short[])tempStateTable.elementAt(loopingStateRowNum);
+                    loopingState = tempStateTable.elementAt(loopingStateRowNum);
                 }
 
                 // clear out the backfill part of the flag word
@@ -1594,7 +1607,7 @@ class RuleBasedBreakIteratorBuilder {
         backfillLoopingStates();
 
         int[] rowNumMap = new int[tempStateTable.size()];
-        Stack rowsToFollow = new Stack();
+        Stack<Integer> rowsToFollow = new Stack<>();
         rowsToFollow.push(new Integer(1));
         rowNumMap[1] = 1;
 
@@ -1602,8 +1615,8 @@ class RuleBasedBreakIteratorBuilder {
         // (the reachable states will have their row numbers in the row number
         // map, and the nonreachable states will have zero in the row number map)
         while (rowsToFollow.size() != 0) {
-            int rowNum = ((Integer)rowsToFollow.pop()).intValue();
-            short[] row = (short[])(tempStateTable.elementAt(rowNum));
+            int rowNum = rowsToFollow.pop().intValue();
+            short[] row = tempStateTable.elementAt(rowNum);
 
             for (int i = 0; i < numCategories; i++) {
                 if (row[i] != 0) {
@@ -1632,7 +1645,7 @@ class RuleBasedBreakIteratorBuilder {
             if (rowNumMap[i] == 0) {
                 continue;
             }
-            state1 = (short[])tempStateTable.elementAt(i);
+            state1 = tempStateTable.elementAt(i);
             for (int j = 0; j < numCategories; j++) {
                 if (state1[j] != 0) {
                     ++stateClasses[i];
@@ -1663,10 +1676,10 @@ class RuleBasedBreakIteratorBuilder {
                 for (int i = 0; i < stateClasses.length; i++) {
                     if (stateClasses[i] == currentClass) {
                         if (state1 == null) {
-                            state1 = (short[])tempStateTable.elementAt(i);
+                            state1 = tempStateTable.elementAt(i);
                         }
                         else {
-                            state2 = (short[])tempStateTable.elementAt(i);
+                            state2 = tempStateTable.elementAt(i);
                             for (int j = 0; j < state2.length; j++) {
                                 if ((j == numCategories && state1[j] != state2[j] && forward)
                                         || (j != numCategories && stateClasses[state1[j]]
@@ -1733,7 +1746,7 @@ class RuleBasedBreakIteratorBuilder {
             int p = 0;
             int p2 = 0;
             for (int i = 0; i < tempStateTable.size(); i++) {
-                short[] row = (short[])(tempStateTable.elementAt(i));
+                short[] row = tempStateTable.elementAt(i);
                 if (row == null) {
                     continue;
                 }
@@ -1752,7 +1765,7 @@ class RuleBasedBreakIteratorBuilder {
             backwardsStateTable = new short[newRowNum * numCategories];
             int p = 0;
             for (int i = 0; i < tempStateTable.size(); i++) {
-                short[] row = (short[])(tempStateTable.elementAt(i));
+                short[] row = tempStateTable.elementAt(i);
                 if (row == null) {
                     continue;
                 }
@@ -1769,12 +1782,12 @@ class RuleBasedBreakIteratorBuilder {
      * table and any additional rules (identified by the ! on the front)
      * supplied in the description
      */
-    private void buildBackwardsStateTable(Vector tempRuleList) {
+    private void buildBackwardsStateTable(Vector<String> tempRuleList) {
 
         // create the temporary state table and seed it with two rows (row 0
         // isn't used for anything, and we have to create row 1 (the initial
         // state) before we can do anything else
-        tempStateTable = new Vector();
+        tempStateTable = new Vector<>();
         tempStateTable.addElement(new short[numCategories + 1]);
         tempStateTable.addElement(new short[numCategories + 1]);
 
@@ -1786,7 +1799,7 @@ class RuleBasedBreakIteratorBuilder {
         // the same syntax as the normal break rules, but begin with '!' to distinguish
         // them from normal break rules
         for (int i = 0; i < tempRuleList.size(); i++) {
-            String rule = (String)tempRuleList.elementAt(i);
+            String rule = tempRuleList.elementAt(i);
             if (rule.charAt(0) == '!') {
                 parseRule(rule.substring(1), false);
             }
@@ -1831,7 +1844,7 @@ class RuleBasedBreakIteratorBuilder {
         for (int i = 0; i < numCategories + 1; i++)
             tempStateTable.addElement(new short[numCategories + 1]);
 
-        short[] state = (short[])tempStateTable.elementAt(backTableOffset - 1);
+        short[] state = tempStateTable.elementAt(backTableOffset - 1);
         for (int i = 0; i < numCategories; i++)
             state[i] = (short)(i + backTableOffset);
 
@@ -1855,7 +1868,7 @@ class RuleBasedBreakIteratorBuilder {
                     for (int nextColumn = 0; nextColumn < numCategories; nextColumn++) {
                         int cellValue = lookupState(nextRow, nextColumn);
                         if (cellValue != 0) {
-                            state = (short[])tempStateTable.elementAt(nextColumn +
+                            state = tempStateTable.elementAt(nextColumn +
                                             backTableOffset);
                             state[column] = (short)(column + backTableOffset);
                         }
@@ -1876,9 +1889,9 @@ class RuleBasedBreakIteratorBuilder {
             // populated that is also populated in row 1 of the rule-based
             // sub-table, copy the value from row 1 over the value in the
             // auto-generated sub-table
-            state = (short[])tempStateTable.elementAt(1);
+            state = tempStateTable.elementAt(1);
             for (int i = backTableOffset - 1; i < tempStateTable.size(); i++) {
-                short[] state2 = (short[])tempStateTable.elementAt(i);
+                short[] state2 = tempStateTable.elementAt(i);
                 for (int j = 0; j < numCategories; j++) {
                     if (state[j] != 0 && state2[j] != 0) {
                         state2[j] = state[j];
@@ -1890,9 +1903,9 @@ class RuleBasedBreakIteratorBuilder {
             // an end state, fill in all unpopulated cells with the values
             // of the corresponding cells in the first row of the auto-
             // generated sub-table.
-            state = (short[])tempStateTable.elementAt(backTableOffset - 1);
+            state = tempStateTable.elementAt(backTableOffset - 1);
             for (int i = 1; i < backTableOffset - 1; i++) {
-                short[] state2 = (short[])tempStateTable.elementAt(i);
+                short[] state2 = tempStateTable.elementAt(i);
                 if ((state2[numCategories] & END_STATE_FLAG) == 0) {
                     for (int j = 0; j < numCategories; j++) {
                         if (state2[j] == 0) {

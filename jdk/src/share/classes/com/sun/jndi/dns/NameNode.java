@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ class NameNode {
 
     private String label;               // name of this node relative to its
                                         // parent, or null for root of a tree
-    private Hashtable children = null;  // child nodes
+    private Hashtable<String,NameNode> children = null;  // child nodes
     private boolean isZoneCut = false;  // true if this node is a zone cut
     private int depth = 0;              // depth in tree (0 for root)
 
@@ -97,7 +97,7 @@ class NameNode {
      * Returns the children of this node, or null if there are none.
      * The caller must not modify the Hashtable returned.
      */
-    Hashtable getChildren() {
+    Hashtable<String,NameNode> getChildren() {
         return children;
     }
 
@@ -108,7 +108,7 @@ class NameNode {
      */
     NameNode get(String key) {
         return (children != null)
-            ? (NameNode) children.get(key)
+            ? children.get(key)
             : null;
     }
 
@@ -140,9 +140,9 @@ class NameNode {
 
             NameNode child = null;
             if (node.children == null) {
-                node.children = new Hashtable();
+                node.children = new Hashtable<>();
             } else {
-                child = (NameNode) node.children.get(key);
+                child = node.children.get(key);
             }
             if (child == null) {
                 child = newNameNode(label);

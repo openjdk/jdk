@@ -46,6 +46,7 @@ const char* Abstract_VM_Version::_s_vm_release = Abstract_VM_Version::vm_release
 const char* Abstract_VM_Version::_s_internal_vm_info_string = Abstract_VM_Version::internal_vm_info_string();
 bool Abstract_VM_Version::_supports_cx8 = false;
 unsigned int Abstract_VM_Version::_logical_processors_per_package = 1U;
+int Abstract_VM_Version::_reserve_for_allocation_prefetch = 0;
 
 #ifndef HOTSPOT_RELEASE_VERSION
   #error HOTSPOT_RELEASE_VERSION must be defined
@@ -127,7 +128,7 @@ void Abstract_VM_Version::initialize() {
 #ifndef HOTSPOT_VM_DISTRO
   #error HOTSPOT_VM_DISTRO must be defined
 #endif
-#define VMNAME HOTSPOT_VM_DISTRO " " VMLP VMTYPE " VM"
+#define VMNAME HOTSPOT_VM_DISTRO " " VMLP EMBEDDED_ONLY("Embedded ") VMTYPE " VM"
 
 const char* Abstract_VM_Version::vm_name() {
   return VMNAME;
@@ -166,7 +167,8 @@ const char* Abstract_VM_Version::vm_release() {
 
 #define OS       LINUX_ONLY("linux")             \
                  WINDOWS_ONLY("windows")         \
-                 SOLARIS_ONLY("solaris")
+                 SOLARIS_ONLY("solaris")         \
+                 BSD_ONLY("bsd")
 
 #ifdef ZERO
 #define CPU      ZERO_LIBARCH

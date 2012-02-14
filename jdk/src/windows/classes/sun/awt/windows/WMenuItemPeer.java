@@ -183,7 +183,9 @@ class WMenuItemPeer extends WObjectPeer implements MenuItemPeer {
      */
     private static native void initIDs();
 
-    // Needed for MenuComponentPeer.
-    public void setFont(Font f) {
+    private native void _setFont(Font f);
+
+    public void setFont(final Font f) {
+        _setFont(f);
     }
 }

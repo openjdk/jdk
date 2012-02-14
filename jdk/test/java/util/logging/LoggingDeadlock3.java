@@ -27,7 +27,7 @@
  * @summary Calling LogManager.addLogger() and Logger.getLogger() cause deadlock
  * @author  Serguei Spitsyn
  * @build LoggingDeadlock3
- * @run main/timeout=15 LoggingDeadlock3
+ * @run main/timeout=80 LoggingDeadlock3
  */
 
 import java.io.*;

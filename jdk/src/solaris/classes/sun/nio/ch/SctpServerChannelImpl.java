@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -367,6 +367,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getOption(SctpSocketOption<T> name) throws IOException {
         if (name == null)
             throw new NullPointerException();
@@ -403,7 +404,7 @@ public class SctpServerChannelImpl extends SctpServerChannel
             if (!isOpen())
                 throw new ClosedChannelException();
             if (!isBound())
-                return Collections.EMPTY_SET;
+                return Collections.emptySet();
 
             return SctpNet.getLocalAddresses(fdVal);
         }

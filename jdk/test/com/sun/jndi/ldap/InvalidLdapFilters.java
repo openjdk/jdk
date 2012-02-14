@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
 
 /**
  * @test
- * @bug 6916202
+ * @bug 6916202 7041125
  * @summary More cases of invalid ldap filters accepted and processed
+ *      LDAP API does not catch malformed filters that contain two operands
+ *      for the ! operator
  * @run main/othervm InvalidLdapFilters valid (cn=Babs)
  * @run main/othervm InvalidLdapFilters valid (&(cn=Bob))
  * @run main/othervm InvalidLdapFilters valid (&(objectClass=*)(uid=*))
@@ -34,6 +36,7 @@
  * @run main/othervm InvalidLdapFilters valid (!(!(cn=Tim)))
  * @run main/othervm InvalidLdapFilters valid (!(&(objectClass=*)(uid=*)))
  * @run main/othervm InvalidLdapFilters valid (!(|(objectClass=*)(uid=*)))
+ * @run main/othervm InvalidLdapFilters valid (&(objectClass=*)(!(uid=*)))
  * @run main/othervm InvalidLdapFilters valid (o=univ*of*mich*)
  * @run main/othervm InvalidLdapFilters valid (seeAlso=)
  * @run main/othervm InvalidLdapFilters valid (cn:caseExactMatch:=Flintstone)
@@ -75,6 +78,8 @@
          "((objectCategory=person)(cn=u)(!(cn=u2*)))"
  * @run main/othervm InvalidLdapFilters invalid
          "((&(objectClass=user)(cn=andy*)(cn=steve*)(cn=bob*)))"
+ * @run main/othervm InvalidLdapFilters invalid
+         (&(objectClass=Person)(!(sn=Jensen)(cn=Bab)))
  *
  * @author Xuelei Fan
  */

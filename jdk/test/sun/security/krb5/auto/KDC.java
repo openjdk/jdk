@@ -170,6 +170,14 @@ public class KDC {
          * Use only one preauth, so that some keys are not easy to generate
          */
         ONLY_ONE_PREAUTH,
+        /**
+         * Set all name-type to a value in response
+         */
+        RESP_NT,
+        /**
+         * Multiple ETYPE-INFO-ENTRY with same etype but different salt
+         */
+        DUP_ETYPE,
     };
 
     static {
@@ -637,10 +645,16 @@ public class KDC {
      */
     private byte[] processTgsReq(byte[] in) throws Exception {
         TGSReq tgsReq = new TGSReq(in);
+        PrincipalName service = tgsReq.reqBody.sname;
+        if (options.containsKey(KDC.Option.RESP_NT)) {
+            service = new PrincipalName(service.getNameStrings(),
+                    (int)options.get(KDC.Option.RESP_NT));
+            service.setRealm(service.getRealm());
+        }
         try {
             System.out.println(realm + "> " + tgsReq.reqBody.cname +
                     " sends TGS-REQ for " +
-                    tgsReq.reqBody.sname);
+                    service);
             KDCReqBody body = tgsReq.reqBody;
             int[] eTypes = KDCReqBodyDotEType(body);
             int e2 = eTypes[0];     // etype for outgoing session key
@@ -708,7 +722,7 @@ public class KDC {
                 bFlags[Krb5.TKT_OPTS_MAY_POSTDATE] = true;
             }
 
-            if (configMatch("", body.sname.getNameString(), "ok-as-delegate")) {
+            if (configMatch("", service.getNameString(), "ok-as-delegate")) {
                 bFlags[Krb5.TKT_OPTS_DELEGATE] = true;
             }
             bFlags[Krb5.TKT_OPTS_INITIAL] = true;
@@ -728,13 +742,13 @@ public class KDC {
                             : new HostAddresses(
                                 new InetAddress[]{InetAddress.getLocalHost()}),
                     null);
-            EncryptionKey skey = keyForUser(body.sname, e3, true);
+            EncryptionKey skey = keyForUser(service, e3, true);
             if (skey == null) {
                 throw new KrbException(Krb5.KDC_ERR_SUMTYPE_NOSUPP); // TODO
             }
             Ticket t = new Ticket(
                     body.crealm,
-                    body.sname,
+                    service,
                     new EncryptedData(skey, enc.asn1Encode(), KeyUsage.KU_TICKET)
             );
             EncTGSRepPart enc_part = new EncTGSRepPart(
@@ -750,7 +764,7 @@ public class KDC {
                     body.from,
                     till, body.rtime,
                     body.crealm,
-                    body.sname,
+                    service,
                     body.addresses != null  // always set caddr
                             ? body.addresses
                             : new HostAddresses(
@@ -781,7 +795,7 @@ public class KDC {
                         0,
                         ke.returnCode(),
                         body.crealm, body.cname,
-                        new Realm(getRealm()), body.sname,
+                        new Realm(getRealm()), service,
                         KrbException.errorMessage(ke.returnCode()),
                         null);
             }
@@ -800,10 +814,16 @@ public class KDC {
         int[] eTypes = null;
         List<PAData> outPAs = new ArrayList<>();
 
+        PrincipalName service = asReq.reqBody.sname;
+        if (options.containsKey(KDC.Option.RESP_NT)) {
+            service = new PrincipalName(service.getNameStrings(),
+                    (int)options.get(KDC.Option.RESP_NT));
+            service.setRealm(service.getRealm());
+        }
         try {
             System.out.println(realm + "> " + asReq.reqBody.cname +
                     " sends AS-REQ for " +
-                    asReq.reqBody.sname);
+                    service);
 
             KDCReqBody body = asReq.reqBody;
             body.cname.setRealm(getRealm());
@@ -812,7 +832,7 @@ public class KDC {
             int eType = eTypes[0];
 
             EncryptionKey ckey = keyForUser(body.cname, eType, false);
-            EncryptionKey skey = keyForUser(body.sname, eType, true);
+            EncryptionKey skey = keyForUser(service, eType, true);
 
             if (options.containsKey(KDC.Option.ONLY_RC4_TGT)) {
                 int tgtEType = EncryptedData.ETYPE_ARCFOUR_HMAC;
@@ -826,7 +846,7 @@ public class KDC {
                 if (!found) {
                     throw new KrbException(Krb5.KDC_ERR_ETYPE_NOSUPP);
                 }
-                skey = keyForUser(body.sname, tgtEType, true);
+                skey = keyForUser(service, tgtEType, true);
             }
             if (ckey == null) {
                 throw new KrbException(Krb5.KDC_ERR_ETYPE_NOSUPP);
@@ -865,48 +885,104 @@ public class KDC {
             bFlags[Krb5.TKT_OPTS_INITIAL] = true;
 
             // Creating PA-DATA
-            int[] epas = eTypes;
-            if (options.containsKey(KDC.Option.RC4_FIRST_PREAUTH)) {
-                for (int i=1; i<epas.length; i++) {
-                    if (epas[i] == EncryptedData.ETYPE_ARCFOUR_HMAC) {
-                        epas[i] = epas[0];
-                        epas[0] = EncryptedData.ETYPE_ARCFOUR_HMAC;
+            DerValue[] pas2 = null, pas = null;
+            if (options.containsKey(KDC.Option.DUP_ETYPE)) {
+                int n = (Integer)options.get(KDC.Option.DUP_ETYPE);
+                switch (n) {
+                    case 1:     // customer's case in 7067974
+                        pas2 = new DerValue[] {
+                            new DerValue(new ETypeInfo2(1, null, null).asn1Encode()),
+                            new DerValue(new ETypeInfo2(1, "", null).asn1Encode()),
+                            new DerValue(new ETypeInfo2(1, OneKDC.REALM, new byte[]{1}).asn1Encode()),
+                        };
+                        pas = new DerValue[] {
+                            new DerValue(new ETypeInfo(1, null).asn1Encode()),
+                            new DerValue(new ETypeInfo(1, "").asn1Encode()),
+                            new DerValue(new ETypeInfo(1, OneKDC.REALM).asn1Encode()),
+                        };
                         break;
-                    }
-                };
-            } else if (options.containsKey(KDC.Option.ONLY_ONE_PREAUTH)) {
-                epas = new int[] { eTypes[0] };
-            }
-
-            DerValue[] pas = new DerValue[epas.length];
-            for (int i=0; i<epas.length; i++) {
-                pas[i] = new DerValue(new ETypeInfo2(
-                        epas[i],
-                        epas[i] == EncryptedData.ETYPE_ARCFOUR_HMAC ?
-                            null : getSalt(body.cname),
-                        null).asn1Encode());
-            }
-            DerOutputStream eid = new DerOutputStream();
-            eid.putSequence(pas);
-
-            outPAs.add(new PAData(Krb5.PA_ETYPE_INFO2, eid.toByteArray()));
-
-            boolean allOld = true;
-            for (int i: eTypes) {
-                if (i == EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96 ||
-                        i == EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96) {
-                    allOld = false;
-                    break;
+                    case 2:     // we still reject non-null s2kparams and prefer E2 over E
+                        pas2 = new DerValue[] {
+                            new DerValue(new ETypeInfo2(1, OneKDC.REALM, new byte[]{1}).asn1Encode()),
+                            new DerValue(new ETypeInfo2(1, null, null).asn1Encode()),
+                            new DerValue(new ETypeInfo2(1, "", null).asn1Encode()),
+                        };
+                        pas = new DerValue[] {
+                            new DerValue(new ETypeInfo(1, OneKDC.REALM).asn1Encode()),
+                            new DerValue(new ETypeInfo(1, null).asn1Encode()),
+                            new DerValue(new ETypeInfo(1, "").asn1Encode()),
+                        };
+                        break;
+                    case 3:     // but only E is wrong
+                        pas = new DerValue[] {
+                            new DerValue(new ETypeInfo(1, OneKDC.REALM).asn1Encode()),
+                            new DerValue(new ETypeInfo(1, null).asn1Encode()),
+                            new DerValue(new ETypeInfo(1, "").asn1Encode()),
+                        };
+                        break;
+                    case 4:     // we also ignore rc4-hmac
+                        pas = new DerValue[] {
+                            new DerValue(new ETypeInfo(23, "ANYTHING").asn1Encode()),
+                            new DerValue(new ETypeInfo(1, null).asn1Encode()),
+                            new DerValue(new ETypeInfo(1, "").asn1Encode()),
+                        };
+                        break;
+                    case 5:     // "" should be wrong, but we accept it now
+                                // See s.s.k.internal.PAData$SaltAndParams
+                        pas = new DerValue[] {
+                            new DerValue(new ETypeInfo(1, "").asn1Encode()),
+                            new DerValue(new ETypeInfo(1, null).asn1Encode()),
+                        };
+                        break;
                 }
-            }
-            if (allOld) {
+            } else {
+                int[] epas = eTypes;
+                if (options.containsKey(KDC.Option.RC4_FIRST_PREAUTH)) {
+                    for (int i=1; i<epas.length; i++) {
+                        if (epas[i] == EncryptedData.ETYPE_ARCFOUR_HMAC) {
+                            epas[i] = epas[0];
+                            epas[0] = EncryptedData.ETYPE_ARCFOUR_HMAC;
+                            break;
+                        }
+                    };
+                } else if (options.containsKey(KDC.Option.ONLY_ONE_PREAUTH)) {
+                    epas = new int[] { eTypes[0] };
+                }
+                pas2 = new DerValue[epas.length];
                 for (int i=0; i<epas.length; i++) {
-                    pas[i] = new DerValue(new ETypeInfo(
+                    pas2[i] = new DerValue(new ETypeInfo2(
                             epas[i],
                             epas[i] == EncryptedData.ETYPE_ARCFOUR_HMAC ?
-                                null : getSalt(body.cname)
-                            ).asn1Encode());
+                                null : getSalt(body.cname),
+                            null).asn1Encode());
                 }
+                boolean allOld = true;
+                for (int i: eTypes) {
+                    if (i == EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96 ||
+                            i == EncryptedData.ETYPE_AES256_CTS_HMAC_SHA1_96) {
+                        allOld = false;
+                        break;
+                    }
+                }
+                if (allOld) {
+                    pas = new DerValue[epas.length];
+                    for (int i=0; i<epas.length; i++) {
+                        pas[i] = new DerValue(new ETypeInfo(
+                                epas[i],
+                                epas[i] == EncryptedData.ETYPE_ARCFOUR_HMAC ?
+                                    null : getSalt(body.cname)
+                                ).asn1Encode());
+                    }
+                }
+            }
+
+            DerOutputStream eid;
+            if (pas2 != null) {
+                eid = new DerOutputStream();
+                eid.putSequence(pas2);
+                outPAs.add(new PAData(Krb5.PA_ETYPE_INFO2, eid.toByteArray()));
+            }
+            if (pas != null) {
                 eid = new DerOutputStream();
                 eid.putSequence(pas);
                 outPAs.add(new PAData(Krb5.PA_ETYPE_INFO, eid.toByteArray()));
@@ -943,7 +1019,7 @@ public class KDC {
                     null);
             Ticket t = new Ticket(
                     body.crealm,
-                    body.sname,
+                    service,
                     new EncryptedData(skey, enc.asn1Encode(), KeyUsage.KU_TICKET)
             );
             EncASRepPart enc_part = new EncASRepPart(
@@ -959,7 +1035,7 @@ public class KDC {
                     body.from,
                     till, body.rtime,
                     body.crealm,
-                    body.sname,
+                    service,
                     body.addresses
                     );
             EncryptedData edata = new EncryptedData(ckey, enc_part.asn1Encode(), KeyUsage.KU_ENC_AS_REP_PART);
@@ -1023,7 +1099,7 @@ public class KDC {
                         0,
                         ke.returnCode(),
                         body.crealm, body.cname,
-                        new Realm(getRealm()), body.sname,
+                        new Realm(getRealm()), service,
                         KrbException.errorMessage(ke.returnCode()),
                         eData);
             }

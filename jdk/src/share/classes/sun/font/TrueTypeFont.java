@@ -106,7 +106,7 @@ public class TrueTypeFont extends FileFont {
 
     private static Map<String, Short> lcidMap;
 
-    class DirectoryEntry {
+    static class DirectoryEntry {
         int tag;
         int offset;
         int length;

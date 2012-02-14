@@ -76,5 +76,5 @@ while [ ! -s $tmp ] ; do
   sleep 2
 done
 
-$jdk/bin/java -showversion ${OPTIONS} -classpath $javacp SASanityChecker $pid
+$jdk/bin/java -showversion ${OPTIONS} -classpath $javacp $* SASanityChecker $pid
 kill -9 $pid

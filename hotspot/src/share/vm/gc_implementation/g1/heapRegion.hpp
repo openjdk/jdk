@@ -52,9 +52,11 @@ class HeapRegionRemSetIterator;
 class HeapRegion;
 class HeapRegionSetBase;
 
-#define HR_FORMAT "%d:["PTR_FORMAT","PTR_FORMAT","PTR_FORMAT"]"
-#define HR_FORMAT_PARAMS(_hr_) (_hr_)->hrs_index(), (_hr_)->bottom(), \
-                               (_hr_)->top(), (_hr_)->end()
+#define HR_FORMAT SIZE_FORMAT":(%s)["PTR_FORMAT","PTR_FORMAT","PTR_FORMAT"]"
+#define HR_FORMAT_PARAMS(_hr_) \
+                (_hr_)->hrs_index(), \
+                (_hr_)->is_survivor() ? "S" : (_hr_)->is_young() ? "E" : "-", \
+                (_hr_)->bottom(), (_hr_)->top(), (_hr_)->end()
 
 // A dirty card to oop closure for heap regions. It
 // knows how to get the G1 heap and how to use the bitmap
@@ -115,7 +117,6 @@ public:
                   CardTableModRefBS::PrecisionStyle precision,
                   FilterKind fk);
 };
-
 
 // The complicating factor is that BlockOffsetTable diverged
 // significantly, and we need functionality that is only in the G1 version.
@@ -221,10 +222,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
     ContinuesHumongous
   };
 
-  // The next filter kind that should be used for a "new_dcto_cl" call with
-  // the "traditional" signature.
-  HeapRegionDCTOC::FilterKind _next_fk;
-
   // Requires that the region "mr" be dense with objects, and begin and end
   // with an object.
   void oops_in_mr_iterate(MemRegion mr, OopClosure* cl);
@@ -237,9 +234,8 @@ class HeapRegion: public G1OffsetTableContigSpace {
   G1BlockOffsetArrayContigSpace* offsets() { return &_offsets; }
 
  protected:
-  // If this region is a member of a HeapRegionSeq, the index in that
-  // sequence, otherwise -1.
-  int  _hrs_index;
+  // The index of this region in the heap region sequence.
+  size_t  _hrs_index;
 
   HumongousType _humongous_type;
   // For a humongous region, region in which it starts.
@@ -249,10 +245,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   // True iff the region is in current collection_set.
   bool _in_collection_set;
-
-  // Is this or has it been an allocation region in the current collection
-  // pause.
-  bool _is_gc_alloc_region;
 
   // True iff an attempt to evacuate an object in the region failed.
   bool _evacuation_failed;
@@ -296,8 +288,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
   enum YoungType {
     NotYoung,                   // a region is not young
     Young,                      // a region is young
-    Survivor                    // a region is young and it contains
-                                // survivor
+    Survivor                    // a region is young and it contains survivors
   };
 
   volatile YoungType _young_type;
@@ -351,19 +342,21 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
  public:
   // If "is_zeroed" is "true", the region "mr" can be assumed to contain zeros.
-  HeapRegion(G1BlockOffsetSharedArray* sharedOffsetArray,
+  HeapRegion(size_t hrs_index,
+             G1BlockOffsetSharedArray* sharedOffsetArray,
              MemRegion mr, bool is_zeroed);
 
-  static int LogOfHRGrainBytes;
-  static int LogOfHRGrainWords;
-  // The normal type of these should be size_t. However, they used to
-  // be members of an enum before and they are assumed by the
-  // compilers to be ints. To avoid going and fixing all their uses,
-  // I'm declaring them as ints. I'm not anticipating heap region
-  // sizes to reach anywhere near 2g, so using an int here is safe.
-  static int GrainBytes;
-  static int GrainWords;
-  static int CardsPerRegion;
+  static int    LogOfHRGrainBytes;
+  static int    LogOfHRGrainWords;
+
+  static size_t GrainBytes;
+  static size_t GrainWords;
+  static size_t CardsPerRegion;
+
+  static size_t align_up_to_region_byte_size(size_t sz) {
+    return (sz + (size_t) GrainBytes - 1) &
+                                      ~((1 << (size_t) LogOfHRGrainBytes) - 1);
+  }
 
   // It sets up the heap region size (GrainBytes / GrainWords), as
   // well as other related fields that are based on the heap region
@@ -393,8 +386,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   // If this region is a member of a HeapRegionSeq, the index in that
   // sequence, otherwise -1.
-  int hrs_index() const { return _hrs_index; }
-  void set_hrs_index(int index) { _hrs_index = index; }
+  size_t hrs_index() const { return _hrs_index; }
 
   // The number of bytes marked live in the region in the last marking phase.
   size_t marked_bytes()    { return _prev_marked_bytes; }
@@ -437,6 +429,14 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // For a humongous region, region in which it starts.
   HeapRegion* humongous_start_region() const {
     return _humongous_start_region;
+  }
+
+  // Same as Space::is_in_reserved, but will use the original size of the region.
+  // The original size is different only for start humongous regions. They get
+  // their _end set up to be the end of the last continues region of the
+  // corresponding humongous object.
+  bool is_in_reserved_raw(const void* p) const {
+    return _bottom <= p && p < _orig_end;
   }
 
   // Makes the current region be a "starts humongous" region, i.e.,
@@ -494,27 +494,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   void set_next_in_collection_set(HeapRegion* r) {
     assert(in_collection_set(), "should only invoke on member of CS.");
     assert(r == NULL || r->in_collection_set(), "Malformed CS.");
-    _next_in_special_set = r;
-  }
-
-  // True iff it is or has been an allocation region in the current
-  // collection pause.
-  bool is_gc_alloc_region() const {
-    return _is_gc_alloc_region;
-  }
-  void set_is_gc_alloc_region(bool b) {
-    _is_gc_alloc_region = b;
-  }
-  HeapRegion* next_gc_alloc_region() {
-    assert(is_gc_alloc_region(), "should only invoke on member of CS.");
-    assert(_next_in_special_set == NULL ||
-           _next_in_special_set->is_gc_alloc_region(),
-           "Malformed CS.");
-    return _next_in_special_set;
-  }
-  void set_next_gc_alloc_region(HeapRegion* r) {
-    assert(is_gc_alloc_region(), "should only invoke on member of CS.");
-    assert(r == NULL || r->is_gc_alloc_region(), "Malformed CS.");
     _next_in_special_set = r;
   }
 
@@ -579,6 +558,8 @@ class HeapRegion: public G1OffsetTableContigSpace {
   void set_next_dirty_cards_region(HeapRegion* hr) { _next_dirty_cards_region = hr; }
   bool is_on_dirty_cards_region_list() const { return get_next_dirty_cards_region() != NULL; }
 
+  HeapWord* orig_end() { return _orig_end; }
+
   // Allows logical separation between objects allocated before and after.
   void save_marks();
 
@@ -596,40 +577,9 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // allocated in the current region before the last call to "save_mark".
   void oop_before_save_marks_iterate(OopClosure* cl);
 
-  // This call determines the "filter kind" argument that will be used for
-  // the next call to "new_dcto_cl" on this region with the "traditional"
-  // signature (i.e., the call below.)  The default, in the absence of a
-  // preceding call to this method, is "NoFilterKind", and a call to this
-  // method is necessary for each such call, or else it reverts to the
-  // default.
-  // (This is really ugly, but all other methods I could think of changed a
-  // lot of main-line code for G1.)
-  void set_next_filter_kind(HeapRegionDCTOC::FilterKind nfk) {
-    _next_fk = nfk;
-  }
-
-  DirtyCardToOopClosure*
-  new_dcto_closure(OopClosure* cl,
-                   CardTableModRefBS::PrecisionStyle precision,
-                   HeapRegionDCTOC::FilterKind fk);
-
-#if WHASSUP
-  DirtyCardToOopClosure*
-  new_dcto_closure(OopClosure* cl,
-                   CardTableModRefBS::PrecisionStyle precision,
-                   HeapWord* boundary) {
-    assert(boundary == NULL, "This arg doesn't make sense here.");
-    DirtyCardToOopClosure* res = new_dcto_closure(cl, precision, _next_fk);
-    _next_fk = HeapRegionDCTOC::NoFilterKind;
-    return res;
-  }
-#endif
-
-  //
   // Note the start or end of marking. This tells the heap region
   // that the collector is about to start or has finished (concurrently)
   // marking the heap.
-  //
 
   // Note the start of a marking phase. Record the
   // start of the unmarked area of the region here.
@@ -853,14 +803,20 @@ class HeapRegion: public G1OffsetTableContigSpace {
   void print() const;
   void print_on(outputStream* st) const;
 
-  // use_prev_marking == true  -> use "prev" marking information,
-  // use_prev_marking == false -> use "next" marking information
+  // vo == UsePrevMarking  -> use "prev" marking information,
+  // vo == UseNextMarking -> use "next" marking information
+  // vo == UseMarkWord    -> use the mark word in the object header
+  //
   // NOTE: Only the "prev" marking information is guaranteed to be
   // consistent most of the time, so most calls to this should use
-  // use_prev_marking == true. Currently, there is only one case where
-  // this is called with use_prev_marking == false, which is to verify
-  // the "next" marking information at the end of remark.
-  void verify(bool allow_dirty, bool use_prev_marking, bool *failures) const;
+  // vo == UsePrevMarking.
+  // Currently, there is only one case where this is called with
+  // vo == UseNextMarking, which is to verify the "next" marking
+  // information at the end of remark.
+  // Currently there is only one place where this is called with
+  // vo == UseMarkWord, which is to verify the marking during a
+  // full GC.
+  void verify(bool allow_dirty, VerifyOption vo, bool *failures) const;
 
   // Override; it uses the "prev" marking information
   virtual void verify(bool allow_dirty) const;

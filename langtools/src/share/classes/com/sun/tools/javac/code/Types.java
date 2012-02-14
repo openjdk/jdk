@@ -269,41 +269,21 @@ public class Types {
 
     // <editor-fold defaultstate="collapsed" desc="isConvertible">
     /**
-     * Is t a subtype of or convertiable via boxing/unboxing
-     * convertions to s?
+     * Is t a subtype of or convertible via boxing/unboxing
+     * conversion to s?
      */
     public boolean isConvertible(Type t, Type s, Warner warn) {
+        if (t.tag == ERROR)
+            return true;
         boolean tPrimitive = t.isPrimitive();
         boolean sPrimitive = s.isPrimitive();
         if (tPrimitive == sPrimitive) {
-            checkUnsafeVarargsConversion(t, s, warn);
             return isSubtypeUnchecked(t, s, warn);
         }
         if (!allowBoxing) return false;
         return tPrimitive
             ? isSubtype(boxedClass(t).type, s)
             : isSubtype(unboxedType(t), s);
-    }
-    //where
-    private void checkUnsafeVarargsConversion(Type t, Type s, Warner warn) {
-        if (t.tag != ARRAY || isReifiable(t)) return;
-        ArrayType from = (ArrayType)t;
-        boolean shouldWarn = false;
-        switch (s.tag) {
-            case ARRAY:
-                ArrayType to = (ArrayType)s;
-                shouldWarn = from.isVarargs() &&
-                        !to.isVarargs() &&
-                        !isReifiable(from);
-                break;
-            case CLASS:
-                shouldWarn = from.isVarargs() &&
-                        isSubtype(from, s);
-                break;
-        }
-        if (shouldWarn) {
-            warn.warn(LintCategory.VARARGS);
-        }
     }
 
     /**
@@ -326,42 +306,63 @@ public class Types {
      * Is t an unchecked subtype of s?
      */
     public boolean isSubtypeUnchecked(Type t, Type s, Warner warn) {
-        if (t.tag == ARRAY && s.tag == ARRAY) {
-            if (((ArrayType)t).elemtype.tag <= lastBaseTag) {
-                return isSameType(elemtype(t), elemtype(s));
-            } else {
-                ArrayType from = (ArrayType)t;
-                ArrayType to = (ArrayType)s;
-                if (from.isVarargs() &&
-                        !to.isVarargs() &&
-                        !isReifiable(from)) {
-                    warn.warn(LintCategory.VARARGS);
+        boolean result = isSubtypeUncheckedInternal(t, s, warn);
+        if (result) {
+            checkUnsafeVarargsConversion(t, s, warn);
+        }
+        return result;
+    }
+    //where
+        private boolean isSubtypeUncheckedInternal(Type t, Type s, Warner warn) {
+            if (t.tag == ARRAY && s.tag == ARRAY) {
+                if (((ArrayType)t).elemtype.tag <= lastBaseTag) {
+                    return isSameType(elemtype(t), elemtype(s));
+                } else {
+                    return isSubtypeUnchecked(elemtype(t), elemtype(s), warn);
                 }
-                return isSubtypeUnchecked(elemtype(t), elemtype(s), warn);
-            }
-        } else if (isSubtype(t, s)) {
-            return true;
-        }
-        else if (t.tag == TYPEVAR) {
-            return isSubtypeUnchecked(t.getUpperBound(), s, warn);
-        }
-        else if (s.tag == UNDETVAR) {
-            UndetVar uv = (UndetVar)s;
-            if (uv.inst != null)
-                return isSubtypeUnchecked(t, uv.inst, warn);
-        }
-        else if (!s.isRaw()) {
-            Type t2 = asSuper(t, s.tsym);
-            if (t2 != null && t2.isRaw()) {
-                if (isReifiable(s))
-                    warn.silentWarn(LintCategory.UNCHECKED);
-                else
-                    warn.warn(LintCategory.UNCHECKED);
+            } else if (isSubtype(t, s)) {
                 return true;
             }
+            else if (t.tag == TYPEVAR) {
+                return isSubtypeUnchecked(t.getUpperBound(), s, warn);
+            }
+            else if (s.tag == UNDETVAR) {
+                UndetVar uv = (UndetVar)s;
+                if (uv.inst != null)
+                    return isSubtypeUnchecked(t, uv.inst, warn);
+            }
+            else if (!s.isRaw()) {
+                Type t2 = asSuper(t, s.tsym);
+                if (t2 != null && t2.isRaw()) {
+                    if (isReifiable(s))
+                        warn.silentWarn(LintCategory.UNCHECKED);
+                    else
+                        warn.warn(LintCategory.UNCHECKED);
+                    return true;
+                }
+            }
+            return false;
         }
-        return false;
-    }
+
+        private void checkUnsafeVarargsConversion(Type t, Type s, Warner warn) {
+            if (t.tag != ARRAY || isReifiable(t)) return;
+            ArrayType from = (ArrayType)t;
+            boolean shouldWarn = false;
+            switch (s.tag) {
+                case ARRAY:
+                    ArrayType to = (ArrayType)s;
+                    shouldWarn = from.isVarargs() &&
+                            !to.isVarargs() &&
+                            !isReifiable(from);
+                    break;
+                case CLASS:
+                    shouldWarn = from.isVarargs();
+                    break;
+            }
+            if (shouldWarn) {
+                warn.warn(LintCategory.VARARGS);
+            }
+        }
 
     /**
      * Is t a subtype of s?<br>
@@ -506,8 +507,13 @@ public class Types {
             @Override
             public Boolean visitUndetVar(UndetVar t, Type s) {
                 //todo: test against origin needed? or replace with substitution?
-                if (t == s || t.qtype == s || s.tag == ERROR || s.tag == UNKNOWN)
+                if (t == s || t.qtype == s || s.tag == ERROR || s.tag == UNKNOWN) {
                     return true;
+                } else if (s.tag == BOT) {
+                    //if 's' is 'null' there's no instantiated type U for which
+                    //U <: s (but 'null' itself, which is not a valid type)
+                    return false;
+                }
 
                 if (t.inst != null)
                     return isSubtypeNoCapture(t.inst, s); // TODO: ", warn"?
@@ -2117,6 +2123,8 @@ public class Types {
             }
         }
 
+        List<TypeSymbol> seenTypes = List.nil();
+
         /** members closure visitor methods **/
 
         public CompoundScope visitType(Type t, Boolean skipInterface) {
@@ -2125,21 +2133,33 @@ public class Types {
 
         @Override
         public CompoundScope visitClassType(ClassType t, Boolean skipInterface) {
-            ClassSymbol csym = (ClassSymbol)t.tsym;
-            Entry e = _map.get(csym);
-            if (e == null || !e.matches(skipInterface)) {
-                CompoundScope membersClosure = new CompoundScope(csym);
-                if (!skipInterface) {
-                    for (Type i : interfaces(t)) {
-                        membersClosure.addSubScope(visit(i, skipInterface));
-                    }
-                }
-                membersClosure.addSubScope(visit(supertype(t), skipInterface));
-                membersClosure.addSubScope(csym.members());
-                e = new Entry(skipInterface, membersClosure);
-                _map.put(csym, e);
+            if (seenTypes.contains(t.tsym)) {
+                //this is possible when an interface is implemented in multiple
+                //superclasses, or when a classs hierarchy is circular - in such
+                //cases we don't need to recurse (empty scope is returned)
+                return new CompoundScope(t.tsym);
             }
-            return e.compoundScope;
+            try {
+                seenTypes = seenTypes.prepend(t.tsym);
+                ClassSymbol csym = (ClassSymbol)t.tsym;
+                Entry e = _map.get(csym);
+                if (e == null || !e.matches(skipInterface)) {
+                    CompoundScope membersClosure = new CompoundScope(csym);
+                    if (!skipInterface) {
+                        for (Type i : interfaces(t)) {
+                            membersClosure.addSubScope(visit(i, skipInterface));
+                        }
+                    }
+                    membersClosure.addSubScope(visit(supertype(t), skipInterface));
+                    membersClosure.addSubScope(csym.members());
+                    e = new Entry(skipInterface, membersClosure);
+                    _map.put(csym, e);
+                }
+                return e.compoundScope;
+            }
+            finally {
+                seenTypes = seenTypes.tail;
+            }
         }
 
         @Override

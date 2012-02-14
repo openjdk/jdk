@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,10 @@
  * @summary Need to revisit the javadocs for JSSE, especially the
  *      promoted classes, and HttpsURLConnection.getCipherSuite throws
  *      NullPointerException
+ * @run main/othervm ComURLNulls
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  * @author Brad Wetmore
  */
 
@@ -34,6 +38,7 @@ import java.net.*;
 import java.io.*;
 import javax.net.ssl.*;
 import com.sun.net.ssl.HttpsURLConnection;
+import com.sun.net.ssl.HostnameVerifier;
 
 /*
  * Tests that the com null argument changes made it in ok.
@@ -42,59 +47,64 @@ import com.sun.net.ssl.HttpsURLConnection;
 public class ComURLNulls {
 
     public static void main(String[] args) throws Exception {
-
-        System.setProperty("java.protocol.handler.pkgs",
-                                "com.sun.net.ssl.internal.www.protocol");
-        /**
-         * This test does not establish any connection to the specified
-         * URL, hence a dummy URL is used.
-         */
-        URL foobar = new URL("https://example.com/");
-
-        HttpsURLConnection urlc =
-            (HttpsURLConnection) foobar.openConnection();
-
+        HostnameVerifier reservedHV =
+            HttpsURLConnection.getDefaultHostnameVerifier();
         try {
-            urlc.getCipherSuite();
-        } catch (IllegalStateException e) {
-            System.out.print("Caught proper exception: ");
-            System.out.println(e.getMessage());
-        }
+            System.setProperty("java.protocol.handler.pkgs",
+                                    "com.sun.net.ssl.internal.www.protocol");
+            /**
+             * This test does not establish any connection to the specified
+             * URL, hence a dummy URL is used.
+             */
+            URL foobar = new URL("https://example.com/");
 
-        try {
-            urlc.getServerCertificateChain();
-        } catch (IllegalStateException e) {
-            System.out.print("Caught proper exception: ");
-            System.out.println(e.getMessage());
-        }
+            HttpsURLConnection urlc =
+                (HttpsURLConnection) foobar.openConnection();
 
-        try {
-            urlc.setDefaultHostnameVerifier(null);
-        } catch (IllegalArgumentException e) {
-            System.out.print("Caught proper exception: ");
-            System.out.println(e.getMessage());
-        }
+            try {
+                urlc.getCipherSuite();
+            } catch (IllegalStateException e) {
+                System.out.print("Caught proper exception: ");
+                System.out.println(e.getMessage());
+            }
 
-        try {
-            urlc.setHostnameVerifier(null);
-        } catch (IllegalArgumentException e) {
-            System.out.print("Caught proper exception: ");
-            System.out.println(e.getMessage());
-        }
+            try {
+                urlc.getServerCertificateChain();
+            } catch (IllegalStateException e) {
+                System.out.print("Caught proper exception: ");
+                System.out.println(e.getMessage());
+            }
 
-        try {
-            urlc.setDefaultSSLSocketFactory(null);
-        } catch (IllegalArgumentException e) {
-            System.out.print("Caught proper exception: ");
-            System.out.println(e.getMessage());
-        }
+            try {
+                urlc.setDefaultHostnameVerifier(null);
+            } catch (IllegalArgumentException e) {
+                System.out.print("Caught proper exception: ");
+                System.out.println(e.getMessage());
+            }
 
-        try {
-            urlc.setSSLSocketFactory(null);
-        } catch (IllegalArgumentException e) {
-            System.out.print("Caught proper exception");
-            System.out.println(e.getMessage());
+            try {
+                urlc.setHostnameVerifier(null);
+            } catch (IllegalArgumentException e) {
+                System.out.print("Caught proper exception: ");
+                System.out.println(e.getMessage());
+            }
+
+            try {
+                urlc.setDefaultSSLSocketFactory(null);
+            } catch (IllegalArgumentException e) {
+                System.out.print("Caught proper exception: ");
+                System.out.println(e.getMessage());
+            }
+
+            try {
+                urlc.setSSLSocketFactory(null);
+            } catch (IllegalArgumentException e) {
+                System.out.print("Caught proper exception");
+                System.out.println(e.getMessage());
+            }
+            System.out.println("TESTS PASSED");
+        } finally {
+            HttpsURLConnection.setDefaultHostnameVerifier(reservedHV);
         }
-        System.out.println("TESTS PASSED");
     }
 }

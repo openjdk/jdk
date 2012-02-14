@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,6 @@ public:
   const TypeTuple *_domain;
   StartNode( Node *root, const TypeTuple *domain ) : MultiNode(2), _domain(domain) {
     init_class_id(Class_Start);
-    init_flags(Flag_is_block_start);
     init_req(0,this);
     init_req(1,root);
   }
@@ -188,6 +187,7 @@ public:
 // This provides a way to map the optimized program back into the interpreter,
 // or to let the GC mark the stack.
 class JVMState : public ResourceObj {
+  friend class VMStructs;
 public:
   typedef enum {
     Reexecute_Undefined = -1, // not defined -- will be translated into false later
@@ -501,6 +501,7 @@ public:
 // Call nodes now subsume the function of debug nodes at callsites, so they
 // contain the functionality of a full scope chain of debug nodes.
 class CallNode : public SafePointNode {
+  friend class VMStructs;
 public:
   const TypeFunc *_tf;        // Function type
   address      _entry_point;  // Address of method being called
@@ -513,7 +514,6 @@ public:
       _cnt(COUNT_UNKNOWN)
   {
     init_class_id(Class_Call);
-    init_flags(Flag_is_Call);
   }
 
   const TypeFunc* tf()        const { return _tf; }
@@ -567,6 +567,7 @@ public:
 // convention.  (The "Java" calling convention is the compiler's calling
 // convention, as opposed to the interpreter's or that of native C.)
 class CallJavaNode : public CallNode {
+  friend class VMStructs;
 protected:
   virtual uint cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger

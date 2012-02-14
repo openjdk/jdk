@@ -300,8 +300,21 @@ void FreeList::verify_stats() const {
   // dictionary for example, this might be the first block and
   // in that case there would be no place that we could record
   // the stats (which are kept in the block itself).
-  assert(_allocation_stats.prevSweep() + _allocation_stats.splitBirths() + 1   // Total Stock + 1
-          >= _allocation_stats.splitDeaths() + (ssize_t)count(), "Conservation Principle");
+  assert((_allocation_stats.prevSweep() + _allocation_stats.splitBirths()
+          + _allocation_stats.coalBirths() + 1)   // Total Production Stock + 1
+         >= (_allocation_stats.splitDeaths() + _allocation_stats.coalDeaths()
+             + (ssize_t)count()),                // Total Current Stock + depletion
+         err_msg("FreeList " PTR_FORMAT " of size " SIZE_FORMAT
+                 " violates Conservation Principle: "
+                 "prevSweep(" SIZE_FORMAT ")"
+                 " + splitBirths(" SIZE_FORMAT ")"
+                 " + coalBirths(" SIZE_FORMAT ") + 1 >= "
+                 " splitDeaths(" SIZE_FORMAT ")"
+                 " coalDeaths(" SIZE_FORMAT ")"
+                 " + count(" SSIZE_FORMAT ")",
+                 this, _size, _allocation_stats.prevSweep(), _allocation_stats.splitBirths(),
+                 _allocation_stats.splitBirths(), _allocation_stats.splitDeaths(),
+                 _allocation_stats.coalDeaths(), count()));
 }
 
 void FreeList::assert_proper_lock_protection_work() const {

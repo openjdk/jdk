@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6993963
+ * @bug 6993963 7025809
  * @summary Project Coin: Use precise exception analysis for effectively final catch parameters
  * @library ../../lib
  * @build JavacTestingAbstractProcessor ModelChecker
@@ -107,7 +107,7 @@ public class ModelChecker extends JavacTestingAbstractProcessor {
             ; // Expected
         }
 
-        UnionType unionType = new SimpleTypeVisitor7<UnionType, Void>(){
+        UnionType unionType = new SimpleTypeVisitor<UnionType, Void>(){
             @Override
             protected UnionType defaultAction(TypeMirror e, Void p) {return null;}
 

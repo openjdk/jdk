@@ -336,7 +336,9 @@
             classpath="${dist.lib.dir}/javac.jar"
             includeAntRuntime="no"
             debug="${javac.debug}"
-            debuglevel="${javac.debuglevel}"/>
+            debuglevel="${javac.debuglevel}">
+            <compilerarg line="${javac.lint.opts}"/>
+        </javac>
         <java fork="true"
             jvm="${target.java.home}/bin/java"
             dir="test/tools/javac/diags"
@@ -857,7 +859,10 @@
                srcdir="${make.tools.dir}/CompileProperties"
                destdir="${build.toolclasses.dir}/"
                classpath="${ant.core.lib}"
-               includeantruntime="false"/>
+               bootclasspath="${boot.java.home}/jre/lib/rt.jar"
+               includeantruntime="false">
+            <compilerarg line="${javac.lint.opts}"/>
+        </javac>
         <taskdef name="pcompile"
                  classname="CompilePropertiesTask"
                  classpath="${build.toolclasses.dir}/"/>
@@ -874,6 +879,7 @@
                classpath="${ant.core.lib}"
                includeantruntime="false">
             <compilerarg value="-Xbootclasspath/p:${build.bootstrap.dir}/classes"/>
+            <compilerarg line="${javac.lint.opts}"/>
         </javac>
         <taskdef name="genstubs"
                  classname="GenStubs$$Ant"

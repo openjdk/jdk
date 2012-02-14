@@ -28,6 +28,7 @@
  */
 
 import com.sun.source.util.JavacTask;
+import com.sun.tools.javac.api.ClientCodeWrapper;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.util.JCDiagnostic;
 import java.net.URI;
@@ -236,7 +237,7 @@ public class UnusedResourcesTest {
         public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
             if (diagnostic.getKind() == Diagnostic.Kind.WARNING &&
                     diagnostic.getCode().contains("try.resource.not.referenced")) {
-                String varName = ((JCDiagnostic)diagnostic).getArgs()[0].toString();
+                String varName = unwrap(diagnostic).getArgs()[0].toString();
                 if (varName.equals(TwrStmt.TWR1.resourceName)) {
                     unused_r1 = true;
                 } else if (varName.equals(TwrStmt.TWR2.resourceName)) {
@@ -245,6 +246,14 @@ public class UnusedResourcesTest {
                     unused_r3 = true;
                 }
             }
+        }
+
+        private JCDiagnostic unwrap(Diagnostic<? extends JavaFileObject> diagnostic) {
+            if (diagnostic instanceof JCDiagnostic)
+                return (JCDiagnostic) diagnostic;
+            if (diagnostic instanceof ClientCodeWrapper.DiagnosticSourceUnwrapper)
+                return ((ClientCodeWrapper.DiagnosticSourceUnwrapper)diagnostic).d;
+            throw new IllegalArgumentException();
         }
     }
 }

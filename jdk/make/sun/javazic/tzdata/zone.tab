@@ -54,7 +54,6 @@ AG	+1703-06148	America/Antigua
 AI	+1812-06304	America/Anguilla
 AL	+4120+01950	Europe/Tirane
 AM	+4011+04430	Asia/Yerevan
-AN	+1211-06900	America/Curacao
 AO	-0848+01314	Africa/Luanda
 AQ	-7750+16636	Antarctica/McMurdo	McMurdo Station, Ross Island
 AQ	-9000+00000	Antarctica/South_Pole	Amundsen-Scott Station, South Pole
@@ -109,6 +108,7 @@ BL	+1753-06251	America/St_Barthelemy
 BM	+3217-06446	Atlantic/Bermuda
 BN	+0456+11455	Asia/Brunei
 BO	-1630-06809	America/La_Paz
+BQ	+120903-0681636	America/Kralendijk
 BR	-0351-03225	America/Noronha	Atlantic islands
 BR	-0127-04829	America/Belem	Amapa, E Para
 BR	-0343-03830	America/Fortaleza	NE Brazil (MA, PI, CE, RN, PB)
@@ -142,7 +142,7 @@ CA	+4901-08816	America/Nipigon	Eastern Time - Ontario & Quebec - places that did
 CA	+4823-08915	America/Thunder_Bay	Eastern Time - Thunder Bay, Ontario
 CA	+6344-06828	America/Iqaluit	Eastern Time - east Nunavut - most locations
 CA	+6608-06544	America/Pangnirtung	Eastern Time - Pangnirtung, Nunavut
-CA	+744144-0944945	America/Resolute	Eastern Standard Time - Resolute, Nunavut
+CA	+744144-0944945	America/Resolute	Central Standard Time - Resolute, Nunavut
 CA	+484531-0913718	America/Atikokan	Eastern Standard Time - Atikokan, Ontario and Southampton I, Nunavut
 CA	+624900-0920459	America/Rankin_Inlet	Central Time - central Nunavut
 CA	+4953-09709	America/Winnipeg	Central Time - Manitoba & west Ontario
@@ -177,6 +177,7 @@ CO	+0436-07405	America/Bogota
 CR	+0956-08405	America/Costa_Rica
 CU	+2308-08222	America/Havana
 CV	+1455-02331	Atlantic/Cape_Verde
+CW	+1211-06900	America/Curacao
 CX	-1025+10543	Indian/Christmas
 CY	+3510+03322	Asia/Nicosia
 CZ	+5005+01426	Europe/Prague
@@ -340,7 +341,8 @@ PL	+5215+02100	Europe/Warsaw
 PM	+4703-05620	America/Miquelon
 PN	-2504-13005	Pacific/Pitcairn
 PR	+182806-0660622	America/Puerto_Rico
-PS	+3130+03428	Asia/Gaza
+PS	+3130+03428	Asia/Gaza	Gaza Strip
+PS	+313200+0350542	Asia/Hebron	West Bank
 PT	+3843-00908	Europe/Lisbon	mainland
 PT	+3238-01654	Atlantic/Madeira	Madeira Islands
 PT	+3744-02540	Atlantic/Azores	Azores
@@ -382,8 +384,10 @@ SM	+4355+01228	Europe/San_Marino
 SN	+1440-01726	Africa/Dakar
 SO	+0204+04522	Africa/Mogadishu
 SR	+0550-05510	America/Paramaribo
+SS	+0451+03136	Africa/Juba
 ST	+0020+00644	Africa/Sao_Tome
 SV	+1342-08912	America/El_Salvador
+SX	+180305-0630250	America/Lower_Princes
 SY	+3330+03618	Asia/Damascus
 SZ	-2618+03106	Africa/Mbabane
 TC	+2128-07108	America/Grand_Turk

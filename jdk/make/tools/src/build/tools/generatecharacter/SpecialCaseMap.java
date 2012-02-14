@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.lang.*;
  * <p>
  * @author John O'Conner
  */
-public class SpecialCaseMap implements Comparable {
+public class SpecialCaseMap implements Comparable<SpecialCaseMap> {
 
     SpecialCaseMap() {
         chSource = 0xFFFF;
@@ -55,7 +55,7 @@ public class SpecialCaseMap implements Comparable {
      */
 
     public static SpecialCaseMap[] readSpecFile(File file, int plane) throws FileNotFoundException {
-        ArrayList caseMaps = new ArrayList(150);
+        ArrayList<SpecialCaseMap> caseMaps = new ArrayList<>(150);
         int count = 0;
         BufferedReader f = new BufferedReader(new FileReader(file));
                 String line = null;
@@ -69,7 +69,7 @@ public class SpecialCaseMap implements Comparable {
                 SpecialCaseMap item = parse(line.trim());
                 if (item != null) {
                                 if(item.getCharSource() >> 16 < plane) continue;
-                                if((int)(item.getCharSource() >> 16) > plane) break;
+                                if(item.getCharSource() >> 16 > plane) break;
                                 caseMaps.add(item);
                 ++count;
             }
@@ -83,7 +83,7 @@ public class SpecialCaseMap implements Comparable {
 
     }
 
-    /**
+   /**
     * Given one line of a Unicode special casing data file as a String, parse the line
     * and return a SpecialCaseMap object that contains the case mapping.
     *
@@ -177,25 +177,25 @@ public class SpecialCaseMap implements Comparable {
         else return -1;
     }
 
-        /*
+    /*
      * Extracts and returns the high surrogate value from a UTF-32 code point.
      * If argument is a BMP character, then it is converted to a char and returned;
      * otherwise the high surrogate value is extracted.
      * @param codePoint a UTF-32 codePoint with value greater than 0xFFFF.
      * @return the high surrogate value that helps create <code>codePoint</code>; else
      *         the char representation of <code>codePoint</code> if it is a BMP character.
-         * @since 1.5
+     * @since 1.5
      */
-        static char getHighSurrogate(int codePoint) {
-                char high = (char)codePoint;
-                if (codePoint > 0xFFFF) {
-                    high = (char)((codePoint - 0x10000)/0x0400 + 0xD800);
-                }
-                return high;
+    static char getHighSurrogate(int codePoint) {
+        char high = (char)codePoint;
+        if (codePoint > 0xFFFF) {
+            high = (char)((codePoint - 0x10000)/0x0400 + 0xD800);
         }
+        return high;
+    }
 
 
-        /*
+    /*
      * Extracts and returns the low surrogate value from a UTF-32 code point.
      * If argument is a BMP character, then it is converted to a char and returned;
      * otherwise the high surrogate value is extracted.
@@ -204,29 +204,28 @@ public class SpecialCaseMap implements Comparable {
      *         the char representation of <code>codePoint</code> if it is a BMP character.
      * @since 1.5
      */
-        static char getLowSurrogate(int codePoint) {
-                char low = (char)codePoint;
-                if(codePoint > 0xFFFF) {
-                        low = (char)((codePoint - 0x10000)%0x0400 + 0xDC00);
-                }
-                return low;
+    static char getLowSurrogate(int codePoint) {
+        char low = (char)codePoint;
+        if(codePoint > 0xFFFF) {
+                low = (char)((codePoint - 0x10000)%0x0400 + 0xDC00);
         }
+        return low;
+    }
 
-        static String hex6(int n) {
-                String str = Integer.toHexString(n & 0xFFFFFF).toUpperCase();
-                return "000000".substring(Math.min(6, str.length())) + str;
+    static String hex6(int n) {
+        String str = Integer.toHexString(n & 0xFFFFFF).toUpperCase();
+        return "000000".substring(Math.min(6, str.length())) + str;
+    }
 
+    static String hex6(char[] map){
+        StringBuffer buff = new StringBuffer();
+        int x=0;
+        buff.append(hex6(map[x++]));
+        while(x<map.length) {
+            buff.append(" " + hex6(map[x++]));
         }
-
-        static String hex6(char[] map){
-                StringBuffer buff = new StringBuffer();
-                int x=0;
-                buff.append(hex6(map[x++]));
-                while(x<map.length) {
-                        buff.append(" " + hex6(map[x++]));
-                }
-                return buff.toString();
-        }
+        return buff.toString();
+    }
 
     void setCharSource(int ch) {
         chSource = ch;
@@ -302,56 +301,62 @@ public class SpecialCaseMap implements Comparable {
     static String CONTEXT_MODERN = "MODERN";
     static String CONTEXT_NONMODERN = "NON_MODERN";
 
-    public int compareTo(Object otherObject) {
-                SpecialCaseMap other = (SpecialCaseMap)otherObject;
-        if (chSource < other.chSource) {
+    public int compareTo(SpecialCaseMap otherObject) {
+        if (chSource < otherObject.chSource) {
             return -1;
         }
-        else if (chSource > other.chSource) {
+        else if (chSource > otherObject.chSource) {
             return 1;
         }
         else return 0;
     }
 
     public boolean equals(Object o1) {
-                boolean bEqual = false;
-                if (0 == compareTo(o1)) {
-                        bEqual = true;
-                }
+        if (this == o1) {
+            return true;
+        }
+        if (o1 == null || !(o1 instanceof SpecialCaseMap)) {
+            return false;
+        }
+        SpecialCaseMap other = (SpecialCaseMap)o1;
+        boolean bEqual = false;
+        if (0 == compareTo(other)) {
+            bEqual = true;
+        }
         return bEqual;
     }
 
-        public String toString() {
-                StringBuffer buff = new StringBuffer();
-                buff.append(hex6(getCharSource()));
-                buff.append("|" + hex6(lowerCaseMap));
-                buff.append("|" + hex6(upperCaseMap));
-                buff.append("|" + hex6(titleCaseMap));
-                buff.append("|" + context);
-                return buff.toString();
-        }
+    public String toString() {
+        StringBuffer buff = new StringBuffer();
+        buff.append(hex6(getCharSource()));
+        buff.append("|" + hex6(lowerCaseMap));
+        buff.append("|" + hex6(upperCaseMap));
+        buff.append("|" + hex6(titleCaseMap));
+        buff.append("|" + context);
+        return buff.toString();
+    }
 
-        public int hashCode() {
-                return (int)chSource;
-        }
+    public int hashCode() {
+        return chSource;
+    }
 
-        public static void main(String[] args) {
-                SpecialCaseMap[] spec = null;
-                if (args.length == 2 ) {
-                        try {
-                                File file = new File(args[0]);
-                                int plane = Integer.parseInt(args[1]);
-                                spec = SpecialCaseMap.readSpecFile(file, plane);
-                                System.out.println("SpecialCaseMap[" + spec.length + "]:");
-                                for (int x=0; x<spec.length; x++) {
-                                        System.out.println(spec[x].toString());
-                                }
-                        }
-                        catch(Exception e) {
-                                e.printStackTrace();
-                        }
+    public static void main(String[] args) {
+        SpecialCaseMap[] spec = null;
+        if (args.length == 2 ) {
+            try {
+                File file = new File(args[0]);
+                int plane = Integer.parseInt(args[1]);
+                spec = SpecialCaseMap.readSpecFile(file, plane);
+                System.out.println("SpecialCaseMap[" + spec.length + "]:");
+                for (int x=0; x<spec.length; x++) {
+                    System.out.println(spec[x].toString());
                 }
-
+            }
+            catch(Exception e) {
+                e.printStackTrace();
+            }
         }
+
+    }
 
 }

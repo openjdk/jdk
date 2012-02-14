@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 6639645 7026414
+ * @bug 6639645 7026414 7025809
  * @summary Modeling type implementing missing interfaces
  * @library ../../../../lib
  * @build JavacTestingAbstractProcessor TestMissingElement
@@ -104,7 +104,7 @@ public class TestMissingElement extends JavacTestingAbstractProcessor {
     private String asString(TypeMirror t) {
         if (t == null)
             return "[typ:null]";
-        return t.accept(new SimpleTypeVisitor7<String, Void>() {
+        return t.accept(new SimpleTypeVisitor<String, Void>() {
             @Override
             public String defaultAction(TypeMirror t, Void ignore) {
                 return "[typ:" + t.toString() + "]";
@@ -135,7 +135,7 @@ public class TestMissingElement extends JavacTestingAbstractProcessor {
     private String asString(Element e) {
         if (e == null)
             return "[elt:null]";
-        return e.accept(new SimpleElementVisitor7<String, Void>() {
+        return e.accept(new SimpleElementVisitor<String, Void>() {
             @Override
             public String defaultAction(Element e, Void ignore) {
                 return "[elt:" + e.getKind() + " " + e.toString() + "]";

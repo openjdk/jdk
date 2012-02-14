@@ -41,9 +41,7 @@ class PhaseTransform;
 class MulNode : public Node {
   virtual uint hash() const;
 public:
-  MulNode( Node *in1, Node *in2 ): Node(0,in1,in2) {
-    init_class_id(Class_Mul);
-  }
+  MulNode( Node *in1, Node *in2 ): Node(0,in1,in2) {}
 
   // Handle algebraic identities here.  If we have an identity, return the Node
   // we are equivalent to.  We look for "add of zero" as an identity.

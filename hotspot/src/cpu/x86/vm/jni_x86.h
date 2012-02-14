@@ -26,7 +26,7 @@
 #ifndef _JAVASOFT_JNI_MD_H_
 #define _JAVASOFT_JNI_MD_H_
 
-#if defined(SOLARIS) || defined(LINUX)
+#if defined(SOLARIS) || defined(LINUX) || defined(_ALLBSD_SOURCE)
 
 #if defined(__GNUC__) && (__GNUC__ > 4) || (__GNUC__ == 4) && (__GNUC_MINOR__ > 2)
   #define JNIEXPORT     __attribute__((visibility("default")))
@@ -38,10 +38,14 @@
 
   #define JNICALL
   typedef int jint;
-
-#ifdef _LP64
+#if defined(_LP64) && !defined(__APPLE__)
   typedef long jlong;
 #else
+  /*
+   * On _LP64 __APPLE__ "long" and "long long" are both 64 bits,
+   * but we use the "long long" typedef to avoid complaints from
+   * the __APPLE__ compiler about fprintf formats.
+   */
   typedef long long jlong;
 #endif
 

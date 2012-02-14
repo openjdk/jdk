@@ -474,8 +474,8 @@ public class HTMLDocument extends DefaultStyledDocument {
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
+     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * in Swing</A> for more information.
      *
      * @param offset the offset into the paragraph (must be at least 0)
      * @param length the number of characters affected (must be at least 0)
@@ -3358,13 +3358,13 @@ public class HTMLDocument extends DefaultStyledDocument {
                                                              1);
                     boolean multiple = attr.getAttribute(HTML.Attribute.MULTIPLE) != null;
                     if ((size > 1) || multiple) {
-                        OptionListModel m = new OptionListModel();
+                        OptionListModel<Option> m = new OptionListModel<Option>();
                         if (multiple) {
                             m.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
                         }
                         selectModel = m;
                     } else {
-                        selectModel = new OptionComboBoxModel();
+                        selectModel = new OptionComboBoxModel<Option>();
                     }
                     attr.addAttribute(StyleConstants.ModelAttribute,
                                       selectModel);
@@ -3376,14 +3376,14 @@ public class HTMLDocument extends DefaultStyledDocument {
                     option = new Option(attr);
 
                     if (selectModel instanceof OptionListModel) {
-                        OptionListModel m = (OptionListModel)selectModel;
+                        OptionListModel<Option> m = (OptionListModel<Option>) selectModel;
                         m.addElement(option);
                         if (option.isSelected()) {
                             m.addSelectionInterval(optionCount, optionCount);
                             m.setInitialSelection(optionCount);
                         }
                     } else if (selectModel instanceof OptionComboBoxModel) {
-                        OptionComboBoxModel m = (OptionComboBoxModel)selectModel;
+                        OptionComboBoxModel<Option> m = (OptionComboBoxModel<Option>) selectModel;
                         m.addElement(option);
                         if (option.isSelected()) {
                             m.setSelectedItem(option);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,15 +36,19 @@ public class LocaleTest {
 
     public static void main(String[] args) throws Exception {
 
-        Locale.setDefault(Locale.ITALY);
-
+        Locale reservedLocale = Locale.getDefault();
         try {
+            Locale.setDefault(Locale.ITALY);
+
             throw new XMLSecurityException("foo");
         } catch (XMLSecurityException xse) {
             System.out.println("Test PASSED");
         } catch (Throwable t) {
             System.out.println("Test FAILED");
             t.printStackTrace();
+        } finally {
+            // restore the reserved locale
+            Locale.setDefault(reservedLocale);
         }
     }
 }

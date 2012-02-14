@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,6 +241,7 @@ implements CertAttrSet<String> {
     /**
      * Set the attribute value.
      */
+    @SuppressWarnings("unchecked") // Checked with instanceof
     public void set(String name, Object obj) throws IOException {
         if (name.equalsIgnoreCase(USAGES)) {
             if (!(obj instanceof Vector)) {
@@ -258,7 +259,7 @@ implements CertAttrSet<String> {
     /**
      * Get the attribute value.
      */
-    public Object get(String name) throws IOException {
+    public Vector<ObjectIdentifier> get(String name) throws IOException {
         if (name.equalsIgnoreCase(USAGES)) {
             //XXXX May want to consider cloning this
             return keyUsages;

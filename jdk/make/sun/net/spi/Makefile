@@ -24,6 +24,8 @@
 #
 
 BUILDDIR = ../../..
+SUBDIRS_MAKEFLAGS += JAVAC_WARNINGS_FATAL=true
+
 include $(BUILDDIR)/common/Defs.gmk
 
 SUBDIRS_misc = nameservice 
