@@ -151,6 +151,8 @@ class AllStatic {
 //------------------------------Chunk------------------------------------------
 // Linked list of raw memory chunks
 class Chunk: public CHeapObj {
+  friend class VMStructs;
+
  protected:
   Chunk*       _next;     // Next Chunk in list
   const size_t _len;      // Size of this Chunk
@@ -200,6 +202,8 @@ protected:
   friend class ResourceMark;
   friend class HandleMark;
   friend class NoHandleMark;
+  friend class VMStructs;
+
   Chunk *_first;                // First chunk
   Chunk *_chunk;                // current chunk
   char *_hwm, *_max;            // High water mark and max in current chunk

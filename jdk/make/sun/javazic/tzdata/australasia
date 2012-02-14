@@ -318,6 +318,18 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 # http://www.worldtimezone.com/dst_news/dst_news_fiji04.html
 # </a>
 
+# From Steffen Thorsen (2011-10-03):
+# Now the dates have been confirmed, and at least our start date 
+# assumption was correct (end date was one week wrong).
+#
+# <a href="http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=4966:daylight-saving-starts-in-fiji&catid=71:press-releases&Itemid=155">
+# www.fiji.gov.fj/index.php?option=com_content&view=article&id=4966:daylight-saving-starts-in-fiji&catid=71:press-releases&Itemid=155
+# </a>
+# which says
+# Members of the public are reminded to change their time to one hour in 
+# advance at 2am to 3am on October 23, 2011 and one hour back at 3am to 
+# 2am on February 26 next year.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Fiji	1998	1999	-	Nov	Sun>=1	2:00	1:00	S
 Rule	Fiji	1999	2000	-	Feb	lastSun	3:00	0	-
@@ -325,6 +337,8 @@ Rule	Fiji	2009	only	-	Nov	29	2:00	1:00	S
 Rule	Fiji	2010	only	-	Mar	lastSun	3:00	0	-
 Rule	Fiji	2010	only	-	Oct	24	2:00	1:00	S
 Rule	Fiji	2011	only	-	Mar	Sun>=1	3:00	0	-
+Rule	Fiji	2011	only	-	Oct	23	2:00	1:00	S
+Rule	Fiji	2012	only	-	Feb	26	3:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fiji	11:53:40 -	LMT	1915 Oct 26	# Suva
 			12:00	Fiji	FJ%sT	# Fiji Time
@@ -521,7 +535,7 @@ Zone Pacific/Pago_Pago	 12:37:12 -	LMT	1879 Jul  5
 # http://www.parliament.gov.ws/documents/acts/Daylight%20Saving%20Act%20%202009%20%28English%29%20-%20Final%207-7-091.pdf
 # </a>
 
-# From Raymond Hughes (2010-10-07):
+# From Laupue Raymond Hughes (2010-10-07):
 # Please see
 # <a href="http://www.mcil.gov.ws">
 # http://www.mcil.gov.ws
@@ -531,7 +545,7 @@ Zone Pacific/Pago_Pago	 12:37:12 -	LMT	1879 Jul  5
 # to 01:00am and First Sunday April 2011 (03/04/11) - adjust clocks
 # backwards from 1:00am to 12:00am"
 
-# From Raymond Hughes (2011-03-07)
+# From Laupue Raymond Hughes (2011-03-07):
 # I believe this will be posted shortly on the website
 # <a href="http://www.mcil.gov.ws">
 # www.mcil.gov.ws
@@ -551,12 +565,74 @@ Zone Pacific/Pago_Pago	 12:37:12 -	LMT	1879 Jul  5
 # Margaret Fruean ACTING CHIEF EXECUTIVE OFFICER MINISTRY OF COMMERCE,
 # INDUSTRY AND LABOUR 28th February 2011
 
+# From David Zuelke (2011-05-09):
+# Subject: Samoa to move timezone from east to west of international date line
+# 
+# <a href="http://www.morningstar.co.uk/uk/markets/newsfeeditem.aspx?id=138501958347963">
+# http://www.morningstar.co.uk/uk/markets/newsfeeditem.aspx?id=138501958347963
+# </a>
+
+# From Mark Sim-Smith (2011-08-17):
+# I have been in contact with Leilani Tuala Warren from the Samoa Law
+# Reform Commission, and she has sent me a copy of the Bill that she
+# confirmed has been passed...Most of the sections are about maps rather
+# than the time zone change, but I'll paste the relevant bits below. But
+# the essence is that at midnight 29 Dec (UTC-11 I suppose), Samoa
+# changes from UTC-11 to UTC+13:
+#
+# International Date Line Bill 2011
+#
+# AN ACT to provide for the change to standard time in Samoa and to make
+# consequential amendments to the position of the International Date
+# Line, and for related purposes.
+#
+# BE IT ENACTED by the Legislative Assembly of Samoa in Parliament
+# assembled as follows:
+#
+# 1. Short title and commencement-(1) This Act may be cited as the
+# International Date Line Act 2011. (2) Except for section 5(3) this Act
+# commences at 12 o'clock midnight, on Thursday 29th December 2011. (3)
+# Section 5(3) commences on the date of assent by the Head of State.
+#
+# [snip]
+#
+# 3. Interpretation - [snip] "Samoa standard time" in this Act and any
+# other statute of Samoa which refers to 'Samoa standard time' means the
+# time 13 hours in advance of Co-ordinated Universal Time.
+#
+# 4. Samoa standard time - (1) Upon the commencement of this Act, Samoa
+# standard time shall be set at 13 hours in advance of Co-ordinated
+# Universal Time for the whole of Samoa. (2) All references to Samoa's
+# time zone and to Samoa standard time in Samoa in all legislation and
+# instruments after the commencement of this Act shall be references to
+# Samoa standard time as provided for in this Act. (3) Nothing in this
+# Act affects the provisions of the Daylight Saving Act 2009, except that
+# it defines Samoa standard time....
+
+# From Laupue Raymond Hughes (2011-09-02):
+# <a href="http://www.mcil.gov.ws/mcil_publications.html">
+# http://www.mcil.gov.ws/mcil_publications.html
+# </a>
+#
+# here is the official website publication for Samoa DST and dateline change
+#
+# DST
+# Year	End	Time	Start	Time
+# 2011	- - -	- - -	24 September	3:00am to 4:00am
+# 2012	01 April	4:00am to 3:00am	- - -	- - -
+#
+# Dateline Change skip Friday 30th Dec 2011
+# Thursday 29th December 2011	23:59:59 Hours
+# Saturday 31st December 2011	00:00:00 Hours
 Zone Pacific/Apia	 12:33:04 -	LMT	1879 Jul  5
 			-11:26:56 -	LMT	1911
 			-11:30	-	SAMT	1950		# Samoa Time
 			-11:00	-	WST	2010 Sep 26
 			-11:00	1:00	WSDT	2011 Apr 2 4:00
-			-11:00	-	WST
+			-11:00	-	WST	2011 Sep 24 3:00
+			-11:00	1:00	WSDT	2011 Dec 30
+			 13:00	1:00	WSDT	2012 Apr 1 4:00
+			 13:00	-	WST
 
 # Solomon Is
 # excludes Bougainville, for which see Papua New Guinea
@@ -1228,7 +1304,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # Lord Howe Island Board (controlling authority for the Island) is
 # seeking the community's views on various options for summer time
 # arrangements on the Island, e.g. advance clocks by 1 full hour
-# instead of only 30 minutes.  Dependant on the wishes of residents
+# instead of only 30 minutes.  [Dependent] on the wishes of residents
 # the Board may approach the NSW government to change the existing
 # arrangements.  The starting date for summer time on the Island will
 # however always coincide with the rest of NSW.
@@ -1354,7 +1430,7 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 
 # From Paul Eggert (1996-01-22):
 # Today's _Wall Street Journal_ (page 1) reports that Kiribati
-# ``declared it the same day throught the country as of Jan. 1, 1995''
+# ``declared it the same day [throughout] the country as of Jan. 1, 1995''
 # as part of the competition to be first into the 21st century.
 
 

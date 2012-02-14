@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,12 @@
 package sun.jvm.hotspot;
 
 import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.debugger.dbx.*;
+import sun.jvm.hotspot.debugger.proc.*;
 
 // A test of the debugger backend. This should be used to connect to
 // the helloWorld.cpp program.
 
 public class TestDebugger {
-  // FIXME: make these configurable, i.e., via a dotfile
-  private static final String dbxPathName               = "/export/home/kbr/ws/dbx_61/dev/Derived-sparcv9-S2./src/dbx/dbx";
-  private static final String[] dbxSvcAgentDSOPathNames =
-    new String[] {
-      "/export/home/kbr/main/sa_baseline/src/os/solaris/agent/libsvc_agent_dbx.so"
-    };
 
   private static void usage() {
     System.out.println("usage: java TestDebugger [pid]");
@@ -58,8 +52,7 @@ public class TestDebugger {
         usage();
       }
 
-      JVMDebugger debugger = new DbxDebuggerLocal(new MachineDescriptionSPARC64Bit(),
-                                                  dbxPathName, dbxSvcAgentDSOPathNames, true);
+      JVMDebugger debugger = new ProcDebuggerLocal(null, true);
 
       try {
         debugger.attach(pid);

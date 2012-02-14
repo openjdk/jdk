@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ public class HypotTests {
         for(int i = DoubleConsts.MIN_SUB_EXPONENT;
             i <= DoubleConsts.MAX_EXPONENT;
             i++) {
-            double input = FpUtils.scalb(2, i);
+            double input = Math.scalb(2, i);
             failures += testHypotCase(input, 0.0, input);
         }
 
@@ -126,7 +126,7 @@ public class HypotTests {
         for(int i = 0; i < 1000; i++) {
             double d = rand.nextDouble();
             // Scale d to have an exponent equal to MAX_EXPONENT -15
-            d = FpUtils.scalb(d, DoubleConsts.MAX_EXPONENT
+            d = Math.scalb(d, DoubleConsts.MAX_EXPONENT
                                  -15 - FpUtils.ilogb(d));
             for(int j = 0; j <= 13; j += 1) {
                 failures += testHypotCase(3*d, 4*d, 5*d, 2.5);
@@ -153,13 +153,13 @@ public class HypotTests {
 
 
             for(int i = -18; i <= 18; i++) {
-                double pc = FpUtils.scalb(1.0, i);
+                double pc = Math.scalb(1.0, i);
 
                 pcNeighbors[2] = pc;
-                pcNeighbors[1] = FpUtils.nextDown(pc);
-                pcNeighbors[0] = FpUtils.nextDown(pcNeighbors[1]);
-                pcNeighbors[3] = FpUtils.nextUp(pc);
-                pcNeighbors[4] = FpUtils.nextUp(pcNeighbors[3]);
+                pcNeighbors[1] = Math.nextDown(pc);
+                pcNeighbors[0] = Math.nextDown(pcNeighbors[1]);
+                pcNeighbors[3] = Math.nextUp(pc);
+                pcNeighbors[4] = Math.nextUp(pcNeighbors[3]);
 
                 for(int j = 0; j < pcNeighbors.length; j++) {
                     pcNeighborsHypot[j]       =       Math.hypot(2.0, pcNeighbors[j]);

@@ -35,6 +35,7 @@ import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 
 public class Synch2 {
+    static volatile boolean finished = false;
     public static void main(String[] args) {
         System.setSecurityManager(new SecurityManager());
         Subject subject = new Subject();
@@ -44,12 +45,11 @@ public class Synch2 {
         credentials.add("Dummy credential");
         new Thread() {
             {
-                setDaemon(true);
                 start();
             }
             public void run() {
                 X500Principal p = new X500Principal("CN=Bob");
-                while (true) {
+                while (!finished) {
                     principals.add(p);
                     principals.remove(p);
                 }
@@ -62,5 +62,6 @@ public class Synch2 {
                 }
             }
         }
+        finished = true;
     }
 }

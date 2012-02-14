@@ -69,15 +69,6 @@ else
 include $(BUILDDIR)/common/Classes.gmk
 endif # PLATFORM
 
-#
-# Libraries to link
-#
-ifeq ($(PLATFORM), windows)
-  OTHER_LDLIBS = $(JVMLIB)
-else
-  OTHER_LDLIBS = -ldl $(JVMLIB)
-endif
-
 build:
 ifeq ($(PLATFORM),windows)
 	$(call make-launcher, kinit, sun.security.krb5.internal.tools.Kinit, , )

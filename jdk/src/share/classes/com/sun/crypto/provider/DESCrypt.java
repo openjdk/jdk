@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -622,17 +622,17 @@ class DESCrypt extends SymmetricCipher implements DESConstants {
             // mangler function:
             // every 6 bit is fed into the sbox, which
             // produces 4-bit output
-            left ^= s0p[(int)((temp & 0x3f) ^ key[j+0])]
-                ^ s1p[(int)(((temp >>  4) & 0x3f) ^ key[j+1])]
-                ^ s2p[(int)(((temp >>  8) & 0x3f) ^ key[j+2])]
-                ^ s3p[(int)(((temp >> 12) & 0x3f) ^ key[j+3])]
-                ^ s4p[(int)(((temp >> 16) & 0x3f) ^ key[j+4])]
-                ^ s5p[(int)(((temp >> 20) & 0x3f) ^ key[j+5])]
-                ^ s6p[(int)(((temp >> 24) & 0x3f) ^ key[j+6])];
+            left ^= s0p[(temp & 0x3f) ^ key[j+0]]
+                ^ s1p[((temp >>  4) & 0x3f) ^ key[j+1]]
+                ^ s2p[((temp >>  8) & 0x3f) ^ key[j+2]]
+                ^ s3p[((temp >> 12) & 0x3f) ^ key[j+3]]
+                ^ s4p[((temp >> 16) & 0x3f) ^ key[j+4]]
+                ^ s5p[((temp >> 20) & 0x3f) ^ key[j+5]]
+                ^ s6p[((temp >> 24) & 0x3f) ^ key[j+6]];
 
             // make the last sbox input the last bit from right[0]
             temp = ((right & 1) << 5) | ((right >> 27) & 0x1f);
-            left ^= s7p[(int)(temp ^ key[j+7])];
+            left ^= s7p[temp ^ key[j+7]];
             temp = left;
             left = right;
             right = temp;

@@ -143,12 +143,16 @@ protected:
     // If the test below fails, then this table was reused concurrently
     // with this operation.  This is OK, since the old table was coarsened,
     // and adding a bit to the new table is never incorrect.
-    if (loc_hr->is_in_reserved(from)) {
+    // If the table used to belong to a continues humongous region and is
+    // now reused for the corresponding start humongous region, we need to
+    // make sure that we detect this. Thus, we call is_in_reserved_raw()
+    // instead of just is_in_reserved() here.
+    if (loc_hr->is_in_reserved_raw(from)) {
       size_t hw_offset = pointer_delta((HeapWord*)from, loc_hr->bottom());
       CardIdx_t from_card = (CardIdx_t)
           hw_offset >> (CardTableModRefBS::card_shift - LogHeapWordSize);
 
-      assert(0 <= from_card && from_card < HeapRegion::CardsPerRegion,
+      assert(0 <= from_card && (size_t)from_card < HeapRegion::CardsPerRegion,
              "Must be in range.");
       add_card_work(from_card, par);
     }
@@ -364,7 +368,10 @@ public:
   PosParPRT** next_addr() { return &_next; }
 
   bool should_expand(int tid) {
-    return par_tables() == NULL && tid > 0 && hr()->is_gc_alloc_region();
+    // Given that we now defer RSet updates for after a GC we don't
+    // really need to expand the tables any more. This code should be
+    // cleaned up in the future (see CR 6921087).
+    return false;
   }
 
   void par_expand() {
@@ -636,7 +643,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
         uintptr_t(from_hr->bottom())
           >> CardTableModRefBS::card_shift;
       CardIdx_t card_index = from_card - from_hr_bot_card_index;
-      assert(0 <= card_index && card_index < HeapRegion::CardsPerRegion,
+      assert(0 <= card_index && (size_t)card_index < HeapRegion::CardsPerRegion,
              "Must be in range.");
       if (G1HRRSUseSparseTable &&
           _sparse_table.add_card(from_hrs_ind, card_index)) {
@@ -834,7 +841,7 @@ PosParPRT* OtherRegionsTable::delete_region_table() {
 #endif
 
   // Set the corresponding coarse bit.
-  int max_hrs_index = max->hr()->hrs_index();
+  size_t max_hrs_index = max->hr()->hrs_index();
   if (!_coarse_map.at(max_hrs_index)) {
     _coarse_map.at_put(max_hrs_index, true);
     _n_coarse_entries++;
@@ -860,7 +867,8 @@ void OtherRegionsTable::scrub(CardTableModRefBS* ctbs,
                               BitMap* region_bm, BitMap* card_bm) {
   // First eliminated garbage regions from the coarse map.
   if (G1RSScrubVerbose)
-    gclog_or_tty->print_cr("Scrubbing region %d:", hr()->hrs_index());
+    gclog_or_tty->print_cr("Scrubbing region "SIZE_FORMAT":",
+                           hr()->hrs_index());
 
   assert(_coarse_map.size() == region_bm->size(), "Precondition");
   if (G1RSScrubVerbose)
@@ -878,7 +886,8 @@ void OtherRegionsTable::scrub(CardTableModRefBS* ctbs,
       PosParPRT* nxt = cur->next();
       // If the entire region is dead, eliminate.
       if (G1RSScrubVerbose)
-        gclog_or_tty->print_cr("     For other region %d:", cur->hr()->hrs_index());
+        gclog_or_tty->print_cr("     For other region "SIZE_FORMAT":",
+                               cur->hr()->hrs_index());
       if (!region_bm->at(cur->hr()->hrs_index())) {
         *prev = nxt;
         cur->set_next(NULL);
@@ -994,7 +1003,7 @@ void OtherRegionsTable::clear() {
 
 void OtherRegionsTable::clear_incoming_entry(HeapRegion* from_hr) {
   MutexLockerEx x(&_m, Mutex::_no_safepoint_check_flag);
-  size_t hrs_ind = (size_t)from_hr->hrs_index();
+  size_t hrs_ind = from_hr->hrs_index();
   size_t ind = hrs_ind & _mod_max_fine_entries_mask;
   if (del_single_region_table(ind, from_hr)) {
     assert(!_coarse_map.at(hrs_ind), "Inv");
@@ -1002,7 +1011,7 @@ void OtherRegionsTable::clear_incoming_entry(HeapRegion* from_hr) {
     _coarse_map.par_at_put(hrs_ind, 0);
   }
   // Check to see if any of the fcc entries come from here.
-  int hr_ind = hr()->hrs_index();
+  size_t hr_ind = hr()->hrs_index();
   for (int tid = 0; tid < HeapRegionRemSet::num_par_rem_sets(); tid++) {
     int fcc_ent = _from_card_cache[tid][hr_ind];
     if (fcc_ent != -1) {
@@ -1061,7 +1070,7 @@ bool OtherRegionsTable::contains_reference_locked(OopOrNarrowOopStar from) const
       uintptr_t(hr->bottom()) >> CardTableModRefBS::card_shift;
     assert(from_card >= hr_bot_card_index, "Inv");
     CardIdx_t card_index = from_card - hr_bot_card_index;
-    assert(0 <= card_index && card_index < HeapRegion::CardsPerRegion,
+    assert(0 <= card_index && (size_t)card_index < HeapRegion::CardsPerRegion,
            "Must be in range.");
     return _sparse_table.contains_card(hr_ind, card_index);
   }
@@ -1083,8 +1092,9 @@ int HeapRegionRemSet::num_par_rem_sets() {
 
 HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetSharedArray* bosa,
                                    HeapRegion* hr)
-  : _bosa(bosa), _other_regions(hr), _iter_state(Unclaimed) { }
-
+  : _bosa(bosa), _other_regions(hr) {
+  reset_for_par_iteration();
+}
 
 void HeapRegionRemSet::setup_remset_size() {
   // Setup sparse and fine-grain tables sizes.
@@ -1097,10 +1107,6 @@ void HeapRegionRemSet::setup_remset_size() {
     G1RSetRegionEntries = G1RSetRegionEntriesBase * (region_size_log_mb + 1);
   }
   guarantee(G1RSetSparseRegionEntries > 0 && G1RSetRegionEntries > 0 , "Sanity");
-}
-
-void HeapRegionRemSet::init_for_par_iteration() {
-  _iter_state = Unclaimed;
 }
 
 bool HeapRegionRemSet::claim_iter() {
@@ -1117,7 +1123,6 @@ bool HeapRegionRemSet::iter_is_complete() {
   return _iter_state == Complete;
 }
 
-
 void HeapRegionRemSet::init_iterator(HeapRegionRemSetIterator* iter) const {
   iter->initialize(this);
 }
@@ -1130,7 +1135,7 @@ void HeapRegionRemSet::print() const {
   while (iter.has_next(card_index)) {
     HeapWord* card_start =
       G1CollectedHeap::heap()->bot_shared()->address_for_index(card_index);
-    gclog_or_tty->print_cr("  Card " PTR_FORMAT ".", card_start);
+    gclog_or_tty->print_cr("  Card " PTR_FORMAT, card_start);
   }
   // XXX
   if (iter.n_yielded() != occupied()) {
@@ -1157,6 +1162,14 @@ void HeapRegionRemSet::par_cleanup() {
 void HeapRegionRemSet::clear() {
   _other_regions.clear();
   assert(occupied() == 0, "Should be clear.");
+  reset_for_par_iteration();
+}
+
+void HeapRegionRemSet::reset_for_par_iteration() {
+  _iter_state = Unclaimed;
+  _iter_claimed = 0;
+  // It's good to check this to make sure that the two methods are in sync.
+  assert(verify_ready_for_par_iteration(), "post-condition");
 }
 
 void HeapRegionRemSet::scrub(CardTableModRefBS* ctbs,
@@ -1182,7 +1195,7 @@ void HeapRegionRemSetIterator::initialize(const HeapRegionRemSet* hrrs) {
   _is = Sparse;
   // Set these values so that we increment to the first region.
   _coarse_cur_region_index = -1;
-  _coarse_cur_region_cur_card = (HeapRegion::CardsPerRegion-1);;
+  _coarse_cur_region_cur_card = (HeapRegion::CardsPerRegion-1);
 
   _cur_region_cur_card = 0;
 
@@ -1261,7 +1274,7 @@ bool HeapRegionRemSetIterator::fine_has_next(size_t& card_index) {
 bool HeapRegionRemSetIterator::fine_has_next() {
   return
     _fine_cur_prt != NULL &&
-    _cur_region_cur_card < (size_t) HeapRegion::CardsPerRegion;
+    _cur_region_cur_card < HeapRegion::CardsPerRegion;
 }
 
 bool HeapRegionRemSetIterator::has_next(size_t& card_index) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,16 +85,10 @@ public interface X509Extension {
      * Here is sample code to get a Set of critical extensions from an
      * X509Certificate and print the OIDs:
      * <pre><code>
-     * InputStream inStrm = null;
      * X509Certificate cert = null;
-     * try {
-     *     inStrm = new FileInputStream("DER-encoded-Cert");
+     * try (InputStream inStrm = new FileInputStream("DER-encoded-Cert")) {
      *     CertificateFactory cf = CertificateFactory.getInstance("X.509");
      *     cert = (X509Certificate)cf.generateCertificate(inStrm);
-     * } finally {
-     *     if (inStrm != null) {
-     *         inStrm.close();
-     *     }
      * }<p>
      *
      * Set<String> critSet = cert.getCriticalExtensionOIDs();
@@ -120,23 +114,16 @@ public interface X509Extension {
      * Here is sample code to get a Set of non-critical extensions from an
      * X509CRL revoked certificate entry and print the OIDs:
      * <pre><code>
-     * InputStream inStrm = null;
      * CertificateFactory cf = null;
      * X509CRL crl = null;
-     * try {
-     *     inStrm = new FileInputStream("DER-encoded-CRL");
+     * try (InputStream inStrm = new FileInputStream("DER-encoded-CRL")) {
      *     cf = CertificateFactory.getInstance("X.509");
      *     crl = (X509CRL)cf.generateCRL(inStrm);
-     * } finally {
-     *     if (inStrm != null) {
-     *         inStrm.close();
-     *     }
      * }<p>
      *
      * byte[] certData = &lt;DER-encoded certificate data&gt;
      * ByteArrayInputStream bais = new ByteArrayInputStream(certData);
      * X509Certificate cert = (X509Certificate)cf.generateCertificate(bais);
-     * bais.close();
      * X509CRLEntry badCert =
      *              crl.getRevokedCertificate(cert.getSerialNumber());<p>
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,9 @@ import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.HashMap;
@@ -48,7 +45,6 @@ import java.util.Set;
 import java.security.*;
 import java.security.KeyStore.*;
 
-import java.security.cert.CertPath;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateFactory;
@@ -60,7 +56,6 @@ import java.security.spec.*;
 import javax.crypto.SecretKey;
 import javax.crypto.interfaces.*;
 
-import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.callback.Callback;
@@ -69,7 +64,6 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.UnsupportedCallbackException;
 
 import sun.security.util.Debug;
-import sun.security.x509.SerialNumber;
 import sun.security.util.DerValue;
 
 import sun.security.ec.ECParameters;
@@ -235,7 +229,7 @@ final class P11KeyStore extends KeyStoreSpi {
 
         private PasswordCallbackHandler(char[] password) {
             if (password != null) {
-                this.password = (char[])password.clone();
+                this.password = password.clone();
             }
         }
 
@@ -331,10 +325,8 @@ final class P11KeyStore extends KeyStoreSpi {
 
             // did not find anything
             return null;
-        } catch (PKCS11Exception pe) {
-            throw new ProviderException(pe);
-        } catch (KeyStoreException ke) {
-            throw new ProviderException(ke);
+        } catch (PKCS11Exception | KeyStoreException e) {
+            throw new ProviderException(e);
         } finally {
             token.releaseSession(session);
         }
@@ -458,10 +450,8 @@ final class P11KeyStore extends KeyStoreSpi {
             } else if (key instanceof SecretKey) {
                 entry = new KeyStore.SecretKeyEntry((SecretKey)key);
             }
-        } catch (NullPointerException npe) {
-            throw new KeyStoreException(npe);
-        } catch (IllegalArgumentException iae) {
-            throw new KeyStoreException(iae);
+        } catch (NullPointerException | IllegalArgumentException e) {
+            throw new KeyStoreException(e);
         }
         engineSetEntry(alias, entry, new KeyStore.PasswordProtection(password));
     }
@@ -566,10 +556,8 @@ final class P11KeyStore extends KeyStoreSpi {
                 } else {
                     throw new KeyStoreException("unexpected entry type");
                 }
-            } catch (PKCS11Exception pe) {
-                throw new KeyStoreException(pe);
-            } catch (CertificateException ce) {
-                throw new KeyStoreException(ce);
+            } catch (PKCS11Exception | CertificateException e) {
+                throw new KeyStoreException(e);
             }
         }
         return false;
@@ -770,18 +758,8 @@ final class P11KeyStore extends KeyStoreSpi {
             if (debug != null) {
                 dumpTokenMap();
             }
-        } catch (LoginException le) {
-            IOException ioe = new IOException("load failed");
-            ioe.initCause(le);
-            throw ioe;
-        } catch (KeyStoreException kse) {
-            IOException ioe = new IOException("load failed");
-            ioe.initCause(kse);
-            throw ioe;
-        } catch (PKCS11Exception pe) {
-            IOException ioe = new IOException("load failed");
-            ioe.initCause(pe);
-            throw ioe;
+        } catch (LoginException | KeyStoreException | PKCS11Exception e) {
+            throw new IOException("load failed", e);
         }
     }
 
@@ -860,11 +838,7 @@ final class P11KeyStore extends KeyStoreSpi {
             if (debug != null) {
                 dumpTokenMap();
             }
-        } catch (LoginException e) {
-            throw new IOException("load failed", e);
-        } catch (KeyStoreException e) {
-            throw new IOException("load failed", e);
-        } catch (PKCS11Exception e) {
+        } catch (LoginException | KeyStoreException | PKCS11Exception e) {
             throw new IOException("load failed", e);
         }
     }
@@ -1054,9 +1028,7 @@ final class P11KeyStore extends KeyStoreSpi {
                 storeCert(alias, xcert);
                 module.setTrust(token, xcert);
                 mapLabels();
-            } catch (PKCS11Exception e) {
-                throw new KeyStoreException(e);
-            } catch (CertificateException e) {
+            } catch (PKCS11Exception | CertificateException e) {
                 throw new KeyStoreException(e);
             }
 
@@ -1118,10 +1090,8 @@ final class P11KeyStore extends KeyStoreSpi {
                         storePkey(alias, (KeyStore.PrivateKeyEntry)entry);
                     }
 
-                } catch (PKCS11Exception pe) {
+                } catch (PKCS11Exception | CertificateException pe) {
                     throw new KeyStoreException(pe);
-                } catch (CertificateException ce) {
-                    throw new KeyStoreException(ce);
                 }
 
             } else if (entry instanceof KeyStore.SecretKeyEntry) {
@@ -1158,10 +1128,8 @@ final class P11KeyStore extends KeyStoreSpi {
                 if (debug != null) {
                     dumpTokenMap();
                 }
-            } catch (PKCS11Exception pe) {
+            } catch (PKCS11Exception | CertificateException pe) {
                 throw new KeyStoreException(pe);
-            } catch (CertificateException ce) {
-                throw new KeyStoreException(ce);
             }
         }
 
@@ -1870,7 +1838,7 @@ final class P11KeyStore extends KeyStoreSpi {
                 debug.println("creating RSAPrivateKey attrs");
             }
 
-            RSAPrivateKey rsaKey = (RSAPrivateKey)key;
+            RSAPrivateKey rsaKey = key;
 
             attrs = new CK_ATTRIBUTE[] {
                 ATTR_TOKEN_TRUE,
@@ -2662,7 +2630,7 @@ final class P11KeyStore extends KeyStoreSpi {
     private void dumpTokenMap() {
         Set<String> aliases = aliasMap.keySet();
         System.out.println("Token Alias Map:");
-        if (aliases.size() == 0) {
+        if (aliases.isEmpty()) {
             System.out.println("  [empty]");
         } else {
             for (String s : aliases) {

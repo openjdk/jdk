@@ -103,6 +103,8 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
                                      "\u6771\u90e8\u590f\u6642\u9593", "EDT"};
         String EST_NSW[] = new String[] {"\u6771\u90e8\u6a19\u6e96\u6642 (\u30cb\u30e5\u30fc\u30b5\u30a6\u30b9\u30a6\u30a7\u30fc\u30eb\u30ba)", "EST",
                                          "\u6771\u90e8\u590f\u6642\u9593 (\u30cb\u30e5\u30fc\u30b5\u30a6\u30b9\u30a6\u30a7\u30fc\u30eb\u30ba)", "EST"};
+        String FET[] = new String[] {"Further-eastern European Time", "FET",
+                                     "Further-eastern European Summer Time", "FEST"};
         String GHMT[] = new String[] {"\u30ac\u30fc\u30ca\u6a19\u6e96\u6642", "GMT",
                                      "\u30ac\u30fc\u30ca\u590f\u6642\u9593", "GHST"};
         String GAMBIER[] =  new String[] {"\u30ac\u30f3\u30d3\u30a2\u6642\u9593", "GAMT",
@@ -159,8 +161,6 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
                                       "Pohnpei Summer Time", "PONST"};
         String PST[] = new String[] {"\u592a\u5e73\u6d0b\u6a19\u6e96\u6642", "PST",
                                      "\u592a\u5e73\u6d0b\u590f\u6642\u9593", "PDT"};
-        String RST[] = new String[] {"\u6771\u90e8\u6a19\u6e96\u6642", "EST",
-                                     "\u4e2d\u90e8\u590f\u6642\u9593", "CDT"};
         String SAST[] = new String[] {"\u5357\u30a2\u30d5\u30ea\u30ab\u6a19\u6e96\u6642", "SAST",
                                       "\u5357\u30a2\u30d5\u30ea\u30ab\u590f\u6642\u9593", "SAST"};
         String SBT[] = new String[] {"\u30bd\u30ed\u30e2\u30f3\u8af8\u5cf6\u6642\u9593", "SBT",
@@ -188,7 +188,7 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
         String SAMOA[] = new String[] {"\u30b5\u30e2\u30a2\u6a19\u6e96\u6642", "SST",
                                        "\u30b5\u30e2\u30a2\u590f\u6642\u9593", "SDT"};
         String WST_SAMOA[] = new String[] {"\u897f\u30b5\u30e2\u30a2\u6642\u9593", "WST",
-                                           "\u897f\u30b5\u30e2\u30a2\u590f\u6642\u9593", "WSST"};
+                                           "\u897f\u30b5\u30e2\u30a2\u590f\u6642\u9593", "WSDT"};
         String ChST[] = new String[] {"\u30b0\u30a2\u30e0\u6a19\u6e96\u6642", "ChST",
                                       "\u30b0\u30a2\u30e0\u590f\u6642\u9593", "ChDT"};
         String VICTORIA[] = new String[] {"\u6771\u90e8\u6a19\u6e96\u6642 (\u30d3\u30af\u30c8\u30ea\u30a2)", "EST",
@@ -262,6 +262,7 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"Africa/Gaborone", CAT},
             {"Africa/Harare", CAT},
             {"Africa/Johannesburg", SAST},
+            {"Africa/Juba", EAT},
             {"Africa/Kampala", EAT},
             {"Africa/Khartoum", EAT},
             {"Africa/Kigali", CAT},
@@ -378,11 +379,13 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"America/Kentucky/Louisville", EST},
             {"America/Kentucky/Monticello", EST},
             {"America/Knox_IN", CST},
+            {"America/Kralendijk", AST},
             {"America/La_Paz", new String[] {"\u30dc\u30ea\u30d3\u30a2\u6642\u9593", "BOT",
                                              "\u30dc\u30ea\u30d3\u30a2\u590f\u6642\u9593", "BOST"}},
             {"America/Lima", new String[] {"\u30da\u30eb\u30fc\u6642\u9593", "PET",
                                            "\u30da\u30eb\u30fc\u590f\u6642\u9593", "PEST"}},
             {"America/Louisville", EST},
+            {"America/Lower_Princes", AST},
             {"America/Maceio", BRT},
             {"America/Managua", CST},
             {"America/Manaus", AMT},
@@ -425,7 +428,7 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"America/Rankin_Inlet", CST},
             {"America/Recife", BRT},
             {"America/Regina", CST},
-            {"America/Resolute", RST},
+            {"America/Resolute", CST},
             {"America/Rio_Branco", AMT},
             {"America/Rosario", AGT},
             {"America/Santa_Isabel", PST},
@@ -510,6 +513,7 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
                                             "\u30bf\u30b8\u30ad\u30b9\u30bf\u30f3\u590f\u6642\u9593", "TJST"}},
             {"Asia/Gaza", EET},
             {"Asia/Harbin", CTT},
+            {"Asia/Hebron", EET},
             {"Asia/Ho_Chi_Minh", ICT},
             {"Asia/Hong_Kong", HKT},
             {"Asia/Hovd", new String[] {"\u30db\u30d6\u30c9\u6642\u9593", "HOVT",
@@ -673,8 +677,8 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"Europe/Isle_of_Man", GMTBST},
             {"Europe/Istanbul", EET},
             {"Europe/Jersey", GMTBST},
-            {"Europe/Kaliningrad", EET},
-            {"Europe/Kiev", EET},
+            {"Europe/Kaliningrad", FET},
+            {"Europe/Kiev", FET},
             {"Europe/Lisbon", WET},
             {"Europe/Ljubljana", CET},
             {"Europe/London", GMTBST},
@@ -682,7 +686,7 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"Europe/Madrid", CET},
             {"Europe/Malta", CET},
             {"Europe/Mariehamn", EET},
-            {"Europe/Minsk", EET},
+            {"Europe/Minsk", FET},
             {"Europe/Monaco", CET},
             {"Europe/Moscow", MSK},
             {"Europe/Nicosia", EET},
@@ -695,14 +699,14 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
                                             "\u30b5\u30de\u30e9\u590f\u6642\u9593", "SAMST"}},
             {"Europe/San_Marino", CET},
             {"Europe/Sarajevo", CET},
-            {"Europe/Simferopol", EET},
+            {"Europe/Simferopol", FET},
             {"Europe/Skopje", CET},
             {"Europe/Sofia", EET},
             {"Europe/Stockholm", CET},
             {"Europe/Tallinn", EET},
             {"Europe/Tirane", CET},
             {"Europe/Tiraspol", EET},
-            {"Europe/Uzhgorod", EET},
+            {"Europe/Uzhgorod", FET},
             {"Europe/Vaduz", CET},
             {"Europe/Vatican", CET},
             {"Europe/Vienna", CET},
@@ -711,7 +715,7 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
                                                "\u30dc\u30eb\u30b4\u30b0\u30e9\u30fc\u30c9\u590f\u6642\u9593", "VOLST"}},
             {"Europe/Warsaw", CET},
             {"Europe/Zagreb", CET},
-            {"Europe/Zaporozhye", EET},
+            {"Europe/Zaporozhye", FET},
             {"Europe/Zurich", CET},
             {"GB", GMTBST},
             {"GB-Eire", GMTBST},

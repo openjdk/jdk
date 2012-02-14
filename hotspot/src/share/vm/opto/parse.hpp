@@ -41,6 +41,8 @@ class SwitchRange;
 
 //------------------------------InlineTree-------------------------------------
 class InlineTree : public ResourceObj {
+  friend class VMStructs;
+
   Compile*    C;                  // cache
   JVMState*   _caller_jvms;       // state of caller
   ciMethod*   _method;            // method being called by the caller_jvms
@@ -50,11 +52,12 @@ class InlineTree : public ResourceObj {
   // Always between 0.0 and 1.0.  Represents the percentage of the method's
   // total execution time used at this call site.
   const float _site_invoke_ratio;
-  const int   _site_depth_adjust;
+  const int   _max_inline_level;  // the maximum inline level for this sub-tree (may be adjusted)
   float compute_callee_frequency( int caller_bci ) const;
 
   GrowableArray<InlineTree*> _subtrees;
-  friend class Compile;
+
+  void print_impl(outputStream* stj, int indent) const PRODUCT_RETURN;
 
 protected:
   InlineTree(Compile* C,
@@ -63,7 +66,7 @@ protected:
              JVMState* caller_jvms,
              int caller_bci,
              float site_invoke_ratio,
-             int site_depth_adjust);
+             int max_inline_level);
   InlineTree *build_inline_tree_for_callee(ciMethod* callee_method,
                                            JVMState* caller_jvms,
                                            int caller_bci);
@@ -74,15 +77,17 @@ protected:
 
   InlineTree *caller_tree()       const { return _caller_tree;  }
   InlineTree* callee_at(int bci, ciMethod* m) const;
-  int         inline_depth()      const { return stack_depth() + _site_depth_adjust; }
+  int         inline_level()      const { return stack_depth(); }
   int         stack_depth()       const { return _caller_jvms ? _caller_jvms->depth() : 0; }
 
 public:
+  static const char* check_can_parse(ciMethod* callee);
+
   static InlineTree* build_inline_tree_root();
   static InlineTree* find_subtree_from_root(InlineTree* root, JVMState* jvms, ciMethod* callee, bool create_if_not_found = false);
 
   // For temporary (stack-allocated, stateless) ilts:
-  InlineTree(Compile* c, ciMethod* callee_method, JVMState* caller_jvms, float site_invoke_ratio, int site_depth_adjust);
+  InlineTree(Compile* c, ciMethod* callee_method, JVMState* caller_jvms, float site_invoke_ratio, int max_inline_level);
 
   // InlineTree enum
   enum InlineStyle {
@@ -119,6 +124,8 @@ public:
   uint        count_inlines()     const { return _count_inlines; };
 #endif
   GrowableArray<InlineTree*> subtrees() { return _subtrees; }
+
+  void print_value_on(outputStream* st) const PRODUCT_RETURN;
 };
 
 

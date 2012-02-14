@@ -25,6 +25,10 @@
  * @test
  * @bug 1234567
  * @summary Use this template to help speed your client/server tests.
+ * @run main/othervm SSLSocketTemplate
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  * @author Brad Wetmore
  */
 

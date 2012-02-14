@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,10 +149,7 @@ public class X509CertInfo implements CertAttrSet<String> {
 
             parse(in);
         } catch (IOException e) {
-            CertificateParsingException parseException =
-                        new CertificateParsingException(e.toString());
-            parseException.initCause(e);
-            throw parseException;
+            throw new CertificateParsingException(e);
         }
     }
 
@@ -168,10 +165,7 @@ public class X509CertInfo implements CertAttrSet<String> {
         try {
             parse(derVal);
         } catch (IOException e) {
-            CertificateParsingException parseException =
-                        new CertificateParsingException(e.toString());
-            parseException.initCause(e);
-            throw parseException;
+            throw new CertificateParsingException(e);
         }
     }
 
@@ -319,12 +313,12 @@ public class X509CertInfo implements CertAttrSet<String> {
             sb.append("  Subject Id:\n" + subjectUniqueId.toString() + "\n");
         }
         if (extensions != null) {
-            Collection allExts = extensions.getAllExtensions();
-            Object[] objs = allExts.toArray();
-            sb.append("\nCertificate Extensions: " + objs.length);
-            for (int i = 0; i < objs.length; i++) {
+            Collection<Extension> allExts = extensions.getAllExtensions();
+            Extension[] exts = allExts.toArray(new Extension[0]);
+            sb.append("\nCertificate Extensions: " + exts.length);
+            for (int i = 0; i < exts.length; i++) {
                 sb.append("\n[" + (i+1) + "]: ");
-                Extension ext = (Extension)objs[i];
+                Extension ext = exts[i];
                 try {
                     if (OIDMap.getClass(ext.getExtensionId()) == null) {
                         sb.append(ext.toString());
@@ -766,8 +760,8 @@ public class X509CertInfo implements CertAttrSet<String> {
             try {
                 subjectAltNameExt = (SubjectAlternativeNameExtension)
                         extensions.get(SubjectAlternativeNameExtension.NAME);
-                names = (GeneralNames) subjectAltNameExt.get
-                        (SubjectAlternativeNameExtension.SUBJECT_NAME);
+                names = subjectAltNameExt.get(
+                        SubjectAlternativeNameExtension.SUBJECT_NAME);
             } catch (IOException e) {
                 throw new CertificateParsingException("X.509 Certificate is " +
                         "incomplete: subject field is empty, and " +

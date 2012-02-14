@@ -139,7 +139,7 @@ public class NetworkClient {
                                         serverSocket.getOutputStream()),
                                         true, encoding);
         } catch (UnsupportedEncodingException e) {
-            throw new InternalError(encoding +"encoding not found");
+            throw new InternalError(encoding +"encoding not found", e);
         }
         serverInput = new BufferedInputStream(serverSocket.getInputStream());
     }

@@ -148,6 +148,7 @@
   template(java_lang_InstantiationException,          "java/lang/InstantiationException")         \
   template(java_lang_InstantiationError,              "java/lang/InstantiationError")             \
   template(java_lang_InterruptedException,            "java/lang/InterruptedException")           \
+  template(java_lang_BootstrapMethodError,            "java/lang/BootstrapMethodError")           \
   template(java_lang_LinkageError,                    "java/lang/LinkageError")                   \
   template(java_lang_NegativeArraySizeException,      "java/lang/NegativeArraySizeException")     \
   template(java_lang_NoSuchFieldException,            "java/lang/NoSuchFieldException")           \
@@ -217,6 +218,7 @@
   template(returnType_name,                           "returnType")                               \
   template(signature_name,                            "signature")                                \
   template(slot_name,                                 "slot")                                     \
+  template(selectAlternative_name,                    "selectAlternative")                        \
                                                                                                   \
   /* Support for annotations (JDK 1.5 and above) */                                               \
                                                                                                   \
@@ -232,6 +234,9 @@
   template(java_lang_invoke_InvokeDynamic,            "java/lang/invoke/InvokeDynamic")           \
   template(java_lang_invoke_Linkage,                  "java/lang/invoke/Linkage")                 \
   template(java_lang_invoke_CallSite,                 "java/lang/invoke/CallSite")                \
+  template(java_lang_invoke_ConstantCallSite,         "java/lang/invoke/ConstantCallSite")        \
+  template(java_lang_invoke_MutableCallSite,          "java/lang/invoke/MutableCallSite")         \
+  template(java_lang_invoke_VolatileCallSite,         "java/lang/invoke/VolatileCallSite")        \
   template(java_lang_invoke_MethodHandle,             "java/lang/invoke/MethodHandle")            \
   template(java_lang_invoke_MethodType,               "java/lang/invoke/MethodType")              \
   template(java_lang_invoke_WrongMethodTypeException, "java/lang/invoke/WrongMethodTypeException") \
@@ -242,9 +247,11 @@
   template(java_lang_invoke_MethodTypeForm_signature, "Ljava/lang/invoke/MethodTypeForm;")        \
   template(java_lang_invoke_MemberName,               "java/lang/invoke/MemberName")              \
   template(java_lang_invoke_MethodHandleNatives,      "java/lang/invoke/MethodHandleNatives")     \
+  template(java_lang_invoke_MethodHandleImpl,         "java/lang/invoke/MethodHandleImpl")        \
   template(java_lang_invoke_AdapterMethodHandle,      "java/lang/invoke/AdapterMethodHandle")     \
   template(java_lang_invoke_BoundMethodHandle,        "java/lang/invoke/BoundMethodHandle")       \
   template(java_lang_invoke_DirectMethodHandle,       "java/lang/invoke/DirectMethodHandle")      \
+  template(java_lang_invoke_CountingMethodHandle,     "java/lang/invoke/CountingMethodHandle")    \
   /* internal up-calls made only by the JVM, via class sun.invoke.MethodHandleNatives: */         \
   template(findMethodHandleType_name,                 "findMethodHandleType")                     \
   template(findMethodHandleType_signature,       "(Ljava/lang/Class;[Ljava/lang/Class;)Ljava/lang/invoke/MethodType;") \
@@ -254,8 +261,12 @@
   template(linkMethodHandleConstant_signature, "(Ljava/lang/Class;ILjava/lang/Class;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/invoke/MethodHandle;") \
   template(makeDynamicCallSite_name,                  "makeDynamicCallSite")                      \
   template(makeDynamicCallSite_signature, "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/Object;Ljava/lang/invoke/MemberName;I)Ljava/lang/invoke/CallSite;") \
-  NOT_LP64(  do_alias(machine_word_signature,         int_signature)  )                           \
-  LP64_ONLY( do_alias(machine_word_signature,         long_signature) )                           \
+  template(setTargetNormal_name,                      "setTargetNormal")                          \
+  template(setTargetVolatile_name,                    "setTargetVolatile")                        \
+  template(setTarget_signature,                       "(Ljava/lang/invoke/MethodHandle;)V")       \
+  NOT_LP64(  do_alias(intptr_signature,               int_signature)  )                           \
+  LP64_ONLY( do_alias(intptr_signature,               long_signature) )                           \
+  template(selectAlternative_signature, "(ZLjava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodHandle;)Ljava/lang/invoke/MethodHandle;") \
                                                                                                   \
   /* common method and field names */                                                             \
   template(object_initializer_name,                   "<init>")                                   \
@@ -340,6 +351,7 @@
   template(vmmethod_name,                             "vmmethod")                                 \
   template(vmtarget_name,                             "vmtarget")                                 \
   template(vmentry_name,                              "vmentry")                                  \
+  template(vmcount_name,                              "vmcount")                                  \
   template(vmslots_name,                              "vmslots")                                  \
   template(vmlayout_name,                             "vmlayout")                                 \
   template(vmindex_name,                              "vmindex")                                  \
@@ -353,6 +365,11 @@
   template(erasedType_name,                           "erasedType")                               \
   template(genericInvoker_name,                       "genericInvoker")                           \
   template(append_name,                               "append")                                   \
+  template(klass_name,                                "klass")                                    \
+  template(resolved_constructor_name,                 "resolved_constructor")                     \
+  template(array_klass_name,                          "array_klass")                              \
+  template(oop_size_name,                             "oop_size")                                 \
+  template(static_oop_field_count_name,               "static_oop_field_count")                   \
                                                                                                   \
   /* non-intrinsic name/signature pairs: */                                                       \
   template(register_method_name,                      "register")                                 \
@@ -903,6 +920,8 @@
   do_intrinsic(_invokeVarargs,            java_lang_invoke_MethodHandle, invokeVarargs_name, object_array_object_signature, F_R)  \
   do_intrinsic(_invokeDynamic,            java_lang_invoke_InvokeDynamic, star_name,         object_array_object_signature, F_SN) \
                                                                                                                         \
+  do_intrinsic(_selectAlternative,        java_lang_invoke_MethodHandleImpl, selectAlternative_name, selectAlternative_signature, F_S)  \
+                                                                                                                        \
   /* unboxing methods: */                                                                                               \
   do_intrinsic(_booleanValue,             java_lang_Boolean,      booleanValue_name, void_boolean_signature, F_R)       \
    do_name(     booleanValue_name,       "booleanValue")                                                                \
@@ -948,7 +967,8 @@
 // Class vmSymbols
 
 class vmSymbols: AllStatic {
- friend class vmIntrinsics;
+  friend class vmIntrinsics;
+  friend class VMStructs;
  public:
   // enum for figuring positions and size of array holding Symbol*s
   enum SID {

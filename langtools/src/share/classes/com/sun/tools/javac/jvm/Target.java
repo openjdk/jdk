@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,10 @@ public enum Target {
     JDK1_6("1.6", 50, 0),
 
     /** JDK 7. */
-    JDK1_7("1.7", 51, 0);
+    JDK1_7("1.7", 51, 0),
+
+    /** JDK 8. */ // For now, a clone of 7
+    JDK1_8("1.8", 51, 0);
 
     private static final Context.Key<Target> targetKey =
         new Context.Key<Target>();
@@ -99,6 +102,7 @@ public enum Target {
         tab.put("5", JDK1_5);
         tab.put("6", JDK1_6);
         tab.put("7", JDK1_7);
+        tab.put("8", JDK1_8);
     }
 
     public final String name;
@@ -110,7 +114,7 @@ public enum Target {
         this.minorVersion = minorVersion;
     }
 
-    public static final Target DEFAULT = JDK1_7;
+    public static final Target DEFAULT = JDK1_8;
 
     public static Target lookup(String name) {
         return tab.get(name);

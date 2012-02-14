@@ -51,7 +51,12 @@ inline void ParallelScavengeHeap::invoke_full_gc(bool maximum_compaction)
 }
 
 inline bool ParallelScavengeHeap::is_in_young(oop p) {
-  return young_gen()->is_in_reserved(p);
+  // Assumes the the old gen address range is lower than that of the young gen.
+  const void* loc = (void*) p;
+  bool result = ((HeapWord*)p) >= young_gen()->reserved().start();
+  assert(result == young_gen()->is_in_reserved(p),
+        err_msg("incorrect test - result=%d, p=" PTR_FORMAT, result, (void*)p));
+  return result;
 }
 
 inline bool ParallelScavengeHeap::is_in_old_or_perm(oop p) {

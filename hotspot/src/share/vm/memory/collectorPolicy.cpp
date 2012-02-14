@@ -47,6 +47,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 #ifndef SERIALGC
 #include "gc_implementation/concurrentMarkSweep/cmsAdaptiveSizePolicy.hpp"
 #include "gc_implementation/concurrentMarkSweep/cmsGCAdaptivePolicyCounters.hpp"
@@ -748,10 +751,6 @@ HeapWord* GenCollectorPolicy::satisfy_failed_allocation(size_t size,
   // complete compaction phase than we've tried so far might be
   // appropriate.
   return NULL;
-}
-
-size_t GenCollectorPolicy::large_typearray_limit() {
-  return FastAllocateSizeLimit;
 }
 
 // Return true if any of the following is true:

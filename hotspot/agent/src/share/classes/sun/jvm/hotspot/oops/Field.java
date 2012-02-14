@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,28 +39,20 @@ public class Field {
 
   /** Constructor for fields that are named in an InstanceKlass's
       fields array (i.e., named, non-VM fields) */
-  Field(InstanceKlass holder, int fieldArrayIndex) {
+  Field(InstanceKlass holder, int fieldIndex) {
     this.holder = holder;
-    this.fieldArrayIndex = fieldArrayIndex;
+    this.fieldIndex = fieldIndex;
 
-    ConstantPool cp      = holder.getConstants();
-    TypeArray fields     = holder.getFields();
-    short access         = fields.getShortAt(fieldArrayIndex + InstanceKlass.ACCESS_FLAGS_OFFSET);
-    short nameIndex      = fields.getShortAt(fieldArrayIndex + InstanceKlass.NAME_INDEX_OFFSET);
-    short signatureIndex = fields.getShortAt(fieldArrayIndex + InstanceKlass.SIGNATURE_INDEX_OFFSET);
-    offset               = VM.getVM().buildIntFromShorts(fields.getShortAt(fieldArrayIndex + InstanceKlass.LOW_OFFSET),
-                                                         fields.getShortAt(fieldArrayIndex + InstanceKlass.HIGH_OFFSET));
-    short genericSignatureIndex = fields.getShortAt(fieldArrayIndex + InstanceKlass.GENERIC_SIGNATURE_INDEX_OFFSET);
-    Symbol name = cp.getSymbolAt(nameIndex);
+    offset               = holder.getFieldOffset(fieldIndex);
+    genericSignature     = holder.getFieldGenericSignature(fieldIndex);
+
+    Symbol name          = holder.getFieldName(fieldIndex);
     id          = new NamedFieldIdentifier(name.asString());
-    signature   = cp.getSymbolAt(signatureIndex);
-    if (genericSignatureIndex != 0)  {
-       genericSignature = cp.getSymbolAt(genericSignatureIndex);
-    } else {
-       genericSignature = null;
-    }
 
+    signature            = holder.getFieldSignature(fieldIndex);
     fieldType   = new FieldType(signature);
+
+    short access         = holder.getFieldAccessFlags(fieldIndex);
     accessFlags = new AccessFlags(access);
   }
 
@@ -73,7 +65,7 @@ public class Field {
   private Symbol          signature;
   private Symbol          genericSignature;
   private AccessFlags     accessFlags;
-  private int             fieldArrayIndex;
+  private int             fieldIndex;
 
   /** Returns the byte offset of the field within the object or klass */
   public long getOffset() { return offset; }
@@ -101,8 +93,8 @@ public class Field {
   /** (Named, non-VM fields only) Returns the index in the fields
       TypeArray for this field. Equivalent to the "index" in the VM's
       fieldDescriptors. */
-  public int getFieldArrayIndex() {
-    return fieldArrayIndex;
+  public int getFieldIndex() {
+    return fieldIndex;
   }
 
   /** (Named, non-VM fields only) Retrieves the access flags. */

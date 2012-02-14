@@ -25,13 +25,12 @@
  * @test
  * @bug 6738532
  * @summary Check EllipticCurve.equals() does not compare seed value of curve.
- * @run main/othervm EllipticCurveMatch
  * @author Mike StJohns
  */
 
 import java.security.spec.*;
 import java.math.BigInteger;
-import java.security.SecureRandom;
+import java.util.Random;
 
 public class EllipticCurveMatch {
     static String primeP256 =
@@ -45,7 +44,7 @@ public class EllipticCurveMatch {
 
     private static EllipticCurve addSeedToCurve(EllipticCurve curve)
     {
-        SecureRandom rand = new SecureRandom();
+        Random rand = new Random();
         byte[] seed = new byte[12];
         rand.nextBytes(seed);
 

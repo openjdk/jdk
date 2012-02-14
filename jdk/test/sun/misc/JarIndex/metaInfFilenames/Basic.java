@@ -154,7 +154,7 @@ public class Basic {
     /* run javac <args> */
     static void compile(String... args) {
         debug("Running: javac " + Arrays.toString(args));
-        com.sun.tools.javac.main.Main compiler = new com.sun.tools.javac.main.Main("javac");
+        com.sun.tools.javac.Main compiler = new com.sun.tools.javac.Main();
         if (compiler.compile(args) != 0) {
              throw new RuntimeException("javac failed: args=" + Arrays.toString(args));
         }

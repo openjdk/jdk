@@ -27,6 +27,7 @@
  * @summary Verify that we can parse ECPrivateKeys from PKCS#12 and use them
  * @author Andreas Sterbenz
  * @library ..
+ * @library ../../../../java/security/testlibrary
  */
 
 import java.io.*;
@@ -52,7 +53,7 @@ public class ReadPKCS12 extends PKCS11Test {
             System.out.println("Provider does not support ECDSA, skipping...");
             return;
         }
-        Security.insertProviderAt(p, 1);
+        Providers.setAt(p, 1);
 
         CertificateFactory factory = CertificateFactory.getInstance("X.509");
         try {

@@ -31,7 +31,10 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.MissingResourceException;
+import java.util.Set;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.annotation.processing.Processor;
@@ -73,12 +76,23 @@ public class Main {
 
     /** Result codes.
      */
-    static final int
-        EXIT_OK = 0,        // Compilation completed with no errors.
-        EXIT_ERROR = 1,     // Completed but reported errors.
-        EXIT_CMDERR = 2,    // Bad command-line arguments
-        EXIT_SYSERR = 3,    // System error or resource exhaustion.
-        EXIT_ABNORMAL = 4;  // Compiler terminated abnormally
+    public enum Result {
+        OK(0),        // Compilation completed with no errors.
+        ERROR(1),     // Completed but reported errors.
+        CMDERR(2),    // Bad command-line arguments
+        SYSERR(3),    // System error or resource exhaustion.
+        ABNORMAL(4);  // Compiler terminated abnormally
+
+        Result(int exitCode) {
+            this.exitCode = exitCode;
+        }
+
+        public boolean isOK() {
+            return (exitCode == 0);
+        }
+
+        public final int exitCode;
+    }
 
     private Option[] recognizedOptions = RecognizedOptions.getJavaCompilerOptions(new OptionHelper() {
 
@@ -107,8 +121,7 @@ public class Main {
         }
 
         public void addFile(File f) {
-            if (!filenames.contains(f))
-                filenames.append(f);
+            filenames.add(f);
         }
 
         public void addClassName(String s) {
@@ -136,7 +149,7 @@ public class Main {
 
     /** The list of source files to process
      */
-    public ListBuffer<File> filenames = null; // XXX sb protected
+    public Set<File> filenames = null; // XXX sb protected
 
     /** List of class files names passed on the command line
      */
@@ -202,7 +215,7 @@ public class Main {
      *  in `options' table and return all source filenames.
      *  @param flags    The array of command line arguments.
      */
-    public List<File> processArgs(String[] flags) { // XXX sb protected
+    public Collection<File> processArgs(String[] flags) { // XXX sb protected
         int ac = 0;
         while (ac < flags.length) {
             String flag = flags[ac];
@@ -294,7 +307,7 @@ public class Main {
             showClass(showClass);
         }
 
-        return filenames.toList();
+        return filenames;
     }
     // where
         private boolean checkDirectory(OptionName optName) {
@@ -316,10 +329,10 @@ public class Main {
     /** Programmatic interface for main function.
      * @param args    The command line parameters.
      */
-    public int compile(String[] args) {
+    public Result compile(String[] args) {
         Context context = new Context();
         JavacFileManager.preRegister(context); // can't create it until Log has been set up
-        int result = compile(args, context);
+        Result result = compile(args, context);
         if (fileManager instanceof JavacFileManager) {
             // A fresh context was created above, so jfm must be a JavacFileManager
             ((JavacFileManager)fileManager).close();
@@ -327,14 +340,14 @@ public class Main {
         return result;
     }
 
-    public int compile(String[] args, Context context) {
+    public Result compile(String[] args, Context context) {
         return compile(args, context, List.<JavaFileObject>nil(), null);
     }
 
     /** Programmatic interface for main function.
      * @param args    The command line parameters.
      */
-    public int compile(String[] args,
+    public Result compile(String[] args,
                        Context context,
                        List<JavaFileObject> fileObjects,
                        Iterable<? extends Processor> processors)
@@ -342,7 +355,7 @@ public class Main {
         if (options == null)
             options = Options.instance(context); // creates a new one
 
-        filenames = new ListBuffer<File>();
+        filenames = new LinkedHashSet<File>();
         classnames = new ListBuffer<String>();
         JavaCompiler comp = null;
         /*
@@ -353,34 +366,34 @@ public class Main {
         try {
             if (args.length == 0 && fileObjects.isEmpty()) {
                 help();
-                return EXIT_CMDERR;
+                return Result.CMDERR;
             }
 
-            List<File> files;
+            Collection<File> files;
             try {
                 files = processArgs(CommandLine.parse(args));
                 if (files == null) {
                     // null signals an error in options, abort
-                    return EXIT_CMDERR;
+                    return Result.CMDERR;
                 } else if (files.isEmpty() && fileObjects.isEmpty() && classnames.isEmpty()) {
                     // it is allowed to compile nothing if just asking for help or version info
                     if (options.isSet(HELP)
                         || options.isSet(X)
                         || options.isSet(VERSION)
                         || options.isSet(FULLVERSION))
-                        return EXIT_OK;
+                        return Result.OK;
                     if (JavaCompiler.explicitAnnotationProcessingRequested(options)) {
                         error("err.no.source.files.classes");
                     } else {
                         error("err.no.source.files");
                     }
-                    return EXIT_CMDERR;
+                    return Result.CMDERR;
                 }
             } catch (java.io.FileNotFoundException e) {
                 Log.printLines(out, ownName + ": " +
                                getLocalizedString("err.file.not.found",
                                                   e.getMessage()));
-                return EXIT_SYSERR;
+                return Result.SYSERR;
             }
 
             boolean forceStdOut = options.isSet("stdout");
@@ -400,7 +413,7 @@ public class Main {
             fileManager = context.get(JavaFileManager.class);
 
             comp = JavaCompiler.instance(context);
-            if (comp == null) return EXIT_SYSERR;
+            if (comp == null) return Result.SYSERR;
 
             Log log = Log.instance(context);
 
@@ -421,32 +434,32 @@ public class Main {
             if (log.expectDiagKeys != null) {
                 if (log.expectDiagKeys.isEmpty()) {
                     Log.printLines(log.noticeWriter, "all expected diagnostics found");
-                    return EXIT_OK;
+                    return Result.OK;
                 } else {
                     Log.printLines(log.noticeWriter, "expected diagnostic keys not found: " + log.expectDiagKeys);
-                    return EXIT_ERROR;
+                    return Result.ERROR;
                 }
             }
 
             if (comp.errorCount() != 0)
-                return EXIT_ERROR;
+                return Result.ERROR;
         } catch (IOException ex) {
             ioMessage(ex);
-            return EXIT_SYSERR;
+            return Result.SYSERR;
         } catch (OutOfMemoryError ex) {
             resourceMessage(ex);
-            return EXIT_SYSERR;
+            return Result.SYSERR;
         } catch (StackOverflowError ex) {
             resourceMessage(ex);
-            return EXIT_SYSERR;
+            return Result.SYSERR;
         } catch (FatalError ex) {
             feMessage(ex);
-            return EXIT_SYSERR;
+            return Result.SYSERR;
         } catch (AnnotationProcessingError ex) {
             if (apiMode)
                 throw new RuntimeException(ex.getCause());
             apMessage(ex);
-            return EXIT_SYSERR;
+            return Result.SYSERR;
         } catch (ClientCodeException ex) {
             // as specified by javax.tools.JavaCompiler#getTask
             // and javax.tools.JavaCompiler.CompilationTask#call
@@ -460,7 +473,7 @@ public class Main {
             if (comp == null || comp.errorCount() == 0 ||
                 options == null || options.isSet("dev"))
                 bugMessage(ex);
-            return EXIT_ABNORMAL;
+            return Result.ABNORMAL;
         } finally {
             if (comp != null) {
                 try {
@@ -472,7 +485,7 @@ public class Main {
             filenames = null;
             options = null;
         }
-        return EXIT_OK;
+        return Result.OK;
     }
 
     /** Print a message reporting an internal error.

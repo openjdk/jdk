@@ -479,7 +479,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             return (DecimalFormatSymbols)super.clone();
             // other fields are bit-copied
         } catch (CloneNotSupportedException e) {
-            throw new InternalError();
+            throw new InternalError(e);
         }
     }
 

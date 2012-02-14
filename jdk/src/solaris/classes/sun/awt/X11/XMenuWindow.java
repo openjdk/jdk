@@ -432,9 +432,9 @@ public class XMenuWindow extends XBaseMenuWindow {
     /**
      * Paints menu window
      */
-    public void paint(Graphics g) {
+    @Override
+    public void paintPeer(Graphics g) {
         resetColors();
-
         int width = getWidth();
         int height = getHeight();
 

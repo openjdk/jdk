@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ endif
 
 sanity:: post-sanity
 
-source-sanity : pre-sanity alt_bootdir bootdir post-sanity
+source-sanity : pre-sanity post-sanity
 
 $(ERROR_FILE) $(WARNING_FILE) $(MESSAGE_FILE):
 	@$(prep-target)
@@ -224,45 +224,6 @@ ifdef DEV_ONLY
 endif
 
 ######################################################
-# if specified, ALT_BOOTDIR must point to non-relative path if set
-######################################################
-alt_bootdir:
-ifdef ALT_BOOTDIR
-	@if [ `$(ECHO) $(subst \,/,$(ALT_BOOTDIR)) | $(EGREP) -c '^([A-Za-z]:)?/'` -ne 1 ]; then \
-	  $(ECHO) "ERROR: ALT_BOOTDIR must be an Absolute Path Name, \n" \
-	    "      not a Relative Path Name. \n" \
-	    "      The current value of ALT_BOOTDIR is \n" \
-	    "          $(ALT_BOOTDIR) \n" \
-	    "      Please fix this and continue your build. \n" \
-	    "" >> $(ERROR_FILE) ; \
-	fi
-endif
-
-######################################################
-# BOOTDIR must point to a valid JDK.
-######################################################
-JAVA_VERSION := $(shell $(BOOTDIR)/bin/java$(EXE_SUFFIX) -version 2>&1  | $(NAWK) -F'"' '{ print $$2 }')
-JAVA_VERSION_OK := $(shell $(ECHO) $(JAVA_VERSION) | $(EGREP) -c '^1.[5-6].[0-9]')
-bootdir:
-	@if [ -x $(BOOTDIR)/bin/java$(EXE_SUFFIX) ]; then \
-	  if [ $(JAVA_VERSION_OK) -ne 1 ]; then \
-	    $(ECHO) "ERROR: Your BOOTDIR environment variable does not point \n" \
-	      "      to a valid JDK for bootstrapping this build. \n" \
-	      "      A JDK $(JDK_MKTG_VERSION) source generation process must be \n" \
-	      "      bootstrapped using JDK $(PREVIOUS_JDK_VERSION) fcs (or later). \n" \
-	      "      Apparently, your bootstrap JDK is version $(JAVA_VERSION) \n" \
-	      "      Please update your ALT_BOOTDIR setting and start your build again. \n" \
-	      "" >> $(ERROR_FILE) ; \
-	  fi \
-	else \
-	  $(ECHO) "ERROR: BOOTDIR does not point to a valid Java 2 SDK \n" \
-	    "      Check that you have access to \n" \
-	    "          $(BOOTDIR)/bin/java$(EXE_SUFFIX) \n" \
-	    "      and/or check your value of ALT_BOOTDIR. \n" \
-	    "" >> $(ERROR_FILE) ; \
-	fi
-
-######################################################
 # dump out the variable settings...
 ######################################################
 ifneq ($(PLATFORM), windows)
@@ -350,4 +311,4 @@ endif
 .PHONY: sanity settings pre-sanity insane \
 	post-sanity post-sanity-hotspot post-sanity-jdk \
 	post-sanity-install post-sanity-deploy \
-	alt_bootdir bootdir environment
+	environment

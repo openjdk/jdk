@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,7 @@ public class TimeZoneNameProviderTest extends ProviderTest {
 
     void test2() {
         Locale defaultLocale = Locale.getDefault();
+        TimeZone reservedTimeZone = TimeZone.getDefault();
         Date d = new Date(2005-1900, Calendar.DECEMBER, 22);
         String formatted;
 
@@ -139,7 +140,6 @@ public class TimeZoneNameProviderTest extends ProviderTest {
                 df = new SimpleDateFormat(pattern, DateFormatSymbols.getInstance());
                 System.out.println(formatted = df.format(d));
                 if(!formatted.equals(DISPLAY_NAMES_KYOTO[i])) {
-                    Locale.setDefault(defaultLocale);
                     throw new RuntimeException("Timezone " + TIMEZONES[i] +
                         ": formatted zone names mismatch. " +
                         formatted + " should match with " +
@@ -148,10 +148,12 @@ public class TimeZoneNameProviderTest extends ProviderTest {
                 df.parse(DISPLAY_NAMES_KYOTO[i]);
             }
         } catch (ParseException pe) {
-            Locale.setDefault(defaultLocale);
             throw new RuntimeException("parse error occured" + pe);
+        } finally {
+            // restore the reserved locale and time zone
+            Locale.setDefault(defaultLocale);
+            TimeZone.setDefault(reservedTimeZone);
         }
-        Locale.setDefault(defaultLocale);
     }
 
     final String LATIME = "America/Los_Angeles";

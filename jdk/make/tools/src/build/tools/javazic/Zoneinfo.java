@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -407,9 +405,9 @@ class Zoneinfo {
                 if (!zrec.hasUntil()) {
                     if (tz.getNTransitions() > 0) {
                         if (stdOffset == 0) {
-                            tz.setDSTType(tz.X_DST);
+                            tz.setDSTType(Timezone.X_DST);
                         } else {
-                            tz.setDSTType(tz.LAST_DST);
+                            tz.setDSTType(Timezone.LAST_DST);
                         }
                         long time = Time.getLocalTime(maxYear,
                                                       Month.JANUARY, 1, 0);
@@ -419,7 +417,7 @@ class Zoneinfo {
                                          tz.getDstOffsetIndex(stdOffset));
                         tz.addUsedRec(zrec);
                     } else {
-                        tz.setDSTType(tz.NO_DST);
+                        tz.setDSTType(Timezone.NO_DST);
                     }
                     break;
                 }
@@ -527,7 +525,7 @@ class Zoneinfo {
                         if (year == endYear && !zrec.hasUntil()) {
                             if (tz.getNTransitions() > 0) {
                                 // Assume that this Zone stopped DST
-                                tz.setDSTType(tz.X_DST);
+                                tz.setDSTType(Timezone.X_DST);
                                 long time = Time.getLocalTime(maxYear, Month.JANUARY,
                                                               1, 0);
                                 time -= zrec.getGmtOffset();
@@ -536,7 +534,7 @@ class Zoneinfo {
                                                  tz.getDstOffsetIndex(0));
                                 usedZone = true;
                             } else {
-                                tz.setDSTType(tz.NO_DST);
+                                tz.setDSTType(Timezone.NO_DST);
                             }
                         }
                     }
@@ -552,8 +550,8 @@ class Zoneinfo {
             }
         }
 
-        if (tz.getDSTType() == tz.UNDEF_DST) {
-            tz.setDSTType(tz.DST);
+        if (tz.getDSTType() == Timezone.UNDEF_DST) {
+            tz.setDSTType(Timezone.DST);
         }
         tz.optimize();
         tz.checksum();

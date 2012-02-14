@@ -56,6 +56,12 @@ ifeq ($(INCLUDE_SA), true)
     IMPORT_LIST += $(LIB_LOCATION)/$(SAMAP_NAME) \
                    $(LIB_LOCATION)/$(SAPDB_NAME)
   endif
+  ifneq ($(OBJCOPY),)
+    # the import JDK may not contain .debuginfo files
+    ifneq ($(wildcard $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(SA_DEBUGINFO_NAME)),)
+      IMPORT_LIST += $(LIB_LOCATION)/$(SA_DEBUGINFO_NAME)
+    endif
+  endif
 endif # INCLUDE_SA
 
 
@@ -79,6 +85,11 @@ $(LIB_LOCATION)/$(SAPDB_NAME): $(HOTSPOT_SALIB_PATH)/$(SAPDB_NAME)
 $(LIB_LOCATION)/$(SAMAP_NAME): $(HOTSPOT_SALIB_PATH)/$(SAMAP_NAME)
 	$(install-import-file)
 endif # windows
+
+  ifneq ($(OBJCOPY),)
+$(LIB_LOCATION)/$(SA_DEBUGINFO_NAME): $(HOTSPOT_SALIB_PATH)/$(SA_DEBUGINFO_NAME)
+	$(install-import-file)
+  endif
 endif # INCLUDE_SA
 
 all: $(IMPORT_LIST)
