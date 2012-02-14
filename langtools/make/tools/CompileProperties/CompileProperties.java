@@ -222,13 +222,13 @@ public class CompileProperties {
                 sortedKeys.add((String)key);
             }
             Collections.sort(sortedKeys);
-            Iterator keys = sortedKeys.iterator();
+            Iterator<String> keys = sortedKeys.iterator();
 
             StringBuffer data = new StringBuffer();
 
             while (keys.hasNext()) {
-                Object key = keys.next();
-                data.append("            { \"" + escape((String)key) + "\", \"" +
+                String key = keys.next();
+                data.append("            { \"" + escape(key) + "\", \"" +
                         escape((String)p.get(key)) + "\" },\n");
             }
 

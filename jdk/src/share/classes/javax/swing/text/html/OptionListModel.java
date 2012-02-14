@@ -26,7 +26,6 @@ package javax.swing.text.html;
 
 import javax.swing.*;
 import javax.swing.event.*;
-import java.util.EventListener;
 import java.util.BitSet;
 import java.io.Serializable;
 
@@ -44,7 +43,7 @@ import java.io.Serializable;
   @author Sunita Mani
  */
 
-class OptionListModel extends DefaultListModel implements ListSelectionModel, Serializable {
+class OptionListModel<E> extends DefaultListModel<E> implements ListSelectionModel, Serializable {
 
 
     private static final int MIN = -1;

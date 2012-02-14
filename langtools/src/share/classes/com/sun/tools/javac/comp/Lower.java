@@ -2271,6 +2271,14 @@ public class Lower extends TreeTranslator {
         tree.extending = translate(tree.extending);
         tree.implementing = translate(tree.implementing);
 
+        if (currentClass.isLocal()) {
+            ClassSymbol encl = currentClass.owner.enclClass();
+            if (encl.trans_local == null) {
+                encl.trans_local = List.nil();
+            }
+            encl.trans_local = encl.trans_local.prepend(currentClass);
+        }
+
         // Recursively translate members, taking into account that new members
         // might be created during the translation and prepended to the member
         // list `tree.defs'.
@@ -3450,6 +3458,7 @@ public class Lower extends TreeTranslator {
                 JCExpression expression = oneCase.getExpression();
 
                 if (expression != null) { // expression for a "default" case is null
+                    expression = TreeInfo.skipParens(expression);
                     String labelExpr = (String) expression.type.constValue();
                     Integer mapping = caseLabelToPosition.put(labelExpr, casePosition);
                     Assert.checkNull(mapping);
@@ -3555,8 +3564,8 @@ public class Lower extends TreeTranslator {
                 if (isDefault)
                     caseExpr = null;
                 else {
-                    caseExpr = make.Literal(caseLabelToPosition.get((String)oneCase.
-                                                                    getExpression().
+                    caseExpr = make.Literal(caseLabelToPosition.get((String)TreeInfo.skipParens(oneCase.
+                                                                                                getExpression()).
                                                                     type.constValue()));
                 }
 

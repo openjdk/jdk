@@ -811,13 +811,16 @@ class DH_ServerKeyExchange extends ServerKeyExchange
             sig = JsseJce.getSignature(
                         preferableSignatureAlgorithm.getAlgorithmName());
         } else {
-            if (algorithm.equals("DSA")) {
-                sig = JsseJce.getSignature(JsseJce.SIGNATURE_DSA);
-            } else if (algorithm.equals("RSA")) {
-                sig = RSASignature.getInstance();
-            } else {
-                throw new SSLKeyException("neither an RSA or a DSA key");
-            }
+                switch (algorithm) {
+                    case "DSA":
+                        sig = JsseJce.getSignature(JsseJce.SIGNATURE_DSA);
+                        break;
+                    case "RSA":
+                        sig = RSASignature.getInstance();
+                        break;
+                    default:
+                        throw new SSLKeyException("neither an RSA or a DSA key");
+                }
         }
 
         sig.initVerify(publicKey);
@@ -1097,13 +1100,14 @@ class ECDH_ServerKeyExchange extends ServerKeyExchange {
 
     private static Signature getSignature(String keyAlgorithm)
             throws NoSuchAlgorithmException {
-        if (keyAlgorithm.equals("EC")) {
-            return JsseJce.getSignature(JsseJce.SIGNATURE_ECDSA);
-        } else if (keyAlgorithm.equals("RSA")) {
-            return RSASignature.getInstance();
-        } else {
-            throw new NoSuchAlgorithmException("neither an RSA or a EC key");
-        }
+            switch (keyAlgorithm) {
+                case "EC":
+                    return JsseJce.getSignature(JsseJce.SIGNATURE_ECDSA);
+                case "RSA":
+                    return RSASignature.getInstance();
+                default:
+                    throw new NoSuchAlgorithmException("neither an RSA or a EC key");
+            }
     }
 
     private void updateSignature(Signature sig, byte clntNonce[],
@@ -1611,16 +1615,17 @@ static final class CertificateVerify extends HandshakeMessage {
      */
     private static Signature getSignature(ProtocolVersion protocolVersion,
             String algorithm) throws GeneralSecurityException {
-        if (algorithm.equals("RSA")) {
-            return RSASignature.getInternalInstance();
-        } else if (algorithm.equals("DSA")) {
-            return JsseJce.getSignature(JsseJce.SIGNATURE_RAWDSA);
-        } else if (algorithm.equals("EC")) {
-            return JsseJce.getSignature(JsseJce.SIGNATURE_RAWECDSA);
-        } else {
-            throw new SignatureException("Unrecognized algorithm: "
-                + algorithm);
-        }
+            switch (algorithm) {
+                case "RSA":
+                    return RSASignature.getInternalInstance();
+                case "DSA":
+                    return JsseJce.getSignature(JsseJce.SIGNATURE_RAWDSA);
+                case "EC":
+                    return JsseJce.getSignature(JsseJce.SIGNATURE_RAWECDSA);
+                default:
+                    throw new SignatureException("Unrecognized algorithm: "
+                        + algorithm);
+            }
     }
 
     /*
@@ -1696,7 +1701,7 @@ static final class CertificateVerify extends HandshakeMessage {
         md.update(temp);
     }
 
-    private final static Class delegate;
+    private final static Class<?> delegate;
     private final static Field spiField;
 
     static {
@@ -1724,7 +1729,7 @@ static final class CertificateVerify extends HandshakeMessage {
     // cache Method objects per Spi class
     // Note that this will prevent the Spi classes from being GC'd. We assume
     // that is not a problem.
-    private final static Map<Class,Object> methodCache =
+    private final static Map<Class<?>,Object> methodCache =
                                         new ConcurrentHashMap<>();
 
     private static void digestKey(MessageDigest md, SecretKey key) {

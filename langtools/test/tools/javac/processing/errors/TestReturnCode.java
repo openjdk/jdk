@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,25 +27,25 @@
  * @summary Test that an erroneous return code results from raising an error.
  * @author  Joseph D. Darcy
  * @library ../../lib
- * @build JavacTestingAbstractProcessor
+ * @build JavacTestingAbstractProcessor CompileFail
  * @compile TestReturnCode.java
  *
- * @compile      -processor TestReturnCode -proc:only                                                                   Foo.java
- * @compile/fail -processor TestReturnCode -proc:only                                                    -AErrorOnFirst Foo.java
- * @compile/fail -processor TestReturnCode -proc:only                                      -AErrorOnLast                Foo.java
- * @compile/fail -processor TestReturnCode -proc:only                                      -AErrorOnLast -AErrorOnFirst Foo.java
- * @compile/fail -processor TestReturnCode -proc:only                   -AExceptionOnFirst                              Foo.java
- * @compile/fail -processor TestReturnCode -proc:only                   -AExceptionOnFirst               -AErrorOnFirst Foo.java
- * @compile/fail -processor TestReturnCode -proc:only                   -AExceptionOnFirst -AErrorOnLast                Foo.java
- * @compile/fail -processor TestReturnCode -proc:only                   -AExceptionOnFirst -AErrorOnLast -AErrorOnFirst Foo.java
- * @compile/fail -processor TestReturnCode -proc:only -AExceptionOnLast                                                 Foo.java
- * @compile/fail -processor TestReturnCode -proc:only -AExceptionOnLast                                  -AErrorOnFirst Foo.java
- * @compile/fail -processor TestReturnCode -proc:only -AExceptionOnLast                    -AErrorOnLast                Foo.java
- * @compile/fail -processor TestReturnCode -proc:only -AExceptionOnLast                    -AErrorOnLast -AErrorOnFirst Foo.java
- * @compile/fail -processor TestReturnCode -proc:only -AExceptionOnLast -AExceptionOnFirst                              Foo.java
- * @compile/fail -processor TestReturnCode -proc:only -AExceptionOnLast -AExceptionOnFirst               -AErrorOnFirst Foo.java
- * @compile/fail -processor TestReturnCode -proc:only -AExceptionOnLast -AExceptionOnFirst -AErrorOnLast                Foo.java
- * @compile/fail -processor TestReturnCode -proc:only -AExceptionOnLast -AExceptionOnFirst -AErrorOnLast -AErrorOnFirst Foo.java
+ * @compile                     -processor TestReturnCode -proc:only                                                                   Foo.java
+ * @run main CompileFail ERROR  -processor TestReturnCode -proc:only                                                    -AErrorOnFirst Foo.java
+ * @run main CompileFail ERROR  -processor TestReturnCode -proc:only                                      -AErrorOnLast                Foo.java
+ * @run main CompileFail ERROR  -processor TestReturnCode -proc:only                                      -AErrorOnLast -AErrorOnFirst Foo.java
+ * @run main CompileFail SYSERR -processor TestReturnCode -proc:only                   -AExceptionOnFirst                              Foo.java
+ * @run main CompileFail SYSERR -processor TestReturnCode -proc:only                   -AExceptionOnFirst               -AErrorOnFirst Foo.java
+ * @run main CompileFail SYSERR -processor TestReturnCode -proc:only                   -AExceptionOnFirst -AErrorOnLast                Foo.java
+ * @run main CompileFail SYSERR -processor TestReturnCode -proc:only                   -AExceptionOnFirst -AErrorOnLast -AErrorOnFirst Foo.java
+ * @run main CompileFail SYSERR -processor TestReturnCode -proc:only -AExceptionOnLast                                                 Foo.java
+ * @run main CompileFail SYSERR -processor TestReturnCode -proc:only -AExceptionOnLast                                  -AErrorOnFirst Foo.java
+ * @run main CompileFail SYSERR -processor TestReturnCode -proc:only -AExceptionOnLast                    -AErrorOnLast                Foo.java
+ * @run main CompileFail SYSERR -processor TestReturnCode -proc:only -AExceptionOnLast                    -AErrorOnLast -AErrorOnFirst Foo.java
+ * @run main CompileFail SYSERR -processor TestReturnCode -proc:only -AExceptionOnLast -AExceptionOnFirst                              Foo.java
+ * @run main CompileFail SYSERR -processor TestReturnCode -proc:only -AExceptionOnLast -AExceptionOnFirst               -AErrorOnFirst Foo.java
+ * @run main CompileFail SYSERR -processor TestReturnCode -proc:only -AExceptionOnLast -AExceptionOnFirst -AErrorOnLast                Foo.java
+ * @run main CompileFail SYSERR -processor TestReturnCode -proc:only -AExceptionOnLast -AExceptionOnFirst -AErrorOnLast -AErrorOnFirst Foo.java
  */
 
 import java.util.Set;

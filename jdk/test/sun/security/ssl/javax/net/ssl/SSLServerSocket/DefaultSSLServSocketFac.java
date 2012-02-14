@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,10 @@
  * @test
  * @bug 6449579
  * @summary DefaultSSLServerSocketFactory does not override createServerSocket()
+ * @run main/othervm DefaultSSLServSocketFac
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  */
 import java.security.Security;
 import javax.net.ServerSocketFactory;
@@ -33,6 +37,10 @@ import javax.net.ssl.SSLServerSocketFactory;
 
 public class DefaultSSLServSocketFac {
     public static void main(String[] args) throws Exception {
+        // reserve the security properties
+        String reservedSSFacProvider =
+            Security.getProperty("ssl.ServerSocketFactory.provider");
+
         try {
             Security.setProperty("ssl.ServerSocketFactory.provider", "oops");
             ServerSocketFactory ssocketFactory =
@@ -44,6 +52,13 @@ public class DefaultSSLServSocketFac {
                 throw e;
             }
             // get the expected exception
+        } finally {
+            // restore the security properties
+            if (reservedSSFacProvider == null) {
+                reservedSSFacProvider = "";
+            }
+            Security.setProperty("ssl.ServerSocketFactory.provider",
+                                                    reservedSSFacProvider);
         }
     }
 }

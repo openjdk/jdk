@@ -80,6 +80,8 @@ class WarmCallInfo;
 // This class defines a top-level Compiler invocation.
 
 class Compile : public Phase {
+  friend class VMStructs;
+
  public:
   // Fixed alias indexes.  (See also MergeMemNode.)
   enum {
@@ -785,11 +787,14 @@ class Compile : public Phase {
   // Process an OopMap Element while emitting nodes
   void Process_OopMap_Node(MachNode *mach, int code_offset);
 
+  // Initialize code buffer
+  CodeBuffer* init_buffer(uint* blk_starts);
+
   // Write out basic block data to code buffer
-  void Fill_buffer();
+  void fill_buffer(CodeBuffer* cb, uint* blk_starts);
 
   // Determine which variable sized branches can be shortened
-  void Shorten_branches(Label *labels, int& code_size, int& reloc_size, int& stub_size);
+  void shorten_branches(uint* blk_starts, int& code_size, int& reloc_size, int& stub_size);
 
   // Compute the size of first NumberOfLoopInstrToAlign instructions
   // at the head of a loop.

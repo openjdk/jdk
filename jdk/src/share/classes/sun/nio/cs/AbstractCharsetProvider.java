@@ -179,7 +179,9 @@ public class AbstractCharsetProvider
 
                 public Charset next() {
                     String csn = i.next();
-                    return lookup(csn);
+                    synchronized (AbstractCharsetProvider.this) {
+                        return lookup(csn);
+                    }
                 }
 
                 public void remove() {

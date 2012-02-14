@@ -391,13 +391,9 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
     }
   }
   // Check if an appropriate new value phi already exists.
-  Node* new_phi = NULL;
-  uint size = value_phis->size();
-  for (uint i=0; i < size; i++) {
-    if ( mem->_idx == value_phis->index_at(i) ) {
-      return value_phis->node_at(i);
-    }
-  }
+  Node* new_phi = value_phis->find(mem->_idx);
+  if (new_phi != NULL)
+    return new_phi;
 
   if (level <= 0) {
     return NULL; // Give up: phi tree too deep
@@ -1594,7 +1590,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
         prefetch_adr = new (C, 4) AddPNode( old_pf_wm, new_pf_wmt,
                                             _igvn.MakeConX(distance) );
         transform_later(prefetch_adr);
-        prefetch = new (C, 3) PrefetchWriteNode( i_o, prefetch_adr );
+        prefetch = new (C, 3) PrefetchAllocationNode( i_o, prefetch_adr );
         transform_later(prefetch);
         distance += step_size;
         i_o = prefetch;
@@ -1615,13 +1611,14 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       contended_phi_rawmem = pf_phi_rawmem;
       i_o = pf_phi_abio;
    } else if( UseTLAB && AllocatePrefetchStyle == 3 ) {
-      // Insert a prefetch for each allocation only on the fast-path
+      // Insert a prefetch for each allocation.
+      // This code is used for Sparc with BIS.
       Node *pf_region = new (C, 3) RegionNode(3);
       Node *pf_phi_rawmem = new (C, 3) PhiNode( pf_region, Type::MEMORY,
                                                 TypeRawPtr::BOTTOM );
 
-      // Generate several prefetch instructions only for arrays.
-      uint lines = (length != NULL) ? AllocatePrefetchLines : 1;
+      // Generate several prefetch instructions.
+      uint lines = (length != NULL) ? AllocatePrefetchLines : AllocateInstancePrefetchLines;
       uint step_size = AllocatePrefetchStepSize;
       uint distance = AllocatePrefetchDistance;
 
@@ -1638,7 +1635,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       transform_later(cache_adr);
 
       // Prefetch
-      Node *prefetch = new (C, 3) PrefetchWriteNode( contended_phi_rawmem, cache_adr );
+      Node *prefetch = new (C, 3) PrefetchAllocationNode( contended_phi_rawmem, cache_adr );
       prefetch->set_req(0, needgc_false);
       transform_later(prefetch);
       contended_phi_rawmem = prefetch;
@@ -1648,7 +1645,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
         prefetch_adr = new (C, 4) AddPNode( cache_adr, cache_adr,
                                             _igvn.MakeConX(distance) );
         transform_later(prefetch_adr);
-        prefetch = new (C, 3) PrefetchWriteNode( contended_phi_rawmem, prefetch_adr );
+        prefetch = new (C, 3) PrefetchAllocationNode( contended_phi_rawmem, prefetch_adr );
         transform_later(prefetch);
         distance += step_size;
         contended_phi_rawmem = prefetch;
@@ -1657,15 +1654,15 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       // Insert a prefetch for each allocation only on the fast-path
       Node *prefetch_adr;
       Node *prefetch;
-      // Generate several prefetch instructions only for arrays.
-      uint lines = (length != NULL) ? AllocatePrefetchLines : 1;
+      // Generate several prefetch instructions.
+      uint lines = (length != NULL) ? AllocatePrefetchLines : AllocateInstancePrefetchLines;
       uint step_size = AllocatePrefetchStepSize;
       uint distance = AllocatePrefetchDistance;
       for ( uint i = 0; i < lines; i++ ) {
         prefetch_adr = new (C, 4) AddPNode( old_eden_top, new_eden_top,
                                             _igvn.MakeConX(distance) );
         transform_later(prefetch_adr);
-        prefetch = new (C, 3) PrefetchWriteNode( i_o, prefetch_adr );
+        prefetch = new (C, 3) PrefetchAllocationNode( i_o, prefetch_adr );
         // Do not let it float too high, since if eden_top == eden_end,
         // both might be null.
         if( i == 0 ) { // Set control for first prefetch, next follows it
@@ -1688,30 +1685,48 @@ void PhaseMacroExpand::expand_allocate(AllocateNode *alloc) {
 
 void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
   Node* length = alloc->in(AllocateNode::ALength);
+  InitializeNode* init = alloc->initialization();
+  Node* klass_node = alloc->in(AllocateNode::KlassNode);
+  ciKlass* k = _igvn.type(klass_node)->is_klassptr()->klass();
+  address slow_call_address;  // Address of slow call
+  if (init != NULL && init->is_complete_with_arraycopy() &&
+      k->is_type_array_klass()) {
+    // Don't zero type array during slow allocation in VM since
+    // it will be initialized later by arraycopy in compiled code.
+    slow_call_address = OptoRuntime::new_array_nozero_Java();
+  } else {
+    slow_call_address = OptoRuntime::new_array_Java();
+  }
   expand_allocate_common(alloc, length,
                          OptoRuntime::new_array_Type(),
-                         OptoRuntime::new_array_Java());
+                         slow_call_address);
 }
 
-
-// we have determined that this lock/unlock can be eliminated, we simply
-// eliminate the node without expanding it.
-//
-// Note:  The membar's associated with the lock/unlock are currently not
-//        eliminated.  This should be investigated as a future enhancement.
-//
-bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
-
+//-----------------------mark_eliminated_locking_nodes-----------------------
+// During EA obj may point to several objects but after few ideal graph
+// transformations (CCP) it may point to only one non escaping object
+// (but still using phi), corresponding locks and unlocks will be marked
+// for elimination. Later obj could be replaced with a new node (new phi)
+// and which does not have escape information. And later after some graph
+// reshape other locks and unlocks (which were not marked for elimination
+// before) are connected to this new obj (phi) but they still will not be
+// marked for elimination since new obj has no escape information.
+// Mark all associated (same box and obj) lock and unlock nodes for
+// elimination if some of them marked already.
+void PhaseMacroExpand::mark_eliminated_locking_nodes(AbstractLockNode *alock) {
   if (!alock->is_eliminated()) {
-    return false;
+    return;
   }
-  if (alock->is_Lock() && !alock->is_coarsened()) {
+  if (!alock->is_coarsened()) { // Eliminated by EA
       // Create new "eliminated" BoxLock node and use it
       // in monitor debug info for the same object.
       BoxLockNode* oldbox = alock->box_node()->as_BoxLock();
       Node* obj = alock->obj_node();
       if (!oldbox->is_eliminated()) {
         BoxLockNode* newbox = oldbox->clone()->as_BoxLock();
+        // Note: BoxLock node is marked eliminated only here
+        // and it is used to indicate that all associated lock
+        // and unlock nodes are marked for elimination.
         newbox->set_eliminated();
         transform_later(newbox);
         // Replace old box node with new box for all users
@@ -1720,22 +1735,14 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
 
           bool next_edge = true;
           Node* u = oldbox->raw_out(i);
-          if (u == alock) {
-            i++;
-            continue; // It will be removed below
-          }
-          if (u->is_Lock() &&
-              u->as_Lock()->obj_node() == obj &&
-              // oldbox could be referenced in debug info also
-              u->as_Lock()->box_node() == oldbox) {
-            assert(u->as_Lock()->is_eliminated(), "sanity");
+          if (u->is_AbstractLock() &&
+              u->as_AbstractLock()->obj_node() == obj &&
+              u->as_AbstractLock()->box_node() == oldbox) {
+            // Mark all associated locks and unlocks.
+            u->as_AbstractLock()->set_eliminated();
             _igvn.hash_delete(u);
             u->set_req(TypeFunc::Parms + 1, newbox);
             next_edge = false;
-#ifdef ASSERT
-          } else if (u->is_Unlock() && u->as_Unlock()->obj_node() == obj) {
-            assert(u->as_Unlock()->is_eliminated(), "sanity");
-#endif
           }
           // Replace old box in monitor debug info.
           if (u->is_SafePoint() && u->as_SafePoint()->jvms()) {
@@ -1761,8 +1768,27 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
           if (next_edge) i++;
         } // for (uint i = 0; i < oldbox->outcnt();)
       } // if (!oldbox->is_eliminated())
-  } // if (alock->is_Lock() && !lock->is_coarsened())
+  } // if (!alock->is_coarsened())
+}
 
+// we have determined that this lock/unlock can be eliminated, we simply
+// eliminate the node without expanding it.
+//
+// Note:  The membar's associated with the lock/unlock are currently not
+//        eliminated.  This should be investigated as a future enhancement.
+//
+bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
+
+  if (!alock->is_eliminated()) {
+    return false;
+  }
+#ifdef ASSERT
+  if (alock->is_Lock() && !alock->is_coarsened()) {
+    // Check that new "eliminated" BoxLock node is created.
+    BoxLockNode* oldbox = alock->box_node()->as_BoxLock();
+    assert(oldbox->is_eliminated(), "should be done already");
+  }
+#endif
   CompileLog* log = C->log();
   if (log != NULL) {
     log->head("eliminate_lock lock='%d'",
@@ -1803,9 +1829,9 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
   // The input to a Lock is merged memory, so extract its RawMem input
   // (unless the MergeMem has been optimized away.)
   if (alock->is_Lock()) {
-    // Seach for MemBarAcquire node and delete it also.
+    // Seach for MemBarAcquireLock node and delete it also.
     MemBarNode* membar = fallthroughproj->unique_ctrl_out()->as_MemBar();
-    assert(membar != NULL && membar->Opcode() == Op_MemBarAcquire, "");
+    assert(membar != NULL && membar->Opcode() == Op_MemBarAcquireLock, "");
     Node* ctrlproj = membar->proj_out(TypeFunc::Control);
     Node* memproj = membar->proj_out(TypeFunc::Memory);
     _igvn.replace_node(ctrlproj, fallthroughproj);
@@ -1820,11 +1846,11 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
     }
   }
 
-  // Seach for MemBarRelease node and delete it also.
+  // Seach for MemBarReleaseLock node and delete it also.
   if (alock->is_Unlock() && ctrl != NULL && ctrl->is_Proj() &&
       ctrl->in(0)->is_MemBar()) {
     MemBarNode* membar = ctrl->in(0)->as_MemBar();
-    assert(membar->Opcode() == Op_MemBarRelease &&
+    assert(membar->Opcode() == Op_MemBarReleaseLock &&
            mem->is_Proj() && membar == mem->in(0), "");
     _igvn.replace_node(fallthroughproj, ctrl);
     _igvn.replace_node(memproj_fallthrough, mem);
@@ -2145,6 +2171,15 @@ bool PhaseMacroExpand::expand_macro_nodes() {
   if (C->macro_count() == 0)
     return false;
   // First, attempt to eliminate locks
+  int cnt = C->macro_count();
+  for (int i=0; i < cnt; i++) {
+    Node *n = C->macro_node(i);
+    if (n->is_AbstractLock()) { // Lock and Unlock nodes
+      // Before elimination mark all associated (same box and obj)
+      // lock and unlock nodes.
+      mark_eliminated_locking_nodes(n->as_AbstractLock());
+    }
+  }
   bool progress = true;
   while (progress) {
     progress = false;

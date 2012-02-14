@@ -132,7 +132,7 @@ public class VersionCheck {
         StringBuilder out = new StringBuilder();
         // remove the HotSpot line
         for (String x : alist) {
-            if (!x.contains("HotSpot")) {
+            if (!x.matches(".*Client.*VM.*|.*Server.*VM.*")) {
                 out = out.append(x + "\n");
             }
         }

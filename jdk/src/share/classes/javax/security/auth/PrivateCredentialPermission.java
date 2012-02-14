@@ -117,7 +117,7 @@ public final class PrivateCredentialPermission extends Permission {
      *          The set contains elements of type,
      *          <code>PrivateCredentialPermission.CredOwner</code>.
      */
-    private Set principals;  // ignored - kept around for compatibility
+    private Set<Principal> principals;  // ignored - kept around for compatibility
     private transient CredOwner[] credOwners;
 
     /**

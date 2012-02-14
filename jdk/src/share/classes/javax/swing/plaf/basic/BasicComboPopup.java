@@ -63,8 +63,7 @@ import java.io.Serializable;
 public class BasicComboPopup extends JPopupMenu implements ComboPopup {
     // An empty ListMode, this is used when the UI changes to allow
     // the JList to be gc'ed.
-    private static class EmptyListModelClass implements ListModel,
-                                                        Serializable {
+    private static class EmptyListModelClass implements ListModel<Object>, Serializable {
         public int getSize() { return 0; }
         public Object getElementAt(int index) { return null; }
         public void addListDataListener(ListDataListener l) {}

@@ -488,6 +488,10 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      */
     public Todo todo;
 
+    /** A list of items to be closed when the compilation is complete.
+     */
+    public List<Closeable> closeables = List.nil();
+
     /** Ordered list of compiler phases for each compilation unit. */
     public enum CompileState {
         PARSE(1),
@@ -1581,6 +1585,19 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             if (names != null && disposeNames)
                 names.dispose();
             names = null;
+
+            for (Closeable c: closeables) {
+                try {
+                    c.close();
+                } catch (IOException e) {
+                    // When javac uses JDK 7 as a baseline, this code would be
+                    // better written to set any/all exceptions from all the
+                    // Closeables as suppressed exceptions on the FatalError
+                    // that is thrown.
+                    JCDiagnostic msg = diagFactory.fragment("fatal.err.cant.close");
+                    throw new FatalError(msg, e);
+                }
+            }
         }
     }
 
@@ -1615,6 +1632,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         keepComments = prev.keepComments;
         start_msec = prev.start_msec;
         hasBeenUsed = true;
+        closeables = prev.closeables;
+        prev.closeables = List.nil();
     }
 
     public static void enableLogging() {

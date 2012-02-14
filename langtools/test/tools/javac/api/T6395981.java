@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
 
 /*
  * @test
- * @bug     6395981 6458819
+ * @bug     6395981 6458819 7025784
  * @summary JavaCompilerTool and Tool must specify version of JLS and JVMS
  * @author  Peter von der Ah\u00e9
  * @run main/fail T6395981
  * @run main/fail T6395981 RELEASE_3 RELEASE_5 RELEASE_6
  * @run main/fail T6395981 RELEASE_0 RELEASE_1 RELEASE_2 RELEASE_3 RELEASE_4 RELEASE_5 RELEASE_6
- * @run main T6395981 RELEASE_3 RELEASE_4 RELEASE_5 RELEASE_6 RELEASE_7
+ * @run main T6395981 RELEASE_3 RELEASE_4 RELEASE_5 RELEASE_6 RELEASE_7 RELEASE_8
  */
 
 import java.util.EnumSet;

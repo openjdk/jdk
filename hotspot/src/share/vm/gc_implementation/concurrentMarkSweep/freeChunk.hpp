@@ -114,17 +114,11 @@ class FreeChunk VALUE_OBJ_CLASS_SPEC {
     linkNext(ptr);
     if (ptr != NULL) ptr->linkPrev(this);
   }
-  void linkAfterNonNull(FreeChunk* ptr) {
-    assert(ptr != NULL, "precondition violation");
-    linkNext(ptr);
-    ptr->linkPrev(this);
-  }
   void linkNext(FreeChunk* ptr) { _next = ptr; }
   void linkPrev(FreeChunk* ptr) {
     LP64_ONLY(if (UseCompressedOops) _prev = ptr; else)
     _prev = (FreeChunk*)((intptr_t)ptr | 0x1);
   }
-  void clearPrev()              { _prev = NULL; }
   void clearNext()              { _next = NULL; }
   void markNotFree() {
     // Set _prev (klass) to null before (if) clearing the mark word below

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.NoSuchElementException;
 import java.util.Vector;
+import java.util.Locale;
 
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
@@ -42,11 +43,14 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 
 import sun.security.util.Cache;
+import sun.security.util.Cache.CacheVisitor;
 
 
 final class SSLSessionContextImpl implements SSLSessionContext {
-    private Cache sessionCache;         // session cache, session id as key
-    private Cache sessionHostPortCache; // session cache, "host:port" as key
+    private Cache<SessionId, SSLSessionImpl> sessionCache;
+                                        // session cache, session id as key
+    private Cache<String, SSLSessionImpl> sessionHostPortCache;
+                                        // session cache, "host:port" as key
     private int cacheLimit;             // the max cache size
     private int timeout;                // timeout in seconds
 
@@ -70,8 +74,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
             throw new NullPointerException("session id cannot be null");
         }
 
-        SSLSessionImpl sess =
-                (SSLSessionImpl)sessionCache.get(new SessionId(sessionId));
+        SSLSessionImpl sess = sessionCache.get(new SessionId(sessionId));
         if (!isTimedout(sess)) {
             return sess;
         }
@@ -156,8 +159,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
             return null;
         }
 
-        SSLSessionImpl sess =
-            (SSLSessionImpl)sessionHostPortCache.get(getKey(hostname, port));
+        SSLSessionImpl sess = sessionHostPortCache.get(getKey(hostname, port));
         if (!isTimedout(sess)) {
             return sess;
         }
@@ -166,7 +168,8 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     }
 
     private String getKey(String hostname, int port) {
-        return (hostname + ":" + String.valueOf(port)).toLowerCase();
+        return (hostname + ":" +
+            String.valueOf(port)).toLowerCase(Locale.ENGLISH);
     }
 
     // cache a SSLSession
@@ -191,7 +194,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
 
     // package-private method, remove a cached SSLSession
     void remove(SessionId key) {
-        SSLSessionImpl s = (SSLSessionImpl)sessionCache.get(key);
+        SSLSessionImpl s = sessionCache.get(key);
         if (s != null) {
             sessionCache.remove(key);
             sessionHostPortCache.remove(
@@ -231,17 +234,17 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     }
 
     final class SessionCacheVisitor
-            implements sun.security.util.Cache.CacheVisitor {
+            implements Cache.CacheVisitor<SessionId, SSLSessionImpl> {
         Vector<byte[]> ids = null;
 
-        // public void visit(java.util.Map<Object, Object> map) {}
-        public void visit(java.util.Map<Object, Object> map) {
-            ids = new Vector<byte[]>(map.size());
+        // public void visit(java.util.Map<K,V> map) {}
+        public void visit(java.util.Map<SessionId, SSLSessionImpl> map) {
+            ids = new Vector<>(map.size());
 
-            for (Object key : map.keySet()) {
-                SSLSessionImpl value = (SSLSessionImpl)map.get(key);
+            for (SessionId key : map.keySet()) {
+                SSLSessionImpl value = map.get(key);
                 if (!isTimedout(value)) {
-                    ids.addElement(((SessionId)key).getId());
+                    ids.addElement(key.getId());
                 }
             }
         }

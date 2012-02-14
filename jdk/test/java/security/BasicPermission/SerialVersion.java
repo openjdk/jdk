@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4502729
+ * @bug 4502729 7054918
  * @summary BasicPermissionCollection serial version UID incorrect
  */
 
@@ -36,40 +36,44 @@ public class SerialVersion {
         String dir = System.getProperty("test.src");
         File  sFile =  new File (dir,"SerialVersion.1.2.1");
         // read in a 1.2.1 BasicPermissionCollection
-        ObjectInputStream ois = new ObjectInputStream
-                (new FileInputStream(sFile));
-        PermissionCollection pc = (PermissionCollection)ois.readObject();
-        System.out.println("1.2.1 collection = " + pc);
+        try (FileInputStream fis = new FileInputStream(sFile);
+                ObjectInputStream ois = new ObjectInputStream(fis)) {
+            PermissionCollection pc = (PermissionCollection)ois.readObject();
+            System.out.println("1.2.1 collection = " + pc);
+        }
 
         // read in a 1.3.1 BasicPermissionCollection
         sFile =  new File (dir,"SerialVersion.1.3.1");
 
-        ois = new ObjectInputStream
-                (new FileInputStream(sFile));
-        pc = (PermissionCollection)ois.readObject();
-        System.out.println("1.3.1 collection = " + pc);
+        try (FileInputStream fis = new FileInputStream(sFile);
+                ObjectInputStream ois = new ObjectInputStream(fis)) {
+            PermissionCollection pc = (PermissionCollection)ois.readObject();
+            System.out.println("1.3.1 collection = " + pc);
+        }
 
         // read in a 1.4 BasicPermissionCollection
         sFile =  new File (dir,"SerialVersion.1.4");
-        ois = new ObjectInputStream
-                (new FileInputStream(sFile));
-        pc = (PermissionCollection)ois.readObject();
-        System.out.println("1.4 collection = " + pc);
+        try (FileInputStream fis = new FileInputStream(sFile);
+                ObjectInputStream ois = new ObjectInputStream(fis)) {
+            PermissionCollection pc = (PermissionCollection)ois.readObject();
+            System.out.println("1.4 collection = " + pc);
+        }
 
         // write out current BasicPermissionCollection
         MyPermission mp = new MyPermission("SerialVersionTest");
         PermissionCollection bpc = mp.newPermissionCollection();
         sFile =  new File (dir,"SerialVersion.current");
-        ObjectOutputStream oos = new ObjectOutputStream
-                (new FileOutputStream("SerialVersion.current"));
-        oos.writeObject(bpc);
-        oos.close();
+        try (FileOutputStream fos = new FileOutputStream("SerialVersion.current");
+                ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+            oos.writeObject(bpc);
+        }
 
         // read in current BasicPermissionCollection
-        ois = new ObjectInputStream
-                (new FileInputStream("SerialVersion.current"));
-        pc = (PermissionCollection)ois.readObject();
-        System.out.println("current collection = " + pc);
+        try (FileInputStream fis = new FileInputStream("SerialVersion.current");
+                ObjectInputStream ois = new ObjectInputStream(fis)) {
+            PermissionCollection pc = (PermissionCollection)ois.readObject();
+            System.out.println("current collection = " + pc);
+        }
     }
 }
 

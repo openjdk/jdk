@@ -78,7 +78,7 @@ public class JavacTaskImpl extends JavacTask {
     private AtomicBoolean used = new AtomicBoolean();
     private Iterable<? extends Processor> processors;
 
-    private Integer result = null;
+    private Main.Result result = null;
 
     JavacTaskImpl(Main compilerMain,
                 String[] args,
@@ -131,7 +131,7 @@ public class JavacTaskImpl extends JavacTask {
             compilerMain.setAPIMode(true);
             result = compilerMain.compile(args, context, fileObjects, processors);
             cleanup();
-            return result == 0;
+            return result.isOK();
         } else {
             throw new IllegalStateException("multiple calls to method 'call'");
         }
@@ -158,10 +158,10 @@ public class JavacTaskImpl extends JavacTask {
         } else {
             initContext();
             compilerMain.setOptions(Options.instance(context));
-            compilerMain.filenames = new ListBuffer<File>();
-            List<File> filenames = compilerMain.processArgs(CommandLine.parse(args));
+            compilerMain.filenames = new LinkedHashSet<File>();
+            Collection<File> filenames = compilerMain.processArgs(CommandLine.parse(args));
             if (!filenames.isEmpty())
-                throw new IllegalArgumentException("Malformed arguments " + filenames.toString(" "));
+                throw new IllegalArgumentException("Malformed arguments " + toString(filenames, " "));
             compiler = JavaCompiler.instance(context);
             compiler.keepComments = true;
             compiler.genEndPos = true;
@@ -175,6 +175,17 @@ public class JavacTaskImpl extends JavacTask {
             // TODO: should handle the case after each phase if errors have occurred
             args = null;
         }
+    }
+
+    <T> String toString(Iterable<T> items, String sep) {
+        String currSep = "";
+        StringBuilder sb = new StringBuilder();
+        for (T item: items) {
+            sb.append(currSep);
+            sb.append(item.toString());
+            currSep = sep;
+        }
+        return sb.toString();
     }
 
     private void initContext() {
@@ -263,6 +274,9 @@ public class JavacTaskImpl extends JavacTask {
     public Iterable<? extends TypeElement> enter(Iterable<? extends CompilationUnitTree> trees)
         throws IOException
     {
+        if (trees == null && notYetEntered != null && notYetEntered.isEmpty())
+            return List.nil();
+
         prepareCompiler();
 
         ListBuffer<JCCompilationUnit> roots = null;

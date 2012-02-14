@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,7 @@
 package sun.net.www;
 
 import java.net.URL;
-import java.net.ContentHandler;
 import java.util.*;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.BufferedInputStream;
-import java.net.UnknownServiceException;
 
 /**
  * A class to represent an active connection to an object
@@ -99,7 +94,7 @@ abstract public class URLConnection extends java.net.URLConnection {
     public Map<String,List<String>> getRequestProperties() {
         if (connected)
             throw new IllegalStateException("Already connected");
-        return Collections.EMPTY_MAP;
+        return Collections.emptyMap();
     }
 
     public String getHeaderField(String name) {

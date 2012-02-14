@@ -25,7 +25,6 @@
 
 package sun.misc;
 
-import sun.misc.FpUtils;
 import sun.misc.DoubleConsts;
 import sun.misc.FloatConsts;
 import java.util.regex.*;

@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 4273454 7052537
+ * @bug 4273454 7054918 7052537
+ * @library ../testlibrary
  * @summary Make sure getProviders(filter) doesn't throw NPE
  * @run main/othervm NoInstalledProviders
  */
@@ -32,7 +33,16 @@ import java.security.*;
 
 public class NoInstalledProviders {
 
-    public static void main(String[] argv) {
+    public static void main(String[] args) throws Exception {
+        ProvidersSnapshot snapshot = ProvidersSnapshot.create();
+        try {
+            main0(args);
+        } finally {
+            snapshot.restore();
+        }
+    }
+
+    public static void main0(String[] args) throws Exception {
 
         Provider[] provs = Security.getProviders();
         // make sure there are no providers in the system

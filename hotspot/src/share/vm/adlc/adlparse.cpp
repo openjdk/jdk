@@ -126,9 +126,6 @@ void ADLParser::parse() {
   if (_globalNames[AttributeForm::_ins_cost] == NULL) {
     parse_err(SEMERR, "Did not declare 'ins_cost' attribute");
   }
-  if (_globalNames[AttributeForm::_ins_pc_relative] == NULL) {
-    parse_err(SEMERR, "Did not declare 'ins_pc_relative' attribute");
-  }
   if (_globalNames[AttributeForm::_op_cost] == NULL) {
     parse_err(SEMERR, "Did not declare 'op_cost' attribute");
   }
@@ -2812,6 +2809,13 @@ void ADLParser::ins_encode_parse_block(InstructForm& inst) {
     params->add_entry(param);
   }
 
+  // Check for duplicate ins_encode sections after parsing the block
+  // so that parsing can continue and find any other errors.
+  if (inst._insencode != NULL) {
+    parse_err(SYNERR, "Multiple ins_encode sections defined\n");
+    return;
+  }
+
   // Set encode class of this instruction.
   inst._insencode = encrule;
 }
@@ -3043,6 +3047,13 @@ void ADLParser::ins_encode_parse(InstructForm& inst) {
   }
   next_char();                     // move past ';'
   skipws();                        // be friendly to oper_parse()
+
+  // Check for duplicate ins_encode sections after parsing the block
+  // so that parsing can continue and find any other errors.
+  if (inst._insencode != NULL) {
+    parse_err(SYNERR, "Multiple ins_encode sections defined\n");
+    return;
+  }
 
   // Debug Stuff
   if (_AD._adl_debug > 1) fprintf(stderr,"Instruction Encode: %s\n", ec_name);

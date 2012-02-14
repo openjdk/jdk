@@ -99,14 +99,16 @@ class AllocationStats VALUE_OBJ_CLASS_SPEC {
     // vulnerable to noisy glitches. In such cases, we
     // ignore the current sample and use currently available
     // historical estimates.
-    // XXX NEEDS TO BE FIXED
-    // assert(prevSweep() + splitBirths() >= splitDeaths() + (ssize_t)count, "Conservation Principle");
-    //     ^^^^^^^^^^^^^^^^^^^^^^^^^^^    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    //     "Total Stock"                  "Not used at this block size"
+    assert(prevSweep() + splitBirths() + coalBirths()        // "Total Production Stock"
+           >= splitDeaths() + coalDeaths() + (ssize_t)count, // "Current stock + depletion"
+           "Conservation Principle");
     if (inter_sweep_current > _threshold) {
-      ssize_t demand = prevSweep() - (ssize_t)count + splitBirths() - splitDeaths();
-      // XXX NEEDS TO BE FIXED
-      // assert(demand >= 0, "Demand should be non-negative");
+      ssize_t demand = prevSweep() - (ssize_t)count + splitBirths() + coalBirths()
+                       - splitDeaths() - coalDeaths();
+      assert(demand >= 0,
+             err_msg("Demand (" SSIZE_FORMAT ") should be non-negative for "
+                     PTR_FORMAT " (size=" SIZE_FORMAT ")",
+                     demand, this, count));
       // Defensive: adjust for imprecision in event counting
       if (demand < 0) {
         demand = 0;

@@ -30,8 +30,10 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/exceptions.hpp"
 
+#ifndef USDT2
 HS_DTRACE_PROBE_DECL(hs_private, safepoint__begin);
 HS_DTRACE_PROBE_DECL(hs_private, safepoint__end);
+#endif /* !USDT2 */
 
 TimeStamp RuntimeService::_app_timer;
 TimeStamp RuntimeService::_safepoint_timer;
@@ -108,7 +110,11 @@ void RuntimeService::init() {
 }
 
 void RuntimeService::record_safepoint_begin() {
+#ifndef USDT2
   HS_DTRACE_PROBE(hs_private, safepoint__begin);
+#else /* USDT2 */
+  HS_PRIVATE_SAFEPOINT_BEGIN();
+#endif /* USDT2 */
 
   // Print the time interval in which the app was executing
   if (PrintGCApplicationConcurrentTime) {
@@ -133,7 +139,11 @@ void RuntimeService::record_safepoint_synchronized() {
 }
 
 void RuntimeService::record_safepoint_end() {
+#ifndef USDT2
   HS_DTRACE_PROBE(hs_private, safepoint__end);
+#else /* USDT2 */
+  HS_PRIVATE_SAFEPOINT_END();
+#endif /* USDT2 */
 
   // Print the time interval for which the app was stopped
   // during the current safepoint operation.

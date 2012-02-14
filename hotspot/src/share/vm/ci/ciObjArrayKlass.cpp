@@ -93,6 +93,7 @@ ciKlass* ciObjArrayKlass::element_klass() {
       // element klass by name.
       _element_klass = CURRENT_THREAD_ENV->get_klass_by_name_impl(
                           this,
+                          constantPoolHandle(),
                           construct_array_name(base_element_klass()->name(),
                                                dimension() - 1),
                           false);

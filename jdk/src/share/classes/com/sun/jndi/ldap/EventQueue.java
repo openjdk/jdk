@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.jndi.ldap;
 
-import java.io.*;
 import java.util.Vector;
 import java.util.EventObject;
 
@@ -52,9 +51,9 @@ final class EventQueue implements Runnable {
         QueueElement next = null;
         QueueElement prev = null;
         EventObject event = null;
-        Vector vector = null;
+        Vector<NamingListener> vector = null;
 
-        QueueElement(EventObject event, Vector vector) {
+        QueueElement(EventObject event, Vector<NamingListener> vector) {
             this.event = event;
             this.vector = vector;
         }
@@ -87,7 +86,7 @@ final class EventQueue implements Runnable {
      * are notified.
      * @param vector List of NamingListeners that will be notified of event.
      */
-    synchronized void enqueue(EventObject event, Vector vector) {
+    synchronized void enqueue(EventObject event, Vector<NamingListener> vector) {
         QueueElement newElt = new QueueElement(event, vector);
 
         if (head == null) {
@@ -133,7 +132,7 @@ final class EventQueue implements Runnable {
         try {
             while ((qe = dequeue()) != null) {
                 EventObject e = qe.event;
-                Vector v = qe.vector;
+                Vector<NamingListener> v = qe.vector;
 
                 for (int i = 0; i < v.size(); i++) {
 
@@ -145,12 +144,11 @@ final class EventQueue implements Runnable {
                     // only enqueue events with listseners of the correct type.
 
                     if (e instanceof NamingEvent) {
-                        ((NamingEvent)e).dispatch((NamingListener)v.elementAt(i));
+                        ((NamingEvent)e).dispatch(v.elementAt(i));
 
                     // An exception occurred: if notify all naming listeners
                     } else if (e instanceof NamingExceptionEvent) {
-                        ((NamingExceptionEvent)e).dispatch(
-                            (NamingListener)v.elementAt(i));
+                        ((NamingExceptionEvent)e).dispatch(v.elementAt(i));
                     } else if (e instanceof UnsolicitedNotificationEvent) {
                         ((UnsolicitedNotificationEvent)e).dispatch(
                             (UnsolicitedNotificationListener)v.elementAt(i));

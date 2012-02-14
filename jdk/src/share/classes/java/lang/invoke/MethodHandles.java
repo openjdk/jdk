@@ -1995,16 +1995,8 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
         //                lambda(        arg...) { target(arg...) } )
         MethodType newType = targetType.changeReturnType(filterType.returnType());
         MethodHandle result = null;
-        if (AdapterMethodHandle.canCollectArguments(filterType, targetType, 0, false)) {
-            result = AdapterMethodHandle.makeCollectArguments(filter, target, 0, false);
-            if (result != null)  return result;
-        }
-        // FIXME: Too many nodes here.
-        assert(MethodHandleNatives.workaroundWithoutRicochetFrames());  // this class is deprecated
-        MethodHandle returner = dropArguments(filter, filterValues, targetType.parameterList());
-        result = foldArguments(returner, target);
-        assert(result.type().equals(newType));
-        return result;
+        assert(AdapterMethodHandle.canCollectArguments(filterType, targetType, 0, false));
+        return AdapterMethodHandle.makeCollectArguments(filter, target, 0, false);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,6 @@
 
 package com.sun.tools.javac.util;
 
-import com.sun.tools.javac.code.Source;
-import com.sun.tools.javac.main.JavacOption;
-import com.sun.tools.javac.main.OptionName;
-import com.sun.tools.javac.main.RecognizedOptions;
-import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
@@ -54,6 +49,15 @@ import java.util.Map;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 
+import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Source;
+import com.sun.tools.javac.file.FSInfo;
+import com.sun.tools.javac.file.Locations;
+import com.sun.tools.javac.main.JavacOption;
+import com.sun.tools.javac.main.OptionName;
+import com.sun.tools.javac.main.RecognizedOptions;
+import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
+
 /**
  * Utility methods for building a filemanager.
  * There are no references here to file-system specific objects such as
@@ -63,15 +67,21 @@ public abstract class BaseFileManager {
     protected BaseFileManager(Charset charset) {
         this.charset = charset;
         byteBufferCache = new ByteBufferCache();
+        locations = createLocations();
     }
 
     /**
      * Set the context for JavacPathFileManager.
      */
-    protected void setContext(Context context) {
+    public void setContext(Context context) {
         log = Log.instance(context);
         options = Options.instance(context);
         classLoaderClass = options.get("procloader");
+        locations.update(log, options, Lint.instance(context), FSInfo.instance(context));
+    }
+
+    protected Locations createLocations() {
+        return new Locations();
     }
 
     /**
@@ -87,6 +97,8 @@ public abstract class BaseFileManager {
     protected Options options;
 
     protected String classLoaderClass;
+
+    protected Locations locations;
 
     protected Source getSource() {
         String sourceName = options.get(OptionName.SOURCE);
@@ -322,16 +334,46 @@ public abstract class BaseFileManager {
 
     // <editor-fold defaultstate="collapsed" desc="Content cache">
     public CharBuffer getCachedContent(JavaFileObject file) {
-        SoftReference<CharBuffer> r = contentCache.get(file);
-        return (r == null ? null : r.get());
+        ContentCacheEntry e = contentCache.get(file);
+        if (e == null)
+            return null;
+
+        if (!e.isValid(file)) {
+            contentCache.remove(file);
+            return null;
+        }
+
+        return e.getValue();
     }
 
     public void cache(JavaFileObject file, CharBuffer cb) {
-        contentCache.put(file, new SoftReference<CharBuffer>(cb));
+        contentCache.put(file, new ContentCacheEntry(file, cb));
     }
 
-    protected final Map<JavaFileObject, SoftReference<CharBuffer>> contentCache
-            = new HashMap<JavaFileObject, SoftReference<CharBuffer>>();
+    public void flushCache(JavaFileObject file) {
+        contentCache.remove(file);
+    }
+
+    protected final Map<JavaFileObject, ContentCacheEntry> contentCache
+            = new HashMap<JavaFileObject, ContentCacheEntry>();
+
+    protected static class ContentCacheEntry {
+        final long timestamp;
+        final SoftReference<CharBuffer> ref;
+
+        ContentCacheEntry(JavaFileObject file, CharBuffer cb) {
+            this.timestamp = file.getLastModified();
+            this.ref = new SoftReference<CharBuffer>(cb);
+        }
+
+        boolean isValid(JavaFileObject file) {
+            return timestamp == file.getLastModified();
+        }
+
+        CharBuffer getValue() {
+            return ref.get();
+        }
+    }
     // </editor-fold>
 
     public static Kind getKind(String name) {

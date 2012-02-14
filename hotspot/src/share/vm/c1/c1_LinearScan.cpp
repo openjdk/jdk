@@ -2404,7 +2404,7 @@ OopMap* LinearScan::compute_oop_map(IntervalWalker* iw, LIR_Op* op, CodeEmitInfo
       assert(!is_call_site || assigned_reg >= nof_regs || !is_caller_save(assigned_reg), "interval is in a caller-save register at a call -> register will be overwritten");
 
       VMReg name = vm_reg_for_interval(interval);
-      map->set_oop(name);
+      set_oop(map, name);
 
       // Spill optimization: when the stack value is guaranteed to be always correct,
       // then it must be added to the oop map even if the interval is currently in a register
@@ -2415,7 +2415,7 @@ OopMap* LinearScan::compute_oop_map(IntervalWalker* iw, LIR_Op* op, CodeEmitInfo
         assert(interval->canonical_spill_slot() >= LinearScan::nof_regs, "no spill slot assigned");
         assert(interval->assigned_reg() < LinearScan::nof_regs, "interval is on stack, so stack slot is registered twice");
 
-        map->set_oop(frame_map()->slot_regname(interval->canonical_spill_slot() - LinearScan::nof_regs));
+        set_oop(map, frame_map()->slot_regname(interval->canonical_spill_slot() - LinearScan::nof_regs));
       }
     }
   }
@@ -2424,7 +2424,7 @@ OopMap* LinearScan::compute_oop_map(IntervalWalker* iw, LIR_Op* op, CodeEmitInfo
   assert(info->stack() != NULL, "CodeEmitInfo must always have a stack");
   int locks_count = info->stack()->total_locks_size();
   for (int i = 0; i < locks_count; i++) {
-    map->set_oop(frame_map()->monitor_object_regname(i));
+    set_oop(map, frame_map()->monitor_object_regname(i));
   }
 
   return map;
@@ -2619,6 +2619,24 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
 
     Location::Type loc_type = float_saved_as_double ? Location::float_in_dbl : Location::normal;
     VMReg rname = frame_map()->fpu_regname(opr->fpu_regnr());
+#ifndef __SOFTFP__
+#ifndef VM_LITTLE_ENDIAN
+    if (! float_saved_as_double) {
+      // On big endian system, we may have an issue if float registers use only
+      // the low half of the (same) double registers.
+      // Both the float and the double could have the same regnr but would correspond
+      // to two different addresses once saved.
+
+      // get next safely (no assertion checks)
+      VMReg next = VMRegImpl::as_VMReg(1+rname->value());
+      if (next->is_reg() &&
+          (next->as_FloatRegister() == rname->as_FloatRegister())) {
+        // the back-end does use the same numbering for the double and the float
+        rname = next; // VMReg for the low bits, e.g. the real VMReg for the float
+      }
+    }
+#endif
+#endif
     LocationValue* sv = new LocationValue(Location::new_reg_loc(loc_type, rname));
 
     scope_values->append(sv);

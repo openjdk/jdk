@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,6 +139,7 @@ class CipherHelper {
         return flag;
     }
 
+    @SuppressWarnings("fallthrough")
     byte[] calculateChecksum(int alg, byte[] header, byte[] trailer,
         byte[] data, int start, int len, int tokenId) throws GSSException {
 
@@ -1265,7 +1266,7 @@ class CipherHelper {
         // Note: When using this RC4 based encryption type, the sequence number
         // is always sent in big-endian rather than little-endian order.
         byte[] seqNum = new byte[4];
-        token.writeBigEndian(token.getSequenceNumber(), seqNum);
+        WrapToken.writeBigEndian(token.getSequenceNumber(), seqNum);
 
         // Krb5Token.debug("\narcFourEncrypt:" + Krb5Token.getHexBytes(all));
 

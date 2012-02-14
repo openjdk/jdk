@@ -751,7 +751,7 @@ ThreadSnapshot::ThreadSnapshot(JavaThread* thread) {
       _blocker_object = obj();
       JavaThread* owner = ObjectSynchronizer::get_lock_owner(obj, false);
       if ((owner == NULL && _thread_status == java_lang_Thread::BLOCKED_ON_MONITOR_ENTER)
-          || (owner != NULL && owner->is_attaching())) {
+          || (owner != NULL && owner->is_attaching_via_jni())) {
         // ownership information of the monitor is not available
         // (may no longer be owned or releasing to some other thread)
         // make this thread in RUNNABLE state.
@@ -899,7 +899,7 @@ ThreadsListEnumerator::ThreadsListEnumerator(Thread* cur_thread,
     }
 
     // skip jni threads in the process of attaching
-    if (!include_jni_attaching_threads && jt->is_attaching()) {
+    if (!include_jni_attaching_threads && jt->is_attaching_via_jni()) {
       continue;
     }
 
