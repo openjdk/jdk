@@ -1542,7 +1542,28 @@ public class Code {
      */
     public void addCatch(
         char startPc, char endPc, char handlerPc, char catchType) {
-        catchInfo.append(new char[]{startPc, endPc, handlerPc, catchType});
+            catchInfo.append(new char[]{startPc, endPc, handlerPc, catchType});
+        }
+
+
+    public void compressCatchTable() {
+        ListBuffer<char[]> compressedCatchInfo = ListBuffer.lb();
+        List<Integer> handlerPcs = List.nil();
+        for (char[] catchEntry : catchInfo.elems) {
+            handlerPcs = handlerPcs.prepend((int)catchEntry[2]);
+        }
+        for (char[] catchEntry : catchInfo.elems) {
+            int startpc = catchEntry[0];
+            int endpc = catchEntry[1];
+            if (startpc == endpc ||
+                    (startpc == (endpc - 1) &&
+                    handlerPcs.contains(startpc))) {
+                continue;
+            } else {
+                compressedCatchInfo.append(catchEntry);
+            }
+        }
+        catchInfo = compressedCatchInfo;
     }
 
 

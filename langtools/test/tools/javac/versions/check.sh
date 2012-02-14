@@ -22,7 +22,7 @@
 #
 
 # @test
-# @bug 4981566 5028634 5094412 6304984
+# @bug 4981566 5028634 5094412 6304984 7025786 7025789
 # @summary Check interpretation of -target and -source options
 # @build CheckClassFileVersion
 # @run shell check.sh 
@@ -65,9 +65,14 @@ check 51.0 -source 1.6
 check 51.0 -source 6
 check 51.0 -source 1.7
 check 51.0 -source 7
-check 51.0 -target 1.7
-check 51.0 -target 7
+check 51.0 -source 7 -target 1.7
+check 51.0 -source 7 -target 7
 
+# Update when class file version is revved
+check 51.0 -source 1.8
+check 51.0 -source 8
+check 51.0 -target 1.8
+check 51.0 -target 8
 
 # Check source versions
 
@@ -96,6 +101,7 @@ checksrc14() { pass $* $TC/X.java; fail $* $TC/Y.java; }
 checksrc15() { pass $* $TC/X.java; pass $* $TC/Y.java; }
 checksrc16() { checksrc15 $* ; }
 checksrc17() { checksrc15 $* ; }
+checksrc18() { checksrc15 $* ; }
 
 checksrc14 -source 1.4
 checksrc14 -source 1.4 -target 1.5
@@ -108,16 +114,24 @@ checksrc16 -source 6
 checksrc16 -source 1.6 -target 1.6
 checksrc16 -source 6 -target 6
 
-checksrc17
-checksrc17 -target 1.7
-checksrc17 -target 7
 checksrc17 -source 1.7
 checksrc17 -source 7
 checksrc17 -source 1.7 -target 1.7
 checksrc17 -source 7 -target 7
+
+checksrc18
+checksrc18 -target 1.8
+checksrc18 -target 8
+checksrc18 -source 1.8
+checksrc18 -source 8
+checksrc18 -source 1.8 -target 1.8
+checksrc18 -source 8 -target 8
 
 fail -source 1.5 -target 1.4 $TC/X.java
 fail -source 1.6 -target 1.4 $TC/X.java
 fail -source 6   -target 1.4 $TC/X.java
 fail -source 1.6 -target 1.5 $TC/X.java
 fail -source 6   -target 1.5 $TC/X.java
+fail -source 7   -target 1.6 $TC/X.java
+fail -source 8   -target 1.6 $TC/X.java
+fail -source 8   -target 1.7 $TC/X.java

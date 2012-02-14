@@ -25,7 +25,7 @@
 # @summary (cl) ClassLoader.loadClass locks all instances in chain 
 #          when delegating
 # 
-# @run shell/timeout=10 TestOneWayDelegate.sh
+# @run shell TestOneWayDelegate.sh
 
 # if running by hand on windows, change TESTSRC and TESTCLASSES to "."
 if [ "${TESTSRC}" = "" ] ; then

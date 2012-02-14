@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.crypto.provider;
 
 import java.math.BigInteger;
-import java.util.*;
 import java.io.*;
 import sun.security.util.*;
 import sun.security.x509.*;
@@ -180,11 +179,13 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
         engineInit(encoded);
     }
 
-    protected AlgorithmParameterSpec engineGetParameterSpec(Class paramSpec)
+    protected <T extends AlgorithmParameterSpec>
+        T engineGetParameterSpec(Class<T> paramSpec)
         throws InvalidParameterSpecException {
         if (OAEPParameterSpec.class.isAssignableFrom(paramSpec)) {
-            return new OAEPParameterSpec(mdName, "MGF1", mgfSpec,
-                new PSource.PSpecified(p));
+            return paramSpec.cast(
+                new OAEPParameterSpec(mdName, "MGF1", mgfSpec,
+                                      new PSource.PSpecified(p)));
         } else {
             throw new InvalidParameterSpecException
                 ("Inappropriate parameter specification");

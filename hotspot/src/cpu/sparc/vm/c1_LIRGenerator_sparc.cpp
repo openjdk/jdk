@@ -328,7 +328,8 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
   bool use_length = x->length() != NULL;
   bool obj_store = x->elt_type() == T_ARRAY || x->elt_type() == T_OBJECT;
   bool needs_store_check = obj_store && (x->value()->as_Constant() == NULL ||
-                                         !get_jobject_constant(x->value())->is_null_object());
+                                         !get_jobject_constant(x->value())->is_null_object() ||
+                                         x->should_profile());
 
   LIRItem array(x->array(), this);
   LIRItem index(x->index(), this);
@@ -382,7 +383,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
     LIR_Opr tmp3 = FrameMap::G5_opr;
 
     CodeEmitInfo* store_check_info = new CodeEmitInfo(range_check_info);
-    __ store_check(value.result(), array.result(), tmp1, tmp2, tmp3, store_check_info);
+    __ store_check(value.result(), array.result(), tmp1, tmp2, tmp3, store_check_info, x->profiled_method(), x->profiled_bci());
   }
 
   if (obj_store) {

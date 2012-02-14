@@ -112,6 +112,32 @@ public class OopUtilities implements /* imports */ JVMTIThreadState {
     return buf.toString();
   }
 
+  public static String escapeString(String s) {
+    StringBuilder sb = null;
+    for (int index = 0; index < s.length(); index++) {
+      char value = s.charAt(index);
+      if (value >= 32 && value < 127 || value == '\'' || value == '\\') {
+        if (sb != null) {
+          sb.append(value);
+        }
+      } else {
+        if (sb == null) {
+          sb = new StringBuilder(s.length() * 2);
+          sb.append(s, 0, index);
+        }
+        sb.append("\\u");
+        if (value < 0x10) sb.append("000");
+        else if (value < 0x100) sb.append("00");
+        else if (value < 0x1000) sb.append("0");
+        sb.append(Integer.toHexString(value));
+      }
+    }
+    if (sb != null) {
+      return sb.toString();
+    }
+    return s;
+  }
+
   public static String stringOopToString(Oop stringOop) {
     if (offsetField == null) {
       InstanceKlass k = (InstanceKlass) stringOop.getKlass();
@@ -127,6 +153,10 @@ public class OopUtilities implements /* imports */ JVMTIThreadState {
     return charArrayToString((TypeArray) valueField.getValue(stringOop),
                              offsetField.getValue(stringOop),
                              countField.getValue(stringOop));
+  }
+
+  public static String stringOopToEscapedString(Oop stringOop) {
+    return escapeString(stringOopToString(stringOop));
   }
 
   private static void initThreadGroupFields() {

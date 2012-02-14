@@ -127,12 +127,8 @@ public abstract class RenderingEngine {
                         try {
                             Class cls = Class.forName(ductusREClass);
                             return cls.newInstance();
-                        } catch (ClassNotFoundException x) {
+                        } catch (ReflectiveOperationException ignored) {
                             // not found
-                        } catch (IllegalAccessException x) {
-                            // should not reach here
-                        } catch (InstantiationException x) {
-                            // should not reach here
                         }
                     }
 

@@ -44,6 +44,7 @@ public class SystemDictionary {
   private static sun.jvm.hotspot.types.OopField systemKlassField;
   private static sun.jvm.hotspot.types.OopField threadKlassField;
   private static sun.jvm.hotspot.types.OopField threadGroupKlassField;
+  private static sun.jvm.hotspot.types.OopField methodHandleKlassField;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -69,6 +70,7 @@ public class SystemDictionary {
     systemKlassField = type.getOopField(WK_KLASS("System_klass"));
     threadKlassField = type.getOopField(WK_KLASS("Thread_klass"));
     threadGroupKlassField = type.getOopField(WK_KLASS("ThreadGroup_klass"));
+    methodHandleKlassField = type.getOopField(WK_KLASS("MethodHandle_klass"));
   }
 
   // This WK functions must follow the definitions in systemDictionary.hpp:
@@ -125,6 +127,10 @@ public class SystemDictionary {
 
   public static InstanceKlass getSystemKlass() {
     return (InstanceKlass) newOop(systemKlassField.getValue());
+  }
+
+  public static InstanceKlass getMethodHandleKlass() {
+    return (InstanceKlass) newOop(methodHandleKlassField.getValue());
   }
 
   public InstanceKlass getAbstractOwnableSynchronizerKlass() {

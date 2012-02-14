@@ -35,7 +35,6 @@ import java.util.*;
 import java.util.jar.*;
 
 import sun.security.pkcs.*;
-import sun.security.timestamp.TimestampToken;
 import sun.misc.BASE64Decoder;
 
 import sun.security.jca.Providers;
@@ -181,7 +180,7 @@ public class SignatureFileVerifier {
      *
      */
     public void process(Hashtable<String, CodeSigner[]> signers,
-            List manifestDigests)
+            List<Object> manifestDigests)
         throws IOException, SignatureException, NoSuchAlgorithmException,
             JarException, CertificateException
     {
@@ -198,7 +197,7 @@ public class SignatureFileVerifier {
     }
 
     private void processImpl(Hashtable<String, CodeSigner[]> signers,
-            List manifestDigests)
+            List<Object> manifestDigests)
         throws IOException, SignatureException, NoSuchAlgorithmException,
             JarException, CertificateException
     {
@@ -277,7 +276,7 @@ public class SignatureFileVerifier {
     private boolean verifyManifestHash(Manifest sf,
                                        ManifestDigester md,
                                        BASE64Decoder decoder,
-                                       List manifestDigests)
+                                       List<Object> manifestDigests)
          throws IOException
     {
         Attributes mattr = sf.getMainAttributes();
@@ -485,7 +484,7 @@ public class SignatureFileVerifier {
                 signers = new ArrayList<CodeSigner>();
             }
             // Append the new code signer
-            signers.add(new CodeSigner(certChain, getTimestamp(info)));
+            signers.add(new CodeSigner(certChain, info.getTimestamp()));
 
             if (debug != null) {
                 debug.println("Signature Block Certificate: " +
@@ -498,62 +497,6 @@ public class SignatureFileVerifier {
         } else {
             return null;
         }
-    }
-
-    /*
-     * Examines a signature timestamp token to generate a timestamp object.
-     *
-     * Examines the signer's unsigned attributes for a
-     * <tt>signatureTimestampToken</tt> attribute. If present,
-     * then it is parsed to extract the date and time at which the
-     * timestamp was generated.
-     *
-     * @param info A signer information element of a PKCS 7 block.
-     *
-     * @return A timestamp token or null if none is present.
-     * @throws IOException if an error is encountered while parsing the
-     *         PKCS7 data.
-     * @throws NoSuchAlgorithmException if an error is encountered while
-     *         verifying the PKCS7 object.
-     * @throws SignatureException if an error is encountered while
-     *         verifying the PKCS7 object.
-     * @throws CertificateException if an error is encountered while generating
-     *         the TSA's certpath.
-     */
-    private Timestamp getTimestamp(SignerInfo info)
-        throws IOException, NoSuchAlgorithmException, SignatureException,
-            CertificateException {
-
-        Timestamp timestamp = null;
-
-        // Extract the signer's unsigned attributes
-        PKCS9Attributes unsignedAttrs = info.getUnauthenticatedAttributes();
-        if (unsignedAttrs != null) {
-            PKCS9Attribute timestampTokenAttr =
-                unsignedAttrs.getAttribute("signatureTimestampToken");
-            if (timestampTokenAttr != null) {
-                PKCS7 timestampToken =
-                    new PKCS7((byte[])timestampTokenAttr.getValue());
-                // Extract the content (an encoded timestamp token info)
-                byte[] encodedTimestampTokenInfo =
-                    timestampToken.getContentInfo().getData();
-                // Extract the signer (the Timestamping Authority)
-                // while verifying the content
-                SignerInfo[] tsa =
-                    timestampToken.verify(encodedTimestampTokenInfo);
-                // Expect only one signer
-                ArrayList<X509Certificate> chain =
-                                tsa[0].getCertificateChain(timestampToken);
-                CertPath tsaChain = certificateFactory.generateCertPath(chain);
-                // Create a timestamp token info object
-                TimestampToken timestampTokenInfo =
-                    new TimestampToken(encodedTimestampTokenInfo);
-                // Create a timestamp object
-                timestamp =
-                    new Timestamp(timestampTokenInfo.getDate(), tsaChain);
-            }
-        }
-        return timestamp;
     }
 
     // for the toHex function

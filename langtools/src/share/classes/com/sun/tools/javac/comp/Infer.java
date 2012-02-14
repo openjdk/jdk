@@ -34,7 +34,8 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Type.ForAll.ConstraintKind;
 import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.comp.Resolve.VerboseResolutionMode;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 import static com.sun.tools.javac.code.TypeTags.*;
 
@@ -56,6 +57,7 @@ public class Infer {
     Types types;
     Check chk;
     Resolve rs;
+    Log log;
     JCDiagnostic.Factory diags;
 
     public static Infer instance(Context context) {
@@ -70,6 +72,7 @@ public class Infer {
         syms = Symtab.instance(context);
         types = Types.instance(context);
         rs = Resolve.instance(context);
+        log = Log.instance(context);
         chk = Check.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         ambiguousNoInstanceException =
@@ -269,21 +272,18 @@ public class Infer {
             // VGJ: sort of inlined maximizeInst() below.  Adding
             // bounds can cause lobounds that are above hibounds.
             List<Type> hibounds = Type.filter(that.hibounds, errorFilter);
-            if (hibounds.isEmpty())
-                return;
             Type hb = null;
-            if (hibounds.tail.isEmpty())
+            if (hibounds.isEmpty())
+                hb = syms.objectType;
+            else if (hibounds.tail.isEmpty())
                 hb = hibounds.head;
-            else for (List<Type> bs = hibounds;
-                      bs.nonEmpty() && hb == null;
-                      bs = bs.tail) {
-                if (isSubClass(bs.head, hibounds))
-                    hb = types.fromUnknownFun.apply(bs.head);
-            }
+            else
+                hb = types.glb(hibounds);
             if (hb == null ||
-                !types.isSubtypeUnchecked(hb, hibounds, warn) ||
-                !types.isSubtypeUnchecked(that.inst, hb, warn))
-                throw ambiguousNoInstanceException;
+                hb.isErroneous())
+                throw ambiguousNoInstanceException
+                        .setMessage("incompatible.upper.bounds",
+                                    that.qtype, hibounds);
         }
     }
 
@@ -463,7 +463,7 @@ public class Infer {
             // quantify result type with them
             final List<Type> inferredTypes = insttypes.toList();
             final List<Type> all_tvars = tvars; //this is the wrong tvars
-            return new UninferredMethodType(mt, restvars.toList()) {
+            return new UninferredMethodType(env.tree.pos(), msym, mt, restvars.toList()) {
                 @Override
                 List<Type> getConstraints(TypeVar tv, ConstraintKind ck) {
                     for (Type t : restundet.toList()) {
@@ -505,13 +505,17 @@ public class Infer {
          * type - when the return type is instantiated (see Infer.instantiateExpr)
          * the underlying method type is also updated.
          */
-        static abstract class UninferredMethodType extends DelegatedType {
+        abstract class UninferredMethodType extends DelegatedType {
 
             final List<Type> tvars;
+            final Symbol msym;
+            final DiagnosticPosition pos;
 
-            public UninferredMethodType(MethodType mtype, List<Type> tvars) {
+            public UninferredMethodType(DiagnosticPosition pos, Symbol msym, MethodType mtype, List<Type> tvars) {
                 super(METHOD, new MethodType(mtype.argtypes, null, mtype.thrown, mtype.tsym));
                 this.tvars = tvars;
+                this.msym = msym;
+                this.pos = pos;
                 asMethodType().restype = new UninferredReturnType(tvars, mtype.restype);
             }
 
@@ -546,6 +550,9 @@ public class Infer {
                 public Type inst(List<Type> actuals, Types types) {
                     Type newRestype = super.inst(actuals, types);
                     instantiateReturnType(newRestype, actuals, types);
+                    if (rs.verboseResolutionMode.contains(VerboseResolutionMode.DEFERRED_INST)) {
+                        log.note(pos, "deferred.method.inst", msym, UninferredMethodType.this.qtype, newRestype);
+                    }
                     return newRestype;
                 }
                 @Override

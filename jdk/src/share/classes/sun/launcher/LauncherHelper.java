@@ -396,7 +396,11 @@ public enum LauncherHelper {
                 if (mainAttrs == null) {
                     abort(ostream, null, "java.launcher.jar.error3", jarname);
                 }
-                return mainAttrs.getValue(MAIN_CLASS).trim();
+                String mainValue = mainAttrs.getValue(MAIN_CLASS);
+                if (mainValue == null) {
+                    abort(ostream, null, "java.launcher.jar.error3", jarname);
+                }
+                return mainValue.trim();
             } finally {
                 if (jarFile != null) {
                     jarFile.close();

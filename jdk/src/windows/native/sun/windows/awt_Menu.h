@@ -72,6 +72,8 @@ public:
     virtual AwtMenuBar* GetMenuBar();
 
     void AddSeparator();
+    virtual void UpdateContainerLayout();
+    void UpdateLayout();
     virtual void AddItem(AwtMenuItem *item);
     virtual void DeleteItem(UINT index);
 
@@ -103,6 +105,7 @@ protected:
     virtual void RemoveCmdID() { /* do nothing */ }
 
 private:
+    void UpdateLayout(const HMENU hmenu);
     HMENU    m_hMenu;
 };
 

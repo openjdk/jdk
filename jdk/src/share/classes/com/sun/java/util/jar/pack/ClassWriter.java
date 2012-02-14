@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Iterator;
 import java.util.List;
 import static com.sun.java.util.jar.pack.Constants.*;
 /**
@@ -165,14 +164,13 @@ class ClassWriter {
     }
 
     void writeMembers(boolean doMethods) throws IOException {
-        List mems;
+        List<? extends Class.Member> mems;
         if (!doMethods)
             mems = cls.getFields();
         else
             mems = cls.getMethods();
         writeShort(mems.size());
-        for (Iterator i = mems.iterator(); i.hasNext(); ) {
-            Class.Member m = (Class.Member) i.next();
+        for (Class.Member m : mems) {
             writeMember(m, doMethods);
         }
     }

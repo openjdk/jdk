@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ final class Session implements Comparable<Session> {
     }
 
     long id() {
-        if (token.isPresent(this) == false) {
+        if (token.isPresent(this.id) == false) {
             throw new ProviderException("Token has been removed");
         }
         lastAccess = System.currentTimeMillis();
@@ -167,7 +167,9 @@ final class SessionRef extends PhantomReference<Session>
     void dispose() {
         refList.remove(this);
         try {
-            token.p11.C_CloseSession(id);
+            if (token.isPresent(id)) {
+                token.p11.C_CloseSession(id);
+            }
         } catch (PKCS11Exception e1) {
             // ignore
         } catch (ProviderException e2) {

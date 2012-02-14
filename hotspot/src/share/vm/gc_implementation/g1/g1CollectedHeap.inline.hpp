@@ -34,9 +34,10 @@
 
 // Inline functions for G1CollectedHeap
 
+template <class T>
 inline HeapRegion*
-G1CollectedHeap::heap_region_containing(const void* addr) const {
-  HeapRegion* hr = _hrs->addr_to_region(addr);
+G1CollectedHeap::heap_region_containing(const T addr) const {
+  HeapRegion* hr = _hrs.addr_to_region((HeapWord*) addr);
   // hr can be null if addr in perm_gen
   if (hr != NULL && hr->continuesHumongous()) {
     hr = hr->humongous_start_region();
@@ -44,19 +45,16 @@ G1CollectedHeap::heap_region_containing(const void* addr) const {
   return hr;
 }
 
+template <class T>
 inline HeapRegion*
-G1CollectedHeap::heap_region_containing_raw(const void* addr) const {
-  assert(_g1_reserved.contains(addr), "invariant");
-  size_t index = pointer_delta(addr, _g1_reserved.start(), 1)
-                                        >> HeapRegion::LogOfHRGrainBytes;
-
-  HeapRegion* res = _hrs->at(index);
-  assert(res == _hrs->addr_to_region(addr), "sanity");
+G1CollectedHeap::heap_region_containing_raw(const T addr) const {
+  assert(_g1_reserved.contains((const void*) addr), "invariant");
+  HeapRegion* res = _hrs.addr_to_region_unsafe((HeapWord*) addr);
   return res;
 }
 
 inline bool G1CollectedHeap::obj_in_cs(oop obj) {
-  HeapRegion* r = _hrs->addr_to_region(obj);
+  HeapRegion* r = _hrs.addr_to_region((HeapWord*) obj);
   return r != NULL && r->in_collection_set();
 }
 
@@ -75,6 +73,38 @@ G1CollectedHeap::attempt_allocation(size_t word_size,
   assert_heap_not_locked();
   if (result != NULL) {
     dirty_young_block(result, word_size);
+  }
+  return result;
+}
+
+inline HeapWord* G1CollectedHeap::survivor_attempt_allocation(size_t
+                                                              word_size) {
+  assert(!isHumongous(word_size),
+         "we should not be seeing humongous-size allocations in this path");
+
+  HeapWord* result = _survivor_gc_alloc_region.attempt_allocation(word_size,
+                                                      false /* bot_updates */);
+  if (result == NULL) {
+    MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
+    result = _survivor_gc_alloc_region.attempt_allocation_locked(word_size,
+                                                      false /* bot_updates */);
+  }
+  if (result != NULL) {
+    dirty_young_block(result, word_size);
+  }
+  return result;
+}
+
+inline HeapWord* G1CollectedHeap::old_attempt_allocation(size_t word_size) {
+  assert(!isHumongous(word_size),
+         "we should not be seeing humongous-size allocations in this path");
+
+  HeapWord* result = _old_gc_alloc_region.attempt_allocation(word_size,
+                                                       true /* bot_updates */);
+  if (result == NULL) {
+    MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
+    result = _old_gc_alloc_region.attempt_allocation_locked(word_size,
+                                                       true /* bot_updates */);
   }
   return result;
 }

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,15 +45,15 @@ set +e
 failed=0
 
 # -histo[:live] option
-${JMAP} -histo $appJavaPid
+${JMAP} -J-XX:+UsePerfData -histo $appJavaPid
 if [ $? != 0 ]; then failed=1; fi
 
-${JMAP} -histo:live $appJavaPid
+${JMAP} -J-XX:+UsePerfData -histo:live $appJavaPid
 if [ $? != 0 ]; then failed=1; fi
 
 # -dump option
 DUMPFILE="java_pid${appJavaPid}.hprof"
-${JMAP} -dump:format=b,file=${DUMPFILE} $appJavaPid
+${JMAP} -J-XX:+UsePerfData -dump:format=b,file=${DUMPFILE} $appJavaPid
 if [ $? != 0 ]; then failed=1; fi
 
 # check that heap dump is parsable
@@ -64,7 +64,7 @@ if [ $? != 0 ]; then failed=1; fi
 rm ${DUMPFILE}
 
 # -dump:live option
-${JMAP} -dump:live,format=b,file=${DUMPFILE} $appJavaPid
+${JMAP} -J-XX:+UsePerfData -dump:live,format=b,file=${DUMPFILE} $appJavaPid
 if [ $? != 0 ]; then failed=1; fi
 
 # check that heap dump is parsable

@@ -30,11 +30,10 @@
 #include "memory/resourceArea.hpp"
 
 PcDesc::PcDesc(int pc_offset, int scope_decode_offset, int obj_decode_offset) {
-  assert(sizeof(PcDescFlags) <= 4, "occupies more than a word");
   _pc_offset           = pc_offset;
   _scope_decode_offset = scope_decode_offset;
   _obj_decode_offset   = obj_decode_offset;
-  _flags.word          = 0;
+  _flags               = 0;
 }
 
 address PcDesc::real_pc(const nmethod* code) const {
@@ -44,7 +43,7 @@ address PcDesc::real_pc(const nmethod* code) const {
 void PcDesc::print(nmethod* code) {
 #ifndef PRODUCT
   ResourceMark rm;
-  tty->print_cr("PcDesc(pc=0x%lx offset=%x):", real_pc(code), pc_offset());
+  tty->print_cr("PcDesc(pc=0x%lx offset=%x bits=%x):", real_pc(code), pc_offset(), _flags);
 
   if (scope_decode_offset() == DebugInformationRecorder::serialized_null) {
     return;

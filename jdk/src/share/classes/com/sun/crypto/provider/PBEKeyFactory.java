@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.crypto.provider;
 
-import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.spec.KeySpec;
 import java.security.spec.InvalidKeySpecException;
@@ -132,7 +131,7 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
      * inappropriate for the given key, or the given key cannot be processed
      * (e.g., the given key has an unrecognized algorithm or format).
      */
-    protected KeySpec engineGetKeySpec(SecretKey key, Class keySpecCl)
+    protected KeySpec engineGetKeySpec(SecretKey key, Class<?> keySpecCl)
         throws InvalidKeySpecException {
         if ((key instanceof SecretKey)
             && (validTypes.contains(key.getAlgorithm().toUpperCase()))

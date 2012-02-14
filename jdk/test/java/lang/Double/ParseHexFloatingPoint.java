@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 
 
 import java.util.regex.*;
-import sun.misc.FpUtils;
 import sun.misc.DoubleConsts;
 
 public class ParseHexFloatingPoint {
@@ -227,7 +226,7 @@ public class ParseHexFloatingPoint {
             new PairSD("0x1.000000000000001p-1075",     Double.MIN_VALUE),
 
             // More subnormal rounding tests
-            new PairSD("0x0.fffffffffffff7fffffp-1022", FpUtils.nextDown(DoubleConsts.MIN_NORMAL)),
+            new PairSD("0x0.fffffffffffff7fffffp-1022", Math.nextDown(DoubleConsts.MIN_NORMAL)),
             new PairSD("0x0.fffffffffffff8p-1022",      DoubleConsts.MIN_NORMAL),
             new PairSD("0x0.fffffffffffff800000001p-1022",DoubleConsts.MIN_NORMAL),
             new PairSD("0x0.fffffffffffff80000000000000001p-1022",DoubleConsts.MIN_NORMAL),
@@ -242,10 +241,10 @@ public class ParseHexFloatingPoint {
             new PairSD("0x1.fffffffffffff8p1023",       infinityD),
             new PairSD("0x1.fffffffffffff8000001p1023", infinityD),
 
-            new PairSD("0x1.ffffffffffffep1023",        FpUtils.nextDown(Double.MAX_VALUE)),
-            new PairSD("0x1.ffffffffffffe0000p1023",    FpUtils.nextDown(Double.MAX_VALUE)),
-            new PairSD("0x1.ffffffffffffe8p1023",       FpUtils.nextDown(Double.MAX_VALUE)),
-            new PairSD("0x1.ffffffffffffe7p1023",       FpUtils.nextDown(Double.MAX_VALUE)),
+            new PairSD("0x1.ffffffffffffep1023",        Math.nextDown(Double.MAX_VALUE)),
+            new PairSD("0x1.ffffffffffffe0000p1023",    Math.nextDown(Double.MAX_VALUE)),
+            new PairSD("0x1.ffffffffffffe8p1023",       Math.nextDown(Double.MAX_VALUE)),
+            new PairSD("0x1.ffffffffffffe7p1023",       Math.nextDown(Double.MAX_VALUE)),
             new PairSD("0x1.ffffffffffffeffffffp1023",  Double.MAX_VALUE),
             new PairSD("0x1.ffffffffffffe8000001p1023", Double.MAX_VALUE),
         };
@@ -284,8 +283,8 @@ public class ParseHexFloatingPoint {
         };
 
         double [] answers = {
-            FpUtils.nextDown(FpUtils.nextDown(2.0)),
-            FpUtils.nextDown(2.0),
+            Math.nextDown(Math.nextDown(2.0)),
+            Math.nextDown(2.0),
             2.0
         };
 

@@ -157,7 +157,7 @@ public class ElementIterator implements Cloneable {
             }
             return it;
         } catch (CloneNotSupportedException e) {
-            throw new InternalError();
+            throw new InternalError(e);
         }
     }
 

@@ -306,7 +306,16 @@ public class Check {
      */
     void duplicateError(DiagnosticPosition pos, Symbol sym) {
         if (!sym.type.isErroneous()) {
-            log.error(pos, "already.defined", sym, sym.location());
+            Symbol location = sym.location();
+            if (location.kind == MTH &&
+                    ((MethodSymbol)location).isStaticOrInstanceInit()) {
+                log.error(pos, "already.defined.in.clinit", kindName(sym), sym,
+                        kindName(sym.location()), kindName(sym.location().enclClass()),
+                        sym.location().enclClass());
+            } else {
+                log.error(pos, "already.defined", kindName(sym), sym,
+                        kindName(sym.location()), sym.location());
+            }
         }
     }
 
@@ -1160,11 +1169,16 @@ public class Check {
             if (lint.isEnabled(LintCategory.RAW) &&
                 tree.type.tag == CLASS &&
                 !TreeInfo.isDiamond(tree) &&
-                !env.enclClass.name.isEmpty() &&  //anonymous or intersection
+                !withinAnonConstr(env) &&
                 tree.type.isRaw()) {
                 log.warning(LintCategory.RAW,
                         tree.pos(), "raw.class.use", tree.type, tree.type.tsym.type);
             }
+        }
+
+        boolean withinAnonConstr(Env<AttrContext> env) {
+            return env.enclClass.name.isEmpty() &&
+                    env.enclMethod != null && env.enclMethod.name == names.init;
         }
     }
 

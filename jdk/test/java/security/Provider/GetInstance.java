@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 4856968
+ * @bug 4856968 7054918
+ * @library ../testlibrary
  * @summary make sure getInstance() works correctly, including failover
  *   and delayed provider selection for Signatures
  * @author Andreas Sterbenz
@@ -43,6 +44,15 @@ public class GetInstance {
     }
 
     public static void main(String[] args) throws Exception {
+        ProvidersSnapshot snapshot = ProvidersSnapshot.create();
+        try {
+            main0(args);
+        } finally {
+            snapshot.restore();
+        }
+    }
+
+    public static void main0(String[] args) throws Exception {
         long start = System.currentTimeMillis();
 
         Provider foo = new FooProvider();

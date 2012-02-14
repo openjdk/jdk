@@ -604,16 +604,13 @@ public class Proxy implements java.io.Serializable {
          * Invoke its constructor with the designated invocation handler.
          */
         try {
-            Constructor cons = cl.getConstructor(constructorParams);
+            Constructor<?> cons = cl.getConstructor(constructorParams);
             return cons.newInstance(new Object[] { h });
-        } catch (NoSuchMethodException e) {
-            throw new InternalError(e.toString());
-        } catch (IllegalAccessException e) {
-            throw new InternalError(e.toString());
-        } catch (InstantiationException e) {
-            throw new InternalError(e.toString());
-        } catch (InvocationTargetException e) {
-            throw new InternalError(e.toString());
+        } catch (NoSuchMethodException |
+                 IllegalAccessException |
+                 InstantiationException |
+                 InvocationTargetException e) {
+            throw new InternalError(e.toString(), e);
         }
     }
 
@@ -661,6 +658,6 @@ public class Proxy implements java.io.Serializable {
         return p.h;
     }
 
-    private static native Class defineClass0(ClassLoader loader, String name,
-                                             byte[] b, int off, int len);
+    private static native Class<?> defineClass0(ClassLoader loader, String name,
+                                                byte[] b, int off, int len);
 }

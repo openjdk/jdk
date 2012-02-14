@@ -25,7 +25,7 @@
 
 /* @test
  * @summary unit tests for java.lang.invoke.MethodHandle.invoke
- * @compile -target 7 InvokeGenericTest.java
+ * @compile InvokeGenericTest.java
  * @run junit/othervm test.java.lang.invoke.InvokeGenericTest
  */
 

@@ -39,6 +39,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "jvm_windows.h"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "jvm_bsd.h"
+#endif
 
 // os defines the interface to operating system; this includes traditional
 // OS services (time, I/O) as well as other functionality with system-
@@ -181,6 +184,9 @@ class os: AllStatic {
   //    Returns true if it worked, false if it didn't.
   static bool bind_to_processor(uint processor_id);
 
+  // Give a name to the current thread.
+  static void set_native_thread_name(const char *name);
+
   // Interface for stack banging (predetect possible stack overflow for
   // exception processing)  There are guard pages, and above that shadow
   // pages for stack overflow checking.
@@ -208,11 +214,13 @@ class os: AllStatic {
                                      size_t region_max_size,
                                      uint min_pages);
 
-  // Method for tracing page sizes returned by the above method; enabled by
+  // Methods for tracing page sizes returned by the above method; enabled by
   // TracePageSizes.  The region_{min,max}_size parameters should be the values
   // passed to page_size_for_region() and page_size should be the result of that
   // call.  The (optional) base and size parameters should come from the
   // ReservedSpace base() and size() methods.
+  static void trace_page_sizes(const char* str, const size_t* page_sizes,
+                               int count) PRODUCT_RETURN;
   static void trace_page_sizes(const char* str, const size_t region_min_size,
                                const size_t region_max_size,
                                const size_t page_size,
@@ -480,6 +488,7 @@ class os: AllStatic {
   // Output format may be different on different platforms.
   static void print_os_info(outputStream* st);
   static void print_cpu_info(outputStream* st);
+  static void pd_print_cpu_info(outputStream* st);
   static void print_memory_info(outputStream* st);
   static void print_dll_info(outputStream* st);
   static void print_environment_variables(outputStream* st, const char** env_list, char* buffer, int len);
@@ -672,6 +681,9 @@ class os: AllStatic {
 #ifdef TARGET_OS_FAMILY_windows
 # include "os_windows.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.hpp"
+#endif
 #ifdef TARGET_OS_ARCH_linux_x86
 # include "os_linux_x86.hpp"
 #endif
@@ -695,6 +707,12 @@ class os: AllStatic {
 #endif
 #ifdef TARGET_OS_ARCH_linux_ppc
 # include "os_linux_ppc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_bsd_x86
+# include "os_bsd_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_bsd_zero
+# include "os_bsd_zero.hpp"
 #endif
 
 

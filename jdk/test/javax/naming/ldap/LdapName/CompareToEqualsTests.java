@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,14 @@
 
 /*
  * @test
- * @bug 4635618
+ * @bug 4635618 7059542
  * @summary Support for manipulating LDAP Names
+ *          JNDI name operations should be locale independent
  */
 
 import javax.naming.ldap.*;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.List;
 import javax.naming.InvalidNameException;
 
@@ -39,52 +41,61 @@ public class CompareToEqualsTests {
 
     public static void main(String args[])
                 throws Exception {
-
-        /**
-         * Test cases:
-         * 1) Same RDNs.
-         * 2) same RDN sequence with an AVA ordered differently.
-         * 3) RDN sequences of a differing AVA.
-         * 4) RDN sequence of different length.
-         * 5) RDN sequence of different Case.
-         * 6) Matching binary return values.
-         * 7) Binary values that don't match.
-         */
-        String names1[] = new String [] {
+         Locale reservedLocale = Locale.getDefault();
+         try {
+            /**
+             * Test cases:
+             * 1) Same RDNs.
+             * 2) same RDN sequence with an AVA ordered differently.
+             * 3) RDN sequences of a differing AVA.
+             * 4) RDN sequence of different length.
+             * 5) RDN sequence of different Case.
+             * 6) Matching binary return values.
+             * 7) Binary values that don't match.
+             */
+            String names1[] = new String [] {
                 "ou=Sales+cn=Bob", "ou=Sales+cn=Bob", "ou=Sales+cn=Bob",
                 "ou=Sales+cn=Scott+c=US", "cn=config"};
 
-        String names2[] = new String [] {
+            String names2[] = new String [] {
                 "ou=Sales+cn=Bob", "cn=Bob+ou=Sales", "ou=Sales+cn=Scott",
                 "ou=Sales+cn=Scott", "Cn=COnFIG"};
 
-        int expectedResults[] = {0, 0, -1, -1, 0};
+            int expectedResults[] = {0, 0, -1, -1, 0};
 
+            for (Locale locale : Locale.getAvailableLocales()) {
+                // reset the default locale
+                Locale.setDefault(locale);
 
-        for (int i = 0; i < names1.length; i++) {
-            checkResults(new LdapName(names1[i]),
+                for (int i = 0; i < names1.length; i++) {
+                    checkResults(new LdapName(names1[i]),
                         new LdapName(names2[i]), expectedResults[i]);
+                }
+
+                byte[] value = "abcxyz".getBytes();
+                Rdn rdn1 = new Rdn("binary", value);
+                ArrayList rdns1 = new ArrayList();
+                rdns1.add(rdn1);
+                LdapName l1 = new LdapName(rdns1);
+
+                Rdn rdn2 = new Rdn("binary", value);
+                ArrayList rdns2 = new ArrayList();
+                rdns2.add(rdn2);
+                LdapName l2 = new LdapName(rdns2);
+                checkResults(l1, l2, 0);
+
+                l2 = new LdapName("binary=#61626378797A");
+                checkResults(l1, l2, 0);
+
+                l2 = new LdapName("binary=#61626378797B");
+                checkResults(l1, l2, -1);
+
+                System.out.println("Tests passed");
+            }
+        } finally {
+            // restore the reserved locale
+            Locale.setDefault(reservedLocale);
         }
-
-        byte[] value = "abcxyz".getBytes();
-        Rdn rdn1 = new Rdn("binary", value);
-        ArrayList rdns1 = new ArrayList();
-        rdns1.add(rdn1);
-        LdapName l1 = new LdapName(rdns1);
-
-        Rdn rdn2 = new Rdn("binary", value);
-        ArrayList rdns2 = new ArrayList();
-        rdns2.add(rdn2);
-        LdapName l2 = new LdapName(rdns2);
-        checkResults(l1, l2, 0);
-
-        l2 = new LdapName("binary=#61626378797A");
-        checkResults(l1, l2, 0);
-
-        l2 = new LdapName("binary=#61626378797B");
-        checkResults(l1, l2, -1);
-
-        System.out.println("Tests passed");
     }
 
 

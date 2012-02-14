@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ abstract class Node {
     String kind;
     List<Node> components;
     int lineno;
-    List<String> commentList = new ArrayList<String>();
+    List<String> commentList = new ArrayList<>();
     Node parent = null;
     Context context = null;
 
@@ -50,8 +50,8 @@ abstract class Node {
     }
 
     void parentAndExtractComments() {
-        for (Iterator it = components.iterator(); it.hasNext();) {
-            Node node = (Node)it.next();
+        for (Iterator<Node> it = components.iterator(); it.hasNext();) {
+            Node node = it.next();
             if (node instanceof CommentNode) {
                 it.remove();
                 commentList.add(((CommentNode)node).text());
@@ -63,16 +63,14 @@ abstract class Node {
     }
 
     void prune() {
-        for (Iterator it = components.iterator(); it.hasNext();) {
-            Node node = (Node)it.next();
+        for (Node node : components) {
             node.prune();
         }
     }
 
     void constrain(Context ctx) {
         context = ctx;
-        for (Iterator it = components.iterator(); it.hasNext();) {
-            Node node = (Node)it.next();
+        for (Node node : components) {
             constrainComponent(ctx, node);
         }
     }
@@ -109,9 +107,9 @@ abstract class Node {
         if (commentList.size() > 0) {
             indent(writer, depth);
             writer.println("/**");
-            for (Iterator it = commentList.iterator(); it.hasNext();) {
+            for (String comment : commentList) {
                 indent(writer, depth);
-                writer.println(" * " + (String)it.next());
+                writer.println(" * " + comment);
             }
             indent(writer, depth);
             writer.println(" */");
@@ -123,15 +121,13 @@ abstract class Node {
     }
 
     void genJava(PrintWriter writer, int depth) {
-        for (Iterator it = components.iterator(); it.hasNext();) {
-            Node node = (Node)it.next();
+        for (Node node : components) {
             node.genJava(writer, depth);
         }
     }
 
     void genCInclude(PrintWriter writer) {
-        for (Iterator it = components.iterator(); it.hasNext();) {
-            Node node = (Node)it.next();
+        for (Node node : components) {
             node.genCInclude(writer);
         }
     }
@@ -184,8 +180,7 @@ abstract class Node {
     }
 
     void genJavaPreDef(PrintWriter writer, int depth) {
-        for (Iterator it = components.iterator(); it.hasNext();) {
-            Node node = (Node)it.next();
+        for (Node node : components) {
             node.genJavaPreDef(writer, depth);
         }
     }

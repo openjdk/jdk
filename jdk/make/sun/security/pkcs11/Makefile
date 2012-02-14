@@ -110,6 +110,9 @@ ifndef OPENJDK
   endif
 endif
 
+JAVAC_MAX_WARNINGS=false
+JAVAC_LINT_OPTIONS=-Xlint:all,-deprecation
+JAVAC_WARNINGS_FATAL=true
 include $(BUILDDIR)/common/Defs.gmk
 
 #
@@ -156,10 +159,8 @@ include $(BUILDDIR)/common/Library.gmk
 #
 # Libraries to link
 #
-ifeq ($(PLATFORM), windows)
-  OTHER_LDLIBS = $(JVMLIB)
-else
-  OTHER_LDLIBS = -ldl $(JVMLIB)
+ifneq ($(PLATFORM), windows)
+  OTHER_LDLIBS = -ldl
 endif
 
 # Other config files

@@ -151,6 +151,7 @@ FILES_compiled_properties = \
         sun/util/resources/CurrencyNames_es_CL.properties \
         sun/util/resources/CurrencyNames_es_CO.properties \
         sun/util/resources/CurrencyNames_es_CR.properties \
+        sun/util/resources/CurrencyNames_es_CU.properties \
         sun/util/resources/CurrencyNames_es_DO.properties \
         sun/util/resources/CurrencyNames_es_EC.properties \
         sun/util/resources/CurrencyNames_es_ES.properties \

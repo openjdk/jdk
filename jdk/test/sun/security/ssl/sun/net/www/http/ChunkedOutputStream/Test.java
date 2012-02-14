@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
  * @bug 5026745
  * @library ../../httpstest/
  * @run main/othervm Test
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  * @summary Cannot flush output stream when writing to an HttpUrlConnection
  */
 
@@ -283,31 +286,37 @@ public class Test implements HttpCallback {
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + trustStoreFile;
 
-        System.setProperty("javax.net.ssl.keyStore", keyFilename);
-        System.setProperty("javax.net.ssl.keyStorePassword", passwd);
-        System.setProperty("javax.net.ssl.trustStore", trustFilename);
-        System.setProperty("javax.net.ssl.trustStorePassword", passwd);
-        HttpsURLConnection.setDefaultHostnameVerifier(new NameVerifier());
-
+        HostnameVerifier reservedHV =
+            HttpsURLConnection.getDefaultHostnameVerifier();
         try {
-            server = new HttpServer (new Test(), 1, 10, 0);
-            System.out.println ("Server started: listening on port: " + server.getLocalPort());
-            // the test server doesn't support keep-alive yet
-            // test1("http://localhost:"+server.getLocalPort()+"/d0");
-            test1("https://localhost:"+server.getLocalPort()+"/d01");
-            test3("https://localhost:"+server.getLocalPort()+"/d3");
-            test4("https://localhost:"+server.getLocalPort()+"/d4");
-            test5("https://localhost:"+server.getLocalPort()+"/d5");
-            test6("https://localhost:"+server.getLocalPort()+"/d6");
-            test7("https://localhost:"+server.getLocalPort()+"/d7");
-            test8("https://localhost:"+server.getLocalPort()+"/d8");
-        } catch (Exception e) {
-            if (server != null) {
-                server.terminate();
+            System.setProperty("javax.net.ssl.keyStore", keyFilename);
+            System.setProperty("javax.net.ssl.keyStorePassword", passwd);
+            System.setProperty("javax.net.ssl.trustStore", trustFilename);
+            System.setProperty("javax.net.ssl.trustStorePassword", passwd);
+            HttpsURLConnection.setDefaultHostnameVerifier(new NameVerifier());
+
+            try {
+                server = new HttpServer (new Test(), 1, 10, 0);
+                System.out.println ("Server started: listening on port: " + server.getLocalPort());
+                // the test server doesn't support keep-alive yet
+                // test1("http://localhost:"+server.getLocalPort()+"/d0");
+                test1("https://localhost:"+server.getLocalPort()+"/d01");
+                test3("https://localhost:"+server.getLocalPort()+"/d3");
+                test4("https://localhost:"+server.getLocalPort()+"/d4");
+                test5("https://localhost:"+server.getLocalPort()+"/d5");
+                test6("https://localhost:"+server.getLocalPort()+"/d6");
+                test7("https://localhost:"+server.getLocalPort()+"/d7");
+                test8("https://localhost:"+server.getLocalPort()+"/d8");
+            } catch (Exception e) {
+                if (server != null) {
+                    server.terminate();
+                }
+                throw e;
             }
-            throw e;
+            server.terminate();
+        } finally {
+            HttpsURLConnection.setDefaultHostnameVerifier(reservedHV);
         }
-        server.terminate();
     }
 
     static class NameVerifier implements HostnameVerifier {

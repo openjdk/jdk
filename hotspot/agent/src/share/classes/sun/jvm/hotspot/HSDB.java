@@ -1740,7 +1740,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
       else if (f.isCompiledFrame())    { tty.print("compiled"); }
       else if (f.isEntryFrame())       { tty.print("entry"); }
       else if (f.isNativeFrame())      { tty.print("native"); }
-      else if (f.isGlueFrame())        { tty.print("glue"); }
+      else if (f.isRuntimeFrame())     { tty.print("runtime"); }
       else { tty.print("external"); }
       tty.print(" frame with PC = " + f.getPC() + ", SP = " + f.getSP() + ", FP = " + f.getFP());
       if (f.isSignalHandlerFrameDbg()) {

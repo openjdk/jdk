@@ -69,9 +69,9 @@ public class FileCredentialsCache extends CredentialsCache
         try {
             FileCredentialsCache fcc = new FileCredentialsCache();
             if (cache == null) {
-                cacheName = fcc.getDefaultCacheName();
+                cacheName = FileCredentialsCache.getDefaultCacheName();
             } else {
-                cacheName = fcc.checkValidation(cache);
+                cacheName = FileCredentialsCache.checkValidation(cache);
             }
             if ((cacheName == null) || !(new File(cacheName)).exists()) {
                 // invalid cache name or the file doesn't exist
@@ -105,7 +105,7 @@ public class FileCredentialsCache extends CredentialsCache
                                                 String name) {
         try {
             FileCredentialsCache fcc = new FileCredentialsCache();
-            cacheName = fcc.checkValidation(name);
+            cacheName = FileCredentialsCache.checkValidation(name);
             if (cacheName == null) {
                 // invalid cache name or the file doesn't exist
                 return null;
@@ -123,7 +123,7 @@ public class FileCredentialsCache extends CredentialsCache
     static synchronized FileCredentialsCache New(PrincipalName principal) {
         try {
             FileCredentialsCache fcc = new FileCredentialsCache();
-            cacheName = fcc.getDefaultCacheName();
+            cacheName = FileCredentialsCache.getDefaultCacheName();
             fcc.init(principal, cacheName);
             return fcc;
         }

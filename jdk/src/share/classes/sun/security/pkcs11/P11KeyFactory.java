@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.security.*;
 import java.security.spec.*;
 
 import sun.security.pkcs11.wrapper.PKCS11Exception;
-import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
 /**
  * KeyFactory base class. Provides common infrastructure for the RSA, DSA,
@@ -77,7 +76,7 @@ abstract class P11KeyFactory extends KeyFactorySpi {
         if (PKCS8EncodedKeySpec.class.isAssignableFrom(keySpec)
                 || X509EncodedKeySpec.class.isAssignableFrom(keySpec)) {
             try {
-                return (T)implGetSoftwareFactory().getKeySpec(key, keySpec);
+                return implGetSoftwareFactory().getKeySpec(key, keySpec);
             } catch (GeneralSecurityException e) {
                 throw new InvalidKeySpecException("Could not encode key", e);
             }
@@ -92,9 +91,9 @@ abstract class P11KeyFactory extends KeyFactorySpi {
         Session[] session = new Session[1];
         try {
             if (p11Key.isPublic()) {
-                return (T)implGetPublicKeySpec(p11Key, keySpec, session);
+                return implGetPublicKeySpec(p11Key, keySpec, session);
             } else {
-                return (T)implGetPrivateKeySpec(p11Key, keySpec, session);
+                return implGetPrivateKeySpec(p11Key, keySpec, session);
             }
         } catch (PKCS11Exception e) {
             throw new InvalidKeySpecException("Could not generate KeySpec", e);
@@ -138,10 +137,10 @@ abstract class P11KeyFactory extends KeyFactorySpi {
         }
     }
 
-    abstract KeySpec implGetPublicKeySpec(P11Key key, Class keySpec,
+    abstract <T extends KeySpec> T  implGetPublicKeySpec(P11Key key, Class<T> keySpec,
             Session[] session) throws PKCS11Exception, InvalidKeySpecException;
 
-    abstract KeySpec implGetPrivateKeySpec(P11Key key, Class keySpec,
+    abstract <T extends KeySpec> T  implGetPrivateKeySpec(P11Key key, Class<T> keySpec,
             Session[] session) throws PKCS11Exception, InvalidKeySpecException;
 
     abstract PublicKey implTranslatePublicKey(PublicKey key)

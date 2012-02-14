@@ -514,9 +514,12 @@ public class BufferedReader extends Reader {
         synchronized (lock) {
             if (in == null)
                 return;
-            in.close();
-            in = null;
-            cb = null;
+            try {
+                in.close();
+            } finally {
+                in = null;
+                cb = null;
+            }
         }
     }
 }
