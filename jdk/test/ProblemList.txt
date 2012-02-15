@@ -446,12 +446,6 @@ com/sun/jdi/FieldWatchpoints.java                               generic-all
 # Filed 6402201
 com/sun/jdi/ProcessAttachTest.sh                                generic-all
 
-# 7144833
-sun/tools/jcmd/jcmd-Defaults.sh                                 generic-all
-
-# Filed 6986875
-sun/tools/jps/jps-Vvml.sh                                       generic-all
-
 # Filed 6979016
 sun/tools/jconsole/ResourceCheckTest.sh                         generic-all
 
