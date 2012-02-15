@@ -35,20 +35,12 @@
 // This facility is extremly useful for post-mortem debugging. The eventlog
 // often provides crucial information about events leading up to the crash.
 //
-// All arguments past the format string must be passed as an intptr_t.
-//
-// To log a single event use:
-//    Events::log("New nmethod has been created " INTPTR_FORMAT, nm);
-//
-// To log a block of events use:
-//    EventMark m("GarbageCollecting %d", (intptr_t)gc_number);
-//
-// The constructor to eventlog indents the eventlog until the
-// destructor has been executed.
-//
-// IMPLEMENTATION RESTRICTION:
-//   Max 3 arguments are saved for each logged event.
-//
+// Abstractly the logs can record whatever they way but normally they
+// would record at least a timestamp and the current Thread, along
+// with whatever data they need in a ring buffer.  Commonly fixed
+// length text messages are recorded for simplicity but other
+// strategies could be used.  Several logs are provided by default but
+// new instances can be created as needed.
 
 // The base event log dumping class that is registered for dumping at
 // crash time.  This is a very generic interface that is mainly here
@@ -79,7 +71,7 @@ class EventLog : public CHeapObj {
 template <class T> class EventLogBase : public EventLog {
   template <class X> class EventRecord {
    public:
-    jlong   timestamp;
+    double  timestamp;
     Thread* thread;
     X       data;
   };
@@ -100,6 +92,10 @@ template <class T> class EventLogBase : public EventLog {
     _index(0),
     _mutex(Mutex::event, name) {
     _records = new EventRecord<T>[length];
+  }
+
+  double fetch_timestamp() {
+    return tty->time_stamp().seconds();
   }
 
   // move the ring buffer to next open slot and return the index of
@@ -130,7 +126,7 @@ template <class T> class EventLogBase : public EventLog {
   void print(outputStream* out, T& e);
 
   void print(outputStream* out, EventRecord<T>& e) {
-    out->print("Event: " INT64_FORMAT " ", e.timestamp);
+    out->print("Event: %.3f ", e.timestamp);
     if (e.thread != NULL) {
       out->print("Thread " INTPTR_FORMAT " ", e.thread);
     }
@@ -155,7 +151,7 @@ class StringEventLog : public EventLogBase<StringLogMessage> {
   void logv(Thread* thread, const char* format, va_list ap) {
     if (!should_log()) return;
 
-    jlong timestamp = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
+    double timestamp = fetch_timestamp();
     MutexLockerEx ml(&_mutex, Mutex::_no_safepoint_check_flag);
     int index = compute_log_index();
     _records[index].thread = thread;
@@ -193,9 +189,8 @@ class Events : AllStatic {
  public:
   static void print_all(outputStream* out);
 
-  static void print() {
-    print_all(tty);
-  }
+  // Dump all events to the tty
+  static void print();
 
   // Logs a generic message with timestamp and format as printf.
   static void log(Thread* thread, const char* format, ...);
@@ -255,6 +250,7 @@ inline void EventLogBase<T>::print_log_impl(outputStream* out) {
   out->print_cr("%s (%d events):", _name, _count);
   if (_count == 0) {
     out->print_cr("No events");
+    out->cr();
     return;
   }
 

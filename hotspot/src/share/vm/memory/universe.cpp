@@ -1303,22 +1303,22 @@ void Universe::print_heap_at_SIGBREAK() {
   }
 }
 
-void Universe::print_heap_before_gc(outputStream* st) {
+void Universe::print_heap_before_gc(outputStream* st, bool ignore_extended) {
   st->print_cr("{Heap before GC invocations=%u (full %u):",
                heap()->total_collections(),
                heap()->total_full_collections());
-  if (!PrintHeapAtGCExtended) {
+  if (!PrintHeapAtGCExtended || ignore_extended) {
     heap()->print_on(st);
   } else {
     heap()->print_extended_on(st);
   }
 }
 
-void Universe::print_heap_after_gc(outputStream* st) {
+void Universe::print_heap_after_gc(outputStream* st, bool ignore_extended) {
   st->print_cr("Heap after GC invocations=%u (full %u):",
                heap()->total_collections(),
                heap()->total_full_collections());
-  if (!PrintHeapAtGCExtended) {
+  if (!PrintHeapAtGCExtended || ignore_extended) {
     heap()->print_on(st);
   } else {
     heap()->print_extended_on(st);
