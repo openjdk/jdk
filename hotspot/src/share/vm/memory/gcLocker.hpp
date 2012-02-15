@@ -63,9 +63,6 @@ class GC_locker: public AllStatic {
                                          // note: bool is typedef'd as jint
   static volatile bool _doing_gc;        // unlock_critical() is doing a GC
 
-  static jlong         _wait_begin;      // Timestamp for the setting of _needs_gc.
-                                         // Used only by printing code.
-
 #ifdef ASSERT
   // This lock count is updated for all operations and is used to
   // validate the jni_lock_count that is computed during safepoints.
