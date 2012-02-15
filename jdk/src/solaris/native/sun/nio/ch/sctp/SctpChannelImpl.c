@@ -32,21 +32,21 @@
 #include "nio.h"
 #include "net_util.h"
 #include "net_util_md.h"
-#include "sun_nio_ch_SctpNet.h"
-#include "sun_nio_ch_SctpChannelImpl.h"
-#include "sun_nio_ch_SctpAssocChange.h"
-#include "sun_nio_ch_SctpResultContainer.h"
-#include "sun_nio_ch_SctpPeerAddrChange.h"
+#include "sun_nio_ch_sctp_SctpNet.h"
+#include "sun_nio_ch_sctp_SctpChannelImpl.h"
+#include "sun_nio_ch_sctp_AssociationChange.h"
+#include "sun_nio_ch_sctp_ResultContainer.h"
+#include "sun_nio_ch_sctp_PeerAddrChange.h"
 
 /* sizeof(union sctp_notification */
 #define NOTIFICATION_BUFFER_SIZE 280
 
-#define MESSAGE_IMPL_CLASS              "sun/nio/ch/SctpMessageInfoImpl"
-#define RESULT_CONTAINER_CLASS          "sun/nio/ch/SctpResultContainer"
-#define SEND_FAILED_CLASS               "sun/nio/ch/SctpSendFailed"
-#define ASSOC_CHANGE_CLASS              "sun/nio/ch/SctpAssocChange"
-#define PEER_CHANGE_CLASS               "sun/nio/ch/SctpPeerAddrChange"
-#define SHUTDOWN_CLASS                  "sun/nio/ch/SctpShutdown"
+#define MESSAGE_IMPL_CLASS              "sun/nio/ch/sctp/MessageInfoImpl"
+#define RESULT_CONTAINER_CLASS          "sun/nio/ch/sctp/ResultContainer"
+#define SEND_FAILED_CLASS               "sun/nio/ch/sctp/SendFailed"
+#define ASSOC_CHANGE_CLASS              "sun/nio/ch/sctp/AssociationChange"
+#define PEER_CHANGE_CLASS               "sun/nio/ch/sctp/PeerAddrChange"
+#define SHUTDOWN_CLASS                  "sun/nio/ch/sctp/Shutdown"
 
 struct controlData {
     int assocId;
@@ -55,38 +55,40 @@ struct controlData {
     unsigned int ppid;
 };
 
-static jclass    smi_class;    /* sun.nio.ch.SctpMessageInfoImpl            */
-static jmethodID smi_ctrID;    /* sun.nio.ch.SctpMessageInfoImpl.<init>     */
-static jfieldID  src_valueID;  /* sun.nio.ch.SctpResultContainer.value      */
-static jfieldID  src_typeID;   /* sun.nio.ch.SctpResultContainer.type       */
-static jclass    ssf_class;    /* sun.nio.ch.SctpSendFailed                 */
-static jmethodID ssf_ctrID;    /* sun.nio.ch.SctpSendFailed.<init>          */
-static jclass    sac_class;    /* sun.nio.ch.SctpAssociationChanged         */
-static jmethodID sac_ctrID;    /* sun.nio.ch.SctpAssociationChanged.<init>  */
-static jclass    spc_class;    /* sun.nio.ch.SctpPeerAddressChanged         */
-static jmethodID spc_ctrID;    /* sun.nio.ch.SctpPeerAddressChanged.<init>  */
-static jclass    ss_class;     /* sun.nio.ch.SctpShutdown                   */
-static jmethodID ss_ctrID;     /* sun.nio.ch.SctpShutdown.<init>            */
-static jfieldID  isa_addrID;   /* java.net.InetSocketAddress.addr           */
-static jfieldID  isa_portID;   /* java.net.InetSocketAddress.port           */
+static jclass    smi_class;    /* sun.nio.ch.sctp.MessageInfoImpl            */
+static jmethodID smi_ctrID;    /* sun.nio.ch.sctp.MessageInfoImpl.<init>     */
+static jfieldID  src_valueID;  /* sun.nio.ch.sctp.ResultContainer.value      */
+static jfieldID  src_typeID;   /* sun.nio.ch.sctp.ResultContainer.type       */
+static jclass    ssf_class;    /* sun.nio.ch.sctp.SendFailed                 */
+static jmethodID ssf_ctrID;    /* sun.nio.ch.sctp.SendFailed.<init>          */
+static jclass    sac_class;    /* sun.nio.ch.sctp.AssociationChange          */
+static jmethodID sac_ctrID;    /* sun.nio.ch.sctp.AssociationChange.<init>   */
+static jclass    spc_class;    /* sun.nio.ch.sctp.PeerAddressChanged         */
+static jmethodID spc_ctrID;    /* sun.nio.ch.sctp.PeerAddressChanged.<init>  */
+static jclass    ss_class;     /* sun.nio.ch.sctp.Shutdown                   */
+static jmethodID ss_ctrID;     /* sun.nio.ch.sctp.Shutdown.<init>            */
+static jfieldID  isa_addrID;   /* java.net.InetSocketAddress.addr            */
+static jfieldID  isa_portID;   /* java.net.InetSocketAddress.port            */
 
 /* defined in SctpNet.c */
 jobject SockAddrToInetSocketAddress(JNIEnv* env, struct sockaddr* addr);
+
+jint handleSocketError(JNIEnv *env, jint errorValue);
 
 /* use SocketChannelImpl's checkConnect implementation */
 extern jint Java_sun_nio_ch_SocketChannelImpl_checkConnect(JNIEnv* env,
     jobject this, jobject fdo, jboolean block, jboolean ready);
 
 /*
- * Class:     sun_nio_ch_SctpChannelImpl
+ * Class:     sun_nio_ch_sctp_SctpChannelImpl
  * Method:    initIDs
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_sun_nio_ch_SctpChannelImpl_initIDs
+JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_initIDs
   (JNIEnv *env, jclass klass) {
     jclass cls;
 
-    /* SctpMessageInfoImpl */
+    /* MessageInfoImpl */
     cls = (*env)->FindClass(env, MESSAGE_IMPL_CLASS);
     CHECK_NULL(cls);
     smi_class = (*env)->NewGlobalRef(env, cls);
@@ -95,7 +97,7 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_SctpChannelImpl_initIDs
             "(ILjava/net/SocketAddress;IIZZI)V");
     CHECK_NULL(smi_ctrID);
 
-    /* SctpResultContainer */
+    /* ResultContainer */
     cls = (*env)->FindClass(env, RESULT_CONTAINER_CLASS);
     CHECK_NULL(cls);
     src_valueID = (*env)->GetFieldID(env, cls, "value", "Ljava/lang/Object;");
@@ -103,7 +105,7 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_SctpChannelImpl_initIDs
     src_typeID = (*env)->GetFieldID(env, cls, "type", "I");
     CHECK_NULL(src_typeID);
 
-    /* SctpSendFailed */
+    /* SendFailed */
     cls = (*env)->FindClass(env, SEND_FAILED_CLASS);
     CHECK_NULL(cls);
     ssf_class = (*env)->NewGlobalRef(env, cls);
@@ -112,7 +114,7 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_SctpChannelImpl_initIDs
         "(ILjava/net/SocketAddress;Ljava/nio/ByteBuffer;II)V");
     CHECK_NULL(ssf_ctrID);
 
-    /* SctpAssocChange */
+    /* AssociationChange */
     cls = (*env)->FindClass(env, ASSOC_CHANGE_CLASS);
     CHECK_NULL(cls);
     sac_class = (*env)->NewGlobalRef(env, cls);
@@ -120,7 +122,7 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_SctpChannelImpl_initIDs
     sac_ctrID = (*env)->GetMethodID(env, cls, "<init>", "(IIII)V");
     CHECK_NULL(sac_ctrID);
 
-    /* SctpPeerAddrChange */
+    /* PeerAddrChange */
     cls = (*env)->FindClass(env, PEER_CHANGE_CLASS);
     CHECK_NULL(cls);
     spc_class = (*env)->NewGlobalRef(env, cls);
@@ -129,7 +131,7 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_SctpChannelImpl_initIDs
             "(ILjava/net/SocketAddress;I)V");
     CHECK_NULL(spc_ctrID);
 
-    /* sun.nio.ch.SctpShutdown */
+    /* Shutdown */
     cls = (*env)->FindClass(env, SHUTDOWN_CLASS);
     CHECK_NULL(cls);
     ss_class = (*env)->NewGlobalRef(env, cls);
@@ -266,13 +268,13 @@ void handleSendFailed
         }
     }
 
-    /* create SctpSendFailed */
+    /* create SendFailed */
     resultObj = (*env)->NewObject(env, ssf_class, ssf_ctrID, ssf->ssf_assoc_id,
             isaObj, bufferObj, ssf->ssf_error, sri->sinfo_stream);
     CHECK_NULL(resultObj);
     (*env)->SetObjectField(env, resultContainerObj, src_valueID, resultObj);
     (*env)->SetIntField(env, resultContainerObj, src_typeID,
-            sun_nio_ch_SctpResultContainer_SEND_FAILED);
+            sun_nio_ch_sctp_ResultContainer_SEND_FAILED);
 }
 
 void handleAssocChange
@@ -282,38 +284,38 @@ void handleAssocChange
 
     switch (sac->sac_state) {
         case SCTP_COMM_UP :
-            state = sun_nio_ch_SctpAssocChange_SCTP_COMM_UP;
+            state = sun_nio_ch_sctp_AssociationChange_SCTP_COMM_UP;
             break;
         case SCTP_COMM_LOST :
-            state = sun_nio_ch_SctpAssocChange_SCTP_COMM_LOST;
+            state = sun_nio_ch_sctp_AssociationChange_SCTP_COMM_LOST;
             break;
         case SCTP_RESTART :
-            state = sun_nio_ch_SctpAssocChange_SCTP_RESTART;
+            state = sun_nio_ch_sctp_AssociationChange_SCTP_RESTART;
             break;
         case SCTP_SHUTDOWN_COMP :
-            state = sun_nio_ch_SctpAssocChange_SCTP_SHUTDOWN;
+            state = sun_nio_ch_sctp_AssociationChange_SCTP_SHUTDOWN;
             break;
         case SCTP_CANT_STR_ASSOC :
-            state = sun_nio_ch_SctpAssocChange_SCTP_CANT_START;
+            state = sun_nio_ch_sctp_AssociationChange_SCTP_CANT_START;
     }
 
-    /* create SctpAssociationChanged */
+    /* create AssociationChange */
     resultObj = (*env)->NewObject(env, sac_class, sac_ctrID, sac->sac_assoc_id,
         state, sac->sac_outbound_streams, sac->sac_inbound_streams);
     CHECK_NULL(resultObj);
     (*env)->SetObjectField(env, resultContainerObj, src_valueID, resultObj);
     (*env)->SetIntField(env, resultContainerObj, src_typeID,
-            sun_nio_ch_SctpResultContainer_ASSOCIATION_CHANGED);
+            sun_nio_ch_sctp_ResultContainer_ASSOCIATION_CHANGED);
 }
 
 void handleShutdown
   (JNIEnv* env, jobject resultContainerObj, struct sctp_shutdown_event* sse) {
-    /* create SctpShutdown */
+    /* create Shutdown */
     jobject resultObj = (*env)->NewObject(env, ss_class, ss_ctrID, sse->sse_assoc_id);
     CHECK_NULL(resultObj);
     (*env)->SetObjectField(env, resultContainerObj, src_valueID, resultObj);
     (*env)->SetIntField(env, resultContainerObj, src_typeID,
-            sun_nio_ch_SctpResultContainer_SHUTDOWN);
+            sun_nio_ch_sctp_ResultContainer_SHUTDOWN);
 }
 
 void handlePeerAddrChange
@@ -324,35 +326,35 @@ void handlePeerAddrChange
 
     switch (state) {
         case SCTP_ADDR_AVAILABLE :
-            event = sun_nio_ch_SctpPeerAddrChange_SCTP_ADDR_AVAILABLE;
+            event = sun_nio_ch_sctp_PeerAddrChange_SCTP_ADDR_AVAILABLE;
             break;
         case SCTP_ADDR_UNREACHABLE :
-            event = sun_nio_ch_SctpPeerAddrChange_SCTP_ADDR_UNREACHABLE;
+            event = sun_nio_ch_sctp_PeerAddrChange_SCTP_ADDR_UNREACHABLE;
             break;
         case SCTP_ADDR_REMOVED :
-            event = sun_nio_ch_SctpPeerAddrChange_SCTP_ADDR_REMOVED;
+            event = sun_nio_ch_sctp_PeerAddrChange_SCTP_ADDR_REMOVED;
             break;
         case SCTP_ADDR_ADDED :
-            event = sun_nio_ch_SctpPeerAddrChange_SCTP_ADDR_ADDED;
+            event = sun_nio_ch_sctp_PeerAddrChange_SCTP_ADDR_ADDED;
             break;
         case SCTP_ADDR_MADE_PRIM :
-            event = sun_nio_ch_SctpPeerAddrChange_SCTP_ADDR_MADE_PRIM;
+            event = sun_nio_ch_sctp_PeerAddrChange_SCTP_ADDR_MADE_PRIM;
 #ifdef __linux__  /* Solaris currently doesn't support SCTP_ADDR_CONFIRMED */
             break;
         case SCTP_ADDR_CONFIRMED :
-            event = sun_nio_ch_SctpPeerAddrChange_SCTP_ADDR_CONFIRMED;
+            event = sun_nio_ch_sctp_PeerAddrChange_SCTP_ADDR_CONFIRMED;
 #endif  /* __linux__ */
     }
 
     addressObj = SockAddrToInetSocketAddress(env, (struct sockaddr*)&spc->spc_aaddr);
 
-    /* create SctpPeerAddressChanged */
+    /* create PeerAddressChanged */
     resultObj = (*env)->NewObject(env, spc_class, spc_ctrID, spc->spc_assoc_id,
             addressObj, event);
     CHECK_NULL(resultObj);
     (*env)->SetObjectField(env, resultContainerObj, src_valueID, resultObj);
     (*env)->SetIntField(env, resultContainerObj, src_typeID,
-            sun_nio_ch_SctpResultContainer_PEER_ADDRESS_CHANGED);
+            sun_nio_ch_sctp_ResultContainer_PEER_ADDRESS_CHANGED);
 }
 
 void handleUninteresting
@@ -403,7 +405,7 @@ void handleMessage
     isa = SockAddrToInetSocketAddress(env, sap);
     getControlData(msg, cdata);
 
-    /* create SctpMessageInfoImpl */
+    /* create MessageInfoImpl */
     resultObj = (*env)->NewObject(env, smi_class, smi_ctrID, cdata->assocId,
                                   isa, read, cdata->streamNumber,
                                   isEOR ? JNI_TRUE : JNI_FALSE,
@@ -411,15 +413,15 @@ void handleMessage
     CHECK_NULL(resultObj);
     (*env)->SetObjectField(env, resultContainerObj, src_valueID, resultObj);
     (*env)->SetIntField(env, resultContainerObj, src_typeID,
-                        sun_nio_ch_SctpResultContainer_MESSAGE);
+                        sun_nio_ch_sctp_ResultContainer_MESSAGE);
 }
 
 /*
- * Class:     sun_nio_ch_SctpChannelImpl
+ * Class:     sun_nio_ch_sctp_SctpChannelImpl
  * Method:    receive0
- * Signature: (ILsun/nio/ch/SctpResultContainer;JIZ)I
+ * Signature: (ILsun/nio/ch/sctp/ResultContainer;JIZ)I
  */
-JNIEXPORT jint JNICALL Java_sun_nio_ch_SctpChannelImpl_receive0
+JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_receive0
   (JNIEnv *env, jclass klass, jint fd, jobject resultContainerObj,
    jlong address, jint length, jboolean peek) {
     SOCKADDR sa;
@@ -505,11 +507,11 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_SctpChannelImpl_receive0
 }
 
 /*
- * Class:     sun_nio_ch_SctpChannelImpl
+ * Class:     sun_nio_ch_sctp_SctpChannelImpl
  * Method:    send0
  * Signature: (IJILjava/net/SocketAddress;IIZI)I
  */
-JNIEXPORT jint JNICALL Java_sun_nio_ch_SctpChannelImpl_send0
+JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_send0
   (JNIEnv *env, jclass klass, jint fd, jlong address, jint length,
    jobject saTarget, jint assocId, jint streamNumber, jboolean unordered,
    jint ppid) {
@@ -582,11 +584,11 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_SctpChannelImpl_send0
 }
 
 /*
- * Class:     sun_nio_ch_SctpChannelImpl
+ * Class:     sun_nio_ch_sctp_SctpChannelImpl
  * Method:    checkConnect
  * Signature: (Ljava/io/FileDescriptor;ZZ)I
  */
-JNIEXPORT jint JNICALL Java_sun_nio_ch_SctpChannelImpl_checkConnect
+JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_checkConnect
   (JNIEnv* env, jobject this, jobject fdo, jboolean block, jboolean ready) {
     return Java_sun_nio_ch_SocketChannelImpl_checkConnect(env, this,
                                                           fdo, block, ready);

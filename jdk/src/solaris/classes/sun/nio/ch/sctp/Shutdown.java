@@ -22,31 +22,48 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.nio.ch;
+package sun.nio.ch.sctp;
 
 import com.sun.nio.sctp.Association;
+import com.sun.nio.sctp.ShutdownNotification;
 
 /**
- * An implementation of Association
+ * An implementation of ShutdownNotification
  */
-public class SctpAssociationImpl extends Association {
-    public SctpAssociationImpl(int associationID,
-                               int maxInStreams,
-                               int maxOutStreams) {
-        super(associationID, maxInStreams, maxOutStreams);
+public class Shutdown extends ShutdownNotification
+    implements SctpNotification
+{
+    private Association association;
+    /* assocId is used to lookup the association before the notification is
+     * returned to user code */
+    private int assocId;
+
+    /* Invoked from native */
+    private Shutdown(int assocId) {
+        this.assocId = assocId;
+    }
+
+    @Override
+    public int assocId() {
+        return assocId;
+    }
+
+    @Override
+    public void setAssociation(Association association) {
+        this.association = association;
+    }
+
+    @Override
+    public Association association() {
+        assert association != null;
+        return association;
     }
 
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer(super.toString());
-        return sb.append("[associationID:")
-                 .append(associationID())
-                 .append(", maxIn:")
-                 .append(maxInboundStreams())
-                 .append(", maxOut:")
-                 .append(maxOutboundStreams())
-                 .append("]")
-                 .toString();
+        StringBuilder sb = new StringBuilder();
+        sb.append(super.toString()).append(" [");
+        sb.append("Association:").append(association).append("]");
+        return sb.toString();
     }
 }
-

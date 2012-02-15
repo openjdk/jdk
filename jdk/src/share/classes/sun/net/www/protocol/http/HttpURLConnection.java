@@ -270,7 +270,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     protected Proxy instProxy;
 
     private CookieHandler cookieHandler;
-    private ResponseCache cacheHandler;
+    private final ResponseCache cacheHandler;
 
     // the cached response, and cached response headers and body
     protected CacheResponse cachedResponse;
@@ -1579,7 +1579,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
                 if (respCode == 200 || respCode == 203 || respCode == 206 ||
                     respCode == 300 || respCode == 301 || respCode == 410) {
-                    if (cacheHandler != null) {
+                    if (cacheHandler != null && getUseCaches()) {
                         // give cache a chance to save response in cache
                         URI uri = ParseUtil.toURI(url);
                         if (uri != null) {

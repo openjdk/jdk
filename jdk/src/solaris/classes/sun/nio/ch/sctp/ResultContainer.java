@@ -22,13 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.nio.ch;
+package sun.nio.ch.sctp;
 
 /**
  * Wraps the actual message or notification so that it can be
  * set and returned from the native receive implementation.
  */
-public class SctpResultContainer {
+public class ResultContainer {
     /* static final ints so that they can be referenced from native */
     static final int NOTHING = 0;
     static final int MESSAGE = 1;
@@ -63,47 +63,47 @@ public class SctpResultContainer {
         return (SctpNotification) value;
     }
 
-    SctpMessageInfoImpl getMessageInfo() {
+    MessageInfoImpl getMessageInfo() {
         assert type() == MESSAGE;
 
-        if (value instanceof SctpMessageInfoImpl)
-            return (SctpMessageInfoImpl) value;
+        if (value instanceof MessageInfoImpl)
+            return (MessageInfoImpl) value;
 
         return null;
     }
 
-    SctpSendFailed getSendFailed() {
+    SendFailed getSendFailed() {
         assert type() == SEND_FAILED;
 
-        if (value instanceof SctpSendFailed)
-            return (SctpSendFailed) value;
+        if (value instanceof SendFailed)
+            return (SendFailed) value;
 
         return null;
     }
 
-    SctpAssocChange getAssociationChanged() {
+    AssociationChange getAssociationChanged() {
         assert type() == ASSOCIATION_CHANGED;
 
-        if (value instanceof SctpAssocChange)
-            return (SctpAssocChange) value;
+        if (value instanceof AssociationChange)
+            return (AssociationChange) value;
 
         return null;
     }
 
-    SctpPeerAddrChange getPeerAddressChanged() {
+    PeerAddrChange getPeerAddressChanged() {
         assert type() == PEER_ADDRESS_CHANGED;
 
-        if (value instanceof SctpPeerAddrChange)
-            return (SctpPeerAddrChange) value;
+        if (value instanceof PeerAddrChange)
+            return (PeerAddrChange) value;
 
         return null;
     }
 
-    SctpShutdown getShutdown() {
+    Shutdown getShutdown() {
         assert type() == SHUTDOWN;
 
-        if (value instanceof SctpShutdown)
-            return (SctpShutdown) value;
+        if (value instanceof Shutdown)
+            return (Shutdown) value;
 
         return null;
     }

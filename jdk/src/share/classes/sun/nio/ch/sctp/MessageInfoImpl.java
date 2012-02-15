@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.nio.ch;
+package sun.nio.ch.sctp;
 
 import java.net.SocketAddress;
 import com.sun.nio.sctp.MessageInfo;
@@ -31,7 +31,7 @@ import com.sun.nio.sctp.Association;
 /**
  * An implementation of a MessageInfo.
  */
-public class SctpMessageInfoImpl extends MessageInfo {
+public class MessageInfoImpl extends MessageInfo {
     private final SocketAddress address;
     private final int bytes;          /* 0 */
 
@@ -43,9 +43,9 @@ public class SctpMessageInfoImpl extends MessageInfo {
     private long timeToLive;    /* 0L */
     private int ppid;           /* 0 */
 
-    public SctpMessageInfoImpl(Association association,
-                               SocketAddress address,
-                               int streamNumber) {
+    public MessageInfoImpl(Association association,
+                           SocketAddress address,
+                           int streamNumber) {
         this.association = association;
         this.address = address;
         this.streamNumber = streamNumber;
@@ -53,13 +53,13 @@ public class SctpMessageInfoImpl extends MessageInfo {
     }
 
     /* Invoked from native */
-    private SctpMessageInfoImpl(int assocId,
-                                SocketAddress address,
-                                int bytes,
-                                int streamNumber,
-                                boolean complete,
-                                boolean unordered,
-                                int ppid) {
+    private MessageInfoImpl(int assocId,
+                            SocketAddress address,
+                            int bytes,
+                            int streamNumber,
+                            boolean complete,
+                            boolean unordered,
+                            int ppid) {
         this.assocId = assocId;
         this.address = address;
         this.bytes = bytes;
@@ -75,7 +75,7 @@ public class SctpMessageInfoImpl extends MessageInfo {
     }
 
     /**
-     * SctpMessageInfoImpl instances created from native will need to have their
+     * MessageInfoImpl instances created from native will need to have their
      * association set from the channel.
      */
     void setAssociation(Association association) {

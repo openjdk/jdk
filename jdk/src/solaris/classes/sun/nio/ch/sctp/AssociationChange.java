@@ -22,39 +22,62 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.nio.ch;
+package sun.nio.ch.sctp;
 
-import java.nio.ByteBuffer;
-import java.net.SocketAddress;
 import com.sun.nio.sctp.Association;
-import com.sun.nio.sctp.SendFailedNotification;
+import com.sun.nio.sctp.AssociationChangeNotification;
 
 /**
- * An implementation of SendFailedNotification
+ * An implementation of AssociationChangeNotification
  */
-public class SctpSendFailed extends SendFailedNotification
+public class AssociationChange extends AssociationChangeNotification
     implements SctpNotification
 {
+    /* static final ints so that they can be referenced from native */
+    private final static int SCTP_COMM_UP = 1;
+    private final static int SCTP_COMM_LOST = 2;
+    private final static int SCTP_RESTART = 3;
+    private final static int SCTP_SHUTDOWN = 4;
+    private final static int SCTP_CANT_START = 5;
+
     private Association association;
+
     /* assocId is used to lookup the association before the notification is
      * returned to user code */
     private int assocId;
-    private SocketAddress address;
-    private ByteBuffer buffer;
-    private int errorCode;
-    private int streamNumber;
+    private AssocChangeEvent event;
+    private int maxOutStreams;
+    private int maxInStreams;
 
     /* Invoked from native */
-    private SctpSendFailed(int assocId,
-                           SocketAddress address,
-                           ByteBuffer buffer,
-                           int errorCode,
-                           int streamNumber) {
+    private AssociationChange(int assocId,
+                              int intEvent,
+                              int maxOutStreams,
+                              int maxInStreams) {
+        switch (intEvent) {
+            case SCTP_COMM_UP :
+                this.event = AssocChangeEvent.COMM_UP;
+                break;
+            case SCTP_COMM_LOST :
+                this.event = AssocChangeEvent.COMM_LOST;
+                break;
+            case SCTP_RESTART :
+                this.event = AssocChangeEvent.RESTART;
+                break;
+            case SCTP_SHUTDOWN :
+                this.event = AssocChangeEvent.SHUTDOWN;
+                break;
+            case SCTP_CANT_START :
+                this.event = AssocChangeEvent.CANT_START;
+                break;
+            default :
+                throw new AssertionError(
+                      "Unknown Association Change Event type: " + intEvent);
+        }
+
         this.assocId = assocId;
-        this.errorCode = errorCode;
-        this.streamNumber = streamNumber;
-        this.address = address;
-        this.buffer = buffer;
+        this.maxOutStreams = maxOutStreams;
+        this.maxInStreams = maxInStreams;
     }
 
     @Override
@@ -69,30 +92,21 @@ public class SctpSendFailed extends SendFailedNotification
 
     @Override
     public Association association() {
-        /* may be null */
+        assert association != null;
         return association;
     }
 
     @Override
-    public SocketAddress address() {
-        assert address != null;
-        return address;
+    public AssocChangeEvent event() {
+        return event;
     }
 
-    @Override
-    public ByteBuffer buffer() {
-        assert buffer != null;
-        return buffer;
+    int maxOutStreams() {
+        return maxOutStreams;
     }
 
-    @Override
-    public int errorCode() {
-        return errorCode;
-    }
-
-    @Override
-    public int streamNumber() {
-        return streamNumber;
+    int maxInStreams() {
+        return maxInStreams;
     }
 
     @Override
@@ -100,11 +114,7 @@ public class SctpSendFailed extends SendFailedNotification
         StringBuilder sb = new StringBuilder();
         sb.append(super.toString()).append(" [");
         sb.append("Association:").append(association);
-        sb.append(", Address: ").append(address);
-        sb.append(", buffer: ").append(buffer);
-        sb.append(", errorCode: ").append(errorCode);
-        sb.append(", streamNumber: ").append(streamNumber);
-        sb.append("]");
+        sb.append(", Event: ").append(event).append("]");
         return sb.toString();
     }
 }
