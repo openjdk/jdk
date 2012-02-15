@@ -3447,16 +3447,6 @@ G1CollectedHeap::doConcurrentMark() {
   }
 }
 
-double G1CollectedHeap::predict_region_elapsed_time_ms(HeapRegion *hr,
-                                                       bool young) {
-  return _g1_policy->predict_region_elapsed_time_ms(hr, young);
-}
-
-void G1CollectedHeap::check_if_region_is_too_expensive(double
-                                                           predicted_time_ms) {
-  _g1_policy->check_if_region_is_too_expensive(predicted_time_ms);
-}
-
 size_t G1CollectedHeap::pending_card_num() {
   size_t extra_cards = 0;
   JavaThread *curr = Threads::first();
@@ -3728,12 +3718,12 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         g1_policy()->print_collection_set(g1_policy()->inc_cset_head(), gclog_or_tty);
 #endif // YOUNG_LIST_VERBOSE
 
-        g1_policy()->choose_collection_set(target_pause_time_ms);
+        g1_policy()->finalize_cset(target_pause_time_ms);
 
         _cm->note_start_of_gc();
         // We should not verify the per-thread SATB buffers given that
         // we have not filtered them yet (we'll do so during the
-        // GC). We also call this after choose_collection_set() to
+        // GC). We also call this after finalize_cset() to
         // ensure that the CSet has been finalized.
         _cm->verify_no_cset_oops(true  /* verify_stacks */,
                                  true  /* verify_enqueued_buffers */,
