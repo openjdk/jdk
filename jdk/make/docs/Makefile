@@ -1,4 +1,4 @@
-# Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -355,64 +355,6 @@ endif
 $(COREAPI_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(CORE_PKGS))
 	$(prep-target)
 	$(call PackageFilter,$(CORE_PKGS))
-
-#############################################################
-#
-# mirrordocs
-#
-
-# Part of langtools
-ifdef LANGTOOLS_DIST
-  ALL_OTHER_TARGETS += mirrordocs
-endif
-
-MIRROR_DOCDIR      := $(JDK_API_DOCSDIR)/apt/mirror
-MIRROR2COREAPI     := ../../$(JDKJRE2COREAPI)
-MIRROR_DOCTITLE    := Mirror API
-MIRROR_WINDOWTITLE := Mirror API
-MIRROR_HEADER      := <strong>Mirror API</strong>
-MIRROR_BOTTOM      := $(call CommonBottom,$(MIRROR_FIRST_COPYRIGHT_YEAR))
-MIRROR_GROUPNAME   := Packages
-MIRROR_OVERVIEW    := $(IMPORTSRCDIR)/com/sun/mirror/overview.html
-MIRROR_REGEXP      := com.sun.mirror.*
-# MIRROR_PKGS is located in NON_CORE_PKGS.gmk
-
-# The index.html, options, and packages files
-MIRROR_INDEX_FILE    = $(MIRROR_DOCDIR)/index.html
-MIRROR_OPTIONS_FILE  = $(DOCSTMPDIR)/mirror.options
-MIRROR_PACKAGES_FILE = $(DOCSTMPDIR)/mirror.packages
-
-mirrordocs: $(MIRROR_INDEX_FILE)
-
-# Set relative location to core api document root
-$(MIRROR_INDEX_FILE): GET2DOCSDIR=$(MIRROR2COREAPI)/..
-
-# Run javadoc if the index file is out of date or missing
-$(MIRROR_INDEX_FILE): $(MIRROR_OPTIONS_FILE) $(MIRROR_PACKAGES_FILE)
-	$(prep-javadoc)
-	$(call JavadocSummary,$(MIRROR_OPTIONS_FILE),$(MIRROR_PACKAGES_FILE))
-	$(JAVADOC_CMD) $(JAVADOC_VM_MEMORY_FLAGS) -d $(@D) \
-	  @$(MIRROR_OPTIONS_FILE) @$(MIRROR_PACKAGES_FILE)
-
-# Create file with javadoc options in it
-$(MIRROR_OPTIONS_FILE): $(MIRROR_OVERVIEW)
-	$(prep-target)
-	@($(call OptionOnly,$(COMMON_JAVADOCFLAGS))			; \
-	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH))	; \
-	  $(call OptionPair,-encoding,ascii)				; \
-	  $(call OptionPair,-overview,$(MIRROR_OVERVIEW))		; \
-	  $(call OptionPair,-doctitle,$(MIRROR_DOCTITLE))		; \
-	  $(call OptionPair,-windowtitle,$(MIRROR_WINDOWTITLE) $(DRAFT_WINTITLE));\
-	  $(call OptionPair,-header,$(MIRROR_HEADER)$(DRAFT_HEADER))	; \
-	  $(call OptionPair,-bottom,$(MIRROR_BOTTOM)$(DRAFT_BOTTOM)) 	; \
-	  $(call OptionTrip,-group,$(MIRROR_GROUPNAME),$(MIRROR_REGEXP)); \
-	  $(call OptionTrip,-linkoffline,$(MIRROR2COREAPI),$(COREAPI_DOCSDIR)); \
-        ) >> $@
-
-# Create a file with the package names in it
-$(MIRROR_PACKAGES_FILE): $(DIRECTORY_CACHE) $(call PackageDependencies,$(MIRROR_PKGS))
-	$(prep-target)
-	$(call PackageFilter,$(MIRROR_PKGS))
 
 #############################################################
 #

@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.nio.ch;
+package sun.nio.ch.sctp;
 
 import java.net.SocketAddress;
 import java.net.InetAddress;

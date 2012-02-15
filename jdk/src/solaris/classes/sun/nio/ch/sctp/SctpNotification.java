@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.nio.ch;
+package sun.nio.ch.sctp;
 
 import com.sun.nio.sctp.Association;
 import com.sun.nio.sctp.Notification;

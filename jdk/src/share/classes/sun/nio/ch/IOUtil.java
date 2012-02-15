@@ -34,7 +34,7 @@ import java.nio.ByteBuffer;
  * File-descriptor based I/O utilities that are shared by NIO classes.
  */
 
-class IOUtil {
+public class IOUtil {
 
     private IOUtil() { }                // No instantiation
 
@@ -309,7 +309,7 @@ class IOUtil {
         }
     }
 
-    static FileDescriptor newFD(int i) {
+    public static FileDescriptor newFD(int i) {
         FileDescriptor fd = new FileDescriptor();
         setfdVal(fd, i);
         return fd;
@@ -326,10 +326,11 @@ class IOUtil {
 
     static native boolean drain(int fd) throws IOException;
 
-    static native void configureBlocking(FileDescriptor fd, boolean blocking)
+    public static native void configureBlocking(FileDescriptor fd,
+                                                boolean blocking)
         throws IOException;
 
-    static native int fdVal(FileDescriptor fd);
+    public static native int fdVal(FileDescriptor fd);
 
     static native void setfdVal(FileDescriptor fd, int value);
 

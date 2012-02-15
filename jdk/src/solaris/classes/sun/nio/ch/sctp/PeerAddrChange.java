@@ -22,62 +22,60 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.nio.ch;
+package sun.nio.ch.sctp;
 
+import java.net.SocketAddress;
 import com.sun.nio.sctp.Association;
-import com.sun.nio.sctp.AssociationChangeNotification;
+import com.sun.nio.sctp.PeerAddressChangeNotification;
 
 /**
- * An implementation of AssociationChangeNotification
+ * An implementation of PeerAddressChangeNotification
  */
-public class SctpAssocChange extends AssociationChangeNotification
+public class PeerAddrChange extends PeerAddressChangeNotification
     implements SctpNotification
 {
     /* static final ints so that they can be referenced from native */
-    private final static int SCTP_COMM_UP = 1;
-    private final static int SCTP_COMM_LOST = 2;
-    private final static int SCTP_RESTART = 3;
-    private final static int SCTP_SHUTDOWN = 4;
-    private final static int SCTP_CANT_START = 5;
+    private final static int SCTP_ADDR_AVAILABLE = 1;
+    private final static int SCTP_ADDR_UNREACHABLE = 2;
+    private final static int SCTP_ADDR_REMOVED = 3;
+    private final static int SCTP_ADDR_ADDED = 4;
+    private final static int SCTP_ADDR_MADE_PRIM = 5;
+    private final static int SCTP_ADDR_CONFIRMED =6;
 
     private Association association;
 
     /* assocId is used to lookup the association before the notification is
      * returned to user code */
     private int assocId;
-    private AssocChangeEvent event;
-    private int maxOutStreams;
-    private int maxInStreams;
+    private SocketAddress address;
+    private AddressChangeEvent event;
 
     /* Invoked from native */
-    private SctpAssocChange(int assocId,
-                            int intEvent,
-                            int maxOutStreams,
-                            int maxInStreams) {
+    private PeerAddrChange(int assocId, SocketAddress address, int intEvent) {
         switch (intEvent) {
-            case SCTP_COMM_UP :
-                this.event = AssocChangeEvent.COMM_UP;
+            case SCTP_ADDR_AVAILABLE :
+                this.event = AddressChangeEvent.ADDR_AVAILABLE;
                 break;
-            case SCTP_COMM_LOST :
-                this.event = AssocChangeEvent.COMM_LOST;
+            case SCTP_ADDR_UNREACHABLE :
+                this.event = AddressChangeEvent.ADDR_UNREACHABLE;
                 break;
-            case SCTP_RESTART :
-                this.event = AssocChangeEvent.RESTART;
+            case SCTP_ADDR_REMOVED :
+                this.event = AddressChangeEvent.ADDR_REMOVED;
                 break;
-            case SCTP_SHUTDOWN :
-                this.event = AssocChangeEvent.SHUTDOWN;
+            case SCTP_ADDR_ADDED :
+                this.event = AddressChangeEvent.ADDR_ADDED;
                 break;
-            case SCTP_CANT_START :
-                this.event = AssocChangeEvent.CANT_START;
+            case SCTP_ADDR_MADE_PRIM :
+                this.event = AddressChangeEvent.ADDR_MADE_PRIMARY;
                 break;
-            default :
-                throw new AssertionError(
-                      "Unknown Association Change Event type: " + intEvent);
+            case SCTP_ADDR_CONFIRMED :
+                this.event = AddressChangeEvent.ADDR_CONFIRMED;
+                break;
+            default:
+                throw new AssertionError("Unknown event type");
         }
-
         this.assocId = assocId;
-        this.maxOutStreams = maxOutStreams;
-        this.maxInStreams = maxInStreams;
+        this.address = address;
     }
 
     @Override
@@ -91,30 +89,31 @@ public class SctpAssocChange extends AssociationChangeNotification
     }
 
     @Override
+    public SocketAddress address() {
+        assert address != null;
+        return address;
+    }
+
+    @Override
     public Association association() {
         assert association != null;
         return association;
     }
 
     @Override
-    public AssocChangeEvent event() {
+    public AddressChangeEvent event() {
+        assert event != null;
         return event;
-    }
-
-    int maxOutStreams() {
-        return maxOutStreams;
-    }
-
-    int maxInStreams() {
-        return maxInStreams;
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(super.toString()).append(" [");
-        sb.append("Association:").append(association);
+        sb.append("Address: ").append(address);
+        sb.append(", Association:").append(association);
         sb.append(", Event: ").append(event).append("]");
         return sb.toString();
     }
 }
+
