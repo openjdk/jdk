@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ class PSMarkSweep : public MarkSweep {
 
  public:
   static void invoke(bool clear_all_softrefs);
-  static void invoke_no_policy(bool clear_all_softrefs);
+  static bool invoke_no_policy(bool clear_all_softrefs);
 
   static void initialize();
 
