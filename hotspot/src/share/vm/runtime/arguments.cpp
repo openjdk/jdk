@@ -1370,12 +1370,9 @@ void Arguments::set_ergonomics_flags() {
   // by ergonomics.
   if (MaxHeapSize <= max_heap_for_compressed_oops()) {
 #if !defined(COMPILER1) || defined(TIERED)
-// disable UseCompressedOops by default on MacOS X until 7118647 is fixed
-#ifndef __APPLE__
     if (FLAG_IS_DEFAULT(UseCompressedOops)) {
       FLAG_SET_ERGO(bool, UseCompressedOops, true);
     }
-#endif // !__APPLE__
 #endif
 #ifdef _WIN64
     if (UseLargePages && UseCompressedOops) {
