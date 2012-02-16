@@ -667,6 +667,8 @@ private:
   void emit_arith_b(int op1, int op2, Register dst, int imm8);
 
   void emit_arith(int op1, int op2, Register dst, int32_t imm32);
+  // Force generation of a 4 byte immediate value even if it fits into 8bit
+  void emit_arith_imm32(int op1, int op2, Register dst, int32_t imm32);
   // only 32bit??
   void emit_arith(int op1, int op2, Register dst, jobject obj);
   void emit_arith(int op1, int op2, Register dst, Register src);
@@ -1526,6 +1528,9 @@ private:
   void subq(Register dst, Address src);
   void subq(Register dst, Register src);
 
+  // Force generation of a 4 byte immediate value even if it fits into 8bit
+  void subl_imm32(Register dst, int32_t imm32);
+  void subq_imm32(Register dst, int32_t imm32);
 
   // Subtract Scalar Double-Precision Floating-Point Values
   void subsd(XMMRegister dst, Address src);
@@ -1763,8 +1768,8 @@ class MacroAssembler: public Assembler {
   // Alignment
   void align(int modulus);
 
-  // Misc
-  void fat_nop(); // 5 byte nop
+  // A 5 byte nop that is safe for patching (see patch_verified_entry)
+  void fat_nop();
 
   // Stack frame creation/removal
   void enter();
@@ -2275,6 +2280,8 @@ class MacroAssembler: public Assembler {
 
   void subptr(Register dst, Address src) { LP64_ONLY(subq(dst, src)) NOT_LP64(subl(dst, src)); }
   void subptr(Register dst, int32_t src);
+  // Force generation of a 4 byte immediate value even if it fits into 8bit
+  void subptr_imm32(Register dst, int32_t src);
   void subptr(Register dst, Register src);
   void subptr(Register dst, RegisterOrConstant src) {
     if (src.is_constant()) subptr(dst, (int) src.as_constant());
@@ -2565,6 +2572,9 @@ public:
   // sign extend as need a l to ptr sized element
   void movl2ptr(Register dst, Address src) { LP64_ONLY(movslq(dst, src)) NOT_LP64(movl(dst, src)); }
   void movl2ptr(Register dst, Register src) { LP64_ONLY(movslq(dst, src)) NOT_LP64(if (dst != src) movl(dst, src)); }
+
+  // C2 compiled method's prolog code.
+  void verified_entry(int framesize, bool stack_bang, bool fp_mode_24b);
 
   // IndexOf strings.
   // Small strings are loaded through stack if they cross page boundary.
