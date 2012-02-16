@@ -117,10 +117,9 @@ class PSScavenge: AllStatic {
   // Called by parallelScavengeHeap to init the tenuring threshold
   static void initialize();
 
-  // Scavenge entry point
-  static void invoke();
-  // Return true is a collection was done.  Return
-  // false if the collection was skipped.
+  // Scavenge entry point.  This may invoke a full gc; return true if so.
+  static bool invoke();
+  // Return true if a collection was done; false otherwise.
   static bool invoke_no_policy();
 
   // If an attempt to promote fails, this method is invoked
