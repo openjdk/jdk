@@ -381,6 +381,16 @@ void C1_MacroAssembler::unverified_entry(Register receiver, Register ic_klass) {
 
 
 void C1_MacroAssembler::verified_entry() {
+  if (C1Breakpoint || VerifyFPU || !UseStackBanging) {
+    // Verified Entry first instruction should be 5 bytes long for correct
+    // patching by patch_verified_entry().
+    //
+    // C1Breakpoint and VerifyFPU have one byte first instruction.
+    // Also first instruction will be one byte "push(rbp)" if stack banging
+    // code is not generated (see build_frame() above).
+    // For all these cases generate long instruction first.
+    fat_nop();
+  }
   if (C1Breakpoint)int3();
   // build frame
   verify_FPU(0, "method_entry");

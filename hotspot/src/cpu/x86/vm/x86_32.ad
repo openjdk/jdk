@@ -550,117 +550,65 @@ void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 
 //=============================================================================
 #ifndef PRODUCT
-void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
+void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
   Compile* C = ra_->C;
-  if( C->in_24_bit_fp_mode() ) {
-    st->print("FLDCW  24 bit fpu control word");
-    st->print_cr(""); st->print("\t");
-  }
 
   int framesize = C->frame_slots() << LogBytesPerInt;
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
-  // Remove two words for return addr and rbp,
-  framesize -= 2*wordSize;
+  // Remove wordSize for return addr which is already pushed.
+  framesize -= wordSize;
 
-  // Calls to C2R adapters often do not accept exceptional returns.
-  // We require that their callers must bang for them.  But be careful, because
-  // some VM calls (such as call site linkage) can use several kilobytes of
-  // stack.  But the stack safety zone should account for that.
-  // See bugs 4446381, 4468289, 4497237.
   if (C->need_stack_bang(framesize)) {
-    st->print_cr("# stack bang"); st->print("\t");
-  }
-  st->print_cr("PUSHL  EBP"); st->print("\t");
-
-  if( VerifyStackAtCalls ) { // Majik cookie to verify stack depth
-    st->print("PUSH   0xBADB100D\t# Majik cookie for stack depth check");
-    st->print_cr(""); st->print("\t");
     framesize -= wordSize;
-  }
-
-  if ((C->in_24_bit_fp_mode() || VerifyStackAtCalls ) && framesize < 128 ) {
+    st->print("# stack bang");
+    st->print("\n\t");
+    st->print("PUSH   EBP\t# Save EBP");
     if (framesize) {
-      st->print("SUB    ESP,%d\t# Create frame",framesize);
+      st->print("\n\t");
+      st->print("SUB    ESP, #%d\t# Create frame",framesize);
     }
   } else {
-    st->print("SUB    ESP,%d\t# Create frame",framesize);
+    st->print("SUB    ESP, #%d\t# Create frame",framesize);
+    st->print("\n\t");
+    framesize -= wordSize;
+    st->print("MOV    [ESP + #%d], EBP\t# Save EBP",framesize);
   }
+
+  if (VerifyStackAtCalls) {
+    st->print("\n\t");
+    framesize -= wordSize;
+    st->print("MOV    [ESP + #%d], 0xBADB100D\t# Majik cookie for stack depth check",framesize);
+  }
+
+  if( C->in_24_bit_fp_mode() ) {
+    st->print("\n\t");
+    st->print("FLDCW  \t# load 24 bit fpu control word");
+  }
+  if (UseSSE >= 2 && VerifyFPU) {
+    st->print("\n\t");
+    st->print("# verify FPU stack (must be clean on entry)");
+  }
+
+#ifdef ASSERT
+  if (VerifyStackAtCalls) {
+    st->print("\n\t");
+    st->print("# stack alignment check");
+  }
+#endif
+  st->cr();
 }
 #endif
 
 
 void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
-
-  if (UseSSE >= 2 && VerifyFPU) {
-    MacroAssembler masm(&cbuf);
-    masm.verify_FPU(0, "FPU stack must be clean on entry");
-  }
-
-  // WARNING: Initial instruction MUST be 5 bytes or longer so that
-  // NativeJump::patch_verified_entry will be able to patch out the entry
-  // code safely. The fldcw is ok at 6 bytes, the push to verify stack
-  // depth is ok at 5 bytes, the frame allocation can be either 3 or
-  // 6 bytes. So if we don't do the fldcw or the push then we must
-  // use the 6 byte frame allocation even if we have no frame. :-(
-  // If method sets FPU control word do it now
-  if( C->in_24_bit_fp_mode() ) {
-    MacroAssembler masm(&cbuf);
-    masm.fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_24()));
-  }
+  MacroAssembler _masm(&cbuf);
 
   int framesize = C->frame_slots() << LogBytesPerInt;
-  assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
-  // Remove two words for return addr and rbp,
-  framesize -= 2*wordSize;
 
-  // Calls to C2R adapters often do not accept exceptional returns.
-  // We require that their callers must bang for them.  But be careful, because
-  // some VM calls (such as call site linkage) can use several kilobytes of
-  // stack.  But the stack safety zone should account for that.
-  // See bugs 4446381, 4468289, 4497237.
-  if (C->need_stack_bang(framesize)) {
-    MacroAssembler masm(&cbuf);
-    masm.generate_stack_overflow_check(framesize);
-  }
+  __ verified_entry(framesize, C->need_stack_bang(framesize), C->in_24_bit_fp_mode());
 
-  // We always push rbp, so that on return to interpreter rbp, will be
-  // restored correctly and we can correct the stack.
-  emit_opcode(cbuf, 0x50 | EBP_enc);
-
-  if( VerifyStackAtCalls ) { // Majik cookie to verify stack depth
-    emit_opcode(cbuf, 0x68); // push 0xbadb100d
-    emit_d32(cbuf, 0xbadb100d);
-    framesize -= wordSize;
-  }
-
-  if ((C->in_24_bit_fp_mode() || VerifyStackAtCalls ) && framesize < 128 ) {
-    if (framesize) {
-      emit_opcode(cbuf, 0x83);   // sub  SP,#framesize
-      emit_rm(cbuf, 0x3, 0x05, ESP_enc);
-      emit_d8(cbuf, framesize);
-    }
-  } else {
-    emit_opcode(cbuf, 0x81);   // sub  SP,#framesize
-    emit_rm(cbuf, 0x3, 0x05, ESP_enc);
-    emit_d32(cbuf, framesize);
-  }
   C->set_frame_complete(cbuf.insts_size());
-
-#ifdef ASSERT
-  if (VerifyStackAtCalls) {
-    Label L;
-    MacroAssembler masm(&cbuf);
-    masm.push(rax);
-    masm.mov(rax, rsp);
-    masm.andptr(rax, StackAlignmentInBytes-1);
-    masm.cmpptr(rax, StackAlignmentInBytes-wordSize);
-    masm.pop(rax);
-    masm.jcc(Assembler::equal, L);
-    masm.stop("Stack is not properly aligned!");
-    masm.bind(L);
-  }
-#endif
 
   if (C->has_mach_constant_base_node()) {
     // NOTE: We set the table base offset here because users might be
