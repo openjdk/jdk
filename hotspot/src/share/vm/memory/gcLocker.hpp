@@ -83,13 +83,26 @@ class GC_locker: public AllStatic {
   static void jni_lock(JavaThread* thread);
   static void jni_unlock(JavaThread* thread);
 
+  static bool is_active_internal() {
+    verify_critical_count();
+    return _lock_count > 0 || _jni_lock_count > 0;
+  }
+
  public:
   // Accessors
-  static bool is_active();
+  static bool is_active() {
+    assert(_needs_gc || SafepointSynchronize::is_at_safepoint(), "only read at safepoint");
+    return is_active_internal();
+  }
   static bool needs_gc()       { return _needs_gc;                        }
 
   // Shorthand
-  static bool is_active_and_needs_gc() { return needs_gc() && is_active(); }
+  static bool is_active_and_needs_gc() {
+    // Use is_active_internal since _needs_gc can change from true to
+    // false outside of a safepoint, triggering the assert in
+    // is_active.
+    return needs_gc() && is_active_internal();
+  }
 
   // In debug mode track the locking state at all times
   static void increment_debug_jni_lock_count() {
