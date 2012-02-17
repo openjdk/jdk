@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   // Collection of generations that are adjacent in the
   // space reserved for the heap.
   AdjoiningGenerations* _gens;
+  unsigned int _death_march_count;
 
   static GCTaskManager*          _gc_task_manager;      // The task manager.
 
@@ -71,8 +72,13 @@ class ParallelScavengeHeap : public CollectedHeap {
   static inline size_t total_invocations();
   HeapWord* allocate_new_tlab(size_t size);
 
+  inline bool should_alloc_in_eden(size_t size) const;
+  inline void death_march_check(HeapWord* const result, size_t size);
+  HeapWord* mem_allocate_old_gen(size_t size);
+
  public:
   ParallelScavengeHeap() : CollectedHeap() {
+    _death_march_count = 0;
     set_alignment(_perm_gen_alignment, intra_heap_alignment());
     set_alignment(_young_gen_alignment, intra_heap_alignment());
     set_alignment(_old_gen_alignment, intra_heap_alignment());
