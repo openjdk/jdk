@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
 	fi
 	@echo Making SA debugger back-end...
 	$(QUIETLY) $(CC) -D$(BUILDARCH) -D_GNU_SOURCE                   \
+		   -D_FILE_OFFSET_BITS=64                               \
                    $(SYMFLAG) $(ARCHFLAG) $(SHARED_FLAG) $(PICFLAG)     \
 	           -I$(SASRCDIR)                                        \
 	           -I$(GENERATED)                                       \

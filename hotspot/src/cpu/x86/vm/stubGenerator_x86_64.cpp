@@ -2997,7 +2997,7 @@ class StubGenerator: public StubCodeGenerator {
     // Generate oop map
     OopMap* map = new OopMap(framesize, 0);
 
-    oop_maps->add_gc_map(__ pc() - start, map);
+    oop_maps->add_gc_map(the_pc - start, map);
 
     __ reset_last_Java_frame(true, true);
 

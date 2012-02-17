@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ void ScavengeRootsTask::do_it(GCTaskManager* manager, uint which) {
 
   PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(which);
   PSScavengeRootsClosure roots_closure(pm);
+  PSPromoteRootsClosure  roots_to_old_closure(pm);
 
   switch (_root_type) {
     case universe:
@@ -91,7 +92,7 @@ void ScavengeRootsTask::do_it(GCTaskManager* manager, uint which) {
 
     case code_cache:
       {
-        CodeBlobToOopClosure each_scavengable_code_blob(&roots_closure, /*do_marking=*/ true);
+        CodeBlobToOopClosure each_scavengable_code_blob(&roots_to_old_closure, /*do_marking=*/ true);
         CodeCache::scavenge_root_nmethods_do(&each_scavengable_code_blob);
       }
       break;
