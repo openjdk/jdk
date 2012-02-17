@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,86 @@ source %{
   static address double_signmask() { return (address)double_signmask_pool; }
   static address double_signflip() { return (address)double_signflip_pool; }
 #endif
+
+#ifndef PRODUCT
+  void MachNopNode::format(PhaseRegAlloc*, outputStream* st) const {
+    st->print("nop \t# %d bytes pad for loops and calls", _count);
+  }
+#endif
+
+  void MachNopNode::emit(CodeBuffer &cbuf, PhaseRegAlloc*) const {
+    MacroAssembler _masm(&cbuf);
+    __ nop(_count);
+  }
+
+  uint MachNopNode::size(PhaseRegAlloc*) const {
+    return _count;
+  }
+
+#ifndef PRODUCT
+  void MachBreakpointNode::format(PhaseRegAlloc*, outputStream* st) const {
+    st->print("# breakpoint");
+  }
+#endif
+
+  void MachBreakpointNode::emit(CodeBuffer &cbuf, PhaseRegAlloc* ra_) const {
+    MacroAssembler _masm(&cbuf);
+    __ int3();
+  }
+
+  uint MachBreakpointNode::size(PhaseRegAlloc* ra_) const {
+    return MachNode::size(ra_);
+  }
+
+%}
+
+encode %{
+
+  enc_class preserve_SP %{
+    debug_only(int off0 = cbuf.insts_size());
+    MacroAssembler _masm(&cbuf);
+    // RBP is preserved across all calls, even compiled calls.
+    // Use it to preserve RSP in places where the callee might change the SP.
+    __ movptr(rbp_mh_SP_save, rsp);
+    debug_only(int off1 = cbuf.insts_size());
+    assert(off1 - off0 == preserve_SP_size(), "correct size prediction");
+  %}
+
+  enc_class restore_SP %{
+    MacroAssembler _masm(&cbuf);
+    __ movptr(rsp, rbp_mh_SP_save);
+  %}
+
+  enc_class call_epilog %{
+    if (VerifyStackAtCalls) {
+      // Check that stack depth is unchanged: find majik cookie on stack
+      int framesize = ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3*VMRegImpl::slots_per_word));
+      MacroAssembler _masm(&cbuf);
+      Label L;
+      __ cmpptr(Address(rsp, framesize), (int32_t)0xbadb100d);
+      __ jccb(Assembler::equal, L);
+      // Die if stack mismatch
+      __ int3();
+      __ bind(L);
+    }
+  %}
+
 %}
 
 // INSTRUCTIONS -- Platform independent definitions (same for 32- and 64-bit)
+
+// ============================================================================
+
+instruct ShouldNotReachHere() %{
+  match(Halt);
+  format %{ "int3\t# ShouldNotReachHere" %}
+  ins_encode %{
+    __ int3();
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// ============================================================================
 
 instruct addF_reg(regF dst, regF src) %{
   predicate((UseSSE>=1) && (UseAVX == 0));
