@@ -41,20 +41,10 @@ case "${OS}" in
 esac
 
 # Verify apt executable does not exist
-test -e "${TESTJAVA}/bin/apt"
-
-RESULT=$?
-
-case "${RESULT}" in
-        0  )
-        echo "apt executable should not exist."
-        exit 1
-	;;
-
-        * )
-	;;
-esac
-
+if [ -f "${TESTJAVA}/bin/apt" -o -f "${TESTJAVA}/bin/apt.exe" ];then
+    echo "apt executable should not exist."
+    exit 1
+fi
 
 # Construct path to javac executable
 JAVAC="${TESTJAVA}/bin/javac ${TESTTOOLVMOPTS} -source 1.5 -sourcepath ${TESTSRC} -classpath ${TESTJAVA}/lib/tools.jar -d . "
