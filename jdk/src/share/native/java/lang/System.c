@@ -235,7 +235,14 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
     }
     PUTPROP(props, "file.encoding", sprops->encoding);
     PUTPROP(props, "sun.jnu.encoding", sprops->sun_jnu_encoding);
+    if (sprops->sun_stdout_encoding != NULL) {
+        PUTPROP(props, "sun.stdout.encoding", sprops->sun_stdout_encoding);
+    }
+    if (sprops->sun_stderr_encoding != NULL) {
+        PUTPROP(props, "sun.stderr.encoding", sprops->sun_stderr_encoding);
+    }
     PUTPROP(props, "file.encoding.pkg", "sun.io");
+
     /* unicode_encoding specifies the default endianness */
     PUTPROP(props, "sun.io.unicode.encoding", sprops->unicode_encoding);
     PUTPROP(props, "sun.cpu.isalist",

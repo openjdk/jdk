@@ -66,6 +66,8 @@ typedef struct {
     char *display_variant;
     char *encoding;
     char *sun_jnu_encoding;
+    char *sun_stdout_encoding;
+    char *sun_stderr_encoding;
     char *timezone;
 
     char *printerJob;
