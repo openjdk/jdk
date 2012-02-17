@@ -568,6 +568,25 @@ void os::init_system_properties_values() {
             sprintf(ld_library_path, "%s:%s", v, t);
             free(t);
         }
+
+#ifdef __APPLE__
+        // Apple's Java6 has "." at the beginning of java.library.path.
+        // OpenJDK on Windows has "." at the end of java.library.path.
+        // OpenJDK on Linux and Solaris don't have "." in java.library.path
+        // at all. To ease the transition from Apple's Java6 to OpenJDK7,
+        // "." is appended to the end of java.library.path. Yes, this
+        // could cause a change in behavior, but Apple's Java6 behavior
+        // can be achieved by putting "." at the beginning of the
+        // JAVA_LIBRARY_PATH environment variable.
+        {
+            char *t = ld_library_path;
+            // that's +3 for appending ":." and the trailing '\0'
+            ld_library_path = (char *) malloc(strlen(t) + 3);
+            sprintf(ld_library_path, "%s:%s", t, ".");
+            free(t);
+        }
+#endif
+
         Arguments::set_library_path(ld_library_path);
     }
 
