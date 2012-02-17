@@ -958,7 +958,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
         should_try_gc = false;
       } else {
         // Read the GC count while still holding the Heap_lock.
-        gc_count_before = SharedHeap::heap()->total_collections();
+        gc_count_before = total_collections();
         should_try_gc = true;
       }
     }
@@ -976,7 +976,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
         // failed to allocate. No point in trying to allocate
         // further. We'll just return NULL.
         MutexLockerEx x(Heap_lock);
-        *gc_count_before_ret = SharedHeap::heap()->total_collections();
+        *gc_count_before_ret = total_collections();
         return NULL;
       }
     } else {
@@ -1031,7 +1031,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
   // the check before we do the actual allocation. The reason for doing it
   // before the allocation is that we avoid having to keep track of the newly
   // allocated memory while we do a GC.
-  if (g1_policy()->need_to_start_conc_mark("concurrent humongous allocation", word_size)) {
+  if (g1_policy()->need_to_start_conc_mark("concurrent humongous allocation",
+                                           word_size)) {
     collect(GCCause::_g1_humongous_allocation);
   }
 
@@ -1059,7 +1060,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
         should_try_gc = false;
       } else {
         // Read the GC count while still holding the Heap_lock.
-        gc_count_before = SharedHeap::heap()->total_collections();
+        gc_count_before = total_collections();
         should_try_gc = true;
       }
     }
@@ -1081,7 +1082,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
         // failed to allocate. No point in trying to allocate
         // further. We'll just return NULL.
         MutexLockerEx x(Heap_lock);
-        *gc_count_before_ret = SharedHeap::heap()->total_collections();
+        *gc_count_before_ret = total_collections();
         return NULL;
       }
     } else {
@@ -2311,10 +2312,12 @@ size_t G1CollectedHeap::unsafe_max_alloc() {
 }
 
 bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
-  return
-    ((cause == GCCause::_gc_locker           && GCLockerInvokesConcurrent) ||
-     (cause == GCCause::_java_lang_system_gc && ExplicitGCInvokesConcurrent) ||
-      cause == GCCause::_g1_humongous_allocation);
+  switch (cause) {
+    case GCCause::_gc_locker:               return GCLockerInvokesConcurrent;
+    case GCCause::_java_lang_system_gc:     return ExplicitGCInvokesConcurrent;
+    case GCCause::_g1_humongous_allocation: return true;
+    default:                                return false;
+  }
 }
 
 #ifndef PRODUCT
@@ -2408,47 +2411,66 @@ void G1CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
 }
 
 void G1CollectedHeap::collect(GCCause::Cause cause) {
-  // The caller doesn't have the Heap_lock
-  assert(!Heap_lock->owned_by_self(), "this thread should not own the Heap_lock");
+  assert_heap_not_locked();
 
   unsigned int gc_count_before;
   unsigned int full_gc_count_before;
-  {
-    MutexLocker ml(Heap_lock);
+  bool retry_gc;
 
-    // Read the GC count while holding the Heap_lock
-    gc_count_before = SharedHeap::heap()->total_collections();
-    full_gc_count_before = SharedHeap::heap()->total_full_collections();
-  }
+  do {
+    retry_gc = false;
 
-  if (should_do_concurrent_full_gc(cause)) {
-    // Schedule an initial-mark evacuation pause that will start a
-    // concurrent cycle. We're setting word_size to 0 which means that
-    // we are not requesting a post-GC allocation.
-    VM_G1IncCollectionPause op(gc_count_before,
-                               0,     /* word_size */
-                               true,  /* should_initiate_conc_mark */
-                               g1_policy()->max_pause_time_ms(),
-                               cause);
-    VMThread::execute(&op);
-  } else {
-    if (cause == GCCause::_gc_locker
-        DEBUG_ONLY(|| cause == GCCause::_scavenge_alot)) {
+    {
+      MutexLocker ml(Heap_lock);
 
-      // Schedule a standard evacuation pause. We're setting word_size
-      // to 0 which means that we are not requesting a post-GC allocation.
+      // Read the GC count while holding the Heap_lock
+      gc_count_before = total_collections();
+      full_gc_count_before = total_full_collections();
+    }
+
+    if (should_do_concurrent_full_gc(cause)) {
+      // Schedule an initial-mark evacuation pause that will start a
+      // concurrent cycle. We're setting word_size to 0 which means that
+      // we are not requesting a post-GC allocation.
       VM_G1IncCollectionPause op(gc_count_before,
                                  0,     /* word_size */
-                                 false, /* should_initiate_conc_mark */
+                                 true,  /* should_initiate_conc_mark */
                                  g1_policy()->max_pause_time_ms(),
                                  cause);
       VMThread::execute(&op);
+      if (!op.pause_succeeded()) {
+        // Another GC got scheduled and prevented us from scheduling
+        // the initial-mark GC. It's unlikely that the GC that
+        // pre-empted us was also an initial-mark GC. So, we'll retry
+        // the initial-mark GC.
+
+        if (full_gc_count_before == total_full_collections()) {
+          retry_gc = true;
+        } else {
+          // A Full GC happened while we were trying to schedule the
+          // initial-mark GC. No point in starting a new cycle given
+          // that the whole heap was collected anyway.
+        }
+      }
     } else {
-      // Schedule a Full GC.
-      VM_G1CollectFull op(gc_count_before, full_gc_count_before, cause);
-      VMThread::execute(&op);
+      if (cause == GCCause::_gc_locker
+          DEBUG_ONLY(|| cause == GCCause::_scavenge_alot)) {
+
+        // Schedule a standard evacuation pause. We're setting word_size
+        // to 0 which means that we are not requesting a post-GC allocation.
+        VM_G1IncCollectionPause op(gc_count_before,
+                                   0,     /* word_size */
+                                   false, /* should_initiate_conc_mark */
+                                   g1_policy()->max_pause_time_ms(),
+                                   cause);
+        VMThread::execute(&op);
+      } else {
+        // Schedule a Full GC.
+        VM_G1CollectFull op(gc_count_before, full_gc_count_before, cause);
+        VMThread::execute(&op);
+      }
     }
-  }
+  } while (retry_gc);
 }
 
 bool G1CollectedHeap::is_in(const void* p) const {
@@ -3149,12 +3171,12 @@ void G1CollectedHeap::verify(bool allow_dirty,
 
     // We apply the relevant closures to all the oops in the
     // system dictionary, the string table and the code cache.
-    const int so = SharedHeap::SO_AllClasses | SharedHeap::SO_Strings | SharedHeap::SO_CodeCache;
+    const int so = SO_AllClasses | SO_Strings | SO_CodeCache;
 
     process_strong_roots(true,      // activate StrongRootsScope
                          true,      // we set "collecting perm gen" to true,
                                     // so we don't reset the dirty cards in the perm gen.
-                         SharedHeap::ScanningOption(so),  // roots scanning options
+                         ScanningOption(so),  // roots scanning options
                          &rootsCl,
                          &blobsCl,
                          &rootsCl);
@@ -3423,16 +3445,6 @@ G1CollectedHeap::doConcurrentMark() {
     _cmThread->set_started();
     CGC_lock->notify();
   }
-}
-
-double G1CollectedHeap::predict_region_elapsed_time_ms(HeapRegion *hr,
-                                                       bool young) {
-  return _g1_policy->predict_region_elapsed_time_ms(hr, young);
-}
-
-void G1CollectedHeap::check_if_region_is_too_expensive(double
-                                                           predicted_time_ms) {
-  _g1_policy->check_if_region_is_too_expensive(predicted_time_ms);
 }
 
 size_t G1CollectedHeap::pending_card_num() {
@@ -3706,12 +3718,12 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         g1_policy()->print_collection_set(g1_policy()->inc_cset_head(), gclog_or_tty);
 #endif // YOUNG_LIST_VERBOSE
 
-        g1_policy()->choose_collection_set(target_pause_time_ms);
+        g1_policy()->finalize_cset(target_pause_time_ms);
 
         _cm->note_start_of_gc();
         // We should not verify the per-thread SATB buffers given that
         // we have not filtered them yet (we'll do so during the
-        // GC). We also call this after choose_collection_set() to
+        // GC). We also call this after finalize_cset() to
         // ensure that the CSet has been finalized.
         _cm->verify_no_cset_oops(true  /* verify_stacks */,
                                  true  /* verify_enqueued_buffers */,
@@ -4734,7 +4746,7 @@ public:
 void
 G1CollectedHeap::
 g1_process_strong_roots(bool collecting_perm_gen,
-                        SharedHeap::ScanningOption so,
+                        ScanningOption so,
                         OopClosure* scan_non_heap_roots,
                         OopsInHeapRegionClosure* scan_rs,
                         OopsInGenClosure* scan_perm,

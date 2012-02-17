@@ -176,7 +176,11 @@ void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp,
 
   // Update time of last gc for all generations we collected
   // (which curently is all the generations in the heap).
-  gch->update_time_of_last_gc(os::javaTimeMillis());
+  // We need to use a monotonically non-deccreasing time in ms
+  // or we will see time-warp warnings and os::javaTimeMillis()
+  // does not guarantee monotonicity.
+  jlong now = os::javaTimeNanos() / NANOSECS_PER_MILLISEC;
+  gch->update_time_of_last_gc(now);
 }
 
 void GenMarkSweep::allocate_stacks() {
