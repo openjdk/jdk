@@ -95,7 +95,7 @@ template <class T> class EventLogBase : public EventLog {
   }
 
   double fetch_timestamp() {
-    return tty->time_stamp().seconds();
+    return os::elapsedTime();
   }
 
   // move the ring buffer to next open slot and return the index of
