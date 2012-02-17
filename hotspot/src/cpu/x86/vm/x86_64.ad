@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -609,13 +609,6 @@ int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
   current_offset += 11; // skip movq instruction + call opcode byte
   return round_to(current_offset, alignment_required()) - current_offset;
 }
-
-#ifndef PRODUCT
-void MachBreakpointNode::format(PhaseRegAlloc*, outputStream* st) const
-{
-  st->print("INT3");
-}
-#endif
 
 // EMIT_RM()
 void emit_rm(CodeBuffer &cbuf, int f1, int f2, int f3) {
@@ -1530,26 +1523,6 @@ uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const
 
 //=============================================================================
 #ifndef PRODUCT
-void MachNopNode::format(PhaseRegAlloc*, outputStream* st) const
-{
-  st->print("nop \t# %d bytes pad for loops and calls", _count);
-}
-#endif
-
-void MachNopNode::emit(CodeBuffer &cbuf, PhaseRegAlloc*) const
-{
-  MacroAssembler _masm(&cbuf);
-  __ nop(_count);
-}
-
-uint MachNopNode::size(PhaseRegAlloc*) const
-{
-  return _count;
-}
-
-
-//=============================================================================
-#ifndef PRODUCT
 void BoxLockNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
@@ -2253,21 +2226,6 @@ encode %{
                    (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
                    runtime_call_Relocation::spec(),
                    RELOC_DISP32);
-  %}
-
-  enc_class preserve_SP %{
-    debug_only(int off0 = cbuf.insts_size());
-    MacroAssembler _masm(&cbuf);
-    // RBP is preserved across all calls, even compiled calls.
-    // Use it to preserve RSP in places where the callee might change the SP.
-    __ movptr(rbp_mh_SP_save, rsp);
-    debug_only(int off1 = cbuf.insts_size());
-    assert(off1 - off0 == preserve_SP_size(), "correct size prediction");
-  %}
-
-  enc_class restore_SP %{
-    MacroAssembler _masm(&cbuf);
-    __ movptr(rsp, rbp_mh_SP_save);
   %}
 
   enc_class Java_Static_Call(method meth)
@@ -3208,9 +3166,9 @@ frame
   // Ret Addr is on stack in slot 0 if no locks or verification or alignment.
   // Otherwise, it is above the locks and verification slot and alignment word
   return_addr(STACK - 2 +
-              round_to(2 + 2 * VerifyStackAtCalls +
-                       Compile::current()->fixed_slots(),
-                       WordsPerLong * 2));
+              round_to((Compile::current()->in_preserve_stack_slots() +
+                        Compile::current()->fixed_slots()),
+                       stack_alignment_in_slots()));
 
   // Body of function which returns an integer array locating
   // arguments either in registers or in stack slots.  Passed an array
@@ -11665,6 +11623,21 @@ instruct RethrowException()
   format %{ "jmp     rethrow_stub" %}
   ins_encode(enc_rethrow);
   ins_pipe(pipe_jmp);
+%}
+
+
+// ============================================================================
+// This name is KNOWN by the ADLC and cannot be changed.
+// The ADLC forces a 'TypeRawPtr::BOTTOM' output type
+// for this guy.
+instruct tlsLoadP(r15_RegP dst) %{
+  match(Set dst (ThreadLocal));
+  effect(DEF dst);
+
+  size(0);
+  format %{ "# TLS is in R15" %}
+  ins_encode( /*empty encoding*/ );
+  ins_pipe(ialu_reg_reg);
 %}
 
 
