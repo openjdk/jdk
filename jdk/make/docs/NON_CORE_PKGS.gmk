@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -70,11 +70,6 @@ NIO_PKGS         = com.sun.nio.file
 DOCLETAPI_PKGS   = com.sun.javadoc
 
 TAGLETAPI_FILE   = com/sun/tools/doclets/Taglet.java
-
-MIRROR_PKGS      = com.sun.mirror.apt           \
-                   com.sun.mirror.declaration   \
-                   com.sun.mirror.type          \
-                   com.sun.mirror.util
 
 ATTACH_PKGS      = com.sun.tools.attach         \
                    com.sun.tools.attach.spi

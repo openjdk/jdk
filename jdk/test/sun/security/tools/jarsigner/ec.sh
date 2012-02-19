@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,8 @@ $JAR cvf $JFILE A
 
 $KT -alias a -dname CN=a -keyalg ec -genkey -validity 300 || exit 11
 $KT -alias b -dname CN=b -keyalg ec -genkey -validity 300 || exit 12
-$KT -alias c -dname CN=c -keyalg ec -genkey -validity 300 || exit 13
+# Ensure that key length is sufficient for the intended hash (SHA512withECDSA)
+$KT -alias c -dname CN=c -keyalg ec -genkey -validity 300 -keysize 521 || exit 13
 $KT -alias x -dname CN=x -keyalg ec -genkey -validity 300 || exit 14
 
 $JARSIGNER -keystore $KS -storepass changeit $JFILE a -debug -strict || exit 21

@@ -137,6 +137,11 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
                 g.setColor(progressBar.getForeground());
                 barRectHeight -= 2;
                 barRectWidth -= 2;
+
+                if (barRectWidth <= 0 || barRectHeight <= 0) {
+                    return;
+                }
+
                 Graphics2D g2 = (Graphics2D)g;
                 g2.setStroke(new BasicStroke((float)(vertical ? barRectWidth : barRectHeight),
                                              BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL));
