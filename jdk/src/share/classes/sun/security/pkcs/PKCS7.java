@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,16 +72,19 @@ public class PKCS7 {
 
     /*
      * Random number generator for creating nonce values
+     * (Lazy initialization)
      */
-    private static final SecureRandom RANDOM;
-    static {
-        SecureRandom tmp = null;
-        try {
-            tmp = SecureRandom.getInstance("SHA1PRNG");
-        } catch (NoSuchAlgorithmException e) {
-            // should not happen
+    private static class SecureRandomHolder {
+        static final SecureRandom RANDOM;
+        static {
+            SecureRandom tmp = null;
+            try {
+                tmp = SecureRandom.getInstance("SHA1PRNG");
+            } catch (NoSuchAlgorithmException e) {
+                // should not happen
+            }
+            RANDOM = tmp;
         }
-        RANDOM = tmp;
     }
 
     /*
@@ -862,8 +865,8 @@ public class PKCS7 {
 
         // Generate a nonce
         BigInteger nonce = null;
-        if (RANDOM != null) {
-            nonce = new BigInteger(64, RANDOM);
+        if (SecureRandomHolder.RANDOM != null) {
+            nonce = new BigInteger(64, SecureRandomHolder.RANDOM);
             tsQuery.setNonce(nonce);
         }
         tsQuery.requestCertificate(true);

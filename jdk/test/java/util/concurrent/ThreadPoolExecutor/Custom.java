@@ -100,8 +100,8 @@ public class Custom {
         equal(countExecutorThreads(), threadCount);
         equal(CustomTask.births.get(), threadCount);
         tpe.shutdown();
-        tpe.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        Thread.sleep(10);
+        tpe.awaitTermination(120, TimeUnit.SECONDS);
+        Thread.sleep(1000);
         equal(countExecutorThreads(), 0);
 
         CustomSTPE stpe = new CustomSTPE();
@@ -110,8 +110,8 @@ public class Custom {
         equal(CustomSTPE.decorations.get(), threadCount);
         equal(countExecutorThreads(), threadCount);
         stpe.shutdown();
-        stpe.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        Thread.sleep(10);
+        stpe.awaitTermination(120, TimeUnit.SECONDS);
+        Thread.sleep(1000);
         equal(countExecutorThreads(), 0);
 
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);

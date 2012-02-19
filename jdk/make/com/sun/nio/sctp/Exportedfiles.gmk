@@ -29,11 +29,11 @@
 
 ifneq ($(PLATFORM), windows)
 FILES_export = \
-    sun/nio/ch/SctpAssocChange.java \
-    sun/nio/ch/SctpChannelImpl.java \
-    sun/nio/ch/SctpNet.java \
-    sun/nio/ch/SctpPeerAddrChange.java \
-    sun/nio/ch/SctpResultContainer.java \
-    sun/nio/ch/SctpServerChannelImpl.java \
-    sun/nio/ch/SctpStdSocketOption.java
+    sun/nio/ch/sctp/AssociationChange.java \
+    sun/nio/ch/sctp/SctpChannelImpl.java \
+    sun/nio/ch/sctp/SctpNet.java \
+    sun/nio/ch/sctp/PeerAddrChange.java \
+    sun/nio/ch/sctp/ResultContainer.java \
+    sun/nio/ch/sctp/SctpServerChannelImpl.java \
+    sun/nio/ch/sctp/SctpStdSocketOption.java
 endif
