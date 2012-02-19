@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2012 Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,6 @@ JAVAC_JAR = $(LIB_DIR)/javac.jar
 JAVADOC_JAR = $(LIB_DIR)/javadoc.jar
 JAVAH_JAR = $(LIB_DIR)/javah.jar
 JAVAP_JAR = $(LIB_DIR)/javap.jar
-APT_JAR = $(LIB_DIR)/apt.jar
 
 CLASSES_JAR = $(DIST_DIR)/classes.jar
 SRC_ZIP = $(DIST_DIR)/src.zip
@@ -163,7 +162,7 @@ endif
 
 #----- useful macros
 
-TOOLS =  javac javadoc javah javap apt
+TOOLS =  javac javadoc javah javap
 
 SOURCE_LEVEL = 5
 BOOTSTRAP_TARGET_LEVEL = 5
@@ -319,28 +318,6 @@ $(JAVAP_JAR): $(JAVAP_JAVA_FILES) \
 	( $(ECHO) Main-Class: sun.tools.javap.Main ) > $(BUILD_DIR)/javap.mf
 	$(BOOTJAR) -cfm $@ $(BUILD_DIR)/javap.mf $(patsubst %,-C $(CLASSES_DIR) %, $(JAVAP_DIRS))
 
-#----- apt
-
-APT_DIRS = \
-	com/sun/mirror \
-	com/sun/tools/apt
-
-APT_RESOURCE_FILES = \
-	$(shell find $(patsubst %,$(SRC_CLASSES_DIR)/%,$(APT_DIRS)) -name SCCS -prune -o -name \*.properties -print )
-
-APT_JAVA_FILES = \
-	$(shell find $(patsubst %,$(SRC_CLASSES_DIR)/%,$(APT_DIRS)) -name SCCS -prune -o -name \*.java -print ) \
-	$(patsubst $(SRC_CLASSES_DIR)/%.properties,$(GENSRC_DIR)/%.java,$(APT_RESOURCE_FILES))
- 
-$(APT_JAR): $(APT_JAVA_FILES) $(JAVAC_JAR) \
-		$(patsubst $(SRC_CLASSES_DIR)/%.properties,$(GENSRC_DIR)/%.java,$(APT_RESOURCE_FILES))
-	$(MKDIR) -p $(CLASSES_DIR) $(@D)
-	$(BOOT_JAVAC) -sourcepath "" -classpath $(CLASSES_DIR) -d $(CLASSES_DIR) -target $(TARGET_LEVEL) $(NO_PROPRIETARY_API_WARNINGS) \
-		$(APT_JAVA_FILES) \
-		$(patsubst $(SRC_CLASSES_DIR)/%.properties,$(GENSRC_DIR)/%.java,$(APT_RESOURCE_FILES))
-	( $(ECHO) Main-Class: com.sun.tools.apt.Main ; $(ECHO) Class-Path: javac.jar ) > $(BUILD_DIR)/apt.mf
-	$(BOOTJAR) -cfm $@ $(BUILD_DIR)/apt.mf $(patsubst %,-C $(CLASSES_DIR) %, $(APT_DIRS))
-
 #-----
 
 build-tools: $(BUILDTOOLCLASSES_DIR)/CompileProperties/CompileProperties.class
@@ -366,7 +343,7 @@ $(BUILDTOOLCLASSES_DIR)/%.class : $(BUILDTOOLSRC_DIR)/%.java
 
 #----- all classes
 
-$(DIST_DIR)/%/classes.jar: $(JAVAC_JAR) $(JAVADOC_JAR) $(JAVAH_JAR) $(JAVAP_JAR) $(APT_JAR)
+$(DIST_DIR)/%/classes.jar: $(JAVAC_JAR) $(JAVADOC_JAR) $(JAVAH_JAR) $(JAVAP_JAR)
 	$(MKDIR) -p $(@D)
 	$(BOOTJAR) -cf $@ -C $(CLASSES_DIR) .
 
@@ -401,7 +378,6 @@ quick-check: $(patsubst %, $(DIST_LIB_DIR)/%.jar, $(TOOLS))
 	- $(TESTJAVA) -jar $(JAVADOC_JAR) -version
 	$(TESTJAVA) -jar $(JAVAH_JAR) -version
 	- $(TESTJAVA) -jar $(JAVAP_JAR) -version
-	$(TESTJAVA) -jar $(APT_JAR) -version
 
 #-----
 
