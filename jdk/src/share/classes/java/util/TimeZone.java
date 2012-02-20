@@ -43,6 +43,8 @@ import java.lang.ref.SoftReference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.ConcurrentHashMap;
+import sun.misc.SharedSecrets;
+import sun.misc.JavaAWTAccess;
 import sun.security.action.GetPropertyAction;
 import sun.util.TimeZoneNameUtility;
 import sun.util.calendar.ZoneInfo;
@@ -615,7 +617,7 @@ abstract public class TimeZone implements Serializable, Cloneable {
      * method doesn't create a clone.
      */
     static TimeZone getDefaultRef() {
-        TimeZone defaultZone = defaultZoneTL.get();
+        TimeZone defaultZone = getDefaultInAppContext();
         if (defaultZone == null) {
             defaultZone = defaultTimeZone;
             if (defaultZone == null) {
@@ -706,10 +708,65 @@ abstract public class TimeZone implements Serializable, Cloneable {
         if (hasPermission()) {
             synchronized (TimeZone.class) {
                 defaultTimeZone = zone;
-                defaultZoneTL.set(null);
+                setDefaultInAppContext(null);
             }
         } else {
-            defaultZoneTL.set(zone);
+            setDefaultInAppContext(zone);
+        }
+    }
+
+    /**
+     * Returns the default TimeZone in an AppContext if any AppContext
+     * has ever used. null is returned if any AppContext hasn't been
+     * used or if the AppContext doesn't have the default TimeZone.
+     */
+    private synchronized static TimeZone getDefaultInAppContext() {
+        // JavaAWTAccess provides access implementation-private methods without using reflection.
+        JavaAWTAccess javaAWTAccess = SharedSecrets.getJavaAWTAccess();
+
+        // Note that javaAWTAccess may be null if sun.awt.AppContext class hasn't
+        // been loaded. If so, it implies that AWTSecurityManager is not our
+        // SecurityManager and we can use a local static variable.
+        // This works around a build time issue.
+        if (javaAWTAccess == null) {
+            return mainAppContextDefault;
+        } else {
+            if (!javaAWTAccess.isDisposed()) {
+                TimeZone tz = (TimeZone)
+                    javaAWTAccess.get(TimeZone.class);
+                if (tz == null && javaAWTAccess.isMainAppContext()) {
+                    return mainAppContextDefault;
+                } else {
+                    return tz;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Sets the default TimeZone in the AppContext to the given
+     * tz. null is handled special: do nothing if any AppContext
+     * hasn't been used, remove the default TimeZone in the
+     * AppContext otherwise.
+     */
+    private synchronized static void setDefaultInAppContext(TimeZone tz) {
+        // JavaAWTAccess provides access implementation-private methods without using reflection.
+        JavaAWTAccess javaAWTAccess = SharedSecrets.getJavaAWTAccess();
+
+        // Note that javaAWTAccess may be null if sun.awt.AppContext class hasn't
+        // been loaded. If so, it implies that AWTSecurityManager is not our
+        // SecurityManager and we can use a local static variable.
+        // This works around a build time issue.
+        if (javaAWTAccess == null) {
+            mainAppContextDefault = tz;
+        } else {
+            if (!javaAWTAccess.isDisposed()) {
+                javaAWTAccess.put(TimeZone.class, tz);
+                if (javaAWTAccess.isMainAppContext()) {
+                    mainAppContextDefault = null;
+                }
+            }
         }
     }
 
@@ -760,11 +817,12 @@ abstract public class TimeZone implements Serializable, Cloneable {
      */
     private String           ID;
     private static volatile TimeZone defaultTimeZone;
-    private static final InheritableThreadLocal<TimeZone> defaultZoneTL
-                                        = new InheritableThreadLocal<TimeZone>();
 
     static final String         GMT_ID        = "GMT";
     private static final int    GMT_ID_LENGTH = 3;
+
+    // a static TimeZone we can reference if no AppContext is in place
+    private static TimeZone mainAppContextDefault;
 
     /**
      * Parses a custom time zone identifier and returns a corresponding zone.
