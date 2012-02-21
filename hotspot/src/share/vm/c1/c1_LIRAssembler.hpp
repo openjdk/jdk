@@ -241,6 +241,10 @@ class LIR_Assembler: public CompilationResourceObj {
   void membar();
   void membar_acquire();
   void membar_release();
+  void membar_loadload();
+  void membar_storestore();
+  void membar_loadstore();
+  void membar_storeload();
   void get_thread(LIR_Opr result);
 
   void verify_oop_map(CodeEmitInfo* info);

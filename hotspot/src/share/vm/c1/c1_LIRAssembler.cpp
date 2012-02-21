@@ -664,6 +664,22 @@ void LIR_Assembler::emit_op0(LIR_Op0* op) {
       membar_release();
       break;
 
+    case lir_membar_loadload:
+      membar_loadload();
+      break;
+
+    case lir_membar_storestore:
+      membar_storestore();
+      break;
+
+    case lir_membar_loadstore:
+      membar_loadstore();
+      break;
+
+    case lir_membar_storeload:
+      membar_storeload();
+      break;
+
     case lir_get_thread:
       get_thread(op->result_opr());
       break;
