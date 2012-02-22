@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -339,7 +339,7 @@ public class Manifest implements Cloneable {
                     return -1;
                 }
             }
-            return buf[pos++] & 0xff;
+            return Byte.toUnsignedInt(buf[pos++]);
         }
 
         public int read(byte[] b, int off, int len) throws IOException {

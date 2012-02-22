@@ -1018,41 +1018,26 @@ extern "C" void print_method_handle(oop mh);
 void trace_method_handle_stub(const char* adaptername,
                               oop mh,
                               intptr_t* saved_regs,
-                              intptr_t* entry_sp,
-                              intptr_t* saved_sp,
-                              intptr_t* saved_bp) {
+                              intptr_t* entry_sp) {
   // called as a leaf from native code: do not block the JVM!
   bool has_mh = (strstr(adaptername, "return/") == NULL);  // return adapters don't have rcx_mh
+  const char* mh_reg_name = has_mh ? "rcx_mh" : "rcx";
+  tty->print_cr("MH %s %s="PTR_FORMAT" sp="PTR_FORMAT, adaptername, mh_reg_name, mh, entry_sp);
 
-  intptr_t* last_sp = (intptr_t*) saved_bp[frame::interpreter_frame_last_sp_offset];
-  intptr_t* base_sp = last_sp;
-  typedef MethodHandles::RicochetFrame RicochetFrame;
-  RicochetFrame* rfp = (RicochetFrame*)((address)saved_bp - RicochetFrame::sender_link_offset_in_bytes());
-  if (Universe::heap()->is_in((address) rfp->saved_args_base())) {
-    // Probably an interpreter frame.
-    base_sp = (intptr_t*) saved_bp[frame::interpreter_frame_monitor_block_top_offset];
-  }
-  intptr_t    mh_reg = (intptr_t)mh;
-  const char* mh_reg_name = "rcx_mh";
-  if (!has_mh)  mh_reg_name = "rcx";
-  tty->print_cr("MH %s %s="PTR_FORMAT" sp=("PTR_FORMAT"+"INTX_FORMAT") stack_size="INTX_FORMAT" bp="PTR_FORMAT,
-                adaptername, mh_reg_name, mh_reg,
-                (intptr_t)entry_sp, (intptr_t)(saved_sp - entry_sp), (intptr_t)(base_sp - last_sp), (intptr_t)saved_bp);
   if (Verbose) {
-    tty->print(" reg dump: ");
-    int saved_regs_count = (entry_sp-1) - saved_regs;
-    // 32 bit: rdi rsi rbp rsp; rbx rdx rcx (*) rax
-    int i;
-    for (i = 0; i <= saved_regs_count; i++) {
-      if (i > 0 && i % 4 == 0 && i != saved_regs_count) {
+    tty->print_cr("Registers:");
+    const int saved_regs_count = RegisterImpl::number_of_registers;
+    for (int i = 0; i < saved_regs_count; i++) {
+      Register r = as_Register(i);
+      // The registers are stored in reverse order on the stack (by pusha).
+      tty->print("%3s=" PTR_FORMAT, r->name(), saved_regs[((saved_regs_count - 1) - i)]);
+      if ((i + 1) % 4 == 0) {
         tty->cr();
-        tty->print("   + dump: ");
+      } else {
+        tty->print(", ");
       }
-      tty->print(" %d: "PTR_FORMAT, i, saved_regs[i]);
     }
     tty->cr();
-    if (last_sp != saved_sp && last_sp != NULL)
-      tty->print_cr("*** last_sp="PTR_FORMAT, (intptr_t)last_sp);
 
     {
      // dumping last frame with frame::describe
@@ -1102,14 +1087,7 @@ void trace_method_handle_stub(const char* adaptername,
         values.describe(-1, dump_sp, "sp for #1");
       }
 
-      // mark saved_sp if seems valid
-      if (has_mh) {
-        if ((saved_sp >= dump_sp - UNREASONABLE_STACK_MOVE) && (saved_sp < dump_fp)) {
-          values.describe(-1, saved_sp, "*saved_sp");
-        }
-      }
-
-      tty->print_cr("  stack layout:");
+      tty->print_cr("Stack layout:");
       values.print(p);
     }
     if (has_mh)
@@ -1125,16 +1103,12 @@ struct MethodHandleStubArguments {
   oopDesc* mh;
   intptr_t* saved_regs;
   intptr_t* entry_sp;
-  intptr_t* saved_sp;
-  intptr_t* saved_bp;
 };
 void trace_method_handle_stub_wrapper(MethodHandleStubArguments* args) {
   trace_method_handle_stub(args->adaptername,
                            args->mh,
                            args->saved_regs,
-                           args->entry_sp,
-                           args->saved_sp,
-                           args->saved_bp);
+                           args->entry_sp);
 }
 
 void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adaptername) {
@@ -1157,20 +1131,18 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
     __ fst_d(Address(rsp, 0));
   }
 
-  // incoming state:
+  // Incoming state:
   // rcx: method handle
-  // r13 or rsi: saved sp
-  // To avoid calling convention issues, build a record on the stack and pass the pointer to that instead.
-  // Note: fix the increment below if pushing more arguments
-  __ push(rbp);               // saved_bp
-  __ push(saved_last_sp_register()); // saved_sp
+  //
+  // To avoid calling convention issues, build a record on the stack
+  // and pass the pointer to that instead.
   __ push(rbp);               // entry_sp (with extra align space)
   __ push(rbx);               // pusha saved_regs
   __ push(rcx);               // mh
   __ push(rcx);               // slot for adaptername
   __ movptr(Address(rsp, 0), (intptr_t) adaptername);
   __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, trace_method_handle_stub_wrapper), rsp);
-  __ increment(rsp, 6 * wordSize); // MethodHandleStubArguments
+  __ increment(rsp, sizeof(MethodHandleStubArguments));
 
   if  (UseSSE >= 2) {
     __ movdbl(xmm0, Address(rsp, 0));
