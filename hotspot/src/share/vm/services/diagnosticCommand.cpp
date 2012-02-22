@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,11 @@ void DCmdRegistrant::register_dcmds(){
 #endif // SERVICES_KERNEL
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassHistogramDCmd>(true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(true, false));
+
+  //Enhanced JMX Agent Support
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartRemoteDCmd>(true,false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartLocalDCmd>(true,false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStopRemoteDCmd>(true,false));
 
 }
 
@@ -344,3 +349,185 @@ int ThreadDumpDCmd::num_arguments() {
     return 0;
   }
 }
+
+// Enhanced JMX Agent support
+
+JMXStartRemoteDCmd::JMXStartRemoteDCmd(outputStream *output, bool heap_allocated) :
+
+  DCmdWithParser(output, heap_allocated),
+
+  _config_file
+  ("config.file",
+   "set com.sun.management.config.file", "STRING", false),
+
+  _jmxremote_port
+  ("jmxremote.port",
+   "set com.sun.management.jmxremote.port", "STRING", false),
+
+  _jmxremote_rmi_port
+  ("jmxremote.rmi.port",
+   "set com.sun.management.jmxremote.rmi.port", "STRING", false),
+
+  _jmxremote_ssl
+  ("jmxremote.ssl",
+   "set com.sun.management.jmxremote.ssl", "STRING", false),
+
+  _jmxremote_registry_ssl
+  ("jmxremote.registry.ssl",
+   "set com.sun.management.jmxremote.registry.ssl", "STRING", false),
+
+  _jmxremote_authenticate
+  ("jmxremote.authenticate",
+   "set com.sun.management.jmxremote.authenticate", "STRING", false),
+
+  _jmxremote_password_file
+  ("jmxremote.password.file",
+   "set com.sun.management.jmxremote.password.file", "STRING", false),
+
+  _jmxremote_access_file
+  ("jmxremote.access.file",
+   "set com.sun.management.jmxremote.access.file", "STRING", false),
+
+  _jmxremote_login_config
+  ("jmxremote.login.config",
+   "set com.sun.management.jmxremote.login.config", "STRING", false),
+
+  _jmxremote_ssl_enabled_cipher_suites
+  ("jmxremote.ssl.enabled.cipher.suites",
+   "set com.sun.management.jmxremote.ssl.enabled.cipher.suite", "STRING", false),
+
+  _jmxremote_ssl_enabled_protocols
+  ("jmxremote.ssl.enabled.protocols",
+   "set com.sun.management.jmxremote.ssl.enabled.protocols", "STRING", false),
+
+  _jmxremote_ssl_need_client_auth
+  ("jmxremote.ssl.need.client.auth",
+   "set com.sun.management.jmxremote.need.client.auth", "STRING", false),
+
+  _jmxremote_ssl_config_file
+  ("jmxremote.ssl.config.file",
+   "set com.sun.management.jmxremote.ssl_config_file", "STRING", false)
+
+  {
+    _dcmdparser.add_dcmd_option(&_config_file);
+    _dcmdparser.add_dcmd_option(&_jmxremote_port);
+    _dcmdparser.add_dcmd_option(&_jmxremote_rmi_port);
+    _dcmdparser.add_dcmd_option(&_jmxremote_ssl);
+    _dcmdparser.add_dcmd_option(&_jmxremote_registry_ssl);
+    _dcmdparser.add_dcmd_option(&_jmxremote_authenticate);
+    _dcmdparser.add_dcmd_option(&_jmxremote_password_file);
+    _dcmdparser.add_dcmd_option(&_jmxremote_access_file);
+    _dcmdparser.add_dcmd_option(&_jmxremote_login_config);
+    _dcmdparser.add_dcmd_option(&_jmxremote_ssl_enabled_cipher_suites);
+    _dcmdparser.add_dcmd_option(&_jmxremote_ssl_enabled_protocols);
+    _dcmdparser.add_dcmd_option(&_jmxremote_ssl_need_client_auth);
+    _dcmdparser.add_dcmd_option(&_jmxremote_ssl_config_file);
+}
+
+
+int JMXStartRemoteDCmd::num_arguments() {
+  ResourceMark rm;
+  JMXStartRemoteDCmd* dcmd = new JMXStartRemoteDCmd(NULL, false);
+  if (dcmd != NULL) {
+    DCmdMark mark(dcmd);
+    return dcmd->_dcmdparser.num_arguments();
+  } else {
+    return 0;
+  }
+}
+
+
+void JMXStartRemoteDCmd::execute(TRAPS) {
+    ResourceMark rm(THREAD);
+    HandleMark hm(THREAD);
+
+    // Load and initialize the sun.management.Agent class
+    // invoke startRemoteManagementAgent(string) method to start
+    // the remote management server.
+    // throw java.lang.NoSuchMethodError if the method doesn't exist
+
+    Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
+    klassOop k = SystemDictionary::resolve_or_fail(vmSymbols::sun_management_Agent(), loader, Handle(), true, CHECK);
+    instanceKlassHandle ik (THREAD, k);
+
+    JavaValue result(T_VOID);
+
+    // Pass all command line arguments to java as key=value,...
+    // All checks are done on java side
+
+    int len = 0;
+    stringStream options;
+    char comma[2] = {0,0};
+
+    // Leave default values on Agent.class side and pass only
+    // agruments explicitly set by user. All arguments passed
+    // to jcmd override properties with the same name set by
+    // command line with -D or by managmenent.properties
+    // file.
+#define PUT_OPTION(a) \
+    if ( (a).is_set() ){ \
+        options.print("%scom.sun.management.%s=%s", comma, (a).name(), (a).value()); \
+        comma[0] = ','; \
+    }
+
+    PUT_OPTION(_config_file);
+    PUT_OPTION(_jmxremote_port);
+    PUT_OPTION(_jmxremote_rmi_port);
+    PUT_OPTION(_jmxremote_ssl);
+    PUT_OPTION(_jmxremote_registry_ssl);
+    PUT_OPTION(_jmxremote_authenticate);
+    PUT_OPTION(_jmxremote_password_file);
+    PUT_OPTION(_jmxremote_access_file);
+    PUT_OPTION(_jmxremote_login_config);
+    PUT_OPTION(_jmxremote_ssl_enabled_cipher_suites);
+    PUT_OPTION(_jmxremote_ssl_enabled_protocols);
+    PUT_OPTION(_jmxremote_ssl_need_client_auth);
+    PUT_OPTION(_jmxremote_ssl_config_file);
+
+#undef PUT_OPTION
+
+    Handle str = java_lang_String::create_from_str(options.as_string(), CHECK);
+    JavaCalls::call_static(&result, ik, vmSymbols::startRemoteAgent_name(), vmSymbols::string_void_signature(), str, CHECK);
+}
+
+JMXStartLocalDCmd::JMXStartLocalDCmd(outputStream *output, bool heap_allocated) :
+  DCmd(output, heap_allocated)
+{
+  // do nothing
+}
+
+void JMXStartLocalDCmd::execute(TRAPS) {
+    ResourceMark rm(THREAD);
+    HandleMark hm(THREAD);
+
+    // Load and initialize the sun.management.Agent class
+    // invoke startLocalManagementAgent(void) method to start
+    // the local management server
+    // throw java.lang.NoSuchMethodError if method doesn't exist
+
+    Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
+    klassOop k = SystemDictionary::resolve_or_fail(vmSymbols::sun_management_Agent(), loader, Handle(), true, CHECK);
+    instanceKlassHandle ik (THREAD, k);
+
+    JavaValue result(T_VOID);
+    JavaCalls::call_static(&result, ik, vmSymbols::startLocalAgent_name(), vmSymbols::void_method_signature(), CHECK);
+}
+
+
+void JMXStopRemoteDCmd::execute(TRAPS) {
+    ResourceMark rm(THREAD);
+    HandleMark hm(THREAD);
+
+    // Load and initialize the sun.management.Agent class
+    // invoke stopRemoteManagementAgent method to stop the
+    // management server
+    // throw java.lang.NoSuchMethodError if method doesn't exist
+
+    Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
+    klassOop k = SystemDictionary::resolve_or_fail(vmSymbols::sun_management_Agent(), loader, Handle(), true, CHECK);
+    instanceKlassHandle ik (THREAD, k);
+
+    JavaValue result(T_VOID);
+    JavaCalls::call_static(&result, ik, vmSymbols::stopRemoteAgent_name(), vmSymbols::void_method_signature(), CHECK);
+}
+
