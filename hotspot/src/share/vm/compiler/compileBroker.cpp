@@ -204,7 +204,8 @@ class CompilationLog : public StringEventLog {
   }
 
   void log_nmethod(JavaThread* thread, nmethod* nm) {
-    log(thread, "nmethod " INTPTR_FORMAT " code ["INTPTR_FORMAT ", " INTPTR_FORMAT "]",
+    log(thread, "nmethod %d%s " INTPTR_FORMAT " code ["INTPTR_FORMAT ", " INTPTR_FORMAT "]",
+        nm->compile_id(), nm->is_osr_method() ? "%" : "",
         nm, nm->code_begin(), nm->code_end());
   }
 

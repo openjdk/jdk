@@ -284,6 +284,7 @@
   template(run_method_name,                           "run")                                      \
   template(exit_method_name,                          "exit")                                     \
   template(add_method_name,                           "add")                                      \
+  template(remove_method_name,                        "remove")                                   \
   template(parent_name,                               "parent")                                   \
   template(threads_name,                              "threads")                                  \
   template(groups_name,                               "groups")                                   \

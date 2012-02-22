@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2114,25 +2114,26 @@ public class Check {
      */
     void checkOverrideClashes(DiagnosticPosition pos, Type site, MethodSymbol sym) {
          ClashFilter cf = new ClashFilter(site);
-         //for each method m1 that is a member of 'site'...
-         for (Symbol s1 : types.membersClosure(site, false).getElementsByName(sym.name, cf)) {
-            //...find another method m2 that is overridden (directly or indirectly)
-            //by method 'sym' in 'site'
-            for (Symbol s2 : types.membersClosure(site, false).getElementsByName(sym.name, cf)) {
-                if (s1 == s2 || !sym.overrides(s2, site.tsym, types, false)) continue;
+        //for each method m1 that is overridden (directly or indirectly)
+        //by method 'sym' in 'site'...
+        for (Symbol m1 : types.membersClosure(site, false).getElementsByName(sym.name, cf)) {
+            if (!sym.overrides(m1, site.tsym, types, false)) continue;
+             //...check each method m2 that is a member of 'site'
+             for (Symbol m2 : types.membersClosure(site, false).getElementsByName(sym.name, cf)) {
+                if (m2 == m1) continue;
                 //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
                 //a member of 'site') and (ii) m1 has the same erasure as m2, issue an error
-                if (!types.isSubSignature(sym.type, types.memberType(site, s1), false) &&
-                        types.hasSameArgs(s1.erasure(types), s2.erasure(types))) {
+                if (!types.isSubSignature(sym.type, types.memberType(site, m2), false) &&
+                        types.hasSameArgs(m2.erasure(types), m1.erasure(types))) {
                     sym.flags_field |= CLASH;
-                    String key = s2 == sym ?
+                    String key = m1 == sym ?
                             "name.clash.same.erasure.no.override" :
                             "name.clash.same.erasure.no.override.1";
                     log.error(pos,
                             key,
                             sym, sym.location(),
-                            s1, s1.location(),
-                            s2, s2.location());
+                            m2, m2.location(),
+                            m1, m1.location());
                     return;
                 }
             }

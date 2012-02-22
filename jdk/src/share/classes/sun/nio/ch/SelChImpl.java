@@ -36,7 +36,7 @@ import java.io.IOException;
  * @since 1.4
  */
 
-interface SelChImpl extends Channel {
+public interface SelChImpl extends Channel {
 
     FileDescriptor getFD();
 

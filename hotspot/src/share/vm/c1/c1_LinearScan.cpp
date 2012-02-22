@@ -2464,12 +2464,15 @@ void LinearScan::compute_oop_map(IntervalWalker* iw, const LIR_OpVisitState &vis
 
 
 // frequently used constants
-ConstantOopWriteValue LinearScan::_oop_null_scope_value = ConstantOopWriteValue(NULL);
-ConstantIntValue      LinearScan::_int_m1_scope_value = ConstantIntValue(-1);
-ConstantIntValue      LinearScan::_int_0_scope_value =  ConstantIntValue(0);
-ConstantIntValue      LinearScan::_int_1_scope_value =  ConstantIntValue(1);
-ConstantIntValue      LinearScan::_int_2_scope_value =  ConstantIntValue(2);
-LocationValue         _illegal_value = LocationValue(Location());
+// Allocate them with new so they are never destroyed (otherwise, a
+// forced exit could destroy these objects while they are still in
+// use).
+ConstantOopWriteValue* LinearScan::_oop_null_scope_value = new (ResourceObj::C_HEAP) ConstantOopWriteValue(NULL);
+ConstantIntValue*      LinearScan::_int_m1_scope_value = new (ResourceObj::C_HEAP) ConstantIntValue(-1);
+ConstantIntValue*      LinearScan::_int_0_scope_value =  new (ResourceObj::C_HEAP) ConstantIntValue(0);
+ConstantIntValue*      LinearScan::_int_1_scope_value =  new (ResourceObj::C_HEAP) ConstantIntValue(1);
+ConstantIntValue*      LinearScan::_int_2_scope_value =  new (ResourceObj::C_HEAP) ConstantIntValue(2);
+LocationValue*         _illegal_value = new (ResourceObj::C_HEAP) LocationValue(Location());
 
 void LinearScan::init_compute_debug_info() {
   // cache for frequently used scope values
@@ -2508,7 +2511,7 @@ int LinearScan::append_scope_value_for_constant(LIR_Opr opr, GrowableArray<Scope
     case T_OBJECT: {
       jobject value = c->as_jobject();
       if (value == NULL) {
-        scope_values->append(&_oop_null_scope_value);
+        scope_values->append(_oop_null_scope_value);
       } else {
         scope_values->append(new ConstantOopWriteValue(c->as_jobject()));
       }
@@ -2519,10 +2522,10 @@ int LinearScan::append_scope_value_for_constant(LIR_Opr opr, GrowableArray<Scope
     case T_FLOAT: {
       int value = c->as_jint_bits();
       switch (value) {
-        case -1: scope_values->append(&_int_m1_scope_value); break;
-        case 0:  scope_values->append(&_int_0_scope_value); break;
-        case 1:  scope_values->append(&_int_1_scope_value); break;
-        case 2:  scope_values->append(&_int_2_scope_value); break;
+        case -1: scope_values->append(_int_m1_scope_value); break;
+        case 0:  scope_values->append(_int_0_scope_value); break;
+        case 1:  scope_values->append(_int_1_scope_value); break;
+        case 2:  scope_values->append(_int_2_scope_value); break;
         default: scope_values->append(new ConstantIntValue(c->as_jint_bits())); break;
       }
       return 1;
@@ -2531,7 +2534,7 @@ int LinearScan::append_scope_value_for_constant(LIR_Opr opr, GrowableArray<Scope
     case T_LONG: // fall through
     case T_DOUBLE: {
 #ifdef _LP64
-      scope_values->append(&_int_0_scope_value);
+      scope_values->append(_int_0_scope_value);
       scope_values->append(new ConstantLongValue(c->as_jlong_bits()));
 #else
       if (hi_word_offset_in_bytes > lo_word_offset_in_bytes) {
@@ -2657,7 +2660,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
       }
       // Does this reverse on x86 vs. sparc?
       first =  new LocationValue(loc1);
-      second = &_int_0_scope_value;
+      second = _int_0_scope_value;
 #else
       Location loc1, loc2;
       if (!frame_map()->locations_for_slot(opr->double_stack_ix(), Location::normal, &loc1, &loc2)) {
@@ -2671,7 +2674,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
 #ifdef _LP64
       VMReg rname_first = opr->as_register_lo()->as_VMReg();
       first = new LocationValue(Location::new_reg_loc(Location::lng, rname_first));
-      second = &_int_0_scope_value;
+      second = _int_0_scope_value;
 #else
       VMReg rname_first = opr->as_register_lo()->as_VMReg();
       VMReg rname_second = opr->as_register_hi()->as_VMReg();
@@ -2694,7 +2697,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
       VMReg rname_first  = opr->as_xmm_double_reg()->as_VMReg();
 #  ifdef _LP64
       first = new LocationValue(Location::new_reg_loc(Location::dbl, rname_first));
-      second = &_int_0_scope_value;
+      second = _int_0_scope_value;
 #  else
       first = new LocationValue(Location::new_reg_loc(Location::normal, rname_first));
       // %%% This is probably a waste but we'll keep things as they were for now
@@ -2741,7 +2744,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
 
 #ifdef _LP64
       first = new LocationValue(Location::new_reg_loc(Location::dbl, rname_first));
-      second = &_int_0_scope_value;
+      second = _int_0_scope_value;
 #else
       first = new LocationValue(Location::new_reg_loc(Location::normal, rname_first));
       // %%% This is probably a waste but we'll keep things as they were for now
@@ -2822,7 +2825,7 @@ int LinearScan::append_scope_value(int op_id, Value value, GrowableArray<ScopeVa
     }
   } else {
     // append a dummy value because real value not needed
-    scope_values->append(&_illegal_value);
+    scope_values->append(_illegal_value);
     return 1;
   }
 }
@@ -2865,7 +2868,7 @@ IRScopeDebugInfo* LinearScan::compute_debug_info_for_scope(int op_id, IRScope* c
     nof_locals = cur_scope->method()->max_locals();
     locals = new GrowableArray<ScopeValue*>(nof_locals);
     for(int i = 0; i < nof_locals; i++) {
-      locals->append(&_illegal_value);
+      locals->append(_illegal_value);
     }
   }
 

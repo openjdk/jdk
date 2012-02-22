@@ -517,14 +517,14 @@ jdk_nio1: $(call TestDirs, java/nio/file)
 JDK_ALL_TARGETS += jdk_nio2
 JDK_DEFAULT_TARGETS += jdk_nio2
 jdk_nio2: $(call TestDirs, java/nio/Buffer java/nio/ByteOrder \
-          java/nio/channels java/nio/MappedByteBuffer)
+          java/nio/channels java/nio/MappedByteBuffer sun/nio/ch)
 	$(call SharedLibraryPermissions,java/nio/channels)
 	$(call RunAgentvmBatch)
 
 # Stable agentvm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_nio3
 JDK_DEFAULT_TARGETS += jdk_nio3
-jdk_nio3: $(call TestDirs, sun/nio)
+jdk_nio3: $(call TestDirs, java/nio/charset sun/nio/cs)
 	$(call RunAgentvmBatch)
 
 # All nio tests

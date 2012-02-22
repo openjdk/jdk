@@ -312,16 +312,13 @@ private:
   double _recorded_non_young_free_cset_time_ms;
 
   double _sigma;
-  double _expensive_region_limit_ms;
 
   size_t _rs_lengths_prediction;
 
   size_t _known_garbage_bytes;
   double _known_garbage_ratio;
 
-  double sigma() {
-    return _sigma;
-  }
+  double sigma() { return _sigma; }
 
   // A function that prevents us putting too much stock in small sample
   // sets.  Returns a number between 2.0 and 1.0, depending on the number
@@ -490,8 +487,6 @@ public:
     return (double) non_young_num *
            get_new_prediction(_non_young_other_cost_per_region_ms_seq);
   }
-
-  void check_if_region_is_too_expensive(double predicted_time_ms);
 
   double predict_young_collection_elapsed_time_ms(size_t adjustment);
   double predict_base_elapsed_time_ms(size_t pending_cards);
@@ -707,7 +702,6 @@ private:
   // initial-mark work.
   volatile bool _during_initial_mark_pause;
 
-  bool _should_revert_to_young_gcs;
   bool _last_young_gc;
 
   // This set of variables tracks the collector efficiency, in order to
@@ -946,10 +940,17 @@ public:
     return _bytes_copied_during_gc;
   }
 
+  // Determine whether the next GC should be mixed. Called to determine
+  // whether to start mixed GCs or whether to carry on doing mixed
+  // GCs. The two action strings are used in the ergo output when the
+  // method returns true or false.
+  bool next_gc_should_be_mixed(const char* true_action_str,
+                               const char* false_action_str);
+
   // Choose a new collection set.  Marks the chosen regions as being
   // "in_collection_set", and links them together.  The head and number of
   // the collection set are available via access methods.
-  void choose_collection_set(double target_pause_time_ms);
+  void finalize_cset(double target_pause_time_ms);
 
   // The head of the list (via "next_in_collection_set()") representing the
   // current collection set.

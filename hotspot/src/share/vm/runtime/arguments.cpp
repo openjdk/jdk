@@ -102,8 +102,6 @@ SystemProperty *Arguments::_sun_boot_class_path = NULL;
 char* Arguments::_meta_index_path = NULL;
 char* Arguments::_meta_index_dir = NULL;
 
-static bool force_client_mode = false;
-
 // Check if head of 'option' matches 'name', and sets 'tail' remaining part of option string
 
 static bool match_option(const JavaVMOption *option, const char* name,
@@ -1345,7 +1343,7 @@ void Arguments::set_ergonomics_flags() {
     return;
   }
 
-  if (os::is_server_class_machine() && !force_client_mode ) {
+  if (os::is_server_class_machine()) {
     // If no other collector is requested explicitly,
     // let the VM select the collector based on
     // machine class and automatic selection policy.
@@ -1370,12 +1368,9 @@ void Arguments::set_ergonomics_flags() {
   // by ergonomics.
   if (MaxHeapSize <= max_heap_for_compressed_oops()) {
 #if !defined(COMPILER1) || defined(TIERED)
-// disable UseCompressedOops by default on MacOS X until 7118647 is fixed
-#ifndef __APPLE__
     if (FLAG_IS_DEFAULT(UseCompressedOops)) {
       FLAG_SET_ERGO(bool, UseCompressedOops, true);
     }
-#endif // !__APPLE__
 #endif
 #ifdef _WIN64
     if (UseLargePages && UseCompressedOops) {
@@ -2940,11 +2935,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   // Construct the path to the archive
   char jvm_path[JVM_MAXPATHLEN];
   os::jvm_path(jvm_path, sizeof(jvm_path));
-#ifdef TIERED
-  if (strstr(jvm_path, "client") != NULL) {
-    force_client_mode = true;
-  }
-#endif // TIERED
   char *end = strrchr(jvm_path, *os::file_separator());
   if (end != NULL) *end = '\0';
   char *shared_archive_path = NEW_C_HEAP_ARRAY(char, strlen(jvm_path) +
