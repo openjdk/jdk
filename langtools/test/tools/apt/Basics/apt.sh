@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2004, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,10 @@
 #
 
 # @test
-# @bug 4908512 5024825 4957203 4993280 4996963 6174696 6177059
+# @bug 4908512 5024825 4957203 4993280 4996963 6174696 6177059 7041249
 # @run shell ../verifyVariables.sh
-# @build Milk MethodAnnotations NestedClassAnnotations StaticFieldAnnotations StaticMethodAnnotations ParameterAnnotations 
 # @run shell apt.sh
-# @summary test consistency of annotation discovery
+# @summary Make sure apt is removed and doesn't come back
 # @author Joseph D. Darcy
 
 OS=`uname -s`;
@@ -41,136 +40,24 @@ case "${OS}" in
 	;;
 esac
 
-# Construct path to apt executable
-APT="${TESTJAVA}/bin/apt ${TESTTOOLVMOPTS} -XDsuppress-tool-api-removal-message "
-
-printf "%s\n" "-classpath ${TESTCLASSES}"                    > options
-printf "%s\n" "-factorypath ./nullap.jar"                   >> options
-printf "%s\n" "-sourcepath ${TESTSRC} "                     >> options
-printf "%s\n" "-nocompile"                                  >> options
-printf "%s\n" "-XListAnnotationTypes"                       >> options
-
-printf "%s\n" "-classpath ${TESTCLASSES}"                    > options1
-printf "%s\n" "-factorypath ./nullap.jar"                   >> options1
-printf "%s\n" "-sourcepath ${TESTSRC} "                     >> options1
-printf "%s\n" "-nocompile"                                  >> options1
-printf "%s\n" "-XListAnnotationTypes"                       >> options1
-printf "%s\n" "-XclassesAsDecls"                            >> options1
-
+# Verify apt executable does not exist
+if [ -f "${TESTJAVA}/bin/apt" -o -f "${TESTJAVA}/bin/apt.exe" ];then
+    echo "apt executable should not exist."
+    exit 1
+fi
 
 # Construct path to javac executable
 JAVAC="${TESTJAVA}/bin/javac ${TESTTOOLVMOPTS} -source 1.5 -sourcepath ${TESTSRC} -classpath ${TESTJAVA}/lib/tools.jar -d . "
-JAR="${TESTJAVA}/bin/jar "
 
-$JAVAC ${TESTSRC}/NullAPF.java \
-${TESTSRC}/FreshnessApf.java  \
-${TESTSRC}/TestGetTypeDeclarationApf.java \
-${TESTSRC}/TestGetPackageApf.java
+$JAVAC ${TESTSRC}/NullAPF.java
 RESULT=$?
 
 case "${RESULT}" in
         0  )
-        ;;
+        echo "Compilation of apt-using source passed improperly."
+        exit 1
+	;;
 
         * )
-        echo "Compilation failed."
-        exit 1
+	;;
 esac
-
-echo "Making services directory and copying services information."
-mkdir -p META-INF/services
-cp ${TESTSRC}/com.sun.mirror.apt.AnnotationProcessorFactory ./META-INF/services
-$JAR cvf0 nullap.jar NullAPF*.class META-INF
-
-ANNOTATION_FILES="${TESTSRC}/ClassAnnotations.java \
-${TESTSRC}/MethodAnnotations.java \
-${TESTSRC}/NestedClassAnnotations.java \
-${TESTSRC}/StaticFieldAnnotations.java \
-${TESTSRC}/StaticMethodAnnotations.java \
-${TESTSRC}/ParameterAnnotations.java"
-
-for i in ${ANNOTATION_FILES}
-do
-	printf "%s\n" "Testing annotations on source file ${i}"
-	${APT} @options ${i} 2> result.txt
-	diff ${DIFFOPTS} ${TESTSRC}/golden.txt result.txt
-
-	RESULT=$?
-	case "$RESULT" in
-	        0  )
-	        ;;
-
-	        * )
-	        echo "Unexpected set of annotations on source files found."
-	        exit 1
-	esac
-
-	CLASS=`basename ${i} .java`
-	printf "%s\n" "Testing annotations on class file ${CLASS}"
-	${APT} @options1 ${CLASS} 2> result2.txt
-	diff ${DIFFOPTS} ${TESTSRC}/golden.txt result2.txt
-
-	RESULT=$?
-	case "$RESULT" in
-	        0  )
-	        ;;
-
-	        * )
-	        echo "Unexpected set of annotations on class files found."
-	        exit 1
-	esac
-done
-
-# Verify source files are favored over class files
-
-printf "%s\n" "-factorypath ."			 > options2
-printf "%s\n" "-factory FreshnessApf"		>> options2
-printf "%s\n" "-sourcepath ${TESTSRC}"		>> options2
-printf "%s\n" "-classpath  ${TESTCLASSES}"	>> options2
-printf "%s\n" "-nocompile"			>> options2
-
-${APT} @options2 ${TESTSRC}/Indirect.java
-
-RESULT=$?
-case "$RESULT" in
-        0  )
-        ;;
-
-        * )
-        exit 1
-esac
-
-# Verify new classes can be loaded by getTypeDeclaration
-
-printf "%s\n" "-factorypath ."			 	> options3
-printf "%s\n" "-factory TestGetTypeDeclarationApf"	>> options3
-printf "%s\n" "-sourcepath ${TESTSRC}"			>> options3
-
-# ${APT} @options3
-
-RESULT=$?
-case "$RESULT" in
-        0  )
-        ;;
-
-        * )
-        exit 1
-esac
-
-# Verify packages can be loaded by getPackage
-
-printf "%s\n" "-factorypath ."			 	> options4
-printf "%s\n" "-factory TestGetPackageApf"		>> options4
-printf "%s\n" "-sourcepath ${TESTSRC}"			>> options4
-
-${APT} @options4
-
-RESULT=$?
-case "$RESULT" in
-        0  )
-        ;;
-
-        * )
-        exit 1
-esac
-exit 0

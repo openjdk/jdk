@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,10 +117,9 @@ class PSScavenge: AllStatic {
   // Called by parallelScavengeHeap to init the tenuring threshold
   static void initialize();
 
-  // Scavenge entry point
-  static void invoke();
-  // Return true is a collection was done.  Return
-  // false if the collection was skipped.
+  // Scavenge entry point.  This may invoke a full gc; return true if so.
+  static bool invoke();
+  // Return true if a collection was done; false otherwise.
   static bool invoke_no_policy();
 
   // If an attempt to promote fails, this method is invoked
@@ -135,7 +134,8 @@ class PSScavenge: AllStatic {
   template <class T> static inline bool should_scavenge(T* p, MutableSpace* to_space);
   template <class T> static inline bool should_scavenge(T* p, bool check_to_space);
 
-  template <class T> inline static void copy_and_push_safe_barrier(PSPromotionManager* pm, T* p);
+  template <class T, bool promote_immediately>
+    inline static void copy_and_push_safe_barrier(PSPromotionManager* pm, T* p);
 
   // Is an object in the young generation
   // This assumes that the HeapWord argument is in the heap,

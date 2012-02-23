@@ -236,6 +236,16 @@ void Assembler::emit_arith(int op1, int op2, Register dst, int32_t imm32) {
   }
 }
 
+// Force generation of a 4 byte immediate value even if it fits into 8bit
+void Assembler::emit_arith_imm32(int op1, int op2, Register dst, int32_t imm32) {
+  assert(isByte(op1) && isByte(op2), "wrong opcode");
+  assert((op1 & 0x01) == 1, "should be 32bit operation");
+  assert((op1 & 0x02) == 0, "sign-extension bit should not be set");
+  emit_byte(op1);
+  emit_byte(op2 | encode(dst));
+  emit_long(imm32);
+}
+
 // immediate-to-memory forms
 void Assembler::emit_arith_operand(int op1, Register rm, Address adr, int32_t imm32) {
   assert((op1 & 0x01) == 1, "should be 32bit operation");
@@ -939,6 +949,7 @@ void Assembler::addl(Register dst, Register src) {
 }
 
 void Assembler::addr_nop_4() {
+  assert(UseAddressNop, "no CPU support");
   // 4 bytes: NOP DWORD PTR [EAX+0]
   emit_byte(0x0F);
   emit_byte(0x1F);
@@ -947,6 +958,7 @@ void Assembler::addr_nop_4() {
 }
 
 void Assembler::addr_nop_5() {
+  assert(UseAddressNop, "no CPU support");
   // 5 bytes: NOP DWORD PTR [EAX+EAX*0+0] 8-bits offset
   emit_byte(0x0F);
   emit_byte(0x1F);
@@ -956,6 +968,7 @@ void Assembler::addr_nop_5() {
 }
 
 void Assembler::addr_nop_7() {
+  assert(UseAddressNop, "no CPU support");
   // 7 bytes: NOP DWORD PTR [EAX+0] 32-bits offset
   emit_byte(0x0F);
   emit_byte(0x1F);
@@ -964,6 +977,7 @@ void Assembler::addr_nop_7() {
 }
 
 void Assembler::addr_nop_8() {
+  assert(UseAddressNop, "no CPU support");
   // 8 bytes: NOP DWORD PTR [EAX+EAX*0+0] 32-bits offset
   emit_byte(0x0F);
   emit_byte(0x1F);
@@ -2767,6 +2781,12 @@ void Assembler::subl(Address dst, Register src) {
 void Assembler::subl(Register dst, int32_t imm32) {
   prefix(dst);
   emit_arith(0x81, 0xE8, dst, imm32);
+}
+
+// Force generation of a 4 byte immediate value even if it fits into 8bit
+void Assembler::subl_imm32(Register dst, int32_t imm32) {
+  prefix(dst);
+  emit_arith_imm32(0x81, 0xE8, dst, imm32);
 }
 
 void Assembler::subl(Register dst, Address src) {
@@ -4760,6 +4780,12 @@ void Assembler::subq(Register dst, int32_t imm32) {
   emit_arith(0x81, 0xE8, dst, imm32);
 }
 
+// Force generation of a 4 byte immediate value even if it fits into 8bit
+void Assembler::subq_imm32(Register dst, int32_t imm32) {
+  (void) prefixq_and_encode(dst->encoding());
+  emit_arith_imm32(0x81, 0xE8, dst, imm32);
+}
+
 void Assembler::subq(Register dst, Address src) {
   InstructionMark im(this);
   prefixq(src, dst);
@@ -5099,15 +5125,6 @@ void MacroAssembler::extend_sign(Register hi, Register lo) {
     movl(hi, lo);
     sarl(hi, 31);
   }
-}
-
-void MacroAssembler::fat_nop() {
-  // A 5 byte nop that is safe for patching (see patch_verified_entry)
-  emit_byte(0x26); // es:
-  emit_byte(0x2e); // cs:
-  emit_byte(0x64); // fs:
-  emit_byte(0x65); // gs:
-  emit_byte(0x90);
 }
 
 void MacroAssembler::jC2(Register tmp, Label& L) {
@@ -5702,17 +5719,6 @@ void MacroAssembler::decrementq(Address dst, int value) {
   if (value == 0) {                        ; return; }
   if (value == 1 && UseIncDec) { decq(dst) ; return; }
   /* else */      { subq(dst, value)       ; return; }
-}
-
-void MacroAssembler::fat_nop() {
-  // A 5 byte nop that is safe for patching (see patch_verified_entry)
-  // Recommened sequence from 'Software Optimization Guide for the AMD
-  // Hammer Processor'
-  emit_byte(0x66);
-  emit_byte(0x66);
-  emit_byte(0x90);
-  emit_byte(0x66);
-  emit_byte(0x90);
 }
 
 void MacroAssembler::incrementq(Register reg, int value) {
@@ -6764,6 +6770,19 @@ void MacroAssembler::eden_allocate(Register obj,
 void MacroAssembler::enter() {
   push(rbp);
   mov(rbp, rsp);
+}
+
+// A 5 byte nop that is safe for patching (see patch_verified_entry)
+void MacroAssembler::fat_nop() {
+  if (UseAddressNop) {
+    addr_nop_5();
+  } else {
+    emit_byte(0x26); // es:
+    emit_byte(0x2e); // cs:
+    emit_byte(0x64); // fs:
+    emit_byte(0x65); // gs:
+    emit_byte(0x90);
+  }
 }
 
 void MacroAssembler::fcmp(Register tmp) {
@@ -7823,6 +7842,11 @@ void MacroAssembler::store_check_part_2(Register obj) {
 
 void MacroAssembler::subptr(Register dst, int32_t imm32) {
   LP64_ONLY(subq(dst, imm32)) NOT_LP64(subl(dst, imm32));
+}
+
+// Force generation of a 4 byte immediate value even if it fits into 8bit
+void MacroAssembler::subptr_imm32(Register dst, int32_t imm32) {
+  LP64_ONLY(subq_imm32(dst, imm32)) NOT_LP64(subl_imm32(dst, imm32));
 }
 
 void MacroAssembler::subptr(Register dst, Register src) {
@@ -9291,6 +9315,80 @@ void MacroAssembler::reinit_heapbase() {
   }
 }
 #endif // _LP64
+
+
+// C2 compiled method's prolog code.
+void MacroAssembler::verified_entry(int framesize, bool stack_bang, bool fp_mode_24b) {
+
+  // WARNING: Initial instruction MUST be 5 bytes or longer so that
+  // NativeJump::patch_verified_entry will be able to patch out the entry
+  // code safely. The push to verify stack depth is ok at 5 bytes,
+  // the frame allocation can be either 3 or 6 bytes. So if we don't do
+  // stack bang then we must use the 6 byte frame allocation even if
+  // we have no frame. :-(
+
+  assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
+  // Remove word for return addr
+  framesize -= wordSize;
+
+  // Calls to C2R adapters often do not accept exceptional returns.
+  // We require that their callers must bang for them.  But be careful, because
+  // some VM calls (such as call site linkage) can use several kilobytes of
+  // stack.  But the stack safety zone should account for that.
+  // See bugs 4446381, 4468289, 4497237.
+  if (stack_bang) {
+    generate_stack_overflow_check(framesize);
+
+    // We always push rbp, so that on return to interpreter rbp, will be
+    // restored correctly and we can correct the stack.
+    push(rbp);
+    // Remove word for ebp
+    framesize -= wordSize;
+
+    // Create frame
+    if (framesize) {
+      subptr(rsp, framesize);
+    }
+  } else {
+    // Create frame (force generation of a 4 byte immediate value)
+    subptr_imm32(rsp, framesize);
+
+    // Save RBP register now.
+    framesize -= wordSize;
+    movptr(Address(rsp, framesize), rbp);
+  }
+
+  if (VerifyStackAtCalls) { // Majik cookie to verify stack depth
+    framesize -= wordSize;
+    movptr(Address(rsp, framesize), (int32_t)0xbadb100d);
+  }
+
+#ifndef _LP64
+  // If method sets FPU control word do it now
+  if (fp_mode_24b) {
+    fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_24()));
+  }
+  if (UseSSE >= 2 && VerifyFPU) {
+    verify_FPU(0, "FPU stack must be clean on entry");
+  }
+#endif
+
+#ifdef ASSERT
+  if (VerifyStackAtCalls) {
+    Label L;
+    push(rax);
+    mov(rax, rsp);
+    andptr(rax, StackAlignmentInBytes-1);
+    cmpptr(rax, StackAlignmentInBytes-wordSize);
+    pop(rax);
+    jcc(Assembler::equal, L);
+    stop("Stack is not properly aligned!");
+    bind(L);
+  }
+#endif
+
+}
+
 
 // IndexOf for constant substrings with size >= 8 chars
 // which don't need to be loaded through stack.

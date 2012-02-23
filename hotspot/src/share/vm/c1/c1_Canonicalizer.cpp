@@ -594,6 +594,13 @@ static bool is_true(jlong x, If::Condition cond, jlong y) {
   return false;
 }
 
+static bool is_safepoint(BlockEnd* x, BlockBegin* sux) {
+  // An Instruction with multiple successors, x, is replaced by a Goto
+  // to a single successor, sux. Is a safepoint check needed = was the
+  // instruction being replaced a safepoint and the single remaining
+  // successor a back branch?
+  return x->is_safepoint() && (sux->bci() < x->state_before()->bci());
+}
 
 void Canonicalizer::do_If(If* x) {
   // move const to right
@@ -614,7 +621,7 @@ void Canonicalizer::do_If(If* x) {
     case If::geq: sux = x->sux_for(true);  break;
     }
     // If is a safepoint then the debug information should come from the state_before of the If.
-    set_canonical(new Goto(sux, x->state_before(), x->is_safepoint()));
+    set_canonical(new Goto(sux, x->state_before(), is_safepoint(x, sux)));
     return;
   }
 
@@ -626,7 +633,7 @@ void Canonicalizer::do_If(If* x) {
                                                        x->sux_for(false));
       if (sux != NULL) {
         // If is a safepoint then the debug information should come from the state_before of the If.
-        set_canonical(new Goto(sux, x->state_before(), x->is_safepoint()));
+        set_canonical(new Goto(sux, x->state_before(), is_safepoint(x, sux)));
       }
     }
   } else if (rt->as_IntConstant() != NULL) {
@@ -694,10 +701,12 @@ void Canonicalizer::do_If(If* x) {
     }
   } else if (rt == objectNull && (l->as_NewInstance() || l->as_NewArray())) {
     if (x->cond() == Instruction::eql) {
-      set_canonical(new Goto(x->fsux(), x->state_before(), x->is_safepoint()));
+      BlockBegin* sux = x->fsux();
+      set_canonical(new Goto(sux, x->state_before(), is_safepoint(x, sux)));
     } else {
       assert(x->cond() == Instruction::neq, "only other valid case");
-      set_canonical(new Goto(x->tsux(), x->state_before(), x->is_safepoint()));
+      BlockBegin* sux = x->tsux();
+      set_canonical(new Goto(sux, x->state_before(), is_safepoint(x, sux)));
     }
   }
 }
@@ -710,7 +719,7 @@ void Canonicalizer::do_TableSwitch(TableSwitch* x) {
     if (v >= x->lo_key() && v <= x->hi_key()) {
       sux = x->sux_at(v - x->lo_key());
     }
-    set_canonical(new Goto(sux, x->state_before(), x->is_safepoint()));
+    set_canonical(new Goto(sux, x->state_before(), is_safepoint(x, sux)));
   } else if (x->number_of_sux() == 1) {
     // NOTE: Code permanently disabled for now since the switch statement's
     //       tag expression may produce side-effects in which case it must
@@ -741,7 +750,7 @@ void Canonicalizer::do_LookupSwitch(LookupSwitch* x) {
         sux = x->sux_at(i);
       }
     }
-    set_canonical(new Goto(sux, x->state_before(), x->is_safepoint()));
+    set_canonical(new Goto(sux, x->state_before(), is_safepoint(x, sux)));
   } else if (x->number_of_sux() == 1) {
     // NOTE: Code permanently disabled for now since the switch statement's
     //       tag expression may produce side-effects in which case it must

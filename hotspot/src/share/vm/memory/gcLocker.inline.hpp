@@ -27,12 +27,6 @@
 
 #include "memory/gcLocker.hpp"
 
-inline bool GC_locker::is_active() {
-  assert(_needs_gc || SafepointSynchronize::is_at_safepoint(), "only read at safepoint");
-  verify_critical_count();
-  return _lock_count > 0 || _jni_lock_count > 0;
-}
-
 inline void GC_locker::lock() {
   // cast away volatile
   Atomic::inc(&_lock_count);
