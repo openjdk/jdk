@@ -7,7 +7,7 @@ edit, run, test and debug the tools in the OpenJDK langtools
 repository.
 
 The repository contains a number of tools:
-    apt, javac, javadoc and its doclets, javah and javap.
+    javac, javadoc and its doclets, javah and javap.
 
 Build Properties.
 

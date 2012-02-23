@@ -32,9 +32,9 @@ PreserveExceptionMark::PreserveExceptionMark(Thread*& thread) {
   thread     = Thread::current();
   _thread    = thread;
   _preserved_exception_oop = Handle(thread, _thread->pending_exception());
-  _thread->clear_pending_exception(); // Needed to avoid infinite recursion
   _preserved_exception_line = _thread->exception_line();
   _preserved_exception_file = _thread->exception_file();
+  _thread->clear_pending_exception(); // Needed to avoid infinite recursion
 }
 
 
