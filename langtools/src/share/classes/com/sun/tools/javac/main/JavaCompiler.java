@@ -1077,7 +1077,9 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                     boolean errors = false;
                     for (String nameStr : classnames) {
                         Symbol sym = resolveBinaryNameOrIdent(nameStr);
-                        if (sym == null || (sym.kind == Kinds.PCK && !processPcks)) {
+                        if (sym == null ||
+                            (sym.kind == Kinds.PCK && !processPcks) ||
+                            sym.kind == Kinds.ABSENT_TYP) {
                             log.error("proc.cant.find.class", nameStr);
                             errors = true;
                             continue;

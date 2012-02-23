@@ -32,7 +32,7 @@ import java.beans.*;
  */
 
 public class ComponentBeanInfo extends SimpleBeanInfo {
-    private static final Class beanClass = java.awt.Component.class;
+    private static final Class<java.awt.Component> beanClass = java.awt.Component.class;
 
     public PropertyDescriptor[] getPropertyDescriptors() {
         try {

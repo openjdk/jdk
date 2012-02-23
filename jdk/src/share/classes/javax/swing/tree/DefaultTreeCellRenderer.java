@@ -156,7 +156,7 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
     protected Color borderSelectionColor;
 
     private boolean isDropCell;
-    private boolean fillBackground = true;
+    private boolean fillBackground;
 
     /**
      * Set to true after the constructor has run.

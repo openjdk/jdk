@@ -356,7 +356,7 @@ static void parse_caller_options(struct hsdis_app_data* app_data, const char* ca
       if (plen > mach_size)  plen = mach_size;
       strncpy(mach_option, p, plen);
       mach_option[plen] = '\0';
-    } else if (plen > 6 && strncmp(p, "hsdis-", 6)) {
+    } else if (plen > 6 && strncmp(p, "hsdis-", 6) == 0) {
       // do not pass these to the next level
     } else {
       /* just copy it; {i386,sparc}-dis.c might like to see it  */

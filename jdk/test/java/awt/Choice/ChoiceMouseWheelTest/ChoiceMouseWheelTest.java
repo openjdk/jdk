@@ -96,7 +96,10 @@ public class ChoiceMouseWheelTest extends Frame {
 
             // Test mouse wheel over the choice
             String name = Toolkit.getDefaultToolkit().getClass().getName();
-            if(!name.equals("sun.awt.X11.XToolkit")) { // mouse wheel doesn't work for the choice on X11, so skip it
+
+            // mouse wheel doesn't work for the choice on X11 and Mac, so skip it
+            if(!name.equals("sun.awt.X11.XToolkit")
+               && !name.equals("sun.lwawt.macosx.LWCToolkit")) {
                 robot.mouseWheel(1);
                 Util.waitForIdle(robot);
 
