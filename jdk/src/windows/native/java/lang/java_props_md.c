@@ -31,6 +31,9 @@
 #include <sys/timeb.h>
 #include <tchar.h>
 
+#include <stdlib.h>
+#include <Wincon.h>
+
 #include "locale_str.h"
 #include "java_props.h"
 
@@ -121,6 +124,17 @@ getEncodingInternal(LCID lcid)
     }
 
     return ret;
+}
+
+static char* getConsoleEncoding()
+{
+    char* buf = malloc(16);
+    int cp = GetConsoleCP();
+    if (cp >= 874 && cp <= 950)
+        sprintf(buf, "ms%d", cp);
+    else
+        sprintf(buf, "cp%d", cp);
+    return buf;
 }
 
 // Exported entries for AWT
@@ -562,6 +576,7 @@ GetJavaProperties(JNIEnv* env)
 
         {
             char * display_encoding;
+            HANDLE hStdOutErr;
 
             // Windows UI Language selection list only cares "language"
             // information of the UI Language. For example, the list
@@ -605,6 +620,20 @@ GetJavaProperties(JNIEnv* env)
                 // all. Set encoding to MS950_HKSCS.
                 sprops.encoding = "MS950_HKSCS";
                 sprops.sun_jnu_encoding = "MS950_HKSCS";
+            }
+
+            hStdOutErr = GetStdHandle(STD_OUTPUT_HANDLE);
+            if (hStdOutErr != INVALID_HANDLE_VALUE &&
+                GetFileType(hStdOutErr) == FILE_TYPE_CHAR) {
+                sprops.sun_stdout_encoding = getConsoleEncoding();
+            }
+            hStdOutErr = GetStdHandle(STD_ERROR_HANDLE);
+            if (hStdOutErr != INVALID_HANDLE_VALUE &&
+                GetFileType(hStdOutErr) == FILE_TYPE_CHAR) {
+                if (sprops.sun_stdout_encoding != NULL)
+                    sprops.sun_stderr_encoding = sprops.sun_stdout_encoding;
+                else
+                    sprops.sun_stderr_encoding = getConsoleEncoding();
             }
         }
     }
