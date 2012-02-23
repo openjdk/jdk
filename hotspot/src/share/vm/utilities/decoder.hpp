@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
 
-class NullDecoder: public CHeapObj {
+class AbstractDecoder : public CHeapObj {
 public:
   // status code for decoding native C frame
   enum decoder_status {
@@ -43,6 +43,34 @@ public:
          helper_init_error     // SymInitialize failed (Windows only)
   };
 
+  // decode an pc address to corresponding function name and an offset from the beginning of
+  // the function
+  virtual bool decode(address pc, char* buf, int buflen, int* offset,
+    const char* modulepath = NULL) = 0;
+  // demangle a C++ symbol
+  virtual bool demangle(const char* symbol, char* buf, int buflen) = 0;
+  // if the decoder can decode symbols in vm
+  virtual bool can_decode_C_frame_in_vm() const = 0;
+
+  virtual decoder_status status() const {
+    return _decoder_status;
+  }
+
+  virtual bool has_error() const {
+    return is_error(_decoder_status);
+  }
+
+  static bool is_error(decoder_status status) {
+    return (status > 0);
+  }
+
+protected:
+  decoder_status  _decoder_status;
+};
+
+// Do nothing decoder
+class NullDecoder : public AbstractDecoder {
+public:
   NullDecoder() {
     _decoder_status = not_available;
   }
@@ -61,40 +89,34 @@ public:
   virtual bool can_decode_C_frame_in_vm() const {
     return false;
   }
-
-  virtual decoder_status status() const {
-    return _decoder_status;
-  }
-
-  virtual bool has_error() const {
-    return is_error(_decoder_status);
-  }
-
-  static bool is_error(decoder_status status) {
-    return (status > 0);
-  }
-
-protected:
-  decoder_status  _decoder_status;
 };
 
 
-class Decoder: AllStatic {
+class Decoder : AllStatic {
 public:
   static bool decode(address pc, char* buf, int buflen, int* offset, const char* modulepath = NULL);
   static bool demangle(const char* symbol, char* buf, int buflen);
   static bool can_decode_C_frame_in_vm();
 
+  // shutdown shared instance
   static void shutdown();
 protected:
-  static NullDecoder* get_decoder();
+  // shared decoder instance, _shared_instance_lock is needed
+  static AbstractDecoder* get_shared_instance();
+  // a private instance for error handler. Error handler can be
+  // triggered almost everywhere, including signal handler, where
+  // no lock can be taken. So the shared decoder can not be used
+  // in this scenario.
+  static AbstractDecoder* get_error_handler_instance();
 
+  static AbstractDecoder* create_decoder();
 private:
-  static NullDecoder*     _decoder;
-  static NullDecoder      _do_nothing_decoder;
+  static AbstractDecoder*     _shared_decoder;
+  static AbstractDecoder*     _error_handler_decoder;
+  static NullDecoder          _do_nothing_decoder;
 
 protected:
-  static Mutex*       _decoder_lock;
+  static Mutex*               _shared_decoder_lock;
 };
 
 #endif // SHARE_VM_UTILITIES_DECODER_HPP

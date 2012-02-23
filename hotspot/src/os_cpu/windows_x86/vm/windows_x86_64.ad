@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -67,69 +67,6 @@ encode %{
     emit_opcode(cbuf, 0xD0 | (R10_enc - 8));
   %}
 
-  enc_class call_epilog %{
-    if (VerifyStackAtCalls) {
-      // Check that stack depth is unchanged: find majik cookie on stack
-      int framesize =
-        ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3*VMRegImpl::slots_per_word));
-      if (framesize) {
-        if (framesize < 0x80) {
-          emit_opcode(cbuf, Assembler::REX_W);
-          emit_opcode(cbuf, 0x81); // cmpq [rsp+0],0xbadb1ood
-          emit_d8(cbuf, 0x7C);
-          emit_d8(cbuf, 0x24);
-          emit_d8(cbuf, framesize); // Find majik cookie from ESP
-          emit_d32(cbuf, 0xbadb100d);
-        } else {
-          emit_opcode(cbuf, Assembler::REX_W);
-          emit_opcode(cbuf, 0x81); // cmpq [rsp+0],0xbadb1ood
-          emit_d8(cbuf, 0xBC);
-          emit_d8(cbuf, 0x24);
-          emit_d32(cbuf, framesize); // Find majik cookie from ESP
-          emit_d32(cbuf, 0xbadb100d);
-        }
-      }
-      // jmp EQ around INT3
-      // QQQ TODO
-      const int jump_around = 5; // size of call to breakpoint, 1 for CC
-      emit_opcode(cbuf, 0x74);
-      emit_d8(cbuf, jump_around);
-      // QQQ temporary
-      emit_break(cbuf);
-      // Die if stack mismatch
-      // emit_opcode(cbuf,0xCC);
-    }
-  %}
-%}
-
-// INSTRUCTIONS -- Platform dependent
-
-
-//----------OS and Locking Instructions----------------------------------------
-
-// This name is KNOWN by the ADLC and cannot be changed.
-// The ADLC forces a 'TypeRawPtr::BOTTOM' output type
-// for this guy.
-instruct tlsLoadP(r15_RegP dst)
-%{
-  match(Set dst (ThreadLocal));
-  effect(DEF dst);
-
-  size(0);
-  format %{ "# TLS is in R15" %}
-  ins_encode( /*empty encoding*/ );
-  ins_pipe(ialu_reg_reg);
-%}
-
-// Die now
-instruct ShouldNotReachHere( )
-%{
-  match(Halt);
-  // Use the following format syntax
-  format %{ "INT3   ; ShouldNotReachHere" %}
-  opcode(0xCC);
-  ins_encode(OpcP);
-  ins_pipe( pipe_slow );
 %}
 
 //
@@ -140,19 +77,6 @@ source %{
 int MachCallRuntimeNode::ret_addr_offset()
 {
   return 13; // movq r10,#addr; callq (r10)
-}
-
-// emit an interrupt that is caught by the debugger
-void emit_break(CodeBuffer &cbuf) {
-  cbuf.insts()->emit_int8((unsigned char) 0xcc);
-}
-
-void MachBreakpointNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  emit_break(cbuf);
-}
-
-uint MachBreakpointNode::size(PhaseRegAlloc *ra_) const {
-  return 1;
 }
 
 %}

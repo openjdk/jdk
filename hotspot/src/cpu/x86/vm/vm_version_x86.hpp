@@ -249,13 +249,18 @@ protected:
 
   enum {
     // AMD
-    CPU_FAMILY_AMD_11H       = 17,
+    CPU_FAMILY_AMD_11H       = 0x11,
     // Intel
     CPU_FAMILY_INTEL_CORE    = 6,
-    CPU_MODEL_NEHALEM_EP     = 26,
-    CPU_MODEL_WESTMERE_EP    = 44,
-//  CPU_MODEL_IVYBRIDGE_EP   = ??, TODO - get real value
-    CPU_MODEL_SANDYBRIDGE_EP = 45
+    CPU_MODEL_NEHALEM        = 0x1e,
+    CPU_MODEL_NEHALEM_EP     = 0x1a,
+    CPU_MODEL_NEHALEM_EX     = 0x2e,
+    CPU_MODEL_WESTMERE       = 0x25,
+    CPU_MODEL_WESTMERE_EP    = 0x2c,
+    CPU_MODEL_WESTMERE_EX    = 0x2f,
+    CPU_MODEL_SANDYBRIDGE    = 0x2a,
+    CPU_MODEL_SANDYBRIDGE_EP = 0x2d,
+    CPU_MODEL_IVYBRIDGE_EP   = 0x3a
   } cpuExtendedFamily;
 
   // cpuid information block.  All info derived from executing cpuid with
@@ -325,7 +330,7 @@ protected:
     uint32_t proc_name_4, proc_name_5, proc_name_6, proc_name_7;
     uint32_t proc_name_8, proc_name_9, proc_name_10,proc_name_11;
 
-    // cpuid function 0x80000005 //AMD L1, Intel reserved
+    // cpuid function 0x80000005 // AMD L1, Intel reserved
     uint32_t     ext_cpuid5_eax; // unused currently
     uint32_t     ext_cpuid5_ebx; // reserved
     ExtCpuid5Ex  ext_cpuid5_ecx; // L1 data cache info (AMD)
@@ -547,15 +552,15 @@ public:
   static bool is_intel_tsc_synched_at_init()  {
     if (is_intel_family_core()) {
       uint32_t ext_model = extended_cpu_model();
-      if (ext_model == CPU_MODEL_NEHALEM_EP   ||
-          ext_model == CPU_MODEL_WESTMERE_EP  ||
-// TODO   ext_model == CPU_MODEL_IVYBRIDGE_EP ||
-          ext_model == CPU_MODEL_SANDYBRIDGE_EP) {
-        // 2-socket invtsc support. EX versions with 4 sockets are not
-        // guaranteed to synchronize tscs at initialization via a double
-        // handshake. The tscs can be explicitly set in software.  Code
-        // that uses tsc values must be prepared for them to arbitrarily
-        // jump backward or forward.
+      if (ext_model == CPU_MODEL_NEHALEM_EP     ||
+          ext_model == CPU_MODEL_WESTMERE_EP    ||
+          ext_model == CPU_MODEL_SANDYBRIDGE_EP ||
+          ext_model == CPU_MODEL_IVYBRIDGE_EP) {
+        // <= 2-socket invariant tsc support. EX versions are usually used
+        // in > 2-socket systems and likely don't synchronize tscs at
+        // initialization.
+        // Code that uses tsc values must be prepared for them to arbitrarily
+        // jump forward or backward.
         return true;
       }
     }

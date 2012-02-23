@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,7 +171,7 @@ class PSPromotionManager : public CHeapObj {
   void set_old_gen_is_full(bool state) { _old_gen_is_full = state; }
 
   // Promotion methods
-  oop copy_to_survivor_space(oop o);
+  template<bool promote_immediately> oop copy_to_survivor_space(oop o);
   oop oop_promotion_failed(oop obj, markOop obj_mark);
 
   void reset();

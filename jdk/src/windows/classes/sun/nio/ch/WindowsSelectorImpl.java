@@ -585,7 +585,7 @@ final class WindowsSelectorImpl extends SelectorImpl {
             ((SelChImpl)selch).kill();
     }
 
-    void putEventOps(SelectionKeyImpl sk, int ops) {
+    public void putEventOps(SelectionKeyImpl sk, int ops) {
         synchronized (closeLock) {
             if (pollWrapper == null)
                 throw new ClosedSelectorException();

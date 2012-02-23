@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,7 @@ encode %{
   // adding a syntax that specifies the sizes of fields in an order,
   // so that the adlc can build the emit functions automagically
 
-  enc_class Java_To_Runtime(method meth)
-  %{
+  enc_class Java_To_Runtime(method meth) %{
     // No relocation needed
 
     // movq r10, <meth>
@@ -70,118 +69,24 @@ encode %{
     emit_opcode(cbuf, 0xD0 | (R10_enc - 8));
   %}
 
-  enc_class solaris_breakpoint
-  %{
-    MacroAssembler* masm = new MacroAssembler(&cbuf);
-    masm->call(RuntimeAddress(CAST_FROM_FN_PTR(address, os::breakpoint)));
-  %}
-
-  enc_class call_epilog
-  %{
-    if (VerifyStackAtCalls) {
-      // Check that stack depth is unchanged: find majik cookie on stack
-      int framesize =
-        ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3*VMRegImpl::slots_per_word));
-      if (framesize) {
-        if (framesize < 0x80) {
-          emit_opcode(cbuf, Assembler::REX_W);
-          emit_opcode(cbuf, 0x81); // cmpq [rsp+0],0xbadb1ood
-          emit_d8(cbuf, 0x7C);
-          emit_d8(cbuf, 0x24);
-          emit_d8(cbuf, framesize); // Find majik cookie from ESP
-          emit_d32(cbuf, 0xbadb100d);
-        } else {
-          emit_opcode(cbuf, Assembler::REX_W);
-          emit_opcode(cbuf, 0x81); // cmpq [rsp+0],0xbadb1ood
-          emit_d8(cbuf, 0xBC);
-          emit_d8(cbuf, 0x24);
-          emit_d32(cbuf, framesize); // Find majik cookie from ESP
-          emit_d32(cbuf, 0xbadb100d);
-        }
-      }
-      // jmp EQ around INT3
-      // QQQ TODO
-      const int jump_around = 5; // size of call to breakpoint, 1 for CC
-      emit_opcode(cbuf, 0x74);
-      emit_d8(cbuf, jump_around);
-      // QQQ temporary
-      emit_break(cbuf);
-      // Die if stack mismatch
-      // emit_opcode(cbuf,0xCC);
-    }
-  %}
-
   enc_class post_call_verify_mxcsr %{
-    MacroAssembler masm(&cbuf);
+    MacroAssembler _masm(&cbuf);
     if (RestoreMXCSROnJNICalls) {
-      masm.ldmxcsr(ExternalAddress(StubRoutines::amd64::mxcsr_std()));
+      __ ldmxcsr(ExternalAddress(StubRoutines::amd64::mxcsr_std()));
     }
     else if (CheckJNICalls) {
-      masm.call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::amd64::verify_mxcsr_entry())));
+      __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::amd64::verify_mxcsr_entry())));
     }
   %}
-%}
-
-// INSTRUCTIONS -- Platform dependent
-
-//----------OS and Locking Instructions----------------------------------------
-
-// This name is KNOWN by the ADLC and cannot be changed.
-// The ADLC forces a 'TypeRawPtr::BOTTOM' output type
-// for this guy.
-instruct tlsLoadP(r15_RegP dst)
-%{
-  match(Set dst (ThreadLocal));
-  effect(DEF dst);
-
-  size(0);
-  format %{ "# TLS is in R15" %}
-  ins_encode( /*empty encoding*/ );
-  ins_pipe(ialu_reg_reg);
-%}
-
-// Die now
-instruct ShouldNotReachHere()
-%{
-  match(Halt);
-
-  // Use the following format syntax
-  format %{ "int3\t# ShouldNotReachHere" %}
-  // QQQ TODO for now call breakpoint
-  // opcode(0xCC);
-  // ins_encode(Opc);
-  ins_encode(solaris_breakpoint);
-  ins_pipe(pipe_slow);
 %}
 
 
 // Platform dependent source
 
-source
-%{
+source %{
 
-int MachCallRuntimeNode::ret_addr_offset()
-{
+int MachCallRuntimeNode::ret_addr_offset() {
   return 13; // movq r10,#addr; callq (r10)
-}
-
-// emit an interrupt that is caught by the debugger
-void emit_break(CodeBuffer& cbuf)
-{
-  // Debugger doesn't really catch this but best we can do so far QQQ
-  MacroAssembler* masm = new MacroAssembler(&cbuf);
-  masm->call(RuntimeAddress(CAST_FROM_FN_PTR(address, os::breakpoint)));
-}
-
-void MachBreakpointNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
-{
-  emit_break(cbuf);
-}
-
-uint MachBreakpointNode::size(PhaseRegAlloc* ra_) const
-{
-  // distance could be far and requires load and call through register
-  return MachNode::size(ra_);
 }
 
 %}

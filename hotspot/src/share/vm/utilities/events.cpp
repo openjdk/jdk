@@ -68,6 +68,10 @@ void Events::print_all(outputStream* out) {
   }
 }
 
+void Events::print() {
+  print_all(tty);
+}
+
 void Events::init() {
   if (LogEvents) {
     _messages = new StringEventLog("Events");
