@@ -144,9 +144,6 @@ javax/management/loading/LibraryLoader/LibraryLoaderTest.java	windows-all
 # 7144846
 javax/management/remote/mandatory/connection/ReconnectTest.java	generic-all
 
-# 7073626
-sun/management/jmxremote/bootstrap/RmiBootstrapTest.sh          windows-all
-sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh       windows-all
 
 ############################################################################
 
