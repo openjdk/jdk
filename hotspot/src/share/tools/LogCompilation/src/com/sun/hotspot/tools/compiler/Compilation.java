@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ public class Compilation implements LogEvent {
     private boolean osr;
     private Method method;
     private CallSite call = new CallSite();
+    private CallSite lateInlineCall = new CallSite();
     private int osrBci;
     private String icount;
     private String bcount;
@@ -80,6 +81,13 @@ public class Compilation implements LogEvent {
             sb.append(site);
             sb.append("\n");
         }
+        if (getLateInlineCall().getCalls() != null) {
+            sb.append("late inline:\n");
+            for (CallSite site : getLateInlineCall().getCalls()) {
+                sb.append(site);
+                sb.append("\n");
+            }
+        }
         return sb.toString();
     }
 
@@ -112,6 +120,12 @@ public class Compilation implements LogEvent {
             }
             if (printInlining && call.getCalls() != null) {
                 for (CallSite site : call.getCalls()) {
+                    site.print(stream, indent + 2);
+                }
+            }
+            if (printInlining && lateInlineCall.getCalls() != null) {
+                stream.println("late inline:");
+                for (CallSite site : lateInlineCall.getCalls()) {
                     site.print(stream, indent + 2);
                 }
             }
@@ -215,7 +229,11 @@ public class Compilation implements LogEvent {
     }
 
     public void setMethod(Method method) {
-        this.method = method;
+        // Don't change method if it is already set to avoid changing
+        // it by post parse inlining info.
+        if (getMethod() == null) {
+            this.method = method;
+        }
     }
 
     public CallSite getCall() {
@@ -224,6 +242,10 @@ public class Compilation implements LogEvent {
 
     public void setCall(CallSite call) {
         this.call = call;
+    }
+
+    public CallSite getLateInlineCall() {
+        return lateInlineCall;
     }
 
     public double getElapsedTime() {
