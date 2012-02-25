@@ -111,6 +111,8 @@ public abstract class BufferedContext {
      *
      * Note: must be called while the RenderQueue lock is held.
      *
+     * It's assumed that the type of surfaces has been checked by the Renderer
+     *
      * @throws InvalidPipeException if either src or dest surface is not valid
      * or lost
      * @see RenderQueue#lock
@@ -134,6 +136,8 @@ public abstract class BufferedContext {
      * and disables all context state settings.
      *
      * Note: must be called while the RenderQueue lock is held.
+     *
+     * It's assumed that the type of surfaces has been checked by the Renderer
      *
      * @throws InvalidPipeException if the surface is not valid
      * or lost
@@ -159,6 +163,8 @@ public abstract class BufferedContext {
      * is safe to pass a null SunGraphics2D and it will be ignored.
      *
      * Note: must be called while the RenderQueue lock is held.
+     *
+     * It's assumed that the type of surfaces has been checked by the Renderer
      *
      * @throws InvalidPipeException if either src or dest surface is not valid
      * or lost
