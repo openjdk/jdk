@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -504,17 +504,17 @@ bool ConstantPoolCacheEntry::is_interesting_method_entry(klassOop k) {
 
 void ConstantPoolCacheEntry::print(outputStream* st, int index) const {
   // print separator
-  if (index == 0) tty->print_cr("                 -------------");
+  if (index == 0) st->print_cr("                 -------------");
   // print entry
-  tty->print("%3d  ("PTR_FORMAT")  ", index, (intptr_t)this);
+  st->print("%3d  ("PTR_FORMAT")  ", index, (intptr_t)this);
   if (is_secondary_entry())
-    tty->print_cr("[%5d|secondary]", main_entry_index());
+    st->print_cr("[%5d|secondary]", main_entry_index());
   else
-    tty->print_cr("[%02x|%02x|%5d]", bytecode_2(), bytecode_1(), constant_pool_index());
-  tty->print_cr("                 [   "PTR_FORMAT"]", (intptr_t)(oop)_f1);
-  tty->print_cr("                 [   "PTR_FORMAT"]", (intptr_t)_f2);
-  tty->print_cr("                 [   "PTR_FORMAT"]", (intptr_t)_flags);
-  tty->print_cr("                 -------------");
+    st->print_cr("[%02x|%02x|%5d]", bytecode_2(), bytecode_1(), constant_pool_index());
+  st->print_cr("                 [   "PTR_FORMAT"]", (intptr_t)(oop)_f1);
+  st->print_cr("                 [   "PTR_FORMAT"]", (intptr_t)_f2);
+  st->print_cr("                 [   "PTR_FORMAT"]", (intptr_t)_flags);
+  st->print_cr("                 -------------");
 }
 
 void ConstantPoolCacheEntry::verify(outputStream* st) const {
