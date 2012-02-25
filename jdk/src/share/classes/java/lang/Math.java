@@ -81,6 +81,22 @@ import sun.misc.DoubleConsts;
  * floating-point approximation.  Not all approximations that have 1
  * ulp accuracy will automatically meet the monotonicity requirements.
  *
+ * <p>
+ * The platform uses signed two's complement integer arithmetic with
+ * int and long primitive types.  The developer should choose
+ * the primitive type to ensure that arithmetic operations consistently
+ * produce correct results, which in some cases means the operations
+ * will not overflow the range of values of the computation.
+ * The best practice is to choose the primitive type and algorithm to avoid
+ * overflow. In cases where the size is {@code int} or {@code long} and
+ * overflow errors need to be detected, the methods {@code addExact},
+ * {@code subtractExact}, {@code multiplyExact}, and {@code toIntExact}
+ * throw an {@code ArithmeticException} when the results overflow.
+ * For other arithmetic operations such as divide, absolute value,
+ * increment, decrement, and negation overflow occurs only with
+ * a specific minimum or maximum value and should be checked against
+ * the minimum or maximum as appropriate.
+ *
  * @author  unascribed
  * @author  Joseph D. Darcy
  * @since   JDK1.0
@@ -716,6 +732,137 @@ public final class Math {
         Random rnd = randomNumberGenerator;
         if (rnd == null) rnd = initRNG();
         return rnd.nextDouble();
+    }
+
+    /**
+     * Returns the sum of its arguments,
+     * throwing an exception if the result overflows an {@code int}.
+     *
+     * @param x the first value
+     * @param y the second value
+     * @return the result
+     * @throws ArithmeticException if the result overflows an int
+     */
+    public static int addExact(int x, int y) {
+        int r = x + y;
+        // HD 2-12 Overflow iff both arguments have the opposite sign of the result
+        if (((x ^ r) & (y ^ r)) < 0) {
+            throw new ArithmeticException("integer overflow");
+        }
+        return r;
+    }
+
+    /**
+     * Returns the sum of its arguments,
+     * throwing an exception if the result overflows a {@code long}.
+     *
+     * @param x the first value
+     * @param y the second value
+     * @return the result
+     * @throws ArithmeticException if the result overflows a long
+     */
+    public static long addExact(long x, long y) {
+        long r = x + y;
+        // HD 2-12 Overflow iff both arguments have the opposite sign of the result
+        if (((x ^ r) & (y ^ r)) < 0) {
+            throw new ArithmeticException("long overflow");
+        }
+        return r;
+    }
+
+    /**
+     * Returns the difference of the arguments,
+     * throwing an exception if the result overflows an {@code int}.
+     *
+     * @param x the first value
+     * @param y the second value to subtract from the first
+     * @return the result
+     * @throws ArithmeticException if the result overflows an int
+     */
+    public static int subtractExact(int x, int y) {
+        int r = x - y;
+        // HD 2-12 Overflow iff the arguments have different signs and
+        // the sign of the result is different than the sign of x
+        if (((x ^ y) & (x ^ r)) < 0) {
+            throw new ArithmeticException("integer overflow");
+        }
+        return r;
+    }
+
+    /**
+     * Returns the difference of the arguments,
+     * throwing an exception if the result overflows a {@code long}.
+     *
+     * @param x the first value
+     * @param y the second value to subtract from the first
+     * @return the result
+     * @throws ArithmeticException if the result overflows a long
+     */
+    public static long subtractExact(long x, long y) {
+        long r = x - y;
+        // HD 2-12 Overflow iff the arguments have different signs and
+        // the sign of the result is different than the sign of x
+        if (((x ^ y) & (x ^ r)) < 0) {
+            throw new ArithmeticException("long overflow");
+        }
+        return r;
+    }
+
+    /**
+     * Returns the product of the arguments,
+     * throwing an exception if the result overflows an {@code int}.
+     *
+     * @param x the first value
+     * @param y the second value
+     * @return the result
+     * @throws ArithmeticException if the result overflows an int
+     */
+    public static int multiplyExact(int x, int y) {
+        long r = (long)x * (long)y;
+        if ((int)r != r) {
+            throw new ArithmeticException("long overflow");
+        }
+        return (int)r;
+    }
+
+    /**
+     * Returns the product of the arguments,
+     * throwing an exception if the result overflows a {@code long}.
+     *
+     * @param x the first value
+     * @param y the second value
+     * @return the result
+     * @throws ArithmeticException if the result overflows a long
+     */
+    public static long multiplyExact(long x, long y) {
+        long r = x * y;
+        long ax = Math.abs(x);
+        long ay = Math.abs(y);
+        if (((ax | ay) >>> 31 != 0)) {
+            // Some bits greater than 2^31 that might cause overflow
+            // Check the result using the divide operator
+            // and check for the special case of Long.MIN_VALUE * -1
+           if (((y != 0) && (r / y != x)) ||
+               (x == Long.MIN_VALUE && y == -1)) {
+                throw new ArithmeticException("long overflow");
+            }
+        }
+        return r;
+    }
+
+    /**
+     * Returns the value of the {@code long} argument;
+     * throwing an exception if the value overflows an {@code int}.
+     *
+     * @param value the long value
+     * @return the argument as an int
+     * @throws ArithmeticException if the {@code argument} overflows an int
+     */
+    public static int toIntExact(long value) {
+        if ((int)value != value) {
+            throw new ArithmeticException("integer overflow");
+        }
+        return (int)value;
     }
 
     /**
@@ -1737,7 +1884,7 @@ public final class Math {
     }
 
     /**
-     * Return {@code d} &times;
+     * Returns {@code d} &times;
      * 2<sup>{@code scaleFactor}</sup> rounded as if performed
      * by a single correctly rounded floating-point multiply to a
      * member of the double value set.  See the Java
@@ -1844,7 +1991,7 @@ public final class Math {
     }
 
     /**
-     * Return {@code f} &times;
+     * Returns {@code f} &times;
      * 2<sup>{@code scaleFactor}</sup> rounded as if performed
      * by a single correctly rounded floating-point multiply to a
      * member of the float value set.  See the Java

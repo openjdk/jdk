@@ -114,82 +114,9 @@
 
 # jdk_awt
 
-# None of the awt tests are using samevm, might not be worth the effort due
-#  to the vm overhead not being enough to make a difference.
-# In general, the awt tests are problematic with or without samevm, and there
-#  are issues with using a Xvfb display.
-
-# Fails on solaris sparc, timedout? in othervm mode
-java/awt/event/MouseEvent/AcceptExtraButton/AcceptExtraButton.java generic-all
-
-# Causes hang in samevm mode??? Solaris 11 i586
-java/awt/FullScreen/SetFSWindow/FSFrame.java                    generic-all
-
-# Fails on solaris 11 i586, -client, in othervm mode not sure why
-java/awt/Component/PrintAllXcheckJNI/PrintAllXcheckJNI.java     generic-all
-java/awt/Focus/CloseDialogActivateOwnerTest/CloseDialogActivateOwnerTest.java generic-all
-java/awt/FontClass/FontAccess.java                              generic-all
-java/awt/Mixing/HWDisappear.java                                generic-all
-java/awt/Mixing/MixingInHwPanel.java                            generic-all
-java/awt/Mouse/MaximizedFrameTest/MaximizedFrameTest.html       generic-all
-java/awt/Robot/AcceptExtraMouseButtons/AcceptExtraMouseButtons.java generic-all
-java/awt/Toolkit/SecurityTest/SecurityTest2.java                generic-all
-java/awt/image/mlib/MlibOpsTest.java                            generic-all
-
-# Fails on windows, othervm mode, various errors
-java/awt/Focus/NonFocusableWindowTest/NonfocusableOwnerTest.java        generic-all
-java/awt/Focus/OwnedWindowFocusIMECrashTest/OwnedWindowFocusIMECrashTest.java   generic-all
-java/awt/FullScreen/NoResizeEventOnDMChangeTest/NoResizeEventOnDMChangeTest.java        generic-all
-java/awt/Mouse/MouseModifiersUnitTest/MouseModifiersUnitTest_Standard.java      generic-all
-java/awt/event/KeyEvent/KeyTyped/CtrlASCII.html                 generic-all
-java/awt/font/Threads/FontThread.java                           generic-all
-java/awt/print/PrinterJob/PrtException.java                     generic-all
-
-# Fails with windows X64, othervm, -server
-com/sun/awt/Translucency/WindowOpacity.java                     generic-all
-java/awt/EventDispatchThread/HandleExceptionOnEDT/HandleExceptionOnEDT.java             generic-all
-java/awt/EventDispatchThread/LoopRobustness/LoopRobustness.html generic-all
-java/awt/Focus/AppletInitialFocusTest/AppletInitialFocusTest1.html generic-all
-java/awt/Focus/FocusEmbeddedFrameTest/FocusEmbeddedFrameTest.java generic-all
-java/awt/Frame/LayoutOnMaximizeTest/LayoutOnMaximizeTest.java   generic-all
-java/awt/FullScreen/TranslucentWindow/TranslucentWindow.java    generic-all
-java/awt/Mixing/MixingOnShrinkingHWButton.java                  generic-all
-java/awt/Mouse/MouseModifiersUnitTest/ExtraButtonDrag.java      generic-all
-
 ############################################################################
 
 # jdk_beans
-
-# A large set of the beans tests set the security manager, which would seem
-#  to indicate that a large number of them should be "othervm", yet are all
-#  very small tests and could greatly benefit from a samevm test run.
-#  So a large batch of beans tests are currently run with othervm mode.
-
-# Filed 6986807
-java/beans/Introspector/TestTypeResolver.java                   generic-all
-
-# Filed 6986813
-java/beans/Introspector/memory/Test4508780.java                 generic-all
-
-# Linux, some kind of problems with X11 display
-java/beans/PropertyChangeSupport/Test4682386.java               generic-all
-java/beans/PropertyChangeSupport/TestSynchronization.java       generic-all
-java/beans/Statement/Test4653179.java                           generic-all
-
-# Runs REALLY slow on Solaris sparc for some reason, both -client and -server
-java/beans/XMLEncoder/Test4625418.java                          solaris-sparc
-
-# Problems with samevm and setting security manager (speculation partially)
-java/beans/Introspector/4168475/Test4168475.java                generic-all
-java/beans/Introspector/4520754/Test4520754.java                generic-all
-java/beans/Introspector/6380849/TestBeanInfo.java               generic-all
-java/beans/Introspector/Test4144543.java                        generic-all
-
-# Failed to call method solaris-sparc???
-java/beans/EventHandler/Test6788531.java                        generic-all
-
-# Jar or class not found???
-java/beans/XMLEncoder/6329581/Test6329581.java                  generic-all
 
 ############################################################################
 
@@ -211,6 +138,12 @@ java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
 
 # jdk_management
 
+# 6959636
+javax/management/loading/LibraryLoader/LibraryLoaderTest.java	windows-all
+
+# 7144846
+javax/management/remote/mandatory/connection/ReconnectTest.java	generic-all
+
 # 7073626
 sun/management/jmxremote/bootstrap/RmiBootstrapTest.sh          windows-all
 sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh       windows-all
@@ -228,72 +161,6 @@ demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
 
 # Need to be marked othervm, or changed to be samevm safe
 com/sun/jndi/rmi/registry/RegistryContext/UnbindIdempotent.java generic-all
-
-# Need to be marked othervm, or changed to be samevm safe
-com/sun/org/apache/xml/internal/security/transforms/ClassLoaderTest.java generic-all
-
-# Solaris sparc and others, exception in initializer
-javax/imageio/CachePremissionsTest/CachePermissionsTest.java    generic-all
-
-# Leaves file rgba_* open, fails with windows samevm
-javax/imageio/plugins/png/PngOutputTypeTest.java                generic-all
-
-# Suspect test.png file is left open, windows samevm problems
-javax/imageio/plugins/png/ITXtTest.java                         generic-all
-
-# Solaris sparc and others, failed to compile testcase
-javax/imageio/metadata/DOML3Node.java                           generic-all
-
-# One of these tests is leaving file IMGP1001.JPG open, windows samevm
-javax/imageio/plugins/jpeg/ConcurrentReadingTest.java           generic-all
-javax/imageio/plugins/jpeg/ReadingInterruptionTest.java         generic-all
-
-# One of these files is missing a close on writer_* files, windows samevm
-javax/imageio/plugins/jpeg/ConcurrentWritingTest.java           generic-all
-javax/imageio/plugins/jpeg/WritingInterruptionTest.java         generic-all
-
-# Leaving file test.jpg open, windows samevm
-javax/imageio/plugins/jpeg/ReadAsGrayTest.java                  generic-all
-
-# Missing close on file wbmp*, windows samevm
-javax/imageio/plugins/wbmp/CanDecodeTest.java                   generic-all
-
-# Failures on OpenSolaris, cannot read input files? samevm issues?
-javax/imageio/metadata/BooleanAttributes.java                   generic-all
-javax/imageio/plugins/bmp/BMPSubsamplingTest.java               generic-all
-javax/imageio/plugins/bmp/TopDownTest.java                      generic-all
-javax/imageio/plugins/gif/EncodeSubImageTest.java               generic-all
-javax/imageio/plugins/gif/GifTransparencyTest.java              generic-all
-javax/imageio/plugins/png/GrayPngTest.java                      generic-all
-javax/imageio/plugins/png/ItxtUtf8Test.java                     generic-all
-javax/imageio/plugins/png/MergeStdCommentTest.java              generic-all
-javax/imageio/plugins/png/ShortHistogramTest.java               generic-all
-javax/imageio/plugins/shared/BitDepth.java                      generic-all
-
-# Exclude all javax/print tests, even if they passed, they may need samevm work
-
-# Times out on solaris-sparc, sparcv9, x64 -server, some on i586 -client
-javax/print/attribute/autosense/PrintAutoSenseData.java         generic-all
-javax/print/attribute/Chroma.java                               generic-all
-javax/print/attribute/CollateAttr.java                          generic-all
-javax/print/attribute/PSCopiesFlavorTest.java                   generic-all
-javax/print/LookupServices.java                                 generic-all
-javax/print/TestRaceCond.java                                   generic-all
-
-# These tests really require a printer (might all be windows only tests?)
-javax/print/CheckDupFlavor.java                                 generic-all
-javax/print/PrintSE/PrintSE.sh                                  generic-all
-javax/print/attribute/ChromaticityValues.java                   generic-all
-javax/print/attribute/GetCopiesSupported.java                   generic-all
-javax/print/attribute/SidesPageRangesTest.java                  generic-all
-javax/print/attribute/SupportedPrintableAreas.java              generic-all
-javax/print/attribute/AttributeTest.java                        generic-all
-
-# Only print test left, excluding just because all print tests have been
-javax/print/attribute/MediaMappingsTest.java                    generic-all
-
-# Filed 7058852
-javax/sound/sampled/FileWriter/AlawEncoderSync.java             generic-all
 
 ############################################################################
 
@@ -317,6 +184,7 @@ java/net/InetAddress/CheckJNI.java                              linux-all
 # failing on vista 32/64 on nightly
 # 7102702
 java/net/PortUnreachableException/OneExceptionOnly.java         windows-all
+
 ############################################################################
 
 # jdk_io
@@ -353,6 +221,12 @@ java/rmi/registry/readTest/readTest.sh				windows-all
 ############################################################################
 
 # jdk_security
+
+# 7145024
+sun/security/ssl/com/sun/net/ssl/internal/ssl/GenSSLConfigs/main.java	solaris-all
+
+# 7147060
+com/sun/org/apache/xml/internal/security/transforms/ClassLoaderTest.java	generic-all
 
 # Failing on Solaris i586, 3/9/2010, not a -samevm issue (jdk_security3)
 sun/security/pkcs11/Secmod/AddPrivateKey.java                   solaris-i586
@@ -409,20 +283,15 @@ sun/security/tools/keytool/standard.sh                          solaris-all
 
 ############################################################################
 
-# jdk_swing (not using samevm)
+# jdk_sound
 
-# Fails on solaris 11 i586, with othervm
-javax/swing/JFileChooser/6570445/bug6570445.java                generic-all
-javax/swing/JFileChooser/6738668/bug6738668.java                generic-all
-javax/swing/JPopupMenu/6675802/bug6675802.java                  generic-all
-javax/swing/system/6799345/TestShutdown.java                    generic-all
+############################################################################
+
+# jdk_swing
 
 ############################################################################
 
 # jdk_text
-
-# Linux x64 occasional errors, no details
-java/text/Bidi/Bug6665028.java                                  linux-x64
 
 ############################################################################
 
@@ -452,7 +321,7 @@ sun/tools/jconsole/ResourceCheckTest.sh                         generic-all
 # 7132203
 sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
 
-# Tests take too long
+# Tests take too long, see 7143279
 tools/pack200/CommandLineTests.java                         	generic-all
 tools/pack200/Pack200Test.java                              	generic-all
 
