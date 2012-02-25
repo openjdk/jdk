@@ -568,6 +568,25 @@ void os::init_system_properties_values() {
             sprintf(ld_library_path, "%s:%s", v, t);
             free(t);
         }
+
+#ifdef __APPLE__
+        // Apple's Java6 has "." at the beginning of java.library.path.
+        // OpenJDK on Windows has "." at the end of java.library.path.
+        // OpenJDK on Linux and Solaris don't have "." in java.library.path
+        // at all. To ease the transition from Apple's Java6 to OpenJDK7,
+        // "." is appended to the end of java.library.path. Yes, this
+        // could cause a change in behavior, but Apple's Java6 behavior
+        // can be achieved by putting "." at the beginning of the
+        // JAVA_LIBRARY_PATH environment variable.
+        {
+            char *t = ld_library_path;
+            // that's +3 for appending ":." and the trailing '\0'
+            ld_library_path = (char *) malloc(strlen(t) + 3);
+            sprintf(ld_library_path, "%s:%s", t, ".");
+            free(t);
+        }
+#endif
+
         Arguments::set_library_path(ld_library_path);
     }
 
@@ -979,8 +998,13 @@ static void *java_start(Thread *thread) {
   }
 
 #ifdef _ALLBSD_SOURCE
+#ifdef __APPLE__
+  // thread_id is mach thread on macos
+  osthread->set_thread_id(::mach_thread_self());
+#else
   // thread_id is pthread_id on BSD
   osthread->set_thread_id(::pthread_self());
+#endif
 #else
   // thread_id is kernel thread id (similar to Solaris LWP id)
   osthread->set_thread_id(os::Bsd::gettid());
@@ -1171,7 +1195,11 @@ bool os::create_attached_thread(JavaThread* thread) {
 
   // Store pthread info into the OSThread
 #ifdef _ALLBSD_SOURCE
+#ifdef __APPLE__
+  osthread->set_thread_id(::mach_thread_self());
+#else
   osthread->set_thread_id(::pthread_self());
+#endif
 #else
   osthread->set_thread_id(os::Bsd::gettid());
 #endif
@@ -1788,7 +1816,13 @@ size_t os::lasterror(char *buf, size_t len) {
   return n;
 }
 
-intx os::current_thread_id() { return (intx)pthread_self(); }
+intx os::current_thread_id() {
+#ifdef __APPLE__
+  return (intx)::mach_thread_self();
+#else
+  return (intx)::pthread_self();
+#endif
+}
 int os::current_process_id() {
 
   // Under the old bsd thread library, bsd gives each thread
@@ -5133,9 +5167,9 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   struct thread_basic_info tinfo;
   mach_msg_type_number_t tcount = THREAD_INFO_MAX;
   kern_return_t kr;
-  mach_port_t mach_thread;
+  thread_t mach_thread;
 
-  mach_thread = pthread_mach_thread_np(thread->osthread()->thread_id());
+  mach_thread = thread->osthread()->thread_id();
   kr = thread_info(mach_thread, THREAD_BASIC_INFO, (thread_info_t)&tinfo, &tcount);
   if (kr != KERN_SUCCESS)
     return -1;
