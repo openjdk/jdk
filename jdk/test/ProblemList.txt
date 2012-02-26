@@ -131,6 +131,9 @@ java/lang/management/ThreadMXBean/ThreadStateTest.java          generic-all
 # 7067973
 java/lang/management/MemoryMXBean/CollectionUsageThreshold.java generic-all
 
+# 7148492
+java/lang/management/MemoryMXBean/ResetPeakMemoryUsage.java	generic-all
+
 ############################################################################
 
 # jdk_management
@@ -179,6 +182,10 @@ java/net/InetAddress/CheckJNI.java                              linux-all
 # 7102702
 java/net/PortUnreachableException/OneExceptionOnly.java         windows-all
 
+# 7148829
+sun/net/InetAddress/nameservice/simple/CacheTest.java		generic-all
+sun/net/InetAddress/nameservice/simple/DefaultCaching.java	generic-all
+
 ############################################################################
 
 # jdk_io
@@ -208,6 +215,9 @@ java/rmi/server/Unreferenced/finiteGCLatency/FiniteGCLatency.java generic-all
 
 # 6948101
 java/rmi/transport/pinLastArguments/PinLastArguments.java	generic-all
+
+# 7146541
+java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java	linux-all
 
 # 7132247
 java/rmi/registry/readTest/readTest.sh				windows-all
@@ -318,6 +328,9 @@ sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
 # Tests take too long, see 7143279
 tools/pack200/CommandLineTests.java                         	generic-all
 tools/pack200/Pack200Test.java                              	generic-all
+
+# 7148499
+tools/launcher/Settings.java					generic-all
 
 ############################################################################
 
