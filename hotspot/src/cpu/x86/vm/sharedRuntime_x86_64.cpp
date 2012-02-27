@@ -3620,8 +3620,12 @@ void OptoRuntime::generate_exception_blob() {
   //
   // address OptoRuntime::handle_exception_C(JavaThread* thread)
 
-  __ set_last_Java_frame(noreg, noreg, NULL);
+  // At a method handle call, the stack may not be properly aligned
+  // when returning with an exception.
+  address the_pc = __ pc();
+  __ set_last_Java_frame(noreg, noreg, the_pc);
   __ mov(c_rarg0, r15_thread);
+  __ andptr(rsp, -(StackAlignmentInBytes));    // Align stack
   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, OptoRuntime::handle_exception_C)));
 
   // Set an oopmap for the call site.  This oopmap will only be used if we
@@ -3632,9 +3636,9 @@ void OptoRuntime::generate_exception_blob() {
 
   OopMapSet* oop_maps = new OopMapSet();
 
-  oop_maps->add_gc_map( __ pc()-start, new OopMap(SimpleRuntimeFrame::framesize, 0));
+  oop_maps->add_gc_map(the_pc - start, new OopMap(SimpleRuntimeFrame::framesize, 0));
 
-  __ reset_last_Java_frame(false, false);
+  __ reset_last_Java_frame(false, true);
 
   // Restore callee-saved registers
 
