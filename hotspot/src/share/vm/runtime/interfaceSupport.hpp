@@ -436,6 +436,7 @@ class RuntimeHistogramElement : public HistogramElement {
 #define VM_LEAF_BASE(result_type, header)                            \
   TRACE_CALL(result_type, header)                                    \
   debug_only(NoHandleMark __hm;)                                     \
+  os::verify_stack_alignment();                                      \
   /* begin of body */
 
 
@@ -445,6 +446,7 @@ class RuntimeHistogramElement : public HistogramElement {
   TRACE_CALL(result_type, header)                                    \
   HandleMarkCleaner __hm(thread);                                    \
   Thread* THREAD = thread;                                           \
+  os::verify_stack_alignment();                                      \
   /* begin of body */
 
 
@@ -454,6 +456,7 @@ class RuntimeHistogramElement : public HistogramElement {
   TRACE_CALL(result_type, header)                                    \
   debug_only(NoHandleMark __hm;)                                     \
   Thread* THREAD = thread;                                           \
+  os::verify_stack_alignment();                                      \
   /* begin of body */
 
 
