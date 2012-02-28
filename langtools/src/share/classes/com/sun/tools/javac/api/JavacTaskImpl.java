@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.*;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.*;
+import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.model.*;
 import com.sun.tools.javac.parser.Parser;
 import com.sun.tools.javac.parser.ParserFactory;
@@ -51,7 +52,6 @@ import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.List;
-import com.sun.tools.javac.main.JavaCompiler;
 
 /**
  * Provides access to functionality specific to the JDK Java Compiler, javac.
@@ -64,18 +64,16 @@ import com.sun.tools.javac.main.JavaCompiler;
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons
  */
-public class JavacTaskImpl extends JavacTask {
+public class JavacTaskImpl extends BasicJavacTask {
     private ClientCodeWrapper ccw;
     private Main compilerMain;
     private JavaCompiler compiler;
     private Locale locale;
     private String[] args;
     private String[] classNames;
-    private Context context;
     private List<JavaFileObject> fileObjects;
     private Map<JavaFileObject, JCCompilationUnit> notYetEntered;
     private ListBuffer<Env<AttrContext>> genList;
-    private TaskListener taskListener;
     private AtomicBoolean used = new AtomicBoolean();
     private Iterable<? extends Processor> processors;
 
@@ -86,6 +84,7 @@ public class JavacTaskImpl extends JavacTask {
                 String[] classNames,
                 Context context,
                 List<JavaFileObject> fileObjects) {
+        super(null, false);
         this.ccw = ClientCodeWrapper.instance(context);
         this.compilerMain = compilerMain;
         this.args = args;
@@ -190,11 +189,7 @@ public class JavacTaskImpl extends JavacTask {
     }
 
     private void initContext() {
-        context.put(JavacTaskImpl.class, this);
-        if (context.get(TaskListener.class) != null)
-            context.put(TaskListener.class, (TaskListener)null);
-        if (taskListener != null)
-            context.put(TaskListener.class, ccw.wrap(taskListener));
+        context.put(JavacTask.class, this);
         //initialize compiler's default locale
         context.put(Locale.class, locale);
     }
@@ -222,10 +217,6 @@ public class JavacTaskImpl extends JavacTask {
     public JavaFileObject asJavaFileObject(File file) {
         JavacFileManager fm = (JavacFileManager)context.get(JavaFileManager.class);
         return fm.getRegularFile(file);
-    }
-
-    public void setTaskListener(TaskListener taskListener) {
-        this.taskListener = taskListener;
     }
 
     /**
