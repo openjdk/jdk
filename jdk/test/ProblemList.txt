@@ -144,6 +144,8 @@ javax/management/loading/LibraryLoader/LibraryLoaderTest.java	windows-all
 # 7144846
 javax/management/remote/mandatory/connection/ReconnectTest.java	generic-all
 
+# 7149181 
+sun/management/jmxremote/startstop/JMXStartStopTest.sh          generic-all
 
 ############################################################################
 
@@ -346,4 +348,3 @@ java/util/concurrent/locks/ReentrantLock/CancelledLockLoops.java generic-all
 java/util/TimeZone/TimeZoneDatePermissionCheck.sh               solaris-all
 
 ############################################################################
-
