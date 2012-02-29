@@ -32,13 +32,7 @@ import java.security.cert.CRLReason;
 import java.security.cert.CertificateException;
 import java.security.cert.X509CRLEntry;
 import java.math.BigInteger;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -75,7 +69,8 @@ import sun.misc.HexDumpEncoder;
  * @author Hemma Prafullchandra
  */
 
-public class X509CRLEntryImpl extends X509CRLEntry {
+public class X509CRLEntryImpl extends X509CRLEntry
+        implements Comparable<X509CRLEntryImpl> {
 
     private SerialNumber serialNumber = null;
     private Date revocationDate = null;
@@ -196,9 +191,14 @@ public class X509CRLEntryImpl extends X509CRLEntry {
      * @exception CRLException if an encoding error occurs.
      */
     public byte[] getEncoded() throws CRLException {
+        return getEncoded0().clone();
+    }
+
+    // Called internally to avoid clone
+    private byte[] getEncoded0() throws CRLException {
         if (revokedCert == null)
             this.encode(new DerOutputStream());
-        return revokedCert.clone();
+        return revokedCert;
     }
 
     @Override
@@ -352,7 +352,7 @@ public class X509CRLEntryImpl extends X509CRLEntry {
         if (extensions == null) {
             return null;
         }
-        Set<String> extSet = new HashSet<String>();
+        Set<String> extSet = new TreeSet<>();
         for (Extension ex : extensions.getAllExtensions()) {
             if (ex.isCritical()) {
                 extSet.add(ex.getExtensionId().toString());
@@ -373,7 +373,7 @@ public class X509CRLEntryImpl extends X509CRLEntry {
         if (extensions == null) {
             return null;
         }
-        Set<String> extSet = new HashSet<String>();
+        Set<String> extSet = new TreeSet<>();
         for (Extension ex : extensions.getAllExtensions()) {
             if (!ex.isCritical()) {
                 extSet.add(ex.getExtensionId().toString());
@@ -501,13 +501,39 @@ public class X509CRLEntryImpl extends X509CRLEntry {
             getExtension(PKIXExtensions.CertificateIssuer_Id);
     }
 
+    /**
+     * Returns all extensions for this entry in a map
+     * @return the extension map, can be empty, but not null
+     */
     public Map<String, java.security.cert.Extension> getExtensions() {
+        if (extensions == null) {
+            return Collections.emptyMap();
+        }
         Collection<Extension> exts = extensions.getAllExtensions();
-        HashMap<String, java.security.cert.Extension> map =
-            new HashMap<String, java.security.cert.Extension>(exts.size());
+        Map<String, java.security.cert.Extension> map = new TreeMap<>();
         for (Extension ext : exts) {
             map.put(ext.getId(), ext);
         }
         return map;
+    }
+
+    @Override
+    public int compareTo(X509CRLEntryImpl that) {
+        int compSerial = getSerialNumber().compareTo(that.getSerialNumber());
+        if (compSerial != 0) {
+            return compSerial;
+        }
+        try {
+            byte[] thisEncoded = this.getEncoded0();
+            byte[] thatEncoded = that.getEncoded0();
+            for (int i=0; i<thisEncoded.length && i<thatEncoded.length; i++) {
+                int a = thisEncoded[i] & 0xff;
+                int b = thatEncoded[i] & 0xff;
+                if (a != b) return a-b;
+            }
+            return thisEncoded.length -thatEncoded.length;
+        } catch (CRLException ce) {
+            return -1;
+        }
     }
 }
