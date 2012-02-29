@@ -331,9 +331,6 @@ sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
 tools/pack200/CommandLineTests.java                         	generic-all
 tools/pack200/Pack200Test.java                              	generic-all
 
-# 7148499
-tools/launcher/Settings.java					generic-all
-
 ############################################################################
 
 # jdk_util
