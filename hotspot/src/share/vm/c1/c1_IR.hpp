@@ -149,6 +149,7 @@ class IRScope: public CompilationResourceObj {
   XHandlers*    _xhandlers;                      // the exception handlers
   int           _number_of_locks;                // the number of monitor lock slots needed
   bool          _monitor_pairing_ok;             // the monitor pairing info
+  bool          _wrote_final;                    // has written final field
   BlockBegin*   _start;                          // the start block, successsors are method entries
 
   BitMap        _requires_phi_function;          // bit is set if phi functions at loop headers are necessary for a local variable
@@ -181,6 +182,8 @@ class IRScope: public CompilationResourceObj {
   void          set_min_number_of_locks(int n)   { if (n > _number_of_locks) _number_of_locks = n; }
   bool          monitor_pairing_ok() const       { return _monitor_pairing_ok; }
   BlockBegin*   start() const                    { return _start; }
+  void          set_wrote_final()                { _wrote_final = true; }
+  bool          wrote_final    () const          { return _wrote_final; }
 };
 
 
