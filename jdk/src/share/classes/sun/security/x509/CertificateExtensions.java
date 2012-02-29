@@ -57,7 +57,8 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
 
     private static final Debug debug = Debug.getInstance("x509");
 
-    private Hashtable<String,Extension> map = new Hashtable<String,Extension>();
+    private Map<String,Extension> map = Collections.synchronizedMap(
+            new TreeMap<String,Extension>());
     private boolean unsupportedCritExt = false;
 
     private Map<String,Extension> unparseableExtensions;
@@ -117,7 +118,7 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
             if (ext.isCritical() == false) {
                 // ignore errors parsing non-critical extensions
                 if (unparseableExtensions == null) {
-                    unparseableExtensions = new HashMap<String,Extension>();
+                    unparseableExtensions = new TreeMap<String,Extension>();
                 }
                 unparseableExtensions.put(ext.getExtensionId().toString(),
                         new UnparseableExtension(ext, e));
@@ -218,6 +219,12 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
         return (obj);
     }
 
+    // Similar to get(String), but throw no exception, might return null.
+    // Used in X509CertImpl::getExtension(OID).
+    Extension getExtension(String name) {
+        return map.get(name);
+    }
+
     /**
      * Delete the attribute value.
      * @param name the extension name used in the lookup.
@@ -245,7 +252,7 @@ public class CertificateExtensions implements CertAttrSet<Extension> {
      * attribute.
      */
     public Enumeration<Extension> getElements() {
-        return map.elements();
+        return Collections.enumeration(map.values());
     }
 
     /**
