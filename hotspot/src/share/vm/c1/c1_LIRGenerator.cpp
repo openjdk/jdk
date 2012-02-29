@@ -3165,3 +3165,20 @@ LIR_Opr LIRGenerator::call_runtime(BasicTypeArray* signature, LIRItemList* args,
   }
   return result;
 }
+
+void LIRGenerator::do_MemBar(MemBar* x) {
+  if (os::is_MP()) {
+    LIR_Code code = x->code();
+    switch(code) {
+      case lir_membar_acquire   : __ membar_acquire(); break;
+      case lir_membar_release   : __ membar_release(); break;
+      case lir_membar           : __ membar(); break;
+      case lir_membar_loadload  : __ membar_loadload(); break;
+      case lir_membar_storestore: __ membar_storestore(); break;
+      case lir_membar_loadstore : __ membar_loadstore(); break;
+      case lir_membar_storeload : __ membar_storeload(); break;
+      default                   : ShouldNotReachHere(); break;
+    }
+  }
+}
+

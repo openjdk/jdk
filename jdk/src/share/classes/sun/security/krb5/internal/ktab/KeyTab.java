@@ -141,7 +141,7 @@ public class KeyTab implements KeyTabConstants {
         if (s == null) {
             return getInstance();
         } else {
-            return getInstance0(s);
+            return getInstance0(parse(s));
         }
     }
 
