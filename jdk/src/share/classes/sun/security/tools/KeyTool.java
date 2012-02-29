@@ -2117,19 +2117,24 @@ public final class KeyTool {
             if (caks != null) {
                 issuer = verifyCRL(caks, crl);
                 if (issuer != null) {
-                    System.out.println("Verified by " + issuer + " in cacerts");
+                    out.printf(rb.getString(
+                            "verified.by.s.in.s"), issuer, "cacerts");
+                    out.println();
                 }
             }
             if (issuer == null && keyStore != null) {
                 issuer = verifyCRL(keyStore, crl);
                 if (issuer != null) {
-                    System.out.println("Verified by " + issuer + " in keystore");
+                    out.printf(rb.getString(
+                            "verified.by.s.in.s"), issuer, "keystore");
+                    out.println();
                 }
             }
             if (issuer == null) {
                 out.println(rb.getString
                         ("STAR"));
-                out.println("WARNING: not verified. Make sure -keystore and -alias are correct.");
+                out.println(rb.getString
+                        ("warning.not.verified.make.sure.keystore.is.correct"));
                 out.println(rb.getString
                         ("STARNN"));
             }

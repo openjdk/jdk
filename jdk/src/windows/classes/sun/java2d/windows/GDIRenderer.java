@@ -29,6 +29,7 @@ import java.awt.Composite;
 import java.awt.Shape;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
+import sun.java2d.InvalidPipeException;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 import sun.java2d.pipe.Region;
@@ -45,7 +46,7 @@ public class GDIRenderer implements
     PixelFillPipe,
     ShapeDrawPipe
 {
-    native void doDrawLine(SurfaceData sData,
+    native void doDrawLine(GDIWindowSurfaceData sData,
                            Region clip, Composite comp, int color,
                            int x1, int y1, int x2, int y2);
 
@@ -54,24 +55,32 @@ public class GDIRenderer implements
     {
         int transx = sg2d.transX;
         int transy = sg2d.transY;
-        doDrawLine(sg2d.surfaceData,
-                   sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
-                   x1+transx, y1+transy, x2+transx, y2+transy);
+        try {
+            doDrawLine((GDIWindowSurfaceData)sg2d.surfaceData,
+                       sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
+                       x1+transx, y1+transy, x2+transx, y2+transy);
+        } catch (ClassCastException e) {
+            throw new InvalidPipeException("wrong surface data type: " + sg2d.surfaceData);
+        }
     }
 
-    native void doDrawRect(SurfaceData sData,
+    native void doDrawRect(GDIWindowSurfaceData sData,
                            Region clip, Composite comp, int color,
                            int x, int y, int w, int h);
 
     public void drawRect(SunGraphics2D sg2d,
                          int x, int y, int width, int height)
     {
-        doDrawRect(sg2d.surfaceData,
-                   sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
-                   x+sg2d.transX, y+sg2d.transY, width, height);
+        try {
+            doDrawRect((GDIWindowSurfaceData)sg2d.surfaceData,
+                       sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
+                       x+sg2d.transX, y+sg2d.transY, width, height);
+        } catch (ClassCastException e) {
+            throw new InvalidPipeException("wrong surface data type: " + sg2d.surfaceData);
+        }
     }
 
-    native void doDrawRoundRect(SurfaceData sData,
+    native void doDrawRoundRect(GDIWindowSurfaceData sData,
                                 Region clip, Composite comp, int color,
                                 int x, int y, int w, int h,
                                 int arcW, int arcH);
@@ -80,25 +89,33 @@ public class GDIRenderer implements
                               int x, int y, int width, int height,
                               int arcWidth, int arcHeight)
     {
-        doDrawRoundRect(sg2d.surfaceData,
-                        sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
-                        x+sg2d.transX, y+sg2d.transY, width, height,
-                        arcWidth, arcHeight);
+        try {
+            doDrawRoundRect((GDIWindowSurfaceData)sg2d.surfaceData,
+                            sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
+                            x+sg2d.transX, y+sg2d.transY, width, height,
+                            arcWidth, arcHeight);
+        } catch (ClassCastException e) {
+            throw new InvalidPipeException("wrong surface data type: " + sg2d.surfaceData);
+        }
     }
 
-    native void doDrawOval(SurfaceData sData,
+    native void doDrawOval(GDIWindowSurfaceData sData,
                            Region clip, Composite comp, int color,
                            int x, int y, int w, int h);
 
     public void drawOval(SunGraphics2D sg2d,
                          int x, int y, int width, int height)
     {
-        doDrawOval(sg2d.surfaceData,
-                   sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
-                   x+sg2d.transX, y+sg2d.transY, width, height);
+        try {
+            doDrawOval((GDIWindowSurfaceData)sg2d.surfaceData,
+                       sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
+                       x+sg2d.transX, y+sg2d.transY, width, height);
+        } catch (ClassCastException e) {
+            throw new InvalidPipeException("wrong surface data type: " + sg2d.surfaceData);
+        }
     }
 
-    native void doDrawArc(SurfaceData sData,
+    native void doDrawArc(GDIWindowSurfaceData sData,
                           Region clip, Composite comp, int color,
                           int x, int y, int w, int h,
                           int angleStart, int angleExtent);
@@ -107,13 +124,17 @@ public class GDIRenderer implements
                         int x, int y, int width, int height,
                         int startAngle, int arcAngle)
     {
-        doDrawArc(sg2d.surfaceData,
-                  sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
-                  x+sg2d.transX, y+sg2d.transY, width, height,
-                  startAngle, arcAngle);
+        try {
+            doDrawArc((GDIWindowSurfaceData)sg2d.surfaceData,
+                      sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
+                      x+sg2d.transX, y+sg2d.transY, width, height,
+                      startAngle, arcAngle);
+        } catch (ClassCastException e) {
+            throw new InvalidPipeException("wrong surface data type: " + sg2d.surfaceData);
+        }
     }
 
-    native void doDrawPoly(SurfaceData sData,
+    native void doDrawPoly(GDIWindowSurfaceData sData,
                            Region clip, Composite comp, int color,
                            int transx, int transy,
                            int[] xpoints, int[] ypoints,
@@ -123,33 +144,45 @@ public class GDIRenderer implements
                              int xpoints[], int ypoints[],
                              int npoints)
     {
-        doDrawPoly(sg2d.surfaceData,
-                   sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
-                   sg2d.transX, sg2d.transY, xpoints, ypoints, npoints, false);
+        try {
+            doDrawPoly((GDIWindowSurfaceData)sg2d.surfaceData,
+                       sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
+                       sg2d.transX, sg2d.transY, xpoints, ypoints, npoints, false);
+        } catch (ClassCastException e) {
+            throw new InvalidPipeException("wrong surface data type: " + sg2d.surfaceData);
+        }
     }
 
     public void drawPolygon(SunGraphics2D sg2d,
                             int xpoints[], int ypoints[],
                             int npoints)
     {
-        doDrawPoly(sg2d.surfaceData,
-                   sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
-                   sg2d.transX, sg2d.transY, xpoints, ypoints, npoints, true);
+        try {
+            doDrawPoly((GDIWindowSurfaceData)sg2d.surfaceData,
+                       sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
+                       sg2d.transX, sg2d.transY, xpoints, ypoints, npoints, true);
+        } catch (ClassCastException e) {
+            throw new InvalidPipeException("wrong surface data type: " + sg2d.surfaceData);
+        }
     }
 
-    native void doFillRect(SurfaceData sData,
+    native void doFillRect(GDIWindowSurfaceData sData,
                            Region clip, Composite comp, int color,
                            int x, int y, int w, int h);
 
     public void fillRect(SunGraphics2D sg2d,
                          int x, int y, int width, int height)
     {
-        doFillRect(sg2d.surfaceData,
-                   sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
-                   x+sg2d.transX, y+sg2d.transY, width, height);
+        try {
+            doFillRect((GDIWindowSurfaceData)sg2d.surfaceData,
+                       sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
+                       x+sg2d.transX, y+sg2d.transY, width, height);
+        } catch (ClassCastException e) {
+            throw new InvalidPipeException("wrong surface data type: " + sg2d.surfaceData);
+        }
     }
 
-    native void doFillRoundRect(SurfaceData sData,
+    native void doFillRoundRect(GDIWindowSurfaceData sData,
                                 Region clip, Composite comp, int color,
                                 int x, int y, int w, int h,
                                 int arcW, int arcH);
@@ -158,25 +191,33 @@ public class GDIRenderer implements
                               int x, int y, int width, int height,
                               int arcWidth, int arcHeight)
     {
-        doFillRoundRect(sg2d.surfaceData,
-                        sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
-                        x+sg2d.transX, y+sg2d.transY, width, height,
-                        arcWidth, arcHeight);
+        try {
+            doFillRoundRect((GDIWindowSurfaceData)sg2d.surfaceData,
+                            sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
+                            x+sg2d.transX, y+sg2d.transY, width, height,
+                            arcWidth, arcHeight);
+        } catch (ClassCastException e) {
+            throw new InvalidPipeException("wrong surface data type: " + sg2d.surfaceData);
+        }
     }
 
-    native void doFillOval(SurfaceData sData,
+    native void doFillOval(GDIWindowSurfaceData sData,
                            Region clip, Composite comp, int color,
                            int x, int y, int w, int h);
 
     public void fillOval(SunGraphics2D sg2d,
                          int x, int y, int width, int height)
     {
-        doFillOval(sg2d.surfaceData,
-                   sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
-                   x+sg2d.transX, y+sg2d.transY, width, height);
+        try {
+            doFillOval((GDIWindowSurfaceData)sg2d.surfaceData,
+                       sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
+                       x+sg2d.transX, y+sg2d.transY, width, height);
+        } catch (ClassCastException e) {
+            throw new InvalidPipeException("wrong surface data type: " + sg2d.surfaceData);
+        }
     }
 
-    native void doFillArc(SurfaceData sData,
+    native void doFillArc(GDIWindowSurfaceData sData,
                           Region clip, Composite comp, int color,
                           int x, int y, int w, int h,
                           int angleStart, int angleExtent);
@@ -185,13 +226,17 @@ public class GDIRenderer implements
                         int x, int y, int width, int height,
                         int startAngle, int arcAngle)
     {
-        doFillArc(sg2d.surfaceData,
-                  sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
-                  x+sg2d.transX, y+sg2d.transY, width, height,
-                  startAngle, arcAngle);
+        try {
+            doFillArc((GDIWindowSurfaceData)sg2d.surfaceData,
+                      sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
+                      x+sg2d.transX, y+sg2d.transY, width, height,
+                      startAngle, arcAngle);
+        } catch (ClassCastException e) {
+            throw new InvalidPipeException("wrong surface data type: " + sg2d.surfaceData);
+        }
     }
 
-    native void doFillPoly(SurfaceData sData,
+    native void doFillPoly(GDIWindowSurfaceData sData,
                            Region clip, Composite comp, int color,
                            int transx, int transy,
                            int[] xpoints, int[] ypoints,
@@ -201,12 +246,16 @@ public class GDIRenderer implements
                             int xpoints[], int ypoints[],
                             int npoints)
     {
-        doFillPoly(sg2d.surfaceData,
-                   sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
-                   sg2d.transX, sg2d.transY, xpoints, ypoints, npoints);
+        try {
+            doFillPoly((GDIWindowSurfaceData)sg2d.surfaceData,
+                       sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
+                       sg2d.transX, sg2d.transY, xpoints, ypoints, npoints);
+        } catch (ClassCastException e) {
+            throw new InvalidPipeException("wrong surface data type: " + sg2d.surfaceData);
+        }
     }
 
-    native void doShape(SurfaceData sData,
+    native void doShape(GDIWindowSurfaceData sData,
                         Region clip, Composite comp, int color,
                         int transX, int transY,
                         Path2D.Float p2df, boolean isfill);
@@ -228,9 +277,13 @@ public class GDIRenderer implements
             transX = 0;
             transY = 0;
         }
-        doShape(sg2d.surfaceData,
-                sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
-                transX, transY, p2df, isfill);
+        try {
+            doShape((GDIWindowSurfaceData)sg2d.surfaceData,
+                    sg2d.getCompClip(), sg2d.composite, sg2d.eargb,
+                    transX, transY, p2df, isfill);
+        } catch (ClassCastException e) {
+            throw new InvalidPipeException("wrong surface data type: " + sg2d.surfaceData);
+        }
     }
 
     // REMIND: This is just a hack to get WIDE lines to honor the
@@ -239,7 +292,12 @@ public class GDIRenderer implements
     // method that could be filled by the doShape method more quickly.
     public void doFillSpans(SunGraphics2D sg2d, SpanIterator si) {
         int box[] = new int[4];
-        SurfaceData sd = sg2d.surfaceData;
+        GDIWindowSurfaceData sd;
+        try {
+            sd = (GDIWindowSurfaceData)sg2d.surfaceData;
+        } catch (ClassCastException e) {
+            throw new InvalidPipeException("wrong surface data type: " + sg2d.surfaceData);
+        }
         Region clip = sg2d.getCompClip();
         Composite comp = sg2d.composite;
         int eargb = sg2d.eargb;
@@ -268,7 +326,7 @@ public class GDIRenderer implements
         doShape(sg2d, s, true);
     }
 
-    public native void devCopyArea(SurfaceData sData,
+    public native void devCopyArea(GDIWindowSurfaceData sData,
                                    int srcx, int srcy,
                                    int dx, int dy,
                                    int w, int h);
@@ -278,21 +336,21 @@ public class GDIRenderer implements
     }
 
     public static class Tracer extends GDIRenderer {
-        void doDrawLine(SurfaceData sData,
+        void doDrawLine(GDIWindowSurfaceData sData,
                         Region clip, Composite comp, int color,
                         int x1, int y1, int x2, int y2)
         {
             GraphicsPrimitive.tracePrimitive("GDIDrawLine");
             super.doDrawLine(sData, clip, comp, color, x1, y1, x2, y2);
         }
-        void doDrawRect(SurfaceData sData,
+        void doDrawRect(GDIWindowSurfaceData sData,
                         Region clip, Composite comp, int color,
                         int x, int y, int w, int h)
         {
             GraphicsPrimitive.tracePrimitive("GDIDrawRect");
             super.doDrawRect(sData, clip, comp, color, x, y, w, h);
         }
-        void doDrawRoundRect(SurfaceData sData,
+        void doDrawRoundRect(GDIWindowSurfaceData sData,
                              Region clip, Composite comp, int color,
                              int x, int y, int w, int h,
                              int arcW, int arcH)
@@ -301,14 +359,14 @@ public class GDIRenderer implements
             super.doDrawRoundRect(sData, clip, comp, color,
                                   x, y, w, h, arcW, arcH);
         }
-        void doDrawOval(SurfaceData sData,
+        void doDrawOval(GDIWindowSurfaceData sData,
                         Region clip, Composite comp, int color,
                         int x, int y, int w, int h)
         {
             GraphicsPrimitive.tracePrimitive("GDIDrawOval");
             super.doDrawOval(sData, clip, comp, color, x, y, w, h);
         }
-        void doDrawArc(SurfaceData sData,
+        void doDrawArc(GDIWindowSurfaceData sData,
                        Region clip, Composite comp, int color,
                        int x, int y, int w, int h,
                        int angleStart, int angleExtent)
@@ -317,7 +375,7 @@ public class GDIRenderer implements
             super.doDrawArc(sData, clip, comp, color, x, y, w, h,
                             angleStart, angleExtent);
         }
-        void doDrawPoly(SurfaceData sData,
+        void doDrawPoly(GDIWindowSurfaceData sData,
                         Region clip, Composite comp, int color,
                         int transx, int transy,
                         int[] xpoints, int[] ypoints,
@@ -327,14 +385,14 @@ public class GDIRenderer implements
             super.doDrawPoly(sData, clip, comp, color, transx, transy,
                              xpoints, ypoints, npoints, isclosed);
         }
-        void doFillRect(SurfaceData sData,
+        void doFillRect(GDIWindowSurfaceData sData,
                         Region clip, Composite comp, int color,
                         int x, int y, int w, int h)
         {
             GraphicsPrimitive.tracePrimitive("GDIFillRect");
             super.doFillRect(sData, clip, comp, color, x, y, w, h);
         }
-        void doFillRoundRect(SurfaceData sData,
+        void doFillRoundRect(GDIWindowSurfaceData sData,
                              Region clip, Composite comp, int color,
                              int x, int y, int w, int h,
                              int arcW, int arcH)
@@ -343,14 +401,14 @@ public class GDIRenderer implements
             super.doFillRoundRect(sData, clip, comp, color,
                                   x, y, w, h, arcW, arcH);
         }
-        void doFillOval(SurfaceData sData,
+        void doFillOval(GDIWindowSurfaceData sData,
                         Region clip, Composite comp, int color,
                         int x, int y, int w, int h)
         {
             GraphicsPrimitive.tracePrimitive("GDIFillOval");
             super.doFillOval(sData, clip, comp, color, x, y, w, h);
         }
-        void doFillArc(SurfaceData sData,
+        void doFillArc(GDIWindowSurfaceData sData,
                        Region clip, Composite comp, int color,
                        int x, int y, int w, int h,
                        int angleStart, int angleExtent)
@@ -359,7 +417,7 @@ public class GDIRenderer implements
             super.doFillArc(sData, clip, comp, color, x, y, w, h,
                             angleStart, angleExtent);
         }
-        void doFillPoly(SurfaceData sData,
+        void doFillPoly(GDIWindowSurfaceData sData,
                         Region clip, Composite comp, int color,
                         int transx, int transy,
                         int[] xpoints, int[] ypoints,
@@ -369,7 +427,7 @@ public class GDIRenderer implements
             super.doFillPoly(sData, clip, comp, color, transx, transy,
                              xpoints, ypoints, npoints);
         }
-        void doShape(SurfaceData sData,
+        void doShape(GDIWindowSurfaceData sData,
                      Region clip, Composite comp, int color,
                      int transX, int transY,
                      Path2D.Float p2df, boolean isfill)
@@ -380,7 +438,7 @@ public class GDIRenderer implements
             super.doShape(sData, clip, comp, color,
                           transX, transY, p2df, isfill);
         }
-        public void devCopyArea(SurfaceData sData,
+        public void devCopyArea(GDIWindowSurfaceData sData,
                                 int srcx, int srcy,
                                 int dx, int dy,
                                 int w, int h)
