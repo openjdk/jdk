@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,32 +35,33 @@ import java.security.PrivilegedAction;
 
 class ServerConfig {
 
-    static int clockTick;
-
-    static final int DEFAULT_CLOCK_TICK = 10000 ; // 10 sec.
+    private static final int DEFAULT_CLOCK_TICK = 10000 ; // 10 sec.
 
     /* These values must be a reasonable multiple of clockTick */
-    static final long DEFAULT_IDLE_INTERVAL = 30 ; // 5 min
-    static final int DEFAULT_MAX_IDLE_CONNECTIONS = 200 ;
+    private static final long DEFAULT_IDLE_INTERVAL = 30 ; // 5 min
+    private static final int DEFAULT_MAX_IDLE_CONNECTIONS = 200 ;
 
-    static final long DEFAULT_MAX_REQ_TIME = -1; // default: forever
-    static final long DEFAULT_MAX_RSP_TIME = -1; // default: forever
-    static final long DEFAULT_TIMER_MILLIS = 1000;
+    private static final long DEFAULT_MAX_REQ_TIME = -1; // default: forever
+    private static final long DEFAULT_MAX_RSP_TIME = -1; // default: forever
+    private static final long DEFAULT_TIMER_MILLIS = 1000;
+    private static final int  DEFAULT_MAX_REQ_HEADERS = 200;
+    private static final long DEFAULT_DRAIN_AMOUNT = 64 * 1024;
 
-    static final long DEFAULT_DRAIN_AMOUNT = 64 * 1024;
-
-    static long idleInterval;
-    static long drainAmount;    // max # of bytes to drain from an inputstream
-    static int maxIdleConnections;
-
+    private static int clockTick;
+    private static long idleInterval;
+    // The maximum number of bytes to drain from an inputstream
+    private static long drainAmount;
+    private static int maxIdleConnections;
+    // The maximum number of request headers allowable
+    private static int maxReqHeaders;
     // max time a request or response is allowed to take
-    static long maxReqTime;
-    static long maxRspTime;
-    static long timerMillis;
-    static boolean debug;
+    private static long maxReqTime;
+    private static long maxRspTime;
+    private static long timerMillis;
+    private static boolean debug;
 
     // the value of the TCP_NODELAY socket-level option
-    static boolean noDelay;
+    private static boolean noDelay;
 
     static {
         java.security.AccessController.doPrivileged(
@@ -79,6 +80,10 @@ class ServerConfig {
 
                     drainAmount = Long.getLong("sun.net.httpserver.drainAmount",
                             DEFAULT_DRAIN_AMOUNT);
+
+                    maxReqHeaders = Integer.getInteger(
+                            "sun.net.httpserver.maxReqHeaders",
+                            DEFAULT_MAX_REQ_HEADERS);
 
                     maxReqTime = Long.getLong("sun.net.httpserver.maxReqTime",
                             DEFAULT_MAX_REQ_TIME);
@@ -99,8 +104,7 @@ class ServerConfig {
 
     }
 
-
-    static void checkLegacyProperties (final Logger logger) {
+    static void checkLegacyProperties(final Logger logger) {
 
         // legacy properties that are no longer used
         // print a warning to logger if they are set.
@@ -137,35 +141,39 @@ class ServerConfig {
         );
     }
 
-    static boolean debugEnabled () {
+    static boolean debugEnabled() {
         return debug;
     }
 
-    static long getIdleInterval () {
+    static long getIdleInterval() {
         return idleInterval;
     }
 
-    static int getClockTick () {
+    static int getClockTick() {
         return clockTick;
     }
 
-    static int getMaxIdleConnections () {
+    static int getMaxIdleConnections() {
         return maxIdleConnections;
     }
 
-    static long getDrainAmount () {
+    static long getDrainAmount() {
         return drainAmount;
     }
 
-    static long getMaxReqTime () {
+    static int getMaxReqHeaders() {
+        return maxReqHeaders;
+    }
+
+    static long getMaxReqTime() {
         return maxReqTime;
     }
 
-    static long getMaxRspTime () {
+    static long getMaxRspTime() {
         return maxRspTime;
     }
 
-    static long getTimerMillis () {
+    static long getTimerMillis() {
         return timerMillis;
     }
 
