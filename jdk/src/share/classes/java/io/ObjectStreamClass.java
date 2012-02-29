@@ -123,14 +123,39 @@ public class ObjectStreamClass implements Serializable {
      */
     private boolean hasBlockExternalData = true;
 
+    /**
+     * Contains information about InvalidClassException instances to be thrown
+     * when attempting operations on an invalid class. Note that instances of
+     * this class are immutable and are potentially shared among
+     * ObjectStreamClass instances.
+     */
+    private static class ExceptionInfo {
+        private final String className;
+        private final String message;
+
+        ExceptionInfo(String cn, String msg) {
+            className = cn;
+            message = msg;
+        }
+
+        /**
+         * Returns (does not throw) an InvalidClassException instance created
+         * from the information in this object, suitable for being thrown by
+         * the caller.
+         */
+        InvalidClassException newInvalidClassException() {
+            return new InvalidClassException(className, message);
+        }
+    }
+
     /** exception (if any) thrown while attempting to resolve class */
     private ClassNotFoundException resolveEx;
     /** exception (if any) to throw if non-enum deserialization attempted */
-    private InvalidClassException deserializeEx;
+    private ExceptionInfo deserializeEx;
     /** exception (if any) to throw if non-enum serialization attempted */
-    private InvalidClassException serializeEx;
+    private ExceptionInfo serializeEx;
     /** exception (if any) to throw if default serialization attempted */
-    private InvalidClassException defaultSerializeEx;
+    private ExceptionInfo defaultSerializeEx;
 
     /** serializable fields */
     private ObjectStreamField[] fields;
@@ -444,7 +469,8 @@ public class ObjectStreamClass implements Serializable {
                         fields = getSerialFields(cl);
                         computeFieldOffsets();
                     } catch (InvalidClassException e) {
-                        serializeEx = deserializeEx = e;
+                        serializeEx = deserializeEx =
+                            new ExceptionInfo(e.classname, e.getMessage());
                         fields = NO_FIELDS;
                     }
 
@@ -483,15 +509,14 @@ public class ObjectStreamClass implements Serializable {
 
         if (deserializeEx == null) {
             if (isEnum) {
-                deserializeEx = new InvalidClassException(name, "enum type");
+                deserializeEx = new ExceptionInfo(name, "enum type");
             } else if (cons == null) {
-                deserializeEx = new InvalidClassException(
-                    name, "no valid constructor");
+                deserializeEx = new ExceptionInfo(name, "no valid constructor");
             }
         }
         for (int i = 0; i < fields.length; i++) {
             if (fields[i].getField() == null) {
-                defaultSerializeEx = new InvalidClassException(
+                defaultSerializeEx = new ExceptionInfo(
                     name, "unmatched serializable field(s) declared");
             }
         }
@@ -601,8 +626,8 @@ public class ObjectStreamClass implements Serializable {
                     (externalizable != localDesc.externalizable) ||
                     !(serializable || externalizable))
                 {
-                    deserializeEx = new InvalidClassException(localDesc.name,
-                        "class invalid for deserialization");
+                    deserializeEx = new ExceptionInfo(
+                        localDesc.name, "class invalid for deserialization");
                 }
             }
 
@@ -727,11 +752,7 @@ public class ObjectStreamClass implements Serializable {
      */
     void checkDeserialize() throws InvalidClassException {
         if (deserializeEx != null) {
-            InvalidClassException ice =
-                new InvalidClassException(deserializeEx.classname,
-                                          deserializeEx.getMessage());
-            ice.initCause(deserializeEx);
-            throw ice;
+            throw deserializeEx.newInvalidClassException();
         }
     }
 
@@ -742,11 +763,7 @@ public class ObjectStreamClass implements Serializable {
      */
     void checkSerialize() throws InvalidClassException {
         if (serializeEx != null) {
-            InvalidClassException ice =
-                new InvalidClassException(serializeEx.classname,
-                                          serializeEx.getMessage());
-            ice.initCause(serializeEx);
-            throw ice;
+            throw serializeEx.newInvalidClassException();
         }
     }
 
@@ -759,11 +776,7 @@ public class ObjectStreamClass implements Serializable {
      */
     void checkDefaultSerialize() throws InvalidClassException {
         if (defaultSerializeEx != null) {
-            InvalidClassException ice =
-                new InvalidClassException(defaultSerializeEx.classname,
-                                          defaultSerializeEx.getMessage());
-            ice.initCause(defaultSerializeEx);
-            throw ice;
+            throw defaultSerializeEx.newInvalidClassException();
         }
     }
 

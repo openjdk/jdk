@@ -55,10 +55,11 @@ class SocketDispatcher extends NativeDispatcher
         return writev0(fd, address, len);
     }
 
-    void close(FileDescriptor fd) throws IOException {
+    void preClose(FileDescriptor fd) throws IOException {
+        preClose0(fd);
     }
 
-    void preClose(FileDescriptor fd) throws IOException {
+    void close(FileDescriptor fd) throws IOException {
         close0(fd);
     }
 
@@ -74,6 +75,8 @@ class SocketDispatcher extends NativeDispatcher
 
     static native long writev0(FileDescriptor fd, long address, int len)
         throws IOException;
+
+    static native void preClose0(FileDescriptor fd) throws IOException;
 
     static native void close0(FileDescriptor fd) throws IOException;
 }

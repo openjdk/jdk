@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,14 +87,7 @@
 #endif
 #ifdef __APPLE__
   #include <AvailabilityMacros.h>
-  #if (MAC_OS_X_VERSION_MAX_ALLOWED <= MAC_OS_X_VERSION_10_4)
-    // Mac OS X 10.4 defines EFL_AC and EFL_ID,
-    // which conflict with hotspot variable names.
-    //
-    // This has been fixed in Mac OS X 10.5.
-    #undef EFL_AC
-    #undef EFL_ID
-  #endif
+  #include <mach/mach.h>
 #endif
 #include <sys/time.h>
 #endif // LINUX || _ALLBSD_SOURCE
