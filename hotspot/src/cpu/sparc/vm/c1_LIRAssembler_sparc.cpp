@@ -3231,6 +3231,26 @@ void LIR_Assembler::membar_release() {
   // no-op on TSO
 }
 
+void LIR_Assembler::membar_loadload() {
+  // no-op
+  //__ membar(Assembler::Membar_mask_bits(Assembler::loadload));
+}
+
+void LIR_Assembler::membar_storestore() {
+  // no-op
+  //__ membar(Assembler::Membar_mask_bits(Assembler::storestore));
+}
+
+void LIR_Assembler::membar_loadstore() {
+  // no-op
+  //__ membar(Assembler::Membar_mask_bits(Assembler::loadstore));
+}
+
+void LIR_Assembler::membar_storeload() {
+  __ membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
+}
+
+
 // Pack two sequential registers containing 32 bit values
 // into a single 64 bit register.
 // src and src->successor() are packed into dst
