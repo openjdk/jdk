@@ -1197,7 +1197,6 @@ static void save_or_restore_arguments(MacroAssembler* masm,
     if (in_regs[i].first()->is_Register() &&
         (in_sig_bt[i] == T_LONG || in_sig_bt[i] == T_ARRAY)) {
       int offset = slot * VMRegImpl::stack_slot_size;
-      slot += VMRegImpl::slots_per_word;
       if (map != NULL) {
         __ movq(Address(rsp, offset), in_regs[i].first()->as_Register());
         if (in_sig_bt[i] == T_ARRAY) {
@@ -1206,6 +1205,7 @@ static void save_or_restore_arguments(MacroAssembler* masm,
       } else {
         __ movq(in_regs[i].first()->as_Register(), Address(rsp, offset));
       }
+      slot += VMRegImpl::slots_per_word;
     }
   }
   // Save or restore single word registers
