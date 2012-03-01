@@ -37,7 +37,7 @@ import sun.security.util.SecurityConstants;
  * collection of key/value pairs storing state shared by all engines created
  * by the Manager. This class uses the <a href="../../../technotes/guides/jar/jar.html#Service%20Provider">service provider</a> mechanism to enumerate all the
  * implementations of <code>ScriptEngineFactory</code>. <br><br>
- * The <code>ScriptEngineManager</code> provides a method to return an array of all these factories
+ * The <code>ScriptEngineManager</code> provides a method to return a list of all these factories
  * as well as utility methods which look up factories on the basis of language name, file extension
  * and mime type.
  * <p>
@@ -202,7 +202,7 @@ public class ScriptEngineManager  {
      * The algorithm first searches for a <code>ScriptEngineFactory</code> that has been
      * registered as a handler for the specified name using the <code>registerEngineName</code>
      * method.
-     * <br><br> If one is not found, it searches the array of <code>ScriptEngineFactory</code> instances
+     * <br><br> If one is not found, it searches the set of <code>ScriptEngineFactory</code> instances
      * stored by the constructor for one with the specified name.  If a <code>ScriptEngineFactory</code>
      * is found by either method, it is used to create instance of <code>ScriptEngine</code>.
      * @param shortName The short name of the <code>ScriptEngine</code> implementation.
@@ -351,7 +351,7 @@ public class ScriptEngineManager  {
     }
 
     /**
-     * Returns an array whose elements are instances of all the <code>ScriptEngineFactory</code> classes
+     * Returns a list whose elements are instances of all the <code>ScriptEngineFactory</code> classes
      * found by the discovery mechanism.
      * @return List of all discovered <code>ScriptEngineFactory</code>s.
      */
