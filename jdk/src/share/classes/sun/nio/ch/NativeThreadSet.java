@@ -44,8 +44,9 @@ class NativeThreadSet {
     //
     int add() {
         long th = NativeThread.current();
-        if (th == -1)
-            return -1;
+        // 0 and -1 are treated as placeholders, not real thread handles
+        if (th == 0)
+            th = -1;
         synchronized (this) {
             int start = 0;
             if (used >= elts.length) {
@@ -71,8 +72,6 @@ class NativeThreadSet {
     // Removes the thread at the given index.
     //
     void remove(int i) {
-        if (i < 0)
-            return;
         synchronized (this) {
             elts[i] = 0;
             used--;
@@ -91,7 +90,8 @@ class NativeThreadSet {
                 long th = elts[i];
                 if (th == 0)
                     continue;
-                NativeThread.signal(th);
+                if (th != -1)
+                    NativeThread.signal(th);
                 if (--u == 0)
                     break;
             }

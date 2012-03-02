@@ -34,12 +34,12 @@ import java.nio.channels.spi.*;
  * An implementation of SelectionKey for Solaris.
  */
 
-class SelectionKeyImpl
+public class SelectionKeyImpl
     extends AbstractSelectionKey
 {
 
     final SelChImpl channel;                            // package-private
-    final SelectorImpl selector;                        // package-private
+    public final SelectorImpl selector;
 
     // Index for a pollfd array in Selector that this key is registered with
     private int index;
@@ -91,15 +91,15 @@ class SelectionKeyImpl
     // The nio versions of these operations do not care if a key
     // has been invalidated. They are for internal use by nio code.
 
-    void nioReadyOps(int ops) {                 // package-private
+    public void nioReadyOps(int ops) {
         readyOps = ops;
     }
 
-    int nioReadyOps() {                         // package-private
+    public int nioReadyOps() {
         return readyOps;
     }
 
-    SelectionKey nioInterestOps(int ops) {      // package-private
+    public SelectionKey nioInterestOps(int ops) {
         if ((ops & ~channel().validOps()) != 0)
             throw new IllegalArgumentException();
         channel.translateAndSetInterestOps(ops, this);
@@ -107,7 +107,7 @@ class SelectionKeyImpl
         return this;
     }
 
-    int nioInterestOps() {                       // package-private
+    public int nioInterestOps() {
         return interestOps;
     }
 

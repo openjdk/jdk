@@ -605,9 +605,12 @@ Java_sun_nio_fs_UnixNativeDispatcher_closedir(JNIEnv* env, jclass this, jlong di
 
 JNIEXPORT jbyteArray JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_readdir(JNIEnv* env, jclass this, jlong value) {
-    char entry[sizeof(struct dirent64) + PATH_MAX + 1];
-    struct dirent64* ptr = (struct dirent64*)&entry;
     struct dirent64* result;
+    struct {
+        struct dirent64 buf;
+        char name_extra[PATH_MAX + 1 - sizeof result->d_name];
+    } entry;
+    struct dirent64* ptr = &entry.buf;
     int res;
     DIR* dirp = jlong_to_ptr(value);
 

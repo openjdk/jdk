@@ -521,7 +521,7 @@ countCENHeaders(unsigned char *beg, unsigned char *end)
 {
     jint count = 0;
     ptrdiff_t i;
-    for (i = 0; i + CENHDR < end - beg; i += CENSIZE(beg + i))
+    for (i = 0; i + CENHDR <= end - beg; i += CENSIZE(beg + i))
         count++;
     return count;
 }
