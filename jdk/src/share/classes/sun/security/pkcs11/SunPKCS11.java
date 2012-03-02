@@ -342,6 +342,18 @@ public final class SunPKCS11 extends AuthProvider {
                 System.out.println("Library info:");
                 System.out.println(p11Info);
             }
+
+            // Check library version number
+            String libraryVersionCheck = config.getLibraryVersionCheck();
+            if (libraryVersionCheck != null) {
+                if (p11Info.libraryVersion.toString()
+                    .compareTo(libraryVersionCheck) < 0) {
+                    throw new ProviderException(
+                        "Cryptoki library version check failed: " +
+                        "installed version is " + p11Info.libraryVersion);
+                }
+            }
+
             if ((slotID < 0) || showInfo) {
                 long[] slots = p11.C_GetSlotList(false);
                 if (showInfo) {

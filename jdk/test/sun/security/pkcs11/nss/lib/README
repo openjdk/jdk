@@ -1,0 +1,4 @@
+This copy of the Mozilla NSS-3.13.1 libraries is used by the PKCS11 tests.
+The following source code versions were used to build these libraries:
+  NSS_3.13.1_RTM
+  NSPR_4.8.9_RTM
