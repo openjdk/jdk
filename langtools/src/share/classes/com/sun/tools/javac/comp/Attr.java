@@ -1627,7 +1627,6 @@ public class Attr extends JCTree.Visitor {
         // Attribute clazz expression and store
         // symbol + type back into the attributed tree.
         Type clazztype = attribType(clazz, env);
-        Pair<Scope,Scope> mapping = getSyntheticScopeMapping(clazztype);
         clazztype = chk.checkDiamond(tree, clazztype);
         chk.validate(clazz, localEnv);
         if (tree.encl != null) {
@@ -1654,7 +1653,7 @@ public class Attr extends JCTree.Visitor {
         List<Type> typeargtypes = attribTypes(tree.typeargs, localEnv);
 
         if (TreeInfo.isDiamond(tree) && !clazztype.isErroneous()) {
-            clazztype = attribDiamond(localEnv, tree, clazztype, mapping, argtypes, typeargtypes);
+            clazztype = attribDiamond(localEnv, tree, clazztype, argtypes, typeargtypes);
             clazz.type = clazztype;
         } else if (allowDiamondFinder &&
                 tree.def == null &&
@@ -1671,7 +1670,6 @@ public class Attr extends JCTree.Visitor {
                 inferred = attribDiamond(localEnv,
                         tree,
                         clazztype,
-                        mapping,
                         argtypes,
                         typeargtypes);
             }
@@ -1827,12 +1825,10 @@ public class Attr extends JCTree.Visitor {
     Type attribDiamond(Env<AttrContext> env,
                         JCNewClass tree,
                         Type clazztype,
-                        Pair<Scope, Scope> mapping,
                         List<Type> argtypes,
                         List<Type> typeargtypes) {
         if (clazztype.isErroneous() ||
-                clazztype.isInterface() ||
-                mapping == erroneousMapping) {
+                clazztype.isInterface()) {
             //if the type of the instance creation expression is erroneous,
             //or if it's an interface, or if something prevented us to form a valid
             //mapping, return the (possibly erroneous) type unchanged
@@ -1841,27 +1837,22 @@ public class Attr extends JCTree.Visitor {
 
         //dup attribution environment and augment the set of inference variables
         Env<AttrContext> localEnv = env.dup(tree);
-        localEnv.info.tvars = clazztype.tsym.type.getTypeArguments();
+
+        ClassType site = new ClassType(clazztype.getEnclosingType(),
+                    clazztype.tsym.type.getTypeArguments(),
+                    clazztype.tsym);
 
         //if the type of the instance creation expression is a class type
         //apply method resolution inference (JLS 15.12.2.7). The return type
         //of the resolved constructor will be a partially instantiated type
-        ((ClassSymbol) clazztype.tsym).members_field = mapping.snd;
-        Symbol constructor;
-        try {
-            constructor = rs.resolveDiamond(tree.pos(),
+        Symbol constructor = rs.resolveDiamond(tree.pos(),
                     localEnv,
-                    clazztype,
+                    site,
                     argtypes,
                     typeargtypes);
-        } finally {
-            ((ClassSymbol) clazztype.tsym).members_field = mapping.fst;
-        }
+
         if (constructor.kind == MTH) {
-            ClassType ct = new ClassType(clazztype.getEnclosingType(),
-                    clazztype.tsym.type.getTypeArguments(),
-                    clazztype.tsym);
-            clazztype = checkMethod(ct,
+            clazztype = checkMethod(site,
                     constructor,
                     localEnv,
                     tree.args,
@@ -1892,42 +1883,6 @@ public class Attr extends JCTree.Visitor {
                 clazztype,
                 true);
     }
-
-    /** Creates a synthetic scope containing fake generic constructors.
-     *  Assuming that the original scope contains a constructor of the kind:
-     *  Foo(X x, Y y), where X,Y are class type-variables declared in Foo,
-     *  the synthetic scope is added a generic constructor of the kind:
-     *  <X,Y>Foo<X,Y>(X x, Y y). This is crucial in order to enable diamond
-     *  inference. The inferred return type of the synthetic constructor IS
-     *  the inferred type for the diamond operator.
-     */
-    private Pair<Scope, Scope> getSyntheticScopeMapping(Type ctype) {
-        if (ctype.tag != CLASS) {
-            return erroneousMapping;
-        }
-
-        Pair<Scope, Scope> mapping =
-                new Pair<Scope, Scope>(ctype.tsym.members(), new Scope(ctype.tsym));
-
-        //for each constructor in the original scope, create a synthetic constructor
-        //whose return type is the type of the class in which the constructor is
-        //declared, and insert it into the new scope.
-        for (Scope.Entry e = mapping.fst.lookup(names.init);
-                e.scope != null;
-                e = e.next()) {
-            Type synthRestype = new ClassType(ctype.getEnclosingType(),
-                        ctype.tsym.type.getTypeArguments(),
-                        ctype.tsym);
-            MethodSymbol synhConstr = new MethodSymbol(e.sym.flags(),
-                    names.init,
-                    types.createMethodTypeWithReturn(e.sym.type, synthRestype),
-                    e.sym.owner);
-            mapping.snd.enter(synhConstr);
-        }
-        return mapping;
-    }
-
-    private final Pair<Scope,Scope> erroneousMapping = new Pair<Scope,Scope>(null, null);
 
     /** Make an attributed null check tree.
      */
