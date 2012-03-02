@@ -35,15 +35,15 @@ import sun.misc.*;
  * @since 1.4
  */
 
-abstract class AbstractPollArrayWrapper {
+public abstract class AbstractPollArrayWrapper {
 
     // Event masks
-    static final short POLLIN       = 0x0001;
-    static final short POLLOUT      = 0x0004;
-    static final short POLLERR      = 0x0008;
-    static final short POLLHUP      = 0x0010;
-    static final short POLLNVAL     = 0x0020;
-    static final short POLLREMOVE   = 0x0800;
+    public static final short POLLIN       = 0x0001;
+    public static final short POLLOUT      = 0x0004;
+    public static final short POLLERR      = 0x0008;
+    public static final short POLLHUP      = 0x0010;
+    public static final short POLLNVAL     = 0x0020;
+    public static final short POLLREMOVE   = 0x0800;
 
     // Miscellaneous constants
     static final short SIZE_POLLFD   = 8;

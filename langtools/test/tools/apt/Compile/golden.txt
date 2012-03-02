@@ -1,6 +1,0 @@
-error: It's a mad, mad, mad, mad world
-error: Something wicked this way comes
-HelloWorld.java:2: error: Boring class name
-public class HelloWorld {
-       ^
-3 errors
