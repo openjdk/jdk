@@ -1306,6 +1306,7 @@ void GraphBuilder::table_switch() {
       if (sw.dest_offset_at(i) < 0) has_bb = true;
     }
     // add default successor
+    if (sw.default_offset() < 0) has_bb = true;
     sux->at_put(i, block_at(bci() + sw.default_offset()));
     ValueStack* state_before = has_bb ? copy_state_before() : NULL;
     Instruction* res = append(new TableSwitch(ipop(), sux, sw.low_key(), state_before, has_bb));
@@ -1350,6 +1351,7 @@ void GraphBuilder::lookup_switch() {
       keys->at_put(i, pair.match());
     }
     // add default successor
+    if (sw.default_offset() < 0) has_bb = true;
     sux->at_put(i, block_at(bci() + sw.default_offset()));
     ValueStack* state_before = has_bb ? copy_state_before() : NULL;
     Instruction* res = append(new LookupSwitch(ipop(), sux, keys, state_before, has_bb));
