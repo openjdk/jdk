@@ -84,7 +84,7 @@ final class DGCImpl implements DGC {
     /** remote implementation of DGC interface for this VM */
     private static DGCImpl dgc;
     /** table that maps VMID to LeaseInfo */
-    private Map<VMID,LeaseInfo> leaseTable = new HashMap<VMID,LeaseInfo>();
+    private Map<VMID,LeaseInfo> leaseTable = new HashMap<>();
     /** checks for lease expiration */
     private Future<?> checker = null;
 
@@ -236,7 +236,7 @@ final class DGCImpl implements DGC {
         long time = System.currentTimeMillis();
 
         /* List of vmids that need to be removed from the leaseTable */
-        List<LeaseInfo> toUnregister = new ArrayList<LeaseInfo>();
+        List<LeaseInfo> toUnregister = new ArrayList<>();
 
         /* Build a list of leaseInfo objects that need to have
          * targets removed from their notifySet.  Remove expired
@@ -313,7 +313,7 @@ final class DGCImpl implements DGC {
     private static class LeaseInfo {
         VMID vmid;
         long expiration;
-        Set<Target> notifySet = new HashSet<Target>();
+        Set<Target> notifySet = new HashSet<>();
 
         LeaseInfo(VMID vmid, long lease) {
             this.vmid = vmid;
