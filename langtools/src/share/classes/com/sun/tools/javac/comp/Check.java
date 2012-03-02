@@ -525,16 +525,16 @@ public class Check {
      *  @param a             The type that should be bounded by bs.
      *  @param bs            The bound.
      */
-    private boolean checkExtends(Type a, TypeVar bs) {
+    private boolean checkExtends(Type a, Type bound) {
          if (a.isUnbound()) {
              return true;
          } else if (a.tag != WILDCARD) {
              a = types.upperBound(a);
-             return types.isSubtype(a, bs.bound);
+             return types.isSubtype(a, bound);
          } else if (a.isExtendsBound()) {
-             return types.isCastable(bs.getUpperBound(), types.upperBound(a), Warner.noWarnings);
+             return types.isCastable(bound, types.upperBound(a), Warner.noWarnings);
          } else if (a.isSuperBound()) {
-             return !types.notSoftSubtype(types.lowerBound(a), bs.getUpperBound());
+             return !types.notSoftSubtype(types.lowerBound(a), bound);
          }
          return true;
      }
@@ -776,18 +776,16 @@ public class Check {
             List<Type> actuals = type.allparams();
             List<Type> args = type.getTypeArguments();
             List<Type> forms = type.tsym.type.getTypeArguments();
-            ListBuffer<Type> tvars_buf = new ListBuffer<Type>();
+            ListBuffer<Type> bounds_buf = new ListBuffer<Type>();
 
             // For matching pairs of actual argument types `a' and
             // formal type parameters with declared bound `b' ...
             while (args.nonEmpty() && forms.nonEmpty()) {
                 // exact type arguments needs to know their
                 // bounds (for upper and lower bound
-                // calculations).  So we create new TypeVars with
-                // bounds substed with actuals.
-                tvars_buf.append(types.substBound(((TypeVar)forms.head),
-                                                  formals,
-                                                  actuals));
+                // calculations).  So we create new bounds where
+                // type-parameters are replaced with actuals argument types.
+                bounds_buf.append(types.subst(forms.head.getUpperBound(), formals, actuals));
                 args = args.tail;
                 forms = forms.tail;
             }
@@ -804,32 +802,30 @@ public class Check {
             }
 
             args = type.getTypeArguments();
-            List<Type> tvars = tvars_buf.toList();
+            List<Type> bounds = bounds_buf.toList();
 
-            while (args.nonEmpty() && tvars.nonEmpty()) {
-                Type actual = types.subst(args.head,
-                    type.tsym.type.getTypeArguments(),
-                    tvars_buf.toList());
+            while (args.nonEmpty() && bounds.nonEmpty()) {
+                Type actual = args.head;
                 if (!isTypeArgErroneous(actual) &&
-                        !tvars.head.getUpperBound().isErroneous() &&
-                        !checkExtends(actual, (TypeVar)tvars.head)) {
+                        !bounds.head.isErroneous() &&
+                        !checkExtends(actual, bounds.head)) {
                     return args.head;
                 }
                 args = args.tail;
-                tvars = tvars.tail;
+                bounds = bounds.tail;
             }
 
             args = type.getTypeArguments();
-            tvars = tvars_buf.toList();
+            bounds = bounds_buf.toList();
 
             for (Type arg : types.capture(type).getTypeArguments()) {
                 if (arg.tag == TYPEVAR &&
                         arg.getUpperBound().isErroneous() &&
-                        !tvars.head.getUpperBound().isErroneous() &&
+                        !bounds.head.isErroneous() &&
                         !isTypeArgErroneous(args.head)) {
                     return args.head;
                 }
-                tvars = tvars.tail;
+                bounds = bounds.tail;
                 args = args.tail;
             }
 
