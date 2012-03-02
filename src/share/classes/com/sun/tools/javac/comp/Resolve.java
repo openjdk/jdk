@@ -1835,7 +1835,7 @@ public class Resolve {
                    steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
                    sym.kind >= ERRONEOUS) {
                 currentResolutionContext.step = steps.head;
-                sym = findConstructor(pos, env, site, argtypes, typeargtypes,
+                sym = findDiamond(env, site, argtypes, typeargtypes,
                         steps.head.isBoxingRequired(),
                         env.info.varArgs = steps.head.isVarargsRequired());
                 currentResolutionContext.resolutionCache.put(steps.head, sym);
@@ -1865,6 +1865,43 @@ public class Resolve {
         finally {
             currentResolutionContext = prevResolutionContext;
         }
+    }
+
+    /** This method scans all the constructor symbol in a given class scope -
+     *  assuming that the original scope contains a constructor of the kind:
+     *  Foo(X x, Y y), where X,Y are class type-variables declared in Foo,
+     *  a method check is executed against the modified constructor type:
+     *  <X,Y>Foo<X,Y>(X x, Y y). This is crucial in order to enable diamond
+     *  inference. The inferred return type of the synthetic constructor IS
+     *  the inferred type for the diamond operator.
+     */
+    private Symbol findDiamond(Env<AttrContext> env,
+                              Type site,
+                              List<Type> argtypes,
+                              List<Type> typeargtypes,
+                              boolean allowBoxing,
+                              boolean useVarargs) {
+        Symbol bestSoFar = methodNotFound;
+        for (Scope.Entry e = site.tsym.members().lookup(names.init);
+             e.scope != null;
+             e = e.next()) {
+            //- System.out.println(" e " + e.sym);
+            if (e.sym.kind == MTH &&
+                (e.sym.flags_field & SYNTHETIC) == 0) {
+                    List<Type> oldParams = e.sym.type.tag == FORALL ?
+                            ((ForAll)e.sym.type).tvars :
+                            List.<Type>nil();
+                    Type constrType = new ForAll(site.tsym.type.getTypeArguments().appendList(oldParams),
+                            types.createMethodTypeWithReturn(e.sym.type.asMethodType(), site));
+                    bestSoFar = selectBest(env, site, argtypes, typeargtypes,
+                            new MethodSymbol(e.sym.flags(), names.init, constrType, site.tsym),
+                            bestSoFar,
+                            allowBoxing,
+                            useVarargs,
+                            false);
+            }
+        }
+        return bestSoFar;
     }
 
     /** Resolve constructor.
