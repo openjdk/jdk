@@ -756,3 +756,8 @@ size_t os::Linux::default_guard_size(os::ThreadType thr_type) {
   // guard page, only enable glibc guard page for non-Java threads.
   return (thr_type == java_thread ? 0 : page_size());
 }
+
+#ifndef PRODUCT
+void os::verify_stack_alignment() {
+}
+#endif
