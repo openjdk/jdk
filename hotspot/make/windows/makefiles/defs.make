@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -193,6 +193,8 @@ ifeq ($(ARCH_DATA_MODEL), 32)
   EXPORT_LIST += $(EXPORT_KERNEL_DIR)/jvm.pdb
   EXPORT_LIST += $(EXPORT_KERNEL_DIR)/jvm.map
 endif
+
+EXPORT_LIST += $(EXPORT_JRE_LIB_DIR)/wb.jar
 
 ifeq ($(BUILD_WIN_SA), 1)
   EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.$(LIBRARY_SUFFIX)
