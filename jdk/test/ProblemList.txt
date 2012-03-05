@@ -234,6 +234,16 @@ sun/security/ssl/com/sun/net/ssl/internal/ssl/GenSSLConfigs/main.java	solaris-al
 # 7147060
 com/sun/org/apache/xml/internal/security/transforms/ClassLoaderTest.java	generic-all
 
+# Failing on Solaris i586, 3/9/2010, not a -samevm issue (jdk_security3)
+sun/security/pkcs11/Secmod/AddPrivateKey.java                   solaris-i586
+sun/security/pkcs11/ec/ReadCertificates.java                    solaris-i586
+sun/security/pkcs11/ec/ReadPKCS12.java                          solaris-i586
+sun/security/pkcs11/ec/TestCurves.java                          solaris-i586
+sun/security/pkcs11/ec/TestECDSA.java                           solaris-i586
+#sun/security/pkcs11/ec/TestECGenSpec.java                      solaris-i586
+#sun/security/pkcs11/ec/TestKeyFactory.java                     solaris-i586
+sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            solaris-i586
+
 # Fails on Fedora 9/Ubuntu 10.04 64bit, PKCS11Exception: CKR_DEVICE_ERROR
 sun/security/pkcs11/KeyAgreement/TestDH.java                    generic-all
 

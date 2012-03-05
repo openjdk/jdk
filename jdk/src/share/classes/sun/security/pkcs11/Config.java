@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,9 +197,6 @@ final class Config {
     // (false).
     private boolean useEcX963Encoding = false;
 
-    // The minimum library version number
-    private String libraryVersionCheck = null;
-
     private Config(String filename, InputStream in) throws IOException {
         if (in == null) {
             if (filename.startsWith("--")) {
@@ -332,10 +329,6 @@ final class Config {
         return useEcX963Encoding;
     }
 
-    String getLibraryVersionCheck() {
-        return libraryVersionCheck;
-    }
-
     private static String expand(final String s) throws IOException {
         try {
             return PropertyExpander.expand(s);
@@ -458,8 +451,6 @@ final class Config {
                 nssUseSecmodTrust = parseBooleanEntry(word);
             } else if (word.equals("useEcX963Encoding")) {
                 useEcX963Encoding = parseBooleanEntry(word);
-            } else if (word.equals("libraryVersionCheck")) {
-                libraryVersionCheck = parseStringEntry(word);
             } else {
                 throw new ConfigurationException
                         ("Unknown keyword '" + word + "', line " + st.lineno());

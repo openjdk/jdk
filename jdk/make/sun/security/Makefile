@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,16 @@ ifneq ($(PLATFORM), windows)
     JGSS_WRAPPER = jgss/wrapper
 endif
 
+# Build PKCS#11 on all platforms except 64-bit Windows.
+# We exclude windows-amd64 because we don't have any
+# 64-bit PKCS#11 implementations to test with on that platform.
+PKCS11 = pkcs11
+ifeq ($(ARCH_DATA_MODEL), 64)
+  ifeq ($(PLATFORM), windows)
+    PKCS11 =
+  endif
+endif
+
 # Build Microsoft CryptoAPI provider only on Windows platform.
 MSCAPI =
 ifeq ($(PLATFORM), windows)
@@ -58,7 +68,7 @@ ifdef DISABLE_INTREE_EC
 endif
 
 SUBDIRS       = $(INTREE_EC) other action util krb5
-SUBDIRS_misc  = jgss pkcs11 $(JGSS_WRAPPER) $(MSCAPI) smartcardio
+SUBDIRS_misc  = jgss $(PKCS11) $(JGSS_WRAPPER) $(MSCAPI) smartcardio
 SUBDIRS_tools = tools
 include $(BUILDDIR)/common/Subdirs.gmk
 

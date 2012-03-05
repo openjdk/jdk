@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,6 @@ public abstract class PKCS11Test {
 
     // directory corresponding to BASE in the /closed hierarchy
     static final String CLOSED_BASE;
-
-    // Minimum supported NSS library version
-    private static final String MINIMUM_SUPPORTED_NSS_VERSION = "3.12";
 
     static {
         // hack
@@ -132,13 +129,6 @@ public abstract class PKCS11Test {
     }
 
     private static String PKCS11_BASE;
-    static {
-        try {
-            PKCS11_BASE = getBase();
-        } catch (Exception e) {
-            // ignore
-        }
-    }
 
     private final static String PKCS11_REL_PATH = "sun/security/pkcs11";
 
@@ -170,18 +160,20 @@ public abstract class PKCS11Test {
         }
         String osid = osName + "-"
                 + props.getProperty("os.arch") + "-" + props.getProperty("sun.arch.data.model");
-        String nssLibDir = osMap.get(osid);
-        if (nssLibDir == null) {
+        String ostype = osMap.get(osid);
+        if (ostype == null) {
             System.out.println("Unsupported OS, skipping: " + osid);
             return null;
-//          throw new Exception("Unsupported OS " + osName);
+//          throw new Exception("Unsupported OS " + osid);
         }
-        if (nssLibDir.length() == 0) {
+        if (ostype.length() == 0) {
             System.out.println("NSS not supported on this platform, skipping test");
             return null;
         }
-        System.setProperty("pkcs11test.nss.libdir", nssLibDir);
-        return nssLibDir;
+        String base = getBase();
+        String libdir = base + SEP + "nss" + SEP + "lib" + SEP + ostype + SEP;
+        System.setProperty("pkcs11test.nss.libdir", libdir);
+        return libdir;
     }
 
     protected static void safeReload(String lib) throws Exception {
@@ -199,8 +191,6 @@ public abstract class PKCS11Test {
         safeReload(libdir + System.mapLibraryName(NSPR_PREFIX + "nspr4"));
         safeReload(libdir + System.mapLibraryName(NSPR_PREFIX + "plc4"));
         safeReload(libdir + System.mapLibraryName(NSPR_PREFIX + "plds4"));
-        safeReload(libdir + System.mapLibraryName("sqlite3"));
-        safeReload(libdir + System.mapLibraryName("nssutil3"));
         return true;
     }
 
@@ -230,12 +220,7 @@ public abstract class PKCS11Test {
                                 customConfig :
                                 base + SEP + "nss" + SEP + customConfigName;
 
-        System.out.println("[WARNING: NSS libraries loaded from " + libdir +
-            " must be at least version " +
-            MINIMUM_SUPPORTED_NSS_VERSION + "]");
         System.setProperty("pkcs11test.nss.lib", libfile);
-        System.setProperty("pkcs11test.nss.libVersionCheck",
-            MINIMUM_SUPPORTED_NSS_VERSION);
         System.setProperty("pkcs11test.nss.db", dbdir);
         Provider p = getSunPKCS11(p11config);
         test.premain(p);
@@ -244,19 +229,15 @@ public abstract class PKCS11Test {
 
     private static final Map<String,String> osMap;
 
-    // Location of the NSS libraries on each supported platform
     static {
         osMap = new HashMap<String,String>();
-        osMap.put("SunOS-sparc-32", "/usr/lib/mps/");
-        osMap.put("SunOS-sparcv9-64", "/usr/lib/mps/64/");
-        osMap.put("SunOS-x86-32", "/usr/lib/mps/");
-        osMap.put("SunOS-amd64-64", "/usr/lib/mps/64/");
-        osMap.put("Linux-i386-32", "/usr/lib/");
-        osMap.put("Linux-amd64-64", "/usr/lib64/");
-        osMap.put("Windows-x86-32",
-            PKCS11_BASE + "/nss/lib/windows-i586/".replace('/', SEP));
-        osMap.put("Windows-amd64-64",
-            PKCS11_BASE + "/nss/lib/windows-amd64/".replace('/', SEP));
+        osMap.put("SunOS-sparc-32", "solaris-sparc");
+        osMap.put("SunOS-sparcv9-64", "solaris-sparcv9");
+        osMap.put("SunOS-x86-32", "solaris-i586");
+        osMap.put("SunOS-amd64-64", "solaris-amd64");
+        osMap.put("Linux-i386-32", "linux-i586");
+        osMap.put("Linux-amd64-64", "linux-amd64");
+        osMap.put("Windows-x86-32", "windows-i586");
     }
 
     private final static char[] hexDigits = "0123456789abcdef".toCharArray();
