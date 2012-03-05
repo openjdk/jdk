@@ -849,6 +849,7 @@ $(FILES_gensbcs_out): $(GENCSSRC)/SingleByte-X.java.template $(GENCSSRC)/sbcs
 
 GENUC_SRC = $(PLATFORM_SRC)/native/sun/nio/fs/genUnixConstants.c
 
+GENUC_OBJ = $(TEMPDIR)/genUnixConstants.o
 GENUC_EXE = $(TEMPDIR)/genUnixConstants
 
 GENUC_COPYRIGHT_YEARS = $(shell $(CAT) $(GENUC_SRC) | \
@@ -856,7 +857,8 @@ GENUC_COPYRIGHT_YEARS = $(shell $(CAT) $(GENUC_SRC) | \
 
 $(GENUC_EXE) : $(GENUC_SRC)
 	$(prep-target)
-	$(CC) $(CPPFLAGS) -o $@ $(GENUC_SRC)
+	$(CC) $(CPPFLAGS) -c -o $(GENUC_OBJ) $(GENUC_SRC)
+	$(CC) $(CPPFLAGS) -o $@ $(GENUC_OBJ)
 
 ifdef NIO_PLATFORM_CLASSES_ROOT_DIR
 $(SFS_GEN)/UnixConstants.java: $(NIO_PLATFORM_CLASSES_ROOT_DIR)/sun/nio/fs/UnixConstants-$(PLATFORM)-$(ARCH).java
@@ -871,6 +873,7 @@ endif
 
 GENSC_SRC = $(PLATFORM_SRC)/native/sun/nio/fs/genSolarisConstants.c
 
+GENSC_OBJ = $(TEMPDIR)/genSolarisConstants.o
 GENSC_EXE = $(TEMPDIR)/genSolarisConstants
 
 GENSC_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSC_SRC) | \
@@ -878,7 +881,8 @@ GENSC_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSC_SRC) | \
 
 $(GENSC_EXE) : $(GENSC_SRC)
 	$(prep-target)
-	$(CC) $(CPPFLAGS) -o $@ $(GENSC_SRC)
+	$(CC) $(CPPFLAGS) -c -o $(GENSC_OBJ) $(GENSC_SRC)
+	$(CC) $(CPPFLAGS) -o $@ $(GENSC_OBJ)
 
 ifdef NIO_PLATFORM_CLASSES_ROOT_DIR
 $(SFS_GEN)/SolarisConstants.java: $(NIO_PLATFORM_CLASSES_ROOT_DIR)/sun/nio/fs/SolarisConstants-$(PLATFORM)-$(ARCH).java

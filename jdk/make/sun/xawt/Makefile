@@ -251,9 +251,11 @@ XLIBTYPES=$(PLATFORM_SRC)/classes/sun/awt/X11/generator/xlibtypes.txt
 $(SIZERS): $(SIZERS_C) 
 	$(prep-target)
 ifndef CROSS_COMPILE_ARCH
-	$(CC) $(CFLAGS_$(subst .,,$(suffix $@))) $(CPPFLAGS) -o $@ $(SIZER)$(suffix $@).c
+	$(CC) $(CFLAGS_$(subst .,,$(suffix $@))) $(CPPFLAGS) -c -o $(SIZER)$(suffix $@).o $(SIZER)$(suffix $@).c
+	$(CC) $(CFLAGS_$(subst .,,$(suffix $@))) -o $@ $(CPPFLAGS) $(SIZER)$(suffix $@).o
 else
-	$(HOST_CC) $(CPPFLAGS) -o $@ $(SIZER)$(suffix $@).c
+	$(HOST_CC) $(CPPFLAGS) -c -o $(SIZER)$(suffix $@).o $(SIZER)$(suffix $@).c
+	$(HOST_CC) $(CPPFLAGS) -o $@ $(SIZER)$(suffix $@).o
 endif
 
 $(WRAPPER_GENERATOR_CLASS): $(WRAPPER_GENERATOR_JAVA)
