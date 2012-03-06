@@ -62,8 +62,8 @@ PLATFORM_SHARED=done
 #     CLASSPATH_SEPARATOR         separator in classpath, ; or :
 #     BUNDLE_FILE_SUFFIX          suffix for bundles: .tar or .tar.gz
 #     ISA_DIR                     solaris only: /sparcv9 or /amd64
-#     REQUIRED_WINDOWS_NAME       windows only: basic name of windows 
-#     REQUIRED_WINDOWS_VERSION    windows only: specific version of windows 
+#     REQUIRED_WINDOWS_NAME       windows only: basic name of windows
+#     REQUIRED_WINDOWS_VERSION    windows only: specific version of windows
 #     USING_CYGWIN                windows only: true or false
 #     WINDOWS_NT_VERSION_STRING   windows only: long version name
 #     REQUIRED_OS_VERSION         required OS version, e.g. 5.10, 2.4
@@ -135,7 +135,7 @@ ifeq ($(SYSTEM_UNAME), SunOS)
   BUNDLE_FILE_SUFFIX=.tar
   # Required Solaris version
   REQUIRED_OS_VERSION = 5.10
-  # Minimum disk space needed as determined by running 'du -sk' on 
+  # Minimum disk space needed as determined by running 'du -sk' on
   #    a fully built workspace.
   ifeq ($(ARCH_FAMILY), sparc)
     REQUIRED_FREE_SPACE=1300000
@@ -207,7 +207,7 @@ ifeq ($(SYSTEM_UNAME), Linux)
 
   # Suffix for file bundles used in previous release
   BUNDLE_FILE_SUFFIX=.tar.gz
-  # Minimum disk space needed as determined by running 'du -sk' on 
+  # Minimum disk space needed as determined by running 'du -sk' on
   #    a fully built workspace.
   REQUIRED_FREE_SPACE=1460000
   LINUX_VERSION_INFO = /etc/redhat-release
@@ -229,6 +229,98 @@ ifeq ($(SYSTEM_UNAME), Linux)
   endif
   # How much RAM does this machine have:
   MB_OF_MEMORY := $(shell free -m | fgrep Mem: | sed -e 's@\ \ *@ @g' | cut -d' ' -f2)
+endif
+
+ifeq ($(SYSTEM_UNAME), FreeBSD)
+  PLATFORM = bsd
+  OS_NAME = freebsd
+  OS_VENDOR = FreeBSD
+  REQUIRED_OS_VERSION = 6.0
+endif
+
+ifeq ($(SYSTEM_UNAME), Darwin)
+  PLATFORM = bsd
+  OS_NAME = darwin
+  OS_VENDOR = Apple
+  REQUIRED_OS_VERSION = 8.0
+endif
+
+ifeq ($(SYSTEM_UNAME), NetBSD)
+  PLATFORM = bsd
+  OS_NAME = netbsd
+  OS_VENDOR = NetBSD
+  REQUIRED_OS_VERSION = 3.0
+endif
+
+ifeq ($(SYSTEM_UNAME), OpenBSD)
+  PLATFORM = bsd
+  OS_NAME = openbsd
+  OS_VENDOR = OpenBSD
+  REQUIRED_OS_VERSION = 4.9
+endif
+
+# Platform settings specific to BSD
+ifeq ($(PLATFORM), bsd)
+  OS_VERSION := $(shell uname -r)
+  # Arch and OS name/version
+  mach := $(shell uname -m)
+  archExpr = case "$(mach)" in \
+                i[3-9]86) \
+                    echo i586 \
+                    ;; \
+                sparc64) \
+                    echo sparcv9 \
+                    ;; \
+                sparc*) \
+                    echo sparc \
+                    ;; \
+                x86_64) \
+                    echo amd64 \
+                    ;; \
+                "Power Macintosh") \
+                    echo ppc \
+                    ;; \
+                *) \
+                    echo $(mach) \
+                    ;; \
+      esac
+  ARCH        := $(shell $(archExpr) )
+  ARCH_FAMILY := $(ARCH)
+
+  # Darwin x86 builds are i386/amd64 universal.
+  ifeq ($(SYSTEM_UNAME), Darwin)
+    ifneq ($(ARCH), ppc)
+      ARCH=universal
+    endif
+  endif
+
+  # i586, sparc, and ppc are 32 bit, amd64 and sparc64 are 64
+  ifneq (,$(findstring $(ARCH), i586 sparc ppc universal))
+    ARCH_DATA_MODEL=32
+  else
+    ARCH_DATA_MODEL=64
+  endif
+
+  ifeq ($(ARCH), i586)
+    LIBARCH = i386
+  else
+    LIBARCH = $(ARCH)
+  endif
+
+  # Value of Java os.arch property
+  ARCHPROP  = $(LIBARCH)
+
+  # Suffix for file bundles used in previous release
+  BUNDLE_FILE_SUFFIX=.tar.gz
+  # Minimum disk space needed as determined by running 'du -sk' on
+  #    a fully built workspace.
+  REQUIRED_FREE_SPACE=1500000
+  # How much RAM does this machine have:
+  ifeq ($(OS_VENDOR), OpenBSD)
+    MB_OF_MEMORY=$(shell sysctl -n hw.physmem | awk '{print int($$NF / 1048576); }' )
+  else
+    MB_OF_MEMORY=$(shell (sysctl -n hw.physmem64 2> /dev/null || sysctl -n hw.physmem) | awk '{print int($$NF / 1048576); }' )
+  endif
 endif
 
 # Windows with and without CYGWIN will be slightly different
@@ -327,7 +419,7 @@ ifeq ($(PLATFORM), windows)
   endif
   # Suffix for file bundles used in previous release
   BUNDLE_FILE_SUFFIX=.tar
-  # Minimum disk space needed as determined by running 'du -sk' on 
+  # Minimum disk space needed as determined by running 'du -sk' on
   #    a fully built workspace.
   REQUIRED_FREE_SPACE=500000
   # How much RAM does this machine have:
@@ -335,8 +427,8 @@ ifeq ($(PLATFORM), windows)
     MB_OF_MEMORY := $(shell \
       if [ -f "C:/cygwin/bin/free.exe" ] ; then \
         ( C:/cygwin/bin/bash.exe -c "C:/cygwin/bin/free.exe -m" ) | \
-	  grep Mem: | \
-	  sed -e 's@\ \ *@ @g' | cut -d' ' -f2 ; \
+          grep Mem: | \
+          sed -e 's@\ \ *@ @g' | cut -d' ' -f2 ; \
       else \
         echo "512"; \
       fi)
@@ -392,7 +484,7 @@ ifneq ($(PLATFORM), windows)
   # Where is unwanted output to be delivered?
   DEV_NULL = /dev/null
   export DEV_NULL
-  # Character used between entries in classpath 
+  # Character used between entries in classpath
   CLASSPATH_SEPARATOR = :
   # User name determination (set _USER)
   ifndef USER
