@@ -87,6 +87,33 @@ typedef struct {
 
     char *desktop;              /* Desktop name. */
 
+#ifdef MACOSX
+    // These are for proxy-related information.
+    // Note that if these platform-specific extensions get out of hand we should make a new
+    // structure for them and #include it here.
+    int httpProxyEnabled;
+    char *httpHost;
+    char *httpPort;
+
+    int httpsProxyEnabled;
+    char *httpsHost;
+    char *httpsPort;
+
+    int ftpProxyEnabled;
+    char *ftpHost;
+    char *ftpPort;
+
+    int socksProxyEnabled;
+    char *socksHost;
+    char *socksPort;
+
+    int gopherProxyEnabled;
+    char *gopherHost;
+    char *gopherPort;
+
+    char *exceptionList;
+#endif
+
 } java_props_t;
 
 java_props_t *GetJavaProperties(JNIEnv *env);

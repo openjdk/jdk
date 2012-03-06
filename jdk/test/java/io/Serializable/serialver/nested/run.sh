@@ -25,7 +25,7 @@
 # @bug 4312217 4785473
 # @summary Test the use of the -classpath switch in the serialver application.
 # @author Naveen Sanjeeva
-# 
+#
 # @build Test
 # @run shell run.sh
 
@@ -43,11 +43,11 @@ if [ "${TESTJAVA}" = "" ] ; then
   echo "FAILED!!!"
   exit 1
 fi
-  
+
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     PS=":"    ;;
   Windows* | CYGWIN* )
     PS=";"    ;;

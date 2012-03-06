@@ -32,6 +32,11 @@ PRODUCT = com
 include $(BUILDDIR)/common/Defs.gmk
 
 SUBDIRS = sun oracle
+
+ifeq ($(PLATFORM), macosx)
+    SUBDIRS += apple
+endif
+
 include $(BUILDDIR)/common/Subdirs.gmk
 
 all build clean clobber::

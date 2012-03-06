@@ -55,7 +55,7 @@ include $(BUILDDIR)/common/Library.gmk
 vpath %.c   $(PLATFORM_SRC)/native/$(PKGDIR)
 
 ifneq ($(PLATFORM), windows)
-  LDLIBS =  -ldga -lX11 -ldl -lc
+  LDLIBS =  -ldga -lX11 $(LIBDL) -lc
 
   CPPFLAGS += \
 	-I$(SHARE_SRC)/javavm/export \

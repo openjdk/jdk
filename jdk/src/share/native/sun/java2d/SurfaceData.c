@@ -28,7 +28,7 @@
 #include "jni_util.h"
 #include "Disposer.h"
 
-#include "malloc.h"
+#include "stdlib.h"
 #include "string.h"
 
 /**
