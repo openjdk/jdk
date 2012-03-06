@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import javax.lang.model.element.Name;
  *   <em>expression</em> # <em>[ identifier | new ]</em>
  * </pre>
  *
- * @see JSR 292
+ * @since 1.8
  */
 public interface MemberReferenceTree extends ExpressionTree {
 
