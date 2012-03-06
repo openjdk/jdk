@@ -1146,7 +1146,8 @@ public class Attr extends JCTree.Visitor {
 
     void checkAutoCloseable(DiagnosticPosition pos, Env<AttrContext> env, Type resource) {
         if (!resource.isErroneous() &&
-                types.asSuper(resource, syms.autoCloseableType.tsym) != null) {
+            types.asSuper(resource, syms.autoCloseableType.tsym) != null &&
+            !types.isSameType(resource, syms.autoCloseableType)) { // Don't emit warning for AutoCloseable itself
             Symbol close = syms.noSymbol;
             boolean prevDeferDiags = log.deferDiagnostics;
             Queue<JCDiagnostic> prevDeferredDiags = log.deferredDiagnostics;

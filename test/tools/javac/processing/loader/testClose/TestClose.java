@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import com.sun.source.util.JavacTask;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.api.ClientCodeWrapper.Trusted;
+import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.Context;
@@ -89,10 +90,10 @@ public class TestClose implements TaskListener {
         "                public void run() {\n" +
         "                    System.out.println(getClass().getName() + \": run()\");\n" +
         "                    try {\n" +
-        "                    cl.loadClass(\"Callback\")\n" +
-        "                        .asSubclass(Runnable.class)\n" +
-        "                        .newInstance()\n" +
-        "                        .run();\n" +
+        "                        cl.loadClass(\"Callback\")\n" +
+        "                            .asSubclass(Runnable.class)\n" +
+        "                            .newInstance()\n" +
+        "                            .run();\n" +
         "                    } catch (ReflectiveOperationException e) {\n" +
         "                        throw new Error(e);\n" +
         "                    }\n" +
@@ -184,25 +185,24 @@ public class TestClose implements TaskListener {
             throw new AssertionError();
     }
 
-
     public static void add(ProcessingEnvironment env, Runnable r) {
         try {
-            Context c = ((JavacProcessingEnvironment) env).getContext();
-            Object o = c.get(TaskListener.class);
+            JavacTask task = JavacTask.instance(env);
+            TaskListener l = ((BasicJavacTask) task).getTaskListeners().iterator().next();
             // The TaskListener is an instanceof TestClose, but when using the
             // default class loaders. the taskListener uses a different
             // instance of Class<TestClose> than the anno processor.
             // If you try to evaluate
-            //      TestClose tc = (TestClose) (o).
+            //      TestClose tc = (TestClose) (l).
             // you get the following somewhat confusing error:
             //   java.lang.ClassCastException: TestClose cannot be cast to TestClose
             // The workaround is to access the fields of TestClose with reflection.
-            Field f = o.getClass().getField("runnables");
+            Field f = l.getClass().getField("runnables");
             @SuppressWarnings("unchecked")
-            List<Runnable> runnables = (List<Runnable>) f.get(o);
+            List<Runnable> runnables = (List<Runnable>) f.get(l);
             runnables.add(r);
         } catch (Throwable t) {
-            System.err.println(t);
+            t.printStackTrace();
         }
     }
 
