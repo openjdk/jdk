@@ -3132,9 +3132,22 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
   bool cantrap = true;
   vmIntrinsics::ID id = callee->intrinsic_id();
   switch (id) {
-    case vmIntrinsics::_arraycopy     :
+    case vmIntrinsics::_arraycopy:
       if (!InlineArrayCopy) return false;
       break;
+
+#ifdef TRACE_HAVE_INTRINSICS
+    case vmIntrinsics::_classID:
+    case vmIntrinsics::_threadID:
+      preserves_state = true;
+      cantrap = true;
+      break;
+
+    case vmIntrinsics::_counterTime:
+      preserves_state = true;
+      cantrap = false;
+      break;
+#endif
 
     case vmIntrinsics::_currentTimeMillis:
     case vmIntrinsics::_nanoTime:

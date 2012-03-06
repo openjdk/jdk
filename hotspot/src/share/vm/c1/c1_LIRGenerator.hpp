@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -425,6 +425,12 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   SwitchRangeArray* create_lookup_ranges(TableSwitch* x);
   SwitchRangeArray* create_lookup_ranges(LookupSwitch* x);
   void do_SwitchRanges(SwitchRangeArray* x, LIR_Opr value, BlockBegin* default_sux);
+
+  void do_RuntimeCall(address routine, int expected_arguments, Intrinsic* x);
+#ifdef TRACE_HAVE_INTRINSICS
+  void do_ThreadIDIntrinsic(Intrinsic* x);
+  void do_ClassIDIntrinsic(Intrinsic* x);
+#endif
 
  public:
   Compilation*  compilation() const              { return _compilation; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -709,9 +709,9 @@ const TypeFunc* OptoRuntime::Math_DD_D_Type() {
   return TypeFunc::make(domain, range);
 }
 
-//-------------- currentTimeMillis
+//-------------- currentTimeMillis, currentTimeNanos, etc
 
-const TypeFunc* OptoRuntime::current_time_millis_Type() {
+const TypeFunc* OptoRuntime::void_long_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(0);
   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+0, fields);

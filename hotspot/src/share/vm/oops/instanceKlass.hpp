@@ -642,6 +642,7 @@ class instanceKlass: public Klass {
 
   // support for stub routines
   static ByteSize init_state_offset()  { return in_ByteSize(sizeof(klassOopDesc) + offset_of(instanceKlass, _init_state)); }
+  TRACE_DEFINE_OFFSET;
   static ByteSize init_thread_offset() { return in_ByteSize(sizeof(klassOopDesc) + offset_of(instanceKlass, _init_thread)); }
 
   // subclass/subinterface checks
