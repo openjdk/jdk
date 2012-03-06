@@ -69,7 +69,7 @@ public final class Resources {
             format = "missing resource key: key = \"" + key + "\", " +
                 "arguments = \"{0}\", \"{1}\", \"{2}\"";
         }
-        return MessageFormat.format(format, (Object[]) args);
+        return MessageFormat.format(format, args);
     }
 
     /**
