@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1518,8 +1518,6 @@ public class Attr extends JCTree.Visitor {
             Type mpt = newMethTemplate(argtypes, typeargtypes);
             localEnv.info.varArgs = false;
             Type mtype = attribExpr(tree.meth, localEnv, mpt);
-            if (localEnv.info.varArgs)
-                Assert.check(mtype.isErroneous() || tree.varargsElement != null);
 
             // Compute the result type.
             Type restype = mtype.getReturnType();
@@ -1553,6 +1551,9 @@ public class Attr extends JCTree.Visitor {
             // Check that value of resulting type is admissible in the
             // current context.  Also, capture the return type
             result = check(tree, capture(restype), VAL, pkind, pt);
+
+            if (localEnv.info.varArgs)
+                Assert.check(result.isErroneous() || tree.varargsElement != null);
         }
         chk.validate(tree.typeargs, localEnv);
     }
@@ -1730,7 +1731,7 @@ public class Attr extends JCTree.Visitor {
                     tree.pos(), rsEnv, clazztype, argtypes, typeargtypes);
                 tree.constructorType = tree.constructor.type.isErroneous() ?
                     syms.errType :
-                    checkMethod(clazztype,
+                    checkConstructor(clazztype,
                         tree.constructor,
                         rsEnv,
                         tree.args,
@@ -1805,7 +1806,7 @@ public class Attr extends JCTree.Visitor {
                     tree.constructorType =  syms.errType;
                 }
                 else {
-                    tree.constructorType = checkMethod(clazztype,
+                    tree.constructorType = checkConstructor(clazztype,
                             tree.constructor,
                             localEnv,
                             tree.args,
@@ -2675,7 +2676,7 @@ public class Attr extends JCTree.Visitor {
     Warner noteWarner = new Warner();
 
     /**
-     * Check that method arguments conform to its instantation.
+     * Check that method arguments conform to its instantiation.
      **/
     public Type checkMethod(Type site,
                             Symbol sym,
@@ -2712,107 +2713,37 @@ public class Attr extends JCTree.Visitor {
                                       true,
                                       useVarargs,
                                       noteWarner);
-        boolean warned = noteWarner.hasNonSilentLint(LintCategory.UNCHECKED);
 
         // If this fails, something went wrong; we should not have
         // found the identifier in the first place.
         if (owntype == null) {
             if (!pt.isErroneous())
                 log.error(env.tree.pos(),
-                          "internal.error.cant.instantiate",
-                          sym, site,
+                           "internal.error.cant.instantiate",
+                           sym, site,
                           Type.toString(pt.getParameterTypes()));
             owntype = types.createErrorType(site);
+            return types.createErrorType(site);
+        } else if (owntype.getReturnType().tag == FORALL) {
+            return owntype;
         } else {
-            // System.out.println("call   : " + env.tree);
-            // System.out.println("method : " + owntype);
-            // System.out.println("actuals: " + argtypes);
-            List<Type> formals = owntype.getParameterTypes();
-            Type last = useVarargs ? formals.last() : null;
-            if (sym.name==names.init &&
-                sym.owner == syms.enumSym)
-                formals = formals.tail.tail;
-            List<JCExpression> args = argtrees;
-            while (formals.head != last) {
-                JCTree arg = args.head;
-                Warner warn = chk.convertWarner(arg.pos(), arg.type, formals.head);
-                assertConvertible(arg, arg.type, formals.head, warn);
-                warned |= warn.hasNonSilentLint(LintCategory.UNCHECKED);
-                args = args.tail;
-                formals = formals.tail;
-            }
-            if (useVarargs) {
-                Type varArg = types.elemtype(last);
-                while (args.tail != null) {
-                    JCTree arg = args.head;
-                    Warner warn = chk.convertWarner(arg.pos(), arg.type, varArg);
-                    assertConvertible(arg, arg.type, varArg, warn);
-                    warned |= warn.hasNonSilentLint(LintCategory.UNCHECKED);
-                    args = args.tail;
-                }
-            } else if ((sym.flags() & VARARGS) != 0 && allowVarargs) {
-                // non-varargs call to varargs method
-                Type varParam = owntype.getParameterTypes().last();
-                Type lastArg = argtypes.last();
-                if (types.isSubtypeUnchecked(lastArg, types.elemtype(varParam)) &&
-                    !types.isSameType(types.erasure(varParam), types.erasure(lastArg)))
-                    log.warning(argtrees.last().pos(), "inexact.non-varargs.call",
-                                types.elemtype(varParam),
-                                varParam);
-            }
-
-            if (warned && sym.type.tag == FORALL) {
-                chk.warnUnchecked(env.tree.pos(),
-                                  "unchecked.meth.invocation.applied",
-                                  kindName(sym),
-                                  sym.name,
-                                  rs.methodArguments(sym.type.getParameterTypes()),
-                                  rs.methodArguments(argtypes),
-                                  kindName(sym.location()),
-                                  sym.location());
-                owntype = new MethodType(owntype.getParameterTypes(),
-                                         types.erasure(owntype.getReturnType()),
-                                         types.erasure(owntype.getThrownTypes()),
-                                         syms.methodClass);
-            }
-            if (useVarargs) {
-                JCTree tree = env.tree;
-                Type argtype = owntype.getParameterTypes().last();
-                if (owntype.getReturnType().tag != FORALL || warned) {
-                    chk.checkVararg(env.tree.pos(), owntype.getParameterTypes(), sym);
-                }
-                Type elemtype = types.elemtype(argtype);
-                switch (tree.getTag()) {
-                case APPLY:
-                    ((JCMethodInvocation) tree).varargsElement = elemtype;
-                    break;
-                case NEWCLASS:
-                    ((JCNewClass) tree).varargsElement = elemtype;
-                    break;
-                default:
-                    throw new AssertionError(""+tree);
-                }
-            }
+            return chk.checkMethod(owntype, sym, env, argtrees, argtypes, useVarargs);
         }
-        return owntype;
     }
 
-    private void assertConvertible(JCTree tree, Type actual, Type formal, Warner warn) {
-        if (types.isConvertible(actual, formal, warn))
-            return;
-
-        if (formal.isCompound()
-            && types.isSubtype(actual, types.supertype(formal))
-            && types.isSubtypeUnchecked(actual, types.interfaces(formal), warn))
-            return;
-
-        if (false) {
-            // TODO: make assertConvertible work
-            chk.typeError(tree.pos(), diags.fragment("incompatible.types"), actual, formal);
-            throw new AssertionError("Tree: " + tree
-                                     + " actual:" + actual
-                                     + " formal: " + formal);
-        }
+    /**
+     * Check that constructor arguments conform to its instantiation.
+     **/
+    public Type checkConstructor(Type site,
+                            Symbol sym,
+                            Env<AttrContext> env,
+                            final List<JCExpression> argtrees,
+                            List<Type> argtypes,
+                            List<Type> typeargtypes,
+                            boolean useVarargs) {
+        Type owntype = checkMethod(site, sym, env, argtrees, argtypes, typeargtypes, useVarargs);
+        chk.checkType(env.tree.pos(), owntype.getReturnType(), syms.voidType);
+        return owntype;
     }
 
     public void visitLiteral(JCLiteral tree) {
