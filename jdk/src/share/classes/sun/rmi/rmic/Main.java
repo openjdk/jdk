@@ -73,15 +73,14 @@ public class Main implements sun.rmi.rmic.Constants {
     File destDir;
     int flags;
     long tm;
-    Vector<String> classes;
+    Vector classes;
     boolean nowrite;
     boolean nocompile;
     boolean keepGenerated;
     boolean status;
     String[] generatorArgs;
-    Vector<Generator> generators;
-    Class<? extends BatchEnvironment> environmentClass =
-        BatchEnvironment.class;
+    Vector generators;
+    Class environmentClass = BatchEnvironment.class;
     boolean iiopGeneration = false;
 
     /**
@@ -184,7 +183,7 @@ public class Main implements sun.rmi.rmic.Constants {
         destDir = null;
         flags = F_WARNINGS;
         tm = System.currentTimeMillis();
-        classes = new Vector<>();
+        classes = new Vector();
         nowrite = false;
         nocompile = false;
         keepGenerated = false;
@@ -192,7 +191,7 @@ public class Main implements sun.rmi.rmic.Constants {
         if (generatorArgs == null) {
             return false;
         }
-        generators = new Vector<>();
+        generators = new Vector();
 
         // Pre-process command line for @file arguments
         try {
@@ -412,7 +411,7 @@ public class Main implements sun.rmi.rmic.Constants {
 
         // Get the environment required by this generator...
 
-        Class<?> envClass = BatchEnvironment.class;
+        Class envClass = BatchEnvironment.class;
         String env = getString("generator.env." + arg);
         if (env != null) {
             try {
@@ -424,7 +423,7 @@ public class Main implements sun.rmi.rmic.Constants {
 
                     // Yes, so switch to the new one...
 
-                    environmentClass = BatchEnvironment.class.asSubclass(environmentClass);
+                    environmentClass = envClass;
 
                 } else {
 
@@ -496,9 +495,8 @@ public class Main implements sun.rmi.rmic.Constants {
         try {
             Class[] ctorArgTypes = {OutputStream.class,ClassPath.class,Main.class};
             Object[] ctorArgs = {out,classPath,this};
-            Constructor<? extends BatchEnvironment> constructor =
-                environmentClass.getConstructor(ctorArgTypes);
-            result =  constructor.newInstance(ctorArgs);
+            Constructor constructor = environmentClass.getConstructor(ctorArgTypes);
+            result = (BatchEnvironment) constructor.newInstance(ctorArgs);
             result.reset();
         }
         catch (Exception e) {
@@ -532,7 +530,7 @@ public class Main implements sun.rmi.rmic.Constants {
              */
             for (int i = classes.size()-1; i >= 0; i-- ) {
                 Identifier implClassName =
-                    Identifier.lookup(classes.elementAt(i));
+                    Identifier.lookup((String)classes.elementAt(i));
 
                 /*
                  * Fix bugid 4049354: support using '.' as an inner class
@@ -560,7 +558,7 @@ public class Main implements sun.rmi.rmic.Constants {
                 try {
                     ClassDefinition def = decl.getClassDefinition(env);
                     for (int j = 0; j < generators.size(); j++) {
-                        Generator gen = generators.elementAt(j);
+                        Generator gen = (Generator)generators.elementAt(j);
                         gen.generate(env, def, destDir);
                     }
                 } catch (ClassNotFound ex) {
@@ -675,7 +673,7 @@ public class Main implements sun.rmi.rmic.Constants {
 
         do {
             done = true;
-            for (Enumeration<?> e = env.getClasses() ; e.hasMoreElements() ; ) {
+            for (Enumeration e = env.getClasses() ; e.hasMoreElements() ; ) {
                 ClassDeclaration c = (ClassDeclaration)e.nextElement();
                 done = compileClass(c,buf,env);
             }
@@ -684,9 +682,7 @@ public class Main implements sun.rmi.rmic.Constants {
 
     /*
      * Compile a single class.
-     * Fallthrough is intentional
      */
-    @SuppressWarnings("fallthrough")
     public boolean compileClass (ClassDeclaration c,
                                  ByteArrayOutputStream buf,
                                  BatchEnvironment env)
@@ -883,6 +879,6 @@ public class Main implements sun.rmi.rmic.Constants {
         args[1] = (arg1 != null ? arg1.toString() : "null");
         args[2] = (arg2 != null ? arg2.toString() : "null");
 
-        return java.text.MessageFormat.format(format, (Object[]) args);
+        return java.text.MessageFormat.format(format, args);
     }
 }

@@ -455,7 +455,7 @@ public class Main {
         BatchEnvironment env;
         try {
             Constructor<? extends BatchEnvironment> cons =
-                batch.envClass.getConstructor(new Class<?>[] { RootDoc.class });
+                batch.envClass.getConstructor(new Class[] { RootDoc.class });
             env = cons.newInstance(rootDoc);
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);

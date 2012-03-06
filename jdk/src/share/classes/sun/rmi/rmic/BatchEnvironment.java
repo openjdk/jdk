@@ -160,7 +160,7 @@ public class BatchEnvironment extends sun.tools.javac.BatchEnvironment {
     }
 
     /** list of generated source files created in this environment */
-    private Vector<File> generatedFiles = new Vector<>();
+    private Vector generatedFiles = new Vector();
 
     /**
      * Remember a generated source file generated so that it
@@ -177,9 +177,9 @@ public class BatchEnvironment extends sun.tools.javac.BatchEnvironment {
      */
     public void deleteGeneratedFiles() {
         synchronized(generatedFiles) {
-            Enumeration<File> enumeration = generatedFiles.elements();
+            Enumeration enumeration = generatedFiles.elements();
             while (enumeration.hasMoreElements()) {
-                File file = enumeration.nextElement();
+                File file = (File) enumeration.nextElement();
                 file.delete();
             }
             generatedFiles.removeAllElements();
