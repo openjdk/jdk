@@ -145,6 +145,9 @@ public abstract class KeyboardFocusManager
                 public void setMostRecentFocusOwner(Window window, Component component) {
                     KeyboardFocusManager.setMostRecentFocusOwner(window, component);
                 }
+                public KeyboardFocusManager getCurrentKeyboardFocusManager(AppContext ctx) {
+                    return KeyboardFocusManager.getCurrentKeyboardFocusManager(ctx);
+                }
             }
         );
     }

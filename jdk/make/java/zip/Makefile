@@ -74,16 +74,24 @@ else
 CPPFLAGS += -UDEBUG 
 endif
 
-CPPFLAGS += -I$(SHARE_SRC)/native/java/util/zip/zlib-$(ZLIB_VERSION)
 CPPFLAGS += -I$(SHARE_SRC)/native/java/io
 CPPFLAGS += -I$(PLATFORM_SRC)/native/java/io
+
+ifneq ($(SYSTEM_ZLIB),true)
+CPPFLAGS += -I$(SHARE_SRC)/native/java/util/zip/zlib-$(ZLIB_VERSION)
 
 #
 # Add to ambient vpath so we pick up the library files
 #
 vpath %.c $(SHARE_SRC)/native/$(PKGDIR)/zlib-$(ZLIB_VERSION)
+endif
 
 #
 # Link to JVM library for JVM_Zip* functions
 #
+ifeq ($(SYSTEM_ZLIB),true)
+OTHER_LDLIBS = -lz
+else
 OTHER_LDLIBS = $(JVMLIB)
+endif
+

@@ -1,0 +1,297 @@
+." Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+." or visit www.oracle.com if you need additional information or have any
+." questions.
+."
+.TH xjc 1 "10 May 2011"
+
+.LP
+.SH "Name"
+xjc \- Java(TM) Architecture for XML Binding
+.br
+Binding Compiler
+.LP
+.LP
+\f3Specification Version:\fP 2.1
+.br
+\f3Reference Implementation (RI) Version:\fP 2.1.3
+.LP
+.SH "Launching xjc"
+.LP
+.LP
+The binding compiler can be launched using the appropriate \f2xjc\fP shell script in the \f2bin\fP directory for your platform. We also provide an Ant task to run the binding complier \- see the instructions for
+.na
+\f2using the XJC Ant task\fP @
+.fi
+https://jaxb.dev.java.net/nonav/2.1.3/docs/xjcTask.html.
+.LP
+.LP
+\f2% xjc \-help\fP
+.LP
+.SS
+Output
+.LP
+.nf
+\f3
+.fl
+Usage: xjc [\-options ...] <schema file/URL/dir/jar> ... [\-b <bindinfo>] ...
+.fl
+If dir is specified, all schema files in it will be compiled.
+.fl
+If jar is specified, /META\-INF/sun\-jaxb.episode binding file will be compiled.
+.fl
+Options:
+.fl
+  \-nv                :  do not perform strict validation of the input schema(s)
+.fl
+  \-extension         :  allow vendor extensions \- do not strictly follow the Compatibility Rules and App E.2 from the JAXB Spec
+.fl
+  \-b <file/dir>      :  specify external bindings files (each <file> must have its own \-b); if a directory is given, **/*.xjb is searched
+.fl
+  \-d <dir>           :  generated files will go into this directory
+.fl
+  \-p <pkg>           :  specifies the target package
+.fl
+  \-httpproxy <proxy> :  set HTTP/HTTPS proxy; format is [user[:password]@]proxyHost:proxyPort
+.fl
+  \-httpproxyfile <f> :  works like \-httpproxy but takes the argument in a file to protect password
+.fl
+  \-classpath <arg>   :  specify where to find user class files
+.fl
+  \-catalog <file>    :  specify catalog files to resolve external entity references; support TR9401, XCatalog, and OASIS XML Catalog format
+.fl
+  \-readOnly          :  generated files will be in read\-only mode
+.fl
+  \-npa               :  suppress generation of package level annotations (**/package\-info.java)
+.fl
+  \-no\-header         :  suppress generation of a file header with timestamp
+.fl
+  \-target 2.0        :  behave like XJC 2.0 and generate code that doesnt use any 2.1 features
+.fl
+  \-xmlschema         :  treat input as W3C XML Schema (default)
+.fl
+  \-relaxng           :  treat input as RELAX NG (experimental,unsupported)
+.fl
+  \-relaxng\-compact   :  treat input as RELAX NG compact syntax (experimental,unsupported)
+.fl
+  \-dtd               :  treat input as XML DTD (experimental,unsupported)
+.fl
+  \-wsdl              :  treat input as WSDL and compile schemas inside it (experimental,unsupported)
+.fl
+  \-verbose           :  be extra verbose
+.fl
+  \-quiet             :  suppress compiler output
+.fl
+  \-help              :  display this help message
+.fl
+  \-version           :  display version information
+.fl
+
+.fl
+
+.fl
+Extensions:
+.fl
+  \-Xlocator          :  enable source location support for generated code
+.fl
+  \-Xsync\-methods     :  generate accessor methods with the 'synchronized' keyword
+.fl
+  \-mark\-generated    :  mark the generated code as @javax.annotation.Generated
+.fl
+  \-episode <FILE>    :  generate the episode file for separate compilation
+.fl
+\fP
+.fi
+
+.LP
+.SH "OPTIONS"
+.LP
+.RS 3
+.TP 3
+\-nv
+By default, the XJC binding compiler performs strict validation of the source schema before processing it. Use this option to disable strict schema validation. This does not mean that the binding compiler will not perform any validation, it simply means that it will perform less\-strict validation.
+.TP 3
+\-extension
+By default, the XJC binding compiler strictly enforces the rules outlined in the Compatibility chapter of the JAXB Specification. Appendix E.2 defines a set of W3C XML Schema features that are not completely supported by JAXB v1.0. In some cases, you may be allowed to use them in the "\-extension" mode enabled by this switch. In the default (strict) mode, you are also limited to using only the binding customizations defined in the specification. By using the "\-extension" switch, you will be allowed to use the JAXB Vendor Extensions
+.TP 3
+\-b <file>
+Specify one or more external binding files to process. (Each binding file must have its own \f2"\-b"\fP switch.) The syntax of the external binding files is extremely flexible. You may have a single binding file that contains customizations for multiple schemas or you can break the customizations into multiple bindings files: \f2xjc schema1.xsd schema2.xsd schema3.xsd \-b bindings123.xjb\fP
+.br
+\f2xjc schema1.xsd schema2.xsd schema3.xsd \-b bindings1.xjb \-b bindings2.xjb \-b bindings3.xjb\fP In addition, the ordering of the schema files and binding files on the command line does not matter.
+.TP 3
+\-d <dir>
+By default, the XJC binding compiler will generate the Java content classes in the current directory. Use this option to specify an alternate output directory. The output directory must already exist, the XJC binding compiler will not create it for you.
+.TP 3
+\-p <pkg>
+Specifying a target package via this command\-line option overrides any binding customization for package name and the default package name algorithm defined in the specification.
+.TP 3
+\-httpproxy <proxy>
+Specify the HTTP/HTTPS proxy. The format is [user[:password]@]proxyHost[:proxyPort]. The old \f2\-host\fP and \f2\-port\fP are still supported by the RI for backwards compatibility, but they have been deprecated. Note that the password specified with this option is an argument that is visible to other users who use the \f2top\fP command, for example. For greater security, use \f2\-httpproxyfile\fP, below.
+.TP 3
+\-httpproxyfile <file>
+Specify the HTTP/HTTPS proxy using a file. Same format as above, but the password specified in the file is not visible to other users.
+.TP 3
+\-classpath <arg>
+Specify where to find client application class files used by the \f2<jxb:javaType>\fP and \f2<xjc:superClass>\fP customizations.
+.TP 3
+\-catalog <file>
+Specify catalog files to resolve external entity references. Supports TR9401, XCatalog, and OASIS XML Catalog format. Please read the XML Entity and URI Resolvers document or the \f2catalog\-resolver\fP sample application.
+.TP 3
+\-readOnly
+By default, the XJC binding compiler does not write\-protect the Java source files it generates. Use this option to force the XJC binding compiler to mark the generated Java sources read\-only.
+.TP 3
+\-npa
+Supress the generation of package level annotations into **/package\-info.java. Using this switch causes the generated code to internalize those annotations into the other generated classes.
+.TP 3
+\-no\-header
+Supress the generation of a file header comment that includes some note and timestamp. Using this makes the generated code more diff\-friendly.
+.TP 3
+\-target 2.0
+Avoid generating code that relies on any JAXB 2.1 features. This will allow the generated code to run with JAXB 2.0 runtime (such as JavaSE 6.)
+.TP 3
+\-xmlschema
+Treat input schemas as W3C XML Schema (default). If you do not specify this switch, your input schemas will be treated as W3C XML Schema.
+.TP 3
+\-relaxng
+Treat input schemas as RELAX NG (experimental, unsupported). Support for RELAX NG schemas is provided as a JAXB Vendor Extension.
+.TP 3
+\-relaxng\-compact
+Treat input schemas as RELAX NG compact syntax(experimental, unsupported). Support for RELAX NG schemas is provided as a JAXB Vendor Extension.
+.TP 3
+\-dtd
+Treat input schemas as XML DTD (experimental, unsupported). Support for RELAX NG schemas is provided as a JAXB Vendor Extension.
+.TP 3
+\-wsdl
+Treat input as WSDL and compile schemas inside it (experimental,unsupported).
+.TP 3
+\-quiet
+Suppress compiler output, such as progress information and warnings.
+.TP 3
+\-verbose
+Be extra verbose, such as printing informational messages or displaying stack traces upon some errors.
+.TP 3
+\-help
+Display a brief summary of the compiler switches.
+.TP 3
+\-version
+Display the compiler version information.
+.TP 3
+<schema file/URL/dir>
+Specify one or more schema files to compile. If you specify a directory, then xjc will scan it for all schema files and compile them.
+.RE
+
+.LP
+.SS
+Non\-Standard Command Line Options
+.LP
+.RS 3
+.TP 3
+\-Xlocator
+Causes the generated code to expose SAX Locator information about the source XML in the Java bean instances after unmarshalling.
+.TP 3
+\-Xsync\-methods
+Causes all of the generated method signatures to include the \f2synchronized\fP keyword.
+.TP 3
+\-mark\-generated
+Mark the generated code with the annotation \f2@javax.annotation.Generated\fP.
+.TP 3
+\-episode <file>
+Generate the specified episode file for separate compilation.
+.RE
+
+.LP
+.SS
+Deprecated and Removed Command Line Options
+.LP
+.RS 3
+.TP 3
+\-host & \-port
+These options have been deprecated and replaced with the \f3\-httpproxy\fP option. For backwards compatibility, we will continue to support these options, but they will no longer be documented and may be removed from future releases.
+.TP 3
+\-use\-runtime
+Since the JAXB 2.0 specification has defined a portable runtime, it is no longer necessary for the JAXB RI to generate **/impl/runtime packages. Therefore, this switch is obsolete and has been removed.
+.TP 3
+\-source
+The \-source compatibility switch was introduced in the first JAXB 2.0 Early Access release. We have decided to remove this switch from future releases of JAXB 2.0. If you need to generate 1.0.x code, please use an installation of the 1.0.x codebase.
+.RE
+
+.LP
+.SS
+Compiler Restrictions
+.LP
+.LP
+In general, it is safest to compile all related schemas as a single unit with the same binding compiler switches.
+.LP
+.LP
+Please keep the following list of restrictions in mind when running xjc. Most of these issues only apply when compiling multiple schemas with multiple invocations of xjc.
+.LP
+.RS 3
+.TP 2
+o
+To compile multiple schemas at the same time, keep the following precedence rules for the target Java package name in mind:
+.RS 3
+.TP 3
+1.
+The "\f2\-p\fP" command line option takes the highest precedence.
+.TP 3
+2.
+<\f2jaxb:package\fP> customization
+.TP 3
+3.
+If \f2targetNamespace\fP is declared, apply \f2targetNamespace\fP \-> Java package name algorithm defined in the specification.
+.TP 3
+4.
+If no \f2targetNamespace\fP is declared, use a hardcoded package named "generated".
+.RE
+.TP 2
+o
+It is not legal to have more than one <\f2jaxb:schemaBindings\fP> per namespace, so it is impossible to have two schemas in the same target namespace compiled into different Java packages.
+.TP 2
+o
+All schemas being compiled into the same Java package must be submitted to the XJC binding compiler at the same time \- they cannot be compiled independently and work as expected.
+.TP 2
+o
+Element substitution groups spread across multiple schema files must be compiled at the same time.
+.RE
+
+.LP
+.SH "See Also"
+.LP
+.RS 3
+.TP 2
+o
+Running the binding compiler (XJC): [
+.na
+\f2command\-line instructions\fP @
+.fi
+https://jaxb.dev.java.net/nonav/2.1.3/docs/xjc.html,
+.na
+\f2using the XJC Ant task\fP @
+.fi
+https://jaxb.dev.java.net/nonav/2.1.3/docs/xjcTask.html]
+.TP 2
+o
+.na
+\f2Java Architecture for XML Binding (JAXB)\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/guides/xml/jaxb/index.html
+.RE
+
+.LP
+

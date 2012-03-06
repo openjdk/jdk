@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,14 +112,17 @@ final class TerminalImpl extends CardTerminal {
             if (wantPresent == present) {
                 return true;
             }
-            // no match, wait
-            status = SCardGetStatusChange(contextId, timeout, status, readers);
-            present = (status[0] & SCARD_STATE_PRESENT) != 0;
-            // should never happen
-            if (wantPresent != present) {
-                throw new CardException("wait mismatch");
+            // no match, wait (until timeout expires)
+            long end = System.currentTimeMillis() + timeout;
+            while (wantPresent != present && timeout != 0) {
+              // set remaining timeout
+              if (timeout != TIMEOUT_INFINITE) {
+                timeout = Math.max(end - System.currentTimeMillis(), 0l);
+              }
+              status = SCardGetStatusChange(contextId, timeout, status, readers);
+              present = (status[0] & SCARD_STATE_PRESENT) != 0;
             }
-            return true;
+            return wantPresent == present;
         } catch (PCSCException e) {
             if (e.code == SCARD_E_TIMEOUT) {
                 return false;

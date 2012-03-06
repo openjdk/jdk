@@ -113,6 +113,13 @@ ifeq ($(PLATFORM), linux)
   ALSA_VERSION := $(call GetVersion,$(_ALSA_VERSION))
 endif
 
+ifeq ($(PLATFORM), macosx)
+  # What kind of system we are using
+  OS_VERSION := $(shell uname -r)
+  OS_VARIANT_NAME := MacOSX
+  OS_VARIANT_VERSION := $(shell sw_vers -productVersion)
+endif
+
 ifeq ($(PLATFORM), windows)
   # Windows 2000 is 5.0, Windows XP is 5.1, Windows 2003 is 5.2
   #    Assume 5.0 (Windows 2000) if systeminfo does not help
@@ -839,8 +846,10 @@ endif
 
 ######################################################
 # Check for existence of DEVTOOLS_PATH
+# All needed tools come with base system on Apple
 ######################################################
 sane-devtools_path:
+ifneq ($(OS_VENDOR), Apple)
 	@if [ "$(DEVTOOLS_PATH)" != "" -a ! -r "$(DEVTOOLS_PATH)" ]; then \
 	  $(ECHO) "ERROR: You do not have a valid DEVTOOLS_PATH setting. \n" \
 	    "      Please check your access to \n" \
@@ -848,6 +857,7 @@ sane-devtools_path:
 	    "      and/or check your value of ALT_DEVTOOLS_PATH. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
+endif
 
 ######################################################
 # Check for existence of MS_RUNTIME_LIBRARIES

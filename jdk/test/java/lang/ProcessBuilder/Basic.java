@@ -40,6 +40,7 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.security.*;
 import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import static java.lang.System.getenv;
 import static java.lang.System.out;
 import static java.lang.Boolean.TRUE;
@@ -49,6 +50,9 @@ public class Basic {
 
     /* used for Windows only */
     static final String systemRoot = System.getenv("SystemRoot");
+
+    /* used for Mac OS X only */
+    static final String cfUserTextEncoding = System.getenv("__CF_USER_TEXT_ENCODING");
 
     private static String commandOutput(Reader r) throws Throwable {
         StringBuilder sb = new StringBuilder();
@@ -590,6 +594,12 @@ public class Basic {
             ! osName.equals("Windows Me");
     }
 
+    static class MacOSX {
+        public static boolean is() { return is; }
+        private static final String osName = System.getProperty("os.name");
+        private static final boolean is = osName.startsWith("Mac OS");
+    }
+
     static class True {
         public static int exitValue() { return 0; }
     }
@@ -627,6 +637,32 @@ public class Basic {
 
     private static boolean matches(String str, String regex) {
         return Pattern.compile(regex).matcher(str).find();
+    }
+
+    private static String matchAndExtract(String str, String regex) {
+        Matcher matcher = Pattern.compile(regex).matcher(str);
+        if (matcher.find()) {
+            return matcher.group();
+        } else {
+            return "";
+        }
+    }
+
+    /* Only used for Mac OS X --
+     * Mac OS X (may) add the variable __CF_USER_TEXT_ENCODING to an empty
+     * environment. The environment variable JAVA_MAIN_CLASS_<pid> may also
+     * be set in Mac OS X.
+     * Remove them both from the list of env variables
+     */
+    private static String removeMacExpectedVars(String vars) {
+        // Check for __CF_USER_TEXT_ENCODING
+        String cleanedVars = vars.replace("__CF_USER_TEXT_ENCODING="
+                                            +cfUserTextEncoding+",","");
+        // Check for JAVA_MAIN_CLASS_<pid>
+        String javaMainClassStr
+                = matchAndExtract(cleanedVars,
+                                    "JAVA_MAIN_CLASS_\\d+=Basic.JavaChild,");
+        return cleanedVars.replace(javaMainClassStr,"");
     }
 
     private static String sortByLinesWindowsly(String text) {
@@ -1080,7 +1116,11 @@ public class Basic {
             if (Windows.is()) {
                 pb.environment().put("SystemRoot", systemRoot);
             }
-            equal(getenvInChild(pb), expected);
+            String result = getenvInChild(pb);
+            if (MacOSX.is()) {
+                result = removeMacExpectedVars(result);
+            }
+            equal(result, expected);
         } catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------
@@ -1594,7 +1634,11 @@ public class Basic {
             }
             Process p = Runtime.getRuntime().exec(cmdp, envp);
             String expected = Windows.is() ? "=C:=\\,SystemRoot="+systemRoot+",=ExitValue=3," : "=C:=\\,";
-            equal(commandOutput(p), expected);
+            String commandOutput = commandOutput(p);
+            if (MacOSX.is()) {
+                commandOutput = removeMacExpectedVars(commandOutput);
+            }
+            equal(commandOutput, expected);
             if (Windows.is()) {
                 ProcessBuilder pb = new ProcessBuilder(childArgs);
                 pb.environment().clear();
@@ -1632,8 +1676,22 @@ public class Basic {
             } else {
                 envp = envpOth;
             }
+            System.out.println ("cmdp");
+            for (int i=0; i<cmdp.length; i++) {
+                System.out.printf ("cmdp %d: %s\n", i, cmdp[i]);
+            }
+            System.out.println ("envp");
+            for (int i=0; i<envp.length; i++) {
+                System.out.printf ("envp %d: %s\n", i, envp[i]);
+            }
             Process p = Runtime.getRuntime().exec(cmdp, envp);
-            check(commandOutput(p).equals(Windows.is() ? "SystemRoot="+systemRoot+",LC_ALL=C," : "LC_ALL=C,"),
+            String commandOutput = commandOutput(p);
+            if (MacOSX.is()) {
+                commandOutput = removeMacExpectedVars(commandOutput);
+            }
+            check(commandOutput.equals(Windows.is()
+                    ? "SystemRoot="+systemRoot+",LC_ALL=C,"
+                    : "LC_ALL=C,"),
                   "Incorrect handling of envstrings containing NULs");
         } catch (Throwable t) { unexpected(t); }
 
