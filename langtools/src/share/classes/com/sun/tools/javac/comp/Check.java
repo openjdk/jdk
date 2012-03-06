@@ -2488,7 +2488,7 @@ public class Check {
                     if (enableSunApiLintControl)
                       warnSunApi(pos, "sun.proprietary", s);
                     else
-                      log.strictWarning(pos, "sun.proprietary", s);
+                      log.mandatoryWarning(pos, "sun.proprietary", s);
                 }
             });
         }
