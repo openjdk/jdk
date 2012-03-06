@@ -2097,9 +2097,10 @@ public class Resolve {
  *  ResolveError classes, indicating error situations when accessing symbols
  ****************************************************************************/
 
-    public void logAccessError(Env<AttrContext> env, JCTree tree, Type type) {
-        AccessError error = new AccessError(env, type.getEnclosingType(), type.tsym);
-        logResolveError(error, tree.pos(), type.getEnclosingType().tsym, type.getEnclosingType(), null, null, null);
+    //used by TransTypes when checking target type of synthetic cast
+    public void logAccessErrorInternal(Env<AttrContext> env, JCTree tree, Type type) {
+        AccessError error = new AccessError(env, env.enclClass.type, type.tsym);
+        logResolveError(error, tree.pos(), env.enclClass.sym, env.enclClass.type, null, null, null);
     }
     //where
     private void logResolveError(ResolveError error,
