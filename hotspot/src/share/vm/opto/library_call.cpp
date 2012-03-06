@@ -338,8 +338,27 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     break;
 
   case vmIntrinsics::_bitCount_i:
+    if (!Matcher::has_match_rule(Op_PopCountI)) return NULL;
+    break;
+
   case vmIntrinsics::_bitCount_l:
-    if (!UsePopCountInstruction)  return NULL;
+    if (!Matcher::has_match_rule(Op_PopCountL)) return NULL;
+    break;
+
+  case vmIntrinsics::_numberOfLeadingZeros_i:
+    if (!Matcher::match_rule_supported(Op_CountLeadingZerosI)) return NULL;
+    break;
+
+  case vmIntrinsics::_numberOfLeadingZeros_l:
+    if (!Matcher::match_rule_supported(Op_CountLeadingZerosL)) return NULL;
+    break;
+
+  case vmIntrinsics::_numberOfTrailingZeros_i:
+    if (!Matcher::match_rule_supported(Op_CountTrailingZerosI)) return NULL;
+    break;
+
+  case vmIntrinsics::_numberOfTrailingZeros_l:
+    if (!Matcher::match_rule_supported(Op_CountTrailingZerosL)) return NULL;
     break;
 
   case vmIntrinsics::_Reference_get:
@@ -416,14 +435,12 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
     return kit.transfer_exceptions_into_jvms();
   }
 
-  if (PrintIntrinsics) {
+  // The intrinsic bailed out
+  if (PrintIntrinsics || PrintInlining NOT_PRODUCT( || PrintOptoInlining) ) {
     if (jvms->has_method()) {
       // Not a root compile.
-      tty->print("Did not inline intrinsic %s%s at bci:%d in",
-                 vmIntrinsics::name_at(intrinsic_id()),
-                 (is_virtual() ? " (virtual)" : ""), kit.bci());
-      kit.caller()->print_short_name(tty);
-      tty->print_cr(" (%d bytes)", kit.caller()->code_size());
+      const char* msg = is_virtual() ? "failed to inline (intrinsic, virtual)" : "failed to inline (intrinsic)";
+      CompileTask::print_inlining(kit.callee(), jvms->depth() - 1, kit.bci(), msg);
     } else {
       // Root compile
       tty->print("Did not generate intrinsic %s%s at bci:%d in",
@@ -5453,4 +5470,3 @@ bool LibraryCallKit::inline_reference_get() {
   push(result);
   return true;
 }
-
