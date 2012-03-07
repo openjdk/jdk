@@ -43,6 +43,7 @@
 // a description of how to extend it, see the stubRoutines.hpp file.
 
 address StubRoutines::x86::_get_previous_fp_entry = NULL;
+address StubRoutines::x86::_get_previous_sp_entry = NULL;
 
 address StubRoutines::x86::_verify_mxcsr_entry = NULL;
 

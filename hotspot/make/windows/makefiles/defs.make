@@ -202,3 +202,19 @@ ifeq ($(BUILD_WIN_SA), 1)
   # Must pass this down to nmake.
   MAKE_ARGS += BUILD_WIN_SA=1
 endif
+
+# Propagate compiler and tools paths from configure to nmake. 
+# Need to make sure they contain \\ and not /.
+ifneq ($(SPEC),)
+  ifeq ($(USING_CYGWIN), true)
+    MAKE_ARGS += CXX="$(subst /,\\,$(shell /bin/cygpath -s -m -a $(CXX)))"
+    MAKE_ARGS += LD="$(subst /,\\,$(shell /bin/cygpath -s -m -a $(LD)))"
+    MAKE_ARGS += RC="$(subst /,\\,$(shell /bin/cygpath -s -m -a $(RC)))"
+    MAKE_ARGS += MT="$(subst /,\\,$(shell /bin/cygpath -s -m -a $(MT)))"
+  else
+    MAKE_ARGS += CXX="$(subst /,\\,$(CXX))"
+    MAKE_ARGS += LD="$(subst /,\\,$(LD))"
+    MAKE_ARGS += RC="$(subst /,\\,$(RC))"
+    MAKE_ARGS += MT="$(subst /,\\,$(MT))"
+  endif
+endif

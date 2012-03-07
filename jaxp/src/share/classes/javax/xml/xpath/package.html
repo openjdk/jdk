@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+This code is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License version 2 only, as
+published by the Free Software Foundation.  Oracle designates this
+particular file as subject to the "Classpath" exception as provided
+by Oracle in the LICENSE file that accompanied this code.
+
+This code is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+version 2 for more details (a copy is included in the LICENSE file that
+accompanied this code).
+
+You should have received a copy of the GNU General Public License version
+2 along with this work; if not, write to the Free Software Foundation,
+Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+or visit www.oracle.com if you need additional information or have any
+questions. 
+-->
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+                      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>javax.xml.xpath</title>
+<meta name="@author" content="mailto:Ben@galbraiths.org" />
+<meta name="@author" content="mailto:Norman.Walsh@Sun.com" />
+<meta name="@author" content="mailto:Jeff.Suttor@Sun.com" />
+<meta name="@version" content="$Revision: 1.3 $, $Date: 2005/11/03 19:34:17 $" />
+<meta name="@see" content="http://www.w3.org/TR/xpath" />
+<meta name="@since" content="1.5" />
+</head>
+
+<body>
+
+<p>This package provides an <em>object-model neutral</em> API for the
+evaluation of XPath expressions and access to the evaluation
+environment.
+</p>
+
+<p>The following XML standards apply:</p>
+
+<ul>
+<li><a href="http://www.w3.org/TR/xpath">XML Path Language (XPath) Version 1.0</a></li>
+</ul>
+
+<hr />
+
+<h2>XPath Overview</h2>
+
+<p>The XPath language provides a simple, concise syntax for selecting
+nodes from an XML document. XPath also provides rules for converting a
+node in an XML document object model (DOM) tree to a boolean, double,
+or string value. XPath is a W3C-defined language and an official W3C
+recommendation; the W3C hosts the XML Path Language (XPath) Version
+1.0 specification.
+</p>
+
+<p>XPath started in life in 1999 as a supplement to the XSLT and
+XPointer languages, but has more recently become popular as a
+stand-alone language, as a single XPath expression can be used to
+replace many lines of DOM API code.
+</p>
+
+<h3>XPath Expressions</h3>
+
+<p>An XPath <em>expression</em> is composed of a <em>location
+path</em> and one or more optional <em>predicates</em>. Expressions
+may also include XPath variables.
+</p>
+
+<p>The following is an example of a simple XPath expression:</p>
+
+<pre>
+/foo/bar
+</pre>
+
+<p>This example would select the <code>&lt;bar&gt;</code> element in
+an XML document such as the following:</p>
+
+<pre>
+&lt;foo&gt;
+&lt;bar/&gt;
+&lt;/foo&gt;
+</pre>
+
+<p>The expression <code>/foo/bar</code> is an example of a location
+path. While XPath location paths resemble Unix-style file system
+paths, an important distinction is that XPath expressions return
+<em>all</em> nodes that match the expression. Thus, all three
+<code>&lt;bar&gt;</code> elements in the following document would be
+selected by the <code>/foo/bar</code> expression:</p>
+
+<pre>
+&lt;foo&gt;
+&lt;bar/&gt;
+&lt;bar/&gt;
+&lt;bar/&gt;
+&lt;/foo&gt;
+</pre>
+
+<p>A special location path operator, <code>//</code>, selects nodes at
+any depth in an XML document. The following example selects all
+<code>&lt;bar&gt;</code> elements regardless of their location in a
+document:</p>
+
+<pre>
+//bar
+</pre>
+
+<p>A wildcard operator, *, causes all element nodes to be selected.
+The following example selects all children elements of a
+<code>&lt;foo&gt;</code> element:</p>
+
+<pre>
+/foo/*
+</pre>
+
+<p>In addition to element nodes, XPath location paths may also address
+attribute nodes, text nodes, comment nodes, and processing instruction
+nodes. The following table gives examples of location paths for each
+of these node types:</p>
+
+<table border="1">
+<tr>
+<td>Location Path</td>
+<td>Description</td>
+</tr>
+<tr>
+<td>
+<code>/foo/bar/<strong>@id</strong></code>
+</td>
+<td>Selects the attribute <code>id</code> of the <code>&lt;bar&gt;</code> element
+</td>
+</tr>
+<tr>
+<td><code>/foo/bar/<strong>text()</strong></code>
+</td>
+<td>Selects the text nodes of the <code>&lt;bar&gt;</code> element. No
+distinction is made between escaped and non-escaped character data.
+</td>
+</tr>
+<tr>
+<td><code>/foo/bar/<strong>comment()</strong></code>
+</td>
+<td>Selects all comment nodes contained in the <code>&lt;bar&gt;</code> element.
+</td>
+</tr>
+<tr>
+<td><code>/foo/bar/<strong>processing-instruction()</strong></code>
+</td>
+<td>Selects all processing-instruction nodes contained in the
+<code>&lt;bar&gt;</code> element.
+</td>
+</tr>
+</table>
+
+<p>Predicates allow for refining the nodes selected by an XPath
+location path. Predicates are of the form
+<code>[<em>expression</em>]</code>. The following example selects all
+<code>&lt;foo&gt;</code> elements that contain an <code>include</code>
+attribute with the value of <code>true</code>:</p>
+
+<pre>
+//foo[@include='true']
+</pre>
+
+<p>Predicates may be appended to each other to further refine an
+expression, such as:</p>
+
+<pre>
+//foo[@include='true'][@mode='bar']
+</pre>
+
+<h3>Using the XPath API</h3>
+
+<p>
+The following example demonstrates using the XPath API to select one
+or more nodes from an XML document:</p>
+
+<pre>
+XPath xpath = XPathFactory.newInstance().newXPath();
+String expression = "/widgets/widget";
+InputSource inputSource = new InputSource("widgets.xml");
+NodeList nodes = (NodeList) xpath.evaluate(expression, inputSource, XPathConstants.NODESET);
+</pre>
+
+<h3>XPath Expressions and Types</h3>
+
+<p>While XPath expressions select nodes in the XML document, the XPath
+API allows the selected nodes to be coalesced into one of the
+following other data types:</p>
+
+<ul>
+<li><code>Boolean</code></li>
+<li><code>Number</code></li>
+<li><code>String</code></li>
+</ul>
+
+<p>The desired return type is specified by a {@link
+javax.xml.namespace.QName} parameter in method call used to evaluate
+the expression, which is either a call to
+<code>XPathExpression.evalute(...)</code> or to one of the
+<code>XPath.evaluate(...)</code> convenience methods. The allowed
+QName values are specified as constants in the {@link
+javax.xml.xpath.XPathConstants} class; they are:</p>
+
+<ul>
+<li>{@link javax.xml.xpath.XPathConstants#NODESET}</li>
+<li>{@link javax.xml.xpath.XPathConstants#NODE}</li>
+<li>{@link javax.xml.xpath.XPathConstants#STRING}</li>
+<li>{@link javax.xml.xpath.XPathConstants#BOOLEAN}</li>
+<li>{@link javax.xml.xpath.XPathConstants#NUMBER}</li>
+</ul>
+
+<p>When a <code>Boolean</code> return type is requested,
+<code>Boolean.TRUE</code> is returned if one or more nodes were
+selected; otherwise, <code>Boolean.FALSE</code> is returned.</p>
+
+<p>The <code>String</code> return type is a convenience for retrieving
+the character data from a text node, attribute node, comment node, or
+processing-instruction node. When used on an element node, the value
+of the child text nodes is returned.
+</p>
+
+<p>The <code>Number</code> return type attempts to coalesce the text
+of a node to a <code>double</code> data type.
+</p>
+
+<h3>XPath Context</h3>
+
+<p>XPath location paths may be relative to a particular node in the
+document, known as the <code>context</code>. Consider the following
+XML document:</p>
+
+<pre>
+&lt;widgets&gt;
+&lt;widget&gt;
+&lt;manufacturer/&gt;
+&lt;dimensions/&gt;
+&lt;/widget&gt;
+&lt;/widgets&gt;
+</pre>
+
+<p>The <code>&lt;widget&gt;</code> element can be selected with the
+following XPath API code:</p>
+
+<pre>
+// parse the XML as a W3C Document
+DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+Document document = builder.parse(new File("/widgets.xml"));
+
+XPath xpath = XPathFactory.newInstance().newXPath();
+String expression = "/widgets/widget";
+Node widgetNode = (Node) xpath.evaluate(expression, document, XPathConstants.NODE);
+</pre>
+
+<p>With a reference to the <code>&lt;widget&gt;</code> element, a
+relative XPath expression can now written to select the
+<code>&lt;manufacturer&gt;</code> child element:</p>
+
+<pre>
+XPath xpath = XPathFactory.newInstance().newXPath();
+<strong>String expression = "manufacturer";</strong>
+Node manufacturerNode = (Node) xpath.evaluate(expression, <strong>widgetNode</strong>, XPathConstants.NODE);
+</pre>
+
+<ul>
+<li>Author <a href="mailto:Ben@galbraiths.org">Ben Galbraith</a></li>
+<li>Author <a href="mailto:Norman.Walsh@Sun.com">Norman Walsh</a></li>
+<li>Author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a></li>
+<li>See <a href="http://www.w3.org/TR/xpath">XML Path Language (XPath) Version 1.0</a></li>
+<li>Since 1.5</li>
+</ul>		
+</body>
+</html>
