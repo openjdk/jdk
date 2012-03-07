@@ -5845,7 +5845,7 @@ bool os::is_headless_jre() {
     char buf[MAXPATHLEN];
     char libmawtpath[MAXPATHLEN];
     const char *xawtstr  = "/xawt/libmawt" JNI_LIB_SUFFIX;
-    const char *new_xawtstr = "/libawt_xawt" JNI_LIB_SUFFIX;
+    const char *new_xawtstr = "/xawt/libawt_xawt" JNI_LIB_SUFFIX;
     char *p;
 
     // Get path to libjvm.so
