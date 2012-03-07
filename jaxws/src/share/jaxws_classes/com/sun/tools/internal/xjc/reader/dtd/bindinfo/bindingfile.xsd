@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+
+<!--
+  DTD binding information file which is supported by this version of XJC.
+  
+  - Changes from the EA1 is marked by "CHANGE:"
+  - "ref:key" and "ref:keyref" are used to specify cross-reference
+    information.
+  - "a:defaultValue" is used to specify the default behavior.
+    Note that default behaviors are hard-coded to the source code.
+    Values specified in this schema is not used in the actual processing.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc">
+  <xs:import namespace="http://java.sun.com/xml/ns/jaxb/xjc" schemaLocation="xjc.xsd"/>
+  <xs:element name="xml-java-binding-schema">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="options"/>
+        <xs:element ref="xjc:serializable"/>
+        <xs:element ref="xjc:superClass"/>
+        <xs:element ref="xjc:noMarshaller"/>
+        <xs:element ref="xjc:noUnmarshaller"/>
+        <xs:element ref="xjc:noValidator"/>
+        <xs:element ref="xjc:noValidatingUnmarshaller"/>
+        <xs:choice>
+          <xs:group ref="toplevel.declaration"/>
+          <xs:element ref="global.or.local.declaration"/>
+        </xs:choice>
+      </xs:choice>
+      <xs:attribute name="version">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="1.0ea2"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="options">
+    <xs:complexType>
+      <xs:attribute name="package"/>
+    </xs:complexType>
+  </xs:element>
+  <!-- element-class declaration -->
+  <xs:group name="toplevel.declaration">
+    <xs:choice>
+      <xs:element name="element">
+        <xs:complexType>
+          <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element ref="attribute"/>
+            <xs:element ref="global.or.local.declaration"/>
+            <xs:element ref="constructor"/>
+            <xs:element ref="content"/>
+          </xs:choice>
+          <xs:attribute name="name" use="required"/>
+          <xs:attribute name="type" use="required">
+            <xs:simpleType>
+              <xs:restriction base="xs:token">
+                <xs:enumeration value="class"/>
+                <xs:enumeration value="value"/>
+              </xs:restriction>
+            </xs:simpleType>
+          </xs:attribute>
+          <xs:attribute name="class" type="java.classname.datatype"/>
+          <xs:attribute name="root">
+            <xs:simpleType>
+              <xs:restriction base="xs:token">
+                <xs:enumeration value="true"/>
+                <xs:enumeration value="false"/>
+              </xs:restriction>
+            </xs:simpleType>
+          </xs:attribute>
+          <xs:attribute name="convert"/>
+        </xs:complexType>
+      </xs:element>
+      <xs:element ref="interface"/>
+    </xs:choice>
+  </xs:group>
+  <xs:element name="attribute">
+    <xs:complexType>
+      <xs:attribute name="name" use="required"/>
+      <xs:attribute name="property"/>
+      <xs:attribute name="collection">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="list"/>
+            <xs:enumeration value="set"/>
+            <xs:enumeration value="vector"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="convert"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="constructor">
+    <xs:complexType>
+      <xs:attribute name="properties" use="required">
+        <xs:simpleType>
+          <xs:restriction>
+            <xs:simpleType>
+              <xs:list itemType="xs:token"/>
+            </xs:simpleType>
+            <xs:minLength value="1"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="content">
+    <xs:complexType>
+      <xs:sequence minOccurs="0">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="element-ref"/>
+          <xs:choice>
+            <xs:element ref="sequence"/>
+            <xs:element ref="choice"/>
+          </xs:choice>
+        </xs:choice>
+        <xs:element minOccurs="0" ref="rest"/>
+      </xs:sequence>
+      <xs:attribute name="property"/>
+      <xs:attribute name="collection">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="list"/>
+            <xs:enumeration value="set"/>
+            <xs:enumeration value="vector"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="supertype"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="element-ref">
+    <xs:complexType>
+      <xs:attribute name="name" use="required"/>
+      <xs:attribute name="property"/>
+      <xs:attribute name="collection">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="list"/>
+            <xs:enumeration value="set"/>
+            <xs:enumeration value="vector"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="sequence">
+    <xs:complexType>
+      <xs:attributeGroup ref="collection.particle.decl"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="choice">
+    <xs:complexType>
+      <xs:attributeGroup ref="collection.particle.decl"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="rest">
+    <xs:complexType>
+      <xs:attributeGroup ref="collection.particle.decl"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="interface">
+    <xs:complexType>
+      <xs:attribute name="name" use="required" type="java.classname.datatype"/>
+      <xs:attribute name="members" use="required">
+        <xs:simpleType>
+          <xs:restriction>
+            <xs:simpleType>
+              <xs:list itemType="java.classname.datatype"/>
+            </xs:simpleType>
+            <xs:minLength value="1"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="collection.particle.decl">
+    <xs:attribute name="property" use="required"/>
+    <xs:attribute name="collection">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="list"/>
+          <xs:enumeration value="set"/>
+          <xs:enumeration value="vector"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="supertype"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="collection.att">
+    <xs:attribute name="collection" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="list"/>
+          <xs:enumeration value="set"/>
+          <xs:enumeration value="vector"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:attributeGroup>
+  <!-- conversion declaration -->
+  <xs:element name="global.or.local.declaration" abstract="true"/>
+  <xs:element name="conversion" substitutionGroup="global.or.local.declaration">
+    <xs:complexType>
+      <xs:attribute name="name" use="required"/>
+      <xs:attribute name="type"/>
+      <xs:attribute name="parse"/>
+      <xs:attribute name="print"/>
+      <xs:attribute name="whitespace">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="preserve"/>
+            <xs:enumeration value="replace"/>
+            <xs:enumeration value="collapse"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="enumeration" substitutionGroup="global.or.local.declaration">
+    <xs:complexType>
+      <xs:attribute name="name" use="required" type="java.classname.datatype"/>
+      <xs:attribute name="members" use="required">
+        <xs:simpleType>
+          <xs:restriction>
+            <xs:simpleType>
+              <xs:list itemType="xs:token"/>
+            </xs:simpleType>
+            <xs:minLength value="1"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <!-- element-value declaration -->
+  <!-- interface declaration -->
+  <!-- enumeration declaration -->
+  <!-- valid Java name -->
+  <xs:simpleType name="java.name.datatype">
+    <xs:restriction base="xs:token"/>
+  </xs:simpleType>
+  <xs:simpleType name="java.classname.datatype">
+    <xs:restriction base="java.name.datatype"/>
+  </xs:simpleType>
+</xs:schema>
