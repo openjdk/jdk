@@ -23,18 +23,13 @@
  * questions.
  */
 
+package genstubs;
+
 import java.io.*;
 import java.util.*;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
-
-import org.apache.tools.ant.BuildException;
-import org.apache.tools.ant.DirectoryScanner;
-import org.apache.tools.ant.taskdefs.MatchingTask;
-import org.apache.tools.ant.types.Path;
-import org.apache.tools.ant.types.Reference;
-
 
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.JavacTask;
@@ -81,15 +76,6 @@ import javax.tools.JavaFileManager;
  * Documentation comments and annotations are removed. Method bodies are removed
  * and methods are marked native. Private and package-private field definitions
  * have their initializers replace with 0, 0.0, false, null as appropriate.
- *
- * An Ant task, Main$Ant is also provided. Files are specified with an implicit
- * fileset, using srcdir as a base directory. The set of files to be included
- * is specified with an includes attribute or nested <includes> set. However,
- * unlike a normal fileset, an empty includes attribute means "no files" instead
- * of "all files".  The Ant task also accepts "fork=true" and classpath attribute
- * or nested <classpath> element to run GenStubs in a separate VM with the specified
- * path. This is likely necessary if a JDK 7 parser is required to read the
- * JDK 7 input files.
  */
 
 public class GenStubs {
@@ -110,7 +96,7 @@ public class GenStubs {
             System.exit(1);
     }
 
-    boolean run(String... args) {
+    public boolean run(String... args) {
         File outdir = null;
         String sourcepath = null;
         List<String> classes = new ArrayList<String>();
@@ -132,7 +118,7 @@ public class GenStubs {
         return run(sourcepath, outdir, classes);
     }
 
-    boolean run(String sourcepath, File outdir, List<String> classes) {
+    public boolean run(String sourcepath, File outdir, List<String> classes) {
         //System.err.println("run: sourcepath:" + sourcepath + " outdir:" + outdir + " classes:" + classes);
         if (sourcepath == null)
             throw new IllegalArgumentException("sourcepath not set");
@@ -298,9 +284,9 @@ public class GenStubs {
             tree.accept(this);
             ListBuffer<JCTree> defs = new ListBuffer<JCTree>();
             for (JCTree def: tree.defs) {
-                if (def.getTag() == JCTree.IMPORT) {
+                if (def.getTag() == JCTree.Tag.IMPORT) {
                     JCImport imp = (JCImport) def;
-                    if (imp.qualid.getTag() == JCTree.SELECT) {
+                    if (imp.qualid.getTag() == JCTree.Tag.SELECT) {
                         JCFieldAccess qualid = (JCFieldAccess) imp.qualid;
                         if (!qualid.name.toString().equals("*")
                                 && !names.contains(qualid.name)) {
@@ -325,124 +311,6 @@ public class GenStubs {
         public void visitSelect(JCFieldAccess tree) {
             super.visitSelect(tree);
             names.add(tree.name);
-        }
-    }
-
-    //---------- Ant Invocation ------------------------------------------------
-
-    public static class Ant extends MatchingTask {
-        private File srcDir;
-        private File destDir;
-        private boolean fork;
-        private Path classpath;
-        private String includes;
-
-        public void setSrcDir(File dir) {
-            this.srcDir = dir;
-        }
-
-        public void setDestDir(File dir) {
-            this.destDir = dir;
-        }
-
-        public void setFork(boolean v) {
-            this.fork = v;
-        }
-
-        public void setClasspath(Path cp) {
-            if (classpath == null)
-                classpath = cp;
-            else
-                classpath.append(cp);
-        }
-
-        public Path createClasspath() {
-            if (classpath == null) {
-                classpath = new Path(getProject());
-            }
-            return classpath.createPath();
-        }
-
-        public void setClasspathRef(Reference r) {
-            createClasspath().setRefid(r);
-        }
-
-        public void setIncludes(String includes) {
-            super.setIncludes(includes);
-            this.includes = includes;
-        }
-
-        @Override
-        public void execute() {
-            if (includes != null && includes.trim().isEmpty())
-                return;
-
-            DirectoryScanner s = getDirectoryScanner(srcDir);
-            String[] files = s.getIncludedFiles();
-//            System.err.println("Ant.execute: srcDir " + srcDir);
-//            System.err.println("Ant.execute: destDir " + destDir);
-//            System.err.println("Ant.execute: files " + Arrays.asList(files));
-
-            files = filter(srcDir, destDir, files);
-            if (files.length == 0)
-                return;
-            System.out.println("Generating " + files.length + " stub files to " + destDir);
-
-            List<String> classNames = new ArrayList<String>();
-            for (String file: files) {
-                classNames.add(file.replaceAll(".java$", "").replace('/', '.'));
-            }
-
-            if (!fork) {
-                GenStubs m = new GenStubs();
-                boolean ok = m.run(srcDir.getPath(), destDir, classNames);
-                if (!ok)
-                    throw new BuildException("genstubs failed");
-            } else {
-                List<String> cmd = new ArrayList<String>();
-                String java_home = System.getProperty("java.home");
-                cmd.add(new File(new File(java_home, "bin"), "java").getPath());
-                if (classpath != null)
-                    cmd.add("-Xbootclasspath/p:" + classpath);
-                cmd.add(GenStubs.class.getName());
-                cmd.add("-sourcepath");
-                cmd.add(srcDir.getPath());
-                cmd.add("-s");
-                cmd.add(destDir.getPath());
-                cmd.addAll(classNames);
-                //System.err.println("GenStubs exec " + cmd);
-                ProcessBuilder pb = new ProcessBuilder(cmd);
-                pb.redirectErrorStream(true);
-                try {
-                    Process p = pb.start();
-                    BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                    try {
-                        String line;
-                        while ((line = in.readLine()) != null)
-                            System.out.println(line);
-                    } finally {
-                        in.close();
-                    }
-                    int rc = p.waitFor();
-                    if (rc != 0)
-                        throw new BuildException("genstubs failed");
-                } catch (IOException e) {
-                    throw new BuildException("genstubs failed", e);
-                } catch (InterruptedException e) {
-                    throw new BuildException("genstubs failed", e);
-                }
-            }
-        }
-
-        String[] filter(File srcDir, File destDir, String[] files) {
-            List<String> results = new ArrayList<String>();
-            for (String f: files) {
-                long srcTime = new File(srcDir, f).lastModified();
-                long destTime = new File(destDir, f).lastModified();
-                if (srcTime > destTime)
-                    results.add(f);
-            }
-            return results.toArray(new String[results.size()]);
         }
     }
 }
