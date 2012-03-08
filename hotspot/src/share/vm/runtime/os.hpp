@@ -404,6 +404,8 @@ class os: AllStatic {
   static address current_stack_base();
   static size_t current_stack_size();
 
+  static void verify_stack_alignment() PRODUCT_RETURN;
+
   static int message_box(const char* title, const char* message);
   static char* do_you_want_to_debug(const char* message);
 
