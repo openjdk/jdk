@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,34 +25,33 @@
 
 package com.sun.tools.javac.processing;
 
-import java.lang.reflect.*;
-import java.util.*;
-import java.util.regex.*;
-
-import java.net.URL;
 import java.io.Closeable;
 import java.io.File;
 import java.io.PrintWriter;
-import java.io.IOException;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.*;
+import java.util.regex.*;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.*;
-import javax.tools.JavaFileManager;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.JavaFileObject;
 import javax.tools.DiagnosticListener;
+import javax.tools.JavaFileManager;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import static javax.tools.StandardLocation.*;
 
+import com.sun.source.util.JavacTask;
 import com.sun.source.util.TaskEvent;
-import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.api.JavacTrees;
+import com.sun.tools.javac.api.MultiTaskListener;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.file.FSInfo;
@@ -71,19 +70,16 @@ import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Convert;
-import com.sun.tools.javac.util.FatalError;
 import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.JavacMessages;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.JavacMessages;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
-
-import static javax.tools.StandardLocation.*;
-import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
-import static com.sun.tools.javac.main.Option.*;
 import static com.sun.tools.javac.code.Lint.LintCategory.PROCESSING;
+import static com.sun.tools.javac.main.Option.*;
+import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 
 /**
  * Objects of this class hold and manage the state needed to support
@@ -157,6 +153,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      */
     private JavacMessages messages;
 
+    private MultiTaskListener taskListener;
+
     private Context context;
 
     public JavacProcessingEnvironment(Context context, Iterable<? extends Processor> processors) {
@@ -185,6 +183,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         processorOptions = initProcessorOptions(context);
         unmatchedProcessorOptions = initUnmatchedProcessorOptions();
         messages = JavacMessages.instance(context);
+        taskListener = MultiTaskListener.instance(context);
         initProcessorIterator(context, processors);
     }
 
@@ -976,8 +975,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         void run(boolean lastRound, boolean errorStatus) {
             printRoundInfo(lastRound);
 
-            TaskListener taskListener = context.get(TaskListener.class);
-            if (taskListener != null)
+            if (!taskListener.isEmpty())
                 taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING_ROUND));
 
             try {
@@ -993,7 +991,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                     discoverAndRunProcs(context, annotationsPresent, topLevelClasses, packageInfoFiles);
                 }
             } finally {
-                if (taskListener != null)
+                if (!taskListener.isEmpty())
                     taskListener.finished(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING_ROUND));
             }
 
@@ -1051,9 +1049,9 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             if (dl != null)
                 next.put(DiagnosticListener.class, dl);
 
-            TaskListener tl = context.get(TaskListener.class);
-            if (tl != null)
-                next.put(TaskListener.class, tl);
+            MultiTaskListener mtl = context.get(MultiTaskListener.taskListenerKey);
+            if (mtl != null)
+                next.put(MultiTaskListener.taskListenerKey, mtl);
 
             FSInfo fsInfo = context.get(FSInfo.class);
             if (fsInfo != null)
@@ -1086,9 +1084,9 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             elementUtils.setContext(next);
             typeUtils.setContext(next);
 
-            JavacTaskImpl task = context.get(JavacTaskImpl.class);
+            JavacTaskImpl task = (JavacTaskImpl) context.get(JavacTask.class);
             if (task != null) {
-                next.put(JavacTaskImpl.class, task);
+                next.put(JavacTask.class, task);
                 task.updateContext(next);
             }
 
@@ -1110,8 +1108,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                                      List<JCCompilationUnit> roots,
                                      List<ClassSymbol> classSymbols,
                                      Iterable<? extends PackageSymbol> pckSymbols) {
-
-        TaskListener taskListener = context.get(TaskListener.class);
         log = Log.instance(context);
 
         Set<PackageSymbol> specifiedPackages = new LinkedHashSet<PackageSymbol>();
@@ -1182,7 +1178,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         // Free resources
         this.close();
 
-        if (taskListener != null)
+        if (!taskListener.isEmpty())
             taskListener.finished(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
 
         if (errorStatus) {

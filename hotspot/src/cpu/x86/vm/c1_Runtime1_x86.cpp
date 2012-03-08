@@ -47,6 +47,12 @@ int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address e
   assert(!(oop_result1->is_valid() || oop_result2->is_valid()) || oop_result1 != oop_result2, "registers must be different");
   assert(oop_result1 != thread && oop_result2 != thread, "registers must be different");
   assert(args_size >= 0, "illegal args_size");
+  bool align_stack = false;
+#ifdef _LP64
+  // At a method handle call, the stack may not be properly aligned
+  // when returning with an exception.
+  align_stack = (stub_id() == Runtime1::handle_exception_from_callee_id);
+#endif
 
 #ifdef _LP64
   mov(c_rarg0, thread);
@@ -59,11 +65,21 @@ int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address e
   push(thread);
 #endif // _LP64
 
-  set_last_Java_frame(thread, noreg, rbp, NULL);
+  int call_offset;
+  if (!align_stack) {
+    set_last_Java_frame(thread, noreg, rbp, NULL);
+  } else {
+    address the_pc = pc();
+    call_offset = offset();
+    set_last_Java_frame(thread, noreg, rbp, the_pc);
+    andptr(rsp, -(StackAlignmentInBytes));    // Align stack
+  }
 
   // do the call
   call(RuntimeAddress(entry));
-  int call_offset = offset();
+  if (!align_stack) {
+    call_offset = offset();
+  }
   // verify callee-saved register
 #ifdef ASSERT
   guarantee(thread != rax, "change this code");
@@ -78,7 +94,7 @@ int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address e
   }
   pop(rax);
 #endif
-  reset_last_Java_frame(thread, true, false);
+  reset_last_Java_frame(thread, true, align_stack);
 
   // discard thread and arguments
   NOT_LP64(addptr(rsp, num_rt_args()*BytesPerWord));
