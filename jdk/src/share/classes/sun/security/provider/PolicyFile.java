@@ -1246,7 +1246,10 @@ public class PolicyFile extends java.security.Policy {
      * @return the set of permissions according to the policy.
      */
     private PermissionCollection getPermissions(Permissions perms,
-                               final CodeSource cs) {
+                                                final CodeSource cs) {
+
+        if (cs == null)
+            return perms;
 
         CodeSource canonCodeSource = AccessController.doPrivileged(
             new java.security.PrivilegedAction<CodeSource>(){

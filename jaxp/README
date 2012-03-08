@@ -17,9 +17,3 @@ Simple Build Instructions:
   "dist" directory.
   Help information is available by running "ant -projecthelp" or "make help".
 
-Drop Repository:
-  This repository builds sources from a created "drop" source directory.
-  These files will normally be copied from a shared directory area or
-  downloaded from a public website.
-  See the ant build script (build.xml) for more details.
-

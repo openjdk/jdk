@@ -237,6 +237,12 @@ frame os::get_sender_for_C_frame(frame* fr) {
   return frame(fr->sender_sp(), fr->link(), fr->sender_pc());
 }
 
+extern "C" intptr_t *_get_current_sp();  // in .il file
+
+address os::current_stack_pointer() {
+  return (address)_get_current_sp();
+}
+
 extern "C" intptr_t *_get_current_fp();  // in .il file
 
 frame os::current_frame() {
@@ -954,3 +960,11 @@ void os::setup_fpu() {
   _solaris_raw_setup_fpu(fpu_cntrl);
 }
 #endif // AMD64
+
+#ifndef PRODUCT
+void os::verify_stack_alignment() {
+#ifdef AMD64
+  assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");
+#endif
+}
+#endif

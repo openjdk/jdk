@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -396,7 +396,7 @@ while read token; do
         touch $FAIL_MARKER
     fi
 
-    MESG=`cat expect_boot_cp_line`
+    MESG=`cat expect_boot_cp_line | tr -d '\n\r'`
     grep -s "$MESG" output.log > /dev/null
     result=$?
     if [ "$result" = 0 ]; then
@@ -406,7 +406,7 @@ while read token; do
         touch $FAIL_MARKER
     fi
 
-    MESG=`cat expect_redef_line`
+    MESG=`cat expect_redef_line | tr -d '\n\r'`
     grep -s "$MESG" output.log > /dev/null
     result=$?
     if [ "$result" = 0 ]; then
@@ -416,7 +416,7 @@ while read token; do
         touch $FAIL_MARKER
     fi
 
-    MESG=`cat expect_retrans_line`
+    MESG=`cat expect_retrans_line | tr -d '\n\r'`
     grep -s "$MESG" output.log > /dev/null
     result=$?
     if [ "$result" = 0 ]; then
@@ -426,7 +426,7 @@ while read token; do
         touch $FAIL_MARKER
     fi
 
-    MESG=`cat expect_set_nmp_line`
+    MESG=`cat expect_set_nmp_line | tr -d '\n\r'`
     grep -s "$MESG" output.log > /dev/null
     result=$?
     if [ "$result" = 0 ]; then
