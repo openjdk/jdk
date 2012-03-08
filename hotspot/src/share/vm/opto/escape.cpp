@@ -2035,40 +2035,14 @@ void ConnectionGraph::find_init_values(Node* alloc, VectorSet* visited, PhaseTra
           Node* store = ini->find_captured_store(offset, type2aelembytes(ft), phase);
           if (store != NULL && store->is_Store()) {
             value = store->in(MemNode::ValueIn);
-          } else if (ptn->edge_count() > 0) { // Are there oop stores?
-            // Check for a store which follows allocation without branches.
+          } else {
+            // There could be initializing stores which follow allocation.
             // For example, a volatile field store is not collected
-            // by Initialize node. TODO: it would be nice to use idom() here.
+            // by Initialize node.
             //
-            // Search all references to the same field which use different
-            // AddP nodes, for example, in the next case:
-            //
-            //    Point p[] = new Point[1];
-            //    if ( x ) { p[0] = new Point(); p[0].x = x; }
-            //    if ( p[0] != null ) { y = p[0].x; } // has CastPP
-            //
-            for (uint next = ei; (next < ae_cnt) && (value == NULL); next++) {
-              uint fpi = pta->edge_target(next); // Field (AddP)
-              PointsToNode *ptf = ptnode_adr(fpi);
-              if (ptf->offset() == offset) {
-                Node* nf = ptf->_node;
-                for (DUIterator_Fast imax, i = nf->fast_outs(imax); i < imax; i++) {
-                  store = nf->fast_out(i);
-                  if (store->is_Store() && store->in(0) != NULL) {
-                    Node* ctrl = store->in(0);
-                    while(!(ctrl == ini || ctrl == alloc || ctrl == NULL ||
-                            ctrl == C->root() || ctrl == C->top() || ctrl->is_Region() ||
-                            ctrl->is_IfTrue() || ctrl->is_IfFalse())) {
-                       ctrl = ctrl->in(0);
-                    }
-                    if (ctrl == ini || ctrl == alloc) {
-                      value = store->in(MemNode::ValueIn);
-                      break;
-                    }
-                  }
-                }
-              }
-            }
+            // Need to check for dependent loads to separate such stores from
+            // stores which follow loads. For now, add initial value NULL so
+            // that compare pointers optimization works correctly.
           }
         }
         if (value == NULL || value != ptnode_adr(value->_idx)->_node) {
