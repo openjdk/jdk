@@ -26,10 +26,10 @@
 BUILDDIR = ../..
 MODULE  = awt
 PACKAGE = sun.lwawt
-LIBRARY = lwawt
+LIBRARY = awt_lwawt
 PRODUCT = sun
 
-LIB_LOCATION = $(LIBDIR)/lwawt
+LIB_LOCATION = $(LIBDIR)
 
 include $(BUILDDIR)/common/Defs.gmk
 

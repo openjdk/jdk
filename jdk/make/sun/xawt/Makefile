@@ -28,10 +28,6 @@ PACKAGE = sun.awt.X11
 LIBRARY = awt_xawt
 PRODUCT = sun
 
-ifeq ($(PLATFORM), macosx)
-LIB_LOCATION = $(LIBDIR)/xawt
-endif
-
 include $(BUILDDIR)/common/Defs.gmk
 
 GEN_DIR=$(GENSRCDIR)/sun/awt/X11

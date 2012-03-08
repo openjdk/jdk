@@ -98,7 +98,7 @@ CPPFLAGS += \
 
 OTHER_LDLIBS = \
     -lawt -losxapp \
-    -llwawt -L$(LIBDIR)/lwawt -Xlinker -rpath -Xlinker @loader_path/lwawt \
+    -lawt_lwawt -L$(LIBDIR) -Xlinker -rpath -Xlinker @loader_path \
     -framework Cocoa \
     -framework Carbon \
     -framework ApplicationServices \
