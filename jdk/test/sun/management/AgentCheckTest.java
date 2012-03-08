@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,10 @@ public class AgentCheckTest {
     public static void main(String[] args){
         String [][] testStrings = {
             {"agent.err.error", "", ""},
-            {"jmxremote.ConnectorBootstrap.initialize", "", ""},
-            {"jmxremote.ConnectorBootstrap.initialize.noAuthentication", "", ""},
-            {"jmxremote.ConnectorBootstrap.initialize.ready", "Phony JMXServiceURL", ""},
-            {"jmxremote.ConnectorBootstrap.initialize.password.readonly", "Phony passwordFileName", ""},
+            {"jmxremote.ConnectorBootstrap.starting", "", ""},
+            {"jmxremote.ConnectorBootstrap.noAuthentication", "", ""},
+            {"jmxremote.ConnectorBootstrap.ready", "Phony JMXServiceURL", ""},
+            {"jmxremote.ConnectorBootstrap.password.readonly", "Phony passwordFileName", ""},
             {"jmxremote.AdaptorBootstrap.getTargetList.processing", "", ""},
             {"jmxremote.AdaptorBootstrap.getTargetList.adding", "Phony target", ""},
             {"jmxremote.AdaptorBootstrap.getTargetList.starting", "", ""},
