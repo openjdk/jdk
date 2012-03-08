@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,8 @@ public class AgentConfigurationError extends Error {
         "agent.err.invalid.agentclass";
     public static final String INVALID_JMXREMOTE_PORT =
         "agent.err.invalid.jmxremote.port";
+    public static final String INVALID_JMXREMOTE_RMI_PORT =
+        "agent.err.invalid.jmxremote.rmi.port";
     public static final String PASSWORD_FILE_NOT_SET =
         "agent.err.password.file.notset";
     public static final String PASSWORD_FILE_NOT_READABLE =
@@ -105,6 +107,8 @@ public class AgentConfigurationError extends Error {
         "agent.err.snmp.adaptor.start.failed";
     public static final String SNMP_MIB_INIT_FAILED =
         "agent.err.snmp.mib.init.failed";
+    public static final String INVALID_STATE =
+        "agent.err.invalid.state";
 
     private final String error;
     private final String[] params;
