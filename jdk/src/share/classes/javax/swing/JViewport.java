@@ -27,9 +27,7 @@ package javax.swing;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.VolatileImage;
 import java.awt.peer.ComponentPeer;
-import java.applet.Applet;
 import java.beans.Transient;
 import javax.swing.plaf.ViewportUI;
 
@@ -264,6 +262,14 @@ public class JViewport extends JComponent implements Accessible
      * Whether or not a valid view has been installed.
      */
     private boolean hasHadValidView;
+
+    /**
+     * When view is changed we have to synchronize scrollbar values
+     * with viewport (see the BasicScrollPaneUI#syncScrollPaneWithViewport method).
+     * This flag allows to invoke that method while ScrollPaneLayout#layoutContainer
+     * is running.
+     */
+    private boolean viewChanged;
 
     /** Creates a <code>JViewport</code>. */
     public JViewport() {
@@ -830,7 +836,9 @@ public class JViewport extends JComponent implements Accessible
             backingStoreImage = null;
         }
         super.reshape(x, y, w, h);
-        if (sizeChanged) {
+        if (sizeChanged || viewChanged) {
+            viewChanged = false;
+
             fireStateChanged();
         }
     }
@@ -966,6 +974,8 @@ public class JViewport extends JComponent implements Accessible
         else if (view != null) {
             hasHadValidView = true;
         }
+
+        viewChanged = true;
 
         revalidate();
         repaint();
