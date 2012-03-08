@@ -77,11 +77,12 @@ JNIEXPORT jboolean JNICALL AWTIsHeadless() {
  * Pathnames to the various awt toolkits
  */
 
+
 #ifdef MACOSX
-  #define XAWT_PATH "/xawt/libawt_xawt.dylib"
-  #define LWAWT_PATH "/lwawt/liblwawt.dylib"
+  #define XAWT_PATH "/libawt_xawt.dylib"
+  #define LWAWT_PATH "/libawt_lwawt.dylib"
   #define DEFAULT_PATH LWAWT_PATH
-  #define HEADLESS_PATH "/headless/libawt_headless.dylib"
+  #define HEADLESS_PATH "/libawt_headless.dylib"
 #else
   #define XAWT_PATH "/libawt_xawt.so"
   #define DEFAULT_PATH XAWT_PATH

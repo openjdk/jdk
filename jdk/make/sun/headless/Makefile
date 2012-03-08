@@ -29,11 +29,6 @@ NO_ROBOT = true
 MOTIF_VERSION = none
 MOTIF_VERSION_STRING=none
 
-ifeq ($(PLATFORM), macosx)
-LIB_LOCATION = $(LIBDIR)/headless
-else
-endif
-
 PACKAGE = sun.awt
 LIBRARY = awt_headless
 PRODUCT = sun
