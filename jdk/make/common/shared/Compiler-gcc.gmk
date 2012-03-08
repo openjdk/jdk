@@ -67,7 +67,7 @@ ifeq ($(PLATFORM), linux)
     CXX            = $(COMPILER_PATH)g++
   endif
   # Option used to create a shared library
-  SHARED_LIBRARY_FLAG = -shared -mimpure-text
+  SHARED_LIBRARY_FLAG = -shared
   SUN_COMP_VER := $(shell $(CC) --verbose 2>&1 )
 
 endif
