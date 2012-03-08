@@ -133,7 +133,7 @@ endif # PLATFORM
 
 ifeq ($(PLATFORM), macosx)
 vpath %.m   $(call NativeSrcDirList,,native/sun/awt)
-OTHER_LDLIBS = -llwawt -L$(LIBDIR)/lwawt -Xlinker -rpath -Xlinker @loader_path/lwawt \
+OTHER_LDLIBS = -lawt_lwawt -L$(LIBDIR) -Xlinker -rpath -Xlinker @loader_path \
                -framework Cocoa
 endif # PLATFORM
 
