@@ -27,53 +27,57 @@ OS_VENDOR = $(shell uname -s)
 #------------------------------------------------------------------------
 # CC, CXX & AS
 
-# When cross-compiling the ALT_COMPILER_PATH points
-# to the cross-compilation toolset
-ifdef CROSS_COMPILE_ARCH
- CXX = $(ALT_COMPILER_PATH)/g++
- CC  = $(ALT_COMPILER_PATH)/gcc
- HOSTCXX = g++
- HOSTCC  = gcc
-else ifneq ($(OS_VENDOR), Darwin)
- CXX = g++
- CC  = gcc
- HOSTCXX = $(CXX)
- HOSTCC  = $(CC)
+# If a SPEC is not set already, then use these defaults.
+ifeq ($(SPEC),)
+  # When cross-compiling the ALT_COMPILER_PATH points
+  # to the cross-compilation toolset
+  ifdef CROSS_COMPILE_ARCH
+    CXX = $(ALT_COMPILER_PATH)/g++
+    CC  = $(ALT_COMPILER_PATH)/gcc
+    HOSTCXX = g++
+    HOSTCC  = gcc
+  else ifneq ($(OS_VENDOR), Darwin)
+    CXX = g++
+    CC  = gcc
+    HOSTCXX = $(CXX)
+    HOSTCC  = $(CC)
+  endif
+
+  # i486 hotspot requires -mstackrealign on Darwin.
+  # llvm-gcc supports this in Xcode 3.2.6 and 4.0.
+  # gcc-4.0 supports this on earlier versions.
+  # Prefer llvm-gcc where available.
+  ifeq ($(OS_VENDOR), Darwin)
+    ifeq ($(origin CXX), default)
+      CXX = llvm-g++
+    endif
+    ifeq ($(origin CC), default)
+      CC  = llvm-gcc
+    endif
+
+    ifeq ($(ARCH), i486)
+      LLVM_SUPPORTS_STACKREALIGN := $(shell \
+       [ "0"`llvm-gcc -v 2>&1 | grep LLVM | sed -E "s/.*LLVM build ([0-9]+).*/\1/"` -gt "2333" ] \
+       && echo true || echo false)
+
+      ifeq ($(LLVM_SUPPORTS_STACKREALIGN), true)
+        CXX32 ?= llvm-g++
+        CC32  ?= llvm-gcc
+      else
+        CXX32 ?= g++-4.0
+        CC32  ?= gcc-4.0
+      endif
+      CXX = $(CXX32)
+      CC  = $(CC32)
+    endif
+
+    HOSTCXX = $(CXX)
+    HOSTCC  = $(CC)
+  endif
+
+  AS   = $(CC) -c -x assembler-with-cpp
 endif
 
-# i486 hotspot requires -mstackrealign on Darwin.
-# llvm-gcc supports this in Xcode 3.2.6 and 4.0.
-# gcc-4.0 supports this on earlier versions.
-# Prefer llvm-gcc where available.
-ifeq ($(OS_VENDOR), Darwin)
-  ifeq ($(origin CXX), default)
-   CXX = llvm-g++
-  endif
-  ifeq ($(origin CC), default)
-   CC  = llvm-gcc
-  endif
-
-  ifeq ($(ARCH), i486)
-  LLVM_SUPPORTS_STACKREALIGN := $(shell \
-   [ "0"`llvm-gcc -v 2>&1 | grep LLVM | sed -E "s/.*LLVM build ([0-9]+).*/\1/"` -gt "2333" ] \
-   && echo true || echo false)
-
-  ifeq ($(LLVM_SUPPORTS_STACKREALIGN), true)
-    CXX32 ?= llvm-g++
-    CC32  ?= llvm-gcc
-  else
-    CXX32 ?= g++-4.0
-    CC32  ?= gcc-4.0
-  endif
-  CXX = $(CXX32)
-  CC  = $(CC32)
-  endif
-
-  HOSTCXX = $(CXX)
-  HOSTCC  = $(CC)
-endif
-
-AS   = $(CC) -c -x assembler-with-cpp
 
 # -dumpversion in gcc-2.91 shows "egcs-2.91.66". In later version, it only
 # prints the numbers (e.g. "2.95", "3.2.1")

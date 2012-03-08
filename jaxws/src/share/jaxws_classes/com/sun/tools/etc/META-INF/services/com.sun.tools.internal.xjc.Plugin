@@ -1,0 +1,5 @@
+com.sun.tools.internal.xjc.addon.code_injector.PluginImpl
+com.sun.tools.internal.xjc.addon.locator.SourceLocationAddOn
+com.sun.tools.internal.xjc.addon.sync.SynchronizedMethodAddOn
+com.sun.tools.internal.xjc.addon.at_generated.PluginImpl
+com.sun.tools.internal.xjc.addon.episode.PluginImpl
