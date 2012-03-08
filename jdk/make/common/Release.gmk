@@ -965,9 +965,13 @@ initial-image-jdk-db: $(DB_ZIP_LIST)
           ($(CD) $(JDK_IMAGE_DIR)/db && $(UNZIP) -o $$d); \
 	done
 	$(CP) $(ABS_DB_PATH)/README-JDK.html $(JDK_IMAGE_DIR)/db
+ifndef NO_DEMOS
 	$(RM) -rf $(DEMODIR)/db
 	$(MV) $(JDK_IMAGE_DIR)/db/demo $(DEMODIR)/db
 	$(CP) $(ABS_DB_PATH)/README-JDK-DEMOS.html $(DEMODIR)/db/
+else
+	$(RM) -rf $(JDK_IMAGE_DIR)/db/demo
+endif
 	$(RM) $(JDK_IMAGE_DIR)/db/index.html $(JDK_IMAGE_DIR)/db/register.html
 endif
 
