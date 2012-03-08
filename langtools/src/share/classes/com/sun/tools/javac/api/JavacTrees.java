@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package com.sun.tools.javac.api;
 
 import java.io.IOException;
-import java.util.Map;
+
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
@@ -44,13 +44,14 @@ import com.sun.source.tree.CatchTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Scope;
 import com.sun.source.tree.Tree;
+import com.sun.source.util.JavacTask;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
-import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type.UnionClassType;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
@@ -61,8 +62,8 @@ import com.sun.tools.javac.comp.Resolve;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.parser.EndPosTable;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
-import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.TreeCopier;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
@@ -95,12 +96,14 @@ public class JavacTrees extends Trees {
     private JavacElements elements;
     private JavacTaskImpl javacTaskImpl;
 
+    // called reflectively from Trees.instance(CompilationTask task)
     public static JavacTrees instance(JavaCompiler.CompilationTask task) {
         if (!(task instanceof JavacTaskImpl))
             throw new IllegalArgumentException();
         return instance(((JavacTaskImpl)task).getContext());
     }
 
+    // called reflectively from Trees.instance(ProcessingEnvironment env)
     public static JavacTrees instance(ProcessingEnvironment env) {
         if (!(env instanceof JavacProcessingEnvironment))
             throw new IllegalArgumentException();
@@ -131,7 +134,10 @@ public class JavacTrees extends Trees {
         resolve = Resolve.instance(context);
         treeMaker = TreeMaker.instance(context);
         memberEnter = MemberEnter.instance(context);
-        javacTaskImpl = context.get(JavacTaskImpl.class);
+
+        JavacTask t = context.get(JavacTask.class);
+        if (t instanceof JavacTaskImpl)
+            javacTaskImpl = (JavacTaskImpl) t;
     }
 
     public SourcePositions getSourcePositions() {
