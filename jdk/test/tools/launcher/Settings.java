@@ -75,14 +75,14 @@ public class Settings extends TestHelper {
     static void runTestOptionDefault() throws IOException {
         TestResult tr = null;
         tr = doExec(javaCmd, "-Xms64m", "-Xmx512m",
-                "-Xss128k", "-XshowSettings", "-jar", testJar.getAbsolutePath());
+                "-Xss256k", "-XshowSettings", "-jar", testJar.getAbsolutePath());
         containsAllOptions(tr);
         if (!tr.isOK()) {
             System.out.println(tr.status);
             throw new RuntimeException("test fails");
         }
         tr = doExec(javaCmd, "-Xms65536k", "-Xmx712m",
-                "-Xss122880", "-XshowSettings", "-jar", testJar.getAbsolutePath());
+                "-Xss256000", "-XshowSettings", "-jar", testJar.getAbsolutePath());
         containsAllOptions(tr);
         if (!tr.isOK()) {
             System.out.println(tr.status);
