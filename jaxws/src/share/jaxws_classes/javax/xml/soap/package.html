@@ -1,0 +1,92 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<!--
+ Copyright (c) 1993, 2002, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+
+<html>
+<head>
+   
+  <title></title>
+
+</head>
+   <body bgcolor="white">
+    Provides the API for creating and building SOAP messages. This package
+ is defined in the <i>SOAP with Attachments API for Java<sup><font
+ size="-2">TM</font></sup> (SAAJ) 1.3</i> specification.
+<p> The API in the <code>javax.xml.soap</code> package allows you to do the
+ following: </p>
+
+<ul>
+     <li>create a point-to-point connection to a specified endpoint   </li>
+    <li>create a SOAP message   </li>
+    <li>create an XML fragment   </li>
+    <li>add content to the header of a SOAP message   </li>
+    <li>add content to the body of a SOAP message   </li>
+    <li>create attachment parts and add content to them   </li>
+    <li>access/add/modify parts of a SOAP message   </li>
+    <li>create/add/modify SOAP fault information   </li>
+    <li>extract content from a SOAP message   </li>
+    <li>send a SOAP request-response message   </li>
+
+</ul>
+
+<p>   <!-- <h2>Package Specification</h2> -->  <!-- The SAAJ 1.1 specification gives an overview of the  -->
+ <!-- <code>javax.xml.soap</code> package and --> <!-- explains how its classes and interfaces work. -->
+ <!-- <ul> --> <!--   <li><a href="http://java.sun.com/xml/downloads/jaxm.html"> -->
+ <!-- 	SAAJ 1.1 Specification</a> --> <!-- </ul> -->  <!-- <h2>Related Documentation</h2> -->
+ <!-- 	For overviews, tutorials, examples, guides, and tool documentation, please see: -->
+ <!-- 	<ul> --> <!-- 	  <li><a href="../../../../tutorial/doc/JAXM.html">JAXM Tutorial</a> -->
+ <!-- 	  <li><a href="../../../../jaxm/index.html">JAXM Reference Implementation (RI) -->
+ <!-- 			  Documentation</a> --> <!-- 	</ul> -->  </p>
+In addition the APIs in the <code>javax.xml.soap</code> package extend
+their  counterparts in the <code>org.w3c.dom</code> package. This means that
+the  <code>SOAPPart</code> of a <code>SOAPMessage</code> is also a DOM Level
+2 <code>Document</code>, and can be manipulated as such by applications,
+tools and libraries that use DOM (see http://www.w3.org/DOM/ for more information).
+It is important to note that, while it is possible to use DOM APIs to add
+ordinary DOM nodes to a SAAJ tree, the SAAJ APIs are still required to return
+SAAJ types when examining or manipulating the tree. In order to accomplish
+this the SAAJ APIs (specifically {@link javax.xml.soap.SOAPElement#getChildElements()})
+are allowed to silently replace objects that are incorrectly typed relative
+to SAAJ requirements with equivalent objects of the required type. These
+replacements must never cause the logical structure of the tree to change,
+so from the perspective of the DOM APIs the tree will remain unchanged. However,
+the physical composition of the tree will have changed so that references
+to the nodes that were replaced will refer to nodes that are no longer a
+part of the tree. The SAAJ APIs are not allowed to make these replacements
+if they are not required so the replacement objects will never subsequently
+be silently replaced by future calls to the SAAJ API.
+<p>
+What this means in
+practical terms is that an application that starts to use SAAJ APIs on a
+tree after manipulating it using DOM APIs must assume that the tree has been
+translated into an all SAAJ tree and that any references to objects within
+the tree that were obtained using DOM APIs are no longer valid. Switching
+from SAAJ APIs to DOM APIs is not allowed to cause invalid references and
+neither is using SAAJ APIs exclusively. It is only switching from using DOM
+APIs on a particular SAAJ tree to using SAAJ APIs that causes the risk of
+invalid references.<br>
+
+</body>
+</html>

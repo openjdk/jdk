@@ -1181,14 +1181,13 @@ static void save_or_restore_arguments(MacroAssembler* masm,
                                       BasicType* in_sig_bt) {
   // if map is non-NULL then the code should store the values,
   // otherwise it should load them.
-  int handle_index = 0;
+  int slot = arg_save_area;
   // Save down double word first
   for ( int i = 0; i < total_in_args; i++) {
     if (in_regs[i].first()->is_XMMRegister() && in_sig_bt[i] == T_DOUBLE) {
-      int slot = handle_index * VMRegImpl::slots_per_word + arg_save_area;
       int offset = slot * VMRegImpl::stack_slot_size;
-      handle_index += 2;
-      assert(handle_index <= stack_slots, "overflow");
+      slot += VMRegImpl::slots_per_word;
+      assert(slot <= stack_slots, "overflow");
       if (map != NULL) {
         __ movdbl(Address(rsp, offset), in_regs[i].first()->as_XMMRegister());
       } else {
@@ -1197,10 +1196,7 @@ static void save_or_restore_arguments(MacroAssembler* masm,
     }
     if (in_regs[i].first()->is_Register() &&
         (in_sig_bt[i] == T_LONG || in_sig_bt[i] == T_ARRAY)) {
-      int slot = handle_index * VMRegImpl::slots_per_word + arg_save_area;
       int offset = slot * VMRegImpl::stack_slot_size;
-      handle_index += 2;
-      assert(handle_index <= stack_slots, "overflow");
       if (map != NULL) {
         __ movq(Address(rsp, offset), in_regs[i].first()->as_Register());
         if (in_sig_bt[i] == T_ARRAY) {
@@ -1209,14 +1205,15 @@ static void save_or_restore_arguments(MacroAssembler* masm,
       } else {
         __ movq(in_regs[i].first()->as_Register(), Address(rsp, offset));
       }
+      slot += VMRegImpl::slots_per_word;
     }
   }
   // Save or restore single word registers
   for ( int i = 0; i < total_in_args; i++) {
     if (in_regs[i].first()->is_Register()) {
-      int slot = handle_index++ * VMRegImpl::slots_per_word + arg_save_area;
       int offset = slot * VMRegImpl::stack_slot_size;
-      assert(handle_index <= stack_slots, "overflow");
+      slot++;
+      assert(slot <= stack_slots, "overflow");
 
       // Value is in an input register pass we must flush it to the stack
       const Register reg = in_regs[i].first()->as_Register();
@@ -1241,9 +1238,9 @@ static void save_or_restore_arguments(MacroAssembler* masm,
       }
     } else if (in_regs[i].first()->is_XMMRegister()) {
       if (in_sig_bt[i] == T_FLOAT) {
-        int slot = handle_index++ * VMRegImpl::slots_per_word + arg_save_area;
         int offset = slot * VMRegImpl::stack_slot_size;
-        assert(handle_index <= stack_slots, "overflow");
+        slot++;
+        assert(slot <= stack_slots, "overflow");
         if (map != NULL) {
           __ movflt(Address(rsp, offset), in_regs[i].first()->as_XMMRegister());
         } else {
@@ -1368,6 +1365,174 @@ static void unpack_array_argument(MacroAssembler* masm, VMRegPair reg, BasicType
   __ bind(done);
 }
 
+
+class ComputeMoveOrder: public StackObj {
+  class MoveOperation: public ResourceObj {
+    friend class ComputeMoveOrder;
+   private:
+    VMRegPair        _src;
+    VMRegPair        _dst;
+    int              _src_index;
+    int              _dst_index;
+    bool             _processed;
+    MoveOperation*  _next;
+    MoveOperation*  _prev;
+
+    static int get_id(VMRegPair r) {
+      return r.first()->value();
+    }
+
+   public:
+    MoveOperation(int src_index, VMRegPair src, int dst_index, VMRegPair dst):
+      _src(src)
+    , _src_index(src_index)
+    , _dst(dst)
+    , _dst_index(dst_index)
+    , _next(NULL)
+    , _prev(NULL)
+    , _processed(false) {
+    }
+
+    VMRegPair src() const              { return _src; }
+    int src_id() const                 { return get_id(src()); }
+    int src_index() const              { return _src_index; }
+    VMRegPair dst() const              { return _dst; }
+    void set_dst(int i, VMRegPair dst) { _dst_index = i, _dst = dst; }
+    int dst_index() const              { return _dst_index; }
+    int dst_id() const                 { return get_id(dst()); }
+    MoveOperation* next() const       { return _next; }
+    MoveOperation* prev() const       { return _prev; }
+    void set_processed()               { _processed = true; }
+    bool is_processed() const          { return _processed; }
+
+    // insert
+    void break_cycle(VMRegPair temp_register) {
+      // create a new store following the last store
+      // to move from the temp_register to the original
+      MoveOperation* new_store = new MoveOperation(-1, temp_register, dst_index(), dst());
+
+      // break the cycle of links and insert new_store at the end
+      // break the reverse link.
+      MoveOperation* p = prev();
+      assert(p->next() == this, "must be");
+      _prev = NULL;
+      p->_next = new_store;
+      new_store->_prev = p;
+
+      // change the original store to save it's value in the temp.
+      set_dst(-1, temp_register);
+    }
+
+    void link(GrowableArray<MoveOperation*>& killer) {
+      // link this store in front the store that it depends on
+      MoveOperation* n = killer.at_grow(src_id(), NULL);
+      if (n != NULL) {
+        assert(_next == NULL && n->_prev == NULL, "shouldn't have been set yet");
+        _next = n;
+        n->_prev = this;
+      }
+    }
+  };
+
+ private:
+  GrowableArray<MoveOperation*> edges;
+
+ public:
+  ComputeMoveOrder(int total_in_args, VMRegPair* in_regs, int total_c_args, VMRegPair* out_regs,
+                    BasicType* in_sig_bt, GrowableArray<int>& arg_order, VMRegPair tmp_vmreg) {
+    // Move operations where the dest is the stack can all be
+    // scheduled first since they can't interfere with the other moves.
+    for (int i = total_in_args - 1, c_arg = total_c_args - 1; i >= 0; i--, c_arg--) {
+      if (in_sig_bt[i] == T_ARRAY) {
+        c_arg--;
+        if (out_regs[c_arg].first()->is_stack() &&
+            out_regs[c_arg + 1].first()->is_stack()) {
+          arg_order.push(i);
+          arg_order.push(c_arg);
+        } else {
+          if (out_regs[c_arg].first()->is_stack() ||
+              in_regs[i].first() == out_regs[c_arg].first()) {
+            add_edge(i, in_regs[i].first(), c_arg, out_regs[c_arg + 1]);
+          } else {
+            add_edge(i, in_regs[i].first(), c_arg, out_regs[c_arg]);
+          }
+        }
+      } else if (in_sig_bt[i] == T_VOID) {
+        arg_order.push(i);
+        arg_order.push(c_arg);
+      } else {
+        if (out_regs[c_arg].first()->is_stack() ||
+            in_regs[i].first() == out_regs[c_arg].first()) {
+          arg_order.push(i);
+          arg_order.push(c_arg);
+        } else {
+          add_edge(i, in_regs[i].first(), c_arg, out_regs[c_arg]);
+        }
+      }
+    }
+    // Break any cycles in the register moves and emit the in the
+    // proper order.
+    GrowableArray<MoveOperation*>* stores = get_store_order(tmp_vmreg);
+    for (int i = 0; i < stores->length(); i++) {
+      arg_order.push(stores->at(i)->src_index());
+      arg_order.push(stores->at(i)->dst_index());
+    }
+ }
+
+  // Collected all the move operations
+  void add_edge(int src_index, VMRegPair src, int dst_index, VMRegPair dst) {
+    if (src.first() == dst.first()) return;
+    edges.append(new MoveOperation(src_index, src, dst_index, dst));
+  }
+
+  // Walk the edges breaking cycles between moves.  The result list
+  // can be walked in order to produce the proper set of loads
+  GrowableArray<MoveOperation*>* get_store_order(VMRegPair temp_register) {
+    // Record which moves kill which values
+    GrowableArray<MoveOperation*> killer;
+    for (int i = 0; i < edges.length(); i++) {
+      MoveOperation* s = edges.at(i);
+      assert(killer.at_grow(s->dst_id(), NULL) == NULL, "only one killer");
+      killer.at_put_grow(s->dst_id(), s, NULL);
+    }
+    assert(killer.at_grow(MoveOperation::get_id(temp_register), NULL) == NULL,
+           "make sure temp isn't in the registers that are killed");
+
+    // create links between loads and stores
+    for (int i = 0; i < edges.length(); i++) {
+      edges.at(i)->link(killer);
+    }
+
+    // at this point, all the move operations are chained together
+    // in a doubly linked list.  Processing it backwards finds
+    // the beginning of the chain, forwards finds the end.  If there's
+    // a cycle it can be broken at any point,  so pick an edge and walk
+    // backward until the list ends or we end where we started.
+    GrowableArray<MoveOperation*>* stores = new GrowableArray<MoveOperation*>();
+    for (int e = 0; e < edges.length(); e++) {
+      MoveOperation* s = edges.at(e);
+      if (!s->is_processed()) {
+        MoveOperation* start = s;
+        // search for the beginning of the chain or cycle
+        while (start->prev() != NULL && start->prev() != s) {
+          start = start->prev();
+        }
+        if (start->prev() == s) {
+          start->break_cycle(temp_register);
+        }
+        // walk the chain forward inserting to store list
+        while (start != NULL) {
+          stores->append(start);
+          start->set_processed();
+          start = start->next();
+        }
+      }
+    }
+    return stores;
+  }
+};
+
+
 // ---------------------------------------------------------------------------
 // Generate a native wrapper for a given method.  The method takes arguments
 // in the Java compiled code convention, marshals them to the native
@@ -1488,12 +1653,12 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
       if (in_regs[i].first()->is_Register()) {
         const Register reg = in_regs[i].first()->as_Register();
         switch (in_sig_bt[i]) {
-          case T_ARRAY:
           case T_BOOLEAN:
           case T_BYTE:
           case T_SHORT:
           case T_CHAR:
           case T_INT:  single_slots++; break;
+          case T_ARRAY:
           case T_LONG: double_slots++; break;
           default:  ShouldNotReachHere();
         }
@@ -1690,36 +1855,43 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
 #endif /* ASSERT */
 
-  if (is_critical_native) {
-    // The mapping of Java and C arguments passed in registers are
-    // rotated by one, which helps when passing arguments to regular
-    // Java method but for critical natives that creates a cycle which
-    // can cause arguments to be killed before they are used.  Break
-    // the cycle by moving the first argument into a temporary
-    // register.
-    for (int i = 0; i < total_c_args; i++) {
-      if (in_regs[i].first()->is_Register() &&
-          in_regs[i].first()->as_Register() == rdi) {
-        __ mov(rbx, rdi);
-        in_regs[i].set1(rbx->as_VMReg());
-      }
-    }
-  }
-
   // This may iterate in two different directions depending on the
   // kind of native it is.  The reason is that for regular JNI natives
   // the incoming and outgoing registers are offset upwards and for
   // critical natives they are offset down.
-  int c_arg = total_c_args - 1;
-  int stride = -1;
-  int init = total_in_args - 1;
-  if (is_critical_native) {
-    // stride forwards
-    c_arg = 0;
-    stride = 1;
-    init = 0;
+  GrowableArray<int> arg_order(2 * total_in_args);
+  VMRegPair tmp_vmreg;
+  tmp_vmreg.set1(rbx->as_VMReg());
+
+  if (!is_critical_native) {
+    for (int i = total_in_args - 1, c_arg = total_c_args - 1; i >= 0; i--, c_arg--) {
+      arg_order.push(i);
+      arg_order.push(c_arg);
+    }
+  } else {
+    // Compute a valid move order, using tmp_vmreg to break any cycles
+    ComputeMoveOrder cmo(total_in_args, in_regs, total_c_args, out_regs, in_sig_bt, arg_order, tmp_vmreg);
   }
-  for (int i = init, count = 0; count < total_in_args; i += stride, c_arg += stride, count++ ) {
+
+  int temploc = -1;
+  for (int ai = 0; ai < arg_order.length(); ai += 2) {
+    int i = arg_order.at(ai);
+    int c_arg = arg_order.at(ai + 1);
+    __ block_comment(err_msg("move %d -> %d", i, c_arg));
+    if (c_arg == -1) {
+      assert(is_critical_native, "should only be required for critical natives");
+      // This arg needs to be moved to a temporary
+      __ mov(tmp_vmreg.first()->as_Register(), in_regs[i].first()->as_Register());
+      in_regs[i] = tmp_vmreg;
+      temploc = i;
+      continue;
+    } else if (i == -1) {
+      assert(is_critical_native, "should only be required for critical natives");
+      // Read from the temporary location
+      assert(temploc != -1, "must be valid");
+      i = temploc;
+      temploc = -1;
+    }
 #ifdef ASSERT
     if (in_regs[i].first()->is_Register()) {
       assert(!reg_destroyed[in_regs[i].first()->as_Register()->encoding()], "destroyed reg!");
@@ -1779,7 +1951,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   // point c_arg at the first arg that is already loaded in case we
   // need to spill before we call out
-  c_arg++;
+  int c_arg = total_c_args - total_in_args;
 
   // Pre-load a static method's oop into r14.  Used both by locking code and
   // the normal JNI call code.
@@ -3620,8 +3792,12 @@ void OptoRuntime::generate_exception_blob() {
   //
   // address OptoRuntime::handle_exception_C(JavaThread* thread)
 
-  __ set_last_Java_frame(noreg, noreg, NULL);
+  // At a method handle call, the stack may not be properly aligned
+  // when returning with an exception.
+  address the_pc = __ pc();
+  __ set_last_Java_frame(noreg, noreg, the_pc);
   __ mov(c_rarg0, r15_thread);
+  __ andptr(rsp, -(StackAlignmentInBytes));    // Align stack
   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, OptoRuntime::handle_exception_C)));
 
   // Set an oopmap for the call site.  This oopmap will only be used if we
@@ -3632,9 +3808,9 @@ void OptoRuntime::generate_exception_blob() {
 
   OopMapSet* oop_maps = new OopMapSet();
 
-  oop_maps->add_gc_map( __ pc()-start, new OopMap(SimpleRuntimeFrame::framesize, 0));
+  oop_maps->add_gc_map(the_pc - start, new OopMap(SimpleRuntimeFrame::framesize, 0));
 
-  __ reset_last_Java_frame(false, false);
+  __ reset_last_Java_frame(false, true);
 
   // Restore callee-saved registers
 

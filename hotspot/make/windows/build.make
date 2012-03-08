@@ -297,6 +297,10 @@ $(variantDir)\local.make: checks
 	@ echo BUILDARCH=$(BUILDARCH)         			>> $@
 	@ echo Platform_arch=$(Platform_arch)        		>> $@
 	@ echo Platform_arch_model=$(Platform_arch_model)	>> $@
+	@ echo CXX=$(CXX)					>> $@
+	@ echo LD=$(LD)						>> $@
+	@ echo MT=$(MT)						>> $@
+	@ echo RC=$(RC)						>> $@
 	@ sh $(WorkSpace)/make/windows/get_msc_ver.sh		>> $@
 
 checks: checkVariant checkWorkSpace checkSA
