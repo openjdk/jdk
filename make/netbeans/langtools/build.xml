@@ -261,7 +261,8 @@
 
     <target name="-def-select-tool">
         <mkdir dir="${build.toolclasses.dir}"/>
-        <javac srcdir="${make.tools.dir}/SelectTool"
+        <javac srcdir="${make.tools.dir}"
+               includes="anttasks/SelectTool*"
                destdir="${build.toolclasses.dir}/"
                classpath="${ant.core.lib}"
                includeantruntime="false"
@@ -270,7 +271,7 @@
                    <compilerarg line="-Xlint"/>
         </javac>
         <taskdef name="select-tool"
-                 classname="SelectToolTask"
+                 classname="anttasks.SelectToolTask"
                  classpath="${build.toolclasses.dir}/"/>
     </target>
 
