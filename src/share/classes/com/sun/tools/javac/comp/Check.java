@@ -755,8 +755,8 @@ public class Check {
                             Env<AttrContext> env,
                             final List<JCExpression> argtrees,
                             List<Type> argtypes,
-                            boolean useVarargs) {
-        boolean warned = false;
+                            boolean useVarargs,
+                            boolean unchecked) {
         // System.out.println("call   : " + env.tree);
         // System.out.println("method : " + owntype);
         // System.out.println("actuals: " + argtypes);
@@ -770,7 +770,6 @@ public class Check {
             JCTree arg = args.head;
             Warner warn = convertWarner(arg.pos(), arg.type, formals.head);
             assertConvertible(arg, arg.type, formals.head, warn);
-            warned |= warn.hasNonSilentLint(LintCategory.UNCHECKED);
             args = args.tail;
             formals = formals.tail;
         }
@@ -780,7 +779,6 @@ public class Check {
                 JCTree arg = args.head;
                 Warner warn = convertWarner(arg.pos(), arg.type, varArg);
                 assertConvertible(arg, arg.type, varArg, warn);
-                warned |= warn.hasNonSilentLint(LintCategory.UNCHECKED);
                 args = args.tail;
             }
         } else if ((sym.flags() & VARARGS) != 0 && allowVarargs) {
@@ -792,7 +790,7 @@ public class Check {
                 log.warning(argtrees.last().pos(), "inexact.non-varargs.call",
                         types.elemtype(varParam), varParam);
         }
-        if (warned) {
+        if (unchecked) {
             warnUnchecked(env.tree.pos(),
                     "unchecked.meth.invocation.applied",
                     kindName(sym),
