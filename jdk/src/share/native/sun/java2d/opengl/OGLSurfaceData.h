@@ -286,7 +286,7 @@ void OGLSD_GetRasInfo(JNIEnv *env,
 void OGLSD_Unlock(JNIEnv *env,
                   SurfaceDataOps *ops, SurfaceDataRasInfo *pRasInfo);
 void OGLSD_Dispose(JNIEnv *env, SurfaceDataOps *ops);
-void OGLSD_Flush(JNIEnv *env, OGLSDOps *oglsdo);
+void OGLSD_Delete(JNIEnv *env, OGLSDOps *oglsdo);
 jint OGLSD_NextPowerOfTwo(jint val, jint max);
 jboolean OGLSD_InitFBObject(GLuint *fbobjectID, GLuint *depthID,
                             GLuint textureID, GLenum textureTarget,

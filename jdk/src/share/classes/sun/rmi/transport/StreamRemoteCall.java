@@ -199,6 +199,7 @@ public class StreamRemoteCall implements RemoteCall {
     /**
      * Do whatever it takes to execute the call.
      */
+    @SuppressWarnings("fallthrough")
     public void executeCall() throws Exception {
         byte returnType;
 
@@ -252,6 +253,7 @@ public class StreamRemoteCall implements RemoteCall {
             } else {
                 throw new UnmarshalException("Return type not Exception");
             }
+            // Exception is thrown before fallthrough can occur
         default:
             if (Transport.transportLog.isLoggable(Log.BRIEF)) {
                 Transport.transportLog.log(Log.BRIEF,

@@ -1,0 +1,141 @@
+." Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+." or visit www.oracle.com if you need additional information or have any
+." questions.
+."
+.TH jhat 1 "10 May 2011"
+
+.LP
+.SH "Name"
+jhat \- Java Heap Analysis Tool
+.LP
+.SH "SYNOPSIS"
+.LP
+.nf
+\f3
+.fl
+\fP\f3jhat\fP [ \f2options\fP ] <heap\-dump\-file>
+.fl
+
+.fl
+.fi
+
+.LP
+.SH "PARAMETERS"
+.LP
+.RS 3
+.TP 3
+options
+Options, if used, should follow immediately after the command name.
+.TP 3
+heap\-dump\-file
+Java binary heap dump file to be browsed. For a dump file that contains multiple heap dumps, you may specify which dump in the file by appending "#<number> to the file name, i.e. "foo.hprof#3".
+.RE
+
+.LP
+.SH "DESCRIPTION"
+.LP
+.LP
+The \f3jhat\fP command parses a java heap dump file and launches a webserver. jhat enables you to browse heap dumps using your favorite webbrowser. jhat supports pre\-designed queries (such as 'show all instances of a known class "Foo"') as well as \f3OQL\fP (\f3O\fPbject \f3Q\fPuery \f3L\fPanguage) \- a SQL\-like query language to query heap dumps. Help on OQL is available from the OQL help page shown by jhat. With the default port, OQL help is available at http://localhost:7000/oqlhelp/
+.LP
+.LP
+There are several ways to generate a java heap dump:
+.LP
+.RS 3
+.TP 2
+o
+Use jmap(1) \-dump option to obtain a heap dump at runtime;
+.TP 2
+o
+Use jconsole(1) option to obtain a heap dump via
+.na
+\f2HotSpotDiagnosticMXBean\fP @
+.fi
+http://download.oracle.com/javase/7/docs/jre/api/management/extension/com/sun/management/HotSpotDiagnosticMXBean.html at runtime;
+.TP 2
+o
+Heap dump will be generated when OutOfMemoryError is thrown by specifying \-XX:+HeapDumpOnOutOfMemoryError VM option;
+.TP 2
+o
+Use
+.na
+\f2hprof\fP @
+.fi
+http://java.sun.com/developer/technicalArticles/Programming/HPROF.html.
+.RE
+
+.LP
+.LP
+\f3NOTE:\fP This tool is \f3experimental\fP and may \f3not\fP be available in future versions of the JDK.
+.LP
+.SH "OPTIONS"
+.LP
+.RS 3
+.TP 3
+\-stack false/true
+Turn off tracking object allocation call stack. Note that if allocation site information is not available in the heap dump, you have to set this flag to false. Default is true.
+.TP 3
+\-refs false/true
+Turn off tracking of references to objects. Default is true. By default, back pointers (objects pointing to a given object a.k.a referrers or in\-coming references) are calculated for all objects in the heap.
+.TP 3
+\-port port\-number
+Set the port for the jhat's HTTP server. Default is 7000.
+.TP 3
+\-exclude exclude\-file
+Specify a file that lists data members that should be excluded from the "reachable objects" query. For example, if the file lists \f2java.lang.String.value\fP, then, whenever list of objects reachable from a specific object "o" are calculated, reference paths involving \f2java.lang.String.value\fP field will not considered.
+.TP 3
+\-baseline baseline\-dump\-file
+Specify a baseline heap dump. Objects in both heap dumps with the same object ID will be marked as not being "new". Other objects will be marked as "new". This is useful while comparing two different heap dumps.
+.TP 3
+\-debug int
+Set debug level for this tool. 0 means no debug output. Set higher values for more verbose modes.
+.TP 3
+\-version
+Report version number and exit.
+.TP 3
+\-h
+Output help message and exit.
+.TP 3
+\-help
+Output help message and exit.
+.TP 3
+\-J<flag>
+Pass <flag> to the Java virtual machine on which jhat is run. For example, \-J\-Xmx512m to use a maximum heap size of 512MB.
+.RE
+
+.LP
+.SH "SEE ALSO"
+.LP
+.RS 3
+.TP 2
+o
+jmap(1)
+.TP 2
+o
+jconsole(1)
+.TP 2
+o
+.na
+\f2hprof \- Heap and CPU profiling tool\fP @
+.fi
+http://java.sun.com/developer/technicalArticles/Programming/HPROF.html
+.RE
+
+.LP
+

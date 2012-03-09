@@ -29,6 +29,8 @@
 #
 
 BUILDDIR = ../../..
+JAVAC_MAX_WARNINGS = true
+JAVAC_WARNINGS_FATAL = true
 PACKAGE = sun.rmi.activation
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk

@@ -41,6 +41,12 @@
 #include "java_io_FileSystem.h"
 #include "java_io_UnixFileSystem.h"
 
+#if defined(_ALLBSD_SOURCE)
+#define dirent64 dirent
+#define readdir64_r readdir_r
+#define stat64 stat
+#define statvfs64 statvfs
+#endif
 
 /* -- Field IDs -- */
 

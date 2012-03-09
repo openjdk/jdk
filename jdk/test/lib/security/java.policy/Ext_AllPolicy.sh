@@ -50,7 +50,7 @@ fi
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     NULL=/dev/null
     PS=":"
     FS="/"
@@ -78,6 +78,6 @@ ${TESTJAVA}${FS}bin${FS}jar -cvf Ext_AllPolicy.jar Ext_AllPolicy.class
 
 rm Ext_AllPolicy.class
 ${TESTJAVA}${FS}bin${FS}java \
-	-Djava.security.manager -Djava.ext.dirs="${TESTCLASSES}" Ext_AllPolicy
+        -Djava.security.manager -Djava.ext.dirs="${TESTCLASSES}" Ext_AllPolicy
 
 exit $?

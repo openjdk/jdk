@@ -47,6 +47,7 @@ import java.lang.reflect.*;
 import javax.sound.sampled.*;
 
 import sun.awt.AppContext;
+import sun.awt.SunToolkit;
 
 import sun.swing.SwingLazyValue;
 import sun.swing.SwingUtilities2;
@@ -1909,6 +1910,15 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
 
         table.putDefaults(defaults);
     }
+
+    static int getFocusAcceleratorKeyMask() {
+        Toolkit tk = Toolkit.getDefaultToolkit();
+        if (tk instanceof SunToolkit) {
+            return ((SunToolkit)tk).getFocusAcceleratorKeyMask();
+        }
+        return ActionEvent.ALT_MASK;
+    }
+
 
 
     /**

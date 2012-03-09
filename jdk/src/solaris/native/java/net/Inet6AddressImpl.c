@@ -33,6 +33,9 @@
 #include <strings.h>
 #include <stdlib.h>
 #include <ctype.h>
+#ifdef _ALLBSD_SOURCE
+#include <unistd.h> /* gethostname */
+#endif
 
 #include "jvm.h"
 #include "jni_util.h"
@@ -70,8 +73,8 @@ Java_java_net_Inet6AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
     } else {
         // ensure null-terminated
         hostname[NI_MAXHOST] = '\0';
-#ifdef __linux__
-        /* On Linux gethostname() says "host.domain.sun.com".  On
+#if defined(__linux__) && defined(_ALLBSD_SOURCE)
+        /* On Linux/FreeBSD gethostname() says "host.domain.sun.com".  On
          * Solaris gethostname() says "host", so extra work is needed.
          */
 #else
@@ -107,7 +110,7 @@ Java_java_net_Inet6AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
             freeaddrinfo(res);
         }
 #endif /* AF_INET6 */
-#endif /* __linux__ */
+#endif /* __linux__ || _ALLBSD_SOURCE */
     }
     return (*env)->NewStringUTF(env, hostname);
 }

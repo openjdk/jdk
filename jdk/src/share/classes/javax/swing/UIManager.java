@@ -379,6 +379,9 @@ public class UIManager implements Serializable
                  "com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel"));
             }
         }
+        else if (osType == OSInfo.OSType.MACOSX) {
+            iLAFs.add(new LookAndFeelInfo("Mac OS X", "com.apple.laf.AquaLookAndFeel"));
+        }
         else {
             // GTK is not shipped on Windows.
             iLAFs.add(new LookAndFeelInfo("GTK+",
@@ -607,6 +610,12 @@ public class UIManager implements Serializable
                     ((SunToolkit) toolkit).isNativeGTKAvailable()) {
                 // May be set on Linux and Solaris boxs.
                 return "com.sun.java.swing.plaf.gtk.GTKLookAndFeel";
+            }
+            if (osType == OSInfo.OSType.MACOSX) {
+                if (toolkit.getClass() .getName()
+                                       .equals("sun.lwawt.macosx.LWCToolkit")) {
+                    return "com.apple.laf.AquaLookAndFeel";
+                }
             }
             if (osType == OSInfo.OSType.SOLARIS) {
                 return "com.sun.java.swing.plaf.motif.MotifLookAndFeel";
@@ -1214,6 +1223,11 @@ public class UIManager implements Serializable
             java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<Object>() {
                 public Object run() {
+                    OSInfo.OSType osType = AccessController.doPrivileged(OSInfo.getOSTypeAction());
+                    if (osType == OSInfo.OSType.MACOSX) {
+                        props.put(defaultLAFKey, getSystemLookAndFeelClassName());
+                    }
+
                     try {
                         File file = new File(makeSwingPropertiesFilename());
 

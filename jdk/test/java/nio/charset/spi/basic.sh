@@ -47,7 +47,7 @@ JAR=$TESTJAVA/bin/jar
 
 DIR=`pwd`
 case `uname` in
-  SunOS | Linux ) CPS=':' ;;
+  SunOS | Linux | Darwin ) CPS=':' ;;
   Windows* )      CPS=';' ;;
   CYGWIN*  )
     DIR=`/usr/bin/cygpath -a -s -m $DIR`
@@ -80,7 +80,7 @@ if [ $# -gt 0 ]; then
     L="$1"
     shift
     s=`uname -s`
-    if [ $s != Linux -a $s != SunOS ]; then
+    if [ $s != Linux -a $s != SunOS -a $s != Darwin ]; then
       echo "$L: Locales not supported on this system, skipping..."
       exit 0
     fi
