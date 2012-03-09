@@ -268,6 +268,15 @@ class Thread: public ThreadShadow {
   ObjectMonitor* omInUseList;                   // SLL to track monitors in circulation
   int omInUseCount;                             // length of omInUseList
 
+#ifdef ASSERT
+ private:
+  bool _visited_for_critical_count;
+
+ public:
+  void set_visited_for_critical_count(bool z) { _visited_for_critical_count = z; }
+  bool was_visited_for_critical_count() const   { return _visited_for_critical_count; }
+#endif
+
  public:
   enum {
     is_definitely_current_thread = true
