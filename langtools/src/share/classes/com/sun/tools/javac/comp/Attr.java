@@ -2725,6 +2725,8 @@ public class Attr extends JCTree.Visitor {
                                       useVarargs,
                                       noteWarner);
 
+        boolean unchecked = noteWarner.hasNonSilentLint(LintCategory.UNCHECKED);
+
         // If this fails, something went wrong; we should not have
         // found the identifier in the first place.
         if (owntype == null) {
@@ -2735,10 +2737,10 @@ public class Attr extends JCTree.Visitor {
                           Type.toString(pt().getParameterTypes()));
             owntype = types.createErrorType(site);
             return types.createErrorType(site);
-        } else if (owntype.getReturnType().tag == FORALL) {
+        } else if (owntype.getReturnType().tag == FORALL && !unchecked) {
             return owntype;
         } else {
-            return chk.checkMethod(owntype, sym, env, argtrees, argtypes, useVarargs);
+            return chk.checkMethod(owntype, sym, env, argtrees, argtypes, useVarargs, unchecked);
         }
     }
 
