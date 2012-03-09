@@ -1,5 +1,5 @@
-# 
-# Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+#
+# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,28 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-# 
-
-#
-# 
-
-#
-# Master Hotspot version file.  These values may be overridden by a control
-# workspace build.  This file format must remain compatible with both
-# GNU Makefile and Microsoft nmake formats.
+#  
 #
 
-# Don't put quotes (fail windows build).
-HOTSPOT_VM_COPYRIGHT=Copyright 2011
+# Rules to build whitebox testing library, used by vm.make
+WB = wb
 
-HS_MAJOR_VER=24
-HS_MINOR_VER=0
-HS_BUILD_NUMBER=03
+WBSRCDIR = $(GAMMADIR)/src/share/tools/whitebox
 
-JDK_MAJOR_VER=1
-JDK_MINOR_VER=8
-JDK_MICRO_VER=0
+WB_JAR = $(GENERATED)/$(WB).jar
 
-# Previous (bootdir) JDK version
-JDK_PREVIOUS_VERSION=1.7.0
+WB_JAVA_SRCS = $(shell find $(WBSRCDIR) -name '*.java')
+WB_JAVA_CLASSDIR = $(GENERATED)/wb/classes
+
+WB_JAVA_CLASSES  = $(patsubst $(WBSRCDIR)/%,$(WB_JAVA_CLASSDIR)/%, \
+	$(patsubst %.java,%.class,$(WB_JAVA_SRCS)))
+
+$(WB_JAVA_CLASSDIR)/%.class: $(WBSRCDIR)/%.java $(WB_JAVA_CLASSDIR)
+	$(REMOTE) $(COMPILE.JAVAC) -nowarn -d $(WB_JAVA_CLASSDIR) $<
+
+$(WB_JAR): $(WB_JAVA_CLASSES)
+	$(QUIETLY) $(REMOTE) $(RUN.JAR) cf $@ -C $(WB_JAVA_CLASSDIR)/ .
+
+$(WB_JAVA_CLASSDIR):
+	$(QUIETLY) mkdir -p $@
+
