@@ -385,7 +385,6 @@ public class Infer {
                                   final Warner warn) throws InferenceException {
         //-System.err.println("instantiateMethod(" + tvars + ", " + mt + ", " + argtypes + ")"); //DEBUG
         List<Type> undetvars = Type.map(tvars, fromTypeVarFun);
-        //final List<Type> capturedArgs = types.capture(argtypes);
 
         final List<Type> capturedArgs =
                 rs.checkRawArgumentsAcceptable(env, undetvars, argtypes, mt.getParameterTypes(),
@@ -451,11 +450,12 @@ public class Infer {
                                        types.subst(getThrownTypes(), tvars, inferred),
                                        qtype.tsym);
                     // check that actuals conform to inferred formals
+                    warn.clear();
                     checkArgumentsAcceptable(env, capturedArgs, owntype.getParameterTypes(), allowBoxing, useVarargs, warn);
                     // check that inferred bounds conform to their bounds
                     checkWithinBounds(all_tvars,
                            types.subst(inferredTypes, tvars, inferred), warn);
-                    qtype = chk.checkMethod(owntype, msym, env, TreeInfo.args(env.tree), capturedArgs, useVarargs);
+                    qtype = chk.checkMethod(owntype, msym, env, TreeInfo.args(env.tree), capturedArgs, useVarargs, warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED));
                 }
             };
         }
