@@ -2221,7 +2221,7 @@ public:
   // traps as per trap.h (SPARC ABI?)
 
   void breakpoint_trap();
-  void breakpoint_trap(Condition c, CC cc = icc);
+  void breakpoint_trap(Condition c, CC cc);
   void flush_windows_trap();
   void clean_windows_trap();
   void get_psr_trap();
