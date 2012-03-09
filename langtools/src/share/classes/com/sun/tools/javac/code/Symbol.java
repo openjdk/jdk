@@ -1235,7 +1235,7 @@ public abstract class Symbol implements Element {
             // if origin is derived from a raw type, we might have missed
             // an implementation because we do not know enough about instantiations.
             // in this case continue with the supertype as origin.
-            if (types.isDerivedRaw(origin.type))
+            if (types.isDerivedRaw(origin.type) && !origin.isInterface())
                 return implementation(types.supertype(origin.type).tsym, types, checkResult);
             else
                 return null;
