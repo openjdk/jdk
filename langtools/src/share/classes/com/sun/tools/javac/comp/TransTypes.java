@@ -107,7 +107,7 @@ public class TransTypes extends TreeTranslator {
         make.at(tree.pos);
         if (!types.isSameType(tree.type, target)) {
             if (!resolve.isAccessible(env, target.tsym))
-                resolve.logAccessError(env, tree, target);
+                resolve.logAccessErrorInternal(env, tree, target);
             tree = make.TypeCast(make.Type(target), tree).setType(target);
         }
         make.pos = oldpos;
