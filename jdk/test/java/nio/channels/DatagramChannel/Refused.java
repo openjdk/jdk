@@ -104,16 +104,9 @@ public class Refused {
             Thread.sleep(2000);
             inBuf.clear();
             server.read(inBuf);
-            if (onSolarisOrLinux())
-                throw new Exception("Expected PUE not thrown");
         } catch (PortUnreachableException pue) {
             System.err.println("received PUE");
         }
         server.close();
-    }
-
-    static boolean onSolarisOrLinux() {
-        String osName = System.getProperty("os.name");
-        return osName.startsWith("SunOS") || osName.startsWith("Linux");
     }
 }

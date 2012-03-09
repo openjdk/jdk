@@ -1,0 +1,5329 @@
+." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+." or visit www.oracle.com if you need additional information or have any
+." questions.
+."
+.TH jstat 1 "10 May 2011"
+
+.LP
+.SH "Name"
+jstat \- Java Virtual Machine Statistics Monitoring Tool
+.LP
+.SH "SYNOPSIS"
+.LP
+.nf
+\f3
+.fl
+\fP\f3jstat\fP [ \f2generalOption\fP | \f2outputOptions\fP \f2vmid\fP [\f2interval\fP[s|ms] [\f2count\fP]] ]
+.fl
+.fi
+
+.LP
+.SH "PARAMETERS"
+.LP
+.RS 3
+.TP 3
+generalOption
+A single general command\-line option (\-help, \-options, or \-version)
+.TP 3
+outputOptions
+One or more output options, consisting of a single \f2statOption\fP, plus any of the \-t, \-h, and \-J options.
+.TP 3
+vmid
+Virtual machine identifier, a string indicating the target Java virtual machine (JVM). The general syntax is
+.nf
+\f3
+.fl
+[\fP\f4protocol\fP\f3:][//]\fP\f4lvmid\fP[@\f2hostname\fP[:\f2port\fP]/\f2servername\fP]
+.fl
+.fi
+The syntax of the vmid string largely corresponds to the syntax of a URI. The \f2vmid\fP can vary from a simple integer representing a local JVM to a more complex construction specifying a communications protocol, port number, and other implementation\-specific values. See Virtual Machine Identifier for details.
+.TP 3
+interval[s|ms]
+Sampling interval in the specified units, seconds (s) or milliseconds (ms). Default units are milliseconds. Must be a positive integer. If specified, \f3jstat\fP will produce its output at each interval.
+.TP 3
+count
+Number of samples to display. Default value is infinity; that is, \f3jstat\fP displays statistics until the target JVM terminates or the \f3jstat\fP command is terminated. Must be a positive integer.
+.RE
+
+.LP
+.SH "DESCRIPTION"
+.LP
+.LP
+The \f3jstat\fP tool displays performance statistics for an instrumented HotSpot Java virtual machine (JVM). The target JVM is identified by its virtual machine identifier, or \f2vmid\fP option described below.
+.LP
+.LP
+\f3NOTE\fP: This utility is unsupported and may not be available in future versions of the JDK. It is not currently available on Windows 98 and Windows ME. platforms.
+.br
+
+.LP
+.SS
+VIRTUAL MACHINE IDENTIFIER
+.LP
+.LP
+The syntax of the \f2vmid\fP string largely corresponds to the syntax of a URI:
+.LP
+.nf
+\f3
+.fl
+[\fP\f4protocol\fP\f3:][//]\fP\f4lvmid\fP[@\f2hostname\fP][:\f2port\fP][/\f2servername\fP]
+.fl
+.fi
+
+.LP
+.RS 3
+.TP 3
+protocol
+The communications protocol. If the \f2protocol\fP is omitted and a \f2hostname\fP is not specified, the default protocol is a platform specific optimized local protocol. If the \f2protocol\fP is omitted and a \f2hostname\fP is specified, then the default protocol is \f3rmi\fP.
+.TP 3
+lvmid
+The local virtual machine identifier for the target JVM. The \f2lvmid\fP is a platform\-specific value that uniquely identifies a JVM on a system. The \f2lvmid\fP is the only required component of a virtual machine identifier. The \f2lvmid\fP is typically, but not necessarily, the operating system's process identifier for the target JVM process. You can use the jps(1) command to determine the \f2lvmid\fP. Also, you can determine \f2lvmid\fP on Unix platforms with the \f3ps\fP command, and on Windows with the Windows Task Manager.
+.TP 3
+hostname
+A hostname or IP address indicating the target host. If \f2hostname\fP is omitted, then the target host is the local host.
+.TP 3
+port
+The default port for communicating with the remote server. If the \f2hostname\fP is omitted or the \f2protocol\fP specifies an optimized, local protocol, then \f2port\fP is ignored. Otherwise, treatment of the \f2port\fP parameter is implementation specific. For the default \f3rmi\fP protocol, the \f2port\fP indicates the port number for the rmiregistry on the remote host. If \f2port\fP is omitted, and \f2protocol\fP indicates \f3rmi\fP, then the default rmiregistry port (1099) is used.
+.TP 3
+servername
+The treatment of this parameter depends on implementation. For the optimized local protocol, this field is ignored. For the \f3rmi\fP protocol, it represents the name of the RMI remote object on the remote host.
+.RE
+
+.LP
+.SH "OPTIONS"
+.LP
+.LP
+The \f3jstat\fP command supports two types of options, general options and output options. General options cause \f3jstat\fP to display simple usage and version information. Output options determine the content and format of the statistical output.
+.br
+
+.LP
+.LP
+\f3NOTE\fP: All options, and their functionality are subject to change or removal in future releases.
+.LP
+.SS
+GENERAL OPTIONS
+.LP
+.LP
+If you specify one of the general options, you cannot specify any other option or parameter.
+.LP
+.RS 3
+.TP 3
+\-help
+Display help message.
+.TP 3
+\-version
+Display version information.
+.TP 3
+\-options
+Display list of statistics options. See the Output Options section below.
+.RE
+
+.LP
+.SS
+OUTPUT OPTIONS
+.LP
+.LP
+If you do not specify a general option, then you can specify output options. Output options determine the content and format of \f3jstat\fP's output, and consist of a single \f2statOption\fP, plus any of the other output options (\-h, \-t, and \-J). The \f2statOption\fP must come first.
+.LP
+.LP
+Output is formatted as a table, with columns are separated by spaces. A header row with titles describes the columns. Use the \f3\-h\fP option to set the frequency at which the header is displayed. Column header names are generally consistent between the different options. In general, if two options provide a column with the same name, then the data source for the two columns are the same.
+.LP
+.LP
+Use the \f3\-t\fP option to display a time stamp column, labeled \f2Timestamp\fP as the first column of output. The \f2Timestamp\fP column contains the elapsed time, in seconds, since startup of the target JVM. The resolution of the time stamp is dependent on various factors and is subject to variation due to delayed thread scheduling on heavily loaded systems.
+.LP
+.LP
+Use the \f2interval\fP and \f2count\fP parameters to determine how frequently and how many times, respectively, \f3jstat\fP displays its output.
+.LP
+.LP
+\f3NOTE\fP: You are advised not to write scripts to parse \f3jstat's\fP output since the format may change in future releases. If you choose to write scripts that parse \f3jstat\fP output, expect to modify them for future releases of this tool.
+.LP
+.RS 3
+.TP 3
+\-statOption
+Determines the statistics information that \f3jstat\fP displays. The following table lists the available options. Use the \f3\-options\fP general option to display the list of options for a particular platform installation.
+.br
+.br
+.LP
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 34 \n(.lu
+.eo
+.am 81
+.br
+.di a+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Statistics on the behavior of the class loader.
+.br
+.di
+.nr a| \n(dn
+.nr a- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di b+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Statistics of the behavior of the HotSpot Just\-in\-Time compiler.
+.br
+.di
+.nr b| \n(dn
+.nr b- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di c+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Statistics of the behavior of the garbage collected heap.
+.br
+.di
+.nr c| \n(dn
+.nr c- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di d+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Statistics of the capacities of the generations and their corresponding spaces.
+.br
+.di
+.nr d| \n(dn
+.nr d- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di e+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Summary of garbage collection statistics (same as \f3\-gcutil\fP), with the cause of the last and current (if applicable) garbage collection events.
+.br
+.di
+.nr e| \n(dn
+.nr e- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di f+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Statistics of the behavior of the new generation.
+.br
+.di
+.nr f| \n(dn
+.nr f- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di g+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Statistics of the sizes of the new generations and its corresponding spaces.
+.br
+.di
+.nr g| \n(dn
+.nr g- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di h+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Statistics of the behavior of the old and permanent generations.
+.br
+.di
+.nr h| \n(dn
+.nr h- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di i+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Statistics of the sizes of the old generation.
+.br
+.di
+.nr i| \n(dn
+.nr i- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di j+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Statistics of the sizes of the permanent generation.
+.br
+.di
+.nr j| \n(dn
+.nr j- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di k+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Summary of garbage collection statistics.
+.br
+.di
+.nr k| \n(dn
+.nr k- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di l+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+HotSpot compilation method statistics.
+.br
+.di
+.nr l| \n(dn
+.nr l- \n(dl
+..
+.ec \
+.35
+.nf
+.ll \n(34u
+.nr 80 0
+.nr 38 \w\f3Option\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wclass
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wcompiler
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wgc
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wgccapacity
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wgccause
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wgcnew
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wgcnewcapacity
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wgcold
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wgcoldcapacity
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wgcpermcapacity
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wgcutil
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wprintcompilation
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \w\f3Displays...\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 \n(a-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(b-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(c-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(d-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(e-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(f-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(g-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(h-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(i-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(j-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(k-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(l-
+.if \n(81<\n(38 .nr 81 \n(38
+.35
+.nf
+.ll \n(34u
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if \n(TW>\n(.li .tm Table at line 215 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3Option\fP\h'|\n(41u'\f3Displays...\fP
+.ne \n(a|u+\n(.Vu
+.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'class\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.a+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(b|u+\n(.Vu
+.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'compiler\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.b+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(c|u+\n(.Vu
+.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'gc\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.c+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(d|u+\n(.Vu
+.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'gccapacity\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.d+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(e|u+\n(.Vu
+.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'gccause\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.e+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(f|u+\n(.Vu
+.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'gcnew\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.f+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(g|u+\n(.Vu
+.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'gcnewcapacity\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.g+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(h|u+\n(.Vu
+.if (\n(h|+\n(#^-1v)>\n(#- .nr #- +(\n(h|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'gcold\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.h+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(i|u+\n(.Vu
+.if (\n(i|+\n(#^-1v)>\n(#- .nr #- +(\n(i|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'gcoldcapacity\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.i+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(j|u+\n(.Vu
+.if (\n(j|+\n(#^-1v)>\n(#- .nr #- +(\n(j|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'gcpermcapacity\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.j+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(k|u+\n(.Vu
+.if (\n(k|+\n(#^-1v)>\n(#- .nr #- +(\n(k|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'gcutil\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.k+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(l|u+\n(.Vu
+.if (\n(l|+\n(#^-1v)>\n(#- .nr #- +(\n(l|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'printcompilation\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.l+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.fc
+.nr T. 1
+.T# 1
+.35
+.rm a+
+.rm b+
+.rm c+
+.rm d+
+.rm e+
+.rm f+
+.rm g+
+.rm h+
+.rm i+
+.rm j+
+.rm k+
+.rm l+
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-52
+.TP 3
+\-h n
+Display a column header every \f2n\fP samples (output rows), where \f2n\fP is a positive integer. Default value is 0, which displays the column header above the first row of data.
+.TP 3
+\-t n
+Display a timestamp column as the first column of output. The timestamp is the time since the start time of the target JVM.
+.TP 3
+\-JjavaOption
+Pass \f2javaOption\fP to the \f3java\fP application launcher. For example, \f3\-J\-Xms48m\fP sets the startup memory to 48 megabytes. For a complete list of options, see java(1)
+.RE
+
+.LP
+.SS
+STATOPTIONS AND OUTPUT
+.LP
+.LP
+The following tables summarize the columns that \f3jstat\fP outputs for each \f2statOption\fP.
+.br
+
+.LP
+.SS
+\-class Option
+.LP
+.LP
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 34 \n(.lu
+.eo
+.am 81
+.br
+.di a+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Number of classes unloaded.
+.br
+.di
+.nr a| \n(dn
+.nr a- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di b+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Number of Kbytes unloaded.
+.br
+.di
+.nr b| \n(dn
+.nr b- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di c+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Time spent performing class load and unload operations.
+.br
+.di
+.nr c| \n(dn
+.nr c- \n(dl
+..
+.ec \
+.35
+.nf
+.ll \n(34u
+.nr 80 0
+.nr 38 \wClass Loader Statistics
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3Column\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wLoaded
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wBytes
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wUnloaded
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wBytes
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wTime
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \w\f3Description\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wNumber of classes loaded.
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wNumber of Kbytes loaded.
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 \n(a-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(b-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(c-
+.if \n(81<\n(38 .nr 81 \n(38
+.35
+.nf
+.ll \n(34u
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if \n(TW>\n(.li .tm Table at line 261 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Class Loader Statistics\h'|\n(41u'
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3Column\fP\h'|\n(41u'\f3Description\fP
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Loaded\h'|\n(41u'Number of classes loaded.
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Bytes\h'|\n(41u'Number of Kbytes loaded.
+.ne \n(a|u+\n(.Vu
+.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Unloaded\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.a+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(b|u+\n(.Vu
+.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Bytes\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.b+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(c|u+\n(.Vu
+.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Time\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.c+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.fc
+.nr T. 1
+.T# 1
+.35
+.rm a+
+.rm b+
+.rm c+
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-21
+
+.LP
+.SS
+\-compiler Option
+.LP
+.LP
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 34 \n(.lu
+.eo
+.am 81
+.br
+.di a+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Number of compilation tasks performed.
+.br
+.di
+.nr a| \n(dn
+.nr a- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di b+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Number of compilation tasks that failed.
+.br
+.di
+.nr b| \n(dn
+.nr b- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di c+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Number of compilation tasks that were invalidated.
+.br
+.di
+.nr c| \n(dn
+.nr c- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di d+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Time spent performing compilation tasks.
+.br
+.di
+.nr d| \n(dn
+.nr d- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di e+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Compile type of the last failed compilation.
+.br
+.di
+.nr e| \n(dn
+.nr e- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di f+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Class name and method for the last failed compilation.
+.br
+.di
+.nr f| \n(dn
+.nr f- \n(dl
+..
+.ec \
+.35
+.nf
+.ll \n(34u
+.nr 80 0
+.nr 38 \wHotSpot Just\-In\-Time Compiler Statistics
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3Column\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wCompiled
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wFailed
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wInvalid
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wTime
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wFailedType
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wFailedMethod
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \w\f3Description\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 \n(a-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(b-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(c-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(d-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(e-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(f-
+.if \n(81<\n(38 .nr 81 \n(38
+.35
+.nf
+.ll \n(34u
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if \n(TW>\n(.li .tm Table at line 297 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'HotSpot Just\-In\-Time Compiler Statistics\h'|\n(41u'
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3Column\fP\h'|\n(41u'\f3Description\fP
+.ne \n(a|u+\n(.Vu
+.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Compiled\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.a+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(b|u+\n(.Vu
+.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Failed\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.b+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(c|u+\n(.Vu
+.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Invalid\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.c+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(d|u+\n(.Vu
+.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Time\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.d+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(e|u+\n(.Vu
+.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'FailedType\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.e+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(f|u+\n(.Vu
+.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'FailedMethod\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.f+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.fc
+.nr T. 1
+.T# 1
+.35
+.rm a+
+.rm b+
+.rm c+
+.rm d+
+.rm e+
+.rm f+
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-29
+
+.LP
+.SS
+\-gc Option
+.LP
+.LP
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 34 \n(.lu
+.eo
+.am 81
+.br
+.di a+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current survivor space 0 capacity (KB).
+.br
+.di
+.nr a| \n(dn
+.nr a- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di b+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current survivor space 1 capacity (KB).
+.br
+.di
+.nr b| \n(dn
+.nr b- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di c+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Survivor space 0 utilization (KB).
+.br
+.di
+.nr c| \n(dn
+.nr c- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di d+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Survivor space 1 utilization (KB).
+.br
+.di
+.nr d| \n(dn
+.nr d- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di e+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current eden space capacity (KB).
+.br
+.di
+.nr e| \n(dn
+.nr e- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di f+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Eden space utilization (KB).
+.br
+.di
+.nr f| \n(dn
+.nr f- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di g+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current old space capacity (KB).
+.br
+.di
+.nr g| \n(dn
+.nr g- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di h+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Old space utilization (KB).
+.br
+.di
+.nr h| \n(dn
+.nr h- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di i+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current permanent space capacity (KB).
+.br
+.di
+.nr i| \n(dn
+.nr i- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di j+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Permanent space utilization (KB).
+.br
+.di
+.nr j| \n(dn
+.nr j- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di k+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Number of young generation GC Events.
+.br
+.di
+.nr k| \n(dn
+.nr k- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di l+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Young generation garbage collection time.
+.br
+.di
+.nr l| \n(dn
+.nr l- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di m+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Full garbage collection time.
+.br
+.di
+.nr m| \n(dn
+.nr m- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di n+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Total garbage collection time.
+.br
+.di
+.nr n| \n(dn
+.nr n- \n(dl
+..
+.ec \
+.35
+.nf
+.ll \n(34u
+.nr 80 0
+.nr 38 \wGarbage\-collected heap statistics
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3Column\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wS0C
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wS1C
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wS0U
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wS1U
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wEC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wEU
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wOC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wOU
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wPC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wPU
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wYGC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wYGCT
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wFGC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wFGCT
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wGCT
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \w\f3Description\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wNumber of full GC events.
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 \n(a-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(b-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(c-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(d-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(e-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(f-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(g-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(h-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(i-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(j-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(k-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(l-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(m-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(n-
+.if \n(81<\n(38 .nr 81 \n(38
+.35
+.nf
+.ll \n(34u
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if \n(TW>\n(.li .tm Table at line 367 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Garbage\-collected heap statistics\h'|\n(41u'
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3Column\fP\h'|\n(41u'\f3Description\fP
+.ne \n(a|u+\n(.Vu
+.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'S0C\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.a+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(b|u+\n(.Vu
+.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'S1C\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.b+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(c|u+\n(.Vu
+.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'S0U\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.c+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(d|u+\n(.Vu
+.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'S1U\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.d+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(e|u+\n(.Vu
+.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'EC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.e+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(f|u+\n(.Vu
+.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'EU\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.f+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(g|u+\n(.Vu
+.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'OC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.g+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(h|u+\n(.Vu
+.if (\n(h|+\n(#^-1v)>\n(#- .nr #- +(\n(h|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'OU\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.h+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(i|u+\n(.Vu
+.if (\n(i|+\n(#^-1v)>\n(#- .nr #- +(\n(i|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'PC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.i+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(j|u+\n(.Vu
+.if (\n(j|+\n(#^-1v)>\n(#- .nr #- +(\n(j|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'PU\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.j+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(k|u+\n(.Vu
+.if (\n(k|+\n(#^-1v)>\n(#- .nr #- +(\n(k|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'YGC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.k+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(l|u+\n(.Vu
+.if (\n(l|+\n(#^-1v)>\n(#- .nr #- +(\n(l|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'YGCT\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.l+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'FGC\h'|\n(41u'Number of full GC events.
+.ne \n(m|u+\n(.Vu
+.if (\n(m|+\n(#^-1v)>\n(#- .nr #- +(\n(m|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'FGCT\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.m+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(n|u+\n(.Vu
+.if (\n(n|+\n(#^-1v)>\n(#- .nr #- +(\n(n|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'GCT\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.n+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.fc
+.nr T. 1
+.T# 1
+.35
+.rm a+
+.rm b+
+.rm c+
+.rm d+
+.rm e+
+.rm f+
+.rm g+
+.rm h+
+.rm i+
+.rm j+
+.rm k+
+.rm l+
+.rm m+
+.rm n+
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-63
+
+.LP
+.SS
+\-gccapacity Option
+.LP
+.LP
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 34 \n(.lu
+.eo
+.am 81
+.br
+.di a+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Minimum new generation capacity (KB).
+.br
+.di
+.nr a| \n(dn
+.nr a- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di b+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Maximum new generation capacity (KB).
+.br
+.di
+.nr b| \n(dn
+.nr b- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di c+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current new generation capacity (KB).
+.br
+.di
+.nr c| \n(dn
+.nr c- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di d+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current survivor space 0 capacity (KB).
+.br
+.di
+.nr d| \n(dn
+.nr d- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di e+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current survivor space 1 capacity (KB).
+.br
+.di
+.nr e| \n(dn
+.nr e- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di f+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current eden space capacity (KB).
+.br
+.di
+.nr f| \n(dn
+.nr f- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di g+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Minimum old generation capacity (KB).
+.br
+.di
+.nr g| \n(dn
+.nr g- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di h+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Maximum old generation capacity (KB).
+.br
+.di
+.nr h| \n(dn
+.nr h- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di i+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current old generation capacity (KB).
+.br
+.di
+.nr i| \n(dn
+.nr i- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di j+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current old space capacity (KB).
+.br
+.di
+.nr j| \n(dn
+.nr j- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di k+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Minimum permanent generation capacity (KB).
+.br
+.di
+.nr k| \n(dn
+.nr k- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di l+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Maximum Permanent generation capacity (KB).
+.br
+.di
+.nr l| \n(dn
+.nr l- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di m+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current Permanent generation capacity (KB).
+.br
+.di
+.nr m| \n(dn
+.nr m- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di n+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current Permanent space capacity (KB).
+.br
+.di
+.nr n| \n(dn
+.nr n- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di o+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Number of Young generation GC Events.
+.br
+.di
+.nr o| \n(dn
+.nr o- \n(dl
+..
+.ec \
+.35
+.nf
+.ll \n(34u
+.nr 80 0
+.nr 38 \wMemory Pool Generation and Space Capacities
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3Column\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wNGCMN
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wNGCMX
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wNGC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wS0C
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wS1C
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wEC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wOGCMN
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wOGCMX
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wOGC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wOC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wPGCMN
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wPGCMX
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wPGC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wPC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wYGC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wFGC
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \w\f3Description\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wNumber of Full GC Events.
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 \n(a-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(b-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(c-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(d-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(e-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(f-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(g-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(h-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(i-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(j-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(k-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(l-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(m-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(n-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(o-
+.if \n(81<\n(38 .nr 81 \n(38
+.35
+.nf
+.ll \n(34u
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if \n(TW>\n(.li .tm Table at line 441 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Memory Pool Generation and Space Capacities\h'|\n(41u'
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3Column\fP\h'|\n(41u'\f3Description\fP
+.ne \n(a|u+\n(.Vu
+.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'NGCMN\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.a+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(b|u+\n(.Vu
+.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'NGCMX\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.b+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(c|u+\n(.Vu
+.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'NGC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.c+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(d|u+\n(.Vu
+.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'S0C\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.d+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(e|u+\n(.Vu
+.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'S1C\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.e+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(f|u+\n(.Vu
+.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'EC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.f+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(g|u+\n(.Vu
+.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'OGCMN\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.g+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(h|u+\n(.Vu
+.if (\n(h|+\n(#^-1v)>\n(#- .nr #- +(\n(h|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'OGCMX\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.h+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(i|u+\n(.Vu
+.if (\n(i|+\n(#^-1v)>\n(#- .nr #- +(\n(i|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'OGC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.i+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(j|u+\n(.Vu
+.if (\n(j|+\n(#^-1v)>\n(#- .nr #- +(\n(j|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'OC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.j+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(k|u+\n(.Vu
+.if (\n(k|+\n(#^-1v)>\n(#- .nr #- +(\n(k|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'PGCMN\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.k+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(l|u+\n(.Vu
+.if (\n(l|+\n(#^-1v)>\n(#- .nr #- +(\n(l|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'PGCMX\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.l+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(m|u+\n(.Vu
+.if (\n(m|+\n(#^-1v)>\n(#- .nr #- +(\n(m|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'PGC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.m+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(n|u+\n(.Vu
+.if (\n(n|+\n(#^-1v)>\n(#- .nr #- +(\n(n|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'PC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.n+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(o|u+\n(.Vu
+.if (\n(o|+\n(#^-1v)>\n(#- .nr #- +(\n(o|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'YGC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.o+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'FGC\h'|\n(41u'Number of Full GC Events.
+.fc
+.nr T. 1
+.T# 1
+.35
+.rm a+
+.rm b+
+.rm c+
+.rm d+
+.rm e+
+.rm f+
+.rm g+
+.rm h+
+.rm i+
+.rm j+
+.rm k+
+.rm l+
+.rm m+
+.rm n+
+.rm o+
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-67
+
+.LP
+.SS
+\-gccause Option
+.LP
+.LP
+This option displays the same summary of garbage collection statistics as the \f3\-gcutil\fP option, but includes the causes of the last garbage collection event and (if applicable) the current garbage collection event. In addition to the columns listed for \f3\-gcutil\fP, this option adds the following columns:
+.LP
+.LP
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 34 \n(.lu
+.eo
+.am 81
+.br
+.di a+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Cause of last Garbage Collection.
+.br
+.di
+.nr a| \n(dn
+.nr a- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di b+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Cause of current Garbage Collection.
+.br
+.di
+.nr b| \n(dn
+.nr b- \n(dl
+..
+.ec \
+.35
+.nf
+.ll \n(34u
+.nr 80 0
+.nr 38 \wGarbage Collection Statistics, Including GC Events
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3Column\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wLGCC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wGCC
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \w\f3Description\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 \n(a-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(b-
+.if \n(81<\n(38 .nr 81 \n(38
+.35
+.nf
+.ll \n(34u
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if \n(TW>\n(.li .tm Table at line 464 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Garbage Collection Statistics, Including GC Events\h'|\n(41u'
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3Column\fP\h'|\n(41u'\f3Description\fP
+.ne \n(a|u+\n(.Vu
+.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'LGCC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.a+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(b|u+\n(.Vu
+.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'GCC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.b+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.fc
+.nr T. 1
+.T# 1
+.35
+.rm a+
+.rm b+
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-13
+
+.LP
+.SS
+\-gcnew Option
+.LP
+.LP
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 34 \n(.lu
+.eo
+.am 81
+.br
+.di a+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current survivor space 0 capacity (KB).
+.br
+.di
+.nr a| \n(dn
+.nr a- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di b+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current survivor space 1 capacity (KB).
+.br
+.di
+.nr b| \n(dn
+.nr b- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di c+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Survivor space 0 utilization (KB).
+.br
+.di
+.nr c| \n(dn
+.nr c- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di d+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Survivor space 1 utilization (KB).
+.br
+.di
+.nr d| \n(dn
+.nr d- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di e+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Maximum tenuring threshold.
+.br
+.di
+.nr e| \n(dn
+.nr e- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di f+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Desired survivor size (KB).
+.br
+.di
+.nr f| \n(dn
+.nr f- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di g+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current eden space capacity (KB).
+.br
+.di
+.nr g| \n(dn
+.nr g- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di h+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Eden space utilization (KB).
+.br
+.di
+.nr h| \n(dn
+.nr h- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di i+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Number of young generation GC events.
+.br
+.di
+.nr i| \n(dn
+.nr i- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di j+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Young generation garbage collection time.
+.br
+.di
+.nr j| \n(dn
+.nr j- \n(dl
+..
+.ec \
+.35
+.nf
+.ll \n(34u
+.nr 80 0
+.nr 38 \wNew Generation Statistics
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3Column\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wS0C
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wS1C
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wS0U
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wS1U
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wTT
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wMTT
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wDSS
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wEC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wEU
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wYGC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wYGCT
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \w\f3Description\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wTenuring threshold.
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 \n(a-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(b-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(c-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(d-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(e-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(f-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(g-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(h-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(i-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(j-
+.if \n(81<\n(38 .nr 81 \n(38
+.35
+.nf
+.ll \n(34u
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if \n(TW>\n(.li .tm Table at line 518 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'New Generation Statistics\h'|\n(41u'
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3Column\fP\h'|\n(41u'\f3Description\fP
+.ne \n(a|u+\n(.Vu
+.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'S0C\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.a+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(b|u+\n(.Vu
+.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'S1C\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.b+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(c|u+\n(.Vu
+.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'S0U\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.c+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(d|u+\n(.Vu
+.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'S1U\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.d+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'TT\h'|\n(41u'Tenuring threshold.
+.ne \n(e|u+\n(.Vu
+.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'MTT\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.e+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(f|u+\n(.Vu
+.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'DSS\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.f+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(g|u+\n(.Vu
+.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'EC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.g+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(h|u+\n(.Vu
+.if (\n(h|+\n(#^-1v)>\n(#- .nr #- +(\n(h|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'EU\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.h+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(i|u+\n(.Vu
+.if (\n(i|+\n(#^-1v)>\n(#- .nr #- +(\n(i|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'YGC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.i+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(j|u+\n(.Vu
+.if (\n(j|+\n(#^-1v)>\n(#- .nr #- +(\n(j|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'YGCT\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.j+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.fc
+.nr T. 1
+.T# 1
+.35
+.rm a+
+.rm b+
+.rm c+
+.rm d+
+.rm e+
+.rm f+
+.rm g+
+.rm h+
+.rm i+
+.rm j+
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-47
+
+.LP
+.SS
+\-gcnewcapacity Option
+.LP
+.LP
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 34 \n(.lu
+.eo
+.am 81
+.br
+.di a+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Minimum new generation capacity (KB).
+.br
+.di
+.nr a| \n(dn
+.nr a- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di b+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Maximum new generation capacity (KB).
+.br
+.di
+.nr b| \n(dn
+.nr b- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di c+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current new generation capacity (KB).
+.br
+.di
+.nr c| \n(dn
+.nr c- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di d+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Maximum survivor space 0 capacity (KB).
+.br
+.di
+.nr d| \n(dn
+.nr d- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di e+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current survivor space 0 capacity (KB).
+.br
+.di
+.nr e| \n(dn
+.nr e- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di f+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Maximum survivor space 1 capacity (KB).
+.br
+.di
+.nr f| \n(dn
+.nr f- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di g+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current survivor space 1 capacity (KB).
+.br
+.di
+.nr g| \n(dn
+.nr g- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di h+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Maximum eden space capacity (KB).
+.br
+.di
+.nr h| \n(dn
+.nr h- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di i+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current eden space capacity (KB).
+.br
+.di
+.nr i| \n(dn
+.nr i- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di j+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Number of young generation GC events.
+.br
+.di
+.nr j| \n(dn
+.nr j- \n(dl
+..
+.ec \
+.35
+.nf
+.ll \n(34u
+.nr 80 0
+.nr 38 \wNew Generation Space Size Statistics
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3Column\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wNGCMN
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wNGCMX
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wNGC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wS0CMX
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wS0C
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wS1CMX
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wS1C
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wECMX
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wEC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wYGC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wFGC
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \w\f3Description\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wNumber of Full GC Events.
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 \n(a-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(b-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(c-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(d-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(e-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(f-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(g-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(h-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(i-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(j-
+.if \n(81<\n(38 .nr 81 \n(38
+.35
+.nf
+.ll \n(34u
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if \n(TW>\n(.li .tm Table at line 572 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'New Generation Space Size Statistics\h'|\n(41u'
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3Column\fP\h'|\n(41u'\f3Description\fP
+.ne \n(a|u+\n(.Vu
+.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'NGCMN\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.a+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(b|u+\n(.Vu
+.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'NGCMX\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.b+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(c|u+\n(.Vu
+.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'NGC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.c+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(d|u+\n(.Vu
+.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'S0CMX\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.d+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(e|u+\n(.Vu
+.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'S0C\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.e+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(f|u+\n(.Vu
+.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'S1CMX\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.f+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(g|u+\n(.Vu
+.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'S1C\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.g+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(h|u+\n(.Vu
+.if (\n(h|+\n(#^-1v)>\n(#- .nr #- +(\n(h|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'ECMX\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.h+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(i|u+\n(.Vu
+.if (\n(i|+\n(#^-1v)>\n(#- .nr #- +(\n(i|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'EC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.i+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(j|u+\n(.Vu
+.if (\n(j|+\n(#^-1v)>\n(#- .nr #- +(\n(j|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'YGC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.j+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'FGC\h'|\n(41u'Number of Full GC Events.
+.fc
+.nr T. 1
+.T# 1
+.35
+.rm a+
+.rm b+
+.rm c+
+.rm d+
+.rm e+
+.rm f+
+.rm g+
+.rm h+
+.rm i+
+.rm j+
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-47
+
+.LP
+.SS
+\-gcold Option
+.LP
+.LP
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 34 \n(.lu
+.eo
+.am 81
+.br
+.di a+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current permanent space capacity (KB).
+.br
+.di
+.nr a| \n(dn
+.nr a- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di b+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Permanent space utilization (KB).
+.br
+.di
+.nr b| \n(dn
+.nr b- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di c+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current old space capacity (KB).
+.br
+.di
+.nr c| \n(dn
+.nr c- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di d+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+old space utilization (KB).
+.br
+.di
+.nr d| \n(dn
+.nr d- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di e+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Number of young generation GC events.
+.br
+.di
+.nr e| \n(dn
+.nr e- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di f+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Full garbage collection time.
+.br
+.di
+.nr f| \n(dn
+.nr f- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di g+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Total garbage collection time.
+.br
+.di
+.nr g| \n(dn
+.nr g- \n(dl
+..
+.ec \
+.35
+.nf
+.ll \n(34u
+.nr 80 0
+.nr 38 \wOld and Permanent Generation Statistics
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3Column\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wPC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wPU
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wOC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wOU
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wYGC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wFGC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wFGCT
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wGCT
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \w\f3Description\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wNumber of full GC events.
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 \n(a-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(b-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(c-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(d-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(e-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(f-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(g-
+.if \n(81<\n(38 .nr 81 \n(38
+.35
+.nf
+.ll \n(34u
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if \n(TW>\n(.li .tm Table at line 614 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Old and Permanent Generation Statistics\h'|\n(41u'
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3Column\fP\h'|\n(41u'\f3Description\fP
+.ne \n(a|u+\n(.Vu
+.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'PC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.a+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(b|u+\n(.Vu
+.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'PU\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.b+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(c|u+\n(.Vu
+.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'OC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.c+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(d|u+\n(.Vu
+.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'OU\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.d+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(e|u+\n(.Vu
+.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'YGC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.e+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'FGC\h'|\n(41u'Number of full GC events.
+.ne \n(f|u+\n(.Vu
+.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'FGCT\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.f+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(g|u+\n(.Vu
+.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'GCT\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.g+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.fc
+.nr T. 1
+.T# 1
+.35
+.rm a+
+.rm b+
+.rm c+
+.rm d+
+.rm e+
+.rm f+
+.rm g+
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-35
+
+.LP
+.SS
+\-gcoldcapacity Option
+.LP
+.LP
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 34 \n(.lu
+.eo
+.am 81
+.br
+.di a+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Minimum old generation capacity (KB).
+.br
+.di
+.nr a| \n(dn
+.nr a- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di b+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Maximum old generation capacity (KB).
+.br
+.di
+.nr b| \n(dn
+.nr b- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di c+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current old generation capacity (KB).
+.br
+.di
+.nr c| \n(dn
+.nr c- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di d+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current old space capacity (KB).
+.br
+.di
+.nr d| \n(dn
+.nr d- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di e+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Number of young generation GC events.
+.br
+.di
+.nr e| \n(dn
+.nr e- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di f+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Full garbage collection time.
+.br
+.di
+.nr f| \n(dn
+.nr f- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di g+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Total garbage collection time.
+.br
+.di
+.nr g| \n(dn
+.nr g- \n(dl
+..
+.ec \
+.35
+.nf
+.ll \n(34u
+.nr 80 0
+.nr 38 \wOld Generation Statistics
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3Column\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wOGCMN
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wOGCMX
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wOGC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wOC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wYGC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wFGC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wFGCT
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wGCT
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \w\f3Description\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wNumber of full GC events.
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 \n(a-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(b-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(c-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(d-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(e-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(f-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(g-
+.if \n(81<\n(38 .nr 81 \n(38
+.35
+.nf
+.ll \n(34u
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if \n(TW>\n(.li .tm Table at line 656 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Old Generation Statistics\h'|\n(41u'
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3Column\fP\h'|\n(41u'\f3Description\fP
+.ne \n(a|u+\n(.Vu
+.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'OGCMN\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.a+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(b|u+\n(.Vu
+.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'OGCMX\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.b+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(c|u+\n(.Vu
+.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'OGC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.c+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(d|u+\n(.Vu
+.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'OC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.d+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(e|u+\n(.Vu
+.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'YGC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.e+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'FGC\h'|\n(41u'Number of full GC events.
+.ne \n(f|u+\n(.Vu
+.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'FGCT\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.f+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(g|u+\n(.Vu
+.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'GCT\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.g+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.fc
+.nr T. 1
+.T# 1
+.35
+.rm a+
+.rm b+
+.rm c+
+.rm d+
+.rm e+
+.rm f+
+.rm g+
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-35
+
+.LP
+.SS
+\-gcpermcapacity Option
+.LP
+.LP
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 34 \n(.lu
+.eo
+.am 81
+.br
+.di a+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Minimum permanent generation capacity (KB).
+.br
+.di
+.nr a| \n(dn
+.nr a- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di b+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Maximum permanent generation capacity (KB).
+.br
+.di
+.nr b| \n(dn
+.nr b- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di c+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current permanent generation capacity (KB).
+.br
+.di
+.nr c| \n(dn
+.nr c- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di d+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Current permanent space capacity (KB).
+.br
+.di
+.nr d| \n(dn
+.nr d- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di e+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Number of young generation GC events.
+.br
+.di
+.nr e| \n(dn
+.nr e- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di f+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Full garbage collection time.
+.br
+.di
+.nr f| \n(dn
+.nr f- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di g+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Total garbage collection time.
+.br
+.di
+.nr g| \n(dn
+.nr g- \n(dl
+..
+.ec \
+.35
+.nf
+.ll \n(34u
+.nr 80 0
+.nr 38 \wPermanent Generation Statistics
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3Column\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wPGCMN
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wPGCMX
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wPGC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wPC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wYGC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wFGC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wFGCT
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wGCT
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \w\f3Description\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wNumber of full GC events.
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 \n(a-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(b-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(c-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(d-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(e-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(f-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(g-
+.if \n(81<\n(38 .nr 81 \n(38
+.35
+.nf
+.ll \n(34u
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if \n(TW>\n(.li .tm Table at line 698 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Permanent Generation Statistics\h'|\n(41u'
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3Column\fP\h'|\n(41u'\f3Description\fP
+.ne \n(a|u+\n(.Vu
+.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'PGCMN\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.a+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(b|u+\n(.Vu
+.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'PGCMX\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.b+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(c|u+\n(.Vu
+.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'PGC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.c+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(d|u+\n(.Vu
+.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'PC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.d+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(e|u+\n(.Vu
+.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'YGC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.e+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'FGC\h'|\n(41u'Number of full GC events.
+.ne \n(f|u+\n(.Vu
+.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'FGCT\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.f+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(g|u+\n(.Vu
+.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'GCT\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.g+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.fc
+.nr T. 1
+.T# 1
+.35
+.rm a+
+.rm b+
+.rm c+
+.rm d+
+.rm e+
+.rm f+
+.rm g+
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-35
+
+.LP
+.SS
+\-gcutil Option
+.LP
+.LP
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 34 \n(.lu
+.eo
+.am 81
+.br
+.di a+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Survivor space 0 utilization as a percentage of the space's current capacity.
+.br
+.di
+.nr a| \n(dn
+.nr a- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di b+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Survivor space 1 utilization as a percentage of the space's current capacity.
+.br
+.di
+.nr b| \n(dn
+.nr b- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di c+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Eden space utilization as a percentage of the space's current capacity.
+.br
+.di
+.nr c| \n(dn
+.nr c- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di d+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Old space utilization as a percentage of the space's current capacity.
+.br
+.di
+.nr d| \n(dn
+.nr d- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di e+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Permanent space utilization as a percentage of the space's current capacity.
+.br
+.di
+.nr e| \n(dn
+.nr e- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di f+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Number of young generation GC events.
+.br
+.di
+.nr f| \n(dn
+.nr f- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di g+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Young generation garbage collection time.
+.br
+.di
+.nr g| \n(dn
+.nr g- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di h+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Full garbage collection time.
+.br
+.di
+.nr h| \n(dn
+.nr h- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di i+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Total garbage collection time.
+.br
+.di
+.nr i| \n(dn
+.nr i- \n(dl
+..
+.ec \
+.35
+.nf
+.ll \n(34u
+.nr 80 0
+.nr 38 \wSummary of Garbage Collection Statistics
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3Column\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wS0
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wS1
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wE
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wO
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wYGC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wYGCT
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wFGC
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wFGCT
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wGCT
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \w\f3Description\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wNumber of full GC events.
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 \n(a-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(b-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(c-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(d-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(e-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(f-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(g-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(h-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(i-
+.if \n(81<\n(38 .nr 81 \n(38
+.35
+.nf
+.ll \n(34u
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if \n(TW>\n(.li .tm Table at line 748 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Summary of Garbage Collection Statistics\h'|\n(41u'
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3Column\fP\h'|\n(41u'\f3Description\fP
+.ne \n(a|u+\n(.Vu
+.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'S0\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.a+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(b|u+\n(.Vu
+.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'S1\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.b+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(c|u+\n(.Vu
+.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'E\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.c+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(d|u+\n(.Vu
+.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'O\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.d+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(e|u+\n(.Vu
+.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'P\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.e+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(f|u+\n(.Vu
+.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'YGC\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.f+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(g|u+\n(.Vu
+.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'YGCT\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.g+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'FGC\h'|\n(41u'Number of full GC events.
+.ne \n(h|u+\n(.Vu
+.if (\n(h|+\n(#^-1v)>\n(#- .nr #- +(\n(h|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'FGCT\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.h+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(i|u+\n(.Vu
+.if (\n(i|+\n(#^-1v)>\n(#- .nr #- +(\n(i|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'GCT\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.i+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.fc
+.nr T. 1
+.T# 1
+.35
+.rm a+
+.rm b+
+.rm c+
+.rm d+
+.rm e+
+.rm f+
+.rm g+
+.rm h+
+.rm i+
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-43
+
+.LP
+.SS
+\-printcompilation Option
+.LP
+.LP
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 34 \n(.lu
+.eo
+.am 81
+.br
+.di a+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Number of compilation tasks performed.
+.br
+.di
+.nr a| \n(dn
+.nr a- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di b+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Number of bytes of bytecode for the method.
+.br
+.di
+.nr b| \n(dn
+.nr b- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di c+
+.35
+.ft \n(.f
+.ll \n(34u*1u/3u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+Class name and method name identifying the compiled method. Class name uses "/" instead of "." as namespace separator. Method name is the method within the given class. The format for these two fields is consistent with the HotSpot \- \f3XX:+PrintComplation\fP option.
+.br
+.di
+.nr c| \n(dn
+.nr c- \n(dl
+..
+.ec \
+.35
+.nf
+.ll \n(34u
+.nr 80 0
+.nr 38 \wHotSpot Compiler Method Statistics
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3Column\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wCompiled
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wSize
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wType
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \wMethod
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \w\f3Description\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wCompilation type.
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 \n(a-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(b-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(c-
+.if \n(81<\n(38 .nr 81 \n(38
+.35
+.nf
+.ll \n(34u
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if \n(TW>\n(.li .tm Table at line 774 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'HotSpot Compiler Method Statistics\h'|\n(41u'
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3Column\fP\h'|\n(41u'\f3Description\fP
+.ne \n(a|u+\n(.Vu
+.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Compiled\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.a+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(b|u+\n(.Vu
+.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Size\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.b+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Type\h'|\n(41u'Compilation type.
+.ne \n(c|u+\n(.Vu
+.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'Method\h'|\n(41u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.c+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.fc
+.nr T. 1
+.T# 1
+.35
+.rm a+
+.rm b+
+.rm c+
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-19
+
+.LP
+.SH "EXAMPLES"
+.LP
+.LP
+This section presents some examples of monitoring a local JVM with a \f2lvmid\fP of 21891.
+.LP
+.SS
+Using the gcutil option
+.LP
+.LP
+This example attaches to \f2lvmid\fP 21891 and takes 7 samples at 250 millisecond intervals and displays the output as specified by the \f3\-gcutil\fP option.
+.LP
+.nf
+\f3
+.fl
+\fP\f3jstat \-gcutil 21891 250 7\fP
+.br
+
+.fl
+  S0     S1     E      O      P     YGC    YGCT    FGC    FGCT     GCT
+.br
+
+.fl
+ 12.44   0.00  27.20   9.49  96.70    78    0.176     5    0.495    0.672
+.br
+
+.fl
+ 12.44   0.00  62.16   9.49  96.70    78    0.176     5    0.495    0.672
+.br
+
+.fl
+ 12.44   0.00  83.97   9.49  96.70    78    0.176     5    0.495    0.672
+.br
+
+.fl
+  0.00   7.74   0.00   9.51  96.70    79    0.177     5    0.495    0.673
+.br
+
+.fl
+  0.00   7.74  23.37   9.51  96.70    79    0.177     5    0.495    0.673
+.br
+
+.fl
+  0.00   7.74  43.82   9.51  96.70    79    0.177     5    0.495    0.673
+.br
+
+.fl
+  0.00   7.74  58.11   9.51  96.71    79    0.177     5    0.495    0.673
+.br
+
+.fl
+.fi
+
+.LP
+.LP
+The output of this example shows that a young generation collection occurred between the 3rd and 4th sample. The collection took 0.001 seconds and promoted objects from the eden space (E) to the old space (O), resulting in an increase of old space utilization from 9.49% to 9.51%. Before the collection, the survivor space was 12.44% utilized, but after this collection it is only 7.74% utilized.
+.LP
+.SS
+Repeating the column header string
+.LP
+.LP
+This example attaches to \f2lvmid\fP 21891 and takes samples at 250 millisecond intervals and displays the output as specified by \f3\-gcutil\fP option. In addition, it uses the \f3\-h3\fP option to output the column header after every 3 lines of data.
+.LP
+.nf
+\f3
+.fl
+\fP\f3jstat \-gcnew \-h3 21891 250\fP
+.br
+
+.fl
+ S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT
+.br
+
+.fl
+  64.0   64.0    0.0   31.7 31  31   32.0    512.0    178.6    249    0.203
+.br
+
+.fl
+  64.0   64.0    0.0   31.7 31  31   32.0    512.0    355.5    249    0.203
+.br
+
+.fl
+  64.0   64.0   35.4    0.0  2  31   32.0    512.0     21.9    250    0.204
+.br
+
+.fl
+ S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT
+.br
+
+.fl
+  64.0   64.0   35.4    0.0  2  31   32.0    512.0    245.9    250    0.204
+.br
+
+.fl
+  64.0   64.0   35.4    0.0  2  31   32.0    512.0    421.1    250    0.204
+.br
+
+.fl
+  64.0   64.0    0.0   19.0 31  31   32.0    512.0     84.4    251    0.204
+.br
+
+.fl
+ S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT
+.br
+
+.fl
+  64.0   64.0    0.0   19.0 31  31   32.0    512.0    306.7    251    0.204
+.br
+
+.fl
+.fi
+
+.LP
+.LP
+In addition to showing the repeating header string, this example shows that between the 2nd and 3rd samples, a young GC occurred. Its duration was 0.001 seconds. The collection found enough live data that the survivor space 0 utilization (S0U) would would have exceeded the desired survivor Size (DSS). As a result, objects were promoted to the old generation (not visible in this output), and the tenuring threshold (TT) was lowered from 31 to 2.
+.LP
+.LP
+Another collection occurs between the 5th and 6th samples. This collection found very few survivors and returned the tenuring threshold to 31.
+.LP
+.SS
+Including a time stamp for each sample
+.LP
+.LP
+This example attaches to \f2lvmid\fP 21891 and takes 3 samples at 250 millisecond intervals. The \f3\-t\fP option is used to generate a time stamp for each sample in the first column.
+.LP
+.nf
+\f3
+.fl
+\fP\f3jstat \-gcoldcapacity \-t 21891 250 3\fP
+.br
+
+.fl
+Timestamp          OGCMN        OGCMX         OGC           OC       YGC   FGC    FGCT    GCT
+.br
+
+.fl
+          150.1       1408.0      60544.0      11696.0      11696.0   194    80    2.874   3.799
+.br
+
+.fl
+          150.4       1408.0      60544.0      13820.0      13820.0   194    81    2.938   3.863
+.br
+
+.fl
+          150.7       1408.0      60544.0      13820.0      13820.0   194    81    2.938   3.863
+.br
+
+.fl
+.fi
+
+.LP
+.LP
+The \f2Timestamp\fP column reports the elapsed time in seconds since the start of the target JVM. In addition, the \f3\-gcoldcapacity\fP output shows the old generation capacity (OGC) and the old space capacity (OC) increasing as the heap expands to meet allocation and/or promotion demands. The old generation capacity (OGC) has grown to from 11696 KB to 13820 KB after the 81st Full GC (FGC). The maximum capacity of the generation (and space) is 60544 KB (OGCMX), so it still has room to expand.
+.LP
+.SS
+Monitor instrumentation for a remote JVM
+.LP
+.LP
+This example attaches to \f2lvmid\fP 40496 on the system named \f2remote.domain\fP using the \f3\-gcutil\fP option, with samples taken every second indefinitely.
+.LP
+.nf
+\f3
+.fl
+\fP\f3jstat \-gcutil 40496@remote.domain 1000\fP
+.br
+
+.fl
+... \f2output omitted\fP
+.br
+
+.fl
+.fi
+
+.LP
+.LP
+The \f2lvmid\fP is combined with the name of the remote host to construct a \f2vmid\fP of \f240496@remote.domain\fP. This \f2vmid\fP results in the use of the \f3rmi\fP protocol to communicate to the default \f3jstatd\fP server on the remote host. The \f3jstatd\fP server is located using the \f3rmiregistry\fP on \f2remote.domain\fP that is bound to the default \f3rmiregistry\fP port (port 1099).
+.LP
+.SH "SEE ALSO"
+.LP
+.RS 3
+.TP 2
+o
+java(1) \- the Java Application Launcher
+.TP 2
+o
+jps(1) \- the Java Process Status Application
+.TP 2
+o
+jstatd(1) \- the jvmstat daemon
+.TP 2
+o
+rmiregistry(1) \- the Java Remote Object Registry
+.RE
+
+.LP
+

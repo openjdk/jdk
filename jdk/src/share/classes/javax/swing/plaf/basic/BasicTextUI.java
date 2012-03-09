@@ -497,9 +497,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             if (km != null) {
                 km.clear();
                 if (accelerator != '\0') {
-                    km.put(KeyStroke.getKeyStroke(accelerator,
-                                                  ActionEvent.ALT_MASK),
-                           "requestFocus");
+                    km.put(KeyStroke.getKeyStroke(accelerator, BasicLookAndFeel.getFocusAcceleratorKeyMask()), "requestFocus");
                 }
             }
         }

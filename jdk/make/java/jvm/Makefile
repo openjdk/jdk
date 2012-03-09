@@ -43,7 +43,6 @@ $(INCLUDEDIR)/%.h: $(SHARE_SRC)/javavm/export/%.h
 $(PLATFORM_INCLUDE)/%.h: $(PLATFORM_SRC)/javavm/export/%.h
 	$(install-file)
 
-JVMCFG_DIR = $(LIBDIR)/$(LIBARCH)
 JVMCFG = $(JVMCFG_DIR)/jvm.cfg
 
 #
@@ -53,6 +52,14 @@ ifeq ($(ZERO_BUILD), true)
 JVMCFG_ARCH = zero
 else
 JVMCFG_ARCH = $(ARCH)
+endif
+
+ifeq ($(PLATFORM),macosx)
+  JVMCFG_SRC=$(PLATFORM_SRC_MACOS)/bin/$(JVMCFG_ARCH)/jvm.cfg
+  JVMCFG_DIR = $(LIBDIR)
+else
+  JVMCFG_SRC=$(PLATFORM_SRC)/bin/$(JVMCFG_ARCH)/jvm.cfg
+  JVMCFG_DIR = $(LIBDIR)/$(LIBARCH)
 endif
 
 ifdef BUILD_CLIENT_ONLY
@@ -67,7 +74,7 @@ $(JVMCFG)::
 	$(ECHO) "-native ERROR">>$(JVMCFG)
 	$(ECHO) "-green ERROR">>$(JVMCFG)
 else
-$(JVMCFG): $(PLATFORM_SRC)/bin/$(JVMCFG_ARCH)/jvm.cfg
+$(JVMCFG): $(JVMCFG_SRC)
 	$(install-file)
 endif
 

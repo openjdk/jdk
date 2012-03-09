@@ -113,6 +113,26 @@ public class Config {
     }
 
 
+    private static boolean isMacosLionOrBetter() {
+        // split the "10.x.y" version number
+        String osVersion = System.getProperty("os.version");
+        String[] fragments = osVersion.split("\\.");
+
+        // sanity check the "10." part of the version
+        if (!fragments[0].equals("10")) return false;
+        if (fragments.length < 2) return false;
+
+        // check if Mac OS X 10.7(.y)
+        try {
+            int minorVers = Integer.parseInt(fragments[1]);
+            if (minorVers >= 7) return true;
+        } catch (NumberFormatException e) {
+            // was not an integer
+        }
+
+        return false;
+    }
+
     /**
      * Private constructor - can not be instantiated externally.
      */
@@ -146,7 +166,11 @@ public class Config {
         try {
             Vector<String> configFile;
             configFile = loadConfigFile();
-            stanzaTable = parseStanzaTable(configFile);
+            if (configFile == null && isMacosLionOrBetter()) {
+                stanzaTable = SCDynamicStoreConfig.getConfig();
+            } else {
+                stanzaTable = parseStanzaTable(configFile);
+            }
         } catch (IOException ioe) {
             // No krb5.conf, no problem. We'll use DNS or system property etc.
         }
@@ -713,6 +737,9 @@ public class Config {
                     }
                 } else if (osname.startsWith("SunOS")) {
                     name =  "/etc/krb5/krb5.conf";
+                } else if (osname.startsWith("Mac")) {
+                    if (isMacosLionOrBetter()) return "";
+                    name = findMacosConfigFile();
                 } else {
                     name =  "/etc/krb5.conf";
                 }
@@ -722,6 +749,30 @@ public class Config {
             System.out.println("Config name: " + name);
         }
         return name;
+    }
+
+    private String getProperty(String property) {
+        return java.security.AccessController.doPrivileged(new sun.security.action.GetPropertyAction(property));
+    }
+
+    private String findMacosConfigFile() {
+        String userHome = getProperty("user.home");
+        final String PREF_FILE = "/Library/Preferences/edu.mit.Kerberos";
+        String userPrefs=userHome + PREF_FILE;
+
+        if (fileExists(userPrefs)) {
+            return userPrefs;
+        }
+
+        if (fileExists(PREF_FILE)) {
+            return PREF_FILE;
+        }
+
+        if (fileExists("/etc/krb5.conf")) {
+            return "/etc/krb5.conf";
+        }
+
+        return "";
     }
 
     private static String trimmed(String s) {

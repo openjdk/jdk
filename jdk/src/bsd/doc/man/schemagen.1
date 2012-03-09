@@ -1,0 +1,127 @@
+." Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+." or visit www.oracle.com if you need additional information or have any
+." questions.
+."
+.TH schemagen 1 "10 May 2011"
+
+.LP
+.SH "Name"
+schemagen \- Java(TM) Architecture for XML Binding Schema Generator
+.LP
+.LP
+\f3Specification Version:\fP 2.1
+.br
+\f3Implementation Version:\fP 2.1.3
+.LP
+.SH "Launching schemagen"
+.LP
+.LP
+The schema generator can be launched using the appropriate \f2schemagen\fP shell script in the \f2bin\fP directory for your platform.
+.LP
+.LP
+The current schema generator can process either Java source files or class files.
+.LP
+.LP
+We also provide an Ant task to run the schema generator \- see the instructions for
+.na
+\f2using schemagen with Ant\fP @
+.fi
+https://jaxb.dev.java.net/nonav/2.1.3/docs/schemagenTask.html.
+.LP
+.nf
+\f3
+.fl
+% schemagen.sh Foo.java Bar.java ...
+.fl
+Note: Writing schema1.xsd
+.fl
+\fP
+.fi
+
+.LP
+.LP
+If your java sources/classes reference other classes, they must be accessable on your system CLASSPATH environment variable, or they need to be given to the tool by using the \f2\-classpath\fP/\f2\-cp\fP options. Otherwise you will see errors when generating your schema.
+.LP
+.SS
+Command Line Options
+.LP
+.nf
+\f3
+.fl
+Usage: schemagen [\-options ...] <java files>
+.fl
+
+.fl
+Options:
+.fl
+    \-d <path>             : specify where to place processor and javac generated class files
+.fl
+    \-cp <path>            : specify where to find user specified files
+.fl
+    \-classpath <path>     : specify where to find user specified files
+.fl
+    \-encoding <encoding>  : specify encoding to be used for apt/javac invocation
+.fl
+
+.fl
+    \-episode <file>       : generate episode file for separate compilation
+.fl
+    \-version              : display version information
+.fl
+    \-help                 : display this usage message
+.fl
+\fP
+.fi
+
+.LP
+.SH "Generated Resource Files"
+.LP
+.LP
+The current schema generator simply creates a schema file for each namespace referenced in your Java classes. There is no way to control the name of the generated schema files at this time. For that purpose, use
+.na
+\f2the schema generator ant task\fP @
+.fi
+https://jaxb.dev.java.net/nonav/2.1.3/docs/schemagenTask.html.
+.LP
+.SH "Name"
+See Also
+.LP
+.RS 3
+.TP 2
+o
+Running the schema generator (schemagen): [
+.na
+\f2command\-line instructions\fP @
+.fi
+https://jaxb.dev.java.net/nonav/2.1.3/docs/schemagen.html,
+.na
+\f2using the SchemaGen Ant task\fP @
+.fi
+https://jaxb.dev.java.net/nonav/2.1.3/docs/schemagenTask.html]
+.TP 2
+o
+.na
+\f2Java Architecture for XML Binding (JAXB)\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/guides/xml/jaxb/index.html
+.RE
+
+.LP
+

@@ -41,7 +41,7 @@ import sun.rmi.runtime.Log;
  * @author  Ann Wollrath
  * @author  Peter Jones
  */
-class WeakRef extends WeakReference {
+class WeakRef extends WeakReference<Object> {
 
     /** value of the referent's "identity" hash code */
     private int hashValue;
@@ -60,7 +60,7 @@ class WeakRef extends WeakReference {
     /**
      * Create a new WeakRef to the given object, registered with a queue.
      */
-    public WeakRef(Object obj, ReferenceQueue q) {
+    public WeakRef(Object obj, ReferenceQueue<Object> q) {
         super(obj, q);
         setHashValue(obj);      // cache object's "identity" hash code
     }

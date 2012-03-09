@@ -119,7 +119,8 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
     }
 
     static boolean isBSD() {
-        return osname.equals("Linux");
+        return (osname.equals("Linux") ||
+                osname.startsWith("Mac OS X"));
     }
 
     static final int UNINITIALIZED = -1;
@@ -134,8 +135,8 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
     };
 
     String[] lpcAllCom = {
-        "/usr/sbin/lpc status | grep : | sed -e 's/://'",
-        "/usr/sbin/lpc -a status | grep -E '^[ 0-9a-zA-Z_-]*@' | awk -F'@' '{print $1}' | sort"
+        "/usr/sbin/lpc status all | grep : | sed -e 's/://'",
+        "/usr/sbin/lpc status all | grep -E '^[ 0-9a-zA-Z_-]*@' | awk -F'@' '{print $1}' | sort"
     };
 
     String[] lpcNameCom = {
@@ -145,7 +146,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
 
 
     static int getBSDCommandIndex() {
-        String command  = "/usr/sbin/lpc status";
+        String command  = "/usr/sbin/lpc status all";
         String[] names = execCmd(command);
 
         if ((names == null) || (names.length == 0)) {
