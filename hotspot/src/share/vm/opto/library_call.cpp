@@ -338,11 +338,11 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     break;
 
   case vmIntrinsics::_bitCount_i:
-    if (!Matcher::has_match_rule(Op_PopCountI)) return NULL;
+    if (!Matcher::match_rule_supported(Op_PopCountI)) return NULL;
     break;
 
   case vmIntrinsics::_bitCount_l:
-    if (!Matcher::has_match_rule(Op_PopCountL)) return NULL;
+    if (!Matcher::match_rule_supported(Op_PopCountL)) return NULL;
     break;
 
   case vmIntrinsics::_numberOfLeadingZeros_i:
