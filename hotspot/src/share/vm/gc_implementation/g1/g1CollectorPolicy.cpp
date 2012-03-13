@@ -1261,6 +1261,9 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     other_time_ms -= known_time;
   }
 
+  // Now subtract the time taken to fix up roots in generated code
+  other_time_ms -= _cur_collection_code_root_fixup_time_ms;
+
   // Subtract the time taken to clean the card table from the
   // current value of "other time"
   other_time_ms -= _cur_clear_ct_time_ms;
@@ -1401,10 +1404,10 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
       print_par_stats(2, "Object Copy", _par_last_obj_copy_times_ms);
       print_par_stats(2, "Termination", _par_last_termination_times_ms);
       print_par_sizes(3, "Termination Attempts", _par_last_termination_attempts);
-      print_par_stats(2, "GC Worker End", _par_last_gc_worker_end_times_ms);
 
       for (int i = 0; i < _parallel_gc_threads; i++) {
-        _par_last_gc_worker_times_ms[i] = _par_last_gc_worker_end_times_ms[i] - _par_last_gc_worker_start_times_ms[i];
+        _par_last_gc_worker_times_ms[i] = _par_last_gc_worker_end_times_ms[i] -
+                                          _par_last_gc_worker_start_times_ms[i];
 
         double worker_known_time = _par_last_ext_root_scan_times_ms[i] +
                                    _par_last_satb_filtering_times_ms[i] +
@@ -1413,10 +1416,13 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
                                    _par_last_obj_copy_times_ms[i] +
                                    _par_last_termination_times_ms[i];
 
-        _par_last_gc_worker_other_times_ms[i] = _cur_collection_par_time_ms - worker_known_time;
+        _par_last_gc_worker_other_times_ms[i] = _par_last_gc_worker_times_ms[i] -
+                                                worker_known_time;
       }
-      print_par_stats(2, "GC Worker", _par_last_gc_worker_times_ms);
+
       print_par_stats(2, "GC Worker Other", _par_last_gc_worker_other_times_ms);
+      print_par_stats(2, "GC Worker Total", _par_last_gc_worker_times_ms);
+      print_par_stats(2, "GC Worker End", _par_last_gc_worker_end_times_ms);
     } else {
       print_stats(1, "Ext Root Scanning", ext_root_scan_time);
       if (print_marking_info) {
@@ -1427,6 +1433,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
       print_stats(1, "Scan RS", scan_rs_time);
       print_stats(1, "Object Copying", obj_copy_time);
     }
+    print_stats(1, "Code Root Fixup", _cur_collection_code_root_fixup_time_ms);
     if (print_marking_info) {
       print_stats(1, "Complete CSet Marking", _mark_closure_time_ms);
     }

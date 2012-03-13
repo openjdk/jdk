@@ -4675,73 +4675,141 @@ public:
     double start_time_ms = os::elapsedTime() * 1000.0;
     _g1h->g1_policy()->record_gc_worker_start_time(worker_id, start_time_ms);
 
-    ResourceMark rm;
-    HandleMark   hm;
-
-    ReferenceProcessor*             rp = _g1h->ref_processor_stw();
-
-    G1ParScanThreadState            pss(_g1h, worker_id);
-    G1ParScanHeapEvacClosure        scan_evac_cl(_g1h, &pss, rp);
-    G1ParScanHeapEvacFailureClosure evac_failure_cl(_g1h, &pss, rp);
-    G1ParScanPartialArrayClosure    partial_scan_cl(_g1h, &pss, rp);
-
-    pss.set_evac_closure(&scan_evac_cl);
-    pss.set_evac_failure_closure(&evac_failure_cl);
-    pss.set_partial_scan_closure(&partial_scan_cl);
-
-    G1ParScanExtRootClosure        only_scan_root_cl(_g1h, &pss, rp);
-    G1ParScanPermClosure           only_scan_perm_cl(_g1h, &pss, rp);
-
-    G1ParScanAndMarkExtRootClosure scan_mark_root_cl(_g1h, &pss, rp);
-    G1ParScanAndMarkPermClosure    scan_mark_perm_cl(_g1h, &pss, rp);
-
-    OopClosure*                    scan_root_cl = &only_scan_root_cl;
-    OopsInHeapRegionClosure*       scan_perm_cl = &only_scan_perm_cl;
-
-    if (_g1h->g1_policy()->during_initial_mark_pause()) {
-      // We also need to mark copied objects.
-      scan_root_cl = &scan_mark_root_cl;
-      scan_perm_cl = &scan_mark_perm_cl;
-    }
-
-    G1ParPushHeapRSClosure          push_heap_rs_cl(_g1h, &pss);
-
-    pss.start_strong_roots();
-    _g1h->g1_process_strong_roots(/* not collecting perm */ false,
-                                  SharedHeap::SO_AllClasses,
-                                  scan_root_cl,
-                                  &push_heap_rs_cl,
-                                  scan_perm_cl,
-                                  worker_id);
-    pss.end_strong_roots();
-
     {
-      double start = os::elapsedTime();
-      G1ParEvacuateFollowersClosure evac(_g1h, &pss, _queues, &_terminator);
-      evac.do_void();
-      double elapsed_ms = (os::elapsedTime()-start)*1000.0;
-      double term_ms = pss.term_time()*1000.0;
-      _g1h->g1_policy()->record_obj_copy_time(worker_id, elapsed_ms-term_ms);
-      _g1h->g1_policy()->record_termination(worker_id, term_ms, pss.term_attempts());
+      ResourceMark rm;
+      HandleMark   hm;
+
+      ReferenceProcessor*             rp = _g1h->ref_processor_stw();
+
+      G1ParScanThreadState            pss(_g1h, worker_id);
+      G1ParScanHeapEvacClosure        scan_evac_cl(_g1h, &pss, rp);
+      G1ParScanHeapEvacFailureClosure evac_failure_cl(_g1h, &pss, rp);
+      G1ParScanPartialArrayClosure    partial_scan_cl(_g1h, &pss, rp);
+
+      pss.set_evac_closure(&scan_evac_cl);
+      pss.set_evac_failure_closure(&evac_failure_cl);
+      pss.set_partial_scan_closure(&partial_scan_cl);
+
+      G1ParScanExtRootClosure        only_scan_root_cl(_g1h, &pss, rp);
+      G1ParScanPermClosure           only_scan_perm_cl(_g1h, &pss, rp);
+
+      G1ParScanAndMarkExtRootClosure scan_mark_root_cl(_g1h, &pss, rp);
+      G1ParScanAndMarkPermClosure    scan_mark_perm_cl(_g1h, &pss, rp);
+
+      OopClosure*                    scan_root_cl = &only_scan_root_cl;
+      OopsInHeapRegionClosure*       scan_perm_cl = &only_scan_perm_cl;
+
+      if (_g1h->g1_policy()->during_initial_mark_pause()) {
+        // We also need to mark copied objects.
+        scan_root_cl = &scan_mark_root_cl;
+        scan_perm_cl = &scan_mark_perm_cl;
+      }
+
+      G1ParPushHeapRSClosure          push_heap_rs_cl(_g1h, &pss);
+
+      pss.start_strong_roots();
+      _g1h->g1_process_strong_roots(/* not collecting perm */ false,
+                                    SharedHeap::SO_AllClasses,
+                                    scan_root_cl,
+                                    &push_heap_rs_cl,
+                                    scan_perm_cl,
+                                    worker_id);
+      pss.end_strong_roots();
+
+      {
+        double start = os::elapsedTime();
+        G1ParEvacuateFollowersClosure evac(_g1h, &pss, _queues, &_terminator);
+        evac.do_void();
+        double elapsed_ms = (os::elapsedTime()-start)*1000.0;
+        double term_ms = pss.term_time()*1000.0;
+        _g1h->g1_policy()->record_obj_copy_time(worker_id, elapsed_ms-term_ms);
+        _g1h->g1_policy()->record_termination(worker_id, term_ms, pss.term_attempts());
+      }
+      _g1h->g1_policy()->record_thread_age_table(pss.age_table());
+      _g1h->update_surviving_young_words(pss.surviving_young_words()+1);
+
+      // Clean up any par-expanded rem sets.
+      HeapRegionRemSet::par_cleanup();
+
+      if (ParallelGCVerbose) {
+        MutexLocker x(stats_lock());
+        pss.print_termination_stats(worker_id);
+      }
+
+      assert(pss.refs()->is_empty(), "should be empty");
+
+      // Close the inner scope so that the ResourceMark and HandleMark
+      // destructors are executed here and are included as part of the
+      // "GC Worker Time".
     }
-    _g1h->g1_policy()->record_thread_age_table(pss.age_table());
-    _g1h->update_surviving_young_words(pss.surviving_young_words()+1);
 
-    // Clean up any par-expanded rem sets.
-    HeapRegionRemSet::par_cleanup();
-
-    if (ParallelGCVerbose) {
-      MutexLocker x(stats_lock());
-      pss.print_termination_stats(worker_id);
-    }
-
-    assert(pss.refs()->is_empty(), "should be empty");
     double end_time_ms = os::elapsedTime() * 1000.0;
     _g1h->g1_policy()->record_gc_worker_end_time(worker_id, end_time_ms);
   }
 };
 
 // *** Common G1 Evacuation Stuff
+
+// Closures that support the filtering of CodeBlobs scanned during
+// external root scanning.
+
+// Closure applied to reference fields in code blobs (specifically nmethods)
+// to determine whether an nmethod contains references that point into
+// the collection set. Used as a predicate when walking code roots so
+// that only nmethods that point into the collection set are added to the
+// 'marked' list.
+
+class G1FilteredCodeBlobToOopClosure : public CodeBlobToOopClosure {
+
+  class G1PointsIntoCSOopClosure : public OopClosure {
+    G1CollectedHeap* _g1;
+    bool _points_into_cs;
+  public:
+    G1PointsIntoCSOopClosure(G1CollectedHeap* g1) :
+      _g1(g1), _points_into_cs(false) { }
+
+    bool points_into_cs() const { return _points_into_cs; }
+
+    template <class T>
+    void do_oop_nv(T* p) {
+      if (!_points_into_cs) {
+        T heap_oop = oopDesc::load_heap_oop(p);
+        if (!oopDesc::is_null(heap_oop) &&
+            _g1->in_cset_fast_test(oopDesc::decode_heap_oop_not_null(heap_oop))) {
+          _points_into_cs = true;
+        }
+      }
+    }
+
+    virtual void do_oop(oop* p)        { do_oop_nv(p); }
+    virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
+  };
+
+  G1CollectedHeap* _g1;
+
+public:
+  G1FilteredCodeBlobToOopClosure(G1CollectedHeap* g1, OopClosure* cl) :
+    CodeBlobToOopClosure(cl, true), _g1(g1) { }
+
+  virtual void do_code_blob(CodeBlob* cb) {
+    nmethod* nm = cb->as_nmethod_or_null();
+    if (nm != NULL && !(nm->test_oops_do_mark())) {
+      G1PointsIntoCSOopClosure predicate_cl(_g1);
+      nm->oops_do(&predicate_cl);
+
+      if (predicate_cl.points_into_cs()) {
+        // At least one of the reference fields or the oop relocations
+        // in the nmethod points into the collection set. We have to
+        // 'mark' this nmethod.
+        // Note: Revisit the following if CodeBlobToOopClosure::do_code_blob()
+        // or MarkingCodeBlobClosure::do_code_blob() change.
+        if (!nm->test_set_oops_do_mark()) {
+          do_newly_marked_nmethod(nm);
+        }
+      }
+    }
+  }
+};
 
 // This method is run in a GC worker.
 
@@ -4764,7 +4832,7 @@ g1_process_strong_roots(bool collecting_perm_gen,
 
   // Walk the code cache w/o buffering, because StarTask cannot handle
   // unaligned oop locations.
-  CodeBlobToOopClosure eager_scan_code_roots(scan_non_heap_roots, /*do_marking=*/ true);
+  G1FilteredCodeBlobToOopClosure eager_scan_code_roots(this, scan_non_heap_roots);
 
   process_strong_roots(false, // no scoping; this is parallel code
                        collecting_perm_gen, so,
@@ -5378,25 +5446,39 @@ void G1CollectedHeap::evacuate_collection_set() {
   rem_set()->prepare_for_younger_refs_iterate(true);
 
   assert(dirty_card_queue_set().completed_buffers_num() == 0, "Should be empty");
-  double start_par = os::elapsedTime();
+  double start_par_time_sec = os::elapsedTime();
+  double end_par_time_sec;
 
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    // The individual threads will set their evac-failure closures.
+  {
     StrongRootsScope srs(this);
-    if (ParallelGCVerbose) G1ParScanThreadState::print_termination_stats_hdr();
-    // These tasks use ShareHeap::_process_strong_tasks
-    assert(UseDynamicNumberOfGCThreads ||
-           workers()->active_workers() == workers()->total_workers(),
-           "If not dynamic should be using all the  workers");
-    workers()->run_task(&g1_par_task);
-  } else {
-    StrongRootsScope srs(this);
-    g1_par_task.set_for_termination(n_workers);
-    g1_par_task.work(0);
+
+    if (G1CollectedHeap::use_parallel_gc_threads()) {
+      // The individual threads will set their evac-failure closures.
+      if (ParallelGCVerbose) G1ParScanThreadState::print_termination_stats_hdr();
+      // These tasks use ShareHeap::_process_strong_tasks
+      assert(UseDynamicNumberOfGCThreads ||
+             workers()->active_workers() == workers()->total_workers(),
+             "If not dynamic should be using all the  workers");
+      workers()->run_task(&g1_par_task);
+    } else {
+      g1_par_task.set_for_termination(n_workers);
+      g1_par_task.work(0);
+    }
+    end_par_time_sec = os::elapsedTime();
+
+    // Closing the inner scope will execute the destructor
+    // for the StrongRootsScope object. We record the current
+    // elapsed time before closing the scope so that time
+    // taken for the SRS destructor is NOT included in the
+    // reported parallel time.
   }
 
-  double par_time = (os::elapsedTime() - start_par) * 1000.0;
-  g1_policy()->record_par_time(par_time);
+  double par_time_ms = (end_par_time_sec - start_par_time_sec) * 1000.0;
+  g1_policy()->record_par_time(par_time_ms);
+
+  double code_root_fixup_time_ms =
+        (os::elapsedTime() - end_par_time_sec) * 1000.0;
+  g1_policy()->record_code_root_fixup_time(code_root_fixup_time_ms);
 
   set_par_threads(0);
 

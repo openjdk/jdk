@@ -179,6 +179,9 @@ private:
   size_t _cur_collection_pause_used_at_start_bytes;
   size_t _cur_collection_pause_used_regions_at_start;
   double _cur_collection_par_time_ms;
+
+  double _cur_collection_code_root_fixup_time_ms;
+
   double _cur_satb_drain_time_ms;
   double _cur_clear_ct_time_ms;
   double _cur_ref_proc_time_ms;
@@ -226,8 +229,8 @@ private:
   double* _par_last_gc_worker_times_ms;
 
   // Each workers 'other' time i.e. the elapsed time of the parallel
-  // phase of the pause minus the sum of the individual sub-phase
-  // times for a given worker thread.
+  // code executed by a worker minus the sum of the individual sub-phase
+  // times for that worker thread.
   double* _par_last_gc_worker_other_times_ms;
 
   // indicates whether we are in young or mixed GC mode
@@ -895,6 +898,10 @@ public:
 
   void record_par_time(double ms) {
     _cur_collection_par_time_ms = ms;
+  }
+
+  void record_code_root_fixup_time(double ms) {
+    _cur_collection_code_root_fixup_time_ms = ms;
   }
 
   void record_aux_start_time(int i) {
