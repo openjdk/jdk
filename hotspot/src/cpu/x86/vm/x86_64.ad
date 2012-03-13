@@ -1714,6 +1714,14 @@ const bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode))
     return false;
 
+  switch (opcode) {
+    case Op_PopCountI:
+    case Op_PopCountL:
+      if (!UsePopCountInstruction)
+        return false;
+    break;
+  }
+
   return true;  // Per default match rules are supported.
 }
 
