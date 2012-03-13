@@ -591,14 +591,11 @@ bool Reflection::is_same_package_member(klassOop class1, klassOop class2, TRAPS)
 // Caller is responsible for figuring out in advance which case must be true.
 void Reflection::check_for_inner_class(instanceKlassHandle outer, instanceKlassHandle inner,
                                        bool inner_is_member, TRAPS) {
-  const int inner_class_info_index = 0;
-  const int outer_class_info_index = 1;
-
-  typeArrayHandle    icls (THREAD, outer->inner_classes());
+  InnerClassesIterator iter(outer);
   constantPoolHandle cp   (THREAD, outer->constants());
-  for(int i = 0; i < icls->length(); i += 4) {
-     int ioff = icls->ushort_at(i + inner_class_info_index);
-     int ooff = icls->ushort_at(i + outer_class_info_index);
+  for (; !iter.done(); iter.next()) {
+     int ioff = iter.inner_class_info_index();
+     int ooff = iter.outer_class_info_index();
 
      if (inner_is_member && ioff != 0 && ooff != 0) {
         klassOop o = cp->klass_at(ooff, CHECK);

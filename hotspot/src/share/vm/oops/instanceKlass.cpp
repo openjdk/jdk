@@ -1132,6 +1132,36 @@ JNIid* instanceKlass::jni_id_for(int offset) {
   return probe;
 }
 
+u2 instanceKlass::enclosing_method_data(int offset) {
+  typeArrayOop inner_class_list = inner_classes();
+  if (inner_class_list == NULL) {
+    return 0;
+  }
+  int length = inner_class_list->length();
+  if (length % inner_class_next_offset == 0) {
+    return 0;
+  } else {
+    int index = length - enclosing_method_attribute_size;
+    typeArrayHandle inner_class_list_h(inner_class_list);
+    assert(offset < enclosing_method_attribute_size, "invalid offset");
+    return inner_class_list_h->ushort_at(index + offset);
+  }
+}
+
+void instanceKlass::set_enclosing_method_indices(u2 class_index,
+                                                 u2 method_index) {
+  typeArrayOop inner_class_list = inner_classes();
+  assert (inner_class_list != NULL, "_inner_classes list is not set up");
+  int length = inner_class_list->length();
+  if (length % inner_class_next_offset == enclosing_method_attribute_size) {
+    int index = length - enclosing_method_attribute_size;
+    typeArrayHandle inner_class_list_h(inner_class_list);
+    inner_class_list_h->ushort_at_put(
+      index + enclosing_method_class_index_offset, class_index);
+    inner_class_list_h->ushort_at_put(
+      index + enclosing_method_method_index_offset, method_index);
+  }
+}
 
 // Lookup or create a jmethodID.
 // This code is called by the VMThread and JavaThreads so the
@@ -2106,28 +2136,21 @@ jint instanceKlass::compute_modifier_flags(TRAPS) const {
   jint access = access_flags().as_int();
 
   // But check if it happens to be member class.
-  typeArrayOop inner_class_list = inner_classes();
-  int length = (inner_class_list == NULL) ? 0 : inner_class_list->length();
-  assert (length % instanceKlass::inner_class_next_offset == 0, "just checking");
-  if (length > 0) {
-    typeArrayHandle inner_class_list_h(THREAD, inner_class_list);
-    instanceKlassHandle ik(THREAD, k);
-    for (int i = 0; i < length; i += instanceKlass::inner_class_next_offset) {
-      int ioff = inner_class_list_h->ushort_at(
-                      i + instanceKlass::inner_class_inner_class_info_offset);
+  instanceKlassHandle ik(THREAD, k);
+  InnerClassesIterator iter(ik);
+  for (; !iter.done(); iter.next()) {
+    int ioff = iter.inner_class_info_index();
+    // Inner class attribute can be zero, skip it.
+    // Strange but true:  JVM spec. allows null inner class refs.
+    if (ioff == 0) continue;
 
-      // Inner class attribute can be zero, skip it.
-      // Strange but true:  JVM spec. allows null inner class refs.
-      if (ioff == 0) continue;
-
-      // only look at classes that are already loaded
-      // since we are looking for the flags for our self.
-      Symbol* inner_name = ik->constants()->klass_name_at(ioff);
-      if ((ik->name() == inner_name)) {
-        // This is really a member class.
-        access = inner_class_list_h->ushort_at(i + instanceKlass::inner_class_access_flags_offset);
-        break;
-      }
+    // only look at classes that are already loaded
+    // since we are looking for the flags for our self.
+    Symbol* inner_name = ik->constants()->klass_name_at(ioff);
+    if ((ik->name() == inner_name)) {
+      // This is really a member class.
+      access = iter.inner_access_flags();
+      break;
     }
   }
   // Remember to strip ACC_SUPER bit
