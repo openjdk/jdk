@@ -172,6 +172,15 @@ else # PLATFORM
 # Libraries to link, and other C flags.
 #
 
+ifeq ($(PLATFORM), macosx))
+OTHER_INCLUDES += -I$(X11_PATH)/include
+OTHER_LDLIBS  += -lawt $(LIBM) $(LIBCXX)
+ ifeq ($(OS_VENDOR),Apple)
+   # XXXDARWIN Match BSD/Linux behavior -- the mawt.dylib symbols will
+   # be available at runtime.
+   OTHER_LDLIBS += -undefined dynamic_lookup
+ endif
+else
 ifeq ($(PLATFORM), solaris)
   # Note that on Solaris, fontmanager is built against the headless library.
   LDFLAGS      += -L$(LIBDIR)/$(LIBARCH)/headless
@@ -182,10 +191,15 @@ else # PLATFORM is linux
     OTHER_LDLIBS  += -Wl,-Bstatic -lgcc_eh -Wl,-Bdynamic
   endif                           
 endif
+endif
 
 endif # PLATFORM
 
 # set up compile flags..
+
+ifeq ($(PLATFORM), macosx))
+CPPFLAGS += -I$(CLASSHDRDIR)
+endif
 
 CPPFLAGS += -I$(SHARE_SRC)/native/$(PKGDIR) \
             -I$(SHARE_SRC)/native/$(PKGDIR)/layout \

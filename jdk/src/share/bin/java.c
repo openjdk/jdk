@@ -147,7 +147,6 @@ static int knownVMsLimit = 0;
 static void GrowKnownVMs();
 static int  KnownVMIndex(const char* name);
 static void FreeKnownVMs();
-static void ShowSplashScreen();
 static jboolean IsWildCardEnabled();
 
 #define ARG_CHECK(n, f, a) if (n < 1) { \
@@ -164,25 +163,6 @@ static jboolean IsWildCardEnabled();
 static jlong threadStackSize = 0;  /* stack size of the new thread */
 static jlong maxHeapSize        = 0;  /* max heap size */
 static jlong initialHeapSize    = 0;  /* inital heap size */
-
-int JNICALL JavaMain(void * args); /* entry point                  */
-
-enum LaunchMode {               // cf. sun.launcher.LauncherHelper
-    LM_UNKNOWN = 0,
-    LM_CLASS,
-    LM_JAR
-};
-
-static const char *launchModeNames[]
-    = { "Unknown", "Main class", "JAR file" };
-
-typedef struct {
-    int    argc;
-    char **argv;
-    int    mode;
-    char  *what;
-    InvocationFunctions ifn;
-} JavaMainArgs;
 
 /*
  * Entry point.
@@ -210,6 +190,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
     jlong start, end;
     char jvmpath[MAXPATHLEN];
     char jrepath[MAXPATHLEN];
+    char jvmcfg[MAXPATHLEN];
 
     _fVersion = fullversion;
     _dVersion = dotversion;
@@ -252,7 +233,8 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
 
     CreateExecutionEnvironment(&argc, &argv,
                                jrepath, sizeof(jrepath),
-                               jvmpath, sizeof(jvmpath));
+                               jvmpath, sizeof(jvmpath),
+                               jvmcfg,  sizeof(jvmcfg));
 
     ifn.CreateJavaVM = 0;
     ifn.GetDefaultJavaVMInitArgs = 0;
@@ -312,11 +294,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
     /* set the -Dsun.java.launcher.* platform properties */
     SetJavaLauncherPlatformProps();
 
-    /* Show the splash screen if needed */
-    ShowSplashScreen();
-
-    return ContinueInNewThread(&ifn, argc, argv, mode, what, ret);
-
+    return JVMInit(&ifn, threadStackSize, argc, argv, mode, what, ret);
 }
 /*
  * Always detach the main thread so that it appears to have ended when
@@ -374,6 +352,8 @@ JavaMain(void * _args)
     jobjectArray mainArgs;
     int ret = 0;
     jlong start, end;
+
+    RegisterThread();
 
     /* Initialize the virtual machine */
     start = CounterGet();
@@ -444,7 +424,7 @@ JavaMain(void * _args)
      */
     mainClass = LoadMainClass(env, mode, what);
     CHECK_EXCEPTION_NULL_LEAVE(mainClass);
-
+    PostJVMInit(env, mainClass, vm);
     /*
      * The LoadMainClass not only loads the main class, it will also ensure
      * that the main method's signature is correct, therefore further checking
@@ -1067,7 +1047,9 @@ ParseArguments(int *pargc, char ***pargv,
                    JLI_StrCmp(arg, "-jre-restrict-search") == 0 ||
                    JLI_StrCCmp(arg, "-splash:") == 0) {
             ; /* Ignore machine independent options already handled */
-        } else if (RemovableOption(arg) ) {
+        } else if (ProcessPlatformOption(arg)) {
+            ; /* Processing of platform dependent options */
+        } else if (RemovableOption(arg)) {
             ; /* Do not pass option to vm. */
         } else {
             AddOption(arg, NULL);
@@ -1128,17 +1110,6 @@ InitializeJVM(JavaVM **pvm, JNIEnv **penv, InvocationFunctions *ifn)
     JLI_MemFree(options);
     return r == JNI_OK;
 }
-
-
-#define NULL_CHECK0(e) if ((e) == 0) { \
-    JLI_ReportErrorMessage(JNI_ERROR); \
-    return 0; \
-  }
-
-#define NULL_CHECK(e) if ((e) == 0) { \
-    JLI_ReportErrorMessage(JNI_ERROR); \
-    return; \
-  }
 
 static jclass helperClass = NULL;
 
@@ -1598,10 +1569,9 @@ PrintUsage(JNIEnv* env, jboolean doXUsage)
  * mechanism.
  */
 jint
-ReadKnownVMs(const char *jrepath, const char * arch, jboolean speculative)
+ReadKnownVMs(const char *jvmCfgName, jboolean speculative)
 {
     FILE *jvmCfg;
-    char jvmCfgName[MAXPATHLEN+20];
     char line[MAXPATHLEN+20];
     int cnt = 0;
     int lineno = 0;
@@ -1614,8 +1584,6 @@ ReadKnownVMs(const char *jrepath, const char * arch, jboolean speculative)
     if (JLI_IsTraceLauncher()) {
         start = CounterGet();
     }
-    JLI_Snprintf(jvmCfgName, sizeof(jvmCfgName), "%s%slib%s%s%sjvm.cfg",
-        jrepath, FILESEP, FILESEP, arch, FILESEP);
 
     jvmCfg = fopen(jvmCfgName, "r");
     if (jvmCfg == NULL) {
@@ -1775,7 +1743,7 @@ FreeKnownVMs()
  * Displays the splash screen according to the jar file name
  * and image file names stored in environment variables
  */
-static void
+void
 ShowSplashScreen()
 {
     const char *jar_name = getenv(SPLASH_JAR_ENV_ENTRY);
@@ -1852,8 +1820,9 @@ IsWildCardEnabled()
     return _wc_enabled;
 }
 
-static int
-ContinueInNewThread(InvocationFunctions* ifn, int argc, char **argv,
+int
+ContinueInNewThread(InvocationFunctions* ifn, jlong threadStackSize,
+                    int argc, char **argv,
                     int mode, char *what, int ret)
 {
 

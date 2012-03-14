@@ -1,0 +1,113 @@
+." Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+." or visit www.oracle.com if you need additional information or have any
+." questions.
+."
+.TH servertool 1 "10 May 2011"
+
+.LP
+.SH "Name"
+servertool \- The Java(TM) IDL Server Tool
+.LP
+\f3servertool\fP provides a command\-line interface for application programmers to register, unregister, startup, and shutdown a persistent server.
+.SH "SYNOPSIS"
+.LP
+.nf
+\f3
+.fl
+servertool \-ORBInitialPort \fP\f4nameserverport\fP\f3 \fP\f3options\fP\f3 [ \fP\f3commands\fP\f3 ]
+.fl
+\fP
+.fi
+
+.LP
+.LP
+If you did not enter a command when starting \f2servertool\fP, the command\-line tool displays with a \f2servertool >\fP prompt. Enter commands at the \f2servertool >\fP prompt.
+.LP
+.LP
+If you enter a command when starting \f2servertool\fP, the Java IDL Server Tool starts, runs the command, and exits.
+.LP
+.LP
+The \f2\-ORBInitialPort\fP \f2nameserverport\fP option is \f3required\fP. The value for \f2nameserverport\fP must specify the port on which \f2orbd\fP is running and listening for incoming requests. When using Solaris software, you must become root to start a process on a port under 1024. For this reason, we recommend that you use a port number greater than or equal to 1024 for the \f2nameserverport\fP.
+.LP
+.SH "DESCRIPTION"
+.LP
+.LP
+The \f2servertool\fP provides the command\-line interface for the application programmers to register, unregister, startup, and shutdown a persistent server. Other commands are provided to obtain various statistical information about the server.
+.LP
+.SH "OPTIONS"
+.LP
+.RS 3
+.TP 3
+\-ORBInitialHost nameserverhost
+Specifies the host machine on which the name server is running and listening for incoming requests. The \f2nameserverhost\fP defaults to \f2localhost\fP if this option is not specified. If \f2orbd\fP and \f2servertool\fP are running on different machines, you must specify the name or IP address of the host on which \f2orbd\fP is running.
+.TP 3
+\-Joption
+Pass \f2option\fP to the Java virtual machine, where \f2option\fP is one of the options described on the reference page for java(1). For example, \f3\-J\-Xms48m\fP sets the startup memory to 48 megabytes. It is a common convention for \f3\-J\fP to pass options to the underlying virtual machine.
+.RE
+
+.LP
+.SH "COMMANDS"
+.LP
+.RS 3
+.TP 3
+register \-server\ <server\ class\ name> \ \-classpath\ <classpath\ to\ server> [\ \-applicationName\ <application\ name> \-args\ <args\ to\ server> \-vmargs\ <flags\ to\ be\ passed\ to\ Java\ VM> \ ]
+Register a new persistent server with the Object Request Broker Daemon (ORBD). If the server is not already registered, it is registered and activated. This command causes an install method to be invoked in the main class of the server identified by the \f2\-server\fP option. The install method must be \f2public static void install(org.omg.CORBA.ORB)\fP. The install method is optional and enables the developer to provide their own server installation behavior (for example, creating database schema).
+.TP 3
+unregister \-serverid\ <server\ id\ >\ | \-applicationName\ <application\ name>
+Unregister a server from the ORBD by using either its server id or its application name. This command causes an uninstall method to be invoked in the main class of the server identified by the \f2\-server\fP option. The uninstall method must be \f2public static void uninstall(org.omg.CORBA.ORB)\fP. The uninstall method is optional and enables the developer to provide their own server uninstall behavior (for example, undoing the behavior of the install method).
+.TP 3
+getserverid \-applicationName\ <application\ name>
+Return the server id that corresponds with an application.
+.TP 3
+list
+List information about all persistent servers registered with the ORBD.
+.TP 3
+listappnames
+List the application names for all servers currently registered with the ORBD.
+.TP 3
+listactive
+List information about all persistent servers that have been launched by the ORBD and are currently running.
+.TP 3
+locate \-serverid\ <server\ id\ >\ | \-applicationName\ <application\ name> [\-endpointType\ <endpointType>\ ]
+Locate the endpoints (ports) of a specific type for all ORBs created by a registered server. If a server is not already running, it is activated. If an endpoint type is not specified, then the plain/non\-protected endpoint associated with each ORB in a server is returned.
+.TP 3
+locateperorb \-serverid\ <server\ id\ >\ | \-applicationName\ <application\ name> [\-orbid\ <ORB\ name>\ ]
+Locate all the endpoints (ports) registered by a specific ORB of registered server. If a server is not already running, then it is activated. If an \f2orbid\fP is not specified, the default value of "" is assigned to the \f2orbid\fP. If any ORBs are created with an \f2orbid\fP of empty string, all ports registered by it are returned.
+.TP 3
+orblist \-serverid\ <server\ id\ >\ | \-applicationName\ <application\ name>
+Lists the ORBId of the ORBs defined on a server. An ORBId is the string name for the ORB created by the server. If the server is not already running, it is activated.
+.TP 3
+shutdown \-serverid\ <server\ id\ >\ | \-applicationName\ <application\ name>
+Shutdown an active server that is registered with ORBD. During execution of this command, the \f2shutdown()\fP method defined in the class specified by either the \f2\-serverid\fP or \f2\-applicationName\fP parameter is also invoked to shutdown the server process appropriately.
+.TP 3
+startup \-serverid\ <server\ id\ >\ | \-applicationName\ <application\ name>
+Startup or activate a server that is registered with ORBD. If the server is not running, this command launches the server. If the server is already running, an error message is returned to the user.
+.TP 3
+help
+List all the commands available to the server through the server tool.
+.TP 3
+quit
+Exit the server tool.
+.RE
+
+.LP
+.SH "SEE ALSO"
+.LP
+orbd(1)

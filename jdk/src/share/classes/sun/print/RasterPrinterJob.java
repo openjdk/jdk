@@ -240,7 +240,8 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * The document to be printed. It is initialized to an
      * empty (zero pages) book.
      */
-    private Pageable mDocument = new Book();
+// MacOSX - made protected so subclasses can reference it.
+    protected Pageable mDocument = new Book();
 
     /**
      * The name of the job being printed.
@@ -251,8 +252,10 @@ public abstract class RasterPrinterJob extends PrinterJob {
     /**
      * Printing cancellation flags
      */
-    private boolean performingPrinting = false;
-    private boolean userCancelled = false;
+ // MacOSX - made protected so subclasses can reference it.
+    protected boolean performingPrinting = false;
+ // MacOSX - made protected so subclasses can reference it.
+    protected boolean userCancelled = false;
 
    /**
     * Print to file permission variables.
@@ -1241,7 +1244,8 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * a DocPrintJob from their service and pass a Doc representing
      * the application's printjob
      */
-    private void spoolToService(PrintService psvc,
+// MacOSX - made protected so subclasses can reference it.
+    protected void spoolToService(PrintService psvc,
                                 PrintRequestAttributeSet attributes)
         throws PrinterException {
 
@@ -1738,7 +1742,8 @@ public abstract class RasterPrinterJob extends PrinterJob {
     /* Called by cancelDoc */
     protected abstract void abortDoc();
 
-    private void cancelDoc() throws PrinterAbortException {
+// MacOSX - made protected so subclasses can reference it.
+    protected void cancelDoc() throws PrinterAbortException {
         abortDoc();
         synchronized (this) {
             userCancelled = false;
@@ -2220,7 +2225,8 @@ public abstract class RasterPrinterJob extends PrinterJob {
      *      color:  black.
      *      clip:   <as passed in>
      */
-    void initPrinterGraphics(Graphics2D g, Rectangle2D clip) {
+// MacOSX - made protected so subclasses can reference it.
+    protected void initPrinterGraphics(Graphics2D g, Rectangle2D clip) {
 
         g.setClip(clip);
         g.setPaint(Color.black);

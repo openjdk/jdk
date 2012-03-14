@@ -30,3 +30,4 @@
 #[solaris]sun.tools.attach.SolarisAttachProvider
 #[windows]sun.tools.attach.WindowsAttachProvider
 #[linux]sun.tools.attach.LinuxAttachProvider
+#[macosx]sun.tools.attach.BsdAttachProvider

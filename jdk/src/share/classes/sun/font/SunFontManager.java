@@ -142,9 +142,11 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
       * The pool array stores the fonts, rather than directly referencing
       * the channels, as the font needs to do the open/close work.
       */
-     private static final int CHANNELPOOLSIZE = 20;
+     // MACOSX begin -- need to access these in subclass
+     protected static final int CHANNELPOOLSIZE = 20;
+     protected FileFont fontFileCache[] = new FileFont[CHANNELPOOLSIZE];
+     // MACOSX end
      private int lastPoolIndex = 0;
-     private FileFont fontFileCache[] = new FileFont[CHANNELPOOLSIZE];
 
     /* Need to implement a simple linked list scheme for fast
      * traversal and lookup.
@@ -168,8 +170,10 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      * here in that this contains the content of compositeFonts +
      * physicalFonts.
      */
-    private ConcurrentHashMap<String, Font2D>
+    // MACOSX begin -- need to access this in subclass
+    protected ConcurrentHashMap<String, Font2D>
         fullNameToFont = new ConcurrentHashMap<String, Font2D>();
+    // MACOSX end
 
     /* TrueType fonts have localised names. Support searching all
      * of these before giving up on a name.
@@ -735,7 +739,9 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      * If it returns null means this font was not registered and none
      * in that name is registered. The caller must find a substitute
      */
-    private PhysicalFont addToFontList(PhysicalFont f, int rank) {
+    // MACOSX begin -- need to access this in subclass
+    protected PhysicalFont addToFontList(PhysicalFont f, int rank) {
+    // MACOSX end
 
         String fontName = f.fullName;
         String familyName = f.familyName;
@@ -1233,8 +1239,8 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         return defaultPhysicalFont;
     }
 
-    public CompositeFont getDefaultLogicalFont(int style) {
-        return (CompositeFont)findFont2D("dialog", style, NO_FALLBACK);
+    public Font2D getDefaultLogicalFont(int style) {
+        return findFont2D("dialog", style, NO_FALLBACK);
     }
 
     /*
@@ -2435,7 +2441,9 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
 
     protected abstract String getFontPath(boolean noType1Fonts);
 
-    private Thread fileCloser = null;
+    // MACOSX begin -- need to access this in subclass
+    protected Thread fileCloser = null;
+    // MACOSX end
     Vector<File> tmpFontFiles = null;
 
     public Font2D createFont2D(File fontFile, int fontFormat,
@@ -3349,7 +3357,9 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         registerFontsInDir(dirName, true, Font2D.JRE_RANK, true, false);
     }
 
-    private void registerFontsInDir(String dirName, boolean useJavaRasterizer,
+    // MACOSX begin -- need to access this in subclass
+    protected void registerFontsInDir(String dirName, boolean useJavaRasterizer,
+    // MACOSX end
                                     int fontRank,
                                     boolean defer, boolean resolveSymLinks) {
         File pathFile = new File(dirName);
@@ -3769,6 +3779,9 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
             }
         }
 
+        // Add any native font family names here
+        addNativeFontFamilyNames(familyNames, requestedLocale);
+
         String[] retval =  new String[familyNames.size()];
         Object [] keyNames = familyNames.keySet().toArray();
         for (int i=0; i < keyNames.length; i++) {
@@ -3781,6 +3794,9 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
         }
         return retval;
     }
+
+    // Provides an aperture to add native font family names to the map
+    protected void addNativeFontFamilyNames(TreeMap<String, String> familyNames, Locale requestedLocale) { }
 
     public void register1dot0Fonts() {
         java.security.AccessController.doPrivileged(

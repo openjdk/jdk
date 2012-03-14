@@ -37,7 +37,7 @@
 #endif
 
 
-#ifdef __linux__
+#if defined(__linux__) || defined(MACOSX)
 extern int NET_Timeout(int s, long timeout);
 extern int NET_Read(int s, void* buf, size_t len);
 extern int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
