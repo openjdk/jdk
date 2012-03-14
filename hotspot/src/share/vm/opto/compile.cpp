@@ -1875,10 +1875,10 @@ void Compile::Code_Gen() {
 
     cfg.Estimate_Block_Frequency();
     cfg.GlobalCodeMotion(m,unique(),proj_list);
+    if (failing())  return;
 
     print_method("Global code motion", 2);
 
-    if (failing())  return;
     NOT_PRODUCT( verify_graph_edges(); )
 
     debug_only( cfg.verify(); )
