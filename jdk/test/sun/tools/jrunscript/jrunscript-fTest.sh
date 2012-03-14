@@ -40,7 +40,7 @@ if [ $? -eq 2 ]; then
 fi
 
 rm -f jrunscript-fTest.out 2>/dev/null
-${JRUNSCRIPT} -f ${TESTSRC}/hello.js > jrunscript-fTest.out 2>&1
+${JRUNSCRIPT} -J-Djava.awt.headless=true -f ${TESTSRC}/hello.js > jrunscript-fTest.out 2>&1
 
 $golden_diff jrunscript-fTest.out ${TESTSRC}/dash-f.out
 if [ $? != 0 ]
@@ -54,7 +54,7 @@ fi
 # with -l option
 
 rm -f jrunscript-fTest.out 2>/dev/null
-${JRUNSCRIPT} -l js -f ${TESTSRC}/hello.js > jrunscript-fTest.out 2>&1
+${JRUNSCRIPT} -J-Djava.awt.headless=true -l js -f ${TESTSRC}/hello.js > jrunscript-fTest.out 2>&1
 
 $golden_diff jrunscript-fTest.out ${TESTSRC}/dash-f.out
 if [ $? != 0 ]

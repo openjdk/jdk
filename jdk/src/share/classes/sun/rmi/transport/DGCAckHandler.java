@@ -78,7 +78,7 @@ public class DGCAckHandler {
         Collections.synchronizedMap(new HashMap<UID,DGCAckHandler>());
 
     private final UID id;
-    private List<Object> objList = new ArrayList<Object>(); // null if released
+    private List<Object> objList = new ArrayList<>(); // null if released
     private Future<?> task = null;
 
     /**

@@ -30,6 +30,10 @@
 #include "jni_util.h"
 #include "sun_management_FileSystemImpl.h"
 
+#ifdef _ALLBSD_SOURCE
+#define stat64 stat
+#endif
+
 /*
  * Class:     sun_management_FileSystemImpl
  * Method:    isAccessUserOnly0

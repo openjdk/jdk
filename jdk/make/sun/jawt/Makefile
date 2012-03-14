@@ -35,6 +35,8 @@ include $(BUILDDIR)/common/Defs.gmk
 #
 ifeq ($(PLATFORM), windows)
 FILES_cpp = jawt.cpp
+else ifeq ($(PLATFORM), macosx) # PLATFORM
+FILES_objc = jawt.m
 else # PLATFORM
 FILES_c = jawt.c
 endif # PLATFORM
@@ -108,6 +110,7 @@ CPPFLAGS += -I$(OPENWIN_HOME)/include \
 	    -I$(SHARE_SRC)/native/$(PKGDIR)/../dc/path \
             -I$(PLATFORM_SRC)/native/$(PKGDIR)/../jdga \
 	    $(EVENT_MODEL)
+
 #
 # Libraries to link in.
 #
@@ -128,8 +131,13 @@ ifeq ($(PLATFORM), linux)
   endif
 endif # PLATFORM
 
+ifeq ($(PLATFORM), macosx)
+vpath %.m   $(call NativeSrcDirList,,native/sun/awt)
+OTHER_LDLIBS = -lawt_lwawt -L$(LIBDIR) -Xlinker -rpath -Xlinker @loader_path \
+               -framework Cocoa
 endif # PLATFORM
 
+endif # PLATFORM
 
 #
 # Lets not remove any class files.

@@ -72,6 +72,6 @@ include $(BUILDDIR)/common/Library.gmk
 # Libraries to link
 #
 ifneq ($(PLATFORM), windows)
-  OTHER_LDLIBS = -ldl
+  OTHER_LDLIBS = $(LIBDL)
 endif
 

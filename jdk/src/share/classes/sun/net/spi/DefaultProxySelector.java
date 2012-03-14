@@ -111,7 +111,7 @@ public class DefaultProxySelector extends ProxySelector {
     static class NonProxyInfo {
         // Default value for nonProxyHosts, this provides backward compatibility
         // by excluding localhost and its litteral notations.
-        static final String defStringVal = "localhost|127.*|[::1]";
+        static final String defStringVal = "localhost|127.*|[::1]|0.0.0.0|[::0]";
 
         String hostsSource;
         RegexpPool hostsPool;
@@ -249,6 +249,12 @@ public class DefaultProxySelector extends ProxySelector {
                                             nprop.hostsSource = null;
                                             nprop.hostsPool = null;
                                         }
+                                    } else if (nphosts.length() != 0) {
+                                        // add the required default patterns
+                                        // but only if property no set. If it
+                                        // is empty, leave empty.
+                                        nphosts += "|" + NonProxyInfo
+                                                         .defStringVal;
                                     }
                                     if (nphosts != null) {
                                         if (!nphosts.equals(nprop.hostsSource)) {
