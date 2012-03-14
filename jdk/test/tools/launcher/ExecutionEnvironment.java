@@ -61,7 +61,9 @@ import java.util.Map;
 
 
 public class ExecutionEnvironment extends TestHelper {
-    static final String LD_LIBRARY_PATH    = "LD_LIBRARY_PATH";
+    static final String LD_LIBRARY_PATH    = TestHelper.isMacOSX
+            ? "DYLD_LIBRARY_PATH"
+            : "LD_LIBRARY_PATH";
     static final String LD_LIBRARY_PATH_32 = LD_LIBRARY_PATH + "_32";
     static final String LD_LIBRARY_PATH_64 = LD_LIBRARY_PATH + "_64";
 
@@ -81,7 +83,9 @@ public class ExecutionEnvironment extends TestHelper {
     static int errors = 0;
     static int passes = 0;
 
-    static final String LIBJVM = isWindows ? "jvm.dll" : "libjvm.so";
+    static final String LIBJVM = TestHelper.isWindows
+            ? "jvm.dll"
+            : "libjvm" + (TestHelper.isMacOSX ? ".dylib" : ".so");
 
     static void createTestJar() {
         try {
@@ -175,7 +179,7 @@ public class ExecutionEnvironment extends TestHelper {
 
         Map<String, String> env = new HashMap<>();
 
-        if (isLinux) {
+        if (TestHelper.isLinux || TestHelper.isMacOSX) {
             for (String x : LD_PATH_STRINGS) {
                 String pairs[] = x.split("=");
                 env.put(pairs[0], pairs[1]);

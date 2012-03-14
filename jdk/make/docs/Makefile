@@ -70,6 +70,8 @@ include $(BUILDDIR)/common/internal/ImportComponents.gmk
 #    WARNING: This could cause thrashing on low memory machines.
 ifeq ($(ARCH_DATA_MODEL),64)
   MAX_VM_MEMORY = 1024
+else ifeq ($(ARCH),universal)
+  MAX_VM_MEMORY = 1024
 else
   MAX_VM_MEMORY = 612
 endif

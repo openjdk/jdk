@@ -189,7 +189,7 @@ public final class SunGraphics2D
     public int renderHint;
     public int antialiasHint;
     public int textAntialiasHint;
-    private int fractionalMetricsHint;
+    protected int fractionalMetricsHint;
 
     /* A gamma adjustment to the colour used in lcd text blitting */
     public int lcdTextContrast;

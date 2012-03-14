@@ -42,7 +42,7 @@ JAR="$TESTJAVA/bin/jar"
 
 OS=`uname -s`
 case "$OS" in
-    SunOS )
+    SunOS | Darwin )
       SEP=':' ;;
     Linux )
       SEP=':' ;;
@@ -63,7 +63,7 @@ if [ \! -d $EXTD ]; then
     for n in 2 3; do
       rm -rf $JARD/*; mkdir -p $JARD/META-INF/services
       echo FooProvider$n \
-	>$JARD/META-INF/services/FooService
+        >$JARD/META-INF/services/FooService
       cp $TESTCLASSES/FooProvider$n.class $JARD
       if [ $n = 3 ]; then
         cp $TESTCLASSES/FooService.class $JARD

@@ -49,6 +49,19 @@
 #include <mntent.h>
 #endif
 
+#ifdef _ALLBSD_SOURCE
+#include <string.h>
+
+#define stat64 stat
+#define statvfs64 statvfs
+
+#define open64 open
+#define fstat64 fstat
+#define lstat64 lstat
+#define dirent64 dirent
+#define readdir64_r readdir_r
+#endif
+
 #include "jni.h"
 #include "jni_util.h"
 #include "jlong.h"
@@ -198,7 +211,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
     /* system calls that might not be available at run time */
 
-#if defined(__solaris__) && defined(_LP64)
+#if (defined(__solaris__) && defined(_LP64)) || defined(_ALLBSD_SOURCE)
     /* Solaris 64-bit does not have openat64/fstatat64 */
     my_openat64_func = (openat64_func*)dlsym(RTLD_DEFAULT, "openat");
     my_fstatat64_func = (fstatat64_func*)dlsym(RTLD_DEFAULT, "fstatat");
@@ -552,11 +565,17 @@ Java_sun_nio_fs_UnixNativeDispatcher_futimes(JNIEnv* env, jclass this, jint file
     times[1].tv_sec = modificationTime / 1000000;
     times[1].tv_usec = modificationTime % 1000000;
 
-    if (my_futimesat_func != NULL) {
-        RESTARTABLE((*my_futimesat_func)(filedes, NULL, &times[0]), err);
-        if (err == -1) {
-            throwUnixException(env, errno);
-        }
+#ifdef _ALLBSD_SOURCE
+    RESTARTABLE(futimes(filedes, &times[0]), err);
+#else
+    if (my_futimesat_func == NULL) {
+        JNU_ThrowInternalError(env, "my_ftimesat_func is NULL");
+        return;
+    }
+    RESTARTABLE((*my_futimesat_func)(filedes, NULL, &times[0]), err);
+#endif
+    if (err == -1) {
+        throwUnixException(env, errno);
     }
 }
 
@@ -1071,6 +1090,10 @@ Java_sun_nio_fs_UnixNativeDispatcher_getextmntent(JNIEnv* env, jclass this,
 {
 #ifdef __solaris__
     struct extmnttab ent;
+#elif defined(_ALLBSD_SOURCE)
+    char buf[1024];
+    char *str;
+    char *last;
 #else
     struct mntent ent;
     char buf[1024];
@@ -1099,6 +1122,25 @@ Java_sun_nio_fs_UnixNativeDispatcher_getextmntent(JNIEnv* env, jclass this,
         throwUnixException(env, errno);
         return -1;
     }
+#elif defined(_ALLBSD_SOURCE)
+again:
+    if (!(str = fgets(buf, sizeof(buf), fp)))
+        return -1;
+
+    name = strtok_r(str, " \t\n", &last);
+    if (name == NULL)
+        return -1;
+
+    // skip comments
+    if (*name == '#')
+        goto again;
+
+    dir = strtok_r((char *)NULL, " \t\n", &last);
+    fstype = strtok_r((char *)NULL, " \t\n", &last);
+    options = strtok_r((char *)NULL, " \t\n", &last);
+    if (options == NULL)
+        return -1;
+    dev = 0;
 #else
     m = getmntent_r(fp, &ent, (char*)&buf, buflen);
     if (m == NULL)

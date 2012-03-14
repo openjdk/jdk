@@ -63,4 +63,8 @@ setup() {
     JRUNSCRIPT="${TESTJAVA}/bin/jrunscript"
     JAVAC="${TESTJAVA}/bin/javac"
     JAVA="${TESTJAVA}/bin/java"
+    # needed to get full headless behavior on Mac
+    if [ "$OS" = "Darwin" ]; then
+        export AWT_TOOLKIT=XToolkit
+    fi
 }

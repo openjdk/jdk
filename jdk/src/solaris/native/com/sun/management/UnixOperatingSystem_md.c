@@ -32,10 +32,16 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#if defined(_ALLBSD_SOURCE)
+#include <sys/sysctl.h>
+#else
 #include <sys/swap.h>
+#endif
 #include <sys/resource.h>
 #include <sys/times.h>
+#ifndef _ALLBSD_SOURCE
 #include <sys/sysinfo.h>
+#endif
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
@@ -46,16 +52,22 @@
 
 static jlong page_size = 0;
 
+#if defined(_ALLBSD_SOURCE)
+#define MB      (1024UL * 1024UL)
+#else
+
 /* This gets us the new structured proc interfaces of 5.6 & later */
 /* - see comment in <sys/procfs.h> */
 #define _STRUCTURED_PROC 1
 #include <sys/procfs.h>
 
+#endif /* _ALLBSD_SOURCE */
+
 static struct dirent* read_dir(DIR* dirp, struct dirent* entry) {
 #ifdef __solaris__
     struct dirent* dbuf = readdir(dirp);
     return dbuf;
-#else /* __linux__ */
+#else /* __linux__ || _ALLBSD_SOURCE */
     struct dirent* p;
     if (readdir_r(dirp, entry, &p) == 0) {
         return p;
@@ -124,7 +136,7 @@ static jlong get_total_or_available_swap_space_size(JNIEnv* env, jboolean availa
     free(strtab);
     return available ? ((jlong)avail * page_size) :
                        ((jlong)total * page_size);
-#else /* __linux__ */
+#elif defined(__linux__)
     int ret;
     FILE *fp;
     jlong total = 0, avail = 0;
@@ -138,6 +150,13 @@ static jlong get_total_or_available_swap_space_size(JNIEnv* env, jboolean availa
     avail = (jlong)si.freeswap * si.mem_unit;
 
     return available ? avail : total;
+#else /* _ALLBSD_SOURCE */
+    /*
+     * XXXBSD: there's no way available to get swap info in
+     *         FreeBSD.  Usage of libkvm is not an option here
+     */
+    // throw_internal_error(env, "Unimplemented in FreeBSD");
+    return (0);
 #endif
 }
 
@@ -179,7 +198,7 @@ Java_com_sun_management_UnixOperatingSystem_getCommittedVirtualMemorySize
 
     JVM_Close(fd);
     return (jlong) psinfo.pr_size * 1024;
-#else /* __linux__ */
+#elif defined(__linux__)
     FILE *fp;
     unsigned long vsize = 0;
 
@@ -197,6 +216,12 @@ Java_com_sun_management_UnixOperatingSystem_getCommittedVirtualMemorySize
 
     fclose(fp);
     return (jlong)vsize;
+#else /* _ALLBSD_SOURCE */
+    /*
+     * XXXBSD: there's no way available to do it in FreeBSD, AFAIK.
+     */
+    // throw_internal_error(env, "Unimplemented in FreeBSD");
+    return (64 * MB);
 #endif
 }
 
@@ -222,9 +247,13 @@ Java_com_sun_management_UnixOperatingSystem_getProcessCpuTime
     jlong cpu_time_ns;
     struct tms time;
 
-#ifdef __solaris__
+    /*
+     * BSDNOTE: FreeBSD implements _SC_CLK_TCK since FreeBSD 5, so
+     *          add a magic to handle it
+     */
+#if defined(__solaris__) || defined(_SC_CLK_TCK)
     clk_tck = (jlong) sysconf(_SC_CLK_TCK);
-#else /* __linux__ */
+#elif defined(__linux__) || defined(_ALLBSD_SOURCE)
     clk_tck = 100;
 #endif
     if (clk_tck == -1) {
@@ -244,22 +273,51 @@ JNIEXPORT jlong JNICALL
 Java_com_sun_management_UnixOperatingSystem_getFreePhysicalMemorySize
   (JNIEnv *env, jobject mbean)
 {
+#ifdef _ALLBSD_SOURCE
+    /*
+     * XXBSDL no way to do it in FreeBSD
+     */
+    // throw_internal_error(env, "unimplemented in FreeBSD")
+    return (128 * MB);
+#else
     jlong num_avail_physical_pages = sysconf(_SC_AVPHYS_PAGES);
     return (num_avail_physical_pages * page_size);
+#endif
 }
 
 JNIEXPORT jlong JNICALL
 Java_com_sun_management_UnixOperatingSystem_getTotalPhysicalMemorySize
   (JNIEnv *env, jobject mbean)
 {
+#ifdef _ALLBSD_SOURCE
+    jlong result;
+    int mib[2];
+    size_t rlen;
+
+    mib[0] = CTL_HW;
+    mib[1] = HW_PHYSMEM;
+    rlen = sizeof(result);
+    if (sysctl(mib, 2, &result, &rlen, NULL, 0) == -1)
+        result = 256 * MB;
+
+    return (result);
+#else
     jlong num_physical_pages = sysconf(_SC_PHYS_PAGES);
     return (num_physical_pages * page_size);
+#endif
 }
 
 JNIEXPORT jlong JNICALL
 Java_com_sun_management_UnixOperatingSystem_getOpenFileDescriptorCount
   (JNIEnv *env, jobject mbean)
 {
+#ifdef _ALLBSD_SOURCE
+    /*
+     * XXXBSD: there's no way available to do it in FreeBSD, AFAIK.
+     */
+    // throw_internal_error(env, "Unimplemented in FreeBSD");
+    return (100);
+#else /* solaris/linux */
     DIR *dirp;
     struct dirent dbuf;
     struct dirent* dentp;
@@ -282,6 +340,7 @@ Java_com_sun_management_UnixOperatingSystem_getOpenFileDescriptorCount
     closedir(dirp);
     // subtract by 1 which was the fd open for this implementation
     return (fds - 1);
+#endif
 }
 
 JNIEXPORT jlong JNICALL
