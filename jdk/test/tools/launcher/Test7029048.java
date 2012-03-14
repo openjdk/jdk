@@ -285,8 +285,8 @@ public class Test7029048 extends TestHelper {
     }
 
     public static void main(String... args) throws Exception {
-        if (isWindows) {
-            System.out.println("Warning: noop on windows");
+        if (TestHelper.isWindows || TestHelper.isMacOSX) {
+            System.out.println("Note: applicable on neither Windows nor MacOSX");
             return;
         }
         // create our test jar first

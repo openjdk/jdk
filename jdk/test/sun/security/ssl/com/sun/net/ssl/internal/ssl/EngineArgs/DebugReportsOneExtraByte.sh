@@ -33,11 +33,7 @@
 
 OS=`uname -s`
 case "$OS" in
-  SunOS )
-    PS=":"
-    FS="/"
-    ;;
-  Linux )
+  SunOS | Linux | Darwin )
     PS=":"
     FS="/"
     ;;
@@ -74,6 +70,10 @@ echo "========="
 if [ ${RETVAL} -ne 0 ]; then
     echo "Did NOT see the expected debug output."
     exit 1
+else
+    echo "Received the expected debug output."
+    exit 0
+fi
 else
     echo "Received the expected debug output."
     exit 0

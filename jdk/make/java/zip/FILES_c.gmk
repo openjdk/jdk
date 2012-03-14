@@ -29,7 +29,10 @@ FILES_c = \
 	Deflater.c \
 	Inflater.c \
 	ZipFile.c \
-	zip_util.c \
+	zip_util.c
+
+ifneq ($(SYSTEM_ZLIB),true)
+FILES_c += \
 	compress.c \
 	deflate.c \
 	gzclose.c \
@@ -44,4 +47,5 @@ FILES_c = \
 	uncompr.c \
 	zadler32.c \
 	zcrc32.c \
-	zutil.c 
+	zutil.c
+endif

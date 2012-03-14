@@ -31,31 +31,31 @@
 
 if [ "${TESTJAVA}" = "" ]
 then
-	echo "TESTJAVA not set.  Test cannot execute.  Failed."
-	exit 1
+        echo "TESTJAVA not set.  Test cannot execute.  Failed."
+        exit 1
 fi
 
 if [ "${TESTSRC}" = "" ]
 then
-	TESTSRC="."
+        TESTSRC="."
 fi
 
 OS=`uname -s`
 case "$OS" in
-    SunOS | Linux )
+    SunOS | Linux | Darwin )
         FILESEP="/"
-	PATHSEP=":"
-	;;
+        PATHSEP=":"
+        ;;
 
     CYGWIN* )
         FILESEP="/"
-	PATHSEP=";"
-	;;
+        PATHSEP=";"
+        ;;
 
     Windows* )
         FILESEP="\\"
-	PATHSEP=";"
-	;;
+        PATHSEP=";"
+        ;;
 esac
 
 set -ex

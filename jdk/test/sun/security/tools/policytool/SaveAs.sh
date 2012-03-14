@@ -24,7 +24,7 @@
 # @test
 # @bug 4252583
 # @summary policytool throws FileNotFoundException when user tries to
-#		save new policy file
+#               save new policy file
 #
 # @run applet/manual=done SaveAs.html
 # @run shell SaveAs.sh
@@ -47,7 +47,7 @@ fi
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     NULL=/dev/null
     PS=":"
     FS="/"

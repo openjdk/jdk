@@ -27,13 +27,17 @@
  * - move all the conversion code into an own file
  */
 
-#define USE_TRACE
-#define USE_ERROR
+//#define USE_TRACE
+//#define USE_ERROR
 
 
 #include <jni.h>
 // for malloc
+#ifdef _ALLBSD_SOURCE
+#include <stdlib.h>
+#else
 #include <malloc.h>
+#endif
 #include "SoundDefs.h"
 #include "DirectAudio.h"
 #include "Utilities.h"
@@ -58,22 +62,22 @@ typedef struct {
 /* 16 bit signed sample, native endianness, stored in 32-bits */
 typedef INT32 MAP_Sample;
 
-INLINE UINT16 MAP_SWAP16_impl(UINT16 a) {
+static INLINE UINT16 MAP_SWAP16_impl(UINT16 a) {
     return (a>>8) | (a<<8);
 }
 
-INLINE UINT32 MAP_SWAP32_impl(UINT32 a) {
+static INLINE UINT32 MAP_SWAP32_impl(UINT32 a) {
     return (a>>24)
         | ((a>>8) & 0xFF00)
         | ((a<<8) & 0xFF0000)
         | (a<<24);
 }
 
-INLINE UINT32 MAP_SWAP16BIT(UINT32 sh) {
+static INLINE UINT32 MAP_SWAP16BIT(UINT32 sh) {
     return (UINT32) ((sh & 0xFF) << 8) | ((sh & 0xFF00) >> 8);
 }
 
-INLINE INT32 MAP_ClipAndConvertToShort(MAP_Sample sample) {
+static INLINE INT32 MAP_ClipAndConvertToShort(MAP_Sample sample) {
     if (sample < -32768) {
         return -32768;
     }
@@ -84,7 +88,7 @@ INLINE INT32 MAP_ClipAndConvertToShort(MAP_Sample sample) {
 }
 
 
-INLINE INT32 MAP_ClipAndConvertToShort_Swapped(MAP_Sample sample) {
+static INLINE INT32 MAP_ClipAndConvertToShort_Swapped(MAP_Sample sample) {
     if (sample < -32768) {
         return 0x0080;
     }
@@ -94,7 +98,7 @@ INLINE INT32 MAP_ClipAndConvertToShort_Swapped(MAP_Sample sample) {
     return (INT32) (INT16) MAP_SWAP16BIT(sample);
 }
 
-INLINE INT8 MAP_ClipAndConvertToByte(MAP_Sample sample) {
+static INLINE INT8 MAP_ClipAndConvertToByte(MAP_Sample sample) {
     if (sample < -32768) {
         return -128;
     }
@@ -105,7 +109,7 @@ INLINE INT8 MAP_ClipAndConvertToByte(MAP_Sample sample) {
 }
 
 
-INLINE UINT8 MAP_ClipAndConvertToUByte(MAP_Sample sample) {
+static INLINE UINT8 MAP_ClipAndConvertToUByte(MAP_Sample sample) {
     if (sample < -32768) {
         return 0;
     }

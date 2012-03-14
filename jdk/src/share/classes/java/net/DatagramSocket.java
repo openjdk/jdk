@@ -133,7 +133,8 @@ class DatagramSocket implements java.io.Closeable {
           bind(new InetSocketAddress(0));
 
         // old impls do not support connect/disconnect
-        if (oldImpl) {
+        if (oldImpl || (impl instanceof AbstractPlainDatagramSocketImpl &&
+             ((AbstractPlainDatagramSocketImpl)impl).nativeConnectDisabled())) {
             connectState = ST_CONNECTED_NO_IMPL;
         } else {
             try {
@@ -752,9 +753,19 @@ class DatagramSocket implements java.io.Closeable {
                 // via the impl failed.
                 boolean stop = false;
                 while (!stop) {
+                    InetAddress peekAddress = null;
+                    int peekPort = -1;
                     // peek at the packet to see who it is from.
-                    InetAddress peekAddress = new InetAddress();
-                    int peekPort = getImpl().peek(peekAddress);
+                    if (!oldImpl) {
+                        // We can use the new peekData() API
+                        DatagramPacket peekPacket = new DatagramPacket(new byte[1], 1);
+                        peekPort = getImpl().peekData(peekPacket);
+                        peekAddress = peekPacket.getAddress();
+                    } else {
+                        // this api only works for IPv4
+                        peekAddress = new InetAddress();
+                        peekPort = getImpl().peek(peekAddress);
+                    }
                     if ((!connectedAddress.equals(peekAddress)) ||
                         (connectedPort != peekPort)) {
                         // throw the packet away and silently continue

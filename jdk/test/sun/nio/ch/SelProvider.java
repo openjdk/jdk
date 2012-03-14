@@ -50,6 +50,8 @@ public class SelProvider {
             } else {
                 throw new RuntimeException("Test does not recognize this operating system");
             }
+        } else if (osname.startsWith("Mac OS")) {
+            expected = "sun.nio.ch.PollSelectorProvider";
         } else
             return;
         if (!spName.equals(expected))

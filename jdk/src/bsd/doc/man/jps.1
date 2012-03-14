@@ -1,0 +1,250 @@
+." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+." or visit www.oracle.com if you need additional information or have any
+." questions.
+."
+.TH jps 1 "10 May 2011"
+
+.LP
+.SH "Name"
+jps \- Java Virtual Machine Process Status Tool
+.LP
+.SH "SYNOPSIS"
+.LP
+.nf
+\f3
+.fl
+\fP\f3jps\fP [ \f2options\fP ] [ \f2hostid\fP ]
+.br
+
+.fl
+.fi
+
+.LP
+.SH "PARAMETERS"
+.LP
+.RS 3
+.TP 3
+options
+Command\-line options.
+.TP 3
+hostid
+The host identifier of the host for which the process report should be generated. The \f2hostid\fP may include optional components that indicate the communications protocol, port number, and other implementation specific data.
+.RE
+
+.LP
+.SH "DESCRIPTION"
+.LP
+.LP
+The \f3jps\fP tool lists the instrumented HotSpot Java Virtual Machines (JVMs) on the target system. The tool is limited to reporting information on JVMs for which it has the access permissions.
+.LP
+.LP
+If \f3jps\fP is run without specifying a \f2hostid\fP, it will look for instrumented JVMs on the local host. If started with a \f2hostid\fP, it will look for JVMs on the indicated host, using the specified protocol and port. A \f3jstatd\fP process is assumed to be running on the target host.
+.LP
+.LP
+The \f3jps\fP command will report the local VM identifier, or \f2lvmid\fP, for each instrumented JVM found on the target system. The \f3lvmid\fP is typically, but not necessarily, the operating system's process identifier for the JVM process. With no options, \f3jps\fP will list each Java application's \f2lvmid\fP followed by the short form of the application's class name or jar file name. The short form of the class name or JAR file name omits the class's package information or the JAR files path information.
+.LP
+.LP
+The \f3jps\fP command uses the \f3java\fP launcher to find the class name and arguments passed to the \f2main\fP method. If the target JVM is started with a custom launcher, the class name (or JAR file name) and the arguments to the \f2main\fP method will not be available. In this case, the \f3jps\fP command will output the string \f2Unknown\fP for the class name or JAR file name and for the arguments to the main method.
+.LP
+.LP
+The list of JVMs produced by the \f3jps\fP command may be limited by the permissions granted to the principal running the command. The command will only list the JVMs for which the principle has access rights as determined by operating system specific access control mechanisms.
+.LP
+.LP
+\f3NOTE:\fP This utility is unsupported and may not be available in future versions of the JDK. It is not currently available on Windows 98 and Windows ME platforms.
+.LP
+.SH "OPTIONS"
+.LP
+.LP
+The \f3jps\fP command supports a number of options that modify the output of the command. These options are subject to change or removal in the future.
+.LP
+.RS 3
+.TP 3
+\-q
+Suppress the output of the class name, JAR file name, and arguments passed to the \f2main\fP method, producing only a list of local VM identifiers.
+.TP 3
+\-m
+Output the arguments passed to the main method. The output may be null for embedded JVMs.
+.TP 3
+\-l
+Output the full package name for the application's main class or the full path name to the application's JAR file.
+.TP 3
+\-v
+Output the arguments passed to the JVM.
+.TP 3
+\-V
+Output the arguments passed to the JVM through the flags file (the .hotspotrc file or the file specified by the \-XX:Flags=<\f2filename\fP> argument).
+.TP 3
+\-Joption
+Pass \f2option\fP to the \f3java\fP launcher called by \f3jps\fP. For example, \f3\-J\-Xms48m\fP sets the startup memory to 48 megabytes. It is a common convention for \f3\-J\fP to pass options to the underlying VM executing applications written in Java.
+.RE
+
+.LP
+.SS
+HOST IDENTIFIER
+.LP
+.LP
+The host identifier, or \f2hostid\fP is a string that indicates the target system. The syntax of the \f2hostid\fP string largely corresponds to the syntax of a URI:
+.LP
+.nf
+\f3
+.fl
+[\fP\f4protocol\fP\f3:][[//]\fP\f4hostname\fP\f3][:\fP\f4port\fP\f3][/\fP\f4servername\fP\f3]\fP
+.br
+\f3
+.fl
+\fP
+.fi
+
+.LP
+.RS 3
+.TP 3
+protocol
+The communications protocol. If the \f2protocol\fP is omitted and a \f2hostname\fP is not specified, the default protocol is a platform specific, optimized, local protocol. If the \f2protocol\fP is omitted and a \f2hostname\fP is specified, then the default protocol is \f3rmi\fP.
+.TP 3
+hostname
+A hostname or IP address indicating the target host. If \f2hostname\fP is omitted, then the target host is the local host.
+.TP 3
+port
+The default port for communicating with the remote server. If the \f2hostname\fP is omitted or the \f2protocol\fP specifies an optimized, local protocol, then \f2port\fP is ignored. Otherwise, treatment of the \f2port\fP parameter is implementation specific. For the default \f3rmi\fP protocol the \f2port\fP indicates the port number for the rmiregistry on the remote host. If \f2port\fP is omitted, and \f2protocol\fP indicates \f3rmi\fP, then the default rmiregistry port (1099) is used.
+.TP 3
+servername
+The treatment of this parameter depends on the implementation. For the optimized, local protocol, this field is ignored. For the \f3rmi\fP protocol, this parameter is a string representing the name of the RMI remote object on the remote host. See the \f3\-n\fP option for the jstatd(1) command.
+.RE
+
+.LP
+.SH "OUTPUT FORMAT"
+.LP
+.LP
+The output of the \f3jps\fP command follows the following pattern:
+.LP
+.nf
+\f3
+.fl
+\fP\f4lvmid\fP\f3 [ [ \fP\f4classname\fP\f3 | \fP\f4JARfilename\fP\f3 | "Unknown"] [ \fP\f4arg\fP\f3* ] [ \fP\f4jvmarg\fP\f3* ] ]\fP
+.br
+\f3
+.fl
+\fP
+.fi
+
+.LP
+.LP
+Where all output tokens are separated by white space. An \f2arg\fP that includes embedded white space will introduce ambiguity when attempting to map arguments to their actual positional parameters.
+.br
+.br
+\f3NOTE\fP: You are advised not to write scripts to parse \f3jps\fP output since the format may change in future releases. If you choose to write scripts that parse \f3jps\fP output, expect to modify them for future releases of this tool.
+.br
+
+.LP
+.SH "EXAMPLES"
+.LP
+.LP
+This section provides examples of the \f3jps\fP command.
+.LP
+.LP
+Listing the instrumented JVMs on the local host:
+.LP
+.nf
+\f3
+.fl
+\fP\f3jps\fP
+.br
+
+.fl
+18027 Java2Demo.JAR
+.br
+
+.fl
+18032 jps
+.br
+
+.fl
+18005 jstat
+.br
+
+.fl
+.fi
+
+.LP
+.LP
+Listing the instrumented JVMs on a remote host:
+.LP
+.LP
+This example assumes that the \f3jstat\fP server and either the its internal RMI registry or a separate external \f3rmiregistry\fP process are running on the remote host on the default port (port 1099). It also assumes that the local host has appropriate permissions to access the remote host. This example also includes the \f2\-l\fP option to output the long form of the class names or JAR file names.
+.LP
+.nf
+\f3
+.fl
+\fP\f3jps \-l remote.domain\fP
+.br
+
+.fl
+3002 /opt/jdk1.7.0/demo/jfc/Java2D/Java2Demo.JAR
+.br
+
+.fl
+2857 sun.tools.jstatd.jstatd
+.br
+
+.fl
+.fi
+
+.LP
+.LP
+Listing the instrumented JVMs on a remote host with a non\-default port for the RMI registry
+.LP
+.LP
+This example assumes that the \f3jstatd\fP server, with an internal RMI registry bound to port 2002, is running on the remote host. This example also uses the \f2\-m\fP option to include the arguments passed to the \f2main\fP method of each of the listed Java applications.
+.LP
+.nf
+\f3
+.fl
+\fP\f3jps \-m remote.domain:2002\fP
+.br
+
+.fl
+3002 /opt/jdk1.7.0/demo/jfc/Java2D/Java2Demo.JAR
+.br
+
+.fl
+3102 sun.tools.jstatd.jstatd \-p 2002
+.fl
+.fi
+
+.LP
+.SH "SEE ALSO"
+.LP
+.RS 3
+.TP 2
+o
+java(1) \- the Java Application Launcher
+.TP 2
+o
+jstat(1) \- the Java virtual machine Statistics Monitoring Tool
+.TP 2
+o
+jstatd(1) \- the jstat daemon
+.TP 2
+o
+rmiregistry(1) \- the Java Remote Object Registry
+.RE
+
+.LP
+

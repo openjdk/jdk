@@ -804,7 +804,7 @@ static AnyFunc* hash_table_vis[HASH_SIZE];
 static int initialized;
 static int usevis = JNI_TRUE;
 
-#ifdef __linux__
+#if defined(__linux__) || defined(MACOSX)
 #   define ULTRA_CHIP   "sparc64"
 #else
 #   define ULTRA_CHIP   "sun4u"

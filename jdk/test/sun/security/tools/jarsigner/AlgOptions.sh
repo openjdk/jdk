@@ -46,7 +46,7 @@ fi
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     NULL=/dev/null
     PS=":"
     FS="/"
@@ -84,7 +84,7 @@ RESULT=$?
 if [ $RESULT -eq 0 ]; then
     echo "test 1 failed"
     failed=1
-else 
+else
     echo "test 1 passed"
 fi
 
@@ -98,11 +98,11 @@ RESULT=$?
 if [ $RESULT -eq 0 ]; then
     echo "test 2 failed"
     failed=1
-else 
+else
     echo "test 2 passed"
 fi
 
-# test BOGUS signature algorithm 
+# test BOGUS signature algorithm
 ${TESTJAVA}${FS}bin${FS}jarsigner \
     -keystore ${TESTSRC}${FS}JarSigning.keystore \
     -storepass bbbbbb \
@@ -112,11 +112,11 @@ RESULT=$?
 if [ $RESULT -eq 0 ]; then
     echo "test 3 failed"
     failed=1
-else 
+else
     echo "test 3 passed"
 fi
 
-# test BOGUS digest algorithm 
+# test BOGUS digest algorithm
 ${TESTJAVA}${FS}bin${FS}jarsigner \
     -keystore ${TESTSRC}${FS}JarSigning.keystore \
     -storepass bbbbbb \
@@ -126,11 +126,11 @@ RESULT=$?
 if [ $RESULT -eq 0 ]; then
     echo "test 4 failed"
     failed=1
-else 
+else
     echo "test 4 passed"
 fi
 
-# test incompatible signature algorithm 
+# test incompatible signature algorithm
 ${TESTJAVA}${FS}bin${FS}jarsigner \
     -keystore ${TESTSRC}${FS}JarSigning.keystore \
     -storepass bbbbbb \
@@ -140,11 +140,11 @@ RESULT=$?
 if [ $RESULT -eq 0 ]; then
     echo "test 5 failed"
     failed=1
-else 
+else
     echo "test 5 passed"
 fi
 
-# test compatible signature algorithm 
+# test compatible signature algorithm
 ${TESTJAVA}${FS}bin${FS}jarsigner \
     -keystore ${TESTSRC}${FS}JarSigning.keystore \
     -storepass bbbbbb \
@@ -153,22 +153,22 @@ ${TESTJAVA}${FS}bin${FS}jarsigner \
 RESULT=$?
 if [ $RESULT -eq 0 ]; then
     echo "test 6 passed"
-else 
+else
     echo "test 6 failed"
     failed=1
 fi
 
-# verify it 
+# verify it
 ${TESTJAVA}${FS}bin${FS}jarsigner -verify ${TESTCLASSES}${FS}AlgOptionsTmp.jar
 RESULT=$?
 if [ $RESULT -eq 0 ]; then
     echo "test 7 passed"
-else 
+else
     echo "test 7 failed"
     failed=1
 fi
 
-# test non-default digest algorithm 
+# test non-default digest algorithm
 ${TESTJAVA}${FS}bin${FS}jarsigner \
     -keystore ${TESTSRC}${FS}JarSigning.keystore \
     -storepass bbbbbb \
@@ -177,17 +177,17 @@ ${TESTJAVA}${FS}bin${FS}jarsigner \
 RESULT=$?
 if [ $RESULT -eq 0 ]; then
     echo "test 8 passed"
-else 
+else
     echo "test 8 failed"
     failed=1
 fi
 
-# verify it 
+# verify it
 ${TESTJAVA}${FS}bin${FS}jarsigner -verify ${TESTCLASSES}${FS}AlgOptionsTmp.jar
 RESULT=$?
 if [ $RESULT -eq 0 ]; then
     echo "test 9 passed"
-else 
+else
     echo "test 9 failed"
     failed=1
 fi
@@ -202,17 +202,17 @@ ${TESTJAVA}${FS}bin${FS}jarsigner \
 RESULT=$?
 if [ $RESULT -eq 0 ]; then
     echo "test 10 passed"
-else 
+else
     echo "test 10 failed"
     failed=1
 fi
 
-# verify it 
+# verify it
 ${TESTJAVA}${FS}bin${FS}jarsigner -verify ${TESTCLASSES}${FS}AlgOptionsTmp.jar
 RESULT=$?
 if [ $RESULT -eq 0 ]; then
     echo "test 11 passed"
-else 
+else
     echo "test 11 failed"
     failed=1
 fi

@@ -48,6 +48,9 @@ case "$OS" in
   Linux )
     FILESEP="/"
     ;;
+  Darwin )
+    FILESEP="/"
+    ;;
   CYGWIN* )
     FILESEP="/"
     ;;
@@ -61,8 +64,8 @@ case "$OS" in
 esac
 
 ${TESTJAVA}${FILESEP}bin${FILESEP}keytool \
-	-list -v \
-	-keystore ${TESTSRC}${FILESEP}CloneKeyAskPassword.jks \
-	-storepass test123
+        -list -v \
+        -keystore ${TESTSRC}${FILESEP}CloneKeyAskPassword.jks \
+        -storepass test123
 
 exit $?

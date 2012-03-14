@@ -1,0 +1,252 @@
+#
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+#
+# Definitions for Bsd.
+#
+
+# Default for COMPILER_WARNINGS_FATAL on Bsd (C & C++ compiler warnings)
+ifndef COMPILER_WARNINGS_FATAL
+  COMPILER_WARNINGS_FATAL=false
+endif
+
+# Bsd should use parallel compilation for best build times
+ifndef COMPILE_APPROACH
+  COMPILE_APPROACH = parallel
+endif
+
+# Indication that we are doing an incremental build.
+#    This may trigger the creation of make depend files.
+ifndef INCREMENTAL_BUILD
+  INCREMENTAL_BUILD = false
+endif
+
+# FullPath just makes sure it never ends with a / and no duplicates
+define FullPath
+$(shell cd $1 2> $(DEV_NULL) && pwd)
+endef
+
+# OptFullPath: Absolute path name of a dir that might not initially exist.
+define OptFullPath
+$(shell if [ "$1" != "" -a -d "$1" ]; then (cd $1 && pwd); else echo "$1"; fi)
+endef
+
+# Location on system where jdk installs might be
+USRJDKINSTANCES_PATH = $(PACKAGE_PATH)
+
+# UNIXCOMMAND_PATH: path to where the most common Unix commands are.
+#  NOTE: Must end with / so that it could be empty, allowing PATH usage.
+ifneq "$(origin ALT_UNIXCOMMAND_PATH)" "undefined"
+  UNIXCOMMAND_PATH :=$(call PrefixPath,$(ALT_UNIXCOMMAND_PATH))
+else
+  UNIXCOMMAND_PATH  = /bin/
+endif
+
+# USRBIN_PATH: path to where the most common Unix commands are.
+#  NOTE: Must end with / so that it could be empty, allowing PATH usage.
+ifneq "$(origin ALT_USRBIN_PATH)" "undefined"
+  USRBIN_PATH :=$(call PrefixPath,$(ALT_USRBIN_PATH))
+else
+  USRBIN_PATH  = /usr/bin/
+endif
+
+# UNIXCCS_PATH: path to where the Solaris ported UNIX commands can be found
+#  NOTE: Must end with / so that it could be empty, allowing PATH usage.
+ifneq "$(origin ALT_UNIXCCS_PATH)" "undefined"
+  UNIXCCS_PATH :=$(call PrefixPath,$(ALT_UNIXCCS_PATH))
+else
+  UNIXCCS_PATH = /usr/ccs/bin/
+endif
+
+# SLASH_JAVA: location of all network accessable files
+ifdef ALT_SLASH_JAVA
+  SLASH_JAVA  :=$(ALT_SLASH_JAVA)
+else
+  SLASH_JAVA  := $(call DirExists,/java,/java,/NOT-SET)
+endif
+
+# JDK_DEVTOOLS_DIR: common path for all the java devtools
+ifdef ALT_JDK_DEVTOOLS_DIR
+  JDK_DEVTOOLS_DIR  =$(ALT_JDK_DEVTOOLS_DIR)
+else
+  JDK_DEVTOOLS_DIR =$(SLASH_JAVA)/devtools
+endif
+
+# COMPILER_PATH: path to where the compiler and tools are installed.
+#  NOTE: Must end with / so that it could be empty, allowing PATH usage.
+ifneq "$(origin ALT_COMPILER_PATH)" "undefined"
+  COMPILER_PATH :=$(call PrefixPath,$(ALT_COMPILER_PATH))
+else
+ ifeq ($(OS_VENDOR), Apple)
+  ifndef DEVELOPER_DIR
+   DEVELOPER_DIR = $(shell /usr/bin/xcode-select -print-path)/usr/bin/
+  endif
+  
+  COMPILER_PATH  := $(call DirExists,$(DEVELOPER_DIR),/usr/bin/,/NOT-SET)
+ else
+  COMPILER_PATH  =/usr/bin/
+ endif
+endif
+
+# OPENWIN_HOME: path to where the X11 environment is installed.
+#  NOTE: Must end with / so that it could be empty, allowing PATH usage.
+ifneq ($(ALT_OPENWIN_HOME),)
+  OPENWIN_HOME :=$(call PrefixPath,$(ALT_OPENWIN_HOME))
+else
+  OPENWIN_HOME  =$(X11_PATH)
+endif
+
+# DEVTOOLS_PATH: for other tools required for building (such as zip, etc.)
+#  NOTE: Must end with / so that it could be empty, allowing PATH usage.
+ifneq "$(origin ALT_DEVTOOLS_PATH)" "undefined"
+  DEVTOOLS_PATH :=$(call PrefixPath,$(ALT_DEVTOOLS_PATH))
+else
+  DEVTOOLS_PATH =$(PACKAGE_PATH)/bin/
+endif
+
+# _BOOTDIR1: First choice for a Bootstrap JDK, previous released JDK.
+# _BOOTDIR2: Second choice
+ifndef ALT_BOOTDIR
+  _BOOTDIR1  =$(SLASH_JAVA)/re/jdk/$(PREVIOUS_JDK_VERSION)/archive/fcs/binaries/$(PLATFORM)-$(ARCH)
+  _BOOTDIR2  =$(USRJDKINSTANCES_PATH)/jdk$(PREVIOUS_JDK_VERSION)
+endif
+
+# Always build headless on Bsd
+BUILD_HEADLESS = true
+LIBM=-lm
+
+ifeq ($(OS_VENDOR), Apple)
+  _CUPS_HEADERS_PATH=/usr/include
+else
+  _CUPS_HEADERS_PATH=$(PACKAGE_PATH)/include
+endif
+
+# Import JDK images allow for partial builds, components not built are
+#    imported (or copied from) these import areas when needed.
+
+# BUILD_JDK_IMPORT_PATH: location of JDK install trees to import for 
+#   multiple platforms, e.g. windows-i586, solaris-sparc, bsd-586, etc.
+ifdef ALT_BUILD_JDK_IMPORT_PATH
+  BUILD_JDK_IMPORT_PATH  :=$(call FullPath,$(ALT_BUILD_JDK_IMPORT_PATH))
+else
+  BUILD_JDK_IMPORT_PATH   = $(PROMOTED_BUILD_BINARIES)
+endif
+BUILD_JDK_IMPORT_PATH:=$(call AltCheckValue,BUILD_JDK_IMPORT_PATH)
+
+# JDK_IMPORT_PATH: location of JDK install tree (this version) to import
+ifdef ALT_JDK_IMPORT_PATH
+  JDK_IMPORT_PATH  :=$(call FullPath,$(ALT_JDK_IMPORT_PATH))
+else
+  JDK_IMPORT_PATH   = $(BUILD_JDK_IMPORT_PATH)/$(PLATFORM)-$(ARCH)$(_JDK_IMPORT_VARIANT)
+endif
+JDK_IMPORT_PATH:=$(call AltCheckValue,JDK_IMPORT_PATH)
+
+# HOTSPOT_IMPORT_PATH: location of hotspot pre-built files
+ifdef ALT_HOTSPOT_IMPORT_PATH
+  HOTSPOT_IMPORT_PATH :=$(call FullPath,$(ALT_HOTSPOT_IMPORT_PATH))
+else
+  HOTSPOT_IMPORT_PATH =$(JDK_IMPORT_PATH)
+endif
+HOTSPOT_IMPORT_PATH:=$(call AltCheckValue,HOTSPOT_IMPORT_PATH)
+
+# HOTSPOT_CLIENT_PATH: location of client jvm library file.
+ifeq ($(ARCH_DATA_MODEL), 32)
+  ifdef ALT_HOTSPOT_CLIENT_PATH
+    HOTSPOT_CLIENT_PATH :=$(call FullPath,$(ALT_HOTSPOT_CLIENT_PATH))
+  else
+    HOTSPOT_CLIENT_PATH   =$(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/client
+  endif
+  HOTSPOT_CLIENT_PATH:=$(call AltCheckValue,HOTSPOT_CLIENT_PATH)
+endif
+
+# HOTSPOT_SERVER_PATH: location of server jvm library file.
+ifdef ALT_HOTSPOT_SERVER_PATH
+  HOTSPOT_SERVER_PATH :=$(call FullPath,$(ALT_HOTSPOT_SERVER_PATH))
+else
+  HOTSPOT_SERVER_PATH   =$(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/server
+endif
+HOTSPOT_SERVER_PATH:=$(call AltCheckValue,HOTSPOT_SERVER_PATH)
+
+# Special define for checking the binaries
+
+# Debug builds should downgrade warnings to just info
+MAPFILE_WARNING-DBG=INFO
+MAPFILE_WARNING-OPT=WARNING
+MAPFILE_WARNING-=WARNING
+MAPFILE_WARNING=$(MAPFILE_WARNING-$(VARIANT))
+
+# Macro to check it's input file for banned dependencies and verify the
+#   binary built properly. Relies on process exit code.
+ifndef CROSS_COMPILE_ARCH
+ifeq ($(OS_VENDOR), Apple)
+define binary_file_verification # binary_file
+( \
+  $(ECHO) "Checking for mapfile use in: $1" && \
+  if [ "`$(NM) -g $1 | $(EGREP) 'SUNWprivate'`" = "" ] ; then \
+    $(ECHO) "WARNING: File was not built with a mapfile: $1"; \
+  fi && \
+  $(ECHO) "Library loads for: $1" && \
+  $(OTOOL) -L $1 && \
+  $(ECHO) "RUNPATH for: $1" && \
+  ( $(OTOOL) -l $1 | $(EGREP) 'path ' ) \
+) || true
+endef
+else
+ifeq ($(OS_VENDOR), OpenBSD)
+define binary_file_verification # binary_file
+( \
+  $(ECHO) "Checking for mapfile use in: $1" && \
+  if [ "`$(OBJDUMP) -T $1 | $(EGREP) '[0-9a-f]* g *DF \.text.*SUNWprivate'`" = "" ] ; then \
+    $(ECHO) "$(MAPFILE_WARNING): File was not built with a mapfile: $1"; \
+  fi && \
+  $(ECHO) "Library loads for: $1" && \
+  $(LDD) $1 && \
+  $(ECHO) "RUNPATH for: $1" && \
+  ( $(READELF) -d $1 | $(EGREP) 'NEEDED|RUNPATH|RPATH' ) \
+) || true
+endef
+else
+define binary_file_verification # binary_file
+( \
+  $(ECHO) "Checking for mapfile use in: $1" && \
+  if [ "`$(NM) -D -g --defined-only $1 | $(EGREP) 'SUNWprivate'`" = "" ] ; then \
+    $(ECHO) "$(MAPFILE_WARNING): File was not built with a mapfile: $1"; \
+  fi && \
+  $(ECHO) "Library loads for: $1" && \
+  $(LDD) $1 && \
+  $(ECHO) "RUNPATH for: $1" && \
+  ( $(READELF) -d $1 | $(EGREP) 'NEEDED|RUNPATH|RPATH' ) \
+)
+endef
+endif # OS_VENDOR == OpenBSD
+endif # OS_VENDOR == Apple
+else
+define binary_file_verification 
+( \
+  $(ECHO) "Skipping binary file verification for cross-compile build" \
+)
+endef
+endif
+

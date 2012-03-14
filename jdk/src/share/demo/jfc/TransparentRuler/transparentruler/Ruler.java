@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,12 +40,9 @@
 package transparentruler;
 
 
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.GraphicsDevice;
+import java.awt.*;
 import java.awt.GraphicsDevice.WindowTranslucency;
-import java.awt.GraphicsEnvironment;
+import static java.awt.GraphicsDevice.WindowTranslucency.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -79,16 +76,32 @@ public class Ruler extends JFrame {
     private static final int F_HEIGHT = 400;
     private static final int F_WIDTH = (int) (F_HEIGHT * 1.618 + 0.5);
 
-    private static void checkTranslucencyMode(WindowTranslucency arg) {
+    private static boolean translucencySupported;
+    private static boolean transparencySupported;
+
+    private static boolean checkTranslucencyMode(WindowTranslucency arg) {
         GraphicsEnvironment ge =
                 GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice gd = ge.getDefaultScreenDevice();
-        if (!gd.isWindowTranslucencySupported(arg)) {
-            System.err.println("'" + arg
-                    + "' translucency mode isn't supported.");
-            System.exit(-1);
-        }
+        return gd.isWindowTranslucencySupported(arg);
     }
+
+    public Shape buildShape() {
+        int h = getHeight();
+        int w = getWidth();
+        float a = (float) Math.hypot(h, w);
+        Float path = new java.awt.geom.Path2D.Float();
+        path.moveTo(0, 0);
+        path.lineTo(w, 0);
+        path.lineTo(0, h);
+        path.closePath();
+        path.moveTo(W, W);
+        path.lineTo(W, h - W * (a + h) / w);
+        path.lineTo(w - W * (a + w) / h, W);
+        path.closePath();
+        return path;
+    }
+
     private final ComponentAdapter componentListener = new ComponentAdapter() {
 
         /**
@@ -97,36 +110,32 @@ public class Ruler extends JFrame {
          */
         @Override
         public void componentResized(ComponentEvent e) {
-            int h = getHeight();
-            int w = getWidth();
-            float a = (float) Math.hypot(h, w);
-            Float path = new java.awt.geom.Path2D.Float();
-            path.moveTo(0, 0);
-            path.lineTo(w, 0);
-            path.lineTo(0, h);
-            path.closePath();
-            path.moveTo(W, W);
-            path.lineTo(W, h - W * (a + h) / w);
-            path.lineTo(w - W * (a + w) / h, W);
-            path.closePath();
-            setShape(path);
+
+            // We do apply shape only if PERPIXEL_TRANSPARENT is supported
+            if (transparencySupported) {
+                setShape(buildShape());
+            }
         }
     };
+
     private final Action exitAction = new AbstractAction("Exit") {
 
         {
             putValue(Action.MNEMONIC_KEY, KeyEvent.VK_X);
         }
 
+        @Override
         public void actionPerformed(ActionEvent e) {
             System.exit(0);
         }
     };
+
     private final JPopupMenu jPopupMenu = new JPopupMenu();
 
     {
         jPopupMenu.add(new JMenuItem(exitAction));
     }
+
     /**
      * Implements mouse-related behavior: window dragging and popup menu
      * invocation
@@ -157,6 +166,7 @@ public class Ruler extends JFrame {
             }
         }
     };
+
     /**
      * Implements keyboard navigation. Arrows move by 5 pixels, Ctrl + arrows
      * move by 50 pixels, Alt + arrows move by 1 pixel.
@@ -201,10 +211,22 @@ public class Ruler extends JFrame {
 
             @Override
             protected void paintComponent(Graphics g) {
-                Graphics gg = g.create();
+                Graphics2D gg = (Graphics2D) g.create();
                 int w = getWidth();
                 int h = getHeight();
                 int hh = gg.getFontMetrics().getAscent();
+
+                // This is an approach to apply shape when PERPIXEL_TRANSPARENT
+                // isn't supported
+                if (!transparencySupported) {
+                    gg.setBackground(new Color(0, 0, 0, 0));
+                    gg.clearRect(0, 0, w, h);
+                    gg.clip(buildShape());
+
+                    gg.setBackground(Ruler.this.getBackground());
+                    gg.clearRect(0, 0, w, h);
+                }
+
                 gg.setColor(FOREGROUND);
                 for (int x = 0; x < w * (h - 8) / h - 5; x += 5) {
                     boolean hi = x % 50 == 0;
@@ -216,6 +238,7 @@ public class Ruler extends JFrame {
                         gg.drawString(number, x + 5 - ww / 2, 20 + hh);
                     }
                 }
+
                 gg.dispose();
             }
         });
@@ -231,9 +254,17 @@ public class Ruler extends JFrame {
 
         SwingUtilities.invokeAndWait(new Runnable() {
 
+            @Override
             public void run() {
-                checkTranslucencyMode(WindowTranslucency.PERPIXEL_TRANSLUCENT);
-                checkTranslucencyMode(WindowTranslucency.PERPIXEL_TRANSPARENT);
+                translucencySupported = checkTranslucencyMode(PERPIXEL_TRANSLUCENT);
+                transparencySupported = checkTranslucencyMode(PERPIXEL_TRANSPARENT);
+
+                if (!translucencySupported) {
+                    System.err.println("This application requires "
+                            + "'PERPIXEL_TRANSLUCENT' translucency mode to "
+                            + "be supported.");
+                    System.exit(-1);
+                }
 
                 Ruler ruler = new Ruler();
                 ruler.setVisible(true);

@@ -83,7 +83,7 @@ OTHER_INCLUDES = -I$(SRCDIR) \
 ifeq ($(PLATFORM), windows)
   OTHER_LDLIBS += wsock32.lib winmm.lib
 else
-  OTHER_LDLIBS += $(LIBSOCKET) $(LIBNSL) -ldl
+  OTHER_LDLIBS += $(LIBSOCKET) $(LIBNSL) $(LIBDL)
 endif
 
 #

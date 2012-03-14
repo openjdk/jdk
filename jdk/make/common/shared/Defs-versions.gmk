@@ -44,6 +44,11 @@ ifeq ($(PLATFORM), linux)
   override CC_VERSION = gcc
 endif
 
+# Mac OS X uses LLVM by default
+ifeq ($(PLATFORM), macosx)
+  override CC_VERSION = llvm
+endif
+
 ##########################################################################
 #
 # List of JDK official minimum, expected, or required versions:
@@ -162,6 +167,17 @@ ifeq ($(PLATFORM), linux)
       REQUIRED_CC_VER           = 5.10
     endif
   endif
+endif
+
+# Mac specific
+ifeq ($(PLATFORM), macosx)
+  REQUIRED_OS_NAME            = Darwin
+  REQUIRED_OS_VERSION         = 11.2
+  REQUIRED_OS_VARIANT_NAME    = MacOSX
+  REQUIRED_OS_VARIANT_VERSION = 10.7.2
+  REQUIRED_COMPILER_NAME      = GCC4
+  REQUIRED_COMPILER_VERSION   = GCC4
+  REQUIRED_CC_VER             = 4.2.1
 endif
 
 # Windows specific
