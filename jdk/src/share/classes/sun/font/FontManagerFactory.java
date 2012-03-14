@@ -51,10 +51,13 @@ public final class FontManagerFactory {
 
     private static final String DEFAULT_CLASS;
     static {
-        if (FontUtilities.isWindows)
+        if (FontUtilities.isWindows) {
             DEFAULT_CLASS = "sun.awt.Win32FontManager";
-        else
+        } else if (FontUtilities.isMacOSX) {
+            DEFAULT_CLASS = "sun.font.CFontManager";
+            } else {
             DEFAULT_CLASS = "sun.awt.X11FontManager";
+            }
     }
 
     /**

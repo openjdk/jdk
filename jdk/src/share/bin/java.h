@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,10 +79,12 @@
  */
 typedef jint (JNICALL *CreateJavaVM_t)(JavaVM **pvm, void **env, void *args);
 typedef jint (JNICALL *GetDefaultJavaVMInitArgs_t)(void *args);
+typedef jint (JNICALL *GetCreatedJavaVMs_t)(JavaVM **vmBuf, jsize bufLen, jsize *nVMs);
 
 typedef struct {
     CreateJavaVM_t CreateJavaVM;
     GetDefaultJavaVMInitArgs_t GetDefaultJavaVMInitArgs;
+    GetCreatedJavaVMs_t GetCreatedJavaVMs;
 } InvocationFunctions;
 
 int
@@ -125,7 +127,8 @@ GetApplicationHome(char *buf, jint bufsize);
  */
 void CreateExecutionEnvironment(int *argc, char ***argv,
                                 char *jrepath, jint so_jrepath,
-                                char *jvmpath, jint so_jvmpath);
+                                char *jvmpath, jint so_jvmpath,
+                                char *jvmcfg,  jint so_jvmcfg);
 
 /* Reports an error message to stderr or a window as appropriate. */
 void JLI_ReportErrorMessage(const char * message, ...);
@@ -159,7 +162,7 @@ void SetJavaLauncherProp(void);
 /*
  * Functions defined in java.c and used in java_md.c.
  */
-jint ReadKnownVMs(const char *jrepath, const char * arch, jboolean speculative);
+jint ReadKnownVMs(const char *jvmcfg, jboolean speculative);
 char *CheckJvmType(int *argc, char ***argv, jboolean speculative);
 void AddOption(char *str, void *info);
 
@@ -178,14 +181,33 @@ jint GetErgoPolicy();
 
 jboolean ServerClassMachine();
 
-static int ContinueInNewThread(InvocationFunctions* ifn,
-                               int argc, char** argv,
-                               int mode, char *what, int ret);
+int ContinueInNewThread(InvocationFunctions* ifn, jlong threadStackSize,
+                   int argc, char** argv,
+                   int mode, char *what, int ret);
+
+int JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
+                   int argc, char** argv,
+                   int mode, char *what, int ret);
 
 /*
  * Initialize platform specific settings
  */
 void InitLauncher(jboolean javaw);
+
+/*
+ * For MacOSX and Windows/Unix compatibility we require these
+ * entry points, some of them may be stubbed out on Windows/Unixes.
+ */
+void     PostJVMInit(JNIEnv *env, jstring mainClass, JavaVM *vm);
+void     ShowSplashScreen();
+void     RegisterThread();
+/*
+ * this method performs additional platform specific processing and
+ * should return JNI_TRUE to indicate the argument has been consumed,
+ * otherwise returns JNI_FALSE to allow the calling logic to further
+ * process the option.
+ */
+jboolean ProcessPlatformOption(const char *arg);
 
 /*
  * This allows for finding classes from the VM's bootstrap class loader directly,
@@ -196,4 +218,34 @@ void InitLauncher(jboolean javaw);
 typedef jclass (JNICALL FindClassFromBootLoader_t(JNIEnv *env,
                                                   const char *name));
 jclass FindBootStrapClass(JNIEnv *env, const char *classname);
+
+int JNICALL JavaMain(void * args); /* entry point                  */
+
+enum LaunchMode {               // cf. sun.launcher.LauncherHelper
+    LM_UNKNOWN = 0,
+    LM_CLASS,
+    LM_JAR
+};
+
+static const char *launchModeNames[]
+    = { "Unknown", "Main class", "JAR file" };
+
+typedef struct {
+    int    argc;
+    char **argv;
+    int    mode;
+    char  *what;
+    InvocationFunctions ifn;
+} JavaMainArgs;
+
+#define NULL_CHECK0(e) if ((e) == 0) { \
+    JLI_ReportErrorMessage(JNI_ERROR); \
+    return 0; \
+  }
+
+#define NULL_CHECK(e) if ((e) == 0) { \
+    JLI_ReportErrorMessage(JNI_ERROR); \
+    return; \
+  }
+
 #endif /* _JAVA_H_ */

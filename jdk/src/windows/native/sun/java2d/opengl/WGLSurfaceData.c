@@ -566,6 +566,12 @@ OGLSD_SwapBuffers(JNIEnv *env, jlong pPeerData)
     }
 }
 
+// needed by Mac OS X port, no-op on other platforms
+void
+OGLSD_Flush(JNIEnv *env)
+{
+}
+
 /*
  * Class:     sun_java2d_opengl_WGLSurfaceData
  * Method:    updateWindowAccelImpl

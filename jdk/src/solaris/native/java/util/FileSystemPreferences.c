@@ -47,8 +47,11 @@ Java_java_util_prefs_FileSystemPreferences_chmod(JNIEnv *env,
     return (jint) result;
 }
 
-
+#if defined(_ALLBSD_SOURCE)
+typedef struct flock FLOCK;
+#else
 typedef struct flock64 FLOCK;
+#endif
 
 /**
  * Try to open a named lock file.
@@ -86,7 +89,11 @@ Java_java_util_prefs_FileSystemPreferences_lockFile0(JNIEnv *env,
     if (fd < 0) {
         result[0] = 0;
     } else {
+#if defined(_ALLBSD_SOURCE)
+        rc = fcntl(fd, F_SETLK, &fl);
+#else
         rc = fcntl(fd, F_SETLK64, &fl);
+#endif
         result[1] = errno;
         if (rc < 0) {
             result[0]= 0;
@@ -116,7 +123,11 @@ Java_java_util_prefs_FileSystemPreferences_unlockFile0(JNIEnv *env,
     fl.l_start = 0;
     fl.l_type = F_UNLCK;
 
+#if defined(_ALLBSD_SOURCE)
+    rc = fcntl(fd, F_SETLK, &fl);
+#else
     rc = fcntl(fd, F_SETLK64, &fl);
+#endif
 
     if (rc < 0) {
         close(fd);

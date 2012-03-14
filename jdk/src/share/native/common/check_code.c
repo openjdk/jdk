@@ -1067,7 +1067,7 @@ verify_method(context_type *context, jclass cb, int method_index,
  * Make sure that branches don't go into the middle of nowhere.
  */
 
-static jint ntohl(jint n)
+static jint _ck_ntohl(jint n)
 {
     unsigned char *p = (unsigned char *)&n;
     return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
@@ -1146,26 +1146,26 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
             }
         }
         if (opcode == JVM_OPC_tableswitch) {
-            keys = ntohl(lpc[2]) -  ntohl(lpc[1]) + 1;
+            keys = _ck_ntohl(lpc[2]) -  _ck_ntohl(lpc[1]) + 1;
             delta = 1;
         } else {
-            keys = ntohl(lpc[1]); /* number of pairs */
+            keys = _ck_ntohl(lpc[1]); /* number of pairs */
             delta = 2;
             /* Make sure that the tableswitch items are sorted */
             for (k = keys - 1, lptr = &lpc[2]; --k >= 0; lptr += 2) {
-                int this_key = ntohl(lptr[0]);  /* NB: ntohl may be unsigned */
-                int next_key = ntohl(lptr[2]);
+                int this_key = _ck_ntohl(lptr[0]);  /* NB: ntohl may be unsigned */
+                int next_key = _ck_ntohl(lptr[2]);
                 if (this_key >= next_key) {
                     CCerror(context, "Unsorted lookup switch");
                 }
             }
         }
         saved_operand = NEW(int, keys + 2);
-        if (!isLegalTarget(context, offset + ntohl(lpc[0])))
+        if (!isLegalTarget(context, offset + _ck_ntohl(lpc[0])))
             CCerror(context, "Illegal default target in switch");
-        saved_operand[keys + 1] = code_data[offset + ntohl(lpc[0])];
+        saved_operand[keys + 1] = code_data[offset + _ck_ntohl(lpc[0])];
         for (k = keys, lptr = &lpc[3]; --k >= 0; lptr += delta) {
-            int target = offset + ntohl(lptr[0]);
+            int target = offset + _ck_ntohl(lptr[0]);
             if (!isLegalTarget(context, target))
                 CCerror(context, "Illegal branch in tableswitch");
             saved_operand[k + 1] = code_data[target];
@@ -1634,7 +1634,7 @@ static int instruction_length(unsigned char *iptr, unsigned char *end)
             if (lpc + 2 >= (int *)end) {
                 return -1; /* do not read pass the end */
             }
-            index = ntohl(lpc[2]) - ntohl(lpc[1]);
+            index = _ck_ntohl(lpc[2]) - _ck_ntohl(lpc[1]);
             if ((index < 0) || (index > 65535)) {
                 return -1;      /* illegal */
             } else {
@@ -1647,7 +1647,7 @@ static int instruction_length(unsigned char *iptr, unsigned char *end)
             int npairs;
             if (lpc + 1 >= (int *)end)
                 return -1; /* do not read pass the end */
-            npairs = ntohl(lpc[1]);
+            npairs = _ck_ntohl(lpc[1]);
             /* There can't be more than 64K labels because of the limit
              * on per-method byte code length.
              */

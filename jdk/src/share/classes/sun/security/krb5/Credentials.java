@@ -285,10 +285,11 @@ public class Credentials {
         throws KrbException, IOException {
 
         if (ticketCache == null) {
-            // The default ticket cache on Windows is not a file.
+            // The default ticket cache on Windows and Mac is not a file.
             String os = java.security.AccessController.doPrivileged(
                         new sun.security.action.GetPropertyAction("os.name"));
-            if (os.toUpperCase(Locale.ENGLISH).startsWith("WINDOWS")) {
+            if (os.toUpperCase(Locale.ENGLISH).startsWith("WINDOWS") ||
+                    os.toUpperCase(Locale.ENGLISH).startsWith("MAC")) {
                 Credentials creds = acquireDefaultCreds();
                 if (creds == null) {
                     if (DEBUG) {
@@ -470,7 +471,11 @@ public class Credentials {
         java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<Void> () {
                         public Void run() {
-                                System.loadLibrary("w2k_lsa_auth");
+                                if (System.getProperty("os.name").startsWith("Mac")) {
+                                    System.loadLibrary("osxkrb5");
+                                } else {
+                                    System.loadLibrary("w2k_lsa_auth");
+                                }
                                 return null;
                         }
                 });
