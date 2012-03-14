@@ -36,6 +36,7 @@
 #include <sys/socket.h>
 
 #include "nio_util.h"
+#include <limits.h>
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_DatagramDispatcher_read0(JNIEnv *env, jclass clazz,
@@ -60,23 +61,14 @@ Java_sun_nio_ch_DatagramDispatcher_readv0(JNIEnv *env, jclass clazz,
     ssize_t result = 0;
     struct iovec *iov = (struct iovec *)jlong_to_ptr(address);
     struct msghdr m;
-    if (len > 16) {
-        len = 16;
+    if (len > IOV_MAX) {
+        len = IOV_MAX;
     }
 
-    m.msg_name = NULL;
-    m.msg_namelen = 0;
+    // initialize the message
+    memset(&m, 0, sizeof(m));
     m.msg_iov = iov;
     m.msg_iovlen = len;
-#ifdef __solaris__
-    m.msg_accrights = NULL;
-    m.msg_accrightslen = 0;
-#endif
-
-#if defined(__linux__) || defined(_ALLBSD_SOURCE)
-    m.msg_control = NULL;
-    m.msg_controllen = 0;
-#endif
 
     result = recvmsg(fd, &m, 0);
     if (result < 0 && errno == ECONNREFUSED) {
@@ -108,23 +100,14 @@ Java_sun_nio_ch_DatagramDispatcher_writev0(JNIEnv *env, jclass clazz,
     struct iovec *iov = (struct iovec *)jlong_to_ptr(address);
     struct msghdr m;
     ssize_t result = 0;
-    if (len > 16) {
-        len = 16;
+    if (len > IOV_MAX) {
+        len = IOV_MAX;
     }
 
-    m.msg_name = NULL;
-    m.msg_namelen = 0;
+    // initialize the message
+    memset(&m, 0, sizeof(m));
     m.msg_iov = iov;
     m.msg_iovlen = len;
-#ifdef __solaris__
-    m.msg_accrights = NULL;
-    m.msg_accrightslen = 0;
-#endif
-
-#if defined(__linux__) || defined(_ALLBSD_SOURCE)
-    m.msg_control = NULL;
-    m.msg_controllen = 0;
-#endif
 
     result = sendmsg(fd, &m, 0);
     if (result < 0 && errno == ECONNREFUSED) {
