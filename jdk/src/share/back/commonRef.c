@@ -23,6 +23,10 @@
  * questions.
  */
 
+#if defined(_ALLBSD_SOURCE)
+#include <stdint.h>                     /* for uintptr_t */
+#endif
+
 #include "util.h"
 #include "commonRef.h"
 

@@ -650,4 +650,14 @@ public abstract class OGLSurfaceData extends SurfaceData
             rq.unlock();
         }
     }
+
+    /**
+     * Returns true if the surface is an on-screen window surface or
+     * a FBO texture attached to an on-screen CALayer.
+     *
+     * Needed by Mac OS X port.
+     */
+    boolean isOnScreen() {
+        return getType() == WINDOW;
+    }
 }

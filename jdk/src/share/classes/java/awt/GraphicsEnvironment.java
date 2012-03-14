@@ -170,10 +170,20 @@ public abstract class GraphicsEnvironment {
                         if (System.getProperty("javaplugin.version") != null) {
                             headless = defaultHeadless = Boolean.FALSE;
                         } else {
-                            String osName = System.getProperty("os.name");
-                            headless = defaultHeadless =
-                                Boolean.valueOf(("Linux".equals(osName) || "SunOS".equals(osName)) &&
-                                                (System.getenv("DISPLAY") == null));
+                            if ("sun.awt.HeadlessGraphicsEnvironment".equals(
+                                    System.getProperty("java.awt.graphicsenv")))
+                            {
+                                headless = defaultHeadless = Boolean.TRUE;
+                            } else {
+                                String osName = System.getProperty("os.name");
+                                headless = defaultHeadless =
+                                    Boolean.valueOf(("Linux".equals(osName) ||
+                                                     "SunOS".equals(osName) ||
+                                                     "FreeBSD".equals(osName) ||
+                                                     "NetBSD".equals(osName) ||
+                                                     "OpenBSD".equals(osName)) &&
+                                                     (System.getenv("DISPLAY") == null));
+                            }
                         }
                     } else if (nm.equals("true")) {
                         headless = Boolean.TRUE;

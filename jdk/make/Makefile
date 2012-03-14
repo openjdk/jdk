@@ -233,6 +233,9 @@ import_product:
 all build:: sanity-all post-sanity-all
 
 SUBDIRS       = tools java javax sun com
+ifeq ($(PLATFORM), macosx)
+  SUBDIRS += apple
+endif
 SUBDIRS_tools = launchers
 SUBDIRS_misc  = org sunw jpda
 

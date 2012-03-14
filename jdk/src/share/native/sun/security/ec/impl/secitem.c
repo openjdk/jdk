@@ -43,9 +43,9 @@
 #include <sys/types.h>
 
 #ifndef _WIN32
-#ifndef __linux__
+#if !defined(__linux__) && !defined(_ALLBSD_SOURCE)
 #include <sys/systm.h>
-#endif /* __linux__ */
+#endif /* __linux__ || _ALLBSD_SOURCE */
 #include <sys/param.h>
 #endif /* _WIN32 */
 

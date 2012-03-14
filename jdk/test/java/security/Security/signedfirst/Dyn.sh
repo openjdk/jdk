@@ -54,6 +54,10 @@ case "$OS" in
     PATHSEP=":"
     FILESEP="/"
     ;;
+  Darwin )
+    PATHSEP=":"
+    FILESEP="/"
+    ;;
   CYGWIN* )
     PATHSEP=";"
     FILESEP="/"
@@ -74,13 +78,13 @@ rm DynSignedProvFirst.class
 
 # compile the test program
 ${TESTJAVA}${FILESEP}bin${FILESEP}javac \
-	-classpath ${TESTSRC}${FILESEP}exp.jar \
-	-d ${TESTCLASSES}${FILESEP} \
-	${TESTSRC}${FILESEP}DynSignedProvFirst.java
+        -classpath ${TESTSRC}${FILESEP}exp.jar \
+        -d ${TESTCLASSES}${FILESEP} \
+        ${TESTSRC}${FILESEP}DynSignedProvFirst.java
 
 # run the test
 ${TESTJAVA}${FILESEP}bin${FILESEP}java \
-	-classpath "${TESTCLASSES}${PATHSEP}${TESTSRC}${FILESEP}exp.jar" \
-	DynSignedProvFirst
+        -classpath "${TESTCLASSES}${PATHSEP}${TESTSRC}${FILESEP}exp.jar" \
+        DynSignedProvFirst
 
 exit $?

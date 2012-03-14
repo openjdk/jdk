@@ -27,13 +27,13 @@
 
 OS=`uname -s`
 case "$OS" in
-  SunOS )
+  SunOS | Darwin )
     PS=":"
-    FS="/"            
+    FS="/"
     ;;
   Linux )
     PS=":"
-    FS="/"            
+    FS="/"
     ;;
   CYGWIN* )
     PS=";"

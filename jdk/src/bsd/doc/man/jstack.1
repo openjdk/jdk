@@ -1,0 +1,148 @@
+." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+." or visit www.oracle.com if you need additional information or have any
+." questions.
+."
+.TH jstack 1 "10 May 2011"
+
+.LP
+.SH "Name"
+jstack \- Stack Trace
+.br
+
+.LP
+.SH "SYNOPSIS"
+.LP
+.nf
+\f3
+.fl
+\fP\f3jstack\fP [ option ] pid
+.fl
+\f3jstack\fP [ option ] executable core
+.fl
+\f3jstack\fP [ option ] [server\-id@]remote\-hostname\-or\-IP
+.fl
+.fi
+
+.LP
+.SH "PARAMETERS"
+.LP
+.LP
+Options are mutually exclusive. Option, if used, should follow immediately after the command name. See OPTIONS.
+.LP
+.RS 3
+.TP 3
+pid
+process id for which the stack trace is to be printed. The process must be a Java process. To get a list of Java processes running on a machine, jps(1) may be used.
+.RE
+
+.LP
+.RS 3
+.TP 3
+executable
+Java executable from which the core dump was produced.
+.br
+.TP 3
+core
+core file for which the stack trace is to be printed.
+.br
+.TP 3
+remote\-hostname\-or\-IP
+remote debug server's (see jsadebugd(1)) hostname or IP address.
+.br
+.TP 3
+server\-id
+optional unique id, if multiple debug servers are running on the same remote host.
+.RE
+
+.LP
+.SH "DESCRIPTION"
+.LP
+.LP
+\f3jstack\fP prints Java stack traces of Java threads for a given Java process or core file or a remote debug server. For each Java frame, the full class name, method name, 'bci' (byte code index) and line number, if available, are printed. With the \-m option, jstack prints both Java and native frames of all threads along with the 'pc' (program counter). For each native frame, the closest native symbol to 'pc', if available, is printed. C++ mangled names are not demangled. To demangle C++ names, the output of this command may be piped to \f3c++filt\fP. If the given process is running on a 64\-bit VM, you may need to specify the \f2\-J\-d64\fP option, e.g.:
+.br
+
+.LP
+.nf
+\f3
+.fl
+jstack \-J\-d64 \-m pid
+.fl
+\fP
+.fi
+
+.LP
+.LP
+\f3NOTE\fP \- This utility is unsupported and may or may not be available in future versions of the JDK. In Windows Systems where dbgeng.dll is not present, 'Debugging Tools For Windows' needs to be installed to have these tools working. Also, \f2PATH\fP environment variable should contain the location of \f2jvm.dll\fP used by the target process or the location from which the Crash Dump file was produced.
+.LP
+.LP
+For example, \f2set PATH=<jdk>\\jre\\bin\\client;%PATH%\fP
+.LP
+.SH "OPTIONS"
+.LP
+.RS 3
+.TP 3
+\-F
+Force a stack dump when 'jstack [\-l] pid' does not respond.
+.TP 3
+\-l
+Long listing. Prints additional information about locks such as list of owned java.util.concurrent
+.na
+\f2ownable synchronizers\fP @
+.fi
+http://download.oracle.com/javase/7/docs/api/java/util/concurrent/locks/AbstractOwnableSynchronizer.html.
+.TP 3
+\-m
+prints mixed mode (both Java and native C/C++ frames) stack trace.
+.TP 3
+\-h
+prints a help message.
+.br
+.br
+.TP 3
+\-help
+prints a help message
+.br
+.RE
+
+.LP
+.SH "SEE ALSO"
+.LP
+.RS 3
+.TP 2
+o
+pstack(1)
+.TP 2
+o
+c++filt(1)
+.TP 2
+o
+jps(1)
+.TP 2
+o
+jsadebugd(1)
+.RE
+
+.LP
+.SH "KNOWN BUGS"
+.LP
+.LP
+Mixed mode stack trace, the \-m option, does not work with the remote debug server.
+.LP
+

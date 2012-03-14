@@ -70,6 +70,8 @@ jfieldID psi_serverSocketID;
 jfieldID psi_fdLockID;
 jfieldID psi_closePendingID;
 
+extern void setDefaultScopeID(JNIEnv *env, struct sockaddr *him);
+
 /*
  * file descriptor used for dup2
  */
@@ -114,7 +116,6 @@ static int getMarkerFD()
 
     return sv[0];
 }
-
 
 /*
  * Return the file descriptor given a PlainSocketImpl
@@ -260,6 +261,9 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
 
     /* fdObj is the FileDescriptor field on this */
     jobject fdObj = (*env)->GetObjectField(env, this, psi_fdID);
+
+    jclass clazz = (*env)->GetObjectClass(env, this);
+
     jobject fdLock;
 
     jint trafficClass = (*env)->GetIntField(env, this, psi_trafficClassID);
@@ -286,6 +290,7 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
     if (NET_InetAddressToSockaddr(env, iaObj, port, (struct sockaddr *)&him, &len, JNI_TRUE) != 0) {
       return;
     }
+    setDefaultScopeID(env, (struct sockaddr *)&him);
 
 #ifdef AF_INET6
     if (trafficClass != 0 && ipv6_available()) {
@@ -483,9 +488,11 @@ Java_java_net_PlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
         if (connect_rv == JVM_IO_INTR) {
             JNU_ThrowByName(env, JNU_JAVAIOPKG "InterruptedIOException",
                             "operation interrupted");
+#if defined(EPROTO)
         } else if (errno == EPROTO) {
             NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "ProtocolException",
                            "Protocol error");
+#endif
         } else if (errno == ECONNREFUSED) {
             NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "ConnectException",
                            "Connection refused");
@@ -565,6 +572,7 @@ Java_java_net_PlainSocketImpl_socketBind(JNIEnv *env, jobject this,
     if (NET_InetAddressToSockaddr(env, iaObj, localport, (struct sockaddr *)&him, &len, JNI_TRUE) != 0) {
       return;
     }
+    setDefaultScopeID(env, (struct sockaddr *)&him);
 
     if (NET_Bind(fd, (struct sockaddr *)&him, len) < 0) {
         if (errno == EADDRINUSE || errno == EADDRNOTAVAIL ||
