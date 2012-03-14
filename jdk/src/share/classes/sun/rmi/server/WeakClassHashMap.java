@@ -46,8 +46,7 @@ import java.util.WeakHashMap;
  **/
 public abstract class WeakClassHashMap<V> {
 
-    private Map<Class<?>,ValueCell<V>> internalMap =
-        new WeakHashMap<Class<?>,ValueCell<V>>();
+    private Map<Class<?>,ValueCell<V>> internalMap = new WeakHashMap<>();
 
     protected WeakClassHashMap() { }
 

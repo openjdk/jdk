@@ -25,8 +25,8 @@
 
 # @test
 # @author  Ram Marti
-# @bug 4350951 
-# @summary 4350951 assumes permission constructor with 2 string params 
+# @bug 4350951
+# @summary 4350951 assumes permission constructor with 2 string params
 
 # set a few environment variables so that the shell-script can run stand-alone
 # in the source directory
@@ -55,6 +55,10 @@ case "$OS" in
     PS=":"
     FS="/"
     ;;
+  Darwin )
+    PS=":"
+    FS="/"
+    ;;
   CYGWIN* )
     PS=";"
     FS="/"
@@ -69,24 +73,24 @@ case "$OS" in
     ;;
 esac
 
-if [ ! -d ${TESTCLASSES}${FS}boot ]; then 
-	mkdir -p ${TESTCLASSES}${FS}boot
+if [ ! -d ${TESTCLASSES}${FS}boot ]; then
+        mkdir -p ${TESTCLASSES}${FS}boot
 fi
-if [ ! -d ${TESTCLASSES}${FS}app ]; then 
-	mkdir -p ${TESTCLASSES}${FS}app
+if [ ! -d ${TESTCLASSES}${FS}app ]; then
+        mkdir -p ${TESTCLASSES}${FS}app
 fi
 
 cd ${TESTSRC}${FS}
 ${TESTJAVA}${FS}bin${FS}javac -d ${TESTCLASSES}${FS}boot \
-	${TESTSRC}${FS}NoArgPermission.java
+        ${TESTSRC}${FS}NoArgPermission.java
 ${TESTJAVA}${FS}bin${FS}javac -d ${TESTCLASSES}${FS}boot \
-	${TESTSRC}${FS}OneArgPermission.java
+        ${TESTSRC}${FS}OneArgPermission.java
 ${TESTJAVA}${FS}bin${FS}javac -d ${TESTCLASSES}${FS}boot \
-	${TESTSRC}${FS}TwoArgPermission.java
+        ${TESTSRC}${FS}TwoArgPermission.java
 ${TESTJAVA}${FS}bin${FS}javac -d ${TESTCLASSES}${FS}boot \
-	${TESTSRC}${FS}TwoArgNullActionsPermission.java
+        ${TESTSRC}${FS}TwoArgNullActionsPermission.java
 ${TESTJAVA}${FS}bin${FS}javac -d ${TESTCLASSES}${FS}app \
-	${TESTSRC}${FS}GetInstance.java
+        ${TESTSRC}${FS}GetInstance.java
 
 ${TESTJAVA}${FS}bin${FS}java  \
 -Xbootclasspath/a:"${TESTCLASSES}${FS}boot" \

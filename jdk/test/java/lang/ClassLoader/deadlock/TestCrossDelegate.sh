@@ -22,9 +22,9 @@
 #
 # @test
 # @bug 4735126
-# @summary (cl) ClassLoader.loadClass locks all instances in chain 
+# @summary (cl) ClassLoader.loadClass locks all instances in chain
 #          when delegating
-# 
+#
 # @run shell/timeout=300 TestCrossDelegate.sh
 
 # if running by hand on windows, change TESTSRC and TESTCLASSES to "."
@@ -49,6 +49,9 @@ case "$OS" in
     FS="/"
     ;;
   Linux )
+    FS="/"
+    ;;
+  Darwin )
     FS="/"
     ;;
   Windows*)

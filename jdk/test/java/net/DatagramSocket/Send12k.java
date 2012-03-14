@@ -33,10 +33,16 @@ import java.io.*;
 
 public class Send12k {
 
-    static final int SEND_SIZE = 16 * 1024;
 
     public static void main(String args[]) throws Exception {
 
+         int SEND_SIZE=0;
+
+         if(System.getProperty("os.name").contains("Mac")) {
+             SEND_SIZE = 16 * 576;
+         } else {
+             SEND_SIZE = 16 * 1024;
+         }
         DatagramSocket s1 = new DatagramSocket();
         DatagramSocket s2 = new DatagramSocket();
 

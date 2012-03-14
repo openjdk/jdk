@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,28 +23,25 @@
  * questions.
  */
 
-/* @test
-   @bug 4054511
-   @summary Check that applets don't get a security exception when invoking
-            the File.isDirectory method on a non-existent directory
-   @author Mark Reinhold
-   @run applet Applet.html
+#import <AppKit/AppKit.h>
+#import "jni.h"
+
+/*
+ * Sets up the dictionary of numbers to NSStrings
  */
+extern void initializeMappingTable();
 
-import java.io.*;
+/*
+ * Convert from a standard NSPasteboard data type to an index in our mapping table.
+ */
+extern jlong indexForFormat(NSString *format);
 
+/*
+ * Inverse of above -- given a long int index, get the matching data format NSString.
+ */
+extern NSString* formatForIndex(jlong inFormatCode);
 
-public class Applet extends java.applet.Applet {
-
-    void go(String fn) {
-        File f = new File(fn);
-        System.err.println(fn + ": " + f.isDirectory());
-    }
-
-    public void init() {
-        String nxdir = "non_EX_is_TENT_dir_EC_tory";
-        go(nxdir);
-        go(nxdir + File.separator + "bar" + File.separator + "baz");
-    }
-
-}
+/*
+ * Register a non-standard NSPasteboard data type in our mapping table and return its index.
+ */
+extern jlong registerFormatWithPasteboard(NSString *format);

@@ -65,6 +65,7 @@ public class UnicastRef implements RemoteRef {
         Log.getLog("sun.rmi.client.call", "RMI",
                    AccessController.doPrivileged(
                        new GetBooleanAction("sun.rmi.client.logCalls")));
+    private static final long serialVersionUID = 8258372400816541186L;
 
     protected LiveRef ref;
 
