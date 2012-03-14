@@ -55,7 +55,7 @@ FILES_java = \
 FILES_export = $(FILES_java)
 
 ifeq ($(PLATFORM), linux)
-OTHER_LDLIBS += -ldl
+OTHER_LDLIBS += $(LIBDL)
 endif
 
 #

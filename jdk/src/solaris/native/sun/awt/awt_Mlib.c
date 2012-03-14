@@ -32,6 +32,7 @@
 #include <dlfcn.h>
 #include "jni.h"
 #include <jni_util.h>
+#include "jvm_md.h"
 #include "awt_Mlib.h"
 #include "java_awt_image_BufferedImage.h"
 
@@ -67,11 +68,11 @@ mlib_status awt_getImagingLib(JNIEnv *env, mlibFnS_t *sMlibFns,
         ((strncmp(name.machine, "sun4v" , 5) == 0) &&
          (getenv("USE_VIS_ON_SUN4V") != NULL)))
     {
-        handle = dlopen("libmlib_image_v.so", RTLD_LAZY);
+        handle = dlopen(JNI_LIB_NAME("mlib_image_v"), RTLD_LAZY);
     }
 
     if (handle == NULL) {
-        handle = dlopen("libmlib_image.so", RTLD_LAZY);
+        handle = dlopen(JNI_LIB_NAME("mlib_image"), RTLD_LAZY);
     }
 
     if (handle == NULL) {

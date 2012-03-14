@@ -347,7 +347,7 @@ class OGLBlitLoops {
                 OGLBufImgOps.disableBufImgOp(rq, biop);
             }
 
-            if (rtt && (oglDst.getType() == OGLSurfaceData.WINDOW)) {
+            if (rtt && oglDst.isOnScreen()) {
                 // we only have to flush immediately when copying from a
                 // (non-texture) surface to the screen; otherwise Swing apps
                 // might appear unresponsive until the auto-flush completes

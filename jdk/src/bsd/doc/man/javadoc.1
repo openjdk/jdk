@@ -1,0 +1,4226 @@
+." Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+." or visit www.oracle.com if you need additional information or have any
+." questions.
+."
+.TH javadoc 1 "10 May 2011"
+.SH "Name"
+javadoc \- The Java API Documentation Generator
+.LP
+Generates HTML pages of API documentation from Java source files. This document contains Javadoc examples for Solaris.
+.SH "SYNOPSIS"
+.LP
+\f4javadoc\fP\f2\ [\ \fP\f2options\fP\f2\ ]\ [\ packagenames\ ]\ [\ sourcefilenames\ ]\ [\ \-subpackages\fP\ \f2pkg1:pkg2:...\fP\f2\ ]\ [\ \fP\f2@argfiles\fP\f2\ ]\fP
+.LP
+Arguments can be in any order. See processing of Source Files for details on how the Javadoc tool determines which "\f2.java\fP" files to process.
+.RS 3
+.TP 3
+options
+Command\-line options, as specified in this document. To see a typical use of javadoc options, see Real\-World Example.
+.TP 3
+packagenames
+A series of names of packages, separated by spaces, such as \f2java.lang\ java.lang.reflect\ java.awt\fP. You must separately specify each package you want to document. Wildcards are not allowed; use \-subpackages for recursion. The Javadoc tool uses \f2\-sourcepath\fP to look for these package names. See Example \- Documenting One or More Packages
+.TP 3
+sourcefilenames
+A series of source file names, separated by spaces, each of which can begin with a path and contain a wildcard such as asterisk (*). The Javadoc tool will process every file whose name ends with ".java", and whose name, when stripped of that suffix, is actually a legal class name (see the Java Language Specification). Therefore, you can name files with dashes (such as \f2X\-Buffer\fP), or other illegal characters, to prevent them from being documented. This is useful for test files and template files The path that precedes the source file name determines where javadoc will look for the file. (The Javadoc tool does \f2not\fP use \f2\-sourcepath\fP to look for these source file names.) Relative paths are relative to the current directory, so passing in \f2Button.java\fP is identical to \f2./Button.java\fP. A source file name with an absolute path and a wildcard, for example, is \f2/home/src/java/awt/Graphics*.java\fP. See Example\ \-\ Documenting One or More Classes. You can also mix packagenames and sourcefilenames, as in Example\ \-\ Documenting Both Packages and Classes
+.TP 3
+\-subpackages pkg1:pkg2:...
+Generates documentation from source files in the specified packages and recursively in their subpackages. An alternative to supplying packagenames or sourcefilenames.
+.TP 3
+@argfiles
+One or more files that contain a list of Javadoc options, packagenames and sourcefilenames in any order. Wildcards (*) and \f2\-J\fP options are not allowed in these files.
+.RE
+.SH "DESCRIPTION"
+.LP
+The \f3Javadoc\fP tool parses the declarations and documentation comments in a set of Java source files and produces a corresponding set of HTML pages describing (by default) the public and protected classes, nested classes (but not anonymous inner classes), interfaces, constructors, methods, and fields. You can use it to generate the API (Application Programming Interface) documentation or the implementation documentation for a set of source files.
+.LP
+You can run the Javadoc tool on entire packages, individual source files, or both. When documenting entire packages, you can either use \f2\-subpackages\fP for traversing recursively down from a top\-level directory, or pass in an explicit list of package names. When documenting individual source files, you pass in a list of source (\f2.java\fP) filenames. Examples are given at the end of this document. How Javadoc processes source files is covered next.
+.SS
+Processing of source files
+.LP
+The Javadoc tool processes files that end in "\f2.java\fP" plus other files described under Source Files. If you run the Javadoc tool by explicitly passing in individual source filenames, you can determine exactly which "\f2.java\fP" files are processed. However, that is not how most developers want to work, as it is simpler to pass in package names. The Javadoc tool can be run three ways without explicitly specifying the source filenames. You can (1) pass in package names, (2) use \f2\-subpackages\fP, and (3) use wildcards with source filenames (\f2*.java\fP). In these cases, the Javadoc tool processes a "\f2.java\fP" file only if it fulfills all of the following requirements:
+.RS 3
+.TP 2
+o
+Its name, after stripping off the "\f2.java\fP" suffix, is actually a legal class name (see the Java Language Specification for legal characters)
+.TP 2
+o
+Its directory path relative to the root of the source tree is actually a legal package name (after converting its separators to dots)
+.TP 2
+o
+Its package statement contains the legal package name (specified in the previous bullet)
+.RE
+.LP
+\f3Processing of links\fP \- During a run, the Javadoc tool automatically adds cross\-reference links to package, class and member names that are being documented as part of that run. Links appear in several places:
+.RS 3
+.TP 2
+o
+Declarations (return types, argument types, field types)
+.TP 2
+o
+"See Also" sections generated from \f2@see\fP tags
+.TP 2
+o
+In\-line text generated from \f2{@link}\fP tags
+.TP 2
+o
+Exception names generated from \f2@throws\fP tags
+.TP 2
+o
+"Specified by" links to members in interfaces and "Overrides" links to members in classes
+.TP 2
+o
+Summary tables listing packages, classes and members
+.TP 2
+o
+Package and class inheritance trees
+.TP 2
+o
+The index
+.RE
+.LP
+You can add hyperlinks to existing text for classes not included on the command line (but generated separately) by way of the \f2\-link\fP and \f2\-linkoffline\fP options.
+.LP
+\f3Other processing details\fP \- The Javadoc tool produces one complete document each time it is run; it cannot do incremental builds \-\- that is, it cannot modify or \f2directly\fP incorporate results from previous runs of the Javadoc tool. However, it can link to results from other runs, as just mentioned.
+.LP
+As implemented, the Javadoc tool requires and relies on the java compiler to do its job. The Javadoc tool calls part of \f2javac\fP to compile the declarations, ignoring the member implementation. It builds a rich internal representation of the classes, including the class hierarchy, and "use" relationships, then generates the HTML from that. The Javadoc tool also picks up user\-supplied documentation from documentation comments in the source code.
+.LP
+In fact, the Javadoc tool will run on \f2.java\fP source files that are pure stub files with no method bodies. This means you can write documentation comments and run the Javadoc tool in the earliest stages of design while creating the API, before writing the implementation.
+.LP
+Relying on the compiler ensures that the HTML output corresponds exactly with the actual implementation, which may rely on implicit, rather than explicit, source code. For example, the Javadoc tool documents default constructors (see Java Language Specification) that are present in the \f2.class\fP files but not in the source code.
+.LP
+In many cases, the Javadoc tool allows you to generate documentation for source files whose code is incomplete or erroneous. This is a benefit that enables you to generate documentation before all debugging and troubleshooting is done. For example, according to the \f2Java Language Specification\fP, a class that contains an abstract method should itself be declared abstract. The Javadoc tool does not check for this, and would proceed without a warning, whereas the javac compiler stops on this error. The Javadoc tool does do some primitive checking of doc comments. Use the DocCheck doclet to check the doc comments more thoroughly.
+.LP
+When the Javadoc tool builds its internal structure for the documentation, it loads all referenced classes. Because of this, the Javadoc tool must be able to find all referenced classes, whether bootstrap classes, extensions, or user classes. For more about this, see
+.na
+\f2How Classes Are Found\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/tools/findingclasses.html. Generally speaking, classes you create must either be loaded as an extension or in the Javadoc tool's class path.
+.SS
+Javadoc Doclets
+.LP
+You can customize the content and format of the Javadoc tool's output by using doclets. The Javadoc tool has a default "built\-in" doclet, called the standard doclet, that generates HTML\-formatted API documentation. You can modify or subclass the standard doclet, or write your own doclet to generate HTML, XML, MIF, RTF or whatever output format you'd like. Information about doclets and their use is at the following locations:
+.RS 3
+.TP 2
+o
+.na
+\f2Javadoc Doclets\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/guides/javadoc/index.html
+.TP 2
+o
+The \f2\-doclet\fP command\-line option
+.RE
+.LP
+When a custom doclet is not specified with the \f2\-doclet\fP command line option, the Javadoc tool will use the default standard doclet. The javadoc tool has several command line options that are available regardless of which doclet is being used. The standard doclet adds a supplementary set of command line options. Both sets of options are described below in the options section.
+.SS
+Related Documentation and Doclets
+.RS 3
+.TP 2
+o
+.na
+\f2Javadoc Enhancements\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/guides/javadoc/index.html for details about improvements added in Javadoc.
+.TP 2
+o
+.na
+\f2Javadoc FAQ\fP @
+.fi
+http://java.sun.com/j2se/javadoc/faq/index.html for answers to common questions, information about Javadoc\-related tools, and workarounds for bugs.
+.TP 2
+o
+.na
+\f2How to Write Doc Comments for Javadoc\fP @
+.fi
+http://www.oracle.com/technetwork/java/javase/documentation/index\-137868.html for more information about Sun conventions for writing documentation comments.
+.TP 2
+o
+.na
+\f2Requirements for Writing API Specifications\fP @
+.fi
+http://java.sun.com/j2se/javadoc/writingapispecs/index.html \- Standard requirements used when writing the Java SE Platform Specification. It can be useful whether you are writing API specifications in source file documentation comments or in other formats. It covers requirements for packages, classes, interfaces, fields and methods to satisfy testable assertions.
+.TP 2
+o
+.na
+\f2Documentation Comment Specification\fP @
+.fi
+http://java.sun.com/docs/books/jls/first_edition/html/18.doc.html \- The original specification on documentation comments, Chapter 18, Documentation Comments, in the \f2Java Language Specification\fP, First Edition, by James Gosling, Bill Joy, and Guy Steele. (This chapter was removed from the second edition.)
+.TP 2
+o
+.na
+\f2DocCheck Doclet\fP @
+.fi
+http://www.oracle.com/technetwork/java/javase/documentation/index\-141437.html \- Checks doc comments in source files and generates a report listing the errors and irregularities it finds. It is part of the Doc Check Utilities.
+.TP 2
+o
+.na
+\f2MIF Doclet\fP @
+.fi
+http://java.sun.com/j2se/javadoc/mifdoclet/ \- Can automate the generation of API documentation in MIF, FrameMaker and PDF formats. MIF is Adobe FrameMaker's interchange format.
+.RE
+.SS
+Terminology
+.LP
+The terms \f2documentation comment\fP, \f2doc comment\fP, \f2main description\fP, \f2tag\fP, \f2block tag\fP, and \f2in\-line tag\fP are described at Documentation Comments. These other terms have specific meanings within the context of the Javadoc tool:
+.RS 3
+.TP 3
+generated document
+The document generated by the javadoc tool from the doc comments in Java source code. The default generated document is in HTML and is created by the standard doclet.
+.LP
+.TP 3
+name
+A name of a program element written in the Java Language \-\- that is, the name of a package, class, interface, field, constructor or method. A name can be fully\-qualified, such as \f2java.lang.String.equals(java.lang.Object)\fP, or partially\-qualified, such as \f2equals(Object)\fP.
+.LP
+.TP 3
+documented classes
+The classes and interfaces for which detailed documentation is generated during a javadoc run. To be documented, the source files must be available, their source filenames or package names must be passed into the javadoc command, and they must not be filtered out by their access modifier (public, protected, package\-private or private). We also refer to these as the classes included in the javadoc output, or the \f2included classes\fP.
+.LP
+.TP 3
+included classes
+Classes and interfaces whose details are documented during a run of the Javadoc tool. Same as \f2documented classes\fP.
+.LP
+.TP 3
+excluded classes
+Classes and interfaces whose details are \f2not\fP documented during a run of the Javadoc tool.
+.LP
+.TP 3
+referenced classes
+The classes and interfaces that are explicitly referred to in the definition (implementation) or doc comments of the documented classes and interfaces. Examples of references include return type, parameter type, cast type, extended class, implemented interface, imported classes, classes used in method bodies, @see, {@link}, {@linkplain}, and {@inheritDoc} tags. (Notice this definition has changed since
+.na
+\f21.3\fP @
+.fi
+http://download.oracle.com/javase/1.3/docs/tooldocs/solaris/javadoc.html#referencedclasses.) When the Javadoc tool is run, it should load into memory all of the referenced classes in javadoc's bootclasspath and classpath. (The Javadoc tool prints a "Class not found" warning for referenced classes not found.) The Javadoc tool can derive enough information from the .class files to determine their existence and the fully\-qualified names of their members.
+.LP
+.TP 3
+external referenced classes
+The referenced classes whose documentation is not being generated during a javadoc run. In other words, these classes are not passed into the Javadoc tool on the command line. Links in the generated documentation to those classes are said to be \f2external references\fP or \f2external links\fP. For example, if you run the Javadoc tool on only the \f2java.awt\fP package, then any class in \f2java.lang\fP, such as \f2Object\fP, is an external referenced class. External referenced classes can be linked to using the \f2\-link\fP and \f2\-linkoffline\fP options. An important property of an external referenced class is that its source comments are normally not available to the Javadoc run. In this case, these comments cannot be inherited.
+.RE
+.SH "SOURCE FILES"
+.LP
+The Javadoc tool will generate output originating from four different types of "source" files: Java language source files for classes (\f2.java\fP), package comment files, overview comment files, and miscellaneous unprocessed files. This section also covers test files and template files that can also be in the source tree, but which you want to be sure not to document.
+.SS
+Class Source Code Files
+.LP
+Each class or interface and its members can have their own documentation comments, contained in a \f2.java\fP file. For more details about these doc comments, see Documentation Comments.
+.SS
+Package Comment Files
+.LP
+Each package can have its own documentation comment, contained in its own "source" file, that the Javadoc tool will merge into the package summary page that it generates. You typically include in this comment any documentation that applies to the entire package.
+.LP
+To create a package comment file, you have a choice of two files to place your comments:
+.RS 3
+.TP 2
+o
+\f2package\-info.java\fP \- Can contain a package declaration, package annotations, package comments and Javadoc tags. This file is generally preferred over package.html.
+.TP 2
+o
+\f2package.html\fP \- Can contain only package comments and Javadoc tags, no package annotations.
+.RE
+.LP
+A package may have a single \f2package.html\fP file or a single \f2package\-info.java\fP file but not both. Place either file in the package directory in the source tree along with your \f2.java\fP files.
+.LP
+\f4package\-info.java\fP \- This file can contain a package comment of the following structure \-\- the comment is placed before the package declaration:
+.LP
+File: \f2java/applet/package\-info.java\fP
+.nf
+\f3
+.fl
+/**
+.fl
+ * Provides the classes necessary to create an
+.fl
+ * applet and the classes an applet uses
+.fl
+ * to communicate with its applet context.
+.fl
+ * <p>
+.fl
+ * The applet framework involves two entities:
+.fl
+ * the applet and the applet context.
+.fl
+ * An applet is an embeddable window (see the
+.fl
+ * {@link java.awt.Panel} class) with a few extra
+.fl
+ * methods that the applet context can use to
+.fl
+ * initialize, start, and stop the applet.
+.fl
+ *
+.fl
+ * @since 1.0
+.fl
+ * @see java.awt
+.fl
+ */
+.fl
+package java.lang.applet;
+.fl
+\fP
+.fi
+.LP
+Note that while the comment separators \f2/**\fP and \f2/*\fP must be present, the leading asterisks on the intermediate lines can be omitted.
+.LP
+\f4package.html\fP \- This file can contain a package comment of the following structure \-\- the comment is placed in the \f2<body>\fP element:
+.LP
+File: \f2java/applet/package.html\fP
+.nf
+\f3
+.fl
+<HTML>
+.fl
+<BODY>
+.fl
+Provides the classes necessary to create an applet and the
+.fl
+classes an applet uses to communicate with its applet context.
+.fl
+<p>
+.fl
+The applet framework involves two entities: the applet
+.fl
+and the applet context. An applet is an embeddable
+.fl
+window (see the {@link java.awt.Panel} class) with a
+.fl
+few extra methods that the applet context can use to
+.fl
+initialize, start, and stop the applet.
+.fl
+
+.fl
+@since 1.0
+.fl
+@see java.awt
+.fl
+</BODY>
+.fl
+</HTML>
+.fl
+\fP
+.fi
+.LP
+Notice this is just a normal HTML file and does not include a package declaration. The content of the package comment file is written in HTML, like all other comments, with one exception: The documentation comment should not include the comment separators \f2/**\fP and \f2*/\fP or leading asterisks. When writing the comment, you should make the first sentence a summary about the package, and not put a title or any other text between \f2<body>\fP and the first sentence. You can include package tags; as with any documentation comment, all block tags must appear after the main description. If you add a \f2@see\fP tag in a package comment file, it must have a fully\-qualified name. For more details, see the
+.na
+\f2example of \fP\f2package.html\fP @
+.fi
+http://www.oracle.com/technetwork/java/javase/documentation/index\-137868.html#packagecomments.
+.LP
+\f3Processing of package comment file\fP \- When the Javadoc tool runs, it will automatically look for the package comment file; if found, the Javadoc tool does the following:
+.RS 3
+.TP 2
+o
+Copies the comment for processing. (For \f2package.html\fP, copies all content between \f2<body>\fP and \f2</body>\fP HTML tags. You can include a \f2<head>\fP section to put a \f2<title>\fP, source file copyright statement, or other information, but none of these will appear in the generated documentation.)
+.TP 2
+o
+Processes any package tags that are present.
+.TP 2
+o
+Inserts the processed text at the bottom of the package summary page it generates, as shown in
+.na
+\f2Package Summary\fP @
+.fi
+http://download.oracle.com/javase/7/docs/api/java/applet/package\-summary.html.
+.TP 2
+o
+Copies the first sentence of the package comment to the top of the package summary page. It also adds the package name and this first sentence to the list of packages on the overview page, as shown in
+.na
+\f2Overview Summary\fP @
+.fi
+http://download.oracle.com/javase/7/docs/api/overview\-summary.html. The end\-of\-sentence is determined by the same rules used for the end of the first sentence of class and member main descriptions.
+.RE
+.SS
+Overview Comment File
+.LP
+Each application or set of packages that you are documenting can have its own overview documentation comment, kept in its own "source" file, that the Javadoc tool will merge into the overview page that it generates. You typically include in this comment any documentation that applies to the entire application or set of packages.
+.LP
+To create an overview comment file, you can name the file anything you want, typically \f4overview.html\fP and place it anywhere, typically at the top level of the source tree. For example, if the source files for the \f2java.applet\fP package are contained in \f2/home/user/src/java/applet\fP directory, you could create an overview comment file at \f2/home/user/src/overview.html\fP.
+.LP
+Notice you can have multiple overview comment files for the same set of source files, in case you want to run javadoc multiple times on different sets of packages. For example, you could run javadoc once with \-private for internal documentation and again without that option for public documentation. In this case, you could describe the documentation as public or internal in the first sentence of each overview comment file.
+.LP
+The content of the overview comment file is one big documentation comment, written in HTML, like the package comment file described previously. See that description for details. To re\-iterate, when writing the comment, you should make the first sentence a summary about the application or set of packages, and not put a title or any other text between \f2<body>\fP and the first sentence. You can include overview tags; as with any documentation comment, all tags except in\-line tags, such as \f2{@link}\fP, must appear after the main description. If you add a \f2@see\fP tag, it must have a fully\-qualified name.
+.LP
+When you run the Javadoc tool, you specify the overview comment file name with the \-overview option. The file is then processed similar to that of a package comment file.
+.RS 3
+.TP 2
+o
+Copies all content between \f2<body>\fP and \f2</body>\fP tags for processing.
+.TP 2
+o
+Processes any overview tags that are present.
+.TP 2
+o
+Inserts the processed text at the bottom of the overview page it generates, as shown in
+.na
+\f2Overview Summary\fP @
+.fi
+http://download.oracle.com/javase/7/docs/api/overview\-summary.html.
+.TP 2
+o
+Copies the first sentence of the overview comment to the top of the overview summary page.
+.RE
+.SS
+Miscellaneous Unprocessed Files
+.LP
+You can also include in your source any miscellaneous files that you want the Javadoc tool to copy to the destination directory. These typically includes graphic files, example Java source (.java) and class (.class) files, and self\-standing HTML files whose content would overwhelm the documentation comment of a normal Java source file.
+.LP
+To include unprocessed files, put them in a directory called \f4doc\-files\fP which can be a subdirectory of any package directory that contains source files. You can have one such subdirectory for each package. You might include images, example code, source files, .class files, applets and HTML files. For example, if you want to include the image of a button \f2button.gif\fP in the \f2java.awt.Button\fP class documentation, you place that file in the \f2/home/user/src/java/awt/doc\-files/\fP directory. Notice the \f2doc\-files\fP directory should not be located at \f2/home/user/src/java/doc\-files\fP because \f2java\fP is not a package \-\- that is, it does not directly contain any source files.
+.LP
+All links to these unprocessed files must be hard\-coded, because the Javadoc tool does not look at the files \-\- it simply copies the directory and all its contents to the destination. For example, the link in the \f2Button.java\fP doc comment might look like:
+.nf
+\f3
+.fl
+    /**
+.fl
+     * This button looks like this:
+.fl
+     * <img src="doc\-files/Button.gif">
+.fl
+     */
+.fl
+\fP
+.fi
+.SS
+Test Files and Template Files
+.LP
+Some developers have indicated they want to store test files and templates files in the source tree near their corresponding source files. That is, they would like to put them in the same directory, or a subdirectory, of those source files.
+.LP
+If you run the Javadoc tool by explicitly passing in individual source filenames, you can deliberately omit test and templates files and prevent them from being processed. However, if you are passing in package names or wildcards, you need to follow certain rules to ensure these test files and templates files are not processed.
+.LP
+Test files differ from template files in that the former are legal, compilable source files, while the latter are not, but may end with ".java".
+.LP
+\f3Test files\fP \- Often developers want to put compilable, runnable test files for a given package in the \f2same\fP directory as the source files for that package. But they want the test files to belong to a package other than the source file package, such as the unnamed package (so the test files have no package statement or a different package statement from the source). In this scenario, when the source is being documented by specifying its package name specified on the command line, the test files will cause warnings or errors. You need to put such test files in a subdirectory. For example, if you want to add test files for source files in \f2com.package1\fP, put them in a subdirectory that would be an invalid package name (because it contains a hyphen):
+.nf
+\f3
+.fl
+    com/package1/test\-files/
+.fl
+\fP
+.fi
+.LP
+The test directory will be skipped by the Javadoc tool with no warnings.
+.LP
+If your test files contain doc comments, you can set up a separate run of the Javadoc tool to produce documentation of the test files by passing in their test source filenames with wildcards, such as \f2com/package1/test\-files/*.java\fP.
+.LP
+\f3Templates for source files\fP \- Template files have names that often end in ".java" and are not compilable. If you have a template for a source file that you want to keep in the source directory, you can name it with a dash (such as \f2Buffer\-Template.java\fP), or any other illegal Java character, to prevent it from being processed. This relies on the fact that the Javadoc tool will only process source files whose name, when stripped of the ".java" suffix, is actually a legal class name (see information about Identifiers in the Java Language Specification).
+.SH "GENERATED FILES"
+.LP
+By default, javadoc uses a standard doclet that generates HTML\-formatted documentation. This doclet generates the following kinds of files (where each HTML "page" corresponds to a separate file). Note that javadoc generates files with two types of names: those named after classes/interfaces, and those that are not (such as \f2package\-summary.html\fP). Files in the latter group contain hyphens to prevent filename conflicts with those in the former group.
+.LP
+\f3Basic Content Pages\fP
+.RS 3
+.TP 2
+o
+One \f3class or interface page\fP (\f2classname\fP\f2.html\fP) for each class or interface it is documenting.
+.TP 2
+o
+One \f3package page\fP (\f2package\-summary.html\fP) for each package it is documenting. The Javadoc tool will include any HTML text provided in a file named \f2package.html\fP or \f2package\-info.java\fP in the package directory of the source tree.
+.TP 2
+o
+One \f3overview page\fP (\f2overview\-summary.html\fP) for the entire set of packages. This is the front page of the generated document. The Javadoc tool will include any HTML text provided in a file specified with the \f2\-overview\fP option. Note that this file is created only if you pass into javadoc two or more package names. For further explanation, see HTML Frames.)
+.RE
+.LP
+\f3Cross\-Reference Pages\fP
+.RS 3
+.TP 2
+o
+One \f3class hierarchy page for the entire set of packages\fP (\f2overview\-tree.html\fP). To view this, click on "Overview" in the navigation bar, then click on "Tree".
+.TP 2
+o
+One \f3class hierarchy page for each package\fP (\f2package\-tree.html\fP) To view this, go to a particular package, class or interface page; click "Tree" to display the hierarchy for that package.
+.TP 2
+o
+One \f3"use" page\fP for each package (\f2package\-use.html\fP) and a separate one for each class and interface (\f2class\-use/\fP\f2classname\fP\f2.html\fP). This page describes what packages, classes, methods, constructors and fields use any part of the given class, interface or package. Given a class or interface A, its "use" page includes subclasses of A, fields declared as A, methods that return A, and methods and constructors with parameters of type A. You can access this page by first going to the package, class or interface, then clicking on the "Use" link in the navigation bar.
+.TP 2
+o
+A \f3deprecated API page\fP (\f2deprecated\-list.html\fP) listing all deprecated names. (A deprecated name is not recommended for use, generally due to improvements, and a replacement name is usually given. Deprecated APIs may be removed in future implementations.)
+.TP 2
+o
+A \f3constant field values page\fP (\f2constant\-values.html\fP) for the values of static fields.
+.TP 2
+o
+A \f3serialized form page\fP (\f2serialized\-form.html\fP) for information about serializable and externalizable classes. Each such class has a description of its serialization fields and methods. This information is of interest to re\-implementors, not to developers using the API. While there is no link in the navigation bar, you can get to this information by going to any serialized class and clicking "Serialized Form" in the "See also" section of the class comment. The standard doclet automatically generates a serialized form page: any class (public or non\-public) that implements Serializable is included, along with \f2readObject\fP and \f2writeObject\fP methods, the fields that are serialized, and the doc comments from the \f2@serial\fP, \f2@serialField\fP, and \f2@serialData\fP tags. Public serializable classes can be excluded by marking them (or their package) with \f2@serial exclude\fP, and package\-private serializable classes can be included by marking them (or their package) with \f2@serial include\fP. As of 1.4, you can generate the complete serialized form for public and private classes by running javadoc \f2without\fP specifying the \f2\-private\fP option.
+.TP 2
+o
+An \f3index\fP (\f2index\-*.html\fP) of all class, interface, constructor, field and method names, alphabetically arranged. This is internationalized for Unicode and can be generated as a single file or as a separate file for each starting character (such as A\-Z for English).
+.RE
+.LP
+\f3Support Files\fP
+.RS 3
+.TP 2
+o
+A \f3help page\fP (\f2help\-doc.html\fP) that describes the navigation bar and the above pages. You can provide your own custom help file to override the default using \f2\-helpfile\fP.
+.TP 2
+o
+One \f3index.html file\fP which creates the HTML frames for display. This is the file you load to display the front page with frames. This file itself contains no text content.
+.TP 2
+o
+Several \f3frame files\fP (\f2*\-frame.html\fP) containing lists of packages, classes and interfaces, used when HTML frames are being displayed.
+.TP 2
+o
+A \f3package list\fP file (\f2package\-list\fP), used by the \f2\-link\fP and \f2\-linkoffline\fP options. This is a text file, not HTML, and is not reachable through any links.
+.TP 2
+o
+A \f3style sheet\fP file (\f2stylesheet.css\fP) that controls a limited amount of color, font family, font size, font style and positioning on the generated pages.
+.TP 2
+o
+A \f3doc\-files\fP directory that holds any image, example, source code or other files that you want copied to the destination directory. These files are not processed by the Javadoc tool in any manner \-\- that is, any javadoc tags in them will be ignored. This directory is not generated unless it exists in the source tree.
+.RE
+.LP
+\f3HTML Frames\fP
+.LP
+The Javadoc tool will generate either two or three HTML frames, as shown in the figure below. It creates the minimum necessary number of frames by omitting the list of packages if there is only one package (or no packages). That is, when you pass a single package name or source files (*.java) belonging to a single package as arguments into the javadoc command, it will create only one frame (C) in the left\-hand column \-\- the list of classes. When you pass into javadoc two or more package names, it creates a third frame (P) listing all packages, as well as an overview page (Detail). This overview page has the filename \f2overview\-summary.html\fP. Thus, this file is created only if you pass in two or more package names. You can bypass frames by clicking on the "No Frames" link or entering at overview\-summary.html.
+.LP
+If you are unfamiliar with HTML frames, you should be aware that frames can have \f2focus\fP for printing and scrolling. To give a frame focus, click on it. Then on many browsers the arrow keys and page keys will scroll that frame, and the print menu command will print it.
+.LP
+Load one of the following two files as the starting page depending on whether you want HTML frames or not:
+.RS 3
+.TP 2
+o
+\f2index.html\fP (for frames)
+.TP 2
+o
+\f2overview\-summary.html\fP (for no frames)
+.RE
+.LP
+\f3Generated File Structure\fP
+.LP
+The generated class and interface files are organized in the same directory hierarchy that Java source files and class files are organized. This structure is one directory per subpackage.
+.LP
+For example, the document generated for the class \f2java.applet.Applet\fP class would be located at \f2java/applet/Applet.html\fP. The file structure for the java.applet package follows, given that the destination directory is named \f2apidocs\fP. All files that contain the word "frame" appear in the upper\-left or lower\-left frames, as noted. All other HTML files appear in the right\-hand frame.
+.LP
+NOTE \- Directories are shown in \f3bold\fP. The asterisks (\f2*\fP) indicate the files and directories that are \f2omitted\fP when the arguments to javadoc are source filenames (*.java) rather than package names. Also when arguments are source filenames, \f2package\-list\fP is created but is empty. The doc\-files directory will not be created in the destination unless it exists in the source tree.
+.nf
+\f3
+.fl
+
+.fl
+\fP\f3apidocs\fP                             Top directory
+.fl
+   index.html                       Initial page that sets up HTML frames
+.fl
+ * overview\-summary.html            Lists all packages with first sentence summaries
+.fl
+   overview\-tree.html               Lists class hierarchy for all packages
+.fl
+   deprecated\-list.html             Lists deprecated API for all packages
+.fl
+   constant\-values.html             Lists values of static fields for all packages
+.fl
+   serialized\-form.html             Lists serialized form for all packages
+.fl
+ * overview\-frame.html              Lists all packages, used in upper\-left frame
+.fl
+   allclasses\-frame.html            Lists all classes for all packages, used in lower\-left frame
+.fl
+   help\-doc.html                    Lists user help for how these pages are organized
+.fl
+   index\-all.html                   Default index created without \-splitindex option
+.fl
+   \f3index\-files\fP                      Directory created with \-splitindex option
+.fl
+       index\-<number>.html          Index files created with \-splitindex option
+.fl
+   package\-list                     Lists package names, used only for resolving external refs
+.fl
+   stylesheet.css                   HTML style sheet for defining fonts, colors and positions
+.fl
+   \f3java\fP                             Package directory
+.fl
+       \f3applet\fP                       Subpackage directory
+.fl
+            Applet.html             Page for Applet class
+.fl
+            AppletContext.html      Page for AppletContext interface
+.fl
+            AppletStub.html         Page for AppletStub interface
+.fl
+            AudioClip.html          Page for AudioClip interface
+.fl
+          * package\-summary.html    Lists classes with first sentence summaries for this package
+.fl
+          * package\-frame.html      Lists classes in this package, used in lower left\-hand frame
+.fl
+          * package\-tree.html       Lists class hierarchy for this package
+.fl
+            package\-use             Lists where this package is used
+.fl
+            \f3doc\-files\fP               Directory holding image and example files
+.fl
+            \f3class\-use\fP               Directory holding pages API is used
+.fl
+                Applet.html         Page for uses of Applet class
+.fl
+                AppletContext.html  Page for uses of AppletContext interface
+.fl
+                AppletStub.html     Page for uses of AppletStub interface
+.fl
+                AudioClip.html      Page for uses of AudioClip interface
+.fl
+   \f3src\-html\fP                         Source code directory
+.fl
+       \f3java\fP                         Package directory
+.fl
+           \f3applet\fP                   Subpackage directory
+.fl
+                Applet.html         Page for Applet source code
+.fl
+                AppletContext.html  Page for AppletContext source code
+.fl
+                AppletStub.html     Page for AppletStub source code
+.fl
+                AudioClip.html      Page for AudioClip source code
+.fl
+.fi
+.SS
+Generated API Declarations
+.LP
+The Javadoc tool generates a declaration at the start of each class, interface, field, constructor, and method description for that API item. For example, the declaration for the \f2Boolean\fP class is:
+.LP
+\f2public final class Boolean\fP
+.br
+\f2extends Object\fP
+.br
+\f2implements Serializable\fP
+.LP
+and the declaration for the \f2Boolean.valueOf\fPmethod is:
+.LP
+\f2public static Boolean valueOf(String s)\fP
+.LP
+The Javadoc tool can include the modifiers \f2public\fP, \f2protected\fP, \f2private\fP, \f2abstract\fP, \f2final\fP, \f2static\fP, \f2transient\fP, and \f2volatile\fP, but not \f2synchronized\fP or \f2native\fP. These last two modifiers are considered implementation detail and not part of the API specification.
+.LP
+Rather than relying on the keyword \f2synchronized\fP, APIs should document their concurrency semantics in the comment's main description, as in "a single \f2Enumeration\fP cannot be used by multiple threads concurrently". The document should not describe how to achieve these semantics. As another example, while \f2Hashtable\fP should be thread\-safe, there's no reason to specify that we achieve this by synchronizing all of its exported methods. We should reserve the right to synchronize internally at the bucket level, thus offering higher concurrency.
+.SH "DOCUMENTATION COMMENTS"
+.LP
+The original "Documentation Comment Specification" can be found under related documentation.
+.SS
+Commenting the Source Code
+.LP
+You can include \f2documentation comments\fP ("doc comments") in the source code, ahead of declarations for any class, interface, method, constructor, or field. You can also create doc comments for each package and another one for the overview, though their syntax is slightly different. Doc comments are also known informally as "Javadoc comments" (but this term violates its trademark usage). A doc comment consists of the characters between the characters \f2/**\fP that begin the comment and the characters \f2*/\fP that end it. Leading asterisks are allowed on each line and are described further below. The text in a comment can continue onto multiple lines.
+.nf
+\f3
+.fl
+/**
+.fl
+ * This is the typical format of a simple documentation comment
+.fl
+ * that spans two lines.
+.fl
+ */
+.fl
+\fP
+.fi
+.LP
+To save space you can put a comment on one line:
+.nf
+\f3
+.fl
+/** This comment takes up only one line. */
+.fl
+\fP
+.fi
+.LP
+\f3Placement of comments\fP \- Documentation comments are recognized only when placed immediately before class, interface, constructor, method, or field declarations \-\- see the class example, method example, and field example. Documentation comments placed in the body of a method are ignored. Only one documentation comment per declaration statement is recognized by the Javadoc tool.
+.LP
+A common mistake is to put an \f2import\fP statement between the class comment and the class declaration. Avoid this, as the Javadoc tool will ignore the class comment.
+.nf
+\f3
+.fl
+   /**
+.fl
+    * This is the class comment for the class Whatever.
+.fl
+    */
+.fl
+
+.fl
+    import com.sun;   // MISTAKE \- Important not to put import statement here
+.fl
+
+.fl
+    public class Whatever {
+.fl
+    }
+.fl
+\fP
+.fi
+.LP
+\f3A doc comment is composed of a \fP\f4main description\fP\f3 followed by a \fP\f4tag section\fP \- The \f2main description\fP begins after the starting delimiter \f2/**\fP and continues until the tag section. The \f2tag section\fP starts with the first block tag, which is defined by the first \f2@\fP character that begins a line (ignoring leading asterisks, white space, and leading separator \f2/**\fP). It is possible to have a comment with only a tag section and no main description. The main description cannot continue after the tag section begins. The argument to a tag can span multiple lines. There can be any number of tags \-\- some types of tags can be repeated while others cannot. For example, this \f2@see\fP starts the tag section:
+.nf
+\f3
+.fl
+/**
+.fl
+ * This sentence would hold the main description for this doc comment.
+.fl
+ * @see java.lang.Object
+.fl
+ */
+.fl
+\fP
+.fi
+.LP
+\f3Block tags and in\-line tags\fP \- A \f2tag\fP is a special keyword within a doc comment that the Javadoc tool can process. There are two kinds of tags: block tags, which appear as \f2@tag\fP (also known as "standalone tags"), and in\-line tags, which appear within curly braces, as \f2{@tag}\fP. To be interpreted, a block tag must appear at the beginning of a line, ignoring leading asterisks, white space, and separator (\f2/**\fP). This means you can use the \f2@\fP character elsewhere in the text and it will not be interpreted as the start of a tag. If you want to start a line with the \f2@\fP character and not have it be interpreted, use the HTML entity \f2&#064;\fP. Each block tag has associated text, which includes any text following the tag up to, but not including, either the next tag, or the end of the doc comment. This associated text can span multiple lines. An in\-line tag is allowed and interpreted anywhere that text is allowed. The following example contains the block tag \f2@deprecated\fP and in\-line tag \f2{@link}\fP.
+.nf
+\f3
+.fl
+/**
+.fl
+ * @deprecated  As of JDK 1.1, replaced by {@link #setBounds(int,int,int,int)}
+.fl
+ */
+.fl
+\fP
+.fi
+.LP
+\f3Comments are written in HTML\fP \- The text must be written in HTML, in that they should use HTML entities and can use HTML tags. You can use whichever version of HTML your browser supports; we have written the standard doclet to generate HTML 3.2\-compliant code elsewhere (outside of the documentation comments) with the inclusion of cascading style sheets and frames. (We preface each generated file with "HTML 4.0" because of the frame sets.)
+.LP
+For example, entities for the less\-than (\f2<\fP) and greater\-than (\f2>\fP) symbols should be written \f2<\fP and \f2>\fP. Likewise, the ampersand (\f2&\fP) should be written \f2&\fP. The bold HTML tag \f2<b>\fP is shown in the following example.
+.LP
+Here is a doc comment:
+.nf
+\f3
+.fl
+/**
+.fl
+ * This is a <b>doc</b> comment.
+.fl
+ * @see java.lang.Object
+.fl
+ */
+.fl
+\fP
+.fi
+.LP
+\f3Leading asterisks\fP \- When javadoc parses a doc comment, leading asterisk (\f2*\fP) characters on each line are discarded; blanks and tabs preceding the initial asterisk (\f2*\fP) characters are also discarded. Starting with 1.4, if you omit the leading asterisk on a line, the leading white space is no longer removed. This enables you to paste code examples directly into a doc comment inside a \f2<PRE>\fP tag, and its indentation will be honored. Spaces are generally interpreted by browsers more uniformly than tabs. Indentation is relative to the left margin (rather than the separator \f2/**\fP or \f2<PRE>\fP tag).
+.LP
+\f3First sentence\fP \- The first sentence of each doc comment should be a summary sentence, containing a concise but complete description of the declared entity. This sentence ends at the first period that is followed by a blank, tab, or line terminator, or at the first block tag. The Javadoc tool copies this first sentence to the member summary at the top of the HTML page.
+.LP
+\f3Declaration with multiple fields\fP \- Java allows declaring multiple fields in a single statement, but this statement can have only one documentation comment, which is copied for all fields. Therefore if you want individual documentation comments for each field, you must declare each field in a separate statement. For example, the following documentation comment doesn't make sense written as a single declaration and would be better handled as two declarations:
+.nf
+\f3
+.fl
+/**
+.fl
+ * The horizontal and vertical distances of point (x,y)
+.fl
+ */
+.fl
+public int x, y;      // Avoid this
+.fl
+\fP
+.fi
+.LP
+The Javadoc tool generates the following documentation from the above code:
+.nf
+\f3
+.fl
+public int \fP\f3x\fP
+.fl
+.fi
+.RS 3
+The horizontal and vertical distances of point (x,y)
+.RE
+.nf
+\f3
+.fl
+public int \fP\f3y\fP
+.fl
+.fi
+.RS 3
+The horizontal and vertical distances of point (x,y)
+.RE
+.LP
+\f3Use header tags carefully\fP \- When writing documentation comments for members, it's best not to use HTML heading tags such as <H1> and <H2>, because the Javadoc tool creates an entire structured document and these structural tags might interfere with the formatting of the generated document. However, it is fine to use these headings in class and package comments to provide your own structure.
+.SS
+Automatic Copying of Method Comments
+.LP
+The Javadoc tool has the ability to copy or "inherit" method comments in classes and interfaces under the following two circumstances. Constructors, fields and nested classes do not inherit doc comments.
+.RS 3
+.TP 2
+o
+\f3Automatically inherit comment to fill in missing text\fP \- When a main description, or \f2@return\fP, \f2@param\fP or \f2@throws\fP  tag is missing from a method comment, the Javadoc tool copies the corresponding main description or tag comment from the method it overrides or implements (if any), according to the algorithm below.
+.LP
+More specifically, when a \f2@param\fP tag for a particular parameter is missing, then the comment for that parameter is copied from the method further up the inheritance hierarchy. When a \f2@throws\fP tag for a particular exception is missing, the \f2@throws\fP tag is copied \f2only if that exception is declared\fP.
+.LP
+This behavior contrasts with version 1.3 and earlier, where the presence of any main description or tag would prevent all comments from being inherited.
+.TP 2
+o
+\f3Explicitly inherit comment with {@inheritDoc} tag\fP \- Insert the inline tag \f2{@inheritDoc}\fP in a method main description or \f2@return\fP, \f2@param\fP or \f2@throws\fP tag comment \-\- the corresponding inherited main description or tag comment is copied into that spot.
+.RE
+.LP
+The source file for the inherited method need only be on the path specified by \-sourcepath for the doc comment to actually be available to copy. Neither the class nor its package needs to be passed in on the command line. This contrasts with 1.3.x and earlier releases, where the class had to be a documented class
+.LP
+\f3Inherit from classes and interfaces\fP \- Inheriting of comments occurs in all three possible cases of inheritance from classes and interfaces:
+.RS 3
+.TP 2
+o
+When a method in a class overrides a method in a superclass
+.TP 2
+o
+When a method in an interface overrides a method in a superinterface
+.TP 2
+o
+When a method in a class implements a method in an interface
+.RE
+.LP
+In the first two cases, for method overrides, the Javadoc tool generates a subheading "Overrides" in the documentation for the overriding method, with a link to the method it is overriding, whether or not the comment is inherited.
+.LP
+In the third case, when a method in a given class implements a method in an interface, the Javadoc tool generates a subheading "Specified by" in the documentation for the overriding method, with a link to the method it is implementing. This happens whether or not the comment is inherited.
+.LP
+\f3Algorithm for Inheriting Method Comments\fP \- If a method does not have a doc comment, or has an {@inheritDoc} tag, the Javadoc tool searches for an applicable comment using the following algorithm, which is designed to find the most specific applicable doc comment, giving preference to interfaces over superclasses:
+.RS 3
+.TP 3
+1.
+Look in each directly implemented (or extended) interface in the order they appear following the word implements (or extends) in the method declaration. Use the first doc comment found for this method.
+.TP 3
+2.
+If step 1 failed to find a doc comment, recursively apply this entire algorithm to each directly implemented (or extended) interface, in the same order they were examined in step 1.
+.TP 3
+3.
+If step 2 failed to find a doc comment and this is a class other than Object (not an interface):
+.RS 3
+.TP 3
+a.
+If the superclass has a doc comment for this method, use it.
+.TP 3
+b.
+If step 3a failed to find a doc comment, recursively apply this entire algorithm to the superclass.
+.RE
+.RE
+.SH "JAVADOC TAGS"
+.LP
+The Javadoc tool parses special tags when they are embedded within a Java doc comment. These doc tags enable you to autogenerate a complete, well\-formatted API from your source code. The tags start with an "at" sign (\f2@\fP) and are case\-sensitive \-\- they must be typed with the uppercase and lowercase letters as shown. A tag must start at the beginning of a line (after any leading spaces and an optional asterisk) or it is treated as normal text. By convention, tags with the same name are grouped together. For example, put all \f2@see\fP tags together.
+.LP
+Tags come in two types:
+.RS 3
+.TP 2
+o
+\f3Block tags\fP \- Can be placed only in the tag section that follows the main description. Block tags are of the form: \f2@tag\fP.
+.TP 2
+o
+\f3Inline tags\fP \- Can be placed anywhere in the main description or in the comments for block tags. Inline tags are denoted by curly braces: \f2{@tag}\fP.
+.RE
+.LP
+For information about tags we might introduce in future releases, see
+.na
+\f2Proposed Tags\fP @
+.fi
+http://java.sun.com/j2se/javadoc/proposed\-tags.html.
+.LP
+The current tags are:
+.LP
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \w\f3Tag\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f2@author\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f2{@code}\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f2{@docRoot}\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f2@deprecated\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f2@exception\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f2{@inheritDoc}\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f2{@link}\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f2{@linkplain}\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f2{@literal}\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f2@param\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f2@return\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f2@see\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f2@serial\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f2@serialData\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f2@serialField\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f2@since\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f2@throws\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f2{@value}\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f2@version\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \w\f3Introduced in JDK/SDK\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w1.0
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w1.5
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w1.3
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w1.0
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w1.0
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w1.4
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w1.2
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w1.4
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w1.5
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w1.0
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w1.0
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w1.0
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w1.2
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w1.2
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w1.2
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w1.1
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w1.2
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w1.4
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \w1.0
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if \n(TW>\n(.li .tm Table at line 873 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3Tag\fP\h'|\n(41u'\f3Introduced in JDK/SDK\fP
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f2@author\fP\h'|\n(41u'1.0
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f2{@code}\fP\h'|\n(41u'1.5
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f2{@docRoot}\fP\h'|\n(41u'1.3
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f2@deprecated\fP\h'|\n(41u'1.0
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f2@exception\fP\h'|\n(41u'1.0
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f2{@inheritDoc}\fP\h'|\n(41u'1.4
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f2{@link}\fP\h'|\n(41u'1.2
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f2{@linkplain}\fP\h'|\n(41u'1.4
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f2{@literal}\fP\h'|\n(41u'1.5
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f2@param\fP\h'|\n(41u'1.0
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f2@return\fP\h'|\n(41u'1.0
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f2@see\fP\h'|\n(41u'1.0
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f2@serial\fP\h'|\n(41u'1.2
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f2@serialData\fP\h'|\n(41u'1.2
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f2@serialField\fP\h'|\n(41u'1.2
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f2@since\fP\h'|\n(41u'1.1
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f2@throws\fP\h'|\n(41u'1.2
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f2{@value}\fP\h'|\n(41u'1.4
+.ta \n(80u \n(81u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f2@version\fP\h'|\n(41u'1.0
+.fc
+.nr T. 1
+.T# 1
+.35
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-42
+.LP
+For custom tags, see the \-tag option.
+.RS 3
+.TP 3
+@author\  name\-text
+Adds an "Author" entry with the specified \f2name\-text\fP to the generated docs when the \-author option is used. A doc comment may contain multiple \f2@author\fP tags. You can specify one name per \f2@author\fP tag or multiple names per tag. In the former case, the Javadoc tool inserts a comma (\f2,\fP) and space between names. In the latter case, the entire text is simply copied to the generated document without being parsed. Therefore, you can use multiple names per line if you want a localized name separator other than comma.
+.RE
+.LP
+For more details, see Where Tags Can Be Used and
+.na
+\f2writing @author tags\fP @
+.fi
+http://www.oracle.com/technetwork/java/javase/documentation/index\-137868.html#@author.
+.LP
+.RS 3
+.TP 3
+@deprecated\  deprecated\-text Note: You can deprecate a program element using the @Deprecated annotation.
+.RE
+.LP
+Adds a comment indicating that this API should no longer be used (even though it may continue to work). The Javadoc tool moves the \f2deprecated\-text\fP ahead of the main description, placing it in italics and preceding it with a bold warning: "Deprecated". This tag is valid in all doc comments: overview, package, class, interface, constructor, method and field.
+.LP
+The first sentence of \f2deprecated\-text\fP should at least tell the user when the API was deprecated and what to use as a replacement. The Javadoc tool copies just the first sentence to the summary section and index. Subsequent sentences can also explain why it has been deprecated. You should include a \f2{@link}\fP tag (for Javadoc 1.2 or later) that points to the replacement API:
+.LP
+For more details, see
+.na
+\f2writing @deprecated tags\fP @
+.fi
+http://www.oracle.com/technetwork/java/javase/documentation/index\-137868.html#@deprecated.
+.RS 3
+.TP 2
+o
+For Javadoc 1.2 and later, use a \f2{@link}\fP tag. This creates the link in\-line, where you want it. For example:
+.nf
+\f3
+.fl
+/**
+.fl
+ * @deprecated  As of JDK 1.1, replaced by {@link #setBounds(int,int,int,int)}
+.fl
+ */
+.fl
+
+.fl
+\fP
+.fi
+.TP 2
+o
+For Javadoc 1.1, the standard format is to create a \f2@see\fP tag (which cannot be in\-line) for each \f2@deprecated\fP tag.
+.RE
+.LP
+For more about deprecation, see
+.na
+\f2The @deprecated tag\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/guides/javadoc/deprecation/index.html.
+.LP
+.RS 3
+.TP 3
+{@code\  text}
+Equivalent to \f2<code>{@literal}</code>\fP.
+.LP
+Displays \f2text\fP in \f2code\fP font without interpreting the text as HTML markup or nested javadoc tags. This enables you to use regular angle brackets (\f2<\fP and \f2>\fP) instead of the HTML entities (\f2<\fP and \f2>\fP) in doc comments, such as in parameter types (\f2<Object>\fP), inequalities (\f23 < 4\fP), or arrows (\f2<\-\fP). For example, the doc comment text:
+.nf
+\f3
+.fl
+     \fP\f4{@code A<B>C}\fP\f3
+.fl
+
+.fl
+\fP
+.fi
+.LP
+displays in the generated HTML page unchanged, as:
+.nf
+\f3
+.fl
+     \fP\f4A<B>C\fP\f3
+.fl
+
+.fl
+\fP
+.fi
+.LP
+The noteworthy point is that the \f2<B>\fP is not interpreted as bold and is in code font.
+.LP
+If you want the same functionality without the code font, use \f2{@literal}\fP.
+.LP
+.TP 3
+{@docRoot}
+Represents the relative path to the generated document's (destination) root directory from any generated page. It is useful when you want to include a file, such as a copyright page or company logo, that you want to reference from all generated pages. Linking to the copyright page from the bottom of each page is common.
+.LP
+This \f2{@docRoot}\fP tag can be used both on the command line and in a doc comment: This tag is valid in all doc comments: overview, package, class, interface, constructor, method and field, including the text portion of any tag (such as @return, @param and @deprecated).
+.RS 3
+.TP 3
+1.
+On the command line, where the header/footer/bottom are defined:
+.nf
+\f3
+.fl
+   javadoc \-bottom '<a href="{@docRoot}/copyright.html">Copyright</a>'
+.fl
+
+.fl
+\fP
+.fi
+.LP
+NOTE \- When using \f2{@docRoot}\fP this way in a make file, some makefile programs require special escaping for the brace {} characters. For example, the Inprise MAKE version 5.2 running on Windows requires double braces: \f2{{@docRoot}}\fP. It also requires double (rather than single) quotes to enclose arguments to options such as \f2\-bottom\fP (with the quotes around the \f2href\fP argument omitted).
+.TP 3
+2.
+In a doc comment:
+.nf
+\f3
+.fl
+   /**
+.fl
+    * See the <a href="{@docRoot}/copyright.html">Copyright</a>.
+.fl
+    */
+.fl
+
+.fl
+\fP
+.fi
+.RE
+.LP
+The reason this tag is needed is because the generated docs are in hierarchical directories, as deep as the number of subpackages. This expression:
+.nf
+\f3
+.fl
+  <a href="{@docRoot}/copyright.html">
+.fl
+
+.fl
+\fP
+.fi
+.LP
+would resolve to:
+.nf
+\f3
+.fl
+  <a href="../../copyright.html">      for java/lang/Object.java
+.fl
+
+.fl
+\fP
+.fi
+.LP
+and
+.nf
+\f3
+.fl
+  <a href="../../../copyright.html">   for java/lang/ref/Reference.java
+.fl
+
+.fl
+\fP
+.fi
+.LP
+.TP 3
+@exception\  class\-name\  description
+The \f2@exception\fP tag is a synonym for \f2@throws\fP.
+.LP
+.TP 3
+{@inheritDoc}\
+Inherits (copies) documentation from the "nearest" inheritable class or implementable interface into the current doc comment at this tag's location. This allows you to write more general comments higher up the inheritance tree, and to write around the copied text.
+.LP
+This tag is valid only in these places in a doc comment:
+.RS 3
+.TP 2
+o
+In the main description block of a method. In this case, the main description is copied from a class or interface up the hierarchy.
+.TP 2
+o
+In the text arguments of the @return, @param and @throws tags of a method. In this case, the tag text is copied from the corresponding tag up the hierarchy.
+.RE
+.LP
+See Automatic Copying of Method Comments for a more precise description of how comments are found in the inheritance hierarchy. Note that if this tag is missing, the comment is or is not automatically inherited according to rules described in that section.
+.LP
+.TP 3
+{@link\  package.class#member\  label}
+Inserts an in\-line link with visible text \f2label\fP that points to the documentation for the specified package, class or member name of a referenced class. This tag is valid in all doc comments: overview, package, class, interface, constructor, method and field, including the text portion of any tag (such as @return, @param and @deprecated).
+.LP
+This tag is very simliar to \f2@see\fP \-\- both require the same references and accept exactly the same syntax for \f2package.class\fP\f2#\fP\f2member\fP and \f2label\fP. The main difference is that \f2{@link}\fP generates an in\-line link rather than placing the link in the "See Also" section. Also, the \f2{@link}\fP tag begins and ends with curly braces to separate it from the rest of the in\-line text. If you need to use "}" inside the label, use the HTML entity notation &#125;
+.LP
+There is no limit to the number of \f2{@link}\fP tags allowed in a sentence. You can use this tag in the main description part of any documentation comment or in the text portion of any tag (such as @deprecated, @return or @param).
+.LP
+For example, here is a comment that refers to the \f2getComponentAt(int, int)\fP method:
+.nf
+\f3
+.fl
+Use the {@link #getComponentAt(int, int) getComponentAt} method.
+.fl
+
+.fl
+\fP
+.fi
+.LP
+From this, the standard doclet would generate the following HTML (assuming it refers to another class in the same package):
+.nf
+\f3
+.fl
+Use the <a href="Component.html#getComponentAt(int, int)">getComponentAt</a> method.
+.fl
+
+.fl
+\fP
+.fi
+.LP
+Which appears on the web page as:
+.nf
+\f3
+.fl
+Use the getComponentAt method.
+.fl
+
+.fl
+\fP
+.fi
+.LP
+You can extend \f2{@link}\fP to link to classes not being documented by using the \f2\-link\fP option.
+.LP
+For more details, see
+.na
+\f2writing {@link} tags\fP @
+.fi
+http://www.oracle.com/technetwork/java/javase/documentation/index\-137868.html#{@link}.
+.LP
+.TP 3
+{@linkplain\  package.class#member\  label}
+Identical to \f2{@link}\fP, except the link's label is displayed in plain text than code font. Useful when the label is plain text. Example:
+.nf
+\f3
+.fl
+     Refer to {@linkplain add() the overridden method}.
+.fl
+
+.fl
+\fP
+.fi
+.LP
+This would display as:
+.LP
+Refer to the overridden method.
+.LP
+.TP 3
+{@literal\  text}
+Displays \f2text\fP without interpreting the text as HTML markup or nested javadoc tags. This enables you to use regular angle brackets (\f2<\fP and \f2>\fP) instead of the HTML entities (\f2<\fP and \f2>\fP) in doc comments, such as in parameter types (\f2<Object>\fP), inequalities (\f23 < 4\fP), or arrows (\f2<\-\fP). For example, the doc comment text:
+.nf
+\f3
+.fl
+     \fP\f4{@literal A<B>C}\fP\f3
+.fl
+
+.fl
+\fP
+.fi
+.LP
+displays unchanged in the generated HTML page in your browser, as:
+.LP
+\f2\ \ \ \ \ \fPA<B>C
+.LP
+The noteworthy point is that the \f2<B>\fP is not interpreted as bold (and it is not in code font).
+.LP
+If you want the same functionality but with the text in code font, use \f2{@code}\fP.
+.LP
+.TP 3
+@param\  parameter\-name description
+Adds a parameter with the specified \f2parameter\-name\fP followed by the specified \f2description\fP to the "Parameters" section. When writing the doc comment, you may continue the \f2description\fP onto multiple lines. This tag is valid only in a doc comment for a method, constructor or class.
+.LP
+The \f2parameter\-name\fP can be the name of a parameter in a method or constructor, or the name of a type parameter of a class, method or constructor. Use angle brackets around this parameter name to specify the use of a type parameter.
+.LP
+Example of a type parameter of a class:
+.nf
+\f3
+.fl
+     /**
+.fl
+      * @param <E> Type of element stored in a list
+.fl
+      */
+.fl
+     public interface List<E> extends Collection<E> {
+.fl
+     }
+.fl
+
+.fl
+\fP
+.fi
+.LP
+Example of a type parameter of a method:
+.nf
+\f3
+.fl
+     /**
+.fl
+      * @param string  the string to be converted
+.fl
+      * @param type    the type to convert the string to
+.fl
+      * @param <T>     the type of the element
+.fl
+      * @param <V>     the value of the element
+.fl
+      */
+.fl
+     <T, V extends T> V convert(String string, Class<T> type) {
+.fl
+     }
+.fl
+
+.fl
+\fP
+.fi
+.LP
+For more details, see
+.na
+\f2writing @param tags\fP @
+.fi
+http://www.oracle.com/technetwork/java/javase/documentation/index\-137868.html#@param.
+.LP
+.TP 3
+@return\  description
+Adds a "Returns" section with the \f2description\fP text. This text should describe the return type and permissible range of values. This tag is valid only in a doc comment for a method.
+.LP
+For more details, see
+.na
+\f2writing @return tags\fP @
+.fi
+http://www.oracle.com/technetwork/java/javase/documentation/index\-137868.html#@return.
+.LP
+.TP 3
+@see\  reference
+Adds a "See Also" heading with a link or text entry that points to \f2reference\fP. A doc comment may contain any number of \f2@see\fP tags, which are all grouped under the same heading. The \f2@see\fP tag has three variations; the third form below is the most common. This tag is valid in any doc comment: overview, package, class, interface, constructor, method or field. For inserting an in\-line link within a sentence to a package, class or member, see \f2{@link}\fP.
+.RS 3
+.TP 3
+@see "string"
+Adds a text entry for \f2string\fP. No link is generated. The \f2string\fP is a book or other reference to information not available by URL. The Javadoc tool distinguishes this from the previous cases by looking for a double\-quote (\f2"\fP) as the first character. For example:
+.nf
+\f3
+.fl
+     @see "The Java Programming Language"
+.fl
+
+.fl
+\fP
+.fi
+.LP
+This generates text such as:
+.RE
+.RE
+.RS 3
+.RS 3
+.RS 3
+.RS 3
+.TP 3
+See Also:
+"The Java Programming Language"
+.RE
+.RE
+.TP 3
+@see <a href="URL#value">label</a>
+Adds a link as defined by \f2URL\fP#\f2value\fP. The \f2URL\fP#\f2value\fP is a relative or absolute URL. The Javadoc tool distinguishes this from other cases by looking for a less\-than symbol (\f2<\fP) as the first character. For example:
+.nf
+\f3
+.fl
+     @see <a href="spec.html#section">Java Spec</a>
+.fl
+\fP
+.fi
+This generates a link such as:
+.RS 3
+.TP 3
+See Also:
+Java Spec
+.RE
+.TP 3
+@see\  package.class#member\  label
+Adds a link, with visible text \f2label\fP, that points to the documentation for the specified name in the Java Language that is referenced. The \f2label\fP is optional; if omitted, the name appears instead as the visible text, suitably shortened \-\- see How a name is displayed. Use \-noqualifier to globally remove the package name from this visible text. Use the label when you want the visible text to be different from the auto\-generated visible text.
+.LP
+Only in version 1.2, just the name but not the label would automatically appear in <code> HTML tags, Starting with 1.2.2, the <code> is always included around the visible text, whether or not a label is used.
+.LP
+.RS 3
+.TP 2
+o
+\f4package.class\fP\f4#\fP\f4member\fP is any valid program element name that is referenced \-\- a package, class, interface, constructor, method or field name \-\- except that the character ahead of the member name should be a hash character (\f2#\fP). The \f2class\fP represents any top\-level or nested class or interface. The \f2member\fP represents any constructor, method or field (not a nested class or interface). If this name is in the documented classes, the Javadoc tool will automatically create a link to it. To create links to external referenced classes, use the \f2\-link\fP option. Use either of the other two \f2@see\fP forms for referring to documentation of a name that does not belong to a referenced class. This argument is described at greater length below under Specifying a Name.
+.TP 2
+o
+\f4label\fP is optional text that is visible as the link's label. The \f2label\fP can contain whitespace. If \f2label\fP is omitted, then \f2package.class.member\fP will appear, suitably shortened relative to the current class and package \-\- see How a name is displayed.
+.TP 2
+o
+A space is the delimiter between \f2package.class\fP\f2#\fP\f2member\fP and \f2label\fP. A space inside parentheses does not indicate the start of a label, so spaces may be used between parameters in a method.
+.RE
+.LP
+\f3Example\fP \- In this example, an \f2@see\fP tag (in the \f2Character\fP class) refers to the \f2equals\fP method in the \f2String\fP class. The tag includes both arguments: the name "\f2String#equals(Object)\fP" and the label "\f2equals\fP".
+.nf
+\f3
+.fl
+ /**
+.fl
+  * @see String#equals(Object) equals
+.fl
+  */
+.fl
+\fP
+.fi
+The standard doclet produces HTML something like this:
+.nf
+\f3
+.fl
+<dl>
+.fl
+<dt><b>See Also:</b>
+.fl
+<dd><a href="../../java/lang/String#equals(java.lang.Object)"><code>equals<code></a>
+.fl
+</dl>
+.fl
+\fP
+.fi
+Which looks something like this in a browser, where the label is the visible link text:
+.RS 3
+.TP 3
+See Also:
+equals
+.RE
+.LP
+\f3Specifying a name\fP \- This \f2package.class\fP\f2#\fP\f2member\fP name can be either fully\-qualified, such as \f2java.lang.String#toUpperCase()\fP or not, such as \f2String#toUpperCase()\fP or \f2#toUpperCase()\fP. If less than fully\-qualified, the Javadoc tool uses the normal Java compiler search order to find it, further described below in Search order for @see. The name can contain whitespace within parentheses, such as between method arguments.
+.LP
+Of course the advantage of providing shorter, "partially\-qualified" names is that they are shorter to type and there is less clutter in the source code. The following table shows the different forms of the name, where \f2Class\fP can be a class or interface, \f2Type\fP can be a class, interface, array, or primitive, and \f2method\fP can be a method or constructor.
+.LP
+.LP
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80
+.nr 34 \n(.lu
+.eo
+.am 80
+.br
+.di a+
+.35
+.ft \n(.f
+.ll \n(34u*1u/2u
+.if \n(.l<\n(80 .ll \n(80u
+.in 0
+\f3Typical\ forms\ for\ \fP\f4@see\fP\f3\ \fP\f4package.class#member\fP
+.br
+.di
+.nr a| \n(dn
+.nr a- \n(dl
+..
+.ec \
+.eo
+.am 80
+.br
+.di b+
+.35
+.ft \n(.f
+.ll \n(34u*1u/2u
+.if \n(.l<\n(80 .ll \n(80u
+.in 0
+\f3Referencing\ a\ member\ of\ the\ current\ class\fP
+.br
+\f2@see\fP\ \f2#\fP\f2field\fP
+.br
+\f2@see\fP\ \f2#\fP\f2method(Type,\ Type,...)\fP
+.br
+\f2@see\fP\ \f2#\fP\f2method(Type\ argname,\ Type\ argname,...)\fP
+.br
+\f2@see\fP\ \f2#\fP\f2constructor(Type,\ Type,...)\fP
+.br
+\f2@see\fP\ \f2#\fP\f2constructor(Type\ argname,\ Type\ argname,...)\fP
+.br
+.di
+.nr b| \n(dn
+.nr b- \n(dl
+..
+.ec \
+.eo
+.am 80
+.br
+.di c+
+.35
+.ft \n(.f
+.ll \n(34u*1u/2u
+.if \n(.l<\n(80 .ll \n(80u
+.in 0
+\f3Referencing\ another\ class\ in\ the\ current\ or\ imported\ packages\fP
+.br
+\f2@see\fP\ \f2Class\fP\f2#\fP\f2field\fP
+.br
+\f2@see\fP\ \f2Class\fP\f2#\fP\f2method(Type,\ Type,...)\fP
+.br
+\f2@see\fP\ \f2Class\fP\f2#\fP\f2method(Type\ argname,\ Type\ argname,...)\fP
+.br
+\f2@see\fP\ \f2Class\fP\f2#\fP\f2constructor(Type,\ Type,...)\fP
+.br
+\f2@see\fP\ \f2Class\fP\f2#\fP\f2constructor(Type\ argname,\ Type\ argname,...)\fP
+.br
+\f2@see\fP\ \f2Class.NestedClass\fP
+.br
+\f2@see\fP\ \f2Class\fP
+.br
+.di
+.nr c| \n(dn
+.nr c- \n(dl
+..
+.ec \
+.eo
+.am 80
+.br
+.di d+
+.35
+.ft \n(.f
+.ll \n(34u*1u/2u
+.if \n(.l<\n(80 .ll \n(80u
+.in 0
+\f3Referencing\ an\ element\ in\ another\ package\fP\ (fully qualified)
+.br
+\f2@see\fP\ \f2package.Class\fP\f2#\fP\f2field\fP
+.br
+\f2@see\fP\ \f2package.Class\fP\f2#\fP\f2method(Type,\ Type,...)\fP
+.br
+\f2@see\fP\ \f2package.Class\fP\f2#\fP\f2method(Type\ argname,\ Type\ argname,...)\fP
+.br
+\f2@see\fP\ \f2package.Class\fP\f2#\fP\f2constructor(Type,\ Type,...)\fP
+.br
+\f2@see\fP\ \f2package.Class\fP\f2#\fP\f2constructor(Type\ argname,\ Type\ argname,...)\fP
+.br
+\f2@see\fP\ \f2package.Class.NestedClass\fP
+.br
+\f2@see\fP\ \f2package.Class\fP
+.br
+\f2@see\fP\ \f2package\fP
+.br
+.di
+.nr d| \n(dn
+.nr d- \n(dl
+..
+.ec \
+.35
+.nf
+.ll \n(34u
+.nr 80 0
+.80
+.rm 80
+.nr 38 \n(a-
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \n(b-
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \n(c-
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \n(d-
+.if \n(80<\n(38 .nr 80 \n(38
+.35
+.nf
+.ll \n(34u
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr TW \n(80
+.if t .if \n(TW>\n(.li .tm Table at line 1364 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ne \n(a|u+\n(.Vu
+.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
+.ta \n(80u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(40u
+.in +\n(37u
+.a+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(b|u+\n(.Vu
+.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
+.ta \n(80u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(40u
+.in +\n(37u
+.b+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(c|u+\n(.Vu
+.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
+.ta \n(80u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(40u
+.in +\n(37u
+.c+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(d|u+\n(.Vu
+.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
+.ta \n(80u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(40u
+.in +\n(37u
+.d+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.fc
+.nr T. 1
+.T# 1
+.35
+.rm a+
+.rm b+
+.rm c+
+.rm d+
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-58
+.LP
+The following notes apply to the above table:
+.RS 3
+.TP 2
+o
+The first set of forms (with no class or package) will cause the Javadoc tool to search only through the current class's hierarchy. It will find a member of the current class or interface, one of its superclasses or superinterfaces, or one of its enclosing classes or interfaces (search steps 1\-3). It will not search the rest of the current package or other packages (search steps 4\-5).
+.TP 2
+o
+If any method or constructor is entered as a name with no parentheses, such as \f2getValue\fP, and if there is no field with the same name, the Javadoc tool will correctly create a link to it, but will print a warning message reminding you to add the parentheses and arguments. If this method is overloaded, the Javadoc tool will link to the first method its search encounters, which is unspecified.
+.TP 2
+o
+Nested classes must be specified as \f2outer\fP\f2.\fP\f2inner\fP, not simply \f2inner\fP, for all forms.
+.TP 2
+o
+As stated, the hash character (\f2#\fP), rather than a dot (\f2.\fP) separates a member from its class. This enables the Javadoc tool to resolve ambiguities, since the dot also separates classes, nested classes, packages, and subpackages. However, the Javadoc tool is generally lenient and will properly parse a dot if you know there is no ambiguity, though it will print a warning.
+.RE
+.LP
+\f3Search order for @see\fP \- the Javadoc tool will process a \f2@see\fP tag that appears in a source file (.java), package file (package.html or package\-info.java) or overview file (overview.html). In the latter two files, you must fully\-qualify the name you supply with \f2@see\fP. In a source file, you can specify a name that is fully\-qualified or partially\-qualified.
+.LP
+When the Javadoc tool encounters a \f2@see\fP tag in a \f2.java\fP file that is \f2not\fP fully qualified, it searches for the specified name in the same order as the Java compiler would (except the Javadoc tool will not detect certain namespace ambiguities, since it assumes the source code is free of these errors). This search order is formally defined in the \f2Java Language Specification\fP. The Javadoc tool searches for that name through all related and imported classes and packages. In particular, it searches in this order:
+.RS 3
+.TP 3
+1.
+the current class or interface
+.TP 3
+2.
+any enclosing classes and interfaces, searching closest first
+.TP 3
+3.
+any superclasses and superinterfaces, searching closest first
+.TP 3
+4.
+the current package
+.TP 3
+5.
+any imported packages, classes and interfaces, searching in the order of the import statement
+.RE
+.LP
+The Javadoc tool continues to search recursively through steps 1\-3 for each class it encounters until it finds a match. That is, after it searches through the current class and its enclosing class E, it will search through E's superclasses before E's enclosing classes.  In steps 4 and 5, the Javadoc tool does not search classes or interfaces within a package in any specified order (that order depends on the particular compiler). In step 5, the Javadoc tool looks in java.lang, since that is automatically imported by all programs.
+.LP
+The Javadoc tool does not necessarily look in subclasses, nor will it look in other packages even if their documentation is being generated in the same run. For example, if the \f2@see\fP tag is in the \f2java.awt.event.KeyEvent\fP class and refers to a name in the \f2java.awt\fP package, javadoc does not look in that package unless that class imports it.
+.LP
+\f3How a name is displayed\fP \- If \f2label\fP is omitted, then \f2package.class.member\fP appears. In general, it is suitably shortened relative to the current class and package. By "shortened", we mean the Javadoc tool displays only the minimum name necessary. For example, if the \f2String.toUpperCase()\fP method contains references to a member of the same class and to a member of a different class, the class name is displayed only in the latter case, as shown in the following table.
+.LP
+Use \-noqualifier to globally remove the package names.
+.br
+.LP
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81 82
+.nr 34 \n(.lu
+.eo
+.am 81
+.br
+.di a+
+.35
+.ft \n(.f
+.ll \n(34u*1u/4u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+\f3Example in \fP\f4String.toUpperCase()\fP
+.br
+.di
+.nr a| \n(dn
+.nr a- \n(dl
+..
+.ec \
+.eo
+.am 80
+.br
+.di b+
+.35
+.ft \n(.f
+.ll \n(34u*1u/4u
+.if \n(.l<\n(80 .ll \n(80u
+.in 0
+\f2@see\fP tag refers to member of the same class, same package
+.br
+.di
+.nr b| \n(dn
+.nr b- \n(dl
+..
+.ec \
+.eo
+.am 82
+.br
+.di c+
+.35
+.ft \n(.f
+.ll \n(34u*1u/4u
+.if \n(.l<\n(82 .ll \n(82u
+.in 0
+\f2toLowerCase()\fP (omits the package and class names)
+.br
+.di
+.nr c| \n(dn
+.nr c- \n(dl
+..
+.ec \
+.eo
+.am 80
+.br
+.di d+
+.35
+.ft \n(.f
+.ll \n(34u*1u/4u
+.if \n(.l<\n(80 .ll \n(80u
+.in 0
+\f2@see\fP tag refers to member of a different class, same package
+.br
+.di
+.nr d| \n(dn
+.nr d- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di e+
+.35
+.ft \n(.f
+.ll \n(34u*1u/4u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+\f2@see Character#toLowerCase(char)\fP
+.br
+.di
+.nr e| \n(dn
+.nr e- \n(dl
+..
+.ec \
+.eo
+.am 82
+.br
+.di f+
+.35
+.ft \n(.f
+.ll \n(34u*1u/4u
+.if \n(.l<\n(82 .ll \n(82u
+.in 0
+\f2Character.toLowerCase(char)\fP (omits the package name, includes the class name)
+.br
+.di
+.nr f| \n(dn
+.nr f- \n(dl
+..
+.ec \
+.eo
+.am 80
+.br
+.di g+
+.35
+.ft \n(.f
+.ll \n(34u*1u/4u
+.if \n(.l<\n(80 .ll \n(80u
+.in 0
+\f2@see\fP tag refers to member of a different class, different package
+.br
+.di
+.nr g| \n(dn
+.nr g- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di h+
+.35
+.ft \n(.f
+.ll \n(34u*1u/4u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+\f2@see java.io.File#exists()\fP
+.br
+.di
+.nr h| \n(dn
+.nr h- \n(dl
+..
+.ec \
+.eo
+.am 82
+.br
+.di i+
+.35
+.ft \n(.f
+.ll \n(34u*1u/4u
+.if \n(.l<\n(82 .ll \n(82u
+.in 0
+\f2java.io.File.exists()\fP (includes the package and class names)
+.br
+.di
+.nr i| \n(dn
+.nr i- \n(dl
+..
+.ec \
+.35
+.nf
+.ll \n(34u
+.nr 80 0
+.nr 38 \w\f3Type of Reference\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 38 \n(b-
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \n(d-
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \n(g-
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 81 0
+.nr 38 \w\f2@see String#toLowerCase()\fP
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 \n(a-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(e-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \n(h-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 82 0
+.nr 38 \w\f3Displays As\fP
+.if \n(82<\n(38 .nr 82 \n(38
+.82
+.rm 82
+.nr 38 \n(c-
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \n(f-
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \n(i-
+.if \n(82<\n(38 .nr 82 \n(38
+.35
+.nf
+.ll \n(34u
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr 42 \n(81+(3*\n(38)
+.nr 82 +\n(42
+.nr TW \n(82
+.if t .if \n(TW>\n(.li .tm Table at line 1440 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ne \n(a|u+\n(.Vu
+.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u \n(82u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3Type of Reference\fP\h'|\n(41u'\h'|\n(42u'\f3Displays As\fP
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.a+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(b|u+\n(.Vu
+.ne \n(c|u+\n(.Vu
+.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
+.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u \n(82u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\h'|\n(41u'\f2@see String#toLowerCase()\fP\h'|\n(42u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(40u
+.in +\n(37u
+.b+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(##u-1v
+.nr 37 \n(42u
+.in +\n(37u
+.c+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(d|u+\n(.Vu
+.ne \n(e|u+\n(.Vu
+.ne \n(f|u+\n(.Vu
+.if (\n(d|+\n(#^-1v)>\n(#- .nr #- +(\n(d|+\n(#^-\n(#--1v)
+.if (\n(e|+\n(#^-1v)>\n(#- .nr #- +(\n(e|+\n(#^-\n(#--1v)
+.if (\n(f|+\n(#^-1v)>\n(#- .nr #- +(\n(f|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u \n(82u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\h'|\n(41u'\h'|\n(42u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(40u
+.in +\n(37u
+.d+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.e+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(##u-1v
+.nr 37 \n(42u
+.in +\n(37u
+.f+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.ne \n(g|u+\n(.Vu
+.ne \n(h|u+\n(.Vu
+.ne \n(i|u+\n(.Vu
+.if (\n(g|+\n(#^-1v)>\n(#- .nr #- +(\n(g|+\n(#^-\n(#--1v)
+.if (\n(h|+\n(#^-1v)>\n(#- .nr #- +(\n(h|+\n(#^-\n(#--1v)
+.if (\n(i|+\n(#^-1v)>\n(#- .nr #- +(\n(i|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u \n(82u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\h'|\n(41u'\h'|\n(42u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(40u
+.in +\n(37u
+.g+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.h+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(##u-1v
+.nr 37 \n(42u
+.in +\n(37u
+.i+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.fc
+.nr T. 1
+.T# 1
+.35
+.rm a+
+.rm b+
+.rm c+
+.rm d+
+.rm e+
+.rm f+
+.rm g+
+.rm h+
+.rm i+
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-28
+.LP
+\f3Examples of @see\fP
+.br
+The comment to the right shows how the name would be displayed if the \f2@see\fP tag is in a class in another package, such as \f2java.applet.Applet\fP.
+.nf
+\f3
+.fl
+                                           See also:
+.fl
+@see java.lang.String                   //  String                          \fP\f3
+.fl
+@see java.lang.String The String class  //  The String class                \fP\f3
+.fl
+@see String                             //  String                          \fP\f3
+.fl
+@see String#equals(Object)              //  String.equals(Object)           \fP\f3
+.fl
+@see String#equals                      //  String.equals(java.lang.Object) \fP\f3
+.fl
+@see java.lang.Object#wait(long)        //  java.lang.Object.wait(long)     \fP\f3
+.fl
+@see Character#MAX_RADIX                //  Character.MAX_RADIX             \fP\f3
+.fl
+@see <a href="spec.html">Java Spec</a>  //  Java Spec           \fP\f3
+.fl
+@see "The Java Programming Language"    //  "The Java Programming Language"        \fP\f3
+.fl
+\fP
+.fi
+You can extend \f2@see\fP to link to classes not being documented by using the \f2\-link\fP option.
+.LP
+For more details, see
+.na
+\f2writing @see tags\fP @
+.fi
+http://www.oracle.com/technetwork/java/javase/documentation/index\-137868.html#@see.
+.RE
+.RE
+.LP
+.RS 3
+.TP 3
+@serial\  field\-description | include | exclude
+Used in the doc comment for a default serializable field.
+.LP
+An optional \f2field\-description\fP should explain the meaning of the field and list the acceptable values. If needed, the description can span multiple lines. The standard doclet adds this information to the serialized form page.
+.LP
+If a serializable field was added to a class some time after the class was made serializable, a statement should be added to its main description to identify at which version it was added.
+.LP
+The \f2include\fP and \f2exclude\fP arguments identify whether a class or package should be included or excluded from the serialized form page. They work as follows:
+.RS 3
+.TP 2
+o
+A public or protected class that implements \f2Serializable\fP is \f2included\fP unless that class (or its package) is marked \f2@serial exclude\fP.
+.TP 2
+o
+A private or package\-private class that implements \f2Serializable\fP is \f2excluded\fP unless that class (or its package) is marked \f2@serial include\fP.
+.RE
+.LP
+Examples: The \f2javax.swing\fP package is marked \f2@serial exclude\fP (in \f2package.html\fP or \f2package\-info.java\fP). The public class \f2java.security.BasicPermission\fP is marked \f2@serial exclude\fP. The package\-private class \f2java.util.PropertyPermissionCollection\fP is marked \f2@serial include\fP.
+.LP
+The tag @serial at a class level overrides @serial at a package level.
+.LP
+For more information about how to use these tags, along with an example, see "
+.na
+\f2Documenting Serializable Fields and Data for a Class\fP @
+.fi
+http://download.oracle.com/javase/7/docs/platform/serialization/spec/serial\-arch.html," Section 1.6 of the \f2Java Object Serialization Specification\fP. Also see the
+.na
+\f2Serialization FAQ\fP @
+.fi
+http://java.sun.com/javase/technologies/core/basic/serializationFAQ.jsp#javadoc_warn_missing, which covers common questions, such as "Why do I see javadoc warnings stating that I am missing @serial tags for private fields if I am not running javadoc with the \-private switch?". Also see
+.na
+\f2Sun's criteria\fP @
+.fi
+http://java.sun.com/j2se/javadoc/writingapispecs/serialized\-criteria.html for including classes in the serialized form specification.
+.LP
+.TP 3
+@serialField\  field\-name\  field\-type\  field\-description
+Documents an \f2ObjectStreamField\fP component of a \f2Serializable\fP class's \f2serialPersistentFields\fP member. One \f2@serialField\fP tag should be used for each \f2ObjectStreamField\fP component.
+.LP
+.TP 3
+@serialData\  data\-description
+The \f2data\-description\fP documents the types and order of data in the serialized form. Specifically, this data includes the optional data written by the \f2writeObject\fP method and all data (including base classes) written by the \f2Externalizable.writeExternal\fP method.
+.LP
+The \f2@serialData\fP tag can be used in the doc comment for the \f2writeObject\fP, \f2readObject\fP, \f2writeExternal\fP, \f2readExternal\fP, \f2writeReplace\fP, and \f2readResolve\fP methods.
+.LP
+.TP 3
+@since\  since\-text
+Adds a "Since" heading with the specified \f2since\-text\fP to the generated documentation. The text has no special internal structure. This tag is valid in any doc comment: overview, package, class, interface, constructor, method or field. This tag means that this change or feature has existed since the software release specified by the \f2since\-text\fP. For example:
+.nf
+\f3
+.fl
+    @since 1.5
+.fl
+
+.fl
+\fP
+.fi
+.LP
+For source code in the Java platform, this tag indicates the version of the Java platform API specification (not necessarily when it was added to the reference implementation). Multiple @since tags are allowed and are treated like multiple @author tags. You could use multiple tags if the prgram element is used by more than one API.
+.LP
+.TP 3
+@throws\  class\-name\  description
+The \f2@throws\fP and \f2@exception\fP tags are synonyms. Adds a "Throws" subheading to the generated documentation, with the \f2class\-name\fP and \f2description\fP text. The \f2class\-name\fP is the name of the exception that may be thrown by the method. This tag is valid only in the doc comment for a method or constructor. If this class is not fully\-specified, the Javadoc tool uses the search order to look up this class. Multiple \f2@throws\fP tags can be used in a given doc comment for the same or different exceptions.
+.LP
+To ensure that all checked exceptions are documented, if a \f2@throws\fP tag does not exist for an exception in the throws clause, the Javadoc tool automatically adds that exception to the HTML output (with no description) as if it were documented with @throws tag.
+.LP
+The \f2@throws\fP documentation is copied from an overridden method to a subclass only when the exception is explicitly declared in the overridden method. The same is true for copying from an interface method to an implementing method. You can use {@inheritDoc} to force @throws to inherit documentation.
+.LP
+For more details, see
+.na
+\f2writing @throws tags\fP @
+.fi
+http://www.oracle.com/technetwork/java/javase/documentation/index\-137868.html#@exception.
+.LP
+.TP 3
+{@value\  package.class#field}
+When \f2{@value}\fP is used (without any argument) in the doc comment of a static field, it displays the value of that constant:
+.nf
+\f3
+.fl
+    /**
+.fl
+     * The value of this constant is {@value}.
+.fl
+     */
+.fl
+    public static final String SCRIPT_START = "<script>"
+.fl
+
+.fl
+\fP
+.fi
+.LP
+When used with argument \f2package.class#field\fP in any doc comment, it displays the value of the specified constant:
+.nf
+\f3
+.fl
+    /**
+.fl
+     * Evaluates the script starting with {@value #SCRIPT_START}.
+.fl
+     */
+.fl
+    public String evalScript(String script) {
+.fl
+    }
+.fl
+
+.fl
+\fP
+.fi
+.LP
+The argument \f2package.class#field\fP takes a form identical to that of the @see argument, except that the member must be a static field.
+.LP
+These values of these constants are also displayed on the
+.na
+\f2Constant Field Values\fP @
+.fi
+http://download.oracle.com/javase/7/docs/api/constant\-values.html page.
+.LP
+.TP 3
+@version\  version\-text
+Adds a "Version" subheading with the specified \f2version\-text\fP to the generated docs when the \-version option is used. This tag is intended to hold the current version number of the software that this code is part of (as opposed to @since, which holds the version number where this code was introduced). The \f2version\-text\fP has no special internal structure. To see where the version tag can be used, see Where Tags Can Be Used.
+.LP
+A doc comment may contain multiple \f2@version\fP tags. If it makes sense, you can specify one version number per \f2@version\fP tag or multiple version numbers per tag. In the former case, the Javadoc tool inserts a comma (\f2,\fP) and space between names. In the latter case, the entire text is simply copied to the generated document without being parsed. Therefore, you can use multiple names per line if you want a localized name separator other than comma.
+.LP
+For more details, see
+.na
+\f2writing @version tags\fP @
+.fi
+http://www.oracle.com/technetwork/java/javase/documentation/index\-137868.html#@version.
+.RE
+.SS
+Where Tags Can Be Used
+.LP
+The following sections describe where the tags can be used. Note that these tags can be used in all doc comments: \f2@see\fP, \f2@since\fP, \f2@deprecated\fP, \f2{@link}\fP, \f2{@linkplain}\fP, and \f2{@docroot}\fP.
+.SS
+Overview Documentation Tags
+.LP
+Overview tags are tags that can appear in the documentation comment for the overview page (which resides in the source file typically named \f2overview.html\fP). Like in any other documentation comments, these tags must appear after the main description.
+.LP
+\f3NOTE\fP \- The \f2{@link}\fP tag has a bug in overview documents in version 1.2 \-\- the text appears properly but has no link. The \f2{@docRoot}\fP tag does not currently work in overview documents.
+.LP
+\f3Overview Tags\fP
+.RS 3
+.TP 2
+o
+\f2@see\fP
+.TP 2
+o
+\f2@since\fP
+.TP 2
+o
+\f2@author\fP
+.TP 2
+o
+\f2@version\fP
+.TP 2
+o
+\f2{@link}\fP
+.TP 2
+o
+\f2{@linkplain}\fP
+.TP 2
+o
+\f2{@docRoot}\fP
+.RE
+.SS
+Package Documentation Tags
+.LP
+Package tags are tags that can appear in the documentation comment for a package (which resides in the source file named \f2package.html\fP or \f2package\-info.java\fP). The \f2@serial\fP tag can only be used here with the \f2include\fP or \f2exclude\fP argument.
+.LP
+\f3Package Tags\fP
+.RS 3
+.TP 2
+o
+\f2@see\fP
+.TP 2
+o
+\f2@since\fP
+.TP 2
+o
+\f2@serial\fP
+.TP 2
+o
+\f2@author\fP
+.TP 2
+o
+\f2@version\fP
+.TP 2
+o
+\f2{@link}\fP
+.TP 2
+o
+\f2{@linkplain}\fP
+.TP 2
+o
+\f2{@docRoot}\fP
+.RE
+.SS
+Class and Interface Documentation Tags
+.LP
+The following are tags that can appear in the documentation comment for a class or interface. The \f2@serial\fP tag can only be used here with the \f2include\fP or \f2exclude\fP argument.
+.LP
+\f3Class/Interface Tags\fP
+.RS 3
+.TP 2
+o
+\f2@see\fP
+.TP 2
+o
+\f2@since\fP
+.TP 2
+o
+\f2@deprecated\fP
+.TP 2
+o
+\f2@serial\fP
+.TP 2
+o
+\f2@author\fP
+.TP 2
+o
+\f2@version\fP
+.TP 2
+o
+\f2{@link}\fP
+.TP 2
+o
+\f2{@linkplain}\fP
+.TP 2
+o
+\f2{@docRoot}\fP
+.RE
+\f3An example of a class comment:\fP
+.nf
+\f3
+.fl
+/**
+.fl
+ * A class representing a window on the screen.
+.fl
+ * For example:
+.fl
+ * <pre>
+.fl
+ *    Window win = new Window(parent);
+.fl
+ *    win.show();
+.fl
+ * </pre>
+.fl
+ *
+.fl
+ * @author  Sami Shaio
+.fl
+ * @version 1.13, 06/08/06
+.fl
+ * @see     java.awt.BaseWindow
+.fl
+ * @see     java.awt.Button
+.fl
+ */
+.fl
+class Window extends BaseWindow {
+.fl
+   ...
+.fl
+}
+.fl
+\fP
+.fi
+.SS
+Field Documentation Tags
+.LP
+The following are the tags that can appear in
+.LP
+\f3Field Tags\fP
+.RS 3
+.TP 2
+o
+\f2@see\fP
+.TP 2
+o
+\f2@since\fP
+.TP 2
+o
+\f2@deprecated\fP
+.TP 2
+o
+\f2@serial\fP
+.TP 2
+o
+\f2@serialField\fP
+.TP 2
+o
+\f2{@link}\fP
+.TP 2
+o
+\f2{@linkplain}\fP
+.TP 2
+o
+\f2{@docRoot}\fP
+.TP 2
+o
+\f2{@value}\fP
+.RE
+\f3An example of a field comment:\fP
+.nf
+\f3
+.fl
+    /**
+.fl
+     * The X\-coordinate of the component.
+.fl
+     *
+.fl
+     * @see #getLocation()
+.fl
+     */
+.fl
+    int x = 1263732;
+.fl
+\fP
+.fi
+.SS
+Constructor and Method Documentation Tags
+.LP
+The following are the tags that can appear in the documentation comment for a constructor or method, except for \f2@return\fP, which cannot appear in a constructor, and \f2{@inheritDoc}\fP, which has certain restrictions. The \f2@serialData\fP tag can only be used in the doc comment for certain serialization methods.
+.LP
+\f3Method/Constructor Tags\fP
+.RS 3
+.TP 2
+o
+\f2@see\fP
+.TP 2
+o
+\f2@since\fP
+.TP 2
+o
+\f2@deprecated\fP
+.TP 2
+o
+\f2@param\fP
+.TP 2
+o
+\f2@return\fP
+.TP 2
+o
+\f2@throws\fP and \f2@exception\fP
+.TP 2
+o
+\f2@serialData\fP
+.TP 2
+o
+\f2{@link}\fP
+.TP 2
+o
+\f2{@linkplain}\fP
+.TP 2
+o
+\f2{@inheritDoc}\fP
+.TP 2
+o
+\f2{@docRoot}\fP
+.RE
+\f3An example of a method doc comment:\fP
+.nf
+\f3
+.fl
+    /**
+.fl
+     * Returns the character at the specified index. An index
+.fl
+     * ranges from <code>0</code> to <code>length() \- 1</code>.
+.fl
+     *
+.fl
+     * @param     index  the index of the desired character.
+.fl
+     * @return    the desired character.
+.fl
+     * @exception StringIndexOutOfRangeException
+.fl
+     *              if the index is not in the range <code>0</code>
+.fl
+     *              to <code>length()\-1</code>.
+.fl
+     * @see       java.lang.Character#charValue()
+.fl
+     */
+.fl
+    public char charAt(int index) {
+.fl
+       ...
+.fl
+    }
+.fl
+\fP
+.fi
+.SH "OPTIONS"
+.LP
+The javadoc tool uses doclets to determine its output. The Javadoc tool uses the default standard doclet unless a custom doclet is specified with the \-doclet option. The Javadoc tool provides a set of command\-line options that can be used with any doclet \-\- these options are described below under the sub\-heading Javadoc Options. The standard doclet provides an additional set of command\-line options that are described below under the sub\-heading Options Provided by the Standard Doclet. All option names are case\-insensitive, though their arguments can be case\-sensitive.
+.LP
+The options are:
+.LP
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81 82
+.nr 34 \n(.lu
+.eo
+.am 80
+.br
+.di a+
+.35
+.ft \n(.f
+.ll \n(34u*1u/4u
+.if \n(.l<\n(80 .ll \n(80u
+.in 0
+\-\f21.1\fP
+.br
+\-author
+.br
+\-\f2bootclasspath\fP
+.br
+\-bottom
+.br
+\-\f2breakiterator\fP
+.br
+\-charset
+.br
+\-\f2classpath\fP
+.br
+\-d
+.br
+\-docencoding
+.br
+\-docfilessubdirs
+.br
+\-\f2doclet\fP
+.br
+\-\f2docletpath\fP
+.br
+\-doctitle
+.br
+\-\f2encoding\fP
+.br
+\-\f2exclude\fP
+.br
+\-excludedocfilessubdir
+.br
+\-\f2extdirs\fP
+.br
+\-footer
+.br
+\-group
+.br
+.br
+.di
+.nr a| \n(dn
+.nr a- \n(dl
+..
+.ec \
+.eo
+.am 81
+.br
+.di b+
+.35
+.ft \n(.f
+.ll \n(34u*1u/4u
+.if \n(.l<\n(81 .ll \n(81u
+.in 0
+\-header
+.br
+\-\f2help\fP
+.br
+\-helpfile
+.br
+\-\f2J\fP
+.br
+\-keywords
+.br
+\-link
+.br
+\-linkoffline
+.br
+\-linksource
+.br
+\-\f2locale\fP
+.br
+\-nocomment
+.br
+\-nodeprecated
+.br
+\-nodeprecatedlist
+.br
+\-nohelp
+.br
+\-noindex
+.br
+\-nonavbar
+.br
+\-noqualifier
+.br
+\-nosince
+.br
+\-notimestamp
+.br
+\-notree
+.br
+\-\f2overview\fP
+.br
+\-\f2package\fP
+.br
+.br
+.di
+.nr b| \n(dn
+.nr b- \n(dl
+..
+.ec \
+.eo
+.am 82
+.br
+.di c+
+.35
+.ft \n(.f
+.ll \n(34u*1u/4u
+.if \n(.l<\n(82 .ll \n(82u
+.in 0
+\-\f2private\fP
+.br
+\-\f2protected\fP
+.br
+\-\f2public\fP
+.br
+\-\f2quiet\fP
+.br
+\-serialwarn
+.br
+\-\f2source\fP
+.br
+\-\f2sourcepath\fP
+.br
+\-sourcetab
+.br
+\-splitindex
+.br
+\-stylesheetfile
+.br
+\-\f2subpackages\fP
+.br
+\-tag
+.br
+\-taglet
+.br
+\-tagletpath
+.br
+\-top
+.br
+\-title
+.br
+\-use
+.br
+\-\f2verbose\fP
+.br
+\-version
+.br
+\-windowtitle
+.br
+.br
+.di
+.nr c| \n(dn
+.nr c- \n(dl
+..
+.ec \
+.35
+.nf
+.ll \n(34u
+.nr 80 0
+.80
+.rm 80
+.nr 38 \n(a-
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 81 0
+.81
+.rm 81
+.nr 38 \n(b-
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 82 0
+.82
+.rm 82
+.nr 38 \n(c-
+.if \n(82<\n(38 .nr 82 \n(38
+.35
+.nf
+.ll \n(34u
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr 42 \n(81+(3*\n(38)
+.nr 82 +\n(42
+.nr TW \n(82
+.if t .if \n(TW>\n(.li .tm Table at line 2015 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ne \n(a|u+\n(.Vu
+.ne \n(b|u+\n(.Vu
+.ne \n(c|u+\n(.Vu
+.if (\n(a|+\n(#^-1v)>\n(#- .nr #- +(\n(a|+\n(#^-\n(#--1v)
+.if (\n(b|+\n(#^-1v)>\n(#- .nr #- +(\n(b|+\n(#^-\n(#--1v)
+.if (\n(c|+\n(#^-1v)>\n(#- .nr #- +(\n(c|+\n(#^-\n(#--1v)
+.ta \n(80u \n(81u \n(82u
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\h'|\n(41u'\h'|\n(42u'
+.mk ##
+.nr 31 \n(##
+.sp |\n(##u-1v
+.nr 37 \n(40u
+.in +\n(37u
+.a+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(##u-1v
+.nr 37 \n(41u
+.in +\n(37u
+.b+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(##u-1v
+.nr 37 \n(42u
+.in +\n(37u
+.c+
+.in -\n(37u
+.mk 32
+.if \n(32>\n(31 .nr 31 \n(32
+.sp |\n(31u
+.fc
+.nr T. 1
+.T# 1
+.35
+.rm a+
+.rm b+
+.rm c+
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-127
+.LP
+Options shown in \f2italic\fP are the Javadoc core options, which are provided by the front end of the Javadoc tool and are available to all doclets. The standard doclet itself provides the non\-italic options.
+.SS
+Javadoc Options
+.RS 3
+.TP 3
+\-overview \ path/filename
+Specifies that javadoc should retrieve the text for the overview documentation from the "source" file specified by \f2path/filename\fP and place it on the Overview page (\f2overview\-summary.html\fP). The \f2path/filename\fP is relative to the current directory.
+.br
+.br
+While you can use any name you want for \f2filename\fP and place it anywhere you want for \f2path\fP, a typical thing to do is to name it \f2overview.html\fP and place it in the source tree at the directory that contains the topmost package directories. In this location, no \f2path\fP is needed when documenting packages, since \f2\-sourcepath\fP will point to this file. For example, if the source tree for the \f2java.lang\fP package is \f2/src/classes/java/lang/\fP, then you could place the overview file at \f2/src/classes/overview.html\fP. See Real World Example.
+.br
+.br
+For information about the file specified by \f2path/filename\fP, see overview comment file.
+.br
+.br
+Note that the overview page is created only if you pass into javadoc two or more package names. For further explanation, see HTML Frames.)
+.br
+.br
+The title on the overview page is set by \f2\-doctitle\fP.
+.TP 3
+\-public
+Shows only public classes and members.
+.TP 3
+\-protected
+Shows only protected and public classes and members. This is the default.
+.TP 3
+\-package
+Shows only package, protected, and public classes and members.
+.TP 3
+\-private
+Shows all classes and members.
+.TP 3
+\-help
+Displays the online help, which lists these javadoc and doclet command line options.
+.TP 3
+\-doclet\  class
+Specifies the class file that starts the doclet used in generating the documentation. Use the fully\-qualified name. This doclet defines the content and formats the output. If the \f4\-doclet\fP option is not used, javadoc uses the standard doclet for generating the default HTML format. This class must contain the \f2start(Root)\fP method. The path to this starting class is defined by the \f2\-docletpath\fP option.
+.br
+.br
+For example, to call the MIF doclet, use:
+.nf
+\f3
+.fl
+    \-doclet com.sun.tools.doclets.mif.MIFDoclet
+.fl
+\fP
+.fi
+For full, working examples of running a particular doclet, see the
+.na
+\f2MIF Doclet documentation\fP @
+.fi
+http://java.sun.com/j2se/javadoc/mifdoclet/docs/mifdoclet.html.
+.TP 3
+\-docletpath\  classpathlist
+Specifies the path to the doclet starting class file (specified with the \f2\-doclet\fP option) and any jar files it depends on. If the starting class file is in a jar file, then this specifies the path to that jar file, as shown in the example below. You can specify an absolute path or a path relative to the current directory. If \f2classpathlist\fP contains multiple paths or jar files, they should be separated with a colon (:) on Solaris and a semi\-colon (;) on Windows. This option is not necessary if the doclet starting class is already in the search path.
+.br
+.br
+Example of path to jar file that contains the starting doclet class file. Notice the jar filename is included.
+.nf
+\f3
+.fl
+   \-docletpath /home/user/mifdoclet/lib/mifdoclet.jar
+.fl
+\fP
+.fi
+Example of path to starting doclet class file. Notice the class filename is omitted.
+.nf
+\f3
+.fl
+   \-docletpath /home/user/mifdoclet/classes/com/sun/tools/doclets/mif/
+.fl
+\fP
+.fi
+For full, working examples of running a particular doclet, see the
+.na
+\f2MIF Doclet documentation\fP @
+.fi
+http://java.sun.com/j2se/javadoc/mifdoclet/docs/mifdoclet.html.
+.TP 3
+\-1.1
+\f2This feature has been removed from Javadoc 1.4. There is no replacement for it. This option created documentation with the appearance and functionality of documentation generated by Javadoc 1.1 (it never supported nested classes). If you need this option, use Javadoc 1.2 or 1.3 instead.\fP
+.TP 3
+\-source release
+Specifies the version of source code accepted. The following values for \f2release\fP are allowed:
+.RS 3
+.TP 2
+o
+\f31.5\fP \- javadoc accepts code containing generics and other language features introduced in JDK 1.5. The compiler defaults to the 1.5 behavior if the \f3\-source\fP flag is not used.
+.TP 2
+o
+\f31.4\fP \- javadoc accepts code containing assertions, which were introduced in JDK 1.4.
+.TP 2
+o
+\f31.3\fP \- javadoc does \f2not\fP support assertions, generics, or other language features introduced after JDK 1.3.
+.RE
+Use the value of \f2release\fP corresponding to that used when compiling the code with javac.
+.TP 3
+\-sourcepath\  sourcepathlist
+Specifies the search paths for finding source files (\f2.java\fP) when passing package names or \f2\-subpackages\fP into the \f2javadoc\fP command. The \f2sourcepathlist\fP can contain multiple paths by separating them with a colon (\f2:\fP). The Javadoc tool will search in all subdirectories of the specified paths. Note that this option is not only used to locate the source files being documented, but also to find source files that are not being documented but whose comments are inherited by the source files being documented.
+.br
+.br
+Note that you can use the \f2\-sourcepath\fP option only when passing package names into the javadoc command \-\- it will not locate \f2.java\fP files passed into the \f2javadoc\fP command. (To locate \f2.java\fP files, cd to that directory or include the path ahead of each file, as shown at Documenting One or More Classes.) If \f2\-sourcepath\fP is omitted, javadoc uses the class path to find the source files (see \-classpath). Therefore, the default \-sourcepath is the value of class path. If \-classpath is omitted and you are passing package names into javadoc, it looks in the current directory (and subdirectories) for the source files.
+.br
+.br
+Set \f2sourcepathlist\fP to the root directory of the source tree for the package you are documenting. For example, suppose you want to document a package called \f2com.mypackage\fP whose source files are located at:
+.nf
+\f3
+.fl
+  /home/user/src/com/mypackage/*.java
+.fl
+\fP
+.fi
+In this case you would specify the \f2sourcepath\fP to \f2/home/user/src\fP, the directory that contains \f2com/mypackage\fP, and then supply the package name \f2com.mypackage\fP:
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-sourcepath /home/user/src/ com.mypackage\fP
+.fl
+.fi
+This is easy to remember by noticing that if you concatenate the value of sourcepath and the package name together and change the dot to a slash "/", you end up with the full path to the package: \f2/home/user/src/com/mypackage\fP.
+.br
+.br
+To point to two source paths:
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-sourcepath /home/user1/src:/home/user2/src com.mypackage\fP
+.fl
+.fi
+.TP 3
+\-classpath\  classpathlist
+Specifies the paths where javadoc will look for referenced classes (\f2.class\fP files) \-\- these are the documented classes plus any classes referenced by those classes. The \f2classpathlist\fP can contain multiple paths by separating them with a colon (\f2:\fP). The Javadoc tool will search in all subdirectories of the specified paths. Follow the instructions in
+.na
+\f2class path\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/tools/index.html#general documentation for specifying \f2classpathlist\fP.
+.br
+.br
+If \f2\-sourcepath\fP is omitted, the Javadoc tool uses \f2\-classpath\fP to find the source files as well as class files (for backward compatibility). Therefore, if you want to search for source and class files in separate paths, use both \f2\-sourcepath\fP and \f2\-classpath\fP.
+.br
+.br
+For example, if you want to document \f2com.mypackage\fP, whose source files reside in the directory \f2/home/user/src/com/mypackage\fP, and if this package relies on a library in \f2/home/user/lib\fP, you would specify:
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-classpath /home/user/lib \-sourcepath /home/user/src com.mypackage\fP
+.fl
+.fi
+As with other tools, if you do not specify \f2\-classpath\fP, the Javadoc tool uses the CLASSPATH environment variable, if it is set. If both are not set, the Javadoc tool searches for classes from the current directory.
+.br
+.br
+For an in\-depth description of how the Javadoc tool uses \f2\-classpath\fP to find user classes as it relates to extension classes and bootstrap classes, see
+.na
+\f2How Classes Are Found\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/tools/findingclasses.html.
+.br
+.br
+As a special convenience, a class path element containing a basename of \f2*\fP is considered equivalent to specifying a list of all the files in the directory with the extension \f2.jar\fP or \f2.JAR\fP (a Java program cannot tell the difference between the two invocations).
+.br
+.br
+For example, if directory \f2foo\fP contains \f2a.jar\fP and \f2b.JAR\fP, then the class path element \f2foo/*\fP is expanded to a \f2A.jar:b.JAR\fP, except that the order of jar files is unspecified. All jar files in the specified directory, even hidden ones, are included in the list. A classpath entry consisting simply of \f2*\fP expands to a list of all the jar files in the current directory. The \f2CLASSPATH\fP environment variable, where defined, will be similarly expanded. Any classpath wildcard expansion occurs before the Java virtual machine is started \-\- no Java program will ever see unexpanded wildcards except by querying the environment. For example; by invoking \f2System.getenv("CLASSPATH")\fP.
+.TP 3
+\-subpackages\ \ package1:package2:...
+Generates documentation from source files in the specified packages and recursively in their subpackages. This option is useful when adding new subpackages to the source code, as they are automatically included. Each \f2package\fP argument is any top\-level subpackage (such as \f2java\fP) or fully qualified package (such as \f2javax.swing\fP) that does not need to contain source files. Arguments are separated by colons (on all operating systmes). Wildcards are not needed or allowed. Use \f2\-sourcepath\fP to specify where to find the packages. This option is smart about not processing source files that are in the source tree but do not belong to the packages, as described at processing of source files.
+.br
+.br
+For example:
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-d docs \-sourcepath /home/user/src \-subpackages java:javax.swing\fP
+.fl
+.fi
+This command generates documentation for packages named "java" and "javax.swing" and all their subpackages.
+.br
+.br
+You can use \f2\-subpackages\fP in conjunction with \f2\-exclude\fP to exclude specific packages.
+.TP 3
+\-exclude\ \ packagename1:packagename2:...
+Unconditionally excludes the specified packages and their subpackages from the list formed by \f2\-subpackages\fP. It excludes those packages even if they would otherwise be included by some previous or later \f2\-subpackages\fP option. For example:
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-sourcepath /home/user/src \-subpackages java \-exclude java.net:java.lang\fP
+.fl
+.fi
+would include \f2java.io\fP, \f2java.util\fP, and \f2java.math\fP (among others), but would exclude packages rooted at \f2java.net\fP and \f2java.lang\fP. Notice this excludes \f2java.lang.ref\fP, a subpackage of \f2java.lang\fP).
+.TP 3
+\-bootclasspath\  classpathlist
+Specifies the paths where the boot classes reside. These are nominally the Java platform classes. The bootclasspath is part of the search path the Javadoc tool will use to look up source and class files. See
+.na
+\f2How Classes Are Found\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/tools/findingclasses.html#srcfiles. for more details. Separate directories in \f2classpathlist\fP with colons (:).
+.TP 3
+\-extdirs\  dirlist
+Specifies the directories where extension classes reside. These are any classes that use the Java Extension mechanism. The extdirs is part of the search path the Javadoc tool will use to look up source and class files. See \f2\-classpath\fP (above) for more details. Separate directories in \f2dirlist\fP with colons (:).
+.TP 3
+\-verbose
+Provides more detailed messages while javadoc is running. Without the verbose option, messages appear for loading the source files, generating the documentation (one message per source file), and sorting. The verbose option causes the printing of additional messages specifying the number of milliseconds to parse each java source file.
+.TP 3
+\-quiet
+Shuts off non\-error and non\-warning messages, leaving only the warnings and errors appear, making them easier to view. Also suppresses the version string.
+.TP 3
+\-breakiterator\
+Uses the internationalized sentence boundary of
+.na
+\f2java.text.BreakIterator\fP @
+.fi
+http://download.oracle.com/javase/7/docs/api/java/text/BreakIterator.html to determine the end of the first sentence for English (all other locales already use \f2BreakIterator\fP), rather than an English language, locale\-specific algorithm. By \f2first sentence\fP, we mean the first sentence in the main description of a package, class or member. This sentence is copied to the package, class or member summary, and to the alphabetic index.
+.br
+.br
+From JDK 1.2 forward, the BreakIterator class is already used to determine the end of sentence for all languages but English. Therefore, the \f2\-breakiterator\fP option has no effect except for English from 1.2 forward. English has its own default algorithm:
+.RS 3
+.TP 2
+o
+English default sentence\-break algorithm \- Stops at a period followed by a space or a HTML block tag, such as \f2<P>\fP.
+.TP 2
+o
+Breakiterator sentence\-break algorithm \- In general, stops at a period, question mark or exclamation mark followed by a space if the next word starts with a capital letter. This is meant to handle most abbreviations (such as "The serial no. is valid", but won't handle "Mr. Smith"). Doesn't stop at HTML tags or sentences that begin with numbers or symbols. Stops at the last period in "../filename", even if embedded in an HTML tag.
+.RE
+NOTE: We have removed from 1.5.0 the breakiterator warning messages that were in 1.4.x and have left the default sentence\-break algorithm unchanged. That is, the \-breakiterator option is not the default in 1.5.0, nor do we expect it to become the default. This is a reversal from our former intention that the default would change in the "next major release" (1.5.0). This means if you have not modified your source code to eliminate the breakiterator warnings in 1.4.x, then you don't have to do anything, and the warnings go away starting with 1.5.0. The reason for this reversal is because any benefit to having breakiterator become the default would be outweighed by the incompatible source change it would require. We regret any extra work and confusion this has caused.
+.TP 3
+\-locale\  language_country_variant
+\f3Important\fP \- The \f2\-locale\fP option must be placed \f2ahead\fP (to the left) of any options provided by the standard doclet or any other doclet. Otherwise, the navigation bars will appear in English. This is the only command\-line option that is order\-dependent.
+.br
+.br
+Specifies the locale that javadoc uses when generating documentation. The argument is the name of the locale, as described in java.util.Locale documentation, such as \f2en_US\fP (English, United States) or \f2en_US_WIN\fP (Windows variant).
+.br
+.br
+Specifying a locale causes javadoc to choose the resource files of that locale for messages (strings in the navigation bar, headings for lists and tables, help file contents, comments in stylesheet.css, and so forth). It also specifies the sorting order for lists sorted alphabetically, and the sentence separator to determine the end of the first sentence. It does not determine the locale of the doc comment text specified in the source files of the documented classes.
+.TP 3
+\-encoding\  name
+Specifies the encoding name of the source files, such as \f2EUCJIS/SJIS\fP. If this option is not specified, the platform default converter is used.
+.br
+.br
+Also see \-docencoding and \-charset.
+.TP 3
+\-Jflag
+Passes \f2flag\fP directly to the runtime system java that runs javadoc. Notice there must be no space between the \f2J\fP and the \f2flag\fP. For example, if you need to ensure that the system sets aside 32 megabytes of memory in which to process the generated documentation, then you would call the \f2\-Xmx\fP option of java as follows (\f2\-Xms\fP is optional, as it only sets the size of initial memory, which is useful if you know the minimum amount of memory required):
+.nf
+\f3
+.fl
+   % \fP\f3javadoc \-J\-Xmx32m \-J\-Xms32m\fP \f3com.mypackage\fP
+.fl
+.fi
+To tell what version of javadoc you are using, call the "\f2\-version\fP" option of java:
+.nf
+\f3
+.fl
+   % \fP\f3javadoc \-J\-version\fP
+.fl
+   java version "1.2"
+.fl
+   Classic VM (build JDK\-1.2\-V, green threads, sunwjit)
+.fl
+.fi
+(The version number of the standard doclet appears in its output stream.)
+.RE
+.SS
+Options Provided by the Standard Doclet
+.RS 3
+.TP 3
+\-d\  directory
+Specifies the destination directory where javadoc saves the generated HTML files. (The "d" means "destination.") Omitting this option causes the files to be saved to the current directory. The value \f2directory\fP can be absolute, or relative to the current working directory. As of 1.4, the destination directory is automatically created when javadoc is run.
+.br
+.br
+For example, the following generates the documentation for the package \f2com.mypackage\fP and saves the results in the \f2/home/user/doc/\fP directory:
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-d /home/user/doc com.mypackage\fP
+.fl
+.fi
+.TP 3
+\-use
+Includes one "Use" page for each documented class and package. The page describes what packages, classes, methods, constructors and fields use any API of the given class or package. Given class C, things that use class C would include subclasses of C, fields declared as C, methods that return C, and methods and constructors with parameters of type C.
+.br
+.br
+For example, let us look at what might appear on the "Use" page for String. The \f2getName()\fP method in the \f2java.awt.Font\fP class returns type \f2String\fP. Therefore, \f2getName()\fP uses \f2String\fP, and you will find that method on the "Use" page for \f2String\fP.
+.br
+.br
+Note that this documents only uses of the API, not the implementation. If a method uses \f2String\fP in its implementation but does not take a string as an argument or return a string, that is not considered a "use" of \f2String\fP.
+.br
+.br
+You can access the generated "Use" page by first going to the class or package, then clicking on the "Use" link in the navigation bar.
+.TP 3
+\-version
+Includes the @version text in the generated docs. This text is omitted by default. To tell what version of the Javadoc tool you are using, use the \f2\-J\-version\fP option.
+.TP 3
+\-author
+Includes the @author text in the generated docs.
+.TP 3
+\-splitindex
+Splits the index file into multiple files, alphabetically, one file per letter, plus a file for any index entries that start with non\-alphabetical characters.
+.TP 3
+\-windowtitle\  title
+Specifies the title to be placed in the HTML <title> tag. This appears in the window title and in any browser bookmarks (favorite places) that someone creates for this page. This title should not contain any HTML tags, as the browser will not properly interpret them. Any internal quotation marks within \f2title\fP may have to be escaped. If \-windowtitle is omitted, the Javadoc tool uses the value of \-doctitle for this option.
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-windowtitle "Java SE Platform" com.mypackage\fP
+.fl
+.fi
+.TP 3
+\-doctitle\  title
+Specifies the title to be placed near the top of the overview summary file. The title will be placed as a centered, level\-one heading directly beneath the upper navigation bar. The \f2title\fP may contain html tags and white space, though if it does, it must be enclosed in quotes. Any internal quotation marks within \f2title\fP may have to be escaped.
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-doctitle "Java(TM)" com.mypackage\fP
+.fl
+.fi
+.TP 3
+\-title\  title
+\f3This option no longer exists.\fP It existed only in Beta versions of Javadoc 1.2. It has been renamed to \f2\-doctitle\fP. This option is being renamed to make it clear that it defines the document title rather than the window title.
+.TP 3
+\-header\  header
+Specifies the header text to be placed at the top of each output file. The header will be placed to the right of the upper navigation bar. \f2header\fP may contain HTML tags and white space, though if it does, it must be enclosed in quotes. Any internal quotation marks within \f2header\fP may have to be escaped.
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-header "<b>Java 2 Platform </b><br>v1.4" com.mypackage\fP
+.fl
+.fi
+.TP 3
+\-footer\  footer
+Specifies the footer text to be placed at the bottom of each output file. The footer will be placed to the right of the lower navigation bar. \f2footer\fP may contain html tags and white space, though if it does, it must be enclosed in quotes. Any internal quotation marks within \f2footer\fP may have to be escaped.
+.TP 3
+\-top
+Specifies the text to be placed at the top of each output file.
+.TP 3
+\-bottom\  text
+Specifies the text to be placed at the bottom of each output file. The text will be placed at the bottom of the page, below the lower navigation bar. The \f2text\fP may contain HTML tags and white space, though if it does, it must be enclosed in quotes. Any internal quotation marks within \f2text\fP may have to be escaped.
+.TP 3
+\-link\  extdocURL
+Creates links to existing javadoc\-generated documentation of external referenced classes. It takes one argument:
+.RS 3
+.TP 2
+o
+\f4extdocURL\fP is the absolute or relative URL of the directory containing the external javadoc\-generated documentation you want to link to. Examples are shown below. The package\-list file must be found in this directory (otherwise, use \f2\-linkoffline\fP). The Javadoc tool reads the package names from the \f2package\-list\fP file and then links to those packages at that URL. When the Javadoc tool is run, the \f2extdocURL\fP value is copied literally into the \f2<A HREF>\fP links that are created. Therefore, \f2extdocURL\fP must be the URL to the \f2directory\fP, not to a file.
+.br
+.br
+You can use an absolute link for \f2extdocURL\fP to enable your docs to link to a document on any website, or can use a relative link to link only to a relative location. If relative, the value you pass in should be the relative path from the destination directory (specified with \f2\-d\fP) to the directory containing the packages being linked to.
+.br
+.br
+When specifying an absolute link you normally use an \f2http:\fP link. However, if you want to link to a file system that has no web server, you can use a \f2file:\fP link \-\- however, do this only if everyone wanting to access the generated documentation shares the same file system.
+.br
+.br
+In all cases, and on all operating systems, you should use a forward slash as the separator, whether the URL is absolute or relative, and "http:" or "file:" based (as specified in the
+.na
+\f2URL Memo\fP @
+.fi
+http://www.ietf.org/rfc/rfc1738.txt).
+.RS 3
+.TP 3
+Absolute http: based link:
+\f2\-link http://<host>/<directory>/<directory>/.../<name>\fP
+.TP 3
+Absolute file: based link:
+\f2\-link file://<host>/<directory>/<directory>/.../<name>\fP
+.TP 3
+Relative link:
+\f2\-link <directory>/<directory>/.../<name>\fP
+.RE
+.RE
+You can specify multiple \f2\-link\fP options in a given javadoc run to link to multiple documents.
+.br
+.br
+\f3Choosing between \-linkoffline and \-link\fP:
+.br
+.br
+Use \f2\-link\fP:
+.RS 3
+.TP 2
+o
+when using a relative path to the external API document, or
+.TP 2
+o
+when using an absolute URL to the external API document, if your shell allows a program to open a connection to that URL for reading.
+.RE
+Use \f2\-linkoffline\fP:
+.RS 3
+.TP 2
+o
+when using an absolute URL to the external API document, if your shell \f2does not allow\fP a program to open a connection to that URL for reading. This can occur if you are behind a firewall and the document you want to link to is on the other side.
+.RE
+.br
+.br
+\f3Example using absolute links to the external docs\fP \- Let us say you want to link to the \f2java.lang\fP, \f2java.io\fP and other Java Platform packages at
+.na
+\f2http://download.oracle.com/javase/7/docs/api/\fP @
+.fi
+http://download.oracle.com/javase/7/docs/api/. The following command generates documentation for the package \f2com.mypackage\fP with links to the Java SE Platform packages. The generated documentation will contain links to the \f2Object\fP class, for example, in the class trees. (Other options, such as \f2\-sourcepath\fP and \f2\-d\fP, are not shown.)
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-link http://download.oracle.com/javase/7/docs/api/ com.mypackage\fP
+.fl
+.fi
+\f3Example using relative links to the external docs\fP \- Let us say you have two packages whose docs are generated in different runs of the Javadoc tool, and those docs are separated by a relative path. In this example, the packages are \f2com.apipackage\fP, an API, and \f2com.spipackage\fP, an SPI (Service Provide Interface). You want the documentation to reside in \f2docs/api/com/apipackage\fP and \f2docs/spi/com/spipackage\fP. Assuming the API package documentation is already generated, and that \f2docs\fP is the current directory, you would document the SPI package with links to the API documentation by running:
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-d ./spi \-link ../api com.spipackage\fP
+.fl
+.fi
+Notice the \f2\-link\fP argument is relative to the destination directory (\f2docs/spi\fP).
+.br
+.br
+\f3Details\fP \- The \f2\-link\fP option enables you to link to classes referenced to by your code but \f2not\fP documented in the current javadoc run. For these links to go to valid pages, you must know where those HTML pages are located, and specify that location with \f2extdocURL\fP. This allows, for instance, third party documentation to link to \f2java.*\fP documentation on \f2http://java.sun.com\fP.
+.br
+.br
+Omit the \f2\-link\fP option for javadoc to create links only to API within the documentation it is generating in the current run. (Without the \f2\-link\fP option, the Javadoc tool does not create links to documentation for external references, because it does not know if or where that documentation exists.)
+.br
+.br
+This option can create links in several places in the generated documentation.
+.br
+.br
+Another use is for cross\-links between sets of packages: Execute javadoc on one set of packages, then run javadoc again on another set of packages, creating links both ways between both sets.
+.br
+.br
+\f3How a Class Must be Referenced\fP \- For a link to an external referenced class to actually appear (and not just its text label), the class must be referenced in the following way. It is not sufficient for it to be referenced in the body of a method. It must be referenced in either an \f2import\fP statement or in a declaration. Here are examples of how the class \f2java.io.File\fP can be referenced:
+.RS 3
+.TP 2
+o
+In any kind of \f2import\fP statement: by wildcard import, import explicitly by name, or automatically import for \f2java.lang.*\fP. For example, this would suffice:
+.br
+\f2import java.io.*;\fP
+.br
+In 1.3.x and 1.2.x, only an explicit import by name works \-\- a wildcard import statement does not work, nor does the automatic import \f2java.lang.*\fP.
+.TP 2
+o
+In a declaration:
+.br
+\f2void foo(File f) {}\fP
+.br
+The reference and be in the return type or parameter type of a method, constructor, field, class or interface, or in an \f2implements\fP, \f2extends\fP or \f2throws\fP statement.
+.RE
+An important corollary is that when you use the \f2\-link\fP option, there may be many links that unintentionally do not appear due to this constraint. (The text would appear without a hypertext link.) You can detect these by the warnings they emit. The most innocuous way to properly reference a class and thereby add the link would be to import that class, as shown above.
+.br
+.br
+\f3Package List\fP \- The \f2\-link\fP option requires that a file named \f2package\-list\fP, which is generated by the Javadoc tool, exist at the URL you specify with \f2\-link\fP. The \f2package\-list\fP file is a simple text file that lists the names of packages documented at that location. In the earlier example, the Javadoc tool looks for a file named \f2package\-list\fP at the given URL, reads in the package names and then links to those packages at that URL.
+.br
+.br
+For example, the package list for the Java SE 6 API is located at
+.na
+\f2http://download.oracle.com/javase/7/docs/api/package\-list\fP @
+.fi
+http://download.oracle.com/javase/7/docs/api/package\-list. and starts as follows:
+.nf
+\f3
+.fl
+  java.applet
+.fl
+  java.awt
+.fl
+  java.awt.color
+.fl
+  java.awt.datatransfer
+.fl
+  java.awt.dnd
+.fl
+  java.awt.event
+.fl
+  java.awt.font
+.fl
+  etc.
+.fl
+\fP
+.fi
+When javadoc is run without the \f2\-link\fP option, when it encounters a name that belongs to an external referenced class, it prints the name with no link. However, when the \f2\-link\fP option is used, the Javadoc tool searches the \f2package\-list\fP file at the specified \f2extdocURL\fP location for that package name. If it finds the package name, it prefixes the name with \f2extdocURL\fP.
+.br
+.br
+In order for there to be no broken links, all of the documentation for the external references must exist at the specified URLs. The Javadoc tool will not check that these pages exist \-\- only that the package\-list exists.
+.br
+.br
+\f3Multiple Links\fP \- You can supply multiple \f2\-link\fP options to link to any number of external generated documents. \  Javadoc 1.2 has a known bug which prevents you from supplying more than one \f2\-link\fP command. This was fixed in 1.2.2.
+.br
+.br
+Specify a different link option for each external document to link to:
+.br
+.br
+\ \  \f2% \fP\f4javadoc \-link\fP \f2extdocURL1\fP \f4\-link\fP \f2extdocURL2\fP \f2... \fP\f4\-link\fP \f2extdocURLn\fP \f4com.mypackage\fP
+.br
+.br
+where \f2extdocURL1\fP,\  \f2extdocURL2\fP,\  ... \f2extdocURLn\fP point respectively to the roots of external documents, each of which contains a file named \f2package\-list\fP.
+.br
+.br
+\f3Cross\-links\fP \- Note that "bootstrapping" may be required when cross\-linking two or more documents that have not previously been generated. In other words, if \f2package\-list\fP does not exist for either document, when you run the Javadoc tool on the first document, the \f2package\-list\fP will not yet exist for the second document. Therefore, to create the external links, you must re\-generate the first document after generating the second document.
+.br
+.br
+In this case, the purpose of first generating a document is to create its \f2package\-list\fP (or you can create it by hand it if you're certain of the package names). Then generate the second document with its external links. The Javadoc tool prints a warning if a needed external \f2package\-list\fP file does not exist.
+.TP 3
+\-linkoffline\  extdocURL\  packagelistLoc
+This option is a variation of \f2\-link\fP; they both create links to javadoc\-generated documentation for external referenced classes. Use the \f2\-linkoffline\fP option when linking to a document on the web when the Javadoc tool itself is "offline" \-\- that is, it cannot access the document through a web connection.
+.br
+.br
+More specifically, use \f2\-linkoffline\fP if the external document's \f2package\-list\fP file is not accessible or does not exist at the \f2extdocURL\fP location but does exist at a different location, which can be specified by \f2packageListLoc\fP (typically local). Thus, if \f2extdocURL\fP is accessible only on the World Wide Web, \f2\-linkoffline\fP removes the constraint that the Javadoc tool have a web connection when generating the documentation.
+.br
+.br
+Another use is as a "hack" to update docs: After you have run javadoc on a full set of packages, then you can run javadoc again on onlya smaller set of changed packages, so that the updated files can be inserted back into the original set. Examples are given below.
+.br
+.br
+The \f2\-linkoffline\fP option takes two arguments \-\- the first for the string to be embedded in the \f2<a href>\fP links, the second telling it where to find \f2package\-list\fP:
+.RS 3
+.TP 2
+o
+\f4extdocURL\fP is the absolute or relative URL of the directory containing the external javadoc\-generated documentation you want to link to. If relative, the value should be the relative path from the destination directory (specified with \f2\-d\fP) to the root of the packages being linked to. For more details, see \f2extdocURL\fP in the \f2\-link\fP option.
+.TP 2
+o
+\f4packagelistLoc\fP is the path or URL to the directory containing the \f2package\-list\fP file for the external documentation. This can be a URL (http: or file:) or file path, and can be absolute or relative. If relative, make it relative to the \f2current\fP directory from where javadoc was run. Do not include the \f2package\-list\fP filename.
+.RE
+You can specify multiple \f2\-linkoffline\fP options in a given javadoc run. (Prior to 1.2.2, it could be specified only once.)
+.br
+.br
+\f3Example using absolute links to the external docs\fP \- Let us say you want to link to the \f2java.lang\fP, \f2java.io\fP and other Java SE Platform packages at \f2http://download.oracle.com/javase/7/docs/api/\fP, but your shell does not have web access. You could open the \f2package\-list\fP file in a browser at
+.na
+\f2http://download.oracle.com/javase/7/docs/api/package\-list\fP @
+.fi
+http://download.oracle.com/javase/7/docs/api/package\-list, save it to a local directory, and point to this local copy with the second argument, \f2packagelistLoc\fP. In this example, the package list file has been saved to the current directory "\f2.\fP" . The following command generates documentation for the package \f2com.mypackage\fP with links to the Java SE Platform packages. The generated documentation will contain links to the \f2Object\fP class, for example, in the class trees. (Other necessary options, such as \f2\-sourcepath\fP, are not shown.)
+.nf
+\f3
+.fl
+% \fP\f3javadoc \-linkoffline http://download.oracle.com/javase/7/docs/api/ . com.mypackage\fP
+.fl
+.fi
+\f3Example using relative links to the external docs\fP \- It's not very common to use \f2\-linkoffline\fP with relative paths, for the simple reason that \f2\-link\fP usually suffices. When using \f2\-linkoffline\fP, the \f2package\-list\fP file is generally local, and when using relative links, the file you are linking to is also generally local. So it is usually unnecessary to give a different path for the two arguments to \f2\-linkoffline\fP. When the two arguments are identical, you can use \f2\-link\fP. See the \f2\-link\fP relative example.
+.br
+.br
+\f3Manually Creating a \fP\f4package\-list\fP\f3 File\fP \- If a \f2package\-list\fP file does not yet exist, but you know what package names your document will link to, you can create your own copy of this file by hand and specify its path with \f2packagelistLoc\fP. An example would be the previous case where the package list for \f2com.spipackage\fP did not exist when \f2com.apipackage\fP was first generated. This technique is useful when you need to generate documentation that links to new external documentation whose package names you know, but which is not yet published. This is also a way of creating \f2package\-list\fP files for packages generated with Javadoc 1.0 or 1.1, where \f2package\-list\fP files were not generated. Likewise, two companies can share their unpublished \f2package\-list\fP files, enabling them to release their cross\-linked documentation simultaneously.
+.br
+.br
+\f3Linking to Multiple Documents\fP \- You can include \f2\-linkoffline\fP once for each generated document you want to refer to (each option is shown on a separate line for clarity):
+.br
+.br
+\f2% \fP\f4javadoc \-linkoffline\fP \f2extdocURL1\fP \f2packagelistLoc1\fP \f2\\\fP
+.br
+\f2\ \ \ \ \ \ \ \ \ \ \fP\f4\-linkoffline\fP \f2extdocURL2\fP \f2packagelistLoc2\fP \f2\\\fP
+.br
+\f2\ \ \ \ \ \ \ \ \ \ ...\fP
+.br
+.br
+\f3Updating docs\fP \- Another use for \f2\-linkoffline\fP option is useful if your project has dozens or hundreds of packages, if you have already run javadoc on the entire tree, and now, in a separate run, you want to quickly make some small changes and re\-run javadoc on just a small portion of the source tree. This is somewhat of a hack in that it works properly only if your changes are only to doc comments and not to declarations. If you were to add, remove or change any declarations from the source code, then broken links could show up in the index, package tree, inherited member lists, use page, and other places.
+.br
+.br
+First, you create a new destination directory (call it \f2update\fP) for this new small run. Let us say the original destination directory was named \f2html\fP. In the simplest example, cd to the parent of \f2html\fP. Set the first argument of \f2\-linkoffline\fP to the current directory "." and set the second argument to the relative path to \f2html\fP, where it can find \f2package\-list\fP, and pass in only the package names of the packages you want to update:
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-d update \-linkoffline . html com.mypackage\fP
+.fl
+.fi
+When the Javadoc tool is done, copy these generated class pages in \f2update/com/package\fP (not the overview or index), over the original files in \f2html/com/package\fP.
+.TP 3
+\-linksource\
+Creates an HTML version of each source file (with line numbers) and adds links to them from the standard HTML documentation. Links are created for classes, interfaces, constructors, methods and fields whose declarations are in a source file. Otherwise, links are not created, such as for default constructors and generated classes.
+.br
+.br
+\f3This option exposes \fP\f4all\fP\f3 private implementation details in the included source files, including private classes, private fields, and the bodies of private methods, \fP\f4regardless of the \fP\f4\-public\fP\f3, \fP\f4\-package\fP\f3, \fP\f4\-protected\fP\f3 and \fP\f4\-private\fP\f3 options.\fP Unless you also use the \f2\-private\fP option, not all private classes or interfaces will necessarily be accessible via links.
+.br
+.br
+Each link appears on the name of the identifier in its declaration. For example, the link to the source code of the \f2Button\fP class would be on the word "Button":
+.nf
+\f3
+.fl
+    public class Button
+.fl
+    extends Component
+.fl
+    implements Accessible
+.fl
+\fP
+.fi
+and the link to the source code of the \f2getLabel()\fP method in the Button class would be on the word "getLabel":
+.nf
+\f3
+.fl
+    public String getLabel()
+.fl
+\fP
+.fi
+.TP 3
+\-group\  groupheading\  packagepattern:packagepattern:...
+Separates packages on the overview page into whatever groups you specify, one group per table. You specify each group with a different \f2\-group\fP option. The groups appear on the page in the order specified on the command line; packages are alphabetized within a group. For a given \f2\-group\fP option, the packages matching the list of \f2packagepattern\fP expressions appear in a table with the heading \f2groupheading\fP.
+.RS 3
+.TP 2
+o
+\f4groupheading\fP can be any text, and can include white space. This text is placed in the table heading for the group.
+.TP 2
+o
+\f4packagepattern\fP can be any package name, or can be the start of any package name followed by an asterisk (\f2*\fP). The asterisk is a wildcard meaning "match any characters". This is the only wildcard allowed. Multiple patterns can be included in a group by separating them with colons (\f2:\fP).
+.RE
+\f3NOTE: If using an asterisk in a pattern or pattern list, the pattern list must be inside quotes, such as \fP\f4"java.lang*:java.util"\fP
+.br
+.br
+If you do not supply any \f2\-group\fP option, all packages are placed in one group with the heading "Packages". If the all groups do not include all documented packages, any leftover packages appear in a separate group with the heading "Other Packages".
+.br
+.br
+For example, the following option separates the four documented packages into core, extension and other packages. Notice the trailing "dot" does not appear in "java.lang*" \-\- including the dot, such as "java.lang.*" would omit the java.lang package.
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-group "Core Packages" "java.lang*:java.util"
+.fl
+            \-group "Extension Packages" "javax.*"
+.fl
+            java.lang java.lang.reflect java.util javax.servlet java.new\fP
+.fl
+.fi
+This results in the groupings:
+.RS 3
+.TP 3
+Core Packages
+\f2java.lang\fP
+\f2java.lang.reflect\fP
+\f2java.util\fP
+.TP 3
+Extension Packages
+\f2javax.servlet\fP
+.TP 3
+Other Packages
+\f2java.new\fP
+.RE
+.TP 3
+\-nodeprecated
+Prevents the generation of any deprecated API at all in the documentation. This does what \-nodeprecatedlist does, plus it does not generate any deprecated API throughout the rest of the documentation. This is useful when writing code and you don't want to be distracted by the deprecated code.
+.TP 3
+\-nodeprecatedlist
+Prevents the generation of the file containing the list of deprecated APIs (deprecated\-list.html) and the link in the navigation bar to that page. (However, javadoc continues to generate the deprecated API throughout the rest of the document.) This is useful if your source code contains no deprecated API, and you want to make the navigation bar cleaner.
+.TP 3
+\-nosince
+Omits from the generated docs the "Since" sections associated with the @since tags.
+.TP 3
+\-notree
+Omits the class/interface hierarchy pages from the generated docs. These are the pages you reach using the "Tree" button in the navigation bar. The hierarchy is produced by default.
+.TP 3
+\-noindex
+Omits the index from the generated docs. The index is produced by default.
+.TP 3
+\-nohelp
+Omits the HELP link in the navigation bars at the top and bottom of each page of output.
+.TP 3
+\-nonavbar
+Prevents the generation of the navigation bar, header and footer, otherwise found at the top and bottom of the generated pages. Has no affect on the "bottom" option. The \f2\-nonavbar\fP option is useful when you are interested only in the content and have no need for navigation, such as converting the files to PostScript or PDF for print only.
+.TP 3
+\-helpfile\  path/filename
+Specifies the path of an alternate help file \f2path/filename\fP that the HELP link in the top and bottom navigation bars link to. Without this option, the Javadoc tool automatically creates a help file \f2help\-doc.html\fP that is hard\-coded in the Javadoc tool. This option enables you to override this default. The \f2filename\fP can be any name and is not restricted to \f2help\-doc.html\fP \-\- the Javadoc tool will adjust the links in the navigation bar accordingly. For example:
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-helpfile /home/user/myhelp.html java.awt\fP
+.fl
+.fi
+.TP 3
+\-stylesheetfile\  path/filename
+Specifies the path of an alternate HTML stylesheet file. Without this option, the Javadoc tool automatically creates a stylesheet file \f2stylesheet.css\fP that is hard\-coded in the Javadoc tool. This option enables you to override this default. The \f2filename\fP can be any name and is not restricted to \f2stylesheet.css\fP. For example:
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-stylesheetfile /home/user/mystylesheet.css com.mypackage\fP
+.fl
+.fi
+.TP 3
+\-serialwarn
+Generates compile\-time warnings for missing @serial tags. By default, Javadoc 1.2.2 (and later versions) generates no serial warnings. (This is a reversal from earlier versions.) Use this option to display the serial warnings, which helps to properly document default serializable fields and \f2writeExternal\fP methods.
+.TP 3
+\-charset\  name
+Specifies the HTML character set for this document. The name should be a preferred MIME name as given in the
+.na
+\f2IANA Registry\fP @
+.fi
+http://www.iana.org/assignments/character\-sets. For example:
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-charset "iso\-8859\-1" mypackage\fP
+.fl
+.fi
+would insert the following line in the head of every generated page:
+.nf
+\f3
+.fl
+   <META http\-equiv="Content\-Type" content="text/html; charset=ISO\-8859\-1">
+.fl
+\fP
+.fi
+This META tag is described in the
+.na
+\f2HTML standard\fP @
+.fi
+http://www.w3.org/TR/REC\-html40/charset.html#h\-5.2.2. (4197265 and 4137321)
+.br
+.br
+Also see \-encoding and \-docencoding.
+.TP 3
+\-docencoding\  name
+Specifies the encoding of the generated HTML files. The name should be a preferred MIME name as given in the
+.na
+\f2IANA Registry\fP @
+.fi
+http://www.iana.org/assignments/character\-sets. If you omit this option but use \-encoding, then the encoding of the generated HTML files is determined by \-encoding. Example:
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-docencoding "ISO\-8859\-1" mypackage\fP
+.fl
+.fi
+Also see \-encoding and \-charset.
+.TP 3
+\-keywords
+Adds HTML meta keyword tags to the generated file for each class. These tags can help the page be found by search engines that look for meta tags. (Most search engines that search the entire Internet do not look at meta tags, because pages can misuse them; but search engines offered by companies that confine their search to their own website can benefit by looking at meta tags.)
+.br
+.br
+The meta tags include the fully qualified name of the class and the unqualified names of the fields and methods. Constructors are not included because they are identical to the class name. For example, the class String starts with these keywords:
+.nf
+\f3
+.fl
+     <META NAME="keywords" CONTENT="java.lang.String class">
+.fl
+     <META NAME="keywords" CONTENT="CASE_INSENSITIVE_ORDER">
+.fl
+     <META NAME="keywords" CONTENT="length()">
+.fl
+     <META NAME="keywords" CONTENT="charAt()">
+.fl
+\fP
+.fi
+.TP 3
+\-tag\ \ tagname:Xaoptcmf:"taghead"
+Enables the Javadoc tool to interpret a simple, one\-argument custom block tag \f2@\fP\f2tagname\fP in doc comments. So the Javadoc tool can "spell\-check" tag names, it is important to include a \f2\-tag\fP option for every custom tag that is present in the source code, disabling (with \f2X\fP) those that are not being output in the current run.
+.br
+.br
+The colon (\f4:\fP) is always the separator. To use a colon in \f2tagname\fP, see Use of Colon in Tag Name.
+.br
+.br
+The \f2\-tag\fP option outputs the tag's heading \f2taghead\fP in bold, followed on the next line by the text from its single argument, as shown in the example below. Like any block tag, this argument's text can contain inline tags, which are also interpreted. The output is similar to standard one\-argument tags, such as \f2@return\fP and \f2@author\fP. Omitting \f2taghead\fP causes \f2tagname\fP to appear as the heading.
+.br
+.br
+\f3Placement of tags\fP \- The \f4Xaoptcmf\fP part of the argument determines where in the source code the tag is allowed to be placed, and whether the tag can be disabled (using \f2X\fP). You can supply either \f4a\fP, to allow the tag in all places, or any combination of the other letters:
+.br
+.br
+\f4X\fP (disable tag)
+.br
+\f4a\fP (all)
+.br
+\f4o\fP (overview)
+.br
+\f4p\fP (packages)
+.br
+\f4t\fP (types, that is classes and interfaces)
+.br
+\f4c\fP (constructors)
+.br
+\f4m\fP (methods)
+.br
+\f4f\fP (fields)
+.br
+.br
+\f3Examples of single tags\fP \- An example of a tag option for a tag that can be used anywhere in the source code is:
+.nf
+\f3
+.fl
+    \-tag todo:a:"To Do:"
+.fl
+\fP
+.fi
+If you wanted @todo to be used only with constructors, methods and fields, you would use:
+.nf
+\f3
+.fl
+    \-tag todo:cmf:"To Do:"
+.fl
+\fP
+.fi
+Notice the last colon (\f2:\fP) above is not a parameter separator, but is part of the heading text (as shown below). You would use either tag option for source code that contains the tag \f2@todo\fP, such as:
+.nf
+\f3
+.fl
+     @todo The documentation for this method needs work.
+.fl
+\fP
+.fi
+\f3Use of Colon in Tag Name\fP \- A colon can be used in a tag name if it is escaped with a backslash. For this doc comment:
+.nf
+\f3
+.fl
+    /**
+.fl
+     * @ejb:bean
+.fl
+     */
+.fl
+\fP
+.fi
+use this tag option:
+.nf
+\f3
+.fl
+    \-tag ejb\\\\:bean:a:"EJB Bean:"
+.fl
+\fP
+.fi
+\f3Spell\-checking tag names (Disabling tags)\fP \- Some developers put custom tags in the source code that they don't always want to output. In these cases, it is important to list all tags that are present in the source code, enabling the ones you want to output and disabling the ones you don't want to output. The presence of \f2X\fP disables the tag, while its absence enables the tag. This gives the Javadoc tool enough information to know if a tag it encounters is unknown, probably the results of a typo or a misspelling. It prints a warning in these cases.
+.br
+.br
+You can add \f2X\fP to the placement values already present, so that when you want to enable the tag, you can simply delete the \f2X\fP. For example, if @todo is a tag that you want to suppress on output, you would use:
+.nf
+\f3
+.fl
+    \-tag todo:Xcmf:"To Do:"
+.fl
+\fP
+.fi
+or, if you'd rather keep it simple:
+.nf
+\f3
+.fl
+    \-tag todo:X
+.fl
+\fP
+.fi
+The syntax \f2\-tag todo:X\fP works even if \f2@todo\fP is defined by a taglet.
+.br
+.br
+\f3Order of tags\fP \- The order of the \f2\-tag\fP (and \f2\-taglet\fP) options determine the order the tags are output. You can mix the custom tags with the standard tags to intersperse them. The tag options for standard tags are placeholders only for determining the order \-\- they take only the standard tag's name. (Subheadings for standard tags cannot be altered.) This is illustrated in the following example.
+.br
+.br
+If \f2\-tag\fP is missing, then the position of \f2\-taglet\fP determines its order. If they are both present, then whichever appears last on the command line determines its order. (This happens because the tags and taglets are processed in the order that they appear on the command line. For example, if \f2\-taglet\fP and \f2\-tag\fP both have the name "todo", the one that appears last on the command line will determine its order.
+.br
+.br
+\f3Example of a complete set of tags\fP \- This example inserts "To Do" after "Parameters" and before "Throws" in the output. By using "X", it also specifies that @example is a tag that might be encountered in the source code that should not be output during this run. Notice that if you use @argfile, you can put the tags on separate lines in an argument file like this (no line continuation characters needed):
+.nf
+\f3
+.fl
+   \-tag param
+.fl
+   \-tag return
+.fl
+   \-tag todo:a:"To Do:"
+.fl
+   \-tag throws
+.fl
+   \-tag see
+.fl
+   \-tag example:X
+.fl
+\fP
+.fi
+When javadoc parses the doc comments, any tag encountered that is neither a standard tag nor passed in with \f2\-tag\fP or \f2\-taglet\fP is considered unknown, and a warning is thrown.
+.br
+.br
+The standard tags are initially stored internally in a list in their default order. Whenever \f2\-tag\fP options are used, those tags get appended to this list \-\- standard tags are moved from their default position. Therefore, if a \f2\-tag\fP option is omitted for a standard tag, it remains in its default position.
+.br
+.br
+\f3Avoiding Conflicts\fP \- If you want to slice out your own namespace, you can use a dot\-separated naming convention similar to that used for packages: \f2com.mycompany.todo\fP. Oracle will continue to create standard tags whose names do not contain dots. Any tag you create will override the behavior of a tag by the same name defined by Oracle. In other words, if you create a tag or taglet \f2@todo\fP, it will always have the same behavior you define, even if Oracle later creates a standard tag of the same name.
+.br
+.br
+\f3Annotations vs. Javadoc Tags\fP \- In general, if the markup you want to add is intended to affect or produce documentation, it should probably be a javadoc tag; otherwise, it should be an annotation. See
+.na
+\f2Comparing Annotations and Javadoc Tags\fP @
+.fi
+http://www.oracle.com/technetwork/java/javase/documentation/index\-137868.html#annotations<
+.br
+.br
+You can also create more complex block tags, or custom inline tags with the \-taglet option.
+.TP 3
+\-taglet\ \ class
+Specifies the class file that starts the taglet used in generating the documentation for that tag. Use the fully\-qualified name for \f2class\fP. This taglet also defines the number of text arguments that the custom tag has. The taglet accepts those arguments, processes them, and generates the output. For extensive documentation with example taglets, see:
+.RS 3
+.TP 2
+o
+.na
+\f2Taglet Overview\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/guides/javadoc/taglet/overview.html
+.RE
+Taglets are useful for block or inline tags. They can have any number of arguments and implement custom behavior, such as making text bold, formatting bullets, writing out the text to a file, or starting other processes.
+.br
+.br
+Taglets can only determine where a tag should appear and in what form. All other decisions are made by the doclet. So a taglet cannot do things such as remove a class name from the list of included classes. However, it can execute side effects, such as printing the tag's text to a file or triggering another process.
+.br
+.br
+Use the \f2\-tagletpath\fP option to specify the path to the taglet. Here is an example that inserts the "To Do" taglet after "Parameters" and ahead of "Throws" in the generated pages:
+.nf
+\f3
+.fl
+    \-taglet com.sun.tools.doclets.ToDoTaglet
+.fl
+    \-tagletpath /home/taglets
+.fl
+    \-tag return
+.fl
+    \-tag param
+.fl
+    \-tag todo
+.fl
+    \-tag throws
+.fl
+    \-tag see
+.fl
+\fP
+.fi
+Alternatively, you can use the \f2\-taglet\fP option in place of its \f2\-tag\fP option, but that may be harder to read.
+.TP 3
+\-tagletpath\ \ tagletpathlist
+Specifies the search paths for finding taglet class files (.class). The \f2tagletpathlist\fP can contain multiple paths by separating them with a colon (\f2:\fP). The Javadoc tool will search in all subdirectories of the specified paths.
+.TP 3
+\-docfilessubdirs\
+Enables deep copying of "\f2doc\-files\fP" directories. In other words, subdirectories and all contents are recursively copied to the destination. For example, the directory \f2doc\-files/example/images\fP and all its contents would now be copied. There is also an option to exclude subdirectories.
+.TP 3
+\-excludedocfilessubdir\ \ name1:name2...
+Excludes any "\f2doc\-files\fP" subdirectories with the given names. This prevents the copying of SCCS and other source\-code\-control subdirectories.
+.TP 3
+\-noqualifier\ \ all\  | \ packagename1:packagename2:...
+Omits qualifying package name from ahead of class names in output. The argument to \f2\-noqualifier\fP is either "\f2all\fP" (all package qualifiers are omitted) or a colon\-separate list of packages, with wildcards, to be removed as qualifiers. The package name is removed from places where class or interface names appear.
+.br
+.br
+The following example omits all package qualifiers:
+.nf
+\f3
+.fl
+    \-noqualifier all
+.fl
+\fP
+.fi
+The following example omits "java.lang" and "java.io" package qualifiers:
+.nf
+\f3
+.fl
+    \-noqualifier java.lang:java.io
+.fl
+\fP
+.fi
+The following example omits package qualifiers starting with "java", and "com.sun" subpackages (but not "javax"):
+.nf
+\f3
+.fl
+    \-noqualifier java.*:com.sun.*
+.fl
+\fP
+.fi
+Where a package qualifier would appear due to the above behavior, the name can be suitably shortened \-\- see How a name is displayed. This rule is in effect whether or not \f2\-noqualifier\fP is used.
+.TP 3
+\-notimestamp\
+Suppresses the timestamp, which is hidden in an HTML comment in the generated HTML near the top of each page. Useful when you want to run javadoc on two source bases and diff them, as it prevents timestamps from causing a diff (which would otherwise be a diff on every page). The timestamp includes the javadoc version number, and currently looks like this:
+.nf
+\f3
+.fl
+     <!\-\- Generated by javadoc (build 1.5.0_01) on Thu Apr 02 14:04:52 IST 2009 \-\->
+.fl
+\fP
+.fi
+.TP 3
+\-nocomment\
+Suppress the entire comment body, including the main description and all tags, generating only declarations. This option enables re\-using source files originally intended for a different purpose, to produce skeleton HTML documentation at the early stages of a new project.
+.TP 3
+\-sourcetab tabLength
+Specify the number of spaces each tab takes up in the source.
+.RE
+.SH "COMMAND LINE ARGUMENT FILES"
+.LP
+To shorten or simplify the javadoc command line, you can specify one or more files that themselves contain arguments to the \f2javadoc\fP command (except \f2\-J\fP options). This enables you to create javadoc commands of any length on any operating system.
+.LP
+An argument file can include javac options and source filenames in any combination. The arguments within a file can be space\-separated or newline\-separated. If a filename contains embedded spaces, put the whole filename in double quotes.
+.LP
+Filenames within an argument file are relative to the current directory, not the location of the argument file. Wildcards (*) are not allowed in these lists (such as for specifying \f2*.java\fP). Use of the '\f2@\fP' character to recursively interpret files is not supported. The \f2\-J\fP options are not supported because they are passed to the launcher, which does not support argument files.
+.LP
+When executing javadoc, pass in the path and name of each argument file with the '\f2@\fP' leading character. When javadoc encounters an argument beginning with the character `\f2@\fP', it expands the contents of that file into the argument list.
+.SS
+Example \- Single Arg File
+.LP
+You could use a single argument file named "\f2argfile\fP" to hold all Javadoc arguments:
+.nf
+\f3
+.fl
+  % \fP\f3javadoc @argfile\fP
+.fl
+.fi
+.LP
+This argument file could contain the contents of both files shown in the next example.
+.SS
+Example \- Two Arg Files
+.LP
+You can create two argument files \-\- one for the Javadoc options and the other for the package names or source filenames: (Notice the following lists have no line\-continuation characters.)
+.LP
+Create a file named "\f2options\fP" containing:
+.nf
+\f3
+.fl
+     \-d docs\-filelist
+.fl
+     \-use
+.fl
+     \-splitindex
+.fl
+     \-windowtitle 'Java SE 7 API Specification'
+.fl
+     \-doctitle 'Java SE 7 API Specification'
+.fl
+     \-header '<b>Java(TM) SE 7</b>'
+.fl
+     \-bottom 'Copyright &copy; 1993\-2011 Oracle and/or its affiliates. All rights reserved.'
+.fl
+     \-group "Core Packages" "java.*"
+.fl
+     \-overview /java/pubs/ws/1.7.0/src/share/classes/overview\-core.html
+.fl
+     \-sourcepath /java/pubs/ws/1.7.0/src/share/classes
+.fl
+\fP
+.fi
+.LP
+Create a file named "\f2packages\fP" containing:
+.nf
+\f3
+.fl
+     com.mypackage1
+.fl
+     com.mypackage2
+.fl
+     com.mypackage3
+.fl
+\fP
+.fi
+.LP
+You would then run javadoc with:
+.nf
+\f3
+.fl
+  % \fP\f3javadoc @options @packages\fP
+.fl
+.fi
+.SS
+Example \- Arg Files with Paths
+.LP
+The argument files can have paths, but any filenames inside the files are relative to the current working directory (not \f2path1\fP or \f2path2\fP):
+.nf
+\f3
+.fl
+  % \fP\f3javadoc @path1/options @path2/packages\fP
+.fl
+.fi
+.SS
+Example \- Option Arguments
+.LP
+Here's an example of saving just an argument to a javadoc option in an argument file. We'll use the \f2\-bottom\fP option, since it can have a lengthy argument. You could create a file named "\f2bottom\fP" containing its text argument:
+.nf
+\f3
+.fl
+<font size="\-1">
+.fl
+      <a href="http://bugreport.sun.com/bugreport/">Submit a bug or feature</a><br/>
+.fl
+      Copyright &copy; 1993, 2011, Oracle and/or its affiliates. All rights reserved.<br/>
+.fl
+      Oracle is a registered trademark of Oracle Corporation and/or its affiliates.
+.fl
+      Other names may be trademarks of their respective owners.</font>
+.fl
+\fP
+.fi
+.LP
+Then run the Javadoc tool with:
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-bottom @bottom @packages\fP
+.fl
+.fi
+.LP
+Or you could include the \f2\-bottom\fP option at the start of the argument file, and then just run it as:
+.nf
+\f3
+.fl
+  % \fP\f3javadoc @bottom @packages\fP
+.fl
+.fi
+.SH "Name"
+Running
+.SH "RUNNING JAVADOC"
+.LP
+\f3Version Numbers\fP \- The version number of javadoc can be determined using \f3javadoc \-J\-version\fP. The version number of the standard doclet appears in its output stream. It can be turned off with \f2\-quiet\fP.
+.LP
+\f3Public programmatic interface\fP \- To invoke the Javadoc tool from within programs written in the Java language. This interface is in \f2com.sun.tools.javadoc.Main\fP (and javadoc is re\-entrant). For more details, see
+.na
+\f2Standard Doclet\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/guides/javadoc/standard\-doclet.html#runningprogrammatically.
+.LP
+\f3Running Doclets\fP \- The instructions given below are for invoking the standard HTML doclet. To invoke a custom doclet, use the \-doclet and \-docletpath options. For full, working examples of running a particular doclet, see the
+.na
+\f2MIF Doclet documentation\fP @
+.fi
+http://java.sun.com/j2se/javadoc/mifdoclet/docs/mifdoclet.html.
+.SH "SIMPLE EXAMPLES"
+.LP
+You can run javadoc on entire packages or individual source files. Each package name has a corresponding directory name. In the following examples, the source files are located at \f2/home/src/java/awt/*.java\fP. The destination directory is \f2/home/html\fP.
+.SS
+Documenting One or More Packages
+.LP
+To document a package, the source files (\f2*.java\fP) for that package must be located in a directory having the same name as the package. If a package name is made up of several identifiers (separated by dots, such as \f2java.awt.color\fP), each subsequent identifier must correspond to a deeper subdirectory (such as \f2java/awt/color\fP). You may split the source files for a single package among two such directory trees located at different places, as long as \f2\-sourcepath\fP points to them both \-\- for example \f2src1/java/awt/color\fP and \f2src2/java/awt/color\fP.
+.LP
+You can run javadoc either by changing directories (with \f2cd\fP) or by using \f2\-sourcepath\fP option. The examples below illustrate both alternatives.
+.RS 3
+.TP 2
+o
+\f3Case 1 \- Run recursively starting from one or more packages\fP \- This example uses \-sourcepath so javadoc can be run from any directory and \-subpackages (a new 1.4 option) for recursion. It traverses the subpackages of the \f2java\fP directory excluding packages rooted at \f2java.net\fP and \f2java.lang\fP. Notice this excludes \f2java.lang.ref\fP, a subpackage of \f2java.lang\fP).
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \fP\f3\-d\fP\f3 /home/html \fP\f3\-sourcepath\fP\f3 /home/src \fP\f3\-subpackages\fP\f3 java \fP\f3\-exclude\fP\f3 java.net:java.lang\fP
+.fl
+.fi
+.LP
+To also traverse down other package trees, append their names to the \f2\-subpackages\fP argument, such as \f2java:javax:org.xml.sax\fP.
+.TP 2
+o
+\f3Case 2 \- Run on explicit packages after changing to the "root" source directory\fP \- Change to the parent directory of the fully\-qualified package. Then run javadoc, supplying names of one or more packages you want to document:
+.nf
+\f3
+.fl
+  % \fP\f3cd /home/src/\fP
+.fl
+  % \f3javadoc \-d /home/html java.awt java.awt.event\fP
+.fl
+.fi
+.TP 2
+o
+\f3Case 3 \- Run from any directory on explicit packages in a single directory tree\fP \- In this case, it doesn't matter what the current directory is. Run javadoc supplying \f2\-sourcepath\fP with the parent directory of the top\-level package, and supplying names of one or more packages you want to document:
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-d /home/html \-sourcepath /home/src java.awt java.awt.event\fP
+.fl
+.fi
+.TP 2
+o
+\f3Case 4 \- Run from any directory on explicit packages in multiple directory trees\fP \- This is the same as case 3, but for packages in separate directory trees. Run javadoc supplying \f2\-sourcepath\fP with the path to each tree's root (colon\-separated) and supply names of one or more packages you want to document. All source files for a given package do not need to be located under a single root directory \-\- they just need to be found somewhere along the sourcepath.
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-d /home/html \-sourcepath /home/src1:/home/src2 java.awt java.awt.event\fP
+.fl
+.fi
+.RE
+.LP
+Result: All cases generate HTML\-formatted documentation for the public and protected classes and interfaces in packages \f2java.awt\fP and \f2java.awt.event\fP and save the HTML files in the specified destination directory (\f2/home/html\fP). Because two or more packages are being generated, the document has three HTML frames \-\- for the list of packages, the list of classes, and the main class pages.
+.SS
+Documenting One or More Classes
+.LP
+The second way to run the Javadoc tool is by passing in one or more source files (\f2.java\fP). You can run javadoc either of the following two ways \-\- by changing directories (with \f2cd\fP) or by fully\-specifying the path to the \f2.java\fP files. Relative paths are relative to the current directory. The \f2\-sourcepath\fP option is ignored when passing in source files. You can use command line wildcards, such as asterisk (*), to specify groups of classes.
+.RS 3
+.TP 2
+o
+\f3Case 1 \- Changing to the source directory\fP \- Change to the directory holding the \f2.java\fP files. Then run javadoc, supplying names of one or more source files you want to document.
+.nf
+\f3
+.fl
+  % \fP\f3cd /home/src/java/awt\fP
+.fl
+  % \f3javadoc \-d /home/html Button.java Canvas.java Graphics*.java\fP
+.fl
+.fi
+This example generates HTML\-formatted documentation for the classes \f2Button\fP, \f2Canvas\fP and classes beginning with \f2Graphics\fP. Because source files rather than package names were passed in as arguments to javadoc, the document has two frames \-\- for the list of classes and the main page.
+.TP 2
+o
+\f3Case 2 \- Changing to the package root directory\fP \- This is useful for documenting individual source files from different subpackages off the same root. Change to the package root directory, and supply the source files with paths from the root.
+.nf
+\f3
+.fl
+  % \fP\f3cd /home/src/\fP
+.fl
+  % \f3javadoc \-d /home/html java/awt/Button.java java/applet/Applet.java\fP
+.fl
+.fi
+This example generates HTML\-formatted documentation for the classes \f2Button\fP and \f2Applet\fP.
+.TP 2
+o
+\f3Case 3 \- From any directory\fP \- In this case, it doesn't matter what the current directory is. Run javadoc supplying the absolute path (or path relative to the current directory) to the \f2.java\fP files you want to document.
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-d /home/html /home/src/java/awt/Button.java /home/src/java/awt/Graphics*.java\fP
+.fl
+.fi
+This example generates HTML\-formatted documentation for the class \f2Button\fP and classes beginning with \f2Graphics\fP.
+.RE
+.SS
+Documenting Both Packages and Classes
+.LP
+You can document entire packages and individual classes at the same time. Here's an example that mixes two of the previous examples. You can use \f2\-sourcepath\fP for the path to the packages but not for the path to the individual classes.
+.nf
+\f3
+.fl
+  % \fP\f3javadoc \-d /home/html \-sourcepath /home/src java.awt /home/src/java/applet/Applet.java\fP
+.fl
+.fi
+.LP
+This example generates HTML\-formatted documentation for the package \f2java.awt\fP and class \f2Applet\fP. (The Javadoc tool determines the package name for \f2Applet\fP from the package declaration, if any, in the \f2Applet.java\fP source file.)
+.SH "REAL WORLD EXAMPLE"
+.LP
+The Javadoc tool has many useful options, some of which are more commonly used than others. Here is effectively the command we use to run the Javadoc tool on the Java platform API. We use 180MB of memory to generate the documentation for the 1500 (approx.) public and protected classes in the Java SE Platform, Standard Edition, v1.2.
+.LP
+The same example is shown twice \-\- first as executed on the command line, then as executed from a makefile. It uses absolute paths in the option arguments, which enables the same \f2javadoc\fP command to be run from any directory.
+.SS
+Command Line Example
+.LP
+The following example may be too long for some shells such as DOS. You can use a command line argument file (or write a shell script) to workaround this limitation.
+.nf
+\f3
+.fl
+% javadoc \-sourcepath /java/jdk/src/share/classes \\
+.fl
+    \-overview /java/jdk/src/share/classes/overview.html \\
+.fl
+    \-d /java/jdk/build/api \\
+.fl
+    \-use \\
+.fl
+    \-splitIndex \\
+.fl
+    \-windowtitle 'Java Platform, Standard Edition 7 API Specification' \\
+.fl
+    \-doctitle 'Java Platform, Standard Edition 7 API Specification' \\
+.fl
+    \-header '<b>Java(TM) SE 7</b>' \\
+.fl
+    \-bottom '<font size="\-1">
+.fl
+      <a href="http://bugreport.sun.com/bugreport/">Submit a bug or feature</a><br/>
+.fl
+      Copyright &copy; 1993, 2011, Oracle and/or its affiliates. All rights reserved.<br/>
+.fl
+      Oracle is a registered trademark of Oracle Corporation and/or its affiliates.
+.fl
+      Other names may be trademarks of their respective owners.</font>' \\
+.fl
+    \-group "Core Packages" "java.*:com.sun.java.*:org.omg.*" \\
+.fl
+    \-group "Extension Packages" "javax.*" \\
+.fl
+    \-J\-Xmx180m \\
+.fl
+    @packages
+.fl
+\fP
+.fi
+.LP
+where \f2packages\fP is the name of a file containing the packages to process, such as \f2java.applet java.lang\fP. None of the options should contain any newline characters between the single quotes. (For example, if you copy and paste this example, delete the newline characters from the \f2\-bottom\fP option.) See the other notes listed below.
+.SS
+Makefile Example
+.LP
+This is an example of a GNU makefile. For an example of a Windows makefile, see
+.na
+\f2creating a makefile for Windows\fP @
+.fi
+http://java.sun.com/j2se/javadoc/faq/index.html#makefiles.
+.nf
+\f3
+.fl
+javadoc \-\fP\f3sourcepath\fP\f3 $(SRCDIR)              \\   /* Sets path for source files     */
+.fl
+        \-\fP\f3overview\fP\f3 $(SRCDIR)/overview.html  \\   /* Sets file for overview text    */
+.fl
+        \-\fP\f3d\fP\f3 /java/jdk/build/api             \\   /* Sets destination directory     */
+.fl
+        \-\fP\f3use\fP\f3                               \\   /* Adds "Use" files               */
+.fl
+        \-\fP\f3splitIndex\fP\f3                        \\   /* Splits index A\-Z               */
+.fl
+        \-\fP\f3windowtitle\fP\f3 $(WINDOWTITLE)        \\   /* Adds a window title            */
+.fl
+        \-\fP\f3doctitle\fP\f3 $(DOCTITLE)              \\   /* Adds a doc title               */
+.fl
+        \-\fP\f3header\fP\f3 $(HEADER)                  \\   /* Adds running header text       */
+.fl
+        \-\fP\f3bottom\fP\f3 $(BOTTOM)                  \\   /* Adds text at bottom            */
+.fl
+        \-\fP\f3group\fP\f3 $(GROUPCORE)                \\   /* 1st subhead on overview page   */
+.fl
+        \-\fP\f3group\fP\f3 $(GROUPEXT)                 \\   /* 2nd subhead on overview page   */
+.fl
+        \-\fP\f3J\fP\f3\-Xmx180m                         \\   /* Sets memory to 180MB           */
+.fl
+        java.lang java.lang.reflect        \\   /* Sets packages to document      */
+.fl
+        java.util java.io java.net         \\
+.fl
+        java.applet
+.fl
+
+.fl
+WINDOWTITLE = 'Java(TM) SE 7 API Specification'
+.fl
+DOCTITLE = 'Java(TM) Platform Standard Edition 7 API Specification'
+.fl
+HEADER = '<b>Java(TM) SE 7</font>'
+.fl
+BOTTOM = '<font size="\-1">
+.fl
+      <a href="http://bugreport.sun.com/bugreport/">Submit a bug or feature</a><br/>
+.fl
+      Copyright &copy; 1993, 2011, Oracle and/or its affiliates. All rights reserved.<br/>
+.fl
+      Oracle is a registered trademark of Oracle Corporation and/or its affiliates.
+.fl
+      Other names may be trademarks of their respective owners.</font>'
+.fl
+GROUPCORE = '"Core Packages" "java.*:com.sun.java.*:org.omg.*"'
+.fl
+GROUPEXT  = '"Extension Packages" "javax.*"'
+.fl
+SRCDIR = '/java/jdk/1.7.0/src/share/classes'
+.fl
+\fP
+.fi
+.LP
+Single quotes are used to surround makefile arguments.
+.LP
+\f3NOTES\fP
+.RS 3
+.TP 2
+o
+If you omit the \f2\-windowtitle\fP option, the Javadoc tool copies the doc title to the window title. The \f2\-windowtitle\fP text is basically the same as the \f2\-doctitle\fP but without HTML tags, to prevent those tags from appearing as raw text in the window title.
+.TP 2
+o
+If you omit the \f2\-footer\fP option, as done here, the Javadoc tool copies the header text to the footer.
+.TP 2
+o
+Other important options you might want to use but not needed in this example are \-\f2classpath\fP and \-\f2link\fP.
+.RE
+.SH "TROUBLESHOOTING"
+.SS
+General Troubleshooting
+.RS 3
+.TP 2
+o
+\f3Javadoc FAQ\fP \- Commonly\-encountered bugs and troubleshooting tips can be found on the
+.na
+\f2Javadoc FAQ\fP @
+.fi
+http://java.sun.com/j2se/javadoc/faq/index.html#B
+.TP 2
+o
+\f3Bugs and Limitations\fP \- You can also see some bugs listed at Important Bug Fixes and Changes.
+.TP 2
+o
+\f3Version number\fP \- See version numbers.
+.TP 2
+o
+\f3Documents only legal classes\fP \- When documenting a package, javadoc only reads files whose names are composed of legal class names. You can prevent javadoc from parsing a file by including, for example, a hyphen "\-" in its filename.
+.RE
+.SS
+Errors and Warnings
+.LP
+Error and warning messages contain the filename and line number to the declaration line rather than to the particular line in the doc comment.
+.RS 3
+.TP 2
+o
+\f2"error: cannot read: Class1.java"\fP the Javadoc tool is trying to load the class Class1.java in the current directory. The class name is shown with its path (absolute or relative), which in this case is the same as \f2./Class1.java\fP.
+.RE
+.SH "ENVIRONMENT"
+.RS 3
+.TP 3
+CLASSPATH
+Environment variable that provides the path which javadoc uses to find user class files. This environment variable is overridden by the \f2\-classpath\fP option. Separate directories with a colon, for example:
+.:/home/classes:/usr/local/java/classes
+.RE
+.SH "SEE ALSO"
+.RS 3
+.TP 2
+o
+javac(1)
+.TP 2
+o
+java(1)
+.TP 2
+o
+jdb(1)
+.TP 2
+o
+javah(1)
+.TP 2
+o
+javap(1)
+.TP 2
+o
+.na
+\f2Javadoc Home Page\fP @
+.fi
+http://www.oracle.com/technetwork/java/javase/documentation/index\-jsp\-135444.html
+.TP 2
+o
+.na
+\f2How to Write Doc Comments for Javadoc\fP @
+.fi
+http://www.oracle.com/technetwork/java/javase/documentation/index\-137868.html
+.TP 2
+o
+.na
+\f2Setting the Class Path\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/tools/index.html#general
+.TP 2
+o
+.na
+\f2How Javac and Javadoc Find Classes\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/tools/findingclasses.html#srcfiles (tools.jar)
+.RE
+

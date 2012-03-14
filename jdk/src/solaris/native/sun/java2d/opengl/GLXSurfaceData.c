@@ -442,4 +442,10 @@ OGLSD_SwapBuffers(JNIEnv *env, jlong window)
     j2d_glXSwapBuffers(awt_display, (Window)window);
 }
 
+// needed by Mac OS X port, no-op on other platforms
+void
+OGLSD_Flush(JNIEnv *env)
+{
+}
+
 #endif /* !HEADLESS */

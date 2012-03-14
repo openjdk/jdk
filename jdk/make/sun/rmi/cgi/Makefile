@@ -28,6 +28,8 @@
 #
 
 BUILDDIR = ../../..
+JAVAC_MAX_WARNINGS = true
+JAVAC_WARNINGS_FATAL = true
 # java-rmi.cgi is a JDK tool
 PACKAGE = sun.rmi
 PRODUCT = sun

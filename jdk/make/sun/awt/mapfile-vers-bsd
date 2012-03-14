@@ -1,0 +1,577 @@
+#
+# Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Define public interface for libawt.so on Bsd.
+# Bsd port does not use mawt, all public symbols are in libawt.so
+
+SUNWprivate_1.1 {
+	global:
+		JNI_OnLoad;
+
+		Java_java_awt_CheckboxMenuItem_initIDs;
+		Java_java_awt_Color_initIDs;
+		Java_java_awt_FontMetrics_initIDs;
+		Java_java_awt_image_BufferedImage_initIDs;
+		Java_sun_awt_image_DataBufferNative_getElem;
+		Java_sun_awt_image_DataBufferNative_setElem;
+		Java_java_awt_image_ColorModel_initIDs;
+		Java_java_awt_image_ComponentSampleModel_initIDs;
+		Java_java_awt_image_IndexColorModel_initIDs;
+		Java_java_awt_image_Kernel_initIDs;
+		Java_java_awt_image_Raster_initIDs;
+		Java_java_awt_image_SampleModel_initIDs;
+		Java_java_awt_Label_initIDs;
+		Java_java_awt_MenuBar_initIDs;
+		Java_java_awt_ScrollPaneAdjustable_initIDs;
+		Java_java_awt_Toolkit_initIDs;
+		Java_java_awt_TrayIcon_initIDs;
+                Java_sun_awt_DebugSettings_setCTracingOn__Z; 
+                Java_sun_awt_DebugSettings_setCTracingOn__ZLjava_lang_String_2; 
+                Java_sun_awt_DebugSettings_setCTracingOn__ZLjava_lang_String_2I; 
+		Java_sun_awt_image_ByteComponentRaster_initIDs;
+		Java_sun_awt_image_GifImageDecoder_initIDs;
+		Java_sun_awt_image_GifImageDecoder_parseImage;
+		Java_sun_awt_image_Image_initIDs;
+		Java_sun_awt_image_ImageRepresentation_initIDs;
+		Java_sun_awt_image_ImageRepresentation_setDiffICM;
+		Java_sun_awt_image_ImageRepresentation_setICMpixels;
+		Java_sun_awt_image_ImagingLib_convolveBI;
+		Java_sun_awt_image_ImagingLib_convolveRaster;
+		Java_sun_awt_image_ImagingLib_init;
+		Java_sun_awt_image_ImagingLib_transformBI;
+		Java_sun_awt_image_ImagingLib_transformRaster;
+		Java_sun_awt_image_IntegerComponentRaster_initIDs;
+		Java_sun_awt_image_ShortComponentRaster_initIDs;
+		Java_sun_java2d_pipe_SpanClipRenderer_eraseTile;
+		Java_sun_java2d_pipe_SpanClipRenderer_fillTile;
+                Java_sun_java2d_pipe_ShapeSpanIterator_addSegment;
+                Java_sun_java2d_pipe_ShapeSpanIterator_moveTo;
+                Java_sun_java2d_pipe_ShapeSpanIterator_lineTo;
+                Java_sun_java2d_pipe_ShapeSpanIterator_quadTo;
+                Java_sun_java2d_pipe_ShapeSpanIterator_curveTo;
+                Java_sun_java2d_pipe_ShapeSpanIterator_closePath;
+                Java_sun_java2d_pipe_ShapeSpanIterator_pathDone;
+                Java_sun_java2d_pipe_ShapeSpanIterator_getNativeConsumer;
+                Java_sun_java2d_pipe_ShapeSpanIterator_appendPoly;
+                Java_sun_java2d_pipe_ShapeSpanIterator_dispose;
+                Java_sun_java2d_pipe_ShapeSpanIterator_getNativeIterator;
+                Java_sun_java2d_pipe_ShapeSpanIterator_getPathBox;
+                Java_sun_java2d_pipe_ShapeSpanIterator_initIDs;
+                Java_sun_java2d_pipe_ShapeSpanIterator_intersectClipBox;
+                Java_sun_java2d_pipe_ShapeSpanIterator_nextSpan;
+                Java_sun_java2d_pipe_ShapeSpanIterator_setNormalize;
+                Java_sun_java2d_pipe_ShapeSpanIterator_setOutputAreaXYXY;
+                Java_sun_java2d_pipe_ShapeSpanIterator_setRule;
+                Java_sun_java2d_pipe_ShapeSpanIterator_skipDownTo;
+
+		Java_java_awt_Dimension_initIDs;
+		Java_java_awt_event_MouseEvent_initIDs;
+		Java_java_awt_image_DataBufferInt_initIDs;
+		Java_java_awt_image_SinglePixelPackedSampleModel_initIDs;
+		Java_java_awt_Rectangle_initIDs;
+		Java_sun_awt_image_BufImgSurfaceData_getSurfaceData;
+		Java_sun_awt_image_BufImgSurfaceData_initIDs;
+		Java_sun_awt_image_BufImgSurfaceData_initRaster;
+		Java_sun_awt_image_BufImgSurfaceData_setSurfaceData;
+                Java_sun_awt_image_BufImgSurfaceData_freeNativeICMData;
+		Java_sun_awt_image_BytePackedRaster_initIDs;
+		Java_sun_awt_image_ImagingLib_lookupByteBI;
+		Java_sun_awt_image_ImagingLib_lookupByteRaster;
+		Java_sun_java2d_SurfaceData_initIDs;
+		Java_sun_java2d_SurfaceData_isOpaqueGray;
+		Java_sun_java2d_Disposer_initIDs;
+		Java_sun_java2d_DefaultDisposerRecord_invokeNativeDispose;
+		Java_sun_java2d_loops_BlitBg_BlitBg;
+		Java_sun_java2d_loops_Blit_Blit;
+		Java_sun_java2d_loops_ScaledBlit_Scale;
+		Java_sun_java2d_loops_DrawLine_DrawLine;
+		Java_sun_java2d_loops_DrawPolygons_DrawPolygons;
+		Java_sun_java2d_loops_DrawRect_DrawRect;
+		Java_sun_java2d_loops_FillRect_FillRect;
+		Java_sun_java2d_loops_FillSpans_FillSpans;
+		Java_sun_java2d_loops_GraphicsPrimitiveMgr_initIDs;
+		Java_sun_java2d_loops_GraphicsPrimitiveMgr_registerNativeLoops;
+		Java_sun_java2d_loops_MaskBlit_MaskBlit;
+		Java_sun_java2d_loops_MaskFill_MaskFill;
+		Java_sun_java2d_loops_MaskFill_FillAAPgram;
+		Java_sun_java2d_loops_MaskFill_DrawAAPgram;
+                Java_sun_java2d_pipe_BufferedRenderPipe_fillSpans;
+		Java_sun_java2d_pipe_SpanClipRenderer_initIDs;
+		sun_awt_image_GifImageDecoder_initIDs;
+
+		# libmawt entry points
+		SurfaceData_InitOps;
+		SurfaceData_ThrowInvalidPipeException;
+                Region_GetBounds;
+                Region_GetInfo;
+                Region_StartIteration;
+                Region_CountIterationRects;
+                Region_NextIteration;
+                Region_EndIteration;
+                GrPrim_CompGetXorInfo;
+                GrPrim_CompGetAlphaInfo;
+		img_makePalette;
+		initInverseGrayLut;
+		make_dither_arrays;
+		make_uns_ordered_dither_array;
+
+		# variables exported to libmawt
+		std_img_oda_red;
+		std_img_oda_blue;
+		std_img_oda_green;
+		std_odas_computed;
+		g_CMpDataID;
+		colorValueID;
+                jvm;
+
+		# CDE private entry point
+                # This is in awt_LoadLibrary.c and falls through to libmawt.
+                # Evidently CDE needs this for backward compatability.
+		Java_sun_awt_motif_XsessionWMcommand;
+
+		# Java Plugin
+                # This is in awt_LoadLibrary.c and falls through to libmawt.
+                # Evidently plugin needs this for backward compatability.
+		getAwtLockFunctions;
+		getAwtData;
+		getAwtDisplay;
+
+		# libfontmanager entry points
+		AWTIsHeadless;
+		GrPrim_Sg2dGetCompInfo;
+		GrPrim_Sg2dGetClip;
+		GetNativePrim;
+		SurfaceData_IntersectBounds;
+		SurfaceData_GetOps;
+		Disposer_AddRecord;
+		GrPrim_Sg2dGetEaRGB;
+		GrPrim_Sg2dGetPixel;
+		GrPrim_Sg2dGetLCDTextContrast;
+
+		#Java_sun_awt_motif_MComponentPeer_restoreFocus;
+		Java_sun_awt_DefaultMouseInfoPeer_fillPointWithCoords;
+		Java_sun_awt_DefaultMouseInfoPeer_isWindowUnderMouse;
+		Java_java_awt_AWTEvent_nativeSetSource;
+		Java_java_awt_Checkbox_initIDs;
+		Java_java_awt_Component_initIDs;
+		Java_java_awt_Dialog_initIDs;
+		Java_java_awt_Font_initIDs;
+		Java_sun_awt_KeyboardFocusManagerPeerImpl_clearNativeGlobalFocusOwner;
+                Java_sun_awt_KeyboardFocusManagerPeerImpl_getNativeFocusOwner;
+                Java_sun_awt_KeyboardFocusManagerPeerImpl_getNativeFocusedWindow;
+                Java_java_awt_KeyboardFocusManager_initIDs;
+		Java_java_awt_Menu_initIDs;
+		Java_java_awt_MenuComponent_initIDs;
+		Java_java_awt_MenuItem_initIDs;
+		Java_java_awt_Scrollbar_initIDs;
+		Java_java_awt_ScrollPane_initIDs;
+		Java_java_awt_TextArea_initIDs;
+		Java_sun_awt_FontDescriptor_initIDs;
+		#Java_sun_awt_motif_MButtonPeer_create;
+		#Java_sun_awt_motif_MButtonPeer_setLabel;
+		#Java_sun_awt_motif_MCanvasPeer_create;
+		#Java_sun_awt_motif_MCanvasPeer_initIDs;
+		#Java_sun_awt_motif_MCanvasPeer_resetTargetGC;
+		#Java_sun_awt_motif_MCheckboxMenuItemPeer_pSetState;
+		#Java_sun_awt_motif_MCheckboxPeer_create;
+		#Java_sun_awt_motif_MCheckboxPeer_setCheckboxGroup;
+		#Java_sun_awt_motif_MCheckboxPeer_setLabel;
+		#Java_sun_awt_motif_MCheckboxPeer_pSetState;
+		#Java_sun_awt_motif_MCheckboxPeer_pGetState;
+		#Java_sun_awt_motif_MChoicePeer_addItem;
+		#Java_sun_awt_motif_MChoicePeer_appendItems;
+		#Java_sun_awt_motif_MChoicePeer_create;
+		#Java_sun_awt_motif_MChoicePeer_pReshape;
+		#Java_sun_awt_motif_MChoicePeer_remove;
+		#Java_sun_awt_motif_MChoicePeer_removeAll;
+		#Java_sun_awt_motif_MChoicePeer_setBackground;
+		#Java_sun_awt_motif_MChoicePeer_pSelect;
+		#Java_sun_awt_motif_MChoicePeer_setFont;
+		#Java_sun_awt_motif_MChoicePeer_setForeground;
+		#Java_sun_awt_motif_MComponentPeer_addNativeDropTarget;
+		#Java_sun_awt_motif_MComponentPeer_createBackBuffer;
+		#Java_sun_awt_motif_MComponentPeer_destroyBackBuffer;
+		#Java_sun_awt_motif_MComponentPeer_getNativeColor;
+		#Java_sun_awt_motif_MComponentPeer_getWindow;
+		#Java_sun_awt_motif_MComponentPeer_pDisable;
+		#Java_sun_awt_motif_MComponentPeer_pDispose;
+		#Java_sun_awt_motif_MComponentPeer_pEnable;
+		#Java_sun_awt_motif_MComponentPeer_pGetLocationOnScreen;
+		#Java_sun_awt_motif_MComponentPeer_pGetLocationOnScreen2;
+		#Java_sun_awt_motif_MComponentPeer_pHide;
+		#Java_sun_awt_motif_MComponentPeer_pInitialize;
+		#Java_sun_awt_motif_MComponentPeer_pMakeCursorVisible;
+		#Java_sun_awt_motif_MComponentPeer_pReshape;
+		#Java_sun_awt_motif_MComponentPeer_pShow;
+		#Java_sun_awt_motif_MComponentPeer_removeNativeDropTarget;
+		#Java_sun_awt_motif_MComponentPeer_swapBuffers;
+		#Java_sun_awt_motif_MComponentPeer_pSetBackground;
+		#Java_sun_awt_motif_MComponentPeer_pSetFont;
+                #Java_sun_awt_motif_MComponentPeer_processSynchronousLightweightTransfer;
+                #Java_sun_awt_motif_MComponentPeer__1requestFocus;
+		#Java_sun_awt_motif_MCheckboxMenuItemPeer_getState;
+		#Java_sun_awt_motif_MComponentPeer_pSetForeground;
+		#Java_sun_awt_motif_MDragSourceContextPeer_startDrag;
+		#Java_sun_awt_motif_MDragSourceContextPeer_setNativeCursor;
+		#Java_sun_awt_motif_MDropTargetContextPeer_addTransfer;
+		#Java_sun_awt_motif_MDropTargetContextPeer_dropDone;
+		#Java_sun_awt_motif_MDropTargetContextPeer_startTransfer;
+		#Java_sun_awt_motif_X11DragSourceContextPeer_startDrag;
+		#Java_sun_awt_motif_X11DragSourceContextPeer_setNativeCursor;
+		#Java_sun_awt_motif_X11DropTargetContextPeer_sendResponse;
+		#Java_sun_awt_motif_X11DropTargetContextPeer_dropDone;
+		#Java_sun_awt_motif_X11DropTargetContextPeer_getData;
+		#Java_sun_awt_motif_MEmbeddedFramePeer_NEFcreate;
+		#Java_sun_awt_motif_MEmbeddedFramePeer_pShowImpl;
+		#Java_sun_awt_motif_MEmbeddedFramePeer_pReshapePrivate;
+		#Java_sun_awt_motif_MEmbeddedFramePeer_getBoundsPrivate;
+		#Java_sun_awt_motif_MFramePeer_pSetIconImage___3B_3I_3SII;
+		#Java_sun_awt_motif_MEmbeddedFramePeer_requestXEmbedFocus;
+		#Java_sun_awt_motif_MEmbeddedFramePeer_isXEmbedApplicationActive;
+		#Java_sun_awt_motif_MEmbeddedFramePeer_isXEmbedActive;
+		#Java_sun_awt_motif_MEmbeddedFrame_getWidget;
+		#Java_sun_awt_motif_MEmbeddedFrame_mapWidget;
+		#Java_sun_awt_motif_MFileDialogPeer_create;
+		#Java_sun_awt_motif_MFileDialogPeer_pDispose;
+		#Java_sun_awt_motif_MFileDialogPeer_pHide;
+		#Java_sun_awt_motif_MFileDialogPeer_pReshape;
+		#Java_sun_awt_motif_MFileDialogPeer_pShow;
+		#Java_sun_awt_motif_MFileDialogPeer_setFileEntry;
+		#Java_sun_awt_motif_MFileDialogPeer_setFont;
+		#Java_sun_awt_motif_MFramePeer_pGetIconSize;
+		#Java_sun_awt_motif_MGlobalCursorManager_cacheInit;
+		#Java_sun_awt_motif_MGlobalCursorManager_findComponentAt;
+		#Java_sun_awt_motif_MGlobalCursorManager_findHeavyweightUnderCursor;
+		#Java_sun_awt_motif_MGlobalCursorManager_getCursorPos;
+		#Java_sun_awt_motif_MGlobalCursorManager_getLocationOnScreen;
+		#Java_sun_awt_motif_MLabelPeer_create;
+		#Java_sun_awt_motif_MLabelPeer_setAlignment;
+		#Java_sun_awt_motif_MLabelPeer_setText;
+		#Java_sun_awt_motif_MListPeer_addItem;
+		#Java_sun_awt_motif_MListPeer_create;
+		#Java_sun_awt_motif_MListPeer_delItems;
+		#Java_sun_awt_motif_MListPeer_deselect;
+		#Java_sun_awt_motif_MListPeer_isSelected;
+		#Java_sun_awt_motif_MListPeer_makeVisible;
+		#Java_sun_awt_motif_MListPeer_select;
+		#Java_sun_awt_motif_MListPeer_setMultipleSelections;
+		#Java_sun_awt_motif_MMenuBarPeer_create;
+		#Java_sun_awt_motif_MMenuItemPeer_createMenuItem;
+		#Java_sun_awt_motif_MMenuItemPeer_pDisable;
+		#Java_sun_awt_motif_MMenuItemPeer_pDispose;
+		#Java_sun_awt_motif_MMenuItemPeer_pEnable;
+		#Java_sun_awt_motif_MMenuItemPeer_pSetLabel;
+		#Java_sun_awt_motif_MMenuPeer_createMenu;
+		#Java_sun_awt_motif_MMenuPeer_createSubMenu;
+		#Java_sun_awt_motif_MMenuPeer_pDispose;
+		#Java_sun_awt_motif_MPopupMenuPeer_createMenu;
+		#Java_sun_awt_motif_MPopupMenuPeer_pDispose;
+		#Java_sun_awt_motif_MPopupMenuPeer_pShow;
+		#Java_sun_awt_motif_MRobotPeer_getRGBPixelsImpl;
+		#Java_sun_awt_motif_MRobotPeer_keyPressImpl;
+		#Java_sun_awt_motif_MRobotPeer_keyReleaseImpl;
+		#Java_sun_awt_motif_MRobotPeer_mouseMoveImpl;
+		#Java_sun_awt_motif_MRobotPeer_mousePressImpl;
+		#Java_sun_awt_motif_MRobotPeer_mouseReleaseImpl;
+		#Java_sun_awt_motif_MRobotPeer_mouseWheelImpl;
+		#Java_sun_awt_motif_MRobotPeer_setup;
+		#Java_sun_awt_motif_MScrollbarPeer_create;
+		#Java_sun_awt_motif_MScrollbarPeer_setLineIncrement;
+		#Java_sun_awt_motif_MScrollbarPeer_setPageIncrement;
+		#Java_sun_awt_motif_MScrollbarPeer_pSetValues;
+		#Java_sun_awt_motif_MScrollPanePeer_create;
+		#Java_sun_awt_motif_MScrollPanePeer_pGetBlockIncrement;
+		#Java_sun_awt_motif_MScrollPanePeer_pGetScrollbarSpace;
+		#Java_sun_awt_motif_MScrollPanePeer_pGetShadow;
+		#Java_sun_awt_motif_MScrollPanePeer_pInsets;
+		#Java_sun_awt_motif_MScrollPanePeer_pSetIncrement;
+		#Java_sun_awt_motif_MScrollPanePeer_pSetScrollChild;
+		#Java_sun_awt_motif_MScrollPanePeer_setScrollPosition;
+		#Java_sun_awt_motif_MTextAreaPeer_initIDs;
+		#Java_sun_awt_motif_MTextAreaPeer_pCreate;
+		#Java_sun_awt_motif_MTextAreaPeer_getCaretPosition;
+		#Java_sun_awt_motif_MTextAreaPeer_getExtraHeight;
+		#Java_sun_awt_motif_MTextAreaPeer_getExtraWidth;
+		#Java_sun_awt_motif_MTextAreaPeer_getSelectionEnd;
+		#Java_sun_awt_motif_MTextAreaPeer_getSelectionStart;
+		#Java_sun_awt_motif_MTextAreaPeer_getText;
+		#Java_sun_awt_motif_MTextAreaPeer_insert;
+		#Java_sun_awt_motif_MTextAreaPeer_pMakeCursorVisible;
+		#Java_sun_awt_motif_MTextAreaPeer_pSetEditable;
+		#Java_sun_awt_motif_MTextAreaPeer_pShow2;
+		#Java_sun_awt_motif_MTextAreaPeer_replaceRange;
+		#Java_sun_awt_motif_MTextAreaPeer_select;
+		#Java_sun_awt_motif_MTextAreaPeer_setCaretPosition;
+		#Java_sun_awt_motif_MTextAreaPeer_setFont;
+		#Java_sun_awt_motif_MTextAreaPeer_setText;
+		#Java_sun_awt_motif_MTextAreaPeer_setTextBackground;
+		#Java_sun_awt_motif_MTextFieldPeer_initIDs;
+		#Java_sun_awt_motif_MTextFieldPeer_pCreate;
+		#Java_sun_awt_motif_MTextFieldPeer_getCaretPosition;
+		#Java_sun_awt_motif_MTextFieldPeer_getSelectionEnd;
+		#Java_sun_awt_motif_MTextFieldPeer_getSelectionStart;
+		#Java_sun_awt_motif_MTextFieldPeer_getText;
+		#Java_sun_awt_motif_MTextFieldPeer_insertReplaceText;
+		#Java_sun_awt_motif_MTextFieldPeer_preDispose;
+		#Java_sun_awt_motif_MTextFieldPeer_pSetEditable;
+		#Java_sun_awt_motif_MTextFieldPeer_select;
+		#Java_sun_awt_motif_MTextFieldPeer_setCaretPosition;
+		#Java_sun_awt_motif_MTextFieldPeer_setEchoChar;
+		#Java_sun_awt_motif_MTextFieldPeer_setFont;
+		#Java_sun_awt_motif_MTextFieldPeer_setText;
+		Java_sun_awt_motif_MToolkit_beep;
+		Java_sun_awt_motif_MToolkit_getLockingKeyStateNative;
+		Java_sun_awt_motif_MToolkit_getMulticlickTime;
+                Java_sun_awt_motif_MToolkit_getNumMouseButtons;
+		Java_sun_awt_motif_MToolkit_getScreenHeight;
+		Java_sun_awt_motif_MToolkit_getScreenResolution;
+		Java_sun_awt_motif_MToolkit_getScreenWidth;
+		Java_sun_awt_motif_MToolkit_init;
+		Java_sun_awt_motif_MToolkit_isDynamicLayoutSupportedNative;
+		Java_sun_awt_motif_MToolkit_isFrameStateSupported;
+		Java_sun_awt_motif_MToolkit_loadSystemColors;
+		Java_sun_awt_motif_MToolkit_makeColorModel;
+		Java_sun_awt_motif_MToolkit_run;
+		Java_sun_awt_motif_MToolkit_sync;
+                Java_sun_awt_motif_MToolkit_isAlwaysOnTopSupported;
+		Java_sun_awt_motif_MWindowAttributes_initIDs;
+		#Java_sun_awt_motif_MWindowPeer_pDispose;
+		#Java_sun_awt_motif_MWindowPeer_pHide;
+		#Java_sun_awt_motif_MWindowPeer_pReshape;
+		#Java_sun_awt_motif_MWindowPeer_pSetTitle;
+		#Java_sun_awt_motif_MWindowPeer_pShow;
+		#Java_sun_awt_motif_MWindowPeer_setResizable;
+		#Java_sun_awt_motif_MWindowPeer_toBack;
+		#Java_sun_awt_motif_MWindowPeer_addTextComponentNative;
+		#Java_sun_awt_motif_MWindowPeer_getState;
+		#Java_sun_awt_motif_MWindowPeer_pSetIMMOption;
+		#Java_sun_awt_motif_MWindowPeer_pSetMenuBar;
+		#Java_sun_awt_motif_MWindowPeer_pShowModal;
+		#Java_sun_awt_motif_MWindowPeer_removeTextComponentNative;
+		#Java_sun_awt_motif_MWindowPeer_setSaveUnder;
+		#Java_sun_awt_motif_MWindowPeer_setState;
+		#Java_sun_awt_motif_MWindowPeer_resetTargetGC;
+		#Java_sun_awt_motif_MWindowPeer_registerX11DropTarget;
+		#Java_sun_awt_motif_MWindowPeer_unregisterX11DropTarget;
+                #Java_sun_awt_motif_MWindowPeer_updateAlwaysOnTop;
+		#Java_sun_awt_motif_X11CustomCursor_cacheInit;
+		#Java_sun_awt_motif_X11CustomCursor_createCursor;
+		#Java_sun_awt_motif_X11CustomCursor_queryBestCursor;
+		Java_sun_awt_motif_X11FontMetrics_bytesWidth;
+		Java_sun_awt_motif_X11FontMetrics_getMFCharsWidth;
+		Java_sun_awt_motif_X11FontMetrics_init;
+		Java_sun_awt_X11InputMethod_disposeXIC;
+		Java_sun_awt_X11InputMethod_isCompositionEnabledNative;
+		Java_sun_awt_X11InputMethod_resetXIC;
+		Java_sun_awt_X11InputMethod_setCompositionEnabledNative;
+		Java_sun_awt_X11InputMethod_turnoffStatusWindow;
+		#Java_sun_awt_motif_MInputMethod_openXIMNative;
+		#Java_sun_awt_motif_MInputMethod_configureStatusAreaNative;
+		#Java_sun_awt_motif_MInputMethod_createXICNative;
+		#Java_sun_awt_motif_MInputMethod_reconfigureXICNative;
+		#Java_sun_awt_motif_MInputMethod_setXICFocusNative;
+		#Java_sun_awt_motif_X11Clipboard_getClipboardData;
+		#Java_sun_awt_motif_X11Clipboard_getClipboardFormats;
+		#Java_sun_awt_motif_X11Clipboard_registerClipboardViewer;
+		#Java_sun_awt_motif_X11Clipboard_unregisterClipboardViewer;
+		#Java_sun_awt_motif_X11Selection_init;
+		#Java_sun_awt_motif_X11Selection_pGetSelectionOwnership;
+		#Java_sun_awt_motif_X11Selection_clearNativeContext;
+		Java_sun_awt_SunToolkit_closeSplashScreen;
+		Java_sun_awt_PlatformFont_initIDs;
+		Java_sun_awt_X11GraphicsConfig_init;
+		Java_sun_awt_X11GraphicsConfig_dispose;
+		Java_sun_awt_X11GraphicsConfig_pGetBounds;
+		Java_sun_awt_X11GraphicsConfig_getNumColors;
+		Java_sun_awt_X11GraphicsConfig_getXResolution;
+		Java_sun_awt_X11GraphicsConfig_getYResolution;
+                Java_sun_awt_X11GraphicsConfig_isTranslucencyCapable;
+		Java_sun_awt_X11GraphicsDevice_isDBESupported;
+		Java_sun_awt_X11GraphicsDevice_getDisplay;
+		Java_sun_awt_X11GraphicsDevice_getDoubleBufferVisuals;
+		Java_sun_awt_X11GraphicsDevice_getNumConfigs;
+		Java_sun_awt_X11GraphicsDevice_initIDs;
+                Java_sun_awt_X11GraphicsDevice_initXrandrExtension;
+                Java_sun_awt_X11GraphicsDevice_enterFullScreenExclusive;
+                Java_sun_awt_X11GraphicsDevice_exitFullScreenExclusive;
+                Java_sun_awt_X11GraphicsDevice_getCurrentDisplayMode;
+                Java_sun_awt_X11GraphicsDevice_enumDisplayModes;
+                Java_sun_awt_X11GraphicsDevice_configDisplayMode;
+                Java_sun_awt_X11GraphicsDevice_resetNativeData;
+		Java_sun_awt_X11GraphicsEnvironment_checkShmExt;
+		Java_sun_awt_X11GraphicsEnvironment_getDefaultScreenNum;
+		Java_sun_awt_X11GraphicsEnvironment_getDisplayString;
+		Java_sun_awt_X11GraphicsEnvironment_getNumScreens;
+		Java_sun_awt_X11GraphicsEnvironment_initDisplay;
+		Java_sun_awt_X11GraphicsEnvironment_pRunningXinerama;
+		Java_sun_awt_X11GraphicsEnvironment_getXineramaCenterPoint;
+		Java_sun_awt_X11GraphicsEnvironment_initXRender;
+        
+        
+
+		Java_java_awt_AWTEvent_initIDs;
+		Java_java_awt_Button_initIDs;
+		Java_java_awt_Container_initIDs;
+		Java_java_awt_Cursor_finalizeImpl;
+		Java_java_awt_Cursor_initIDs;
+		Java_java_awt_Event_initIDs;
+		Java_java_awt_event_InputEvent_initIDs;
+		Java_java_awt_event_KeyEvent_initIDs;
+		Java_java_awt_FileDialog_initIDs;
+		Java_java_awt_Frame_initIDs;
+		Java_java_awt_Insets_initIDs;
+		Java_java_awt_TextField_initIDs;
+		Java_java_awt_Window_initIDs;
+		#Java_sun_awt_motif_MCheckboxPeer_getIndicatorSize;
+		#Java_sun_awt_motif_MCheckboxPeer_getSpacing;
+		#Java_sun_awt_motif_MChoicePeer_freeNativeData;
+		#Java_sun_awt_motif_MComponentPeer_getComponents_1NoClientCode;
+		#Java_sun_awt_motif_MComponentPeer_getParent_1NoClientCode;
+		#Java_sun_awt_motif_MComponentPeer_initIDs;
+		#Java_sun_awt_motif_MComponentPeer_nativeHandleEvent;
+		#Java_sun_awt_motif_MComponentPeer_pSetCursor;
+		#Java_sun_awt_motif_MComponentPeer_pSetInnerForeground;
+		#Java_sun_awt_motif_MComponentPeer_pSetScrollbarBackground;
+		#Java_sun_awt_motif_MComponentPeer_setTargetBackground;
+		#Java_sun_awt_motif_MDataTransferer_dragQueryFile;
+		#Java_sun_awt_motif_MDataTransferer_getAtomForTarget;
+		#Java_sun_awt_motif_MDataTransferer_getTargetNameForAtom;
+		#Java_sun_awt_motif_MFileDialogPeer_insertReplaceFileDialogText;
+		Java_sun_awt_motif_MFontPeer_initIDs;
+		#Java_sun_awt_motif_MListPeer_setBackground;
+		#Java_sun_awt_motif_MMenuBarPeer_initIDs;
+		#Java_sun_awt_motif_MMenuBarPeer_pDispose;
+		#Java_sun_awt_motif_MMenuItemPeer_getParent_1NoClientCode;
+		#Java_sun_awt_motif_MMenuItemPeer_initIDs;
+		#Java_sun_awt_motif_MMenuItemPeer_pSetShortcut;
+		#Java_sun_awt_motif_MPopupMenuPeer_initIDs;
+		#Java_sun_awt_motif_MScrollbarPeer_initIDs;
+		#Java_sun_awt_motif_MScrollPanePeer_initIDs;
+		#Java_sun_awt_motif_MTextAreaPeer_pSetCursor;
+		Java_sun_awt_motif_MToolkit_shutdown;
+		#Java_sun_awt_motif_MWindowPeer_initIDs;
+		#Java_sun_awt_motif_MWindowPeer_pCreate;
+		#Java_sun_awt_motif_MWindowPeer_wrapInSequenced;
+		Java_sun_awt_motif_X11FontMetrics_initIDs;
+		#Java_sun_awt_X11InputMethod_initIDs;
+		Java_sun_awt_motif_X11OffScreenImage_updateBitmask;
+		#Java_sun_awt_motif_X11Selection_initIDs;
+		Java_sun_awt_motif_MToolkitThreadBlockedHandler_enter;
+		Java_sun_awt_motif_MToolkitThreadBlockedHandler_exit;
+		Java_sun_awt_X11GraphicsConfig_init;
+		Java_sun_awt_X11GraphicsConfig_initIDs;
+		Java_sun_awt_X11GraphicsConfig_makeColorModel;
+		Java_sun_awt_X11GraphicsDevice_getConfigVisualId;
+		Java_sun_awt_X11PMBlitLoops_Blit;
+		Java_sun_awt_X11PMBlitBgLoops_nativeBlitBg;
+		Java_sun_awt_X11Renderer_devFillSpans;
+		Java_sun_awt_X11Renderer_doDrawArc;
+		Java_sun_awt_X11Renderer_doDrawLine;
+		Java_sun_awt_X11Renderer_doDrawOval;
+		Java_sun_awt_X11Renderer_doDrawPoly;
+		Java_sun_awt_X11Renderer_doDrawRect;
+		Java_sun_awt_X11Renderer_doDrawRoundRect;
+		Java_sun_awt_X11Renderer_doFillArc;
+		Java_sun_awt_X11Renderer_doFillOval;
+		Java_sun_awt_X11Renderer_doFillPoly;
+		Java_sun_awt_X11Renderer_doFillRect;
+		Java_sun_awt_X11Renderer_doFillRoundRect;
+		Java_sun_awt_X11Renderer_devCopyArea;
+		Java_sun_awt_X11SurfaceData_initIDs;
+		Java_sun_awt_X11SurfaceData_initOps;
+		Java_sun_awt_X11SurfaceData_initSurface;
+		Java_sun_awt_X11SurfaceData_isDgaAvailable;
+		Java_sun_awt_X11SurfaceData_setInvalid;
+		Java_sun_awt_X11SurfaceData_flushNativeSurface;
+                #Java_sun_awt_motif_MEmbedCanvasPeer_initXEmbedServer;
+                #Java_sun_awt_motif_MEmbedCanvasPeer_destroyXEmbedServer;
+                #Java_sun_awt_motif_MEmbedCanvasPeer_isXEmbedActive;
+                #Java_sun_awt_motif_MEmbedCanvasPeer_initDispatching;
+                #Java_sun_awt_motif_MEmbedCanvasPeer_endDispatching;
+                #Java_sun_awt_motif_MEmbedCanvasPeer_embedChild;
+                #Java_sun_awt_motif_MEmbedCanvasPeer_childDestroyed;
+                #Java_sun_awt_motif_MEmbedCanvasPeer_getEmbedPreferredSize;
+                #Java_sun_awt_motif_MEmbedCanvasPeer_getEmbedMinimumSize;
+                #Java_sun_awt_motif_MEmbedCanvasPeer_getClientBounds;
+                #Java_sun_awt_motif_MEmbedCanvasPeer_notifyChildEmbedded;
+                #Java_sun_awt_motif_MEmbedCanvasPeer_detachChild;
+                #Java_sun_awt_motif_MEmbedCanvasPeer_forwardKeyEvent;
+                #Java_sun_awt_motif_MEmbedCanvasPeer_getAWTKeyCodeForKeySym;
+                #Java_sun_awt_motif_MEmbedCanvasPeer_sendMessage__I;
+                #Java_sun_awt_motif_MEmbedCanvasPeer_sendMessage__IJJJ;
+                #Java_sun_awt_motif_MEmbedCanvasPeer_getWindow;       
+                #Java_sun_awt_motif_MEmbedCanvasPeer_forwardEventToEmbedded;       
+                #Java_sun_awt_motif_GrabbedKey_initKeySymAndModifiers;
+                #Java_sun_awt_motif_MEmbeddedFramePeer_traverseOut;
+		awt_display;
+		awt_lock;
+		awt_Lock;
+		awt_Unlock;
+	        awt_GetDrawingSurface;
+	        awt_FreeDrawingSurface;
+	        awt_GetComponent;
+
+		X11SurfaceData_GetOps;
+		getDefaultConfig;
+                Java_sun_font_FontConfigManager_getFontConfig;
+                Java_sun_font_FontConfigManager_getFontConfigAASettings;
+		Java_sun_awt_X11FontManager_getFontPathNative;
+		Java_sun_font_SunFontManager_populateFontFileNameMap;
+
+		# CDE private entry point
+		Java_sun_awt_motif_XsessionWMcommand;
+
+		# Java Plugin
+		getAwtLockFunctions;
+		getAwtData;
+		getAwtDisplay;
+		
+		# libfontmanager entry points
+		AWTIsHeadless;
+		AWTCountFonts;
+                AWTLoadFont;
+                AWTFreeFont;
+                AWTFontMinByte1;
+                AWTFontMaxByte1;
+                AWTFontMinCharOrByte2;
+                AWTFontMaxCharOrByte2;
+                AWTFontDefaultChar;
+                AWTFontPerChar;
+                AWTFontMaxBounds;
+                AWTFontTextExtents16;
+                AWTFreeChar;
+                AWTFontGenerateImage;
+                AWTCharAdvance;
+                AWTCharLBearing;
+                AWTCharRBearing;
+                AWTCharAscent;
+                AWTCharDescent;
+                AWTDrawGlyphList;
+                AccelGlyphCache_RemoveAllCellInfos;
+
+	local:
+		*;
+};
+

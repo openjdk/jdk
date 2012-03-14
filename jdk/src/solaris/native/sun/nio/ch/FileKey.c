@@ -30,6 +30,12 @@
 #include "nio_util.h"
 #include "sun_nio_ch_FileKey.h"
 
+#ifdef _ALLBSD_SOURCE
+#define stat64 stat
+
+#define fstat64 fstat
+#endif
+
 static jfieldID key_st_dev;    /* id for FileKey.st_dev */
 static jfieldID key_st_ino;    /* id for FileKey.st_ino */
 

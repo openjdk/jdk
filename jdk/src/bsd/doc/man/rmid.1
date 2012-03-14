@@ -1,0 +1,328 @@
+." Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+." or visit www.oracle.com if you need additional information or have any
+." questions.
+."
+.TH rmid 1 "10 May 2011"
+
+.LP
+.SH "Name"
+rmid \- The Java RMI Activation System Daemon
+.LP
+.LP
+\f3rmid\fP starts the activation system daemon that allows objects to be registered and activated in a virtual machine (VM).
+.LP
+.SH "SYNOPSIS"
+.LP
+.nf
+\f3
+.fl
+rmid [options]
+.fl
+\fP
+.fi
+
+.LP
+.SH "DESCRIPTION"
+.LP
+.LP
+The \f3rmid\fP tool starts the activation system daemon. The activation system daemon must be started before activatable objects can be either registered with the activation system or activated in a VM. See the
+.na
+\f2Java RMI Specification\fP @
+.fi
+http://download.oracle.com/javase/7/docs/platform/rmi/spec/rmiTOC.html and
+.na
+\f2Activation tutorials\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/guides/rmi/activation/overview.html for details on how to write programs that use activatable remote objects.
+.LP
+.LP
+The daemon can be started by executing the \f2rmid\fP command, and specifying a security policy file, as follows:
+.LP
+.nf
+\f3
+.fl
+    rmid \-J\-Djava.security.policy=rmid.policy
+.fl
+\fP
+.fi
+
+.LP
+.LP
+\f3Note:\fP When running Sun's implementation of \f2rmid\fP, by default you will need to specify a security policy file so that \f2rmid\fP can verify whether or not the information in each \f2ActivationGroupDesc\fP is allowed to be used to launch a VM for an activation group. Specifically, the command and options specified by the \f2CommandEnvironment\fP and any \f2Properties\fP passed to an \f2ActivationGroupDesc\fP's constructor must now be explicitly allowed in the security policy file for \f2rmid\fP. The value of the \f2sun.rmi.activation.execPolicy\fP property dictates the policy that \f2rmid\fP uses to determine whether or not the information in an \f2ActivationGroupDesc\fP may be used to launch a VM for an activation group.
+.LP
+.LP
+Executing \f2rmid\fP by default
+.LP
+.RS 3
+.TP 2
+o
+starts the Activator and an internal registry on the default port, 1098, and
+.TP 2
+o
+binds an \f2ActivationSystem\fP to the name \f2java.rmi.activation.ActivationSystem\fP in this internal registry.
+.RE
+
+.LP
+.LP
+To specify an alternate port for the registry, you must specify the \f2\-port\fP option when starting up \f2rmid\fP. For example,
+.LP
+.nf
+\f3
+.fl
+    rmid \-J\-Djava.security.policy=rmid.policy \-port 1099
+.fl
+\fP
+.fi
+
+.LP
+.LP
+starts the activation system daemon and a registry on the registry's default port, 1099.
+.LP
+.SS
+Starting rmid from inetd/xinetd
+.LP
+.LP
+An alternative to starting \f2rmid\fP from the command line is to configure \f2inetd\fP (Solaris) or \f2xinetd\fP (Bsd) to start \f2rmid\fP on demand.
+.LP
+.LP
+When \f2rmid\fP starts up, it attempts to obtain an inherited channel (inherited from \f2inetd\fP/\f2xinetd\fP) by invoking the \f2System.inheritedChannel\fP method. If the inherited channel is \f2null\fP or not an instance of \f2java.nio.channels.ServerSocketChannel\fP, then \f2rmid\fP assumes that it was not started by \f2inetd\fP/\f2xinetd\fP, and it starts up as described above.
+.LP
+.LP
+If the inherited channel is a \f2ServerSocketChannel\fP instance, then \f2rmid\fP uses the \f2java.net.ServerSocket\fP obtained from the \f2ServerSocketChannel\fP as the server socket that accepts requests for the remote objects it exports, namely the registry in which the \f2java.rmi.activation.ActivationSystem\fP is bound and the \f2java.rmi.activation.Activator\fP remote object. In this mode, \f2rmid\fP behaves the same as when it is started from the command line, \f2except\fP:
+.LP
+.RS 3
+.TP 2
+o
+Output printed to \f2System.err\fP is redirected to a file. This file is located in the directory specified by the \f2java.io.tmpdir\fP system property (typically \f2/var/tmp\fP or \f2/tmp\fP) with the prefix \f2"rmid\-err"\fP and the suffix \f2"tmp"\fP.
+.TP 2
+o
+The \f2\-port\fP option is disallowed. If this option is specified, \f2rmid\fP will exit with an error message.
+.TP 2
+o
+The \f2\-log\fP option is required. If this option is not specified, \f2rmid\fP will exit with an error message.
+.RE
+
+.LP
+.LP
+See the man pages for \f2inetd\fP (Solaris) or \f2xinetd\fP (Bsd) for details on how to configure services to be started on demand.
+.LP
+.SH "OPTIONS"
+.LP
+.RS 3
+.TP 3
+\-C<someCommandLineOption>
+Specifies an option that is passed as a command\-line argument to each child process (activation group) of \f2rmid\fP when that process is created. For example, you could pass a property to each virtual machine spawned by the activation system daemon:
+.nf
+\f3
+.fl
+    rmid \-C\-Dsome.property=value
+.fl
+\fP
+.fi
+This ability to pass command\-line arguments to child processes can be useful for debugging. For example, the following command:
+.nf
+\f3
+.fl
+    rmid \-C\-Djava.rmi.server.logCalls=true
+.fl
+\fP
+.fi
+will enable server\-call logging in all child VMs.
+.LP
+.TP 3
+\-J<someCommandLineOption>
+Specifies an option that is passed to the \f2java\fP interpreter running \f2rmid\fP. For example, to specify that \f2rmid\fP use a policy file named \f2rmid.policy\fP, the \f2\-J\fP option can be used to define the \f2java.security.policy\fP property on \f2rmid\fP's command line, for example:
+.nf
+\f3
+.fl
+    rmid \-J\-Djava.security.policy=rmid.policy
+.fl
+\fP
+.fi
+.TP 3
+\-J\-Dsun.rmi.activation.execPolicy=<policy>
+Specifies the policy that \f2rmid\fP employs to check commands and command\-line options used to launch the VM in which an activation group runs. Please note that this option exists only in Sun's implementation of the Java RMI activation daemon. If this property is not specified on the command line, the result is the same as if \f2\-J\-Dsun.rmi.activation.execPolicy=default\fP were specified. The possible values of \f2<policy>\fP can be \f2default\fP, \f2<policyClassName>\fP, or \f2none\fP:
+.RS 3
+.TP 2
+o
+\f3default (or if this property is \fP\f4unspecified\fP\f3)\fP
+.LP
+The default \f2execPolicy\fP allows \f2rmid\fP to execute commands with specific command\-line options only if \f2rmid\fP has been granted permission to execute those commands and options in the security policy file that \f2rmid\fP uses. Only the default activation group implementation can be used with the \f2default\fP execution policy.
+.LP
+\f2rmid\fP launches a VM for an activation group using the information in the group's registered activation group descriptor, an \f2ActivationGroupDesc\fP. The group descriptor specifies an optional \f2ActivationGroupDesc.CommandEnvironment\fP which includes the \f2command\fP to execute to start the activation group as well as any command line \f2options\fP to be added to the command line. By default, \f2rmid\fP uses the \f2java\fP command found in \f2java.home\fP. The group descriptor also contains \f2properties\fP overrides that are added to the command line as options defined as:
+.nf
+\f3
+.fl
+    \-D\fP\f4<property>\fP\f3=\fP\f4<value>\fP\f3
+.fl
+\fP
+.fi
+.LP
+The permission \f2com.sun.rmi.rmid.ExecPermission\fP is used to grant \f2rmid\fP permission to execute a command, specified in the group descriptor's \f2CommandEnvironment\fP to launch an activation group. The permission \f2com.sun.rmi.rmid.ExecOptionPermission\fP is used to allow \f2rmid\fP to use command\-line options, specified as properties overrides in the group descriptor or as options in the \f2CommandEnvironment\fP, when launching the activation group.
+.LP
+When granting \f2rmid\fP permission to execute various commands and options, the permissions \f2ExecPermission\fP and \f2ExecOptionPermission\fP need to be granted universally (i.e., granted to all code sources).
+.RS 3
+.TP 3
+ExecPermission
+The \f2ExecPermission\fP class represents permission for \f2rmid\fP to execute a specific \f2command\fP to launch an activation group.
+.LP
+\f3Syntax\fP
+.br
+The \f2name\fP of an \f2ExecPermission\fP is the path name of a command to grant \f2rmid\fP permission to execute. A path name that ends in "/*" indicates all the files contained in that directory (where "/" is the file\-separator character, \f2File.separatorChar\fP). A path name that ends with "/\-" indicates all files and subdirectories contained in that directory (recursively). A path name consisting of the special token "<<ALL FILES>>" matches \f3any\fP file.
+.LP
+\f3Note:\fP A path name consisting of a single "*" indicates all the files in the current directory, while a path name consisting of a single "\-" indicates all the files in the current directory and (recursively) all files and subdirectories contained in the current directory.
+.TP 3
+ExecOptionPermission
+The \f2ExecOptionPermission\fP class represents permission for \f2rmid\fP to use a specific command\-line \f2option\fP when launching an activation group. The \f2name\fP of an \f2ExecOptionPermission\fP is the value of a command line option.
+.LP
+\f3Syntax\fP
+.br
+Options support a limited wildcard scheme. An asterisk signifies a wildcard match, and it may appear as the option name itself (i.e., it matches any option), or an asterisk may appear at the end of the option name only if the asterisk follows either a "." or "=".
+.LP
+For example: "*" or "\-Dfoo.*" or "\-Da.b.c=*" is valid, "*foo" or "\-Da*b" or "ab*" is not.
+.TP 3
+Policy file for rmid
+When granting \f2rmid\fP permission to execute various commands and options, the permissions \f2ExecPermission\fP and \f2ExecOptionPermission\fP need to be granted universally (i.e., granted to all code sources). It is safe to grant these permissions universally because only \f2rmid\fP checks these permissions.
+.LP
+An example policy file that grants various execute permissions to \f2rmid\fP is:
+.nf
+\f3
+.fl
+grant {
+.fl
+    permission com.sun.rmi.rmid.ExecPermission
+.fl
+        "/files/apps/java/jdk1.7.0/solaris/bin/java";
+.fl
+
+.fl
+    permission com.sun.rmi.rmid.ExecPermission
+.fl
+        "/files/apps/rmidcmds/*";
+.fl
+
+.fl
+    permission com.sun.rmi.rmid.ExecOptionPermission
+.fl
+        "\-Djava.security.policy=/files/policies/group.policy";
+.fl
+
+.fl
+    permission com.sun.rmi.rmid.ExecOptionPermission
+.fl
+        "\-Djava.security.debug=*";
+.fl
+
+.fl
+    permission com.sun.rmi.rmid.ExecOptionPermission
+.fl
+        "\-Dsun.rmi.*";
+.fl
+};
+.fl
+\fP
+.fi
+The first permission granted allow \f2rmid\fP to execute the 1.7.0 version of the \f2java\fP command, specified by its explicit path name. Note that by default, the version of the \f2java\fP command found in \f2java.home\fP is used (the same one that \f2rmid\fP uses), and does not need to be specified in the policy file. The second permission allows \f2rmid\fP to execute any command in the directory \f2/files/apps/rmidcmds\fP.
+.LP
+The third permission granted, an \f2ExecOptionPermission\fP, allows \f2rmid\fP to launch an activation group that defines the security policy file to be \f2/files/policies/group.policy\fP. The next permission allows the \f2java.security.debug\fP property to be used by an activation group. The last permission allows any property in the \f2sun.rmi\fP property name hierarchy to be used by activation groups.
+.LP
+To start \f2rmid\fP with a policy file, the \f2java.security.policy\fP property needs to be specified on \f2rmid\fP's command line, for example:
+.LP
+\f2rmid \-J\-Djava.security.policy=rmid.policy\fP
+.RE
+.TP 2
+o
+\f4<policyClassName>\fP
+.LP
+If the default behavior is not flexible enough, an administrator can provide, when starting \f2rmid\fP, the name of a class whose \f2checkExecCommand\fP method is executed in order to check commands to be executed by rmid.
+.LP
+The \f2policyClassName\fP specifies a public class with a public, no\-argument constructor and an implementation of the following \f2checkExecCommand\fP method:
+.nf
+\f3
+.fl
+    public void checkExecCommand(ActivationGroupDesc desc,
+.fl
+                                 String[] command)
+.fl
+        throws SecurityException;
+.fl
+\fP
+.fi
+Before launching an activation group, \f2rmid\fP calls the policy's \f2checkExecCommand\fP method, passing it the activation group descriptor and an array containing the complete command to launch the activation group. If the \f2checkExecCommand\fP throws a \f2SecurityException\fP, \f2rmid\fP will not launch the activation group and an \f2ActivationException\fP will be thrown to the caller attempting to activate the object.
+.TP 2
+o
+\f3none\fP
+.LP
+If the \f2sun.rmi.activation.execPolicy\fP property value is "none", then \f2rmid\fP will not perform any validation of commands to launch activation groups.
+.RE
+.LP
+.TP 3
+\-log dir
+Specifies the name of the directory the activation system daemon uses to write its database and associated information. The log directory defaults to creating a directory, \f2log\fP, in the directory in which the \f2rmid\fP command was executed.
+.LP
+.TP 3
+\-port port
+Specifies the port \f2rmid\fP's registry uses. The activation system daemon binds the \f2ActivationSystem\fP, with the name \f2java.rmi.activation.ActivationSystem\fP, in this registry. Thus, the \f2ActivationSystem\fP on the local machine can be obtained using the following \f2Naming.lookup\fP method call:
+.nf
+\f3
+.fl
+    import java.rmi.*;
+.fl
+    import java.rmi.activation.*;
+.fl
+
+.fl
+    ActivationSystem system; system = (ActivationSystem)
+.fl
+    Naming.lookup("//:\fP\f4port\fP/java.rmi.activation.ActivationSystem");
+.fl
+.fi
+.TP 3
+\-stop
+Stops the current invocation of \f2rmid\fP, for a port specified by the \f2\-port\fP option. If no port is specified, it will stop the \f2rmid\fP running on port 1098.
+.RE
+
+.LP
+.SH "ENVIRONMENT VARIABLES"
+.LP
+.RS 3
+.TP 3
+CLASSPATH
+Used to provide the system a path to user\-defined classes. Directories are separated by colons. For example:
+.nf
+\f3
+.fl
+    .:/usr/local/java/classes
+.fl
+\fP
+.fi
+.RE
+
+.LP
+.SH "SEE ALSO"
+.LP
+.LP
+rmic(1),
+.na
+\f2CLASSPATH\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/tools/index.html#classpath, java(1)
+.LP
+
