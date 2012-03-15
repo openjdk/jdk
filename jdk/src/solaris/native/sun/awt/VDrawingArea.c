@@ -31,7 +31,7 @@
 #endif /* !HEADLESS */
 
 #include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 #ifdef __linux__
 /* XXX: Shouldn't be necessary. */

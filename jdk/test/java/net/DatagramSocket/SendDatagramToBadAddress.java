@@ -45,6 +45,8 @@ public class SendDatagramToBadAddress {
             return (true);
         if (p.getProperty ("os.name").equals ("Linux"))
             return (true);
+        if (p.getProperty ("os.name").startsWith ("Mac OS"))
+            return (true);
         // Check for specific Solaris version from here
         v = p.getProperty ("os.arch");
         if (!v.equalsIgnoreCase ("sparc"))

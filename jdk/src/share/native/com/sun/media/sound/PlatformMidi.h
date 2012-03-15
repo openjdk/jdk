@@ -34,7 +34,7 @@
 
 /* do we need the queue ? */
 #if (USE_PLATFORM_MIDI_IN == TRUE) || (USE_PLATFORM_MIDI_OUT == TRUE)
- #if X_PLATFORM == X_WINDOWS
+ #if X_PLATFORM == X_WINDOWS || X_PLATFORM == X_MACOSX
   #define USE_MIDI_QUEUE TRUE
  #endif
 #endif

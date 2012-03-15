@@ -47,6 +47,11 @@ ifeq ($(PLATFORM), solaris)
 	SUBDIRS += dtrace
 endif
 
+# and Mac OS X too
+ifeq ($(PLATFORM), macosx) 
+	SUBDIRS += dtrace
+endif
+
 include $(BUILDDIR)/common/Subdirs.gmk
 
 TOPLEVEL_FILES =							\

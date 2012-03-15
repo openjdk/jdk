@@ -545,7 +545,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         if (mnemonicToIndexMap == null) {
             initMnemonics();
         }
-        mnemonicInputMap.put(KeyStroke.getKeyStroke(mnemonic, Event.ALT_MASK),
+        mnemonicInputMap.put(KeyStroke.getKeyStroke(mnemonic, BasicLookAndFeel.getFocusAcceleratorKeyMask()),
                              "setSelectedIndex");
         mnemonicToIndexMap.put(Integer.valueOf(mnemonic), Integer.valueOf(index));
     }

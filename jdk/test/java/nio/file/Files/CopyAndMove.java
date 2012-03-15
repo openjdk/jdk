@@ -153,13 +153,12 @@ public class CopyAndMove {
 
         // get file attributes of source file
         String os = System.getProperty("os.name");
-        if (os.equals("SunOS") || os.equals("Linux")) {
-            posixAttributes = readAttributes(source, PosixFileAttributes.class, NOFOLLOW_LINKS);
-            basicAttributes = posixAttributes;
-        }
         if (os.startsWith("Windows")) {
             dosAttributes = readAttributes(source, DosFileAttributes.class, NOFOLLOW_LINKS);
             basicAttributes = dosAttributes;
+        } else {
+            posixAttributes = readAttributes(source, PosixFileAttributes.class, NOFOLLOW_LINKS);
+            basicAttributes = posixAttributes;
         }
         if (basicAttributes == null)
             basicAttributes = readAttributes(source, BasicFileAttributes.class, NOFOLLOW_LINKS);
