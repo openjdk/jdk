@@ -107,6 +107,34 @@ class EventDispatchThread extends Thread {
         }
     }
 
+    // MacOSX change:
+    //  This was added because this class (and java.awt.Conditional) are package private.
+    //  There are certain instances where classes in other packages need to block the
+    //  AWTEventQueue while still allowing it to process events. This uses reflection
+    //  to call back into the caller in order to remove dependencies.
+    //
+    // NOTE: This uses reflection in its implementation, so it is not for performance critical code.
+    //
+    //  cond is an instance of sun.lwawt.macosx.EventDispatchAccess
+    //
+    private Conditional _macosxGetConditional(final Object cond) {
+        try {
+            return new Conditional() {
+                final Method evaluateMethod = Class.forName("sun.lwawt.macosx.EventDispatchAccess").getMethod("evaluate", null);
+                public boolean evaluate() {
+                    try {
+                        return ((Boolean)evaluateMethod.invoke(cond, null)).booleanValue();
+                    } catch (Exception e) {
+                        return false;
+                    }
+                }
+            };
+        } catch (Exception e) {
+            return new Conditional() { public boolean evaluate() { return false; } };
+        }
+    }
+
+
     void pumpEvents(Conditional cond) {
         pumpEvents(ANY_EVENT, cond);
     }

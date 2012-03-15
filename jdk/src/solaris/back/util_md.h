@@ -31,6 +31,11 @@
 
 #include <limits.h>
 #include <sys/types.h>
+#ifdef _ALLBSD_SOURCE
+#include <machine/endian.h>
+#elif __linux__
+#include <endian.h>
+#endif
 
 #ifdef _LP64
 typedef unsigned long UNSIGNED_JLONG;

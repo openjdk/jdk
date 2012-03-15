@@ -47,6 +47,7 @@
 #   isLinux   - true if OS is Linux
 #   isSolaris - true if OS is Solaris
 #   isWindows - true if OS is Windows
+#   isMacos   - true if OS is Macos X
 
 
 if [ -z "${TESTJAVA}" ]; then
@@ -81,6 +82,7 @@ isLinux=false
 isSolaris=false
 isUnknownOS=false
 isWindows=false
+isMacos=false
 
 OS=`uname -s`
 
@@ -102,6 +104,10 @@ case "$OS" in
   Linux )
     OS="Linux"
     isLinux=true
+    ;;
+  Darwin )
+    OS="Mac OS X"
+    isMacos=true
     ;;
   SunOS )
     OS="Solaris"

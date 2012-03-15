@@ -23,7 +23,7 @@
  * questions.
  */
 
-#include "malloc.h"
+#include <stdlib.h>
 
 #include "SurfaceData.h"
 #include "sun_awt_image_DataBufferNative.h"

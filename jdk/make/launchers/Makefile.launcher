@@ -82,12 +82,15 @@ ifeq ($(PROGRAM),jstack)
 endif
 ifeq ($(PROGRAM),jsadebugd)
   SA_TOOL=true
+  INFO_PLIST_FILE=Info-privileged.plist
 endif
 ifeq ($(PROGRAM),jinfo)
   SA_TOOL=true
+  INFO_PLIST_FILE=Info-privileged.plist
 endif
 ifeq ($(PROGRAM),jmap)
   SA_TOOL=true
+  INFO_PLIST_FILE=Info-privileged.plist
 endif
 
 # special idlj launcher

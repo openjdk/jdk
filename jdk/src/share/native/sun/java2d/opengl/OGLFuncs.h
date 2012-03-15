@@ -26,6 +26,9 @@
 #ifndef OGLFuncs_h_Included
 #define OGLFuncs_h_Included
 
+#ifdef MACOSX
+#include <dlfcn.h>
+#endif
 #include "jni.h"
 #include "J2D_GL/gl.h"
 #include "J2D_GL/glext.h"

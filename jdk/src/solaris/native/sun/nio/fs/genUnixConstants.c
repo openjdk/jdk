@@ -63,7 +63,12 @@ int main(int argc, const char* argv[]) {
     DEFX(O_EXCL);
     DEFX(O_TRUNC);
     DEFX(O_SYNC);
+#ifndef O_DSYNC
+    // At least FreeBSD doesn't define O_DSYNC
+    emit("O_DSYNC", O_SYNC);
+#else
     DEFX(O_DSYNC);
+#endif
 #ifdef O_NOFOLLOW
     DEFX(O_NOFOLLOW);
 #else
@@ -111,7 +116,12 @@ int main(int argc, const char* argv[]) {
     DEF(ENOSYS);
     DEF(ELOOP);
     DEF(EROFS);
+#ifndef ENODATA
+    // Only used in Linux java source, provide any value so it compiles
+    emit("ENODATA", ELAST);
+#else
     DEF(ENODATA);
+#endif
     DEF(ERANGE);
     DEF(EMFILE);
 

@@ -32,7 +32,7 @@
 HOSTNAME=`uname -n`
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     PS=":"
     FS="/"
     ;;

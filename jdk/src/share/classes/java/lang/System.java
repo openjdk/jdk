@@ -1168,11 +1168,6 @@ public final class System {
         // classes are used.
         sun.misc.VM.initializeOSEnvironment();
 
-        // Subsystems that are invoked during initialization can invoke
-        // sun.misc.VM.isBooted() in order to avoid doing things that should
-        // wait until the application class loader has been set up.
-        sun.misc.VM.booted();
-
         // The main thread is not added to its thread group in the same
         // way as other threads; we must do it ourselves here.
         Thread current = Thread.currentThread();
@@ -1180,6 +1175,12 @@ public final class System {
 
         // register shared secrets
         setJavaLangAccess();
+
+        // Subsystems that are invoked during initialization can invoke
+        // sun.misc.VM.isBooted() in order to avoid doing things that should
+        // wait until the application class loader has been set up.
+        // IMPORTANT: Ensure that this remains the last initialization action!
+        sun.misc.VM.booted();
     }
 
     private static void setJavaLangAccess() {

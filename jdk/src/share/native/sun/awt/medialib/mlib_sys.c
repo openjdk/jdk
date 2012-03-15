@@ -26,6 +26,10 @@
 
 #include <stdlib.h>
 #include <string.h>
+#ifdef MACOSX
+#include <unistd.h>
+#include <sys/param.h>
+#endif
 #include <mlib_types.h>
 #include <mlib_sys_proto.h>
 #include "mlib_SysMath.h"
@@ -86,7 +90,9 @@ void *__mlib_malloc(mlib_u32 size)
    * alignment. -- from stdlib.h of MS VC++5.0.
    */
   return (void *) malloc(size);
-#else /* _MSC_VER */
+#elif defined(MACOSX)
+  return valloc(size);
+#else
   return (void *) memalign(8, size);
 #endif /* _MSC_VER */
 }

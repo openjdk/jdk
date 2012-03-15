@@ -80,7 +80,7 @@ public class ActivatableRef implements RemoteRef {
         String className = desc.getClassName();
 
         try {
-            Class cl =
+            Class<?> cl =
                 RMIClassLoader.loadClass(desc.getLocation(), className);
             RemoteRef clientRef = new ActivatableRef(id, null);
             return Util.createProxy(cl, clientRef, false);
@@ -373,8 +373,8 @@ public class ActivatableRef implements RemoteRef {
         if (className.equals("")) return;
 
         try {
-            Class refClass = Class.forName(RemoteRef.packagePrefix + "." +
-                                           className);
+            Class<?> refClass = Class.forName(RemoteRef.packagePrefix + "." +
+                                              className);
             ref = (RemoteRef)refClass.newInstance();
             ref.readExternal(in);
         } catch (InstantiationException e) {
