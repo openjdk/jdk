@@ -61,7 +61,7 @@ import com.sun.corba.se.impl.util.Utility;
  */
 public class RMIGenerator implements RMIConstants, Generator {
 
-    private static final Hashtable versionOptions = new Hashtable();
+    private static final Hashtable<String, Integer> versionOptions = new Hashtable<>();
     static {
         versionOptions.put("-v1.1", new Integer(STUB_VERSION_1_1));
         versionOptions.put("-vcompat", new Integer(STUB_VERSION_FAT));
@@ -96,7 +96,7 @@ public class RMIGenerator implements RMIConstants, Generator {
                         return false;
                     }
                     explicitVersion = arg;
-                    version = ((Integer) versionOptions.get(arg)).intValue();
+                    version = versionOptions.get(arg);
                     argv[i] = null;
                 }
             }
@@ -519,7 +519,7 @@ public class RMIGenerator implements RMIConstants, Generator {
          * follows a previous catch of it or of one of its superclasses.
          * The following method invocation takes care of these details.
          */
-        Vector catchList = computeUniqueCatchList(exceptions);
+        Vector<ClassDefinition> catchList = computeUniqueCatchList(exceptions);
 
         /*
          * If we need to catch any particular exceptions (i.e. this method
@@ -615,10 +615,10 @@ public class RMIGenerator implements RMIConstants, Generator {
          * UnexpectedException, and end the try block.
          */
         if (catchList.size() > 0) {
-            for (Enumeration enumeration = catchList.elements();
+            for (Enumeration<ClassDefinition> enumeration = catchList.elements();
                  enumeration.hasMoreElements();)
             {
-                ClassDefinition def = (ClassDefinition) enumeration.nextElement();
+                ClassDefinition def = enumeration.nextElement();
                 p.pOlnI("} catch (" + def.getName() + " e) {");
                 p.pln("throw e;");
             }
@@ -650,8 +650,8 @@ public class RMIGenerator implements RMIConstants, Generator {
      * of its superclasses is in the throws clause of the method, indicating
      * that no exceptions need to be caught.
      */
-    private Vector computeUniqueCatchList(ClassDeclaration[] exceptions) {
-        Vector uniqueList = new Vector();       // unique exceptions to catch
+    private Vector<ClassDefinition> computeUniqueCatchList(ClassDeclaration[] exceptions) {
+        Vector<ClassDefinition> uniqueList = new Vector<>();       // unique exceptions to catch
 
         uniqueList.addElement(defRuntimeException);
         uniqueList.addElement(defRemoteException);
@@ -682,8 +682,7 @@ public class RMIGenerator implements RMIConstants, Generator {
                  * exceptions that need to be caught:
                  */
                 for (int j = 0; j < uniqueList.size();) {
-                    ClassDefinition def =
-                        (ClassDefinition) uniqueList.elementAt(j);
+                    ClassDefinition def = uniqueList.elementAt(j);
                     if (def.superClassOf(env, decl)) {
                         /*
                          * If a superclass of this exception is already on
