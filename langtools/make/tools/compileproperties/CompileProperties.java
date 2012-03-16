@@ -23,6 +23,8 @@
  * questions.
  */
 
+package compileproperties;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -61,7 +63,7 @@ public class CompileProperties {
         }
     }
 
-    static interface Log {
+    public static interface Log {
         void info(String msg);
         void verbose(String msg);
         void error(String msg, Exception e);
@@ -72,7 +74,7 @@ public class CompileProperties {
     private String supers[]   ;
     private int compileCount = 0;
     private boolean quiet = false;
-    private Log log;
+    public Log log;
 
     public void setLog(Log log) {
         this.log = log;
