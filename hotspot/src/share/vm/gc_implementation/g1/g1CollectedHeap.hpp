@@ -199,7 +199,8 @@ class G1CollectedHeap : public SharedHeap {
   friend class OldGCAllocRegion;
 
   // Closures used in implementation.
-  friend class G1ParCopyHelper;
+  template <bool do_gen_barrier, G1Barrier barrier, bool do_mark_object>
+  friend class G1ParCopyClosure;
   friend class G1IsAliveClosure;
   friend class G1EvacuateFollowersClosure;
   friend class G1ParScanThreadState;
