@@ -28,9 +28,6 @@
 #include <string.h>
 
 #include <dlfcn.h>
-#ifndef __APPLE__
-#include <link.h>
-#endif
 
 #include <jni_util.h>
 
