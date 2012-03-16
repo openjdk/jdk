@@ -63,6 +63,7 @@ public class Check {
 
     private final Names names;
     private final Log log;
+    private final Resolve rs;
     private final Symtab syms;
     private final Enter enter;
     private final Infer infer;
@@ -95,6 +96,7 @@ public class Check {
 
         names = Names.instance(context);
         log = Log.instance(context);
+        rs = Resolve.instance(context);
         syms = Symtab.instance(context);
         enter = Enter.instance(context);
         infer = Infer.instance(context);
@@ -106,6 +108,7 @@ public class Check {
 
         Source source = Source.instance(context);
         allowGenerics = source.allowGenerics();
+        allowVarargs = source.allowVarargs();
         allowAnnotations = source.allowAnnotations();
         allowCovariantReturns = source.allowCovariantReturns();
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
@@ -136,6 +139,10 @@ public class Check {
     /** Switch: generics enabled?
      */
     boolean allowGenerics;
+
+    /** Switch: varargs enabled?
+     */
+    boolean allowVarargs;
 
     /** Switch: annotations enabled?
      */
@@ -525,16 +532,16 @@ public class Check {
      *  @param a             The type that should be bounded by bs.
      *  @param bs            The bound.
      */
-    private boolean checkExtends(Type a, TypeVar bs) {
+    private boolean checkExtends(Type a, Type bound) {
          if (a.isUnbound()) {
              return true;
          } else if (a.tag != WILDCARD) {
              a = types.upperBound(a);
-             return types.isSubtype(a, bs.bound);
+             return types.isSubtype(a, bound);
          } else if (a.isExtendsBound()) {
-             return types.isCastable(bs.getUpperBound(), types.upperBound(a), Warner.noWarnings);
+             return types.isCastable(bound, types.upperBound(a), Warner.noWarnings);
          } else if (a.isSuperBound()) {
-             return !types.notSoftSubtype(types.lowerBound(a), bs.getUpperBound());
+             return !types.notSoftSubtype(types.lowerBound(a), bound);
          }
          return true;
      }
@@ -743,22 +750,103 @@ public class Check {
                     (s.flags() & (STATIC | FINAL)) != 0);
         }
 
-    /**
-     * Check that vararg method call is sound
-     * @param pos Position to be used for error reporting.
-     * @param argtypes Actual arguments supplied to vararg method.
-     */
-    void checkVararg(DiagnosticPosition pos, List<Type> argtypes, Symbol msym) {
-        Type argtype = argtypes.last();
-        if (!types.isReifiable(argtype) &&
-                (!allowSimplifiedVarargs ||
-                msym.attribute(syms.trustMeType.tsym) == null ||
-                !isTrustMeAllowedOnMethod(msym))) {
-            warnUnchecked(pos,
-                              "unchecked.generic.array.creation",
-                              argtype);
+    Type checkMethod(Type owntype,
+                            Symbol sym,
+                            Env<AttrContext> env,
+                            final List<JCExpression> argtrees,
+                            List<Type> argtypes,
+                            boolean useVarargs,
+                            boolean unchecked) {
+        // System.out.println("call   : " + env.tree);
+        // System.out.println("method : " + owntype);
+        // System.out.println("actuals: " + argtypes);
+        List<Type> formals = owntype.getParameterTypes();
+        Type last = useVarargs ? formals.last() : null;
+        if (sym.name==names.init &&
+                sym.owner == syms.enumSym)
+                formals = formals.tail.tail;
+        List<JCExpression> args = argtrees;
+        while (formals.head != last) {
+            JCTree arg = args.head;
+            Warner warn = convertWarner(arg.pos(), arg.type, formals.head);
+            assertConvertible(arg, arg.type, formals.head, warn);
+            args = args.tail;
+            formals = formals.tail;
         }
+        if (useVarargs) {
+            Type varArg = types.elemtype(last);
+            while (args.tail != null) {
+                JCTree arg = args.head;
+                Warner warn = convertWarner(arg.pos(), arg.type, varArg);
+                assertConvertible(arg, arg.type, varArg, warn);
+                args = args.tail;
+            }
+        } else if ((sym.flags() & VARARGS) != 0 && allowVarargs) {
+            // non-varargs call to varargs method
+            Type varParam = owntype.getParameterTypes().last();
+            Type lastArg = argtypes.last();
+            if (types.isSubtypeUnchecked(lastArg, types.elemtype(varParam)) &&
+                    !types.isSameType(types.erasure(varParam), types.erasure(lastArg)))
+                log.warning(argtrees.last().pos(), "inexact.non-varargs.call",
+                        types.elemtype(varParam), varParam);
+        }
+        if (unchecked) {
+            warnUnchecked(env.tree.pos(),
+                    "unchecked.meth.invocation.applied",
+                    kindName(sym),
+                    sym.name,
+                    rs.methodArguments(sym.type.getParameterTypes()),
+                    rs.methodArguments(argtypes),
+                    kindName(sym.location()),
+                    sym.location());
+           owntype = new MethodType(owntype.getParameterTypes(),
+                   types.erasure(owntype.getReturnType()),
+                   types.erasure(owntype.getThrownTypes()),
+                   syms.methodClass);
+        }
+        if (useVarargs) {
+            JCTree tree = env.tree;
+            Type argtype = owntype.getParameterTypes().last();
+            if (!types.isReifiable(argtype) &&
+                    (!allowSimplifiedVarargs ||
+                    sym.attribute(syms.trustMeType.tsym) == null ||
+                    !isTrustMeAllowedOnMethod(sym))) {
+                warnUnchecked(env.tree.pos(),
+                                  "unchecked.generic.array.creation",
+                                  argtype);
+            }
+            Type elemtype = types.elemtype(argtype);
+            switch (tree.getTag()) {
+                case APPLY:
+                    ((JCMethodInvocation) tree).varargsElement = elemtype;
+                    break;
+                case NEWCLASS:
+                    ((JCNewClass) tree).varargsElement = elemtype;
+                    break;
+                default:
+                    throw new AssertionError(""+tree);
+            }
+         }
+         return owntype;
     }
+    //where
+        private void assertConvertible(JCTree tree, Type actual, Type formal, Warner warn) {
+            if (types.isConvertible(actual, formal, warn))
+                return;
+
+            if (formal.isCompound()
+                && types.isSubtype(actual, types.supertype(formal))
+                && types.isSubtypeUnchecked(actual, types.interfaces(formal), warn))
+                return;
+
+            if (false) {
+                // TODO: make assertConvertible work
+                typeError(tree.pos(), diags.fragment("incompatible.types"), actual, formal);
+                throw new AssertionError("Tree: " + tree
+                                         + " actual:" + actual
+                                         + " formal: " + formal);
+            }
+        }
 
     /**
      * Check that type 't' is a valid instantiation of a generic class
@@ -776,18 +864,16 @@ public class Check {
             List<Type> actuals = type.allparams();
             List<Type> args = type.getTypeArguments();
             List<Type> forms = type.tsym.type.getTypeArguments();
-            ListBuffer<Type> tvars_buf = new ListBuffer<Type>();
+            ListBuffer<Type> bounds_buf = new ListBuffer<Type>();
 
             // For matching pairs of actual argument types `a' and
             // formal type parameters with declared bound `b' ...
             while (args.nonEmpty() && forms.nonEmpty()) {
                 // exact type arguments needs to know their
                 // bounds (for upper and lower bound
-                // calculations).  So we create new TypeVars with
-                // bounds substed with actuals.
-                tvars_buf.append(types.substBound(((TypeVar)forms.head),
-                                                  formals,
-                                                  actuals));
+                // calculations).  So we create new bounds where
+                // type-parameters are replaced with actuals argument types.
+                bounds_buf.append(types.subst(forms.head.getUpperBound(), formals, actuals));
                 args = args.tail;
                 forms = forms.tail;
             }
@@ -804,32 +890,30 @@ public class Check {
             }
 
             args = type.getTypeArguments();
-            List<Type> tvars = tvars_buf.toList();
+            List<Type> bounds = bounds_buf.toList();
 
-            while (args.nonEmpty() && tvars.nonEmpty()) {
-                Type actual = types.subst(args.head,
-                    type.tsym.type.getTypeArguments(),
-                    tvars_buf.toList());
+            while (args.nonEmpty() && bounds.nonEmpty()) {
+                Type actual = args.head;
                 if (!isTypeArgErroneous(actual) &&
-                        !tvars.head.getUpperBound().isErroneous() &&
-                        !checkExtends(actual, (TypeVar)tvars.head)) {
+                        !bounds.head.isErroneous() &&
+                        !checkExtends(actual, bounds.head)) {
                     return args.head;
                 }
                 args = args.tail;
-                tvars = tvars.tail;
+                bounds = bounds.tail;
             }
 
             args = type.getTypeArguments();
-            tvars = tvars_buf.toList();
+            bounds = bounds_buf.toList();
 
             for (Type arg : types.capture(type).getTypeArguments()) {
                 if (arg.tag == TYPEVAR &&
                         arg.getUpperBound().isErroneous() &&
-                        !tvars.head.getUpperBound().isErroneous() &&
+                        !bounds.head.isErroneous() &&
                         !isTypeArgErroneous(args.head)) {
                     return args.head;
                 }
-                tvars = tvars.tail;
+                bounds = bounds.tail;
                 args = args.tail;
             }
 
@@ -2492,7 +2576,7 @@ public class Check {
                     if (enableSunApiLintControl)
                       warnSunApi(pos, "sun.proprietary", s);
                     else
-                      log.strictWarning(pos, "sun.proprietary", s);
+                      log.mandatoryWarning(pos, "sun.proprietary", s);
                 }
             });
         }
