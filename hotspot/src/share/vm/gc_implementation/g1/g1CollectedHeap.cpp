@@ -4355,7 +4355,8 @@ G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1,
   _during_initial_mark(_g1->g1_policy()->during_initial_mark_pause()),
   _mark_in_progress(_g1->mark_in_progress()) { }
 
-void G1ParCopyHelper::mark_object(oop obj) {
+template <bool do_gen_barrier, G1Barrier barrier, bool do_mark_object>
+void G1ParCopyClosure<do_gen_barrier, barrier, do_mark_object>::mark_object(oop obj) {
 #ifdef ASSERT
   HeapRegion* hr = _g1->heap_region_containing(obj);
   assert(hr != NULL, "sanity");
@@ -4366,7 +4367,9 @@ void G1ParCopyHelper::mark_object(oop obj) {
   _cm->grayRoot(obj, (size_t) obj->size(), _worker_id);
 }
 
-void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
+template <bool do_gen_barrier, G1Barrier barrier, bool do_mark_object>
+void G1ParCopyClosure<do_gen_barrier, barrier, do_mark_object>
+  ::mark_forwarded_object(oop from_obj, oop to_obj) {
 #ifdef ASSERT
   assert(from_obj->is_forwarded(), "from obj should be forwarded");
   assert(from_obj->forwardee() == to_obj, "to obj should be the forwardee");
@@ -4388,7 +4391,9 @@ void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
   _cm->grayRoot(to_obj, (size_t) from_obj->size(), _worker_id);
 }
 
-oop G1ParCopyHelper::copy_to_survivor_space(oop old) {
+template <bool do_gen_barrier, G1Barrier barrier, bool do_mark_object>
+oop G1ParCopyClosure<do_gen_barrier, barrier, do_mark_object>
+  ::copy_to_survivor_space(oop old) {
   size_t    word_sz = old->size();
   HeapRegion* from_region = _g1->heap_region_containing_raw(old);
   // +1 to make the -1 indexes valid...
@@ -4457,8 +4462,8 @@ oop G1ParCopyHelper::copy_to_survivor_space(oop old) {
     } else {
       // No point in using the slower heap_region_containing() method,
       // given that we know obj is in the heap.
-      _scanner->set_region(_g1->heap_region_containing_raw(obj));
-      obj->oop_iterate_backwards(_scanner);
+      _scanner.set_region(_g1->heap_region_containing_raw(obj));
+      obj->oop_iterate_backwards(&_scanner);
     }
   } else {
     _par_scan_state->undo_allocation(alloc_purpose, obj_ptr, word_sz);
