@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -322,6 +322,12 @@ class JvmtiExport : public AllStatic {
   inline static void vm_object_alloc_event_collector(oop object) {
     if (should_post_vm_object_alloc()) {
       record_vm_internal_object_allocation(object);
+    }
+  }
+  inline static void post_array_size_exhausted() {
+    if (should_post_resource_exhausted()) {
+      post_resource_exhausted(JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR,
+                              "Requested array size exceeds VM limit");
     }
   }
 

@@ -1187,7 +1187,7 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
 
   #ifdef ASSERT
     __ tst(O1);
-    __ breakpoint_trap(Assembler::zero);
+    __ breakpoint_trap(Assembler::zero, Assembler::ptr_cc);
   #endif // ASSERT
 
     const int entry_size            = frame::interpreter_frame_monitor_size() * wordSize;
