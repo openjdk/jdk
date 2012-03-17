@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,6 +173,10 @@ ClearNoncleanCardWrapper::ClearNoncleanCardWrapper(
             SharedHeap::heap()->workers()->active_workers()), "Mismatch");
 }
 
+bool ClearNoncleanCardWrapper::is_word_aligned(jbyte* entry) {
+  return (((intptr_t)entry) & (BytesPerWord-1)) == 0;
+}
+
 void ClearNoncleanCardWrapper::do_MemRegion(MemRegion mr) {
   assert(mr.word_size() > 0, "Error");
   assert(_ct->is_aligned(mr.start()), "mr.start() should be card aligned");
@@ -194,6 +198,17 @@ void ClearNoncleanCardWrapper::do_MemRegion(MemRegion mr) {
         const MemRegion mrd(start_of_non_clean, end_of_non_clean);
         _dirty_card_closure->do_MemRegion(mrd);
       }
+
+      // fast forward through potential continuous whole-word range of clean cards beginning at a word-boundary
+      if (is_word_aligned(cur_entry)) {
+        jbyte* cur_row = cur_entry - BytesPerWord;
+        while (cur_row >= limit && *((intptr_t*)cur_row) ==  CardTableRS::clean_card_row()) {
+          cur_row -= BytesPerWord;
+        }
+        cur_entry = cur_row + BytesPerWord;
+        cur_hw = _ct->addr_for(cur_entry);
+      }
+
       // Reset the dirty window, while continuing to look
       // for the next dirty card that will start a
       // new dirty window.
