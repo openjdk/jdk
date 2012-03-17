@@ -2523,15 +2523,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       // was arrived at by experimenting with specjbb.
       FLAG_SET_CMDLINE(uintx, OldPLABSize, 8*K);  // Note: this is in words
 
-      // CompilationPolicyChoice=0 causes the server compiler to adopt
-      // a more conservative which-method-do-I-compile policy when one
-      // of the counters maintained by the interpreter trips.  The
-      // result is reduced startup time and improved specjbb and
-      // alacrity performance.  Zero is the default, but we set it
-      // explicitly here in case the default changes.
-      // See runtime/compilationPolicy.*.
-      FLAG_SET_CMDLINE(intx, CompilationPolicyChoice, 0);
-
       // Enable parallel GC and adaptive generation sizing
       FLAG_SET_CMDLINE(bool, UseParallelGC, true);
       FLAG_SET_DEFAULT(ParallelGCThreads,
