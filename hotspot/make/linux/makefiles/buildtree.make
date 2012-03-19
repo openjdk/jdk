@@ -66,7 +66,7 @@ QUIETLY$(MAKE_VERBOSE)	= @
 # For now, until the compiler is less wobbly:
 TESTFLAGS	= -Xbatch -showversion
 
-ifeq ($(ZERO_BUILD), true)
+ifeq ($(findstring true, $(JVM_VARIANT_ZERO) $(JVM_VARIANT_ZEROSHARK)), true)
   PLATFORM_FILE = $(shell dirname $(shell dirname $(shell pwd)))/platform_zero
 else
   ifdef USE_SUNCC
