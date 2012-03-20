@@ -467,21 +467,41 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
           int offs = (int)igvn->find_intptr_t_con(adr->in(AddPNode::Offset), Type::OffsetBot);
           assert(offs != Type::OffsetBot, "offset must be a constant");
         }
+#endif
       } else {
         // Ignore copy the displaced header to the BoxNode (OSR compilation).
         if (adr->is_BoxLock())
           break;
-
-        if (!adr->is_AddP()) {
-          n->dump(1);
-          assert(adr->is_AddP(), "expecting an AddP");
+        // Stored value escapes in unsafe access.
+        if ((opcode == Op_StoreP) && (adr_type == TypeRawPtr::BOTTOM)) {
+          // Pointer stores in G1 barriers looks like unsafe access.
+          // Ignore such stores to be able scalar replace non-escaping
+          // allocations.
+          if (UseG1GC && adr->is_AddP()) {
+            Node* base = get_addp_base(adr);
+            if (base->Opcode() == Op_LoadP &&
+                base->in(MemNode::Address)->is_AddP()) {
+              adr = base->in(MemNode::Address);
+              Node* tls = get_addp_base(adr);
+              if (tls->Opcode() == Op_ThreadLocal) {
+                int offs = (int)igvn->find_intptr_t_con(adr->in(AddPNode::Offset), Type::OffsetBot);
+                if (offs == in_bytes(JavaThread::satb_mark_queue_offset() +
+                                     PtrQueue::byte_offset_of_buf())) {
+                  break; // G1 pre barier previous oop value store.
+                }
+                if (offs == in_bytes(JavaThread::dirty_card_queue_offset() +
+                                     PtrQueue::byte_offset_of_buf())) {
+                  break; // G1 post barier card address store.
+                }
+              }
+            }
+          }
+          delayed_worklist->push(n); // Process unsafe access later.
+          break;
         }
-        // Ignore G1 barrier's stores.
-        if (!UseG1GC || (opcode != Op_StoreP) ||
-            (adr_type != TypeRawPtr::BOTTOM)) {
-          n->dump(1);
-          assert(false, "not G1 barrier raw StoreP");
-        }
+#ifdef ASSERT
+        n->dump(1);
+        assert(false, "not unsafe or G1 barrier raw StoreP");
 #endif
       }
       break;
@@ -635,6 +655,20 @@ void ConnectionGraph::add_final_edges(Node *n) {
         PointsToNode* ptn = ptnode_adr(val->_idx);
         assert(ptn != NULL, "node should be registered");
         add_edge(adr_ptn, ptn);
+        break;
+      } else if ((opcode == Op_StoreP) && (adr_type == TypeRawPtr::BOTTOM)) {
+        // Stored value escapes in unsafe access.
+        Node *val = n->in(MemNode::ValueIn);
+        PointsToNode* ptn = ptnode_adr(val->_idx);
+        assert(ptn != NULL, "node should be registered");
+        ptn->set_escape_state(PointsToNode::GlobalEscape);
+        // Add edge to object for unsafe access with offset.
+        PointsToNode* adr_ptn = ptnode_adr(adr->_idx);
+        assert(adr_ptn != NULL, "node should be registered");
+        if (adr_ptn->is_Field()) {
+          assert(adr_ptn->as_Field()->is_oop(), "should be oop field");
+          add_edge(adr_ptn, ptn);
+        }
         break;
       }
       ELSE_FAIL("Op_StoreP");
