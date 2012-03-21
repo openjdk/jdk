@@ -65,6 +65,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     // Loger to report issues happened during execution but that do not affect functionality
     private static final PlatformLogger logger = PlatformLogger.getLogger("sun.lwawt.macosx.CPlatformWindow");
+    private static final PlatformLogger focusLogger = PlatformLogger.getLogger("sun.lwawt.macosx.focus.CPlatformWindow");
 
     // for client properties
     public static final String WINDOW_BRUSH_METAL_LOOK = "apple.awt.brushMetalLook";
@@ -600,7 +601,20 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     @Override
+    public boolean rejectFocusRequest(CausedFocusEvent.Cause cause) {
+        // Cross-app activation requests are not allowed.
+        if (cause != CausedFocusEvent.Cause.MOUSE_EVENT &&
+            !((LWCToolkit)Toolkit.getDefaultToolkit()).isApplicationActive())
+        {
+            focusLogger.fine("the app is inactive, so the request is rejected");
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public boolean requestWindowFocus() {
+
         long ptr = getNSWindowPtr();
         if (CWrapper.NSWindow.canBecomeMainWindow(ptr)) {
             CWrapper.NSWindow.makeMainWindow(ptr);
