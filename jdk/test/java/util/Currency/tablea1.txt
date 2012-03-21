@@ -1,6 +1,6 @@
 #
 #
-# Based on BSi's ISO4217 data - "TABLE A1.doc" + amendments up until MA153.doc
+# Amendments up until ISO 4217 AMENDMENT NUMBER 153
 #   (As of 12 January 2012)
 #
 
@@ -227,6 +227,7 @@ SI	EUR	978	2
 SB	SBD	90	2
 SO	SOS	706	2
 ZA	ZAR	710	2
+SS	SSP	728	2
 ES	EUR	978	2
 LK	LKR	144	2
 SD	SDG	938	2

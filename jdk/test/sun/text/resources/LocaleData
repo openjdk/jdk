@@ -7019,3 +7019,11 @@ FormatData/bg/DateTimePatterns/4=dd MMMM y, EEEE
 FormatData/bg/DateTimePatterns/5=dd MMMM y
 FormatData/bg/DateTimePatterns/6=dd.MM.yyyy
 FormatData/bg/DateTimePatterns/7=dd.MM.yy
+
+# bug 7085757
+CurrencyNames//SSP=SSP
+CurrencyNames//ssp=South Sudanese Pound
+CurrencyNames//xsu=Sucre
+CurrencyNames//xua=ADB Unit of Account
+LocaleNames//SS=South Sudan
+LocaleNames/en/SS=South Sudan
