@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Basic unit test of HotspotClassLoadingMBean.getClassLoadingTime()
  * @author  Steve Bohne
  * @build ClassToLoad0
+ * @run main GetClassLoadingTime
  */
 
 /*
@@ -71,10 +72,8 @@ public class GetClassLoadingTime {
         }
 
         long time2 = mbean.getClassLoadingTime();
-        long count = mbean.getLoadedClassCount();
 
         if (trace) {
-            System.out.println("(new count is " + count + ")");
             System.out.println("Class loading time2 (ms): " + time2);
         }
 
@@ -93,8 +92,6 @@ public class GetClassLoadingTime {
 // so we can avoid delegation and spend lots of time loading the
 // same class over and over, to test the class loading timer.
 class KlassLoader extends ClassLoader {
-  static String klassDir="";
-  static int index=0;
 
   public KlassLoader() {
       super(null);
@@ -102,14 +99,13 @@ class KlassLoader extends ClassLoader {
 
   protected synchronized Class findClass(String name)
                         throws ClassNotFoundException {
-        String cname = klassDir
-            + (klassDir == "" ? "" : "/")
-            +name.replace('.', '/')
+        String cname =
+            name.replace('.', '/')
             +".class";
 
         FileInputStream in;
         try {
-                in=new FileInputStream(cname);
+                in = new FileInputStream(new File(System.getProperty("test.classes", "."), cname));
                 if (in == null) {
                         throw new ClassNotFoundException("getResourceAsStream("
                                 +cname+")");

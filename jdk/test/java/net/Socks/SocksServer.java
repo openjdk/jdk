@@ -22,13 +22,14 @@
  */
 import java.net.*;
 import java.io.*;
+import java.util.HashMap;
 
 public class SocksServer extends Thread {
     // Some useful SOCKS constant
 
-    static final int PROTO_VERS4                = 4;
+    static final int PROTO_VERS4        = 4;
     static final int PROTO_VERS         = 5;
-    static final int DEFAULT_PORT               = 1080;
+    static final int DEFAULT_PORT       = 1080;
 
     static final int NO_AUTH            = 0;
     static final int GSSAPI             = 1;
@@ -36,28 +37,28 @@ public class SocksServer extends Thread {
     static final int NO_METHODS         = -1;
 
     static final int CONNECT            = 1;
-    static final int BIND                       = 2;
+    static final int BIND               = 2;
     static final int UDP_ASSOC          = 3;
 
-    static final int IPV4                       = 1;
-    static final int DOMAIN_NAME                = 3;
-    static final int IPV6                       = 4;
+    static final int IPV4               = 1;
+    static final int DOMAIN_NAME        = 3;
+    static final int IPV6               = 4;
 
     static final int REQUEST_OK         = 0;
     static final int GENERAL_FAILURE    = 1;
-    static final int NOT_ALLOWED                = 2;
+    static final int NOT_ALLOWED        = 2;
     static final int NET_UNREACHABLE    = 3;
     static final int HOST_UNREACHABLE   = 4;
-    static final int CONN_REFUSED               = 5;
-    static final int TTL_EXPIRED                = 6;
+    static final int CONN_REFUSED       = 5;
+    static final int TTL_EXPIRED        = 6;
     static final int CMD_NOT_SUPPORTED  = 7;
     static final int ADDR_TYPE_NOT_SUP  = 8;
 
     private int port;
     private ServerSocket server;
     private boolean useV4 = false;
-    private java.util.Hashtable users = new java.util.Hashtable();
-    private boolean done = false;
+    private HashMap<String,String> users = new HashMap<>();
+    private volatile boolean done = false;
     // Inner class to handle protocol with client
     // This is the bulk of the work (protocol handler)
     class ClientHandler extends Thread {
@@ -136,7 +137,7 @@ public class SocksServer extends Thread {
             System.err.println("User: '" + uname);
             System.err.println("PSWD: '" + password);
             if (users.containsKey(uname)) {
-                String p1 = (String) users.get(uname);
+                String p1 = users.get(uname);
                 System.err.println("p1 = " + p1);
                 if (p1.equals(password)) {
                     out.write(PROTO_VERS);
@@ -492,7 +493,12 @@ public class SocksServer extends Thread {
     public SocksServer(int port) throws IOException {
         this.port = port;
         server = new ServerSocket();
-        server.bind(new InetSocketAddress(port));
+        if (port == 0) {
+            server.bind(null);
+            this.port = server.getLocalPort();
+        } else {
+            server.bind(new InetSocketAddress(port));
+        }
     }
 
     public SocksServer() throws IOException {
@@ -503,8 +509,13 @@ public class SocksServer extends Thread {
         users.put(user, passwd);
     }
 
-    public synchronized void terminate() {
+    public int getPort() {
+        return port;
+    }
+
+    public void terminate() {
         done = true;
+        try { server.close(); } catch (IOException unused) {}
     }
 
     public void run() {

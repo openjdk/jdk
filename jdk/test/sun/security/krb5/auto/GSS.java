@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,32 +23,38 @@
 
 /*
  * @test
- * @bug 4727547
- * @summary SocksSocketImpl throws NullPointerException
- * @build SocksServer
- * @run main SocksV4Test
+ * @bug 7152176
+ * @summary More krb5 tests
+ * @compile -XDignore.symbol.file GSS.java
+ * @run main/othervm GSS
  */
 
-import java.net.*;
+import sun.security.jgss.GSSUtil;
 
-public class SocksV4Test {
+// Testing JGSS without JAAS
+public class GSS {
+
     public static void main(String[] args) throws Exception {
-        // Create a SOCKS V4 proxy
-        SocksServer srvr = new SocksServer(0, true);
-        srvr.start();
-        Proxy sp = new Proxy(Proxy.Type.SOCKS,
-                             new InetSocketAddress("localhost", srvr.getPort()));
-        // Let's create an unresolved address
-        InetSocketAddress ad = new InetSocketAddress("doesnt.exist.name", 1234);
-        try (Socket s = new Socket(sp)) {
-            s.connect(ad, 10000);
-        } catch (UnknownHostException ex) {
-            // OK, that's what we expected
-        } catch (NullPointerException npe) {
-            // Not OK, this used to be the bug
-            throw new RuntimeException("Got a NUllPointerException");
-        } finally {
-            srvr.terminate();
-        }
+
+        new OneKDC(null).writeJAASConf();
+
+        Context c, s;
+        c = Context.fromThinAir();
+        s = Context.fromThinAir();
+
+        // This is the only setting needed for JGSS without JAAS. The default
+        // JAAS config entries are already created by OneKDC.
+        System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");
+
+        c.startAsClient(OneKDC.SERVER, GSSUtil.GSS_KRB5_MECH_OID);
+        s.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
+
+        Context.handshake(c, s);
+
+        Context.transmit("i say high --", c, s);
+        Context.transmit("   you say low", s, c);
+
+        s.dispose();
+        c.dispose();
     }
 }
