@@ -65,6 +65,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     // Loger to report issues happened during execution but that do not affect functionality
     private static final PlatformLogger logger = PlatformLogger.getLogger("sun.lwawt.macosx.CPlatformWindow");
+    private static final PlatformLogger focusLogger = PlatformLogger.getLogger("sun.lwawt.macosx.focus.CPlatformWindow");
 
     // for client properties
     public static final String WINDOW_BRUSH_METAL_LOOK = "apple.awt.brushMetalLook";
@@ -112,6 +113,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     static final int MINIMIZABLE = 1 << 8;
 
     static final int RESIZABLE = 1 << 9; // both a style bit and prop bit
+    static final int NONACTIVATING = 1 << 24;
 
     static final int _STYLE_PROP_BITMASK = DECORATED | TEXTURED | UNIFIED | UTILITY | HUD | SHEET | CLOSEABLE | MINIMIZABLE | RESIZABLE;
 
@@ -126,9 +128,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     static final int FULLSCREENABLE = 1 << 23;
 
     static final int _METHOD_PROP_BITMASK = RESIZABLE | HAS_SHADOW | ZOOMABLE | ALWAYS_ON_TOP | HIDES_ON_DEACTIVATE | DRAGGABLE_BACKGROUND | DOCUMENT_MODIFIED | FULLSCREENABLE;
-
-    // not sure
-    static final int POPUP = 1 << 14;
 
     // corresponds to callback-based properties
     static final int SHOULD_BECOME_KEY = 1 << 12;
@@ -264,10 +263,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         // defaults style bits
         int styleBits = DECORATED | HAS_SHADOW | CLOSEABLE | MINIMIZABLE | ZOOMABLE | RESIZABLE;
 
-        if (target.getName() == "###overrideRedirect###") {
-            styleBits = SET(styleBits, POPUP, true);
-        }
-
         if (isNativelyFocusableWindow()) {
             styleBits = SET(styleBits, SHOULD_BECOME_KEY, true);
             styleBits = SET(styleBits, SHOULD_BECOME_MAIN, true);
@@ -275,6 +270,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
         final boolean isFrame = (target instanceof Frame);
         final boolean isDialog = (target instanceof Dialog);
+        final boolean isPopup = (target.getType() == Window.Type.POPUP);
         if (isDialog) {
             styleBits = SET(styleBits, MINIMIZABLE, false);
         }
@@ -304,8 +300,10 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         }
 
         // If the target is a dialog, popup or tooltip we want it to ignore the brushed metal look.
-        if (!isDialog && IS(styleBits, POPUP)) {
+        if (isPopup) {
             styleBits = SET(styleBits, TEXTURED, true);
+            // Popups in applets don't activate applet's process
+            styleBits = SET(styleBits, NONACTIVATING, true);
         }
 
         if (target instanceof javax.swing.RootPaneContainer) {
@@ -498,11 +496,18 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             // If it ain't blocked, or is being hidden, go regular way
             if (visible) {
                 CWrapper.NSWindow.makeFirstResponder(nsWindowPtr, contentView.getAWTView());
-                boolean isKeyWindow = CWrapper.NSWindow.isKeyWindow(nsWindowPtr);
-                if (!isKeyWindow) {
-                    CWrapper.NSWindow.makeKeyAndOrderFront(nsWindowPtr);
+
+                boolean isPopup = (target.getType() == Window.Type.POPUP);
+                if (isPopup) {
+                    // Popups in applets don't activate applet's process
+                    CWrapper.NSWindow.orderFrontRegardless(nsWindowPtr);
                 } else {
                     CWrapper.NSWindow.orderFront(nsWindowPtr);
+                }
+
+                boolean isKeyWindow = CWrapper.NSWindow.isKeyWindow(nsWindowPtr);
+                if (!isKeyWindow) {
+                    CWrapper.NSWindow.makeKeyWindow(nsWindowPtr);
                 }
             } else {
                 CWrapper.NSWindow.orderOut(nsWindowPtr);
@@ -600,7 +605,20 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     @Override
+    public boolean rejectFocusRequest(CausedFocusEvent.Cause cause) {
+        // Cross-app activation requests are not allowed.
+        if (cause != CausedFocusEvent.Cause.MOUSE_EVENT &&
+            !((LWCToolkit)Toolkit.getDefaultToolkit()).isApplicationActive())
+        {
+            focusLogger.fine("the app is inactive, so the request is rejected");
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public boolean requestWindowFocus() {
+
         long ptr = getNSWindowPtr();
         if (CWrapper.NSWindow.canBecomeMainWindow(ptr)) {
             CWrapper.NSWindow.makeMainWindow(ptr);
@@ -751,6 +769,11 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
      * Callbacks from the AWTWindow and AWTView objc classes.
      *************************************************************/
     private void deliverWindowFocusEvent(boolean gained){
+        // Fix for 7150349: ingore "gained" notifications when the app is inactive.
+        if (gained && !((LWCToolkit)Toolkit.getDefaultToolkit()).isApplicationActive()) {
+            focusLogger.fine("the app is inactive, so the notification is ignored");
+            return;
+        }
         peer.notifyActivation(gained);
     }
 
