@@ -29,9 +29,6 @@
 #include <assert.h>
 
 #include <dlfcn.h>
-#ifndef __APPLE__
-#include <link.h>
-#endif
 
 #include <winscard.h>
 

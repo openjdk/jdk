@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,36 @@
  * questions.
  */
 
-/* @test
- * @bug 4065313
- * @summary Ensure that it is okay to replace an object with null.
+/*
+ * @test
+ * @bug 7152176
+ * @summary More krb5 tests
+ * @compile -XDignore.symbol.file Basic.java
+ * @run main/othervm Basic
  */
-import java.io.*;
 
-class A { }
+import sun.security.jgss.GSSUtil;
 
-class MyObjectOutputStream extends ObjectOutputStream {
-  public MyObjectOutputStream(OutputStream out) throws IOException {
-    super(out);
-    enableReplaceObject(true);
-  }
-  protected Object replaceObject(Object obj) throws IOException {
-    if(obj instanceof A) return null;
-    else return obj;
-  }
-}
+// The basic krb5 test skeleton you can copy from
+public class Basic {
 
-public class ReplaceWithNull {
-    public static void main(String args[]) throws IOException {
-        A a = new A();
+    public static void main(String[] args) throws Exception {
 
-        MyObjectOutputStream out =
-            new MyObjectOutputStream(new ByteArrayOutputStream());
-        out.writeObject(a);     //raised NullPointerException.
-        out.close();
+        new OneKDC(null).writeJAASConf();
+
+        Context c, s;
+        c = Context.fromJAAS("client");
+        s = Context.fromJAAS("server");
+
+        c.startAsClient(OneKDC.SERVER, GSSUtil.GSS_KRB5_MECH_OID);
+        s.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
+
+        Context.handshake(c, s);
+
+        Context.transmit("i say high --", c, s);
+        Context.transmit("   you say low", s, c);
+
+        s.dispose();
+        c.dispose();
     }
 }
