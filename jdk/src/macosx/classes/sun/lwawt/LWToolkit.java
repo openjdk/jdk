@@ -522,11 +522,6 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
         postEvent(targetToAppContext(event.getSource()), event);
     }
 
-    /*
-     * Returns true if the application (one of its windows) owns keyboard focus.
-     */
-    public abstract boolean isApplicationActive();
-
     // use peer's back buffer to implement non-opaque windows.
     @Override
     public boolean needUpdateWindow() {
