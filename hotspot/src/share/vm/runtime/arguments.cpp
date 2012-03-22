@@ -816,8 +816,21 @@ bool Arguments::process_argument(const char* arg,
     return true;
   }
 
-  jio_fprintf(defaultStream::error_stream(),
-              "Unrecognized VM option '%s'\n", argname);
+  // For locked flags, report a custom error message if available.
+  // Otherwise, report the standard unrecognized VM option.
+
+  Flag* locked_flag = Flag::find_flag((char*)argname, strlen(argname), true);
+  if (locked_flag != NULL) {
+    char locked_message_buf[BUFLEN];
+    locked_flag->get_locked_message(locked_message_buf, BUFLEN);
+    if (strlen(locked_message_buf) == 0) {
+      jio_fprintf(defaultStream::error_stream(),
+        "Unrecognized VM option '%s'\n", argname);
+    } else {
+      jio_fprintf(defaultStream::error_stream(), "%s", locked_message_buf);
+    }
+  }
+
   // allow for commandline "commenting out" options like -XX:#+Verbose
   return arg[0] == '#';
 }

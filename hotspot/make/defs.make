@@ -55,6 +55,27 @@ define prep-target
 @$(RM) $@
 endef
 
+# Default values for JVM_VARIANT* variables if configure hasn't set
+# it already.
+ifeq ($(JVM_VARIANTS),)
+  ifeq ($(ZERO_BUILD), true)
+    ifeq ($(SHARK_BUILD), true)
+      JVM_VARIANTS:=zeroshark
+      JVM_VARIANT_ZEROSHARK:=true
+    else
+      JVM_VARIANTS:=zero
+      JVM_VARIANT_ZERO:=true
+    endif
+  else
+    # A default is needed
+    ifeq ($(BUILD_CLIENT_ONLY), true)
+      JVM_VARIANTS:=client
+      JVM_VARIANT_CLIENT:=true
+    endif
+    # Further defaults are platform and arch specific
+  endif
+endif
+
 # Directory paths and user name
 # Unless GAMMADIR is set on the command line, search upward from
 # the current directory for a parent directory containing "src/share/vm".
