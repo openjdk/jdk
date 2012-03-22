@@ -107,6 +107,19 @@ ifneq ($(shell $(ECHO) $(PROCESSOR_IDENTIFIER) | $(GREP) EM64T),)
   endif
 endif
 
+# On 32 bit windows we build server, client and kernel, on 64 bit just server.
+ifeq ($(JVM_VARIANTS),)
+  ifeq ($(ARCH_DATA_MODEL), 32)
+    JVM_VARIANTS:=client,server,kernel
+    JVM_VARIANT_CLIENT:=true
+    JVM_VARIANT_SERVER:=true
+    JVM_VARIANT_KERNEL:=true
+  else
+    JVM_VARIANTS:=server
+    JVM_VARIANT_SERVER:=true
+  endif
+endif
+
 JDK_INCLUDE_SUBDIR=win32
 
 # Library suffix
@@ -177,17 +190,20 @@ EXPORT_SERVER_DIR = $(EXPORT_JRE_BIN_DIR)/server
 EXPORT_CLIENT_DIR = $(EXPORT_JRE_BIN_DIR)/client
 EXPORT_KERNEL_DIR = $(EXPORT_JRE_BIN_DIR)/kernel
 
-EXPORT_LIST += $(EXPORT_SERVER_DIR)/Xusage.txt
-EXPORT_LIST += $(EXPORT_SERVER_DIR)/jvm.$(LIBRARY_SUFFIX)
-EXPORT_LIST += $(EXPORT_SERVER_DIR)/jvm.pdb
-EXPORT_LIST += $(EXPORT_SERVER_DIR)/jvm.map
-EXPORT_LIST += $(EXPORT_LIB_DIR)/jvm.lib
-ifeq ($(ARCH_DATA_MODEL), 32)
+ifeq ($(JVM_VARIANT_SERVER),true)
+  EXPORT_LIST += $(EXPORT_SERVER_DIR)/Xusage.txt
+  EXPORT_LIST += $(EXPORT_SERVER_DIR)/jvm.$(LIBRARY_SUFFIX)
+  EXPORT_LIST += $(EXPORT_SERVER_DIR)/jvm.pdb
+  EXPORT_LIST += $(EXPORT_SERVER_DIR)/jvm.map
+  EXPORT_LIST += $(EXPORT_LIB_DIR)/jvm.lib
+endif
+ifeq ($(JVM_VARIANT_CLIENT),true)
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/Xusage.txt
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/jvm.$(LIBRARY_SUFFIX)
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/jvm.pdb
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/jvm.map
-  # kernel vm
+endif
+ifeq ($(JVM_VARIANT_KERNEL),true)
   EXPORT_LIST += $(EXPORT_KERNEL_DIR)/Xusage.txt
   EXPORT_LIST += $(EXPORT_KERNEL_DIR)/jvm.$(LIBRARY_SUFFIX)
   EXPORT_LIST += $(EXPORT_KERNEL_DIR)/jvm.pdb
