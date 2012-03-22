@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -321,9 +321,12 @@ include $(MAKEFILES_DIR)/jsig.make
 # Serviceability agent
 include $(MAKEFILES_DIR)/saproc.make
 
+# Whitebox testing API
+include $(MAKEFILES_DIR)/wb.make
+
 #----------------------------------------------------------------------
 
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(LIBJVM_DTRACE) $(BUILDLIBSAPROC) dtraceCheck
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(LIBJVM_DTRACE) $(BUILDLIBSAPROC) dtraceCheck $(WB_JAR)
 
 install: install_jvm install_jsig install_saproc
 

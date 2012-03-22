@@ -61,7 +61,7 @@ void trace_type_profile(ciMethod *method, int depth, int bci, ciMethod *prof_met
 
 CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, bool call_is_virtual,
                                        JVMState* jvms, bool allow_inline,
-                                       float prof_factor) {
+                                       float prof_factor, bool allow_intrinsics) {
   ciMethod*       caller   = jvms->method();
   int             bci      = jvms->bci();
   Bytecodes::Code bytecode = caller->java_code_at_bci(bci);
@@ -108,7 +108,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
   // then we return it as the inlined version of the call.
   // We do this before the strict f.p. check below because the
   // intrinsics handle strict f.p. correctly.
-  if (allow_inline) {
+  if (allow_inline && allow_intrinsics) {
     CallGenerator* cg = find_intrinsic(call_method, call_is_virtual);
     if (cg != NULL)  return cg;
   }
@@ -455,21 +455,12 @@ void Parse::do_call() {
     // cg->generate(), we are committed.  If it fails, the whole
     // compilation task is compromised.
     if (failing())  return;
-#ifndef PRODUCT
-    if (PrintOpto || PrintOptoInlining || PrintInlining) {
-      // Only one fall-back, so if an intrinsic fails, ignore any bytecodes.
-      if (cg->is_intrinsic() && call_method->code_size() > 0) {
-        tty->print("Bailed out of intrinsic, will not inline: ");
-        call_method->print_name(); tty->cr();
-      }
-    }
-#endif
+
     // This can happen if a library intrinsic is available, but refuses
     // the call site, perhaps because it did not match a pattern the
-    // intrinsic was expecting to optimize.  The fallback position is
-    // to call out-of-line.
-    try_inline = false;  // Inline tactic bailed out.
-    cg = C->call_generator(call_method, vtable_index, call_is_virtual, jvms, try_inline, prof_factor());
+    // intrinsic was expecting to optimize. Should always be possible to
+    // get a normal java call that may inline in that case
+    cg = C->call_generator(call_method, vtable_index, call_is_virtual, jvms, try_inline, prof_factor(), /* allow_intrinsics= */ false);
     if ((new_jvms = cg->generate(jvms)) == NULL) {
       guarantee(failing(), "call failed to generate:  calls should work");
       return;
