@@ -607,10 +607,6 @@ ifndef JAVASE_EMBEDDED
 	$(ECHO) "oracle/jrockit/jfr/parser/" >> $@
 	$(ECHO) "oracle/jrockit/jfr/settings/" >> $@
 	$(ECHO) "oracle/jrockit/jfr/tools/" >> $@
-	$(ECHO) "oracle/jrockit/jfr/util/" >> $@
-	$(ECHO) "oracle/jrockit/jfr/util/log/" >> $@
-	$(ECHO) "oracle/jrockit/jfr/util/os/" >> $@
-	$(ECHO) "oracle/jrockit/jfr/util/text/" >> $@
 endif
 endif
 
@@ -637,7 +633,7 @@ $(TOTAL_JAR_FILELIST): $(JARREORDER_JARFILE) $(NOT_RT_JAR_LIST)
 	$(MV) $@.temp $@
 	@($(CD) $(CLASSBINDIR) && $(java-vm-cleanup))
 
-# Create the jfr.jar containing Java Flight Recorder implementation
+# Create jfr.jar
 JFR_JAR=
 ifndef OPENJDK
 ifndef JAVASE_EMBEDDED
