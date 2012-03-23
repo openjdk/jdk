@@ -128,7 +128,6 @@ class CollectedHeap : public CHeapObj {
   // Reinitialize tlabs before resuming mutators.
   virtual void resize_all_tlabs();
 
- protected:
   // Allocate from the current thread's TLAB, with broken-out slow path.
   inline static HeapWord* allocate_from_tlab(Thread* thread, size_t size);
   static HeapWord* allocate_from_tlab_slow(Thread* thread, size_t size);
@@ -169,7 +168,6 @@ class CollectedHeap : public CHeapObj {
   // Filler object utilities.
   static inline size_t filler_array_hdr_size();
   static inline size_t filler_array_min_size();
-  static inline size_t filler_array_max_size();
 
   DEBUG_ONLY(static void fill_args_check(HeapWord* start, size_t words);)
   DEBUG_ONLY(static void zap_filler_array(HeapWord* start, size_t words, bool zap = true);)
@@ -196,6 +194,10 @@ class CollectedHeap : public CHeapObj {
     ParallelScavengeHeap,
     G1CollectedHeap
   };
+
+  static inline size_t filler_array_max_size() {
+    return _filler_array_max_size;
+  }
 
   virtual CollectedHeap::Name kind() const { return CollectedHeap::Abstract; }
 
