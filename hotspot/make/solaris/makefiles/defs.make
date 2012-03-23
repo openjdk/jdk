@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -74,45 +74,47 @@ else
 endif
 
 ifeq ($(JDK6_OR_EARLIER),0)
-  # Full Debug Symbols is supported on JDK7 or newer
+  # Full Debug Symbols is supported on JDK7 or newer.
+  # Default is enabled with .debuginfo files ZIP'ed to save space.
 
-ifdef ENABLE_FULL_DEBUG_SYMBOLS
-  # Only check for Full Debug Symbols support on Solaris if it is
-  # specifically enabled. Hopefully, it can be enabled by default
-  # once the .debuginfo size issues are worked out.
-  
-  # Default OBJCOPY comes from the SUNWbinutils package:
-  DEF_OBJCOPY=/usr/sfw/bin/gobjcopy
-  ifeq ($(VM_PLATFORM),solaris_amd64)
-    # On Solaris AMD64/X64, gobjcopy is not happy and fails:
-    #
-    # usr/sfw/bin/gobjcopy --add-gnu-debuglink=<lib>.debuginfo <lib>.so
-    # BFD: stKPaiop: Not enough room for program headers, try linking with -N
-    # /usr/sfw/bin/gobjcopy: stKPaiop: Bad value
-    # BFD: stKPaiop: Not enough room for program headers, try linking with -N
-    # /usr/sfw/bin/gobjcopy: libsaproc.debuginfo: Bad value
-    # BFD: stKPaiop: Not enough room for program headers, try linking with -N
-    # /usr/sfw/bin/gobjcopy: stKPaiop: Bad value
-    _JUNK_ := $(shell \
-      echo >&2 "INFO: $(DEF_OBJCOPY) is not working on Solaris AMD64/X64")
-    OBJCOPY=
-  else
-    OBJCOPY=$(shell test -x $(DEF_OBJCOPY) && echo $(DEF_OBJCOPY))
-    ifneq ($(ALT_OBJCOPY),)
-      _JUNK_ := $(shell echo >&2 "INFO: ALT_OBJCOPY=$(ALT_OBJCOPY)")
-      # disable .debuginfo support by setting ALT_OBJCOPY to a non-existent path
-      OBJCOPY=$(shell test -x $(ALT_OBJCOPY) && echo $(ALT_OBJCOPY))
+  ENABLE_FULL_DEBUG_SYMBOLS ?= 1
+  # since objcopy is optional, we set ZIP_DEBUGINFO_FILES later
+
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    # Default OBJCOPY comes from the SUNWbinutils package:
+    DEF_OBJCOPY=/usr/sfw/bin/gobjcopy
+    ifeq ($(VM_PLATFORM),solaris_amd64)
+      # On Solaris AMD64/X64, gobjcopy is not happy and fails:
+      #
+      # usr/sfw/bin/gobjcopy --add-gnu-debuglink=<lib>.debuginfo <lib>.so
+      # BFD: stKPaiop: Not enough room for program headers, try linking with -N
+      # /usr/sfw/bin/gobjcopy: stKPaiop: Bad value
+      # BFD: stKPaiop: Not enough room for program headers, try linking with -N
+      # /usr/sfw/bin/gobjcopy: libsaproc.debuginfo: Bad value
+      # BFD: stKPaiop: Not enough room for program headers, try linking with -N
+      # /usr/sfw/bin/gobjcopy: stKPaiop: Bad value
+      _JUNK_ := $(shell \
+        echo >&2 "INFO: $(DEF_OBJCOPY) is not working on Solaris AMD64/X64")
+      OBJCOPY=
+    else
+      OBJCOPY=$(shell test -x $(DEF_OBJCOPY) && echo $(DEF_OBJCOPY))
+      ifneq ($(ALT_OBJCOPY),)
+        _JUNK_ := $(shell echo >&2 "INFO: ALT_OBJCOPY=$(ALT_OBJCOPY)")
+        OBJCOPY=$(shell test -x $(ALT_OBJCOPY) && echo $(ALT_OBJCOPY))
+      endif
     endif
+  else
+    OBJCOPY=
   endif
-endif
-  
+
   ifeq ($(OBJCOPY),)
     _JUNK_ := $(shell \
       echo >&2 "INFO: no objcopy cmd found so cannot create .debuginfo files.")
+    ENABLE_FULL_DEBUG_SYMBOLS=0
   else
     _JUNK_ := $(shell \
       echo >&2 "INFO: $(OBJCOPY) cmd found so will create .debuginfo files.")
-  
+
     # Library stripping policies for .debuginfo configs:
     #   all_strip - strips everything from the library
     #   min_strip - strips most stuff from the library; leaves minimum symbols
@@ -121,14 +123,17 @@ endif
     # Oracle security policy requires "all_strip". A waiver was granted on
     # 2011.09.01 that permits using "min_strip" in the Java JDK and Java JRE.
     #
-    DEF_STRIP_POLICY="min_strip"
-    ifeq ($(ALT_STRIP_POLICY),)
-      STRIP_POLICY=$(DEF_STRIP_POLICY)
-    else
-      STRIP_POLICY=$(ALT_STRIP_POLICY)
-    endif
+    # Currently, STRIP_POLICY is only used when Full Debug Symbols is enabled.
+    #
+    STRIP_POLICY ?= min_strip
+
     _JUNK_ := $(shell \
       echo >&2 "INFO: STRIP_POLICY=$(STRIP_POLICY)")
+
+    ZIP_DEBUGINFO_FILES ?= 1
+
+    _JUNK_ := $(shell \
+      echo >&2 "INFO: ZIP_DEBUGINFO_FILES=$(ZIP_DEBUGINFO_FILES)")
   endif
 endif
 
@@ -144,8 +149,12 @@ EXPORT_LIST += $(EXPORT_DOCS_DIR)/platform/jvmti/jvmti.html
 
 # client and server subdirectories have symbolic links to ../libjsig.$(LIBRARY_SUFFIX)
 EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.$(LIBRARY_SUFFIX)
-ifneq ($(OBJCOPY),)
-  EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.debuginfo
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+    EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.diz
+  else
+    EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.debuginfo
+  endif
 endif
 
 EXPORT_SERVER_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/server
@@ -156,10 +165,16 @@ EXPORT_LIST += $(EXPORT_SERVER_DIR)/Xusage.txt
 EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.$(LIBRARY_SUFFIX)
 EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_db.$(LIBRARY_SUFFIX)
 EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_dtrace.$(LIBRARY_SUFFIX)
-  ifneq ($(OBJCOPY),)
-    EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.debuginfo
-    EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_db.debuginfo
-    EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_dtrace.debuginfo
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+      EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.diz
+      EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_db.diz
+      EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_dtrace.diz
+    else
+      EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.debuginfo
+      EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_db.debuginfo
+      EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm_dtrace.debuginfo
+    endif
   endif
 endif
 ifeq ($(ARCH_DATA_MODEL), 32)
@@ -169,25 +184,42 @@ ifeq ($(ARCH_DATA_MODEL), 32)
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_dtrace.$(LIBRARY_SUFFIX)
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/64/libjvm_db.$(LIBRARY_SUFFIX)
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/64/libjvm_dtrace.$(LIBRARY_SUFFIX)
-  ifneq ($(OBJCOPY),)
-    EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.debuginfo
-    EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_db.debuginfo
-    EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_dtrace.debuginfo
-    EXPORT_LIST += $(EXPORT_CLIENT_DIR)/64/libjvm_db.debuginfo
-    EXPORT_LIST += $(EXPORT_CLIENT_DIR)/64/libjvm_dtrace.debuginfo
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+      EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.diz
+      EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_db.diz
+      EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_dtrace.diz
+      EXPORT_LIST += $(EXPORT_CLIENT_DIR)/64/libjvm_db.diz
+      EXPORT_LIST += $(EXPORT_CLIENT_DIR)/64/libjvm_dtrace.diz
+    else
+      EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.debuginfo
+      EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_db.debuginfo
+      EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_dtrace.debuginfo
+      EXPORT_LIST += $(EXPORT_CLIENT_DIR)/64/libjvm_db.debuginfo
+      EXPORT_LIST += $(EXPORT_CLIENT_DIR)/64/libjvm_dtrace.debuginfo
+    endif
   endif
   ifneq ($(BUILD_CLIENT_ONLY), true)
     EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_db.$(LIBRARY_SUFFIX)
     EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_dtrace.$(LIBRARY_SUFFIX)
-    ifneq ($(OBJCOPY),)
-      EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_db.debuginfo
-      EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_dtrace.debuginfo
+    ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+      ifeq ($(ZIP_DEBUGINFO_FILES),1)
+        EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_db.diz
+        EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_dtrace.diz
+      else
+        EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_db.debuginfo
+        EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_dtrace.debuginfo
+      endif
     endif
   endif
 endif
 
 EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX)
-ifneq ($(OBJCOPY),)
-  EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.debuginfo
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+    EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.diz
+  else
+    EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.debuginfo
+  endif
 endif
 EXPORT_LIST += $(EXPORT_LIB_DIR)/sa-jdi.jar 

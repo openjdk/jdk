@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -129,32 +129,40 @@ else
 endif
 
 ifeq ($(JDK6_OR_EARLIER),0)
-  # Full Debug Symbols is supported on JDK7 or newer
+  # Full Debug Symbols is supported on JDK7 or newer.
+  # Default is enabled with .debuginfo files ZIP'ed to save space.
 
-  # Default OBJCOPY comes from GNU Binutils on Linux:
-  DEF_OBJCOPY=/usr/bin/objcopy
-  ifdef CROSS_COMPILE_ARCH
-    # don't try to generate .debuginfo files when cross compiling
-    _JUNK_ := $(shell \
-      echo >&2 "INFO: cross compiling for ARCH $(CROSS_COMPILE_ARCH)," \
-        "skipping .debuginfo generation.")
-    OBJCOPY=
-  else
-    OBJCOPY=$(shell test -x $(DEF_OBJCOPY) && echo $(DEF_OBJCOPY))
-    ifneq ($(ALT_OBJCOPY),)
-      _JUNK_ := $(shell echo >&2 "INFO: ALT_OBJCOPY=$(ALT_OBJCOPY)")
-      # disable .debuginfo support by setting ALT_OBJCOPY to a non-existent path
-      OBJCOPY=$(shell test -x $(ALT_OBJCOPY) && echo $(ALT_OBJCOPY))
+  ENABLE_FULL_DEBUG_SYMBOLS ?= 1
+  # since objcopy is optional, we set ZIP_DEBUGINFO_FILES later
+
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    # Default OBJCOPY comes from GNU Binutils on Linux:
+    DEF_OBJCOPY=/usr/bin/objcopy
+    ifdef CROSS_COMPILE_ARCH
+      # don't try to generate .debuginfo files when cross compiling
+      _JUNK_ := $(shell \
+        echo >&2 "INFO: cross compiling for ARCH $(CROSS_COMPILE_ARCH)," \
+          "skipping .debuginfo generation.")
+      OBJCOPY=
+    else
+      OBJCOPY=$(shell test -x $(DEF_OBJCOPY) && echo $(DEF_OBJCOPY))
+      ifneq ($(ALT_OBJCOPY),)
+        _JUNK_ := $(shell echo >&2 "INFO: ALT_OBJCOPY=$(ALT_OBJCOPY)")
+        OBJCOPY=$(shell test -x $(ALT_OBJCOPY) && echo $(ALT_OBJCOPY))
+      endif
     endif
+  else
+    OBJCOPY=
   endif
-  
+
   ifeq ($(OBJCOPY),)
     _JUNK_ := $(shell \
       echo >&2 "INFO: no objcopy cmd found so cannot create .debuginfo files.")
+    ENABLE_FULL_DEBUG_SYMBOLS=0
   else
     _JUNK_ := $(shell \
       echo >&2 "INFO: $(OBJCOPY) cmd found so will create .debuginfo files.")
-  
+
     # Library stripping policies for .debuginfo configs:
     #   all_strip - strips everything from the library
     #   min_strip - strips most stuff from the library; leaves minimum symbols
@@ -163,15 +171,17 @@ ifeq ($(JDK6_OR_EARLIER),0)
     # Oracle security policy requires "all_strip". A waiver was granted on
     # 2011.09.01 that permits using "min_strip" in the Java JDK and Java JRE.
     #
-    DEF_STRIP_POLICY="min_strip"
-    ifeq ($(ALT_STRIP_POLICY),)
-      STRIP_POLICY=$(DEF_STRIP_POLICY)
-    else
-      STRIP_POLICY=$(ALT_STRIP_POLICY)
-    endif
-  
+    # Currently, STRIP_POLICY is only used when Full Debug Symbols is enabled.
+    #
+    STRIP_POLICY ?= min_strip
+
     _JUNK_ := $(shell \
       echo >&2 "INFO: STRIP_POLICY=$(STRIP_POLICY)")
+
+    ZIP_DEBUGINFO_FILES ?= 1
+
+    _JUNK_ := $(shell \
+      echo >&2 "INFO: ZIP_DEBUGINFO_FILES=$(ZIP_DEBUGINFO_FILES)")
   endif
 endif
 
@@ -187,8 +197,12 @@ EXPORT_LIST += $(EXPORT_DOCS_DIR)/platform/jvmti/jvmti.html
 
 # client and server subdirectories have symbolic links to ../libjsig.so
 EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.$(LIBRARY_SUFFIX)
-ifneq ($(OBJCOPY),)
-  EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.debuginfo
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+    EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.diz
+  else
+    EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libjsig.debuginfo
+  endif
 endif
 EXPORT_SERVER_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/server
 EXPORT_CLIENT_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/client
@@ -196,8 +210,12 @@ EXPORT_CLIENT_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/client
 ifndef BUILD_CLIENT_ONLY
 EXPORT_LIST += $(EXPORT_SERVER_DIR)/Xusage.txt
 EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.$(LIBRARY_SUFFIX)
-  ifneq ($(OBJCOPY),)
-    EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.debuginfo
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+      EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.diz
+    else
+      EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.debuginfo
+    endif
   endif
 endif
 
@@ -205,8 +223,12 @@ ifneq ($(ZERO_BUILD), true)
   ifeq ($(ARCH_DATA_MODEL), 32)
     EXPORT_LIST += $(EXPORT_CLIENT_DIR)/Xusage.txt
     EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.$(LIBRARY_SUFFIX)
-    ifneq ($(OBJCOPY),)
-      EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.debuginfo
+    ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+      ifeq ($(ZIP_DEBUGINFO_FILES),1)
+        EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.diz
+      else
+        EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.debuginfo
+      endif
     endif
   endif
 endif
@@ -217,9 +239,14 @@ ADD_SA_BINARIES/x86   = $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX) \
                         $(EXPORT_LIB_DIR)/sa-jdi.jar 
 ADD_SA_BINARIES/sparc = $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX) \
                         $(EXPORT_LIB_DIR)/sa-jdi.jar 
-ifneq ($(OBJCOPY),)
-  ADD_SA_BINARIES/x86   += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.debuginfo
-  ADD_SA_BINARIES/sparc += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.debuginfo
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+    ADD_SA_BINARIES/x86   += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.diz
+    ADD_SA_BINARIES/sparc += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.diz
+  else
+    ADD_SA_BINARIES/x86   += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.debuginfo
+    ADD_SA_BINARIES/sparc += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.debuginfo
+  endif
 endif
 ADD_SA_BINARIES/ppc   = 
 ADD_SA_BINARIES/ia64  = 

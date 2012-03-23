@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,22 @@ ifneq ($(shell $(ECHO) $(PROCESSOR_IDENTIFIER) | $(GREP) EM64T),)
   endif
 endif
 
+# Full Debug Symbols has been enabled on Windows since JDK1.4.1 so
+# there is no need for an "earlier than JDK7 check".
+# Default is enabled with debug info files ZIP'ed to save space.
+
+ENABLE_FULL_DEBUG_SYMBOLS ?= 1
+MAKE_ARGS += ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS)
+
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ZIP_DEBUGINFO_FILES ?= 1
+else
+  ZIP_DEBUGINFO_FILES=0
+endif
+MAKE_ARGS += ZIP_DEBUGINFO_FILES=$(ZIP_DEBUGINFO_FILES)
+MAKE_ARGS += RM="$(RM)"
+MAKE_ARGS += ZIPEXE=$(ZIPEXE)
+
 JDK_INCLUDE_SUBDIR=win32
 
 # Library suffix
@@ -179,25 +195,49 @@ EXPORT_KERNEL_DIR = $(EXPORT_JRE_BIN_DIR)/kernel
 
 EXPORT_LIST += $(EXPORT_SERVER_DIR)/Xusage.txt
 EXPORT_LIST += $(EXPORT_SERVER_DIR)/jvm.$(LIBRARY_SUFFIX)
-EXPORT_LIST += $(EXPORT_SERVER_DIR)/jvm.pdb
-EXPORT_LIST += $(EXPORT_SERVER_DIR)/jvm.map
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+    EXPORT_LIST += $(EXPORT_SERVER_DIR)/jvm.diz
+  else
+    EXPORT_LIST += $(EXPORT_SERVER_DIR)/jvm.pdb
+    EXPORT_LIST += $(EXPORT_SERVER_DIR)/jvm.map
+  endif
+endif
 EXPORT_LIST += $(EXPORT_LIB_DIR)/jvm.lib
 ifeq ($(ARCH_DATA_MODEL), 32)
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/Xusage.txt
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/jvm.$(LIBRARY_SUFFIX)
-  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/jvm.pdb
-  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/jvm.map
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+      EXPORT_LIST += $(EXPORT_CLIENT_DIR)/jvm.diz
+    else
+      EXPORT_LIST += $(EXPORT_CLIENT_DIR)/jvm.pdb
+      EXPORT_LIST += $(EXPORT_CLIENT_DIR)/jvm.map
+    endif
+  endif
   # kernel vm
   EXPORT_LIST += $(EXPORT_KERNEL_DIR)/Xusage.txt
   EXPORT_LIST += $(EXPORT_KERNEL_DIR)/jvm.$(LIBRARY_SUFFIX)
-  EXPORT_LIST += $(EXPORT_KERNEL_DIR)/jvm.pdb
-  EXPORT_LIST += $(EXPORT_KERNEL_DIR)/jvm.map
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+      EXPORT_LIST += $(EXPORT_KERNEL_DIR)/jvm.diz
+    else
+      EXPORT_LIST += $(EXPORT_KERNEL_DIR)/jvm.pdb
+      EXPORT_LIST += $(EXPORT_KERNEL_DIR)/jvm.map
+    endif
+  endif
 endif
 
 ifeq ($(BUILD_WIN_SA), 1)
   EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.$(LIBRARY_SUFFIX)
-  EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.pdb
-  EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.map
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+      EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.diz
+    else
+      EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.pdb
+      EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.map
+    endif
+  endif
   EXPORT_LIST += $(EXPORT_LIB_DIR)/sa-jdi.jar
   # Must pass this down to nmake.
   MAKE_ARGS += BUILD_WIN_SA=1
