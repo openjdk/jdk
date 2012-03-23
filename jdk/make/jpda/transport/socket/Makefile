@@ -40,7 +40,7 @@ ifeq ($(PLATFORM), linux)
   OTHER_LDLIBS += $(LIBNSL) $(LIBSOCKET) -lpthread
 endif
 
-ifeq ($(PLATFORM), macosx))
+ifeq ($(PLATFORM), macosx)
   LIBSOCKET =
   OTHER_LDLIBS += -pthread
 endif
