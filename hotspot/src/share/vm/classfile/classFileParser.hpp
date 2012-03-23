@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,9 +68,10 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   void set_stream(ClassFileStream* st)             { _stream = st; }
 
   // Constant pool parsing
-  void parse_constant_pool_entries(constantPoolHandle cp, int length, TRAPS);
+  void parse_constant_pool_entries(Handle class_loader,
+                                   constantPoolHandle cp, int length, TRAPS);
 
-  constantPoolHandle parse_constant_pool(TRAPS);
+  constantPoolHandle parse_constant_pool(Handle class_loader, TRAPS);
 
   // Interface parsing
   objArrayHandle parse_interfaces(constantPoolHandle cp,
