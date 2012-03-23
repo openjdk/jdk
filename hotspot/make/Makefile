@@ -298,6 +298,8 @@ $(EXPORT_LIB_DIR)/%.lib:  $(MISC_DIR)/%.lib
 	$(install-file)
 
 # Other libraries (like SA)
+$(EXPORT_JRE_BIN_DIR)/%.diz: $(MISC_DIR)/%.diz
+	$(install-file)
 $(EXPORT_JRE_BIN_DIR)/%.dll: $(MISC_DIR)/%.dll
 	$(install-file)
 $(EXPORT_JRE_BIN_DIR)/%.pdb: $(MISC_DIR)/%.pdb
@@ -306,6 +308,8 @@ $(EXPORT_JRE_BIN_DIR)/%.map: $(MISC_DIR)/%.map
 	$(install-file)
 
 # Client files always come from C1 area
+$(EXPORT_CLIENT_DIR)/%.diz:  $(C1_DIR)/%.diz
+	$(install-file)
 $(EXPORT_CLIENT_DIR)/%.dll:  $(C1_DIR)/%.dll
 	$(install-file)
 $(EXPORT_CLIENT_DIR)/%.pdb:  $(C1_DIR)/%.pdb
@@ -314,6 +318,8 @@ $(EXPORT_CLIENT_DIR)/%.map:  $(C1_DIR)/%.map
 	$(install-file)
 
 # Server files always come from C2 area
+$(EXPORT_SERVER_DIR)/%.diz:  $(C2_DIR)/%.diz
+	$(install-file)
 $(EXPORT_SERVER_DIR)/%.dll:  $(C2_DIR)/%.dll
 	$(install-file)
 $(EXPORT_SERVER_DIR)/%.pdb:  $(C2_DIR)/%.pdb
@@ -322,6 +328,8 @@ $(EXPORT_SERVER_DIR)/%.map:  $(C2_DIR)/%.map
 	$(install-file)
 
 # Kernel files always come from kernel area
+$(EXPORT_KERNEL_DIR)/%.diz:  $(KERNEL_DIR)/%.diz
+	$(install-file)
 $(EXPORT_KERNEL_DIR)/%.dll:  $(KERNEL_DIR)/%.dll
 	$(install-file)
 $(EXPORT_KERNEL_DIR)/%.pdb:  $(KERNEL_DIR)/%.pdb
@@ -370,6 +378,20 @@ $(EXPORT_CLIENT_DIR)/64/%.debuginfo:    $(C1_DIR)/%.debuginfo
 $(EXPORT_SERVER_DIR)/%.debuginfo:       $(C2_DIR)/%.debuginfo
 	$(install-file)
 $(EXPORT_SERVER_DIR)/64/%.debuginfo:    $(C2_DIR)/%.debuginfo
+	$(install-file)
+
+# ZIP'ed debug info for shared library
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz: $(C1_DIR)/%.diz
+	$(install-file)
+$(EXPORT_JRE_LIB_ARCH_DIR)/%.diz: $(C2_DIR)/%.diz
+	$(install-file)
+$(EXPORT_CLIENT_DIR)/%.diz:       $(C1_DIR)/%.diz
+	$(install-file)
+$(EXPORT_CLIENT_DIR)/64/%.diz:    $(C1_DIR)/%.diz
+	$(install-file)
+$(EXPORT_SERVER_DIR)/%.diz:       $(C2_DIR)/%.diz
+	$(install-file)
+$(EXPORT_SERVER_DIR)/64/%.diz:    $(C2_DIR)/%.diz
 	$(install-file)
   endif
 endif

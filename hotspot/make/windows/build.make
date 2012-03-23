@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -298,6 +298,10 @@ $(variantDir)\local.make: checks
 	@ echo Platform_arch=$(Platform_arch)        		>> $@
 	@ echo Platform_arch_model=$(Platform_arch_model)	>> $@
 	@ sh $(WorkSpace)/make/windows/get_msc_ver.sh		>> $@
+	@ if "$(ENABLE_FULL_DEBUG_SYMBOLS)" NEQ "" echo ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS) >> $@
+	@ if "$(ZIP_DEBUGINFO_FILES)" NEQ "" echo ZIP_DEBUGINFO_FILES=$(ZIP_DEBUGINFO_FILES) >> $@
+	@ if "$(RM)" NEQ "" echo RM=$(RM)                       >> $@
+	@ if "$(ZIPEXE)" NEQ "" echo ZIPEXE=$(ZIPEXE)           >> $@
 
 checks: checkVariant checkWorkSpace checkSA
 

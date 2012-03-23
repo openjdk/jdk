@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,9 @@ SAPROC_G = $(SAPROC)$(G_SUFFIX)
 LIBSAPROC_G = lib$(SAPROC_G).so
 
 LIBSAPROC_DEBUGINFO   = lib$(SAPROC).debuginfo
+LIBSAPROC_DIZ         = lib$(SAPROC).diz
 LIBSAPROC_G_DEBUGINFO = lib$(SAPROC_G).debuginfo
+LIBSAPROC_G_DIZ       = lib$(SAPROC_G).diz
 
 AGENT_DIR = $(GAMMADIR)/agent
 
@@ -45,6 +47,7 @@ SAMAPFILE = $(SASRCDIR)/mapfile
 
 DEST_SAPROC           = $(JDK_LIBDIR)/$(LIBSAPROC)
 DEST_SAPROC_DEBUGINFO = $(JDK_LIBDIR)/$(LIBSAPROC_DEBUGINFO)
+DEST_SAPROC_DIZ       = $(JDK_LIBDIR)/$(LIBSAPROC_DIZ)
 
 # if $(AGENT_DIR) does not exist, we don't build SA
 
@@ -105,7 +108,7 @@ $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
 	           -o $@                                                \
 	           -ldl -ldemangle -lthread -lc
 	[ -f $(LIBSAPROC_G) ] || { ln -s $@ $(LIBSAPROC_G); }
-ifneq ($(OBJCOPY),)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBSAPROC_DEBUGINFO)
 	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBSAPROC_DEBUGINFO) $@
   ifeq ($(STRIP_POLICY),all_strip)
@@ -117,6 +120,11 @@ ifneq ($(OBJCOPY),)
     endif
   endif
 	[ -f $(LIBSAPROC_G_DEBUGINFO) ] || { ln -s $(LIBSAPROC_DEBUGINFO) $(LIBSAPROC_G_DEBUGINFO); }
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	$(ZIPEXE) -q -y $(LIBSAPROC_DIZ) $(LIBSAPROC_DEBUGINFO) $(LIBSAPROC_G_DEBUGINFO)
+	$(RM) $(LIBSAPROC_DEBUGINFO) $(LIBSAPROC_G_DEBUGINFO)
+	[ -f $(LIBSAPROC_G_DIZ) ] || { ln -s $(LIBSAPROC_DIZ) $(LIBSAPROC_G_DIZ); }
+  endif
 endif
 
 install_saproc: $(BULDLIBSAPROC)
@@ -124,6 +132,8 @@ install_saproc: $(BULDLIBSAPROC)
 	  echo "Copying $(LIBSAPROC) to $(DEST_SAPROC)";     \
 	  test -f $(LIBSAPROC_DEBUGINFO) &&             \
 	    cp -f $(LIBSAPROC_DEBUGINFO) $(DEST_SAPROC_DEBUGINFO); \
+	  test -f $(LIBSAPROC_DIZ) &&             \
+	    cp -f $(LIBSAPROC_DIZ) $(DEST_SAPROC_DIZ); \
 	  cp -f $(LIBSAPROC) $(DEST_SAPROC) && echo "Done";  \
 	fi
 

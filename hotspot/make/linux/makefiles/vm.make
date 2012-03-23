@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ Src_Dirs_I += $(GENERATED)
 INCLUDES += $(PRECOMPILED_HEADER_DIR:%=-I%) $(Src_Dirs_I:%=-I%)
 
 # SYMFLAG is used by {jsig,saproc}.make
-ifneq ($(OBJCOPY),)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   # always build with debug info when we can create .debuginfo files
   SYMFLAG = -g
 else
@@ -139,7 +139,9 @@ LIBJVM   = lib$(JVM).so
 LIBJVM_G = lib$(JVM)$(G_SUFFIX).so
 
 LIBJVM_DEBUGINFO   = lib$(JVM).debuginfo
+LIBJVM_DIZ         = lib$(JVM).diz
 LIBJVM_G_DEBUGINFO = lib$(JVM)$(G_SUFFIX).debuginfo
+LIBJVM_G_DIZ       = lib$(JVM)$(G_SUFFIX).diz
 
 SPECIAL_PATHS:=adlc c1 gc_implementation opto shark libadt
 
@@ -331,7 +333,7 @@ $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
             fi 								\
 	}
 ifeq ($(CROSS_COMPILE_ARCH),)
-  ifneq ($(OBJCOPY),)
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJVM_DEBUGINFO)
 	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DEBUGINFO) $@
     ifeq ($(STRIP_POLICY),all_strip)
@@ -343,17 +345,25 @@ ifeq ($(CROSS_COMPILE_ARCH),)
       endif
     endif
 	$(QUIETLY) [ -f $(LIBJVM_G_DEBUGINFO) ] || ln -s $(LIBJVM_DEBUGINFO) $(LIBJVM_G_DEBUGINFO)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	$(ZIPEXE) -q -y $(LIBJVM_DIZ) $(LIBJVM_DEBUGINFO) $(LIBJVM_G_DEBUGINFO)
+	$(RM) $(LIBJVM_DEBUGINFO) $(LIBJVM_G_DEBUGINFO)
+	[ -f $(LIBJVM_G_DIZ) ] || { ln -s $(LIBJVM_DIZ) $(LIBJVM_G_DIZ); }
+    endif
   endif
 endif
 
 DEST_SUBDIR        = $(JDK_LIBDIR)/$(VM_SUBDIR)
 DEST_JVM           = $(DEST_SUBDIR)/$(LIBJVM)
 DEST_JVM_DEBUGINFO = $(DEST_SUBDIR)/$(LIBJVM_DEBUGINFO)
+DEST_JVM_DIZ       = $(DEST_SUBDIR)/$(LIBJVM_DIZ)
 
 install_jvm: $(LIBJVM)
 	@echo "Copying $(LIBJVM) to $(DEST_JVM)"
 	$(QUIETLY) test -f $(LIBJVM_DEBUGINFO) && \
 	    cp -f $(LIBJVM_DEBUGINFO) $(DEST_JVM_DEBUGINFO)
+	$(QUIETLY) test -f $(LIBJVM_DIZ) && \
+	    cp -f $(LIBJVM_DIZ) $(DEST_JVM_DIZ)
 	$(QUIETLY) cp -f $(LIBJVM) $(DEST_JVM) && echo "Done"
 
 #----------------------------------------------------------------------
