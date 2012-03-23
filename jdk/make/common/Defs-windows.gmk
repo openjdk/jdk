@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,17 @@ ifeq ($(COMPILER_VERSION), VS2010)
 endif
 
 EXTRA_LFLAGS += /LIBPATH:$(DXSDK_LIB_PATH)
+
+# Full Debug Symbols has been enabled on Windows since JDK1.4.1.
+# Default is enabled with debug info files ZIP'ed to save space.
+
+ENABLE_FULL_DEBUG_SYMBOLS ?= 1
+
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ZIP_DEBUGINFO_FILES ?= 1
+else
+  ZIP_DEBUGINFO_FILES=0
+endif
 
 # C Compiler flag definitions
 
@@ -201,7 +212,10 @@ ifeq ($(CC_VERSION),msvc)
   #   /D _STATIC_CPPLIB
   #            Use static link for the C++ runtime (so msvcpnn.dll not needed)
   #   
-  CFLAGS_COMMON  += -Zi -nologo
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    CFLAGS_COMMON  += -Zi
+  endif
+  CFLAGS_COMMON  += -nologo
   CFLAGS_OPT      = $(CC_OPT)
   CFLAGS_DBG      = -Od $(MS_RUNTIME_DEBUG_OPTION)
 
@@ -305,6 +319,7 @@ HOTSPOT_SALIB_PATH   = $(HOTSPOT_IMPORT_PATH)/jre/bin
 SALIB_NAME = $(LIB_PREFIX)sawindbg.$(LIBRARY_SUFFIX)
 SAMAP_NAME = $(LIB_PREFIX)sawindbg.map
 SAPDB_NAME = $(LIB_PREFIX)sawindbg.pdb
+SA_DIZ_NAME = $(LIB_PREFIX)sawindbg.diz
 
 ifeq ($(ARCH), ia64)
   # SA will never be supported here.
