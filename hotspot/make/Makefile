@@ -271,23 +271,25 @@ KERNEL_DIR=$(KERNEL_BASE_DIR)/$(VM_SUBDIR)
 ZERO_DIR=$(ZERO_BASE_DIR)/$(VM_SUBDIR)
 SHARK_DIR=$(SHARK_BASE_DIR)/$(VM_SUBDIR)
 
-# Misc files and generated files need to come from C1 or C2 area
-ifeq ($(ZERO_BUILD), true)
-ifeq ($(SHARK_BUILD), true)
-  MISC_DIR=$(SHARK_DIR)
-  GEN_DIR=$(SHARK_BASE_DIR)/generated
-else
-  MISC_DIR=$(ZERO_DIR)
-  GEN_DIR=$(ZERO_BASE_DIR)/generated
+ifeq ($(JVM_VARIANT_SERVER), true)
+    MISC_DIR=$(C2_DIR)
+    GEN_DIR=$(C2_BASE_DIR)/generated
 endif
-else
-ifeq ($(ARCH_DATA_MODEL), 32)
-  MISC_DIR=$(C1_DIR)
-  GEN_DIR=$(C1_BASE_DIR)/generated
-else
-  MISC_DIR=$(C2_DIR)
-  GEN_DIR=$(C2_BASE_DIR)/generated
+ifeq ($(JVM_VARIANT_CLIENT), true)
+    MISC_DIR=$(C1_DIR)
+    GEN_DIR=$(C1_BASE_DIR)/generated
 endif
+ifeq ($(JVM_VARIANT_KERNEL), true)
+    MISC_DIR=$(C2_DIR)
+    GEN_DIR=$(C2_BASE_DIR)/generated
+endif
+ifeq ($(JVM_VARIANT_ZEROSHARK), true)
+    MISC_DIR=$(SHARK_DIR)
+    GEN_DIR=$(SHARK_BASE_DIR)/generated
+endif
+ifeq ($(JVM_VARIANT_ZERO), true)
+    MISC_DIR=$(ZERO_DIR)
+    GEN_DIR=$(ZERO_BASE_DIR)/generated
 endif
 
 # Bin files (windows)
@@ -332,46 +334,46 @@ endif
 
 # Shared Library
 ifneq ($(OSNAME),windows)
-  ifeq ($(ZERO_BUILD), true)
-    ifeq ($(SHARK_BUILD), true)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(SHARK_DIR)/%.$(LIBRARY_SUFFIX)
-	$(install-file)
-$(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):       $(SHARK_DIR)/%.$(LIBRARY_SUFFIX)
-	$(install-file)
-    else
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(ZERO_DIR)/%.$(LIBRARY_SUFFIX)
-	$(install-file)
-$(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):       $(ZERO_DIR)/%.$(LIBRARY_SUFFIX)
-	$(install-file)
+    ifeq ($(JVM_VARIANT_SERVER), true)
+        $(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(C2_DIR)/%.$(LIBRARY_SUFFIX)
+		$(install-file)
+        $(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):       $(C2_DIR)/%.$(LIBRARY_SUFFIX)
+		$(install-file)
+        $(EXPORT_SERVER_DIR)/64/%.$(LIBRARY_SUFFIX):    $(C2_DIR)/%.$(LIBRARY_SUFFIX)
+		$(install-file)
+        $(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo: 		$(C2_DIR)/%.debuginfo
+		$(install-file)
+        $(EXPORT_SERVER_DIR)/%.debuginfo:       		$(C2_DIR)/%.debuginfo
+		$(install-file)
+        $(EXPORT_SERVER_DIR)/64/%.debuginfo:    		$(C2_DIR)/%.debuginfo
+		$(install-file)
     endif
-  else
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(C1_DIR)/%.$(LIBRARY_SUFFIX)
-	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(C2_DIR)/%.$(LIBRARY_SUFFIX)
-	$(install-file)
-$(EXPORT_CLIENT_DIR)/%.$(LIBRARY_SUFFIX):       $(C1_DIR)/%.$(LIBRARY_SUFFIX)
-	$(install-file)
-$(EXPORT_CLIENT_DIR)/64/%.$(LIBRARY_SUFFIX):    $(C1_DIR)/%.$(LIBRARY_SUFFIX)
-	$(install-file)
-$(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):       $(C2_DIR)/%.$(LIBRARY_SUFFIX)
-	$(install-file)
-$(EXPORT_SERVER_DIR)/64/%.$(LIBRARY_SUFFIX):    $(C2_DIR)/%.$(LIBRARY_SUFFIX)
-	$(install-file)
-
-# Debug info for shared library
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo: $(C1_DIR)/%.debuginfo
-	$(install-file)
-$(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo: $(C2_DIR)/%.debuginfo
-	$(install-file)
-$(EXPORT_CLIENT_DIR)/%.debuginfo:       $(C1_DIR)/%.debuginfo
-	$(install-file)
-$(EXPORT_CLIENT_DIR)/64/%.debuginfo:    $(C1_DIR)/%.debuginfo
-	$(install-file)
-$(EXPORT_SERVER_DIR)/%.debuginfo:       $(C2_DIR)/%.debuginfo
-	$(install-file)
-$(EXPORT_SERVER_DIR)/64/%.debuginfo:    $(C2_DIR)/%.debuginfo
-	$(install-file)
-  endif
+    ifeq ($(JVM_VARIANT_CLIENT), true)
+        $(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(C1_DIR)/%.$(LIBRARY_SUFFIX)
+		$(install-file)
+        $(EXPORT_CLIENT_DIR)/%.$(LIBRARY_SUFFIX):       $(C1_DIR)/%.$(LIBRARY_SUFFIX)
+		$(install-file)
+        $(EXPORT_CLIENT_DIR)/64/%.$(LIBRARY_SUFFIX):    $(C1_DIR)/%.$(LIBRARY_SUFFIX)
+		$(install-file)
+        $(EXPORT_JRE_LIB_ARCH_DIR)/%.debuginfo: 		$(C1_DIR)/%.debuginfo
+		$(install-file)
+        $(EXPORT_CLIENT_DIR)/%.debuginfo:       		$(C1_DIR)/%.debuginfo
+		$(install-file)
+        $(EXPORT_CLIENT_DIR)/64/%.debuginfo:    		$(C1_DIR)/%.debuginfo
+		$(install-file)
+    endif
+    ifeq ($(JVM_VARIANT_ZEROSHARK), true)
+        $(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(SHARK_DIR)/%.$(LIBRARY_SUFFIX)
+		$(install-file)
+        $(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):       $(SHARK_DIR)/%.$(LIBRARY_SUFFIX)
+		$(install-file)
+    endif
+    ifeq ($(JVM_VARIANT_ZERO), true)
+        $(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(ZERO_DIR)/%.$(LIBRARY_SUFFIX)
+		$(install-file)
+        $(EXPORT_SERVER_DIR)/%.$(LIBRARY_SUFFIX):       $(ZERO_DIR)/%.$(LIBRARY_SUFFIX)
+		$(install-file)
+    endif
 endif
 
 # Jar file (sa-jdi.jar)
@@ -450,18 +452,19 @@ $(JDK_IMAGE_DIR)/jre/lib/rt.jar:
 	 ($(CD) $(JDK_IMAGE_DIR) && $(TAR) -xf -)
 
 test_jdk:
-    ifeq ($(ARCH_DATA_MODEL), 32)
-      ifneq ($(ZERO_BUILD), true)
-	$(JDK_IMAGE_DIR)/bin/java -d32 -client -Xinternalversion
-	$(JDK_IMAGE_DIR)/bin/java -d32 -client -version
-      endif
-	$(JDK_IMAGE_DIR)/bin/java -d32 -server -Xinternalversion
-	$(JDK_IMAGE_DIR)/bin/java -d32 -server -version
-    endif
-    ifeq ($(ARCH_DATA_MODEL), 64)
-	$(JDK_IMAGE_DIR)/bin/java -d64 -server -Xinternalversion
-	$(JDK_IMAGE_DIR)/bin/java -d64 -server -version
-    endif
+  ifeq ($(JVM_VARIANT_CLIENT), true)
+	$(JDK_IMAGE_DIR)/bin/java -d$(ARCH_DATA_MODEL) -client -Xinternalversion
+	$(JDK_IMAGE_DIR)/bin/java -d$(ARCH_DATA_MODEL) -client -version
+  endif
+  ifeq ($(findstring true, $(JVM_VARIANT_SERVER)\
+		$(JVM_VARIANT_ZERO)$(JVM_VARIANT_ZEROSHARK)), true)
+	$(JDK_IMAGE_DIR)/bin/java -d$(ARCH_DATA_MODEL) -server -Xinternalversion
+	$(JDK_IMAGE_DIR)/bin/java -d$(ARCH_DATA_MODEL) -server -version
+  endif
+  ifeq ($(JVM_VARIANT_KERNEL), true)
+	$(JDK_IMAGE_DIR)/bin/java -d$(ARCH_DATA_MODEL) -kernel -Xinternalversion
+	$(JDK_IMAGE_DIR)/bin/java -d$(ARCH_DATA_MODEL) -kernel -version
+  endif
 
 copy_product_jdk::
 	$(RM) -r $(JDK_IMAGE_DIR)
