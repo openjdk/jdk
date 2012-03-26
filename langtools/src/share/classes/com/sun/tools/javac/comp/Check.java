@@ -593,7 +593,7 @@ public class Check {
                     Symbol sym = TreeInfo.symbol(apply.meth);
                     is292targetTypeCast = sym != null &&
                         sym.kind == MTH &&
-                        (sym.flags() & POLYMORPHIC_SIGNATURE) != 0;
+                        (sym.flags() & HYPOTHETICAL) != 0;
                 }
                 return is292targetTypeCast;
             }

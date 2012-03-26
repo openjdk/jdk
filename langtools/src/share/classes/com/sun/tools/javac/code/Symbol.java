@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,16 +200,6 @@ public abstract class Symbol implements Element {
 
     public boolean isInterface() {
         return (flags() & INTERFACE) != 0;
-    }
-
-    /** Recognize if this symbol was marked @PolymorphicSignature in the source. */
-    public boolean isPolymorphicSignatureGeneric() {
-        return (flags() & (POLYMORPHIC_SIGNATURE | HYPOTHETICAL)) == POLYMORPHIC_SIGNATURE;
-    }
-
-    /** Recognize if this symbol was split from a @PolymorphicSignature symbol in the source. */
-    public boolean isPolymorphicSignatureInstance() {
-        return (flags() & (POLYMORPHIC_SIGNATURE | HYPOTHETICAL)) == (POLYMORPHIC_SIGNATURE | HYPOTHETICAL);
     }
 
     /** Is this symbol declared (directly or indirectly) local
@@ -1314,6 +1304,25 @@ public abstract class Symbol implements Element {
         public boolean isStaticOrInstanceInit() {
             return getKind() == ElementKind.STATIC_INIT ||
                     getKind() == ElementKind.INSTANCE_INIT;
+        }
+
+        /**
+         * A polymorphic signature method (JLS SE 7, 8.4.1) is a method that
+         * (i) is declared in the java.lang.invoke.MethodHandle class, (ii) takes
+         * a single variable arity parameter (iii) whose declared type is Object[],
+         * (iv) has a return type of Object and (v) is native.
+         */
+        public boolean isSignaturePolymorphic(Types types) {
+            List<Type> argtypes = type.getParameterTypes();
+            Type firstElemType = argtypes.nonEmpty() ?
+                    types.elemtype(argtypes.head) :
+                    null;
+            return owner == types.syms.methodHandleType.tsym &&
+                    argtypes.length() == 1 &&
+                    firstElemType != null &&
+                    types.isSameType(firstElemType, types.syms.objectType) &&
+                    types.isSameType(type.getReturnType(), types.syms.objectType) &&
+                    (flags() & NATIVE) != 0;
         }
 
         public Attribute getDefaultValue() {
