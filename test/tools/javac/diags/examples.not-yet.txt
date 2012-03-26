@@ -1,8 +1,6 @@
 compiler.err.already.annotated                          # internal compiler error?
 compiler.err.already.defined.this.unit                  # seems to be masked by compiler.err.duplicate.class
 compiler.err.annotation.value.not.allowable.type        # cannot happen: precluded by complete type-specific tests
-compiler.err.assignment.from.super-bound                # DEAD
-compiler.err.assignment.to.extends-bound                # DEAD
 compiler.err.cant.apply.symbol
 compiler.err.cant.read.file                             # (apt.JavaCompiler?)
 compiler.err.cant.select.static.class.from.param.type
@@ -24,7 +22,6 @@ compiler.err.no.annotation.member
 compiler.err.no.encl.instance.of.type.in.scope          # cannot occur; always followed by assert false;
 compiler.err.no.match.entry                             # UNUSED?
 compiler.err.not.annotation.type                        # cannot occur given preceding checkType
-compiler.err.prob.found.req.1                           # Check: DEAD, in unused method
 compiler.err.proc.bad.config.file                       # JavacProcessingEnvironment
 compiler.err.proc.cant.access                           # completion failure
 compiler.err.proc.cant.access.1                         # completion failure, no stack trace
@@ -38,12 +35,9 @@ compiler.err.source.cant.overwrite.input.file
 compiler.err.stack.sim.error
 compiler.err.type.var.more.than.once                    # UNUSED
 compiler.err.type.var.more.than.once.in.result          # UNUSED
-compiler.err.undetermined.type
 compiler.err.unexpected.type
 compiler.err.unsupported.cross.fp.lit                   # Scanner: host system dependent
 compiler.err.wrong.target.for.polymorphic.signature.definition     # Transitional 292
-compiler.misc.assignment.from.super-bound
-compiler.misc.assignment.to.extends-bound
 compiler.misc.bad.class.file.header                     # bad class file
 compiler.misc.bad.class.signature                       # bad class file
 compiler.misc.bad.const.pool.tag                        # bad class file
@@ -88,7 +82,6 @@ compiler.misc.type.req.exact
 compiler.misc.type.variable.has.undetermined.type
 compiler.misc.unable.to.access.file                     # ClassFile
 compiler.misc.undecl.type.var                           # ClassReader
-compiler.misc.undetermined.type
 compiler.misc.unicode.str.not.supported                 # ClassReader
 compiler.misc.verbose.retro                             # UNUSED
 compiler.misc.verbose.retro.with                        # UNUSED

@@ -21,7 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.undetermined.type.1
+// key: compiler.err.prob.found.req.1
+// key: compiler.misc.undetermined.type
 // key: compiler.misc.no.unique.maximal.instance.exists
 
 class UndeterminedType1<V> {

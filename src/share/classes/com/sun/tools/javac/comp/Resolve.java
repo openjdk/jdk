@@ -29,6 +29,8 @@ import com.sun.tools.javac.api.Formattable.LocalizedString;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.comp.Attr.ResultInfo;
+import com.sun.tools.javac.comp.Check.CheckContext;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionContext.Candidate;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.tree.*;
@@ -70,6 +72,7 @@ public class Resolve {
     Names names;
     Log log;
     Symtab syms;
+    Attr attr;
     Check chk;
     Infer infer;
     ClassReader reader;
@@ -101,6 +104,7 @@ public class Resolve {
 
         names = Names.instance(context);
         log = Log.instance(context);
+        attr = Attr.instance(context);
         chk = Check.instance(context);
         infer = Infer.instance(context);
         reader = ClassReader.instance(context);
@@ -627,15 +631,8 @@ public class Resolve {
         }
 
         while (argtypes.nonEmpty() && formals.head != varargsFormal) {
-            Type undetFormal = infer.asUndetType(formals.head, undetvars);
-            Type capturedActual = types.capture(argtypes.head);
-            boolean works = allowBoxing ?
-                    types.isConvertible(capturedActual, undetFormal, warn) :
-                    types.isSubtypeUnchecked(capturedActual, undetFormal, warn);
-            if (!works) {
-                throw handler.argumentMismatch(false, argtypes.head, formals.head);
-            }
-            checkedArgs.append(capturedActual);
+            ResultInfo resultInfo = methodCheckResult(formals.head, allowBoxing, false, undetvars, handler, warn);
+            checkedArgs.append(resultInfo.check(env.tree.pos(), argtypes.head));
             argtypes = argtypes.tail;
             formals = formals.tail;
         }
@@ -648,13 +645,9 @@ public class Resolve {
             //note: if applicability check is triggered by most specific test,
             //the last argument of a varargs is _not_ an array type (see JLS 15.12.2.5)
             Type elt = types.elemtype(varargsFormal);
-            Type eltUndet = infer.asUndetType(elt, undetvars);
             while (argtypes.nonEmpty()) {
-                Type capturedActual = types.capture(argtypes.head);
-                if (!types.isConvertible(capturedActual, eltUndet, warn)) {
-                    throw handler.argumentMismatch(true, argtypes.head, elt);
-                }
-                checkedArgs.append(capturedActual);
+                ResultInfo resultInfo = methodCheckResult(elt, allowBoxing, true, undetvars, handler, warn);
+                checkedArgs.append(resultInfo.check(env.tree.pos(), argtypes.head));
                 argtypes = argtypes.tail;
             }
             //check varargs element type accessibility
@@ -665,39 +658,116 @@ public class Resolve {
         }
         return checkedArgs.toList();
     }
-    // where
-        public static class InapplicableMethodException extends RuntimeException {
-            private static final long serialVersionUID = 0;
 
-            JCDiagnostic diagnostic;
-            JCDiagnostic.Factory diags;
+    /**
+     * Check context to be used during method applicability checks. A method check
+     * context might contain inference variables.
+     */
+    abstract class MethodCheckContext implements CheckContext {
 
-            InapplicableMethodException(JCDiagnostic.Factory diags) {
-                this.diagnostic = null;
-                this.diags = diags;
-            }
-            InapplicableMethodException setMessage() {
-                this.diagnostic = null;
-                return this;
-            }
-            InapplicableMethodException setMessage(String key) {
-                this.diagnostic = key != null ? diags.fragment(key) : null;
-                return this;
-            }
-            InapplicableMethodException setMessage(String key, Object... args) {
-                this.diagnostic = key != null ? diags.fragment(key, args) : null;
-                return this;
-            }
-            InapplicableMethodException setMessage(JCDiagnostic diag) {
-                this.diagnostic = diag;
-                return this;
-            }
+        MethodCheckHandler handler;
+        boolean useVarargs;
+        List<Type> undetvars;
+        Warner rsWarner;
 
-            public JCDiagnostic getDiagnostic() {
-                return diagnostic;
-            }
+        public MethodCheckContext(MethodCheckHandler handler, boolean useVarargs, List<Type> undetvars, Warner rsWarner) {
+            this.handler = handler;
+            this.useVarargs = useVarargs;
+            this.undetvars = undetvars;
+            this.rsWarner = rsWarner;
         }
-        private final InapplicableMethodException inapplicableMethodException;
+
+        public void report(DiagnosticPosition pos, Type found, Type req, JCDiagnostic details) {
+            throw handler.argumentMismatch(useVarargs, found, req);
+        }
+
+        public Type rawInstantiatePoly(ForAll found, Type req, Warner warn) {
+            throw new AssertionError("ForAll in argument position");
+        }
+
+        public Warner checkWarner(DiagnosticPosition pos, Type found, Type req) {
+            return rsWarner;
+        }
+    }
+
+    /**
+     * Subclass of method check context class that implements strict method conversion.
+     * Strict method conversion checks compatibility between types using subtyping tests.
+     */
+    class StrictMethodContext extends MethodCheckContext {
+
+        public StrictMethodContext(MethodCheckHandler handler, boolean useVarargs, List<Type> undetvars, Warner rsWarner) {
+            super(handler, useVarargs, undetvars, rsWarner);
+        }
+
+        public boolean compatible(Type found, Type req, Warner warn) {
+            return types.isSubtypeUnchecked(found, infer.asUndetType(req, undetvars), warn);
+        }
+    }
+
+    /**
+     * Subclass of method check context class that implements loose method conversion.
+     * Loose method conversion checks compatibility between types using method conversion tests.
+     */
+    class LooseMethodContext extends MethodCheckContext {
+
+        public LooseMethodContext(MethodCheckHandler handler, boolean useVarargs, List<Type> undetvars, Warner rsWarner) {
+            super(handler, useVarargs, undetvars, rsWarner);
+        }
+
+        public boolean compatible(Type found, Type req, Warner warn) {
+            return types.isConvertible(found, infer.asUndetType(req, undetvars), warn);
+        }
+    }
+
+    /**
+     * Create a method check context to be used during method applicability check
+     */
+    ResultInfo methodCheckResult(Type to, boolean allowBoxing, boolean useVarargs,
+            List<Type> undetvars, MethodCheckHandler methodHandler, Warner rsWarner) {
+        MethodCheckContext checkContext = allowBoxing ?
+                new LooseMethodContext(methodHandler, useVarargs, undetvars, rsWarner) :
+                new StrictMethodContext(methodHandler, useVarargs, undetvars, rsWarner);
+        return attr.new ResultInfo(VAL, to, checkContext) {
+            @Override
+            protected Type check(DiagnosticPosition pos, Type found) {
+                return super.check(pos, chk.checkNonVoid(pos, types.capture(types.upperBound(found))));
+            }
+        };
+    }
+
+    public static class InapplicableMethodException extends RuntimeException {
+        private static final long serialVersionUID = 0;
+
+        JCDiagnostic diagnostic;
+        JCDiagnostic.Factory diags;
+
+        InapplicableMethodException(JCDiagnostic.Factory diags) {
+            this.diagnostic = null;
+            this.diags = diags;
+        }
+        InapplicableMethodException setMessage() {
+            this.diagnostic = null;
+            return this;
+        }
+        InapplicableMethodException setMessage(String key) {
+            this.diagnostic = key != null ? diags.fragment(key) : null;
+            return this;
+        }
+        InapplicableMethodException setMessage(String key, Object... args) {
+            this.diagnostic = key != null ? diags.fragment(key, args) : null;
+            return this;
+        }
+        InapplicableMethodException setMessage(JCDiagnostic diag) {
+            this.diagnostic = diag;
+            return this;
+        }
+
+        public JCDiagnostic getDiagnostic() {
+            return diagnostic;
+        }
+    }
+    private final InapplicableMethodException inapplicableMethodException;
 
 /* ***************************************************************************
  *  Symbol lookup
