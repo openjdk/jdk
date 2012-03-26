@@ -85,7 +85,7 @@ CollectedHeap::CollectedHeap() : _n_par_threads(0)
   const size_t max_len = size_t(arrayOopDesc::max_array_length(T_INT));
   const size_t elements_per_word = HeapWordSize / sizeof(jint);
   _filler_array_max_size = align_object_size(filler_array_hdr_size() +
-                                             max_len * elements_per_word);
+                                             max_len / elements_per_word);
 
   _barrier_set = NULL;
   _is_gc_active = false;
@@ -303,10 +303,6 @@ size_t CollectedHeap::filler_array_min_size() {
   return align_object_size(filler_array_hdr_size()); // align to MinObjAlignment
 }
 
-size_t CollectedHeap::filler_array_max_size() {
-  return _filler_array_max_size;
-}
-
 #ifdef ASSERT
 void CollectedHeap::fill_args_check(HeapWord* start, size_t words)
 {
@@ -333,6 +329,7 @@ CollectedHeap::fill_with_array(HeapWord* start, size_t words, bool zap)
 
   const size_t payload_size = words - filler_array_hdr_size();
   const size_t len = payload_size * HeapWordSize / sizeof(jint);
+  assert((int)len >= 0, err_msg("size too large " SIZE_FORMAT " becomes %d", words, (int)len));
 
   // Set the length first for concurrent GC.
   ((arrayOop)start)->set_length((int)len);
