@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -425,7 +425,7 @@ public class StubGenerator extends sun.rmi.rmic.iiop.Generator {
         // Write the _ids() method...
 
         p.plnI("public String[] _ids() { ");
-        p.pln("return _type_ids;");
+        p.pln("return (String[]) _type_ids.clone();");
         p.pOln("}");
 
         // Get all the methods and write each stub method...
@@ -1860,11 +1860,11 @@ public class StubGenerator extends sun.rmi.rmic.iiop.Generator {
     {
         if(POATie){
         p.plnI("public String[] _all_interfaces(org.omg.PortableServer.POA poa, byte[] objectId){");
-        p.pln("return _type_ids;");
+        p.pln("return (String[]) _type_ids.clone();");
         p.pOln("}");
         } else {
         p.plnI("public String[] _ids() { ");
-        p.pln("return _type_ids;");
+        p.pln("return (String[]) _type_ids.clone();");
         p.pOln("}");
         }
     }
