@@ -603,8 +603,7 @@ public class Infer {
      * method signature. The target return type is computed from the immediately
      * enclosing scope surrounding the polymorphic-signature call.
      */
-    Type instantiatePolymorphicSignatureInstance(Env<AttrContext> env, Type site,
-                                            Name name,
+    Type instantiatePolymorphicSignatureInstance(Env<AttrContext> env,
                                             MethodSymbol spMethod,  // sig. poly. method or null if none
                                             List<Type> argtypes) {
         final Type restype;
