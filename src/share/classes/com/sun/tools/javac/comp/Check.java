@@ -516,6 +516,35 @@ public class Check {
                              found, req);
         }
     }
+
+    /** Check for redundant casts (i.e. where source type is a subtype of target type)
+     * The problem should only be reported for non-292 cast
+     */
+    public void checkRedundantCast(Env<AttrContext> env, JCTypeCast tree) {
+        if (!tree.type.isErroneous() &&
+            (env.info.lint == null || env.info.lint.isEnabled(Lint.LintCategory.CAST))
+            && types.isSameType(tree.expr.type, tree.clazz.type)
+            && !is292targetTypeCast(tree)) {
+            log.warning(Lint.LintCategory.CAST,
+                    tree.pos(), "redundant.cast", tree.expr.type);
+        }
+    }
+    //where
+            private boolean is292targetTypeCast(JCTypeCast tree) {
+                boolean is292targetTypeCast = false;
+                JCExpression expr = TreeInfo.skipParens(tree.expr);
+                if (expr.hasTag(APPLY)) {
+                    JCMethodInvocation apply = (JCMethodInvocation)expr;
+                    Symbol sym = TreeInfo.symbol(apply.meth);
+                    is292targetTypeCast = sym != null &&
+                        sym.kind == MTH &&
+                        (sym.flags() & POLYMORPHIC_SIGNATURE) != 0;
+                }
+                return is292targetTypeCast;
+            }
+
+
+
 //where
         /** Is type a type variable, or a (possibly multi-dimensional) array of
          *  type variables?
