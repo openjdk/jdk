@@ -269,23 +269,6 @@ public class Check {
         else return syms.errType;
     }
 
-    /** Report a type error.
-     *  @param pos        Position to be used for error reporting.
-     *  @param problem    A string describing the error.
-     *  @param found      The type that was found.
-     *  @param req        The type that was required.
-     */
-    Type typeError(DiagnosticPosition pos, Object problem, Type found, Type req) {
-        log.error(pos, "prob.found.req",
-                  problem, found, req);
-        return types.createErrorType(found);
-    }
-
-    Type typeError(DiagnosticPosition pos, String problem, Type found, Type req, Object explanation) {
-        log.error(pos, "prob.found.req.1", problem, found, req, explanation);
-        return types.createErrorType(found);
-    }
-
     /** Report an error that wrong type tag was found.
      *  @param pos        Position to be used for error reporting.
      *  @param required   An internationalized string describing the type tag
@@ -430,6 +413,86 @@ public class Check {
  * Type Checking
  **************************************************************************/
 
+    /**
+     * A check context is an object that can be used to perform compatibility
+     * checks - depending on the check context, meaning of 'compatibility' might
+     * vary significantly.
+     */
+    interface CheckContext {
+        /**
+         * Is type 'found' compatible with type 'req' in given context
+         */
+        boolean compatible(Type found, Type req, Warner warn);
+        /**
+         * Instantiate a ForAll type against a given target type 'req' in given context
+         */
+        Type rawInstantiatePoly(ForAll found, Type req, Warner warn);
+        /**
+         * Report a check error
+         */
+        void report(DiagnosticPosition pos, Type found, Type req, JCDiagnostic details);
+        /**
+         * Obtain a warner for this check context
+         */
+        public Warner checkWarner(DiagnosticPosition pos, Type found, Type req);
+    }
+
+    /**
+     * This class represent a check context that is nested within another check
+     * context - useful to check sub-expressions. The default behavior simply
+     * redirects all method calls to the enclosing check context leveraging
+     * the forwarding pattern.
+     */
+    static class NestedCheckContext implements CheckContext {
+        CheckContext enclosingContext;
+
+        NestedCheckContext(CheckContext enclosingContext) {
+            this.enclosingContext = enclosingContext;
+        }
+
+        public boolean compatible(Type found, Type req, Warner warn) {
+            return enclosingContext.compatible(found, req, warn);
+        }
+
+        public Type rawInstantiatePoly(ForAll found, Type req, Warner warn) {
+            return enclosingContext.rawInstantiatePoly(found, req, warn);
+        }
+
+        public void report(DiagnosticPosition pos, Type found, Type req, JCDiagnostic details) {
+            enclosingContext.report(pos, found, req, details);
+        }
+
+        public Warner checkWarner(DiagnosticPosition pos, Type found, Type req) {
+            return enclosingContext.checkWarner(pos, found, req);
+        }
+    }
+
+    /**
+     * Check context to be used when evaluating assignment/return statements
+     */
+    CheckContext basicHandler = new CheckContext() {
+        public void report(DiagnosticPosition pos, Type found, Type req, JCDiagnostic details) {
+            if (details == null) {
+                log.error(pos, "prob.found.req", found, req);
+            } else {
+                log.error(pos, "prob.found.req.1", details);
+            }
+        }
+        public boolean compatible(Type found, Type req, Warner warn) {
+            return types.isAssignable(found, req, warn);
+        }
+
+        public Type rawInstantiatePoly(ForAll found, Type req, Warner warn) {
+            if (req.tag == NONE)
+                req = found.qtype.tag <= VOID ? found.qtype : syms.objectType;
+            return infer.instantiateExpr(found, req, warn);
+        }
+
+        public Warner checkWarner(DiagnosticPosition pos, Type found, Type req) {
+            return convertWarner(pos, found, req);
+        }
+    };
+
     /** Check that a given type is assignable to a given proto-type.
      *  If it is, return the type, otherwise return errType.
      *  @param pos        Position to be used for error reporting.
@@ -437,64 +500,54 @@ public class Check {
      *  @param req        The type that was required.
      */
     Type checkType(DiagnosticPosition pos, Type found, Type req) {
-        return checkType(pos, found, req, "incompatible.types");
+        return checkType(pos, found, req, basicHandler);
     }
 
-    Type checkType(DiagnosticPosition pos, Type found, Type req, String errKey) {
+    Type checkType(final DiagnosticPosition pos, Type found, Type req, CheckContext checkContext) {
         if (req.tag == ERROR)
             return req;
-        if (found.tag == FORALL)
-            return instantiatePoly(pos, (ForAll)found, req, convertWarner(pos, found, req));
+        if (found.tag == FORALL) {
+            ForAll fa = (ForAll)found;
+            Type owntype = instantiatePoly(pos, checkContext, fa, req, checkContext.checkWarner(pos, found, req));
+            return checkType(pos, owntype, req, checkContext);
+        }
         if (req.tag == NONE)
             return found;
-        if (types.isAssignable(found, req, convertWarner(pos, found, req)))
+        if (checkContext.compatible(found, req, checkContext.checkWarner(pos, found, req))) {
             return found;
-        if (found.tag <= DOUBLE && req.tag <= DOUBLE)
-            return typeError(pos, diags.fragment("possible.loss.of.precision"), found, req);
-        if (found.isSuperBound()) {
-            log.error(pos, "assignment.from.super-bound", found);
+        } else {
+            if (found.tag <= DOUBLE && req.tag <= DOUBLE) {
+                checkContext.report(pos, found, req, diags.fragment("possible.loss.of.precision"));
+                return types.createErrorType(found);
+            }
+            checkContext.report(pos, found, req, null);
             return types.createErrorType(found);
         }
-        if (req.isExtendsBound()) {
-            log.error(pos, "assignment.to.extends-bound", req);
-            return types.createErrorType(found);
-        }
-        return typeError(pos, diags.fragment(errKey), found, req);
     }
 
     /** Instantiate polymorphic type to some prototype, unless
      *  prototype is `anyPoly' in which case polymorphic type
      *  is returned unchanged.
      */
-    Type instantiatePoly(DiagnosticPosition pos, ForAll t, Type pt, Warner warn) throws Infer.NoInstanceException {
-        if (pt == Infer.anyPoly && complexInference) {
-            return t;
-        } else if (pt == Infer.anyPoly || pt.tag == NONE) {
-            Type newpt = t.qtype.tag <= VOID ? t.qtype : syms.objectType;
-            return instantiatePoly(pos, t, newpt, warn);
-        } else if (pt.tag == ERROR) {
-            return pt;
-        } else {
-            try {
-                return infer.instantiateExpr(t, pt, warn);
-            } catch (Infer.NoInstanceException ex) {
+    Type instantiatePoly(DiagnosticPosition pos, CheckContext checkContext, ForAll t, Type pt, Warner warn) throws Infer.NoInstanceException {
+        try {
+            return checkContext.rawInstantiatePoly(t, pt, warn);
+        } catch (final Infer.NoInstanceException ex) {
+            JCDiagnostic d = ex.getDiagnostic();
+            if (d != null) {
                 if (ex.isAmbiguous) {
-                    JCDiagnostic d = ex.getDiagnostic();
-                    log.error(pos,
-                              "undetermined.type" + (d!=null ? ".1" : ""),
-                              t, d);
-                    return types.createErrorType(pt);
-                } else {
-                    JCDiagnostic d = ex.getDiagnostic();
-                    return typeError(pos,
-                                     diags.fragment("incompatible.types" + (d!=null ? ".1" : ""), d),
-                                     t, pt);
+                    d = diags.fragment("undetermined.type", t, d);
                 }
-            } catch (Infer.InvalidInstanceException ex) {
-                JCDiagnostic d = ex.getDiagnostic();
-                log.error(pos, "invalid.inferred.types", t.tvars, d);
-                return types.createErrorType(pt);
             }
+            checkContext.report(pos, t, pt, d);
+            return types.createErrorType(pt);
+        } catch (Infer.InvalidInstanceException ex) {
+            JCDiagnostic d = ex.getDiagnostic();
+            if (d != null) {
+                d = diags.fragment("invalid.inferred.types", t.tvars, d);
+            }
+            checkContext.report(pos, t, pt, d);
+            return types.createErrorType(pt);
         }
     }
 
@@ -505,15 +558,17 @@ public class Check {
      *  @param req        The target type of the cast.
      */
     Type checkCastable(DiagnosticPosition pos, Type found, Type req) {
+        return checkCastable(pos, found, req, basicHandler);
+    }
+    Type checkCastable(DiagnosticPosition pos, Type found, Type req, CheckContext checkContext) {
         if (found.tag == FORALL) {
-            instantiatePoly(pos, (ForAll) found, req, castWarner(pos, found, req));
+            instantiatePoly(pos, basicHandler, (ForAll) found, req, castWarner(pos, found, req));
             return req;
         } else if (types.isCastable(found, req, castWarner(pos, found, req))) {
             return req;
         } else {
-            return typeError(pos,
-                             diags.fragment("inconvertible.types"),
-                             found, req);
+            checkContext.report(pos, found, req, diags.fragment("inconvertible.types", found, req));
+            return types.createErrorType(found);
         }
     }
 
@@ -867,14 +922,6 @@ public class Check {
                 && types.isSubtype(actual, types.supertype(formal))
                 && types.isSubtypeUnchecked(actual, types.interfaces(formal), warn))
                 return;
-
-            if (false) {
-                // TODO: make assertConvertible work
-                typeError(tree.pos(), diags.fragment("incompatible.types"), actual, formal);
-                throw new AssertionError("Tree: " + tree
-                                         + " actual:" + actual
-                                         + " formal: " + formal);
-            }
         }
 
     /**
