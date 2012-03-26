@@ -399,7 +399,6 @@ public class Resolve {
         else {
             Symbol s2 = ((MethodSymbol)sym).implementation(site.tsym, types, true);
             return (s2 == null || s2 == sym || sym.owner == s2.owner ||
-                    s2.isPolymorphicSignatureGeneric() ||
                     !types.isSubSignature(types.memberType(site, s2), types.memberType(site, sym)));
         }
     }
@@ -449,7 +448,6 @@ public class Resolve {
                         boolean useVarargs,
                         Warner warn)
         throws Infer.InferenceException {
-        boolean polymorphicSignature = m.isPolymorphicSignatureGeneric() && allowMethodHandles;
         if (useVarargs && (m.flags() & VARARGS) == 0)
             throw inapplicableMethodException.setMessage();
         Type mt = types.memberType(site, m);
@@ -490,8 +488,7 @@ public class Resolve {
         }
 
         // find out whether we need to go the slow route via infer
-        boolean instNeeded = tvars.tail != null || /*inlined: tvars.nonEmpty()*/
-                polymorphicSignature;
+        boolean instNeeded = tvars.tail != null; /*inlined: tvars.nonEmpty()*/
         for (List<Type> l = argtypes;
              l.tail != null/*inlined: l.nonEmpty()*/ && !instNeeded;
              l = l.tail) {
@@ -499,9 +496,7 @@ public class Resolve {
         }
 
         if (instNeeded)
-            return polymorphicSignature ?
-                infer.instantiatePolymorphicSignatureInstance(env, site, m.name, (MethodSymbol)m, argtypes) :
-                infer.instantiateMethod(env,
+            return infer.instantiateMethod(env,
                                     tvars,
                                     (MethodType)mt,
                                     m,
@@ -1740,25 +1735,18 @@ public class Resolve {
                 steps = steps.tail;
             }
             if (sym.kind >= AMBIGUOUS) {
-                if (site.tsym.isPolymorphicSignatureGeneric()) {
-                    //polymorphic receiver - synthesize new method symbol
+                //if nothing is found return the 'first' error
+                MethodResolutionPhase errPhase =
+                        currentResolutionContext.firstErroneousResolutionPhase();
+                sym = access(currentResolutionContext.resolutionCache.get(errPhase),
+                        pos, location, site, name, true, argtypes, typeargtypes);
+                env.info.varArgs = errPhase.isVarargsRequired;
+            } else if (allowMethodHandles) {
+                MethodSymbol msym = (MethodSymbol)sym;
+                if (msym.isSignaturePolymorphic(types)) {
                     env.info.varArgs = false;
-                    sym = findPolymorphicSignatureInstance(env,
-                            site, name, null, argtypes);
+                    return findPolymorphicSignatureInstance(env, sym, argtypes);
                 }
-                else {
-                    //if nothing is found return the 'first' error
-                    MethodResolutionPhase errPhase =
-                            currentResolutionContext.firstErroneousResolutionPhase();
-                    sym = access(currentResolutionContext.resolutionCache.get(errPhase),
-                            pos, location, site, name, true, argtypes, typeargtypes);
-                    env.info.varArgs = errPhase.isVarargsRequired;
-                }
-            } else if (allowMethodHandles && sym.isPolymorphicSignatureGeneric()) {
-                //non-instantiated polymorphic signature - synthesize new method symbol
-                env.info.varArgs = false;
-                sym = findPolymorphicSignatureInstance(env,
-                        site, name, (MethodSymbol)sym, argtypes);
             }
             return sym;
         }
@@ -1771,40 +1759,25 @@ public class Resolve {
      *  Searches in a side table, not the main scope of the site.
      *  This emulates the lookup process required by JSR 292 in JVM.
      *  @param env       Attribution environment
-     *  @param site      The original type from where the selection takes place.
-     *  @param name      The method's name.
-     *  @param spMethod  A template for the implicit method, or null.
-     *  @param argtypes  The required argument types.
-     *  @param typeargtypes  The required type arguments.
+     *  @param spMethod  signature polymorphic method - i.e. MH.invokeExact
+     *  @param argtypes  The required argument types
      */
-    Symbol findPolymorphicSignatureInstance(Env<AttrContext> env, Type site,
-                                            Name name,
-                                            MethodSymbol spMethod,  // sig. poly. method or null if none
+    Symbol findPolymorphicSignatureInstance(Env<AttrContext> env,
+                                            Symbol spMethod,
                                             List<Type> argtypes) {
         Type mtype = infer.instantiatePolymorphicSignatureInstance(env,
-                site, name, spMethod, argtypes);
-        long flags = ABSTRACT | HYPOTHETICAL | POLYMORPHIC_SIGNATURE |
-                    (spMethod != null ?
-                        spMethod.flags() & Flags.AccessFlags :
-                        Flags.PUBLIC | Flags.STATIC);
-        Symbol m = null;
-        for (Scope.Entry e = polymorphicSignatureScope.lookup(name);
-             e.scope != null;
-             e = e.next()) {
-            Symbol sym = e.sym;
-            if (types.isSameType(mtype, sym.type) &&
-                (sym.flags() & Flags.STATIC) == (flags & Flags.STATIC) &&
-                types.isSameType(sym.owner.type, site)) {
-               m = sym;
-               break;
+                (MethodSymbol)spMethod, argtypes);
+        for (Symbol sym : polymorphicSignatureScope.getElementsByName(spMethod.name)) {
+            if (types.isSameType(mtype, sym.type)) {
+               return sym;
             }
         }
-        if (m == null) {
-            // create the desired method
-            m = new MethodSymbol(flags, name, mtype, site.tsym);
-            polymorphicSignatureScope.enter(m);
-        }
-        return m;
+
+        // create the desired method
+        long flags = ABSTRACT | HYPOTHETICAL | spMethod.flags() & Flags.AccessFlags;
+        Symbol msym = new MethodSymbol(flags, spMethod.name, mtype, spMethod.owner);
+        polymorphicSignatureScope.enter(msym);
+        return msym;
     }
 
     /** Resolve a qualified method identifier, throw a fatal error if not
