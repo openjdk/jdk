@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,16 @@
  * questions.
  */
 
-// key: compiler.misc.where.intersection
-// key: compiler.misc.where.description.intersection
-// key: compiler.misc.intersection.type
-// key: compiler.err.prob.found.req
-// options: -XDdiags=where
-// run: simple
+// key: compiler.err.prob.found.req.1
+// key: compiler.misc.cant.apply.diamond.1
+// key: compiler.misc.infer.no.conforming.instance.exists
+// key: compiler.misc.diamond
 
-class WhereIntersection {
-    interface I1 {}
-    interface I2 {}
-    class A implements I1, I2 {}
-    class B implements I1, I2 {}
-    class Test {
-        <Z> Z m(Z z1, Z z2) { return null; }
-        void main(){
-            A a = m(new A(), new B());
-        }
+class CantApplyDiamond1<X> {
+
+    CantApplyDiamond1(CantApplyDiamond1<? super X> lz) { }
+
+    void test(CantApplyDiamond1<Integer> li) {
+       CantApplyDiamond1<String> ls = new CantApplyDiamond1<>(li);
     }
 }

@@ -347,7 +347,7 @@ public class Infer {
                     that.tvars,
                     instantiateAsUninferredVars(undetvars, that.tvars));
         }
-        return chk.checkType(warn.pos(), that.inst(targs, types), to);
+        return that.inst(targs, types);
     }
     //where
     private List<Type> instantiateAsUninferredVars(List<Type> undetvars, List<Type> tvars) {
