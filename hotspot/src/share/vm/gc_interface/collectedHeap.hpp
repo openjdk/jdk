@@ -149,18 +149,14 @@ class CollectedHeap : public CHeapObj {
   inline static HeapWord* common_permanent_mem_allocate_init(size_t size, TRAPS);
 
   // Helper functions for (VM) allocation.
-  inline static void post_allocation_setup_common(KlassHandle klass,
-                                                  HeapWord* obj, size_t size);
+  inline static void post_allocation_setup_common(KlassHandle klass, HeapWord* obj);
   inline static void post_allocation_setup_no_klass_install(KlassHandle klass,
-                                                            HeapWord* objPtr,
-                                                            size_t size);
+                                                            HeapWord* objPtr);
 
-  inline static void post_allocation_setup_obj(KlassHandle klass,
-                                               HeapWord* obj, size_t size);
+  inline static void post_allocation_setup_obj(KlassHandle klass, HeapWord* obj);
 
   inline static void post_allocation_setup_array(KlassHandle klass,
-                                                 HeapWord* obj, size_t size,
-                                                 int length);
+                                                 HeapWord* obj, int length);
 
   // Clears an allocated object.
   inline static void init_obj(HeapWord* obj, size_t size);
@@ -368,9 +364,7 @@ class CollectedHeap : public CHeapObj {
   inline static oop permanent_obj_allocate_no_klass_install(KlassHandle klass,
                                                             int size,
                                                             TRAPS);
-  inline static void post_allocation_install_obj_klass(KlassHandle klass,
-                                                       oop obj,
-                                                       int size);
+  inline static void post_allocation_install_obj_klass(KlassHandle klass, oop obj);
   inline static oop permanent_array_allocate(KlassHandle klass, int size, int length, TRAPS);
 
   // Raw memory allocation facilities
@@ -663,9 +657,6 @@ class CollectedHeap : public CHeapObj {
       _gc_heap_log->log_heap_after();
     }
   }
-
-  // Allocate GCHeapLog during VM startup
-  static void initialize_heap_log();
 
   // Heap verification
   virtual void verify(bool allow_dirty, bool silent, VerifyOption option) = 0;

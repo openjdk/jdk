@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,10 +174,9 @@ KlassHandle Klass::base_create_klass(KlassHandle& klass, int size,
 }
 
 void Klass_vtbl::post_new_init_klass(KlassHandle& klass,
-                                     klassOop new_klass,
-                                     int size) const {
+                                     klassOop new_klass) const {
   assert(!new_klass->klass_part()->null_vtbl(), "Not a complete klass");
-  CollectedHeap::post_allocation_install_obj_klass(klass, new_klass, size);
+  CollectedHeap::post_allocation_install_obj_klass(klass, new_klass);
 }
 
 void* Klass_vtbl::operator new(size_t ignored, KlassHandle& klass,
