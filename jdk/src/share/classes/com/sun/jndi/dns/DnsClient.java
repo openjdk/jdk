@@ -577,8 +577,8 @@ public class DnsClient {
         // enqueue only the first response, responses for retries are ignored.
         //
         synchronized (queuesLock) {
-            if (reqs.contains(xid)) { // enqueue only the first response
-                resps.put(xid, pkt);
+            if (reqs.contains(hdr.xid)) { // enqueue only the first response
+                resps.put(hdr.xid, pkt);
             }
         }
 
