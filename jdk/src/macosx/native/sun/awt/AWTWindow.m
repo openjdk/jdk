@@ -102,11 +102,12 @@ static JNF_CLASS_CACHE(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow");
         type |= NSBorderlessWindowMask;
     }
 
-    if (IS(styleBits, TEXTURED))    type |= NSTexturedBackgroundWindowMask;
-    if (IS(styleBits, UNIFIED))     type |= NSUnifiedTitleAndToolbarWindowMask;
-    if (IS(styleBits, UTILITY))     type |= NSUtilityWindowMask;
-    if (IS(styleBits, HUD))         type |= NSHUDWindowMask;
-    if (IS(styleBits, SHEET))       type |= NSDocModalWindowMask;
+    if (IS(styleBits, TEXTURED))      type |= NSTexturedBackgroundWindowMask;
+    if (IS(styleBits, UNIFIED))       type |= NSUnifiedTitleAndToolbarWindowMask;
+    if (IS(styleBits, UTILITY))       type |= NSUtilityWindowMask;
+    if (IS(styleBits, HUD))           type |= NSHUDWindowMask;
+    if (IS(styleBits, SHEET))         type |= NSDocModalWindowMask;
+    if (IS(styleBits, NONACTIVATING)) type |= NSNonactivatingPanelMask;
 
     return type;
 }

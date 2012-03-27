@@ -26,9 +26,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <dlfcn.h>
-#ifndef __APPLE__
-#include <link.h>
-#endif
 #include "NativeFunc.h"
 
 /* standard GSS method names (ordering is from mapfile) */
