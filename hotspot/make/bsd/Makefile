@@ -188,7 +188,7 @@ VARIANTARCH = $(subst i386,i486,$(ZERO_LIBARCH))
 # in the build.sh script:
 TARGETS           = debug jvmg fastdebug optimized profiled product
 
-ifeq ($(ZERO_BUILD), true)
+ifeq ($(findstring true, $(JVM_VARIANT_ZERO) $(JVM_VARIANT_ZEROSHARK)), true)
   SUBDIR_DOCS     = $(OSNAME)_$(VARIANTARCH)_docs
 else
   SUBDIR_DOCS     = $(OSNAME)_$(BUILDARCH)_docs
