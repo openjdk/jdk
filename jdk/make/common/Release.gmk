@@ -144,6 +144,7 @@ JDK_MAN_PAGES =            \
 	javadoc.1          \
 	javah.1            \
 	javap.1            \
+	jcmd.1             \
 	jconsole.1         \
 	jdb.1              \
 	jhat.1             \
