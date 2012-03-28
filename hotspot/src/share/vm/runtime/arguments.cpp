@@ -816,8 +816,21 @@ bool Arguments::process_argument(const char* arg,
     return true;
   }
 
-  jio_fprintf(defaultStream::error_stream(),
-              "Unrecognized VM option '%s'\n", argname);
+  // For locked flags, report a custom error message if available.
+  // Otherwise, report the standard unrecognized VM option.
+
+  Flag* locked_flag = Flag::find_flag((char*)argname, strlen(argname), true);
+  if (locked_flag != NULL) {
+    char locked_message_buf[BUFLEN];
+    locked_flag->get_locked_message(locked_message_buf, BUFLEN);
+    if (strlen(locked_message_buf) == 0) {
+      jio_fprintf(defaultStream::error_stream(),
+        "Unrecognized VM option '%s'\n", argname);
+    } else {
+      jio_fprintf(defaultStream::error_stream(), "%s", locked_message_buf);
+    }
+  }
+
   // allow for commandline "commenting out" options like -XX:#+Verbose
   return arg[0] == '#';
 }
@@ -2522,15 +2535,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       // number of PLAB allocation events during gc.  The value of 8kw
       // was arrived at by experimenting with specjbb.
       FLAG_SET_CMDLINE(uintx, OldPLABSize, 8*K);  // Note: this is in words
-
-      // CompilationPolicyChoice=0 causes the server compiler to adopt
-      // a more conservative which-method-do-I-compile policy when one
-      // of the counters maintained by the interpreter trips.  The
-      // result is reduced startup time and improved specjbb and
-      // alacrity performance.  Zero is the default, but we set it
-      // explicitly here in case the default changes.
-      // See runtime/compilationPolicy.*.
-      FLAG_SET_CMDLINE(intx, CompilationPolicyChoice, 0);
 
       // Enable parallel GC and adaptive generation sizing
       FLAG_SET_CMDLINE(bool, UseParallelGC, true);
