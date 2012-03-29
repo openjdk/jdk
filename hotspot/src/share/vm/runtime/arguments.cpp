@@ -3002,12 +3002,14 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     }
   }
 
+#ifdef ASSERT
   // Parse default .hotspotrc settings file
   if (!settings_file_specified) {
     if (!process_settings_file(".hotspotrc", false, args->ignoreUnrecognized)) {
       return JNI_EINVAL;
     }
   }
+#endif
 
   if (PrintVMOptions) {
     for (index = 0; index < args->nOptions; index++) {
