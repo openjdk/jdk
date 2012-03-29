@@ -3,13 +3,17 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.util.Hashtable;
+import java.nio.file.FileSystems;
 import java.util.Iterator;
-import java.util.TreeSet;
+import java.util.LinkedList;
 import java.util.UUID;
 import java.util.Vector;
 
 public class WinGammaPlatformVC10 extends WinGammaPlatformVC7 {
+
+
+   LinkedList <String>filters = new LinkedList<String>();
+   LinkedList <String[]>filterDeps = new LinkedList<String[]>();
 
     @Override
     protected String getProjectExt() {
@@ -37,15 +41,15 @@ public class WinGammaPlatformVC10 extends WinGammaPlatformVC7 {
                     "Include", cfg.get("Name"));
             tagData("Configuration", cfg.get("Id"));
             tagData("Platform", cfg.get("PlatformName"));
-            endTag("ProjectConfiguration");
+            endTag();
         }
-        endTag("ItemGroup");
+        endTag();
 
         startTag("PropertyGroup", "Label", "Globals");
         tagData("ProjectGuid", "{8822CB5C-1C41-41C2-8493-9F6E1994338B}");
         tag("SccProjectName");
         tag("SccLocalPath");
-        endTag("PropertyGroup");
+        endTag();
 
         tag("Import", "Project", "$(VCTargetsPath)\\Microsoft.Cpp.Default.props");
 
@@ -53,19 +57,19 @@ public class WinGammaPlatformVC10 extends WinGammaPlatformVC7 {
             startTag(cfg, "PropertyGroup", "Label", "Configuration");
             tagData("ConfigurationType", "DynamicLibrary");
             tagData("UseOfMfc", "false");
-            endTag("PropertyGroup");
+            endTag();
         }
 
         tag("Import", "Project", "$(VCTargetsPath)\\Microsoft.Cpp.props");
         startTag("ImportGroup", "Label", "ExtensionSettings");
-        endTag("ImportGroup");
+        endTag();
         for (BuildConfig cfg : allConfigs) {
             startTag(cfg, "ImportGroup", "Label", "PropertySheets");
             tag("Import",
                     "Project", "$(UserRootDir)\\Microsoft.Cpp.$(Platform).user.props",
                     "Condition", "exists('$(UserRootDir)\\Microsoft.Cpp.$(Platform).user.props')",
                     "Label", "LocalAppDataPlatform");
-            endTag("ImportGroup");
+            endTag();
         }
 
         tag("PropertyGroup", "Label", "UserMacros");
@@ -82,38 +86,38 @@ public class WinGammaPlatformVC10 extends WinGammaPlatformVC7 {
             tag(cfg, "CodeAnalysisRules");
             tag(cfg, "CodeAnalysisRuleAssemblies");
         }
-        endTag("PropertyGroup");
+        endTag();
 
         for (BuildConfig cfg : allConfigs) {
             startTag(cfg, "ItemDefinitionGroup");
             startTag("ClCompile");
             tagV(cfg.getV("CompilerFlags"));
-            endTag("ClCompile");
+            endTag();
 
             startTag("Link");
             tagV(cfg.getV("LinkerFlags"));
-            endTag("Link");
+            endTag();
 
             startTag("PostBuildEvent");
             tagData("Message", BuildConfig.getFieldString(null, "PostbuildDescription"));
             tagData("Command", cfg.expandFormat(BuildConfig.getFieldString(null, "PostbuildCommand").replace("\t", "\r\n")));
-            endTag("PostBuildEvent");
+            endTag();
 
             startTag("PreLinkEvent");
             tagData("Message", BuildConfig.getFieldString(null, "PrelinkDescription"));
             tagData("Command", cfg.expandFormat(BuildConfig.getFieldString(null, "PrelinkCommand").replace("\t", "\r\n")));
-            endTag("PreLinkEvent");
+            endTag();
 
-            endTag("ItemDefinitionGroup");
+            endTag();
         }
 
         writeFiles(allConfigs, projDir);
 
         tag("Import", "Project", "$(VCTargetsPath)\\Microsoft.Cpp.targets");
         startTag("ImportGroup", "Label", "ExtensionTargets");
-        endTag("ImportGroup");
+        endTag();
 
-        endTag("Project");
+        endTag();
         printWriter.close();
         System.out.println("    Done.");
 
@@ -138,12 +142,20 @@ public class WinGammaPlatformVC10 extends WinGammaPlatformVC7 {
         for (BuildConfig cfg : allConfigs) {
             startTag(cfg, "PropertyGroup");
             tagData("LocalDebuggerCommand", "$(TargetDir)/hotspot.exe");
-            endTag("PropertyGroup");
+            endTag();
         }
 
-        endTag("Project");
+        endTag();
         printWriter.close();
         System.out.println("    Done.");
+    }
+
+    public void addFilter(String rPath) {
+       filters.add(rPath);
+    }
+
+    public void addFilterDependency(String fileLoc, String filter) {
+      filterDeps.add(new String[] {fileLoc, filter});
     }
 
     private void writeFilterFile(String projectFileName, String projectName,
@@ -157,209 +169,91 @@ public class WinGammaPlatformVC10 extends WinGammaPlatformVC7 {
                 "ToolsVersion", "4.0",
                 "xmlns", "http://schemas.microsoft.com/developer/msbuild/2003");
 
-        Hashtable<String, FileAttribute> allFiles = computeAttributedFiles(allConfigs);
-        TreeSet<FileInfo> sortedFiles = sortFiles(allFiles);
-        Vector<NameFilter> filters = makeFilters(sortedFiles);
-
-        // first all filters
         startTag("ItemGroup");
-        for (NameFilter filter : filters) {
-            doWriteFilter(filter, "");
+        for (String filter : filters) {
+           startTag("Filter", "Include",filter);
+           UUID uuid = UUID.randomUUID();
+           tagData("UniqueIdentifier", "{" + uuid.toString() + "}");
+           endTag();
         }
         startTag("Filter", "Include", "Resource Files");
         UUID uuid = UUID.randomUUID();
         tagData("UniqueIdentifier", "{" + uuid.toString() + "}");
         tagData("Extensions", "ico;cur;bmp;dlg;rc2;rct;bin;cnt;rtf;gif;jpg;jpeg;jpe");
-        endTag("Filter");
-        endTag("ItemGroup");
+        endTag();
+        endTag();
 
-        // then all cpp files
+        //TODO - do I need to split cpp and hpp files?
+
+        // then all files
         startTag("ItemGroup");
-        for (NameFilter filter : filters) {
-            doWriteFiles(sortedFiles, filter, "", "ClCompile", new Evaluator() {
-                public boolean pick(FileInfo fi) {
-                    return fi.isCpp();
-                }
-            }, base);
-        }
-        endTag("ItemGroup");
+        for (String[] dep : filterDeps) {
+           String tagName = getFileTagFromSuffix(dep[0]);
 
-        // then all header files
-        startTag("ItemGroup");
-        for (NameFilter filter : filters) {
-            doWriteFiles(sortedFiles, filter, "", "ClInclude", new Evaluator() {
-                public boolean pick(FileInfo fi) {
-                    return fi.isHeader();
-                }
-            }, base);
+           startTag(tagName, "Include", dep[0]);
+           tagData("Filter", dep[1]);
+           endTag();
         }
-        endTag("ItemGroup");
+        endTag();
 
-        // then all other files
-        startTag("ItemGroup");
-        for (NameFilter filter : filters) {
-            doWriteFiles(sortedFiles, filter, "", "None", new Evaluator() {
-                public boolean pick(FileInfo fi) {
-                    return true;
-                }
-            }, base);
-        }
-        endTag("ItemGroup");
-
-        endTag("Project");
+        endTag();
         printWriter.close();
         System.out.println("    Done.");
     }
 
-
-    private void doWriteFilter(NameFilter filter, String start) {
-        startTag("Filter", "Include", start + filter.fname);
-        UUID uuid = UUID.randomUUID();
-        tagData("UniqueIdentifier", "{" + uuid.toString() + "}");
-        endTag("Filter");
-        if (filter instanceof ContainerFilter) {
-            Iterator i = ((ContainerFilter)filter).babies();
-            while (i.hasNext()) {
-                doWriteFilter((NameFilter)i.next(), start + filter.fname + "\\");
-            }
-        }
+    public String getFileTagFromSuffix(String fileName) {
+       if (fileName.endsWith(".cpp")) {
+          return"ClCompile";
+       } else if (fileName.endsWith(".c")) {
+          return "ClCompile";
+       } else if (fileName.endsWith(".hpp")) {
+          return"ClInclude";
+       } else if (fileName.endsWith(".h")) {
+          return "ClInclude";
+       } else {
+          return"None";
+       }
     }
-
-    interface Evaluator {
-        boolean pick(FileInfo fi);
-    }
-
-    private void doWriteFiles(TreeSet<FileInfo> allFiles, NameFilter filter, String start, String tool, Evaluator eval, String base) {
-        if (filter instanceof ContainerFilter) {
-            Iterator i = ((ContainerFilter)filter).babies();
-            while (i.hasNext()) {
-                doWriteFiles(allFiles, (NameFilter)i.next(), start + filter.fname + "\\", tool, eval, base);
-            }
-        }
-        else {
-            Iterator i = allFiles.iterator();
-            while (i.hasNext()) {
-                FileInfo fi = (FileInfo)i.next();
-
-                if (!filter.match(fi)) {
-                    continue;
-                }
-                if (eval.pick(fi)) {
-                    startTag(tool, "Include", rel(fi.full, base));
-                    tagData("Filter", start + filter.fname);
-                    endTag(tool);
-
-                    // we not gonna look at this file anymore (sic!)
-                    i.remove();
-                }
-            }
-        }
-    }
-
 
     void writeFiles(Vector<BuildConfig> allConfigs, String projDir) {
-        Hashtable<String, FileAttribute> allFiles = computeAttributedFiles(allConfigs);
-        TreeSet<FileInfo> sortedFiles = sortFiles(allFiles);
+       // This code assummes there are no config specific includes.
+       startTag("ItemGroup");
 
-        // first cpp-files
-        startTag("ItemGroup");
-        for (FileInfo fi : sortedFiles) {
-            if (!fi.isCpp()) {
-                continue;
-            }
-            writeFile("ClCompile", allConfigs, fi, projDir);
-        }
-        endTag("ItemGroup");
+       String sourceBase = BuildConfig.getFieldString(null, "SourceBase");
 
-        // then header-files
-        startTag("ItemGroup");
-        for (FileInfo fi : sortedFiles) {
-            if (!fi.isHeader()) {
-                continue;
-            }
-            writeFile("ClInclude", allConfigs, fi, projDir);
-        }
-        endTag("ItemGroup");
+       // Use first config for all global absolute includes.
+       BuildConfig baseConfig = allConfigs.firstElement();
+       Vector<String> rv = new Vector<String>();
 
-        // then others
-        startTag("ItemGroup");
-        for (FileInfo fi : sortedFiles) {
-            if (fi.isHeader() || fi.isCpp()) {
-                continue;
-            }
-            writeFile("None", allConfigs, fi, projDir);
-        }
-        endTag("ItemGroup");
+       // Then use first config for all relative includes
+       Vector<String> ri = new Vector<String>();
+       baseConfig.collectRelevantVectors(ri, "RelativeSrcInclude");
+       for (String f : ri) {
+          rv.add(sourceBase + Util.sep + f);
+       }
+
+       baseConfig.collectRelevantVectors(rv, "AbsoluteSrcInclude");
+
+       handleIncludes(rv, allConfigs);
+
+       endTag();
     }
 
-    /**
-     * Make "path" into a relative path using "base" as the base.
-     *
-     * path and base are assumed to be normalized with / as the file separator.
-     * returned path uses "\\" as file separator
-     */
-    private String rel(String path, String base)
-    {
-        if(!base.endsWith("/")) {
-                base += "/";
-        }
-        String[] pathTok = path.split("/");
-        String[] baseTok = base.split("/");
-        int pi = 0;
-        int bi = 0;
-        StringBuilder newPath = new StringBuilder();
-
-        // first step past all path components that are the same
-        while (pi < pathTok.length &&
-                bi < baseTok.length &&
-                pathTok[pi].equals(baseTok[bi])) {
-            pi++;
-            bi++;
-        }
-
-        // for each path component left in base, add "../"
-        while (bi < baseTok.length) {
-            bi++;
-                newPath.append("..\\");
-        }
-
-        // now add everything left in path
-        while (pi < pathTok.length) {
-                newPath.append(pathTok[pi]);
-                pi++;
-            if (pi != pathTok.length) {
-                newPath.append("\\");
-            }
-        }
-        return newPath.toString();
-    }
-
-    private void writeFile(String tool, Vector<BuildConfig> allConfigs, FileInfo fi, String base) {
-        if (fi.attr.configs == null && fi.attr.pchRoot == false && fi.attr.noPch == false) {
-            tag(tool, "Include", rel(fi.full, base));
-        }
-        else {
-            startTag(tool, "Include", rel(fi.full, base));
-            for (BuildConfig cfg : allConfigs) {
-                if (fi.attr.configs != null && !fi.attr.configs.contains(cfg.get("Name"))) {
-                    tagData(cfg, "ExcludedFromBuild", "true");
-                }
-                if (fi.attr.pchRoot) {
-                        tagData(cfg, "PrecompiledHeader", "Create");
-                }
-                if (fi.attr.noPch) {
-                        startTag(cfg, "PrecompiledHeader");
-                        endTag("PrecompiledHeader");
-                }
-            }
-            endTag(tool);
-        }
+    // Will visit file tree for each include
+    private void handleIncludes(Vector<String> includes, Vector<BuildConfig> allConfigs) {
+       for (String path : includes)  {
+          FileTreeCreatorVC10 ftc = new FileTreeCreatorVC10(FileSystems.getDefault().getPath(path) , allConfigs, this);
+          try {
+             ftc.writeFileTree();
+          } catch (IOException e) {
+             e.printStackTrace();
+          }
+       }
     }
 
     String buildCond(BuildConfig cfg) {
         return "'$(Configuration)|$(Platform)'=='"+cfg.get("Name")+"'";
     }
-
 
     void tagV(Vector<String> v) {
         Iterator<String> i = v.iterator();
@@ -391,6 +285,7 @@ public class WinGammaPlatformVC10 extends WinGammaPlatformVC7 {
 
         startTag(name, ss);
     }
+
 }
 
 class CompilerInterfaceVC10 extends CompilerInterface {
