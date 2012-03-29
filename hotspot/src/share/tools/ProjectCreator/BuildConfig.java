@@ -22,15 +22,14 @@
  *
  */
 
-import java.io.File;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.Vector;
 
 class BuildConfig {
+    @SuppressWarnings("rawtypes")
     Hashtable vars;
-    Vector basicNames, basicPaths;
+    Vector<String> basicNames, basicPaths;
     String[] context;
 
     static CompilerInterface ci;
@@ -47,6 +46,7 @@ class BuildConfig {
         return ci;
     }
 
+    @SuppressWarnings("rawtypes")
     protected void initNames(String flavour, String build, String outDll) {
         if (vars == null) vars = new Hashtable();
 
@@ -63,26 +63,28 @@ class BuildConfig {
         // ones mentioned above were needed to expand format
         String buildBase = expandFormat(getFieldString(null, "BuildBase"));
         String sourceBase = getFieldString(null, "SourceBase");
+        String buildSpace = getFieldString(null, "BuildSpace");
         String outDir = buildBase;
 
         put("Id", flavourBuild);
         put("OutputDir", outDir);
         put("SourceBase", sourceBase);
         put("BuildBase", buildBase);
+        put("BuildSpace", buildSpace);
         put("OutputDll", outDir + Util.sep + outDll);
 
         context = new String [] {flavourBuild, flavour, build, null};
     }
 
-    protected void init(Vector includes, Vector defines) {
+    protected void init(Vector<String> includes, Vector<String> defines) {
         initDefaultDefines(defines);
         initDefaultCompilerFlags(includes);
         initDefaultLinkerFlags();
-        handleDB();
+        //handleDB();
     }
 
 
-    protected void initDefaultCompilerFlags(Vector includes) {
+    protected void initDefaultCompilerFlags(Vector<String> includes) {
         Vector compilerFlags = new Vector();
 
         compilerFlags.addAll(getCI().getBaseCompilerFlags(getV("Define"),
@@ -100,141 +102,46 @@ class BuildConfig {
         put("LinkerFlags", linkerFlags);
     }
 
-    DirectoryTree getSourceTree(String sourceBase, String startAt) {
-        DirectoryTree tree = new DirectoryTree();
-
-        tree.addSubdirToIgnore("Codemgr_wsdata");
-        tree.addSubdirToIgnore("deleted_files");
-        tree.addSubdirToIgnore("SCCS");
-        tree.setVerbose(true);
-        if (startAt != null) {
-            tree.readDirectory(sourceBase + File.separator + startAt);
-        } else {
-            tree.readDirectory(sourceBase);
-        }
-
-        return tree;
-    }
-
-
-    Vector getPreferredPaths() {
-        Vector preferredPaths = new Vector();
-
-        // In the case of multiple files with the same name in
-        // different subdirectories, prefer these versions
-        preferredPaths.add("windows");
-        preferredPaths.add("x86");
-        preferredPaths.add("closed");
-
-        // Also prefer "opto" over "adlc" for adlcVMDeps.hpp
-        preferredPaths.add("opto");
-
-        return preferredPaths;
-    }
-
-
-    void handleDB() {
-        WinGammaPlatform platform = (WinGammaPlatform)getField(null, "PlatformObject");
-
-        putSpecificField("AllFilesHash", computeAllFiles(platform));
-    }
-
-
-    private boolean matchesIgnoredPath(String prefixedName) {
-        Vector rv = new Vector();
+    public boolean matchesIgnoredPath(String path) {
+        Vector<String> rv = new Vector<String>();
         collectRelevantVectors(rv, "IgnorePath");
-        for (Iterator i = rv.iterator(); i.hasNext(); ) {
-            String pathPart = (String) i.next();
-            if (prefixedName.contains(Util.normalize(pathPart)))  {
+        for (String pathPart : rv) {
+            if (path.contains(pathPart))  {
                 return true;
             }
         }
         return false;
     }
 
-    void addAll(Iterator i, Hashtable hash,
-                WinGammaPlatform platform, DirectoryTree tree,
-                Vector preferredPaths, Vector filesNotFound, Vector filesDuplicate) {
-        for (; i.hasNext(); ) {
-            String fileName = (String) i.next();
-            if (lookupHashFieldInContext("IgnoreFile", fileName) == null) {
-                String prefixedName = platform.envVarPrefixedFileName(fileName,
-                                                                      0, /* ignored */
-                                                                      tree,
-                                                                      preferredPaths,
-                                                                      filesNotFound,
-                                                                      filesDuplicate);
-                if (prefixedName != null) {
-                    prefixedName = Util.normalize(prefixedName);
-                    if (!matchesIgnoredPath(prefixedName)) {
-                        addTo(hash, prefixedName, fileName);
-                    }
+    public boolean matchesHidePath(String path) {
+        Vector<String> rv = new Vector<String>();
+        collectRelevantVectors(rv, "HidePath");
+        for (String pathPart : rv) {
+            if (path.contains(Util.normalize(pathPart)))  {
+                return true;
+            }
+        }
+        return false;
+    }
+
+   public Vector<String> matchesAdditionalGeneratedPath(String fullPath) {
+        Vector<String> rv = new Vector<String>();
+        Hashtable<String, String> v = (Hashtable<String, String>)BuildConfig.getField(this.toString(), "AdditionalGeneratedFile");
+        if (v != null) {
+            for (Enumeration<String> e=v.keys(); e.hasMoreElements(); ) {
+                String key = e.nextElement();
+                String val = v.get(key);
+
+                if (fullPath.endsWith(expandFormat(key))) {
+                    rv.add(expandFormat(val));
                 }
             }
         }
+        return rv;
     }
 
     void addTo(Hashtable ht, String key, String value) {
         ht.put(expandFormat(key), expandFormat(value));
-    }
-
-    Hashtable computeAllFiles(WinGammaPlatform platform) {
-        Hashtable rv = new Hashtable();
-        DirectoryTree tree = getSourceTree(get("SourceBase"), getFieldString(null, "StartAt"));
-        Vector preferredPaths = getPreferredPaths();
-
-        // Hold errors until end
-        Vector filesNotFound = new Vector();
-        Vector filesDuplicate = new Vector();
-
-        Vector includedFiles = new Vector();
-
-        // find all files
-        Vector dirs = getSourceIncludes();
-        for (Iterator i = dirs.iterator(); i.hasNext(); ) {
-            String dir = (String)i.next();
-            DirectoryTree subtree = getSourceTree(dir, null);
-            for (Iterator fi = subtree.getFileIterator(); fi.hasNext(); ) {
-                String name = ((File)fi.next()).getName();
-                includedFiles.add(name);
-            }
-        }
-        addAll(includedFiles.iterator(), rv,
-               platform, tree,
-               preferredPaths, filesNotFound, filesDuplicate);
-
-        Vector addFiles = new Vector();
-        collectRelevantVectors(addFiles, "AdditionalFile");
-        addAll(addFiles.iterator(), rv,
-               platform, tree,
-               preferredPaths, filesNotFound, filesDuplicate);
-
-        collectRelevantHashes(rv, "AdditionalGeneratedFile");
-
-        if ((filesNotFound.size() != 0) ||
-            (filesDuplicate.size() != 0)) {
-            System.err.println("Error: some files were not found or " +
-                               "appeared in multiple subdirectories of " +
-                               "directory " + get("SourceBase") + " and could not " +
-                               "be resolved with os_family and arch.");
-            if (filesNotFound.size() != 0) {
-                System.err.println("Files not found:");
-                for (Iterator iter = filesNotFound.iterator();
-                     iter.hasNext(); ) {
-                    System.err.println("  " + (String) iter.next());
-                }
-            }
-            if (filesDuplicate.size() != 0) {
-                System.err.println("Duplicate files:");
-                for (Iterator iter = filesDuplicate.iterator();
-                     iter.hasNext(); ) {
-                    System.err.println("  " + (String) iter.next());
-                }
-            }
-            throw new RuntimeException();
-        }
-
-        return rv;
     }
 
     void initDefaultDefines(Vector defines) {
@@ -324,20 +231,19 @@ class BuildConfig {
     }
 
     void collectRelevantVectors(Vector rv, String field) {
-        for (int i = 0; i < context.length; i++) {
-            Vector v = getFieldVector(context[i], field);
+        for (String ctx : context) {
+            Vector<String> v = getFieldVector(ctx, field);
             if (v != null) {
-                for (Iterator j=v.iterator(); j.hasNext(); ) {
-                    String val = (String)j.next();
-                    rv.add(expandFormat(val));
+                for (String val : v) {
+                    rv.add(expandFormat(val).replace('/', '\\'));
                 }
             }
         }
     }
 
     void collectRelevantHashes(Hashtable rv, String field) {
-        for (int i = 0; i < context.length; i++) {
-            Hashtable v = (Hashtable)getField(context[i], field);
+        for (String ctx : context) {
+            Hashtable v = (Hashtable)getField(ctx, field);
             if (v != null) {
                 for (Enumeration e=v.keys(); e.hasMoreElements(); ) {
                     String key = (String)e.nextElement();
@@ -357,21 +263,17 @@ class BuildConfig {
 
     Vector getIncludes() {
         Vector rv = new Vector();
-
         collectRelevantVectors(rv, "AbsoluteInclude");
-
         rv.addAll(getSourceIncludes());
-
         return rv;
     }
 
     private Vector getSourceIncludes() {
-        Vector rv = new Vector();
-        Vector ri = new Vector();
+        Vector<String> rv = new Vector<String>();
+        Vector<String> ri = new Vector<String>();
         String sourceBase = getFieldString(null, "SourceBase");
         collectRelevantVectors(ri, "RelativeInclude");
-        for (Iterator i = ri.iterator(); i.hasNext(); ) {
-            String f = (String)i.next();
+        for (String f : ri) {
             rv.add(sourceBase + Util.sep + f);
         }
         return rv;
@@ -604,7 +506,6 @@ class TieredFastDebugConfig extends GenericDebugNonKernelConfig {
     }
 }
 
-
 abstract class ProductConfig extends BuildConfig {
     protected void init(Vector includes, Vector defines) {
         defines.add("NDEBUG");
@@ -638,7 +539,6 @@ class TieredProductConfig extends ProductConfig {
     }
 }
 
-
 class CoreDebugConfig extends GenericDebugNonKernelConfig {
     String getOptFlag() {
         return getCI().getNoOptFlag();
@@ -650,7 +550,6 @@ class CoreDebugConfig extends GenericDebugNonKernelConfig {
     }
 }
 
-
 class CoreFastDebugConfig extends GenericDebugNonKernelConfig {
     String getOptFlag() {
         return getCI().getOptFlag();
@@ -661,7 +560,6 @@ class CoreFastDebugConfig extends GenericDebugNonKernelConfig {
         init(getIncludes(), getDefines());
     }
 }
-
 
 class CoreProductConfig extends ProductConfig {
     CoreProductConfig() {
@@ -700,6 +598,7 @@ class KernelProductConfig extends ProductConfig {
         init(getIncludes(), getDefines());
     }
 }
+
 abstract class CompilerInterface {
     abstract Vector getBaseCompilerFlags(Vector defines, Vector includes, String outDir);
     abstract Vector getBaseLinkerFlags(String outDir, String outDll, String platformName);
