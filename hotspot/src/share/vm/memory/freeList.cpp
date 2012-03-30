@@ -23,12 +23,16 @@
  */
 
 #include "precompiled.hpp"
-#include "gc_implementation/concurrentMarkSweep/freeBlockDictionary.hpp"
-#include "gc_implementation/concurrentMarkSweep/freeList.hpp"
+#include "memory/freeBlockDictionary.hpp"
+#include "memory/freeList.hpp"
 #include "memory/sharedHeap.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/vmThread.hpp"
+
+#ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/freeChunk.hpp"
+#endif // SERIALGC
 
 // Free list.  A FreeList is used to access a linked list of chunks
 // of space in the heap.  The head and tail are maintained so that
@@ -36,7 +40,8 @@
 // at the tail of the list and removed from the head of the list to
 // maintain a FIFO queue.
 
-FreeList::FreeList() :
+template <class Chunk>
+FreeList<Chunk>::FreeList() :
   _head(NULL), _tail(NULL)
 #ifdef ASSERT
   , _protecting_lock(NULL)
@@ -48,7 +53,8 @@ FreeList::FreeList() :
   init_statistics();
 }
 
-FreeList::FreeList(FreeChunk* fc) :
+template <class Chunk>
+FreeList<Chunk>::FreeList(Chunk* fc) :
   _head(fc), _tail(fc)
 #ifdef ASSERT
   , _protecting_lock(NULL)
@@ -63,40 +69,27 @@ FreeList::FreeList(FreeChunk* fc) :
 #endif
 }
 
-FreeList::FreeList(HeapWord* addr, size_t size) :
-  _head((FreeChunk*) addr), _tail((FreeChunk*) addr)
-#ifdef ASSERT
-  , _protecting_lock(NULL)
-#endif
-{
-  assert(size > sizeof(FreeChunk), "size is too small");
-  head()->setSize(size);
-  _size         = size;
-  _count        = 1;
-  init_statistics();
-#ifndef PRODUCT
-  _allocation_stats.set_returnedBytes(_size * HeapWordSize);
-#endif
-}
-
-void FreeList::reset(size_t hint) {
+template <class Chunk>
+void FreeList<Chunk>::reset(size_t hint) {
   set_count(0);
   set_head(NULL);
   set_tail(NULL);
   set_hint(hint);
 }
 
-void FreeList::init_statistics(bool split_birth) {
+template <class Chunk>
+void FreeList<Chunk>::init_statistics(bool split_birth) {
   _allocation_stats.initialize(split_birth);
 }
 
-FreeChunk* FreeList::getChunkAtHead() {
+template <class Chunk>
+Chunk* FreeList<Chunk>::getChunkAtHead() {
   assert_proper_lock_protection();
   assert(head() == NULL || head()->prev() == NULL, "list invariant");
   assert(tail() == NULL || tail()->next() == NULL, "list invariant");
-  FreeChunk* fc = head();
+  Chunk* fc = head();
   if (fc != NULL) {
-    FreeChunk* nextFC = fc->next();
+    Chunk* nextFC = fc->next();
     if (nextFC != NULL) {
       // The chunk fc being removed has a "next".  Set the "next" to the
       // "prev" of fc.
@@ -113,20 +106,21 @@ FreeChunk* FreeList::getChunkAtHead() {
 }
 
 
-void FreeList::getFirstNChunksFromList(size_t n, FreeList* fl) {
+template <class Chunk>
+void FreeList<Chunk>::getFirstNChunksFromList(size_t n, FreeList<Chunk>* fl) {
   assert_proper_lock_protection();
   assert(fl->count() == 0, "Precondition");
   if (count() > 0) {
     int k = 1;
     fl->set_head(head()); n--;
-    FreeChunk* tl = head();
+    Chunk* tl = head();
     while (tl->next() != NULL && n > 0) {
       tl = tl->next(); n--; k++;
     }
     assert(tl != NULL, "Loop Inv.");
 
     // First, fix up the list we took from.
-    FreeChunk* new_head = tl->next();
+    Chunk* new_head = tl->next();
     set_head(new_head);
     set_count(count() - k);
     if (new_head == NULL) {
@@ -143,7 +137,8 @@ void FreeList::getFirstNChunksFromList(size_t n, FreeList* fl) {
 }
 
 // Remove this chunk from the list
-void FreeList::removeChunk(FreeChunk*fc) {
+template <class Chunk>
+void FreeList<Chunk>::removeChunk(Chunk*fc) {
    assert_proper_lock_protection();
    assert(head() != NULL, "Remove from empty list");
    assert(fc != NULL, "Remove a NULL chunk");
@@ -151,8 +146,8 @@ void FreeList::removeChunk(FreeChunk*fc) {
    assert(head() == NULL || head()->prev() == NULL, "list invariant");
    assert(tail() == NULL || tail()->next() == NULL, "list invariant");
 
-   FreeChunk* prevFC = fc->prev();
-   FreeChunk* nextFC = fc->next();
+   Chunk* prevFC = fc->prev();
+   Chunk* nextFC = fc->next();
    if (nextFC != NULL) {
      // The chunk fc being removed has a "next".  Set the "next" to the
      // "prev" of fc.
@@ -185,14 +180,15 @@ void FreeList::removeChunk(FreeChunk*fc) {
 }
 
 // Add this chunk at the head of the list.
-void FreeList::returnChunkAtHead(FreeChunk* chunk, bool record_return) {
+template <class Chunk>
+void FreeList<Chunk>::returnChunkAtHead(Chunk* chunk, bool record_return) {
   assert_proper_lock_protection();
   assert(chunk != NULL, "insert a NULL chunk");
   assert(size() == chunk->size(), "Wrong size");
   assert(head() == NULL || head()->prev() == NULL, "list invariant");
   assert(tail() == NULL || tail()->next() == NULL, "list invariant");
 
-  FreeChunk* oldHead = head();
+  Chunk* oldHead = head();
   assert(chunk != oldHead, "double insertion");
   chunk->linkAfter(oldHead);
   link_head(chunk);
@@ -212,20 +208,22 @@ void FreeList::returnChunkAtHead(FreeChunk* chunk, bool record_return) {
   assert(tail() == NULL || tail()->size() == size(), "wrong item on list");
 }
 
-void FreeList::returnChunkAtHead(FreeChunk* chunk) {
+template <class Chunk>
+void FreeList<Chunk>::returnChunkAtHead(Chunk* chunk) {
   assert_proper_lock_protection();
   returnChunkAtHead(chunk, true);
 }
 
 // Add this chunk at the tail of the list.
-void FreeList::returnChunkAtTail(FreeChunk* chunk, bool record_return) {
+template <class Chunk>
+void FreeList<Chunk>::returnChunkAtTail(Chunk* chunk, bool record_return) {
   assert_proper_lock_protection();
   assert(head() == NULL || head()->prev() == NULL, "list invariant");
   assert(tail() == NULL || tail()->next() == NULL, "list invariant");
   assert(chunk != NULL, "insert a NULL chunk");
   assert(size() == chunk->size(), "wrong size");
 
-  FreeChunk* oldTail = tail();
+  Chunk* oldTail = tail();
   assert(chunk != oldTail, "double insertion");
   if (oldTail != NULL) {
     oldTail->linkAfter(chunk);
@@ -246,11 +244,13 @@ void FreeList::returnChunkAtTail(FreeChunk* chunk, bool record_return) {
   assert(tail() == NULL || tail()->size() == size(), "wrong item on list");
 }
 
-void FreeList::returnChunkAtTail(FreeChunk* chunk) {
+template <class Chunk>
+void FreeList<Chunk>::returnChunkAtTail(Chunk* chunk) {
   returnChunkAtTail(chunk, true);
 }
 
-void FreeList::prepend(FreeList* fl) {
+template <class Chunk>
+void FreeList<Chunk>::prepend(FreeList<Chunk>* fl) {
   assert_proper_lock_protection();
   if (fl->count() > 0) {
     if (count() == 0) {
@@ -259,8 +259,8 @@ void FreeList::prepend(FreeList* fl) {
       set_count(fl->count());
     } else {
       // Both are non-empty.
-      FreeChunk* fl_tail = fl->tail();
-      FreeChunk* this_head = head();
+      Chunk* fl_tail = fl->tail();
+      Chunk* this_head = head();
       assert(fl_tail->next() == NULL, "Well-formedness of fl");
       fl_tail->linkNext(this_head);
       this_head->linkPrev(fl_tail);
@@ -275,11 +275,12 @@ void FreeList::prepend(FreeList* fl) {
 
 // verifyChunkInFreeLists() is used to verify that an item is in this free list.
 // It is used as a debugging aid.
-bool FreeList::verifyChunkInFreeLists(FreeChunk* fc) const {
+template <class Chunk>
+bool FreeList<Chunk>::verifyChunkInFreeLists(Chunk* fc) const {
   // This is an internal consistency check, not part of the check that the
   // chunk is in the free lists.
   guarantee(fc->size() == size(), "Wrong list is being searched");
-  FreeChunk* curFC = head();
+  Chunk* curFC = head();
   while (curFC) {
     // This is an internal consistency check.
     guarantee(size() == curFC->size(), "Chunk is in wrong list.");
@@ -292,7 +293,8 @@ bool FreeList::verifyChunkInFreeLists(FreeChunk* fc) const {
 }
 
 #ifndef PRODUCT
-void FreeList::verify_stats() const {
+template <class Chunk>
+void FreeList<Chunk>::verify_stats() const {
   // The +1 of the LH comparand is to allow some "looseness" in
   // checking: we usually call this interface when adding a block
   // and we'll subsequently update the stats; we cannot update the
@@ -317,7 +319,8 @@ void FreeList::verify_stats() const {
                  _allocation_stats.coalDeaths(), count()));
 }
 
-void FreeList::assert_proper_lock_protection_work() const {
+template <class Chunk>
+void FreeList<Chunk>::assert_proper_lock_protection_work() const {
   assert(_protecting_lock != NULL, "Don't call this directly");
   assert(ParallelGCThreads > 0, "Don't call this directly");
   Thread* thr = Thread::current();
@@ -334,7 +337,8 @@ void FreeList::assert_proper_lock_protection_work() const {
 #endif
 
 // Print the "label line" for free list stats.
-void FreeList::print_labels_on(outputStream* st, const char* c) {
+template <class Chunk>
+void FreeList<Chunk>::print_labels_on(outputStream* st, const char* c) {
   st->print("%16s\t", c);
   st->print("%14s\t"    "%14s\t"    "%14s\t"    "%14s\t"    "%14s\t"
             "%14s\t"    "%14s\t"    "%14s\t"    "%14s\t"    "%14s\t"    "\n",
@@ -346,7 +350,8 @@ void FreeList::print_labels_on(outputStream* st, const char* c) {
 // to the call is a non-null string, it is printed in the first column;
 // otherwise, if the argument is null (the default), then the size of the
 // (free list) block is printed in the first column.
-void FreeList::print_on(outputStream* st, const char* c) const {
+template <class Chunk>
+void FreeList<Chunk>::print_on(outputStream* st, const char* c) const {
   if (c != NULL) {
     st->print("%16s", c);
   } else {
@@ -358,3 +363,8 @@ void FreeList::print_on(outputStream* st, const char* c) const {
            bfrSurp(),             surplus(),             desired(),             prevSweep(),           beforeSweep(),
            count(),               coalBirths(),          coalDeaths(),          splitBirths(),         splitDeaths());
 }
+
+#ifndef SERIALGC
+// Needs to be after the definitions have been seen.
+template class FreeList<FreeChunk>;
+#endif // SERIALGC

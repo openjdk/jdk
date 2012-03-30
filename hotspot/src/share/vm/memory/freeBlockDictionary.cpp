@@ -23,7 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "gc_implementation/concurrentMarkSweep/freeBlockDictionary.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/freeChunk.hpp"
+#endif // SERIALGC
+#include "memory/freeBlockDictionary.hpp"
 #ifdef TARGET_OS_FAMILY_linux
 # include "thread_linux.inline.hpp"
 #endif
@@ -38,15 +41,15 @@
 #endif
 
 #ifndef PRODUCT
-Mutex* FreeBlockDictionary::par_lock() const {
+template <class Chunk> Mutex* FreeBlockDictionary<Chunk>::par_lock() const {
   return _lock;
 }
 
-void FreeBlockDictionary::set_par_lock(Mutex* lock) {
+template <class Chunk> void FreeBlockDictionary<Chunk>::set_par_lock(Mutex* lock) {
   _lock = lock;
 }
 
-void FreeBlockDictionary::verify_par_locked() const {
+template <class Chunk> void FreeBlockDictionary<Chunk>::verify_par_locked() const {
 #ifdef ASSERT
   if (ParallelGCThreads > 0) {
     Thread* myThread = Thread::current();
@@ -58,3 +61,8 @@ void FreeBlockDictionary::verify_par_locked() const {
 #endif // ASSERT
 }
 #endif
+
+#ifndef SERIALGC
+// Explicitly instantiate for FreeChunk
+template class FreeBlockDictionary<FreeChunk>;
+#endif // SERIALGC

@@ -22,39 +22,36 @@
  *
  */
 
-#ifndef SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_FREELIST_HPP
-#define SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_FREELIST_HPP
+#ifndef SHARE_VM_MEMORY_FREELIST_HPP
+#define SHARE_VM_MEMORY_FREELIST_HPP
 
 #include "gc_implementation/shared/allocationStats.hpp"
 
 class CompactibleFreeListSpace;
 
-// A class for maintaining a free list of FreeChunk's.  The FreeList
+// A class for maintaining a free list of Chunk's.  The FreeList
 // maintains a the structure of the list (head, tail, etc.) plus
 // statistics for allocations from the list.  The links between items
 // are not part of FreeList.  The statistics are
-// used to make decisions about coalescing FreeChunk's when they
+// used to make decisions about coalescing Chunk's when they
 // are swept during collection.
 //
 // See the corresponding .cpp file for a description of the specifics
 // for that implementation.
 
 class Mutex;
-class TreeList;
+template <class Chunk> class TreeList;
+template <class Chunk> class PrintTreeCensusClosure;
 
+template <class Chunk>
 class FreeList VALUE_OBJ_CLASS_SPEC {
   friend class CompactibleFreeListSpace;
   friend class VMStructs;
-  friend class PrintTreeCensusClosure;
-
- protected:
-  TreeList* _parent;
-  TreeList* _left;
-  TreeList* _right;
+  friend class PrintTreeCensusClosure<Chunk>;
 
  private:
-  FreeChunk*    _head;          // Head of list of free chunks
-  FreeChunk*    _tail;          // Tail of list of free chunks
+  Chunk*        _head;          // Head of list of free chunks
+  Chunk*        _tail;          // Tail of list of free chunks
   size_t        _size;          // Size in Heap words of each chunk
   ssize_t       _count;         // Number of entries in list
   size_t        _hint;          // next larger size list with a positive surplus
@@ -92,10 +89,7 @@ class FreeList VALUE_OBJ_CLASS_SPEC {
   // Construct a list without any entries.
   FreeList();
   // Construct a list with "fc" as the first (and lone) entry in the list.
-  FreeList(FreeChunk* fc);
-  // Construct a list which will have a FreeChunk at address "addr" and
-  // of size "size" as the first (and lone) entry in the list.
-  FreeList(HeapWord* addr, size_t size);
+  FreeList(Chunk* fc);
 
   // Reset the head, tail, hint, and count of a free list.
   void reset(size_t hint);
@@ -108,18 +102,18 @@ class FreeList VALUE_OBJ_CLASS_SPEC {
 #endif
 
   // Accessors.
-  FreeChunk* head() const {
+  Chunk* head() const {
     assert_proper_lock_protection();
     return _head;
   }
-  void set_head(FreeChunk* v) {
+  void set_head(Chunk* v) {
     assert_proper_lock_protection();
     _head = v;
     assert(!_head || _head->size() == _size, "bad chunk size");
   }
   // Set the head of the list and set the prev field of non-null
   // values to NULL.
-  void link_head(FreeChunk* v) {
+  void link_head(Chunk* v) {
     assert_proper_lock_protection();
     set_head(v);
     // If this method is not used (just set the head instead),
@@ -129,18 +123,18 @@ class FreeList VALUE_OBJ_CLASS_SPEC {
     }
   }
 
-  FreeChunk* tail() const {
+  Chunk* tail() const {
     assert_proper_lock_protection();
     return _tail;
   }
-  void set_tail(FreeChunk* v) {
+  void set_tail(Chunk* v) {
     assert_proper_lock_protection();
     _tail = v;
     assert(!_tail || _tail->size() == _size, "bad chunk size");
   }
   // Set the tail of the list and set the next field of non-null
   // values to NULL.
-  void link_tail(FreeChunk* v) {
+  void link_tail(Chunk* v) {
     assert_proper_lock_protection();
     set_tail(v);
     if (v != NULL) {
@@ -298,31 +292,31 @@ class FreeList VALUE_OBJ_CLASS_SPEC {
 
   // Unlink head of list and return it.  Returns NULL if
   // the list is empty.
-  FreeChunk* getChunkAtHead();
+  Chunk* getChunkAtHead();
 
   // Remove the first "n" or "count", whichever is smaller, chunks from the
   // list, setting "fl", which is required to be empty, to point to them.
-  void getFirstNChunksFromList(size_t n, FreeList* fl);
+  void getFirstNChunksFromList(size_t n, FreeList<Chunk>* fl);
 
   // Unlink this chunk from it's free list
-  void removeChunk(FreeChunk* fc);
+  void removeChunk(Chunk* fc);
 
   // Add this chunk to this free list.
-  void returnChunkAtHead(FreeChunk* fc);
-  void returnChunkAtTail(FreeChunk* fc);
+  void returnChunkAtHead(Chunk* fc);
+  void returnChunkAtTail(Chunk* fc);
 
   // Similar to returnChunk* but also records some diagnostic
   // information.
-  void returnChunkAtHead(FreeChunk* fc, bool record_return);
-  void returnChunkAtTail(FreeChunk* fc, bool record_return);
+  void returnChunkAtHead(Chunk* fc, bool record_return);
+  void returnChunkAtTail(Chunk* fc, bool record_return);
 
   // Prepend "fl" (whose size is required to be the same as that of "this")
   // to the front of "this" list.
-  void prepend(FreeList* fl);
+  void prepend(FreeList<Chunk>* fl);
 
   // Verify that the chunk is in the list.
   // found.  Return NULL if "fc" is not found.
-  bool verifyChunkInFreeLists(FreeChunk* fc) const;
+  bool verifyChunkInFreeLists(Chunk* fc) const;
 
   // Stats verification
   void verify_stats() const PRODUCT_RETURN;
@@ -332,4 +326,4 @@ class FreeList VALUE_OBJ_CLASS_SPEC {
   void print_on(outputStream* st, const char* c = NULL) const;
 };
 
-#endif // SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_FREELIST_HPP
+#endif // SHARE_VM_MEMORY_FREELIST_HPP
