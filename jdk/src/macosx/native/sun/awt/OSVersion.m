@@ -31,33 +31,31 @@
 #import <JavaRuntimeSupport/JavaRuntimeSupport.h>
 
 
-// returns 10.7 for Lion, 10.6 for SnowLeopard etc.
-double getOSXMajorVersion() {
-    char *version = JRSCopyOSVersion();
-
-    if (version == NULL) return 0.0;
-
-    char temp[32];
-    strlcpy(temp, version, sizeof(temp));
-    free(version);
-
-    if (strlen(temp) < 3) {
-        return 0.0;
+// returns 107 for Lion, 106 for SnowLeopard etc.
+int getOSXMajorVersion() {
+    char *ver = JRSCopyOSVersion();
+    if (ver == NULL) { 
+        return 0;
     }
 
-    if (temp[2] != '.')  { // Third char must be a '.'
-        return 0.0;
+    int len = strlen(ver);
+    int v = 0;
+    
+    // Third char must be a '.'    
+    if (len >= 3 && ver[2] == '.') {
+        int i;
+        
+        v = (ver[0] - '0') * 10 + (ver[1] - '0');
+        for (i = 3; i < len && isdigit(ver[i]); ++i) {
+            v = v * 10 + (ver[i] - '0');
+        }
     }
 
-    char *ptr = strchr(temp+3, '.'); // remove the second . if one exists.
-    if (ptr != NULL) {
-        *ptr = 0;
-    }
-
-    return atof(temp);
+    free(ver);
+    
+    return v;
 }
 
-
 BOOL isSnowLeopardOrLower() {
-    return (getOSXMajorVersion() < 10.7);
+    return (getOSXMajorVersion() < 107);
 }

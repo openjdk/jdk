@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ DEP_DIR       = $(GENERATED)/dependencies
 -include $(DEP_DIR)/*.d
 
 # read machine-specific adjustments (%%% should do this via buildtree.make?)
-ifeq ($(ZERO_BUILD), true)
+ifeq ($(findstring true, $(JVM_VARIANT_ZERO) $(JVM_VARIANT_ZEROSHARK)), true)
   include $(MAKEFILES_DIR)/zeroshark.make
 else
   include $(MAKEFILES_DIR)/$(BUILDARCH).make
@@ -271,12 +271,12 @@ else
 
   LIBS_VM                  += $(LIBS)
 endif
-ifeq ($(ZERO_BUILD), true)
+ifeq ($(JVM_VARIANT_ZERO), true)
   LIBS_VM += $(LIBFFI_LIBS)
 endif
-ifeq ($(SHARK_BUILD), true)
+ifeq ($(JVM_VARIANT_ZEROSHARK), true)
+  LIBS_VM   += $(LIBFFI_LIBS) $(LLVM_LIBS)
   LFLAGS_VM += $(LLVM_LDFLAGS)
-  LIBS_VM   += $(LLVM_LIBS)
 endif
 
 
@@ -335,6 +335,9 @@ include $(MAKEFILES_DIR)/jsig.make
 # Serviceability agent
 include $(MAKEFILES_DIR)/saproc.make
 
+# Whitebox testing API
+include $(MAKEFILES_DIR)/wb.make
+
 #----------------------------------------------------------------------
 
 ifeq ($(OS_VENDOR), Darwin)
@@ -342,10 +345,10 @@ $(LIBJVM).dSYM: $(LIBJVM)
 	dsymutil $(LIBJVM)
 
 # no libjvm_db for macosx
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(BUILDLIBSAPROC) dtraceCheck $(LIBJVM).dSYM
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(BUILDLIBSAPROC) dtraceCheck $(LIBJVM).dSYM $(WB_JAR)
 	echo "Doing vm.make build:"
 else
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC)
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC) $(WB_JAR)
 endif
 
 install: install_jvm install_jsig install_saproc

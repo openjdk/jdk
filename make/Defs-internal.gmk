@@ -79,7 +79,7 @@ endef
 # Find all build_time_* files and print their contents in a list sorted
 # on the name of the sub repository.
 define ReportBuildTimes
-$(PRINTF) "-- Build times ----------\nTarget %s\nStart %s\nEnd   %s\n%s\n%s\n-------------------------\n" \
+$(PRINTF) -- "-- Build times ----------\nTarget %s\nStart %s\nEnd   %s\n%s\n%s\n-------------------------\n" \
 $1 \
 "`$(CAT) $(BUILDTIMESDIR)/build_time_start_TOTAL_human_readable`" \
 "`$(CAT) $(BUILDTIMESDIR)/build_time_end_TOTAL_human_readable`" \

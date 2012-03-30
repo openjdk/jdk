@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,7 @@ public:
   // accepts a value for L
   TruncatedSeq(int length = DefaultSeqLength,
                double alpha = DEFAULT_ALPHA_VALUE);
+  ~TruncatedSeq();
   virtual void add(double val);
   virtual double maximum() const;
   virtual double last() const; // the last value added to the sequence

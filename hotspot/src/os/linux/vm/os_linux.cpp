@@ -2547,7 +2547,14 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 }
 
 void os::free_memory(char *addr, size_t bytes, size_t alignment_hint) {
-  commit_memory(addr, bytes, alignment_hint, false);
+  // This method works by doing an mmap over an existing mmaping and effectively discarding
+  // the existing pages. However it won't work for SHM-based large pages that cannot be
+  // uncommitted at all. We don't do anything in this case to avoid creating a segment with
+  // small pages on top of the SHM segment. This method always works for small pages, so we
+  // allow that in any case.
+  if (alignment_hint <= (size_t)os::vm_page_size() || !UseSHM) {
+    commit_memory(addr, bytes, alignment_hint, false);
+  }
 }
 
 void os::numa_make_global(char *addr, size_t bytes) {
