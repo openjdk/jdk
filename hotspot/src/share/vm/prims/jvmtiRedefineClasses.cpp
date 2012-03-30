@@ -2400,44 +2400,33 @@ void VM_RedefineClasses::set_new_constant_pool(
   // new constant indices as needed. The inner classes info is a
   // quadruple:
   // (inner_class_info, outer_class_info, inner_name, inner_access_flags)
-  typeArrayOop inner_class_list = scratch_class->inner_classes();
-  int icl_length = (inner_class_list == NULL) ? 0 : inner_class_list->length();
-  if (icl_length > 0) {
-    typeArrayHandle inner_class_list_h(THREAD, inner_class_list);
-    for (int i = 0; i < icl_length;
-         i += instanceKlass::inner_class_next_offset) {
-      int cur_index = inner_class_list_h->ushort_at(i
-                        + instanceKlass::inner_class_inner_class_info_offset);
-      if (cur_index == 0) {
-        continue;  // JVM spec. allows null inner class refs so skip it
-      }
-      int new_index = find_new_index(cur_index);
-      if (new_index != 0) {
-        RC_TRACE_WITH_THREAD(0x00080000, THREAD,
-          ("inner_class_info change: %d to %d", cur_index, new_index));
-        inner_class_list_h->ushort_at_put(i
-          + instanceKlass::inner_class_inner_class_info_offset, new_index);
-      }
-      cur_index = inner_class_list_h->ushort_at(i
-                    + instanceKlass::inner_class_outer_class_info_offset);
-      new_index = find_new_index(cur_index);
-      if (new_index != 0) {
-        RC_TRACE_WITH_THREAD(0x00080000, THREAD,
-          ("outer_class_info change: %d to %d", cur_index, new_index));
-        inner_class_list_h->ushort_at_put(i
-          + instanceKlass::inner_class_outer_class_info_offset, new_index);
-      }
-      cur_index = inner_class_list_h->ushort_at(i
-                    + instanceKlass::inner_class_inner_name_offset);
-      new_index = find_new_index(cur_index);
-      if (new_index != 0) {
-        RC_TRACE_WITH_THREAD(0x00080000, THREAD,
-          ("inner_name change: %d to %d", cur_index, new_index));
-        inner_class_list_h->ushort_at_put(i
-          + instanceKlass::inner_class_inner_name_offset, new_index);
-      }
-    } // end for each inner class
-  } // end if we have inner classes
+  InnerClassesIterator iter(scratch_class);
+  for (; !iter.done(); iter.next()) {
+    int cur_index = iter.inner_class_info_index();
+    if (cur_index == 0) {
+      continue;  // JVM spec. allows null inner class refs so skip it
+    }
+    int new_index = find_new_index(cur_index);
+    if (new_index != 0) {
+      RC_TRACE_WITH_THREAD(0x00080000, THREAD,
+        ("inner_class_info change: %d to %d", cur_index, new_index));
+      iter.set_inner_class_info_index(new_index);
+    }
+    cur_index = iter.outer_class_info_index();
+    new_index = find_new_index(cur_index);
+    if (new_index != 0) {
+      RC_TRACE_WITH_THREAD(0x00080000, THREAD,
+        ("outer_class_info change: %d to %d", cur_index, new_index));
+      iter.set_outer_class_info_index(new_index);
+    }
+    cur_index = iter.inner_name_index();
+    new_index = find_new_index(cur_index);
+    if (new_index != 0) {
+      RC_TRACE_WITH_THREAD(0x00080000, THREAD,
+        ("inner_name change: %d to %d", cur_index, new_index));
+      iter.set_inner_name_index(new_index);
+    }
+  } // end for each inner class
 
   // Attach each method in klass to the new constant pool and update
   // to use new constant pool indices as needed:

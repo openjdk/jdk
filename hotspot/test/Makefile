@@ -26,6 +26,8 @@
 # Makefile to run various jdk tests
 #
 
+GETMIXEDPATH=echo
+
 # Get OS/ARCH specifics
 OSNAME = $(shell uname -s)
 ifeq ($(OSNAME), SunOS)
@@ -60,7 +62,14 @@ ifeq ($(findstring BSD,$(OSNAME)), BSD)
     ARCH = i586
   endif
 endif
-ifeq ($(OSNAME), Windows_NT)
+ifeq ($(PLATFORM),)
+  # detect wether we're running in MKS or cygwin
+  ifeq ($(OSNAME), Windows_NT) # MKS
+    GETMIXEDPATH=dosname -s
+  endif
+  ifeq ($(findstring CYGWIN,$(OSNAME)), CYGWIN)
+    GETMIXEDPATH=cygpath -m -s
+  endif
   PLATFORM = windows
   SLASH_JAVA = J:
   ifeq ($(word 1, $(PROCESSOR_IDENTIFIER)),ia64)
@@ -234,11 +243,11 @@ wbapitest: prep $(JT_HOME) $(PRODUCT_HOME) $(JTREG)
 	$(JTREG) -a -v:fail,error               \
           $(JTREG_KEY_OPTION)                   \
           $(EXTRA_JTREG_OPTIONS)                \
-          -r:$(ABS_TEST_OUTPUT_DIR)/JTreport    \
-          -w:$(ABS_TEST_OUTPUT_DIR)/JTwork      \
-          -jdk:$(PRODUCT_HOME)                  \
+          -r:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/JTreport    \
+          -w:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)")/JTwork      \
+          -jdk:$(shell $(GETMIXEDPATH) "$(PRODUCT_HOME)")                  \
           $(JAVA_OPTIONS:%=-vmoption:%)         \
-          $(TEST_ROOT)/sanity                   \
+          $(shell $(GETMIXEDPATH) "$(TEST_ROOT)")/sanity                   \
 	  || $(BUNDLE_UP_FAILED)
 	$(BUNDLE_UP)
 
