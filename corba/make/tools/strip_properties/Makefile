@@ -34,7 +34,7 @@ PROGRAM = stripproperties
 include $(BUILDDIR)/common/Defs.gmk
 
 BUILDTOOL_SOURCE_ROOT = $(BUILDDIR)/tools/src
-BUILDTOOL_MAIN        = $(PKGDIR)/StripProperties.java
+BUILDTOOL_MAIN        = $(PKGDIR)/StripPropertiesCorba.java
 
 #
 # Build tool jar rules.

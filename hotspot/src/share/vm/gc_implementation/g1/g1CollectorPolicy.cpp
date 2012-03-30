@@ -2608,7 +2608,7 @@ bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
   size_t reclaimable_bytes = cset_chooser->remainingReclaimableBytes();
   size_t capacity_bytes = _g1->capacity();
   double perc = (double) reclaimable_bytes * 100.0 / (double) capacity_bytes;
-  double threshold = (double) G1OldReclaimableThresholdPercent;
+  double threshold = (double) G1HeapWastePercent;
   if (perc < threshold) {
     ergo_verbose4(ErgoMixedGCs,
               false_action_str,

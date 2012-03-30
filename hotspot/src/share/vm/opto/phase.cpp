@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,9 @@ elapsedTimer Phase::_t_stubCompilation;
 
 // The next timers used for LogCompilation
 elapsedTimer Phase::_t_parser;
-elapsedTimer Phase::_t_escapeAnalysis;
 elapsedTimer Phase::_t_optimizer;
+elapsedTimer   Phase::_t_escapeAnalysis;
+elapsedTimer     Phase::_t_connectionGraph;
 elapsedTimer   Phase::_t_idealLoop;
 elapsedTimer   Phase::_t_ccp;
 elapsedTimer Phase::_t_matcher;
@@ -51,6 +52,7 @@ elapsedTimer Phase::_t_output;
 elapsedTimer Phase::_t_graphReshaping;
 elapsedTimer Phase::_t_scheduler;
 elapsedTimer Phase::_t_blockOrdering;
+elapsedTimer Phase::_t_macroEliminate;
 elapsedTimer Phase::_t_macroExpand;
 elapsedTimer Phase::_t_peephole;
 elapsedTimer Phase::_t_codeGeneration;
@@ -104,6 +106,8 @@ void Phase::print_timers() {
     if (DoEscapeAnalysis) {
       // EA is part of Optimizer.
       tty->print_cr ("      escape analysis: %3.3f sec", Phase::_t_escapeAnalysis.seconds());
+      tty->print_cr ("        connection graph: %3.3f sec", Phase::_t_connectionGraph.seconds());
+      tty->print_cr ("      macroEliminate : %3.3f sec", Phase::_t_macroEliminate.seconds());
     }
     tty->print_cr ("      iterGVN        : %3.3f sec", Phase::_t_iterGVN.seconds());
     tty->print_cr ("      idealLoop      : %3.3f sec", Phase::_t_idealLoop.seconds());
@@ -112,9 +116,10 @@ void Phase::print_timers() {
     tty->print_cr ("      iterGVN2       : %3.3f sec", Phase::_t_iterGVN2.seconds());
     tty->print_cr ("      macroExpand    : %3.3f sec", Phase::_t_macroExpand.seconds());
     tty->print_cr ("      graphReshape   : %3.3f sec", Phase::_t_graphReshaping.seconds());
-    double optimizer_subtotal = Phase::_t_iterGVN.seconds() +
+    double optimizer_subtotal = Phase::_t_iterGVN.seconds() + Phase::_t_iterGVN2.seconds() +
+      Phase::_t_escapeAnalysis.seconds() + Phase::_t_macroEliminate.seconds() +
       Phase::_t_idealLoop.seconds() + Phase::_t_ccp.seconds() +
-      Phase::_t_graphReshaping.seconds();
+      Phase::_t_macroExpand.seconds() + Phase::_t_graphReshaping.seconds();
     double percent_of_optimizer = ((optimizer_subtotal == 0.0) ? 0.0 : (optimizer_subtotal / Phase::_t_optimizer.seconds() * 100.0));
     tty->print_cr ("      subtotal       : %3.3f sec,  %3.2f %%", optimizer_subtotal, percent_of_optimizer);
   }

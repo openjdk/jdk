@@ -993,7 +993,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
     // iteration (after taking the Heap_lock).
     result = _mutator_alloc_region.attempt_allocation(word_size,
                                                       false /* bot_updates */);
-    if (result != NULL ){
+    if (result != NULL) {
       return result;
     }
 
@@ -2437,19 +2437,21 @@ void G1CollectedHeap::collect(GCCause::Cause cause) {
                                  true,  /* should_initiate_conc_mark */
                                  g1_policy()->max_pause_time_ms(),
                                  cause);
+
       VMThread::execute(&op);
       if (!op.pause_succeeded()) {
-        // Another GC got scheduled and prevented us from scheduling
-        // the initial-mark GC. It's unlikely that the GC that
-        // pre-empted us was also an initial-mark GC. So, we'll retry
-        // the initial-mark GC.
-
         if (full_gc_count_before == total_full_collections()) {
-          retry_gc = true;
+          retry_gc = op.should_retry_gc();
         } else {
           // A Full GC happened while we were trying to schedule the
           // initial-mark GC. No point in starting a new cycle given
           // that the whole heap was collected anyway.
+        }
+
+        if (retry_gc) {
+          if (GC_locker::is_active_and_needs_gc()) {
+            GC_locker::stall_until_clear();
+          }
         }
       }
     } else {
