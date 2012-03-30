@@ -983,12 +983,13 @@ public class JavacParser implements Parser {
                                 t = lambdaExpressionOrStatement(variableDeclaratorId(mods, t), pos);
                                 break;
                             }
-                        } else {
-                            Assert.check((mode & EXPR) != 0);
+                        } else if ((mode & EXPR) != 0) {
                             mode = EXPR;
                             JCExpression e = term2Rest(t1, TreeInfo.shiftPrec);
                             t = F.at(pos1).Binary(op, t, e);
                             t = termRest(term1Rest(term2Rest(t, TreeInfo.orPrec)));
+                        } else {
+                            accept(GT);
                         }
                     } else if ((mode & TYPE) != 0 &&
                             (token.kind == IDENTIFIER || token.kind == ELLIPSIS)) {
