@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3354,6 +3354,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     klassOop ik = oopFactory::new_instanceKlass(name, vtable_size, itable_size,
                                                 static_field_size,
                                                 total_oop_map_count,
+                                                access_flags,
                                                 rt, CHECK_(nullHandle));
     instanceKlassHandle this_klass (THREAD, ik);
 
@@ -3362,7 +3363,6 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
            "sanity");
 
     // Fill in information already parsed
-    this_klass->set_access_flags(access_flags);
     this_klass->set_should_verify_class(verify);
     jint lh = Klass::instance_layout_helper(instance_size, false);
     this_klass->set_layout_helper(lh);
