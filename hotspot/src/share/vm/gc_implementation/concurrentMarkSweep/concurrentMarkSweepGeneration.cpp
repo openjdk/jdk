@@ -188,7 +188,7 @@ class CMSParGCThreadState: public CHeapObj {
 ConcurrentMarkSweepGeneration::ConcurrentMarkSweepGeneration(
      ReservedSpace rs, size_t initial_byte_size, int level,
      CardTableRS* ct, bool use_adaptive_freelists,
-     FreeBlockDictionary::DictionaryChoice dictionaryChoice) :
+     FreeBlockDictionary<FreeChunk>::DictionaryChoice dictionaryChoice) :
   CardGeneration(rs, initial_byte_size, level, ct),
   _dilatation_factor(((double)MinChunkSize)/((double)(CollectedHeap::min_fill_size()))),
   _debug_collection_type(Concurrent_collection_type)

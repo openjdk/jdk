@@ -25,10 +25,10 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_COMPACTIBLEFREELISTSPACE_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_COMPACTIBLEFREELISTSPACE_HPP
 
-#include "gc_implementation/concurrentMarkSweep/binaryTreeDictionary.hpp"
-#include "gc_implementation/concurrentMarkSweep/freeList.hpp"
 #include "gc_implementation/concurrentMarkSweep/promotionInfo.hpp"
+#include "memory/binaryTreeDictionary.hpp"
 #include "memory/blockOffsetTable.inline.hpp"
+#include "memory/freeList.hpp"
 #include "memory/space.hpp"
 
 // Classes in support of keeping track of promotions into a non-Contiguous
@@ -129,10 +129,10 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // Linear allocation blocks
   LinearAllocBlock _smallLinearAllocBlock;
 
-  FreeBlockDictionary::DictionaryChoice _dictionaryChoice;
-  FreeBlockDictionary* _dictionary;    // ptr to dictionary for large size blocks
+  FreeBlockDictionary<FreeChunk>::DictionaryChoice _dictionaryChoice;
+  FreeBlockDictionary<FreeChunk>* _dictionary;    // ptr to dictionary for large size blocks
 
-  FreeList _indexedFreeList[IndexSetSize];
+  FreeList<FreeChunk> _indexedFreeList[IndexSetSize];
                                        // indexed array for small size blocks
   // allocation stategy
   bool       _fitStrategy;      // Use best fit strategy.
@@ -169,7 +169,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // If the count of "fl" is negative, it's absolute value indicates a
   // number of free chunks that had been previously "borrowed" from global
   // list of size "word_sz", and must now be decremented.
-  void par_get_chunk_of_blocks(size_t word_sz, size_t n, FreeList* fl);
+  void par_get_chunk_of_blocks(size_t word_sz, size_t n, FreeList<FreeChunk>* fl);
 
   // Allocation helper functions
   // Allocate using a strategy that takes from the indexed free lists
@@ -215,7 +215,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // and return it.  The split off remainder is returned to
   // the free lists.  The old name for getFromListGreater
   // was lookInListGreater.
-  FreeChunk* getFromListGreater(FreeList* fl, size_t numWords);
+  FreeChunk* getFromListGreater(FreeList<FreeChunk>* fl, size_t numWords);
   // Get a chunk in the indexed free list or dictionary,
   // by considering a larger chunk and splitting it.
   FreeChunk* getChunkFromGreater(size_t numWords);
@@ -286,10 +286,10 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // Constructor...
   CompactibleFreeListSpace(BlockOffsetSharedArray* bs, MemRegion mr,
                            bool use_adaptive_freelists,
-                           FreeBlockDictionary::DictionaryChoice);
+                           FreeBlockDictionary<FreeChunk>::DictionaryChoice);
   // accessors
   bool bestFitFirst() { return _fitStrategy == FreeBlockBestFitFirst; }
-  FreeBlockDictionary* dictionary() const { return _dictionary; }
+  FreeBlockDictionary<FreeChunk>* dictionary() const { return _dictionary; }
   HeapWord* nearLargestChunk() const { return _nearLargestChunk; }
   void set_nearLargestChunk(HeapWord* v) { _nearLargestChunk = v; }
 
@@ -622,7 +622,7 @@ class CFLS_LAB : public CHeapObj {
   CompactibleFreeListSpace* _cfls;
 
   // Our local free lists.
-  FreeList _indexedFreeList[CompactibleFreeListSpace::IndexSetSize];
+  FreeList<FreeChunk> _indexedFreeList[CompactibleFreeListSpace::IndexSetSize];
 
   // Initialized from a command-line arg.
 
@@ -635,7 +635,7 @@ class CFLS_LAB : public CHeapObj {
   size_t        _num_blocks        [CompactibleFreeListSpace::IndexSetSize];
 
   // Internal work method
-  void get_from_global_pool(size_t word_sz, FreeList* fl);
+  void get_from_global_pool(size_t word_sz, FreeList<FreeChunk>* fl);
 
 public:
   CFLS_LAB(CompactibleFreeListSpace* cfls);

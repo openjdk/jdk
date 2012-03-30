@@ -44,11 +44,11 @@
   nonstatic_field(FreeChunk,                   _next,                                         FreeChunk*)                            \
   nonstatic_field(FreeChunk,                   _prev,                                         FreeChunk*)                            \
   nonstatic_field(LinearAllocBlock,            _word_size,                                    size_t)                                \
-  nonstatic_field(FreeList,                    _size,                                         size_t)                                \
-  nonstatic_field(FreeList,                    _count,                                        ssize_t)                               \
-  nonstatic_field(BinaryTreeDictionary,        _totalSize,                                    size_t)                                \
-  nonstatic_field(CompactibleFreeListSpace,    _dictionary,                                   FreeBlockDictionary*)                  \
-  nonstatic_field(CompactibleFreeListSpace,    _indexedFreeList[0],                           FreeList)                              \
+  nonstatic_field(FreeList<FreeChunk>,         _size,                                         size_t)                                \
+  nonstatic_field(FreeList<FreeChunk>,         _count,                                        ssize_t)                               \
+  nonstatic_field(BinaryTreeDictionary<FreeChunk>,_totalSize,                                 size_t)                                \
+  nonstatic_field(CompactibleFreeListSpace,    _dictionary,                                   FreeBlockDictionary<FreeChunk>*)       \
+  nonstatic_field(CompactibleFreeListSpace,    _indexedFreeList[0],                           FreeList<FreeChunk>)                   \
   nonstatic_field(CompactibleFreeListSpace,    _smallLinearAllocBlock,                        LinearAllocBlock)
 
 
@@ -70,13 +70,13 @@
   declare_toplevel_type(CompactibleFreeListSpace*)                        \
   declare_toplevel_type(CMSCollector*)                                    \
   declare_toplevel_type(FreeChunk*)                                       \
-  declare_toplevel_type(BinaryTreeDictionary*)                            \
-  declare_toplevel_type(FreeBlockDictionary*)                             \
-  declare_toplevel_type(FreeList*)                                        \
-  declare_toplevel_type(FreeList)                                         \
+  declare_toplevel_type(BinaryTreeDictionary<FreeChunk>*)                 \
+  declare_toplevel_type(FreeBlockDictionary<FreeChunk>*)                  \
+  declare_toplevel_type(FreeList<FreeChunk>*)                             \
+  declare_toplevel_type(FreeList<FreeChunk>)                              \
   declare_toplevel_type(LinearAllocBlock)                                 \
-  declare_toplevel_type(FreeBlockDictionary)                              \
-            declare_type(BinaryTreeDictionary,        FreeBlockDictionary)
+  declare_toplevel_type(FreeBlockDictionary<FreeChunk>)                   \
+            declare_type(BinaryTreeDictionary<FreeChunk>, FreeBlockDictionary<FreeChunk>)
 
 #define VM_INT_CONSTANTS_CMS(declare_constant)                            \
   declare_constant(Generation::ConcurrentMarkSweep)                       \
