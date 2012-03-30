@@ -1694,7 +1694,9 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       // they are roughly equivalent to Object.
       ciInstanceKlass* singleton = NULL;
       if (target->holder()->nof_implementors() == 1) {
-        singleton = target->holder()->implementor(0);
+        singleton = target->holder()->implementor();
+        assert(singleton != NULL && singleton != target->holder(),
+               "just checking");
 
         assert(holder->is_interface(), "invokeinterface to non interface?");
         ciInstanceKlass* decl_interface = (ciInstanceKlass*)holder;
