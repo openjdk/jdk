@@ -297,16 +297,14 @@ public:
 
       if (obj->blueprint()->oop_is_instanceKlass()) {
         instanceKlass* ik = instanceKlass::cast((klassOop)obj);
-        typeArrayOop inner_classes = ik->inner_classes();
-        if (inner_classes != NULL) {
-          constantPoolOop constants = ik->constants();
-          int n = inner_classes->length();
-          for (int i = 0; i < n; i += instanceKlass::inner_class_next_offset) {
-            int ioff = i + instanceKlass::inner_class_inner_name_offset;
-            int index = inner_classes->ushort_at(ioff);
-            if (index != 0) {
-              _closure->do_symbol(constants->symbol_at_addr(index));
-            }
+        instanceKlassHandle ik_h((klassOop)obj);
+        InnerClassesIterator iter(ik_h);
+        constantPoolOop constants = ik->constants();
+        for (; !iter.done(); iter.next()) {
+          int index = iter.inner_name_index();
+
+          if (index != 0) {
+            _closure->do_symbol(constants->symbol_at_addr(index));
           }
         }
       }
