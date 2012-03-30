@@ -333,7 +333,7 @@ CollectedHeap::fill_with_array(HeapWord* start, size_t words, bool zap)
 
   // Set the length first for concurrent GC.
   ((arrayOop)start)->set_length((int)len);
-  post_allocation_setup_common(Universe::intArrayKlassObj(), start, words);
+  post_allocation_setup_common(Universe::intArrayKlassObj(), start);
   DEBUG_ONLY(zap_filler_array(start, words, zap);)
 }
 
@@ -346,8 +346,7 @@ CollectedHeap::fill_with_object_impl(HeapWord* start, size_t words, bool zap)
     fill_with_array(start, words, zap);
   } else if (words > 0) {
     assert(words == min_fill_size(), "unaligned size");
-    post_allocation_setup_common(SystemDictionary::Object_klass(), start,
-                                 words);
+    post_allocation_setup_common(SystemDictionary::Object_klass(), start);
   }
 }
 
@@ -477,7 +476,7 @@ oop CollectedHeap::Class_obj_allocate(KlassHandle klass, int size, KlassHandle r
     assert(ScavengeRootsInCode > 0, "must be");
     obj = common_mem_allocate_init(size, CHECK_NULL);
   }
-  post_allocation_setup_common(klass, obj, size);
+  post_allocation_setup_common(klass, obj);
   assert(Universe::is_bootstrapping() ||
          !((oop)obj)->blueprint()->oop_is_array(), "must not be an array");
   NOT_PRODUCT(Universe::heap()->check_for_bad_heap_word_value(obj, size));
