@@ -202,6 +202,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private LWWindowPeer peer;
     private CPlatformView contentView;
     private CPlatformWindow owner;
+    private boolean undecorated; // initialized in getInitialStyleBits()
+    private Rectangle normalBounds = null; // not-null only for undecorated maximized windows
 
     public CPlatformWindow(final PeerType peerType) {
         super(0, true);
@@ -277,8 +279,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
         // Either java.awt.Frame or java.awt.Dialog can be undecorated, however java.awt.Window always is undecorated.
         {
-            final boolean undecorated = isFrame ? ((Frame)target).isUndecorated() : (isDialog ? ((Dialog)target).isUndecorated() : true);
-            if (undecorated) styleBits = SET(styleBits, DECORATED, false);
+            this.undecorated = isFrame ? ((Frame)target).isUndecorated() : (isDialog ? ((Dialog)target).isUndecorated() : true);
+            if (this.undecorated) styleBits = SET(styleBits, DECORATED, false);
         }
 
         // Either java.awt.Frame or java.awt.Dialog can be resizable, however java.awt.Window is never resizable
@@ -466,6 +468,30 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         nativeSetNSWindowBounds(getNSWindowPtr(), x, y, w, h);
     }
 
+    private void zoom() {
+        if (!undecorated) {
+            CWrapper.NSWindow.zoom(getNSWindowPtr());
+        } else {
+            // OS X handles -zoom incorrectly for undecorated windows
+            final boolean isZoomed = this.normalBounds == null;
+            deliverZoom(isZoomed);
+
+            Rectangle toBounds;
+            if (isZoomed) {
+                this.normalBounds = peer.getBounds();
+                long screen = CWrapper.NSWindow.screen(getNSWindowPtr());
+                toBounds = CWrapper.NSScreen.visibleFrame(screen).getBounds();
+                // Flip the y coordinate
+                Rectangle frame = CWrapper.NSScreen.frame(screen).getBounds();
+                toBounds.y = frame.height - toBounds.y - toBounds.height;
+            } else {
+                toBounds = normalBounds;
+                this.normalBounds = null;
+            }
+            setBounds(toBounds.x, toBounds.y, toBounds.width, toBounds.height);
+        }
+    }
+
     @Override // PlatformWindow
     public void setVisible(boolean visible) {
         final long nsWindowPtr = getNSWindowPtr();
@@ -486,7 +512,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                     CWrapper.NSWindow.deminiaturize(nsWindowPtr);
                     break;
                 case Frame.MAXIMIZED_BOTH:
-                    CWrapper.NSWindow.zoom(nsWindowPtr);
+                    zoom();
                     break;
             }
         }
@@ -526,7 +552,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                         CWrapper.NSWindow.miniaturize(nsWindowPtr);
                         break;
                     case Frame.MAXIMIZED_BOTH:
-                        CWrapper.NSWindow.zoom(nsWindowPtr);
+                        zoom();
                         break;
                 }
             }
@@ -692,7 +718,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 if (prevWindowState == Frame.MAXIMIZED_BOTH) {
                     // let's return into the normal states first
                     // the zoom call toggles between the normal and the max states
-                    CWrapper.NSWindow.zoom(nsWindowPtr);
+                    zoom();
                 }
                 CWrapper.NSWindow.miniaturize(nsWindowPtr);
                 break;
@@ -701,14 +727,14 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                     // let's return into the normal states first
                     CWrapper.NSWindow.deminiaturize(nsWindowPtr);
                 }
-                CWrapper.NSWindow.zoom(nsWindowPtr);
+                zoom();
                 break;
             case Frame.NORMAL:
                 if (prevWindowState == Frame.ICONIFIED) {
                     CWrapper.NSWindow.deminiaturize(nsWindowPtr);
                 } else if (prevWindowState == Frame.MAXIMIZED_BOTH) {
                     // the zoom call toggles between the normal and the max states
-                    CWrapper.NSWindow.zoom(nsWindowPtr);
+                    zoom();
                 }
                 break;
             default:
