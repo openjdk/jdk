@@ -257,6 +257,18 @@ const char* InlineTree::should_not_inline(ciMethod *callee_method, ciMethod* cal
       return "exception method";
   }
 
+  if (callee_method->should_not_inline()) {
+    return "disallowed by CompilerOracle";
+  }
+
+  if (UseStringCache) {
+    // Do not inline StringCache::profile() method used only at the beginning.
+    if (callee_method->name() == ciSymbol::profile_name() &&
+        callee_method->holder()->name() == ciSymbol::java_lang_StringCache()) {
+      return "profiling method";
+    }
+  }
+
   // use frequency-based objections only for non-trivial methods
   if (callee_method->code_size_for_inlining() <= MaxTrivialSize) return NULL;
 
@@ -275,18 +287,6 @@ const char* InlineTree::should_not_inline(ciMethod *callee_method, ciMethod* cal
     } else if (!callee_method->was_executed_more_than(MIN2(MinInliningThreshold,
                                                            CompileThreshold >> 1))) {
       return "executed < MinInliningThreshold times";
-    }
-  }
-
-  if (callee_method->should_not_inline()) {
-    return "disallowed by CompilerOracle";
-  }
-
-  if (UseStringCache) {
-    // Do not inline StringCache::profile() method used only at the beginning.
-    if (callee_method->name() == ciSymbol::profile_name() &&
-        callee_method->holder()->name() == ciSymbol::java_lang_StringCache()) {
-      return "profiling method";
     }
   }
 

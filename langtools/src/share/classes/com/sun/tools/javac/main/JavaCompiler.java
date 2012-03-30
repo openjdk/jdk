@@ -44,6 +44,8 @@ import javax.lang.model.SourceVersion;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardLocation;
+
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 import com.sun.source.util.TaskEvent;
@@ -60,6 +62,7 @@ import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Log.WriterKind;
+
 import static com.sun.tools.javac.main.Option.*;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 import static com.sun.tools.javac.util.ListBuffer.lb;
@@ -227,6 +230,10 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      */
     protected ClassWriter writer;
 
+    /** The native header writer.
+     */
+    protected JNIWriter jniWriter;
+
     /** The module for the symbol table entry phases.
      */
     protected Enter enter;
@@ -330,6 +337,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         reader = ClassReader.instance(context);
         make = TreeMaker.instance(context);
         writer = ClassWriter.instance(context);
+        jniWriter = JNIWriter.instance(context);
         enter = Enter.instance(context);
         todo = Todo.instance(context);
 
@@ -1450,8 +1458,13 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 JavaFileObject file;
                 if (usePrintSource)
                     file = printSource(env, cdef);
-                else
+                else {
+                    if (fileManager.hasLocation(StandardLocation.NATIVE_HEADER_OUTPUT)
+                            && jniWriter.needsHeader(cdef.sym)) {
+                        jniWriter.write(cdef.sym);
+                    }
                     file = genCode(env, cdef);
+                }
                 if (results != null && file != null)
                     results.add(file);
             } catch (IOException ex) {
