@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -464,6 +464,9 @@
                                                                             \
   notproduct(bool, PrintOptimizePtrCompare, false,                          \
           "Print information about optimized pointers compare")             \
+                                                                            \
+  notproduct(bool, VerifyConnectionGraph , true,                            \
+          "Verify Connection Graph construction in Escape Analysis")        \
                                                                             \
   product(bool, UseOptoBiasInlining, true,                                  \
           "Generate biased locking code in C2 ideal graph")                 \

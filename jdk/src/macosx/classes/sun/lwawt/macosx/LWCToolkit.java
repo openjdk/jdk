@@ -686,7 +686,10 @@ public class LWCToolkit extends LWToolkit {
         return sunAwtDisableCALayers.booleanValue();
     }
 
-    @Override
+
+    /*
+     * Returns true if the application (one of its windows) owns keyboard focus.
+     */
     public native boolean isApplicationActive();
 
     /************************

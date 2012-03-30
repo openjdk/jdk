@@ -1067,11 +1067,7 @@ public class LWWindowPeer
             return false;
         }
 
-        // Cross-app activation requests are not allowed.
-        if (cause != CausedFocusEvent.Cause.MOUSE_EVENT &&
-            !((LWToolkit)Toolkit.getDefaultToolkit()).isApplicationActive())
-        {
-            focusLog.fine("the app is inactive, so the request is rejected");
+        if (platformWindow.rejectFocusRequest(cause)) {
             return false;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,9 +96,9 @@ getPathName(const char *dir, const char *name) {
 /*
  * Scans the specified directory and its subdirectories to find a
  * zoneinfo file which has the same content as /etc/localtime on Linux
- * or /usr/share/lib/zoneinfo/localtime (most likely a symbolic link)
- * on Solaris given in 'buf'. Returns a zone ID if found, otherwise,
- * NULL is returned.
+ * or /usr/share/lib/zoneinfo/localtime on Solaris given in 'buf'.
+ * If file is symbolic link, then the contents it points to are in buf.
+ * Returns a zone ID if found, otherwise, NULL is returned.
  */
 static char *
 findZoneinfoFile(char *buf, size_t size, const char *dir)
@@ -280,21 +280,27 @@ getPlatformTimeZoneID()
         tz = getZoneName(linkbuf);
         if (tz != NULL) {
             tz = strdup(tz);
+            return tz;
         }
-        return tz;
     }
 
     /*
      * If it's a regular file, we need to find out the same zoneinfo file
      * that has been copied as /etc/localtime.
+     * If initial symbolic link resolution failed, we should treat target
+     * file as a regular file.
      */
+    if ((fd = open(DEFAULT_ZONEINFO_FILE, O_RDONLY)) == -1) {
+        return NULL;
+    }
+    if (fstat(fd, &statbuf) == -1) {
+        (void) close(fd);
+        return NULL;
+    }
     size = (size_t) statbuf.st_size;
     buf = (char *) malloc(size);
     if (buf == NULL) {
-        return NULL;
-    }
-    if ((fd = open(DEFAULT_ZONEINFO_FILE, O_RDONLY)) == -1) {
-        free((void *) buf);
+        (void) close(fd);
         return NULL;
     }
 
