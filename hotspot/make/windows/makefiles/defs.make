@@ -109,9 +109,37 @@ endif
 
 # Full Debug Symbols has been enabled on Windows since JDK1.4.1 so
 # there is no need for an "earlier than JDK7 check".
-# Default is enabled with debug info files ZIP'ed to save space.
+# The Full Debug Symbols (FDS) default for BUILD_FLAVOR == product
+# builds is enabled with debug info files ZIP'ed to save space. For
+# BUILD_FLAVOR != product builds, FDS is always enabled, after all a
+# debug build without debug info isn't very useful.
+# The ZIP_DEBUGINFO_FILES option only has meaning when FDS is enabled.
+#
+# If you invoke a build with FULL_DEBUG_SYMBOLS=0, then FDS will be
+# disabled for a BUILD_FLAVOR == product build.
+#
+# Note: Use of a different variable name for the FDS override option
+# versus the FDS enabled check is intentional (FULL_DEBUG_SYMBOLS
+# versus ENABLE_FULL_DEBUG_SYMBOLS). For auto build systems that pass
+# in options via environment variables, use of distinct variables
+# prevents strange behaviours. For example, in a BUILD_FLAVOR !=
+# product build, the FULL_DEBUG_SYMBOLS environment variable will be
+# 0, but the ENABLE_FULL_DEBUG_SYMBOLS make variable will be 1. If
+# the same variable name is used, then different values can be picked
+# up by different parts of the build. Just to be clear, we only need
+# two variable names because the incoming option value can be
+# overridden in some situations, e.g., a BUILD_FLAVOR != product
+# build.
 
-ENABLE_FULL_DEBUG_SYMBOLS ?= 1
+ifeq ($(BUILD_FLAVOR), product)
+  FULL_DEBUG_SYMBOLS ?= 1
+  ENABLE_FULL_DEBUG_SYMBOLS = $(FULL_DEBUG_SYMBOLS)
+else
+  # debug variants always get Full Debug Symbols (if available)
+  ENABLE_FULL_DEBUG_SYMBOLS = 1
+endif
+_JUNK_ := $(shell \
+  echo >&2 "INFO: ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS)")
 MAKE_ARGS += ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS)
 
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
