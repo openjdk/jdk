@@ -136,31 +136,36 @@ docs:
 ifeq ($(OSNAME),windows)
 	@$(ECHO) "No docs ($(VM_TARGET)) for windows"
 else
+# We specify 'BUILD_FLAVOR=product' so that the proper
+# ENABLE_FULL_DEBUG_SYMBOLS value is used.
 	$(CD) $(OUTPUTDIR); \
 	    $(MAKE) -f $(ABS_OS_MAKEFILE) \
-		      $(MAKE_ARGS) docs
+		      $(MAKE_ARGS) BUILD_FLAVOR=product docs
 endif
 
 # Build variation of hotspot
 $(C1_VM_TARGETS):
 	$(CD) $(GAMMADIR)/make; \
-	$(MAKE) VM_TARGET=$@ generic_build1 $(ALT_OUT)
+	$(MAKE) BUILD_FLAVOR=$(@:%1=%) VM_TARGET=$@ generic_build1 $(ALT_OUT)
 
 $(C2_VM_TARGETS):
 	$(CD) $(GAMMADIR)/make; \
-	$(MAKE) VM_TARGET=$@ generic_build2 $(ALT_OUT)
+	$(MAKE) BUILD_FLAVOR=$@ VM_TARGET=$@ generic_build2 $(ALT_OUT)
 
 $(KERNEL_VM_TARGETS):
 	$(CD) $(GAMMADIR)/make; \
-	$(MAKE) VM_TARGET=$@ generic_buildkernel $(ALT_OUT)
+	$(MAKE) BUILD_FLAVOR=$(@:%kernel=%) VM_TARGET=$@ \
+	  generic_buildkernel $(ALT_OUT)
 
 $(ZERO_VM_TARGETS):
 	$(CD) $(GAMMADIR)/make; \
-	$(MAKE) VM_TARGET=$@ generic_buildzero $(ALT_OUT)
+	$(MAKE) BUILD_FLAVOR=$(@:%zero=%) VM_TARGET=$@ \
+	  generic_buildzero $(ALT_OUT)
 
 $(SHARK_VM_TARGETS):
 	$(CD) $(GAMMADIR)/make; \
-	$(MAKE) VM_TARGET=$@ generic_buildshark $(ALT_OUT)
+	$(MAKE) BUILD_FLAVOR=$(@:%shark=%) VM_TARGET=$@ \
+	  generic_buildshark $(ALT_OUT)
 
 # Build compiler1 (client) rule, different for platforms
 generic_build1:
@@ -237,25 +242,37 @@ generic_buildshark:
 # Export file rule
 generic_export: $(EXPORT_LIST)
 export_product:
-	$(MAKE) VM_SUBDIR=product                            generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%=%) VM_SUBDIR=$(@:export_%=%) \
+          generic_export
 export_fastdebug:
-	$(MAKE) VM_SUBDIR=fastdebug EXPORT_SUBDIR=/fastdebug generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%=%) VM_SUBDIR=$(@:export_%=%) \
+	  EXPORT_SUBDIR=/$(@:export_%=%) \
+	  generic_export
 export_debug:
-	$(MAKE) VM_SUBDIR=${VM_DEBUG} EXPORT_SUBDIR=/debug   generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%=%) VM_SUBDIR=${VM_DEBUG} \
+	  EXPORT_SUBDIR=/$(@:export_%=%) \
+	  generic_export
 export_optimized:
-	$(MAKE) VM_SUBDIR=optimized EXPORT_SUBDIR=/optimized generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%=%) VM_SUBDIR=$(@:export_%=%) \
+	  EXPORT_SUBDIR=/$(@:export_%=%) \
+	  generic_export
 export_product_jdk::
-	$(MAKE) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR) \
-		VM_SUBDIR=product                            generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) \
+	  VM_SUBDIR=$(@:export_%_jdk=%) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR) \
+	  generic_export
 export_optimized_jdk::
-	$(MAKE) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR) \
-		VM_SUBDIR=optimized                          generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) \
+	  VM_SUBDIR=$(@:export_%_jdk=%) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR) \
+	  generic_export
 export_fastdebug_jdk::
-	$(MAKE) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR)/fastdebug \
-		VM_SUBDIR=fastdebug                          generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) \
+	  VM_SUBDIR=$(@:export_%_jdk=%)  \
+	  ALT_EXPORT_PATH=$(JDK_IMAGE_DIR)/$(@:export_%_jdk=%) \
+	  generic_export
 export_debug_jdk::
-	$(MAKE) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR)/debug \
-		VM_SUBDIR=${VM_DEBUG}                        generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) VM_SUBDIR=${VM_DEBUG} \
+	  ALT_EXPORT_PATH=$(JDK_IMAGE_DIR)/$(@:export_%_jdk=%) \
+	  generic_export
 
 # Export file copy rules
 XUSAGE=$(HS_SRC_DIR)/share/vm/Xusage.txt
