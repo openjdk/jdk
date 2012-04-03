@@ -73,7 +73,36 @@ SCRIPT_SUFFIX =
 # CC compiler object code output directive flag value
 CC_OBJECT_OUTPUT_FLAG = -o #trailing blank required!
 
-ENABLE_FULL_DEBUG_SYMBOLS ?= 1
+# The Full Debug Symbols (FDS) default for VARIANT == OPT builds is
+# enabled with debug info files ZIP'ed to save space. For VARIANT !=
+# OPT builds, FDS is always enabled, after all a debug build without
+# debug info isn't very useful. The ZIP_DEBUGINFO_FILES option only has
+# meaning when FDS is enabled.
+#
+# If you invoke a build with FULL_DEBUG_SYMBOLS=0, then FDS will be
+# disabled for a VARIANT == OPT build.
+#
+# Note: Use of a different variable name for the FDS override option
+# versus the FDS enabled check is intentional (FULL_DEBUG_SYMBOLS
+# versus ENABLE_FULL_DEBUG_SYMBOLS). For auto build systems that pass
+# in options via environment variables, use of distinct variables
+# prevents strange behaviours. For example, in a VARIANT != OPT build,
+# the FULL_DEBUG_SYMBOLS environment variable will be 0, but the
+# ENABLE_FULL_DEBUG_SYMBOLS make variable will be 1. If the same
+# variable name is used, then different values can be picked up by
+# different parts of the build. Just to be clear, we only need two
+# variable names because the incoming option value can be overridden
+# in some situations, e.g., a VARIANT != OPT build.
+
+ifeq ($(VARIANT), OPT)
+  FULL_DEBUG_SYMBOLS ?= 1
+  ENABLE_FULL_DEBUG_SYMBOLS = $(FULL_DEBUG_SYMBOLS)
+else
+  # debug variants always get Full Debug Symbols (if available)
+  ENABLE_FULL_DEBUG_SYMBOLS = 1
+endif
+_JUNK_ := $(shell \
+  echo >&2 "INFO: ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS)")
 # since objcopy is optional, we set ZIP_DEBUGINFO_FILES later
 
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
@@ -130,7 +159,9 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
     _JUNK_ := $(shell \
       echo >&2 "INFO: STRIP_POLICY=$(STRIP_POLICY)")
 
-    ZIP_DEBUGINFO_FILES ?= 1
+    # HACK: disable ZIP_DEBUGINFO_FILES by default until install repo
+    # changes are promoted
+    ZIP_DEBUGINFO_FILES ?= 0
 
     _JUNK_ := $(shell \
       echo >&2 "INFO: ZIP_DEBUGINFO_FILES=$(ZIP_DEBUGINFO_FILES)")
