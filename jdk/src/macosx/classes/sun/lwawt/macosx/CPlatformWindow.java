@@ -29,6 +29,7 @@ import java.awt.BufferCapabilities.FlipContents;
 import java.awt.*;
 import java.awt.Dialog.ModalityType;
 import java.awt.event.*;
+import java.awt.peer.WindowPeer;
 import java.beans.*;
 import java.util.List;
 
@@ -202,6 +203,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private LWWindowPeer peer;
     private CPlatformView contentView;
     private CPlatformWindow owner;
+    private boolean visible = false; // visibility status from native perspective
     private boolean undecorated; // initialized in getInitialStyleBits()
     private Rectangle normalBounds = null; // not-null only for undecorated maximized windows
 
@@ -492,19 +494,38 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         }
     }
 
+    private boolean isVisible() {
+        return this.visible;
+    }
+
     @Override // PlatformWindow
     public void setVisible(boolean visible) {
         final long nsWindowPtr = getNSWindowPtr();
 
-        if (owner != null) {
-            if (!visible) {
+        // 1. Process parent-child relationship when hiding
+        if (!visible) {
+            // 1a. Unparent my children
+            for (Window w : target.getOwnedWindows()) {
+                WindowPeer p = (WindowPeer)w.getPeer();
+                if (p instanceof LWWindowPeer) {
+                    CPlatformWindow pw = (CPlatformWindow)((LWWindowPeer)p).getPlatformWindow();
+                    if (pw != null && pw.isVisible()) {
+                        CWrapper.NSWindow.removeChildWindow(nsWindowPtr, pw.getNSWindowPtr());
+                    }
+                }
+            }
+
+            // 1b. Unparent myself
+            if (owner != null && owner.isVisible()) {
                 CWrapper.NSWindow.removeChildWindow(owner.getNSWindowPtr(), nsWindowPtr);
             }
         }
 
+        // 2. Configure stuff
         updateIconImages();
         updateFocusabilityForAutoRequestFocus(false);
 
+        // 3. Manage the extended state when hiding
         if (!visible) {
             // Cancel out the current native state of the window
             switch (peer.getState()) {
@@ -517,6 +538,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             }
         }
 
+        // 4. Actually show or hide the window
         LWWindowPeer blocker = peer.getBlocker();
         if (blocker == null || !visible) {
             // If it ain't blocked, or is being hidden, go regular way
@@ -543,7 +565,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             CWrapper.NSWindow.orderWindow(nsWindowPtr, CWrapper.NSWindow.NSWindowBelow,
                     ((CPlatformWindow)blocker.getPlatformWindow()).getNSWindowPtr());
         }
+        this.visible = visible;
 
+        // 5. Manage the extended state when showing
         if (visible) {
             // Re-apply the extended state as expected in shared code
             if (target instanceof Frame) {
@@ -558,17 +582,35 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             }
         }
 
+        // 6. Configure stuff #2
         updateFocusabilityForAutoRequestFocus(true);
 
-        if (owner != null) {
-            if (visible) {
+        // 7. Manage parent-child relationship when showing
+        if (visible) {
+            // 7a. Add myself as a child
+            if (owner != null && owner.isVisible()) {
                 CWrapper.NSWindow.addChildWindow(owner.getNSWindowPtr(), nsWindowPtr, CWrapper.NSWindow.NSWindowAbove);
                 if (target.isAlwaysOnTop()) {
                     CWrapper.NSWindow.setLevel(nsWindowPtr, CWrapper.NSWindow.NSFloatingWindowLevel);
                 }
             }
+
+            // 7b. Add my own children to myself
+            for (Window w : target.getOwnedWindows()) {
+                WindowPeer p = (WindowPeer)w.getPeer();
+                if (p instanceof LWWindowPeer) {
+                    CPlatformWindow pw = (CPlatformWindow)((LWWindowPeer)p).getPlatformWindow();
+                    if (pw != null && pw.isVisible()) {
+                        CWrapper.NSWindow.addChildWindow(nsWindowPtr, pw.getNSWindowPtr(), CWrapper.NSWindow.NSWindowAbove);
+                        if (w.isAlwaysOnTop()) {
+                            CWrapper.NSWindow.setLevel(pw.getNSWindowPtr(), CWrapper.NSWindow.NSFloatingWindowLevel);
+                        }
+                    }
+                }
+            }
         }
 
+        // 8. Deal with the blocker of the window being shown
         if (blocker != null && visible) {
             // Make sure the blocker is above its siblings
             ((CPlatformWindow)blocker.getPlatformWindow()).orderAboveSiblings();
@@ -875,15 +917,23 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             return;
         }
 
-        // Recursively pop up the windows from the very bottom so that only
-        // the very top-most one becomes the main window
-        owner.orderAboveSiblings();
+        // NOTE: the logic will fail if we have a hierarchy like:
+        //       visible root owner
+        //          invisible owner
+        //              visible dialog
+        // However, this is an unlikely scenario for real life apps
+        if (owner.isVisible()) {
+            // Recursively pop up the windows from the very bottom so that only
+            // the very top-most one becomes the main window
+            owner.orderAboveSiblings();
 
-        // Order the window to front of the stack of child windows
-        final long nsWindowSelfPtr = getNSWindowPtr();
-        final long nsWindowOwnerPtr = owner.getNSWindowPtr();
-        CWrapper.NSWindow.removeChildWindow(nsWindowOwnerPtr, nsWindowSelfPtr);
-        CWrapper.NSWindow.addChildWindow(nsWindowOwnerPtr, nsWindowSelfPtr, CWrapper.NSWindow.NSWindowAbove);
+            // Order the window to front of the stack of child windows
+            final long nsWindowSelfPtr = getNSWindowPtr();
+            final long nsWindowOwnerPtr = owner.getNSWindowPtr();
+            CWrapper.NSWindow.removeChildWindow(nsWindowOwnerPtr, nsWindowSelfPtr);
+            CWrapper.NSWindow.addChildWindow(nsWindowOwnerPtr, nsWindowSelfPtr, CWrapper.NSWindow.NSWindowAbove);
+        }
+
         if (target.isAlwaysOnTop()) {
             CWrapper.NSWindow.setLevel(getNSWindowPtr(), CWrapper.NSWindow.NSFloatingWindowLevel);
         }
