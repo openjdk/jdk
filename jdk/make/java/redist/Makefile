@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -61,9 +61,13 @@ JVMDB_NAME             = $(LIB_PREFIX)jvm$(DB_SUFFIX).$(LIBRARY_SUFFIX)
 JVMDTRACE_NAME         = $(LIB_PREFIX)jvm$(DTRACE_SUFFIX).$(LIBRARY_SUFFIX)
 
 JVM_DEBUGINFO_NAME       = $(LIB_PREFIX)jvm.debuginfo
+JVM_DIZ_NAME             = $(LIB_PREFIX)jvm.diz
 LIBJSIG_DEBUGINFO_NAME   = $(LIB_PREFIX)jsig.debuginfo
+LIBJSIG_DIZ_NAME         = $(LIB_PREFIX)jsig.diz
 JVMDB_DEBUGINFO_NAME     = $(LIB_PREFIX)jvm$(DB_SUFFIX).debuginfo
+JVMDB_DIZ_NAME           = $(LIB_PREFIX)jvm$(DB_SUFFIX).diz
 JVMDTRACE_DEBUGINFO_NAME = $(LIB_PREFIX)jvm$(DTRACE_SUFFIX).debuginfo
+JVMDTRACE_DIZ_NAME       = $(LIB_PREFIX)jvm$(DTRACE_SUFFIX).diz
 
 CLASSSHARINGDATA_DIR   = $(BUILDDIR)/tools/sharing
 
@@ -86,10 +90,17 @@ INTERNAL_IMPORT_LIST = $(LIBDIR)/classlist
 ifndef BUILD_CLIENT_ONLY
   IMPORT_LIST = $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVM_NAME) \
                 $(LIB_LOCATION)/$(SERVER_LOCATION)/Xusage.txt
-  ifneq ($(OBJCOPY),)
-    # the import JDK may not contain .debuginfo files
-    ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/$(JVM_DEBUGINFO_NAME)),)
-      IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVM_DEBUGINFO_NAME)
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+      # the import JDK may not contain .diz files
+      ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/$(JVM_DIZ_NAME)),)
+        IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVM_DIZ_NAME)
+      endif
+    else
+      # the import JDK may not contain .debuginfo files
+      ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/$(JVM_DEBUGINFO_NAME)),)
+        IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVM_DEBUGINFO_NAME)
+      endif
     endif
   endif
 else
@@ -101,10 +112,17 @@ ifneq ($(ZERO_BUILD), true)
 ifeq ($(ARCH_DATA_MODEL), 32)
   IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVM_NAME) \
                  $(LIB_LOCATION)/$(CLIENT_LOCATION)/Xusage.txt
-  ifneq ($(OBJCOPY),)
-    # the import JDK may not contain .debuginfo files
-    ifneq ($(wildcard $(HOTSPOT_CLIENT_PATH)/$(JVM_DEBUGINFO_NAME)),)
-      IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVM_DEBUGINFO_NAME)
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+      # the import JDK may not contain .diz files
+      ifneq ($(wildcard $(HOTSPOT_CLIENT_PATH)/$(JVM_DIZ_NAME)),)
+        IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVM_DIZ_NAME)
+      endif
+    else
+      # the import JDK may not contain .debuginfo files
+      ifneq ($(wildcard $(HOTSPOT_CLIENT_PATH)/$(JVM_DEBUGINFO_NAME)),)
+        IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVM_DEBUGINFO_NAME)
+      endif
     endif
   endif
 endif
@@ -121,20 +139,56 @@ $(BINDIR)/$(MSVCRNN_DLL): $(MSVCRNN_DLL_PATH)/$(MSVCRNN_DLL)
 
 # Get the hotspot .map and .pdb files for client and server
 ifndef BUILD_CLIENT_ONLY
-IMPORT_LIST += \
-	$(LIBDIR)/$(JVMLIB_NAME) \
-	$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMMAP_NAME) \
-	$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMPDB_NAME)
+  IMPORT_LIST += $(LIBDIR)/$(JVMLIB_NAME)
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+      # the import JDK may not contain .diz files
+      ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/$(JVM_DIZ_NAME)),)
+        IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVM_DIZ_NAME)
+      endif
+    else
+      # the import JDK may not contain .pdb files
+      ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/$(JVMPDB_NAME)),)
+        # assume .map file is present if .pdb file is preset
+        IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMMAP_NAME) \
+	  $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMPDB_NAME)
+      endif
+    endif
+  endif
 endif
 
 # Add .map and .pdb files to the import path for client and kernel VMs. 
 # These are only available on 32-bit windows builds. 
 ifeq ($(ARCH_DATA_MODEL), 32)
-  IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMMAP_NAME) \
-                 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMPDB_NAME)
-  ifeq ($(DO_KERNEL), true)
-    IMPORT_LIST += $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVMMAP_NAME) \
-                   $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVMPDB_NAME)
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+      # the import JDK may not contain .diz files
+      ifneq ($(wildcard $(HOTSPOT_CLIENT_PATH)/$(JVM_DIZ_NAME)),)
+        IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVM_DIZ_NAME)
+      endif
+    else
+      # the import JDK may not contain .pdb files
+      ifneq ($(wildcard $(HOTSPOT_CLIENT_PATH)/$(JVMPDB_NAME)),)
+        # assume .map file is present if .pdb file is preset
+        IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMMAP_NAME) \
+                       $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMPDB_NAME)
+      endif
+    endif
+    ifeq ($(DO_KERNEL), true)
+      ifeq ($(ZIP_DEBUGINFO_FILES),1)
+        # the import JDK may not contain .diz files
+        ifneq ($(wildcard $(HOTSPOT_KERNEL_PATH)/$(JVM_DIZ_NAME)),)
+          IMPORT_LIST += $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVM_DIZ_NAME)
+        endif
+      else
+        # the import JDK may not contain .pdb files
+        ifneq ($(wildcard $(HOTSPOT_KERNEL_PATH)/$(JVMPDB_NAME)),)
+          # assume .map file is present if .pdb file is preset
+          IMPORT_LIST += $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVMMAP_NAME) \
+                         $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVMPDB_NAME)
+        endif
+      endif
+    endif
   endif
 endif
 
@@ -165,10 +219,22 @@ $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVMPDB_NAME):
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_KERNEL_PATH)/$(JVMPDB_NAME)  $@
 
+$(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVM_DIZ_NAME):
+	@$(prep-target)
+	-$(CP) $(HOTSPOT_CLIENT_PATH)/$(JVM_DIZ_NAME)  $@
+
+$(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVM_DIZ_NAME):
+	@$(prep-target)
+	-$(CP) $(HOTSPOT_KERNEL_PATH)/$(JVM_DIZ_NAME)  $@
+
 ifndef BUILD_CLIENT_ONLY
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMPDB_NAME): 
 	@$(prep-target)
 	-$(CP) $(HOTSPOT_SERVER_PATH)/$(JVMPDB_NAME) $@
+
+$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVM_DIZ_NAME):
+	@$(prep-target)
+	-$(CP) $(HOTSPOT_SERVER_PATH)/$(JVM_DIZ_NAME) $@
 endif
 
 #  Windows     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  Windows
@@ -176,18 +242,33 @@ else # PLATFORM
 #  NOT Windows vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv  NOT Windows
 
 IMPORT_LIST += $(LIB_LOCATION)/$(LIBJSIG_NAME) 
-ifneq ($(OBJCOPY),)
-  # the import JDK may not contain .debuginfo files
-  ifneq ($(wildcard $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(LIBJSIG_DEBUGINFO_NAME)),)
-    IMPORT_LIST += $(LIB_LOCATION)/$(LIBJSIG_DEBUGINFO_NAME)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+    # the import JDK may not contain .diz files
+    ifneq ($(wildcard $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(LIBJSIG_DIZ_NAME)),)
+      IMPORT_LIST += $(LIB_LOCATION)/$(LIBJSIG_DIZ_NAME)
+    endif
+  else
+    # the import JDK may not contain .debuginfo files
+    ifneq ($(wildcard $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(LIBJSIG_DEBUGINFO_NAME)),)
+      IMPORT_LIST += $(LIB_LOCATION)/$(LIBJSIG_DEBUGINFO_NAME)
+    endif
   endif
 endif
 ifndef BUILD_CLIENT_ONLY
   IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(LIBJSIG_NAME)
-  ifneq ($(OBJCOPY),)
-    # the import JDK may not contain the target of the symlink
-    ifneq ($(wildcard $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(LIBJSIG_DEBUGINFO_NAME)),)
-      IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(LIBJSIG_DEBUGINFO_NAME)
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+      # the import JDK may not contain the target of the symlink
+      ifneq ($(wildcard $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(LIBJSIG_DIZ_NAME)),)
+        # check for the .diz file, but create the .debuginfo link
+        IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(LIBJSIG_DEBUGINFO_NAME)
+      endif
+    else
+      # the import JDK may not contain the target of the symlink
+      ifneq ($(wildcard $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(LIBJSIG_DEBUGINFO_NAME)),)
+        IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(LIBJSIG_DEBUGINFO_NAME)
+      endif
     endif
   endif
 endif
@@ -195,19 +276,33 @@ endif
 ifeq ($(PLATFORM), solaris)
   ifndef BUILD_CLIENT_ONLY
     IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDB_NAME)
-    ifneq ($(OBJCOPY),)
-      # the import JDK may not contain .debuginfo files
-      ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/$(JVMDB_DEBUGINFO_NAME)),)
-        IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDB_DEBUGINFO_NAME)
+    ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+      ifeq ($(ZIP_DEBUGINFO_FILES),1)
+        # the import JDK may not contain .diz files
+        ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/$(JVMDB_DIZ_NAME)),)
+          IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDB_DIZ_NAME)
+        endif
+      else
+        # the import JDK may not contain .debuginfo files
+        ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/$(JVMDB_DEBUGINFO_NAME)),)
+          IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDB_DEBUGINFO_NAME)
+        endif
       endif
     endif
     # The conditional can be removed when import JDKs contain these files.
     ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/$(JVMDTRACE_NAME)),)
       IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDTRACE_NAME)
-      ifneq ($(OBJCOPY),)
-        # the import JDK may not contain .debuginfo files
-        ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/$(JVMDTRACE_DEBUGINFO_NAME)),)
-          IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDTRACE_DEBUGINFO_NAME)
+      ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+        ifeq ($(ZIP_DEBUGINFO_FILES),1)
+          # the import JDK may not contain .diz files
+          ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/$(JVMDTRACE_DIZ_NAME)),)
+            IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDTRACE_DIZ_NAME)
+          endif
+        else
+          # the import JDK may not contain .debuginfo files
+          ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/$(JVMDTRACE_DEBUGINFO_NAME)),)
+            IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDTRACE_DEBUGINFO_NAME)
+          endif
         endif
       endif
     else
@@ -220,10 +315,18 @@ ifneq ($(ZERO_BUILD), true)
 ifeq ($(ARCH_DATA_MODEL), 32)
 
 IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_NAME)
-ifneq ($(OBJCOPY),)
-  # the import JDK may not contain the target of the symlink
-  ifneq ($(wildcard $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(LIBJSIG_DEBUGINFO_NAME)),)
-    IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_DEBUGINFO_NAME)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+    # the import JDK may not contain the target of the symlink
+    ifneq ($(wildcard $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(LIBJSIG_DIZ_NAME)),)
+      # check for the .diz file, but create the .debuginfo link
+      IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_DEBUGINFO_NAME)
+    endif
+  else
+    # the import JDK may not contain the target of the symlink
+    ifneq ($(wildcard $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(LIBJSIG_DEBUGINFO_NAME)),)
+      IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_DEBUGINFO_NAME)
+    endif
   endif
 endif
 
@@ -231,10 +334,17 @@ ifeq ($(PLATFORM), solaris)
 #  solaris   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv  solaris
 
 IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDB_NAME)
-ifneq ($(OBJCOPY),)
-  # the import JDK may not contain .debuginfo files
-  ifneq ($(wildcard $(HOTSPOT_CLIENT_PATH)/$(JVMDB_DEBUGINFO_NAME)),)
-    IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDB_DEBUGINFO_NAME)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+    # the import JDK may not contain .diz files
+    ifneq ($(wildcard $(HOTSPOT_CLIENT_PATH)/$(JVMDB_DIZ_NAME)),)
+      IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDB_DIZ_NAME)
+    endif
+  else
+    # the import JDK may not contain .debuginfo files
+    ifneq ($(wildcard $(HOTSPOT_CLIENT_PATH)/$(JVMDB_DEBUGINFO_NAME)),)
+      IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDB_DEBUGINFO_NAME)
+    endif
   endif
 endif
 
@@ -243,13 +353,22 @@ ifneq ($(wildcard $(HOTSPOT_CLIENT_PATH)/$(JVMDTRACE_NAME)),)
   IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDTRACE_NAME)
   IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDB_NAME)
   IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDTRACE_NAME)
-  ifneq ($(OBJCOPY),)
-    # the import JDK may not contain .debuginfo files
-    ifneq ($(wildcard $(HOTSPOT_CLIENT_PATH)/$(JVMDTRACE_DEBUGINFO_NAME)),)
-      IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDTRACE_DEBUGINFO_NAME)
-      IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDB_DEBUGINFO_NAME)
-      IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDTRACE_DEBUGINFO_NAME)
-  endif
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+      # the import JDK may not contain .diz files
+      ifneq ($(wildcard $(HOTSPOT_CLIENT_PATH)/$(JVMDTRACE_DIZ_NAME)),)
+        IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDTRACE_DIZ_NAME)
+        IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDB_DIZ_NAME)
+        IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDTRACE_DIZ_NAME)
+      endif
+    else
+      # the import JDK may not contain .debuginfo files
+      ifneq ($(wildcard $(HOTSPOT_CLIENT_PATH)/$(JVMDTRACE_DEBUGINFO_NAME)),)
+        IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDTRACE_DEBUGINFO_NAME)
+        IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDB_DEBUGINFO_NAME)
+        IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDTRACE_DEBUGINFO_NAME)
+      endif
+    endif
   endif
 else
   $(warning WARNING: $(HOTSPOT_CLIENT_PATH)/$(JVMDTRACE_NAME) not found!)
@@ -259,10 +378,17 @@ ifndef BUILD_CLIENT_ONLY
   # The conditional can be removed when import JDKs contain these files.
   ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/64/$(JVMDB_NAME)),)
     IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDB_NAME)
-    ifneq ($(OBJCOPY),)
-      # the import JDK may not contain .debuginfo files
-      ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/64/$(JVMDB_DEBUGINFO_NAME)),)
-        IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDB_DEBUGINFO_NAME)
+    ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+      ifeq ($(ZIP_DEBUGINFO_FILES),1)
+        # the import JDK may not contain .diz files
+        ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/64/$(JVMDB_DIZ_NAME)),)
+          IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDB_DIZ_NAME)
+        endif
+      else
+        # the import JDK may not contain .debuginfo files
+        ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/64/$(JVMDB_DEBUGINFO_NAME)),)
+          IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDB_DEBUGINFO_NAME)
+        endif
       endif
     endif
   else
@@ -272,10 +398,17 @@ ifndef BUILD_CLIENT_ONLY
   # The conditional can be removed when import JDKs contain these files.
   ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/64/$(JVMDTRACE_NAME)),)
     IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDTRACE_NAME)
-    ifneq ($(OBJCOPY),)
-      # the import JDK may not contain .debuginfo files
-      ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/64/$(JVMDTRACE_DEBUGINFO_NAME)),)
-        IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDTRACE_DEBUGINFO_NAME)
+    ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+      ifeq ($(ZIP_DEBUGINFO_FILES),1)
+        # the import JDK may not contain .diz files
+        ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/64/$(JVMDTRACE_DIZ_NAME)),)
+          IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDTRACE_DIZ_NAME)
+        endif
+      else
+        # the import JDK may not contain .debuginfo files
+        ifneq ($(wildcard $(HOTSPOT_SERVER_PATH)/64/$(JVMDTRACE_DEBUGINFO_NAME)),)
+          IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDTRACE_DEBUGINFO_NAME)
+        endif
       endif
     endif
   else
@@ -304,9 +437,14 @@ $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVM_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVM_NAM
 	$(install-import-file)
 	@$(call binary_file_verification,$@)
 
-ifneq ($(OBJCOPY),)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+$(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVM_DIZ_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVM_DIZ_NAME)
+	$(install-import-file)
+  else
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVM_DEBUGINFO_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVM_DEBUGINFO_NAME)
 	$(install-import-file)
+  endif
 endif
 
 $(LIB_LOCATION)/$(KERNEL_LOCATION)/$(JVM_NAME): $(HOTSPOT_KERNEL_PATH)/$(JVM_NAME)
@@ -317,9 +455,14 @@ $(LIB_LOCATION)/$(LIBJSIG_NAME): $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(LIBJ
 	$(install-import-file)
 	@$(call binary_file_verification,$@)
 
-ifneq ($(OBJCOPY),)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+$(LIB_LOCATION)/$(LIBJSIG_DIZ_NAME): $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(LIBJSIG_DIZ_NAME)
+	$(install-import-file)
+  else
 $(LIB_LOCATION)/$(LIBJSIG_DEBUGINFO_NAME): $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(LIBJSIG_DEBUGINFO_NAME)
 	$(install-import-file)
+  endif
 endif
 
 ifndef BUILD_CLIENT_ONLY
@@ -328,22 +471,24 @@ $(LIB_LOCATION)/$(SERVER_LOCATION)/$(LIBJSIG_NAME):
 	@$(prep-target)
 	$(call install-sym-link, ../$(LIBJSIG_NAME))
 
-ifneq ($(OBJCOPY),)
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+# we don't create a symlink to a libjsig.diz file
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_DEBUGINFO_NAME) \
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(LIBJSIG_DEBUGINFO_NAME):
 	@$(prep-target)
 	$(call install-sym-link, ../$(LIBJSIG_DEBUGINFO_NAME))
-endif
+  endif
 else
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_NAME):
 	@$(prep-target)
 	$(call install-sym-link, ../$(LIBJSIG_NAME))
 
-ifneq ($(OBJCOPY),)
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+# we don't create a symlink to a libjsig.diz file
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_DEBUGINFO_NAME):
 	@$(prep-target)
 	$(call install-sym-link, ../$(LIBJSIG_DEBUGINFO_NAME))
-endif
+  endif
 endif
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDB_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVMDB_NAME)
@@ -354,12 +499,20 @@ $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDB_NAME): $(HOTSPOT_CLIENT_PATH)/64/$
 	$(install-import-file)
 	@$(call binary_file_verification,$@)
 
-ifneq ($(OBJCOPY),)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+$(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDB_DIZ_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVMDB_DIZ_NAME)
+	$(install-import-file)
+
+$(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDB_DIZ_NAME): $(HOTSPOT_CLIENT_PATH)/64/$(JVMDB_DIZ_NAME)
+	$(install-import-file)
+  else
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDB_DEBUGINFO_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVMDB_DEBUGINFO_NAME)
 	$(install-import-file)
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDB_DEBUGINFO_NAME): $(HOTSPOT_CLIENT_PATH)/64/$(JVMDB_DEBUGINFO_NAME)
 	$(install-import-file)
+  endif
 endif
 
 ifndef BUILD_CLIENT_ONLY
@@ -371,13 +524,21 @@ $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDB_NAME): $(HOTSPOT_SERVER_PATH)/64/$
 	$(install-import-file)
 	@$(call binary_file_verification,$@)
 
-ifneq ($(OBJCOPY),)
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDB_DIZ_NAME): $(HOTSPOT_SERVER_PATH)/$(JVMDB_DIZ_NAME)
+	$(install-import-file)
+
+$(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDB_DIZ_NAME): $(HOTSPOT_SERVER_PATH)/64/$(JVMDB_DIZ_NAME)
+	$(install-import-file)
+    else
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDB_DEBUGINFO_NAME): $(HOTSPOT_SERVER_PATH)/$(JVMDB_DEBUGINFO_NAME)
 	$(install-import-file)
 
 $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDB_DEBUGINFO_NAME): $(HOTSPOT_SERVER_PATH)/64/$(JVMDB_DEBUGINFO_NAME)
 	$(install-import-file)
-endif
+    endif
+  endif
 endif
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDTRACE_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVMDTRACE_NAME)
@@ -388,12 +549,20 @@ $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDTRACE_NAME): $(HOTSPOT_CLIENT_PATH)/
 	$(install-import-file)
 	@$(call binary_file_verification,$@)
 
-ifneq ($(OBJCOPY),)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+$(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDTRACE_DIZ_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVMDTRACE_DIZ_NAME)
+	$(install-import-file)
+
+$(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDTRACE_DIZ_NAME): $(HOTSPOT_CLIENT_PATH)/64/$(JVMDTRACE_DIZ_NAME)
+	$(install-import-file)
+  else
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(JVMDTRACE_DEBUGINFO_NAME): $(HOTSPOT_CLIENT_PATH)/$(JVMDTRACE_DEBUGINFO_NAME)
 	$(install-import-file)
 
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/64/$(JVMDTRACE_DEBUGINFO_NAME): $(HOTSPOT_CLIENT_PATH)/64/$(JVMDTRACE_DEBUGINFO_NAME)
 	$(install-import-file)
+  endif
 endif
 
 ifndef BUILD_CLIENT_ONLY
@@ -409,7 +578,17 @@ $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVM_NAME): $(HOTSPOT_SERVER_PATH)/$(JVM_NAM
 	$(install-import-file)
 	@$(call binary_file_verification,$@)
 
-ifneq ($(OBJCOPY),)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDTRACE_DIZ_NAME): $(HOTSPOT_SERVER_PATH)/$(JVMDTRACE_DIZ_NAME)
+	$(install-import-file)
+
+$(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDTRACE_DIZ_NAME): $(HOTSPOT_SERVER_PATH)/64/$(JVMDTRACE_DIZ_NAME)
+	$(install-import-file)
+
+$(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVM_DIZ_NAME): $(HOTSPOT_SERVER_PATH)/$(JVM_DIZ_NAME)
+	$(install-import-file)
+  else
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVMDTRACE_DEBUGINFO_NAME): $(HOTSPOT_SERVER_PATH)/$(JVMDTRACE_DEBUGINFO_NAME)
 	$(install-import-file)
 
@@ -418,6 +597,7 @@ $(LIB_LOCATION)/$(SERVER_LOCATION)/64/$(JVMDTRACE_DEBUGINFO_NAME): $(HOTSPOT_SER
 
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(JVM_DEBUGINFO_NAME): $(HOTSPOT_SERVER_PATH)/$(JVM_DEBUGINFO_NAME)
 	$(install-import-file)
+  endif
 endif
 
 $(LIB_LOCATION)/$(SERVER_LOCATION)/Xusage.txt : $(HOTSPOT_SERVER_PATH)/Xusage.txt

@@ -171,6 +171,10 @@ ifeq ($(PLATFORM), windows)
 	@$(prep-target)
 	$(SED) 's%IMVERSION%$(IMVERSION)%g;s%PROGRAM%$(PROGRAM)%g' $< > $@
 
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  MAP_OPTION="-map:$(OBJDIR)/$(PROGRAM).map"
+endif
+
   # We used a hand-crafted manifest file for all executables.
   # It is tweaked to embed the build number and executable name.
   # Use ";#2" for .dll and ";#1" for .exe in the MT command below:
@@ -179,7 +183,7 @@ ifeq ($(PLATFORM), windows)
 	@set -- $?; \
 	    $(ECHO) Rebuilding $@ because of $$1 $$2 $$3 $$4 $$5 $$6 $${7:+...};
 	$(LINK) -out:$@ /STACK:$(STACK_SIZE) \
-	    -map:$(OBJDIR)/$(PROGRAM).map $(LFLAGS) $(LDFLAGS) \
+	    $(MAP_OPTION) $(LFLAGS) $(LDFLAGS) \
 	    @$(OBJDIR)/$(PROGRAM).lcf $(LDLIBS)
   ifdef MT
 	$(MT) /manifest $(OBJDIR)/$(PROGRAM).exe.manifest /outputresource:$@;#1
