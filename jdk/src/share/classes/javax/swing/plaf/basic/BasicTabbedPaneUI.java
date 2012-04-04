@@ -875,6 +875,8 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
                 int availTextWidth = tabScroller.croppedEdge.getCropline() -
                         (textRect.x - tabRect.x) - tabScroller.croppedEdge.getCroppedSideWidth();
                 clippedTitle = SwingUtilities2.clipStringIfNecessary(null, metrics, title, availTextWidth);
+            } else if (!scrollableTabLayoutEnabled() && isHorizontalTabPlacement()) {
+                clippedTitle = SwingUtilities2.clipStringIfNecessary(null, metrics, title, textRect.width);
             }
 
             paintText(g, tabPlacement, font, metrics,
