@@ -252,6 +252,9 @@ java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java	linux-all
 # 7132247
 java/rmi/registry/readTest/readTest.sh				windows-all
 
+# 7142596
+java/rmi/transport/pinClientSocketFactory/PinClientSocketFactory.java generic-all
+
 ############################################################################
 
 # jdk_security
