@@ -616,6 +616,17 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
                 windowLocation.y + locationInWindow.y);
     }
 
+    /**
+     * Returns the cursor of the peer, which is cursor of the target by default,
+     * but peer can override this behavior.
+     *
+     * @param p Point relative to the peer.
+     * @return Cursor of the peer or null if default cursor should be used.
+     */
+    protected Cursor getCursor(final Point p) {
+        return getTarget().getCursor();
+    }
+
     @Override
     public void setBackground(final Color c) {
         final Color oldBg = getBackground();
