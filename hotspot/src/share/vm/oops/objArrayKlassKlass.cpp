@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ klassOop objArrayKlassKlass::allocate_objArray_klass_impl(objArrayKlassKlassHand
       new_str[idx++] = ';';
     }
     new_str[idx++] = '\0';
-    name = SymbolTable::new_symbol(new_str, CHECK_0);
+    name = SymbolTable::new_permanent_symbol(new_str, CHECK_0);
     if (element_klass->oop_is_instance()) {
       instanceKlass* ik = instanceKlass::cast(element_klass());
       ik->set_array_name(name);
