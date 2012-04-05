@@ -27,6 +27,9 @@
 #define OGLFuncs_md_h_Included
 
 #include <stdlib.h>
+#ifndef MACOSX
+#include <dlfcn.h>
+#endif
 #include "jvm_md.h"
 #include "J2D_GL/glx.h"
 #include "OGLFuncMacros.h"
