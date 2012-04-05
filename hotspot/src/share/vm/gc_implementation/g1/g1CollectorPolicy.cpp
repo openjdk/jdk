@@ -140,7 +140,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _summary(new Summary()),
 
   _cur_clear_ct_time_ms(0.0),
-  _mark_closure_time_ms(0.0),
   _root_region_scan_wait_time_ms(0.0),
 
   _cur_ref_proc_time_ms(0.0),
@@ -944,9 +943,6 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
     _cur_aux_times_set[i] = false;
   }
 
-  // This is initialized to zero here and is set during
-  // the evacuation pause if marking is in progress.
-  _cur_satb_drain_time_ms = 0.0;
   // This is initialized to zero here and is set during the evacuation
   // pause if we actually waited for the root region scanning to finish.
   _root_region_scan_wait_time_ms = 0.0;
@@ -1246,11 +1242,6 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
 
   double other_time_ms = elapsed_ms;
 
-  // Subtract the SATB drain time. It's initialized to zero at the
-  // start of the pause and is updated during the pause if marking
-  // is in progress.
-  other_time_ms -= _cur_satb_drain_time_ms;
-
   // Subtract the root region scanning wait time. It's initialized to
   // zero at the start of the pause.
   other_time_ms -= _root_region_scan_wait_time_ms;
@@ -1268,11 +1259,6 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
   // current value of "other time"
   other_time_ms -= _cur_clear_ct_time_ms;
 
-  // Subtract the time spent completing marking in the collection
-  // set. Note if marking is not in progress during the pause
-  // the value of _mark_closure_time_ms will be zero.
-  other_time_ms -= _mark_closure_time_ms;
-
   // TraceGen0Time and TraceGen1Time summary info updating.
   _all_pause_times_ms->add(elapsed_ms);
 
@@ -1283,16 +1269,8 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     MainBodySummary* body_summary = _summary->main_body_summary();
     assert(body_summary != NULL, "should not be null!");
 
-    // This will be non-zero iff marking is currently in progress (i.e.
-    // _g1->mark_in_progress() == true) and the currrent pause was not
-    // an initial mark pause. Since the body_summary items are NumberSeqs,
-    // however, they have to be consistent and updated in lock-step with
-    // each other. Therefore we unconditionally record the SATB drain
-    // time - even if it's zero.
-    body_summary->record_satb_drain_time_ms(_cur_satb_drain_time_ms);
     body_summary->record_root_region_scan_wait_time_ms(
                                                _root_region_scan_wait_time_ms);
-
     body_summary->record_ext_root_scan_time_ms(ext_root_scan_time);
     body_summary->record_satb_filtering_time_ms(satb_filtering_time);
     body_summary->record_update_rs_time_ms(update_rs_time);
@@ -1308,7 +1286,6 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
       body_summary->record_parallel_other_time_ms(parallel_other_time);
     }
 
-    body_summary->record_mark_closure_time_ms(_mark_closure_time_ms);
     body_summary->record_clear_ct_time_ms(_cur_clear_ct_time_ms);
 
     // We exempt parallel collection from this check because Alloc Buffer
@@ -1434,9 +1411,6 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
       print_stats(1, "Object Copying", obj_copy_time);
     }
     print_stats(1, "Code Root Fixup", _cur_collection_code_root_fixup_time_ms);
-    if (print_marking_info) {
-      print_stats(1, "Complete CSet Marking", _mark_closure_time_ms);
-    }
     print_stats(1, "Clear CT", _cur_clear_ct_time_ms);
 #ifndef PRODUCT
     print_stats(1, "Cur Clear CC", _cur_clear_cc_time_ms);
@@ -1584,8 +1558,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     }
 
     double all_other_time_ms = pause_time_ms -
-      (update_rs_time + scan_rs_time + obj_copy_time +
-       _mark_closure_time_ms + termination_time);
+      (update_rs_time + scan_rs_time + obj_copy_time + termination_time);
 
     double young_other_time_ms = 0.0;
     if (young_cset_region_length() > 0) {
@@ -1710,41 +1683,6 @@ void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
     dcqs.set_completed_queue_padding(0);
   }
   dcqs.notify_if_necessary();
-}
-
-double
-G1CollectorPolicy::
-predict_young_collection_elapsed_time_ms(size_t adjustment) {
-  guarantee( adjustment == 0 || adjustment == 1, "invariant" );
-
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  size_t young_num = g1h->young_list()->length();
-  if (young_num == 0)
-    return 0.0;
-
-  young_num += adjustment;
-  size_t pending_cards = predict_pending_cards();
-  size_t rs_lengths = g1h->young_list()->sampled_rs_lengths() +
-                      predict_rs_length_diff();
-  size_t card_num;
-  if (gcs_are_young()) {
-    card_num = predict_young_card_num(rs_lengths);
-  } else {
-    card_num = predict_non_young_card_num(rs_lengths);
-  }
-  size_t young_byte_size = young_num * HeapRegion::GrainBytes;
-  double accum_yg_surv_rate =
-    _short_lived_surv_rate_group->accum_surv_rate(adjustment);
-
-  size_t bytes_to_copy =
-    (size_t) (accum_yg_surv_rate * (double) HeapRegion::GrainBytes);
-
-  return
-    predict_rs_update_time_ms(pending_cards) +
-    predict_rs_scan_time_ms(card_num) +
-    predict_object_copy_time_ms(bytes_to_copy) +
-    predict_young_other_time_ms(young_num) +
-    predict_constant_other_time_ms();
 }
 
 double
@@ -1980,7 +1918,6 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
         print_summary(1, "Object Copy", body_summary->get_obj_copy_seq());
       }
     }
-    print_summary(1, "Mark Closure", body_summary->get_mark_closure_seq());
     print_summary(1, "Clear CT", body_summary->get_clear_ct_seq());
     print_summary(1, "Other", summary->get_other_seq());
     {
@@ -1989,17 +1926,15 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
         if (parallel) {
           // parallel
           NumberSeq* other_parts[] = {
-            body_summary->get_satb_drain_seq(),
             body_summary->get_root_region_scan_wait_seq(),
             body_summary->get_parallel_seq(),
             body_summary->get_clear_ct_seq()
           };
           calc_other_times_ms = NumberSeq(summary->get_total_seq(),
-                                          4, other_parts);
+                                          3, other_parts);
         } else {
           // serial
           NumberSeq* other_parts[] = {
-            body_summary->get_satb_drain_seq(),
             body_summary->get_root_region_scan_wait_seq(),
             body_summary->get_update_rs_seq(),
             body_summary->get_ext_root_scan_seq(),
@@ -2008,7 +1943,7 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
             body_summary->get_obj_copy_seq()
           };
           calc_other_times_ms = NumberSeq(summary->get_total_seq(),
-                                          7, other_parts);
+                                          6, other_parts);
         }
         check_other_times(1,  summary->get_other_seq(), &calc_other_times_ms);
       }
