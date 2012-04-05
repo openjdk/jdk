@@ -213,16 +213,8 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
             SwingUtilities3.setDelegateRepaintManager(delegate, new RepaintManager() {
                 @Override
                 public void addDirtyRegion(final JComponent c, final int x, final int y, final int w, final int h) {
-                    if (SunToolkit.isDispatchThreadForAppContext(getTarget())) {
-                        synchronized (getDelegateLock()) {
-                            if (getDelegate().isPaintingForPrint()) {
-                                return;
-                            }
-                        }
-                    }
-                    Rectangle res = SwingUtilities.convertRectangle(
-                            c, new Rectangle(x, y, w, h), getDelegate());
-                    repaintPeer(res);
+                    repaintPeer(SwingUtilities.convertRectangle(
+                            c, new Rectangle(x, y, w, h), getDelegate()));
                 }
             });
         }
