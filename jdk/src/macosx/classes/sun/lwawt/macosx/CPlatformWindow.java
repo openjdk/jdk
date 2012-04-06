@@ -810,11 +810,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         if (icons == null || icons.size() == 0) {
             return null;
         }
-
-        // TODO: need a walk-through to find the best image.
-        // The best mean with higher resolution. Otherwise an icon looks bad.
-        final Image image = icons.get(0);
-        return CImage.getCreator().createFromImage(image);
+        return CImage.getCreator().createFromImages(icons);
     }
 
     /*
