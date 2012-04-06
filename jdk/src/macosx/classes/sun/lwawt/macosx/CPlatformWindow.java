@@ -661,11 +661,19 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     @Override
     public void setResizable(boolean resizable) {
         setStyleBits(RESIZABLE, resizable);
+
+        // Re-apply the size constraints and the size to ensure the space
+        // occupied by the grow box is counted properly
+        setMinimumSize(1, 1); // the method ignores its arguments
+
+        Rectangle bounds = peer.getBounds();
+        setBounds(bounds.x, bounds.y, bounds.width, bounds.height);
     }
 
     @Override
     public void setMinimumSize(int width, int height) {
         //TODO width, height should be used
+        //NOTE: setResizable() calls setMinimumSize(1,1) relaying on the logic below
         final long nsWindowPtr = getNSWindowPtr();
         final Dimension min = target.getMinimumSize();
         final Dimension max = target.getMaximumSize();
