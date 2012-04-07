@@ -69,9 +69,6 @@
   diagnostic(bool, G1TraceConcRefinement, false,                            \
           "Trace G1 concurrent refinement")                                 \
                                                                             \
-  product(intx, G1MarkRegionStackSize, 1024 * 1024,                         \
-          "Size of the region stack for concurrent marking.")               \
-                                                                            \
   product(double, G1ConcMarkStepDurationMillis, 10.0,                       \
           "Target duration of individual concurrent marking steps "         \
           "in milliseconds.")                                               \
