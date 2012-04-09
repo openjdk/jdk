@@ -2651,56 +2651,49 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     // Check to see if a field modification watch has been set before we take
     // the time to call into the VM.
     Label L2;
-    __ mov32(rcx, ExternalAddress((address)JvmtiExport::get_field_modification_count_addr()));
-    __ testl(rcx,rcx);
-    __ jcc(Assembler::zero, L2);
-    __ pop_ptr(rbx);               // copy the object pointer from tos
-    __ verify_oop(rbx);
-    __ push_ptr(rbx);              // put the object pointer back on tos
-    __ subptr(rsp, sizeof(jvalue));  // add space for a jvalue object
-    __ mov(rcx, rsp);
-    __ push_ptr(rbx);                 // save object pointer so we can steal rbx,
-    __ xorptr(rbx, rbx);
-    const Address lo_value(rcx, rbx, Address::times_1, 0*wordSize);
-    const Address hi_value(rcx, rbx, Address::times_1, 1*wordSize);
-    switch (bytecode()) {          // load values into the jvalue object
-    case Bytecodes::_fast_bputfield: __ movb(lo_value, rax); break;
-    case Bytecodes::_fast_sputfield: __ movw(lo_value, rax); break;
-    case Bytecodes::_fast_cputfield: __ movw(lo_value, rax); break;
-    case Bytecodes::_fast_iputfield: __ movl(lo_value, rax);                         break;
-    case Bytecodes::_fast_lputfield:
-      NOT_LP64(__ movptr(hi_value, rdx));
-      __ movptr(lo_value, rax);
-      break;
+     __ mov32(rcx, ExternalAddress((address)JvmtiExport::get_field_modification_count_addr()));
+     __ testl(rcx,rcx);
+     __ jcc(Assembler::zero, L2);
+     __ pop_ptr(rbx);               // copy the object pointer from tos
+     __ verify_oop(rbx);
+     __ push_ptr(rbx);              // put the object pointer back on tos
 
-    // need to call fld_s() after fstp_s() to restore the value for below
-    case Bytecodes::_fast_fputfield: __ fstp_s(lo_value); __ fld_s(lo_value);        break;
+     // Save tos values before call_VM() clobbers them. Since we have
+     // to do it for every data type, we use the saved values as the
+     // jvalue object.
+     switch (bytecode()) {          // load values into the jvalue object
+     case Bytecodes::_fast_aputfield: __ push_ptr(rax); break;
+     case Bytecodes::_fast_bputfield: // fall through
+     case Bytecodes::_fast_sputfield: // fall through
+     case Bytecodes::_fast_cputfield: // fall through
+     case Bytecodes::_fast_iputfield: __ push_i(rax); break;
+     case Bytecodes::_fast_dputfield: __ push_d(); break;
+     case Bytecodes::_fast_fputfield: __ push_f(); break;
+     case Bytecodes::_fast_lputfield: __ push_l(rax); break;
 
-    // need to call fld_d() after fstp_d() to restore the value for below
-    case Bytecodes::_fast_dputfield: __ fstp_d(lo_value); __ fld_d(lo_value);        break;
+     default:
+       ShouldNotReachHere();
+     }
+     __ mov(rcx, rsp);              // points to jvalue on the stack
+     // access constant pool cache entry
+     __ get_cache_entry_pointer_at_bcp(rax, rdx, 1);
+     __ verify_oop(rbx);
+     // rbx,: object pointer copied above
+     // rax,: cache entry pointer
+     // rcx: jvalue object on the stack
+     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_field_modification), rbx, rax, rcx);
 
-    // since rcx is not an object we don't call store_check() here
-    case Bytecodes::_fast_aputfield: __ movptr(lo_value, rax);                       break;
-
-    default:  ShouldNotReachHere();
-    }
-    __ pop_ptr(rbx);  // restore copy of object pointer
-
-    // Save rax, and sometimes rdx because call_VM() will clobber them,
-    // then use them for JVM/DI purposes
-    __ push(rax);
-    if (bytecode() == Bytecodes::_fast_lputfield) __ push(rdx);
-    // access constant pool cache entry
-    __ get_cache_entry_pointer_at_bcp(rax, rdx, 1);
-    __ verify_oop(rbx);
-    // rbx,: object pointer copied above
-    // rax,: cache entry pointer
-    // rcx: jvalue object on the stack
-    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_field_modification), rbx, rax, rcx);
-    if (bytecode() == Bytecodes::_fast_lputfield) __ pop(rdx);  // restore high value
-    __ pop(rax);     // restore lower value
-    __ addptr(rsp, sizeof(jvalue));  // release jvalue object space
-    __ bind(L2);
+     switch (bytecode()) {             // restore tos values
+     case Bytecodes::_fast_aputfield: __ pop_ptr(rax); break;
+     case Bytecodes::_fast_bputfield: // fall through
+     case Bytecodes::_fast_sputfield: // fall through
+     case Bytecodes::_fast_cputfield: // fall through
+     case Bytecodes::_fast_iputfield: __ pop_i(rax); break;
+     case Bytecodes::_fast_dputfield: __ pop_d(); break;
+     case Bytecodes::_fast_fputfield: __ pop_f(); break;
+     case Bytecodes::_fast_lputfield: __ pop_l(rax); break;
+     }
+     __ bind(L2);
   }
 }
 
