@@ -1,0 +1,75 @@
+#
+# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+
+SAMPLE_TARGET_DIR = $(JDK_OUTPUTDIR)/sample
+SAMPLE_SOURCE_DIR = $(JDK_TOPDIR)/src/share/sample
+SAMPLE_CLOSED_SOURCE_DIR = $(JDK_TOPDIR)/src/closed/share/sample
+SAMPLE_SOLARIS_SOURCE_DIR = $(JDK_TOPDIR)/src/solaris/sample
+
+# Exclude the vm directory
+SAMPLE_FIND_FILTER = -name vm -prune -o
+
+SAMPLE_SOURCE := $(shell $(FIND) $(SAMPLE_SOURCE_DIR) $(SAMPLE_FIND_FILTER) -type f -print)
+SAMPLE_TARGET := $(subst $(SAMPLE_SOURCE_DIR),$(SAMPLE_TARGET_DIR),$(SAMPLE_SOURCE))
+
+ifndef OPENJDK
+# Exclude Main.java in EbayClient dir
+    SAMPLE_CLOSED_SOURCE := $(shell $(FIND) $(SAMPLE_CLOSED_SOURCE_DIR) -type f -print | $(GREP) -v EbayClient/Main.java)
+    SAMPLE_CLOSED_TARGET := $(subst $(SAMPLE_CLOSED_SOURCE_DIR),$(SAMPLE_TARGET_DIR),$(SAMPLE_CLOSED_SOURCE))
+    SAMPLE_TARGET += $(SAMPLE_CLOSED_TARGET)
+endif
+
+ifeq ($(PLATFORM),solaris)
+    SAMPLE_SOLARIS_SOURCE := $(shell $(FIND) $(SAMPLE_SOLARIS_SOURCE_DIR) -type f -print)
+    SAMPLE_SOLARIS_TARGET := $(subst $(SAMPLE_SOLARIS_SOURCE_DIR),$(SAMPLE_TARGET_DIR),$(SAMPLE_SOLARIS_SOURCE))
+    SAMPLE_TARGET += $(SAMPLE_SOLARIS_TARGET)
+endif
+
+$(SAMPLE_TARGET_DIR)/dtrace/%: $(SAMPLE_SOLARIS_SOURCE_DIR)/dtrace/%
+	$(MKDIR) -p $(@D)
+	rm -f $@
+	$(CP) $< $@
+
+$(SAMPLE_TARGET_DIR)/webservices/%: $(SAMPLE_CLOSED_SOURCE_DIR)/webservices/%
+	$(MKDIR) -p $(@D)
+	rm -f $@
+	$(CP) $< $@
+
+$(SAMPLE_TARGET_DIR)/%: $(SAMPLE_SOURCE_DIR)/%
+	$(MKDIR) -p $(@D)
+	rm -f $@
+	$(CP) $< $@
+
+COPY_FILES += $(SAMPLE_TARGET)
+
+all: $(COPY_FILES) 
+
+.PHONY: all
+
