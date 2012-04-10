@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,10 +50,6 @@ int pathmap_open(const char* name) {
    char alt_path[PATH_MAX + 1];
 
    init_alt_root();
-   fd = open(name, O_RDONLY);
-   if (fd >= 0) {
-      return fd;
-   }
 
    if (alt_root_len > 0) {
       strcpy(alt_path, alt_root);
@@ -72,6 +68,11 @@ int pathmap_open(const char* name) {
             print_debug("path %s substituted for %s\n", alt_path, name);
             return fd;
          }
+      }
+   } else {
+      fd = open(name, O_RDONLY);
+      if (fd >= 0) {
+         return fd;
       }
    }
 

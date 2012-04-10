@@ -34,6 +34,8 @@ class MonitorValue;
 class ObjectValue;
 
 class Deoptimization : AllStatic {
+  friend class VMStructs;
+
  public:
   // What condition caused the deoptimization?
   enum DeoptReason {
@@ -137,7 +139,7 @@ class Deoptimization : AllStatic {
     address*  _frame_pcs;                 // Array of frame pc's, in bytes, for unrolling the stack
     intptr_t* _register_block;            // Block for storing callee-saved registers.
     BasicType _return_type;               // Tells if we have to restore double or long return value
-    intptr_t  _initial_fp;                // FP of the sender frame
+    intptr_t  _initial_info;              // Platform dependent data for the sender frame (was FP on x86)
     int       _caller_actual_parameters;  // The number of actual arguments at the
                                           // interpreted caller of the deoptimized frame
 
@@ -170,7 +172,7 @@ class Deoptimization : AllStatic {
     // Returns the total size of frames
     int size_of_frames() const;
 
-    void set_initial_fp(intptr_t fp) { _initial_fp = fp; }
+    void set_initial_info(intptr_t info) { _initial_info = info; }
 
     int caller_actual_parameters() const { return _caller_actual_parameters; }
 
@@ -184,7 +186,7 @@ class Deoptimization : AllStatic {
     static int register_block_offset_in_bytes()            { return offset_of(UnrollBlock, _register_block);            }
     static int return_type_offset_in_bytes()               { return offset_of(UnrollBlock, _return_type);               }
     static int counter_temp_offset_in_bytes()              { return offset_of(UnrollBlock, _counter_temp);              }
-    static int initial_fp_offset_in_bytes()                { return offset_of(UnrollBlock, _initial_fp);                }
+    static int initial_info_offset_in_bytes()              { return offset_of(UnrollBlock, _initial_info);              }
     static int unpack_kind_offset_in_bytes()               { return offset_of(UnrollBlock, _unpack_kind);               }
     static int sender_sp_temp_offset_in_bytes()            { return offset_of(UnrollBlock, _sender_sp_temp);            }
 

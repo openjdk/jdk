@@ -400,7 +400,7 @@ class SecurityManager {
      */
     @Deprecated
     protected Class<?> currentLoadedClass() {
-        Class c = currentLoadedClass0();
+        Class<?> c = currentLoadedClass0();
         if ((c != null) && hasAllPermission())
             c = null;
         return c;
@@ -1715,7 +1715,7 @@ class SecurityManager {
         checkPermission(new SecurityPermission(target));
     }
 
-    private native Class currentLoadedClass0();
+    private native Class<?> currentLoadedClass0();
 
     /**
      * Returns the thread group into which to instantiate any new

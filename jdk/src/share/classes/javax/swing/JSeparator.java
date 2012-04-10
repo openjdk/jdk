@@ -71,6 +71,7 @@ import java.io.IOException;
  * @author Georges Saab
  * @author Jeff Shapiro
  */
+@SuppressWarnings("serial")
 public class JSeparator extends JComponent implements SwingConstants, Accessible
 {
     /**
@@ -279,6 +280,7 @@ public class JSeparator extends JComponent implements SwingConstants, Accessible
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial")
     protected class AccessibleJSeparator extends AccessibleJComponent {
 
         /**

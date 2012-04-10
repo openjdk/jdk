@@ -23,23 +23,28 @@
 #
 
 #------------------------------------------------------------------------
-# CC, CPP & AS
+# CC, CXX & AS
 
-# When cross-compiling the ALT_COMPILER_PATH points
-# to the cross-compilation toolset
-ifdef CROSS_COMPILE_ARCH
-CPP = $(ALT_COMPILER_PATH)/g++
-CC  = $(ALT_COMPILER_PATH)/gcc
-HOSTCPP = g++
-HOSTCC  = gcc
-else
-CPP = g++
-CC  = gcc
-HOSTCPP = $(CPP)
-HOSTCC  = $(CC)
+# If a SPEC is not set already, then use these defaults.
+ifeq ($(SPEC),)
+  # When cross-compiling the ALT_COMPILER_PATH points
+  # to the cross-compilation toolset
+  ifdef CROSS_COMPILE_ARCH
+    CXX = $(ALT_COMPILER_PATH)/g++
+    CC  = $(ALT_COMPILER_PATH)/gcc
+    HOSTCXX = g++
+    HOSTCC  = gcc
+    STRIP = $(ALT_COMPILER_PATH)/strip
+  else
+    CXX = g++
+    CC  = gcc
+    HOSTCXX = $(CXX)
+    HOSTCC  = $(CC)
+    STRIP = strip
+  endif
+  AS  = $(CC) -c
 endif
 
-AS  = $(CC) -c
 
 # -dumpversion in gcc-2.91 shows "egcs-2.91.66". In later version, it only
 # prints the numbers (e.g. "2.95", "3.2.1")
@@ -50,9 +55,8 @@ CC_VER_MINOR := $(shell $(CC) -dumpversion | sed 's/egcs-//' | cut -d'.' -f2)
 ifneq "$(shell expr \( $(CC_VER_MAJOR) \> 3 \) \| \( \( $(CC_VER_MAJOR) = 3 \) \& \( $(CC_VER_MINOR) \>= 4 \) \))" "0"
 # Allow the user to turn off precompiled headers from the command line.
 ifneq ($(USE_PRECOMPILED_HEADER),0)
-USE_PRECOMPILED_HEADER=1
 PRECOMPILED_HEADER_DIR=.
-PRECOMPILED_HEADER_SRC=$(GAMMADIR)/src/share/vm/precompiled.hpp
+PRECOMPILED_HEADER_SRC=$(GAMMADIR)/src/share/vm/precompiled/precompiled.hpp
 PRECOMPILED_HEADER=$(PRECOMPILED_HEADER_DIR)/precompiled.hpp.gch
 endif
 endif
@@ -68,10 +72,11 @@ VM_PICFLAG/LIBJVM = $(PICFLAG)
 VM_PICFLAG/AOUT   =
 VM_PICFLAG        = $(VM_PICFLAG/$(LINK_INTO))
 
-ifeq ($(ZERO_BUILD), true)
+ifeq ($(JVM_VARIANT_ZERO), true)
 CFLAGS += $(LIBFFI_CFLAGS)
 endif
-ifeq ($(SHARK_BUILD), true)
+ifeq ($(JVM_VARIANT_ZEROSHARK), true)
+CFLAGS += $(LIBFFI_CFLAGS)
 CFLAGS += $(LLVM_CFLAGS)
 endif
 CFLAGS += $(VM_PICFLAG)
@@ -165,7 +170,7 @@ DEPFLAGS = -MMD -MP -MF $(DEP_DIR)/$(@:%=%.d)
 endif
 
 # -DDONT_USE_PRECOMPILED_HEADER will exclude all includes in precompiled.hpp.
-ifneq ($(USE_PRECOMPILED_HEADER),1)
+ifeq ($(USE_PRECOMPILED_HEADER),0)
 CFLAGS += -DDONT_USE_PRECOMPILED_HEADER
 endif
 
@@ -223,6 +228,26 @@ DEBUG_CFLAGS/ppc   = -g
 DEBUG_CFLAGS += $(DEBUG_CFLAGS/$(BUILDARCH))
 ifeq ($(DEBUG_CFLAGS/$(BUILDARCH)),)
 DEBUG_CFLAGS += -gstabs
+endif
+
+ifneq ($(OBJCOPY),)
+  FASTDEBUG_CFLAGS/ia64  = -g
+  FASTDEBUG_CFLAGS/amd64 = -g
+  FASTDEBUG_CFLAGS/arm   = -g
+  FASTDEBUG_CFLAGS/ppc   = -g
+  FASTDEBUG_CFLAGS += $(DEBUG_CFLAGS/$(BUILDARCH))
+  ifeq ($(FASTDEBUG_CFLAGS/$(BUILDARCH)),)
+    FASTDEBUG_CFLAGS += -gstabs
+  endif
+
+  OPT_CFLAGS/ia64  = -g
+  OPT_CFLAGS/amd64 = -g
+  OPT_CFLAGS/arm   = -g
+  OPT_CFLAGS/ppc   = -g
+  OPT_CFLAGS += $(OPT_CFLAGS/$(BUILDARCH))
+  ifeq ($(OPT_CFLAGS/$(BUILDARCH)),)
+    OPT_CFLAGS += -gstabs
+  endif
 endif
 
 # DEBUG_BINARIES overrides everything, use full -g debug information

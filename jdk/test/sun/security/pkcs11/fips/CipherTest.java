@@ -394,7 +394,6 @@ public class CipherTest {
 
     public static void main(PeerFactory peerFactory, KeyStore keyStore,
             String[] args) throws Exception {
-
         long time = System.currentTimeMillis();
         String relPath;
         if ((args != null) && (args.length > 0) && args[0].equals("sh")) {
@@ -423,7 +422,8 @@ public class CipherTest {
 
 //      trustManager = new AlwaysTrustManager();
         SSLContext context = SSLContext.getInstance("TLS");
-        context.init(new KeyManager[] {keyManager}, new TrustManager[] {trustManager}, null);
+        context.init(new KeyManager[] {keyManager},
+                new TrustManager[] {trustManager}, null);
         SSLContext.setDefault(context);
 
         CipherTest cipherTest = new CipherTest(peerFactory);

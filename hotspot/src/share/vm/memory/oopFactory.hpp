@@ -63,6 +63,7 @@ class oopFactory: AllStatic {
   static typeArrayOop    new_permanent_intArray  (int length, TRAPS);  // used for class file structures
 
   static typeArrayOop    new_typeArray(BasicType type, int length, TRAPS);
+  static typeArrayOop    new_typeArray_nozero(BasicType type, int length, TRAPS);
 
   // Constant pools
   static constantPoolOop      new_constantPool     (int length,

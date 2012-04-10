@@ -25,7 +25,7 @@
 
 #ifndef HEADLESS
 
-#include <malloc.h>
+#include <stdlib.h>
 #include <math.h>
 #include <jlong.h>
 

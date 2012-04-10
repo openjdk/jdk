@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ DEP_DIR       = $(GENERATED)/dependencies
 -include $(DEP_DIR)/*.d
 
 # read machine-specific adjustments (%%% should do this via buildtree.make?)
-ifeq ($(ZERO_BUILD), true)
+ifeq ($(findstring true, $(JVM_VARIANT_ZERO) $(JVM_VARIANT_ZEROSHARK)), true)
   include $(MAKEFILES_DIR)/zeroshark.make
 else
   include $(MAKEFILES_DIR)/$(BUILDARCH).make
@@ -60,10 +60,16 @@ Src_Dirs_I += $(GENERATED)
 # The order is important for the precompiled headers to work.
 INCLUDES += $(PRECOMPILED_HEADER_DIR:%=-I%) $(Src_Dirs_I:%=-I%)
 
-ifeq (${VERSION}, debug)
+# SYMFLAG is used by {jsig,saproc}.make
+ifneq ($(OBJCOPY),)
+  # always build with debug info when we can create .debuginfo files
   SYMFLAG = -g
 else
-  SYMFLAG =
+  ifeq (${VERSION}, debug)
+    SYMFLAG = -g
+  else
+    SYMFLAG =
+  endif
 endif
 
 # HOTSPOT_RELEASE_VERSION and HOTSPOT_BUILD_VERSION are defined 
@@ -82,15 +88,23 @@ BUILD_TARGET  = -DHOTSPOT_BUILD_TARGET="\"$(TARGET)\""
 BUILD_USER    = -DHOTSPOT_BUILD_USER="\"$(HOTSPOT_BUILD_USER)\""
 VM_DISTRO     = -DHOTSPOT_VM_DISTRO="\"$(HOTSPOT_VM_DISTRO)\""
 
-CPPFLAGS =           \
+CXXFLAGS =           \
   ${SYSDEFS}         \
   ${INCLUDES}        \
   ${BUILD_VERSION}   \
   ${BUILD_TARGET}    \
   ${BUILD_USER}      \
   ${HS_LIB_ARCH}     \
-  ${JRE_VERSION}     \
   ${VM_DISTRO}
+
+# This is VERY important! The version define must only be supplied to vm_version.o
+# If not, ccache will not re-use the cache at all, since the version string might contain
+# a time and date. 
+vm_version.o: CXXFLAGS += ${JRE_VERSION}
+
+ifndef JAVASE_EMBEDDED
+CFLAGS += -DINCLUDE_TRACE
+endif
 
 # CFLAGS_WARN holds compiler options to suppress/enable warnings.
 CFLAGS += $(CFLAGS_WARN/BYFILE)
@@ -124,6 +138,9 @@ JVM      = jvm
 LIBJVM   = lib$(JVM).so
 LIBJVM_G = lib$(JVM)$(G_SUFFIX).so
 
+LIBJVM_DEBUGINFO   = lib$(JVM).debuginfo
+LIBJVM_G_DEBUGINFO = lib$(JVM)$(G_SUFFIX).debuginfo
+
 SPECIAL_PATHS:=adlc c1 gc_implementation opto shark libadt
 
 SOURCE_PATHS=\
@@ -133,6 +150,12 @@ SOURCE_PATHS+=$(HS_COMMON_SRC)/os/$(Platform_os_family)/vm
 SOURCE_PATHS+=$(HS_COMMON_SRC)/os/posix/vm
 SOURCE_PATHS+=$(HS_COMMON_SRC)/cpu/$(Platform_arch)/vm
 SOURCE_PATHS+=$(HS_COMMON_SRC)/os_cpu/$(Platform_os_arch)/vm
+
+ifndef JAVASE_EMBEDDED
+SOURCE_PATHS+=$(shell if [ -d $(HS_ALT_SRC)/share/vm/jfr ]; then \
+  find $(HS_ALT_SRC)/share/vm/jfr -type d; \
+  fi)
+endif
 
 CORE_PATHS=$(foreach path,$(SOURCE_PATHS),$(call altsrc,$(path)) $(path))
 CORE_PATHS+=$(GENERATED)/jvmtifiles
@@ -213,7 +236,7 @@ mapfile_reorder : mapfile $(REORDERFILE)
 vm.def: $(Res_Files) $(Obj_Files)
 	sh $(GAMMADIR)/make/linux/makefiles/build_vm_def.sh *.o > $@
 
-ifeq ($(SHARK_BUILD), true)
+ifeq ($(JVM_VARIANT_ZEROSHARK), true)
   STATIC_CXX = false
 else
   ifeq ($(ZERO_LIBARCH), ppc64)
@@ -245,21 +268,21 @@ else
 
   LIBS_VM                  += $(LIBS)
 endif
-ifeq ($(ZERO_BUILD), true)
+ifeq ($(JVM_VARIANT_ZERO), true)
   LIBS_VM += $(LIBFFI_LIBS)
 endif
-ifeq ($(SHARK_BUILD), true)
+ifeq ($(JVM_VARIANT_ZEROSHARK), true)
+  LIBS_VM   += $(LIBFFI_LIBS) $(LLVM_LIBS)
   LFLAGS_VM += $(LLVM_LDFLAGS)
-  LIBS_VM   += $(LLVM_LIBS)
 endif
 
-LINK_VM = $(LINK_LIB.c)
+LINK_VM = $(LINK_LIB.CC)
 
 # rule for building precompiled header
 $(PRECOMPILED_HEADER):
 	$(QUIETLY) echo Generating precompiled header $@
 	$(QUIETLY) mkdir -p $(PRECOMPILED_HEADER_DIR)
-	$(QUIETLY) $(COMPILE.CC) $(DEPFLAGS) -x c++-header $(PRECOMPILED_HEADER_SRC) -o $@ $(COMPILE_DONE)
+	$(QUIETLY) $(COMPILE.CXX) $(DEPFLAGS) -x c++-header $(PRECOMPILED_HEADER_SRC) -o $@ $(COMPILE_DONE)
 
 # making the library:
 
@@ -289,10 +312,10 @@ endif
 $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
 	$(QUIETLY) {                                                    \
 	    echo Linking vm...;                                         \
-	    $(LINK_LIB.CC/PRE_HOOK)                                     \
+	    $(LINK_LIB.CXX/PRE_HOOK)                                     \
 	    $(LINK_VM) $(LD_SCRIPT_FLAG)                                \
 		       $(LFLAGS_VM) -o $@ $(LIBJVM.o) $(LIBS_VM);       \
-	    $(LINK_LIB.CC/POST_HOOK)                                    \
+	    $(LINK_LIB.CXX/POST_HOOK)                                    \
 	    rm -f $@.1; ln -s $@ $@.1;                                  \
 	    [ -f $(LIBJVM_G) ] || { ln -s $@ $(LIBJVM_G); ln -s $@.1 $(LIBJVM_G).1; }; \
             if [ \"$(CROSS_COMPILE_ARCH)\" = \"\" ] ; then                    \
@@ -307,11 +330,30 @@ $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
 	      fi                                                        \
             fi 								\
 	}
+ifeq ($(CROSS_COMPILE_ARCH),)
+  ifneq ($(OBJCOPY),)
+	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJVM_DEBUGINFO)
+	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DEBUGINFO) $@
+    ifeq ($(STRIP_POLICY),all_strip)
+	$(QUIETLY) $(STRIP) $@
+    else
+      ifeq ($(STRIP_POLICY),min_strip)
+	$(QUIETLY) $(STRIP) -g $@
+      # implied else here is no stripping at all
+      endif
+    endif
+	$(QUIETLY) [ -f $(LIBJVM_G_DEBUGINFO) ] || ln -s $(LIBJVM_DEBUGINFO) $(LIBJVM_G_DEBUGINFO)
+  endif
+endif
 
-DEST_JVM = $(JDK_LIBDIR)/$(VM_SUBDIR)/$(LIBJVM)
+DEST_SUBDIR        = $(JDK_LIBDIR)/$(VM_SUBDIR)
+DEST_JVM           = $(DEST_SUBDIR)/$(LIBJVM)
+DEST_JVM_DEBUGINFO = $(DEST_SUBDIR)/$(LIBJVM_DEBUGINFO)
 
 install_jvm: $(LIBJVM)
 	@echo "Copying $(LIBJVM) to $(DEST_JVM)"
+	$(QUIETLY) test -f $(LIBJVM_DEBUGINFO) && \
+	    cp -f $(LIBJVM_DEBUGINFO) $(DEST_JVM_DEBUGINFO)
 	$(QUIETLY) cp -f $(LIBJVM) $(DEST_JVM) && echo "Done"
 
 #----------------------------------------------------------------------
@@ -326,9 +368,12 @@ include $(MAKEFILES_DIR)/jsig.make
 # Serviceability agent
 include $(MAKEFILES_DIR)/saproc.make
 
+# Whitebox testing API
+include $(MAKEFILES_DIR)/wb.make
+
 #----------------------------------------------------------------------
 
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC)
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC) $(WB_JAR)
 
 install: install_jvm install_jsig install_saproc
 

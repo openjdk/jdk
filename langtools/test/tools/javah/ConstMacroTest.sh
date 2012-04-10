@@ -56,7 +56,7 @@ EXPECTED_JAVAH_OUT_FILE=SubClassConsts.out
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     PS=":"
     FS="/"
     ;;

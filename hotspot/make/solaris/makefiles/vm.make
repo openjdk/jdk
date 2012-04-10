@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -55,10 +55,17 @@ VPATH += $(Src_Dirs_V:%=%:)
 Src_Dirs_I += $(GENERATED)
 INCLUDES += $(Src_Dirs_I:%=-I%)
 
-ifeq (${VERSION}, debug)
-  SYMFLAG = -g
+# SYMFLAG is used by {dtrace,jsig,saproc}.make.
+ifneq ($(OBJCOPY),)
+  # always build with debug info when we can create .debuginfo files
+  # and disable 'lazy debug info' so the .so has everything.
+  SYMFLAG = -g -xs
 else
-  SYMFLAG =
+  ifeq (${VERSION}, debug)
+    SYMFLAG = -g
+  else
+    SYMFLAG =
+  endif
 endif
 
 # The following variables are defined in the generated flags.make file.
@@ -69,15 +76,19 @@ BUILD_TARGET  = -DHOTSPOT_BUILD_TARGET="\"$(TARGET)\""
 BUILD_USER    = -DHOTSPOT_BUILD_USER="\"$(HOTSPOT_BUILD_USER)\""
 VM_DISTRO     = -DHOTSPOT_VM_DISTRO="\"$(HOTSPOT_VM_DISTRO)\""
 
-CPPFLAGS =           \
+CXXFLAGS =           \
   ${SYSDEFS}         \
   ${INCLUDES}        \
   ${BUILD_VERSION}   \
   ${BUILD_TARGET}    \
   ${BUILD_USER}      \
   ${HS_LIB_ARCH}     \
-  ${JRE_VERSION}     \
   ${VM_DISTRO}
+
+# This is VERY important! The version define must only be supplied to vm_version.o
+# If not, ccache will not re-use the cache at all, since the version string might contain
+# a time and date. 
+vm_version.o: CXXFLAGS += ${JRE_VERSION} 
 
 # CFLAGS_WARN holds compiler options to suppress/enable warnings.
 CFLAGS += $(CFLAGS_WARN)
@@ -86,7 +97,7 @@ CFLAGS += $(CFLAGS_WARN)
 CFLAGS += $(CFLAGS/NOEX)
 
 # Extra flags from gnumake's invocation or environment
-CFLAGS += $(EXTRA_CFLAGS)
+CFLAGS += $(EXTRA_CFLAGS) -DINCLUDE_TRACE
 
 # Math Library (libm.so), do not use -lm.
 #    There might be two versions of libm.so on the build system:
@@ -140,6 +151,9 @@ JVM      = jvm
 LIBJVM   = lib$(JVM).so
 LIBJVM_G = lib$(JVM)$(G_SUFFIX).so
 
+LIBJVM_DEBUGINFO   = lib$(JVM).debuginfo
+LIBJVM_G_DEBUGINFO = lib$(JVM)$(G_SUFFIX).debuginfo
+
 SPECIAL_PATHS:=adlc c1 dist gc_implementation opto shark libadt
 
 SOURCE_PATHS=\
@@ -149,6 +163,10 @@ SOURCE_PATHS+=$(HS_COMMON_SRC)/os/$(Platform_os_family)/vm
 SOURCE_PATHS+=$(HS_COMMON_SRC)/os/posix/vm
 SOURCE_PATHS+=$(HS_COMMON_SRC)/cpu/$(Platform_arch)/vm
 SOURCE_PATHS+=$(HS_COMMON_SRC)/os_cpu/$(Platform_os_arch)/vm
+
+SOURCE_PATHS+=$(shell if [ -d $(HS_ALT_SRC)/share/vm/jfr ]; then \
+  find $(HS_ALT_SRC)/share/vm/jfr -type d; \
+  fi)
 
 CORE_PATHS=$(foreach path,$(SOURCE_PATHS),$(call altsrc,$(path)) $(path))
 CORE_PATHS+=$(GENERATED)/jvmtifiles
@@ -212,13 +230,23 @@ JVM_OBJ_FILES = $(Obj_Files) $(DTRACE_OBJS)
 
 vm_version.o: $(filter-out vm_version.o,$(JVM_OBJ_FILES))
 
-mapfile : $(MAPFILE) $(MAPFILE_DTRACE_OPT)
+mapfile : $(MAPFILE) $(MAPFILE_DTRACE_OPT) vm.def
 	rm -f $@
-	cat $^ > $@
+	cat $(MAPFILE) $(MAPFILE_DTRACE_OPT) \
+	    | $(NAWK) '{                                         \
+	              if ($$0 ~ "INSERT VTABLE SYMBOLS HERE") {  \
+	                  system ("cat vm.def");                 \
+	              } else {                                   \
+	                  print $$0;                             \
+	              }                                          \
+	          }' > $@
 
 mapfile_reorder : mapfile $(MAPFILE_DTRACE_OPT) $(REORDERFILE)
 	rm -f $@
 	cat $^ > $@
+
+vm.def: $(Obj_Files)
+	sh $(GAMMADIR)/make/solaris/makefiles/build_vm_def.sh *.o > $@
 
 ifeq ($(LINK_INTO),AOUT)
   LIBJVM.o                 =
@@ -241,27 +269,44 @@ endif
 endif
 
 ifdef USE_GCC
-LINK_VM = $(LINK_LIB.c)
-else
 LINK_VM = $(LINK_LIB.CC)
+else
+LINK_VM = $(LINK_LIB.CXX)
 endif
 # making the library:
 $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) 
 ifeq ($(filter -sbfast -xsbfast, $(CFLAGS_BROWSE)),)
 	@echo Linking vm...
-	$(QUIETLY) $(LINK_LIB.CC/PRE_HOOK)
+	$(QUIETLY) $(LINK_LIB.CXX/PRE_HOOK)
 	$(QUIETLY) $(LINK_VM) $(LFLAGS_VM) -o $@ $(LIBJVM.o) $(LIBS_VM)
-	$(QUIETLY) $(LINK_LIB.CC/POST_HOOK)
+	$(QUIETLY) $(LINK_LIB.CXX/POST_HOOK)
 	$(QUIETLY) rm -f $@.1 && ln -s $@ $@.1
 	$(QUIETLY) [ -f $(LIBJVM_G) ] || ln -s $@ $(LIBJVM_G)
 	$(QUIETLY) [ -f $(LIBJVM_G).1 ] || ln -s $@.1 $(LIBJVM_G).1
+ifneq ($(OBJCOPY),)
+	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJVM_DEBUGINFO)
+	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DEBUGINFO) $@
+  ifeq ($(STRIP_POLICY),all_strip)
+	$(QUIETLY) $(STRIP) $@
+  else
+    ifeq ($(STRIP_POLICY),min_strip)
+	$(QUIETLY) $(STRIP) -x $@
+    # implied else here is no stripping at all
+    endif
+  endif
+	$(QUIETLY) [ -f $(LIBJVM_G_DEBUGINFO) ] || ln -s $(LIBJVM_DEBUGINFO) $(LIBJVM_G_DEBUGINFO)
+endif
 endif # filter -sbfast -xsbfast
 
 
-DEST_JVM = $(JDK_LIBDIR)/$(VM_SUBDIR)/$(LIBJVM)
+DEST_SUBDIR        = $(JDK_LIBDIR)/$(VM_SUBDIR)
+DEST_JVM           = $(DEST_SUBDIR)/$(LIBJVM)
+DEST_JVM_DEBUGINFO = $(DEST_SUBDIR)/$(LIBJVM_DEBUGINFO)
 
 install_jvm: $(LIBJVM)
 	@echo "Copying $(LIBJVM) to $(DEST_JVM)"
+	$(QUIETLY) test -f $(LIBJVM_DEBUGINFO) && \
+	    cp -f $(LIBJVM_DEBUGINFO) $(DEST_JVM_DEBUGINFO)
 	$(QUIETLY) cp -f $(LIBJVM) $(DEST_JVM) && echo "Done"
 
 #----------------------------------------------------------------------
@@ -276,9 +321,12 @@ include $(MAKEFILES_DIR)/jsig.make
 # Serviceability agent
 include $(MAKEFILES_DIR)/saproc.make
 
+# Whitebox testing API
+include $(MAKEFILES_DIR)/wb.make
+
 #----------------------------------------------------------------------
 
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(LIBJVM_DTRACE) $(BUILDLIBSAPROC) dtraceCheck
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(LIBJVM_DTRACE) $(BUILDLIBSAPROC) dtraceCheck $(WB_JAR)
 
 install: install_jvm install_jsig install_saproc
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,15 +66,15 @@ final class VersionHelper12 extends VersionHelper {
             }
     }
 
-    Class loadClass(String className) throws ClassNotFoundException {
+    Class<?> loadClass(String className) throws ClassNotFoundException {
         ClassLoader cl = getContextClassLoader();
         return Class.forName(className, true, cl);
     }
 
     private ClassLoader getContextClassLoader() {
-        return (ClassLoader) AccessController.doPrivileged(
-            new PrivilegedAction() {
-                public Object run() {
+        return AccessController.doPrivileged(
+            new PrivilegedAction<ClassLoader>() {
+                public ClassLoader run() {
                     return Thread.currentThread().getContextClassLoader();
                 }
             }
@@ -82,9 +82,9 @@ final class VersionHelper12 extends VersionHelper {
     }
 
     Thread createThread(final Runnable r) {
-        return (Thread) AccessController.doPrivileged(
-            new PrivilegedAction() {
-                public Object run() {
+        return AccessController.doPrivileged(
+            new PrivilegedAction<Thread>() {
+                public Thread run() {
                     return new Thread(r);
                 }
             }

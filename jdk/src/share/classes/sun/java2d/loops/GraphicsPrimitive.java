@@ -328,7 +328,7 @@ public abstract class GraphicsPrimitive {
 
     static {
         GetPropertyAction gpa = new GetPropertyAction("sun.java2d.trace");
-        String trace = (String)AccessController.doPrivileged(gpa);
+        String trace = AccessController.doPrivileged(gpa);
         if (trace != null) {
             boolean verbose = false;
             int traceflags = 0;
@@ -391,9 +391,9 @@ public abstract class GraphicsPrimitive {
     private static PrintStream getTraceOutputFile() {
         if (traceout == null) {
             if (tracefile != null) {
-                Object o =
-                    AccessController.doPrivileged(new PrivilegedAction() {
-                        public Object run() {
+                FileOutputStream o = AccessController.doPrivileged(
+                    new PrivilegedAction<FileOutputStream>() {
+                        public FileOutputStream run() {
                             try {
                                 return new FileOutputStream(tracefile);
                             } catch (FileNotFoundException e) {
@@ -402,7 +402,7 @@ public abstract class GraphicsPrimitive {
                         }
                     });
                 if (o != null) {
-                    traceout = new PrintStream((OutputStream) o);
+                    traceout = new PrintStream(o);
                 } else {
                     traceout = System.err;
                 }
@@ -415,8 +415,8 @@ public abstract class GraphicsPrimitive {
 
     public static class TraceReporter extends Thread {
         public static void setShutdownHook() {
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
+            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                public Void run() {
                     TraceReporter t = new TraceReporter();
                     t.setContextClassLoader(null);
                     Runtime.getRuntime().addShutdownHook(t);

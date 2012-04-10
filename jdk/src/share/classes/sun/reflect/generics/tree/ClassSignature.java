@@ -52,5 +52,5 @@ public class ClassSignature implements Signature {
     public ClassTypeSignature getSuperclass(){return superclass;}
     public ClassTypeSignature[] getSuperInterfaces(){return superInterfaces;}
 
-    public void accept(Visitor v){v.visitClassSignature(this);}
+    public void accept(Visitor<?> v){v.visitClassSignature(this);}
 }

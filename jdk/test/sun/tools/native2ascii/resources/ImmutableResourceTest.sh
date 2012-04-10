@@ -28,14 +28,14 @@
 #
 #   @run shell ImmutableResourceTest.sh
 #
-# 
+#
 
 # Beginning of subroutines:
 status=1
 
 #Call this from anywhere to fail the test with an error message
 # usage: fail "reason why the test failed"
-fail() 
+fail()
  { echo "The test failed :-("
    echo "$*" 1>&2
    echo "exit status was $status"
@@ -44,7 +44,7 @@ fail()
 
 #Call this from anywhere to pass the test with a message
 # usage: pass "reason why the test passed if applicable"
-pass() 
+pass()
  { echo "The test passed!!!"
    echo "$*" 1>&2
    exit 0
@@ -56,7 +56,7 @@ pass()
 
 OS=`uname -s`
 case "$OS" in
-   SunOS | Linux )
+   SunOS | Linux | Darwin )
       PATHSEP=":"
       ;;
 
@@ -83,7 +83,7 @@ if [ -z "${TESTJAVA}" ] ; then
    if [ -n "$1" ] ; then
           TESTJAVA=$1
       else
-	  TESTJAVA=$JAVA_HOME
+          TESTJAVA=$JAVA_HOME
    fi
    TESTSRC=.
    TESTCLASSES=.

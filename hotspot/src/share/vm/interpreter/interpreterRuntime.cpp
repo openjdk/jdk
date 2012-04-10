@@ -139,9 +139,15 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* thread, Bytecodes::C
   ResourceMark rm(thread);
   methodHandle m (thread, method(thread));
   Bytecode_loadconstant ldc(m, bci(thread));
-  oop result = ldc.resolve_constant(THREAD);
-  DEBUG_ONLY(ConstantPoolCacheEntry* cpce = m->constants()->cache()->entry_at(ldc.cache_index()));
-  assert(result == cpce->f1(), "expected result for assembly code");
+  oop result = ldc.resolve_constant(CHECK);
+#ifdef ASSERT
+  {
+    // The bytecode wrappers aren't GC-safe so construct a new one
+    Bytecode_loadconstant ldc2(m, bci(thread));
+    ConstantPoolCacheEntry* cpce = m->constants()->cache()->entry_at(ldc2.cache_index());
+    assert(result == cpce->f1(), "expected result for assembly code");
+  }
+#endif
 }
 IRT_END
 
@@ -356,25 +362,6 @@ IRT_ENTRY(void, InterpreterRuntime::throw_ClassCastException(
   THROW_MSG(vmSymbols::java_lang_ClassCastException(), message);
 IRT_END
 
-// required can be either a MethodType, or a Class (for a single argument)
-// actual (if not null) can be either a MethodHandle, or an arbitrary value (for a single argument)
-IRT_ENTRY(void, InterpreterRuntime::throw_WrongMethodTypeException(JavaThread* thread,
-                                                                   oopDesc* required,
-                                                                   oopDesc* actual)) {
-  ResourceMark rm(thread);
-  char* message = SharedRuntime::generate_wrong_method_type_message(thread, required, actual);
-
-  if (ProfileTraps) {
-    note_trap(thread, Deoptimization::Reason_constraint, CHECK);
-  }
-
-  // create exception
-  THROW_MSG(vmSymbols::java_lang_invoke_WrongMethodTypeException(), message);
-}
-IRT_END
-
-
-
 // exception_handler_for_exception(...) returns the continuation address,
 // the exception oop (via TLS) and sets the bci/bcp for the continuation.
 // The exception oop is returned to make sure it is preserved over GC (it
@@ -522,6 +509,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecode
   // resolve field
   FieldAccessInfo info;
   constantPoolHandle pool(thread, method(thread)->constants());
+  bool is_put    = (bytecode == Bytecodes::_putfield  || bytecode == Bytecodes::_putstatic);
   bool is_static = (bytecode == Bytecodes::_getstatic || bytecode == Bytecodes::_putstatic);
 
   {
@@ -541,8 +529,6 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecode
   // exceptions at the correct place. If we do not resolve completely
   // in the current pass, leaving the put_code set to zero will
   // cause the next put instruction to reresolve.
-  bool is_put = (bytecode == Bytecodes::_putfield ||
-                 bytecode == Bytecodes::_putstatic);
   Bytecodes::Code put_code = (Bytecodes::Code)0;
 
   // We also need to delay resolving getstatic instructions until the
@@ -554,12 +540,28 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecode
                                !klass->is_initialized());
   Bytecodes::Code get_code = (Bytecodes::Code)0;
 
-
   if (!uninitialized_static) {
     get_code = ((is_static) ? Bytecodes::_getstatic : Bytecodes::_getfield);
     if (is_put || !info.access_flags().is_final()) {
       put_code = ((is_static) ? Bytecodes::_putstatic : Bytecodes::_putfield);
     }
+  }
+
+  if (is_put && !is_static && klass->is_subclass_of(SystemDictionary::CallSite_klass()) && (info.name() == vmSymbols::target_name())) {
+    const jint direction = frame::interpreter_frame_expression_stack_direction();
+    Handle call_site    (THREAD, *((oop*) thread->last_frame().interpreter_frame_tos_at(-1 * direction)));
+    Handle method_handle(THREAD, *((oop*) thread->last_frame().interpreter_frame_tos_at( 0 * direction)));
+    assert(call_site    ->is_a(SystemDictionary::CallSite_klass()),     "must be");
+    assert(method_handle->is_a(SystemDictionary::MethodHandle_klass()), "must be");
+
+    {
+      // Walk all nmethods depending on this call site.
+      MutexLocker mu(Compile_lock, thread);
+      Universe::flush_dependents_on(call_site, method_handle);
+    }
+
+    // Don't allow fast path for setting CallSite.target and sub-classes.
+    put_code = (Bytecodes::Code) 0;
   }
 
   cache_entry(thread)->set_field(
@@ -857,7 +859,9 @@ IRT_ENTRY(nmethod*,
   const int branch_bci = branch_bcp != NULL ? method->bci_from(branch_bcp) : InvocationEntryBci;
   const int bci = branch_bcp != NULL ? method->bci_from(fr.interpreter_frame_bcp()) : InvocationEntryBci;
 
-  nmethod* osr_nm = CompilationPolicy::policy()->event(method, method, branch_bci, bci, CompLevel_none, thread);
+  assert(!HAS_PENDING_EXCEPTION, "Should not have any exceptions pending");
+  nmethod* osr_nm = CompilationPolicy::policy()->event(method, method, branch_bci, bci, CompLevel_none, NULL, thread);
+  assert(!HAS_PENDING_EXCEPTION, "Event handler should not throw any exceptions");
 
   if (osr_nm != NULL) {
     // We may need to do on-stack replacement which requires that no
@@ -982,11 +986,8 @@ ConstantPoolCacheEntry *cp_entry))
   // check the access_flags for the field in the klass
 
   instanceKlass* ik = instanceKlass::cast(java_lang_Class::as_klassOop(cp_entry->f1()));
-  typeArrayOop fields = ik->fields();
   int index = cp_entry->field_index();
-  assert(index < fields->length(), "holders field index is out of range");
-  // bail out if field accesses are not watched
-  if ((fields->ushort_at(index) & JVM_ACC_FIELD_ACCESS_WATCHED) == 0) return;
+  if ((ik->field_access_flags(index) & JVM_ACC_FIELD_ACCESS_WATCHED) == 0) return;
 
   switch(cp_entry->flag_state()) {
     case btos:    // fall through
@@ -1019,11 +1020,9 @@ IRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread *thread,
 
   // check the access_flags for the field in the klass
   instanceKlass* ik = instanceKlass::cast(k);
-  typeArrayOop fields = ik->fields();
   int index = cp_entry->field_index();
-  assert(index < fields->length(), "holders field index is out of range");
   // bail out if field modifications are not watched
-  if ((fields->ushort_at(index) & JVM_ACC_FIELD_MODIFICATION_WATCHED) == 0) return;
+  if ((ik->field_access_flags(index) & JVM_ACC_FIELD_MODIFICATION_WATCHED) == 0) return;
 
   char sig_type = '\0';
 
@@ -1242,7 +1241,7 @@ IRT_ENTRY(void, InterpreterRuntime::prepare_native_call(JavaThread* thread, meth
   // preparing the same method will be sure to see non-null entry & mirror.
 IRT_END
 
-#if defined(IA32) || defined(AMD64)
+#if defined(IA32) || defined(AMD64) || defined(ARM)
 IRT_LEAF(void, InterpreterRuntime::popframe_move_outgoing_args(JavaThread* thread, void* src_address, void* dest_address))
   if (src_address == dest_address) {
     return;

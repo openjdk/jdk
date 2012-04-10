@@ -31,7 +31,6 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -45,10 +44,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.LinkedList;
-import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
@@ -56,7 +52,6 @@ import sun.misc.Unsafe;
 import sun.reflect.ConstantPool;
 import sun.reflect.Reflection;
 import sun.reflect.ReflectionFactory;
-import sun.reflect.SignatureIterator;
 import sun.reflect.generics.factory.CoreReflectionFactory;
 import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.repository.ClassRepository;
@@ -354,7 +349,8 @@ public final
                         });
                 cachedConstructor = c;
             } catch (NoSuchMethodException e) {
-                throw new InstantiationException(getName());
+                throw (InstantiationException)
+                    new InstantiationException(getName()).initCause(e);
             }
         }
         Constructor<T> tmpConstructor = cachedConstructor;
@@ -635,6 +631,7 @@ public final
      *     <cite>The Java&trade; Virtual Machine Specification</cite>
      * @since 1.5
      */
+    @SuppressWarnings("unchecked")
     public TypeVariable<Class<T>>[] getTypeParameters() {
         if (getGenericSignature() != null)
             return (TypeVariable<Class<T>>[])getGenericInfo().getTypeParameters();
@@ -978,7 +975,7 @@ public final
                 descriptor      = (String)   enclosingInfo[2];
                 assert((name != null && descriptor != null) || name == descriptor);
             } catch (ClassCastException cce) {
-                throw new InternalError("Invalid type in enclosing method information");
+                throw new InternalError("Invalid type in enclosing method information", cce);
             }
         }
 
@@ -1244,7 +1241,7 @@ public final
         try {
             return getName().substring(enclosingClass.getName().length());
         } catch (IndexOutOfBoundsException ex) {
-            throw new InternalError("Malformed class name");
+            throw new InternalError("Malformed class name", ex);
         }
     }
 
@@ -1307,7 +1304,7 @@ public final
 
         return java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Class<?>[]>() {
-                public Class[] run() {
+                public Class<?>[] run() {
                     List<Class<?>> list = new ArrayList<>();
                     Class<?> currentClass = Class.this;
                     while (currentClass != null) {
@@ -1319,7 +1316,7 @@ public final
                         }
                         currentClass = currentClass.getSuperclass();
                     }
-                    return list.toArray(new Class[0]);
+                    return list.toArray(new Class<?>[0]);
                 }
             });
     }
@@ -2154,7 +2151,7 @@ public final
      * Return the Virtual Machine's Class object for the named
      * primitive type.
      */
-    static native Class getPrimitiveClass(String name);
+    static native Class<?> getPrimitiveClass(String name);
 
 
     /*
@@ -2399,7 +2396,9 @@ public final
         }
         // No cached value available; request value from VM
         if (isInterface()) {
-            res = new Constructor[0];
+            @SuppressWarnings("unchecked")
+            Constructor<T>[] temporaryRes = (Constructor<T>[]) new Constructor<?>[0];
+            res = temporaryRes;
         } else {
             res = getDeclaredConstructors0(publicOnly);
         }
@@ -2559,7 +2558,7 @@ public final
         // Start by fetching public declared methods
         MethodArray methods = new MethodArray();
         {
-            Method[] tmp = privateGetDeclaredMethods(true);
+                Method[] tmp = privateGetDeclaredMethods(true);
             methods.addAll(tmp);
         }
         // Now recur over superclass and direct superinterfaces.
@@ -2909,6 +2908,7 @@ public final
                         return null;
                     }
 
+                    // Doesn't use Boolean.getBoolean to avoid class init.
                     String val =
                         System.getProperty("sun.reflect.noCaches");
                     if (val != null && val.equals("true")) {
@@ -2954,13 +2954,14 @@ public final
                                 return null;
                             }
                         });
-                enumConstants = (T[])values.invoke(null);
+                @SuppressWarnings("unchecked")
+                T[] temporaryConstants = (T[])values.invoke(null);
+                enumConstants = temporaryConstants;
             }
             // These can happen when users concoct enum-like classes
             // that don't comply with the enum spec.
-            catch (InvocationTargetException ex) { return null; }
-            catch (NoSuchMethodException ex) { return null; }
-            catch (IllegalAccessException ex) { return null; }
+            catch (InvocationTargetException | NoSuchMethodException |
+                   IllegalAccessException ex) { return null; }
         }
         return enumConstants;
     }
@@ -3000,6 +3001,7 @@ public final
      *
      * @since 1.5
      */
+    @SuppressWarnings("unchecked")
     public T cast(Object obj) {
         if (obj != null && !isInstance(obj))
             throw new ClassCastException(cannotCastMsg(obj));
@@ -3012,7 +3014,7 @@ public final
 
     /**
      * Casts this {@code Class} object to represent a subclass of the class
-     * represented by the specified class object.  Checks that that the cast
+     * represented by the specified class object.  Checks that the cast
      * is valid, and throws a {@code ClassCastException} if it is not.  If
      * this method succeeds, it always returns a reference to this class object.
      *
@@ -3030,6 +3032,7 @@ public final
      *    the class itself).
      * @since 1.5
      */
+    @SuppressWarnings("unchecked")
     public <U> Class<? extends U> asSubclass(Class<U> clazz) {
         if (clazz.isAssignableFrom(this))
             return (Class<? extends U>) this;
@@ -3041,6 +3044,7 @@ public final
      * @throws NullPointerException {@inheritDoc}
      * @since 1.5
      */
+    @SuppressWarnings("unchecked")
     public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
         if (annotationClass == null)
             throw new NullPointerException();
@@ -3114,4 +3118,9 @@ public final
     AnnotationType getAnnotationType() {
         return annotationType;
     }
+
+    /* Backing store of user-defined values pertaining to this class.
+     * Maintained by the ClassValue class.
+     */
+    transient ClassValue.ClassValueMap classValueMap;
 }

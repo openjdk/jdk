@@ -171,11 +171,11 @@ public class LoopPipe
 
 
     public void draw(SunGraphics2D sg2d, Shape s) {
-        if (sg2d.strokeState == sg2d.STROKE_THIN) {
+        if (sg2d.strokeState == SunGraphics2D.STROKE_THIN) {
             Path2D.Float p2df;
             int transX;
             int transY;
-            if (sg2d.transformState <= sg2d.TRANSFORM_INT_TRANSLATE) {
+            if (sg2d.transformState <= SunGraphics2D.TRANSFORM_INT_TRANSLATE) {
                 if (s instanceof Path2D.Float) {
                     p2df = (Path2D.Float)s;
                 } else {
@@ -193,7 +193,7 @@ public class LoopPipe
             return;
         }
 
-        if (sg2d.strokeState == sg2d.STROKE_CUSTOM) {
+        if (sg2d.strokeState == SunGraphics2D.STROKE_CUSTOM) {
             fill(sg2d, sg2d.stroke.createStrokedShape(s));
             return;
         }
@@ -271,7 +271,7 @@ public class LoopPipe
             sr.setRule(PathIterator.WIND_NON_ZERO);
 
             BasicStroke bs = (BasicStroke) sg2d.stroke;
-            boolean thin = (sg2d.strokeState <= sg2d.STROKE_THINDASHED);
+            boolean thin = (sg2d.strokeState <= SunGraphics2D.STROKE_THINDASHED);
             boolean normalize =
                 (sg2d.strokeHint != SunHints.INTVAL_STROKE_PURE);
 
@@ -281,19 +281,18 @@ public class LoopPipe
         } catch (Throwable t) {
             sr.dispose();
             sr = null;
-            t.printStackTrace();
             throw new InternalError("Unable to Stroke shape ("+
-                                    t.getMessage()+")");
+                                    t.getMessage()+")", t);
         }
         return sr;
     }
 
     public void fill(SunGraphics2D sg2d, Shape s) {
-        if (sg2d.strokeState == sg2d.STROKE_THIN) {
+        if (sg2d.strokeState == SunGraphics2D.STROKE_THIN) {
             Path2D.Float p2df;
             int transX;
             int transY;
-            if (sg2d.transformState <= sg2d.TRANSFORM_INT_TRANSLATE) {
+            if (sg2d.transformState <= SunGraphics2D.TRANSFORM_INT_TRANSLATE) {
                 if (s instanceof Path2D.Float) {
                     p2df = (Path2D.Float)s;
                 } else {
@@ -315,7 +314,7 @@ public class LoopPipe
         try {
             sr.setOutputArea(sg2d.getCompClip());
             AffineTransform at =
-                ((sg2d.transformState == sg2d.TRANSFORM_ISIDENT)
+                ((sg2d.transformState == SunGraphics2D.TRANSFORM_ISIDENT)
                  ? null
                  : sg2d.transform);
             sr.appendPath(s.getPathIterator(at));
@@ -329,7 +328,7 @@ public class LoopPipe
         // REMIND: Eventually, the plan is that it will not be possible for
         // fs to be null since the FillSpans loop will be the fundamental
         // loop implemented for any destination type...
-        if (sg2d.clipState == sg2d.CLIP_SHAPE) {
+        if (sg2d.clipState == SunGraphics2D.CLIP_SHAPE) {
             si = sg2d.clipRegion.filter(si);
             // REMIND: Region.filter produces a Java-only iterator
             // with no native counterpart...

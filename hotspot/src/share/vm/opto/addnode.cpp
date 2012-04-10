@@ -34,8 +34,6 @@
 
 // Portions of code courtesy of Clifford Click
 
-#define MAXFLOAT        ((float)3.40282346638528860e+38)
-
 // Classic Add functionality.  This covers all the usual 'add' behaviors for
 // an algebraic ring.  Add-integer, add-float, add-double, and binary-or are
 // all inherited from this class.  The various identity values are supplied

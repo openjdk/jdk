@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,9 @@
 #endif
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
 #endif
 
 
@@ -88,29 +91,37 @@ void MutableNUMASpace::ensure_parsability() {
     MutableSpace *s = ls->space();
     if (s->top() < top()) { // For all spaces preceding the one containing top()
       if (s->free_in_words() > 0) {
-        size_t area_touched_words = pointer_delta(s->end(), s->top());
-        CollectedHeap::fill_with_object(s->top(), area_touched_words);
+        intptr_t cur_top = (intptr_t)s->top();
+        size_t words_left_to_fill = pointer_delta(s->end(), s->top());;
+        while (words_left_to_fill > 0) {
+          size_t words_to_fill = MIN2(words_left_to_fill, CollectedHeap::filler_array_max_size());
+          assert(words_to_fill >= CollectedHeap::min_fill_size(),
+            err_msg("Remaining size ("SIZE_FORMAT ") is too small to fill (based on " SIZE_FORMAT " and " SIZE_FORMAT ")",
+            words_to_fill, words_left_to_fill, CollectedHeap::filler_array_max_size()));
+          CollectedHeap::fill_with_object((HeapWord*)cur_top, words_to_fill);
+          if (!os::numa_has_static_binding()) {
+            size_t touched_words = words_to_fill;
 #ifndef ASSERT
-        if (!ZapUnusedHeapArea) {
-          area_touched_words = MIN2((size_t)align_object_size(typeArrayOopDesc::header_size(T_INT)),
-                                    area_touched_words);
-        }
+            if (!ZapUnusedHeapArea) {
+              touched_words = MIN2((size_t)align_object_size(typeArrayOopDesc::header_size(T_INT)),
+                touched_words);
+            }
 #endif
-        if (!os::numa_has_static_binding()) {
-          MemRegion invalid;
-          HeapWord *crossing_start = (HeapWord*)round_to((intptr_t)s->top(), os::vm_page_size());
-          HeapWord *crossing_end = (HeapWord*)round_to((intptr_t)(s->top() + area_touched_words),
-                                                       os::vm_page_size());
-          if (crossing_start != crossing_end) {
-            // If object header crossed a small page boundary we mark the area
-            // as invalid rounding it to a page_size().
-            HeapWord *start = MAX2((HeapWord*)round_down((intptr_t)s->top(), page_size()), s->bottom());
-            HeapWord *end = MIN2((HeapWord*)round_to((intptr_t)(s->top() + area_touched_words), page_size()),
-                                 s->end());
-            invalid = MemRegion(start, end);
-          }
+            MemRegion invalid;
+            HeapWord *crossing_start = (HeapWord*)round_to(cur_top, os::vm_page_size());
+            HeapWord *crossing_end = (HeapWord*)round_to(cur_top + touched_words, os::vm_page_size());
+            if (crossing_start != crossing_end) {
+              // If object header crossed a small page boundary we mark the area
+              // as invalid rounding it to a page_size().
+              HeapWord *start = MAX2((HeapWord*)round_down(cur_top, page_size()), s->bottom());
+              HeapWord *end = MIN2((HeapWord*)round_to(cur_top + touched_words, page_size()), s->end());
+              invalid = MemRegion(start, end);
+            }
 
-          ls->add_invalid_region(invalid);
+            ls->add_invalid_region(invalid);
+          }
+          cur_top = cur_top + (words_to_fill * HeapWordSize);
+          words_left_to_fill -= words_to_fill;
         }
       }
     } else {
@@ -279,7 +290,7 @@ void MutableNUMASpace::bias_region(MemRegion mr, int lgrp_id) {
     // large page can be broken down if we require small pages.
     os::realign_memory((char*)aligned_region.start(), aligned_region.byte_size(), page_size());
     // Then we uncommit the pages in the range.
-    os::free_memory((char*)aligned_region.start(), aligned_region.byte_size());
+    os::free_memory((char*)aligned_region.start(), aligned_region.byte_size(), page_size());
     // And make them local/first-touch biased.
     os::numa_make_local((char*)aligned_region.start(), aligned_region.byte_size(), lgrp_id);
   }
@@ -294,7 +305,7 @@ void MutableNUMASpace::free_region(MemRegion mr) {
     assert((intptr_t)aligned_region.start()     % page_size() == 0 &&
            (intptr_t)aligned_region.byte_size() % page_size() == 0, "Bad alignment");
     assert(region().contains(aligned_region), "Sanity");
-    os::free_memory((char*)aligned_region.start(), aligned_region.byte_size());
+    os::free_memory((char*)aligned_region.start(), aligned_region.byte_size(), page_size());
   }
 }
 
@@ -951,7 +962,7 @@ void MutableNUMASpace::LGRPSpace::scan_pages(size_t page_size, size_t page_count
     if (e != scan_end) {
       if ((page_expected.size != page_size || page_expected.lgrp_id != lgrp_id())
           && page_expected.size != 0) {
-        os::free_memory(s, pointer_delta(e, s, sizeof(char)));
+        os::free_memory(s, pointer_delta(e, s, sizeof(char)), page_size);
       }
       page_expected = page_found;
     }

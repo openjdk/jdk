@@ -767,8 +767,11 @@ class UnixPath
     // package-private
     int openForAttributeAccess(boolean followLinks) throws IOException {
         int flags = O_RDONLY;
-        if (!followLinks)
+        if (!followLinks) {
+            if (!supportsNoFollowLinks())
+                throw new IOException("NOFOLLOW_LINKS is not supported on this platform");
             flags |= O_NOFOLLOW;
+        }
         try {
             return open(this, flags, 0);
         } catch (UnixException x) {

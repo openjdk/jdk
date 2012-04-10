@@ -83,7 +83,7 @@
  - global property definitions
  - general top level targets
  - general diagnostic/debugging targets
- - groups of targets for each tool: javac, javadoc, doclets, javah, javap, apt
+ - groups of targets for each tool: javac, javadoc, doclets, javah, javap
     Within each group, the following targets are provided, where applicable
       build-bootstrap-TOOL      build the bootstrap version of the tool
       build-classes-TOOL        build the classes for the tool
@@ -131,8 +131,10 @@
     <property name="dist.bin.dir" location="${dist.dir}/bin"/>
     <property name="dist.coverage.dir" location="${dist.dir}/coverage"/>
     <property name="dist.findbugs.dir" location="${dist.dir}/findbugs"/>
+    <property name="dist.checkstyle.dir" location="${dist.dir}/checkstyle"/>
     <property name="dist.lib.dir" location="${dist.dir}/lib"/>
     <property name="make.dir" location="make"/>
+    <property name="make.conf.dir" location="${make.dir}/conf"/>
     <property name="make.tools.dir" location="${make.dir}/tools"/>
     <property name="src.dir" location="src"/>
     <property name="src.bin.dir" location="${src.dir}/share/bin"/>
@@ -243,11 +245,11 @@
     />
 
     <target name="build-all-tools"
-        depends="build-javac,build-javadoc,build-doclets,build-javah,build-javap,build-apt"
+        depends="build-javac,build-javadoc,build-doclets,build-javah,build-javap"
     />
 
     <target name="build-all-classes" depends="build-bootstrap-javac,-create-import-jdk-stubs">
-        <build-classes includes="${javac.includes} ${javadoc.includes} ${doclets.includes} ${javah.includes} ${javap.includes} ${apt.includes}"/>
+        <build-classes includes="${javac.includes} ${javadoc.includes} ${doclets.includes} ${javah.includes} ${javap.includes}"/>
     </target>
 
     <!-- clean -->
@@ -263,6 +265,41 @@
         <jtreg-tool name="all" tests="${jtreg.tests}"/>
     </target>
 
+    <target name="checkstyle" depends="-def-checkstyle"
+        description="Generates reports for code convention violations.">
+        <mkdir dir="${dist.checkstyle.dir}"/>
+        <checkstyle config="${make.conf.dir}/checkstyle-langtools.xml"
+              failureProperty="checkstyle.failure"
+              failOnViolation="false">
+            <formatter type="xml" tofile="${dist.checkstyle.dir}/checkstyle_report.xml"/>
+            <fileset dir="src" includes="**/*.java, **/*.properties"/>
+        </checkstyle>
+        <!-- transform the output to a simple html -->
+        <xslt  in="${dist.checkstyle.dir}/checkstyle_report.xml"
+               out="${dist.checkstyle.dir}/checkstyle_report.html"
+               style="${checkstyle.home}/contrib/checkstyle-simple.xsl"/>            
+        <!-- transform the output to a very simple emacs friendly text file -->
+        <xslt  in="${dist.checkstyle.dir}/checkstyle_report.xml"
+               out="${dist.checkstyle.dir}/checkstyle_report.tmp"
+               style="${make.conf.dir}/checkstyle-emacs.xsl"/>
+        <!-- beautify remove extra lines -->
+        <move file="${dist.checkstyle.dir}/checkstyle_report.tmp"
+             toFile="${dist.checkstyle.dir}/checkstyle_report.emacs.txt">
+            <filterchain>
+                <ignoreblank/>
+                <replaceregex byline="true" pattern="^File:" replace="${line.separator}File:"/>
+            </filterchain>
+        </move>
+    </target>
+    <!-- target can be invoked from an ide, the output of which can be used
+         to access and fix the errors directly.
+     -->
+    <target name="checkstyle-ide" depends="checkstyle">
+        <concat>
+            <fileset file="${dist.checkstyle.dir}/checkstyle_report.emacs.txt"/>
+        </concat>  
+    </target>
+    
     <target name="findbugs" depends="-def-findbugs,build-all-tools">
         <property name="findbugs.reportLevel" value="medium"/>
         <mkdir dir="${dist.findbugs.dir}"/>
@@ -336,7 +373,9 @@
             classpath="${dist.lib.dir}/javac.jar"
             includeAntRuntime="no"
             debug="${javac.debug}"
-            debuglevel="${javac.debuglevel}"/>
+            debuglevel="${javac.debuglevel}">
+            <compilerarg line="${javac.lint.opts}"/>
+        </javac>
         <java fork="true"
             jvm="${target.java.home}/bin/java"
             dir="test/tools/javac/diags"
@@ -404,6 +443,7 @@
         <echo level="info">target.java.home = ${target.java.home}</echo>
         <echo level="info">jtreg.home = ${jtreg.home}</echo>
         <echo level="info">findbugs.home = ${findbugs.home}</echo>
+        <echo level="info">checkstyle.home = ${checkstyle.home}</echo>
     </target>
 
     <target name="post-sanity" depends="-def-jtreg,sanity,build"
@@ -617,42 +657,6 @@
 
 
     <!--
-    **** apt targets.
-    -->
-
-    <target name="build-bootstrap-apt" depends="build-bootstrap-javac">
-        <build-bootstrap-classes includes="${apt.includes}"/>
-        <build-bootstrap-jar     name="apt" includes="${apt.includes}"
-                                 jarclasspath="javac.jar"/>
-        <build-bootstrap-tool    name="apt"/>
-    </target>
-
-    <target name="build-apt" depends="build-javac,build-classes-apt">
-        <build-jar  name="apt" includes="${apt.includes}" jarclasspath="javac.jar"/>
-        <build-tool name="apt"/>
-    </target>
-
-    <target name="build-classes-apt" depends="build-classes-javac">
-        <build-classes includes="${apt.includes}"/>
-    </target>
-
-    <target name="javadoc-apt" depends="build-apt,-def-javadoc-tool">
-        <javadoc-tool name="apt" includes="${apt.includes}"/>
-    </target>
-
-
-    <target name="jtreg-apt" depends="build-apt,-def-jtreg">
-        <jtreg-tool name="apt" tests="${apt.tests}"/>
-    </target>
-
-    <target name="findbugs-apt" depends="build-apt,-def-findbugs">
-        <findbugs-tool name="apt"/>
-    </target>
-
-    <target name="apt" depends="build-apt,jtreg-apt,findbugs-apt"/>
-
-
-    <!--
     **** Create import JDK stubs.
     -->
 
@@ -688,6 +692,10 @@
         <check name="findbugs" property="findbugs.home" marker="lib/findbugs.jar"/>
     </target>
 
+    <target name="-check-checkstyle.home" depends="-def-check">
+        <check name="checkstyle" property="checkstyle.home" marker="${checkstyle.name.version}.jar"/>
+    </target>
+    
     <target name="-check-jtreg.home" depends="-def-check">
         <check name="jtreg" property="jtreg.home" marker="lib/jtreg.jar"/>
     </target>
@@ -854,12 +862,16 @@
                source="${boot.javac.source}"
                target="${boot.javac.target}"
                executable="${boot.java.home}/bin/javac"
-               srcdir="${make.tools.dir}/CompileProperties"
+               srcdir="${make.tools.dir}"
+               includes="compileproperties/* anttasks/CompileProperties*"
                destdir="${build.toolclasses.dir}/"
                classpath="${ant.core.lib}"
-               includeantruntime="false"/>
+               bootclasspath="${boot.java.home}/jre/lib/rt.jar"
+               includeantruntime="false">
+            <compilerarg line="${javac.lint.opts}"/>
+        </javac>
         <taskdef name="pcompile"
-                 classname="CompilePropertiesTask"
+                 classname="anttasks.CompilePropertiesTask"
                  classpath="${build.toolclasses.dir}/"/>
     </target>
 
@@ -869,14 +881,16 @@
                source="${boot.javac.source}"
                target="${boot.javac.target}"
                executable="${boot.java.home}/bin/javac"
-               srcdir="${make.tools.dir}/GenStubs"
+               srcdir="${make.tools.dir}"
+               includes="genstubs/* anttasks/GenStubs*"
                destdir="${build.toolclasses.dir}/"
                classpath="${ant.core.lib}"
                includeantruntime="false">
             <compilerarg value="-Xbootclasspath/p:${build.bootstrap.dir}/classes"/>
+            <compilerarg line="${javac.lint.opts}"/>
         </javac>
         <taskdef name="genstubs"
-                 classname="GenStubs$$Ant"
+                 classname="anttasks.GenStubsTask"
                  classpath="${build.toolclasses.dir}/"/>
     </target>
 
@@ -919,7 +933,6 @@
                             <filename name="java/"/>
                             <filename name="javax/"/>
                             <filename name="com/sun/javadoc/"/>
-                            <filename name="com/sun/mirror/"/>
                             <filename name="com/sun/source/"/>
                         </or>
                     </packageset>
@@ -957,7 +970,7 @@
                     samevm="@{samevm}" verbose="@{verbose}"
                     failonerror="false" resultproperty="jtreg.@{name}.result"
                     javacoptions="-g"
-                    vmoptions="${coverage.options} -Xbootclasspath/p:${coverage.classpath}:${build.classes.dir} @{jpda.jvmargs}">
+                    vmoptions="${coverage.options} -Xbootclasspath/p:${coverage.classpath}${path.separator}${build.classes.dir} @{jpda.jvmargs}">
                     <arg line="@{keywords}"/>
                     <arg line="@{options}"/>
                     <arg line="@{tests}"/>
@@ -983,6 +996,16 @@
         <taskdef classpathref="cobertura.classpath" resource="tasks.properties"/>
     </target>
 
+    <target name="-def-checkstyle" unless="checkstyle.defined"
+        depends="-check-checkstyle.home">
+        <taskdef resource="checkstyletask.properties">
+            <classpath>
+                <pathelement location="${checkstyle.home}/${checkstyle.name.version}-all.jar"/>
+            </classpath>
+        </taskdef>
+        <property name="checkstyle.defined" value="true"/>
+    </target>
+    
     <target name="-def-findbugs" unless="findbugs.defined"
         depends="-check-findbugs.home,-check-target.java.home">
         <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask">

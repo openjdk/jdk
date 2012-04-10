@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -802,13 +802,11 @@ public class AWTKeyStroke implements Serializable {
      */
     protected Object readResolve() throws java.io.ObjectStreamException {
         synchronized (AWTKeyStroke.class) {
-            Class newClass = getClass();
-            Class awtKeyStrokeClass = getAWTKeyStrokeClass();
-            if (!newClass.equals(awtKeyStrokeClass)) {
-                registerSubclass(newClass);
+            if (getClass().equals(getAWTKeyStrokeClass())) {
+                return  getCachedStroke(keyChar, keyCode, modifiers, onKeyRelease);
             }
-            return getCachedStroke(keyChar, keyCode, modifiers, onKeyRelease);
         }
+        return this;
     }
 
     private static int mapOldModifiers(int modifiers) {

@@ -2512,7 +2512,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         }
         catch (CloneNotSupportedException e) {
             // this shouldn't happen, since we are Cloneable
-            throw new InternalError();
+            throw new InternalError(e);
         }
     }
 
@@ -2705,7 +2705,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * removed from the serialization stream; this will probably happen in the
      * near future.
      */
-    private void writeObject(ObjectOutputStream stream)
+    private synchronized void writeObject(ObjectOutputStream stream)
          throws IOException
     {
         // Try to compute the time correctly, for the future (stream

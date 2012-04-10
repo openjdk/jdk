@@ -55,6 +55,7 @@ public class WPageDialog extends WPrintDialog {
         this.painter = painter;
     }
 
+    @SuppressWarnings("deprecation")
     public void addNotify() {
         synchronized(getTreeLock()) {
             Container parent = getParent();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,42 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONSEQ_INLINE_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONSEQ_INLINE_HPP
 
+#include "gc_implementation/g1/heapRegion.hpp"
 #include "gc_implementation/g1/heapRegionSeq.hpp"
 
-inline HeapRegion* HeapRegionSeq::addr_to_region(const void* addr) {
-  assert(_seq_bottom != NULL, "bad _seq_bottom in addr_to_region");
-  if ((char*) addr >= _seq_bottom) {
-    size_t diff = (size_t) pointer_delta((HeapWord*) addr,
-                                         (HeapWord*) _seq_bottom);
-    int index = (int) (diff >> HeapRegion::LogOfHRGrainWords);
-    assert(index >= 0, "invariant / paranoia");
-    if (index < _regions.length()) {
-      HeapRegion* hr = _regions.at(index);
-      assert(hr->is_in_reserved(addr),
-             "addr_to_region is wrong...");
-      return hr;
-    }
+inline size_t HeapRegionSeq::addr_to_index_biased(HeapWord* addr) const {
+  assert(_heap_bottom <= addr && addr < _heap_end,
+         err_msg("addr: "PTR_FORMAT" bottom: "PTR_FORMAT" end: "PTR_FORMAT,
+                 addr, _heap_bottom, _heap_end));
+  size_t index = (size_t) addr >> _region_shift;
+  return index;
+}
+
+inline HeapRegion* HeapRegionSeq::addr_to_region_unsafe(HeapWord* addr) const {
+  assert(_heap_bottom <= addr && addr < _heap_end,
+         err_msg("addr: "PTR_FORMAT" bottom: "PTR_FORMAT" end: "PTR_FORMAT,
+                 addr, _heap_bottom, _heap_end));
+  size_t index_biased = addr_to_index_biased(addr);
+  HeapRegion* hr = _regions_biased[index_biased];
+  assert(hr != NULL, "invariant");
+  return hr;
+}
+
+inline HeapRegion* HeapRegionSeq::addr_to_region(HeapWord* addr) const {
+  if (addr != NULL && addr < _heap_end) {
+    assert(addr >= _heap_bottom,
+          err_msg("addr: "PTR_FORMAT" bottom: "PTR_FORMAT, addr, _heap_bottom));
+    return addr_to_region_unsafe(addr);
   }
   return NULL;
+}
+
+inline HeapRegion* HeapRegionSeq::at(size_t index) const {
+  assert(index < length(), "pre-condition");
+  HeapRegion* hr = _regions[index];
+  assert(hr != NULL, "sanity");
+  assert(hr->hrs_index() == index, "sanity");
+  return hr;
 }
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONSEQ_INLINE_HPP

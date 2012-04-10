@@ -24,6 +24,8 @@
  */
 package java.awt;
 
+import sun.awt.AWTAccessor;
+
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
 import java.awt.peer.ScrollPanePeer;
@@ -156,6 +158,12 @@ public class ScrollPaneAdjustable implements Adjustable, Serializable {
         if (!GraphicsEnvironment.isHeadless()) {
             initIDs();
         }
+        AWTAccessor.setScrollPaneAdjustableAccessor(new AWTAccessor.ScrollPaneAdjustableAccessor() {
+            public void setTypedValue(final ScrollPaneAdjustable adj,
+                                      final int v, final int type) {
+                adj.setTypedValue(v, type);
+            }
+        });
     }
 
     /**

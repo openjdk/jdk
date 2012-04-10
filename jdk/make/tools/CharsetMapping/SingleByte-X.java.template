@@ -55,18 +55,6 @@ public class $NAME_CLZ$ extends Charset implements HistoricallyNamedCharset
         return new SingleByte.Encoder(this, c2b, c2bIndex);
     }
 
-    public String getDecoderSingleByteMappings() {
-        return b2cTable;
-    }
-
-    public char[] getEncoderIndex2() {
-        return c2b;
-    }
-
-    public char[] getEncoderIndex1() {
-        return c2bIndex;
-    }
-
     private final static String b2cTable = $B2CTABLE$
 
     private final static char[] b2c = b2cTable.toCharArray();

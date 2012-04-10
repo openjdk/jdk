@@ -35,6 +35,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 
 // Task class hierarchy:
 //   AbstractGangTask
@@ -65,7 +68,7 @@ class AbstractGangTask VALUE_OBJ_CLASS_SPEC {
 public:
   // The abstract work method.
   // The argument tells you which member of the gang you are.
-  virtual void work(int i) = 0;
+  virtual void work(uint worker_id) = 0;
 
   // This method configures the task for proper termination.
   // Some tasks do not have any requirements on termination
@@ -93,11 +96,14 @@ private:
 
 protected:
   // Constructor and desctructor: only construct subclasses.
-  AbstractGangTask(const char* name) {
+  AbstractGangTask(const char* name)
+  {
     NOT_PRODUCT(_name = name);
     _counter = 0;
   }
   virtual ~AbstractGangTask() { }
+
+public:
 };
 
 class AbstractGangTaskWOopQueues : public AbstractGangTask {
@@ -113,6 +119,7 @@ class AbstractGangTaskWOopQueues : public AbstractGangTask {
   OopTaskQueueSet* queues() { return _queues; }
 };
 
+
 // Class AbstractWorkGang:
 // An abstract class representing a gang of workers.
 // You subclass this to supply an implementation of run_task().
@@ -127,6 +134,8 @@ public:
   virtual void run_task(AbstractGangTask* task) = 0;
   // Stop and terminate all workers.
   virtual void stop();
+  // Return true if more workers should be applied to the task.
+  virtual bool needs_more_workers() const { return true; }
 public:
   // Debugging.
   const char* name() const;
@@ -140,7 +149,7 @@ protected:
   // and notifies of changes in it.
   Monitor*  _monitor;
   // The count of the number of workers in the gang.
-  int _total_workers;
+  uint _total_workers;
   // Whether the workers should terminate.
   bool _terminate;
   // The array of worker threads for this gang.
@@ -151,18 +160,18 @@ protected:
   // A sequence number for the current task.
   int _sequence_number;
   // The number of started workers.
-  int _started_workers;
+  uint _started_workers;
   // The number of finished workers.
-  int _finished_workers;
+  uint _finished_workers;
 public:
   // Accessors for fields
   Monitor* monitor() const {
     return _monitor;
   }
-  int total_workers() const {
+  uint total_workers() const {
     return _total_workers;
   }
-  virtual int active_workers() const {
+  virtual uint active_workers() const {
     return _total_workers;
   }
   bool terminate() const {
@@ -177,10 +186,10 @@ public:
   int sequence_number() const {
     return _sequence_number;
   }
-  int started_workers() const {
+  uint started_workers() const {
     return _started_workers;
   }
-  int finished_workers() const {
+  uint finished_workers() const {
     return _finished_workers;
   }
   bool are_GC_task_threads() const {
@@ -194,7 +203,7 @@ public:
     return (task() == NULL);
   }
   // Return the Ith gang worker.
-  GangWorker* gang_worker(int i) const;
+  GangWorker* gang_worker(uint i) const;
 
   void threads_do(ThreadClosure* tc) const;
 
@@ -246,13 +255,13 @@ public:
 class WorkGang: public AbstractWorkGang {
 public:
   // Constructor
-  WorkGang(const char* name, int workers,
+  WorkGang(const char* name, uint workers,
            bool are_GC_task_threads, bool are_ConcurrentGC_threads);
   // Run a task, returns when the task is done (or terminated).
   virtual void run_task(AbstractGangTask* task);
   void run_task(AbstractGangTask* task, uint no_of_parallel_workers);
   // Allocate a worker and return a pointer to it.
-  virtual GangWorker* allocate_worker(int which);
+  virtual GangWorker* allocate_worker(uint which);
   // Initialize workers in the gang.  Return true if initialization
   // succeeded. The type of the worker can be overridden in a derived
   // class with the appropriate implementation of allocate_worker().
@@ -284,20 +293,62 @@ public:
   AbstractWorkGang* gang() const { return _gang; }
 };
 
+// Dynamic number of worker threads
+//
+// This type of work gang is used to run different numbers of
+// worker threads at different times.  The
+// number of workers run for a task is "_active_workers"
+// instead of "_total_workers" in a WorkGang.  The method
+// "needs_more_workers()" returns true until "_active_workers"
+// have been started and returns false afterwards.  The
+// implementation of "needs_more_workers()" in WorkGang always
+// returns true so that all workers are started.  The method
+// "loop()" in GangWorker was modified to ask "needs_more_workers()"
+// in its loop to decide if it should start working on a task.
+// A worker in "loop()" waits for notification on the WorkGang
+// monitor and execution of each worker as it checks for work
+// is serialized via the same monitor.  The "needs_more_workers()"
+// call is serialized and additionally the calculation for the
+// "part" (effectively the worker id for executing the task) is
+// serialized to give each worker a unique "part".  Workers that
+// are not needed for this tasks (i.e., "_active_workers" have
+// been started before it, continue to wait for work.
+
 class FlexibleWorkGang: public WorkGang {
+  // The currently active workers in this gang.
+  // This is a number that is dynamically adjusted
+  // and checked in the run_task() method at each invocation.
+  // As described above _active_workers determines the number
+  // of threads started on a task.  It must also be used to
+  // determine completion.
+
  protected:
-  int _active_workers;
+  uint _active_workers;
  public:
   // Constructor and destructor.
-  FlexibleWorkGang(const char* name, int workers,
+  // Initialize active_workers to a minimum value.  Setting it to
+  // the parameter "workers" will initialize it to a maximum
+  // value which is not desirable.
+  FlexibleWorkGang(const char* name, uint workers,
                    bool are_GC_task_threads,
                    bool  are_ConcurrentGC_threads) :
-    WorkGang(name, workers, are_GC_task_threads, are_ConcurrentGC_threads) {
-    _active_workers = ParallelGCThreads;
-  };
+    WorkGang(name, workers, are_GC_task_threads, are_ConcurrentGC_threads),
+    _active_workers(UseDynamicNumberOfGCThreads ? 1U : ParallelGCThreads) {}
   // Accessors for fields
-  virtual int active_workers() const { return _active_workers; }
-  void set_active_workers(int v) { _active_workers = v; }
+  virtual uint active_workers() const { return _active_workers; }
+  void set_active_workers(uint v) {
+    assert(v <= _total_workers,
+           "Trying to set more workers active than there are");
+    _active_workers = MIN2(v, _total_workers);
+    assert(v != 0, "Trying to set active workers to 0");
+    _active_workers = MAX2(1U, _active_workers);
+    assert(UseDynamicNumberOfGCThreads || _active_workers == _total_workers,
+           "Unless dynamic should use total workers");
+  }
+  virtual void run_task(AbstractGangTask* task);
+  virtual bool needs_more_workers() const {
+    return _started_workers < _active_workers;
+  }
 };
 
 // Work gangs in garbage collectors: 2009-06-10
@@ -319,13 +370,13 @@ class FlexibleWorkGang: public WorkGang {
 class WorkGangBarrierSync : public StackObj {
 protected:
   Monitor _monitor;
-  int     _n_workers;
-  int     _n_completed;
+  uint     _n_workers;
+  uint     _n_completed;
   bool    _should_reset;
 
   Monitor* monitor()        { return &_monitor; }
-  int      n_workers()      { return _n_workers; }
-  int      n_completed()    { return _n_completed; }
+  uint     n_workers()      { return _n_workers; }
+  uint     n_completed()    { return _n_completed; }
   bool     should_reset()   { return _should_reset; }
 
   void     zero_completed() { _n_completed = 0; }
@@ -335,11 +386,11 @@ protected:
 
 public:
   WorkGangBarrierSync();
-  WorkGangBarrierSync(int n_workers, const char* name);
+  WorkGangBarrierSync(uint n_workers, const char* name);
 
   // Set the number of workers that will use the barrier.
   // Must be called before any of the workers start running.
-  void set_n_workers(int n_workers);
+  void set_n_workers(uint n_workers);
 
   // Enter the barrier. A worker that enters the barrier will
   // not be allowed to leave until all other threads have
@@ -351,13 +402,18 @@ public:
 // subtasks will be identified by integer indices, usually elements of an
 // enumeration type.
 
-class SubTasksDone: public CHeapObj {
-  jint* _tasks;
-  int _n_tasks;
-  int _n_threads;
-  jint _threads_completed;
+class SubTasksDone : public CHeapObj {
+  uint* _tasks;
+  uint _n_tasks;
+  // _n_threads is used to determine when a sub task is done.
+  // It does not control how many threads will execute the subtask
+  // but must be initialized to the number that do execute the task
+  // in order to correctly decide when the subtask is done (all the
+  // threads working on the task have finished).
+  uint _n_threads;
+  uint _threads_completed;
 #ifdef ASSERT
-  volatile jint _claimed;
+  volatile uint _claimed;
 #endif
 
   // Set all tasks to unclaimed.
@@ -367,19 +423,19 @@ public:
   // Initializes "this" to a state in which there are "n" tasks to be
   // processed, none of the which are originally claimed.  The number of
   // threads doing the tasks is initialized 1.
-  SubTasksDone(int n);
+  SubTasksDone(uint n);
 
   // True iff the object is in a valid state.
   bool valid();
 
   // Get/set the number of parallel threads doing the tasks to "t".  Can only
   // be called before tasks start or after they are complete.
-  int n_threads() { return _n_threads; }
-  void set_n_threads(int t);
+  uint n_threads() { return _n_threads; }
+  void set_n_threads(uint t);
 
   // Returns "false" if the task "t" is unclaimed, and ensures that task is
   // claimed.  The task "t" is required to be within the range of "this".
-  bool is_task_claimed(int t);
+  bool is_task_claimed(uint t);
 
   // The calling thread asserts that it has attempted to claim all the
   // tasks that it will try to claim.  Every thread in the parallel task
@@ -400,12 +456,12 @@ public:
 
 class SequentialSubTasksDone : public StackObj {
 protected:
-  jint _n_tasks;     // Total number of tasks available.
-  jint _n_claimed;   // Number of tasks claimed.
+  uint _n_tasks;     // Total number of tasks available.
+  uint _n_claimed;   // Number of tasks claimed.
   // _n_threads is used to determine when a sub task is done.
   // See comments on SubTasksDone::_n_threads
-  jint _n_threads;   // Total number of parallel threads.
-  jint _n_completed; // Number of completed threads.
+  uint _n_threads;   // Total number of parallel threads.
+  uint _n_completed; // Number of completed threads.
 
   void clear();
 
@@ -419,26 +475,26 @@ public:
   bool valid();
 
   // number of tasks
-  jint n_tasks() const { return _n_tasks; }
+  uint n_tasks() const { return _n_tasks; }
 
   // Get/set the number of parallel threads doing the tasks to t.
   // Should be called before the task starts but it is safe
   // to call this once a task is running provided that all
   // threads agree on the number of threads.
-  int n_threads() { return _n_threads; }
-  void set_n_threads(int t) { _n_threads = t; }
+  uint n_threads() { return _n_threads; }
+  void set_n_threads(uint t) { _n_threads = t; }
 
   // Set the number of tasks to be claimed to t. As above,
   // should be called before the tasks start but it is safe
   // to call this once a task is running provided all threads
   // agree on the number of tasks.
-  void set_n_tasks(int t) { _n_tasks = t; }
+  void set_n_tasks(uint t) { _n_tasks = t; }
 
   // Returns false if the next task in the sequence is unclaimed,
   // and ensures that it is claimed. Will set t to be the index
   // of the claimed task in the sequence. Will return true if
   // the task cannot be claimed and there are none left to claim.
-  bool is_task_claimed(int& t);
+  bool is_task_claimed(uint& t);
 
   // The calling thread asserts that it has attempted to claim
   // all the tasks it possibly can in the sequence. Every thread

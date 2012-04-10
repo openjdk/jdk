@@ -386,7 +386,7 @@ instanceKlassKlass::allocate_instance_klass(Symbol* name, int vtable_len, int it
     ik->set_local_interfaces(NULL);
     ik->set_transitive_interfaces(NULL);
     ik->init_implementor();
-    ik->set_fields(NULL);
+    ik->set_fields(NULL, 0);
     ik->set_constants(NULL);
     ik->set_class_loader(NULL);
     ik->set_protection_domain(NULL);
@@ -416,7 +416,6 @@ instanceKlassKlass::allocate_instance_klass(Symbol* name, int vtable_len, int it
     ik->set_methods_annotations(NULL);
     ik->set_methods_parameter_annotations(NULL);
     ik->set_methods_default_annotations(NULL);
-    ik->set_enclosing_method_indices(0, 0);
     ik->set_jvmti_cached_class_field_map(NULL);
     ik->set_initial_method_idnum(0);
     assert(k()->is_parsable(), "should be parsable here.");

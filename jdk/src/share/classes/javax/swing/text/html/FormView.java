@@ -725,11 +725,11 @@ public class FormView extends ComponentView implements ActionListener {
         }
         Object m = attr.getAttribute(StyleConstants.ModelAttribute);
         if (m instanceof OptionListModel) {
-            OptionListModel model = (OptionListModel)m;
+            OptionListModel<Option> model = (OptionListModel<Option>) m;
 
             for (int i = 0; i < model.getSize(); i++) {
                 if (model.isSelectedIndex(i)) {
-                    Option option = (Option) model.getElementAt(i);
+                    Option option = model.getElementAt(i);
                     appendBuffer(buffer, name, option.getValue());
                 }
             }

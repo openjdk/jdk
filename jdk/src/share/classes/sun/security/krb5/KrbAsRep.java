@@ -131,13 +131,11 @@ class KrbAsRep extends KrbKdcRep {
             KrbAsReq asReq, PrincipalName cname)
             throws KrbException, Asn1Exception, IOException {
         int encPartKeyType = rep.encPart.getEType();
-        PAData.SaltAndParams snp =
-                PAData.getSaltAndParams(encPartKeyType, rep.pAData);
-        EncryptionKey dkey = null;
-        dkey = EncryptionKey.acquireSecretKey(password,
-                snp.salt == null ? cname.getSalt() : snp.salt,
+        EncryptionKey dkey = EncryptionKey.acquireSecretKey(
+                cname,
+                password,
                 encPartKeyType,
-                snp.params);
+                PAData.getSaltAndParams(encPartKeyType, rep.pAData));
         decrypt(dkey, asReq);
     }
 

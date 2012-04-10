@@ -1884,7 +1884,7 @@ void LinearScan::resolve_exception_entry(BlockBegin* block, MoveResolver &move_r
 
   if (move_resolver.has_mappings()) {
     // insert moves after first instruction
-    move_resolver.set_insert_position(block->lir(), 1);
+    move_resolver.set_insert_position(block->lir(), 0);
     move_resolver.resolve_and_append_moves();
   }
 }
@@ -2404,7 +2404,7 @@ OopMap* LinearScan::compute_oop_map(IntervalWalker* iw, LIR_Op* op, CodeEmitInfo
       assert(!is_call_site || assigned_reg >= nof_regs || !is_caller_save(assigned_reg), "interval is in a caller-save register at a call -> register will be overwritten");
 
       VMReg name = vm_reg_for_interval(interval);
-      map->set_oop(name);
+      set_oop(map, name);
 
       // Spill optimization: when the stack value is guaranteed to be always correct,
       // then it must be added to the oop map even if the interval is currently in a register
@@ -2415,7 +2415,7 @@ OopMap* LinearScan::compute_oop_map(IntervalWalker* iw, LIR_Op* op, CodeEmitInfo
         assert(interval->canonical_spill_slot() >= LinearScan::nof_regs, "no spill slot assigned");
         assert(interval->assigned_reg() < LinearScan::nof_regs, "interval is on stack, so stack slot is registered twice");
 
-        map->set_oop(frame_map()->slot_regname(interval->canonical_spill_slot() - LinearScan::nof_regs));
+        set_oop(map, frame_map()->slot_regname(interval->canonical_spill_slot() - LinearScan::nof_regs));
       }
     }
   }
@@ -2424,7 +2424,7 @@ OopMap* LinearScan::compute_oop_map(IntervalWalker* iw, LIR_Op* op, CodeEmitInfo
   assert(info->stack() != NULL, "CodeEmitInfo must always have a stack");
   int locks_count = info->stack()->total_locks_size();
   for (int i = 0; i < locks_count; i++) {
-    map->set_oop(frame_map()->monitor_object_regname(i));
+    set_oop(map, frame_map()->monitor_object_regname(i));
   }
 
   return map;
@@ -2464,12 +2464,15 @@ void LinearScan::compute_oop_map(IntervalWalker* iw, const LIR_OpVisitState &vis
 
 
 // frequently used constants
-ConstantOopWriteValue LinearScan::_oop_null_scope_value = ConstantOopWriteValue(NULL);
-ConstantIntValue      LinearScan::_int_m1_scope_value = ConstantIntValue(-1);
-ConstantIntValue      LinearScan::_int_0_scope_value =  ConstantIntValue(0);
-ConstantIntValue      LinearScan::_int_1_scope_value =  ConstantIntValue(1);
-ConstantIntValue      LinearScan::_int_2_scope_value =  ConstantIntValue(2);
-LocationValue         _illegal_value = LocationValue(Location());
+// Allocate them with new so they are never destroyed (otherwise, a
+// forced exit could destroy these objects while they are still in
+// use).
+ConstantOopWriteValue* LinearScan::_oop_null_scope_value = new (ResourceObj::C_HEAP) ConstantOopWriteValue(NULL);
+ConstantIntValue*      LinearScan::_int_m1_scope_value = new (ResourceObj::C_HEAP) ConstantIntValue(-1);
+ConstantIntValue*      LinearScan::_int_0_scope_value =  new (ResourceObj::C_HEAP) ConstantIntValue(0);
+ConstantIntValue*      LinearScan::_int_1_scope_value =  new (ResourceObj::C_HEAP) ConstantIntValue(1);
+ConstantIntValue*      LinearScan::_int_2_scope_value =  new (ResourceObj::C_HEAP) ConstantIntValue(2);
+LocationValue*         _illegal_value = new (ResourceObj::C_HEAP) LocationValue(Location());
 
 void LinearScan::init_compute_debug_info() {
   // cache for frequently used scope values
@@ -2508,7 +2511,7 @@ int LinearScan::append_scope_value_for_constant(LIR_Opr opr, GrowableArray<Scope
     case T_OBJECT: {
       jobject value = c->as_jobject();
       if (value == NULL) {
-        scope_values->append(&_oop_null_scope_value);
+        scope_values->append(_oop_null_scope_value);
       } else {
         scope_values->append(new ConstantOopWriteValue(c->as_jobject()));
       }
@@ -2519,10 +2522,10 @@ int LinearScan::append_scope_value_for_constant(LIR_Opr opr, GrowableArray<Scope
     case T_FLOAT: {
       int value = c->as_jint_bits();
       switch (value) {
-        case -1: scope_values->append(&_int_m1_scope_value); break;
-        case 0:  scope_values->append(&_int_0_scope_value); break;
-        case 1:  scope_values->append(&_int_1_scope_value); break;
-        case 2:  scope_values->append(&_int_2_scope_value); break;
+        case -1: scope_values->append(_int_m1_scope_value); break;
+        case 0:  scope_values->append(_int_0_scope_value); break;
+        case 1:  scope_values->append(_int_1_scope_value); break;
+        case 2:  scope_values->append(_int_2_scope_value); break;
         default: scope_values->append(new ConstantIntValue(c->as_jint_bits())); break;
       }
       return 1;
@@ -2531,7 +2534,7 @@ int LinearScan::append_scope_value_for_constant(LIR_Opr opr, GrowableArray<Scope
     case T_LONG: // fall through
     case T_DOUBLE: {
 #ifdef _LP64
-      scope_values->append(&_int_0_scope_value);
+      scope_values->append(_int_0_scope_value);
       scope_values->append(new ConstantLongValue(c->as_jlong_bits()));
 #else
       if (hi_word_offset_in_bytes > lo_word_offset_in_bytes) {
@@ -2619,6 +2622,24 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
 
     Location::Type loc_type = float_saved_as_double ? Location::float_in_dbl : Location::normal;
     VMReg rname = frame_map()->fpu_regname(opr->fpu_regnr());
+#ifndef __SOFTFP__
+#ifndef VM_LITTLE_ENDIAN
+    if (! float_saved_as_double) {
+      // On big endian system, we may have an issue if float registers use only
+      // the low half of the (same) double registers.
+      // Both the float and the double could have the same regnr but would correspond
+      // to two different addresses once saved.
+
+      // get next safely (no assertion checks)
+      VMReg next = VMRegImpl::as_VMReg(1+rname->value());
+      if (next->is_reg() &&
+          (next->as_FloatRegister() == rname->as_FloatRegister())) {
+        // the back-end does use the same numbering for the double and the float
+        rname = next; // VMReg for the low bits, e.g. the real VMReg for the float
+      }
+    }
+#endif
+#endif
     LocationValue* sv = new LocationValue(Location::new_reg_loc(loc_type, rname));
 
     scope_values->append(sv);
@@ -2639,7 +2660,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
       }
       // Does this reverse on x86 vs. sparc?
       first =  new LocationValue(loc1);
-      second = &_int_0_scope_value;
+      second = _int_0_scope_value;
 #else
       Location loc1, loc2;
       if (!frame_map()->locations_for_slot(opr->double_stack_ix(), Location::normal, &loc1, &loc2)) {
@@ -2653,7 +2674,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
 #ifdef _LP64
       VMReg rname_first = opr->as_register_lo()->as_VMReg();
       first = new LocationValue(Location::new_reg_loc(Location::lng, rname_first));
-      second = &_int_0_scope_value;
+      second = _int_0_scope_value;
 #else
       VMReg rname_first = opr->as_register_lo()->as_VMReg();
       VMReg rname_second = opr->as_register_hi()->as_VMReg();
@@ -2676,7 +2697,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
       VMReg rname_first  = opr->as_xmm_double_reg()->as_VMReg();
 #  ifdef _LP64
       first = new LocationValue(Location::new_reg_loc(Location::dbl, rname_first));
-      second = &_int_0_scope_value;
+      second = _int_0_scope_value;
 #  else
       first = new LocationValue(Location::new_reg_loc(Location::normal, rname_first));
       // %%% This is probably a waste but we'll keep things as they were for now
@@ -2723,7 +2744,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
 
 #ifdef _LP64
       first = new LocationValue(Location::new_reg_loc(Location::dbl, rname_first));
-      second = &_int_0_scope_value;
+      second = _int_0_scope_value;
 #else
       first = new LocationValue(Location::new_reg_loc(Location::normal, rname_first));
       // %%% This is probably a waste but we'll keep things as they were for now
@@ -2804,7 +2825,7 @@ int LinearScan::append_scope_value(int op_id, Value value, GrowableArray<ScopeVa
     }
   } else {
     // append a dummy value because real value not needed
-    scope_values->append(&_illegal_value);
+    scope_values->append(_illegal_value);
     return 1;
   }
 }
@@ -2847,7 +2868,7 @@ IRScopeDebugInfo* LinearScan::compute_debug_info_for_scope(int op_id, IRScope* c
     nof_locals = cur_scope->method()->max_locals();
     locals = new GrowableArray<ScopeValue*>(nof_locals);
     for(int i = 0; i < nof_locals; i++) {
-      locals->append(&_illegal_value);
+      locals->append(_illegal_value);
     }
   }
 

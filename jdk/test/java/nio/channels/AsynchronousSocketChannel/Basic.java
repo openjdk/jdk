@@ -63,7 +63,9 @@ public class Basic {
         testRead3();
         testWrite1();
         testWrite2();
-        testTimeout();
+        // skip timeout tests until 7052549 is fixed
+        if (!System.getProperty("os.name").startsWith("Windows"))
+            testTimeout();
         testShutdown();
     }
 

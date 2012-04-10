@@ -862,3 +862,11 @@ void os::setup_fpu() {
                       : "r" (fpu_cntrl) : "memory");
 #endif // !AMD64
 }
+
+#ifndef PRODUCT
+void os::verify_stack_alignment() {
+#ifdef AMD64
+  assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");
+#endif
+}
+#endif

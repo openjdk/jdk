@@ -426,7 +426,7 @@ VectorLoadNode* VectorLoadNode::make(Compile* C, int opc, Node* ctl, Node* mem,
 
 // Return the vector version of a scalar store node.
 VectorStoreNode* VectorStoreNode::make(Compile* C, int opc, Node* ctl, Node* mem,
-                                       Node* adr, const TypePtr* atyp, VectorNode* val,
+                                       Node* adr, const TypePtr* atyp, Node* val,
                                        uint vlen) {
   int vopc = opcode(opc, vlen);
 

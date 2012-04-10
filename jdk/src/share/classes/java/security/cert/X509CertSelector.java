@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,7 +277,7 @@ public class X509CertSelector implements CertSelector {
         try {
             issuer = (issuerDN == null ? null : new X500Principal(issuerDN));
         } catch (IllegalArgumentException e) {
-            throw (IOException)new IOException("Invalid name").initCause(e);
+            throw new IOException("Invalid name", e);
         }
     }
 
@@ -341,7 +341,7 @@ public class X509CertSelector implements CertSelector {
         try {
             subject = (subjectDN == null ? null : new X500Principal(subjectDN));
         } catch (IllegalArgumentException e) {
-            throw (IOException)new IOException("Invalid name").initCause(e);
+            throw new IOException("Invalid name", e);
         }
     }
 
@@ -872,7 +872,7 @@ public class X509CertSelector implements CertSelector {
      * @param object2 a Collection containing the second object to compare
      * @return true if the objects are equal, false otherwise
      */
-    static boolean equalNames(Collection object1, Collection object2) {
+    static boolean equalNames(Collection<?> object1, Collection<?> object2) {
         if ((object1 == null) || (object2 == null)) {
             return object1 == object2;
         }
@@ -1672,19 +1672,15 @@ public class X509CertSelector implements CertSelector {
     private static Set<List<?>> cloneAndCheckNames(Collection<List<?>> names) throws IOException {
         // Copy the Lists and Collection
         Set<List<?>> namesCopy = new HashSet<List<?>>();
-        Iterator<List<?>> i = names.iterator();
-        while (i.hasNext()) {
-            Object o = i.next();
-            if (!(o instanceof List)) {
-                throw new IOException("expected a List");
-            }
-            namesCopy.add(new ArrayList<Object>((List<?>)o));
+        for (List<?> o : names)
+        {
+            namesCopy.add(new ArrayList<Object>(o));
         }
 
         // Check the contents of the Lists and clone any byte arrays
-        i = namesCopy.iterator();
-        while (i.hasNext()) {
-            List<Object> nameList = (List<Object>)i.next();
+        for (List<?> list : namesCopy) {
+            @SuppressWarnings("unchecked") // See javadoc for parameter "names".
+            List<Object> nameList = (List<Object>)list;
             if (nameList.size() != 2) {
                 throw new IOException("name list size not 2");
             }
@@ -2184,8 +2180,7 @@ public class X509CertSelector implements CertSelector {
             if (debug != null) {
                 String time = "n/a";
                 try {
-                    Date notAfter =
-                        (Date)ext.get(PrivateKeyUsageExtension.NOT_AFTER);
+                    Date notAfter = ext.get(PrivateKeyUsageExtension.NOT_AFTER);
                     time = notAfter.toString();
                 } catch (CertificateException ex) {
                     // not able to retrieve notAfter value
@@ -2201,8 +2196,7 @@ public class X509CertSelector implements CertSelector {
             if (debug != null) {
                 String time = "n/a";
                 try {
-                    Date notBefore = (Date)
-                        ext.get(PrivateKeyUsageExtension.NOT_BEFORE);
+                    Date notBefore = ext.get(PrivateKeyUsageExtension.NOT_BEFORE);
                     time = notBefore.toString();
                 } catch (CertificateException ex) {
                     // not able to retrieve notBefore value
@@ -2212,14 +2206,6 @@ public class X509CertSelector implements CertSelector {
                     + time + "; X509CertSelector: "
                     + this.toString());
                 e2.printStackTrace();
-            }
-            return false;
-        } catch (CertificateException e3) {
-            if (debug != null) {
-                debug.println("X509CertSelector.match: CertificateException "
-                    + "in private key usage check; X509CertSelector: "
-                    + this.toString());
-                e3.printStackTrace();
             }
             return false;
         } catch (IOException e4) {
@@ -2252,7 +2238,7 @@ public class X509CertSelector implements CertSelector {
                     + subjectPublicKeyAlgID + ", xcert subjectPublicKeyAlgID = "
                     + algID.getOID());
             }
-            if (!subjectPublicKeyAlgID.equals(algID.getOID())) {
+            if (!subjectPublicKeyAlgID.equals((Object)algID.getOID())) {
                 if (debug != null) {
                     debug.println("X509CertSelector.match: "
                         + "subject public key alg IDs don't match");
@@ -2301,7 +2287,7 @@ public class X509CertSelector implements CertSelector {
                                                 EXTENDED_KEY_USAGE_ID);
             if (ext != null) {
                 Vector<ObjectIdentifier> certKeyPurposeVector =
-                    (Vector<ObjectIdentifier>)ext.get(ExtendedKeyUsageExtension.USAGES);
+                    ext.get(ExtendedKeyUsageExtension.USAGES);
                 if (!certKeyPurposeVector.contains(ANY_EXTENDED_KEY_USAGE)
                         && !certKeyPurposeVector.containsAll(keyPurposeOIDSet)) {
                     if (debug != null) {
@@ -2337,8 +2323,8 @@ public class X509CertSelector implements CertSelector {
                 }
                 return false;
             }
-            GeneralNames certNames = (GeneralNames)
-                sanExt.get(SubjectAlternativeNameExtension.SUBJECT_NAME);
+            GeneralNames certNames =
+                    sanExt.get(SubjectAlternativeNameExtension.SUBJECT_NAME);
             Iterator<GeneralNameInterface> i =
                                 subjectAlternativeGeneralNames.iterator();
             while (i.hasNext()) {
@@ -2406,7 +2392,7 @@ public class X509CertSelector implements CertSelector {
                 }
                 return false;
             }
-            List<PolicyInformation> policies = (List<PolicyInformation>)ext.get(CertificatePoliciesExtension.POLICIES);
+            List<PolicyInformation> policies = ext.get(CertificatePoliciesExtension.POLICIES);
             /*
              * Convert the Vector of PolicyInformation to a Vector
              * of CertificatePolicyIds for easier comparison.
@@ -2467,7 +2453,7 @@ public class X509CertSelector implements CertSelector {
             if (ext == null) {
                 return true;
             }
-            if ((debug != null) && debug.isOn("certpath")) {
+            if ((debug != null) && Debug.isOn("certpath")) {
                 debug.println("X509CertSelector.match pathToNames:\n");
                 Iterator<GeneralNameInterface> i =
                                         pathToGeneralNames.iterator();
@@ -2476,10 +2462,10 @@ public class X509CertSelector implements CertSelector {
                 }
             }
 
-            GeneralSubtrees permitted = (GeneralSubtrees)
-                ext.get(NameConstraintsExtension.PERMITTED_SUBTREES);
-            GeneralSubtrees excluded = (GeneralSubtrees)
-                ext.get(NameConstraintsExtension.EXCLUDED_SUBTREES);
+            GeneralSubtrees permitted =
+                    ext.get(NameConstraintsExtension.PERMITTED_SUBTREES);
+            GeneralSubtrees excluded =
+                    ext.get(NameConstraintsExtension.EXCLUDED_SUBTREES);
             if (excluded != null) {
                 if (matchExcluded(excluded) == false) {
                     return false;
@@ -2597,12 +2583,13 @@ public class X509CertSelector implements CertSelector {
         return true;
     }
 
-    private static Set<?> cloneSet(Set<?> set) {
+    @SuppressWarnings("unchecked") // Safe casts assuming clone() works correctly
+    private static <T> Set<T> cloneSet(Set<T> set) {
         if (set instanceof HashSet) {
-            Object clone = ((HashSet<?>)set).clone();
-            return (Set<?>)clone;
+            Object clone = ((HashSet<T>)set).clone();
+            return (Set<T>)clone;
         } else {
-            return new HashSet<Object>(set);
+            return new HashSet<T>(set);
         }
     }
 
@@ -2617,22 +2604,18 @@ public class X509CertSelector implements CertSelector {
             // Must clone these because addPathToName et al. modify them
             if (subjectAlternativeNames != null) {
                 copy.subjectAlternativeNames =
-                        (Set<List<?>>)cloneSet(subjectAlternativeNames);
+                        cloneSet(subjectAlternativeNames);
                 copy.subjectAlternativeGeneralNames =
-                        (Set<GeneralNameInterface>)cloneSet
-                                (subjectAlternativeGeneralNames);
+                        cloneSet(subjectAlternativeGeneralNames);
             }
             if (pathToGeneralNames != null) {
-                copy.pathToNames =
-                        (Set<List<?>>)cloneSet(pathToNames);
-                copy.pathToGeneralNames =
-                        (Set<GeneralNameInterface>)cloneSet
-                                (pathToGeneralNames);
+                copy.pathToNames = cloneSet(pathToNames);
+                copy.pathToGeneralNames = cloneSet(pathToGeneralNames);
             }
             return copy;
         } catch (CloneNotSupportedException e) {
             /* Cannot happen */
-            throw new InternalError(e.toString());
+            throw new InternalError(e.toString(), e);
         }
     }
 }

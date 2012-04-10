@@ -25,7 +25,6 @@
 
 package sun.misc;
 
-import sun.misc.FpUtils;
 import sun.misc.DoubleConsts;
 import sun.misc.FloatConsts;
 import java.util.regex.*;
@@ -334,7 +333,7 @@ public class FormattedFloatingDecimal{
             // can do int arithmetic rather than long!
             int  ivalue = (int)lvalue;
             ndigits = 10;
-            digits = (char[])(perThreadBuffer.get());
+            digits = perThreadBuffer.get();
             digitno = ndigits-1;
             c = ivalue%10;
             ivalue /= 10;
@@ -354,7 +353,7 @@ public class FormattedFloatingDecimal{
             // same algorithm as above (same bugs, too )
             // but using long arithmetic.
             ndigits = 20;
-            digits = (char[])(perThreadBuffer.get());
+            digits = perThreadBuffer.get();
             digitno = ndigits-1;
             c = (int)(lvalue%10L);
             lvalue /= 10L;
@@ -555,9 +554,9 @@ public class FormattedFloatingDecimal{
         }
         // Begin to unpack
         // Discover obvious special cases of NaN and Infinity.
-        binExp = (int)( (fBits&singleExpMask) >> singleExpShift );
+        binExp = (fBits&singleExpMask) >> singleExpShift;
         fractBits = fBits&singleFractMask;
-        if ( binExp == (int)(singleExpMask>>singleExpShift) ) {
+        if ( binExp == (singleExpMask>>singleExpShift) ) {
             isExceptional = true;
             if ( fractBits == 0L ){
                 digits =  infinity;
@@ -1141,8 +1140,8 @@ public class FormattedFloatingDecimal{
     }
 
     // Per-thread buffer for string/stringbuffer conversion
-    private static ThreadLocal perThreadBuffer = new ThreadLocal() {
-            protected synchronized Object initialValue() {
+    private static ThreadLocal<char[]> perThreadBuffer = new ThreadLocal<char[]>() {
+            protected synchronized char[] initialValue() {
                 return new char[26];
             }
         };

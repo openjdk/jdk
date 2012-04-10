@@ -42,25 +42,25 @@ FILES_java = \
 	com/sun/nio/sctp/SendFailedNotification.java \
 	com/sun/nio/sctp/ShutdownNotification.java \
 	\
-	sun/nio/ch/SctpMessageInfoImpl.java \
-	sun/nio/ch/SctpStdSocketOption.java
+	sun/nio/ch/sctp/MessageInfoImpl.java \
+	sun/nio/ch/sctp/SctpStdSocketOption.java
 
 ifneq ($(PLATFORM), windows)
 FILES_java += \
-	sun/nio/ch/SctpAssocChange.java \
-	sun/nio/ch/SctpAssociationImpl.java \
-	sun/nio/ch/SctpChannelImpl.java \
-	sun/nio/ch/SctpMultiChannelImpl.java \
-	sun/nio/ch/SctpNet.java \
-	sun/nio/ch/SctpNotification.java \
-	sun/nio/ch/SctpPeerAddrChange.java \
-	sun/nio/ch/SctpResultContainer.java \
-	sun/nio/ch/SctpSendFailed.java \
-	sun/nio/ch/SctpServerChannelImpl.java \
-	sun/nio/ch/SctpShutdown.java
+	sun/nio/ch/sctp/AssociationChange.java \
+	sun/nio/ch/sctp/AssociationImpl.java \
+	sun/nio/ch/sctp/PeerAddrChange.java \
+	sun/nio/ch/sctp/ResultContainer.java \
+	sun/nio/ch/sctp/SctpChannelImpl.java \
+	sun/nio/ch/sctp/SctpMultiChannelImpl.java \
+	sun/nio/ch/sctp/SctpNet.java \
+	sun/nio/ch/sctp/SctpNotification.java \
+	sun/nio/ch/sctp/SctpServerChannelImpl.java \
+	sun/nio/ch/sctp/SendFailed.java \
+	sun/nio/ch/sctp/Shutdown.java
 else
 FILES_java += \
-	sun/nio/ch/SctpChannelImpl.java \
-	sun/nio/ch/SctpMultiChannelImpl.java \
-	sun/nio/ch/SctpServerChannelImpl.java
+	sun/nio/ch/sctp/SctpChannelImpl.java \
+	sun/nio/ch/sctp/SctpMultiChannelImpl.java \
+	sun/nio/ch/sctp/SctpServerChannelImpl.java
 endif

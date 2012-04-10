@@ -61,8 +61,7 @@ void trace_type_profile(ciMethod *method, int depth, int bci, ciMethod *prof_met
 
 CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, bool call_is_virtual,
                                        JVMState* jvms, bool allow_inline,
-                                       float prof_factor) {
-  CallGenerator*  cg;
+                                       float prof_factor, bool allow_intrinsics) {
   ciMethod*       caller   = jvms->method();
   int             bci      = jvms->bci();
   Bytecodes::Code bytecode = caller->java_code_at_bci(bci);
@@ -109,74 +108,28 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
   // then we return it as the inlined version of the call.
   // We do this before the strict f.p. check below because the
   // intrinsics handle strict f.p. correctly.
-  if (allow_inline) {
-    cg = find_intrinsic(call_method, call_is_virtual);
+  if (allow_inline && allow_intrinsics) {
+    CallGenerator* cg = find_intrinsic(call_method, call_is_virtual);
     if (cg != NULL)  return cg;
   }
 
-  // Do MethodHandle calls.
+  // Do method handle calls.
   // NOTE: This must happen before normal inlining logic below since
   // MethodHandle.invoke* are native methods which obviously don't
   // have bytecodes and so normal inlining fails.
   if (call_method->is_method_handle_invoke()) {
     if (bytecode != Bytecodes::_invokedynamic) {
       GraphKit kit(jvms);
-      Node* n = kit.argument(0);
-
-      if (n->Opcode() == Op_ConP) {
-        const TypeOopPtr* oop_ptr = n->bottom_type()->is_oopptr();
-        ciObject* const_oop = oop_ptr->const_oop();
-        ciMethodHandle* method_handle = const_oop->as_method_handle();
-
-        // Set the callee to have access to the class and signature in
-        // the MethodHandleCompiler.
-        method_handle->set_callee(call_method);
-        method_handle->set_caller(caller);
-        method_handle->set_call_profile(&profile);
-
-        // Get an adapter for the MethodHandle.
-        ciMethod* target_method = method_handle->get_method_handle_adapter();
-        if (target_method != NULL) {
-          CallGenerator* hit_cg = this->call_generator(target_method, vtable_index, false, jvms, true, prof_factor);
-          if (hit_cg != NULL && hit_cg->is_inline())
-            return hit_cg;
-        }
-      }
-
-      return CallGenerator::for_direct_call(call_method);
+      Node* method_handle = kit.argument(0);
+      return CallGenerator::for_method_handle_call(method_handle, jvms, caller, call_method, profile);
     }
     else {
-      // Get the MethodHandle from the CallSite.
-      ciMethod* caller_method = jvms->method();
-      ciBytecodeStream str(caller_method);
-      str.force_bci(jvms->bci());  // Set the stream to the invokedynamic bci.
-      ciCallSite*     call_site     = str.get_call_site();
-      ciMethodHandle* method_handle = call_site->get_target();
-
-      // Set the callee to have access to the class and signature in
-      // the MethodHandleCompiler.
-      method_handle->set_callee(call_method);
-      method_handle->set_caller(caller);
-      method_handle->set_call_profile(&profile);
-
-      // Get an adapter for the MethodHandle.
-      ciMethod* target_method = method_handle->get_invokedynamic_adapter();
-      if (target_method != NULL) {
-        CallGenerator* hit_cg = this->call_generator(target_method, vtable_index, false, jvms, true, prof_factor);
-        if (hit_cg != NULL && hit_cg->is_inline()) {
-          CallGenerator* miss_cg = CallGenerator::for_dynamic_call(call_method);
-          return CallGenerator::for_predicted_dynamic_call(method_handle, miss_cg, hit_cg, prof_factor);
-        }
-      }
-
-      // If something failed, generate a normal dynamic call.
-      return CallGenerator::for_dynamic_call(call_method);
+      return CallGenerator::for_invokedynamic_call(jvms, caller, call_method, profile);
     }
   }
 
   // Do not inline strict fp into non-strict code, or the reverse
-  bool caller_method_is_strict = jvms->method()->is_strict();
-  if( caller_method_is_strict ^ call_method->is_strict() ) {
+  if (caller->is_strict() ^ call_method->is_strict()) {
     allow_inline = false;
   }
 
@@ -198,7 +151,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
         // TO DO:  When UseOldInlining is removed, copy the ILT code elsewhere.
         float site_invoke_ratio = prof_factor;
         // Note:  ilt is for the root of this parse, not the present call site.
-        ilt = new InlineTree(this, jvms->method(), jvms->caller(), site_invoke_ratio, 0);
+        ilt = new InlineTree(this, jvms->method(), jvms->caller(), site_invoke_ratio, MaxInlineLevel);
       }
       WarmCallInfo scratch_ci;
       if (!UseOldInlining)
@@ -287,7 +240,7 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
             }
             if (miss_cg != NULL) {
               NOT_PRODUCT(trace_type_profile(jvms->method(), jvms->depth() - 1, jvms->bci(), receiver_method, profile.receiver(0), site_count, receiver_count));
-              cg = CallGenerator::for_predicted_call(profile.receiver(0), miss_cg, hit_cg, profile.receiver_prob(0));
+              CallGenerator* cg = CallGenerator::for_predicted_call(profile.receiver(0), miss_cg, hit_cg, profile.receiver_prob(0));
               if (cg != NULL)  return cg;
             }
           }
@@ -502,21 +455,12 @@ void Parse::do_call() {
     // cg->generate(), we are committed.  If it fails, the whole
     // compilation task is compromised.
     if (failing())  return;
-#ifndef PRODUCT
-    if (PrintOpto || PrintOptoInlining || PrintInlining) {
-      // Only one fall-back, so if an intrinsic fails, ignore any bytecodes.
-      if (cg->is_intrinsic() && call_method->code_size() > 0) {
-        tty->print("Bailed out of intrinsic, will not inline: ");
-        call_method->print_name(); tty->cr();
-      }
-    }
-#endif
+
     // This can happen if a library intrinsic is available, but refuses
     // the call site, perhaps because it did not match a pattern the
-    // intrinsic was expecting to optimize.  The fallback position is
-    // to call out-of-line.
-    try_inline = false;  // Inline tactic bailed out.
-    cg = C->call_generator(call_method, vtable_index, call_is_virtual, jvms, try_inline, prof_factor());
+    // intrinsic was expecting to optimize. Should always be possible to
+    // get a normal java call that may inline in that case
+    cg = C->call_generator(call_method, vtable_index, call_is_virtual, jvms, try_inline, prof_factor(), /* allow_intrinsics= */ false);
     if ((new_jvms = cg->generate(jvms)) == NULL) {
       guarantee(failing(), "call failed to generate:  calls should work");
       return;

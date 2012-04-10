@@ -57,5 +57,5 @@ public class MethodTypeSignature implements Signature {
     public ReturnType getReturnType(){return returnType;}
     public FieldTypeSignature[] getExceptionTypes(){return exceptionTypes;}
 
-    public void accept(Visitor v){v.visitMethodTypeSignature(this);}
+    public void accept(Visitor<?> v){v.visitMethodTypeSignature(this);}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,4 +26,6 @@
 package sun.reflect.generics.reflectiveObjects;
 
 /** Temporary class used to indicate missing functionality */
-public class NotImplementedException extends RuntimeException {}
+public class NotImplementedException extends RuntimeException {
+    private static final long serialVersionUID = -9177857708926624790L;
+}

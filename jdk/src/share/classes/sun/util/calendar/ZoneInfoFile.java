@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -473,6 +473,8 @@ public class ZoneInfoFile {
 
     private static Map<String, ZoneInfo> zoneInfoObjects = null;
 
+    private static final ZoneInfo GMT = new ZoneInfo("GMT", 0);
+
     private static final String ziDir = AccessController.doPrivileged(
         new PrivilegedAction<String>() {
             public String run() {
@@ -553,8 +555,15 @@ public class ZoneInfoFile {
      * id.
      */
     public static ZoneInfo getZoneInfo(String id) {
+        //treat GMT zone as special
+        if ("GMT".equals(id))
+            return (ZoneInfo) GMT.clone();
         ZoneInfo zi = getFromCache(id);
         if (zi == null) {
+            Map<String, String> aliases = ZoneInfo.getCachedAliasTable();
+            if (aliases != null && aliases.get(id) != null) {
+                return null;
+            }
             zi = createZoneInfo(id);
             if (zi == null) {
                 return null;
@@ -573,7 +582,7 @@ public class ZoneInfoFile {
 
     synchronized static ZoneInfo addToCache(String id, ZoneInfo zi) {
         if (zoneInfoObjects == null) {
-            zoneInfoObjects = new HashMap<String, ZoneInfo>();
+            zoneInfoObjects = new HashMap<>();
         } else {
             ZoneInfo zone = zoneInfoObjects.get(id);
             if (zone != null) {
@@ -758,7 +767,7 @@ public class ZoneInfoFile {
                 case TAG_ZoneIDs:
                     {
                         int n = (buf[index++] << 8) + (buf[index++] & 0xFF);
-                        ids = new ArrayList<String>(n);
+                        ids = new ArrayList<>(n);
 
                         for (int i = 0; i < n; i++) {
                             byte m = buf[index++];
@@ -777,7 +786,7 @@ public class ZoneInfoFile {
             System.err.println("ZoneInfo: corrupted " + JAVAZM_FILE_NAME);
         }
 
-        zoneIDs = new SoftReference<List<String>>(ids);
+        zoneIDs = new SoftReference<>(ids);
         return ids;
     }
 
@@ -802,7 +811,7 @@ public class ZoneInfoFile {
                 case TAG_ZoneAliases:
                     {
                         int n = (buf[index++] << 8) + (buf[index++] & 0xFF);
-                        aliases = new HashMap<String, String>(n);
+                        aliases = new HashMap<>(n);
                         for (int i = 0; i < n; i++) {
                             byte m = buf[index++];
                             String name = new String(buf, index, m, "UTF-8");
@@ -865,7 +874,7 @@ public class ZoneInfoFile {
                 case TAG_ExcludedZones:
                     {
                         int n = (buf[index++] << 8) + (buf[index++] & 0xFF);
-                        excludeList = new ArrayList<String>();
+                        excludeList = new ArrayList<>();
                         for (int i = 0; i < n; i++) {
                             byte m = buf[index++];
                             String name = new String(buf, index, m, "UTF-8");
@@ -886,7 +895,7 @@ public class ZoneInfoFile {
         }
 
         if (excludeList != null) {
-            excludedIDs = new SoftReference<List<String>>(excludeList);
+            excludedIDs = new SoftReference<>(excludeList);
         } else {
             hasNoExcludeList = true;
         }
@@ -935,7 +944,7 @@ public class ZoneInfoFile {
             System.err.println("ZoneInfo: corrupted " + JAVAZM_FILE_NAME);
         }
 
-        rawOffsetIndices = new SoftReference<byte[]>(indices);
+        rawOffsetIndices = new SoftReference<>(indices);
         return indices;
     }
 
@@ -986,7 +995,7 @@ public class ZoneInfoFile {
             System.err.println("ZoneInfo: corrupted " + JAVAZM_FILE_NAME);
         }
 
-        rawOffsets = new SoftReference<int[]>(offsets);
+        rawOffsets = new SoftReference<>(offsets);
         return offsets;
     }
 
@@ -1022,7 +1031,7 @@ public class ZoneInfoFile {
             return null;
         }
 
-        zoneInfoMappings = new SoftReference<byte[]>(data);
+        zoneInfoMappings = new SoftReference<>(data);
         return data;
     }
 
@@ -1031,30 +1040,26 @@ public class ZoneInfoFile {
      * @return the buffer, or null if any I/O error occurred.
      */
     private static byte[] readZoneInfoFile(final String fileName) {
+        if (fileName.indexOf("..") >= 0) {
+            return null;
+        }
         byte[] buffer = null;
 
         try {
-            buffer = (byte[]) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                public Object run() throws IOException {
+            buffer = AccessController.doPrivileged(new PrivilegedExceptionAction<byte[]>() {
+                public byte[] run() throws IOException {
                     File file = new File(ziDir, fileName);
-                    if (!file.exists() || !file.isFile()) {
-                        return null;
-                    }
-                    file = file.getCanonicalFile();
-                    String path = file.getCanonicalPath();
                     byte[] buf = null;
-                    if (path != null && path.startsWith(ziDir)) {
-                        int filesize = (int)file.length();
-                        if (filesize > 0) {
-                            FileInputStream fis = new FileInputStream(file);
-                            buf = new byte[filesize];
-                            try {
-                                if (fis.read(buf) != filesize) {
-                                    throw new IOException("read error on " + fileName);
-                                }
-                            } finally {
-                                fis.close();
+                    int filesize = (int)file.length();
+                    if (filesize > 0) {
+                        FileInputStream fis = new FileInputStream(file);
+                        buf = new byte[filesize];
+                        try {
+                            if (fis.read(buf) != filesize) {
+                                throw new IOException("read error on " + fileName);
                             }
+                        } finally {
+                            fis.close();
                         }
                     }
                     return buf;
@@ -1067,5 +1072,8 @@ public class ZoneInfoFile {
             }
         }
         return buffer;
+    }
+
+    private ZoneInfoFile() {
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,9 @@ SymbolPropertyTable*   SystemDictionary::_invoke_method_table = NULL;
 
 
 int         SystemDictionary::_number_of_modifications = 0;
+int         SystemDictionary::_sdgeneration               = 0;
+const int   SystemDictionary::_primelist[_prime_array_size] = {1009,2017,4049,5051,10103,
+              20201,40423,99991};
 
 oop         SystemDictionary::_system_loader_lock_obj     =  NULL;
 
@@ -125,13 +128,13 @@ bool SystemDictionary::is_internal_format(Symbol* class_name) {
 bool SystemDictionary::is_parallelCapable(Handle class_loader) {
   if (UnsyncloadClass || class_loader.is_null()) return true;
   if (AlwaysLockClassLoader) return false;
-  return java_lang_Class::parallelCapable(class_loader());
+  return java_lang_ClassLoader::parallelCapable(class_loader());
 }
 // ----------------------------------------------------------------------------
 // ParallelDefineClass flag does not apply to bootclass loader
 bool SystemDictionary::is_parallelDefine(Handle class_loader) {
    if (class_loader.is_null()) return false;
-   if (AllowParallelDefineClass && java_lang_Class::parallelCapable(class_loader())) {
+   if (AllowParallelDefineClass && java_lang_ClassLoader::parallelCapable(class_loader())) {
      return true;
    }
    return false;
@@ -1178,8 +1181,8 @@ void SystemDictionary::set_shared_dictionary(HashtableBucket* t, int length,
 
 klassOop SystemDictionary::find_shared_class(Symbol* class_name) {
   if (shared_dictionary() != NULL) {
-    unsigned int d_hash = dictionary()->compute_hash(class_name, Handle());
-    int d_index = dictionary()->hash_to_index(d_hash);
+    unsigned int d_hash = shared_dictionary()->compute_hash(class_name, Handle());
+    int d_index = shared_dictionary()->hash_to_index(d_hash);
     return shared_dictionary()->find_shared_class(d_index, d_hash, class_name);
   } else {
     return NULL;
@@ -1290,7 +1293,7 @@ static instanceKlassHandle download_and_retry_class_load(
                                                     Symbol* class_name,
                                                     TRAPS) {
 
-  klassOop dlm = SystemDictionary::sun_jkernel_DownloadManager_klass();
+  klassOop dlm = SystemDictionary::DownloadManager_klass();
   instanceKlassHandle nk;
 
   // If download manager class isn't loaded just return.
@@ -1750,7 +1753,21 @@ void SystemDictionary::placeholders_do(OopClosure* blk) {
   placeholders()->oops_do(blk);
 }
 
-
+// Calculate a "good" systemdictionary size based
+// on predicted or current loaded classes count
+int SystemDictionary::calculate_systemdictionary_size(int classcount) {
+  int newsize = _old_default_sdsize;
+  if ((classcount > 0)  && !DumpSharedSpaces) {
+    int desiredsize = classcount/_average_depth_goal;
+    for (newsize = _primelist[_sdgeneration]; _sdgeneration < _prime_array_size -1;
+         newsize = _primelist[++_sdgeneration]) {
+      if (desiredsize <=  newsize) {
+        break;
+      }
+    }
+  }
+  return newsize;
+}
 bool SystemDictionary::do_unloading(BoolObjectClosure* is_alive) {
   bool result = dictionary()->do_unloading(is_alive);
   constraints()->purge_loader_constraints(is_alive);
@@ -1873,7 +1890,8 @@ void SystemDictionary::initialize(TRAPS) {
   // Allocate arrays
   assert(dictionary() == NULL,
          "SystemDictionary should only be initialized once");
-  _dictionary          = new Dictionary(_nof_buckets);
+  _sdgeneration        = 0;
+  _dictionary          = new Dictionary(calculate_systemdictionary_size(PredictedLoadedClassCount));
   _placeholders        = new PlaceholderTable(_nof_buckets);
   _number_of_modifications = 0;
   _loader_constraints  = new LoaderConstraintTable(_loader_constraint_size);
@@ -1953,7 +1971,7 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   // first do Object, String, Class
   initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(Class_klass), scan, CHECK);
 
-  debug_only(instanceKlass::verify_class_klass_nonstatic_oop_maps(WK_KLASS(Class_klass)));
+  java_lang_Class::compute_offsets();
 
   // Fixup mirrors for classes loaded before java.lang.Class.
   // These calls iterate over the objects currently in the perm gen
@@ -1978,7 +1996,7 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
 
   // JSR 292 classes
   WKID jsr292_group_start = WK_KLASS_ENUM_NAME(MethodHandle_klass);
-  WKID jsr292_group_end   = WK_KLASS_ENUM_NAME(CallSite_klass);
+  WKID jsr292_group_end   = WK_KLASS_ENUM_NAME(VolatileCallSite_klass);
   initialize_wk_klasses_until(jsr292_group_start, scan, CHECK);
   if (EnableInvokeDynamic) {
     initialize_wk_klasses_through(jsr292_group_end, scan, CHECK);
@@ -2001,7 +2019,7 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   //_box_klasses[T_ARRAY]   = WK_KLASS(object_klass);
 
 #ifdef KERNEL
-  if (sun_jkernel_DownloadManager_klass() == NULL) {
+  if (DownloadManager_klass() == NULL) {
     warning("Cannot find sun/jkernel/DownloadManager");
   }
 #endif // KERNEL
@@ -2130,6 +2148,12 @@ void SystemDictionary::update_dictionary(int d_index, unsigned int d_hash,
       k->set_prototype_header(markOopDesc::biased_locking_prototype());
     }
   }
+
+  // Assign a classid if one has not already been assigned.  The
+  // counter does not need to be atomically incremented since this
+  // is only done while holding the SystemDictionary_lock.
+  // All loaded classes get a unique ID.
+  TRACE_INIT_ID(k);
 
   // Check for a placeholder. If there, remove it and make a
   // new system dictionary entry.
@@ -2367,6 +2391,8 @@ methodOop SystemDictionary::find_method_handle_invoke(Symbol* name,
         // Link m to his method type, if it is suitably generic.
         oop mtform = java_lang_invoke_MethodType::form(mt());
         if (mtform != NULL && mt() == java_lang_invoke_MethodTypeForm::erasedType(mtform)
+            // vmlayout must be an invokeExact:
+            && name_id == vmSymbols::VM_SYMBOL_ENUM_NAME(invokeExact_name)
             && java_lang_invoke_MethodTypeForm::vmlayout_offset_in_bytes() > 0) {
           java_lang_invoke_MethodTypeForm::init_vmlayout(mtform, m());
         }
@@ -2734,7 +2760,7 @@ class ClassStatistics: AllStatic {
       class_size += ik->local_interfaces()->size();
       class_size += ik->transitive_interfaces()->size();
       // We do not have to count implementors, since we only store one!
-      class_size += ik->fields()->size();
+      class_size += ik->all_fields_count() * FieldInfo::field_slots;
     }
   }
 

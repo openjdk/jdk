@@ -66,14 +66,14 @@ public abstract class LocaleObjectCache<K, V> {
 
             CacheEntry<K, V> newEntry = new CacheEntry<>(key, newVal, queue);
 
-            while (value == null) {
-                cleanStaleEntries();
-                entry = map.putIfAbsent(key, newEntry);
-                if (entry == null) {
+            entry = map.putIfAbsent(key, newEntry);
+            if (entry == null) {
+                value = newVal;
+            } else {
+                value = entry.get();
+                if (value == null) {
+                    map.put(key, newEntry);
                     value = newVal;
-                    break;
-                } else {
-                    value = entry.get();
                 }
             }
         }

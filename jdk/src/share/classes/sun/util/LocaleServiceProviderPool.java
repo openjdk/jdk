@@ -40,6 +40,7 @@ import java.util.ResourceBundle.Control;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.spi.LocaleServiceProvider;
 
 import sun.util.logging.PlatformLogger;
@@ -57,8 +58,8 @@ public final class LocaleServiceProviderPool {
      * A Map that holds singleton instances of this class.  Each instance holds a
      * set of provider implementations of a particular locale sensitive service.
      */
-    private static Map<Class, LocaleServiceProviderPool> poolOfPools =
-        new ConcurrentHashMap<Class, LocaleServiceProviderPool>();
+    private static ConcurrentMap<Class<? extends LocaleServiceProvider>, LocaleServiceProviderPool> poolOfPools =
+        new ConcurrentHashMap<>();
 
     /**
      * A Set containing locale service providers that implement the
@@ -109,7 +110,7 @@ public final class LocaleServiceProviderPool {
         if (pool == null) {
             LocaleServiceProviderPool newPool =
                 new LocaleServiceProviderPool(providerClass);
-            pool = poolOfPools.put(providerClass, newPool);
+            pool = poolOfPools.putIfAbsent(providerClass, newPool);
             if (pool == null) {
                 pool = newPool;
             }
@@ -146,6 +147,10 @@ public final class LocaleServiceProviderPool {
     /**
      * Lazy loaded set of available locales.
      * Loading all locales is a very long operation.
+     *
+     * We know "providerClasses" contains classes that extends LocaleServiceProvider,
+     * but generic array creation is not allowed, thus the "unchecked" warning
+     * is suppressed here.
      */
     private static class AllAvailableLocales {
         /**
@@ -155,7 +160,9 @@ public final class LocaleServiceProviderPool {
         static final Locale[] allAvailableLocales;
 
         static {
-            Class[] providerClasses = {
+            @SuppressWarnings("unchecked")
+            Class<LocaleServiceProvider>[] providerClasses =
+                        (Class<LocaleServiceProvider>[]) new Class<?>[] {
                 java.text.spi.BreakIteratorProvider.class,
                 java.text.spi.CollatorProvider.class,
                 java.text.spi.DateFormatProvider.class,
@@ -173,7 +180,7 @@ public final class LocaleServiceProviderPool {
                 all.add(getLookupLocale(locale));
             }
 
-            for (Class providerClass : providerClasses) {
+            for (Class<LocaleServiceProvider> providerClass : providerClasses) {
                 LocaleServiceProviderPool pool =
                     LocaleServiceProviderPool.getPool(providerClass);
                 all.addAll(pool.getProviderLocales());
@@ -257,10 +264,11 @@ public final class LocaleServiceProviderPool {
             synchronized (LocaleServiceProviderPool.class) {
                 if (availableJRELocales == null) {
                     Locale[] allLocales = LocaleData.getAvailableLocales();
-                    availableJRELocales = new ArrayList<Locale>(allLocales.length);
+                    List<Locale> tmpList = new ArrayList<>(allLocales.length);
                     for (Locale locale : allLocales) {
-                        availableJRELocales.add(getLookupLocale(locale));
+                        tmpList.add(getLookupLocale(locale));
                     }
+                    availableJRELocales = tmpList;
                 }
             }
         }
@@ -353,7 +361,6 @@ public final class LocaleServiceProviderPool {
             }
             Locale bundleLocale = (bundle != null ? bundle.getLocale() : null);
             List<Locale> lookupLocales = getLookupLocales(locale);
-            P lsp;
             S providersObj = null;
 
             // check whether a provider has an implementation that's closer
@@ -373,7 +380,9 @@ public final class LocaleServiceProviderPool {
                     }
                 }
                 if (provLoc.contains(current)) {
-                    lsp = (P)findProvider(current);
+                    // It is safe to assume that findProvider() returns the instance of type P.
+                    @SuppressWarnings("unchecked")
+                    P lsp = (P)findProvider(current);
                     if (lsp != null) {
                         providersObj = getter.getObject(lsp, locale, key, params);
                         if (providersObj != null) {
@@ -395,7 +404,9 @@ public final class LocaleServiceProviderPool {
                     // JRE has it.
                     return null;
                 } else {
-                    lsp = (P)findProvider(bundleLocale);
+                    // It is safe to assume that findProvider() returns the instance of type P.
+                    @SuppressWarnings("unchecked")
+                    P lsp = (P)findProvider(bundleLocale);
                     if (lsp != null) {
                         providersObj = getter.getObject(lsp, locale, key, params);
                         if (providersObj != null) {

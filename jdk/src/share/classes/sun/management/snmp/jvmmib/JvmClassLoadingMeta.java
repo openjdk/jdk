@@ -70,6 +70,7 @@ import com.sun.jmx.snmp.SnmpDefinitions;
 public class JvmClassLoadingMeta extends SnmpMibGroup
      implements Serializable, SnmpStandardMetaServer {
 
+    static final long serialVersionUID = 5722857476941218568L;
     /**
      * Constructor for the metadata associated to "JvmClassLoading".
      */

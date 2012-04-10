@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -375,16 +375,10 @@ JRT_ENTRY(void, Runtime1::throw_array_store_exception(JavaThread* thread, oopDes
 JRT_END
 
 
-JRT_ENTRY(void, Runtime1::post_jvmti_exception_throw(JavaThread* thread))
-  if (JvmtiExport::can_post_on_exceptions()) {
-    vframeStream vfst(thread, true);
-    address bcp = vfst.method()->bcp_from(vfst.bci());
-    JvmtiExport::post_exception_throw(thread, vfst.method(), bcp, thread->exception_oop());
-  }
-JRT_END
-
-// This is a helper to allow us to safepoint but allow the outer entry
-// to be safepoint free if we need to do an osr
+// counter_overflow() is called from within C1-compiled methods. The enclosing method is the method
+// associated with the top activation record. The inlinee (that is possibly included in the enclosing
+// method) method oop is passed as an argument. In order to do that it is embedded in the code as
+// a constant.
 static nmethod* counter_overflow_helper(JavaThread* THREAD, int branch_bci, methodOopDesc* m) {
   nmethod* osr_nm = NULL;
   methodHandle method(THREAD, m);
@@ -419,8 +413,9 @@ static nmethod* counter_overflow_helper(JavaThread* THREAD, int branch_bci, meth
     }
     bci = branch_bci + offset;
   }
-
-  osr_nm = CompilationPolicy::policy()->event(enclosing_method, method, branch_bci, bci, level, THREAD);
+  assert(!HAS_PENDING_EXCEPTION, "Should not have any exceptions pending");
+  osr_nm = CompilationPolicy::policy()->event(enclosing_method, method, branch_bci, bci, level, nm, THREAD);
+  assert(!HAS_PENDING_EXCEPTION, "Event handler should not throw any exceptions");
   return osr_nm;
 }
 
@@ -602,7 +597,6 @@ address Runtime1::exception_handler_for_pc(JavaThread* thread) {
 
 JRT_ENTRY(void, Runtime1::throw_range_check_exception(JavaThread* thread, int index))
   NOT_PRODUCT(_throw_range_check_exception_count++;)
-  Events::log("throw_range_check");
   char message[jintAsStringSize];
   sprintf(message, "%d", index);
   SharedRuntime::throw_and_post_jvmti_exception(thread, vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), message);
@@ -611,7 +605,6 @@ JRT_END
 
 JRT_ENTRY(void, Runtime1::throw_index_exception(JavaThread* thread, int index))
   NOT_PRODUCT(_throw_index_exception_count++;)
-  Events::log("throw_index");
   char message[16];
   sprintf(message, "%d", index);
   SharedRuntime::throw_and_post_jvmti_exception(thread, vmSymbols::java_lang_IndexOutOfBoundsException(), message);
@@ -685,6 +678,23 @@ JRT_LEAF(void, Runtime1::monitorexit(JavaThread* thread, BasicObjectLock* lock))
   } else {
     ObjectSynchronizer::fast_exit(obj, lock->lock(), THREAD);
   }
+JRT_END
+
+// Cf. OptoRuntime::deoptimize_caller_frame
+JRT_ENTRY(void, Runtime1::deoptimize(JavaThread* thread))
+  // Called from within the owner thread, so no need for safepoint
+  RegisterMap reg_map(thread, false);
+  frame stub_frame = thread->last_frame();
+  assert(stub_frame.is_runtime_frame(), "sanity check");
+  frame caller_frame = stub_frame.sender(&reg_map);
+
+  // We are coming from a compiled method; check this is true.
+  assert(CodeCache::find_nmethod(caller_frame.pc()) != NULL, "sanity");
+
+  // Deoptimize the caller frame.
+  Deoptimization::deoptimize_frame(thread, caller_frame.id());
+
+  // Return to the now deoptimized frame.
 JRT_END
 
 
@@ -792,11 +802,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
   // Note also that in the presence of inlining it is not guaranteed
   // that caller_method() == caller_code->method()
 
-
   int bci = vfst.bci();
-
-  Events::log("patch_code @ " INTPTR_FORMAT , caller_frame.pc());
-
   Bytecodes::Code code = caller_method()->java_code_at(bci);
 
 #ifndef PRODUCT

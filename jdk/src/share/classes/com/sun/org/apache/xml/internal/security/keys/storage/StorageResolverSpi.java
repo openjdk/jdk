@@ -36,5 +36,5 @@ public abstract class StorageResolverSpi {
     *
     * @return the iterator for the storage
     */
-   public abstract Iterator getIterator();
+   public abstract Iterator<?> getIterator();
 }

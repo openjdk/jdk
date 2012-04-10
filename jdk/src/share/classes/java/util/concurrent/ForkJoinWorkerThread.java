@@ -192,7 +192,7 @@ public class ForkJoinWorkerThread extends Thread {
 
     /**
      * The work-stealing queue array. Size must be a power of two.
-     * Initialized when started (as oposed to when constructed), to
+     * Initialized when started (as opposed to when constructed), to
      * improve memory locality.
      */
     ForkJoinTask<?>[] queue;
@@ -360,7 +360,7 @@ public class ForkJoinWorkerThread extends Thread {
      */
     protected void onStart() {
         queue = new ForkJoinTask<?>[INITIAL_QUEUE_CAPACITY];
-        int r = pool.workerSeedGenerator.nextInt();
+        int r = ForkJoinPool.workerSeedGenerator.nextInt();
         seed = (r == 0) ? 1 : r; //  must be nonzero
     }
 
@@ -846,7 +846,7 @@ public class ForkJoinWorkerThread extends Thread {
                     (b = v.queueBase) != v.queueTop &&
                     (q = v.queue) != null &&
                     (i = (q.length - 1) & b) >= 0 &&
-                    q[i] ==  t) {
+                    q[i] == t) {
                     long u = (i << ASHIFT) + ABASE;
                     if (v.queueBase == b &&
                         UNSAFE.compareAndSwapObject(q, u, t, null)) {
@@ -984,7 +984,7 @@ public class ForkJoinWorkerThread extends Thread {
         int s;
         try {
             UNSAFE = sun.misc.Unsafe.getUnsafe();
-            Class a = ForkJoinTask[].class;
+            Class<?> a = ForkJoinTask[].class;
             ABASE = UNSAFE.arrayBaseOffset(a);
             s = UNSAFE.arrayIndexScale(a);
         } catch (Exception e) {

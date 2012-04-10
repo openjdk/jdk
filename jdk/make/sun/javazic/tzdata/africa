@@ -80,7 +80,7 @@
 # I invented the following abbreviations; corrections are welcome!
 #	 2:00	WAST	West Africa Summer Time
 #	 2:30	BEAT	British East Africa Time (no longer used)
-#	 2:44:45 BEAUT	British East Africa Unified Time (no longer used)
+#	 2:45	BEAUT	British East Africa Unified Time (no longer used)
 #	 3:00	CAST	Central Africa Summer Time (no longer used)
 #	 3:00	SAST	South Africa Summer Time (no longer used)
 #	 3:00	EAT	East Africa Time
@@ -418,7 +418,7 @@ Zone	Africa/Bissau	-1:02:20 -	LMT	1911 May 26
 Zone	Africa/Nairobi	2:27:16	-	LMT	1928 Jul
 			3:00	-	EAT	1930
 			2:30	-	BEAT	1940
-			2:44:45	-	BEAUT	1960
+			2:45	-	BEAUT	1960
 			3:00	-	EAT
 
 # Lesotho
@@ -979,6 +979,11 @@ Zone	Africa/Khartoum	2:10:08 -	LMT	1931
 			2:00	Sudan	CA%sT	2000 Jan 15 12:00
 			3:00	-	EAT
 
+# South Sudan
+Zone	Africa/Juba	2:06:24 -	LMT	1931
+			2:00	Sudan	CA%sT	2000 Jan 15 12:00
+			3:00	-	EAT
+
 # Swaziland
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Mbabane	2:04:24 -	LMT	1903 Mar
@@ -988,7 +993,7 @@ Zone	Africa/Mbabane	2:04:24 -	LMT	1903 Mar
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Africa/Dar_es_Salaam 2:37:08 -	LMT	1931
 			3:00	-	EAT	1948
-			2:44:45	-	BEAUT	1961
+			2:45	-	BEAUT	1961
 			3:00	-	EAT
 
 # Togo
@@ -1114,7 +1119,7 @@ Zone	Africa/Tunis	0:40:44 -	LMT	1881 May 12
 Zone	Africa/Kampala	2:09:40 -	LMT	1928 Jul
 			3:00	-	EAT	1930
 			2:30	-	BEAT	1948
-			2:44:45	-	BEAUT	1957
+			2:45	-	BEAUT	1957
 			3:00	-	EAT
 
 # Zambia

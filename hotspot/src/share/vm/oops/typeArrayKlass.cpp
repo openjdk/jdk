@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ klassOop typeArrayKlass::create_klass(BasicType type, int scale,
   return k();
 }
 
-typeArrayOop typeArrayKlass::allocate(int length, TRAPS) {
+typeArrayOop typeArrayKlass::allocate_common(int length, bool do_zero, TRAPS) {
   assert(log2_element_size() >= 0, "bad scale");
   if (length >= 0) {
     if (length <= max_length()) {
@@ -84,15 +84,16 @@ typeArrayOop typeArrayKlass::allocate(int length, TRAPS) {
       KlassHandle h_k(THREAD, as_klassOop());
       typeArrayOop t;
       CollectedHeap* ch = Universe::heap();
-      if (size < ch->large_typearray_limit()) {
+      if (do_zero) {
         t = (typeArrayOop)CollectedHeap::array_allocate(h_k, (int)size, length, CHECK_NULL);
       } else {
-        t = (typeArrayOop)CollectedHeap::large_typearray_allocate(h_k, (int)size, length, CHECK_NULL);
+        t = (typeArrayOop)CollectedHeap::array_allocate_nozero(h_k, (int)size, length, CHECK_NULL);
       }
       assert(t->is_parsable(), "Don't publish unless parsable");
       return t;
     } else {
       report_java_out_of_memory("Requested array size exceeds VM limit");
+      JvmtiExport::post_array_size_exhausted();
       THROW_OOP_0(Universe::out_of_memory_error_array_size());
     }
   } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ public class Debug {
         System.err.println("policy        loading and granting");
         System.err.println("provider      security provider debugging");
         System.err.println("scl           permissions SecureClassLoader assigns");
+        System.err.println("ts            timestamping");
         System.err.println();
         System.err.println("The following can be used with access:");
         System.err.println();

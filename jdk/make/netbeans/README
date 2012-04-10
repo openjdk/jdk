@@ -5,7 +5,7 @@ Working on OpenJDK using NetBeans
 
 Getting Started
     In addition to the source bundle for Open JDK, you'll need to download
-    and install copies of the JDK and of NetBeans 6. And if you want to run
+    and install copies of the JDK and of NetBeans. And if you want to run
     tests on the JDK (you do want to run tests, right?), you'll need to
     install the jtreg test harness.
 
@@ -20,30 +20,28 @@ Getting Started
 
     Downloading the JDK
         You've probably done this a million times. Download and install it
-        from http://java.sun.com/javase
+        from http://www.oracle.com/technetwork/java/javase/overview/index.html
 
     Downloading the OpenJDK sources
         Since you're reading this, d you've already downloaded the OpenJDK
         source bundle.  Later in this document we'll refer to the location
         where you installed the Open JDK sources as *install-dir*.
 
-    Downloading a pre-built, JDK 7
+    Downloading a pre-built, JDK 8
         This will be necessary to do builds of some of the projects.  In
         general, you want to download and install a pre-built JDK that
         corresponds to the OpenJDK sources you download.  Building the entire
         OpenJDK depends on a few parts of the pre-built JDK.  Get this from
-        http://download.java.net/jdk7/binaries
+        http://download.java.net/jdk8/binaries
 
-        Note: For working on certain projects, like JMX and JConsole, you 
-              may find convenient to use a pre-built version of JDK 7 (or 
+        Note: For working on certain projects, like JMX and JConsole, you
+              may find convenient to use a pre-built version of JDK 8 (or
               OpenJDK) rather than building your own. This will allow you
               to build only that part of the OpenJDK sources which correspond
-              to that project. 
+              to that project.
 
-    NetBeans 6
-        Yep, NetBeans *6*. Nope, not FCS'd yet. We're on the edge here,
-        enjoy it! Get the latest working development build of NetBeans 6
-        from http://netbeans.org
+    NetBeans 7.0 or later
+        Older versions may also work but are unsupported.
 
     jtreg
         "jtreg" is the test harness for running OpenJDK's regression tests.
@@ -51,7 +49,7 @@ Getting Started
 
     Ant
        NetBeans comes with ant, but if you use a separately-installed copy
-       please make sure that it is at least version 1.7.0.
+       please make sure that it is at least version 1.8.1.
 
 Configuring
     Building OpenJDK is hard and complex. No, strike that. While it's not
@@ -92,8 +90,8 @@ Configuring
         situation:
 
         make.options=\
-            ALT_BOOTDIR=/home/me/bin/jdk1.6.0 \
-            ALT_JDK_IMPORT_PATH=/home/me/bin/jdk1.7.0 \
+            ALT_BOOTDIR=/home/me/bin/jdk1.7.0 \
+            ALT_JDK_IMPORT_PATH=/home/me/bin/jdk1.8.0 \
             OPENJDK=true
 
         The trailing '\' are important, so that make gets the above as a
@@ -107,7 +105,7 @@ Configuring
   Windows-specific configuration
     First, please note that the entire JDK cannot currently be built on
     Windows platforms.  This will likely limit your ability to build
-    make-based projects.  See 
+    make-based projects.  See
          *install-dir*/jdk/make/README-builds.html
     for full information on issues with building on the Windows platform.
 
@@ -141,7 +139,7 @@ Configuring
     editor.
 
   Locale Requirements
-    To build the Open JDK sources, be certain that you are using the "C"
+    To build the OpenJDK sources, be certain that you are using the "C"
     locale on Unix (R) platforms, or "English (United States)" locale on
     Windows.
 
@@ -220,13 +218,13 @@ Provided NetBeans projects
         running and debugging JConsole.
 
         This ant-based project does *not* require that you build the jdk
-        project first, provided that you use a pre-built version of JDK 7. 
+        project first, provided that you use a pre-built version of JDK 7.
 
     Java (TM) Management Extensions (JMX(TM)) API (directory "jmx")
         For working on JMX source code. Creates ../dist/lib/jmx.jar.
 
         This ant-based project does *not* require that you build the jdk
-        project first, provided that you use a pre-built version of JDK 7. 
+        project first, provided that you use a pre-built version of JDK 7.
 
     Jar & Zip (directory "jarzip")
         For working on jar & zip. It builds the zip library (including
@@ -242,12 +240,12 @@ Provided NetBeans projects
         running and debugging the SampleTree demo.
 
         This ant-based project does *not* require that you build the jdk
-        project first, provided that you use a pre-built version of JDK 7. 
+        project first, provided that you use a pre-built version of JDK 7.
 
     In addition, there are projects for building the compiler, javadoc,
     and related tools, in the OpenJDK langtools component.  These
     projects are separate from those described here, and have their
-    own set of guidelines and conventions. For more details, see the 
+    own set of guidelines and conventions. For more details, see the
     README files in make/netbeans in the OpenJDK langtools component.
 
 Running Tests
@@ -603,13 +601,6 @@ Appendix 1: Customizations
     * -clean-make
 
 Known Issues
-  Tests won't run: waiting for lock
-    Occasionally when running tests, there will be a delay, followed by a
-    message like this:
-        Waiting to lock test result cache for
-           /tmp/jdk/build/linux-i586/jtreg/jconsole/JTwork for 20 seconds
-    The workaround is to stop the tests, rm -rf the offending jtreg/<project>
-    directory by hand, and re-run the tests.
 
   Can't run nor debug a single test in the JConsole test
     In most projects, you can run a single test by opening it in the editor,

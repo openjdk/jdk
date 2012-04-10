@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,15 +76,21 @@
 # include <sys/procfs.h>
 # endif
 
-#ifdef LINUX
+#if defined(LINUX) || defined(_ALLBSD_SOURCE)
 #ifndef __STDC_LIMIT_MACROS
 #define __STDC_LIMIT_MACROS
 #endif // __STDC_LIMIT_MACROS
 #include <inttypes.h>
 #include <signal.h>
+#ifndef __OpenBSD__
 #include <ucontext.h>
+#endif
+#ifdef __APPLE__
+  #include <AvailabilityMacros.h>
+  #include <mach/mach.h>
+#endif
 #include <sys/time.h>
-#endif // LINUX
+#endif // LINUX || _ALLBSD_SOURCE
 
 // 4810578: varargs unsafe on 32-bit integer/64-bit pointer architectures
 // When __cplusplus is defined, NULL is defined as 0 (32-bit constant) in
@@ -120,7 +126,7 @@
 // pointer is stored as integer value.  On some platforms, sizeof(intptr_t) >
 // sizeof(void*), so here we want something which is integer type, but has the
 // same size as a pointer.
-#ifdef LINUX
+#ifdef __GNUC__
   #ifdef _LP64
     #define NULL_WORD  0L
   #else
@@ -132,7 +138,7 @@
   #define NULL_WORD  NULL
 #endif
 
-#ifndef LINUX
+#if !defined(LINUX) && !defined(_ALLBSD_SOURCE)
 // Compiler-specific primitive types
 typedef unsigned short     uint16_t;
 #ifndef _UINT32_T
@@ -152,7 +158,7 @@ typedef unsigned int            uintptr_t;
 // prior definition of intptr_t, and add "&& !defined(XXX)" above.
 #endif // _SYS_INT_TYPES_H
 
-#endif // !LINUX
+#endif // !LINUX && !_ALLBSD_SOURCE
 
 // Additional Java basic types
 
@@ -244,7 +250,9 @@ inline int g_isnan(float  f) { return isnanf(f); }
 inline int g_isnan(float  f) { return isnand(f); }
 #endif
 inline int g_isnan(double f) { return isnand(f); }
-#elif LINUX
+#elif defined(__APPLE__)
+inline int g_isnan(double f) { return isnan(f); }
+#elif defined(LINUX) || defined(_ALLBSD_SOURCE)
 inline int g_isnan(float  f) { return isnanf(f); }
 inline int g_isnan(double f) { return isnan(f); }
 #else

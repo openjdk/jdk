@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @bug 4052404 4052440 4084688 4092475 4101316 4105828 4107014 4107953 4110613
  * 4118587 4118595 4122371 4126371 4126880 4135316 4135752 4139504 4139940 4143951
  * 4147315 4147317 4147552 4335196 4778440 4940539 5010672 6475525 6544471 6627549
- * 6786276
+ * 6786276 7066203 7085757
  * @summary test Locales
  */
 /*
@@ -400,7 +400,7 @@ public class LocaleTest extends LocaleTestFmwk {
     }
 
     /**
-     * @bug 4106155 4118587
+     * @bug 4106155 4118587 7066203 7085757
      */
     public void TestGetLangsAndCountries() {
         // It didn't seem right to just do an exhaustive test of everything here, so I check
@@ -440,8 +440,8 @@ public class LocaleTest extends LocaleTestFmwk {
         String[] spotCheck2 = { "US", "CA", "GB", "FR", "DE", "IT", "JP", "KR", "CN", "TW", "TH" };
 
 
-        if (test.length != 246)
-            errln("Expected getISOCountries to return 246 countries; it returned " + test.length);
+        if (test.length != 250)
+            errln("Expected getISOCountries to return 250 countries; it returned " + test.length);
         else {
             for (int i = 0; i < spotCheck2.length; i++) {
                 int j;

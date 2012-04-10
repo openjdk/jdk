@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1080,7 +1080,11 @@ public abstract class $Type$Buffer
         int h = 1;
         int p = position();
         for (int i = limit() - 1; i >= p; i--)
+#if[int]
+            h = 31 * h + get(i);
+#else[int]
             h = 31 * h + (int)get(i);
+#end[int]
         return h;
     }
 

@@ -58,9 +58,17 @@ ifneq ($(PLATFORM), windows)
   XAWT_SUBDIR     = xawt
 endif
 
+ifeq ($(PLATFORM), macosx)
+  LWAWT_PRE_SUBDIR = osxapp
+  LWAWT_SUBDIR = lwawt
+endif
+
 ifndef OPENJDK
+ifneq ($(PLATFORM), macosx)
   JDBC_SUBDIR = jdbc
 endif
+endif
+
 ifdef OPENJDK
   RENDER_SUBDIR = pisces
 else
@@ -68,7 +76,7 @@ else
 endif
 
 # nio need to be compiled before awt to have all charsets ready
-SUBDIRS            = jar security javazic misc net nio text launcher
+SUBDIRS            = jar security javazic misc net nio text util launcher
 
 ifdef BUILD_HEADLESS_ONLY
   DISPLAY_LIBS = awt $(HEADLESS_SUBDIR)
@@ -78,7 +86,7 @@ else
   DISPLAY_TOOLS = applet
 endif
 SUBDIRS_desktop    = audio $(RENDER_SUBDIR) image \
-                     $(DISPLAY_LIBS) $(DGA_SUBDIR) \
+                     $(LWAWT_PRE_SUBDIR) $(DISPLAY_LIBS) $(DGA_SUBDIR) $(LWAWT_SUBDIR) \
                      jawt font jpeg cmm $(DISPLAY_TOOLS) beans
 SUBDIRS_management = management
 SUBDIRS_misc       = $(ORG_SUBDIR) rmi $(JDBC_SUBDIR) tracing

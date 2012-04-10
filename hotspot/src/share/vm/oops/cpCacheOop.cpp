@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,17 +128,13 @@ bool ConstantPoolCacheEntry::same_methodOop(oop cur_f1, oop f1) {
 void ConstantPoolCacheEntry::set_field(Bytecodes::Code get_code,
                                        Bytecodes::Code put_code,
                                        KlassHandle field_holder,
-                                       int orig_field_index,
+                                       int field_index,
                                        int field_offset,
                                        TosState field_type,
                                        bool is_final,
                                        bool is_volatile) {
   set_f1(field_holder()->java_mirror());
   set_f2(field_offset);
-  // The field index is used by jvm/ti and is the index into fields() array
-  // in holder instanceKlass.  This is scaled by instanceKlass::next_offset.
-  assert((orig_field_index % instanceKlass::next_offset) == 0, "wierd index");
-  const int field_index = orig_field_index / instanceKlass::next_offset;
   assert(field_index <= field_index_mask,
          "field index does not fit in low flag bits");
   set_flags(as_flags(field_type, is_final, false, is_volatile, false, false) |
@@ -149,7 +145,7 @@ void ConstantPoolCacheEntry::set_field(Bytecodes::Code get_code,
 }
 
 int  ConstantPoolCacheEntry::field_index() const {
-  return (_flags & field_index_mask) * instanceKlass::next_offset;
+  return (_flags & field_index_mask);
 }
 
 void ConstantPoolCacheEntry::set_method(Bytecodes::Code invoke_code,
@@ -293,6 +289,50 @@ void ConstantPoolCacheEntry::set_dynamic_call(Handle call_site, methodHandle sig
   //set_bytecode_1(Bytecodes::_invokedynamic);
   set_f1_if_null_atomic(call_site());  // This must be the last one to set (see NOTE above)!
 }
+
+
+methodOop ConstantPoolCacheEntry::get_method_if_resolved(Bytecodes::Code invoke_code, constantPoolHandle cpool) {
+  assert(invoke_code > (Bytecodes::Code)0, "bad query");
+  if (is_secondary_entry()) {
+    return cpool->cache()->entry_at(main_entry_index())->get_method_if_resolved(invoke_code, cpool);
+  }
+  // Decode the action of set_method and set_interface_call
+  if (bytecode_1() == invoke_code) {
+    oop f1 = _f1;
+    if (f1 != NULL) {
+      switch (invoke_code) {
+      case Bytecodes::_invokeinterface:
+        assert(f1->is_klass(), "");
+        return klassItable::method_for_itable_index(klassOop(f1), (int) f2());
+      case Bytecodes::_invokestatic:
+      case Bytecodes::_invokespecial:
+        assert(f1->is_method(), "");
+        return methodOop(f1);
+      }
+    }
+  }
+  if (bytecode_2() == invoke_code) {
+    switch (invoke_code) {
+    case Bytecodes::_invokevirtual:
+      if (is_vfinal()) {
+        // invokevirtual
+        methodOop m = methodOop((intptr_t) f2());
+        assert(m->is_method(), "");
+        return m;
+      } else {
+        int holder_index = cpool->uncached_klass_ref_index_at(constant_pool_index());
+        if (cpool->tag_at(holder_index).is_klass()) {
+          klassOop klass = cpool->resolved_klass_at(holder_index);
+          if (!Klass::cast(klass)->oop_is_instance())
+            klass = SystemDictionary::Object_klass();
+          return instanceKlass::cast(klass)->method_at_vtable((int) f2());
+        }
+      }
+    }
+  }
+  return NULL;
+}
+
 
 
 class LocalOopClosure: public OopClosure {
@@ -464,17 +504,17 @@ bool ConstantPoolCacheEntry::is_interesting_method_entry(klassOop k) {
 
 void ConstantPoolCacheEntry::print(outputStream* st, int index) const {
   // print separator
-  if (index == 0) tty->print_cr("                 -------------");
+  if (index == 0) st->print_cr("                 -------------");
   // print entry
-  tty->print("%3d  ("PTR_FORMAT")  ", index, (intptr_t)this);
+  st->print("%3d  ("PTR_FORMAT")  ", index, (intptr_t)this);
   if (is_secondary_entry())
-    tty->print_cr("[%5d|secondary]", main_entry_index());
+    st->print_cr("[%5d|secondary]", main_entry_index());
   else
-    tty->print_cr("[%02x|%02x|%5d]", bytecode_2(), bytecode_1(), constant_pool_index());
-  tty->print_cr("                 [   "PTR_FORMAT"]", (intptr_t)(oop)_f1);
-  tty->print_cr("                 [   "PTR_FORMAT"]", (intptr_t)_f2);
-  tty->print_cr("                 [   "PTR_FORMAT"]", (intptr_t)_flags);
-  tty->print_cr("                 -------------");
+    st->print_cr("[%02x|%02x|%5d]", bytecode_2(), bytecode_1(), constant_pool_index());
+  st->print_cr("                 [   "PTR_FORMAT"]", (intptr_t)(oop)_f1);
+  st->print_cr("                 [   "PTR_FORMAT"]", (intptr_t)_f2);
+  st->print_cr("                 [   "PTR_FORMAT"]", (intptr_t)_flags);
+  st->print_cr("                 -------------");
 }
 
 void ConstantPoolCacheEntry::verify(outputStream* st) const {

@@ -83,6 +83,8 @@ static jfieldID pdsi_loopbackID;
 static jfieldID pdsi_ttlID;
 #endif
 
+extern void setDefaultScopeID(JNIEnv *env, struct sockaddr *him);
+
 /*
  * Returns a java.lang.Integer based on 'i'
  */
@@ -240,6 +242,7 @@ Java_java_net_PlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
     if (NET_InetAddressToSockaddr(env, iaObj, localport, (struct sockaddr *)&him, &len, JNI_TRUE) != 0) {
       return;
     }
+    setDefaultScopeID(env, (struct sockaddr *)&him);
 
     if (NET_Bind(fd, (struct sockaddr *)&him, len) < 0)  {
         if (errno == EADDRINUSE || errno == EADDRNOTAVAIL ||
@@ -310,6 +313,7 @@ Java_java_net_PlainDatagramSocketImpl_connect0(JNIEnv *env, jobject this,
         setsockopt(fd, SOL_SOCKET, SO_BSDCOMPAT, (char*) &t, sizeof(int));
     } else
 #endif
+    setDefaultScopeID(env, (struct sockaddr *)&rmtaddr);
     {
         if (JVM_Connect(fd, (struct sockaddr *)&rmtaddr, len) == -1) {
             NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "ConnectException",
@@ -331,7 +335,7 @@ Java_java_net_PlainDatagramSocketImpl_disconnect0(JNIEnv *env, jobject this, jin
     /* The fdObj'fd */
     jint fd;
 
-#ifdef __linux__
+#if defined(__linux__) || defined(_ALLBSD_SOURCE)
     SOCKADDR addr;
     int len;
 #endif
@@ -341,11 +345,13 @@ Java_java_net_PlainDatagramSocketImpl_disconnect0(JNIEnv *env, jobject this, jin
     }
     fd = (*env)->GetIntField(env, fdObj, IO_fd_fdID);
 
+#if defined(__linux__) || defined(_ALLBSD_SOURCE)
 #ifdef __linux__
     if (isOldKernel) {
         int t = 1;
         setsockopt(fd, SOL_SOCKET, SO_BSDCOMPAT, (char*) &t, sizeof(int));
     } else {
+#endif /* __linux__ */
         memset(&addr, 0, sizeof(addr));
 #ifdef AF_INET6
         if (ipv6_available()) {
@@ -361,6 +367,7 @@ Java_java_net_PlainDatagramSocketImpl_disconnect0(JNIEnv *env, jobject this, jin
         }
         JVM_Connect(fd, (struct sockaddr *)&addr, len);
 
+#ifdef __linux__
         // After disconnecting a UDP socket, Linux kernel will set
         // local port to zero if the port number comes from implicit
         // bind. Successive send/recv on the same socket will fail.
@@ -383,6 +390,7 @@ Java_java_net_PlainDatagramSocketImpl_disconnect0(JNIEnv *env, jobject this, jin
             NET_Bind(fd, (struct sockaddr *)&addr, len);
         }
     }
+#endif
 #else
     JVM_Connect(fd, 0, 0);
 #endif
@@ -453,6 +461,7 @@ Java_java_net_PlainDatagramSocketImpl_send(JNIEnv *env, jobject this,
           return;
         }
     }
+    setDefaultScopeID(env, (struct sockaddr *)&rmtaddr);
 
     if (packetBufferLen > MAX_BUFFER_LEN) {
         /* When JNI-ifying the JDK's IO routines, we turned
@@ -1052,7 +1061,7 @@ JNIEXPORT void JNICALL
 Java_java_net_PlainDatagramSocketImpl_datagramSocketCreate(JNIEnv *env,
                                                            jobject this) {
     jobject fdObj = (*env)->GetObjectField(env, this, pdsi_fdID);
-    int fd, t = 1;
+    int arg, fd, t = 1;
 #ifdef AF_INET6
     int domain = ipv6_available() ? AF_INET6 : AF_INET;
 #else
@@ -1074,7 +1083,7 @@ Java_java_net_PlainDatagramSocketImpl_datagramSocketCreate(JNIEnv *env,
 #ifdef AF_INET6
     /* Disable IPV6_V6ONLY to ensure dual-socket support */
     if (domain == AF_INET6) {
-        int arg = 0;
+        arg = 0;
         if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&arg,
                        sizeof(int)) < 0) {
             NET_ThrowNew(env, errno, "cannot set IPPROTO_IPV6");
@@ -1083,6 +1092,22 @@ Java_java_net_PlainDatagramSocketImpl_datagramSocketCreate(JNIEnv *env,
         }
     }
 #endif /* AF_INET6 */
+
+#ifdef __APPLE__
+    arg = 65507;
+    if (JVM_SetSockOpt(fd, SOL_SOCKET, SO_SNDBUF,
+                       (char *)&arg, sizeof(arg)) < 0) {
+        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
+                        strerror(errno));
+        return;
+    }
+    if (JVM_SetSockOpt(fd, SOL_SOCKET, SO_RCVBUF,
+                       (char *)&arg, sizeof(arg)) < 0) {
+        JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
+                        strerror(errno));
+        return;
+    }
+#endif /* __APPLE__ */
 
      setsockopt(fd, SOL_SOCKET, SO_BROADCAST, (char*) &t, sizeof(int));
 
@@ -1324,7 +1349,7 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd,
          * value is an InetAddress.
          */
 #ifdef AF_INET6
-#ifdef __solaris__
+#if defined(__solaris__) || defined(MACOSX)
         if (ipv6_available()) {
             mcast_set_if_by_addr_v6(env, this, fd, value);
         } else {
@@ -1347,7 +1372,7 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd,
          * value is a NetworkInterface.
          */
 #ifdef AF_INET6
-#ifdef __solaris__
+#if defined(__solaris__) || defined(MACOSX)
         if (ipv6_available()) {
             mcast_set_if_by_if_v6(env, this, fd, value);
         } else {
@@ -1430,7 +1455,7 @@ static void mcast_set_loop_v6(JNIEnv *env, jobject this, int fd, jobject value) 
 static void setMulticastLoopbackMode(JNIEnv *env, jobject this, int fd,
                                   jint opt, jobject value) {
 #ifdef AF_INET6
-#ifdef __solaris__
+#if defined(__solaris__) || defined(MACOSX)
     if (ipv6_available()) {
         mcast_set_loop_v6(env, this, fd, value);
     } else {
@@ -2004,7 +2029,7 @@ Java_java_net_PlainDatagramSocketImpl_setTimeToLive(JNIEnv *env, jobject this,
     }
     /* setsockopt to be correct ttl */
 #ifdef AF_INET6
-#ifdef __solaris__
+#if defined(__solaris__) || defined(MACOSX)
     if (ipv6_available()) {
         setHopLimit(env, fd, ttl);
     } else {
@@ -2400,18 +2425,30 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
             mname6.ipv6mr_interface = idx;
         }
 
+#if defined(_ALLBSD_SOURCE)
+#define ADD_MEMBERSHIP          IPV6_JOIN_GROUP
+#define DRP_MEMBERSHIP          IPV6_LEAVE_GROUP
+#define S_ADD_MEMBERSHIP        "IPV6_JOIN_GROUP"
+#define S_DRP_MEMBERSHIP        "IPV6_LEAVE_GROUP"
+#else
+#define ADD_MEMBERSHIP          IPV6_ADD_MEMBERSHIP
+#define DRP_MEMBERSHIP          IPV6_DROP_MEMBERSHIP
+#define S_ADD_MEMBERSHIP        "IPV6_ADD_MEMBERSHIP"
+#define S_DRP_MEMBERSHIP        "IPV6_DROP_MEMBERSHIP"
+#endif
+
         /* Join the multicast group */
-        if (JVM_SetSockOpt(fd, IPPROTO_IPV6, (join ? IPV6_ADD_MEMBERSHIP : IPV6_DROP_MEMBERSHIP),
+        if (JVM_SetSockOpt(fd, IPPROTO_IPV6, (join ? ADD_MEMBERSHIP : DRP_MEMBERSHIP),
                            (char *) &mname6, sizeof (mname6)) < 0) {
 
             if (join) {
-                NET_ThrowCurrent(env, "setsockopt IPV6_ADD_MEMBERSHIP failed");
+                NET_ThrowCurrent(env, "setsockopt " S_ADD_MEMBERSHIP " failed");
             } else {
                 if (errno == ENOENT) {
                    JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
                         "Not a member of the multicast group");
                 } else {
-                    NET_ThrowCurrent(env, "setsockopt IPV6_DROP_MEMBERSHIP failed");
+                    NET_ThrowCurrent(env, "setsockopt " S_DRP_MEMBERSHIP " failed");
                 }
             }
         }

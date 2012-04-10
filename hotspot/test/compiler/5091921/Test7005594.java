@@ -27,7 +27,7 @@
  * @bug 7005594
  * @summary Array overflow not handled correctly with loop optimzations
  *
- * @run main/othervm -Xms2048m -Xcomp -XX:CompileOnly=Test7005594.test Test7005594
+ * @run shell Test7005594.sh
  */
 
 public class Test7005594 {

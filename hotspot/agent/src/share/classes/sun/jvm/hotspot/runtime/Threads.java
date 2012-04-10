@@ -37,6 +37,8 @@ import sun.jvm.hotspot.runtime.linux_x86.LinuxX86JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.linux_ia64.LinuxIA64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.linux_amd64.LinuxAMD64JavaThreadPDAccess;
 import sun.jvm.hotspot.runtime.linux_sparc.LinuxSPARCJavaThreadPDAccess;
+import sun.jvm.hotspot.runtime.bsd_x86.BsdX86JavaThreadPDAccess;
+import sun.jvm.hotspot.runtime.bsd_amd64.BsdAMD64JavaThreadPDAccess;
 import sun.jvm.hotspot.utilities.*;
 
 public class Threads {
@@ -90,7 +92,12 @@ public class Threads {
             } else if (cpu.equals("sparc")) {
                 access = new LinuxSPARCJavaThreadPDAccess();
             }
-
+        } else if (os.equals("bsd")) {
+            if (cpu.equals("x86")) {
+                access = new BsdX86JavaThreadPDAccess();
+            } else if (cpu.equals("amd64")) {
+                access = new BsdAMD64JavaThreadPDAccess();
+            }
         }
 
         if (access == null) {

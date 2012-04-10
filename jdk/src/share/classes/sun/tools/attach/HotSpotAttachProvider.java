@@ -75,7 +75,7 @@ public abstract class HotSpotAttachProvider extends AttachProvider {
             new ArrayList<VirtualMachineDescriptor>();
 
         MonitoredHost host;
-        Set vms;
+        Set<Integer> vms;
         try {
             host = MonitoredHost.getMonitoredHost(new HostIdentifier((String)null));
             vms = host.activeVms();
@@ -89,34 +89,32 @@ public abstract class HotSpotAttachProvider extends AttachProvider {
             if (t instanceof SecurityException) {
                 return result;
             }
-            throw new InternalError();          // shouldn't happen
+            throw new InternalError(t);          // shouldn't happen
         }
 
-        for (Object vmid: vms) {
-            if (vmid instanceof Integer) {
-                String pid = vmid.toString();
-                String name = pid;      // default to pid if name not available
-                boolean isAttachable = false;
-                MonitoredVm mvm = null;
+        for (Integer vmid: vms) {
+            String pid = vmid.toString();
+            String name = pid;      // default to pid if name not available
+            boolean isAttachable = false;
+            MonitoredVm mvm = null;
+            try {
+                mvm = host.getMonitoredVm(new VmIdentifier(pid));
                 try {
-                    mvm = host.getMonitoredVm(new VmIdentifier(pid));
-                    try {
-                        isAttachable = MonitoredVmUtil.isAttachable(mvm);
-                        // use the command line as the display name
-                        name =  MonitoredVmUtil.commandLine(mvm);
-                    } catch (Exception e) {
-                    }
-                    if (isAttachable) {
-                        result.add(new HotSpotVirtualMachineDescriptor(this, pid, name));
-                    }
-                } catch (Throwable t) {
-                    if (t instanceof ThreadDeath) {
-                        throw (ThreadDeath)t;
-                    }
-                } finally {
-                    if (mvm != null) {
-                        mvm.detach();
-                    }
+                    isAttachable = MonitoredVmUtil.isAttachable(mvm);
+                    // use the command line as the display name
+                    name =  MonitoredVmUtil.commandLine(mvm);
+                } catch (Exception e) {
+                }
+                if (isAttachable) {
+                    result.add(new HotSpotVirtualMachineDescriptor(this, pid, name));
+                }
+            } catch (Throwable t) {
+                if (t instanceof ThreadDeath) {
+                    throw (ThreadDeath)t;
+                }
+            } finally {
+                if (mvm != null) {
+                    mvm.detach();
                 }
             }
         }

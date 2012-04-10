@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.*;
 import java.security.NoSuchAlgorithmException;
 import java.security.InvalidKeyException;
 import java.security.SecureRandom;
+import java.security.KeyManagementException;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
@@ -65,7 +66,7 @@ import static sun.security.ssl.JsseJce.*;
  *    unavailable or disabled at compile time
  *
  */
-final class CipherSuite implements Comparable {
+final class CipherSuite implements Comparable<CipherSuite> {
 
     // minimum priority for supported CipherSuites
     final static int SUPPORTED_SUITES_PRIORITY = 1;
@@ -202,8 +203,8 @@ final class CipherSuite implements Comparable {
      * Note that for unsupported CipherSuites parsed from a handshake
      * message we violate the equals() contract.
      */
-    public int compareTo(Object o) {
-        return ((CipherSuite)o).priority - priority;
+    public int compareTo(CipherSuite o) {
+        return o.priority - priority;
     }
 
     /**
@@ -423,6 +424,17 @@ final class CipherSuite implements Comparable {
         // Is the cipher algorithm of Cipher Block Chaining (CBC) mode?
         final boolean isCBCMode;
 
+        // The secure random used to detect the cipher availability.
+        private final static SecureRandom secureRandom;
+
+        static {
+            try {
+                secureRandom = JsseJce.getSecureRandom();
+            } catch (KeyManagementException kme) {
+                throw new RuntimeException(kme);
+            }
+        }
+
         BulkCipher(String transformation, int keySize,
                 int expandedKeySize, int ivSize, boolean allowed) {
             this.transformation = transformation;
@@ -505,7 +517,7 @@ final class CipherSuite implements Comparable {
                     IvParameterSpec iv =
                         new IvParameterSpec(new byte[cipher.ivSize]);
                     cipher.newCipher(ProtocolVersion.DEFAULT,
-                                                key, iv, null, true);
+                                            key, iv, secureRandom, true);
                     b = Boolean.TRUE;
                 } catch (NoSuchAlgorithmException e) {
                     b = Boolean.FALSE;

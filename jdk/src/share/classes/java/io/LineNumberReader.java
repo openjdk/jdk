@@ -120,6 +120,7 @@ public class LineNumberReader extends BufferedReader {
      * @throws  IOException
      *          If an I/O error occurs
      */
+    @SuppressWarnings("fallthrough")
     public int read() throws IOException {
         synchronized (lock) {
             int c = super.read();
@@ -159,6 +160,7 @@ public class LineNumberReader extends BufferedReader {
      * @throws  IOException
      *          If an I/O error occurs
      */
+    @SuppressWarnings("fallthrough")
     public int read(char cbuf[], int off, int len) throws IOException {
         synchronized (lock) {
             int n = super.read(cbuf, off, len);

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,8 @@ OTHER_INCLUDES += \
 # Rules
 #
 CLASSDESTDIR = $(TEMPDIR)/classes
-JAVAHFLAGS += -classpath $(CLASSDESTDIR)
+JAVAHFLAGS = -bootclasspath \
+  "$(CLASSDESTDIR)$(CLASSPATH_SEPARATOR)$(CLASSBINDIR)"
 
 include $(BUILDDIR)/common/Mapfile-vers.gmk
 
@@ -159,7 +160,7 @@ include $(BUILDDIR)/common/Library.gmk
 # Libraries to link
 #
 ifeq ($(PLATFORM), windows)
-  OTHER_LDLIBS += $(JVMLIB) Crypt32.Lib
+  OTHER_LDLIBS += Crypt32.Lib
 endif
 
 #

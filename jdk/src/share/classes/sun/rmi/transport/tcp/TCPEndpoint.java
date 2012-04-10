@@ -148,7 +148,7 @@ public class TCPEndpoint implements Endpoint {
     // TBD: should this be a weak hash table?
     private static final
         Map<TCPEndpoint,LinkedList<TCPEndpoint>> localEndpoints =
-        new HashMap<TCPEndpoint,LinkedList<TCPEndpoint>>();
+        new HashMap<>();
 
     /**
      * Create an endpoint for a specified host and port.
@@ -623,10 +623,9 @@ public class TCPEndpoint implements Endpoint {
             try {
                 TCPEndpoint.shedConnectionCaches();
                 // REMIND: should we retry createSocket?
-            } catch (OutOfMemoryError mem) {
+            } catch (OutOfMemoryError | Exception mem) {
                 // don't quit if out of memory
-            } catch (Exception ex) {
-                // don't quit if shed fails non-catastrophically
+                // or shed fails non-catastrophically
             }
 
             throw new ConnectIOException("Exception creating connection to: " +

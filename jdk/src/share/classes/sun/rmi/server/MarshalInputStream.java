@@ -65,14 +65,14 @@ public class MarshalInputStream extends ObjectInputStream {
 
     /** table to hold sun classes to which access is explicitly permitted */
     protected static Map<String, Class<?>> permittedSunClasses
-        = new HashMap<String, Class<?>>(3);
+        = new HashMap<>(3);
 
     /** if true, don't try superclass first in resolveClass() */
     private boolean skipDefaultResolveClass = false;
 
     /** callbacks to make when done() called: maps Object to Runnable */
     private final Map<Object, Runnable> doneCallbacks
-        = new HashMap<Object, Runnable>(3);
+        = new HashMap<>(3);
 
     /**
      * if true, load classes (if not available locally) only from the
@@ -107,14 +107,6 @@ public class MarshalInputStream extends ObjectInputStream {
             throw new NoClassDefFoundError("Missing system class: " +
                                            e.getMessage());
         }
-    }
-
-    /**
-     * Load the "rmi" native library.
-     */
-    static {
-        java.security.AccessController.doPrivileged(
-            new sun.security.action.LoadLibraryAction("rmi"));
     }
 
     /**
@@ -176,7 +168,7 @@ public class MarshalInputStream extends ObjectInputStream {
      * from which to load the specified class.
      * It will find, load, and return the class.
      */
-    protected Class resolveClass(ObjectStreamClass classDesc)
+    protected Class<?> resolveClass(ObjectStreamClass classDesc)
         throws IOException, ClassNotFoundException
     {
         /*
@@ -238,7 +230,7 @@ public class MarshalInputStream extends ObjectInputStream {
      * resolveProxyClass is extended to acquire (if present) the location
      * to determine the class loader to define the proxy class in.
      */
-    protected Class resolveProxyClass(String[] interfaces)
+    protected Class<?> resolveProxyClass(String[] interfaces)
         throws IOException, ClassNotFoundException
     {
         /*
@@ -262,13 +254,15 @@ public class MarshalInputStream extends ObjectInputStream {
      * Returns the first non-null class loader up the execution stack, or null
      * if only code from the null class loader is on the stack.
      */
-    private static native ClassLoader latestUserDefinedLoader();
+    private static ClassLoader latestUserDefinedLoader() {
+        return sun.misc.VM.latestUserDefinedLoader();
+    }
 
     /**
      * Fix for 4179055: Need to assist resolving sun stubs; resolve
      * class locally if it is a "permitted" sun class
      */
-    private Class checkSunClass(String className, AccessControlException e)
+    private Class<?> checkSunClass(String className, AccessControlException e)
         throws AccessControlException
     {
         // ensure that we are giving out a stub for the correct reason

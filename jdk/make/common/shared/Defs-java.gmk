@@ -66,7 +66,11 @@ JAVA_HOTSPOT_DISABLE_PRINT_VMOPTIONS = \
    -XX:-PrintVMOptions -XX:+UnlockDiagnosticVMOptions -XX:-LogVMOutput
 
 # JVM options
-JAVA_JVM_FLAGS = $(JAVA_HOTSPOT_DISABLE_PRINT_VMOPTIONS)
+ifeq ($(PLATFORM), macosx)
+  JAVA_JVM_FLAGS = $(JAVA_HOTSPOT_DISABLE_PRINT_VMOPTIONS) -Djava.awt.headless=true
+else
+  JAVA_JVM_FLAGS = $(JAVA_HOTSPOT_DISABLE_PRINT_VMOPTIONS)
+endif
 
 ifeq ($(ADD_CLIENT_VM_OPTION), true)
   JAVA_JVM_FLAGS += -client
@@ -116,11 +120,16 @@ ifeq ($(DEBUG_CLASSFILES),true)
   JAVACFLAGS += -g
 endif
 ifeq ($(JAVAC_MAX_WARNINGS), true)
-  JAVACFLAGS  += -Xlint:all
+  JAVAC_LINT_OPTIONS += -Xlint:all
 endif
 ifeq ($(JAVAC_WARNINGS_FATAL), true)
   JAVACFLAGS  += -Werror
 endif
+
+# TODO: Workaround for CR 7063027. Remove -path eventually.
+JAVAC_LINT_OPTIONS += -Xlint:-path
+
+JAVACFLAGS += $(JAVAC_LINT_OPTIONS)
 
 #
 # Some licensees do not get the Security Source bundles.  We will
@@ -211,16 +220,12 @@ endif
 # The javac options supplied to the boot javac is limited. This compiler
 #   should only be used to build the 'make/tools' sources, which are not
 #   class files that end up in the classes directory.
-ifeq ($(JAVAC_MAX_WARNINGS), true)
-  BOOT_JAVACFLAGS  += -Xlint:all
-endif
+BOOT_JAVACFLAGS += $(JAVAC_LINT_OPTIONS)
 ifeq ($(JAVAC_WARNINGS_FATAL), true)
   BOOT_JAVACFLAGS  += -Werror
 endif
 
-BOOT_SOURCE_LANGUAGE_VERSION = 6
-BOOT_TARGET_CLASS_VERSION = 6
-BOOT_JAVACFLAGS  += -encoding ascii -source $(BOOT_SOURCE_LANGUAGE_VERSION) -target $(BOOT_TARGET_CLASS_VERSION)
+BOOT_JAVACFLAGS  += -encoding ascii
 BOOT_JAR_JFLAGS += $(JAR_JFLAGS)
 
 BOOT_JAVACFLAGS  += $(NO_PROPRIETARY_API_WARNINGS)

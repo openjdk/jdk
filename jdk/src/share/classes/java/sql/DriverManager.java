@@ -80,7 +80,7 @@ public class DriverManager {
 
 
     // List of registered JDBC drivers
-    private final static CopyOnWriteArrayList<DriverInfo> registeredDrivers = new CopyOnWriteArrayList<DriverInfo>();
+    private final static CopyOnWriteArrayList<DriverInfo> registeredDrivers = new CopyOnWriteArrayList<>();
     private static volatile int loginTimeout = 0;
     private static volatile java.io.PrintWriter logWriter = null;
     private static volatile java.io.PrintStream logStream = null;
@@ -357,7 +357,7 @@ public class DriverManager {
      * @return the list of JDBC Drivers loaded by the caller's class loader
      */
     public static java.util.Enumeration<Driver> getDrivers() {
-        java.util.Vector<Driver> result = new java.util.Vector<Driver>();
+        java.util.Vector<Driver> result = new java.util.Vector<>();
 
         // Gets the classloader of the code that called this method, may
         // be null.
@@ -621,15 +621,18 @@ class DriverInfo {
         this.driver = driver;
     }
 
+    @Override
     public boolean equals(Object other) {
         return (other instanceof DriverInfo)
                 && this.driver == ((DriverInfo) other).driver;
     }
 
+    @Override
     public int hashCode() {
         return driver.hashCode();
     }
 
+    @Override
     public String toString() {
         return ("driver[className="  + driver + "]");
     }

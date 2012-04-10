@@ -41,8 +41,6 @@ import javax.crypto.BadPaddingException;
 
 import javax.net.ssl.*;
 
-import com.sun.net.ssl.internal.ssl.X509ExtendedTrustManager;
-
 /**
  * Implementation of an SSL socket.  This is a normal connection type
  * socket, implementing SSL over some lower level socket, such as TCP.
@@ -1487,7 +1485,8 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
 
     private void closeSocket(boolean selfInitiated) throws IOException {
         if ((debug != null) && Debug.isOn("ssl")) {
-            System.out.println(threadName() + ", called closeSocket(selfInitiated)");
+            System.out.println(threadName() +
+                ", called closeSocket(" + selfInitiated + ")");
         }
         if (self == this) {
             super.close();
@@ -2028,8 +2027,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
             readMAC = handshaker.newReadMAC();
         } catch (GeneralSecurityException e) {
             // "can't happen"
-            throw (SSLException)new SSLException
-                                ("Algorithm missing:  ").initCause(e);
+            throw new SSLException("Algorithm missing:  ", e);
         }
 
         /*
@@ -2060,8 +2058,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
             writeMAC = handshaker.newWriteMAC();
         } catch (GeneralSecurityException e) {
             // "can't happen"
-            throw (SSLException)new SSLException
-                                ("Algorithm missing:  ").initCause(e);
+            throw new SSLException("Algorithm missing:  ", e);
         }
 
         // See comment above.
@@ -2252,6 +2249,7 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
      * client or server mode.  Must be called before any SSL
      * traffic has started.
      */
+    @SuppressWarnings("fallthrough")
     synchronized public void setUseClientMode(boolean flag) {
         switch (connectionState) {
 
@@ -2478,11 +2476,12 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
             entrySet, HandshakeCompletedEvent e) {
 
             super("HandshakeCompletedNotify-Thread");
-            targets = entrySet;
+            targets = new HashSet<>(entrySet);          // clone the entry set
             event = e;
         }
 
         public void run() {
+            // Don't need to synchronize, as it only runs in one thread.
             for (Map.Entry<HandshakeCompletedListener,AccessControlContext>
                 entry : targets) {
 

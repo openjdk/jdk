@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -53,19 +53,19 @@ fi
 RMIREGISTRY_OUT="rmiregistry_$$.out"
 JSTATD_OUT="jstatd_$$.out"
 
-${RMIREGISTRY} ${PORT} > ${RMIREGISTRY_OUT} 2>&1 &
+${RMIREGISTRY} -J-XX:+UsePerfData ${PORT} > ${RMIREGISTRY_OUT} 2>&1 &
 RMIREGISTRY_PID=$!
 
 echo "rmiregistry started on port ${PORT} as pid ${RMIREGISTRY_PID}"
 sleep 3
 
-${JSTATD} -J-Djava.security.policy=${TESTSRC}/all.policy -p ${PORT} > ${JSTATD_OUT} 2>&1 &
+${JSTATD} -J-XX:+UsePerfData -J-Djava.security.policy=${TESTSRC}/all.policy -p ${PORT} > ${JSTATD_OUT} 2>&1 &
 JSTATD_PID=$!
 
 echo "jstatd started as pid ${JSTATD_PID}"
 sleep 3
 
-${JPS} ${HOSTNAME}:${PORT} 2>&1 | awk -f ${TESTSRC}/jpsOutput1.awk
+${JPS} -J-XX:+UsePerfData ${HOSTNAME}:${PORT} 2>&1 | awk -f ${TESTSRC}/jpsOutput1.awk
 
 if [ $? -ne 0 ]
 then
@@ -73,7 +73,7 @@ then
     exit 1
 fi
 
-${JSTAT} -gcutil ${JSTATD_PID}@${HOSTNAME}:${PORT} 250 5 2>&1 | awk -f ${TESTSRC}/jstatGcutilOutput1.awk
+${JSTAT} -J-XX:+UsePerfData -J-Duser.language=en -gcutil ${JSTATD_PID}@${HOSTNAME}:${PORT} 250 5 2>&1 | awk -f ${TESTSRC}/jstatGcutilOutput1.awk
 RC=$?
 
 if [ ${RC} -ne 0 ]

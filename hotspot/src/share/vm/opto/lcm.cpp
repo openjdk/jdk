@@ -45,6 +45,9 @@
 #ifdef TARGET_ARCH_MODEL_arm
 # include "adfiles/ad_arm.hpp"
 #endif
+#ifdef TARGET_ARCH_MODEL_ppc
+# include "adfiles/ad_ppc.hpp"
+#endif
 
 // Optimization - Graph Style
 
@@ -322,7 +325,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
       // that also need to be hoisted.
       for (DUIterator_Fast jmax, j = val->fast_outs(jmax); j < jmax; j++) {
         Node* n = val->fast_out(j);
-        if( n->Opcode() == Op_MachProj ) {
+        if( n->is_MachProj() ) {
           cfg->_bbs[n->_idx]->find_remove(n);
           this->add_inst(n);
           cfg->_bbs.map(n->_idx,this);
@@ -344,7 +347,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
   // Should be DU safe because no edge updates.
   for (DUIterator_Fast jmax, j = best->fast_outs(jmax); j < jmax; j++) {
     Node* n = best->fast_out(j);
-    if( n->Opcode() == Op_MachProj ) {
+    if( n->is_MachProj() ) {
       cfg->_bbs[n->_idx]->find_remove(n);
       add_inst(n);
       cfg->_bbs.map(n->_idx,this);
@@ -401,7 +404,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
 // remaining cases (most), choose the instruction with the greatest latency
 // (that is, the most number of pseudo-cycles required to the end of the
 // routine). If there is a tie, choose the instruction with the most inputs.
-Node *Block::select(PhaseCFG *cfg, Node_List &worklist, int *ready_cnt, VectorSet &next_call, uint sched_slot) {
+Node *Block::select(PhaseCFG *cfg, Node_List &worklist, GrowableArray<int> &ready_cnt, VectorSet &next_call, uint sched_slot) {
 
   // If only a single entry on the stack, use it
   uint cnt = worklist.size();
@@ -462,7 +465,7 @@ Node *Block::select(PhaseCFG *cfg, Node_List &worklist, int *ready_cnt, VectorSe
 
         // More than this instruction pending for successor to be ready,
         // don't choose this if other opportunities are ready
-        if (ready_cnt[use->_idx] > 1)
+        if (ready_cnt.at(use->_idx) > 1)
           n_choice = 1;
       }
 
@@ -536,7 +539,7 @@ void Block::needed_for_next_call(Node *this_call, VectorSet &next_call, Block_Ar
     Node* m = this_call->fast_out(i);
     if( bbs[m->_idx] == this && // Local-block user
         m != this_call &&       // Not self-start node
-        m->is_Call() )
+        m->is_MachCall() )
       call = m;
       break;
   }
@@ -545,8 +548,24 @@ void Block::needed_for_next_call(Node *this_call, VectorSet &next_call, Block_Ar
   set_next_call(call, next_call, bbs);
 }
 
+//------------------------------add_call_kills-------------------------------------
+void Block::add_call_kills(MachProjNode *proj, RegMask& regs, const char* save_policy, bool exclude_soe) {
+  // Fill in the kill mask for the call
+  for( OptoReg::Name r = OptoReg::Name(0); r < _last_Mach_Reg; r=OptoReg::add(r,1) ) {
+    if( !regs.Member(r) ) {     // Not already defined by the call
+      // Save-on-call register?
+      if ((save_policy[r] == 'C') ||
+          (save_policy[r] == 'A') ||
+          ((save_policy[r] == 'E') && exclude_soe)) {
+        proj->_rout.Insert(r);
+      }
+    }
+  }
+}
+
+
 //------------------------------sched_call-------------------------------------
-uint Block::sched_call( Matcher &matcher, Block_Array &bbs, uint node_cnt, Node_List &worklist, int *ready_cnt, MachCallNode *mcall, VectorSet &next_call ) {
+uint Block::sched_call( Matcher &matcher, Block_Array &bbs, uint node_cnt, Node_List &worklist, GrowableArray<int> &ready_cnt, MachCallNode *mcall, VectorSet &next_call ) {
   RegMask regs;
 
   // Schedule all the users of the call right now.  All the users are
@@ -554,9 +573,10 @@ uint Block::sched_call( Matcher &matcher, Block_Array &bbs, uint node_cnt, Node_
   // Collect all the defined registers.
   for (DUIterator_Fast imax, i = mcall->fast_outs(imax); i < imax; i++) {
     Node* n = mcall->fast_out(i);
-    assert( n->Opcode()==Op_MachProj, "" );
-    --ready_cnt[n->_idx];
-    assert( !ready_cnt[n->_idx], "" );
+    assert( n->is_MachProj(), "" );
+    int n_cnt = ready_cnt.at(n->_idx)-1;
+    ready_cnt.at_put(n->_idx, n_cnt);
+    assert( n_cnt == 0, "" );
     // Schedule next to call
     _nodes.map(node_cnt++, n);
     // Collect defined registers
@@ -571,7 +591,9 @@ uint Block::sched_call( Matcher &matcher, Block_Array &bbs, uint node_cnt, Node_
       Node* m = n->fast_out(j); // Get user
       if( bbs[m->_idx] != this ) continue;
       if( m->is_Phi() ) continue;
-      if( !--ready_cnt[m->_idx] )
+      int m_cnt = ready_cnt.at(m->_idx)-1;
+      ready_cnt.at_put(m->_idx, m_cnt);
+      if( m_cnt == 0 )
         worklist.push(m);
     }
 
@@ -628,17 +650,7 @@ uint Block::sched_call( Matcher &matcher, Block_Array &bbs, uint node_cnt, Node_
       proj->_rout.OR(Matcher::method_handle_invoke_SP_save_mask());
   }
 
-  // Fill in the kill mask for the call
-  for( OptoReg::Name r = OptoReg::Name(0); r < _last_Mach_Reg; r=OptoReg::add(r,1) ) {
-    if( !regs.Member(r) ) {     // Not already defined by the call
-      // Save-on-call register?
-      if ((save_policy[r] == 'C') ||
-          (save_policy[r] == 'A') ||
-          ((save_policy[r] == 'E') && exclude_soe)) {
-        proj->_rout.Insert(r);
-      }
-    }
-  }
+  add_call_kills(proj, regs, save_policy, exclude_soe);
 
   return node_cnt;
 }
@@ -646,7 +658,7 @@ uint Block::sched_call( Matcher &matcher, Block_Array &bbs, uint node_cnt, Node_
 
 //------------------------------schedule_local---------------------------------
 // Topological sort within a block.  Someday become a real scheduler.
-bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, VectorSet &next_call) {
+bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, GrowableArray<int> &ready_cnt, VectorSet &next_call) {
   // Already "sorted" are the block start Node (as the first entry), and
   // the block-ending Node and any trailing control projections.  We leave
   // these alone.  PhiNodes and ParmNodes are made to follow the block start
@@ -686,7 +698,7 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
         if( m && cfg->_bbs[m->_idx] == this && !m->is_top() )
           local++;              // One more block-local input
       }
-      ready_cnt[n->_idx] = local; // Count em up
+      ready_cnt.at_put(n->_idx, local); // Count em up
 
 #ifdef ASSERT
       if( UseConcMarkSweepGC || UseG1GC ) {
@@ -720,7 +732,7 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
     }
   }
   for(uint i2=i; i2<_nodes.size(); i2++ ) // Trailing guys get zapped count
-    ready_cnt[_nodes[i2]->_idx] = 0;
+    ready_cnt.at_put(_nodes[i2]->_idx, 0);
 
   // All the prescheduled guys do not hold back internal nodes
   uint i3;
@@ -728,8 +740,10 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
     Node *n = _nodes[i3];       // Get pre-scheduled
     for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
       Node* m = n->fast_out(j);
-      if( cfg->_bbs[m->_idx] ==this ) // Local-block user
-        ready_cnt[m->_idx]--;   // Fix ready count
+      if( cfg->_bbs[m->_idx] ==this ) { // Local-block user
+        int m_cnt = ready_cnt.at(m->_idx)-1;
+        ready_cnt.at_put(m->_idx, m_cnt);   // Fix ready count
+      }
     }
   }
 
@@ -738,7 +752,7 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
   Node_List worklist;
   for(uint i4=i3; i4<node_cnt; i4++ ) {    // Put ready guys on worklist
     Node *m = _nodes[i4];
-    if( !ready_cnt[m->_idx] ) {   // Zero ready count?
+    if( !ready_cnt.at(m->_idx) ) {   // Zero ready count?
       if (m->is_iteratively_computed()) {
         // Push induction variable increments last to allow other uses
         // of the phi to be scheduled first. The select() method breaks
@@ -766,13 +780,14 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
       for (uint j=0; j<_nodes.size(); j++) {
         Node     *n = _nodes[j];
         int     idx = n->_idx;
-        tty->print("#   ready cnt:%3d  ", ready_cnt[idx]);
+        tty->print("#   ready cnt:%3d  ", ready_cnt.at(idx));
         tty->print("latency:%3d  ", cfg->_node_latency->at_grow(idx));
         tty->print("%4d: %s\n", idx, n->Name());
       }
     }
 #endif
 
+  uint max_idx = (uint)ready_cnt.length();
   // Pull from worklist and schedule
   while( worklist.size() ) {    // Worklist is not ready
 
@@ -812,12 +827,31 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
       phi_cnt = sched_call(matcher, cfg->_bbs, phi_cnt, worklist, ready_cnt, mcall, next_call);
       continue;
     }
+
+    if (n->is_Mach() && n->as_Mach()->has_call()) {
+      RegMask regs;
+      regs.Insert(matcher.c_frame_pointer());
+      regs.OR(n->out_RegMask());
+
+      MachProjNode *proj = new (matcher.C, 1) MachProjNode( n, 1, RegMask::Empty, MachProjNode::fat_proj );
+      cfg->_bbs.map(proj->_idx,this);
+      _nodes.insert(phi_cnt++, proj);
+
+      add_call_kills(proj, regs, matcher._c_reg_save_policy, false);
+    }
+
     // Children are now all ready
     for (DUIterator_Fast i5max, i5 = n->fast_outs(i5max); i5 < i5max; i5++) {
       Node* m = n->fast_out(i5); // Get user
       if( cfg->_bbs[m->_idx] != this ) continue;
       if( m->is_Phi() ) continue;
-      if( !--ready_cnt[m->_idx] )
+      if (m->_idx >= max_idx) { // new node, skip it
+        assert(m->is_MachProj() && n->is_Mach() && n->as_Mach()->has_call(), "unexpected node types");
+        continue;
+      }
+      int m_cnt = ready_cnt.at(m->_idx)-1;
+      ready_cnt.at_put(m->_idx, m_cnt);
+      if( m_cnt == 0 )
         worklist.push(m);
     }
   }
@@ -972,8 +1006,8 @@ void Block::call_catch_cleanup(Block_Array &bbs) {
   if( !_nodes[end]->is_Catch() ) return;
   // Start of region to clone
   uint beg = end;
-  while( _nodes[beg-1]->Opcode() != Op_MachProj ||
-        !_nodes[beg-1]->in(0)->is_Call() ) {
+  while(!_nodes[beg-1]->is_MachProj() ||
+        !_nodes[beg-1]->in(0)->is_MachCall() ) {
     beg--;
     assert(beg > 0,"Catch cleanup walking beyond block boundary");
   }

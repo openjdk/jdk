@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,19 +120,19 @@ public class OtherName implements GeneralNameInterface {
     private GeneralNameInterface getGNI(ObjectIdentifier oid, byte[] nameValue)
             throws IOException {
         try {
-            Class extClass = OIDMap.getClass(oid);
+            Class<?> extClass = OIDMap.getClass(oid);
             if (extClass == null) {   // Unsupported OtherName
                 return null;
             }
-            Class[] params = { Object.class };
-            Constructor cons = ((Class<?>)extClass).getConstructor(params);
+            Class<?>[] params = { Object.class };
+            Constructor<?> cons = extClass.getConstructor(params);
 
             Object[] passed = new Object[] { nameValue };
             GeneralNameInterface gni =
                        (GeneralNameInterface)cons.newInstance(passed);
             return gni;
         } catch (Exception e) {
-            throw (IOException)new IOException("Instantiation error: " + e).initCause(e);
+            throw new IOException("Instantiation error: " + e, e);
         }
     }
 
@@ -176,7 +176,7 @@ public class OtherName implements GeneralNameInterface {
             return false;
         }
         OtherName otherOther = (OtherName)other;
-        if (!(otherOther.oid.equals(oid))) {
+        if (!(otherOther.oid.equals((Object)oid))) {
             return false;
         }
         GeneralNameInterface otherGNI = null;

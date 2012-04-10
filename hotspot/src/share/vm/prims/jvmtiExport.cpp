@@ -373,7 +373,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
     JavaThread* current_thread = (JavaThread*) ThreadLocalStorage::thread();
     // transition code: native to VM
     ThreadInVMfromNative __tiv(current_thread);
-    __ENTRY(jvmtiEnv*, JvmtiExport::get_jvmti_interface, current_thread)
+    VM_ENTRY_BASE(jvmtiEnv*, JvmtiExport::get_jvmti_interface, current_thread)
     debug_only(VMNativeEntryWrapper __vew;)
 
     JvmtiEnv *jvmti_env = JvmtiEnv::create_a_jvmti(version);
@@ -538,8 +538,6 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     _curr_env = NULL;
     _cached_length_ptr = cached_length_ptr;
     _cached_data_ptr = cached_data_ptr;
-    *_cached_length_ptr = 0;
-    *_cached_data_ptr = NULL;
 
     _state = _thread->jvmti_thread_state();
     if (_state != NULL) {

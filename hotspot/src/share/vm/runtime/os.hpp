@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "jvm_windows.h"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "jvm_bsd.h"
+#endif
 
 // os defines the interface to operating system; this includes traditional
 // OS services (time, I/O) as well as other functionality with system-
@@ -70,8 +73,9 @@ enum ThreadPriority {        // JLS 20.20.1-3
   MinPriority      =  1,     // Minimum priority
   NormPriority     =  5,     // Normal (non-daemon) priority
   NearMaxPriority  =  9,     // High priority, used for VMThread
-  MaxPriority      = 10      // Highest priority, used for WatcherThread
+  MaxPriority      = 10,     // Highest priority, used for WatcherThread
                              // ensures that VMThread doesn't starve profiler
+  CriticalPriority = 11      // Critical thread priority
 };
 
 // Typedef for structured exception handling support
@@ -96,9 +100,11 @@ class os: AllStatic {
   }
 
  public:
-
   static void init(void);                      // Called before command line parsing
   static jint init_2(void);                    // Called after command line parsing
+  static void init_globals(void) {             // Called from init_globals() in init.cpp
+    init_globals_ext();
+  }
   static void init_3(void);                    // Called at the end of vm init
 
   // File names are case-insensitive on windows only
@@ -181,6 +187,9 @@ class os: AllStatic {
   //    Returns true if it worked, false if it didn't.
   static bool bind_to_processor(uint processor_id);
 
+  // Give a name to the current thread.
+  static void set_native_thread_name(const char *name);
+
   // Interface for stack banging (predetect possible stack overflow for
   // exception processing)  There are guard pages, and above that shadow
   // pages for stack overflow checking.
@@ -208,11 +217,13 @@ class os: AllStatic {
                                      size_t region_max_size,
                                      uint min_pages);
 
-  // Method for tracing page sizes returned by the above method; enabled by
+  // Methods for tracing page sizes returned by the above method; enabled by
   // TracePageSizes.  The region_{min,max}_size parameters should be the values
   // passed to page_size_for_region() and page_size should be the result of that
   // call.  The (optional) base and size parameters should come from the
   // ReservedSpace base() and size() methods.
+  static void trace_page_sizes(const char* str, const size_t* page_sizes,
+                               int count) PRODUCT_RETURN;
   static void trace_page_sizes(const char* str, const size_t region_min_size,
                                const size_t region_max_size,
                                const size_t page_size,
@@ -248,7 +259,7 @@ class os: AllStatic {
                              char *addr, size_t bytes, bool read_only,
                              bool allow_exec);
   static bool   unmap_memory(char *addr, size_t bytes);
-  static void   free_memory(char *addr, size_t bytes);
+  static void   free_memory(char *addr, size_t bytes, size_t alignment_hint);
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
   // NUMA-specific interface
@@ -393,6 +404,8 @@ class os: AllStatic {
   static address current_stack_base();
   static size_t current_stack_size();
 
+  static void verify_stack_alignment() PRODUCT_RETURN;
+
   static int message_box(const char* title, const char* message);
   static char* do_you_want_to_debug(const char* message);
 
@@ -480,6 +493,7 @@ class os: AllStatic {
   // Output format may be different on different platforms.
   static void print_os_info(outputStream* st);
   static void print_cpu_info(outputStream* st);
+  static void pd_print_cpu_info(outputStream* st);
   static void print_memory_info(outputStream* st);
   static void print_dll_info(outputStream* st);
   static void print_environment_variables(outputStream* st, const char** env_list, char* buffer, int len);
@@ -491,6 +505,7 @@ class os: AllStatic {
 
   static void print_location(outputStream* st, intptr_t x, bool verbose = false);
   static size_t lasterror(char *buf, size_t len);
+  static int get_last_error();
 
   // Determines whether the calling process is being debugged by a user-mode debugger.
   static bool is_debugger_attached();
@@ -575,28 +590,28 @@ class os: AllStatic {
   static int socket(int domain, int type, int protocol);
   static int socket_close(int fd);
   static int socket_shutdown(int fd, int howto);
-  static int recv(int fd, char *buf, int nBytes, int flags);
-  static int send(int fd, char *buf, int nBytes, int flags);
-  static int raw_send(int fd, char *buf, int nBytes, int flags);
+  static int recv(int fd, char* buf, size_t nBytes, uint flags);
+  static int send(int fd, char* buf, size_t nBytes, uint flags);
+  static int raw_send(int fd, char* buf, size_t nBytes, uint flags);
   static int timeout(int fd, long timeout);
   static int listen(int fd, int count);
-  static int connect(int fd, struct sockaddr *him, int len);
-  static int bind(int fd, struct sockaddr *him, int len);
-  static int accept(int fd, struct sockaddr *him, int *len);
-  static int recvfrom(int fd, char *buf, int nbytes, int flags,
-                             struct sockaddr *from, int *fromlen);
-  static int get_sock_name(int fd, struct sockaddr *him, int *len);
-  static int sendto(int fd, char *buf, int len, int flags,
-                           struct sockaddr *to, int tolen);
-  static int socket_available(int fd, jint *pbytes);
+  static int connect(int fd, struct sockaddr* him, socklen_t len);
+  static int bind(int fd, struct sockaddr* him, socklen_t len);
+  static int accept(int fd, struct sockaddr* him, socklen_t* len);
+  static int recvfrom(int fd, char* buf, size_t nbytes, uint flags,
+                      struct sockaddr* from, socklen_t* fromlen);
+  static int get_sock_name(int fd, struct sockaddr* him, socklen_t* len);
+  static int sendto(int fd, char* buf, size_t len, uint flags,
+                    struct sockaddr* to, socklen_t tolen);
+  static int socket_available(int fd, jint* pbytes);
 
   static int get_sock_opt(int fd, int level, int optname,
-                           char *optval, int* optlen);
+                          char* optval, socklen_t* optlen);
   static int set_sock_opt(int fd, int level, int optname,
-                           const char *optval, int optlen);
+                          const char* optval, socklen_t optlen);
   static int get_host_name(char* name, int namelen);
 
-  static struct hostent*  get_host_by_name(char* name);
+  static struct hostent* get_host_by_name(char* name);
 
   // Printing 64 bit integers
   static const char* jlong_format_specifier();
@@ -662,6 +677,11 @@ class os: AllStatic {
   // rest of line is skipped. Returns number of bytes read or -1 on EOF
   static int get_line_chars(int fd, char *buf, const size_t bsize);
 
+  // Extensions
+#include "runtime/os_ext.hpp"
+
+ public:
+
   // Platform dependent stuff
 #ifdef TARGET_OS_FAMILY_linux
 # include "os_linux.hpp"
@@ -671,6 +691,9 @@ class os: AllStatic {
 #endif
 #ifdef TARGET_OS_FAMILY_windows
 # include "os_windows.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_linux_x86
 # include "os_linux_x86.hpp"
@@ -696,8 +719,14 @@ class os: AllStatic {
 #ifdef TARGET_OS_ARCH_linux_ppc
 # include "os_linux_ppc.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_bsd_x86
+# include "os_bsd_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_bsd_zero
+# include "os_bsd_zero.hpp"
+#endif
 
-
+ public:
   // debugging support (mostly used by debug.cpp but also fatal error handler)
   static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address
 
@@ -707,7 +736,7 @@ class os: AllStatic {
   // Thread priority helpers (implemented in OS-specific part)
   static OSReturn set_native_priority(Thread* thread, int native_prio);
   static OSReturn get_native_priority(const Thread* const thread, int* priority_ptr);
-  static int java_to_os_priority[MaxPriority + 1];
+  static int java_to_os_priority[CriticalPriority + 1];
   // Hint to the underlying OS that a task switch would not be good.
   // Void return because it's a hint and can fail.
   static void hint_no_preempt();

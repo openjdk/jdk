@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.crypto.provider;
 
-import java.util.*;
 import java.io.*;
 import sun.security.util.*;
 import java.math.BigInteger;
@@ -95,11 +94,12 @@ public final class DHParameters extends AlgorithmParametersSpi {
             engineInit(params);
     }
 
-    protected AlgorithmParameterSpec engineGetParameterSpec(Class paramSpec)
+    protected <T extends AlgorithmParameterSpec>
+        T engineGetParameterSpec(Class<T> paramSpec)
         throws InvalidParameterSpecException {
 
         if (DHParameterSpec.class.isAssignableFrom(paramSpec)) {
-            return new DHParameterSpec(this.p, this.g, this.l);
+            return paramSpec.cast(new DHParameterSpec(this.p, this.g, this.l));
         } else {
             throw new InvalidParameterSpecException
                 ("Inappropriate parameter Specification");

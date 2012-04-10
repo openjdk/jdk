@@ -45,13 +45,24 @@ ADLCFLAGS=-q -T -D_LP64
 ADLCFLAGS=-q -T -U_LP64
 !endif
 
-ADLC_CPP_FLAGS=$(CPP_FLAGS) /D _CRT_SECURE_NO_WARNINGS /D _CRT_SECURE_NO_DEPRECATE
+ADLC_CXX_FLAGS=$(CXX_FLAGS) /D _CRT_SECURE_NO_WARNINGS /D _CRT_SECURE_NO_DEPRECATE
 
-CPP_INCLUDE_DIRS=\
+CXX_INCLUDE_DIRS=\
   /I "..\generated" \
   /I "$(WorkSpace)\src\share\vm" \
   /I "$(WorkSpace)\src\os\windows\vm" \
   /I "$(WorkSpace)\src\cpu\$(Platform_arch)\vm"
+
+!if "$(Platform_arch_model)" == "$(Platform_arch)"
+SOURCES_AD=\
+  $(WorkSpace)/src/cpu/$(Platform_arch)/vm/$(Platform_arch_model).ad \
+  $(WorkSpace)/src/os_cpu/windows_$(Platform_arch)/vm/windows_$(Platform_arch_model).ad
+!else
+SOURCES_AD=\
+  $(WorkSpace)/src/cpu/$(Platform_arch)/vm/$(Platform_arch_model).ad \
+  $(WorkSpace)/src/cpu/$(Platform_arch)/vm/$(Platform_arch).ad \
+  $(WorkSpace)/src/os_cpu/windows_$(Platform_arch)/vm/windows_$(Platform_arch_model).ad
+!endif
 
 # NOTE! If you add any files here, you must also update GENERATED_NAMES_IN_DIR
 # and ProjectCreatorIDEOptions in projectcreator.make. 
@@ -83,14 +94,14 @@ GENERATED_NAMES_IN_DIR=\
   $(AdlcOutDir)\dfa_$(Platform_arch_model).cpp
 
 {$(WorkSpace)\src\share\vm\adlc}.cpp.obj::
-        $(CPP) $(ADLC_CPP_FLAGS) $(EXH_FLAGS) $(CPP_INCLUDE_DIRS) /c $<
+        $(CXX) $(ADLC_CXX_FLAGS) $(EXH_FLAGS) $(CXX_INCLUDE_DIRS) /c $<
 
 {$(WorkSpace)\src\share\vm\opto}.cpp.obj::
-        $(CPP) $(ADLC_CPP_FLAGS) $(EXH_FLAGS) $(CPP_INCLUDE_DIRS) /c $<
+        $(CXX) $(ADLC_CXX_FLAGS) $(EXH_FLAGS) $(CXX_INCLUDE_DIRS) /c $<
 
 adlc.exe: main.obj adlparse.obj archDesc.obj arena.obj dfa.obj dict2.obj filebuff.obj \
           forms.obj formsopt.obj formssel.obj opcodes.obj output_c.obj output_h.obj
-	$(LINK) $(LINK_FLAGS) /subsystem:console /out:$@ $**
+	$(LD) $(LD_FLAGS) /subsystem:console /out:$@ $**
 !if "$(MT)" != ""
 # The previous link command created a .manifest file that we want to
 # insert into the linked artifact so we do not need to track it
@@ -105,7 +116,6 @@ $(GENERATED_NAMES_IN_DIR): $(Platform_arch_model).ad adlc.exe
 	$(ADLC) $(ADLCFLAGS) $(Platform_arch_model).ad
 	mv $(GENERATED_NAMES) $(AdlcOutDir)/
 
-$(Platform_arch_model).ad: $(WorkSpace)/src/cpu/$(Platform_arch)/vm/$(Platform_arch_model).ad $(WorkSpace)/src/os_cpu/windows_$(Platform_arch)/vm/windows_$(Platform_arch_model).ad
+$(Platform_arch_model).ad: $(SOURCES_AD)
 	rm -f $(Platform_arch_model).ad
-	cat $(WorkSpace)/src/cpu/$(Platform_arch)/vm/$(Platform_arch_model).ad  \
-	    $(WorkSpace)/src/os_cpu/windows_$(Platform_arch)/vm/windows_$(Platform_arch_model).ad >$(Platform_arch_model).ad
+	cat $(SOURCES_AD) >$(Platform_arch_model).ad

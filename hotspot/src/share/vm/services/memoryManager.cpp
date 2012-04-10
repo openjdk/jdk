@@ -36,10 +36,12 @@
 #include "services/gcNotifier.hpp"
 #include "utilities/dtrace.hpp"
 
+#ifndef USDT2
 HS_DTRACE_PROBE_DECL8(hotspot, mem__pool__gc__begin, char*, int, char*, int,
   size_t, size_t, size_t, size_t);
 HS_DTRACE_PROBE_DECL8(hotspot, mem__pool__gc__end, char*, int, char*, int,
   size_t, size_t, size_t, size_t);
+#endif /* !USDT2 */
 
 MemoryManager::MemoryManager() {
   _num_pools = 0;
@@ -166,10 +168,8 @@ GCStatInfo::GCStatInfo(int num_pools) {
   // initialize the arrays for memory usage
   _before_gc_usage_array = (MemoryUsage*) NEW_C_HEAP_ARRAY(MemoryUsage, num_pools);
   _after_gc_usage_array  = (MemoryUsage*) NEW_C_HEAP_ARRAY(MemoryUsage, num_pools);
-  size_t len = num_pools * sizeof(MemoryUsage);
-  memset(_before_gc_usage_array, 0, len);
-  memset(_after_gc_usage_array, 0, len);
   _usage_array_size = num_pools;
+  clear();
 }
 
 GCStatInfo::~GCStatInfo() {
@@ -214,8 +214,8 @@ GCMemoryManager::~GCMemoryManager() {
 
 void GCMemoryManager::initialize_gc_stat_info() {
   assert(MemoryService::num_memory_pools() > 0, "should have one or more memory pools");
-  _last_gc_stat = new GCStatInfo(MemoryService::num_memory_pools());
-  _current_gc_stat = new GCStatInfo(MemoryService::num_memory_pools());
+  _last_gc_stat = new(ResourceObj::C_HEAP) GCStatInfo(MemoryService::num_memory_pools());
+  _current_gc_stat = new(ResourceObj::C_HEAP) GCStatInfo(MemoryService::num_memory_pools());
   // tracking concurrent collections we need two objects: one to update, and one to
   // hold the publicly available "last (completed) gc" information.
 }
@@ -238,11 +238,19 @@ void GCMemoryManager::gc_begin(bool recordGCBeginTime, bool recordPreGCUsage,
       MemoryPool* pool = MemoryService::get_memory_pool(i);
       MemoryUsage usage = pool->get_memory_usage();
       _current_gc_stat->set_before_gc_usage(i, usage);
+#ifndef USDT2
       HS_DTRACE_PROBE8(hotspot, mem__pool__gc__begin,
         name(), strlen(name()),
         pool->name(), strlen(pool->name()),
         usage.init_size(), usage.used(),
         usage.committed(), usage.max_size());
+#else /* USDT2 */
+      HOTSPOT_MEM_POOL_GC_BEGIN(
+        (char *) name(), strlen(name()),
+        (char *) pool->name(), strlen(pool->name()),
+        usage.init_size(), usage.used(),
+        usage.committed(), usage.max_size());
+#endif /* USDT2 */
     }
   }
 }
@@ -268,11 +276,19 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
       MemoryPool* pool = MemoryService::get_memory_pool(i);
       MemoryUsage usage = pool->get_memory_usage();
 
+#ifndef USDT2
       HS_DTRACE_PROBE8(hotspot, mem__pool__gc__end,
         name(), strlen(name()),
         pool->name(), strlen(pool->name()),
         usage.init_size(), usage.used(),
         usage.committed(), usage.max_size());
+#else /* USDT2 */
+      HOTSPOT_MEM_POOL_GC_END(
+        (char *) name(), strlen(name()),
+        (char *) pool->name(), strlen(pool->name()),
+        usage.init_size(), usage.used(),
+        usage.committed(), usage.max_size());
+#endif /* USDT2 */
 
       _current_gc_stat->set_after_gc_usage(i, usage);
     }
@@ -286,12 +302,8 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
       pool->set_last_collection_usage(usage);
       LowMemoryDetector::detect_after_gc_memory(pool);
     }
-    if(is_notification_enabled()) {
-      bool isMajorGC = this == MemoryService::get_major_gc_manager();
-      GCNotifier::pushNotification(this, isMajorGC ? "end of major GC" : "end of minor GC",
-                                   GCCause::to_string(cause));
-    }
   }
+
   if (countCollection) {
     _num_collections++;
     // alternately update two objects making one public when complete
@@ -302,6 +314,12 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
       _current_gc_stat = tmp;
       // reset the current stat for diagnosability purposes
       _current_gc_stat->clear();
+    }
+
+    if (is_notification_enabled()) {
+      bool isMajorGC = this == MemoryService::get_major_gc_manager();
+      GCNotifier::pushNotification(this, isMajorGC ? "end of major GC" : "end of minor GC",
+                                   GCCause::to_string(cause));
     }
   }
 }

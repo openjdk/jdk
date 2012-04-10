@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,8 @@ public class JarSplit {
     /* classlist[0] contains class file list
      * classlist[1] contains non-class file list
      */
-    private static Vector<String>[] classlist = (Vector<String>[])(new Vector[2]);
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private static Vector<String>[] classlist = new Vector[2];
 
     /* The 2 class list name passed as arguments. */
     private static String[] fileNamelist = new String[2];

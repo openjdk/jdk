@@ -981,6 +981,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * @param exception the message to use in the
      *        {@code IllegalArgumentException} that is thrown for an invalid
      *        value
+     * @return the {@code key} argument
      * @exception IllegalArgumentException if key is not one of the legal
      *            values listed above
      * @see #setHorizontalTextPosition
@@ -1011,6 +1012,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * @param exception the message to use in the
      *        {@code IllegalArgumentException} that is thrown for an invalid
      *        value
+     * @return the {@code key} argument
      * @exception IllegalArgumentException if key is not one of the legal
      *            values listed above
      */
@@ -1347,6 +1349,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
         return new ButtonActionPropertyChangeListener(this, a);
     }
 
+    @SuppressWarnings("serial")
     private static class ButtonActionPropertyChangeListener
                  extends ActionPropertyChangeListener<AbstractButton> {
         ButtonActionPropertyChangeListener(AbstractButton b, Action a) {
@@ -1974,6 +1977,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial")
     protected class ButtonChangeListener implements ChangeListener, Serializable {
         // NOTE: This class is NOT used, instead the functionality has
         // been moved to Handler.
@@ -2318,6 +2322,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
     //
     // Listeners that are added to model
     //
+    @SuppressWarnings("serial")
     class Handler implements ActionListener, ChangeListener, ItemListener,
                              Serializable {
         //
@@ -2470,7 +2475,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
                         // the members of the button group.
                         int len = group.getButtonCount();
                         Object [] target = new Object[len];
-                        Enumeration elem = group.getElements();
+                        Enumeration<AbstractButton> elem = group.getElements();
                         for (int i = 0; i < len; i++) {
                             if (elem.hasMoreElements()) {
                                 target[i] = elem.nextElement();

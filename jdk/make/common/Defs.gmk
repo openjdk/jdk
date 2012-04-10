@@ -179,11 +179,18 @@ DEVTOOLS_FT_DIR_EXISTS = $(shell \
 
   ifdef ALT_FREETYPE_LIB_PATH
     FREETYPE_LIB_PATH = $(ALT_FREETYPE_LIB_PATH)
+    ifeq ($(PLATFORM), macosx)
+      USING_SYSTEM_FT_LIB=true
+    endif
   else
     ifeq ($(DEVTOOLS_FT_DIR_EXISTS), true)
       FREETYPE_LIB_PATH = $(DEVTOOLS_FT_DIR)/lib
     else
-      FREETYPE_LIB_PATH = /usr/lib
+      ifeq ($(PLATFORM), macosx)
+        FREETYPE_LIB_PATH = /usr/X11R6/lib
+      else
+        FREETYPE_LIB_PATH = /usr/lib
+      endif
       USING_SYSTEM_FT_LIB=true
     endif
   endif 
@@ -194,7 +201,11 @@ DEVTOOLS_FT_DIR_EXISTS = $(shell \
     ifeq ($(DEVTOOLS_FT_DIR_EXISTS), true)
       FREETYPE_HEADERS_PATH = $(DEVTOOLS_FT_DIR)/include
     else
-      FREETYPE_HEADERS_PATH = /usr/include
+      ifeq ($(PLATFORM), macosx)
+        FREETYPE_HEADERS_PATH = /usr/X11R6/include
+      else
+        FREETYPE_HEADERS_PATH = /usr/include
+      endif
     endif
   endif
 endif
@@ -202,7 +213,7 @@ endif
 #
 # zlib version
 #
-ZLIB_VERSION = 1.2.3
+ZLIB_VERSION = 1.2.5
 
 
 #
@@ -220,14 +231,30 @@ JDK_LOCALES  = ja zh_CN
 JRE_NONEXIST_LOCALES = en en_US de_DE es_ES fr_FR it_IT ja_JP ko_KR sv_SE zh
 
 #
-# All libraries except libjava and libjvm itself link against libjvm and
-# libjava, the latter for its exported common utilities.  libjava only links
-# against libjvm.  Programs' makefiles take their own responsibility for
+# For now, most libraries except libjava and libjvm itself link against libjvm
+# and libjava, the latter for its exported common utilities. libjava only
+# links against libjvm. Programs' makefiles take their own responsibility for
 # adding other libs.
 #
+# The makefiles for these packages do not link against libjvm and libjava.
+# This list will eventually go away and each Programs' makefiles
+# will have to explicitly declare that they want to link to libjava/libjvm
+#
+NO_JAVALIB_PKGS = \
+		sun.security.mscapi \
+		sun.security.krb5 \
+		sun.security.pkcs11 \
+		sun.security.jgss \
+		sun.security.jgss.wrapper \
+		sun.security.ec \
+		sun.security.smartcardio \
+		com.sun.security.auth.module
+
 ifdef PACKAGE
 # put JAVALIB first, but do not lose any platform specific values....
-  LDLIBS_COMMON = $(JAVALIB)
+  ifeq (,$(findstring $(PACKAGE),$(NO_JAVALIB_PKGS)))
+    LDLIBS_COMMON = $(JAVALIB)
+  endif
 endif # PACKAGE
 
 #
@@ -241,6 +268,10 @@ ifdef PROGRAM
 
   ifeq ($(PLATFORM), linux)
     LDLIBS_COMMON = -ldl
+  endif
+
+  ifeq ($(PLATFORM), macosx)
+    LDLIBS_COMMON = -pthread
   endif
 
 endif # PROGRAM
@@ -299,6 +330,9 @@ JRE_IMAGE_DIR = $(ABS_OUTPUTDIR)/j2re-image
 
 #where the demo source can be found
 DEMOSRCDIR          = $(SHARE_SRC)/demo
+
+#where the sample source can be found
+SAMPLESRCDIR          = $(SHARE_SRC)/sample
 
 # An attempt is made to generate unique enough directories for the
 # generated files to not have name collisisons. Most build units
@@ -380,7 +414,12 @@ OTHER_CPPFLAGS += $(INCLUDES)
 # We define an intermediate variable for Java files because
 # we use its value later to help define $SOURCEPATH
 
-VPATH0.java = $(GENSRCDIR)$(CLASSPATH_SEPARATOR)$(PLATFORM_SRC)/classes$(CLASSPATH_SEPARATOR)$(SHARE_SRC)/classes
+ifeq ($(PLATFORM), macosx)
+  VPATH0.java = $(subst $(ONESPACE),:,$(GENSRCDIR) $(call JavaSrcDirList,,classes))
+else
+  VPATH0.java = $(GENSRCDIR)$(CLASSPATH_SEPARATOR)$(PLATFORM_SRC)/classes$(CLASSPATH_SEPARATOR)$(SHARE_SRC)/classes
+endif
+
 ifdef OPENJDK
   VPATH.java = $(VPATH0.java)
 else
@@ -406,7 +445,12 @@ vpath %.$(OBJECT_SUFFIX) $(OBJDIR)
 # namely jni.h, jvm.h, and jni_utils.h, plus their platform-specific
 # relatives.
 #
-VPATH.h =   $(PLATFORM_SRC)/javavm/export$(CLASSPATH_SEPARATOR)$(SHARE_SRC)/javavm/export
+VPATH0.h =   $(PLATFORM_SRC)/javavm/export$(CLASSPATH_SEPARATOR)$(SHARE_SRC)/javavm/export
+ifdef OPENJDK
+  VPATH.h = $(VPATH0.h)
+else
+  VPATH.h = $(CLOSED_SHARE_SRC)/javavm/export$(CLASSPATH_SEPARATOR)$(VPATH0.h)
+endif
 vpath %.h   $(VPATH.h)
 
 #

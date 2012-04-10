@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
  */
 
 import sun.misc.DoubleConsts;
-import sun.misc.FpUtils;
 
 /*
  * The Taylor expansion of expxm1(x) = exp(x) -1 is
@@ -82,7 +81,7 @@ public class Expm1Tests {
 
         // For |x| < 2^-54 expm1(x) ~= x
         for(int i = DoubleConsts.MIN_SUB_EXPONENT; i <= -54; i++) {
-            double d = FpUtils.scalb(2, i);
+            double d = Math.scalb(2, i);
             failures += testExpm1Case(d, d);
             failures += testExpm1Case(-d, -d);
         }
@@ -101,7 +100,7 @@ public class Expm1Tests {
 
         // For x > 710, expm1(x) should be infinity
         for(int i = 10; i <= DoubleConsts.MAX_EXPONENT; i++) {
-            double d = FpUtils.scalb(2, i);
+            double d = Math.scalb(2, i);
             failures += testExpm1Case(d, infinityD);
         }
 
@@ -118,7 +117,7 @@ public class Expm1Tests {
         }
 
         for(int i = 7; i <= DoubleConsts.MAX_EXPONENT; i++) {
-            double d = -FpUtils.scalb(2, i);
+            double d = -Math.scalb(2, i);
             failures += testExpm1CaseWithUlpDiff(d, -1.0, 1, reachedLimit);
         }
 
@@ -143,10 +142,10 @@ public class Expm1Tests {
                 double pc = StrictMath.log(2)*i;
 
                 pcNeighbors[2] = pc;
-                pcNeighbors[1] = FpUtils.nextDown(pc);
-                pcNeighbors[0] = FpUtils.nextDown(pcNeighbors[1]);
-                pcNeighbors[3] = FpUtils.nextUp(pc);
-                pcNeighbors[4] = FpUtils.nextUp(pcNeighbors[3]);
+                pcNeighbors[1] = Math.nextDown(pc);
+                pcNeighbors[0] = Math.nextDown(pcNeighbors[1]);
+                pcNeighbors[3] = Math.nextUp(pc);
+                pcNeighbors[4] = Math.nextUp(pcNeighbors[3]);
 
                 for(int j = 0; j < pcNeighbors.length; j++) {
                     pcNeighborsExpm1[j]       =       Math.expm1(pcNeighbors[j]);

@@ -46,23 +46,20 @@ fi
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     NULL=/dev/null
     PS=":"
     FS="/"
-    TMP=/tmp
     ;;
   CYGWIN* )
     NULL=/dev/null
     PS=";"
     FS="/"
-    TMP=/tmp
     ;;
   Windows_* )
     NULL=NUL
     PS=";"
     FS="\\"
-    TMP="c:/temp"
     ;;
   * )
     echo "Unrecognized operating system!"
@@ -75,19 +72,19 @@ esac
 ${TESTJAVA}${FS}bin${FS}keytool -genkey -v -alias pkcs12testCA -keyalg "RsA" -keysize 2048 -sigalg "ShA1wItHRSA" -dname "cn=PKCS12 Test CA, ou=Security SQE, o=JavaSoft, c=US" -validity 3650 -keypass storepass -keystore keystoreCA.jceks.data -storepass storepass -storetype jceKS 2>&1 | egrep 'RsA|ShA1wItHRSA'
 
 RESULT=$?
-if [ $RESULT -eq 0 ]; then 
+if [ $RESULT -eq 0 ]; then
     exit 1
 else
     #Lead
     ${TESTJAVA}${FS}bin${FS}keytool -genkey -v -alias pkcs12testLead -keyalg "rSA" -keysize 1024 -sigalg "mD5withRSA" -dname "cn=PKCS12 Test Lead, ou=Security SQE, o=JavaSoft, c=US" -validity 3650 -keypass storepass -keystore keystoreLead.jceks.data -storepass storepass -storetype jCeks 2>&1 | egrep 'rSA|mD5withRSA'
     RESULT=$?
-    if [ $RESULT -eq 0 ]; then 
+    if [ $RESULT -eq 0 ]; then
         exit 1
     else
         #End User 1
         ${TESTJAVA}${FS}bin${FS}keytool -genkey -v -alias pkcs12testEndUser1 -keyalg "RSa" -keysize 1024 -sigalg "sHa1wIThRSA" -dname "cn=PKCS12 Test End User 1, ou=Security SQE, o=JavaSoft, c=US" -validity 3650 -keypass storepass -keystore keystoreEndUser1.jceks.data -storepass storepass -storetype Jceks 2>&1 | egrep 'RSa|sHa1wIThRSA'
         RESULT=$?
-        if [ $RESULT -eq 0 ]; then 
+        if [ $RESULT -eq 0 ]; then
             exit 1
         else
             exit 0

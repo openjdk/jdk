@@ -29,7 +29,6 @@
  */
 
 import java.beans.Beans;
-import sun.awt.SunToolkit;
 
 public class TestDesignTime implements Runnable {
     public static void main(String[] args) throws InterruptedException {
@@ -44,7 +43,6 @@ public class TestDesignTime implements Runnable {
     }
 
     public void run() {
-        SunToolkit.createNewAppContext();
         if (Beans.isDesignTime()) {
             throw new Error("shared DesignTime property");
         }

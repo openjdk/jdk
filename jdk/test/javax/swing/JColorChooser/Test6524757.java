@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,17 +98,23 @@ public class Test6524757 {
     private static final Object[] FRENCH = convert(Locale.FRENCH, KEYS);
 
     public static void main(String[] args) {
-        // it affects Swing because it is not initialized
-        Locale.setDefault(Locale.KOREAN);
-        validate(KOREAN, create());
+        Locale reservedLocale = Locale.getDefault();
+        try {
+            // it affects Swing because it is not initialized
+            Locale.setDefault(Locale.KOREAN);
+            validate(KOREAN, create());
 
-        // it does not affect Swing because it is initialized
-        Locale.setDefault(Locale.CANADA);
-        validate(KOREAN, create());
+            // it does not affect Swing because it is initialized
+            Locale.setDefault(Locale.CANADA);
+            validate(KOREAN, create());
 
-        // it definitely should affect Swing
-        JComponent.setDefaultLocale(Locale.FRENCH);
-        validate(FRENCH, create());
+            // it definitely should affect Swing
+            JComponent.setDefaultLocale(Locale.FRENCH);
+            validate(FRENCH, create());
+        } finally {
+            // restore the reserved locale
+            Locale.setDefault(reservedLocale);
+        }
     }
 
     private static void validate(Object[] expected, Object[] actual) {

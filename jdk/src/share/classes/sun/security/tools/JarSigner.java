@@ -66,7 +66,7 @@ import sun.misc.BASE64Encoder;
  * 0: success
  * 1: any error that the jar cannot be signed or verified, including:
  *      keystore loading error
- *      TSP communciation error
+ *      TSP communication error
  *      jarsigner command line error...
  * otherwise: error codes from -strict
  *
@@ -258,8 +258,7 @@ public class JarSigner {
             if (hasExpiringCert) {
                 exitCode |= 2;
             }
-            if (chainNotValidated) {
-                // hasExpiredCert and notYetValidCert included in this case
+            if (chainNotValidated || hasExpiredCert || notYetValidCert) {
                 exitCode |= 4;
             }
             if (badKeyUsage || badExtendedKeyUsage || badNetscapeCertType) {
@@ -600,7 +599,6 @@ public class JarSigner {
                 if (verbose != null) System.out.println();
                 Enumeration<JarEntry> e = entriesVec.elements();
 
-                long now = System.currentTimeMillis();
                 String tab = rb.getString("6SPACE");
 
                 while (e.hasMoreElements()) {
@@ -648,7 +646,7 @@ public class JarSigner {
                             // signerInfo() must be called even if -verbose
                             // not provided. The method updates various
                             // warning flags.
-                            String si = signerInfo(signer, tab, now);
+                            String si = signerInfo(signer, tab);
                             if (showcerts) {
                                 sb.append(si);
                                 sb.append('\n');
@@ -837,7 +835,7 @@ public class JarSigner {
      * Note: no newline character at the end
      */
     String printCert(String tab, Certificate c, boolean checkValidityPeriod,
-        long now, boolean checkUsage) {
+        Date timestamp, boolean checkUsage) {
 
         StringBuilder certStr = new StringBuilder();
         String space = rb.getString("SPACE");
@@ -862,22 +860,24 @@ public class JarSigner {
             certStr.append("\n").append(tab).append("[");
             Date notAfter = x509Cert.getNotAfter();
             try {
-                x509Cert.checkValidity();
-                // test if cert will expire within six months
-                if (now == 0) {
-                    now = System.currentTimeMillis();
-                }
-                if (notAfter.getTime() < now + SIX_MONTHS) {
-                    hasExpiringCert = true;
-
-                    if (expiringTimeForm == null) {
-                        expiringTimeForm = new MessageFormat(
-                            rb.getString("certificate.will.expire.on"));
+                boolean printValidity = true;
+                if (timestamp == null) {
+                    x509Cert.checkValidity();
+                    // test if cert will expire within six months
+                    if (notAfter.getTime() < System.currentTimeMillis() + SIX_MONTHS) {
+                        hasExpiringCert = true;
+                        if (expiringTimeForm == null) {
+                            expiringTimeForm = new MessageFormat(
+                                rb.getString("certificate.will.expire.on"));
+                        }
+                        Object[] source = { notAfter };
+                        certStr.append(expiringTimeForm.format(source));
+                        printValidity = false;
                     }
-                    Object[] source = { notAfter };
-                    certStr.append(expiringTimeForm.format(source));
-
                 } else {
+                    x509Cert.checkValidity(timestamp);
+                }
+                if (printValidity) {
                     if (validityTimeForm == null) {
                         validityTimeForm = new MessageFormat(
                             rb.getString("certificate.is.valid.from"));
@@ -1277,14 +1277,13 @@ public class JarSigner {
                     System.out.println(rb.getString("TSA.location.") + tsaUrl);
                 }
                 if (tsaCert != null) {
-                    String certUrl =
-                        TimestampedSigner.getTimestampingUrl(tsaCert);
-                    if (certUrl != null) {
+                    URI tsaURI = TimestampedSigner.getTimestampingURI(tsaCert);
+                    if (tsaURI != null) {
                         System.out.println(rb.getString("TSA.location.") +
-                            certUrl);
+                            tsaURI);
                     }
                     System.out.println(rb.getString("TSA.certificate.") +
-                        printCert("", tsaCert, false, 0, false));
+                        printCert("", tsaCert, false, null, false));
                 }
                 if (signingMechanism != null) {
                     System.out.println(
@@ -1425,6 +1424,7 @@ public class JarSigner {
      * lines of attributes plus an empty line. The empty line is included
      * in the header.
      */
+    @SuppressWarnings("fallthrough")
     private int findHeaderEnd(byte[] bs) {
         // Initial state true to deal with empty header
         boolean newline = true;     // just met a newline
@@ -1481,23 +1481,27 @@ public class JarSigner {
     /**
      * Returns a string of singer info, with a newline at the end
      */
-    private String signerInfo(CodeSigner signer, String tab, long now) {
+    private String signerInfo(CodeSigner signer, String tab) {
         if (cacheForSignerInfo.containsKey(signer)) {
             return cacheForSignerInfo.get(signer);
         }
         StringBuffer s = new StringBuffer();
         List<? extends Certificate> certs = signer.getSignerCertPath().getCertificates();
         // display the signature timestamp, if present
-        Timestamp timestamp = signer.getTimestamp();
-        if (timestamp != null) {
-            s.append(printTimestamp(tab, timestamp));
+        Date timestamp;
+        Timestamp ts = signer.getTimestamp();
+        if (ts != null) {
+            s.append(printTimestamp(tab, ts));
             s.append('\n');
+            timestamp = ts.getTimestamp();
+        } else {
+            timestamp = null;
         }
-        // display the certificate(s). The first one is end-enity cert and
+        // display the certificate(s). The first one is end-entity cert and
         // its KeyUsage should be checked.
         boolean first = true;
         for (Certificate c : certs) {
-            s.append(printCert(tab, c, true, now, first));
+            s.append(printCert(tab, c, true, timestamp, first));
             s.append('\n');
             first = false;
         }
@@ -1505,9 +1509,18 @@ public class JarSigner {
             CertPath cp = certificateFactory.generateCertPath(certs);
             validator.validate(cp, pkixParameters);
         } catch (Exception e) {
-            chainNotValidated = true;
-            s.append(tab + rb.getString(".CertPath.not.validated.") +
-                    e.getLocalizedMessage() + "]\n");   // TODO
+            if (debug) {
+                e.printStackTrace();
+            }
+            if (e.getCause() != null &&
+                    (e.getCause() instanceof CertificateExpiredException ||
+                     e.getCause() instanceof CertificateNotYetValidException)) {
+                // No more warning, we alreay have hasExpiredCert or notYetValidCert
+            } else {
+                chainNotValidated = true;
+                s.append(tab + rb.getString(".CertPath.not.validated.") +
+                        e.getLocalizedMessage() + "]\n");   // TODO
+            }
         }
         String result = s.toString();
         cacheForSignerInfo.put(signer, result);
@@ -1561,6 +1574,27 @@ public class JarSigner {
         }
 
         try {
+
+            certificateFactory = CertificateFactory.getInstance("X.509");
+            validator = CertPathValidator.getInstance("PKIX");
+            Set<TrustAnchor> tas = new HashSet<>();
+            try {
+                KeyStore caks = KeyTool.getCacertsKeyStore();
+                if (caks != null) {
+                    Enumeration<String> aliases = caks.aliases();
+                    while (aliases.hasMoreElements()) {
+                        String a = aliases.nextElement();
+                        try {
+                            tas.add(new TrustAnchor((X509Certificate)caks.getCertificate(a), null));
+                        } catch (Exception e2) {
+                            // ignore, when a SecretkeyEntry does not include a cert
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // Ignore, if cacerts cannot be loaded
+            }
+
             if (providerName == null) {
                 store = KeyStore.getInstance(storetype);
             } else {
@@ -1579,45 +1613,28 @@ public class JarSigner {
                         (rb.getString("Enter.Passphrase.for.keystore."));
             }
 
-            if (nullStream) {
-                store.load(null, storepass);
-            } else {
-                keyStoreName = keyStoreName.replace(File.separatorChar, '/');
-                URL url = null;
-                try {
-                    url = new URL(keyStoreName);
-                } catch (java.net.MalformedURLException e) {
-                    // try as file
-                    url = new File(keyStoreName).toURI().toURL();
-                }
-                InputStream is = null;
-                try {
-                    is = url.openStream();
-                    store.load(is, storepass);
-                } finally {
-                    if (is != null) {
-                        is.close();
-                    }
-                }
-            }
-            Set<TrustAnchor> tas = new HashSet<>();
             try {
-                KeyStore caks = KeyTool.getCacertsKeyStore();
-                if (caks != null) {
-                    Enumeration<String> aliases = caks.aliases();
-                    while (aliases.hasMoreElements()) {
-                        String a = aliases.nextElement();
-                        try {
-                            tas.add(new TrustAnchor((X509Certificate)caks.getCertificate(a), null));
-                        } catch (Exception e2) {
-                            // ignore, when a SecretkeyEntry does not include a cert
+                if (nullStream) {
+                    store.load(null, storepass);
+                } else {
+                    keyStoreName = keyStoreName.replace(File.separatorChar, '/');
+                    URL url = null;
+                    try {
+                        url = new URL(keyStoreName);
+                    } catch (java.net.MalformedURLException e) {
+                        // try as file
+                        url = new File(keyStoreName).toURI().toURL();
+                    }
+                    InputStream is = null;
+                    try {
+                        is = url.openStream();
+                        store.load(is, storepass);
+                    } finally {
+                        if (is != null) {
+                            is.close();
                         }
                     }
                 }
-            } catch (Exception e) {
-                // Ignore, if cacerts cannot be loaded
-            }
-            if (store != null) {
                 Enumeration<String> aliases = store.aliases();
                 while (aliases.hasMoreElements()) {
                     String a = aliases.nextElement();
@@ -1633,14 +1650,13 @@ public class JarSigner {
                         // ignore, when a SecretkeyEntry does not include a cert
                     }
                 }
-            }
-            certificateFactory = CertificateFactory.getInstance("X.509");
-            validator = CertPathValidator.getInstance("PKIX");
-            try {
-                pkixParameters = new PKIXParameters(tas);
-                pkixParameters.setRevocationEnabled(false);
-            } catch (InvalidAlgorithmParameterException ex) {
-                // Only if tas is empty
+            } finally {
+                try {
+                    pkixParameters = new PKIXParameters(tas);
+                    pkixParameters.setRevocationEnabled(false);
+                } catch (InvalidAlgorithmParameterException ex) {
+                    // Only if tas is empty
+                }
             }
         } catch (IOException ioe) {
             throw new RuntimeException(rb.getString("keystore.load.") +
@@ -1739,8 +1755,7 @@ public class JarSigner {
                 NetscapeCertTypeExtension extn =
                         new NetscapeCertTypeExtension(encoded);
 
-                Boolean val = (Boolean)extn.get(
-                        NetscapeCertTypeExtension.OBJECT_SIGNING);
+                Boolean val = extn.get(NetscapeCertTypeExtension.OBJECT_SIGNING);
                 if (!val) {
                     if (bad != null) {
                         bad[2] = true;
@@ -1799,13 +1814,22 @@ public class JarSigner {
 
             // We don't meant to print anything, the next call
             // checks validity and keyUsage etc
-            printCert("", certChain[0], true, 0, true);
+            printCert("", certChain[0], true, null, true);
 
             try {
                 CertPath cp = certificateFactory.generateCertPath(Arrays.asList(certChain));
                 validator.validate(cp, pkixParameters);
             } catch (Exception e) {
-                chainNotValidated = true;
+                if (debug) {
+                    e.printStackTrace();
+                }
+                if (e.getCause() != null &&
+                        (e.getCause() instanceof CertificateExpiredException ||
+                        e.getCause() instanceof CertificateNotYetValidException)) {
+                    // No more warning, we alreay have hasExpiredCert or notYetValidCert
+                } else {
+                    chainNotValidated = true;
+                }
             }
 
             try {
@@ -2054,7 +2078,7 @@ public class JarSigner {
         ClassLoader appClassLoader = new URLClassLoader(urls);
 
         // attempt to find signer
-        Class signerClass = appClassLoader.loadClass(signerClassName);
+        Class<?> signerClass = appClassLoader.loadClass(signerClassName);
 
         // Check that it implements ContentSigner
         Object signer = signerClass.newInstance();
@@ -2297,9 +2321,7 @@ class SignatureFile {
                     tsaUri = new URI(tsaUrl);
                 }
             } catch (URISyntaxException e) {
-                IOException ioe = new IOException();
-                ioe.initCause(e);
-                throw ioe;
+                throw new IOException(e);
             }
 
             // Assemble parameters for the signing mechanism

@@ -37,7 +37,7 @@
 #endif
 
 
-#ifdef __linux__
+#if defined(__linux__) || defined(MACOSX)
 extern int NET_Timeout(int s, long timeout);
 extern int NET_Read(int s, void* buf, size_t len);
 extern int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
@@ -101,10 +101,6 @@ extern getnameinfo_f getnameinfo_ptr;
 void ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
                                            const char* hostname,
                                            int gai_error);
-
-/* do we have address translation support */
-
-extern jboolean NET_addrtransAvailable();
 
 #define NET_WAIT_READ   0x01
 #define NET_WAIT_WRITE  0x02

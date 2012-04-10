@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,11 @@ class ConstantSetNode extends AbstractNamedNode {
     /**
      * The mapping between a constant and its value.
      */
-    protected static final Map<String, String> constantMap = new HashMap<String, String>();
+    protected static final Map<String, String> constantMap = new HashMap<>();
 
     void prune() {
-        List<Node> addons = new ArrayList<Node>();
+        List<Node> addons = new ArrayList<>();
 
-        for (Iterator it = components.iterator(); it.hasNext(); ) {
-            Node node = (Node)it.next();
-        }
         if (!addons.isEmpty()) {
             components.addAll(addons);
         }
@@ -63,8 +60,8 @@ class ConstantSetNode extends AbstractNamedNode {
         writer.println("<dd><table border=1 cellpadding=3 cellspacing=0 width=\"90%\" summary=\"\"><tr>");
         writer.println("<th width=\"20%\"><th width=\"5%\"><th width=\"65%\">");
         ConstantNode n;
-        for (Iterator it = components.iterator(); it.hasNext();) {
-            n = ((ConstantNode)it.next());
+        for (Node node : components) {
+            n = (ConstantNode)node;
             writer.println("<a NAME=\"" + name + "_" + n.name + "\"></a>");
             n.document(writer);
         }

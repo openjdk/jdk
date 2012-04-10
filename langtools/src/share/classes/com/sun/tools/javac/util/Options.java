@@ -26,8 +26,8 @@
 package com.sun.tools.javac.util;
 
 import java.util.*;
-import com.sun.tools.javac.main.OptionName;
-import static com.sun.tools.javac.main.OptionName.*;
+import com.sun.tools.javac.main.Option;
+import static com.sun.tools.javac.main.Option.*;
 
 /** A table of all command-line options.
  *  If an option has an argument, the option name is mapped to the argument.
@@ -71,8 +71,8 @@ public class Options {
     /**
      * Get the value for an option.
      */
-    public String get(OptionName name) {
-        return values.get(name.optionName);
+    public String get(Option option) {
+        return values.get(option.text);
     }
 
     /**
@@ -101,15 +101,15 @@ public class Options {
     /**
      * Check if the value for an option has been set.
      */
-    public boolean isSet(OptionName name) {
-        return (values.get(name.optionName) != null);
+    public boolean isSet(Option option) {
+        return (values.get(option.text) != null);
     }
 
     /**
      * Check if the value for a choice option has been set to a specific value.
      */
-    public boolean isSet(OptionName name, String value) {
-        return (values.get(name.optionName + value) != null);
+    public boolean isSet(Option option, String value) {
+        return (values.get(option.text + value) != null);
     }
 
     /**
@@ -122,23 +122,23 @@ public class Options {
     /**
      * Check if the value for an option has not been set.
      */
-    public boolean isUnset(OptionName name) {
-        return (values.get(name.optionName) == null);
+    public boolean isUnset(Option option) {
+        return (values.get(option.text) == null);
     }
 
     /**
      * Check if the value for a choice option has not been set to a specific value.
      */
-    public boolean isUnset(OptionName name, String value) {
-        return (values.get(name.optionName + value) == null);
+    public boolean isUnset(Option option, String value) {
+        return (values.get(option.text + value) == null);
     }
 
     public void put(String name, String value) {
         values.put(name, value);
     }
 
-    public void put(OptionName name, String value) {
-        values.put(name.optionName, value);
+    public void put(Option option, String value) {
+        values.put(option.text, value);
     }
 
     public void putAll(Options options) {
@@ -155,6 +155,19 @@ public class Options {
 
     public int size() {
         return values.size();
+    }
+
+    // light-weight notification mechanism
+
+    private List<Runnable> listeners = List.nil();
+
+    public void addListener(Runnable listener) {
+        listeners = listeners.prepend(listener);
+    }
+
+    public void notifyListeners() {
+        for (Runnable r: listeners)
+            r.run();
     }
 
     /** Check for a lint suboption. */

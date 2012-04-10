@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -632,7 +632,7 @@ public class X509CRLSelector implements CRLSelector {
                 byte[] encoded = in.getOctetString();
                 CRLNumberExtension crlNumExt =
                     new CRLNumberExtension(Boolean.FALSE, encoded);
-                crlNum = (BigInteger)crlNumExt.get(CRLNumberExtension.NUMBER);
+                crlNum = crlNumExt.get(CRLNumberExtension.NUMBER);
             } catch (IOException ex) {
                 if (debug != null) {
                     debug.println("X509CRLSelector.match: exception in "
@@ -708,7 +708,7 @@ public class X509CRLSelector implements CRLSelector {
             return copy;
         } catch (CloneNotSupportedException e) {
             /* Cannot happen */
-            throw new InternalError(e.toString());
+            throw new InternalError(e.toString(), e);
         }
     }
 }

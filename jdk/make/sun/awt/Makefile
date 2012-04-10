@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ AUTO_JAVA_PRUNE += X11 AWTCharset.java
 ifeq  ($(PLATFORM), solaris)
 FILES_c = $(FILES_2D_c)
 FILES_c += awt_LoadLibrary.c
-OTHER_LDLIBS = $(JVMLIB) $(LIBM) -ldl
+OTHER_LDLIBS = $(JVMLIB) $(LIBM) $(LIBDL)
 ifeq ($(CC_VER), 5.8)
   ifndef REMOVE_ALL_WORKAROUNDS
     ifeq ($(ARCH_FAMILY), i586)
@@ -120,12 +120,40 @@ ifeq  ($(PLATFORM), linux)
 FILES_c = $(FILES_2D_c)
 FILES_c += awt_LoadLibrary.c
 OTHER_CFLAGS += -DMLIB_NO_LIBSUNMATH
-OTHER_LDLIBS = $(JVMLIB) $(LIBM) -ldl
+OTHER_LDLIBS = $(JVMLIB) $(LIBM) $(LIBDL)
 endif
 
 FILES_c += initIDs.c
 
+ifeq ($(PLATFORM), macosx)
+FILES_c = $(FILES_2D_c)
+FILES_c += awt_LoadLibrary.c
+OTHER_CFLAGS += -DMLIB_NO_LIBSUNMATH
+OTHER_LDLIBS = $(JVMLIB) $(LIBM)
+endif
+
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ SOLARIS/LINUX
+endif # PLATFORM 
+
+ifeq ($(PLATFORM), macosx)
+# vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv MAC OS X
+
+#
+# Files
+#
+include FILES_c_macosx.gmk
+include FILES_export_macosx.gmk
+
+FILES_objc = $(FILES_AWT_objc)
+OTHER_LDLIBS = -lmlib_image $(JVMLIB) $(LIBM) \
+    -framework Cocoa \
+    -framework OpenGL \
+    -framework JavaNativeFoundation \
+    -framework JavaRuntimeSupport \
+    -framework ApplicationServices \
+    -framework AudioToolbox
+
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ MAC OS X
 endif # PLATFORM 
 
 # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv SOLARIS-SPARC
@@ -240,13 +268,19 @@ vpath %.c     $(SHARE_SRC)/native/$(PKGDIR)/../font
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ WINDOWS
 endif # PLATFORM
 
-ifeq ($(PLATFORM), linux)
+ifneq (,$(findstring $(PLATFORM), linux bsd))
 # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv LINUX
 vpath %.c   $(SHARE_SRC)/native/$(PKGDIR)/../java2d/opengl
 vpath %.c   $(PLATFORM_SRC)/native/$(PKGDIR)/../java2d/opengl
 vpath %.c   $(PLATFORM_SRC)/native/$(PKGDIR)/../java2d/x11
 vpath %.c   $(SHARE_SRC)/native/$(PKGDIR)/../font
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ LINUX
+endif # PLATFORM
+
+ifeq ($(PLATFORM), macosx)
+# vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv MAC OS X
+vpath %.m   $(call NativeSrcDirList,,native/com/apple/resources)
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ MAC OS X
 endif # PLATFORM
 
 ifeq ($(PLATFORM), windows)
@@ -367,7 +401,8 @@ else
 FONTCONFIGS_SRC	= $(CLOSED_SRC)/solaris/classes/sun/awt/fontconfigs
 _FONTCONFIGS	= \
 	fontconfig.properties				\
-	fontconfig.RedHat.5.5.properties		\
+	fontconfig.RedHat.5.properties			\
+	fontconfig.RedHat.6.properties			\
 	fontconfig.Turbo.properties			\
 	fontconfig.SuSE.10.properties                   \
 	fontconfig.SuSE.11.properties
@@ -388,6 +423,19 @@ _FONTCONFIGS	= \
 FONTCONFIGS_SRC_PREFIX = $(PLATFORM).
 
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ SOLARIS
+endif # PLATFORM
+
+
+ifeq ($(PLATFORM), macosx)
+# vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv MAC OS X
+
+FONTCONFIGS_SRC = $(JDK_TOPDIR)/src/macosx/classes/sun/awt/fontconfigs
+_FONTCONFIGS    = \
+        fontconfig.properties
+
+FONTCONFIGS_SRC_PREFIX = $(PLATFORM).
+
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ MAC OS X
 endif # PLATFORM
 
 FONTCONFIGS     = $(_FONTCONFIGS:%=$(LIBDIR)/%.src)

@@ -33,6 +33,12 @@ include $(BUILDDIR)/common/Defs.gmk
 #
 AUTO_FILES_JAVA_DIRS = sun/security/krb5
 
+ifeq ($(PLATFORM), macosx)
+FILES_export = sun/security/krb5/Credentials.java
+FILES_c = nativeccache.c
+LIBRARY = osxkrb5
+endif # PLATFORM
+
 ifeq ($(PLATFORM), windows)
 #
 # Java files that define native methods
@@ -52,8 +58,12 @@ endif # PLATFORM
 #
 # Find native code
 #
-vpath %.c \
-  $(PLATFORM_SRC)/native/sun/security/krb5
+ifeq ($PLATFORM), macosx)
+  vpath %.c $(call NativeSrcDirList,,native/sun/security/krb5)
+else
+  vpath %.c \
+    $(PLATFORM_SRC)/native/sun/security/krb5
+endif
 
 JGSS_NATIVE_SRC=$(PLATFORM_SRC)/native/sun/security/krb5
 JGSS_NATIVE_DIR_EXISTS := $(shell if [ -d $(JGSS_NATIVE_SRC) ] ; then echo true; else echo false; fi)
@@ -65,19 +75,20 @@ ifeq ($(PLATFORM), windows)
   ifeq ($(JGSS_NATIVE_DIR_EXISTS), true)
     include $(BUILDDIR)/common/Library.gmk
   endif
+else ifeq ($(PLATFORM), macosx)
+  include $(BUILDDIR)/common/Library.gmk
 else
 include $(BUILDDIR)/common/Classes.gmk
 endif # PLATFORM
 
-#
-# Libraries to link
-#
-ifeq ($(PLATFORM), windows)
-  OTHER_LDLIBS = $(JVMLIB)
-else
-  OTHER_LDLIBS = -ldl $(JVMLIB)
+ifneq ($(PLATFORM), windows)
+  ifeq ($(PLATFORM), macosx)
+    OTHER_LDLIBS = $(LIBDL) -framework Kerberos
+  else
+    OTHER_LDLIBS = $(LIBDL)
+  endif
 endif
-
+  
 build:
 ifeq ($(PLATFORM),windows)
 	$(call make-launcher, kinit, sun.security.krb5.internal.tools.Kinit, , )

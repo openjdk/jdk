@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,25 +28,22 @@ package sun.management.jmxremote;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStream;
 import java.io.IOException;
-
+import java.io.InputStream;
+import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
-
 import java.rmi.NoSuchObjectException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.registry.Registry;
-import java.rmi.server.RemoteObject;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
+import java.rmi.server.RemoteObject;
 import java.rmi.server.UnicastRemoteObject;
-
 import java.security.KeyStore;
 import java.security.Principal;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -55,35 +52,31 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 
-import java.lang.management.ManagementFactory;
-
-import javax.net.ssl.*;
-
 import javax.management.MBeanServer;
 import javax.management.remote.JMXAuthenticator;
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
 import javax.management.remote.rmi.RMIConnectorServer;
-
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
 import javax.rmi.ssl.SslRMIServerSocketFactory;
-
 import javax.security.auth.Subject;
 
-import sun.rmi.server.UnicastRef;
-import sun.rmi.server.UnicastServerRef;
-import sun.rmi.server.UnicastServerRef2;
+import com.sun.jmx.remote.internal.RMIExporter;
+import com.sun.jmx.remote.security.JMXPluggableAuthenticator;
+import com.sun.jmx.remote.util.ClassLogger;
 
 import sun.management.Agent;
 import sun.management.AgentConfigurationError;
 import static sun.management.AgentConfigurationError.*;
 import sun.management.ConnectorAddressLink;
 import sun.management.FileSystem;
-import com.sun.jmx.remote.util.ClassLogger;
-
-import com.sun.jmx.remote.internal.RMIExporter;
-import com.sun.jmx.remote.security.JMXPluggableAuthenticator;
+import sun.rmi.server.UnicastRef;
+import sun.rmi.server.UnicastServerRef;
+import sun.rmi.server.UnicastServerRef2;
 
 /**
  * This class initializes and starts the RMIConnectorServer for JSR 163
@@ -114,6 +107,8 @@ public final class ConnectorBootstrap {
 
         public static final String PORT =
                 "com.sun.management.jmxremote.port";
+        public static final String RMI_PORT =
+                "com.sun.management.jmxremote.rmi.port";
         public static final String CONFIG_FILE_NAME =
                 "com.sun.management.config.file";
         public static final String USE_LOCAL_ONLY =
@@ -233,17 +228,16 @@ public final class ConnectorBootstrap {
                         "the access file [" + accessFile + "] as the " +
                         "authenticated Subject is null");
             }
-            final Set principals = subject.getPrincipals();
-            for (Iterator i = principals.iterator(); i.hasNext();) {
-                final Principal p = (Principal) i.next();
-                if (properties.containsKey(p.getName())) {
+            final Set<Principal> principals = subject.getPrincipals();
+            for (Principal p1: principals) {
+                if (properties.containsKey(p1.getName())) {
                     return;
                 }
             }
-            final Set<String> principalsStr = new HashSet<String>();
-            for (Iterator i = principals.iterator(); i.hasNext();) {
-                final Principal p = (Principal) i.next();
-                principalsStr.add(p.getName());
+
+            final Set<String> principalsStr = new HashSet<>();
+            for (Principal p2: principals) {
+                principalsStr.add(p2.getName());
             }
             throw new SecurityException(
                     "Access denied! No entries found in the access file [" +
@@ -257,9 +251,9 @@ public final class ConnectorBootstrap {
             if (fname == null) {
                 return p;
             }
-            FileInputStream fin = new FileInputStream(fname);
-            p.load(fin);
-            fin.close();
+            try (FileInputStream fin = new FileInputStream(fname)) {
+                p.load(fin);
+            }
             return p;
         }
         private final Map<String, Object> environment;
@@ -267,34 +261,61 @@ public final class ConnectorBootstrap {
         private final String accessFile;
     }
 
-    /**
-     * Initializes and starts the JMX Connector Server.
-     * If the com.sun.management.jmxremote.port property is not defined,
-     * simply return. Otherwise, attempts to load the config file, and
-     * then calls {@link #initialize(java.lang.String, java.util.Properties)}.
-     *
-     **/
-    public static synchronized JMXConnectorServer initialize() {
+    // The variable below is here to support stop functionality
+    // It would be overriten if you call startRemoteCommectionServer second
+    // time. It's OK for now as logic in Agent.java forbids mutiple agents
+    private static Registry registry = null;
 
-        // Load a new management properties
-        final Properties props = Agent.loadManagementProperties();
-        if (props == null) {
-            return null;
+    public static void unexportRegistry() {
+        // Remove the entry from registry
+        try {
+            if (registry != null) {
+                UnicastRemoteObject.unexportObject(registry, true);
+                registry = null;
+            }
+        } catch(NoSuchObjectException ex) {
+            // This exception can appears only if we attempt
+            // to unexportRegistry second time. So it's safe
+            // to ignore it without additional messages.
         }
+    }
 
-        final String portStr = props.getProperty(PropertyNames.PORT);
+     /**
+      * Initializes and starts the JMX Connector Server.
+      * If the com.sun.management.jmxremote.port property is not defined,
+      * simply return. Otherwise, attempts to load the config file, and
+      * then calls {@link #startRemoteConnectorServer
+      *                            (java.lang.String, java.util.Properties)}.
+      *
+      * This method is used by some jtreg tests.
+      **/
+      public static synchronized JMXConnectorServer initialize() {
 
+         // Load a new management properties
+         final Properties props = Agent.loadManagementProperties();
+         if (props == null) {
+              return null;
+         }
 
-        // System.out.println("initializing: {port=" + portStr + ",
-        //                     properties="+props+"}");
-        return initialize(portStr, props);
+         final String portStr = props.getProperty(PropertyNames.PORT);
+         return startRemoteConnectorServer(portStr, props);
+     }
+
+    /**
+     * This method is used by some jtreg tests.
+     *
+     * @see #startRemoteConnectorServer
+     *             (String portStr, Properties props)
+     */
+    public static synchronized JMXConnectorServer initialize(String portStr, Properties props)  {
+         return startRemoteConnectorServer(portStr, props);
     }
 
     /**
      * Initializes and starts a JMX Connector Server for remote
      * monitoring and management.
      **/
-    public static synchronized JMXConnectorServer initialize(String portStr, Properties props) {
+    public static synchronized JMXConnectorServer startRemoteConnectorServer(String portStr, Properties props) {
 
         // Get port number
         final int port;
@@ -305,6 +326,22 @@ public final class ConnectorBootstrap {
         }
         if (port < 0) {
             throw new AgentConfigurationError(INVALID_JMXREMOTE_PORT, portStr);
+        }
+
+        // User can specify a port to be used to export rmi object,
+        // in order to simplify firewall rules
+        // if port is not specified random one will be allocated.
+        int rmiPort = 0;
+        String rmiPortStr = props.getProperty(PropertyNames.RMI_PORT);
+        try {
+            if (rmiPortStr != null) {
+               rmiPort = Integer.parseInt(rmiPortStr);
+            }
+        } catch (NumberFormatException x) {
+            throw new AgentConfigurationError(INVALID_JMXREMOTE_RMI_PORT, x, rmiPortStr);
+        }
+        if (rmiPort < 0) {
+            throw new AgentConfigurationError(INVALID_JMXREMOTE_RMI_PORT, rmiPortStr);
         }
 
         // Do we use authentication?
@@ -388,9 +425,10 @@ public final class ConnectorBootstrap {
         }
 
         if (log.debugOn()) {
-            log.debug("initialize",
-                    Agent.getText("jmxremote.ConnectorBootstrap.initialize") +
+            log.debug("startRemoteConnectorServer",
+                    Agent.getText("jmxremote.ConnectorBootstrap.starting") +
                     "\n\t" + PropertyNames.PORT + "=" + port +
+                    "\n\t" + PropertyNames.RMI_PORT + "=" + rmiPort +
                     "\n\t" + PropertyNames.USE_SSL + "=" + useSsl +
                     "\n\t" + PropertyNames.USE_REGISTRY_SSL + "=" + useRegistrySsl +
                     "\n\t" + PropertyNames.SSL_CONFIG_FILE_NAME + "=" + sslConfigFileName +
@@ -405,7 +443,7 @@ public final class ConnectorBootstrap {
                     (useAuthentication ? (loginConfigName == null ? ("\n\t" + PropertyNames.PASSWORD_FILE_NAME + "=" +
                     passwordFileName) : ("\n\t" + PropertyNames.LOGIN_CONFIG_NAME + "=" +
                     loginConfigName)) : "\n\t" +
-                    Agent.getText("jmxremote.ConnectorBootstrap.initialize.noAuthentication")) +
+                    Agent.getText("jmxremote.ConnectorBootstrap.noAuthentication")) +
                     (useAuthentication ? ("\n\t" + PropertyNames.ACCESS_FILE_NAME + "=" +
                     accessFileName) : "") +
                     "");
@@ -416,15 +454,15 @@ public final class ConnectorBootstrap {
         JMXServiceURL url = null;
         try {
             final JMXConnectorServerData data = exportMBeanServer(
-                    mbs, port, useSsl, useRegistrySsl,
+                    mbs, port, rmiPort, useSsl, useRegistrySsl,
                     sslConfigFileName, enabledCipherSuitesList,
                     enabledProtocolsList, sslNeedClientAuth,
                     useAuthentication, loginConfigName,
                     passwordFileName, accessFileName);
             cs = data.jmxConnectorServer;
             url = data.jmxRemoteURL;
-            log.config("initialize",
-                    Agent.getText("jmxremote.ConnectorBootstrap.initialize.ready",
+            log.config("startRemoteConnectorServer",
+                    Agent.getText("jmxremote.ConnectorBootstrap.ready",
                     url.toString()));
         } catch (Exception e) {
             throw new AgentConfigurationError(AGENT_EXCEPTION, e, e.toString());
@@ -432,7 +470,7 @@ public final class ConnectorBootstrap {
         try {
             // Export remote connector address and associated configuration
             // properties to the instrumentation buffer.
-            Map<String, String> properties = new HashMap<String, String>();
+            Map<String, String> properties = new HashMap<>();
             properties.put("remoteAddress", url.toString());
             properties.put("authenticate", useAuthenticationStr);
             properties.put("ssl", useSslStr);
@@ -443,7 +481,7 @@ public final class ConnectorBootstrap {
             // Remote connector server started but unable to export remote
             // connector address and associated configuration properties to
             // the instrumentation buffer - non-fatal error.
-            log.debug("initialize", e);
+            log.debug("startRemoteConnectorServer", e);
         }
         return cs;
     }
@@ -458,7 +496,7 @@ public final class ConnectorBootstrap {
         System.setProperty("java.rmi.server.randomIDs", "true");
 
         // This RMI server should not keep the VM alive
-        Map<String, Object> env = new HashMap<String, Object>();
+        Map<String, Object> env = new HashMap<>();
         env.put(RMIExporter.EXPORTER_ATTRIBUTE, new PermanentExporter());
 
         // The local connector server need only be available via the
@@ -518,9 +556,9 @@ public final class ConnectorBootstrap {
         try {
             if (fs.supportsFileSecurity(file)) {
                 if (!fs.isAccessUserOnly(file)) {
-                    final String msg = Agent.getText("jmxremote.ConnectorBootstrap.initialize.password.readonly",
+                    final String msg = Agent.getText("jmxremote.ConnectorBootstrap.password.readonly",
                             passwordFileName);
-                    log.config("initialize", msg);
+                    log.config("startRemoteConnectorServer", msg);
                     throw new AgentConfigurationError(PASSWORD_FILE_ACCESS_NOT_RESTRICTED,
                             passwordFileName);
                 }
@@ -561,9 +599,9 @@ public final class ConnectorBootstrap {
             if (fs.supportsFileSecurity(file)) {
                 if (!fs.isAccessUserOnly(file)) {
                     final String msg = Agent.getText(
-                            "jmxremote.ConnectorBootstrap.initialize.file.readonly",
+                            "jmxremote.ConnectorBootstrap.file.readonly",
                             restrictedFileName);
-                    log.config("initialize", msg);
+                    log.config("startRemoteConnectorServer", msg);
                     throw new AgentConfigurationError(
                             FILE_ACCESS_NOT_RESTRICTED, restrictedFileName);
                 }
@@ -601,12 +639,9 @@ public final class ConnectorBootstrap {
             try {
                 // Load the SSL keystore properties from the config file
                 Properties p = new Properties();
-                InputStream in = new FileInputStream(sslConfigFileName);
-                try {
+                try (InputStream in = new FileInputStream(sslConfigFileName)) {
                     BufferedInputStream bin = new BufferedInputStream(in);
                     p.load(bin);
-                } finally {
-                    in.close();
                 }
                 String keyStore =
                         p.getProperty("javax.net.ssl.keyStore");
@@ -630,11 +665,8 @@ public final class ConnectorBootstrap {
                 KeyStore ks = null;
                 if (keyStore != null) {
                     ks = KeyStore.getInstance(KeyStore.getDefaultType());
-                    FileInputStream ksfis = new FileInputStream(keyStore);
-                    try {
+                    try (FileInputStream ksfis = new FileInputStream(keyStore)) {
                         ks.load(ksfis, keyStorePasswd);
-                    } finally {
-                        ksfis.close();
                     }
                 }
                 KeyManagerFactory kmf = KeyManagerFactory.getInstance(
@@ -644,16 +676,13 @@ public final class ConnectorBootstrap {
                 KeyStore ts = null;
                 if (trustStore != null) {
                     ts = KeyStore.getInstance(KeyStore.getDefaultType());
-                    FileInputStream tsfis = new FileInputStream(trustStore);
-                    try {
+                    try (FileInputStream tsfis = new FileInputStream(trustStore)) {
                         ts.load(tsfis, trustStorePasswd);
-                    } finally {
-                        tsfis.close();
                     }
                 }
                 TrustManagerFactory tmf = TrustManagerFactory.getInstance(
                         TrustManagerFactory.getDefaultAlgorithm());
-                tmf.init((KeyStore) ts);
+                tmf.init(ts);
 
                 SSLContext ctx = SSLContext.getInstance("SSL");
                 ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
@@ -672,6 +701,7 @@ public final class ConnectorBootstrap {
     private static JMXConnectorServerData exportMBeanServer(
             MBeanServer mbs,
             int port,
+            int rmiPort,
             boolean useSsl,
             boolean useRegistrySsl,
             String sslConfigFileName,
@@ -689,9 +719,9 @@ public final class ConnectorBootstrap {
          * IDs.  */
         System.setProperty("java.rmi.server.randomIDs", "true");
 
-        JMXServiceURL url = new JMXServiceURL("rmi", null, 0);
+        JMXServiceURL url = new JMXServiceURL("rmi", null, rmiPort);
 
-        Map<String, Object> env = new HashMap<String, Object>();
+        Map<String, Object> env = new HashMap<>();
 
         PermanentExporter exporter = new PermanentExporter();
 
@@ -746,7 +776,6 @@ public final class ConnectorBootstrap {
             }
         }
 
-        final Registry registry;
         if (useRegistrySsl) {
             registry =
                     new SingleEntryRegistry(port, csf, ssf,
@@ -757,10 +786,12 @@ public final class ConnectorBootstrap {
                     "jmxrmi", exporter.firstExported);
         }
 
-        JMXServiceURL remoteURL = new JMXServiceURL(
-                "service:jmx:rmi:///jndi/rmi://" + url.getHost() + ":" +
-                ((UnicastRef) ((RemoteObject) registry).getRef()).getLiveRef().getPort() +
-                "/jmxrmi");
+
+        int registryPort =
+            ((UnicastRef) ((RemoteObject) registry).getRef()).getLiveRef().getPort();
+        String jmxUrlStr =  String.format("service:jmx:rmi:///jndi/rmi://%s:%d/jmxrmi",
+                                           url.getHost(), registryPort);
+        JMXServiceURL remoteURL = new JMXServiceURL(jmxUrlStr);
 
         /* Our exporter remembers the first object it was asked to
         export, which will be an RMIServerImpl appropriate for

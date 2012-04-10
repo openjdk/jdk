@@ -181,7 +181,7 @@ public class RowSetProvider {
 
         trace("***In newInstance()");
         try {
-            Class providerClass = getFactoryClass(factoryClassName, cl, false);
+            Class<?> providerClass = getFactoryClass(factoryClassName, cl, false);
             RowSetFactory instance = (RowSetFactory) providerClass.newInstance();
             if (debug) {
                 trace("Created new instance of " + providerClass +
@@ -229,7 +229,7 @@ public class RowSetProvider {
      * context class loader followed by the current class loader.
      *  @return The class which was loaded
      */
-    static private Class getFactoryClass(String factoryClassName, ClassLoader cl,
+    static private Class<?> getFactoryClass(String factoryClassName, ClassLoader cl,
             boolean doFallback) throws ClassNotFoundException {
         try {
             if (cl == null) {

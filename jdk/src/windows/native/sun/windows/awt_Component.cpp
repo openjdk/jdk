@@ -183,6 +183,7 @@ jmethodID AwtComponent::isEnabledMID;
 jmethodID AwtComponent::getLocationOnScreenMID;
 jmethodID AwtComponent::replaceSurfaceDataMID;
 jmethodID AwtComponent::replaceSurfaceDataLaterMID;
+jmethodID AwtComponent::disposeLaterMID;
 
 HKL    AwtComponent::m_hkl = ::GetKeyboardLayout(0);
 LANGID AwtComponent::m_idLang = LOWORD(::GetKeyboardLayout(0));
@@ -246,6 +247,7 @@ AwtComponent::AwtComponent()
     m_hCursorCache = NULL;
 
     m_bSubclassed = FALSE;
+    m_bPauseDestroy = FALSE;
 
     m_MessagesProcessing = 0;
     m_wheelRotationAmount = 0;
@@ -300,6 +302,7 @@ void AwtComponent::Dispose()
         delete m_childList;
 
     DestroyDropTarget();
+    ReleaseDragCapture(0);
 
     if (m_myControlID != 0) {
         AwtComponent* parent = GetParent();
@@ -317,6 +320,12 @@ void AwtComponent::Dispose()
     if (m_brushBackground != NULL) {
         m_brushBackground->Release();
         m_brushBackground = NULL;
+    }
+
+    if (m_bPauseDestroy) {
+        // AwtComponent::WmNcDestroy could be released now
+        m_bPauseDestroy = FALSE;
+        m_hwnd = NULL;
     }
 
     // The component instance is deleted using AwtObject::Dispose() method
@@ -364,6 +373,7 @@ AwtComponent* AwtComponent::GetComponentImpl(HWND hWnd) {
     AwtComponent *component =
         (AwtComponent *)::GetWindowLongPtr(hWnd, GWLP_USERDATA);
     DASSERT(!component || !IsBadReadPtr(component, sizeof(AwtComponent)) );
+    DASSERT(!component || component->GetHWnd() == hWnd );
     return component;
 }
 
@@ -1376,6 +1386,7 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
       case WM_CREATE: mr = WmCreate(); break;
       case WM_CLOSE:      mr = WmClose(); break;
       case WM_DESTROY:    mr = WmDestroy(); break;
+      case WM_NCDESTROY:  mr = WmNcDestroy(); break;
 
       case WM_ERASEBKGND:
           mr = WmEraseBkgnd((HDC)wParam, *(BOOL*)&retValue); break;
@@ -1964,10 +1975,24 @@ LRESULT AwtComponent::DefWindowProc(UINT msg, WPARAM wParam, LPARAM lParam)
  */
 MsgRouting AwtComponent::WmDestroy()
 {
-    // fix for 6259348: we should enter the SyncCall critical section before
-    // disposing the native object, that is value 1 of lParam is intended for
-    if(m_peerObject != NULL) { // is not being terminating
-        AwtToolkit::GetInstance().SendMessage(WM_AWT_DISPOSE, (WPARAM)m_peerObject, (LPARAM)1);
+    return mrConsume;
+}
+
+/*
+ * This message should only be received when a window is destroyed by
+ * Windows, and not Java. It is sent only after child windows were destroyed.
+ */
+MsgRouting AwtComponent::WmNcDestroy()
+{
+    if (m_peerObject != NULL) { // is not being terminating
+        // Stay in this handler until AwtComponent::Dispose is called.
+        m_bPauseDestroy = TRUE;
+
+        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+        // Post invocation event for WObjectPeer.dispose to EDT
+        env->CallVoidMethod(m_peerObject, AwtComponent::disposeLaterMID);
+        // Wait until AwtComponent::Dispose is called
+        AwtToolkit::GetInstance().PumpToDestroy(this);
     }
 
     return mrConsume;
@@ -6299,6 +6324,7 @@ Java_java_awt_Component_initIDs(JNIEnv *env, jclass cls)
         env->GetMethodID(peerCls, "replaceSurfaceData", "()V");
     AwtComponent::replaceSurfaceDataLaterMID =
         env->GetMethodID(peerCls, "replaceSurfaceDataLater", "()V");
+    AwtComponent::disposeLaterMID = env->GetMethodID(peerCls, "disposeLater", "()V");
 
     DASSERT(AwtComponent::xID);
     DASSERT(AwtComponent::yID);
@@ -6317,6 +6343,8 @@ Java_java_awt_Component_initIDs(JNIEnv *env, jclass cls)
     DASSERT(AwtComponent::getLocationOnScreenMID);
     DASSERT(AwtComponent::replaceSurfaceDataMID);
     DASSERT(AwtComponent::replaceSurfaceDataLaterMID);
+    DASSERT(AwtComponent::disposeLaterMID);
+
 
     CATCH_BAD_ALLOC;
 }

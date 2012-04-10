@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 4624534
  * @summary Make sure jar certificates work for Turkish locale
  * @author kladko
- * @run main/othervm TurkCert
  */
 
 import java.util.*;
@@ -36,15 +35,24 @@ import java.io.*;
 
 public class TurkCert {
     public static void main(String[] args) throws Exception{
-        Locale.setDefault(new Locale("TR", "tr"));
-        File f = new File(System.getProperty("test.src","."), "test.jar");
-        JarFile jf = new JarFile(f, true);
-        JarEntry je = (JarEntry)jf.getEntry("test.class");
-        InputStream is = jf.getInputStream(je);
-        byte[] b = new byte[1024];
-        while (is.read(b) != -1) {
+        Locale reservedLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(new Locale("TR", "tr"));
+            File f = new File(System.getProperty("test.src","."), "test.jar");
+            try (JarFile jf = new JarFile(f, true)) {
+                JarEntry je = (JarEntry)jf.getEntry("test.class");
+                try (InputStream is = jf.getInputStream(je)) {
+                    byte[] b = new byte[1024];
+                    while (is.read(b) != -1) {
+                    }
+                }
+                if (je.getCertificates() == null) {
+                    throw new Exception("Null certificate for test.class.");
+                }
+            }
+        } finally {
+            // restore the default locale
+            Locale.setDefault(reservedLocale);
         }
-        if (je.getCertificates() == null)
-            throw new Exception("Null certificate for test.class.");
     }
 }

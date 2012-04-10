@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTags.*;
 import static com.sun.tools.javac.jvm.UninitializedType.*;
-import static com.sun.tools.javac.main.OptionName.*;
+import static com.sun.tools.javac.main.Option.*;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 
@@ -69,11 +69,11 @@ public class ClassWriter extends ClassFile {
      */
     private boolean verbose;
 
-    /** Switch: scrable private names.
+    /** Switch: scramble private names.
      */
     private boolean scramble;
 
-    /** Switch: scrable private names.
+    /** Switch: scramble private names.
      */
     private boolean scrambleAll;
 
@@ -863,10 +863,10 @@ public class ClassWriter extends ClassFile {
         }
         if (c.type.tag != CLASS) return; // arrays
         if (pool != null && // pool might be null if called from xClassName
-            c.owner.kind != PCK &&
+            c.owner.enclClass() != null &&
             (innerClasses == null || !innerClasses.contains(c))) {
 //          log.errWriter.println("enter inner " + c);//DEBUG
-            if (c.owner.kind == TYP) enterInner((ClassSymbol)c.owner);
+            enterInner(c.owner.enclClass());
             pool.put(c);
             pool.put(c.name);
             if (innerClasses == null) {
@@ -892,8 +892,9 @@ public class ClassWriter extends ClassFile {
             if ((flags & INTERFACE) != 0) flags |= ABSTRACT; // Interfaces are always ABSTRACT
             if (inner.name.isEmpty()) flags &= ~FINAL; // Anonymous class: unset FINAL flag
             if (dumpInnerClassModifiers) {
-                log.errWriter.println("INNERCLASS  " + inner.name);
-                log.errWriter.println("---" + flagNames(flags));
+                PrintWriter pw = log.getWriter(Log.WriterKind.ERROR);
+                pw.println("INNERCLASS  " + inner.name);
+                pw.println("---" + flagNames(flags));
             }
             databuf.appendChar(pool.get(inner));
             databuf.appendChar(
@@ -911,8 +912,9 @@ public class ClassWriter extends ClassFile {
         int flags = adjustFlags(v.flags());
         databuf.appendChar(flags);
         if (dumpFieldModifiers) {
-            log.errWriter.println("FIELD  " + fieldName(v));
-            log.errWriter.println("---" + flagNames(v.flags()));
+            PrintWriter pw = log.getWriter(Log.WriterKind.ERROR);
+            pw.println("FIELD  " + fieldName(v));
+            pw.println("---" + flagNames(v.flags()));
         }
         databuf.appendChar(pool.put(fieldName(v)));
         databuf.appendChar(pool.put(typeSig(v.erasure(types))));
@@ -934,8 +936,9 @@ public class ClassWriter extends ClassFile {
         int flags = adjustFlags(m.flags());
         databuf.appendChar(flags);
         if (dumpMethodModifiers) {
-            log.errWriter.println("METHOD  " + fieldName(m));
-            log.errWriter.println("---" + flagNames(m.flags()));
+            PrintWriter pw = log.getWriter(Log.WriterKind.ERROR);
+            pw.println("METHOD  " + fieldName(m));
+            pw.println("---" + flagNames(m.flags()));
         }
         databuf.appendChar(pool.put(fieldName(m)));
         databuf.appendChar(pool.put(typeSig(m.externalType(types))));
@@ -1483,9 +1486,10 @@ public class ClassWriter extends ClassFile {
         if ((flags & INTERFACE) == 0) flags |= ACC_SUPER;
         if (c.isInner() && c.name.isEmpty()) flags &= ~FINAL;
         if (dumpClassModifiers) {
-            log.errWriter.println();
-            log.errWriter.println("CLASSFILE  " + c.getQualifiedName());
-            log.errWriter.println("---" + flagNames(flags));
+            PrintWriter pw = log.getWriter(Log.WriterKind.ERROR);
+            pw.println();
+            pw.println("CLASSFILE  " + c.getQualifiedName());
+            pw.println("---" + flagNames(flags));
         }
         databuf.appendChar(flags);
 
@@ -1505,6 +1509,13 @@ public class ClassWriter extends ClassFile {
             default : Assert.error();
             }
         }
+
+        if (c.trans_local != null) {
+            for (ClassSymbol local : c.trans_local) {
+                enterInner(local);
+            }
+        }
+
         databuf.appendChar(fieldsCount);
         writeFields(c.members().elems);
         databuf.appendChar(methodsCount);

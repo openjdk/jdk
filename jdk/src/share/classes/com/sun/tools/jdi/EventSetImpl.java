@@ -47,7 +47,7 @@ enum EventDestination {UNKNOWN_EVENT, INTERNAL_EVENT, CLIENT_EVENT};
  * that is on the queues are all for client requests.
  */
 public class EventSetImpl extends ArrayList<Event> implements EventSet {
-
+    private static final long serialVersionUID = -4857338819787924570L;
     private VirtualMachineImpl vm; // we implement Mirror
     private Packet pkt;
     private byte suspendPolicy;
@@ -607,7 +607,7 @@ public class EventSetImpl extends ArrayList<Event> implements EventSet {
         PacketStream ps = new PacketStream(vm, pkt);
         JDWP.Event.Composite compEvt = new JDWP.Event.Composite(vm, ps);
         suspendPolicy = compEvt.suspendPolicy;
-        if ((vm.traceFlags & vm.TRACE_EVENTS) != 0) {
+        if ((vm.traceFlags & VirtualMachine.TRACE_EVENTS) != 0) {
             switch(suspendPolicy) {
                 case JDWP.SuspendPolicy.ALL:
                     vm.printTrace("EventSet: SUSPEND_ALL");
@@ -626,7 +626,7 @@ public class EventSetImpl extends ArrayList<Event> implements EventSet {
         ThreadReference fix6485605 = null;
         for (int i = 0; i < compEvt.events.length; i++) {
             EventImpl evt = createEvent(compEvt.events[i]);
-            if ((vm.traceFlags & vm.TRACE_EVENTS) != 0) {
+            if ((vm.traceFlags & VirtualMachine.TRACE_EVENTS) != 0) {
                 try {
                     vm.printTrace("Event: " + evt);
                 } catch (VMDisconnectedException ee) {

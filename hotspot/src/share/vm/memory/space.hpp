@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,9 @@
 #endif
 #ifdef TARGET_OS_FAMILY_windows
 # include "os_windows.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.inline.hpp"
 #endif
 
 // A space is an abstraction for the "storage units" backing
@@ -184,7 +187,7 @@ class Space: public CHeapObj {
   // expensive operation. To prevent performance problems
   // on account of its inadvertent use in product jvm's,
   // we restrict its use to assertion checks only.
-  virtual bool is_in(const void* p) const;
+  virtual bool is_in(const void* p) const = 0;
 
   // Returns true iff the given reserved memory of the space contains the
   // given address.
@@ -530,7 +533,8 @@ protected:
    * by the MarkSweepAlwaysCompactCount parameter.                           \
    */                                                                        \
   int invocations = SharedHeap::heap()->perm_gen()->stat_record()->invocations;\
-  bool skip_dead = ((invocations % MarkSweepAlwaysCompactCount) != 0);       \
+  bool skip_dead = (MarkSweepAlwaysCompactCount < 1)                         \
+    ||((invocations % MarkSweepAlwaysCompactCount) != 0);                    \
                                                                              \
   size_t allowed_deadspace = 0;                                              \
   if (skip_dead) {                                                           \

@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,10 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "mutex_windows.inline.hpp"
 # include "thread_windows.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "mutex_bsd.inline.hpp"
+# include "thread_bsd.inline.hpp"
 #endif
 
 // o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o
@@ -523,7 +527,21 @@ void Monitor::ILock (Thread * Self) {
 
 void Monitor::IUnlock (bool RelaxAssert) {
   assert (ILocked(), "invariant") ;
-  _LockWord.Bytes[_LSBINDEX] = 0 ;       // drop outer lock
+  // Conceptually we need a MEMBAR #storestore|#loadstore barrier or fence immediately
+  // before the store that releases the lock.  Crucially, all the stores and loads in the
+  // critical section must be globally visible before the store of 0 into the lock-word
+  // that releases the lock becomes globally visible.  That is, memory accesses in the
+  // critical section should not be allowed to bypass or overtake the following ST that
+  // releases the lock.  As such, to prevent accesses within the critical section
+  // from "leaking" out, we need a release fence between the critical section and the
+  // store that releases the lock.  In practice that release barrier is elided on
+  // platforms with strong memory models such as TSO.
+  //
+  // Note that the OrderAccess::storeload() fence that appears after unlock store
+  // provides for progress conditions and succession and is _not related to exclusion
+  // safety or lock release consistency.
+  OrderAccess::release_store(&_LockWord.Bytes[_LSBINDEX], 0); // drop outer lock
+
   OrderAccess::storeload ();
   ParkEvent * const w = _OnDeck ;
   assert (RelaxAssert || w != Thread::current()->_MutexEvent, "invariant") ;
@@ -1278,10 +1296,6 @@ void Monitor::set_owner_implementation(Thread *new_owner) {
 
       assert(this->rank() >= 0, "bad lock rank");
 
-      if (LogMultipleMutexLocking && locks != NULL) {
-        Events::log("thread " INTPTR_FORMAT " locks %s, already owns %s", new_owner, name(), locks->name());
-      }
-
       // Deadlock avoidance rules require us to acquire Mutexes only in
       // a global total order. For example m1 is the lowest ranked mutex
       // that the thread holds and m2 is the mutex the thread is trying
@@ -1324,10 +1338,6 @@ void Monitor::set_owner_implementation(Thread *new_owner) {
 
     #ifdef ASSERT
       Monitor *locks = old_owner->owned_locks();
-
-      if (LogMultipleMutexLocking && locks != this) {
-        Events::log("thread " INTPTR_FORMAT " unlocks %s, still owns %s", old_owner, this->name(), locks->name());
-      }
 
       // remove "this" from the owned locks list
 

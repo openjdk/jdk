@@ -31,19 +31,19 @@ import sun.nio.ch.Interruptible;
 
 public interface JavaLangAccess {
     /** Return the constant pool for a class. */
-    ConstantPool getConstantPool(Class klass);
+    ConstantPool getConstantPool(Class<?> klass);
 
     /**
      * Set the AnnotationType instance corresponding to this class.
      * (This method only applies to annotation types.)
      */
-    void setAnnotationType(Class klass, AnnotationType annotationType);
+    void setAnnotationType(Class<?> klass, AnnotationType annotationType);
 
     /**
      * Get the AnnotationType instance corresponding to this class.
      * (This method only applies to annotation types.)
      */
-    AnnotationType getAnnotationType(Class klass);
+    AnnotationType getAnnotationType(Class<?> klass);
 
     /**
      * Returns the elements of an enum class or null if the

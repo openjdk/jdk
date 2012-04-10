@@ -34,8 +34,10 @@ import java.security.AccessController;
 import sun.security.action.GetPropertyAction;
 import sun.awt.AWTAutoShutdown;
 import sun.awt.SunToolkit;
+import sun.awt.AppContext;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 import sun.util.logging.PlatformLogger;
 
 import sun.awt.dnd.SunDragSourceContextPeer;
@@ -66,11 +68,11 @@ class EventDispatchThread extends Thread {
 
     private EventQueue theQueue;
     private boolean doDispatch = true;
-    private boolean threadDeathCaught = false;
+    private volatile boolean shutdown = false;
 
     private static final int ANY_EVENT = -1;
 
-    private Vector<EventFilter> eventFilters = new Vector<EventFilter>();
+    private ArrayList<EventFilter> eventFilters = new ArrayList<EventFilter>();
 
     EventDispatchThread(ThreadGroup group, String name, EventQueue queue) {
         super(group, name);
@@ -84,6 +86,11 @@ class EventDispatchThread extends Thread {
         doDispatch = false;
     }
 
+    public void interrupt() {
+        shutdown = true;
+        super.interrupt();
+    }
+
     public void run() {
         while (true) {
             try {
@@ -93,13 +100,40 @@ class EventDispatchThread extends Thread {
                     }
                 });
             } finally {
-                EventQueue eq = getEventQueue();
-                if (eq.detachDispatchThread(this) || threadDeathCaught) {
+                if(getEventQueue().detachDispatchThread(this, shutdown)) {
                     break;
                 }
             }
         }
     }
+
+    // MacOSX change:
+    //  This was added because this class (and java.awt.Conditional) are package private.
+    //  There are certain instances where classes in other packages need to block the
+    //  AWTEventQueue while still allowing it to process events. This uses reflection
+    //  to call back into the caller in order to remove dependencies.
+    //
+    // NOTE: This uses reflection in its implementation, so it is not for performance critical code.
+    //
+    //  cond is an instance of sun.lwawt.macosx.EventDispatchAccess
+    //
+    private Conditional _macosxGetConditional(final Object cond) {
+        try {
+            return new Conditional() {
+                final Method evaluateMethod = Class.forName("sun.lwawt.macosx.EventDispatchAccess").getMethod("evaluate", null);
+                public boolean evaluate() {
+                    try {
+                        return ((Boolean)evaluateMethod.invoke(cond, null)).booleanValue();
+                    } catch (Exception e) {
+                        return false;
+                    }
+                }
+            };
+        } catch (Exception e) {
+            return new Conditional() { public boolean evaluate() { return false; } };
+        }
+    }
+
 
     void pumpEvents(Conditional cond) {
         pumpEvents(ANY_EVENT, cond);
@@ -124,10 +158,9 @@ class EventDispatchThread extends Thread {
     void pumpEventsForFilter(int id, Conditional cond, EventFilter filter) {
         addEventFilter(filter);
         doDispatch = true;
-        while (doDispatch && cond.evaluate()) {
-            if (isInterrupted() || !pumpOneEventForFilters(id)) {
-                doDispatch = false;
-            }
+        shutdown |= isInterrupted();
+        while (doDispatch && !shutdown && cond.evaluate()) {
+            pumpOneEventForFilters(id);
         }
         removeEventFilter(filter);
     }
@@ -163,7 +196,7 @@ class EventDispatchThread extends Thread {
         }
     }
 
-    boolean pumpOneEventForFilters(int id) {
+    void pumpOneEventForFilters(int id) {
         AWTEvent event = null;
         boolean eventOK = false;
         try {
@@ -212,24 +245,18 @@ class EventDispatchThread extends Thread {
             if (delegate != null) {
                 delegate.afterDispatch(event, handle);
             }
-
-            return true;
         }
         catch (ThreadDeath death) {
-            threadDeathCaught = true;
-            return false;
-
+            shutdown = true;
+            throw death;
         }
         catch (InterruptedException interruptedException) {
-            return false; // AppContext.dispose() interrupts all
-                          // Threads in the AppContext
-
+            shutdown = true; // AppContext.dispose() interrupts all
+                             // Threads in the AppContext
         }
         catch (Throwable e) {
             processException(e);
         }
-
-        return true;
     }
 
     private void processException(Throwable e) {

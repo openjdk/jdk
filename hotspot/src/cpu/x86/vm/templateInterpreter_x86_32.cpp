@@ -112,32 +112,6 @@ address TemplateInterpreterGenerator::generate_ClassCastException_handler() {
   return entry;
 }
 
-// Arguments are: required type at TOS+4, failing object (or NULL) at TOS.
-address TemplateInterpreterGenerator::generate_WrongMethodType_handler() {
-  address entry = __ pc();
-
-  __ pop(rbx);                  // actual failing object is at TOS
-  __ pop(rax);                  // required type is at TOS+4
-
-  __ verify_oop(rbx);
-  __ verify_oop(rax);
-
-  // Various method handle types use interpreter registers as temps.
-  __ restore_bcp();
-  __ restore_locals();
-
-  // Expression stack must be empty before entering the VM for an exception.
-  __ empty_expression_stack();
-  __ empty_FPU_stack();
-  __ call_VM(noreg,
-             CAST_FROM_FN_PTR(address,
-                              InterpreterRuntime::throw_WrongMethodTypeException),
-             // pass required type, failing object (or NULL)
-             rax, rbx);
-  return entry;
-}
-
-
 address TemplateInterpreterGenerator::generate_exception_handler_common(const char* name, const char* message, bool pass_oop) {
   assert(!pass_oop || message == NULL, "either oop or message but not both");
   address entry = __ pc();
@@ -548,9 +522,18 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
 
   __ pop(rsi);  // get saved bcp / (c++ prev state ).
 
-  __ pop(rax);  // get return address
-  __ jump(ExternalAddress(Interpreter::throw_StackOverflowError_entry()));
+  // Restore sender's sp as SP. This is necessary if the sender's
+  // frame is an extended compiled frame (see gen_c2i_adapter())
+  // and safer anyway in case of JSR292 adaptations.
 
+  __ pop(rax); // return address must be moved if SP is changed
+  __ mov(rsp, rsi);
+  __ push(rax);
+
+  // Note: the restored frame is not necessarily interpreted.
+  // Use the shared runtime version of the StackOverflowError.
+  assert(StubRoutines::throw_StackOverflowError_entry() != NULL, "stub not yet generated");
+  __ jump(ExternalAddress(StubRoutines::throw_StackOverflowError_entry()));
   // all done with frame size check
   __ bind(after_frame_check_pop);
   __ pop(rsi);
@@ -578,7 +561,7 @@ void InterpreterGenerator::lock_method(void) {
   #endif // ASSERT
   // get synchronization object
   { Label done;
-    const int mirror_offset = klassOopDesc::klass_part_offset_in_bytes() + Klass::java_mirror_offset_in_bytes();
+    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     __ movl(rax, access_flags);
     __ testl(rax, JVM_ACC_STATIC);
     __ movptr(rax, Address(rdi, Interpreter::local_offset_in_bytes(0)));  // get receiver (assume this is frequent case)
@@ -1038,7 +1021,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // pass mirror handle if static call
   { Label L;
-    const int mirror_offset = klassOopDesc::klass_part_offset_in_bytes() + Klass::java_mirror_offset_in_bytes();
+    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     __ movl(t, Address(method, methodOopDesc::access_flags_offset()));
     __ testl(t, JVM_ACC_STATIC);
     __ jcc(Assembler::zero, L);
@@ -1634,6 +1617,12 @@ int AbstractInterpreter::layout_activation(methodOop method,
     // interpreter_frame_sender_sp is the original sp of the caller (the unextended_sp)
     // and sender_sp is fp+8
     intptr_t* locals = interpreter_frame->sender_sp() + max_locals - 1;
+
+#ifdef ASSERT
+    if (caller->is_interpreted_frame()) {
+      assert(locals < caller->fp() + frame::interpreter_frame_initial_sp_offset, "bad placement");
+    }
+#endif
 
     interpreter_frame->interpreter_frame_set_locals(locals);
     BasicObjectLock* montop = interpreter_frame->interpreter_frame_monitor_begin();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,11 @@ import com.sun.tools.javac.util.Position;
 public class AnnotationTypeElementDocImpl
         extends MethodDocImpl implements AnnotationTypeElementDoc {
 
-    AnnotationTypeElementDocImpl(DocEnv env, MethodSymbol sym) {
+    public AnnotationTypeElementDocImpl(DocEnv env, MethodSymbol sym) {
         super(env, sym);
     }
 
-    AnnotationTypeElementDocImpl(DocEnv env, MethodSymbol sym,
+    public AnnotationTypeElementDocImpl(DocEnv env, MethodSymbol sym,
                                  String doc, JCMethodDecl tree, Position.LineMap lineMap) {
         super(env, sym, doc, tree, lineMap);
     }

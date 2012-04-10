@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -48,17 +48,18 @@ sun.jvm.hotspot.asm.x86 \
 sun.jvm.hotspot.bugspot \
 sun.jvm.hotspot.bugspot.tree \
 sun.jvm.hotspot.c1 \
+sun.jvm.hotspot.ci \
 sun.jvm.hotspot.code \
 sun.jvm.hotspot.compiler \
 sun.jvm.hotspot.debugger \
 sun.jvm.hotspot.debugger.amd64 \
+sun.jvm.hotspot.debugger.bsd \
+sun.jvm.hotspot.debugger.bsd.amd64 \
+sun.jvm.hotspot.debugger.bsd.x86 \
 sun.jvm.hotspot.debugger.cdbg \
 sun.jvm.hotspot.debugger.cdbg.basic \
 sun.jvm.hotspot.debugger.cdbg.basic.amd64 \
 sun.jvm.hotspot.debugger.cdbg.basic.x86 \
-sun.jvm.hotspot.debugger.dbx \
-sun.jvm.hotspot.debugger.dbx.sparc \
-sun.jvm.hotspot.debugger.dbx.x86 \
 sun.jvm.hotspot.debugger.dummy \
 sun.jvm.hotspot.debugger.ia64 \
 sun.jvm.hotspot.debugger.linux \
@@ -76,7 +77,6 @@ sun.jvm.hotspot.debugger.remote.amd64 \
 sun.jvm.hotspot.debugger.remote.sparc \
 sun.jvm.hotspot.debugger.remote.x86 \
 sun.jvm.hotspot.debugger.sparc \
-sun.jvm.hotspot.debugger.win32 \
 sun.jvm.hotspot.debugger.win32.coff \
 sun.jvm.hotspot.debugger.windbg \
 sun.jvm.hotspot.debugger.windbg.amd64 \
@@ -84,6 +84,7 @@ sun.jvm.hotspot.debugger.windbg.ia64 \
 sun.jvm.hotspot.debugger.windbg.x86 \
 sun.jvm.hotspot.debugger.x86 \
 sun.jvm.hotspot.gc_implementation \
+sun.jvm.hotspot.gc_implementation.g1 \
 sun.jvm.hotspot.gc_implementation.parallelScavenge \
 sun.jvm.hotspot.gc_implementation.shared \
 sun.jvm.hotspot.gc_interface \
@@ -91,9 +92,14 @@ sun.jvm.hotspot.interpreter \
 sun.jvm.hotspot.jdi \
 sun.jvm.hotspot.livejvm \
 sun.jvm.hotspot.memory \
+sun.jvm.hotspot.opto \
 sun.jvm.hotspot.oops \
+sun.jvm.hotspot.prims \
 sun.jvm.hotspot.runtime \
 sun.jvm.hotspot.runtime.amd64 \
+sun.jvm.hotspot.runtime.bsd \
+sun.jvm.hotspot.runtime.bsd_amd64 \
+sun.jvm.hotspot.runtime.bsd_x86 \
 sun.jvm.hotspot.runtime.ia64 \
 sun.jvm.hotspot.runtime.linux \
 sun.jvm.hotspot.runtime.linux_amd64 \
@@ -139,17 +145,18 @@ sun/jvm/hotspot/asm/x86/*.java \
 sun/jvm/hotspot/bugspot/*.java \
 sun/jvm/hotspot/bugspot/tree/*.java \
 sun/jvm/hotspot/c1/*.java \
+sun/jvm/hotspot/ci/*.java \
 sun/jvm/hotspot/code/*.java \
 sun/jvm/hotspot/compiler/*.java \
 sun/jvm/hotspot/debugger/*.java \
 sun/jvm/hotspot/debugger/amd64/*.java \
+sun/jvm/hotspot/debugger/bsd/*.java \
+sun/jvm/hotspot/debugger/bsd/amd64/*.java \
+sun/jvm/hotspot/debugger/bsd/x86/*.java \
 sun/jvm/hotspot/debugger/cdbg/*.java \
 sun/jvm/hotspot/debugger/cdbg/basic/*.java \
 sun/jvm/hotspot/debugger/cdbg/basic/amd64/*.java \
 sun/jvm/hotspot/debugger/cdbg/basic/x86/*.java \
-sun/jvm/hotspot/debugger/dbx/*.java \
-sun/jvm/hotspot/debugger/dbx/sparc/*.java \
-sun/jvm/hotspot/debugger/dbx/x86/*.java \
 sun/jvm/hotspot/debugger/dummy/*.java \
 sun/jvm/hotspot/debugger/ia64/*.java \
 sun/jvm/hotspot/debugger/linux/*.java \
@@ -165,19 +172,26 @@ sun/jvm/hotspot/debugger/remote/amd64/*.java \
 sun/jvm/hotspot/debugger/remote/sparc/*.java \
 sun/jvm/hotspot/debugger/remote/x86/*.java \
 sun/jvm/hotspot/debugger/sparc/*.java \
-sun/jvm/hotspot/debugger/win32/*.java \
 sun/jvm/hotspot/debugger/win32/coff/*.java \
 sun/jvm/hotspot/debugger/windbg/*.java \
 sun/jvm/hotspot/debugger/windbg/ia64/*.java \
 sun/jvm/hotspot/debugger/windbg/x86/*.java \
 sun/jvm/hotspot/debugger/x86/*.java \
+sun/jvm/hotspot/gc_implementation/g1/*.java \
+sun/jvm/hotspot/gc_implementation/parallelScavenge/*.java \
+sun/jvm/hotspot/gc_implementation/shared/*.java \
 sun/jvm/hotspot/interpreter/*.java \
 sun/jvm/hotspot/jdi/*.java \
 sun/jvm/hotspot/livejvm/*.java \
 sun/jvm/hotspot/memory/*.java \
 sun/jvm/hotspot/oops/*.java \
+sun/jvm/hotspot/opto/*.java \
+sun/jvm/hotspot/prims/*.java \
 sun/jvm/hotspot/runtime/*.java \
 sun/jvm/hotspot/runtime/amd64/*.java \
+sun/jvm/hotspot/runtime/bsd/*.java \
+sun/jvm/hotspot/runtime/bsd_amd64/*.java \
+sun/jvm/hotspot/runtime/bsd_x86/*.java \
 sun/jvm/hotspot/runtime/ia64/*.java \
 sun/jvm/hotspot/runtime/linux/*.java \
 sun/jvm/hotspot/runtime/linux_amd64/*.java \

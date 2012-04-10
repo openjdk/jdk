@@ -381,6 +381,10 @@ public enum LauncherHelper {
         PrintStream ostream =  (printToStderr) ? System.err : System.out;
         ostream.println(getLocalizedMessage("java.launcher.X.usage",
                 File.pathSeparator));
+        if (System.getProperty("os.name").startsWith("Mac OS")) {
+            ostream.println(getLocalizedMessage("java.launcher.X.macosx.usage",
+                        File.pathSeparator));
+        }
     }
 
     static String getMainClassFromJar(PrintStream ostream, String jarname) {
@@ -396,7 +400,11 @@ public enum LauncherHelper {
                 if (mainAttrs == null) {
                     abort(ostream, null, "java.launcher.jar.error3", jarname);
                 }
-                return mainAttrs.getValue(MAIN_CLASS).trim();
+                String mainValue = mainAttrs.getValue(MAIN_CLASS);
+                if (mainValue == null) {
+                    abort(ostream, null, "java.launcher.jar.error3", jarname);
+                }
+                return mainValue.trim();
             } finally {
                 if (jarFile != null) {
                     jarFile.close();
@@ -424,7 +432,7 @@ public enum LauncherHelper {
             if (t != null) {
                 t.printStackTrace();
             } else {
-                Thread.currentThread().dumpStack();
+                Thread.dumpStack();
             }
         }
         System.exit(1);

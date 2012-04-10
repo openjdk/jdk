@@ -1,8 +1,4 @@
 #
-# @(#)mapfile-vers-product	1.19 08/02/12 10:56:37
-#
-
-#
 # Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -221,6 +217,7 @@ SUNWprivate_1.1 {
                 JVM_SetArrayElement;
                 JVM_SetClassSigners;
                 JVM_SetLength;
+                JVM_SetNativeThreadName;
                 JVM_SetPrimitiveArrayElement;
                 JVM_SetProtectionDomain;
                 JVM_SetSockOpt;
@@ -243,24 +240,6 @@ SUNWprivate_1.1 {
                 JVM_Write;
                 JVM_Yield;
                 JVM_handle_linux_signal;
-
-                # Old reflection routines
-                # These do not need to be present in the product build in JDK 1.4
-                # but their code has not been removed yet because there will not
-                # be a substantial code savings until JVM_InvokeMethod and
-                # JVM_NewInstanceFromConstructor can also be removed; see
-                # reflectionCompat.hpp.
-                JVM_GetClassConstructor;
-                JVM_GetClassConstructors;
-                JVM_GetClassField;
-                JVM_GetClassFields;
-                JVM_GetClassMethod;
-                JVM_GetClassMethods;
-                JVM_GetField;
-                JVM_GetPrimitiveField;
-                JVM_NewInstance;
-                JVM_SetField;
-                JVM_SetPrimitiveField;
 
                 # miscellaneous functions
                 jio_fprintf;

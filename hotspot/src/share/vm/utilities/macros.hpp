@@ -161,6 +161,14 @@
 #define NOT_WINDOWS(code) code
 #endif
 
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__APPLE__)
+#define BSD_ONLY(code) code
+#define NOT_BSD(code)
+#else
+#define BSD_ONLY(code)
+#define NOT_BSD(code) code
+#endif
+
 #ifdef _WIN64
 #define WIN64_ONLY(code) code
 #define NOT_WIN64(code)
