@@ -337,7 +337,7 @@ class instanceKlass: public Klass {
   int java_fields_count() const           { return (int)_java_fields_count; }
 
   // Number of fields including any injected fields
-  int all_fields_count() const            { return _fields->length() / sizeof(FieldInfo::field_slots); }
+  int all_fields_count() const            { return _fields->length() / FieldInfo::field_slots; }
 
   typeArrayOop fields() const              { return _fields; }
 
