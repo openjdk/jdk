@@ -50,14 +50,31 @@ ifeq ($(LINK_INTO),AOUT)
   LIBS_LAUNCHER             += $(STATIC_STDCXX) $(LIBS)
 else
   LAUNCHER.o                 = launcher.o
-  LFLAGS_LAUNCHER           += -L`pwd`
+  LFLAGS_LAUNCHER           += -L`pwd` 
+
+  # The gamma launcher runs the JDK from $JAVA_HOME, overriding the JVM with a
+  # freshly built JVM at ./libjvm.{so|dylib}.  This is accomplished by setting 
+  # the library searchpath using ({DY}LD_LIBRARY_PATH) to find the local JVM 
+  # first.  Gamma dlopen()s libjava from $JAVA_HOME/jre/lib{/$arch}, which is
+  # statically linked with CoreFoundation framework libs. Unfortunately, gamma's
+  # unique searchpath results in some unresolved symbols in the framework 
+  # libraries, because JDK libraries are inadvertently discovered first on the
+  # searchpath, e.g. libjpeg.  On Mac OS X, filenames are case *insensitive*.
+  # So, the actual filename collision is libjpeg.dylib and libJPEG.dylib.
+  # To resolve this, gamma needs to also statically link with the CoreFoundation 
+  # framework libraries.
+
+  ifeq ($(OS_VENDOR),Darwin)
+    LFLAGS_LAUNCHER         += -framework CoreFoundation 
+  endif
+
   LIBS_LAUNCHER             += -l$(JVM) $(LIBS)
 endif
 
-LINK_LAUNCHER = $(LINK.c)
+LINK_LAUNCHER = $(LINK.CC)
 
-LINK_LAUNCHER/PRE_HOOK  = $(LINK_LIB.CC/PRE_HOOK)
-LINK_LAUNCHER/POST_HOOK = $(LINK_LIB.CC/POST_HOOK)
+LINK_LAUNCHER/PRE_HOOK  = $(LINK_LIB.CXX/PRE_HOOK)
+LINK_LAUNCHER/POST_HOOK = $(LINK_LIB.CXX/POST_HOOK)
 
 LAUNCHER_OUT = launcher
 
@@ -73,11 +90,11 @@ DEPFILES := $(patsubst %.o,%.d,$(OBJS))
 
 $(LAUNCHER_OUT)/%.o: $(LAUNCHERDIR_SHARE)/%.c
 	$(QUIETLY) [ -d $(LAUNCHER_OUT) ] || { mkdir -p $(LAUNCHER_OUT); }
-	$(QUIETLY) $(CC) -g -o $@ -c $< -MMD $(LAUNCHERFLAGS) $(CPPFLAGS)
+	$(QUIETLY) $(CC) -g -o $@ -c $< -MMD $(LAUNCHERFLAGS) $(CXXFLAGS)
 
 $(LAUNCHER_OUT)/%.o: $(LAUNCHERDIR)/%.c
 	$(QUIETLY) [ -d $(LAUNCHER_OUT) ] || { mkdir -p $(LAUNCHER_OUT); }
-	$(QUIETLY) $(CC) -g -o $@ -c $< -MMD $(LAUNCHERFLAGS) $(CPPFLAGS)
+	$(QUIETLY) $(CC) -g -o $@ -c $< -MMD $(LAUNCHERFLAGS) $(CXXFLAGS)
 
 $(LAUNCHER): $(OBJS) $(LIBJVM) $(LAUNCHER_MAPFILE)
 	$(QUIETLY) echo Linking launcher...

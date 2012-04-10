@@ -72,8 +72,8 @@ else
   echo "MSC_VER_RAW=$MSC_VER_RAW"
 fi
 
-if [ "x$FORCE_LINK_VER" != "x" ]; then
-  echo "LINK_VER=$FORCE_LINK_VER"
+if [ "x$FORCE_LD_VER" != "x" ]; then
+  echo "LD_VER=$FORCE_LD_VER"
 else
   # use the "link" command that is co-located with the "cl" command
   cl_cmd=`which cl`
@@ -83,11 +83,11 @@ else
     # which can't find "cl" so just use which ever "link" we find
     link_cmd="link"
   fi
-  LINK_VER_RAW=`"$link_cmd" 2>&1 | "$HEAD" -n 1 | "$SED" 's/.*Version[\ ]*\([0-9][0-9.]*\).*/\1/'`
-  LINK_VER_MAJOR=`"$ECHO" $LINK_VER_RAW | "$CUT" -d'.' -f1`
-  LINK_VER_MINOR=`"$ECHO" $LINK_VER_RAW | "$CUT" -d'.' -f2`
-  LINK_VER_MICRO=`"$ECHO" $LINK_VER_RAW | "$CUT" -d'.' -f3`
-  LINK_VER=`"$EXPR" $LINK_VER_MAJOR \* 100 + $LINK_VER_MINOR`
-  echo "LINK_VER=$LINK_VER"
-  echo "LINK_VER_RAW=$LINK_VER_RAW"
+  LD_VER_RAW=`"$link_cmd" 2>&1 | "$HEAD" -n 1 | "$SED" 's/.*Version[\ ]*\([0-9][0-9.]*\).*/\1/'`
+  LD_VER_MAJOR=`"$ECHO" $LD_VER_RAW | "$CUT" -d'.' -f1`
+  LD_VER_MINOR=`"$ECHO" $LD_VER_RAW | "$CUT" -d'.' -f2`
+  LD_VER_MICRO=`"$ECHO" $LD_VER_RAW | "$CUT" -d'.' -f3`
+  LD_VER=`"$EXPR" $LD_VER_MAJOR \* 100 + $LD_VER_MINOR`
+  echo "LD_VER=$LD_VER"
+  echo "LD_VER_RAW=$LD_VER_RAW"
 fi

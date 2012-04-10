@@ -374,7 +374,9 @@ class HeapRegion: public G1OffsetTableContigSpace {
     ParVerifyClaimValue        = 4,
     RebuildRSClaimValue        = 5,
     CompleteMarkCSetClaimValue = 6,
-    ParEvacFailureClaimValue   = 7
+    ParEvacFailureClaimValue   = 7,
+    AggregateCountClaimValue   = 8,
+    VerifyCountClaimValue      = 9
   };
 
   inline HeapWord* par_allocate_no_bot_updates(size_t word_size) {
@@ -411,6 +413,16 @@ class HeapRegion: public G1OffsetTableContigSpace {
     assert(used_at_mark_start_bytes >= marked_bytes(),
            "Can't mark more than we have.");
     return used_at_mark_start_bytes - marked_bytes();
+  }
+
+  // Return the amount of bytes we'll reclaim if we collect this
+  // region. This includes not only the known garbage bytes in the
+  // region but also any unallocated space in it, i.e., [top, end),
+  // since it will also be reclaimed if we collect the region.
+  size_t reclaimable_bytes() {
+    size_t known_live_bytes = live_bytes();
+    assert(known_live_bytes <= capacity(), "sanity");
+    return capacity() - known_live_bytes;
   }
 
   // An upper bound on the number of live bytes in the region.
@@ -646,10 +658,8 @@ class HeapRegion: public G1OffsetTableContigSpace {
     init_top_at_mark_start();
   }
 
-  // <PREDICTION>
   void calc_gc_efficiency(void);
   double gc_efficiency() { return _gc_efficiency;}
-  // </PREDICTION>
 
   bool is_young() const     { return _young_type != NotYoung; }
   bool is_survivor() const  { return _young_type == Survivor; }

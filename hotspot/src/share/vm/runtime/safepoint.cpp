@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,7 @@
 SafepointSynchronize::SynchronizeState volatile SafepointSynchronize::_state = SafepointSynchronize::_not_synchronized;
 volatile int  SafepointSynchronize::_waiting_to_block = 0;
 volatile int SafepointSynchronize::_safepoint_counter = 0;
+int SafepointSynchronize::_current_jni_active_count = 0;
 long  SafepointSynchronize::_end_of_last_safepoint = 0;
 static volatile int PageArmed = 0 ;        // safepoint polling page is RO|RW vs PROT_NONE
 static volatile int TryingToBlock = 0 ;    // proximate value -- for advisory use only
@@ -135,8 +136,10 @@ void SafepointSynchronize::begin() {
 
   RuntimeService::record_safepoint_begin();
 
-  {
   MutexLocker mu(Safepoint_lock);
+
+  // Reset the count of active JNI critical threads
+  _current_jni_active_count = 0;
 
   // Set number of threads to wait for, before we initiate the callbacks
   _waiting_to_block = nof_threads;
@@ -216,6 +219,8 @@ void SafepointSynchronize::begin() {
 #ifdef ASSERT
   for (JavaThread *cur = Threads::first(); cur != NULL; cur = cur->next()) {
     assert(cur->safepoint_state()->is_running(), "Illegal initial state");
+    // Clear the visited flag to ensure that the critical counts are collected properly.
+    cur->set_visited_for_critical_count(false);
   }
 #endif // ASSERT
 
@@ -375,6 +380,16 @@ void SafepointSynchronize::begin() {
 
   OrderAccess::fence();
 
+#ifdef ASSERT
+  for (JavaThread *cur = Threads::first(); cur != NULL; cur = cur->next()) {
+    // make sure all the threads were visited
+    assert(cur->was_visited_for_critical_count(), "missed a thread");
+  }
+#endif // ASSERT
+
+  // Update the count of active JNI critical regions
+  GC_locker::set_jni_lock_count(_current_jni_active_count);
+
   if (TraceSafepoint) {
     VM_Operation *op = VMThread::vm_operation();
     tty->print_cr("Entering safepoint region: %s", (op != NULL) ? op->name() : "no vm operation");
@@ -391,7 +406,6 @@ void SafepointSynchronize::begin() {
   if (PrintSafepointStatistics) {
     // Record how much time spend on the above cleanup tasks
     update_statistics_on_cleanup_end(os::javaTimeNanos());
-  }
   }
 }
 
@@ -539,6 +553,42 @@ bool SafepointSynchronize::safepoint_safe(JavaThread *thread, JavaThreadState st
 }
 
 
+// See if the thread is running inside a lazy critical native and
+// update the thread critical count if so.  Also set a suspend flag to
+// cause the native wrapper to return into the JVM to do the unlock
+// once the native finishes.
+void SafepointSynchronize::check_for_lazy_critical_native(JavaThread *thread, JavaThreadState state) {
+  if (state == _thread_in_native &&
+      thread->has_last_Java_frame() &&
+      thread->frame_anchor()->walkable()) {
+    // This thread might be in a critical native nmethod so look at
+    // the top of the stack and increment the critical count if it
+    // is.
+    frame wrapper_frame = thread->last_frame();
+    CodeBlob* stub_cb = wrapper_frame.cb();
+    if (stub_cb != NULL &&
+        stub_cb->is_nmethod() &&
+        stub_cb->as_nmethod_or_null()->is_lazy_critical_native()) {
+      // A thread could potentially be in a critical native across
+      // more than one safepoint, so only update the critical state on
+      // the first one.  When it returns it will perform the unlock.
+      if (!thread->do_critical_native_unlock()) {
+#ifdef ASSERT
+        if (!thread->in_critical()) {
+          GC_locker::increment_debug_jni_lock_count();
+        }
+#endif
+        thread->enter_critical();
+        // Make sure the native wrapper calls back on return to
+        // perform the needed critical unlock.
+        thread->set_critical_native_unlock();
+      }
+    }
+  }
+}
+
+
+
 // -------------------------------------------------------------------------------------------------------
 // Implementation of Safepoint callback point
 
@@ -584,6 +634,12 @@ void SafepointSynchronize::block(JavaThread *thread) {
         assert(_waiting_to_block > 0, "sanity check");
         _waiting_to_block--;
         thread->safepoint_state()->set_has_called_back(true);
+
+        DEBUG_ONLY(thread->set_visited_for_critical_count(true));
+        if (thread->in_critical()) {
+          // Notice that this thread is in a critical section
+          increment_jni_active_count();
+        }
 
         // Consider (_waiting_to_block < 2) to pipeline the wakeup of the VM thread
         if (_waiting_to_block == 0) {
@@ -861,8 +917,9 @@ void ThreadSafepointState::examine_state_of_thread() {
   // running, but are actually at a safepoint. We will happily
   // agree and update the safepoint state here.
   if (SafepointSynchronize::safepoint_safe(_thread, state)) {
-      roll_forward(_at_safepoint);
-      return;
+    SafepointSynchronize::check_for_lazy_critical_native(_thread, state);
+    roll_forward(_at_safepoint);
+    return;
   }
 
   if (state == _thread_in_vm) {
@@ -886,6 +943,11 @@ void ThreadSafepointState::roll_forward(suspend_type type) {
   switch(_type) {
     case _at_safepoint:
       SafepointSynchronize::signal_thread_at_safepoint();
+      DEBUG_ONLY(_thread->set_visited_for_critical_count(true));
+      if (_thread->in_critical()) {
+        // Notice that this thread is in a critical section
+        SafepointSynchronize::increment_jni_active_count();
+      }
       break;
 
     case _call_back:

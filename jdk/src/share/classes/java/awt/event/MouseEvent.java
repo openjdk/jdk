@@ -488,14 +488,15 @@ public class MouseEvent extends InputEvent {
      * @param when         A long integer that gives the time the event occurred.
      *                     Passing negative or zero value
      *                     is not recommended
-     * @param modifiers    The modifier keys down during event (e.g. shift, ctrl,
-     *                     alt, meta)
+     * @param modifiers    a modifier mask describing the modifier keys and mouse
+     *                     buttons (for example, shift, ctrl, alt, and meta) that
+     *                     are down during the event.
+     *                     Only extended modifiers are allowed to be used as a
+     *                     value for this parameter (see the {@link InputEvent#getModifiersEx}
+     *                     class for the description of extended modifiers).
      *                     Passing negative parameter
      *                     is not recommended.
-     *                     Zero value means that no modifiers were passed.
-     *                     Use either an extended _DOWN_MASK or old _MASK modifiers,
-     *                     however do not mix models in the one event.
-     *                     The extended modifiers are preferred for using
+     *                     Zero value means that no modifiers were passed
      * @param x            The horizontal x coordinate for the mouse location.
      *                       It is allowed to pass negative values
      * @param y            The vertical y coordinate for the mouse location.
@@ -586,14 +587,15 @@ public class MouseEvent extends InputEvent {
      * @param when         A long integer that gives the time the event occurred.
      *                     Passing negative or zero value
      *                     is not recommended
-     * @param modifiers    The modifier keys down during event (e.g. shift, ctrl,
-     *                     alt, meta)
+     * @param modifiers    a modifier mask describing the modifier keys and mouse
+     *                     buttons (for example, shift, ctrl, alt, and meta) that
+     *                     are down during the event.
+     *                     Only extended modifiers are allowed to be used as a
+     *                     value for this parameter (see the {@link InputEvent#getModifiersEx}
+     *                     class for the description of extended modifiers).
      *                     Passing negative parameter
      *                     is not recommended.
-     *                     Zero value means that no modifiers were passed.
-     *                     Use either an extended _DOWN_MASK or old _MASK modifiers,
-     *                     however do not mix models in the one event.
-     *                     The extended modifiers are preferred for using
+     *                     Zero value means that no modifiers were passed
      * @param x            The horizontal x coordinate for the mouse location.
      *                       It is allowed to pass negative values
      * @param y            The vertical y coordinate for the mouse location.
@@ -657,14 +659,15 @@ public class MouseEvent extends InputEvent {
      * @param when         A long integer that gives the time the event occurred.
      *                     Passing negative or zero value
      *                     is not recommended
-     * @param modifiers    The modifier keys down during event (e.g. shift, ctrl,
-     *                     alt, meta)
+     * @param modifiers    a modifier mask describing the modifier keys and mouse
+     *                     buttons (for example, shift, ctrl, alt, and meta) that
+     *                     are down during the event.
+     *                     Only extended modifiers are allowed to be used as a
+     *                     value for this parameter (see the {@link InputEvent#getModifiersEx}
+     *                     class for the description of extended modifiers).
      *                     Passing negative parameter
      *                     is not recommended.
-     *                     Zero value means that no modifiers were passed.
-     *                     Use either an extended _DOWN_MASK or old _MASK modifiers,
-     *                     however do not mix models in the one event.
-     *                     The extended modifiers are preferred for using
+     *                     Zero value means that no modifiers were passed
      * @param x            The horizontal x coordinate for the mouse location.
      *                       It is allowed to pass negative values
      * @param y            The vertical y coordinate for the mouse location.
@@ -758,7 +761,6 @@ public class MouseEvent extends InputEvent {
 
             if (getModifiersEx() != 0) { //There is at least one more button in a pressed state.
                 if (id == MouseEvent.MOUSE_RELEASED || id == MouseEvent.MOUSE_CLICKED){
-                    System.out.println("MEvent. CASE!");
                     shouldExcludeButtonFromExtModifiers = true;
                 }
             }

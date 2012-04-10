@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package javax.sql.rowset.serial;
 
 import java.sql.*;
+import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -119,7 +120,7 @@ public class SQLInputImpl implements SQLInput {
             "object with null parameters");
         }
         // assign our local reference to the attribute stream
-        attrib = attributes;
+        attrib = Arrays.copyOf(attributes, attributes.length);
         // init the index point before the head of the stream
         idx = -1;
         // set the map

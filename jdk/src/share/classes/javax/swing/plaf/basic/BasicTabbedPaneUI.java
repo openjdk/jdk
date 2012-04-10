@@ -545,7 +545,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
         if (mnemonicToIndexMap == null) {
             initMnemonics();
         }
-        mnemonicInputMap.put(KeyStroke.getKeyStroke(mnemonic, Event.ALT_MASK),
+        mnemonicInputMap.put(KeyStroke.getKeyStroke(mnemonic, BasicLookAndFeel.getFocusAcceleratorKeyMask()),
                              "setSelectedIndex");
         mnemonicToIndexMap.put(Integer.valueOf(mnemonic), Integer.valueOf(index));
     }
@@ -1115,9 +1115,8 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
 
     protected int getTabLabelShiftY(int tabPlacement, int tabIndex, boolean isSelected) {
         Rectangle tabRect = rects[tabIndex];
-        String propKey = (isSelected ? "selectedLabelShift" : "labelShift");
-        int nudge = DefaultLookup.getInt(
-                tabPane, this, "TabbedPane." + propKey, 1);
+        int nudge = (isSelected ? DefaultLookup.getInt(tabPane, this, "TabbedPane.selectedLabelShift", -1) :
+                DefaultLookup.getInt(tabPane, this, "TabbedPane.labelShift", 1));
 
         switch (tabPlacement) {
             case BOTTOM:

@@ -35,6 +35,8 @@ include $(BUILDDIR)/common/Defs.gmk
 #
 ifeq ($(PLATFORM), windows)
 FILES_cpp = jawt.cpp
+else ifeq ($(PLATFORM), macosx) # PLATFORM
+FILES_objc = jawt.m
 else # PLATFORM
 FILES_c = jawt.c
 endif # PLATFORM
@@ -108,28 +110,34 @@ CPPFLAGS += -I$(OPENWIN_HOME)/include \
 	    -I$(SHARE_SRC)/native/$(PKGDIR)/../dc/path \
             -I$(PLATFORM_SRC)/native/$(PKGDIR)/../jdga \
 	    $(EVENT_MODEL)
+
 #
 # Libraries to link in.
 #
 ifeq ($(PLATFORM), solaris)
   ifndef BUILD_HEADLESS_ONLY
-    OTHER_LDLIBS = -L$(LIBDIR)/$(LIBARCH) -L$(OPENWIN_LIB) -L$(LIBDIR)/$(LIBARCH)/xawt -lmawt -L/usr/openwin/sfw/lib$(ISA_DIR) -lXrender
+    OTHER_LDLIBS = -L$(LIBDIR)/$(LIBARCH) -L$(OPENWIN_LIB) -lawt_xawt -L/usr/openwin/sfw/lib$(ISA_DIR) -lXrender
   else
-    OTHER_LDLIBS = -L$(LIBDIR)/$(LIBARCH) -L$(OPENWIN_LIB) -L$(LIBDIR)/$(LIBARCH)/headless -lmawt -L/usr/openwin/sfw/lib$(ISA_DIR) -lXrender
+    OTHER_LDLIBS = -L$(LIBDIR)/$(LIBARCH) -L$(OPENWIN_LIB) -lawt_headless -L/usr/openwin/sfw/lib$(ISA_DIR) -lXrender
   endif
 endif # PLATFORM
 
 ifeq ($(PLATFORM), linux)
   ifndef BUILD_HEADLESS_ONLY
-    OTHER_LDLIBS = -L$(LIBDIR)/$(LIBARCH) -lawt -L$(LIBDIR)/$(LIBARCH)/xawt -lmawt
+    OTHER_LDLIBS = -L$(LIBDIR)/$(LIBARCH) -lawt -lawt_xawt
   else
-    OTHER_LDLIBS = -L$(LIBDIR)/$(LIBARCH) -lawt -L$(LIBDIR)/$(LIBARCH)/headless -lmawt
+    OTHER_LDLIBS = -L$(LIBDIR)/$(LIBARCH) -lawt -lawt_headless
     CFLAGS += -DHEADLESS
   endif
 endif # PLATFORM
 
+ifeq ($(PLATFORM), macosx)
+vpath %.m   $(call NativeSrcDirList,,native/sun/awt)
+OTHER_LDLIBS = -lawt_lwawt -L$(LIBDIR) -Xlinker -rpath -Xlinker @loader_path \
+               -framework Cocoa
 endif # PLATFORM
 
+endif # PLATFORM
 
 #
 # Lets not remove any class files.

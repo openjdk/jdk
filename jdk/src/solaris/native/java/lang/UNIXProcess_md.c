@@ -40,7 +40,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <ctype.h>
-#include <wait.h>
+#include <sys/wait.h>
 #include <signal.h>
 #include <string.h>
 #include <errno.h>
@@ -48,6 +48,11 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <limits.h>
+
+#ifdef __APPLE__
+#include <crt_externs.h>
+#define environ (*_NSGetEnviron())
+#endif
 
 /*
  * There are 3 possible strategies we might use to "fork":
@@ -385,6 +390,14 @@ isAsciiDigit(char c)
   return c >= '0' && c <= '9';
 }
 
+#ifdef _ALLBSD_SOURCE
+#define FD_DIR "/dev/fd"
+#define dirent64 dirent
+#define readdir64 readdir
+#else
+#define FD_DIR "/proc/self/fd"
+#endif
+
 static int
 closeDescriptors(void)
 {
@@ -402,7 +415,7 @@ closeDescriptors(void)
     restartableClose(from_fd);          /* for possible use by opendir() */
     restartableClose(from_fd + 1);      /* another one for good luck */
 
-    if ((dp = opendir("/proc/self/fd")) == NULL)
+    if ((dp = opendir(FD_DIR)) == NULL)
         return 0;
 
     /* We use readdir64 instead of readdir to work around Solaris bug

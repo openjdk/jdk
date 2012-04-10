@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,6 +284,7 @@
   template(run_method_name,                           "run")                                      \
   template(exit_method_name,                          "exit")                                     \
   template(add_method_name,                           "add")                                      \
+  template(remove_method_name,                        "remove")                                   \
   template(parent_name,                               "parent")                                   \
   template(threads_name,                              "threads")                                  \
   template(groups_name,                               "groups")                                   \
@@ -508,6 +509,9 @@
   template(clear_name,                                 "clear")                                                   \
   template(trigger_method_signature,                   "(ILjava/lang/management/MemoryUsage;)V")                                                 \
   template(startAgent_name,                            "startAgent")                                              \
+  template(startRemoteAgent_name,                      "startRemoteManagementAgent")                              \
+  template(startLocalAgent_name,                       "startLocalManagementAgent")                               \
+  template(stopRemoteAgent_name,                       "stopRemoteManagementAgent")                               \
   template(java_lang_management_ThreadInfo_constructor_signature, "(Ljava/lang/Thread;ILjava/lang/Object;Ljava/lang/Thread;JJJJ[Ljava/lang/StackTraceElement;)V") \
   template(java_lang_management_ThreadInfo_with_locks_constructor_signature, "(Ljava/lang/Thread;ILjava/lang/Object;Ljava/lang/Thread;JJJJ[Ljava/lang/StackTraceElement;[Ljava/lang/Object;[I[Ljava/lang/Object;)V") \
   template(long_long_long_long_void_signature,         "(JJJJ)V")                                                 \

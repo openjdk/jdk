@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2134,6 +2134,7 @@ public:
   // address pseudos: make these names unlike instruction names to avoid confusion
   inline intptr_t load_pc_address( Register reg, int bytes_to_skip );
   inline void load_contents(const AddressLiteral& addrlit, Register d, int offset = 0);
+  inline void load_bool_contents(const AddressLiteral& addrlit, Register d, int offset = 0);
   inline void load_ptr_contents(const AddressLiteral& addrlit, Register d, int offset = 0);
   inline void store_contents(Register s, const AddressLiteral& addrlit, Register temp, int offset = 0);
   inline void store_ptr_contents(Register s, const AddressLiteral& addrlit, Register temp, int offset = 0);
@@ -2220,7 +2221,7 @@ public:
   // traps as per trap.h (SPARC ABI?)
 
   void breakpoint_trap();
-  void breakpoint_trap(Condition c, CC cc = icc);
+  void breakpoint_trap(Condition c, CC cc);
   void flush_windows_trap();
   void clean_windows_trap();
   void get_psr_trap();
@@ -2249,7 +2250,7 @@ public:
   // this platform we assume byte size
 
   inline void stbool(Register d, const Address& a) { stb(d, a); }
-  inline void ldbool(const Address& a, Register d) { ldsb(a, d); }
+  inline void ldbool(const Address& a, Register d) { ldub(a, d); }
   inline void movbool( bool boolconst, Register d) { mov( (int) boolconst, d); }
 
   // klass oop manipulations if compressed

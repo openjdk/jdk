@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1301,9 +1301,6 @@ JVM_END
 // Inner class reflection ///////////////////////////////////////////////////////////////////////////////
 
 JVM_ENTRY(jobjectArray, JVM_GetDeclaredClasses(JNIEnv *env, jclass ofClass))
-  const int inner_class_info_index = 0;
-  const int outer_class_info_index = 1;
-
   JvmtiVMObjectAllocEventCollector oam;
   // ofClass is a reference to a java_lang_Class object. The mirror object
   // of an instanceKlass
@@ -1315,26 +1312,26 @@ JVM_ENTRY(jobjectArray, JVM_GetDeclaredClasses(JNIEnv *env, jclass ofClass))
   }
 
   instanceKlassHandle k(thread, java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(ofClass)));
+  InnerClassesIterator iter(k);
 
-  if (k->inner_classes()->length() == 0) {
+  if (iter.length() == 0) {
     // Neither an inner nor outer class
     oop result = oopFactory::new_objArray(SystemDictionary::Class_klass(), 0, CHECK_NULL);
     return (jobjectArray)JNIHandles::make_local(env, result);
   }
 
   // find inner class info
-  typeArrayHandle    icls(thread, k->inner_classes());
   constantPoolHandle cp(thread, k->constants());
-  int length = icls->length();
+  int length = iter.length();
 
   // Allocate temp. result array
   objArrayOop r = oopFactory::new_objArray(SystemDictionary::Class_klass(), length/4, CHECK_NULL);
   objArrayHandle result (THREAD, r);
   int members = 0;
 
-  for(int i = 0; i < length; i += 4) {
-    int ioff = icls->ushort_at(i + inner_class_info_index);
-    int ooff = icls->ushort_at(i + outer_class_info_index);
+  for (; !iter.done(); iter.next()) {
+    int ioff = iter.inner_class_info_index();
+    int ooff = iter.outer_class_info_index();
 
     if (ioff != 0 && ooff != 0) {
       // Check to see if the name matches the class we're looking for
@@ -1392,17 +1389,13 @@ klassOop instanceKlass::compute_enclosing_class_impl(instanceKlassHandle k,
                                                      bool* inner_is_member,
                                                      TRAPS) {
   Thread* thread = THREAD;
-  const int inner_class_info_index = inner_class_inner_class_info_offset;
-  const int outer_class_info_index = inner_class_outer_class_info_offset;
-
-  if (k->inner_classes()->length() == 0) {
+  InnerClassesIterator iter(k);
+  if (iter.length() == 0) {
     // No inner class info => no declaring class
     return NULL;
   }
 
-  typeArrayHandle i_icls(thread, k->inner_classes());
   constantPoolHandle i_cp(thread, k->constants());
-  int i_length = i_icls->length();
 
   bool found = false;
   klassOop ok;
@@ -1410,10 +1403,10 @@ klassOop instanceKlass::compute_enclosing_class_impl(instanceKlassHandle k,
   *inner_is_member = false;
 
   // Find inner_klass attribute
-  for (int i = 0; i < i_length && !found; i += inner_class_next_offset) {
-    int ioff = i_icls->ushort_at(i + inner_class_info_index);
-    int ooff = i_icls->ushort_at(i + outer_class_info_index);
-    int noff = i_icls->ushort_at(i + inner_class_inner_name_offset);
+  for (; !iter.done() && !found; iter.next()) {
+    int ioff = iter.inner_class_info_index();
+    int ooff = iter.outer_class_info_index();
+    int noff = iter.inner_name_index();
     if (ioff != 0) {
       // Check to see if the name matches the class we're looking for
       // before attempting to find the class.
@@ -2716,7 +2709,9 @@ JVM_ENTRY(void, JVM_StopThread(JNIEnv* env, jobject jthread, jobject throwable))
   }
   oop java_thread = JNIHandles::resolve_non_null(jthread);
   JavaThread* receiver = java_lang_Thread::thread(java_thread);
-  Events::log("JVM_StopThread thread JavaThread " INTPTR_FORMAT " as oop " INTPTR_FORMAT " [exception " INTPTR_FORMAT "]", receiver, (address)java_thread, throwable);
+  Events::log_exception(JavaThread::current(),
+                        "JVM_StopThread thread JavaThread " INTPTR_FORMAT " as oop " INTPTR_FORMAT " [exception " INTPTR_FORMAT "]",
+                        receiver, (address)java_thread, throwable);
   // First check if thread is alive
   if (receiver != NULL) {
     // Check if exception is getting thrown at self (use oop equality, since the

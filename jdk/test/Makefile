@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,15 @@ ifeq ($(UNAME_S), SunOS)
 endif
 ifeq ($(UNAME_S), Linux)
   OS_NAME     = linux
+  OS_ARCH    := $(shell $(UNAME) -m)
+  # Check for unknown arch, try uname -p if uname -m says unknown
+  ifeq ($(OS_ARCH),unknown)
+    OS_ARCH    := $(shell $(UNAME) -p)
+  endif
+  OS_VERSION := $(shell $(UNAME) -r)
+endif
+ifeq ($(UNAME_S), Darwin)
+  OS_NAME     = macosx
   OS_ARCH    := $(shell $(UNAME) -m)
   # Check for unknown arch, try uname -p if uname -m says unknown
   ifeq ($(OS_ARCH),unknown)
@@ -432,14 +441,14 @@ jdk_awt: $(call TestDirs, com/sun/awt java/awt sun/awt \
          javax/imageio javax/print sun/pisces)
 	$(call RunOthervmBatch)
 
-# Stable agentvm testruns (minus items from PROBLEM_LIST)
+# Stable othervm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_beans1
 JDK_DEFAULT_TARGETS += jdk_beans1
 jdk_beans1: $(call TestDirs, \
             java/beans/beancontext java/beans/PropertyChangeSupport \
             java/beans/Introspector java/beans/Performance \
             java/beans/VetoableChangeSupport java/beans/Statement)
-	$(call RunAgentvmBatch)
+	$(call RunOthervmBatch)
 
 # Stable othervm testruns (minus items from PROBLEM_LIST)
 #   Using agentvm has serious problems with these tests
@@ -517,14 +526,14 @@ jdk_nio1: $(call TestDirs, java/nio/file)
 JDK_ALL_TARGETS += jdk_nio2
 JDK_DEFAULT_TARGETS += jdk_nio2
 jdk_nio2: $(call TestDirs, java/nio/Buffer java/nio/ByteOrder \
-          java/nio/channels java/nio/MappedByteBuffer)
+          java/nio/channels java/nio/MappedByteBuffer sun/nio/ch)
 	$(call SharedLibraryPermissions,java/nio/channels)
 	$(call RunAgentvmBatch)
 
 # Stable agentvm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_nio3
 JDK_DEFAULT_TARGETS += jdk_nio3
-jdk_nio3: $(call TestDirs, sun/nio)
+jdk_nio3: $(call TestDirs, java/nio/charset sun/nio/cs)
 	$(call RunAgentvmBatch)
 
 # All nio tests
@@ -556,7 +565,7 @@ jdk_security2: $(call TestDirs, javax/crypto javax/xml/crypto com/sun/crypto)
 JDK_ALL_TARGETS += jdk_security3
 jdk_security3: $(call TestDirs, com/sun/security lib/security javax/security \
         sun/security com/sun/org/apache/xml/internal/security \
-        com/oracle/secrity/ucrypto)
+        com/oracle/security/ucrypto)
 	$(call SharedLibraryPermissions,sun/security)
 	$(call RunAgentvmBatch)
 

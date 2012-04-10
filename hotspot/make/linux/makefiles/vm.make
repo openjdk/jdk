@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ DEP_DIR       = $(GENERATED)/dependencies
 -include $(DEP_DIR)/*.d
 
 # read machine-specific adjustments (%%% should do this via buildtree.make?)
-ifeq ($(ZERO_BUILD), true)
+ifeq ($(findstring true, $(JVM_VARIANT_ZERO) $(JVM_VARIANT_ZEROSHARK)), true)
   include $(MAKEFILES_DIR)/zeroshark.make
 else
   include $(MAKEFILES_DIR)/$(BUILDARCH).make
@@ -88,15 +88,19 @@ BUILD_TARGET  = -DHOTSPOT_BUILD_TARGET="\"$(TARGET)\""
 BUILD_USER    = -DHOTSPOT_BUILD_USER="\"$(HOTSPOT_BUILD_USER)\""
 VM_DISTRO     = -DHOTSPOT_VM_DISTRO="\"$(HOTSPOT_VM_DISTRO)\""
 
-CPPFLAGS =           \
+CXXFLAGS =           \
   ${SYSDEFS}         \
   ${INCLUDES}        \
   ${BUILD_VERSION}   \
   ${BUILD_TARGET}    \
   ${BUILD_USER}      \
   ${HS_LIB_ARCH}     \
-  ${JRE_VERSION}     \
   ${VM_DISTRO}
+
+# This is VERY important! The version define must only be supplied to vm_version.o
+# If not, ccache will not re-use the cache at all, since the version string might contain
+# a time and date. 
+vm_version.o: CXXFLAGS += ${JRE_VERSION}
 
 ifndef JAVASE_EMBEDDED
 CFLAGS += -DINCLUDE_TRACE
@@ -232,7 +236,7 @@ mapfile_reorder : mapfile $(REORDERFILE)
 vm.def: $(Res_Files) $(Obj_Files)
 	sh $(GAMMADIR)/make/linux/makefiles/build_vm_def.sh *.o > $@
 
-ifeq ($(SHARK_BUILD), true)
+ifeq ($(JVM_VARIANT_ZEROSHARK), true)
   STATIC_CXX = false
 else
   ifeq ($(ZERO_LIBARCH), ppc64)
@@ -264,21 +268,21 @@ else
 
   LIBS_VM                  += $(LIBS)
 endif
-ifeq ($(ZERO_BUILD), true)
+ifeq ($(JVM_VARIANT_ZERO), true)
   LIBS_VM += $(LIBFFI_LIBS)
 endif
-ifeq ($(SHARK_BUILD), true)
+ifeq ($(JVM_VARIANT_ZEROSHARK), true)
+  LIBS_VM   += $(LIBFFI_LIBS) $(LLVM_LIBS)
   LFLAGS_VM += $(LLVM_LDFLAGS)
-  LIBS_VM   += $(LLVM_LIBS)
 endif
 
-LINK_VM = $(LINK_LIB.c)
+LINK_VM = $(LINK_LIB.CC)
 
 # rule for building precompiled header
 $(PRECOMPILED_HEADER):
 	$(QUIETLY) echo Generating precompiled header $@
 	$(QUIETLY) mkdir -p $(PRECOMPILED_HEADER_DIR)
-	$(QUIETLY) $(COMPILE.CC) $(DEPFLAGS) -x c++-header $(PRECOMPILED_HEADER_SRC) -o $@ $(COMPILE_DONE)
+	$(QUIETLY) $(COMPILE.CXX) $(DEPFLAGS) -x c++-header $(PRECOMPILED_HEADER_SRC) -o $@ $(COMPILE_DONE)
 
 # making the library:
 
@@ -308,10 +312,10 @@ endif
 $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
 	$(QUIETLY) {                                                    \
 	    echo Linking vm...;                                         \
-	    $(LINK_LIB.CC/PRE_HOOK)                                     \
+	    $(LINK_LIB.CXX/PRE_HOOK)                                     \
 	    $(LINK_VM) $(LD_SCRIPT_FLAG)                                \
 		       $(LFLAGS_VM) -o $@ $(LIBJVM.o) $(LIBS_VM);       \
-	    $(LINK_LIB.CC/POST_HOOK)                                    \
+	    $(LINK_LIB.CXX/POST_HOOK)                                    \
 	    rm -f $@.1; ln -s $@ $@.1;                                  \
 	    [ -f $(LIBJVM_G) ] || { ln -s $@ $(LIBJVM_G); ln -s $@.1 $(LIBJVM_G).1; }; \
             if [ \"$(CROSS_COMPILE_ARCH)\" = \"\" ] ; then                    \
@@ -364,9 +368,12 @@ include $(MAKEFILES_DIR)/jsig.make
 # Serviceability agent
 include $(MAKEFILES_DIR)/saproc.make
 
+# Whitebox testing API
+include $(MAKEFILES_DIR)/wb.make
+
 #----------------------------------------------------------------------
 
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC)
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC) $(WB_JAR)
 
 install: install_jvm install_jsig install_saproc
 

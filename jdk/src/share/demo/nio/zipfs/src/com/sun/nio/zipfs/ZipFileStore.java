@@ -61,7 +61,7 @@ public class ZipFileStore extends FileStore {
     private final ZipFileSystem zfs;
 
     ZipFileStore(ZipPath zpath) {
-        this.zfs = (ZipFileSystem)zpath.getFileSystem();
+        this.zfs = zpath.getFileSystem();
     }
 
     @Override

@@ -27,11 +27,12 @@
 
 #include "utilities/globalDefinitions.hpp"
 
-
+class Decoder;
 class VM_ReportJavaOutOfMemory;
 
 class VMError : public StackObj {
   friend class VM_ReportJavaOutOfMemory;
+  friend class Decoder;
 
   enum ErrorType {
     internal_error = 0xe0000000,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.ProviderException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import javax.crypto.KeyAgreementSpi;
@@ -234,31 +235,14 @@ extends KeyAgreementSpi {
     protected byte[] engineGenerateSecret()
         throws IllegalStateException
     {
-        if (generateSecret == false) {
-            throw new IllegalStateException
-                ("Key agreement has not been completed yet");
+        int expectedLen = (init_p.bitLength() + 7) >>> 3;
+        byte[] result = new byte[expectedLen];
+        try {
+            engineGenerateSecret(result, 0);
+        } catch (ShortBufferException sbe) {
+            // should never happen since length are identical
         }
-
-        // Reset the key agreement here (in case anything goes wrong)
-        generateSecret = false;
-
-        // get the modulus
-        BigInteger modulus = init_p;
-
-        BigInteger tmpResult = y.modPow(x, modulus);
-        byte[] secret = tmpResult.toByteArray();
-
-        /*
-         * BigInteger.toByteArray will sometimes put a sign byte up front, but
-         * we NEVER want one.
-         */
-        if ((tmpResult.bitLength() % 8) == 0) {
-            byte retval[] = new byte[secret.length - 1];
-            System.arraycopy(secret, 1, retval, 0, retval.length);
-            return retval;
-        } else {
-            return secret;
-        }
+        return result;
     }
 
     /**
@@ -301,39 +285,51 @@ extends KeyAgreementSpi {
         }
 
         BigInteger modulus = init_p;
-        byte[] secret = this.y.modPow(this.x, modulus).toByteArray();
-
-        // BigInteger.toByteArray will sometimes put a sign byte up front,
-        // but we NEVER want one.
-        if ((secret.length << 3) != modulus.bitLength()) {
-            if ((sharedSecret.length - offset) < (secret.length - 1)) {
-                throw new ShortBufferException
+        int expectedLen = (modulus.bitLength() + 7) >>> 3;
+        if ((sharedSecret.length - offset) < expectedLen) {
+            throw new ShortBufferException
                     ("Buffer too short for shared secret");
-            }
-            System.arraycopy(secret, 1, sharedSecret, offset,
-                             secret.length - 1);
-
-            // Reset the key agreement here (not earlier!), so that people
-            // can recover from ShortBufferException above without losing
-            // internal state
-            generateSecret = false;
-
-            return secret.length - 1;
-
-        } else {
-            if ((sharedSecret.length - offset) < secret.length) {
-                throw new ShortBufferException
-                    ("Buffer too short to hold shared secret");
-            }
-            System.arraycopy(secret, 0, sharedSecret, offset, secret.length);
-
-            // Reset the key agreement here (not earlier!), so that people
-            // can recover from ShortBufferException above without losing
-            // internal state
-            generateSecret = false;
-
-            return secret.length;
         }
+
+        // Reset the key agreement after checking for ShortBufferException
+        // above, so user can recover w/o losing internal state
+        generateSecret = false;
+
+        /*
+         * NOTE: BigInteger.toByteArray() returns a byte array containing
+         * the two's-complement representation of this BigInteger with
+         * the most significant byte is in the zeroth element. This
+         * contains the minimum number of bytes required to represent
+         * this BigInteger, including at least one sign bit whose value
+         * is always 0.
+         *
+         * Keys are always positive, and the above sign bit isn't
+         * actually used when representing keys.  (i.e. key = new
+         * BigInteger(1, byteArray))  To obtain an array containing
+         * exactly expectedLen bytes of magnitude, we strip any extra
+         * leading 0's, or pad with 0's in case of a "short" secret.
+         */
+        byte[] secret = this.y.modPow(this.x, modulus).toByteArray();
+        if (secret.length == expectedLen) {
+            System.arraycopy(secret, 0, sharedSecret, offset,
+                             secret.length);
+        } else {
+            // Array too short, pad it w/ leading 0s
+            if (secret.length < expectedLen) {
+                System.arraycopy(secret, 0, sharedSecret,
+                    offset + (expectedLen - secret.length),
+                    secret.length);
+            } else {
+                // Array too long, check and trim off the excess
+                if ((secret.length == (expectedLen+1)) && secret[0] == 0) {
+                    // ignore the leading sign byte
+                    System.arraycopy(secret, 1, sharedSecret, offset, expectedLen);
+                } else {
+                    throw new ProviderException("Generated secret is out-of-range");
+                }
+            }
+        }
+        return expectedLen;
     }
 
     /**

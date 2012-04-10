@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,16 +33,23 @@
 // Simple class to format the ctor arguments into a fixed-sized buffer.
 template <size_t bufsz = 256>
 class FormatBuffer {
-public:
+ public:
   inline FormatBuffer(const char * format, ...);
   inline void append(const char* format, ...);
+  inline void print(const char* format, ...);
+  inline void printv(const char* format, va_list ap);
   operator const char *() const { return _buf; }
 
-private:
+  char* buffer() { return _buf; }
+  int size() { return bufsz; }
+
+ private:
   FormatBuffer(const FormatBuffer &); // prevent copies
 
-private:
+ protected:
   char _buf[bufsz];
+
+  inline FormatBuffer();
 };
 
 template <size_t bufsz>
@@ -51,6 +58,24 @@ FormatBuffer<bufsz>::FormatBuffer(const char * format, ...) {
   va_start(argp, format);
   jio_vsnprintf(_buf, bufsz, format, argp);
   va_end(argp);
+}
+
+template <size_t bufsz>
+FormatBuffer<bufsz>::FormatBuffer() {
+  _buf[0] = '\0';
+}
+
+template <size_t bufsz>
+void FormatBuffer<bufsz>::print(const char * format, ...) {
+  va_list argp;
+  va_start(argp, format);
+  jio_vsnprintf(_buf, bufsz, format, argp);
+  va_end(argp);
+}
+
+template <size_t bufsz>
+void FormatBuffer<bufsz>::printv(const char * format, va_list argp) {
+  jio_vsnprintf(_buf, bufsz, format, argp);
 }
 
 template <size_t bufsz>

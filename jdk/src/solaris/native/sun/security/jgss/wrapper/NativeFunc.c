@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <dlfcn.h>
-#include <link.h>
 #include "NativeFunc.h"
 
 /* standard GSS method names (ordering is from mapfile) */

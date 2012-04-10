@@ -38,8 +38,14 @@ ifndef OPENJDK
   endif
 endif
 
+JFR =
+ifndef OPENJDK
+ifndef JAVASE_EMBEDDED
+	JFR = jfr
+endif
+endif
 
-SUBDIRS = net nio util $(UCRYPTO)
+SUBDIRS = $(JFR) net nio util $(UCRYPTO)
 
 include $(BUILDDIR)/common/Subdirs.gmk
 

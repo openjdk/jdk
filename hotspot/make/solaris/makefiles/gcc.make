@@ -23,11 +23,15 @@
 #
 
 #------------------------------------------------------------------------
-# CC, CPP & AS
+# CC, CXX & AS
 
-CPP = g++
-CC  = gcc
-AS  = $(CC) -c
+# If a SPEC is not set already, then use these defaults.
+ifeq ($(SPEC),)
+  CXX = g++
+  CC  = gcc
+  AS  = $(CC) -c
+  MCS = /usr/ccs/bin/mcs
+endif
 
 Compiler = gcc
 
@@ -36,12 +40,12 @@ Compiler = gcc
 CC_VER_MAJOR := $(shell $(CC) -dumpversion | sed 's/egcs-//' | cut -d'.' -f1)
 CC_VER_MINOR := $(shell $(CC) -dumpversion | sed 's/egcs-//' | cut -d'.' -f2)
 
-# Check for the versions of C++ and C compilers ($CPP and $CC) used. 
+# Check for the versions of C++ and C compilers ($CXX and $CC) used. 
 
 # Get the last thing on the line that looks like x.x+ (x is a digit).
 COMPILER_REV := \
-$(shell $(CPP) -dumpversion | sed 's/egcs-//' | cut -d'.' -f1)
-C_COMPILER_REV := \
+$(shell $(CXX) -dumpversion | sed 's/egcs-//' | cut -d'.' -f1)
+CC_COMPILER_REV := \
 $(shell $(CC) -dumpversion | sed 's/egcs-//' | cut -d'.' -f2)
 
 
@@ -193,5 +197,3 @@ DEBUG_CFLAGS += $(DEBUG_CFLAGS/$(BUILDARCH))
 ifeq ($(DEBUG_CFLAGS/$(BUILDARCH)),) 
 DEBUG_CFLAGS += -gstabs 
 endif 
-
-MCS = /usr/ccs/bin/mcs

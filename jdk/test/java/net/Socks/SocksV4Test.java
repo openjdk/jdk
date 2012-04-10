@@ -26,23 +26,22 @@
  * @bug 4727547
  * @summary SocksSocketImpl throws NullPointerException
  * @build SocksServer
+ * @run main SocksV4Test
  */
 
 import java.net.*;
-import java.io.*;
 
 public class SocksV4Test {
-    public static void main(String[] args) throws IOException {
-        // Create a SOCKS V4 proxy on port 8888
-        SocksServer srvr = new SocksServer(8888, true);
+    public static void main(String[] args) throws Exception {
+        // Create a SOCKS V4 proxy
+        SocksServer srvr = new SocksServer(0, true);
         srvr.start();
-        System.setProperty("socksProxyHost", "localhost");
-        System.setProperty("socksProxyPort", "8888");
+        Proxy sp = new Proxy(Proxy.Type.SOCKS,
+                             new InetSocketAddress("localhost", srvr.getPort()));
         // Let's create an unresolved address
         InetSocketAddress ad = new InetSocketAddress("doesnt.exist.name", 1234);
-        Socket s = new Socket();
-        try {
-            s.connect(ad,10000);
+        try (Socket s = new Socket(sp)) {
+            s.connect(ad, 10000);
         } catch (UnknownHostException ex) {
             // OK, that's what we expected
         } catch (NullPointerException npe) {
@@ -50,7 +49,6 @@ public class SocksV4Test {
             throw new RuntimeException("Got a NUllPointerException");
         } finally {
             srvr.terminate();
-            srvr.interrupt();
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "memory/gcLocker.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
@@ -245,6 +246,10 @@ Thread::Thread() {
   omFreeProvision = 32 ;
   omInUseList = NULL ;
   omInUseCount = 0 ;
+
+#ifdef ASSERT
+  _visited_for_critical_count = false;
+#endif
 
   _SR_lock = new Monitor(Mutex::suspend_resume, "SR_lock", true);
   _suspend_flags = 0;
@@ -1600,8 +1605,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     // java.lang.Thread.dispatchUncaughtException
     if (uncaught_exception.not_null()) {
       Handle group(this, java_lang_Thread::threadGroup(threadObj()));
-      Events::log("uncaught exception INTPTR_FORMAT " " INTPTR_FORMAT " " INTPTR_FORMAT",
-        (address)uncaught_exception(), (address)threadObj(), (address)group());
       {
         EXCEPTION_MARK;
         // Check if the method Thread.dispatchUncaughtException() exists. If so
@@ -2277,6 +2280,26 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
     // We are in _thread_in_native_trans state, don't handle unsafe
     // access error since that may block.
     thread->check_and_handle_async_exceptions(false);
+  }
+}
+
+// This is a variant of the normal
+// check_special_condition_for_native_trans with slightly different
+// semantics for use by critical native wrappers.  It does all the
+// normal checks but also performs the transition back into
+// thread_in_Java state.  This is required so that critical natives
+// can potentially block and perform a GC if they are the last thread
+// exiting the GC_locker.
+void JavaThread::check_special_condition_for_native_trans_and_transition(JavaThread *thread) {
+  check_special_condition_for_native_trans(thread);
+
+  // Finish the transition
+  thread->set_thread_state(_thread_in_Java);
+
+  if (thread->do_critical_native_unlock()) {
+    ThreadInVMfromJavaNoAsyncException tiv(thread);
+    GC_locker::unlock_critical(thread);
+    thread->clear_critical_native_unlock();
   }
 }
 
@@ -3201,11 +3224,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     return status;
   }
 
-  // Must be run after init_ft which initializes ft_enabled
-  if (TRACE_INITIALIZE() != JNI_OK) {
-    vm_exit_during_initialization("Failed to initialize tracing backend");
-  }
-
   // Should be done after the heap is fully created
   main_thread->cache_global_variables();
 
@@ -3347,6 +3365,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       initialize_class(vmSymbols::java_lang_ArithmeticException(), CHECK_0);
       initialize_class(vmSymbols::java_lang_StackOverflowError(), CHECK_0);
       initialize_class(vmSymbols::java_lang_IllegalMonitorStateException(), CHECK_0);
+      initialize_class(vmSymbols::java_lang_IllegalArgumentException(), CHECK_0);
     } else {
       warning("java.lang.OutOfMemoryError has not been initialized");
       warning("java.lang.NullPointerException has not been initialized");
@@ -3354,6 +3373,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       warning("java.lang.ArrayStoreException has not been initialized");
       warning("java.lang.ArithmeticException has not been initialized");
       warning("java.lang.StackOverflowError has not been initialized");
+      warning("java.lang.IllegalArgumentException has not been initialized");
     }
   }
 
@@ -3382,6 +3402,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   reset_vm_info_property(CHECK_0);
 
   quicken_jni_functions();
+
+  // Must be run after init_ft which initializes ft_enabled
+  if (TRACE_INITIALIZE() != JNI_OK) {
+    vm_exit_during_initialization("Failed to initialize tracing backend");
+  }
 
   // Set flag that basic initialization has completed. Used by exceptions and various
   // debug stuff, that does not work until all basic classes have been initialized.
@@ -3885,7 +3910,7 @@ void Threads::add(JavaThread* p, bool force_daemon) {
   ThreadService::add_thread(p, daemon);
 
   // Possible GC point.
-  Events::log("Thread added: " INTPTR_FORMAT, p);
+  Events::log(p, "Thread added: " INTPTR_FORMAT, p);
 }
 
 void Threads::remove(JavaThread* p) {
@@ -3930,7 +3955,7 @@ void Threads::remove(JavaThread* p) {
   } // unlock Threads_lock
 
   // Since Events::log uses a lock, we grab it outside the Threads_lock
-  Events::log("Thread exited: " INTPTR_FORMAT, p);
+  Events::log(p, "Thread exited: " INTPTR_FORMAT, p);
 }
 
 // Threads_lock must be held when this is called (or must be called during a safepoint)

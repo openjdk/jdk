@@ -1,0 +1,317 @@
+<?xml version="1.0"?>
+<!--
+ Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+
+<!--
+DTD binding information file which is supported by this version of XJC.
+
+- Changes from the EA1 is marked by "CHANGE:"
+- "ref:key" and "ref:keyref" are used to specify cross-reference
+  information.
+- "a:defaultValue" is used to specify the default behavior.
+  Note that default behaviors are hard-coded to the source code.
+  Values specified in this schema is not used in the actual processing.
+-->
+<grammar
+  xmlns="http://relaxng.org/ns/structure/1.0"
+  xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc"
+  xmlns:a="http://relaxng.org/ns/annotation/1.0"
+  xmlns:ref="urn:crossreference"
+  datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+
+  <start>
+    <element name="xml-java-binding-schema">
+      <optional>
+        <attribute name="version">
+          <value>1.0ea2</value>
+        </attribute>
+      </optional>
+
+      <interleave>
+        <optional>
+          <element name="options">
+            <optional>
+              <attribute name="package"/>
+            </optional>
+          </element>
+        </optional>
+        <optional>
+          <element name="xjc:serializable">
+            <optional>
+              <attribute name="uid">
+                <data type="long"/>
+              </attribute>
+            </optional>
+          </element>
+        </optional>
+        <optional>
+          <element name="xjc:superClass">
+            <attribute name="name"/>
+          </element>
+        </optional>
+        <!-- light-weight runtime -->
+        <optional>
+          <element name="xjc:noMarshaller">
+            <empty/>
+          </element>
+        </optional>
+        <optional>
+          <element name="xjc:noUnmarshaller">
+            <empty/>
+          </element>
+        </optional>
+        <optional>
+          <element name="xjc:noValidator">
+            <empty/>
+          </element>
+        </optional>
+        <optional>
+          <element name="xjc:noValidatingUnmarshaller">
+            <empty/>
+          </element>
+        </optional>
+        <zeroOrMore>
+          <choice>
+            <ref name="toplevel.declaration"/>
+            <ref name="global.or.local.declaration"/>
+          </choice>
+        </zeroOrMore>
+      </interleave>
+    </element>
+  </start>
+ 
+ 
+ 
+ 
+  <!-- element-class declaration -->
+  <define name="toplevel.declaration" combine="choice">
+    <element name="element">
+      <attribute name="name"/>
+      <attribute name="type">
+        <value>class</value>
+      </attribute>
+      <optional>
+        <attribute name="class">
+          <ref name="java.classname.datatype"/>
+        </attribute>
+      </optional>
+      <optional>
+        <attribute name="root" a:defaultValue="false">
+          <choice>
+            <value>true</value>
+            <value>false</value>
+          </choice>
+        </attribute>
+      </optional>
+
+      <interleave>
+        <!-- attribute-property declaration -->
+        <zeroOrMore>
+          <element name="attribute">
+            <attribute name="name"/>
+            <optional>
+              <attribute name="property"/>
+            </optional>
+            <optional>
+              <ref name="collection.att"/>
+            </optional>
+            <optional>
+              <attribute name="convert">
+                <text ref:keyref="conversion"/>
+              </attribute>
+            </optional>
+          </element>
+        </zeroOrMore>
+
+        <zeroOrMore>
+          <ref name="global.or.local.declaration"/>
+        </zeroOrMore>
+
+        <!-- element-local declarations -->
+        <zeroOrMore>
+          <element name="constructor">
+            <attribute name="properties">
+              <list>
+                <oneOrMore>
+                  <!-- point to a property defined in this element -->
+                  <data type="token"/>
+                </oneOrMore>
+              </list>
+            </attribute>
+          </element>
+        </zeroOrMore>
+
+        <optional>
+          <element name="content">
+            <interleave>
+              <choice>
+                <!-- general content-property declaration -->
+                <ref name="collection.particle.decl"/>
+
+                <!-- model-based content property declaration -->
+                <group>
+                  <zeroOrMore>
+                    <choice>
+                      <element name="element-ref">
+                        <attribute name="name"/>
+                        <optional>
+                          <attribute name="property"/>
+                        </optional>
+                        <optional>
+                          <ref name="collection.att"/>
+                        </optional>
+                      </element>
+                      <element>
+                        <choice>
+                          <name>sequence</name>
+                          <name>choice</name>
+                        </choice>
+                        <ref name="collection.particle.decl"/>
+                      </element>
+                    </choice>
+                  </zeroOrMore>
+                  <optional><!-- followed by an optional <rest> -->
+                    <element name="rest">
+                      <ref name="collection.particle.decl"/>
+                    </element>
+                  </optional>
+                </group>
+              </choice>
+            </interleave>
+          </element>
+        </optional>
+      </interleave>
+    </element>
+  </define>
+
+  <define name="collection.particle.decl">
+    <attribute name="property"/>
+    <optional>
+      <ref name="collection.att"/>
+    </optional>
+    <optional>
+      <attribute name="supertype"/>
+    </optional>
+  </define>
+
+  <define name="collection.att">
+    <attribute name="collection">
+      <!-- CHANGE: array is removed and set,vector are added -->
+      <choice>
+        <value>list</value>
+        <value>set</value>
+        <value>vector</value>
+      </choice>
+    </attribute>
+  </define>
+
+ 
+ 
+  <!-- conversion declaration -->
+  <define name="global.or.local.declaration" combine="choice">
+    <element name="conversion">
+      <attribute name="name" ref:key="conversion"/>
+      <optional>
+        <!-- defaults to @name -->
+        <attribute name="type"/>
+      </optional>
+      <optional>
+        <attribute name="parse" a:defaultValue="new"/>
+      </optional>
+      <optional>
+        <attribute name="print" a:defaultValue="toString"/>
+      </optional>
+      <optional>
+        <attribute name="whitespace" a:defaultValue="collapse">
+          <choice>
+            <value>preserve</value>
+            <value>replace</value><!-- CHANGE: it was normalize -->
+            <value>collapse</value>
+          </choice>
+        </attribute>
+      </optional>
+    </element>
+  </define>
+ 
+  <!-- element-value declaration -->
+  <define name="toplevel.declaration" combine="choice">
+    <element name="element">
+      <attribute name="name"/>
+      <attribute name="type">
+        <value>value</value>
+      </attribute>
+      <optional>
+        <attribute name="convert">
+          <text ref:keyref="conversion"/>
+        </attribute>
+      </optional>
+    </element>
+  </define>
+ 
+  <!-- interface declaration -->
+  <define name="toplevel.declaration" combine="choice">
+    <element name="interface">
+      <attribute name="name">
+        <ref name="java.classname.datatype"/>
+      </attribute>
+      <attribute name="members">
+        <list>
+          <oneOrMore>
+            <ref name="java.classname.datatype"/>
+          </oneOrMore>
+        </list>
+      </attribute>
+      <!-- CHANGE: TODO: @properties is not supported yet -->
+    </element>
+  </define>
+ 
+  <!-- enumeration declaration -->
+  <define name="global.or.local.declaration" combine="choice">
+    <element name="enumeration">
+      <attribute name="name">
+        <ref name="java.classname.datatype"/>
+      </attribute>
+      <attribute name="members">
+        <list>
+          <oneOrMore>
+            <data type="token"/>
+          </oneOrMore>
+        </list>
+      </attribute>
+    </element>
+  </define>
+ 
+ 
+ 
+  <!-- valid Java name -->
+  <define name="java.name.datatype">
+    <!-- TODO: add pattern facet or implement a custom datatype -->
+    <data type="token"/>
+  </define>
+
+  <define name="java.classname.datatype">
+    <ref name="java.name.datatype"/>
+  </define>
+</grammar>

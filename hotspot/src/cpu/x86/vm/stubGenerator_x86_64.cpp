@@ -710,6 +710,21 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Support for intptr_t get_previous_sp()
+  //
+  // This routine is used to find the previous stack pointer for the
+  // caller.
+  address generate_get_previous_sp() {
+    StubCodeMark mark(this, "StubRoutines", "get_previous_sp");
+    address start = __ pc();
+
+    __ movptr(rax, rsp);
+    __ addptr(rax, 8); // return address is at the top of the stack.
+    __ ret(0);
+
+    return start;
+  }
+
   //----------------------------------------------------------------------------------------------------
   // Support for void verify_mxcsr()
   //
@@ -2978,7 +2993,9 @@ class StubGenerator: public StubCodeGenerator {
     int frame_complete = __ pc() - start;
 
     // Set up last_Java_sp and last_Java_fp
-    __ set_last_Java_frame(rsp, rbp, NULL);
+    address the_pc = __ pc();
+    __ set_last_Java_frame(rsp, rbp, the_pc);
+    __ andptr(rsp, -(StackAlignmentInBytes));    // Align stack
 
     // Call runtime
     if (arg1 != noreg) {
@@ -2995,9 +3012,9 @@ class StubGenerator: public StubCodeGenerator {
     // Generate oop map
     OopMap* map = new OopMap(framesize, 0);
 
-    oop_maps->add_gc_map(__ pc() - start, map);
+    oop_maps->add_gc_map(the_pc - start, map);
 
-    __ reset_last_Java_frame(true, false);
+    __ reset_last_Java_frame(true, true);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
 
@@ -3058,6 +3075,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // platform dependent
     StubRoutines::x86::_get_previous_fp_entry = generate_get_previous_fp();
+    StubRoutines::x86::_get_previous_sp_entry = generate_get_previous_sp();
 
     StubRoutines::x86::_verify_mxcsr_entry    = generate_verify_mxcsr();
 

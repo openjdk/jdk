@@ -42,7 +42,8 @@ JNIEXPORT jboolean JNICALL JAWT_GetAWT(JNIEnv* env, JAWT* awt)
     }
 
     if (awt->version != JAWT_VERSION_1_3
-        && awt->version != JAWT_VERSION_1_4) {
+        && awt->version != JAWT_VERSION_1_4
+        && awt->version != JAWT_VERSION_1_7) {
         return JNI_FALSE;
     }
 

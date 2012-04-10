@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,14 +279,16 @@ void MethodHandles::RicochetFrame::leave_ricochet_frame(MacroAssembler* _masm,
 }
 
 // Emit code to verify that RBP is pointing at a valid ricochet frame.
-#ifdef ASSERT
+#ifndef PRODUCT
 enum {
   ARG_LIMIT = 255, SLOP = 4,
   // use this parameter for checking for garbage stack movements:
   UNREASONABLE_STACK_MOVE = (ARG_LIMIT + SLOP)
   // the slop defends against false alarms due to fencepost errors
 };
+#endif
 
+#ifdef ASSERT
 void MethodHandles::RicochetFrame::verify_clean(MacroAssembler* _masm) {
   // The stack should look like this:
   //    ... keep1 | dest=42 | keep2 | RF | magic | handler | magic | recursive args |
@@ -990,53 +992,103 @@ void MethodHandles::move_return_value(MacroAssembler* _masm, BasicType type,
   BLOCK_COMMENT("} move_return_value");
 }
 
+#ifndef PRODUCT
+#define DESCRIBE_RICOCHET_OFFSET(rf, name) \
+  values.describe(frame_no, (intptr_t *) (((uintptr_t)rf) + MethodHandles::RicochetFrame::name##_offset_in_bytes()), #name)
+
+void MethodHandles::RicochetFrame::describe(const frame* fr, FrameValues& values, int frame_no)  {
+    address bp = (address) fr->fp();
+    RicochetFrame* rf = (RicochetFrame*)(bp - sender_link_offset_in_bytes());
+
+    // ricochet slots
+    DESCRIBE_RICOCHET_OFFSET(rf, exact_sender_sp);
+    DESCRIBE_RICOCHET_OFFSET(rf, conversion);
+    DESCRIBE_RICOCHET_OFFSET(rf, saved_args_base);
+    DESCRIBE_RICOCHET_OFFSET(rf, saved_args_layout);
+    DESCRIBE_RICOCHET_OFFSET(rf, saved_target);
+    DESCRIBE_RICOCHET_OFFSET(rf, continuation);
+
+    // relevant ricochet targets (in caller frame)
+    values.describe(-1, rf->saved_args_base(),  err_msg("*saved_args_base for #%d", frame_no));
+}
+#endif // ASSERT
 
 #ifndef PRODUCT
 extern "C" void print_method_handle(oop mh);
 void trace_method_handle_stub(const char* adaptername,
                               oop mh,
                               intptr_t* saved_regs,
-                              intptr_t* entry_sp,
-                              intptr_t* saved_sp,
-                              intptr_t* saved_bp) {
+                              intptr_t* entry_sp) {
   // called as a leaf from native code: do not block the JVM!
   bool has_mh = (strstr(adaptername, "return/") == NULL);  // return adapters don't have rcx_mh
-  intptr_t* last_sp = (intptr_t*) saved_bp[frame::interpreter_frame_last_sp_offset];
-  intptr_t* base_sp = last_sp;
-  typedef MethodHandles::RicochetFrame RicochetFrame;
-  RicochetFrame* rfp = (RicochetFrame*)((address)saved_bp - RicochetFrame::sender_link_offset_in_bytes());
-  if (Universe::heap()->is_in((address) rfp->saved_args_base())) {
-    // Probably an interpreter frame.
-    base_sp = (intptr_t*) saved_bp[frame::interpreter_frame_monitor_block_top_offset];
-  }
-  intptr_t    mh_reg = (intptr_t)mh;
-  const char* mh_reg_name = "rcx_mh";
-  if (!has_mh)  mh_reg_name = "rcx";
-  tty->print_cr("MH %s %s="PTR_FORMAT" sp=("PTR_FORMAT"+"INTX_FORMAT") stack_size="INTX_FORMAT" bp="PTR_FORMAT,
-                adaptername, mh_reg_name, mh_reg,
-                (intptr_t)entry_sp, (intptr_t)(saved_sp - entry_sp), (intptr_t)(base_sp - last_sp), (intptr_t)saved_bp);
+  const char* mh_reg_name = has_mh ? "rcx_mh" : "rcx";
+  tty->print_cr("MH %s %s="PTR_FORMAT" sp="PTR_FORMAT, adaptername, mh_reg_name, mh, entry_sp);
+
   if (Verbose) {
-    tty->print(" reg dump: ");
-    int saved_regs_count = (entry_sp-1) - saved_regs;
-    // 32 bit: rdi rsi rbp rsp; rbx rdx rcx (*) rax
-    int i;
-    for (i = 0; i <= saved_regs_count; i++) {
-      if (i > 0 && i % 4 == 0 && i != saved_regs_count) {
+    tty->print_cr("Registers:");
+    const int saved_regs_count = RegisterImpl::number_of_registers;
+    for (int i = 0; i < saved_regs_count; i++) {
+      Register r = as_Register(i);
+      // The registers are stored in reverse order on the stack (by pusha).
+      tty->print("%3s=" PTR_FORMAT, r->name(), saved_regs[((saved_regs_count - 1) - i)]);
+      if ((i + 1) % 4 == 0) {
         tty->cr();
-        tty->print("   + dump: ");
+      } else {
+        tty->print(", ");
       }
-      tty->print(" %d: "PTR_FORMAT, i, saved_regs[i]);
     }
     tty->cr();
-    if (last_sp != saved_sp && last_sp != NULL)
-      tty->print_cr("*** last_sp="PTR_FORMAT, (intptr_t)last_sp);
-    int stack_dump_count = 16;
-    if (stack_dump_count < (int)(saved_bp + 2 - saved_sp))
-      stack_dump_count = (int)(saved_bp + 2 - saved_sp);
-    if (stack_dump_count > 64)  stack_dump_count = 48;
-    for (i = 0; i < stack_dump_count; i += 4) {
-      tty->print_cr(" dump at SP[%d] "PTR_FORMAT": "PTR_FORMAT" "PTR_FORMAT" "PTR_FORMAT" "PTR_FORMAT,
-                    i, (intptr_t) &entry_sp[i+0], entry_sp[i+0], entry_sp[i+1], entry_sp[i+2], entry_sp[i+3]);
+
+    {
+     // dumping last frame with frame::describe
+
+      JavaThread* p = JavaThread::active();
+
+      ResourceMark rm;
+      PRESERVE_EXCEPTION_MARK; // may not be needed by safer and unexpensive here
+      FrameValues values;
+
+      // Note: We want to allow trace_method_handle from any call site.
+      // While trace_method_handle creates a frame, it may be entered
+      // without a PC on the stack top (e.g. not just after a call).
+      // Walking that frame could lead to failures due to that invalid PC.
+      // => carefully detect that frame when doing the stack walking
+
+      // Current C frame
+      frame cur_frame = os::current_frame();
+
+      // Robust search of trace_calling_frame (independant of inlining).
+      // Assumes saved_regs comes from a pusha in the trace_calling_frame.
+      assert(cur_frame.sp() < saved_regs, "registers not saved on stack ?");
+      frame trace_calling_frame = os::get_sender_for_C_frame(&cur_frame);
+      while (trace_calling_frame.fp() < saved_regs) {
+        trace_calling_frame = os::get_sender_for_C_frame(&trace_calling_frame);
+      }
+
+      // safely create a frame and call frame::describe
+      intptr_t *dump_sp = trace_calling_frame.sender_sp();
+      intptr_t *dump_fp = trace_calling_frame.link();
+
+      bool walkable = has_mh; // whether the traced frame shoud be walkable
+
+      if (walkable) {
+        // The previous definition of walkable may have to be refined
+        // if new call sites cause the next frame constructor to start
+        // failing. Alternatively, frame constructors could be
+        // modified to support the current or future non walkable
+        // frames (but this is more intrusive and is not considered as
+        // part of this RFE, which will instead use a simpler output).
+        frame dump_frame = frame(dump_sp, dump_fp);
+        dump_frame.describe(values, 1);
+      } else {
+        // Stack may not be walkable (invalid PC above FP):
+        // Add descriptions without building a Java frame to avoid issues
+        values.describe(-1, dump_fp, "fp for #1 <not parsed, cannot trust pc>");
+        values.describe(-1, dump_sp, "sp for #1");
+      }
+
+      tty->print_cr("Stack layout:");
+      values.print(p);
     }
     if (has_mh)
       print_method_handle(mh);
@@ -1051,41 +1103,58 @@ struct MethodHandleStubArguments {
   oopDesc* mh;
   intptr_t* saved_regs;
   intptr_t* entry_sp;
-  intptr_t* saved_sp;
-  intptr_t* saved_bp;
 };
 void trace_method_handle_stub_wrapper(MethodHandleStubArguments* args) {
   trace_method_handle_stub(args->adaptername,
                            args->mh,
                            args->saved_regs,
-                           args->entry_sp,
-                           args->saved_sp,
-                           args->saved_bp);
+                           args->entry_sp);
 }
 
 void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adaptername) {
   if (!TraceMethodHandles)  return;
   BLOCK_COMMENT("trace_method_handle {");
-  __ push(rax);
-  __ lea(rax, Address(rsp, wordSize * NOT_LP64(6) LP64_ONLY(14))); // entry_sp  __ pusha();
-  __ pusha();
-  __ mov(rbx, rsp);
   __ enter();
-  // incoming state:
+  __ andptr(rsp, -16); // align stack if needed for FPU state
+  __ pusha();
+  __ mov(rbx, rsp); // for retreiving saved_regs
+  // Note: saved_regs must be in the entered frame for the
+  // robust stack walking implemented in trace_method_handle_stub.
+
+  // save FP result, valid at some call sites (adapter_opt_return_float, ...)
+  __ increment(rsp, -2 * wordSize);
+  if  (UseSSE >= 2) {
+    __ movdbl(Address(rsp, 0), xmm0);
+  } else if (UseSSE == 1) {
+    __ movflt(Address(rsp, 0), xmm0);
+  } else {
+    __ fst_d(Address(rsp, 0));
+  }
+
+  // Incoming state:
   // rcx: method handle
-  // r13 or rsi: saved sp
-  // To avoid calling convention issues, build a record on the stack and pass the pointer to that instead.
-  __ push(rbp);               // saved_bp
-  __ push(rsi);               // saved_sp
-  __ push(rax);               // entry_sp
+  //
+  // To avoid calling convention issues, build a record on the stack
+  // and pass the pointer to that instead.
+  __ push(rbp);               // entry_sp (with extra align space)
   __ push(rbx);               // pusha saved_regs
   __ push(rcx);               // mh
-  __ push(rcx);               // adaptername
+  __ push(rcx);               // slot for adaptername
   __ movptr(Address(rsp, 0), (intptr_t) adaptername);
   __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, trace_method_handle_stub_wrapper), rsp);
-  __ leave();
+  __ increment(rsp, sizeof(MethodHandleStubArguments));
+
+  if  (UseSSE >= 2) {
+    __ movdbl(xmm0, Address(rsp, 0));
+  } else if (UseSSE == 1) {
+    __ movflt(xmm0, Address(rsp, 0));
+  } else {
+    __ fld_d(Address(rsp, 0));
+  }
+  __ increment(rsp, 2 * wordSize);
+
   __ popa();
-  __ pop(rax);
+  __ leave();
   BLOCK_COMMENT("} trace_method_handle");
 }
 #endif //PRODUCT
@@ -2267,23 +2336,19 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
 
       // grab another temp
       Register rsi_temp = rsi;
-      { if (rsi_temp == saved_last_sp)  __ push(saved_last_sp); }
-      // (preceding push must be done after argslot address is taken!)
-#define UNPUSH_RSI \
-      { if (rsi_temp == saved_last_sp)  __ pop(saved_last_sp); }
 
       // arx_argslot points both to the array and to the first output arg
       vmarg = Address(rax_argslot, 0);
 
       // Get the array value.
-      Register  rsi_array       = rsi_temp;
+      Register  rdi_array       = rdi_temp;
       Register  rdx_array_klass = rdx_temp;
       BasicType elem_type = ek_adapter_opt_spread_type(ek);
       int       elem_slots = type2size[elem_type];  // 1 or 2
       int       array_slots = 1;  // array is always a T_OBJECT
       int       length_offset   = arrayOopDesc::length_offset_in_bytes();
       int       elem0_offset    = arrayOopDesc::base_offset_in_bytes(elem_type);
-      __ movptr(rsi_array, vmarg);
+      __ movptr(rdi_array, vmarg);
 
       Label L_array_is_empty, L_insert_arg_space, L_copy_args, L_args_done;
       if (length_can_be_zero) {
@@ -2294,12 +2359,30 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
           __ testl(rbx_temp, rbx_temp);
           __ jcc(Assembler::notZero, L_skip);
         }
-        __ testptr(rsi_array, rsi_array);
-        __ jcc(Assembler::zero, L_array_is_empty);
+        __ testptr(rdi_array, rdi_array);
+        __ jcc(Assembler::notZero, L_skip);
+
+        // If 'rsi' contains the 'saved_last_sp' (this is only the
+        // case in a 32-bit version of the VM) we have to save 'rsi'
+        // on the stack because later on (at 'L_array_is_empty') 'rsi'
+        // will be overwritten.
+        { if (rsi_temp == saved_last_sp)  __ push(saved_last_sp); }
+        // Also prepare a handy macro which restores 'rsi' if required.
+#define UNPUSH_RSI                                                      \
+        { if (rsi_temp == saved_last_sp)  __ pop(saved_last_sp); }
+
+        __ jmp(L_array_is_empty);
         __ bind(L_skip);
       }
-      __ null_check(rsi_array, oopDesc::klass_offset_in_bytes());
-      __ load_klass(rdx_array_klass, rsi_array);
+      __ null_check(rdi_array, oopDesc::klass_offset_in_bytes());
+      __ load_klass(rdx_array_klass, rdi_array);
+
+      // Save 'rsi' if required (see comment above).  Do this only
+      // after the null check such that the exception handler which is
+      // called in the case of a null pointer exception will not be
+      // confused by the extra value on the stack (it expects the
+      // return pointer on top of the stack)
+      { if (rsi_temp == saved_last_sp)  __ push(saved_last_sp); }
 
       // Check the array type.
       Register rbx_klass = rbx_temp;
@@ -2307,18 +2390,18 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       load_klass_from_Class(_masm, rbx_klass);
 
       Label ok_array_klass, bad_array_klass, bad_array_length;
-      __ check_klass_subtype(rdx_array_klass, rbx_klass, rdi_temp, ok_array_klass);
+      __ check_klass_subtype(rdx_array_klass, rbx_klass, rsi_temp, ok_array_klass);
       // If we get here, the type check failed!
       __ jmp(bad_array_klass);
       __ BIND(ok_array_klass);
 
       // Check length.
       if (length_constant >= 0) {
-        __ cmpl(Address(rsi_array, length_offset), length_constant);
+        __ cmpl(Address(rdi_array, length_offset), length_constant);
       } else {
         Register rbx_vminfo = rbx_temp;
         load_conversion_vminfo(_masm, rbx_vminfo, rcx_amh_conversion);
-        __ cmpl(rbx_vminfo, Address(rsi_array, length_offset));
+        __ cmpl(rbx_vminfo, Address(rdi_array, length_offset));
       }
       __ jcc(Assembler::notEqual, bad_array_length);
 
@@ -2330,9 +2413,9 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         __ lea(rdx_argslot_limit, Address(rax_argslot, Interpreter::stackElementSize));
         // 'stack_move' is negative number of words to insert
         // This number already accounts for elem_slots.
-        Register rdi_stack_move = rdi_temp;
-        load_stack_move(_masm, rdi_stack_move, rcx_recv, true);
-        __ cmpptr(rdi_stack_move, 0);
+        Register rsi_stack_move = rsi_temp;
+        load_stack_move(_masm, rsi_stack_move, rcx_recv, true);
+        __ cmpptr(rsi_stack_move, 0);
         assert(stack_move_unit() < 0, "else change this comparison");
         __ jcc(Assembler::less, L_insert_arg_space);
         __ jcc(Assembler::equal, L_copy_args);
@@ -2343,12 +2426,12 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         __ jmp(L_args_done);  // no spreading to do
         __ BIND(L_insert_arg_space);
         // come here in the usual case, stack_move < 0 (2 or more spread arguments)
-        Register rsi_temp = rsi_array;  // spill this
-        insert_arg_slots(_masm, rdi_stack_move,
-                         rax_argslot, rbx_temp, rsi_temp);
+        Register rdi_temp = rdi_array;  // spill this
+        insert_arg_slots(_masm, rsi_stack_move,
+                         rax_argslot, rbx_temp, rdi_temp);
         // reload the array since rsi was killed
         // reload from rdx_argslot_limit since rax_argslot is now decremented
-        __ movptr(rsi_array, Address(rdx_argslot_limit, -Interpreter::stackElementSize));
+        __ movptr(rdi_array, Address(rdx_argslot_limit, -Interpreter::stackElementSize));
       } else if (length_constant >= 1) {
         int new_slots = (length_constant * elem_slots) - array_slots;
         insert_arg_slots(_masm, new_slots * stack_move_unit(),
@@ -2371,16 +2454,16 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       if (length_constant == -1) {
         // [rax_argslot, rdx_argslot_limit) is the area we are inserting into.
         // Array element [0] goes at rdx_argslot_limit[-wordSize].
-        Register rsi_source = rsi_array;
-        __ lea(rsi_source, Address(rsi_array, elem0_offset));
+        Register rdi_source = rdi_array;
+        __ lea(rdi_source, Address(rdi_array, elem0_offset));
         Register rdx_fill_ptr = rdx_argslot_limit;
         Label loop;
         __ BIND(loop);
         __ addptr(rdx_fill_ptr, -Interpreter::stackElementSize * elem_slots);
         move_typed_arg(_masm, elem_type, true,
-                       Address(rdx_fill_ptr, 0), Address(rsi_source, 0),
-                       rbx_temp, rdi_temp);
-        __ addptr(rsi_source, type2aelembytes(elem_type));
+                       Address(rdx_fill_ptr, 0), Address(rdi_source, 0),
+                       rbx_temp, rsi_temp);
+        __ addptr(rdi_source, type2aelembytes(elem_type));
         __ cmpptr(rdx_fill_ptr, rax_argslot);
         __ jcc(Assembler::above, loop);
       } else if (length_constant == 0) {
@@ -2391,8 +2474,8 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
         for (int index = 0; index < length_constant; index++) {
           slot_offset -= Interpreter::stackElementSize * elem_slots;  // fill backward
           move_typed_arg(_masm, elem_type, true,
-                         Address(rax_argslot, slot_offset), Address(rsi_array, elem_offset),
-                         rbx_temp, rdi_temp);
+                         Address(rax_argslot, slot_offset), Address(rdi_array, elem_offset),
+                         rbx_temp, rsi_temp);
           elem_offset += type2aelembytes(elem_type);
         }
       }

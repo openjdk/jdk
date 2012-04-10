@@ -866,6 +866,10 @@ enum LIR_Code {
       , lir_membar
       , lir_membar_acquire
       , lir_membar_release
+      , lir_membar_loadload
+      , lir_membar_storestore
+      , lir_membar_loadstore
+      , lir_membar_storeload
       , lir_get_thread
   , end_op0
   , begin_op1
@@ -1354,9 +1358,10 @@ class LIR_OpBranch: public LIR_Op {
   CodeStub*     _stub;   // if this is a branch to a stub, this is the stub
 
  public:
-  LIR_OpBranch(LIR_Condition cond, Label* lbl)
+  LIR_OpBranch(LIR_Condition cond, BasicType type, Label* lbl)
     : LIR_Op(lir_branch, LIR_OprFact::illegalOpr, (CodeEmitInfo*) NULL)
     , _cond(cond)
+    , _type(type)
     , _label(lbl)
     , _block(NULL)
     , _ublock(NULL)
@@ -1917,6 +1922,10 @@ class LIR_List: public CompilationResourceObj {
   void membar()                                  { append(new LIR_Op0(lir_membar)); }
   void membar_acquire()                          { append(new LIR_Op0(lir_membar_acquire)); }
   void membar_release()                          { append(new LIR_Op0(lir_membar_release)); }
+  void membar_loadload()                         { append(new LIR_Op0(lir_membar_loadload)); }
+  void membar_storestore()                       { append(new LIR_Op0(lir_membar_storestore)); }
+  void membar_loadstore()                        { append(new LIR_Op0(lir_membar_loadstore)); }
+  void membar_storeload()                        { append(new LIR_Op0(lir_membar_storeload)); }
 
   void nop()                                     { append(new LIR_Op0(lir_nop)); }
   void build_frame()                             { append(new LIR_Op0(lir_build_frame)); }
@@ -2053,7 +2062,7 @@ class LIR_List: public CompilationResourceObj {
   void jump(CodeStub* stub) {
     append(new LIR_OpBranch(lir_cond_always, T_ILLEGAL, stub));
   }
-  void branch(LIR_Condition cond, Label* lbl)        { append(new LIR_OpBranch(cond, lbl)); }
+  void branch(LIR_Condition cond, BasicType type, Label* lbl)        { append(new LIR_OpBranch(cond, type, lbl)); }
   void branch(LIR_Condition cond, BasicType type, BlockBegin* block) {
     assert(type != T_FLOAT && type != T_DOUBLE, "no fp comparisons");
     append(new LIR_OpBranch(cond, type, block));

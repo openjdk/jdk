@@ -55,7 +55,7 @@ echo "CLASSPATH=${CLASSPATH}"
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     if [ -d /usr/lib/locale/en_US.UTF-8 -o -d /usr/lib/locale/en_US.utf8 ]
     then
         ENV="env LANG=en_US.UTF-8"

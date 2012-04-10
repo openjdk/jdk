@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2005, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -47,10 +47,6 @@ ifndef MAIN_CLASS
 endif
 
 # Some tools need the wildcard expansion option
-ifeq ($(PROGRAM),apt)
-  WILDCARDS=true
-  NEVER_ACT_AS_SERVER_CLASS_MACHINE=true
-endif
 ifeq ($(PROGRAM),javac)
   WILDCARDS=true
   MAIN_JAVA_ARGS += -J-Xss4m -J-ea:com.sun.tools...
@@ -86,12 +82,15 @@ ifeq ($(PROGRAM),jstack)
 endif
 ifeq ($(PROGRAM),jsadebugd)
   SA_TOOL=true
+  INFO_PLIST_FILE=Info-privileged.plist
 endif
 ifeq ($(PROGRAM),jinfo)
   SA_TOOL=true
+  INFO_PLIST_FILE=Info-privileged.plist
 endif
 ifeq ($(PROGRAM),jmap)
   SA_TOOL=true
+  INFO_PLIST_FILE=Info-privileged.plist
 endif
 
 # special idlj launcher

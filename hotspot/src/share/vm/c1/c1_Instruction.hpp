@@ -107,6 +107,7 @@ class         UnsafePrefetchWrite;
 class   ProfileCall;
 class   ProfileInvoke;
 class   RuntimeCall;
+class   MemBar;
 
 // A Value is a reference to the instruction creating the value
 typedef Instruction* Value;
@@ -204,6 +205,7 @@ class InstructionVisitor: public StackObj {
   virtual void do_ProfileCall    (ProfileCall*     x) = 0;
   virtual void do_ProfileInvoke  (ProfileInvoke*   x) = 0;
   virtual void do_RuntimeCall    (RuntimeCall*     x) = 0;
+  virtual void do_MemBar         (MemBar*          x) = 0;
 };
 
 
@@ -2349,6 +2351,23 @@ LEAF(ProfileInvoke, Instruction)
   ValueStack* state()      { return _state; }
   virtual void input_values_do(ValueVisitor*)   {}
   virtual void state_values_do(ValueVisitor*);
+};
+
+LEAF(MemBar, Instruction)
+ private:
+  LIR_Code _code;
+
+ public:
+  MemBar(LIR_Code code)
+    : Instruction(voidType)
+    , _code(code)
+  {
+    pin();
+  }
+
+  LIR_Code code()           { return _code; }
+
+  virtual void input_values_do(ValueVisitor*)   {}
 };
 
 class BlockPair: public CompilationResourceObj {

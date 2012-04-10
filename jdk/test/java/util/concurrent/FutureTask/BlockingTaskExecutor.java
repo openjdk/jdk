@@ -75,10 +75,10 @@ public class BlockingTaskExecutor {
             throw new Error("Executor stuck");
 
         // Wait for the invocation thread to complete.
-        thread.join(1000);
+        thread.join(5000);
         if (thread.isAlive()) {
             thread.interrupt();
-            thread.join(1000);
+            thread.join(5000);
             throw new Error("invokeAll stuck");
         }
     }

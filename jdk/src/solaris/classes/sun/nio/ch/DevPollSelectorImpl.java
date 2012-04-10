@@ -180,7 +180,7 @@ class DevPollSelectorImpl
             ((SelChImpl)selch).kill();
     }
 
-    void putEventOps(SelectionKeyImpl sk, int ops) {
+    public void putEventOps(SelectionKeyImpl sk, int ops) {
         if (closed)
             throw new ClosedSelectorException();
         int fd = IOUtil.fdVal(sk.channel.getFD());
