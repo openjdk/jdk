@@ -286,46 +286,47 @@ public final class Currency implements Serializable {
 
     private static Currency getInstance(String currencyCode, int defaultFractionDigits,
         int numericCode) {
-            // Try to look up the currency code in the instances table.
-            // This does the null pointer check as a side effect.
-            // Also, if there already is an entry, the currencyCode must be valid.
-            Currency instance = instances.get(currencyCode);
-            if (instance != null) {
-                return instance;
-            }
+        // Try to look up the currency code in the instances table.
+        // This does the null pointer check as a side effect.
+        // Also, if there already is an entry, the currencyCode must be valid.
+        Currency instance = instances.get(currencyCode);
+        if (instance != null) {
+            return instance;
+        }
 
-            if (defaultFractionDigits == Integer.MIN_VALUE) {
-                // Currency code not internally generated, need to verify first
-                // A currency code must have 3 characters and exist in the main table
-                // or in the list of other currencies.
-                if (currencyCode.length() != 3) {
+        if (defaultFractionDigits == Integer.MIN_VALUE) {
+            // Currency code not internally generated, need to verify first
+            // A currency code must have 3 characters and exist in the main table
+            // or in the list of other currencies.
+            if (currencyCode.length() != 3) {
+                throw new IllegalArgumentException();
+            }
+            char char1 = currencyCode.charAt(0);
+            char char2 = currencyCode.charAt(1);
+            int tableEntry = getMainTableEntry(char1, char2);
+            if ((tableEntry & COUNTRY_TYPE_MASK) == SIMPLE_CASE_COUNTRY_MASK
+                    && tableEntry != INVALID_COUNTRY_ENTRY
+                    && currencyCode.charAt(2) - 'A' == (tableEntry & SIMPLE_CASE_COUNTRY_FINAL_CHAR_MASK)) {
+                defaultFractionDigits = (tableEntry & SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_MASK) >> SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_SHIFT;
+                numericCode = (tableEntry & NUMERIC_CODE_MASK) >> NUMERIC_CODE_SHIFT;
+            } else {
+                // Check for '-' separately so we don't get false hits in the table.
+                if (currencyCode.charAt(2) == '-') {
                     throw new IllegalArgumentException();
                 }
-                char char1 = currencyCode.charAt(0);
-                char char2 = currencyCode.charAt(1);
-                int tableEntry = getMainTableEntry(char1, char2);
-                if ((tableEntry & COUNTRY_TYPE_MASK) == SIMPLE_CASE_COUNTRY_MASK
-                        && tableEntry != INVALID_COUNTRY_ENTRY
-                        && currencyCode.charAt(2) - 'A' == (tableEntry & SIMPLE_CASE_COUNTRY_FINAL_CHAR_MASK)) {
-                    defaultFractionDigits = (tableEntry & SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_MASK) >> SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_SHIFT;
-                    numericCode = (tableEntry & NUMERIC_CODE_MASK) >> NUMERIC_CODE_SHIFT;
-                } else {
-                    // Check for '-' separately so we don't get false hits in the table.
-                    if (currencyCode.charAt(2) == '-') {
-                        throw new IllegalArgumentException();
-                    }
-                    int index = otherCurrencies.indexOf(currencyCode);
-                    if (index == -1) {
-                        throw new IllegalArgumentException();
-                    }
-                    defaultFractionDigits = otherCurrenciesDFD[index / 4];
-                    numericCode = otherCurrenciesNumericCode[index / 4];
+                int index = otherCurrencies.indexOf(currencyCode);
+                if (index == -1) {
+                    throw new IllegalArgumentException();
                 }
+                defaultFractionDigits = otherCurrenciesDFD[index / 4];
+                numericCode = otherCurrenciesNumericCode[index / 4];
             }
+        }
 
-        instance = instances.putIfAbsent(currencyCode,
-                   new Currency(currencyCode, defaultFractionDigits, numericCode));
-        return (instance != null ? instance : instances.get(currencyCode));
+        Currency currencyVal =
+            new Currency(currencyCode, defaultFractionDigits, numericCode);
+        instance = instances.putIfAbsent(currencyCode, currencyVal);
+        return (instance != null ? instance : currencyVal);
     }
 
     /**
