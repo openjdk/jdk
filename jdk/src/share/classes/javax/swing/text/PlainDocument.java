@@ -100,8 +100,8 @@ public class PlainDocument extends AbstractDocument {
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
+     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * in Swing</A> for more information.
      *
      * @param offs the starting offset >= 0
      * @param str the string to insert; does nothing with null/empty strings

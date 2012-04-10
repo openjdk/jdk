@@ -121,7 +121,7 @@ void LIR_Assembler::append_patching_stub(PatchingStub* stub) {
 
 void LIR_Assembler::check_codespace() {
   CodeSection* cs = _masm->code_section();
-  if (cs->remaining() < (int)(1*K)) {
+  if (cs->remaining() < (int)(NOT_LP64(1*K)LP64_ONLY(2*K))) {
     BAILOUT("CodeBuffer overflow");
   }
 }
@@ -662,6 +662,22 @@ void LIR_Assembler::emit_op0(LIR_Op0* op) {
 
     case lir_membar_release:
       membar_release();
+      break;
+
+    case lir_membar_loadload:
+      membar_loadload();
+      break;
+
+    case lir_membar_storestore:
+      membar_storestore();
+      break;
+
+    case lir_membar_loadstore:
+      membar_loadstore();
+      break;
+
+    case lir_membar_storeload:
+      membar_storeload();
       break;
 
     case lir_get_thread:

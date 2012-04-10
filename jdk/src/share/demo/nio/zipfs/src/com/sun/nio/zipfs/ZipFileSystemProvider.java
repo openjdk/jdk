@@ -29,6 +29,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * This source code is provided to illustrate the usage of a given feature
+ * or technique and has been deliberately simplified. Additional steps
+ * required for a production-quality application, such as security checks,
+ * input validation and proper error handling, might not be present in
+ * this sample code.
+ */
+
+
 package com.sun.nio.zipfs;
 
 import java.io.*;
@@ -202,7 +211,7 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     public <V extends FileAttributeView> V
         getFileAttributeView(Path path, Class<V> type, LinkOption... options)
     {
-        return (V)ZipFileAttributeView.get(toZipPath(path), type);
+        return ZipFileAttributeView.get(toZipPath(path), type);
     }
 
     @Override

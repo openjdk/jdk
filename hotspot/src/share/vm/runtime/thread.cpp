@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "memory/gcLocker.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
@@ -73,6 +74,7 @@
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
 #include "services/threadService.hpp"
+#include "trace/traceEventTypes.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -88,6 +90,10 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "os_windows.inline.hpp"
 # include "thread_windows.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.inline.hpp"
+# include "thread_bsd.inline.hpp"
 #endif
 #ifndef SERIALGC
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
@@ -106,6 +112,7 @@
 
 // Only bother with this argument setup if dtrace is available
 
+#ifndef USDT2
 HS_DTRACE_PROBE_DECL(hotspot, vm__init__begin);
 HS_DTRACE_PROBE_DECL(hotspot, vm__init__end);
 HS_DTRACE_PROBE_DECL5(hotspot, thread__start, char*, intptr_t,
@@ -125,6 +132,26 @@ HS_DTRACE_PROBE_DECL5(hotspot, thread__stop, char*, intptr_t,
       (javathread)->osthread()->thread_id(),                               \
       java_lang_Thread::is_daemon((javathread)->threadObj()));             \
   }
+
+#else /* USDT2 */
+
+#define HOTSPOT_THREAD_PROBE_start HOTSPOT_THREAD_PROBE_START
+#define HOTSPOT_THREAD_PROBE_stop HOTSPOT_THREAD_PROBE_STOP
+
+#define DTRACE_THREAD_PROBE(probe, javathread)                             \
+  {                                                                        \
+    ResourceMark rm(this);                                                 \
+    int len = 0;                                                           \
+    const char* name = (javathread)->get_thread_name();                    \
+    len = strlen(name);                                                    \
+    HOTSPOT_THREAD_PROBE_##probe(  /* probe = start, stop */               \
+      (char *) name, len,                                                           \
+      java_lang_Thread::thread_id((javathread)->threadObj()),              \
+      (uintptr_t) (javathread)->osthread()->thread_id(),                               \
+      java_lang_Thread::is_daemon((javathread)->threadObj()));             \
+  }
+
+#endif /* USDT2 */
 
 #else //  ndef DTRACE_ENABLED
 
@@ -207,6 +234,7 @@ Thread::Thread() {
   CHECK_UNHANDLED_OOPS_ONLY(_gc_locked_out_count = 0;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
+  set_trace_buffer(NULL);
   _vm_operation_started_count = 0;
   _vm_operation_completed_count = 0;
   _current_pending_monitor = NULL;
@@ -218,6 +246,10 @@ Thread::Thread() {
   omFreeProvision = 32 ;
   omInUseList = NULL ;
   omInUseCount = 0 ;
+
+#ifdef ASSERT
+  _visited_for_critical_count = false;
+#endif
 
   _SR_lock = new Monitor(Mutex::suspend_resume, "SR_lock", true);
   _suspend_flags = 0;
@@ -749,15 +781,16 @@ bool Thread::claim_oops_do_par_case(int strong_roots_parity) {
   jint thread_parity = _oops_do_parity;
   if (thread_parity != strong_roots_parity) {
     jint res = Atomic::cmpxchg(strong_roots_parity, &_oops_do_parity, thread_parity);
-    if (res == thread_parity) return true;
-    else {
+    if (res == thread_parity) {
+      return true;
+    } else {
       guarantee(res == strong_roots_parity, "Or else what?");
-      assert(SharedHeap::heap()->n_par_threads() > 0,
-             "Should only fail when parallel.");
+      assert(SharedHeap::heap()->workers()->active_workers() > 0,
+         "Should only fail when parallel.");
       return false;
     }
   }
-  assert(SharedHeap::heap()->n_par_threads() > 0,
+  assert(SharedHeap::heap()->workers()->active_workers() > 0,
          "Should only fail when parallel.");
   return false;
 }
@@ -966,7 +999,7 @@ static void call_initializeSystemClass(TRAPS) {
 // General purpose hook into Java code, run once when the VM is initialized.
 // The Java library method itself may be changed independently from the VM.
 static void call_postVMInitHook(TRAPS) {
-  klassOop k = SystemDictionary::sun_misc_PostVMInitHook_klass();
+  klassOop k = SystemDictionary::PostVMInitHook_klass();
   instanceKlassHandle klass (THREAD, k);
   if (klass.not_null()) {
     JavaValue result(T_VOID);
@@ -1272,7 +1305,6 @@ void JavaThread::initialize() {
   _exception_oop = NULL;
   _exception_pc  = 0;
   _exception_handler_pc = 0;
-  _exception_stack_size = 0;
   _is_method_handle_return = 0;
   _jvmti_thread_state= NULL;
   _should_post_on_exceptions_flag = JNI_FALSE;
@@ -1324,7 +1356,7 @@ SATBMarkQueueSet JavaThread::_satb_mark_queue_set;
 DirtyCardQueueSet JavaThread::_dirty_card_queue_set;
 #endif // !SERIALGC
 
-JavaThread::JavaThread(bool is_attaching) :
+JavaThread::JavaThread(bool is_attaching_via_jni) :
   Thread()
 #ifndef SERIALGC
   , _satb_mark_queue(&_satb_mark_queue_set),
@@ -1332,7 +1364,11 @@ JavaThread::JavaThread(bool is_attaching) :
 #endif // !SERIALGC
 {
   initialize();
-  _is_attaching = is_attaching;
+  if (is_attaching_via_jni) {
+    _jni_attach_state = _attaching_via_jni;
+  } else {
+    _jni_attach_state = _not_attaching_via_jni;
+  }
   assert(_deferred_card_mark.is_empty(), "Default MemRegion ctor");
 }
 
@@ -1388,7 +1424,7 @@ JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) :
     tty->print_cr("creating thread %p", this);
   }
   initialize();
-  _is_attaching = false;
+  _jni_attach_state = _not_attaching_via_jni;
   set_entry_point(entry_point);
   // Create the native thread itself.
   // %note runtime_23
@@ -1483,6 +1519,10 @@ void JavaThread::run() {
     JvmtiExport::post_thread_start(this);
   }
 
+  EVENT_BEGIN(TraceEventThreadStart, event);
+  EVENT_COMMIT(event,
+     EVENT_SET(event, javalangthread, java_lang_Thread::thread_id(this->threadObj())));
+
   // We call another function to do the rest so we are sure that the stack addresses used
   // from there will be lower than the stack base just computed
   thread_main_inner();
@@ -1500,6 +1540,10 @@ void JavaThread::thread_main_inner() {
   // Note: Due to JVM_StopThread we can have pending exceptions already!
   if (!this->has_pending_exception() &&
       !java_lang_Thread::is_stillborn(this->threadObj())) {
+    {
+      ResourceMark rm(this);
+      this->set_native_thread_name(this->get_thread_name());
+    }
     HandleMark hm(this);
     this->entry_point()(this, this);
   }
@@ -1561,8 +1605,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     // java.lang.Thread.dispatchUncaughtException
     if (uncaught_exception.not_null()) {
       Handle group(this, java_lang_Thread::threadGroup(threadObj()));
-      Events::log("uncaught exception INTPTR_FORMAT " " INTPTR_FORMAT " " INTPTR_FORMAT",
-        (address)uncaught_exception(), (address)threadObj(), (address)group());
       {
         EXCEPTION_MARK;
         // Check if the method Thread.dispatchUncaughtException() exists. If so
@@ -1607,6 +1649,15 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
         }
       }
     }
+
+    // Called before the java thread exit since we want to read info
+    // from java_lang_Thread object
+    EVENT_BEGIN(TraceEventThreadEnd, event);
+    EVENT_COMMIT(event,
+        EVENT_SET(event, javalangthread, java_lang_Thread::thread_id(this->threadObj())));
+
+    // Call after last event on thread
+    EVENT_THREAD_EXIT(this);
 
     // Call Thread.exit(). We try 3 times in case we got another Thread.stop during
     // the execution of the method. If that is not enough, then we don't really care. Thread.stop
@@ -2232,6 +2283,26 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
   }
 }
 
+// This is a variant of the normal
+// check_special_condition_for_native_trans with slightly different
+// semantics for use by critical native wrappers.  It does all the
+// normal checks but also performs the transition back into
+// thread_in_Java state.  This is required so that critical natives
+// can potentially block and perform a GC if they are the last thread
+// exiting the GC_locker.
+void JavaThread::check_special_condition_for_native_trans_and_transition(JavaThread *thread) {
+  check_special_condition_for_native_trans(thread);
+
+  // Finish the transition
+  thread->set_thread_state(_thread_in_Java);
+
+  if (thread->do_critical_native_unlock()) {
+    ThreadInVMfromJavaNoAsyncException tiv(thread);
+    GC_locker::unlock_critical(thread);
+    thread->clear_critical_native_unlock();
+  }
+}
+
 // We need to guarantee the Threads_lock here, since resumes are not
 // allowed during safepoint synchronization
 // Can only resume from an external suspension
@@ -2679,7 +2750,7 @@ const char* JavaThread::get_thread_name_string(char* buf, int buflen) const {
         name_str = UNICODE::as_utf8((jchar*) name->base(T_CHAR), name->length(), buf, buflen);
       }
     }
-    else if (is_attaching()) { // workaround for 6412693 - see 6404306
+    else if (is_attaching_via_jni()) { // workaround for 6412693 - see 6404306
       name_str = "<no-name - thread is attaching>";
     }
     else {
@@ -2860,7 +2931,46 @@ void JavaThread::trace_frames() {
   }
 }
 
+class PrintAndVerifyOopClosure: public OopClosure {
+ protected:
+  template <class T> inline void do_oop_work(T* p) {
+    oop obj = oopDesc::load_decode_heap_oop(p);
+    if (obj == NULL) return;
+    tty->print(INTPTR_FORMAT ": ", p);
+    if (obj->is_oop_or_null()) {
+      if (obj->is_objArray()) {
+        tty->print_cr("valid objArray: " INTPTR_FORMAT, (oopDesc*) obj);
+      } else {
+        obj->print();
+      }
+    } else {
+      tty->print_cr("invalid oop: " INTPTR_FORMAT, (oopDesc*) obj);
+    }
+    tty->cr();
+  }
+ public:
+  virtual void do_oop(oop* p) { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)  { do_oop_work(p); }
+};
 
+
+static void oops_print(frame* f, const RegisterMap *map) {
+  PrintAndVerifyOopClosure print;
+  f->print_value();
+  f->oops_do(&print, NULL, (RegisterMap*)map);
+}
+
+// Print our all the locations that contain oops and whether they are
+// valid or not.  This useful when trying to find the oldest frame
+// where an oop has gone bad since the frame walk is from youngest to
+// oldest.
+void JavaThread::trace_oops() {
+  tty->print_cr("[Trace oops]");
+  frames_do(oops_print);
+}
+
+
+#ifdef ASSERT
 // Print or validate the layout of stack frames
 void JavaThread::print_frame_layout(int depth, bool validate_only) {
   ResourceMark rm;
@@ -2875,10 +2985,10 @@ void JavaThread::print_frame_layout(int depth, bool validate_only) {
     values.validate();
   } else {
     tty->print_cr("[Describe stack layout]");
-    values.print();
+    values.print(this);
   }
 }
-
+#endif
 
 void JavaThread::trace_stack_from(vframe* start_vf) {
   ResourceMark rm;
@@ -2942,12 +3052,22 @@ CompilerThread::CompilerThread(CompileQueue* queue, CompilerCounters* counters)
   _queue = queue;
   _counters = counters;
   _buffer_blob = NULL;
+  _scanned_nmethod = NULL;
 
 #ifndef PRODUCT
   _ideal_graph_printer = NULL;
 #endif
 }
 
+void CompilerThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
+  JavaThread::oops_do(f, cf);
+  if (_scanned_nmethod != NULL && cf != NULL) {
+    // Safepoints can occur when the sweeper is scanning an nmethod so
+    // process it here to make sure it isn't unloaded in the middle of
+    // a scan.
+    cf->do_code_blob(_scanned_nmethod);
+  }
+}
 
 // ======= Threads ========
 
@@ -3026,7 +3146,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     os::pause();
   }
 
+#ifndef USDT2
   HS_DTRACE_PROBE(hotspot, vm__init__begin);
+#else /* USDT2 */
+  HOTSPOT_VM_INIT_BEGIN();
+#endif /* USDT2 */
 
   // Record VM creation timing statistics
   TraceVmCreationTime create_vm_timer;
@@ -3241,6 +3365,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       initialize_class(vmSymbols::java_lang_ArithmeticException(), CHECK_0);
       initialize_class(vmSymbols::java_lang_StackOverflowError(), CHECK_0);
       initialize_class(vmSymbols::java_lang_IllegalMonitorStateException(), CHECK_0);
+      initialize_class(vmSymbols::java_lang_IllegalArgumentException(), CHECK_0);
     } else {
       warning("java.lang.OutOfMemoryError has not been initialized");
       warning("java.lang.NullPointerException has not been initialized");
@@ -3248,6 +3373,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       warning("java.lang.ArrayStoreException has not been initialized");
       warning("java.lang.ArithmeticException has not been initialized");
       warning("java.lang.StackOverflowError has not been initialized");
+      warning("java.lang.IllegalArgumentException has not been initialized");
     }
   }
 
@@ -3277,11 +3403,20 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   quicken_jni_functions();
 
+  // Must be run after init_ft which initializes ft_enabled
+  if (TRACE_INITIALIZE() != JNI_OK) {
+    vm_exit_during_initialization("Failed to initialize tracing backend");
+  }
+
   // Set flag that basic initialization has completed. Used by exceptions and various
   // debug stuff, that does not work until all basic classes have been initialized.
   set_init_completed();
 
+#ifndef USDT2
   HS_DTRACE_PROBE(hotspot, vm__init__end);
+#else /* USDT2 */
+  HOTSPOT_VM_INIT_END();
+#endif /* USDT2 */
 
   // record VM initialization completion time
   Management::record_vm_init_completed();
@@ -3333,10 +3468,16 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     create_vm_init_libraries();
   }
 
+  if (!TRACE_START()) {
+    vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));
+  }
+
   // Notify JVMTI agents that VM initialization is complete - nop if no agents.
   JvmtiExport::post_vm_initialized();
 
-  Chunk::start_chunk_pool_cleaner_task();
+  if (CleanChunkPoolAsync) {
+    Chunk::start_chunk_pool_cleaner_task();
+  }
 
   // initialize compiler(s)
   CompileBroker::compilation_init();
@@ -3687,6 +3828,14 @@ bool Threads::destroy_vm() {
     // heap is unparseable if they are caught. Grab the Heap_lock
     // to prevent this. The GC vm_operations will not be able to
     // queue until after the vm thread is dead.
+    // After this point, we'll never emerge out of the safepoint before
+    // the VM exits, so concurrent GC threads do not need to be explicitly
+    // stopped; they remain inactive until the process exits.
+    // Note: some concurrent G1 threads may be running during a safepoint,
+    // but these will not be accessing the heap, just some G1-specific side
+    // data structures that are not accessed by any other threads but them
+    // after this point in a terminal safepoint.
+
     MutexLocker ml(Heap_lock);
 
     VMThread::wait_for_vm_thread_exit();
@@ -3761,7 +3910,7 @@ void Threads::add(JavaThread* p, bool force_daemon) {
   ThreadService::add_thread(p, daemon);
 
   // Possible GC point.
-  Events::log("Thread added: " INTPTR_FORMAT, p);
+  Events::log(p, "Thread added: " INTPTR_FORMAT, p);
 }
 
 void Threads::remove(JavaThread* p) {
@@ -3806,7 +3955,7 @@ void Threads::remove(JavaThread* p) {
   } // unlock Threads_lock
 
   // Since Events::log uses a lock, we grab it outside the Threads_lock
-  Events::log("Thread exited: " INTPTR_FORMAT, p);
+  Events::log(p, "Thread exited: " INTPTR_FORMAT, p);
 }
 
 // Threads_lock must be held when this is called (or must be called during a safepoint)
@@ -3839,7 +3988,15 @@ void Threads::possibly_parallel_oops_do(OopClosure* f, CodeBlobClosure* cf) {
   // root groups.  Overhead should be small enough to use all the time,
   // even in sequential code.
   SharedHeap* sh = SharedHeap::heap();
-  bool is_par = (sh->n_par_threads() > 0);
+  // Cannot yet substitute active_workers for n_par_threads
+  // because of G1CollectedHeap::verify() use of
+  // SharedHeap::process_strong_roots().  n_par_threads == 0 will
+  // turn off parallelism in process_strong_roots while active_workers
+  // is being used for parallelism elsewhere.
+  bool is_par = sh->n_par_threads() > 0;
+  assert(!is_par ||
+         (SharedHeap::heap()->n_par_threads() ==
+          SharedHeap::heap()->workers()->active_workers()), "Mismatch");
   int cp = SharedHeap::heap()->strong_roots_parity();
   ALL_JAVA_THREADS(p) {
     if (p->claim_oops_do(is_par, cp)) {
@@ -3847,8 +4004,9 @@ void Threads::possibly_parallel_oops_do(OopClosure* f, CodeBlobClosure* cf) {
     }
   }
   VMThread* vmt = VMThread::vm_thread();
-  if (vmt->claim_oops_do(is_par, cp))
+  if (vmt->claim_oops_do(is_par, cp)) {
     vmt->oops_do(f, cf);
+  }
 }
 
 #ifndef SERIALGC

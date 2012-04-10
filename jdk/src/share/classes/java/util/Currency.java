@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -99,7 +101,7 @@ public final class Currency implements Serializable {
 
     // class data: instance map
 
-    private static HashMap<String, Currency> instances = new HashMap<String, Currency>(7);
+    private static ConcurrentMap<String, Currency> instances = new ConcurrentHashMap<>(7);
     private static HashSet<Currency> available;
 
 
@@ -189,7 +191,7 @@ public final class Currency implements Serializable {
     private static final int VALID_FORMAT_VERSION = 1;
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction() {
+        AccessController.doPrivileged(new PrivilegedAction<Object>() {
             public Object run() {
                 String homeDir = System.getProperty("java.home");
                 try {
@@ -221,9 +223,7 @@ public final class Currency implements Serializable {
                     otherCurrenciesNumericCode = readIntArray(dis, ocCount);
                     dis.close();
                 } catch (IOException e) {
-                    InternalError ie = new InternalError();
-                    ie.initCause(e);
-                    throw ie;
+                    throw new InternalError(e);
                 }
 
                 // look for the properties file for overrides
@@ -286,7 +286,6 @@ public final class Currency implements Serializable {
 
     private static Currency getInstance(String currencyCode, int defaultFractionDigits,
         int numericCode) {
-        synchronized (instances) {
             // Try to look up the currency code in the instances table.
             // This does the null pointer check as a side effect.
             // Also, if there already is an entry, the currencyCode must be valid.
@@ -324,10 +323,9 @@ public final class Currency implements Serializable {
                 }
             }
 
-            instance = new Currency(currencyCode, defaultFractionDigits, numericCode);
-            instances.put(currencyCode, instance);
-            return instance;
-        }
+        instance = instances.putIfAbsent(currencyCode,
+                   new Currency(currencyCode, defaultFractionDigits, numericCode));
+        return (instance != null ? instance : instances.get(currencyCode));
     }
 
     /**
@@ -433,7 +431,9 @@ public final class Currency implements Serializable {
             }
         }
 
-        return (Set<Currency>) available.clone();
+        @SuppressWarnings("unchecked")
+        Set<Currency> result = (Set<Currency>) available.clone();
+        return result;
     }
 
     /**

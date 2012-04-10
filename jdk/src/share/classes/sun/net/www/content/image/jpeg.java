@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,8 @@
 
 package sun.net.www.content.image;
 
-import java.net.URL;
-import java.net.URLConnection;
 import java.net.*;
 import sun.awt.image.*;
-import java.io.InputStream;
 import java.io.IOException;
 import java.awt.Image;
 import java.awt.Toolkit;
@@ -40,14 +37,15 @@ public class jpeg extends ContentHandler {
     }
 
     public Object getContent(URLConnection urlc, Class[] classes) throws IOException {
-        for (int i = 0; i < classes.length; i++) {
-          if (classes[i].isAssignableFrom(URLImageSource.class)) {
+        Class<?>[] cls = classes;
+        for (int i = 0; i < cls.length; i++) {
+            if (cls[i].isAssignableFrom(URLImageSource.class)) {
                 return new URLImageSource(urlc);
-          }
-          if (classes[i].isAssignableFrom(Image.class)) {
-            Toolkit tk = Toolkit.getDefaultToolkit();
-            return tk.createImage(new URLImageSource(urlc));
-          }
+            }
+            if (cls[i].isAssignableFrom(Image.class)) {
+                Toolkit tk = Toolkit.getDefaultToolkit();
+                return tk.createImage(new URLImageSource(urlc));
+            }
         }
         return null;
     }

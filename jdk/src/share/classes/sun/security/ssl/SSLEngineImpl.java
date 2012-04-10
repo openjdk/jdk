@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package sun.security.ssl;
 
 import java.io.*;
 import java.nio.*;
-import java.nio.ReadOnlyBufferException;
-import java.util.LinkedList;
 import java.security.*;
 
 import javax.crypto.BadPaddingException;
@@ -36,7 +34,6 @@ import javax.crypto.BadPaddingException;
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;
 
-import com.sun.net.ssl.internal.ssl.X509ExtendedTrustManager;
 
 /**
  * Implementation of an non-blocking SSLEngine.
@@ -579,8 +576,7 @@ final public class SSLEngineImpl extends SSLEngine {
             readMAC = handshaker.newReadMAC();
         } catch (GeneralSecurityException e) {
             // "can't happen"
-            throw (SSLException)new SSLException
-                                ("Algorithm missing:  ").initCause(e);
+            throw new SSLException("Algorithm missing:  ", e);
         }
 
         /*
@@ -616,8 +612,7 @@ final public class SSLEngineImpl extends SSLEngine {
             writeMAC = handshaker.newWriteMAC();
         } catch (GeneralSecurityException e) {
             // "can't happen"
-            throw (SSLException)new SSLException
-                                ("Algorithm missing:  ").initCause(e);
+            throw new SSLException("Algorithm missing:  ", e);
         }
 
         // See comment above.
@@ -885,9 +880,7 @@ final public class SSLEngineImpl extends SSLEngine {
         } catch (SSLException e) {
             throw e;
         } catch (IOException e) {
-            SSLException ex = new SSLException("readRecord");
-            ex.initCause(e);
-            throw ex;
+            throw new SSLException("readRecord", e);
         }
 
         /*
@@ -1159,7 +1152,7 @@ final public class SSLEngineImpl extends SSLEngine {
          * For now, force it to be large enough to handle any
          * valid SSL/TLS record.
          */
-        if (netData.remaining() < outputRecord.maxRecordSize) {
+        if (netData.remaining() < EngineOutputRecord.maxRecordSize) {
             return new SSLEngineResult(
                 Status.BUFFER_OVERFLOW, getHSStatus(null), 0, 0);
         }
@@ -1172,7 +1165,7 @@ final public class SSLEngineImpl extends SSLEngine {
             ea.resetPos();
 
             fatal(Alerts.alert_internal_error,
-                "problem unwrapping net record", e);
+                "problem wrapping app data", e);
             return null;  // make compiler happy
         } finally {
             /*
@@ -1256,9 +1249,7 @@ final public class SSLEngineImpl extends SSLEngine {
         } catch (SSLException e) {
             throw e;
         } catch (IOException e) {
-            SSLException ex = new SSLException("Write problems");
-            ex.initCause(e);
-            throw ex;
+            throw new SSLException("Write problems", e);
         }
 
         /*
@@ -1658,10 +1649,7 @@ final public class SSLEngineImpl extends SSLEngine {
             } else if (cause instanceof SSLException) {
                 throw (SSLException)cause;
             } else if (cause instanceof Exception) {
-                SSLException ssle = new SSLException(
-                    "fatal SSLEngine condition");
-                ssle.initCause(cause);
-                throw ssle;
+                throw new SSLException("fatal SSLEngine condition", cause);
             }
         }
 
@@ -1909,6 +1897,7 @@ final public class SSLEngineImpl extends SSLEngine {
      * client or server mode.  Must be called before any SSL
      * traffic has started.
      */
+    @SuppressWarnings("fallthrough")
     synchronized public void setUseClientMode(boolean flag) {
         switch (connectionState) {
 

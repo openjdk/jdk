@@ -167,7 +167,7 @@ public class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
 
         WToolkit.executeOnEventHandlerThread(fileDialog, new Runnable() {
              public void run() {
-                 fileDialog.hide();
+                 fileDialog.setVisible(false);
              }
         });
     } // handleSelected()
@@ -182,16 +182,16 @@ public class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
 
         WToolkit.executeOnEventHandlerThread(fileDialog, new Runnable() {
              public void run() {
-                 fileDialog.hide();
+                 fileDialog.setVisible(false);
              }
         });
     } // handleCancel()
 
     //This whole static block is a part of 4152317 fix
     static {
-        String filterString = (String) AccessController.doPrivileged(
-            new PrivilegedAction() {
-                public Object run() {
+        String filterString = AccessController.doPrivileged(
+            new PrivilegedAction<String>() {
+                public String run() {
                     try {
                         ResourceBundle rb = ResourceBundle.getBundle("sun.awt.windows.awtLocalization");
                         return rb.getString("allFiles");

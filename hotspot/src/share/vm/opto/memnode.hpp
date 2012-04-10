@@ -215,6 +215,7 @@ public:
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type *Value(PhaseTransform *phase) const;
   virtual int store_Opcode() const { return Op_StoreB; }
   virtual BasicType memory_type() const { return T_BYTE; }
 };
@@ -228,6 +229,7 @@ public:
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node* Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type *Value(PhaseTransform *phase) const;
   virtual int store_Opcode() const { return Op_StoreB; }
   virtual BasicType memory_type() const { return T_BYTE; }
 };
@@ -241,8 +243,23 @@ public:
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type *Value(PhaseTransform *phase) const;
   virtual int store_Opcode() const { return Op_StoreC; }
   virtual BasicType memory_type() const { return T_CHAR; }
+};
+
+//------------------------------LoadSNode--------------------------------------
+// Load a short (16bits signed) from memory
+class LoadSNode : public LoadNode {
+public:
+  LoadSNode( Node *c, Node *mem, Node *adr, const TypePtr* at, const TypeInt *ti = TypeInt::SHORT )
+    : LoadNode(c,mem,adr,at,ti) {}
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegI; }
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type *Value(PhaseTransform *phase) const;
+  virtual int store_Opcode() const { return Op_StoreC; }
+  virtual BasicType memory_type() const { return T_SHORT; }
 };
 
 //------------------------------LoadINode--------------------------------------
@@ -432,19 +449,6 @@ public:
   virtual bool depends_only_on_test() const { return true; }
 };
 
-
-//------------------------------LoadSNode--------------------------------------
-// Load a short (16bits signed) from memory
-class LoadSNode : public LoadNode {
-public:
-  LoadSNode( Node *c, Node *mem, Node *adr, const TypePtr* at, const TypeInt *ti = TypeInt::SHORT )
-    : LoadNode(c,mem,adr,at,ti) {}
-  virtual int Opcode() const;
-  virtual uint ideal_reg() const { return Op_RegI; }
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual int store_Opcode() const { return Op_StoreC; }
-  virtual BasicType memory_type() const { return T_SHORT; }
-};
 
 //------------------------------StoreNode--------------------------------------
 // Store value; requires Store, Address and Value
@@ -800,6 +804,7 @@ public:
   virtual uint match_edge(uint idx) const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type *Value(PhaseTransform *phase) const;
 };
 
 //------------------------------StrComp-------------------------------------
@@ -879,7 +884,7 @@ public:
 
 // "Acquire" - no following ref can move before (but earlier refs can
 // follow, like an early Load stalled in cache).  Requires multi-cpu
-// visibility.  Inserted after a volatile load or FastLock.
+// visibility.  Inserted after a volatile load.
 class MemBarAcquireNode: public MemBarNode {
 public:
   MemBarAcquireNode(Compile* C, int alias_idx, Node* precedent)
@@ -889,11 +894,40 @@ public:
 
 // "Release" - no earlier ref can move after (but later refs can move
 // up, like a speculative pipelined cache-hitting Load).  Requires
-// multi-cpu visibility.  Inserted before a volatile store or FastUnLock.
+// multi-cpu visibility.  Inserted before a volatile store.
 class MemBarReleaseNode: public MemBarNode {
 public:
   MemBarReleaseNode(Compile* C, int alias_idx, Node* precedent)
     : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
+// "Acquire" - no following ref can move before (but earlier refs can
+// follow, like an early Load stalled in cache).  Requires multi-cpu
+// visibility.  Inserted after a FastLock.
+class MemBarAcquireLockNode: public MemBarNode {
+public:
+  MemBarAcquireLockNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
+// "Release" - no earlier ref can move after (but later refs can move
+// up, like a speculative pipelined cache-hitting Load).  Requires
+// multi-cpu visibility.  Inserted before a FastUnLock.
+class MemBarReleaseLockNode: public MemBarNode {
+public:
+  MemBarReleaseLockNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
+class MemBarStoreStoreNode: public MemBarNode {
+public:
+  MemBarStoreStoreNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {
+    init_class_id(Class_MemBarStoreStore);
+  }
   virtual int Opcode() const;
 };
 
@@ -922,7 +956,14 @@ public:
 class InitializeNode: public MemBarNode {
   friend class AllocateNode;
 
-  bool _is_complete;
+  enum {
+    Incomplete    = 0,
+    Complete      = 1,
+    WithArraycopy = 2
+  };
+  int _is_complete;
+
+  bool _does_not_escape;
 
 public:
   enum {
@@ -956,10 +997,15 @@ public:
   // An InitializeNode must completed before macro expansion is done.
   // Completion requires that the AllocateNode must be followed by
   // initialization of the new memory to zero, then to any initializers.
-  bool is_complete() { return _is_complete; }
+  bool is_complete() { return _is_complete != Incomplete; }
+  bool is_complete_with_arraycopy() { return (_is_complete & WithArraycopy) != 0; }
 
   // Mark complete.  (Must not yet be complete.)
   void set_complete(PhaseGVN* phase);
+  void set_complete_with_arraycopy() { _is_complete = Complete | WithArraycopy; }
+
+  bool does_not_escape() { return _does_not_escape; }
+  void set_does_not_escape() { _does_not_escape = true; }
 
 #ifdef ASSERT
   // ensure all non-degenerate stores are ordered and non-overlapping
@@ -1255,6 +1301,16 @@ public:
 class PrefetchWriteNode : public Node {
 public:
   PrefetchWriteNode(Node *abio, Node *adr) : Node(0,abio,adr) {}
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return NotAMachineReg; }
+  virtual uint match_edge(uint idx) const { return idx==2; }
+  virtual const Type *bottom_type() const { return Type::ABIO; }
+};
+
+// Allocation prefetch which may fault, TLAB size have to be adjusted.
+class PrefetchAllocationNode : public Node {
+public:
+  PrefetchAllocationNode(Node *mem, Node *adr) : Node(0,mem,adr) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual uint match_edge(uint idx) const { return idx==2; }

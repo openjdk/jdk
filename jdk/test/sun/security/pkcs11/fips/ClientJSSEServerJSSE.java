@@ -28,6 +28,7 @@
  * @library ..
  * @ignore JSSE supported cipher suites are changed with CR 6916074,
  *     need to update this test case in JDK 7 soon
+ * @run main/othervm ClientJSSEServerJSSE
  * @author Andreas Sterbenz
  */
 

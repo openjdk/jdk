@@ -88,7 +88,7 @@ class ciMethod : public ciObject {
 #endif
 
   ciMethod(methodHandle h_m);
-  ciMethod(ciInstanceKlass* holder, ciSymbol* name, ciSymbol* signature);
+  ciMethod(ciInstanceKlass* holder, ciSymbol* name, ciSymbol* signature, ciInstanceKlass* accessor);
 
   methodOop get_methodOop() const {
     methodOop m = (methodOop)get_oop();
@@ -157,7 +157,11 @@ class ciMethod : public ciObject {
   int interpreter_invocation_count() const       { check_is_loaded(); return _interpreter_invocation_count; }
   int interpreter_throwout_count() const         { check_is_loaded(); return _interpreter_throwout_count; }
 
+  // Code size for inlining decisions.
+  int code_size_for_inlining();
+
   int comp_level();
+  int highest_osr_comp_level();
 
   Bytecodes::Code java_code_at_bci(int bci) {
     address bcp = code() + bci;
@@ -291,12 +295,6 @@ class ciMethod : public ciObject {
   // Print the name of this method in various incarnations.
   void print_name(outputStream* st = tty);
   void print_short_name(outputStream* st = tty);
-
-  methodOop get_method_handle_target() {
-    KlassHandle receiver_limit; int flags = 0;
-    methodHandle m = MethodHandles::decode_method(get_oop(), receiver_limit, flags);
-    return m();
-  }
 };
 
 #endif // SHARE_VM_CI_CIMETHOD_HPP

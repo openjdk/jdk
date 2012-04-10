@@ -55,7 +55,7 @@ public abstract class SnmpNamedListTableCache extends SnmpListTableCache {
      * This map associate an entry name with the SnmpOid index that's
      * been allocated for it.
      **/
-    protected TreeMap names = new TreeMap();
+    protected TreeMap<String, SnmpOid> names = new TreeMap<>();
 
     /**
      * The last allocate index.
@@ -80,7 +80,7 @@ public abstract class SnmpNamedListTableCache extends SnmpListTableCache {
      *        <var>rawDatas</var> list iterator.
      * @param item The raw data object for which a key name must be determined.
      **/
-    protected abstract String getKey(Object context, List rawDatas,
+    protected abstract String getKey(Object context, List<?> rawDatas,
                                      int rank, Object item);
 
     /**
@@ -97,7 +97,7 @@ public abstract class SnmpNamedListTableCache extends SnmpListTableCache {
      *        <var>rawDatas</var> list iterator.
      * @param item The raw data object for which an index must be determined.
      **/
-    protected SnmpOid makeIndex(Object context, List rawDatas,
+    protected SnmpOid makeIndex(Object context, List<?> rawDatas,
                                 int rank, Object item) {
 
         // check we are in the limits of an unsigned32.
@@ -151,7 +151,7 @@ public abstract class SnmpNamedListTableCache extends SnmpListTableCache {
      *        <var>rawDatas</var> list iterator.
      * @param item The raw data object for which an index must be determined.
      **/
-    protected SnmpOid getIndex(Object context, List rawDatas,
+    protected SnmpOid getIndex(Object context, List<?> rawDatas,
                                int rank, Object item) {
         final String key   = getKey(context,rawDatas,rank,item);
         final Object index = (names==null||key==null)?null:names.get(key);
@@ -174,8 +174,8 @@ public abstract class SnmpNamedListTableCache extends SnmpListTableCache {
      * @param rawDatas The table datas from which the cached data will be
      *        computed.
      **/
-    protected SnmpCachedData updateCachedDatas(Object context, List rawDatas) {
-        TreeMap ctxt = new TreeMap();
+    protected SnmpCachedData updateCachedDatas(Object context, List<?> rawDatas) {
+        TreeMap<String,SnmpOid> ctxt = new TreeMap<>();
         final SnmpCachedData result =
             super.updateCachedDatas(context,rawDatas);
         names = ctxt;
@@ -191,7 +191,7 @@ public abstract class SnmpNamedListTableCache extends SnmpListTableCache {
      *        the {@link JvmContextFactory}.
      *
      **/
-    protected abstract List   loadRawDatas(Map userData);
+    protected abstract List<?>  loadRawDatas(Map<Object,Object> userData);
 
     /**
      *The name under which the raw data is to be found/put in
@@ -212,16 +212,16 @@ public abstract class SnmpNamedListTableCache extends SnmpListTableCache {
      *        the request contextual cache.
      *
      **/
-    protected List getRawDatas(Map<Object, Object> userData, String key) {
-        List rawDatas = null;
+    protected List<?> getRawDatas(Map<Object, Object> userData, String key) {
+        List<?> rawDatas = null;
 
         // Look for memory manager list in request contextual cache.
         if (userData != null)
-            rawDatas = (List) userData.get(key);
+            rawDatas =  (List<?>)userData.get(key);
 
         if (rawDatas == null) {
             // No list in contextual cache, get it from API
-            rawDatas =  loadRawDatas(userData);
+            rawDatas = loadRawDatas(userData);
 
 
             // Put list in cache...
@@ -250,12 +250,12 @@ public abstract class SnmpNamedListTableCache extends SnmpListTableCache {
             (context instanceof Map)?Util.<Map<Object, Object>>cast(context):null;
 
         // Look for memory manager list in request contextual cache.
-        final List rawDatas = getRawDatas(userData,getRawDatasKey());
+        final List<?> rawDatas = getRawDatas(userData,getRawDatasKey());
 
         log.debug("updateCachedDatas","rawDatas.size()=" +
               ((rawDatas==null)?"<no data>":""+rawDatas.size()));
 
-        TreeMap ctxt = new TreeMap();
+        TreeMap<String,SnmpOid> ctxt = new TreeMap<>();
         final SnmpCachedData result =
             super.updateCachedDatas(ctxt,rawDatas);
         names = ctxt;

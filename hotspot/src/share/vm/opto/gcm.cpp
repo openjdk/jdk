@@ -95,7 +95,7 @@ void PhaseCFG::replace_block_proj_ctrl( Node *n ) {
   assert(in0 != NULL, "Only control-dependent");
   const Node *p = in0->is_block_proj();
   if (p != NULL && p != n) {    // Control from a block projection?
-    assert(!n->pinned() || n->is_MachConstantBase() || n->is_SafePointScalarObject(), "only pinned MachConstantBase or SafePointScalarObject node is expected here");
+    assert(!n->pinned() || n->is_MachConstantBase(), "only pinned MachConstantBase node is expected here");
     // Find trailing Region
     Block *pb = _bbs[in0->_idx]; // Block-projection already has basic block
     uint j = 0;
@@ -1137,7 +1137,7 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_List &stack) {
 
     // No uses, just terminate
     if (self->outcnt() == 0) {
-      assert(self->Opcode() == Op_MachProj, "sanity");
+      assert(self->is_MachProj(), "sanity");
       continue;                   // Must be a dead machine projection
     }
 
@@ -1344,8 +1344,8 @@ void PhaseCFG::GlobalCodeMotion( Matcher &matcher, uint unique, Node_List &proj_
 
   // Schedule locally.  Right now a simple topological sort.
   // Later, do a real latency aware scheduler.
-  int *ready_cnt = NEW_RESOURCE_ARRAY(int,C->unique());
-  memset( ready_cnt, -1, C->unique() * sizeof(int) );
+  uint max_idx = C->unique();
+  GrowableArray<int> ready_cnt(max_idx, max_idx, -1);
   visited.Clear();
   for (i = 0; i < _num_blocks; i++) {
     if (!_blocks[i]->schedule_local(this, matcher, ready_cnt, visited)) {

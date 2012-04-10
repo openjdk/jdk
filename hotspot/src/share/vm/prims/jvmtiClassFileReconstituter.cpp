@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "interpreter/bytecodeStream.hpp"
+#include "oops/fieldStreams.hpp"
 #include "prims/jvmtiClassFileReconstituter.hpp"
 #include "runtime/signature.hpp"
 #ifdef TARGET_ARCH_x86
@@ -42,7 +43,7 @@
 #ifdef TARGET_ARCH_ppc
 # include "bytes_ppc.hpp"
 #endif
-// FIXME: add Deprecated, LVT, LVTT attributes
+// FIXME: add Deprecated, LVTT attributes
 // FIXME: fix Synthetic attribute
 // FIXME: per Serguei, add error return handling for constantPoolOopDesc::copy_cpool_bytes()
 
@@ -52,25 +53,22 @@
 // JVMSpec|     field_info fields[fields_count];
 void JvmtiClassFileReconstituter::write_field_infos() {
   HandleMark hm(thread());
-  typeArrayHandle fields(thread(), ikh()->fields());
-  int fields_length = fields->length();
-  int num_fields = fields_length / instanceKlass::next_offset;
   objArrayHandle fields_anno(thread(), ikh()->fields_annotations());
 
-  write_u2(num_fields);
-  for (int index = 0; index < fields_length; index += instanceKlass::next_offset) {
-    AccessFlags access_flags;
-    int flags = fields->ushort_at(index + instanceKlass::access_flags_offset);
-    access_flags.set_flags(flags);
-    int name_index = fields->ushort_at(index + instanceKlass::name_index_offset);
-    int signature_index = fields->ushort_at(index + instanceKlass::signature_index_offset);
-    int initial_value_index = fields->ushort_at(index + instanceKlass::initval_index_offset);
+  // Compute the real number of Java fields
+  int java_fields = ikh()->java_fields_count();
+
+  write_u2(java_fields);
+  for (JavaFieldStream fs(ikh()); !fs.done(); fs.next()) {
+    AccessFlags access_flags = fs.access_flags();
+    int name_index = fs.name_index();
+    int signature_index = fs.signature_index();
+    int initial_value_index = fs.initval_index();
     guarantee(name_index != 0 && signature_index != 0, "bad constant pool index for field");
-    int offset = ikh()->offset_from_fields( index );
-    int generic_signature_index =
-                        fields->ushort_at(index + instanceKlass::generic_signature_offset);
+    // int offset = ikh()->field_offset( index );
+    int generic_signature_index = fs.generic_signature_index();
     typeArrayHandle anno(thread(), fields_anno.not_null() ?
-                                 (typeArrayOop)(fields_anno->obj_at(index / instanceKlass::next_offset)) :
+                                 (typeArrayOop)(fields_anno->obj_at(fs.index())) :
                                  (typeArrayOop)NULL);
 
     // JVMSpec|   field_info {
@@ -81,7 +79,7 @@ void JvmtiClassFileReconstituter::write_field_infos() {
     // JVMSpec|         attribute_info attributes[attributes_count];
     // JVMSpec|   }
 
-    write_u2(flags & JVM_RECOGNIZED_FIELD_MODIFIERS);
+    write_u2(access_flags.as_int() & JVM_RECOGNIZED_FIELD_MODIFIERS);
     write_u2(name_index);
     write_u2(signature_index);
     int attr_count = 0;
@@ -138,8 +136,9 @@ void JvmtiClassFileReconstituter::write_code_attribute(methodHandle method) {
   constMethodHandle const_method(thread(), method->constMethod());
   u2 line_num_cnt = 0;
   int stackmap_len = 0;
+  int local_variable_table_length = 0;
 
-  // compute number and length of attributes -- FIXME: for now no LVT
+  // compute number and length of attributes
   int attr_count = 0;
   int attr_size = 0;
   if (const_method->has_linenumber_table()) {
@@ -170,6 +169,25 @@ void JvmtiClassFileReconstituter::write_code_attribute(methodHandle method) {
       //        stack_map_frame_entries[number_of_entries];
       //      }
       attr_size += 2 + 4 + stackmap_len;
+    }
+  }
+  if (method->has_localvariable_table()) {
+    local_variable_table_length = method->localvariable_table_length();
+    ++attr_count;
+    if (local_variable_table_length != 0) {
+      // Compute the size of the local variable table attribute (VM stores raw):
+      // LocalVariableTable_attribute {
+      //   u2 attribute_name_index;
+      //   u4 attribute_length;
+      //   u2 local_variable_table_length;
+      //   {
+      //     u2 start_pc;
+      //     u2 length;
+      //     u2 name_index;
+      //     u2 descriptor_index;
+      //     u2 index;
+      //   }
+      attr_size += 2 + 4 + 2 + local_variable_table_length * (2 + 2 + 2 + 2 + 2);
     }
   }
 
@@ -205,8 +223,9 @@ void JvmtiClassFileReconstituter::write_code_attribute(methodHandle method) {
   if (stackmap_len != 0) {
     write_stackmap_table_attribute(method, stackmap_len);
   }
-
-  // FIXME: write LVT attribute
+  if (local_variable_table_length != 0) {
+    write_local_variable_table_attribute(method, local_variable_table_length);
+  }
 }
 
 // Write Exceptions attribute
@@ -273,8 +292,8 @@ void JvmtiClassFileReconstituter::write_signature_attribute(u2 generic_signature
 
 // Compute the number of entries in the InnerClasses attribute
 u2 JvmtiClassFileReconstituter::inner_classes_attribute_length() {
-  typeArrayOop inner_class_list = ikh()->inner_classes();
-  return (inner_class_list == NULL) ? 0 : inner_class_list->length();
+  InnerClassesIterator iter(ikh());
+  return iter.length();
 }
 
 // Write an annotation attribute.  The VM stores them in raw form, so all we need
@@ -305,26 +324,20 @@ void JvmtiClassFileReconstituter::write_annotations_attribute(const char* attr_n
 // JVMSpec|     } classes[number_of_classes];
 // JVMSpec|   }
 void JvmtiClassFileReconstituter::write_inner_classes_attribute(int length) {
-  typeArrayOop inner_class_list = ikh()->inner_classes();
-  guarantee(inner_class_list != NULL && inner_class_list->length() == length,
+  InnerClassesIterator iter(ikh());
+  guarantee(iter.length() != 0 && iter.length() == length,
             "caller must check");
-  typeArrayHandle inner_class_list_h(thread(), inner_class_list);
-  assert (length % instanceKlass::inner_class_next_offset == 0, "just checking");
   u2 entry_count = length / instanceKlass::inner_class_next_offset;
   u4 size = 2 + entry_count * (2+2+2+2);
 
   write_attribute_name_index("InnerClasses");
   write_u4(size);
   write_u2(entry_count);
-  for (int i = 0; i < length; i += instanceKlass::inner_class_next_offset) {
-    write_u2(inner_class_list_h->ushort_at(
-                      i + instanceKlass::inner_class_inner_class_info_offset));
-    write_u2(inner_class_list_h->ushort_at(
-                      i + instanceKlass::inner_class_outer_class_info_offset));
-    write_u2(inner_class_list_h->ushort_at(
-                      i + instanceKlass::inner_class_inner_name_offset));
-    write_u2(inner_class_list_h->ushort_at(
-                      i + instanceKlass::inner_class_access_flags_offset));
+  for (; !iter.done(); iter.next()) {
+    write_u2(iter.inner_class_info_index());
+    write_u2(iter.outer_class_info_index());
+    write_u2(iter.inner_name_index());
+    write_u2(iter.inner_access_flags());
   }
 }
 
@@ -371,6 +384,36 @@ void JvmtiClassFileReconstituter::write_line_number_table_attribute(methodHandle
     write_u2(stream.bci());
     write_u2(stream.line());
   }
+}
+
+// Write LineNumberTable attribute
+// JVMSpec|   LocalVariableTable_attribute {
+// JVMSpec|     u2 attribute_name_index;
+// JVMSpec|     u4 attribute_length;
+// JVMSpec|     u2 local_variable_table_length;
+// JVMSpec|     {  u2 start_pc;
+// JVMSpec|       u2 length;
+// JVMSpec|       u2 name_index;
+// JVMSpec|       u2 descriptor_index;
+// JVMSpec|       u2 index;
+// JVMSpec|     } local_variable_table[local_variable_table_length];
+// JVMSpec|   }
+void JvmtiClassFileReconstituter::write_local_variable_table_attribute(methodHandle method, u2 num_entries) {
+    write_attribute_name_index("LocalVariableTable");
+    write_u4(2 + num_entries * (2 + 2 + 2 + 2 + 2));
+    write_u2(num_entries);
+
+    assert(method->localvariable_table_length() == num_entries, "just checking");
+
+    LocalVariableTableElement *elem = method->localvariable_table_start();
+    for (int j=0; j<method->localvariable_table_length(); j++) {
+      write_u2(elem->start_bci);
+      write_u2(elem->length);
+      write_u2(elem->name_cp_index);
+      write_u2(elem->descriptor_cp_index);
+      write_u2(elem->slot);
+      elem++;
+    }
 }
 
 // Write stack map table attribute
@@ -678,8 +721,11 @@ void JvmtiClassFileReconstituter::copy_bytecodes(methodHandle mh,
       case Bytecodes::_invokestatic    :  // fall through
       case Bytecodes::_invokedynamic   :  // fall through
       case Bytecodes::_invokeinterface :
-        assert(len == 3 || (code == Bytecodes::_invokeinterface && len ==5),
+        assert(len == 3 ||
+               (code == Bytecodes::_invokeinterface && len == 5) ||
+               (code == Bytecodes::_invokedynamic   && len == 5),
                "sanity check");
+
         int cpci = Bytes::get_native_u2(bcp+1);
         bool is_invokedynamic = (EnableInvokeDynamic && code == Bytecodes::_invokedynamic);
         if (is_invokedynamic)

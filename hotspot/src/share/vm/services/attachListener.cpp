@@ -34,6 +34,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
 #include "services/attachListener.hpp"
+#include "services/diagnosticCommand.hpp"
 #include "services/heapDumper.hpp"
 
 volatile bool AttachListener::_initialized;
@@ -98,6 +99,7 @@ static jint get_properties(AttachOperation* op, outputStream* out, Symbol* seria
 }
 
 // Implementation of "properties" command.
+// See also: PrintSystemPropertiesDCmd class
 static jint get_system_properties(AttachOperation* op, outputStream* out) {
   return get_properties(op, out, vmSymbols::serializePropertiesToByteArray_name());
 }
@@ -126,6 +128,7 @@ static jint data_dump(AttachOperation* op, outputStream* out) {
 }
 
 // Implementation of "threaddump" command - essentially a remote ctrl-break
+// See also: ThreadDumpDCmd class
 //
 static jint thread_dump(AttachOperation* op, outputStream* out) {
   bool print_concurrent_locks = false;
@@ -148,8 +151,28 @@ static jint thread_dump(AttachOperation* op, outputStream* out) {
   return JNI_OK;
 }
 
+// A jcmd attach operation request was received, which will now
+// dispatch to the diagnostic commands used for serviceability functions.
+static jint jcmd(AttachOperation* op, outputStream* out) {
+  Thread* THREAD = Thread::current();
+  // All the supplied jcmd arguments are stored as a single
+  // string (op->arg(0)). This is parsed by the Dcmd framework.
+  DCmd::parse_and_execute(out, op->arg(0), ' ', THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    java_lang_Throwable::print(PENDING_EXCEPTION, out);
+    out->cr();
+    CLEAR_PENDING_EXCEPTION;
+    // The exception has been printed on the output stream
+    // If the JVM returns JNI_ERR, the attachAPI throws a generic I/O
+    // exception and the content of the output stream is not processed.
+    // By returning JNI_OK, the exception will be displayed on the client side
+  }
+  return JNI_OK;
+}
+
 #ifndef SERVICES_KERNEL   // Heap dumping not supported
 // Implementation of "dumpheap" command.
+// See also: HeapDumpDCmd class
 //
 // Input arguments :-
 //   arg0: Name of the dump file
@@ -192,6 +215,7 @@ jint dump_heap(AttachOperation* op, outputStream* out) {
 #endif // SERVICES_KERNEL
 
 // Implementation of "inspectheap" command
+// See also: ClassHistogramDCmd class
 //
 // Input arguments :-
 //   arg0: "-live" or "-all"
@@ -335,6 +359,7 @@ static jint set_flag(AttachOperation* op, outputStream* out) {
 }
 
 // Implementation of "printflag" command
+// See also: PrintVMFlagsDCmd class
 static jint print_flag(AttachOperation* op, outputStream* out) {
   const char* name = NULL;
   if ((name = op->arg(0)) == NULL) {
@@ -366,6 +391,7 @@ static AttachOperationFunctionInfo funcs[] = {
   { "inspectheap",      heap_inspection },
   { "setflag",          set_flag },
   { "printflag",        print_flag },
+  { "jcmd",             jcmd },
   { NULL,               NULL }
 };
 

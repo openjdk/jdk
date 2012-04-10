@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import sun.misc.Cleaner;
 import sun.security.action.GetPropertyAction;
 
 
-class Util {
+public class Util {
 
     // -- Caches --
 
@@ -158,7 +158,7 @@ class Util {
     /**
      * Returns a temporary buffer of at least the given size
      */
-    static ByteBuffer getTemporaryDirectBuffer(int size) {
+    public static ByteBuffer getTemporaryDirectBuffer(int size) {
         BufferCache cache = bufferCache.get();
         ByteBuffer buf = cache.get(size);
         if (buf != null) {
@@ -178,7 +178,7 @@ class Util {
     /**
      * Releases a temporary buffer by returning to the cache or freeing it.
      */
-    static void releaseTemporaryDirectBuffer(ByteBuffer buf) {
+    public static void releaseTemporaryDirectBuffer(ByteBuffer buf) {
         offerFirstTemporaryDirectBuffer(buf);
     }
 
@@ -355,28 +355,25 @@ class Util {
         return pageSize;
     }
 
-    private static volatile Constructor directByteBufferConstructor = null;
+    private static volatile Constructor<?> directByteBufferConstructor = null;
 
     private static void initDBBConstructor() {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 public Void run() {
                     try {
                         Class<?> cl = Class.forName("java.nio.DirectByteBuffer");
-                        Constructor ctor = cl.getDeclaredConstructor(
-                            new Class[] { int.class,
-                                          long.class,
-                                          FileDescriptor.class,
-                                          Runnable.class });
+                        Constructor<?> ctor = cl.getDeclaredConstructor(
+                            new Class<?>[] { int.class,
+                                             long.class,
+                                             FileDescriptor.class,
+                                             Runnable.class });
                         ctor.setAccessible(true);
                         directByteBufferConstructor = ctor;
-                    } catch (ClassNotFoundException x) {
-                        throw new InternalError();
-                    } catch (NoSuchMethodException x) {
-                        throw new InternalError();
-                    } catch (IllegalArgumentException x) {
-                        throw new InternalError();
-                    } catch (ClassCastException x) {
-                        throw new InternalError();
+                    } catch (ClassNotFoundException   |
+                             NoSuchMethodException    |
+                             IllegalArgumentException |
+                             ClassCastException x) {
+                        throw new InternalError(x);
                     }
                     return null;
                 }});
@@ -395,38 +392,33 @@ class Util {
                              new Long(addr),
                              fd,
                              unmapper });
-        } catch (InstantiationException e) {
-            throw new InternalError();
-        } catch (IllegalAccessException e) {
-            throw new InternalError();
-        } catch (InvocationTargetException e) {
-            throw new InternalError();
+        } catch (InstantiationException |
+                 IllegalAccessException |
+                 InvocationTargetException e) {
+            throw new InternalError(e);
         }
         return dbb;
     }
 
-    private static volatile Constructor directByteBufferRConstructor = null;
+    private static volatile Constructor<?> directByteBufferRConstructor = null;
 
     private static void initDBBRConstructor() {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 public Void run() {
                     try {
                         Class<?> cl = Class.forName("java.nio.DirectByteBufferR");
-                        Constructor ctor = cl.getDeclaredConstructor(
-                            new Class[] { int.class,
-                                          long.class,
-                                          FileDescriptor.class,
-                                          Runnable.class });
+                        Constructor<?> ctor = cl.getDeclaredConstructor(
+                            new Class<?>[] { int.class,
+                                             long.class,
+                                             FileDescriptor.class,
+                                             Runnable.class });
                         ctor.setAccessible(true);
                         directByteBufferRConstructor = ctor;
-                    } catch (ClassNotFoundException x) {
-                        throw new InternalError();
-                    } catch (NoSuchMethodException x) {
-                        throw new InternalError();
-                    } catch (IllegalArgumentException x) {
-                        throw new InternalError();
-                    } catch (ClassCastException x) {
-                        throw new InternalError();
+                    } catch (ClassNotFoundException |
+                             NoSuchMethodException |
+                             IllegalArgumentException |
+                             ClassCastException x) {
+                        throw new InternalError(x);
                     }
                     return null;
                 }});
@@ -445,12 +437,10 @@ class Util {
                              new Long(addr),
                              fd,
                              unmapper });
-        } catch (InstantiationException e) {
-            throw new InternalError();
-        } catch (IllegalAccessException e) {
-            throw new InternalError();
-        } catch (InvocationTargetException e) {
-            throw new InternalError();
+        } catch (InstantiationException |
+                 IllegalAccessException |
+                 InvocationTargetException e) {
+            throw new InternalError(e);
         }
         return dbb;
     }
@@ -477,7 +467,7 @@ class Util {
 
     private static boolean loaded = false;
 
-    static void load() {
+    public static void load() {
         synchronized (Util.class) {
             if (loaded)
                 return;

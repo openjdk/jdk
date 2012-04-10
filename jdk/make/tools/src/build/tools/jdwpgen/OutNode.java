@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,8 @@ class OutNode extends AbstractTypeListNode {
         indent(writer, depth);
         writer.print(
             "static " + cmdName + " process(VirtualMachineImpl vm");
-        for (Iterator it = components.iterator(); it.hasNext();) {
-            TypeNode tn = (TypeNode)it.next();
+        for (Node node : components) {
+            TypeNode tn = (TypeNode)node;
             writer.println(", ");
             indent(writer, depth+5);
             writer.print(tn.javaParam());
@@ -59,8 +59,8 @@ class OutNode extends AbstractTypeListNode {
         writer.println("throws JDWPException {");
         indent(writer, depth+1);
         writer.print("PacketStream ps = enqueueCommand(vm");
-        for (Iterator it = components.iterator(); it.hasNext();) {
-            TypeNode tn = (TypeNode)it.next();
+        for (Node node : components) {
+            TypeNode tn = (TypeNode)node;
             writer.print(", ");
             writer.print(tn.name());
         }
@@ -76,8 +76,8 @@ class OutNode extends AbstractTypeListNode {
         indent(writer, depth);
         writer.print(
             "static PacketStream enqueueCommand(VirtualMachineImpl vm");
-        for (Iterator it = components.iterator(); it.hasNext();) {
-            TypeNode tn = (TypeNode)it.next();
+        for (Node node : components) {
+            TypeNode tn = (TypeNode)node;
             writer.println(", ");
             indent(writer, depth+5);
             writer.print(tn.javaParam());
@@ -89,7 +89,7 @@ class OutNode extends AbstractTypeListNode {
         if (Main.genDebug) {
             indent(writer, depth+1);
             writer.println(
-                "if ((vm.traceFlags & vm.TRACE_SENDS) != 0) {");
+                "if ((vm.traceFlags & VirtualMachineImpl.TRACE_SENDS) != 0) {");
             indent(writer, depth+2);
             writer.print(
                 "vm.printTrace(\"Sending Command(id=\" + ps.pkt.id + \") ");

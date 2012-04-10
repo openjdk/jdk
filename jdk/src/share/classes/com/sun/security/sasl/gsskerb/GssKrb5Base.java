@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 
 package com.sun.security.sasl.gsskerb;
 
-import java.io.IOException;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.logging.Level;
 import javax.security.sasl.*;
 import com.sun.security.sasl.util.AbstractSaslImpl;
@@ -50,7 +48,8 @@ abstract class GssKrb5Base extends AbstractSaslImpl {
     protected MessageProp msgProp;              // QOP and privacy for unwrap
     protected static final int JGSS_QOP = 0;    // unrelated to SASL QOP mask
 
-    protected GssKrb5Base(Map props, String className) throws SaslException {
+    protected GssKrb5Base(Map<String, ?> props, String className)
+        throws SaslException {
         super(props, className);
     }
 

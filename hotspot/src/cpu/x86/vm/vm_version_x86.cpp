@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates.  All Rights Reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "os_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.inline.hpp"
+#endif
 
 
 int VM_Version::_cpu;
@@ -47,7 +50,7 @@ const char*           VM_Version::_features_str = "";
 VM_Version::CpuidInfo VM_Version::_cpuid_info   = { 0, };
 
 static BufferBlob* stub_blob;
-static const int stub_size = 400;
+static const int stub_size = 550;
 
 extern "C" {
   typedef void (*getPsrInfo_stub_t)(void*);
@@ -62,15 +65,15 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 
   address generate_getPsrInfo() {
     // Flags to test CPU type.
-    const uint32_t EFL_AC           = 0x40000;
-    const uint32_t EFL_ID           = 0x200000;
+    const uint32_t HS_EFL_AC           = 0x40000;
+    const uint32_t HS_EFL_ID           = 0x200000;
     // Values for when we don't have a CPUID instruction.
     const int      CPU_FAMILY_SHIFT = 8;
     const uint32_t CPU_FAMILY_386   = (3 << CPU_FAMILY_SHIFT);
     const uint32_t CPU_FAMILY_486   = (4 << CPU_FAMILY_SHIFT);
 
     Label detect_486, cpu486, detect_586, std_cpuid1, std_cpuid4;
-    Label ext_cpuid1, ext_cpuid5, done;
+    Label sef_cpuid, ext_cpuid, ext_cpuid1, ext_cpuid5, ext_cpuid7, done;
 
     StubCodeMark mark(this, "VM_Version", "getPsrInfo_stub");
 #   define __ _masm->
@@ -97,7 +100,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     //
     // if we are unable to change the AC flag, we have a 386
     //
-    __ xorl(rax, EFL_AC);
+    __ xorl(rax, HS_EFL_AC);
     __ push(rax);
     __ popf();
     __ pushf();
@@ -115,7 +118,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     //
     __ bind(detect_486);
     __ mov(rax, rcx);
-    __ xorl(rax, EFL_ID);
+    __ xorl(rax, HS_EFL_ID);
     __ push(rax);
     __ popf();
     __ pushf();
@@ -226,20 +229,69 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(Address(rsi, 8), rcx);
     __ movl(Address(rsi,12), rdx);
 
+    //
+    // Check if OS has enabled XGETBV instruction to access XCR0
+    // (OSXSAVE feature flag) and CPU supports AVX
+    //
+    __ andl(rcx, 0x18000000);
+    __ cmpl(rcx, 0x18000000);
+    __ jccb(Assembler::notEqual, sef_cpuid);
+
+    //
+    // XCR0, XFEATURE_ENABLED_MASK register
+    //
+    __ xorl(rcx, rcx);   // zero for XCR0 register
+    __ xgetbv();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::xem_xcr0_offset())));
+    __ movl(Address(rsi, 0), rax);
+    __ movl(Address(rsi, 4), rdx);
+
+    //
+    // cpuid(0x7) Structured Extended Features
+    //
+    __ bind(sef_cpuid);
+    __ movl(rax, 7);
+    __ cmpl(rax, Address(rbp, in_bytes(VM_Version::std_cpuid0_offset()))); // Is cpuid(0x7) supported?
+    __ jccb(Assembler::greater, ext_cpuid);
+
+    __ xorl(rcx, rcx);
+    __ cpuid();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::sef_cpuid7_offset())));
+    __ movl(Address(rsi, 0), rax);
+    __ movl(Address(rsi, 4), rbx);
+
+    //
+    // Extended cpuid(0x80000000)
+    //
+    __ bind(ext_cpuid);
     __ movl(rax, 0x80000000);
     __ cpuid();
     __ cmpl(rax, 0x80000000);     // Is cpuid(0x80000001) supported?
     __ jcc(Assembler::belowEqual, done);
     __ cmpl(rax, 0x80000004);     // Is cpuid(0x80000005) supported?
     __ jccb(Assembler::belowEqual, ext_cpuid1);
-    __ cmpl(rax, 0x80000007);     // Is cpuid(0x80000008) supported?
+    __ cmpl(rax, 0x80000006);     // Is cpuid(0x80000007) supported?
     __ jccb(Assembler::belowEqual, ext_cpuid5);
+    __ cmpl(rax, 0x80000007);     // Is cpuid(0x80000008) supported?
+    __ jccb(Assembler::belowEqual, ext_cpuid7);
     //
     // Extended cpuid(0x80000008)
     //
     __ movl(rax, 0x80000008);
     __ cpuid();
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::ext_cpuid8_offset())));
+    __ movl(Address(rsi, 0), rax);
+    __ movl(Address(rsi, 4), rbx);
+    __ movl(Address(rsi, 8), rcx);
+    __ movl(Address(rsi,12), rdx);
+
+    //
+    // Extended cpuid(0x80000007)
+    //
+    __ bind(ext_cpuid7);
+    __ movl(rax, 0x80000007);
+    __ cpuid();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::ext_cpuid7_offset())));
     __ movl(Address(rsi, 0), rax);
     __ movl(Address(rsi, 4), rbx);
     __ movl(Address(rsi, 8), rcx);
@@ -321,6 +373,20 @@ void VM_Version::get_processor_features() {
   if (UseSSE < 2) UseSSE = 2;
 #endif
 
+#ifdef AMD64
+  // flush_icache_stub have to be generated first.
+  // That is why Icache line size is hard coded in ICache class,
+  // see icache_x86.hpp. It is also the reason why we can't use
+  // clflush instruction in 32-bit VM since it could be running
+  // on CPU which does not support it.
+  //
+  // The only thing we can do is to verify that flushed
+  // ICache::line_size has correct value.
+  guarantee(_cpuid_info.std_cpuid1_edx.bits.clflush != 0, "clflush is not supported");
+  // clflush_size is size in quadwords (8 bytes).
+  guarantee(_cpuid_info.std_cpuid1_ebx.bits.clflush_size == 8, "such clflush size is not supported");
+#endif
+
   // If the OS doesn't support SSE, we can't use this feature even if the HW does
   if (!os::supports_sse())
     _cpuFeatures &= ~(CPU_SSE|CPU_SSE2|CPU_SSE3|CPU_SSSE3|CPU_SSE4A|CPU_SSE4_1|CPU_SSE4_2);
@@ -342,13 +408,19 @@ void VM_Version::get_processor_features() {
   if (UseSSE < 1)
     _cpuFeatures &= ~CPU_SSE;
 
+  if (UseAVX < 2)
+    _cpuFeatures &= ~CPU_AVX2;
+
+  if (UseAVX < 1)
+    _cpuFeatures &= ~CPU_AVX;
+
   if (logical_processors_per_package() == 1) {
     // HT processor could be installed on a system which doesn't support HT.
     _cpuFeatures &= ~CPU_HT;
   }
 
   char buf[256];
-  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                cores_per_cpu(), threads_per_core(),
                cpu_family(), _model, _stepping,
                (supports_cmov() ? ", cmov" : ""),
@@ -362,26 +434,38 @@ void VM_Version::get_processor_features() {
                (supports_sse4_1() ? ", sse4.1" : ""),
                (supports_sse4_2() ? ", sse4.2" : ""),
                (supports_popcnt() ? ", popcnt" : ""),
+               (supports_avx()    ? ", avx" : ""),
+               (supports_avx2()   ? ", avx2" : ""),
                (supports_mmx_ext() ? ", mmxext" : ""),
                (supports_3dnow_prefetch() ? ", 3dnowpref" : ""),
                (supports_lzcnt()   ? ", lzcnt": ""),
                (supports_sse4a()   ? ", sse4a": ""),
-               (supports_ht() ? ", ht": ""));
+               (supports_ht() ? ", ht": ""),
+               (supports_tsc() ? ", tsc": ""),
+               (supports_tscinv_bit() ? ", tscinvbit": ""),
+               (supports_tscinv() ? ", tscinv": ""));
   _features_str = strdup(buf);
 
   // UseSSE is set to the smaller of what hardware supports and what
   // the command line requires.  I.e., you cannot set UseSSE to 2 on
   // older Pentiums which do not support it.
-  if( UseSSE > 4 ) UseSSE=4;
-  if( UseSSE < 0 ) UseSSE=0;
-  if( !supports_sse4_1() ) // Drop to 3 if no SSE4 support
+  if (UseSSE > 4) UseSSE=4;
+  if (UseSSE < 0) UseSSE=0;
+  if (!supports_sse4_1()) // Drop to 3 if no SSE4 support
     UseSSE = MIN2((intx)3,UseSSE);
-  if( !supports_sse3() ) // Drop to 2 if no SSE3 support
+  if (!supports_sse3()) // Drop to 2 if no SSE3 support
     UseSSE = MIN2((intx)2,UseSSE);
-  if( !supports_sse2() ) // Drop to 1 if no SSE2 support
+  if (!supports_sse2()) // Drop to 1 if no SSE2 support
     UseSSE = MIN2((intx)1,UseSSE);
-  if( !supports_sse () ) // Drop to 0 if no SSE  support
+  if (!supports_sse ()) // Drop to 0 if no SSE  support
     UseSSE = 0;
+
+  if (UseAVX > 2) UseAVX=2;
+  if (UseAVX < 0) UseAVX=0;
+  if (!supports_avx2()) // Drop to 1 if no AVX2 support
+    UseAVX = MIN2((intx)1,UseAVX);
+  if (!supports_avx ()) // Drop to 0 if no AVX  support
+    UseAVX = 0;
 
   // On new cpus instructions which update whole XMM register should be used
   // to prevent partial register stall due to dependencies on high half.
@@ -517,6 +601,9 @@ void VM_Version::get_processor_features() {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
       UsePopCountInstruction = true;
     }
+  } else if (UsePopCountInstruction) {
+    warning("POPCNT instruction is not available on this CPU");
+    FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
 
 #ifdef COMPILER2
@@ -543,14 +630,16 @@ void VM_Version::get_processor_features() {
   if( !supports_sse() && supports_3dnow_prefetch() ) AllocatePrefetchInstr = 3;
 
   // Allocation prefetch settings
-  intx cache_line_size = L1_data_cache_line_size();
+  intx cache_line_size = prefetch_data_size();
   if( cache_line_size > AllocatePrefetchStepSize )
     AllocatePrefetchStepSize = cache_line_size;
-  if( FLAG_IS_DEFAULT(AllocatePrefetchLines) )
-    AllocatePrefetchLines = 3; // Optimistic value
+
   assert(AllocatePrefetchLines > 0, "invalid value");
-  if( AllocatePrefetchLines < 1 ) // set valid value in product VM
-    AllocatePrefetchLines = 1; // Conservative value
+  if( AllocatePrefetchLines < 1 )     // set valid value in product VM
+    AllocatePrefetchLines = 3;
+  assert(AllocateInstancePrefetchLines > 0, "invalid value");
+  if( AllocateInstancePrefetchLines < 1 ) // set valid value in product VM
+    AllocateInstancePrefetchLines = 1;
 
   AllocatePrefetchDistance = allocate_prefetch_distance();
   AllocatePrefetchStyle    = allocate_prefetch_style();
@@ -586,11 +675,16 @@ void VM_Version::get_processor_features() {
   if (PrintMiscellaneous && Verbose) {
     tty->print_cr("Logical CPUs per core: %u",
                   logical_processors_per_package());
-    tty->print_cr("UseSSE=%d",UseSSE);
-    tty->print("Allocation: ");
+    tty->print("UseSSE=%d",UseSSE);
+    if (UseAVX > 0) {
+      tty->print("  UseAVX=%d",UseAVX);
+    }
+    tty->cr();
+    tty->print("Allocation");
     if (AllocatePrefetchStyle <= 0 || UseSSE == 0 && !supports_3dnow_prefetch()) {
-      tty->print_cr("no prefetching");
+      tty->print_cr(": no prefetching");
     } else {
+      tty->print(" prefetching: ");
       if (UseSSE == 0 && supports_3dnow_prefetch()) {
         tty->print("PREFETCHW");
       } else if (UseSSE >= 1) {
@@ -605,9 +699,9 @@ void VM_Version::get_processor_features() {
         }
       }
       if (AllocatePrefetchLines > 1) {
-        tty->print_cr(" %d, %d lines with step %d bytes", AllocatePrefetchDistance, AllocatePrefetchLines, AllocatePrefetchStepSize);
+        tty->print_cr(" at distance %d, %d lines of %d bytes", AllocatePrefetchDistance, AllocatePrefetchLines, AllocatePrefetchStepSize);
       } else {
-        tty->print_cr(" %d, one line", AllocatePrefetchDistance);
+        tty->print_cr(" at distance %d, one line of %d bytes", AllocatePrefetchDistance, AllocatePrefetchStepSize);
       }
     }
 

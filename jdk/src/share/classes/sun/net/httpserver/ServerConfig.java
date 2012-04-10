@@ -101,6 +101,7 @@ class ServerConfig {
                     return null;
                 }
             });
+
     }
 
     static void checkLegacyProperties(final Logger logger) {

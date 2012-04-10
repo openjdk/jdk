@@ -66,7 +66,7 @@ from the X Consortium.
   ----------------------------------------------------------------------- **/
 
 #include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include "list.h"
 
 

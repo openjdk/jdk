@@ -305,6 +305,8 @@ public:
 
     UINT MessageLoop(IDLEPROC lpIdleFunc, PEEKMESSAGEPROC lpPeekMessageFunc);
     BOOL PumpWaitingMessages(PEEKMESSAGEPROC lpPeekMessageFunc);
+    void PumpToDestroy(class AwtComponent* p);
+    void ProcessMsg(MSG& msg);
     BOOL PreProcessMsg(MSG& msg);
     BOOL PreProcessMouseMsg(class AwtComponent* p, MSG& msg);
     BOOL PreProcessKeyMsg(class AwtComponent* p, MSG& msg);

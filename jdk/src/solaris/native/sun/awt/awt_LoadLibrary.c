@@ -73,13 +73,29 @@ JNIEXPORT jboolean JNICALL AWTIsHeadless() {
     return isHeadless;
 }
 
+/*
+ * Pathnames to the various awt toolkits
+ */
+
+
+#ifdef MACOSX
+  #define XAWT_PATH "/libawt_xawt.dylib"
+  #define LWAWT_PATH "/libawt_lwawt.dylib"
+  #define DEFAULT_PATH LWAWT_PATH
+  #define HEADLESS_PATH "/libawt_headless.dylib"
+#else
+  #define XAWT_PATH "/libawt_xawt.so"
+  #define DEFAULT_PATH XAWT_PATH
+  #define HEADLESS_PATH "/libawt_headless.so"
+#endif
+
 jint
 AWT_OnLoad(JavaVM *vm, void *reserved)
 {
     Dl_info dlinfo;
     char buf[MAXPATHLEN];
     int32_t len;
-    char *p;
+    char *p, *tk;
     JNI_OnLoad_type *JNI_OnLoad_ptr;
     struct utsname name;
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(vm, JNI_VERSION_1_2);
@@ -89,6 +105,8 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
     int XAWT = 0;
     jstring toolkit = NULL;
     jstring propname = NULL;
+    jstring fmanager = NULL;
+    jstring fmProp = NULL;
 
     if (awtHandle != NULL) {
         /* Avoid several loading attempts */
@@ -105,42 +123,62 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
 
     /*
      * The code below is responsible for:
-     * 1. Loading appropriate awt library, i.e. xawt/libmawt or headless/libwawt
+     * 1. Loading appropriate awt library, i.e. libawt_xawt or libawt_headless
      * 2. Setting "awt.toolkit" system property to use the appropriate Java toolkit class,
      *    (if user has specified the toolkit in env varialble)
      */
 
     propname = (*env)->NewStringUTF(env, "awt.toolkit");
+    fmProp = (*env)->NewStringUTF(env, "sun.font.fontmanager");
+    tk = DEFAULT_PATH; /* default value, may be changed below */
+
     /* Check if toolkit is specified in env variable */
     envvar = getenv("AWT_TOOLKIT");
-    if (envvar) {
-        if (strstr(envvar, "XToolkit")) {
-            toolkit = (*env)->NewStringUTF(env, "sun.awt.X11.XToolkit");
-        }
-        /* If user specified toolkit then set java system property */
-        if (toolkit && propname) {
-            JNU_CallStaticMethodByName (env,
-                                        NULL,
-                                        "java/lang/System",
-                                        "setProperty",
-                                        "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;",
-                                        propname,toolkit);
-        }
+    if (envvar && (strstr(envvar, "XToolkit"))) {
+        toolkit = (*env)->NewStringUTF(env, "sun.awt.X11.XToolkit");
+        tk = XAWT_PATH;
+        fmanager = (*env)->NewStringUTF(env, "sun.awt.X11FontManager");
+#ifdef MACOSX
+    } else {
+        fmanager = (*env)->NewStringUTF(env, "sun.font.CFontManager");
+        tk = LWAWT_PATH;
+#endif
+    }
+    /* If user specified toolkit then set java system property */
+    if (toolkit && propname) {
+        JNU_CallStaticMethodByName (env,
+                    NULL,
+                    "java/lang/System",
+                    "setProperty",
+                    "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;",
+                    propname,toolkit);
+    }
+    if (fmanager && fmProp) {
+        JNU_CallStaticMethodByName (env,
+                    NULL,
+                    "java/lang/System",
+                        "setProperty",
+                    "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;",
+                    fmProp, fmanager);
     }
 
     /* Calculate library name to load */
     if (AWTIsHeadless()) {
-        strncpy(p, "/headless/libmawt.so", MAXPATHLEN-len-1);
-    } else {
-        /* Default AWT Toolkit on Linux and Solaris is XAWT. */
-        strncpy(p, "/xawt/libmawt.so", MAXPATHLEN-len-1);
+        tk = HEADLESS_PATH;
     }
+    strncpy(p, tk, MAXPATHLEN-len-1);
 
     if (toolkit) {
         (*env)->DeleteLocalRef(env, toolkit);
     }
     if (propname) {
         (*env)->DeleteLocalRef(env, propname);
+    }
+    if (fmProp) {
+        (*env)->DeleteLocalRef(env, fmProp);
+    }
+    if (fmanager) {
+        (*env)->DeleteLocalRef(env, fmanager);
     }
 
     JNU_CallStaticMethodByName(env, NULL, "java/lang/System", "load",
@@ -161,7 +199,7 @@ JNI_OnLoad(JavaVM *vm, void *reserved)
 /*
  * This entry point must remain in libawt.so as part of a contract
  * with the CDE variant of Java Media Framework. (sdtjmplay)
- * Reflect this call over to the correct libmawt.so.
+ * Reflect this call over to the correct libawt_<toolkit>.so.
  */
 JNIEXPORT void JNICALL
 Java_sun_awt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
@@ -191,7 +229,7 @@ Java_sun_awt_motif_XsessionWMcommand(JNIEnv *env, jobject this,
 /*
  * This entry point must remain in libawt.so as part of a contract
  * with the CDE variant of Java Media Framework. (sdtjmplay)
- * Reflect this call over to the correct libmawt.so.
+ * Reflect this call over to the correct libawt_<toolkit>.so.
  */
 JNIEXPORT void JNICALL
 Java_sun_awt_motif_XsessionWMcommand_New(JNIEnv *env, jobjectArray jargv)
@@ -250,7 +288,7 @@ return_type name arglist                                                \
 
 /*
  * These entry point must remain in libawt.so ***for Java Plugin ONLY***
- * Reflect this call over to the correct libmawt.so.
+ * Reflect this call over to the correct libawt_<toolkit>.so.
  */
 
 REFLECT_VOID_FUNCTION(getAwtLockFunctions,

@@ -27,7 +27,6 @@
  * @bug 6388456
  * @summary Need adjustable TLS max record size for interoperability
  *      with non-compliant
- *
  * @run main/othervm -Djsse.enableCBCProtection=false LargePacket
  *
  * @author Xuelei Fan

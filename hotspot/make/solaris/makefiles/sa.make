@@ -39,13 +39,7 @@ SA_CLASSPATH = $(BOOT_JAVA_HOME)/lib/tools.jar
 # TODO: if it's a modules image, check if SA module is installed.
 MODULELIB_PATH= $(BOOT_JAVA_HOME)/lib/modules
 
-# gnumake 3.78.1 does not accept the *s that
-# are in AGENT_FILES1 and AGENT_FILES2, so use the shell to expand them
-AGENT_FILES1 := $(shell /usr/bin/test -d $(AGENT_DIR) && /bin/ls $(AGENT_FILES1))
-AGENT_FILES2 := $(shell /usr/bin/test -d $(AGENT_DIR) && /bin/ls $(AGENT_FILES2))
-
-AGENT_FILES1_LIST := $(GENERATED)/agent1.classes.list
-AGENT_FILES2_LIST := $(GENERATED)/agent2.classes.list
+AGENT_FILES_LIST := $(GENERATED)/agent.classes.list
 
 SA_CLASSDIR = $(GENERATED)/saclasses
 
@@ -59,7 +53,7 @@ all:
 	   $(MAKE) -f sa.make $(GENERATED)/sa-jdi.jar; \
 	fi
 
-$(GENERATED)/sa-jdi.jar: $(AGENT_FILES1) $(AGENT_FILES2)
+$(GENERATED)/sa-jdi.jar: $(AGENT_FILES)
 	$(QUIETLY) echo "Making $@";
 	$(QUIETLY) if [ "$(BOOT_JAVA_HOME)" = "" ]; then \
 	   echo "ALT_BOOTDIR, BOOTDIR or JAVA_HOME needs to be defined to build SA"; \
@@ -73,7 +67,6 @@ $(GENERATED)/sa-jdi.jar: $(AGENT_FILES1) $(AGENT_FILES2)
 	$(QUIETLY) if [ ! -d $(SA_CLASSDIR) ] ; then \
 	  mkdir -p $(SA_CLASSDIR);        \
 	fi
-	
 # Note: When indented, make tries to execute the '$(shell' comment.
 # In some environments, cmd processors have limited line length.
 # To prevent the javac invocation in the next block from using
@@ -84,13 +77,12 @@ $(GENERATED)/sa-jdi.jar: $(AGENT_FILES1) $(AGENT_FILES2)
 # the initialization of the lists is also done in the same phase
 # using '$(shell rm ...' instead of using the more traditional
 # 'rm ...' rule.
-	$(shell rm -rf $(AGENT_FILES1_LIST) $(AGENT_FILES2_LIST))
-	$(foreach file,$(AGENT_FILES1),$(shell echo $(file) >> $(AGENT_FILES1_LIST)))
-	$(foreach file,$(AGENT_FILES2),$(shell echo $(file) >> $(AGENT_FILES2_LIST)))
-	
-	$(QUIETLY) $(COMPILE.JAVAC) -classpath $(SA_CLASSPATH) -sourcepath $(AGENT_SRC_DIR) -d $(SA_CLASSDIR) @$(AGENT_FILES1_LIST)
-	$(QUIETLY) $(COMPILE.JAVAC) -classpath $(SA_CLASSPATH) -sourcepath $(AGENT_SRC_DIR) -d $(SA_CLASSDIR) @$(AGENT_FILES2_LIST)
-	
+	$(shell rm -rf $(AGENT_FILES_LIST))
+# gnumake 3.78.1 does not accept the *'s that
+# are in AGENT_FILES, so use the shell to expand them.
+# Be extra carefull to not produce too long command lines in the shell!
+	$(foreach file,$(AGENT_FILES),$(shell ls -1 $(file) >> $(AGENT_FILES_LIST)))
+	$(QUIETLY) $(COMPILE.JAVAC) -classpath $(SA_CLASSPATH) -sourcepath $(AGENT_SRC_DIR) -d $(SA_CLASSDIR) @$(AGENT_FILES_LIST)
 	$(QUIETLY) $(COMPILE.RMIC)  -classpath $(SA_CLASSDIR) -d $(SA_CLASSDIR) sun.jvm.hotspot.debugger.remote.RemoteDebuggerServer
 	$(QUIETLY) echo "$(SA_BUILD_VERSION_PROP)" > $(SA_PROPERTIES)
 	$(QUIETLY) rm -f $(SA_CLASSDIR)/sun/jvm/hotspot/utilities/soql/sa.js
@@ -106,4 +98,4 @@ $(GENERATED)/sa-jdi.jar: $(AGENT_FILES1) $(AGENT_FILES2)
 clean:
 	rm -rf $(SA_CLASSDIR)
 	rm -rf $(GENERATED)/sa-jdi.jar
-	rm -rf $(AGENT_FILES1_LIST) $(AGENT_FILES2_LIST)
+	rm -rf $(AGENT_FILES_LIST)

@@ -535,6 +535,7 @@ abstract public class HttpURLConnection extends URLConnection {
         return responseMessage;
     }
 
+    @SuppressWarnings("deprecation")
     public long getHeaderFieldDate(String name, long Default) {
         String dateString = getHeaderField(name);
         try {

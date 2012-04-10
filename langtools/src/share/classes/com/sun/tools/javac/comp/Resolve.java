@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,29 +25,36 @@
 
 package com.sun.tools.javac.comp;
 
-import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
-import com.sun.tools.javac.code.*;
-import com.sun.tools.javac.jvm.*;
-import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.api.Formattable.LocalizedString;
-import static com.sun.tools.javac.comp.Resolve.MethodResolutionPhase.*;
-
+import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.comp.Resolve.MethodResolutionContext.Candidate;
+import com.sun.tools.javac.jvm.*;
+import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
-
-import static com.sun.tools.javac.code.Flags.*;
-import static com.sun.tools.javac.code.Kinds.*;
-import static com.sun.tools.javac.code.TypeTags.*;
+import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
-import javax.lang.model.element.ElementVisitor;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashMap;
-import java.util.HashSet;
+
+import javax.lang.model.element.ElementVisitor;
+
+import static com.sun.tools.javac.code.Flags.*;
+import static com.sun.tools.javac.code.Flags.BLOCK;
+import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Kinds.ERRONEOUS;
+import static com.sun.tools.javac.code.TypeTags.*;
+import static com.sun.tools.javac.comp.Resolve.MethodResolutionPhase.*;
+import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 /** Helper class for name resolution, used mostly by the attribution phase.
  *
@@ -73,15 +80,9 @@ public class Resolve {
     public final boolean varargsEnabled; // = source.allowVarargs();
     public final boolean allowMethodHandles;
     private final boolean debugResolve;
+    final EnumSet<VerboseResolutionMode> verboseResolutionMode;
 
     Scope polymorphicSignatureScope;
-
-    public static Resolve instance(Context context) {
-        Resolve instance = context.get(resolveKey);
-        if (instance == null)
-            instance = new Resolve(context);
-        return instance;
-    }
 
     protected Resolve(Context context) {
         context.put(resolveKey, this);
@@ -90,9 +91,9 @@ public class Resolve {
         varNotFound = new
             SymbolNotFoundError(ABSENT_VAR);
         wrongMethod = new
-            InapplicableSymbolError(syms.errSymbol);
+            InapplicableSymbolError();
         wrongMethods = new
-            InapplicableSymbolsError(syms.errSymbol);
+            InapplicableSymbolsError();
         methodNotFound = new
             SymbolNotFoundError(ABSENT_MTH);
         typeNotFound = new
@@ -111,6 +112,7 @@ public class Resolve {
         varargsEnabled = source.allowVarargs();
         Options options = Options.instance(context);
         debugResolve = options.isSet("debugresolve");
+        verboseResolutionMode = VerboseResolutionMode.getVerboseResolutionMode(options);
         Target target = Target.instance(context);
         allowMethodHandles = target.hasMethodHandles();
         polymorphicSignatureScope = new Scope(syms.noSymbol);
@@ -120,11 +122,123 @@ public class Resolve {
 
     /** error symbols, which are returned when resolution fails
      */
-    final SymbolNotFoundError varNotFound;
-    final InapplicableSymbolError wrongMethod;
-    final InapplicableSymbolsError wrongMethods;
-    final SymbolNotFoundError methodNotFound;
-    final SymbolNotFoundError typeNotFound;
+    private final SymbolNotFoundError varNotFound;
+    private final InapplicableSymbolError wrongMethod;
+    private final InapplicableSymbolsError wrongMethods;
+    private final SymbolNotFoundError methodNotFound;
+    private final SymbolNotFoundError typeNotFound;
+
+    public static Resolve instance(Context context) {
+        Resolve instance = context.get(resolveKey);
+        if (instance == null)
+            instance = new Resolve(context);
+        return instance;
+    }
+
+    // <editor-fold defaultstate="collapsed" desc="Verbose resolution diagnostics support">
+    enum VerboseResolutionMode {
+        SUCCESS("success"),
+        FAILURE("failure"),
+        APPLICABLE("applicable"),
+        INAPPLICABLE("inapplicable"),
+        DEFERRED_INST("deferred-inference"),
+        PREDEF("predef"),
+        OBJECT_INIT("object-init"),
+        INTERNAL("internal");
+
+        String opt;
+
+        private VerboseResolutionMode(String opt) {
+            this.opt = opt;
+        }
+
+        static EnumSet<VerboseResolutionMode> getVerboseResolutionMode(Options opts) {
+            String s = opts.get("verboseResolution");
+            EnumSet<VerboseResolutionMode> res = EnumSet.noneOf(VerboseResolutionMode.class);
+            if (s == null) return res;
+            if (s.contains("all")) {
+                res = EnumSet.allOf(VerboseResolutionMode.class);
+            }
+            Collection<String> args = Arrays.asList(s.split(","));
+            for (VerboseResolutionMode mode : values()) {
+                if (args.contains(mode.opt)) {
+                    res.add(mode);
+                } else if (args.contains("-" + mode.opt)) {
+                    res.remove(mode);
+                }
+            }
+            return res;
+        }
+    }
+
+    void reportVerboseResolutionDiagnostic(DiagnosticPosition dpos, Name name, Type site,
+            List<Type> argtypes, List<Type> typeargtypes, Symbol bestSoFar) {
+        boolean success = bestSoFar.kind < ERRONEOUS;
+
+        if (success && !verboseResolutionMode.contains(VerboseResolutionMode.SUCCESS)) {
+            return;
+        } else if (!success && !verboseResolutionMode.contains(VerboseResolutionMode.FAILURE)) {
+            return;
+        }
+
+        if (bestSoFar.name == names.init &&
+                bestSoFar.owner == syms.objectType.tsym &&
+                !verboseResolutionMode.contains(VerboseResolutionMode.OBJECT_INIT)) {
+            return; //skip diags for Object constructor resolution
+        } else if (site == syms.predefClass.type &&
+                !verboseResolutionMode.contains(VerboseResolutionMode.PREDEF)) {
+            return; //skip spurious diags for predef symbols (i.e. operators)
+        } else if (currentResolutionContext.internalResolution &&
+                !verboseResolutionMode.contains(VerboseResolutionMode.INTERNAL)) {
+            return;
+        }
+
+        int pos = 0;
+        int mostSpecificPos = -1;
+        ListBuffer<JCDiagnostic> subDiags = ListBuffer.lb();
+        for (Candidate c : currentResolutionContext.candidates) {
+            if (currentResolutionContext.step != c.step ||
+                    (c.isApplicable() && !verboseResolutionMode.contains(VerboseResolutionMode.APPLICABLE)) ||
+                    (!c.isApplicable() && !verboseResolutionMode.contains(VerboseResolutionMode.INAPPLICABLE))) {
+                continue;
+            } else {
+                subDiags.append(c.isApplicable() ?
+                        getVerboseApplicableCandidateDiag(pos, c.sym, c.mtype) :
+                        getVerboseInapplicableCandidateDiag(pos, c.sym, c.details));
+                if (c.sym == bestSoFar)
+                    mostSpecificPos = pos;
+                pos++;
+            }
+        }
+        String key = success ? "verbose.resolve.multi" : "verbose.resolve.multi.1";
+        JCDiagnostic main = diags.note(log.currentSource(), dpos, key, name,
+                site.tsym, mostSpecificPos, currentResolutionContext.step,
+                methodArguments(argtypes), methodArguments(typeargtypes));
+        JCDiagnostic d = new JCDiagnostic.MultilineDiagnostic(main, subDiags.toList());
+        log.report(d);
+    }
+
+    JCDiagnostic getVerboseApplicableCandidateDiag(int pos, Symbol sym, Type inst) {
+        JCDiagnostic subDiag = null;
+        if (inst.getReturnType().tag == FORALL) {
+            Type diagType = types.createMethodTypeWithReturn(inst.asMethodType(),
+                                                            ((ForAll)inst.getReturnType()).qtype);
+            subDiag = diags.fragment("partial.inst.sig", diagType);
+        } else if (sym.type.tag == FORALL) {
+            subDiag = diags.fragment("full.inst.sig", inst.asMethodType());
+        }
+
+        String key = subDiag == null ?
+                "applicable.method.found" :
+                "applicable.method.found.1";
+
+        return diags.fragment(key, pos, sym, subDiag);
+    }
+
+    JCDiagnostic getVerboseInapplicableCandidateDiag(int pos, Symbol sym, JCDiagnostic subDiag) {
+        return diags.fragment("not.applicable.method.found", pos, sym, subDiag);
+    }
+    // </editor-fold>
 
 /* ************************************************************************
  * Identifier resolution
@@ -430,52 +544,126 @@ public class Resolve {
             return false;
         }
     }
+    /**
+     * A check handler is used by the main method applicability routine in order
+     * to handle specific method applicability failures. It is assumed that a class
+     * implementing this interface should throw exceptions that are a subtype of
+     * InapplicableMethodException (see below). Such exception will terminate the
+     * method applicability check and propagate important info outwards (for the
+     * purpose of generating better diagnostics).
+     */
+    interface MethodCheckHandler {
+        /* The number of actuals and formals differ */
+        InapplicableMethodException arityMismatch();
+        /* An actual argument type does not conform to the corresponding formal type */
+        InapplicableMethodException argumentMismatch(boolean varargs, Type found, Type expected);
+        /* The element type of a varargs is not accessible in the current context */
+        InapplicableMethodException inaccessibleVarargs(Symbol location, Type expected);
+    }
+
+    /**
+     * Basic method check handler used within Resolve - all methods end up
+     * throwing InapplicableMethodException; a diagnostic fragment that describes
+     * the cause as to why the method is not applicable is set on the exception
+     * before it is thrown.
+     */
+    MethodCheckHandler resolveHandler = new MethodCheckHandler() {
+            public InapplicableMethodException arityMismatch() {
+                return inapplicableMethodException.setMessage("arg.length.mismatch");
+            }
+            public InapplicableMethodException argumentMismatch(boolean varargs, Type found, Type expected) {
+                String key = varargs ?
+                        "varargs.argument.mismatch" :
+                        "no.conforming.assignment.exists";
+                return inapplicableMethodException.setMessage(key,
+                        found, expected);
+            }
+            public InapplicableMethodException inaccessibleVarargs(Symbol location, Type expected) {
+                return inapplicableMethodException.setMessage("inaccessible.varargs.type",
+                        expected, Kinds.kindName(location), location);
+            }
+    };
+
     void checkRawArgumentsAcceptable(Env<AttrContext> env,
                                 List<Type> argtypes,
                                 List<Type> formals,
                                 boolean allowBoxing,
                                 boolean useVarargs,
                                 Warner warn) {
+        checkRawArgumentsAcceptable(env, List.<Type>nil(), argtypes, formals,
+                allowBoxing, useVarargs, warn, resolveHandler);
+    }
+
+    /**
+     * Main method applicability routine. Given a list of actual types A,
+     * a list of formal types F, determines whether the types in A are
+     * compatible (by method invocation conversion) with the types in F.
+     *
+     * Since this routine is shared between overload resolution and method
+     * type-inference, it is crucial that actual types are converted to the
+     * corresponding 'undet' form (i.e. where inference variables are replaced
+     * with undetvars) so that constraints can be propagated and collected.
+     *
+     * Moreover, if one or more types in A is a poly type, this routine calls
+     * Infer.instantiateArg in order to complete the poly type (this might involve
+     * deferred attribution).
+     *
+     * A method check handler (see above) is used in order to report errors.
+     */
+    List<Type> checkRawArgumentsAcceptable(Env<AttrContext> env,
+                                List<Type> undetvars,
+                                List<Type> argtypes,
+                                List<Type> formals,
+                                boolean allowBoxing,
+                                boolean useVarargs,
+                                Warner warn,
+                                MethodCheckHandler handler) {
         Type varargsFormal = useVarargs ? formals.last() : null;
+        ListBuffer<Type> checkedArgs = ListBuffer.lb();
+
         if (varargsFormal == null &&
                 argtypes.size() != formals.size()) {
-            throw inapplicableMethodException.setMessage("arg.length.mismatch"); // not enough args
+            throw handler.arityMismatch(); // not enough args
         }
 
         while (argtypes.nonEmpty() && formals.head != varargsFormal) {
-            boolean works = allowBoxing
-                ? types.isConvertible(argtypes.head, formals.head, warn)
-                : types.isSubtypeUnchecked(argtypes.head, formals.head, warn);
-            if (!works)
-                throw inapplicableMethodException.setMessage("no.conforming.assignment.exists",
-                        argtypes.head,
-                        formals.head);
+            Type undetFormal = infer.asUndetType(formals.head, undetvars);
+            Type capturedActual = types.capture(argtypes.head);
+            boolean works = allowBoxing ?
+                    types.isConvertible(capturedActual, undetFormal, warn) :
+                    types.isSubtypeUnchecked(capturedActual, undetFormal, warn);
+            if (!works) {
+                throw handler.argumentMismatch(false, argtypes.head, formals.head);
+            }
+            checkedArgs.append(capturedActual);
             argtypes = argtypes.tail;
             formals = formals.tail;
         }
 
-        if (formals.head != varargsFormal)
-            throw inapplicableMethodException.setMessage("arg.length.mismatch"); // not enough args
+        if (formals.head != varargsFormal) {
+            throw handler.arityMismatch(); // not enough args
+        }
 
         if (useVarargs) {
+            //note: if applicability check is triggered by most specific test,
+            //the last argument of a varargs is _not_ an array type (see JLS 15.12.2.5)
             Type elt = types.elemtype(varargsFormal);
+            Type eltUndet = infer.asUndetType(elt, undetvars);
             while (argtypes.nonEmpty()) {
-                if (!types.isConvertible(argtypes.head, elt, warn))
-                    throw inapplicableMethodException.setMessage("varargs.argument.mismatch",
-                            argtypes.head,
-                            elt);
+                Type capturedActual = types.capture(argtypes.head);
+                if (!types.isConvertible(capturedActual, eltUndet, warn)) {
+                    throw handler.argumentMismatch(true, argtypes.head, elt);
+                }
+                checkedArgs.append(capturedActual);
                 argtypes = argtypes.tail;
             }
             //check varargs element type accessibility
-            if (!isAccessible(env, elt)) {
+            if (undetvars.isEmpty() && !isAccessible(env, elt)) {
                 Symbol location = env.enclClass.sym;
-                throw inapplicableMethodException.setMessage("inaccessible.varargs.type",
-                            elt,
-                            Kinds.kindName(location),
-                            location);
+                throw handler.inaccessibleVarargs(location, elt);
             }
         }
-        return;
+        return checkedArgs.toList();
     }
     // where
         public static class InapplicableMethodException extends RuntimeException {
@@ -684,16 +872,20 @@ public class Resolve {
         if (!sym.isInheritedIn(site.tsym, types)) return bestSoFar;
         Assert.check(sym.kind < AMBIGUOUS);
         try {
-            rawInstantiate(env, site, sym, argtypes, typeargtypes,
+            Type mt = rawInstantiate(env, site, sym, argtypes, typeargtypes,
                                allowBoxing, useVarargs, Warner.noWarnings);
+            if (!operator)
+                currentResolutionContext.addApplicableCandidate(sym, mt);
         } catch (InapplicableMethodException ex) {
+            if (!operator)
+                currentResolutionContext.addInapplicableCandidate(sym, ex.getDiagnostic());
             switch (bestSoFar.kind) {
             case ABSENT_MTH:
-                return wrongMethod.setWrongSym(sym, ex.getDiagnostic());
+                return wrongMethod;
             case WRONG_MTH:
-                wrongMethods.addCandidate(currentStep, wrongMethod.sym, wrongMethod.explanation);
+                if (operator) return bestSoFar;
             case WRONG_MTHS:
-                return wrongMethods.addCandidate(currentStep, sym, ex.getDiagnostic());
+                return wrongMethods;
             default:
                 return bestSoFar;
             }
@@ -702,7 +894,7 @@ public class Resolve {
             return (bestSoFar.kind == ABSENT_MTH)
                 ? new AccessError(env, site, sym)
                 : bestSoFar;
-            }
+        }
         return (bestSoFar.kind > AMBIGUOUS)
             ? sym
             : mostSpecific(sym, bestSoFar, env, site,
@@ -767,16 +959,13 @@ public class Resolve {
                                        m2.erasure(types).getParameterTypes()))
                     return ambiguityError(m1, m2);
                 // both abstract, neither overridden; merge throws clause and result type
-                Symbol mostSpecific;
-                if (types.returnTypeSubstitutable(mt1, mt2))
-                    mostSpecific = m1;
-                else if (types.returnTypeSubstitutable(mt2, mt1))
-                    mostSpecific = m2;
-                else {
+                Type mst = mostSpecificReturnType(mt1, mt2);
+                if (mst == null) {
                     // Theoretically, this can't happen, but it is possible
                     // due to error recovery or mixing incompatible class files
                     return ambiguityError(m1, m2);
                 }
+                Symbol mostSpecific = mst == mt1 ? m1 : m2;
                 List<Type> allThrown = chk.intersect(mt1.getThrownTypes(), mt2.getThrownTypes());
                 Type newSig = types.createMethodTypeWithThrown(mostSpecific.type, allThrown);
                 MethodSymbol result = new MethodSymbol(
@@ -859,6 +1048,28 @@ public class Resolve {
         }
     }
     //where
+    Type mostSpecificReturnType(Type mt1, Type mt2) {
+        Type rt1 = mt1.getReturnType();
+        Type rt2 = mt2.getReturnType();
+
+        if (mt1.tag == FORALL && mt2.tag == FORALL) {
+            //if both are generic methods, adjust return type ahead of subtyping check
+            rt1 = types.subst(rt1, mt1.getTypeArguments(), mt2.getTypeArguments());
+        }
+        //first use subtyping, then return type substitutability
+        if (types.isSubtype(rt1, rt2)) {
+            return mt1;
+        } else if (types.isSubtype(rt2, rt1)) {
+            return mt2;
+        } else if (types.returnTypeSubstitutable(mt1, mt2)) {
+            return mt1;
+        } else if (types.returnTypeSubstitutable(mt2, mt1)) {
+            return mt2;
+        } else {
+            return null;
+        }
+    }
+    //where
     Symbol ambiguityError(Symbol m1, Symbol m2) {
         if (((m1.flags() | m2.flags()) & CLASH) != 0) {
             return (m1.flags() & CLASH) == 0 ? m1 : m2;
@@ -887,7 +1098,7 @@ public class Resolve {
                       boolean useVarargs,
                       boolean operator) {
         Symbol bestSoFar = methodNotFound;
-        return findMethod(env,
+        bestSoFar = findMethod(env,
                           site,
                           name,
                           argtypes,
@@ -899,6 +1110,8 @@ public class Resolve {
                           useVarargs,
                           operator,
                           new HashSet<TypeSymbol>());
+        reportVerboseResolutionDiagnostic(env.tree.pos(), name, site, argtypes, typeargtypes, bestSoFar);
+        return bestSoFar;
     }
     // where
     private Symbol findMethod(Env<AttrContext> env,
@@ -1144,7 +1357,7 @@ public class Resolve {
                 staticOnly = true;
         }
 
-        if (env.tree.getTag() != JCTree.IMPORT) {
+        if (!env.tree.hasTag(IMPORT)) {
             sym = findGlobalType(env, env.toplevel.namedImportScope, name);
             if (sym.exists()) return sym;
             else if (sym.kind < bestSoFar.kind) bestSoFar = sym;
@@ -1389,32 +1602,33 @@ public class Resolve {
                          Name name,
                          List<Type> argtypes,
                          List<Type> typeargtypes) {
-        Symbol sym = startResolution();
-        List<MethodResolutionPhase> steps = methodResolutionSteps;
-        while (steps.nonEmpty() &&
-               steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
-               sym.kind >= ERRONEOUS) {
-            currentStep = steps.head;
-            sym = findFun(env, name, argtypes, typeargtypes,
-                    steps.head.isBoxingRequired,
-                    env.info.varArgs = steps.head.isVarargsRequired);
-            methodResolutionCache.put(steps.head, sym);
-            steps = steps.tail;
+        MethodResolutionContext prevResolutionContext = currentResolutionContext;
+        try {
+            currentResolutionContext = new MethodResolutionContext();
+            Symbol sym = methodNotFound;
+            List<MethodResolutionPhase> steps = methodResolutionSteps;
+            while (steps.nonEmpty() &&
+                   steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
+                   sym.kind >= ERRONEOUS) {
+                currentResolutionContext.step = steps.head;
+                sym = findFun(env, name, argtypes, typeargtypes,
+                        steps.head.isBoxingRequired,
+                        env.info.varArgs = steps.head.isVarargsRequired);
+                currentResolutionContext.resolutionCache.put(steps.head, sym);
+                steps = steps.tail;
+            }
+            if (sym.kind >= AMBIGUOUS) {//if nothing is found return the 'first' error
+                MethodResolutionPhase errPhase =
+                        currentResolutionContext.firstErroneousResolutionPhase();
+                sym = access(currentResolutionContext.resolutionCache.get(errPhase),
+                        pos, env.enclClass.sym.type, name, false, argtypes, typeargtypes);
+                env.info.varArgs = errPhase.isVarargsRequired;
+            }
+            return sym;
         }
-        if (sym.kind >= AMBIGUOUS) {//if nothing is found return the 'first' error
-            MethodResolutionPhase errPhase =
-                    firstErroneousResolutionPhase();
-            sym = access(methodResolutionCache.get(errPhase),
-                    pos, env.enclClass.sym.type, name, false, argtypes, typeargtypes);
-            env.info.varArgs = errPhase.isVarargsRequired;
+        finally {
+            currentResolutionContext = prevResolutionContext;
         }
-        return sym;
-    }
-
-    private Symbol startResolution() {
-        wrongMethod.clear();
-        wrongMethods.clear();
-        return methodNotFound;
     }
 
     /** Resolve a qualified method identifier
@@ -1434,40 +1648,53 @@ public class Resolve {
     Symbol resolveQualifiedMethod(DiagnosticPosition pos, Env<AttrContext> env,
                                   Symbol location, Type site, Name name, List<Type> argtypes,
                                   List<Type> typeargtypes) {
-        Symbol sym = startResolution();
-        List<MethodResolutionPhase> steps = methodResolutionSteps;
-        while (steps.nonEmpty() &&
-               steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
-               sym.kind >= ERRONEOUS) {
-            currentStep = steps.head;
-            sym = findMethod(env, site, name, argtypes, typeargtypes,
-                    steps.head.isBoxingRequired(),
-                    env.info.varArgs = steps.head.isVarargsRequired(), false);
-            methodResolutionCache.put(steps.head, sym);
-            steps = steps.tail;
-        }
-        if (sym.kind >= AMBIGUOUS) {
-            if (site.tsym.isPolymorphicSignatureGeneric()) {
-                //polymorphic receiver - synthesize new method symbol
+        return resolveQualifiedMethod(new MethodResolutionContext(), pos, env, location, site, name, argtypes, typeargtypes);
+    }
+    private Symbol resolveQualifiedMethod(MethodResolutionContext resolveContext,
+                                  DiagnosticPosition pos, Env<AttrContext> env,
+                                  Symbol location, Type site, Name name, List<Type> argtypes,
+                                  List<Type> typeargtypes) {
+        MethodResolutionContext prevResolutionContext = currentResolutionContext;
+        try {
+            currentResolutionContext = resolveContext;
+            Symbol sym = methodNotFound;
+            List<MethodResolutionPhase> steps = methodResolutionSteps;
+            while (steps.nonEmpty() &&
+                   steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
+                   sym.kind >= ERRONEOUS) {
+                currentResolutionContext.step = steps.head;
+                sym = findMethod(env, site, name, argtypes, typeargtypes,
+                        steps.head.isBoxingRequired(),
+                        env.info.varArgs = steps.head.isVarargsRequired(), false);
+                currentResolutionContext.resolutionCache.put(steps.head, sym);
+                steps = steps.tail;
+            }
+            if (sym.kind >= AMBIGUOUS) {
+                if (site.tsym.isPolymorphicSignatureGeneric()) {
+                    //polymorphic receiver - synthesize new method symbol
+                    env.info.varArgs = false;
+                    sym = findPolymorphicSignatureInstance(env,
+                            site, name, null, argtypes);
+                }
+                else {
+                    //if nothing is found return the 'first' error
+                    MethodResolutionPhase errPhase =
+                            currentResolutionContext.firstErroneousResolutionPhase();
+                    sym = access(currentResolutionContext.resolutionCache.get(errPhase),
+                            pos, location, site, name, true, argtypes, typeargtypes);
+                    env.info.varArgs = errPhase.isVarargsRequired;
+                }
+            } else if (allowMethodHandles && sym.isPolymorphicSignatureGeneric()) {
+                //non-instantiated polymorphic signature - synthesize new method symbol
                 env.info.varArgs = false;
                 sym = findPolymorphicSignatureInstance(env,
-                        site, name, null, argtypes);
+                        site, name, (MethodSymbol)sym, argtypes);
             }
-            else {
-                //if nothing is found return the 'first' error
-                MethodResolutionPhase errPhase =
-                        firstErroneousResolutionPhase();
-                sym = access(methodResolutionCache.get(errPhase),
-                        pos, location, site, name, true, argtypes, typeargtypes);
-                env.info.varArgs = errPhase.isVarargsRequired;
-            }
-        } else if (allowMethodHandles && sym.isPolymorphicSignatureGeneric()) {
-            //non-instantiated polymorphic signature - synthesize new method symbol
-            env.info.varArgs = false;
-            sym = findPolymorphicSignatureInstance(env,
-                    site, name, (MethodSymbol)sym, argtypes);
+            return sym;
         }
-        return sym;
+        finally {
+            currentResolutionContext = prevResolutionContext;
+        }
     }
 
     /** Find or create an implicit method of exactly the given type (after erasure).
@@ -1524,8 +1751,10 @@ public class Resolve {
                                         Type site, Name name,
                                         List<Type> argtypes,
                                         List<Type> typeargtypes) {
-        Symbol sym = resolveQualifiedMethod(
-            pos, env, site.tsym, site, name, argtypes, typeargtypes);
+        MethodResolutionContext resolveContext = new MethodResolutionContext();
+        resolveContext.internalResolution = true;
+        Symbol sym = resolveQualifiedMethod(resolveContext, pos, env, site.tsym,
+                site, name, argtypes, typeargtypes);
         if (sym.kind == MTH) return (MethodSymbol)sym;
         else throw new FatalError(
                  diags.fragment("fatal.err.cant.locate.meth",
@@ -1546,25 +1775,40 @@ public class Resolve {
                               Type site,
                               List<Type> argtypes,
                               List<Type> typeargtypes) {
-        Symbol sym = startResolution();
-        List<MethodResolutionPhase> steps = methodResolutionSteps;
-        while (steps.nonEmpty() &&
-               steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
-               sym.kind >= ERRONEOUS) {
-            currentStep = steps.head;
-            sym = resolveConstructor(pos, env, site, argtypes, typeargtypes,
-                    steps.head.isBoxingRequired(),
-                    env.info.varArgs = steps.head.isVarargsRequired());
-            methodResolutionCache.put(steps.head, sym);
-            steps = steps.tail;
+        return resolveConstructor(new MethodResolutionContext(), pos, env, site, argtypes, typeargtypes);
+    }
+    private Symbol resolveConstructor(MethodResolutionContext resolveContext,
+                              DiagnosticPosition pos,
+                              Env<AttrContext> env,
+                              Type site,
+                              List<Type> argtypes,
+                              List<Type> typeargtypes) {
+        MethodResolutionContext prevResolutionContext = currentResolutionContext;
+        try {
+            currentResolutionContext = resolveContext;
+            Symbol sym = methodNotFound;
+            List<MethodResolutionPhase> steps = methodResolutionSteps;
+            while (steps.nonEmpty() &&
+                   steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
+                   sym.kind >= ERRONEOUS) {
+                currentResolutionContext.step = steps.head;
+                sym = findConstructor(pos, env, site, argtypes, typeargtypes,
+                        steps.head.isBoxingRequired(),
+                        env.info.varArgs = steps.head.isVarargsRequired());
+                currentResolutionContext.resolutionCache.put(steps.head, sym);
+                steps = steps.tail;
+            }
+            if (sym.kind >= AMBIGUOUS) {//if nothing is found return the 'first' error
+                MethodResolutionPhase errPhase = currentResolutionContext.firstErroneousResolutionPhase();
+                sym = access(currentResolutionContext.resolutionCache.get(errPhase),
+                        pos, site, names.init, true, argtypes, typeargtypes);
+                env.info.varArgs = errPhase.isVarargsRequired();
+            }
+            return sym;
         }
-        if (sym.kind >= AMBIGUOUS) {//if nothing is found return the 'first' error
-            MethodResolutionPhase errPhase = firstErroneousResolutionPhase();
-            sym = access(methodResolutionCache.get(errPhase),
-                    pos, site, names.init, true, argtypes, typeargtypes);
-            env.info.varArgs = errPhase.isVarargsRequired();
+        finally {
+            currentResolutionContext = prevResolutionContext;
         }
-        return sym;
     }
 
     /** Resolve constructor using diamond inference.
@@ -1582,38 +1826,82 @@ public class Resolve {
                               Type site,
                               List<Type> argtypes,
                               List<Type> typeargtypes) {
-        Symbol sym = startResolution();
-        List<MethodResolutionPhase> steps = methodResolutionSteps;
-        while (steps.nonEmpty() &&
-               steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
-               sym.kind >= ERRONEOUS) {
-            currentStep = steps.head;
-            sym = resolveConstructor(pos, env, site, argtypes, typeargtypes,
-                    steps.head.isBoxingRequired(),
-                    env.info.varArgs = steps.head.isVarargsRequired());
-            methodResolutionCache.put(steps.head, sym);
-            steps = steps.tail;
+        MethodResolutionContext prevResolutionContext = currentResolutionContext;
+        try {
+            currentResolutionContext = new MethodResolutionContext();
+            Symbol sym = methodNotFound;
+            List<MethodResolutionPhase> steps = methodResolutionSteps;
+            while (steps.nonEmpty() &&
+                   steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
+                   sym.kind >= ERRONEOUS) {
+                currentResolutionContext.step = steps.head;
+                sym = findDiamond(env, site, argtypes, typeargtypes,
+                        steps.head.isBoxingRequired(),
+                        env.info.varArgs = steps.head.isVarargsRequired());
+                currentResolutionContext.resolutionCache.put(steps.head, sym);
+                steps = steps.tail;
+            }
+            if (sym.kind >= AMBIGUOUS) {
+                final JCDiagnostic details = sym.kind == WRONG_MTH ?
+                                currentResolutionContext.candidates.head.details :
+                                null;
+                Symbol errSym = new ResolveError(WRONG_MTH, "diamond error") {
+                    @Override
+                    JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos,
+                            Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
+                        String key = details == null ?
+                            "cant.apply.diamond" :
+                            "cant.apply.diamond.1";
+                        return diags.create(dkind, log.currentSource(), pos, key,
+                                diags.fragment("diamond", site.tsym), details);
+                    }
+                };
+                MethodResolutionPhase errPhase = currentResolutionContext.firstErroneousResolutionPhase();
+                sym = access(errSym, pos, site, names.init, true, argtypes, typeargtypes);
+                env.info.varArgs = errPhase.isVarargsRequired();
+            }
+            return sym;
         }
-        if (sym.kind >= AMBIGUOUS) {
-            final JCDiagnostic details = sym.kind == WRONG_MTH ?
-                ((InapplicableSymbolError)sym).explanation :
-                null;
-            Symbol errSym = new ResolveError(WRONG_MTH, "diamond error") {
-                @Override
-                JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos,
-                        Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
-                    String key = details == null ?
-                        "cant.apply.diamond" :
-                        "cant.apply.diamond.1";
-                    return diags.create(dkind, log.currentSource(), pos, key,
-                            diags.fragment("diamond", site.tsym), details);
-                }
-            };
-            MethodResolutionPhase errPhase = firstErroneousResolutionPhase();
-            sym = access(errSym, pos, site, names.init, true, argtypes, typeargtypes);
-            env.info.varArgs = errPhase.isVarargsRequired();
+        finally {
+            currentResolutionContext = prevResolutionContext;
         }
-        return sym;
+    }
+
+    /** This method scans all the constructor symbol in a given class scope -
+     *  assuming that the original scope contains a constructor of the kind:
+     *  Foo(X x, Y y), where X,Y are class type-variables declared in Foo,
+     *  a method check is executed against the modified constructor type:
+     *  <X,Y>Foo<X,Y>(X x, Y y). This is crucial in order to enable diamond
+     *  inference. The inferred return type of the synthetic constructor IS
+     *  the inferred type for the diamond operator.
+     */
+    private Symbol findDiamond(Env<AttrContext> env,
+                              Type site,
+                              List<Type> argtypes,
+                              List<Type> typeargtypes,
+                              boolean allowBoxing,
+                              boolean useVarargs) {
+        Symbol bestSoFar = methodNotFound;
+        for (Scope.Entry e = site.tsym.members().lookup(names.init);
+             e.scope != null;
+             e = e.next()) {
+            //- System.out.println(" e " + e.sym);
+            if (e.sym.kind == MTH &&
+                (e.sym.flags_field & SYNTHETIC) == 0) {
+                    List<Type> oldParams = e.sym.type.tag == FORALL ?
+                            ((ForAll)e.sym.type).tvars :
+                            List.<Type>nil();
+                    Type constrType = new ForAll(site.tsym.type.getTypeArguments().appendList(oldParams),
+                            types.createMethodTypeWithReturn(e.sym.type.asMethodType(), site));
+                    bestSoFar = selectBest(env, site, argtypes, typeargtypes,
+                            new MethodSymbol(e.sym.flags(), names.init, constrType, site.tsym),
+                            bestSoFar,
+                            allowBoxing,
+                            useVarargs,
+                            false);
+            }
+        }
+        return bestSoFar;
     }
 
     /** Resolve constructor.
@@ -1632,10 +1920,25 @@ public class Resolve {
                               List<Type> typeargtypes,
                               boolean allowBoxing,
                               boolean useVarargs) {
+        MethodResolutionContext prevResolutionContext = currentResolutionContext;
+        try {
+            currentResolutionContext = new MethodResolutionContext();
+            return findConstructor(pos, env, site, argtypes, typeargtypes, allowBoxing, useVarargs);
+        }
+        finally {
+            currentResolutionContext = prevResolutionContext;
+        }
+    }
+
+    Symbol findConstructor(DiagnosticPosition pos, Env<AttrContext> env,
+                              Type site, List<Type> argtypes,
+                              List<Type> typeargtypes,
+                              boolean allowBoxing,
+                              boolean useVarargs) {
         Symbol sym = findMethod(env, site,
-                                names.init, argtypes,
-                                typeargtypes, allowBoxing,
-                                useVarargs, false);
+                                    names.init, argtypes,
+                                    typeargtypes, allowBoxing,
+                                    useVarargs, false);
         chk.checkDeprecated(pos, env.info.scope.owner, sym);
         return sym;
     }
@@ -1651,8 +1954,9 @@ public class Resolve {
                                         Type site,
                                         List<Type> argtypes,
                                         List<Type> typeargtypes) {
-        Symbol sym = resolveConstructor(
-            pos, env, site, argtypes, typeargtypes);
+        MethodResolutionContext resolveContext = new MethodResolutionContext();
+        resolveContext.internalResolution = true;
+        Symbol sym = resolveConstructor(resolveContext, pos, env, site, argtypes, typeargtypes);
         if (sym.kind == MTH) return (MethodSymbol)sym;
         else throw new FatalError(
                  diags.fragment("fatal.err.cant.locate.ctor", site));
@@ -1664,16 +1968,23 @@ public class Resolve {
      *  @param env       The environment current at the operation.
      *  @param argtypes  The types of the operands.
      */
-    Symbol resolveOperator(DiagnosticPosition pos, int optag,
+    Symbol resolveOperator(DiagnosticPosition pos, JCTree.Tag optag,
                            Env<AttrContext> env, List<Type> argtypes) {
-        Name name = treeinfo.operatorName(optag);
-        Symbol sym = findMethod(env, syms.predefClass.type, name, argtypes,
-                                null, false, false, true);
-        if (boxingEnabled && sym.kind >= WRONG_MTHS)
-            sym = findMethod(env, syms.predefClass.type, name, argtypes,
-                             null, true, false, true);
-        return access(sym, pos, env.enclClass.sym.type, name,
-                      false, argtypes, null);
+        MethodResolutionContext prevResolutionContext = currentResolutionContext;
+        try {
+            currentResolutionContext = new MethodResolutionContext();
+            Name name = treeinfo.operatorName(optag);
+            Symbol sym = findMethod(env, syms.predefClass.type, name, argtypes,
+                                    null, false, false, true);
+            if (boxingEnabled && sym.kind >= WRONG_MTHS)
+                sym = findMethod(env, syms.predefClass.type, name, argtypes,
+                                 null, true, false, true);
+            return access(sym, pos, env.enclClass.sym.type, name,
+                          false, argtypes, null);
+        }
+        finally {
+            currentResolutionContext = prevResolutionContext;
+        }
     }
 
     /** Resolve operator.
@@ -1682,7 +1993,7 @@ public class Resolve {
      *  @param env       The environment current at the operation.
      *  @param arg       The type of the operand.
      */
-    Symbol resolveUnaryOperator(DiagnosticPosition pos, int optag, Env<AttrContext> env, Type arg) {
+    Symbol resolveUnaryOperator(DiagnosticPosition pos, JCTree.Tag optag, Env<AttrContext> env, Type arg) {
         return resolveOperator(pos, optag, env, List.of(arg));
     }
 
@@ -1694,7 +2005,7 @@ public class Resolve {
      *  @param right     The types of the right operand.
      */
     Symbol resolveBinaryOperator(DiagnosticPosition pos,
-                                 int optag,
+                                 JCTree.Tag optag,
                                  Env<AttrContext> env,
                                  Type left,
                                  Type right) {
@@ -1786,9 +2097,10 @@ public class Resolve {
  *  ResolveError classes, indicating error situations when accessing symbols
  ****************************************************************************/
 
-    public void logAccessError(Env<AttrContext> env, JCTree tree, Type type) {
-        AccessError error = new AccessError(env, type.getEnclosingType(), type.tsym);
-        logResolveError(error, tree.pos(), type.getEnclosingType().tsym, type.getEnclosingType(), null, null, null);
+    //used by TransTypes when checking target type of synthetic cast
+    public void logAccessErrorInternal(Env<AttrContext> env, JCTree tree, Type type) {
+        AccessError error = new AccessError(env, env.enclClass.type, type.tsym);
+        logResolveError(error, tree.pos(), env.enclClass.sym, env.enclClass.type, null, null, null);
     }
     //where
     private void logResolveError(ResolveError error,
@@ -1809,7 +2121,7 @@ public class Resolve {
     private final LocalizedString noArgs = new LocalizedString("compiler.misc.no.args");
 
     public Object methodArguments(List<Type> argtypes) {
-        return argtypes.isEmpty() ? noArgs : argtypes;
+        return argtypes == null || argtypes.isEmpty() ? noArgs : argtypes;
     }
 
     /**
@@ -2017,34 +2329,24 @@ public class Resolve {
      * (either a method, a constructor or an operand) is not applicable
      * given an actual arguments/type argument list.
      */
-    class InapplicableSymbolError extends InvalidSymbolError {
+    class InapplicableSymbolError extends ResolveError {
 
-        /** An auxiliary explanation set in case of instantiation errors. */
-        JCDiagnostic explanation;
-
-        InapplicableSymbolError(Symbol sym) {
-            super(WRONG_MTH, sym, "inapplicable symbol error");
+        InapplicableSymbolError() {
+            super(WRONG_MTH, "inapplicable symbol error");
         }
 
-        /** Update sym and explanation and return this.
-         */
-        InapplicableSymbolError setWrongSym(Symbol sym, JCDiagnostic explanation) {
-            this.sym = sym;
-            if (this.sym == sym && explanation != null)
-                this.explanation = explanation; //update the details
-            return this;
-        }
-
-        /** Update sym and return this.
-         */
-        InapplicableSymbolError setWrongSym(Symbol sym) {
-            this.sym = sym;
-            return this;
+        protected InapplicableSymbolError(int kind, String debugName) {
+            super(kind, debugName);
         }
 
         @Override
         public String toString() {
-            return super.toString() + " explanation=" + explanation;
+            return super.toString();
+        }
+
+        @Override
+        public boolean exists() {
+            return true;
         }
 
         @Override
@@ -2069,26 +2371,39 @@ public class Resolve {
                         key, name, first, second);
             }
             else {
-                Symbol ws = sym.asMemberOf(site, types);
+                Candidate c = errCandidate();
+                Symbol ws = c.sym.asMemberOf(site, types);
                 return diags.create(dkind, log.currentSource(), pos,
-                          "cant.apply.symbol" + (explanation != null ? ".1" : ""),
+                          "cant.apply.symbol" + (c.details != null ? ".1" : ""),
                           kindName(ws),
                           ws.name == names.init ? ws.owner.name : ws.name,
                           methodArguments(ws.type.getParameterTypes()),
                           methodArguments(argtypes),
                           kindName(ws.owner),
                           ws.owner.type,
-                          explanation);
+                          c.details);
             }
-        }
-
-        void clear() {
-            explanation = null;
         }
 
         @Override
         public Symbol access(Name name, TypeSymbol location) {
             return types.createErrorType(name, location, syms.errSymbol.type).tsym;
+        }
+
+        protected boolean shouldReport(Candidate c) {
+            return !c.isApplicable() &&
+                    (((c.sym.flags() & VARARGS) != 0 && c.step == VARARITY) ||
+                      (c.sym.flags() & VARARGS) == 0 && c.step == (boxingEnabled ? BOX : BASIC));
+        }
+
+        private Candidate errCandidate() {
+            for (Candidate c : currentResolutionContext.candidates) {
+                if (shouldReport(c)) {
+                    return c;
+                }
+            }
+            Assert.error();
+            return null;
         }
     }
 
@@ -2097,11 +2412,9 @@ public class Resolve {
      * (either methods, constructors or operands) is not applicable
      * given an actual arguments/type argument list.
      */
-    class InapplicableSymbolsError extends ResolveError {
+    class InapplicableSymbolsError extends InapplicableSymbolError {
 
-        private List<Candidate> candidates = List.nil();
-
-        InapplicableSymbolsError(Symbol sym) {
+        InapplicableSymbolsError() {
             super(WRONG_MTHS, "inapplicable symbols");
         }
 
@@ -2113,7 +2426,7 @@ public class Resolve {
                 Name name,
                 List<Type> argtypes,
                 List<Type> typeargtypes) {
-            if (candidates.nonEmpty()) {
+            if (currentResolutionContext.candidates.nonEmpty()) {
                 JCDiagnostic err = diags.create(dkind,
                         log.currentSource(),
                         pos,
@@ -2131,67 +2444,23 @@ public class Resolve {
         //where
         List<JCDiagnostic> candidateDetails(Type site) {
             List<JCDiagnostic> details = List.nil();
-            for (Candidate c : candidates)
-                details = details.prepend(c.getDiagnostic(site));
+            for (Candidate c : currentResolutionContext.candidates) {
+                if (!shouldReport(c)) continue;
+                JCDiagnostic detailDiag = diags.fragment("inapplicable.method",
+                        Kinds.kindName(c.sym),
+                        c.sym.location(site, types),
+                        c.sym.asMemberOf(site, types),
+                        c.details);
+                details = details.prepend(detailDiag);
+            }
             return details.reverse();
         }
 
-        Symbol addCandidate(MethodResolutionPhase currentStep, Symbol sym, JCDiagnostic details) {
-            Candidate c = new Candidate(currentStep, sym, details);
-            if (c.isValid() && !candidates.contains(c))
-                candidates = candidates.append(c);
-            return this;
-        }
-
-        void clear() {
-            candidates = List.nil();
-        }
-
         private Name getName() {
-            Symbol sym = candidates.head.sym;
+            Symbol sym = currentResolutionContext.candidates.head.sym;
             return sym.name == names.init ?
                 sym.owner.name :
                 sym.name;
-        }
-
-        private class Candidate {
-
-            final MethodResolutionPhase step;
-            final Symbol sym;
-            final JCDiagnostic details;
-
-            private Candidate(MethodResolutionPhase step, Symbol sym, JCDiagnostic details) {
-                this.step = step;
-                this.sym = sym;
-                this.details = details;
-            }
-
-            JCDiagnostic getDiagnostic(Type site) {
-                return diags.fragment("inapplicable.method",
-                        Kinds.kindName(sym),
-                        sym.location(site, types),
-                        sym.asMemberOf(site, types),
-                        details);
-            }
-
-            @Override
-            public boolean equals(Object o) {
-                if (o instanceof Candidate) {
-                    Symbol s1 = this.sym;
-                    Symbol s2 = ((Candidate)o).sym;
-                    if  ((s1 != s2 &&
-                        (s1.overrides(s2, s1.owner.type.tsym, types, false) ||
-                        (s2.overrides(s1, s2.owner.type.tsym, types, false)))) ||
-                        ((s1.isConstructor() || s2.isConstructor()) && s1.owner != s2.owner))
-                        return true;
-                }
-                return false;
-            }
-
-            boolean isValid() {
-                return  (((sym.flags() & VARARGS) != 0 && step == VARARITY) ||
-                          (sym.flags() & VARARGS) == 0 && step == (boxingEnabled ? BOX : BASIC));
-            }
         }
     }
 
@@ -2353,24 +2622,91 @@ public class Resolve {
         }
     }
 
-    private Map<MethodResolutionPhase, Symbol> methodResolutionCache =
-        new HashMap<MethodResolutionPhase, Symbol>(MethodResolutionPhase.values().length);
-
     final List<MethodResolutionPhase> methodResolutionSteps = List.of(BASIC, BOX, VARARITY);
 
-    private MethodResolutionPhase currentStep = null;
+    /**
+     * A resolution context is used to keep track of intermediate results of
+     * overload resolution, such as list of method that are not applicable
+     * (used to generate more precise diagnostics) and so on. Resolution contexts
+     * can be nested - this means that when each overload resolution routine should
+     * work within the resolution context it created.
+     */
+    class MethodResolutionContext {
 
-    private MethodResolutionPhase firstErroneousResolutionPhase() {
-        MethodResolutionPhase bestSoFar = BASIC;
-        Symbol sym = methodNotFound;
-        List<MethodResolutionPhase> steps = methodResolutionSteps;
-        while (steps.nonEmpty() &&
-               steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
-               sym.kind >= WRONG_MTHS) {
-            sym = methodResolutionCache.get(steps.head);
-            bestSoFar = steps.head;
-            steps = steps.tail;
+        private List<Candidate> candidates = List.nil();
+
+        private Map<MethodResolutionPhase, Symbol> resolutionCache =
+            new EnumMap<MethodResolutionPhase, Symbol>(MethodResolutionPhase.class);
+
+        private MethodResolutionPhase step = null;
+
+        private boolean internalResolution = false;
+
+        private MethodResolutionPhase firstErroneousResolutionPhase() {
+            MethodResolutionPhase bestSoFar = BASIC;
+            Symbol sym = methodNotFound;
+            List<MethodResolutionPhase> steps = methodResolutionSteps;
+            while (steps.nonEmpty() &&
+                   steps.head.isApplicable(boxingEnabled, varargsEnabled) &&
+                   sym.kind >= WRONG_MTHS) {
+                sym = resolutionCache.get(steps.head);
+                bestSoFar = steps.head;
+                steps = steps.tail;
+            }
+            return bestSoFar;
         }
-        return bestSoFar;
+
+        void addInapplicableCandidate(Symbol sym, JCDiagnostic details) {
+            Candidate c = new Candidate(currentResolutionContext.step, sym, details, null);
+            if (!candidates.contains(c))
+                candidates = candidates.append(c);
+        }
+
+        void addApplicableCandidate(Symbol sym, Type mtype) {
+            Candidate c = new Candidate(currentResolutionContext.step, sym, null, mtype);
+            candidates = candidates.append(c);
+        }
+
+        /**
+         * This class represents an overload resolution candidate. There are two
+         * kinds of candidates: applicable methods and inapplicable methods;
+         * applicable methods have a pointer to the instantiated method type,
+         * while inapplicable candidates contain further details about the
+         * reason why the method has been considered inapplicable.
+         */
+        class Candidate {
+
+            final MethodResolutionPhase step;
+            final Symbol sym;
+            final JCDiagnostic details;
+            final Type mtype;
+
+            private Candidate(MethodResolutionPhase step, Symbol sym, JCDiagnostic details, Type mtype) {
+                this.step = step;
+                this.sym = sym;
+                this.details = details;
+                this.mtype = mtype;
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (o instanceof Candidate) {
+                    Symbol s1 = this.sym;
+                    Symbol s2 = ((Candidate)o).sym;
+                    if  ((s1 != s2 &&
+                        (s1.overrides(s2, s1.owner.type.tsym, types, false) ||
+                        (s2.overrides(s1, s2.owner.type.tsym, types, false)))) ||
+                        ((s1.isConstructor() || s2.isConstructor()) && s1.owner != s2.owner))
+                        return true;
+                }
+                return false;
+            }
+
+            boolean isApplicable() {
+                return mtype != null;
+            }
+        }
     }
+
+    MethodResolutionContext currentResolutionContext = null;
 }

@@ -199,6 +199,7 @@ import sun.security.action.GetBooleanAction;
  * @author David Kloba
  */
 /// PENDING(klobad) Who should be opaque in this component?
+@SuppressWarnings("serial")
 public class JRootPane extends JComponent implements Accessible {
 
     private static final String uiClassID = "RootPaneUI";
@@ -834,6 +835,7 @@ public class JRootPane extends JComponent implements Accessible {
         }
     }
 
+    @SuppressWarnings("serial")
     static class DefaultAction extends AbstractAction {
         JButton owner;
         JRootPane root;
@@ -900,6 +902,7 @@ public class JRootPane extends JComponent implements Accessible {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial")
     protected class RootLayout implements LayoutManager2, Serializable
     {
         /**
@@ -1065,6 +1068,7 @@ public class JRootPane extends JComponent implements Accessible {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial")
     protected class AccessibleJRootPane extends AccessibleJComponent {
         /**
          * Get the role of this object.

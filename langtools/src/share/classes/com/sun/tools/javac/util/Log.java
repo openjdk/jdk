@@ -29,19 +29,19 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.api.DiagnosticFormatter;
-import com.sun.tools.javac.main.OptionName;
-import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.main.Main;
+import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.parser.EndPosTable;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 
-import static com.sun.tools.javac.main.OptionName.*;
+import static com.sun.tools.javac.main.Option.*;
 
 /** A class for error logs. Reports errors and warnings, and
  *  keeps track of error numbers and positions.
@@ -60,19 +60,31 @@ public class Log extends AbstractLog {
     public static final Context.Key<PrintWriter> outKey =
         new Context.Key<PrintWriter>();
 
-    //@Deprecated
-    public final PrintWriter errWriter;
+    /* TODO: Should unify this with prefix handling in JCDiagnostic.Factory. */
+    public enum PrefixKind {
+        JAVAC("javac."),
+        COMPILER_MISC("compiler.misc.");
+        PrefixKind(String v) {
+            value = v;
+        }
+        public String key(String k) {
+            return value + k;
+        }
+        final String value;
+    }
 
-    //@Deprecated
-    public final PrintWriter warnWriter;
+    public enum WriterKind { NOTICE, WARNING, ERROR };
 
-    //@Deprecated
-    public final PrintWriter noticeWriter;
+    protected PrintWriter errWriter;
+
+    protected PrintWriter warnWriter;
+
+    protected PrintWriter noticeWriter;
 
     /** The maximum number of errors/warnings that are reported.
      */
-    public final int MaxErrors;
-    public final int MaxWarnings;
+    protected int MaxErrors;
+    protected int MaxWarnings;
 
     /** Switch: prompt user on each error.
      */
@@ -123,7 +135,6 @@ public class Log extends AbstractLog {
 
     /** Construct a log with given I/O redirections.
      */
-    @Deprecated
     protected Log(Context context, PrintWriter errWriter, PrintWriter warnWriter, PrintWriter noticeWriter) {
         super(JCDiagnostic.Factory.instance(context));
         context.put(logKey, this);
@@ -131,30 +142,42 @@ public class Log extends AbstractLog {
         this.warnWriter = warnWriter;
         this.noticeWriter = noticeWriter;
 
-        Options options = Options.instance(context);
-        this.dumpOnError = options.isSet(DOE);
-        this.promptOnError = options.isSet(PROMPT);
-        this.emitWarnings = options.isUnset(XLINT_CUSTOM, "none");
-        this.suppressNotes = options.isSet("suppressNotes");
-        this.MaxErrors = getIntOption(options, XMAXERRS, getDefaultMaxErrors());
-        this.MaxWarnings = getIntOption(options, XMAXWARNS, getDefaultMaxWarnings());
-
-        boolean rawDiagnostics = options.isSet("rawDiagnostics");
-        messages = JavacMessages.instance(context);
-        this.diagFormatter = rawDiagnostics ? new RawDiagnosticFormatter(options) :
-                                              new BasicDiagnosticFormatter(options, messages);
         @SuppressWarnings("unchecked") // FIXME
         DiagnosticListener<? super JavaFileObject> dl =
             context.get(DiagnosticListener.class);
         this.diagListener = dl;
 
-        String ek = options.get("expectKeys");
-        if (ek != null)
-            expectDiagKeys = new HashSet<String>(Arrays.asList(ek.split(", *")));
+        messages = JavacMessages.instance(context);
+        messages.add(Main.javacBundleName);
+
+        final Options options = Options.instance(context);
+        initOptions(options);
+        options.addListener(new Runnable() {
+            public void run() {
+                initOptions(options);
+            }
+        });
     }
     // where
-        private int getIntOption(Options options, OptionName optionName, int defaultValue) {
-            String s = options.get(optionName);
+        private void initOptions(Options options) {
+            this.dumpOnError = options.isSet(DOE);
+            this.promptOnError = options.isSet(PROMPT);
+            this.emitWarnings = options.isUnset(XLINT_CUSTOM, "none");
+            this.suppressNotes = options.isSet("suppressNotes");
+            this.MaxErrors = getIntOption(options, XMAXERRS, getDefaultMaxErrors());
+            this.MaxWarnings = getIntOption(options, XMAXWARNS, getDefaultMaxWarnings());
+
+            boolean rawDiagnostics = options.isSet("rawDiagnostics");
+            this.diagFormatter = rawDiagnostics ? new RawDiagnosticFormatter(options) :
+                                                  new BasicDiagnosticFormatter(options, messages);
+
+            String ek = options.get("expectKeys");
+            if (ek != null)
+                expectDiagKeys = new HashSet<String>(Arrays.asList(ek.split(", *")));
+        }
+
+        private int getIntOption(Options options, Option option, int defaultValue) {
+            String s = options.get(option);
             try {
                 if (s != null) {
                     int n = Integer.parseInt(s);
@@ -180,7 +203,7 @@ public class Log extends AbstractLog {
 
     /** The default writer for diagnostics
      */
-    static final PrintWriter defaultWriter(Context context) {
+    static PrintWriter defaultWriter(Context context) {
         PrintWriter result = context.get(outKey);
         if (result == null)
             context.put(outKey, result = new PrintWriter(System.err));
@@ -225,9 +248,9 @@ public class Log extends AbstractLog {
         return diagListener != null;
     }
 
-    public void setEndPosTable(JavaFileObject name, Map<JCTree, Integer> table) {
+    public void setEndPosTable(JavaFileObject name, EndPosTable endPosTable) {
         name.getClass(); // null check
-        getSource(name).setEndPosTable(table);
+        getSource(name).setEndPosTable(endPosTable);
     }
 
     /** Return current sourcefile.
@@ -248,12 +271,46 @@ public class Log extends AbstractLog {
         this.diagFormatter = diagFormatter;
     }
 
+    public PrintWriter getWriter(WriterKind kind) {
+        switch (kind) {
+            case NOTICE:    return noticeWriter;
+            case WARNING:   return warnWriter;
+            case ERROR:     return errWriter;
+            default:        throw new IllegalArgumentException();
+        }
+    }
+
+    public void setWriter(WriterKind kind, PrintWriter pw) {
+        pw.getClass();
+        switch (kind) {
+            case NOTICE:    noticeWriter = pw;  break;
+            case WARNING:   warnWriter = pw;    break;
+            case ERROR:     errWriter = pw;     break;
+            default:        throw new IllegalArgumentException();
+        }
+    }
+
+    public void setWriters(PrintWriter pw) {
+        pw.getClass();
+        noticeWriter = warnWriter = errWriter = pw;
+    }
+
+    public void setWriters(Log other) {
+        this.noticeWriter = other.noticeWriter;
+        this.warnWriter = other.warnWriter;
+        this.errWriter = other.errWriter;
+    }
+
     /** Flush the logs
      */
     public void flush() {
         errWriter.flush();
         warnWriter.flush();
         noticeWriter.flush();
+    }
+
+    public void flush(WriterKind kind) {
+        getWriter(kind).flush();
     }
 
     /** Returns true if an error needs to be reported for a given
@@ -275,7 +332,6 @@ public class Log extends AbstractLog {
     public void prompt() {
         if (promptOnError) {
             System.err.println(localize("resume.abort"));
-            char ch;
             try {
                 while (true) {
                     switch (System.in.read()) {
@@ -302,7 +358,7 @@ public class Log extends AbstractLog {
             return;
         int col = source.getColumnNumber(pos, false);
 
-        printLines(writer, line);
+        printRawLines(writer, line);
         for (int i = 0; i < col - 1; i++) {
             writer.print((line.charAt(i) == '\t') ? "\t" : " ");
         }
@@ -310,10 +366,48 @@ public class Log extends AbstractLog {
         writer.flush();
     }
 
+    public void printNewline() {
+        noticeWriter.println();
+    }
+
+    public void printNewline(WriterKind wk) {
+        getWriter(wk).println();
+    }
+
+    public void printLines(String key, Object... args) {
+        printRawLines(noticeWriter, localize(key, args));
+    }
+
+    public void printLines(PrefixKind pk, String key, Object... args) {
+        printRawLines(noticeWriter, localize(pk, key, args));
+    }
+
+    public void printLines(WriterKind wk, String key, Object... args) {
+        printRawLines(getWriter(wk), localize(key, args));
+    }
+
+    public void printLines(WriterKind wk, PrefixKind pk, String key, Object... args) {
+        printRawLines(getWriter(wk), localize(pk, key, args));
+    }
+
     /** Print the text of a message, translating newlines appropriately
      *  for the platform.
      */
-    public static void printLines(PrintWriter writer, String msg) {
+    public void printRawLines(String msg) {
+        printRawLines(noticeWriter, msg);
+    }
+
+    /** Print the text of a message, translating newlines appropriately
+     *  for the platform.
+     */
+    public void printRawLines(WriterKind kind, String msg) {
+        printRawLines(getWriter(kind), msg);
+    }
+
+    /** Print the text of a message, translating newlines appropriately
+     *  for the platform.
+     */
+    public static void printRawLines(PrintWriter writer, String msg) {
         int nl;
         while ((nl = msg.indexOf('\n')) != -1) {
             writer.println(msg.substring(0, nl));
@@ -322,30 +416,16 @@ public class Log extends AbstractLog {
         if (msg.length() != 0) writer.println(msg);
     }
 
-    /** Print the text of a message to the errWriter stream,
-     *  translating newlines appropriately for the platform.
-     */
-    public void printErrLines(String key, Object... args) {
-        printLines(errWriter, localize(key, args));
-    }
-
-    /** Print the text of a message to the noticeWriter stream,
-     *  translating newlines appropriately for the platform.
-     */
-    public void printNoteLines(String key, Object... args) {
-        printLines(noticeWriter, localize(key, args));
-    }
-
     /**
      * Print the localized text of a "verbose" message to the
      * noticeWriter stream.
      */
     public void printVerbose(String key, Object... args) {
-        printLines(noticeWriter, localize("verbose." + key, args));
+        printRawLines(noticeWriter, localize("verbose." + key, args));
     }
 
     protected void directError(String key, Object... args) {
-        printErrLines(key, args);
+        printRawLines(errWriter, localize(key, args));
         errWriter.flush();
     }
 
@@ -431,7 +511,7 @@ public class Log extends AbstractLog {
 
         PrintWriter writer = getWriterForDiagnosticType(diag.getType());
 
-        printLines(writer, diagFormatter.format(diag, messages.getCurrentLocale()));
+        printRawLines(writer, diagFormatter.format(diag, messages.getCurrentLocale()));
 
         if (promptOnError) {
             switch (diag.getType()) {
@@ -474,7 +554,7 @@ public class Log extends AbstractLog {
      *  @param args   Fields to substitute into the string.
      */
     public static String getLocalizedString(String key, Object ... args) {
-        return JavacMessages.getDefaultLocalizedString("compiler.misc." + key, args);
+        return JavacMessages.getDefaultLocalizedString(PrefixKind.COMPILER_MISC.key(key), args);
     }
 
     /** Find a localized string in the resource bundle.
@@ -482,8 +562,22 @@ public class Log extends AbstractLog {
      *  @param args   Fields to substitute into the string.
      */
     public String localize(String key, Object... args) {
-        return messages.getLocalizedString("compiler.misc." + key, args);
+        return localize(PrefixKind.COMPILER_MISC, key, args);
     }
+
+    /** Find a localized string in the resource bundle.
+     *  @param key    The key for the localized string.
+     *  @param args   Fields to substitute into the string.
+     */
+    public String localize(PrefixKind pk, String key, Object... args) {
+        if (useRawMessages)
+            return pk.key(key);
+        else
+            return messages.getLocalizedString(pk.key(key), args);
+    }
+    // where
+        // backdoor hook for testing, should transition to use -XDrawDiagnostics
+        private static boolean useRawMessages = false;
 
 /***************************************************************************
  * raw error messages without internationalization; used for experimentation
@@ -494,12 +588,12 @@ public class Log extends AbstractLog {
      */
     private void printRawError(int pos, String msg) {
         if (source == null || pos == Position.NOPOS) {
-            printLines(errWriter, "error: " + msg);
+            printRawLines(errWriter, "error: " + msg);
         } else {
             int line = source.getLineNumber(pos);
             JavaFileObject file = source.getFile();
             if (file != null)
-                printLines(errWriter,
+                printRawLines(errWriter,
                            file.getName() + ":" +
                            line + ": " + msg);
             printErrLine(pos, errWriter);

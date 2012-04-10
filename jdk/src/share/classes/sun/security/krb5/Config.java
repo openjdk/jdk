@@ -45,7 +45,6 @@ import java.net.UnknownHostException;
 import java.util.List;
 import sun.net.dns.ResolverConfiguration;
 import sun.security.krb5.internal.crypto.EType;
-import sun.security.krb5.internal.ktab.*;
 import sun.security.krb5.internal.Krb5;
 
 /**
@@ -114,6 +113,26 @@ public class Config {
     }
 
 
+    private static boolean isMacosLionOrBetter() {
+        // split the "10.x.y" version number
+        String osVersion = System.getProperty("os.version");
+        String[] fragments = osVersion.split("\\.");
+
+        // sanity check the "10." part of the version
+        if (!fragments[0].equals("10")) return false;
+        if (fragments.length < 2) return false;
+
+        // check if Mac OS X 10.7(.y)
+        try {
+            int minorVers = Integer.parseInt(fragments[1]);
+            if (minorVers >= 7) return true;
+        } catch (NumberFormatException e) {
+            // was not an integer
+        }
+
+        return false;
+    }
+
     /**
      * Private constructor - can not be instantiated externally.
      */
@@ -147,7 +166,11 @@ public class Config {
         try {
             Vector<String> configFile;
             configFile = loadConfigFile();
-            stanzaTable = parseStanzaTable(configFile);
+            if (configFile == null && isMacosLionOrBetter()) {
+                stanzaTable = SCDynamicStoreConfig.getConfig();
+            } else {
+                stanzaTable = parseStanzaTable(configFile);
+            }
         } catch (IOException ioe) {
             // No krb5.conf, no problem. We'll use DNS or system property etc.
         }
@@ -233,15 +256,18 @@ public class Config {
      * @return the value found in config file, returns null if no value
      * matched with the key is found.
      */
-    private String getDefault(String k, Hashtable t) {
+    private String getDefault(String k, Hashtable<String, Object> t) {
         String result = null;
         String key;
         if (stanzaTable != null) {
-            for (Enumeration e = t.keys(); e.hasMoreElements(); ) {
-                key = (String)e.nextElement();
+            for (Enumeration<String> e = t.keys(); e.hasMoreElements(); ) {
+                key = e.nextElement();
                 Object ob = t.get(key);
                 if (ob instanceof Hashtable) {
-                    result = getDefault(k, (Hashtable)ob);
+                    @SuppressWarnings("unchecked") // Checked with an instanceof check
+                    Hashtable<String, Object> table =
+                            (Hashtable<String, Object>)ob;
+                    result = getDefault(k, table);
                     if (result != null) {
                         return result;
                     }
@@ -276,15 +302,20 @@ public class Config {
      * @param section the name of the section.
      * @return the default value, null is returned if it cannot be found.
      */
+    // stanzaTable leads to a lot of unchecked casts since its value type is
+    // STANZATABLE = String | Hashtable<String, STANZATABLE>
+    @SuppressWarnings("unchecked")
     public String getDefault(String name, String section) {
         String stanzaName;
         String result = null;
-        Hashtable subTable;
+        Hashtable<String, Object> subTable;
 
         if (stanzaTable != null) {
-            for (Enumeration e = stanzaTable.keys(); e.hasMoreElements(); ) {
-                stanzaName = (String)e.nextElement();
-                subTable = (Hashtable)stanzaTable.get(stanzaName);
+            for (Enumeration<String> e = stanzaTable.keys();
+                 e.hasMoreElements(); ) {
+                stanzaName = e.nextElement();
+                subTable = (Hashtable<String, Object>)
+                        stanzaTable.get(stanzaName);
                 if (stanzaName.equalsIgnoreCase(section)) {
                     if (subTable.containsKey(name)) {
                         return (String)(subTable.get(name));
@@ -292,7 +323,8 @@ public class Config {
                 } else if (subTable.containsKey(section)) {
                     Object ob = subTable.get(section);
                     if (ob instanceof Hashtable) {
-                        Hashtable temp = (Hashtable)ob;
+                        Hashtable<String, Object> temp =
+                                (Hashtable<String, Object>)ob;
                         if (temp.containsKey(name)) {
                             Object object = temp.get(name);
                             if (object instanceof Vector) {
@@ -705,6 +737,9 @@ public class Config {
                     }
                 } else if (osname.startsWith("SunOS")) {
                     name =  "/etc/krb5/krb5.conf";
+                } else if (osname.startsWith("Mac")) {
+                    if (isMacosLionOrBetter()) return "";
+                    name = findMacosConfigFile();
                 } else {
                     name =  "/etc/krb5.conf";
                 }
@@ -714,6 +749,30 @@ public class Config {
             System.out.println("Config name: " + name);
         }
         return name;
+    }
+
+    private String getProperty(String property) {
+        return java.security.AccessController.doPrivileged(new sun.security.action.GetPropertyAction(property));
+    }
+
+    private String findMacosConfigFile() {
+        String userHome = getProperty("user.home");
+        final String PREF_FILE = "/Library/Preferences/edu.mit.Kerberos";
+        String userPrefs=userHome + PREF_FILE;
+
+        if (fileExists(userPrefs)) {
+            return userPrefs;
+        }
+
+        if (fileExists(PREF_FILE)) {
+            return PREF_FILE;
+        }
+
+        if (fileExists("/etc/krb5.conf")) {
+            return "/etc/krb5.conf";
+        }
+
+        return "";
     }
 
     private static String trimmed(String s) {
@@ -819,10 +878,10 @@ public class Config {
     /**
      * Compares the key with the known keys to see if it exists.
      */
-    private boolean exists(String key, Vector v) {
+    private boolean exists(String key, Vector<String> v) {
         boolean exists = false;
         for (int i = 0; i < v.size(); i++) {
-            if (((String)(v.elementAt(i))).equals(key)) {
+            if (v.elementAt(i).equals(key)) {
                 exists = true;
             }
         }
@@ -837,12 +896,15 @@ public class Config {
         listTable(stanzaTable);
     }
 
-    private void listTable(Hashtable table) {
-        Vector v = new Vector();
+    // stanzaTable leads to a lot of unchecked casts since its value type is
+    // STANZATABLE = String | Hashtable<String, STANZATABLE>
+    @SuppressWarnings("unchecked")
+    private void listTable(Hashtable<String, Object> table) {
+        Vector<String> v = new Vector<String>();
         String key;
         if (stanzaTable != null) {
-            for (Enumeration e = table.keys(); e.hasMoreElements(); ) {
-                key = (String)e.nextElement();
+            for (Enumeration<String> e = table.keys(); e.hasMoreElements(); ) {
+                key = e.nextElement();
                 Object object = table.get(key);
                 if (table == stanzaTable) {
                     System.out.println("[" + key + "]");
@@ -850,7 +912,7 @@ public class Config {
                 if (object instanceof Hashtable) {
                     if (table != stanzaTable)
                         System.out.println("\t" + key + " = {");
-                    listTable((Hashtable)object);
+                    listTable((Hashtable<String, Object>)object);
                     if (table != stanzaTable)
                         System.out.println("\t}");
 
@@ -858,10 +920,9 @@ public class Config {
                     System.out.println("\t" + key + " = " +
                                 (String)table.get(key));
                 } else if (object instanceof Vector) {
-                    v = (Vector)object;
+                    v = (Vector<String>)object;
                     for (int i = 0; i < v.size(); i++) {
-                        System.out.println("\t" + key + " = " +
-                                (String)v.elementAt(i));
+                        System.out.println("\t" + key + " = " + v.elementAt(i));
                     }
                 }
             }
@@ -906,7 +967,7 @@ public class Config {
                     ls.add(type);
                 }
             }
-            if (ls.size() == 0) {
+            if (ls.isEmpty()) {
                 if (DEBUG) {
                     System.out.println(
                         "no supported default etypes for " + enctypes);
@@ -1296,7 +1357,7 @@ public class Config {
             sb.append(obj);
             sb.append('\n');
         } else if (obj instanceof Hashtable) {
-            Hashtable tab = (Hashtable)obj;
+            Hashtable<?, ?> tab = (Hashtable<?, ?>)obj;
             for (Object o: tab.keySet()) {
                 sb.append(prefix);
                 sb.append(o);
@@ -1305,7 +1366,7 @@ public class Config {
                 sb.append(prefix + "}\n");
             }
         } else if (obj instanceof Vector) {
-            Vector v = (Vector)obj;
+            Vector<?> v = (Vector<?>)obj;
             for (Object o: v.toArray()) {
                 toStringIndented(prefix + "    ", o, sb);
             }

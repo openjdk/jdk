@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 
 package java.io;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Instances of the file descriptor class serve as an opaque handle
@@ -46,12 +47,9 @@ public final class FileDescriptor {
 
     private int fd;
 
-    /**
-     * A counter for tracking the FIS/FOS/RAF instances that
-     * use this FileDescriptor. The FIS/FOS.finalize() will not release
-     * the FileDescriptor if it is still under user by a stream.
-     */
-    private AtomicInteger useCount;
+    private Closeable parent;
+    private List<Closeable> otherParents;
+    private boolean closed;
 
     /**
      * Constructs an (invalid) FileDescriptor
@@ -59,12 +57,10 @@ public final class FileDescriptor {
      */
     public /**/ FileDescriptor() {
         fd = -1;
-        useCount = new AtomicInteger();
     }
 
     private /* */ FileDescriptor(int fd) {
         this.fd = fd;
-        useCount = new AtomicInteger();
     }
 
     /**
@@ -164,13 +160,67 @@ public final class FileDescriptor {
         );
     }
 
-    // package private methods used by FIS, FOS and RAF
+    /*
+     * Package private methods to track referents.
+     * If multiple streams point to the same FileDescriptor, we cycle
+     * through the list of all referents and call close()
+     */
 
-    int incrementAndGetUseCount() {
-        return useCount.incrementAndGet();
+    /**
+     * Attach a Closeable to this FD for tracking.
+     * parent reference is added to otherParents when
+     * needed to make closeAll simpler.
+     */
+    synchronized void attach(Closeable c) {
+        if (parent == null) {
+            // first caller gets to do this
+            parent = c;
+        } else if (otherParents == null) {
+            otherParents = new ArrayList<>();
+            otherParents.add(parent);
+            otherParents.add(c);
+        } else {
+            otherParents.add(c);
+        }
     }
 
-    int decrementAndGetUseCount() {
-        return useCount.decrementAndGet();
+    /**
+     * Cycle through all Closeables sharing this FD and call
+     * close() on each one.
+     *
+     * The caller closeable gets to call close0().
+     */
+    @SuppressWarnings("try")
+    synchronized void closeAll(Closeable releaser) throws IOException {
+        if (!closed) {
+            closed = true;
+            IOException ioe = null;
+            try (Closeable c = releaser) {
+                if (otherParents != null) {
+                    for (Closeable referent : otherParents) {
+                        try {
+                            referent.close();
+                        } catch(IOException x) {
+                            if (ioe == null) {
+                                ioe = x;
+                            } else {
+                                ioe.addSuppressed(x);
+                            }
+                        }
+                    }
+                }
+            } catch(IOException ex) {
+                /*
+                 * If releaser close() throws IOException
+                 * add other exceptions as suppressed.
+                 */
+                if (ioe != null)
+                    ex.addSuppressed(ioe);
+                ioe = ex;
+            } finally {
+                if (ioe != null)
+                    throw ioe;
+            }
+        }
     }
 }

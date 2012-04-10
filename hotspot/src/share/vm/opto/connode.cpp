@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -721,12 +721,7 @@ const Type *ConvF2DNode::Value( PhaseTransform *phase ) const {
   if( t == Type::TOP ) return Type::TOP;
   if( t == Type::FLOAT ) return Type::DOUBLE;
   const TypeF *tf = t->is_float_constant();
-#ifndef IA64
   return TypeD::make( (double)tf->getf() );
-#else
-  float x = tf->getf();
-  return TypeD::make( (x == 0.0f) ? (double)x : (double)x + ia64_double_zero );
-#endif
 }
 
 //=============================================================================
@@ -1056,6 +1051,7 @@ Node *ConvL2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
 //------------------------------Value------------------------------------------
 const Type *CastX2PNode::Value( PhaseTransform *phase ) const {
   const Type* t = phase->type(in(1));
+  if (t == Type::TOP) return Type::TOP;
   if (t->base() == Type_X && t->singleton()) {
     uintptr_t bits = (uintptr_t) t->is_intptr_t()->get_con();
     if (bits == 0)   return TypePtr::NULL_PTR;
@@ -1126,6 +1122,7 @@ Node *CastX2PNode::Identity( PhaseTransform *phase ) {
 //------------------------------Value------------------------------------------
 const Type *CastP2XNode::Value( PhaseTransform *phase ) const {
   const Type* t = phase->type(in(1));
+  if (t == Type::TOP) return Type::TOP;
   if (t->base() == Type::RawPtr && t->singleton()) {
     uintptr_t bits = (uintptr_t) t->is_rawptr()->get_con();
     return TypeX::make(bits);

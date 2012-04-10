@@ -32,6 +32,9 @@ BUILDDIR = ../..
 PACKAGE = java.lang
 LIBRARY = java
 PRODUCT = java
+SUBDIRS_MAKEFLAGS += JAVAC_MAX_WARNINGS=true
+SUBDIRS_MAKEFLAGS += JAVAC_WARNINGS_FATAL=true
+JAVAC_MAX_WARNINGS=true
 include $(BUILDDIR)/common/Defs.gmk
 
 # windows compiler flags
@@ -93,6 +96,15 @@ FILES_c    +=   UNIXProcess_md.c \
 INIT += $(GENSRCDIR)/java/lang/UNIXProcess.java
 
 endif # PLATFORM
+
+ifeq ($(PLATFORM), macosx)
+FILES_c    +=   java_props_macosx.c
+FILES_java += 	java/util/prefs/MacOSXPreferences.java \
+		java/util/prefs/MacOSXPreferencesFile.java \
+		java/util/prefs/MacOSXPreferencesFactory.java
+
+CFLAGS_$(VARIANT)/java_props_md.o = -Os -x objective-c
+endif
 
 #
 # Make sure first rule does 'all'
@@ -165,7 +177,9 @@ OTHER_INCLUDES += -I$(PLATFORM_SRC)/native/java/util
 # Is the altzone extern documented in ctime(3C) available?
 #
 ifneq ($(PLATFORM), windows)
+ifneq ($(PLATFORM), macosx)
 HAVE_ALTZONE=true
+endif
 endif
 
 ifeq ($(HAVE_ALTZONE),true)
@@ -205,8 +219,14 @@ OTHER_LDLIBS += $(JVMLIB) -libpath:$(OBJDIR)/../../../fdlibm/$(OBJDIRNAME) fdlib
 		       -libpath:$(OBJDIR)/../../../verify/$(OBJDIRNAME) verify.lib \
 		       shell32.lib delayimp.lib /DELAYLOAD:shell32.dll
 else
-OTHER_LDLIBS += $(JVMLIB) -lverify $(LIBSOCKET) $(LIBNSL) -ldl \
+OTHER_LDLIBS += $(JVMLIB) -lverify $(LIBSOCKET) $(LIBNSL) $(LIBSCF) $(LIBDL) \
 		-L$(OBJDIR)/../../../fdlibm/$(OBJDIRNAME) -lfdlibm.$(ARCH)
+ifeq ($(PLATFORM), macosx)
+OTHER_LDLIBS += \
+        -framework CoreFoundation \
+        -framework Security \
+        -framework SystemConfiguration
+endif
 endif
 
 #
@@ -243,8 +263,15 @@ ifneq ($(PLATFORM),windows)
 # UNIXProcess.java is different for solaris and linux. We need to copy
 # the correct UNIXProcess.java over to $(GENSRCDIR)/java/lang/.
 
-$(GENSRCDIR)/java/lang/UNIXProcess.java: \
+ifeq ($(PLATFORM), macosx)
+PLATFORM_UNIX_PROCESS = \
+    $(PLATFORM_SRC)/classes/java/lang/UNIXProcess.java.bsd
+else
+PLATFORM_UNIX_PROCESS = \
     $(PLATFORM_SRC)/classes/java/lang/UNIXProcess.java.$(PLATFORM)
+endif
+
+$(GENSRCDIR)/java/lang/UNIXProcess.java: $(PLATFORM_UNIX_PROCESS)
 	$(install-file)
 
 clean:: 

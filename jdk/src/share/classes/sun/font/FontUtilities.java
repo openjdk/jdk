@@ -48,6 +48,8 @@ public final class FontUtilities {
 
     public static boolean isLinux;
 
+    public static boolean isMacOSX;
+
     public static boolean isSolaris8;
 
     public static boolean isSolaris9;
@@ -75,6 +77,8 @@ public final class FontUtilities {
                 isSolaris = osName.startsWith("SunOS");
 
                 isLinux = osName.startsWith("Linux");
+
+                isMacOSX = osName.startsWith("Mac OS X"); // TODO: MacOSX
 
                 String t2kStr = System.getProperty("sun.java2d.font.scaler");
                 if (t2kStr != null) {
@@ -407,12 +411,12 @@ public final class FontUtilities {
         }
 
         FontManager fm = FontManagerFactory.getInstance();
-        CompositeFont dialog2D =
-          (CompositeFont) fm.findFont2D("dialog", font.getStyle(),
-                                        FontManager.NO_FALLBACK);
-        if (dialog2D == null) { /* shouldn't happen */
+        Font2D dialog = fm.findFont2D("dialog", font.getStyle(), FontManager.NO_FALLBACK);
+        // Should never be null, but MACOSX fonts are not CompositeFonts
+        if (dialog == null || !(dialog instanceof CompositeFont)) {
             return fuir;
         }
+        CompositeFont dialog2D = (CompositeFont)dialog;
         PhysicalFont physicalFont = (PhysicalFont)font2D;
         ConcurrentHashMap<PhysicalFont, CompositeFont> compMap = compMapRef.get();
         if (compMap == null) { // Its been collected.

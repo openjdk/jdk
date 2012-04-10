@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ class AltNode extends AbstractGroupNode implements TypeNode {
         indent(writer, depth+1);
         writer.print("return new " + select.name() + "(");
         writer.print("ALT_ID, new " + javaClassName() + "(");
-        for (Iterator it = components.iterator(); it.hasNext();) {
+        for (Iterator<Node> it = components.iterator(); it.hasNext();) {
             TypeNode tn = (TypeNode)it.next();
             writer.print(tn.name());
             if (it.hasNext()) {

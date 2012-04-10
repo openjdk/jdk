@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,10 +45,10 @@ class ResourceRecords {
     // Four sections:  question, answer, authority, additional.
     // The question section is treated as being made up of (shortened)
     // resource records, although this isn't technically how it's defined.
-    Vector question = new Vector();
-    Vector answer = new Vector();
-    Vector authority = new Vector();
-    Vector additional = new Vector();
+    Vector<ResourceRecord> question = new Vector<>();
+    Vector<ResourceRecord> answer = new Vector<>();
+    Vector<ResourceRecord> authority = new Vector<>();
+    Vector<ResourceRecord> additional = new Vector<>();
 
     /*
      * True if these resource records are from a zone transfer.  In
@@ -80,7 +80,7 @@ class ResourceRecords {
         if (answer.size() == 0) {
             return -1;
         }
-        return ((ResourceRecord) answer.firstElement()).getType();
+        return answer.firstElement().getType();
     }
 
     /*
@@ -91,7 +91,7 @@ class ResourceRecords {
         if (answer.size() == 0) {
             return -1;
         }
-        return ((ResourceRecord) answer.lastElement()).getType();
+        return answer.lastElement().getType();
     }
 
     /*

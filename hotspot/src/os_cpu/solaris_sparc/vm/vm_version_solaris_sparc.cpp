@@ -114,6 +114,11 @@ int VM_Version::platform_features(int features) {
 #endif
     if (av & AV_SPARC_VIS3)         features |= vis3_instructions_m;
 
+#ifndef AV_SPARC_CBCOND
+#define AV_SPARC_CBCOND 0x10000000  /* compare and branch instrs supported */
+#endif
+    if (av & AV_SPARC_CBCOND)       features |= cbcond_instructions_m;
+
   } else {
     // getisax(2) failed, use the old legacy code.
 #ifndef PRODUCT

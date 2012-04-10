@@ -506,3 +506,8 @@ extern "C" {
   }
 };
 #endif // !_LP64
+
+#ifndef PRODUCT
+void os::verify_stack_alignment() {
+}
+#endif

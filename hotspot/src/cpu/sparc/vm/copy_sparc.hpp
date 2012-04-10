@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,13 +82,35 @@ static void pd_conjoint_bytes_atomic(void* from, void* to, size_t count) {
 }
 
 static void pd_conjoint_jshorts_atomic(jshort* from, jshort* to, size_t count) {
-  // FIXME
-  (void)memmove(to, from, count << LogBytesPerShort);
+  if (from > to) {
+    while (count-- > 0) {
+      // Copy forwards
+      *to++ = *from++;
+    }
+  } else {
+    from += count - 1;
+    to   += count - 1;
+    while (count-- > 0) {
+      // Copy backwards
+      *to-- = *from--;
+    }
+  }
 }
 
 static void pd_conjoint_jints_atomic(jint* from, jint* to, size_t count) {
-  // FIXME
-  (void)memmove(to, from, count << LogBytesPerInt);
+  if (from > to) {
+    while (count-- > 0) {
+      // Copy forwards
+      *to++ = *from++;
+    }
+  } else {
+    from += count - 1;
+    to   += count - 1;
+    while (count-- > 0) {
+      // Copy backwards
+      *to-- = *from--;
+    }
+  }
 }
 
 static void pd_conjoint_jlongs_atomic(jlong* from, jlong* to, size_t count) {
@@ -156,9 +178,16 @@ static void pd_fill_to_words(HeapWord* tohw, size_t count, juint value) {
 #endif // _LP64
 }
 
+typedef void (*_zero_Fn)(HeapWord* to, size_t count);
+
 static void pd_fill_to_aligned_words(HeapWord* tohw, size_t count, juint value) {
   assert(MinObjAlignmentInBytes >= BytesPerLong, "need alternate implementation");
 
+  if (value == 0 && UseBlockZeroing &&
+      (count > (BlockZeroingLowLimit >> LogHeapWordSize))) {
+   // Call it only when block zeroing is used
+   ((_zero_Fn)StubRoutines::zero_aligned_words())(tohw, count);
+  } else {
    julong* to = (julong*)tohw;
    julong  v  = ((julong)value << 32) | value;
    // If count is odd, odd will be equal to 1 on 32-bit platform
@@ -176,6 +205,7 @@ static void pd_fill_to_aligned_words(HeapWord* tohw, size_t count, juint value) 
      *((juint*)to) = value;
 
    }
+  }
 }
 
 static void pd_fill_to_bytes(void* to, size_t count, jubyte value) {

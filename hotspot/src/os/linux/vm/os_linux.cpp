@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,6 @@
  * questions.
  *
  */
-
-# define __STDC_FORMAT_MACROS
 
 // no precompiled headers
 #include "classfile/classLoader.hpp"
@@ -129,7 +127,6 @@
 
 // for timer info max values which include all bits
 #define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
-#define SEC_IN_NANOSECS  1000000000LL
 
 #define LARGEPAGES_BIT (1 << 6)
 ////////////////////////////////////////////////////////////////////////////////
@@ -169,7 +166,35 @@ sigset_t SR_sigset;
 /* Used to protect dlsym() calls */
 static pthread_mutex_t dl_mutex;
 
-////////////////////////////////////////////////////////////////////////////////
+#ifdef JAVASE_EMBEDDED
+class MemNotifyThread: public Thread {
+  friend class VMStructs;
+ public:
+  virtual void run();
+
+ private:
+  static MemNotifyThread* _memnotify_thread;
+  int _fd;
+
+ public:
+
+  // Constructor
+  MemNotifyThread(int fd);
+
+  // Tester
+  bool is_memnotify_thread() const { return true; }
+
+  // Printing
+  char* name() const { return (char*)"Linux MemNotify Thread"; }
+
+  // Returns the single instance of the MemNotifyThread
+  static MemNotifyThread* memnotify_thread() { return _memnotify_thread; }
+
+  // Create and start the single instance of MemNotifyThread
+  static void start();
+};
+#endif // JAVASE_EMBEDDED
+
 // utility functions
 
 static int SR_initialize();
@@ -1707,7 +1732,7 @@ bool os::dll_address_to_function_name(address addr, char *buf,
     return true;
   } else if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != 0) {
     if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
-       dlinfo.dli_fname, buf, buflen, offset) == Decoder::no_error) {
+        buf, buflen, offset, dlinfo.dli_fname)) {
        return true;
     }
   }
@@ -2082,6 +2107,14 @@ void os::print_os_info(outputStream* st) {
   // meminfo
   st->print("\n/proc/meminfo:\n");
   _print_ascii_file("/proc/meminfo", st);
+  st->cr();
+}
+
+void os::pd_print_cpu_info(outputStream* st) {
+  st->print("\n/proc/cpuinfo:\n");
+  if (!_print_ascii_file("/proc/cpuinfo", st)) {
+    st->print("  <Not Available>");
+  }
   st->cr();
 }
 
@@ -2462,7 +2495,13 @@ bool os::commit_memory(char* addr, size_t size, bool exec) {
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
   uintptr_t res = (uintptr_t) ::mmap(addr, size, prot,
                                    MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
-  return res != (uintptr_t) MAP_FAILED;
+  if (res != (uintptr_t) MAP_FAILED) {
+    if (UseNUMAInterleaving) {
+      numa_make_global(addr, size);
+    }
+    return true;
+  }
+  return false;
 }
 
 // Define MAP_HUGETLB here so we can build HotSpot on old systems.
@@ -2483,10 +2522,20 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
       (uintptr_t) ::mmap(addr, size, prot,
                          MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS|MAP_HUGETLB,
                          -1, 0);
-    return res != (uintptr_t) MAP_FAILED;
+    if (res != (uintptr_t) MAP_FAILED) {
+      if (UseNUMAInterleaving) {
+        numa_make_global(addr, size);
+      }
+      return true;
+    }
+    // Fall through and try to use small pages
   }
 
-  return commit_memory(addr, size, exec);
+  if (commit_memory(addr, size, exec)) {
+    realign_memory(addr, size, alignment_hint);
+    return true;
+  }
+  return false;
 }
 
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
@@ -2497,8 +2546,15 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   }
 }
 
-void os::free_memory(char *addr, size_t bytes) {
-  ::madvise(addr, bytes, MADV_DONTNEED);
+void os::free_memory(char *addr, size_t bytes, size_t alignment_hint) {
+  // This method works by doing an mmap over an existing mmaping and effectively discarding
+  // the existing pages. However it won't work for SHM-based large pages that cannot be
+  // uncommitted at all. We don't do anything in this case to avoid creating a segment with
+  // small pages on top of the SHM segment. This method always works for small pages, so we
+  // allow that in any case.
+  if (alignment_hint <= (size_t)os::vm_page_size() || !UseSHM) {
+    commit_memory(addr, bytes, alignment_hint, false);
+  }
 }
 
 void os::numa_make_global(char *addr, size_t bytes) {
@@ -2542,6 +2598,31 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
   return end;
 }
 
+
+int os::Linux::sched_getcpu_syscall(void) {
+  unsigned int cpu;
+  int retval = -1;
+
+#if defined(IA32)
+# ifndef SYS_getcpu
+# define SYS_getcpu 318
+# endif
+  retval = syscall(SYS_getcpu, &cpu, NULL, NULL);
+#elif defined(AMD64)
+// Unfortunately we have to bring all these macros here from vsyscall.h
+// to be able to compile on old linuxes.
+# define __NR_vgetcpu 2
+# define VSYSCALL_START (-10UL << 20)
+# define VSYSCALL_SIZE 1024
+# define VSYSCALL_ADDR(vsyscall_nr) (VSYSCALL_START+VSYSCALL_SIZE*(vsyscall_nr))
+  typedef long (*vgetcpu_t)(unsigned int *cpu, unsigned int *node, unsigned long *tcache);
+  vgetcpu_t vgetcpu = (vgetcpu_t)VSYSCALL_ADDR(__NR_vgetcpu);
+  retval = vgetcpu(&cpu, NULL, NULL);
+#endif
+
+  return (retval == -1) ? retval : cpu;
+}
+
 // Something to do with the numa-aware allocator needs these symbols
 extern "C" JNIEXPORT void numa_warn(int number, char *where, ...) { }
 extern "C" JNIEXPORT void numa_error(char *where) { }
@@ -2564,6 +2645,10 @@ bool os::Linux::libnuma_init() {
   // sched_getcpu() should be in libc.
   set_sched_getcpu(CAST_TO_FN_PTR(sched_getcpu_func_t,
                                   dlsym(RTLD_DEFAULT, "sched_getcpu")));
+
+  // If it's not, try a direct syscall.
+  if (sched_getcpu() == -1)
+    set_sched_getcpu(CAST_TO_FN_PTR(sched_getcpu_func_t, (void*)&sched_getcpu_syscall));
 
   if (sched_getcpu() != -1) { // Does it work?
     void *handle = dlopen("libnuma.so.1", RTLD_LAZY);
@@ -3055,6 +3140,10 @@ char* os::reserve_memory_special(size_t bytes, char* req_addr, bool exec) {
      return NULL;
   }
 
+  if ((addr != NULL) && UseNUMAInterleaving) {
+    numa_make_global(addr, bytes);
+  }
+
   return addr;
 }
 
@@ -3176,8 +3265,6 @@ size_t os::read(int fd, void *buf, unsigned int nBytes) {
 // generates a SIGUSRx signal. Note that SIGUSR1 can interfere with
 // SIGSEGV, see 4355769.
 
-const int NANOSECS_PER_MILLISECS = 1000000;
-
 int os::sleep(Thread* thread, jlong millis, bool interruptible) {
   assert(thread == Thread::current(),  "thread consistency check");
 
@@ -3200,7 +3287,7 @@ int os::sleep(Thread* thread, jlong millis, bool interruptible) {
         // not a guarantee() because JVM should not abort on kernel/glibc bugs
         assert(!Linux::supports_monotonic_clock(), "time moving backwards");
       } else {
-        millis -= (newtime - prevtime) / NANOSECS_PER_MILLISECS;
+        millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
       }
 
       if(millis <= 0) {
@@ -3239,7 +3326,7 @@ int os::sleep(Thread* thread, jlong millis, bool interruptible) {
         // not a guarantee() because JVM should not abort on kernel/glibc bugs
         assert(!Linux::supports_monotonic_clock(), "time moving backwards");
       } else {
-        millis -= (newtime - prevtime) / NANOSECS_PER_MILLISECS;
+        millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
       }
 
       if(millis <= 0) break ;
@@ -3303,7 +3390,7 @@ void os::loop_breaker(int attempts) {
 // this reason, the code should not be used as default (ThreadPriorityPolicy=0).
 // It is only used when ThreadPriorityPolicy=1 and requires root privilege.
 
-int os::java_to_os_priority[MaxPriority + 1] = {
+int os::java_to_os_priority[CriticalPriority + 1] = {
   19,              // 0 Entry should never be used
 
    4,              // 1 MinPriority
@@ -3318,7 +3405,9 @@ int os::java_to_os_priority[MaxPriority + 1] = {
   -3,              // 8
   -4,              // 9 NearMaxPriority
 
-  -5               // 10 MaxPriority
+  -5,              // 10 MaxPriority
+
+  -5               // 11 CriticalPriority
 };
 
 static int prio_init() {
@@ -3332,6 +3421,9 @@ static int prio_init() {
       }
       ThreadPriorityPolicy = 0;
     }
+  }
+  if (UseCriticalJavaThreadPriority) {
+    os::java_to_os_priority[MaxPriority] = os::java_to_os_priority[CriticalPriority];
   }
   return 0;
 }
@@ -3810,14 +3902,19 @@ void os::Linux::install_signal_handlers() {
     }
 
     // We don't activate signal checker if libjsig is in place, we trust ourselves
-    // and if UserSignalHandler is installed all bets are off
+    // and if UserSignalHandler is installed all bets are off.
+    // Log that signal checking is off only if -verbose:jni is specified.
     if (CheckJNICalls) {
       if (libjsig_is_loaded) {
-        tty->print_cr("Info: libjsig is activated, all active signal checking is disabled");
+        if (PrintJNIResolving) {
+          tty->print_cr("Info: libjsig is activated, all active signal checking is disabled");
+        }
         check_signals = false;
       }
       if (AllowUserSignalHandlers) {
-        tty->print_cr("Info: AllowUserSignalHandlers is activated, all active signal checking is disabled");
+        if (PrintJNIResolving) {
+          tty->print_cr("Info: AllowUserSignalHandlers is activated, all active signal checking is disabled");
+        }
         check_signals = false;
       }
     }
@@ -3836,7 +3933,7 @@ jlong os::Linux::fast_thread_cpu_time(clockid_t clockid) {
   int rc = os::Linux::clock_gettime(clockid, &tp);
   assert(rc == 0, "clock_gettime is expected to return 0 code");
 
-  return (tp.tv_sec * SEC_IN_NANOSECS) + tp.tv_nsec;
+  return (tp.tv_sec * NANOSECS_PER_SEC) + tp.tv_nsec;
 }
 
 /////
@@ -4237,7 +4334,16 @@ jint os::init_2(void)
 }
 
 // this is called at the end of vm_initialization
-void os::init_3(void) { }
+void os::init_3(void)
+{
+#ifdef JAVASE_EMBEDDED
+  // Start the MemNotifyThread
+  if (LowMemoryProtection) {
+    MemNotifyThread::start();
+  }
+  return;
+#endif
+}
 
 // Mark the polling page as unreadable
 void os::make_polling_page_unreadable(void) {
@@ -4258,6 +4364,11 @@ int os::active_processor_count() {
   int online_cpus = ::sysconf(_SC_NPROCESSORS_ONLN);
   assert(online_cpus > 0 && online_cpus <= processor_count(), "sanity check");
   return online_cpus;
+}
+
+void os::set_native_thread_name(const char *name) {
+  // Not yet implemented.
+  return;
 }
 
 bool os::distribute_processes(uint length, uint* distribution) {
@@ -4586,14 +4697,12 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
                      char *addr, size_t bytes, bool read_only,
                      bool allow_exec) {
   int prot;
-  int flags;
+  int flags = MAP_PRIVATE;
 
   if (read_only) {
     prot = PROT_READ;
-    flags = MAP_SHARED;
   } else {
     prot = PROT_READ | PROT_WRITE;
-    flags = MAP_PRIVATE;
   }
 
   if (allow_exec) {
@@ -5063,9 +5172,6 @@ void os::PlatformEvent::unpark() {
  * is no need to track notifications.
  */
 
-
-#define NANOSECS_PER_SEC 1000000000
-#define NANOSECS_PER_MILLISEC 1000000
 #define MAX_SECS 100000000
 /*
  * This code is common to linux and solaris and will be moved to a
@@ -5323,15 +5429,18 @@ int os::fork_and_exec(char* cmd) {
 
 // is_headless_jre()
 //
-// Test for the existence of libmawt in motif21 or xawt directories
+// Test for the existence of xawt/libmawt.so or libawt_xawt.so
 // in order to report if we are running in a headless jre
+//
+// Since JDK8 xawt/libmawt.so was moved into the same directory
+// as libawt.so, and renamed libawt_xawt.so
 //
 bool os::is_headless_jre() {
     struct stat statbuf;
     char buf[MAXPATHLEN];
     char libmawtpath[MAXPATHLEN];
     const char *xawtstr  = "/xawt/libmawt.so";
-    const char *motifstr = "/motif21/libmawt.so";
+    const char *new_xawtstr = "/libawt_xawt.so";
     char *p;
 
     // Get path to libjvm.so
@@ -5352,11 +5461,86 @@ bool os::is_headless_jre() {
     strcat(libmawtpath, xawtstr);
     if (::stat(libmawtpath, &statbuf) == 0) return false;
 
-    // check motif21/libmawt.so
+    // check libawt_xawt.so
     strcpy(libmawtpath, buf);
-    strcat(libmawtpath, motifstr);
+    strcat(libmawtpath, new_xawtstr);
     if (::stat(libmawtpath, &statbuf) == 0) return false;
 
     return true;
 }
 
+
+#ifdef JAVASE_EMBEDDED
+//
+// A thread to watch the '/dev/mem_notify' device, which will tell us when the OS is running low on memory.
+//
+MemNotifyThread* MemNotifyThread::_memnotify_thread = NULL;
+
+// ctor
+//
+MemNotifyThread::MemNotifyThread(int fd): Thread() {
+  assert(memnotify_thread() == NULL, "we can only allocate one MemNotifyThread");
+  _fd = fd;
+
+  if (os::create_thread(this, os::os_thread)) {
+    _memnotify_thread = this;
+    os::set_priority(this, NearMaxPriority);
+    os::start_thread(this);
+  }
+}
+
+// Where all the work gets done
+//
+void MemNotifyThread::run() {
+  assert(this == memnotify_thread(), "expected the singleton MemNotifyThread");
+
+  // Set up the select arguments
+  fd_set rfds;
+  if (_fd != -1) {
+    FD_ZERO(&rfds);
+    FD_SET(_fd, &rfds);
+  }
+
+  // Now wait for the mem_notify device to wake up
+  while (1) {
+    // Wait for the mem_notify device to signal us..
+    int rc = select(_fd+1, _fd != -1 ? &rfds : NULL, NULL, NULL, NULL);
+    if (rc == -1) {
+      perror("select!\n");
+      break;
+    } else if (rc) {
+      //ssize_t free_before = os::available_memory();
+      //tty->print ("Notified: Free: %dK \n",os::available_memory()/1024);
+
+      // The kernel is telling us there is not much memory left...
+      // try to do something about that
+
+      // If we are not already in a GC, try one.
+      if (!Universe::heap()->is_gc_active()) {
+        Universe::heap()->collect(GCCause::_allocation_failure);
+
+        //ssize_t free_after = os::available_memory();
+        //tty->print ("Post-Notify: Free: %dK\n",free_after/1024);
+        //tty->print ("GC freed: %dK\n", (free_after - free_before)/1024);
+      }
+      // We might want to do something like the following if we find the GC's are not helping...
+      // Universe::heap()->size_policy()->set_gc_time_limit_exceeded(true);
+    }
+  }
+}
+
+//
+// See if the /dev/mem_notify device exists, and if so, start a thread to monitor it.
+//
+void MemNotifyThread::start() {
+  int    fd;
+  fd = open ("/dev/mem_notify", O_RDONLY, 0);
+  if (fd < 0) {
+      return;
+  }
+
+  if (memnotify_thread() == NULL) {
+    new MemNotifyThread(fd);
+  }
+}
+#endif // JAVASE_EMBEDDED

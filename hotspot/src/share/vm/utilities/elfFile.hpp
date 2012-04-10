@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,16 @@
  *
  */
 
-#ifndef __ELF_FILE_HPP
-#define __ELF_FILE_HPP
+#ifndef SHARE_VM_UTILITIES_ELF_FILE_HPP
+#define SHARE_VM_UTILITIES_ELF_FILE_HPP
 
-#ifndef _WINDOWS
+#if !defined(_WINDOWS) && !defined(__APPLE__)
 
+#if defined(__OpenBSD__)
+#include <sys/exec_elf.h>
+#else
 #include <elf.h>
+#endif
 #include <stdio.h>
 
 #ifdef _LP64
@@ -41,7 +45,9 @@ typedef Elf64_Ehdr      Elf_Ehdr;
 typedef Elf64_Shdr      Elf_Shdr;
 typedef Elf64_Sym       Elf_Sym;
 
+#if !defined(_ALLBSD_SOURCE) || defined(__APPLE__)
 #define ELF_ST_TYPE ELF64_ST_TYPE
+#endif
 
 #else
 
@@ -55,7 +61,9 @@ typedef Elf32_Ehdr      Elf_Ehdr;
 typedef Elf32_Shdr      Elf_Shdr;
 typedef Elf32_Sym       Elf_Sym;
 
+#if !defined(_ALLBSD_SOURCE) || defined(__APPLE__)
 #define ELF_ST_TYPE ELF32_ST_TYPE
+#endif
 #endif
 
 #include "globalDefinitions.hpp"
@@ -75,12 +83,12 @@ class ElfSymbolTable;
 // part of code to be very defensive, and bait out if anything went wrong.
 
 class ElfFile: public CHeapObj {
-  friend class Decoder;
+  friend class ElfDecoder;
  public:
   ElfFile(const char* filepath);
   ~ElfFile();
 
-  const char* decode(address addr, int* offset);
+  bool decode(address addr, char* buf, int buflen, int* offset);
   const char* filepath() {
     return m_filepath;
   }
@@ -91,7 +99,7 @@ class ElfFile: public CHeapObj {
     return (m_filepath && !strcmp(filepath, m_filepath));
   }
 
-  Decoder::decoder_status get_status() {
+  NullDecoder::decoder_status get_status() {
     return m_status;
   }
 
@@ -111,8 +119,9 @@ class ElfFile: public CHeapObj {
   // return a string table at specified section index
   ElfStringTable* get_string_table(int index);
 
-  // look up an address and return the nearest symbol
-  const char* look_up(Elf_Shdr shdr, address addr, int* offset);
+protected:
+   ElfFile*  next() const { return m_next; }
+   void set_next(ElfFile* file) { m_next = file; }
 
  protected:
     ElfFile*         m_next;
@@ -123,18 +132,17 @@ class ElfFile: public CHeapObj {
   FILE* m_file;
 
   // Elf header
-  Elf_Ehdr            m_elfHdr;
+  Elf_Ehdr                     m_elfHdr;
 
   // symbol tables
-  ElfSymbolTable*     m_symbol_tables;
+  ElfSymbolTable*              m_symbol_tables;
 
   // string tables
-  ElfStringTable*     m_string_tables;
+  ElfStringTable*              m_string_tables;
 
-  Decoder::decoder_status  m_status;
+  NullDecoder::decoder_status  m_status;
 };
 
 #endif // _WINDOWS
 
-#endif // __ELF_FILE_HPP
-
+#endif // SHARE_VM_UTILITIES_ELF_FILE_HPP

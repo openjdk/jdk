@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/safepoint.hpp"
+#include "utilities/events.hpp"
 
 // A "CollectedHeap" is an implementation of a java heap for HotSpot.  This
 // is an abstract class: there may be many different kinds of heaps.  This
@@ -42,6 +43,29 @@ class ThreadClosure;
 class AdaptiveSizePolicy;
 class Thread;
 class CollectorPolicy;
+
+class GCMessage : public FormatBuffer<1024> {
+ public:
+  bool is_before;
+
+ public:
+  GCMessage() {}
+};
+
+class GCHeapLog : public EventLogBase<GCMessage> {
+ private:
+  void log_heap(bool before);
+
+ public:
+  GCHeapLog() : EventLogBase<GCMessage>("GC Heap History") {}
+
+  void log_heap_before() {
+    log_heap(true);
+  }
+  void log_heap_after() {
+    log_heap(false);
+  }
+};
 
 //
 // CollectedHeap
@@ -62,6 +86,8 @@ class CollectedHeap : public CHeapObj {
   // Used for filler objects (static, but initialized in ctor).
   static size_t _filler_array_max_size;
 
+  GCHeapLog* _gc_heap_log;
+
   // Used in support of ReduceInitialCardMarks; only consulted if COMPILER2 is being used
   bool _defer_initial_card_mark;
 
@@ -69,7 +95,7 @@ class CollectedHeap : public CHeapObj {
   MemRegion _reserved;
   BarrierSet* _barrier_set;
   bool _is_gc_active;
-  int _n_par_threads;
+  uint _n_par_threads;
 
   unsigned int _total_collections;          // ... started
   unsigned int _total_full_collections;     // ... started
@@ -93,7 +119,7 @@ class CollectedHeap : public CHeapObj {
   // pure virtual.
   void pre_initialize();
 
-  // Create a new tlab
+  // Create a new tlab. All TLAB allocations must go through this.
   virtual HeapWord* allocate_new_tlab(size_t size);
 
   // Accumulate statistics on all tlabs.
@@ -102,18 +128,17 @@ class CollectedHeap : public CHeapObj {
   // Reinitialize tlabs before resuming mutators.
   virtual void resize_all_tlabs();
 
- protected:
   // Allocate from the current thread's TLAB, with broken-out slow path.
   inline static HeapWord* allocate_from_tlab(Thread* thread, size_t size);
   static HeapWord* allocate_from_tlab_slow(Thread* thread, size_t size);
 
   // Allocate an uninitialized block of the given size, or returns NULL if
   // this is impossible.
-  inline static HeapWord* common_mem_allocate_noinit(size_t size, bool is_noref, TRAPS);
+  inline static HeapWord* common_mem_allocate_noinit(size_t size, TRAPS);
 
   // Like allocate_init, but the block returned by a successful allocation
   // is guaranteed initialized to zeros.
-  inline static HeapWord* common_mem_allocate_init(size_t size, bool is_noref, TRAPS);
+  inline static HeapWord* common_mem_allocate_init(size_t size, TRAPS);
 
   // Same as common_mem version, except memory is allocated in the permanent area
   // If there is no permanent area, revert to common_mem_allocate_noinit
@@ -124,18 +149,14 @@ class CollectedHeap : public CHeapObj {
   inline static HeapWord* common_permanent_mem_allocate_init(size_t size, TRAPS);
 
   // Helper functions for (VM) allocation.
-  inline static void post_allocation_setup_common(KlassHandle klass,
-                                                  HeapWord* obj, size_t size);
+  inline static void post_allocation_setup_common(KlassHandle klass, HeapWord* obj);
   inline static void post_allocation_setup_no_klass_install(KlassHandle klass,
-                                                            HeapWord* objPtr,
-                                                            size_t size);
+                                                            HeapWord* objPtr);
 
-  inline static void post_allocation_setup_obj(KlassHandle klass,
-                                               HeapWord* obj, size_t size);
+  inline static void post_allocation_setup_obj(KlassHandle klass, HeapWord* obj);
 
   inline static void post_allocation_setup_array(KlassHandle klass,
-                                                 HeapWord* obj, size_t size,
-                                                 int length);
+                                                 HeapWord* obj, int length);
 
   // Clears an allocated object.
   inline static void init_obj(HeapWord* obj, size_t size);
@@ -143,7 +164,6 @@ class CollectedHeap : public CHeapObj {
   // Filler object utilities.
   static inline size_t filler_array_hdr_size();
   static inline size_t filler_array_min_size();
-  static inline size_t filler_array_max_size();
 
   DEBUG_ONLY(static void fill_args_check(HeapWord* start, size_t words);)
   DEBUG_ONLY(static void zap_filler_array(HeapWord* start, size_t words, bool zap = true);)
@@ -170,6 +190,10 @@ class CollectedHeap : public CHeapObj {
     ParallelScavengeHeap,
     G1CollectedHeap
   };
+
+  static inline size_t filler_array_max_size() {
+    return _filler_array_max_size;
+  }
 
   virtual CollectedHeap::Name kind() const { return CollectedHeap::Abstract; }
 
@@ -217,8 +241,8 @@ class CollectedHeap : public CHeapObj {
     return p == NULL || is_in_reserved(p);
   }
 
-  // Returns "TRUE" if "p" points to the head of an allocated object in the
-  // heap. Since this method can be expensive in general, we restrict its
+  // Returns "TRUE" iff "p" points into the committed areas of the heap.
+  // Since this method can be expensive in general, we restrict its
   // use to assertion checking only.
   virtual bool is_in(const void* p) const = 0;
 
@@ -269,6 +293,13 @@ class CollectedHeap : public CHeapObj {
   // space). If you need the more conservative answer use is_permanent().
   virtual bool is_in_permanent(const void *p) const = 0;
 
+
+#ifdef ASSERT
+  // Returns true if "p" is in the part of the
+  // heap being collected.
+  virtual bool is_in_partial_collection(const void *p) = 0;
+#endif
+
   bool is_in_permanent_or_null(const void *p) const {
     return p == NULL || is_in_permanent(p);
   }
@@ -284,11 +315,7 @@ class CollectedHeap : public CHeapObj {
 
   // An object is scavengable if its location may move during a scavenge.
   // (A scavenge is a GC which is not a full GC.)
-  // Currently, this just means it is not perm (and not null).
-  // This could change if we rethink what's in perm-gen.
-  bool is_scavengable(const void *p) const {
-    return !is_in_permanent_or_null(p);
-  }
+  virtual bool is_scavengable(const void *p) = 0;
 
   // Returns "TRUE" if "p" is a method oop in the
   // current heap, with high probability. This predicate
@@ -306,20 +333,23 @@ class CollectedHeap : public CHeapObj {
   GCCause::Cause gc_cause() { return _gc_cause; }
 
   // Number of threads currently working on GC tasks.
-  int n_par_threads() { return _n_par_threads; }
+  uint n_par_threads() { return _n_par_threads; }
 
   // May be overridden to set additional parallelism.
-  virtual void set_par_threads(int t) { _n_par_threads = t; };
+  virtual void set_par_threads(uint t) { _n_par_threads = t; };
 
   // Preload classes into the shared portion of the heap, and then dump
   // that data to a file so that it can be loaded directly by another
   // VM (then terminate).
   virtual void preload_and_dump(TRAPS) { ShouldNotReachHere(); }
 
+  // Allocate and initialize instances of Class
+  static oop Class_obj_allocate(KlassHandle klass, int size, KlassHandle real_klass, TRAPS);
+
   // General obj/array allocation facilities.
   inline static oop obj_allocate(KlassHandle klass, int size, TRAPS);
   inline static oop array_allocate(KlassHandle klass, int size, int length, TRAPS);
-  inline static oop large_typearray_allocate(KlassHandle klass, int size, int length, TRAPS);
+  inline static oop array_allocate_nozero(KlassHandle klass, int size, int length, TRAPS);
 
   // Special obj/array allocation facilities.
   // Some heaps may want to manage "permanent" data uniquely. These default
@@ -334,23 +364,17 @@ class CollectedHeap : public CHeapObj {
   inline static oop permanent_obj_allocate_no_klass_install(KlassHandle klass,
                                                             int size,
                                                             TRAPS);
-  inline static void post_allocation_install_obj_klass(KlassHandle klass,
-                                                       oop obj,
-                                                       int size);
+  inline static void post_allocation_install_obj_klass(KlassHandle klass, oop obj);
   inline static oop permanent_array_allocate(KlassHandle klass, int size, int length, TRAPS);
 
   // Raw memory allocation facilities
   // The obj and array allocate methods are covers for these methods.
   // The permanent allocation method should default to mem_allocate if
-  // permanent memory isn't supported.
+  // permanent memory isn't supported. mem_allocate() should never be
+  // called to allocate TLABs, only individual objects.
   virtual HeapWord* mem_allocate(size_t size,
-                                 bool is_noref,
-                                 bool is_tlab,
                                  bool* gc_overhead_limit_was_exceeded) = 0;
   virtual HeapWord* permanent_mem_allocate(size_t size) = 0;
-
-  // The boundary between a "large" and "small" array of primitives, in words.
-  virtual size_t large_typearray_limit() = 0;
 
   // Utilities for turning raw memory into filler objects.
   //
@@ -588,13 +612,27 @@ class CollectedHeap : public CHeapObj {
   void pre_full_gc_dump();
   void post_full_gc_dump();
 
-  virtual void print() const = 0;
+  // Print heap information on the given outputStream.
   virtual void print_on(outputStream* st) const = 0;
+  // The default behavior is to call print_on() on tty.
+  virtual void print() const {
+    print_on(tty);
+  }
+  // Print more detailed heap information on the given
+  // outputStream. The default behaviour is to call print_on(). It is
+  // up to each subclass to override it and add any additional output
+  // it needs.
+  virtual void print_extended_on(outputStream* st) const {
+    print_on(st);
+  }
 
   // Print all GC threads (other than the VM thread)
   // used by this heap.
   virtual void print_gc_threads_on(outputStream* st) const = 0;
-  void print_gc_threads() { print_gc_threads_on(tty); }
+  // The default behavior is to call print_gc_threads_on() on tty.
+  void print_gc_threads() {
+    print_gc_threads_on(tty);
+  }
   // Iterator for all GC threads (other than VM thread)
   virtual void gc_threads_do(ThreadClosure* tc) const = 0;
 
@@ -602,8 +640,26 @@ class CollectedHeap : public CHeapObj {
   // Default implementation does nothing.
   virtual void print_tracing_info() const = 0;
 
+  // If PrintHeapAtGC is set call the appropriate routi
+  void print_heap_before_gc() {
+    if (PrintHeapAtGC) {
+      Universe::print_heap_before_gc();
+    }
+    if (_gc_heap_log != NULL) {
+      _gc_heap_log->log_heap_before();
+    }
+  }
+  void print_heap_after_gc() {
+    if (PrintHeapAtGC) {
+      Universe::print_heap_after_gc();
+    }
+    if (_gc_heap_log != NULL) {
+      _gc_heap_log->log_heap_after();
+    }
+  }
+
   // Heap verification
-  virtual void verify(bool allow_dirty, bool silent, bool option) = 0;
+  virtual void verify(bool allow_dirty, bool silent, VerifyOption option) = 0;
 
   // Non product verification and debugging.
 #ifndef PRODUCT
@@ -632,6 +688,10 @@ class CollectedHeap : public CHeapObj {
   // reduce the occurrence of ParallelGCThreads to uses where the
   // actual number may be germane.
   static bool use_parallel_gc_threads() { return ParallelGCThreads > 0; }
+
+  /////////////// Unit tests ///////////////
+
+  NOT_PRODUCT(static void test_is_in();)
 };
 
 // Class to set and reset the GC cause for a CollectedHeap.

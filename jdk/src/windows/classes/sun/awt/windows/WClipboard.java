@@ -71,17 +71,14 @@ public class WClipboard extends SunClipboard {
         // Get all of the target formats into which the Transferable can be
         // translated. Then, for each format, translate the data and post
         // it to the Clipboard.
-        Map formatMap = WDataTransferer.getInstance().
+        Map <Long, DataFlavor> formatMap = WDataTransferer.getInstance().
             getFormatsForTransferable(contents, flavorMap);
 
         openClipboard(this);
 
         try {
-            for (Iterator iter = formatMap.keySet().iterator();
-                 iter.hasNext(); ) {
-                Long lFormat = (Long)iter.next();
-                long format = lFormat.longValue();
-                DataFlavor flavor = (DataFlavor)formatMap.get(lFormat);
+            for (Long format : formatMap.keySet()) {
+                DataFlavor flavor = formatMap.get(format);
 
                 try {
                     byte[] bytes = WDataTransferer.getInstance().

@@ -55,9 +55,9 @@ sed_script="$SED -e \"s@^#warn .*@// -- This file was mechanically generated: Do
 for FILE in $RESOURCE_NAMES 
 do
     getlocalelist $FILE $EURO_FILES_LIST
-    sed_script=$sed_script"-e \"s/#"$FILE"_EuroLocales#/$localelist/g\" "
+    sed_script=$sed_script"-e \"s@#"$FILE"_EuroLocales#@$localelist@g\" "
     getlocalelist $FILE $NONEURO_FILES_LIST
-    sed_script=$sed_script"-e \"s/#"$FILE"_NonEuroLocales#/$localelist/g\" "
+    sed_script=$sed_script"-e \"s@#"$FILE"_NonEuroLocales#@$localelist@g\" "
 done
 
 sed_script=$sed_script"$INPUT_FILE > $OUTPUT_FILE"

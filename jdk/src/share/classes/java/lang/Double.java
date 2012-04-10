@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,6 +128,7 @@ public final class Double extends Number implements Comparable<Double> {
      *
      * @since JDK1.1
      */
+    @SuppressWarnings("unchecked")
     public static final Class<Double>   TYPE = (Class<Double>) Class.getPrimitiveClass("double");
 
     /**
@@ -139,7 +140,7 @@ public final class Double extends Number implements Comparable<Double> {
      * <li>Otherwise, the result is a string that represents the sign and
      * magnitude (absolute value) of the argument. If the sign is negative,
      * the first character of the result is '{@code -}'
-     * (<code>'&#92;u002D'</code>); if the sign is positive, no sign character
+     * ({@code '\u005Cu002D'}); if the sign is positive, no sign character
      * appears in the result. As for the magnitude <i>m</i>:
      * <ul>
      * <li>If <i>m</i> is infinity, it is represented by the characters
@@ -155,7 +156,7 @@ public final class Double extends Number implements Comparable<Double> {
      * <li>If <i>m</i> is greater than or equal to 10<sup>-3</sup> but less
      * than 10<sup>7</sup>, then it is represented as the integer part of
      * <i>m</i>, in decimal form with no leading zeroes, followed by
-     * '{@code .}' (<code>'&#92;u002E'</code>), followed by one or
+     * '{@code .}' ({@code '\u005Cu002E'}), followed by one or
      * more decimal digits representing the fractional part of <i>m</i>.
      *
      * <li>If <i>m</i> is less than 10<sup>-3</sup> or greater than or
@@ -167,9 +168,9 @@ public final class Double extends Number implements Comparable<Double> {
      * 10<sup><i>n</i></sup> so that 1 &le; <i>a</i> {@literal <} 10. The
      * magnitude is then represented as the integer part of <i>a</i>,
      * as a single decimal digit, followed by '{@code .}'
-     * (<code>'&#92;u002E'</code>), followed by decimal digits
+     * ({@code '\u005Cu002E'}), followed by decimal digits
      * representing the fractional part of <i>a</i>, followed by the
-     * letter '{@code E}' (<code>'&#92;u0045'</code>), followed
+     * letter '{@code E}' ({@code '\u005Cu0045'}), followed
      * by a representation of <i>n</i> as a decimal integer, as
      * produced by the method {@link Integer#toString(int)}.
      * </ul>
@@ -207,7 +208,7 @@ public final class Double extends Number implements Comparable<Double> {
      * <li>Otherwise, the result is a string that represents the sign
      * and magnitude of the argument. If the sign is negative, the
      * first character of the result is '{@code -}'
-     * (<code>'&#92;u002D'</code>); if the sign is positive, no sign
+     * ({@code '\u005Cu002D'}); if the sign is positive, no sign
      * character appears in the result. As for the magnitude <i>m</i>:
      *
      * <ul>
@@ -276,14 +277,14 @@ public final class Double extends Number implements Comparable<Double> {
          * 7.19.6.1; however, the output of this method is more
          * tightly specified.
          */
-        if (!FpUtils.isFinite(d) )
+        if (!isFinite(d) )
             // For infinity and NaN, use the decimal output.
             return Double.toString(d);
         else {
             // Initialized to maximum size of output.
             StringBuffer answer = new StringBuffer(24);
 
-            if (FpUtils.rawCopySign(1.0, d) == -1.0) // value is negative,
+            if (Math.copySign(1.0, d) == -1.0)    // value is negative,
                 answer.append("-");                  // so append sign info
 
             answer.append("0x");
@@ -322,7 +323,7 @@ public final class Double extends Number implements Comparable<Double> {
                 // E_min -1).
                 answer.append("p" + (subnormal ?
                                DoubleConsts.MIN_EXPONENT:
-                               FpUtils.getExponent(d) ));
+                               Math.getExponent(d) ));
             }
             return answer.toString();
         }
@@ -548,7 +549,7 @@ public final class Double extends Number implements Comparable<Double> {
      * @return  {@code true} if the value of the argument is NaN;
      *          {@code false} otherwise.
      */
-    static public boolean isNaN(double v) {
+    public static boolean isNaN(double v) {
         return (v != v);
     }
 
@@ -560,8 +561,22 @@ public final class Double extends Number implements Comparable<Double> {
      * @return  {@code true} if the value of the argument is positive
      *          infinity or negative infinity; {@code false} otherwise.
      */
-    static public boolean isInfinite(double v) {
+    public static boolean isInfinite(double v) {
         return (v == POSITIVE_INFINITY) || (v == NEGATIVE_INFINITY);
+    }
+
+    /**
+     * Returns {@code true} if the argument is a finite floating-point
+     * value; returns {@code false} otherwise (for NaN and infinity
+     * arguments).
+     *
+     * @param d the {@code double} value to be tested
+     * @return {@code true} if the argument is a finite
+     * floating-point value, {@code false} otherwise.
+     * @since 1.8
+     */
+    public static boolean isFinite(double d) {
+        return Math.abs(d) <= DoubleConsts.MAX_VALUE;
     }
 
     /**
@@ -593,8 +608,7 @@ public final class Double extends Number implements Comparable<Double> {
      * @see       java.lang.Double#valueOf(java.lang.String)
      */
     public Double(String s) throws NumberFormatException {
-        // REMIND: this is inefficient
-        this(valueOf(s).doubleValue());
+        value = parseDouble(s);
     }
 
     /**
@@ -702,7 +716,7 @@ public final class Double extends Number implements Comparable<Double> {
      * @return the {@code double} value represented by this object
      */
     public double doubleValue() {
-        return (double)value;
+        return value;
     }
 
     /**

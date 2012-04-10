@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.crypto.provider;
 
-import java.io.UnsupportedEncodingException;
 import java.security.KeyRep;
 import java.security.spec.InvalidKeySpecException;
 import javax.crypto.SecretKey;
@@ -56,9 +55,12 @@ final class PBEKey implements SecretKey {
             // Should allow an empty password.
             passwd = new char[0];
         }
-        for (int i=0; i<passwd.length; i++) {
-            if ((passwd[i] < '\u0020') || (passwd[i] > '\u007E')) {
-                throw new InvalidKeySpecException("Password is not ASCII");
+        // Accept "\0" to signify "zero-length password with no terminator".
+        if (!(passwd.length == 1 && passwd[0] == 0)) {
+            for (int i=0; i<passwd.length; i++) {
+                if ((passwd[i] < '\u0020') || (passwd[i] > '\u007E')) {
+                    throw new InvalidKeySpecException("Password is not ASCII");
+                }
             }
         }
         this.key = new byte[passwd.length];
@@ -69,7 +71,7 @@ final class PBEKey implements SecretKey {
     }
 
     public byte[] getEncoded() {
-        return (byte[])this.key.clone();
+        return this.key.clone();
     }
 
     public String getAlgorithm() {
@@ -118,7 +120,7 @@ final class PBEKey implements SecretKey {
          throws java.io.IOException, ClassNotFoundException
     {
         s.defaultReadObject();
-        key = (byte[])key.clone();
+        key = key.clone();
     }
 
 

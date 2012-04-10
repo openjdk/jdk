@@ -68,14 +68,18 @@ import javax.print.attribute.standard.Sides;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.CharConversionException;
 import java.io.File;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -673,15 +677,38 @@ public class PSPrinterJob extends RasterPrinterJob {
     private class PrinterSpooler implements java.security.PrivilegedAction {
         PrinterException pex;
 
+        private void handleProcessFailure(final Process failedProcess,
+                final String[] execCmd, final int result) throws IOException {
+            try (StringWriter sw = new StringWriter();
+                    PrintWriter pw = new PrintWriter(sw)) {
+                pw.append("error=").append(Integer.toString(result));
+                pw.append(" running:");
+                for (String arg: execCmd) {
+                    pw.append(" '").append(arg).append("'");
+                }
+                try (InputStream is = failedProcess.getErrorStream();
+                        InputStreamReader isr = new InputStreamReader(is);
+                        BufferedReader br = new BufferedReader(isr)) {
+                    while (br.ready()) {
+                        pw.println();
+                        pw.append("\t\t").append(br.readLine());
+                    }
+                } finally {
+                    pw.flush();
+                    throw new IOException(sw.toString());
+                }
+            }
+        }
+
         public Object run() {
+            if (spoolFile == null || !spoolFile.exists()) {
+               pex = new PrinterException("No spool file");
+               return null;
+            }
             try {
                 /**
                  * Spool to the printer.
                  */
-                if (spoolFile == null || !spoolFile.exists()) {
-                   pex = new PrinterException("No spool file");
-                   return null;
-                }
                 String fileName = spoolFile.getAbsolutePath();
                 String execCmd[] = printExecCmd(mDestination, mOptions,
                                mNoJobSheet, getJobNameInt(),
@@ -689,12 +716,16 @@ public class PSPrinterJob extends RasterPrinterJob {
 
                 Process process = Runtime.getRuntime().exec(execCmd);
                 process.waitFor();
-                spoolFile.delete();
-
+                final int result = process.exitValue();
+                if (0 != result) {
+                    handleProcessFailure(process, execCmd, result);
+                }
             } catch (IOException ex) {
                 pex = new PrinterIOException(ex);
             } catch (InterruptedException ie) {
                 pex = new PrinterException(ie.toString());
+            } finally {
+                spoolFile.delete();
             }
             return null;
         }
@@ -1534,7 +1565,9 @@ public class PSPrinterJob extends RasterPrinterJob {
             pFlags |= NOSHEET;
             ncomps+=1;
         }
-       if (System.getProperty("os.name").equals("Linux")) {
+
+       String osname = System.getProperty("os.name");
+       if (osname.equals("Linux") || osname.startsWith("Mac OS X")) {
             execCmd = new String[ncomps];
             execCmd[n++] = "/usr/bin/lpr";
             if ((pFlags & PRINTER) != 0) {

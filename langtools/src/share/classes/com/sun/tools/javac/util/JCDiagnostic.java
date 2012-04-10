@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.api.DiagnosticFormatter;
 import com.sun.tools.javac.code.Lint.LintCategory;
+import com.sun.tools.javac.parser.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticType.*;
@@ -70,7 +71,16 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
             this(JavacMessages.instance(context), "compiler");
             context.put(diagnosticFactoryKey, this);
 
-            Options options = Options.instance(context);
+            final Options options = Options.instance(context);
+            initOptions(options);
+            options.addListener(new Runnable() {
+               public void run() {
+                   initOptions(options);
+               }
+            });
+        }
+
+        private void initOptions(Options options) {
             if (options.isSet("onlySyntaxErrorsUnrecoverable"))
                 defaultErrorFlags.add(DiagnosticFlag.RECOVERABLE);
         }
@@ -304,7 +314,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         /** If there is a tree node, and if endPositions are available, get
          *  the end position of the tree node. Otherwise, just returns the
          *  same as getPreferredPosition(). */
-        int getEndPosition(Map<JCTree, Integer> endPosTable);
+        int getEndPosition(EndPosTable endPosTable);
     }
 
     /**
@@ -328,7 +338,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
             return pos;
         }
 
-        public int getEndPosition(Map<JCTree, Integer> endPosTable) {
+        public int getEndPosition(EndPosTable endPosTable) {
             return pos;
         }
 

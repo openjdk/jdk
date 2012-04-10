@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,6 +155,14 @@ public class ClientAuth extends PKCS11Test {
         SSLSocket sslSocket = (SSLSocket)
             sslsf.createSocket("localhost", serverPort);
 
+        if (clientProtocol != null) {
+            sslSocket.setEnabledProtocols(new String[] {clientProtocol});
+        }
+
+        if (clientCiperSuite != null) {
+            sslSocket.setEnabledCipherSuites(new String[] {clientCiperSuite});
+        }
+
         InputStream sslIS = sslSocket.getInputStream();
         OutputStream sslOS = sslSocket.getOutputStream();
 
@@ -176,7 +184,22 @@ public class ClientAuth extends PKCS11Test {
     volatile Exception serverException = null;
     volatile Exception clientException = null;
 
+    private static String clientProtocol = null;
+    private static String clientCiperSuite = null;
+
+    private static void parseArguments(String[] args) {
+        if (args.length > 0) {
+            clientProtocol = args[0];
+        }
+
+        if (args.length > 1) {
+            clientCiperSuite = args[1];
+        }
+    }
+
     public static void main(String[] args) throws Exception {
+        // Get the customized arguments.
+        parseArguments(args);
         main(new ClientAuth());
     }
 

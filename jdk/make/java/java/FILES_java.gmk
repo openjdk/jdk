@@ -208,7 +208,6 @@ JAVA_JAVA_java = \
     java/util/Observable.java \
     java/util/Observer.java \
     java/util/Properties.java \
-        java/util/XMLUtils.java \
         java/util/InvalidPropertiesFormatException.java \
     java/util/PropertyPermission.java \
     java/util/PropertyResourceBundle.java \

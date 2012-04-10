@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,33 +31,36 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.NestingKind;
 import javax.tools.Diagnostic;
+import javax.tools.DiagnosticListener;
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
+import javax.tools.JavaFileObject.Kind;
 
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import javax.lang.model.element.Modifier;
-import javax.tools.DiagnosticListener;
-import javax.tools.JavaFileObject.Kind;
+import com.sun.tools.javac.util.JCDiagnostic;
 
 /**
  *  Wrap objects to enable unchecked exceptions to be caught and handled.
@@ -146,7 +149,7 @@ public class ClientCodeWrapper {
             return fo;
     }
 
-    <T> DiagnosticListener<T> wrap(DiagnosticListener<T> dl) {
+    <T /*super JavaFileOject*/> DiagnosticListener<T> wrap(DiagnosticListener<T> dl) {
         if (isTrusted(dl))
             return dl;
         return new WrappedDiagnosticListener<T>(dl);
@@ -158,6 +161,30 @@ public class ClientCodeWrapper {
         return new WrappedTaskListener(tl);
     }
 
+    TaskListener unwrap(TaskListener l) {
+        if (l instanceof WrappedTaskListener)
+            return ((WrappedTaskListener) l).clientTaskListener;
+        else
+            return l;
+    }
+
+    Collection<TaskListener> unwrap(Collection<? extends TaskListener> listeners) {
+        Collection<TaskListener> c = new ArrayList<TaskListener>(listeners.size());
+        for (TaskListener l: listeners)
+            c.add(unwrap(l));
+        return c;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> Diagnostic<T> unwrap(final Diagnostic<T> diagnostic) {
+        if (diagnostic instanceof JCDiagnostic) {
+            JCDiagnostic d = (JCDiagnostic) diagnostic;
+            return (Diagnostic<T>) new DiagnosticSourceUnwrapper(d);
+        } else {
+            return diagnostic;
+        }
+    }
+
     protected boolean isTrusted(Object o) {
         Class<?> c = o.getClass();
         Boolean trusted = trustedClasses.get(c);
@@ -167,6 +194,10 @@ public class ClientCodeWrapper {
             trustedClasses.put(c, trusted);
         }
         return trusted;
+    }
+
+    private String wrappedToString(Class<?> wrapperClass, Object wrapped) {
+        return wrapperClass.getSimpleName() + "[" + wrapped + "]";
     }
 
     // <editor-fold defaultstate="collapsed" desc="Wrapper classes">
@@ -349,6 +380,11 @@ public class ClientCodeWrapper {
                 throw new ClientCodeException(e);
             }
         }
+
+        @Override
+        public String toString() {
+            return wrappedToString(getClass(), clientJavaFileManager);
+        }
     }
 
     protected class WrappedFileObject implements FileObject {
@@ -474,6 +510,11 @@ public class ClientCodeWrapper {
                 throw new ClientCodeException(e);
             }
         }
+
+        @Override
+        public String toString() {
+            return wrappedToString(getClass(), clientFileObject);
+        }
     }
 
     protected class WrappedJavaFileObject extends WrappedFileObject implements JavaFileObject {
@@ -532,9 +573,14 @@ public class ClientCodeWrapper {
                 throw new ClientCodeException(e);
             }
         }
+
+        @Override
+        public String toString() {
+            return wrappedToString(getClass(), clientFileObject);
+        }
     }
 
-    protected class WrappedDiagnosticListener<T> implements DiagnosticListener<T> {
+    protected class WrappedDiagnosticListener<T /*super JavaFileObject*/> implements DiagnosticListener<T> {
         protected DiagnosticListener<T> clientDiagnosticListener;
         WrappedDiagnosticListener(DiagnosticListener<T> clientDiagnosticListener) {
             clientDiagnosticListener.getClass(); // null check
@@ -544,7 +590,7 @@ public class ClientCodeWrapper {
         @Override
         public void report(Diagnostic<? extends T> diagnostic) {
             try {
-                clientDiagnosticListener.report(diagnostic);
+                clientDiagnosticListener.report(unwrap(diagnostic));
             } catch (ClientCodeException e) {
                 throw e;
             } catch (RuntimeException e) {
@@ -552,6 +598,60 @@ public class ClientCodeWrapper {
             } catch (Error e) {
                 throw new ClientCodeException(e);
             }
+        }
+
+        @Override
+        public String toString() {
+            return wrappedToString(getClass(), clientDiagnosticListener);
+        }
+    }
+
+    public class DiagnosticSourceUnwrapper implements Diagnostic<JavaFileObject> {
+        public final JCDiagnostic d;
+
+        DiagnosticSourceUnwrapper(JCDiagnostic d) {
+            this.d = d;
+        }
+
+        public Diagnostic.Kind getKind() {
+            return d.getKind();
+        }
+
+        public JavaFileObject getSource() {
+            return unwrap(d.getSource());
+        }
+
+        public long getPosition() {
+            return d.getPosition();
+        }
+
+        public long getStartPosition() {
+            return d.getStartPosition();
+        }
+
+        public long getEndPosition() {
+            return d.getEndPosition();
+        }
+
+        public long getLineNumber() {
+            return d.getLineNumber();
+        }
+
+        public long getColumnNumber() {
+            return d.getColumnNumber();
+        }
+
+        public String getCode() {
+            return d.getCode();
+        }
+
+        public String getMessage(Locale locale) {
+            return d.getMessage(locale);
+        }
+
+        @Override
+        public String toString() {
+            return d.toString();
         }
     }
 
@@ -586,6 +686,11 @@ public class ClientCodeWrapper {
             } catch (Error e) {
                 throw new ClientCodeException(e);
             }
+        }
+
+        @Override
+        public String toString() {
+            return wrappedToString(getClass(), clientTaskListener);
         }
     }
 

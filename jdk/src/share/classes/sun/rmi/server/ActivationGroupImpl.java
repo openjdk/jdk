@@ -66,10 +66,10 @@ public class ActivationGroupImpl extends ActivationGroup {
 
     /** maps persistent IDs to activated remote objects */
     private final Hashtable<ActivationID,ActiveEntry> active =
-        new Hashtable<ActivationID,ActiveEntry>();
+        new Hashtable<>();
     private boolean groupInactive = false;
     private final ActivationGroupID groupID;
-    private final List<ActivationID> lockedIDs = new ArrayList<ActivationID>();
+    private final List<ActivationID> lockedIDs = new ArrayList<>();
 
     /**
      * Creates a default activation group implementation.
@@ -296,14 +296,9 @@ public class ActivationGroupImpl extends ActivationGroup {
             active.put(id, entry);
             return entry.mobj;
 
-        } catch (NoSuchMethodException e) {
-            /* user forgot to provide activatable constructor? */
-            throw new ActivationException
-                ("Activatable object must provide an activation"+
-                 " constructor", e);
-
-        } catch (NoSuchMethodError e) {
-            /* code recompiled and user forgot to provide
+        } catch (NoSuchMethodException | NoSuchMethodError e) {
+            /* user forgot to provide activatable constructor?
+             * or code recompiled and user forgot to provide
              *  activatable constructor?
              */
             throw new ActivationException

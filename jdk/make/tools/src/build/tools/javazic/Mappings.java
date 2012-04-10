@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package build.tools.javazic;
 
 import  java.util.ArrayList;
 import  java.util.HashMap;
-import  java.util.HashSet;
-import  java.util.Iterator;
 import  java.util.LinkedList;
 import  java.util.List;
 import  java.util.Map;
@@ -79,8 +77,8 @@ class Mappings {
             // If the GMT offset of this Zone will change in some
             // future time, this Zone is added to the exclude list.
             boolean isExcluded = false;
-            if (zone.size() > 1) {
-                ZoneRec zrec = zone.get(zone.size()-2);
+            for (int i = 0; i < zone.size(); i++) {
+                ZoneRec zrec = zone.get(i);
                 if ((zrec.getGmtOffset() != rawOffset)
                     && (zrec.getUntilTime(0) > Time.getCurrentTime())) {
                     if (excludeList == null) {
@@ -88,6 +86,7 @@ class Mappings {
                     }
                     excludeList.add(zone.getName());
                     isExcluded = true;
+                    break;
                 }
             }
 
@@ -164,6 +163,20 @@ class Mappings {
         for (String key : toBeRemoved) {
             aliases.remove(key);
         }
+        // Eliminate any alias-to-alias mappings. For example, if
+        // there are A->B and B->C, A->B is changed to A->C.
+        Map<String, String> newMap = new HashMap<String, String>();
+        for (String key : aliases.keySet()) {
+            String realid = aliases.get(key);
+            String leaf = realid;
+            while (aliases.get(leaf) != null) {
+                leaf = aliases.get(leaf);
+            }
+            if (!realid.equals(leaf)) {
+                newMap.put(key, leaf);
+            }
+        }
+        aliases.putAll(newMap);
     }
 
     Map<String,String> getAliases() {

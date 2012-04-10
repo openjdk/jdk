@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,9 @@
 
 package sun.security.x509;
 
-import java.io.InputStream;
 import java.io.IOException;
 import java.security.cert.CRLException;
 import java.security.cert.CRLReason;
-import java.security.cert.CertificateException;
 import java.security.cert.X509CRLEntry;
 import java.math.BigInteger;
 import java.util.*;
@@ -281,7 +279,7 @@ public class X509CRLEntryImpl extends X509CRLEntry
         if (obj == null)
             return null;
         CRLReasonCodeExtension reasonCode = (CRLReasonCodeExtension)obj;
-        return (Integer)(reasonCode.get(reasonCode.REASON));
+        return reasonCode.get(CRLReasonCodeExtension.REASON);
     }
 
     /**
@@ -299,13 +297,13 @@ public class X509CRLEntryImpl extends X509CRLEntry
             sb.append("\n    Certificate issuer: " + certIssuer);
         }
         if (extensions != null) {
-            Collection allEntryExts = extensions.getAllExtensions();
-            Object[] objs = allEntryExts.toArray();
+            Collection<Extension> allEntryExts = extensions.getAllExtensions();
+            Extension[] exts = allEntryExts.toArray(new Extension[0]);
 
-            sb.append("\n    CRL Entry Extensions: " + objs.length);
-            for (int i = 0; i < objs.length; i++) {
+            sb.append("\n    CRL Entry Extensions: " + exts.length);
+            for (int i = 0; i < exts.length; i++) {
                 sb.append("\n    [" + (i+1) + "]: ");
-                Extension ext = (Extension)objs[i];
+                Extension ext = exts[i];
                 try {
                     if (OIDMap.getClass(ext.getExtensionId()) == null) {
                         sb.append(ext.toString());
@@ -409,7 +407,7 @@ public class X509CRLEntryImpl extends X509CRLEntry
                                                  e.hasMoreElements();) {
                     ex = e.nextElement();
                     inCertOID = ex.getExtensionId();
-                    if (inCertOID.equals(findOID)) {
+                    if (inCertOID.equals((Object)findOID)) {
                         crlExt = ex;
                         break;
                     }

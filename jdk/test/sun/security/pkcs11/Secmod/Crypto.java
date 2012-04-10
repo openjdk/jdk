@@ -27,6 +27,7 @@
  * @summary verify that NSS no-db mode works correctly
  * @author Andreas Sterbenz
  * @library ..
+ * @run main/othervm Crypto
  */
 
 import java.util.*;

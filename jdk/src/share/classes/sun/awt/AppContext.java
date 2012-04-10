@@ -171,7 +171,7 @@ public final class AppContext {
      * HashMap's potentially risky methods, such as clear(), elements(),
      * putAll(), etc.
      */
-    private final HashMap table = new HashMap();
+    private final Map<Object, Object> table = new HashMap<>();
 
     private final ThreadGroup threadGroup;
 
@@ -198,8 +198,8 @@ public final class AppContext {
         // On the main Thread, we get the ThreadGroup, make a corresponding
         // AppContext, and instantiate the Java EventQueue.  This way, legacy
         // code is unaffected by the move to multiple AppContext ability.
-        AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
                 ThreadGroup currentThreadGroup =
                         Thread.currentThread().getThreadGroup();
                 ThreadGroup parentThreadGroup = currentThreadGroup.getParent();
@@ -210,7 +210,7 @@ public final class AppContext {
                 }
                 mainAppContext = new AppContext(currentThreadGroup);
                 numAppContexts = 1;
-                return mainAppContext;
+                return null;
             }
         });
     }
@@ -342,6 +342,16 @@ public final class AppContext {
         return appContext;
     }
 
+    /**
+     * Returns the main ("system") AppContext.
+     *
+     * @return  the main AppContext
+     * @since   1.8
+     */
+    final static AppContext getMainAppContext() {
+        return mainAppContext;
+    }
+
     private long DISPOSAL_TIMEOUT = 5000;  // Default to 5-second timeout
                                            // for disposal of all Frames
                                            // (we wait for this time twice,
@@ -399,8 +409,8 @@ public final class AppContext {
                         log.finer("exception occured while disposing app context", t);
                     }
                 }
-                AccessController.doPrivileged(new PrivilegedAction() {
-                        public Object run() {
+                AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                        public Void run() {
                             if (!GraphicsEnvironment.isHeadless() && SystemTray.isSupported())
                             {
                                 SystemTray systemTray = SystemTray.getSystemTray();
@@ -523,7 +533,7 @@ public final class AppContext {
         }
     }
 
-    static final class CreateThreadAction implements PrivilegedAction {
+    static final class CreateThreadAction implements PrivilegedAction<Thread> {
         private final AppContext appContext;
         private final Runnable runnable;
 
@@ -532,7 +542,7 @@ public final class AppContext {
             runnable = r;
         }
 
-        public Object run() {
+        public Thread run() {
             Thread t = new Thread(appContext.getThreadGroup(), runnable);
             t.setContextClassLoader(appContext.getContextClassLoader());
             t.setPriority(Thread.NORM_PRIORITY + 1);
@@ -552,8 +562,8 @@ public final class AppContext {
             if (appContext != AppContext.getAppContext()) {
                 // Create a thread that belongs to the thread group associated
                 // with the AppContext and invokes EventQueue.postEvent.
-                PrivilegedAction action = new CreateThreadAction(appContext, r);
-                Thread thread = (Thread)AccessController.doPrivileged(action);
+                PrivilegedAction<Thread> action = new CreateThreadAction(appContext, r);
+                Thread thread = AccessController.doPrivileged(action);
                 thread.start();
             } else {
                 r.run();

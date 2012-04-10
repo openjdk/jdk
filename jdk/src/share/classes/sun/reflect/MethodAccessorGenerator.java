@@ -25,10 +25,8 @@
 
 package sun.reflect;
 
-import java.lang.reflect.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import sun.misc.Unsafe;
 
 /** Generator for sun.reflect.MethodAccessor and
     sun.reflect.ConstructorAccessor objects using bytecodes to
@@ -50,11 +48,11 @@ class MethodAccessorGenerator extends AccessorGenerator {
     private static volatile int constructorSymnum = 0;
     private static volatile int serializationConstructorSymnum = 0;
 
-    private Class   declaringClass;
-    private Class[] parameterTypes;
-    private Class   returnType;
-    private boolean isConstructor;
-    private boolean forSerialization;
+    private Class<?>   declaringClass;
+    private Class<?>[] parameterTypes;
+    private Class<?>   returnType;
+    private boolean    isConstructor;
+    private boolean    forSerialization;
 
     private short targetMethodRef;
     private short invokeIdx;
@@ -67,11 +65,11 @@ class MethodAccessorGenerator extends AccessorGenerator {
     }
 
     /** This routine is not thread-safe */
-    public MethodAccessor generateMethod(Class declaringClass,
-                                         String name,
-                                         Class[] parameterTypes,
-                                         Class   returnType,
-                                         Class[] checkedExceptions,
+    public MethodAccessor generateMethod(Class<?> declaringClass,
+                                         String   name,
+                                         Class<?>[] parameterTypes,
+                                         Class<?>   returnType,
+                                         Class<?>[] checkedExceptions,
                                          int modifiers)
     {
         return (MethodAccessor) generate(declaringClass,
@@ -86,9 +84,9 @@ class MethodAccessorGenerator extends AccessorGenerator {
     }
 
     /** This routine is not thread-safe */
-    public ConstructorAccessor generateConstructor(Class declaringClass,
-                                                   Class[] parameterTypes,
-                                                   Class[] checkedExceptions,
+    public ConstructorAccessor generateConstructor(Class<?> declaringClass,
+                                                   Class<?>[] parameterTypes,
+                                                   Class<?>[] checkedExceptions,
                                                    int modifiers)
     {
         return (ConstructorAccessor) generate(declaringClass,
@@ -104,11 +102,11 @@ class MethodAccessorGenerator extends AccessorGenerator {
 
     /** This routine is not thread-safe */
     public SerializationConstructorAccessorImpl
-    generateSerializationConstructor(Class declaringClass,
-                                     Class[] parameterTypes,
-                                     Class[] checkedExceptions,
+    generateSerializationConstructor(Class<?> declaringClass,
+                                     Class<?>[] parameterTypes,
+                                     Class<?>[] checkedExceptions,
                                      int modifiers,
-                                     Class targetConstructorClass)
+                                     Class<?> targetConstructorClass)
     {
         return (SerializationConstructorAccessorImpl)
             generate(declaringClass,
@@ -123,15 +121,15 @@ class MethodAccessorGenerator extends AccessorGenerator {
     }
 
     /** This routine is not thread-safe */
-    private MagicAccessorImpl generate(final Class declaringClass,
+    private MagicAccessorImpl generate(final Class<?> declaringClass,
                                        String name,
-                                       Class[] parameterTypes,
-                                       Class   returnType,
-                                       Class[] checkedExceptions,
+                                       Class<?>[] parameterTypes,
+                                       Class<?>   returnType,
+                                       Class<?>[] checkedExceptions,
                                        int modifiers,
                                        boolean isConstructor,
                                        boolean forSerialization,
-                                       Class serializationTargetClass)
+                                       Class<?> serializationTargetClass)
     {
         ByteVector vec = ByteVectorFactory.create();
         asm = new ClassFileAssembler(vec);
@@ -340,7 +338,7 @@ class MethodAccessorGenerator extends AccessorGenerator {
         // Output class information for non-primitive parameter types
         nonPrimitiveParametersBaseIdx = add(asm.cpi(), S2);
         for (int i = 0; i < parameterTypes.length; i++) {
-            Class c = parameterTypes[i];
+            Class<?> c = parameterTypes[i];
             if (!isPrimitive(c)) {
                 asm.emitConstantPoolUTF8(getClassName(c, false));
                 asm.emitConstantPoolClass(asm.cpi());
@@ -403,12 +401,8 @@ class MethodAccessorGenerator extends AccessorGenerator {
                                  0,
                                  bytes.length,
                                  declaringClass.getClassLoader()).newInstance();
-                        } catch (InstantiationException e) {
-                            throw (InternalError)
-                                new InternalError().initCause(e);
-                        } catch (IllegalAccessException e) {
-                            throw (InternalError)
-                                new InternalError().initCause(e);
+                        } catch (InstantiationException | IllegalAccessException e) {
+                            throw new InternalError(e);
                         }
                     }
                 });
@@ -530,7 +524,7 @@ class MethodAccessorGenerator extends AccessorGenerator {
         byte count = 1; // both invokeinterface opcode's "count" as well as
         // num args of other invoke bytecodes
         for (int i = 0; i < parameterTypes.length; i++) {
-            Class paramType = parameterTypes[i];
+            Class<?> paramType = parameterTypes[i];
             count += (byte) typeSizeInStackSlots(paramType);
             if (nextParamLabel != null) {
                 nextParamLabel.bind();
@@ -577,7 +571,7 @@ class MethodAccessorGenerator extends AccessorGenerator {
                 nextParamLabel = new Label();
 
                 for (int j = 0; j < primitiveTypes.length; j++) {
-                    Class c = primitiveTypes[j];
+                    Class<?> c = primitiveTypes[j];
                     if (canWidenTo(c, paramType)) {
                         if (l != null) {
                             l.bind();

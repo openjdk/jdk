@@ -87,7 +87,7 @@ public interface ReferenceList {
      *
      * @return Iterator.
      */
-    public Iterator getReferences();
+    public Iterator<Reference> getReferences();
 
     /**
      * <code>DataReference</code> factory method. Returns a

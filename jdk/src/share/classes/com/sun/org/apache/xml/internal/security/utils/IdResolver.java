@@ -23,6 +23,7 @@ package com.sun.org.apache.xml.internal.security.utils;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.WeakHashMap;
+import java.util.Map;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -52,7 +53,8 @@ public class IdResolver {
     private static java.util.logging.Logger log =
         java.util.logging.Logger.getLogger(IdResolver.class.getName());
 
-    private static WeakHashMap docMap = new WeakHashMap();
+    private static Map<Document, Map<String, WeakReference<Element>>> docMap =
+                    new WeakHashMap<Document, Map<String, WeakReference<Element>>>();
 
     /**
      * Constructor IdResolver
@@ -70,15 +72,15 @@ public class IdResolver {
      */
     public static void registerElementById(Element element, String idValue) {
         Document doc = element.getOwnerDocument();
-        WeakHashMap elementMap;
+        Map<String, WeakReference<Element>> elementMap;
         synchronized (docMap) {
-            elementMap = (WeakHashMap) docMap.get(doc);
+            elementMap = docMap.get(doc);
             if (elementMap == null) {
-                elementMap = new WeakHashMap();
+                elementMap = new WeakHashMap<String, WeakReference<Element>>();
                 docMap.put(doc, elementMap);
             }
         }
-        elementMap.put(idValue, new WeakReference(element));
+        elementMap.put(idValue, new WeakReference<Element>(element));
     }
 
     /**
@@ -156,20 +158,20 @@ public class IdResolver {
     private static Element getElementByIdType(Document doc, String id) {
         if (log.isLoggable(java.util.logging.Level.FINE))
             log.log(java.util.logging.Level.FINE, "getElementByIdType() Search for ID " + id);
-        WeakHashMap elementMap;
+        Map<String, WeakReference<Element>> elementMap;
         synchronized (docMap) {
-            elementMap = (WeakHashMap) docMap.get(doc);
+            elementMap = docMap.get(doc);
         }
         if (elementMap != null) {
-            WeakReference weakReference = (WeakReference) elementMap.get(id);
+            WeakReference<Element> weakReference =  elementMap.get(id);
             if (weakReference != null) {
-                return (Element) weakReference.get();
+                return weakReference.get();
             }
         }
         return null;
     }
 
-    private static java.util.List names;
+    private static java.util.List<String> names;
     private static int namesLength;
     static {
         String namespaces[]={
@@ -248,6 +250,8 @@ public class IdResolver {
                     int index=s==null ? elementIndex : names.indexOf(n.getNamespaceURI());
                     index=(index<0) ? namesLength : index;
                     String name=n.getLocalName();
+                    if (name == null)
+                        name = n.getName();
                     if (name.length()>2)
                         continue;
                     String value=n.getNodeValue();

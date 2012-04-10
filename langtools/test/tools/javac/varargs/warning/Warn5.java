@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug     6993978
+ * @bug     6993978 7097436
  * @summary Project Coin: Annotation to reduce varargs warnings
  * @author  mcimadamore
  * @run main Warn5
@@ -31,8 +31,8 @@
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.JavacTool;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import javax.tools.Diagnostic;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
@@ -95,7 +95,6 @@ public class Warn5 {
         METHOD("void m"),
         CONSTRUCTOR("Test");
 
-
         String name;
 
         MethodKind(String name) {
@@ -155,7 +154,124 @@ public class Warn5 {
         }
     }
 
-    static class JavaSource extends SimpleJavaFileObject {
+    enum WarningKind {
+        UNSAFE_BODY,
+        UNSAFE_DECL,
+        MALFORMED_SAFEVARARGS,
+        REDUNDANT_SAFEVARARGS;
+    }
+
+    // Create a single file manager and reuse it for each compile to save time.
+    static StandardJavaFileManager fm = JavacTool.create().getStandardFileManager(null, null, null);
+
+    public static void main(String... args) throws Exception {
+        for (SourceLevel sourceLevel : SourceLevel.values()) {
+            for (XlintOption xlint : XlintOption.values()) {
+                for (TrustMe trustMe : TrustMe.values()) {
+                    for (SuppressLevel suppressLevel : SuppressLevel.values()) {
+                        for (ModifierKind modKind : ModifierKind.values()) {
+                            for (MethodKind methKind : MethodKind.values()) {
+                                for (SignatureKind sig : SignatureKind.values()) {
+                                    for (BodyKind body : BodyKind.values()) {
+                                        new Warn5(sourceLevel,
+                                                xlint,
+                                                trustMe,
+                                                suppressLevel,
+                                                modKind,
+                                                methKind,
+                                                sig,
+                                                body).test();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    final SourceLevel sourceLevel;
+    final XlintOption xlint;
+    final TrustMe trustMe;
+    final SuppressLevel suppressLevel;
+    final ModifierKind modKind;
+    final MethodKind methKind;
+    final SignatureKind sig;
+    final BodyKind body;
+    final JavaSource source;
+    final DiagnosticChecker dc;
+
+    public Warn5(SourceLevel sourceLevel, XlintOption xlint, TrustMe trustMe, SuppressLevel suppressLevel, ModifierKind modKind, MethodKind methKind, SignatureKind sig, BodyKind body) {
+        this.sourceLevel = sourceLevel;
+        this.xlint = xlint;
+        this.trustMe = trustMe;
+        this.suppressLevel = suppressLevel;
+        this.modKind = modKind;
+        this.methKind = methKind;
+        this.sig = sig;
+        this.body = body;
+        this.source = new JavaSource();
+        this.dc = new DiagnosticChecker();
+    }
+
+    void test() throws Exception {
+        final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
+        JavacTask ct = (JavacTask)tool.getTask(null, fm, dc,
+                Arrays.asList(xlint.getXlintOption(), "-source", sourceLevel.sourceKey), null, Arrays.asList(source));
+        ct.analyze();
+        check();
+    }
+
+    void check() {
+
+        EnumSet<WarningKind> expectedWarnings = EnumSet.noneOf(WarningKind.class);
+
+        if (sourceLevel == SourceLevel.JDK_7 &&
+                trustMe == TrustMe.TRUST &&
+                suppressLevel != SuppressLevel.VARARGS &&
+                xlint != XlintOption.NONE &&
+                sig.isVarargs && !sig.isReifiableArg && body.hasAliasing &&
+                (methKind == MethodKind.CONSTRUCTOR || (methKind == MethodKind.METHOD && modKind != ModifierKind.NONE))) {
+            expectedWarnings.add(WarningKind.UNSAFE_BODY);
+        }
+
+        if (sourceLevel == SourceLevel.JDK_7 &&
+                trustMe == TrustMe.DONT_TRUST &&
+                sig.isVarargs &&
+                !sig.isReifiableArg &&
+                xlint == XlintOption.ALL) {
+            expectedWarnings.add(WarningKind.UNSAFE_DECL);
+        }
+
+        if (sourceLevel == SourceLevel.JDK_7 &&
+                trustMe == TrustMe.TRUST &&
+                (!sig.isVarargs ||
+                (modKind == ModifierKind.NONE && methKind == MethodKind.METHOD))) {
+            expectedWarnings.add(WarningKind.MALFORMED_SAFEVARARGS);
+        }
+
+        if (sourceLevel == SourceLevel.JDK_7 &&
+                trustMe == TrustMe.TRUST &&
+                xlint != XlintOption.NONE &&
+                suppressLevel != SuppressLevel.VARARGS &&
+                (modKind != ModifierKind.NONE || methKind == MethodKind.CONSTRUCTOR) &&
+                sig.isVarargs &&
+                sig.isReifiableArg) {
+            expectedWarnings.add(WarningKind.REDUNDANT_SAFEVARARGS);
+        }
+
+        if (!expectedWarnings.containsAll(dc.warnings) ||
+                !dc.warnings.containsAll(expectedWarnings)) {
+            throw new Error("invalid diagnostics for source:\n" +
+                    source.getCharContent(true) +
+                    "\nOptions: " + xlint.getXlintOption() +
+                    "\nExpected warnings: " + expectedWarnings +
+                    "\nFound warnings: " + dc.warnings);
+        }
+    }
+
+    class JavaSource extends SimpleJavaFileObject {
 
         String template = "import com.sun.tools.javac.api.*;\n" +
                           "import java.util.List;\n" +
@@ -167,12 +283,11 @@ public class Warn5 {
 
         String source;
 
-        public JavaSource(TrustMe trustMe, SuppressLevel suppressLevel, ModifierKind modKind,
-                MethodKind methKind, SignatureKind meth, BodyKind body) {
+        public JavaSource() {
             super(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE);
             source = template.replace("#T", trustMe.anno).
                     replace("#S", suppressLevel.getSuppressAnno()).
-                    replace("#M", meth.getSignature(modKind, methKind)).
+                    replace("#M", sig.getSignature(modKind, methKind)).
                     replace("#B", body.body);
         }
 
@@ -182,117 +297,34 @@ public class Warn5 {
         }
     }
 
-    public static void main(String... args) throws Exception {
-        for (SourceLevel sourceLevel : SourceLevel.values()) {
-            for (XlintOption xlint : XlintOption.values()) {
-                for (TrustMe trustMe : TrustMe.values()) {
-                    for (SuppressLevel suppressLevel : SuppressLevel.values()) {
-                        for (ModifierKind modKind : ModifierKind.values()) {
-                            for (MethodKind methKind : MethodKind.values()) {
-                                for (SignatureKind sig : SignatureKind.values()) {
-                                    for (BodyKind body : BodyKind.values()) {
-                                        test(sourceLevel,
-                                                xlint,
-                                                trustMe,
-                                                suppressLevel,
-                                                modKind,
-                                                methKind,
-                                                sig,
-                                                body);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    class DiagnosticChecker implements javax.tools.DiagnosticListener<JavaFileObject> {
 
-    // Create a single file manager and reuse it for each compile to save time.
-    static StandardJavaFileManager fm = JavacTool.create().getStandardFileManager(null, null, null);
-
-    static void test(SourceLevel sourceLevel, XlintOption xlint, TrustMe trustMe, SuppressLevel suppressLevel,
-            ModifierKind modKind, MethodKind methKind, SignatureKind sig, BodyKind body) throws Exception {
-        final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
-        JavaSource source = new JavaSource(trustMe, suppressLevel, modKind, methKind, sig, body);
-        DiagnosticChecker dc = new DiagnosticChecker();
-        JavacTask ct = (JavacTask)tool.getTask(null, fm, dc,
-                Arrays.asList(xlint.getXlintOption(), "-source", sourceLevel.sourceKey), null, Arrays.asList(source));
-        ct.analyze();
-        check(sourceLevel, dc, source, xlint, trustMe,
-                suppressLevel, modKind, methKind, sig, body);
-    }
-
-    static void check(SourceLevel sourceLevel, DiagnosticChecker dc, JavaSource source,
-            XlintOption xlint, TrustMe trustMe, SuppressLevel suppressLevel, ModifierKind modKind,
-            MethodKind methKind, SignatureKind meth, BodyKind body) {
-
-        boolean hasPotentiallyUnsafeBody = sourceLevel == SourceLevel.JDK_7 &&
-                trustMe == TrustMe.TRUST &&
-                suppressLevel != SuppressLevel.VARARGS &&
-                xlint != XlintOption.NONE &&
-                meth.isVarargs && !meth.isReifiableArg && body.hasAliasing &&
-                (methKind == MethodKind.CONSTRUCTOR || (methKind == MethodKind.METHOD && modKind != ModifierKind.NONE));
-
-        boolean hasPotentiallyPollutingDecl = sourceLevel == SourceLevel.JDK_7 &&
-                trustMe == TrustMe.DONT_TRUST &&
-                meth.isVarargs &&
-                !meth.isReifiableArg &&
-                xlint == XlintOption.ALL;
-
-        boolean hasMalformedAnnoInDecl = sourceLevel == SourceLevel.JDK_7 &&
-                trustMe == TrustMe.TRUST &&
-                (!meth.isVarargs ||
-                (modKind == ModifierKind.NONE && methKind == MethodKind.METHOD));
-
-        boolean hasRedundantAnnoInDecl = sourceLevel == SourceLevel.JDK_7 &&
-                trustMe == TrustMe.TRUST &&
-                xlint != XlintOption.NONE &&
-                suppressLevel != SuppressLevel.VARARGS &&
-                (modKind != ModifierKind.NONE || methKind == MethodKind.CONSTRUCTOR) &&
-                meth.isVarargs &&
-                meth.isReifiableArg;
-
-        if (hasPotentiallyUnsafeBody != dc.hasPotentiallyUnsafeBody ||
-                hasPotentiallyPollutingDecl != dc.hasPotentiallyPollutingDecl ||
-                hasMalformedAnnoInDecl != dc.hasMalformedAnnoInDecl ||
-                hasRedundantAnnoInDecl != dc.hasRedundantAnnoInDecl) {
-            throw new Error("invalid diagnostics for source:\n" +
-                    source.getCharContent(true) +
-                    "\nOptions: " + xlint.getXlintOption() +
-                    "\nExpected potentially unsafe body warning: " + hasPotentiallyUnsafeBody +
-                    "\nExpected potentially polluting decl warning: " + hasPotentiallyPollutingDecl +
-                    "\nExpected malformed anno error: " + hasMalformedAnnoInDecl +
-                    "\nExpected redundant anno warning: " + hasRedundantAnnoInDecl +
-                    "\nFound potentially unsafe body warning: " + dc.hasPotentiallyUnsafeBody +
-                    "\nFound potentially polluting decl warning: " + dc.hasPotentiallyPollutingDecl +
-                    "\nFound malformed anno error: " + dc.hasMalformedAnnoInDecl +
-                    "\nFound redundant anno warning: " + dc.hasRedundantAnnoInDecl);
-        }
-    }
-
-    static class DiagnosticChecker implements javax.tools.DiagnosticListener<JavaFileObject> {
-
-        boolean hasPotentiallyUnsafeBody = false;
-        boolean hasPotentiallyPollutingDecl = false;
-        boolean hasMalformedAnnoInDecl = false;
-        boolean hasRedundantAnnoInDecl = false;
+        EnumSet<WarningKind> warnings = EnumSet.noneOf(WarningKind.class);
 
         public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
             if (diagnostic.getKind() == Diagnostic.Kind.WARNING) {
                     if (diagnostic.getCode().contains("unsafe.use.varargs.param")) {
-                        hasPotentiallyUnsafeBody = true;
+                        setWarning(WarningKind.UNSAFE_BODY);
                     } else if (diagnostic.getCode().contains("redundant.trustme")) {
-                        hasRedundantAnnoInDecl = true;
+                        setWarning(WarningKind.REDUNDANT_SAFEVARARGS);
                     }
             } else if (diagnostic.getKind() == Diagnostic.Kind.MANDATORY_WARNING &&
                     diagnostic.getCode().contains("varargs.non.reifiable.type")) {
-                hasPotentiallyPollutingDecl = true;
+                setWarning(WarningKind.UNSAFE_DECL);
             } else if (diagnostic.getKind() == Diagnostic.Kind.ERROR &&
                     diagnostic.getCode().contains("invalid.trustme")) {
-                hasMalformedAnnoInDecl = true;
+                setWarning(WarningKind.MALFORMED_SAFEVARARGS);
             }
+        }
+
+        void setWarning(WarningKind wk) {
+            if (!warnings.add(wk)) {
+                throw new AssertionError("Duplicate warning of kind " + wk + " in source:\n" + source);
+            }
+        }
+
+        boolean hasWarning(WarningKind wk) {
+            return warnings.contains(wk);
         }
     }
 }

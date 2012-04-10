@@ -28,7 +28,6 @@
 #endif
 
 #include "awt_p.h"
-#include "awt_Component.h"
 #include "awt_GraphicsEnv.h"
 #define XK_MISCELLANY
 #include <X11/keysymdef.h>
@@ -45,7 +44,7 @@
 #include "wsutils.h"
 #include "list.h"
 #include "multiVis.h"
-#ifdef __linux__
+#if defined(__linux__) || defined(MACOSX)
 #include <sys/socket.h>
 #endif
 

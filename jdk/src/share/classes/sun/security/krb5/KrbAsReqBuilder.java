@@ -144,15 +144,18 @@ public final class KrbAsReqBuilder {
 
     /**
      * Retrieves an array of secret keys for the client. This is used when
-     * the client supplies password but need keys to act as an acceptor
-     * (in JAAS words, isInitiator=true and storeKey=true)
+     * the client supplies password but need keys to act as an acceptor. For
+     * an initiator, it must be called after AS-REQ is performed (state is OK).
+     * For an acceptor, it can be called when this KrbAsReqBuilder object is
+     * constructed (state is INIT).
+     * @param isInitiator if the caller is an initiator
      * @return generated keys from password. PA-DATA from server might be used.
      * All "default_tkt_enctypes" keys will be generated, Never null.
      * @throws IllegalStateException if not constructed from a password
      * @throws KrbException
      */
-    public EncryptionKey[] getKeys() throws KrbException {
-        checkState(State.REQ_OK, "Cannot get keys");
+    public EncryptionKey[] getKeys(boolean isInitiator) throws KrbException {
+        checkState(isInitiator?State.REQ_OK:State.INIT, "Cannot get keys");
         if (password != null) {
             int[] eTypes = EType.getDefaults("default_tkt_enctypes");
             EncryptionKey[] result = new EncryptionKey[eTypes.length];
@@ -169,34 +172,44 @@ public final class KrbAsReqBuilder {
              * from a keytab on acceptor, but unfortunately (?) Java supports
              * acceptor using password. In this case, if the service ticket is
              * encrypted using an etype which we don't have PA-DATA new salt,
-             * using the default salt is normally wrong (say, case-insensitive
+             * using the default salt might be wrong (say, case-insensitive
              * user name). Instead, we would use the new salt of another etype.
              */
 
             String salt = null;     // the saved new salt
-            for (int i=0; i<eTypes.length; i++) {
-                PAData.SaltAndParams snp =
-                        PAData.getSaltAndParams(eTypes[i], paList);
-                // First round, only calculate those with new salt
-                if (snp.salt != null) {
-                    salt = snp.salt;
-                    result[i] = EncryptionKey.acquireSecretKey(password,
-                            snp.salt,
-                            eTypes[i],
-                            snp.params);
-                }
-            }
-            if (salt == null) salt = cname.getSalt();
-            for (int i=0; i<eTypes.length; i++) {
-                // Second round, calculate those with no new salt
-                if (result[i] == null) {
+            try {
+                for (int i=0; i<eTypes.length; i++) {
+                    // First round, only calculate those have a PA entry
                     PAData.SaltAndParams snp =
                             PAData.getSaltAndParams(eTypes[i], paList);
-                    result[i] = EncryptionKey.acquireSecretKey(password,
-                            salt,
-                            eTypes[i],
-                            snp.params);
+                    if (snp != null) {
+                        // Never uses a salt for rc4-hmac, it does not use
+                        // a salt at all
+                        if (eTypes[i] != EncryptedData.ETYPE_ARCFOUR_HMAC &&
+                                snp.salt != null) {
+                            salt = snp.salt;
+                        }
+                        result[i] = EncryptionKey.acquireSecretKey(cname,
+                                password,
+                                eTypes[i],
+                                snp);
+                    }
                 }
+                // No new salt from PA, maybe empty, maybe only rc4-hmac
+                if (salt == null) salt = cname.getSalt();
+                for (int i=0; i<eTypes.length; i++) {
+                    // Second round, calculate those with no PA entry
+                    if (result[i] == null) {
+                        result[i] = EncryptionKey.acquireSecretKey(password,
+                                salt,
+                                eTypes[i],
+                                null);
+                    }
+                }
+            } catch (IOException ioe) {
+                KrbException ke = new KrbException(Krb5.ASN1_PARSE_ERROR);
+                ke.initCause(ioe);
+                throw ke;
             }
             return result;
         } else {
@@ -315,27 +328,19 @@ public final class KrbAsReqBuilder {
                     }
                     preAuthFailedOnce = true;
                     KRBError kerr = ke.getError();
+                    int paEType = PAData.getPreferredEType(kerr.getPA(),
+                            EType.getDefaults("default_tkt_enctypes")[0]);
                     if (password == null) {
                         EncryptionKey[] ks = Krb5Util.keysFromJavaxKeyTab(ktab, cname);
-                        pakey = EncryptionKey.findKey(kerr.getEType(), ks);
+                        pakey = EncryptionKey.findKey(paEType, ks);
                         if (pakey != null) pakey = (EncryptionKey)pakey.clone();
                         for (EncryptionKey k: ks) k.destroy();
                     } else {
-                        PAData.SaltAndParams snp = PAData.getSaltAndParams(
-                                kerr.getEType(), kerr.getPA());
-                        if (kerr.getEType() == 0) {
-                            // Possible if PA-PW-SALT is in KRB-ERROR. RFC
-                            // does not recommend this
-                            pakey = EncryptionKey.acquireSecretKey(password,
-                                    snp.salt == null ? cname.getSalt() : snp.salt,
-                                    EType.getDefaults("default_tkt_enctypes")[0],
-                                    null);
-                        } else {
-                            pakey = EncryptionKey.acquireSecretKey(password,
-                                    snp.salt == null ? cname.getSalt() : snp.salt,
-                                    kerr.getEType(),
-                                    snp.params);
-                        }
+                        pakey = EncryptionKey.acquireSecretKey(cname,
+                                password,
+                                paEType,
+                                PAData.getSaltAndParams(
+                                    paEType, kerr.getPA()));
                     }
                     paList = kerr.getPA();  // Update current paList
                 } else {

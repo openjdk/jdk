@@ -121,6 +121,13 @@ public abstract class FileFont extends PhysicalFont {
                          new CreatedFontFileDisposerRecord(file, tracker));
     }
 
+    // MACOSX begin -- Make this static so that we can pass in CFont
+    static void setFileToRemove(Object font, File file, CreatedFontTracker tracker) {
+        Disposer.addObjectRecord(font,
+                         new CreatedFontFileDisposerRecord(file, tracker));
+    }
+    // MACOSX - end
+
     /* This is called when a font scaler is determined to
      * be unusable (ie bad).
      * We want to replace current scaler with NullFontScaler, so
@@ -163,7 +170,9 @@ public abstract class FileFont extends PhysicalFont {
                 }
             }
         }
-        scaler.dispose();
+        if (scaler != null) {
+            scaler.dispose();
+        }
         scaler = FontScaler.getNullScaler();
     }
 

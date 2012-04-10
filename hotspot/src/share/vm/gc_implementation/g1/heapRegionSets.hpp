@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ public:
 
 class MasterFreeRegionList : public FreeRegionList {
 protected:
+  virtual const char* verify_region_extra(HeapRegion* hr);
   virtual bool check_mt_safety();
 
 public:
@@ -58,6 +59,30 @@ protected:
 
 public:
   SecondaryFreeRegionList(const char* name) : FreeRegionList(name) { }
+};
+
+//////////////////// OldRegionSet ////////////////////
+
+class OldRegionSet : public HeapRegionSet {
+protected:
+  virtual const char* verify_region_extra(HeapRegion* hr);
+
+  virtual bool regions_humongous() { return false; }
+  virtual bool regions_empty()     { return false; }
+
+public:
+  OldRegionSet(const char* name) : HeapRegionSet(name) { }
+};
+
+//////////////////// MasterOldRegionSet ////////////////////
+
+class MasterOldRegionSet : public OldRegionSet {
+private:
+protected:
+  virtual bool check_mt_safety();
+
+public:
+  MasterOldRegionSet(const char* name) : OldRegionSet(name) { }
 };
 
 //////////////////// HumongousRegionSet ////////////////////

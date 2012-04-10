@@ -27,7 +27,6 @@ package java.lang.invoke;
 
 import sun.invoke.empty.Empty;
 import sun.misc.Unsafe;
-import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
 /**
@@ -244,8 +243,8 @@ public class CallSite {
         try {
             GET_TARGET = IMPL_LOOKUP.
                 findVirtual(CallSite.class, "getTarget", MethodType.methodType(MethodHandle.class));
-        } catch (ReflectiveOperationException ignore) {
-            throw new InternalError();
+        } catch (ReflectiveOperationException e) {
+            throw new InternalError(e);
         }
     }
 
@@ -267,7 +266,7 @@ public class CallSite {
 
     /*package-private*/
     void setTargetNormal(MethodHandle newTarget) {
-        target = newTarget;
+        MethodHandleNatives.setCallSiteTargetNormal(this, newTarget);
     }
     /*package-private*/
     MethodHandle getTargetVolatile() {
@@ -275,7 +274,7 @@ public class CallSite {
     }
     /*package-private*/
     void setTargetVolatile(MethodHandle newTarget) {
-        unsafe.putObjectVolatile(this, TARGET_OFFSET, newTarget);
+        MethodHandleNatives.setCallSiteTargetVolatile(this, newTarget);
     }
 
     // this implements the upcall from the JVM, MethodHandleNatives.makeDynamicCallSite:

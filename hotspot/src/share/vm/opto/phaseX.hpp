@@ -256,11 +256,6 @@ public:
   // For pessimistic optimizations this is simply pointer equivalence.
   bool eqv(const Node* n1, const Node* n2) const { return n1 == n2; }
 
-  // Return whether two Nodes are equivalent, after stripping casting.
-  bool eqv_uncast(const Node* n1, const Node* n2) const {
-    return eqv(n1->uncast(), n2->uncast());
-  }
-
   // For pessimistic passes, the return type must monotonically narrow.
   // For optimistic  passes, the return type must monotonically widen.
   // It is possible to get into a "death march" in either type of pass,
@@ -473,7 +468,6 @@ public:
 
   // Clone loop predicates. Defined in loopTransform.cpp.
   Node* clone_loop_predicates(Node* old_entry, Node* new_entry, bool clone_limit_check);
-  Node*  move_loop_predicates(Node* old_entry, Node* new_entry, bool clone_limit_check);
   // Create a new if below new_entry for the predicate to be cloned
   ProjNode* create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry,
                                         Deoptimization::DeoptReason reason);

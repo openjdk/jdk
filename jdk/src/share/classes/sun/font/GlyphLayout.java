@@ -233,7 +233,7 @@ public final class GlyphLayout {
                     invdtx = dtx.createInverse();
                 }
                 catch (NoninvertibleTransformException e) {
-                    throw new InternalError();
+                    throw new InternalError(e);
                 }
             }
 

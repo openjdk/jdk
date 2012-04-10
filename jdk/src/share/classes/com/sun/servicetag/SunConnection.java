@@ -101,10 +101,7 @@ class SunConnection {
             return new URL(registerURL);
         } catch (MalformedURLException ex) {
             // should never reach here
-            InternalError x =
-                new InternalError(ex.getMessage());
-            x.initCause(ex);
-            throw x;
+            throw new InternalError(ex.getMessage(), ex);
         }
     }
 
@@ -171,9 +168,7 @@ class SunConnection {
         try {
             BrowserSupport.browse(url.toURI());
         } catch (URISyntaxException ex) {
-            InternalError x = new InternalError("Error in registering: " + ex.getMessage());
-            x.initCause(ex);
-            throw x;
+            throw new InternalError("Error in registering: " + ex.getMessage(), ex);
         } catch (IllegalArgumentException ex) {
             if (Util.isVerbose()) {
                 ex.printStackTrace();
@@ -232,9 +227,7 @@ class SunConnection {
             return (returnCode == HttpURLConnection.HTTP_OK);
         } catch (MalformedURLException me) {
             // should never reach here
-            InternalError x = new InternalError("Error in registering: " + me.getMessage());
-            x.initCause(me);
-            throw x;
+            throw new InternalError("Error in registering: " + me.getMessage(), me);
         } catch (Exception ioe) {
             // SocketTimeoutException, IOException or UnknownHostException
             if (Util.isVerbose()) {
@@ -262,10 +255,9 @@ class SunConnection {
             BrowserSupport.browse(registerPage.toURI());
         } catch (FileNotFoundException ex) {
             // should never reach here
-            InternalError x =
-                new InternalError("Error in launching " + registerPage + ": " + ex.getMessage());
-            x.initCause(ex);
-            throw x;
+            throw new InternalError(
+                    "Error in launching " + registerPage + ": " + ex.getMessage()
+                    , ex);
         } catch (IllegalArgumentException ex) {
             if (Util.isVerbose()) {
                 ex.printStackTrace();

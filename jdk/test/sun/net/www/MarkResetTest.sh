@@ -28,7 +28,7 @@
 
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     PS=":"
     FS="/"
     ;;
@@ -49,7 +49,7 @@ esac
 ${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}MarkResetTest.java
 
 # ftp server used by the test requires the file to be present
-# in this directory 
+# in this directory
 cp ${TESTSRC}${FS}EncDec.doc .
 
 ${TESTJAVA}${FS}bin${FS}java MarkResetTest

@@ -567,42 +567,46 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             }
 
             FileInputStream fs = null;
-            if (defaultKeyStore.length() != 0 && !NONE.equals(defaultKeyStore)) {
-                fs = AccessController.doPrivileged(
-                        new PrivilegedExceptionAction<FileInputStream>() {
-                    public FileInputStream run() throws Exception {
-                        return new FileInputStream(defaultKeyStore);
-                    }
-                });
-            }
-
-            String defaultKeyStorePassword = props.get("keyStorePasswd");
-            char[] passwd = null;
-            if (defaultKeyStorePassword.length() != 0) {
-                passwd = defaultKeyStorePassword.toCharArray();
-            }
-
-            /**
-             * Try to initialize key store.
-             */
             KeyStore ks = null;
-            if ((defaultKeyStoreType.length()) != 0) {
-                if (debug != null && Debug.isOn("defaultctx")) {
-                    System.out.println("init keystore");
-                }
-                if (defaultKeyStoreProvider.length() == 0) {
-                    ks = KeyStore.getInstance(defaultKeyStoreType);
-                } else {
-                    ks = KeyStore.getInstance(defaultKeyStoreType,
-                                        defaultKeyStoreProvider);
+            char[] passwd = null;
+            try {
+                if (defaultKeyStore.length() != 0 &&
+                        !NONE.equals(defaultKeyStore)) {
+                    fs = AccessController.doPrivileged(
+                            new PrivilegedExceptionAction<FileInputStream>() {
+                        public FileInputStream run() throws Exception {
+                            return new FileInputStream(defaultKeyStore);
+                        }
+                    });
                 }
 
-                // if defaultKeyStore is NONE, fs will be null
-                ks.load(fs, passwd);
-            }
-            if (fs != null) {
-                fs.close();
-                fs = null;
+                String defaultKeyStorePassword = props.get("keyStorePasswd");
+                if (defaultKeyStorePassword.length() != 0) {
+                    passwd = defaultKeyStorePassword.toCharArray();
+                }
+
+                /**
+                 * Try to initialize key store.
+                 */
+                if ((defaultKeyStoreType.length()) != 0) {
+                    if (debug != null && Debug.isOn("defaultctx")) {
+                        System.out.println("init keystore");
+                    }
+                    if (defaultKeyStoreProvider.length() == 0) {
+                        ks = KeyStore.getInstance(defaultKeyStoreType);
+                    } else {
+                        ks = KeyStore.getInstance(defaultKeyStoreType,
+                                            defaultKeyStoreProvider);
+                    }
+
+                    // if defaultKeyStore is NONE, fs will be null
+                    ks.load(fs, passwd);
+                }
+            } finally {
+                if (fs != null) {
+                    fs.close();
+                    fs = null;
+                }
             }
 
             /*
@@ -767,10 +771,15 @@ public abstract class SSLContextImpl extends SSLContextSpi {
 final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
             implements X509TrustManager {
 
+    // the delegated trust manager
     private final X509TrustManager tm;
+
+    // Cache the trusted certificate to optimize the performance.
+    private final Collection<X509Certificate> trustedCerts = new HashSet<>();
 
     AbstractTrustManagerWrapper(X509TrustManager tm) {
         this.tm = tm;
+        Collections.addAll(trustedCerts, tm.getAcceptedIssuers());
     }
 
     @Override
@@ -859,20 +868,7 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
                 constraints = new SSLAlgorithmConstraints(sslSocket, true);
             }
 
-            AlgorithmChecker checker = new AlgorithmChecker(constraints);
-            try {
-                checker.init(false);
-
-                // a forward checker, need to check from trust to target
-                for (int i = chain.length - 1; i >= 0; i--) {
-                    Certificate cert = chain[i];
-                    // We don't care about the unresolved critical extensions.
-                    checker.check(cert, Collections.<String>emptySet());
-                }
-            } catch (CertPathValidatorException cpve) {
-                throw new CertificateException(
-                    "Certificates does not conform to algorithm constraints");
-            }
+            checkAlgorithmConstraints(chain, constraints);
         }
     }
 
@@ -914,20 +910,33 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
                 constraints = new SSLAlgorithmConstraints(engine, true);
             }
 
-            AlgorithmChecker checker = new AlgorithmChecker(constraints);
-            try {
-                checker.init(false);
+            checkAlgorithmConstraints(chain, constraints);
+        }
+    }
 
-                // A forward checker, need to check from trust to target
-                for (int i = chain.length - 1; i >= 0; i--) {
+    private void checkAlgorithmConstraints(X509Certificate[] chain,
+            AlgorithmConstraints constraints) throws CertificateException {
+
+        try {
+            // Does the certificate chain end with a trusted certificate?
+            int checkedLength = chain.length - 1;
+            if (trustedCerts.contains(chain[checkedLength])) {
+                    checkedLength--;
+            }
+
+            // A forward checker, need to check from trust to target
+            if (checkedLength >= 0) {
+                AlgorithmChecker checker = new AlgorithmChecker(constraints);
+                checker.init(false);
+                for (int i = checkedLength; i >= 0; i--) {
                     Certificate cert = chain[i];
                     // We don't care about the unresolved critical extensions.
                     checker.check(cert, Collections.<String>emptySet());
                 }
-            } catch (CertPathValidatorException cpve) {
-                throw new CertificateException(
-                    "Certificates does not conform to algorithm constraints");
             }
+        } catch (CertPathValidatorException cpve) {
+            throw new CertificateException(
+                "Certificates does not conform to algorithm constraints");
         }
     }
 }

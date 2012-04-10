@@ -25,7 +25,6 @@
 
 package sun.security.provider.certpath;
 
-import java.io.IOException;
 import java.security.AccessController;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.cert.CertPath;
@@ -40,13 +39,11 @@ import java.security.cert.PKIXReason;
 import java.security.cert.PolicyNode;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
-import java.security.cert.X509CertSelector;
 import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Set;
-import javax.security.auth.x500.X500Principal;
 import sun.security.action.GetBooleanSecurityPropertyAction;
 import sun.security.util.Debug;
 
@@ -130,6 +127,9 @@ public class PKIXCertPathValidator extends CertPathValidatorSpi {
 
         // Must copy elements of certList into a new modifiable List before
         // calling Collections.reverse().
+        // If cp is not an X.509 or X509 certpath, an
+        // InvalidAlgorithmParameterException will have been thrown by now.
+        @SuppressWarnings("unchecked")
         ArrayList<X509Certificate> certList = new ArrayList<X509Certificate>
             ((List<X509Certificate>)cp.getCertificates());
         if (debug != null) {

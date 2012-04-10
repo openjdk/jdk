@@ -28,6 +28,9 @@ BUILDDIR = ../../../..
 PACKAGE = com.sun.tools.attach
 LIBRARY = attach
 PRODUCT = sun
+JAVAC_MAX_WARNINGS = true
+JAVAC_WARNINGS_FATAL = true
+
 include $(BUILDDIR)/common/Defs.gmk
 
 ifeq ($(PLATFORM), solaris)
@@ -35,6 +38,9 @@ FILES_m = mapfile-solaris
 endif
 ifeq ($(PLATFORM), linux)
 FILES_m = mapfile-linux
+endif
+ifeq ($(PLATFORM), macosx)
+FILES_m = mapfile-bsd 
 endif
 include $(BUILDDIR)/common/Mapfile-vers.gmk
 
@@ -52,7 +58,11 @@ ifeq ($(PLATFORM), windows)
 EXTRA_LIBS += psapi.lib
 endif
 
-vpath %.c $(PLATFORM_SRC)/native/sun/tools/attach
+ifeq ($PLATFORM), macosx)
+  vpath %.c $(call NativeSrcDirList,,native/sun/tools/attach)
+else
+  vpath %.c $(PLATFORM_SRC)/native/sun/tools/attach
+endif
 
 all: classes copy-files
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.util.Properties;
 import java.security.Key;
 import java.security.PublicKey;
 import java.security.KeyFactory;
-import java.security.KeyRep;
 import java.security.Security;
 import java.security.Provider;
 import java.security.InvalidKeyException;
@@ -245,7 +244,7 @@ public class X509Key implements PublicKey {
                 throw new InstantiationException();
             }
 
-            Class keyClass = null;
+            Class<?> keyClass = null;
             try {
                 keyClass = Class.forName(classname);
             } catch (ClassNotFoundException e) {

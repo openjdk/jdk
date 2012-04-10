@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,10 @@ import java.security.PublicKey;
 import java.security.PrivateKey;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.ProviderException;
 import java.security.MessageDigest;
-import java.security.SecureRandom;
-import java.security.Signature;
-import java.security.SignatureSpi;
 import java.security.SignatureException;
 import java.math.BigInteger;
 
@@ -294,7 +290,7 @@ abstract class RSASignature extends java.security.SignatureSpi
 
         // Check against the local and global values to make sure
         // the sizes are ok.  Round up to nearest byte.
-        RSAKeyFactory.checkKeyLengths(((privateKey.bitLength() + 7) & ~7),
+        RSAKeyFactory.checkKeyLengths(((privateKey.length() + 7) & ~7),
             null, RSAKeyPairGenerator.KEY_SIZE_MIN,
             RSAKeyPairGenerator.KEY_SIZE_MAX);
 
@@ -474,6 +470,7 @@ abstract class RSASignature extends java.security.SignatureSpi
      * #engineSetParameter(java.security.spec.AlgorithmParameterSpec)
      * engineSetParameter}.
      */
+    @Deprecated
     protected void engineSetParameter(String param, Object value)
         throws InvalidParameterException
     {
@@ -503,6 +500,7 @@ abstract class RSASignature extends java.security.SignatureSpi
      *
      * @deprecated
      */
+    @Deprecated
     protected Object engineGetParameter(String param)
         throws InvalidParameterException
     {

@@ -55,21 +55,21 @@ class SimpleThresholdPolicy : public CompilationPolicy {
   // loop_event checks if a method should be OSR compiled at a different
   // level.
   CompLevel loop_event(methodOop method, CompLevel cur_level);
-
+  void print_counters(const char* prefix, methodHandle mh);
 protected:
   int c1_count() const     { return _c1_count; }
   int c2_count() const     { return _c2_count; }
   void set_c1_count(int x) { _c1_count = x;    }
   void set_c2_count(int x) { _c2_count = x;    }
 
-  enum EventType { CALL, LOOP, COMPILE, KILL, UPDATE, REPROFILE };
+  enum EventType { CALL, LOOP, COMPILE, REMOVE_FROM_QUEUE, UPDATE_IN_QUEUE, REPROFILE, MAKE_NOT_ENTRANT };
   void print_event(EventType type, methodHandle mh, methodHandle imh, int bci, CompLevel level);
   // Print policy-specific information if necessary
   virtual void print_specific(EventType type, methodHandle mh, methodHandle imh, int bci, CompLevel level) { }
   // Check if the method can be compiled, change level if necessary
-  void compile(methodHandle mh, int bci, CompLevel level, TRAPS);
+  void compile(methodHandle mh, int bci, CompLevel level, JavaThread* thread);
   // Submit a given method for compilation
-  virtual void submit_compile(methodHandle mh, int bci, CompLevel level, TRAPS);
+  virtual void submit_compile(methodHandle mh, int bci, CompLevel level, JavaThread* thread);
   // Simple methods are as good being compiled with C1 as C2.
   // This function tells if it's such a function.
   inline bool is_trivial(methodOop method);
@@ -88,9 +88,9 @@ protected:
     return CompLevel_none;
   }
   virtual void method_invocation_event(methodHandle method, methodHandle inlinee,
-                                       CompLevel level, TRAPS);
+                                       CompLevel level, nmethod* nm, JavaThread* thread);
   virtual void method_back_branch_event(methodHandle method, methodHandle inlinee,
-                                        int bci, CompLevel level, TRAPS);
+                                        int bci, CompLevel level, nmethod* nm, JavaThread* thread);
 public:
   SimpleThresholdPolicy() : _c1_count(0), _c2_count(0) { }
   virtual int compiler_count(CompLevel comp_level) {
@@ -98,20 +98,24 @@ public:
     if (is_c2_compile(comp_level)) return c2_count();
     return 0;
   }
+  virtual CompLevel initial_compile_level() { return MIN2((CompLevel)TieredStopAtLevel, CompLevel_initial_compile); }
   virtual void do_safepoint_work() { }
   virtual void delay_compilation(methodOop method) { }
   virtual void disable_compilation(methodOop method) { }
-  // TODO: we should honour reprofiling requests in the future. Currently reprofiling
-  // would happen but not to the extent we would ideally like.
   virtual void reprofile(ScopeDesc* trap_scope, bool is_osr);
   virtual nmethod* event(methodHandle method, methodHandle inlinee,
-                         int branch_bci, int bci, CompLevel comp_level, TRAPS);
+                         int branch_bci, int bci, CompLevel comp_level, nmethod* nm, JavaThread* thread);
   // Select task is called by CompileBroker. We should return a task or NULL.
   virtual CompileTask* select_task(CompileQueue* compile_queue);
   // Tell the runtime if we think a given method is adequately profiled.
   virtual bool is_mature(methodOop method);
   // Initialize: set compiler thread count
   virtual void initialize();
+  virtual bool should_not_inline(ciEnv* env, ciMethod* callee) {
+    return (env->comp_level() == CompLevel_limited_profile ||
+            env->comp_level() == CompLevel_full_profile) &&
+            callee->has_loops();
+  }
 };
 
 #endif // SHARE_VM_RUNTIME_SIMPLETHRESHOLDPOLICY_HPP

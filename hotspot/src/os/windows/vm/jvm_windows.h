@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef OS_WINDOWS_VM_JVM_WINDOWS_H
+#define OS_WINDOWS_VM_JVM_WINDOWS_H
+
 #ifndef _JAVASOFT_JVM_MD_H_
 #define _JAVASOFT_JVM_MD_H_
 
@@ -30,10 +33,33 @@
  * JNI conversion, which should be sorted out later.
  */
 
-#include <windows.h>
-// #include <windef.h>
-// #include <winbase.h>
+// JDK7 requires VS2010
+#if _MSC_VER >= 1600
+// JDK7 minimum platform requirement: Windows XP
+#if _WIN32_WINNT < 0x0501
+#undef _WIN32_WINNT
+#define _WIN32_WINNT  0x0501
+#endif
+#endif
 
+#include <windows.h>
+
+#if _MSC_VER <= 1200
+// Psapi.h doesn't come with Visual Studio 6; it can be downloaded as Platform
+// SDK from Microsoft.  Here are the definitions copied from Psapi.h
+typedef struct _MODULEINFO {
+    LPVOID lpBaseOfDll;
+    DWORD SizeOfImage;
+    LPVOID EntryPoint;
+} MODULEINFO, *LPMODULEINFO;
+
+#else
+#include <Psapi.h>
+#endif
+
+#include <Tlhelp32.h>
+
+typedef unsigned int socklen_t;
 
 // #include "jni.h"
 
@@ -106,3 +132,5 @@ JVM_GetThreadInterruptEvent();
 #define SHUTDOWN2_SIGNAL SIGTERM
 
 #endif /* !_JAVASOFT_JVM_MD_H_ */
+
+#endif // OS_WINDOWS_VM_JVM_WINDOWS_H

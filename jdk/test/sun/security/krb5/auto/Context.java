@@ -76,7 +76,6 @@ public class Context {
 
     private Subject s;
     private ExtendedGSSContext x;
-    private boolean f;      // context established?
     private String name;
     private GSSCredential cred;     // see static method delegated().
 
@@ -97,6 +96,15 @@ public class Context {
     }
 
     /**
+     * No JAAS login at all, can be used to test JGSS without JAAS
+     */
+    public static Context fromThinAir() throws Exception {
+        Context out = new Context();
+        out.s = new Subject();
+        return out;
+    }
+
+    /**
      * Logins with a JAAS login config entry name
      */
     public static Context fromJAAS(final String name) throws Exception {
@@ -112,8 +120,10 @@ public class Context {
             String user, char[] pass, boolean storeKey) throws Exception {
         return fromUserPass(null, user, pass, storeKey);
     }
+
     /**
      * Logins with a username and a password, using Krb5LoginModule directly
+     * @param s existing subject, test multiple princ & creds for single subj
      * @param storeKey true if key should be saved, used on acceptor side
      */
     public static Context fromUserPass(Subject s,
@@ -194,7 +204,6 @@ public class Context {
                 return null;
             }
         }, null);
-        f = false;
     }
 
     /**
@@ -228,7 +237,6 @@ public class Context {
                 return null;
             }
         }, null);
-        f = false;
     }
 
     /**
@@ -375,6 +383,89 @@ public class Context {
         }
     }
 
+    public byte[] wrap(byte[] t, final boolean privacy)
+            throws Exception {
+        return doAs(new Action() {
+            @Override
+            public byte[] run(Context me, byte[] input) throws Exception {
+                System.out.printf("wrap %s privacy from %s: ", privacy?"with":"without", me.name);
+                MessageProp p1 = new MessageProp(0, privacy);
+                byte[] out;
+                if (usingStream) {
+                    ByteArrayOutputStream os = new ByteArrayOutputStream();
+                    me.x.wrap(new ByteArrayInputStream(input), os, p1);
+                    out = os.toByteArray();
+                } else {
+                    out = me.x.wrap(input, 0, input.length, p1);
+                }
+                System.out.println(printProp(p1));
+                return out;
+            }
+        }, t);
+    }
+
+    public byte[] unwrap(byte[] t, final boolean privacy)
+            throws Exception {
+        return doAs(new Action() {
+            @Override
+            public byte[] run(Context me, byte[] input) throws Exception {
+                System.out.printf("unwrap %s privacy from %s: ", privacy?"with":"without", me.name);
+                MessageProp p1 = new MessageProp(0, privacy);
+                byte[] bytes;
+                if (usingStream) {
+                    ByteArrayOutputStream os = new ByteArrayOutputStream();
+                    me.x.unwrap(new ByteArrayInputStream(input), os, p1);
+                    bytes = os.toByteArray();
+                } else {
+                    bytes = me.x.unwrap(input, 0, input.length, p1);
+                }
+                System.out.println(printProp(p1));
+                return bytes;
+            }
+        }, t);
+    }
+
+    public byte[] getMic(byte[] t) throws Exception {
+        return doAs(new Action() {
+            @Override
+            public byte[] run(Context me, byte[] input) throws Exception {
+                MessageProp p1 = new MessageProp(0, true);
+                byte[] bytes;
+                p1 = new MessageProp(0, true);
+                System.out.printf("getMic from %s: ", me.name);
+                if (usingStream) {
+                    ByteArrayOutputStream os = new ByteArrayOutputStream();
+                    me.x.getMIC(new ByteArrayInputStream(input), os, p1);
+                    bytes = os.toByteArray();
+                } else {
+                    bytes = me.x.getMIC(input, 0, input.length, p1);
+                }
+                System.out.println(printProp(p1));
+                return bytes;
+            }
+        }, t);
+    }
+
+    public void verifyMic(byte[] t, final byte[] msg) throws Exception {
+        doAs(new Action() {
+            @Override
+            public byte[] run(Context me, byte[] input) throws Exception {
+                MessageProp p1 = new MessageProp(0, true);
+                System.out.printf("verifyMic from %s: ", me.name);
+                if (usingStream) {
+                    me.x.verifyMIC(new ByteArrayInputStream(input),
+                            new ByteArrayInputStream(msg), p1);
+                } else {
+                    me.x.verifyMIC(input, 0, input.length,
+                            msg, 0, msg.length,
+                            p1);
+                }
+                System.out.println(printProp(p1));
+                return null;
+            }
+        }, t);
+    }
+
     /**
      * Transmits a message from one Context to another. The sender wraps the
      * message and sends it to the receiver. The receiver unwraps it, creates
@@ -390,73 +481,13 @@ public class Context {
         final byte[] messageBytes = message.getBytes();
         System.out.printf("-------------------- TRANSMIT from %s to %s------------------------\n",
                 s1.name, s2.name);
-
-        byte[] t = s1.doAs(new Action() {
-            @Override
-            public byte[] run(Context me, byte[] dummy) throws Exception {
-                System.out.println("wrap");
-                MessageProp p1 = new MessageProp(0, true);
-                byte[] out;
-                if (usingStream) {
-                    ByteArrayOutputStream os = new ByteArrayOutputStream();
-                    me.x.wrap(new ByteArrayInputStream(messageBytes), os, p1);
-                    out = os.toByteArray();
-                } else {
-                    out = me.x.wrap(messageBytes, 0, messageBytes.length, p1);
-                }
-                System.out.println(printProp(p1));
-                return out;
-            }
-        }, null);
-
-        t = s2.doAs(new Action() {
-            @Override
-            public byte[] run(Context me, byte[] input) throws Exception {
-                MessageProp p1 = new MessageProp(0, true);
-                byte[] bytes;
-                if (usingStream) {
-                    ByteArrayOutputStream os = new ByteArrayOutputStream();
-                    me.x.unwrap(new ByteArrayInputStream(input), os, p1);
-                    bytes = os.toByteArray();
-                } else {
-                    bytes = me.x.unwrap(input, 0, input.length, p1);
-                }
-                if (!Arrays.equals(messageBytes, bytes))
-                    throw new Exception("wrap/unwrap mismatch");
-                System.out.println("unwrap");
-                System.out.println(printProp(p1));
-                p1 = new MessageProp(0, true);
-                System.out.println("getMIC");
-                if (usingStream) {
-                    ByteArrayOutputStream os = new ByteArrayOutputStream();
-                    me.x.getMIC(new ByteArrayInputStream(messageBytes), os, p1);
-                    bytes = os.toByteArray();
-                } else {
-                    bytes = me.x.getMIC(messageBytes, 0, messageBytes.length, p1);
-                }
-                System.out.println(printProp(p1));
-                return bytes;
-            }
-        }, t);
-
-        // Re-unwrap should make p2.isDuplicateToken() returns true
-        s1.doAs(new Action() {
-            @Override
-            public byte[] run(Context me, byte[] input) throws Exception {
-                MessageProp p1 = new MessageProp(0, true);
-                System.out.println("verifyMIC");
-                if (usingStream) {
-                    me.x.verifyMIC(new ByteArrayInputStream(input),
-                            new ByteArrayInputStream(messageBytes), p1);
-                } else {
-                    me.x.verifyMIC(input, 0, input.length,
-                            messageBytes, 0, messageBytes.length,
-                            p1);
-                }
-                System.out.println(printProp(p1));
-                return null;
-            }
-        }, t);
+        byte[] wrapped = s1.wrap(messageBytes, true);
+        byte[] unwrapped = s2.unwrap(wrapped, true);
+        if (!Arrays.equals(messageBytes, unwrapped)) {
+            throw new Exception("wrap/unwrap mismatch");
+        }
+        byte[] mic = s2.getMic(unwrapped);
+        s1.verifyMic(mic, messageBytes);
     }
 
     /**
@@ -479,6 +510,29 @@ public class Context {
         return sb.toString();
     }
 
+    public byte[] take(final byte[] in) throws Exception {
+        return doAs(new Action() {
+            @Override
+            public byte[] run(Context me, byte[] input) throws Exception {
+                if (me.x.isEstablished()) {
+                    System.out.println(name + " side established");
+                    if (input != null) {
+                        throw new Exception("Context established but " +
+                                "still receive token at " + name);
+                    }
+                    return null;
+                } else {
+                    System.out.println(name + " call initSecContext");
+                    if (me.x.isInitiator()) {
+                        return me.x.initSecContext(input, 0, input.length);
+                    } else {
+                        return me.x.acceptSecContext(input, 0, input.length);
+                    }
+                }
+            }
+        }, in);
+    }
+
     /**
      * Handshake (security context establishment process) between two Contexts
      * @param c the initiator
@@ -487,54 +541,9 @@ public class Context {
      */
     static public void handshake(final Context c, final Context s) throws Exception {
         byte[] t = new byte[0];
-        while (!c.f || !s.f) {
-            t = c.doAs(new Action() {
-                @Override
-                public byte[] run(Context me, byte[] input) throws Exception {
-                    if (me.x.isEstablished()) {
-                        me.f = true;
-                        System.out.println(c.name + " side established");
-                        if (input != null) {
-                            throw new Exception("Context established but " +
-                                    "still receive token at " + c.name);
-                        }
-                        return null;
-                    } else {
-                        System.out.println(c.name + " call initSecContext");
-                        if (usingStream) {
-                            ByteArrayOutputStream os = new ByteArrayOutputStream();
-                            me.x.initSecContext(new ByteArrayInputStream(input), os);
-                            return os.size() == 0 ? null : os.toByteArray();
-                        } else {
-                            return me.x.initSecContext(input, 0, input.length);
-                        }
-                    }
-                }
-            }, t);
-
-            t = s.doAs(new Action() {
-                @Override
-                public byte[] run(Context me, byte[] input) throws Exception {
-                    if (me.x.isEstablished()) {
-                        me.f = true;
-                        System.out.println(s.name + " side established");
-                        if (input != null) {
-                            throw new Exception("Context established but " +
-                                    "still receive token at " + s.name);
-                        }
-                        return null;
-                    } else {
-                        System.out.println(s.name + " called acceptSecContext");
-                        if (usingStream) {
-                            ByteArrayOutputStream os = new ByteArrayOutputStream();
-                            me.x.acceptSecContext(new ByteArrayInputStream(input), os);
-                            return os.size() == 0 ? null : os.toByteArray();
-                        } else {
-                            return me.x.acceptSecContext(input, 0, input.length);
-                        }
-                    }
-                }
-            }, t);
+        while (!c.x.isEstablished() || !s.x.isEstablished()) {
+            t = c.take(t);
+            t = s.take(t);
         }
     }
 }

@@ -43,8 +43,8 @@ class ICache : public AbstractICache {
 #ifdef AMD64
   enum {
     stub_size      = 64, // Size of the icache flush stub in bytes
-    line_size      = 32, // Icache line size in bytes
-    log2_line_size = 5   // log2(line_size)
+    line_size      = 64, // Icache line size in bytes
+    log2_line_size = 6   // log2(line_size)
   };
 
   // Use default implementation

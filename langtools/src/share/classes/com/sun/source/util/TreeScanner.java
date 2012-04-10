@@ -285,6 +285,12 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
         return r;
     }
 
+    public R visitLambdaExpression(LambdaExpressionTree node, P p) {
+        R r = scan(node.getParameters(), p);
+        r = scanAndReduce(node.getBody(), p, r);
+        return r;
+    }
+
     public R visitParenthesized(ParenthesizedTree node, P p) {
         return scan(node.getExpression(), p);
     }
@@ -331,6 +337,12 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
 
     public R visitMemberSelect(MemberSelectTree node, P p) {
         return scan(node.getExpression(), p);
+    }
+
+    public R visitMemberReference(MemberReferenceTree node, P p) {
+        R r = scan(node.getQualifierExpression(), p);
+        r = scanAndReduce(node.getTypeArguments(), p, r);
+        return r;
     }
 
     public R visitIdentifier(IdentifierTree node, P p) {

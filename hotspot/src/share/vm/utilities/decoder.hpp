@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,80 +23,100 @@
  */
 
 
-#ifndef __DECODER_HPP
-#define __DECODER_HPP
+#ifndef SHARE_VM_UTILITIES_DECODER_HPP
+#define SHARE_VM_UTILITIES_DECODER_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/mutex.hpp"
 
-#ifdef _WINDOWS
-#include <windows.h>
-#include <imagehlp.h>
-
-// functions needed for decoding symbols
-typedef DWORD (WINAPI *pfn_SymSetOptions)(DWORD);
-typedef BOOL  (WINAPI *pfn_SymInitialize)(HANDLE, PCTSTR, BOOL);
-typedef BOOL  (WINAPI *pfn_SymGetSymFromAddr64)(HANDLE, DWORD64, PDWORD64, PIMAGEHLP_SYMBOL64);
-typedef DWORD (WINAPI *pfn_UndecorateSymbolName)(const char*, char*, DWORD, DWORD);
-
-#else
-
-class ElfFile;
-
-#endif // _WINDOWS
-
-
-class Decoder: public StackObj {
-
- public:
+class AbstractDecoder : public CHeapObj {
+public:
   // status code for decoding native C frame
   enum decoder_status {
-         no_error,             // successfully decoded frames
+         not_available = -10,  // real decoder is not available
+         no_error = 0,         // successfully decoded frames
          out_of_memory,        // out of memory
          file_invalid,         // invalid elf file
          file_not_found,       // could not found symbol file (on windows), such as jvm.pdb or jvm.map
          helper_not_found,     // could not load dbghelp.dll (Windows only)
          helper_func_error,    // decoding functions not found (Windows only)
-         helper_init_error,    // SymInitialize failed (Windows only)
-         symbol_not_found      // could not find the symbol
+         helper_init_error     // SymInitialize failed (Windows only)
   };
 
- public:
-  Decoder() { initialize(); };
-  ~Decoder() { uninitialize(); };
+  // decode an pc address to corresponding function name and an offset from the beginning of
+  // the function
+  virtual bool decode(address pc, char* buf, int buflen, int* offset,
+    const char* modulepath = NULL) = 0;
+  // demangle a C++ symbol
+  virtual bool demangle(const char* symbol, char* buf, int buflen) = 0;
+  // if the decoder can decode symbols in vm
+  virtual bool can_decode_C_frame_in_vm() const = 0;
 
-  static bool can_decode_C_frame_in_vm();
+  virtual decoder_status status() const {
+    return _decoder_status;
+  }
 
-  static void initialize();
-  static void uninitialize();
+  virtual bool has_error() const {
+    return is_error(_decoder_status);
+  }
 
-#ifdef _WINDOWS
-  static decoder_status    decode(address addr, char *buf, int buflen, int *offset);
-#else
-  static decoder_status    decode(address addr, const char* filepath, char *buf, int buflen, int *offset);
-#endif
+  static bool is_error(decoder_status status) {
+    return (status > 0);
+  }
 
-  static bool              demangle(const char* symbol, char *buf, int buflen);
-
-  static decoder_status    get_status() { return _decoder_status; };
-
-#ifndef _WINDOWS
- private:
-  static ElfFile*         get_elf_file(const char* filepath);
-#endif // _WINDOWS
-
-
- private:
-  static decoder_status     _decoder_status;
-  static bool               _initialized;
-
-#ifdef _WINDOWS
-  static HMODULE                   _dbghelp_handle;
-  static bool                      _can_decode_in_vm;
-  static pfn_SymGetSymFromAddr64   _pfnSymGetSymFromAddr64;
-  static pfn_UndecorateSymbolName  _pfnUndecorateSymbolName;
-#else
-  static ElfFile*                  _opened_elf_files;
-#endif // _WINDOWS
+protected:
+  decoder_status  _decoder_status;
 };
 
-#endif // __DECODER_HPP
+// Do nothing decoder
+class NullDecoder : public AbstractDecoder {
+public:
+  NullDecoder() {
+    _decoder_status = not_available;
+  }
+
+  ~NullDecoder() {};
+
+  virtual bool decode(address pc, char* buf, int buflen, int* offset,
+    const char* modulepath = NULL) {
+    return false;
+  }
+
+  virtual bool demangle(const char* symbol, char* buf, int buflen) {
+    return false;
+  }
+
+  virtual bool can_decode_C_frame_in_vm() const {
+    return false;
+  }
+};
+
+
+class Decoder : AllStatic {
+public:
+  static bool decode(address pc, char* buf, int buflen, int* offset, const char* modulepath = NULL);
+  static bool demangle(const char* symbol, char* buf, int buflen);
+  static bool can_decode_C_frame_in_vm();
+
+  // shutdown shared instance
+  static void shutdown();
+protected:
+  // shared decoder instance, _shared_instance_lock is needed
+  static AbstractDecoder* get_shared_instance();
+  // a private instance for error handler. Error handler can be
+  // triggered almost everywhere, including signal handler, where
+  // no lock can be taken. So the shared decoder can not be used
+  // in this scenario.
+  static AbstractDecoder* get_error_handler_instance();
+
+  static AbstractDecoder* create_decoder();
+private:
+  static AbstractDecoder*     _shared_decoder;
+  static AbstractDecoder*     _error_handler_decoder;
+  static NullDecoder          _do_nothing_decoder;
+
+protected:
+  static Mutex*               _shared_decoder_lock;
+};
+
+#endif // SHARE_VM_UTILITIES_DECODER_HPP

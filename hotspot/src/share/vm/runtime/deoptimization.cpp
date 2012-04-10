@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ Deoptimization::UnrollBlock::UnrollBlock(int  size_of_deoptimized_frame,
   _frame_pcs                 = frame_pcs;
   _register_block            = NEW_C_HEAP_ARRAY(intptr_t, RegisterMap::reg_count * 2);
   _return_type               = return_type;
-  _initial_fp                = 0;
+  _initial_info              = 0;
   // PD (x86 only)
   _counter_temp              = 0;
   _unpack_kind               = 0;
@@ -211,7 +211,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 #ifdef COMPILER2
   // Reallocate the non-escaping objects and restore their fields. Then
   // relock objects if synchronization on them was eliminated.
-  if (DoEscapeAnalysis) {
+  if (DoEscapeAnalysis || EliminateNestedLocks) {
     if (EliminateAllocations) {
       assert (chunk->at(0)->scope() != NULL,"expect only compiled java frames");
       GrowableArray<ScopeValue*>* objects = chunk->at(0)->scope()->objects();
@@ -339,7 +339,6 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 
 #ifdef ASSERT
   assert(cb->is_deoptimization_stub() || cb->is_uncommon_trap_stub(), "just checking");
-  Events::log("fetch unroll sp " INTPTR_FORMAT, unpack_sp);
 #endif
 #else
   intptr_t* unpack_sp = stub_frame.sender(&dummy_map).unextended_sp();
@@ -362,8 +361,6 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   intptr_t* frame_sizes = NEW_C_HEAP_ARRAY(intptr_t, number_of_frames);
   // +1 because we always have an interpreter return address for the final slot.
   address* frame_pcs = NEW_C_HEAP_ARRAY(address, number_of_frames + 1);
-  int callee_parameters = 0;
-  int callee_locals = 0;
   int popframe_extra_args = 0;
   // Create an interpreter return address for the stub to use as its return
   // address so the skeletal frames are perfectly walkable
@@ -387,14 +384,16 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // handles are used.  If the caller is interpreted get the real
   // value so that the proper amount of space can be added to it's
   // frame.
-  int caller_actual_parameters = callee_parameters;
+  bool caller_was_method_handle = false;
   if (deopt_sender.is_interpreted_frame()) {
     methodHandle method = deopt_sender.interpreter_frame_method();
-    Bytecode_invoke cur = Bytecode_invoke_check(method,
-                                                deopt_sender.interpreter_frame_bci());
-    Symbol* signature = method->constants()->signature_ref_at(cur.index());
-    ArgumentSizeComputer asc(signature);
-    caller_actual_parameters = asc.size() + (cur.has_receiver() ? 1 : 0);
+    Bytecode_invoke cur = Bytecode_invoke_check(method, deopt_sender.interpreter_frame_bci());
+    if (cur.is_method_handle_invoke()) {
+      // Method handle invokes may involve fairly arbitrary chains of
+      // calls so it's impossible to know how much actual space the
+      // caller has for locals.
+      caller_was_method_handle = true;
+    }
   }
 
   //
@@ -411,14 +410,15 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // in the frame_sizes/frame_pcs so the assembly code can do a trivial walk.
   // so things look a little strange in this loop.
   //
+  int callee_parameters = 0;
+  int callee_locals = 0;
   for (int index = 0; index < array->frames(); index++ ) {
     // frame[number_of_frames - 1 ] = on_stack_size(youngest)
     // frame[number_of_frames - 2 ] = on_stack_size(sender(youngest))
     // frame[number_of_frames - 3 ] = on_stack_size(sender(sender(youngest)))
     int caller_parms = callee_parameters;
-    if (index == array->frames() - 1) {
-      // Use the value from the interpreted caller
-      caller_parms = caller_actual_parameters;
+    if ((index == array->frames() - 1) && caller_was_method_handle) {
+      caller_parms = 0;
     }
     frame_sizes[number_of_frames - 1 - index] = BytesPerWord * array->element(index)->on_stack_size(caller_parms,
                                                                                                     callee_parameters,
@@ -460,13 +460,13 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // QQQ I'd rather see this pushed down into last_frame_adjust
   // and have it take the sender (aka caller).
 
-  if (deopt_sender.is_compiled_frame()) {
+  if (deopt_sender.is_compiled_frame() || caller_was_method_handle) {
     caller_adjustment = last_frame_adjust(0, callee_locals);
-  } else if (callee_locals > caller_actual_parameters) {
+  } else if (callee_locals > callee_parameters) {
     // The caller frame may need extending to accommodate
     // non-parameter locals of the first unpacked interpreted frame.
     // Compute that adjustment.
-    caller_adjustment = last_frame_adjust(caller_actual_parameters, callee_locals);
+    caller_adjustment = last_frame_adjust(callee_parameters, callee_locals);
   }
 
   // If the sender is deoptimized the we must retrieve the address of the handler
@@ -481,14 +481,15 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 
   UnrollBlock* info = new UnrollBlock(array->frame_size() * BytesPerWord,
                                       caller_adjustment * BytesPerWord,
-                                      caller_actual_parameters,
+                                      caller_was_method_handle ? 0 : callee_parameters,
                                       number_of_frames,
                                       frame_sizes,
                                       frame_pcs,
                                       return_type);
-  // On some platforms, we need a way to pass fp to the unpacking code
-  // so the skeletal frames come out correct.
-  info->set_initial_fp((intptr_t) array->sender().fp());
+  // On some platforms, we need a way to pass some platform dependent
+  // information to the unpacking code so the skeletal frames come out
+  // correct (initial fp value, unextended sp, ...)
+  info->set_initial_info((intptr_t) array->sender().initial_deoptimization_info());
 
   if (array->frames() > 1) {
     if (VerifyStack && TraceDeoptimization) {
@@ -575,6 +576,8 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
     tty->print_cr("DEOPT UNPACKING thread " INTPTR_FORMAT " vframeArray " INTPTR_FORMAT " mode %d", thread, array, exec_mode);
   }
 #endif
+  Events::log(thread, "DEOPT UNPACKING pc=" INTPTR_FORMAT " sp=" INTPTR_FORMAT " mode %d",
+              stub_frame.pc(), stub_frame.sp(), exec_mode);
 
   UnrollBlock* info = array->unroll_block();
 
@@ -979,6 +982,7 @@ void Deoptimization::print_objects(GrowableArray<ScopeValue*>* objects) {
 #endif // COMPILER2
 
 vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, RegisterMap *reg_map, GrowableArray<compiledVFrame*>* chunk) {
+  Events::log(thread, "DEOPT PACKING pc=" INTPTR_FORMAT " sp=" INTPTR_FORMAT, fr.pc(), fr.sp());
 
 #ifndef PRODUCT
   if (TraceDeoptimization) {
@@ -1024,7 +1028,6 @@ vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, Re
 
   // Compare the vframeArray to the collected vframes
   assert(array->structural_compare(thread, chunk), "just checking");
-  Events::log("# vframes = %d", (intptr_t)chunk->length());
 
 #ifndef PRODUCT
   if (TraceDeoptimization) {
@@ -1121,8 +1124,6 @@ void Deoptimization::deoptimize_single_frame(JavaThread* thread, frame fr) {
   assert(fr.can_be_deoptimized(), "checking frame type");
 
   gather_statistics(Reason_constraint, Action_none, Bytecodes::_illegal);
-
-  EventMark m("Deoptimization (pc=" INTPTR_FORMAT ", sp=" INTPTR_FORMAT ")", fr.pc(), fr.id());
 
   // Patch the nmethod so that when execution returns to it we will
   // deopt the execution state and return to the interpreter.
@@ -1237,6 +1238,10 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
   // before we are done with it.
   nmethodLocker nl(fr.pc());
 
+  // Log a message
+  Events::log_deopt_message(thread, "Uncommon trap %d fr.pc " INTPTR_FORMAT,
+                            trap_request, fr.pc());
+
   {
     ResourceMark rm;
 
@@ -1247,7 +1252,6 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
     DeoptAction action = trap_request_action(trap_request);
     jint unloaded_class_index = trap_request_index(trap_request); // CP idx or -1
 
-    Events::log("Uncommon trap occurred @" INTPTR_FORMAT " unloaded_class_index = %d", fr.pc(), (int) trap_request);
     vframe*  vf  = vframe::new_vframe(&fr, &reg_map, thread);
     compiledVFrame* cvf = compiledVFrame::cast(vf);
 

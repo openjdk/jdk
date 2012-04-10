@@ -109,6 +109,9 @@ class OSThread: public CHeapObj {
 #ifdef TARGET_OS_FAMILY_windows
 # include "osThread_windows.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "osThread_bsd.hpp"
+#endif
 
 };
 

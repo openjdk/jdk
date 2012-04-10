@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,9 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Type.ForAll.ConstraintKind;
 import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.comp.Resolve.InapplicableMethodException;
+import com.sun.tools.javac.comp.Resolve.VerboseResolutionMode;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 import static com.sun.tools.javac.code.TypeTags.*;
 
@@ -56,6 +58,7 @@ public class Infer {
     Types types;
     Check chk;
     Resolve rs;
+    Log log;
     JCDiagnostic.Factory diags;
 
     public static Infer instance(Context context) {
@@ -70,6 +73,7 @@ public class Infer {
         syms = Symtab.instance(context);
         types = Types.instance(context);
         rs = Resolve.instance(context);
+        log = Log.instance(context);
         chk = Check.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         ambiguousNoInstanceException =
@@ -81,7 +85,7 @@ public class Infer {
 
     }
 
-    public static class InferenceException extends Resolve.InapplicableMethodException {
+    public static class InferenceException extends InapplicableMethodException {
         private static final long serialVersionUID = 0;
 
         InferenceException(JCDiagnostic.Factory diags) {
@@ -269,22 +273,31 @@ public class Infer {
             // VGJ: sort of inlined maximizeInst() below.  Adding
             // bounds can cause lobounds that are above hibounds.
             List<Type> hibounds = Type.filter(that.hibounds, errorFilter);
-            if (hibounds.isEmpty())
-                return;
             Type hb = null;
-            if (hibounds.tail.isEmpty())
+            if (hibounds.isEmpty())
+                hb = syms.objectType;
+            else if (hibounds.tail.isEmpty())
                 hb = hibounds.head;
-            else for (List<Type> bs = hibounds;
-                      bs.nonEmpty() && hb == null;
-                      bs = bs.tail) {
-                if (isSubClass(bs.head, hibounds))
-                    hb = types.fromUnknownFun.apply(bs.head);
-            }
+            else
+                hb = types.glb(hibounds);
             if (hb == null ||
-                !types.isSubtypeUnchecked(hb, hibounds, warn) ||
-                !types.isSubtypeUnchecked(that.inst, hb, warn))
-                throw ambiguousNoInstanceException;
+                hb.isErroneous())
+                throw ambiguousNoInstanceException
+                        .setMessage("incompatible.upper.bounds",
+                                    that.qtype, hibounds);
         }
+    }
+
+    Type asUndetType(Type t, List<Type> undetvars) {
+        return types.subst(t, inferenceVars(undetvars), undetvars);
+    }
+
+    List<Type> inferenceVars(List<Type> undetvars) {
+        ListBuffer<Type> tvars = ListBuffer.lb();
+        for (Type uv : undetvars) {
+            tvars.append(((UndetVar)uv).qtype);
+        }
+        return tvars.toList();
     }
 
 /***************************************************************************
@@ -332,25 +345,29 @@ public class Infer {
             //replace uninferred type-vars
             targs = types.subst(targs,
                     that.tvars,
-                    instaniateAsUninferredVars(undetvars, that.tvars));
+                    instantiateAsUninferredVars(undetvars, that.tvars));
         }
         return chk.checkType(warn.pos(), that.inst(targs, types), to);
     }
     //where
-    private List<Type> instaniateAsUninferredVars(List<Type> undetvars, List<Type> tvars) {
+    private List<Type> instantiateAsUninferredVars(List<Type> undetvars, List<Type> tvars) {
+        Assert.check(undetvars.length() == tvars.length());
         ListBuffer<Type> new_targs = ListBuffer.lb();
-        //step 1 - create syntethic captured vars
+        //step 1 - create synthetic captured vars
         for (Type t : undetvars) {
             UndetVar uv = (UndetVar)t;
             Type newArg = new CapturedType(t.tsym.name, t.tsym, uv.inst, syms.botType, null);
             new_targs = new_targs.append(newArg);
         }
         //step 2 - replace synthetic vars in their bounds
+        List<Type> formals = tvars;
         for (Type t : new_targs.toList()) {
             CapturedType ct = (CapturedType)t;
             ct.bound = types.subst(ct.bound, tvars, new_targs.toList());
-            WildcardType wt = new WildcardType(ct.bound, BoundKind.EXTENDS, syms.boundClass);
+            WildcardType wt = new WildcardType(syms.objectType, BoundKind.UNBOUND, syms.boundClass);
+            wt.bound = (TypeVar)formals.head;
             ct.wildcard = wt;
+            formals = formals.tail;
         }
         return new_targs.toList();
     }
@@ -368,62 +385,10 @@ public class Infer {
                                   final Warner warn) throws InferenceException {
         //-System.err.println("instantiateMethod(" + tvars + ", " + mt + ", " + argtypes + ")"); //DEBUG
         List<Type> undetvars = Type.map(tvars, fromTypeVarFun);
-        List<Type> formals = mt.argtypes;
-        //need to capture exactly once - otherwise subsequent
-        //applicability checks might fail
-        final List<Type> capturedArgs = types.capture(argtypes);
-        List<Type> actuals = capturedArgs;
-        List<Type> actualsNoCapture = argtypes;
-        // instantiate all polymorphic argument types and
-        // set up lower bounds constraints for undetvars
-        Type varargsFormal = useVarargs ? formals.last() : null;
-        if (varargsFormal == null &&
-                actuals.size() != formals.size()) {
-            throw unambiguousNoInstanceException
-                .setMessage("infer.arg.length.mismatch");
-        }
-        while (actuals.nonEmpty() && formals.head != varargsFormal) {
-            Type formal = formals.head;
-            Type actual = actuals.head.baseType();
-            Type actualNoCapture = actualsNoCapture.head.baseType();
-            if (actual.tag == FORALL)
-                actual = instantiateArg((ForAll)actual, formal, tvars, warn);
-            Type undetFormal = types.subst(formal, tvars, undetvars);
-            boolean works = allowBoxing
-                ? types.isConvertible(actual, undetFormal, warn)
-                : types.isSubtypeUnchecked(actual, undetFormal, warn);
-            if (!works) {
-                throw unambiguousNoInstanceException
-                    .setMessage("infer.no.conforming.assignment.exists",
-                                tvars, actualNoCapture, formal);
-            }
-            formals = formals.tail;
-            actuals = actuals.tail;
-            actualsNoCapture = actualsNoCapture.tail;
-        }
 
-        if (formals.head != varargsFormal) // not enough args
-            throw unambiguousNoInstanceException.setMessage("infer.arg.length.mismatch");
-
-        // for varargs arguments as well
-        if (useVarargs) {
-            Type elemType = types.elemtype(varargsFormal);
-            Type elemUndet = types.subst(elemType, tvars, undetvars);
-            while (actuals.nonEmpty()) {
-                Type actual = actuals.head.baseType();
-                Type actualNoCapture = actualsNoCapture.head.baseType();
-                if (actual.tag == FORALL)
-                    actual = instantiateArg((ForAll)actual, elemType, tvars, warn);
-                boolean works = types.isConvertible(actual, elemUndet, warn);
-                if (!works) {
-                    throw unambiguousNoInstanceException
-                        .setMessage("infer.no.conforming.assignment.exists",
-                                    tvars, actualNoCapture, elemType);
-                }
-                actuals = actuals.tail;
-                actualsNoCapture = actualsNoCapture.tail;
-            }
-        }
+        final List<Type> capturedArgs =
+                rs.checkRawArgumentsAcceptable(env, undetvars, argtypes, mt.getParameterTypes(),
+                    allowBoxing, useVarargs, warn, new InferenceCheckHandler(undetvars));
 
         // minimize as yet undetermined type variables
         for (Type t : undetvars)
@@ -463,7 +428,7 @@ public class Infer {
             // quantify result type with them
             final List<Type> inferredTypes = insttypes.toList();
             final List<Type> all_tvars = tvars; //this is the wrong tvars
-            return new UninferredMethodType(mt, restvars.toList()) {
+            return new UninferredMethodType(env.tree.pos(), msym, mt, restvars.toList()) {
                 @Override
                 List<Type> getConstraints(TypeVar tv, ConstraintKind ck) {
                     for (Type t : restundet.toList()) {
@@ -479,16 +444,20 @@ public class Infer {
                     return List.nil();
                 }
                 @Override
-                void check(List<Type> inferred, Types types) throws NoInstanceException {
+                void instantiateReturnType(Type restype, List<Type> inferred, Types types) throws NoInstanceException {
+                    Type owntype = new MethodType(types.subst(getParameterTypes(), tvars, inferred),
+                                       restype,
+                                       types.subst(getThrownTypes(), tvars, inferred),
+                                       qtype.tsym);
                     // check that actuals conform to inferred formals
-                    checkArgumentsAcceptable(env, capturedArgs, getParameterTypes(), allowBoxing, useVarargs, warn);
+                    warn.clear();
+                    checkArgumentsAcceptable(env, capturedArgs, owntype.getParameterTypes(), allowBoxing, useVarargs, warn);
                     // check that inferred bounds conform to their bounds
                     checkWithinBounds(all_tvars,
                            types.subst(inferredTypes, tvars, inferred), warn);
-                    if (useVarargs) {
-                        chk.checkVararg(env.tree.pos(), getParameterTypes(), msym);
-                    }
-            }};
+                    qtype = chk.checkMethod(owntype, msym, env, TreeInfo.args(env.tree), capturedArgs, useVarargs, warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED));
+                }
+            };
         }
         else {
             // check that actuals conform to inferred formals
@@ -499,19 +468,48 @@ public class Infer {
     }
     //where
 
+        /** inference check handler **/
+        class InferenceCheckHandler implements Resolve.MethodCheckHandler {
+
+            List<Type> undetvars;
+
+            public InferenceCheckHandler(List<Type> undetvars) {
+                this.undetvars = undetvars;
+            }
+
+            public InapplicableMethodException arityMismatch() {
+                return unambiguousNoInstanceException.setMessage("infer.arg.length.mismatch");
+            }
+            public InapplicableMethodException argumentMismatch(boolean varargs, Type found, Type expected) {
+                String key = varargs ?
+                    "infer.varargs.argument.mismatch" :
+                    "infer.no.conforming.assignment.exists";
+                return unambiguousNoInstanceException.setMessage(key,
+                        inferenceVars(undetvars), found, expected);
+            }
+            public InapplicableMethodException inaccessibleVarargs(Symbol location, Type expected) {
+                return unambiguousNoInstanceException.setMessage("inaccessible.varargs.type",
+                        expected, Kinds.kindName(location), location);
+            }
+        }
+
         /**
          * A delegated type representing a partially uninferred method type.
          * The return type of a partially uninferred method type is a ForAll
          * type - when the return type is instantiated (see Infer.instantiateExpr)
          * the underlying method type is also updated.
          */
-        static abstract class UninferredMethodType extends DelegatedType {
+        abstract class UninferredMethodType extends DelegatedType {
 
             final List<Type> tvars;
+            final Symbol msym;
+            final DiagnosticPosition pos;
 
-            public UninferredMethodType(MethodType mtype, List<Type> tvars) {
+            public UninferredMethodType(DiagnosticPosition pos, Symbol msym, MethodType mtype, List<Type> tvars) {
                 super(METHOD, new MethodType(mtype.argtypes, null, mtype.thrown, mtype.tsym));
                 this.tvars = tvars;
+                this.msym = msym;
+                this.pos = pos;
                 asMethodType().restype = new UninferredReturnType(tvars, mtype.restype);
             }
 
@@ -525,16 +523,7 @@ public class Infer {
                 return qtype.map(f);
             }
 
-            void instantiateReturnType(Type restype, List<Type> inferred, Types types) throws NoInstanceException {
-                //update method type with newly inferred type-arguments
-                qtype = new MethodType(types.subst(getParameterTypes(), tvars, inferred),
-                                       restype,
-                                       types.subst(UninferredMethodType.this.getThrownTypes(), tvars, inferred),
-                                       UninferredMethodType.this.qtype.tsym);
-                check(inferred, types);
-            }
-
-            abstract void check(List<Type> inferred, Types types) throws NoInstanceException;
+            abstract void instantiateReturnType(Type restype, List<Type> inferred, Types types);
 
             abstract List<Type> getConstraints(TypeVar tv, ConstraintKind ck);
 
@@ -546,7 +535,10 @@ public class Infer {
                 public Type inst(List<Type> actuals, Types types) {
                     Type newRestype = super.inst(actuals, types);
                     instantiateReturnType(newRestype, actuals, types);
-                    return newRestype;
+                    if (rs.verboseResolutionMode.contains(VerboseResolutionMode.DEFERRED_INST)) {
+                        log.note(pos, "deferred.method.inst", msym, UninferredMethodType.this.qtype, newRestype);
+                    }
+                    return UninferredMethodType.this.qtype.getReturnType();
                 }
                 @Override
                 public List<Type> getConstraints(TypeVar tv, ConstraintKind ck) {
@@ -561,7 +553,7 @@ public class Infer {
                 rs.checkRawArgumentsAcceptable(env, actuals, formals,
                        allowBoxing, useVarargs, warn);
             }
-            catch (Resolve.InapplicableMethodException ex) {
+            catch (InapplicableMethodException ex) {
                 // inferred method is not applicable
                 throw invalidInstanceException.setMessage(ex.getDiagnostic());
             }
@@ -626,13 +618,13 @@ public class Infer {
         //the polymorphic signature call environment is nested.
 
         switch (env.next.tree.getTag()) {
-            case JCTree.TYPECAST:
+            case TYPECAST:
                 JCTypeCast castTree = (JCTypeCast)env.next.tree;
                 restype = (TreeInfo.skipParens(castTree.expr) == env.tree) ?
                     castTree.clazz.type :
                     syms.objectType;
                 break;
-            case JCTree.EXEC:
+            case EXEC:
                 JCTree.JCExpressionStatement execTree =
                         (JCTree.JCExpressionStatement)env.next.tree;
                 restype = (TreeInfo.skipParens(execTree.expr) == env.tree) ?

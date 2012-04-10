@@ -258,7 +258,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
             ClassType norm = (ClassType) t.tsym.type;
             if (norm == null) {
                 s = localize(locale, "compiler.misc.anonymous.class", (Object) null);
-            } else if (norm.interfaces_field.nonEmpty()) {
+            } else if (norm.interfaces_field != null && norm.interfaces_field.nonEmpty()) {
                 s = localize(locale, "compiler.misc.anonymous.class",
                         visit(norm.interfaces_field.head, locale));
             } else {
@@ -311,7 +311,7 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
 
     @Override
     public String visitMethodSymbol(MethodSymbol s, Locale locale) {
-        if ((s.flags() & BLOCK) != 0) {
+        if (s.isStaticOrInstanceInit()) {
             return s.owner.name.toString();
         } else {
             String ms = (s.name == s.name.table.names.init)

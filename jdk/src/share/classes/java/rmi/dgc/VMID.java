@@ -118,7 +118,7 @@ public final class VMID implements java.io.Serializable {
         StringBuffer result = new StringBuffer();
         if (addr != null)
             for (int i = 0; i < addr.length; ++ i) {
-                int x = (int) (addr[i] & 0xFF);
+                int x = addr[i] & 0xFF;
                 result.append((x < 0x10 ? "0" : "") +
                               Integer.toString(x, 16));
             }
@@ -170,7 +170,7 @@ public final class VMID implements java.io.Serializable {
             /* can't happen, but be deterministic anyway. */
             addrHash = new byte[0];
         } catch (NoSuchAlgorithmException complain) {
-            throw new InternalError(complain.toString());
+            throw new InternalError(complain.toString(), complain);
         }
         return addrHash;
     }

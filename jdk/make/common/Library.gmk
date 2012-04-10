@@ -58,6 +58,14 @@ FILES_o   = $(patsubst %.c,   %.$(OBJECT_SUFFIX), $(addprefix $(OBJDIR)/, $(notd
 FILES_o  += $(patsubst %.s,   %.$(OBJECT_SUFFIX), $(addprefix $(OBJDIR)/, $(notdir $(FILES_s))))
 FILES_o  += $(patsubst %.cpp, %.$(OBJECT_SUFFIX), $(addprefix $(OBJDIR)/, $(notdir $(FILES_cpp))))
 
+ifeq ($(PLATFORM), macosx)
+FILES_o  += $(patsubst %.m,   %.$(OBJECT_SUFFIX), $(addprefix $(OBJDIR)/, $(notdir $(FILES_objc))))
+FILES_o  += $(patsubst %.mm,  %.$(OBJECT_SUFFIX), $(addprefix $(OBJDIR)/, $(notdir $(FILES_objcpp))))
+
+INCREMENTAL_BUILD=false
+
+endif # PLATFORM
+
 ifeq ($(INCREMENTAL_BUILD),true)
 FILES_d   = $(patsubst %.c,   %.$(DEPEND_SUFFIX), $(addprefix $(OBJDIR)/, $(notdir $(FILES_c))))
 FILES_d  += $(patsubst %.cpp, %.$(DEPEND_SUFFIX), $(addprefix $(OBJDIR)/, $(notdir $(FILES_cpp))))
@@ -165,7 +173,7 @@ $(ACTUAL_LIBRARY):: $(OBJDIR)/$(LIBRARY).lcf
 	$(LINK) -dll -out:$(OBJDIR)/$(@F) \
 	  -map:$(OBJDIR)/$(LIBRARY).map \
 	  $(LFLAGS) @$(OBJDIR)/$(LIBRARY).lcf \
-	  $(OTHER_LCF) $(JAVALIB) $(LDLIBS)
+	  $(OTHER_LCF) $(LDLIBS)
 	$(CP) $(OBJDIR)/$(@F) $@
 	@$(call binary_file_verification,$@)
 	$(CP) $(OBJDIR)/$(LIBRARY).map $(@D)
@@ -217,12 +225,17 @@ else # PLATFORM
 # the shared library.  On other platforms set this to false at the
 # make command line.
 #
+
+ifneq ($(PLATFORM), macosx)
+  ARFLAGS = -r
+endif
+
 $(ACTUAL_LIBRARY):: $(COMPILE_FILES_o) $(FILES_m) $(FILES_reorder)
 	@$(prep-target)
 	@$(ECHO) "STATS: LIBRARY=$(LIBRARY), PRODUCT=$(PRODUCT), OPTIMIZATION_LEVEL=$(OPTIMIZATION_LEVEL)"
 	@$(ECHO) "Rebuilding $@ because of $?"
 ifeq ($(LIBRARY), fdlibm)
-	$(AR) -r $@ $(FILES_o)
+	$(AR) $(ARFLAGS) $@ $(FILES_o)
 else # LIBRARY
 	$(LINKER) $(SHARED_LIBRARY_FLAG) -o $@ $(FILES_o) $(LDLIBS)
 	@$(call binary_file_verification,$@)

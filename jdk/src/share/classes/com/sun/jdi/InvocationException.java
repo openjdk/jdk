@@ -34,6 +34,7 @@ package com.sun.jdi;
  */
 public class InvocationException extends Exception
 {
+    private static final long serialVersionUID = 6066780907971918568L;
     ObjectReference exception;
 
     public InvocationException(ObjectReference exception)

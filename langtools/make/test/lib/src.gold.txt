@@ -1,14 +1,4 @@
 com/sun/javadoc/package.html
-com/sun/mirror/apt/package.html
-com/sun/mirror/declaration/package.html
-com/sun/mirror/overview.html
-com/sun/mirror/type/package.html
-com/sun/mirror/util/package.html
-com/sun/tools/apt/Main.java
-com/sun/tools/apt/main/Main.java
-com/sun/tools/apt/resources/apt.properties
-com/sun/tools/apt/resources/apt_ja.properties
-com/sun/tools/apt/resources/apt_zh_CN.properties
 com/sun/tools/doclets/formats/html/markup/package.html
 com/sun/tools/doclets/formats/html/package.html
 com/sun/tools/doclets/formats/html/resources/standard.properties

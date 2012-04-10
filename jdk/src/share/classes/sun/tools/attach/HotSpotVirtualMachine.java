@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         try {
             loadAgentLibrary("instrument", args);
         } catch (AgentLoadException x) {
-            throw new InternalError("instrument library is missing in target VM");
+            throw new InternalError("instrument library is missing in target VM", x);
         } catch (AgentInitializationException x) {
             /*
              * Translate interesting errors into the right exception and
@@ -195,6 +195,10 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         return executeCommand("printflag", name);
     }
 
+    public InputStream executeJCmd(String command) throws IOException {
+        return executeCommand("jcmd", command);
+    }
+
     // -- Supporting methods
 
 
@@ -212,7 +216,7 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         try {
             return execute(cmd, args);
         } catch (AgentLoadException x) {
-            throw new InternalError("Should not get here");
+            throw new InternalError("Should not get here", x);
         }
     }
 

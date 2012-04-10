@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,59 +41,90 @@
 # include "os_windows.inline.hpp"
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.inline.hpp"
+# include "thread_bsd.inline.hpp"
+#endif
 
 // The direct lock/unlock calls do not force a collection if an unlock
 // decrements the count to zero. Avoid calling these if at all possible.
 
 class GC_locker: public AllStatic {
  private:
-  static volatile jint _jni_lock_count;  // number of jni active instances
+  // The _jni_lock_count keeps track of the number of threads that are
+  // currently in a critical region.  It's only kept up to date when
+  // _needs_gc is true.  The current value is computed during
+  // safepointing and decremented during the slow path of GC_locker
+  // unlocking.
+  static volatile jint _jni_lock_count;  // number of jni active instances.
+
   static volatile jint _lock_count;      // number of other active instances
   static volatile bool _needs_gc;        // heap is filling, we need a GC
                                          // note: bool is typedef'd as jint
   static volatile bool _doing_gc;        // unlock_critical() is doing a GC
 
+#ifdef ASSERT
+  // This lock count is updated for all operations and is used to
+  // validate the jni_lock_count that is computed during safepoints.
+  static volatile jint _debug_jni_lock_count;
+#endif
+
   // Accessors
   static bool is_jni_active() {
+    assert(_needs_gc, "only valid when _needs_gc is set");
     return _jni_lock_count > 0;
   }
 
-  static void set_needs_gc() {
-    assert(SafepointSynchronize::is_at_safepoint(),
-      "needs_gc is only set at a safepoint");
-    _needs_gc = true;
-  }
+  // At a safepoint, visit all threads and count the number of active
+  // critical sections.  This is used to ensure that all active
+  // critical sections are exited before a new one is started.
+  static void verify_critical_count() NOT_DEBUG_RETURN;
 
-  static void clear_needs_gc() {
-    assert_lock_strong(JNICritical_lock);
-    _needs_gc = false;
-  }
+  static void jni_lock(JavaThread* thread);
+  static void jni_unlock(JavaThread* thread);
 
-  static void jni_lock() {
-    Atomic::inc(&_jni_lock_count);
-    CHECK_UNHANDLED_OOPS_ONLY(
-      if (CheckUnhandledOops) { Thread::current()->_gc_locked_out_count++; })
-    assert(Universe::heap() == NULL || !Universe::heap()->is_gc_active(),
-           "locking failed");
+  static bool is_active_internal() {
+    verify_critical_count();
+    return _lock_count > 0 || _jni_lock_count > 0;
   }
-
-  static void jni_unlock() {
-    Atomic::dec(&_jni_lock_count);
-    CHECK_UNHANDLED_OOPS_ONLY(
-      if (CheckUnhandledOops) { Thread::current()->_gc_locked_out_count--; })
-  }
-
-  static void jni_lock_slow();
-  static void jni_unlock_slow();
 
  public:
   // Accessors
-  static bool is_active();
+  static bool is_active() {
+    assert(_needs_gc || SafepointSynchronize::is_at_safepoint(), "only read at safepoint");
+    return is_active_internal();
+  }
   static bool needs_gc()       { return _needs_gc;                        }
-  // Shorthand
-  static bool is_active_and_needs_gc() { return is_active() && needs_gc();}
 
-  // Calls set_needs_gc() if is_active() is true. Returns is_active().
+  // Shorthand
+  static bool is_active_and_needs_gc() {
+    // Use is_active_internal since _needs_gc can change from true to
+    // false outside of a safepoint, triggering the assert in
+    // is_active.
+    return needs_gc() && is_active_internal();
+  }
+
+  // In debug mode track the locking state at all times
+  static void increment_debug_jni_lock_count() {
+#ifdef ASSERT
+    assert(_debug_jni_lock_count >= 0, "bad value");
+    Atomic::inc(&_debug_jni_lock_count);
+#endif
+  }
+  static void decrement_debug_jni_lock_count() {
+#ifdef ASSERT
+    assert(_debug_jni_lock_count > 0, "bad value");
+    Atomic::dec(&_debug_jni_lock_count);
+#endif
+  }
+
+  // Set the current lock count
+  static void set_jni_lock_count(int count) {
+    _jni_lock_count = count;
+    verify_critical_count();
+  }
+
+  // Sets _needs_gc if is_active() is true. Returns is_active().
   static bool check_active_before_gc();
 
   // Stalls the caller (who should not be in a jni critical section)
@@ -127,22 +158,24 @@ class GC_locker: public AllStatic {
   // JNI critical regions are the only participants in this scheme
   // because they are, by spec, well bounded while in a critical region.
   //
-  // Each of the following two method is split into a fast path and a slow
-  // path. JNICritical_lock is only grabbed in the slow path.
+  // Each of the following two method is split into a fast path and a
+  // slow path. JNICritical_lock is only grabbed in the slow path.
   // _needs_gc is initially false and every java thread will go
-  // through the fast path (which does the same thing as the slow path
-  // when _needs_gc is false). When GC happens at a safepoint,
-  // GC_locker::is_active() is checked. Since there is no safepoint in the
-  // fast path of lock_critical() and unlock_critical(), there is no race
-  // condition between the fast path and GC. After _needs_gc is set at a
-  // safepoint, every thread will go through the slow path after the safepoint.
-  // Since after a safepoint, each of the following two methods is either
-  // entered from the method entry and falls into the slow path, or is
-  // resumed from the safepoints in the method, which only exist in the slow
-  // path. So when _needs_gc is set, the slow path is always taken, till
-  // _needs_gc is cleared.
+  // through the fast path, which simply increments or decrements the
+  // current thread's critical count.  When GC happens at a safepoint,
+  // GC_locker::is_active() is checked. Since there is no safepoint in
+  // the fast path of lock_critical() and unlock_critical(), there is
+  // no race condition between the fast path and GC. After _needs_gc
+  // is set at a safepoint, every thread will go through the slow path
+  // after the safepoint.  Since after a safepoint, each of the
+  // following two methods is either entered from the method entry and
+  // falls into the slow path, or is resumed from the safepoints in
+  // the method, which only exist in the slow path. So when _needs_gc
+  // is set, the slow path is always taken, till _needs_gc is cleared.
   static void lock_critical(JavaThread* thread);
   static void unlock_critical(JavaThread* thread);
+
+  static address needs_gc_address() { return (address) &_needs_gc; }
 };
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ public final class Short extends Number implements Comparable<Short> {
      * The {@code Class} instance representing the primitive type
      * {@code short}.
      */
+    @SuppressWarnings("unchecked")
     public static final Class<Short>    TYPE = (Class<Short>) Class.getPrimitiveClass("short");
 
     /**
@@ -79,8 +80,8 @@ public final class Short extends Number implements Comparable<Short> {
      * determined by whether {@link java.lang.Character#digit(char,
      * int)} returns a nonnegative value) except that the first
      * character may be an ASCII minus sign {@code '-'}
-     * (<code>'&#92;u002D'</code>) to indicate a negative value or an
-     * ASCII plus sign {@code '+'} (<code>'&#92;u002B'</code>) to
+     * ({@code '\u005Cu002D'}) to indicate a negative value or an
+     * ASCII plus sign {@code '+'} ({@code '\u005Cu002B'}) to
      * indicate a positive value.  The resulting {@code short} value
      * is returned.
      *
@@ -96,8 +97,8 @@ public final class Short extends Number implements Comparable<Short> {
      *
      * <li> Any character of the string is not a digit of the
      * specified radix, except that the first character may be a minus
-     * sign {@code '-'} (<code>'&#92;u002D'</code>) or plus sign
-     * {@code '+'} (<code>'&#92;u002B'</code>) provided that the
+     * sign {@code '-'} ({@code '\u005Cu002D'}) or plus sign
+     * {@code '+'} ({@code '\u005Cu002B'}) provided that the
      * string is longer than length 1.
      *
      * <li> The value represented by the string is not a value of type
@@ -125,9 +126,9 @@ public final class Short extends Number implements Comparable<Short> {
      * Parses the string argument as a signed decimal {@code
      * short}. The characters in the string must all be decimal
      * digits, except that the first character may be an ASCII minus
-     * sign {@code '-'} (<code>'&#92;u002D'</code>) to indicate a
+     * sign {@code '-'} ({@code '\u005Cu002D'}) to indicate a
      * negative value or an ASCII plus sign {@code '+'}
-     * (<code>'&#92;u002B'</code>) to indicate a positive value.  The
+     * ({@code '\u005Cu002B'}) to indicate a positive value.  The
      * resulting {@code short} value is returned, exactly as if the
      * argument and the radix 10 were given as arguments to the {@link
      * #parseShort(java.lang.String, int)} method.
@@ -466,6 +467,47 @@ public final class Short extends Number implements Comparable<Short> {
      */
     public static short reverseBytes(short i) {
         return (short) (((i & 0xFF00) >> 8) | (i << 8));
+    }
+
+
+    /**
+     * Converts the argument to an {@code int} by an unsigned
+     * conversion.  In an unsigned conversion to an {@code int}, the
+     * high-order 16 bits of the {@code int} are zero and the
+     * low-order 16 bits are equal to the bits of the {@code short} argument.
+     *
+     * Consequently, zero and positive {@code short} values are mapped
+     * to a numerically equal {@code int} value and negative {@code
+     * short} values are mapped to an {@code int} value equal to the
+     * input plus 2<sup>16</sup>.
+     *
+     * @param  x the value to convert to an unsigned {@code int}
+     * @return the argument converted to {@code int} by an unsigned
+     *         conversion
+     * @since 1.8
+     */
+    public static int toUnsignedInt(short x) {
+        return ((int) x) & 0xffff;
+    }
+
+    /**
+     * Converts the argument to a {@code long} by an unsigned
+     * conversion.  In an unsigned conversion to a {@code long}, the
+     * high-order 48 bits of the {@code long} are zero and the
+     * low-order 16 bits are equal to the bits of the {@code short} argument.
+     *
+     * Consequently, zero and positive {@code short} values are mapped
+     * to a numerically equal {@code long} value and negative {@code
+     * short} values are mapped to a {@code long} value equal to the
+     * input plus 2<sup>16</sup>.
+     *
+     * @param  x the value to convert to an unsigned {@code long}
+     * @return the argument converted to {@code long} by an unsigned
+     *         conversion
+     * @since 1.8
+     */
+    public static long toUnsignedLong(short x) {
+        return ((long) x) & 0xffffL;
     }
 
     /** use serialVersionUID from JDK 1.1. for interoperability */

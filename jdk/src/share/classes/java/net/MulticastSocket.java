@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package java.net;
 
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.util.Enumeration;
 
 /**
@@ -82,6 +81,13 @@ import java.util.Enumeration;
  */
 public
 class MulticastSocket extends DatagramSocket {
+
+    /**
+     * Used on some platforms to record if an outgoing interface
+     * has been set for this socket.
+     */
+    private boolean interfaceSet;
+
     /**
      * Create a multicast socket.
      *
@@ -162,7 +168,12 @@ class MulticastSocket extends DatagramSocket {
         setReuseAddress(true);
 
         if (bindaddr != null) {
-            bind(bindaddr);
+            try {
+                bind(bindaddr);
+            } finally {
+                if (!isBound())
+                    close();
+            }
         }
     }
 
@@ -297,6 +308,16 @@ class MulticastSocket extends DatagramSocket {
 
         if (!mcastaddr.isMulticastAddress()) {
             throw new SocketException("Not a multicast address");
+        }
+
+        /**
+         * required for some platforms where it's not possible to join
+         * a group without setting the interface first.
+         */
+        NetworkInterface defaultInterface = NetworkInterface.getDefault();
+
+        if (!interfaceSet && defaultInterface != null) {
+            setNetworkInterface(defaultInterface);
         }
 
         getImpl().join(mcastaddr);
@@ -449,6 +470,7 @@ class MulticastSocket extends DatagramSocket {
         synchronized (infLock) {
             getImpl().setOption(SocketOptions.IP_MULTICAST_IF, inf);
             infAddress = inf;
+            interfaceSet = true;
         }
     }
 
@@ -495,9 +517,9 @@ class MulticastSocket extends DatagramSocket {
              */
             try {
                 NetworkInterface ni = NetworkInterface.getByInetAddress(ia);
-                Enumeration addrs = ni.getInetAddresses();
+                Enumeration<InetAddress> addrs = ni.getInetAddresses();
                 while (addrs.hasMoreElements()) {
-                    InetAddress addr = (InetAddress)(addrs.nextElement());
+                    InetAddress addr = addrs.nextElement();
                     if (addr.equals(infAddress)) {
                         return infAddress;
                     }
@@ -531,6 +553,7 @@ class MulticastSocket extends DatagramSocket {
         synchronized (infLock) {
             getImpl().setOption(SocketOptions.IP_MULTICAST_IF2, netIf);
             infAddress = null;
+            interfaceSet = true;
         }
     }
 

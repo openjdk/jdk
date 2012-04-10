@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ class G1RemSet: public CHeapObj {
 protected:
   G1CollectedHeap* _g1;
   unsigned _conc_refine_cards;
-  size_t n_workers();
+  uint n_workers();
 
 protected:
   enum SomePrivateConstants {
@@ -104,8 +104,6 @@ public:
   void scanRS(OopsInHeapRegionClosure* oc, int worker_i);
   void updateRS(DirtyCardQueue* into_cset_dcq, int worker_i);
 
-  HeapRegion* calculateStartRegion(int i);
-
   CardTableModRefBS* ct_bs() { return _ct_bs; }
   size_t cardsScanned() { return _total_cards_scanned; }
 
@@ -124,7 +122,7 @@ public:
   // parallel thread id of the current thread, and "claim_val" is the
   // value that should be used to claim heap regions.
   void scrub_par(BitMap* region_bm, BitMap* card_bm,
-                 int worker_num, int claim_val);
+                 uint worker_num, int claim_val);
 
   // Refine the card corresponding to "card_ptr".  If "sts" is non-NULL,
   // join and leave around parts that must be atomic wrt GC.  (NULL means
@@ -141,8 +139,6 @@ public:
   // Prepare remembered set for verification.
   virtual void prepare_for_verify();
 };
-
-#define G1_REM_SET_LOGGING 0
 
 class CountNonCleanMemRegionClosure: public MemRegionClosure {
   G1CollectedHeap* _g1;
@@ -193,45 +189,6 @@ public:
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(      oop* p) { do_oop_work(p); }
-};
-
-class UpdateRSOrPushRefOopClosure: public OopClosure {
-  G1CollectedHeap* _g1;
-  G1RemSet* _g1_rem_set;
-  HeapRegion* _from;
-  OopsInHeapRegionClosure* _push_ref_cl;
-  bool _record_refs_into_cset;
-  int _worker_i;
-
-  template <class T> void do_oop_work(T* p);
-
-public:
-  UpdateRSOrPushRefOopClosure(G1CollectedHeap* g1h,
-                              G1RemSet* rs,
-                              OopsInHeapRegionClosure* push_ref_cl,
-                              bool record_refs_into_cset,
-                              int worker_i = 0) :
-    _g1(g1h),
-    _g1_rem_set(rs),
-    _from(NULL),
-    _record_refs_into_cset(record_refs_into_cset),
-    _push_ref_cl(push_ref_cl),
-    _worker_i(worker_i) { }
-
-  void set_from(HeapRegion* from) {
-    assert(from != NULL, "from region must be non-NULL");
-    _from = from;
-  }
-
-  bool self_forwarded(oop obj) {
-    bool result = (obj->is_forwarded() && (obj->forwardee()== obj));
-    return result;
-  }
-
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(oop* p)       { do_oop_work(p); }
-
-  bool apply_to_weak_ref_discovered_field() { return true; }
 };
 
 

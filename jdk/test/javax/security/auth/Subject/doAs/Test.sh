@@ -25,7 +25,7 @@
 
 # @test 1.1, 02/14/01
 # @author  Ram Marti
-# @bug 4399067 
+# @bug 4399067
 # @summary Subject.doAs(null, action) does not clear the executing
 #
 # ${TESTJAVA} is pointing to the jre
@@ -39,6 +39,11 @@ case "$OS" in
     RM="/bin/rm -f"
     ;;
   Linux )
+    PS=":"
+    FS="/"
+    RM="/bin/rm -f"
+    ;;
+  Darwin )
     PS=":"
     FS="/"
     RM="/bin/rm -f"
@@ -69,6 +74,6 @@ echo $WD
 ${TESTJAVA}${FS}bin${FS}java -classpath "${TESTCLASSES}${FS}" \
 -Djava.security.manager  \
 -Djava.security.policy=${TESTSRC}${FS}policy \
-Test 
+Test
 
 exit $?

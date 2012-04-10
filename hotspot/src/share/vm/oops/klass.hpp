@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "oops/klassPS.hpp"
 #include "oops/oop.hpp"
 #include "runtime/orderAccess.hpp"
+#include "trace/traceMacros.hpp"
 #include "utilities/accessFlags.hpp"
 #ifndef SERIALGC
 #include "gc_implementation/concurrentMarkSweep/cmsOopClosures.hpp"
@@ -80,6 +81,7 @@
 //    [last_biased_lock_bulk_revocation_time] (64 bits)
 //    [prototype_header]
 //    [biased_lock_revocation_count]
+//    [trace_id]
 
 
 // Forward declarations.
@@ -147,7 +149,7 @@ class Klass_vtbl {
   // by the shared "base_create" subroutines.
   //
   virtual void* allocate_permanent(KlassHandle& klass, int size, TRAPS) const = 0;
-  void post_new_init_klass(KlassHandle& klass, klassOop obj, int size) const;
+  void post_new_init_klass(KlassHandle& klass, klassOop obj) const;
 
   // Every subclass on which vtbl_value is called must include this macro.
   // Delay the installation of the klassKlass pointer until after the
@@ -158,7 +160,7 @@ class Klass_vtbl {
     if (HAS_PENDING_EXCEPTION) return NULL;                                   \
     klassOop new_klass = ((Klass*) result)->as_klassOop();                    \
     OrderAccess::storestore();                                                \
-    post_new_init_klass(klass_klass, new_klass, size);                        \
+    post_new_init_klass(klass_klass, new_klass);                              \
     return result;                                                            \
   }
 
@@ -263,6 +265,7 @@ class Klass : public Klass_vtbl {
   markOop  _prototype_header;   // Used when biased locking is both enabled and disabled for this type
   jint     _biased_lock_revocation_count;
 
+  TRACE_DEFINE_KLASS_TRACE_ID;
  public:
 
   // returns the enclosing klassOop
@@ -313,7 +316,7 @@ class Klass : public Klass_vtbl {
   // Can this klass be a primary super?  False for interfaces and arrays of
   // interfaces.  False also for arrays or classes with long super chains.
   bool can_be_primary_super() const {
-    const juint secondary_offset = secondary_super_cache_offset_in_bytes() + sizeof(oopDesc);
+    const juint secondary_offset = in_bytes(secondary_super_cache_offset());
     return super_check_offset() != secondary_offset;
   }
   virtual bool can_be_primary_super_slow() const;
@@ -323,7 +326,7 @@ class Klass : public Klass_vtbl {
     if (!can_be_primary_super()) {
       return primary_super_limit();
     } else {
-      juint d = (super_check_offset() - (primary_supers_offset_in_bytes() + sizeof(oopDesc))) / sizeof(klassOop);
+      juint d = (super_check_offset() - in_bytes(primary_supers_offset())) / sizeof(klassOop);
       assert(d < primary_super_limit(), "oob");
       assert(_primary_supers[d] == as_klassOop(), "proper init");
       return d;
@@ -373,15 +376,15 @@ class Klass : public Klass_vtbl {
   virtual void set_alloc_size(juint n) = 0;
 
   // Compiler support
-  static int super_offset_in_bytes()         { return offset_of(Klass, _super); }
-  static int super_check_offset_offset_in_bytes() { return offset_of(Klass, _super_check_offset); }
-  static int primary_supers_offset_in_bytes(){ return offset_of(Klass, _primary_supers); }
-  static int secondary_super_cache_offset_in_bytes() { return offset_of(Klass, _secondary_super_cache); }
-  static int secondary_supers_offset_in_bytes() { return offset_of(Klass, _secondary_supers); }
-  static int java_mirror_offset_in_bytes()   { return offset_of(Klass, _java_mirror); }
-  static int modifier_flags_offset_in_bytes(){ return offset_of(Klass, _modifier_flags); }
-  static int layout_helper_offset_in_bytes() { return offset_of(Klass, _layout_helper); }
-  static int access_flags_offset_in_bytes()  { return offset_of(Klass, _access_flags); }
+  static ByteSize super_offset()                 { return in_ByteSize(sizeof(klassOopDesc) + offset_of(Klass, _super)); }
+  static ByteSize super_check_offset_offset()    { return in_ByteSize(sizeof(klassOopDesc) + offset_of(Klass, _super_check_offset)); }
+  static ByteSize primary_supers_offset()        { return in_ByteSize(sizeof(klassOopDesc) + offset_of(Klass, _primary_supers)); }
+  static ByteSize secondary_super_cache_offset() { return in_ByteSize(sizeof(klassOopDesc) + offset_of(Klass, _secondary_super_cache)); }
+  static ByteSize secondary_supers_offset()      { return in_ByteSize(sizeof(klassOopDesc) + offset_of(Klass, _secondary_supers)); }
+  static ByteSize java_mirror_offset()           { return in_ByteSize(sizeof(klassOopDesc) + offset_of(Klass, _java_mirror)); }
+  static ByteSize modifier_flags_offset()        { return in_ByteSize(sizeof(klassOopDesc) + offset_of(Klass, _modifier_flags)); }
+  static ByteSize layout_helper_offset()         { return in_ByteSize(sizeof(klassOopDesc) + offset_of(Klass, _layout_helper)); }
+  static ByteSize access_flags_offset()          { return in_ByteSize(sizeof(klassOopDesc) + offset_of(Klass, _access_flags)); }
 
   // Unpacking layout_helper:
   enum {
@@ -478,7 +481,7 @@ class Klass : public Klass_vtbl {
   bool is_subtype_of(klassOop k) const {
     juint    off = k->klass_part()->super_check_offset();
     klassOop sup = *(klassOop*)( (address)as_klassOop() + off );
-    const juint secondary_offset = secondary_super_cache_offset_in_bytes() + sizeof(oopDesc);
+    const juint secondary_offset = in_bytes(secondary_super_cache_offset());
     if (sup == k) {
       return true;
     } else if (off != secondary_offset) {
@@ -674,7 +677,7 @@ class Klass : public Klass_vtbl {
   // are potential problems in setting the bias pattern for
   // JVM-internal oops.
   inline void set_prototype_header(markOop header);
-  static int prototype_header_offset_in_bytes() { return offset_of(Klass, _prototype_header); }
+  static ByteSize prototype_header_offset() { return in_ByteSize(sizeof(klassOopDesc) + offset_of(Klass, _prototype_header)); }
 
   int  biased_lock_revocation_count() const { return (int) _biased_lock_revocation_count; }
   // Atomically increments biased_lock_revocation_count and returns updated value
@@ -683,6 +686,7 @@ class Klass : public Klass_vtbl {
   jlong last_biased_lock_bulk_revocation_time() { return _last_biased_lock_bulk_revocation_time; }
   void  set_last_biased_lock_bulk_revocation_time(jlong cur_time) { _last_biased_lock_bulk_revocation_time = cur_time; }
 
+  TRACE_DEFINE_KLASS_METHODS;
 
   // garbage collection support
   virtual void follow_weak_klass_links(

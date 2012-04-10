@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  * @bug 6530694
  * @summary Checks that sun.util.CoreResourceBundleControl does not apply
  *     to the application provided Swing resources.
- * @run main/othervm Bug6530694
+ * @run main/othervm -Djava.awt.headless=true Bug6530694
  */
 
 import java.util.Locale;
@@ -43,6 +43,12 @@ public class Bug6530694 {
     }
 
     public static void main(String[] args) {
-        new Bug6530694();
+        Locale reservedLocale = Locale.getDefault();
+        try {
+            new Bug6530694();
+        } finally {
+            // restore the reserved locale
+            Locale.setDefault(reservedLocale);
+        }
     }
 }
