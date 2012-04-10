@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -391,31 +391,31 @@ public class UnicodeSpec {
     */
 
     public static UnicodeSpec[] readSpecFile(File file, int plane) throws FileNotFoundException {
-                ArrayList list = new ArrayList(3000);
+        ArrayList<UnicodeSpec> list = new ArrayList<>(3000);
         UnicodeSpec[] result = null;
         int count = 0;
         BufferedReader f = new BufferedReader(new FileReader(file));
-                String line = null;
+        String line = null;
         loop:
         while(true) {
             try {
                 line = f.readLine();
             }
             catch (IOException e) {
-                                break loop;
-                        }
+                break loop;
+            }
             if (line == null) break loop;
             UnicodeSpec item = parse(line.trim());
-                        int specPlane = (int)(item.getCodePoint() >>> 16);
-                        if (specPlane < plane) continue;
-                        if (specPlane > plane) break;
+            int specPlane = item.getCodePoint() >>> 16;
+            if (specPlane < plane) continue;
+            if (specPlane > plane) break;
 
             if (item != null) {
-                                list.add(item);
+                list.add(item);
             }
         }
-                result = new UnicodeSpec[list.size()];
-                list.toArray(result);
+        result = new UnicodeSpec[list.size()];
+        list.toArray(result);
         return result;
     }
 

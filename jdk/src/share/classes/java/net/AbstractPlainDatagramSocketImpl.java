@@ -26,8 +26,7 @@ package java.net;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.util.Enumeration;
+import java.security.AccessController;
 import sun.net.ResourceManager;
 
 /**
@@ -46,13 +45,22 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
     int timeout = 0;
     boolean connected = false;
     private int trafficClass = 0;
-    private InetAddress connectedAddress = null;
+    protected InetAddress connectedAddress = null;
     private int connectedPort = -1;
 
     /* cached socket options */
     private int multicastInterface = 0;
     private boolean loopbackMode = true;
     private int ttl = -1;
+
+    private static final String os = AccessController.doPrivileged(
+        new sun.security.action.GetPropertyAction("os.name")
+    );
+
+    /**
+     * flag set if the native connect() call not to be used
+     */
+    private final static boolean connectDisabled = os.startsWith("Mac OS");
 
     /**
      * Load net library into runtime.
@@ -66,8 +74,8 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
      * Creates a datagram socket
      */
     protected synchronized void create() throws SocketException {
-        fd = new FileDescriptor();
         ResourceManager.beforeUdpCreate();
+        fd = new FileDescriptor();
         try {
             datagramSocketCreate();
         } catch (SocketException ioe) {
@@ -153,11 +161,13 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
      * Set the TTL (time-to-live) option.
      * @param TTL to be set.
      */
+    @Deprecated
     protected abstract void setTTL(byte ttl) throws IOException;
 
     /**
      * Get the TTL (time-to-live) option.
      */
+    @Deprecated
     protected abstract byte getTTL() throws IOException;
 
     /**
@@ -349,4 +359,7 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
     protected abstract void connect0(InetAddress address, int port) throws SocketException;
     protected abstract void disconnect0(int family);
 
+    protected boolean nativeConnectDisabled() {
+        return connectDisabled;
+    }
 }

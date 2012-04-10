@@ -48,6 +48,7 @@ public class VM {
         return suspended;
     }
 
+    @SuppressWarnings("deprecation")
     public static boolean allowThreadSuspension(ThreadGroup g, boolean b) {
         return g.allowThreadSuspension(b);
     }
@@ -167,7 +168,7 @@ public class VM {
     //
     // The initial value of this field is arbitrary; during JRE initialization
     // it will be reset to the value specified on the command line, if any,
-    // otherwise to Runtime.getRuntime.maxDirectMemory().
+    // otherwise to Runtime.getRuntime().maxMemory().
     //
     private static long directMemory = 64 * 1024 * 1024;
 
@@ -370,6 +371,12 @@ public class VM {
     private final static int JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER = 0x0400;
     private final static int JVMTI_THREAD_STATE_WAITING_INDEFINITELY = 0x0010;
     private final static int JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT = 0x0020;
+
+    /*
+     * Returns the first non-null class loader up the execution stack,
+     * or null if only code from the null class loader is on the stack.
+     */
+    public static native ClassLoader latestUserDefinedLoader();
 
     static {
         initialize();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,13 @@ import java.nio.channels.*;
 import java.nio.channels.spi.*;
 import java.net.SocketException;
 import java.util.*;
-import sun.misc.*;
 
 
 /**
  * Base Selector implementation class.
  */
 
-abstract class SelectorImpl
+public abstract class SelectorImpl
     extends AbstractSelector
 {
 
@@ -119,7 +118,7 @@ abstract class SelectorImpl
 
     protected abstract void implClose() throws IOException;
 
-    void putEventOps(SelectionKeyImpl sk, int ops) { }
+    public void putEventOps(SelectionKeyImpl sk, int ops) { }
 
     protected final SelectionKey register(AbstractSelectableChannel ch,
                                           int ops,
@@ -140,19 +139,16 @@ abstract class SelectorImpl
 
     void processDeregisterQueue() throws IOException {
         // Precondition: Synchronized on this, keys, and selectedKeys
-        Set cks = cancelledKeys();
+        Set<SelectionKey> cks = cancelledKeys();
         synchronized (cks) {
             if (!cks.isEmpty()) {
-                Iterator i = cks.iterator();
+                Iterator<SelectionKey> i = cks.iterator();
                 while (i.hasNext()) {
                     SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
                     try {
                         implDereg(ski);
                     } catch (SocketException se) {
-                        IOException ioe = new IOException(
-                            "Error deregistering key");
-                        ioe.initCause(se);
-                        throw ioe;
+                        throw new IOException("Error deregistering key", se);
                     } finally {
                         i.remove();
                     }

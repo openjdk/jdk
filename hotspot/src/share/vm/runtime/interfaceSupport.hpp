@@ -44,6 +44,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 
 // Wrapper for all entry points to the virtual machine.
 // The HandleMarkCleaner is a faster version of HandleMark.
@@ -69,9 +72,9 @@ class HandleMarkCleaner: public StackObj {
   }
 };
 
-// InterfaceSupport provides functionality used by the __LEAF and __ENTRY
-// macros. These macros are used to guard entry points into the VM and
-// perform checks upon leave of the VM.
+// InterfaceSupport provides functionality used by the VM_LEAF_BASE and
+// VM_ENTRY_BASE macros. These macros are used to guard entry points into
+// the VM and perform checks upon leave of the VM.
 
 
 class InterfaceSupport: AllStatic {
@@ -114,6 +117,9 @@ class InterfaceSupport: AllStatic {
 #endif
 #ifdef TARGET_OS_FAMILY_windows
 # include "interfaceSupport_windows.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "interfaceSupport_bsd.hpp"
 #endif
 
 };
@@ -427,27 +433,30 @@ class RuntimeHistogramElement : public HistogramElement {
 
 // LEAF routines do not lock, GC or throw exceptions
 
-#define __LEAF(result_type, header)                                  \
+#define VM_LEAF_BASE(result_type, header)                            \
   TRACE_CALL(result_type, header)                                    \
   debug_only(NoHandleMark __hm;)                                     \
+  os::verify_stack_alignment();                                      \
   /* begin of body */
 
 
 // ENTRY routines may lock, GC and throw exceptions
 
-#define __ENTRY(result_type, header, thread)                         \
+#define VM_ENTRY_BASE(result_type, header, thread)                   \
   TRACE_CALL(result_type, header)                                    \
   HandleMarkCleaner __hm(thread);                                    \
   Thread* THREAD = thread;                                           \
+  os::verify_stack_alignment();                                      \
   /* begin of body */
 
 
 // QUICK_ENTRY routines behave like ENTRY but without a handle mark
 
-#define __QUICK_ENTRY(result_type, header, thread)                   \
+#define VM_QUICK_ENTRY_BASE(result_type, header, thread)             \
   TRACE_CALL(result_type, header)                                    \
   debug_only(NoHandleMark __hm;)                                     \
   Thread* THREAD = thread;                                           \
+  os::verify_stack_alignment();                                      \
   /* begin of body */
 
 
@@ -457,20 +466,20 @@ class RuntimeHistogramElement : public HistogramElement {
 #define IRT_ENTRY(result_type, header)                               \
   result_type header {                                               \
     ThreadInVMfromJava __tiv(thread);                                \
-    __ENTRY(result_type, header, thread)                             \
+    VM_ENTRY_BASE(result_type, header, thread)                       \
     debug_only(VMEntryWrapper __vew;)
 
 
 #define IRT_LEAF(result_type, header)                                \
   result_type header {                                               \
-    __LEAF(result_type, header)                                      \
+    VM_LEAF_BASE(result_type, header)                                \
     debug_only(No_Safepoint_Verifier __nspv(true);)
 
 
 #define IRT_ENTRY_NO_ASYNC(result_type, header)                      \
   result_type header {                                               \
     ThreadInVMfromJavaNoAsyncException __tiv(thread);                \
-    __ENTRY(result_type, header, thread)                             \
+    VM_ENTRY_BASE(result_type, header, thread)                       \
     debug_only(VMEntryWrapper __vew;)
 
 // Another special case for nmethod_entry_point so the nmethod that the
@@ -481,7 +490,7 @@ class RuntimeHistogramElement : public HistogramElement {
   result_type header {                                               \
     nmethodLocker _nmlock(nm);                                       \
     ThreadInVMfromJavaNoAsyncException __tiv(thread);                                \
-    __ENTRY(result_type, header, thread)
+    VM_ENTRY_BASE(result_type, header, thread)
 
 #define IRT_END }
 
@@ -491,20 +500,20 @@ class RuntimeHistogramElement : public HistogramElement {
 #define JRT_ENTRY(result_type, header)                               \
   result_type header {                                               \
     ThreadInVMfromJava __tiv(thread);                                \
-    __ENTRY(result_type, header, thread)                             \
+    VM_ENTRY_BASE(result_type, header, thread)                       \
     debug_only(VMEntryWrapper __vew;)
 
 
 #define JRT_LEAF(result_type, header)                                \
   result_type header {                                               \
-  __LEAF(result_type, header)                                        \
+  VM_LEAF_BASE(result_type, header)                                  \
   debug_only(JRT_Leaf_Verifier __jlv;)
 
 
 #define JRT_ENTRY_NO_ASYNC(result_type, header)                      \
   result_type header {                                               \
     ThreadInVMfromJavaNoAsyncException __tiv(thread);                \
-    __ENTRY(result_type, header, thread)                             \
+    VM_ENTRY_BASE(result_type, header, thread)                       \
     debug_only(VMEntryWrapper __vew;)
 
 // Same as JRT Entry but allows for return value after the safepoint
@@ -537,11 +546,11 @@ extern "C" {                                                         \
     assert( !VerifyJNIEnvThread || (thread == Thread::current()), "JNIEnv is only valid in same thread"); \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
-    __ENTRY(result_type, header, thread)
+    VM_ENTRY_BASE(result_type, header, thread)
 
 
 // Ensure that the VMNativeEntryWrapper constructor, which can cause
-// a GC, is called outside the NoHandleMark (set via __QUICK_ENTRY).
+// a GC, is called outside the NoHandleMark (set via VM_QUICK_ENTRY_BASE).
 #define JNI_QUICK_ENTRY(result_type, header)                         \
 extern "C" {                                                         \
   result_type JNICALL header {                                \
@@ -549,7 +558,7 @@ extern "C" {                                                         \
     assert( !VerifyJNIEnvThread || (thread == Thread::current()), "JNIEnv is only valid in same thread"); \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
-    __QUICK_ENTRY(result_type, header, thread)
+    VM_QUICK_ENTRY_BASE(result_type, header, thread)
 
 
 #define JNI_LEAF(result_type, header)                                \
@@ -557,7 +566,7 @@ extern "C" {                                                         \
   result_type JNICALL header {                                \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
     assert( !VerifyJNIEnvThread || (thread == Thread::current()), "JNIEnv is only valid in same thread"); \
-    __LEAF(result_type, header)
+    VM_LEAF_BASE(result_type, header)
 
 
 // Close the routine and the extern "C"
@@ -573,7 +582,7 @@ extern "C" {                                                         \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
-    __ENTRY(result_type, header, thread)
+    VM_ENTRY_BASE(result_type, header, thread)
 
 
 #define JVM_ENTRY_NO_ENV(result_type, header)                        \
@@ -582,7 +591,7 @@ extern "C" {                                                         \
     JavaThread* thread = (JavaThread*)ThreadLocalStorage::thread();  \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
-    __ENTRY(result_type, header, thread)
+    VM_ENTRY_BASE(result_type, header, thread)
 
 
 #define JVM_QUICK_ENTRY(result_type, header)                         \
@@ -591,14 +600,14 @@ extern "C" {                                                         \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
     ThreadInVMfromNative __tiv(thread);                              \
     debug_only(VMNativeEntryWrapper __vew;)                          \
-    __QUICK_ENTRY(result_type, header, thread)
+    VM_QUICK_ENTRY_BASE(result_type, header, thread)
 
 
 #define JVM_LEAF(result_type, header)                                \
 extern "C" {                                                         \
   result_type JNICALL header {                                       \
     VM_Exit::block_if_vm_exited();                                   \
-    __LEAF(result_type, header)
+    VM_LEAF_BASE(result_type, header)
 
 
 #define JVM_END } }

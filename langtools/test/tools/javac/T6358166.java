@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class T6358166 extends AbstractProcessor {
 
         Main compilerMain = new Main("javac", new PrintWriter(System.err, true));
         compilerMain.setOptions(Options.instance(context));
-        compilerMain.filenames = new ListBuffer<File>();
+        compilerMain.filenames = new LinkedHashSet<File>();
         compilerMain.processArgs(args);
 
         JavaCompiler c = JavaCompiler.instance(context);

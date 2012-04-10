@@ -28,7 +28,6 @@
 #include <string.h>
 
 #include <dlfcn.h>
-#include <link.h>
 
 #include <jni_util.h>
 
@@ -40,7 +39,7 @@ void *findFunction(JNIEnv *env, jlong jHandle, const char *functionName) {
     if (fAddress == NULL) {
         char errorMessage[256];
         snprintf(errorMessage, sizeof(errorMessage), "Symbol not found: %s", functionName);
-        JNU_ThrowNullPointerException(env, errorMessage);
+        throwNullPointerException(env, errorMessage);
         return NULL;
     }
     return fAddress;
@@ -69,7 +68,7 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_Secmod_nssLoadLibrary
     dprintf2("-handle: %u (0X%X)\n", hModule, hModule);
 
     if (hModule == NULL) {
-        JNU_ThrowIOException(env, dlerror());
+        throwIOException(env, dlerror());
         return 0;
     }
 

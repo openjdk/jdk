@@ -41,13 +41,13 @@ fi
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     FS="/"
     SCR=`pwd`
     ;;
   CYGWIN* )
     FS="/"
-    SCR=`pwd | cygpath -d`
+    SCR=`pwd | cygpath -d -f -`
     ;;
   Windows* )
     FS="\\"

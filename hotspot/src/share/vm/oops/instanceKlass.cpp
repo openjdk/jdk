@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "memory/genOopClosures.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/permGen.hpp"
+#include "oops/fieldStreams.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceOop.hpp"
@@ -60,6 +61,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 #ifndef SERIALGC
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
@@ -75,6 +79,8 @@
 #endif
 
 #ifdef DTRACE_ENABLED
+
+#ifndef USDT2
 
 HS_DTRACE_PROBE_DECL4(hotspot, class__initialization__required,
   char*, intptr_t, oop, intptr_t);
@@ -118,6 +124,42 @@ HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
     HS_DTRACE_PROBE5(hotspot, class__initialization__##type,     \
       data, len, (clss)->class_loader(), thread_type, wait);     \
   }
+#else /* USDT2 */
+
+#define HOTSPOT_CLASS_INITIALIZATION_required HOTSPOT_CLASS_INITIALIZATION_REQUIRED
+#define HOTSPOT_CLASS_INITIALIZATION_recursive HOTSPOT_CLASS_INITIALIZATION_RECURSIVE
+#define HOTSPOT_CLASS_INITIALIZATION_concurrent HOTSPOT_CLASS_INITIALIZATION_CONCURRENT
+#define HOTSPOT_CLASS_INITIALIZATION_erroneous HOTSPOT_CLASS_INITIALIZATION_ERRONEOUS
+#define HOTSPOT_CLASS_INITIALIZATION_super__failed HOTSPOT_CLASS_INITIALIZATION_SUPER_FAILED
+#define HOTSPOT_CLASS_INITIALIZATION_clinit HOTSPOT_CLASS_INITIALIZATION_CLINIT
+#define HOTSPOT_CLASS_INITIALIZATION_error HOTSPOT_CLASS_INITIALIZATION_ERROR
+#define HOTSPOT_CLASS_INITIALIZATION_end HOTSPOT_CLASS_INITIALIZATION_END
+#define DTRACE_CLASSINIT_PROBE(type, clss, thread_type)          \
+  {                                                              \
+    char* data = NULL;                                           \
+    int len = 0;                                                 \
+    Symbol* name = (clss)->name();                               \
+    if (name != NULL) {                                          \
+      data = (char*)name->bytes();                               \
+      len = name->utf8_length();                                 \
+    }                                                            \
+    HOTSPOT_CLASS_INITIALIZATION_##type(                         \
+      data, len, (clss)->class_loader(), thread_type);           \
+  }
+
+#define DTRACE_CLASSINIT_PROBE_WAIT(type, clss, thread_type, wait) \
+  {                                                              \
+    char* data = NULL;                                           \
+    int len = 0;                                                 \
+    Symbol* name = (clss)->name();                               \
+    if (name != NULL) {                                          \
+      data = (char*)name->bytes();                               \
+      len = name->utf8_length();                                 \
+    }                                                            \
+    HOTSPOT_CLASS_INITIALIZATION_##type(                         \
+      data, len, (clss)->class_loader(), thread_type, wait);     \
+  }
+#endif /* USDT2 */
 
 #else //  ndef DTRACE_ENABLED
 
@@ -166,7 +208,7 @@ void instanceKlass::eager_initialize_impl(instanceKlassHandle this_oop) {
   // abort if someone beat us to the initialization
   if (!this_oop->is_not_initialized()) return;  // note: not equivalent to is_initialized()
 
-  ClassState old_state = this_oop->_init_state;
+  ClassState old_state = this_oop->init_state();
   link_class_impl(this_oop, true, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
@@ -335,6 +377,9 @@ bool instanceKlass::link_class_impl(
         this_oop->rewrite_class(CHECK_false);
       }
 
+      // relocate jsrs and link methods after they are all rewritten
+      this_oop->relocate_and_link_methods(CHECK_false);
+
       // Initialize the vtable and interface table after
       // methods have been rewritten since rewrite may
       // fabricate new methodOops.
@@ -365,17 +410,8 @@ bool instanceKlass::link_class_impl(
 
 
 // Rewrite the byte codes of all of the methods of a class.
-// Three cases:
-//    During the link of a newly loaded class.
-//    During the preloading of classes to be written to the shared spaces.
-//      - Rewrite the methods and update the method entry points.
-//
-//    During the link of a class in the shared spaces.
-//      - The methods were already rewritten, update the metho entry points.
-//
 // The rewriter must be called exactly once. Rewriting must happen after
 // verification but before the first method of the class is executed.
-
 void instanceKlass::rewrite_class(TRAPS) {
   assert(is_loaded(), "must be loaded");
   instanceKlassHandle this_oop(THREAD, this->as_klassOop());
@@ -383,8 +419,17 @@ void instanceKlass::rewrite_class(TRAPS) {
     assert(this_oop()->is_shared(), "rewriting an unshared class?");
     return;
   }
-  Rewriter::rewrite(this_oop, CHECK); // No exception can happen here
+  Rewriter::rewrite(this_oop, CHECK);
   this_oop->set_rewritten();
+}
+
+// Now relocate and link method entry points after class is rewritten.
+// This is outside is_rewritten flag. In case of an exception, it can be
+// executed more than once.
+void instanceKlass::relocate_and_link_methods(TRAPS) {
+  assert(is_loaded(), "must be loaded");
+  instanceKlassHandle this_oop(THREAD, this->as_klassOop());
+  Rewriter::relocate_and_link(this_oop, CHECK);
 }
 
 
@@ -624,6 +669,7 @@ objArrayOop instanceKlass::allocate_objArray(int n, int length, TRAPS) {
   if (length < 0) THROW_0(vmSymbols::java_lang_NegativeArraySizeException());
   if (length > arrayOopDesc::max_array_length(T_OBJECT)) {
     report_java_out_of_memory("Requested array size exceeds VM limit");
+    JvmtiExport::post_array_size_exhausted();
     THROW_OOP_0(Universe::out_of_memory_error_array_size());
   }
   int size = objArrayOopDesc::object_size(length);
@@ -779,14 +825,11 @@ void instanceKlass::mask_for(methodHandle method, int bci,
 
 
 bool instanceKlass::find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
-  const int n = fields()->length();
-  for (int i = 0; i < n; i += next_offset ) {
-    int name_index = fields()->ushort_at(i + name_index_offset);
-    int sig_index  = fields()->ushort_at(i + signature_index_offset);
-    Symbol* f_name = constants()->symbol_at(name_index);
-    Symbol* f_sig  = constants()->symbol_at(sig_index);
+  for (JavaFieldStream fs(as_klassOop()); !fs.done(); fs.next()) {
+    Symbol* f_name = fs.name();
+    Symbol* f_sig  = fs.signature();
     if (f_name == name && f_sig == sig) {
-      fd->initialize(as_klassOop(), i);
+      fd->initialize(as_klassOop(), fs.index());
       return true;
     }
   }
@@ -800,11 +843,10 @@ void instanceKlass::shared_symbols_iterate(SymbolClosure* closure) {
   closure->do_symbol(&_source_file_name);
   closure->do_symbol(&_source_debug_extension);
 
-  const int n = fields()->length();
-  for (int i = 0; i < n; i += next_offset ) {
-    int name_index = fields()->ushort_at(i + name_index_offset);
+  for (JavaFieldStream fs(this); !fs.done(); fs.next()) {
+    int name_index = fs.name_index();
     closure->do_symbol(constants()->symbol_at_addr(name_index));
-    int sig_index  = fields()->ushort_at(i + signature_index_offset);
+    int sig_index  = fs.signature_index();
     closure->do_symbol(constants()->symbol_at_addr(sig_index));
   }
 }
@@ -869,10 +911,9 @@ klassOop instanceKlass::find_field(Symbol* name, Symbol* sig, bool is_static, fi
 
 
 bool instanceKlass::find_local_field_from_offset(int offset, bool is_static, fieldDescriptor* fd) const {
-  int length = fields()->length();
-  for (int i = 0; i < length; i += next_offset) {
-    if (offset_from_fields( i ) == offset) {
-      fd->initialize(as_klassOop(), i);
+  for (JavaFieldStream fs(as_klassOop()); !fs.done(); fs.next()) {
+    if (fs.offset() == offset) {
+      fd->initialize(as_klassOop(), fs.index());
       if (fd->is_static() == is_static) return true;
     }
   }
@@ -903,11 +944,12 @@ void instanceKlass::methods_do(void f(methodOop method)) {
 
 
 void instanceKlass::do_local_static_fields(FieldClosure* cl) {
-  fieldDescriptor fd;
-  int length = fields()->length();
-  for (int i = 0; i < length; i += next_offset) {
-    fd.initialize(as_klassOop(), i);
-    if (fd.is_static()) cl->do_field(&fd);
+  for (JavaFieldStream fs(this); !fs.done(); fs.next()) {
+    if (fs.access_flags().is_static()) {
+      fieldDescriptor fd;
+      fd.initialize(as_klassOop(), fs.index());
+      cl->do_field(&fd);
+    }
   }
 }
 
@@ -919,11 +961,12 @@ void instanceKlass::do_local_static_fields(void f(fieldDescriptor*, TRAPS), TRAP
 
 
 void instanceKlass::do_local_static_fields_impl(instanceKlassHandle this_oop, void f(fieldDescriptor* fd, TRAPS), TRAPS) {
-  fieldDescriptor fd;
-  int length = this_oop->fields()->length();
-  for (int i = 0; i < length; i += next_offset) {
-    fd.initialize(this_oop(), i);
-    if (fd.is_static()) { f(&fd, CHECK); } // Do NOT remove {}! (CHECK macro expands into several statements)
+  for (JavaFieldStream fs(this_oop()); !fs.done(); fs.next()) {
+    if (fs.access_flags().is_static()) {
+      fieldDescriptor fd;
+      fd.initialize(this_oop(), fs.index());
+      f(&fd, CHECK);
+    }
   }
 }
 
@@ -938,11 +981,11 @@ void instanceKlass::do_nonstatic_fields(FieldClosure* cl) {
     super->do_nonstatic_fields(cl);
   }
   fieldDescriptor fd;
-  int length = fields()->length();
+  int length = java_fields_count();
   // In DebugInfo nonstatic fields are sorted by offset.
   int* fields_sorted = NEW_C_HEAP_ARRAY(int, 2*(length+1));
   int j = 0;
-  for (int i = 0; i < length; i += next_offset) {
+  for (int i = 0; i < length; i += 1) {
     fd.initialize(as_klassOop(), i);
     if (!fd.is_static()) {
       fields_sorted[j + 0] = fd.offset();
@@ -1090,6 +1133,36 @@ JNIid* instanceKlass::jni_id_for(int offset) {
   return probe;
 }
 
+u2 instanceKlass::enclosing_method_data(int offset) {
+  typeArrayOop inner_class_list = inner_classes();
+  if (inner_class_list == NULL) {
+    return 0;
+  }
+  int length = inner_class_list->length();
+  if (length % inner_class_next_offset == 0) {
+    return 0;
+  } else {
+    int index = length - enclosing_method_attribute_size;
+    typeArrayHandle inner_class_list_h(inner_class_list);
+    assert(offset < enclosing_method_attribute_size, "invalid offset");
+    return inner_class_list_h->ushort_at(index + offset);
+  }
+}
+
+void instanceKlass::set_enclosing_method_indices(u2 class_index,
+                                                 u2 method_index) {
+  typeArrayOop inner_class_list = inner_classes();
+  assert (inner_class_list != NULL, "_inner_classes list is not set up");
+  int length = inner_class_list->length();
+  if (length % inner_class_next_offset == enclosing_method_attribute_size) {
+    int index = length - enclosing_method_attribute_size;
+    typeArrayHandle inner_class_list_h(inner_class_list);
+    inner_class_list_h->ushort_at_put(
+      index + enclosing_method_class_index_offset, class_index);
+    inner_class_list_h->ushort_at_put(
+      index + enclosing_method_method_index_offset, method_index);
+  }
+}
 
 // Lookup or create a jmethodID.
 // This code is called by the VMThread and JavaThreads so the
@@ -1371,39 +1444,8 @@ int instanceKlass::cached_itable_index(size_t idnum) {
 
 
 //
-// nmethodBucket is used to record dependent nmethods for
-// deoptimization.  nmethod dependencies are actually <klass, method>
-// pairs but we really only care about the klass part for purposes of
-// finding nmethods which might need to be deoptimized.  Instead of
-// recording the method, a count of how many times a particular nmethod
-// was recorded is kept.  This ensures that any recording errors are
-// noticed since an nmethod should be removed as many times are it's
-// added.
-//
-class nmethodBucket {
- private:
-  nmethod*       _nmethod;
-  int            _count;
-  nmethodBucket* _next;
-
- public:
-  nmethodBucket(nmethod* nmethod, nmethodBucket* next) {
-    _nmethod = nmethod;
-    _next = next;
-    _count = 1;
-  }
-  int count()                             { return _count; }
-  int increment()                         { _count += 1; return _count; }
-  int decrement()                         { _count -= 1; assert(_count >= 0, "don't underflow"); return _count; }
-  nmethodBucket* next()                   { return _next; }
-  void set_next(nmethodBucket* b)         { _next = b; }
-  nmethod* get_nmethod()                  { return _nmethod; }
-};
-
-
-//
 // Walk the list of dependent nmethods searching for nmethods which
-// are dependent on the klassOop that was passed in and mark them for
+// are dependent on the changes that were passed in and mark them for
 // deoptimization.  Returns the number of nmethods found.
 //
 int instanceKlass::mark_dependent_nmethods(DepChange& changes) {
@@ -2095,28 +2137,21 @@ jint instanceKlass::compute_modifier_flags(TRAPS) const {
   jint access = access_flags().as_int();
 
   // But check if it happens to be member class.
-  typeArrayOop inner_class_list = inner_classes();
-  int length = (inner_class_list == NULL) ? 0 : inner_class_list->length();
-  assert (length % instanceKlass::inner_class_next_offset == 0, "just checking");
-  if (length > 0) {
-    typeArrayHandle inner_class_list_h(THREAD, inner_class_list);
-    instanceKlassHandle ik(THREAD, k);
-    for (int i = 0; i < length; i += instanceKlass::inner_class_next_offset) {
-      int ioff = inner_class_list_h->ushort_at(
-                      i + instanceKlass::inner_class_inner_class_info_offset);
+  instanceKlassHandle ik(THREAD, k);
+  InnerClassesIterator iter(ik);
+  for (; !iter.done(); iter.next()) {
+    int ioff = iter.inner_class_info_index();
+    // Inner class attribute can be zero, skip it.
+    // Strange but true:  JVM spec. allows null inner class refs.
+    if (ioff == 0) continue;
 
-      // Inner class attribute can be zero, skip it.
-      // Strange but true:  JVM spec. allows null inner class refs.
-      if (ioff == 0) continue;
-
-      // only look at classes that are already loaded
-      // since we are looking for the flags for our self.
-      Symbol* inner_name = ik->constants()->klass_name_at(ioff);
-      if ((ik->name() == inner_name)) {
-        // This is really a member class.
-        access = inner_class_list_h->ushort_at(i + instanceKlass::inner_class_access_flags_offset);
-        break;
-      }
+    // only look at classes that are already loaded
+    // since we are looking for the flags for our self.
+    Symbol* inner_name = ik->constants()->klass_name_at(ioff);
+    if ((ik->name() == inner_name)) {
+      // This is really a member class.
+      access = iter.inner_access_flags();
+      break;
     }
   }
   // Remember to strip ACC_SUPER bit
@@ -2408,43 +2443,6 @@ void instanceKlass::oop_verify_on(oop obj, outputStream* st) {
   oop_oop_iterate(obj, &blk);
 }
 
-#ifndef PRODUCT
-
-void instanceKlass::verify_class_klass_nonstatic_oop_maps(klassOop k) {
-  // This verification code is disabled.  JDK_Version::is_gte_jdk14x_version()
-  // cannot be called since this function is called before the VM is
-  // able to determine what JDK version is running with.
-  // The check below always is false since 1.4.
-  return;
-
-  // This verification code temporarily disabled for the 1.4
-  // reflection implementation since java.lang.Class now has
-  // Java-level instance fields. Should rewrite this to handle this
-  // case.
-  if (!(JDK_Version::is_gte_jdk14x_version() && UseNewReflection)) {
-    // Verify that java.lang.Class instances have a fake oop field added.
-    instanceKlass* ik = instanceKlass::cast(k);
-
-    // Check that we have the right class
-    static bool first_time = true;
-    guarantee(k == SystemDictionary::Class_klass() && first_time, "Invalid verify of maps");
-    first_time = false;
-    const int extra = java_lang_Class::number_of_fake_oop_fields;
-    guarantee(ik->nonstatic_field_size() == extra, "just checking");
-    guarantee(ik->nonstatic_oop_map_count() == 1, "just checking");
-    guarantee(ik->size_helper() == align_object_size(instanceOopDesc::header_size() + extra), "just checking");
-
-    // Check that the map is (2,extra)
-    int offset = java_lang_Class::klass_offset;
-
-    OopMapBlock* map = ik->start_of_nonstatic_oop_maps();
-    guarantee(map->offset() == offset && map->count() == (unsigned int) extra,
-              "sanity");
-  }
-}
-
-#endif // ndef PRODUCT
-
 // JNIid class for jfieldIDs only
 // Note to reviewers:
 // These JNI functions are just moved over to column 1 and not changed
@@ -2505,7 +2503,7 @@ void instanceKlass::set_init_state(ClassState state) {
   bool good_state = as_klassOop()->is_shared() ? (_init_state <= state)
                                                : (_init_state < state);
   assert(good_state || state == allocated, "illegal state transition");
-  _init_state = state;
+  _init_state = (u1)state;
 }
 #endif
 

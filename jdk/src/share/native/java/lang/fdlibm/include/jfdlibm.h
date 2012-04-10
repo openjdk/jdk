@@ -61,10 +61,9 @@
 #define log1p   jlog1p
 #define expm1   jexpm1
 
-#ifdef __linux__
+#if defined(__linux__) || defined(_ALLBSD_SOURCE)
 #define __ieee754_sqrt          __j__ieee754_sqrt
 #define __ieee754_acos          __j__ieee754_acos
-#define __ieee754_acosh         __j__ieee754_acosh
 #define __ieee754_log           __j__ieee754_log
 #define __ieee754_atanh         __j__ieee754_atanh
 #define __ieee754_asin          __j__ieee754_asin
@@ -73,19 +72,9 @@
 #define __ieee754_cosh          __j__ieee754_cosh
 #define __ieee754_fmod          __j__ieee754_fmod
 #define __ieee754_pow           __j__ieee754_pow
-#define __ieee754_lgamma_r      __j__ieee754_lgamma_r
-#define __ieee754_gamma_r       __j__ieee754_gamma_r
-#define __ieee754_lgamma        __j__ieee754_lgamma
-#define __ieee754_gamma         __j__ieee754_gamma
 #define __ieee754_log10         __j__ieee754_log10
 #define __ieee754_sinh          __j__ieee754_sinh
 #define __ieee754_hypot         __j__ieee754_hypot
-#define __ieee754_j0            __j__ieee754_j0
-#define __ieee754_j1            __j__ieee754_j1
-#define __ieee754_y0            __j__ieee754_y0
-#define __ieee754_y1            __j__ieee754_y1
-#define __ieee754_jn            __j__ieee754_jn
-#define __ieee754_yn            __j__ieee754_yn
 #define __ieee754_remainder     __j__ieee754_remainder
 #define __ieee754_rem_pio2      __j__ieee754_rem_pio2
 #define __ieee754_scalb         __j__ieee754_scalb

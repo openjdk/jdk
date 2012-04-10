@@ -363,6 +363,17 @@ public final class Files {
 
     // -- Directories --
 
+    private static class AcceptAllFilter
+        implements DirectoryStream.Filter<Path>
+    {
+        private AcceptAllFilter() { }
+
+        @Override
+        public boolean accept(Path entry) { return true; }
+
+        static final AcceptAllFilter FILTER = new AcceptAllFilter();
+    }
+
     /**
      * Opens a directory, returning a {@link DirectoryStream} to iterate over
      * all entries in the directory. The elements returned by the directory
@@ -397,12 +408,7 @@ public final class Files {
     public static DirectoryStream<Path> newDirectoryStream(Path dir)
         throws IOException
     {
-        return provider(dir).newDirectoryStream(dir, new DirectoryStream.Filter<Path>() {
-            @Override
-            public boolean accept(Path entry) {
-                return true;
-            }
-        });
+        return provider(dir).newDirectoryStream(dir, AcceptAllFilter.FILTER);
     }
 
     /**
@@ -1425,7 +1431,7 @@ public final class Files {
      * <li>It is <i>transitive</i>: for three {@code Paths}
      *     {@code f}, {@code g}, and {@code h}, if {@code isSameFile(f,g)} returns
      *     {@code true} and {@code isSameFile(g,h)} returns {@code true}, then
-     *     {@code isSameFile(g,h)} will return return {@code true}.
+     *     {@code isSameFile(f,h)} will return return {@code true}.
      * </ul>
      *
      * @param   path

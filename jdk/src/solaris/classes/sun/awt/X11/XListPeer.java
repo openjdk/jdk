@@ -363,9 +363,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
             return Math.min(items.size()-1, itemsInWindow()-1);
         }
     }
-
     public void repaintScrollbarRequest(XScrollbar scrollbar) {
-        Graphics g = getGraphics();
         if (scrollbar == hsb)  {
             repaint(PAINT_HSCROLL);
         }
@@ -373,9 +371,6 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
             repaint(PAINT_VSCROLL);
         }
     }
-
-
-
     /**
      * Overridden for performance
      */
@@ -410,18 +405,20 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
      * @param distance the distance to copy the source area
      */
     private void repaint(int firstItem, int lastItem, int options, Rectangle source, Point distance) {
-        Graphics g = getGraphics();
-        try {
-            painter.paint(g, firstItem, lastItem, options, source, distance);
-        } finally {
-            g.dispose();
+        final Graphics g = getGraphics();
+        if (g != null) {
+            try {
+                painter.paint(g, firstItem, lastItem, options, source, distance);
+                target.paint(g);
+            } finally {
+                g.dispose();
+            }
         }
     }
-
-    public void paint(Graphics g) {
+    @Override
+    void paintPeer(final Graphics g) {
         painter.paint(g, getFirstVisibleItem(), getLastVisibleItem(), PAINT_ALL);
     }
-
     public boolean isFocusable() { return true; }
 
     // TODO: share/promote the Focus methods?

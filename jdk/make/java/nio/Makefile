@@ -31,7 +31,8 @@ BUILDDIR = ../..
 PACKAGE = java.nio
 LIBRARY = nio
 PRODUCT = java
-OTHER_JAVACFLAGS += -Xmaxwarns 1000 -Xlint:serial -Werror
+JAVAC_MAX_WARNINGS = true
+JAVAC_WARNINGS_FATAL = true
 include $(BUILDDIR)/common/Defs.gmk
 
 NIO_SRC = $(SHARE_SRC)/classes/java/nio
@@ -205,7 +206,6 @@ FILES_java += \
 	sun/nio/fs/LinuxUserDefinedFileAttributeView.java \
 	sun/nio/fs/LinuxNativeDispatcher.java \
 	sun/nio/fs/LinuxWatchService.java \
-	sun/nio/fs/PollingWatchService.java \
 	sun/nio/fs/UnixChannelFactory.java \
 	sun/nio/fs/UnixCopyFile.java \
 	sun/nio/fs/UnixDirectoryStream.java \
@@ -255,10 +255,95 @@ FILES_export += \
 	sun/nio/fs/LinuxWatchService.java \
 	sun/nio/fs/UnixCopyFile.java \
 	sun/nio/fs/UnixNativeDispatcher.java
-	
+
 FILES_gen += \
 	sun/nio/fs/UnixConstants.java
 endif # PLATFORM = linux
+
+ifeq ($(PLATFORM), macosx)
+FILES_java += \
+        sun/nio/ch/AbstractPollSelectorImpl.java \
+	sun/nio/ch/BsdAsynchronousChannelProvider.java \
+	sun/nio/ch/InheritedChannel.java \
+	sun/nio/ch/KQueue.java \
+	sun/nio/ch/KQueuePort.java \
+        sun/nio/ch/PollSelectorProvider.java \
+        sun/nio/ch/PollSelectorImpl.java \
+	sun/nio/ch/Port.java \
+	sun/nio/ch/SimpleAsynchronousFileChannelImpl.java \
+	sun/nio/ch/UnixAsynchronousServerSocketChannelImpl.java \
+	sun/nio/ch/UnixAsynchronousSocketChannelImpl.java \
+	\
+	sun/nio/fs/GnomeFileTypeDetector.java \
+	sun/nio/fs/BsdFileStore.java \
+	sun/nio/fs/BsdFileSystem.java \
+	sun/nio/fs/BsdFileSystemProvider.java \
+	sun/nio/fs/BsdNativeDispatcher.java \
+	sun/nio/fs/PollingWatchService.java \
+	sun/nio/fs/UnixChannelFactory.java \
+	sun/nio/fs/UnixCopyFile.java \
+	sun/nio/fs/UnixDirectoryStream.java \
+	sun/nio/fs/UnixException.java \
+	sun/nio/fs/UnixFileAttributeViews.java \
+	sun/nio/fs/UnixFileAttributes.java \
+	sun/nio/fs/UnixFileKey.java \
+	sun/nio/fs/UnixFileModeAttribute.java \
+	sun/nio/fs/UnixFileStore.java \
+	sun/nio/fs/UnixFileStoreAttributes.java \
+	sun/nio/fs/UnixFileSystem.java \
+	sun/nio/fs/UnixFileSystemProvider.java \
+	sun/nio/fs/UnixMountEntry.java \
+	sun/nio/fs/UnixNativeDispatcher.java \
+	sun/nio/fs/UnixPath.java \
+	sun/nio/fs/UnixSecureDirectoryStream.java \
+	sun/nio/fs/UnixUriUtils.java \
+	sun/nio/fs/UnixUserPrincipals.java
+
+FILES_c += \
+	InheritedChannel.c \
+	NativeThread.c \
+        PollArrayWrapper.c \
+	UnixAsynchronousServerSocketChannelImpl.c \
+	UnixAsynchronousSocketChannelImpl.c \
+	\
+	GnomeFileTypeDetector.c \
+	BsdNativeDispatcher.c \
+	UnixCopyFile.c \
+	UnixNativeDispatcher.c \
+	\
+	KQueue.c \
+	KQueuePort.c
+
+FILES_export += \
+	sun/nio/ch/InheritedChannel.java \
+	sun/nio/ch/KQueue.java \
+	sun/nio/ch/KQueuePort.java \
+	sun/nio/ch/NativeThread.java \
+	sun/nio/ch/UnixAsynchronousServerSocketChannelImpl.java \
+	sun/nio/ch/UnixAsynchronousSocketChannelImpl.java \
+	\
+	sun/nio/fs/GnomeFileTypeDetector.java \
+	sun/nio/fs/BsdNativeDispatcher.java \
+	sun/nio/fs/UnixCopyFile.java \
+	sun/nio/fs/UnixNativeDispatcher.java
+	
+FILES_gen += \
+	sun/nio/fs/UnixConstants.java
+endif # PLATFORM = bsd, macosx
+
+ifeq ($(PLATFORM), macosx)
+FILES_java += \
+    sun/nio/ch/KQueueSelectorProvider.java \
+    sun/nio/ch/KQueueSelectorImpl.java \
+    sun/nio/ch/KQueueArrayWrapper.java
+
+FILES_c += \
+    KQueueArrayWrapper.c
+
+vpath %.c $(call NativeSrcDirList,,native/sun/nio/fs)
+vpath %.c $(call NativeSrcDirList,,native/sun/nio/ch)
+
+else
 
 #
 # Find platform-specific C source files
@@ -266,6 +351,8 @@ endif # PLATFORM = linux
 vpath %.c $(PLATFORM_SRC)/native/sun/nio/fs
 vpath %.c $(PLATFORM_SRC)/native/sun/nio/ch
 vpath %.c $(SHARE_SRC)/native/sun/nio/ch
+
+endif # PLATFORM = macosx
 
 #
 # Various variables
@@ -292,10 +379,13 @@ ifeq ($(PLATFORM),windows)
      $(OBJDIR)/../../../java.lang/java/$(OBJDIRNAME)/FileDescriptor_md.obj
 endif
 ifeq ($(PLATFORM), linux)
-OTHER_LDLIBS += -L$(LIBDIR)/$(LIBARCH) -ljava -lnet -lpthread -ldl
+OTHER_LDLIBS += -L$(LIBDIR)/$(LIBARCH) -ljava -lnet -lpthread $(LIBDL)
+endif
+ifeq ($(PLATFORM), macosx)
+OTHER_LDLIBS += -L$(LIBDIR) -ljava -lnet -pthread
 endif
 ifeq ($(PLATFORM), solaris)
-OTHER_LDLIBS += $(JVMLIB) $(LIBSOCKET) -lposix4 -ldl -lsendfile \
+OTHER_LDLIBS += $(JVMLIB) $(LIBSOCKET) -lposix4 $(LIBDL) -lsendfile \
 		-L$(LIBDIR)/$(LIBARCH) -ljava -lnet
 endif # PLATFORM
 
@@ -315,6 +405,9 @@ FILES_m = mapfile-solaris
 endif
 ifeq ($(PLATFORM), linux)
 FILES_m = mapfile-linux
+endif
+ifeq ($(PLATFORM), macosx)
+FILES_m = mapfile-bsd
 endif
 include $(BUILDDIR)/common/Mapfile-vers.gmk
 include $(BUILDDIR)/common/Library.gmk
@@ -771,7 +864,7 @@ $(CS_GEN)/CharsetEncoder.java: $(CHARSET_X_CODER_TEMPLATE) $(GEN_CODER_SH)
 #
 
 GEN_EX_SH = genExceptions.sh
- 
+
 GEN_EX_CMD = NAWK="$(NAWK)" SH="$(SH)" $(SH) $(GEN_EX_SH)
 
 $(CH_GEN)/%Exception.java: genExceptions.sh $(CH_SRC)/exceptions
@@ -818,16 +911,27 @@ SOR_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSOR_SRC) | \
 $(TEMPDIR)/$(GENSOR_SRC) : $(GENSOR_SRC)
 	$(install-file)
 
+ifeq ($(PLATFORM), macosx)
+  NIO_CC=$(HOST_CC)
+else
+  NIO_CC=$(CC)
+endif
+
 $(GENSOR_EXE) : $(TEMPDIR)/$(GENSOR_SRC)
 	$(prep-target)
-	($(CD) $(TEMPDIR); $(HOST_CC) $(CPPFLAGS) $(LDDFLAGS) \
+	($(CD) $(TEMPDIR); $(NIO_CC) $(CPPFLAGS) $(LDDFLAGS) \
 	   -o genSocketOptionRegistry$(EXE_SUFFIX) $(GENSOR_SRC))
 
+ifdef NIO_PLATFORM_CLASSES_ROOT_DIR
+$(SCH_GEN)/SocketOptionRegistry.java: $(NIO_PLATFORM_CLASSES_ROOT_DIR)/sun/nio/ch/SocketOptionRegistry-$(PLATFORM)-$(ARCH).java
+	$(prep-target)
+	$(CP) $< $@
+else 
 $(SCH_GEN)/SocketOptionRegistry.java: $(GENSOR_EXE)
 	$(prep-target)
 	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e addNotices.sh "$(SOR_COPYRIGHT_YEARS)" > $@
 	$(GENSOR_EXE) >> $@
-
+endif
 #
 # Generated sun.nio.cs SingleByte classes
 #
@@ -844,6 +948,7 @@ $(FILES_gensbcs_out): $(GENCSSRC)/SingleByte-X.java.template $(GENCSSRC)/sbcs
 
 GENUC_SRC = $(PLATFORM_SRC)/native/sun/nio/fs/genUnixConstants.c
 
+GENUC_OBJ = $(TEMPDIR)/genUnixConstants.o
 GENUC_EXE = $(TEMPDIR)/genUnixConstants
 
 GENUC_COPYRIGHT_YEARS = $(shell $(CAT) $(GENUC_SRC) | \
@@ -851,15 +956,23 @@ GENUC_COPYRIGHT_YEARS = $(shell $(CAT) $(GENUC_SRC) | \
 
 $(GENUC_EXE) : $(GENUC_SRC)
 	$(prep-target)
-	$(HOST_CC) $(CPPFLAGS) -o $@ $(GENUC_SRC)
+	$(CC) $(CPPFLAGS) -c -o $(GENUC_OBJ) $(GENUC_SRC)
+	$(CC) $(CPPFLAGS) -o $@ $(GENUC_OBJ)
 
+ifdef NIO_PLATFORM_CLASSES_ROOT_DIR
+$(SFS_GEN)/UnixConstants.java: $(NIO_PLATFORM_CLASSES_ROOT_DIR)/sun/nio/fs/UnixConstants-$(PLATFORM)-$(ARCH).java
+	$(prep-target)
+	$(CP) $< $@
+else
 $(SFS_GEN)/UnixConstants.java: $(GENUC_EXE)
 	$(prep-target)
 	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e addNotices.sh "$(GENUC_COPYRIGHT_YEARS)" > $@
 	$(GENUC_EXE) >> $@
+endif
 
 GENSC_SRC = $(PLATFORM_SRC)/native/sun/nio/fs/genSolarisConstants.c
 
+GENSC_OBJ = $(TEMPDIR)/genSolarisConstants.o
 GENSC_EXE = $(TEMPDIR)/genSolarisConstants
 
 GENSC_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSC_SRC) | \
@@ -867,11 +980,18 @@ GENSC_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSC_SRC) | \
 
 $(GENSC_EXE) : $(GENSC_SRC)
 	$(prep-target)
-	$(HOST_CC) $(CPPFLAGS) -o $@ $(GENSC_SRC)
+	$(CC) $(CPPFLAGS) -c -o $(GENSC_OBJ) $(GENSC_SRC)
+	$(CC) $(CPPFLAGS) -o $@ $(GENSC_OBJ)
 
+ifdef NIO_PLATFORM_CLASSES_ROOT_DIR
+$(SFS_GEN)/SolarisConstants.java: $(NIO_PLATFORM_CLASSES_ROOT_DIR)/sun/nio/fs/SolarisConstants-$(PLATFORM)-$(ARCH).java
+	$(prep-target)
+	$(CP) $< $@
+else
 $(SFS_GEN)/SolarisConstants.java: $(GENSC_EXE)
 	$(prep-target)
 	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e addNotices.sh "$(GENSC_COPYRIGHT_YEARS)" > $@
 	$(GENSC_EXE) >> $@
+endif
 
 .PHONY: sources 

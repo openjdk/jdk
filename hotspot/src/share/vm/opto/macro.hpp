@@ -92,6 +92,8 @@ private:
   void process_users_of_allocation(AllocateNode *alloc);
 
   void eliminate_card_mark(Node *cm);
+  void mark_eliminated_box(Node* box, Node* obj);
+  void mark_eliminated_locking_nodes(AbstractLockNode *alock);
   bool eliminate_locking_node(AbstractLockNode *alock);
   void expand_lock_node(LockNode *lock);
   void expand_unlock_node(UnlockNode *unlock);
@@ -118,6 +120,7 @@ public:
   PhaseMacroExpand(PhaseIterGVN &igvn) : Phase(Macro_Expand), _igvn(igvn) {
     _igvn.set_delay_transform(true);
   }
+  void eliminate_macro_nodes();
   bool expand_macro_nodes();
 
 };

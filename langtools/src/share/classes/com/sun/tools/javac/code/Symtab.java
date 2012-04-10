@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,6 +126,7 @@ public class Symtab {
     public final Type cloneableType;
     public final Type serializableType;
     public final Type methodHandleType;
+    public final Type nativeHeaderType;
     public final Type polymorphicSignatureType;
     public final Type throwableType;
     public final Type errorType;
@@ -477,6 +478,7 @@ public class Symtab {
                                             List.of(exceptionType), methodClass),
                              autoCloseableType.tsym);
         trustMeType = enterClass("java.lang.SafeVarargs");
+        nativeHeaderType = enterClass("javax.tools.annotation.GenerateNativeHeader");
 
         synthesizeEmptyInterfaceIfMissing(autoCloseableType);
         synthesizeEmptyInterfaceIfMissing(cloneableType);

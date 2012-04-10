@@ -1522,6 +1522,11 @@ Node* GraphKit::store_oop(Node* ctl,
                           const TypeOopPtr* val_type,
                           BasicType bt,
                           bool use_precise) {
+  // Transformation of a value which could be NULL pointer (CastPP #NULL)
+  // could be delayed during Parse (for example, in adjust_map_after_if()).
+  // Execute transformation here to avoid barrier generation in such case.
+  if (_gvn.type(val) == TypePtr::NULL_PTR)
+    val = _gvn.makecon(TypePtr::NULL_PTR);
 
   set_control(ctl);
   if (stopped()) return top(); // Dead path ?
@@ -2304,9 +2309,9 @@ Node* GraphKit::gen_subtype_check(Node* subklass, Node* superklass) {
   // will always succeed.  We could leave a dependency behind to ensure this.
 
   // First load the super-klass's check-offset
-  Node *p1 = basic_plus_adr( superklass, superklass, sizeof(oopDesc) + Klass::super_check_offset_offset_in_bytes() );
+  Node *p1 = basic_plus_adr( superklass, superklass, in_bytes(Klass::super_check_offset_offset()) );
   Node *chk_off = _gvn.transform( new (C, 3) LoadINode( NULL, memory(p1), p1, _gvn.type(p1)->is_ptr() ) );
-  int cacheoff_con = sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes();
+  int cacheoff_con = in_bytes(Klass::secondary_super_cache_offset());
   bool might_be_cache = (find_int_con(chk_off, cacheoff_con) == cacheoff_con);
 
   // Load from the sub-klass's super-class display list, or a 1-word cache of
@@ -2856,7 +2861,7 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
   // lock has no side-effects, sets few values
   set_predefined_output_for_runtime_call(lock, mem, TypeRawPtr::BOTTOM);
 
-  insert_mem_bar(Op_MemBarAcquire);
+  insert_mem_bar(Op_MemBarAcquireLock);
 
   // Add this to the worklist so that the lock can be eliminated
   record_for_igvn(lock);
@@ -2889,7 +2894,7 @@ void GraphKit::shared_unlock(Node* box, Node* obj) {
   }
 
   // Memory barrier to avoid floating things down past the locked region
-  insert_mem_bar(Op_MemBarRelease);
+  insert_mem_bar(Op_MemBarReleaseLock);
 
   const TypeFunc *tf = OptoRuntime::complete_monitor_exit_Type();
   UnlockNode *unlock = new (C, tf->domain()->cnt()) UnlockNode(C, tf);
@@ -2934,7 +2939,7 @@ Node* GraphKit::get_layout_helper(Node* klass_node, jint& constant_value) {
     }
   }
   constant_value = Klass::_lh_neutral_value;  // put in a known value
-  Node* lhp = basic_plus_adr(klass_node, klass_node, Klass::layout_helper_offset_in_bytes() + sizeof(oopDesc));
+  Node* lhp = basic_plus_adr(klass_node, klass_node, in_bytes(Klass::layout_helper_offset()));
   return make_load(NULL, lhp, TypeInt::INT, T_INT);
 }
 
@@ -3332,6 +3337,19 @@ InitializeNode* AllocateNode::initialization() {
     if (init->is_Initialize()) {
       assert(init->as_Initialize()->allocation() == this, "2-way link");
       return init->as_Initialize();
+    }
+  }
+  return NULL;
+}
+
+// Trace Allocate -> Proj[Parm] -> MemBarStoreStore
+MemBarStoreStoreNode* AllocateNode::storestore() {
+  ProjNode* rawoop = proj_out(AllocateNode::RawAddress);
+  if (rawoop == NULL)  return NULL;
+  for (DUIterator_Fast imax, i = rawoop->fast_outs(imax); i < imax; i++) {
+    Node* storestore = rawoop->fast_out(i);
+    if (storestore->is_MemBarStoreStore()) {
+      return storestore->as_MemBarStoreStore();
     }
   }
   return NULL;

@@ -460,8 +460,11 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // Is it dead loop?
     // If it is LoopNopde it had 2 (+1 itself) inputs and
     // one of them was cut. The loop is dead if it was EntryContol.
-    assert(!this->is_Loop() || cnt_orig == 3, "Loop node should have 3 inputs");
-    if (this->is_Loop() && del_it == LoopNode::EntryControl ||
+    // Loop node may have only one input because entry path
+    // is removed in PhaseIdealLoop::Dominators().
+    assert(!this->is_Loop() || cnt_orig <= 3, "Loop node should have 3 or less inputs");
+    if (this->is_Loop() && (del_it == LoopNode::EntryControl ||
+                            del_it == 0 && is_unreachable_region(phase)) ||
        !this->is_Loop() && has_phis && is_unreachable_region(phase)) {
       // Yes,  the region will be removed during the next step below.
       // Cut the backedge input and remove phis since no data paths left.
@@ -1349,17 +1352,9 @@ static Node* is_absolute( PhaseGVN *phase, PhiNode *phi_root, int true_path) {
 static void split_once(PhaseIterGVN *igvn, Node *phi, Node *val, Node *n, Node *newn) {
   igvn->hash_delete(n);         // Remove from hash before hacking edges
 
-  Node* predicate_proj = NULL;
   uint j = 1;
   for (uint i = phi->req()-1; i > 0; i--) {
     if (phi->in(i) == val) {   // Found a path with val?
-      if (n->is_Region()) {
-        Node* proj = PhaseIdealLoop::find_predicate(n->in(i));
-        if (proj != NULL) {
-          assert(predicate_proj == NULL, "only one predicate entry expected");
-          predicate_proj = proj;
-        }
-      }
       // Add to NEW Region/Phi, no DU info
       newn->set_req( j++, n->in(i) );
       // Remove from OLD Region/Phi
@@ -1370,11 +1365,6 @@ static void split_once(PhaseIterGVN *igvn, Node *phi, Node *val, Node *n, Node *
   // Register the new node but do not transform it.  Cannot transform until the
   // entire Region/Phi conglomerate has been hacked as a single huge transform.
   igvn->register_new_node_with_optimizer( newn );
-
-  // Clone loop predicates
-  if (predicate_proj != NULL) {
-    newn = igvn->clone_loop_predicates(predicate_proj, newn, !n->is_CountedLoop());
-  }
 
   // Now I can point to the new node.
   n->add_req(newn);
@@ -1404,13 +1394,18 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
 
   Node *val = phi->in(i);       // Constant to split for
   uint hit = 0;                 // Number of times it occurs
+  Node *r = phi->region();
 
   for( ; i < phi->req(); i++ ){ // Count occurrences of constant
     Node *n = phi->in(i);
     if( !n ) return NULL;
     if( phase->type(n) == Type::TOP ) return NULL;
-    if( phi->in(i) == val )
+    if( phi->in(i) == val ) {
       hit++;
+      if (PhaseIdealLoop::find_predicate(r->in(i)) != NULL) {
+        return NULL;            // don't split loop entry path
+      }
+    }
   }
 
   if( hit <= 1 ||               // Make sure we find 2 or more
@@ -1420,7 +1415,6 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
   // Now start splitting out the flow paths that merge the same value.
   // Split first the RegionNode.
   PhaseIterGVN *igvn = phase->is_IterGVN();
-  Node *r = phi->region();
   RegionNode *newr = new (phase->C, hit+1) RegionNode(hit+1);
   split_once(igvn, phi, val, r, newr);
 
@@ -1556,7 +1550,9 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   Node *top = phase->C->top();
   bool new_phi = (outcnt() == 0); // transforming new Phi
-  assert(!can_reshape || !new_phi, "for igvn new phi should be hooked");
+  // No change for igvn if new phi is not hooked
+  if (new_phi && can_reshape)
+    return NULL;
 
   // The are 2 situations when only one valid phi's input is left
   // (in addition to Region input).
@@ -1592,14 +1588,17 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // Only one not-NULL unique input path is left.
     // Determine if this input is backedge of a loop.
     // (Skip new phis which have no uses and dead regions).
-    if( outcnt() > 0 && r->in(0) != NULL ) {
+    if (outcnt() > 0 && r->in(0) != NULL) {
       // First, take the short cut when we know it is a loop and
       // the EntryControl data path is dead.
-      assert(!r->is_Loop() || r->req() == 3, "Loop node should have 3 inputs");
+      // Loop node may have only one input because entry path
+      // is removed in PhaseIdealLoop::Dominators().
+      assert(!r->is_Loop() || r->req() <= 3, "Loop node should have 3 or less inputs");
+      bool is_loop = (r->is_Loop() && r->req() == 3);
       // Then, check if there is a data loop when phi references itself directly
       // or through other data nodes.
-      if( r->is_Loop() && !phase->eqv_uncast(uin, in(LoopNode::EntryControl)) ||
-         !r->is_Loop() && is_unsafe_data_reference(uin) ) {
+      if (is_loop && !uin->eqv_uncast(in(LoopNode::EntryControl)) ||
+         !is_loop && is_unsafe_data_reference(uin)) {
         // Break this data loop to avoid creation of a dead loop.
         if (can_reshape) {
           return top;

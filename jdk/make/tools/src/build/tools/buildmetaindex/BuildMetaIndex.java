@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,8 +114,8 @@ public class BuildMetaIndex {
                  */
 
                 out.println(jmi.getJarFileKind().getMarkerChar() + " " + filename);
-                for (Iterator<String> iter = index.iterator(); iter.hasNext(); ) {
-                    out.println(iter.next());
+                for (String entry : index) {
+                    out.println(entry);
                 }
 
             }
@@ -171,8 +171,7 @@ class JarMetaIndex {
      * A hashmap contains a mapping from the prefix string to
      * a hashset which contains a set of the second level of prefix string.
      */
-    private HashMap<String, HashSet<String>> knownPrefixMap = new
-        HashMap<String, HashSet<String>>();
+    private HashMap<String, HashSet<String>> knownPrefixMap = new HashMap<>();
 
     /*
      * We add maximum 5 second level entries to "sun", "java" and
@@ -195,12 +194,12 @@ class JarMetaIndex {
         if (indexSet == null) {
             synchronized(this) {
                 if (indexSet == null) {
-                    indexSet = new HashSet<String>();
-                    Enumeration entries = jar.entries();
+                    indexSet = new HashSet<>();
+                    Enumeration<JarEntry> entries = jar.entries();
                     boolean containsOnlyClass = true;
                     boolean containsOnlyResource = true;
                     while (entries.hasMoreElements()) {
-                        JarEntry entry = (JarEntry) entries.nextElement();
+                        JarEntry entry = entries.nextElement();
                         String name = entry.getName();
                         /* We only look at the non-directory entry.
                            MANIFEST file is also skipped. */
@@ -338,9 +337,7 @@ class JarMetaIndex {
         /* Iterate through the hash map, add the second level package names
          * to the indexSet if has any.
          */
-        for (Iterator<String> keysIterator = knownPrefixMap.keySet().iterator();
-             keysIterator.hasNext();) {
-            String key = keysIterator.next();
+        for (String key : knownPrefixMap.keySet()) {
             HashSet<String> pkgSetStartsWithKey = knownPrefixMap.get(key);
             int setSize = pkgSetStartsWithKey.size();
 
@@ -353,9 +350,8 @@ class JarMetaIndex {
                 /* If the set contains less than MAX_PKGS_WITH_KNOWN_PREFIX, add
                  * them to the indexSet of the MetaIndex object.
                  */
-                for (Iterator<String> secondPkgElements = pkgSetStartsWithKey.iterator();
-                     secondPkgElements.hasNext();) {
-                    indexSet.add(key + "/" + secondPkgElements.next());
+                for (String secondPkgElement : pkgSetStartsWithKey) {
+                    indexSet.add(key + "/" + secondPkgElement);
                 }
             }
         } // end the outer "for"

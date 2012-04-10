@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -390,8 +390,10 @@ public class DatagramSocketAdaptor
 
        protected void receive(DatagramPacket p) throws IOException {}
 
+       @Deprecated
        protected void setTTL(byte ttl) throws IOException {}
 
+       @Deprecated
        protected byte getTTL() throws IOException { return 0; }
 
        protected void setTimeToLive(int ttl) throws IOException {}

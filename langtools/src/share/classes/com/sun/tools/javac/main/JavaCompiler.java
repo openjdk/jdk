@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ package com.sun.tools.javac.main;
 import java.io.*;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Queue;
@@ -41,27 +41,29 @@ import java.util.logging.Logger;
 
 import javax.annotation.processing.Processor;
 import javax.lang.model.SourceVersion;
+import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
-import javax.tools.DiagnosticListener;
+import javax.tools.StandardLocation;
+
+import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 import com.sun.source.util.TaskEvent;
-import com.sun.source.util.TaskListener;
-
-import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.api.MultiTaskListener;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.comp.*;
+import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.jvm.*;
+import com.sun.tools.javac.parser.*;
+import com.sun.tools.javac.processing.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
-import com.sun.tools.javac.parser.*;
-import com.sun.tools.javac.comp.*;
-import com.sun.tools.javac.jvm.*;
-import com.sun.tools.javac.processing.*;
+import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.Log.WriterKind;
 
-import static javax.tools.StandardLocation.CLASS_OUTPUT;
-import static com.sun.tools.javac.main.OptionName.*;
+import static com.sun.tools.javac.main.Option.*;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 import static com.sun.tools.javac.util.ListBuffer.lb;
 
@@ -228,6 +230,10 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      */
     protected ClassWriter writer;
 
+    /** The native header writer.
+     */
+    protected JNIWriter jniWriter;
+
     /** The module for the symbol table entry phases.
      */
     protected Enter enter;
@@ -288,9 +294,9 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      */
     protected ParserFactory parserFactory;
 
-    /** Optional listener for progress events
+    /** Broadcasting listener for progress events
      */
-    protected TaskListener taskListener;
+    protected MultiTaskListener taskListener;
 
     /**
      * Annotation processing may require and provide a new instance
@@ -331,6 +337,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         reader = ClassReader.instance(context);
         make = TreeMaker.instance(context);
         writer = ClassWriter.instance(context);
+        jniWriter = JNIWriter.instance(context);
         enter = Enter.instance(context);
         todo = Todo.instance(context);
 
@@ -355,7 +362,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         lower = Lower.instance(context);
         annotate = Annotate.instance(context);
         types = Types.instance(context);
-        taskListener = context.get(TaskListener.class);
+        taskListener = MultiTaskListener.instance(context);
 
         reader.sourceCompleter = this;
 
@@ -488,6 +495,10 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      */
     public Todo todo;
 
+    /** A list of items to be closed when the compilation is complete.
+     */
+    public List<Closeable> closeables = List.nil();
+
     /** Ordered list of compiler phases for each compilation unit. */
     public enum CompileState {
         PARSE(1),
@@ -587,7 +598,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             if (verbose) {
                 log.printVerbose("parsing.started", filename);
             }
-            if (taskListener != null) {
+            if (!taskListener.isEmpty()) {
                 TaskEvent e = new TaskEvent(TaskEvent.Kind.PARSE, filename);
                 taskListener.started(e);
             }
@@ -600,7 +611,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
         tree.sourcefile = filename;
 
-        if (content != null && taskListener != null) {
+        if (content != null && !taskListener.isEmpty()) {
             TaskEvent e = new TaskEvent(TaskEvent.Kind.PARSE, tree);
             taskListener.finished(e);
         }
@@ -746,14 +757,14 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             log.useSource(prev);
         }
 
-        if (taskListener != null) {
+        if (!taskListener.isEmpty()) {
             TaskEvent e = new TaskEvent(TaskEvent.Kind.ENTER, tree);
             taskListener.started(e);
         }
 
         enter.complete(List.of(tree), c);
 
-        if (taskListener != null) {
+        if (!taskListener.isEmpty()) {
             TaskEvent e = new TaskEvent(TaskEvent.Kind.ENTER, tree);
             taskListener.finished(e);
         }
@@ -812,8 +823,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
         // forcibly set the equivalent of -Xlint:-options, so that no further
         // warnings about command line options are generated from this point on
-        options.put(XLINT_CUSTOM + "-" + LintCategory.OPTIONS.option, "true");
-        options.remove(XLINT_CUSTOM + LintCategory.OPTIONS.option);
+        options.put(XLINT_CUSTOM.text + "-" + LintCategory.OPTIONS.option, "true");
+        options.remove(XLINT_CUSTOM.text + LintCategory.OPTIONS.option);
 
         start_msec = now();
 
@@ -919,7 +930,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      */
     public List<JCCompilationUnit> enterTrees(List<JCCompilationUnit> roots) {
         //enter symbols for all files
-        if (taskListener != null) {
+        if (!taskListener.isEmpty()) {
             for (JCCompilationUnit unit: roots) {
                 TaskEvent e = new TaskEvent(TaskEvent.Kind.ENTER, unit);
                 taskListener.started(e);
@@ -928,7 +939,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
         enter.main(roots);
 
-        if (taskListener != null) {
+        if (!taskListener.isEmpty()) {
             for (JCCompilationUnit unit: roots) {
                 TaskEvent e = new TaskEvent(TaskEvent.Kind.ENTER, unit);
                 taskListener.finished(e);
@@ -997,7 +1008,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 reader.saveParameterNames = true;
                 keepComments = true;
                 genEndPos = true;
-                if (taskListener != null)
+                if (!taskListener.isEmpty())
                     taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
                 log.deferDiagnostics = true;
             } else { // free resources
@@ -1012,7 +1023,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
     }
 
     /**
-     * Process any anotations found in the specifed compilation units.
+     * Process any annotations found in the specified compilation units.
      * @param roots a list of compilation units
      * @return an instance of the compiler in which to complete the compilation
      */
@@ -1072,7 +1083,9 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                     boolean errors = false;
                     for (String nameStr : classnames) {
                         Symbol sym = resolveBinaryNameOrIdent(nameStr);
-                        if (sym == null || (sym.kind == Kinds.PCK && !processPcks)) {
+                        if (sym == null ||
+                            (sym.kind == Kinds.PCK && !processPcks) ||
+                            sym.kind == Kinds.ABSENT_TYP) {
                             log.error("proc.cant.find.class", nameStr);
                             errors = true;
                             continue;
@@ -1169,7 +1182,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         if (verbose)
             log.printVerbose("checking.attribution", env.enclClass.sym);
 
-        if (taskListener != null) {
+        if (!taskListener.isEmpty()) {
             TaskEvent e = new TaskEvent(TaskEvent.Kind.ANALYZE, env.toplevel, env.enclClass.sym);
             taskListener.started(e);
         }
@@ -1252,7 +1265,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             }
         }
         finally {
-            if (taskListener != null) {
+            if (!taskListener.isEmpty()) {
                 TaskEvent e = new TaskEvent(TaskEvent.Kind.ANALYZE, env.toplevel, env.enclClass.sym);
                 taskListener.finished(e);
             }
@@ -1433,7 +1446,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                                + " " + cdef.sym + "]");
             }
 
-            if (taskListener != null) {
+            if (!taskListener.isEmpty()) {
                 TaskEvent e = new TaskEvent(TaskEvent.Kind.GENERATE, env.toplevel, cdef.sym);
                 taskListener.started(e);
             }
@@ -1445,8 +1458,13 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 JavaFileObject file;
                 if (usePrintSource)
                     file = printSource(env, cdef);
-                else
+                else {
+                    if (fileManager.hasLocation(StandardLocation.NATIVE_HEADER_OUTPUT)
+                            && jniWriter.needsHeader(cdef.sym)) {
+                        jniWriter.write(cdef.sym);
+                    }
                     file = genCode(env, cdef);
+                }
                 if (results != null && file != null)
                     results.add(file);
             } catch (IOException ex) {
@@ -1457,7 +1475,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 log.useSource(prev);
             }
 
-            if (taskListener != null) {
+            if (!taskListener.isEmpty()) {
                 TaskEvent e = new TaskEvent(TaskEvent.Kind.GENERATE, env.toplevel, cdef.sym);
                 taskListener.finished(e);
             }
@@ -1502,20 +1520,20 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                     for (List<JCTree> it = tree.defs; it.tail != null; it = it.tail) {
                         JCTree t = it.head;
                         switch (t.getTag()) {
-                        case JCTree.CLASSDEF:
+                        case CLASSDEF:
                             if (isInterface ||
                                 (((JCClassDecl) t).mods.flags & (Flags.PROTECTED|Flags.PUBLIC)) != 0 ||
                                 (((JCClassDecl) t).mods.flags & (Flags.PRIVATE)) == 0 && ((JCClassDecl) t).sym.packge().getQualifiedName() == names.java_lang)
                                 newdefs.append(t);
                             break;
-                        case JCTree.METHODDEF:
+                        case METHODDEF:
                             if (isInterface ||
                                 (((JCMethodDecl) t).mods.flags & (Flags.PROTECTED|Flags.PUBLIC)) != 0 ||
                                 ((JCMethodDecl) t).sym.name == names.init ||
                                 (((JCMethodDecl) t).mods.flags & (Flags.PRIVATE)) == 0 && ((JCMethodDecl) t).sym.packge().getQualifiedName() == names.java_lang)
                                 newdefs.append(t);
                             break;
-                        case JCTree.VARDEF:
+                        case VARDEF:
                             if (isInterface || (((JCVariableDecl) t).mods.flags & (Flags.PROTECTED|Flags.PUBLIC)) != 0 ||
                                 (((JCVariableDecl) t).mods.flags & (Flags.PRIVATE)) == 0 && ((JCVariableDecl) t).sym.packge().getQualifiedName() == names.java_lang)
                                 newdefs.append(t);
@@ -1581,11 +1599,24 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
             if (names != null && disposeNames)
                 names.dispose();
             names = null;
+
+            for (Closeable c: closeables) {
+                try {
+                    c.close();
+                } catch (IOException e) {
+                    // When javac uses JDK 7 as a baseline, this code would be
+                    // better written to set any/all exceptions from all the
+                    // Closeables as suppressed exceptions on the FatalError
+                    // that is thrown.
+                    JCDiagnostic msg = diagFactory.fragment("fatal.err.cant.close");
+                    throw new FatalError(msg, e);
+                }
+            }
         }
     }
 
     protected void printNote(String lines) {
-        Log.printLines(log.noticeWriter, lines);
+        log.printRawLines(Log.WriterKind.NOTICE, lines);
     }
 
     /** Print numbers of errors and warnings.
@@ -1597,8 +1628,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
                 key = "count." + kind;
             else
                 key = "count." + kind + ".plural";
-            log.printErrLines(key, String.valueOf(count));
-            log.errWriter.flush();
+            log.printLines(WriterKind.ERROR, key, String.valueOf(count));
+            log.flush(Log.WriterKind.ERROR);
         }
     }
 
@@ -1615,6 +1646,8 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         keepComments = prev.keepComments;
         start_msec = prev.start_msec;
         hasBeenUsed = true;
+        closeables = prev.closeables;
+        prev.closeables = List.nil();
     }
 
     public static void enableLogging() {

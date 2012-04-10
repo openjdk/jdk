@@ -1,7 +1,7 @@
 #!/bin/sh -f
 
 #
-# Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ fi
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     FS="/"
     ;;
   CYGWIN* )
@@ -71,7 +71,7 @@ rm -f Test.java Test.out
 diff ${DIFFOPTS} -c "${TESTSRC}${FS}Test.out" Test.out
 result=$?
 
-if [ $result -eq o ]
+if [ $result -eq 0 ]
 then
   echo "Passed"
 else

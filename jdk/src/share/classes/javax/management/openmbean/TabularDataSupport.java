@@ -671,7 +671,7 @@ public class TabularDataSupport
             return c;
         }
         catch (CloneNotSupportedException e) {
-            throw new InternalError(e.toString());
+            throw new InternalError(e.toString(), e);
         }
     }
 

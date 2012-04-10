@@ -308,7 +308,7 @@ For X86:
 <code><ul>
 gcc -O2 -fPIC -pthread -DLINUX -c <i>*.c</i>
 <br>
-gcc -z defs -static-libgcc -shared -mimpure-text -o <i>libXXX.so *.o</i> -lc
+gcc -z defs -static-libgcc -shared -o <i>libXXX.so *.o</i> -lc
 </code></ul>
 <br>
 For AMD64:
@@ -316,7 +316,7 @@ For AMD64:
 <code><ul>
 gcc -O2 -fPIC -pthread -DLINUX -D_LP64=1 -c <i>*.c</i>
 <br>
-gcc -z defs -static-libgcc -shared -mimpure-text -o <i>libXXX.so *.o</i> -lc
+gcc -z defs -static-libgcc -shared -o <i>libXXX.so *.o</i> -lc
 </code></ul>
 <br>
 </li>
@@ -339,7 +339,7 @@ option.
 </li>
 
 <li>
-Library: Use -static-libgcc -mimpure-text.
+Library: Use -static-libgcc.
 <br>
 When building the shared library (-shared option), this option
 allows for maximum portability of the library between different

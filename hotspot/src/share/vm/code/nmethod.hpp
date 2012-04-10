@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,7 @@ class xmlStream;
 class nmethod : public CodeBlob {
   friend class VMStructs;
   friend class NMethodSweeper;
-  friend class CodeCache;  // non-perm oops
+  friend class CodeCache;  // scavengable oops
  private:
   // Shared fields for all nmethod's
   methodOop _method;
@@ -175,6 +175,7 @@ class nmethod : public CodeBlob {
   // set during construction
   unsigned int _has_unsafe_access:1;         // May fault due to unsafe access.
   unsigned int _has_method_handle_invokes:1; // Has this method MethodHandle invokes?
+  unsigned int _lazy_critical_native:1;      // Lazy JNI critical native
 
   // Protected by Patching_lock
   unsigned char _state;                      // {alive, not_entrant, zombie, unloaded}
@@ -190,8 +191,6 @@ class nmethod : public CodeBlob {
 
 
   jbyte _scavenge_root_state;
-
-  NOT_PRODUCT(bool _has_debug_info; )
 
   // Nmethod Flushing lock. If non-zero, then the nmethod is not removed
   // and is not made into a zombie. However, once the nmethod is made into
@@ -329,11 +328,6 @@ class nmethod : public CodeBlob {
   methodOop method() const                        { return _method; }
   AbstractCompiler* compiler() const              { return _compiler; }
 
-#ifndef PRODUCT
-  bool has_debug_info() const                     { return _has_debug_info; }
-  void set_has_debug_info(bool f)                 { _has_debug_info = false; }
-#endif // NOT PRODUCT
-
   // type info
   bool is_nmethod() const                         { return true; }
   bool is_java_method() const                     { return !method()->is_native(); }
@@ -437,7 +431,10 @@ class nmethod : public CodeBlob {
   void  set_has_method_handle_invokes(bool z)     { _has_method_handle_invokes = z; }
 
   bool  is_speculatively_disconnected() const     { return _speculatively_disconnected; }
-  void  set_speculatively_disconnected(bool z)     { _speculatively_disconnected = z; }
+  void  set_speculatively_disconnected(bool z)    { _speculatively_disconnected = z; }
+
+  bool  is_lazy_critical_native() const           { return _lazy_critical_native; }
+  void  set_lazy_critical_native(bool z)          { _lazy_critical_native = z; }
 
   int   comp_level() const                        { return _comp_level; }
 
@@ -466,17 +463,17 @@ public:
   bool is_at_poll_return(address pc);
   bool is_at_poll_or_poll_return(address pc);
 
-  // Non-perm oop support
+  // Scavengable oop support
   bool  on_scavenge_root_list() const                  { return (_scavenge_root_state & 1) != 0; }
  protected:
-  enum { npl_on_list = 0x01, npl_marked = 0x10 };
-  void  set_on_scavenge_root_list()                    { _scavenge_root_state = npl_on_list; }
+  enum { sl_on_list = 0x01, sl_marked = 0x10 };
+  void  set_on_scavenge_root_list()                    { _scavenge_root_state = sl_on_list; }
   void  clear_on_scavenge_root_list()                  { _scavenge_root_state = 0; }
   // assertion-checking and pruning logic uses the bits of _scavenge_root_state
 #ifndef PRODUCT
-  void  set_scavenge_root_marked()                     { _scavenge_root_state |= npl_marked; }
-  void  clear_scavenge_root_marked()                   { _scavenge_root_state &= ~npl_marked; }
-  bool  scavenge_root_not_marked()                     { return (_scavenge_root_state &~ npl_on_list) == 0; }
+  void  set_scavenge_root_marked()                     { _scavenge_root_state |= sl_marked; }
+  void  clear_scavenge_root_marked()                   { _scavenge_root_state &= ~sl_marked; }
+  bool  scavenge_root_not_marked()                     { return (_scavenge_root_state &~ sl_on_list) == 0; }
   // N.B. there is no positive marked query, and we only use the not_marked query for asserts.
 #endif //PRODUCT
   nmethod* scavenge_root_link() const                  { return _scavenge_root_link; }

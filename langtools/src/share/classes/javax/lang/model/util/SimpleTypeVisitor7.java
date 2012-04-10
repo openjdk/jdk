@@ -68,6 +68,7 @@ import static javax.lang.model.SourceVersion.*;
  *            additional parameter.
  *
  * @see SimpleTypeVisitor6
+ * @see SimpleTypeVisitor8
  * @since 1.7
  */
 @SupportedSourceVersion(RELEASE_7)

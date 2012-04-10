@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -309,12 +309,14 @@ class Address VALUE_OBJ_CLASS_SPEC {
 #endif
 
   // accessors
-  Register base()      const { return _base; }
-  Register index()     const { return _index_or_disp.as_register(); }
-  int      disp()      const { return _index_or_disp.as_constant(); }
+  Register base()             const { return _base; }
+  Register index()            const { return _index_or_disp.as_register(); }
+  int      disp()             const { return _index_or_disp.as_constant(); }
 
-  bool     has_index() const { return _index_or_disp.is_register(); }
-  bool     has_disp()  const { return _index_or_disp.is_constant(); }
+  bool     has_index()        const { return _index_or_disp.is_register(); }
+  bool     has_disp()         const { return _index_or_disp.is_constant(); }
+
+  bool     uses(Register reg) const { return base() == reg || (has_index() && index() == reg); }
 
   const relocInfo::relocType rtype() { return _rspec.type(); }
   const RelocationHolder&    rspec() { return _rspec; }
@@ -329,6 +331,10 @@ class Address VALUE_OBJ_CLASS_SPEC {
     assert(_index_or_disp.is_constant(), "must have a displacement");
     Address a(base(), disp() + plusdisp);
     return a;
+  }
+  bool is_same_address(Address a) const {
+    // disregard _rspec
+    return base() == a.base() && (has_index() ? index() == a.index() : disp() == a.disp());
   }
 
   Address after_save() const {
@@ -436,6 +442,10 @@ class AddressLiteral VALUE_OBJ_CLASS_SPEC {
     : _address((address) addr),
       _rspec(rspec_from_rtype(rtype, (address) addr)) {}
 
+  AddressLiteral(oop* addr, relocInfo::relocType rtype = relocInfo::none)
+    : _address((address) addr),
+      _rspec(rspec_from_rtype(rtype, (address) addr)) {}
+
   AddressLiteral(float* addr, relocInfo::relocType rtype = relocInfo::none)
     : _address((address) addr),
       _rspec(rspec_from_rtype(rtype, (address) addr)) {}
@@ -455,6 +465,21 @@ class AddressLiteral VALUE_OBJ_CLASS_SPEC {
   }
 };
 
+// Convenience classes
+class ExternalAddress: public AddressLiteral {
+ private:
+  static relocInfo::relocType reloc_for_target(address target) {
+    // Sometimes ExternalAddress is used for values which aren't
+    // exactly addresses, like the card table base.
+    // external_word_type can't be used for values in the first page
+    // so just skip the reloc in that case.
+    return external_word_Relocation::can_be_relocated(target) ? relocInfo::external_word_type : relocInfo::none;
+  }
+
+ public:
+  ExternalAddress(address target) : AddressLiteral(target, reloc_for_target(          target)) {}
+  ExternalAddress(oop*    target) : AddressLiteral(target, reloc_for_target((address) target)) {}
+};
 
 inline Address RegisterImpl::address_in_saved_window() const {
    return (Address(SP, (sp_offset_in_saved_window() * wordSize) + STACK_BIAS));
@@ -691,6 +716,8 @@ class Assembler : public AbstractAssembler  {
     casa_op3     = 0x3c,
     casxa_op3    = 0x3e,
 
+    mftoi_op3    = 0x36,
+
     alt_bit_op3  = 0x10,
      cc_bit_op3  = 0x10
   };
@@ -725,10 +752,16 @@ class Assembler : public AbstractAssembler  {
     fitod_opf   = 0xc8,
     fstod_opf   = 0xc9,
     fstoi_opf   = 0xd1,
-    fdtoi_opf   = 0xd2
+    fdtoi_opf   = 0xd2,
+
+    mdtox_opf   = 0x110,
+    mstouw_opf  = 0x111,
+    mstosw_opf  = 0x113,
+    mxtod_opf   = 0x118,
+    mwtos_opf   = 0x119
   };
 
-  enum RCondition {  rc_z = 1,  rc_lez = 2,  rc_lz = 3, rc_nz = 5, rc_gz = 6, rc_gez = 7  };
+  enum RCondition {  rc_z = 1,  rc_lez = 2,  rc_lz = 3, rc_nz = 5, rc_gz = 6, rc_gez = 7, rc_last = rc_gez  };
 
   enum Condition {
      // for FBfcc & FBPfcc instruction
@@ -822,20 +855,23 @@ class Assembler : public AbstractAssembler  {
     Lookaside  = 1 << 4
   };
 
-  // test if x is within signed immediate range for nbits
-  static bool is_simm(intptr_t x, int nbits) { return -( intptr_t(1) << nbits-1 )  <= x   &&   x  <  ( intptr_t(1) << nbits-1 ); }
-
-  // test if -4096 <= x <= 4095
-  static bool is_simm13(intptr_t x) { return is_simm(x, 13); }
-
   static bool is_in_wdisp_range(address a, address b, int nbits) {
     intptr_t d = intptr_t(b) - intptr_t(a);
     return is_simm(d, nbits + 2);
   }
 
+  address target_distance(Label& L) {
+    // Assembler::target(L) should be called only when
+    // a branch instruction is emitted since non-bound
+    // labels record current pc() as a branch address.
+    if (L.is_bound()) return target(L);
+    // Return current address for non-bound labels.
+    return pc();
+  }
+
   // test if label is in simm16 range in words (wdisp16).
   bool is_in_wdisp16_range(Label& L) {
-    return is_in_wdisp_range(target(L), pc(), 16);
+    return is_in_wdisp_range(target_distance(L), pc(), 16);
   }
   // test if the distance between two addresses fits in simm30 range in words
   static bool is_in_wdisp30_range(address a, address b) {
@@ -843,8 +879,13 @@ class Assembler : public AbstractAssembler  {
   }
 
   enum ASIs { // page 72, v9
-    ASI_PRIMARY        = 0x80,
-    ASI_PRIMARY_LITTLE = 0x88
+    ASI_PRIMARY            = 0x80,
+    ASI_PRIMARY_NOFAULT    = 0x82,
+    ASI_PRIMARY_LITTLE     = 0x88,
+    // Block initializing store
+    ASI_ST_BLKINIT_PRIMARY = 0xE2,
+    // Most-Recently-Used (MRU) BIS variant
+    ASI_ST_BLKINIT_MRU_PRIMARY = 0xF2
     // add more from book as needed
   };
 
@@ -855,9 +896,8 @@ class Assembler : public AbstractAssembler  {
   // and be sign-extended. Check the range.
 
   static void assert_signed_range(intptr_t x, int nbits) {
-    assert( nbits == 32
-        ||  -(1 << nbits-1) <= x  &&  x < ( 1 << nbits-1),
-      "value out of range");
+    assert(nbits == 32 || (-(1 << nbits-1) <= x  &&  x < ( 1 << nbits-1)),
+           err_msg("value out of range: x=" INTPTR_FORMAT ", nbits=%d", x, nbits));
   }
 
   static void assert_signed_word_disp_range(intptr_t x, int nbits) {
@@ -943,6 +983,20 @@ class Assembler : public AbstractAssembler  {
   static int sx(       int         i)  { return  u_field(i,             12, 12); } // shift x=1 means 64-bit
   static int opf(      int         x)  { return  u_field(x,             13,  5); }
 
+  static bool is_cbcond( int x ) {
+    return (VM_Version::has_cbcond() && (inv_cond(x) > rc_last) &&
+            inv_op(x) == branch_op && inv_op2(x) == bpr_op2);
+  }
+  static bool is_cxb( int x ) {
+    assert(is_cbcond(x), "wrong instruction");
+    return (x & (1<<21)) != 0;
+  }
+  static int cond_cbcond( int         x)  { return  u_field((((x & 8)<<1) + 8 + (x & 7)), 29, 25); }
+  static int inv_cond_cbcond(int      x)  {
+    assert(is_cbcond(x), "wrong instruction");
+    return inv_u_field(x, 27, 25) | (inv_u_field(x, 29, 29)<<3);
+  }
+
   static int opf_cc(   CC          c, bool useFloat ) { return u_field((useFloat ? 0 : 4) + c, 13, 11); }
   static int mov_cc(   CC          c, bool useFloat ) { return u_field(useFloat ? 0 : 1,  18, 18) | u_field(c, 12, 11); }
 
@@ -994,6 +1048,26 @@ class Assembler : public AbstractAssembler  {
     return r;
   }
 
+  // compute inverse of wdisp10
+  static intptr_t inv_wdisp10(int x, intptr_t pos) {
+    assert(is_cbcond(x), "wrong instruction");
+    int lo = inv_u_field(x, 12, 5);
+    int hi = (x >> 19) & 3;
+    if (hi >= 2) hi |= ~1;
+    return (((hi << 8) | lo) << 2) + pos;
+  }
+
+  // word offset for cbcond, 8 bits at [B12,B5], 2 bits at [B20,B19]
+  static int wdisp10(intptr_t x, intptr_t off) {
+    assert(VM_Version::has_cbcond(), "This CPU does not have CBCOND instruction");
+    intptr_t xx = x - off;
+    assert_signed_word_disp_range(xx, 10);
+    int r =  ( ( (xx >>  2   ) & ((1 << 8) - 1) ) <<  5 )
+           | ( ( (xx >> (2+8)) & 3              ) << 19 );
+    // Have to fake cbcond instruction to pass assert in inv_wdisp10()
+    assert(inv_wdisp10((r | op(branch_op) | cond_cbcond(rc_last+1) | op2(bpr_op2)), off) == x,  "inverse is not inverse");
+    return r;
+  }
 
   // word displacement in low-order nbits bits
 
@@ -1036,6 +1110,9 @@ class Assembler : public AbstractAssembler  {
   static int low10( int x ) {
     return x & ((1 << 10) - 1);
   }
+
+  // instruction only in VIS3
+  static void vis3_only() { assert( VM_Version::has_vis3(), "This instruction only works on SPARC with VIS3"); }
 
   // instruction only in v9
   static void v9_only() { assert( VM_Version::v9_instructions_work(), "This instruction only works on SPARC V9"); }
@@ -1103,7 +1180,26 @@ class Assembler : public AbstractAssembler  {
 #endif
   }
 
+  // cbcond instruction should not be generated one after an other
+  bool cbcond_before() {
+    if (offset() == 0) return false; // it is first instruction
+    int x = *(int*)(intptr_t(pc()) - 4); // previous instruction
+    return is_cbcond(x);
+  }
+
+  void no_cbcond_before() {
+    assert(offset() == 0 || !cbcond_before(), "cbcond should not follow an other cbcond");
+  }
+
 public:
+
+  bool use_cbcond(Label& L) {
+    if (!UseCBCond || cbcond_before()) return false;
+    intptr_t x = intptr_t(target_distance(L)) - intptr_t(pc());
+    assert( (x & 3) == 0, "not word aligned");
+    return is_simm12(x);
+  }
+
   // Tells assembler you know that next instruction is delayed
   Assembler* delayed() {
 #ifdef CHECK_DELAY
@@ -1146,10 +1242,15 @@ public:
   void addccc( Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(addc_op3 | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
   void addccc( Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(addc_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
+
   // pp 136
 
-  inline void bpr( RCondition c, bool a, Predict p, Register s1, address d, relocInfo::relocType rt = relocInfo::none );
-  inline void bpr( RCondition c, bool a, Predict p, Register s1, Label& L);
+  inline void bpr(RCondition c, bool a, Predict p, Register s1, address d, relocInfo::relocType rt = relocInfo::none);
+  inline void bpr(RCondition c, bool a, Predict p, Register s1, Label& L);
+
+  // compare and branch
+  inline void cbcond(Condition c, CC cc, Register s1, Register s2, Label& L);
+  inline void cbcond(Condition c, CC cc, Register s1, int simm5, Label& L);
 
  protected: // use MacroAssembler::br instead
 
@@ -1162,8 +1263,6 @@ public:
 
   inline void fbp( Condition c, bool a, CC cc, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
   inline void fbp( Condition c, bool a, CC cc, Predict p, Label& L );
-
- public:
 
   // pp 144
 
@@ -1184,6 +1283,8 @@ public:
 
   inline void call( address d,  relocInfo::relocType rt = relocInfo::runtime_call_type );
   inline void call( Label& L,   relocInfo::relocType rt = relocInfo::runtime_call_type );
+
+ public:
 
   // pp 150
 
@@ -1223,8 +1324,8 @@ public:
 
   // pp 159
 
-  void ftox( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v9_only();  emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x80 + w) | fs2(s, w)); }
-  void ftoi( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) {             emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0xd0 + w) | fs2(s, w)); }
+  void ftox( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v9_only();  emit_long( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(fpop1_op3) | opf(0x80 + w) | fs2(s, w)); }
+  void ftoi( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) {             emit_long( op(arith_op) | fd(d, FloatRegisterImpl::S) | op3(fpop1_op3) | opf(0xd0 + w) | fs2(s, w)); }
 
   // pp 160
 
@@ -1232,8 +1333,8 @@ public:
 
   // pp 161
 
-  void fxtof( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v9_only();  emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x80 + w*4) | fs2(s, w)); }
-  void fitof( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) {             emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0xc0 + w*4) | fs2(s, w)); }
+  void fxtof( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v9_only();  emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x80 + w*4) | fs2(s, FloatRegisterImpl::D)); }
+  void fitof( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) {             emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0xc0 + w*4) | fs2(s, FloatRegisterImpl::S)); }
 
   // pp 162
 
@@ -1680,10 +1781,26 @@ public:
                                                                            rs1(s) |
                                                                            op3(wrreg_op3) |
                                                                            u_field(2, 29, 25) |
-                                                                           u_field(1, 13, 13) |
+                                                                           immed(true) |
                                                                            simm(simm13a, 13)); }
-  inline void wrasi(  Register d) { v9_only(); emit_long( op(arith_op) | rs1(d) | op3(wrreg_op3) | u_field(3, 29, 25)); }
+  inline void wrasi(Register d) { v9_only(); emit_long( op(arith_op) | rs1(d) | op3(wrreg_op3) | u_field(3, 29, 25)); }
+  // wrasi(d, imm) stores (d xor imm) to asi
+  inline void wrasi(Register d, int simm13a) { v9_only(); emit_long( op(arith_op) | rs1(d) | op3(wrreg_op3) |
+                                               u_field(3, 29, 25) | immed(true) | simm(simm13a, 13)); }
   inline void wrfprs( Register d) { v9_only(); emit_long( op(arith_op) | rs1(d) | op3(wrreg_op3) | u_field(6, 29, 25)); }
+
+
+  // VIS3 instructions
+
+  void movstosw( FloatRegister s, Register d ) { vis3_only();  emit_long( op(arith_op) | rd(d) | op3(mftoi_op3) | opf(mstosw_opf) | fs2(s, FloatRegisterImpl::S)); }
+  void movstouw( FloatRegister s, Register d ) { vis3_only();  emit_long( op(arith_op) | rd(d) | op3(mftoi_op3) | opf(mstouw_opf) | fs2(s, FloatRegisterImpl::S)); }
+  void movdtox(  FloatRegister s, Register d ) { vis3_only();  emit_long( op(arith_op) | rd(d) | op3(mftoi_op3) | opf(mdtox_opf) | fs2(s, FloatRegisterImpl::D)); }
+
+  void movwtos( Register s, FloatRegister d ) { vis3_only();  emit_long( op(arith_op) | fd(d, FloatRegisterImpl::S) | op3(mftoi_op3) | opf(mwtos_opf) | rs2(s)); }
+  void movxtod( Register s, FloatRegister d ) { vis3_only();  emit_long( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(mftoi_op3) | opf(mxtod_opf) | rs2(s)); }
+
+
+
 
   // For a given register condition, return the appropriate condition code
   // Condition (the one you would use to get the same effect after "tst" on
@@ -1814,18 +1931,32 @@ class MacroAssembler: public Assembler {
   inline void fb( Condition c, bool a, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
   inline void fb( Condition c, bool a, Predict p, Label& L );
 
-  // compares register with zero and branches (V9 and V8 instructions)
-  void br_zero( Condition c, bool a, Predict p, Register s1, Label& L);
+  // compares register with zero (32 bit) and branches (V9 and V8 instructions)
+  void cmp_zero_and_br( Condition c, Register s1, Label& L, bool a = false, Predict p = pn );
   // Compares a pointer register with zero and branches on (not)null.
   // Does a test & branch on 32-bit systems and a register-branch on 64-bit.
   void br_null   ( Register s1, bool a, Predict p, Label& L );
   void br_notnull( Register s1, bool a, Predict p, Label& L );
 
-  // These versions will do the most efficient thing on v8 and v9.  Perhaps
-  // this is what the routine above was meant to do, but it didn't (and
-  // didn't cover both target address kinds.)
-  void br_on_reg_cond( RCondition c, bool a, Predict p, Register s1, address d, relocInfo::relocType rt = relocInfo::none );
-  void br_on_reg_cond( RCondition c, bool a, Predict p, Register s1, Label& L);
+  //
+  // Compare registers and branch with nop in delay slot or cbcond without delay slot.
+  //
+  // ATTENTION: use these instructions with caution because cbcond instruction
+  //            has very short distance: 512 instructions (2Kbyte).
+
+  // Compare integer (32 bit) values (icc only).
+  void cmp_and_br_short(Register s1, Register s2, Condition c, Predict p, Label& L);
+  void cmp_and_br_short(Register s1, int simm13a, Condition c, Predict p, Label& L);
+  // Platform depending version for pointer compare (icc on !LP64 and xcc on LP64).
+  void cmp_and_brx_short(Register s1, Register s2, Condition c, Predict p, Label& L);
+  void cmp_and_brx_short(Register s1, int simm13a, Condition c, Predict p, Label& L);
+
+  // Short branch version for compares a pointer pwith zero.
+  void br_null_short   ( Register s1, Predict p, Label& L );
+  void br_notnull_short( Register s1, Predict p, Label& L );
+
+  // unconditional short branch
+  void ba_short(Label& L);
 
   inline void bp( Condition c, bool a, CC cc, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
   inline void bp( Condition c, bool a, CC cc, Predict p, Label& L );
@@ -1834,8 +1965,8 @@ class MacroAssembler: public Assembler {
   inline void brx( Condition c, bool a, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
   inline void brx( Condition c, bool a, Predict p, Label& L );
 
-  // unconditional short branch
-  inline void ba( bool a, Label& L );
+  // unconditional branch
+  inline void ba( Label& L );
 
   // Branch that tests fp condition codes
   inline void fbp( Condition c, bool a, CC cc, Predict p, address d, relocInfo::relocType rt = relocInfo::none );
@@ -2003,6 +2134,7 @@ public:
   // address pseudos: make these names unlike instruction names to avoid confusion
   inline intptr_t load_pc_address( Register reg, int bytes_to_skip );
   inline void load_contents(const AddressLiteral& addrlit, Register d, int offset = 0);
+  inline void load_bool_contents(const AddressLiteral& addrlit, Register d, int offset = 0);
   inline void load_ptr_contents(const AddressLiteral& addrlit, Register d, int offset = 0);
   inline void store_contents(Register s, const AddressLiteral& addrlit, Register temp, int offset = 0);
   inline void store_ptr_contents(Register s, const AddressLiteral& addrlit, Register temp, int offset = 0);
@@ -2089,7 +2221,7 @@ public:
   // traps as per trap.h (SPARC ABI?)
 
   void breakpoint_trap();
-  void breakpoint_trap(Condition c, CC cc = icc);
+  void breakpoint_trap(Condition c, CC cc);
   void flush_windows_trap();
   void clean_windows_trap();
   void get_psr_trap();
@@ -2118,8 +2250,7 @@ public:
   // this platform we assume byte size
 
   inline void stbool(Register d, const Address& a) { stb(d, a); }
-  inline void ldbool(const Address& a, Register d) { ldsb(a, d); }
-  inline void tstbool( Register s ) { tst(s); }
+  inline void ldbool(const Address& a, Register d) { ldub(a, d); }
   inline void movbool( bool boolconst, Register d) { mov( (int) boolconst, d); }
 
   // klass oop manipulations if compressed
@@ -2287,7 +2418,7 @@ public:
   int total_frame_size_in_bytes(int extraWords);
 
   // used when extraWords known statically
-  void save_frame(int extraWords);
+  void save_frame(int extraWords = 0);
   void save_frame_c1(int size_in_bytes);
   // make a frame, and simultaneously pass up one or two register value
   // into the new register window
@@ -2421,8 +2552,7 @@ public:
                                      Label* L_success,
                                      Label* L_failure,
                                      Label* L_slow_path,
-                RegisterOrConstant super_check_offset = RegisterOrConstant(-1),
-                Register instanceof_hack = noreg);
+                RegisterOrConstant super_check_offset = RegisterOrConstant(-1));
 
   // The rest of the type check; must be wired to a corresponding fast path.
   // It does not repeat the fast path logic, so don't use it standalone.
@@ -2456,9 +2586,11 @@ public:
   // offset relative to Gargs of argument at tos[arg_slot].
   // (arg_slot == 0 means the last argument, not the first).
   RegisterOrConstant argument_offset(RegisterOrConstant arg_slot,
+                                     Register temp_reg,
                                      int extra_slot_offset = 0);
   // Address of Gargs and argument_offset.
   Address            argument_address(RegisterOrConstant arg_slot,
+                                      Register temp_reg,
                                       int extra_slot_offset = 0);
 
   // Stack overflow checking
@@ -2492,6 +2624,8 @@ public:
   void char_arrays_equals(Register ary1, Register ary2,
                           Register limit, Register result,
                           Register chr1, Register chr2, Label& Ldone);
+  // Use BIS for zeroing
+  void bis_zeroing(Register to, Register count, Register temp, Label& Ldone);
 
 #undef VIRTUAL
 

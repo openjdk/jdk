@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,4 +35,22 @@ package java.lang.reflect;
  */
 public class GenericSignatureFormatError extends ClassFormatError {
     private static final long serialVersionUID = 6709919147137911034L;
+
+    /**
+     * Constructs a new {@code GenericSignatureFormatError}.
+     *
+     */
+    public GenericSignatureFormatError() {
+        super();
+    }
+
+    /**
+     * Constructs a new {@code GenericSignatureFormatError} with the
+     * specified message.
+     *
+     * @param message the detail message, may be {@code null}
+     */
+    public GenericSignatureFormatError(String message) {
+        super(message);
+    }
 }

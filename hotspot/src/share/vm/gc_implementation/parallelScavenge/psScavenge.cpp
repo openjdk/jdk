@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
+#include "code/codeCache.hpp"
 #include "gc_implementation/parallelScavenge/cardTableExtension.hpp"
 #include "gc_implementation/parallelScavenge/gcTaskManager.hpp"
 #include "gc_implementation/parallelScavenge/generationSizer.hpp"
@@ -100,7 +101,7 @@ public:
 
     // Weak refs may be visited more than once.
     if (PSScavenge::should_scavenge(p, _to_space)) {
-      PSScavenge::copy_and_push_safe_barrier(_promotion_manager, p);
+      PSScavenge::copy_and_push_safe_barrier<T, /*promote_immediately=*/false>(_promotion_manager, p);
     }
   }
   virtual void do_oop(oop* p)       { PSKeepAliveClosure::do_oop_work(p); }
@@ -181,28 +182,29 @@ class PSRefProcTaskExecutor: public AbstractRefProcTaskExecutor {
 void PSRefProcTaskExecutor::execute(ProcessTask& task)
 {
   GCTaskQueue* q = GCTaskQueue::create();
-  for(uint i=0; i<ParallelGCThreads; i++) {
+  GCTaskManager* manager = ParallelScavengeHeap::gc_task_manager();
+  for(uint i=0; i < manager->active_workers(); i++) {
     q->enqueue(new PSRefProcTaskProxy(task, i));
   }
-  ParallelTaskTerminator terminator(
-                 ParallelScavengeHeap::gc_task_manager()->workers(),
+  ParallelTaskTerminator terminator(manager->active_workers(),
                  (TaskQueueSetSuper*) PSPromotionManager::stack_array_depth());
-  if (task.marks_oops_alive() && ParallelGCThreads > 1) {
-    for (uint j=0; j<ParallelGCThreads; j++) {
+  if (task.marks_oops_alive() && manager->active_workers() > 1) {
+    for (uint j = 0; j < manager->active_workers(); j++) {
       q->enqueue(new StealTask(&terminator));
     }
   }
-  ParallelScavengeHeap::gc_task_manager()->execute_and_wait(q);
+  manager->execute_and_wait(q);
 }
 
 
 void PSRefProcTaskExecutor::execute(EnqueueTask& task)
 {
   GCTaskQueue* q = GCTaskQueue::create();
-  for(uint i=0; i<ParallelGCThreads; i++) {
+  GCTaskManager* manager = ParallelScavengeHeap::gc_task_manager();
+  for(uint i=0; i < manager->active_workers(); i++) {
     q->enqueue(new PSRefEnqueueTaskProxy(task, i));
   }
-  ParallelScavengeHeap::gc_task_manager()->execute_and_wait(q);
+  manager->execute_and_wait(q);
 }
 
 // This method contains all heap specific policy for invoking scavenge.
@@ -213,36 +215,41 @@ void PSRefProcTaskExecutor::execute(EnqueueTask& task)
 //
 // Note that this method should only be called from the vm_thread while
 // at a safepoint!
-void PSScavenge::invoke() {
+bool PSScavenge::invoke() {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
   assert(!Universe::heap()->is_gc_active(), "not reentrant");
 
-  ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
+  ParallelScavengeHeap* const heap = (ParallelScavengeHeap*)Universe::heap();
   assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
 
   PSAdaptiveSizePolicy* policy = heap->size_policy();
   IsGCActiveMark mark;
 
-  bool scavenge_was_done = PSScavenge::invoke_no_policy();
+  const bool scavenge_done = PSScavenge::invoke_no_policy();
+  const bool need_full_gc = !scavenge_done ||
+    policy->should_full_GC(heap->old_gen()->free_in_bytes());
+  bool full_gc_done = false;
 
-  PSGCAdaptivePolicyCounters* counters = heap->gc_policy_counters();
-  if (UsePerfData)
-    counters->update_full_follows_scavenge(0);
-  if (!scavenge_was_done ||
-      policy->should_full_GC(heap->old_gen()->free_in_bytes())) {
-    if (UsePerfData)
-      counters->update_full_follows_scavenge(full_follows_scavenge);
+  if (UsePerfData) {
+    PSGCAdaptivePolicyCounters* const counters = heap->gc_policy_counters();
+    const int ffs_val = need_full_gc ? full_follows_scavenge : not_skipped;
+    counters->update_full_follows_scavenge(ffs_val);
+  }
+
+  if (need_full_gc) {
     GCCauseSetter gccs(heap, GCCause::_adaptive_size_policy);
     CollectorPolicy* cp = heap->collector_policy();
     const bool clear_all_softrefs = cp->should_clear_all_soft_refs();
 
     if (UseParallelOldGC) {
-      PSParallelCompact::invoke_no_policy(clear_all_softrefs);
+      full_gc_done = PSParallelCompact::invoke_no_policy(clear_all_softrefs);
     } else {
-      PSMarkSweep::invoke_no_policy(clear_all_softrefs);
+      full_gc_done = PSMarkSweep::invoke_no_policy(clear_all_softrefs);
     }
   }
+
+  return full_gc_done;
 }
 
 // This method contains no policy. You should probably
@@ -294,9 +301,7 @@ bool PSScavenge::invoke_no_policy() {
     heap->record_gen_tops_before_GC();
   }
 
-  if (PrintHeapAtGC) {
-    Universe::print_heap_before_gc();
-  }
+  heap->print_heap_before_gc();
 
   assert(!NeverTenure || _tenuring_threshold == markOopDesc::max_age + 1, "Sanity");
   assert(!AlwaysTenure || _tenuring_threshold == 0, "Sanity");
@@ -350,10 +355,9 @@ bool PSScavenge::invoke_no_policy() {
     }
     save_to_space_top_before_gc();
 
-    NOT_PRODUCT(reference_processor()->verify_no_references_recorded());
     COMPILER2_PRESENT(DerivedPointerTable::clear());
 
-    reference_processor()->enable_discovery();
+    reference_processor()->enable_discovery(true /*verify_disabled*/, true /*verify_no_refs*/);
     reference_processor()->setup_policy(false);
 
     // We track how much was promoted to the next generation for
@@ -376,6 +380,14 @@ bool PSScavenge::invoke_no_policy() {
     // Release all previously held resources
     gc_task_manager()->release_all_resources();
 
+    // Set the number of GC threads to be used in this collection
+    gc_task_manager()->set_active_gang();
+    gc_task_manager()->task_idle_workers();
+    // Get the active number of workers here and use that value
+    // throughout the methods.
+    uint active_workers = gc_task_manager()->active_workers();
+    heap->set_par_threads(active_workers);
+
     PSPromotionManager::pre_scavenge();
 
     // We'll use the promotion manager again later.
@@ -386,8 +398,9 @@ bool PSScavenge::invoke_no_policy() {
 
       GCTaskQueue* q = GCTaskQueue::create();
 
-      for(uint i=0; i<ParallelGCThreads; i++) {
-        q->enqueue(new OldToYoungRootsTask(old_gen, old_top, i));
+      uint stripe_total = active_workers;
+      for(uint i=0; i < stripe_total; i++) {
+        q->enqueue(new OldToYoungRootsTask(old_gen, old_top, i, stripe_total));
       }
 
       q->enqueue(new SerialOldToYoungRootsTask(perm_gen, perm_top));
@@ -404,10 +417,10 @@ bool PSScavenge::invoke_no_policy() {
       q->enqueue(new ScavengeRootsTask(ScavengeRootsTask::code_cache));
 
       ParallelTaskTerminator terminator(
-                  gc_task_manager()->workers(),
+        active_workers,
                   (TaskQueueSetSuper*) promotion_manager->stack_array_depth());
-      if (ParallelGCThreads>1) {
-        for (uint j=0; j<ParallelGCThreads; j++) {
+      if (active_workers > 1) {
+        for (uint j = 0; j < active_workers; j++) {
           q->enqueue(new StealTask(&terminator));
         }
       }
@@ -420,6 +433,7 @@ bool PSScavenge::invoke_no_policy() {
     // Process reference objects discovered during scavenge
     {
       reference_processor()->setup_policy(false); // not always_clear
+      reference_processor()->set_active_mt_degree(active_workers);
       PSKeepAliveClosure keep_alive(promotion_manager);
       PSEvacuateFollowersClosure evac_followers(promotion_manager);
       if (reference_processor()->processing_is_mt()) {
@@ -594,6 +608,8 @@ bool PSScavenge::invoke_no_policy() {
 
     NOT_PRODUCT(reference_processor()->verify_no_references_recorded());
 
+    CodeCache::prune_scavenge_root_nmethods();
+
     // Re-verify object start arrays
     if (VerifyObjectStartArray &&
         VerifyAfterGC) {
@@ -623,6 +639,8 @@ bool PSScavenge::invoke_no_policy() {
     // Track memory usage and detect low memory
     MemoryService::track_memory_usage();
     heap->update_counters();
+
+    gc_task_manager()->release_idle_workers();
   }
 
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {
@@ -631,9 +649,7 @@ bool PSScavenge::invoke_no_policy() {
     Universe::verify(false);
   }
 
-  if (PrintHeapAtGC) {
-    Universe::print_heap_after_gc();
-  }
+  heap->print_heap_after_gc();
 
   if (ZapUnusedHeapArea) {
     young_gen->eden_space()->check_mangled_unused_area_complete();
@@ -805,6 +821,7 @@ void PSScavenge::initialize() {
 
   // Initialize ref handling object for scavenging.
   MemRegion mr = young_gen->reserved();
+
   _ref_processor =
     new ReferenceProcessor(mr,                         // span
                            ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing

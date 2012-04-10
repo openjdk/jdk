@@ -47,13 +47,13 @@ import org.w3c.dom.Element;
  */
 public class DOMCryptoContext implements XMLCryptoContext {
 
-    private HashMap nsMap = new HashMap();
-    private HashMap idMap = new HashMap();
-    private HashMap objMap = new HashMap();
+    private HashMap<String,String> nsMap = new HashMap<>();
+    private HashMap<String,Element> idMap = new HashMap<>();
+    private HashMap<Object,Object> objMap = new HashMap<>();
     private String baseURI;
     private KeySelector ks;
     private URIDereferencer dereferencer;
-    private HashMap propMap = new HashMap();
+    private HashMap<String,Object> propMap = new HashMap<>();
     private String defaultPrefix;
 
     /**
@@ -73,7 +73,7 @@ public class DOMCryptoContext implements XMLCryptoContext {
         if (namespaceURI == null) {
             throw new NullPointerException("namespaceURI cannot be null");
         }
-        String prefix = (String) nsMap.get(namespaceURI);
+        String prefix = nsMap.get(namespaceURI);
         return (prefix != null ? prefix : defaultPrefix);
     }
 
@@ -87,7 +87,7 @@ public class DOMCryptoContext implements XMLCryptoContext {
         if (namespaceURI == null) {
             throw new NullPointerException("namespaceURI is null");
         }
-        return (String) nsMap.put(namespaceURI, prefix);
+        return nsMap.put(namespaceURI, prefix);
     }
 
     public String getDefaultNamespacePrefix() {
@@ -170,7 +170,7 @@ public class DOMCryptoContext implements XMLCryptoContext {
         if (idValue == null) {
             throw new NullPointerException("idValue is null");
         }
-        return (Element) idMap.get(idValue);
+        return idMap.get(idValue);
     }
 
     /**
@@ -219,6 +219,7 @@ public class DOMCryptoContext implements XMLCryptoContext {
      *
      * @return a read-only iterator over the set of mappings
      */
+    @SuppressWarnings("rawtypes")
     public Iterator iterator() {
         return Collections.unmodifiableMap(idMap).entrySet().iterator();
     }

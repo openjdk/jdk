@@ -142,6 +142,7 @@ import static sun.swing.SwingUtilities2.Section.*;
  * @author Ray Ryan
  * @author Scott Violet
  */
+@SuppressWarnings("serial")
 public class JTree extends JComponent implements Scrollable, Accessible
 {
     /**
@@ -421,6 +422,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      */
     private int expandRow = -1;
 
+    @SuppressWarnings("serial")
     private class TreeTimer extends Timer {
         public TreeTimer() {
             super(2000, null);
@@ -1838,7 +1840,9 @@ public class JTree extends JComponent implements Scrollable, Accessible
      *         nodes, or <code>null</code> if nothing is currently selected
      */
     public TreePath[] getSelectionPaths() {
-        return getSelectionModel().getSelectionPaths();
+        TreePath[] selectionPaths = getSelectionModel().getSelectionPaths();
+
+        return (selectionPaths != null && selectionPaths.length > 0) ? selectionPaths : null;
     }
 
     /**
@@ -3075,7 +3079,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
 
         expandedStack = new Stack<Stack<TreePath>>();
 
-        Vector          values = (Vector)s.readObject();
+        Vector<?>          values = (Vector)s.readObject();
         int             indexCounter = 0;
         int             maxCounter = values.size();
 
@@ -3157,7 +3161,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      */
     private void unarchiveExpandedState(Object state) {
         if(state instanceof Vector) {
-            Vector          paths = (Vector)state;
+            Vector<?>          paths = (Vector)state;
 
             for(int counter = paths.size() - 1; counter >= 0; counter--) {
                 Boolean        eState = (Boolean)paths.elementAt(counter--);
@@ -3238,6 +3242,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial")
     protected static class EmptySelectionModel extends
               DefaultTreeSelectionModel
     {
@@ -3359,6 +3364,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial")
     protected class TreeSelectionRedirector implements Serializable,
                     TreeSelectionListener
     {
@@ -3659,7 +3665,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
     {
          if(toRemove != null) {
              while(toRemove.hasMoreElements()) {
-                 Enumeration descendants = getDescendantToggledPaths
+                 Enumeration<?> descendants = getDescendantToggledPaths
                          (toRemove.nextElement());
 
                  if(descendants != null) {
@@ -3859,6 +3865,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial")
     public static class DynamicUtilTreeNode extends DefaultMutableTreeNode {
         /**
          * Does the this <code>JTree</code> have children?
@@ -3880,7 +3887,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         public static void createChildren(DefaultMutableTreeNode parent,
                                           Object children) {
             if(children instanceof Vector) {
-                Vector          childVector = (Vector)children;
+                Vector<?>          childVector = (Vector)children;
 
                 for(int counter = 0, maxCounter = childVector.size();
                     counter < maxCounter; counter++)
@@ -3889,8 +3896,8 @@ public class JTree extends JComponent implements Scrollable, Accessible
                                 childVector.elementAt(counter)));
             }
             else if(children instanceof Hashtable) {
-                Hashtable           childHT = (Hashtable)children;
-                Enumeration         keys = childHT.keys();
+                Hashtable<?,?>           childHT = (Hashtable)children;
+                Enumeration<?>         keys = childHT.keys();
                 Object              aKey;
 
                 while(keys.hasMoreElements()) {
@@ -4090,6 +4097,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial")
     protected class AccessibleJTree extends AccessibleJComponent
             implements AccessibleSelection, TreeSelectionListener,
                        TreeModelListener, TreeExpansionListener  {
@@ -5240,6 +5248,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
                 }
             }
 
+            @SuppressWarnings("deprecation")
             public boolean isFocusTraversable() {
                 AccessibleContext ac = getCurrentAccessibleContext();
                 if (ac instanceof AccessibleComponent) {

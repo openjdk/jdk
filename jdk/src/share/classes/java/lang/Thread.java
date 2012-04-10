@@ -1136,6 +1136,9 @@ class Thread implements Runnable {
     public final void setName(String name) {
         checkAccess();
         this.name = name.toCharArray();
+        if (threadStatus != 0) {
+            setNativeName(name);
+        }
     }
 
     /**
@@ -1650,7 +1653,7 @@ class Thread implements Runnable {
      * security-sensitive non-final methods, or else the
      * "enableContextClassLoaderOverride" RuntimePermission is checked.
      */
-    private static boolean isCCLOverridden(Class cl) {
+    private static boolean isCCLOverridden(Class<?> cl) {
         if (cl == Thread.class)
             return false;
 
@@ -1670,21 +1673,21 @@ class Thread implements Runnable {
      * override security-sensitive non-final methods.  Returns true if the
      * subclass overrides any of the methods, false otherwise.
      */
-    private static boolean auditSubclass(final Class subcl) {
+    private static boolean auditSubclass(final Class<?> subcl) {
         Boolean result = AccessController.doPrivileged(
             new PrivilegedAction<Boolean>() {
                 public Boolean run() {
-                    for (Class cl = subcl;
+                    for (Class<?> cl = subcl;
                          cl != Thread.class;
                          cl = cl.getSuperclass())
                     {
                         try {
-                            cl.getDeclaredMethod("getContextClassLoader", new Class[0]);
+                            cl.getDeclaredMethod("getContextClassLoader", new Class<?>[0]);
                             return Boolean.TRUE;
                         } catch (NoSuchMethodException ex) {
                         }
                         try {
-                            Class[] params = {ClassLoader.class};
+                            Class<?>[] params = {ClassLoader.class};
                             cl.getDeclaredMethod("setContextClassLoader", params);
                             return Boolean.TRUE;
                         } catch (NoSuchMethodException ex) {
@@ -2032,4 +2035,5 @@ class Thread implements Runnable {
     private native void suspend0();
     private native void resume0();
     private native void interrupt0();
+    private native void setNativeName(String name);
 }

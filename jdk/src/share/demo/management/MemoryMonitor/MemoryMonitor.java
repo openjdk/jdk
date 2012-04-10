@@ -30,6 +30,15 @@
  */
 
 /*
+ * This source code is provided to illustrate the usage of a given feature
+ * or technique and has been deliberately simplified. Additional steps
+ * required for a production-quality application, such as security checks,
+ * input validation and proper error handling, might not be present in
+ * this sample code.
+ */
+
+
+/*
  */
 
 import java.awt.*;
@@ -204,10 +213,10 @@ public class MemoryMonitor extends JPanel {
 
             // Calculate remaining size
             float ssH = ascent + descent;
-            float remainingHeight = (float) (y2 - (ssH*2) - 0.5f);
+            float remainingHeight = y2 - (ssH*2) - 0.5f;
             float blockHeight = remainingHeight/10;
             float blockWidth = 20.0f;
-            float remainingWidth = (float) (x2 - blockWidth - 10);
+            float remainingWidth = x2 - blockWidth - 10;
 
             // .. Memory Free ..
             big.setColor(mfColor);
@@ -215,7 +224,7 @@ public class MemoryMonitor extends JPanel {
             int i = 0;
             for ( ; i < MemUsage ; i++) {
                 mfRect.setRect(x1+5,(float) y1+ssH+i*blockHeight,
-                                blockWidth,(float) blockHeight-1);
+                                blockWidth, blockHeight-1);
                 big.fill(mfRect);
             }
 
@@ -223,13 +232,13 @@ public class MemoryMonitor extends JPanel {
             big.setColor(Color.green);
             for ( ; i < 10; i++)  {
                 muRect.setRect(x1+5,(float) y1 + ssH+i*blockHeight,
-                                blockWidth,(float) blockHeight-1);
+                                blockWidth, blockHeight-1);
                 big.fill(muRect);
             }
 
             // .. Draw History Graph ..
             if (remainingWidth <= 30) remainingWidth = (float)30;
-            if (remainingHeight <= ssH) remainingHeight = (float)ssH;
+            if (remainingHeight <= ssH) remainingHeight = ssH;
             big.setColor(graphColor);
             int graphX = x1+30;
             int graphY = y1 + (int) ssH;
@@ -338,8 +347,8 @@ public class MemoryMonitor extends JPanel {
                     big = bimg.createGraphics();
                     big.setFont(font);
                     FontMetrics fm = big.getFontMetrics(font);
-                    ascent = (int) fm.getAscent();
-                    descent = (int) fm.getDescent();
+                    ascent = fm.getAscent();
+                    descent = fm.getDescent();
                 }
                 repaint();
                 try {

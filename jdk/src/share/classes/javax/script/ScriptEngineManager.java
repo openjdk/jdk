@@ -25,11 +25,9 @@
 
 package javax.script;
 import java.util.*;
-import java.net.URL;
-import java.io.*;
 import java.security.*;
-import sun.misc.Service;
-import sun.misc.ServiceConfigurationError;
+import java.util.ServiceLoader;
+import java.util.ServiceConfigurationError;
 import sun.reflect.Reflection;
 import sun.security.util.SecurityConstants;
 
@@ -39,7 +37,7 @@ import sun.security.util.SecurityConstants;
  * collection of key/value pairs storing state shared by all engines created
  * by the Manager. This class uses the <a href="../../../technotes/guides/jar/jar.html#Service%20Provider">service provider</a> mechanism to enumerate all the
  * implementations of <code>ScriptEngineFactory</code>. <br><br>
- * The <code>ScriptEngineManager</code> provides a method to return an array of all these factories
+ * The <code>ScriptEngineManager</code> provides a method to return a list of all these factories
  * as well as utility methods which look up factories on the basis of language name, file extension
  * and mime type.
  * <p>
@@ -102,13 +100,15 @@ public class ScriptEngineManager  {
     }
 
     private void initEngines(final ClassLoader loader) {
-        Iterator itr = null;
+        Iterator<ScriptEngineFactory> itr = null;
         try {
+            ServiceLoader<ScriptEngineFactory> sl;
             if (loader != null) {
-                itr = Service.providers(ScriptEngineFactory.class, loader);
+                sl = ServiceLoader.load(ScriptEngineFactory.class, loader);
             } else {
-                itr = Service.installedProviders(ScriptEngineFactory.class);
+                sl = ServiceLoader.loadInstalled(ScriptEngineFactory.class);
             }
+            itr = sl.iterator();
         } catch (ServiceConfigurationError err) {
             System.err.println("Can't find ScriptEngineFactory providers: " +
                           err.getMessage());
@@ -124,7 +124,7 @@ public class ScriptEngineManager  {
         try {
             while (itr.hasNext()) {
                 try {
-                    ScriptEngineFactory fact = (ScriptEngineFactory) itr.next();
+                    ScriptEngineFactory fact = itr.next();
                     engineSpis.add(fact);
                 } catch (ServiceConfigurationError err) {
                     System.err.println("ScriptEngineManager providers.next(): "
@@ -202,7 +202,7 @@ public class ScriptEngineManager  {
      * The algorithm first searches for a <code>ScriptEngineFactory</code> that has been
      * registered as a handler for the specified name using the <code>registerEngineName</code>
      * method.
-     * <br><br> If one is not found, it searches the array of <code>ScriptEngineFactory</code> instances
+     * <br><br> If one is not found, it searches the set of <code>ScriptEngineFactory</code> instances
      * stored by the constructor for one with the specified name.  If a <code>ScriptEngineFactory</code>
      * is found by either method, it is used to create instance of <code>ScriptEngine</code>.
      * @param shortName The short name of the <code>ScriptEngine</code> implementation.
@@ -351,7 +351,7 @@ public class ScriptEngineManager  {
     }
 
     /**
-     * Returns an array whose elements are instances of all the <code>ScriptEngineFactory</code> classes
+     * Returns a list whose elements are instances of all the <code>ScriptEngineFactory</code> classes
      * found by the discovery mechanism.
      * @return List of all discovered <code>ScriptEngineFactory</code>s.
      */
@@ -441,7 +441,7 @@ public class ScriptEngineManager  {
     // Note that this code is same as ClassLoader.getCallerClassLoader().
     // But, that method is package private and hence we can't call here.
     private ClassLoader getCallerClassLoader() {
-        Class caller = Reflection.getCallerClass(3);
+        Class<?> caller = Reflection.getCallerClass(3);
         if (caller == null) {
             return null;
         }

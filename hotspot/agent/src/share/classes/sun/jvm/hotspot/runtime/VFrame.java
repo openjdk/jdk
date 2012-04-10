@@ -77,7 +77,7 @@ public class VFrame {
           return new CompiledVFrame(f, regMap, thread, scope, mayBeImprecise);
         }
 
-        if (f.isGlueFrame()) {
+        if (f.isRuntimeFrame()) {
           // This is a conversion frame. Skip this frame and try again.
           RegisterMap tempMap = regMap.copy();
           Frame s = f.sender(tempMap);

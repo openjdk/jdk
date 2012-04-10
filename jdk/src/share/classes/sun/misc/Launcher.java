@@ -71,7 +71,7 @@ public class Launcher {
             extcl = ExtClassLoader.getExtClassLoader();
         } catch (IOException e) {
             throw new InternalError(
-                "Could not create extension class loader");
+                "Could not create extension class loader", e);
         }
 
         // Now create the class loader to use to launch the application
@@ -79,7 +79,7 @@ public class Launcher {
             loader = AppClassLoader.getAppClassLoader(extcl);
         } catch (IOException e) {
             throw new InternalError(
-                "Could not create application class loader");
+                "Could not create application class loader", e);
         }
 
         // Also set the context class loader for the primordial thread.
@@ -295,7 +295,7 @@ public class Launcher {
         /**
          * Override loadClass so we can checkPackageAccess.
          */
-        public Class loadClass(String name, boolean resolve)
+        public Class<?> loadClass(String name, boolean resolve)
             throws ClassNotFoundException
         {
             int i = name.lastIndexOf('.');
@@ -460,7 +460,7 @@ public class Launcher {
             return ParseUtil.fileToEncodedURL(file);
         } catch (MalformedURLException e) {
             // Should never happen since we specify the protocol...
-            throw new InternalError();
+            throw new InternalError(e);
         }
     }
 
@@ -473,17 +473,12 @@ public class Launcher {
         public URLStreamHandler createURLStreamHandler(String protocol) {
             String name = PREFIX + "." + protocol + ".Handler";
             try {
-                Class c = Class.forName(name);
+                Class<?> c = Class.forName(name);
                 return (URLStreamHandler)c.newInstance();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
+            } catch (ReflectiveOperationException e) {
+                throw new InternalError("could not load " + protocol +
+                                        "system protocol handler", e);
             }
-            throw new InternalError("could not load " + protocol +
-                                    "system protocol handler");
         }
     }
 }

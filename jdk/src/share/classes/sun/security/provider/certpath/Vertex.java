@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,7 +171,8 @@ public class Vertex {
         try {
             sKeyID = x509Cert.getSubjectKeyIdentifierExtension();
             if (sKeyID != null) {
-                KeyIdentifier keyID = (KeyIdentifier)sKeyID.get(sKeyID.KEY_ID);
+                KeyIdentifier keyID = sKeyID.get(
+                        SubjectKeyIdentifierExtension.KEY_ID);
                 out = out + "SubjKeyID:  " + keyID.toString();
             }
         } catch (Exception e) {
@@ -184,7 +185,8 @@ public class Vertex {
         try {
             aKeyID = x509Cert.getAuthorityKeyIdentifierExtension();
             if (aKeyID != null) {
-                KeyIdentifier keyID = (KeyIdentifier)aKeyID.get(aKeyID.KEY_ID);
+                KeyIdentifier keyID = (KeyIdentifier)aKeyID.get(
+                        AuthorityKeyIdentifierExtension.KEY_ID);
                 out = out + "AuthKeyID:  " + keyID.toString();
             }
         } catch (Exception e) {

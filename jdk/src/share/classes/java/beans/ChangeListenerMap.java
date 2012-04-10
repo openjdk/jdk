@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ abstract class ChangeListenerMap<L extends EventListener> {
      */
     public final synchronized void add(String name, L listener) {
         if (this.map == null) {
-            this.map = new HashMap<String, L[]>();
+            this.map = new HashMap<>();
         }
         L[] array = this.map.get(name);
         int size = (array != null)
@@ -146,7 +146,7 @@ abstract class ChangeListenerMap<L extends EventListener> {
     public final void set(String name, L[] listeners) {
         if (listeners != null) {
             if (this.map == null) {
-                this.map = new HashMap<String, L[]>();
+                this.map = new HashMap<>();
             }
             this.map.put(name, listeners);
         }
@@ -167,7 +167,7 @@ abstract class ChangeListenerMap<L extends EventListener> {
         if (this.map == null) {
             return newArray(0);
         }
-        List<L> list = new ArrayList<L>();
+        List<L> list = new ArrayList<>();
 
         L[] listeners = this.map.get(null);
         if (listeners != null) {
@@ -237,11 +237,5 @@ abstract class ChangeListenerMap<L extends EventListener> {
      *
      * @return a real listener
      */
-    public final L extract(L listener) {
-        while (listener instanceof EventListenerProxy) {
-            EventListenerProxy<L> proxy = (EventListenerProxy<L>) listener;
-            listener = proxy.getListener();
-        }
-        return listener;
-    }
+    public abstract L extract(L listener);
 }

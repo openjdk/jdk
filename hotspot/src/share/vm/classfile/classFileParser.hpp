@@ -33,6 +33,9 @@
 #include "utilities/accessFlags.hpp"
 
 class TempNewSymbol;
+class FieldAllocationCount;
+
+
 // Parser for for .class files
 //
 // The bytes describing the class file structure is read from a Stream object
@@ -84,9 +87,11 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                               bool* is_synthetic_addr,
                               u2* generic_signature_index_addr,
                               typeArrayHandle* field_annotations, TRAPS);
-  typeArrayHandle parse_fields(constantPoolHandle cp, bool is_interface,
-                               struct FieldAllocationCount *fac,
-                               objArrayHandle* fields_annotations, TRAPS);
+  typeArrayHandle parse_fields(Symbol* class_name,
+                               constantPoolHandle cp, bool is_interface,
+                               FieldAllocationCount *fac,
+                               objArrayHandle* fields_annotations,
+                               u2* java_fields_count_ptr, TRAPS);
 
   // Method parsing
   methodHandle parse_method(constantPoolHandle cp, bool is_interface,
@@ -125,7 +130,11 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   void parse_classfile_sourcefile_attribute(constantPoolHandle cp, instanceKlassHandle k, TRAPS);
   void parse_classfile_source_debug_extension_attribute(constantPoolHandle cp,
                                                 instanceKlassHandle k, int length, TRAPS);
-  u2   parse_classfile_inner_classes_attribute(constantPoolHandle cp,
+  u2   parse_classfile_inner_classes_attribute(u1* inner_classes_attribute_start,
+                                               bool parsed_enclosingmethod_attribute,
+                                               u2 enclosing_method_class_index,
+                                               u2 enclosing_method_method_index,
+                                               constantPoolHandle cp,
                                                instanceKlassHandle k, TRAPS);
   void parse_classfile_attributes(constantPoolHandle cp, instanceKlassHandle k, TRAPS);
   void parse_classfile_synthetic_attribute(constantPoolHandle cp, instanceKlassHandle k, TRAPS);
@@ -149,25 +158,6 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   void set_precomputed_flags(instanceKlassHandle k);
   objArrayHandle compute_transitive_interfaces(instanceKlassHandle super,
                                                objArrayHandle local_ifs, TRAPS);
-
-  // Special handling for certain classes.
-  // Add the "discovered" field to java.lang.ref.Reference if
-  // it does not exist.
-  void java_lang_ref_Reference_fix_pre(typeArrayHandle* fields_ptr,
-                                       constantPoolHandle cp,
-                                       FieldAllocationCount *fac_ptr, TRAPS);
-  // Adjust the field allocation counts for java.lang.Class to add
-  // fake fields.
-  void java_lang_Class_fix_pre(int* nonstatic_field_size,
-                               FieldAllocationCount *fac_ptr);
-  // Adjust the next_nonstatic_oop_offset to place the fake fields
-  // before any Java fields.
-  void java_lang_Class_fix_post(int* next_nonstatic_oop_offset);
-  // Adjust the field allocation counts for java.lang.invoke.MethodHandle to add
-  // a fake address (void*) field.
-  void java_lang_invoke_MethodHandle_fix_pre(constantPoolHandle cp,
-                                     typeArrayHandle fields,
-                                     FieldAllocationCount *fac_ptr, TRAPS);
 
   // Format checker methods
   void classfile_parse_error(const char* msg, TRAPS);

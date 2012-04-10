@@ -41,26 +41,23 @@ fi
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     NULL=/dev/null
     PS=":"
     FS="/"
     CP="${FS}bin${FS}cp -f"
-    TMP=/tmp
     ;;
   CYGWIN* )
     NULL=/dev/null
     PS=";"
     FS="/"
     CP="cp -f"
-    TMP=/tmp
     ;;
   Windows_* )
     NULL=NUL
     PS=";"
     FS="\\"
     CP="cp -f"
-    TMP="c:/temp"
     ;;
   * )
     echo "Unrecognized operating system!"

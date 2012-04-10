@@ -25,7 +25,6 @@
 
 package sun.misc;
 
-import sun.misc.FpUtils;
 import sun.misc.DoubleConsts;
 import sun.misc.FloatConsts;
 import java.util.regex.*;
@@ -326,7 +325,7 @@ public class FloatingDecimal{
             // can do int arithmetic rather than long!
             int  ivalue = (int)lvalue;
             ndigits = 10;
-            digits = (char[])(perThreadBuffer.get());
+            digits = perThreadBuffer.get();
             digitno = ndigits-1;
             c = ivalue%10;
             ivalue /= 10;
@@ -346,7 +345,7 @@ public class FloatingDecimal{
             // same algorithm as above (same bugs, too )
             // but using long arithmetic.
             ndigits = 20;
-            digits = (char[])(perThreadBuffer.get());
+            digits = perThreadBuffer.get();
             digitno = ndigits-1;
             c = (int)(lvalue%10L);
             lvalue /= 10L;
@@ -478,9 +477,9 @@ public class FloatingDecimal{
         }
         // Begin to unpack
         // Discover obvious special cases of NaN and Infinity.
-        binExp = (int)( (fBits&singleExpMask) >> singleExpShift );
+        binExp = (fBits&singleExpMask) >> singleExpShift;
         fractBits = fBits&singleFractMask;
-        if ( binExp == (int)(singleExpMask>>singleExpShift) ) {
+        if ( binExp == (singleExpMask>>singleExpShift) ) {
             isExceptional = true;
             if ( fractBits == 0L ){
                 digits =  infinity;
@@ -901,7 +900,7 @@ public class FloatingDecimal{
     }
 
     public String toJavaFormatString() {
-        char result[] = (char[])(perThreadBuffer.get());
+        char result[] = perThreadBuffer.get();
         int i = getChars(result);
         return new String(result, 0, i);
     }
@@ -979,14 +978,14 @@ public class FloatingDecimal{
     }
 
     // Per-thread buffer for string/stringbuffer conversion
-    private static ThreadLocal perThreadBuffer = new ThreadLocal() {
-            protected synchronized Object initialValue() {
+    private static ThreadLocal<char[]> perThreadBuffer = new ThreadLocal<char[]>() {
+            protected synchronized char[] initialValue() {
                 return new char[26];
             }
         };
 
     public void appendTo(Appendable buf) {
-          char result[] = (char[])(perThreadBuffer.get());
+          char result[] = perThreadBuffer.get();
           int i = getChars(result);
         if (buf instanceof StringBuilder)
             ((StringBuilder) buf).append(result, 0, i);
@@ -996,6 +995,7 @@ public class FloatingDecimal{
             assert false;
     }
 
+    @SuppressWarnings("fallthrough")
     public static FloatingDecimal
     readJavaFormatString( String in ) throws NumberFormatException {
         boolean isNegative = false;
@@ -2210,7 +2210,7 @@ public class FloatingDecimal{
                     // exponent correctly, even in the case of
                     // Double.MAX_VALUE overflowing to infinity.
 
-                    significand = (( ((long)exponent +
+                    significand = (( (exponent +
                                      (long)DoubleConsts.EXP_BIAS) <<
                                      (DoubleConsts.SIGNIFICAND_WIDTH-1))
                                    & DoubleConsts.EXP_BIT_MASK) |
@@ -2297,9 +2297,9 @@ public class FloatingDecimal{
                     significand++;
                 }
 
-                FloatingDecimal fd = new FloatingDecimal(FpUtils.rawCopySign(
-                                                                 Double.longBitsToDouble(significand),
-                                                                 sign));
+                FloatingDecimal fd = new FloatingDecimal(Math.copySign(
+                                                              Double.longBitsToDouble(significand),
+                                                              sign));
 
                 /*
                  * Set roundingDir variable field of fd properly so

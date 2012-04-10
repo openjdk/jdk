@@ -19,6 +19,7 @@
 # Get OS/ARCH specifics
 OSNAME = $(shell uname -s)
 ifeq ($(OSNAME), SunOS)
+  SLASH_JAVA = /java
   PLATFORM = solaris
   JT_PLATFORM = solaris
   ARCH = $(shell uname -p)
@@ -27,6 +28,7 @@ ifeq ($(OSNAME), SunOS)
   endif
 endif
 ifeq ($(OSNAME), Linux)
+  SLASH_JAVA = /java
   PLATFORM = linux
   JT_PLATFORM = linux
   ARCH = $(shell uname -m)
@@ -34,8 +36,25 @@ ifeq ($(OSNAME), Linux)
     ARCH=i586
   endif
 endif
+ifeq ($(OSNAME), Darwin)
+  PLATFORM = bsd
+  JT_PLATFORM = linux
+  ARCH = $(shell uname -m)
+  ifeq ($(ARCH), i386)
+    ARCH=i586
+  endif
+endif
 ifeq ($(OSNAME), Windows_NT)
+  # MKS
+  PLATFORM=windows
+endif
+ifeq ($(PLATFORM),)
   PLATFORM = windows
+  CYGPATH = | cygpath -m -s -f -
+endif
+
+ifeq ($(PLATFORM), windows)
+  SLASH_JAVA = J:
   JT_PLATFORM = win32
   ifeq ($(word 1, $(PROCESSOR_IDENTIFIER)),ia64)
     ARCH=ia64
@@ -54,7 +73,7 @@ ifeq ($(OSNAME), Windows_NT)
 endif
 
 # Root of this test area (important to use full paths in some places)
-TEST_ROOT := $(shell pwd)
+TEST_ROOT := $(shell pwd $(CYGPATH) )
 
 # Default bundle of all test results (passed or not) (JPRT only)
 ifdef JPRT_JOB_ID
@@ -72,7 +91,7 @@ endif
 ifdef JPRT_JTREG_HOME
   JTREG_HOME = $(JPRT_JTREG_HOME)
 else
-  JTREG_HOME = $(SLASH_JAVA)/re/jtreg/4.0/promoted/latest/binaries/jtreg
+  JTREG_HOME = $(SLASH_JAVA)/re/jtreg/4.1/promoted/latest/binaries/jtreg
 endif
 JTREG = $(JTREG_HOME)/$(JT_PLATFORM)/bin/jtreg
 JTDIFF = $(JTREG_HOME)/$(JT_PLATFORM)/bin/jtdiff
@@ -81,7 +100,7 @@ JTDIFF = $(JTREG_HOME)/$(JT_PLATFORM)/bin/jtdiff
 ifdef JPRT_JCK_HOME
   JCK_HOME = $(JPRT_JCK_HOME)
 else
-  JCK_HOME = $(SLASH_JAVA)/re/jck/7/promoted/latest/binaries
+  JCK_HOME = $(SLASH_JAVA)/re/jck/8/promoted/latest/binaries
 endif
 
 # Default JDK for JTREG and JCK
@@ -93,7 +112,7 @@ endif
 ifdef JPRT_JAVA_HOME
   JT_JAVA = $(JPRT_JAVA_HOME)
 else
-  JT_JAVA = $(SLASH_JAVA)/re/jdk/1.6.0/archive/fcs/binaries/$(PLATFORM)-$(ARCH)
+  JT_JAVA = $(SLASH_JAVA)/re/jdk/1.7.0/archive/fcs/binaries/$(PLATFORM)-$(ARCH)
 endif
 
 # Default JDK to test
@@ -195,7 +214,7 @@ TEST_OUTPUT_DIR = $(TEST_ROOT)/../build/$(PLATFORM)-$(ARCH)/test/langtools
 ABS_TEST_OUTPUT_DIR := \
 	$(shell mkdir -p $(TEST_ROOT)/../build/$(PLATFORM)-$(ARCH)/test/langtools; \
 		cd  $(TEST_ROOT)/../build/$(PLATFORM)-$(ARCH)/test/langtools; \
-		pwd )
+		pwd $(CYGPATH))
 # Subdirectories for different test runs
 JTREG_OUTPUT_DIR = $(ABS_TEST_OUTPUT_DIR)/jtreg
 JCK_COMPILER_OUTPUT_DIR = $(ABS_TEST_OUTPUT_DIR)/jck-compiler
@@ -240,6 +259,7 @@ javap:		JTREG_TESTDIRS = tools/javap
 # JTREG_REFERENCE
 #	(Optional) reference results (e.g. work, report or summary.txt)
 #
+jtreg_tests: jtreg-tests
 jtreg-tests: check-jtreg FRC
 	@rm -f -r $(JTREG_OUTPUT_DIR)/JTwork $(JTREG_OUTPUT_DIR)/JTreport \
 	    $(JTREG_OUTPUT_DIR)/diff.html $(JTREG_OUTPUT_DIR)/status.txt
@@ -272,15 +292,17 @@ jtreg-summary: FRC
 	fi
 
 # Check to make sure these directories exist
-check-jtreg: $(JT_HOME) $(PRODUCT_HOME) $(JTREG)
+check-jtreg: $(PRODUCT_HOME) $(JTREG)
 
 
 # Run JCK-compiler tests
 #
 # JCK_HOME
 #	Installed location of JCK: should include JCK-compiler, and JCK-extras
+#       Default is JCK 8.
 # JT_JAVA
 #	Version of java used to run JCK.  Should normally be the same as TESTJAVA
+#       Default is JDK 7
 # TESTJAVA
 # 	Version of java to be tested.  
 # JCK_COMPILER_OPTIONS
@@ -297,7 +319,7 @@ jck-compiler-tests: check-jck FRC
 	    $(JCK_COMPILER_OUTPUT_DIR)/diff.html $(JCK_COMPILER_OUTPUT_DIR)/status.txt
 	@mkdir -p $(JCK_COMPILER_OUTPUT_DIR)
 	$(JT_JAVA)/bin/java -XX:MaxPermSize=256m -Xmx512m \
-	    -jar $(JCK_HOME)/JCK-compiler-7/lib/jtjck.jar \
+	    -jar $(JCK_HOME)/JCK-compiler-8/lib/jtjck.jar \
 	    -v:non-pass \
             -r:$(JCK_COMPILER_OUTPUT_DIR)/report \
             -w:$(JCK_COMPILER_OUTPUT_DIR)/work \
@@ -346,7 +368,7 @@ jck-runtime-tests: check-jck FRC
 	    $(JCK_RUNTIME_OUTPUT_DIR)/diff.html $(JCK_RUNTIME_OUTPUT_DIR)/status.txt
 	@mkdir -p $(JCK_RUNTIME_OUTPUT_DIR)
 	$(JT_JAVA)/bin/java -XX:MaxPermSize=256m -Xmx512m \
-	    -jar $(JCK_HOME)/JCK-runtime-7/lib/jtjck.jar \
+	    -jar $(JCK_HOME)/JCK-runtime-8/lib/jtjck.jar \
 	    -v:non-pass \
             -r:$(JCK_RUNTIME_OUTPUT_DIR)/report \
             -w:$(JCK_RUNTIME_OUTPUT_DIR)/work \
@@ -373,7 +395,7 @@ jck-runtime-summary: FRC
 	fi
 
 # Check to make sure these directories exist
-check-jck: $(JT_HOME) $(JCK_HOME) $(PRODUCT_HOME)
+check-jck: $(JCK_HOME) $(PRODUCT_HOME)
 
 all-summary: FRC
 	if [ -n "`find $(TEST_OUTPUT_DIR) -name status.txt`" ]; then

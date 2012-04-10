@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package java.net;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.nio.channels.SocketChannel;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
@@ -421,10 +420,13 @@ class Socket implements java.io.Closeable {
             createImpl(stream);
             if (localAddr != null)
                 bind(localAddr);
-            if (address != null)
-                connect(address);
-        } catch (IOException e) {
-            close();
+            connect(address);
+        } catch (IOException | IllegalArgumentException | SecurityException e) {
+            try {
+                close();
+            } catch (IOException ce) {
+                e.addSuppressed(ce);
+            }
             throw e;
         }
     }
@@ -457,13 +459,10 @@ class Socket implements java.io.Closeable {
         oldImpl = AccessController.doPrivileged
                                 (new PrivilegedAction<Boolean>() {
             public Boolean run() {
-                Class[] cl = new Class[2];
-                cl[0] = SocketAddress.class;
-                cl[1] = Integer.TYPE;
-                Class clazz = impl.getClass();
+                Class<?> clazz = impl.getClass();
                 while (true) {
                     try {
-                        clazz.getDeclaredMethod("connect", cl);
+                        clazz.getDeclaredMethod("connect", SocketAddress.class, int.class);
                         return Boolean.FALSE;
                     } catch (NoSuchMethodException e) {
                         clazz = clazz.getSuperclass();
@@ -1436,8 +1435,9 @@ class Socket implements java.io.Closeable {
      * Any data sent to the input stream side of the socket is acknowledged
      * and then silently discarded.
      * <p>
-     * If you read from a socket input stream after invoking
-     * shutdownInput() on the socket, the stream will return EOF.
+     * If you read from a socket input stream after invoking this method on the
+     * socket, the stream's {@code available} method will return 0, and its
+     * {@code read} methods will return {@code -1} (end of stream).
      *
      * @exception IOException if an I/O error occurs when shutting down this
      * socket.

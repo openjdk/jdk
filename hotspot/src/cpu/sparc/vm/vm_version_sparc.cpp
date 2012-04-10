@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,24 +44,58 @@ void VM_Version::initialize() {
   PrefetchScanIntervalInBytes = prefetch_scan_interval_in_bytes();
   PrefetchFieldsAhead         = prefetch_fields_ahead();
 
+  assert(0 <= AllocatePrefetchInstr && AllocatePrefetchInstr <= 1, "invalid value");
+  if( AllocatePrefetchInstr < 0 ) AllocatePrefetchInstr = 0;
+  if( AllocatePrefetchInstr > 1 ) AllocatePrefetchInstr = 0;
+
   // Allocation prefetch settings
-  intx cache_line_size = L1_data_cache_line_size();
+  intx cache_line_size = prefetch_data_size();
   if( cache_line_size > AllocatePrefetchStepSize )
     AllocatePrefetchStepSize = cache_line_size;
-  if( FLAG_IS_DEFAULT(AllocatePrefetchLines) )
-    AllocatePrefetchLines = 3; // Optimistic value
-  assert( AllocatePrefetchLines > 0, "invalid value");
-  if( AllocatePrefetchLines < 1 ) // set valid value in product VM
-    AllocatePrefetchLines = 1; // Conservative value
+
+  assert(AllocatePrefetchLines > 0, "invalid value");
+  if( AllocatePrefetchLines < 1 )     // set valid value in product VM
+    AllocatePrefetchLines = 3;
+  assert(AllocateInstancePrefetchLines > 0, "invalid value");
+  if( AllocateInstancePrefetchLines < 1 ) // set valid value in product VM
+    AllocateInstancePrefetchLines = 1;
 
   AllocatePrefetchDistance = allocate_prefetch_distance();
   AllocatePrefetchStyle    = allocate_prefetch_style();
 
-  assert(AllocatePrefetchDistance % AllocatePrefetchStepSize == 0, "invalid value");
+  assert((AllocatePrefetchDistance % AllocatePrefetchStepSize) == 0 &&
+         (AllocatePrefetchDistance > 0), "invalid value");
+  if ((AllocatePrefetchDistance % AllocatePrefetchStepSize) != 0 ||
+      (AllocatePrefetchDistance <= 0)) {
+    AllocatePrefetchDistance = AllocatePrefetchStepSize;
+  }
+
+  if (AllocatePrefetchStyle == 3 && !has_blk_init()) {
+    warning("BIS instructions are not available on this CPU");
+    FLAG_SET_DEFAULT(AllocatePrefetchStyle, 1);
+  }
+
+  if (has_v9()) {
+    assert(ArraycopySrcPrefetchDistance < 4096, "invalid value");
+    if (ArraycopySrcPrefetchDistance >= 4096)
+      ArraycopySrcPrefetchDistance = 4064;
+    assert(ArraycopyDstPrefetchDistance < 4096, "invalid value");
+    if (ArraycopyDstPrefetchDistance >= 4096)
+      ArraycopyDstPrefetchDistance = 4064;
+  } else {
+    if (ArraycopySrcPrefetchDistance > 0) {
+      warning("prefetch instructions are not available on this CPU");
+      FLAG_SET_DEFAULT(ArraycopySrcPrefetchDistance, 0);
+    }
+    if (ArraycopyDstPrefetchDistance > 0) {
+      warning("prefetch instructions are not available on this CPU");
+      FLAG_SET_DEFAULT(ArraycopyDstPrefetchDistance, 0);
+    }
+  }
 
   UseSSE = 0; // Only on x86 and x64
 
-  _supports_cx8               = has_v9();
+  _supports_cx8 = has_v9();
 
   if (is_niagara()) {
     // Indirect branch is the same cost as direct
@@ -94,18 +128,41 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(InteriorEntryAlignment, 4);
     }
     if (is_niagara_plus()) {
-      if (has_blk_init() && AllocatePrefetchStyle > 0 &&
-          FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
-        // Use BIS instruction for allocation prefetch.
-        FLAG_SET_DEFAULT(AllocatePrefetchStyle, 3);
+      if (has_blk_init() && UseTLAB &&
+          FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
+        // Use BIS instruction for TLAB allocation prefetch.
+        FLAG_SET_ERGO(intx, AllocatePrefetchInstr, 1);
+        if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
+          FLAG_SET_ERGO(intx, AllocatePrefetchStyle, 3);
+        }
         if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
-          // Use smaller prefetch distance on N2 with BIS
+          // Use smaller prefetch distance with BIS
           FLAG_SET_DEFAULT(AllocatePrefetchDistance, 64);
+        }
+      }
+      if (is_T4()) {
+        // Double number of prefetched cache lines on T4
+        // since L2 cache line size is smaller (32 bytes).
+        if (FLAG_IS_DEFAULT(AllocatePrefetchLines)) {
+          FLAG_SET_ERGO(intx, AllocatePrefetchLines, AllocatePrefetchLines*2);
+        }
+        if (FLAG_IS_DEFAULT(AllocateInstancePrefetchLines)) {
+          FLAG_SET_ERGO(intx, AllocateInstancePrefetchLines, AllocateInstancePrefetchLines*2);
         }
       }
       if (AllocatePrefetchStyle != 3 && FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
         // Use different prefetch distance without BIS
         FLAG_SET_DEFAULT(AllocatePrefetchDistance, 256);
+      }
+      if (AllocatePrefetchInstr == 1) {
+        // Need a space at the end of TLAB for BIS since it
+        // will fault when accessing memory outside of heap.
+
+        // +1 for rounding up to next cache line, +1 to be safe
+        int lines = AllocatePrefetchLines + 2;
+        int step_size = AllocatePrefetchStepSize;
+        int distance = AllocatePrefetchDistance;
+        _reserve_for_allocation_prefetch = (distance + step_size*lines)/(int)HeapWordSize;
       }
     }
 #endif
@@ -116,27 +173,69 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
       FLAG_SET_DEFAULT(UsePopCountInstruction, true);
     }
+  } else if (UsePopCountInstruction) {
+    warning("POPC instruction is not available on this CPU");
+    FLAG_SET_DEFAULT(UsePopCountInstruction, false);
+  }
+
+  // T4 and newer Sparc cpus have new compare and branch instruction.
+  if (has_cbcond()) {
+    if (FLAG_IS_DEFAULT(UseCBCond)) {
+      FLAG_SET_DEFAULT(UseCBCond, true);
+    }
+  } else if (UseCBCond) {
+    warning("CBCOND instruction is not available on this CPU");
+    FLAG_SET_DEFAULT(UseCBCond, false);
+  }
+
+  assert(BlockZeroingLowLimit > 0, "invalid value");
+  if (has_block_zeroing()) {
+    if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
+      FLAG_SET_DEFAULT(UseBlockZeroing, true);
+    }
+  } else if (UseBlockZeroing) {
+    warning("BIS zeroing instructions are not available on this CPU");
+    FLAG_SET_DEFAULT(UseBlockZeroing, false);
+  }
+
+  assert(BlockCopyLowLimit > 0, "invalid value");
+  if (has_block_zeroing()) { // has_blk_init() && is_T4(): core's local L2 cache
+    if (FLAG_IS_DEFAULT(UseBlockCopy)) {
+      FLAG_SET_DEFAULT(UseBlockCopy, true);
+    }
+  } else if (UseBlockCopy) {
+    warning("BIS instructions are not available or expensive on this CPU");
+    FLAG_SET_DEFAULT(UseBlockCopy, false);
   }
 
 #ifdef COMPILER2
+  // T4 and newer Sparc cpus have fast RDPC.
+  if (has_fast_rdpc() && FLAG_IS_DEFAULT(UseRDPCForConstantTableBase)) {
+    FLAG_SET_DEFAULT(UseRDPCForConstantTableBase, true);
+  }
+
   // Currently not supported anywhere.
   FLAG_SET_DEFAULT(UseFPUForSpilling, false);
+
+  assert((InteriorEntryAlignment % relocInfo::addr_unit()) == 0, "alignment is not a multiple of NOP size");
 #endif
 
+  assert((CodeEntryAlignment % relocInfo::addr_unit()) == 0, "alignment is not a multiple of NOP size");
+  assert((OptoLoopAlignment % relocInfo::addr_unit()) == 0, "alignment is not a multiple of NOP size");
+
   char buf[512];
-  jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
-               (has_v8() ? ", has_v8" : ""),
-               (has_v9() ? ", has_v9" : ""),
+  jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+               (has_v9() ? ", v9" : (has_v8() ? ", v8" : "")),
                (has_hardware_popc() ? ", popc" : ""),
-               (has_vis1() ? ", has_vis1" : ""),
-               (has_vis2() ? ", has_vis2" : ""),
-               (has_vis3() ? ", has_vis3" : ""),
-               (has_blk_init() ? ", has_blk_init" : ""),
-               (is_ultra3() ? ", is_ultra3" : ""),
-               (is_sun4v() ? ", is_sun4v" : ""),
-               (is_niagara() ? ", is_niagara" : ""),
-               (is_niagara_plus() ? ", is_niagara_plus" : ""),
-               (is_sparc64() ? ", is_sparc64" : ""),
+               (has_vis1() ? ", vis1" : ""),
+               (has_vis2() ? ", vis2" : ""),
+               (has_vis3() ? ", vis3" : ""),
+               (has_blk_init() ? ", blk_init" : ""),
+               (has_cbcond() ? ", cbcond" : ""),
+               (is_ultra3() ? ", ultra3" : ""),
+               (is_sun4v() ? ", sun4v" : ""),
+               (is_niagara_plus() ? ", niagara_plus" : (is_niagara() ? ", niagara" : "")),
+               (is_sparc64() ? ", sparc64" : ""),
                (!has_hardware_mul32() ? ", no-mul32" : ""),
                (!has_hardware_div32() ? ", no-div32" : ""),
                (!has_hardware_fsmuld() ? ", no-fsmuld" : ""));
@@ -144,16 +243,34 @@ void VM_Version::initialize() {
   // buf is started with ", " or is empty
   _features_str = strdup(strlen(buf) > 2 ? buf + 2 : buf);
 
+  // UseVIS is set to the smallest of what hardware supports and what
+  // the command line requires.  I.e., you cannot set UseVIS to 3 on
+  // older UltraSparc which do not support it.
+  if (UseVIS > 3) UseVIS=3;
+  if (UseVIS < 0) UseVIS=0;
+  if (!has_vis3()) // Drop to 2 if no VIS3 support
+    UseVIS = MIN2((intx)2,UseVIS);
+  if (!has_vis2()) // Drop to 1 if no VIS2 support
+    UseVIS = MIN2((intx)1,UseVIS);
+  if (!has_vis1()) // Drop to 0 if no VIS1 support
+    UseVIS = 0;
+
 #ifndef PRODUCT
   if (PrintMiscellaneous && Verbose) {
-    tty->print("Allocation: ");
+    tty->print("Allocation");
     if (AllocatePrefetchStyle <= 0) {
-      tty->print_cr("no prefetching");
+      tty->print_cr(": no prefetching");
     } else {
+      tty->print(" prefetching: ");
+      if (AllocatePrefetchInstr == 0) {
+          tty->print("PREFETCH");
+      } else if (AllocatePrefetchInstr == 1) {
+          tty->print("BIS");
+      }
       if (AllocatePrefetchLines > 1) {
-        tty->print_cr("PREFETCH %d, %d lines of size %d bytes", AllocatePrefetchDistance, AllocatePrefetchLines, AllocatePrefetchStepSize);
+        tty->print_cr(" at distance %d, %d lines of %d bytes", AllocatePrefetchDistance, AllocatePrefetchLines, AllocatePrefetchStepSize);
       } else {
-        tty->print_cr("PREFETCH %d, one line", AllocatePrefetchDistance);
+        tty->print_cr(" at distance %d, one line of %d bytes", AllocatePrefetchDistance, AllocatePrefetchStepSize);
       }
     }
     if (PrefetchCopyIntervalInBytes > 0) {

@@ -102,10 +102,12 @@
 // Compiled code entry points
 address OptoRuntime::_new_instance_Java                           = NULL;
 address OptoRuntime::_new_array_Java                              = NULL;
+address OptoRuntime::_new_array_nozero_Java                       = NULL;
 address OptoRuntime::_multianewarray2_Java                        = NULL;
 address OptoRuntime::_multianewarray3_Java                        = NULL;
 address OptoRuntime::_multianewarray4_Java                        = NULL;
 address OptoRuntime::_multianewarray5_Java                        = NULL;
+address OptoRuntime::_multianewarrayN_Java                        = NULL;
 address OptoRuntime::_g1_wb_pre_Java                              = NULL;
 address OptoRuntime::_g1_wb_post_Java                             = NULL;
 address OptoRuntime::_vtable_must_compile_Java                    = NULL;
@@ -120,6 +122,7 @@ address OptoRuntime::_zap_dead_Java_locals_Java                   = NULL;
 address OptoRuntime::_zap_dead_native_locals_Java                 = NULL;
 # endif
 
+ExceptionBlob* OptoRuntime::_exception_blob;
 
 // This should be called in an assertion at the start of OptoRuntime routines
 // which are entered from compiled code (all of them)
@@ -149,10 +152,12 @@ void OptoRuntime::generate(ciEnv* env) {
   // -------------------------------------------------------------------------------------------------------------------------------
   gen(env, _new_instance_Java              , new_instance_Type            , new_instance_C                  ,    0 , true , false, false);
   gen(env, _new_array_Java                 , new_array_Type               , new_array_C                     ,    0 , true , false, false);
+  gen(env, _new_array_nozero_Java          , new_array_Type               , new_array_nozero_C              ,    0 , true , false, false);
   gen(env, _multianewarray2_Java           , multianewarray2_Type         , multianewarray2_C               ,    0 , true , false, false);
   gen(env, _multianewarray3_Java           , multianewarray3_Type         , multianewarray3_C               ,    0 , true , false, false);
   gen(env, _multianewarray4_Java           , multianewarray4_Type         , multianewarray4_C               ,    0 , true , false, false);
   gen(env, _multianewarray5_Java           , multianewarray5_Type         , multianewarray5_C               ,    0 , true , false, false);
+  gen(env, _multianewarrayN_Java           , multianewarrayN_Type         , multianewarrayN_C               ,    0 , true , false, false);
   gen(env, _g1_wb_pre_Java                 , g1_wb_pre_Type               , SharedRuntime::g1_wb_pre        ,    0 , false, false, false);
   gen(env, _g1_wb_post_Java                , g1_wb_post_Type              , SharedRuntime::g1_wb_post       ,    0 , false, false, false);
   gen(env, _complete_monitor_locking_Java  , complete_monitor_enter_Type  , SharedRuntime::complete_monitor_locking_C      ,    0 , false, false, false);
@@ -305,6 +310,54 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(klassOopDesc* array_type, int len
   }
 JRT_END
 
+// array allocation without zeroing
+JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(klassOopDesc* array_type, int len, JavaThread *thread))
+  JRT_BLOCK;
+#ifndef PRODUCT
+  SharedRuntime::_new_array_ctr++;            // new array requires GC
+#endif
+  assert(check_compiled_frame(thread), "incorrect caller");
+
+  // Scavenge and allocate an instance.
+  oop result;
+
+  assert(Klass::cast(array_type)->oop_is_typeArray(), "should be called only for type array");
+  // The oopFactory likes to work with the element type.
+  BasicType elem_type = typeArrayKlass::cast(array_type)->element_type();
+  result = oopFactory::new_typeArray_nozero(elem_type, len, THREAD);
+
+  // Pass oops back through thread local storage.  Our apparent type to Java
+  // is that we return an oop, but we can block on exit from this routine and
+  // a GC can trash the oop in C's return register.  The generated stub will
+  // fetch the oop from TLS after any possible GC.
+  deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
+  thread->set_vm_result(result);
+  JRT_BLOCK_END;
+
+  if (GraphKit::use_ReduceInitialCardMarks()) {
+    // inform GC that we won't do card marks for initializing writes.
+    new_store_pre_barrier(thread);
+  }
+
+  oop result = thread->vm_result();
+  if ((len > 0) && (result != NULL) &&
+      is_deoptimized_caller_frame(thread)) {
+    // Zero array here if the caller is deoptimized.
+    int size = ((typeArrayOop)result)->object_size();
+    BasicType elem_type = typeArrayKlass::cast(array_type)->element_type();
+    const size_t hs = arrayOopDesc::header_size(elem_type);
+    // Align to next 8 bytes to avoid trashing arrays's length.
+    const size_t aligned_hs = align_object_offset(hs);
+    HeapWord* obj = (HeapWord*)result;
+    if (aligned_hs > hs) {
+      Copy::zero_to_words(obj+hs, aligned_hs-hs);
+    }
+    // Optimized zeroing.
+    Copy::fill_to_aligned_words(obj+aligned_hs, size-aligned_hs);
+  }
+
+JRT_END
+
 // Note: multianewarray for one dimension is handled inline by GraphKit::new_array.
 
 // multianewarray for 2 dimensions
@@ -372,6 +425,24 @@ JRT_ENTRY(void, OptoRuntime::multianewarray5_C(klassOopDesc* elem_type, int len1
   deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
   thread->set_vm_result(obj);
 JRT_END
+
+JRT_ENTRY(void, OptoRuntime::multianewarrayN_C(klassOopDesc* elem_type, arrayOopDesc* dims, JavaThread *thread))
+  assert(check_compiled_frame(thread), "incorrect caller");
+  assert(oop(elem_type)->is_klass(), "not a class");
+  assert(oop(dims)->is_typeArray(), "not an array");
+
+  ResourceMark rm;
+  jint len = dims->length();
+  assert(len > 0, "Dimensions array should contain data");
+  jint *j_dims = typeArrayOop(dims)->int_at_addr(0);
+  jint *c_dims = NEW_RESOURCE_ARRAY(jint, len);
+  Copy::conjoint_jints_atomic(j_dims, c_dims, len);
+
+  oop obj = arrayKlass::cast(elem_type)->multi_allocate(len, c_dims, THREAD);
+  deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
+  thread->set_vm_result(obj);
+JRT_END
+
 
 const TypeFunc *OptoRuntime::new_instance_Type() {
   // create input type (domain)
@@ -451,6 +522,21 @@ const TypeFunc *OptoRuntime::multianewarray4_Type() {
 
 const TypeFunc *OptoRuntime::multianewarray5_Type() {
   return multianewarray_Type(5);
+}
+
+const TypeFunc *OptoRuntime::multianewarrayN_Type() {
+  // create input type (domain)
+  const Type **fields = TypeTuple::fields(2);
+  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;   // element klass
+  fields[TypeFunc::Parms+1] = TypeInstPtr::NOTNULL;   // array of dim sizes
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+2, fields);
+
+  // create result type (range)
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeRawPtr::NOTNULL; // Returned oop
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+1, fields);
+
+  return TypeFunc::make(domain, range);
 }
 
 const TypeFunc *OptoRuntime::g1_wb_pre_Type() {
@@ -929,10 +1015,13 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
         force_unwind ? NULL : nm->handler_for_exception_and_pc(exception, pc);
 
       if (handler_address == NULL) {
+        Handle original_exception(thread, exception());
         handler_address = SharedRuntime::compute_compiled_exc_handler(nm, pc, exception, force_unwind, true);
         assert (handler_address != NULL, "must have compiled handler");
-        // Update the exception cache only when the unwind was not forced.
-        if (!force_unwind) {
+        // Update the exception cache only when the unwind was not forced
+        // and there didn't happen another exception during the computation of the
+        // compiled exception handler.
+        if (!force_unwind && original_exception() == exception()) {
           nm->add_handler_for_exception_and_pc(exception,pc,handler_address);
         }
       } else {
@@ -942,7 +1031,6 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
 
     thread->set_exception_pc(pc);
     thread->set_exception_handler_pc(handler_address);
-    thread->set_exception_stack_size(0);
 
     // Check if the exception PC is a MethodHandle call site.
     thread->set_is_method_handle_return(nm->is_method_handle_return(pc));
@@ -1060,9 +1148,19 @@ void OptoRuntime::deoptimize_caller_frame(JavaThread *thread, bool doit) {
     assert(stub_frame.is_runtime_frame() || exception_blob()->contains(stub_frame.pc()), "sanity check");
     frame caller_frame = stub_frame.sender(&reg_map);
 
-    // bypass VM_DeoptimizeFrame and deoptimize the frame directly
+    // Deoptimize the caller frame.
     Deoptimization::deoptimize_frame(thread, caller_frame.id());
   }
+}
+
+
+bool OptoRuntime::is_deoptimized_caller_frame(JavaThread *thread) {
+  // Called from within the owner thread, so no need for safepoint
+  RegisterMap reg_map(thread);
+  frame stub_frame = thread->last_frame();
+  assert(stub_frame.is_runtime_frame() || exception_blob()->contains(stub_frame.pc()), "sanity check");
+  frame caller_frame = stub_frame.sender(&reg_map);
+  return caller_frame.is_deoptimized_frame();
 }
 
 

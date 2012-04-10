@@ -133,7 +133,6 @@ class LIR_Assembler: public CompilationResourceObj {
   static bool is_small_constant(LIR_Opr opr);
 
   static LIR_Opr receiverOpr();
-  static LIR_Opr incomingReceiverOpr();
   static LIR_Opr osrBufferPointer();
 
   // stubs
@@ -242,6 +241,10 @@ class LIR_Assembler: public CompilationResourceObj {
   void membar();
   void membar_acquire();
   void membar_release();
+  void membar_loadload();
+  void membar_storestore();
+  void membar_loadstore();
+  void membar_storeload();
   void get_thread(LIR_Opr result);
 
   void verify_oop_map(CodeEmitInfo* info);

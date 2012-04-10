@@ -36,6 +36,8 @@ package javax.script;
  */
 public class ScriptException extends Exception {
 
+    private static final long serialVersionUID = 8265071037049225001L;
+
     private String fileName;
     private int lineNumber;
     private int columnNumber;

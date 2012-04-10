@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,13 @@
 
 package build.tools.jdwpgen;
 
-import java.util.*;
 import java.io.*;
 
 abstract class AbstractGroupNode extends AbstractTypeListNode {
 
     void document(PrintWriter writer) {
-        for (Iterator it = components.iterator(); it.hasNext();) {
-            ((Node)it.next()).document(writer);
+        for (Node node : components) {
+            node.document(writer);
         }
     }
 

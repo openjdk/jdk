@@ -33,7 +33,6 @@
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/reflection.hpp"
-#include "runtime/reflectionCompat.hpp"
 #include "runtime/synchronizer.hpp"
 #include "services/threadService.hpp"
 #include "utilities/copy.hpp"
@@ -43,9 +42,11 @@
  *      Implementation of class sun.misc.Unsafe
  */
 
+#ifndef USDT2
 HS_DTRACE_PROBE_DECL3(hotspot, thread__park__begin, uintptr_t, int, long long);
 HS_DTRACE_PROBE_DECL1(hotspot, thread__park__end, uintptr_t);
 HS_DTRACE_PROBE_DECL1(hotspot, thread__unpark, uintptr_t);
+#endif /* !USDT2 */
 
 #define MAX_OBJECT_SIZE \
   ( arrayOopDesc::header_size(T_DOUBLE) * HeapWordSize \
@@ -301,6 +302,22 @@ UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_SetObjectVolatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jobject x_h))
   UnsafeWrapper("Unsafe_SetObjectVolatile");
+  {
+    // Catch VolatileCallSite.target stores (via
+    // CallSite.setTargetVolatile) and check call site dependencies.
+    oop p = JNIHandles::resolve(obj);
+    if ((offset == java_lang_invoke_CallSite::target_offset_in_bytes()) && p->is_a(SystemDictionary::CallSite_klass())) {
+      Handle call_site    (THREAD, p);
+      Handle method_handle(THREAD, JNIHandles::resolve(x_h));
+      assert(call_site    ->is_a(SystemDictionary::CallSite_klass()),     "must be");
+      assert(method_handle->is_a(SystemDictionary::MethodHandle_klass()), "must be");
+      {
+        // Walk all nmethods depending on this call site.
+        MutexLocker mu(Compile_lock, thread);
+        Universe::flush_dependents_on(call_site(), method_handle());
+      }
+    }
+  }
   oop x = JNIHandles::resolve(x_h);
   oop p = JNIHandles::resolve(obj);
   void* addr = index_oop_from_field_offset_long(p, offset);
@@ -707,7 +724,7 @@ jint find_field_offset(jobject field, int must_be_static, TRAPS) {
     }
   }
 
-  int offset = instanceKlass::cast(k)->offset_from_fields(slot);
+  int offset = instanceKlass::cast(k)->field_offset(slot);
   return field_offset_from_byte_offset(offset);
 }
 
@@ -1175,10 +1192,20 @@ UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_Park(JNIEnv *env, jobject unsafe, jboolean isAbsolute, jlong time))
   UnsafeWrapper("Unsafe_Park");
+#ifndef USDT2
   HS_DTRACE_PROBE3(hotspot, thread__park__begin, thread->parker(), (int) isAbsolute, time);
+#else /* USDT2 */
+   HOTSPOT_THREAD_PARK_BEGIN(
+                             (uintptr_t) thread->parker(), (int) isAbsolute, time);
+#endif /* USDT2 */
   JavaThreadParkedState jtps(thread, time != 0);
   thread->parker()->park(isAbsolute != 0, time);
+#ifndef USDT2
   HS_DTRACE_PROBE1(hotspot, thread__park__end, thread->parker());
+#else /* USDT2 */
+  HOTSPOT_THREAD_PARK_END(
+                          (uintptr_t) thread->parker());
+#endif /* USDT2 */
 UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread))
@@ -1210,7 +1237,12 @@ UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread))
     }
   }
   if (p != NULL) {
+#ifndef USDT2
     HS_DTRACE_PROBE1(hotspot, thread__unpark, p);
+#else /* USDT2 */
+    HOTSPOT_THREAD_UNPARK(
+                          (uintptr_t) p);
+#endif /* USDT2 */
     p->unpark();
   }
 UNSAFE_END

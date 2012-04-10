@@ -72,29 +72,79 @@ bool PhaseChaitin::may_be_copy_of_callee( Node *def ) const {
   return i == limit;
 }
 
+//------------------------------yank-----------------------------------
+// Helper function for yank_if_dead
+int PhaseChaitin::yank( Node *old, Block *current_block, Node_List *value, Node_List *regnd ) {
+  int blk_adjust=0;
+  Block *oldb = _cfg._bbs[old->_idx];
+  oldb->find_remove(old);
+  // Count 1 if deleting an instruction from the current block
+  if( oldb == current_block ) blk_adjust++;
+  _cfg._bbs.map(old->_idx,NULL);
+  OptoReg::Name old_reg = lrgs(n2lidx(old)).reg();
+  if( regnd && (*regnd)[old_reg]==old ) { // Instruction is currently available?
+    value->map(old_reg,NULL);  // Yank from value/regnd maps
+    regnd->map(old_reg,NULL);  // This register's value is now unknown
+  }
+  return blk_adjust;
+}
 
+#ifdef ASSERT
+static bool expected_yanked_node(Node *old, Node *orig_old) {
+  // This code is expected only next original nodes:
+  // - load from constant table node which may have next data input nodes:
+  //     MachConstantBase, Phi, MachTemp, MachSpillCopy
+  // - load constant node which may have next data input nodes:
+  //     MachTemp, MachSpillCopy
+  // - MachSpillCopy
+  // - MachProj and Copy dead nodes
+  if (old->is_MachSpillCopy()) {
+    return true;
+  } else if (old->is_Con()) {
+    return true;
+  } else if (old->is_MachProj()) { // Dead kills projection of Con node
+    return (old == orig_old);
+  } else if (old->is_Copy()) {     // Dead copy of a callee-save value
+    return (old == orig_old);
+  } else if (old->is_MachTemp()) {
+    return orig_old->is_Con();
+  } else if (old->is_Phi() || old->is_MachConstantBase()) {
+    return (orig_old->is_Con() && orig_old->is_MachConstant());
+  }
+  return false;
+}
+#endif
 
 //------------------------------yank_if_dead-----------------------------------
-// Removed an edge from 'old'.  Yank if dead.  Return adjustment counts to
+// Removed edges from 'old'.  Yank if dead.  Return adjustment counts to
 // iterators in the current block.
-int PhaseChaitin::yank_if_dead( Node *old, Block *current_block, Node_List *value, Node_List *regnd ) {
+int PhaseChaitin::yank_if_dead_recurse(Node *old, Node *orig_old, Block *current_block,
+                                       Node_List *value, Node_List *regnd) {
   int blk_adjust=0;
-  while (old->outcnt() == 0 && old != C->top()) {
-    Block *oldb = _cfg._bbs[old->_idx];
-    oldb->find_remove(old);
-    // Count 1 if deleting an instruction from the current block
-    if( oldb == current_block ) blk_adjust++;
-    _cfg._bbs.map(old->_idx,NULL);
-    OptoReg::Name old_reg = lrgs(n2lidx(old)).reg();
-    if( regnd && (*regnd)[old_reg]==old ) { // Instruction is currently available?
-      value->map(old_reg,NULL);  // Yank from value/regnd maps
-      regnd->map(old_reg,NULL);  // This register's value is now unknown
+  if (old->outcnt() == 0 && old != C->top()) {
+#ifdef ASSERT
+    if (!expected_yanked_node(old, orig_old)) {
+      tty->print_cr("==============================================");
+      tty->print_cr("orig_old:");
+      orig_old->dump();
+      tty->print_cr("old:");
+      old->dump();
+      assert(false, "unexpected yanked node");
     }
-    assert(old->req() <= 2, "can't handle more inputs");
-    Node *tmp = old->req() > 1 ? old->in(1) : NULL;
+    if (old->is_Con())
+      orig_old = old; // Reset to satisfy expected nodes checks.
+#endif
+    blk_adjust += yank(old, current_block, value, regnd);
+
+    for (uint i = 1; i < old->req(); i++) {
+      Node* n = old->in(i);
+      if (n != NULL) {
+        old->set_req(i, NULL);
+        blk_adjust += yank_if_dead_recurse(n, orig_old, current_block, value, regnd);
+      }
+    }
+    // Disconnect control and remove precedence edges if any exist
     old->disconnect_inputs(NULL);
-    if( !tmp ) break;
-    old = tmp;
   }
   return blk_adjust;
 }

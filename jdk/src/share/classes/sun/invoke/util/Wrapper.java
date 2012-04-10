@@ -31,7 +31,7 @@ public enum Wrapper {
     BYTE(Byte.class, byte.class, 'B', (Byte)(byte)0, new byte[0], Format.signed(8)),
     SHORT(Short.class, short.class, 'S', (Short)(short)0, new short[0], Format.signed(16)),
     CHAR(Character.class, char.class, 'C', (Character)(char)0, new char[0], Format.unsigned(16)),
-    INT(Integer.class, int.class, 'I', (Integer)(int)0, new int[0], Format.signed(32)),
+    INT(Integer.class, int.class, 'I', (Integer)/*(int)*/0, new int[0], Format.signed(32)),
     LONG(Long.class, long.class, 'J', (Long)(long)0, new long[0], Format.signed(64)),
     FLOAT(Float.class, float.class, 'F', (Float)(float)0, new float[0], Format.floating(32)),
     DOUBLE(Double.class, double.class, 'D', (Double)(double)0, new double[0], Format.floating(64)),
@@ -539,7 +539,7 @@ public enum Wrapper {
         switch (basicTypeChar) {
             case 'L': throw newIllegalArgumentException("cannot wrap to object type");
             case 'V': return null;
-            case 'I': return Integer.valueOf((int)x);
+            case 'I': return Integer.valueOf(x);
             case 'J': return Long.valueOf(x);
             case 'F': return Float.valueOf(x);
             case 'D': return Double.valueOf(x);

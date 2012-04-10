@@ -109,7 +109,7 @@ public class SerialRef implements Ref, Serializable, Cloneable {
     public Object getObject(java.util.Map<String,Class<?>> map)
         throws SerialException
     {
-        map = new Hashtable(map);
+        map = new Hashtable<String, Class<?>>(map);
         if (object != null) {
             return map.get(object);
         } else {

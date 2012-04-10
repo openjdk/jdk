@@ -34,9 +34,9 @@
 
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux ) ;;
+  SunOS | Linux | Darwin ) ;;
   # Skip locale test for Windows
-  Windows* )
+  Windows* | CYGWIN* )
     echo "Passed"; exit 0 ;;
   * ) echo "Unrecognized system!" ;  exit 1 ;;
 esac
@@ -67,7 +67,7 @@ runTest() {
   expectPass $?
 }
 
-# Run the test in the common Solaris/Linux locales
+# Run the test in the common Solaris/Linux/Mac OS locales
 # Tests will simply run in current locale if locale isn't supported
 # on the test machine/platform
 

@@ -83,7 +83,7 @@ class CharacterName {
             dis.readFully(strPool);
             refStrPool = new SoftReference<>(strPool);
         } catch (Exception x) {
-            throw new InternalError(x.getMessage());
+            throw new InternalError(x.getMessage(), x);
         } finally {
             try {
                 if (dis != null)
@@ -101,6 +101,8 @@ class CharacterName {
         if (lookup[cp>>8] == null ||
             (off = lookup[cp>>8][cp&0xff]) == 0)
             return null;
-        return new String(strPool, 0, off >>> 8, off & 0xff);  // ASCII
+        @SuppressWarnings("deprecation")
+        String result = new String(strPool, 0, off >>> 8, off & 0xff);  // ASCII
+        return result;
     }
 }

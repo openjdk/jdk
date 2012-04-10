@@ -27,6 +27,7 @@
 
 #include "oops/constMethodOop.hpp"
 #include "oops/constantPoolOop.hpp"
+#include "oops/fieldInfo.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klassOop.hpp"
 #include "oops/klassVtable.hpp"
@@ -187,7 +188,17 @@ class instanceKlass: public Klass {
   klassOop        _host_klass;
   // Class signers.
   objArrayOop     _signers;
-  // inner_classes attribute.
+  // The InnerClasses attribute and EnclosingMethod attribute. The
+  // _inner_classes is an array of shorts. If the class has InnerClasses
+  // attribute, then the _inner_classes array begins with 4-tuples of shorts
+  // [inner_class_info_index, outer_class_info_index,
+  // inner_name_index, inner_class_access_flags] for the InnerClasses
+  // attribute. If the EnclosingMethod attribute exists, it occupies the
+  // last two shorts [class_index, method_index] of the array. If only
+  // the InnerClasses attribute exists, the _inner_classes array length is
+  // number_of_inner_classes * 4. If the class has both InnerClasses
+  // and EnclosingMethod attributes the _inner_classes array length is
+  // number_of_inner_classes * 4 + enclosing_method_attribute_size.
   typeArrayOop    _inner_classes;
   // Implementors of this interface (not valid if it overflows)
   klassOop        _implementors[implementors_limit];
@@ -226,19 +237,19 @@ class instanceKlass: public Klass {
   // (including inherited fields but after header_size()).
   int             _nonstatic_field_size;
   int             _static_field_size;    // number words used by static fields (oop and non-oop) in this klass
-  int             _static_oop_field_count;// number of static oop fields in this klass
+  u2              _static_oop_field_count;// number of static oop fields in this klass
+  u2              _java_fields_count;    // The number of declared Java fields
   int             _nonstatic_oop_map_size;// size in words of nonstatic oop map blocks
+
   bool            _is_marked_dependent;  // used for marking during flushing and deoptimization
   bool            _rewritten;            // methods rewritten.
   bool            _has_nonstatic_fields; // for sizing with UseCompressedOops
   bool            _should_verify_class;  // allow caching of preverification
   u2              _minor_version;        // minor version number of class file
   u2              _major_version;        // major version number of class file
-  ClassState      _init_state;           // state of class
   Thread*         _init_thread;          // Pointer to current thread doing initialization (to handle recusive initialization)
   int             _vtable_len;           // length of Java vtable (in words)
   int             _itable_len;           // length of Java itable (in words)
-  ReferenceType   _reference_type;       // reference type
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
   JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
   jmethodID*      _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or NULL if none
@@ -250,13 +261,18 @@ class instanceKlass: public Klass {
   // Array of interesting part(s) of the previous version(s) of this
   // instanceKlass. See PreviousVersionWalker below.
   GrowableArray<PreviousVersionNode *>* _previous_versions;
-  u2              _enclosing_method_class_index;  // Constant pool index for class of enclosing method, or 0 if none
-  u2              _enclosing_method_method_index; // Constant pool index for name and type of enclosing method, or 0 if none
   // JVMTI fields can be moved to their own structure - see 6315920
   unsigned char * _cached_class_file_bytes;       // JVMTI: cached class file, before retransformable agent modified it in CFLH
   jint            _cached_class_file_len;         // JVMTI: length of above
   JvmtiCachedClassFieldMap* _jvmti_cached_class_field_map;  // JVMTI: used during heap iteration
   volatile u2     _idnum_allocated_count;         // JNI/JVMTI: increments with the addition of methods, old ids don't change
+
+  // Class states are defined as ClassState (see above).
+  // Place the _init_state here to utilize the unused 2-byte after
+  // _idnum_allocated_count.
+  u1              _init_state;                    // state of class
+
+  u1              _reference_type;                // reference type
 
   // embedded Java vtable follows here
   // embedded Java itables follows here
@@ -277,8 +293,8 @@ class instanceKlass: public Klass {
   int static_field_size() const            { return _static_field_size; }
   void set_static_field_size(int size)     { _static_field_size = size; }
 
-  int static_oop_field_count() const        { return _static_oop_field_count; }
-  void set_static_oop_field_count(int size) { _static_oop_field_count = size; }
+  int static_oop_field_count() const       { return (int)_static_oop_field_count; }
+  void set_static_oop_field_count(u2 size) { _static_oop_field_count = size; }
 
   // Java vtable
   int  vtable_length() const               { return _vtable_len; }
@@ -307,27 +323,28 @@ class instanceKlass: public Klass {
   objArrayOop transitive_interfaces() const     { return _transitive_interfaces; }
   void set_transitive_interfaces(objArrayOop a) { oop_store_without_check((oop*) &_transitive_interfaces, (oop) a); }
 
-  // fields
-  // Field info extracted from the class file and stored
-  // as an array of 7 shorts
-  enum FieldOffset {
-    access_flags_offset    = 0,
-    name_index_offset      = 1,
-    signature_index_offset = 2,
-    initval_index_offset   = 3,
-    low_offset             = 4,
-    high_offset            = 5,
-    generic_signature_offset = 6,
-    next_offset            = 7
-  };
+ private:
+  friend class fieldDescriptor;
+  FieldInfo* field(int index) const { return FieldInfo::from_field_array(_fields, index); }
+
+ public:
+  int     field_offset      (int index) const { return field(index)->offset(); }
+  int     field_access_flags(int index) const { return field(index)->access_flags(); }
+  Symbol* field_name        (int index) const { return field(index)->name(constants()); }
+  Symbol* field_signature   (int index) const { return field(index)->signature(constants()); }
+
+  // Number of Java declared fields
+  int java_fields_count() const           { return (int)_java_fields_count; }
+
+  // Number of fields including any injected fields
+  int all_fields_count() const            { return _fields->length() / sizeof(FieldInfo::field_slots); }
 
   typeArrayOop fields() const              { return _fields; }
-  int offset_from_fields( int index ) const {
-    return build_int_from_shorts( fields()->ushort_at(index + low_offset),
-                                  fields()->ushort_at(index + high_offset) );
-  }
 
-  void set_fields(typeArrayOop f)          { oop_store_without_check((oop*) &_fields, (oop) f); }
+  void set_fields(typeArrayOop f, u2 java_fields_count) {
+    oop_store_without_check((oop*) &_fields, (oop) f);
+    _java_fields_count = java_fields_count;
+  }
 
   // inner classes
   typeArrayOop inner_classes() const       { return _inner_classes; }
@@ -340,6 +357,12 @@ class instanceKlass: public Klass {
     inner_class_inner_name_offset = 2,
     inner_class_access_flags_offset = 3,
     inner_class_next_offset = 4
+  };
+
+  enum EnclosingMethodAttributeOffset {
+    enclosing_method_class_index_offset = 0,
+    enclosing_method_method_index_offset = 1,
+    enclosing_method_attribute_size = 2
   };
 
   // method override check
@@ -374,7 +397,7 @@ class instanceKlass: public Klass {
   bool is_being_initialized() const        { return _init_state == being_initialized; }
   bool is_in_error_state() const           { return _init_state == initialization_error; }
   bool is_reentrant_initialization(Thread *thread)  { return thread == _init_thread; }
-  int  get_init_state()                    { return _init_state; } // Useful for debugging
+  ClassState  init_state()                 { return (ClassState)_init_state; }
   bool is_rewritten() const                { return _rewritten; }
 
   // defineClass specified verification
@@ -392,16 +415,20 @@ class instanceKlass: public Klass {
   bool link_class_or_fail(TRAPS); // returns false on failure
   void unlink_class();
   void rewrite_class(TRAPS);
+  void relocate_and_link_methods(TRAPS);
   methodOop class_initializer();
 
   // set the class to initialized if no static initializer is present
   void eager_initialize(Thread *thread);
 
   // reference type
-  ReferenceType reference_type() const     { return _reference_type; }
-  void set_reference_type(ReferenceType t) { _reference_type = t; }
+  ReferenceType reference_type() const     { return (ReferenceType)_reference_type; }
+  void set_reference_type(ReferenceType t) {
+    assert(t == (u1)t, "overflow");
+    _reference_type = (u1)t;
+  }
 
-  static int reference_type_offset_in_bytes() { return offset_of(instanceKlass, _reference_type); }
+  static ByteSize reference_type_offset() { return in_ByteSize(sizeof(klassOopDesc) + offset_of(instanceKlass, _reference_type)); }
 
   // find local field, returns true if found
   bool find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const;
@@ -520,11 +547,15 @@ class instanceKlass: public Klass {
   Symbol* generic_signature() const                   { return _generic_signature; }
   void set_generic_signature(Symbol* sig)             { _generic_signature = sig; }
 
-  u2 enclosing_method_class_index() const             { return _enclosing_method_class_index; }
-  u2 enclosing_method_method_index() const            { return _enclosing_method_method_index; }
+  u2 enclosing_method_data(int offset);
+  u2 enclosing_method_class_index() {
+    return enclosing_method_data(enclosing_method_class_index_offset);
+  }
+  u2 enclosing_method_method_index() {
+    return enclosing_method_data(enclosing_method_method_index_offset);
+  }
   void set_enclosing_method_indices(u2 class_index,
-                                    u2 method_index)  { _enclosing_method_class_index  = class_index;
-                                                        _enclosing_method_method_index = method_index; }
+                                    u2 method_index);
 
   // jmethodID support
   static jmethodID get_jmethod_id(instanceKlassHandle ik_h,
@@ -561,9 +592,9 @@ class instanceKlass: public Klass {
   void set_method_annotations_of(int idnum, typeArrayOop anno)
                                                 { set_methods_annotations_of(idnum, anno, &_methods_annotations); }
   void set_method_parameter_annotations_of(int idnum, typeArrayOop anno)
-                                                { set_methods_annotations_of(idnum, anno, &_methods_annotations); }
+                                                { set_methods_annotations_of(idnum, anno, &_methods_parameter_annotations); }
   void set_method_default_annotations_of(int idnum, typeArrayOop anno)
-                                                { set_methods_annotations_of(idnum, anno, &_methods_annotations); }
+                                                { set_methods_annotations_of(idnum, anno, &_methods_default_annotations); }
 
   // allocation
   DEFINE_ALLOCATE_PERMANENT(instanceKlass);
@@ -612,8 +643,8 @@ class instanceKlass: public Klass {
   void set_breakpoints(BreakpointInfo* bps) { _breakpoints = bps; };
 
   // support for stub routines
-  static int init_state_offset_in_bytes()    { return offset_of(instanceKlass, _init_state); }
-  static int init_thread_offset_in_bytes()   { return offset_of(instanceKlass, _init_thread); }
+  static ByteSize init_state_offset()  { return in_ByteSize(sizeof(klassOopDesc) + offset_of(instanceKlass, _init_state)); }
+  static ByteSize init_thread_offset() { return in_ByteSize(sizeof(klassOopDesc) + offset_of(instanceKlass, _init_thread)); }
 
   // subclass/subinterface checks
   bool implements_interface(klassOop k) const;
@@ -750,7 +781,7 @@ private:
 #ifdef ASSERT
   void set_init_state(ClassState state);
 #else
-  void set_init_state(ClassState state) { _init_state = state; }
+  void set_init_state(ClassState state) { _init_state = (u1)state; }
 #endif
   void set_rewritten()                  { _rewritten = true; }
   void set_init_thread(Thread *thread)  { _init_thread = thread; }
@@ -841,10 +872,6 @@ public:
   // Verification
   const char* internal_name() const;
   void oop_verify_on(oop obj, outputStream* st);
-
-#ifndef PRODUCT
-  static void verify_class_klass_nonstatic_oop_maps(klassOop k) PRODUCT_RETURN;
-#endif
 };
 
 inline methodOop instanceKlass::method_at_vtable(int index)  {
@@ -1010,6 +1037,117 @@ class PreviousVersionWalker : public StackObj {
   // Return the interesting information for the next previous version
   // of the klass. Returns NULL if there are no more previous versions.
   PreviousVersionInfo* next_previous_version();
+};
+
+
+//
+// nmethodBucket is used to record dependent nmethods for
+// deoptimization.  nmethod dependencies are actually <klass, method>
+// pairs but we really only care about the klass part for purposes of
+// finding nmethods which might need to be deoptimized.  Instead of
+// recording the method, a count of how many times a particular nmethod
+// was recorded is kept.  This ensures that any recording errors are
+// noticed since an nmethod should be removed as many times are it's
+// added.
+//
+class nmethodBucket: public CHeapObj {
+  friend class VMStructs;
+ private:
+  nmethod*       _nmethod;
+  int            _count;
+  nmethodBucket* _next;
+
+ public:
+  nmethodBucket(nmethod* nmethod, nmethodBucket* next) {
+    _nmethod = nmethod;
+    _next = next;
+    _count = 1;
+  }
+  int count()                             { return _count; }
+  int increment()                         { _count += 1; return _count; }
+  int decrement()                         { _count -= 1; assert(_count >= 0, "don't underflow"); return _count; }
+  nmethodBucket* next()                   { return _next; }
+  void set_next(nmethodBucket* b)         { _next = b; }
+  nmethod* get_nmethod()                  { return _nmethod; }
+};
+
+// An iterator that's used to access the inner classes indices in the
+// instanceKlass::_inner_classes array.
+class InnerClassesIterator : public StackObj {
+ private:
+  typeArrayHandle _inner_classes;
+  int _length;
+  int _idx;
+ public:
+
+  InnerClassesIterator(instanceKlassHandle k) {
+    _inner_classes = k->inner_classes();
+    if (k->inner_classes() != NULL) {
+      _length = _inner_classes->length();
+      // The inner class array's length should be the multiple of
+      // inner_class_next_offset if it only contains the InnerClasses
+      // attribute data, or it should be
+      // n*inner_class_next_offset+enclosing_method_attribute_size
+      // if it also contains the EnclosingMethod data.
+      assert((_length % instanceKlass::inner_class_next_offset == 0 ||
+              _length % instanceKlass::inner_class_next_offset == instanceKlass::enclosing_method_attribute_size),
+             "just checking");
+      // Remove the enclosing_method portion if exists.
+      if (_length % instanceKlass::inner_class_next_offset == instanceKlass::enclosing_method_attribute_size) {
+        _length -= instanceKlass::enclosing_method_attribute_size;
+      }
+    } else {
+      _length = 0;
+    }
+    _idx = 0;
+  }
+
+  int length() const {
+    return _length;
+  }
+
+  void next() {
+    _idx += instanceKlass::inner_class_next_offset;
+  }
+
+  bool done() const {
+    return (_idx >= _length);
+  }
+
+  u2 inner_class_info_index() const {
+    return _inner_classes->ushort_at(
+               _idx + instanceKlass::inner_class_inner_class_info_offset);
+  }
+
+  void set_inner_class_info_index(u2 index) {
+    _inner_classes->ushort_at_put(
+               _idx + instanceKlass::inner_class_inner_class_info_offset, index);
+  }
+
+  u2 outer_class_info_index() const {
+    return _inner_classes->ushort_at(
+               _idx + instanceKlass::inner_class_outer_class_info_offset);
+  }
+
+  void set_outer_class_info_index(u2 index) {
+    _inner_classes->ushort_at_put(
+               _idx + instanceKlass::inner_class_outer_class_info_offset, index);
+  }
+
+  u2 inner_name_index() const {
+    return _inner_classes->ushort_at(
+               _idx + instanceKlass::inner_class_inner_name_offset);
+  }
+
+  void set_inner_name_index(u2 index) {
+    _inner_classes->ushort_at_put(
+               _idx + instanceKlass::inner_class_inner_name_offset, index);
+  }
+
+  u2 inner_access_flags() const {
+    return _inner_classes->ushort_at(
+               _idx + instanceKlass::inner_class_access_flags_offset);
+  }
 };
 
 #endif // SHARE_VM_OOPS_INSTANCEKLASS_HPP

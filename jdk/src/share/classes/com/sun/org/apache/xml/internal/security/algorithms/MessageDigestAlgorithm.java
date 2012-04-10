@@ -71,9 +71,10 @@ public class MessageDigestAlgorithm extends Algorithm {
       this.algorithm = messageDigest;
    }
 
-   static ThreadLocal instances=new ThreadLocal() {
-           protected Object initialValue() {
-                   return new HashMap();
+   static ThreadLocal<Map<String, MessageDigest>> instances=new
+       ThreadLocal<Map<String, MessageDigest>>() {
+           protected Map<String, MessageDigest> initialValue() {
+               return new HashMap<String, MessageDigest>();
            };
    };
 
@@ -92,7 +93,7 @@ public class MessageDigestAlgorithm extends Algorithm {
    }
 
 private static MessageDigest getDigestInstance(String algorithmURI) throws XMLSignatureException {
-        MessageDigest result=(MessageDigest) ((Map)instances.get()).get(algorithmURI);
+        MessageDigest result= instances.get().get(algorithmURI);
         if (result!=null)
                 return result;
     String algorithmID = JCEMapper.translateURItoJCEID(algorithmURI);
@@ -121,7 +122,7 @@ private static MessageDigest getDigestInstance(String algorithmURI) throws XMLSi
 
         throw new XMLSignatureException("algorithms.NoSuchAlgorithm", exArgs);
         }
-      ((Map)instances.get()).put(algorithmURI, md);
+        instances.get().put(algorithmURI, md);
         return md;
 }
 

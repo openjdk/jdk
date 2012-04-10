@@ -389,12 +389,6 @@ int MachNode::operand_index( uint operand ) const {
 }
 
 
-//------------------------------negate-----------------------------------------
-// Negate conditional branches.  Error for non-branch Nodes
-void MachNode::negate() {
-  ShouldNotCallThis();
-}
-
 //------------------------------peephole---------------------------------------
 // Apply peephole rule(s) to this instruction
 MachNode *MachNode::peephole( Block *block, int block_index, PhaseRegAlloc *ra_, int &deleted, Compile* C ) {
@@ -404,12 +398,6 @@ MachNode *MachNode::peephole( Block *block, int block_index, PhaseRegAlloc *ra_,
 //------------------------------add_case_label---------------------------------
 // Adds the label for the case
 void MachNode::add_case_label( int index_num, Label* blockLabel) {
-  ShouldNotCallThis();
-}
-
-//------------------------------label_set--------------------------------------
-// Set the Label for a LabelOper, if an operand for this instruction
-void MachNode::label_set( Label& label, uint block_num ) {
   ShouldNotCallThis();
 }
 
@@ -492,14 +480,20 @@ void MachTypeNode::dump_spec(outputStream *st) const {
 
 //=============================================================================
 int MachConstantNode::constant_offset() {
-  int offset = _constant.offset();
   // Bind the offset lazily.
-  if (offset == -1) {
+  if (_constant.offset() == -1) {
     Compile::ConstantTable& constant_table = Compile::current()->constant_table();
-    offset = constant_table.table_base_offset() + constant_table.find_offset(_constant);
-    _constant.set_offset(offset);
+    int offset = constant_table.find_offset(_constant);
+    // If called from Compile::scratch_emit_size return the
+    // pre-calculated offset.
+    // NOTE: If the AD file does some table base offset optimizations
+    // later the AD file needs to take care of this fact.
+    if (Compile::current()->in_scratch_emit_size()) {
+      return constant_table.calculate_table_base_offset() + offset;
+    }
+    _constant.set_offset(constant_table.table_base_offset() + offset);
   }
-  return offset;
+  return _constant.offset();
 }
 
 
@@ -513,6 +507,12 @@ void MachNullCheckNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 
 void MachNullCheckNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   // only emits entries in the null-pointer exception handler table
+}
+void MachNullCheckNode::label_set(Label* label, uint block_num) {
+  // Nothing to emit
+}
+void MachNullCheckNode::save_label( Label** label, uint* block_num ) {
+  // Nothing to emit
 }
 
 const RegMask &MachNullCheckNode::in_RegMask( uint idx ) const {

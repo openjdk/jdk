@@ -62,14 +62,6 @@ public class TransformXSLT extends TransformSpi {
    static final String defaultXSLTSpecNSprefix = "xslt";
    static final String XSLTSTYLESHEET          = "stylesheet";
 
-   // check for secure processing feature
-   private static Class xClass = null;
-   static {
-      try {
-         xClass = Class.forName("javax.xml.XMLConstants");
-      } catch (Exception e) {}
-   }
-
    static java.util.logging.Logger log =
       java.util.logging.Logger.getLogger(
          TransformXSLT.class.getName());
@@ -101,10 +93,6 @@ public class TransformXSLT extends TransformSpi {
     protected XMLSignatureInput enginePerformTransform(XMLSignatureInput input,OutputStream baos, Transform _transformObject)
     throws IOException,
            TransformationException {
-      if (xClass == null) {
-         Object exArgs[] = { "SECURE_PROCESSING_FEATURE not supported" };
-         throw new TransformationException("generic.EmptyMessage", exArgs);
-      }
       try {
          Element transformElement = _transformObject.getElement();
 
@@ -119,11 +107,9 @@ public class TransformXSLT extends TransformSpi {
          }
 
          TransformerFactory tFactory = TransformerFactory.newInstance();
-         Class c = tFactory.getClass();
-         Method m = c.getMethod("setFeature", new Class[] {String.class, boolean.class});
-         // Process XSLT stylesheets in a secure manner
-         m.invoke(tFactory, new Object[] {"http://javax.xml.XMLConstants/feature/secure-processing", Boolean.TRUE});
 
+         // Process XSLT stylesheets in a secure manner
+         tFactory.setFeature("http://javax.xml.XMLConstants/feature/secure-processing", Boolean.TRUE);
          /*
           * This transform requires an octet stream as input. If the actual
           * input is an XPath node-set, then the signature application should
@@ -190,18 +176,6 @@ public class TransformXSLT extends TransformSpi {
 
          throw new TransformationException("generic.EmptyMessage", exArgs, ex);
       } catch (TransformerException ex) {
-         Object exArgs[] = { ex.getMessage() };
-
-         throw new TransformationException("generic.EmptyMessage", exArgs, ex);
-      } catch (NoSuchMethodException ex) {
-         Object exArgs[] = { ex.getMessage() };
-
-         throw new TransformationException("generic.EmptyMessage", exArgs, ex);
-      } catch (IllegalAccessException ex) {
-         Object exArgs[] = { ex.getMessage() };
-
-         throw new TransformationException("generic.EmptyMessage", exArgs, ex);
-      } catch (java.lang.reflect.InvocationTargetException ex) {
          Object exArgs[] = { ex.getMessage() };
 
          throw new TransformationException("generic.EmptyMessage", exArgs, ex);

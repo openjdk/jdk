@@ -474,7 +474,7 @@ public class TreeSet<E> extends AbstractSet<E>
         try {
             clone = (TreeSet<E>) super.clone();
         } catch (CloneNotSupportedException e) {
-            throw new InternalError();
+            throw new InternalError(e);
         }
 
         clone.m = new TreeMap<>(m);

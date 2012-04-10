@@ -1106,7 +1106,7 @@ public class BidiBase {
      * Assume sizeNeeded>0.
      * If object != null, then assume size > 0.
      */
-    private Object getMemory(String label, Object array, Class arrayClass,
+    private Object getMemory(String label, Object array, Class<?> arrayClass,
             boolean mayAllocate, int sizeNeeded)
     {
         int len = Array.getLength(array);
@@ -1990,7 +1990,7 @@ public class BidiBase {
         cell = impTab[oldStateSeq][_prop];
         levState.state = GetState(cell);        /* isolate the new state */
         actionSeq = impAct[GetAction(cell)];    /* isolate the action */
-        addLevel = (byte)impTab[levState.state][IMPTABLEVELS_RES];
+        addLevel = impTab[levState.state][IMPTABLEVELS_RES];
 
         if (actionSeq != 0) {
             switch (actionSeq) {
@@ -2014,7 +2014,7 @@ public class BidiBase {
                     /* nothing, just clean up */
                     levState.lastStrongRTL = -1;
                     /* check if we have a pending conditional segment */
-                    level = (byte)impTab[oldStateSeq][IMPTABLEVELS_RES];
+                    level = impTab[oldStateSeq][IMPTABLEVELS_RES];
                     if ((level & 1) != 0 && levState.startON > 0) { /* after ON */
                         start = levState.startON;   /* reset to basic run level */
                     }
@@ -2115,7 +2115,7 @@ public class BidiBase {
                 break;
 
             case 11:                    /* L after L+ON+EN/AN/ON */
-                level = (byte)levState.runLevel;
+                level = levState.runLevel;
                 for (k = start0-1; k >= levState.startON; k--) {
                     if (levels[k] == level+3) {
                         while (levels[k] == level+3) {
@@ -2178,7 +2178,7 @@ public class BidiBase {
         levState.runLevel = levels[start];
         levState.impTab = impTabPair.imptab[levState.runLevel & 1];
         levState.impAct = impTabPair.impact[levState.runLevel & 1];
-        processPropertySeq(levState, (short)sor, start, start);
+        processPropertySeq(levState, sor, start, start);
         /* initialize for property state table */
         if (dirProps[start] == NSM) {
             stateImp = (short)(1 + sor);
@@ -2230,7 +2230,7 @@ public class BidiBase {
             }
         }
         /* flush possible pending sequence, e.g. ON */
-        processPropertySeq(levState, (short)eor, limit, limit);
+        processPropertySeq(levState, eor, limit, limit);
     }
 
     /* perform (L1) and (X9) ---------------------------------------------------- */
@@ -2690,6 +2690,7 @@ public class BidiBase {
     public void setPara(AttributedCharacterIterator paragraph)
     {
         byte paraLvl;
+        char ch = paragraph.first();
         Boolean runDirection =
             (Boolean) paragraph.getAttribute(TextAttributeConstants.RUN_DIRECTION);
         Object shaper = paragraph.getAttribute(TextAttributeConstants.NUMERIC_SHAPING);
@@ -2705,7 +2706,6 @@ public class BidiBase {
         byte[] embeddingLevels = new byte[len];
         char[] txt = new char[len];
         int i = 0;
-        char ch = paragraph.first();
         while (ch != AttributedCharacterIterator.DONE) {
             txt[i] = ch;
             Integer embedding =
@@ -3411,18 +3411,21 @@ public class BidiBase {
      * Display the bidi internal state, used in debugging.
      */
     public String toString() {
-        StringBuffer buf = new StringBuffer(super.toString());
+        StringBuilder buf = new StringBuilder(getClass().getName());
 
-        buf.append("[dir: " + direction);
-        buf.append(" baselevel: " + paraLevel);
-        buf.append(" length: " + length);
+        buf.append("[dir: ");
+        buf.append(direction);
+        buf.append(" baselevel: ");
+        buf.append(paraLevel);
+        buf.append(" length: ");
+        buf.append(length);
         buf.append(" runs: ");
         if (levels == null) {
-            buf.append("null");
+            buf.append("none");
         } else {
             buf.append('[');
             buf.append(levels[0]);
-            for (int i = 0; i < levels.length; i++) {
+            for (int i = 1; i < levels.length; i++) {
                 buf.append(' ');
                 buf.append(levels[i]);
             }
@@ -3430,12 +3433,11 @@ public class BidiBase {
         }
         buf.append(" text: [0x");
         buf.append(Integer.toHexString(text[0]));
-        for (int i = 0; i < text.length; i++) {
+        for (int i = 1; i < text.length; i++) {
             buf.append(" 0x");
             buf.append(Integer.toHexString(text[i]));
         }
-        buf.append(']');
-        buf.append(']');
+        buf.append("]]");
 
         return buf.toString();
     }
@@ -3482,6 +3484,7 @@ public class BidiBase {
             }
         }
 
+        @SuppressWarnings("serial")
         private static AttributedCharacterIterator.Attribute
             getTextAttribute(String name)
         {

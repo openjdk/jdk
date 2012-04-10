@@ -180,6 +180,7 @@ public abstract class EmbeddedFrame extends Frame
      * reference to our EmbeddedFrame forever if the Frame is no longer in use, so we
      * add listeners in show() and remove them in hide().
      */
+    @SuppressWarnings("deprecation")
     public void show() {
         if (appletKFM != null) {
             addTraversingOutListeners(appletKFM);
@@ -193,6 +194,7 @@ public abstract class EmbeddedFrame extends Frame
      * reference to our EmbeddedFrame forever if the Frame is no longer in use, so we
      * add listeners in show() and remove them in hide().
      */
+    @SuppressWarnings("deprecation")
     public void hide() {
         if (appletKFM != null) {
             removeTraversingOutListeners(appletKFM);
@@ -212,8 +214,8 @@ public abstract class EmbeddedFrame extends Frame
         // belongs to. That's why we can't use public methods to find current focus cycle
         // root. Instead, we access KFM's private field directly.
         if (currentCycleRoot == null) {
-            currentCycleRoot = (Field)AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
+            currentCycleRoot = AccessController.doPrivileged(new PrivilegedAction<Field>() {
+                public Field run() {
                     try {
                         Field unaccessibleRoot = KeyboardFocusManager.class.
                                                      getDeclaredField("currentFocusCycleRoot");
@@ -257,7 +259,7 @@ public abstract class EmbeddedFrame extends Frame
         }
 
         AWTKeyStroke stroke = AWTKeyStroke.getAWTKeyStrokeForEvent(e);
-        Set toTest;
+        Set<AWTKeyStroke> toTest;
         Component currentFocused = e.getComponent();
 
         toTest = getFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS);
@@ -357,6 +359,7 @@ public abstract class EmbeddedFrame extends Frame
         return true;
     }
 
+    @SuppressWarnings("deprecation")
     public void addNotify() {
         synchronized (getTreeLock()) {
             if (getPeer() == null) {
@@ -367,6 +370,7 @@ public abstract class EmbeddedFrame extends Frame
     }
 
     // These three functions consitute RFE 4100710. Do not remove.
+    @SuppressWarnings("deprecation")
     public void setCursorAllowed(boolean isCursorAllowed) {
         this.isCursorAllowed = isCursorAllowed;
         getPeer().updateCursorImmediately();
@@ -380,27 +384,28 @@ public abstract class EmbeddedFrame extends Frame
             : Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
     }
 
-    protected  void setPeer(final ComponentPeer p){
+    @SuppressWarnings("deprecation")
+    protected void setPeer(final ComponentPeer p){
         if (fieldPeer == null) {
-            fieldPeer = (Field)AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
-                        try {
-                            Field lnkPeer = Component.class.getDeclaredField("peer");
-                            if (lnkPeer != null) {
-                                lnkPeer.setAccessible(true);
-                            }
-                            return lnkPeer;
-                        } catch (NoSuchFieldException e) {
-                            assert false;
-                        } catch (SecurityException e) {
-                            assert false;
+            fieldPeer = AccessController.doPrivileged(new PrivilegedAction<Field>() {
+                public Field run() {
+                    try {
+                        Field lnkPeer = Component.class.getDeclaredField("peer");
+                        if (lnkPeer != null) {
+                            lnkPeer.setAccessible(true);
                         }
-                        return null;
-                    }//run
-                });
+                        return lnkPeer;
+                    } catch (NoSuchFieldException e) {
+                        assert false;
+                    } catch (SecurityException e) {
+                        assert false;
+                    }
+                    return null;
+                }//run
+            });
         }
         try{
-            if (fieldPeer !=null){
+            if (fieldPeer != null){
                 fieldPeer.set(EmbeddedFrame.this, p);
             }
         } catch (IllegalAccessException e) {
@@ -507,6 +512,7 @@ public abstract class EmbeddedFrame extends Frame
      * @see #getBoundsPrivate
      * @since 1.5
      */
+    @SuppressWarnings("deprecation")
     protected void setBoundsPrivate(int x, int y, int width, int height) {
         final FramePeer peer = (FramePeer)getPeer();
         if (peer != null) {
@@ -538,6 +544,7 @@ public abstract class EmbeddedFrame extends Frame
      * @see #setBoundsPrivate
      * @since 1.6
      */
+    @SuppressWarnings("deprecation")
     protected Rectangle getBoundsPrivate() {
         final FramePeer peer = (FramePeer)getPeer();
         if (peer != null) {

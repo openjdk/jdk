@@ -37,7 +37,7 @@ import java.awt.Component;
  */
 public class WBufferStrategy {
 
-    private static native void initIDs(Class componentClass);
+    private static native void initIDs(Class <?> componentClass);
 
     static {
         initIDs(Component.class);

@@ -30,10 +30,23 @@
       movq     %fs:0, %rax 
       .end
 
-  // Get the frame pointer from current frame.
+  // Get current sp
+      .inline _get_current_sp,0
+      .volatile
+      movq     %rsp, %rax 
+      .end
+
+  // Get current fp
       .inline _get_current_fp,0
       .volatile
       movq     %rbp, %rax 
+      .end
+
+  // Support for os::rdtsc()
+      .inline _raw_rdtsc,0
+      rdtsc
+      salq     $32, %rdx
+      orq      %rdx, %rax
       .end
 
   // Support for jint Atomic::add(jint add_value, volatile jint* dest)

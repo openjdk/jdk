@@ -32,6 +32,7 @@
 #include "gdefs.h"
 
 #include "jni_util.h"
+#include "jvm_md.h"
 #include "awt_Component.h"
 #include "awt_GraphicsEnv.h"
 
@@ -64,9 +65,6 @@ static UnlockFunc X11SD_Unlock;
 static DisposeFunc X11SD_Dispose;
 static GetPixmapBgFunc X11SD_GetPixmapWithBg;
 static ReleasePixmapBgFunc X11SD_ReleasePixmapWithBg;
-#ifndef XAWT
-extern struct MComponentPeerIDs mComponentPeerIDs;
-#endif
 extern int J2DXErrHandler(Display *display, XErrorEvent *xerr);
 extern AwtGraphicsConfigDataPtr
     getGraphicsConfigFromComponentPeer(JNIEnv *env, jobject this);
@@ -163,7 +161,7 @@ Java_sun_java2d_x11_X11SurfaceData_initIDs(JNIEnv *env, jclass xsd,
 
     if (tryDGA && (getenv("NO_J2D_DGA") == NULL)) {
     /* we use RTLD_NOW because of bug 4032715 */
-        lib = dlopen("libsunwjdga.so", RTLD_NOW);
+        lib = dlopen(JNI_LIB_NAME("sunwjdga"), RTLD_NOW);
     }
 
     if (lib != NULL) {
@@ -263,31 +261,12 @@ Java_sun_java2d_x11_XSurfaceData_initOps(JNIEnv *env, jobject xsd,
     xsdo->sdOps.Dispose = X11SD_Dispose;
     xsdo->GetPixmapWithBg = X11SD_GetPixmapWithBg;
     xsdo->ReleasePixmapWithBg = X11SD_ReleasePixmapWithBg;
-#ifndef XAWT
-    if (peer != NULL) {
-        struct ComponentData *cdata;
-        cdata = (struct ComponentData *)
-            JNU_GetLongFieldAsPtr(env, peer, mComponentPeerIDs.pData);
-        if (cdata == NULL) {
-            JNU_ThrowNullPointerException(env, "Component data missing");
-            return;
-        }
-        if (cdata->widget == NULL) {
-            JNU_ThrowInternalError(env, "Widget is NULL in initOps");
-            return;
-        }
-        xsdo->widget = cdata->widget;
-    } else {
-        xsdo->widget = NULL;
-    }
-#else
     xsdo->widget = NULL;
     if (peer != NULL) {
         xsdo->drawable = JNU_CallMethodByName(env, NULL, peer, "getWindow", "()J").j;
     } else {
         xsdo->drawable = 0;
     }
-#endif
     xsdo->depth = depth;
     xsdo->dgaAvailable = dgaAvailable;
     xsdo->isPixmap = JNI_FALSE;
@@ -562,6 +541,8 @@ XImage* X11SD_CreateSharedImage(X11SDOps *xsdo,
         J2dRlsTraceLn1(J2D_TRACE_ERROR,
                        "X11SD_SetupSharedSegment shmget has failed: %s",
                        strerror(errno));
+        free((void *)shminfo);
+        XDestroyImage(img);
         return NULL;
     }
 
@@ -571,6 +552,8 @@ XImage* X11SD_CreateSharedImage(X11SDOps *xsdo,
         J2dRlsTraceLn1(J2D_TRACE_ERROR,
                        "X11SD_SetupSharedSegment shmat has failed: %s",
                        strerror(errno));
+        free((void *)shminfo);
+        XDestroyImage(img);
         return NULL;
     }
 
@@ -591,6 +574,9 @@ XImage* X11SD_CreateSharedImage(X11SDOps *xsdo,
         J2dRlsTraceLn1(J2D_TRACE_ERROR,
                        "X11SD_SetupSharedSegment XShmAttach has failed: %s",
                        strerror(errno));
+        shmdt(shminfo->shmaddr);
+        free((void *)shminfo);
+        XDestroyImage(img);
         return NULL;
     }
 
@@ -775,14 +761,6 @@ jint X11SD_InitWindow(JNIEnv *env, X11SDOps *xsdo)
     if (xsdo->isPixmap == JNI_TRUE) {
         return SD_FAILURE;
     }
-#ifndef XAWT
-    if (!XtIsRealized(xsdo->widget)) {
-        J2dTraceLn(J2D_TRACE_WARNING, "X11SD_InitWindow: widget is unrealized");
-        /* AWT_UNLOCK(); unlock it in caller */
-        return SD_FAILURE;
-    }
-    xsdo->drawable = XtWindow(xsdo->widget);
-#endif
     xsdo->cData = xsdo->configData->color_data;
 
     return SD_SUCCESS;
@@ -804,9 +782,7 @@ static jint X11SD_Lock(JNIEnv *env,
         SurfaceData_ThrowInvalidPipeException(env, "bounds changed");
         return SD_FAILURE;
     }
-#ifdef XAWT
     xsdo->cData = xsdo->configData->color_data;
-#endif
     if (xsdo->drawable == 0 && X11SD_InitWindow(env, xsdo) == SD_FAILURE) {
         AWT_UNLOCK();
         return SD_FAILURE;
@@ -1081,30 +1057,6 @@ X11SD_ClipToRoot(SurfaceDataBounds *b, SurfaceDataBounds *bounds,
     int tmpx, tmpy;
     Window tmpchild;
 
-#ifndef XAWT
-    Widget w = xsdo->widget;
-
-    x1 = y1 = 0;
-    for (; w != NULL && ! XtIsShell(w); w = w->core.parent) {
-        x1 += w->core.x + w->core.border_width;
-        y1 += w->core.y + w->core.border_width;
-    }
-    if (w == NULL) {
-        return FALSE;
-    }
-
-    /*
-     * REMIND: We should not be offsetting here by border_width
-     * but for some unknown reason if we do not do that the
-     * results will be off exactly by border_width. We were unable
-     * to find cause of this.
-     */
-    (void) XTranslateCoordinates(XtDisplay(w), XtWindow(w),
-                                 RootWindowOfScreen(XtScreen(w)),
-                                 (int) w->core.border_width,
-                                 (int) w->core.border_width,
-                                 &tmpx, &tmpy, &tmpchild);
-#else
     Window window = (Window)(xsdo->drawable); /* is always a Window */
     XWindowAttributes winAttr;
 
@@ -1118,7 +1070,6 @@ X11SD_ClipToRoot(SurfaceDataBounds *b, SurfaceDataBounds *bounds,
                                0, 0, &tmpx, &tmpy, &tmpchild)) {
         return FALSE;
     }
-#endif
 
     x1 = -(x1 + tmpx);
     y1 = -(y1 + tmpy);
@@ -1150,89 +1101,6 @@ X11SD_ClipToRoot(SurfaceDataBounds *b, SurfaceDataBounds *bounds,
 static int
 X11SD_FindClip(SurfaceDataBounds *b, SurfaceDataBounds *bounds, X11SDOps *xsdo)
 {
-#ifndef XAWT
-    int x1, y1, x2, y2, px1, py1, px2, py2, child_x, child_y;
-    Widget current_widget, child_widget;
-
-    XWindowAttributes attr;
-    Window ignore_root, current_window, *ignore_children;
-    unsigned int pborder, ignore_uint;
-
-    x1 = bounds->x1;
-    y1 = bounds->y1;
-    x2 = bounds->x2;
-    y2 = bounds->y2;
-
-    px1 = py1 = 0;
-
-    child_widget = xsdo->widget;
-    current_widget = XtParent(xsdo->widget);
-    while (current_widget != NULL && !XtIsShell(current_widget)) {
-        px1 = px1 - (child_widget->core.x + child_widget->core.border_width);
-        py1 = py1 - (child_widget->core.y + child_widget->core.border_width);
-        px2 = px1 + current_widget->core.width;
-        py2 = py1 + current_widget->core.height;
-        x1 = MAX(x1, px1);
-        y1 = MAX(y1, py1);
-        x2 = MIN(x2, px2);
-        y2 = MIN(y2, py2);
-        if ((x1 >= x2) || (y1 >= y2)) {
-            return FALSE;
-        }
-
-        child_widget = current_widget;
-        current_widget = current_widget->core.parent;
-    }
-
-    if (current_widget == NULL) {
-        XQueryTree(awt_display,
-                   XtWindow(child_widget),
-                   &ignore_root,
-                   &current_window,
-                   &ignore_children,
-                   &ignore_uint);
-        XFree(ignore_children);
-    } else {
-        current_window = XtWindow(current_widget);
-    }
-
-    child_x = child_widget->core.x + child_widget->core.border_width;
-    child_y = child_widget->core.y + child_widget->core.border_width;
-    while (current_window != 0) {
-        px1 = px1 - child_x;
-        py1 = py1 - child_y;
-        if (!XGetGeometry(awt_display, current_window, &ignore_root,
-                          &child_x, &child_y,
-                          (unsigned int *)&px2, (unsigned int *)&py2,
-                          &pborder, &ignore_uint)) {
-            return FALSE;
-        }
-        child_x += pborder;
-        child_y += pborder;
-        px2 += px1;
-        py2 += py1;
-
-        x1 = MAX(x1, px1);
-        y1 = MAX(y1, py1);
-        x2 = MIN(x2, px2);
-        y2 = MIN(y2, py2);
-        if ((x1 >= x2) || (y1 >= y2)) {
-            return FALSE;
-        }
-        XQueryTree(awt_display,
-                   current_window,
-                   &ignore_root,
-                   &current_window,
-                   &ignore_children,
-                   &ignore_uint);
-        XFree(ignore_children);
-    }
-
-    b->x1 = x1;
-    b->y1 = y1;
-    b->x2 = x2;
-    b->y2 = y2;
-#endif
     return TRUE;
 }
 
@@ -1484,13 +1352,10 @@ void X11SD_DisposeXImage(XImage * image) {
 #ifdef MITSHM
         if (image->obdata != NULL) {
             X11SD_DropSharedSegment((XShmSegmentInfo*)image->obdata);
-        } else {
-            free(image->data);
+            image->obdata = NULL;
         }
-#else
-        free(image->data);
 #endif /* MITSHM */
-        XFree(image);
+        XDestroyImage(image);
     }
 }
 

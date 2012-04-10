@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,41 +269,21 @@ public class Types {
 
     // <editor-fold defaultstate="collapsed" desc="isConvertible">
     /**
-     * Is t a subtype of or convertiable via boxing/unboxing
-     * convertions to s?
+     * Is t a subtype of or convertible via boxing/unboxing
+     * conversion to s?
      */
     public boolean isConvertible(Type t, Type s, Warner warn) {
+        if (t.tag == ERROR)
+            return true;
         boolean tPrimitive = t.isPrimitive();
         boolean sPrimitive = s.isPrimitive();
         if (tPrimitive == sPrimitive) {
-            checkUnsafeVarargsConversion(t, s, warn);
             return isSubtypeUnchecked(t, s, warn);
         }
         if (!allowBoxing) return false;
         return tPrimitive
             ? isSubtype(boxedClass(t).type, s)
             : isSubtype(unboxedType(t), s);
-    }
-    //where
-    private void checkUnsafeVarargsConversion(Type t, Type s, Warner warn) {
-        if (t.tag != ARRAY || isReifiable(t)) return;
-        ArrayType from = (ArrayType)t;
-        boolean shouldWarn = false;
-        switch (s.tag) {
-            case ARRAY:
-                ArrayType to = (ArrayType)s;
-                shouldWarn = from.isVarargs() &&
-                        !to.isVarargs() &&
-                        !isReifiable(from);
-                break;
-            case CLASS:
-                shouldWarn = from.isVarargs() &&
-                        isSubtype(from, s);
-                break;
-        }
-        if (shouldWarn) {
-            warn.warn(LintCategory.VARARGS);
-        }
     }
 
     /**
@@ -326,42 +306,63 @@ public class Types {
      * Is t an unchecked subtype of s?
      */
     public boolean isSubtypeUnchecked(Type t, Type s, Warner warn) {
-        if (t.tag == ARRAY && s.tag == ARRAY) {
-            if (((ArrayType)t).elemtype.tag <= lastBaseTag) {
-                return isSameType(elemtype(t), elemtype(s));
-            } else {
-                ArrayType from = (ArrayType)t;
-                ArrayType to = (ArrayType)s;
-                if (from.isVarargs() &&
-                        !to.isVarargs() &&
-                        !isReifiable(from)) {
-                    warn.warn(LintCategory.VARARGS);
+        boolean result = isSubtypeUncheckedInternal(t, s, warn);
+        if (result) {
+            checkUnsafeVarargsConversion(t, s, warn);
+        }
+        return result;
+    }
+    //where
+        private boolean isSubtypeUncheckedInternal(Type t, Type s, Warner warn) {
+            if (t.tag == ARRAY && s.tag == ARRAY) {
+                if (((ArrayType)t).elemtype.tag <= lastBaseTag) {
+                    return isSameType(elemtype(t), elemtype(s));
+                } else {
+                    return isSubtypeUnchecked(elemtype(t), elemtype(s), warn);
                 }
-                return isSubtypeUnchecked(elemtype(t), elemtype(s), warn);
-            }
-        } else if (isSubtype(t, s)) {
-            return true;
-        }
-        else if (t.tag == TYPEVAR) {
-            return isSubtypeUnchecked(t.getUpperBound(), s, warn);
-        }
-        else if (s.tag == UNDETVAR) {
-            UndetVar uv = (UndetVar)s;
-            if (uv.inst != null)
-                return isSubtypeUnchecked(t, uv.inst, warn);
-        }
-        else if (!s.isRaw()) {
-            Type t2 = asSuper(t, s.tsym);
-            if (t2 != null && t2.isRaw()) {
-                if (isReifiable(s))
-                    warn.silentWarn(LintCategory.UNCHECKED);
-                else
-                    warn.warn(LintCategory.UNCHECKED);
+            } else if (isSubtype(t, s)) {
                 return true;
             }
+            else if (t.tag == TYPEVAR) {
+                return isSubtypeUnchecked(t.getUpperBound(), s, warn);
+            }
+            else if (s.tag == UNDETVAR) {
+                UndetVar uv = (UndetVar)s;
+                if (uv.inst != null)
+                    return isSubtypeUnchecked(t, uv.inst, warn);
+            }
+            else if (!s.isRaw()) {
+                Type t2 = asSuper(t, s.tsym);
+                if (t2 != null && t2.isRaw()) {
+                    if (isReifiable(s))
+                        warn.silentWarn(LintCategory.UNCHECKED);
+                    else
+                        warn.warn(LintCategory.UNCHECKED);
+                    return true;
+                }
+            }
+            return false;
         }
-        return false;
-    }
+
+        private void checkUnsafeVarargsConversion(Type t, Type s, Warner warn) {
+            if (t.tag != ARRAY || isReifiable(t)) return;
+            ArrayType from = (ArrayType)t;
+            boolean shouldWarn = false;
+            switch (s.tag) {
+                case ARRAY:
+                    ArrayType to = (ArrayType)s;
+                    shouldWarn = from.isVarargs() &&
+                            !to.isVarargs() &&
+                            !isReifiable(from);
+                    break;
+                case CLASS:
+                    shouldWarn = from.isVarargs();
+                    break;
+            }
+            if (shouldWarn) {
+                warn.warn(LintCategory.VARARGS);
+            }
+        }
 
     /**
      * Is t a subtype of s?<br>
@@ -506,8 +507,13 @@ public class Types {
             @Override
             public Boolean visitUndetVar(UndetVar t, Type s) {
                 //todo: test against origin needed? or replace with substitution?
-                if (t == s || t.qtype == s || s.tag == ERROR || s.tag == UNKNOWN)
+                if (t == s || t.qtype == s || s.tag == ERROR || s.tag == UNKNOWN) {
                     return true;
+                } else if (s.tag == BOT) {
+                    //if 's' is 'null' there's no instantiated type U for which
+                    //U <: s (but 'null' itself, which is not a valid type)
+                    return false;
+                }
 
                 if (t.inst != null)
                     return isSubtypeNoCapture(t.inst, s); // TODO: ", warn"?
@@ -2117,6 +2123,8 @@ public class Types {
             }
         }
 
+        List<TypeSymbol> seenTypes = List.nil();
+
         /** members closure visitor methods **/
 
         public CompoundScope visitType(Type t, Boolean skipInterface) {
@@ -2125,21 +2133,33 @@ public class Types {
 
         @Override
         public CompoundScope visitClassType(ClassType t, Boolean skipInterface) {
-            ClassSymbol csym = (ClassSymbol)t.tsym;
-            Entry e = _map.get(csym);
-            if (e == null || !e.matches(skipInterface)) {
-                CompoundScope membersClosure = new CompoundScope(csym);
-                if (!skipInterface) {
-                    for (Type i : interfaces(t)) {
-                        membersClosure.addSubScope(visit(i, skipInterface));
-                    }
-                }
-                membersClosure.addSubScope(visit(supertype(t), skipInterface));
-                membersClosure.addSubScope(csym.members());
-                e = new Entry(skipInterface, membersClosure);
-                _map.put(csym, e);
+            if (seenTypes.contains(t.tsym)) {
+                //this is possible when an interface is implemented in multiple
+                //superclasses, or when a classs hierarchy is circular - in such
+                //cases we don't need to recurse (empty scope is returned)
+                return new CompoundScope(t.tsym);
             }
-            return e.compoundScope;
+            try {
+                seenTypes = seenTypes.prepend(t.tsym);
+                ClassSymbol csym = (ClassSymbol)t.tsym;
+                Entry e = _map.get(csym);
+                if (e == null || !e.matches(skipInterface)) {
+                    CompoundScope membersClosure = new CompoundScope(csym);
+                    if (!skipInterface) {
+                        for (Type i : interfaces(t)) {
+                            membersClosure.addSubScope(visit(i, skipInterface));
+                        }
+                    }
+                    membersClosure.addSubScope(visit(supertype(t), skipInterface));
+                    membersClosure.addSubScope(csym.members());
+                    e = new Entry(skipInterface, membersClosure);
+                    _map.put(csym, e);
+                }
+                return e.compoundScope;
+            }
+            finally {
+                seenTypes = seenTypes.tail;
+            }
         }
 
         @Override
@@ -3580,39 +3600,44 @@ public class Types {
 
         @Override
         public Type visitCapturedType(CapturedType t, Void s) {
-            Type bound = visitWildcardType(t.wildcard, null);
-            return (bound.contains(t)) ?
-                    erasure(bound) :
-                    bound;
+            Type w_bound = t.wildcard.type;
+            Type bound = w_bound.contains(t) ?
+                        erasure(w_bound) :
+                        visit(w_bound);
+            return rewriteAsWildcardType(visit(bound), t.wildcard.bound, t.wildcard.kind);
         }
 
         @Override
         public Type visitTypeVar(TypeVar t, Void s) {
             if (rewriteTypeVars) {
-                Type bound = high ?
-                    (t.bound.contains(t) ?
+                Type bound = t.bound.contains(t) ?
                         erasure(t.bound) :
-                        visit(t.bound)) :
-                    syms.botType;
-                return rewriteAsWildcardType(bound, t);
-            }
-            else
+                        visit(t.bound);
+                return rewriteAsWildcardType(bound, t, EXTENDS);
+            } else {
                 return t;
+            }
         }
 
         @Override
         public Type visitWildcardType(WildcardType t, Void s) {
-            Type bound = high ? t.getExtendsBound() :
-                                t.getSuperBound();
-            if (bound == null)
-            bound = high ? syms.objectType : syms.botType;
-            return rewriteAsWildcardType(visit(bound), t.bound);
+            Type bound2 = visit(t.type);
+            return t.type == bound2 ? t : rewriteAsWildcardType(bound2, t.bound, t.kind);
         }
 
-        private Type rewriteAsWildcardType(Type bound, TypeVar formal) {
-            return high ?
-                makeExtendsWildcard(B(bound), formal) :
-                makeSuperWildcard(B(bound), formal);
+        private Type rewriteAsWildcardType(Type bound, TypeVar formal, BoundKind bk) {
+            switch (bk) {
+               case EXTENDS: return high ?
+                       makeExtendsWildcard(B(bound), formal) :
+                       makeExtendsWildcard(syms.objectType, formal);
+               case SUPER: return high ?
+                       makeSuperWildcard(syms.botType, formal) :
+                       makeSuperWildcard(B(bound), formal);
+               case UNBOUND: return makeExtendsWildcard(syms.objectType, formal);
+               default:
+                   Assert.error("Invalid bound kind " + bk);
+                   return null;
+            }
         }
 
         Type B(Type t) {

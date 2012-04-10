@@ -72,8 +72,8 @@ class UTF_8 extends Unicode
         return new Encoder(this);
     }
 
-    static final void updatePositions(Buffer src, int sp,
-                                      Buffer dst, int dp) {
+    private static final void updatePositions(Buffer src, int sp,
+                                              Buffer dst, int dp) {
         src.position(sp - src.arrayOffset());
         dst.position(dp - dst.arrayOffset());
     }
@@ -88,16 +88,17 @@ class UTF_8 extends Unicode
             return (b & 0xc0) != 0x80;
         }
 
-        //  [C2..DF] [80..BF]
-        private static boolean isMalformed2(int b1, int b2) {
-            return (b1 & 0x1e) == 0x0 || (b2 & 0xc0) != 0x80;
-        }
-
         //  [E0]     [A0..BF] [80..BF]
         //  [E1..EF] [80..BF] [80..BF]
         private static boolean isMalformed3(int b1, int b2, int b3) {
             return (b1 == (byte)0xe0 && (b2 & 0xe0) == 0x80) ||
                    (b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80;
+        }
+
+        // only used when there is only one byte left in src buffer
+        private static boolean isMalformed3_2(int b1, int b2) {
+            return (b1 == (byte)0xe0 && (b2 & 0xe0) == 0x80) ||
+                   (b2 & 0xc0) != 0x80;
         }
 
         //  [F0]     [90..BF] [80..BF] [80..BF]
@@ -108,6 +109,16 @@ class UTF_8 extends Unicode
         private static boolean isMalformed4(int b2, int b3, int b4) {
             return (b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80 ||
                    (b4 & 0xc0) != 0x80;
+        }
+
+        // only used when there is less than 4 bytes left in src buffer
+        private static boolean isMalformed4_2(int b1, int b2) {
+            return (b1 == 0xf0 && b2 == 0x90) ||
+                   (b2 & 0xc0) != 0x80;
+        }
+
+        private static boolean isMalformed4_3(int b3) {
+            return (b3 & 0xc0) != 0x80;
         }
 
         private static CoderResult lookupN(ByteBuffer src, int n)
@@ -122,28 +133,14 @@ class UTF_8 extends Unicode
         private static CoderResult malformedN(ByteBuffer src, int nb) {
             switch (nb) {
             case 1:
-                int b1 = src.get();
-                if ((b1 >> 2) == -2) {
-                    // 5 bytes 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
-                    if (src.remaining() < 4)
-                        return CoderResult.UNDERFLOW;
-                    return lookupN(src, 5);
-                }
-                if ((b1 >> 1) == -2) {
-                    // 6 bytes 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
-                    if (src.remaining() < 5)
-                        return CoderResult.UNDERFLOW;
-                    return lookupN(src, 6);
-                }
-                return CoderResult.malformedForLength(1);
             case 2:                    // always 1
                 return CoderResult.malformedForLength(1);
             case 3:
-                b1 = src.get();
+                int b1 = src.get();
                 int b2 = src.get();    // no need to lookup b3
                 return CoderResult.malformedForLength(
                     ((b1 == (byte)0xe0 && (b2 & 0xe0) == 0x80) ||
-                     isNotContinuation(b2))?1:2);
+                     isNotContinuation(b2)) ? 1 : 2);
             case 4:  // we don't care the speed here
                 b1 = src.get() & 0xff;
                 b2 = src.get() & 0xff;
@@ -171,6 +168,7 @@ class UTF_8 extends Unicode
             return cr;
         }
 
+
         private static CoderResult malformed(ByteBuffer src,
                                              int mark, int nb)
         {
@@ -180,18 +178,36 @@ class UTF_8 extends Unicode
             return cr;
         }
 
+        private static CoderResult malformedForLength(ByteBuffer src,
+                                                      int sp,
+                                                      CharBuffer dst,
+                                                      int dp,
+                                                      int malformedNB)
+        {
+            updatePositions(src, sp, dst, dp);
+            return CoderResult.malformedForLength(malformedNB);
+        }
+
+        private static CoderResult malformedForLength(ByteBuffer src,
+                                                      int mark,
+                                                      int malformedNB)
+        {
+            src.position(mark);
+            return CoderResult.malformedForLength(malformedNB);
+        }
+
+
         private static CoderResult xflow(Buffer src, int sp, int sl,
                                          Buffer dst, int dp, int nb) {
             updatePositions(src, sp, dst, dp);
             return (nb == 0 || sl - sp < nb)
-                   ?CoderResult.UNDERFLOW:CoderResult.OVERFLOW;
+                   ? CoderResult.UNDERFLOW : CoderResult.OVERFLOW;
         }
 
         private static CoderResult xflow(Buffer src, int mark, int nb) {
-            CoderResult cr = (nb == 0 || src.remaining() < (nb - 1))
-                             ?CoderResult.UNDERFLOW:CoderResult.OVERFLOW;
             src.position(mark);
-            return cr;
+            return (nb == 0 || src.remaining() < nb)
+                   ? CoderResult.UNDERFLOW : CoderResult.OVERFLOW;
         }
 
         private CoderResult decodeArrayLoop(ByteBuffer src,
@@ -210,7 +226,6 @@ class UTF_8 extends Unicode
             // ASCII only loop
             while (dp < dlASCII && sa[sp] >= 0)
                 da[dp++] = (char) sa[sp++];
-
             while (sp < sl) {
                 int b1 = sa[sp];
                 if (b1 >= 0) {
@@ -219,13 +234,20 @@ class UTF_8 extends Unicode
                         return xflow(src, sp, sl, dst, dp, 1);
                     da[dp++] = (char) b1;
                     sp++;
-                } else if ((b1 >> 5) == -2) {
+                } else if ((b1 >> 5) == -2 && (b1 & 0x1e) != 0) {
                     // 2 bytes, 11 bits: 110xxxxx 10xxxxxx
+                    //                   [C2..DF] [80..BF]
                     if (sl - sp < 2 || dp >= dl)
                         return xflow(src, sp, sl, dst, dp, 2);
                     int b2 = sa[sp + 1];
-                    if (isMalformed2(b1, b2))
-                        return malformed(src, sp, dst, dp, 2);
+                    // Now we check the first byte of 2-byte sequence as
+                    //     if ((b1 >> 5) == -2 && (b1 & 0x1e) != 0)
+                    // no longer need to check b1 against c1 & c0 for
+                    // malformed as we did in previous version
+                    //   (b1 & 0x1e) == 0x0 || (b2 & 0xc0) != 0x80;
+                    // only need to check the second byte b2.
+                    if (isNotContinuation(b2))
+                        return malformedForLength(src, sp, dst, dp, 1);
                     da[dp++] = (char) (((b1 << 6) ^ b2)
                                        ^
                                        (((byte) 0xC0 << 6) ^
@@ -233,24 +255,37 @@ class UTF_8 extends Unicode
                     sp += 2;
                 } else if ((b1 >> 4) == -2) {
                     // 3 bytes, 16 bits: 1110xxxx 10xxxxxx 10xxxxxx
-                    if (sl - sp < 3 || dp >= dl)
+                    int srcRemaining = sl - sp;
+                    if (srcRemaining < 3 || dp >= dl) {
+                        if (srcRemaining > 1 && isMalformed3_2(b1, sa[sp + 1]))
+                            return malformedForLength(src, sp, dst, dp, 1);
                         return xflow(src, sp, sl, dst, dp, 3);
+                    }
                     int b2 = sa[sp + 1];
                     int b3 = sa[sp + 2];
                     if (isMalformed3(b1, b2, b3))
                         return malformed(src, sp, dst, dp, 3);
-                    da[dp++] = (char)
+                    char c = (char)
                         ((b1 << 12) ^
                          (b2 <<  6) ^
                          (b3 ^
                           (((byte) 0xE0 << 12) ^
                            ((byte) 0x80 <<  6) ^
                            ((byte) 0x80 <<  0))));
+                    if (Character.isSurrogate(c))
+                        return malformedForLength(src, sp, dst, dp, 3);
+                    da[dp++] = c;
                     sp += 3;
                 } else if ((b1 >> 3) == -2) {
                     // 4 bytes, 21 bits: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-                    if (sl - sp < 4 || dl - dp < 2)
+                    int srcRemaining = sl - sp;
+                    if (srcRemaining < 4 || dl - dp < 2) {
+                        if (srcRemaining > 1 && isMalformed4_2(b1, sa[sp + 1]))
+                            return malformedForLength(src, sp, dst, dp, 1);
+                        if (srcRemaining > 2 && isMalformed4_3(sa[sp + 2]))
+                            return malformedForLength(src, sp, dst, dp, 2);
                         return xflow(src, sp, sl, dst, dp, 4);
+                    }
                     int b2 = sa[sp + 1];
                     int b3 = sa[sp + 2];
                     int b4 = sa[sp + 3];
@@ -289,38 +324,51 @@ class UTF_8 extends Unicode
                         return xflow(src, mark, 1); // overflow
                     dst.put((char) b1);
                     mark++;
-                } else if ((b1 >> 5) == -2) {
+                } else if ((b1 >> 5) == -2 && (b1 & 0x1e) != 0) {
                     // 2 bytes, 11 bits: 110xxxxx 10xxxxxx
                     if (limit - mark < 2|| dst.remaining() < 1)
                         return xflow(src, mark, 2);
                     int b2 = src.get();
-                    if (isMalformed2(b1, b2))
-                        return malformed(src, mark, 2);
-                    dst.put((char) (((b1 << 6) ^ b2)
+                    if (isNotContinuation(b2))
+                        return malformedForLength(src, mark, 1);
+                     dst.put((char) (((b1 << 6) ^ b2)
                                     ^
                                     (((byte) 0xC0 << 6) ^
                                      ((byte) 0x80 << 0))));
                     mark += 2;
                 } else if ((b1 >> 4) == -2) {
                     // 3 bytes, 16 bits: 1110xxxx 10xxxxxx 10xxxxxx
-                    if (limit - mark < 3 || dst.remaining() < 1)
+                    int srcRemaining = limit - mark;
+                    if (srcRemaining < 3 || dst.remaining() < 1) {
+                        if (srcRemaining > 1 && isMalformed3_2(b1, src.get()))
+                            return malformedForLength(src, mark, 1);
                         return xflow(src, mark, 3);
+                    }
                     int b2 = src.get();
                     int b3 = src.get();
                     if (isMalformed3(b1, b2, b3))
                         return malformed(src, mark, 3);
-                    dst.put((char)
-                            ((b1 << 12) ^
-                             (b2 <<  6) ^
-                             (b3 ^
-                              (((byte) 0xE0 << 12) ^
-                               ((byte) 0x80 <<  6) ^
-                               ((byte) 0x80 <<  0)))));
+                    char c = (char)
+                        ((b1 << 12) ^
+                         (b2 <<  6) ^
+                         (b3 ^
+                          (((byte) 0xE0 << 12) ^
+                           ((byte) 0x80 <<  6) ^
+                           ((byte) 0x80 <<  0))));
+                    if (Character.isSurrogate(c))
+                        return malformedForLength(src, mark, 3);
+                    dst.put(c);
                     mark += 3;
                 } else if ((b1 >> 3) == -2) {
                     // 4 bytes, 21 bits: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-                    if (limit - mark < 4 || dst.remaining() < 2)
+                    int srcRemaining = limit - mark;
+                    if (srcRemaining < 4 || dst.remaining() < 2) {
+                        if (srcRemaining > 1 && isMalformed4_2(b1, src.get()))
+                            return malformedForLength(src, mark, 1);
+                        if (srcRemaining > 2 && isMalformed4_3(src.get()))
+                            return malformedForLength(src, mark, 2);
                         return xflow(src, mark, 4);
+                    }
                     int b2 = src.get();
                     int b3 = src.get();
                     int b4 = src.get();
@@ -364,7 +412,7 @@ class UTF_8 extends Unicode
             return bb;
         }
 
-        // returns -1 if there is malformed byte(s) and the
+        // returns -1 if there is/are malformed byte(s) and the
         // "action" for malformed input is not REPLACE.
         public int decode(byte[] sa, int sp, int len, char[] da) {
             final int sl = sp + len;
@@ -381,11 +429,11 @@ class UTF_8 extends Unicode
                 if (b1 >= 0) {
                     // 1 byte, 7 bits: 0xxxxxxx
                     da[dp++] = (char) b1;
-                } else if ((b1 >> 5) == -2) {
+                } else if ((b1 >> 5) == -2 && (b1 & 0x1e) != 0) {
                     // 2 bytes, 11 bits: 110xxxxx 10xxxxxx
                     if (sp < sl) {
                         int b2 = sa[sp++];
-                        if (isMalformed2(b1, b2)) {
+                        if (isNotContinuation(b2)) {
                             if (malformedInputAction() != CodingErrorAction.REPLACE)
                                 return -1;
                             da[dp++] = replacement().charAt(0);
@@ -410,21 +458,33 @@ class UTF_8 extends Unicode
                             if (malformedInputAction() != CodingErrorAction.REPLACE)
                                 return -1;
                             da[dp++] = replacement().charAt(0);
-                            sp -=3;
+                            sp -= 3;
                             bb = getByteBuffer(bb, sa, sp);
                             sp += malformedN(bb, 3).length();
                         } else {
-                            da[dp++] = (char)((b1 << 12) ^
+                            char c = (char)((b1 << 12) ^
                                               (b2 <<  6) ^
                                               (b3 ^
                                               (((byte) 0xE0 << 12) ^
                                               ((byte) 0x80 <<  6) ^
                                               ((byte) 0x80 <<  0))));
+                            if (Character.isSurrogate(c)) {
+                                if (malformedInputAction() != CodingErrorAction.REPLACE)
+                                    return -1;
+                                da[dp++] = replacement().charAt(0);
+                            } else {
+                                da[dp++] = c;
+                            }
                         }
                         continue;
                     }
                     if (malformedInputAction() != CodingErrorAction.REPLACE)
                         return -1;
+                    if (sp  < sl && isMalformed3_2(b1, sa[sp])) {
+                        da[dp++] = replacement().charAt(0);
+                        continue;
+
+                    }
                     da[dp++] = replacement().charAt(0);
                     return dp;
                 } else if ((b1 >> 3) == -2) {
@@ -458,28 +518,29 @@ class UTF_8 extends Unicode
                     }
                     if (malformedInputAction() != CodingErrorAction.REPLACE)
                         return -1;
+
+                    if (sp  < sl && isMalformed4_2(b1, sa[sp])) {
+                        da[dp++] = replacement().charAt(0);
+                        continue;
+                    }
+                    sp++;
+                    if (sp  < sl && isMalformed4_3(sa[sp])) {
+                        da[dp++] = replacement().charAt(0);
+                        continue;
+                    }
                     da[dp++] = replacement().charAt(0);
                     return dp;
                 } else {
                     if (malformedInputAction() != CodingErrorAction.REPLACE)
                         return -1;
                     da[dp++] = replacement().charAt(0);
-                    sp--;
-                    bb = getByteBuffer(bb, sa, sp);
-                    CoderResult cr = malformedN(bb, 1);
-                    if (!cr.isError()) {
-                        // leading byte for 5 or 6-byte, but don't have enough
-                        // bytes in buffer to check. Consumed rest as malformed.
-                        return dp;
-                    }
-                    sp +=  cr.length();
                 }
             }
             return dp;
         }
     }
 
-    private static class Encoder extends CharsetEncoder
+    private static final class Encoder extends CharsetEncoder
                                  implements ArrayEncoder {
 
         private Encoder(Charset cs) {

@@ -744,7 +744,6 @@ public class RepaintManager
         int localBoundsY = 0;
         int localBoundsH;
         int localBoundsW;
-        Enumeration keys;
 
         roots = new ArrayList<Component>(count);
 
@@ -758,6 +757,11 @@ public class RepaintManager
             for(i=0 ; i < count ; i++) {
                 dirtyComponent = roots.get(i);
                 rect = tmpDirtyComponents.get(dirtyComponent);
+                // Sometimes when RepaintManager is changed during the painting
+                // we may get null here, see #6995769 for details
+                if (rect == null) {
+                    continue;
+                }
                 localBoundsH = dirtyComponent.getHeight();
                 localBoundsW = dirtyComponent.getWidth();
 
@@ -1068,9 +1072,9 @@ public class RepaintManager
             }
         }
         // Clear out the VolatileImages
-        Iterator gcs = volatileMap.keySet().iterator();
+        Iterator<GraphicsConfiguration> gcs = volatileMap.keySet().iterator();
         while (gcs.hasNext()) {
-            GraphicsConfiguration gc = (GraphicsConfiguration)gcs.next();
+            GraphicsConfiguration gc = gcs.next();
             VolatileImage image = volatileMap.get(gc);
             if (image.getWidth() > width || image.getHeight() > height) {
                 image.flush();

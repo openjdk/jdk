@@ -636,7 +636,7 @@ public final class NormalizerBase implements Cloneable {
             return copy;
         }
         catch (CloneNotSupportedException e) {
-            throw new InternalError(e.toString());
+            throw new InternalError(e.toString(), e);
         }
     }
 
@@ -886,6 +886,7 @@ public final class NormalizerBase implements Cloneable {
      * @deprecated ICU 3.2
      * @obsolete ICU 3.2
      */
+     @Deprecated
      public int setIndex(int index) {
          setIndexOnly(index);
          return current();
@@ -899,6 +900,7 @@ public final class NormalizerBase implements Cloneable {
      * @return The codepoint as an int
      * @see #startIndex
      */
+    @Deprecated
     public int getBeginIndex() {
         return 0;
     }
@@ -911,6 +913,7 @@ public final class NormalizerBase implements Cloneable {
      * @return The codepoint as an int
      * @see #endIndex
      */
+    @Deprecated
     public int getEndIndex() {
         return endIndex();
     }
@@ -1235,11 +1238,11 @@ public final class NormalizerBase implements Cloneable {
                                                 mode, options);
 
                 if(pNeededToNormalize!=null) {
-                    pNeededToNormalize[0]=(boolean)(destLength!=bufferLength ||
-                                                    Utility.arrayRegionMatches(
-                                                                               buffer,0,dest,
-                                                                               destStart,destLimit
-                                                                               ));
+                    pNeededToNormalize[0]=destLength!=bufferLength ||
+                                          Utility.arrayRegionMatches(
+                                            buffer,0,dest,
+                                            destStart,destLimit
+                                          );
                 }
             } else {
                 /* just copy the source characters */
@@ -1458,10 +1461,10 @@ public final class NormalizerBase implements Cloneable {
                                           dest,destStart,destLimit, options);
 
                 if(pNeededToNormalize!=null) {
-                    pNeededToNormalize[0]=(boolean)(destLength!=bufferLength ||
-                                                    Utility.arrayRegionMatches(buffer,startIndex[0],
-                                                                               dest,destStart,
-                                                                               destLength));
+                    pNeededToNormalize[0]=destLength!=bufferLength ||
+                                          Utility.arrayRegionMatches(buffer,startIndex[0],
+                                            dest,destStart,
+                                            destLength);
                 }
             } else {
                 /* just copy the source characters */

@@ -232,7 +232,7 @@ protected:
   char *get_relation_dup(void);
 
   void  get_oplist(NameList &parameters, FormDict &operands);// Parse type-operand pairs
-  void  get_effectlist(FormDict &effects, FormDict &operands); // Parse effect-operand pairs
+  void  get_effectlist(FormDict &effects, FormDict &operands, bool& has_call); // Parse effect-operand pairs
   // Return the contents of a parenthesized expression.
   // Requires initial '(' and consumes final ')', which is replaced by '\0'.
   char *get_paren_expr(const char *description, bool include_location = false);

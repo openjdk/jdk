@@ -297,16 +297,14 @@ public:
 
       if (obj->blueprint()->oop_is_instanceKlass()) {
         instanceKlass* ik = instanceKlass::cast((klassOop)obj);
-        typeArrayOop inner_classes = ik->inner_classes();
-        if (inner_classes != NULL) {
-          constantPoolOop constants = ik->constants();
-          int n = inner_classes->length();
-          for (int i = 0; i < n; i += instanceKlass::inner_class_next_offset) {
-            int ioff = i + instanceKlass::inner_class_inner_name_offset;
-            int index = inner_classes->ushort_at(ioff);
-            if (index != 0) {
-              _closure->do_symbol(constants->symbol_at_addr(index));
-            }
+        instanceKlassHandle ik_h((klassOop)obj);
+        InnerClassesIterator iter(ik_h);
+        constantPoolOop constants = ik->constants();
+        for (; !iter.done(); iter.next()) {
+          int index = iter.inner_name_index();
+
+          if (index != 0) {
+            _closure->do_symbol(constants->symbol_at_addr(index));
           }
         }
       }
@@ -1402,7 +1400,7 @@ class LinkClassesClosure : public ObjectClosure {
         instanceKlass* ik = (instanceKlass*) k;
         // Link the class to cause the bytecodes to be rewritten and the
         // cpcache to be created.
-        if (ik->get_init_state() < instanceKlass::linked) {
+        if (ik->init_state() < instanceKlass::linked) {
           ik->link_class(THREAD);
           guarantee(!HAS_PENDING_EXCEPTION, "exception in class rewriting");
         }
@@ -1535,7 +1533,7 @@ void GenCollectedHeap::preload_and_dump(TRAPS) {
         // are loaded in order that the related data structures (klass,
         // cpCache, Sting constants) are located together.
 
-        if (ik->get_init_state() < instanceKlass::linked) {
+        if (ik->init_state() < instanceKlass::linked) {
           ik->link_class(THREAD);
           guarantee(!(HAS_PENDING_EXCEPTION), "exception in class rewriting");
         }

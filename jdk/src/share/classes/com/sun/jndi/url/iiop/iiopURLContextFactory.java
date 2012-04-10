@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,12 +68,12 @@ public class iiopURLContextFactory implements ObjectFactory {
       * context on for the ORB at 'localhost' on port 900,
       * and returns as the remaining name "rest/of/name".
       */
-    static ResolveResult getUsingURLIgnoreRest(String url, Hashtable env)
+    static ResolveResult getUsingURLIgnoreRest(String url, Hashtable<?,?> env)
         throws NamingException {
         return CNCtx.createUsingURL(url, env);
     }
 
-    private static Object getUsingURL(String url, Hashtable env)
+    private static Object getUsingURL(String url, Hashtable<?,?> env)
         throws NamingException {
         ResolveResult res = getUsingURLIgnoreRest(url, env);
 
@@ -85,7 +85,7 @@ public class iiopURLContextFactory implements ObjectFactory {
         }
     }
 
-    private static Object getUsingURLs(String[] urls, Hashtable env) {
+    private static Object getUsingURLs(String[] urls, Hashtable<?,?> env) {
         for (int i = 0; i < urls.length; i++) {
             String url = urls[i];
             try {

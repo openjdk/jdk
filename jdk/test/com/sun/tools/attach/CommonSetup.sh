@@ -36,11 +36,7 @@
 
 OS=`uname -s`
 case "$OS" in
-  SunOS )
-    PS=":"
-    FS="/"
-    ;;
-  Linux )
+  SunOS | Linux | Darwin )
     PS=":"
     FS="/"
     ;;
@@ -72,7 +68,7 @@ then
   echo "TESTSRC not set.  Test cannot execute.  Failed."
   exit 1
 fi
- 
+
 if [ "${TESTCLASSES}" = "" ]
 then
   echo "TESTCLASSES not set.  Test cannot execute.  Failed."

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,8 @@ extern "C" {
 }
 
 class GenericGrowableArray : public ResourceObj {
+  friend class VMStructs;
+
  protected:
   int    _len;          // current length
   int    _max;          // maximum length
@@ -136,6 +138,8 @@ class GenericGrowableArray : public ResourceObj {
 };
 
 template<class E> class GrowableArray : public GenericGrowableArray {
+  friend class VMStructs;
+
  private:
   E*     _data;         // data array
 
@@ -194,8 +198,11 @@ template<class E> class GrowableArray : public GenericGrowableArray {
     return idx;
   }
 
-  void append_if_missing(const E& elem) {
-    if (!contains(elem)) append(elem);
+  bool append_if_missing(const E& elem) {
+    // Returns TRUE if elem is added.
+    bool missed = !contains(elem);
+    if (missed) append(elem);
+    return missed;
   }
 
   E at(int i) const {
@@ -288,10 +295,20 @@ template<class E> class GrowableArray : public GenericGrowableArray {
     ShouldNotReachHere();
   }
 
+  // The order is preserved.
   void remove_at(int index) {
     assert(0 <= index && index < _len, "illegal index");
     for (int j = index + 1; j < _len; j++) _data[j-1] = _data[j];
     _len--;
+  }
+
+  // The order is changed.
+  void delete_at(int index) {
+    assert(0 <= index && index < _len, "illegal index");
+    if (index < --_len) {
+      // Replace removed element with last one.
+      _data[index] = _data[_len];
+    }
   }
 
   // inserts the given element before the element at index i

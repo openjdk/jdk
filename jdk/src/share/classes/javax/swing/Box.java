@@ -76,6 +76,7 @@ import javax.accessibility.*;
  *
  * @author  Timothy Prinzing
  */
+@SuppressWarnings("serial")
 public class Box extends JComponent implements Accessible {
 
     /**
@@ -301,6 +302,7 @@ public class Box extends JComponent implements Accessible {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial")
     public static class Filler extends JComponent implements Accessible {
 
         /**
@@ -380,6 +382,7 @@ public class Box extends JComponent implements Accessible {
          * This class implements accessibility support for the
          * <code>Box.Filler</code> class.
          */
+        @SuppressWarnings("serial")
         protected class AccessibleBoxFiller extends AccessibleAWTComponent {
             // AccessibleContext methods
             //
@@ -420,6 +423,7 @@ public class Box extends JComponent implements Accessible {
      * This class implements accessibility support for the
      * <code>Box</code> class.
      */
+    @SuppressWarnings("serial")
     protected class AccessibleBox extends AccessibleAWTContainer {
         // AccessibleContext methods
         //

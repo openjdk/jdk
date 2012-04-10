@@ -36,6 +36,7 @@ class ciCallProfile : StackObj {
 private:
   // Fields are initialized directly by ciMethod::call_profile_at_bci.
   friend class ciMethod;
+  friend class ciMethodHandle;
 
   enum { MorphismLimit = 2 }; // Max call site's morphism we care about
   int  _limit;                // number of receivers have been determined
@@ -58,10 +59,10 @@ private:
 
 public:
   // Note:  The following predicates return false for invalid profiles:
-  bool      has_receiver(int i) { return _limit > i; }
-  int       morphism()          { return _morphism; }
+  bool      has_receiver(int i) const { return _limit > i; }
+  int       morphism() const          { return _morphism; }
 
-  int       count()             { return _count; }
+  int       count() const             { return _count; }
   int       receiver_count(int i)  {
     assert(i < _limit, "out of Call Profile MorphismLimit");
     return _receiver_count[i];
@@ -77,6 +78,17 @@ public:
   ciKlass*  receiver(int i)        {
     assert(i < _limit, "out of Call Profile MorphismLimit");
     return _receiver[i];
+  }
+
+  // Rescale the current profile based on the incoming scale
+  ciCallProfile rescale(double scale) {
+    assert(scale >= 0 && scale <= 1.0, "out of range");
+    ciCallProfile call = *this;
+    call._count = (int)(call._count * scale);
+    for (int i = 0; i < _morphism; i++) {
+      call._receiver_count[i] = (int)(call._receiver_count[i] * scale);
+    }
+    return call;
   }
 };
 

@@ -45,7 +45,7 @@ public class ManyZipFiles {
         // Windows capability it is much simpler to only run it
         // on that platform.
         String osName = System.getProperty("os.name");
-        if (osName.startsWith("Linux") || osName.startsWith("SunOS")) {
+        if (!(osName.startsWith("Windows"))) {
             return;
         }
 

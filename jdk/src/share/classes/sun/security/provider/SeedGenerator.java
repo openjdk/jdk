@@ -151,7 +151,8 @@ abstract class SeedGenerator {
         try {
             md = MessageDigest.getInstance("SHA");
         } catch (NoSuchAlgorithmException nsae) {
-            throw new InternalError("internal error: SHA-1 not available.");
+            throw new InternalError("internal error: SHA-1 not available."
+                    , nsae);
         }
 
         // The current time in millis
@@ -258,7 +259,8 @@ abstract class SeedGenerator {
             try {
                 digest = MessageDigest.getInstance("SHA");
             } catch (NoSuchAlgorithmException e) {
-                throw new InternalError("internal error: SHA-1 not available.");
+                throw new InternalError("internal error: SHA-1 not available."
+                        , e);
             }
 
             final ThreadGroup[] finalsg = new ThreadGroup[1];
@@ -311,7 +313,8 @@ abstract class SeedGenerator {
                             t.start();
                         } catch (Exception e) {
                             throw new InternalError("internal error: " +
-                                                    "SeedGenerator thread creation error.");
+                                                    "SeedGenerator thread creation error."
+                                    , e);
                         }
 
                         // We wait 250milli quanta, so the minimum wait time
@@ -344,7 +347,8 @@ abstract class SeedGenerator {
                 }
             } catch (Exception e) {
                 throw new InternalError("internal error: " +
-                                        "SeedGenerator thread generated an exception.");
+                                        "SeedGenerator thread generated an exception."
+                        , e);
             }
         }
 
@@ -367,7 +371,8 @@ abstract class SeedGenerator {
             } catch (Exception e) {
                 if (count <= 0)
                     throw new InternalError("internal error: " +
-                                            "SeedGenerator thread generated an exception.");
+                                            "SeedGenerator thread generated an exception."
+                            ,e);
             }
 
             synchronized(this) {
@@ -533,7 +538,7 @@ abstract class SeedGenerator {
             } catch (IOException ioe) {
                 throw new InternalError("URLSeedGenerator " + deviceName +
                                         " generated exception: " +
-                                        ioe.getMessage());
+                                        ioe.getMessage(), ioe);
             }
         }
 

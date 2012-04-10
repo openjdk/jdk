@@ -22,7 +22,6 @@
  */
 
 /* @test
- * @clean A B Container ReplacerObjectOutputStream
  * @summary Verify that ClassCastException is thrown when deserializing
  *          an object and one of its object fields is  incompatibly replaced
  *          by either replaceObject/resolveObject.

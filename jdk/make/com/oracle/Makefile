@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,30 @@
 
 BUILDDIR = ../..
 PRODUCT = oracle
+#SUBDIRS_MAKEFLAGS += JAVAC_MAX_WARNINGS=true
+#SUBDIRS_MAKEFLAGS += JAVAC_WARNINGS_FATAL=true
+#SUBDIRS_MAKEFLAGS += JAVAC_LINT_OPTIONS=-Xlint:all,-deprecation,-path
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS = net
+# build com/oracle/security/ucrypto on Solaris platform for non-OpenJDK builds
+UCRYPTO =
+ifndef OPENJDK
+  ifeq ($(PLATFORM), solaris)
+    UCRYPTO = security/ucrypto
+  endif
+endif
+
+JFR =
+ifndef OPENJDK
+ifndef JAVASE_EMBEDDED
+	JFR = jfr
+endif
+endif
+
+SUBDIRS = $(JFR) net nio util $(UCRYPTO)
+
 include $(BUILDDIR)/common/Subdirs.gmk
 
 all build clean clobber::
 	$(SUBDIRS-loop)
+

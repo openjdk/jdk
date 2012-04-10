@@ -833,8 +833,20 @@ Node* Node::uncast() const {
 
 //---------------------------uncast_helper-------------------------------------
 Node* Node::uncast_helper(const Node* p) {
-  uint max_depth = 3;
-  for (uint i = 0; i < max_depth; i++) {
+#ifdef ASSERT
+  uint depth_count = 0;
+  const Node* orig_p = p;
+#endif
+
+  while (true) {
+#ifdef ASSERT
+    if (depth_count >= K) {
+      orig_p->dump(4);
+      if (p != orig_p)
+        p->dump(1);
+    }
+    assert(depth_count++ < K, "infinite loop in Node::uncast_helper");
+#endif
     if (p == NULL || p->req() != 2) {
       break;
     } else if (p->is_ConstraintCast()) {
@@ -2010,6 +2022,16 @@ void Node_Stack::grow() {
   _inodes = REALLOC_ARENA_ARRAY(_a, INode, _inodes, old_max, max);
   _inode_max = _inodes + max;
   _inode_top = _inodes + old_top;        // restore _top
+}
+
+// Node_Stack is used to map nodes.
+Node* Node_Stack::find(uint idx) const {
+  uint sz = size();
+  for (uint i=0; i < sz; i++) {
+    if (idx == index_at(i) )
+      return node_at(i);
+  }
+  return NULL;
 }
 
 //=============================================================================

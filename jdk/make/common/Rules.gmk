@@ -51,12 +51,22 @@ $(CLASSDESTDIR) $(CLASSHDRDIR) $(OBJDIR) $(OUTPUTDIR) $(BINDIR) $(LIBDIR) $(LIBD
 #
 # All source tree areas for java/properties files (a few may be closed)
 #
-ifdef OPENJDK
-  ALL_CLASSES_SRC = $(SHARE_SRC)/classes $(PLATFORM_SRC)/classes
+ifeq ($(PLATFORM), macosx)
+  ifdef OPENJDK
+    ALL_CLASSES_SRC = $(call JavaSrcDirList,,classes)
+  else
+    ALL_CLASSES_SRC = \
+	  $(CLOSED_SHARE_SRC)/classes $(CLOSED_PLATFORM_SRC)/classes \
+	  $(call JavaSrcDirList,,classes)
+  endif
 else
-  ALL_CLASSES_SRC = \
-	$(CLOSED_SHARE_SRC)/classes $(CLOSED_PLATFORM_SRC)/classes \
-	$(SHARE_SRC)/classes $(PLATFORM_SRC)/classes
+  ifdef OPENJDK
+    ALL_CLASSES_SRC = $(SHARE_SRC)/classes $(PLATFORM_SRC)/classes
+  else
+    ALL_CLASSES_SRC = \
+	  $(CLOSED_SHARE_SRC)/classes $(CLOSED_PLATFORM_SRC)/classes \
+	  $(SHARE_SRC)/classes $(PLATFORM_SRC)/classes
+  endif
 endif
 
 #
@@ -200,8 +210,14 @@ endif
 
 $(CLASSDESTDIR)/%.class: $(GENSRCDIR)/%.java
 	@$(add-java-file)
+
+ifeq ($(PLATFORM), macosx)
+$(CLASSDESTDIR)/%.class: $(JDK_TOPDIR)/src/macosx/classes/%.java
+	@$(add-java-file)
+endif
 $(CLASSDESTDIR)/%.class: $(PLATFORM_SRC)/classes/%.java
 	@$(add-java-file)
+
 $(CLASSDESTDIR)/%.class: $(SHARE_SRC)/classes/%.java
 	@$(add-java-file)
 
@@ -233,13 +249,15 @@ classes : $(CLASSES_INIT) .delete.classlist .compile.classlist
 	@$(MKDIR) -p $(CLASSDESTDIR)
 	@$(RM) $<.filtered
 	@$(CAT) $< | $(NAWK) 'length>0' | $(SORT) -u > $<.filtered
-	@if [ `$(CAT) $<.filtered | $(WC) -l` -ge 1 ] ; then \
-	  $(ECHO) "# Java sources to be compiled: (listed in file $<)"; \
-	  $(CAT) $<.filtered; \
-	  $(ECHO) "# Running javac:"; \
-	  $(ECHO) $(JAVAC_CMD) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$<.filtered; \
-	  $(JAVAC_CMD) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$<.filtered; \
-	fi
+	@numfiles=`$(WC) -l < $<.filtered` ; \
+	  if [ $$numfiles -ge 1 ] ; then \
+	    $(ECHO) "# Java sources to be compiled: (listed in file $<)"; \
+	    $(CAT) $<.filtered; \
+	    $(ECHO) "# Running javac: $$numfiles files; in $(CURDIR)"; \
+	    $(ECHO) $(JAVAC_CMD) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$<.filtered; \
+	    $(JAVAC_CMD) -sourcepath "$(SOURCEPATH)" -d $(CLASSDESTDIR) @$<.filtered && \
+	    $(ECHO) "# javac finished"; \
+	  fi
 	@$(java-vm-cleanup)
 
 clobber clean::

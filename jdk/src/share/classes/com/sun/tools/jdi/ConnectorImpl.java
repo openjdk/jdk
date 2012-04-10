@@ -47,9 +47,9 @@ abstract class ConnectorImpl implements Connector {
 
     public Map<String,Argument> defaultArguments() {
         Map<String,Argument> defaults = new java.util.LinkedHashMap<String,Argument>();
-        Collection values = defaultArguments.values();
+        Collection<Argument> values = defaultArguments.values();
 
-        Iterator iter = values.iterator();
+        Iterator<Argument> iter = values.iterator();
         while (iter.hasNext()) {
             ArgumentImpl argument = (ArgumentImpl)iter.next();
             defaults.put(argument.name(), (Argument)argument.clone());
@@ -96,7 +96,7 @@ abstract class ConnectorImpl implements Connector {
                                                       mustSpecify, list));
     }
 
-    ArgumentImpl argument(String name, Map arguments)
+    ArgumentImpl argument(String name, Map<String, ? extends Argument> arguments)
                 throws IllegalConnectorArgumentsException {
 
         ArgumentImpl argument = (ArgumentImpl)arguments.get(name);
@@ -130,7 +130,7 @@ abstract class ConnectorImpl implements Connector {
 
     public String toString() {
         String string = name() + " (defaults: ";
-        Iterator iter = defaultArguments().values().iterator();
+        Iterator<Argument> iter = defaultArguments().values().iterator();
         boolean first = true;
         while (iter.hasNext()) {
             ArgumentImpl argument = (ArgumentImpl)iter.next();
@@ -222,7 +222,7 @@ abstract class ConnectorImpl implements Connector {
 
     class BooleanArgumentImpl extends ConnectorImpl.ArgumentImpl
                               implements Connector.BooleanArgument {
-
+        private static final long serialVersionUID = 1624542968639361316L;
         BooleanArgumentImpl(String name, String label, String description,
                             boolean value,
                             boolean mustSpecify) {
@@ -277,7 +277,7 @@ abstract class ConnectorImpl implements Connector {
 
     class IntegerArgumentImpl extends ConnectorImpl.ArgumentImpl
                               implements Connector.IntegerArgument {
-
+        private static final long serialVersionUID = 763286081923797770L;
         private final int min;
         private final int max;
 
@@ -378,7 +378,7 @@ abstract class ConnectorImpl implements Connector {
 
     class StringArgumentImpl extends ConnectorImpl.ArgumentImpl
                               implements Connector.StringArgument {
-
+        private static final long serialVersionUID = 7500484902692107464L;
         StringArgumentImpl(String name, String label, String description,
                            String value,
                            boolean mustSpecify) {
@@ -396,7 +396,7 @@ abstract class ConnectorImpl implements Connector {
 
     class SelectedArgumentImpl extends ConnectorImpl.ArgumentImpl
                               implements Connector.SelectedArgument {
-
+        private static final long serialVersionUID = -5689584530908382517L;
         private final List<String> choices;
 
         SelectedArgumentImpl(String name, String label, String description,

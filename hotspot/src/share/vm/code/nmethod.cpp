@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
+#include "code/dependencies.hpp"
 #include "code/nmethod.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/abstractCompiler.hpp"
@@ -49,6 +50,7 @@
 
 // Only bother with this argument setup if dtrace is available
 
+#ifndef USDT2
 HS_DTRACE_PROBE_DECL8(hotspot, compiled__method__load,
   const char*, int, const char*, int, const char*, int, void*, size_t);
 
@@ -68,6 +70,21 @@ HS_DTRACE_PROBE_DECL6(hotspot, compiled__method__unload,
         signature->bytes(), signature->utf8_length());                    \
     }                                                                     \
   }
+#else /* USDT2 */
+#define DTRACE_METHOD_UNLOAD_PROBE(method)                                \
+  {                                                                       \
+    methodOop m = (method);                                               \
+    if (m != NULL) {                                                      \
+      Symbol* klass_name = m->klass_name();                               \
+      Symbol* name = m->name();                                           \
+      Symbol* signature = m->signature();                                 \
+      HOTSPOT_COMPILED_METHOD_UNLOAD(                                     \
+        (char *) klass_name->bytes(), klass_name->utf8_length(),                   \
+        (char *) name->bytes(), name->utf8_length(),                               \
+        (char *) signature->bytes(), signature->utf8_length());                    \
+    }                                                                     \
+  }
+#endif /* USDT2 */
 
 #else //  ndef DTRACE_ENABLED
 
@@ -445,12 +462,12 @@ void nmethod::init_defaults() {
   _speculatively_disconnected = 0;
   _has_unsafe_access          = 0;
   _has_method_handle_invokes  = 0;
+  _lazy_critical_native       = 0;
   _marked_for_deoptimization  = 0;
   _lock_count                 = 0;
   _stack_traversal_mark       = 0;
   _unload_reported            = false;           // jvmti state
 
-  NOT_PRODUCT(_has_debug_info = false);
 #ifdef ASSERT
   _oops_are_stale             = false;
 #endif
@@ -688,7 +705,6 @@ nmethod::nmethod(
       xtty->tail("print_native_nmethod");
     }
   }
-  Events::log("Create nmethod " INTPTR_FORMAT, this);
 }
 
 // For dtrace wrappers
@@ -765,7 +781,6 @@ nmethod::nmethod(
       xtty->tail("print_dtrace_nmethod");
     }
   }
-  Events::log("Create nmethod " INTPTR_FORMAT, this);
 }
 #endif // def HAVE_DTRACE_H
 
@@ -873,13 +888,6 @@ nmethod::nmethod(
   if (printnmethods || PrintDebugInfo || PrintRelocations || PrintDependencies || PrintExceptionHandlers) {
     print_nmethod(printnmethods);
   }
-
-  // Note: Do not verify in here as the CodeCache_lock is
-  //       taken which would conflict with the CompiledIC_lock
-  //       which taken during the verification of call sites.
-  //       (was bug - gri 10/25/99)
-
-  Events::log("Create nmethod " INTPTR_FORMAT, this);
 }
 
 
@@ -1370,7 +1378,7 @@ void nmethod::flush() {
   assert_locked_or_safepoint(CodeCache_lock);
 
   // completely deallocate this method
-  EventMark m("flushing nmethod " INTPTR_FORMAT " %s", this, "");
+  Events::log(JavaThread::current(), "flushing nmethod " INTPTR_FORMAT, this);
   if (PrintMethodFlushing) {
     tty->print_cr("*flushing nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT "/Free CodeCache:" SIZE_FORMAT "Kb",
         _compile_id, this, CodeCache::nof_blobs(), CodeCache::unallocated_capacity()/1024);
@@ -1473,6 +1481,7 @@ bool nmethod::can_unload(BoolObjectClosure* is_alive,
 void nmethod::post_compiled_method_load_event() {
 
   methodOop moop = method();
+#ifndef USDT2
   HS_DTRACE_PROBE8(hotspot, compiled__method__load,
       moop->klass_name()->bytes(),
       moop->klass_name()->utf8_length(),
@@ -1481,6 +1490,16 @@ void nmethod::post_compiled_method_load_event() {
       moop->signature()->bytes(),
       moop->signature()->utf8_length(),
       insts_begin(), insts_size());
+#else /* USDT2 */
+  HOTSPOT_COMPILED_METHOD_LOAD(
+      (char *) moop->klass_name()->bytes(),
+      moop->klass_name()->utf8_length(),
+      (char *) moop->name()->bytes(),
+      moop->name()->utf8_length(),
+      (char *) moop->signature()->bytes(),
+      moop->signature()->utf8_length(),
+      insts_begin(), insts_size());
+#endif /* USDT2 */
 
   if (JvmtiExport::should_post_compiled_method_load() ||
       JvmtiExport::should_post_compiled_method_unload()) {
@@ -1810,7 +1829,7 @@ public:
   void maybe_print(oop* p) {
     if (_print_nm == NULL)  return;
     if (!_detected_scavenge_root)  _print_nm->print_on(tty, "new scavenge root");
-    tty->print_cr(""PTR_FORMAT"[offset=%d] detected non-perm oop "PTR_FORMAT" (found at "PTR_FORMAT")",
+    tty->print_cr(""PTR_FORMAT"[offset=%d] detected scavengable oop "PTR_FORMAT" (found at "PTR_FORMAT")",
                   _print_nm, (int)((intptr_t)p - (intptr_t)_print_nm),
                   (intptr_t)(*p), (intptr_t)p);
     (*p)->print();
@@ -1832,7 +1851,9 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
   if (!method()->is_native()) {
     SimpleScopeDesc ssd(this, fr.pc());
     Bytecode_invoke call(ssd.method(), ssd.bci());
-    bool has_receiver = call.has_receiver();
+    // compiled invokedynamic call sites have an implicit receiver at
+    // resolution time, so make sure it gets GC'ed.
+    bool has_receiver = !call.is_invokestatic();
     Symbol* signature = call.signature();
     fr.oops_compiled_arguments_do(signature, has_receiver, reg_map, f);
   }
@@ -2311,7 +2332,7 @@ public:
       _nm->print_nmethod(true);
       _ok = false;
     }
-    tty->print_cr("*** non-perm oop "PTR_FORMAT" found at "PTR_FORMAT" (offset %d)",
+    tty->print_cr("*** scavengable oop "PTR_FORMAT" found at "PTR_FORMAT" (offset %d)",
                   (intptr_t)(*p), (intptr_t)p, (int)((intptr_t)p - (intptr_t)_nm));
     (*p)->print();
   }
@@ -2324,7 +2345,7 @@ void nmethod::verify_scavenge_root_oops() {
     DebugScavengeRoot debug_scavenge_root(this);
     oops_do(&debug_scavenge_root);
     if (!debug_scavenge_root.ok())
-      fatal("found an unadvertised bad non-perm oop in the code cache");
+      fatal("found an unadvertised bad scavengable oop in the code cache");
   }
   assert(scavenge_root_not_marked(), "");
 }
