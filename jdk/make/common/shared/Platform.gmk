@@ -147,8 +147,8 @@ ifeq ($(SYSTEM_UNAME), SunOS)
   endif
   # Suffix for file bundles used in previous release
   BUNDLE_FILE_SUFFIX=.tar
-  # How much RAM does this machine have:
-  MB_OF_MEMORY=$(shell /usr/sbin/prtconf | fgrep 'Memory size:' | expand | cut -d' ' -f3)
+  # How much RAM does this machine have (zones send an error to stderr):
+  MB_OF_MEMORY:=$(shell /usr/sbin/prtconf 2>/dev/null | fgrep 'Memory size:' | expand | cut -d' ' -f3)
 endif
 
 # Platform settings specific to Linux
@@ -222,6 +222,85 @@ ifeq ($(SYSTEM_UNAME), Linux)
   BUNDLE_FILE_SUFFIX=.tar.gz
   # How much RAM does this machine have:
   MB_OF_MEMORY := $(shell free -m | fgrep Mem: | awk '{print $$2;}' )
+endif
+
+ifeq ($(SYSTEM_UNAME), Darwin)
+  PLATFORM = macosx
+  OS_NAME = darwin
+  OS_VENDOR = Apple
+  GB_OF_MEMORY := $(shell system_profiler SPHardwareDataType | fgrep Memory: | awk '{print $$2}')
+  MB_OF_MEMORY := $(shell expr ${GB_OF_MEMORY} '*' 1024)
+endif
+
+# Platform settings specific to BSD/Mac OS X
+ifeq ($(PLATFORM), macosx)
+  OS_VERSION := $(shell uname -r)
+
+  # Arch and OS name/version
+  # Darwin x86 builds are i386/amd64 universal by default.
+  # Allow arch to be set from the environment to avoid this.
+  ifeq ($(origin ARCH), undefined)
+   ifeq ($(PLATFORM), macosx)
+#     ifdef OPENJDK -- when universal 32/64 binaries available in Hotspot
+#        mach := universal
+#     else
+        mach := x86_64
+#     endif
+   else
+    mach := $(shell uname -m)
+   endif
+  else
+   mach := $(ARCH)
+  endif
+
+  archExpr = case "$(mach)" in \
+                i[3-9]86) \
+                    echo i586 \
+                    ;; \
+                sparc64) \
+                    echo sparcv9 \
+                    ;; \
+                sparc*) \
+                    echo sparc \
+                    ;; \
+                x86_64) \
+                    echo amd64 \
+                    ;; \
+                universal) \
+                    echo universal \
+                    ;; \
+                "Power Macintosh") \
+                    echo ppc \
+                    ;; \
+                *) \
+                    echo $(mach) \
+                    ;; \
+      esac
+  ARCH        := $(shell $(archExpr) )
+  ARCH_FAMILY := $(ARCH)
+
+  # i586, sparc, and ppc are 32 bit, amd64 and sparc64 are 64
+  # ARCH_DATA_MODEL does not exactly mean anything in universal
+  # but it has to be one or the other, so pick 32
+  ifneq (,$(findstring $(ARCH), i586 sparc ppc universal))
+    ARCH_DATA_MODEL=32
+  else
+    ARCH_DATA_MODEL=64
+  endif
+
+  # Need to maintain the jre/lib/i386 location for 32-bit Intel
+  ifeq ($(ARCH), i586)
+    LIBARCH = i386
+  else
+    LIBARCH = $(ARCH)
+  endif
+
+  # Value of Java os.arch property
+  ARCHPROP  = $(LIBARCH)
+
+  # Suffix for file bundles used in previous release
+  BUNDLE_FILE_SUFFIX=.tar.gz
+  # How much RAM does this machine have:
 endif
 
 # Windows with and without CYGWIN will be slightly different
@@ -423,6 +502,22 @@ ifneq ($(PLATFORM), windows)
   endif
   # Location of client/server directories
   ARCH_VM_SUBDIR=jre/lib/$(LIBARCH)
+endif
+
+# Darwin-specific Overrides
+ifeq ($(SYSTEM_UNAME),Darwin)
+  # The suffix applied to runtime libraries
+  LIBRARY_SUFFIX = dylib
+  # The suffix applied to link libraries
+  ifeq ($(ARCH), universal)
+    LIB_SUFFIX = o
+  else
+    LIB_SUFFIX = a
+  endif
+
+  ifeq ($(PLATFORM), macosx)
+  	ARCH_VM_SUBDIR=jre/lib
+  endif
 endif
 
 # Machines with 512Mb or less of real memory are considered low memory

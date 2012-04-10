@@ -24,81 +24,107 @@
 
 #include "precompiled.hpp"
 #include "prims/jvm.h"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
 #include "utilities/decoder.hpp"
+#include "utilities/vmError.hpp"
 
-Decoder::decoder_status  Decoder::_decoder_status = Decoder::no_error;
-bool                     Decoder::_initialized = false;
+#if defined(_WINDOWS)
+  #include "decoder_windows.hpp"
+#elif defined(__APPLE__)
+  #include "decoder_machO.hpp"
+#else
+  #include "decoder_elf.hpp"
+#endif
 
-#ifndef _WINDOWS
+AbstractDecoder*  Decoder::_shared_decoder = NULL;
+AbstractDecoder*  Decoder::_error_handler_decoder = NULL;
+NullDecoder       Decoder::_do_nothing_decoder;
+Mutex*            Decoder::_shared_decoder_lock = new Mutex(Mutex::native,
+                                "SharedDecoderLock");
 
-// Implementation of common functionalities among Solaris and Linux
-#include "utilities/elfFile.hpp"
+AbstractDecoder* Decoder::get_shared_instance() {
+  assert(_shared_decoder_lock != NULL && _shared_decoder_lock->owned_by_self(),
+    "Require DecoderLock to enter");
 
-ElfFile* Decoder::_opened_elf_files = NULL;
+  if (_shared_decoder == NULL) {
+    _shared_decoder = create_decoder();
+  }
+  return _shared_decoder;
+}
+
+AbstractDecoder* Decoder::get_error_handler_instance() {
+  if (_error_handler_decoder == NULL) {
+    _error_handler_decoder = create_decoder();
+  }
+  return _error_handler_decoder;
+}
+
+
+AbstractDecoder* Decoder::create_decoder() {
+  AbstractDecoder* decoder;
+#if defined(_WINDOWS)
+  decoder = new (std::nothrow) WindowsDecoder();
+#elif defined (__APPLE__)
+  decoder = new (std::nothrow)MachODecoder();
+#else
+  decoder = new (std::nothrow)ElfDecoder();
+#endif
+
+  if (decoder == NULL || decoder->has_error()) {
+    if (decoder != NULL) {
+      delete decoder;
+    }
+    decoder = &_do_nothing_decoder;
+  }
+  return decoder;
+}
+
+bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const char* modulepath) {
+  assert(_shared_decoder_lock != NULL, "Just check");
+  bool error_handling_thread = os::current_thread_id() == VMError::first_error_tid;
+  MutexLockerEx locker(error_handling_thread ? NULL : _shared_decoder_lock, true);
+  AbstractDecoder* decoder = error_handling_thread ?
+    get_error_handler_instance(): get_shared_instance();
+  assert(decoder != NULL, "null decoder");
+
+  return decoder->decode(addr, buf, buflen, offset, modulepath);
+}
+
+bool Decoder::demangle(const char* symbol, char* buf, int buflen) {
+  assert(_shared_decoder_lock != NULL, "Just check");
+  bool error_handling_thread = os::current_thread_id() == VMError::first_error_tid;
+  MutexLockerEx locker(error_handling_thread ? NULL : _shared_decoder_lock, true);
+  AbstractDecoder* decoder = error_handling_thread ?
+    get_error_handler_instance(): get_shared_instance();
+  assert(decoder != NULL, "null decoder");
+  return decoder->demangle(symbol, buf, buflen);
+}
 
 bool Decoder::can_decode_C_frame_in_vm() {
-  return true;
+  assert(_shared_decoder_lock != NULL, "Just check");
+  bool error_handling_thread = os::current_thread_id() == VMError::first_error_tid;
+  MutexLockerEx locker(error_handling_thread ? NULL : _shared_decoder_lock, true);
+  AbstractDecoder* decoder = error_handling_thread ?
+    get_error_handler_instance(): get_shared_instance();
+  assert(decoder != NULL, "null decoder");
+  return decoder->can_decode_C_frame_in_vm();
 }
 
-void Decoder::initialize() {
-  _initialized = true;
+/*
+ * Shutdown shared decoder and replace it with
+ * _do_nothing_decoder. Do nothing with error handler
+ * instance, since the JVM is going down.
+ */
+void Decoder::shutdown() {
+  assert(_shared_decoder_lock != NULL, "Just check");
+  MutexLockerEx locker(_shared_decoder_lock, true);
+
+  if (_shared_decoder != NULL &&
+    _shared_decoder != &_do_nothing_decoder) {
+    delete _shared_decoder;
+  }
+
+  _shared_decoder = &_do_nothing_decoder;
 }
-
-void Decoder::uninitialize() {
-  if (_opened_elf_files != NULL) {
-    delete _opened_elf_files;
-    _opened_elf_files = NULL;
-  }
-  _initialized = false;
-}
-
-Decoder::decoder_status Decoder::decode(address addr, const char* filepath, char *buf, int buflen, int *offset) {
-  if (_decoder_status != no_error) {
-    return _decoder_status;
-  }
-
-  ElfFile* file = get_elf_file(filepath);
-  if (_decoder_status != no_error) {
-    return _decoder_status;
-  }
-
-  const char* symbol = file->decode(addr, offset);
-  if (file->get_status() == out_of_memory) {
-    _decoder_status = out_of_memory;
-    return _decoder_status;
-  } else if (symbol != NULL) {
-    if (!demangle(symbol, buf, buflen)) {
-      jio_snprintf(buf, buflen, "%s", symbol);
-    }
-    return no_error;
-  } else {
-    return symbol_not_found;
-  }
-}
-
-ElfFile* Decoder::get_elf_file(const char* filepath) {
-  if (_decoder_status != no_error) {
-    return NULL;
-  }
-  ElfFile* file = _opened_elf_files;
-  while (file != NULL) {
-    if (file->same_elf_file(filepath)) {
-      return file;
-    }
-    file = file->m_next;
-  }
-
-  file = new ElfFile(filepath);
-  if (file == NULL) {
-    _decoder_status = out_of_memory;
-  }
-  if (_opened_elf_files != NULL) {
-    file->m_next = _opened_elf_files;
-  }
-
-  _opened_elf_files = file;
-  return file;
-}
-
-#endif
 

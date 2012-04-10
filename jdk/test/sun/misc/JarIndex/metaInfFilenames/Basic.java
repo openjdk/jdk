@@ -154,8 +154,7 @@ public class Basic {
     /* run javac <args> */
     static void compile(String... args) {
         debug("Running: javac " + Arrays.toString(args));
-        com.sun.tools.javac.main.Main compiler = new com.sun.tools.javac.main.Main("javac");
-        if (compiler.compile(args) != 0) {
+        if (com.sun.tools.javac.Main.compile(args) != 0) {
              throw new RuntimeException("javac failed: args=" + Arrays.toString(args));
         }
     }
@@ -259,7 +258,7 @@ public class Basic {
         URLClassLoader loader = getLoader(baseURL);
         httpServer.reset();
 
-        Class messageServiceClass = null;
+        Class<?> messageServiceClass = null;
         try {
             messageServiceClass = loader.loadClass(serviceClass);
         } catch (ClassNotFoundException cnfe) {
@@ -267,7 +266,7 @@ public class Basic {
             throw new RuntimeException("Error in test: " + cnfe);
         }
 
-        Iterator<Class<?>> iterator = sun.misc.Service.providers(messageServiceClass, loader);
+        Iterator<?> iterator = sun.misc.Service.providers(messageServiceClass, loader);
         if (expectToFind && !iterator.hasNext()) {
             debug(messageServiceClass + " NOT found.");
             return false;
@@ -301,7 +300,7 @@ public class Basic {
         URLClassLoader loader = getLoader(baseURL);
         httpServer.reset();
 
-        Class messageServiceClass = null;
+        Class<?> messageServiceClass = null;
         try {
             messageServiceClass = loader.loadClass(serviceClass);
         } catch (ClassNotFoundException cnfe) {
@@ -309,7 +308,7 @@ public class Basic {
             throw new RuntimeException("Error in test: " + cnfe);
         }
 
-        Iterator<Class<?>> iterator = (ServiceLoader.load(messageServiceClass, loader)).iterator();
+        Iterator<?> iterator = (ServiceLoader.load(messageServiceClass, loader)).iterator();
         if (expectToFind && !iterator.hasNext()) {
             debug(messageServiceClass + " NOT found.");
             return false;
@@ -345,7 +344,7 @@ public class Basic {
         URLClassLoader loader = getLoader(baseURL);
         httpServer.reset();
 
-        Class ADotAKlass = null;
+        Class<?> ADotAKlass = null;
         try {
             ADotAKlass = loader.loadClass("a.A");
         } catch (ClassNotFoundException cnfe) {

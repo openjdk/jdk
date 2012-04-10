@@ -237,8 +237,8 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
      * <p>
      * This method is thread safe, although most Swing methods
      * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
+     * <A HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">Concurrency
+     * in Swing</A> for more information.
      */
     protected final synchronized void repaint() {
         if (component != null) {
@@ -403,6 +403,10 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
      * @see MouseListener#mouseClicked
      */
     public void mouseClicked(MouseEvent e) {
+        if (getComponent() == null) {
+            return;
+        }
+
         int nclicks = SwingUtilities2.getAdjustedClickCount(getComponent(), e);
 
         if (! e.isConsumed()) {
@@ -1326,7 +1330,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
         if ( ! SwingUtilities2.canCurrentEventAccessSystemClipboard() ) {
             return;
         }
-        if (this.dot != this.mark && component != null) {
+        if (this.dot != this.mark && component != null && component.hasFocus()) {
             Clipboard clip = getSystemSelection();
             if (clip != null) {
                 String selectedText;

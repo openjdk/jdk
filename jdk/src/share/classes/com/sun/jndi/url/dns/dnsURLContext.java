@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import com.sun.jndi.toolkit.url.GenericURLDirContext;
 
 public class dnsURLContext extends GenericURLDirContext {
 
-    public dnsURLContext(Hashtable env) {
+    public dnsURLContext(Hashtable<?,?> env) {
         super(env);
     }
 
@@ -54,7 +54,7 @@ public class dnsURLContext extends GenericURLDirContext {
      * to the named DNS server, and returns the domain name as the
      * remaining name.
      */
-    protected ResolveResult getRootURLContext(String url, Hashtable env)
+    protected ResolveResult getRootURLContext(String url, Hashtable<?,?> env)
             throws NamingException {
 
         DnsUrl dnsUrl;

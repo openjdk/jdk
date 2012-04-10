@@ -110,14 +110,15 @@ class outputStream : public ResourceObj {
    // flushing
    virtual void flush() {}
    virtual void write(const char* str, size_t len) = 0;
-   virtual ~outputStream() {}  // close properly on deletion
+   virtual void rotate_log() {} // GC log rotation
+   virtual ~outputStream() {}   // close properly on deletion
 
    void dec_cr() { dec(); cr(); }
    void inc_cr() { inc(); cr(); }
 };
 
 // standard output
-                                // ANSI C++ name collision
+// ANSI C++ name collision
 extern outputStream* tty;           // tty output
 extern outputStream* gclog_or_tty;  // stream for gc log if -Xloggc:<f>, or tty
 
@@ -176,6 +177,7 @@ class fileStream : public outputStream {
   FILE* _file;
   bool  _need_close;
  public:
+  fileStream() { _file = NULL; _need_close = false; }
   fileStream(const char* file_name);
   fileStream(const char* file_name, const char* opentype);
   fileStream(FILE* file) { _file = file; _need_close = false; }
@@ -208,6 +210,20 @@ class fdStream : public outputStream {
   int fd() const { return _fd; }
   virtual void write(const char* c, size_t len);
   void flush() {};
+};
+
+class rotatingFileStream : public fileStream {
+ protected:
+  char*  _file_name;
+  jlong  _bytes_writen;
+  uintx  _cur_file_num;             // current logfile rotation number, from 0 to MaxGCLogFileNumbers-1
+ public:
+  rotatingFileStream(const char* file_name);
+  rotatingFileStream(const char* file_name, const char* opentype);
+  rotatingFileStream(FILE* file) : fileStream(file) {}
+  ~rotatingFileStream();
+  virtual void write(const char* c, size_t len);
+  virtual void rotate_log();
 };
 
 void ostream_init();

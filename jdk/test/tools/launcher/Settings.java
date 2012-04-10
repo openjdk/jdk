@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@ import java.io.IOException;
 
 /*
  * @test
- * @bug 6994753
+ * @bug 6994753 7123582
  * @summary tests -XshowSettings options
- * @compile -XDignore.symbol.file Settings.java TestHelper.java
+ * @compile -XDignore.symbol.file Settings.java
  * @run main Settings
  * @author ksrini
  */
-public class Settings {
+public class Settings extends TestHelper {
     private static File testJar = null;
 
     static void init() throws IOException {
@@ -45,17 +45,17 @@ public class Settings {
         tsrc.append("        System.out.println(x);\n");
         tsrc.append("   }\n");
         tsrc.append("}\n");
-        TestHelper.createJar(testJar, tsrc.toString());
+        createJar(testJar, tsrc.toString());
     }
 
-    static void checkContains(TestHelper.TestResult tr, String str) {
+    static void checkContains(TestResult tr, String str) {
         if (!tr.contains(str)) {
             System.out.println(tr);
             throw new RuntimeException(str + " not found");
         }
     }
 
-    static void checkNoContains(TestHelper.TestResult tr, String str) {
+    static void checkNoContains(TestResult tr, String str) {
         if (tr.contains(str)) {
             System.out.println(tr.status);
             throw new RuntimeException(str + " found");
@@ -66,23 +66,23 @@ public class Settings {
     private static final String PROP_SETTINGS = "Property settings:";
     private static final String LOCALE_SETTINGS = "Locale settings:";
 
-    static void containsAllOptions(TestHelper.TestResult tr) {
+    static void containsAllOptions(TestResult tr) {
         checkContains(tr, VM_SETTINGS);
         checkContains(tr, PROP_SETTINGS);
         checkContains(tr, LOCALE_SETTINGS);
     }
 
     static void runTestOptionDefault() throws IOException {
-        TestHelper.TestResult tr = null;
-        tr = TestHelper.doExec(TestHelper.javaCmd, "-Xms64m", "-Xmx512m",
-                "-Xss128k", "-XshowSettings", "-jar", testJar.getAbsolutePath());
+        TestResult tr = null;
+        tr = doExec(javaCmd, "-Xms64m", "-Xmx512m",
+                "-Xss256k", "-XshowSettings", "-jar", testJar.getAbsolutePath());
         containsAllOptions(tr);
         if (!tr.isOK()) {
             System.out.println(tr.status);
             throw new RuntimeException("test fails");
         }
-        tr = TestHelper.doExec(TestHelper.javaCmd, "-Xms65536k", "-Xmx712m",
-                "-Xss122880", "-XshowSettings", "-jar", testJar.getAbsolutePath());
+        tr = doExec(javaCmd, "-Xms65536k", "-Xmx712m",
+                "-Xss256000", "-XshowSettings", "-jar", testJar.getAbsolutePath());
         containsAllOptions(tr);
         if (!tr.isOK()) {
             System.out.println(tr.status);
@@ -92,43 +92,54 @@ public class Settings {
 
     static void runTestOptionAll() throws IOException {
         init();
-        TestHelper.TestResult tr = null;
-        tr = TestHelper.doExec(TestHelper.javaCmd, "-XshowSettings:all");
+        TestResult tr = null;
+        tr = doExec(javaCmd, "-XshowSettings:all");
         containsAllOptions(tr);
     }
 
     static void runTestOptionVM() throws IOException {
-        TestHelper.TestResult tr = null;
-        tr = TestHelper.doExec(TestHelper.javaCmd, "-XshowSettings:vm");
+        TestResult tr = null;
+        tr = doExec(javaCmd, "-XshowSettings:vm");
         checkContains(tr, VM_SETTINGS);
         checkNoContains(tr, PROP_SETTINGS);
         checkNoContains(tr, LOCALE_SETTINGS);
     }
 
     static void runTestOptionProperty() throws IOException {
-        TestHelper.TestResult tr = null;
-        tr = TestHelper.doExec(TestHelper.javaCmd, "-XshowSettings:properties");
+        TestResult tr = null;
+        tr = doExec(javaCmd, "-XshowSettings:properties");
         checkNoContains(tr, VM_SETTINGS);
         checkContains(tr, PROP_SETTINGS);
         checkNoContains(tr, LOCALE_SETTINGS);
     }
 
     static void runTestOptionLocale() throws IOException {
-        TestHelper.TestResult tr = null;
-        tr = TestHelper.doExec(TestHelper.javaCmd, "-XshowSettings:locale");
+        TestResult tr = null;
+        tr = doExec(javaCmd, "-XshowSettings:locale");
         checkNoContains(tr, VM_SETTINGS);
         checkNoContains(tr, PROP_SETTINGS);
         checkContains(tr, LOCALE_SETTINGS);
     }
 
     static void runTestBadOptions() throws IOException {
-        TestHelper.TestResult tr = null;
-        tr = TestHelper.doExec(TestHelper.javaCmd, "-XshowSettingsBadOption");
+        TestResult tr = null;
+        tr = doExec(javaCmd, "-XshowSettingsBadOption");
         checkNoContains(tr, VM_SETTINGS);
         checkNoContains(tr, PROP_SETTINGS);
         checkNoContains(tr, LOCALE_SETTINGS);
         checkContains(tr, "Unrecognized option: -XshowSettingsBadOption");
     }
+
+    static void runTest7123582() throws IOException {
+        TestResult tr = null;
+        tr = doExec(javaCmd, "-XshowSettings", "-version");
+        if (!tr.isOK()) {
+            System.out.println(tr.status);
+            throw new RuntimeException("test fails");
+        }
+        containsAllOptions(tr);
+    }
+
     public static void main(String... args) {
         try {
             runTestOptionAll();
@@ -137,6 +148,7 @@ public class Settings {
             runTestOptionProperty();
             runTestOptionLocale();
             runTestBadOptions();
+            runTest7123582();
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }

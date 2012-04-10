@@ -46,6 +46,11 @@
 #include "zip_util.h"
 #include "zlib.h"
 
+#ifdef _ALLBSD_SOURCE
+#define off64_t off_t
+#define mmap64 mmap
+#endif
+
 /* USE_MMAP means mmap the CEN & ENDHDR part of the zip file. */
 #ifdef USE_MMAP
 #include <sys/mman.h>
@@ -521,7 +526,7 @@ countCENHeaders(unsigned char *beg, unsigned char *end)
 {
     jint count = 0;
     ptrdiff_t i;
-    for (i = 0; i + CENHDR < end - beg; i += CENSIZE(beg + i))
+    for (i = 0; i + CENHDR <= end - beg; i += CENSIZE(beg + i))
         count++;
     return count;
 }

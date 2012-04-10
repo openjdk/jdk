@@ -55,6 +55,7 @@ import java.awt.geom.Rectangle2D;
 import java.text.AttributedString;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedCharacterIterator.Attribute;
+import java.text.CharacterIterator;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -382,7 +383,7 @@ public final class TextLayout implements Cloneable {
             throw new IllegalArgumentException("Zero length string passed to TextLayout constructor.");
         }
 
-        Map attributes = null;
+        Map<? extends Attribute, ?> attributes = null;
         if (font.hasLayoutAttributes()) {
             attributes = font.getAttributes();
         }
@@ -451,7 +452,7 @@ public final class TextLayout implements Cloneable {
     private static Font singleFont(char[] text,
                                    int start,
                                    int limit,
-                                   Map attributes) {
+                                   Map<? extends Attribute, ?> attributes) {
 
         if (attributes.get(TextAttribute.CHAR_REPLACEMENT) != null) {
             return null;
@@ -516,14 +517,17 @@ public final class TextLayout implements Cloneable {
         text.first();
         char[] chars = new char[len];
         int n = 0;
-        for (char c = text.first(); c != text.DONE; c = text.next()) {
+        for (char c = text.first();
+             c != CharacterIterator.DONE;
+             c = text.next())
+        {
             chars[n++] = c;
         }
 
         text.first();
         if (text.getRunLimit() == limit) {
 
-            Map attributes = text.getAttributes();
+            Map<? extends Attribute, ?> attributes = text.getAttributes();
             Font font = singleFont(chars, 0, len, attributes);
             if (font != null) {
                 fastInit(chars, font, attributes, frc);
@@ -561,7 +565,9 @@ public final class TextLayout implements Cloneable {
     /**
      * Initialize the paragraph-specific data.
      */
-    private void paragraphInit(byte aBaseline, CoreMetrics lm, Map paragraphAttrs, char[] text) {
+    private void paragraphInit(byte aBaseline, CoreMetrics lm,
+                               Map<? extends Attribute, ?> paragraphAttrs,
+                               char[] text) {
 
         baseline = aBaseline;
 
@@ -581,7 +587,10 @@ public final class TextLayout implements Cloneable {
      * all renderable by one font (ie no embedded graphics)
      * all on one baseline
      */
-    private void fastInit(char[] chars, Font font, Map attrs, FontRenderContext frc) {
+    private void fastInit(char[] chars, Font font,
+                          Map<? extends Attribute, ?> attrs,
+                          FontRenderContext frc) {
+
         // Object vf = attrs.get(TextAttribute.ORIENTATION);
         // isVerticalLine = TextAttribute.ORIENTATION_VERTICAL.equals(vf);
         isVerticalLine = false;
@@ -619,7 +628,7 @@ public final class TextLayout implements Cloneable {
             // and use it and its font to initialize the paragraph.
             // If not, use the first graphic to initialize.
 
-            Map paragraphAttrs = text.getAttributes();
+            Map<? extends Attribute, ?> paragraphAttrs = text.getAttributes();
 
             boolean haveFont = TextLine.advanceToFirstFont(text);
 
@@ -753,7 +762,7 @@ public final class TextLayout implements Cloneable {
             return super.clone();
         }
         catch (CloneNotSupportedException e) {
-            throw new InternalError();
+            throw new InternalError(e);
         }
     }
 

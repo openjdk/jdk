@@ -41,7 +41,7 @@ OS=`uname -s`
 # Need to determine the classpath separator and filepath separator based on the
 # operating system.
 case "$OS" in
-SunOS | Linux )
+SunOS | Linux | Darwin )
   PS=":"  ;;
 Windows* | CYGWIN* )
   PS=";"  ;;
@@ -55,19 +55,19 @@ JAVAC=${TESTJAVA}/bin/javac
 MKDIR=mkdir
 RDEL="rm -r"
 
-if [ -d ${TESTCLASSES}/oclasses ] 
+if [ -d ${TESTCLASSES}/oclasses ]
 then
-   ${RDEL} ${TESTCLASSES}/oclasses 
+   ${RDEL} ${TESTCLASSES}/oclasses
 fi
-if [ -d ${TESTCLASSES}/nclasses ] 
+if [ -d ${TESTCLASSES}/nclasses ]
 then
-   ${RDEL} ${TESTCLASSES}/nclasses 
+   ${RDEL} ${TESTCLASSES}/nclasses
 fi
-if [ -d ${TESTCLASSES}/share ] 
+if [ -d ${TESTCLASSES}/share ]
 then
-   ${RDEL} ${TESTCLASSES}/share 
+   ${RDEL} ${TESTCLASSES}/share
 fi
-if [ -f ${TESTCLASSES}/stream.ser ] 
+if [ -f ${TESTCLASSES}/stream.ser ]
 then
    ${RDEL} ${TESTCLASSES}/stream.ser
 fi
@@ -77,7 +77,7 @@ mkdir ${TESTCLASSES}/share
 mkdir ${TESTCLASSES}/nclasses
 
 # Build sources
-set -e 
+set -e
 ${JAVAC} -d ${TESTCLASSES}/share ${TESTSRC}/extension/ExtendedObjectInputStream.java
 CLASSPATH=${TESTCLASSES}/share; export CLASSPATH;
 ${JAVAC} -d ${TESTCLASSES}/oclasses ${TESTSRC}/test/SerialDriver.java

@@ -750,7 +750,7 @@ class PackageReader extends BandStructure {
         file_options.readFrom(in);
         file_bits.setInputStreamFrom(in);
 
-        Iterator nextClass = pkg.getClasses().iterator();
+        Iterator<Class> nextClass = pkg.getClasses().iterator();
 
         // Compute file lengths before reading any file bits.
         long totalFileLength = 0;
@@ -790,14 +790,14 @@ class PackageReader extends BandStructure {
             pkg.addFile(file);
             if (file.isClassStub()) {
                 assert(file.getFileLength() == 0);
-                Class cls = (Class) nextClass.next();
+                Class cls = nextClass.next();
                 cls.initFile(file);
             }
         }
 
         // Do the rest of the classes.
         while (nextClass.hasNext()) {
-            Class cls = (Class) nextClass.next();
+            Class cls = nextClass.next();
             cls.initFile(null);  // implicitly initialize to a trivial one
             cls.file.modtime = pkg.default_modtime;
         }
@@ -1006,14 +1006,14 @@ class PackageReader extends BandStructure {
         if (k >= 0)
             return k;
         if (e.tag == CONSTANT_Utf8) {
-            Entry se = (Entry) utf8Signatures.get(e);
+            Entry se = utf8Signatures.get(e);
             return pkg.cp.untypedIndexOf(se);
         }
         return -1;
     }
 
     Comparator<Entry> entryOutputOrder = new Comparator<Entry>() {
-        public int compare(Entry  e0, Entry e1) {
+        public int compare(Entry e0, Entry e1) {
             int k0 = getOutputIndex(e0);
             int k1 = getOutputIndex(e1);
             if (k0 >= 0 && k1 >= 0)
@@ -1332,7 +1332,8 @@ class PackageReader extends BandStructure {
     // classes, fields, methods, and codes.
     // The holders is a global list, already collected,
     // of attribute "customers".
-    void countAndReadAttrs(int ctype, Collection holders) throws IOException {
+    void countAndReadAttrs(int ctype, Collection<? extends Attribute.Holder> holders)
+            throws IOException {
         //  class_attr_bands:
         //        *class_flags :UNSIGNED5
         //        *class_attr_count :UNSIGNED5
@@ -1386,7 +1387,8 @@ class PackageReader extends BandStructure {
 
     // Read flags and count the attributes that are to be placed
     // on the given holders.
-    void countAttrs(int ctype, Collection holders) throws IOException {
+    void countAttrs(int ctype, Collection<? extends Attribute.Holder> holders)
+            throws IOException {
         // Here, xxx stands for one of class, field, method, code.
         MultiBand xxx_attr_bands = attrBands[ctype];
         long flagMask = attrFlagMask[ctype];
@@ -1414,8 +1416,7 @@ class PackageReader extends BandStructure {
         xxx_flags_lo.expectLength(holders.size());
         xxx_flags_lo.readFrom(in);
         assert((flagMask & overflowMask) == overflowMask);
-        for (Iterator i = holders.iterator(); i.hasNext(); ) {
-            Attribute.Holder h = (Attribute.Holder) i.next();
+        for (Attribute.Holder h : holders) {
             int flags = xxx_flags_lo.getInt();
             h.flags = flags;
             if ((flags & overflowMask) != 0)
@@ -1433,8 +1434,7 @@ class PackageReader extends BandStructure {
         // (class/field/method/code), and also we accumulate (b) a total
         // count for each attribute type.
         int[] totalCounts = new int[defs.length];
-        for (Iterator i = holders.iterator(); i.hasNext(); ) {
-            Attribute.Holder h = (Attribute.Holder) i.next();
+        for (Attribute.Holder h : holders) {
             assert(h.attributes == null);
             // System.out.println("flags="+h.flags+" using fm="+flagMask);
             long attrBits = ((h.flags & flagMask) << 32) >>> 32;
@@ -1582,13 +1582,12 @@ class PackageReader extends BandStructure {
                                    ATTR_CONTEXT_NAME[ctype]+" attribute");
     }
 
-    @SuppressWarnings("unchecked")
-    void readAttrs(int ctype, Collection holders) throws IOException {
+    void readAttrs(int ctype, Collection<? extends Attribute.Holder> holders)
+            throws IOException {
         // Decode band values into attributes.
         Set<Attribute.Layout> sawDefs = new HashSet<>();
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        for (Iterator i = holders.iterator(); i.hasNext(); ) {
-            final Attribute.Holder h = (Attribute.Holder) i.next();
+        for (final Attribute.Holder h : holders) {
             if (h.attributes == null)  continue;
             for (ListIterator<Attribute> j = h.attributes.listIterator(); j.hasNext(); ) {
                 Attribute a = j.next();

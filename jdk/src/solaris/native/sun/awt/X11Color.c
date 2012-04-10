@@ -33,7 +33,6 @@
 #include <math.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#include <alloca.h>
 #ifndef HEADLESS
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>

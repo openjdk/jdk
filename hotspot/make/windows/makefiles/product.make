@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,12 @@ GENERATED=../generated
 BUILD_PCH_FILE=_build_pch_file.obj
 !endif
 
-default:: $(BUILD_PCH_FILE) $(AOUT) launcher checkAndBuildSA
+default:: $(BUILD_PCH_FILE) $(AOUT) launcher checkAndBuildSA wb
 
 !include ../local.make
 !include compile.make
 
-CPP_FLAGS=$(CPP_FLAGS) $(PRODUCT_OPT_OPTION)
+CXX_FLAGS=$(CXX_FLAGS) $(PRODUCT_OPT_OPTION)
 
 RELEASE=
 
@@ -54,16 +54,16 @@ $(Res_Files): FORCE
 # Kernel doesn't need exported vtbl symbols.
 !if "$(Variant)" == "kernel"
 $(AOUT): $(Res_Files) $(Obj_Files)
-	$(LINK) @<<
-  $(LINK_FLAGS) /out:$@ /implib:$*.lib $(Obj_Files) $(Res_Files)
+	$(LD) @<<
+  $(LD_FLAGS) /out:$@ /implib:$*.lib $(Obj_Files) $(Res_Files)
 <<
 !else
 vm.def: $(Obj_Files)
 	sh $(WorkSpace)/make/windows/build_vm_def.sh
 
 $(AOUT): $(Res_Files) $(Obj_Files) vm.def
-	$(LINK) @<<
-  $(LINK_FLAGS) /out:$@ /implib:$*.lib /def:vm.def $(Obj_Files) $(Res_Files)
+	$(LD) @<<
+  $(LD_FLAGS) /out:$@ /implib:$*.lib /def:vm.def $(Obj_Files) $(Res_Files)
 <<
 !endif
 !if "$(MT)" != ""
@@ -76,3 +76,4 @@ $(AOUT): $(Res_Files) $(Obj_Files) vm.def
 !include $(WorkSpace)/make/windows/makefiles/shared.make
 !include $(WorkSpace)/make/windows/makefiles/sa.make
 !include $(WorkSpace)/make/windows/makefiles/launcher.make
+!include $(WorkSpace)/make/windows/makefiles/wb.make

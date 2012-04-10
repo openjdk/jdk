@@ -83,8 +83,8 @@ public abstract class AbstractScope<D extends GenericDeclaration>
      * @return the requested type variable, if found
      */
     public TypeVariable<?> lookup(String name) {
-        TypeVariable[] tas = getRecvr().getTypeParameters();
-        for (TypeVariable/*<?>*/ tv : tas) {
+        TypeVariable<?>[] tas = getRecvr().getTypeParameters();
+        for (TypeVariable<?> tv : tas) {
             if (tv.getName().equals(name)) {return tv;}
         }
         return getEnclosingScope().lookup(name);

@@ -29,6 +29,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * This source code is provided to illustrate the usage of a given feature
+ * or technique and has been deliberately simplified. Additional steps
+ * required for a production-quality application, such as security checks,
+ * input validation and proper error handling, might not be present in
+ * this sample code.
+ */
+
+
 package com.sun.nio.zipfs;
 
 import java.nio.file.Paths;
@@ -69,12 +78,12 @@ public class ZipInfo {
                 // twice
                 long len = LOCHDR + CENNAM(cen, pos) + CENEXT(cen, pos) + CENHDR;
                 if (zfs.readFullyAt(buf, 0, len, locoff(cen, pos)) != len)
-                    zfs.zerror("read loc header failed");
+                    ZipFileSystem.zerror("read loc header failed");
                 if (LOCEXT(buf) > CENEXT(cen, pos) + CENHDR) {
                     // have to read the second time;
                     len = LOCHDR + LOCNAM(buf) + LOCEXT(buf);
                     if (zfs.readFullyAt(buf, 0, len, locoff(cen, pos)) != len)
-                        zfs.zerror("read loc header failed");
+                        ZipFileSystem.zerror("read loc header failed");
                 }
                 printLOC(buf);
                 pos += CENHDR + CENNAM(cen, pos) + CENEXT(cen, pos) + CENCOM(cen, pos);

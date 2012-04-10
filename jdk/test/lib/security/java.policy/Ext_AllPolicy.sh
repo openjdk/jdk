@@ -50,23 +50,20 @@ fi
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     NULL=/dev/null
     PS=":"
     FS="/"
-    TMP=/tmp
     ;;
   CYGWIN* )
     NULL=/dev/null
     PS=";"
     FS="/"
-    TMP=/tmp
     ;;
   Windows_95 | Windows_98 | Windows_NT )
     NULL=NUL
     PS=";"
     FS="\\"
-    TMP="c:/temp"
     ;;
   * )
     echo "Unrecognized system!"
@@ -81,6 +78,6 @@ ${TESTJAVA}${FS}bin${FS}jar -cvf Ext_AllPolicy.jar Ext_AllPolicy.class
 
 rm Ext_AllPolicy.class
 ${TESTJAVA}${FS}bin${FS}java \
-	-Djava.security.manager -Djava.ext.dirs="${TESTCLASSES}" Ext_AllPolicy
+        -Djava.security.manager -Djava.ext.dirs="${TESTCLASSES}" Ext_AllPolicy
 
 exit $?

@@ -39,6 +39,7 @@ import java.awt.image.DataBuffer;
 import sun.java2d.SurfaceData;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.StateTrackable;
+import sun.java2d.StateTrackable.*;
 import sun.java2d.StateTracker;
 import sun.java2d.loops.SurfaceType;
 import sun.java2d.loops.CompositeType;
@@ -323,8 +324,8 @@ public class BufImgSurfaceData extends SurfaceData {
     }
 
     public RenderLoops getRenderLoops(SunGraphics2D sg2d) {
-        if (sg2d.paintState <= sg2d.PAINT_ALPHACOLOR &&
-            sg2d.compositeState <= sg2d.COMP_ISCOPY)
+        if (sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR &&
+            sg2d.compositeState <= SunGraphics2D.COMP_ISCOPY)
         {
             return solidloops;
         }
@@ -353,6 +354,10 @@ public class BufImgSurfaceData extends SurfaceData {
         super(SunWritableRaster.stealTrackable(db),
               sType, bufImg.getColorModel());
         this.bufImg = bufImg;
+    }
+
+    protected BufImgSurfaceData(SurfaceType surfaceType, ColorModel cm) {
+        super(surfaceType, cm);
     }
 
     public void initSolidLoops() {

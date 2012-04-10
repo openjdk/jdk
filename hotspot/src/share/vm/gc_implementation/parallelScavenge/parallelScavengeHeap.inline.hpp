@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,12 @@ inline size_t ParallelScavengeHeap::total_invocations()
     PSMarkSweep::total_invocations();
 }
 
+inline bool ParallelScavengeHeap::should_alloc_in_eden(const size_t size) const
+{
+  const size_t eden_size = young_gen()->eden_space()->capacity_in_words();
+  return size < eden_size / 2;
+}
+
 inline void ParallelScavengeHeap::invoke_scavenge()
 {
   PSScavenge::invoke();
@@ -51,7 +57,12 @@ inline void ParallelScavengeHeap::invoke_full_gc(bool maximum_compaction)
 }
 
 inline bool ParallelScavengeHeap::is_in_young(oop p) {
-  return young_gen()->is_in_reserved(p);
+  // Assumes the the old gen address range is lower than that of the young gen.
+  const void* loc = (void*) p;
+  bool result = ((HeapWord*)p) >= young_gen()->reserved().start();
+  assert(result == young_gen()->is_in_reserved(p),
+        err_msg("incorrect test - result=%d, p=" PTR_FORMAT, result, (void*)p));
+  return result;
 }
 
 inline bool ParallelScavengeHeap::is_in_old_or_perm(oop p) {

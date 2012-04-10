@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,8 @@ package java.lang.annotation;
 public class IncompleteAnnotationException extends RuntimeException {
     private static final long serialVersionUID = 8445097402741811912L;
 
-    private Class annotationType;
+    private Class<? extends Annotation> annotationType;
     private String elementName;
-
 
     /**
      * Constructs an IncompleteAnnotationException to indicate that
@@ -51,11 +50,14 @@ public class IncompleteAnnotationException extends RuntimeException {
      *
      * @param annotationType the Class object for the annotation type
      * @param elementName the name of the missing element
+     * @throws NullPointerException if either parameter is {@code null}
      */
     public IncompleteAnnotationException(
             Class<? extends Annotation> annotationType,
             String elementName) {
-        super(annotationType.getName() + " missing element " + elementName);
+        super(annotationType.getName().toString() +
+              " missing element " +
+              elementName.toString());
 
         this.annotationType = annotationType;
         this.elementName = elementName;

@@ -271,6 +271,13 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).NewClass(encl, typeargs, clazz, args, def);
     }
 
+    public JCTree visitLambdaExpression(LambdaExpressionTree node, P p) {
+        JCLambda t = (JCLambda) node;
+        List<JCVariableDecl> params = copy(t.params, p);
+        JCTree body = copy(t.body, p);
+        return M.at(t.pos).Lambda(params, body);
+    }
+
     public JCTree visitParenthesized(ParenthesizedTree node, P p) {
         JCParens t = (JCParens) node;
         JCExpression expr = copy(t.expr, p);
@@ -287,6 +294,13 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         JCFieldAccess t = (JCFieldAccess) node;
         JCExpression selected = copy(t.selected, p);
         return M.at(t.pos).Select(selected, t.name);
+    }
+
+    public JCTree visitMemberReference(MemberReferenceTree node, P p) {
+        JCMemberReference t = (JCMemberReference) node;
+        JCExpression expr = copy(t.expr, p);
+        List<JCExpression> typeargs = copy(t.typeargs, p);
+        return M.at(t.pos).Reference(t.mode, t.name, expr, typeargs);
     }
 
     public JCTree visitEmptyStatement(EmptyStatementTree node, P p) {
@@ -406,7 +420,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitOther(Tree node, P p) {
         JCTree tree = (JCTree) node;
         switch (tree.getTag()) {
-            case JCTree.LETEXPR: {
+            case LETEXPR: {
                 LetExpr t = (LetExpr) node;
                 List<JCVariableDecl> defs = copy(t.defs, p);
                 JCTree expr = copy(t.expr, p);

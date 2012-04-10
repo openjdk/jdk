@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.net.CookieHandler;
 import java.security.Principal;
 import java.security.cert.*;
 import java.util.StringTokenizer;
@@ -268,13 +267,6 @@ final class HttpsClient extends HttpClient
             port = getDefaultPort();
         }
         setConnectTimeout(connectTimeout);
-        // get the cookieHandler if there is any
-        cookieHandler = java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<CookieHandler>() {
-                public CookieHandler run() {
-                    return CookieHandler.getDefault();
-                }
-            });
         openServer();
     }
 
@@ -623,7 +615,7 @@ final class HttpsClient extends HttpClient
      */
     @Override
     public void closeIdleConnection() {
-        HttpClient http = (HttpClient) kac.get(url, sslSocketFactory);
+        HttpClient http = kac.get(url, sslSocketFactory);
         if (http != null) {
             http.closeServer();
         }
@@ -681,8 +673,7 @@ final class HttpsClient extends HttpClient
             // return the X500Principal of the end-entity cert.
             java.security.cert.Certificate[] certs =
                         session.getPeerCertificates();
-            principal = (X500Principal)
-                ((X509Certificate)certs[0]).getSubjectX500Principal();
+            principal = ((X509Certificate)certs[0]).getSubjectX500Principal();
         }
         return principal;
     }
@@ -703,8 +694,7 @@ final class HttpsClient extends HttpClient
             java.security.cert.Certificate[] certs =
                         session.getLocalCertificates();
             if (certs != null) {
-                principal = (X500Principal)
-                    ((X509Certificate)certs[0]).getSubjectX500Principal();
+                principal = ((X509Certificate)certs[0]).getSubjectX500Principal();
             }
         }
         return principal;

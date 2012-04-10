@@ -203,7 +203,7 @@ class HttpSendSocket extends Socket implements RMISocketInfo {
 
                 message += "HttpSendSocket.readNotify: response body: ";
                 try {
-                    DataInputStream din = new DataInputStream(in);
+                    BufferedReader din = new BufferedReader(new InputStreamReader(in));
                     String line;
                     while ((line = din.readLine()) != null)
                         message += line + lineSeparator;

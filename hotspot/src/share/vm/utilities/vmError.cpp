@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc_interface/collectedHeap.hpp"
+#include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/init.hpp"
@@ -36,6 +37,7 @@
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/errorReporter.hpp"
+#include "utilities/events.hpp"
 #include "utilities/top.hpp"
 #include "utilities/vmError.hpp"
 
@@ -45,12 +47,17 @@ const char *env_list[] = {
   "JAVA_HOME", "JRE_HOME", "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "CLASSPATH",
   "JAVA_COMPILER", "PATH", "USERNAME",
 
-  // Env variables that are defined on Solaris/Linux
+  // Env variables that are defined on Solaris/Linux/BSD
   "LD_LIBRARY_PATH", "LD_PRELOAD", "SHELL", "DISPLAY",
   "HOSTTYPE", "OSTYPE", "ARCH", "MACHTYPE",
 
   // defined on Linux
   "LD_ASSUME_KERNEL", "_JAVA_SR_SIGNUM",
+
+  // defined on Darwin
+  "DYLD_LIBRARY_PATH", "DYLD_FALLBACK_LIBRARY_PATH",
+  "DYLD_FRAMEWORK_PATH", "DYLD_FALLBACK_FRAMEWORK_PATH",
+  "DYLD_INSERT_LIBRARIES",
 
   // defined on Windows
   "OS", "PROCESSOR_IDENTIFIER", "_ALT_JAVA_HOME_DIR",
@@ -566,8 +573,6 @@ void VMError::report(outputStream* st) {
        if (fr.pc()) {
           st->print_cr("Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)");
 
-          // initialize decoder to decode C frames
-          Decoder decoder;
 
           int count = 0;
           while (count++ < StackPrintLimit) {
@@ -675,8 +680,10 @@ void VMError::report(outputStream* st) {
   STEP(190, "(printing heap information)" )
 
      if (_verbose && Universe::is_fully_initialized()) {
-       // print heap information before vm abort
-       Universe::print_on(st);
+       // Print heap information before vm abort. As we'd like as much
+       // information as possible in the report we ask for the
+       // extended (i.e., more detailed) version.
+       Universe::print_on(st, true /* extended */);
        st->cr();
      }
 
@@ -688,7 +695,14 @@ void VMError::report(outputStream* st) {
        st->cr();
      }
 
-  STEP(200, "(printing dynamic libraries)" )
+  STEP(200, "(printing ring buffers)" )
+
+     if (_verbose) {
+       Events::print_all(st);
+       st->cr();
+     }
+
+  STEP(205, "(printing dynamic libraries)" )
 
      if (_verbose) {
        // dynamic libraries, or memory map
@@ -701,6 +715,13 @@ void VMError::report(outputStream* st) {
      if (_verbose) {
        // VM options
        Arguments::print_on(st);
+       st->cr();
+     }
+
+  STEP(215, "(printing warning if internal testing API used)" )
+
+     if (WhiteBox::used()) {
+       st->print_cr("Unsupported internal testing APIs have been used.");
        st->cr();
      }
 
@@ -958,7 +979,7 @@ void VMError::report_and_die() {
     const char* ptr = OnError;
     while ((cmd = next_OnError_command(buffer, sizeof(buffer), &ptr)) != NULL){
       out.print_raw   ("#   Executing ");
-#if defined(LINUX)
+#if defined(LINUX) || defined(_ALLBSD_SOURCE)
       out.print_raw   ("/bin/sh -c ");
 #elif defined(SOLARIS)
       out.print_raw   ("/usr/bin/sh -c ");

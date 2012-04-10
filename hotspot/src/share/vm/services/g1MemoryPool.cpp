@@ -32,71 +32,44 @@
 G1MemoryPoolSuper::G1MemoryPoolSuper(G1CollectedHeap* g1h,
                                      const char* name,
                                      size_t init_size,
+                                     size_t max_size,
                                      bool support_usage_threshold) :
-  _g1h(g1h), CollectedMemoryPool(name,
-                                   MemoryPool::Heap,
-                                   init_size,
-                                   undefined_max(),
-                                   support_usage_threshold) {
+  _g1mm(g1h->g1mm()), CollectedMemoryPool(name,
+                                          MemoryPool::Heap,
+                                          init_size,
+                                          max_size,
+                                          support_usage_threshold) {
   assert(UseG1GC, "sanity");
-}
-
-// See the comment at the top of g1MemoryPool.hpp
-size_t G1MemoryPoolSuper::eden_space_committed(G1CollectedHeap* g1h) {
-  return MAX2(eden_space_used(g1h), (size_t) HeapRegion::GrainBytes);
-}
-
-// See the comment at the top of g1MemoryPool.hpp
-size_t G1MemoryPoolSuper::eden_space_used(G1CollectedHeap* g1h) {
-  return g1h->g1mm()->eden_space_used();
-}
-
-// See the comment at the top of g1MemoryPool.hpp
-size_t G1MemoryPoolSuper::survivor_space_committed(G1CollectedHeap* g1h) {
-  return g1h->g1mm()->survivor_space_committed();
-}
-
-// See the comment at the top of g1MemoryPool.hpp
-size_t G1MemoryPoolSuper::survivor_space_used(G1CollectedHeap* g1h) {
-  return g1h->g1mm()->survivor_space_used();
-}
-
-// See the comment at the top of g1MemoryPool.hpp
-size_t G1MemoryPoolSuper::old_space_committed(G1CollectedHeap* g1h) {
-  return g1h->g1mm()->old_space_committed();
-}
-
-// See the comment at the top of g1MemoryPool.hpp
-size_t G1MemoryPoolSuper::old_space_used(G1CollectedHeap* g1h) {
-  return g1h->g1mm()->old_space_used();
 }
 
 G1EdenPool::G1EdenPool(G1CollectedHeap* g1h) :
   G1MemoryPoolSuper(g1h,
-                    "G1 Eden",
-                    eden_space_committed(g1h), /* init_size */
+                    "G1 Eden Space",
+                    g1h->g1mm()->eden_space_committed(), /* init_size */
+                    _undefined_max,
                     false /* support_usage_threshold */) { }
 
 MemoryUsage G1EdenPool::get_memory_usage() {
   size_t initial_sz = initial_size();
   size_t max_sz     = max_size();
   size_t used       = used_in_bytes();
-  size_t committed  = eden_space_committed(_g1h);
+  size_t committed  = _g1mm->eden_space_committed();
 
   return MemoryUsage(initial_sz, used, committed, max_sz);
 }
 
 G1SurvivorPool::G1SurvivorPool(G1CollectedHeap* g1h) :
   G1MemoryPoolSuper(g1h,
-                    "G1 Survivor",
-                    survivor_space_committed(g1h), /* init_size */
+                    "G1 Survivor Space",
+                    g1h->g1mm()->survivor_space_committed(), /* init_size */
+                    _undefined_max,
                     false /* support_usage_threshold */) { }
 
 MemoryUsage G1SurvivorPool::get_memory_usage() {
   size_t initial_sz = initial_size();
   size_t max_sz     = max_size();
   size_t used       = used_in_bytes();
-  size_t committed  = survivor_space_committed(_g1h);
+  size_t committed  = _g1mm->survivor_space_committed();
 
   return MemoryUsage(initial_sz, used, committed, max_sz);
 }
@@ -104,14 +77,15 @@ MemoryUsage G1SurvivorPool::get_memory_usage() {
 G1OldGenPool::G1OldGenPool(G1CollectedHeap* g1h) :
   G1MemoryPoolSuper(g1h,
                     "G1 Old Gen",
-                    old_space_committed(g1h), /* init_size */
+                    g1h->g1mm()->old_space_committed(), /* init_size */
+                    g1h->g1mm()->old_gen_max(),
                     true /* support_usage_threshold */) { }
 
 MemoryUsage G1OldGenPool::get_memory_usage() {
   size_t initial_sz = initial_size();
   size_t max_sz     = max_size();
   size_t used       = used_in_bytes();
-  size_t committed  = old_space_committed(_g1h);
+  size_t committed  = _g1mm->old_space_committed();
 
   return MemoryUsage(initial_sz, used, committed, max_sz);
 }

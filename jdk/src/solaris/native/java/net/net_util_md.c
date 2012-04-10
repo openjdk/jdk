@@ -33,7 +33,17 @@
 #include <netdb.h>
 #include <stdlib.h>
 #include <dlfcn.h>
+
+#ifndef _ALLBSD_SOURCE
 #include <values.h>
+#else
+#include <limits.h>
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#ifndef MAXINT
+#define MAXINT INT_MAX
+#endif
+#endif
 
 #ifdef __solaris__
 #include <sys/sockio.h>
@@ -74,6 +84,30 @@ getnameinfo_f getnameinfo_ptr = NULL;
 #if defined(__solaris__) && !defined(UDP_EXCLBIND)
 #define UDP_EXCLBIND            0x0101
 #endif
+
+void setDefaultScopeID(JNIEnv *env, struct sockaddr *him)
+{
+#ifdef MACOSX
+    static jclass ni_class = NULL;
+    static jfieldID ni_defaultIndexID;
+    if (ni_class == NULL) {
+        jclass c = (*env)->FindClass(env, "java/net/NetworkInterface");
+        CHECK_NULL(c);
+        c = (*env)->NewGlobalRef(env, c);
+        CHECK_NULL(c);
+        ni_defaultIndexID = (*env)->GetStaticFieldID(
+            env, c, "defaultIndex", "I");
+        ni_class = c;
+    }
+    int defaultIndex;
+    struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)him;
+    if (sin6->sin6_family == AF_INET6 && (sin6->sin6_scope_id == 0)) {
+        defaultIndex = (*env)->GetStaticIntField(env, ni_class,
+                                                 ni_defaultIndexID);
+        sin6->sin6_scope_id = defaultIndex;
+    }
+#endif
+}
 
 #ifdef __solaris__
 static int init_tcp_max_buf, init_udp_max_buf;
@@ -272,6 +306,14 @@ NET_GetFileDescriptorID(JNIEnv *env)
     return (*env)->GetFieldID(env, cls, "fd", "I");
 }
 
+#if defined(DONT_ENABLE_IPV6)
+jint  IPv6_supported()
+{
+    return JNI_FALSE;
+}
+
+#else /* !DONT_ENABLE_IPV6 */
+
 jint  IPv6_supported()
 {
 #ifndef AF_INET6
@@ -377,39 +419,15 @@ jint  IPv6_supported()
      *  we should also check if the APIs are available.
      */
     ipv6_fn = JVM_FindLibraryEntry(RTLD_DEFAULT, "inet_pton");
-    if (ipv6_fn == NULL ) {
-        close(fd);
-        return JNI_FALSE;
-    }
-
-    /*
-     * We've got the library, let's get the pointers to some
-     * IPV6 specific functions. We have to do that because, at least
-     * on Solaris we may build on a system without IPV6 networking
-     * libraries, therefore we can't have a hard link to these
-     * functions.
-     */
-    getaddrinfo_ptr = (getaddrinfo_f)
-        JVM_FindLibraryEntry(RTLD_DEFAULT, "getaddrinfo");
-
-    freeaddrinfo_ptr = (freeaddrinfo_f)
-        JVM_FindLibraryEntry(RTLD_DEFAULT, "freeaddrinfo");
-
-    gai_strerror_ptr = (gai_strerror_f)
-        JVM_FindLibraryEntry(RTLD_DEFAULT, "gai_strerror");
-
-    getnameinfo_ptr = (getnameinfo_f)
-        JVM_FindLibraryEntry(RTLD_DEFAULT, "getnameinfo");
-
-    if (freeaddrinfo_ptr == NULL || getnameinfo_ptr == NULL) {
-        /* We need all 3 of them */
-        getaddrinfo_ptr = NULL;
-    }
-
     close(fd);
-    return JNI_TRUE;
+    if (ipv6_fn == NULL ) {
+        return JNI_FALSE;
+    } else {
+        return JNI_TRUE;
+    }
 #endif /* AF_INET6 */
 }
+#endif /* DONT_ENABLE_IPV6 */
 
 void ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
                                            const char* hostname,
@@ -613,7 +631,7 @@ static void initLoopbackRoutes() {
         int plen, scope, dad_status, if_idx;
 
         if ((f = fopen("/proc/net/if_inet6", "r")) != NULL) {
-            while (fscanf(f, "%4s%4s%4s%4s%4s%4s%4s%4s %02x %02x %02x %02x %20s\n",
+            while (fscanf(f, "%4s%4s%4s%4s%4s%4s%4s%4s %08x %02x %02x %02x %20s\n",
                       addr6p[0], addr6p[1], addr6p[2], addr6p[3],
                       addr6p[4], addr6p[5], addr6p[6], addr6p[7],
                   &if_idx, &plen, &scope, &dad_status, devname) == 13) {
@@ -772,6 +790,11 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
         him6->sin6_family = AF_INET6;
         *len = sizeof(struct sockaddr_in6) ;
 
+#if defined(_ALLBSD_SOURCE) && defined(_AF_INET6)
+// XXXBSD: should we do something with scope id here ? see below linux comment
+/* MMM: Come back to this! */
+#endif
+
         /*
          * On Linux if we are connecting to a link-local address
          * we need to specify the interface in the scope_id (2.4 kernel only)
@@ -918,10 +941,6 @@ NET_IsEqual(jbyte* caddr1, jbyte* caddr2) {
         }
     }
     return 1;
-}
-
-jboolean NET_addrtransAvailable() {
-    return (jboolean)(getaddrinfo_ptr != NULL);
 }
 
 /*
@@ -1107,7 +1126,7 @@ int getDefaultIPv6Interface(struct in6_addr *target_addr) {
         int plen, scope, dad_status, if_idx;
 
         if ((f = fopen("/proc/net/if_inet6", "r")) != NULL) {
-            while (fscanf(f, "%4s%4s%4s%4s%4s%4s%4s%4s %02x %02x %02x %02x %20s\n",
+            while (fscanf(f, "%4s%4s%4s%4s%4s%4s%4s%4s %08x %02x %02x %02x %20s\n",
                       addr6p[0], addr6p[1], addr6p[2], addr6p[3],
                       addr6p[4], addr6p[5], addr6p[6], addr6p[7],
                   &if_idx, &plen, &scope, &dad_status, devname) == 13) {
@@ -1197,6 +1216,15 @@ NET_GetSockOpt(int fd, int level, int opt, void *result,
     }
 #endif
 
+/* Workaround for Mac OS treating linger value as
+ *  signed integer
+ */
+#ifdef MACOSX
+    if (level == SOL_SOCKET && opt == SO_LINGER) {
+        struct linger* to_cast = (struct linger*)result;
+        to_cast->l_linger = (unsigned short)to_cast->l_linger;
+    }
+#endif
     return rv;
 }
 
@@ -1224,11 +1252,29 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
 #define IPTOS_PREC_MASK 0xe0
 #endif
 
+#if defined(_ALLBSD_SOURCE)
+#if defined(KIPC_MAXSOCKBUF)
+    int mib[3];
+    size_t rlen;
+#endif
+
+    int *bufsize;
+
+#ifdef __APPLE__
+    static int maxsockbuf = -1;
+#else
+    static long maxsockbuf = -1;
+#endif
+
+    int addopt;
+    struct linger *ling;
+#endif
+
     /*
      * IPPROTO/IP_TOS :-
-     * 1. IPv6 on Solaris: no-op and will be set in flowinfo
-     *    field when connecting TCP socket, or sending
-     *    UDP packet.
+     * 1. IPv6 on Solaris/Mac OS: no-op and will be set
+     *    in flowinfo field when connecting TCP socket,
+     *    or sending UDP packet.
      * 2. IPv6 on Linux: By default Linux ignores flowinfo
      *    field so enable IPV6_FLOWINFO_SEND so that flowinfo
      *    will be examined.
@@ -1238,7 +1284,7 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
     if (level == IPPROTO_IP && opt == IP_TOS) {
         int *iptos;
 
-#if defined(AF_INET6) && defined(__solaris__)
+#if defined(AF_INET6) && (defined(__solaris__) || defined(MACOSX))
         if (ipv6_available()) {
             return 0;
         }
@@ -1327,6 +1373,71 @@ NET_SetSockOpt(int fd, int level, int  opt, const void *arg,
             *bufsize = 1024;
         }
     }
+#endif
+
+#if defined(_ALLBSD_SOURCE)
+    /*
+     * SOL_SOCKET/{SO_SNDBUF,SO_RCVBUF} - On FreeBSD need to
+     * ensure that value is <= kern.ipc.maxsockbuf as otherwise we get
+     * an ENOBUFS error.
+     */
+    if (level == SOL_SOCKET) {
+        if (opt == SO_SNDBUF || opt == SO_RCVBUF) {
+#ifdef KIPC_MAXSOCKBUF
+            if (maxsockbuf == -1) {
+               mib[0] = CTL_KERN;
+               mib[1] = KERN_IPC;
+               mib[2] = KIPC_MAXSOCKBUF;
+               rlen = sizeof(maxsockbuf);
+               if (sysctl(mib, 3, &maxsockbuf, &rlen, NULL, 0) == -1)
+                   maxsockbuf = 1024;
+
+#if 1
+               /* XXXBSD: This is a hack to workaround mb_max/mb_max_adj
+                  problem.  It should be removed when kern.ipc.maxsockbuf
+                  will be real value. */
+               maxsockbuf = (maxsockbuf/5)*4;
+#endif
+           }
+#elif defined(__OpenBSD__)
+           maxsockbuf = SB_MAX;
+#else
+           maxsockbuf = 64 * 1024;      /* XXX: NetBSD */
+#endif
+
+           bufsize = (int *)arg;
+           if (*bufsize > maxsockbuf) {
+               *bufsize = maxsockbuf;
+           }
+
+           if (opt == SO_RCVBUF && *bufsize < 1024) {
+                *bufsize = 1024;
+           }
+
+        }
+    }
+
+    /*
+     * On Solaris, SO_REUSEADDR will allow multiple datagram
+     * sockets to bind to the same port.  The network jck tests
+     * for this "feature", so we need to emulate it by turning on
+     * SO_REUSEPORT as well for that combination.
+     */
+    if (level == SOL_SOCKET && opt == SO_REUSEADDR) {
+        int sotype;
+        socklen_t arglen;
+
+        arglen = sizeof(sotype);
+        if (getsockopt(fd, SOL_SOCKET, SO_TYPE, (void *)&sotype, &arglen) < 0) {
+            return -1;
+        }
+
+        if (sotype == SOCK_DGRAM) {
+            addopt = SO_REUSEPORT;
+            setsockopt(fd, level, addopt, arg, len);
+        }
+    }
+
 #endif
 
     return setsockopt(fd, level, opt, arg, len);

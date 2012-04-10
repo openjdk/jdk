@@ -100,6 +100,14 @@ void Parse::do_field_access(bool is_get, bool is_field) {
     }
   }
 
+  // Deoptimize on putfield writes to call site target field.
+  if (!is_get && field->is_call_site_target()) {
+    uncommon_trap(Deoptimization::Reason_unhandled,
+                  Deoptimization::Action_reinterpret,
+                  NULL, "put to call site target field");
+    return;
+  }
+
   assert(field->will_link(method()->holder(), bc()), "getfield: typeflow responsibility");
 
   // Note:  We do not check for an unloaded field type here any more.
@@ -139,19 +147,21 @@ void Parse::do_field_access(bool is_get, bool is_field) {
 void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
   // Does this field have a constant value?  If so, just push the value.
   if (field->is_constant()) {
+    // final field
     if (field->is_static()) {
       // final static field
       if (push_constant(field->constant_value()))
         return;
     }
     else {
-      // final non-static field of a trusted class (classes in
-      // java.lang.invoke and sun.invoke packages and subpackages).
+      // final non-static field
+      // Treat final non-static fields of trusted classes (classes in
+      // java.lang.invoke and sun.invoke packages and subpackages) as
+      // compile time constants.
       if (obj->is_Con()) {
         const TypeOopPtr* oop_ptr = obj->bottom_type()->isa_oopptr();
         ciObject* constant_oop = oop_ptr->const_oop();
         ciConstant constant = field->constant_value_of(constant_oop);
-
         if (push_constant(constant, true))
           return;
       }
@@ -417,17 +427,10 @@ void Parse::do_multianewarray() {
 
   // Note:  Array classes are always initialized; no is_initialized check.
 
-  enum { MAX_DIMENSION = 5 };
-  if (ndimensions > MAX_DIMENSION || ndimensions <= 0) {
-    uncommon_trap(Deoptimization::Reason_unhandled,
-                  Deoptimization::Action_none);
-    return;
-  }
-
   kill_dead_locals();
 
   // get the lengths from the stack (first dimension is on top)
-  Node* length[MAX_DIMENSION+1];
+  Node** length = NEW_RESOURCE_ARRAY(Node*, ndimensions + 1);
   length[ndimensions] = NULL;  // terminating null for make_runtime_call
   int j;
   for (j = ndimensions-1; j >= 0 ; j--) length[j] = pop();
@@ -470,20 +473,43 @@ void Parse::do_multianewarray() {
 
   address fun = NULL;
   switch (ndimensions) {
-  //case 1: Actually, there is no case 1.  It's handled by new_array.
+  case 1: ShouldNotReachHere(); break;
   case 2: fun = OptoRuntime::multianewarray2_Java(); break;
   case 3: fun = OptoRuntime::multianewarray3_Java(); break;
   case 4: fun = OptoRuntime::multianewarray4_Java(); break;
   case 5: fun = OptoRuntime::multianewarray5_Java(); break;
-  default: ShouldNotReachHere();
   };
+  Node* c = NULL;
 
-  Node* c = make_runtime_call(RC_NO_LEAF | RC_NO_IO,
-                              OptoRuntime::multianewarray_Type(ndimensions),
-                              fun, NULL, TypeRawPtr::BOTTOM,
-                              makecon(TypeKlassPtr::make(array_klass)),
-                              length[0], length[1], length[2],
-                              length[3], length[4]);
+  if (fun != NULL) {
+    c = make_runtime_call(RC_NO_LEAF | RC_NO_IO,
+                          OptoRuntime::multianewarray_Type(ndimensions),
+                          fun, NULL, TypeRawPtr::BOTTOM,
+                          makecon(TypeKlassPtr::make(array_klass)),
+                          length[0], length[1], length[2],
+                          length[3], length[4]);
+  } else {
+    // Create a java array for dimension sizes
+    Node* dims = NULL;
+    { PreserveReexecuteState preexecs(this);
+      _sp += ndimensions;
+      Node* dims_array_klass = makecon(TypeKlassPtr::make(ciArrayKlass::make(ciType::make(T_INT))));
+      dims = new_array(dims_array_klass, intcon(ndimensions), 0);
+
+      // Fill-in it with values
+      for (j = 0; j < ndimensions; j++) {
+        Node *dims_elem = array_element_address(dims, intcon(j), T_INT);
+        store_to_memory(control(), dims_elem, length[j], T_INT, TypeAryPtr::INTS);
+      }
+    }
+
+    c = make_runtime_call(RC_NO_LEAF | RC_NO_IO,
+                          OptoRuntime::multianewarrayN_Type(),
+                          OptoRuntime::multianewarrayN_Java(), NULL, TypeRawPtr::BOTTOM,
+                          makecon(TypeKlassPtr::make(array_klass)),
+                          dims);
+  }
+
   Node* res = _gvn.transform(new (C, 1) ProjNode(c, TypeFunc::Parms));
 
   const Type* type = TypeOopPtr::make_from_klass_raw(array_klass);
@@ -496,7 +522,7 @@ void Parse::do_multianewarray() {
   if (ltype != NULL)
     type = type->is_aryptr()->cast_to_size(ltype);
 
-  // We cannot sharpen the nested sub-arrays, since the top level is mutable.
+    // We cannot sharpen the nested sub-arrays, since the top level is mutable.
 
   Node* cast = _gvn.transform( new (C, 2) CheckCastPPNode(control(), res, type) );
   push(cast);

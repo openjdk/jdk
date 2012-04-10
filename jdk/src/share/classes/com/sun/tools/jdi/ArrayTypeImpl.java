@@ -61,7 +61,7 @@ public class ArrayTypeImpl extends ReferenceTypeImpl
         return findType(componentSignature());
     }
 
-    void addVisibleMethods(Map map) {
+    void addVisibleMethods(Map<String, Method> map) {
         // arrays don't have methods
     }
 
@@ -83,10 +83,10 @@ public class ArrayTypeImpl extends ReferenceTypeImpl
         if (PacketStream.isObjectTag(tag)) {
             // It's a reference type
             JNITypeParser parser = new JNITypeParser(componentSignature());
-            List list = vm.classesByName(parser.typeName());
-            Iterator iter = list.iterator();
+            List<ReferenceType> list = vm.classesByName(parser.typeName());
+            Iterator<ReferenceType> iter = list.iterator();
             while (iter.hasNext()) {
-                ReferenceType type = (ReferenceType)iter.next();
+                ReferenceType type = iter.next();
                 ClassLoaderReference cl = type.classLoader();
                 if ((cl == null)?
                          (classLoader() == null) :

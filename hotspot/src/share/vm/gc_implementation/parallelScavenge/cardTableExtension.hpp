@@ -69,7 +69,8 @@ class CardTableExtension : public CardTableModRefBS {
                                   MutableSpace* sp,
                                   HeapWord* space_top,
                                   PSPromotionManager* pm,
-                                  uint stripe_number);
+                                  uint stripe_number,
+                                  uint stripe_total);
 
   // Verification
   static void verify_all_young_refs_imprecise();

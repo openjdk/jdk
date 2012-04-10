@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   // Collection of generations that are adjacent in the
   // space reserved for the heap.
   AdjoiningGenerations* _gens;
+  unsigned int _death_march_count;
 
   static GCTaskManager*          _gc_task_manager;      // The task manager.
 
@@ -71,8 +72,13 @@ class ParallelScavengeHeap : public CollectedHeap {
   static inline size_t total_invocations();
   HeapWord* allocate_new_tlab(size_t size);
 
+  inline bool should_alloc_in_eden(size_t size) const;
+  inline void death_march_check(HeapWord* const result, size_t size);
+  HeapWord* mem_allocate_old_gen(size_t size);
+
  public:
   ParallelScavengeHeap() : CollectedHeap() {
+    _death_march_count = 0;
     set_alignment(_perm_gen_alignment, intra_heap_alignment());
     set_alignment(_young_gen_alignment, intra_heap_alignment());
     set_alignment(_old_gen_alignment, intra_heap_alignment());
@@ -127,6 +133,12 @@ CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector
   // collection.
   virtual bool is_maximal_no_gc() const;
 
+  // Return true if the reference points to an object that
+  // can be moved in a partial collection.  For currently implemented
+  // generational collectors that means during a collection of
+  // the young gen.
+  virtual bool is_scavengable(const void* addr);
+
   // Does this heap support heap inspection? (+PrintClassHistogram)
   bool supports_heap_inspection() const { return true; }
 
@@ -143,6 +155,10 @@ CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector
     return perm_gen()->reserved().contains(p);
   }
 
+#ifdef ASSERT
+  virtual bool is_in_partial_collection(const void *p);
+#endif
+
   bool is_permanent(const void *p) const {    // committed part
     return perm_gen()->is_in(p);
   }
@@ -155,12 +171,13 @@ CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector
   // an excessive amount of time is being spent doing collections
   // and caused a NULL to be returned.  If a NULL is not returned,
   // "gc_time_limit_was_exceeded" has an undefined meaning.
-
   HeapWord* mem_allocate(size_t size,
-                         bool is_noref,
-                         bool is_tlab,
                          bool* gc_overhead_limit_was_exceeded);
-  HeapWord* failed_mem_allocate(size_t size, bool is_tlab);
+
+  // Allocation attempt(s) during a safepoint. It should never be called
+  // to allocate a new TLAB as this allocation might be satisfied out
+  // of the old generation.
+  HeapWord* failed_mem_allocate(size_t size);
 
   HeapWord* permanent_mem_allocate(size_t size);
   HeapWord* failed_permanent_mem_allocate(size_t size);
@@ -183,8 +200,6 @@ CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector
   // references.
   inline void invoke_scavenge();
   inline void invoke_full_gc(bool maximum_compaction);
-
-  size_t large_typearray_limit() { return FastAllocateSizeLimit; }
 
   bool supports_inline_contig_alloc() const { return !UseNUMA; }
 
@@ -237,13 +252,12 @@ CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector
   jlong millis_since_last_gc();
 
   void prepare_for_verify();
-  void print() const;
-  void print_on(outputStream* st) const;
+  virtual void print_on(outputStream* st) const;
   virtual void print_gc_threads_on(outputStream* st) const;
   virtual void gc_threads_do(ThreadClosure* tc) const;
   virtual void print_tracing_info() const;
 
-  void verify(bool allow_dirty, bool silent, bool /* option */);
+  void verify(bool allow_dirty, bool silent, VerifyOption option /* ignored */);
 
   void print_heap_change(size_t prev_used);
 

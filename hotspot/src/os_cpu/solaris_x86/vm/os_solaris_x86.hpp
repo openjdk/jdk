@@ -46,6 +46,8 @@
 
   static bool supports_sse();
 
+  static jlong rdtsc();
+
   static bool is_allocatable(size_t bytes);
 
   // Used to register dynamic code cache area with the OS

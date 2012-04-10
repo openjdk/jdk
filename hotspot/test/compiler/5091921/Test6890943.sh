@@ -52,7 +52,7 @@ cp ${TESTSRC}/Test6890943.sh .
 
 ${TESTJAVA}/bin/javac -d . Test6890943.java
 
-${TESTJAVA}/bin/java  ${TESTVMOPTS} Test6890943 < input6890943.txt > test.out 2>&1
+${TESTJAVA}/bin/java -XX:-PrintVMOptions ${TESTVMOPTS} Test6890943 < input6890943.txt > test.out 2>&1
 
 diff output6890943.txt test.out
 

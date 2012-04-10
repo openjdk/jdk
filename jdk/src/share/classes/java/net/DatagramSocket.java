@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,7 @@
 
 package java.net;
 
-import java.io.FileDescriptor;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.nio.channels.DatagramChannel;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
@@ -135,7 +133,8 @@ class DatagramSocket implements java.io.Closeable {
           bind(new InetSocketAddress(0));
 
         // old impls do not support connect/disconnect
-        if (oldImpl) {
+        if (oldImpl || (impl instanceof AbstractPlainDatagramSocketImpl &&
+             ((AbstractPlainDatagramSocketImpl)impl).nativeConnectDisabled())) {
             connectState = ST_CONNECTED_NO_IMPL;
         } else {
             try {
@@ -174,15 +173,7 @@ class DatagramSocket implements java.io.Closeable {
      * @see SecurityManager#checkListen
      */
     public DatagramSocket() throws SocketException {
-        // create a datagram socket.
-        createImpl();
-        try {
-            bind(new InetSocketAddress(0));
-        } catch (SocketException se) {
-            throw se;
-        } catch(IOException e) {
-            throw new SocketException(e.getMessage());
-        }
+        this(new InetSocketAddress(0));
     }
 
     /**
@@ -227,7 +218,12 @@ class DatagramSocket implements java.io.Closeable {
         // create a datagram socket.
         createImpl();
         if (bindaddr != null) {
-            bind(bindaddr);
+            try {
+                bind(bindaddr);
+            } finally {
+                if (!isBound())
+                    close();
+            }
         }
     }
 
@@ -292,7 +288,7 @@ class DatagramSocket implements java.io.Closeable {
             AccessController.doPrivileged(
                 new PrivilegedExceptionAction<Void>() {
                     public Void run() throws NoSuchMethodException {
-                        Class[] cl = new Class[1];
+                        Class<?>[] cl = new Class<?>[1];
                         cl[0] = DatagramPacket.class;
                         impl.getClass().getDeclaredMethod("peekData", cl);
                         return null;
@@ -303,7 +299,7 @@ class DatagramSocket implements java.io.Closeable {
         }
     }
 
-    static Class implClass = null;
+    static Class<?> implClass = null;
 
     void createImpl() throws SocketException {
         if (impl == null) {
@@ -757,9 +753,19 @@ class DatagramSocket implements java.io.Closeable {
                 // via the impl failed.
                 boolean stop = false;
                 while (!stop) {
+                    InetAddress peekAddress = null;
+                    int peekPort = -1;
                     // peek at the packet to see who it is from.
-                    InetAddress peekAddress = new InetAddress();
-                    int peekPort = getImpl().peek(peekAddress);
+                    if (!oldImpl) {
+                        // We can use the new peekData() API
+                        DatagramPacket peekPacket = new DatagramPacket(new byte[1], 1);
+                        peekPort = getImpl().peekData(peekPacket);
+                        peekAddress = peekPacket.getAddress();
+                    } else {
+                        // this api only works for IPv4
+                        peekAddress = new InetAddress();
+                        peekPort = getImpl().peek(peekAddress);
+                    }
                     if ((!connectedAddress.equals(peekAddress)) ||
                         (connectedPort != peekPort)) {
                         // throw the packet away and silently continue

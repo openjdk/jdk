@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -552,7 +552,7 @@ source %{
 #define __ _masm.
 
 static int preserve_SP_size() {
-  return LP64_ONLY(1 +) 2;  // [rex,] op, rm(reg/reg)
+  return 3;  // rex.w, op, rm(reg/reg)
 }
 
 // !!!!! Special hack to get all types of calls to specify the byte offset
@@ -609,13 +609,6 @@ int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
   current_offset += 11; // skip movq instruction + call opcode byte
   return round_to(current_offset, alignment_required()) - current_offset;
 }
-
-#ifndef PRODUCT
-void MachBreakpointNode::format(PhaseRegAlloc*, outputStream* st) const
-{
-  st->print("INT3");
-}
-#endif
 
 // EMIT_RM()
 void emit_rm(CodeBuffer &cbuf, int f1, int f2, int f3) {
@@ -797,43 +790,44 @@ void encode_RegMem(CodeBuffer &cbuf,
   }
 }
 
-void encode_copy(CodeBuffer &cbuf, int dstenc, int srcenc)
-{
-  if (dstenc != srcenc) {
-    if (dstenc < 8) {
-      if (srcenc >= 8) {
-        emit_opcode(cbuf, Assembler::REX_B);
-        srcenc -= 8;
-      }
-    } else {
-      if (srcenc < 8) {
-        emit_opcode(cbuf, Assembler::REX_R);
-      } else {
-        emit_opcode(cbuf, Assembler::REX_RB);
-        srcenc -= 8;
-      }
-      dstenc -= 8;
-    }
-
-    emit_opcode(cbuf, 0x8B);
-    emit_rm(cbuf, 0x3, dstenc, srcenc);
-  }
+// This could be in MacroAssembler but it's fairly C2 specific
+void emit_cmpfp_fixup(MacroAssembler& _masm) {
+  Label exit;
+  __ jccb(Assembler::noParity, exit);
+  __ pushf();
+  //
+  // comiss/ucomiss instructions set ZF,PF,CF flags and
+  // zero OF,AF,SF for NaN values.
+  // Fixup flags by zeroing ZF,PF so that compare of NaN
+  // values returns 'less than' result (CF is set).
+  // Leave the rest of flags unchanged.
+  //
+  //    7 6 5 4 3 2 1 0
+  //   |S|Z|r|A|r|P|r|C|  (r - reserved bit)
+  //    0 0 1 0 1 0 1 1   (0x2B)
+  //
+  __ andq(Address(rsp, 0), 0xffffff2b);
+  __ popf();
+  __ bind(exit);
 }
 
-void encode_CopyXD( CodeBuffer &cbuf, int dst_encoding, int src_encoding ) {
-  if( dst_encoding == src_encoding ) {
-    // reg-reg copy, use an empty encoding
-  } else {
-    MacroAssembler _masm(&cbuf);
-
-    __ movdqa(as_XMMRegister(dst_encoding), as_XMMRegister(src_encoding));
-  }
+void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
+  Label done;
+  __ movl(dst, -1);
+  __ jcc(Assembler::parity, done);
+  __ jcc(Assembler::below, done);
+  __ setb(Assembler::notEqual, dst);
+  __ movzbl(dst, dst);
+  __ bind(done);
 }
 
 
 //=============================================================================
-const bool Matcher::constant_table_absolute_addressing = true;
 const RegMask& MachConstantBaseNode::_out_RegMask = RegMask::Empty;
+
+int Compile::ConstantTable::calculate_table_base_offset() const {
+  return 0;  // absolute addressing, no offset
+}
 
 void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
   // Empty encoding
@@ -852,120 +846,59 @@ void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 
 //=============================================================================
 #ifndef PRODUCT
-void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const
-{
+void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
   Compile* C = ra_->C;
 
   int framesize = C->frame_slots() << LogBytesPerInt;
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
-  // Remove wordSize for return adr already pushed
-  // and another for the RBP we are going to save
-  framesize -= 2*wordSize;
-  bool need_nop = true;
+  // Remove wordSize for return addr which is already pushed.
+  framesize -= wordSize;
 
-  // Calls to C2R adapters often do not accept exceptional returns.
-  // We require that their callers must bang for them.  But be
-  // careful, because some VM calls (such as call site linkage) can
-  // use several kilobytes of stack.  But the stack safety zone should
-  // account for that.  See bugs 4446381, 4468289, 4497237.
   if (C->need_stack_bang(framesize)) {
-    st->print_cr("# stack bang"); st->print("\t");
-    need_nop = false;
+    framesize -= wordSize;
+    st->print("# stack bang");
+    st->print("\n\t");
+    st->print("pushq   rbp\t# Save rbp");
+    if (framesize) {
+      st->print("\n\t");
+      st->print("subq    rsp, #%d\t# Create frame",framesize);
+    }
+  } else {
+    st->print("subq    rsp, #%d\t# Create frame",framesize);
+    st->print("\n\t");
+    framesize -= wordSize;
+    st->print("movq    [rsp + #%d], rbp\t# Save rbp",framesize);
   }
-  st->print_cr("pushq   rbp"); st->print("\t");
 
   if (VerifyStackAtCalls) {
-    // Majik cookie to verify stack depth
-    st->print_cr("pushq   0xffffffffbadb100d"
-                  "\t# Majik cookie for stack depth check");
-    st->print("\t");
-    framesize -= wordSize; // Remove 2 for cookie
-    need_nop = false;
+    st->print("\n\t");
+    framesize -= wordSize;
+    st->print("movq    [rsp + #%d], 0xbadb100d\t# Majik cookie for stack depth check",framesize);
+#ifdef ASSERT
+    st->print("\n\t");
+    st->print("# stack alignment check");
+#endif
   }
-
-  if (framesize) {
-    st->print("subq    rsp, #%d\t# Create frame", framesize);
-    if (framesize < 0x80 && need_nop) {
-      st->print("\n\tnop\t# nop for patch_verified_entry");
-    }
-  }
+  st->cr();
 }
 #endif
 
-void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const
-{
+void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
-
-  // WARNING: Initial instruction MUST be 5 bytes or longer so that
-  // NativeJump::patch_verified_entry will be able to patch out the entry
-  // code safely. The fldcw is ok at 6 bytes, the push to verify stack
-  // depth is ok at 5 bytes, the frame allocation can be either 3 or
-  // 6 bytes. So if we don't do the fldcw or the push then we must
-  // use the 6 byte frame allocation even if we have no frame. :-(
-  // If method sets FPU control word do it now
+  MacroAssembler _masm(&cbuf);
 
   int framesize = C->frame_slots() << LogBytesPerInt;
-  assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
-  // Remove wordSize for return adr already pushed
-  // and another for the RBP we are going to save
-  framesize -= 2*wordSize;
-  bool need_nop = true;
 
-  // Calls to C2R adapters often do not accept exceptional returns.
-  // We require that their callers must bang for them.  But be
-  // careful, because some VM calls (such as call site linkage) can
-  // use several kilobytes of stack.  But the stack safety zone should
-  // account for that.  See bugs 4446381, 4468289, 4497237.
-  if (C->need_stack_bang(framesize)) {
-    MacroAssembler masm(&cbuf);
-    masm.generate_stack_overflow_check(framesize);
-    need_nop = false;
-  }
-
-  // We always push rbp so that on return to interpreter rbp will be
-  // restored correctly and we can correct the stack.
-  emit_opcode(cbuf, 0x50 | RBP_enc);
-
-  if (VerifyStackAtCalls) {
-    // Majik cookie to verify stack depth
-    emit_opcode(cbuf, 0x68); // pushq (sign-extended) 0xbadb100d
-    emit_d32(cbuf, 0xbadb100d);
-    framesize -= wordSize; // Remove 2 for cookie
-    need_nop = false;
-  }
-
-  if (framesize) {
-    emit_opcode(cbuf, Assembler::REX_W);
-    if (framesize < 0x80) {
-      emit_opcode(cbuf, 0x83);   // sub  SP,#framesize
-      emit_rm(cbuf, 0x3, 0x05, RSP_enc);
-      emit_d8(cbuf, framesize);
-      if (need_nop) {
-        emit_opcode(cbuf, 0x90); // nop
-      }
-    } else {
-      emit_opcode(cbuf, 0x81);   // sub  SP,#framesize
-      emit_rm(cbuf, 0x3, 0x05, RSP_enc);
-      emit_d32(cbuf, framesize);
-    }
-  }
+  __ verified_entry(framesize, C->need_stack_bang(framesize), false);
 
   C->set_frame_complete(cbuf.insts_size());
 
-#ifdef ASSERT
-  if (VerifyStackAtCalls) {
-    Label L;
-    MacroAssembler masm(&cbuf);
-    masm.push(rax);
-    masm.mov(rax, rsp);
-    masm.andptr(rax, StackAlignmentInBytes-1);
-    masm.cmpptr(rax, StackAlignmentInBytes-wordSize);
-    masm.pop(rax);
-    masm.jcc(Assembler::equal, L);
-    masm.stop("Stack is not properly aligned!");
-    masm.bind(L);
+  if (C->has_mach_constant_base_node()) {
+    // NOTE: We set the table base offset here because users might be
+    // emitted before MachConstantBaseNode.
+    Compile::ConstantTable& constant_table = C->constant_table();
+    constant_table.set_table_base_offset(constant_table.calculate_table_base_offset());
   }
-#endif
 }
 
 uint MachPrologNode::size(PhaseRegAlloc* ra_) const
@@ -1253,16 +1186,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // 64-bit
         int offset = ra_->reg2offset(src_first);
         if (cbuf) {
-          emit_opcode(*cbuf, UseXmmLoadAndClearUpper ? 0xF2 : 0x66);
-          if (Matcher::_regEncode[dst_first] >= 8) {
-            emit_opcode(*cbuf, Assembler::REX_R);
-          }
-          emit_opcode(*cbuf, 0x0F);
-          emit_opcode(*cbuf, UseXmmLoadAndClearUpper ? 0x10 : 0x12);
-          encode_RegMem(*cbuf,
-                        Matcher::_regEncode[dst_first],
-                        RSP_enc, 0x4, 0, offset,
-                        false);
+          MacroAssembler _masm(cbuf);
+          __ movdbl( as_XMMRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
         } else if (!do_size) {
           st->print("%s  %s, [rsp + #%d]\t# spill",
@@ -1273,25 +1198,17 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         }
         return
           ((offset == 0) ? 0 : (offset < 0x80 ? 1 : 4)) +
-          ((Matcher::_regEncode[dst_first] < 8)
-           ? 5
-           : 6); // REX
+          ((Matcher::_regEncode[dst_first] >= 8)
+           ? 6
+           : (5 + ((UseAVX>0)?1:0))); // REX
       } else {
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
         int offset = ra_->reg2offset(src_first);
         if (cbuf) {
-          emit_opcode(*cbuf, 0xF3);
-          if (Matcher::_regEncode[dst_first] >= 8) {
-            emit_opcode(*cbuf, Assembler::REX_R);
-          }
-          emit_opcode(*cbuf, 0x0F);
-          emit_opcode(*cbuf, 0x10);
-          encode_RegMem(*cbuf,
-                        Matcher::_regEncode[dst_first],
-                        RSP_enc, 0x4, 0, offset,
-                        false);
+          MacroAssembler _masm(cbuf);
+          __ movflt( as_XMMRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
 #ifndef PRODUCT
         } else if (!do_size) {
           st->print("movss   %s, [rsp + #%d]\t# spill",
@@ -1301,9 +1218,9 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         }
         return
           ((offset == 0) ? 0 : (offset < 0x80 ? 1 : 4)) +
-          ((Matcher::_regEncode[dst_first] < 8)
-           ? 5
-           : 6); // REX
+          ((Matcher::_regEncode[dst_first] >= 8)
+           ? 6
+           : (5 + ((UseAVX>0)?1:0))); // REX
       }
     }
   } else if (src_first_rc == rc_int) {
@@ -1429,25 +1346,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         if (cbuf) {
-          emit_opcode(*cbuf, 0x66);
-          if (Matcher::_regEncode[dst_first] < 8) {
-            if (Matcher::_regEncode[src_first] < 8) {
-              emit_opcode(*cbuf, Assembler::REX_W);
-            } else {
-              emit_opcode(*cbuf, Assembler::REX_WB);
-            }
-          } else {
-            if (Matcher::_regEncode[src_first] < 8) {
-              emit_opcode(*cbuf, Assembler::REX_WR);
-            } else {
-              emit_opcode(*cbuf, Assembler::REX_WRB);
-            }
-          }
-          emit_opcode(*cbuf, 0x0F);
-          emit_opcode(*cbuf, 0x6E);
-          emit_rm(*cbuf, 0x3,
-                  Matcher::_regEncode[dst_first] & 7,
-                  Matcher::_regEncode[src_first] & 7);
+          MacroAssembler _masm(cbuf);
+          __ movdq( as_XMMRegister(Matcher::_regEncode[dst_first]), as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else if (!do_size) {
           st->print("movdq   %s, %s\t# spill",
@@ -1461,23 +1361,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
         if (cbuf) {
-          emit_opcode(*cbuf, 0x66);
-          if (Matcher::_regEncode[dst_first] < 8) {
-            if (Matcher::_regEncode[src_first] >= 8) {
-              emit_opcode(*cbuf, Assembler::REX_B);
-            }
-          } else {
-            if (Matcher::_regEncode[src_first] < 8) {
-              emit_opcode(*cbuf, Assembler::REX_R);
-            } else {
-              emit_opcode(*cbuf, Assembler::REX_RB);
-            }
-          }
-          emit_opcode(*cbuf, 0x0F);
-          emit_opcode(*cbuf, 0x6E);
-          emit_rm(*cbuf, 0x3,
-                  Matcher::_regEncode[dst_first] & 7,
-                  Matcher::_regEncode[src_first] & 7);
+          MacroAssembler _masm(cbuf);
+          __ movdl( as_XMMRegister(Matcher::_regEncode[dst_first]), as_Register(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else if (!do_size) {
           st->print("movdl   %s, %s\t# spill",
@@ -1486,9 +1371,9 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
 #endif
         }
         return
-          (Matcher::_regEncode[src_first] < 8 && Matcher::_regEncode[dst_first] < 8)
-          ? 4
-          : 5; // REX
+          (Matcher::_regEncode[src_first] >= 8 || Matcher::_regEncode[dst_first] >= 8)
+          ? 5
+          : (4 + ((UseAVX>0)?1:0)); // REX
       }
     }
   } else if (src_first_rc == rc_float) {
@@ -1500,16 +1385,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         // 64-bit
         int offset = ra_->reg2offset(dst_first);
         if (cbuf) {
-          emit_opcode(*cbuf, 0xF2);
-          if (Matcher::_regEncode[src_first] >= 8) {
-              emit_opcode(*cbuf, Assembler::REX_R);
-          }
-          emit_opcode(*cbuf, 0x0F);
-          emit_opcode(*cbuf, 0x11);
-          encode_RegMem(*cbuf,
-                        Matcher::_regEncode[src_first],
-                        RSP_enc, 0x4, 0, offset,
-                        false);
+          MacroAssembler _masm(cbuf);
+          __ movdbl( Address(rsp, offset), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else if (!do_size) {
           st->print("movsd   [rsp + #%d], %s\t# spill",
@@ -1519,25 +1396,17 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         }
         return
           ((offset == 0) ? 0 : (offset < 0x80 ? 1 : 4)) +
-          ((Matcher::_regEncode[src_first] < 8)
-           ? 5
-           : 6); // REX
+          ((Matcher::_regEncode[src_first] >= 8)
+           ? 6
+           : (5 + ((UseAVX>0)?1:0))); // REX
       } else {
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
         int offset = ra_->reg2offset(dst_first);
         if (cbuf) {
-          emit_opcode(*cbuf, 0xF3);
-          if (Matcher::_regEncode[src_first] >= 8) {
-              emit_opcode(*cbuf, Assembler::REX_R);
-          }
-          emit_opcode(*cbuf, 0x0F);
-          emit_opcode(*cbuf, 0x11);
-          encode_RegMem(*cbuf,
-                        Matcher::_regEncode[src_first],
-                        RSP_enc, 0x4, 0, offset,
-                        false);
+          MacroAssembler _masm(cbuf);
+          __ movflt(Address(rsp, offset), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else if (!do_size) {
           st->print("movss   [rsp + #%d], %s\t# spill",
@@ -1547,9 +1416,9 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         }
         return
           ((offset == 0) ? 0 : (offset < 0x80 ? 1 : 4)) +
-          ((Matcher::_regEncode[src_first] < 8)
-           ? 5
-           : 6); // REX
+          ((Matcher::_regEncode[src_first] >=8)
+           ? 6
+           : (5 + ((UseAVX>0)?1:0))); // REX
       }
     } else if (dst_first_rc == rc_int) {
       // xmm -> gpr
@@ -1557,25 +1426,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         if (cbuf) {
-          emit_opcode(*cbuf, 0x66);
-          if (Matcher::_regEncode[dst_first] < 8) {
-            if (Matcher::_regEncode[src_first] < 8) {
-              emit_opcode(*cbuf, Assembler::REX_W);
-            } else {
-              emit_opcode(*cbuf, Assembler::REX_WR); // attention!
-            }
-          } else {
-            if (Matcher::_regEncode[src_first] < 8) {
-              emit_opcode(*cbuf, Assembler::REX_WB); // attention!
-            } else {
-              emit_opcode(*cbuf, Assembler::REX_WRB);
-            }
-          }
-          emit_opcode(*cbuf, 0x0F);
-          emit_opcode(*cbuf, 0x7E);
-          emit_rm(*cbuf, 0x3,
-                  Matcher::_regEncode[src_first] & 7,
-                  Matcher::_regEncode[dst_first] & 7);
+          MacroAssembler _masm(cbuf);
+          __ movdq( as_Register(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else if (!do_size) {
           st->print("movdq   %s, %s\t# spill",
@@ -1589,23 +1441,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
         if (cbuf) {
-          emit_opcode(*cbuf, 0x66);
-          if (Matcher::_regEncode[dst_first] < 8) {
-            if (Matcher::_regEncode[src_first] >= 8) {
-              emit_opcode(*cbuf, Assembler::REX_R); // attention!
-            }
-          } else {
-            if (Matcher::_regEncode[src_first] < 8) {
-              emit_opcode(*cbuf, Assembler::REX_B); // attention!
-            } else {
-              emit_opcode(*cbuf, Assembler::REX_RB);
-            }
-          }
-          emit_opcode(*cbuf, 0x0F);
-          emit_opcode(*cbuf, 0x7E);
-          emit_rm(*cbuf, 0x3,
-                  Matcher::_regEncode[src_first] & 7,
-                  Matcher::_regEncode[dst_first] & 7);
+          MacroAssembler _masm(cbuf);
+          __ movdl( as_Register(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else if (!do_size) {
           st->print("movdl   %s, %s\t# spill",
@@ -1614,9 +1451,9 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
 #endif
         }
         return
-          (Matcher::_regEncode[src_first] < 8 && Matcher::_regEncode[dst_first] < 8)
-          ? 4
-          : 5; // REX
+          (Matcher::_regEncode[src_first] >= 8 || Matcher::_regEncode[dst_first] >= 8)
+          ? 5
+          : (4 + ((UseAVX>0)?1:0)); // REX
       }
     } else if (dst_first_rc == rc_float) {
       // xmm -> xmm
@@ -1624,23 +1461,8 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
           (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
         // 64-bit
         if (cbuf) {
-          emit_opcode(*cbuf, UseXmmRegToRegMoveAll ? 0x66 : 0xF2);
-          if (Matcher::_regEncode[dst_first] < 8) {
-            if (Matcher::_regEncode[src_first] >= 8) {
-              emit_opcode(*cbuf, Assembler::REX_B);
-            }
-          } else {
-            if (Matcher::_regEncode[src_first] < 8) {
-              emit_opcode(*cbuf, Assembler::REX_R);
-            } else {
-              emit_opcode(*cbuf, Assembler::REX_RB);
-            }
-          }
-          emit_opcode(*cbuf, 0x0F);
-          emit_opcode(*cbuf, UseXmmRegToRegMoveAll ? 0x28 : 0x10);
-          emit_rm(*cbuf, 0x3,
-                  Matcher::_regEncode[dst_first] & 7,
-                  Matcher::_regEncode[src_first] & 7);
+          MacroAssembler _masm(cbuf);
+          __ movdbl( as_XMMRegister(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else if (!do_size) {
           st->print("%s  %s, %s\t# spill",
@@ -1650,32 +1472,16 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
 #endif
         }
         return
-          (Matcher::_regEncode[src_first] < 8 && Matcher::_regEncode[dst_first] < 8)
-          ? 4
-          : 5; // REX
+          (Matcher::_regEncode[src_first] >= 8 || Matcher::_regEncode[dst_first] >= 8)
+          ? 5
+          : (4 + ((UseAVX>0)?1:0)); // REX
       } else {
         // 32-bit
         assert(!((src_first & 1) == 0 && src_first + 1 == src_second), "no transform");
         assert(!((dst_first & 1) == 0 && dst_first + 1 == dst_second), "no transform");
         if (cbuf) {
-          if (!UseXmmRegToRegMoveAll)
-            emit_opcode(*cbuf, 0xF3);
-          if (Matcher::_regEncode[dst_first] < 8) {
-            if (Matcher::_regEncode[src_first] >= 8) {
-              emit_opcode(*cbuf, Assembler::REX_B);
-            }
-          } else {
-            if (Matcher::_regEncode[src_first] < 8) {
-              emit_opcode(*cbuf, Assembler::REX_R);
-            } else {
-              emit_opcode(*cbuf, Assembler::REX_RB);
-            }
-          }
-          emit_opcode(*cbuf, 0x0F);
-          emit_opcode(*cbuf, UseXmmRegToRegMoveAll ? 0x28 : 0x10);
-          emit_rm(*cbuf, 0x3,
-                  Matcher::_regEncode[dst_first] & 7,
-                  Matcher::_regEncode[src_first] & 7);
+          MacroAssembler _masm(cbuf);
+          __ movflt( as_XMMRegister(Matcher::_regEncode[dst_first]), as_XMMRegister(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
         } else if (!do_size) {
           st->print("%s  %s, %s\t# spill",
@@ -1684,10 +1490,10 @@ uint MachSpillCopyNode::implementation(CodeBuffer* cbuf,
                      Matcher::regName[src_first]);
 #endif
         }
-        return
-          (Matcher::_regEncode[src_first] < 8 && Matcher::_regEncode[dst_first] < 8)
-          ? (UseXmmRegToRegMoveAll ? 3 : 4)
-          : (UseXmmRegToRegMoveAll ? 4 : 5); // REX
+        return ((UseAVX>0) ? 5:
+          ((Matcher::_regEncode[src_first] >= 8 || Matcher::_regEncode[dst_first] >= 8)
+           ? (UseXmmRegToRegMoveAll ? 4 : 5)
+           : (UseXmmRegToRegMoveAll ? 3 : 4))); // REX
       }
     }
   }
@@ -1714,26 +1520,6 @@ uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const
 {
   return implementation(NULL, ra_, true, NULL);
 }
-
-//=============================================================================
-#ifndef PRODUCT
-void MachNopNode::format(PhaseRegAlloc*, outputStream* st) const
-{
-  st->print("nop \t# %d bytes pad for loops and calls", _count);
-}
-#endif
-
-void MachNopNode::emit(CodeBuffer &cbuf, PhaseRegAlloc*) const
-{
-  MacroAssembler _masm(&cbuf);
-  __ nop(_count);
-}
-
-uint MachNopNode::size(PhaseRegAlloc*) const
-{
-  return _count;
-}
-
 
 //=============================================================================
 #ifndef PRODUCT
@@ -1928,6 +1714,14 @@ const bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode))
     return false;
 
+  switch (opcode) {
+    case Op_PopCountI:
+    case Op_PopCountL:
+      if (!UsePopCountInstruction)
+        return false;
+    break;
+  }
+
   return true;  // Per default match rules are supported.
 }
 
@@ -1955,7 +1749,12 @@ const uint Matcher::vector_ideal_reg(void) {
 //
 // NOTE: If the platform does not provide any short branch variants, then
 //       this method should return false for offset 0.
-bool Matcher::is_short_branch_offset(int rule, int offset) {
+bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
+  // The passed offset is relative to address of the branch.
+  // On 86 a branch displacement is calculated relative to address
+  // of a next instruction.
+  offset -= br_size;
+
   // the short version of jmpConUCF2 contains multiple branches,
   // making the reach slightly less
   if (rule == jmpConUCF2_rule)
@@ -1976,6 +1775,12 @@ const bool Matcher::init_array_count_is_in_bytes = false;
 
 // Threshold size for cleararray.
 const int Matcher::init_array_short_size = 8 * BytesPerLong;
+
+// No additional cost for CMOVL.
+const int Matcher::long_cmove_cost() { return 0; }
+
+// No CMOVF/CMOVD with SSE2
+const int Matcher::float_cmove_cost() { return ConditionalMoveLimit; }
 
 // Should the Matcher clone shifts on addressing modes, expecting them
 // to be subsumed into complex addressing expressions or compute them
@@ -2057,26 +1862,26 @@ bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {
 
 // Register for DIVI projection of divmodI
 RegMask Matcher::divI_proj_mask() {
-  return INT_RAX_REG_mask;
+  return INT_RAX_REG_mask();
 }
 
 // Register for MODI projection of divmodI
 RegMask Matcher::modI_proj_mask() {
-  return INT_RDX_REG_mask;
+  return INT_RDX_REG_mask();
 }
 
 // Register for DIVL projection of divmodL
 RegMask Matcher::divL_proj_mask() {
-  return LONG_RAX_REG_mask;
+  return LONG_RAX_REG_mask();
 }
 
 // Register for MODL projection of divmodL
 RegMask Matcher::modL_proj_mask() {
-  return LONG_RDX_REG_mask;
+  return LONG_RDX_REG_mask();
 }
 
 const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return PTR_RBP_REG_mask;
+  return PTR_RBP_REG_mask();
 }
 
 static Address build_address(int b, int i, int s, int d) {
@@ -2171,65 +1976,6 @@ encode %{
   %{
     emit_opcode(cbuf, $opcode$$constant);
     emit_rm(cbuf, 0x3, $dst$$reg & 7, $src$$reg & 7);
-  %}
-
-  enc_class cmpfp_fixup()
-  %{
-    // jnp,s exit
-    emit_opcode(cbuf, 0x7B);
-    emit_d8(cbuf, 0x0A);
-
-    // pushfq
-    emit_opcode(cbuf, 0x9C);
-
-    // andq $0xffffff2b, (%rsp)
-    emit_opcode(cbuf, Assembler::REX_W);
-    emit_opcode(cbuf, 0x81);
-    emit_opcode(cbuf, 0x24);
-    emit_opcode(cbuf, 0x24);
-    emit_d32(cbuf, 0xffffff2b);
-
-    // popfq
-    emit_opcode(cbuf, 0x9D);
-
-    // nop (target for branch to avoid branch to branch)
-    emit_opcode(cbuf, 0x90);
-  %}
-
-  enc_class cmpfp3(rRegI dst)
-  %{
-    int dstenc = $dst$$reg;
-
-    // movl $dst, -1
-    if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
-    }
-    emit_opcode(cbuf, 0xB8 | (dstenc & 7));
-    emit_d32(cbuf, -1);
-
-    // jp,s done
-    emit_opcode(cbuf, 0x7A);
-    emit_d8(cbuf, dstenc < 4 ? 0x08 : 0x0A);
-
-    // jb,s done
-    emit_opcode(cbuf, 0x72);
-    emit_d8(cbuf, dstenc < 4 ? 0x06 : 0x08);
-
-    // setne $dst
-    if (dstenc >= 4) {
-      emit_opcode(cbuf, dstenc < 8 ? Assembler::REX : Assembler::REX_B);
-    }
-    emit_opcode(cbuf, 0x0F);
-    emit_opcode(cbuf, 0x95);
-    emit_opcode(cbuf, 0xC0 | (dstenc & 7));
-
-    // movzbl $dst, $dst
-    if (dstenc >= 4) {
-      emit_opcode(cbuf, dstenc < 8 ? Assembler::REX : Assembler::REX_RB);
-    }
-    emit_opcode(cbuf, 0x0F);
-    emit_opcode(cbuf, 0xB6);
-    emit_rm(cbuf, 0x3, dstenc & 7, dstenc & 7);
   %}
 
   enc_class cdql_enc(no_rax_rdx_RegI div)
@@ -2433,22 +2179,6 @@ encode %{
     }
   %}
 
-  enc_class Lbl(label labl)
-  %{
-    // JMP, CALL
-    Label* l = $labl$$label;
-    emit_d32(cbuf, l ? (l->loc_pos() - (cbuf.insts_size() + 4)) : 0);
-  %}
-
-  enc_class LblShort(label labl)
-  %{
-    // JMP, CALL
-    Label* l = $labl$$label;
-    int disp = l ? (l->loc_pos() - (cbuf.insts_size() + 1)) : 0;
-    assert(-128 <= disp && disp <= 127, "Displacement too large for short jmp");
-    emit_d8(cbuf, disp);
-  %}
-
   enc_class opc2_reg(rRegI dst)
   %{
     // BSWAP
@@ -2467,79 +2197,11 @@ encode %{
     emit_rm(cbuf, 0x3, $secondary, $div$$reg & 7);
   %}
 
-  enc_class Jcc(cmpOp cop, label labl)
-  %{
-    // JCC
-    Label* l = $labl$$label;
-    $$$emit8$primary;
-    emit_cc(cbuf, $secondary, $cop$$cmpcode);
-    emit_d32(cbuf, l ? (l->loc_pos() - (cbuf.insts_size() + 4)) : 0);
-  %}
-
-  enc_class JccShort (cmpOp cop, label labl)
-  %{
-  // JCC
-    Label *l = $labl$$label;
-    emit_cc(cbuf, $primary, $cop$$cmpcode);
-    int disp = l ? (l->loc_pos() - (cbuf.insts_size() + 1)) : 0;
-    assert(-128 <= disp && disp <= 127, "Displacement too large for short jmp");
-    emit_d8(cbuf, disp);
-  %}
-
   enc_class enc_cmov(cmpOp cop)
   %{
     // CMOV
     $$$emit8$primary;
     emit_cc(cbuf, $secondary, $cop$$cmpcode);
-  %}
-
-  enc_class enc_cmovf_branch(cmpOp cop, regF dst, regF src)
-  %{
-    // Invert sense of branch from sense of cmov
-    emit_cc(cbuf, 0x70, $cop$$cmpcode ^ 1);
-    emit_d8(cbuf, ($dst$$reg < 8 && $src$$reg < 8)
-                  ? (UseXmmRegToRegMoveAll ? 3 : 4)
-                  : (UseXmmRegToRegMoveAll ? 4 : 5) ); // REX
-    // UseXmmRegToRegMoveAll ? movaps(dst, src) : movss(dst, src)
-    if (!UseXmmRegToRegMoveAll) emit_opcode(cbuf, 0xF3);
-    if ($dst$$reg < 8) {
-      if ($src$$reg >= 8) {
-        emit_opcode(cbuf, Assembler::REX_B);
-      }
-    } else {
-      if ($src$$reg < 8) {
-        emit_opcode(cbuf, Assembler::REX_R);
-      } else {
-        emit_opcode(cbuf, Assembler::REX_RB);
-      }
-    }
-    emit_opcode(cbuf, 0x0F);
-    emit_opcode(cbuf, UseXmmRegToRegMoveAll ? 0x28 : 0x10);
-    emit_rm(cbuf, 0x3, $dst$$reg & 7, $src$$reg & 7);
-  %}
-
-  enc_class enc_cmovd_branch(cmpOp cop, regD dst, regD src)
-  %{
-    // Invert sense of branch from sense of cmov
-    emit_cc(cbuf, 0x70, $cop$$cmpcode ^ 1);
-    emit_d8(cbuf, $dst$$reg < 8 && $src$$reg < 8 ? 4 : 5); // REX
-
-    //  UseXmmRegToRegMoveAll ? movapd(dst, src) : movsd(dst, src)
-    emit_opcode(cbuf, UseXmmRegToRegMoveAll ? 0x66 : 0xF2);
-    if ($dst$$reg < 8) {
-      if ($src$$reg >= 8) {
-        emit_opcode(cbuf, Assembler::REX_B);
-      }
-    } else {
-      if ($src$$reg < 8) {
-        emit_opcode(cbuf, Assembler::REX_R);
-      } else {
-        emit_opcode(cbuf, Assembler::REX_RB);
-      }
-    }
-    emit_opcode(cbuf, 0x0F);
-    emit_opcode(cbuf, UseXmmRegToRegMoveAll ? 0x28 : 0x10);
-    emit_rm(cbuf, 0x3, $dst$$reg & 7, $src$$reg & 7);
   %}
 
   enc_class enc_PartialSubtypeCheck()
@@ -2572,21 +2234,6 @@ encode %{
                    (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
                    runtime_call_Relocation::spec(),
                    RELOC_DISP32);
-  %}
-
-  enc_class preserve_SP %{
-    debug_only(int off0 = cbuf.insts_size());
-    MacroAssembler _masm(&cbuf);
-    // RBP is preserved across all calls, even compiled calls.
-    // Use it to preserve RSP in places where the callee might change the SP.
-    __ movptr(rbp_mh_SP_save, rsp);
-    debug_only(int off1 = cbuf.insts_size());
-    assert(off1 - off0 == preserve_SP_size(), "correct size prediction");
-  %}
-
-  enc_class restore_SP %{
-    MacroAssembler _masm(&cbuf);
-    __ movptr(rsp, rbp_mh_SP_save);
   %}
 
   enc_class Java_Static_Call(method meth)
@@ -2769,68 +2416,6 @@ encode %{
       emit_d64_reloc(cbuf, $src$$constant, relocInfo::oop_type, RELOC_IMM64);
     } else {
       emit_d64(cbuf, $src$$constant);
-    }
-  %}
-
-  // Encode a reg-reg copy.  If it is useless, then empty encoding.
-  enc_class enc_copy(rRegI dst, rRegI src)
-  %{
-    encode_copy(cbuf, $dst$$reg, $src$$reg);
-  %}
-
-  // Encode xmm reg-reg copy.  If it is useless, then empty encoding.
-  enc_class enc_CopyXD( RegD dst, RegD src ) %{
-    encode_CopyXD( cbuf, $dst$$reg, $src$$reg );
-  %}
-
-  enc_class enc_copy_always(rRegI dst, rRegI src)
-  %{
-    int srcenc = $src$$reg;
-    int dstenc = $dst$$reg;
-
-    if (dstenc < 8) {
-      if (srcenc >= 8) {
-        emit_opcode(cbuf, Assembler::REX_B);
-        srcenc -= 8;
-      }
-    } else {
-      if (srcenc < 8) {
-        emit_opcode(cbuf, Assembler::REX_R);
-      } else {
-        emit_opcode(cbuf, Assembler::REX_RB);
-        srcenc -= 8;
-      }
-      dstenc -= 8;
-    }
-
-    emit_opcode(cbuf, 0x8B);
-    emit_rm(cbuf, 0x3, dstenc, srcenc);
-  %}
-
-  enc_class enc_copy_wide(rRegL dst, rRegL src)
-  %{
-    int srcenc = $src$$reg;
-    int dstenc = $dst$$reg;
-
-    if (dstenc != srcenc) {
-      if (dstenc < 8) {
-        if (srcenc < 8) {
-          emit_opcode(cbuf, Assembler::REX_W);
-        } else {
-          emit_opcode(cbuf, Assembler::REX_WB);
-          srcenc -= 8;
-        }
-      } else {
-        if (srcenc < 8) {
-          emit_opcode(cbuf, Assembler::REX_WR);
-        } else {
-          emit_opcode(cbuf, Assembler::REX_WRB);
-          srcenc -= 8;
-        }
-        dstenc -= 8;
-      }
-      emit_opcode(cbuf, 0x8B);
-      emit_rm(cbuf, 0x3, dstenc, srcenc);
     }
   %}
 
@@ -3179,50 +2764,6 @@ encode %{
     emit_rm(cbuf, 0x3, 0x0, dstenc);
   %}
 
-  enc_class enc_cmpLTP(no_rcx_RegI p, no_rcx_RegI q, no_rcx_RegI y,
-                       rcx_RegI tmp)
-  %{
-    // cadd_cmpLT
-
-    int tmpReg = $tmp$$reg;
-
-    int penc = $p$$reg;
-    int qenc = $q$$reg;
-    int yenc = $y$$reg;
-
-    // subl $p,$q
-    if (penc < 8) {
-      if (qenc >= 8) {
-        emit_opcode(cbuf, Assembler::REX_B);
-      }
-    } else {
-      if (qenc < 8) {
-        emit_opcode(cbuf, Assembler::REX_R);
-      } else {
-        emit_opcode(cbuf, Assembler::REX_RB);
-      }
-    }
-    emit_opcode(cbuf, 0x2B);
-    emit_rm(cbuf, 0x3, penc & 7, qenc & 7);
-
-    // sbbl $tmp, $tmp
-    emit_opcode(cbuf, 0x1B);
-    emit_rm(cbuf, 0x3, tmpReg, tmpReg);
-
-    // andl $tmp, $y
-    if (yenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
-    }
-    emit_opcode(cbuf, 0x23);
-    emit_rm(cbuf, 0x3, tmpReg, yenc & 7);
-
-    // addl $p,$tmp
-    if (penc >= 8) {
-        emit_opcode(cbuf, Assembler::REX_R);
-    }
-    emit_opcode(cbuf, 0x03);
-    emit_rm(cbuf, 0x3, penc & 7, tmpReg);
-  %}
 
   // Compare the lonogs and set -1, 0, or 1 into dst
   enc_class cmpl3_flag(rRegL src1, rRegL src2, rRegI dst)
@@ -3277,92 +2818,19 @@ encode %{
   %}
 
   enc_class Push_ResultXD(regD dst) %{
-    int dstenc = $dst$$reg;
-
-    store_to_stackslot( cbuf, 0xDD, 0x03, 0 ); //FSTP [RSP]
-
-    // UseXmmLoadAndClearUpper ? movsd dst,[rsp] : movlpd dst,[rsp]
-    emit_opcode  (cbuf, UseXmmLoadAndClearUpper ? 0xF2 : 0x66);
-    if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_R);
-    }
-    emit_opcode  (cbuf, 0x0F );
-    emit_opcode  (cbuf, UseXmmLoadAndClearUpper ? 0x10 : 0x12 );
-    encode_RegMem(cbuf, dstenc, RSP_enc, 0x4, 0, 0, false);
-
-    // add rsp,8
-    emit_opcode(cbuf, Assembler::REX_W);
-    emit_opcode(cbuf,0x83);
-    emit_rm(cbuf,0x3, 0x0, RSP_enc);
-    emit_d8(cbuf,0x08);
+    MacroAssembler _masm(&cbuf);
+    __ fstp_d(Address(rsp, 0));
+    __ movdbl($dst$$XMMRegister, Address(rsp, 0));
+    __ addptr(rsp, 8);
   %}
 
   enc_class Push_SrcXD(regD src) %{
-    int srcenc = $src$$reg;
-
-    // subq rsp,#8
-    emit_opcode(cbuf, Assembler::REX_W);
-    emit_opcode(cbuf, 0x83);
-    emit_rm(cbuf, 0x3, 0x5, RSP_enc);
-    emit_d8(cbuf, 0x8);
-
-    // movsd [rsp],src
-    emit_opcode(cbuf, 0xF2);
-    if (srcenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_R);
-    }
-    emit_opcode(cbuf, 0x0F);
-    emit_opcode(cbuf, 0x11);
-    encode_RegMem(cbuf, srcenc, RSP_enc, 0x4, 0, 0, false);
-
-    // fldd [rsp]
-    emit_opcode(cbuf, 0x66);
-    emit_opcode(cbuf, 0xDD);
-    encode_RegMem(cbuf, 0x0, RSP_enc, 0x4, 0, 0, false);
-  %}
-
-
-  enc_class movq_ld(regD dst, memory mem) %{
     MacroAssembler _masm(&cbuf);
-    __ movq($dst$$XMMRegister, $mem$$Address);
+    __ subptr(rsp, 8);
+    __ movdbl(Address(rsp, 0), $src$$XMMRegister);
+    __ fld_d(Address(rsp, 0));
   %}
 
-  enc_class movq_st(memory mem, regD src) %{
-    MacroAssembler _masm(&cbuf);
-    __ movq($mem$$Address, $src$$XMMRegister);
-  %}
-
-  enc_class pshufd_8x8(regF dst, regF src) %{
-    MacroAssembler _masm(&cbuf);
-
-    encode_CopyXD(cbuf, $dst$$reg, $src$$reg);
-    __ punpcklbw(as_XMMRegister($dst$$reg), as_XMMRegister($dst$$reg));
-    __ pshuflw(as_XMMRegister($dst$$reg), as_XMMRegister($dst$$reg), 0x00);
-  %}
-
-  enc_class pshufd_4x16(regF dst, regF src) %{
-    MacroAssembler _masm(&cbuf);
-
-    __ pshuflw(as_XMMRegister($dst$$reg), as_XMMRegister($src$$reg), 0x00);
-  %}
-
-  enc_class pshufd(regD dst, regD src, int mode) %{
-    MacroAssembler _masm(&cbuf);
-
-    __ pshufd(as_XMMRegister($dst$$reg), as_XMMRegister($src$$reg), $mode);
-  %}
-
-  enc_class pxor(regD dst, regD src) %{
-    MacroAssembler _masm(&cbuf);
-
-    __ pxor(as_XMMRegister($dst$$reg), as_XMMRegister($src$$reg));
-  %}
-
-  enc_class mov_i2x(regD dst, rRegI src) %{
-    MacroAssembler _masm(&cbuf);
-
-    __ movdl(as_XMMRegister($dst$$reg), as_Register($src$$reg));
-  %}
 
   // obj: object to lock
   // box: box address (header location) -- killed
@@ -3599,303 +3067,6 @@ encode %{
                    RELOC_DISP32);
   %}
 
-  enc_class absF_encoding(regF dst)
-  %{
-    int dstenc = $dst$$reg;
-    address signmask_address = (address) StubRoutines::x86::float_sign_mask();
-
-    cbuf.set_insts_mark();
-    if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_R);
-      dstenc -= 8;
-    }
-    // XXX reg_mem doesn't support RIP-relative addressing yet
-    emit_opcode(cbuf, 0x0F);
-    emit_opcode(cbuf, 0x54);
-    emit_rm(cbuf, 0x0, dstenc, 0x5);  // 00 reg 101
-    emit_d32_reloc(cbuf, signmask_address);
-  %}
-
-  enc_class absD_encoding(regD dst)
-  %{
-    int dstenc = $dst$$reg;
-    address signmask_address = (address) StubRoutines::x86::double_sign_mask();
-
-    cbuf.set_insts_mark();
-    emit_opcode(cbuf, 0x66);
-    if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_R);
-      dstenc -= 8;
-    }
-    // XXX reg_mem doesn't support RIP-relative addressing yet
-    emit_opcode(cbuf, 0x0F);
-    emit_opcode(cbuf, 0x54);
-    emit_rm(cbuf, 0x0, dstenc, 0x5);  // 00 reg 101
-    emit_d32_reloc(cbuf, signmask_address);
-  %}
-
-  enc_class negF_encoding(regF dst)
-  %{
-    int dstenc = $dst$$reg;
-    address signflip_address = (address) StubRoutines::x86::float_sign_flip();
-
-    cbuf.set_insts_mark();
-    if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_R);
-      dstenc -= 8;
-    }
-    // XXX reg_mem doesn't support RIP-relative addressing yet
-    emit_opcode(cbuf, 0x0F);
-    emit_opcode(cbuf, 0x57);
-    emit_rm(cbuf, 0x0, dstenc, 0x5);  // 00 reg 101
-    emit_d32_reloc(cbuf, signflip_address);
-  %}
-
-  enc_class negD_encoding(regD dst)
-  %{
-    int dstenc = $dst$$reg;
-    address signflip_address = (address) StubRoutines::x86::double_sign_flip();
-
-    cbuf.set_insts_mark();
-    emit_opcode(cbuf, 0x66);
-    if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_R);
-      dstenc -= 8;
-    }
-    // XXX reg_mem doesn't support RIP-relative addressing yet
-    emit_opcode(cbuf, 0x0F);
-    emit_opcode(cbuf, 0x57);
-    emit_rm(cbuf, 0x0, dstenc, 0x5);  // 00 reg 101
-    emit_d32_reloc(cbuf, signflip_address);
-  %}
-
-  enc_class f2i_fixup(rRegI dst, regF src)
-  %{
-    int dstenc = $dst$$reg;
-    int srcenc = $src$$reg;
-
-    // cmpl $dst, #0x80000000
-    if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
-    }
-    emit_opcode(cbuf, 0x81);
-    emit_rm(cbuf, 0x3, 0x7, dstenc & 7);
-    emit_d32(cbuf, 0x80000000);
-
-    // jne,s done
-    emit_opcode(cbuf, 0x75);
-    if (srcenc < 8 && dstenc < 8) {
-      emit_d8(cbuf, 0xF);
-    } else if (srcenc >= 8 && dstenc >= 8) {
-      emit_d8(cbuf, 0x11);
-    } else {
-      emit_d8(cbuf, 0x10);
-    }
-
-    // subq rsp, #8
-    emit_opcode(cbuf, Assembler::REX_W);
-    emit_opcode(cbuf, 0x83);
-    emit_rm(cbuf, 0x3, 0x5, RSP_enc);
-    emit_d8(cbuf, 8);
-
-    // movss [rsp], $src
-    emit_opcode(cbuf, 0xF3);
-    if (srcenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_R);
-    }
-    emit_opcode(cbuf, 0x0F);
-    emit_opcode(cbuf, 0x11);
-    encode_RegMem(cbuf, srcenc, RSP_enc, 0x4, 0, 0, false); // 2 bytes
-
-    // call f2i_fixup
-    cbuf.set_insts_mark();
-    emit_opcode(cbuf, 0xE8);
-    emit_d32_reloc(cbuf,
-                   (int)
-                   (StubRoutines::x86::f2i_fixup() - cbuf.insts_end() - 4),
-                   runtime_call_Relocation::spec(),
-                   RELOC_DISP32);
-
-    // popq $dst
-    if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
-    }
-    emit_opcode(cbuf, 0x58 | (dstenc & 7));
-
-    // done:
-  %}
-
-  enc_class f2l_fixup(rRegL dst, regF src)
-  %{
-    int dstenc = $dst$$reg;
-    int srcenc = $src$$reg;
-    address const_address = (address) StubRoutines::x86::double_sign_flip();
-
-    // cmpq $dst, [0x8000000000000000]
-    cbuf.set_insts_mark();
-    emit_opcode(cbuf, dstenc < 8 ? Assembler::REX_W : Assembler::REX_WR);
-    emit_opcode(cbuf, 0x39);
-    // XXX reg_mem doesn't support RIP-relative addressing yet
-    emit_rm(cbuf, 0x0, dstenc & 7, 0x5); // 00 reg 101
-    emit_d32_reloc(cbuf, const_address);
-
-
-    // jne,s done
-    emit_opcode(cbuf, 0x75);
-    if (srcenc < 8 && dstenc < 8) {
-      emit_d8(cbuf, 0xF);
-    } else if (srcenc >= 8 && dstenc >= 8) {
-      emit_d8(cbuf, 0x11);
-    } else {
-      emit_d8(cbuf, 0x10);
-    }
-
-    // subq rsp, #8
-    emit_opcode(cbuf, Assembler::REX_W);
-    emit_opcode(cbuf, 0x83);
-    emit_rm(cbuf, 0x3, 0x5, RSP_enc);
-    emit_d8(cbuf, 8);
-
-    // movss [rsp], $src
-    emit_opcode(cbuf, 0xF3);
-    if (srcenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_R);
-    }
-    emit_opcode(cbuf, 0x0F);
-    emit_opcode(cbuf, 0x11);
-    encode_RegMem(cbuf, srcenc, RSP_enc, 0x4, 0, 0, false); // 2 bytes
-
-    // call f2l_fixup
-    cbuf.set_insts_mark();
-    emit_opcode(cbuf, 0xE8);
-    emit_d32_reloc(cbuf,
-                   (int)
-                   (StubRoutines::x86::f2l_fixup() - cbuf.insts_end() - 4),
-                   runtime_call_Relocation::spec(),
-                   RELOC_DISP32);
-
-    // popq $dst
-    if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
-    }
-    emit_opcode(cbuf, 0x58 | (dstenc & 7));
-
-    // done:
-  %}
-
-  enc_class d2i_fixup(rRegI dst, regD src)
-  %{
-    int dstenc = $dst$$reg;
-    int srcenc = $src$$reg;
-
-    // cmpl $dst, #0x80000000
-    if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
-    }
-    emit_opcode(cbuf, 0x81);
-    emit_rm(cbuf, 0x3, 0x7, dstenc & 7);
-    emit_d32(cbuf, 0x80000000);
-
-    // jne,s done
-    emit_opcode(cbuf, 0x75);
-    if (srcenc < 8 && dstenc < 8) {
-      emit_d8(cbuf, 0xF);
-    } else if (srcenc >= 8 && dstenc >= 8) {
-      emit_d8(cbuf, 0x11);
-    } else {
-      emit_d8(cbuf, 0x10);
-    }
-
-    // subq rsp, #8
-    emit_opcode(cbuf, Assembler::REX_W);
-    emit_opcode(cbuf, 0x83);
-    emit_rm(cbuf, 0x3, 0x5, RSP_enc);
-    emit_d8(cbuf, 8);
-
-    // movsd [rsp], $src
-    emit_opcode(cbuf, 0xF2);
-    if (srcenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_R);
-    }
-    emit_opcode(cbuf, 0x0F);
-    emit_opcode(cbuf, 0x11);
-    encode_RegMem(cbuf, srcenc, RSP_enc, 0x4, 0, 0, false); // 2 bytes
-
-    // call d2i_fixup
-    cbuf.set_insts_mark();
-    emit_opcode(cbuf, 0xE8);
-    emit_d32_reloc(cbuf,
-                   (int)
-                   (StubRoutines::x86::d2i_fixup() - cbuf.insts_end() - 4),
-                   runtime_call_Relocation::spec(),
-                   RELOC_DISP32);
-
-    // popq $dst
-    if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
-    }
-    emit_opcode(cbuf, 0x58 | (dstenc & 7));
-
-    // done:
-  %}
-
-  enc_class d2l_fixup(rRegL dst, regD src)
-  %{
-    int dstenc = $dst$$reg;
-    int srcenc = $src$$reg;
-    address const_address = (address) StubRoutines::x86::double_sign_flip();
-
-    // cmpq $dst, [0x8000000000000000]
-    cbuf.set_insts_mark();
-    emit_opcode(cbuf, dstenc < 8 ? Assembler::REX_W : Assembler::REX_WR);
-    emit_opcode(cbuf, 0x39);
-    // XXX reg_mem doesn't support RIP-relative addressing yet
-    emit_rm(cbuf, 0x0, dstenc & 7, 0x5); // 00 reg 101
-    emit_d32_reloc(cbuf, const_address);
-
-
-    // jne,s done
-    emit_opcode(cbuf, 0x75);
-    if (srcenc < 8 && dstenc < 8) {
-      emit_d8(cbuf, 0xF);
-    } else if (srcenc >= 8 && dstenc >= 8) {
-      emit_d8(cbuf, 0x11);
-    } else {
-      emit_d8(cbuf, 0x10);
-    }
-
-    // subq rsp, #8
-    emit_opcode(cbuf, Assembler::REX_W);
-    emit_opcode(cbuf, 0x83);
-    emit_rm(cbuf, 0x3, 0x5, RSP_enc);
-    emit_d8(cbuf, 8);
-
-    // movsd [rsp], $src
-    emit_opcode(cbuf, 0xF2);
-    if (srcenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_R);
-    }
-    emit_opcode(cbuf, 0x0F);
-    emit_opcode(cbuf, 0x11);
-    encode_RegMem(cbuf, srcenc, RSP_enc, 0x4, 0, 0, false); // 2 bytes
-
-    // call d2l_fixup
-    cbuf.set_insts_mark();
-    emit_opcode(cbuf, 0xE8);
-    emit_d32_reloc(cbuf,
-                   (int)
-                   (StubRoutines::x86::d2l_fixup() - cbuf.insts_end() - 4),
-                   runtime_call_Relocation::spec(),
-                   RELOC_DISP32);
-
-    // popq $dst
-    if (dstenc >= 8) {
-      emit_opcode(cbuf, Assembler::REX_B);
-    }
-    emit_opcode(cbuf, 0x58 | (dstenc & 7));
-
-    // done:
-  %}
 %}
 
 
@@ -4003,9 +3174,9 @@ frame
   // Ret Addr is on stack in slot 0 if no locks or verification or alignment.
   // Otherwise, it is above the locks and verification slot and alignment word
   return_addr(STACK - 2 +
-              round_to(2 + 2 * VerifyStackAtCalls +
-                       Compile::current()->fixed_slots(),
-                       WordsPerLong * 2));
+              round_to((Compile::current()->in_preserve_stack_slots() +
+                        Compile::current()->fixed_slots()),
+                       stack_alignment_in_slots()));
 
   // Body of function which returns an integer array locating
   // arguments either in registers or in stack slots.  Passed an array
@@ -4064,7 +3235,6 @@ op_attrib op_cost(0);        // Required cost attribute
 //----------Instruction Attributes---------------------------------------------
 ins_attrib ins_cost(100);       // Required cost attribute
 ins_attrib ins_size(8);         // Required size attribute (in bits)
-ins_attrib ins_pc_relative(0);  // Required PC Relative flag
 ins_attrib ins_short_branch(0); // Required flag: is this instruction
                                 // a non-matching short branch variant
                                 // of some long branch?
@@ -6222,8 +5392,9 @@ instruct loadF(regF dst, memory mem)
 
   ins_cost(145); // XXX
   format %{ "movss   $dst, $mem\t# float" %}
-  opcode(0xF3, 0x0F, 0x10);
-  ins_encode(OpcP, REX_reg_mem(dst, mem), OpcS, OpcT, reg_mem(dst, mem));
+  ins_encode %{
+    __ movflt($dst$$XMMRegister, $mem$$Address);
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 
@@ -6235,8 +5406,9 @@ instruct loadD_partial(regD dst, memory mem)
 
   ins_cost(145); // XXX
   format %{ "movlpd  $dst, $mem\t# double" %}
-  opcode(0x66, 0x0F, 0x12);
-  ins_encode(OpcP, REX_reg_mem(dst, mem), OpcS, OpcT, reg_mem(dst, mem));
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $mem$$Address);
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 
@@ -6247,8 +5419,9 @@ instruct loadD(regD dst, memory mem)
 
   ins_cost(145); // XXX
   format %{ "movsd   $dst, $mem\t# double" %}
-  opcode(0xF2, 0x0F, 0x10);
-  ins_encode(OpcP, REX_reg_mem(dst, mem), OpcS, OpcT, reg_mem(dst, mem));
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $mem$$Address);
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 
@@ -6257,7 +5430,9 @@ instruct loadA8B(regD dst, memory mem) %{
   match(Set dst (Load8B mem));
   ins_cost(125);
   format %{ "MOVQ  $dst,$mem\t! packed8B" %}
-  ins_encode( movq_ld(dst, mem));
+  ins_encode %{
+    __ movq($dst$$XMMRegister, $mem$$Address);
+  %}
   ins_pipe( pipe_slow );
 %}
 
@@ -6266,7 +5441,9 @@ instruct loadA4S(regD dst, memory mem) %{
   match(Set dst (Load4S mem));
   ins_cost(125);
   format %{ "MOVQ  $dst,$mem\t! packed4S" %}
-  ins_encode( movq_ld(dst, mem));
+  ins_encode %{
+    __ movq($dst$$XMMRegister, $mem$$Address);
+  %}
   ins_pipe( pipe_slow );
 %}
 
@@ -6275,7 +5452,9 @@ instruct loadA4C(regD dst, memory mem) %{
   match(Set dst (Load4C mem));
   ins_cost(125);
   format %{ "MOVQ  $dst,$mem\t! packed4C" %}
-  ins_encode( movq_ld(dst, mem));
+  ins_encode %{
+    __ movq($dst$$XMMRegister, $mem$$Address);
+  %}
   ins_pipe( pipe_slow );
 %}
 
@@ -6284,16 +5463,20 @@ instruct load2IU(regD dst, memory mem) %{
   match(Set dst (Load2I mem));
   ins_cost(125);
   format %{ "MOVQ  $dst,$mem\t! packed2I" %}
-  ins_encode( movq_ld(dst, mem));
+  ins_encode %{
+    __ movq($dst$$XMMRegister, $mem$$Address);
+  %}
   ins_pipe( pipe_slow );
 %}
 
 // Load Aligned Packed Single to XMM
 instruct loadA2F(regD dst, memory mem) %{
   match(Set dst (Load2F mem));
-  ins_cost(145);
+  ins_cost(125);
   format %{ "MOVQ  $dst,$mem\t! packed2F" %}
-  ins_encode( movq_ld(dst, mem));
+  ins_encode %{
+    __ movq($dst$$XMMRegister, $mem$$Address);
+  %}
   ins_pipe( pipe_slow );
 %}
 
@@ -6606,8 +5789,9 @@ instruct loadConF0(regF dst, immF0 src)
   ins_cost(100);
 
   format %{ "xorps   $dst, $dst\t# float 0.0" %}
-  opcode(0x0F, 0x57);
-  ins_encode(REX_reg_reg(dst, dst), OpcP, OpcS, reg_reg(dst, dst));
+  ins_encode %{
+    __ xorps($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -6628,8 +5812,9 @@ instruct loadConD0(regD dst, immD0 src)
   ins_cost(100);
 
   format %{ "xorpd   $dst, $dst\t# double 0.0" %}
-  opcode(0x66, 0x0F, 0x57);
-  ins_encode(OpcP, REX_reg_reg(dst, dst), OpcS, OpcT, reg_reg(dst, dst));
+  ins_encode %{
+    __ xorpd ($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -6672,8 +5857,9 @@ instruct loadSSF(regF dst, stackSlotF src)
 
   ins_cost(125);
   format %{ "movss   $dst, $src\t# float stk" %}
-  opcode(0xF3, 0x0F, 0x10);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, reg_mem(dst, src));
+  ins_encode %{
+    __ movflt($dst$$XMMRegister, Address(rsp, $src$$disp));
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 
@@ -6699,8 +5885,9 @@ instruct prefetchr( memory mem ) %{
   ins_cost(125);
 
   format %{ "PREFETCHR $mem\t# Prefetch into level 1 cache" %}
-  opcode(0x0F, 0x0D);     /* Opcode 0F 0D /0 */
-  ins_encode(REX_mem(mem), OpcP, OpcS, RM_opc_mem(0x00, mem));
+  ins_encode %{
+    __ prefetchr($mem$$Address);
+  %}
   ins_pipe(ialu_mem);
 %}
 
@@ -6710,8 +5897,9 @@ instruct prefetchrNTA( memory mem ) %{
   ins_cost(125);
 
   format %{ "PREFETCHNTA $mem\t# Prefetch into non-temporal cache for read" %}
-  opcode(0x0F, 0x18);     /* Opcode 0F 18 /0 */
-  ins_encode(REX_mem(mem), OpcP, OpcS, RM_opc_mem(0x00, mem));
+  ins_encode %{
+    __ prefetchnta($mem$$Address);
+  %}
   ins_pipe(ialu_mem);
 %}
 
@@ -6721,8 +5909,9 @@ instruct prefetchrT0( memory mem ) %{
   ins_cost(125);
 
   format %{ "PREFETCHT0 $mem\t# prefetch into L1 and L2 caches for read" %}
-  opcode(0x0F, 0x18); /* Opcode 0F 18 /1 */
-  ins_encode(REX_mem(mem), OpcP, OpcS, RM_opc_mem(0x01, mem));
+  ins_encode %{
+    __ prefetcht0($mem$$Address);
+  %}
   ins_pipe(ialu_mem);
 %}
 
@@ -6732,52 +5921,70 @@ instruct prefetchrT2( memory mem ) %{
   ins_cost(125);
 
   format %{ "PREFETCHT2 $mem\t# prefetch into L2 caches for read" %}
-  opcode(0x0F, 0x18); /* Opcode 0F 18 /3 */
-  ins_encode(REX_mem(mem), OpcP, OpcS, RM_opc_mem(0x03, mem));
-  ins_pipe(ialu_mem);
-%}
-
-instruct prefetchw( memory mem ) %{
-  predicate(AllocatePrefetchInstr==3);
-  match(PrefetchWrite mem);
-  ins_cost(125);
-
-  format %{ "PREFETCHW $mem\t# Prefetch into level 1 cache and mark modified" %}
-  opcode(0x0F, 0x0D);     /* Opcode 0F 0D /1 */
-  ins_encode(REX_mem(mem), OpcP, OpcS, RM_opc_mem(0x01, mem));
+  ins_encode %{
+    __ prefetcht2($mem$$Address);
+  %}
   ins_pipe(ialu_mem);
 %}
 
 instruct prefetchwNTA( memory mem ) %{
-  predicate(AllocatePrefetchInstr==0);
   match(PrefetchWrite mem);
   ins_cost(125);
 
   format %{ "PREFETCHNTA $mem\t# Prefetch to non-temporal cache for write" %}
-  opcode(0x0F, 0x18);     /* Opcode 0F 18 /0 */
-  ins_encode(REX_mem(mem), OpcP, OpcS, RM_opc_mem(0x00, mem));
+  ins_encode %{
+    __ prefetchnta($mem$$Address);
+  %}
   ins_pipe(ialu_mem);
 %}
 
-instruct prefetchwT0( memory mem ) %{
+// Prefetch instructions for allocation.
+
+instruct prefetchAlloc( memory mem ) %{
+  predicate(AllocatePrefetchInstr==3);
+  match(PrefetchAllocation mem);
+  ins_cost(125);
+
+  format %{ "PREFETCHW $mem\t# Prefetch allocation into level 1 cache and mark modified" %}
+  ins_encode %{
+    __ prefetchw($mem$$Address);
+  %}
+  ins_pipe(ialu_mem);
+%}
+
+instruct prefetchAllocNTA( memory mem ) %{
+  predicate(AllocatePrefetchInstr==0);
+  match(PrefetchAllocation mem);
+  ins_cost(125);
+
+  format %{ "PREFETCHNTA $mem\t# Prefetch allocation to non-temporal cache for write" %}
+  ins_encode %{
+    __ prefetchnta($mem$$Address);
+  %}
+  ins_pipe(ialu_mem);
+%}
+
+instruct prefetchAllocT0( memory mem ) %{
   predicate(AllocatePrefetchInstr==1);
-  match(PrefetchWrite mem);
+  match(PrefetchAllocation mem);
   ins_cost(125);
 
-  format %{ "PREFETCHT0 $mem\t# Prefetch to level 1 and 2 caches for write" %}
-  opcode(0x0F, 0x18);     /* Opcode 0F 18 /1 */
-  ins_encode(REX_mem(mem), OpcP, OpcS, RM_opc_mem(0x01, mem));
+  format %{ "PREFETCHT0 $mem\t# Prefetch allocation to level 1 and 2 caches for write" %}
+  ins_encode %{
+    __ prefetcht0($mem$$Address);
+  %}
   ins_pipe(ialu_mem);
 %}
 
-instruct prefetchwT2( memory mem ) %{
+instruct prefetchAllocT2( memory mem ) %{
   predicate(AllocatePrefetchInstr==2);
-  match(PrefetchWrite mem);
+  match(PrefetchAllocation mem);
   ins_cost(125);
 
-  format %{ "PREFETCHT2 $mem\t# Prefetch to level 2 cache for write" %}
-  opcode(0x0F, 0x18);     /* Opcode 0F 18 /3 */
-  ins_encode(REX_mem(mem), OpcP, OpcS, RM_opc_mem(0x03, mem));
+  format %{ "PREFETCHT2 $mem\t# Prefetch allocation to level 2 cache for write" %}
+  ins_encode %{
+    __ prefetcht2($mem$$Address);
+  %}
   ins_pipe(ialu_mem);
 %}
 
@@ -7017,7 +6224,9 @@ instruct storeA8B(memory mem, regD src) %{
   match(Set mem (Store8B mem src));
   ins_cost(145);
   format %{ "MOVQ  $mem,$src\t! packed8B" %}
-  ins_encode( movq_st(mem, src));
+  ins_encode %{
+    __ movq($mem$$Address, $src$$XMMRegister);
+  %}
   ins_pipe( pipe_slow );
 %}
 
@@ -7026,7 +6235,9 @@ instruct storeA4C(memory mem, regD src) %{
   match(Set mem (Store4C mem src));
   ins_cost(145);
   format %{ "MOVQ  $mem,$src\t! packed4C" %}
-  ins_encode( movq_st(mem, src));
+  ins_encode %{
+    __ movq($mem$$Address, $src$$XMMRegister);
+  %}
   ins_pipe( pipe_slow );
 %}
 
@@ -7035,7 +6246,9 @@ instruct storeA2I(memory mem, regD src) %{
   match(Set mem (Store2I mem src));
   ins_cost(145);
   format %{ "MOVQ  $mem,$src\t! packed2I" %}
-  ins_encode( movq_st(mem, src));
+  ins_encode %{
+    __ movq($mem$$Address, $src$$XMMRegister);
+  %}
   ins_pipe( pipe_slow );
 %}
 
@@ -7069,7 +6282,9 @@ instruct storeA2F(memory mem, regD src) %{
   match(Set mem (Store2F mem src));
   ins_cost(145);
   format %{ "MOVQ  $mem,$src\t! packed2F" %}
-  ins_encode( movq_st(mem, src));
+  ins_encode %{
+    __ movq($mem$$Address, $src$$XMMRegister);
+  %}
   ins_pipe( pipe_slow );
 %}
 
@@ -7080,8 +6295,9 @@ instruct storeF(memory mem, regF src)
 
   ins_cost(95); // XXX
   format %{ "movss   $mem, $src\t# float" %}
-  opcode(0xF3, 0x0F, 0x11);
-  ins_encode(OpcP, REX_reg_mem(src, mem), OpcS, OpcT, reg_mem(src, mem));
+  ins_encode %{
+    __ movflt($mem$$Address, $src$$XMMRegister);
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 
@@ -7117,8 +6333,9 @@ instruct storeD(memory mem, regD src)
 
   ins_cost(95); // XXX
   format %{ "movsd   $mem, $src\t# double" %}
-  opcode(0xF2, 0x0F, 0x11);
-  ins_encode(OpcP, REX_reg_mem(src, mem), OpcS, OpcT, reg_mem(src, mem));
+  ins_encode %{
+    __ movdbl($mem$$Address, $src$$XMMRegister);
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 
@@ -7187,8 +6404,9 @@ instruct storeSSF(stackSlotF dst, regF src)
 
   ins_cost(95); // XXX
   format %{ "movss   $dst, $src\t# float stk" %}
-  opcode(0xF3, 0x0F, 0x11);
-  ins_encode(OpcP, REX_reg_mem(src, dst), OpcS, OpcT, reg_mem(src, dst));
+  ins_encode %{
+    __ movflt(Address(rsp, $dst$$disp), $src$$XMMRegister);
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 
@@ -7198,8 +6416,9 @@ instruct storeSSD(stackSlotD dst, regD src)
 
   ins_cost(95); // XXX
   format %{ "movsd   $dst, $src\t# double stk" %}
-  opcode(0xF2, 0x0F, 0x11);
-  ins_encode(OpcP, REX_reg_mem(src, dst), OpcS, OpcT, reg_mem(src, dst));
+  ins_encode %{
+    __ movdbl(Address(rsp, $dst$$disp), $src$$XMMRegister);
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 
@@ -7427,8 +6646,7 @@ instruct membar_acquire()
 
 instruct membar_acquire_lock()
 %{
-  match(MemBarAcquire);
-  predicate(Matcher::prior_fast_lock(n));
+  match(MemBarAcquireLock);
   ins_cost(0);
 
   size(0);
@@ -7450,8 +6668,7 @@ instruct membar_release()
 
 instruct membar_release_lock()
 %{
-  match(MemBarRelease);
-  predicate(Matcher::post_fast_unlock(n));
+  match(MemBarReleaseLock);
   ins_cost(0);
 
   size(0);
@@ -7491,6 +6708,16 @@ instruct unnecessary_membar_volatile()
   ins_pipe(empty);
 %}
 
+instruct membar_storestore() %{
+  match(MemBarStoreStore);
+  ins_cost(0);
+
+  size(0);
+  format %{ "MEMBAR-storestore (empty encoding)" %}
+  ins_encode( );
+  ins_pipe(empty);
+%}
+
 //----------Move Instructions--------------------------------------------------
 
 instruct castX2P(rRegP dst, rRegL src)
@@ -7498,7 +6725,11 @@ instruct castX2P(rRegP dst, rRegL src)
   match(Set dst (CastX2P src));
 
   format %{ "movq    $dst, $src\t# long->ptr" %}
-  ins_encode(enc_copy_wide(dst, src));
+  ins_encode %{
+    if ($dst$$reg != $src$$reg) {
+      __ movptr($dst$$Register, $src$$Register);
+    }
+  %}
   ins_pipe(ialu_reg_reg); // XXX
 %}
 
@@ -7507,7 +6738,11 @@ instruct castP2X(rRegL dst, rRegP src)
   match(Set dst (CastP2X src));
 
   format %{ "movq    $dst, $src\t# ptr -> long" %}
-  ins_encode(enc_copy_wide(dst, src));
+  ins_encode %{
+    if ($dst$$reg != $src$$reg) {
+      __ movptr($dst$$Register, $src$$Register);
+    }
+  %}
   ins_pipe(ialu_reg_reg); // XXX
 %}
 
@@ -7598,7 +6833,6 @@ instruct jumpXtnd_offset(rRegL switch_val, immI2 shift, rRegI dest) %{
     __ jmp(dispatch);
   %}
   ins_pipe(pipe_jmp);
-  ins_pc_relative(1);
 %}
 
 instruct jumpXtnd_addr(rRegL switch_val, immI2 shift, immL32 offset, rRegI dest) %{
@@ -7619,7 +6853,6 @@ instruct jumpXtnd_addr(rRegL switch_val, immI2 shift, immL32 offset, rRegI dest)
     __ jmp(dispatch);
   %}
   ins_pipe(pipe_jmp);
-  ins_pc_relative(1);
 %}
 
 instruct jumpXtnd(rRegL switch_val, rRegI dest) %{
@@ -7640,7 +6873,6 @@ instruct jumpXtnd(rRegL switch_val, rRegI dest) %{
     __ jmp(dispatch);
   %}
   ins_pipe(pipe_jmp);
-  ins_pc_relative(1);
 %}
 
 // Conditional move
@@ -7863,7 +7095,13 @@ instruct cmovF_reg(cmpOp cop, rFlagsReg cr, regF dst, regF src)
   format %{ "jn$cop    skip\t# signed cmove float\n\t"
             "movss     $dst, $src\n"
     "skip:" %}
-  ins_encode(enc_cmovf_branch(cop, dst, src));
+  ins_encode %{
+    Label Lskip;
+    // Invert sense of branch from sense of CMOV
+    __ jccb((Assembler::Condition)($cop$$cmpcode^1), Lskip);
+    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
+    __ bind(Lskip);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -7887,7 +7125,13 @@ instruct cmovF_regU(cmpOpU cop, rFlagsRegU cr, regF dst, regF src)
   format %{ "jn$cop    skip\t# unsigned cmove float\n\t"
             "movss     $dst, $src\n"
     "skip:" %}
-  ins_encode(enc_cmovf_branch(cop, dst, src));
+  ins_encode %{
+    Label Lskip;
+    // Invert sense of branch from sense of CMOV
+    __ jccb((Assembler::Condition)($cop$$cmpcode^1), Lskip);
+    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
+    __ bind(Lskip);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -7907,7 +7151,13 @@ instruct cmovD_reg(cmpOp cop, rFlagsReg cr, regD dst, regD src)
   format %{ "jn$cop    skip\t# signed cmove double\n\t"
             "movsd     $dst, $src\n"
     "skip:" %}
-  ins_encode(enc_cmovd_branch(cop, dst, src));
+  ins_encode %{
+    Label Lskip;
+    // Invert sense of branch from sense of CMOV
+    __ jccb((Assembler::Condition)($cop$$cmpcode^1), Lskip);
+    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
+    __ bind(Lskip);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -7919,7 +7169,13 @@ instruct cmovD_regU(cmpOpU cop, rFlagsRegU cr, regD dst, regD src)
   format %{ "jn$cop    skip\t# unsigned cmove double\n\t"
             "movsd     $dst, $src\n"
     "skip:" %}
-  ins_encode(enc_cmovd_branch(cop, dst, src));
+  ins_encode %{
+    Label Lskip;
+    // Invert sense of branch from sense of CMOV
+    __ jccb((Assembler::Condition)($cop$$cmpcode^1), Lskip);
+    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
+    __ bind(Lskip);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10206,9 +9462,7 @@ instruct cmpLTMask0(rRegI dst, immI0 zero, rFlagsReg cr)
 %}
 
 
-instruct cadd_cmpLTMask(rRegI p, rRegI q, rRegI y,
-                         rRegI tmp,
-                         rFlagsReg cr)
+instruct cadd_cmpLTMask(rRegI p, rRegI q, rRegI y, rRegI tmp, rFlagsReg cr)
 %{
   match(Set p (AddI (AndI (CmpLTMask p q) y) (SubI p q)));
   effect(TEMP tmp, KILL cr);
@@ -10218,24 +9472,18 @@ instruct cadd_cmpLTMask(rRegI p, rRegI q, rRegI y,
             "sbbl    $tmp, $tmp\n\t"
             "andl    $tmp, $y\n\t"
             "addl    $p, $tmp" %}
-  ins_encode(enc_cmpLTP(p, q, y, tmp));
+  ins_encode %{
+    Register Rp = $p$$Register;
+    Register Rq = $q$$Register;
+    Register Ry = $y$$Register;
+    Register Rt = $tmp$$Register;
+    __ subl(Rp, Rq);
+    __ sbbl(Rt, Rt);
+    __ andl(Rt, Ry);
+    __ addl(Rp, Rt);
+  %}
   ins_pipe(pipe_cmplt);
 %}
-
-/* If I enable this, I encourage spilling in the inner loop of compress.
-instruct cadd_cmpLTMask_mem( rRegI p, rRegI q, memory y, rRegI tmp, rFlagsReg cr )
-%{
-  match(Set p (AddI (AndI (CmpLTMask p q) (LoadI y)) (SubI p q)));
-  effect( TEMP tmp, KILL cr );
-  ins_cost(400);
-
-  format %{ "SUB    $p,$q\n\t"
-            "SBB    RCX,RCX\n\t"
-            "AND    RCX,$y\n\t"
-            "ADD    $p,RCX" %}
-  ins_encode( enc_cmpLTP_mem(p,q,y,tmp) );
-%}
-*/
 
 //---------- FP Instructions------------------------------------------------
 
@@ -10249,17 +9497,18 @@ instruct cmpF_cc_reg(rFlagsRegU cr, regF src1, regF src2)
             "pushfq\t# saw NaN, set CF\n\t"
             "andq    [rsp], #0xffffff2b\n\t"
             "popfq\n"
-    "exit:   nop\t# avoid branch to branch" %}
-  opcode(0x0F, 0x2E);
-  ins_encode(REX_reg_reg(src1, src2), OpcP, OpcS, reg_reg(src1, src2),
-             cmpfp_fixup);
+    "exit:" %}
+  ins_encode %{
+    __ ucomiss($src1$$XMMRegister, $src2$$XMMRegister);
+    emit_cmpfp_fixup(_masm);
+  %}
   ins_pipe(pipe_slow);
 %}
 
 instruct cmpF_cc_reg_CF(rFlagsRegUCF cr, regF src1, regF src2) %{
   match(Set cr (CmpF src1 src2));
 
-  ins_cost(145);
+  ins_cost(100);
   format %{ "ucomiss $src1, $src2" %}
   ins_encode %{
     __ ucomiss($src1$$XMMRegister, $src2$$XMMRegister);
@@ -10277,10 +9526,11 @@ instruct cmpF_cc_mem(rFlagsRegU cr, regF src1, memory src2)
             "pushfq\t# saw NaN, set CF\n\t"
             "andq    [rsp], #0xffffff2b\n\t"
             "popfq\n"
-    "exit:   nop\t# avoid branch to branch" %}
-  opcode(0x0F, 0x2E);
-  ins_encode(REX_reg_mem(src1, src2), OpcP, OpcS, reg_mem(src1, src2),
-             cmpfp_fixup);
+    "exit:" %}
+  ins_encode %{
+    __ ucomiss($src1$$XMMRegister, $src2$$Address);
+    emit_cmpfp_fixup(_masm);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10289,8 +9539,9 @@ instruct cmpF_cc_memCF(rFlagsRegUCF cr, regF src1, memory src2) %{
 
   ins_cost(100);
   format %{ "ucomiss $src1, $src2" %}
-  opcode(0x0F, 0x2E);
-  ins_encode(REX_reg_mem(src1, src2), OpcP, OpcS, reg_mem(src1, src2));
+  ins_encode %{
+    __ ucomiss($src1$$XMMRegister, $src2$$Address);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10303,16 +9554,10 @@ instruct cmpF_cc_imm(rFlagsRegU cr, regF src, immF con) %{
             "pushfq\t# saw NaN, set CF\n\t"
             "andq    [rsp], #0xffffff2b\n\t"
             "popfq\n"
-    "exit:   nop\t# avoid branch to branch" %}
+    "exit:" %}
   ins_encode %{
-    Label L_exit;
     __ ucomiss($src$$XMMRegister, $constantaddress($con));
-    __ jcc(Assembler::noParity, L_exit);
-    __ pushf();
-    __ andq(rsp, 0xffffff2b);
-    __ popf();
-    __ bind(L_exit);
-    __ nop();
+    emit_cmpfp_fixup(_masm);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10337,10 +9582,11 @@ instruct cmpD_cc_reg(rFlagsRegU cr, regD src1, regD src2)
             "pushfq\t# saw NaN, set CF\n\t"
             "andq    [rsp], #0xffffff2b\n\t"
             "popfq\n"
-    "exit:   nop\t# avoid branch to branch" %}
-  opcode(0x66, 0x0F, 0x2E);
-  ins_encode(OpcP, REX_reg_reg(src1, src2), OpcS, OpcT, reg_reg(src1, src2),
-             cmpfp_fixup);
+    "exit:" %}
+  ins_encode %{
+    __ ucomisd($src1$$XMMRegister, $src2$$XMMRegister);
+    emit_cmpfp_fixup(_masm);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10365,10 +9611,11 @@ instruct cmpD_cc_mem(rFlagsRegU cr, regD src1, memory src2)
             "pushfq\t# saw NaN, set CF\n\t"
             "andq    [rsp], #0xffffff2b\n\t"
             "popfq\n"
-    "exit:   nop\t# avoid branch to branch" %}
-  opcode(0x66, 0x0F, 0x2E);
-  ins_encode(OpcP, REX_reg_mem(src1, src2), OpcS, OpcT, reg_mem(src1, src2),
-             cmpfp_fixup);
+    "exit:" %}
+  ins_encode %{
+    __ ucomisd($src1$$XMMRegister, $src2$$Address);
+    emit_cmpfp_fixup(_masm);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10377,8 +9624,9 @@ instruct cmpD_cc_memCF(rFlagsRegUCF cr, regD src1, memory src2) %{
 
   ins_cost(100);
   format %{ "ucomisd $src1, $src2" %}
-  opcode(0x66, 0x0F, 0x2E);
-  ins_encode(OpcP, REX_reg_mem(src1, src2), OpcS, OpcT, reg_mem(src1, src2));
+  ins_encode %{
+    __ ucomisd($src1$$XMMRegister, $src2$$Address);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10391,16 +9639,10 @@ instruct cmpD_cc_imm(rFlagsRegU cr, regD src, immD con) %{
             "pushfq\t# saw NaN, set CF\n\t"
             "andq    [rsp], #0xffffff2b\n\t"
             "popfq\n"
-    "exit:   nop\t# avoid branch to branch" %}
+    "exit:" %}
   ins_encode %{
-    Label L_exit;
     __ ucomisd($src$$XMMRegister, $constantaddress($con));
-    __ jcc(Assembler::noParity, L_exit);
-    __ pushf();
-    __ andq(rsp, 0xffffff2b);
-    __ popf();
-    __ bind(L_exit);
-    __ nop();
+    emit_cmpfp_fixup(_masm);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10429,10 +9671,10 @@ instruct cmpF_reg(rRegI dst, regF src1, regF src2, rFlagsReg cr)
             "setne   $dst\n\t"
             "movzbl  $dst, $dst\n"
     "done:" %}
-
-  opcode(0x0F, 0x2E);
-  ins_encode(REX_reg_reg(src1, src2), OpcP, OpcS, reg_reg(src1, src2),
-             cmpfp3(dst));
+  ins_encode %{
+    __ ucomiss($src1$$XMMRegister, $src2$$XMMRegister);
+    emit_cmpfp3(_masm, $dst$$Register);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10450,10 +9692,10 @@ instruct cmpF_mem(rRegI dst, regF src1, memory src2, rFlagsReg cr)
             "setne   $dst\n\t"
             "movzbl  $dst, $dst\n"
     "done:" %}
-
-  opcode(0x0F, 0x2E);
-  ins_encode(REX_reg_mem(src1, src2), OpcP, OpcS, reg_mem(src1, src2),
-             cmpfp3(dst));
+  ins_encode %{
+    __ ucomiss($src1$$XMMRegister, $src2$$Address);
+    emit_cmpfp3(_masm, $dst$$Register);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10471,15 +9713,8 @@ instruct cmpF_imm(rRegI dst, regF src, immF con, rFlagsReg cr) %{
             "movzbl  $dst, $dst\n"
     "done:" %}
   ins_encode %{
-    Label L_done;
-    Register Rdst = $dst$$Register;
     __ ucomiss($src$$XMMRegister, $constantaddress($con));
-    __ movl(Rdst, -1);
-    __ jcc(Assembler::parity, L_done);
-    __ jcc(Assembler::below, L_done);
-    __ setb(Assembler::notEqual, Rdst);
-    __ movzbl(Rdst, Rdst);
-    __ bind(L_done);
+    emit_cmpfp3(_masm, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -10498,10 +9733,10 @@ instruct cmpD_reg(rRegI dst, regD src1, regD src2, rFlagsReg cr)
             "setne   $dst\n\t"
             "movzbl  $dst, $dst\n"
     "done:" %}
-
-  opcode(0x66, 0x0F, 0x2E);
-  ins_encode(OpcP, REX_reg_reg(src1, src2), OpcS, OpcT, reg_reg(src1, src2),
-             cmpfp3(dst));
+  ins_encode %{
+    __ ucomisd($src1$$XMMRegister, $src2$$XMMRegister);
+    emit_cmpfp3(_masm, $dst$$Register);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10519,10 +9754,10 @@ instruct cmpD_mem(rRegI dst, regD src1, memory src2, rFlagsReg cr)
             "setne   $dst\n\t"
             "movzbl  $dst, $dst\n"
     "done:" %}
-
-  opcode(0x66, 0x0F, 0x2E);
-  ins_encode(OpcP, REX_reg_mem(src1, src2), OpcS, OpcT, reg_mem(src1, src2),
-             cmpfp3(dst));
+  ins_encode %{
+    __ ucomisd($src1$$XMMRegister, $src2$$Address);
+    emit_cmpfp3(_masm, $dst$$Register);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10540,374 +9775,9 @@ instruct cmpD_imm(rRegI dst, regD src, immD con, rFlagsReg cr) %{
             "movzbl  $dst, $dst\n"
     "done:" %}
   ins_encode %{
-    Register Rdst = $dst$$Register;
-    Label L_done;
     __ ucomisd($src$$XMMRegister, $constantaddress($con));
-    __ movl(Rdst, -1);
-    __ jcc(Assembler::parity, L_done);
-    __ jcc(Assembler::below, L_done);
-    __ setb(Assembler::notEqual, Rdst);
-    __ movzbl(Rdst, Rdst);
-    __ bind(L_done);
+    emit_cmpfp3(_masm, $dst$$Register);
   %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct addF_reg(regF dst, regF src)
-%{
-  match(Set dst (AddF dst src));
-
-  format %{ "addss   $dst, $src" %}
-  ins_cost(150); // XXX
-  opcode(0xF3, 0x0F, 0x58);
-  ins_encode(OpcP, REX_reg_reg(dst, src), OpcS, OpcT, reg_reg(dst, src));
-  ins_pipe(pipe_slow);
-%}
-
-instruct addF_mem(regF dst, memory src)
-%{
-  match(Set dst (AddF dst (LoadF src)));
-
-  format %{ "addss   $dst, $src" %}
-  ins_cost(150); // XXX
-  opcode(0xF3, 0x0F, 0x58);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, reg_mem(dst, src));
-  ins_pipe(pipe_slow);
-%}
-
-instruct addF_imm(regF dst, immF con) %{
-  match(Set dst (AddF dst con));
-  format %{ "addss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
-  ins_cost(150); // XXX
-  ins_encode %{
-    __ addss($dst$$XMMRegister, $constantaddress($con));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct addD_reg(regD dst, regD src)
-%{
-  match(Set dst (AddD dst src));
-
-  format %{ "addsd   $dst, $src" %}
-  ins_cost(150); // XXX
-  opcode(0xF2, 0x0F, 0x58);
-  ins_encode(OpcP, REX_reg_reg(dst, src), OpcS, OpcT, reg_reg(dst, src));
-  ins_pipe(pipe_slow);
-%}
-
-instruct addD_mem(regD dst, memory src)
-%{
-  match(Set dst (AddD dst (LoadD src)));
-
-  format %{ "addsd   $dst, $src" %}
-  ins_cost(150); // XXX
-  opcode(0xF2, 0x0F, 0x58);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, reg_mem(dst, src));
-  ins_pipe(pipe_slow);
-%}
-
-instruct addD_imm(regD dst, immD con) %{
-  match(Set dst (AddD dst con));
-  format %{ "addsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
-  ins_cost(150); // XXX
-  ins_encode %{
-    __ addsd($dst$$XMMRegister, $constantaddress($con));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct subF_reg(regF dst, regF src)
-%{
-  match(Set dst (SubF dst src));
-
-  format %{ "subss   $dst, $src" %}
-  ins_cost(150); // XXX
-  opcode(0xF3, 0x0F, 0x5C);
-  ins_encode(OpcP, REX_reg_reg(dst, src), OpcS, OpcT, reg_reg(dst, src));
-  ins_pipe(pipe_slow);
-%}
-
-instruct subF_mem(regF dst, memory src)
-%{
-  match(Set dst (SubF dst (LoadF src)));
-
-  format %{ "subss   $dst, $src" %}
-  ins_cost(150); // XXX
-  opcode(0xF3, 0x0F, 0x5C);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, reg_mem(dst, src));
-  ins_pipe(pipe_slow);
-%}
-
-instruct subF_imm(regF dst, immF con) %{
-  match(Set dst (SubF dst con));
-  format %{ "subss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
-  ins_cost(150); // XXX
-  ins_encode %{
-    __ subss($dst$$XMMRegister, $constantaddress($con));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct subD_reg(regD dst, regD src)
-%{
-  match(Set dst (SubD dst src));
-
-  format %{ "subsd   $dst, $src" %}
-  ins_cost(150); // XXX
-  opcode(0xF2, 0x0F, 0x5C);
-  ins_encode(OpcP, REX_reg_reg(dst, src), OpcS, OpcT, reg_reg(dst, src));
-  ins_pipe(pipe_slow);
-%}
-
-instruct subD_mem(regD dst, memory src)
-%{
-  match(Set dst (SubD dst (LoadD src)));
-
-  format %{ "subsd   $dst, $src" %}
-  ins_cost(150); // XXX
-  opcode(0xF2, 0x0F, 0x5C);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, reg_mem(dst, src));
-  ins_pipe(pipe_slow);
-%}
-
-instruct subD_imm(regD dst, immD con) %{
-  match(Set dst (SubD dst con));
-  format %{ "subsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
-  ins_cost(150); // XXX
-  ins_encode %{
-    __ subsd($dst$$XMMRegister, $constantaddress($con));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct mulF_reg(regF dst, regF src)
-%{
-  match(Set dst (MulF dst src));
-
-  format %{ "mulss   $dst, $src" %}
-  ins_cost(150); // XXX
-  opcode(0xF3, 0x0F, 0x59);
-  ins_encode(OpcP, REX_reg_reg(dst, src), OpcS, OpcT, reg_reg(dst, src));
-  ins_pipe(pipe_slow);
-%}
-
-instruct mulF_mem(regF dst, memory src)
-%{
-  match(Set dst (MulF dst (LoadF src)));
-
-  format %{ "mulss   $dst, $src" %}
-  ins_cost(150); // XXX
-  opcode(0xF3, 0x0F, 0x59);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, reg_mem(dst, src));
-  ins_pipe(pipe_slow);
-%}
-
-instruct mulF_imm(regF dst, immF con) %{
-  match(Set dst (MulF dst con));
-  format %{ "mulss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
-  ins_cost(150); // XXX
-  ins_encode %{
-    __ mulss($dst$$XMMRegister, $constantaddress($con));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct mulD_reg(regD dst, regD src)
-%{
-  match(Set dst (MulD dst src));
-
-  format %{ "mulsd   $dst, $src" %}
-  ins_cost(150); // XXX
-  opcode(0xF2, 0x0F, 0x59);
-  ins_encode(OpcP, REX_reg_reg(dst, src), OpcS, OpcT, reg_reg(dst, src));
-  ins_pipe(pipe_slow);
-%}
-
-instruct mulD_mem(regD dst, memory src)
-%{
-  match(Set dst (MulD dst (LoadD src)));
-
-  format %{ "mulsd   $dst, $src" %}
-  ins_cost(150); // XXX
-  opcode(0xF2, 0x0F, 0x59);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, reg_mem(dst, src));
-  ins_pipe(pipe_slow);
-%}
-
-instruct mulD_imm(regD dst, immD con) %{
-  match(Set dst (MulD dst con));
-  format %{ "mulsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
-  ins_cost(150); // XXX
-  ins_encode %{
-    __ mulsd($dst$$XMMRegister, $constantaddress($con));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct divF_reg(regF dst, regF src)
-%{
-  match(Set dst (DivF dst src));
-
-  format %{ "divss   $dst, $src" %}
-  ins_cost(150); // XXX
-  opcode(0xF3, 0x0F, 0x5E);
-  ins_encode(OpcP, REX_reg_reg(dst, src), OpcS, OpcT, reg_reg(dst, src));
-  ins_pipe(pipe_slow);
-%}
-
-instruct divF_mem(regF dst, memory src)
-%{
-  match(Set dst (DivF dst (LoadF src)));
-
-  format %{ "divss   $dst, $src" %}
-  ins_cost(150); // XXX
-  opcode(0xF3, 0x0F, 0x5E);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, reg_mem(dst, src));
-  ins_pipe(pipe_slow);
-%}
-
-instruct divF_imm(regF dst, immF con) %{
-  match(Set dst (DivF dst con));
-  format %{ "divss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
-  ins_cost(150); // XXX
-  ins_encode %{
-    __ divss($dst$$XMMRegister, $constantaddress($con));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct divD_reg(regD dst, regD src)
-%{
-  match(Set dst (DivD dst src));
-
-  format %{ "divsd   $dst, $src" %}
-  ins_cost(150); // XXX
-  opcode(0xF2, 0x0F, 0x5E);
-  ins_encode(OpcP, REX_reg_reg(dst, src), OpcS, OpcT, reg_reg(dst, src));
-  ins_pipe(pipe_slow);
-%}
-
-instruct divD_mem(regD dst, memory src)
-%{
-  match(Set dst (DivD dst (LoadD src)));
-
-  format %{ "divsd   $dst, $src" %}
-  ins_cost(150); // XXX
-  opcode(0xF2, 0x0F, 0x5E);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, reg_mem(dst, src));
-  ins_pipe(pipe_slow);
-%}
-
-instruct divD_imm(regD dst, immD con) %{
-  match(Set dst (DivD dst con));
-  format %{ "divsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
-  ins_cost(150); // XXX
-  ins_encode %{
-    __ divsd($dst$$XMMRegister, $constantaddress($con));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct sqrtF_reg(regF dst, regF src)
-%{
-  match(Set dst (ConvD2F (SqrtD (ConvF2D src))));
-
-  format %{ "sqrtss  $dst, $src" %}
-  ins_cost(150); // XXX
-  opcode(0xF3, 0x0F, 0x51);
-  ins_encode(OpcP, REX_reg_reg(dst, src), OpcS, OpcT, reg_reg(dst, src));
-  ins_pipe(pipe_slow);
-%}
-
-instruct sqrtF_mem(regF dst, memory src)
-%{
-  match(Set dst (ConvD2F (SqrtD (ConvF2D (LoadF src)))));
-
-  format %{ "sqrtss  $dst, $src" %}
-  ins_cost(150); // XXX
-  opcode(0xF3, 0x0F, 0x51);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, reg_mem(dst, src));
-  ins_pipe(pipe_slow);
-%}
-
-instruct sqrtF_imm(regF dst, immF con) %{
-  match(Set dst (ConvD2F (SqrtD (ConvF2D con))));
-  format %{ "sqrtss  $dst, [$constantaddress]\t# load from constant table: float=$con" %}
-  ins_cost(150); // XXX
-  ins_encode %{
-    __ sqrtss($dst$$XMMRegister, $constantaddress($con));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct sqrtD_reg(regD dst, regD src)
-%{
-  match(Set dst (SqrtD src));
-
-  format %{ "sqrtsd  $dst, $src" %}
-  ins_cost(150); // XXX
-  opcode(0xF2, 0x0F, 0x51);
-  ins_encode(OpcP, REX_reg_reg(dst, src), OpcS, OpcT, reg_reg(dst, src));
-  ins_pipe(pipe_slow);
-%}
-
-instruct sqrtD_mem(regD dst, memory src)
-%{
-  match(Set dst (SqrtD (LoadD src)));
-
-  format %{ "sqrtsd  $dst, $src" %}
-  ins_cost(150); // XXX
-  opcode(0xF2, 0x0F, 0x51);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, reg_mem(dst, src));
-  ins_pipe(pipe_slow);
-%}
-
-instruct sqrtD_imm(regD dst, immD con) %{
-  match(Set dst (SqrtD con));
-  format %{ "sqrtsd  $dst, [$constantaddress]\t# load from constant table: double=$con" %}
-  ins_cost(150); // XXX
-  ins_encode %{
-    __ sqrtsd($dst$$XMMRegister, $constantaddress($con));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct absF_reg(regF dst)
-%{
-  match(Set dst (AbsF dst));
-
-  format %{ "andps   $dst, [0x7fffffff]\t# abs float by sign masking" %}
-  ins_encode(absF_encoding(dst));
-  ins_pipe(pipe_slow);
-%}
-
-instruct absD_reg(regD dst)
-%{
-  match(Set dst (AbsD dst));
-
-  format %{ "andpd   $dst, [0x7fffffffffffffff]\t"
-            "# abs double by sign masking" %}
-  ins_encode(absD_encoding(dst));
-  ins_pipe(pipe_slow);
-%}
-
-instruct negF_reg(regF dst)
-%{
-  match(Set dst (NegF dst));
-
-  format %{ "xorps   $dst, [0x80000000]\t# neg float by sign flipping" %}
-  ins_encode(negF_encoding(dst));
-  ins_pipe(pipe_slow);
-%}
-
-instruct negD_reg(regD dst)
-%{
-  match(Set dst (NegD dst));
-
-  format %{ "xorpd   $dst, [0x8000000000000000]\t"
-            "# neg double by sign flipping" %}
-  ins_encode(negD_encoding(dst));
   ins_pipe(pipe_slow);
 %}
 
@@ -10999,8 +9869,9 @@ instruct convF2D_reg_reg(regD dst, regF src)
   match(Set dst (ConvF2D src));
 
   format %{ "cvtss2sd $dst, $src" %}
-  opcode(0xF3, 0x0F, 0x5A);
-  ins_encode(OpcP, REX_reg_reg(dst, src), OpcS, OpcT, reg_reg(dst, src));
+  ins_encode %{
+    __ cvtss2sd ($dst$$XMMRegister, $src$$XMMRegister);
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 
@@ -11009,8 +9880,9 @@ instruct convF2D_reg_mem(regD dst, memory src)
   match(Set dst (ConvF2D (LoadF src)));
 
   format %{ "cvtss2sd $dst, $src" %}
-  opcode(0xF3, 0x0F, 0x5A);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, reg_mem(dst, src));
+  ins_encode %{
+    __ cvtss2sd ($dst$$XMMRegister, $src$$Address);
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 
@@ -11019,8 +9891,9 @@ instruct convD2F_reg_reg(regF dst, regD src)
   match(Set dst (ConvD2F src));
 
   format %{ "cvtsd2ss $dst, $src" %}
-  opcode(0xF2, 0x0F, 0x5A);
-  ins_encode(OpcP, REX_reg_reg(dst, src), OpcS, OpcT, reg_reg(dst, src));
+  ins_encode %{
+    __ cvtsd2ss ($dst$$XMMRegister, $src$$XMMRegister);
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 
@@ -11029,8 +9902,9 @@ instruct convD2F_reg_mem(regF dst, memory src)
   match(Set dst (ConvD2F (LoadD src)));
 
   format %{ "cvtsd2ss $dst, $src" %}
-  opcode(0xF2, 0x0F, 0x5A);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, reg_mem(dst, src));
+  ins_encode %{
+    __ cvtsd2ss ($dst$$XMMRegister, $src$$Address);
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 
@@ -11048,9 +9922,17 @@ instruct convF2I_reg_reg(rRegI dst, regF src, rFlagsReg cr)
             "call    f2i_fixup\n\t"
             "popq    $dst\n"
     "done:   "%}
-  opcode(0xF3, 0x0F, 0x2C);
-  ins_encode(OpcP, REX_reg_reg(dst, src), OpcS, OpcT, reg_reg(dst, src),
-             f2i_fixup(dst, src));
+  ins_encode %{
+    Label done;
+    __ cvttss2sil($dst$$Register, $src$$XMMRegister);
+    __ cmpl($dst$$Register, 0x80000000);
+    __ jccb(Assembler::notEqual, done);
+    __ subptr(rsp, 8);
+    __ movflt(Address(rsp, 0), $src$$XMMRegister);
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::f2i_fixup())));
+    __ pop($dst$$Register);
+    __ bind(done);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -11067,9 +9949,18 @@ instruct convF2L_reg_reg(rRegL dst, regF src, rFlagsReg cr)
             "call    f2l_fixup\n\t"
             "popq    $dst\n"
     "done:   "%}
-  opcode(0xF3, 0x0F, 0x2C);
-  ins_encode(OpcP, REX_reg_reg_wide(dst, src), OpcS, OpcT, reg_reg(dst, src),
-             f2l_fixup(dst, src));
+  ins_encode %{
+    Label done;
+    __ cvttss2siq($dst$$Register, $src$$XMMRegister);
+    __ cmp64($dst$$Register,
+             ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
+    __ jccb(Assembler::notEqual, done);
+    __ subptr(rsp, 8);
+    __ movflt(Address(rsp, 0), $src$$XMMRegister);
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::f2l_fixup())));
+    __ pop($dst$$Register);
+    __ bind(done);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -11086,9 +9977,17 @@ instruct convD2I_reg_reg(rRegI dst, regD src, rFlagsReg cr)
             "call    d2i_fixup\n\t"
             "popq    $dst\n"
     "done:   "%}
-  opcode(0xF2, 0x0F, 0x2C);
-  ins_encode(OpcP, REX_reg_reg(dst, src), OpcS, OpcT, reg_reg(dst, src),
-             d2i_fixup(dst, src));
+  ins_encode %{
+    Label done;
+    __ cvttsd2sil($dst$$Register, $src$$XMMRegister);
+    __ cmpl($dst$$Register, 0x80000000);
+    __ jccb(Assembler::notEqual, done);
+    __ subptr(rsp, 8);
+    __ movdbl(Address(rsp, 0), $src$$XMMRegister);
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2i_fixup())));
+    __ pop($dst$$Register);
+    __ bind(done);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -11105,9 +10004,18 @@ instruct convD2L_reg_reg(rRegL dst, regD src, rFlagsReg cr)
             "call    d2l_fixup\n\t"
             "popq    $dst\n"
     "done:   "%}
-  opcode(0xF2, 0x0F, 0x2C);
-  ins_encode(OpcP, REX_reg_reg_wide(dst, src), OpcS, OpcT, reg_reg(dst, src),
-             d2l_fixup(dst, src));
+  ins_encode %{
+    Label done;
+    __ cvttsd2siq($dst$$Register, $src$$XMMRegister);
+    __ cmp64($dst$$Register,
+             ExternalAddress((address) StubRoutines::x86::double_sign_flip()));
+    __ jccb(Assembler::notEqual, done);
+    __ subptr(rsp, 8);
+    __ movdbl(Address(rsp, 0), $src$$XMMRegister);
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2l_fixup())));
+    __ pop($dst$$Register);
+    __ bind(done);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -11117,8 +10025,9 @@ instruct convI2F_reg_reg(regF dst, rRegI src)
   match(Set dst (ConvI2F src));
 
   format %{ "cvtsi2ssl $dst, $src\t# i2f" %}
-  opcode(0xF3, 0x0F, 0x2A);
-  ins_encode(OpcP, REX_reg_reg(dst, src), OpcS, OpcT, reg_reg(dst, src));
+  ins_encode %{
+    __ cvtsi2ssl ($dst$$XMMRegister, $src$$Register);
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 
@@ -11127,8 +10036,9 @@ instruct convI2F_reg_mem(regF dst, memory src)
   match(Set dst (ConvI2F (LoadI src)));
 
   format %{ "cvtsi2ssl $dst, $src\t# i2f" %}
-  opcode(0xF3, 0x0F, 0x2A);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, reg_mem(dst, src));
+  ins_encode %{
+    __ cvtsi2ssl ($dst$$XMMRegister, $src$$Address);
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 
@@ -11138,8 +10048,9 @@ instruct convI2D_reg_reg(regD dst, rRegI src)
   match(Set dst (ConvI2D src));
 
   format %{ "cvtsi2sdl $dst, $src\t# i2d" %}
-  opcode(0xF2, 0x0F, 0x2A);
-  ins_encode(OpcP, REX_reg_reg(dst, src), OpcS, OpcT, reg_reg(dst, src));
+  ins_encode %{
+    __ cvtsi2sdl ($dst$$XMMRegister, $src$$Register);
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 
@@ -11148,8 +10059,9 @@ instruct convI2D_reg_mem(regD dst, memory src)
   match(Set dst (ConvI2D (LoadI src)));
 
   format %{ "cvtsi2sdl $dst, $src\t# i2d" %}
-  opcode(0xF2, 0x0F, 0x2A);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, reg_mem(dst, src));
+  ins_encode %{
+    __ cvtsi2sdl ($dst$$XMMRegister, $src$$Address);
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 
@@ -11186,8 +10098,9 @@ instruct convL2F_reg_reg(regF dst, rRegL src)
   match(Set dst (ConvL2F src));
 
   format %{ "cvtsi2ssq $dst, $src\t# l2f" %}
-  opcode(0xF3, 0x0F, 0x2A);
-  ins_encode(OpcP, REX_reg_reg_wide(dst, src), OpcS, OpcT, reg_reg(dst, src));
+  ins_encode %{
+    __ cvtsi2ssq ($dst$$XMMRegister, $src$$Register);
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 
@@ -11196,8 +10109,9 @@ instruct convL2F_reg_mem(regF dst, memory src)
   match(Set dst (ConvL2F (LoadL src)));
 
   format %{ "cvtsi2ssq $dst, $src\t# l2f" %}
-  opcode(0xF3, 0x0F, 0x2A);
-  ins_encode(OpcP, REX_reg_mem_wide(dst, src), OpcS, OpcT, reg_mem(dst, src));
+  ins_encode %{
+    __ cvtsi2ssq ($dst$$XMMRegister, $src$$Address);
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 
@@ -11206,8 +10120,9 @@ instruct convL2D_reg_reg(regD dst, rRegL src)
   match(Set dst (ConvL2D src));
 
   format %{ "cvtsi2sdq $dst, $src\t# l2d" %}
-  opcode(0xF2, 0x0F, 0x2A);
-  ins_encode(OpcP, REX_reg_reg_wide(dst, src), OpcS, OpcT, reg_reg(dst, src));
+  ins_encode %{
+    __ cvtsi2sdq ($dst$$XMMRegister, $src$$Register);
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 
@@ -11216,8 +10131,9 @@ instruct convL2D_reg_mem(regD dst, memory src)
   match(Set dst (ConvL2D (LoadL src)));
 
   format %{ "cvtsi2sdq $dst, $src\t# l2d" %}
-  opcode(0xF2, 0x0F, 0x2A);
-  ins_encode(OpcP, REX_reg_mem_wide(dst, src), OpcS, OpcT, reg_mem(dst, src));
+  ins_encode %{
+    __ cvtsi2sdq ($dst$$XMMRegister, $src$$Address);
+  %}
   ins_pipe(pipe_slow); // XXX
 %}
 
@@ -11256,7 +10172,11 @@ instruct convI2L_reg_reg_zex(rRegL dst, rRegI src, immL_32bits mask)
   match(Set dst (AndL (ConvI2L src) mask));
 
   format %{ "movl    $dst, $src\t# i2l zero-extend\n\t" %}
-  ins_encode(enc_copy(dst, src));
+  ins_encode %{
+    if ($dst$$reg != $src$$reg) {
+      __ movl($dst$$Register, $src$$Register);
+    }
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -11266,8 +10186,9 @@ instruct convI2L_reg_mem_zex(rRegL dst, memory src, immL_32bits mask)
   match(Set dst (AndL (ConvI2L (LoadI src)) mask));
 
   format %{ "movl    $dst, $src\t# i2l zero-extend\n\t" %}
-  opcode(0x8B);
-  ins_encode(REX_reg_mem(dst, src), OpcP, reg_mem(dst, src));
+  ins_encode %{
+    __ movl($dst$$Register, $src$$Address);
+  %}
   ins_pipe(ialu_reg_mem);
 %}
 
@@ -11276,7 +10197,9 @@ instruct zerox_long_reg_reg(rRegL dst, rRegL src, immL_32bits mask)
   match(Set dst (AndL src mask));
 
   format %{ "movl    $dst, $src\t# zero-extend long" %}
-  ins_encode(enc_copy_always(dst, src));
+  ins_encode %{
+    __ movl($dst$$Register, $src$$Register);
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -11285,7 +10208,9 @@ instruct convL2I_reg_reg(rRegI dst, rRegL src)
   match(Set dst (ConvL2I src));
 
   format %{ "movl    $dst, $src\t# l2i" %}
-  ins_encode(enc_copy_always(dst, src));
+  ins_encode %{
+    __ movl($dst$$Register, $src$$Register);
+  %}
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -11296,8 +10221,9 @@ instruct MoveF2I_stack_reg(rRegI dst, stackSlotF src) %{
 
   ins_cost(125);
   format %{ "movl    $dst, $src\t# MoveF2I_stack_reg" %}
-  opcode(0x8B);
-  ins_encode(REX_reg_mem(dst, src), OpcP, reg_mem(dst, src));
+  ins_encode %{
+    __ movl($dst$$Register, Address(rsp, $src$$disp));
+  %}
   ins_pipe(ialu_reg_mem);
 %}
 
@@ -11307,8 +10233,9 @@ instruct MoveI2F_stack_reg(regF dst, stackSlotI src) %{
 
   ins_cost(125);
   format %{ "movss   $dst, $src\t# MoveI2F_stack_reg" %}
-  opcode(0xF3, 0x0F, 0x10);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, reg_mem(dst, src));
+  ins_encode %{
+    __ movflt($dst$$XMMRegister, Address(rsp, $src$$disp));
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -11318,8 +10245,9 @@ instruct MoveD2L_stack_reg(rRegL dst, stackSlotD src) %{
 
   ins_cost(125);
   format %{ "movq    $dst, $src\t# MoveD2L_stack_reg" %}
-  opcode(0x8B);
-  ins_encode(REX_reg_mem_wide(dst, src), OpcP, reg_mem(dst, src));
+  ins_encode %{
+    __ movq($dst$$Register, Address(rsp, $src$$disp));
+  %}
   ins_pipe(ialu_reg_mem);
 %}
 
@@ -11330,8 +10258,9 @@ instruct MoveL2D_stack_reg_partial(regD dst, stackSlotL src) %{
 
   ins_cost(125);
   format %{ "movlpd  $dst, $src\t# MoveL2D_stack_reg" %}
-  opcode(0x66, 0x0F, 0x12);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, reg_mem(dst, src));
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, Address(rsp, $src$$disp));
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -11342,8 +10271,9 @@ instruct MoveL2D_stack_reg(regD dst, stackSlotL src) %{
 
   ins_cost(125);
   format %{ "movsd   $dst, $src\t# MoveL2D_stack_reg" %}
-  opcode(0xF2, 0x0F, 0x10);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, reg_mem(dst, src));
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, Address(rsp, $src$$disp));
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -11354,8 +10284,9 @@ instruct MoveF2I_reg_stack(stackSlotI dst, regF src) %{
 
   ins_cost(95); // XXX
   format %{ "movss   $dst, $src\t# MoveF2I_reg_stack" %}
-  opcode(0xF3, 0x0F, 0x11);
-  ins_encode(OpcP, REX_reg_mem(src, dst), OpcS, OpcT, reg_mem(src, dst));
+  ins_encode %{
+    __ movflt(Address(rsp, $dst$$disp), $src$$XMMRegister);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -11365,8 +10296,9 @@ instruct MoveI2F_reg_stack(stackSlotF dst, rRegI src) %{
 
   ins_cost(100);
   format %{ "movl    $dst, $src\t# MoveI2F_reg_stack" %}
-  opcode(0x89);
-  ins_encode(REX_reg_mem(src, dst), OpcP, reg_mem(src, dst));
+  ins_encode %{
+    __ movl(Address(rsp, $dst$$disp), $src$$Register);
+  %}
   ins_pipe( ialu_mem_reg );
 %}
 
@@ -11376,8 +10308,9 @@ instruct MoveD2L_reg_stack(stackSlotL dst, regD src) %{
 
   ins_cost(95); // XXX
   format %{ "movsd   $dst, $src\t# MoveL2D_reg_stack" %}
-  opcode(0xF2, 0x0F, 0x11);
-  ins_encode(OpcP, REX_reg_mem(src, dst), OpcS, OpcT, reg_mem(src, dst));
+  ins_encode %{
+    __ movdbl(Address(rsp, $dst$$disp), $src$$XMMRegister);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -11387,8 +10320,9 @@ instruct MoveL2D_reg_stack(stackSlotD dst, rRegL src) %{
 
   ins_cost(100);
   format %{ "movq    $dst, $src\t# MoveL2D_reg_stack" %}
-  opcode(0x89);
-  ins_encode(REX_reg_mem_wide(src, dst), OpcP, reg_mem(src, dst));
+  ins_encode %{
+    __ movq(Address(rsp, $dst$$disp), $src$$Register);
+  %}
   ins_pipe(ialu_mem_reg);
 %}
 
@@ -11397,7 +10331,9 @@ instruct MoveF2I_reg_reg(rRegI dst, regF src) %{
   effect(DEF dst, USE src);
   ins_cost(85);
   format %{ "movd    $dst,$src\t# MoveF2I" %}
-  ins_encode %{ __ movdl($dst$$Register, $src$$XMMRegister); %}
+  ins_encode %{
+    __ movdl($dst$$Register, $src$$XMMRegister);
+  %}
   ins_pipe( pipe_slow );
 %}
 
@@ -11406,7 +10342,9 @@ instruct MoveD2L_reg_reg(rRegL dst, regD src) %{
   effect(DEF dst, USE src);
   ins_cost(85);
   format %{ "movd    $dst,$src\t# MoveD2L" %}
-  ins_encode %{ __ movdq($dst$$Register, $src$$XMMRegister); %}
+  ins_encode %{
+    __ movdq($dst$$Register, $src$$XMMRegister);
+  %}
   ins_pipe( pipe_slow );
 %}
 
@@ -11416,7 +10354,9 @@ instruct MoveI2F_reg_reg(regF dst, rRegI src) %{
   effect(DEF dst, USE src);
   ins_cost(300);
   format %{ "movd    $dst,$src\t# MoveI2F" %}
-  ins_encode %{ __ movdl($dst$$XMMRegister, $src$$Register); %}
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+  %}
   ins_pipe( pipe_slow );
 %}
 
@@ -11425,7 +10365,9 @@ instruct MoveL2D_reg_reg(regD dst, rRegL src) %{
   effect(DEF dst, USE src);
   ins_cost(300);
   format %{ "movd    $dst,$src\t# MoveL2D" %}
-  ins_encode %{ __ movdq($dst$$XMMRegister, $src$$Register); %}
+  ins_encode %{
+     __ movdq($dst$$XMMRegister, $src$$Register);
+  %}
   ins_pipe( pipe_slow );
 %}
 
@@ -11435,7 +10377,13 @@ instruct Repl8B_reg(regD dst, regD src) %{
   format %{ "MOVDQA  $dst,$src\n\t"
             "PUNPCKLBW $dst,$dst\n\t"
             "PSHUFLW $dst,$dst,0x00\t! replicate8B" %}
-  ins_encode( pshufd_8x8(dst, src));
+  ins_encode %{
+    if ($dst$$reg != $src$$reg) {
+      __ movdqa($dst$$XMMRegister, $src$$XMMRegister);
+    }
+    __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+  %}
   ins_pipe( pipe_slow );
 %}
 
@@ -11445,7 +10393,11 @@ instruct Repl8B_rRegI(regD dst, rRegI src) %{
   format %{ "MOVD    $dst,$src\n\t"
             "PUNPCKLBW $dst,$dst\n\t"
             "PSHUFLW $dst,$dst,0x00\t! replicate8B" %}
-  ins_encode( mov_i2x(dst, src), pshufd_8x8(dst, dst));
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+  %}
   ins_pipe( pipe_slow );
 %}
 
@@ -11453,7 +10405,9 @@ instruct Repl8B_rRegI(regD dst, rRegI src) %{
 instruct Repl8B_immI0(regD dst, immI0 zero) %{
   match(Set dst (Replicate8B zero));
   format %{ "PXOR  $dst,$dst\t! replicate8B" %}
-  ins_encode( pxor(dst, dst));
+  ins_encode %{
+    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
   ins_pipe( fpu_reg_reg );
 %}
 
@@ -11461,7 +10415,9 @@ instruct Repl8B_immI0(regD dst, immI0 zero) %{
 instruct Repl4S_reg(regD dst, regD src) %{
   match(Set dst (Replicate4S src));
   format %{ "PSHUFLW $dst,$src,0x00\t! replicate4S" %}
-  ins_encode( pshufd_4x16(dst, src));
+  ins_encode %{
+    __ pshuflw($dst$$XMMRegister, $src$$XMMRegister, 0x00);
+  %}
   ins_pipe( fpu_reg_reg );
 %}
 
@@ -11470,7 +10426,10 @@ instruct Repl4S_rRegI(regD dst, rRegI src) %{
   match(Set dst (Replicate4S src));
   format %{ "MOVD    $dst,$src\n\t"
             "PSHUFLW $dst,$dst,0x00\t! replicate4S" %}
-  ins_encode( mov_i2x(dst, src), pshufd_4x16(dst, dst));
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+  %}
   ins_pipe( fpu_reg_reg );
 %}
 
@@ -11478,7 +10437,9 @@ instruct Repl4S_rRegI(regD dst, rRegI src) %{
 instruct Repl4S_immI0(regD dst, immI0 zero) %{
   match(Set dst (Replicate4S zero));
   format %{ "PXOR  $dst,$dst\t! replicate4S" %}
-  ins_encode( pxor(dst, dst));
+  ins_encode %{
+    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
   ins_pipe( fpu_reg_reg );
 %}
 
@@ -11486,7 +10447,9 @@ instruct Repl4S_immI0(regD dst, immI0 zero) %{
 instruct Repl4C_reg(regD dst, regD src) %{
   match(Set dst (Replicate4C src));
   format %{ "PSHUFLW $dst,$src,0x00\t! replicate4C" %}
-  ins_encode( pshufd_4x16(dst, src));
+  ins_encode %{
+    __ pshuflw($dst$$XMMRegister, $src$$XMMRegister, 0x00);
+  %}
   ins_pipe( fpu_reg_reg );
 %}
 
@@ -11495,7 +10458,10 @@ instruct Repl4C_rRegI(regD dst, rRegI src) %{
   match(Set dst (Replicate4C src));
   format %{ "MOVD    $dst,$src\n\t"
             "PSHUFLW $dst,$dst,0x00\t! replicate4C" %}
-  ins_encode( mov_i2x(dst, src), pshufd_4x16(dst, dst));
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+  %}
   ins_pipe( fpu_reg_reg );
 %}
 
@@ -11503,7 +10469,9 @@ instruct Repl4C_rRegI(regD dst, rRegI src) %{
 instruct Repl4C_immI0(regD dst, immI0 zero) %{
   match(Set dst (Replicate4C zero));
   format %{ "PXOR  $dst,$dst\t! replicate4C" %}
-  ins_encode( pxor(dst, dst));
+  ins_encode %{
+    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
   ins_pipe( fpu_reg_reg );
 %}
 
@@ -11511,7 +10479,9 @@ instruct Repl4C_immI0(regD dst, immI0 zero) %{
 instruct Repl2I_reg(regD dst, regD src) %{
   match(Set dst (Replicate2I src));
   format %{ "PSHUFD $dst,$src,0x00\t! replicate2I" %}
-  ins_encode( pshufd(dst, src, 0x00));
+  ins_encode %{
+    __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x00);
+  %}
   ins_pipe( fpu_reg_reg );
 %}
 
@@ -11520,7 +10490,10 @@ instruct Repl2I_rRegI(regD dst, rRegI src) %{
   match(Set dst (Replicate2I src));
   format %{ "MOVD   $dst,$src\n\t"
             "PSHUFD $dst,$dst,0x00\t! replicate2I" %}
-  ins_encode( mov_i2x(dst, src), pshufd(dst, dst, 0x00));
+  ins_encode %{
+    __ movdl($dst$$XMMRegister, $src$$Register);
+    __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
+  %}
   ins_pipe( fpu_reg_reg );
 %}
 
@@ -11528,7 +10501,9 @@ instruct Repl2I_rRegI(regD dst, rRegI src) %{
 instruct Repl2I_immI0(regD dst, immI0 zero) %{
   match(Set dst (Replicate2I zero));
   format %{ "PXOR  $dst,$dst\t! replicate2I" %}
-  ins_encode( pxor(dst, dst));
+  ins_encode %{
+    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
   ins_pipe( fpu_reg_reg );
 %}
 
@@ -11536,7 +10511,9 @@ instruct Repl2I_immI0(regD dst, immI0 zero) %{
 instruct Repl2F_reg(regD dst, regD src) %{
   match(Set dst (Replicate2F src));
   format %{ "PSHUFD $dst,$src,0xe0\t! replicate2F" %}
-  ins_encode( pshufd(dst, src, 0xe0));
+  ins_encode %{
+    __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0xe0);
+  %}
   ins_pipe( fpu_reg_reg );
 %}
 
@@ -11544,7 +10521,9 @@ instruct Repl2F_reg(regD dst, regD src) %{
 instruct Repl2F_regF(regD dst, regF src) %{
   match(Set dst (Replicate2F src));
   format %{ "PSHUFD $dst,$src,0xe0\t! replicate2F" %}
-  ins_encode( pshufd(dst, src, 0xe0));
+  ins_encode %{
+    __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0xe0);
+  %}
   ins_pipe( fpu_reg_reg );
 %}
 
@@ -11552,7 +10531,9 @@ instruct Repl2F_regF(regD dst, regF src) %{
 instruct Repl2F_immF0(regD dst, immF0 zero) %{
   match(Set dst (Replicate2F zero));
   format %{ "PXOR  $dst,$dst\t! replicate2F" %}
-  ins_encode( pxor(dst, dst));
+  ins_encode %{
+    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
   ins_pipe( fpu_reg_reg );
 %}
 
@@ -12088,10 +11069,11 @@ instruct jmpDir(label labl)
   ins_cost(300);
   format %{ "jmp     $labl" %}
   size(5);
-  opcode(0xE9);
-  ins_encode(OpcP, Lbl(labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jmp(*L, false); // Always long jump
+  %}
   ins_pipe(pipe_jmp);
-  ins_pc_relative(1);
 %}
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
@@ -12103,10 +11085,11 @@ instruct jmpCon(cmpOp cop, rFlagsReg cr, label labl)
   ins_cost(300);
   format %{ "j$cop     $labl" %}
   size(6);
-  opcode(0x0F, 0x80);
-  ins_encode(Jcc(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
+  %}
   ins_pipe(pipe_jcc);
-  ins_pc_relative(1);
 %}
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
@@ -12118,10 +11101,11 @@ instruct jmpLoopEnd(cmpOp cop, rFlagsReg cr, label labl)
   ins_cost(300);
   format %{ "j$cop     $labl\t# loop end" %}
   size(6);
-  opcode(0x0F, 0x80);
-  ins_encode(Jcc(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
+  %}
   ins_pipe(pipe_jcc);
-  ins_pc_relative(1);
 %}
 
 // Jump Direct Conditional - Label defines a relative address from Jcc+1
@@ -12132,10 +11116,11 @@ instruct jmpLoopEndU(cmpOpU cop, rFlagsRegU cmp, label labl) %{
   ins_cost(300);
   format %{ "j$cop,u   $labl\t# loop end" %}
   size(6);
-  opcode(0x0F, 0x80);
-  ins_encode(Jcc(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
+  %}
   ins_pipe(pipe_jcc);
-  ins_pc_relative(1);
 %}
 
 instruct jmpLoopEndUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
@@ -12145,10 +11130,11 @@ instruct jmpLoopEndUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
   ins_cost(200);
   format %{ "j$cop,u   $labl\t# loop end" %}
   size(6);
-  opcode(0x0F, 0x80);
-  ins_encode(Jcc(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
+  %}
   ins_pipe(pipe_jcc);
-  ins_pc_relative(1);
 %}
 
 // Jump Direct Conditional - using unsigned comparison
@@ -12159,10 +11145,11 @@ instruct jmpConU(cmpOpU cop, rFlagsRegU cmp, label labl) %{
   ins_cost(300);
   format %{ "j$cop,u  $labl" %}
   size(6);
-  opcode(0x0F, 0x80);
-  ins_encode(Jcc(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
+  %}
   ins_pipe(pipe_jcc);
-  ins_pc_relative(1);
 %}
 
 instruct jmpConUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
@@ -12172,10 +11159,11 @@ instruct jmpConUCF(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
   ins_cost(200);
   format %{ "j$cop,u  $labl" %}
   size(6);
-  opcode(0x0F, 0x80);
-  ins_encode(Jcc(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
+  %}
   ins_pipe(pipe_jcc);
-  ins_pc_relative(1);
 %}
 
 instruct jmpConUCF2(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
@@ -12193,29 +11181,21 @@ instruct jmpConUCF2(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
       $$emit$$"done:"
     }
   %}
-  size(12);
-  opcode(0x0F, 0x80);
   ins_encode %{
     Label* l = $labl$$label;
-    $$$emit8$primary;
-    emit_cc(cbuf, $secondary, Assembler::parity);
-    int parity_disp = -1;
     if ($cop$$cmpcode == Assembler::notEqual) {
-       // the two jumps 6 bytes apart so the jump distances are too
-       parity_disp = l ? (l->loc_pos() - (cbuf.insts_size() + 4)) : 0;
+      __ jcc(Assembler::parity, *l, false);
+      __ jcc(Assembler::notEqual, *l, false);
     } else if ($cop$$cmpcode == Assembler::equal) {
-       parity_disp = 6;
+      Label done;
+      __ jccb(Assembler::parity, done);
+      __ jcc(Assembler::equal, *l, false);
+      __ bind(done);
     } else {
        ShouldNotReachHere();
     }
-    emit_d32(cbuf, parity_disp);
-    $$$emit8$primary;
-    emit_cc(cbuf, $secondary, $cop$$cmpcode);
-    int disp = l ? (l->loc_pos() - (cbuf.insts_size() + 4)) : 0;
-    emit_d32(cbuf, disp);
   %}
   ins_pipe(pipe_jcc);
-  ins_pc_relative(1);
 %}
 
 // ============================================================================
@@ -12233,12 +11213,12 @@ instruct partialSubtypeCheck(rdi_RegP result,
   effect(KILL rcx, KILL cr);
 
   ins_cost(1100);  // slightly larger than the next version
-  format %{ "movq    rdi, [$sub + (sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes())]\n\t"
+  format %{ "movq    rdi, [$sub + in_bytes(Klass::secondary_supers_offset())]\n\t"
             "movl    rcx, [rdi + arrayOopDesc::length_offset_in_bytes()]\t# length to scan\n\t"
             "addq    rdi, arrayOopDex::base_offset_in_bytes(T_OBJECT)\t# Skip to start of data; set NZ in case count is zero\n\t"
             "repne   scasq\t# Scan *rdi++ for a match with rax while rcx--\n\t"
             "jne,s   miss\t\t# Missed: rdi not-zero\n\t"
-            "movq    [$sub + (sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes())], $super\t# Hit: update cache\n\t"
+            "movq    [$sub + in_bytes(Klass::secondary_super_cache_offset())], $super\t# Hit: update cache\n\t"
             "xorq    $result, $result\t\t Hit: rdi zero\n\t"
     "miss:\t" %}
 
@@ -12256,12 +11236,12 @@ instruct partialSubtypeCheck_vs_Zero(rFlagsReg cr,
   effect(KILL rcx, KILL result);
 
   ins_cost(1000);
-  format %{ "movq    rdi, [$sub + (sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes())]\n\t"
+  format %{ "movq    rdi, [$sub + in_bytes(Klass::secondary_supers_offset())]\n\t"
             "movl    rcx, [rdi + arrayOopDesc::length_offset_in_bytes()]\t# length to scan\n\t"
             "addq    rdi, arrayOopDex::base_offset_in_bytes(T_OBJECT)\t# Skip to start of data; set NZ in case count is zero\n\t"
             "repne   scasq\t# Scan *rdi++ for a match with rax while cx-- != 0\n\t"
             "jne,s   miss\t\t# Missed: flags nz\n\t"
-            "movq    [$sub + (sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes())], $super\t# Hit: update cache\n\t"
+            "movq    [$sub + in_bytes(Klass::secondary_super_cache_offset())], $super\t# Hit: update cache\n\t"
     "miss:\t" %}
 
   opcode(0x0); // No need to XOR RDI
@@ -12289,10 +11269,11 @@ instruct jmpDir_short(label labl) %{
   ins_cost(300);
   format %{ "jmp,s   $labl" %}
   size(2);
-  opcode(0xEB);
-  ins_encode(OpcP, LblShort(labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jmpb(*L);
+  %}
   ins_pipe(pipe_jmp);
-  ins_pc_relative(1);
   ins_short_branch(1);
 %}
 
@@ -12304,10 +11285,11 @@ instruct jmpCon_short(cmpOp cop, rFlagsReg cr, label labl) %{
   ins_cost(300);
   format %{ "j$cop,s   $labl" %}
   size(2);
-  opcode(0x70);
-  ins_encode(JccShort(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
+  %}
   ins_pipe(pipe_jcc);
-  ins_pc_relative(1);
   ins_short_branch(1);
 %}
 
@@ -12319,10 +11301,11 @@ instruct jmpLoopEnd_short(cmpOp cop, rFlagsReg cr, label labl) %{
   ins_cost(300);
   format %{ "j$cop,s   $labl\t# loop end" %}
   size(2);
-  opcode(0x70);
-  ins_encode(JccShort(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
+  %}
   ins_pipe(pipe_jcc);
-  ins_pc_relative(1);
   ins_short_branch(1);
 %}
 
@@ -12334,10 +11317,11 @@ instruct jmpLoopEndU_short(cmpOpU cop, rFlagsRegU cmp, label labl) %{
   ins_cost(300);
   format %{ "j$cop,us  $labl\t# loop end" %}
   size(2);
-  opcode(0x70);
-  ins_encode(JccShort(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
+  %}
   ins_pipe(pipe_jcc);
-  ins_pc_relative(1);
   ins_short_branch(1);
 %}
 
@@ -12348,10 +11332,11 @@ instruct jmpLoopEndUCF_short(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
   ins_cost(300);
   format %{ "j$cop,us  $labl\t# loop end" %}
   size(2);
-  opcode(0x70);
-  ins_encode(JccShort(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
+  %}
   ins_pipe(pipe_jcc);
-  ins_pc_relative(1);
   ins_short_branch(1);
 %}
 
@@ -12363,10 +11348,11 @@ instruct jmpConU_short(cmpOpU cop, rFlagsRegU cmp, label labl) %{
   ins_cost(300);
   format %{ "j$cop,us  $labl" %}
   size(2);
-  opcode(0x70);
-  ins_encode(JccShort(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
+  %}
   ins_pipe(pipe_jcc);
-  ins_pc_relative(1);
   ins_short_branch(1);
 %}
 
@@ -12377,10 +11363,11 @@ instruct jmpConUCF_short(cmpOpUCF cop, rFlagsRegUCF cmp, label labl) %{
   ins_cost(300);
   format %{ "j$cop,us  $labl" %}
   size(2);
-  opcode(0x70);
-  ins_encode(JccShort(cop, labl));
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
+  %}
   ins_pipe(pipe_jcc);
-  ins_pc_relative(1);
   ins_short_branch(1);
 %}
 
@@ -12400,27 +11387,21 @@ instruct jmpConUCF2_short(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
     }
   %}
   size(4);
-  opcode(0x70);
   ins_encode %{
     Label* l = $labl$$label;
-    emit_cc(cbuf, $primary, Assembler::parity);
-    int parity_disp = -1;
     if ($cop$$cmpcode == Assembler::notEqual) {
-      parity_disp = l ? (l->loc_pos() - (cbuf.insts_size() + 1)) : 0;
+      __ jccb(Assembler::parity, *l);
+      __ jccb(Assembler::notEqual, *l);
     } else if ($cop$$cmpcode == Assembler::equal) {
-      parity_disp = 2;
+      Label done;
+      __ jccb(Assembler::parity, done);
+      __ jccb(Assembler::equal, *l);
+      __ bind(done);
     } else {
-      ShouldNotReachHere();
+       ShouldNotReachHere();
     }
-    emit_d8(cbuf, parity_disp);
-    emit_cc(cbuf, $primary, $cop$$cmpcode);
-    int disp = l ? (l->loc_pos() - (cbuf.insts_size() + 1)) : 0;
-    emit_d8(cbuf, disp);
-    assert(-128 <= disp && disp <= 127, "Displacement too large for short jmp");
-    assert(-128 <= parity_disp && parity_disp <= 127, "Displacement too large for short jmp");
   %}
   ins_pipe(pipe_jcc);
-  ins_pc_relative(1);
   ins_short_branch(1);
 %}
 
@@ -12428,29 +11409,27 @@ instruct jmpConUCF2_short(cmpOpUCF2 cop, rFlagsRegUCF cmp, label labl) %{
 // inlined locking and unlocking
 
 instruct cmpFastLock(rFlagsReg cr,
-                     rRegP object, rRegP box, rax_RegI tmp, rRegP scr)
+                     rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr)
 %{
   match(Set cr (FastLock object box));
-  effect(TEMP tmp, TEMP scr);
+  effect(TEMP tmp, TEMP scr, USE_KILL box);
 
   ins_cost(300);
-  format %{ "fastlock $object,$box,$tmp,$scr" %}
+  format %{ "fastlock $object,$box\t! kills $box,$tmp,$scr" %}
   ins_encode(Fast_Lock(object, box, tmp, scr));
   ins_pipe(pipe_slow);
-  ins_pc_relative(1);
 %}
 
 instruct cmpFastUnlock(rFlagsReg cr,
                        rRegP object, rax_RegP box, rRegP tmp)
 %{
   match(Set cr (FastUnlock object box));
-  effect(TEMP tmp);
+  effect(TEMP tmp, USE_KILL box);
 
   ins_cost(300);
-  format %{ "fastunlock $object, $box, $tmp" %}
+  format %{ "fastunlock $object,$box\t! kills $box,$tmp" %}
   ins_encode(Fast_Unlock(object, box, tmp));
   ins_pipe(pipe_slow);
-  ins_pc_relative(1);
 %}
 
 
@@ -12503,7 +11482,6 @@ instruct CallStaticJavaDirect(method meth) %{
   opcode(0xE8); /* E8 cd */
   ins_encode(Java_Static_Call(meth), call_epilog);
   ins_pipe(pipe_slow);
-  ins_pc_relative(1);
   ins_alignment(4);
 %}
 
@@ -12525,7 +11503,6 @@ instruct CallStaticJavaHandle(method meth, rbp_RegP rbp_mh_SP_save) %{
              restore_SP,
              call_epilog);
   ins_pipe(pipe_slow);
-  ins_pc_relative(1);
   ins_alignment(4);
 %}
 
@@ -12543,7 +11520,6 @@ instruct CallDynamicJavaDirect(method meth)
   opcode(0xE8); /* E8 cd */
   ins_encode(Java_Dynamic_Call(meth), call_epilog);
   ins_pipe(pipe_slow);
-  ins_pc_relative(1);
   ins_alignment(4);
 %}
 
@@ -12558,7 +11534,6 @@ instruct CallRuntimeDirect(method meth)
   opcode(0xE8); /* E8 cd */
   ins_encode(Java_To_Runtime(meth));
   ins_pipe(pipe_slow);
-  ins_pc_relative(1);
 %}
 
 // Call runtime without safepoint
@@ -12572,7 +11547,6 @@ instruct CallLeafDirect(method meth)
   opcode(0xE8); /* E8 cd */
   ins_encode(Java_To_Runtime(meth));
   ins_pipe(pipe_slow);
-  ins_pc_relative(1);
 %}
 
 // Call runtime without safepoint
@@ -12586,7 +11560,6 @@ instruct CallLeafNoFPDirect(method meth)
   opcode(0xE8); /* E8 cd */
   ins_encode(Java_To_Runtime(meth));
   ins_pipe(pipe_slow);
-  ins_pc_relative(1);
 %}
 
 // Return Instruction
@@ -12658,6 +11631,21 @@ instruct RethrowException()
   format %{ "jmp     rethrow_stub" %}
   ins_encode(enc_rethrow);
   ins_pipe(pipe_jmp);
+%}
+
+
+// ============================================================================
+// This name is KNOWN by the ADLC and cannot be changed.
+// The ADLC forces a 'TypeRawPtr::BOTTOM' output type
+// for this guy.
+instruct tlsLoadP(r15_RegP dst) %{
+  match(Set dst (ThreadLocal));
+  effect(DEF dst);
+
+  size(0);
+  format %{ "# TLS is in R15" %}
+  ins_encode( /*empty encoding*/ );
+  ins_pipe(ialu_reg_reg);
 %}
 
 

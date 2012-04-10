@@ -28,9 +28,10 @@ package sun.awt;
 import java.awt.IllegalComponentStateException;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashMap;
 import java.util.WeakHashMap;
 
 import sun.util.logging.PlatformLogger;
@@ -54,12 +55,14 @@ import sun.util.logging.PlatformLogger;
  * screen to another on a system equipped with multiple displays.
  */
 public class SunDisplayChanger {
+
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.multiscreen.SunDisplayChanger");
 
-    // Create a new synchronizedMap with initial capacity of one listener.
+    // Create a new synchronized map with initial capacity of one listener.
     // It is asserted that the most common case is to have one GraphicsDevice
     // and one top-level Window.
-    private Map listeners = Collections.synchronizedMap(new WeakHashMap(1));
+    private Map<DisplayChangedListener, Void> listeners =
+        Collections.synchronizedMap(new WeakHashMap<DisplayChangedListener, Void>(1));
 
     public SunDisplayChanger() {}
 
@@ -113,18 +116,15 @@ public class SunDisplayChanger {
     // synchronization provides no protection against modifying the listener
     // list while in the middle of iterating over it.  -bchristi 7/10/2001
 
-        HashMap listClone;
-        Set cloneSet;
+        Set<DisplayChangedListener> cloneSet;
 
         synchronized(listeners) {
-            listClone = new HashMap(listeners);
+            cloneSet = new HashSet<DisplayChangedListener>(listeners.keySet());
         }
 
-        cloneSet = listClone.keySet();
-        Iterator itr = cloneSet.iterator();
+        Iterator<DisplayChangedListener> itr = cloneSet.iterator();
         while (itr.hasNext()) {
-            DisplayChangedListener current =
-             (DisplayChangedListener) itr.next();
+            DisplayChangedListener current = itr.next();
             try {
                 if (log.isLoggable(PlatformLogger.FINEST)) {
                     log.finest("displayChanged for listener: " + current);
@@ -160,17 +160,14 @@ public class SunDisplayChanger {
     // synchronization provides no protection against modifying the listener
     // list while in the middle of iterating over it.  -bchristi 7/10/2001
 
-        HashMap listClone;
-        Set cloneSet;
+        Set<DisplayChangedListener> cloneSet;
 
         synchronized (listeners) {
-            listClone = new HashMap(listeners);
+            cloneSet = new HashSet<DisplayChangedListener>(listeners.keySet());
         }
-        cloneSet = listClone.keySet();
-        Iterator itr = cloneSet.iterator();
+        Iterator<DisplayChangedListener> itr = cloneSet.iterator();
         while (itr.hasNext()) {
-            DisplayChangedListener current =
-             (DisplayChangedListener) itr.next();
+            DisplayChangedListener current = itr.next();
             try {
                 if (log.isLoggable(PlatformLogger.FINEST)) {
                     log.finest("paletteChanged for listener: " + current);

@@ -27,7 +27,7 @@
  * @summary Deadlock between LogManager.<clinit> and Logger.getLogger()
  * @author  Daniel D. Daugherty
  * @build LoggingDeadlock4
- * @run main/timeout=15 LoggingDeadlock4
+ * @run main/othervm/timeout=15 -Djava.awt.headless=true LoggingDeadlock4
  */
 
 import java.awt.Container;

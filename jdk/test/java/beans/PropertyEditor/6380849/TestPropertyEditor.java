@@ -36,7 +36,6 @@ import java.awt.Font;
 import java.beans.PropertyEditor;
 import java.beans.PropertyEditorManager;
 
-import sun.awt.SunToolkit;
 import sun.beans.editors.BooleanEditor;
 import sun.beans.editors.ByteEditor;
 import sun.beans.editors.ColorEditor;
@@ -77,12 +76,7 @@ public class TestPropertyEditor implements Runnable {
         }
     }
 
-    private boolean passed;
-
     public void run() {
-        if (this.passed) {
-            SunToolkit.createNewAppContext();
-        }
         PropertyEditorManager.registerEditor(ThirdBean.class, ThirdBeanEditor.class);
 
         test(FirstBean.class, FirstBeanEditor.class);
@@ -135,7 +129,5 @@ public class TestPropertyEditor implements Runnable {
         test(Color.class, null);
         test(Font.class, null);
         test(Enumeration.class, EnumEditor.class);
-
-        this.passed = true;
     }
 }

@@ -1112,11 +1112,14 @@ void unpacker::read_Utf8_values(entry* cpMap, int len) {
     uint size3 = suffix * 3;
     if (suffix == 0)  continue;  // done with empty string
     chars.malloc(size3);
+    CHECK;
     byte* chp = chars.ptr;
     band saved_band = cp_Utf8_big_chars;
     cp_Utf8_big_chars.readData(suffix);
+    CHECK;
     for (int j = 0; j < suffix; j++) {
       unsigned short ch = cp_Utf8_big_chars.getInt();
+      CHECK;
       chp = store_Utf8_char(chp, ch);
     }
     chars.realloc(chp - chars.ptr);
@@ -1134,10 +1137,12 @@ void unpacker::read_Utf8_values(entry* cpMap, int len) {
   CHECK;
   int prevlen = 0;  // previous string length (in chars)
   tmallocs.add(bigbuf.ptr);  // free after this block
+  CHECK;
   cp_Utf8_prefix.rewind();
   for (i = 0; i < len; i++) {
     bytes& chars = allsuffixes[i];
     int prefix = (i < PREFIX_SKIP_2)? 0: cp_Utf8_prefix.getInt();
+    CHECK;
     int suffix = (int)chars.len;
     byte* fillp;
     // by induction, the buffer is already filled with the prefix

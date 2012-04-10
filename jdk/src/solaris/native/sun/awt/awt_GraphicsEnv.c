@@ -40,12 +40,12 @@
 #include <jni.h>
 #include <jni_util.h>
 #include <jvm.h>
+#include <jvm_md.h>
 #include <jlong.h>
 
 #include <stdlib.h>
 
 #include "awt_GraphicsEnv.h"
-#include "awt_Window.h"
 #include "awt_util.h"
 #include "gdefs.h"
 #include <dlfcn.h>
@@ -94,8 +94,6 @@ jboolean awtLockInited = JNI_FALSE;
 
 struct X11GraphicsConfigIDs x11GraphicsConfigIDs;
 struct X11GraphicsDeviceIDs x11GraphicsDeviceIDs;
-extern struct WindowIDs mWindowIDs;
-extern struct MWindowPeerIDs mWindowPeerIDs;
 
 #ifndef HEADLESS
 int awtCreateX11Colormap(AwtGraphicsConfigDataPtr adata);
@@ -122,7 +120,7 @@ static char *x11GraphicsConfigClassName = "sun/awt/X11GraphicsConfig";
  */
 
 #define MAXFRAMEBUFFERS 16
-#ifdef __linux__
+#if defined(__linux__) || defined(MACOSX)
 typedef struct {
    int   screen_number;
    short x_org;
@@ -427,6 +425,17 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
     {
         xrenderLibHandle = dlopen("libXrender.so.1", RTLD_LAZY | RTLD_GLOBAL);
 
+#ifdef MACOSX
+#define XRENDER_LIB "/usr/X11/lib/libXrender.dylib"
+#else
+#define XRENDER_LIB "libXrender.so"
+#endif
+
+        if (xrenderLibHandle == NULL) {
+            xrenderLibHandle = dlopen(XRENDER_LIB,
+                                      RTLD_LAZY | RTLD_GLOBAL);
+        }
+
 #ifndef __linux__ /* SOLARIS */
         if (xrenderLibHandle == NULL) {
             xrenderLibHandle = dlopen("/usr/sfw/lib/libXrender.so.1",
@@ -570,89 +579,23 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
     AWT_UNLOCK ();
 }
 
-/*
- * Determing if this top-level has been moved onto another Xinerama screen.
- * Called from awt_TopLevel.c
- *
- * ASSUME: wdata != null
- */
 #ifndef HEADLESS
-void checkNewXineramaScreen(JNIEnv* env, jobject peer, struct FrameData* wdata,
-                            int32_t newX, int32_t newY,
-                            int32_t newWidth, int32_t newHeight) {
-    int i;
-    int amt;
-    int totAmt = 0;
-    int largestAmt = 0;
-    int largestAmtScr = 0;
-
-    int horiz;
-    int vert;
-
-    if (!usingXinerama) { return; }
-
-    totAmt = newWidth * newHeight;
-
-    /* assert that peer implements WindowPeer */
-    DASSERT(JNU_IsInstanceOfByName(env, peer, "java/awt/peer/WindowPeer"));
-
-    DTRACE_PRINTLN4("checkNewXineramaScreen() x=%i y=%i w=%i h=%i\n",newX, newY, newWidth, newHeight);
-
-    /* decide which screen we're on
-     * if we're spanning, figure out which screen we're most on
-     */
-    for (i = 0; i < awt_numScreens; i++) {
-        if (INTERSECTS(newX, newX + newWidth, newY, newY + newHeight,
-                       fbrects[i].x, fbrects[i].x + fbrects[i].width,
-                       fbrects[i].y, fbrects[i].y + fbrects[i].height)) {
-
-            /* calc how much of window is on this screen */
-            horiz = MIN(newX + newWidth, fbrects[i].x + fbrects[i].width) -
-                    MAX(newX, fbrects[i].x);
-            vert =  MIN(newY + newHeight, fbrects[i].y + fbrects[i].height) -
-                    MAX(newY, fbrects[i].y);
-            DASSERT(horiz > 0);
-            DASSERT(vert > 0);
-
-            amt = horiz * vert;
-            if (amt == totAmt) {
-                /* completely on this screen - done! */
-                largestAmtScr = i;
-                break;
-            }
-            if (amt > largestAmt) {
-                largestAmt = amt;
-                largestAmtScr = i;
-            }
-        }
-    }
-
-#ifndef XAWT
-    /* check if we're on a new screen */
-    if (largestAmtScr != wdata->screenNum) {
-        wdata->screenNum = largestAmtScr;
-        /* update peer, target Comp */
-        (*env)->CallVoidMethod(env, peer,
-                               mWindowPeerIDs.draggedToScreenMID, largestAmtScr);
-    }
-#endif /* XAWT */
-}
-#endif /* HEADLESS */
-
-#ifndef HEADLESS
-#ifdef __linux__
+#if defined(__linux__) || defined(MACOSX)
 static void xinerama_init_linux()
 {
-    void* libHandle = 0;
-    char* XineramaLibName= "libXinerama.so.1";
+    void* libHandle = NULL;
     int32_t locNumScr = 0;
     XineramaScreenInfo *xinInfo;
     char* XineramaQueryScreensName = "XineramaQueryScreens";
     XineramaQueryScreensFunc* XineramaQueryScreens = NULL;
 
     /* load library */
-    libHandle = dlopen(XineramaLibName, RTLD_LAZY | RTLD_GLOBAL);
-    if (libHandle != 0) {
+    libHandle = dlopen(VERSIONED_JNI_LIB_NAME("Xinerama", "1"),
+                       RTLD_LAZY | RTLD_GLOBAL);
+    if (libHandle == NULL) {
+        libHandle = dlopen(JNI_LIB_NAME("Xinerama"), RTLD_LAZY | RTLD_GLOBAL);
+    }
+    if (libHandle != NULL) {
         XineramaQueryScreens = (XineramaQueryScreensFunc*)
             dlsym(libHandle, XineramaQueryScreensName);
 
@@ -688,11 +631,10 @@ static void xinerama_init_linux()
     }
 }
 #endif
-#ifndef __linux__ /* Solaris */
+#if !defined(__linux__) && !defined(MACOSX) /* Solaris */
 static void xinerama_init_solaris()
 {
-    void* libHandle = 0;
-    char* XineramaLibName= "libXext.so";
+    void* libHandle = NULL;
     unsigned char fbhints[MAXFRAMEBUFFERS];
     int32_t locNumScr = 0;
     /* load and run XineramaGetInfo */
@@ -701,8 +643,8 @@ static void xinerama_init_solaris()
     XineramaGetInfoFunc* XineramaSolarisFunc = NULL;
 
     /* load library */
-    libHandle = dlopen(XineramaLibName, RTLD_LAZY | RTLD_GLOBAL);
-    if (libHandle != 0) {
+    libHandle = dlopen(JNI_LIB_NAME("Xext"), RTLD_LAZY | RTLD_GLOBAL);
+    if (libHandle != NULL) {
         XineramaSolarisFunc = (XineramaGetInfoFunc*)dlsym(libHandle, XineramaGetInfoName);
         XineramaSolarisCenterFunc =
             (XineramaGetCenterHintFunc*)dlsym(libHandle, XineramaGetCenterHintName);
@@ -749,11 +691,11 @@ static void xineramaInit(void) {
     }
 
     DTRACE_PRINTLN("Xinerama extension is available");
-#ifdef __linux__
+#if defined(__linux__) || defined(MACOSX)
     xinerama_init_linux();
 #else /* Solaris */
     xinerama_init_solaris();
-#endif /* __linux__ */
+#endif /* __linux__ || MACOSX */
 }
 #endif /* HEADLESS */
 
@@ -1434,11 +1376,17 @@ Java_sun_awt_X11GraphicsConfig_pGetBounds(JNIEnv *env, jobject this, jint screen
                                                         fbrects[screen].height);
         }
         else {
+            XWindowAttributes xwa;
+            memset(&xwa, 0, sizeof(xwa));
+
+            AWT_LOCK ();
+            XGetWindowAttributes(awt_display,
+                    RootWindow(awt_display, adata->awt_visInfo.screen),
+                    &xwa);
+            AWT_UNLOCK ();
+
             bounds = (*env)->NewObject(env, clazz, mid, 0, 0,
-                                   DisplayWidth(awt_display,
-                                                adata->awt_visInfo.screen),
-                                   DisplayHeight(awt_display,
-                                                 adata->awt_visInfo.screen));
+                    xwa.width, xwa.height);
         }
 
         if ((*env)->ExceptionOccurred(env)) {
@@ -1628,7 +1576,7 @@ Java_sun_awt_X11GraphicsEnvironment_getXineramaCenterPoint(JNIEnv *env,
 {
     jobject point = NULL;
 #ifndef HEADLESS    /* return NULL in HEADLESS, Linux */
-#ifndef __linux__
+#if !defined(__linux__) && !defined(MACOSX)
     int x,y;
 
     AWT_LOCK();
@@ -1641,7 +1589,7 @@ Java_sun_awt_X11GraphicsEnvironment_getXineramaCenterPoint(JNIEnv *env,
         DTRACE_PRINTLN("unable to call XineramaSolarisCenterFunc: symbol is null");
     }
     AWT_FLUSH_UNLOCK();
-#endif /* __linux __ */
+#endif /* __linux __ || MACOSX */
 #endif /* HEADLESS */
     return point;
 }
@@ -1711,7 +1659,11 @@ X11GD_InitXrandrFuncs(JNIEnv *env)
 {
     int rr_maj_ver = 0, rr_min_ver = 0;
 
-    void *pLibRandR = dlopen("libXrandr.so.2", RTLD_LAZY | RTLD_LOCAL);
+    void *pLibRandR = dlopen(VERSIONED_JNI_LIB_NAME("Xrandr", "2"),
+                             RTLD_LAZY | RTLD_LOCAL);
+    if (pLibRandR == NULL) {
+        pLibRandR = dlopen(JNI_LIB_NAME("Xrandr"), RTLD_LAZY | RTLD_LOCAL);
+    }
     if (pLibRandR == NULL) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
                       "X11GD_InitXrandrFuncs: Could not open libXrandr.so.2");

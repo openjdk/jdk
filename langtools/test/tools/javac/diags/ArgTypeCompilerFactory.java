@@ -35,7 +35,7 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.file.*;
 import com.sun.tools.javac.main.Main;
 import com.sun.tools.javac.main.JavaCompiler;
-import com.sun.tools.javac.parser.Token;
+import com.sun.tools.javac.parser.Tokens.TokenKind;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.AbstractDiagnosticFormatter.SimpleConfiguration;
 import javax.lang.model.SourceVersion;
@@ -105,13 +105,11 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
 
             Iterable<? extends JavaFileObject> fos = fm.getJavaFileObjectsFromFiles(files);
 
-            JavacTaskImpl t = (JavacTaskImpl) tool.getTask(out, fm, null, opts, null, fos);
-            Context c = t.getContext();
+            Context c = new Context();
             ArgTypeMessages.preRegister(c);
             ArgTypeJavaCompiler.preRegister(c);
-            Boolean ok = t.call();
-
-            return ok;
+            JavacTaskImpl t = (JavacTaskImpl) tool.getTask(out, fm, null, opts, null, fos, c);
+            return t.call();
         }
     }
 
@@ -146,9 +144,9 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
             JavacFileManager.preRegister(c); // can't create it until Log has been set up
             ArgTypeJavaCompiler.preRegister(c);
             ArgTypeMessages.preRegister(c);
-            int result = main.compile(args.toArray(new String[args.size()]), c);
+            Main.Result result = main.compile(args.toArray(new String[args.size()]), c);
 
-            return (result == 0);
+            return result.isOK();
         }
     }
 
@@ -172,10 +170,10 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
             JavacFileManager.preRegister(c); // can't create it until Log has been set up
             ArgTypeJavaCompiler.preRegister(c);
             ArgTypeMessages.preRegister(c);
-            com.sun.tools.javac.main.Main m = new com.sun.tools.javac.main.Main("javac", out);
-            int rc = m.compile(args.toArray(new String[args.size()]), c);
+            Main m = new Main("javac", out);
+            Main.Result result = m.compile(args.toArray(new String[args.size()]), c);
 
-            return (rc == 0);
+            return result.isOK();
         }
 
     }
@@ -319,7 +317,7 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
             return "modifier";
         if (o instanceof KindName)
             return "symbol kind";
-        if (o instanceof Token)
+        if (o instanceof TokenKind)
             return "token";
         if (o instanceof Symbol)
             return "symbol";

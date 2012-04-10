@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+
+<!-- THIS IS A GENERATED FILE. DO NOT MODIFY. -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://java.sun.com/xml/ns/jaxb" xmlns:jaxb="http://java.sun.com/xml/ns/jaxb" xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc">
+  <xs:annotation>
+    <xs:documentation>
+      JAXB customization schema
+    </xs:documentation>
+  </xs:annotation>
+  
+  <xs:import namespace="http://java.sun.com/xml/ns/jaxb/xjc" schemaLocation="xjc.xsd"/>
+  <xs:import namespace="http://www.w3.org/2001/XMLSchema" schemaLocation="xs.xsd"/>
+  <xs:element name="bindings">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+      <xs:attribute name="schemaLocation" type="xs:string" />
+      <xs:attribute name="node" type="xs:string" /> 
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="declaration" abstract="true"/>
+  <xs:element name="globalBindings" substitutionGroup="jaxb:declaration">
+    <xs:annotation>
+      <xs:documentation>
+        Defines global customization. Only one of this is allowed per compilation.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="javaType">
+          <xs:complexType>
+            <xs:attribute name="xmlType" use="required" type="xs:QName"/>
+            <xs:attributeGroup ref="jaxb:conversionBody"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element ref="jaxb:serializable"/>
+        <xs:element ref="xjc:serializable"/>
+        <xs:element ref="xjc:superClass"/>
+        <xs:element ref="xjc:superInterface"/>
+        <xs:element ref="xjc:typeSubstitution"/>
+        <xs:element ref="xjc:smartWildcardDefaultBinding"/>
+        <xs:element ref="xjc:simple"/>
+        <xs:element ref="xjc:treatRestrictionLikeNewType"/>
+        <xs:group   ref="xjc:globalJavaType" />
+        <xs:element ref="xjc:generateElementProperty"/>
+        <xs:element ref="xjc:noMarshaller"/>
+        <xs:element ref="xjc:noUnmarshaller"/>
+        <xs:element ref="xjc:noValidator"/>
+        <xs:element ref="xjc:noValidatingUnmarshaller"/>
+      </xs:choice>
+      <xs:attribute name="underscoreBinding">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="asWordSeparator"/>
+            <xs:enumeration value="asCharInWord"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="optionalProperty">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="wrapper"/>
+            <xs:enumeration value="primitive"/>
+            <xs:enumeration value="isSet"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="enableJavaNamingConventions" type="xs:boolean"/>
+      <xs:attribute name="fixedAttributeAsConstantProperty" type="xs:boolean"/>
+      <xs:attribute name="generateIsSetMethod" type="xs:boolean"/>
+      <xs:attribute name="mapSimpleTypeDef" type="xs:boolean"/>
+      <xs:attribute name="localScoping">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="nested" />
+            <xs:enumeration value="toplevel" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="collectionType" type="jaxb:collectionType"/>
+      <xs:attribute name="typesafeEnumMemberName">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="generateError"/>
+            <xs:enumeration value="generateName"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="typesafeEnumBase">
+        <xs:simpleType>
+          <xs:restriction>
+            <xs:simpleType>
+              <xs:list itemType="xs:QName"/>
+            </xs:simpleType>
+            <xs:minLength value="1"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="typesafeEnumMaxMembers">
+        <xs:simpleType>
+          <xs:restriction>
+            <xs:simpleType>
+              <xs:list itemType="xs:int"/>
+            </xs:simpleType>
+            <xs:minLength value="1"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="choiceContentProperty" type="xs:boolean"/>
+      <xs:attribute name="generateValueClass" type="xs:boolean"/>
+      <xs:attribute name="generateElementClass" type="xs:boolean"/>
+      <xs:attribute name="generateMixedExtensions" type="xs:boolean"/>
+      <xs:attribute name="generateElementProperty" type="xs:boolean"/>
+      <xs:attribute name="enableValidation" type="xs:boolean"/>
+      <xs:attribute name="enableFailFastCheck" type="xs:boolean"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="serializable">
+    <xs:complexType>
+      <xs:attribute name="uid" type="xs:long"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="schemaBindings" substitutionGroup="jaxb:declaration">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="jaxb:package"/>
+        <xs:element minOccurs="0" ref="jaxb:nameXmlTransform"/>
+      </xs:sequence>
+      <xs:attribute name="map" type="xs:boolean" />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="package">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="jaxb:javadoc"/>
+      </xs:sequence>
+      <xs:attribute name="name"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="nameXmlTransform">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="jaxb:typeName" minOccurs='0'/>
+        <xs:element ref="jaxb:elementName" minOccurs='0'/>
+        <xs:element ref="jaxb:attributeName" minOccurs='0'/>
+        <xs:element ref="jaxb:modelGroupName" minOccurs='0'/>
+        <xs:element ref="jaxb:anonymousTypeName" minOccurs='0'/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="typeName">
+    <xs:complexType>
+      <xs:attributeGroup ref="jaxb:nameXmlTransformRule"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="elementName">
+    <xs:complexType>
+      <xs:attributeGroup ref="jaxb:nameXmlTransformRule"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="attributeName">
+    <xs:complexType>
+      <xs:attributeGroup ref="jaxb:nameXmlTransformRule"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="modelGroupName">
+    <xs:complexType>
+      <xs:attributeGroup ref="jaxb:nameXmlTransformRule"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="anonymousTypeName">
+    <xs:complexType>
+      <xs:attributeGroup ref="jaxb:nameXmlTransformRule"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="nameXmlTransformRule">
+    <xs:attribute name="prefix" type="xs:NCName"/>
+    <xs:attribute name="suffix" type="xs:NCName"/>
+  </xs:attributeGroup>
+  <xs:element name="javadoc" type="xs:string"/>
+  <xs:simpleType name="collectionType">
+    <xs:restriction base="xs:token"/>
+  </xs:simpleType>
+  <xs:element name="class" substitutionGroup="jaxb:declaration">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="jaxb:javadoc"/>
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string"/>
+      <xs:attribute name="implClass"/>
+      <xs:attribute name="ref"/>
+      <xs:attribute ref="xjc:recursive" use="optional"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="property" substitutionGroup="jaxb:declaration">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="jaxb:javadoc"/>
+        <xs:element ref="jaxb:baseType"/>
+      </xs:choice>
+      <xs:attribute name="name"/>
+      <xs:attribute name="collectionType" type="jaxb:collectionType"/>
+      <xs:attribute name="fixedAttributeAsConstantProperty" type="xs:boolean"/>
+      <xs:attribute name="generateIsSetMethod" type="xs:boolean"/>
+      <xs:attribute name="generateElementProperty" type="xs:boolean"/>
+      <xs:attribute name="generateFailFastSetterMethod" type="xs:boolean"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="baseType">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice minOccurs="0"><!-- XML Schema is brain dead -->
+          <xs:element ref="jaxb:javaType" />
+          <xs:element ref="xjc:javaType" />
+        </xs:choice>
+      </xs:sequence>
+      <xs:attribute name="name"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="javaType" substitutionGroup="jaxb:declaration">
+    <xs:complexType>
+      <xs:attributeGroup ref="jaxb:conversionBody"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="conversionBody">
+    <xs:attribute name="parseMethod"/>
+    <xs:attribute name="printMethod"/>
+    <xs:attribute name="name" use="required"/>
+    <xs:attribute name="hasNsContext" type="xs:boolean"/>
+  </xs:attributeGroup>
+  <xs:element name="typesafeEnumClass" substitutionGroup="jaxb:declaration">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="jaxb:javadoc"/>
+        <xs:element minOccurs="0" maxOccurs="unbounded" name="typesafeEnumMember">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element minOccurs="0" ref="jaxb:javadoc"/>
+            </xs:sequence>
+            <xs:attribute name="name"/>
+            <xs:attribute name="value" use="required"/>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="map">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="name"/>
+      <xs:attribute name="ref"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="typesafeEnumMember" substitutionGroup="jaxb:declaration">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="jaxb:javadoc"/>
+      </xs:sequence>
+      <xs:attribute name="name" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="dom">
+    <xs:complexType>
+      <xs:attribute name="type" default="w3c"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="inlineBinaryData">
+    <xs:annotation><xs:documentation><![CDATA[
+      Disable binary optimization.
+
+      Used on elements like <xs:element name="foo" type="xs:base64Binary"/> to indicate
+      that this base64 binary data is always inlined and never subjected to the binary
+      transfer optimization (such as XOP/MTOM)
+    ]]></xs:documentation></xs:annotation>
+    <xs:complexType />
+  </xs:element>
+
+  <xs:element name="factoryMethod">
+    <xs:annotation><xs:documentation><![CDATA[
+      Controls the name of the factory method on ObjectFactory. 
+    ]]></xs:documentation></xs:annotation>
+    <xs:complexType>
+      <xs:sequence />
+      <xs:attribute name="name" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+
+  <xs:group name="anyContents">
+    <xs:sequence>
+      <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
+    </xs:sequence>
+  </xs:group>
+  <xs:attributeGroup name="anyContents">
+    <xs:attributeGroup ref="jaxb:anyAttributes"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="anyAttributes">
+    <xs:anyAttribute processContents="skip"/>
+  </xs:attributeGroup>
+</xs:schema>

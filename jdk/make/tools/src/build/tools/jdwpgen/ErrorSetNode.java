@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package build.tools.jdwpgen;
 
-import java.util.*;
 import java.io.*;
 
 class ErrorSetNode extends AbstractSimpleNode {
@@ -41,12 +40,12 @@ class ErrorSetNode extends AbstractSimpleNode {
     void document(PrintWriter writer) {
 
         writer.println("<dt>" + "Error Data");
-        if (components.size() == 0) {
+        if (components.isEmpty()) {
             writer.println("<dd>(None)");
         } else {
             writer.println("<dd><table border=1 cellpadding=3 cellspacing=0 width=\"90%\" summary=\"\">");
-        for (Iterator it = components.iterator(); it.hasNext();) {
-            ((Node)it.next()).document(writer);
+        for (Node node : components) {
+            node.document(writer);
         }
         writer.println("</table>");
         }

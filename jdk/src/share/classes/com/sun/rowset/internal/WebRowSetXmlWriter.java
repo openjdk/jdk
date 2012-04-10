@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,14 +48,14 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
      * for this field is set with the <code>java.io.Writer</code> object given
      * as the second argument to the <code>writeXML</code> method.
      */
-    private java.io.Writer writer;
+    private transient java.io.Writer writer;
 
     /**
      * The <code>java.util.Stack</code> object that this <code>WebRowSetXmlWriter</code>
      * object will use for storing the tags to be used for writing the calling
      * <code>WebRowSet</code> object as an XML document.
      */
-    private java.util.Stack stack;
+    private java.util.Stack<String> stack;
 
     private  JdbcRowSetResourceBundle resBundle;
 
@@ -94,7 +94,7 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
     throws SQLException {
 
         // create a new stack for tag checking.
-        stack = new java.util.Stack();
+        stack = new java.util.Stack<>();
         writer = wrt;
         writeRowSet(caller);
     }
@@ -127,7 +127,7 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
     throws SQLException {
 
         // create a new stack for tag checking.
-        stack = new java.util.Stack();
+        stack = new java.util.Stack<>();
         writer = new OutputStreamWriter(oStream);
         writeRowSet(caller);
     }
@@ -205,16 +205,11 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
 
             //Changed to beginSection and endSection for maps for proper indentation
             beginSection("map");
-            java.util.Map typeMap = caller.getTypeMap();
-            if (typeMap != null) {
-                Iterator i = typeMap.keySet().iterator();
-                Class c;
-                String type;
-                while (i.hasNext()) {
-                    type = (String)i.next();
-                    c = (Class)typeMap.get(type);
-                    propString("type", type);
-                    propString("class", c.getName());
+            Map<String, Class<?>> typeMap = caller.getTypeMap();
+            if(typeMap != null) {
+                for(Map.Entry<String, Class<?>> mm : typeMap.entrySet()) {
+                    propString("type", mm.getKey());
+                    propString("class", mm.getValue().getName());
                 }
             }
             endSection("map");
@@ -532,7 +527,7 @@ public class WebRowSetXmlWriter implements XmlWriter, Serializable {
     }
 
     private String getTag() {
-        return (String)stack.pop();
+        return stack.pop();
     }
 
     private void writeNull() throws java.io.IOException {

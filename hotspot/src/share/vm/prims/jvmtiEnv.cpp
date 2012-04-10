@@ -68,6 +68,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 
 
 
@@ -170,7 +173,7 @@ JvmtiEnv::GetThreadLocalStorage(jthread thread, void** data_ptr) {
     // from native so as to resolve the jthread.
 
     ThreadInVMfromNative __tiv(current_thread);
-    __ENTRY(jvmtiError, JvmtiEnv::GetThreadLocalStorage , current_thread)
+    VM_ENTRY_BASE(jvmtiError, JvmtiEnv::GetThreadLocalStorage , current_thread)
     debug_only(VMNativeEntryWrapper __vew;)
 
     oop thread_oop = JNIHandles::resolve_external_guard(thread);
@@ -264,7 +267,10 @@ JvmtiEnv::RetransformClasses(jint class_count, const jclass* classes) {
 
     instanceKlassHandle ikh(current_thread, k_oop);
     if (ikh->get_cached_class_file_bytes() == NULL) {
-      // not cached, we need to reconstitute the class file from VM representation
+      // Not cached, we need to reconstitute the class file from the
+      // VM representation. We don't attach the reconstituted class
+      // bytes to the instanceKlass here because they have not been
+      // validated and we're not at a safepoint.
       constantPoolHandle  constants(current_thread, ikh->constants());
       ObjectLocker ol(constants, current_thread);    // lock constant pool while we query it
 
@@ -2044,7 +2050,6 @@ JvmtiEnv::SetFieldAccessWatch(fieldDescriptor* fdesc_ptr) {
   // make sure we haven't set this watch before
   if (fdesc_ptr->is_field_access_watched()) return JVMTI_ERROR_DUPLICATE;
   fdesc_ptr->set_is_field_access_watched(true);
-  update_klass_field_access_flag(fdesc_ptr);
 
   JvmtiEventController::change_field_watch(JVMTI_EVENT_FIELD_ACCESS, true);
 
@@ -2057,7 +2062,6 @@ JvmtiEnv::ClearFieldAccessWatch(fieldDescriptor* fdesc_ptr) {
   // make sure we have a watch to clear
   if (!fdesc_ptr->is_field_access_watched()) return JVMTI_ERROR_NOT_FOUND;
   fdesc_ptr->set_is_field_access_watched(false);
-  update_klass_field_access_flag(fdesc_ptr);
 
   JvmtiEventController::change_field_watch(JVMTI_EVENT_FIELD_ACCESS, false);
 
@@ -2070,7 +2074,6 @@ JvmtiEnv::SetFieldModificationWatch(fieldDescriptor* fdesc_ptr) {
   // make sure we haven't set this watch before
   if (fdesc_ptr->is_field_modification_watched()) return JVMTI_ERROR_DUPLICATE;
   fdesc_ptr->set_is_field_modification_watched(true);
-  update_klass_field_access_flag(fdesc_ptr);
 
   JvmtiEventController::change_field_watch(JVMTI_EVENT_FIELD_MODIFICATION, true);
 
@@ -2083,7 +2086,6 @@ JvmtiEnv::ClearFieldModificationWatch(fieldDescriptor* fdesc_ptr) {
    // make sure we have a watch to clear
   if (!fdesc_ptr->is_field_modification_watched()) return JVMTI_ERROR_NOT_FOUND;
   fdesc_ptr->set_is_field_modification_watched(false);
-  update_klass_field_access_flag(fdesc_ptr);
 
   JvmtiEventController::change_field_watch(JVMTI_EVENT_FIELD_MODIFICATION, false);
 

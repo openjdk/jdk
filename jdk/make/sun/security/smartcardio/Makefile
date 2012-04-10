@@ -73,8 +73,8 @@ include $(BUILDDIR)/common/Library.gmk
 # Libraries to link
 #
 ifeq ($(PLATFORM), windows)
-  OTHER_LDLIBS = $(JVMLIB) winscard.lib
+  OTHER_LDLIBS = winscard.lib
 else
-  OTHER_LDLIBS = -ldl $(JVMLIB)
+  OTHER_LDLIBS = $(LIBDL)
   OTHER_CFLAGS = -D__sun_jdk
 endif

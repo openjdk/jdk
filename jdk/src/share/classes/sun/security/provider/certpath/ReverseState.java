@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,9 @@ class ReverseState implements State {
 
     /* the algorithm checker */
     AlgorithmChecker algorithmChecker;
+
+    /* the untrusted certificates checker */
+    UntrustedChecker untrustedChecker;
 
     /* the trust anchor used to validate the path */
     TrustAnchor trustAnchor;
@@ -365,6 +368,7 @@ class ReverseState implements State {
      * because some of them (e.g., subjKeyId) will
      * not have their contents modified by subsequent calls to updateState.
      */
+    @SuppressWarnings("unchecked") // Safe casts assuming clone() works correctly
     public Object clone() {
         try {
             ReverseState clonedState = (ReverseState) super.clone();
@@ -393,7 +397,7 @@ class ReverseState implements State {
 
             return clonedState;
         } catch (CloneNotSupportedException e) {
-            throw new InternalError(e.toString());
+            throw new InternalError(e.toString(), e);
         }
     }
 }

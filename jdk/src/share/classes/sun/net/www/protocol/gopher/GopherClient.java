@@ -281,7 +281,7 @@ public class GopherClient extends NetworkClient implements Runnable {
                 ps.print("</title></head>\n<body>\n<H1>");
                 ps.print(title);
                 ps.print("</h1><dl compact>\n");
-                DataInputStream ds = new DataInputStream(serverInput);
+                BufferedReader ds = new BufferedReader(new InputStreamReader(serverInput));
                 String s;
                 while ((s = ds.readLine()) != null) {
                     int len = s.length();
@@ -324,7 +324,7 @@ public class GopherClient extends NetworkClient implements Runnable {
            }
 
        } catch (UnsupportedEncodingException e) {
-            throw new InternalError(encoding+ " encoding not found");
+            throw new InternalError(encoding+ " encoding not found", e);
        } catch (IOException e) {
        } finally {
            try {

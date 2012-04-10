@@ -29,6 +29,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * This source code is provided to illustrate the usage of a given feature
+ * or technique and has been deliberately simplified. Additional steps
+ * required for a production-quality application, such as security checks,
+ * input validation and proper error handling, might not be present in
+ * this sample code.
+ */
+
+
 package com.sun.nio.zipfs;
 
 
@@ -176,11 +185,11 @@ class ZipConstants {
      */
     ///////////////////////////////////////////////////////
     static final int CH(byte[] b, int n) {
-       return b[n] & 0xff;
+        return Byte.toUnsignedInt(b[n]);
     }
 
     static final int SH(byte[] b, int n) {
-        return (b[n] & 0xff) | ((b[n + 1] & 0xff) << 8);
+        return Byte.toUnsignedInt(b[n]) | (Byte.toUnsignedInt(b[n + 1]) << 8);
     }
 
     static final long LG(byte[] b, int n) {

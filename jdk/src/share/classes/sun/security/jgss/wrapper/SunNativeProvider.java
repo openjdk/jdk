@@ -52,7 +52,7 @@ public final class SunNativeProvider extends Provider {
         "sun.security.jgss.wrapper.NativeGSSFactory";
     private static final String LIB_PROP = "sun.security.jgss.lib";
     private static final String DEBUG_PROP = "sun.security.nativegss.debug";
-    private static HashMap MECH_MAP;
+    private static HashMap<String, String> MECH_MAP;
     static final Provider INSTANCE = new SunNativeProvider();
     static boolean DEBUG;
     static void debug(String message) {
@@ -66,8 +66,9 @@ public final class SunNativeProvider extends Provider {
 
     static {
         MECH_MAP =
-            AccessController.doPrivileged(new PrivilegedAction<HashMap>() {
-                    public HashMap run() {
+            AccessController.doPrivileged(
+                new PrivilegedAction<HashMap<String, String>>() {
+                    public HashMap<String, String> run() {
                         DEBUG = Boolean.parseBoolean
                             (System.getProperty(DEBUG_PROP));
                         try {
@@ -88,6 +89,10 @@ public final class SunNativeProvider extends Provider {
                                     "libgssapi.so",
                                     "libgssapi_krb5.so",
                                     "libgssapi_krb5.so.2",
+                                };
+                            } else if (osname.startsWith("Mac OS X")) {
+                                gssLibs = new String[]{
+                                    "/usr/lib/sasl2/libgssapiv2.2.so",
                                 };
                             }
                         } else {

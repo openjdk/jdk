@@ -81,6 +81,7 @@ import java.applet.Applet;
  * @author David Karlton
  * @author Arnaud Weber
  */
+@SuppressWarnings("serial")
 public class JPopupMenu extends JComponent implements Accessible,MenuElement {
 
     /**
@@ -1200,6 +1201,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      * Java Accessibility API appropriate to popup menu user-interface
      * elements.
      */
+    @SuppressWarnings("serial")
     protected class AccessibleJPopupMenu extends AccessibleJComponent
         implements PropertyChangeListener {
 
@@ -1268,7 +1270,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
         private void fireActiveDescendant() {
             if (JPopupMenu.this instanceof BasicComboPopup) {
                 // get the popup list
-                JList popupList = ((BasicComboPopup)JPopupMenu.this).getList();
+                JList<?> popupList = ((BasicComboPopup)JPopupMenu.this).getList();
                 if (popupList == null) {
                     return;
                 }
@@ -1335,7 +1337,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
         throws IOException, ClassNotFoundException {
         s.defaultReadObject();
 
-        Vector          values = (Vector)s.readObject();
+        Vector<?>          values = (Vector)s.readObject();
         int             indexCounter = 0;
         int             maxCounter = values.size();
 
@@ -1519,6 +1521,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
     /**
      * A popup menu-specific separator.
      */
+    @SuppressWarnings("serial")
     static public class Separator extends JSeparator
     {
         public Separator( )

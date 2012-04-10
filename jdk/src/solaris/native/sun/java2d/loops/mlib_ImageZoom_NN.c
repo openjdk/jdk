@@ -63,6 +63,9 @@
  *    MLIB_EDGE_SRC_PADDED
  */
 
+#ifdef MACOSX
+#include <machine/endian.h>
+#endif
 #include <mlib_image.h>
 #include <mlib_ImageZoom.h>
 

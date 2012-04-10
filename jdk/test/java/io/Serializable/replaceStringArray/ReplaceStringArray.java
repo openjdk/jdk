@@ -22,7 +22,6 @@
  */
 
 /* @test
- * @clean A SubstituteObjectOutputStream SubstituteObjectInputStream
  * @bug 4099013
  * @summary Enable substitution of String and Array by ObjectStreams.
  */

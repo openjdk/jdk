@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,9 @@ class ForwardState implements State {
 
     /* the checker used for revocation status */
     public CrlRevocationChecker crlChecker;
+
+    /* the untrusted certificates checker */
+    UntrustedChecker untrustedChecker;
 
     /* The list of user-defined checkers that support forward checking */
     ArrayList<PKIXCertPathChecker> forwardCheckers;
@@ -206,8 +209,8 @@ class ForwardState implements State {
                 SubjectAlternativeNameExtension subjAltNameExt
                     = icert.getSubjectAlternativeNameExtension();
                 if (subjAltNameExt != null) {
-                    GeneralNames gNames = (GeneralNames)
-                        subjAltNameExt.get(SubjectAlternativeNameExtension.SUBJECT_NAME);
+                    GeneralNames gNames = subjAltNameExt.get(
+                            SubjectAlternativeNameExtension.SUBJECT_NAME);
                     for (Iterator<GeneralName> t = gNames.iterator();
                                 t.hasNext(); ) {
                         GeneralNameInterface gName = t.next().getName();
@@ -236,6 +239,7 @@ class ForwardState implements State {
      * because some of them will
      * not have their contents modified by subsequent calls to updateState.
      */
+    @SuppressWarnings("unchecked") // Safe casts assuming clone() works correctly
     public Object clone() {
         try {
             ForwardState clonedState = (ForwardState) super.clone();
@@ -261,7 +265,7 @@ class ForwardState implements State {
                 = (HashSet<GeneralNameInterface>)subjectNamesTraversed.clone();
             return clonedState;
         } catch (CloneNotSupportedException e) {
-            throw new InternalError(e.toString());
+            throw new InternalError(e.toString(), e);
         }
     }
 }

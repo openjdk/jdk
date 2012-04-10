@@ -54,10 +54,10 @@ public class AtomicBoolean implements java.io.Serializable {
     private static final long valueOffset;
 
     static {
-      try {
-        valueOffset = unsafe.objectFieldOffset
-            (AtomicBoolean.class.getDeclaredField("value"));
-      } catch (Exception ex) { throw new Error(ex); }
+        try {
+            valueOffset = unsafe.objectFieldOffset
+                (AtomicBoolean.class.getDeclaredField("value"));
+        } catch (Exception ex) { throw new Error(ex); }
     }
 
     private volatile int value;

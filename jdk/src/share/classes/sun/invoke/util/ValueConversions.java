@@ -55,9 +55,9 @@ public class ValueConversions {
     private static final Lookup IMPL_LOOKUP = MethodHandles.lookup();
 
     private static EnumMap<Wrapper, MethodHandle>[] newWrapperCaches(int n) {
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings("unchecked")  // generic array creation
         EnumMap<Wrapper, MethodHandle>[] caches
-                = (EnumMap<Wrapper, MethodHandle>[]) new EnumMap[n];  // unchecked warning expected here
+                = (EnumMap<Wrapper, MethodHandle>[]) new EnumMap<?,?>[n];
         for (int i = 0; i < n; i++)
             caches[i] = new EnumMap<>(Wrapper.class);
         return caches;
@@ -677,9 +677,7 @@ public class ValueConversions {
             EMPTY = IMPL_LOOKUP.findStatic(THIS_CLASS, "empty", ignoreType.dropParameterTypes(0, 1));
             NEW_ARRAY = IMPL_LOOKUP.findStatic(THIS_CLASS, "newArray", MethodType.methodType(Object[].class, int.class));
         } catch (NoSuchMethodException | IllegalAccessException ex) {
-            Error err = new InternalError("uncaught exception");
-            err.initCause(ex);
-            throw err;
+            throw new InternalError("uncaught exception", ex);
         }
     }
 
@@ -693,9 +691,7 @@ public class ValueConversions {
                 COPY_AS_PRIMITIVE_ARRAY = IMPL_LOOKUP.findStatic(THIS_CLASS, "copyAsPrimitiveArray", MethodType.methodType(Object.class, Wrapper.class, Object[].class));
                 MAKE_LIST = IMPL_LOOKUP.findStatic(THIS_CLASS, "makeList", MethodType.methodType(List.class, Object[].class));
             } catch (ReflectiveOperationException ex) {
-                Error err = new InternalError("uncaught exception");
-                err.initCause(ex);
-                throw err;
+                throw new InternalError("uncaught exception", ex);
             }
         }
     }
@@ -1101,7 +1097,7 @@ public class ValueConversions {
     }
 
     private static MethodHandle buildNewArray(int nargs) {
-        return MethodHandles.insertArguments(NEW_ARRAY, 0, (int) nargs);
+        return MethodHandles.insertArguments(NEW_ARRAY, 0, nargs);
     }
 
     private static final MethodHandle[] FILLERS = new MethodHandle[MAX_ARITY+1];
@@ -1126,7 +1122,7 @@ public class ValueConversions {
         }
         MethodHandle leftFill = filler(leftLen);  // recursive fill
         MethodHandle rightFill = FILL_ARRAYS[rightLen];
-        rightFill = MethodHandles.insertArguments(rightFill, 1, (int) leftLen);  // [leftLen..nargs-1]
+        rightFill = MethodHandles.insertArguments(rightFill, 1, leftLen);  // [leftLen..nargs-1]
 
         // Combine the two fills: right(left(newArray(nargs), x1..x20), x21..x23)
         MethodHandle mh = filler(0);  // identity function produces result

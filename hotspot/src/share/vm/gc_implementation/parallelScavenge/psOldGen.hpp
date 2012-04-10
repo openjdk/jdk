@@ -60,9 +60,8 @@ class PSOldGen : public CHeapObj {
   // Used when initializing the _name field.
   static inline const char* select_name();
 
-  HeapWord* allocate_noexpand(size_t word_size, bool is_tlab) {
+  HeapWord* allocate_noexpand(size_t word_size) {
     // We assume the heap lock is held here.
-    assert(!is_tlab, "Does not support TLAB allocation");
     assert_locked_or_safepoint(Heap_lock);
     HeapWord* res = object_space()->allocate(word_size);
     if (res != NULL) {
@@ -89,7 +88,7 @@ class PSOldGen : public CHeapObj {
     return (res == NULL) ? expand_and_cas_allocate(word_size) : res;
   }
 
-  HeapWord* expand_and_allocate(size_t word_size, bool is_tlab);
+  HeapWord* expand_and_allocate(size_t word_size);
   HeapWord* expand_and_cas_allocate(size_t word_size);
   void expand(size_t bytes);
   bool expand_by(size_t bytes);
@@ -164,7 +163,7 @@ class PSOldGen : public CHeapObj {
 
   // Allocation. We report all successful allocations to the size policy
   // Note that the perm gen does not use this method, and should not!
-  HeapWord* allocate(size_t word_size, bool is_tlab);
+  HeapWord* allocate(size_t word_size);
 
   // Iteration.
   void oop_iterate(OopClosure* cl) { object_space()->oop_iterate(cl); }

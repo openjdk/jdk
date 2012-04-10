@@ -355,7 +355,7 @@ void AwtWindow::RepositionSecurityWarning(JNIEnv *env)
     RECT rect;
     CalculateWarningWindowBounds(env, &rect);
 
-    ::SetWindowPos(warningWindow, IsAlwaysOnTop() ? HWND_TOPMOST : GetHWnd(),
+    ::SetWindowPos(warningWindow, IsAlwaysOnTop() ? HWND_TOPMOST : HWND_NOTOPMOST,
             rect.left, rect.top,
             rect.right - rect.left, rect.bottom - rect.top,
             SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE |
@@ -835,7 +835,7 @@ void AwtWindow::StartSecurityAnimation(AnimationKind kind)
 
     if (securityAnimationKind == akShow) {
         ::SetWindowPos(warningWindow,
-                IsAlwaysOnTop() ? HWND_TOPMOST : GetHWnd(),
+                IsAlwaysOnTop() ? HWND_TOPMOST : HWND_NOTOPMOST,
                 0, 0, 0, 0,
                 SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOMOVE |
                 SWP_SHOWWINDOW | SWP_NOOWNERZORDER);

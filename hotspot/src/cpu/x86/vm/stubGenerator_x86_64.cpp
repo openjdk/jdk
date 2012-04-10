@@ -47,6 +47,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
@@ -92,6 +95,7 @@ class StubGenerator: public StubCodeGenerator {
 #define inc_counter_np(counter) (0)
 #else
   void inc_counter_np_(int& counter) {
+    // This can destroy rscratch1 if counter is far from the code cache
     __ incrementl(ExternalAddress((address)&counter));
   }
 #define inc_counter_np(counter) \
@@ -706,6 +710,21 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Support for intptr_t get_previous_sp()
+  //
+  // This routine is used to find the previous stack pointer for the
+  // caller.
+  address generate_get_previous_sp() {
+    StubCodeMark mark(this, "StubRoutines", "get_previous_sp");
+    address start = __ pc();
+
+    __ movptr(rax, rsp);
+    __ addptr(rax, 8); // return address is at the top of the stack.
+    __ ret(0);
+
+    return start;
+  }
+
   //----------------------------------------------------------------------------------------------------
   // Support for void verify_mxcsr()
   //
@@ -934,6 +953,8 @@ class StubGenerator: public StubCodeGenerator {
     __ push(0);                       // hole for return address-to-be
     __ pusha();                       // push registers
     Address next_pc(rsp, RegisterImpl::number_of_registers * BytesPerWord);
+
+    // FIXME: this probably needs alignment logic
 
     __ subptr(rsp, frame::arg_reg_save_area_bytes);
     BLOCK_COMMENT("call handle_unsafe_access");
@@ -1263,7 +1284,7 @@ class StubGenerator: public StubCodeGenerator {
            __ subptr(end, start); // number of bytes to copy
 
           intptr_t disp = (intptr_t) ct->byte_map_base;
-          if (__ is_simm32(disp)) {
+          if (Assembler::is_simm32(disp)) {
             Address cardtable(noreg, noreg, Address::no_scale, disp);
             __ lea(scratch, cardtable);
           } else {
@@ -1461,8 +1482,8 @@ class StubGenerator: public StubCodeGenerator {
     __ movb(Address(end_to, 8), rax);
 
   __ BIND(L_exit);
-    inc_counter_np(SharedRuntime::_jbyte_array_copy_ctr);
     restore_arg_regs();
+    inc_counter_np(SharedRuntime::_jbyte_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -1550,8 +1571,8 @@ class StubGenerator: public StubCodeGenerator {
     __ decrement(qword_count);
     __ jcc(Assembler::notZero, L_copy_8_bytes);
 
-    inc_counter_np(SharedRuntime::_jbyte_array_copy_ctr);
     restore_arg_regs();
+    inc_counter_np(SharedRuntime::_jbyte_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -1559,8 +1580,8 @@ class StubGenerator: public StubCodeGenerator {
     // Copy in 32-bytes chunks
     copy_32_bytes_backward(from, to, qword_count, rax, L_copy_32_bytes, L_copy_8_bytes);
 
-    inc_counter_np(SharedRuntime::_jbyte_array_copy_ctr);
     restore_arg_regs();
+    inc_counter_np(SharedRuntime::_jbyte_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -1653,8 +1674,8 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(Address(end_to, 8), rax);
 
   __ BIND(L_exit);
-    inc_counter_np(SharedRuntime::_jshort_array_copy_ctr);
     restore_arg_regs();
+    inc_counter_np(SharedRuntime::_jshort_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -1754,8 +1775,8 @@ class StubGenerator: public StubCodeGenerator {
     __ decrement(qword_count);
     __ jcc(Assembler::notZero, L_copy_8_bytes);
 
-    inc_counter_np(SharedRuntime::_jshort_array_copy_ctr);
     restore_arg_regs();
+    inc_counter_np(SharedRuntime::_jshort_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -1763,8 +1784,8 @@ class StubGenerator: public StubCodeGenerator {
     // Copy in 32-bytes chunks
     copy_32_bytes_backward(from, to, qword_count, rax, L_copy_32_bytes, L_copy_8_bytes);
 
-    inc_counter_np(SharedRuntime::_jshort_array_copy_ctr);
     restore_arg_regs();
+    inc_counter_np(SharedRuntime::_jshort_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -1854,8 +1875,8 @@ class StubGenerator: public StubCodeGenerator {
       __ leaq(end_to, Address(saved_to, dword_count, Address::times_4, -4));
       gen_write_ref_array_post_barrier(saved_to, end_to, rax);
     }
-    inc_counter_np(SharedRuntime::_jint_array_copy_ctr);
     restore_arg_regs();
+    inc_counter_np(SharedRuntime::_jint_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -1935,11 +1956,11 @@ class StubGenerator: public StubCodeGenerator {
     __ decrement(qword_count);
     __ jcc(Assembler::notZero, L_copy_8_bytes);
 
-    inc_counter_np(SharedRuntime::_jint_array_copy_ctr);
     if (is_oop) {
       __ jmp(L_exit);
     }
     restore_arg_regs();
+    inc_counter_np(SharedRuntime::_jint_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -1947,7 +1968,6 @@ class StubGenerator: public StubCodeGenerator {
     // Copy in 32-bytes chunks
     copy_32_bytes_backward(from, to, qword_count, rax, L_copy_32_bytes, L_copy_8_bytes);
 
-   inc_counter_np(SharedRuntime::_jint_array_copy_ctr);
    __ bind(L_exit);
      if (is_oop) {
        Register end_to = rdx;
@@ -1955,6 +1975,7 @@ class StubGenerator: public StubCodeGenerator {
        gen_write_ref_array_post_barrier(to, end_to, rax);
      }
     restore_arg_regs();
+    inc_counter_np(SharedRuntime::_jint_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -2027,8 +2048,8 @@ class StubGenerator: public StubCodeGenerator {
     if (is_oop) {
       __ jmp(L_exit);
     } else {
-      inc_counter_np(SharedRuntime::_jlong_array_copy_ctr);
       restore_arg_regs();
+      inc_counter_np(SharedRuntime::_jlong_array_copy_ctr); // Update counter after rscratch1 is free
       __ xorptr(rax, rax); // return 0
       __ leave(); // required for proper stackwalking of RuntimeStub frame
       __ ret(0);
@@ -2040,11 +2061,13 @@ class StubGenerator: public StubCodeGenerator {
     if (is_oop) {
     __ BIND(L_exit);
       gen_write_ref_array_post_barrier(saved_to, end_to, rax);
-      inc_counter_np(SharedRuntime::_oop_array_copy_ctr);
-    } else {
-      inc_counter_np(SharedRuntime::_jlong_array_copy_ctr);
     }
     restore_arg_regs();
+    if (is_oop) {
+      inc_counter_np(SharedRuntime::_oop_array_copy_ctr); // Update counter after rscratch1 is free
+    } else {
+      inc_counter_np(SharedRuntime::_jlong_array_copy_ctr); // Update counter after rscratch1 is free
+    }
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -2108,8 +2131,8 @@ class StubGenerator: public StubCodeGenerator {
     if (is_oop) {
       __ jmp(L_exit);
     } else {
-      inc_counter_np(SharedRuntime::_jlong_array_copy_ctr);
       restore_arg_regs();
+      inc_counter_np(SharedRuntime::_jlong_array_copy_ctr); // Update counter after rscratch1 is free
       __ xorptr(rax, rax); // return 0
       __ leave(); // required for proper stackwalking of RuntimeStub frame
       __ ret(0);
@@ -2122,11 +2145,13 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(L_exit);
       __ lea(rcx, Address(to, saved_count, Address::times_8, -8));
       gen_write_ref_array_post_barrier(to, rcx, rax);
-      inc_counter_np(SharedRuntime::_oop_array_copy_ctr);
-    } else {
-      inc_counter_np(SharedRuntime::_jlong_array_copy_ctr);
     }
     restore_arg_regs();
+    if (is_oop) {
+      inc_counter_np(SharedRuntime::_oop_array_copy_ctr); // Update counter after rscratch1 is free
+    } else {
+      inc_counter_np(SharedRuntime::_jlong_array_copy_ctr); // Update counter after rscratch1 is free
+    }
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -2251,8 +2276,7 @@ class StubGenerator: public StubCodeGenerator {
     // The ckoff and ckval must be mutually consistent,
     // even though caller generates both.
     { Label L;
-      int sco_offset = (klassOopDesc::header_size() * HeapWordSize +
-                        Klass::super_check_offset_offset_in_bytes());
+      int sco_offset = in_bytes(Klass::super_check_offset_offset());
       __ cmpl(ckoff, Address(ckval, sco_offset));
       __ jcc(Assembler::equal, L);
       __ stop("super_check_offset inconsistent");
@@ -2326,8 +2350,8 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(L_done);
     __ movptr(r13, Address(rsp, saved_r13_offset * wordSize));
     __ movptr(r14, Address(rsp, saved_r14_offset * wordSize));
-    inc_counter_np(SharedRuntime::_checkcast_array_copy_ctr);
     restore_arg_regs();
+    inc_counter_np(SharedRuntime::_checkcast_array_copy_ctr); // Update counter after rscratch1 is free
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
 
@@ -2562,8 +2586,7 @@ class StubGenerator: public StubCodeGenerator {
     //   array_tag: typeArray = 0x3, objArray = 0x2, non-array = 0x0
     //
 
-    const int lh_offset = klassOopDesc::header_size() * HeapWordSize +
-                          Klass::layout_helper_offset_in_bytes();
+    const int lh_offset = in_bytes(Klass::layout_helper_offset());
 
     // Handle objArrays completely differently...
     const jint objArray_lh = Klass::array_layout_helper(T_OBJECT);
@@ -2712,15 +2735,13 @@ class StubGenerator: public StubCodeGenerator {
       assert_clean_int(count, sco_temp);
 
       // Generate the type check.
-      const int sco_offset = (klassOopDesc::header_size() * HeapWordSize +
-                              Klass::super_check_offset_offset_in_bytes());
+      const int sco_offset = in_bytes(Klass::super_check_offset_offset());
       __ movl(sco_temp, Address(r11_dst_klass, sco_offset));
       assert_clean_int(sco_temp, rax);
       generate_type_check(r10_src_klass, sco_temp, r11_dst_klass, L_plain_copy);
 
       // Fetch destination element klass from the objArrayKlass header.
-      int ek_offset = (klassOopDesc::header_size() * HeapWordSize +
-                       objArrayKlass::element_klass_offset_in_bytes());
+      int ek_offset = in_bytes(objArrayKlass::element_klass_offset());
       __ movptr(r11_dst_klass, Address(r11_dst_klass, ek_offset));
       __ movl(  sco_temp,      Address(r11_dst_klass, sco_offset));
       assert_clean_int(sco_temp, rax);
@@ -2934,7 +2955,8 @@ class StubGenerator: public StubCodeGenerator {
   // caller saved registers were assumed volatile in the compiler.
   address generate_throw_exception(const char* name,
                                    address runtime_entry,
-                                   bool restore_saved_exception_pc) {
+                                   Register arg1 = noreg,
+                                   Register arg2 = noreg) {
     // Information about frame layout at time of blocking runtime call.
     // Note that we only have to preserve callee-saved registers since
     // the compilers are responsible for supplying a continuation point
@@ -2960,12 +2982,6 @@ class StubGenerator: public StubCodeGenerator {
     // which has the ability to fetch the return PC out of
     // thread-local storage and also sets up last_Java_sp slightly
     // differently than the real call_VM
-    if (restore_saved_exception_pc) {
-      __ movptr(rax,
-                Address(r15_thread,
-                        in_bytes(JavaThread::saved_exception_pc_offset())));
-      __ push(rax);
-    }
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
@@ -2977,9 +2993,18 @@ class StubGenerator: public StubCodeGenerator {
     int frame_complete = __ pc() - start;
 
     // Set up last_Java_sp and last_Java_fp
-    __ set_last_Java_frame(rsp, rbp, NULL);
+    address the_pc = __ pc();
+    __ set_last_Java_frame(rsp, rbp, the_pc);
+    __ andptr(rsp, -(StackAlignmentInBytes));    // Align stack
 
     // Call runtime
+    if (arg1 != noreg) {
+      assert(arg2 != c_rarg1, "clobbered");
+      __ movptr(c_rarg1, arg1);
+    }
+    if (arg2 != noreg) {
+      __ movptr(c_rarg2, arg2);
+    }
     __ movptr(c_rarg0, r15_thread);
     BLOCK_COMMENT("call runtime_entry");
     __ call(RuntimeAddress(runtime_entry));
@@ -2987,9 +3012,9 @@ class StubGenerator: public StubCodeGenerator {
     // Generate oop map
     OopMap* map = new OopMap(framesize, 0);
 
-    oop_maps->add_gc_map(__ pc() - start, map);
+    oop_maps->add_gc_map(the_pc - start, map);
 
-    __ reset_last_Java_frame(true, false);
+    __ reset_last_Java_frame(true, true);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
 
@@ -3050,8 +3075,24 @@ class StubGenerator: public StubCodeGenerator {
 
     // platform dependent
     StubRoutines::x86::_get_previous_fp_entry = generate_get_previous_fp();
+    StubRoutines::x86::_get_previous_sp_entry = generate_get_previous_sp();
 
     StubRoutines::x86::_verify_mxcsr_entry    = generate_verify_mxcsr();
+
+    // Build this early so it's available for the interpreter.  Stub
+    // expects the required and actual types as register arguments in
+    // j_rarg0 and j_rarg1 respectively.
+    StubRoutines::_throw_WrongMethodTypeException_entry =
+      generate_throw_exception("WrongMethodTypeException throw_exception",
+                               CAST_FROM_FN_PTR(address, SharedRuntime::throw_WrongMethodTypeException),
+                               rax, rcx);
+
+    // Build this early so it's available for the interpreter.
+    StubRoutines::_throw_StackOverflowError_entry =
+      generate_throw_exception("StackOverflowError throw_exception",
+                               CAST_FROM_FN_PTR(address,
+                                                SharedRuntime::
+                                                throw_StackOverflowError));
   }
 
   void generate_all() {
@@ -3064,43 +3105,19 @@ class StubGenerator: public StubCodeGenerator {
       generate_throw_exception("AbstractMethodError throw_exception",
                                CAST_FROM_FN_PTR(address,
                                                 SharedRuntime::
-                                                throw_AbstractMethodError),
-                               false);
+                                                throw_AbstractMethodError));
 
     StubRoutines::_throw_IncompatibleClassChangeError_entry =
       generate_throw_exception("IncompatibleClassChangeError throw_exception",
                                CAST_FROM_FN_PTR(address,
                                                 SharedRuntime::
-                                                throw_IncompatibleClassChangeError),
-                               false);
-
-    StubRoutines::_throw_ArithmeticException_entry =
-      generate_throw_exception("ArithmeticException throw_exception",
-                               CAST_FROM_FN_PTR(address,
-                                                SharedRuntime::
-                                                throw_ArithmeticException),
-                               true);
-
-    StubRoutines::_throw_NullPointerException_entry =
-      generate_throw_exception("NullPointerException throw_exception",
-                               CAST_FROM_FN_PTR(address,
-                                                SharedRuntime::
-                                                throw_NullPointerException),
-                               true);
+                                                throw_IncompatibleClassChangeError));
 
     StubRoutines::_throw_NullPointerException_at_call_entry =
       generate_throw_exception("NullPointerException at call throw_exception",
                                CAST_FROM_FN_PTR(address,
                                                 SharedRuntime::
-                                                throw_NullPointerException_at_call),
-                               false);
-
-    StubRoutines::_throw_StackOverflowError_entry =
-      generate_throw_exception("StackOverflowError throw_exception",
-                               CAST_FROM_FN_PTR(address,
-                                                SharedRuntime::
-                                                throw_StackOverflowError),
-                               false);
+                                                throw_NullPointerException_at_call));
 
     // entry points that are platform specific
     StubRoutines::x86::_f2i_fixup = generate_f2i_fixup();

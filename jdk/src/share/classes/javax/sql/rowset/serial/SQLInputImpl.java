@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package javax.sql.rowset.serial;
 
 import java.sql.*;
-import javax.sql.*;
-import java.io.*;
-import java.math.*;
+import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -91,7 +88,7 @@ public class SQLInputImpl implements SQLInput {
      * <code>SQLData</code> (the Java class that defines how the UDT
      * will be mapped).
      */
-    private Map map;
+    private Map<String,Class<?>> map;
 
 
     /**
@@ -123,7 +120,7 @@ public class SQLInputImpl implements SQLInput {
             "object with null parameters");
         }
         // assign our local reference to the attribute stream
-        attrib = attributes;
+        attrib = Arrays.copyOf(attributes, attributes.length);
         // init the index point before the head of the stream
         idx = -1;
         // set the map
@@ -279,7 +276,7 @@ public class SQLInputImpl implements SQLInput {
 
         if (attrib == null) {
             lastValueWasNull = true;
-            return (int)0;
+            return 0;
         } else {
             lastValueWasNull = false;
             return attrib.intValue();
@@ -591,7 +588,7 @@ public class SQLInputImpl implements SQLInput {
      * position; or if there are no further values in the stream.
      */
     public Object readObject() throws SQLException {
-        Object attrib = (Object)getNextAttribute();
+        Object attrib = getNextAttribute();
 
         if (attrib == null) {
             lastValueWasNull = true;
@@ -601,7 +598,7 @@ public class SQLInputImpl implements SQLInput {
             if (attrib instanceof Struct) {
                 Struct s = (Struct)attrib;
                 // look up the class in the map
-                Class c = (Class)map.get(s.getSQLTypeName());
+                Class<?> c = map.get(s.getSQLTypeName());
                 if (c != null) {
                     // create new instance of the class
                     SQLData obj = null;
@@ -620,10 +617,10 @@ public class SQLInputImpl implements SQLInput {
                     SQLInputImpl sqlInput = new SQLInputImpl(attribs, map);
                     // read the values...
                     obj.readSQL(sqlInput, s.getSQLTypeName());
-                    return (Object)obj;
+                    return obj;
                 }
             }
-            return (Object)attrib;
+            return attrib;
         }
     }
 

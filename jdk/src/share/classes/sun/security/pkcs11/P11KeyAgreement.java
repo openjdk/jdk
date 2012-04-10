@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,8 +143,8 @@ final class P11KeyAgreement extends KeyAgreementSpi {
             // just in case not, attempt conversion
             P11DHKeyFactory kf = new P11DHKeyFactory(token, "DH");
             try {
-                DHPublicKeySpec spec = (DHPublicKeySpec)kf.engineGetKeySpec
-                                                (key, DHPublicKeySpec.class);
+                DHPublicKeySpec spec = kf.engineGetKeySpec(
+                        key, DHPublicKeySpec.class);
                 y = spec.getY();
                 p = spec.getP();
                 g = spec.getG();
@@ -198,8 +198,22 @@ final class P11KeyAgreement extends KeyAgreementSpi {
             token.p11.C_GetAttributeValue(session.id(), keyID, attributes);
             byte[] secret = attributes[0].getByteArray();
             token.p11.C_DestroyObject(session.id(), keyID);
-            // trim leading 0x00 bytes per JCE convention
-            return P11Util.trimZeroes(secret);
+            // Some vendors, e.g. NSS, trim off the leading 0x00 byte(s) from
+            // the generated secret. Thus, we need to check the secret length
+            // and trim/pad it so the returned value has the same length as
+            // the modulus size
+            if (secret.length == secretLen) {
+                return secret;
+            } else {
+                if (secret.length > secretLen) {
+                    // Shouldn't happen; but check just in case
+                    throw new ProviderException("generated secret is out-of-range");
+                }
+                byte[] newSecret = new byte[secretLen];
+                System.arraycopy(secret, 0, newSecret, secretLen - secret.length,
+                    secret.length);
+                return newSecret;
+            }
         } catch (PKCS11Exception e) {
             throw new ProviderException("Could not derive key", e);
         } finally {

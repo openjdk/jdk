@@ -1,9 +1,5 @@
 #
-# @(#)mapfile-vers	1.32 07/10/25 16:47:36
-#
-
-#
-# Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -221,6 +217,7 @@ SUNWprivate_1.1 {
 		JVM_SetArrayElement;
 		JVM_SetClassSigners;
 		JVM_SetLength;
+                JVM_SetNativeThreadName;
 		JVM_SetPrimitiveArrayElement;
 		JVM_SetProtectionDomain;
 		JVM_SetSockOpt;
@@ -256,6 +253,9 @@ SUNWprivate_1.1 {
 
 		# This is for Forte Analyzer profiling support.
 		AsyncGetCallTrace;
+
+		# INSERT VTABLE SYMBOLS HERE
+
         local:
                 *;
 };

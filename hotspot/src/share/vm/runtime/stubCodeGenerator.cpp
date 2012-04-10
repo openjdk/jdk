@@ -80,9 +80,10 @@ void StubCodeDesc::print_on(outputStream* st) const {
 
 // Implementation of StubCodeGenerator
 
-StubCodeGenerator::StubCodeGenerator(CodeBuffer* code) {
+StubCodeGenerator::StubCodeGenerator(CodeBuffer* code, bool print_code) {
   _masm = new MacroAssembler(code);
   _first_stub = _last_stub = NULL;
+  _print_code = print_code;
 }
 
 extern "C" {
@@ -94,7 +95,7 @@ extern "C" {
 }
 
 StubCodeGenerator::~StubCodeGenerator() {
-  if (PrintStubCode) {
+  if (PrintStubCode || _print_code) {
     CodeBuffer* cbuf = _masm->code();
     CodeBlob*   blob = CodeCache::find_blob_unsafe(cbuf->insts()->start());
     if (blob != NULL) {

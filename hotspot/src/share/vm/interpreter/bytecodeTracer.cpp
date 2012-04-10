@@ -92,7 +92,7 @@ class BytecodePrinter: public BytecodeClosure {
       // the incoming method.  We could lose a line of trace output.
       // This is acceptable in a debug-only feature.
       st->cr();
-      st->print("[%d] ", (int) Thread::current()->osthread()->thread_id());
+      st->print("[%ld] ", (long) Thread::current()->osthread()->thread_id());
       method->print_name(st);
       st->cr();
       _current_method = method();
@@ -106,7 +106,7 @@ class BytecodePrinter: public BytecodeClosure {
     }
     _code = code;
      int bci = bcp - method->code_base();
-    st->print("[%d] ", (int) Thread::current()->osthread()->thread_id());
+    st->print("[%ld] ", (long) Thread::current()->osthread()->thread_id());
     if (Verbose) {
       st->print("%8d  %4d  " INTPTR_FORMAT " " INTPTR_FORMAT " %s",
            BytecodeCounter::counter_value(), bci, tos, tos2, Bytecodes::name(code));
@@ -203,11 +203,14 @@ void print_oop(oop value, outputStream* st) {
   if (value == NULL) {
     st->print_cr(" NULL");
   } else if (java_lang_String::is_instance(value)) {
-    EXCEPTION_MARK;
-    Handle h_value (THREAD, value);
-    Symbol* sym = java_lang_String::as_symbol(h_value, CATCH);
-    print_symbol(sym, st);
-    sym->decrement_refcount();
+    char buf[40];
+    int len = java_lang_String::utf8_length(value);
+    java_lang_String::as_utf8_string(value, buf, sizeof(buf));
+    if (len >= (int)sizeof(buf)) {
+      st->print_cr(" %s...[%d]", buf, len);
+    } else {
+      st->print_cr(" %s", buf);
+    }
   } else {
     st->print_cr(" " PTR_FORMAT, (intptr_t) value);
   }
@@ -238,7 +241,7 @@ bool BytecodePrinter::check_index(int i, int& cp_index, outputStream* st) {
         st->print_cr(" not secondary entry?", i);
         return false;
       }
-      i = cache->entry_at(i)->main_entry_index();
+      i = cache->entry_at(i)->main_entry_index() + constantPoolOopDesc::CPCACHE_INDEX_TAG;
       goto check_cache_index;
     } else {
       st->print_cr(" not in cache[*]?", i);

@@ -69,6 +69,7 @@ import static javax.lang.model.SourceVersion.*;
  *              for visitors that do not need an additional parameter.
  *
  * @see SimpleElementVisitor6
+ * @see SimpleElementVisitor8
  * @since 1.7
  */
 @SupportedSourceVersion(RELEASE_7)

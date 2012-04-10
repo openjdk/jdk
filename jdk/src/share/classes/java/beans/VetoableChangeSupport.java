@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -420,7 +420,7 @@ public class VetoableChangeSupport implements Serializable {
                     listeners = entry.getValue();
                 } else {
                     if (children == null) {
-                        children = new Hashtable<String, VetoableChangeSupport>();
+                        children = new Hashtable<>();
                     }
                     VetoableChangeSupport vcs = new VetoableChangeSupport(this.source);
                     vcs.map.set(null, entry.getValue());
@@ -449,7 +449,8 @@ public class VetoableChangeSupport implements Serializable {
 
         ObjectInputStream.GetField fields = s.readFields();
 
-        Hashtable<String, VetoableChangeSupport> children = (Hashtable<String, VetoableChangeSupport>) fields.get("children", null);
+        @SuppressWarnings("unchecked")
+        Hashtable<String, VetoableChangeSupport> children = (Hashtable<String, VetoableChangeSupport>)fields.get("children", null);
         this.source = fields.get("source", null);
         fields.get("vetoableChangeSupportSerializedDataVersion", 2);
 
@@ -520,6 +521,16 @@ public class VetoableChangeSupport implements Serializable {
         @Override
         protected VetoableChangeListener newProxy(String name, VetoableChangeListener listener) {
             return new VetoableChangeListenerProxy(name, listener);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public final VetoableChangeListener extract(VetoableChangeListener listener) {
+            while (listener instanceof VetoableChangeListenerProxy) {
+                listener = ((VetoableChangeListenerProxy) listener).getListener();
+            }
+            return listener;
         }
     }
 }

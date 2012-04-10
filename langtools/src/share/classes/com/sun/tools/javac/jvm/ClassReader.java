@@ -59,7 +59,7 @@ import static com.sun.tools.javac.code.TypeTags.*;
 import static com.sun.tools.javac.jvm.ClassFile.*;
 import static com.sun.tools.javac.jvm.ClassFile.Version.*;
 
-import static com.sun.tools.javac.main.OptionName.*;
+import static com.sun.tools.javac.main.Option.*;
 
 /** This class provides operations to read a classfile into an internal
  *  representation. The internal representation is anchored in a
@@ -2539,7 +2539,7 @@ public class ClassReader implements Completer {
      *  @param arg An argument for substitution into the output string.
      */
     private void printCCF(String key, Object arg) {
-        log.printNoteLines(key, arg);
+        log.printLines(key, arg);
     }
 
 

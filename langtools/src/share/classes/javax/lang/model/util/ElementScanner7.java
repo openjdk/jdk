@@ -86,6 +86,7 @@ import static javax.lang.model.SourceVersion.*;
  *            additional parameter.
  *
  * @see ElementScanner6
+ * @see ElementScanner8
  * @since 1.7
  */
 @SupportedSourceVersion(RELEASE_7)

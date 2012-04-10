@@ -192,6 +192,11 @@ final class Config {
     // works only for NSS providers created via the Secmod API
     private boolean nssUseSecmodTrust = false;
 
+    // Flag to indicate whether the X9.63 encoding for EC points shall be used
+    // (true) or whether that encoding shall be wrapped in an ASN.1 OctetString
+    // (false).
+    private boolean useEcX963Encoding = false;
+
     private Config(String filename, InputStream in) throws IOException {
         if (in == null) {
             if (filename.startsWith("--")) {
@@ -320,6 +325,10 @@ final class Config {
         return nssUseSecmodTrust;
     }
 
+    boolean getUseEcX963Encoding() {
+        return useEcX963Encoding;
+    }
+
     private static String expand(final String s) throws IOException {
         try {
             return PropertyExpander.expand(s);
@@ -440,6 +449,8 @@ final class Config {
                 parseNSSArgs(word);
             } else if (word.equals("nssUseSecmodTrust")) {
                 nssUseSecmodTrust = parseBooleanEntry(word);
+            } else if (word.equals("useEcX963Encoding")) {
+                useEcX963Encoding = parseBooleanEntry(word);
             } else {
                 throw new ConfigurationException
                         ("Unknown keyword '" + word + "', line " + st.lineno());
@@ -552,12 +563,13 @@ final class Config {
 
     private boolean parseBoolean() throws IOException {
         String val = parseWord();
-        if (val.equals("true")) {
-            return true;
-        } else if (val.equals("false")) {
-            return false;
-        } else {
-            throw excToken("Expected boolean value, read:");
+        switch (val) {
+            case "true":
+                return true;
+            case "false":
+                return false;
+            default:
+                throw excToken("Expected boolean value, read:");
         }
     }
 
@@ -886,14 +898,15 @@ final class Config {
 
     private String parseOperation() throws IOException {
         String op = parseWord();
-        if (op.equals("*")) {
-            return TemplateManager.O_ANY;
-        } else if (op.equals("generate")) {
-            return TemplateManager.O_GENERATE;
-        } else if (op.equals("import")) {
-            return TemplateManager.O_IMPORT;
-        } else {
-            throw excLine("Unknown operation " + op);
+        switch (op) {
+            case "*":
+                return TemplateManager.O_ANY;
+            case "generate":
+                return TemplateManager.O_GENERATE;
+            case "import":
+                return TemplateManager.O_IMPORT;
+            default:
+                throw excLine("Unknown operation " + op);
         }
     }
 
@@ -978,6 +991,7 @@ final class Config {
 }
 
 class ConfigurationException extends IOException {
+    private static final long serialVersionUID = 254492758807673194L;
     ConfigurationException(String msg) {
         super(msg);
     }

@@ -97,7 +97,7 @@ public class FloatValueImpl extends PrimitiveValueImpl
     }
 
     public float floatValue() {
-        return(float)value;
+        return value;
     }
 
     public double doubleValue() {

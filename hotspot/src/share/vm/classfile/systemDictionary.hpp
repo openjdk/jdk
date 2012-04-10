@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,28 +133,33 @@ class SymbolPropertyTable;
   template(reflect_Method_klass,         java_lang_reflect_Method,       Pre) \
   template(reflect_Constructor_klass,    java_lang_reflect_Constructor,  Pre) \
                                                                               \
-  /* NOTE: needed too early in bootstrapping process to have checks based on JDK version */ \
-  /* Universe::is_gte_jdk14x_version() is not set up by this point. */        \
-  /* It's okay if this turns out to be NULL in non-1.4 JDKs. */               \
-  template(reflect_MagicAccessorImpl_klass,          sun_reflect_MagicAccessorImpl,  Opt) \
-  template(reflect_MethodAccessorImpl_klass, sun_reflect_MethodAccessorImpl, Opt_Only_JDK14NewRef) \
-  template(reflect_ConstructorAccessorImpl_klass, sun_reflect_ConstructorAccessorImpl, Opt_Only_JDK14NewRef) \
-  template(reflect_DelegatingClassLoader_klass, sun_reflect_DelegatingClassLoader, Opt) \
-  template(reflect_ConstantPool_klass,  sun_reflect_ConstantPool,       Opt_Only_JDK15) \
-  template(reflect_UnsafeStaticFieldAccessorImpl_klass, sun_reflect_UnsafeStaticFieldAccessorImpl, Opt_Only_JDK15) \
+  /* NOTE: needed too early in bootstrapping process to have checks based on JDK version */                              \
+  /* Universe::is_gte_jdk14x_version() is not set up by this point. */                                                   \
+  /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                          \
+  template(reflect_MagicAccessorImpl_klass,             sun_reflect_MagicAccessorImpl,             Opt)                  \
+  template(reflect_MethodAccessorImpl_klass,            sun_reflect_MethodAccessorImpl,            Opt_Only_JDK14NewRef) \
+  template(reflect_ConstructorAccessorImpl_klass,       sun_reflect_ConstructorAccessorImpl,       Opt_Only_JDK14NewRef) \
+  template(reflect_DelegatingClassLoader_klass,         sun_reflect_DelegatingClassLoader,         Opt)                  \
+  template(reflect_ConstantPool_klass,                  sun_reflect_ConstantPool,                  Opt_Only_JDK15)       \
+  template(reflect_UnsafeStaticFieldAccessorImpl_klass, sun_reflect_UnsafeStaticFieldAccessorImpl, Opt_Only_JDK15)       \
                                                                               \
   /* support for dynamic typing; it's OK if these are NULL in earlier JDKs */ \
-  template(MethodHandle_klass,           java_lang_invoke_MethodHandle,     Pre_JSR292) \
-  template(MemberName_klass,             java_lang_invoke_MemberName,       Pre_JSR292) \
-  template(MethodHandleNatives_klass,    java_lang_invoke_MethodHandleNatives, Pre_JSR292) \
-  template(AdapterMethodHandle_klass,    java_lang_invoke_AdapterMethodHandle, Pre_JSR292) \
-  template(BoundMethodHandle_klass,      java_lang_invoke_BoundMethodHandle, Pre_JSR292) \
-  template(DirectMethodHandle_klass,     java_lang_invoke_DirectMethodHandle, Pre_JSR292) \
-  template(MethodType_klass,             java_lang_invoke_MethodType,       Pre_JSR292) \
-  template(MethodTypeForm_klass,         java_lang_invoke_MethodTypeForm,   Pre_JSR292) \
+  template(MethodHandle_klass,             java_lang_invoke_MethodHandle,             Pre_JSR292) \
+  template(MemberName_klass,               java_lang_invoke_MemberName,               Pre_JSR292) \
+  template(MethodHandleNatives_klass,      java_lang_invoke_MethodHandleNatives,      Pre_JSR292) \
+  template(AdapterMethodHandle_klass,      java_lang_invoke_AdapterMethodHandle,      Pre_JSR292) \
+  template(BoundMethodHandle_klass,        java_lang_invoke_BoundMethodHandle,        Pre_JSR292) \
+  template(DirectMethodHandle_klass,       java_lang_invoke_DirectMethodHandle,       Pre_JSR292) \
+  template(MethodType_klass,               java_lang_invoke_MethodType,               Pre_JSR292) \
+  template(MethodTypeForm_klass,           java_lang_invoke_MethodTypeForm,           Pre_JSR292) \
+  template(BootstrapMethodError_klass,     java_lang_BootstrapMethodError,            Pre_JSR292) \
   template(WrongMethodTypeException_klass, java_lang_invoke_WrongMethodTypeException, Pre_JSR292) \
-  template(CallSite_klass,               java_lang_invoke_CallSite,         Pre_JSR292) \
-  /* Note: MethodHandle must be first, and CallSite last in group */          \
+  template(CallSite_klass,                 java_lang_invoke_CallSite,                 Pre_JSR292) \
+  template(CountingMethodHandle_klass,     java_lang_invoke_CountingMethodHandle,     Opt)        \
+  template(ConstantCallSite_klass,         java_lang_invoke_ConstantCallSite,         Pre_JSR292) \
+  template(MutableCallSite_klass,          java_lang_invoke_MutableCallSite,          Pre_JSR292) \
+  template(VolatileCallSite_klass,         java_lang_invoke_VolatileCallSite,         Pre_JSR292) \
+  /* Note: MethodHandle must be first, and VolatileCallSite last in group */  \
                                                                               \
   template(StringBuffer_klass,           java_lang_StringBuffer,         Pre) \
   template(StringBuilder_klass,          java_lang_StringBuilder,        Pre) \
@@ -163,14 +168,14 @@ class SymbolPropertyTable;
   template(StackTraceElement_klass,      java_lang_StackTraceElement,    Opt) \
   /* Universe::is_gte_jdk14x_version() is not set up by this point. */        \
   /* It's okay if this turns out to be NULL in non-1.4 JDKs. */               \
-  template(java_nio_Buffer_klass,        java_nio_Buffer,                Opt) \
+  template(nio_Buffer_klass,             java_nio_Buffer,                Opt) \
                                                                               \
   /* If this class isn't present, it won't be referenced. */                  \
-  template(sun_misc_AtomicLongCSImpl_klass, sun_misc_AtomicLongCSImpl,   Opt) \
+  template(AtomicLongCSImpl_klass,       sun_misc_AtomicLongCSImpl,   Opt)    \
                                                                               \
-  template(sun_jkernel_DownloadManager_klass, sun_jkernel_DownloadManager, Opt_Kernel) \
+  template(DownloadManager_klass,        sun_jkernel_DownloadManager, Opt_Kernel) \
                                                                               \
-  template(sun_misc_PostVMInitHook_klass, sun_misc_PostVMInitHook, Opt)       \
+  template(PostVMInitHook_klass,         sun_misc_PostVMInitHook, Opt)        \
                                                                               \
   /* Preload boxing klasses */                                                \
   template(Boolean_klass,                java_lang_Boolean,              Pre) \
@@ -194,7 +199,7 @@ class SystemDictionary : AllStatic {
   enum WKID {
     NO_WKID = 0,
 
-    #define WK_KLASS_ENUM(name, ignore_s, ignore_o) WK_KLASS_ENUM_NAME(name),
+    #define WK_KLASS_ENUM(name, symbol, ignore_o) WK_KLASS_ENUM_NAME(name), WK_KLASS_ENUM_NAME(symbol) = WK_KLASS_ENUM_NAME(name),
     WK_KLASSES_DO(WK_KLASS_ENUM)
     #undef WK_KLASS_ENUM
 
@@ -341,6 +346,8 @@ public:
   // loaders.  Returns "true" iff something was unloaded.
   static bool do_unloading(BoolObjectClosure* is_alive);
 
+  static int calculate_systemdictionary_size(int loadedclasses);
+
   // Applies "f->do_oop" to all root oops in the system dictionary.
   static void oops_do(OopClosure* f);
 
@@ -421,10 +428,15 @@ public:
   }
 
 public:
-  #define WK_KLASS_DECLARE(name, ignore_symbol, option) \
+  #define WK_KLASS_DECLARE(name, symbol, option) \
     static klassOop name() { return check_klass_##option(_well_known_klasses[WK_KLASS_ENUM_NAME(name)]); }
   WK_KLASSES_DO(WK_KLASS_DECLARE);
   #undef WK_KLASS_DECLARE
+
+  static klassOop well_known_klass(WKID id) {
+    assert(id >= (int)FIRST_WKID && id < (int)WKID_LIMIT, "oob");
+    return _well_known_klasses[id];
+  }
 
   // Local definition for direct access to the private array:
   #define WK_KLASS(name) _well_known_klasses[SystemDictionary::WK_KLASS_ENUM_NAME(name)]
@@ -528,11 +540,19 @@ public:
     _loader_constraint_size = 107,                     // number of entries in constraint table
     _resolution_error_size  = 107,                     // number of entries in resolution error table
     _invoke_method_size     = 139,                     // number of entries in invoke method table
-    _nof_buckets            = 1009                     // number of buckets in hash table
+    _nof_buckets            = 1009,                    // number of buckets in hash table for placeholders
+    _old_default_sdsize     = 1009,                    // backward compat for system dictionary size
+    _prime_array_size       = 8,                       // array of primes for system dictionary size
+    _average_depth_goal     = 3                        // goal for lookup length
   };
 
 
   // Static variables
+
+  // hashtable sizes for system dictionary to allow growth
+  // prime numbers for system dictionary size
+  static int                     _sdgeneration;
+  static const int               _primelist[_prime_array_size];
 
   // Hashtable holding loaded classes.
   static Dictionary*            _dictionary;

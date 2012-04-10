@@ -36,33 +36,19 @@
       javac.debug          - true or false for debug classfiles
       javac.target         - classfile version target
       javac.source         - source version
-      drops.dir            - directory that holds source drop bundles
-      allow.download       - permit downloads from public url (default is false)
-                             (used if bundles not found in drops.dir)
 
       Run 'make help' for help using the Makefile.
     </description>
 
-    <!-- Mac is special, need to downgrade these before build.properties. -->
-    <condition property="javac.source" value="1.5">
-        <os family="mac"/>
-    </condition>
-    <condition property="javac.target" value="1.5">
-        <os family="mac"/>
-    </condition>
-
     <!-- Project build properties. -->
     <property file="build.properties"/>
 
-    <!-- See if drop sources were included. -->
-    <condition property="drop.dir" 
-               value="${drop.included.dir}" 
-               else="${drop.expanded.dir}">
-        <available file="${drop.included.dir}" type="dir"/>
-    </condition>
-
-    <!-- Get shared targets. -->
-    <import file="build-defs.xml"/>
+    <property name="jaxws.src.dir" value="src/share/jaxws_classes"/>
+    <property name="jaf.src.dir" value="src/share/jaf_classes"/>
+    <path id="src.dir.id">
+      <pathelement path="${jaxws.src.dir}"/>
+      <pathelement path="${jaf.src.dir}"/>
+    </path>
 
     <!-- Initialization of directories needed for build. -->
     <target name="init">
@@ -87,14 +73,20 @@
             unless="javac.jar.exists">
         <echo message="WARNING: Cannot find ${javac.jar}"/>
     </target>
+    
+    <!-- Create src.zip. -->
+    <target name="-dist-src-zip" depends="init">
+        <zip file="${dist.src.zip}" basedir="${jaxws.src.dir}"/>
+        <zip file="${dist.src.zip}" basedir="${jaf.src.dir}" update="true"/>
+    </target>
 
     <!-- Creation of distribution files to jdk build process. -->
     <target name="dist"
-	    depends="init, -init-src-dirs, build, -dist-classes-jar, -dist-src-zip"
+	    depends="init, build, -dist-classes-jar, -dist-src-zip"
             description="Create all built distribution files.">
     </target>
     <target name="-dist-classes-jar-uptodate"
-	    depends="init, -init-src-dirs">
+	    depends="init">
         <condition property="dist.classes.jar.uptodate">
             <and>
                 <available file="${dist.classes.jar}" type="file"/>
@@ -105,14 +97,39 @@
         </condition>
     </target>
     <target name="-dist-classes-jar"
-	    depends="init, -init-src-dirs, -dist-classes-jar-uptodate"
+	    depends="init, -dist-classes-jar-uptodate"
             unless="dist.classes.jar.uptodate">
         <delete file="${dist.classes.jar}"/>
         <jar file="${dist.classes.jar}" basedir="${build.classes.dir}"/>
     </target>
 
-    <target name="-build-setup"
-	    depends="init, -init-src-dirs, -drop-build-setup">
+    <!-- Special build area setup. -->
+    <target name="-build-setup" depends="init">
+        <mkdir dir="${build.classes.dir}"/>
+        <copy todir="${build.classes.dir}">
+            <fileset dir="${jaxws.src.dir}"
+                includes="**/*.xsd, **/*.default, **/*.properties"
+                excludes="**/*.java, **/*.package.html"/>
+        </copy>
+        <replaceregexp match="#(.*)$" replace="#" flags="gm">
+            <fileset dir="${build.classes.dir}" includes="**/*.properties"/>
+        </replaceregexp>
+
+        <mkdir dir="${build.classes.dir}/META-INF/services"/>
+        <copy todir="${build.classes.dir}/META-INF"
+            file="${jaf.src.dir}/META-INF/mailcap.default"/>
+        <copy todir="${build.classes.dir}/META-INF"
+            file="${jaf.src.dir}/META-INF/mimetypes.default"/>
+        <copy todir="${build.classes.dir}/META-INF/services"
+            file="${jaxws.src.dir}/com/sun/tools/etc/META-INF/services/com.sun.tools.internal.ws.wscompile.Plugin"/>
+        <copy todir="${build.classes.dir}/META-INF/services"
+            file="${jaxws.src.dir}/com/sun/tools/etc/META-INF/services/com.sun.tools.internal.xjc.Plugin"/>
+        <mkdir dir="${build.classes.dir}/com/sun/tools/internal/xjc/runtime"/>
+        <copy todir="${build.classes.dir}/com/sun/tools/internal/xjc/runtime">
+            <fileset dir="${jaxws.src.dir}/com/sun/tools/internal/xjc/runtime"
+                includes="**/*.java"
+                excludes="**/*.package.html"/>
+        </copy>
     </target>
 
     <!-- Build (compilation) of sources to class files. -->
@@ -120,7 +137,7 @@
 	    depends="compile, -build-setup">
     </target>
     <target name="compile"
-	    depends="init, -init-src-dirs">
+	    depends="init">
         <mkdir dir="${build.classes.dir}"/>
         <javac 
 	     includeAntRuntime="false" 
@@ -140,24 +157,14 @@
 
     <!-- Test. (FIXME: Need to know how to run tests.) -->
     <target name="test"
-	    depends="init, -init-src-dirs, dist">
+	    depends="init, dist">
         <echo message="FIXME: How do you run the tests"/>
     </target>
     
     <!-- Populate source area if needed. -->
     <target name="source"
-            depends="init, -init-src-dirs"
+            depends="init"
             description="Populate all source file directories">
-    </target>
-
-    <!-- Populate drop_included area. -->
-    <target name="drop_included"
-            depends="clobber"
-            description="Populate all source file directories">
-        <delete dir="${drop.included.dir}"/>
-        <antcall target="source"/>
-        <move file="${drop.expanded.dir}" tofile="${drop.included.dir}"/>
-        <delete dir="${drop.included.dir}/bundles"/>
     </target>
 
     <!-- Clean up compiled files. -->
@@ -171,7 +178,6 @@
     <target name="clobber"
 	    depends="clean"
             description="Delete all generated files, including imported sources">
-        <delete dir="${drop.expanded.dir}"/>
     </target>
 
     <target name="-banner">

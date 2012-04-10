@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,4 +33,4 @@ verify_os
 
 JPS="${TESTJAVA}/bin/jps"
 
-${JPS} 2>&1 | awk -f ${TESTSRC}/jps_Output1.awk
+${JPS} -J-XX:+UsePerfData 2>&1 | awk -f ${TESTSRC}/jps_Output1.awk

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,12 +69,38 @@ class AppOutputStream extends OutputStream {
         // check if the Socket is invalid (error or closed)
         c.checkWrite();
 
+        /*
+         * By default, we counter chosen plaintext issues on CBC mode
+         * ciphersuites in SSLv3/TLS1.0 by sending one byte of application
+         * data in the first record of every payload, and the rest in
+         * subsequent record(s). Note that the issues have been solved in
+         * TLS 1.1 or later.
+         *
+         * It is not necessary to split the very first application record of
+         * a freshly negotiated TLS session, as there is no previous
+         * application data to guess.  To improve compatibility, we will not
+         * split such records.
+         *
+         * This avoids issues in the outbound direction.  For a full fix,
+         * the peer must have similar protections.
+         */
+        boolean isFirstRecordOfThePayload = true;
+
         // Always flush at the end of each application level record.
         // This lets application synchronize read and write streams
         // however they like; if we buffered here, they couldn't.
         try {
             do {
-                int howmuch = Math.min(len, r.availableDataBytes());
+                int howmuch;
+                if (isFirstRecordOfThePayload && c.needToSplitPayload()) {
+                    howmuch = Math.min(0x01, r.availableDataBytes());
+                } else {
+                    howmuch = Math.min(len, r.availableDataBytes());
+                }
+
+                if (isFirstRecordOfThePayload && howmuch != 0) {
+                    isFirstRecordOfThePayload = false;
+                }
 
                 // NOTE: *must* call c.writeRecord() even for howmuch == 0
                 if (howmuch > 0) {

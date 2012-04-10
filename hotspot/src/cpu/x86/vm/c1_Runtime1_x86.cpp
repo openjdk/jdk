@@ -47,6 +47,12 @@ int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address e
   assert(!(oop_result1->is_valid() || oop_result2->is_valid()) || oop_result1 != oop_result2, "registers must be different");
   assert(oop_result1 != thread && oop_result2 != thread, "registers must be different");
   assert(args_size >= 0, "illegal args_size");
+  bool align_stack = false;
+#ifdef _LP64
+  // At a method handle call, the stack may not be properly aligned
+  // when returning with an exception.
+  align_stack = (stub_id() == Runtime1::handle_exception_from_callee_id);
+#endif
 
 #ifdef _LP64
   mov(c_rarg0, thread);
@@ -59,11 +65,21 @@ int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address e
   push(thread);
 #endif // _LP64
 
-  set_last_Java_frame(thread, noreg, rbp, NULL);
+  int call_offset;
+  if (!align_stack) {
+    set_last_Java_frame(thread, noreg, rbp, NULL);
+  } else {
+    address the_pc = pc();
+    call_offset = offset();
+    set_last_Java_frame(thread, noreg, rbp, the_pc);
+    andptr(rsp, -(StackAlignmentInBytes));    // Align stack
+  }
 
   // do the call
   call(RuntimeAddress(entry));
-  int call_offset = offset();
+  if (!align_stack) {
+    call_offset = offset();
+  }
   // verify callee-saved register
 #ifdef ASSERT
   guarantee(thread != rax, "change this code");
@@ -78,7 +94,7 @@ int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address e
   }
   pop(rax);
 #endif
-  reset_last_Java_frame(thread, true, false);
+  reset_last_Java_frame(thread, true, align_stack);
 
   // discard thread and arguments
   NOT_LP64(addptr(rsp, num_rt_args()*BytesPerWord));
@@ -1011,7 +1027,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           if (id == fast_new_instance_init_check_id) {
             // make sure the klass is initialized
-            __ cmpl(Address(klass, instanceKlass::init_state_offset_in_bytes() + sizeof(oopDesc)), instanceKlass::fully_initialized);
+            __ cmpb(Address(klass, instanceKlass::init_state_offset()), instanceKlass::fully_initialized);
             __ jcc(Assembler::notEqual, slow_path);
           }
 
@@ -1019,7 +1035,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           // assert object can be fast path allocated
           {
             Label ok, not_ok;
-            __ movl(obj_size, Address(klass, Klass::layout_helper_offset_in_bytes() + sizeof(oopDesc)));
+            __ movl(obj_size, Address(klass, Klass::layout_helper_offset()));
             __ cmpl(obj_size, 0);  // make sure it's an instance (LH > 0)
             __ jcc(Assembler::lessEqual, not_ok);
             __ testl(obj_size, Klass::_lh_instance_slow_path_bit);
@@ -1040,7 +1056,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ bind(retry_tlab);
 
           // get the instance size (size is postive so movl is fine for 64bit)
-          __ movl(obj_size, Address(klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes()));
+          __ movl(obj_size, Address(klass, Klass::layout_helper_offset()));
 
           __ tlab_allocate(obj, obj_size, 0, t1, t2, slow_path);
 
@@ -1052,7 +1068,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           __ bind(try_eden);
           // get the instance size (size is postive so movl is fine for 64bit)
-          __ movl(obj_size, Address(klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes()));
+          __ movl(obj_size, Address(klass, Klass::layout_helper_offset()));
 
           __ eden_allocate(obj, obj_size, 0, t1, slow_path);
           __ incr_allocated_bytes(thread, obj_size, 0);
@@ -1119,7 +1135,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         {
           Label ok;
           Register t0 = obj;
-          __ movl(t0, Address(klass, Klass::layout_helper_offset_in_bytes() + sizeof(oopDesc)));
+          __ movl(t0, Address(klass, Klass::layout_helper_offset()));
           __ sarl(t0, Klass::_lh_array_tag_shift);
           int tag = ((id == new_type_array_id)
                      ? Klass::_lh_array_tag_type_value
@@ -1153,7 +1169,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           // get the allocation size: round_up(hdr + length << (layout_helper & 0x1F))
           // since size is positive movl does right thing on 64bit
-          __ movl(t1, Address(klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes()));
+          __ movl(t1, Address(klass, Klass::layout_helper_offset()));
           // since size is postive movl does right thing on 64bit
           __ movl(arr_size, length);
           assert(t1 == rcx, "fixed register usage");
@@ -1167,7 +1183,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ tlab_allocate(obj, arr_size, 0, t1, t2, slow_path);  // preserves arr_size
 
           __ initialize_header(obj, klass, length, t1, t2);
-          __ movb(t1, Address(klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes() + (Klass::_lh_header_size_shift / BitsPerByte)));
+          __ movb(t1, Address(klass, in_bytes(Klass::layout_helper_offset()) + (Klass::_lh_header_size_shift / BitsPerByte)));
           assert(Klass::_lh_header_size_shift % BitsPerByte == 0, "bytewise");
           assert(Klass::_lh_header_size_mask <= 0xFF, "bytewise");
           __ andptr(t1, Klass::_lh_header_size_mask);
@@ -1180,7 +1196,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ bind(try_eden);
           // get the allocation size: round_up(hdr + length << (layout_helper & 0x1F))
           // since size is positive movl does right thing on 64bit
-          __ movl(t1, Address(klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes()));
+          __ movl(t1, Address(klass, Klass::layout_helper_offset()));
           // since size is postive movl does right thing on 64bit
           __ movl(arr_size, length);
           assert(t1 == rcx, "fixed register usage");
@@ -1195,7 +1211,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ incr_allocated_bytes(thread, arr_size, 0);
 
           __ initialize_header(obj, klass, length, t1, t2);
-          __ movb(t1, Address(klass, klassOopDesc::header_size() * HeapWordSize + Klass::layout_helper_offset_in_bytes() + (Klass::_lh_header_size_shift / BitsPerByte)));
+          __ movb(t1, Address(klass, in_bytes(Klass::layout_helper_offset()) + (Klass::_lh_header_size_shift / BitsPerByte)));
           assert(Klass::_lh_header_size_shift % BitsPerByte == 0, "bytewise");
           assert(Klass::_lh_header_size_mask <= 0xFF, "bytewise");
           __ andptr(t1, Klass::_lh_header_size_mask);
@@ -1267,7 +1283,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Label register_finalizer;
         Register t = rsi;
         __ load_klass(t, rax);
-        __ movl(t, Address(t, Klass::access_flags_offset_in_bytes() + sizeof(oopDesc)));
+        __ movl(t, Address(t, Klass::access_flags_offset()));
         __ testl(t, JVM_ACC_HAS_FINALIZER);
         __ jcc(Assembler::notZero, register_finalizer);
         __ ret(0);
@@ -1447,7 +1463,22 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         oop_maps = new OopMapSet();
         oop_maps->add_gc_map(call_offset, map);
         restore_live_registers(sasm, save_fpu_registers);
+      }
+      break;
 
+    case deoptimize_id:
+      {
+        StubFrame f(sasm, "deoptimize", dont_gc_arguments);
+        const int num_rt_args = 1;  // thread
+        OopMap* oop_map = save_live_registers(sasm, num_rt_args);
+        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, deoptimize));
+        oop_maps = new OopMapSet();
+        oop_maps->add_gc_map(call_offset, oop_map);
+        restore_live_registers(sasm);
+        DeoptimizationBlob* deopt_blob = SharedRuntime::deopt_blob();
+        assert(deopt_blob != NULL, "deoptimization blob must have been created");
+        __ leave();
+        __ jump(RuntimeAddress(deopt_blob->unpack_with_reexecution()));
       }
       break;
 
@@ -1462,19 +1493,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       { StubFrame f(sasm, "load_klass_patching", dont_gc_arguments);
         // we should set up register map
         oop_maps = generate_patching(sasm, CAST_FROM_FN_PTR(address, move_klass_patching));
-      }
-      break;
-
-    case jvmti_exception_throw_id:
-      { // rax,: exception oop
-        StubFrame f(sasm, "jvmti_exception_throw", dont_gc_arguments);
-        // Preserve all registers across this potentially blocking call
-        const int num_rt_args = 2;  // thread, exception oop
-        OopMap* map = save_live_registers(sasm, num_rt_args);
-        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, Runtime1::post_jvmti_exception_throw), rax);
-        oop_maps = new OopMapSet();
-        oop_maps->add_gc_map(call_offset, map);
-        restore_live_registers(sasm);
       }
       break;
 

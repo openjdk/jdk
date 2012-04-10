@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ public class SystemDictionary {
   private static AddressField placeholdersField;
   private static AddressField loaderConstraintTableField;
   private static sun.jvm.hotspot.types.OopField javaSystemLoaderField;
-  private static int nofBuckets;
 
   private static sun.jvm.hotspot.types.OopField objectKlassField;
   private static sun.jvm.hotspot.types.OopField classLoaderKlassField;
@@ -44,6 +43,7 @@ public class SystemDictionary {
   private static sun.jvm.hotspot.types.OopField systemKlassField;
   private static sun.jvm.hotspot.types.OopField threadKlassField;
   private static sun.jvm.hotspot.types.OopField threadGroupKlassField;
+  private static sun.jvm.hotspot.types.OopField methodHandleKlassField;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -61,7 +61,6 @@ public class SystemDictionary {
     placeholdersField = type.getAddressField("_placeholders");
     loaderConstraintTableField = type.getAddressField("_loader_constraints");
     javaSystemLoaderField = type.getOopField("_java_system_loader");
-    nofBuckets = db.lookupIntConstant("SystemDictionary::_nof_buckets").intValue();
 
     objectKlassField = type.getOopField(WK_KLASS("Object_klass"));
     classLoaderKlassField = type.getOopField(WK_KLASS("ClassLoader_klass"));
@@ -69,6 +68,7 @@ public class SystemDictionary {
     systemKlassField = type.getOopField(WK_KLASS("System_klass"));
     threadKlassField = type.getOopField(WK_KLASS("Thread_klass"));
     threadGroupKlassField = type.getOopField(WK_KLASS("ThreadGroup_klass"));
+    methodHandleKlassField = type.getOopField(WK_KLASS("MethodHandle_klass"));
   }
 
   // This WK functions must follow the definitions in systemDictionary.hpp:
@@ -127,6 +127,10 @@ public class SystemDictionary {
     return (InstanceKlass) newOop(systemKlassField.getValue());
   }
 
+  public static InstanceKlass getMethodHandleKlass() {
+    return (InstanceKlass) newOop(methodHandleKlassField.getValue());
+  }
+
   public InstanceKlass getAbstractOwnableSynchronizerKlass() {
     return (InstanceKlass) find("java/util/concurrent/locks/AbstractOwnableSynchronizer",
                                 null, null);
@@ -134,10 +138,6 @@ public class SystemDictionary {
 
   public static Oop javaSystemLoader() {
     return newOop(javaSystemLoaderField.getValue());
-  }
-
-  public static int getNumOfBuckets() {
-    return nofBuckets;
   }
 
   private static Oop newOop(OopHandle handle) {

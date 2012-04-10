@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,6 @@
 #include <imagehlp.h>             // For os::dll_address_to_function_name
 
 /* for enumerating dll libraries */
-#include <tlhelp32.h>
 #include <vdmdbg.h>
 
 // for timer info max values which include all bits
@@ -133,7 +132,6 @@ PVOID  topLevelVectoredExceptionHandler = NULL;
 // save DLL module handle, used by GetModuleFileName
 
 HINSTANCE vm_lib_handle;
-static int getLastErrorString(char *buf, size_t len);
 
 BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
   switch (reason) {
@@ -241,11 +239,11 @@ void os::init_system_properties_values() {
     /* Win32 library search order (See the documentation for LoadLibrary):
      *
      * 1. The directory from which application is loaded.
-     * 2. The current directory
-     * 3. The system wide Java Extensions directory (Java only)
-     * 4. System directory (GetSystemDirectory)
-     * 5. Windows directory (GetWindowsDirectory)
-     * 6. The PATH environment variable
+     * 2. The system wide Java Extensions directory (Java only)
+     * 3. System directory (GetSystemDirectory)
+     * 4. Windows directory (GetWindowsDirectory)
+     * 5. The PATH environment variable
+     * 6. The current directory
      */
 
     char *library_path;
@@ -260,8 +258,6 @@ void os::init_system_properties_values() {
     GetModuleFileName(NULL, tmp, sizeof(tmp));
     *(strrchr(tmp, '\\')) = '\0';
     strcat(library_path, tmp);
-
-    strcat(library_path, ";.");
 
     GetWindowsDirectory(tmp, sizeof(tmp));
     strcat(library_path, ";");
@@ -280,6 +276,8 @@ void os::init_system_properties_values() {
         strcat(library_path, ";");
         strcat(library_path, path_str);
     }
+
+    strcat(library_path, ";.");
 
     Arguments::set_library_path(library_path);
     FREE_C_HEAP_ARRAY(char, library_path);
@@ -324,16 +322,6 @@ void os::breakpoint() {
 // Invoked from the BREAKPOINT Macro
 extern "C" void breakpoint() {
   os::breakpoint();
-}
-
-// Returns an estimate of the current stack pointer. Result must be guaranteed
-// to point into the calling threads stack, and be no lower than the current
-// stack pointer.
-
-address os::current_stack_pointer() {
-  int dummy;
-  address sp = (address)&dummy;
-  return sp;
 }
 
 // os::current_stack_base()
@@ -711,6 +699,11 @@ int os::active_processor_count() {
   }
 }
 
+void os::set_native_thread_name(const char *name) {
+  // Not yet implemented.
+  return;
+}
+
 bool os::distribute_processes(uint length, uint* distribution) {
   // Not yet implemented.
   return false;
@@ -817,17 +810,15 @@ jlong os::javaTimeMillis() {
   }
 }
 
-#define NANOS_PER_SEC         CONST64(1000000000)
-#define NANOS_PER_MILLISEC    1000000
 jlong os::javaTimeNanos() {
   if (!has_performance_count) {
-    return javaTimeMillis() * NANOS_PER_MILLISEC; // the best we can do.
+    return javaTimeMillis() * NANOSECS_PER_MILLISEC; // the best we can do.
   } else {
     LARGE_INTEGER current_count;
     QueryPerformanceCounter(&current_count);
     double current = as_long(current_count);
     double freq = performance_frequency;
-    jlong time = (jlong)((current/freq) * NANOS_PER_SEC);
+    jlong time = (jlong)((current/freq) * NANOSECS_PER_SEC);
     return time;
   }
 }
@@ -843,15 +834,15 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
     info_ptr->may_skip_forward = true;
   } else {
     jlong freq = performance_frequency;
-    if (freq < NANOS_PER_SEC) {
+    if (freq < NANOSECS_PER_SEC) {
       // the performance counter is 64 bits and we will
       // be multiplying it -- so no wrap in 64 bits
       info_ptr->max_value = ALL_64_BITS;
-    } else if (freq > NANOS_PER_SEC) {
+    } else if (freq > NANOSECS_PER_SEC) {
       // use the max value the counter can reach to
       // determine the max value which could be returned
       julong max_counter = (julong)ALL_64_BITS;
-      info_ptr->max_value = (jlong)(max_counter / (freq / NANOS_PER_SEC));
+      info_ptr->max_value = (jlong)(max_counter / (freq / NANOSECS_PER_SEC));
     } else {
       // the performance counter is 64 bits and we will
       // be using it directly -- so no wrap in 64 bits
@@ -939,7 +930,7 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
     return;
   }
 
-  dbghelp = LoadLibrary("DBGHELP.DLL");
+  dbghelp = os::win32::load_Windows_dll("DBGHELP.DLL", NULL, 0);
 
   if (dbghelp == NULL) {
     VMError::report_coredump_status("Failed to load dbghelp.dll", false);
@@ -1204,70 +1195,6 @@ const char* os::get_current_directory(char *buf, int buflen) {
 
 //-----------------------------------------------------------
 // Helper functions for fatal error handler
-
-// The following library functions are resolved dynamically at runtime:
-
-// PSAPI functions, for Windows NT, 2000, XP
-
-// psapi.h doesn't come with Visual Studio 6; it can be downloaded as Platform
-// SDK from Microsoft.  Here are the definitions copied from psapi.h
-typedef struct _MODULEINFO {
-    LPVOID lpBaseOfDll;
-    DWORD SizeOfImage;
-    LPVOID EntryPoint;
-} MODULEINFO, *LPMODULEINFO;
-
-static BOOL  (WINAPI *_EnumProcessModules)  ( HANDLE, HMODULE *, DWORD, LPDWORD );
-static DWORD (WINAPI *_GetModuleFileNameEx) ( HANDLE, HMODULE, LPTSTR, DWORD );
-static BOOL  (WINAPI *_GetModuleInformation)( HANDLE, HMODULE, LPMODULEINFO, DWORD );
-
-// ToolHelp Functions, for Windows 95, 98 and ME
-
-static HANDLE(WINAPI *_CreateToolhelp32Snapshot)(DWORD,DWORD) ;
-static BOOL  (WINAPI *_Module32First)           (HANDLE,LPMODULEENTRY32) ;
-static BOOL  (WINAPI *_Module32Next)            (HANDLE,LPMODULEENTRY32) ;
-
-bool _has_psapi;
-bool _psapi_init = false;
-bool _has_toolhelp;
-
-static bool _init_psapi() {
-  HINSTANCE psapi = LoadLibrary( "PSAPI.DLL" ) ;
-  if( psapi == NULL ) return false ;
-
-  _EnumProcessModules = CAST_TO_FN_PTR(
-      BOOL(WINAPI *)(HANDLE, HMODULE *, DWORD, LPDWORD),
-      GetProcAddress(psapi, "EnumProcessModules")) ;
-  _GetModuleFileNameEx = CAST_TO_FN_PTR(
-      DWORD (WINAPI *)(HANDLE, HMODULE, LPTSTR, DWORD),
-      GetProcAddress(psapi, "GetModuleFileNameExA"));
-  _GetModuleInformation = CAST_TO_FN_PTR(
-      BOOL (WINAPI *)(HANDLE, HMODULE, LPMODULEINFO, DWORD),
-      GetProcAddress(psapi, "GetModuleInformation"));
-
-  _has_psapi = (_EnumProcessModules && _GetModuleFileNameEx && _GetModuleInformation);
-  _psapi_init = true;
-  return _has_psapi;
-}
-
-static bool _init_toolhelp() {
-  HINSTANCE kernel32 = LoadLibrary("Kernel32.DLL") ;
-  if (kernel32 == NULL) return false ;
-
-  _CreateToolhelp32Snapshot = CAST_TO_FN_PTR(
-      HANDLE(WINAPI *)(DWORD,DWORD),
-      GetProcAddress(kernel32, "CreateToolhelp32Snapshot"));
-  _Module32First = CAST_TO_FN_PTR(
-      BOOL(WINAPI *)(HANDLE,LPMODULEENTRY32),
-      GetProcAddress(kernel32, "Module32First" ));
-  _Module32Next = CAST_TO_FN_PTR(
-      BOOL(WINAPI *)(HANDLE,LPMODULEENTRY32),
-      GetProcAddress(kernel32, "Module32Next" ));
-
-  _has_toolhelp = (_CreateToolhelp32Snapshot && _Module32First && _Module32Next);
-  return _has_toolhelp;
-}
-
 #ifdef _WIN64
 // Helper routine which returns true if address in
 // within the NTDLL address space.
@@ -1279,7 +1206,7 @@ static bool _addr_in_ntdll( address addr )
 
   hmod = GetModuleHandle("NTDLL.DLL");
   if ( hmod == NULL ) return false;
-  if ( !_GetModuleInformation( GetCurrentProcess(), hmod,
+  if ( !os::PSApiDll::GetModuleInformation( GetCurrentProcess(), hmod,
                                &minfo, sizeof(MODULEINFO)) )
     return false;
 
@@ -1318,14 +1245,16 @@ static int _enumerate_modules_winnt( int pid, EnumModulesCallbackFunc func, void
   static char filename[ MAX_PATH ];
   int         result = 0;
 
-  if (!_has_psapi && (_psapi_init || !_init_psapi())) return 0;
+  if (!os::PSApiDll::PSApiAvailable()) {
+    return 0;
+  }
 
   hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
                          FALSE, pid ) ;
   if (hProcess == NULL) return 0;
 
   DWORD size_needed;
-  if (!_EnumProcessModules(hProcess, modules,
+  if (!os::PSApiDll::EnumProcessModules(hProcess, modules,
                            sizeof(modules), &size_needed)) {
       CloseHandle( hProcess );
       return 0;
@@ -1336,13 +1265,13 @@ static int _enumerate_modules_winnt( int pid, EnumModulesCallbackFunc func, void
 
   for (int i = 0; i < MIN2(num_modules, MAX_NUM_MODULES); i++) {
     // Get Full pathname:
-    if(!_GetModuleFileNameEx(hProcess, modules[i],
+    if(!os::PSApiDll::GetModuleFileNameEx(hProcess, modules[i],
                              filename, sizeof(filename))) {
         filename[0] = '\0';
     }
 
     MODULEINFO modinfo;
-    if (!_GetModuleInformation(hProcess, modules[i],
+    if (!os::PSApiDll::GetModuleInformation(hProcess, modules[i],
                                &modinfo, sizeof(modinfo))) {
         modinfo.lpBaseOfDll = NULL;
         modinfo.SizeOfImage = 0;
@@ -1366,17 +1295,19 @@ static int _enumerate_modules_windows( int pid, EnumModulesCallbackFunc func, vo
   static MODULEENTRY32  modentry ;
   int                   result = 0;
 
-  if (!_has_toolhelp) return 0;
+  if (!os::Kernel32Dll::HelpToolsAvailable()) {
+    return 0;
+  }
 
   // Get a handle to a Toolhelp snapshot of the system
-  hSnapShot = _CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pid ) ;
+  hSnapShot = os::Kernel32Dll::CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pid ) ;
   if( hSnapShot == INVALID_HANDLE_VALUE ) {
       return FALSE ;
   }
 
   // iterate through all modules
   modentry.dwSize = sizeof(MODULEENTRY32) ;
-  bool not_done = _Module32First( hSnapShot, &modentry ) != 0;
+  bool not_done = os::Kernel32Dll::Module32First( hSnapShot, &modentry ) != 0;
 
   while( not_done ) {
     // invoke the callback
@@ -1385,7 +1316,7 @@ static int _enumerate_modules_windows( int pid, EnumModulesCallbackFunc func, vo
     if (result) break;
 
     modentry.dwSize = sizeof(MODULEENTRY32) ;
-    not_done = _Module32Next( hSnapShot, &modentry ) != 0;
+    not_done = os::Kernel32Dll::Module32Next( hSnapShot, &modentry ) != 0;
   }
 
   CloseHandle(hSnapShot);
@@ -1450,7 +1381,7 @@ bool os::dll_address_to_library_name(address addr, char* buf,
 
 bool os::dll_address_to_function_name(address addr, char *buf,
                                       int buflen, int *offset) {
-  if (Decoder::decode(addr, buf, buflen, offset) == Decoder::no_error) {
+  if (Decoder::decode(addr, buf, buflen, offset)) {
     return true;
   }
   if (offset != NULL)  *offset  = -1;
@@ -1510,7 +1441,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen)
     return result;
   }
 
-  long errcode = GetLastError();
+  DWORD errcode = GetLastError();
   if (errcode == ERROR_MOD_NOT_FOUND) {
     strncpy(ebuf, "Can't find dependent libraries", ebuflen-1);
     ebuf[ebuflen-1]='\0';
@@ -1521,11 +1452,11 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen)
   // If we can read dll-info and find that dll was built
   // for an architecture other than Hotspot is running in
   // - then print to buffer "DLL was built for a different architecture"
-  // else call getLastErrorString to obtain system error message
+  // else call os::lasterror to obtain system error message
 
   // Read system error message into ebuf
   // It may or may not be overwritten below (in the for loop and just above)
-  getLastErrorString(ebuf, (size_t) ebuflen);
+  lasterror(ebuf, (size_t) ebuflen);
   ebuf[ebuflen-1]='\0';
   int file_descriptor=::open(name, O_RDONLY | O_BINARY, 0);
   if (file_descriptor<0)
@@ -1558,7 +1489,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen)
   ::close(file_descriptor);
   if (failed_to_get_lib_arch)
   {
-    // file i/o error - report getLastErrorString(...) msg
+    // file i/o error - report os::lasterror(...) msg
     return NULL;
   }
 
@@ -1601,7 +1532,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen)
     "Didn't find runing architecture code in arch_array");
 
   // If the architure is right
-  // but some other error took place - report getLastErrorString(...) msg
+  // but some other error took place - report os::lasterror(...) msg
   if (lib_arch == running_arch)
   {
     return NULL;
@@ -1631,10 +1562,6 @@ void os::print_dll_info(outputStream *st) {
    enumerate_modules(pid, _print_module, (void *)st);
 }
 
-// function pointer to Windows API "GetNativeSystemInfo".
-typedef void (WINAPI *GetNativeSystemInfo_func_type)(LPSYSTEM_INFO);
-static GetNativeSystemInfo_func_type _GetNativeSystemInfo;
-
 void os::print_os_info(outputStream* st) {
   st->print("OS:");
 
@@ -1661,17 +1588,10 @@ void os::print_os_info(outputStream* st) {
       // find out whether we are running on 64 bit processor or not.
       SYSTEM_INFO si;
       ZeroMemory(&si, sizeof(SYSTEM_INFO));
-      // Check to see if _GetNativeSystemInfo has been initialized.
-      if (_GetNativeSystemInfo == NULL) {
-        HMODULE hKernel32 = GetModuleHandle(TEXT("kernel32.dll"));
-        _GetNativeSystemInfo =
-            CAST_TO_FN_PTR(GetNativeSystemInfo_func_type,
-                           GetProcAddress(hKernel32,
-                                          "GetNativeSystemInfo"));
-        if (_GetNativeSystemInfo == NULL)
+        if (!os::Kernel32Dll::GetNativeSystemInfoAvailable()){
           GetSystemInfo(&si);
       } else {
-        _GetNativeSystemInfo(&si);
+        os::Kernel32Dll::GetNativeSystemInfo(&si);
       }
       if (os_vers == 5002) {
         if (osvi.wProductType == VER_NT_WORKSTATION &&
@@ -1718,6 +1638,10 @@ void os::print_os_info(outputStream* st) {
   st->print(" Build %d", osvi.dwBuildNumber);
   st->print(" %s", osvi.szCSDVersion);           // service pack
   st->cr();
+}
+
+void os::pd_print_cpu_info(outputStream* st) {
+  // Nothing to do for now.
 }
 
 void os::print_memory_info(outputStream* st) {
@@ -1840,12 +1764,12 @@ void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
 // This method is a copy of JDK's sysGetLastErrorString
 // from src/windows/hpi/src/system_md.c
 
-size_t os::lasterror(char *buf, size_t len) {
-  long errval;
+size_t os::lasterror(char* buf, size_t len) {
+  DWORD errval;
 
   if ((errval = GetLastError()) != 0) {
-      /* DOS error */
-    int n = (int)FormatMessage(
+    // DOS error
+    size_t n = (size_t)FormatMessage(
           FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
           NULL,
           errval,
@@ -1854,7 +1778,7 @@ size_t os::lasterror(char *buf, size_t len) {
           (DWORD)len,
           NULL);
     if (n > 3) {
-      /* Drop final '.', CR, LF */
+      // Drop final '.', CR, LF
       if (buf[n - 1] == '\n') n--;
       if (buf[n - 1] == '\r') n--;
       if (buf[n - 1] == '.') n--;
@@ -1864,15 +1788,23 @@ size_t os::lasterror(char *buf, size_t len) {
   }
 
   if (errno != 0) {
-    /* C runtime error that has no corresponding DOS error code */
-    const char *s = strerror(errno);
+    // C runtime error that has no corresponding DOS error code
+    const char* s = strerror(errno);
     size_t n = strlen(s);
     if (n >= len) n = len - 1;
     strncpy(buf, s, n);
     buf[n] = '\0';
     return n;
   }
+
   return 0;
+}
+
+int os::get_last_error() {
+  DWORD error = GetLastError();
+  if (error == 0)
+    error = errno;
+  return (int)error;
 }
 
 // sun.misc.Signal
@@ -2146,7 +2078,6 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #elif _M_AMD64
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Rip;
-  NOT_PRODUCT(Events::log("idiv overflow exception at " INTPTR_FORMAT , pc));
   assert(pc[0] == 0xF7, "not an idiv opcode");
   assert((pc[1] & ~0x7) == 0xF8, "cannot handle non-register operands");
   assert(ctx->Rax == min_jint, "unexpected idiv exception");
@@ -2158,7 +2089,6 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #else
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Eip;
-  NOT_PRODUCT(Events::log("idiv overflow exception at " INTPTR_FORMAT , pc));
   assert(pc[0] == 0xF7, "not an idiv opcode");
   assert((pc[1] & ~0x7) == 0xF8, "cannot handle non-register operands");
   assert(ctx->Eax == min_jint, "unexpected idiv exception");
@@ -2679,47 +2609,65 @@ int os::vm_allocation_granularity() {
 #define MEM_LARGE_PAGES 0x20000000
 #endif
 
-// GetLargePageMinimum is only available on Windows 2003. The other functions
-// are available on NT but not on Windows 98/Me. We have to resolve them at
-// runtime.
-typedef SIZE_T (WINAPI *GetLargePageMinimum_func_type) (void);
-typedef BOOL (WINAPI *AdjustTokenPrivileges_func_type)
-             (HANDLE, BOOL, PTOKEN_PRIVILEGES, DWORD, PTOKEN_PRIVILEGES, PDWORD);
-typedef BOOL (WINAPI *OpenProcessToken_func_type) (HANDLE, DWORD, PHANDLE);
-typedef BOOL (WINAPI *LookupPrivilegeValue_func_type) (LPCTSTR, LPCTSTR, PLUID);
-
-static GetLargePageMinimum_func_type   _GetLargePageMinimum;
-static AdjustTokenPrivileges_func_type _AdjustTokenPrivileges;
-static OpenProcessToken_func_type      _OpenProcessToken;
-static LookupPrivilegeValue_func_type  _LookupPrivilegeValue;
-
-static HINSTANCE _kernel32;
-static HINSTANCE _advapi32;
 static HANDLE    _hProcess;
 static HANDLE    _hToken;
+
+// Container for NUMA node list info
+class NUMANodeListHolder {
+private:
+  int *_numa_used_node_list;  // allocated below
+  int _numa_used_node_count;
+
+  void free_node_list() {
+    if (_numa_used_node_list != NULL) {
+      FREE_C_HEAP_ARRAY(int, _numa_used_node_list);
+    }
+  }
+
+public:
+  NUMANodeListHolder() {
+    _numa_used_node_count = 0;
+    _numa_used_node_list = NULL;
+    // do rest of initialization in build routine (after function pointers are set up)
+  }
+
+  ~NUMANodeListHolder() {
+    free_node_list();
+  }
+
+  bool build() {
+    DWORD_PTR proc_aff_mask;
+    DWORD_PTR sys_aff_mask;
+    if (!GetProcessAffinityMask(GetCurrentProcess(), &proc_aff_mask, &sys_aff_mask)) return false;
+    ULONG highest_node_number;
+    if (!os::Kernel32Dll::GetNumaHighestNodeNumber(&highest_node_number)) return false;
+    free_node_list();
+    _numa_used_node_list = NEW_C_HEAP_ARRAY(int, highest_node_number + 1);
+    for (unsigned int i = 0; i <= highest_node_number; i++) {
+      ULONGLONG proc_mask_numa_node;
+      if (!os::Kernel32Dll::GetNumaNodeProcessorMask(i, &proc_mask_numa_node)) return false;
+      if ((proc_aff_mask & proc_mask_numa_node)!=0) {
+        _numa_used_node_list[_numa_used_node_count++] = i;
+      }
+    }
+    return (_numa_used_node_count > 1);
+  }
+
+  int get_count() {return _numa_used_node_count;}
+  int get_node_list_entry(int n) {
+    // for indexes out of range, returns -1
+    return (n < _numa_used_node_count ? _numa_used_node_list[n] : -1);
+  }
+
+} numa_node_list_holder;
+
+
 
 static size_t _large_page_size = 0;
 
 static bool resolve_functions_for_large_page_init() {
-  _kernel32 = LoadLibrary("kernel32.dll");
-  if (_kernel32 == NULL) return false;
-
-  _GetLargePageMinimum   = CAST_TO_FN_PTR(GetLargePageMinimum_func_type,
-                            GetProcAddress(_kernel32, "GetLargePageMinimum"));
-  if (_GetLargePageMinimum == NULL) return false;
-
-  _advapi32 = LoadLibrary("advapi32.dll");
-  if (_advapi32 == NULL) return false;
-
-  _AdjustTokenPrivileges = CAST_TO_FN_PTR(AdjustTokenPrivileges_func_type,
-                            GetProcAddress(_advapi32, "AdjustTokenPrivileges"));
-  _OpenProcessToken      = CAST_TO_FN_PTR(OpenProcessToken_func_type,
-                            GetProcAddress(_advapi32, "OpenProcessToken"));
-  _LookupPrivilegeValue  = CAST_TO_FN_PTR(LookupPrivilegeValue_func_type,
-                            GetProcAddress(_advapi32, "LookupPrivilegeValueA"));
-  return _AdjustTokenPrivileges != NULL &&
-         _OpenProcessToken      != NULL &&
-         _LookupPrivilegeValue  != NULL;
+  return os::Kernel32Dll::GetLargePageMinimumAvailable() &&
+    os::Advapi32Dll::AdvapiAvailable();
 }
 
 static bool request_lock_memory_privilege() {
@@ -2728,8 +2676,8 @@ static bool request_lock_memory_privilege() {
 
   LUID luid;
   if (_hProcess != NULL &&
-      _OpenProcessToken(_hProcess, TOKEN_ADJUST_PRIVILEGES, &_hToken) &&
-      _LookupPrivilegeValue(NULL, "SeLockMemoryPrivilege", &luid)) {
+      os::Advapi32Dll::OpenProcessToken(_hProcess, TOKEN_ADJUST_PRIVILEGES, &_hToken) &&
+      os::Advapi32Dll::LookupPrivilegeValue(NULL, "SeLockMemoryPrivilege", &luid)) {
 
     TOKEN_PRIVILEGES tp;
     tp.PrivilegeCount = 1;
@@ -2738,7 +2686,7 @@ static bool request_lock_memory_privilege() {
 
     // AdjustTokenPrivileges() may return TRUE even when it couldn't change the
     // privilege. Check GetLastError() too. See MSDN document.
-    if (_AdjustTokenPrivileges(_hToken, false, &tp, sizeof(tp), NULL, NULL) &&
+    if (os::Advapi32Dll::AdjustTokenPrivileges(_hToken, false, &tp, sizeof(tp), NULL, NULL) &&
         (GetLastError() == ERROR_SUCCESS)) {
       return true;
     }
@@ -2748,19 +2696,158 @@ static bool request_lock_memory_privilege() {
 }
 
 static void cleanup_after_large_page_init() {
-  _GetLargePageMinimum = NULL;
-  _AdjustTokenPrivileges = NULL;
-  _OpenProcessToken = NULL;
-  _LookupPrivilegeValue = NULL;
-  if (_kernel32) FreeLibrary(_kernel32);
-  _kernel32 = NULL;
-  if (_advapi32) FreeLibrary(_advapi32);
-  _advapi32 = NULL;
   if (_hProcess) CloseHandle(_hProcess);
   _hProcess = NULL;
   if (_hToken) CloseHandle(_hToken);
   _hToken = NULL;
 }
+
+static bool numa_interleaving_init() {
+  bool success = false;
+  bool use_numa_interleaving_specified = !FLAG_IS_DEFAULT(UseNUMAInterleaving);
+
+  // print a warning if UseNUMAInterleaving flag is specified on command line
+  bool warn_on_failure = use_numa_interleaving_specified;
+# define WARN(msg) if (warn_on_failure) { warning(msg); }
+
+  // NUMAInterleaveGranularity cannot be less than vm_allocation_granularity (or _large_page_size if using large pages)
+  size_t min_interleave_granularity = UseLargePages ? _large_page_size : os::vm_allocation_granularity();
+  NUMAInterleaveGranularity = align_size_up(NUMAInterleaveGranularity, min_interleave_granularity);
+
+  if (os::Kernel32Dll::NumaCallsAvailable()) {
+    if (numa_node_list_holder.build()) {
+      if (PrintMiscellaneous && Verbose) {
+        tty->print("NUMA UsedNodeCount=%d, namely ", numa_node_list_holder.get_count());
+        for (int i = 0; i < numa_node_list_holder.get_count(); i++) {
+          tty->print("%d ", numa_node_list_holder.get_node_list_entry(i));
+        }
+        tty->print("\n");
+      }
+      success = true;
+    } else {
+      WARN("Process does not cover multiple NUMA nodes.");
+    }
+  } else {
+    WARN("NUMA Interleaving is not supported by the operating system.");
+  }
+  if (!success) {
+    if (use_numa_interleaving_specified) WARN("...Ignoring UseNUMAInterleaving flag.");
+  }
+  return success;
+#undef WARN
+}
+
+// this routine is used whenever we need to reserve a contiguous VA range
+// but we need to make separate VirtualAlloc calls for each piece of the range
+// Reasons for doing this:
+//  * UseLargePagesIndividualAllocation was set (normally only needed on WS2003 but possible to be set otherwise)
+//  * UseNUMAInterleaving requires a separate node for each piece
+static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags, DWORD prot,
+                                         bool should_inject_error=false) {
+  char * p_buf;
+  // note: at setup time we guaranteed that NUMAInterleaveGranularity was aligned up to a page size
+  size_t page_size = UseLargePages ? _large_page_size : os::vm_allocation_granularity();
+  size_t chunk_size = UseNUMAInterleaving ? NUMAInterleaveGranularity : page_size;
+
+  // first reserve enough address space in advance since we want to be
+  // able to break a single contiguous virtual address range into multiple
+  // large page commits but WS2003 does not allow reserving large page space
+  // so we just use 4K pages for reserve, this gives us a legal contiguous
+  // address space. then we will deallocate that reservation, and re alloc
+  // using large pages
+  const size_t size_of_reserve = bytes + chunk_size;
+  if (bytes > size_of_reserve) {
+    // Overflowed.
+    return NULL;
+  }
+  p_buf = (char *) VirtualAlloc(addr,
+                                size_of_reserve,  // size of Reserve
+                                MEM_RESERVE,
+                                PAGE_READWRITE);
+  // If reservation failed, return NULL
+  if (p_buf == NULL) return NULL;
+
+  os::release_memory(p_buf, bytes + chunk_size);
+
+  // we still need to round up to a page boundary (in case we are using large pages)
+  // but not to a chunk boundary (in case InterleavingGranularity doesn't align with page size)
+  // instead we handle this in the bytes_to_rq computation below
+  p_buf = (char *) align_size_up((size_t)p_buf, page_size);
+
+  // now go through and allocate one chunk at a time until all bytes are
+  // allocated
+  size_t  bytes_remaining = bytes;
+  // An overflow of align_size_up() would have been caught above
+  // in the calculation of size_of_reserve.
+  char * next_alloc_addr = p_buf;
+  HANDLE hProc = GetCurrentProcess();
+
+#ifdef ASSERT
+  // Variable for the failure injection
+  long ran_num = os::random();
+  size_t fail_after = ran_num % bytes;
+#endif
+
+  int count=0;
+  while (bytes_remaining) {
+    // select bytes_to_rq to get to the next chunk_size boundary
+
+    size_t bytes_to_rq = MIN2(bytes_remaining, chunk_size - ((size_t)next_alloc_addr % chunk_size));
+    // Note allocate and commit
+    char * p_new;
+
+#ifdef ASSERT
+    bool inject_error_now = should_inject_error && (bytes_remaining <= fail_after);
+#else
+    const bool inject_error_now = false;
+#endif
+
+    if (inject_error_now) {
+      p_new = NULL;
+    } else {
+      if (!UseNUMAInterleaving) {
+        p_new = (char *) VirtualAlloc(next_alloc_addr,
+                                      bytes_to_rq,
+                                      flags,
+                                      prot);
+      } else {
+        // get the next node to use from the used_node_list
+        assert(numa_node_list_holder.get_count() > 0, "Multiple NUMA nodes expected");
+        DWORD node = numa_node_list_holder.get_node_list_entry(count % numa_node_list_holder.get_count());
+        p_new = (char *)os::Kernel32Dll::VirtualAllocExNuma(hProc,
+                                                            next_alloc_addr,
+                                                            bytes_to_rq,
+                                                            flags,
+                                                            prot,
+                                                            node);
+      }
+    }
+
+    if (p_new == NULL) {
+      // Free any allocated pages
+      if (next_alloc_addr > p_buf) {
+        // Some memory was committed so release it.
+        size_t bytes_to_release = bytes - bytes_remaining;
+        os::release_memory(p_buf, bytes_to_release);
+      }
+#ifdef ASSERT
+      if (should_inject_error) {
+        if (TracePageSizes && Verbose) {
+          tty->print_cr("Reserving pages individually failed.");
+        }
+      }
+#endif
+      return NULL;
+    }
+    bytes_remaining -= bytes_to_rq;
+    next_alloc_addr += bytes_to_rq;
+    count++;
+  }
+  // made it this far, success
+  return p_buf;
+}
+
+
 
 void os::large_page_init() {
   if (!UseLargePages) return;
@@ -2773,7 +2860,7 @@ void os::large_page_init() {
 # define WARN(msg) if (warn_on_failure) { warning(msg); }
   if (resolve_functions_for_large_page_init()) {
     if (request_lock_memory_privilege()) {
-      size_t s = _GetLargePageMinimum();
+      size_t s = os::Kernel32Dll::GetLargePageMinimum();
       if (s) {
 #if defined(IA32) || defined(AMD64)
         if (s > 4*M || LargePageSizeInBytes > 4*M) {
@@ -2831,9 +2918,30 @@ char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
   assert((size_t)addr % os::vm_allocation_granularity() == 0,
          "reserve alignment");
   assert(bytes % os::vm_allocation_granularity() == 0, "reserve block size");
-  char* res = (char*)VirtualAlloc(addr, bytes, MEM_RESERVE, PAGE_READWRITE);
+  char* res;
+  // note that if UseLargePages is on, all the areas that require interleaving
+  // will go thru reserve_memory_special rather than thru here.
+  bool use_individual = (UseNUMAInterleaving && !UseLargePages);
+  if (!use_individual) {
+    res = (char*)VirtualAlloc(addr, bytes, MEM_RESERVE, PAGE_READWRITE);
+  } else {
+    elapsedTimer reserveTimer;
+    if( Verbose && PrintMiscellaneous ) reserveTimer.start();
+    // in numa interleaving, we have to allocate pages individually
+    // (well really chunks of NUMAInterleaveGranularity size)
+    res = allocate_pages_individually(bytes, addr, MEM_RESERVE, PAGE_READWRITE);
+    if (res == NULL) {
+      warning("NUMA page allocation failed");
+    }
+    if( Verbose && PrintMiscellaneous ) {
+      reserveTimer.stop();
+      tty->print_cr("reserve_memory of %Ix bytes took %ld ms (%ld ticks)", bytes,
+                    reserveTimer.milliseconds(), reserveTimer.ticks());
+    }
+  }
   assert(res == NULL || addr == NULL || addr == res,
          "Unexpected address from reserve.");
+
   return res;
 }
 
@@ -2863,91 +2971,26 @@ bool os::can_execute_large_page_memory() {
 char* os::reserve_memory_special(size_t bytes, char* addr, bool exec) {
 
   const DWORD prot = exec ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE;
+  const DWORD flags = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
 
-  if (UseLargePagesIndividualAllocation) {
+  // with large pages, there are two cases where we need to use Individual Allocation
+  // 1) the UseLargePagesIndividualAllocation flag is set (set by default on WS2003)
+  // 2) NUMA Interleaving is enabled, in which case we use a different node for each page
+  if (UseLargePagesIndividualAllocation || UseNUMAInterleaving) {
     if (TracePageSizes && Verbose) {
        tty->print_cr("Reserving large pages individually.");
     }
-    char * p_buf;
-    // first reserve enough address space in advance since we want to be
-    // able to break a single contiguous virtual address range into multiple
-    // large page commits but WS2003 does not allow reserving large page space
-    // so we just use 4K pages for reserve, this gives us a legal contiguous
-    // address space. then we will deallocate that reservation, and re alloc
-    // using large pages
-    const size_t size_of_reserve = bytes + _large_page_size;
-    if (bytes > size_of_reserve) {
-      // Overflowed.
-      warning("Individually allocated large pages failed, "
-        "use -XX:-UseLargePagesIndividualAllocation to turn off");
+    char * p_buf = allocate_pages_individually(bytes, addr, flags, prot, LargePagesIndividualAllocationInjectError);
+    if (p_buf == NULL) {
+      // give an appropriate warning message
+      if (UseNUMAInterleaving) {
+        warning("NUMA large page allocation failed, UseLargePages flag ignored");
+      }
+      if (UseLargePagesIndividualAllocation) {
+        warning("Individually allocated large pages failed, "
+                "use -XX:-UseLargePagesIndividualAllocation to turn off");
+      }
       return NULL;
-    }
-    p_buf = (char *) VirtualAlloc(addr,
-                                 size_of_reserve,  // size of Reserve
-                                 MEM_RESERVE,
-                                 PAGE_READWRITE);
-    // If reservation failed, return NULL
-    if (p_buf == NULL) return NULL;
-
-    release_memory(p_buf, bytes + _large_page_size);
-    // round up to page boundary.  If the size_of_reserve did not
-    // overflow and the reservation did not fail, this align up
-    // should not overflow.
-    p_buf = (char *) align_size_up((size_t)p_buf, _large_page_size);
-
-    // now go through and allocate one page at a time until all bytes are
-    // allocated
-    size_t  bytes_remaining = align_size_up(bytes, _large_page_size);
-    // An overflow of align_size_up() would have been caught above
-    // in the calculation of size_of_reserve.
-    char * next_alloc_addr = p_buf;
-
-#ifdef ASSERT
-    // Variable for the failure injection
-    long ran_num = os::random();
-    size_t fail_after = ran_num % bytes;
-#endif
-
-    while (bytes_remaining) {
-      size_t bytes_to_rq = MIN2(bytes_remaining, _large_page_size);
-      // Note allocate and commit
-      char * p_new;
-
-#ifdef ASSERT
-      bool inject_error = LargePagesIndividualAllocationInjectError &&
-          (bytes_remaining <= fail_after);
-#else
-      const bool inject_error = false;
-#endif
-
-      if (inject_error) {
-        p_new = NULL;
-      } else {
-        p_new = (char *) VirtualAlloc(next_alloc_addr,
-                                    bytes_to_rq,
-                                    MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES,
-                                    prot);
-      }
-
-      if (p_new == NULL) {
-        // Free any allocated pages
-        if (next_alloc_addr > p_buf) {
-          // Some memory was committed so release it.
-          size_t bytes_to_release = bytes - bytes_remaining;
-          release_memory(p_buf, bytes_to_release);
-        }
-#ifdef ASSERT
-        if (UseLargePagesIndividualAllocation &&
-            LargePagesIndividualAllocationInjectError) {
-          if (TracePageSizes && Verbose) {
-             tty->print_cr("Reserving large pages individually failed.");
-          }
-        }
-#endif
-        return NULL;
-      }
-      bytes_remaining -= bytes_to_rq;
-      next_alloc_addr += bytes_to_rq;
     }
 
     return p_buf;
@@ -2976,14 +3019,43 @@ bool os::commit_memory(char* addr, size_t bytes, bool exec) {
   assert(bytes % os::vm_page_size() == 0, "commit in page-sized chunks");
   // Don't attempt to print anything if the OS call fails. We're
   // probably low on resources, so the print itself may cause crashes.
-  bool result = VirtualAlloc(addr, bytes, MEM_COMMIT, PAGE_READWRITE) != 0;
-  if (result != NULL && exec) {
-    DWORD oldprot;
-    // Windows doc says to use VirtualProtect to get execute permissions
-    return VirtualProtect(addr, bytes, PAGE_EXECUTE_READWRITE, &oldprot) != 0;
+
+  // unless we have NUMAInterleaving enabled, the range of a commit
+  // is always within a reserve covered by a single VirtualAlloc
+  // in that case we can just do a single commit for the requested size
+  if (!UseNUMAInterleaving) {
+    if (VirtualAlloc(addr, bytes, MEM_COMMIT, PAGE_READWRITE) == NULL) return false;
+    if (exec) {
+      DWORD oldprot;
+      // Windows doc says to use VirtualProtect to get execute permissions
+      if (!VirtualProtect(addr, bytes, PAGE_EXECUTE_READWRITE, &oldprot)) return false;
+    }
+    return true;
   } else {
-    return result;
+
+    // when NUMAInterleaving is enabled, the commit might cover a range that
+    // came from multiple VirtualAlloc reserves (using allocate_pages_individually).
+    // VirtualQuery can help us determine that.  The RegionSize that VirtualQuery
+    // returns represents the number of bytes that can be committed in one step.
+    size_t bytes_remaining = bytes;
+    char * next_alloc_addr = addr;
+    while (bytes_remaining > 0) {
+      MEMORY_BASIC_INFORMATION alloc_info;
+      VirtualQuery(next_alloc_addr, &alloc_info, sizeof(alloc_info));
+      size_t bytes_to_rq = MIN2(bytes_remaining, (size_t)alloc_info.RegionSize);
+      if (VirtualAlloc(next_alloc_addr, bytes_to_rq, MEM_COMMIT, PAGE_READWRITE) == NULL)
+        return false;
+      if (exec) {
+        DWORD oldprot;
+        if (!VirtualProtect(next_alloc_addr, bytes_to_rq, PAGE_EXECUTE_READWRITE, &oldprot))
+          return false;
+      }
+      bytes_remaining -= bytes_to_rq;
+      next_alloc_addr += bytes_to_rq;
+    }
   }
+  // if we made it this far, return true
+  return true;
 }
 
 bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
@@ -3053,18 +3125,25 @@ bool os::unguard_memory(char* addr, size_t bytes) {
 }
 
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }
-void os::free_memory(char *addr, size_t bytes)         { }
+void os::free_memory(char *addr, size_t bytes, size_t alignment_hint)    { }
 void os::numa_make_global(char *addr, size_t bytes)    { }
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint)    { }
 bool os::numa_topology_changed()                       { return false; }
-size_t os::numa_get_groups_num()                       { return 1; }
+size_t os::numa_get_groups_num()                       { return MAX2(numa_node_list_holder.get_count(), 1); }
 int os::numa_get_group_id()                            { return 0; }
 size_t os::numa_get_leaf_groups(int *ids, size_t size) {
-  if (size > 0) {
+  if (numa_node_list_holder.get_count() == 0 && size > 0) {
+    // Provide an answer for UMA systems
     ids[0] = 0;
     return 1;
+  } else {
+    // check for size bigger than actual groups_num
+    size = MIN2(size, numa_get_groups_num());
+    for (int i = 0; i < (int)size; i++) {
+      ids[i] = numa_node_list_holder.get_node_list_entry(i);
+    }
+    return size;
   }
-  return 0;
 }
 
 bool os::get_page_info(char *start, page_info* info) {
@@ -3186,18 +3265,10 @@ typedef BOOL (WINAPI * STTSignature)(void) ;
 os::YieldResult os::NakedYield() {
   // Use either SwitchToThread() or Sleep(0)
   // Consider passing back the return value from SwitchToThread().
-  // We use GetProcAddress() as ancient Win9X versions of windows doen't support SwitchToThread.
-  // In that case we revert to Sleep(0).
-  static volatile STTSignature stt = (STTSignature) 1 ;
-
-  if (stt == ((STTSignature) 1)) {
-    stt = (STTSignature) ::GetProcAddress (LoadLibrary ("Kernel32.dll"), "SwitchToThread") ;
-    // It's OK if threads race during initialization as the operation above is idempotent.
-  }
-  if (stt != NULL) {
-    return (*stt)() ? os::YIELD_SWITCHED : os::YIELD_NONEREADY ;
+  if (os::Kernel32Dll::SwitchToThreadAvailable()) {
+    return SwitchToThread() ? os::YIELD_SWITCHED : os::YIELD_NONEREADY ;
   } else {
-    Sleep (0) ;
+    Sleep(0);
   }
   return os::YIELD_UNKNOWN ;
 }
@@ -3213,7 +3284,7 @@ void os::yield_all(int attempts) {
 // so we compress Java's ten down to seven.  It would be better
 // if we dynamically adjusted relative priorities.
 
-int os::java_to_os_priority[MaxPriority + 1] = {
+int os::java_to_os_priority[CriticalPriority + 1] = {
   THREAD_PRIORITY_IDLE,                         // 0  Entry should never be used
   THREAD_PRIORITY_LOWEST,                       // 1  MinPriority
   THREAD_PRIORITY_LOWEST,                       // 2
@@ -3224,10 +3295,11 @@ int os::java_to_os_priority[MaxPriority + 1] = {
   THREAD_PRIORITY_ABOVE_NORMAL,                 // 7
   THREAD_PRIORITY_ABOVE_NORMAL,                 // 8
   THREAD_PRIORITY_HIGHEST,                      // 9  NearMaxPriority
-  THREAD_PRIORITY_HIGHEST                       // 10 MaxPriority
+  THREAD_PRIORITY_HIGHEST,                      // 10 MaxPriority
+  THREAD_PRIORITY_HIGHEST                       // 11 CriticalPriority
 };
 
-int prio_policy1[MaxPriority + 1] = {
+int prio_policy1[CriticalPriority + 1] = {
   THREAD_PRIORITY_IDLE,                         // 0  Entry should never be used
   THREAD_PRIORITY_LOWEST,                       // 1  MinPriority
   THREAD_PRIORITY_LOWEST,                       // 2
@@ -3238,16 +3310,20 @@ int prio_policy1[MaxPriority + 1] = {
   THREAD_PRIORITY_ABOVE_NORMAL,                 // 7
   THREAD_PRIORITY_HIGHEST,                      // 8
   THREAD_PRIORITY_HIGHEST,                      // 9  NearMaxPriority
-  THREAD_PRIORITY_TIME_CRITICAL                 // 10 MaxPriority
+  THREAD_PRIORITY_TIME_CRITICAL,                // 10 MaxPriority
+  THREAD_PRIORITY_TIME_CRITICAL                 // 11 CriticalPriority
 };
 
 static int prio_init() {
   // If ThreadPriorityPolicy is 1, switch tables
   if (ThreadPriorityPolicy == 1) {
     int i;
-    for (i = 0; i < MaxPriority + 1; i++) {
+    for (i = 0; i < CriticalPriority + 1; i++) {
       os::java_to_os_priority[i] = prio_policy1[i];
     }
+  }
+  if (UseCriticalJavaThreadPriority) {
+    os::java_to_os_priority[MaxPriority] = os::java_to_os_priority[CriticalPriority] ;
   }
   return 0;
 }
@@ -3421,6 +3497,44 @@ void os::win32::initialize_system_info() {
 }
 
 
+HINSTANCE os::win32::load_Windows_dll(const char* name, char *ebuf, int ebuflen) {
+  char path[MAX_PATH];
+  DWORD size;
+  DWORD pathLen = (DWORD)sizeof(path);
+  HINSTANCE result = NULL;
+
+  // only allow library name without path component
+  assert(strchr(name, '\\') == NULL, "path not allowed");
+  assert(strchr(name, ':') == NULL, "path not allowed");
+  if (strchr(name, '\\') != NULL || strchr(name, ':') != NULL) {
+    jio_snprintf(ebuf, ebuflen,
+      "Invalid parameter while calling os::win32::load_windows_dll(): cannot take path: %s", name);
+    return NULL;
+  }
+
+  // search system directory
+  if ((size = GetSystemDirectory(path, pathLen)) > 0) {
+    strcat(path, "\\");
+    strcat(path, name);
+    if ((result = (HINSTANCE)os::dll_load(path, ebuf, ebuflen)) != NULL) {
+      return result;
+    }
+  }
+
+  // try Windows directory
+  if ((size = GetWindowsDirectory(path, pathLen)) > 0) {
+    strcat(path, "\\");
+    strcat(path, name);
+    if ((result = (HINSTANCE)os::dll_load(path, ebuf, ebuflen)) != NULL) {
+      return result;
+    }
+  }
+
+  jio_snprintf(ebuf, ebuflen,
+    "os::win32::load_windows_dll() cannot load %s from system directories.", name);
+  return NULL;
+}
+
 void os::win32::setmode_streams() {
   _setmode(_fileno(stdin), _O_BINARY);
   _setmode(_fileno(stdout), _O_BINARY);
@@ -3559,7 +3673,7 @@ jint os::init_2(void) {
     if(Verbose && PrintMiscellaneous)
       tty->print("[Memory Serialize  Page address: " INTPTR_FORMAT "]\n", (intptr_t)mem_serialize_page);
 #endif
-}
+  }
 
   os::large_page_init();
 
@@ -3654,10 +3768,6 @@ jint os::init_2(void) {
     }
   }
 
-  // initialize PSAPI or ToolHelp for fatal error handler
-  if (win32::is_nt()) _init_psapi();
-  else _init_toolhelp();
-
 #ifndef _WIN64
   // Print something if NX is enabled (win32 on AMD64)
   NOT_PRODUCT(if (PrintMiscellaneous && Verbose) nx_check_protection());
@@ -3667,7 +3777,13 @@ jint os::init_2(void) {
   prio_init();
 
   if (UseNUMA && !ForceNUMA) {
-    UseNUMA = false; // Currently unsupported.
+    UseNUMA = false; // We don't fully support this yet
+  }
+
+  if (UseNUMAInterleaving) {
+    // first check whether this Windows OS supports VirtualAllocExNuma, if not ignore this flag
+    bool success = numa_interleaving_init();
+    if (!success) UseNUMAInterleaving = false;
   }
 
   return JNI_OK;
@@ -4630,7 +4746,7 @@ bool os::check_heap(bool force) {
           fatal("corrupted C heap");
         }
       }
-      int err = GetLastError();
+      DWORD err = GetLastError();
       if (err != ERROR_NO_MORE_ITEMS && err != ERROR_CALL_NOT_IMPLEMENTED) {
         fatal(err_msg("heap walk aborted with error %d", err));
       }
@@ -4662,54 +4778,9 @@ LONG WINAPI os::win32::serialize_fault_filter(struct _EXCEPTION_POINTERS* e) {
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
-static int getLastErrorString(char *buf, size_t len)
-{
-    long errval;
-
-    if ((errval = GetLastError()) != 0)
-    {
-      /* DOS error */
-      size_t n = (size_t)FormatMessage(
-            FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
-            NULL,
-            errval,
-            0,
-            buf,
-            (DWORD)len,
-            NULL);
-      if (n > 3) {
-        /* Drop final '.', CR, LF */
-        if (buf[n - 1] == '\n') n--;
-        if (buf[n - 1] == '\r') n--;
-        if (buf[n - 1] == '.') n--;
-        buf[n] = '\0';
-      }
-      return (int)n;
-    }
-
-    if (errno != 0)
-    {
-      /* C runtime error that has no corresponding DOS error code */
-      const char *s = strerror(errno);
-      size_t n = strlen(s);
-      if (n >= len) n = len - 1;
-      strncpy(buf, s, n);
-      buf[n] = '\0';
-      return (int)n;
-    }
-    return 0;
-}
-
-
 // We don't build a headless jre for Windows
 bool os::is_headless_jre() { return false; }
 
-// OS_SocketInterface
-// Not used on Windows
-
-// OS_SocketInterface
-typedef struct hostent * (PASCAL FAR *ws2_ifn_ptr_t)(...);
-ws2_ifn_ptr_t *get_host_by_name_fn = NULL;
 
 typedef CRITICAL_SECTION mutex_t;
 #define mutexInit(m)    InitializeCriticalSection(m)
@@ -4717,58 +4788,36 @@ typedef CRITICAL_SECTION mutex_t;
 #define mutexLock(m)    EnterCriticalSection(m)
 #define mutexUnlock(m)  LeaveCriticalSection(m)
 
-static bool sockfnptrs_initialized = FALSE;
+static bool sock_initialized = FALSE;
 static mutex_t sockFnTableMutex;
 
-/* is Winsock2 loaded? better to be explicit than to rely on sockfnptrs */
-static bool winsock2Available = FALSE;
-
-
-static void initSockFnTable() {
-  int (PASCAL FAR* WSAStartupPtr)(WORD, LPWSADATA);
+static void initSock() {
   WSADATA wsadata;
+
+  if (!os::WinSock2Dll::WinSock2Available()) {
+    jio_fprintf(stderr, "Could not load Winsock 2 (error: %d)\n",
+      ::GetLastError());
+    return;
+  }
+  if (sock_initialized == TRUE) return;
 
   ::mutexInit(&sockFnTableMutex);
   ::mutexLock(&sockFnTableMutex);
-
-  if (sockfnptrs_initialized == FALSE) {
-        HMODULE hWinsock;
-
-          /* try to load Winsock2, and if that fails, load Winsock */
-    hWinsock = ::LoadLibrary("ws2_32.dll");
-
-    if (hWinsock == NULL) {
-      jio_fprintf(stderr, "Could not load Winsock 2 (error: %d)\n",
-      ::GetLastError());
-      return;
-    }
-
-    /* If we loaded a DLL, then we might as well initialize it.  */
-    WSAStartupPtr = (int (PASCAL FAR *)(WORD, LPWSADATA))
-    ::GetProcAddress(hWinsock, "WSAStartup");
-
-    if (WSAStartupPtr(MAKEWORD(1,1), &wsadata) != 0) {
-        jio_fprintf(stderr, "Could not initialize Winsock\n");
-    }
-
-    get_host_by_name_fn
-        = (ws2_ifn_ptr_t*) GetProcAddress(hWinsock, "gethostbyname");
+  if (os::WinSock2Dll::WSAStartup(MAKEWORD(1,1), &wsadata) != 0) {
+      jio_fprintf(stderr, "Could not initialize Winsock\n");
   }
-
-  assert(get_host_by_name_fn != NULL,
-    "gethostbyname function not found");
-  sockfnptrs_initialized = TRUE;
+  sock_initialized = TRUE;
   ::mutexUnlock(&sockFnTableMutex);
 }
 
-struct hostent*  os::get_host_by_name(char* name) {
-  if (!sockfnptrs_initialized) {
-    initSockFnTable();
+struct hostent* os::get_host_by_name(char* name) {
+  if (!sock_initialized) {
+    initSock();
   }
-
-  assert(sockfnptrs_initialized == TRUE && get_host_by_name_fn != NULL,
-    "sockfnptrs is not initialized or pointer to gethostbyname function is NULL");
-  return (*get_host_by_name_fn)(name);
+  if (!os::WinSock2Dll::WinSock2Available()) {
+    return NULL;
+  }
+  return (struct hostent*)os::WinSock2Dll::gethostbyname(name);
 }
 
 
@@ -4792,39 +4841,39 @@ int os::listen(int fd, int count) {
   return 0;
 }
 
-int os::connect(int fd, struct sockaddr *him, int len) {
+int os::connect(int fd, struct sockaddr* him, socklen_t len) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::accept(int fd, struct sockaddr *him, int *len) {
+int os::accept(int fd, struct sockaddr* him, socklen_t* len) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::sendto(int fd, char *buf, int len, int flags,
-                        struct sockaddr *to, int tolen) {
+int os::sendto(int fd, char* buf, size_t len, uint flags,
+               struct sockaddr* to, socklen_t tolen) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::recvfrom(int fd, char *buf, int nBytes, int flags,
-                         sockaddr *from, int *fromlen) {
+int os::recvfrom(int fd, char *buf, size_t nBytes, uint flags,
+                 sockaddr* from, socklen_t* fromlen) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::recv(int fd, char *buf, int nBytes, int flags) {
+int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::send(int fd, char *buf, int nBytes, int flags) {
+int os::send(int fd, char* buf, size_t nBytes, uint flags) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::raw_send(int fd, char *buf, int nBytes, int flags) {
+int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
   ShouldNotReachHere();
   return 0;
 }
@@ -4844,24 +4893,434 @@ int os::socket_shutdown(int fd, int howto) {
   return 0;
 }
 
-int os::bind(int fd, struct sockaddr *him, int len) {
+int os::bind(int fd, struct sockaddr* him, socklen_t len) {
   ShouldNotReachHere();
   return 0;
 }
 
-int os::get_sock_name(int fd, struct sockaddr *him, int *len) {
+int os::get_sock_name(int fd, struct sockaddr* him, socklen_t* len) {
   ShouldNotReachHere();
   return 0;
 }
 
 int os::get_sock_opt(int fd, int level, int optname,
-                             char *optval, int* optlen) {
+                     char* optval, socklen_t* optlen) {
   ShouldNotReachHere();
   return 0;
 }
 
 int os::set_sock_opt(int fd, int level, int optname,
-                             const char *optval, int optlen) {
+                     const char* optval, socklen_t optlen) {
   ShouldNotReachHere();
   return 0;
 }
+
+
+// Kernel32 API
+typedef SIZE_T (WINAPI* GetLargePageMinimum_Fn)(void);
+typedef LPVOID (WINAPI *VirtualAllocExNuma_Fn) (HANDLE, LPVOID, SIZE_T, DWORD, DWORD, DWORD);
+typedef BOOL (WINAPI *GetNumaHighestNodeNumber_Fn) (PULONG);
+typedef BOOL (WINAPI *GetNumaNodeProcessorMask_Fn) (UCHAR, PULONGLONG);
+
+GetLargePageMinimum_Fn      os::Kernel32Dll::_GetLargePageMinimum = NULL;
+VirtualAllocExNuma_Fn       os::Kernel32Dll::_VirtualAllocExNuma = NULL;
+GetNumaHighestNodeNumber_Fn os::Kernel32Dll::_GetNumaHighestNodeNumber = NULL;
+GetNumaNodeProcessorMask_Fn os::Kernel32Dll::_GetNumaNodeProcessorMask = NULL;
+BOOL                        os::Kernel32Dll::initialized = FALSE;
+SIZE_T os::Kernel32Dll::GetLargePageMinimum() {
+  assert(initialized && _GetLargePageMinimum != NULL,
+    "GetLargePageMinimumAvailable() not yet called");
+  return _GetLargePageMinimum();
+}
+
+BOOL os::Kernel32Dll::GetLargePageMinimumAvailable() {
+  if (!initialized) {
+    initialize();
+  }
+  return _GetLargePageMinimum != NULL;
+}
+
+BOOL os::Kernel32Dll::NumaCallsAvailable() {
+  if (!initialized) {
+    initialize();
+  }
+  return _VirtualAllocExNuma != NULL;
+}
+
+LPVOID os::Kernel32Dll::VirtualAllocExNuma(HANDLE hProc, LPVOID addr, SIZE_T bytes, DWORD flags, DWORD prot, DWORD node) {
+  assert(initialized && _VirtualAllocExNuma != NULL,
+    "NUMACallsAvailable() not yet called");
+
+  return _VirtualAllocExNuma(hProc, addr, bytes, flags, prot, node);
+}
+
+BOOL os::Kernel32Dll::GetNumaHighestNodeNumber(PULONG ptr_highest_node_number) {
+  assert(initialized && _GetNumaHighestNodeNumber != NULL,
+    "NUMACallsAvailable() not yet called");
+
+  return _GetNumaHighestNodeNumber(ptr_highest_node_number);
+}
+
+BOOL os::Kernel32Dll::GetNumaNodeProcessorMask(UCHAR node, PULONGLONG proc_mask) {
+  assert(initialized && _GetNumaNodeProcessorMask != NULL,
+    "NUMACallsAvailable() not yet called");
+
+  return _GetNumaNodeProcessorMask(node, proc_mask);
+}
+
+
+void os::Kernel32Dll::initializeCommon() {
+  if (!initialized) {
+    HMODULE handle = ::GetModuleHandle("Kernel32.dll");
+    assert(handle != NULL, "Just check");
+    _GetLargePageMinimum = (GetLargePageMinimum_Fn)::GetProcAddress(handle, "GetLargePageMinimum");
+    _VirtualAllocExNuma = (VirtualAllocExNuma_Fn)::GetProcAddress(handle, "VirtualAllocExNuma");
+    _GetNumaHighestNodeNumber = (GetNumaHighestNodeNumber_Fn)::GetProcAddress(handle, "GetNumaHighestNodeNumber");
+    _GetNumaNodeProcessorMask = (GetNumaNodeProcessorMask_Fn)::GetProcAddress(handle, "GetNumaNodeProcessorMask");
+    initialized = TRUE;
+  }
+}
+
+
+
+#ifndef JDK6_OR_EARLIER
+
+void os::Kernel32Dll::initialize() {
+  initializeCommon();
+}
+
+
+// Kernel32 API
+inline BOOL os::Kernel32Dll::SwitchToThread() {
+  return ::SwitchToThread();
+}
+
+inline BOOL os::Kernel32Dll::SwitchToThreadAvailable() {
+  return true;
+}
+
+  // Help tools
+inline BOOL os::Kernel32Dll::HelpToolsAvailable() {
+  return true;
+}
+
+inline HANDLE os::Kernel32Dll::CreateToolhelp32Snapshot(DWORD dwFlags,DWORD th32ProcessId) {
+  return ::CreateToolhelp32Snapshot(dwFlags, th32ProcessId);
+}
+
+inline BOOL os::Kernel32Dll::Module32First(HANDLE hSnapshot,LPMODULEENTRY32 lpme) {
+  return ::Module32First(hSnapshot, lpme);
+}
+
+inline BOOL os::Kernel32Dll::Module32Next(HANDLE hSnapshot,LPMODULEENTRY32 lpme) {
+  return ::Module32Next(hSnapshot, lpme);
+}
+
+
+inline BOOL os::Kernel32Dll::GetNativeSystemInfoAvailable() {
+  return true;
+}
+
+inline void os::Kernel32Dll::GetNativeSystemInfo(LPSYSTEM_INFO lpSystemInfo) {
+  ::GetNativeSystemInfo(lpSystemInfo);
+}
+
+// PSAPI API
+inline BOOL os::PSApiDll::EnumProcessModules(HANDLE hProcess, HMODULE *lpModule, DWORD cb, LPDWORD lpcbNeeded) {
+  return ::EnumProcessModules(hProcess, lpModule, cb, lpcbNeeded);
+}
+
+inline DWORD os::PSApiDll::GetModuleFileNameEx(HANDLE hProcess, HMODULE hModule, LPTSTR lpFilename, DWORD nSize) {
+  return ::GetModuleFileNameEx(hProcess, hModule, lpFilename, nSize);
+}
+
+inline BOOL os::PSApiDll::GetModuleInformation(HANDLE hProcess, HMODULE hModule, LPMODULEINFO lpmodinfo, DWORD cb) {
+  return ::GetModuleInformation(hProcess, hModule, lpmodinfo, cb);
+}
+
+inline BOOL os::PSApiDll::PSApiAvailable() {
+  return true;
+}
+
+
+// WinSock2 API
+inline BOOL os::WinSock2Dll::WSAStartup(WORD wVersionRequested, LPWSADATA lpWSAData) {
+  return ::WSAStartup(wVersionRequested, lpWSAData);
+}
+
+inline struct hostent* os::WinSock2Dll::gethostbyname(const char *name) {
+  return ::gethostbyname(name);
+}
+
+inline BOOL os::WinSock2Dll::WinSock2Available() {
+  return true;
+}
+
+// Advapi API
+inline BOOL os::Advapi32Dll::AdjustTokenPrivileges(HANDLE TokenHandle,
+   BOOL DisableAllPrivileges, PTOKEN_PRIVILEGES NewState, DWORD BufferLength,
+   PTOKEN_PRIVILEGES PreviousState, PDWORD ReturnLength) {
+     return ::AdjustTokenPrivileges(TokenHandle, DisableAllPrivileges, NewState,
+       BufferLength, PreviousState, ReturnLength);
+}
+
+inline BOOL os::Advapi32Dll::OpenProcessToken(HANDLE ProcessHandle, DWORD DesiredAccess,
+  PHANDLE TokenHandle) {
+    return ::OpenProcessToken(ProcessHandle, DesiredAccess, TokenHandle);
+}
+
+inline BOOL os::Advapi32Dll::LookupPrivilegeValue(LPCTSTR lpSystemName, LPCTSTR lpName, PLUID lpLuid) {
+  return ::LookupPrivilegeValue(lpSystemName, lpName, lpLuid);
+}
+
+inline BOOL os::Advapi32Dll::AdvapiAvailable() {
+  return true;
+}
+
+#else
+// Kernel32 API
+typedef BOOL (WINAPI* SwitchToThread_Fn)(void);
+typedef HANDLE (WINAPI* CreateToolhelp32Snapshot_Fn)(DWORD,DWORD);
+typedef BOOL (WINAPI* Module32First_Fn)(HANDLE,LPMODULEENTRY32);
+typedef BOOL (WINAPI* Module32Next_Fn)(HANDLE,LPMODULEENTRY32);
+typedef void (WINAPI* GetNativeSystemInfo_Fn)(LPSYSTEM_INFO);
+
+SwitchToThread_Fn           os::Kernel32Dll::_SwitchToThread = NULL;
+CreateToolhelp32Snapshot_Fn os::Kernel32Dll::_CreateToolhelp32Snapshot = NULL;
+Module32First_Fn            os::Kernel32Dll::_Module32First = NULL;
+Module32Next_Fn             os::Kernel32Dll::_Module32Next = NULL;
+GetNativeSystemInfo_Fn      os::Kernel32Dll::_GetNativeSystemInfo = NULL;
+
+
+void os::Kernel32Dll::initialize() {
+  if (!initialized) {
+    HMODULE handle = ::GetModuleHandle("Kernel32.dll");
+    assert(handle != NULL, "Just check");
+
+    _SwitchToThread = (SwitchToThread_Fn)::GetProcAddress(handle, "SwitchToThread");
+    _CreateToolhelp32Snapshot = (CreateToolhelp32Snapshot_Fn)
+      ::GetProcAddress(handle, "CreateToolhelp32Snapshot");
+    _Module32First = (Module32First_Fn)::GetProcAddress(handle, "Module32First");
+    _Module32Next = (Module32Next_Fn)::GetProcAddress(handle, "Module32Next");
+    _GetNativeSystemInfo = (GetNativeSystemInfo_Fn)::GetProcAddress(handle, "GetNativeSystemInfo");
+    initializeCommon();  // resolve the functions that always need resolving
+
+    initialized = TRUE;
+  }
+}
+
+BOOL os::Kernel32Dll::SwitchToThread() {
+  assert(initialized && _SwitchToThread != NULL,
+    "SwitchToThreadAvailable() not yet called");
+  return _SwitchToThread();
+}
+
+
+BOOL os::Kernel32Dll::SwitchToThreadAvailable() {
+  if (!initialized) {
+    initialize();
+  }
+  return _SwitchToThread != NULL;
+}
+
+// Help tools
+BOOL os::Kernel32Dll::HelpToolsAvailable() {
+  if (!initialized) {
+    initialize();
+  }
+  return _CreateToolhelp32Snapshot != NULL &&
+         _Module32First != NULL &&
+         _Module32Next != NULL;
+}
+
+HANDLE os::Kernel32Dll::CreateToolhelp32Snapshot(DWORD dwFlags,DWORD th32ProcessId) {
+  assert(initialized && _CreateToolhelp32Snapshot != NULL,
+    "HelpToolsAvailable() not yet called");
+
+  return _CreateToolhelp32Snapshot(dwFlags, th32ProcessId);
+}
+
+BOOL os::Kernel32Dll::Module32First(HANDLE hSnapshot,LPMODULEENTRY32 lpme) {
+  assert(initialized && _Module32First != NULL,
+    "HelpToolsAvailable() not yet called");
+
+  return _Module32First(hSnapshot, lpme);
+}
+
+inline BOOL os::Kernel32Dll::Module32Next(HANDLE hSnapshot,LPMODULEENTRY32 lpme) {
+  assert(initialized && _Module32Next != NULL,
+    "HelpToolsAvailable() not yet called");
+
+  return _Module32Next(hSnapshot, lpme);
+}
+
+
+BOOL os::Kernel32Dll::GetNativeSystemInfoAvailable() {
+  if (!initialized) {
+    initialize();
+  }
+  return _GetNativeSystemInfo != NULL;
+}
+
+void os::Kernel32Dll::GetNativeSystemInfo(LPSYSTEM_INFO lpSystemInfo) {
+  assert(initialized && _GetNativeSystemInfo != NULL,
+    "GetNativeSystemInfoAvailable() not yet called");
+
+  _GetNativeSystemInfo(lpSystemInfo);
+}
+
+
+
+// PSAPI API
+
+
+typedef BOOL (WINAPI *EnumProcessModules_Fn)(HANDLE, HMODULE *, DWORD, LPDWORD);
+typedef BOOL (WINAPI *GetModuleFileNameEx_Fn)(HANDLE, HMODULE, LPTSTR, DWORD);;
+typedef BOOL (WINAPI *GetModuleInformation_Fn)(HANDLE, HMODULE, LPMODULEINFO, DWORD);
+
+EnumProcessModules_Fn   os::PSApiDll::_EnumProcessModules = NULL;
+GetModuleFileNameEx_Fn  os::PSApiDll::_GetModuleFileNameEx = NULL;
+GetModuleInformation_Fn os::PSApiDll::_GetModuleInformation = NULL;
+BOOL                    os::PSApiDll::initialized = FALSE;
+
+void os::PSApiDll::initialize() {
+  if (!initialized) {
+    HMODULE handle = os::win32::load_Windows_dll("PSAPI.DLL", NULL, 0);
+    if (handle != NULL) {
+      _EnumProcessModules = (EnumProcessModules_Fn)::GetProcAddress(handle,
+        "EnumProcessModules");
+      _GetModuleFileNameEx = (GetModuleFileNameEx_Fn)::GetProcAddress(handle,
+        "GetModuleFileNameExA");
+      _GetModuleInformation = (GetModuleInformation_Fn)::GetProcAddress(handle,
+        "GetModuleInformation");
+    }
+    initialized = TRUE;
+  }
+}
+
+
+
+BOOL os::PSApiDll::EnumProcessModules(HANDLE hProcess, HMODULE *lpModule, DWORD cb, LPDWORD lpcbNeeded) {
+  assert(initialized && _EnumProcessModules != NULL,
+    "PSApiAvailable() not yet called");
+  return _EnumProcessModules(hProcess, lpModule, cb, lpcbNeeded);
+}
+
+DWORD os::PSApiDll::GetModuleFileNameEx(HANDLE hProcess, HMODULE hModule, LPTSTR lpFilename, DWORD nSize) {
+  assert(initialized && _GetModuleFileNameEx != NULL,
+    "PSApiAvailable() not yet called");
+  return _GetModuleFileNameEx(hProcess, hModule, lpFilename, nSize);
+}
+
+BOOL os::PSApiDll::GetModuleInformation(HANDLE hProcess, HMODULE hModule, LPMODULEINFO lpmodinfo, DWORD cb) {
+  assert(initialized && _GetModuleInformation != NULL,
+    "PSApiAvailable() not yet called");
+  return _GetModuleInformation(hProcess, hModule, lpmodinfo, cb);
+}
+
+BOOL os::PSApiDll::PSApiAvailable() {
+  if (!initialized) {
+    initialize();
+  }
+  return _EnumProcessModules != NULL &&
+    _GetModuleFileNameEx != NULL &&
+    _GetModuleInformation != NULL;
+}
+
+
+// WinSock2 API
+typedef int (PASCAL FAR* WSAStartup_Fn)(WORD, LPWSADATA);
+typedef struct hostent *(PASCAL FAR *gethostbyname_Fn)(...);
+
+WSAStartup_Fn    os::WinSock2Dll::_WSAStartup = NULL;
+gethostbyname_Fn os::WinSock2Dll::_gethostbyname = NULL;
+BOOL             os::WinSock2Dll::initialized = FALSE;
+
+void os::WinSock2Dll::initialize() {
+  if (!initialized) {
+    HMODULE handle = os::win32::load_Windows_dll("ws2_32.dll", NULL, 0);
+    if (handle != NULL) {
+      _WSAStartup = (WSAStartup_Fn)::GetProcAddress(handle, "WSAStartup");
+      _gethostbyname = (gethostbyname_Fn)::GetProcAddress(handle, "gethostbyname");
+    }
+    initialized = TRUE;
+  }
+}
+
+
+BOOL os::WinSock2Dll::WSAStartup(WORD wVersionRequested, LPWSADATA lpWSAData) {
+  assert(initialized && _WSAStartup != NULL,
+    "WinSock2Available() not yet called");
+  return _WSAStartup(wVersionRequested, lpWSAData);
+}
+
+struct hostent* os::WinSock2Dll::gethostbyname(const char *name) {
+  assert(initialized && _gethostbyname != NULL,
+    "WinSock2Available() not yet called");
+  return _gethostbyname(name);
+}
+
+BOOL os::WinSock2Dll::WinSock2Available() {
+  if (!initialized) {
+    initialize();
+  }
+  return _WSAStartup != NULL &&
+    _gethostbyname != NULL;
+}
+
+typedef BOOL (WINAPI *AdjustTokenPrivileges_Fn)(HANDLE, BOOL, PTOKEN_PRIVILEGES, DWORD, PTOKEN_PRIVILEGES, PDWORD);
+typedef BOOL (WINAPI *OpenProcessToken_Fn)(HANDLE, DWORD, PHANDLE);
+typedef BOOL (WINAPI *LookupPrivilegeValue_Fn)(LPCTSTR, LPCTSTR, PLUID);
+
+AdjustTokenPrivileges_Fn os::Advapi32Dll::_AdjustTokenPrivileges = NULL;
+OpenProcessToken_Fn      os::Advapi32Dll::_OpenProcessToken = NULL;
+LookupPrivilegeValue_Fn  os::Advapi32Dll::_LookupPrivilegeValue = NULL;
+BOOL                     os::Advapi32Dll::initialized = FALSE;
+
+void os::Advapi32Dll::initialize() {
+  if (!initialized) {
+    HMODULE handle = os::win32::load_Windows_dll("advapi32.dll", NULL, 0);
+    if (handle != NULL) {
+      _AdjustTokenPrivileges = (AdjustTokenPrivileges_Fn)::GetProcAddress(handle,
+        "AdjustTokenPrivileges");
+      _OpenProcessToken = (OpenProcessToken_Fn)::GetProcAddress(handle,
+        "OpenProcessToken");
+      _LookupPrivilegeValue = (LookupPrivilegeValue_Fn)::GetProcAddress(handle,
+        "LookupPrivilegeValueA");
+    }
+    initialized = TRUE;
+  }
+}
+
+BOOL os::Advapi32Dll::AdjustTokenPrivileges(HANDLE TokenHandle,
+   BOOL DisableAllPrivileges, PTOKEN_PRIVILEGES NewState, DWORD BufferLength,
+   PTOKEN_PRIVILEGES PreviousState, PDWORD ReturnLength) {
+   assert(initialized && _AdjustTokenPrivileges != NULL,
+     "AdvapiAvailable() not yet called");
+   return _AdjustTokenPrivileges(TokenHandle, DisableAllPrivileges, NewState,
+       BufferLength, PreviousState, ReturnLength);
+}
+
+BOOL os::Advapi32Dll::OpenProcessToken(HANDLE ProcessHandle, DWORD DesiredAccess,
+  PHANDLE TokenHandle) {
+   assert(initialized && _OpenProcessToken != NULL,
+     "AdvapiAvailable() not yet called");
+    return _OpenProcessToken(ProcessHandle, DesiredAccess, TokenHandle);
+}
+
+BOOL os::Advapi32Dll::LookupPrivilegeValue(LPCTSTR lpSystemName, LPCTSTR lpName, PLUID lpLuid) {
+   assert(initialized && _LookupPrivilegeValue != NULL,
+     "AdvapiAvailable() not yet called");
+  return _LookupPrivilegeValue(lpSystemName, lpName, lpLuid);
+}
+
+BOOL os::Advapi32Dll::AdvapiAvailable() {
+  if (!initialized) {
+    initialize();
+  }
+  return _AdjustTokenPrivileges != NULL &&
+    _OpenProcessToken != NULL &&
+    _LookupPrivilegeValue != NULL;
+}
+
+#endif

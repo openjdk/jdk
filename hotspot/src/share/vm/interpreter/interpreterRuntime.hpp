@@ -41,6 +41,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 
 // The InterpreterRuntime is called by the interpreter for everything
 // that cannot/should not be dealt with in assembly and needs C support.
@@ -98,7 +101,6 @@ class InterpreterRuntime: AllStatic {
   static void    throw_StackOverflowError(JavaThread* thread);
   static void    throw_ArrayIndexOutOfBoundsException(JavaThread* thread, char* name, jint index);
   static void    throw_ClassCastException(JavaThread* thread, oopDesc* obj);
-  static void    throw_WrongMethodTypeException(JavaThread* thread, oopDesc* mtype = NULL, oopDesc* mhandle = NULL);
   static void    create_exception(JavaThread* thread, char* name, char* message);
   static void    create_klass_exception(JavaThread* thread, char* name, oopDesc* obj);
   static address exception_handler_for_exception(JavaThread* thread, oopDesc* exception);
@@ -142,8 +144,8 @@ class InterpreterRuntime: AllStatic {
                                         methodOopDesc* method,
                                         intptr_t* from, intptr_t* to);
 
-#if defined(IA32) || defined(AMD64)
-  // Popframe support (only needed on x86 and AMD64)
+#if defined(IA32) || defined(AMD64) || defined(ARM)
+  // Popframe support (only needed on x86, AMD64 and ARM)
   static void popframe_move_outgoing_args(JavaThread* thread, void* src_address, void* dest_address);
 #endif
 

@@ -38,14 +38,9 @@
  * The GLXSDOps structure contains the GLX-specific information for a given
  * OGLSurfaceData.  It is referenced by the native OGLSDOps structure.
  *
- *     Window window; (used in XAWT only)
+ *     Window window;
  * For onscreen windows, we maintain a reference to that window's associated
  * XWindow handle here.  Offscreen surfaces have no associated Window, so for
- * those surfaces, this value will simply be zero.
- *
- *     Widget widget; (used in MAWT only)
- * For onscreen windows, we maintain a reference to that window's associated
- * Widget handle here.  Offscreen surfaces have no associated Widget, so for
  * those surfaces, this value will simply be zero.
  *
  *     Drawable xdrawable;
@@ -63,11 +58,7 @@
  * created.
  */
 typedef struct _GLXSDOps {
-#ifdef XAWT
     Window      window;
-#else
-    Widget      widget;
-#endif
     Drawable    xdrawable;
     GLXDrawable drawable;
     struct _AwtGraphicsConfigData *configData;

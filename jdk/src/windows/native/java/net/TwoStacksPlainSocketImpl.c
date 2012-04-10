@@ -576,6 +576,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
 {
     /* fields on this */
     jint port;
+    jint scope;
     jint timeout = (*env)->GetIntField(env, this, psi_timeoutID);
     jobject fdObj = (*env)->GetObjectField(env, this, psi_fdID);
     jobject fd1Obj = (*env)->GetObjectField(env, this, psi_fd1ID);
@@ -755,7 +756,11 @@ Java_java_net_TwoStacksPlainSocketImpl_socketAccept(JNIEnv *env, jobject this,
         addr = (*env)->GetObjectField (env, socketAddressObj, ia6_ipaddressID);
         (*env)->SetByteArrayRegion (env, addr, 0, 16, (const char *)&him.him6.sin6_addr);
         (*env)->SetIntField(env, socketAddressObj, ia_familyID, IPv6);
-        (*env)->SetIntField(env, socketAddressObj, ia6_scopeidID, him.him6.sin6_scope_id);
+        scope = him.him6.sin6_scope_id;
+        (*env)->SetIntField(env, socketAddressObj, ia6_scopeidID, scope);
+        if(scope>0) {
+            (*env)->SetBooleanField(env, socketAddressObj, ia6_scopeidsetID, JNI_TRUE);
+        }
     }
     /* fields common to AF_INET and AF_INET6 */
 

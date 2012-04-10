@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
 
 package com.sun.management;
 
+import java.util.List;
 import java.lang.management.PlatformManagedObject;
 
 /**
  * Diagnostic management interface for the HotSpot Virtual Machine.
- * The diagnostic MBean is registered to the platform MBeanServer
+ *
+ * <p>The diagnostic MBean is registered to the platform MBeanServer
  * as are other platform MBeans.
  *
  * <p>The <tt>ObjectName</tt> for uniquely identifying the diagnostic
@@ -40,6 +42,9 @@ import java.lang.management.PlatformManagedObject;
 .*
  * It can be obtained by calling the
  * {@link PlatformManagedObject#getObjectName} method.
+ *
+ * All methods throw a {@code NullPointerException} if any input argument is
+ * {@code null} unless it's stated otherwise.
  *
  * @see ManagementFactory#getPlatformMXBeans(Class)
  */
@@ -101,7 +106,7 @@ public interface HotSpotDiagnosticMXBean extends PlatformManagedObject {
      * @throws IllegalArgumentException if the VM option is not writeable.
      * @throws NullPointerException if name or value is <tt>null</tt>.
      *
-     * @throws  java.security.SecurityException
+     * @throws  java.lang.SecurityException
      *     if a security manager exists and the caller does not have
      *     ManagementPermission("control").
      */

@@ -30,6 +30,7 @@
 #include "interpreter/rewriter.hpp"
 #include "memory/gcLocker.hpp"
 #include "memory/universe.inline.hpp"
+#include "oops/fieldStreams.hpp"
 #include "oops/klassVtable.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
@@ -551,39 +552,33 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
 
   // Check if the number, names, types and order of fields declared in these classes
   // are the same.
-  typeArrayOop k_old_fields = the_class->fields();
-  typeArrayOop k_new_fields = scratch_class->fields();
-  int n_fields = k_old_fields->length();
-  if (n_fields != k_new_fields->length()) {
-    return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
-  }
-
-  for (i = 0; i < n_fields; i += instanceKlass::next_offset) {
+  JavaFieldStream old_fs(the_class);
+  JavaFieldStream new_fs(scratch_class);
+  for (; !old_fs.done() && !new_fs.done(); old_fs.next(), new_fs.next()) {
     // access
-    old_flags = k_old_fields->ushort_at(i + instanceKlass::access_flags_offset);
-    new_flags = k_new_fields->ushort_at(i + instanceKlass::access_flags_offset);
+    old_flags = old_fs.access_flags().as_short();
+    new_flags = new_fs.access_flags().as_short();
     if ((old_flags ^ new_flags) & JVM_RECOGNIZED_FIELD_MODIFIERS) {
       return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
     }
     // offset
-    if (k_old_fields->short_at(i + instanceKlass::low_offset) !=
-        k_new_fields->short_at(i + instanceKlass::low_offset) ||
-        k_old_fields->short_at(i + instanceKlass::high_offset) !=
-        k_new_fields->short_at(i + instanceKlass::high_offset)) {
+    if (old_fs.offset() != new_fs.offset()) {
       return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
     }
     // name and signature
-    jshort name_index = k_old_fields->short_at(i + instanceKlass::name_index_offset);
-    jshort sig_index = k_old_fields->short_at(i +instanceKlass::signature_index_offset);
-    Symbol* name_sym1 = the_class->constants()->symbol_at(name_index);
-    Symbol* sig_sym1 = the_class->constants()->symbol_at(sig_index);
-    name_index = k_new_fields->short_at(i + instanceKlass::name_index_offset);
-    sig_index = k_new_fields->short_at(i + instanceKlass::signature_index_offset);
-    Symbol* name_sym2 = scratch_class->constants()->symbol_at(name_index);
-    Symbol* sig_sym2 = scratch_class->constants()->symbol_at(sig_index);
+    Symbol* name_sym1 = the_class->constants()->symbol_at(old_fs.name_index());
+    Symbol* sig_sym1 = the_class->constants()->symbol_at(old_fs.signature_index());
+    Symbol* name_sym2 = scratch_class->constants()->symbol_at(new_fs.name_index());
+    Symbol* sig_sym2 = scratch_class->constants()->symbol_at(new_fs.signature_index());
     if (name_sym1 != name_sym2 || sig_sym1 != sig_sym2) {
       return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
     }
+  }
+
+  // If both streams aren't done then we have a differing number of
+  // fields.
+  if (!old_fs.done() || !new_fs.done()) {
+    return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
   }
 
   // Do a parallel walk through the old and new methods. Detect
@@ -859,8 +854,9 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
 
     // RC_TRACE_WITH_THREAD macro has an embedded ResourceMark
     RC_TRACE_WITH_THREAD(0x00000001, THREAD,
-      ("loading name=%s (avail_mem=" UINT64_FORMAT "K)",
-      the_class->external_name(), os::available_memory() >> 10));
+      ("loading name=%s kind=%d (avail_mem=" UINT64_FORMAT "K)",
+      the_class->external_name(), _class_load_kind,
+      os::available_memory() >> 10));
 
     ClassFileStream st((u1*) _class_defs[i].class_bytes,
       _class_defs[i].class_byte_count, (char *)"__VM_RedefineClasses__");
@@ -992,6 +988,9 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
     }
 
     Rewriter::rewrite(scratch_class, THREAD);
+    if (!HAS_PENDING_EXCEPTION) {
+      Rewriter::relocate_and_link(scratch_class, THREAD);
+    }
     if (HAS_PENDING_EXCEPTION) {
       Symbol* ex_name = PENDING_EXCEPTION->klass()->klass_part()->name();
       CLEAR_PENDING_EXCEPTION;
@@ -2366,38 +2365,34 @@ void VM_RedefineClasses::set_new_constant_pool(
   int i;  // for portability
 
   // update each field in klass to use new constant pool indices as needed
-  typeArrayHandle fields(THREAD, scratch_class->fields());
-  int n_fields = fields->length();
-  for (i = 0; i < n_fields; i += instanceKlass::next_offset) {
-    jshort cur_index = fields->short_at(i + instanceKlass::name_index_offset);
+  for (JavaFieldStream fs(scratch_class); !fs.done(); fs.next()) {
+    jshort cur_index = fs.name_index();
     jshort new_index = find_new_index(cur_index);
     if (new_index != 0) {
       RC_TRACE_WITH_THREAD(0x00080000, THREAD,
         ("field-name_index change: %d to %d", cur_index, new_index));
-      fields->short_at_put(i + instanceKlass::name_index_offset, new_index);
+      fs.set_name_index(new_index);
     }
-    cur_index = fields->short_at(i + instanceKlass::signature_index_offset);
+    cur_index = fs.signature_index();
     new_index = find_new_index(cur_index);
     if (new_index != 0) {
       RC_TRACE_WITH_THREAD(0x00080000, THREAD,
         ("field-signature_index change: %d to %d", cur_index, new_index));
-      fields->short_at_put(i + instanceKlass::signature_index_offset,
-        new_index);
+      fs.set_signature_index(new_index);
     }
-    cur_index = fields->short_at(i + instanceKlass::initval_index_offset);
+    cur_index = fs.initval_index();
     new_index = find_new_index(cur_index);
     if (new_index != 0) {
       RC_TRACE_WITH_THREAD(0x00080000, THREAD,
         ("field-initval_index change: %d to %d", cur_index, new_index));
-      fields->short_at_put(i + instanceKlass::initval_index_offset, new_index);
+      fs.set_initval_index(new_index);
     }
-    cur_index = fields->short_at(i + instanceKlass::generic_signature_offset);
+    cur_index = fs.generic_signature_index();
     new_index = find_new_index(cur_index);
     if (new_index != 0) {
       RC_TRACE_WITH_THREAD(0x00080000, THREAD,
         ("field-generic_signature change: %d to %d", cur_index, new_index));
-      fields->short_at_put(i + instanceKlass::generic_signature_offset,
-        new_index);
+      fs.set_generic_signature_index(new_index);
     }
   } // end for each field
 
@@ -2405,44 +2400,33 @@ void VM_RedefineClasses::set_new_constant_pool(
   // new constant indices as needed. The inner classes info is a
   // quadruple:
   // (inner_class_info, outer_class_info, inner_name, inner_access_flags)
-  typeArrayOop inner_class_list = scratch_class->inner_classes();
-  int icl_length = (inner_class_list == NULL) ? 0 : inner_class_list->length();
-  if (icl_length > 0) {
-    typeArrayHandle inner_class_list_h(THREAD, inner_class_list);
-    for (int i = 0; i < icl_length;
-         i += instanceKlass::inner_class_next_offset) {
-      int cur_index = inner_class_list_h->ushort_at(i
-                        + instanceKlass::inner_class_inner_class_info_offset);
-      if (cur_index == 0) {
-        continue;  // JVM spec. allows null inner class refs so skip it
-      }
-      int new_index = find_new_index(cur_index);
-      if (new_index != 0) {
-        RC_TRACE_WITH_THREAD(0x00080000, THREAD,
-          ("inner_class_info change: %d to %d", cur_index, new_index));
-        inner_class_list_h->ushort_at_put(i
-          + instanceKlass::inner_class_inner_class_info_offset, new_index);
-      }
-      cur_index = inner_class_list_h->ushort_at(i
-                    + instanceKlass::inner_class_outer_class_info_offset);
-      new_index = find_new_index(cur_index);
-      if (new_index != 0) {
-        RC_TRACE_WITH_THREAD(0x00080000, THREAD,
-          ("outer_class_info change: %d to %d", cur_index, new_index));
-        inner_class_list_h->ushort_at_put(i
-          + instanceKlass::inner_class_outer_class_info_offset, new_index);
-      }
-      cur_index = inner_class_list_h->ushort_at(i
-                    + instanceKlass::inner_class_inner_name_offset);
-      new_index = find_new_index(cur_index);
-      if (new_index != 0) {
-        RC_TRACE_WITH_THREAD(0x00080000, THREAD,
-          ("inner_name change: %d to %d", cur_index, new_index));
-        inner_class_list_h->ushort_at_put(i
-          + instanceKlass::inner_class_inner_name_offset, new_index);
-      }
-    } // end for each inner class
-  } // end if we have inner classes
+  InnerClassesIterator iter(scratch_class);
+  for (; !iter.done(); iter.next()) {
+    int cur_index = iter.inner_class_info_index();
+    if (cur_index == 0) {
+      continue;  // JVM spec. allows null inner class refs so skip it
+    }
+    int new_index = find_new_index(cur_index);
+    if (new_index != 0) {
+      RC_TRACE_WITH_THREAD(0x00080000, THREAD,
+        ("inner_class_info change: %d to %d", cur_index, new_index));
+      iter.set_inner_class_info_index(new_index);
+    }
+    cur_index = iter.outer_class_info_index();
+    new_index = find_new_index(cur_index);
+    if (new_index != 0) {
+      RC_TRACE_WITH_THREAD(0x00080000, THREAD,
+        ("outer_class_info change: %d to %d", cur_index, new_index));
+      iter.set_outer_class_info_index(new_index);
+    }
+    cur_index = iter.inner_name_index();
+    new_index = find_new_index(cur_index);
+    if (new_index != 0) {
+      RC_TRACE_WITH_THREAD(0x00080000, THREAD,
+        ("inner_name change: %d to %d", cur_index, new_index));
+      iter.set_inner_name_index(new_index);
+    }
+  } // end for each inner class
 
   // Attach each method in klass to the new constant pool and update
   // to use new constant pool indices as needed:
@@ -3211,8 +3195,20 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   // with them was cached on the scratch class, move to the_class.
   // Note: we still want to do this if nothing needed caching since it
   // should get cleared in the_class too.
-  the_class->set_cached_class_file(scratch_class->get_cached_class_file_bytes(),
-                                   scratch_class->get_cached_class_file_len());
+  if (the_class->get_cached_class_file_bytes() == 0) {
+    // the_class doesn't have a cache yet so copy it
+    the_class->set_cached_class_file(
+      scratch_class->get_cached_class_file_bytes(),
+      scratch_class->get_cached_class_file_len());
+  }
+#ifndef PRODUCT
+  else {
+    assert(the_class->get_cached_class_file_bytes() ==
+      scratch_class->get_cached_class_file_bytes(), "cache ptrs must match");
+    assert(the_class->get_cached_class_file_len() ==
+      scratch_class->get_cached_class_file_len(), "cache lens must match");
+  }
+#endif
 
   // Replace inner_classes
   typeArrayOop old_inner_classes = the_class->inner_classes();

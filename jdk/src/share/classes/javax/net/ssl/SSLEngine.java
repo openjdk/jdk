@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -538,7 +538,7 @@ public abstract class SSLEngine {
      * If this <code>SSLEngine</code> has not yet started its initial
      * handshake, this method will automatically start the handshake.
      * <P>
-     * This method will attempt to produce one SSL/TLS packet, and will
+     * This method will attempt to produce SSL/TLS records, and will
      * consume as much source data as possible, but will never consume
      * more than the sum of the bytes remaining in each buffer.  Each
      * <code>ByteBuffer</code>'s position is updated to reflect the

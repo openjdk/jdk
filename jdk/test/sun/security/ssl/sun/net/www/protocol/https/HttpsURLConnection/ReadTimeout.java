@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,13 @@
 /*
  * @test
  * @bug 4811482 4700777 4905410
- * @summary sun.net.client.defaultConnectTimeout should work with HttpsURLConnection; HTTP client: Connect and read timeouts; Https needs to support new tiger features that went into http
+ * @summary sun.net.client.defaultConnectTimeout should work with
+ *     HttpsURLConnection; HTTP client: Connect and read timeouts;
+ *     Https needs to support new tiger features that went into http
+ * @run main/othervm ReadTimeout
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  */
 
 import java.io.*;
@@ -143,44 +149,48 @@ public class ReadTimeout {
      * to avoid infinite hangs.
      */
     void doClientSide() throws Exception {
-
-        /*
-         * Wait for server to get started.
-         */
-        while (!serverReady) {
-            Thread.sleep(50);
-        }
-        HttpsURLConnection http = null;
+        HostnameVerifier reservedHV =
+            HttpsURLConnection.getDefaultHostnameVerifier();
         try {
-            URL url = new URL("https://localhost:"+serverPort);
+            /*
+             * Wait for server to get started.
+             */
+            while (!serverReady) {
+                Thread.sleep(50);
+            }
+            HttpsURLConnection http = null;
+            try {
+                URL url = new URL("https://localhost:"+serverPort);
 
-            // set read timeout through system property
-            System.setProperty("sun.net.client.defaultReadTimeout", "2000");
-            HttpsURLConnection.setDefaultHostnameVerifier(
-                                      new NameVerifier());
-            http = (HttpsURLConnection)url.openConnection();
+                // set read timeout through system property
+                System.setProperty("sun.net.client.defaultReadTimeout", "2000");
+                HttpsURLConnection.setDefaultHostnameVerifier(
+                                          new NameVerifier());
+                http = (HttpsURLConnection)url.openConnection();
 
-            InputStream is = http.getInputStream ();
-        } catch (SocketTimeoutException stex) {
-            done();
-            http.disconnect();
+                InputStream is = http.getInputStream ();
+            } catch (SocketTimeoutException stex) {
+                done();
+                http.disconnect();
+            }
+
+            try {
+                URL url = new URL("https://localhost:"+serverPort);
+
+                HttpsURLConnection.setDefaultHostnameVerifier(
+                                          new NameVerifier());
+                http = (HttpsURLConnection)url.openConnection();
+                // set read timeout through API
+                http.setReadTimeout(2000);
+
+                InputStream is = http.getInputStream ();
+            } catch (SocketTimeoutException stex) {
+                done();
+                http.disconnect();
+            }
+        } finally {
+            HttpsURLConnection.setDefaultHostnameVerifier(reservedHV);
         }
-
-        try {
-            URL url = new URL("https://localhost:"+serverPort);
-
-            HttpsURLConnection.setDefaultHostnameVerifier(
-                                      new NameVerifier());
-            http = (HttpsURLConnection)url.openConnection();
-            // set read timeout through API
-            http.setReadTimeout(2000);
-
-            InputStream is = http.getInputStream ();
-        } catch (SocketTimeoutException stex) {
-            done();
-            http.disconnect();
-        }
-
     }
 
     static class NameVerifier implements HostnameVerifier {

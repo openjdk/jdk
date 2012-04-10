@@ -34,6 +34,7 @@
 #   JMAP        - jmap utility
 #   JPS         - jps utility
 #   JSTACK      - jstack utility
+#   JCMD        - jcmd utility
 #   OS          - operating system name
 #   PATTERN_EOL - grep or sed end-of-line pattern
 #   PATTERN_WS  - grep or sed whitespace pattern
@@ -46,6 +47,7 @@
 #   isLinux   - true if OS is Linux
 #   isSolaris - true if OS is Solaris
 #   isWindows - true if OS is Windows
+#   isMacos   - true if OS is Macos X
 
 
 if [ -z "${TESTJAVA}" ]; then
@@ -72,6 +74,7 @@ JINFO="${TESTJAVA}/bin/jinfo"
 JMAP="${TESTJAVA}/bin/jmap"
 JPS="${TESTJAVA}/bin/jps"
 JSTACK="${TESTJAVA}/bin/jstack"
+JCMD="${TESTJAVA}/bin/jcmd"
 
 isCygwin=false
 isMKS=false
@@ -79,6 +82,7 @@ isLinux=false
 isSolaris=false
 isUnknownOS=false
 isWindows=false
+isMacos=false
 
 OS=`uname -s`
 
@@ -100,6 +104,10 @@ case "$OS" in
   Linux )
     OS="Linux"
     isLinux=true
+    ;;
+  Darwin )
+    OS="Mac OS X"
+    isMacos=true
     ;;
   SunOS )
     OS="Solaris"

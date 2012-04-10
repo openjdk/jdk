@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1489,6 +1489,8 @@ public class Collections {
                 }
                 public int hashCode()    {return e.hashCode();}
                 public boolean equals(Object o) {
+                    if (this == o)
+                        return true;
                     if (!(o instanceof Map.Entry))
                         return false;
                     Map.Entry t = (Map.Entry)o;
@@ -1709,6 +1711,8 @@ public class Collections {
         }
 
         public boolean equals(Object o) {
+            if (this == o)
+                return true;
             synchronized (mutex) {return c.equals(o);}
         }
         public int hashCode() {
@@ -1863,6 +1867,8 @@ public class Collections {
         }
 
         public boolean equals(Object o) {
+            if (this == o)
+                return true;
             synchronized (mutex) {return list.equals(o);}
         }
         public int hashCode() {
@@ -2073,6 +2079,8 @@ public class Collections {
         }
 
         public boolean equals(Object o) {
+            if (this == o)
+                return true;
             synchronized (mutex) {return m.equals(o);}
         }
         public int hashCode() {
@@ -2348,6 +2356,64 @@ public class Collections {
             // semantics (which we wouldn't get if we type-checked each
             // element as we added it)
             return c.addAll(checkedCopyOf(coll));
+        }
+    }
+
+    /**
+     * Returns a dynamically typesafe view of the specified queue.
+     * Any attempt to insert an element of the wrong type will result in
+     * an immediate {@link ClassCastException}.  Assuming a queue contains
+     * no incorrectly typed elements prior to the time a dynamically typesafe
+     * view is generated, and that all subsequent access to the queue
+     * takes place through the view, it is <i>guaranteed</i> that the
+     * queue cannot contain an incorrectly typed element.
+     *
+     * <p>A discussion of the use of dynamically typesafe views may be
+     * found in the documentation for the {@link #checkedCollection
+     * checkedCollection} method.
+     *
+     * <p>The returned queue will be serializable if the specified queue
+     * is serializable.
+     *
+     * <p>Since {@code null} is considered to be a value of any reference
+     * type, the returned queue permits insertion of {@code null} elements
+     * whenever the backing queue does.
+     *
+     * @param queue the queue for which a dynamically typesafe view is to be
+     *             returned
+     * @param type the type of element that {@code queue} is permitted to hold
+     * @return a dynamically typesafe view of the specified queue
+     * @since 1.8
+     */
+    public static <E> Queue<E> checkedQueue(Queue<E> queue, Class<E> type) {
+        return new CheckedQueue<>(queue, type);
+    }
+
+    /**
+     * @serial include
+     */
+    static class CheckedQueue<E>
+        extends CheckedCollection<E>
+        implements Queue<E>, Serializable
+    {
+        private static final long serialVersionUID = 1433151992604707767L;
+        final Queue<E> queue;
+
+        CheckedQueue(Queue<E> queue, Class<E> elementType) {
+            super(queue, elementType);
+            this.queue = queue;
+        }
+
+        public E element()              {return queue.element();}
+        public boolean equals(Object o) {return o == this || c.equals(o);}
+        public int hashCode()           {return c.hashCode();}
+        public E peek()                 {return queue.peek();}
+        public E poll()                 {return queue.poll();}
+        public E remove()               {return queue.remove();}
+
+        public boolean offer(E e) {
+            typeCheck(e);
+            return add(e);
         }
     }
 
@@ -3140,6 +3206,102 @@ public class Collections {
         // Preserves singleton property
         private Object readResolve() {
             return EMPTY_SET;
+        }
+    }
+
+    /**
+     * Returns the empty sorted set (immutable).  This set is serializable.
+     *
+     * <p>This example illustrates the type-safe way to obtain an empty sorted
+     * set:
+     * <pre>
+     *     SortedSet&lt;String&gt; s = Collections.emptySortedSet();
+     * </pre>
+     * Implementation note:  Implementations of this method need not
+     * create a separate <tt>SortedSet</tt> object for each call.
+     *
+     * @since 1.8
+     */
+    @SuppressWarnings("unchecked")
+    public static final <E> SortedSet<E> emptySortedSet() {
+        return (SortedSet<E>) new EmptySortedSet<>();
+    }
+
+    /**
+     * @serial include
+     */
+    private static class EmptySortedSet<E>
+        extends AbstractSet<E>
+        implements SortedSet<E>, Serializable
+    {
+        private static final long serialVersionUID = 6316515401502265487L;
+        public Iterator<E> iterator() { return emptyIterator(); }
+        public int size() {return 0;}
+        public boolean isEmpty() {return true;}
+        public boolean contains(Object obj) {return false;}
+        public boolean containsAll(Collection<?> c) { return c.isEmpty(); }
+        public Object[] toArray() { return new Object[0]; }
+
+        public <E> E[] toArray(E[] a) {
+            if (a.length > 0)
+                a[0] = null;
+            return a;
+        }
+
+        // Preserves singleton property
+        private Object readResolve() {
+            return new EmptySortedSet<>();
+        }
+
+        public Comparator comparator() {
+            return null;
+        }
+
+        public SortedSet<E> subSet(Object fromElement, Object toElement) {
+            Objects.requireNonNull(fromElement);
+            Objects.requireNonNull(toElement);
+
+            if (!(fromElement instanceof Comparable) ||
+                    !(toElement instanceof Comparable))
+            {
+                throw new ClassCastException();
+            }
+
+            if ((((Comparable)fromElement).compareTo(toElement) >= 0) ||
+                    (((Comparable)toElement).compareTo(fromElement) < 0))
+            {
+                throw new IllegalArgumentException();
+            }
+
+            return emptySortedSet();
+        }
+
+        public SortedSet<E> headSet(Object toElement) {
+            Objects.requireNonNull(toElement);
+
+            if (!(toElement instanceof Comparable)) {
+                throw new ClassCastException();
+            }
+
+            return emptySortedSet();
+        }
+
+        public SortedSet<E> tailSet(Object fromElement) {
+            Objects.requireNonNull(fromElement);
+
+            if (!(fromElement instanceof Comparable)) {
+                throw new ClassCastException();
+            }
+
+            return emptySortedSet();
+        }
+
+        public E first() {
+            throw new NoSuchElementException();
+        }
+
+        public E last() {
+            throw new NoSuchElementException();
         }
     }
 

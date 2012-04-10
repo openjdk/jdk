@@ -25,6 +25,7 @@
 
 #include <jni.h>
 #include <jni_util.h>
+#include <jvm_md.h>
 #include <dlfcn.h>
 #include <cups/cups.h>
 #include <cups/ppd.h>
@@ -65,10 +66,11 @@ fn_ppdPageSize j2d_ppdPageSize;
 JNIEXPORT jboolean JNICALL
 Java_sun_print_CUPSPrinter_initIDs(JNIEnv *env,
                                          jobject printObj) {
-  void *handle = dlopen("libcups.so.2", RTLD_LAZY | RTLD_GLOBAL);
+  void *handle = dlopen(VERSIONED_JNI_LIB_NAME("cups", "2"),
+                        RTLD_LAZY | RTLD_GLOBAL);
 
   if (handle == NULL) {
-    handle = dlopen("libcups.so", RTLD_LAZY | RTLD_GLOBAL);
+    handle = dlopen(JNI_LIB_NAME("cups"), RTLD_LAZY | RTLD_GLOBAL);
     if (handle == NULL) {
       return JNI_FALSE;
     }

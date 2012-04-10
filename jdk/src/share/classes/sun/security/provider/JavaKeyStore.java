@@ -54,7 +54,7 @@ abstract class JavaKeyStore extends KeyStoreSpi {
     // regular JKS
     public static final class JKS extends JavaKeyStore {
         String convertAlias(String alias) {
-            return alias.toLowerCase();
+            return alias.toLowerCase(Locale.ENGLISH);
         }
     }
 

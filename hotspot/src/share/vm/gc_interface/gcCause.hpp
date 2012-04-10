@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ class GCCause : public AllStatic {
     _adaptive_size_policy,
 
     _g1_inc_collection_pause,
+    _g1_humongous_allocation,
 
     _last_ditch_collection,
     _last_gc_cause

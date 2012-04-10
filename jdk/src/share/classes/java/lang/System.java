@@ -632,6 +632,7 @@ public final class System {
      *
      * <p>On UNIX systems, it returns {@code "\n"}; on Microsoft
      * Windows systems it returns {@code "\r\n"}.
+     * @since 1.7
      */
     public static String lineSeparator() {
         return lineSeparator;
@@ -1031,7 +1032,7 @@ public final class System {
      */
     @Deprecated
     public static void runFinalizersOnExit(boolean value) {
-        Runtime.getRuntime().runFinalizersOnExit(value);
+        Runtime.runFinalizersOnExit(value);
     }
 
     /**
@@ -1099,6 +1100,19 @@ public final class System {
     public static native String mapLibraryName(String libname);
 
     /**
+     * Create PrintStream for stdout/err based on encoding.
+     */
+    private static PrintStream newPrintStream(FileOutputStream fos, String enc) {
+       if (enc != null) {
+            try {
+                return new PrintStream(new BufferedOutputStream(fos, 128), true, enc);
+            } catch (UnsupportedEncodingException uee) {}
+        }
+        return new PrintStream(new BufferedOutputStream(fos, 128), true);
+    }
+
+
+    /**
      * Initialize the system class.  Called after thread initialization.
      */
     private static void initializeSystemClass() {
@@ -1138,8 +1152,9 @@ public final class System {
         FileOutputStream fdOut = new FileOutputStream(FileDescriptor.out);
         FileOutputStream fdErr = new FileOutputStream(FileDescriptor.err);
         setIn0(new BufferedInputStream(fdIn));
-        setOut0(new PrintStream(new BufferedOutputStream(fdOut, 128), true));
-        setErr0(new PrintStream(new BufferedOutputStream(fdErr, 128), true));
+        setOut0(newPrintStream(fdOut, props.getProperty("sun.stdout.encoding")));
+        setErr0(newPrintStream(fdErr, props.getProperty("sun.stderr.encoding")));
+
         // Load the zip library now in order to keep java.util.zip.ZipFile
         // from trying to use itself to load this library later.
         loadLibrary("zip");
@@ -1153,11 +1168,6 @@ public final class System {
         // classes are used.
         sun.misc.VM.initializeOSEnvironment();
 
-        // Subsystems that are invoked during initialization can invoke
-        // sun.misc.VM.isBooted() in order to avoid doing things that should
-        // wait until the application class loader has been set up.
-        sun.misc.VM.booted();
-
         // The main thread is not added to its thread group in the same
         // way as other threads; we must do it ourselves here.
         Thread current = Thread.currentThread();
@@ -1165,18 +1175,24 @@ public final class System {
 
         // register shared secrets
         setJavaLangAccess();
+
+        // Subsystems that are invoked during initialization can invoke
+        // sun.misc.VM.isBooted() in order to avoid doing things that should
+        // wait until the application class loader has been set up.
+        // IMPORTANT: Ensure that this remains the last initialization action!
+        sun.misc.VM.booted();
     }
 
     private static void setJavaLangAccess() {
         // Allow privileged classes outside of java.lang
         sun.misc.SharedSecrets.setJavaLangAccess(new sun.misc.JavaLangAccess(){
-            public sun.reflect.ConstantPool getConstantPool(Class klass) {
+            public sun.reflect.ConstantPool getConstantPool(Class<?> klass) {
                 return klass.getConstantPool();
             }
-            public void setAnnotationType(Class klass, AnnotationType type) {
+            public void setAnnotationType(Class<?> klass, AnnotationType type) {
                 klass.setAnnotationType(type);
             }
-            public AnnotationType getAnnotationType(Class klass) {
+            public AnnotationType getAnnotationType(Class<?> klass) {
                 return klass.getAnnotationType();
             }
             public <E extends Enum<E>>

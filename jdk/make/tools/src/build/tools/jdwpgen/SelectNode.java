@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,10 @@ class SelectNode extends AbstractGroupNode implements TypeNode {
 
     void prune() {
         super.prune();
-        Iterator it = components.iterator();
+        Iterator<Node> it = components.iterator();
 
         if (it.hasNext()) {
-            Node typeNode = (Node)it.next();
+            Node typeNode = it.next();
 
             if (typeNode instanceof ByteTypeNode ||
                       typeNode instanceof IntTypeNode) {
@@ -131,8 +131,8 @@ class SelectNode extends AbstractGroupNode implements TypeNode {
         typeNode.genJavaRead(writer, depth, typeNode.name());
         indent(writer, depth);
         writer.println("switch (" + typeNode.name() + ") {");
-        for (Iterator it = components.iterator(); it.hasNext();) {
-            AltNode alt = (AltNode)it.next();
+        for (Node node : components) {
+            AltNode alt = (AltNode)node;
             alt.genJavaReadsSelectCase(writer, depth+1, commonVar());
         }
         indent(writer, depth);

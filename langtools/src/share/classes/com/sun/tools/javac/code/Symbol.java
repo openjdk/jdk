@@ -149,7 +149,8 @@ public abstract class Symbol implements Element {
      * the default package; otherwise, the owner symbol is returned
      */
     public Symbol location() {
-        if (owner.name == null || (owner.name.isEmpty() && owner.kind != PCK && owner.kind != TYP)) {
+        if (owner.name == null || (owner.name.isEmpty() &&
+                (owner.flags() & BLOCK) == 0 && owner.kind != PCK && owner.kind != TYP)) {
             return null;
         }
         return owner;
@@ -725,6 +726,11 @@ public abstract class Symbol implements Element {
          */
         public JavaFileObject classfile;
 
+        /** the list of translated local classes (used for generating
+         * InnerClasses attribute)
+         */
+        public List<ClassSymbol> trans_local;
+
         /** the constant pool of the class
          */
         public Pool pool;
@@ -1229,7 +1235,7 @@ public abstract class Symbol implements Element {
             // if origin is derived from a raw type, we might have missed
             // an implementation because we do not know enough about instantiations.
             // in this case continue with the supertype as origin.
-            if (types.isDerivedRaw(origin.type))
+            if (types.isDerivedRaw(origin.type) && !origin.isInterface())
                 return implementation(types.supertype(origin.type).tsym, types, checkResult);
             else
                 return null;
@@ -1299,8 +1305,15 @@ public abstract class Symbol implements Element {
                 return ElementKind.CONSTRUCTOR;
             else if (name == name.table.names.clinit)
                 return ElementKind.STATIC_INIT;
+            else if ((flags() & BLOCK) != 0)
+                return isStatic() ? ElementKind.STATIC_INIT : ElementKind.INSTANCE_INIT;
             else
                 return ElementKind.METHOD;
+        }
+
+        public boolean isStaticOrInstanceInit() {
+            return getKind() == ElementKind.STATIC_INIT ||
+                    getKind() == ElementKind.INSTANCE_INIT;
         }
 
         public Attribute getDefaultValue() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,7 +284,7 @@ Java_sun_java2d_loops_TransformHelper_Transform
     TransformHelperFunc *pHelperFunc;
     TransformInterpFunc *pInterpFunc;
     jdouble xorig, yorig;
-    jint numedges;
+    jlong numedges;
     jint *pEdges;
     jint edgebuf[2 + MAXEDGES * 2];
     union {
@@ -379,17 +379,42 @@ Java_sun_java2d_loops_TransformHelper_Transform
     }
     Region_IntersectBounds(&clipInfo, &dstInfo.bounds);
 
-    numedges = (dstInfo.bounds.y2 - dstInfo.bounds.y1);
-    if (numedges > MAXEDGES) {
-        pEdges = malloc((2 + 2 * numedges) * sizeof (*pEdges));
-        if (pEdges == NULL) {
-            SurfaceData_InvokeUnlock(env, dstOps, &dstInfo);
-            SurfaceData_InvokeUnlock(env, srcOps, &srcInfo);
-            /* edgeArray should already contain zeros for min/maxy */
-            return;
-        }
+    numedges = (((jlong) dstInfo.bounds.y2) - ((jlong) dstInfo.bounds.y1));
+    if (numedges <= 0) {
+        pEdges = NULL;
+    } else if (!JNU_IsNull(env, edgeArray)) {
+        /*
+         * Ideally Java should allocate an array large enough, but if
+         * we ever have a miscommunication about the number of edge
+         * lines, or if the Java array calculation should overflow to
+         * a positive number and succeed in allocating an array that
+         * is too small, we need to verify that it can still hold the
+         * number of integers that we plan to store to be safe.
+         */
+        jsize edgesize = (*env)->GetArrayLength(env, edgeArray);
+        /* (edgesize/2 - 1) should avoid any overflow or underflow. */
+        pEdges = (((edgesize / 2) - 1) >= numedges)
+            ? (*env)->GetPrimitiveArrayCritical(env, edgeArray, NULL)
+            : NULL;
+    } else if (numedges > MAXEDGES) {
+        /* numedges variable (jlong) can be at most ((1<<32)-1) */
+        /* memsize can overflow a jint, but not a jlong */
+        jlong memsize = ((numedges * 2) + 2) * sizeof(*pEdges);
+        pEdges = (memsize == ((size_t) memsize))
+            ? malloc((size_t) memsize)
+            : NULL;
     } else {
         pEdges = edgebuf;
+    }
+
+    if (pEdges == NULL) {
+        if (numedges > 0) {
+            JNU_ThrowInternalError(env, "Unable to allocate edge list");
+        }
+        SurfaceData_InvokeUnlock(env, dstOps, &dstInfo);
+        SurfaceData_InvokeUnlock(env, srcOps, &srcInfo);
+        /* edgeArray should already contain zeros for min/maxy */
+        return;
     }
 
     Transform_GetInfo(env, itxform, &itxInfo);
@@ -500,14 +525,14 @@ Java_sun_java2d_loops_TransformHelper_Transform
     } else {
         pEdges[0] = pEdges[1] = 0;
     }
-    SurfaceData_InvokeUnlock(env, dstOps, &dstInfo);
-    SurfaceData_InvokeUnlock(env, srcOps, &srcInfo);
+
     if (!JNU_IsNull(env, edgeArray)) {
-        (*env)->SetIntArrayRegion(env, edgeArray, 0, 2+numedges*2, pEdges);
-    }
-    if (pEdges != edgebuf) {
+        (*env)->ReleasePrimitiveArrayCritical(env, edgeArray, pEdges, 0);
+    } else if (pEdges != edgebuf) {
         free(pEdges);
     }
+    SurfaceData_InvokeUnlock(env, dstOps, &dstInfo);
+    SurfaceData_InvokeUnlock(env, srcOps, &srcInfo);
 }
 
 static void

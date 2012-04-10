@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,9 +63,9 @@ class DTDBuilder extends DTD {
     static PublicMapping mapping = null;
 
     // Hash from name to Integer
-    private Hashtable namesHash = new Hashtable();
+    private Hashtable<String, Integer> namesHash = new Hashtable<>();
     // Vector of all names
-    private Vector namesVector = new Vector();
+    private Vector<String> namesVector = new Vector<>();
 
     /**
      * Create a new DTD.
@@ -87,15 +87,15 @@ class DTDBuilder extends DTD {
         int numNames = namesVector.size();
         out.writeShort((short) (namesVector.size()));
         for (int i = 0; i < namesVector.size(); i++) {
-            String nm = (String) namesVector.elementAt(i);
+            String nm = namesVector.elementAt(i);
             out.writeUTF(nm);
         }
 
         saveEntities(out);
 
         out.writeShort((short) (elements.size()));
-        for (Enumeration e = elements.elements() ; e.hasMoreElements() ; ) {
-            saveElement(out, (Element)e.nextElement());
+        for (Enumeration<Element> e = elements.elements() ; e.hasMoreElements() ; ) {
+            saveElement(out, e.nextElement());
         }
 
         if (namesVector.size() != numNames) {
@@ -106,21 +106,21 @@ class DTDBuilder extends DTD {
     }
 
     private void buildNamesTable() {
-        for (Enumeration e = entityHash.elements() ; e.hasMoreElements() ; ) {
-            Entity ent = (Entity) e.nextElement();
+        for (Enumeration<Entity> e = entityHash.elements() ; e.hasMoreElements() ; ) {
+            Entity ent = e.nextElement();
             // Do even if not isGeneral().  That way, exclusions and inclusions
             // will definitely have their element.
             getNameId(ent.getName());
         }
-        for (Enumeration e = elements.elements() ; e.hasMoreElements() ; ) {
-            Element el = (Element) e.nextElement();
+        for (Enumeration<Element> e = elements.elements() ; e.hasMoreElements() ; ) {
+            Element el = e.nextElement();
             getNameId(el.getName());
             for (AttributeList atts = el.getAttributes() ; atts != null ; atts = atts.getNext()) {
                 getNameId(atts.getName());
                 if (atts.getValue() != null) {
                     getNameId(atts.getValue());
                 }
-                Enumeration vals = atts.getValues();
+                Enumeration<?> vals = atts.getValues();
                 while (vals != null && vals.hasMoreElements()) {
                     String s = (String) vals.nextElement();
                     getNameId(s);
@@ -133,9 +133,9 @@ class DTDBuilder extends DTD {
     // The the id of a name from the list of names
     //
     private short getNameId(String name)  {
-        Object o = namesHash.get(name);
+        Integer o = namesHash.get(name);
         if (o != null) {
-            return (short) ((Integer) o).intValue();
+            return (short) o.intValue();
         }
         int i = namesVector.size();
         namesVector.addElement(name);
@@ -149,16 +149,16 @@ class DTDBuilder extends DTD {
      */
     void saveEntities(DataOutputStream out) throws IOException {
         int num = 0;
-        for (Enumeration e = entityHash.elements() ; e.hasMoreElements() ; ) {
-            Entity ent = (Entity) e.nextElement();
+        for (Enumeration<Entity> e = entityHash.elements() ; e.hasMoreElements() ; ) {
+            Entity ent = e.nextElement();
             if (ent.isGeneral()) {
                 num++;
             }
         }
 
         out.writeShort((short) num);
-        for (Enumeration e = entityHash.elements() ; e.hasMoreElements() ; ) {
-            Entity ent = (Entity) e.nextElement();
+        for (Enumeration<Entity> e = entityHash.elements() ; e.hasMoreElements() ; ) {
+            Entity ent = e.nextElement();
             if (ent.isGeneral()) {
                 out.writeShort(getNameId(ent.getName()));
                 out.writeByte(ent.getType() & ~GENERAL);

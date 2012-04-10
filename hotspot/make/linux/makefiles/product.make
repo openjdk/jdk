@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -46,13 +46,10 @@ VERSION = optimized
 
 # use -g to strip library as -x will discard its symbol table; -x is fine for
 # executables.
-ifdef CROSS_COMPILE_ARCH
-  STRIP = $(ALT_COMPILER_PATH)/strip
-else
-  STRIP = strip
-endif
+# Note: these macros are not used in .debuginfo configs
 STRIP_LIBJVM = $(STRIP) -g $@ || exit 1;
 STRIP_AOUT   = $(STRIP) -x $@ || exit 1;
 
-# Don't strip in VM build; JDK build will strip libraries later
-# LINK_LIB.CC/POST_HOOK += $(STRIP_$(LINK_INTO))
+# If we can create .debuginfo files, then the VM is stripped in vm.make
+# and this macro is not used.
+# LINK_LIB.CXX/POST_HOOK += $(STRIP_$(LINK_INTO))

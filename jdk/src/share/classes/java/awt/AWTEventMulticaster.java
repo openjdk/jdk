@@ -953,7 +953,7 @@ public class AWTEventMulticaster implements
      * AWTEventMulticaster.  Additionally, only listeners of type listenerType
      * are counted.  Method modified to fix bug 4513402.  -bchristi
      */
-    private static int getListenerCount(EventListener l, Class listenerType) {
+    private static int getListenerCount(EventListener l, Class<?> listenerType) {
         if (l instanceof AWTEventMulticaster) {
             AWTEventMulticaster mc = (AWTEventMulticaster)l;
             return getListenerCount(mc.a, listenerType) +
@@ -1017,6 +1017,7 @@ public class AWTEventMulticaster implements
      *
      * @since 1.4
      */
+    @SuppressWarnings("unchecked")
     public static <T extends EventListener> T[]
         getListeners(EventListener l, Class<T> listenerType)
     {

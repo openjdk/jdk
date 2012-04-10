@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,8 +104,8 @@ class CompactibleFreeListSpace: public CompactibleSpace {
     SmallForDictionary  = 257,       // size < this then use _indexedFreeList
     IndexSetSize        = SmallForDictionary  // keep this odd-sized
   };
-  static int IndexSetStart;
-  static int IndexSetStride;
+  static size_t IndexSetStart;
+  static size_t IndexSetStride;
 
  private:
   enum FitStrategyOptions {
@@ -336,12 +336,6 @@ class CompactibleFreeListSpace: public CompactibleSpace {
                      unallocated_block() : end());
   }
 
-  // This is needed because the default implementation uses block_start()
-  // which can;t be used at certain times (for example phase 3 of mark-sweep).
-  // A better fix is to change the assertions in phase 3 of mark-sweep to
-  // use is_in_reserved(), but that is deferred since the is_in() assertions
-  // are buried through several layers of callers and are used elsewhere
-  // as well.
   bool is_in(const void* p) const {
     return used_region().contains(p);
   }
@@ -407,6 +401,11 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   void save_sweep_limit() {
     _sweep_limit = BlockOffsetArrayUseUnallocatedBlock ?
                    unallocated_block() : end();
+    if (CMSTraceSweeper) {
+      gclog_or_tty->print_cr(">>>>> Saving sweep limit " PTR_FORMAT
+                             "  for space [" PTR_FORMAT "," PTR_FORMAT ") <<<<<<",
+                             _sweep_limit, bottom(), end());
+    }
   }
   NOT_PRODUCT(
     void clear_sweep_limit() { _sweep_limit = NULL; }
@@ -497,10 +496,14 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   void verifyFreeLists()                  const PRODUCT_RETURN;
   void verifyIndexedFreeLists()           const;
   void verifyIndexedFreeList(size_t size) const;
-  // verify that the given chunk is in the free lists.
+  // Verify that the given chunk is in the free lists:
+  // i.e. either the binary tree dictionary, the indexed free lists
+  // or the linear allocation block.
   bool verifyChunkInFreeLists(FreeChunk* fc) const;
+  // Verify that the given chunk is the linear allocation block
+  bool verify_chunk_is_linear_alloc_block(FreeChunk* fc) const;
   // Do some basic checks on the the free lists.
-  void checkFreeListConsistency()         const PRODUCT_RETURN;
+  void check_free_list_consistency()      const PRODUCT_RETURN;
 
   // Printing support
   void dump_at_safepoint_with_locks(CMSCollector* c, outputStream* st);
@@ -628,7 +631,7 @@ class CFLS_LAB : public CHeapObj {
   static AdaptiveWeightedAverage
                  _blocks_to_claim  [CompactibleFreeListSpace::IndexSetSize];
   static size_t _global_num_blocks [CompactibleFreeListSpace::IndexSetSize];
-  static int    _global_num_workers[CompactibleFreeListSpace::IndexSetSize];
+  static uint   _global_num_workers[CompactibleFreeListSpace::IndexSetSize];
   size_t        _num_blocks        [CompactibleFreeListSpace::IndexSetSize];
 
   // Internal work method

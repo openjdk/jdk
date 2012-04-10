@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,10 @@ import sun.security.x509.X509CertImpl;
 import sun.security.x509.NetscapeCertTypeExtension;
 import sun.security.util.DerValue;
 import sun.security.util.DerInputStream;
-import sun.security.util.DerOutputStream;
 import sun.security.util.ObjectIdentifier;
 
 import sun.security.provider.certpath.AlgorithmChecker;
+import sun.security.provider.certpath.UntrustedChecker;
 
 /**
  * A simple validator implementation. It is based on code from the JSSE
@@ -132,10 +132,14 @@ public final class SimpleValidator extends Validator {
         // make sure chain includes a trusted cert
         chain = buildTrustedChain(chain);
 
+        @SuppressWarnings("deprecation")
         Date date = validationDate;
         if (date == null) {
             date = new Date();
         }
+
+        // create distrusted certificates checker
+        UntrustedChecker untrustedChecker = new UntrustedChecker();
 
         // create default algorithm constraints checker
         TrustAnchor anchor = new TrustAnchor(chain[chain.length - 1], null);
@@ -153,6 +157,17 @@ public final class SimpleValidator extends Validator {
         for (int i = chain.length - 2; i >= 0; i--) {
             X509Certificate issuerCert = chain[i + 1];
             X509Certificate cert = chain[i];
+
+            // check untrusted certificate
+            try {
+                // Untrusted checker does not care about the unresolved
+                // critical extensions.
+                untrustedChecker.check(cert, Collections.<String>emptySet());
+            } catch (CertPathValidatorException cpve) {
+                throw new ValidatorException(
+                    "Untrusted certificate: " + cert.getSubjectX500Principal(),
+                    ValidatorException.T_UNTRUSTED_CERT, cert, cpve);
+            }
 
             // check certificate algorithm
             try {
@@ -275,7 +290,7 @@ public final class SimpleValidator extends Validator {
                                                                 .toByteArray();
                 ext = new NetscapeCertTypeExtension(encoded);
             }
-            Boolean val = (Boolean)ext.get(type);
+            Boolean val = ext.get(type);
             return val.booleanValue();
         } catch (IOException e) {
             return false;

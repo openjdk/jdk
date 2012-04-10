@@ -222,7 +222,7 @@ public abstract class WComponentPeer extends WObjectPeer
         updateWindow();
         // make sure paint events are transferred to main event queue
         // for coalescing
-        WToolkit.getWToolkit().flushPendingEvents();
+        SunToolkit.flushPendingEvents();
         // paint the damaged area
         paintArea.paint(target, shouldClearRectBeforePaint());
     }
@@ -320,6 +320,7 @@ public abstract class WComponentPeer extends WObjectPeer
 
     native void nativeHandleEvent(AWTEvent e);
 
+    @SuppressWarnings("fallthrough")
     public void handleEvent(AWTEvent e) {
         int id = e.getID();
 
@@ -549,6 +550,7 @@ public abstract class WComponentPeer extends WObjectPeer
     // fallback default font object
     final static Font defaultFont = new Font(Font.DIALOG, Font.PLAIN, 12);
 
+    @SuppressWarnings("deprecation")
     public Graphics getGraphics() {
         if (isDisposed()) {
             return null;
@@ -615,6 +617,14 @@ public abstract class WComponentPeer extends WObjectPeer
         _dispose();
     }
 
+    public void disposeLater() {
+        postEvent(new InvocationEvent(Toolkit.getDefaultToolkit(), new Runnable() {
+            public void run() {
+                dispose();
+            }
+        }));
+    }
+
     public synchronized void setForeground(Color c) {
         foreground = c;
         _setForeground(c.getRGB());
@@ -648,6 +658,7 @@ public abstract class WComponentPeer extends WObjectPeer
     }
 
     // TODO: consider moving it to KeyboardFocusManagerPeerImpl
+    @SuppressWarnings("deprecation")
     public boolean requestFocus(Component lightweightChild, boolean temporary,
                                 boolean focusedWindowChangeAllowed, long time,
                                 CausedFocusEvent.Cause cause)
@@ -1050,6 +1061,7 @@ public abstract class WComponentPeer extends WObjectPeer
     // in the browser on Vista when DWM is enabled.
     // @return true if the toplevel container is not an EmbeddedFrame or
     // if this EmbeddedFrame is acceleration capable, false otherwise
+    @SuppressWarnings("deprecation")
     private static final boolean isContainingTopLevelAccelCapable(Component c) {
         while (c != null && !(c instanceof WEmbeddedFrame)) {
             c = c.getParent();
@@ -1064,6 +1076,7 @@ public abstract class WComponentPeer extends WObjectPeer
      * Applies the shape to the native component window.
      * @since 1.7
      */
+    @SuppressWarnings("deprecation")
     public void applyShape(Region shape) {
         if (shapeLog.isLoggable(PlatformLogger.FINER)) {
             shapeLog.finer(

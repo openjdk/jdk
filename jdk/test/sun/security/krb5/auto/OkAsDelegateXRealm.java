@@ -109,9 +109,6 @@ public class OkAsDelegateXRealm implements CallbackHandler {
 
         System.setProperty("java.security.auth.login.config", "jaas-localkdc.conf");
 
-        new File("krb5-localkdc.conf").deleteOnExit();
-        new File("localkdc.ktab").deleteOnExit();
-        new File("jaas-localkdc.conf").deleteOnExit();
         Config.refresh();
 
         Context c = Context.fromJAAS("com.sun.security.jgss.krb5.initiate");

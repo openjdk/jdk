@@ -42,6 +42,7 @@ import java.util.EventObject;
  *
  * @author Hans Muller
  */
+@SuppressWarnings("serial")
 public class ListDataEvent extends EventObject
 {
     /** Identifies one or more changes in the lists contents. */

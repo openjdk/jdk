@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -541,6 +541,13 @@ public abstract class Buffer {
 
     final int markValue() {                             // package-private
         return mark;
+    }
+
+    final void truncate() {                             // package-private
+        mark = -1;
+        position = 0;
+        limit = 0;
+        capacity = 0;
     }
 
     final void discardMark() {                          // package-private

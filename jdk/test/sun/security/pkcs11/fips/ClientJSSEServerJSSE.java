@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,11 @@
  * @test
  * @bug 6313675 6323647
  * @summary Verify that all ciphersuites work in FIPS mode
+ * @library ..
  * @ignore JSSE supported cipher suites are changed with CR 6916074,
  *     need to update this test case in JDK 7 soon
+ * @run main/othervm ClientJSSEServerJSSE
  * @author Andreas Sterbenz
- * @library ..
  */
 
 import java.security.*;

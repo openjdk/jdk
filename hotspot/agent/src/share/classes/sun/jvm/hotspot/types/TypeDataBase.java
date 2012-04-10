@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,11 @@ public interface TypeDataBase {
       Type for the given address if one was found, or null if none was
       found. */
   public Type guessTypeForAddress(Address addr);
+
+  /** Helper routine for guessing the most derived type of a
+      polymorphic C++ object. Requires a baseType that must be virtual
+      so that lookup can be performed without false positives */
+  public Type findDynamicTypeForAddress(Address addr, Type baseType);
 
   /** Returns an Iterator over the Types in the database. */
   public Iterator getTypes();

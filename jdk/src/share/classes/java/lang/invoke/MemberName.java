@@ -353,7 +353,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
         assert(isResolved());
     }
     /** Create a name for the given reflected constructor.  The resulting name will be in a resolved state. */
-    public MemberName(Constructor ctor) {
+    public MemberName(Constructor<?> ctor) {
         Object[] typeInfo = { void.class, ctor.getParameterTypes() };
         init(ctor.getDeclaringClass(), CONSTRUCTOR_NAME, typeInfo, flagsMods(IS_CONSTRUCTOR, ctor.getModifiers()));
         // fill in vmtarget, vmindex while we have ctor in hand:
@@ -382,7 +382,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
         try {
             return (MemberName) super.clone();
         } catch (CloneNotSupportedException ex) {
-            throw new InternalError();
+            throw new InternalError(ex);
         }
      }
 

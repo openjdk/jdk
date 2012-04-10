@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,11 @@ set +e
 failed=0
 
 # normal
-$JSTACK $appJavaPid 2>&1
+$JSTACK -J-XX:+UsePerfData $appJavaPid 2>&1
 if [ $? != 0 ]; then failed=1; fi
 
 # long
-$JSTACK -l $appJavaPid 2>&1
+$JSTACK -J-XX:+UsePerfData -l $appJavaPid 2>&1
 if [ $? != 0 ]; then failed=1; fi
 
 set -e

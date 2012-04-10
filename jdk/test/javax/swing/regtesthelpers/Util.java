@@ -116,4 +116,41 @@ public class Util {
 
         System.out.println("Got OOME");
     }
+
+    /**
+     * Find a sub component by class name.
+     * Always run this method on the EDT thread
+     */
+    public static Component findSubComponent(Component parent, String className) {
+        String parentClassName = parent.getClass().getName();
+
+        if (parentClassName.contains(className)) {
+            return parent;
+        }
+
+        if (parent instanceof Container) {
+            for (Component child : ((Container) parent).getComponents()) {
+                Component subComponent = findSubComponent(child, className);
+
+                if (subComponent != null) {
+                    return subComponent;
+                }
+            }
+        }
+
+        return null;
+    }
+
+     /**
+     * Hits keys by robot.
+     */
+    public static void hitKeys(Robot robot, int... keys) {
+        for (int i = 0; i < keys.length; i++) {
+            robot.keyPress(keys[i]);
+        }
+
+        for (int i = keys.length - 1; i >= 0; i--) {
+            robot.keyRelease(keys[i]);
+        }
+    }
 }

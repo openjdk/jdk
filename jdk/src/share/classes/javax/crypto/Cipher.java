@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,10 @@
 package javax.crypto;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.regex.*;
 
-import static java.util.Locale.ENGLISH;
 
 import java.security.*;
 import java.security.Provider.Service;
@@ -44,7 +45,6 @@ import java.nio.ReadOnlyBufferException;
 
 import sun.security.util.Debug;
 import sun.security.jca.*;
-import sun.security.jca.GetInstance.Instance;
 
 /**
  * This class provides the functionality of a cryptographic cipher for
@@ -227,10 +227,10 @@ public class Cipher {
 
     // remaining services to try in provider selection
     // null once provider is selected
-    private Iterator serviceIterator;
+    private Iterator<Service> serviceIterator;
 
     // list of transform Strings to lookup in the provider
-    private List transforms;
+    private List<Transform> transforms;
 
     private final Object lock;
 
@@ -271,7 +271,8 @@ public class Cipher {
     }
 
     private Cipher(CipherSpi firstSpi, Service firstService,
-            Iterator serviceIterator, String transformation, List transforms) {
+            Iterator<Service> serviceIterator, String transformation,
+            List<Transform> transforms) {
         this.firstSpi = firstSpi;
         this.firstService = firstService;
         this.serviceIterator = serviceIterator;
@@ -390,23 +391,22 @@ public class Cipher {
             return matches(regexp, value) ? S_YES : S_NO;
         }
 
-        // Map<String,Pattern> for previously compiled patterns
-        // XXX use ConcurrentHashMap once available
-        private final static Map patternCache =
-            Collections.synchronizedMap(new HashMap());
+        // ConcurrentMap<String,Pattern> for previously compiled patterns
+        private final static ConcurrentMap<String, Pattern> patternCache =
+            new ConcurrentHashMap<String, Pattern>();
 
         private static boolean matches(String regexp, String str) {
-            Pattern pattern = (Pattern)patternCache.get(regexp);
+            Pattern pattern = patternCache.get(regexp);
             if (pattern == null) {
                 pattern = Pattern.compile(regexp);
-                patternCache.put(regexp, pattern);
+                patternCache.putIfAbsent(regexp, pattern);
             }
             return pattern.matcher(str.toUpperCase(Locale.ENGLISH)).matches();
         }
 
     }
 
-    private static List getTransforms(String transformation)
+    private static List<Transform> getTransforms(String transformation)
             throws NoSuchAlgorithmException {
         String[] parts = tokenizeTransformation(transformation);
 
@@ -426,7 +426,7 @@ public class Cipher {
             return Collections.singletonList(tr);
         } else { // if ((mode != null) && (pad != null)) {
             // DES/CBC/PKCS5Padding
-            List list = new ArrayList(4);
+            List<Transform> list = new ArrayList<>(4);
             list.add(new Transform(alg, "/" + mode + "/" + pad, null, null));
             list.add(new Transform(alg, "/" + mode, null, pad));
             list.add(new Transform(alg, "//" + pad, mode, null));
@@ -436,10 +436,10 @@ public class Cipher {
     }
 
     // get the transform matching the specified service
-    private static Transform getTransform(Service s, List transforms) {
+    private static Transform getTransform(Service s,
+                                          List<Transform> transforms) {
         String alg = s.getAlgorithm().toUpperCase(Locale.ENGLISH);
-        for (Iterator t = transforms.iterator(); t.hasNext(); ) {
-            Transform tr = (Transform)t.next();
+        for (Transform tr : transforms) {
             if (alg.endsWith(tr.suffix)) {
                 return tr;
             }
@@ -482,19 +482,18 @@ public class Cipher {
     public static final Cipher getInstance(String transformation)
             throws NoSuchAlgorithmException, NoSuchPaddingException
     {
-        List transforms = getTransforms(transformation);
-        List cipherServices = new ArrayList(transforms.size());
-        for (Iterator t = transforms.iterator(); t.hasNext(); ) {
-            Transform transform = (Transform)t.next();
+        List<Transform> transforms = getTransforms(transformation);
+        List<ServiceId> cipherServices = new ArrayList<>(transforms.size());
+        for (Transform transform : transforms) {
             cipherServices.add(new ServiceId("Cipher", transform.transform));
         }
-        List services = GetInstance.getServices(cipherServices);
+        List<Service> services = GetInstance.getServices(cipherServices);
         // make sure there is at least one service from a signed provider
         // and that it can use the specified mode and padding
-        Iterator t = services.iterator();
+        Iterator<Service> t = services.iterator();
         Exception failure = null;
         while (t.hasNext()) {
-            Service s = (Service)t.next();
+            Service s = t.next();
             if (JceSecurity.canUseProvider(s.getProvider()) == false) {
                 continue;
             }
@@ -620,11 +619,10 @@ public class Cipher {
             throw new IllegalArgumentException("Missing provider");
         }
         Exception failure = null;
-        List transforms = getTransforms(transformation);
+        List<Transform> transforms = getTransforms(transformation);
         boolean providerChecked = false;
         String paddingError = null;
-        for (Iterator t = transforms.iterator(); t.hasNext();) {
-            Transform tr = (Transform)t.next();
+        for (Transform tr : transforms) {
             Service s = provider.getService("Cipher", tr.transform);
             if (s == null) {
                 continue;
@@ -727,7 +725,7 @@ public class Cipher {
                     firstService = null;
                     firstSpi = null;
                 } else {
-                    s = (Service)serviceIterator.next();
+                    s = serviceIterator.next();
                     thisSpi = null;
                 }
                 if (JceSecurity.canUseProvider(s.getProvider()) == false) {
@@ -821,7 +819,7 @@ public class Cipher {
                     firstService = null;
                     firstSpi = null;
                 } else {
-                    s = (Service)serviceIterator.next();
+                    s = serviceIterator.next();
                     thisSpi = null;
                 }
                 // if provider says it does not support this key, ignore it
@@ -1622,7 +1620,7 @@ public class Cipher {
             // Check whether the cert has a key usage extension
             // marked as a critical extension.
             X509Certificate cert = (X509Certificate)certificate;
-            Set critSet = cert.getCriticalExtensionOIDs();
+            Set<String> critSet = cert.getCriticalExtensionOIDs();
 
             if (critSet != null && !critSet.isEmpty()
                 && critSet.contains(KEY_USAGE_EXTENSION_OID)) {

@@ -208,7 +208,6 @@ JAVA_JAVA_java = \
     java/util/Observable.java \
     java/util/Observer.java \
     java/util/Properties.java \
-        java/util/XMLUtils.java \
         java/util/InvalidPropertiesFormatException.java \
     java/util/PropertyPermission.java \
     java/util/PropertyResourceBundle.java \
@@ -475,6 +474,7 @@ JAVA_JAVA_java = \
     sun/misc/MessageUtils.java \
     sun/misc/GC.java \
     sun/misc/Service.java \
+    sun/misc/JavaAWTAccess.java \
     sun/misc/JavaLangAccess.java \
     sun/misc/JavaIOAccess.java \
     sun/misc/JavaIOFileDescriptorAccess.java \

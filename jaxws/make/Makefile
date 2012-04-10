@@ -91,23 +91,6 @@ else
   endif
 endif
 
-# Do we have the drops already downloaded?
-# Check ALT_DROPS_DIR for a full path first,
-# before trying to use the devtools path,
-# either via ALT_JDK_DEVTOOLS_DIR or /java/devtools.
-ifdef ALT_DROPS_DIR
-  DROPS_DIR = $(ALT_DROPS_DIR)
-else
-  ifdef ALT_JDK_DEVTOOLS_DIR
-    DROPS_DIR = $(ALT_JDK_DEVTOOLS_DIR)/share/jdk7-drops
-  else
-    DROPS_DIR = $(_SLASHJAVA)/devtools/share/jdk7-drops
-  endif
-endif
-
-# Add in path to drops already downloaded
-ANT_OPTIONS += -Ddrops.dir=$(DROPS_DIR)
-
 ifdef ALT_OUTPUTDIR
   OUTPUTDIR = $(ALT_OUTPUTDIR)
   ANT_OPTIONS += -Doutput.dir=$(ALT_OUTPUTDIR)
@@ -144,12 +127,16 @@ endif
 default: all
 
 # All ant targets of interest
-ANT_TARGETS = all source drop_included build dist clobber clean sanity
+ANT_TARGETS = all build dist clobber clean sanity
 
 # Create a make target for each
 $(ANT_TARGETS):
 	cd .. && $(ANT_JAVA_HOME) $(ANT) $(ANT_OPTIONS) -version
 	cd .. && $(ANT_JAVA_HOME) $(ANT) $(ANT_OPTIONS) $@
+
+# Just for compat reasons, delete in future.
+drop_included:
+source:
 
 # Help target
 define helpenvline
@@ -164,8 +151,6 @@ help:
 	@echo "    $(ANT_TARGETS)"
 	@echo " "
 	@echo "  Environment or command line variables (all optional):"
-	$(call helpenvline, ALT_DROPS_DIR,\
-	       "Directory that contains the drop source bundles i.e. drops.dir")
 	$(call helpenvline, ALT_BOOTDIR,\
 	       "JAVA_HOME to use when running ant")
 	$(call helpenvline, ALT_LANGTOOLS_DIST,\
