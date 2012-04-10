@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,6 +195,7 @@ public:
   DCmdParser() {
     _options = NULL;
     _arguments_list = NULL;
+    _delim = ' ';
   }
   void add_dcmd_option(GenDCmdArgument* arg);
   void add_dcmd_argument(GenDCmdArgument* arg);
@@ -385,6 +386,19 @@ public:
   virtual const char* disabled_message() const {
      return DCmdClass::disabled_message();
   }
+};
+
+// This class provides a convenient way to register Dcmds, without a need to change
+// management.cpp every time. Body of these two methods resides in
+// diagnosticCommand.cpp
+
+class DCmdRegistrant : public AllStatic {
+
+private:
+    static void register_dcmds();
+    static void register_dcmds_ext();
+
+    friend class Management;
 };
 
 #endif // SHARE_VM_SERVICES_DIAGNOSTICFRAMEWORK_HPP

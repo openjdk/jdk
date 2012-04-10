@@ -28,7 +28,6 @@
 #include <string.h>
 
 #include <dlfcn.h>
-#include <link.h>
 
 #include <jni_util.h>
 

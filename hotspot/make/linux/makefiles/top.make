@@ -115,8 +115,8 @@ the_vm: vm_build_preliminaries $(adjust-mflags)
 	@$(UpdatePCH)
 	@$(MAKE) -f vm.make $(MFLAGS-adjusted)
 
-install: the_vm
-	@$(MAKE) -f vm.make install
+install gamma: the_vm
+	@$(MAKE) -f vm.make $@
 
 # next rules support "make foo.[ois]"
 

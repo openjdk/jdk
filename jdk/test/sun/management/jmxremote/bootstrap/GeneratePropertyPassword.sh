@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 # or .access files from a list of input .in files.
 #
 # Source in this GeneratePropertyPassword.sh and call the function
-# generatePropertyPasswordFiles. 
+# generatePropertyPasswordFiles.
 # Call restoreFilePermissions to restore file permissions after the test completes
 #
 
@@ -34,8 +34,15 @@
 OS=`uname -s`
 UMASK=`umask`
 
+if [[ $OS == CYGWIN_NT* ]] ; then
+    OS="Windows_NT"
+    if [ -z "$SystemRoot" ] ;  then
+	SystemRoot=$SYSTEMROOT
+    fi
+fi
+
 case $OS in
-SunOS | Linux)
+SunOS | Linux | Darwin)
     PATHSEP=":"
     FILESEP="/"
     DFILESEP=$FILESEP
@@ -60,12 +67,12 @@ EOF
         sed -e 's^ZZZZ^\\\\\\\\^g' > ${TMP_FILE}
 
     if [ "$OS" = "Windows_NT" ]; then
-	USER=`id -u -n`
-	CACLS="$SystemRoot/system32/cacls.exe"
-	REVOKEALL="${TESTSRC}/../../windows/revokeall.exe"
-	if [ ! -f "$REVOKEALL" ] ; then
-	    echo "$REVOKEALL missing"
-	    exit 1
+        USER=`id -u -n`
+        CACLS="$SystemRoot/system32/cacls.exe"
+        REVOKEALL="${TESTSRC}/../../windows/revokeall.exe"
+        if [ ! -f "$REVOKEALL" ] ; then
+            echo "$REVOKEALL missing"
+            exit 1
         fi
     fi
 
@@ -77,47 +84,47 @@ EOF
     ;;
 esac
 
-generatePropertyPasswordFiles() 
+generatePropertyPasswordFiles()
 {
    for f in $@
    do
         echo processing $f
-	suffix=`basename $f .in`
-   	f2="${TESTCLASSES}${FILESEP}${suffix}"
+        suffix=`basename $f .in`
+        f2="${TESTCLASSES}${FILESEP}${suffix}"
 
-	if [ -f "$f2" ] ; then
-	    rm -f $f2 || echo WARNING: $f2 already exits - unable to remove old copy
-	fi
+        if [ -f "$f2" ] ; then
+            rm -f $f2 || echo WARNING: $f2 already exits - unable to remove old copy
+        fi
 
-	echo creating $f2
+        echo creating $f2
         sed -f $TMP_FILE $f > $f2
 
- 	if [ "$OS" = "Windows_NT" ]; then
-	    chown $USER $f2
-	    # Grant this user full access
-	    echo Y|$CACLS $f2 \/E \/G $USER:F
-  	    # Revoke everyone else
-	    $REVOKEALL $f2
-	    # Display ACLs
-	    $CACLS $f2
+        if [ "$OS" = "Windows_NT" ]; then
+            chown $USER $f2
+            # Grant this user full access
+            echo Y|$CACLS $f2 \/E \/G $USER:F
+            # Revoke everyone else
+            $REVOKEALL $f2
+            # Display ACLs
+            $CACLS $f2
         else
-	    chmod 600 $f2
+            chmod 600 $f2
         fi
    done
 }
 
-restoreFilePermissions() 
+restoreFilePermissions()
 {
     for f in $@
     do
-      	suffix=`basename $f .in`
-	f2="${TESTCLASSES}${FILESEP}${suffix}"
+        suffix=`basename $f .in`
+        f2="${TESTCLASSES}${FILESEP}${suffix}"
 
-	if [ "$OS" = "Windows_NT" ]; then
-	    # Grant everyone full control
-	    $CACLS $f2 \/E \/G Everyone:F
-	else
-	    chmod 777 $f2
+        if [ "$OS" = "Windows_NT" ]; then
+            # Grant everyone full control
+            $CACLS $f2 \/E \/G Everyone:F
+        else
+            chmod 777 $f2
         fi
 
     done

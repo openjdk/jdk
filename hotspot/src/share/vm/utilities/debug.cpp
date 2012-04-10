@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -600,18 +600,10 @@ extern "C" void flush()  {
   tty->flush();
 }
 
-
 extern "C" void events() {
   Command c("events");
-  Events::print_last(tty, 50);
+  Events::print();
 }
-
-
-extern "C" void nevents(int n) {
-  Command c("events");
-  Events::print_last(tty, n);
-}
-
 
 // Given a heap address that was valid before the most recent GC, if
 // the oop that used to contain it is still live, prints the new
@@ -771,7 +763,7 @@ void help() {
 
   tty->print_cr("misc.");
   tty->print_cr("  flush()       - flushes the log file");
-  tty->print_cr("  events()      - dump last 50 events");
+  tty->print_cr("  events()      - dump events from ring buffers");
 
 
   tty->print_cr("compiler debugging");

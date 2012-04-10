@@ -171,6 +171,53 @@ static jobjectArray toFilenamesArray(JNIEnv *env, GSList* list)
     return array;
 }
 
+/**
+ * Convert a GSList to an array of filenames (with the parent folder)
+ */
+static jobjectArray toPathAndFilenamesArray(JNIEnv *env, GSList* list)
+{
+    jstring str;
+    jclass stringCls;
+    GSList *iterator;
+    jobjectArray array;
+    int i;
+    char* entry;
+
+
+    if (list == NULL) {
+        return NULL;
+    }
+
+    stringCls = (*env)->FindClass(env, "java/lang/String");
+    if (stringCls == NULL) {
+        JNU_ThrowInternalError(env, "Could not get java.lang.String class");
+        return NULL;
+    }
+
+    array = (*env)->NewObjectArray(env, fp_gtk_g_slist_length(list), stringCls,
+            NULL);
+    if (array == NULL) {
+        JNU_ThrowInternalError(env, "Could not instantiate array files array");
+        return NULL;
+    }
+
+    i = 0;
+    for (iterator = list; iterator; iterator = iterator->next) {
+        entry = (char*) iterator->data;
+
+        //check for leading slash.
+        if (entry[0] == '/') {
+            entry++;
+        }
+
+        str = (*env)->NewStringUTF(env, entry);
+        (*env)->SetObjectArrayElement(env, array, i, str);
+        i++;
+    }
+
+    return array;
+}
+
 static void handle_response(GtkWidget* aDialog, gint responseId, gpointer obj)
 {
     JNIEnv *env;
@@ -183,16 +230,25 @@ static void handle_response(GtkWidget* aDialog, gint responseId, gpointer obj)
     env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
     current_folder = NULL;
     filenames = NULL;
+    gboolean full_path_names = FALSE;
 
     if (responseId == GTK_RESPONSE_ACCEPT) {
         current_folder = fp_gtk_file_chooser_get_current_folder(
                 GTK_FILE_CHOOSER(aDialog));
+        if (current_folder == NULL) {
+            full_path_names = TRUE;
+        }
         filenames = fp_gtk_file_chooser_get_filenames(GTK_FILE_CHOOSER(aDialog));
     }
-
-    jcurrent_folder = (*env)->NewStringUTF(env, current_folder);
-    jfilenames = toFilenamesArray(env, filenames);
-
+    if (full_path_names) {
+        //This is a hack for use with "Recent Folders" in gtk where each
+        //file could have its own directory.
+        jcurrent_folder = (*env)->NewStringUTF(env, "/");
+        jfilenames = toPathAndFilenamesArray(env, filenames);
+    } else {
+        jcurrent_folder = (*env)->NewStringUTF(env, current_folder);
+        jfilenames = toFilenamesArray(env, filenames);
+    }
     (*env)->CallVoidMethod(env, obj, setFileInternalMethodID, jcurrent_folder,
             jfilenames);
     fp_g_free(current_folder);

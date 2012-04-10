@@ -33,9 +33,24 @@
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <sys/uio.h>
+#include <unistd.h>
 #include "nio.h"
 #include "nio_util.h"
 
+#ifdef _ALLBSD_SOURCE
+#define stat64 stat
+#define flock64 flock
+#define off64_t off_t
+#define F_SETLKW64 F_SETLKW
+#define F_SETLK64 F_SETLK
+
+#define pread64 pread
+#define pwrite64 pwrite
+#define ftruncate64 ftruncate
+#define fstat64 fstat
+
+#define fdatasync fsync
+#endif
 
 static int preCloseFD = -1;     /* File descriptor to which we dup other fd's
                                    before closing them for real */
@@ -191,7 +206,7 @@ Java_sun_nio_ch_FileDispatcherImpl_lock0(JNIEnv *env, jobject this, jobject fdo,
     }
     lockResult = fcntl(fd, cmd, &fl);
     if (lockResult < 0) {
-        if ((cmd == F_SETLK64) && (errno == EAGAIN))
+        if ((cmd == F_SETLK64) && (errno == EAGAIN || errno == EACCES))
             return sun_nio_ch_FileDispatcherImpl_NO_LOCK;
         if (errno == EINTR)
             return sun_nio_ch_FileDispatcherImpl_INTERRUPTED;

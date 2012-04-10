@@ -85,7 +85,7 @@ final class ConnectionMultiplexer {
     private DataOutputStream dataOut;
 
     /** table holding currently open connection IDs and related info */
-    private Hashtable connectionTable = new Hashtable(7);
+    private Hashtable<Integer, MultiplexConnectionInfo> connectionTable = new Hashtable<>(7);
 
     /** number of currently open connections */
     private int numConnections = 0;
@@ -131,7 +131,6 @@ final class ConnectionMultiplexer {
     {
         try {
             int op, id, length;
-            Integer idObj;
             MultiplexConnectionInfo info;
 
             while (true) {
@@ -148,9 +147,7 @@ final class ConnectionMultiplexer {
                         multiplexLog.log(Log.VERBOSE, "operation  OPEN " + id);
                     }
 
-                    idObj = new Integer(id);
-                    info =
-                        (MultiplexConnectionInfo) connectionTable.get(idObj);
+                    info = connectionTable.get(id);
                     if (info != null)
                         throw new IOException(
                             "OPEN: Connection ID already exists");
@@ -158,7 +155,7 @@ final class ConnectionMultiplexer {
                     info.in = new MultiplexInputStream(this, info, 2048);
                     info.out = new MultiplexOutputStream(this, info, 2048);
                     synchronized (connectionTable) {
-                        connectionTable.put(idObj, info);
+                        connectionTable.put(id, info);
                         ++ numConnections;
                     }
                     sun.rmi.transport.Connection conn;
@@ -174,9 +171,7 @@ final class ConnectionMultiplexer {
                         multiplexLog.log(Log.VERBOSE, "operation  CLOSE " + id);
                     }
 
-                    idObj = new Integer(id);
-                    info =
-                        (MultiplexConnectionInfo) connectionTable.get(idObj);
+                    info = connectionTable.get(id);
                     if (info == null)
                         throw new IOException(
                             "CLOSE: Invalid connection ID");
@@ -185,7 +180,7 @@ final class ConnectionMultiplexer {
                     if (!info.closed)
                         sendCloseAck(info);
                     synchronized (connectionTable) {
-                        connectionTable.remove(idObj);
+                        connectionTable.remove(id);
                         -- numConnections;
                     }
                     break;
@@ -199,9 +194,7 @@ final class ConnectionMultiplexer {
                             "operation  CLOSEACK " + id);
                     }
 
-                    idObj = new Integer(id);
-                    info =
-                        (MultiplexConnectionInfo) connectionTable.get(idObj);
+                    info = connectionTable.get(id);
                     if (info == null)
                         throw new IOException(
                             "CLOSEACK: Invalid connection ID");
@@ -211,7 +204,7 @@ final class ConnectionMultiplexer {
                     info.in.disconnect();
                     info.out.disconnect();
                     synchronized (connectionTable) {
-                        connectionTable.remove(idObj);
+                        connectionTable.remove(id);
                         -- numConnections;
                     }
                     break;
@@ -219,9 +212,7 @@ final class ConnectionMultiplexer {
                 // remote endpoint declaring additional bytes receivable
                 case REQUEST:
                     id = dataIn.readUnsignedShort();
-                    idObj = new Integer(id);
-                    info =
-                        (MultiplexConnectionInfo) connectionTable.get(idObj);
+                    info = connectionTable.get(id);
                     if (info == null)
                         throw new IOException(
                             "REQUEST: Invalid connection ID");
@@ -238,9 +229,7 @@ final class ConnectionMultiplexer {
                 // remote endpoint transmitting data packet
                 case TRANSMIT:
                     id = dataIn.readUnsignedShort();
-                    idObj = new Integer(id);
-                    info =
-                        (MultiplexConnectionInfo) connectionTable.get(idObj);
+                    info = connectionTable.get(id);
                     if (info == null)
                         throw new IOException("SEND: Invalid connection ID");
                     length = dataIn.readInt();
@@ -273,7 +262,6 @@ final class ConnectionMultiplexer {
         // If all possible 32768 IDs are used,
         // this method will block searching for a new ID forever.
         int id;
-        Integer idObj;
         do {
             lastID = (++ lastID) & 0x7FFF;
             id = lastID;
@@ -283,8 +271,7 @@ final class ConnectionMultiplexer {
             // two endpoints.
             if (orig)
                 id |= 0x8000;
-            idObj = new Integer(id);
-        } while (connectionTable.get(idObj) != null);
+        } while (connectionTable.get(id) != null);
 
         // create multiplexing streams and bookkeeping information
         MultiplexConnectionInfo info = new MultiplexConnectionInfo(id);
@@ -298,7 +285,7 @@ final class ConnectionMultiplexer {
             if (numConnections >= maxConnections)
                 throw new IOException("Cannot exceed " + maxConnections +
                     " simultaneous multiplexed connections");
-            connectionTable.put(idObj, info);
+            connectionTable.put(id, info);
             ++ numConnections;
         }
 
@@ -331,10 +318,10 @@ final class ConnectionMultiplexer {
                 return;
             alive = false;
 
-            Enumeration enum_ = connectionTable.elements();
+            Enumeration<MultiplexConnectionInfo> enum_ =
+                    connectionTable.elements();
             while (enum_.hasMoreElements()) {
-                MultiplexConnectionInfo info =
-                    (MultiplexConnectionInfo) enum_.nextElement();
+                MultiplexConnectionInfo info = enum_.nextElement();
                 info.in.disconnect();
                 info.out.disconnect();
             }

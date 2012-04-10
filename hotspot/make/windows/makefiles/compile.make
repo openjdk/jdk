@@ -23,9 +23,11 @@
 #
 
 # Generic compiler settings
-CPP=cl.exe
+!if "x$(CXX)" == "x"
+CXX=cl.exe
+!endif
 
-# CPP Flags: (these vary slightly from VC6->VS2003->VS2005 compilers)
+# CXX Flags: (these vary slightly from VC6->VS2003->VS2005 compilers)
 #   /nologo   Supress copyright message at every cl.exe startup
 #   /W3       Warning level 3
 #   /Zi       Include debugging information
@@ -50,47 +52,47 @@ CPP=cl.exe
 # improving the quality of crash log stack traces involving jvm.dll.
 
 # These are always used in all compiles
-CPP_FLAGS=/nologo /W3 /WX
+CXX_FLAGS=/nologo /W3 /WX
 
 # Let's add debug information always too.
-CPP_FLAGS=$(CPP_FLAGS) /Zi
+CXX_FLAGS=$(CXX_FLAGS) /Zi
 
 # Based on BUILDARCH we add some flags and select the default compiler name
 !if "$(BUILDARCH)" == "ia64"
 MACHINE=IA64
 DEFAULT_COMPILER_NAME=VS2003
-CPP_FLAGS=$(CPP_FLAGS) /D "CC_INTERP" /D "_LP64" /D "IA64"
+CXX_FLAGS=$(CXX_FLAGS) /D "CC_INTERP" /D "_LP64" /D "IA64"
 !endif
 
 !if "$(BUILDARCH)" == "amd64"
 MACHINE=AMD64
 DEFAULT_COMPILER_NAME=VS2005
-CPP_FLAGS=$(CPP_FLAGS) /D "_LP64" /D "AMD64"
+CXX_FLAGS=$(CXX_FLAGS) /D "_LP64" /D "AMD64"
 LP64=1
 !endif
 
 !if "$(BUILDARCH)" == "i486"
 MACHINE=I386
 DEFAULT_COMPILER_NAME=VS2003
-CPP_FLAGS=$(CPP_FLAGS) /D "IA32"
+CXX_FLAGS=$(CXX_FLAGS) /D "IA32"
 !endif
 
 # Sanity check, this is the default if not amd64, ia64, or i486
 !ifndef DEFAULT_COMPILER_NAME
-CPP=ARCH_ERROR
+CXX=ARCH_ERROR
 !endif
 
-CPP_FLAGS=$(CPP_FLAGS) /D "WIN32" /D "_WINDOWS"
+CXX_FLAGS=$(CXX_FLAGS) /D "WIN32" /D "_WINDOWS"
 # Must specify this for sharedRuntimeTrig.cpp
-CPP_FLAGS=$(CPP_FLAGS) /D "VM_LITTLE_ENDIAN"
+CXX_FLAGS=$(CXX_FLAGS) /D "VM_LITTLE_ENDIAN"
 
 # Used for platform dispatching
-CPP_FLAGS=$(CPP_FLAGS) /D TARGET_OS_FAMILY_windows
-CPP_FLAGS=$(CPP_FLAGS) /D TARGET_ARCH_$(Platform_arch)
-CPP_FLAGS=$(CPP_FLAGS) /D TARGET_ARCH_MODEL_$(Platform_arch_model)
-CPP_FLAGS=$(CPP_FLAGS) /D TARGET_OS_ARCH_windows_$(Platform_arch)
-CPP_FLAGS=$(CPP_FLAGS) /D TARGET_OS_ARCH_MODEL_windows_$(Platform_arch_model)
-CPP_FLAGS=$(CPP_FLAGS) /D TARGET_COMPILER_visCPP
+CXX_FLAGS=$(CXX_FLAGS) /D TARGET_OS_FAMILY_windows
+CXX_FLAGS=$(CXX_FLAGS) /D TARGET_ARCH_$(Platform_arch)
+CXX_FLAGS=$(CXX_FLAGS) /D TARGET_ARCH_MODEL_$(Platform_arch_model)
+CXX_FLAGS=$(CXX_FLAGS) /D TARGET_OS_ARCH_windows_$(Platform_arch)
+CXX_FLAGS=$(CXX_FLAGS) /D TARGET_OS_ARCH_MODEL_windows_$(Platform_arch_model)
+CXX_FLAGS=$(CXX_FLAGS) /D TARGET_COMPILER_visCPP
 
 
 # MSC_VER is a 4 digit number that tells us what compiler is being used
@@ -150,14 +152,14 @@ MS_RUNTIME_OPTION = /MTd /D "_DEBUG"
 # Always add the _STATIC_CPPLIB flag
 STATIC_CPPLIB_OPTION = /D _STATIC_CPPLIB /D _DISABLE_DEPRECATE_STATIC_CPPLIB
 MS_RUNTIME_OPTION = $(MS_RUNTIME_OPTION) $(STATIC_CPPLIB_OPTION)
-CPP_FLAGS=$(CPP_FLAGS) $(MS_RUNTIME_OPTION)
+CXX_FLAGS=$(CXX_FLAGS) $(MS_RUNTIME_OPTION)
 
 # How /GX option is spelled
 GX_OPTION = /GX
 
 # Optimization settings for various versions of the compilers and types of
 #    builds. Three basic sets of settings: product, fastdebug, and debug.
-#    These get added into CPP_FLAGS as needed by other makefiles.
+#    These get added into CXX_FLAGS as needed by other makefiles.
 !if "$(COMPILER_NAME)" == "VC6"
 PRODUCT_OPT_OPTION   = /Ox /Os /Gy /GF
 FASTDEBUG_OPT_OPTION = /Ox /Os /Gy /GF
@@ -180,10 +182,12 @@ GX_OPTION = /EHsc
 #    externals at link time. Even with /GS-, you need bufferoverflowU.lib.
 #    NOTE: Currently we decided to not use /GS-
 BUFFEROVERFLOWLIB = bufferoverflowU.lib
-LINK_FLAGS = /manifest $(LINK_FLAGS) $(BUFFEROVERFLOWLIB)
+LD_FLAGS = /manifest $(LD_FLAGS) $(BUFFEROVERFLOWLIB)
 # Manifest Tool - used in VS2005 and later to adjust manifests stored
 # as resources inside build artifacts.
+!if "x$(MT)" == "x"
 MT=mt.exe
+!endif
 !endif
 
 !if "$(COMPILER_NAME)" == "VS2008"
@@ -191,10 +195,12 @@ PRODUCT_OPT_OPTION   = /O2 /Oy-
 FASTDEBUG_OPT_OPTION = /O2 /Oy-
 DEBUG_OPT_OPTION     = /Od
 GX_OPTION = /EHsc
-LINK_FLAGS = /manifest $(LINK_FLAGS)
+LD_FLAGS = /manifest $(LD_FLAGS)
 # Manifest Tool - used in VS2005 and later to adjust manifests stored
 # as resources inside build artifacts.
+!if "x$(MT)" == "x"
 MT=mt.exe
+!endif
 !endif
 
 !if "$(COMPILER_NAME)" == "VS2010"
@@ -202,12 +208,14 @@ PRODUCT_OPT_OPTION   = /O2 /Oy-
 FASTDEBUG_OPT_OPTION = /O2 /Oy-
 DEBUG_OPT_OPTION     = /Od
 GX_OPTION = /EHsc
-LINK_FLAGS = /manifest $(LINK_FLAGS)
+LD_FLAGS = /manifest $(LD_FLAGS)
 # Manifest Tool - used in VS2005 and later to adjust manifests stored
 # as resources inside build artifacts.
+!if "x$(MT)" == "x"
 MT=mt.exe
+!endif
 !if "$(BUILDARCH)" == "i486"
-LINK_FLAGS = /SAFESEH $(LINK_FLAGS)
+LD_FLAGS = /SAFESEH $(LD_FLAGS)
 !endif
 !endif
 
@@ -225,19 +233,23 @@ FASTDEBUG_OPT_OPTION = $(DEBUG_OPT_OPTION)
 !endif
 
 # Generic linker settings
-LINK=link.exe
-LINK_FLAGS= $(LINK_FLAGS) kernel32.lib user32.lib gdi32.lib winspool.lib \
+!if "x$(LD)" == "x"
+LD=link.exe
+!endif
+LD_FLAGS= $(LD_FLAGS) kernel32.lib user32.lib gdi32.lib winspool.lib \
  comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib \
  uuid.lib Wsock32.lib winmm.lib /nologo /machine:$(MACHINE) /opt:REF \
  /opt:ICF,8 /map /debug
 
 
 !if $(MSC_VER) >= 1600 
-LINK_FLAGS= $(LINK_FLAGS) psapi.lib
+LD_FLAGS= $(LD_FLAGS) psapi.lib
 !endif
 
 # Resource compiler settings
+!if "x$(RC)" == "x"
 RC=rc.exe
+!endif
 RC_FLAGS=/D "HS_VER=$(HS_VER)" \
 	 /D "HS_DOTVER=$(HS_DOTVER)" \
 	 /D "HS_BUILD_ID=$(HS_BUILD_ID)" \
@@ -250,7 +262,7 @@ RC_FLAGS=/D "HS_VER=$(HS_VER)" \
 	 /D "HS_INTERNAL_NAME=$(HS_INTERNAL_NAME)" \
 	 /D "HS_NAME=$(HS_NAME)"
 
-# Need this to match the CPP_FLAGS settings
+# Need this to match the CXX_FLAGS settings
 !if "$(MFC_DEBUG)" == "true"
 RC_FLAGS = $(RC_FLAGS) /D "_DEBUG"
 !endif

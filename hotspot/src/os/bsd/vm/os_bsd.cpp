@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,6 +301,12 @@ static char cpu_arch[] = "sparc";
 #error Add appropriate cpu_arch setting
 #endif
 
+// Compiler variant
+#ifdef COMPILER2
+#define COMPILER_VARIANT "server"
+#else
+#define COMPILER_VARIANT "client"
+#endif
 
 #ifndef _ALLBSD_SOURCE
 // pid_t gettid()
@@ -562,6 +568,25 @@ void os::init_system_properties_values() {
             sprintf(ld_library_path, "%s:%s", v, t);
             free(t);
         }
+
+#ifdef __APPLE__
+        // Apple's Java6 has "." at the beginning of java.library.path.
+        // OpenJDK on Windows has "." at the end of java.library.path.
+        // OpenJDK on Linux and Solaris don't have "." in java.library.path
+        // at all. To ease the transition from Apple's Java6 to OpenJDK7,
+        // "." is appended to the end of java.library.path. Yes, this
+        // could cause a change in behavior, but Apple's Java6 behavior
+        // can be achieved by putting "." at the beginning of the
+        // JAVA_LIBRARY_PATH environment variable.
+        {
+            char *t = ld_library_path;
+            // that's +3 for appending ":." and the trailing '\0'
+            ld_library_path = (char *) malloc(strlen(t) + 3);
+            sprintf(ld_library_path, "%s:%s", t, ".");
+            free(t);
+        }
+#endif
+
         Arguments::set_library_path(ld_library_path);
     }
 
@@ -973,8 +998,13 @@ static void *java_start(Thread *thread) {
   }
 
 #ifdef _ALLBSD_SOURCE
+#ifdef __APPLE__
+  // thread_id is mach thread on macos
+  osthread->set_thread_id(::mach_thread_self());
+#else
   // thread_id is pthread_id on BSD
   osthread->set_thread_id(::pthread_self());
+#endif
 #else
   // thread_id is kernel thread id (similar to Solaris LWP id)
   osthread->set_thread_id(os::Bsd::gettid());
@@ -1165,7 +1195,11 @@ bool os::create_attached_thread(JavaThread* thread) {
 
   // Store pthread info into the OSThread
 #ifdef _ALLBSD_SOURCE
+#ifdef __APPLE__
+  osthread->set_thread_id(::mach_thread_self());
+#else
   osthread->set_thread_id(::pthread_self());
+#endif
 #else
   osthread->set_thread_id(os::Bsd::gettid());
 #endif
@@ -1782,7 +1816,13 @@ size_t os::lasterror(char *buf, size_t len) {
   return n;
 }
 
-intx os::current_thread_id() { return (intx)pthread_self(); }
+intx os::current_thread_id() {
+#ifdef __APPLE__
+  return (intx)::mach_thread_self();
+#else
+  return (intx)::pthread_self();
+#endif
+}
 int os::current_process_id() {
 
   // Under the old bsd thread library, bsd gives each thread
@@ -2507,7 +2547,7 @@ void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
 
 static char saved_jvm_path[MAXPATHLEN] = {0};
 
-// Find the full path to the current module, libjvm.so or libjvm_g.so
+// Find the full path to the current module, libjvm or libjvm_g
 void os::jvm_path(char *buf, jint buflen) {
   // Error checking.
   if (buflen < MAXPATHLEN) {
@@ -2532,11 +2572,11 @@ void os::jvm_path(char *buf, jint buflen) {
 
   if (Arguments::created_by_gamma_launcher()) {
     // Support for the gamma launcher.  Typical value for buf is
-    // "<JAVA_HOME>/jre/lib/<arch>/<vmtype>/libjvm.so".  If "/jre/lib/" appears at
+    // "<JAVA_HOME>/jre/lib/<arch>/<vmtype>/libjvm".  If "/jre/lib/" appears at
     // the right place in the string, then assume we are installed in a JDK and
-    // we're done.  Otherwise, check for a JAVA_HOME environment variable and fix
-    // up the path so it looks like libjvm.so is installed there (append a
-    // fake suffix hotspot/libjvm.so).
+    // we're done.  Otherwise, check for a JAVA_HOME environment variable and
+    // construct a path to the JVM being overridden.
+
     const char *p = buf + strlen(buf) - 1;
     for (int count = 0; p > buf && count < 5; ++count) {
       for (--p; p > buf && *p != '/'; --p)
@@ -2550,7 +2590,7 @@ void os::jvm_path(char *buf, jint buflen) {
         char* jrelib_p;
         int len;
 
-        // Check the current module name "libjvm.so" or "libjvm_g.so".
+        // Check the current module name "libjvm" or "libjvm_g".
         p = strrchr(buf, '/');
         assert(strstr(p, "/libjvm") == p, "invalid library name");
         p = strstr(p, "_g") ? "_g" : "";
@@ -2563,19 +2603,32 @@ void os::jvm_path(char *buf, jint buflen) {
         // modules image doesn't have "jre" subdirectory
         len = strlen(buf);
         jrelib_p = buf + len;
-        snprintf(jrelib_p, buflen-len, "/jre/lib/%s", cpu_arch);
+
+        // Add the appropriate library subdir
+        snprintf(jrelib_p, buflen-len, "/jre/lib");
         if (0 != access(buf, F_OK)) {
-          snprintf(jrelib_p, buflen-len, "/lib/%s", cpu_arch);
+          snprintf(jrelib_p, buflen-len, "/lib");
         }
 
+        // Add the appropriate client or server subdir
+        len = strlen(buf);
+        jrelib_p = buf + len;
+        snprintf(jrelib_p, buflen-len, "/%s", COMPILER_VARIANT);
+        if (0 != access(buf, F_OK)) {
+          snprintf(jrelib_p, buflen-len, "");
+        }
+
+        // If the path exists within JAVA_HOME, add the JVM library name
+        // to complete the path to JVM being overridden.  Otherwise fallback
+        // to the path to the current library.
         if (0 == access(buf, F_OK)) {
-          // Use current module name "libjvm[_g].so" instead of
-          // "libjvm"debug_only("_g")".so" since for fastdebug version
-          // we should have "libjvm.so" but debug_only("_g") adds "_g"!
+          // Use current module name "libjvm[_g]" instead of
+          // "libjvm"debug_only("_g")"" since for fastdebug version
+          // we should have "libjvm" but debug_only("_g") adds "_g"!
           len = strlen(buf);
-          snprintf(buf + len, buflen-len, "/hotspot/libjvm%s.so", p);
+          snprintf(buf + len, buflen-len, "/libjvm%s%s", p, JNI_LIB_SUFFIX);
         } else {
-          // Go back to path of .so
+          // Fall back to path of current library
           rp = realpath(dli_fname, buf);
           if (rp == NULL)
             return;
@@ -3570,26 +3623,28 @@ void os::loop_breaker(int attempts) {
 // It is only used when ThreadPriorityPolicy=1 and requires root privilege.
 
 #if defined(_ALLBSD_SOURCE) && !defined(__APPLE__)
-int os::java_to_os_priority[MaxPriority + 1] = {
+int os::java_to_os_priority[CriticalPriority + 1] = {
   19,              // 0 Entry should never be used
 
    0,              // 1 MinPriority
    3,              // 2
    6,              // 3
 
-   10,              // 4
-   15,              // 5 NormPriority
-   18,              // 6
+  10,              // 4
+  15,              // 5 NormPriority
+  18,              // 6
 
-   21,              // 7
-   25,              // 8
-   28,              // 9 NearMaxPriority
+  21,              // 7
+  25,              // 8
+  28,              // 9 NearMaxPriority
 
-   31              // 10 MaxPriority
+  31,              // 10 MaxPriority
+
+  31               // 11 CriticalPriority
 };
 #elif defined(__APPLE__)
 /* Using Mach high-level priority assignments */
-int os::java_to_os_priority[MaxPriority + 1] = {
+int os::java_to_os_priority[CriticalPriority + 1] = {
    0,              // 0 Entry should never be used (MINPRI_USER)
 
   27,              // 1 MinPriority
@@ -3604,10 +3659,12 @@ int os::java_to_os_priority[MaxPriority + 1] = {
   34,              // 8
   35,              // 9 NearMaxPriority
 
-  36               // 10 MaxPriority
+  36,              // 10 MaxPriority
+
+  36               // 11 CriticalPriority
 };
 #else
-int os::java_to_os_priority[MaxPriority + 1] = {
+int os::java_to_os_priority[CriticalPriority + 1] = {
   19,              // 0 Entry should never be used
 
    4,              // 1 MinPriority
@@ -3622,7 +3679,9 @@ int os::java_to_os_priority[MaxPriority + 1] = {
   -3,              // 8
   -4,              // 9 NearMaxPriority
 
-  -5               // 10 MaxPriority
+  -5,              // 10 MaxPriority
+
+  -5               // 11 CriticalPriority
 };
 #endif
 
@@ -3637,6 +3696,9 @@ static int prio_init() {
       }
       ThreadPriorityPolicy = 0;
     }
+  }
+  if (UseCriticalJavaThreadPriority) {
+    os::java_to_os_priority[MaxPriority] = os::java_to_os_priority[CriticalPriority];
   }
   return 0;
 }
@@ -5105,9 +5167,9 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   struct thread_basic_info tinfo;
   mach_msg_type_number_t tcount = THREAD_INFO_MAX;
   kern_return_t kr;
-  mach_port_t mach_thread;
+  thread_t mach_thread;
 
-  mach_thread = pthread_mach_thread_np(thread->osthread()->thread_id());
+  mach_thread = thread->osthread()->thread_id();
   kr = thread_info(mach_thread, THREAD_BASIC_INFO, (thread_info_t)&tinfo, &tcount);
   if (kr != KERN_SUCCESS)
     return -1;

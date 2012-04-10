@@ -66,6 +66,8 @@ typedef struct {
     char *display_variant;
     char *encoding;
     char *sun_jnu_encoding;
+    char *sun_stdout_encoding;
+    char *sun_stderr_encoding;
     char *timezone;
 
     char *printerJob;
@@ -84,6 +86,33 @@ typedef struct {
     char *patch_level;          /* patches/service packs installed */
 
     char *desktop;              /* Desktop name. */
+
+#ifdef MACOSX
+    // These are for proxy-related information.
+    // Note that if these platform-specific extensions get out of hand we should make a new
+    // structure for them and #include it here.
+    int httpProxyEnabled;
+    char *httpHost;
+    char *httpPort;
+
+    int httpsProxyEnabled;
+    char *httpsHost;
+    char *httpsPort;
+
+    int ftpProxyEnabled;
+    char *ftpHost;
+    char *ftpPort;
+
+    int socksProxyEnabled;
+    char *socksHost;
+    char *socksPort;
+
+    int gopherProxyEnabled;
+    char *gopherHost;
+    char *gopherPort;
+
+    char *exceptionList;
+#endif
 
 } java_props_t;
 

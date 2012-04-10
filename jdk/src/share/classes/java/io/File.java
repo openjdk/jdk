@@ -153,7 +153,7 @@ public class File
     /**
      * The FileSystem object representing the platform's local file system.
      */
-    static private FileSystem fs = FileSystem.getFileSystem();
+    private static final FileSystem fs = FileSystem.getFileSystem();
 
     /**
      * This abstract pathname's normalized pathname string.  A normalized
@@ -162,13 +162,13 @@ public class File
      *
      * @serial
      */
-    private String path;
+    private final String path;
 
     /**
      * The length of this abstract pathname's prefix, or zero if it has no
      * prefix.
      */
-    private transient int prefixLength;
+    private final transient int prefixLength;
 
     /**
      * Returns the length of this abstract pathname's prefix.
@@ -2023,9 +2023,27 @@ public class File
         char sep = s.readChar(); // read the previous separator char
         if (sep != separatorChar)
             pathField = pathField.replace(sep, separatorChar);
-        this.path = fs.normalize(pathField);
-        this.prefixLength = fs.prefixLength(this.path);
+        String path = fs.normalize(pathField);
+        UNSAFE.putObject(this, PATH_OFFSET, path);
+        UNSAFE.putIntVolatile(this, PREFIX_LENGTH_OFFSET, fs.prefixLength(path));
     }
+
+    private static final long PATH_OFFSET;
+    private static final long PREFIX_LENGTH_OFFSET;
+    private static final sun.misc.Unsafe UNSAFE;
+    static {
+        try {
+            sun.misc.Unsafe unsafe = sun.misc.Unsafe.getUnsafe();
+            PATH_OFFSET = unsafe.objectFieldOffset(
+                    File.class.getDeclaredField("path"));
+            PREFIX_LENGTH_OFFSET = unsafe.objectFieldOffset(
+                    File.class.getDeclaredField("prefixLength"));
+            UNSAFE = unsafe;
+        } catch (ReflectiveOperationException e) {
+            throw new Error(e);
+        }
+    }
+
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
     private static final long serialVersionUID = 301077366599181567L;

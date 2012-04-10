@@ -297,7 +297,7 @@ typedef union {
 #define SAT32(DST) SAT_32(DST, val0)
 
 /***************************************************************/
-#ifdef MLIB_OS64BIT
+#if defined(MLIB_OS64BIT) || (defined(MACOSX) && defined(_LP64))
 #define PBITS  3
 #define MLIB_POINTER_SHIFT(P)  (((P) >> (MLIB_SHIFT - 3)) &~ 7)
 #define MLIB_POINTER_GET(A, P) (*(DTYPE**)((mlib_u8*)(A) + (P)))

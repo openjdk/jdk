@@ -31,11 +31,7 @@ DEST=`pwd`
 
 OS=`uname -s`
 case "$OS" in
-  SunOS )
-    PS=":"
-    FS="/"
-    ;;
-  Linux )
+  SunOS | Linux | Darwin )
     PS=":"
     FS="/"
     ;;
@@ -58,10 +54,10 @@ case "$OS" in
 esac
 
 #
-# build jar1 
+# build jar1
 #
 mkdir -p ${DEST}${FS}jar1
-cd ${TESTSRC}${FS}etc${FS}jar1 
+cd ${TESTSRC}${FS}etc${FS}jar1
 cp -r . ${DEST}${FS}jar1
 ${TESTJAVA}${FS}bin${FS}javac -d ${DEST}${FS}jar1 \
     ${TESTSRC}${FS}src${FS}jar1${FS}LoadResourceBundle.java

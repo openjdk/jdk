@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -341,12 +341,6 @@ int CallDynamicJavaDirectNode::compute_padding(int current_offset) const {
   return round_to(current_offset, alignment_required()) - current_offset;
 }
 
-#ifndef PRODUCT
-void MachBreakpointNode::format( PhaseRegAlloc *, outputStream* st ) const {
-  st->print("INT3");
-}
-#endif
-
 // EMIT_RM()
 void emit_rm(CodeBuffer &cbuf, int f1, int f2, int f3) {
   unsigned char c = (unsigned char)((f1 << 6) | (f2 << 3) | f3);
@@ -550,117 +544,65 @@ void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 
 //=============================================================================
 #ifndef PRODUCT
-void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
+void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
   Compile* C = ra_->C;
-  if( C->in_24_bit_fp_mode() ) {
-    st->print("FLDCW  24 bit fpu control word");
-    st->print_cr(""); st->print("\t");
-  }
 
   int framesize = C->frame_slots() << LogBytesPerInt;
   assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
-  // Remove two words for return addr and rbp,
-  framesize -= 2*wordSize;
+  // Remove wordSize for return addr which is already pushed.
+  framesize -= wordSize;
 
-  // Calls to C2R adapters often do not accept exceptional returns.
-  // We require that their callers must bang for them.  But be careful, because
-  // some VM calls (such as call site linkage) can use several kilobytes of
-  // stack.  But the stack safety zone should account for that.
-  // See bugs 4446381, 4468289, 4497237.
   if (C->need_stack_bang(framesize)) {
-    st->print_cr("# stack bang"); st->print("\t");
-  }
-  st->print_cr("PUSHL  EBP"); st->print("\t");
-
-  if( VerifyStackAtCalls ) { // Majik cookie to verify stack depth
-    st->print("PUSH   0xBADB100D\t# Majik cookie for stack depth check");
-    st->print_cr(""); st->print("\t");
     framesize -= wordSize;
-  }
-
-  if ((C->in_24_bit_fp_mode() || VerifyStackAtCalls ) && framesize < 128 ) {
+    st->print("# stack bang");
+    st->print("\n\t");
+    st->print("PUSH   EBP\t# Save EBP");
     if (framesize) {
-      st->print("SUB    ESP,%d\t# Create frame",framesize);
+      st->print("\n\t");
+      st->print("SUB    ESP, #%d\t# Create frame",framesize);
     }
   } else {
-    st->print("SUB    ESP,%d\t# Create frame",framesize);
+    st->print("SUB    ESP, #%d\t# Create frame",framesize);
+    st->print("\n\t");
+    framesize -= wordSize;
+    st->print("MOV    [ESP + #%d], EBP\t# Save EBP",framesize);
   }
+
+  if (VerifyStackAtCalls) {
+    st->print("\n\t");
+    framesize -= wordSize;
+    st->print("MOV    [ESP + #%d], 0xBADB100D\t# Majik cookie for stack depth check",framesize);
+  }
+
+  if( C->in_24_bit_fp_mode() ) {
+    st->print("\n\t");
+    st->print("FLDCW  \t# load 24 bit fpu control word");
+  }
+  if (UseSSE >= 2 && VerifyFPU) {
+    st->print("\n\t");
+    st->print("# verify FPU stack (must be clean on entry)");
+  }
+
+#ifdef ASSERT
+  if (VerifyStackAtCalls) {
+    st->print("\n\t");
+    st->print("# stack alignment check");
+  }
+#endif
+  st->cr();
 }
 #endif
 
 
 void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
-
-  if (UseSSE >= 2 && VerifyFPU) {
-    MacroAssembler masm(&cbuf);
-    masm.verify_FPU(0, "FPU stack must be clean on entry");
-  }
-
-  // WARNING: Initial instruction MUST be 5 bytes or longer so that
-  // NativeJump::patch_verified_entry will be able to patch out the entry
-  // code safely. The fldcw is ok at 6 bytes, the push to verify stack
-  // depth is ok at 5 bytes, the frame allocation can be either 3 or
-  // 6 bytes. So if we don't do the fldcw or the push then we must
-  // use the 6 byte frame allocation even if we have no frame. :-(
-  // If method sets FPU control word do it now
-  if( C->in_24_bit_fp_mode() ) {
-    MacroAssembler masm(&cbuf);
-    masm.fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_24()));
-  }
+  MacroAssembler _masm(&cbuf);
 
   int framesize = C->frame_slots() << LogBytesPerInt;
-  assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
-  // Remove two words for return addr and rbp,
-  framesize -= 2*wordSize;
 
-  // Calls to C2R adapters often do not accept exceptional returns.
-  // We require that their callers must bang for them.  But be careful, because
-  // some VM calls (such as call site linkage) can use several kilobytes of
-  // stack.  But the stack safety zone should account for that.
-  // See bugs 4446381, 4468289, 4497237.
-  if (C->need_stack_bang(framesize)) {
-    MacroAssembler masm(&cbuf);
-    masm.generate_stack_overflow_check(framesize);
-  }
+  __ verified_entry(framesize, C->need_stack_bang(framesize), C->in_24_bit_fp_mode());
 
-  // We always push rbp, so that on return to interpreter rbp, will be
-  // restored correctly and we can correct the stack.
-  emit_opcode(cbuf, 0x50 | EBP_enc);
-
-  if( VerifyStackAtCalls ) { // Majik cookie to verify stack depth
-    emit_opcode(cbuf, 0x68); // push 0xbadb100d
-    emit_d32(cbuf, 0xbadb100d);
-    framesize -= wordSize;
-  }
-
-  if ((C->in_24_bit_fp_mode() || VerifyStackAtCalls ) && framesize < 128 ) {
-    if (framesize) {
-      emit_opcode(cbuf, 0x83);   // sub  SP,#framesize
-      emit_rm(cbuf, 0x3, 0x05, ESP_enc);
-      emit_d8(cbuf, framesize);
-    }
-  } else {
-    emit_opcode(cbuf, 0x81);   // sub  SP,#framesize
-    emit_rm(cbuf, 0x3, 0x05, ESP_enc);
-    emit_d32(cbuf, framesize);
-  }
   C->set_frame_complete(cbuf.insts_size());
-
-#ifdef ASSERT
-  if (VerifyStackAtCalls) {
-    Label L;
-    MacroAssembler masm(&cbuf);
-    masm.push(rax);
-    masm.mov(rax, rsp);
-    masm.andptr(rax, StackAlignmentInBytes-1);
-    masm.cmpptr(rax, StackAlignmentInBytes-wordSize);
-    masm.pop(rax);
-    masm.jcc(Assembler::equal, L);
-    masm.stop("Stack is not properly aligned!");
-    masm.bind(L);
-  }
-#endif
 
   if (C->has_mach_constant_base_node()) {
     // NOTE: We set the table base offset here because users might be
@@ -1169,7 +1111,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
 }
 
 #ifndef PRODUCT
-void MachSpillCopyNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
+void MachSpillCopyNode::format(PhaseRegAlloc *ra_, outputStream* st) const {
   implementation( NULL, ra_, false, st );
 }
 #endif
@@ -1180,22 +1122,6 @@ void MachSpillCopyNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
 uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
   return implementation( NULL, ra_, true, NULL );
-}
-
-//=============================================================================
-#ifndef PRODUCT
-void MachNopNode::format( PhaseRegAlloc *, outputStream* st ) const {
-  st->print("NOP \t# %d bytes pad for loops and calls", _count);
-}
-#endif
-
-void MachNopNode::emit(CodeBuffer &cbuf, PhaseRegAlloc * ) const {
-  MacroAssembler _masm(&cbuf);
-  __ nop(_count);
-}
-
-uint MachNopNode::size(PhaseRegAlloc *) const {
-  return _count;
 }
 
 
@@ -1367,6 +1293,14 @@ const bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode))
     return false;
 
+  switch (opcode) {
+    case Op_PopCountI:
+    case Op_PopCountL:
+      if (!UsePopCountInstruction)
+        return false;
+    break;
+  }
+  
   return true;  // Per default match rules are supported.
 }
 
@@ -1881,21 +1815,6 @@ encode %{
       MacroAssembler masm(&cbuf);
       masm.fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_24()));
     }
-  %}
-
-  enc_class preserve_SP %{
-    debug_only(int off0 = cbuf.insts_size());
-    MacroAssembler _masm(&cbuf);
-    // RBP is preserved across all calls, even compiled calls.
-    // Use it to preserve RSP in places where the callee might change the SP.
-    __ movptr(rbp_mh_SP_save, rsp);
-    debug_only(int off1 = cbuf.insts_size());
-    assert(off1 - off0 == preserve_SP_size(), "correct size prediction");
-  %}
-
-  enc_class restore_SP %{
-    MacroAssembler _masm(&cbuf);
-    __ movptr(rsp, rbp_mh_SP_save);
   %}
 
   enc_class Java_Static_Call (method meth) %{    // JAVA STATIC CALL
@@ -3846,9 +3765,9 @@ frame %{
   // Ret Addr is on stack in slot 0 if no locks or verification or alignment.
   // Otherwise, it is above the locks and verification slot and alignment word
   return_addr(STACK - 1 +
-              round_to(1+VerifyStackAtCalls+
-              Compile::current()->fixed_slots(),
-              (StackAlignmentInBytes/wordSize)));
+              round_to((Compile::current()->in_preserve_stack_slots() +
+                        Compile::current()->fixed_slots()),
+                       stack_alignment_in_slots()));
 
   // Body of function which returns an integer array locating
   // arguments either in registers or in stack slots.  Passed an array
@@ -13475,6 +13394,25 @@ instruct safePoint_poll(eFlagsReg cr) %{
   ins_encode( Safepoint_Poll() );
   ins_pipe( ialu_reg_mem );
 %}
+
+
+// ============================================================================
+// This name is KNOWN by the ADLC and cannot be changed.
+// The ADLC forces a 'TypeRawPtr::BOTTOM' output type
+// for this guy.
+instruct tlsLoadP(eRegP dst, eFlagsReg cr) %{
+  match(Set dst (ThreadLocal));
+  effect(DEF dst, KILL cr);
+
+  format %{ "MOV    $dst, Thread::current()" %}
+  ins_encode %{
+    Register dstReg = as_Register($dst$$reg);
+    __ get_thread(dstReg);
+  %}
+  ins_pipe( ialu_reg_fat );
+%}
+
+
 
 //----------PEEPHOLE RULES-----------------------------------------------------
 // These must follow all instruction definitions as they use the names

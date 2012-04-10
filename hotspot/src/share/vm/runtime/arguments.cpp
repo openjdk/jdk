@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,8 +101,6 @@ SystemProperty *Arguments::_sun_boot_class_path = NULL;
 
 char* Arguments::_meta_index_path = NULL;
 char* Arguments::_meta_index_dir = NULL;
-
-static bool force_client_mode = false;
 
 // Check if head of 'option' matches 'name', and sets 'tail' remaining part of option string
 
@@ -818,8 +816,21 @@ bool Arguments::process_argument(const char* arg,
     return true;
   }
 
-  jio_fprintf(defaultStream::error_stream(),
-              "Unrecognized VM option '%s'\n", argname);
+  // For locked flags, report a custom error message if available.
+  // Otherwise, report the standard unrecognized VM option.
+
+  Flag* locked_flag = Flag::find_flag((char*)argname, strlen(argname), true);
+  if (locked_flag != NULL) {
+    char locked_message_buf[BUFLEN];
+    locked_flag->get_locked_message(locked_message_buf, BUFLEN);
+    if (strlen(locked_message_buf) == 0) {
+      jio_fprintf(defaultStream::error_stream(),
+        "Unrecognized VM option '%s'\n", argname);
+    } else {
+      jio_fprintf(defaultStream::error_stream(), "%s", locked_message_buf);
+    }
+  }
+
   // allow for commandline "commenting out" options like -XX:#+Verbose
   return arg[0] == '#';
 }
@@ -1040,6 +1051,16 @@ void Arguments::set_tiered_flags() {
 }
 
 #ifndef KERNEL
+static void disable_adaptive_size_policy(const char* collector_name) {
+  if (UseAdaptiveSizePolicy) {
+    if (FLAG_IS_CMDLINE(UseAdaptiveSizePolicy)) {
+      warning("disabling UseAdaptiveSizePolicy; it is incompatible with %s.",
+              collector_name);
+    }
+    FLAG_SET_DEFAULT(UseAdaptiveSizePolicy, false);
+  }
+}
+
 // If the user has chosen ParallelGCThreads > 0, we set UseParNewGC
 // if it's not explictly set or unset. If the user has chosen
 // UseParNewGC and not explicitly set ParallelGCThreads we
@@ -1049,11 +1070,8 @@ void Arguments::set_parnew_gc_flags() {
          "control point invariant");
   assert(UseParNewGC, "Error");
 
-  // Turn off AdaptiveSizePolicy by default for parnew until it is
-  // complete.
-  if (FLAG_IS_DEFAULT(UseAdaptiveSizePolicy)) {
-    FLAG_SET_DEFAULT(UseAdaptiveSizePolicy, false);
-  }
+  // Turn off AdaptiveSizePolicy for parnew until it is complete.
+  disable_adaptive_size_policy("UseParNewGC");
 
   if (ParallelGCThreads == 0) {
     FLAG_SET_DEFAULT(ParallelGCThreads,
@@ -1110,11 +1128,8 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     FLAG_SET_ERGO(bool, UseParNewGC, true);
   }
 
-  // Turn off AdaptiveSizePolicy by default for cms until it is
-  // complete.
-  if (FLAG_IS_DEFAULT(UseAdaptiveSizePolicy)) {
-    FLAG_SET_DEFAULT(UseAdaptiveSizePolicy, false);
-  }
+  // Turn off AdaptiveSizePolicy for CMS until it is complete.
+  disable_adaptive_size_policy("UseConcMarkSweepGC");
 
   // In either case, adjust ParallelGCThreads and/or UseParNewGC
   // as needed.
@@ -1341,7 +1356,7 @@ void Arguments::set_ergonomics_flags() {
     return;
   }
 
-  if (os::is_server_class_machine() && !force_client_mode ) {
+  if (os::is_server_class_machine()) {
     // If no other collector is requested explicitly,
     // let the VM select the collector based on
     // machine class and automatic selection policy.
@@ -1366,12 +1381,9 @@ void Arguments::set_ergonomics_flags() {
   // by ergonomics.
   if (MaxHeapSize <= max_heap_for_compressed_oops()) {
 #if !defined(COMPILER1) || defined(TIERED)
-// disable UseCompressedOops by default on MacOS X until 7118647 is fixed
-#ifndef __APPLE__
     if (FLAG_IS_DEFAULT(UseCompressedOops)) {
       FLAG_SET_ERGO(bool, UseCompressedOops, true);
     }
-#endif // !__APPLE__
 #endif
 #ifdef _WIN64
     if (UseLargePages && UseCompressedOops) {
@@ -1396,10 +1408,11 @@ void Arguments::set_ergonomics_flags() {
 
 void Arguments::set_parallel_gc_flags() {
   assert(UseParallelGC || UseParallelOldGC, "Error");
-  // If parallel old was requested, automatically enable parallel scavenge.
-  if (UseParallelOldGC && !UseParallelGC && FLAG_IS_DEFAULT(UseParallelGC)) {
-    FLAG_SET_DEFAULT(UseParallelGC, true);
+  // Enable ParallelOld unless it was explicitly disabled (cmd line or rc file).
+  if (FLAG_IS_DEFAULT(UseParallelOldGC)) {
+    FLAG_SET_DEFAULT(UseParallelOldGC, true);
   }
+  FLAG_SET_DEFAULT(UseParallelGC, true);
 
   // If no heap maximum was requested explicitly, use some reasonable fraction
   // of the physical memory, up to a maximum of 1GB.
@@ -2050,6 +2063,19 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs* args) {
     FREE_C_HEAP_ARRAY(char, altclasses_path);
   }
 
+  if (WhiteBoxAPI) {
+    // Append wb.jar to bootclasspath if enabled
+    const char* wb_jar = "wb.jar";
+    size_t wb_path_len = strlen(get_meta_index_dir()) + 1 +
+                         strlen(wb_jar);
+    char* wb_path = NEW_C_HEAP_ARRAY(char, wb_path_len);
+    strcpy(wb_path, get_meta_index_dir());
+    strcat(wb_path, wb_jar);
+    scp.add_suffix(wb_path);
+    scp_assembly_required = true;
+    FREE_C_HEAP_ARRAY(char, wb_path);
+  }
+
   // Parse _JAVA_OPTIONS environment variable (if present) (mimics classic VM)
   result = parse_java_options_environment_variable(&scp, &scp_assembly_required);
   if (result != JNI_OK) {
@@ -2510,15 +2536,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       // was arrived at by experimenting with specjbb.
       FLAG_SET_CMDLINE(uintx, OldPLABSize, 8*K);  // Note: this is in words
 
-      // CompilationPolicyChoice=0 causes the server compiler to adopt
-      // a more conservative which-method-do-I-compile policy when one
-      // of the counters maintained by the interpreter trips.  The
-      // result is reduced startup time and improved specjbb and
-      // alacrity performance.  Zero is the default, but we set it
-      // explicitly here in case the default changes.
-      // See runtime/compilationPolicy.*.
-      FLAG_SET_CMDLINE(intx, CompilationPolicyChoice, 0);
-
       // Enable parallel GC and adaptive generation sizing
       FLAG_SET_CMDLINE(bool, UseParallelGC, true);
       FLAG_SET_DEFAULT(ParallelGCThreads,
@@ -2935,11 +2952,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   // Construct the path to the archive
   char jvm_path[JVM_MAXPATHLEN];
   os::jvm_path(jvm_path, sizeof(jvm_path));
-#ifdef TIERED
-  if (strstr(jvm_path, "client") != NULL) {
-    force_client_mode = true;
-  }
-#endif // TIERED
   char *end = strrchr(jvm_path, *os::file_separator());
   if (end != NULL) *end = '\0';
   char *shared_archive_path = NEW_C_HEAP_ARRAY(char, strlen(jvm_path) +

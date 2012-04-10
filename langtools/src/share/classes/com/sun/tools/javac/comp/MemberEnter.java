@@ -44,6 +44,7 @@ import static com.sun.tools.javac.code.Flags.ANNOTATION;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.TypeTags.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 /** This is the second phase of Enter, in which classes are completed
@@ -142,7 +143,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 JCDiagnostic msg = diags.fragment("fatal.err.no.java.lang");
                 throw new FatalError(msg);
             } else {
-                log.error(pos, "doesnt.exist", tsym);
+                log.error(DiagnosticFlag.RESOLVE_ERROR, pos, "doesnt.exist", tsym);
             }
         }
         env.toplevel.starImportScope.importAll(tsym.members());
@@ -528,24 +529,17 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
     // process the non-static imports and the static imports of types.
     public void visitImport(JCImport tree) {
-        JCTree imp = tree.qualid;
+        JCFieldAccess imp = (JCFieldAccess)tree.qualid;
         Name name = TreeInfo.name(imp);
-        TypeSymbol p;
 
         // Create a local environment pointing to this tree to disable
         // effects of other imports in Resolve.findGlobalType
         Env<AttrContext> localEnv = env.dup(tree);
 
-        // Attribute qualifying package or class.
-        JCFieldAccess s = (JCFieldAccess) imp;
-        p = attr.
-            attribTree(s.selected,
-                       localEnv,
-                       tree.staticImport ? TYP : (TYP | PCK),
-                       Type.noType).tsym;
+        TypeSymbol p = attr.attribImportQualifier(tree, localEnv).tsym;
         if (name == names.asterisk) {
             // Import on demand.
-            chk.checkCanonical(s.selected);
+            chk.checkCanonical(imp.selected);
             if (tree.staticImport)
                 importStaticAll(tree.pos, p, env);
             else
@@ -554,7 +548,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             // Named type import.
             if (tree.staticImport) {
                 importNamedStatic(tree.pos(), p, name, localEnv);
-                chk.checkCanonical(s.selected);
+                chk.checkCanonical(imp.selected);
             } else {
                 TypeSymbol c = attribImportType(imp, localEnv).tsym;
                 chk.checkCanonical(imp);

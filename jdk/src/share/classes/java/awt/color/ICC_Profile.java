@@ -921,9 +921,9 @@ public class ICC_Profile implements Serializable {
      */
     private static ICC_Profile getStandardProfile(final String name) {
 
-        return (ICC_Profile) AccessController.doPrivileged(
-            new PrivilegedAction() {
-                 public Object run() {
+        return AccessController.doPrivileged(
+            new PrivilegedAction<ICC_Profile>() {
+                 public ICC_Profile run() {
                      ICC_Profile p = null;
                      try {
                          p = getInstance (name);

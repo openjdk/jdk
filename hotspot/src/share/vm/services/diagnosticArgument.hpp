@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,49 @@
 #include "runtime/thread.hpp"
 #include "utilities/exceptions.hpp"
 
+class StringArrayArgument : public CHeapObj {
+private:
+  GrowableArray<char*>* _array;
+public:
+  StringArrayArgument() {
+    _array = new(ResourceObj::C_HEAP)GrowableArray<char *>(32, true);
+    assert(_array != NULL, "Sanity check");
+  }
+  void add(const char* str, size_t len) {
+    if (str != NULL) {
+      char* ptr = NEW_C_HEAP_ARRAY(char, len+1);
+      strncpy(ptr, str, len);
+      ptr[len] = 0;
+      _array->append(ptr);
+    }
+  }
+  GrowableArray<char*>* array() {
+    return _array;
+  }
+  ~StringArrayArgument() {
+    for (int i=0; i<_array->length(); i++) {
+      if(_array->at(i) != NULL) { // Safety check
+        FREE_C_HEAP_ARRAY(char, _array->at(i));
+      }
+    }
+    delete _array;
+  }
+};
+
+class NanoTimeArgument {
+public:
+  jlong _nanotime;
+  jlong _time;
+  char _unit[3];
+};
+
+class MemorySizeArgument {
+public:
+  u8 _size;
+  u8 _val;
+  char _multiplier;
+};
+
 class GenDCmdArgument : public ResourceObj {
 protected:
   GenDCmdArgument* _next;
@@ -40,6 +83,7 @@ protected:
   const char*      _default_string;
   bool             _is_set;
   bool             _is_mandatory;
+  bool             _allow_multiple;
   GenDCmdArgument(const char* name, const char* description, const char* type,
                   const char* default_string, bool mandatory) {
     _name = name;
@@ -48,6 +92,7 @@ protected:
     _default_string = default_string;
     _is_mandatory = mandatory;
     _is_set = false;
+    _allow_multiple = false;
   };
 public:
   const char* name() { return _name; }
@@ -56,6 +101,7 @@ public:
   const char* default_string() { return _default_string; }
   bool is_set() { return _is_set; }
   void set_is_set(bool b) { _is_set = b; }
+  bool allow_multiple() { return _allow_multiple; }
   bool is_mandatory() { return _is_mandatory; }
   bool has_value() { return _is_set || _default_string != NULL; }
   bool has_default() { return _default_string != NULL; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1181,6 +1181,11 @@ void GraphBuilder::if_node(Value x, If::Condition cond, Value y, ValueStack* sta
   bool is_bb = tsux->bci() < stream()->cur_bci() || fsux->bci() < stream()->cur_bci();
   Instruction *i = append(new If(x, cond, false, y, tsux, fsux, is_bb ? state_before : NULL, is_bb));
 
+  assert(i->as_Goto() == NULL ||
+         (i->as_Goto()->sux_at(0) == tsux  && i->as_Goto()->is_safepoint() == tsux->bci() < stream()->cur_bci()) ||
+         (i->as_Goto()->sux_at(0) == fsux  && i->as_Goto()->is_safepoint() == fsux->bci() < stream()->cur_bci()),
+         "safepoint state of Goto returned by canonicalizer incorrect");
+
   if (is_profiling()) {
     If* if_node = i->as_If();
     if (if_node != NULL) {
@@ -1301,9 +1306,19 @@ void GraphBuilder::table_switch() {
       if (sw.dest_offset_at(i) < 0) has_bb = true;
     }
     // add default successor
+    if (sw.default_offset() < 0) has_bb = true;
     sux->at_put(i, block_at(bci() + sw.default_offset()));
     ValueStack* state_before = has_bb ? copy_state_before() : NULL;
-    append(new TableSwitch(ipop(), sux, sw.low_key(), state_before, has_bb));
+    Instruction* res = append(new TableSwitch(ipop(), sux, sw.low_key(), state_before, has_bb));
+#ifdef ASSERT
+    if (res->as_Goto()) {
+      for (i = 0; i < l; i++) {
+        if (sux->at(i) == res->as_Goto()->sux_at(0)) {
+          assert(res->as_Goto()->is_safepoint() == sw.dest_offset_at(i) < 0, "safepoint state of Goto returned by canonicalizer incorrect");
+        }
+      }
+    }
+#endif
   }
 }
 
@@ -1336,9 +1351,19 @@ void GraphBuilder::lookup_switch() {
       keys->at_put(i, pair.match());
     }
     // add default successor
+    if (sw.default_offset() < 0) has_bb = true;
     sux->at_put(i, block_at(bci() + sw.default_offset()));
     ValueStack* state_before = has_bb ? copy_state_before() : NULL;
-    append(new LookupSwitch(ipop(), sux, keys, state_before, has_bb));
+    Instruction* res = append(new LookupSwitch(ipop(), sux, keys, state_before, has_bb));
+#ifdef ASSERT
+    if (res->as_Goto()) {
+      for (i = 0; i < l; i++) {
+        if (sux->at(i) == res->as_Goto()->sux_at(0)) {
+          assert(res->as_Goto()->is_safepoint() == sw.pair_at(i).offset() < 0, "safepoint state of Goto returned by canonicalizer incorrect");
+        }
+      }
+    }
+#endif
   }
 }
 
@@ -1395,6 +1420,12 @@ void GraphBuilder::method_return(Value x) {
     call_register_finalizer();
   }
 
+  bool need_mem_bar = false;
+  if (method()->name() == ciSymbol::object_initializer_name() &&
+      scope()->wrote_final()) {
+    need_mem_bar = true;
+  }
+
   // Check to see whether we are inlining. If so, Return
   // instructions become Gotos to the continuation point.
   if (continuation() != NULL) {
@@ -1412,6 +1443,10 @@ void GraphBuilder::method_return(Value x) {
     if (method()->is_synchronized()) {
       assert(state()->locks_size() == 1, "receiver must be locked here");
       monitorexit(state()->lock_at(0), SynchronizationEntryBCI);
+    }
+
+    if (need_mem_bar) {
+      append(new MemBar(lir_membar_storestore));
     }
 
     // State at end of inlined method is the state of the caller
@@ -1433,7 +1468,6 @@ void GraphBuilder::method_return(Value x) {
     // the continuation point.
     append_with_bci(goto_callee, scope_data()->continuation()->bci());
     incr_num_returns();
-
     return;
   }
 
@@ -1447,6 +1481,10 @@ void GraphBuilder::method_return(Value x) {
       receiver = append(new Constant(new ClassConstant(method()->holder())));
     }
     append_split(new MonitorExit(receiver, state()->unlock()));
+  }
+
+  if (need_mem_bar) {
+      append(new MemBar(lir_membar_storestore));
   }
 
   append(new Return(x));
@@ -1481,6 +1519,9 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
     }
   }
 
+  if (field->is_final() && (code == Bytecodes::_putfield)) {
+    scope()->set_wrote_final();
+  }
 
   const int offset = !needs_patching ? field->offset() : -1;
   switch (code) {
@@ -1592,6 +1633,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   // this happened while running the JCK invokevirtual tests under doit.  TKR
   ciMethod* cha_monomorphic_target = NULL;
   ciMethod* exact_target = NULL;
+  Value better_receiver = NULL;
   if (UseCHA && DeoptC1 && klass->is_loaded() && target->is_loaded() &&
       !target->is_method_handle_invoke()) {
     Value receiver = NULL;
@@ -1653,6 +1695,18 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       ciInstanceKlass* singleton = NULL;
       if (target->holder()->nof_implementors() == 1) {
         singleton = target->holder()->implementor(0);
+
+        assert(holder->is_interface(), "invokeinterface to non interface?");
+        ciInstanceKlass* decl_interface = (ciInstanceKlass*)holder;
+        // the number of implementors for decl_interface is less or
+        // equal to the number of implementors for target->holder() so
+        // if number of implementors of target->holder() == 1 then
+        // number of implementors for decl_interface is 0 or 1. If
+        // it's 0 then no class implements decl_interface and there's
+        // no point in inlining.
+        if (!holder->is_loaded() || decl_interface->nof_implementors() != 1) {
+          singleton = NULL;
+        }
       }
       if (singleton) {
         cha_monomorphic_target = target->find_monomorphic_target(calling_klass, target->holder(), singleton);
@@ -1667,7 +1721,9 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
           CheckCast* c = new CheckCast(klass, receiver, copy_state_for_exception());
           c->set_incompatible_class_change_check();
           c->set_direct_compare(klass->is_final());
-          append_split(c);
+          // pass the result of the checkcast so that the compiler has
+          // more accurate type info in the inlinee
+          better_receiver = append_split(c);
         }
       }
     }
@@ -1709,7 +1765,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       }
       if (!success) {
         // static binding => check if callee is ok
-        success = try_inline(inline_target, (cha_monomorphic_target != NULL) || (exact_target != NULL));
+        success = try_inline(inline_target, (cha_monomorphic_target != NULL) || (exact_target != NULL), better_receiver);
       }
       CHECK_BAILOUT();
 
@@ -3034,7 +3090,7 @@ int GraphBuilder::recursive_inline_level(ciMethod* cur_callee) const {
 }
 
 
-bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known) {
+bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, Value receiver) {
   // Clear out any existing inline bailout condition
   clear_inline_bailout();
 
@@ -3056,7 +3112,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known) {
   } else if (callee->is_abstract()) {
     INLINE_BAILOUT("abstract")
   } else {
-    return try_inline_full(callee, holder_known);
+    return try_inline_full(callee, holder_known, NULL, receiver);
   }
 }
 
@@ -3405,7 +3461,7 @@ void GraphBuilder::fill_sync_handler(Value lock, BlockBegin* sync_handler, bool 
 }
 
 
-bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBegin* cont_block) {
+bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBegin* cont_block, Value receiver) {
   assert(!callee->is_native(), "callee must not be native");
   if (CompilationPolicy::policy()->should_not_inline(compilation()->env(), callee)) {
     INLINE_BAILOUT("inlining prohibited by policy");
@@ -3541,6 +3597,9 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBeg
       Value  arg = caller_state->stack_at_inc(i);
       // NOTE: take base() of arg->type() to avoid problems storing
       // constants
+      if (receiver != NULL && par_no == 0) {
+        arg = receiver;
+      }
       store_local(callee_state, arg, arg->type()->base(), par_no);
     }
   }
@@ -3683,56 +3742,61 @@ bool GraphBuilder::for_method_handle_inline(ciMethod* callee) {
       // Get the two MethodHandle inputs from the Phi.
       Value op1 = phi->operand_at(0);
       Value op2 = phi->operand_at(1);
-      ciMethodHandle* mh1 = op1->type()->as_ObjectType()->constant_value()->as_method_handle();
-      ciMethodHandle* mh2 = op2->type()->as_ObjectType()->constant_value()->as_method_handle();
+      ObjectType* op1type = op1->type()->as_ObjectType();
+      ObjectType* op2type = op2->type()->as_ObjectType();
 
-      // Set the callee to have access to the class and signature in
-      // the MethodHandleCompiler.
-      mh1->set_callee(callee);
-      mh1->set_caller(method());
-      mh2->set_callee(callee);
-      mh2->set_caller(method());
+      if (op1type->is_constant() && op2type->is_constant()) {
+        ciMethodHandle* mh1 = op1type->constant_value()->as_method_handle();
+        ciMethodHandle* mh2 = op2type->constant_value()->as_method_handle();
 
-      // Get adapters for the MethodHandles.
-      ciMethod* mh1_adapter = mh1->get_method_handle_adapter();
-      ciMethod* mh2_adapter = mh2->get_method_handle_adapter();
+        // Set the callee to have access to the class and signature in
+        // the MethodHandleCompiler.
+        mh1->set_callee(callee);
+        mh1->set_caller(method());
+        mh2->set_callee(callee);
+        mh2->set_caller(method());
 
-      if (mh1_adapter != NULL && mh2_adapter != NULL) {
-        set_inline_cleanup_info();
+        // Get adapters for the MethodHandles.
+        ciMethod* mh1_adapter = mh1->get_method_handle_adapter();
+        ciMethod* mh2_adapter = mh2->get_method_handle_adapter();
 
-        // Build the If guard
-        BlockBegin* one = new BlockBegin(next_bci());
-        BlockBegin* two = new BlockBegin(next_bci());
-        BlockBegin* end = new BlockBegin(next_bci());
-        Instruction* iff = append(new If(phi, If::eql, false, op1, one, two, NULL, false));
-        block()->set_end(iff->as_BlockEnd());
+        if (mh1_adapter != NULL && mh2_adapter != NULL) {
+          set_inline_cleanup_info();
 
-        // Connect up the states
-        one->merge(block()->end()->state());
-        two->merge(block()->end()->state());
+          // Build the If guard
+          BlockBegin* one = new BlockBegin(next_bci());
+          BlockBegin* two = new BlockBegin(next_bci());
+          BlockBegin* end = new BlockBegin(next_bci());
+          Instruction* iff = append(new If(phi, If::eql, false, op1, one, two, NULL, false));
+          block()->set_end(iff->as_BlockEnd());
 
-        // Save the state for the second inlinee
-        ValueStack* state_before = copy_state_before();
+          // Connect up the states
+          one->merge(block()->end()->state());
+          two->merge(block()->end()->state());
 
-        // Parse first adapter
-        _last = _block = one;
-        if (!try_inline_full(mh1_adapter, /*holder_known=*/ true, end)) {
-          restore_inline_cleanup_info();
-          block()->clear_end();  // remove appended iff
-          return false;
+          // Save the state for the second inlinee
+          ValueStack* state_before = copy_state_before();
+
+          // Parse first adapter
+          _last = _block = one;
+          if (!try_inline_full(mh1_adapter, /*holder_known=*/ true, end, NULL)) {
+            restore_inline_cleanup_info();
+            block()->clear_end();  // remove appended iff
+            return false;
+          }
+
+          // Parse second adapter
+          _last = _block = two;
+          _state = state_before;
+          if (!try_inline_full(mh2_adapter, /*holder_known=*/ true, end, NULL)) {
+            restore_inline_cleanup_info();
+            block()->clear_end();  // remove appended iff
+            return false;
+          }
+
+          connect_to_end(end);
+          return true;
         }
-
-        // Parse second adapter
-        _last = _block = two;
-        _state = state_before;
-        if (!try_inline_full(mh2_adapter, /*holder_known=*/ true, end)) {
-          restore_inline_cleanup_info();
-          block()->clear_end();  // remove appended iff
-          return false;
-        }
-
-        connect_to_end(end);
-        return true;
       }
     }
   }

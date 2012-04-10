@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,8 @@ void GCNotifier::pushNotification(GCMemoryManager *mgr, const char *action, cons
   // Make a copy of the last GC statistics
   // GC may occur between now and the creation of the notification
   int num_pools = MemoryService::num_memory_pools();
-  GCStatInfo* stat = new GCStatInfo(num_pools);
+  // stat is deallocated inside GCNotificationRequest
+  GCStatInfo* stat = new(ResourceObj::C_HEAP) GCStatInfo(num_pools);
   mgr->get_last_gc_stat(stat);
   GCNotificationRequest *request = new GCNotificationRequest(os::javaTimeMillis(),mgr,action,cause,stat);
   addRequest(request);
@@ -179,17 +180,43 @@ static Handle createGcInfo(GCMemoryManager *gcManager, GCStatInfo *gcStatInfo,TR
 }
 
 void GCNotifier::sendNotification(TRAPS) {
+  GCNotifier::sendNotificationInternal(THREAD);
+  // Clearing pending exception to avoid premature termination of
+  // the service thread
+  if (HAS_PENDING_EXCEPTION) {
+    CLEAR_PENDING_EXCEPTION;
+  }
+}
+
+class NotificationMark : public StackObj {
+  // This class is used in GCNotifier::sendNotificationInternal to ensure that
+  // the GCNotificationRequest object is properly cleaned up, whatever path
+  // is used to exit the method.
+  GCNotificationRequest* _request;
+public:
+  NotificationMark(GCNotificationRequest* r) {
+    _request = r;
+  }
+  ~NotificationMark() {
+    assert(_request != NULL, "Sanity check");
+    delete _request;
+  }
+};
+
+void GCNotifier::sendNotificationInternal(TRAPS) {
   ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
   GCNotificationRequest *request = getRequest();
-  if(request != NULL) {
-    Handle objGcInfo = createGcInfo(request->gcManager,request->gcStatInfo,THREAD);
+  if (request != NULL) {
+    NotificationMark nm(request);
+    Handle objGcInfo = createGcInfo(request->gcManager, request->gcStatInfo, THREAD);
 
     Handle objName = java_lang_String::create_from_platform_dependent_str(request->gcManager->name(), CHECK);
     Handle objAction = java_lang_String::create_from_platform_dependent_str(request->gcAction, CHECK);
     Handle objCause = java_lang_String::create_from_platform_dependent_str(request->gcCause, CHECK);
 
     klassOop k = Management::sun_management_GarbageCollectorImpl_klass(CHECK);
-    instanceKlassHandle gc_mbean_klass (THREAD, k);
+    instanceKlassHandle gc_mbean_klass(THREAD, k);
 
     instanceOop gc_mbean = request->gcManager->get_memory_manager_instance(THREAD);
     instanceHandle gc_mbean_h(THREAD, gc_mbean);
@@ -212,11 +239,6 @@ void GCNotifier::sendNotification(TRAPS) {
                             vmSymbols::createGCNotification_signature(),
                             &args,
                             CHECK);
-    if (HAS_PENDING_EXCEPTION) {
-      CLEAR_PENDING_EXCEPTION;
-    }
-
-    delete request;
   }
 }
 

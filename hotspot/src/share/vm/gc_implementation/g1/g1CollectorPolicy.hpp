@@ -65,6 +65,7 @@ public:
 
 class MainBodySummary: public CHeapObj {
   define_num_seq(satb_drain) // optional
+  define_num_seq(root_region_scan_wait)
   define_num_seq(parallel) // parallel only
     define_num_seq(ext_root_scan)
     define_num_seq(satb_filtering)
@@ -177,7 +178,6 @@ private:
   double _cur_collection_start_sec;
   size_t _cur_collection_pause_used_at_start_bytes;
   size_t _cur_collection_pause_used_regions_at_start;
-  size_t _prev_collection_pause_used_at_end_bytes;
   double _cur_collection_par_time_ms;
   double _cur_satb_drain_time_ms;
   double _cur_clear_ct_time_ms;
@@ -312,16 +312,13 @@ private:
   double _recorded_non_young_free_cset_time_ms;
 
   double _sigma;
-  double _expensive_region_limit_ms;
 
   size_t _rs_lengths_prediction;
 
   size_t _known_garbage_bytes;
   double _known_garbage_ratio;
 
-  double sigma() {
-    return _sigma;
-  }
+  double sigma() { return _sigma; }
 
   // A function that prevents us putting too much stock in small sample
   // sets.  Returns a number between 2.0 and 1.0, depending on the number
@@ -490,8 +487,6 @@ public:
     return (double) non_young_num *
            get_new_prediction(_non_young_other_cost_per_region_ms_seq);
   }
-
-  void check_if_region_is_too_expensive(double predicted_time_ms);
 
   double predict_young_collection_elapsed_time_ms(size_t adjustment);
   double predict_base_elapsed_time_ms(size_t pending_cards);
@@ -707,7 +702,6 @@ private:
   // initial-mark work.
   volatile bool _during_initial_mark_pause;
 
-  bool _should_revert_to_young_gcs;
   bool _last_young_gc;
 
   // This set of variables tracks the collector efficiency, in order to
@@ -716,6 +710,7 @@ private:
   double _mark_remark_start_sec;
   double _mark_cleanup_start_sec;
   double _mark_closure_time_ms;
+  double _root_region_scan_wait_time_ms;
 
   // Update the young list target length either by setting it to the
   // desired fixed value or by calculating it using G1's pause
@@ -800,6 +795,8 @@ public:
 
   GenRemSet::Name  rem_set_name()     { return GenRemSet::CardTable; }
 
+  bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
+
   // Update the heuristic info to record a collection pause of the given
   // start time, where the given number of bytes were used at the start.
   // This may involve changing the desired size of a collection set.
@@ -814,6 +811,10 @@ public:
 
   void record_mark_closure_time(double mark_closure_time_ms) {
     _mark_closure_time_ms = mark_closure_time_ms;
+  }
+
+  void record_root_region_scan_wait_time(double time_ms) {
+    _root_region_scan_wait_time_ms = time_ms;
   }
 
   void record_concurrent_mark_remark_start();
@@ -939,10 +940,16 @@ public:
     return _bytes_copied_during_gc;
   }
 
+  // Determine whether there are candidate regions so that the
+  // next GC should be mixed. The two action strings are used
+  // in the ergo output when the method returns true or false.
+  bool next_gc_should_be_mixed(const char* true_action_str,
+                               const char* false_action_str);
+
   // Choose a new collection set.  Marks the chosen regions as being
   // "in_collection_set", and links them together.  The head and number of
   // the collection set are available via access methods.
-  void choose_collection_set(double target_pause_time_ms);
+  void finalize_cset(double target_pause_time_ms);
 
   // The head of the list (via "next_in_collection_set()") representing the
   // current collection set.
@@ -1144,11 +1151,6 @@ public:
 
   void note_stop_adding_survivor_regions() {
     _survivor_surv_rate_group->stop_adding_regions();
-  }
-
-  void tenure_all_objects() {
-    _max_survivor_regions = 0;
-    _tenuring_threshold = 0;
   }
 
   void record_survivor_regions(size_t      regions,

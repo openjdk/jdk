@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,19 @@ char* NativeLookup::pure_jni_name(methodHandle method) {
 }
 
 
+char* NativeLookup::critical_jni_name(methodHandle method) {
+  stringStream st;
+  // Prefix
+  st.print("JavaCritical_");
+  // Klass name
+  mangle_name_on(&st, method->klass_name());
+  st.print("_");
+  // Method name
+  mangle_name_on(&st, method->name());
+  return st.as_string();
+}
+
+
 char* NativeLookup::long_jni_name(methodHandle method) {
   // Signature ignore the wrapping parenteses and the trailing return type
   stringStream st;
@@ -108,6 +121,7 @@ extern "C" {
   void JNICALL JVM_RegisterUnsafeMethods(JNIEnv *env, jclass unsafecls);
   void JNICALL JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass unsafecls);
   void JNICALL JVM_RegisterPerfMethods(JNIEnv *env, jclass perfclass);
+  void JNICALL JVM_RegisterWhiteBoxMethods(JNIEnv *env, jclass wbclass);
 }
 
 #define CC (char*)  /* cast a literal from (const char*) */
@@ -120,7 +134,8 @@ static JNINativeMethod lookup_special_native_methods[] = {
 
   { CC"Java_sun_misc_Unsafe_registerNatives",                      NULL, FN_PTR(JVM_RegisterUnsafeMethods)       },
   { CC"Java_java_lang_invoke_MethodHandleNatives_registerNatives", NULL, FN_PTR(JVM_RegisterMethodHandleMethods) },
-  { CC"Java_sun_misc_Perf_registerNatives",                        NULL, FN_PTR(JVM_RegisterPerfMethods)         }
+  { CC"Java_sun_misc_Perf_registerNatives",                        NULL, FN_PTR(JVM_RegisterPerfMethods)         },
+  { CC"Java_sun_hotspot_WhiteBox_registerNatives",                 NULL, FN_PTR(JVM_RegisterWhiteBoxMethods)     },
 };
 
 static address lookup_special_native(char* jni_name) {
@@ -193,6 +208,34 @@ address NativeLookup::lookup_style(methodHandle method, char* pure_name, const c
 }
 
 
+address NativeLookup::lookup_critical_style(methodHandle method, char* pure_name, const char* long_name, int args_size, bool os_style) {
+  if (!method->has_native_function()) {
+    return NULL;
+  }
+
+  address current_entry = method->native_function();
+
+  char dll_name[JVM_MAXPATHLEN];
+  int offset;
+  if (os::dll_address_to_library_name(current_entry, dll_name, sizeof(dll_name), &offset)) {
+    char ebuf[32];
+    void* dll = os::dll_load(dll_name, ebuf, sizeof(ebuf));
+    if (dll != NULL) {
+      // Compute complete JNI name for style
+      stringStream st;
+      if (os_style) os::print_jni_name_prefix_on(&st, args_size);
+      st.print_raw(pure_name);
+      st.print_raw(long_name);
+      if (os_style) os::print_jni_name_suffix_on(&st, args_size);
+      char* jni_name = st.as_string();
+      return (address)os::dll_lookup(dll, jni_name);
+    }
+  }
+
+  return NULL;
+}
+
+
 // Check all the formats of native implementation name to see if there is one
 // for the specified method.
 address NativeLookup::lookup_entry(methodHandle method, bool& in_base_library, TRAPS) {
@@ -224,6 +267,58 @@ address NativeLookup::lookup_entry(methodHandle method, bool& in_base_library, T
 
   // 4) Try JNI long style without os prefix/suffix
   entry = lookup_style(method, pure_name, long_name, args_size, false, in_base_library, CHECK_NULL);
+
+  return entry; // NULL indicates not found
+}
+
+// Check all the formats of native implementation name to see if there is one
+// for the specified method.
+address NativeLookup::lookup_critical_entry(methodHandle method) {
+  if (!CriticalJNINatives) return NULL;
+
+  if (method->is_synchronized() ||
+      !method->is_static()) {
+    // Only static non-synchronized methods are allowed
+    return NULL;
+  }
+
+  ResourceMark rm;
+  address entry = NULL;
+
+  Symbol* signature = method->signature();
+  for (int end = 0; end < signature->utf8_length(); end++) {
+    if (signature->byte_at(end) == 'L') {
+      // Don't allow object types
+      return NULL;
+    }
+  }
+
+  // Compute critical name
+  char* critical_name = critical_jni_name(method);
+
+  // Compute argument size
+  int args_size = 1                             // JNIEnv
+                + (method->is_static() ? 1 : 0) // class for static methods
+                + method->size_of_parameters(); // actual parameters
+
+
+  // 1) Try JNI short style
+  entry = lookup_critical_style(method, critical_name, "",        args_size, true);
+  if (entry != NULL) return entry;
+
+  // Compute long name
+  char* long_name = long_jni_name(method);
+
+  // 2) Try JNI long style
+  entry = lookup_critical_style(method, critical_name, long_name, args_size, true);
+  if (entry != NULL) return entry;
+
+  // 3) Try JNI short style without os prefix/suffix
+  entry = lookup_critical_style(method, critical_name, "",        args_size, false);
+  if (entry != NULL) return entry;
+
+  // 4) Try JNI long style without os prefix/suffix
+  entry = lookup_critical_style(method, critical_name, long_name, args_size, false);
 
   return entry; // NULL indicates not found
 }

@@ -235,12 +235,61 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
     }
     PUTPROP(props, "file.encoding", sprops->encoding);
     PUTPROP(props, "sun.jnu.encoding", sprops->sun_jnu_encoding);
+    if (sprops->sun_stdout_encoding != NULL) {
+        PUTPROP(props, "sun.stdout.encoding", sprops->sun_stdout_encoding);
+    }
+    if (sprops->sun_stderr_encoding != NULL) {
+        PUTPROP(props, "sun.stderr.encoding", sprops->sun_stderr_encoding);
+    }
     PUTPROP(props, "file.encoding.pkg", "sun.io");
+
     /* unicode_encoding specifies the default endianness */
     PUTPROP(props, "sun.io.unicode.encoding", sprops->unicode_encoding);
     PUTPROP(props, "sun.cpu.isalist",
             (sprops->cpu_isalist ? sprops->cpu_isalist : ""));
     PUTPROP(props, "sun.cpu.endian",  sprops->cpu_endian);
+
+
+#ifdef MACOSX
+    /* Proxy setting properties */
+    if (sprops->httpProxyEnabled) {
+        PUTPROP(props, "http.proxyHost", sprops->httpHost);
+        PUTPROP(props, "http.proxyPort", sprops->httpPort);
+    }
+
+    if (sprops->httpsProxyEnabled) {
+        PUTPROP(props, "https.proxyHost", sprops->httpsHost);
+        PUTPROP(props, "https.proxyPort", sprops->httpsPort);
+    }
+
+    if (sprops->ftpProxyEnabled) {
+        PUTPROP(props, "ftp.proxyHost", sprops->ftpHost);
+        PUTPROP(props, "ftp.proxyPort", sprops->ftpPort);
+    }
+
+    if (sprops->socksProxyEnabled) {
+        PUTPROP(props, "socksProxyHost", sprops->socksHost);
+        PUTPROP(props, "socksProxyPort", sprops->socksPort);
+    }
+
+    if (sprops->gopherProxyEnabled) {
+        // The gopher client is different in that it expects an 'is this set?' flag that the others don't.
+        PUTPROP(props, "gopherProxySet", "true");
+        PUTPROP(props, "gopherProxyHost", sprops->gopherHost);
+        PUTPROP(props, "gopherProxyPort", sprops->gopherPort);
+    } else {
+        PUTPROP(props, "gopherProxySet", "false");
+    }
+
+    // Mac OS X only has a single proxy exception list which applies
+    // to all protocols
+    if (sprops->exceptionList) {
+        PUTPROP(props, "http.nonProxyHosts", sprops->exceptionList);
+        // HTTPS: implementation in jsse.jar uses http.nonProxyHosts
+        PUTPROP(props, "ftp.nonProxyHosts", sprops->exceptionList);
+        PUTPROP(props, "socksNonProxyHosts", sprops->exceptionList);
+    }
+#endif
 
     /* !!! DO NOT call PUTPROP_ForPlatformNString before this line !!!
      * !!! I18n properties have not been set up yet !!!

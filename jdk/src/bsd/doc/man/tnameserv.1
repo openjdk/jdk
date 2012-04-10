@@ -1,0 +1,494 @@
+." Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+." or visit www.oracle.com if you need additional information or have any
+." questions.
+."
+.TH tnameserv 1 "10 May 2011"
+
+.LP
+.SH "Name"
+Java IDL: Transient Naming Service \- \f2tnameserv\fP
+.LP
+.LP
+This document discusses using the Java IDL Transient Naming Service, \f2tnameserv\fP. Java IDL also includes the Object Request Broker Daemon (ORBD). ORBD is a daemon process containing a Bootstrap Service, a Transient Naming Service, a \f3Persistent\fP Naming Service, and a Server Manager. The Java IDL tutorials all use ORBD, however, you can substitute \f2tnameserv\fP for \f2orbd\fP in any of the examples that use a Transient Naming Service. For documentation on the \f2orbd\fP tool, link to its orbd(1) or the
+.na
+\f2Java IDL Naming Service Included with ORBD\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/guides/idl/jidlNaming.html topic.
+.LP
+.LP
+Topics in this section include:
+.LP
+.RS 3
+.TP 2
+o
+Java\ IDL Transient Naming Service
+.TP 2
+o
+Starting the Java\ IDL Transient Naming Service
+.TP 2
+o
+Stopping the Java\ IDL Transient Naming Service
+.TP 2
+o
+Sample Client: Adding Objects to the Namespace
+.TP 2
+o
+Sample Client: Browsing the Namespace
+.RE
+
+.LP
+.SH "Java\ IDL Transient Naming Service"
+.LP
+.LP
+The CORBA COS (Common Object Services) Naming Service provides a tree\-like directory for object references much like a filesystem provides a directory structure for files. The Transient Naming Service provided with Java IDL, \f2tnameserv\fP, is a simple implementation of the COS Naming Service specification.
+.LP
+.LP
+Object references are stored in the namespace by name and each object reference\-name pair is called a name \f2binding\fP. Name bindings may be organized under \f2naming contexts\fP. Naming contexts are themselves name bindings and serve the same organizational function as a file system subdirectory. All bindings are stored under the \f2initial naming context\fP. The initial naming context is the only persistent binding in the namespace; the rest of the namespace is lost if the Java IDL naming service process halts and restarts.
+.LP
+.LP
+For an applet or application to use COS naming, its ORB must know the port of a host running a naming service or have access to a stringified initial naming context for that naming service. The naming service can either be the Java\ IDL naming service or another COS\-compliant naming service.
+.LP
+.SH "Starting the Java\ IDL Transient Naming Service"
+.LP
+.LP
+You must start the Java\ IDL naming service before an application or applet that uses its naming service. Installation of the Java\ IDL product creates a script (Solaris: \f2tnameserv\fP) or executable file (Windows NT: \f2tnameserv.exe\fP) that starts the Java\ IDL naming service. Start the naming service so it runs in the background.
+.LP
+.LP
+If you do not specify otherwise, the Java\ IDL naming service listens on port 900 for the bootstrap protocol used to implement the ORB \f2resolve_initial_references()\fP and \f2list_initial_references()\fP methods, as follows:
+.LP
+.nf
+\f3
+.fl
+        tnameserv \-ORBInitialPort \fP\f4nameserverport\fP\f3&
+.fl
+\fP
+.fi
+
+.LP
+.LP
+If you do not specify the name server port, port 900 is used by default. When running Solaris software, you must become root to start a process on a port under 1024. For this reason, we recommend that you use a port number greater than or equal to 1024. To specify a different port, for example, 1050, and to run the naming service in the background, from a UNIX command shell, enter:
+.LP
+.nf
+\f3
+.fl
+        tnameserv \-ORBInitialPort 1050&
+.fl
+\fP
+.fi
+
+.LP
+.LP
+From an MS\-DOS system prompt (Windows), enter:
+.LP
+.nf
+\f3
+.fl
+        start tnameserv \-ORBInitialPort 1050
+.fl
+\fP
+.fi
+
+.LP
+.LP
+Clients of the name server must be made aware of the new port number. Do this by setting the \f2org.omg.CORBA.ORBInitialPort\fP property to the new port number when creating the ORB object.
+.LP
+.SS
+Running the server and client on different hosts
+.LP
+.LP
+In most of the Java IDL and RMI\-IIOP tutorials, the Naming Service, Server, and Client are all running on the development machine. In real world deployment, it is likely that the client and server will run on different host machines than the Naming Service.
+.LP
+.LP
+For the client and server to find the Naming Service, they must be made aware of the port number and host on which the naming service is running. Do this by setting the \f2org.omg.CORBA.ORBInitialPort\fP and \f2org.omg.CORBA.ORBInitialHost\fP properties in the client and server files to the machine name and port number on which the Naming Service is running. An example of this is shown in
+.na
+\f2The Hello World Example Using RMI\-IIOP\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/guides/rmi\-iiop/rmiiiopexample.html. You could also use the command line options \f2\-ORBInitialPort\fP \f2nameserverport#\fP and \f2\-ORBInitialHost\fP \f2nameserverhostname\fP to tell the client and server where to find the Naming Service.
+.na
+\f2Java IDL: Running the Hello World Example on TWO Machines\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/guides/idl/tutorial/jidl2machines.html shows one way of doing this using the command line option.
+.LP
+.LP
+For example, suppose the Transient Naming Service, \f2tnameserv\fP is running on port 1050 on host \f2nameserverhost\fP. The client is running on host \f2clienthost\fP and the server is running on host \f2serverhost\fP.
+.LP
+.RS 3
+.TP 2
+o
+Start \f2tnameserv\fP on the host \f2nameserverhost\fP, as follows:
+.nf
+\f3
+.fl
+     tnameserv \-ORBInitialPort 1050
+.fl
+
+.fl
+\fP
+.fi
+.TP 2
+o
+Start the server on the \f2serverhost\fP, as follows:
+.nf
+\f3
+.fl
+     java Server \-ORBInitialPort 1050 \-ORBInitialHost nameserverhost
+.fl
+\fP
+.fi
+.TP 2
+o
+Start the client on the \f2clienthost\fP, as follows:
+.nf
+\f3
+.fl
+     java Client \-ORBInitialPort 1050 \-ORBInitialHost nameserverhost
+.fl
+\fP
+.fi
+.RE
+
+.LP
+.SS
+The \-J option
+.LP
+This command\-line option is available for use with \f2tnameserve\fP:
+.RS 3
+.TP 3
+\-Joption
+Pass \f2option\fP to the Java virtual machine, where \f2option\fP is one of the options described on the reference page for java(1). For example, \f3\-J\-Xms48m\fP sets the startup memory to 48 megabytes. It is a common convention for \f3\-J\fP to pass options to the underlying virtual machine.
+.RE
+
+.LP
+.SH "Stopping the Java\ IDL Transient Naming Service"
+.LP
+.LP
+To stop the Java\ IDL naming service, use the relevant operating system command, such as \f2kill\fP for a Unix process, or \f2Ctrl\-C\fP for a Windows process. The naming service will continue to wait for invocations until it is explicitly shutdown. Note that names registered with the Java\ IDL naming service disappear when the service is terminated.
+.LP
+.SH "Sample Client: Adding Objects to the Namespace"
+.LP
+.LP
+The following sample program illustrates how to add names to the namespace. It is a self\-contained Transient Naming Service client that creates the following simple tree.
+.LP
+.RS 3
+.TP 2
+o
+\f4Initial Naming Context\fP
+.RS 3
+.TP 2
+*
+\f3plans\fP
+.TP 2
+*
+\f4Personal\fP
+.RS 3
+.TP 2
+-
+\f3calendar\fP
+.TP 2
+-
+\f3schedule\fP
+.RE
+.RE
+.RE
+
+.LP
+.LP
+In this example, \f3plans\fP is an object reference and \f3Personal\fP is a naming context that contains two object references: \f3calendar\fP and \f3schedule\fP.
+.LP
+.nf
+\f3
+.fl
+import java.util.Properties;
+.fl
+import org.omg.CORBA.*;
+.fl
+import org.omg.CosNaming.*;
+.fl
+
+.fl
+public class NameClient
+.fl
+{
+.fl
+   public static void main(String args[])
+.fl
+   {
+.fl
+      try {
+.fl
+\fP
+.fi
+
+.LP
+In the above section, Starting the Java IDL Transient Naming Service, the nameserver was started on port 1050. The following code ensures that the client program is aware of this port number.
+.nf
+\f3
+.fl
+        Properties props = new Properties();
+.fl
+        props.put("org.omg.CORBA.ORBInitialPort", "1050");
+.fl
+        ORB orb = ORB.init(args, props);
+.fl
+
+.fl
+\fP
+.fi
+
+.LP
+This code obtains the initial naming context and assigns it to \f3ctx\fP. The second line copies \f3ctx\fP into a dummy object reference \f3objref\fP that we'll attach to various names and add into the namespace.
+.nf
+\f3
+.fl
+        NamingContext ctx =
+.fl
+NamingContextHelper.narrow(orb.resolve_initial_references("NameService"));
+.fl
+        NamingContext objref = ctx;
+.fl
+
+.fl
+\fP
+.fi
+
+.LP
+This code creates a name "plans" of type "text" and binds it to our dummy object reference. "plans" is then added under the initial naming context using \f2rebind\fP. The \f2rebind\fP method allows us to run this program over and over again without getting the exceptions we'd get from using \f2bind\fP.
+.nf
+\f3
+.fl
+        NameComponent nc1 = new NameComponent("plans", "text");
+.fl
+        NameComponent[] name1 = {nc1};
+.fl
+        ctx.rebind(name1, objref);
+.fl
+        System.out.println("plans rebind sucessful!");
+.fl
+
+.fl
+\fP
+.fi
+
+.LP
+This code creates a naming context called "Personal" of type "directory". The resulting object reference, \f3ctx2\fP, is bound to the name and added under the initial naming context.
+.nf
+\f3
+.fl
+        NameComponent nc2 = new NameComponent("Personal", "directory");
+.fl
+        NameComponent[] name2 = {nc2};
+.fl
+        NamingContext ctx2 = ctx.bind_new_context(name2);
+.fl
+        System.out.println("new naming context added..");
+.fl
+
+.fl
+\fP
+.fi
+
+.LP
+The remainder of the code binds the dummy object reference using the names "schedule" and "calendar" under the "Personal" naming context (\f3ctx2\fP).
+.nf
+\f3
+.fl
+        NameComponent nc3 = new NameComponent("schedule", "text");
+.fl
+        NameComponent[] name3 = {nc3};
+.fl
+        ctx2.rebind(name3, objref);
+.fl
+        System.out.println("schedule rebind sucessful!");
+.fl
+
+.fl
+        NameComponent nc4 = new NameComponent("calender", "text");
+.fl
+        NameComponent[] name4 = {nc4};
+.fl
+        ctx2.rebind(name4, objref);
+.fl
+        System.out.println("calender rebind sucessful!");
+.fl
+
+.fl
+
+.fl
+    } catch (Exception e) {
+.fl
+        e.printStackTrace(System.err);
+.fl
+    }
+.fl
+  }
+.fl
+}
+.fl
+\fP
+.fi
+
+.LP
+.SH "Sample Client: Browsing the Namespace"
+.LP
+.LP
+The following sample program illustrates how to browse the namespace.
+.LP
+.nf
+\f3
+.fl
+import java.util.Properties;
+.fl
+import org.omg.CORBA.*;
+.fl
+import org.omg.CosNaming.*;
+.fl
+
+.fl
+public class NameClientList
+.fl
+{
+.fl
+   public static void main(String args[])
+.fl
+   {
+.fl
+      try {
+.fl
+\fP
+.fi
+
+.LP
+In the above section, Starting the Java IDL Transient Naming Service, the nameserver was started on port 1050. The following code ensures that the client program is aware of this port number.
+.nf
+\f3
+.fl
+
+.fl
+        Properties props = new Properties();
+.fl
+        props.put("org.omg.CORBA.ORBInitialPort", "1050");
+.fl
+        ORB orb = ORB.init(args, props);
+.fl
+
+.fl
+
+.fl
+\fP
+.fi
+
+.LP
+The following code obtains the intial naming context.
+.nf
+\f3
+.fl
+        NamingContext nc =
+.fl
+NamingContextHelper.narrow(orb.resolve_initial_references("NameService"));
+.fl
+
+.fl
+\fP
+.fi
+
+.LP
+The \f2list\fP method lists the bindings in the naming context. In this case, up to 1000 bindings from the initial naming context will be returned in the BindingListHolder; any remaining bindings are returned in the BindingIteratorHolder.
+.nf
+\f3
+.fl
+        BindingListHolder bl = new BindingListHolder();
+.fl
+        BindingIteratorHolder blIt= new BindingIteratorHolder();
+.fl
+        nc.list(1000, bl, blIt);
+.fl
+
+.fl
+\fP
+.fi
+
+.LP
+This code gets the array of bindings out of the returned BindingListHolder. If there are no bindings, the program ends.
+.nf
+\f3
+.fl
+        Binding bindings[] = bl.value;
+.fl
+        if (bindings.length == 0) return;
+.fl
+
+.fl
+\fP
+.fi
+
+.LP
+The remainder of the code loops through the bindings and prints the names out.
+.nf
+\f3
+.fl
+        for (int i=0; i < bindings.length; i++) {
+.fl
+
+.fl
+            // get the object reference for each binding
+.fl
+            org.omg.CORBA.Object obj = nc.resolve(bindings[i].binding_name);
+.fl
+            String objStr = orb.object_to_string(obj);
+.fl
+            int lastIx = bindings[i].binding_name.length\-1;
+.fl
+
+.fl
+            // check to see if this is a naming context
+.fl
+            if (bindings[i].binding_type == BindingType.ncontext) {
+.fl
+              System.out.println( "Context: " +
+.fl
+bindings[i].binding_name[lastIx].id);
+.fl
+            } else {
+.fl
+                System.out.println("Object: " +
+.fl
+bindings[i].binding_name[lastIx].id);
+.fl
+            }
+.fl
+        }
+.fl
+
+.fl
+       } catch (Exception e) {
+.fl
+        e.printStackTrace(System.err);
+.fl
+       }
+.fl
+   }
+.fl
+}
+.fl
+\fP
+.fi
+
+.LP
+

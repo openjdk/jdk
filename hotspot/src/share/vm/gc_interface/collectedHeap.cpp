@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,31 @@ int CollectedHeap::_fire_out_of_memory_count = 0;
 
 size_t CollectedHeap::_filler_array_max_size = 0;
 
+template <>
+void EventLogBase<GCMessage>::print(outputStream* st, GCMessage& m) {
+  st->print_cr("GC heap %s", m.is_before ? "before" : "after");
+  st->print_raw(m);
+}
+
+void GCHeapLog::log_heap(bool before) {
+  if (!should_log()) {
+    return;
+  }
+
+  double timestamp = fetch_timestamp();
+  MutexLockerEx ml(&_mutex, Mutex::_no_safepoint_check_flag);
+  int index = compute_log_index();
+  _records[index].thread = NULL; // Its the GC thread so it's not that interesting.
+  _records[index].timestamp = timestamp;
+  _records[index].data.is_before = before;
+  stringStream st(_records[index].data.buffer(), _records[index].data.size());
+  if (before) {
+    Universe::print_heap_before_gc(&st, true);
+  } else {
+    Universe::print_heap_after_gc(&st, true);
+  }
+}
+
 // Memory state functions.
 
 
@@ -60,7 +85,7 @@ CollectedHeap::CollectedHeap() : _n_par_threads(0)
   const size_t max_len = size_t(arrayOopDesc::max_array_length(T_INT));
   const size_t elements_per_word = HeapWordSize / sizeof(jint);
   _filler_array_max_size = align_object_size(filler_array_hdr_size() +
-                                             max_len * elements_per_word);
+                                             max_len / elements_per_word);
 
   _barrier_set = NULL;
   _is_gc_active = false;
@@ -81,6 +106,12 @@ CollectedHeap::CollectedHeap() : _n_par_threads(0)
                              80, GCCause::to_string(_gc_lastcause), CHECK);
   }
   _defer_initial_card_mark = false; // strengthened by subclass in pre_initialize() below.
+  // Create the ring log
+  if (LogEvents) {
+    _gc_heap_log = new GCHeapLog();
+  } else {
+    _gc_heap_log = NULL;
+  }
 }
 
 void CollectedHeap::pre_initialize() {
@@ -272,10 +303,6 @@ size_t CollectedHeap::filler_array_min_size() {
   return align_object_size(filler_array_hdr_size()); // align to MinObjAlignment
 }
 
-size_t CollectedHeap::filler_array_max_size() {
-  return _filler_array_max_size;
-}
-
 #ifdef ASSERT
 void CollectedHeap::fill_args_check(HeapWord* start, size_t words)
 {
@@ -302,10 +329,11 @@ CollectedHeap::fill_with_array(HeapWord* start, size_t words, bool zap)
 
   const size_t payload_size = words - filler_array_hdr_size();
   const size_t len = payload_size * HeapWordSize / sizeof(jint);
+  assert((int)len >= 0, err_msg("size too large " SIZE_FORMAT " becomes %d", words, (int)len));
 
   // Set the length first for concurrent GC.
   ((arrayOop)start)->set_length((int)len);
-  post_allocation_setup_common(Universe::intArrayKlassObj(), start, words);
+  post_allocation_setup_common(Universe::intArrayKlassObj(), start);
   DEBUG_ONLY(zap_filler_array(start, words, zap);)
 }
 
@@ -318,8 +346,7 @@ CollectedHeap::fill_with_object_impl(HeapWord* start, size_t words, bool zap)
     fill_with_array(start, words, zap);
   } else if (words > 0) {
     assert(words == min_fill_size(), "unaligned size");
-    post_allocation_setup_common(SystemDictionary::Object_klass(), start,
-                                 words);
+    post_allocation_setup_common(SystemDictionary::Object_klass(), start);
   }
 }
 
@@ -449,7 +476,7 @@ oop CollectedHeap::Class_obj_allocate(KlassHandle klass, int size, KlassHandle r
     assert(ScavengeRootsInCode > 0, "must be");
     obj = common_mem_allocate_init(size, CHECK_NULL);
   }
-  post_allocation_setup_common(klass, obj, size);
+  post_allocation_setup_common(klass, obj);
   assert(Universe::is_bootstrapping() ||
          !((oop)obj)->blueprint()->oop_is_array(), "must not be an array");
   NOT_PRODUCT(Universe::heap()->check_for_bad_heap_word_value(obj, size));

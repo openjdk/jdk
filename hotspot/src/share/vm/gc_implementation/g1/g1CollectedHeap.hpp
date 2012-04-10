@@ -355,6 +355,7 @@ private:
   // explicitly started if:
   // (a) cause == _gc_locker and +GCLockerInvokesConcurrent, or
   // (b) cause == _java_lang_system_gc and +ExplicitGCInvokesConcurrent.
+  // (c) cause == _g1_humongous_allocation
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
 
   // Keeps track of how many "full collections" (i.e., Full GCs or
@@ -769,7 +770,7 @@ protected:
   // the "i" of the calling parallel worker thread's work(i) function.
   // In the sequential case this param will be ignored.
   void g1_process_strong_roots(bool collecting_perm_gen,
-                               SharedHeap::ScanningOption so,
+                               ScanningOption so,
                                OopClosure* scan_non_heap_roots,
                                OopsInHeapRegionClosure* scan_rs,
                                OopsInGenClosure* scan_perm,
@@ -1172,10 +1173,20 @@ public:
     _old_set.remove(hr);
   }
 
+  size_t non_young_capacity_bytes() {
+    return _old_set.total_capacity_bytes() + _humongous_set.total_capacity_bytes();
+  }
+
   void set_free_regions_coming();
   void reset_free_regions_coming();
   bool free_regions_coming() { return _free_regions_coming; }
   void wait_while_free_regions_coming();
+
+  // Determine whether the given region is one that we are using as an
+  // old GC alloc region.
+  bool is_old_gc_alloc_region(HeapRegion* hr) {
+    return hr == _retained_old_gc_alloc_region;
+  }
 
   // Perform a collection of the heap; intended for use in implementing
   // "System.gc".  This probably implies as full a collection as the
@@ -1657,8 +1668,6 @@ public:
 public:
   void stop_conc_gc_threads();
 
-  double predict_region_elapsed_time_ms(HeapRegion* hr, bool young);
-  void check_if_region_is_too_expensive(double predicted_time_ms);
   size_t pending_card_num();
   size_t max_pending_card_num();
   size_t cards_scanned();
@@ -1904,7 +1913,7 @@ protected:
   G1ParScanPartialArrayClosure* _partial_scan_cl;
 
   int _hash_seed;
-  int _queue_num;
+  uint _queue_num;
 
   size_t _term_attempts;
 
@@ -1948,7 +1957,7 @@ protected:
   }
 
 public:
-  G1ParScanThreadState(G1CollectedHeap* g1h, int queue_num);
+  G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num);
 
   ~G1ParScanThreadState() {
     FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base);
@@ -2040,7 +2049,7 @@ public:
   }
 
   int* hash_seed() { return &_hash_seed; }
-  int  queue_num() { return _queue_num; }
+  uint queue_num() { return _queue_num; }
 
   size_t term_attempts() const  { return _term_attempts; }
   void note_term_attempt() { _term_attempts++; }

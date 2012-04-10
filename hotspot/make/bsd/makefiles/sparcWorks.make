@@ -23,14 +23,17 @@
 #
 
 #------------------------------------------------------------------------
-# CC, CPP & AS
+# CC, CXX & AS
 
-CPP = CC
-CC  = cc
-AS  = $(CC) -c
+# If a SPEC is not set already, then use these defaults.
+ifeq ($(SPEC),)
+  CXX = CC
+  CC  = cc
+  AS  = $(CC) -c
 
-HOSTCPP = $(CPP)
-HOSTCC  = $(CC)
+  HOSTCXX = $(CXX)
+  HOSTCC  = $(CC)
+endif
 
 ARCHFLAG = $(ARCHFLAG/$(BUILDARCH))
 ARCHFLAG/i486    = -m32

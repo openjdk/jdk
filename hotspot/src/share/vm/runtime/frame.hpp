@@ -494,7 +494,7 @@ class frame VALUE_OBJ_CLASS_SPEC {
 
 };
 
-#ifdef ASSERT
+#ifndef PRODUCT
 // A simple class to describe a location on the stack
 class FrameValue VALUE_OBJ_CLASS_SPEC {
  public:
@@ -524,7 +524,9 @@ class FrameValues {
   // Used by frame functions to describe locations.
   void describe(int owner, intptr_t* location, const char* description, int priority = 0);
 
+#ifdef ASSERT
   void validate();
+#endif
   void print(JavaThread* thread);
 };
 

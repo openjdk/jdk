@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
 #include "utilities/dtrace.hpp"
+#include "utilities/events.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
@@ -189,6 +190,44 @@ CompileTask*  CompileBroker::_task_free_list = NULL;
 GrowableArray<CompilerThread*>* CompileBroker::_method_threads = NULL;
 
 
+class CompilationLog : public StringEventLog {
+ public:
+  CompilationLog() : StringEventLog("Compilation events") {
+  }
+
+  void log_compile(JavaThread* thread, CompileTask* task) {
+    StringLogMessage lm;
+    stringStream msg = lm.stream();
+    // msg.time_stamp().update_to(tty->time_stamp().ticks());
+    task->print_compilation(&msg, true);
+    log(thread, "%s", (const char*)lm);
+  }
+
+  void log_nmethod(JavaThread* thread, nmethod* nm) {
+    log(thread, "nmethod %d%s " INTPTR_FORMAT " code ["INTPTR_FORMAT ", " INTPTR_FORMAT "]",
+        nm->compile_id(), nm->is_osr_method() ? "%" : "",
+        nm, nm->code_begin(), nm->code_end());
+  }
+
+  void log_failure(JavaThread* thread, CompileTask* task, const char* reason, const char* retry_message) {
+    StringLogMessage lm;
+    lm.print("%4d   COMPILE SKIPPED: %s", task->compile_id(), reason);
+    if (retry_message != NULL) {
+      lm.append(" (%s)", retry_message);
+    }
+    lm.print("\n");
+    log(thread, "%s", (const char*)lm);
+  }
+};
+
+static CompilationLog* _compilation_log = NULL;
+
+void compileBroker_init() {
+  if (LogEvents) {
+    _compilation_log = new CompilationLog();
+  }
+}
+
 CompileTaskWrapper::CompileTaskWrapper(CompileTask* task) {
   CompilerThread* thread = CompilerThread::current();
   thread->set_task(task);
@@ -326,8 +365,12 @@ void CompileTask::print_line() {
 
 // ------------------------------------------------------------------
 // CompileTask::print_compilation_impl
-void CompileTask::print_compilation_impl(outputStream* st, methodOop method, int compile_id, int comp_level, bool is_osr_method, int osr_bci, bool is_blocking, const char* msg) {
-  st->print("%7d ", (int) st->time_stamp().milliseconds());  // print timestamp
+void CompileTask::print_compilation_impl(outputStream* st, methodOop method, int compile_id, int comp_level,
+                                         bool is_osr_method, int osr_bci, bool is_blocking,
+                                         const char* msg, bool short_form) {
+  if (!short_form) {
+    st->print("%7d ", (int) st->time_stamp().milliseconds());  // print timestamp
+  }
   st->print("%4d ", compile_id);    // print compilation number
 
   // For unloaded methods the transition to zombie occurs after the
@@ -370,7 +413,9 @@ void CompileTask::print_compilation_impl(outputStream* st, methodOop method, int
   if (msg != NULL) {
     st->print("   %s", msg);
   }
-  st->cr();
+  if (!short_form) {
+    st->cr();
+  }
 }
 
 // ------------------------------------------------------------------
@@ -426,12 +471,12 @@ void CompileTask::print_inline_indent(int inline_level, outputStream* st) {
 
 // ------------------------------------------------------------------
 // CompileTask::print_compilation
-void CompileTask::print_compilation(outputStream* st) {
+void CompileTask::print_compilation(outputStream* st, bool short_form) {
   oop rem = JNIHandles::resolve(method_handle());
   assert(rem != NULL && rem->is_method(), "must be");
   methodOop method = (methodOop) rem;
   bool is_osr_method = osr_bci() != InvocationEntryBci;
-  print_compilation_impl(st, method, compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking());
+  print_compilation_impl(st, method, compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), NULL, short_form);
 }
 
 // ------------------------------------------------------------------
@@ -855,23 +900,23 @@ CompilerThread* CompileBroker::make_compiler_thread(const char* name, CompileQue
     // Note that this only sets the JavaThread _priority field, which by
     // definition is limited to Java priorities and not OS priorities.
     // The os-priority is set in the CompilerThread startup code itself
+
     java_lang_Thread::set_priority(thread_oop(), NearMaxPriority);
-    // CLEANUP PRIORITIES: This -if- statement hids a bug whereby the compiler
-    // threads never have their OS priority set.  The assumption here is to
-    // enable the Performance group to do flag tuning, figure out a suitable
-    // CompilerThreadPriority, and then remove this 'if' statement (and
-    // comment) and unconditionally set the priority.
 
-    // Compiler Threads should be at the highest Priority
-    if ( CompilerThreadPriority != -1 )
-      os::set_native_priority( compiler_thread, CompilerThreadPriority );
-    else
-      os::set_native_priority( compiler_thread, os::java_to_os_priority[NearMaxPriority]);
+    // Note that we cannot call os::set_priority because it expects Java
+    // priorities and we are *explicitly* using OS priorities so that it's
+    // possible to set the compiler thread priority higher than any Java
+    // thread.
 
-      // Note that I cannot call os::set_priority because it expects Java
-      // priorities and I am *explicitly* using OS priorities so that it's
-      // possible to set the compiler thread priority higher than any Java
-      // thread.
+    int native_prio = CompilerThreadPriority;
+    if (native_prio == -1) {
+      if (UseCriticalCompilerThreadPriority) {
+        native_prio = os::java_to_os_priority[CriticalPriority];
+      } else {
+        native_prio = os::java_to_os_priority[NearMaxPriority];
+      }
+    }
+    os::set_native_priority(compiler_thread, native_prio);
 
     java_lang_Thread::set_daemon(thread_oop());
 
@@ -879,6 +924,7 @@ CompilerThread* CompileBroker::make_compiler_thread(const char* name, CompileQue
     Threads::add(compiler_thread);
     Thread::start(compiler_thread);
   }
+
   // Let go of Threads_lock before yielding
   os::yield(); // make sure that the compiler thread is started early (especially helpful on SOLARIS)
 
@@ -961,7 +1007,7 @@ void CompileBroker::compile_method_base(methodHandle method,
                                         methodHandle hot_method,
                                         int hot_count,
                                         const char* comment,
-                                        TRAPS) {
+                                        Thread* thread) {
   // do nothing if compiler thread(s) is not available
   if (!_initialized ) {
     return;
@@ -1037,7 +1083,7 @@ void CompileBroker::compile_method_base(methodHandle method,
 
   // Acquire our lock.
   {
-    MutexLocker locker(queue->lock(), THREAD);
+    MutexLocker locker(queue->lock(), thread);
 
     // Make sure the method has not slipped into the queues since
     // last we checked; note that those checks were "fast bail-outs".
@@ -1119,7 +1165,7 @@ void CompileBroker::compile_method_base(methodHandle method,
 nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
                                        int comp_level,
                                        methodHandle hot_method, int hot_count,
-                                       const char* comment, TRAPS) {
+                                       const char* comment, Thread* THREAD) {
   // make sure arguments make sense
   assert(method->method_holder()->klass_part()->oop_is_instance(), "not an instance method");
   assert(osr_bci == InvocationEntryBci || (0 <= osr_bci && osr_bci < method->code_size()), "bci out of range");
@@ -1173,10 +1219,10 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
   assert(!HAS_PENDING_EXCEPTION, "No exception should be present");
   // some prerequisites that are compiler specific
   if (compiler(comp_level)->is_c2() || compiler(comp_level)->is_shark()) {
-    method->constants()->resolve_string_constants(CHECK_0);
+    method->constants()->resolve_string_constants(CHECK_AND_CLEAR_NULL);
     // Resolve all classes seen in the signature of the method
     // we are compiling.
-    methodOopDesc::load_signature_classes(method, CHECK_0);
+    methodOopDesc::load_signature_classes(method, CHECK_AND_CLEAR_NULL);
   }
 
   // If the method is native, do the lookup in the thread requesting
@@ -1230,7 +1276,7 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
       return NULL;
     }
   } else {
-    compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, comment, CHECK_0);
+    compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, comment, THREAD);
   }
 
   // return requested nmethod
@@ -1648,6 +1694,10 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   CompilerThread* thread = CompilerThread::current();
   ResourceMark rm(thread);
 
+  if (LogEvents) {
+    _compilation_log->log_compile(thread, task);
+  }
+
   // Common flags.
   uint compile_id = task->compile_id();
   int osr_bci = task->osr_bci();
@@ -1716,22 +1766,30 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       ci_env.record_method_not_compilable("compile failed", !TieredCompilation);
     }
 
+    // Copy this bit to the enclosing block:
+    compilable = ci_env.compilable();
+
     if (ci_env.failing()) {
-      // Copy this bit to the enclosing block:
-      compilable = ci_env.compilable();
+      const char* retry_message = ci_env.retry_message();
+      if (_compilation_log != NULL) {
+        _compilation_log->log_failure(thread, task, ci_env.failure_reason(), retry_message);
+      }
       if (PrintCompilation) {
-        const char* reason = ci_env.failure_reason();
-        if (compilable == ciEnv::MethodCompilable_not_at_tier) {
-          tty->print_cr("%4d   COMPILE SKIPPED: %s (retry at different tier)", compile_id, reason);
-        } else if (compilable == ciEnv::MethodCompilable_never) {
-          tty->print_cr("%4d   COMPILE SKIPPED: %s (not retryable)", compile_id, reason);
-        } else if (compilable == ciEnv::MethodCompilable) {
-          tty->print_cr("%4d   COMPILE SKIPPED: %s", compile_id, reason);
+        tty->print("%4d   COMPILE SKIPPED: %s", compile_id, ci_env.failure_reason());
+        if (retry_message != NULL) {
+          tty->print(" (%s)", retry_message);
         }
+        tty->cr();
       }
     } else {
       task->mark_success();
       task->set_num_inlined_bytecodes(ci_env.num_inlined_bytecodes());
+      if (_compilation_log != NULL) {
+        nmethod* code = task->code();
+        if (code != NULL) {
+          _compilation_log->log_nmethod(thread, code);
+        }
+      }
     }
   }
   pop_jni_handle_block();

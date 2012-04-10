@@ -338,8 +338,27 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     break;
 
   case vmIntrinsics::_bitCount_i:
+    if (!Matcher::match_rule_supported(Op_PopCountI)) return NULL;
+    break;
+
   case vmIntrinsics::_bitCount_l:
-    if (!UsePopCountInstruction)  return NULL;
+    if (!Matcher::match_rule_supported(Op_PopCountL)) return NULL;
+    break;
+
+  case vmIntrinsics::_numberOfLeadingZeros_i:
+    if (!Matcher::match_rule_supported(Op_CountLeadingZerosI)) return NULL;
+    break;
+
+  case vmIntrinsics::_numberOfLeadingZeros_l:
+    if (!Matcher::match_rule_supported(Op_CountLeadingZerosL)) return NULL;
+    break;
+
+  case vmIntrinsics::_numberOfTrailingZeros_i:
+    if (!Matcher::match_rule_supported(Op_CountTrailingZerosI)) return NULL;
+    break;
+
+  case vmIntrinsics::_numberOfTrailingZeros_l:
+    if (!Matcher::match_rule_supported(Op_CountTrailingZerosL)) return NULL;
     break;
 
   case vmIntrinsics::_Reference_get:
@@ -416,14 +435,12 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
     return kit.transfer_exceptions_into_jvms();
   }
 
-  if (PrintIntrinsics) {
+  // The intrinsic bailed out
+  if (PrintIntrinsics || PrintInlining NOT_PRODUCT( || PrintOptoInlining) ) {
     if (jvms->has_method()) {
       // Not a root compile.
-      tty->print("Did not inline intrinsic %s%s at bci:%d in",
-                 vmIntrinsics::name_at(intrinsic_id()),
-                 (is_virtual() ? " (virtual)" : ""), kit.bci());
-      kit.caller()->print_short_name(tty);
-      tty->print_cr(" (%d bytes)", kit.caller()->code_size());
+      const char* msg = is_virtual() ? "failed to inline (intrinsic, virtual)" : "failed to inline (intrinsic)";
+      CompileTask::print_inlining(kit.callee(), jvms->depth() - 1, kit.bci(), msg);
     } else {
       // Root compile
       tty->print("Did not generate intrinsic %s%s at bci:%d in",
@@ -2153,7 +2170,7 @@ void LibraryCallKit::insert_g1_pre_barrier(Node* base_oop, Node* offset, Node* p
   //
   // if (offset == java_lang_ref_Reference::_reference_offset) {
   //   if (base != null) {
-  //     if (klass(base)->reference_type() != REF_NONE)) {
+  //     if (instance_of(base, java.lang.ref.Reference)) {
   //       pre_barrier(_, pre_val, ...);
   //     }
   //   }
@@ -2164,8 +2181,6 @@ void LibraryCallKit::insert_g1_pre_barrier(Node* base_oop, Node* offset, Node* p
 
   IdealKit ideal(this);
 #define __ ideal.
-
-  const int reference_type_offset = in_bytes(instanceKlass::reference_type_offset());
 
   Node* referent_off = __ ConX(java_lang_ref_Reference::referent_offset);
 
@@ -2678,7 +2693,13 @@ bool LibraryCallKit::inline_unsafe_CAS(BasicType type) {
     cas = _gvn.transform(new (C, 5) CompareAndSwapLNode(control(), mem, adr, newval, oldval));
     break;
   case T_OBJECT:
-     // reference stores need a store barrier.
+    // Transformation of a value which could be NULL pointer (CastPP #NULL)
+    // could be delayed during Parse (for example, in adjust_map_after_if()).
+    // Execute transformation here to avoid barrier generation in such case.
+    if (_gvn.type(newval) == TypePtr::NULL_PTR)
+      newval = _gvn.makecon(TypePtr::NULL_PTR);
+
+    // Reference stores need a store barrier.
     // (They don't if CAS fails, but it isn't worth checking.)
     pre_barrier(true /* do_load*/,
                 control(), base, adr, alias_idx, newval, value_type->make_oopptr(),
@@ -5449,4 +5470,3 @@ bool LibraryCallKit::inline_reference_get() {
   push(result);
   return true;
 }
-

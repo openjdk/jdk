@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ class Klass_vtbl {
   // by the shared "base_create" subroutines.
   //
   virtual void* allocate_permanent(KlassHandle& klass, int size, TRAPS) const = 0;
-  void post_new_init_klass(KlassHandle& klass, klassOop obj, int size) const;
+  void post_new_init_klass(KlassHandle& klass, klassOop obj) const;
 
   // Every subclass on which vtbl_value is called must include this macro.
   // Delay the installation of the klassKlass pointer until after the
@@ -160,7 +160,7 @@ class Klass_vtbl {
     if (HAS_PENDING_EXCEPTION) return NULL;                                   \
     klassOop new_klass = ((Klass*) result)->as_klassOop();                    \
     OrderAccess::storestore();                                                \
-    post_new_init_klass(klass_klass, new_klass, size);                        \
+    post_new_init_klass(klass_klass, new_klass);                              \
     return result;                                                            \
   }
 
@@ -265,9 +265,7 @@ class Klass : public Klass_vtbl {
   markOop  _prototype_header;   // Used when biased locking is both enabled and disabled for this type
   jint     _biased_lock_revocation_count;
 
-#ifdef TRACE_DEFINE_KLASS_TRACE_ID
   TRACE_DEFINE_KLASS_TRACE_ID;
-#endif
  public:
 
   // returns the enclosing klassOop
@@ -688,9 +686,7 @@ class Klass : public Klass_vtbl {
   jlong last_biased_lock_bulk_revocation_time() { return _last_biased_lock_bulk_revocation_time; }
   void  set_last_biased_lock_bulk_revocation_time(jlong cur_time) { _last_biased_lock_bulk_revocation_time = cur_time; }
 
-#ifdef TRACE_DEFINE_KLASS_METHODS
   TRACE_DEFINE_KLASS_METHODS;
-#endif
 
   // garbage collection support
   virtual void follow_weak_klass_links(

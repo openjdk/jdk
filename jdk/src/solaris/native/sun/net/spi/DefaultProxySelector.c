@@ -26,11 +26,12 @@
 #include "jni.h"
 #include "jni_util.h"
 #include "jvm.h"
+#include "jvm_md.h"
 #include "jlong.h"
 #include "sun_net_spi_DefaultProxySelector.h"
 #include <dlfcn.h>
 #include <stdio.h>
-#ifdef __linux__
+#if defined(__linux__) || defined(_ALLBSD_SOURCE)
 #include <string.h>
 #else
 #include <strings.h>
@@ -110,8 +111,9 @@ Java_sun_net_spi_DefaultProxySelector_init(JNIEnv *env, jclass clazz) {
   /**
    * Let's try to load le GConf-2 library
    */
-  if (dlopen("libgconf-2.so", RTLD_GLOBAL | RTLD_LAZY) != NULL ||
-      dlopen("libgconf-2.so.4", RTLD_GLOBAL | RTLD_LAZY) != NULL) {
+  if (dlopen(JNI_LIB_NAME("gconf-2"), RTLD_GLOBAL | RTLD_LAZY) != NULL ||
+      dlopen(VERSIONED_JNI_LIB_NAME("gconf-2", "4"),
+             RTLD_GLOBAL | RTLD_LAZY) != NULL) {
     gconf_ver = 2;
   }
   if (gconf_ver > 0) {

@@ -29,7 +29,6 @@
 #include <assert.h>
 
 #include <dlfcn.h>
-#include <link.h>
 
 #include <winscard.h>
 

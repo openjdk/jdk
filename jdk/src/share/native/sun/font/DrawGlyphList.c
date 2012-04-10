@@ -26,7 +26,7 @@
 #include "jlong.h"
 #include "math.h"
 #include "string.h"
-#include "malloc.h"
+#include "stdlib.h"
 #include "sunfontids.h"
 #include "fontscalerdefs.h"
 #include "glyphblitting.h"
