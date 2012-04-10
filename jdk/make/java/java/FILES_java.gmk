@@ -51,6 +51,7 @@ JAVA_JAVA_java = \
     java/lang/SuppressWarnings.java \
     java/lang/AbstractStringBuilder.java \
     java/lang/ClassLoader.java \
+    java/lang/ClassLoaderHelper.java \
     java/lang/AssertionStatusDirectives.java \
     java/lang/Enum.java \
     java/lang/StrictMath.java \
