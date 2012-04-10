@@ -1,0 +1,4 @@
+T7157165.java:11:20: compiler.err.expected: >
+T7157165.java:11:21: compiler.err.expected: ';'
+T7157165.java:11:22: compiler.err.illegal.start.of.type
+3 errors

@@ -347,7 +347,7 @@ public class Infer {
                     that.tvars,
                     instantiateAsUninferredVars(undetvars, that.tvars));
         }
-        return chk.checkType(warn.pos(), that.inst(targs, types), to);
+        return that.inst(targs, types);
     }
     //where
     private List<Type> instantiateAsUninferredVars(List<Type> undetvars, List<Type> tvars) {
@@ -603,8 +603,7 @@ public class Infer {
      * method signature. The target return type is computed from the immediately
      * enclosing scope surrounding the polymorphic-signature call.
      */
-    Type instantiatePolymorphicSignatureInstance(Env<AttrContext> env, Type site,
-                                            Name name,
+    Type instantiatePolymorphicSignatureInstance(Env<AttrContext> env,
                                             MethodSymbol spMethod,  // sig. poly. method or null if none
                                             List<Type> argtypes) {
         final Type restype;
