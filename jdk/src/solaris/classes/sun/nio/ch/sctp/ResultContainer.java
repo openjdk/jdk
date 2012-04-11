@@ -24,10 +24,14 @@
  */
 package sun.nio.ch.sctp;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * Wraps the actual message or notification so that it can be
  * set and returned from the native receive implementation.
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class ResultContainer {
     /* static final ints so that they can be referenced from native */
     static final int NOTHING = 0;
