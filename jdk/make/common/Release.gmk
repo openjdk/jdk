@@ -873,7 +873,9 @@ ifeq ($(PLATFORM), windows)
 	   -o -name \*.dll | $(EGREP) -v -i "$(MSVCRNN_DLL)" > $@
 else
 	$(FIND) $(JRE_IMAGE_DIR)/lib -type f -name \*.$(LIB_SUFFIX) >> $@
-	$(FILE) `$(FIND) $(JRE_IMAGE_DIR)/bin -type f -name \*$(EXE_SUFFIX)` \
+# The FILE command reports .debuginfo files as "ELF", but we don't want
+# those files in the JRE_BIN_LIST file. EXE_SUFFIX is empty on non-Windows.
+	$(FILE) `$(FIND) $(JRE_IMAGE_DIR)/bin -type f ! -name '*.debuginfo' -name \*$(EXE_SUFFIX)` \
 	    | $(EGREP) 'ELF' | $(CUT) -d':' -f1 >> $@
 endif
 
@@ -1140,9 +1142,11 @@ ifeq ($(PLATFORM), windows)
 else
 	$(RM) $@
 	$(FIND) $(JDK_IMAGE_DIR)/jre/lib -type f -name \*.$(LIB_SUFFIX) >> $@
-	$(FILE) `$(FIND) $(JDK_IMAGE_DIR)/jre/bin -type f -name \*$(EXE_SUFFIX)` \
+# The FILE command reports .debuginfo files as "ELF", but we don't want
+# those files in the JDK_BIN_LIST file. EXE_SUFFIX is empty on non-Windows.
+	$(FILE) `$(FIND) $(JDK_IMAGE_DIR)/jre/bin -type f ! -name '*.debuginfo' -name \*$(EXE_SUFFIX)` \
 	    | $(EGREP) 'ELF' | $(CUT) -d':' -f1 >> $@
-	file `$(FIND) $(JDK_IMAGE_DIR)/bin -type f -name \*$(EXE_SUFFIX)` \
+	file `$(FIND) $(JDK_IMAGE_DIR)/bin -type f ! -name '*.debuginfo' -name \*$(EXE_SUFFIX)` \
 	    | $(EGREP) 'ELF' | $(CUT) -d':' -f1 >> $@
 endif
 
