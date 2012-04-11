@@ -53,6 +53,11 @@ ifndef PLATFORM_SRC
   PLATFORM_SRC = $(BUILDDIR)/../src/solaris
 endif # PLATFORM_SRC
 
+# Location of the various .properties files specific to Linux platform
+ifndef PLATFORM_PROPERTIES
+  PLATFORM_PROPERTIES  = $(BUILDDIR)/../src/solaris/lib
+endif # PLATFORM_SRC
+
 # Platform specific closed sources
 ifndef OPENJDK
   ifndef CLOSED_PLATFORM_SRC
