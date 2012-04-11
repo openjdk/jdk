@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,12 @@
  * questions.
  */
 
-// key: compiler.misc.where.captured.1
-// key: compiler.misc.where.description.captured.1
-// key: compiler.misc.where.description.typevar
-// key: compiler.misc.where.typevar
 // key: compiler.err.cant.apply.symbol.1
-// key: compiler.misc.inferred.do.not.conform.to.eq.bounds
-// key: compiler.misc.captured.type
-// key: compiler.misc.type.null
-// options: -XDdiags=where,simpleNames
-// run: simple
+// key: compiler.misc.inferred.do.not.conform.to.upper.bounds
 
 import java.util.*;
 
-class WhereCaptured {
-    <T> void m(List<T> l1, List<T> l2) {}
-
-    void test(List<? extends WhereCaptured> list) {
-        m(list, list);
-    }
+class InferredDoNotConformToUpper {
+    <X> void m(X x, List<? super X> lx) {}
+    { this.m("", Arrays.asList(1)); }
 }
