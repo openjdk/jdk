@@ -53,6 +53,11 @@ ifndef PLATFORM_SRC
   PLATFORM_SRC = $(BUILDDIR)/../src/solaris
 endif # PLATFORM_SRC
 
+# Location of the various .properties files specific to MacOS X platform
+ifndef PLATFORM_PROPERTIES
+  PLATFORM_PROPERTIES  = $(BUILDDIR)/../src/macosx/lib
+endif # PLATFORM_SRC
+
 PLATFORM_SRC_MACOS = $(BUILDDIR)/../src/macosx
 
 # BSD build pulls its platform sources from the solaris tree.

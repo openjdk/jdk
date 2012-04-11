@@ -52,6 +52,11 @@ ifndef PLATFORM_SRC
   PLATFORM_SRC  = $(BUILDDIR)/../src/windows
 endif # PLATFORM_SRC
 
+# Location of the various .properties files specific to Windows platform
+ifndef PLATFORM_PROPERTIES
+  PLATFORM_PROPERTIES  = $(BUILDDIR)/../src/windows/lib
+endif # PLATFORM_SRC
+
 # Platform specific closed sources
 ifndef OPENJDK
   ifndef CLOSED_PLATFORM_SRC
