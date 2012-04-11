@@ -124,7 +124,7 @@ const keyTable[] =
     {0x32, YES, KL_STANDARD, java_awt_event_KeyEvent_VK_BACK_QUOTE},
     {0x33, YES, KL_STANDARD, java_awt_event_KeyEvent_VK_BACK_SPACE},
     {0x34, YES, KL_NUMPAD,   java_awt_event_KeyEvent_VK_ENTER},
-    {0x35, NO,  KL_STANDARD, java_awt_event_KeyEvent_VK_ESCAPE},
+    {0x35, YES, KL_STANDARD, java_awt_event_KeyEvent_VK_ESCAPE},
     {0x36, NO,  KL_UNKNOWN,  java_awt_event_KeyEvent_VK_UNDEFINED},
     {0x37, NO,  KL_UNKNOWN,  java_awt_event_KeyEvent_VK_META},      // ****
     {0x38, NO,  KL_UNKNOWN,  java_awt_event_KeyEvent_VK_SHIFT},     // ****
