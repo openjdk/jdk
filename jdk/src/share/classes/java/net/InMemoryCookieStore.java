@@ -207,6 +207,9 @@ class InMemoryCookieStore implements CookieStore {
     public boolean removeAll() {
         lock.lock();
         try {
+            if (cookieJar.isEmpty()) {
+                return false;
+            }
             cookieJar.clear();
             domainIndex.clear();
             uriIndex.clear();

@@ -29,6 +29,7 @@ import java.awt.BufferCapabilities.FlipContents;
 import java.awt.*;
 import java.awt.Dialog.ModalityType;
 import java.awt.event.*;
+import java.awt.peer.WindowPeer;
 import java.beans.*;
 import java.util.List;
 
@@ -65,6 +66,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     // Loger to report issues happened during execution but that do not affect functionality
     private static final PlatformLogger logger = PlatformLogger.getLogger("sun.lwawt.macosx.CPlatformWindow");
+    private static final PlatformLogger focusLogger = PlatformLogger.getLogger("sun.lwawt.macosx.focus.CPlatformWindow");
 
     // for client properties
     public static final String WINDOW_BRUSH_METAL_LOOK = "apple.awt.brushMetalLook";
@@ -112,6 +114,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     static final int MINIMIZABLE = 1 << 8;
 
     static final int RESIZABLE = 1 << 9; // both a style bit and prop bit
+    static final int NONACTIVATING = 1 << 24;
 
     static final int _STYLE_PROP_BITMASK = DECORATED | TEXTURED | UNIFIED | UTILITY | HUD | SHEET | CLOSEABLE | MINIMIZABLE | RESIZABLE;
 
@@ -126,9 +129,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     static final int FULLSCREENABLE = 1 << 23;
 
     static final int _METHOD_PROP_BITMASK = RESIZABLE | HAS_SHADOW | ZOOMABLE | ALWAYS_ON_TOP | HIDES_ON_DEACTIVATE | DRAGGABLE_BACKGROUND | DOCUMENT_MODIFIED | FULLSCREENABLE;
-
-    // not sure
-    static final int POPUP = 1 << 14;
 
     // corresponds to callback-based properties
     static final int SHOULD_BECOME_KEY = 1 << 12;
@@ -203,6 +203,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private LWWindowPeer peer;
     private CPlatformView contentView;
     private CPlatformWindow owner;
+    private boolean visible = false; // visibility status from native perspective
+    private boolean undecorated; // initialized in getInitialStyleBits()
+    private Rectangle normalBounds = null; // not-null only for undecorated maximized windows
 
     public CPlatformWindow(final PeerType peerType) {
         super(0, true);
@@ -264,10 +267,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         // defaults style bits
         int styleBits = DECORATED | HAS_SHADOW | CLOSEABLE | MINIMIZABLE | ZOOMABLE | RESIZABLE;
 
-        if (target.getName() == "###overrideRedirect###") {
-            styleBits = SET(styleBits, POPUP, true);
-        }
-
         if (isNativelyFocusableWindow()) {
             styleBits = SET(styleBits, SHOULD_BECOME_KEY, true);
             styleBits = SET(styleBits, SHOULD_BECOME_MAIN, true);
@@ -275,14 +274,15 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
         final boolean isFrame = (target instanceof Frame);
         final boolean isDialog = (target instanceof Dialog);
+        final boolean isPopup = (target.getType() == Window.Type.POPUP);
         if (isDialog) {
             styleBits = SET(styleBits, MINIMIZABLE, false);
         }
 
         // Either java.awt.Frame or java.awt.Dialog can be undecorated, however java.awt.Window always is undecorated.
         {
-            final boolean undecorated = isFrame ? ((Frame)target).isUndecorated() : (isDialog ? ((Dialog)target).isUndecorated() : true);
-            if (undecorated) styleBits = SET(styleBits, DECORATED, false);
+            this.undecorated = isFrame ? ((Frame)target).isUndecorated() : (isDialog ? ((Dialog)target).isUndecorated() : true);
+            if (this.undecorated) styleBits = SET(styleBits, DECORATED, false);
         }
 
         // Either java.awt.Frame or java.awt.Dialog can be resizable, however java.awt.Window is never resizable
@@ -304,8 +304,10 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         }
 
         // If the target is a dialog, popup or tooltip we want it to ignore the brushed metal look.
-        if (!isDialog && IS(styleBits, POPUP)) {
+        if (isPopup) {
             styleBits = SET(styleBits, TEXTURED, true);
+            // Popups in applets don't activate applet's process
+            styleBits = SET(styleBits, NONACTIVATING, true);
         }
 
         if (target instanceof javax.swing.RootPaneContainer) {
@@ -468,19 +470,62 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         nativeSetNSWindowBounds(getNSWindowPtr(), x, y, w, h);
     }
 
+    private void zoom() {
+        if (!undecorated) {
+            CWrapper.NSWindow.zoom(getNSWindowPtr());
+        } else {
+            // OS X handles -zoom incorrectly for undecorated windows
+            final boolean isZoomed = this.normalBounds == null;
+            deliverZoom(isZoomed);
+
+            Rectangle toBounds;
+            if (isZoomed) {
+                this.normalBounds = peer.getBounds();
+                long screen = CWrapper.NSWindow.screen(getNSWindowPtr());
+                toBounds = CWrapper.NSScreen.visibleFrame(screen).getBounds();
+                // Flip the y coordinate
+                Rectangle frame = CWrapper.NSScreen.frame(screen).getBounds();
+                toBounds.y = frame.height - toBounds.y - toBounds.height;
+            } else {
+                toBounds = normalBounds;
+                this.normalBounds = null;
+            }
+            setBounds(toBounds.x, toBounds.y, toBounds.width, toBounds.height);
+        }
+    }
+
+    private boolean isVisible() {
+        return this.visible;
+    }
+
     @Override // PlatformWindow
     public void setVisible(boolean visible) {
         final long nsWindowPtr = getNSWindowPtr();
 
-        if (owner != null) {
-            if (!visible) {
+        // 1. Process parent-child relationship when hiding
+        if (!visible) {
+            // 1a. Unparent my children
+            for (Window w : target.getOwnedWindows()) {
+                WindowPeer p = (WindowPeer)w.getPeer();
+                if (p instanceof LWWindowPeer) {
+                    CPlatformWindow pw = (CPlatformWindow)((LWWindowPeer)p).getPlatformWindow();
+                    if (pw != null && pw.isVisible()) {
+                        CWrapper.NSWindow.removeChildWindow(nsWindowPtr, pw.getNSWindowPtr());
+                    }
+                }
+            }
+
+            // 1b. Unparent myself
+            if (owner != null && owner.isVisible()) {
                 CWrapper.NSWindow.removeChildWindow(owner.getNSWindowPtr(), nsWindowPtr);
             }
         }
 
+        // 2. Configure stuff
         updateIconImages();
         updateFocusabilityForAutoRequestFocus(false);
 
+        // 3. Manage the extended state when hiding
         if (!visible) {
             // Cancel out the current native state of the window
             switch (peer.getState()) {
@@ -488,21 +533,29 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                     CWrapper.NSWindow.deminiaturize(nsWindowPtr);
                     break;
                 case Frame.MAXIMIZED_BOTH:
-                    CWrapper.NSWindow.zoom(nsWindowPtr);
+                    zoom();
                     break;
             }
         }
 
+        // 4. Actually show or hide the window
         LWWindowPeer blocker = peer.getBlocker();
         if (blocker == null || !visible) {
             // If it ain't blocked, or is being hidden, go regular way
             if (visible) {
                 CWrapper.NSWindow.makeFirstResponder(nsWindowPtr, contentView.getAWTView());
-                boolean isKeyWindow = CWrapper.NSWindow.isKeyWindow(nsWindowPtr);
-                if (!isKeyWindow) {
-                    CWrapper.NSWindow.makeKeyAndOrderFront(nsWindowPtr);
+
+                boolean isPopup = (target.getType() == Window.Type.POPUP);
+                if (isPopup) {
+                    // Popups in applets don't activate applet's process
+                    CWrapper.NSWindow.orderFrontRegardless(nsWindowPtr);
                 } else {
                     CWrapper.NSWindow.orderFront(nsWindowPtr);
+                }
+
+                boolean isKeyWindow = CWrapper.NSWindow.isKeyWindow(nsWindowPtr);
+                if (!isKeyWindow) {
+                    CWrapper.NSWindow.makeKeyWindow(nsWindowPtr);
                 }
             } else {
                 CWrapper.NSWindow.orderOut(nsWindowPtr);
@@ -512,7 +565,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             CWrapper.NSWindow.orderWindow(nsWindowPtr, CWrapper.NSWindow.NSWindowBelow,
                     ((CPlatformWindow)blocker.getPlatformWindow()).getNSWindowPtr());
         }
+        this.visible = visible;
 
+        // 5. Manage the extended state when showing
         if (visible) {
             // Re-apply the extended state as expected in shared code
             if (target instanceof Frame) {
@@ -521,23 +576,41 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                         CWrapper.NSWindow.miniaturize(nsWindowPtr);
                         break;
                     case Frame.MAXIMIZED_BOTH:
-                        CWrapper.NSWindow.zoom(nsWindowPtr);
+                        zoom();
                         break;
                 }
             }
         }
 
+        // 6. Configure stuff #2
         updateFocusabilityForAutoRequestFocus(true);
 
-        if (owner != null) {
-            if (visible) {
+        // 7. Manage parent-child relationship when showing
+        if (visible) {
+            // 7a. Add myself as a child
+            if (owner != null && owner.isVisible()) {
                 CWrapper.NSWindow.addChildWindow(owner.getNSWindowPtr(), nsWindowPtr, CWrapper.NSWindow.NSWindowAbove);
                 if (target.isAlwaysOnTop()) {
                     CWrapper.NSWindow.setLevel(nsWindowPtr, CWrapper.NSWindow.NSFloatingWindowLevel);
                 }
             }
+
+            // 7b. Add my own children to myself
+            for (Window w : target.getOwnedWindows()) {
+                WindowPeer p = (WindowPeer)w.getPeer();
+                if (p instanceof LWWindowPeer) {
+                    CPlatformWindow pw = (CPlatformWindow)((LWWindowPeer)p).getPlatformWindow();
+                    if (pw != null && pw.isVisible()) {
+                        CWrapper.NSWindow.addChildWindow(nsWindowPtr, pw.getNSWindowPtr(), CWrapper.NSWindow.NSWindowAbove);
+                        if (w.isAlwaysOnTop()) {
+                            CWrapper.NSWindow.setLevel(pw.getNSWindowPtr(), CWrapper.NSWindow.NSFloatingWindowLevel);
+                        }
+                    }
+                }
+            }
         }
 
+        // 8. Deal with the blocker of the window being shown
         if (blocker != null && visible) {
             // Make sure the blocker is above its siblings
             ((CPlatformWindow)blocker.getPlatformWindow()).orderAboveSiblings();
@@ -600,7 +673,20 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     @Override
+    public boolean rejectFocusRequest(CausedFocusEvent.Cause cause) {
+        // Cross-app activation requests are not allowed.
+        if (cause != CausedFocusEvent.Cause.MOUSE_EVENT &&
+            !((LWCToolkit)Toolkit.getDefaultToolkit()).isApplicationActive())
+        {
+            focusLogger.fine("the app is inactive, so the request is rejected");
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public boolean requestWindowFocus() {
+
         long ptr = getNSWindowPtr();
         if (CWrapper.NSWindow.canBecomeMainWindow(ptr)) {
             CWrapper.NSWindow.makeMainWindow(ptr);
@@ -674,7 +760,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 if (prevWindowState == Frame.MAXIMIZED_BOTH) {
                     // let's return into the normal states first
                     // the zoom call toggles between the normal and the max states
-                    CWrapper.NSWindow.zoom(nsWindowPtr);
+                    zoom();
                 }
                 CWrapper.NSWindow.miniaturize(nsWindowPtr);
                 break;
@@ -683,14 +769,14 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                     // let's return into the normal states first
                     CWrapper.NSWindow.deminiaturize(nsWindowPtr);
                 }
-                CWrapper.NSWindow.zoom(nsWindowPtr);
+                zoom();
                 break;
             case Frame.NORMAL:
                 if (prevWindowState == Frame.ICONIFIED) {
                     CWrapper.NSWindow.deminiaturize(nsWindowPtr);
                 } else if (prevWindowState == Frame.MAXIMIZED_BOTH) {
                     // the zoom call toggles between the normal and the max states
-                    CWrapper.NSWindow.zoom(nsWindowPtr);
+                    zoom();
                 }
                 break;
             default:
@@ -751,6 +837,11 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
      * Callbacks from the AWTWindow and AWTView objc classes.
      *************************************************************/
     private void deliverWindowFocusEvent(boolean gained){
+        // Fix for 7150349: ingore "gained" notifications when the app is inactive.
+        if (gained && !((LWCToolkit)Toolkit.getDefaultToolkit()).isApplicationActive()) {
+            focusLogger.fine("the app is inactive, so the notification is ignored");
+            return;
+        }
         peer.notifyActivation(gained);
     }
 
@@ -826,15 +917,23 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             return;
         }
 
-        // Recursively pop up the windows from the very bottom so that only
-        // the very top-most one becomes the main window
-        owner.orderAboveSiblings();
+        // NOTE: the logic will fail if we have a hierarchy like:
+        //       visible root owner
+        //          invisible owner
+        //              visible dialog
+        // However, this is an unlikely scenario for real life apps
+        if (owner.isVisible()) {
+            // Recursively pop up the windows from the very bottom so that only
+            // the very top-most one becomes the main window
+            owner.orderAboveSiblings();
 
-        // Order the window to front of the stack of child windows
-        final long nsWindowSelfPtr = getNSWindowPtr();
-        final long nsWindowOwnerPtr = owner.getNSWindowPtr();
-        CWrapper.NSWindow.removeChildWindow(nsWindowOwnerPtr, nsWindowSelfPtr);
-        CWrapper.NSWindow.addChildWindow(nsWindowOwnerPtr, nsWindowSelfPtr, CWrapper.NSWindow.NSWindowAbove);
+            // Order the window to front of the stack of child windows
+            final long nsWindowSelfPtr = getNSWindowPtr();
+            final long nsWindowOwnerPtr = owner.getNSWindowPtr();
+            CWrapper.NSWindow.removeChildWindow(nsWindowOwnerPtr, nsWindowSelfPtr);
+            CWrapper.NSWindow.addChildWindow(nsWindowOwnerPtr, nsWindowSelfPtr, CWrapper.NSWindow.NSWindowAbove);
+        }
+
         if (target.isAlwaysOnTop()) {
             CWrapper.NSWindow.setLevel(getNSWindowPtr(), CWrapper.NSWindow.NSFloatingWindowLevel);
         }

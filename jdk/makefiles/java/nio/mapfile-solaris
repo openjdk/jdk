@@ -1,0 +1,185 @@
+#
+# Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+SUNWprivate_1.1 {
+	global:
+                Java_java_nio_MappedByteBuffer_force0;
+                Java_java_nio_MappedByteBuffer_isLoaded0;
+                Java_java_nio_MappedByteBuffer_load0;
+                Java_sun_nio_ch_DatagramChannelImpl_disconnect0;
+                Java_sun_nio_ch_DatagramChannelImpl_initIDs;
+                Java_sun_nio_ch_DatagramChannelImpl_receive0;
+                Java_sun_nio_ch_DatagramChannelImpl_send0;
+                Java_sun_nio_ch_DatagramDispatcher_read0;
+                Java_sun_nio_ch_DatagramDispatcher_readv0;
+                Java_sun_nio_ch_DatagramDispatcher_write0;
+                Java_sun_nio_ch_DatagramDispatcher_writev0;
+                Java_sun_nio_ch_DevPollArrayWrapper_fdLimit;
+                Java_sun_nio_ch_DevPollArrayWrapper_init;
+                Java_sun_nio_ch_DevPollArrayWrapper_interrupt;
+                Java_sun_nio_ch_DevPollArrayWrapper_poll0;
+                Java_sun_nio_ch_DevPollArrayWrapper_register;
+                Java_sun_nio_ch_DevPollArrayWrapper_registerMultiple;
+                Java_sun_nio_ch_FileChannelImpl_close0;
+                Java_sun_nio_ch_FileChannelImpl_initIDs;
+                Java_sun_nio_ch_FileChannelImpl_map0;
+                Java_sun_nio_ch_FileChannelImpl_position0;
+                Java_sun_nio_ch_FileChannelImpl_transferTo0;
+                Java_sun_nio_ch_FileChannelImpl_unmap0;
+                Java_sun_nio_ch_FileDispatcherImpl_close0;
+                Java_sun_nio_ch_FileDispatcherImpl_closeIntFD;
+		Java_sun_nio_ch_FileDispatcherImpl_force0;
+                Java_sun_nio_ch_FileDispatcherImpl_init;
+		Java_sun_nio_ch_FileDispatcherImpl_lock0;
+                Java_sun_nio_ch_FileDispatcherImpl_preClose0;
+                Java_sun_nio_ch_FileDispatcherImpl_pread0;
+                Java_sun_nio_ch_FileDispatcherImpl_pwrite0;
+                Java_sun_nio_ch_FileDispatcherImpl_read0;
+                Java_sun_nio_ch_FileDispatcherImpl_readv0;
+		Java_sun_nio_ch_FileDispatcherImpl_release0;
+		Java_sun_nio_ch_FileDispatcherImpl_size0;
+		Java_sun_nio_ch_FileDispatcherImpl_truncate0;
+                Java_sun_nio_ch_FileDispatcherImpl_write0;
+                Java_sun_nio_ch_FileDispatcherImpl_writev0;
+                Java_sun_nio_ch_FileKey_init;
+                Java_sun_nio_ch_FileKey_initIDs;
+		Java_sun_nio_ch_InheritedChannel_close0;
+		Java_sun_nio_ch_InheritedChannel_dup;
+		Java_sun_nio_ch_InheritedChannel_dup2;
+		Java_sun_nio_ch_InheritedChannel_open0;
+		Java_sun_nio_ch_InheritedChannel_peerAddress0;
+		Java_sun_nio_ch_InheritedChannel_peerPort0;
+		Java_sun_nio_ch_InheritedChannel_soType0;
+                Java_sun_nio_ch_IOUtil_configureBlocking;
+                Java_sun_nio_ch_IOUtil_drain;
+                Java_sun_nio_ch_IOUtil_fdVal;
+                Java_sun_nio_ch_IOUtil_initIDs;
+                Java_sun_nio_ch_IOUtil_makePipe;
+                Java_sun_nio_ch_IOUtil_randomBytes;
+                Java_sun_nio_ch_IOUtil_setfdVal;
+		Java_sun_nio_ch_NativeThread_current;
+		Java_sun_nio_ch_NativeThread_init;
+		Java_sun_nio_ch_NativeThread_signal;
+		Java_sun_nio_ch_Net_canIPv6SocketJoinIPv4Group0;
+                Java_sun_nio_ch_Net_canJoin6WithIPv4Group0;
+		Java_sun_nio_ch_Net_socket0;
+		Java_sun_nio_ch_Net_bind0;
+		Java_sun_nio_ch_Net_connect0;
+		Java_sun_nio_ch_Net_listen;
+		Java_sun_nio_ch_Net_localPort;
+		Java_sun_nio_ch_Net_localInetAddress;
+		Java_sun_nio_ch_Net_getIntOption0;
+		Java_sun_nio_ch_Net_setIntOption0;
+                Java_sun_nio_ch_Net_initIDs;
+		Java_sun_nio_ch_Net_isIPv6Available0;
+		Java_sun_nio_ch_Net_joinOrDrop4;
+		Java_sun_nio_ch_Net_blockOrUnblock4;
+		Java_sun_nio_ch_Net_joinOrDrop6;
+		Java_sun_nio_ch_Net_blockOrUnblock6;
+		Java_sun_nio_ch_Net_setInterface4;
+		Java_sun_nio_ch_Net_getInterface4;
+		Java_sun_nio_ch_Net_setInterface6;
+		Java_sun_nio_ch_Net_getInterface6;
+		Java_sun_nio_ch_Net_shutdown;
+                Java_sun_nio_ch_PollArrayWrapper_interrupt;
+                Java_sun_nio_ch_PollArrayWrapper_poll0;
+                Java_sun_nio_ch_ServerSocketChannelImpl_accept0;
+                Java_sun_nio_ch_ServerSocketChannelImpl_initIDs;
+                Java_sun_nio_ch_SocketChannelImpl_checkConnect;
+		Java_sun_nio_ch_SocketChannelImpl_sendOutOfBandData;
+		Java_sun_nio_ch_UnixAsynchronousServerSocketChannelImpl_accept0;
+		Java_sun_nio_ch_UnixAsynchronousServerSocketChannelImpl_initIDs;
+		Java_sun_nio_ch_UnixAsynchronousSocketChannelImpl_checkConnect;
+		Java_sun_nio_ch_SolarisEventPort_init;
+		Java_sun_nio_ch_SolarisEventPort_portCreate;
+		Java_sun_nio_ch_SolarisEventPort_portClose;
+		Java_sun_nio_ch_SolarisEventPort_portAssociate;
+		Java_sun_nio_ch_SolarisEventPort_portGet;
+		Java_sun_nio_ch_SolarisEventPort_portGetn;
+		Java_sun_nio_ch_SolarisEventPort_portSend;
+		Java_sun_nio_fs_GnomeFileTypeDetector_initializeGio;
+		Java_sun_nio_fs_GnomeFileTypeDetector_probeUsingGio;
+		Java_sun_nio_fs_GnomeFileTypeDetector_initializeGnomeVfs;
+		Java_sun_nio_fs_GnomeFileTypeDetector_probeUsingGnomeVfs;
+		Java_sun_nio_fs_UnixNativeDispatcher_init;
+		Java_sun_nio_fs_UnixNativeDispatcher_getcwd;
+		Java_sun_nio_fs_UnixNativeDispatcher_strerror;
+		Java_sun_nio_fs_UnixNativeDispatcher_dup;
+		Java_sun_nio_fs_UnixNativeDispatcher_access0;
+		Java_sun_nio_fs_UnixNativeDispatcher_stat0;
+		Java_sun_nio_fs_UnixNativeDispatcher_lstat0;
+		Java_sun_nio_fs_UnixNativeDispatcher_fstat;
+		Java_sun_nio_fs_UnixNativeDispatcher_fstatat0;
+		Java_sun_nio_fs_UnixNativeDispatcher_chmod0;
+		Java_sun_nio_fs_UnixNativeDispatcher_fchmod;
+		Java_sun_nio_fs_UnixNativeDispatcher_chown0;
+		Java_sun_nio_fs_UnixNativeDispatcher_lchown0;
+		Java_sun_nio_fs_UnixNativeDispatcher_fchown;
+		Java_sun_nio_fs_UnixNativeDispatcher_utimes0;
+		Java_sun_nio_fs_UnixNativeDispatcher_futimes;
+		Java_sun_nio_fs_UnixNativeDispatcher_open0;
+		Java_sun_nio_fs_UnixNativeDispatcher_openat0;
+		Java_sun_nio_fs_UnixNativeDispatcher_close;
+		Java_sun_nio_fs_UnixNativeDispatcher_read;
+		Java_sun_nio_fs_UnixNativeDispatcher_write;
+		Java_sun_nio_fs_UnixNativeDispatcher_fopen0;
+		Java_sun_nio_fs_UnixNativeDispatcher_fclose;
+		Java_sun_nio_fs_UnixNativeDispatcher_opendir0;
+		Java_sun_nio_fs_UnixNativeDispatcher_fdopendir;
+		Java_sun_nio_fs_UnixNativeDispatcher_readdir;
+		Java_sun_nio_fs_UnixNativeDispatcher_closedir;
+		Java_sun_nio_fs_UnixNativeDispatcher_link0;
+		Java_sun_nio_fs_UnixNativeDispatcher_unlink0;
+		Java_sun_nio_fs_UnixNativeDispatcher_unlinkat0;
+		Java_sun_nio_fs_UnixNativeDispatcher_rename0;
+		Java_sun_nio_fs_UnixNativeDispatcher_renameat0;
+		Java_sun_nio_fs_UnixNativeDispatcher_mkdir0;
+		Java_sun_nio_fs_UnixNativeDispatcher_rmdir0;
+		Java_sun_nio_fs_UnixNativeDispatcher_symlink0;
+		Java_sun_nio_fs_UnixNativeDispatcher_readlink0;
+		Java_sun_nio_fs_UnixNativeDispatcher_realpath0;
+		Java_sun_nio_fs_UnixNativeDispatcher_statvfs0;
+		Java_sun_nio_fs_UnixNativeDispatcher_pathconf0;
+		Java_sun_nio_fs_UnixNativeDispatcher_fpathconf;
+		Java_sun_nio_fs_UnixNativeDispatcher_mknod0;
+		Java_sun_nio_fs_UnixNativeDispatcher_getpwuid;
+		Java_sun_nio_fs_UnixNativeDispatcher_getgrgid;
+		Java_sun_nio_fs_UnixNativeDispatcher_getpwnam0;
+		Java_sun_nio_fs_UnixNativeDispatcher_getgrnam0;
+		Java_sun_nio_fs_UnixNativeDispatcher_getextmntent;
+		Java_sun_nio_fs_UnixCopyFile_transfer;
+		Java_sun_nio_fs_SolarisNativeDispatcher_init;
+		Java_sun_nio_fs_SolarisNativeDispatcher_facl;
+		Java_sun_nio_fs_SolarisWatchService_init;
+		Java_sun_nio_fs_SolarisWatchService_portCreate;
+		Java_sun_nio_fs_SolarisWatchService_portAssociate;
+		Java_sun_nio_fs_SolarisWatchService_portDissociate;
+		Java_sun_nio_fs_SolarisWatchService_portSend;
+		Java_sun_nio_fs_SolarisWatchService_portGetn;
+		handleSocketError;
+
+	local:
+		*;
+};

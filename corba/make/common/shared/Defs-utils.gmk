@@ -31,7 +31,7 @@
 # These input UTILS_* variables can be defined at anytime, ideally once.
 #         Unix Commands: Normally /bin/, /usr/bin/. or C:/mksnt/mksnt/
 #            UTILS_COMMAND_PATH
-#         /usr/bin/ 
+#         /usr/bin/
 #            UTILS_USR_BIN_PATH
 #         /usr/ccs/bin/ (sccs, m4, lex, yacc, as, ar, strip, mcs)
 #            UTILS_CCS_BIN_PATH
@@ -51,6 +51,13 @@ ifeq ($(PLATFORM),linux)
   UTILS_USR_BIN_PATH=$(USRBIN_PATH)
   UTILS_CCS_BIN_PATH=$(USRBIN_PATH)
   UTILS_DEVTOOL_PATH=$(USRBIN_PATH)
+endif
+
+ifeq ($(PLATFORM),bsd)
+  UTILS_COMMAND_PATH=$(UNIXCOMMAND_PATH)
+  UTILS_USR_BIN_PATH=$(USRBIN_PATH)
+  UTILS_CCS_BIN_PATH=$(USRBIN_PATH)
+  UTILS_DEVTOOL_PATH=$(DEVTOOLS_PATH)
 endif
 
 ifeq ($(PLATFORM),solaris)
@@ -166,15 +173,15 @@ ifeq ($(PLATFORM),linux)
   # Also, some distribution (Ubuntu, Debian, others?) place the rpm command
   # itself in /usr/bin rather than it's traditional home in /bin.
   RPM=$(firstword $(wildcard $(UTILS_COMMAND_PATH)rpm) \
-		  $(wildcard $(UTILS_USR_BIN_PATH)rpm))
+                  $(wildcard $(UTILS_USR_BIN_PATH)rpm))
   RPMBUILD=$(firstword $(wildcard $(UTILS_COMMAND_PATH)rpmbuild) \
-		       $(wildcard $(UTILS_USR_BIN_PATH)rpmbuild) \
-		       $(wildcard $(UTILS_COMMAND_PATH)rpm) \
-		       $(wildcard $(UTILS_USR_BIN_PATH)rpm))
+                       $(wildcard $(UTILS_USR_BIN_PATH)rpmbuild) \
+                       $(wildcard $(UTILS_COMMAND_PATH)rpm) \
+                       $(wildcard $(UTILS_USR_BIN_PATH)rpm))
   # Most Linux distros have "sort" in /bin.  Ubuntu, Debian and perhaps
   # others have it in /usr/bin.
   SORT=$(firstword $(wildcard $(UTILS_COMMAND_PATH)sort) \
-		   $(wildcard $(UTILS_USR_BIN_PATH)sort))
+                   $(wildcard $(UTILS_USR_BIN_PATH)sort))
   NAWK           = $(USRBIN_PATH)gawk
   # Intrinsic unix command, with backslash-escaped character interpretation
   ECHO           = /bin/echo -e
@@ -198,3 +205,34 @@ ifeq ($(PLATFORM),solaris)
   ECHO           = /usr/bin/echo
 endif
 
+# BSD specific
+ifeq ($(PLATFORM),bsd)
+  BASENAME     = $(UTILS_USR_BIN_PATH)basename
+  EGREP        = $(UTILS_USR_BIN_PATH)egrep
+  EXPR         = $(UTILS_COMMAND_PATH)expr
+  FMT          = $(UTILS_USR_BIN_PATH)fmt
+  GREP         = $(UTILS_USR_BIN_PATH)grep
+  GUNZIP       = $(UTILS_USR_BIN_PATH)gunzip
+  ID           = $(UTILS_USR_BIN_PATH)id
+  MSGFMT       = $(UTILS_DEVTOOL_PATH)msgfmt
+  SED          = $(UTILS_USR_BIN_PATH)sed
+  SORT         = $(UTILS_USR_BIN_PATH)sort
+  TEST         = $(UTILS_COMMAND_PATH)test
+  TOUCH        = $(UTILS_USR_BIN_PATH)touch
+  TRUE         = $(UTILS_USR_BIN_PATH)true
+  UNAME        = $(UTILS_USR_BIN_PATH)uname
+  # BSD OS_VENDOR specific
+  ifeq ($(OS_VENDOR), Apple)
+    NAWK       = $(UTILS_USR_BIN_PATH)awk
+    UNZIPSFX   = $(UTILS_USR_BIN_PATH)unzipsfx
+    ZIPEXE     = $(UTILS_USR_BIN_PATH)zip
+  else
+    UNZIP      = $(UTILS_DEVTOOL_PATH)unzip
+  endif
+  ifeq ($(OS_VENDOR), OpenBSD)
+    NAWK       = $(UTILS_USR_BIN_PATH)awk
+  else
+    CPIO       = $(UTILS_USR_BIN_PATH)cpio
+    TAR        = $(UTILS_USR_BIN_PATH)tar
+  endif
+endif

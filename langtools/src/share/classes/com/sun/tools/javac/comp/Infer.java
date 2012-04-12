@@ -347,7 +347,7 @@ public class Infer {
                     that.tvars,
                     instantiateAsUninferredVars(undetvars, that.tvars));
         }
-        return chk.checkType(warn.pos(), that.inst(targs, types), to);
+        return that.inst(targs, types);
     }
     //where
     private List<Type> instantiateAsUninferredVars(List<Type> undetvars, List<Type> tvars) {
@@ -385,7 +385,6 @@ public class Infer {
                                   final Warner warn) throws InferenceException {
         //-System.err.println("instantiateMethod(" + tvars + ", " + mt + ", " + argtypes + ")"); //DEBUG
         List<Type> undetvars = Type.map(tvars, fromTypeVarFun);
-        //final List<Type> capturedArgs = types.capture(argtypes);
 
         final List<Type> capturedArgs =
                 rs.checkRawArgumentsAcceptable(env, undetvars, argtypes, mt.getParameterTypes(),
@@ -445,16 +444,20 @@ public class Infer {
                     return List.nil();
                 }
                 @Override
-                void check(List<Type> inferred, Types types) throws NoInstanceException {
+                void instantiateReturnType(Type restype, List<Type> inferred, Types types) throws NoInstanceException {
+                    Type owntype = new MethodType(types.subst(getParameterTypes(), tvars, inferred),
+                                       restype,
+                                       types.subst(getThrownTypes(), tvars, inferred),
+                                       qtype.tsym);
                     // check that actuals conform to inferred formals
-                    checkArgumentsAcceptable(env, capturedArgs, getParameterTypes(), allowBoxing, useVarargs, warn);
+                    warn.clear();
+                    checkArgumentsAcceptable(env, capturedArgs, owntype.getParameterTypes(), allowBoxing, useVarargs, warn);
                     // check that inferred bounds conform to their bounds
                     checkWithinBounds(all_tvars,
                            types.subst(inferredTypes, tvars, inferred), warn);
-                    if (useVarargs) {
-                        chk.checkVararg(env.tree.pos(), getParameterTypes(), msym);
-                    }
-            }};
+                    qtype = chk.checkMethod(owntype, msym, env, TreeInfo.args(env.tree), capturedArgs, useVarargs, warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED));
+                }
+            };
         }
         else {
             // check that actuals conform to inferred formals
@@ -520,16 +523,7 @@ public class Infer {
                 return qtype.map(f);
             }
 
-            void instantiateReturnType(Type restype, List<Type> inferred, Types types) throws NoInstanceException {
-                //update method type with newly inferred type-arguments
-                qtype = new MethodType(types.subst(getParameterTypes(), tvars, inferred),
-                                       restype,
-                                       types.subst(UninferredMethodType.this.getThrownTypes(), tvars, inferred),
-                                       UninferredMethodType.this.qtype.tsym);
-                check(inferred, types);
-            }
-
-            abstract void check(List<Type> inferred, Types types) throws NoInstanceException;
+            abstract void instantiateReturnType(Type restype, List<Type> inferred, Types types);
 
             abstract List<Type> getConstraints(TypeVar tv, ConstraintKind ck);
 
@@ -544,7 +538,7 @@ public class Infer {
                     if (rs.verboseResolutionMode.contains(VerboseResolutionMode.DEFERRED_INST)) {
                         log.note(pos, "deferred.method.inst", msym, UninferredMethodType.this.qtype, newRestype);
                     }
-                    return newRestype;
+                    return UninferredMethodType.this.qtype.getReturnType();
                 }
                 @Override
                 public List<Type> getConstraints(TypeVar tv, ConstraintKind ck) {
@@ -609,8 +603,7 @@ public class Infer {
      * method signature. The target return type is computed from the immediately
      * enclosing scope surrounding the polymorphic-signature call.
      */
-    Type instantiatePolymorphicSignatureInstance(Env<AttrContext> env, Type site,
-                                            Name name,
+    Type instantiatePolymorphicSignatureInstance(Env<AttrContext> env,
                                             MethodSymbol spMethod,  // sig. poly. method or null if none
                                             List<Type> argtypes) {
         final Type restype;

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -348,7 +348,13 @@ ifneq ($(PLATFORM), windows)
 	    "        Try setting LANG to 'C'. \n" \
 	    "" >> $(WARNING_FILE) ; \
         fi
+ifeq ($(PLATFORM), macosx)
+	@if [ "$(LANG)" = "" ]; then \
+	  $(ECHO) "ERROR: LANG must be set on Mac OS X. Recommended value is \"C\"" >> $(ERROR_FILE) ; \
+	fi
 endif
+endif
+
 
 ######################################################
 # Check the Windows cygwin version
@@ -1031,11 +1037,22 @@ ifeq ($(PLATFORM), windows)
 	    "      and/or check your value of ALT_HOTSPOT_LIB_PATH. \n" \
 	    "" >> $(ERROR_FILE) ; \
 	fi
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 	@#
 	@# Check for the .map files - its OK if they are not there..
 	@#
-  ifeq ($(ARCH_DATA_MODEL), 32)
+    ifeq ($(ARCH_DATA_MODEL), 32)
 	@# There is no 64-bit HotSpot client VM
+      ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	@if [ ! -r $(HOTSPOT_CLIENT_PATH)/jvm.diz ]; then \
+	  $(ECHO) "WARNING: HOTSPOT_CLIENT_PATH does not point to valid HotSpot .diz files. \n" \
+	    "        These files are optional and aid in the debugging of the JVM. \n" \
+	    "        Please check your access to \n" \
+	    "          $(HOTSPOT_CLIENT_PATH)/jvm.diz \n" \
+	    "        and/or check your value of ALT_HOTSPOT_CLIENT_PATH. \n" \
+	    "" >> $(WARNING_FILE) ; \
+	fi
+      else
 	@if [ ! -r $(HOTSPOT_CLIENT_PATH)/jvm.map ]; then \
 	  $(ECHO) "WARNING: HOTSPOT_CLIENT_PATH does not point to valid HotSpot .map files. \n" \
 	    "        These files are optional and aid in the debugging of the JVM. \n" \
@@ -1052,7 +1069,18 @@ ifeq ($(PLATFORM), windows)
 	    "        and/or check your value of ALT_HOTSPOT_CLIENT_PATH. \n" \
 	    "" >> $(WARNING_FILE) ; \
 	fi
-  endif
+      endif
+    endif
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	@if [ ! -r $(HOTSPOT_SERVER_PATH)/jvm.diz ]; then \
+	  $(ECHO) "WARNING: HOTSPOT_SERVER_PATH does not point to valid HotSpot .diz files. \n" \
+	    "        These files are optional and aid in the debugging of the JVM. \n" \
+	    "        Please check your access to \n" \
+	    "          $(HOTSPOT_SERVER_PATH)/jvm.diz \n" \
+	    "        and/or check your value of ALT_HOTSPOT_SERVER_PATH. \n" \
+	    "" >> $(WARNING_FILE) ; \
+	fi
+    else
 	@if [ ! -r $(HOTSPOT_SERVER_PATH)/jvm.map ]; then \
 	  $(ECHO) "WARNING: HOTSPOT_SERVER_PATH does not point to valid HotSpot .map files. \n" \
 	    "        These files are optional and aid in the debugging of the JVM. \n" \
@@ -1069,6 +1097,8 @@ ifeq ($(PLATFORM), windows)
 	    "        and/or check your value of ALT_HOTSPOT_SERVER_PATH. \n" \
 	    "" >> $(WARNING_FILE) ; \
 	fi
+    endif
+  endif	
 endif	
 
 

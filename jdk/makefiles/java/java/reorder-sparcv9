@@ -1,0 +1,103 @@
+data = R0x2000;
+text = LOAD ?RXO;
+# Test Null
+text: .text%init64IO: OUTPUTDIR/tmp/java/java.lang/java/obj64/UnixFileSystem_md.o;
+text: .text%JNI_OnLoad;
+text: .text%Canonicalize;
+text: .text%canonicalize;
+text: .text%collapse: OUTPUTDIR/tmp/java/java.lang/java/obj64/canonicalize_md.o;
+text: .text%Java_java_lang_Object_registerNatives;
+text: .text%Java_java_lang_System_registerNatives;
+text: .text%Java_java_lang_Thread_registerNatives;
+text: .text%Java_java_security_AccessController_getStackAccessControlContext;
+text: .text%Java_java_security_AccessController_getInheritedAccessControlContext;
+text: .text%Java_java_lang_ClassLoader_registerNatives;
+text: .text%Java_java_security_AccessController_doPrivileged__Ljava_security_PrivilegedAction_2;
+text: .text%Java_java_lang_Class_registerNatives;
+text: .text%Java_java_lang_Class_getPrimitiveClass;
+text: .text%Java_java_lang_System_initProperties;
+text: .text%GetJavaProperties;
+text: .text%JNU_NewStringPlatform;
+text: .text%initializeEncoding: OUTPUTDIR/tmp/java/java.lang/java/obj64/jni_util.o;
+text: .text%JNU_CallStaticMethodByName;
+text: .text%newString8859_1: OUTPUTDIR/tmp/java/java.lang/java/obj64/jni_util.o;
+text: .text%NewStringPlatform;
+text: .text%Java_java_io_FileInputStream_initIDs;
+text: .text%Java_java_io_FileDescriptor_initIDs;
+text: .text%Java_java_io_FileOutputStream_initIDs;
+text: .text%Java_java_lang_System_setIn0;
+text: .text%Java_sun_reflect_Reflection_getCallerClass;
+text: .text%Java_java_lang_Class_forName0;
+text: .text%Java_java_lang_String_intern;
+text: .text%Java_java_lang_Float_floatToIntBits;
+text: .text%Java_java_lang_Double_doubleToLongBits;
+text: .text%Java_java_lang_ClassLoader_findLoadedClass;
+text: .text%Java_java_lang_ClassLoader_findBootstrapClass;
+text: .text%VerifyClassCodes;
+text: .text%Java_java_lang_Throwable_fillInStackTrace;
+text: .text%Java_java_lang_System_setOut0;
+text: .text%Java_java_lang_System_setErr0;
+text: .text%Java_java_lang_System_identityHashCode;
+text: .text%Java_sun_misc_Signal_findSignal;
+text: .text%Java_sun_misc_Signal_handle0;
+text: .text%Java_java_io_FileSystem_getFileSystem;
+text: .text%JNU_NewObjectByName;
+text: .text%Java_java_io_UnixFileSystem_initIDs;
+text: .text%Java_java_io_UnixFileSystem_canonicalize;
+text: .text%JNU_GetStringPlatformChars;
+text: .text%JNU_ReleaseStringPlatformChars;
+text: .text%Java_java_io_FileInputStream_open;
+text: .text%fileOpen;
+text: .text%Java_java_io_FileInputStream_readBytes;
+text: .text%readBytes;
+text: .text%Java_java_io_FileInputStream_available;
+text: .text%Java_java_io_FileInputStream_close0;
+text: .text%Java_java_lang_Compiler_registerNatives;
+text: .text%Java_java_security_AccessController_doPrivileged__Ljava_security_PrivilegedExceptionAction_2;
+text: .text%Java_java_io_UnixFileSystem_list;
+text: .text%JNU_ClassString;
+text: .text%JNU_CopyObjectArray;
+text: .text%Java_java_io_UnixFileSystem_getBooleanAttributes0;
+text: .text%statMode: OUTPUTDIR/tmp/java/java.lang/java/obj64/UnixFileSystem_md.o;
+text: .text%Java_java_security_AccessController_doPrivileged__Ljava_security_PrivilegedExceptionAction_2Ljava_security_AccessControlContext_2;
+text: .text%Java_java_lang_System_mapLibraryName;
+text: .text%Java_java_lang_ClassLoader_00024NativeLibrary_load;
+text: .text%Java_java_lang_ClassLoader_00024NativeLibrary_find;
+text: .text%Java_java_io_UnixFileSystem_getLength;
+text: .text%Java_java_lang_Object_getClass;
+text: .text%Java_java_lang_ClassLoader_defineClass0;
+# Test Exit
+text: .text%Java_java_lang_Shutdown_halt;
+# Test Hello
+text: .text%Java_java_io_FileOutputStream_writeBytes;
+text: .text%writeBytes;
+# Test Sleep
+# Test IntToString
+# Test LoadToolkit
+text: .text%Java_java_util_ResourceBundle_getClassContext;
+text: .text%Java_java_security_AccessController_doPrivileged__Ljava_security_PrivilegedAction_2Ljava_security_AccessControlContext_2;
+text: .text%JNU_GetEnv;
+text: .text%Java_java_io_UnixFileSystem_checkAccess;
+text: .text%Java_java_lang_ref_Finalizer_invokeFinalizeMethod;
+text: .text%Java_java_lang_reflect_Array_newArray;
+text: .text%Java_java_lang_Throwable_getStackTraceDepth;
+text: .text%Java_java_lang_Throwable_getStackTraceElement;
+text: .text%throwFileNotFoundException: OUTPUTDIR/tmp/java/java.lang/java/obj64/io_util.o;
+text: .text%JNU_NotifyAll;
+# Test LoadFrame
+text: .text%JNU_CallMethodByName;
+text: .text%JNU_CallMethodByNameV;
+text: .text%Java_java_io_UnixFileSystem_createDirectory;
+text: .text%Java_java_io_UnixFileSystem_getLastModifiedTime;
+text: .text%Java_java_util_prefs_FileSystemPreferences_lockFile0;
+text: .text%Java_java_io_UnixFileSystem_setLastModifiedTime;
+text: .text%Java_java_util_prefs_FileSystemPreferences_unlockFile0;
+# Test LoadJFrame
+text: .text%Java_java_lang_Class_isAssignableFrom;
+text: .text%Java_java_lang_Class_isInstance;
+# Test JHello
+# SwingSet
+text: .text%Java_java_util_TimeZone_getSystemTimeZoneID;
+text: .text%findJavaTZ_md;
+text: .text%Java_java_lang_StrictMath_log;
+text: .text%Java_java_lang_StrictMath_sqrt;

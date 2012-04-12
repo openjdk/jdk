@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,8 +292,8 @@ void JvmtiClassFileReconstituter::write_signature_attribute(u2 generic_signature
 
 // Compute the number of entries in the InnerClasses attribute
 u2 JvmtiClassFileReconstituter::inner_classes_attribute_length() {
-  typeArrayOop inner_class_list = ikh()->inner_classes();
-  return (inner_class_list == NULL) ? 0 : inner_class_list->length();
+  InnerClassesIterator iter(ikh());
+  return iter.length();
 }
 
 // Write an annotation attribute.  The VM stores them in raw form, so all we need
@@ -324,26 +324,20 @@ void JvmtiClassFileReconstituter::write_annotations_attribute(const char* attr_n
 // JVMSpec|     } classes[number_of_classes];
 // JVMSpec|   }
 void JvmtiClassFileReconstituter::write_inner_classes_attribute(int length) {
-  typeArrayOop inner_class_list = ikh()->inner_classes();
-  guarantee(inner_class_list != NULL && inner_class_list->length() == length,
+  InnerClassesIterator iter(ikh());
+  guarantee(iter.length() != 0 && iter.length() == length,
             "caller must check");
-  typeArrayHandle inner_class_list_h(thread(), inner_class_list);
-  assert (length % instanceKlass::inner_class_next_offset == 0, "just checking");
   u2 entry_count = length / instanceKlass::inner_class_next_offset;
   u4 size = 2 + entry_count * (2+2+2+2);
 
   write_attribute_name_index("InnerClasses");
   write_u4(size);
   write_u2(entry_count);
-  for (int i = 0; i < length; i += instanceKlass::inner_class_next_offset) {
-    write_u2(inner_class_list_h->ushort_at(
-                      i + instanceKlass::inner_class_inner_class_info_offset));
-    write_u2(inner_class_list_h->ushort_at(
-                      i + instanceKlass::inner_class_outer_class_info_offset));
-    write_u2(inner_class_list_h->ushort_at(
-                      i + instanceKlass::inner_class_inner_name_offset));
-    write_u2(inner_class_list_h->ushort_at(
-                      i + instanceKlass::inner_class_access_flags_offset));
+  for (; !iter.done(); iter.next()) {
+    write_u2(iter.inner_class_info_index());
+    write_u2(iter.outer_class_info_index());
+    write_u2(iter.inner_name_index());
+    write_u2(iter.inner_access_flags());
   }
 }
 
@@ -727,8 +721,11 @@ void JvmtiClassFileReconstituter::copy_bytecodes(methodHandle mh,
       case Bytecodes::_invokestatic    :  // fall through
       case Bytecodes::_invokedynamic   :  // fall through
       case Bytecodes::_invokeinterface :
-        assert(len == 3 || (code == Bytecodes::_invokeinterface && len ==5),
+        assert(len == 3 ||
+               (code == Bytecodes::_invokeinterface && len == 5) ||
+               (code == Bytecodes::_invokedynamic   && len == 5),
                "sanity check");
+
         int cpci = Bytes::get_native_u2(bcp+1);
         bool is_invokedynamic = (EnableInvokeDynamic && code == Bytecodes::_invokedynamic);
         if (is_invokedynamic)

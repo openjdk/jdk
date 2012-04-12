@@ -26,6 +26,7 @@
 package java.awt;
 
 import java.awt.image.ColorModel;
+import javax.tools.annotation.GenerateNativeHeader;
 import sun.java2d.SunCompositeContext;
 
 /**
@@ -349,6 +350,8 @@ import sun.java2d.SunCompositeContext;
  * @see CompositeContext
  */
 
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public final class AlphaComposite implements Composite {
     /**
      * Both the color and the alpha of the destination are cleared

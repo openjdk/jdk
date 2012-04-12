@@ -1,0 +1,197 @@
+#
+# Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Define public interface.
+# These are the libawt exports, mapfile-mawt-vers contains the libmawt exports.
+
+SUNWprivate_1.1 {
+	global:
+		JNI_OnLoad;
+
+		Java_java_awt_CheckboxMenuItem_initIDs;
+		Java_java_awt_Color_initIDs;
+		Java_java_awt_FontMetrics_initIDs;
+		Java_java_awt_image_BufferedImage_initIDs;
+		Java_sun_awt_image_DataBufferNative_getElem;
+		Java_sun_awt_image_DataBufferNative_setElem;
+		Java_java_awt_image_ColorModel_initIDs;
+		Java_java_awt_image_ComponentSampleModel_initIDs;
+		Java_java_awt_image_IndexColorModel_initIDs;
+		Java_java_awt_image_Kernel_initIDs;
+		Java_java_awt_image_Raster_initIDs;
+		Java_java_awt_image_SampleModel_initIDs;
+		Java_java_awt_Label_initIDs;
+		Java_java_awt_MenuBar_initIDs;
+		Java_java_awt_ScrollPaneAdjustable_initIDs;
+		Java_java_awt_Toolkit_initIDs;
+                Java_sun_awt_DebugSettings_setCTracingOn__Z; 
+                Java_sun_awt_DebugSettings_setCTracingOn__ZLjava_lang_String_2; 
+                Java_sun_awt_DebugSettings_setCTracingOn__ZLjava_lang_String_2I; 
+		Java_sun_awt_image_ByteComponentRaster_initIDs;
+		Java_sun_awt_image_GifImageDecoder_initIDs;
+		Java_sun_awt_image_GifImageDecoder_parseImage;
+		Java_sun_awt_image_ImageRepresentation_initIDs;
+		Java_sun_awt_image_ImageRepresentation_setDiffICM;
+		Java_sun_awt_image_ImageRepresentation_setICMpixels;
+		Java_sun_awt_image_ImagingLib_convolveBI;
+		Java_sun_awt_image_ImagingLib_convolveRaster;
+		Java_sun_awt_image_ImagingLib_init;
+		Java_sun_awt_image_ImagingLib_transformBI;
+		Java_sun_awt_image_ImagingLib_transformRaster;
+		Java_sun_awt_image_IntegerComponentRaster_initIDs;
+		Java_sun_awt_image_ShortComponentRaster_initIDs;
+                Java_sun_java2d_pipe_BufferedMaskBlit_enqueueTile;
+                Java_sun_java2d_pipe_BufferedRenderPipe_fillSpans;
+		Java_sun_java2d_pipe_SpanClipRenderer_eraseTile;
+		Java_sun_java2d_pipe_SpanClipRenderer_fillTile;
+                Java_sun_java2d_pipe_ShapeSpanIterator_addSegment;
+                Java_sun_java2d_pipe_ShapeSpanIterator_moveTo;
+                Java_sun_java2d_pipe_ShapeSpanIterator_lineTo;
+                Java_sun_java2d_pipe_ShapeSpanIterator_quadTo;
+                Java_sun_java2d_pipe_ShapeSpanIterator_curveTo;
+                Java_sun_java2d_pipe_ShapeSpanIterator_closePath;
+                Java_sun_java2d_pipe_ShapeSpanIterator_pathDone;
+                Java_sun_java2d_pipe_ShapeSpanIterator_getNativeConsumer;
+                Java_sun_java2d_pipe_ShapeSpanIterator_appendPoly;
+                Java_sun_java2d_pipe_ShapeSpanIterator_dispose;
+                Java_sun_java2d_pipe_ShapeSpanIterator_getNativeIterator;
+                Java_sun_java2d_pipe_ShapeSpanIterator_getPathBox;
+                Java_sun_java2d_pipe_ShapeSpanIterator_initIDs;
+                Java_sun_java2d_pipe_ShapeSpanIterator_intersectClipBox;
+                Java_sun_java2d_pipe_ShapeSpanIterator_nextSpan;
+                Java_sun_java2d_pipe_ShapeSpanIterator_setNormalize;
+                Java_sun_java2d_pipe_ShapeSpanIterator_setOutputAreaXYXY;
+                Java_sun_java2d_pipe_ShapeSpanIterator_setRule;
+                Java_sun_java2d_pipe_ShapeSpanIterator_skipDownTo;
+
+		Java_java_awt_Dimension_initIDs;
+		Java_java_awt_event_MouseEvent_initIDs;
+		Java_java_awt_image_DataBufferInt_initIDs;
+		Java_java_awt_image_SinglePixelPackedSampleModel_initIDs;
+		Java_java_awt_Rectangle_initIDs;
+		Java_sun_awt_image_BufImgSurfaceData_initIDs;
+		Java_sun_awt_image_BufImgSurfaceData_initRaster;
+                Java_sun_awt_image_BufImgSurfaceData_freeNativeICMData;
+		Java_sun_awt_image_BytePackedRaster_initIDs;
+		Java_sun_awt_image_ImagingLib_lookupByteBI;
+		Java_sun_awt_image_ImagingLib_lookupByteRaster;
+		Java_sun_java2d_SurfaceData_initIDs;
+		Java_sun_java2d_SurfaceData_isOpaqueGray;
+		Java_sun_java2d_Disposer_initIDs;
+		Java_sun_java2d_DefaultDisposerRecord_invokeNativeDispose;
+		Java_sun_java2d_loops_BlitBg_BlitBg;
+		Java_sun_java2d_loops_Blit_Blit;
+		Java_sun_java2d_loops_ScaledBlit_Scale;
+		Java_sun_java2d_loops_DrawLine_DrawLine;
+		Java_sun_java2d_loops_DrawPolygons_DrawPolygons;
+                Java_sun_java2d_loops_DrawPath_DrawPath;
+                Java_sun_java2d_loops_FillPath_FillPath;
+
+		Java_sun_java2d_loops_DrawRect_DrawRect;
+		Java_sun_java2d_loops_FillRect_FillRect;
+		Java_sun_java2d_loops_FillSpans_FillSpans;
+		Java_sun_java2d_loops_FillParallelogram_FillParallelogram;
+		Java_sun_java2d_loops_DrawParallelogram_DrawParallelogram;
+		Java_sun_java2d_loops_GraphicsPrimitiveMgr_initIDs;
+		Java_sun_java2d_loops_GraphicsPrimitiveMgr_registerNativeLoops;
+		Java_sun_java2d_loops_MaskBlit_MaskBlit;
+		Java_sun_java2d_loops_MaskFill_MaskFill;
+		Java_sun_java2d_loops_MaskFill_FillAAPgram;
+		Java_sun_java2d_loops_MaskFill_DrawAAPgram;
+		Java_sun_java2d_loops_TransformHelper_Transform;
+		Java_sun_java2d_pipe_Region_initIDs;
+		Java_sun_java2d_pipe_SpanClipRenderer_initIDs;
+		sun_awt_image_GifImageDecoder_initIDs;
+
+		# libmawt entry points
+		SurfaceData_InitOps;
+		SurfaceData_ThrowInvalidPipeException;
+                SurfaceData_IntersectBlitBounds;
+                SurfaceData_IntersectBoundsXYXY;
+		Region_GetBounds;
+		Region_GetInfo;
+		Region_StartIteration;
+		Region_CountIterationRects;
+		Region_NextIteration;
+		Region_EndIteration;
+		RegionToYXBandedRectangles;
+		GrPrim_CompGetXorInfo;
+		GrPrim_CompGetAlphaInfo;
+                J2dTraceImpl;
+                J2dTraceInit;
+		img_makePalette;
+		initInverseGrayLut;
+		make_dither_arrays;
+		make_uns_ordered_dither_array;
+
+		# variables exported to libmawt
+		std_img_oda_red;
+		std_img_oda_blue;
+		std_img_oda_green;
+		std_odas_computed;
+		g_CMpDataID;
+		colorValueID;
+                mul8table;
+                jvm;
+        
+                # ProcessPath entry points and data
+                doDrawPath;
+                doFillPath;
+                path2DNumTypesID;
+                path2DTypesID;
+                path2DWindingRuleID;
+                path2DFloatCoordsID;
+                sg2dStrokeHintID;
+                sunHints_INTVAL_STROKE_PURE;
+
+		# CDE private entry points
+                # These are in awt_LoadLibrary.c and falls through to libmawt.
+                # Evidently CDE needs this for backward compatability.
+		Java_sun_awt_motif_XsessionWMcommand;
+		Java_sun_awt_motif_XsessionWMcommand_New;
+
+		# Java Plugin
+                # This is in awt_LoadLibrary.c and falls through to libmawt.
+                # Evidently plugin needs this for backward compatability.
+		getAwtLockFunctions;
+		getAwtData;
+		getAwtDisplay;
+
+		# libfontmanager entry points
+		AWTIsHeadless;
+		GrPrim_Sg2dGetCompInfo;
+		GrPrim_Sg2dGetClip;
+		GetNativePrim;
+		SurfaceData_IntersectBounds;
+		SurfaceData_GetOps;
+		Disposer_AddRecord;
+		GrPrim_Sg2dGetEaRGB;
+		GrPrim_Sg2dGetPixel;
+		GrPrim_Sg2dGetLCDTextContrast;
+
+	local:
+		*;
+};
+

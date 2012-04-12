@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public class PlatformInfo {
       return "bsd";
     } else if (os.equals("OpenBSD")) {
       return "bsd";
-    } else if (os.equals("Darwin") || os.startsWith("Mac OS X")) {
+    } else if (os.equals("Darwin") || os.contains("OS X")) {
       return "bsd";
     } else if (os.startsWith("Windows")) {
       return "win32";
@@ -52,17 +52,17 @@ public class PlatformInfo {
     }
   }
 
-  /* Returns "sparc" if on SPARC, "x86" if on x86. */
+  /* Returns "sparc" for SPARC based platforms and "x86" for x86 based
+     platforms. Otherwise returns the value of os.arch.  If the value
+     is not recognized as supported, an exception is thrown instead. */
   public static String getCPU() throws UnsupportedPlatformException {
     String cpu = System.getProperty("os.arch");
-    if (cpu.equals("i386")) {
+    if (cpu.equals("i386") || cpu.equals("x86")) {
       return "x86";
-    } else if (cpu.equals("sparc") || cpu.equals("x86") || cpu.equals("ia64")) {
-      return cpu;
-    } else if (cpu.equals("sparcv9")) {
+    } else if (cpu.equals("sparc") || cpu.equals("sparcv9")) {
       return "sparc";
-    } else if (cpu.equals("x86_64") || cpu.equals("amd64")) {
-      return "amd64";
+    } else if (cpu.equals("ia64") || cpu.equals("amd64") || cpu.equals("x86_64")) {
+      return cpu;
     } else {
       throw new UnsupportedPlatformException("CPU type " + cpu + " not yet supported");
     }
