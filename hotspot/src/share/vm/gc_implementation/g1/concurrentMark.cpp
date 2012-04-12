@@ -29,6 +29,7 @@
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/g1/g1ErgoVerbose.hpp"
+#include "gc_implementation/g1/g1Log.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
 #include "gc_implementation/g1/heapRegion.inline.hpp"
@@ -846,7 +847,7 @@ void ConcurrentMark::enter_first_sync_barrier(int task_num) {
     clear_marking_state(concurrent() /* clear_overflow */);
     force_overflow()->update();
 
-    if (PrintGC) {
+    if (G1Log::fine()) {
       gclog_or_tty->date_stamp(PrintGCDateStamps);
       gclog_or_tty->stamp(PrintGCTimeStamps);
       gclog_or_tty->print_cr("[GC concurrent-mark-reset-for-overflow]");
@@ -2105,7 +2106,7 @@ void ConcurrentMark::cleanup() {
   double end = os::elapsedTime();
   _cleanup_times.add((end - start) * 1000.0);
 
-  if (PrintGC || PrintGCDetails) {
+  if (G1Log::fine()) {
     g1h->print_size_transition(gclog_or_tty,
                                start_used_bytes,
                                g1h->used(),
@@ -2446,11 +2447,10 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   // Inner scope to exclude the cleaning of the string and symbol
   // tables from the displayed time.
   {
-    bool verbose = PrintGC && PrintGCDetails;
-    if (verbose) {
+    if (G1Log::finer()) {
       gclog_or_tty->put(' ');
     }
-    TraceTime t("GC ref-proc", verbose, false, gclog_or_tty);
+    TraceTime t("GC ref-proc", G1Log::finer(), false, gclog_or_tty);
 
     ReferenceProcessor* rp = g1h->ref_processor_cm();
 
