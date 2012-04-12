@@ -28,6 +28,8 @@
    @author Pavel Porvatov
 */
 
+import sun.awt.SunToolkit;
+
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicComboPopup;
 import javax.swing.plaf.synth.SynthLookAndFeel;
@@ -65,7 +67,7 @@ public class bug7158712 {
 
         UIManager.setLookAndFeel(laf);
 
-        EventQueue.invokeLater(new Runnable() {
+        EventQueue.invokeAndWait(new Runnable() {
             public void run() {
                 comboBox = new JComboBox<>(
                         new String[]{"Very Looooooooooooooooooooong Text Item 1", "Item 2"});
@@ -79,6 +81,8 @@ public class bug7158712 {
                 frame.setVisible(true);
             }
         });
+
+        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
 
         Point comboBoxLocation = Util.invokeOnEDT(new Callable<Point>() {
             @Override
