@@ -22,7 +22,6 @@
  */
 
 /* @test
- * @clean A
  * @bug 4146453
  * @summary Test that regrow of object/handle table of ObjectOutputStream works.
  */

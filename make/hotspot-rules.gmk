@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ endif
 ifeq ($(DEBUG_NAME), fastdebug)
   HOTSPOT_TARGET = all_fastdebug
 endif
+BUILD_FLAVOR=$(HOTSPOT_TARGET:all_%=%)
 
 ifeq ($(ZERO_BUILD), true)
   ifeq ($(SHARK_BUILD), true)
@@ -83,6 +84,7 @@ endif
 HOTSPOT_BUILD_ARGUMENTS += $(COMMON_BUILD_ARGUMENTS)
 HOTSPOT_BUILD_ARGUMENTS += ALT_OUTPUTDIR=$(HOTSPOT_OUTPUTDIR)
 HOTSPOT_BUILD_ARGUMENTS += ALT_EXPORT_PATH=$(HOTSPOT_EXPORT_PATH)
+HOTSPOT_BUILD_ARGUMENTS += BUILD_FLAVOR=$(BUILD_FLAVOR)
 
 # Why do these need to be passed in? Because of windows nmake? and MAKEFLAGS=?
 #   Or is there something wrong with hotspot/make/Makefile?
@@ -91,6 +93,16 @@ HOTSPOT_BUILD_ARGUMENTS += ALT_BOOTDIR=$(BOOTDIR)
 
 ifeq ($(BUILD_LANGTOOLS), true)
   HOTSPOT_BUILD_ARGUMENTS += ALT_LANGTOOLS_DIST=$(ABS_LANGTOOLS_DIST)
+endif
+
+# Move to COMMON_BUILD_ARGUMENTS when all repos support
+# FULL_DEBUG_SYMBOLS and ZIP_DEBUGINFO_FILES:
+ifdef FULL_DEBUG_SYMBOLS
+  HOTSPOT_BUILD_ARGUMENTS += FULL_DEBUG_SYMBOLS=$(FULL_DEBUG_SYMBOLS)
+endif
+
+ifdef ZIP_DEBUGINFO_FILES
+  HOTSPOT_BUILD_ARGUMENTS += ZIP_DEBUGINFO_FILES="$(ZIP_DEBUGINFO_FILES)"
 endif
 
 hotspot-build::

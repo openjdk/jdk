@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,31 +191,6 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
   void clear_range(idx_t beg, idx_t end, RangeSizeHint hint);
   void par_set_range(idx_t beg, idx_t end, RangeSizeHint hint);
   void par_clear_range  (idx_t beg, idx_t end, RangeSizeHint hint);
-
-  // It performs the union operation between subsets of equal length
-  // of two bitmaps (the target bitmap of the method and the
-  // from_bitmap) and stores the result to the target bitmap.  The
-  // from_start_index represents the first bit index of the subrange
-  // of the from_bitmap.  The to_start_index is the equivalent of the
-  // target bitmap. Both indexes should be word-aligned, i.e. they
-  // should correspond to the first bit on a bitmap word (it's up to
-  // the caller to ensure this; the method does check it).  The length
-  // of the subset is specified with word_num and it is in number of
-  // bitmap words. The caller should ensure that this is at least 2
-  // (smaller ranges are not support to save extra checks).  Again,
-  // this is checked in the method.
-  //
-  // Atomicity concerns: it is assumed that any contention on the
-  // target bitmap with other threads will happen on the first and
-  // last words; the ones in between will be "owned" exclusively by
-  // the calling thread and, in fact, they will already be 0. So, the
-  // method performs a CAS on the first word, copies the next
-  // word_num-2 words, and finally performs a CAS on the last word.
-  void mostly_disjoint_range_union(BitMap* from_bitmap,
-                                   idx_t   from_start_index,
-                                   idx_t   to_start_index,
-                                   size_t  word_num);
-
 
   // Clearing
   void clear_large();

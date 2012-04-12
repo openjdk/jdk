@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -529,24 +529,17 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
     // process the non-static imports and the static imports of types.
     public void visitImport(JCImport tree) {
-        JCTree imp = tree.qualid;
+        JCFieldAccess imp = (JCFieldAccess)tree.qualid;
         Name name = TreeInfo.name(imp);
-        TypeSymbol p;
 
         // Create a local environment pointing to this tree to disable
         // effects of other imports in Resolve.findGlobalType
         Env<AttrContext> localEnv = env.dup(tree);
 
-        // Attribute qualifying package or class.
-        JCFieldAccess s = (JCFieldAccess) imp;
-        p = attr.
-            attribTree(s.selected,
-                       localEnv,
-                       tree.staticImport ? TYP : (TYP | PCK),
-                       Type.noType).tsym;
+        TypeSymbol p = attr.attribImportQualifier(tree, localEnv).tsym;
         if (name == names.asterisk) {
             // Import on demand.
-            chk.checkCanonical(s.selected);
+            chk.checkCanonical(imp.selected);
             if (tree.staticImport)
                 importStaticAll(tree.pos, p, env);
             else
@@ -555,7 +548,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             // Named type import.
             if (tree.staticImport) {
                 importNamedStatic(tree.pos(), p, name, localEnv);
-                chk.checkCanonical(s.selected);
+                chk.checkCanonical(imp.selected);
             } else {
                 TypeSymbol c = attribImportType(imp, localEnv).tsym;
                 chk.checkCanonical(imp);
@@ -788,20 +781,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 && s.owner.kind != MTH
                 && types.isSameType(c.type, syms.deprecatedType))
                 s.flags_field |= Flags.DEPRECATED;
-            // Internally to java.lang.invoke, a @PolymorphicSignature annotation
-            // acts like a classfile attribute.
-            if (!c.type.isErroneous() &&
-                types.isSameType(c.type, syms.polymorphicSignatureType)) {
-                if (!target.hasMethodHandles()) {
-                    // Somebody is compiling JDK7 source code to a JDK6 target.
-                    // Make it an error, since it is unlikely but important.
-                    log.error(env.tree.pos(),
-                            "wrong.target.for.polymorphic.signature.definition",
-                            target.name);
-                }
-                // Pull the flag through for better diagnostics, even on a bad target.
-                s.flags_field |= Flags.POLYMORPHIC_SIGNATURE;
-            }
             if (!annotated.add(a.type.tsym))
                 log.error(a.pos, "duplicate.annotation");
         }

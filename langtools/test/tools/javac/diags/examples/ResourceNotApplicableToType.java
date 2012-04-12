@@ -22,7 +22,7 @@
  */
 
 // key: compiler.misc.try.not.applicable.to.type
-// key: compiler.err.prob.found.req
+// key: compiler.err.prob.found.req.1
 
 class ResourceNotApplicableToType {
     void m() {

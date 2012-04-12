@@ -157,7 +157,10 @@ class _AppEventHandler {
                 }
             });
         } finally {
-            nativeReplyToAppShouldTerminate(true);
+            // Either we've just called System.exit(), or the app will call
+            // it when processing a WINDOW_CLOSING event. Either way, we reply
+            // to Cocoa that we don't want to exit the event loop yet.
+            nativeReplyToAppShouldTerminate(false);
         }
     }
 

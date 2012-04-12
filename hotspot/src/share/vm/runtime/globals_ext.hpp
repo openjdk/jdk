@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,11 @@ inline bool Flag::is_writeable_ext() const {
 
 inline bool Flag::is_external_ext() const {
   return false;
+}
+
+inline void Flag::get_locked_message_ext(char* buf, int buflen) const {
+  assert(buf != NULL, "Buffer cannot be NULL");
+  buf[0] = '\0';
 }
 
 #endif // SHARE_VM_RUNTIME_GLOBALS_EXT_HPP

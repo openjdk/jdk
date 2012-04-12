@@ -172,7 +172,7 @@ else # PLATFORM
 # Libraries to link, and other C flags.
 #
 
-ifeq ($(PLATFORM), macosx))
+ifeq ($(PLATFORM), macosx)
 OTHER_INCLUDES += -I$(X11_PATH)/include
 OTHER_LDLIBS  += -lawt $(LIBM) $(LIBCXX)
  ifeq ($(OS_VENDOR),Apple)
@@ -197,7 +197,7 @@ endif # PLATFORM
 
 # set up compile flags..
 
-ifeq ($(PLATFORM), macosx))
+ifeq ($(PLATFORM), macosx)
 CPPFLAGS += -I$(CLASSHDRDIR)
 endif
 
