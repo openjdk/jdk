@@ -1083,6 +1083,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCCatch> catchers;
         public JCBlock finalizer;
         public List<JCTree> resources;
+        public boolean finallyCanCompleteNormally;
         protected JCTry(List<JCTree> resources,
                         JCBlock body,
                         List<JCCatch> catchers,

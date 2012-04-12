@@ -3807,7 +3807,7 @@ class CommandLineFlags {
   product(uintx, SharedReadOnlySize,   10*M,                                \
           "Size of read-only space in permanent generation (in bytes)")     \
                                                                             \
-  product(uintx, SharedMiscDataSize,    NOT_LP64(4*M) LP64_ONLY(5*M),       \
+  product(uintx, SharedMiscDataSize, NOT_LP64(4*M) LP64_ONLY(5*M) NOT_PRODUCT(+1*M),       \
           "Size of the shared data area adjacent to the heap (in bytes)")   \
                                                                             \
   product(uintx, SharedMiscCodeSize,    4*M,                                \

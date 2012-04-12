@@ -68,7 +68,7 @@ ifeq ($(PLATFORM), windows)
 endif
 
 # Add location of iconv header
-ifeq ($(PLATFORM), macosx))
+ifeq ($(PLATFORM), macosx)
   OTHER_LDLIBS += -liconv
 endif
 

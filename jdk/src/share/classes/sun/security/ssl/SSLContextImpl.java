@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -774,12 +774,8 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
     // the delegated trust manager
     private final X509TrustManager tm;
 
-    // Cache the trusted certificate to optimize the performance.
-    private final Collection<X509Certificate> trustedCerts = new HashSet<>();
-
     AbstractTrustManagerWrapper(X509TrustManager tm) {
         this.tm = tm;
-        Collections.addAll(trustedCerts, tm.getAcceptedIssuers());
     }
 
     @Override
@@ -920,6 +916,13 @@ final class AbstractTrustManagerWrapper extends X509ExtendedTrustManager
         try {
             // Does the certificate chain end with a trusted certificate?
             int checkedLength = chain.length - 1;
+
+            Collection<X509Certificate> trustedCerts = new HashSet<>();
+            X509Certificate[] certs = tm.getAcceptedIssuers();
+            if ((certs != null) && (certs.length > 0)){
+                Collections.addAll(trustedCerts, certs);
+            }
+
             if (trustedCerts.contains(chain[checkedLength])) {
                     checkedLength--;
             }
