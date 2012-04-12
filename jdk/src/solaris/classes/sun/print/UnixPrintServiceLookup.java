@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import javax.print.attribute.standard.PrinterName;
 import java.io.File;
 import java.io.FileReader;
 import java.net.URL;
+import java.nio.file.Files;
 
 /*
  * Remind: This class uses solaris commands. We also need a linux
@@ -714,7 +715,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
 
                         Process proc;
                         BufferedReader bufferedReader = null;
-                        File f = File.createTempFile("prn","xc");
+                        File f = Files.createTempFile("prn","xc").toFile();
                         cmd[2] = cmd[2]+">"+f.getAbsolutePath();
 
                         proc = Runtime.getRuntime().exec(cmd);
