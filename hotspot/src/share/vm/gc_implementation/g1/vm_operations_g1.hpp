@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,9 @@ protected:
 
 public:
   VM_G1OperationWithAllocRequest(unsigned int gc_count_before,
-                                 size_t       word_size)
-    : VM_GC_Operation(gc_count_before, GCCause::_allocation_failure),
+                                 size_t       word_size,
+                                 GCCause::Cause gc_cause)
+    : VM_GC_Operation(gc_count_before, gc_cause),
       _word_size(word_size), _result(NULL), _pause_succeeded(false) { }
   HeapWord* result() { return _result; }
   bool pause_succeeded() { return _pause_succeeded; }
@@ -77,6 +78,7 @@ public:
 class VM_G1IncCollectionPause: public VM_G1OperationWithAllocRequest {
 private:
   bool         _should_initiate_conc_mark;
+  bool         _should_retry_gc;
   double       _target_pause_time_ms;
   unsigned int _full_collections_completed_before;
 public:
@@ -86,11 +88,13 @@ public:
                           double         target_pause_time_ms,
                           GCCause::Cause gc_cause);
   virtual VMOp_Type type() const { return VMOp_G1IncCollectionPause; }
+  virtual bool doit_prologue();
   virtual void doit();
   virtual void doit_epilogue();
   virtual const char* name() const {
     return "garbage-first incremental collection pause";
   }
+  bool should_retry_gc() const { return _should_retry_gc; }
 };
 
 // Concurrent GC stop-the-world operations such as remark and cleanup;
@@ -98,6 +102,7 @@ public:
 class VM_CGC_Operation: public VM_Operation {
   VoidClosure* _cl;
   const char* _printGCMessage;
+  bool _needs_pll;
 
 protected:
   // java.lang.ref.Reference support
@@ -105,8 +110,8 @@ protected:
   void release_and_notify_pending_list_lock();
 
 public:
-  VM_CGC_Operation(VoidClosure* cl, const char *printGCMsg)
-    : _cl(cl), _printGCMessage(printGCMsg) { }
+  VM_CGC_Operation(VoidClosure* cl, const char *printGCMsg, bool needs_pll)
+    : _cl(cl), _printGCMessage(printGCMsg), _needs_pll(needs_pll) { }
   virtual VMOp_Type type() const { return VMOp_CGC_Operation; }
   virtual void doit();
   virtual bool doit_prologue();

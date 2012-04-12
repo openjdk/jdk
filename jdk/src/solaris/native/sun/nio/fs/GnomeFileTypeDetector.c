@@ -30,9 +30,6 @@
 
 #include <stdlib.h>
 #include <dlfcn.h>
-#ifndef __APPLE__
-#include <link.h>
-#endif
 
 #ifdef __solaris__
 #include <strings.h>

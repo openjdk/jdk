@@ -1,2 +1,2 @@
-CastObjectToPrimitiveTest.java:36:23: compiler.err.prob.found.req: (compiler.misc.inconvertible.types), java.lang.Object, int
+CastObjectToPrimitiveTest.java:36:23: compiler.err.prob.found.req.1: (compiler.misc.inconvertible.types: java.lang.Object, int)
 1 error

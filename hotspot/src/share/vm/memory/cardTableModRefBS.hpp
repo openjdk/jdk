@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,9 @@ class CardTableModRefBS: public ModRefBarrierSet {
     last_card                   =  8,
     CT_MR_BS_last_reserved      = 16
   };
+
+  // a word's worth (row) of clean card values
+  static const intptr_t clean_card_row = (intptr_t)(-1);
 
   // dirty and precleaned are equivalent wrt younger_refs_iter.
   static bool card_is_dirty_wrt_gen_iter(jbyte cv) {
@@ -468,6 +471,9 @@ public:
   const jbyte* byte_for_index(const size_t card_index) const {
     return _byte_map + card_index;
   }
+
+  // Print a description of the memory for the barrier set
+  virtual void print_on(outputStream* st) const;
 
   void verify();
   void verify_guard();

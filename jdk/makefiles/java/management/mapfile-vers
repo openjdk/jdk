@@ -1,0 +1,120 @@
+#
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Define library interface.
+
+SUNWprivate_1.1 {
+	global:
+	    Java_com_sun_management_UnixOperatingSystem_getCommittedVirtualMemorySize;
+	    Java_com_sun_management_UnixOperatingSystem_getFreePhysicalMemorySize;
+	    Java_com_sun_management_UnixOperatingSystem_getFreeSwapSpaceSize;
+	    Java_com_sun_management_UnixOperatingSystem_getMaxFileDescriptorCount;
+	    Java_com_sun_management_UnixOperatingSystem_getOpenFileDescriptorCount;
+	    Java_com_sun_management_UnixOperatingSystem_getProcessCpuLoad;
+	    Java_com_sun_management_UnixOperatingSystem_getProcessCpuTime;
+	    Java_com_sun_management_UnixOperatingSystem_getSystemCpuLoad;
+	    Java_com_sun_management_UnixOperatingSystem_getTotalPhysicalMemorySize;
+	    Java_com_sun_management_UnixOperatingSystem_getTotalSwapSpaceSize;
+	    Java_com_sun_management_UnixOperatingSystem_initialize;
+	    Java_sun_management_ClassLoadingImpl_setVerboseClass;
+	    Java_sun_management_FileSystemImpl_isAccessUserOnly0;
+	    Java_sun_management_Flag_getAllFlagNames;
+	    Java_sun_management_Flag_getFlags;
+	    Java_sun_management_Flag_getInternalFlagCount;
+	    Java_sun_management_Flag_initialize;
+	    Java_sun_management_Flag_setLongValue;
+	    Java_sun_management_Flag_setBooleanValue;
+	    Java_sun_management_Flag_setStringValue;
+	    Java_sun_management_GarbageCollectorImpl_getCollectionCount;
+	    Java_sun_management_GarbageCollectorImpl_getCollectionTime;
+	    Java_sun_management_GarbageCollectorImpl_setNotificationEnabled;
+	    Java_sun_management_GcInfoBuilder_fillGcAttributeInfo;
+	    Java_sun_management_GcInfoBuilder_getLastGcInfo0;
+	    Java_sun_management_GcInfoBuilder_getNumGcExtAttributes;
+	    Java_sun_management_HotSpotDiagnostic_dumpHeap;
+	    Java_sun_management_HotspotThread_getInternalThreadCount;
+	    Java_sun_management_HotspotThread_getInternalThreadTimes0;
+	    Java_sun_management_MemoryImpl_getMemoryManagers0;
+	    Java_sun_management_MemoryImpl_getMemoryPools0;
+	    Java_sun_management_MemoryImpl_getMemoryUsage0;
+	    Java_sun_management_MemoryImpl_setVerboseGC;
+	    Java_sun_management_MemoryManagerImpl_getMemoryPools0;
+	    Java_sun_management_MemoryPoolImpl_getCollectionUsage0;
+	    Java_sun_management_MemoryPoolImpl_getMemoryManagers0;
+	    Java_sun_management_MemoryPoolImpl_getPeakUsage0;
+	    Java_sun_management_MemoryPoolImpl_getUsage0;
+	    Java_sun_management_MemoryPoolImpl_resetPeakUsage0;
+	    Java_sun_management_MemoryPoolImpl_setCollectionThreshold0;
+	    Java_sun_management_MemoryPoolImpl_setPoolCollectionSensor;
+	    Java_sun_management_MemoryPoolImpl_setPoolUsageSensor;
+	    Java_sun_management_MemoryPoolImpl_setUsageThreshold0;
+	    Java_sun_management_ThreadImpl_dumpThreads0;
+	    Java_sun_management_ThreadImpl_findDeadlockedThreads0;
+	    Java_sun_management_ThreadImpl_findMonitorDeadlockedThreads0;
+	    Java_sun_management_ThreadImpl_getThreadInfo1;
+	    Java_sun_management_ThreadImpl_getThreads;
+	    Java_sun_management_ThreadImpl_getThreadTotalCpuTime0;
+	    Java_sun_management_ThreadImpl_getThreadTotalCpuTime1;
+	    Java_sun_management_ThreadImpl_getThreadUserCpuTime0;
+	    Java_sun_management_ThreadImpl_getThreadUserCpuTime1;
+	    Java_sun_management_ThreadImpl_getThreadAllocatedMemory1;
+	    Java_sun_management_ThreadImpl_resetContentionTimes0;
+	    Java_sun_management_ThreadImpl_resetPeakThreadCount0;
+	    Java_sun_management_ThreadImpl_setThreadContentionMonitoringEnabled0;
+	    Java_sun_management_ThreadImpl_setThreadCpuTimeEnabled0;
+	    Java_sun_management_ThreadImpl_setThreadAllocatedMemoryEnabled0;
+	    Java_sun_management_VMManagementImpl_getAvailableProcessors;
+	    Java_sun_management_VMManagementImpl_getClassInitializationTime;
+	    Java_sun_management_VMManagementImpl_getClassLoadingTime;
+	    Java_sun_management_VMManagementImpl_getClassVerificationTime;
+	    Java_sun_management_VMManagementImpl_getDaemonThreadCount;
+	    Java_sun_management_VMManagementImpl_getInitializedClassCount;
+	    Java_sun_management_VMManagementImpl_getLiveThreadCount;
+	    Java_sun_management_VMManagementImpl_getLoadedClassSize;
+	    Java_sun_management_VMManagementImpl_getMethodDataSize;
+	    Java_sun_management_VMManagementImpl_getPeakThreadCount;
+	    Java_sun_management_VMManagementImpl_getProcessId;
+	    Java_sun_management_VMManagementImpl_getSafepointCount;
+	    Java_sun_management_VMManagementImpl_getSafepointSyncTime;
+	    Java_sun_management_VMManagementImpl_getStartupTime;
+	    Java_sun_management_VMManagementImpl_getTotalApplicationNonStoppedTime;
+	    Java_sun_management_VMManagementImpl_getTotalClassCount;
+	    Java_sun_management_VMManagementImpl_getTotalCompileTime;
+	    Java_sun_management_VMManagementImpl_getTotalSafepointTime;
+	    Java_sun_management_VMManagementImpl_getTotalThreadCount;
+	    Java_sun_management_VMManagementImpl_getUnloadedClassCount;
+	    Java_sun_management_VMManagementImpl_getUnloadedClassSize;
+	    Java_sun_management_VMManagementImpl_getVerboseClass;
+	    Java_sun_management_VMManagementImpl_getVerboseGC;
+	    Java_sun_management_VMManagementImpl_getVersion0;
+	    Java_sun_management_VMManagementImpl_getVmArguments0;
+	    Java_sun_management_VMManagementImpl_initOptionalSupportFields;
+	    Java_sun_management_VMManagementImpl_isThreadContentionMonitoringEnabled;
+	    Java_sun_management_VMManagementImpl_isThreadCpuTimeEnabled;
+	    Java_sun_management_VMManagementImpl_isThreadAllocatedMemoryEnabled;
+            JNI_OnLoad;
+	local:
+	    *;
+};

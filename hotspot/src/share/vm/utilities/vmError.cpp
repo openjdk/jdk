@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc_interface/collectedHeap.hpp"
+#include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/init.hpp"
@@ -684,6 +685,12 @@ void VMError::report(outputStream* st) {
        // extended (i.e., more detailed) version.
        Universe::print_on(st, true /* extended */);
        st->cr();
+
+       Universe::heap()->barrier_set()->print_on(st);
+       st->cr();
+
+       st->print_cr("Polling page: " INTPTR_FORMAT, os::get_polling_page());
+       st->cr();
      }
 
   STEP(195, "(printing code cache information)" )
@@ -714,6 +721,13 @@ void VMError::report(outputStream* st) {
      if (_verbose) {
        // VM options
        Arguments::print_on(st);
+       st->cr();
+     }
+
+  STEP(215, "(printing warning if internal testing API used)" )
+
+     if (WhiteBox::used()) {
+       st->print_cr("Unsupported internal testing APIs have been used.");
        st->cr();
      }
 

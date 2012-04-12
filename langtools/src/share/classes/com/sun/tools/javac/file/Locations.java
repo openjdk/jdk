@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -648,7 +648,8 @@ public class Locations {
             new SimpleLocationHandler(StandardLocation.SOURCE_PATH, Option.SOURCEPATH),
             new SimpleLocationHandler(StandardLocation.ANNOTATION_PROCESSOR_PATH, Option.PROCESSORPATH),
             new OutputLocationHandler((StandardLocation.CLASS_OUTPUT), Option.D),
-            new OutputLocationHandler((StandardLocation.SOURCE_OUTPUT), Option.S)
+            new OutputLocationHandler((StandardLocation.SOURCE_OUTPUT), Option.S),
+            new OutputLocationHandler((StandardLocation.NATIVE_HEADER_OUTPUT), Option.H)
         };
 
         for (LocationHandler h: handlers) {

@@ -1,0 +1,97 @@
+#
+# Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+#
+# Makefile for linking with mapfiles.
+#
+# NOTE: Not using a mapfile will expose all your extern functions and
+#	extern data symbols as part of your interface, so unless your
+#	extern names are safe from being mistaken as names from other
+#	libraries, you better use a mapfile, or use a unique naming
+#	convention on all your extern symbols.
+#
+# The mapfile will establish versioning by defining the exported interface.
+#
+# The mapfile can also force certain .o files or elf sections into the 
+#   the different segments of the resulting library/program image.
+#
+# The macro FILES_m can contain any number of mapfiles.
+#
+
+# Always make sure 'all' is the default rule
+mapfile_default_rule: all
+
+ifeq ($(PLATFORM), solaris)
+
+ifeq ($(VARIANT), OPT)
+  # OPT build MUST have a mapfile?
+  ifndef FILES_m
+    FILES_m =        mapfile-vers
+  endif
+  
+  # If we are re-ordering functions in this solaris library, we need to make
+  # sure that -xF is added to the compile lines. This option is critical and
+  # enables the functions to be reordered.
+  ifdef FILES_reorder
+    CFLAGS_OPT   += -xF
+    CXXFLAGS_OPT += -xF
+  endif
+
+INIT += $(TEMPDIR)/mapfile-vers
+
+$(TEMPDIR)/mapfile-vers : $(FILES_m) $(FILES_reorder)
+	$(prep-target)
+	$(CAT) $(FILES_m) > $@
+  ifdef FILES_reorder
+	$(SED) -e 's=OUTPUTDIR=$(OUTPUTDIR)=' $(FILES_reorder) >> $@
+  endif
+endif # VARIANT
+
+ifndef LDNOMAP
+  LDMAPFLAGS_OPT =  -M$(TEMPDIR)/mapfile-vers
+  LDMAPFLAGS_DBG =  $(FILES_m:%=-M%)
+endif
+
+endif # PLATFORM
+
+ifeq ($(PLATFORM), linux)
+
+ifeq ($(VARIANT), OPT)
+  # OPT build MUST have a mapfile?
+  ifndef FILES_m
+    FILES_m =        mapfile-vers
+  endif
+endif # VARIANT
+
+ifndef LDNOMAP
+  LDMAPFLAGS_OPT =  $(FILES_m:%=-Xlinker -version-script=%)
+  LDMAPFLAGS_DBG =  $(FILES_m:%=-Xlinker -version-script=%)
+endif
+
+endif # PLATFORM
+  
+LDFLAGS_OPT +=  $(LDMAPFLAGS_OPT)
+LDFLAGS_DBG +=  $(LDMAPFLAGS_DBG)
+
