@@ -63,6 +63,7 @@ public class Check {
 
     private final Names names;
     private final Log log;
+    private final Resolve rs;
     private final Symtab syms;
     private final Enter enter;
     private final Infer infer;
@@ -95,6 +96,7 @@ public class Check {
 
         names = Names.instance(context);
         log = Log.instance(context);
+        rs = Resolve.instance(context);
         syms = Symtab.instance(context);
         enter = Enter.instance(context);
         infer = Infer.instance(context);
@@ -106,6 +108,7 @@ public class Check {
 
         Source source = Source.instance(context);
         allowGenerics = source.allowGenerics();
+        allowVarargs = source.allowVarargs();
         allowAnnotations = source.allowAnnotations();
         allowCovariantReturns = source.allowCovariantReturns();
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
@@ -136,6 +139,10 @@ public class Check {
     /** Switch: generics enabled?
      */
     boolean allowGenerics;
+
+    /** Switch: varargs enabled?
+     */
+    boolean allowVarargs;
 
     /** Switch: annotations enabled?
      */
@@ -260,23 +267,6 @@ public class Check {
         if (ex instanceof ClassReader.BadClassFile
                 && !suppressAbortOnBadClassFile) throw new Abort();
         else return syms.errType;
-    }
-
-    /** Report a type error.
-     *  @param pos        Position to be used for error reporting.
-     *  @param problem    A string describing the error.
-     *  @param found      The type that was found.
-     *  @param req        The type that was required.
-     */
-    Type typeError(DiagnosticPosition pos, Object problem, Type found, Type req) {
-        log.error(pos, "prob.found.req",
-                  problem, found, req);
-        return types.createErrorType(found);
-    }
-
-    Type typeError(DiagnosticPosition pos, String problem, Type found, Type req, Object explanation) {
-        log.error(pos, "prob.found.req.1", problem, found, req, explanation);
-        return types.createErrorType(found);
     }
 
     /** Report an error that wrong type tag was found.
@@ -423,6 +413,86 @@ public class Check {
  * Type Checking
  **************************************************************************/
 
+    /**
+     * A check context is an object that can be used to perform compatibility
+     * checks - depending on the check context, meaning of 'compatibility' might
+     * vary significantly.
+     */
+    interface CheckContext {
+        /**
+         * Is type 'found' compatible with type 'req' in given context
+         */
+        boolean compatible(Type found, Type req, Warner warn);
+        /**
+         * Instantiate a ForAll type against a given target type 'req' in given context
+         */
+        Type rawInstantiatePoly(ForAll found, Type req, Warner warn);
+        /**
+         * Report a check error
+         */
+        void report(DiagnosticPosition pos, Type found, Type req, JCDiagnostic details);
+        /**
+         * Obtain a warner for this check context
+         */
+        public Warner checkWarner(DiagnosticPosition pos, Type found, Type req);
+    }
+
+    /**
+     * This class represent a check context that is nested within another check
+     * context - useful to check sub-expressions. The default behavior simply
+     * redirects all method calls to the enclosing check context leveraging
+     * the forwarding pattern.
+     */
+    static class NestedCheckContext implements CheckContext {
+        CheckContext enclosingContext;
+
+        NestedCheckContext(CheckContext enclosingContext) {
+            this.enclosingContext = enclosingContext;
+        }
+
+        public boolean compatible(Type found, Type req, Warner warn) {
+            return enclosingContext.compatible(found, req, warn);
+        }
+
+        public Type rawInstantiatePoly(ForAll found, Type req, Warner warn) {
+            return enclosingContext.rawInstantiatePoly(found, req, warn);
+        }
+
+        public void report(DiagnosticPosition pos, Type found, Type req, JCDiagnostic details) {
+            enclosingContext.report(pos, found, req, details);
+        }
+
+        public Warner checkWarner(DiagnosticPosition pos, Type found, Type req) {
+            return enclosingContext.checkWarner(pos, found, req);
+        }
+    }
+
+    /**
+     * Check context to be used when evaluating assignment/return statements
+     */
+    CheckContext basicHandler = new CheckContext() {
+        public void report(DiagnosticPosition pos, Type found, Type req, JCDiagnostic details) {
+            if (details == null) {
+                log.error(pos, "prob.found.req", found, req);
+            } else {
+                log.error(pos, "prob.found.req.1", details);
+            }
+        }
+        public boolean compatible(Type found, Type req, Warner warn) {
+            return types.isAssignable(found, req, warn);
+        }
+
+        public Type rawInstantiatePoly(ForAll found, Type req, Warner warn) {
+            if (req.tag == NONE)
+                req = found.qtype.tag <= VOID ? found.qtype : syms.objectType;
+            return infer.instantiateExpr(found, req, warn);
+        }
+
+        public Warner checkWarner(DiagnosticPosition pos, Type found, Type req) {
+            return convertWarner(pos, found, req);
+        }
+    };
+
     /** Check that a given type is assignable to a given proto-type.
      *  If it is, return the type, otherwise return errType.
      *  @param pos        Position to be used for error reporting.
@@ -430,64 +500,54 @@ public class Check {
      *  @param req        The type that was required.
      */
     Type checkType(DiagnosticPosition pos, Type found, Type req) {
-        return checkType(pos, found, req, "incompatible.types");
+        return checkType(pos, found, req, basicHandler);
     }
 
-    Type checkType(DiagnosticPosition pos, Type found, Type req, String errKey) {
+    Type checkType(final DiagnosticPosition pos, Type found, Type req, CheckContext checkContext) {
         if (req.tag == ERROR)
             return req;
-        if (found.tag == FORALL)
-            return instantiatePoly(pos, (ForAll)found, req, convertWarner(pos, found, req));
+        if (found.tag == FORALL) {
+            ForAll fa = (ForAll)found;
+            Type owntype = instantiatePoly(pos, checkContext, fa, req, checkContext.checkWarner(pos, found, req));
+            return checkType(pos, owntype, req, checkContext);
+        }
         if (req.tag == NONE)
             return found;
-        if (types.isAssignable(found, req, convertWarner(pos, found, req)))
+        if (checkContext.compatible(found, req, checkContext.checkWarner(pos, found, req))) {
             return found;
-        if (found.tag <= DOUBLE && req.tag <= DOUBLE)
-            return typeError(pos, diags.fragment("possible.loss.of.precision"), found, req);
-        if (found.isSuperBound()) {
-            log.error(pos, "assignment.from.super-bound", found);
+        } else {
+            if (found.tag <= DOUBLE && req.tag <= DOUBLE) {
+                checkContext.report(pos, found, req, diags.fragment("possible.loss.of.precision"));
+                return types.createErrorType(found);
+            }
+            checkContext.report(pos, found, req, null);
             return types.createErrorType(found);
         }
-        if (req.isExtendsBound()) {
-            log.error(pos, "assignment.to.extends-bound", req);
-            return types.createErrorType(found);
-        }
-        return typeError(pos, diags.fragment(errKey), found, req);
     }
 
     /** Instantiate polymorphic type to some prototype, unless
      *  prototype is `anyPoly' in which case polymorphic type
      *  is returned unchanged.
      */
-    Type instantiatePoly(DiagnosticPosition pos, ForAll t, Type pt, Warner warn) throws Infer.NoInstanceException {
-        if (pt == Infer.anyPoly && complexInference) {
-            return t;
-        } else if (pt == Infer.anyPoly || pt.tag == NONE) {
-            Type newpt = t.qtype.tag <= VOID ? t.qtype : syms.objectType;
-            return instantiatePoly(pos, t, newpt, warn);
-        } else if (pt.tag == ERROR) {
-            return pt;
-        } else {
-            try {
-                return infer.instantiateExpr(t, pt, warn);
-            } catch (Infer.NoInstanceException ex) {
+    Type instantiatePoly(DiagnosticPosition pos, CheckContext checkContext, ForAll t, Type pt, Warner warn) throws Infer.NoInstanceException {
+        try {
+            return checkContext.rawInstantiatePoly(t, pt, warn);
+        } catch (final Infer.NoInstanceException ex) {
+            JCDiagnostic d = ex.getDiagnostic();
+            if (d != null) {
                 if (ex.isAmbiguous) {
-                    JCDiagnostic d = ex.getDiagnostic();
-                    log.error(pos,
-                              "undetermined.type" + (d!=null ? ".1" : ""),
-                              t, d);
-                    return types.createErrorType(pt);
-                } else {
-                    JCDiagnostic d = ex.getDiagnostic();
-                    return typeError(pos,
-                                     diags.fragment("incompatible.types" + (d!=null ? ".1" : ""), d),
-                                     t, pt);
+                    d = diags.fragment("undetermined.type", t, d);
                 }
-            } catch (Infer.InvalidInstanceException ex) {
-                JCDiagnostic d = ex.getDiagnostic();
-                log.error(pos, "invalid.inferred.types", t.tvars, d);
-                return types.createErrorType(pt);
             }
+            checkContext.report(pos, t, pt, d);
+            return types.createErrorType(pt);
+        } catch (Infer.InvalidInstanceException ex) {
+            JCDiagnostic d = ex.getDiagnostic();
+            if (d != null) {
+                d = diags.fragment("invalid.inferred.types", t.tvars, d);
+            }
+            checkContext.report(pos, t, pt, d);
+            return types.createErrorType(pt);
         }
     }
 
@@ -498,17 +558,48 @@ public class Check {
      *  @param req        The target type of the cast.
      */
     Type checkCastable(DiagnosticPosition pos, Type found, Type req) {
+        return checkCastable(pos, found, req, basicHandler);
+    }
+    Type checkCastable(DiagnosticPosition pos, Type found, Type req, CheckContext checkContext) {
         if (found.tag == FORALL) {
-            instantiatePoly(pos, (ForAll) found, req, castWarner(pos, found, req));
+            instantiatePoly(pos, basicHandler, (ForAll) found, req, castWarner(pos, found, req));
             return req;
         } else if (types.isCastable(found, req, castWarner(pos, found, req))) {
             return req;
         } else {
-            return typeError(pos,
-                             diags.fragment("inconvertible.types"),
-                             found, req);
+            checkContext.report(pos, found, req, diags.fragment("inconvertible.types", found, req));
+            return types.createErrorType(found);
         }
     }
+
+    /** Check for redundant casts (i.e. where source type is a subtype of target type)
+     * The problem should only be reported for non-292 cast
+     */
+    public void checkRedundantCast(Env<AttrContext> env, JCTypeCast tree) {
+        if (!tree.type.isErroneous() &&
+            (env.info.lint == null || env.info.lint.isEnabled(Lint.LintCategory.CAST))
+            && types.isSameType(tree.expr.type, tree.clazz.type)
+            && !is292targetTypeCast(tree)) {
+            log.warning(Lint.LintCategory.CAST,
+                    tree.pos(), "redundant.cast", tree.expr.type);
+        }
+    }
+    //where
+            private boolean is292targetTypeCast(JCTypeCast tree) {
+                boolean is292targetTypeCast = false;
+                JCExpression expr = TreeInfo.skipParens(tree.expr);
+                if (expr.hasTag(APPLY)) {
+                    JCMethodInvocation apply = (JCMethodInvocation)expr;
+                    Symbol sym = TreeInfo.symbol(apply.meth);
+                    is292targetTypeCast = sym != null &&
+                        sym.kind == MTH &&
+                        (sym.flags() & HYPOTHETICAL) != 0;
+                }
+                return is292targetTypeCast;
+            }
+
+
+
 //where
         /** Is type a type variable, or a (possibly multi-dimensional) array of
          *  type variables?
@@ -525,16 +616,16 @@ public class Check {
      *  @param a             The type that should be bounded by bs.
      *  @param bs            The bound.
      */
-    private boolean checkExtends(Type a, TypeVar bs) {
+    private boolean checkExtends(Type a, Type bound) {
          if (a.isUnbound()) {
              return true;
          } else if (a.tag != WILDCARD) {
              a = types.upperBound(a);
-             return types.isSubtype(a, bs.bound);
+             return types.isSubtype(a, bound);
          } else if (a.isExtendsBound()) {
-             return types.isCastable(bs.getUpperBound(), types.upperBound(a), Warner.noWarnings);
+             return types.isCastable(bound, types.upperBound(a), Warner.noWarnings);
          } else if (a.isSuperBound()) {
-             return !types.notSoftSubtype(types.lowerBound(a), bs.getUpperBound());
+             return !types.notSoftSubtype(types.lowerBound(a), bound);
          }
          return true;
      }
@@ -743,22 +834,95 @@ public class Check {
                     (s.flags() & (STATIC | FINAL)) != 0);
         }
 
-    /**
-     * Check that vararg method call is sound
-     * @param pos Position to be used for error reporting.
-     * @param argtypes Actual arguments supplied to vararg method.
-     */
-    void checkVararg(DiagnosticPosition pos, List<Type> argtypes, Symbol msym) {
-        Type argtype = argtypes.last();
-        if (!types.isReifiable(argtype) &&
-                (!allowSimplifiedVarargs ||
-                msym.attribute(syms.trustMeType.tsym) == null ||
-                !isTrustMeAllowedOnMethod(msym))) {
-            warnUnchecked(pos,
-                              "unchecked.generic.array.creation",
-                              argtype);
+    Type checkMethod(Type owntype,
+                            Symbol sym,
+                            Env<AttrContext> env,
+                            final List<JCExpression> argtrees,
+                            List<Type> argtypes,
+                            boolean useVarargs,
+                            boolean unchecked) {
+        // System.out.println("call   : " + env.tree);
+        // System.out.println("method : " + owntype);
+        // System.out.println("actuals: " + argtypes);
+        List<Type> formals = owntype.getParameterTypes();
+        Type last = useVarargs ? formals.last() : null;
+        if (sym.name==names.init &&
+                sym.owner == syms.enumSym)
+                formals = formals.tail.tail;
+        List<JCExpression> args = argtrees;
+        while (formals.head != last) {
+            JCTree arg = args.head;
+            Warner warn = convertWarner(arg.pos(), arg.type, formals.head);
+            assertConvertible(arg, arg.type, formals.head, warn);
+            args = args.tail;
+            formals = formals.tail;
         }
+        if (useVarargs) {
+            Type varArg = types.elemtype(last);
+            while (args.tail != null) {
+                JCTree arg = args.head;
+                Warner warn = convertWarner(arg.pos(), arg.type, varArg);
+                assertConvertible(arg, arg.type, varArg, warn);
+                args = args.tail;
+            }
+        } else if ((sym.flags() & VARARGS) != 0 && allowVarargs) {
+            // non-varargs call to varargs method
+            Type varParam = owntype.getParameterTypes().last();
+            Type lastArg = argtypes.last();
+            if (types.isSubtypeUnchecked(lastArg, types.elemtype(varParam)) &&
+                    !types.isSameType(types.erasure(varParam), types.erasure(lastArg)))
+                log.warning(argtrees.last().pos(), "inexact.non-varargs.call",
+                        types.elemtype(varParam), varParam);
+        }
+        if (unchecked) {
+            warnUnchecked(env.tree.pos(),
+                    "unchecked.meth.invocation.applied",
+                    kindName(sym),
+                    sym.name,
+                    rs.methodArguments(sym.type.getParameterTypes()),
+                    rs.methodArguments(argtypes),
+                    kindName(sym.location()),
+                    sym.location());
+           owntype = new MethodType(owntype.getParameterTypes(),
+                   types.erasure(owntype.getReturnType()),
+                   types.erasure(owntype.getThrownTypes()),
+                   syms.methodClass);
+        }
+        if (useVarargs) {
+            JCTree tree = env.tree;
+            Type argtype = owntype.getParameterTypes().last();
+            if (!types.isReifiable(argtype) &&
+                    (!allowSimplifiedVarargs ||
+                    sym.attribute(syms.trustMeType.tsym) == null ||
+                    !isTrustMeAllowedOnMethod(sym))) {
+                warnUnchecked(env.tree.pos(),
+                                  "unchecked.generic.array.creation",
+                                  argtype);
+            }
+            Type elemtype = types.elemtype(argtype);
+            switch (tree.getTag()) {
+                case APPLY:
+                    ((JCMethodInvocation) tree).varargsElement = elemtype;
+                    break;
+                case NEWCLASS:
+                    ((JCNewClass) tree).varargsElement = elemtype;
+                    break;
+                default:
+                    throw new AssertionError(""+tree);
+            }
+         }
+         return owntype;
     }
+    //where
+        private void assertConvertible(JCTree tree, Type actual, Type formal, Warner warn) {
+            if (types.isConvertible(actual, formal, warn))
+                return;
+
+            if (formal.isCompound()
+                && types.isSubtype(actual, types.supertype(formal))
+                && types.isSubtypeUnchecked(actual, types.interfaces(formal), warn))
+                return;
+        }
 
     /**
      * Check that type 't' is a valid instantiation of a generic class
@@ -776,18 +940,16 @@ public class Check {
             List<Type> actuals = type.allparams();
             List<Type> args = type.getTypeArguments();
             List<Type> forms = type.tsym.type.getTypeArguments();
-            ListBuffer<Type> tvars_buf = new ListBuffer<Type>();
+            ListBuffer<Type> bounds_buf = new ListBuffer<Type>();
 
             // For matching pairs of actual argument types `a' and
             // formal type parameters with declared bound `b' ...
             while (args.nonEmpty() && forms.nonEmpty()) {
                 // exact type arguments needs to know their
                 // bounds (for upper and lower bound
-                // calculations).  So we create new TypeVars with
-                // bounds substed with actuals.
-                tvars_buf.append(types.substBound(((TypeVar)forms.head),
-                                                  formals,
-                                                  actuals));
+                // calculations).  So we create new bounds where
+                // type-parameters are replaced with actuals argument types.
+                bounds_buf.append(types.subst(forms.head.getUpperBound(), formals, actuals));
                 args = args.tail;
                 forms = forms.tail;
             }
@@ -804,32 +966,30 @@ public class Check {
             }
 
             args = type.getTypeArguments();
-            List<Type> tvars = tvars_buf.toList();
+            List<Type> bounds = bounds_buf.toList();
 
-            while (args.nonEmpty() && tvars.nonEmpty()) {
-                Type actual = types.subst(args.head,
-                    type.tsym.type.getTypeArguments(),
-                    tvars_buf.toList());
+            while (args.nonEmpty() && bounds.nonEmpty()) {
+                Type actual = args.head;
                 if (!isTypeArgErroneous(actual) &&
-                        !tvars.head.getUpperBound().isErroneous() &&
-                        !checkExtends(actual, (TypeVar)tvars.head)) {
+                        !bounds.head.isErroneous() &&
+                        !checkExtends(actual, bounds.head)) {
                     return args.head;
                 }
                 args = args.tail;
-                tvars = tvars.tail;
+                bounds = bounds.tail;
             }
 
             args = type.getTypeArguments();
-            tvars = tvars_buf.toList();
+            bounds = bounds_buf.toList();
 
             for (Type arg : types.capture(type).getTypeArguments()) {
                 if (arg.tag == TYPEVAR &&
                         arg.getUpperBound().isErroneous() &&
-                        !tvars.head.getUpperBound().isErroneous() &&
+                        !bounds.head.isErroneous() &&
                         !isTypeArgErroneous(args.head)) {
                     return args.head;
                 }
-                tvars = tvars.tail;
+                bounds = bounds.tail;
                 args = args.tail;
             }
 
@@ -2492,7 +2652,7 @@ public class Check {
                     if (enableSunApiLintControl)
                       warnSunApi(pos, "sun.proprietary", s);
                     else
-                      log.strictWarning(pos, "sun.proprietary", s);
+                      log.mandatoryWarning(pos, "sun.proprietary", s);
                 }
             });
         }

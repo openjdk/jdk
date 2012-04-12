@@ -1,0 +1,126 @@
+#
+# Copyright (c) 1998, 2004, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+#
+# There are the Swing classes for which a BeanInfo class is generated.
+#
+
+# this is used for solaris
+
+BEANS	    = AbstractButton	\
+          Box           \
+	      JComponent	\
+	      JApplet		\
+	      JButton		\
+	      JCheckBox		\
+	      JCheckBoxMenuItem	\
+	      JComboBox		\
+	      JColorChooser	\
+          JDesktopPane  \
+	      JDialog	\
+	      JEditorPane	\
+	      JFileChooser	\
+	      JFrame		\
+	      JFormattedTextField \
+	      JInternalFrame	\
+	      JLabel		\
+          JLayeredPane  \
+	      JList		\
+	      JMenu		\
+	      JMenuBar		\
+	      JMenuItem		\
+	      JOptionPane	\
+	      JPanel		\
+	      JPasswordField	\
+	      JPopupMenu	\
+	      JProgressBar	\
+	      JRadioButton	\
+	      JRadioButtonMenuItem\
+	      JScrollBar	\
+	      JScrollPane	\
+	      JSeparator	\
+	      JSlider		\
+	      JSplitPane	\
+	      JSpinner		\
+	      JTabbedPane	\
+	      JTable		\
+	      JTextArea		\
+	      JTextField	\
+	      JTextPane		\
+	      JToggleButton	\
+	      JToolBar		\
+	      JTree		\
+	      JWindow
+
+# in a separate package
+BEANS_TEXT = JTextComponent  	\
+
+# and this is used for windows
+
+BEANS_SOURCES = ..\..\..\..\..\src\share\classes\javax\swing\AbstractButton.java \
+	        ..\..\..\..\..\src\share\classes\javax\swing\Box.java	\
+	        ..\..\..\..\..\src\share\classes\javax\swing\JComponent.java	\
+	        ..\..\..\..\..\src\share\classes\javax\swing\JColorChooser.java	\
+		..\..\..\..\..\src\share\classes\javax\swing\JApplet.java		\
+		..\..\..\..\..\src\share\classes\javax\swing\JButton.java		\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JCheckBox.java		\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JCheckBoxMenuItem.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JComboBox.java		\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JDesktopPane.java    \
+	      ..\..\..\..\..\src\share\classes\javax\swing\JDialog.java		\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JEditorPane.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JFileChooser.java		\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JFormattedTextField.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JFrame.java		\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JInternalFrame.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JLabel.java		\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JLayeredPane.java \
+	      ..\..\..\..\..\src\share\classes\javax\swing\JList.java		\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JMenu.java		\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JMenuBar.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JMenuItem.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JOptionPane.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JPanel.java		\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JPasswordField.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JPopupMenu.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JProgressBar.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JRadioButton.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JRadioButtonMenuItem.java \
+	      ..\..\..\..\..\src\share\classes\javax\swing\JScrollBar.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JScrollPane.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JSeparator.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JSlider.java		\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JSpinner.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JSplitPane.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JTabbedPane.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JTable.java		\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JTextArea.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\text\JTextComponent.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JTextField.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JTextPane.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JToggleButton.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JToolBar.java	\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JTree.java		\
+	      ..\..\..\..\..\src\share\classes\javax\swing\JWindow.java

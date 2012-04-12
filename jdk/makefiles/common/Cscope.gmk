@@ -1,0 +1,100 @@
+#
+# Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+#
+# The cscope.out file is made in the current directory and spans the entire
+# source tree.
+#
+# Things to note:
+#	1. We use relative names for cscope.
+#	2. We *don't* remove the old cscope.out file, because cscope is smart
+#	   enough to only build what has changed.  It can be confused, however,
+#	   if files are renamed or removed, so it may be necessary to manually
+#	   remove cscope.out if a lot of reorganization has occurred.
+#
+CSDIRS	= $(JDK_TOPDIR)/src $(JDK_TOPDIR)/build
+CSINCS	= $(CSDIRS:%=-I%)
+
+#
+# Set CSFLAGS env variable to -b when using fast cscope to build the fast
+# (but large) cscope data bases.
+#
+CSCOPE	= cscope-fast
+ifeq ($(CSCOPE), cscope-fast)
+CSFLAGS	= -b
+endif
+
+#
+# Adding .java files pushes the file count of a full workspace up about 2500
+# files, which slows database lookup.  Thus allow these files to be added from
+# the environment (CSCLASSES=yes).
+#
+ifdef	CSCLASSES
+ADDCLASSES=	-o -name '*.java'
+endif
+
+#
+# Adding CClassHeaders also pushes the file count of a full workspace up about
+# 200 files (these files also don't exist in a new workspace, and thus will
+# cause the recreation of the database as they get created, which might seem
+# A little confusing).  Thus allow these files to be added from the environment
+# (CSHEADERS=yes).
+#
+ifndef	CSHEADERS
+RMCCHEADERS=	-o -name CClassHeaders
+endif
+
+
+.PRECIOUS:	cscope.out
+
+cscope.out: cscope.files FRC
+	$(CSCOPE) $(CSFLAGS)
+
+#
+# What files should we include?  A simple rule might be just those files under
+# SCM control, however this would miss files we create like the opcodes and
+# CClassHeaders.  The following attempts to find everything that is *useful*.
+# (demo directories contain many .java files
+# that probably aren't useful for development, and the pkgarchive may contain
+# duplicates of files within the source hierarchy).  The ordering of the .raw
+# file is an attempt to make cscope display the most relevant files first.
+#
+cscope.files: FRC
+	@-$(RM) cscope.files cscope.files.raw
+	echo "$(CSINCS)" > cscope.files
+	-find $(CSDIRS) $(SCM_DIRS_prune) -o -type d \( -name '.del-*' -o \
+	    -name '*demo' -o -name pkgarchive $(RMCCHEADERS) \) -prune -o \
+	    -type f \( -name '*.[Ccshlxy]' -o -name '*.il' -o -name '*.cc' -o \
+	    -name 'Makefile*' -o -name GNUmakefile -o -name '*.gmk' -o \
+	    -name '*.cpp' $(ADDCLASSES) \) -print > cscope.files.raw
+	-egrep -v "\.java|\/build\/"	cscope.files.raw >> cscope.files
+	-fgrep ".java"			cscope.files.raw >> cscope.files
+	-fgrep "/build/"		cscope.files.raw >> cscope.files
+	@-$(RM) cscope.files.raw
+
+cscope.clean:
+	-$(RM) cscope.files cscope.files.raw cscope.out
+
+FRC:

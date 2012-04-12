@@ -1,0 +1,63 @@
+#
+# Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# The specific packages that come from or go to rt.jar and tools.jar
+IMPORT_RT_PACKAGES +=  \
+     org/omg/CORBA \
+     org/omg/CORBA_2_3 \
+     org/omg/CosNaming \
+     org/omg/Dynamic \
+     org/omg/DynamicAny \
+     org/omg/IOP \
+     org/omg/Messaging \
+     org/omg/PortableInterceptor \
+     org/omg/PortableServer \
+     org/omg/SendingContext \
+     org/omg/stub/java/rmi \
+     javax/rmi \
+     javax/rmi/CORBA \
+     javax/activity \
+     javax/transaction \
+     com/sun/corba/se/GiopIDL \
+     com/sun/corba/se/PortableActivationIDL \
+     com/sun/corba/se/impl \
+     com/sun/corba/se/internal \
+     com/sun/corba/se/org/omg/CORBA \
+     com/sun/corba/se/pept \
+     com/sun/corba/se/spi \
+     com/sun/org/omg/CORBA \
+     com/sun/org/omg/SendingContext \
+     com/sun/tools/corba/se/logutil \
+     sun/corba \
+     sun/rmi/rmic/iiop
+
+IMPORT_TOOLS_PACKAGES += \
+     com/sun/tools/corba/se/idl \
+     sun/rmi/rmic/iiop
+
+IMPORT_CORBA_BINARIES += \
+     lib/orb.idl \
+     lib/ir.idl
+

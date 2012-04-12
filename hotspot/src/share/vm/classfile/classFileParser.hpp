@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,9 +68,10 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   void set_stream(ClassFileStream* st)             { _stream = st; }
 
   // Constant pool parsing
-  void parse_constant_pool_entries(constantPoolHandle cp, int length, TRAPS);
+  void parse_constant_pool_entries(Handle class_loader,
+                                   constantPoolHandle cp, int length, TRAPS);
 
-  constantPoolHandle parse_constant_pool(TRAPS);
+  constantPoolHandle parse_constant_pool(Handle class_loader, TRAPS);
 
   // Interface parsing
   objArrayHandle parse_interfaces(constantPoolHandle cp,
@@ -130,7 +131,11 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   void parse_classfile_sourcefile_attribute(constantPoolHandle cp, instanceKlassHandle k, TRAPS);
   void parse_classfile_source_debug_extension_attribute(constantPoolHandle cp,
                                                 instanceKlassHandle k, int length, TRAPS);
-  u2   parse_classfile_inner_classes_attribute(constantPoolHandle cp,
+  u2   parse_classfile_inner_classes_attribute(u1* inner_classes_attribute_start,
+                                               bool parsed_enclosingmethod_attribute,
+                                               u2 enclosing_method_class_index,
+                                               u2 enclosing_method_method_index,
+                                               constantPoolHandle cp,
                                                instanceKlassHandle k, TRAPS);
   void parse_classfile_attributes(constantPoolHandle cp, instanceKlassHandle k, TRAPS);
   void parse_classfile_synthetic_attribute(constantPoolHandle cp, instanceKlassHandle k, TRAPS);

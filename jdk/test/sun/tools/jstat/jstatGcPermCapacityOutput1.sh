@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,4 +33,4 @@ verify_os
 
 JSTAT="${TESTJAVA}/bin/jstat"
 
-${JSTAT} -J-XX:+UsePerfData -gcpermcapacity 0 2>&1 | awk -f ${TESTSRC}/gcPermCapacityOutput1.awk
+${JSTAT} -J-XX:+UsePerfData -J-Duser.language=en -gcpermcapacity 0 2>&1 | awk -f ${TESTSRC}/gcPermCapacityOutput1.awk
