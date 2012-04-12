@@ -338,6 +338,7 @@ bool ciField::will_link(ciInstanceKlass* accessing_klass,
     if (_known_to_link_with_put == accessing_klass) {
       return true;
     }
+  } else {
     if (_known_to_link_with_get == accessing_klass) {
       return true;
     }
