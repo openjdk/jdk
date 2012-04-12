@@ -33,6 +33,7 @@
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/g1/g1ErgoVerbose.hpp"
 #include "gc_implementation/g1/g1EvacFailure.hpp"
+#include "gc_implementation/g1/g1Log.hpp"
 #include "gc_implementation/g1/g1MarkSweep.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.inline.hpp"
@@ -1255,10 +1256,10 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     // Timing
     bool system_gc = (gc_cause() == GCCause::_java_lang_system_gc);
     assert(!system_gc || explicit_gc, "invariant");
-    gclog_or_tty->date_stamp(PrintGC && PrintGCDateStamps);
-    TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
+    gclog_or_tty->date_stamp(G1Log::fine() && PrintGCDateStamps);
+    TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
     TraceTime t(system_gc ? "Full GC (System.gc())" : "Full GC",
-                PrintGC, true, gclog_or_tty);
+                G1Log::fine(), true, gclog_or_tty);
 
     TraceCollectorStats tcs(g1mm()->full_collection_counters());
     TraceMemoryManagerStats tms(true /* fullGC */, gc_cause());
@@ -1444,7 +1445,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       heap_region_iterate(&rebuild_rs);
     }
 
-    if (PrintGC) {
+    if (G1Log::fine()) {
       print_size_transition(gclog_or_tty, g1h_prev_used, used(), capacity());
     }
 
@@ -1916,6 +1917,8 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
 jint G1CollectedHeap::initialize() {
   CollectedHeap::pre_initialize();
   os::enable_vtime();
+
+  G1Log::init();
 
   // Necessary to satisfy locking discipline assertions.
 
@@ -3609,12 +3612,12 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       increment_total_full_collections();
     }
 
-    // if PrintGCDetails is on, we'll print long statistics information
+    // if the log level is "finer" is on, we'll print long statistics information
     // in the collector policy code, so let's not print this as the output
     // is messy if we do.
-    gclog_or_tty->date_stamp(PrintGC && PrintGCDateStamps);
-    TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
-    TraceTime t(verbose_str, PrintGC && !PrintGCDetails, true, gclog_or_tty);
+    gclog_or_tty->date_stamp(G1Log::fine() && PrintGCDateStamps);
+    TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
+    TraceTime t(verbose_str, G1Log::fine() && !G1Log::finer(), true, gclog_or_tty);
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
     TraceMemoryManagerStats tms(false /* fullGC */, gc_cause());
@@ -3931,8 +3934,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   }
 
   // The closing of the inner scope, immediately above, will complete
-  // the PrintGC logging output. The record_collection_pause_end() call
-  // above will complete the logging output of PrintGCDetails.
+  // logging at the "fine" level. The record_collection_pause_end() call
+  // above will complete logging at the "finer" level.
   //
   // It is not yet to safe, however, to tell the concurrent mark to
   // start as we have some optional output below. We don't want the
@@ -5514,9 +5517,9 @@ void G1CollectedHeap::evacuate_collection_set() {
 
   if (evacuation_failed()) {
     remove_self_forwarding_pointers();
-    if (PrintGCDetails) {
+    if (G1Log::finer()) {
       gclog_or_tty->print(" (to-space overflow)");
-    } else if (PrintGC) {
+    } else if (G1Log::fine()) {
       gclog_or_tty->print("--");
     }
   }

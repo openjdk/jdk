@@ -26,7 +26,6 @@
 #define SHARE_VM_GC_IMPLEMENTATION_G1_G1_GLOBALS_HPP
 
 #include "runtime/globals.hpp"
-
 //
 // Defines all globals flags used by the garbage-first compiler.
 //
@@ -309,7 +308,10 @@
                                                                             \
   develop(uintx, G1OldCSetRegionThresholdPercent, 10,                       \
           "An upper bound for the number of old CSet regions expressed "    \
-          "as a percentage of the heap size.")
+          "as a percentage of the heap size.")                              \
+                                                                            \
+  experimental(ccstr, G1LogLevel, NULL,                                     \
+          "Log level for G1 logging: fine, finer, finest")
 
 G1_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG)
 

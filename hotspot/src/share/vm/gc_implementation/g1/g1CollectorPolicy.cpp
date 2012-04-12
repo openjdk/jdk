@@ -29,6 +29,7 @@
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/g1/g1ErgoVerbose.hpp"
+#include "gc_implementation/g1/g1Log.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "gc_implementation/shared/gcPolicyCounters.hpp"
 #include "runtime/arguments.hpp"
@@ -885,7 +886,7 @@ void G1CollectorPolicy::record_stop_world_start() {
 
 void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
                                                       size_t start_used) {
-  if (PrintGCDetails) {
+  if (G1Log::finer()) {
     gclog_or_tty->stamp(PrintGCTimeStamps);
     gclog_or_tty->print("[GC pause");
     gclog_or_tty->print(" (%s)", gcs_are_young() ? "young" : "mixed");
@@ -1022,11 +1023,16 @@ void G1CollectorPolicy::print_par_stats(int level,
     if (val > max)
       max = val;
     total += val;
-    buf.append("  %3.1lf", val);
+    if (G1Log::finest()) {
+      buf.append("  %.1lf", val);
+    }
   }
-  buf.append_and_print_cr("");
+
+  if (G1Log::finest()) {
+    buf.append_and_print_cr("");
+  }
   double avg = total / (double) no_of_gc_threads();
-  buf.append_and_print_cr(" Avg: %5.1lf, Min: %5.1lf, Max: %5.1lf, Diff: %5.1lf]",
+  buf.append_and_print_cr(" Avg: %.1lf Min: %.1lf Max: %.1lf Diff: %.1lf]",
     avg, min, max, max - min);
 }
 
@@ -1223,7 +1229,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
 
   // These values are used to update the summary information that is
   // displayed when TraceGen0Time is enabled, and are output as part
-  // of the PrintGCDetails output, in the non-parallel case.
+  // of the "finer" output, in the non-parallel case.
 
   double ext_root_scan_time = avg_value(_par_last_ext_root_scan_times_ms);
   double satb_filtering_time = avg_value(_par_last_satb_filtering_times_ms);
@@ -1356,8 +1362,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     }
   }
 
-  // PrintGCDetails output
-  if (PrintGCDetails) {
+  if (G1Log::finer()) {
     bool print_marking_info =
       _g1->mark_in_progress() && !last_pause_included_initial_mark;
 
@@ -1376,11 +1381,15 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
         print_par_stats(2, "SATB Filtering", _par_last_satb_filtering_times_ms);
       }
       print_par_stats(2, "Update RS", _par_last_update_rs_times_ms);
-      print_par_sizes(3, "Processed Buffers", _par_last_update_rs_processed_buffers);
+      if (G1Log::finest()) {
+        print_par_sizes(3, "Processed Buffers", _par_last_update_rs_processed_buffers);
+      }
       print_par_stats(2, "Scan RS", _par_last_scan_rs_times_ms);
       print_par_stats(2, "Object Copy", _par_last_obj_copy_times_ms);
       print_par_stats(2, "Termination", _par_last_termination_times_ms);
-      print_par_sizes(3, "Termination Attempts", _par_last_termination_attempts);
+      if (G1Log::finest()) {
+        print_par_sizes(3, "Termination Attempts", _par_last_termination_attempts);
+      }
 
       for (int i = 0; i < _parallel_gc_threads; i++) {
         _par_last_gc_worker_times_ms[i] = _par_last_gc_worker_end_times_ms[i] -
@@ -1406,7 +1415,9 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
         print_stats(1, "SATB Filtering", satb_filtering_time);
       }
       print_stats(1, "Update RS", update_rs_time);
-      print_stats(2, "Processed Buffers", (int)update_rs_processed_buffers);
+      if (G1Log::finest()) {
+        print_stats(2, "Processed Buffers", (int)update_rs_processed_buffers);
+      }
       print_stats(1, "Scan RS", scan_rs_time);
       print_stats(1, "Object Copying", obj_copy_time);
     }
@@ -1610,7 +1621,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
   proper_unit_for_byte_size((bytes))
 
 void G1CollectorPolicy::print_heap_transition() {
-  if (PrintGCDetails) {
+  if (G1Log::finer()) {
     YoungList* young_list = _g1->young_list();
     size_t eden_bytes = young_list->eden_used_bytes();
     size_t survivor_bytes = young_list->survivor_used_bytes();
@@ -1637,7 +1648,7 @@ void G1CollectorPolicy::print_heap_transition() {
       EXT_SIZE_PARAMS(capacity));
 
     _prev_eden_capacity = eden_capacity;
-  } else if (PrintGC) {
+  } else if (G1Log::fine()) {
     _g1->print_size_transition(gclog_or_tty,
                                _cur_collection_pause_used_at_start_bytes,
                                _g1->used(), _g1->capacity());
