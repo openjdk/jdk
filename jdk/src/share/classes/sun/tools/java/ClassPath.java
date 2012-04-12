@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ class ClassPath {
         } else {
             StringBuilder sb = new StringBuilder(patharray[0]);
             for (int i = 1; i < patharray.length; i++) {
-                sb.append(File.separator);
+                sb.append(File.pathSeparatorChar);
                 sb.append(patharray[i]);
             }
             this.pathstr = sb.toString();
