@@ -308,6 +308,9 @@ const nsKeyToJavaModifierTable[] =
  * Almost all unicode characters just go from NS to Java with no translation.
  *  For the few exceptions, we handle it here with this small table.
  */
+#define ALL_NS_KEY_MODIFIERS_MASK \
+    (NSShiftKeyMask | NSControlKeyMask | NSAlternateKeyMask | NSCommandKeyMask)
+
 static struct _char {
     NSUInteger modifier;
     unichar nsChar;
@@ -315,17 +318,17 @@ static struct _char {
 }
 const charTable[] = {
     // map enter on keypad to same as return key
-    {0,              NSEnterCharacter,          NSNewlineCharacter},
+    {0,                         NSEnterCharacter,          NSNewlineCharacter},
 
     // [3134616] return newline instead of carriage return
-    {0,              NSCarriageReturnCharacter, NSNewlineCharacter},
+    {0,                         NSCarriageReturnCharacter, NSNewlineCharacter},
 
     // "delete" means backspace in Java
-    {0,              NSDeleteCharacter,         NSBackspaceCharacter},
-    {0,              NSDeleteFunctionKey,     NSDeleteCharacter},
+    {ALL_NS_KEY_MODIFIERS_MASK, NSDeleteCharacter,         NSBackspaceCharacter},
+    {ALL_NS_KEY_MODIFIERS_MASK, NSDeleteFunctionKey,       NSDeleteCharacter},
 
     // back-tab is only differentiated from tab by Shift flag
-    {NSShiftKeyMask, NSBackTabCharacter,     NSTabCharacter},
+    {NSShiftKeyMask,            NSBackTabCharacter,        NSTabCharacter},
 
     {0, 0, 0}
 };
@@ -334,12 +337,8 @@ static unichar
 NsCharToJavaChar(unichar nsChar, NSUInteger modifiers)
 {
     const struct _char *cur;
-    NSUInteger keyModifierFlags =
-        NSShiftKeyMask | NSControlKeyMask |
-        NSAlternateKeyMask | NSCommandKeyMask;
-
     // Mask off just the keyboard modifiers from the event modifier mask.
-    NSUInteger testableFlags = (modifiers & keyModifierFlags);
+    NSUInteger testableFlags = (modifiers & ALL_NS_KEY_MODIFIERS_MASK);
 
     // walk through table & find the match
     for (cur = charTable; cur->nsChar != 0 ; cur++) {
@@ -507,189 +506,6 @@ NsKeyModifiersToJavaModifiers(NSUInteger nsFlags)
     return javaModifiers;
 }
 
-/*
- * Returns the correct java character for a key event.  Most unicode
- * characters don't require any fussing, but a few seem to need adjusting,
- * see nsCharToJavaChar.
- */
-static unichar
-GetJavaCharacter(NSEvent *event, unsigned int index)
-{
-    unichar returnValue = java_awt_event_KeyEvent_CHAR_UNDEFINED;
-    NSString *chars = nil;
-    unichar testChar = 0, testDeadChar = 0;
-    jint javaModifiers = NsKeyModifiersToJavaModifiers([event modifierFlags]);
-
-    switch ([event type]) {
-    case NSFlagsChanged:
-        // no character for modifier keys
-        returnValue = java_awt_event_KeyEvent_CHAR_UNDEFINED;
-        break;
-
-    case NSKeyDown:
-    case NSKeyUp:
-        chars = [event characters];
-        if ([chars length] > 0) {
-            testChar = [chars characterAtIndex:index];
-        }
-
-        if (javaModifiers == 0) {
-            // TODO: uses SPI...
-            //if (TSMGetDeadKeyState() != 0) {
-            //    testDeadChar = [self deadKeyCharacter];
-            //}
-        }
-
-        if (testChar != 0) {
-            returnValue = NsCharToJavaChar(testChar, [event modifierFlags]);
-        } else if (testDeadChar != 0) {
-            returnValue = NsCharToJavaChar(testDeadChar, [event modifierFlags]);
-        } else {
-            returnValue = java_awt_event_KeyEvent_CHAR_UNDEFINED;
-        }
-        break;
-
-    default:
-        //[NSException raise:@"AWT error" format:@"Attempt to get character code from non-key event!"];
-        break;
-    }
-
-    return returnValue;
-}
-
-/*
-static jchar
-GetDeadKeyCharacter(NSEvent *event)
-{
-    // If the current event is not a dead key, return 0.
-    // TODO: this uses SPI; it's an optimization but not strictly necessary
-    //if (TSMGetDeadKeyState() == 0) {
-    //    return 0;
-    //}
-
-    // AppKit does not track dead-key states directly, but TSM does. Even then,
-    // it's not necessarily all that accurate, because the dead key can change
-    // given some combination of modifier keys on certain layouts.
-    // As a result, finding the unicode value for the front end of the dead
-    // key is a bit of a heuristic.
-
-    // This algorithm was suggested by Aki Inoue.
-    // When you get a dead key, you need to simiulate what would happen in
-    // the current dead-key and modifier state if the user hit the spacebar.
-    // That will tell you the front end of the dead-key combination.
-
-    unichar returnValue = 0;
-    const UInt16 VIRTUAL_KEY_SPACE = 49;
-    UInt32 deadKeyState = 0;
-    UInt32 appkitFlags = [event modifierFlags];
-    UniCharCount actualStringLength;
-    UniChar unicodeInputString[16];
-    TISInputSourceRef keyLayout;
-    const void *chrData;
-
-    keyLayout = TISCopyCurrentKeyboardLayoutInputSource();
-    CFDataRef cfUchrData =
-        TISGetInputSourceProperty(keyLayout, kTISPropertyUnicodeKeyLayoutData);
-
-    if (cfUchrData == NULL) {
-        return returnValue;
-    }
-
-    // The actual 'uchr' table is inside the CFDataRef.
-    chrData = CFDataGetBytePtr(cfUchrData);
-
-    UInt8 keyboardType = LMGetKbdType();
-    UInt32 keyEventModifiers = 0;
-    if (appkitFlags & NSShiftKeyMask)      keyEventModifiers |= shiftKey;
-    if (appkitFlags & NSCommandKeyMask)    keyEventModifiers |= cmdKey;
-    if (appkitFlags & NSAlphaShiftKeyMask) keyEventModifiers |= alphaLock;
-    if (appkitFlags & NSControlKeyMask)    keyEventModifiers |= controlKey;
-    if (appkitFlags & NSAlternateKeyMask)  keyEventModifiers |= optionKey;
-
-    if (noErr == UCKeyTranslate(chrData,
-        VIRTUAL_KEY_SPACE,
-        ([event type] == NSKeyDown ? kUCKeyActionDown : kUCKeyActionUp),
-        keyEventModifiers,
-        keyboardType,
-        kUCKeyTranslateNoDeadKeysMask,
-        &deadKeyState,
-        16,
-        &actualStringLength,
-        unicodeInputString))
-    {
-        if (actualStringLength > 0) {
-            returnValue = unicodeInputString[0];
-        }
-    }
-
-    return returnValue;
-}
-*/
-
-
-// REMIND: The fix for MACOSX_PORT-539 introduces Java-level implementation
-// of the function below (see CPlatformResponder). Consider removing this code.
-
-void
-DeliverJavaKeyEvent(JNIEnv *env, NSEvent *event, jobject peer)
-{
-    jint javaKeyType = java_awt_event_KeyEvent_KEY_PRESSED;
-    jint javaKeyCode = java_awt_event_KeyEvent_VK_UNDEFINED;
-    jint javaKeyLocation = java_awt_event_KeyEvent_KEY_LOCATION_UNKNOWN;
-    NSString *chars = nil;
-    BOOL postsTyped;
-    unichar testChar = java_awt_event_KeyEvent_CHAR_UNDEFINED;
-    unichar testDeadChar = 0;
-    jint javaModifiers = 0;
-
-    switch ([event type]) {
-    case NSFlagsChanged:
-        NsKeyModifiersToJavaKeyInfo([event modifierFlags],
-                                    [event keyCode],
-                                    &javaKeyCode,
-                                    &javaKeyLocation,
-                                    &javaKeyType);
-        break;
-
-    case NSKeyDown:
-    case NSKeyUp:
-        chars = [event charactersIgnoringModifiers];
-        if ([chars length] > 0) {
-            testChar = [chars characterAtIndex:0];
-        }
-
-        javaModifiers = NsKeyModifiersToJavaModifiers([event modifierFlags]);
-        if (javaModifiers == 0) {
-      // TODO: dead key chars
-//            testDeadChar = GetDeadKeyCharacter(event);
-        }
-
-        NsCharToJavaVirtualKeyCode(testChar, testDeadChar,
-                                   [event modifierFlags], [event keyCode],
-                                   &javaKeyCode, &javaKeyLocation, &postsTyped);
-        if( !postsTyped ) {
-            testChar = java_awt_event_KeyEvent_CHAR_UNDEFINED;
-        }
-
-        javaKeyType = ([event type] == NSKeyDown) ?
-            java_awt_event_KeyEvent_KEY_PRESSED :
-            java_awt_event_KeyEvent_KEY_RELEASED;
-        break;
-
-    default:
-        //[NSException raise:@"AWT error" format:@"Attempt to get virtual key code from non-key event!"];
-        break;
-    }
-
-    if (env != NULL) {
-        static JNF_CLASS_CACHE(jc_CPlatformView, "sun/lwawt/macosx/CPlatformView");
-        static JNF_MEMBER_CACHE(jm_deliverKeyEvent, jc_CPlatformView, "deliverKeyEvent", "(IICII)V");
-        JNFCallVoidMethod(env, peer, jm_deliverKeyEvent,
-                          javaKeyType, javaModifiers,
-                          testChar, javaKeyCode, javaKeyLocation);
-    }
-}
-
 jint GetJavaMouseModifiers(NSInteger button, NSUInteger modifierFlags)
 {
     // Mousing needs the key modifiers
@@ -724,217 +540,6 @@ jint GetJavaMouseModifiers(NSInteger button, NSUInteger modifierFlags)
     }
 
     return modifiers;
-}
-
-/*
- * Converts an NSEvent button number to a MouseEvent constant.
- */
-static jint
-NSButtonToJavaButton(NSInteger nsButtonNumber)
-{
-    jint jbutton = java_awt_event_MouseEvent_NOBUTTON;
-
-    if (nsButtonNumber == 0) { // left
-        jbutton = java_awt_event_MouseEvent_BUTTON1;
-    } else if (nsButtonNumber == 1) { // right
-        jbutton = java_awt_event_MouseEvent_BUTTON3;
-    } else if (nsButtonNumber == 2) { // middle
-        jbutton = java_awt_event_MouseEvent_BUTTON2;
-    }
-
-    return jbutton;
-}
-
-
-static BOOL isDragging = NO;
-
-void
-DeliverMouseClickedEvent(JNIEnv *env, NSEvent *event, jobject peer)
-{
-    NSPoint pt = [event locationInWindow];
-    NSPoint pOnScreen = [NSEvent mouseLocation];
-    jint etype = java_awt_event_MouseEvent_MOUSE_CLICKED;
-    jint modifiers = GetJavaMouseModifiers([event buttonNumber], [event modifierFlags]);
-    jint clickCount = [event clickCount];
-    jint button = NSButtonToJavaButton([event buttonNumber]);
-
-    if (env != NULL) {
-        static JNF_CLASS_CACHE(jc_CPlatformView, "sun/lwawt/macosx/CPlatformView");
-        static JNF_MEMBER_CACHE(jm_deliverMouseEvent, jc_CPlatformView,
-                                "deliverMouseEvent", "(IIIIFFFF)V");
-        JNFCallVoidMethod(env, peer, jm_deliverMouseEvent,
-                          etype, modifiers,
-                          clickCount, button,
-                          pt.x, pt.y,
-                          pOnScreen.x, pOnScreen.y);
-    }
-}
-
-/*
- * After every key down event, this is called to make the matching
- * KEY_TYPED (if this key posts those).  We use the same NSEvent for it,
- * but create a KEY_TYPED java event this time.
- * If this key doesn't post typed, we don't post the event.
- *
- * TODO: some duplicated effort here; could just fold it
- * into DeliverJavaKeyEvent...
- */
-static void
-DeliverKeyTypedEvents(JNIEnv *env, NSEvent *nsEvent, jobject peer)
-{
-    if (peer == NULL) {
-        return;
-    }
-
-    jint javaKeyCode, javaKeyLocation;
-    BOOL postsTyped = NO;
-    unichar testChar, testDeadChar = 0;
-    jint javaModifiers = NsKeyModifiersToJavaModifiers([nsEvent modifierFlags]);
-
-    if (javaModifiers == 0) {
-        testDeadChar = [nsEvent deadKeyCharacter];
-    }
-
-    NSString *theChars = [nsEvent characters];
-    unsigned i, stringLength = [theChars length];
-
-    for (i = 0; i < stringLength; i++) {
-        testChar = [theChars characterAtIndex:i];
-        NsCharToJavaVirtualKeyCode(testChar, testDeadChar,
-                                   [nsEvent modifierFlags], [nsEvent keyCode],
-                                   &javaKeyCode, &javaKeyLocation, &postsTyped);
-
-        if (postsTyped) {
-            // Some keys may generate a KEY_TYPED, but we can't determine
-            // what that character is. That's likely a bug, but for now we
-            // just check for CHAR_UNDEFINED.
-            unichar theChar = GetJavaCharacter(nsEvent, i);
-            if (theChar != java_awt_event_KeyEvent_CHAR_UNDEFINED) {
-                if (env != NULL) {
-                    static JNF_CLASS_CACHE(jc_CPlatformView,
-                                           "sun/lwawt/macosx/CPlatformView");
-                    static JNF_MEMBER_CACHE(jm_deliverKeyEvent, jc_CPlatformView,
-                                            "deliverKeyEvent", "(IICII)V");
-                    JNFCallVoidMethod(env, peer, jm_deliverKeyEvent,
-                                      java_awt_event_KeyEvent_KEY_TYPED,
-                                      javaModifiers,
-                                      theChar,
-                                      java_awt_event_KeyEvent_VK_UNDEFINED,
-                                      java_awt_event_KeyEvent_KEY_LOCATION_UNKNOWN);
-                }
-            }
-        }
-    }
-}
-
-/*
- * There are a couple of extra events that Java expects to get that don't
- * actually correspond to a direct NSEvent, KEY_TYPED and MOUSE_CLICKED are
- * both extra events that are sort of redundant with ordinary
- * key downs and mouse ups.  In this extra message, we take the original
- * input event and if necessary, cons up a special follow-on event which
- * we dispatch over to Java.
- *
- * For Java, keyDown's generate a KeyPressed (for each hardware key as it
- * goes down) and then a "logical KeyTyped" event for the key event. (So
- * a shift-a generates two presses, one keytyped of "A", and then two
- * releases).  The standard event utility function converts a key down to
- * a key pressed. When appropriate, we need to cons up another event
- * (KEY_TYPED) to follow a keyDown.
- *
- * Java expects you to send a clicked event if you got a down & up, with no
- * intervening drag. So in addition to the MOUSE_RELEASED event that a
- * mouseUp is translated to, we also have to cons up a MOUSE_CLICKED event
- * for that case. Mike Paquette, god of Window Server event handling,
- * confirmed this fact about how to determine if a mouse up event had an
- * intervening drag:
- * An initial mouse-down gets a click count of 1. Subsequent left or right
- * mouse-downs within the space/time tolerance limits increment the click
- * count.  A mouse-up will have the clickCount of the last mouseDown if
- * mouse is not outside the tolerance limits, but 0 otherwise.  Thus, a
- * down-up sequence without any intervening drag will have a click count
- * of 0 in the mouse-up event.  NOTE: The problem with this is that
- * clickCount goes to zero after some point in time. So a long, click &
- * hold without moving and then release the mouse doesn't create a
- * MOUSE_CLICK event as it should. Java AWT now tracks the drag state itself.
- *
- * As another add-on, we also check for the status of mouse-motion events
- * after a mouse-down, so we know whether to generate mouse-dragged events
- * during this down sequence.
- */
-void
-SendAdditionalJavaEvents(JNIEnv *env, NSEvent *nsEvent, jobject peer)
-{
-    AWT_ASSERT_APPKIT_THREAD;
-
-    NSEventType type = [nsEvent type];
-    switch (type) {
-    case NSKeyDown:
-        break;
-
-    case NSLeftMouseUp:
-    case NSRightMouseUp:
-    case NSOtherMouseUp:
-        // TODO: we may need to pull in changedDragToMove here...
-        //if (!isDragging && ([NSViewAWT changedDragToMove]==NO)) {
-        if (!isDragging) {
-            // got down/up pair with no dragged in between; ignores drag events
-            // that have been morphed to move events
-            DeliverMouseClickedEvent(env, nsEvent, peer);
-        }
-        break;
-
-// TODO: to be implemented...
-#if 0
-    case NSLeftMouseDragged:
-    case NSRightMouseDragged:
-    case NSOtherMouseDragged:
-        //
-        // During a drag, the AppKit does not send mouseEnter and mouseExit
-        // events.  It turns out that doing a hitTest causes the window's
-        // view hierarchy to be locked from drawing and that, of course,
-        // slows everything way down.  Synthesize mouseEnter and mouseExit
-        // then forward.
-        //
-        NSView *hitView = [[source model] hitTest:[nsEvent locationInWindow]];
-
-        if ((hitView != nil) &&
-            ([hitView conformsToProtocol:@protocol(AWTPeerControl)]))
-        {
-            if (sLastMouseDraggedView == nil) {
-                sLastMouseDraggedView = hitView;
-            }
-            else if (hitView != sLastMouseDraggedView) {
-                // We know sLastMouseDraggedView is a AWTPeerControl.
-                jobject lastPeer =
-                    [(id <AWTPeerControl>)sLastMouseDraggedView peer];
-
-                // Send mouseExit to sLastMouseDraggedView
-                jobject exitEvent =
-                    makeMouseEvent(env, nsEvent, lastPeer,
-                                   sLastMouseDraggedView,
-                                   java_awt_event_MouseEvent_MOUSE_EXITED);
-                pushEventForward(exitEvent, env);
-                (*env)->DeleteLocalRef(env, exitEvent);
-
-                // Send mouseEnter to hitView
-                jobject enterEvent =
-                    makeMouseEvent(env, nsEvent, peer, hitView,
-                                   java_awt_event_MouseEvent_MOUSE_ENTERED);
-                pushEventForward(enterEvent, env);
-
-                (*env)->DeleteLocalRef(env, enterEvent);
-
-                // Set sLastMouseDraggedView = hitView
-                sLastMouseDraggedView = hitView;
-            }
-        }
-        break;
-#endif
-
-    default:
-        break;
-    }
 }
 
 jlong UTC(NSEvent *event) {
@@ -1068,4 +673,24 @@ JNF_COCOA_ENTER(env);
     (*env)->ReleaseIntArrayElements(env, inData, data, 0);
 
 JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_event_NSEvent
+ * Method:    nsToJavaChar
+ * Signature: (CI)C
+ */
+JNIEXPORT jint JNICALL
+Java_sun_lwawt_macosx_event_NSEvent_nsToJavaChar
+(JNIEnv *env, jclass cls, char nsChar, jint modifierFlags)
+{
+    jchar javaChar = 0;
+    
+JNF_COCOA_ENTER(env);
+    
+    javaChar = NsCharToJavaChar(nsChar, modifierFlags);
+
+JNF_COCOA_EXIT(env);
+    
+    return javaChar;
 }
