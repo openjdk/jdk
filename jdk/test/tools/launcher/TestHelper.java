@@ -66,7 +66,7 @@ public class TestHelper {
     static final boolean isWindows =
             System.getProperty("os.name", "unknown").startsWith("Windows");
     static final boolean isMacOSX =
-            System.getProperty("os.name", "unknown").startsWith("Mac");
+            System.getProperty("os.name", "unknown").contains("OS X");
     static final boolean is64Bit =
             System.getProperty("sun.arch.data.model").equals("64");
     static final boolean is32Bit =
