@@ -779,16 +779,15 @@ void HeapRegion::print_on(outputStream* st) const {
   G1OffsetTableContigSpace::print_on(st);
 }
 
-void HeapRegion::verify(bool allow_dirty) const {
+void HeapRegion::verify() const {
   bool dummy = false;
-  verify(allow_dirty, VerifyOption_G1UsePrevMarking, /* failures */ &dummy);
+  verify(VerifyOption_G1UsePrevMarking, /* failures */ &dummy);
 }
 
 // This really ought to be commoned up into OffsetTableContigSpace somehow.
 // We would need a mechanism to make that code skip dead objects.
 
-void HeapRegion::verify(bool allow_dirty,
-                        VerifyOption vo,
+void HeapRegion::verify(VerifyOption vo,
                         bool* failures) const {
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
   *failures = false;

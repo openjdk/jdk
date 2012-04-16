@@ -193,8 +193,7 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
     // fail. At the end of the GC, the orginal mark word values
     // (including hash values) are restored to the appropriate
     // objects.
-    Universe::heap()->verify(/* allow dirty */ true,
-                             /* silent      */ false,
+    Universe::heap()->verify(/* silent      */ false,
                              /* option      */ VerifyOption_G1UseMarkWord);
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();

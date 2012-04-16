@@ -1504,10 +1504,10 @@ public:
   // Currently there is only one place where this is called with
   // vo == UseMarkWord, which is to verify the marking during a
   // full GC.
-  void verify(bool allow_dirty, bool silent, VerifyOption vo);
+  void verify(bool silent, VerifyOption vo);
 
   // Override; it uses the "prev" marking information
-  virtual void verify(bool allow_dirty, bool silent);
+  virtual void verify(bool silent);
   virtual void print_on(outputStream* st) const;
   virtual void print_extended_on(outputStream* st) const;
 

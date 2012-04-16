@@ -823,10 +823,10 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // Currently there is only one place where this is called with
   // vo == UseMarkWord, which is to verify the marking during a
   // full GC.
-  void verify(bool allow_dirty, VerifyOption vo, bool *failures) const;
+  void verify(VerifyOption vo, bool *failures) const;
 
   // Override; it uses the "prev" marking information
-  virtual void verify(bool allow_dirty) const;
+  virtual void verify() const;
 };
 
 // HeapRegionClosure is used for iterating over regions.
