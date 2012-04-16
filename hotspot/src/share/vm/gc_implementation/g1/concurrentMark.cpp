@@ -1120,8 +1120,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     HandleMark hm;  // handle scope
     gclog_or_tty->print(" VerifyDuringGC:(before)");
     Universe::heap()->prepare_for_verify();
-    Universe::verify(/* allow dirty */ true,
-                     /* silent      */ false,
+    Universe::verify(/* silent      */ false,
                      /* option      */ VerifyOption_G1UsePrevMarking);
   }
 
@@ -1160,8 +1159,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
       HandleMark hm;  // handle scope
       gclog_or_tty->print(" VerifyDuringGC:(after)");
       Universe::heap()->prepare_for_verify();
-      Universe::verify(/* allow dirty */ true,
-                       /* silent      */ false,
+      Universe::verify(/* silent      */ false,
                        /* option      */ VerifyOption_G1UseNextMarking);
     }
     assert(!restart_for_overflow(), "sanity");
@@ -1950,8 +1948,7 @@ void ConcurrentMark::cleanup() {
     HandleMark hm;  // handle scope
     gclog_or_tty->print(" VerifyDuringGC:(before)");
     Universe::heap()->prepare_for_verify();
-    Universe::verify(/* allow dirty */ true,
-                     /* silent      */ false,
+    Universe::verify(/* silent      */ false,
                      /* option      */ VerifyOption_G1UsePrevMarking);
   }
 
@@ -2132,8 +2129,7 @@ void ConcurrentMark::cleanup() {
     HandleMark hm;  // handle scope
     gclog_or_tty->print(" VerifyDuringGC:(after)");
     Universe::heap()->prepare_for_verify();
-    Universe::verify(/* allow dirty */ true,
-                     /* silent      */ false,
+    Universe::verify(/* silent      */ false,
                      /* option      */ VerifyOption_G1UsePrevMarking);
   }
 

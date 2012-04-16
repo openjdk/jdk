@@ -939,10 +939,10 @@ void DefNewGeneration::update_counters() {
   }
 }
 
-void DefNewGeneration::verify(bool allow_dirty) {
-  eden()->verify(allow_dirty);
-  from()->verify(allow_dirty);
-    to()->verify(allow_dirty);
+void DefNewGeneration::verify() {
+  eden()->verify();
+  from()->verify();
+    to()->verify();
 }
 
 void DefNewGeneration::print_on(outputStream* st) const {

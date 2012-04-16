@@ -1291,8 +1291,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       HandleMark hm;  // Discard invalid handles created during verification
       gclog_or_tty->print(" VerifyBeforeGC:");
       prepare_for_verify();
-      Universe::verify(/* allow dirty */ true,
-                       /* silent      */ false,
+      Universe::verify(/* silent      */ false,
                        /* option      */ VerifyOption_G1UsePrevMarking);
 
     }
@@ -1366,8 +1365,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       HandleMark hm;  // Discard invalid handles created during verification
       gclog_or_tty->print(" VerifyAfterGC:");
       prepare_for_verify();
-      Universe::verify(/* allow dirty */ false,
-                       /* silent      */ false,
+      Universe::verify(/* silent      */ false,
                        /* option      */ VerifyOption_G1UsePrevMarking);
 
     }
@@ -3036,7 +3034,6 @@ public:
 
 class VerifyRegionClosure: public HeapRegionClosure {
 private:
-  bool         _allow_dirty;
   bool         _par;
   VerifyOption _vo;
   bool         _failures;
@@ -3044,9 +3041,8 @@ public:
   // _vo == UsePrevMarking -> use "prev" marking information,
   // _vo == UseNextMarking -> use "next" marking information,
   // _vo == UseMarkWord    -> use mark word from object header.
-  VerifyRegionClosure(bool allow_dirty, bool par, VerifyOption vo)
-    : _allow_dirty(allow_dirty),
-      _par(par),
+  VerifyRegionClosure(bool par, VerifyOption vo)
+    : _par(par),
       _vo(vo),
       _failures(false) {}
 
@@ -3059,7 +3055,7 @@ public:
               "Should be unclaimed at verify points.");
     if (!r->continuesHumongous()) {
       bool failures = false;
-      r->verify(_allow_dirty, _vo, &failures);
+      r->verify(_vo, &failures);
       if (failures) {
         _failures = true;
       } else {
@@ -3127,7 +3123,6 @@ public:
 class G1ParVerifyTask: public AbstractGangTask {
 private:
   G1CollectedHeap* _g1h;
-  bool             _allow_dirty;
   VerifyOption     _vo;
   bool             _failures;
 
@@ -3135,10 +3130,9 @@ public:
   // _vo == UsePrevMarking -> use "prev" marking information,
   // _vo == UseNextMarking -> use "next" marking information,
   // _vo == UseMarkWord    -> use mark word from object header.
-  G1ParVerifyTask(G1CollectedHeap* g1h, bool allow_dirty, VerifyOption vo) :
+  G1ParVerifyTask(G1CollectedHeap* g1h, VerifyOption vo) :
     AbstractGangTask("Parallel verify task"),
     _g1h(g1h),
-    _allow_dirty(allow_dirty),
     _vo(vo),
     _failures(false) { }
 
@@ -3148,7 +3142,7 @@ public:
 
   void work(uint worker_id) {
     HandleMark hm;
-    VerifyRegionClosure blk(_allow_dirty, true, _vo);
+    VerifyRegionClosure blk(true, _vo);
     _g1h->heap_region_par_iterate_chunked(&blk, worker_id,
                                           _g1h->workers()->active_workers(),
                                           HeapRegion::ParVerifyClaimValue);
@@ -3158,12 +3152,11 @@ public:
   }
 };
 
-void G1CollectedHeap::verify(bool allow_dirty, bool silent) {
-  verify(allow_dirty, silent, VerifyOption_G1UsePrevMarking);
+void G1CollectedHeap::verify(bool silent) {
+  verify(silent, VerifyOption_G1UsePrevMarking);
 }
 
-void G1CollectedHeap::verify(bool allow_dirty,
-                             bool silent,
+void G1CollectedHeap::verify(bool silent,
                              VerifyOption vo) {
   if (SafepointSynchronize::is_at_safepoint() || ! UseTLAB) {
     if (!silent) { gclog_or_tty->print("Roots (excluding permgen) "); }
@@ -3215,7 +3208,7 @@ void G1CollectedHeap::verify(bool allow_dirty,
       assert(check_heap_region_claim_values(HeapRegion::InitialClaimValue),
              "sanity check");
 
-      G1ParVerifyTask task(this, allow_dirty, vo);
+      G1ParVerifyTask task(this, vo);
       assert(UseDynamicNumberOfGCThreads ||
         workers()->active_workers() == workers()->total_workers(),
         "If not dynamic should be using all the workers");
@@ -3237,7 +3230,7 @@ void G1CollectedHeap::verify(bool allow_dirty,
       assert(check_heap_region_claim_values(HeapRegion::InitialClaimValue),
              "sanity check");
     } else {
-      VerifyRegionClosure blk(allow_dirty, false, vo);
+      VerifyRegionClosure blk(false, vo);
       heap_region_iterate(&blk);
       if (blk.failures()) {
         failures = true;
@@ -3650,8 +3643,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         HandleMark hm;  // Discard invalid handles created during verification
         gclog_or_tty->print(" VerifyBeforeGC:");
         prepare_for_verify();
-        Universe::verify(/* allow dirty */ false,
-                         /* silent      */ false,
+        Universe::verify(/* silent      */ false,
                          /* option      */ VerifyOption_G1UsePrevMarking);
       }
 
@@ -3895,8 +3887,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
           HandleMark hm;  // Discard invalid handles created during verification
           gclog_or_tty->print(" VerifyAfterGC:");
           prepare_for_verify();
-          Universe::verify(/* allow dirty */ true,
-                           /* silent      */ false,
+          Universe::verify(/* silent      */ false,
                            /* option      */ VerifyOption_G1UsePrevMarking);
         }
 
