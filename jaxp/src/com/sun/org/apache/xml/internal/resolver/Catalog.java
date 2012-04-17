@@ -23,6 +23,7 @@
 
 package com.sun.org.apache.xml.internal.resolver;
 
+import com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -399,7 +400,8 @@ public class Catalog {
    * Setup readers.
    */
   public void setupReaders() {
-    SAXParserFactory spf = SAXParserFactory.newInstance();
+    SAXParserFactory spf = catalogManager.useServicesMechanism() ?
+                    SAXParserFactory.newInstance() : new SAXParserFactoryImpl();
     spf.setNamespaceAware(true);
     spf.setValidating(false);
 

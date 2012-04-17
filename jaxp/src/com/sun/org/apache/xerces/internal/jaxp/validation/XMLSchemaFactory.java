@@ -107,7 +107,20 @@ public final class XMLSchemaFactory extends SchemaFactory {
     /** The container for the real grammar pool. */
     private XMLGrammarPoolWrapper fXMLGrammarPoolWrapper;
 
+    /**
+     * Indicates whether implementation parts should use
+     *   service loader (or similar).
+     * Note the default value (false) is the safe option..
+     */
+    private final boolean fUseServicesMechanism;
     public XMLSchemaFactory() {
+        this(true);
+    }
+    public static XMLSchemaFactory newXMLSchemaFactoryNoServiceLoader() {
+        return new XMLSchemaFactory(false);
+    }
+    private XMLSchemaFactory(boolean useServicesMechanism) {
+        fUseServicesMechanism = useServicesMechanism;
         fErrorHandlerWrapper = new ErrorHandlerWrapper(DraconianErrorHandler.getInstance());
         fDOMEntityResolverWrapper = new DOMEntityResolverWrapper();
         fXMLGrammarPoolWrapper = new XMLGrammarPoolWrapper();
@@ -338,6 +351,10 @@ public final class XMLSchemaFactory extends SchemaFactory {
             fSecurityManager = value ? new SecurityManager() : null;
             fXMLSchemaLoader.setProperty(SECURITY_MANAGER, fSecurityManager);
             return;
+        } else if (name.equals(Constants.ORACLE_FEATURE_SERVICE_MECHANISM)) {
+            //in secure mode, let _useServicesMechanism be determined by the constructor
+            if (System.getSecurityManager() != null)
+                return;
         }
         try {
             fXMLSchemaLoader.setFeature(name, value);
@@ -393,6 +410,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
 
     private void propagateFeatures(AbstractXMLSchema schema) {
         schema.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, fSecurityManager != null);
+        schema.setFeature(Constants.ORACLE_FEATURE_SERVICE_MECHANISM, fUseServicesMechanism);
         String[] features = fXMLSchemaLoader.getRecognizedFeatures();
         for (int i = 0; i < features.length; ++i) {
             boolean state = fXMLSchemaLoader.getFeature(features[i]);

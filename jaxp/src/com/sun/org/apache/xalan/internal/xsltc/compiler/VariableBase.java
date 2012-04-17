@@ -84,14 +84,6 @@ class VariableBase extends TopLevelElement {
     }
 
     /**
-     * Remove a reference to this variable. Called by VariableRef when this
-     * variable goes out of scope.
-     */
-    public void removeReference(VariableRefBase vref) {
-        _refs.remove(vref);
-    }
-
-    /**
      * When a variable is overriden by another, e.g. via xsl:import,
      * its references need to be copied or otherwise it may be
      * compiled away as dead code. This method can be used for that
@@ -121,7 +113,7 @@ class VariableBase extends TopLevelElement {
      * Called when we leave the AST scope of the variable's declaration
      */
     public void unmapRegister(MethodGenerator methodGen) {
-        if (_refs.isEmpty() && (_local != null)) {
+        if (_local != null) {
             _local.setEnd(methodGen.getInstructionList().getEnd());
             methodGen.removeLocalVariable(_local);
             _refs = null;

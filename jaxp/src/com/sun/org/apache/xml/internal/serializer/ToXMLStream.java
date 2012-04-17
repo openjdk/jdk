@@ -56,7 +56,7 @@ public final class ToXMLStream extends ToStream
      * Map that tells which XML characters should have special treatment, and it
      *  provides character to entity name lookup.
      */
-    private static CharInfo m_xmlcharInfo =
+    private CharInfo m_xmlcharInfo =
 //      new CharInfo(CharInfo.XML_ENTITIES_RESOURCE);
         CharInfo.getCharInfo(CharInfo.XML_ENTITIES_RESOURCE, Method.XML);
 
@@ -160,8 +160,23 @@ public final class ToXMLStream extends ToStream
                     writer.write('\"');
                     writer.write(standalone);
                     writer.write("?>");
-                    if (m_doIndent)
-                        writer.write(m_lineSep, 0, m_lineSepLen);
+                    if (m_doIndent) {
+                        if (m_standaloneWasSpecified
+                                || getDoctypePublic() != null
+                                || getDoctypeSystem() != null
+                                || m_isStandalone) {
+                            // We almost never put a newline after the XML
+                            // header because this XML could be used as
+                            // an extenal general parsed entity
+                            // and we don't know the context into which it
+                            // will be used in the future.  Only when
+                            // standalone, or a doctype system or public is
+                            // specified are we free to insert a new line
+                            // after the header.  Is it even worth bothering
+                            // in these rare cases?
+                            writer.write(m_lineSep, 0, m_lineSepLen);
+                        }
+                    }
                 }
                 catch(IOException e)
                 {
@@ -312,12 +327,22 @@ public final class ToXMLStream extends ToStream
                 writer.write('?');
                 writer.write('>');
 
-                // Always output a newline char if not inside of an
-                // element. The whitespace is not significant in that
-                // case.
-                if (m_elemContext.m_currentElemDepth <= 0)
+                /**
+                 * Before Xalan 1497, a newline char was printed out if not inside of an
+                 * element. The whitespace is not significant if the output is standalone
+                */
+                if (m_elemContext.m_currentElemDepth <= 0 && m_isStandalone)
                     writer.write(m_lineSep, 0, m_lineSepLen);
 
+                /*
+                 * Don't write out any indentation whitespace now,
+                 * because there may be non-whitespace text after this.
+                 *
+                 * Simply mark that at this point if we do decide
+                 * to indent that we should
+                 * add a newline on the end of the current line before
+                 * the indentation at the start of the next line.
+                 */
                 m_startNewLine = true;
             }
             catch(IOException e)

@@ -29,6 +29,7 @@ import com.sun.org.apache.xml.internal.dtm.DTMIterator;
 import com.sun.org.apache.xpath.internal.Expression;
 import com.sun.org.apache.xpath.internal.XPathContext;
 import com.sun.org.apache.xpath.internal.compiler.Compiler;
+import com.sun.org.apache.xpath.internal.compiler.OpMap;
 
 /**
  * This class implements a general iterator for
@@ -58,7 +59,7 @@ public class OneStepIterator extends ChildTestIterator
           throws javax.xml.transform.TransformerException
   {
     super(compiler, opPos, analysis);
-    int firstStepPos = compiler.getFirstChildPos(opPos);
+    int firstStepPos = OpMap.getFirstChildPos(opPos);
 
     m_axis = WalkerFactory.getAxisFromStep(compiler, firstStepPos);
 

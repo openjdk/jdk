@@ -447,7 +447,13 @@ public class XMLStreamReaderImpl implements javax.xml.stream.XMLStreamReader {
 
     /** Get the XML language version of the current document being parsed */
     public String getVersion() {
-        return fEntityScanner.getXMLVersion();
+        //apply SAP's patch: the default version in the scanner was set to 1.0 because of DOM and SAX
+        //so this patch is a workaround of the difference between StAX and DOM
+        // SAPJVM: Return null if the XML version has not been declared (as specified in the JavaDoc).
+
+        String version = fEntityScanner.getXMLVersion();
+
+        return "1.0".equals(version) && !fEntityScanner.xmlVersionSetExplicitly ? null : version;
     }
 
     /**
@@ -1045,11 +1051,10 @@ public class XMLStreamReaderImpl implements javax.xml.stream.XMLStreamReader {
                     return fScanner.getCharacterData().toString();
 
                 XMLEntityStorage entityStore = fEntityManager.getEntityStore();
-                Hashtable ht = entityStore.getDeclaredEntities();
-                 Entity en = (Entity)ht.get(name);
-                  if(en == null)
-                      return null;
-                  if(en.isExternal())
+                Entity en = entityStore.getEntity(name);
+                if(en == null)
+                    return null;
+                if(en.isExternal())
                     return ((Entity.ExternalEntity)en).entityLocation.getExpandedSystemId();
                 else
                     return ((Entity.InternalEntity)en).text;
@@ -1176,8 +1181,7 @@ public class XMLStreamReaderImpl implements javax.xml.stream.XMLStreamReader {
                     return true;
 
                 XMLEntityStorage entityStore = fEntityManager.getEntityStore();
-                Hashtable ht = entityStore.getDeclaredEntities();
-                Entity en =(Entity)ht.get(name);
+                Entity en = entityStore.getEntity(name);
                 if(en == null)
                     return false;
                 if(en.isExternal()){
@@ -1318,15 +1322,14 @@ public class XMLStreamReaderImpl implements javax.xml.stream.XMLStreamReader {
     protected List getEntityDecls(){
         if(fEventType == XMLStreamConstants.DTD){
             XMLEntityStorage entityStore = fEntityManager.getEntityStore();
-            Hashtable ht = entityStore.getDeclaredEntities();
             ArrayList list = null;
-            if(ht != null){
+            if(entityStore.hasEntities()){
                 EntityDeclarationImpl decl = null;
-                list = new ArrayList(ht.size());
-                Enumeration enu = ht.keys();
+                list = new ArrayList(entityStore.getEntitySize());
+                Enumeration enu = entityStore.getEntityKeys();
                 while(enu.hasMoreElements()){
                     String key = (String)enu.nextElement();
-                    Entity en = (Entity)ht.get(key);
+                    Entity en = (Entity)entityStore.getEntity(key);
                     decl = new EntityDeclarationImpl();
                     decl.setEntityName(key);
                     if(en.isExternal()){

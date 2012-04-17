@@ -56,6 +56,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
 import com.sun.org.apache.xerces.internal.xs.AttributePSVI;
 import com.sun.org.apache.xerces.internal.xs.ElementPSVI;
 import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
+import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
 import org.w3c.dom.Attr;
 import org.w3c.dom.CDATASection;
 import org.w3c.dom.Comment;
@@ -314,7 +315,7 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
     } // <init>(XMLParserConfiguration)
 
     /**
-     * This method retreives the name of current document class.
+     * This method retrieves the name of current document class.
      */
     protected String getDocumentClassName () {
         return fDocumentClassName;
@@ -345,8 +346,7 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
             !documentClassName.equals(PSVI_DOCUMENT_CLASS_NAME)) {
             // verify that this class exists and is of the right type
             try {
-                Class _class = ObjectFactory.findProviderClass (documentClassName,
-                ObjectFactory.findClassLoader (), true);
+                Class _class = ObjectFactory.findProviderClass (documentClassName, true);
                 //if (!_class.isAssignableFrom(Document.class)) {
                 if (!Document.class.isAssignableFrom (_class)) {
                     throw new IllegalArgumentException (
@@ -789,20 +789,16 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
             else {
                 // use specified document class
                 try {
-                    ClassLoader cl = ObjectFactory.findClassLoader();
-                    Class documentClass = ObjectFactory.findProviderClass (fDocumentClassName,
-                        cl, true);
+                    Class documentClass = ObjectFactory.findProviderClass (fDocumentClassName, true);
                     fDocument = (Document)documentClass.newInstance ();
 
                     // if subclass of our own class that's cool too
                     Class defaultDocClass =
-                    ObjectFactory.findProviderClass (CORE_DOCUMENT_CLASS_NAME,
-                        cl, true);
+                    ObjectFactory.findProviderClass (CORE_DOCUMENT_CLASS_NAME, true);
                     if (defaultDocClass.isAssignableFrom (documentClass)) {
                         fDocumentImpl = (CoreDocumentImpl)fDocument;
 
-                        Class psviDocClass = ObjectFactory.findProviderClass (PSVI_DOCUMENT_CLASS_NAME,
-                            cl, true);
+                        Class psviDocClass = ObjectFactory.findProviderClass (PSVI_DOCUMENT_CLASS_NAME, true);
                         if (psviDocClass.isAssignableFrom (documentClass)) {
                             fStorePSVI = true;
                         }

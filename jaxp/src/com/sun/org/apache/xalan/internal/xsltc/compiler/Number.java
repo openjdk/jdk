@@ -323,10 +323,7 @@ final class Number extends Instruction implements Closure {
         il.append(new INVOKESPECIAL(index));
         il.append(RETURN);
 
-        cons.stripAttributes(true);
-        cons.setMaxLocals();
-        cons.setMaxStack();
-        classGen.addMethod(cons.getMethod());
+        classGen.addMethod(cons);
     }
 
     /**
@@ -349,7 +346,7 @@ final class Number extends Instruction implements Closure {
                                 ITERATOR_FIELD_SIG);
         il.append(ALOAD_0); // 'this' pointer on stack
         il.append(new GETFIELD(field));
-        il.append(new ASTORE(local.getIndex()));
+        local.setStart(il.append(new ASTORE(local.getIndex())));
         matchGen.setIteratorIndex(local.getIndex());
 
         // Get NodeCounter._translet and store locally
@@ -361,7 +358,7 @@ final class Number extends Instruction implements Closure {
         il.append(ALOAD_0); // 'this' pointer on stack
         il.append(new GETFIELD(field));
         il.append(new CHECKCAST(cpg.addClass(TRANSLET_CLASS)));
-        il.append(new ASTORE(local.getIndex()));
+        local.setStart(il.append(new ASTORE(local.getIndex())));
         nodeCounterGen.setTransletIndex(local.getIndex());
 
         // Get NodeCounter._document and store locally
@@ -372,7 +369,7 @@ final class Number extends Instruction implements Closure {
         il.append(ALOAD_0); // 'this' pointer on stack
         il.append(new GETFIELD(field));
         // Make sure we have the correct DOM type on the stack!!!
-        il.append(new ASTORE(local.getIndex()));
+        local.setStart(il.append(new ASTORE(local.getIndex())));
         matchGen.setDomIndex(local.getIndex());
     }
 
@@ -436,11 +433,7 @@ final class Number extends Instruction implements Closure {
             _from.synthesize(nodeCounterGen, matchGen);
             il.append(IRETURN);
 
-            matchGen.stripAttributes(true);
-            matchGen.setMaxLocals();
-            matchGen.setMaxStack();
-            matchGen.removeNOPs();
-            nodeCounterGen.addMethod(matchGen.getMethod());
+            nodeCounterGen.addMethod(matchGen);
         }
 
         /*
@@ -467,11 +460,7 @@ final class Number extends Instruction implements Closure {
 
             il.append(IRETURN);
 
-            matchGen.stripAttributes(true);
-            matchGen.setMaxLocals();
-            matchGen.setMaxStack();
-            matchGen.removeNOPs();
-            nodeCounterGen.addMethod(matchGen.getMethod());
+            nodeCounterGen.addMethod(matchGen);
         }
 
         getXSLTC().dumpClass(nodeCounterGen.getJavaClass());

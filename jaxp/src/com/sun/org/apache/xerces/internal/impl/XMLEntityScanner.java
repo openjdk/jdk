@@ -136,7 +136,9 @@ public class XMLEntityScanner implements XMLLocator  {
         VALID_NAMES[58]=true;
         VALID_NAMES[95]=true;
     }
-
+    // SAPJVM: Remember, that the XML version has explicitly been set,
+    // so that XMLStreamReader.getVersion() can find that out.
+    boolean xmlVersionSetExplicitly = false;
     //
     // Constructors
     //
@@ -248,6 +250,7 @@ public class XMLEntityScanner implements XMLLocator  {
      * @param xmlVersion the XML version of the current entity
      */
     public final void setXMLVersion(String xmlVersion) {
+        xmlVersionSetExplicitly = true; // SAPJVM
         fCurrentEntity.xmlVersion = xmlVersion;
     } // setXMLVersion(String)
 

@@ -21,7 +21,10 @@ package com.sun.org.apache.xerces.internal.dom;
 
 import com.sun.org.apache.xerces.internal.impl.RevalidationHandler;
 import com.sun.org.apache.xerces.internal.parsers.DOMParserImpl;
+import com.sun.org.apache.xerces.internal.parsers.DTDConfiguration;
+import com.sun.org.apache.xerces.internal.parsers.XIncludeAwareParserConfiguration;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
+import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarDescription;
 import com.sun.org.apache.xml.internal.serialize.DOMSerializerImpl;
 import org.w3c.dom.DOMException;
@@ -49,6 +52,7 @@ import org.w3c.dom.ls.LSSerializer;
  *
  * @xerces.internal
  *
+ * @version $Id: CoreDOMImplementationImpl.java,v 1.6 2010-11-01 04:39:37 joehw Exp $
  * @since PR-DOM-Level-1-19980818.
  */
 public class CoreDOMImplementationImpl
@@ -114,8 +118,7 @@ public class CoreDOMImplementationImpl
                 && (anyVersion || version.equals("3.0"))) {
                 try {
                     Class xpathClass = ObjectFactory.findProviderClass(
-                        "com.sun.org.apache.xpath.internal.domapi.XPathEvaluatorImpl",
-                        ObjectFactory.findClassLoader(), true);
+                        "com.sun.org.apache.xpath.internal.domapi.XPathEvaluatorImpl", true);
 
                 // Check if the DOM XPath implementation implements
                 // the interface org.w3c.dom.XPathEvaluator
@@ -281,9 +284,7 @@ public class CoreDOMImplementationImpl
                 if ((feature.equalsIgnoreCase("+XPath"))) {
                     try {
                         Class xpathClass = ObjectFactory.findProviderClass(
-                            "com.sun.org.apache.xpath.internal.domapi.XPathEvaluatorImpl",
-                            ObjectFactory.findClassLoader(), true);
-
+                            "com.sun.org.apache.xpath.internal.domapi.XPathEvaluatorImpl", true);
                         // Check if the DOM XPath implementation implements
                         // the interface org.w3c.dom.XPathEvaluator
                         Class interfaces[] = xpathClass.getInterfaces();
@@ -361,14 +362,12 @@ public class CoreDOMImplementationImpl
                 }
                 if (schemaType != null
                         && schemaType.equals("http://www.w3.org/TR/REC-xml")) {
-                        return new DOMParserImpl(
-                                "com.sun.org.apache.xerces.internal.parsers.DTDConfiguration",
+                        return new DOMParserImpl(new DTDConfiguration(),
                                 schemaType);
                 }
                 else {
                         // create default parser configuration validating against XMLSchemas
-                        return new DOMParserImpl(
-                                "com.sun.org.apache.xerces.internal.parsers.XIncludeAwareParserConfiguration",
+                        return new DOMParserImpl(new XIncludeAwareParserConfiguration(),
                                 schemaType);
                 }
         }

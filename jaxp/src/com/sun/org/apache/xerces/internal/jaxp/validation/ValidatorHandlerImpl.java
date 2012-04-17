@@ -43,6 +43,7 @@ import com.sun.org.apache.xerces.internal.impl.dv.XSSimpleType;
 import com.sun.org.apache.xerces.internal.impl.validation.EntityState;
 import com.sun.org.apache.xerces.internal.impl.validation.ValidationManager;
 import com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaValidator;
+import com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl;
 import com.sun.org.apache.xerces.internal.util.AttributesProxy;
 import com.sun.org.apache.xerces.internal.util.SAXLocatorWrapper;
 import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
@@ -669,7 +670,8 @@ final class ValidatorHandlerImpl extends ValidatorHandler implements
                 XMLReader reader = saxSource.getXMLReader();
                 if( reader==null ) {
                     // create one now
-                    SAXParserFactory spf = SAXParserFactory.newInstance();
+                    SAXParserFactory spf = fComponentManager.getFeature(Constants.ORACLE_FEATURE_SERVICE_MECHANISM) ?
+                                    SAXParserFactory.newInstance() : new SAXParserFactoryImpl();
                     spf.setNamespaceAware(true);
                     try {
                         reader = spf.newSAXParser().getXMLReader();

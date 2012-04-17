@@ -321,6 +321,22 @@ public class XString extends XObject implements XMLString
     return xstr().equals(obj2.xstr());
   }
 
+   /**
+   * Compares this string to the specified <code>String</code>.
+   * The result is <code>true</code> if and only if the argument is not
+   * <code>null</code> and is a <code>String</code> object that represents
+   * the same sequence of characters as this object.
+   *
+   * @param   obj2   the object to compare this <code>String</code> against.
+   * @return  <code>true</code> if the <code>String</code>s are equal;
+   *          <code>false</code> otherwise.
+   * @see     java.lang.String#compareTo(java.lang.String)
+   * @see     java.lang.String#equalsIgnoreCase(java.lang.String)
+   */
+  public boolean equals(String obj2) {
+    return str().equals(obj2);
+  }
+
   /**
    * Compares this string to the specified object.
    * The result is <code>true</code> if and only if the argument is not
@@ -336,11 +352,14 @@ public class XString extends XObject implements XMLString
    */
   public boolean equals(XMLString obj2)
   {
-
-    if (!obj2.hasString())
-      return obj2.equals(this);
-    else
-      return str().equals(obj2.toString());
+    if (obj2 != null) {
+      if (!obj2.hasString()) {
+        return obj2.equals(str());
+      } else {
+        return str().equals(obj2.toString());
+      }
+    }
+    return false;
   }
 
   /**

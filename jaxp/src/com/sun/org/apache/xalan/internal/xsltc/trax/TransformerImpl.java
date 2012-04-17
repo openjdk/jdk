@@ -23,6 +23,7 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
+import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -182,7 +183,7 @@ public final class TransformerImpl extends Transformer
     /**
      * A reference to an object that creates and caches XMLReader objects.
      */
-    private XMLReaderManager _readerManager = XMLReaderManager.getInstance();
+    private XMLReaderManager _readerManager;
 
     /**
      * A flag indicating whether we use incremental building of the DTM.
@@ -199,6 +200,13 @@ public final class TransformerImpl extends Transformer
      * State of the secure processing feature.
      */
     private boolean _isSecureProcessing = false;
+
+    /**
+     * Indicates whether implementation parts should use
+     *   service loader (or similar).
+     * Note the default value (false) is the safe option..
+     */
+    private boolean _useServicesMechanism;
 
     /**
      * A hashtable to store parameters for the identity transform. These
@@ -251,6 +259,8 @@ public final class TransformerImpl extends Transformer
         _propertiesClone = (Properties) _properties.clone();
         _indentNumber = indentNumber;
         _tfactory = tfactory;
+        _useServicesMechanism = _tfactory.useServicesMechnism();
+        _readerManager = XMLReaderManager.getInstance(_useServicesMechanism);
         //_isIncremental = tfactory._incremental;
     }
 
@@ -266,6 +276,19 @@ public final class TransformerImpl extends Transformer
      */
     public void setSecureProcessing(boolean flag) {
         _isSecureProcessing = flag;
+    }
+    /**
+     * Return the state of the services mechanism feature.
+     */
+    public boolean useServicesMechnism() {
+        return _useServicesMechanism;
+    }
+
+    /**
+     * Set the state of the services mechanism feature.
+     */
+    public void setServicesMechnism(boolean flag) {
+        _useServicesMechanism = flag;
     }
 
     /**
@@ -347,7 +370,7 @@ public final class TransformerImpl extends Transformer
         // Get encoding using getProperty() to use defaults
         _encoding = (String) _properties.getProperty(OutputKeys.ENCODING);
 
-        _tohFactory = TransletOutputHandlerFactory.newInstance();
+        _tohFactory = TransletOutputHandlerFactory.newInstance(_useServicesMechanism);
         _tohFactory.setEncoding(_encoding);
         if (_method != null) {
             _tohFactory.setOutputMethod(_method);
@@ -435,9 +458,7 @@ public final class TransformerImpl extends Transformer
                     // the systemId will be URI encoded as a result of File.toURI(),
                     // it must be decoded for use by URL
                     try{
-                        Class clazz =   ObjectFactory.findProviderClass("java.net.URI", ObjectFactory.findClassLoader(), true);
-                        Constructor  construct   = clazz.getConstructor(new Class[] {java.lang.String.class} );
-                        URI uri = (URI) construct.newInstance(new Object[]{systemId}) ;
+                        URI uri = new URI(systemId) ;
                         systemId = "file:";
 
                         String host = uri.getHost(); // decoded String
@@ -453,10 +474,6 @@ public final class TransformerImpl extends Transformer
                         } else {
                          systemId += "//" + path;
                         }
-                    }
-                    catch(ClassNotFoundException e){
-                        // running on J2SE 1.3 which doesn't have URI Class so OK to ignore
-                        //ClassNotFoundException.
                     }
                     catch (Exception  exception) {
                         // URI exception which means nothing can be done so OK to ignore
@@ -524,6 +541,7 @@ public final class TransformerImpl extends Transformer
                      _dtmManager =
                          (XSLTCDTMManager)_tfactory.getDTMManagerClass()
                                                    .newInstance();
+                     _dtmManager.setServicesMechnism(_useServicesMechanism);
                  }
                  dom = (DOM)_dtmManager.getDTM(source, false, wsfilter, true,
                                               false, false, 0, hasIdCall);
@@ -695,10 +713,8 @@ public final class TransformerImpl extends Transformer
                 ((SAXSource)source).getXMLReader()==null )||
                 (source instanceof DOMSource &&
                 ((DOMSource)source).getNode()==null)){
-                        DocumentBuilderFactory builderF =
-                                DocumentBuilderFactory.newInstance();
-                        DocumentBuilder builder =
-                                builderF.newDocumentBuilder();
+                        DocumentBuilderFactory builderF = FactoryImpl.getDOMFactory(_useServicesMechanism);
+                        DocumentBuilder builder = builderF.newDocumentBuilder();
                         String systemID = source.getSystemId();
                         source = new DOMSource(builder.newDocument());
 
@@ -974,6 +990,11 @@ public final class TransformerImpl extends Transformer
                     }
                 }
             }
+            else if (name.equals(OutputPropertiesFactory.ORACLE_IS_STANDALONE)) {
+                 if (value != null && value.equals("yes")) {
+                     translet._isStandalone = true;
+                 }
+            }
         }
     }
 
@@ -1031,6 +1052,11 @@ public final class TransformerImpl extends Transformer
             else if (name.equals(OutputPropertiesFactory.S_BUILTIN_EXTENSIONS_UNIVERSAL +"indent-amount")) {
                 if (value != null) {
                     handler.setIndentAmount(Integer.parseInt(value));
+                }
+            }
+            else if (name.equals(OutputPropertiesFactory.ORACLE_IS_STANDALONE)) {
+                if (value != null && value.equals("yes")) {
+                    handler.setIsStandalone(true);
                 }
             }
             else if (name.equals(OutputKeys.CDATA_SECTION_ELEMENTS)) {
@@ -1146,6 +1172,7 @@ public final class TransformerImpl extends Transformer
                 name.equals(OutputKeys.OMIT_XML_DECLARATION)   ||
                 name.equals(OutputKeys.STANDALONE) ||
                 name.equals(OutputKeys.VERSION) ||
+                name.equals(OutputPropertiesFactory.ORACLE_IS_STANDALONE) ||
                 name.charAt(0) == '{');
     }
 
@@ -1252,7 +1279,7 @@ public final class TransformerImpl extends Transformer
         try {
             // Argument to document function was: document('');
             if (href.length() == 0) {
-                href = new String(baseURI);
+                href = baseURI;
             }
 
             /*

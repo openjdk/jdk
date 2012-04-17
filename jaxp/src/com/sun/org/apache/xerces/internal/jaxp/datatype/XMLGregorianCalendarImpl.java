@@ -39,7 +39,7 @@ import javax.xml.datatype.Duration;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 import com.sun.org.apache.xerces.internal.util.DatatypeMessageFormatter;
-
+import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 
 /**
  * <p>Representation for W3C XML Schema 1.0 date/time datatypes.
@@ -2394,7 +2394,10 @@ public class XMLGregorianCalendarImpl
         GregorianCalendar result = null;
         final int DEFAULT_TIMEZONE_OFFSET = DatatypeConstants.FIELD_UNDEFINED;
         TimeZone tz = getTimeZone(DEFAULT_TIMEZONE_OFFSET);
-        Locale locale = Locale.getDefault();
+        /** Use the following instead for JDK7 only:
+         * Locale locale = Locale.getDefault(Locale.Category.FORMAT);
+         */
+        Locale locale = getDefaultLocale();
 
         result = new GregorianCalendar(tz, locale);
         result.clear();
@@ -2439,6 +2442,33 @@ public class XMLGregorianCalendarImpl
         }
 
         return result;
+    }
+
+    /**
+     *
+     * @return default locale
+     */
+    private Locale getDefaultLocale() {
+
+        String lang = SecuritySupport.getSystemProperty("user.language.format");
+        String country = SecuritySupport.getSystemProperty("user.country.format");
+        String variant = SecuritySupport.getSystemProperty("user.variant.format");
+        Locale locale = null;
+        if (lang != null) {
+            if (country != null) {
+                if (variant != null) {
+                    locale = new Locale(lang, country, variant);
+                } else {
+                    locale = new Locale(lang, country);
+                }
+            } else {
+                locale = new Locale(lang);
+            }
+        }
+        if (locale == null) {
+            locale = Locale.getDefault();
+        }
+        return locale;
     }
 
     /**

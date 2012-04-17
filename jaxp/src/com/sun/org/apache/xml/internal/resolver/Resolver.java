@@ -31,10 +31,11 @@ import java.util.Vector;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.MalformedURLException;
+import javax.xml.parsers.SAXParserFactory;
+import com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl;
 import com.sun.org.apache.xml.internal.resolver.readers.SAXCatalogReader;
 import com.sun.org.apache.xml.internal.resolver.readers.OASISXMLCatalogReader;
 import com.sun.org.apache.xml.internal.resolver.readers.TR9401CatalogReader;
-import javax.xml.parsers.SAXParserFactory;
 
 /**
  * An extension to OASIS Open Catalog files, this class supports
@@ -45,6 +46,7 @@ import javax.xml.parsers.SAXParserFactory;
  * @author Norman Walsh
  * <a href="mailto:Norman.Walsh@Sun.COM">Norman.Walsh@Sun.COM</a>
  *
+ * @version 1.0
  */
 public class Resolver extends Catalog {
   /**
@@ -84,7 +86,8 @@ public class Resolver extends Catalog {
    * Setup readers.
    */
   public void setupReaders() {
-    SAXParserFactory spf = SAXParserFactory.newInstance();
+    SAXParserFactory spf = catalogManager.useServicesMechanism() ?
+                    SAXParserFactory.newInstance() : new SAXParserFactoryImpl();
     spf.setNamespaceAware(true);
     spf.setValidating(false);
 

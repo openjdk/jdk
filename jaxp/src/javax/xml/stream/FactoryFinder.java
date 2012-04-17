@@ -58,7 +58,7 @@ class FactoryFinder {
      * Flag indicating if properties from java.home/lib/jaxp.properties
      * have been cached.
      */
-    static boolean firstTime = true;
+    static volatile boolean firstTime = true;
 
     /**
      * Security support class use to check access control before

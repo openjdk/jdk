@@ -49,6 +49,7 @@ import org.xml.sax.ext.Locator2;
 /**
  * @author G. Todd Miller
  * @author Sunitha Reddy
+ * @author Huizhe Wang
  */
 public class SAX2DOM implements ContentHandler, LexicalHandler, Constants {
 
@@ -69,27 +70,16 @@ public class SAX2DOM implements ContentHandler, LexicalHandler, Constants {
      * synchronization because the Javadoc is not explicit about
      * thread safety.
      */
-    static final DocumentBuilderFactory _factory =
+    private DocumentBuilderFactory _factory =
             DocumentBuilderFactory.newInstance();
-    static final DocumentBuilder _internalBuilder;
-    static {
-        DocumentBuilder tmpBuilder = null;
-        try {
-            if (_factory instanceof com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl) {
-                tmpBuilder = _factory.newDocumentBuilder();
-            }
-        } catch(Exception e) {
-            // It's OK. Will create DocumentBuilder every time
-        }
-        _internalBuilder = tmpBuilder;
-    }
+    private boolean _internal = true;
 
-    public SAX2DOM() throws ParserConfigurationException {
-        _document = createDocument();
+    public SAX2DOM(boolean useServicesMachnism) throws ParserConfigurationException {
+        _document = createDocument(useServicesMachnism);
         _root = _document;
     }
 
-    public SAX2DOM(Node root, Node nextSibling) throws ParserConfigurationException {
+    public SAX2DOM(Node root, Node nextSibling, boolean useServicesMachnism) throws ParserConfigurationException {
         _root = root;
         if (root instanceof Document) {
           _document = (Document)root;
@@ -98,15 +88,15 @@ public class SAX2DOM implements ContentHandler, LexicalHandler, Constants {
           _document = root.getOwnerDocument();
         }
         else {
-          _document = createDocument();
+          _document = createDocument(useServicesMachnism);
           _root = _document;
         }
 
         _nextSibling = nextSibling;
     }
 
-    public SAX2DOM(Node root) throws ParserConfigurationException {
-        this(root, null);
+    public SAX2DOM(Node root, boolean useServicesMachnism) throws ParserConfigurationException {
+        this(root, null, useServicesMachnism);
     }
 
     public Node getDOM() {
@@ -318,11 +308,23 @@ public class SAX2DOM implements ContentHandler, LexicalHandler, Constants {
     public void startDTD(String name, String publicId, String systemId)
         throws SAXException {}
 
-    private static Document createDocument() throws ParserConfigurationException {
+    private Document createDocument(boolean useServicesMachnism) throws ParserConfigurationException {
+        if (_factory == null) {
+            if (useServicesMachnism)
+                _factory = DocumentBuilderFactory.newInstance();
+                if (!(_factory instanceof com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl)) {
+                    _internal = false;
+                }
+            else
+                _factory = DocumentBuilderFactory.newInstance(
+                  "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl",
+                  SAX2DOM.class.getClassLoader()
+                  );
+        }
         Document doc;
-        if (_internalBuilder != null) {
+        if (_internal) {
             //default implementation is thread safe
-            doc = _internalBuilder.newDocument();
+            doc = _factory.newDocumentBuilder().newDocument();
         } else {
             synchronized(SAX2DOM.class) {
                 doc = _factory.newDocumentBuilder().newDocument();

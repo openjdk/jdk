@@ -381,7 +381,7 @@ public class ExsltMath extends ExsltBase
        if (bits <= value.length())
          value = value.substring(0, bits);
 
-       return new Double(value).doubleValue();
+       return Double.parseDouble(value);
      }
      else
        return Double.NaN;

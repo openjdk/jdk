@@ -166,10 +166,10 @@ final class Key extends TopLevelElement {
         final LocalVariableGen parentNode =
             methodGen.addLocalVariable("parentNode",
                                        Util.getJCRefType("I"),
-                                       il.getEnd(), null);
+                                       null, null);
 
         // Get the 'parameter' from the stack and store it in a local var.
-        il.append(new ISTORE(parentNode.getIndex()));
+        parentNode.setStart(il.append(new ISTORE(parentNode.getIndex())));
 
         // Save current node and current iterator on the stack
         il.append(methodGen.loadCurrentNode());
@@ -186,9 +186,9 @@ final class Key extends TopLevelElement {
         // Prepare to call buildKeyIndex(String name, int node, String value);
         il.append(classGen.loadTranslet());
         il.append(new PUSH(cpg, _name.toString()));
-        il.append(new ILOAD(parentNode.getIndex()));
+        parentNode.setEnd(il.append(new ILOAD(parentNode.getIndex())));
 
-        // Now get the node value and feck it on the parameter stack
+        // Now get the node value and push it on the parameter stack
         il.append(methodGen.loadDOM());
         il.append(methodGen.loadCurrentNode());
         il.append(new INVOKEINTERFACE(getNodeValue, 2));

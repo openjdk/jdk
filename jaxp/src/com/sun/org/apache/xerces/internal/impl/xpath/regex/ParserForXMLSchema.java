@@ -383,16 +383,13 @@ class ParserForXMLSchema extends RegexParser {
 
             tok = Token.createRange();
             setupRange(tok, DIGITS);
-            ranges.put("xml:isDigit", tok);
-            ranges2.put("xml:isDigit", Token.complementRanges(tok));
-
-            tok = Token.createRange();
-            setupRange(tok, DIGITS);
+            setupRange(tok, DIGITS_INT);
             ranges.put("xml:isDigit", tok);
             ranges2.put("xml:isDigit", Token.complementRanges(tok));
 
             tok = Token.createRange();
             setupRange(tok, LETTERS);
+            setupRange(tok, LETTERS_INT);
             tok.mergeRanges((Token)ranges.get("xml:isDigit"));
             ranges.put("xml:isWord", tok);
             ranges2.put("xml:isWord", Token.complementRanges(tok));
@@ -418,6 +415,12 @@ class ParserForXMLSchema extends RegexParser {
         int len = src.length();
         for (int i = 0;  i < len;  i += 2)
             range.addRange(src.charAt(i), src.charAt(i+1));
+    }
+
+    static void setupRange(Token range, int[] src) {
+        int len = src.length;
+        for (int i = 0;  i < len;  i += 2)
+            range.addRange(src[i], src[i+1]);
     }
 
     private static final String SPACES = "\t\n\r\r  ";
@@ -466,7 +469,8 @@ class ParserForXMLSchema extends RegexParser {
         +"";
     private static final String LETTERS =
         "\u0041\u005a\u0061\u007a\u00c0\u00d6\u00d8\u00f6\u00f8\u0131\u0134\u013e\u0141\u0148"
-        +"\u014a\u017e\u0180\u01c3\u01cd\u01f0\u01f4\u01f5\u01fa\u0217\u0250\u02a8\u02bb\u02c1"
+        +"\u014a\u017e\u0180\u01f0\u01f4\u01f5\u01fa\u0217\u0250\u02a8\u02bb\u02c1"
+        +"\u02b0\u02d1"
         +"\u0386\u0386\u0388\u038a\u038c\u038c\u038e\u03a1\u03a3\u03ce\u03d0\u03d6\u03da\u03da"
         +"\u03dc\u03dc\u03de\u03de\u03e0\u03e0\u03e2\u03f3\u0401\u040c\u040e\u044f\u0451\u045c"
         +"\u045e\u0481\u0490\u04c4\u04c7\u04c8\u04cb\u04cc\u04d0\u04eb\u04ee\u04f5\u04f8\u04f9"
@@ -494,9 +498,15 @@ class ParserForXMLSchema extends RegexParser {
         +"\u1f5f\u1f7d\u1f80\u1fb4\u1fb6\u1fbc\u1fbe\u1fbe\u1fc2\u1fc4\u1fc6\u1fcc\u1fd0\u1fd3"
         +"\u1fd6\u1fdb\u1fe0\u1fec\u1ff2\u1ff4\u1ff6\u1ffc\u2126\u2126\u212a\u212b\u212e\u212e"
         +"\u2180\u2182\u3007\u3007\u3021\u3029\u3041\u3094\u30a1\u30fa\u3105\u312c\u4e00\u9fa5"
-        +"\uac00\ud7a3";
+        +"\uac00\ud7a3\uff66\uff9f";
+
+    private static final int[] LETTERS_INT = {0x1d790, 0x1d7a8, 0x1d7aa, 0x1d7c9, 0x2fa1b, 0x2fa1d};
+
     private static final String DIGITS =
         "\u0030\u0039\u0660\u0669\u06F0\u06F9\u0966\u096F\u09E6\u09EF\u0A66\u0A6F\u0AE6\u0AEF"
         +"\u0B66\u0B6F\u0BE7\u0BEF\u0C66\u0C6F\u0CE6\u0CEF\u0D66\u0D6F\u0E50\u0E59\u0ED0\u0ED9"
         +"\u0F20\u0F29\u1040\u1049\u1369\u1371\u17E0\u17E9\u1810\u1819\uFF10\uFF19";
+
+    private static final int[] DIGITS_INT = {0x1D7CE, 0x1D7FF};
+
 }

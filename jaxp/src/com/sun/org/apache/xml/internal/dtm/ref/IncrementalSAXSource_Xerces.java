@@ -30,6 +30,7 @@ import java.lang.reflect.Method;
 import com.sun.org.apache.xerces.internal.parsers.SAXParser;
 import com.sun.org.apache.xml.internal.res.XMLErrorResources;
 import com.sun.org.apache.xml.internal.res.XMLMessages;
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -101,7 +102,7 @@ public class IncrementalSAXSource_Xerces
                         // If we can't get the magic constructor, no need to look further.
                         Class xniConfigClass=ObjectFactory.findProviderClass(
                             "com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration",
-                            ObjectFactory.findClassLoader(), true);
+                            true);
                         Class[] args1={xniConfigClass};
                         Constructor ctor=SAXParser.class.getConstructor(args1);
 
@@ -110,7 +111,7 @@ public class IncrementalSAXSource_Xerces
                         // we're going to want to use.
                         Class xniStdConfigClass=ObjectFactory.findProviderClass(
                             "com.sun.org.apache.xerces.internal.parsers.StandardParserConfiguration",
-                            ObjectFactory.findClassLoader(), true);
+                            true);
                         fPullParserConfig=xniStdConfigClass.newInstance();
                         Object[] args2={fPullParserConfig};
                         fIncrementalParser = (SAXParser)ctor.newInstance(args2);
@@ -120,7 +121,7 @@ public class IncrementalSAXSource_Xerces
                         // API changes again.
                         Class fXniInputSourceClass=ObjectFactory.findProviderClass(
                             "com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource",
-                            ObjectFactory.findClassLoader(), true);
+                            true);
                         Class[] args3={fXniInputSourceClass};
                         fConfigSetInput=xniStdConfigClass.getMethod("setInputSource",args3);
 

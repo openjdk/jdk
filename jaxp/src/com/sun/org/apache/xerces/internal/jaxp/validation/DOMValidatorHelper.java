@@ -37,6 +37,7 @@ import com.sun.org.apache.xerces.internal.impl.validation.EntityState;
 import com.sun.org.apache.xerces.internal.impl.validation.ValidationManager;
 import com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaValidator;
 import com.sun.org.apache.xerces.internal.impl.xs.util.SimpleLocator;
+import com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl;
 import com.sun.org.apache.xerces.internal.util.NamespaceSupport;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.XMLAttributesImpl;
@@ -62,7 +63,7 @@ import org.xml.sax.SAXException;
  * <p>A validator helper for <code>DOMSource</code>s.</p>
  *
  * @author Michael Glavassevich, IBM
- * @version $Id: DOMValidatorHelper.java,v 1.8 2010/07/23 02:09:26 joehw Exp $
+ * @version $Id: DOMValidatorHelper.java,v 1.9 2010-11-01 04:40:08 joehw Exp $
  */
 final class DOMValidatorHelper implements ValidatorHelper, EntityState {
 
@@ -381,7 +382,8 @@ final class DOMValidatorHelper implements ValidatorHelper, EntityState {
         }
         if (result.getNode() == null) {
             try {
-                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                DocumentBuilderFactory factory = fComponentManager.getFeature(Constants.ORACLE_FEATURE_SERVICE_MECHANISM) ?
+                                    DocumentBuilderFactory.newInstance() : new DocumentBuilderFactoryImpl();
                 factory.setNamespaceAware(true);
                 DocumentBuilder builder = factory.newDocumentBuilder();
                 result.setNode(builder.newDocument());

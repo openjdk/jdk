@@ -33,7 +33,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
  * @author Arnaud  Le Hors, IBM
  * @author Andy Clark, IBM
  *
- * @version $Id: SAXParser.java,v 1.5 2007/07/19 04:38:54 ofung Exp $
+ * @version $Id: SAXParser.java,v 1.7 2010-11-01 04:40:09 joehw Exp $
  */
 public class SAXParser
     extends AbstractSAXParser {
@@ -103,10 +103,7 @@ public class SAXParser
      * grammar pool.
      */
     public SAXParser(SymbolTable symbolTable, XMLGrammarPool grammarPool) {
-        super((XMLParserConfiguration)ObjectFactory.createObject(
-            "com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration",
-            "com.sun.org.apache.xerces.internal.parsers.XIncludeAwareParserConfiguration"
-            ));
+        super(new XIncludeAwareParserConfiguration());
 
         // set features
         fConfiguration.addRecognizedFeatures(RECOGNIZED_FEATURES);

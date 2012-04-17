@@ -33,6 +33,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
  * @author Arnaud  Le Hors, IBM
  * @author Andy Clark, IBM
  *
+ * @version $Id: XMLDocumentParser.java,v 1.6 2010-11-01 04:40:10 joehw Exp $
  */
 public class XMLDocumentParser
     extends AbstractXMLDocumentParser {
@@ -46,10 +47,7 @@ public class XMLDocumentParser
      * configuration.
      */
     public XMLDocumentParser() {
-        super((XMLParserConfiguration)ObjectFactory.createObject(
-            "com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration",
-            "com.sun.org.apache.xerces.internal.parsers.XIncludeAwareParserConfiguration"
-            ));
+        super(new XIncludeAwareParserConfiguration());
     } // <init>()
 
     /**
@@ -63,10 +61,7 @@ public class XMLDocumentParser
      * Constructs a document parser using the specified symbol table.
      */
     public XMLDocumentParser(SymbolTable symbolTable) {
-        super((XMLParserConfiguration)ObjectFactory.createObject(
-            "com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration",
-            "com.sun.org.apache.xerces.internal.parsers.XIncludeAwareParserConfiguration"
-            ));
+        super(new XIncludeAwareParserConfiguration());
         fConfiguration.setProperty(Constants.XERCES_PROPERTY_PREFIX+Constants.SYMBOL_TABLE_PROPERTY, symbolTable);
     } // <init>(SymbolTable)
 
@@ -76,10 +71,7 @@ public class XMLDocumentParser
      */
     public XMLDocumentParser(SymbolTable symbolTable,
                              XMLGrammarPool grammarPool) {
-        super((XMLParserConfiguration)ObjectFactory.createObject(
-            "com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration",
-            "com.sun.org.apache.xerces.internal.parsers.XIncludeAwareParserConfiguration"
-            ));
+        super(new XIncludeAwareParserConfiguration());
         fConfiguration.setProperty(Constants.XERCES_PROPERTY_PREFIX+Constants.SYMBOL_TABLE_PROPERTY, symbolTable);
         fConfiguration.setProperty(Constants.XERCES_PROPERTY_PREFIX+Constants.XMLGRAMMAR_POOL_PROPERTY, grammarPool);
     }

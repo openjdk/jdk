@@ -36,6 +36,7 @@ import com.sun.org.apache.xerces.internal.impl.XMLEntityManager;
 import com.sun.org.apache.xerces.internal.impl.PropertyManager;
 import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
 import com.sun.org.apache.xerces.internal.impl.Constants;
+import java.util.Enumeration;
 
 /**
  *
@@ -129,19 +130,27 @@ public class XMLEntityStorage {
     } // reset(XMLComponentManager)
 
     /**
-     * Returns the hashtable of declared entities.
-     * <p>
-     * <strong>REVISIT:</strong>
-     * This should be done the "right" way by designing a better way to
-     * enumerate the declared entities. For now, this method is needed
-     * by the constructor that takes an XMLEntityManager parameter.
-     * XXX Making this method public, return all the declared entities.
-     * @return Hashtable hastable containing all the declared entities.
+     * Returns entity declaration.
+     *
+     * @param name The name of the entity.
+     *
+     * @see SymbolTable
      */
-    public Hashtable getDeclaredEntities() {
-        return fEntities;
-    } // getDeclaredEntities():Hashtable
+    public Entity getEntity(String name) {
+        return (Entity)fEntities.get(name);
+    } // getEntity(String)
 
+    public boolean hasEntities() {
+            return (fEntities!=null);
+    } // getEntity(String)
+
+    public int getEntitySize() {
+        return fEntities.size();
+    } // getEntity(String)
+
+    public Enumeration getEntityKeys() {
+        return fEntities.keys();
+    }
     /**
      * Adds an internal entity declaration.
      * <p>

@@ -1803,6 +1803,7 @@ public class XMLDocumentFragmentScannerImpl
         String name = fEntityScanner.scanName();
         if (name == null) {
             reportFatalError("NameRequiredInReference", null);
+            return;
         }
         if (!fEntityScanner.skipChar(';')) {
             reportFatalError("SemicolonRequiredInReference", new Object []{name});

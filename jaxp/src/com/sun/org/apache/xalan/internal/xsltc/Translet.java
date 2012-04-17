@@ -51,4 +51,7 @@ public interface Translet {
     public String[] getUrisArray();
     public int[]    getTypesArray();
     public String[] getNamespaceArray();
+    public boolean useServicesMechnism();
+    public void setServicesMechnism(boolean flag);
+
 }

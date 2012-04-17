@@ -55,6 +55,8 @@ import javax.xml.transform.stream.StreamSource;
 import com.sun.org.apache.xalan.internal.Version;
 import com.sun.org.apache.xalan.internal.res.XSLMessages;
 import com.sun.org.apache.xalan.internal.res.XSLTErrorResources;
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
+import com.sun.org.apache.xalan.internal.utils.ConfigurationError;
 
 //J2SE does not support Xalan interpretive
 /*
@@ -457,12 +459,11 @@ public class Process
           {
             try
             {
-              uriResolver = (URIResolver) ObjectFactory.newInstance(
-                argv[++i], ObjectFactory.findClassLoader(), true);
+              uriResolver = (URIResolver) ObjectFactory.newInstance(argv[++i], true);
 
               tfactory.setURIResolver(uriResolver);
             }
-            catch (ObjectFactory.ConfigurationError cnfe)
+            catch (ConfigurationError cnfe)
             {
                 msg = XSLMessages.createMessage(
                     XSLTErrorResources.ER_CLASS_NOT_FOUND_FOR_OPTION,
@@ -486,10 +487,9 @@ public class Process
           {
             try
             {
-              entityResolver = (EntityResolver) ObjectFactory.newInstance(
-                argv[++i], ObjectFactory.findClassLoader(), true);
+              entityResolver = (EntityResolver) ObjectFactory.newInstance(argv[++i], true);
             }
-            catch (ObjectFactory.ConfigurationError cnfe)
+            catch (ConfigurationError cnfe)
             {
                 msg = XSLMessages.createMessage(
                     XSLTErrorResources.ER_CLASS_NOT_FOUND_FOR_OPTION,
@@ -514,10 +514,9 @@ public class Process
           {
             try
             {
-              contentHandler = (ContentHandler) ObjectFactory.newInstance(
-                argv[++i], ObjectFactory.findClassLoader(), true);
+              contentHandler = (ContentHandler) ObjectFactory.newInstance(argv[++i], true);
             }
-            catch (ObjectFactory.ConfigurationError cnfe)
+            catch (ConfigurationError cnfe)
             {
                 msg = XSLMessages.createMessage(
                     XSLTErrorResources.ER_CLASS_NOT_FOUND_FOR_OPTION,

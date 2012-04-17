@@ -412,7 +412,7 @@ final class Predicate extends Expression implements Closure {
         il.append(new CHECKCAST(cpg.addClass(className)));
         il.append(new GETFIELD(cpg.addFieldref(className,
                                                DOM_FIELD, DOM_INTF_SIG)));
-        il.append(new ASTORE(local.getIndex()));
+        local.setStart(il.append(new ASTORE(local.getIndex())));
 
         // Store the dom index in the test generator
         testGen.setDomIndex(local.getIndex());
@@ -420,12 +420,8 @@ final class Predicate extends Expression implements Closure {
         _exp.translate(filterGen, testGen);
         il.append(IRETURN);
 
-        testGen.stripAttributes(true);
-        testGen.setMaxLocals();
-        testGen.setMaxStack();
-        testGen.removeNOPs();
         filterGen.addEmptyConstructor(ACC_PUBLIC);
-        filterGen.addMethod(testGen.getMethod());
+        filterGen.addMethod(testGen);
 
         getXSLTC().dumpClass(filterGen.getJavaClass());
     }

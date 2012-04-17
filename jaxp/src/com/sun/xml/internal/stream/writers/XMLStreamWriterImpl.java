@@ -233,6 +233,7 @@ public final class XMLStreamWriterImpl extends AbstractMap implements XMLStreamW
         fPrefixGen = new Random();
         fAttributeCache = new ArrayList();
         fInternalNamespaceContext = new NamespaceSupport();
+        fInternalNamespaceContext.reset();
         fNamespaceContext = new NamespaceContextImpl();
         fNamespaceContext.internalContext = fInternalNamespaceContext;
 
@@ -383,6 +384,8 @@ public final class XMLStreamWriterImpl extends AbstractMap implements XMLStreamW
         fElementStack.clear();
         fInternalNamespaceContext.reset();
         fReuse = true;
+        fStartTagOpened = false;
+        fNamespaceContext.userContext = null;
     }
 
     /**

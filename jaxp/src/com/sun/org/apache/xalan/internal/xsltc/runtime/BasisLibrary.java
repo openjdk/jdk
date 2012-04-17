@@ -40,12 +40,17 @@ import com.sun.org.apache.xalan.internal.xsltc.dom.DOMAdapter;
 import com.sun.org.apache.xalan.internal.xsltc.dom.MultiDOM;
 import com.sun.org.apache.xalan.internal.xsltc.dom.SingletonIterator;
 import com.sun.org.apache.xalan.internal.xsltc.dom.StepIterator;
+import com.sun.org.apache.xalan.internal.xsltc.dom.ArrayNodeListIterator;
+import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xml.internal.dtm.DTMAxisIterator;
 import com.sun.org.apache.xml.internal.dtm.DTMManager;
 import com.sun.org.apache.xml.internal.dtm.ref.DTMDefaultBase;
+import com.sun.org.apache.xml.internal.dtm.ref.DTMNodeProxy;
 
 import org.w3c.dom.DOMException;
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import com.sun.org.apache.xml.internal.serializer.NamespaceMappings;
@@ -153,7 +158,7 @@ public final class BasisLibrary {
             return dom.getStringValueX(((Node)obj).node);
         }
         else if (obj instanceof DOM) {
-            // When the first argument is a DOM we want the whole fecking
+            // When the first argument is a DOM we want the whole
             // DOM and not just a single node - that would not make sense.
             //return ((DOM)obj).getStringValueX(node);
             return ((DOM)obj).getStringValue();
@@ -1003,7 +1008,7 @@ public final class BasisLibrary {
         }
         // Convert var/param -> node-set
         else if (obj instanceof DTMAxisIterator) {
-            return(((DTMAxisIterator)obj).cloneIterator());
+            return(((DTMAxisIterator)obj).cloneIterator().reset());
         }
         else {
             final String className = obj.getClass().getName();
@@ -1143,90 +1148,42 @@ public final class BasisLibrary {
     }
 
     /**
-     * Utility function used to copy a node list to be under a parent node.
+     * In a perfect world, this would be the implementation for
+     * nodeList2Iterator. In reality, though, this causes a
+     * ClassCastException in getDTMHandleFromNode because SAXImpl is
+     * not an instance of DOM2DTM. So we use the more lengthy
+     * implementation below until this issue has been addressed.
+     *
+     * @see org.apache.xml.dtm.ref.DTMManagerDefault#getDTMHandleFromNode
      */
-    private static void copyNodes(org.w3c.dom.NodeList nodeList,
-        org.w3c.dom.Document doc, org.w3c.dom.Node parent)
+    private static DTMAxisIterator nodeList2IteratorUsingHandleFromNode(
+                                        org.w3c.dom.NodeList nodeList,
+                                        Translet translet, DOM dom)
     {
-        final int size = nodeList.getLength();
-
-          // copy Nodes from NodeList into new w3c DOM
-        for (int i = 0; i < size; i++)
-        {
-            org.w3c.dom.Node curr = nodeList.item(i);
-            int nodeType = curr.getNodeType();
-            String value = null;
-            try {
-                value = curr.getNodeValue();
-            } catch (DOMException ex) {
-                runTimeError(RUN_TIME_INTERNAL_ERR, ex.getMessage());
-                return;
+        final int n = nodeList.getLength();
+        final int[] dtmHandles = new int[n];
+        DTMManager dtmManager = null;
+        if (dom instanceof MultiDOM)
+            dtmManager = ((MultiDOM) dom).getDTMManager();
+        for (int i = 0; i < n; ++i) {
+            org.w3c.dom.Node node = nodeList.item(i);
+            int handle;
+            if (dtmManager != null) {
+                handle = dtmManager.getDTMHandleFromNode(node);
             }
-
-            String nodeName = curr.getNodeName();
-            org.w3c.dom.Node newNode = null;
-            switch (nodeType){
-                case org.w3c.dom.Node.ATTRIBUTE_NODE:
-                     newNode = doc.createAttributeNS(curr.getNamespaceURI(),
-                        nodeName);
-                     break;
-                case org.w3c.dom.Node.CDATA_SECTION_NODE:
-                     newNode = doc.createCDATASection(value);
-                     break;
-                case org.w3c.dom.Node.COMMENT_NODE:
-                     newNode = doc.createComment(value);
-                     break;
-                case org.w3c.dom.Node.DOCUMENT_FRAGMENT_NODE:
-                     newNode = doc.createDocumentFragment();
-                     break;
-                case org.w3c.dom.Node.DOCUMENT_NODE:
-                     newNode = doc.createElementNS(null, "__document__");
-                     copyNodes(curr.getChildNodes(), doc, newNode);
-                     break;
-                case org.w3c.dom.Node.DOCUMENT_TYPE_NODE:
-                     // nothing?
-                     break;
-                case org.w3c.dom.Node.ELEMENT_NODE:
-                     // For Element node, also copy the children and the
-                     // attributes.
-                     org.w3c.dom.Element element = doc.createElementNS(
-                        curr.getNamespaceURI(), nodeName);
-                     if (curr.hasAttributes())
-                     {
-                       org.w3c.dom.NamedNodeMap attributes = curr.getAttributes();
-                       for (int k = 0; k < attributes.getLength(); k++) {
-                         org.w3c.dom.Node attr = attributes.item(k);
-                         element.setAttributeNS(attr.getNamespaceURI(),
-                                 attr.getNodeName(), attr.getNodeValue());
-                       }
-                     }
-                     copyNodes(curr.getChildNodes(), doc, element);
-                     newNode = element;
-                     break;
-                case org.w3c.dom.Node.ENTITY_NODE:
-                     // nothing ?
-                     break;
-                case org.w3c.dom.Node.ENTITY_REFERENCE_NODE:
-                     newNode = doc.createEntityReference(nodeName);
-                     break;
-                case org.w3c.dom.Node.NOTATION_NODE:
-                     // nothing ?
-                     break;
-                case org.w3c.dom.Node.PROCESSING_INSTRUCTION_NODE:
-                     newNode = doc.createProcessingInstruction(nodeName,
-                        value);
-                     break;
-                case org.w3c.dom.Node.TEXT_NODE:
-                     newNode = doc.createTextNode(value);
-                     break;
+            else if (node instanceof DTMNodeProxy
+                     && ((DTMNodeProxy) node).getDTM() == dom) {
+                handle = ((DTMNodeProxy) node).getDTMNodeNumber();
             }
-            try {
-                parent.appendChild(newNode);
-            } catch (DOMException e) {
-                runTimeError(RUN_TIME_INTERNAL_ERR, e.getMessage());
-                return;
+            else {
+                runTimeError(RUN_TIME_INTERNAL_ERR, "need MultiDOM");
+                return null;
             }
+            dtmHandles[i] = handle;
+            System.out.println("Node " + i + " has handle 0x" +
+                               Integer.toString(handle, 16));
         }
+        return new ArrayNodeListIterator(dtmHandles);
     }
 
     /**
@@ -1237,26 +1194,93 @@ public final class BasisLibrary {
                                         org.w3c.dom.NodeList nodeList,
                                         Translet translet, DOM dom)
     {
-        // w3c NodeList -> w3c DOM
+        // First pass: build w3c DOM for all nodes not proxied from our DOM.
+        //
+        // Notice: this looses some (esp. parent) context for these nodes,
+        // so some way to wrap the original nodes inside a DTMAxisIterator
+        // might be preferable in the long run.
+        int n = 0; // allow for change in list length, just in case.
         Document doc = null;
-        try {
-            doc = ((AbstractTranslet) translet).newDocument("", "__top__");
+        DTMManager dtmManager = null;
+        int[] proxyNodes = new int[nodeList.getLength()];
+        if (dom instanceof MultiDOM)
+            dtmManager = ((MultiDOM) dom).getDTMManager();
+        for (int i = 0; i < nodeList.getLength(); ++i) {
+            org.w3c.dom.Node node = nodeList.item(i);
+            if (node instanceof DTMNodeProxy) {
+                DTMNodeProxy proxy = (DTMNodeProxy)node;
+                DTM nodeDTM = proxy.getDTM();
+                int handle = proxy.getDTMNodeNumber();
+                boolean isOurDOM = (nodeDTM == dom);
+                if (!isOurDOM && dtmManager != null) {
+                    try {
+                        isOurDOM = (nodeDTM == dtmManager.getDTM(handle));
+                    }
+                    catch (ArrayIndexOutOfBoundsException e) {
+                        // invalid node handle, so definitely not our doc
+                    }
+                }
+                if (isOurDOM) {
+                    proxyNodes[i] = handle;
+                    ++n;
+                    continue;
+                }
+            }
+            proxyNodes[i] = DTM.NULL;
+            int nodeType = node.getNodeType();
+            if (doc == null) {
+                if (dom instanceof MultiDOM == false) {
+                    runTimeError(RUN_TIME_INTERNAL_ERR, "need MultiDOM");
+                    return null;
+                }
+                try {
+                    AbstractTranslet at = (AbstractTranslet) translet;
+                    doc = at.newDocument("", "__top__");
+                }
+                catch (javax.xml.parsers.ParserConfigurationException e) {
+                    runTimeError(RUN_TIME_INTERNAL_ERR, e.getMessage());
+                    return null;
+                }
+            }
+            // Use one dummy element as container for each node of the
+            // list. That way, it is easier to detect resp. avoid
+            // funny things which change the number of nodes,
+            // e.g. auto-concatenation of text nodes.
+            Element mid;
+            switch (nodeType) {
+                case org.w3c.dom.Node.ELEMENT_NODE:
+                case org.w3c.dom.Node.TEXT_NODE:
+                case org.w3c.dom.Node.CDATA_SECTION_NODE:
+                case org.w3c.dom.Node.COMMENT_NODE:
+                case org.w3c.dom.Node.ENTITY_REFERENCE_NODE:
+                case org.w3c.dom.Node.PROCESSING_INSTRUCTION_NODE:
+                    mid = doc.createElementNS(null, "__dummy__");
+                    mid.appendChild(doc.importNode(node, true));
+                    doc.getDocumentElement().appendChild(mid);
+                    ++n;
+                    break;
+                case org.w3c.dom.Node.ATTRIBUTE_NODE:
+                    // The mid element also serves as a container for
+                    // attributes, avoiding problems with conflicting
+                    // attributes or node order.
+                    mid = doc.createElementNS(null, "__dummy__");
+                    mid.setAttributeNodeNS((Attr)doc.importNode(node, true));
+                    doc.getDocumentElement().appendChild(mid);
+                    ++n;
+                    break;
+                default:
+                    // Better play it safe for all types we aren't sure we know
+                    // how to deal with.
+                    runTimeError(RUN_TIME_INTERNAL_ERR,
+                                 "Don't know how to convert node type "
+                                 + nodeType);
+            }
         }
-        catch (javax.xml.parsers.ParserConfigurationException e) {
-            runTimeError(RUN_TIME_INTERNAL_ERR, e.getMessage());
-            return null;
-        }
-
-        // Copy all the nodes in the nodelist to be under the top element
-        copyNodes(nodeList, doc, doc.getDocumentElement());
 
         // w3cDOM -> DTM -> DOMImpl
-        if (dom instanceof MultiDOM) {
+        DTMAxisIterator iter = null, childIter = null, attrIter = null;
+        if (doc != null) {
             final MultiDOM multiDOM = (MultiDOM) dom;
-
-            DTMDefaultBase dtm = (DTMDefaultBase)((DOMAdapter)multiDOM.getMain()).getDOMImpl();
-            DTMManager dtmManager = dtm.getManager();
-
             DOM idom = (DOM)dtmManager.getDTM(new DOMSource(doc), false,
                                               null, true, false);
             // Create DOMAdapter and register with MultiDOM
@@ -1269,16 +1293,57 @@ public final class BasisLibrary {
 
             DTMAxisIterator iter1 = idom.getAxisIterator(Axis.CHILD);
             DTMAxisIterator iter2 = idom.getAxisIterator(Axis.CHILD);
-            DTMAxisIterator iter = new AbsoluteIterator(
+            iter = new AbsoluteIterator(
                 new StepIterator(iter1, iter2));
 
             iter.setStartNode(DTMDefaultBase.ROOTNODE);
-            return iter;
+
+            childIter = idom.getAxisIterator(Axis.CHILD);
+            attrIter = idom.getAxisIterator(Axis.ATTRIBUTE);
         }
-        else {
-            runTimeError(RUN_TIME_INTERNAL_ERR, "nodeList2Iterator()");
-            return null;
+
+        // Second pass: find DTM handles for every node in the list.
+        int[] dtmHandles = new int[n];
+        n = 0;
+        for (int i = 0; i < nodeList.getLength(); ++i) {
+            if (proxyNodes[i] != DTM.NULL) {
+                dtmHandles[n++] = proxyNodes[i];
+                continue;
+            }
+            org.w3c.dom.Node node = nodeList.item(i);
+            DTMAxisIterator iter3 = null;
+            int nodeType = node.getNodeType();
+            switch (nodeType) {
+                case org.w3c.dom.Node.ELEMENT_NODE:
+                case org.w3c.dom.Node.TEXT_NODE:
+                case org.w3c.dom.Node.CDATA_SECTION_NODE:
+                case org.w3c.dom.Node.COMMENT_NODE:
+                case org.w3c.dom.Node.ENTITY_REFERENCE_NODE:
+                case org.w3c.dom.Node.PROCESSING_INSTRUCTION_NODE:
+                    iter3 = childIter;
+                    break;
+                case org.w3c.dom.Node.ATTRIBUTE_NODE:
+                    iter3 = attrIter;
+                    break;
+                default:
+                    // Should not happen, as first run should have got all these
+                    throw new InternalRuntimeError("Mismatched cases");
+            }
+            if (iter3 != null) {
+                iter3.setStartNode(iter.next());
+                dtmHandles[n] = iter3.next();
+                // For now, play it self and perform extra checks:
+                if (dtmHandles[n] == DTMAxisIterator.END)
+                    throw new InternalRuntimeError("Expected element missing at " + i);
+                if (iter3.next() != DTMAxisIterator.END)
+                    throw new InternalRuntimeError("Too many elements at " + i);
+                ++n;
+            }
         }
+        if (n != dtmHandles.length)
+            throw new InternalRuntimeError("Nodes lost in second pass");
+
+        return new ArrayNodeListIterator(dtmHandles);
     }
 
     /**

@@ -26,6 +26,7 @@ import com.sun.org.apache.xml.internal.res.XMLErrorResources;
 import com.sun.org.apache.xml.internal.res.XMLMessages;
 import com.sun.org.apache.xml.internal.utils.PrefixResolver;
 import com.sun.org.apache.xml.internal.utils.XMLStringFactory;
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 
 /**
  * A DTMManager instance can be used to create DTM and
@@ -64,6 +65,7 @@ public abstract class DTMManager
    */
   protected XMLStringFactory m_xsf = null;
 
+  private boolean _useServicesMechanism;
   /**
    * Default constructor is protected on purpose.
    */
@@ -133,13 +135,23 @@ public abstract class DTMManager
   public static DTMManager newInstance(XMLStringFactory xsf)
            throws DTMConfigurationException
   {
+    return newInstance(xsf, true);
+  }
+
+  public static DTMManager newInstance(XMLStringFactory xsf, boolean useServicesMechanism)
+           throws DTMConfigurationException
+  {
     DTMManager factoryImpl = null;
     try
     {
-      factoryImpl = (DTMManager) ObjectFactory
-        .createObject(defaultPropName, defaultClassName);
+        if (useServicesMechanism) {
+            factoryImpl = (DTMManager) ObjectFactory
+                .createObject(defaultPropName, defaultClassName);
+        } else {
+            factoryImpl = new com.sun.org.apache.xml.internal.dtm.ref.DTMManagerDefault();
+        }
     }
-    catch (ObjectFactory.ConfigurationError e)
+    catch (ConfigurationError e)
     {
       throw new DTMConfigurationException(XMLMessages.createXMLMessage(
         XMLErrorResources.ER_NO_DEFAULT_IMPL, null), e.getException());
@@ -346,6 +358,19 @@ public abstract class DTMManager
     m_source_location = sourceLocation;
   }
 
+    /**
+     * Return the state of the services mechanism feature.
+     */
+    public boolean useServicesMechnism() {
+        return _useServicesMechanism;
+    }
+
+    /**
+     * Set the state of the services mechanism feature.
+     */
+    public void setServicesMechnism(boolean flag) {
+        _useServicesMechanism = flag;
+    }
 
   // -------------------- private methods --------------------
 
@@ -428,5 +453,47 @@ public abstract class DTMManager
   {
     return IDENT_NODE_DEFAULT;
   }
+
+    //
+    // Classes
+    //
+
+    /**
+     * A configuration error.
+     * Originally in ObjectFactory. This is the only portion used in this package
+     */
+    static class ConfigurationError
+        extends Error {
+                static final long serialVersionUID = 5122054096615067992L;
+        //
+        // Data
+        //
+
+        /** Exception. */
+        private Exception exception;
+
+        //
+        // Constructors
+        //
+
+        /**
+         * Construct a new instance with the specified detail string and
+         * exception.
+         */
+        ConfigurationError(String msg, Exception x) {
+            super(msg);
+            this.exception = x;
+        } // <init>(String,Exception)
+
+        //
+        // Public methods
+        //
+
+        /** Returns the exception associated to this error. */
+        Exception getException() {
+            return exception;
+        } // getException():Exception
+
+    } // class ConfigurationError
 
 }

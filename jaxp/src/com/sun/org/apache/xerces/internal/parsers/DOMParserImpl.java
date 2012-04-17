@@ -55,6 +55,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLEntityResolver;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParseException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
+import com.sun.org.apache.xerces.internal.parsers.XIncludeAwareParserConfiguration;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.DOMError;
 import org.w3c.dom.DOMErrorHandler;
@@ -165,11 +166,8 @@ extends AbstractDOMParser implements LSParser, DOMConfiguration {
     /**
      * Constructs a DOM Builder using the standard parser configuration.
      */
-    public DOMParserImpl (String configuration, String schemaType) {
-        this (
-        (XMLParserConfiguration) ObjectFactory.createObject (
-        "com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration",
-        configuration));
+    public DOMParserImpl (XMLParserConfiguration config, String schemaType) {
+        this (config);
         if (schemaType != null) {
             if (schemaType.equals (Constants.NS_DTD)) {
                 //Schema validation is false by default and hence there is no
@@ -261,10 +259,7 @@ extends AbstractDOMParser implements LSParser, DOMConfiguration {
      * Constructs a DOM Builder using the specified symbol table.
      */
     public DOMParserImpl (SymbolTable symbolTable) {
-        this (
-        (XMLParserConfiguration) ObjectFactory.createObject (
-        "com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration",
-        "com.sun.org.apache.xerces.internal.parsers.XIncludeAwareParserConfiguration"));
+        this (new XIncludeAwareParserConfiguration());
         fConfiguration.setProperty (
         Constants.XERCES_PROPERTY_PREFIX + Constants.SYMBOL_TABLE_PROPERTY,
         symbolTable);
@@ -276,10 +271,7 @@ extends AbstractDOMParser implements LSParser, DOMConfiguration {
      * grammar pool.
      */
     public DOMParserImpl (SymbolTable symbolTable, XMLGrammarPool grammarPool) {
-        this (
-        (XMLParserConfiguration) ObjectFactory.createObject (
-        "com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration",
-        "com.sun.org.apache.xerces.internal.parsers.XIncludeAwareParserConfiguration"));
+        this (new XIncludeAwareParserConfiguration());
         fConfiguration.setProperty (
         Constants.XERCES_PROPERTY_PREFIX + Constants.SYMBOL_TABLE_PROPERTY,
         symbolTable);

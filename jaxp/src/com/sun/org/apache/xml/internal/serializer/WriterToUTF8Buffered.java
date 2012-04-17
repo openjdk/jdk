@@ -204,10 +204,10 @@ final class WriterToUTF8Buffered extends Writer implements WriterChain
          */
         int split = length/CHARS_MAX;
         final int chunks;
-        if (split > 1)
-            chunks = split;
+        if (length % CHARS_MAX > 0)
+            chunks = split + 1;
         else
-            chunks = 2;
+            chunks = split;
         int end_chunk = start;
         for (int chunk = 1; chunk <= chunks; chunk++)
         {
@@ -339,10 +339,10 @@ final class WriterToUTF8Buffered extends Writer implements WriterChain
          final int start = 0;
          int split = length/CHARS_MAX;
          final int chunks;
-         if (split > 1)
-             chunks = split;
+         if (length % CHARS_MAX > 0)
+             chunks = split + 1;
          else
-             chunks = 2;
+             chunks = split;
          int end_chunk = 0;
          for (int chunk = 1; chunk <= chunks; chunk++)
          {

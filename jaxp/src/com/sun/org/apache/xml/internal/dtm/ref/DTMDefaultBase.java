@@ -844,12 +844,10 @@ public abstract class DTMDefaultBase implements DTM
           break;
         }
 
-      StringBuffer sb=new StringBuffer();
-          sb.append("["+nodeHandle+": "+typestring+
-                                "(0x"+Integer.toHexString(getExpandedTypeID(nodeHandle))+") "+
-                                getNodeNameX(nodeHandle)+" {"+getNamespaceURI(nodeHandle)+"}"+
-                                "=\""+ getNodeValue(nodeHandle)+"\"]");
-          return sb.toString();
+      return "[" + nodeHandle + ": " + typestring +
+              "(0x" + Integer.toHexString(getExpandedTypeID(nodeHandle)) + ") " +
+              getNodeNameX(nodeHandle) + " {" + getNamespaceURI(nodeHandle) + "}" +
+              "=\"" + getNodeValue(nodeHandle) + "\"]";
   }
 
   // ========= DTM Implementation Control Functions. ==============

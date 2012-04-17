@@ -84,12 +84,10 @@ final class ParameterRef extends VariableRefBase {
                 }
                 else {
                     il.append(_variable.loadInstruction());
-                    _variable.removeReference(this);
                 }
             }
             else {
                 il.append(_variable.loadInstruction());
-                _variable.removeReference(this);
             }
         }
         else {

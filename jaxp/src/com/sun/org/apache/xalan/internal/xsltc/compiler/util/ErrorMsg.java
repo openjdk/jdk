@@ -157,6 +157,14 @@ public final class ErrorMsg {
     public static final String INVALID_NCNAME_ERR = "INVALID_NCNAME_ERR";
     public static final String INVALID_METHOD_IN_OUTPUT = "INVALID_METHOD_IN_OUTPUT";
 
+    public static final String OUTLINE_ERR_TRY_CATCH = "OUTLINE_ERR_TRY_CATCH";
+    public static final String OUTLINE_ERR_UNBALANCED_MARKERS =
+                                            "OUTLINE_ERR_UNBALANCED_MARKERS";
+    public static final String OUTLINE_ERR_DELETED_TARGET =
+                                            "OUTLINE_ERR_DELETED_TARGET";
+    public static final String OUTLINE_ERR_METHOD_TOO_BIG =
+                                            "OUTLINE_ERR_METHOD_TOO_BIG";
+
     // All error messages are localized and are stored in resource bundles.
     // This array and the following 4 strings are read from that bundle.
     private static ResourceBundle _bundle;
@@ -261,7 +269,7 @@ public final class ErrorMsg {
      */
     public String toString() {
         String suffix = (_params == null) ?
-            (null != _code ? new String(getErrorMessage()) : _message)
+            (null != _code ? getErrorMessage() : _message)
             : MessageFormat.format(getErrorMessage(), _params);
         return formatLine() + suffix;
     }

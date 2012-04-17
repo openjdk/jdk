@@ -84,11 +84,11 @@ final class Copy extends Instruction {
         final LocalVariableGen name =
             methodGen.addLocalVariable2("name",
                                         Util.getJCRefType(STRING_SIG),
-                                        il.getEnd());
+                                        null);
         final LocalVariableGen length =
             methodGen.addLocalVariable2("length",
                                         Util.getJCRefType("I"),
-                                        il.getEnd());
+                                        null);
 
         // Get the name of the node to copy and save for later
         il.append(methodGen.loadDOM());
@@ -102,7 +102,7 @@ final class Copy extends Instruction {
                                                   + ")" + STRING_SIG);
         il.append(new INVOKEINTERFACE(cpy, 3));
         il.append(DUP);
-        il.append(new ASTORE(name.getIndex()));
+        name.setStart(il.append(new ASTORE(name.getIndex())));
         final BranchHandle ifBlock1 = il.append(new IFNULL(null));
 
         // Get the length of the node name and save for later
@@ -110,7 +110,7 @@ final class Copy extends Instruction {
         final int lengthMethod = cpg.addMethodref(STRING_CLASS,"length","()I");
         il.append(new INVOKEVIRTUAL(lengthMethod));
         il.append(DUP);
-        il.append(new ISTORE(length.getIndex()));
+        length.setStart(il.append(new ISTORE(length.getIndex())));
 
         // Ignore attribute sets if current node is ROOT. DOM.shallowCopy()
         // returns "" for ROOT, so skip attribute sets if length == 0
@@ -144,10 +144,10 @@ final class Copy extends Instruction {
 
         // Call the output handler's endElement() if we copied an element
         // (The DOM.shallowCopy() method calls startElement().)
-        il.append(new ILOAD(length.getIndex()));
+        length.setEnd(il.append(new ILOAD(length.getIndex())));
         final BranchHandle ifBlock3 = il.append(new IFEQ(null));
         il.append(methodGen.loadHandler());
-        il.append(new ALOAD(name.getIndex()));
+        name.setEnd(il.append(new ALOAD(name.getIndex())));
         il.append(methodGen.endElement());
 
         final InstructionHandle end = il.append(NOP);

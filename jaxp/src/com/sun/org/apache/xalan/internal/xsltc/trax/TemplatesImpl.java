@@ -42,6 +42,7 @@ import com.sun.org.apache.xalan.internal.xsltc.Translet;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.Hashtable;
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 
 /**
  * @author Morten Jorgensen
@@ -118,6 +119,8 @@ public final class TemplatesImpl implements Templates, Serializable {
      */
     private transient TransformerFactoryImpl _tfactory = null;
 
+    private boolean _useServicesMechanism;
+
     static final class TransletClassLoader extends ClassLoader {
         TransletClassLoader(ClassLoader parent) {
             super(parent);
@@ -142,10 +145,7 @@ public final class TemplatesImpl implements Templates, Serializable {
         TransformerFactoryImpl tfactory)
     {
         _bytecodes = bytecodes;
-        _name      = transletName;
-        _outputProperties = outputProperties;
-        _indentNumber = indentNumber;
-        _tfactory = tfactory;
+        init(transletName, outputProperties, indentNumber, tfactory);
     }
 
     /**
@@ -156,14 +156,19 @@ public final class TemplatesImpl implements Templates, Serializable {
         TransformerFactoryImpl tfactory)
     {
         _class     = transletClasses;
-        _name      = transletName;
         _transletIndex = 0;
+        init(transletName, outputProperties, indentNumber, tfactory);
+    }
+
+    private void init(String transletName,
+        Properties outputProperties, int indentNumber,
+        TransformerFactoryImpl tfactory) {
+        _name      = transletName;
         _outputProperties = outputProperties;
         _indentNumber = indentNumber;
         _tfactory = tfactory;
+        _useServicesMechanism = tfactory.useServicesMechnism();
     }
-
-
     /**
      * Need for de-serialization, see readObject().
      */
@@ -207,6 +212,12 @@ public final class TemplatesImpl implements Templates, Serializable {
         }
     }
 
+    /**
+     * Return the state of the services mechanism feature.
+     */
+    public boolean useServicesMechnism() {
+        return _useServicesMechanism;
+    }
 
      /**
      * Store URIResolver needed for Transformers.
@@ -357,6 +368,7 @@ public final class TemplatesImpl implements Templates, Serializable {
             AbstractTranslet translet = (AbstractTranslet) _class[_transletIndex].newInstance();
             translet.postInitialization();
             translet.setTemplates(this);
+            translet.setServicesMechnism(_useServicesMechanism);
             if (_auxClasses != null) {
                 translet.setAuxiliaryClasses(_auxClasses);
             }

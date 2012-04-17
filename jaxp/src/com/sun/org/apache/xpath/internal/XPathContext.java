@@ -96,6 +96,8 @@ public class XPathContext extends DTMManager // implements ExpressionContext
    */
   private boolean m_isSecureProcessing = false;
 
+  private boolean m_useServicesMechanism = true;
+
   /**
    * Though XPathContext context extends
    * the DTMManager, it really is a proxy for this object, which
@@ -308,13 +310,14 @@ public class XPathContext extends DTMManager // implements ExpressionContext
    */
   public XPathContext()
   {
-    m_prefixResolvers.push(null);
-    m_currentNodes.push(DTM.NULL);
-    m_currentExpressionNodes.push(DTM.NULL);
-    m_saxLocations.push(null);
+    this(true);
   }
 
+  public XPathContext(boolean useServicesMechanism) {
+      init(useServicesMechanism);
+  }
   /**
+   **This constructor doesn't seem to be used anywhere -- huizhe wang**
    * Create an XPathContext instance.
    * @param owner Value that can be retrieved via the getOwnerObject() method.
    * @see #getOwnerObject
@@ -326,10 +329,18 @@ public class XPathContext extends DTMManager // implements ExpressionContext
       m_ownerGetErrorListener = m_owner.getClass().getMethod("getErrorListener", new Class[] {});
     }
     catch (NoSuchMethodException nsme) {}
+    init(true);
+  }
+
+  private void init(boolean useServicesMechanism) {
     m_prefixResolvers.push(null);
     m_currentNodes.push(DTM.NULL);
     m_currentExpressionNodes.push(DTM.NULL);
     m_saxLocations.push(null);
+    m_useServicesMechanism = useServicesMechanism;
+    m_dtmManager = DTMManager.newInstance(
+                   com.sun.org.apache.xpath.internal.objects.XMLStringFactoryImpl.getFactory(),
+                   m_useServicesMechanism);
   }
 
   /**
@@ -352,7 +363,8 @@ public class XPathContext extends DTMManager // implements ExpressionContext
 
 
     m_dtmManager = DTMManager.newInstance(
-                   com.sun.org.apache.xpath.internal.objects.XMLStringFactoryImpl.getFactory());
+                   com.sun.org.apache.xpath.internal.objects.XMLStringFactoryImpl.getFactory(),
+                   m_useServicesMechanism);
 
     m_saxLocations.removeAllElements();
         m_axesIteratorStack.removeAllElements();
@@ -1097,6 +1109,19 @@ public class XPathContext extends DTMManager // implements ExpressionContext
     public ErrorListener getErrorListener()
     {
       return XPathContext.this.getErrorListener();
+    }
+    /**
+     * Return the state of the services mechanism feature.
+     */
+    public boolean useServicesMechnism() {
+        return m_useServicesMechanism;
+    }
+
+    /**
+     * Set the state of the services mechanism feature.
+     */
+    public void setServicesMechnism(boolean flag) {
+        m_useServicesMechanism = flag;
     }
 
     /**

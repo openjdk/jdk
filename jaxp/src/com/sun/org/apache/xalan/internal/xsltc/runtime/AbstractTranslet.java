@@ -23,6 +23,7 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.runtime;
 
+import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.BufferedOutputStream;
@@ -66,6 +67,8 @@ public abstract class AbstractTranslet implements Translet {
     public String  _encoding = "UTF-8";
     public boolean _omitHeader = false;
     public String  _standalone = null;
+    //see OutputPropertiesFactory.ORACLE_IS_STANDALONE
+    public boolean  _isStandalone = false;
     public String  _doctypePublic = null;
     public String  _doctypeSystem = null;
     public boolean _indent = false;
@@ -105,6 +108,7 @@ public abstract class AbstractTranslet implements Translet {
     // This is the name of the index used for ID attributes
     private final static String ID_INDEX_NAME = "##id";
 
+    private boolean _useServicesMechanism;
 
     /************************************************************************
      * Debugging
@@ -669,6 +673,7 @@ public abstract class AbstractTranslet implements Translet {
                 if (_doctypeSystem != null) {
                     handler.setDoctype(_doctypeSystem, _doctypePublic);
                 }
+                handler.setIsStandalone(_isStandalone);
             }
             else if (_method.equals("html")) {
                 handler.setIndent(_indent);
@@ -691,6 +696,7 @@ public abstract class AbstractTranslet implements Translet {
             }
             handler.setIndent(_indent);
             handler.setDoctype(_doctypeSystem, _doctypePublic);
+            handler.setIsStandalone(_isStandalone);
         }
     }
 
@@ -738,6 +744,19 @@ public abstract class AbstractTranslet implements Translet {
     public void setTemplates(Templates templates) {
         _templates = templates;
     }
+    /**
+     * Return the state of the services mechanism feature.
+     */
+    public boolean useServicesMechnism() {
+        return _useServicesMechanism;
+    }
+
+    /**
+     * Set the state of the services mechanism feature.
+     */
+    public void setServicesMechnism(boolean flag) {
+        _useServicesMechanism = flag;
+    }
 
     /************************************************************************
      * DOMImplementation caching for basis library
@@ -748,8 +767,8 @@ public abstract class AbstractTranslet implements Translet {
         throws ParserConfigurationException
     {
         if (_domImplementation == null) {
-            _domImplementation = DocumentBuilderFactory.newInstance()
-                .newDocumentBuilder().getDOMImplementation();
+            DocumentBuilderFactory dbf = FactoryImpl.getDOMFactory(_useServicesMechanism);
+            _domImplementation = dbf.newDocumentBuilder().getDOMImplementation();
         }
         return _domImplementation.createDocument(uri, qname, null);
     }

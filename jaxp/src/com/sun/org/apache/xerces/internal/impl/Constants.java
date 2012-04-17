@@ -136,7 +136,9 @@ public final class Constants {
     /** XML string property ("xml-string"). */
     public static final String XML_STRING_PROPERTY = "xml-string";
 
-        public static final String FEATURE_SECURE_PROCESSING = "http://javax.xml.XMLConstants/feature/secure-processing";
+    public static final String FEATURE_SECURE_PROCESSING = "http://javax.xml.XMLConstants/feature/secure-processing";
+
+    public static final String ORACLE_FEATURE_SERVICE_MECHANISM = "http://www.oracle.com/feature/use-service-mechanism";
 
     /** Document XML version property ("document-xml-version"). */
     public static final String DOCUMENT_XML_VERSION_PROPERTY = "document-xml-version";

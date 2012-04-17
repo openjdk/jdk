@@ -112,7 +112,16 @@ public class ParserConfigurationSettings
      *                   to be recognized.
      */
     public void addRecognizedFeatures(String[] featureIds) {
-        fRecognizedFeatures.addAll(Arrays.asList(featureIds));
+
+        // add recognized features
+        int featureIdsCount = featureIds != null ? featureIds.length : 0;
+        for (int i = 0; i < featureIdsCount; i++) {
+            String featureId = featureIds[i];
+            if (!fRecognizedFeatures.contains(featureId)) {
+                fRecognizedFeatures.add(featureId);
+            }
+        }
+
     } // addRecognizedFeatures(String[])
 
     /**

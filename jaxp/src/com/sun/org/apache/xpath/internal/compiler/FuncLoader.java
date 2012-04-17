@@ -25,6 +25,8 @@ package com.sun.org.apache.xpath.internal.compiler;
 import javax.xml.transform.TransformerException;
 
 import com.sun.org.apache.xpath.internal.functions.Function;
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
+import com.sun.org.apache.xalan.internal.utils.ConfigurationError;
 
 /**
  * Lazy load of functions into the function table as needed, so we don't
@@ -96,11 +98,10 @@ public class FuncLoader
             throw new TransformerException("Application can't install his own xpath function.");
       }
 
-      return (Function) ObjectFactory.newInstance(
-          className, ObjectFactory.findClassLoader(), true);
+      return (Function) ObjectFactory.newInstance(className, true);
 
     }
-    catch (ObjectFactory.ConfigurationError e)
+    catch (ConfigurationError e)
     {
       throw new TransformerException(e.getException());
     }

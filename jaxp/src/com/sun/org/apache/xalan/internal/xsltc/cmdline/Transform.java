@@ -49,6 +49,7 @@ import org.xml.sax.XMLReader;
 import com.sun.org.apache.xalan.internal.xsltc.StripFilter;
 import com.sun.org.apache.xml.internal.dtm.DTMWSFilter;
 import com.sun.org.apache.xalan.internal.xsltc.dom.DOMWSFilter;
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 
 /**
  * @author Jacek Ambroziak
@@ -97,8 +98,7 @@ final public class Transform {
 
     private void doTransform() {
         try {
-            final Class clazz = ObjectFactory.findProviderClass(
-                _className, ObjectFactory.findClassLoader(), true);
+            final Class clazz = ObjectFactory.findProviderClass(_className, true);
             final AbstractTranslet translet = (AbstractTranslet)clazz.newInstance();
             translet.postInitialization();
 

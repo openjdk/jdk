@@ -72,10 +72,18 @@ public class TransletOutputHandlerFactory {
     private ContentHandler _handler                 = null;
     private LexicalHandler _lexHandler              = null;
 
+    private boolean _useServicesMechanism;
+
     static public TransletOutputHandlerFactory newInstance() {
-        return new TransletOutputHandlerFactory();
+        return new TransletOutputHandlerFactory(true);
+    }
+    static public TransletOutputHandlerFactory newInstance(boolean useServicesMechanism) {
+        return new TransletOutputHandlerFactory(useServicesMechanism);
     }
 
+    public TransletOutputHandlerFactory(boolean useServicesMechanism) {
+        _useServicesMechanism = useServicesMechanism;
+    }
     public void setOutputType(int outputType) {
         _outputType = outputType;
     }
@@ -188,7 +196,7 @@ public class TransletOutputHandlerFactory {
                 return result;
 
             case DOM :
-                _handler = (_node != null) ? new SAX2DOM(_node, _nextSibling) : new SAX2DOM();
+                _handler = (_node != null) ? new SAX2DOM(_node, _nextSibling, _useServicesMechanism) : new SAX2DOM(_useServicesMechanism);
                 _lexHandler = (LexicalHandler) _handler;
                 // falls through
             case STAX :
