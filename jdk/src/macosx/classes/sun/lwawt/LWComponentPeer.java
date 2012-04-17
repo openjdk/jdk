@@ -985,16 +985,23 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     // DropTargetPeer Method
     @Override
     public void addDropTarget(DropTarget dt) {
-        synchronized (dropTargetLock){
-            // 10-14-02 VL: Windows WComponentPeer would add (or remove) the drop target only
-            // if it's the first (or last) one for the component. Otherwise this call is a no-op.
-            if (++fNumDropTargets == 1) {
-                // Having a non-null drop target would be an error but let's check just in case:
-                if (fDropTarget != null)
-                    System.err.println("CComponent.addDropTarget(): current drop target is non-null.");
+        LWWindowPeer winPeer = getWindowPeerOrSelf();
+        if (winPeer != null && winPeer != this) {
+            // We need to register the DropTarget in the
+            // peer of the window ancestor of the component
+            winPeer.addDropTarget(dt);
+        } else {
+            synchronized (dropTargetLock) {
+                // 10-14-02 VL: Windows WComponentPeer would add (or remove) the drop target only
+                // if it's the first (or last) one for the component. Otherwise this call is a no-op.
+                if (++fNumDropTargets == 1) {
+                    // Having a non-null drop target would be an error but let's check just in case:
+                    if (fDropTarget != null)
+                        System.err.println("CComponent.addDropTarget(): current drop target is non-null.");
 
-                // Create a new drop target:
-                fDropTarget = CDropTarget.createDropTarget(dt, target, this);
+                    // Create a new drop target:
+                    fDropTarget = CDropTarget.createDropTarget(dt, target, this);
+                }
             }
         }
     }
@@ -1002,17 +1009,24 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     // DropTargetPeer Method
     @Override
     public void removeDropTarget(DropTarget dt) {
-        synchronized (dropTargetLock){
-            // 10-14-02 VL: Windows WComponentPeer would add (or remove) the drop target only
-            // if it's the first (or last) one for the component. Otherwise this call is a no-op.
-            if (--fNumDropTargets == 0) {
-                // Having a null drop target would be an error but let's check just in case:
-                if (fDropTarget != null) {
-                    // Dispose of the drop target:
-                    fDropTarget.dispose();
-                    fDropTarget = null;
-                } else
-                    System.err.println("CComponent.removeDropTarget(): current drop target is null.");
+        LWWindowPeer winPeer = getWindowPeerOrSelf();
+        if (winPeer != null && winPeer != this) {
+            // We need to unregister the DropTarget in the
+            // peer of the window ancestor of the component
+            winPeer.removeDropTarget(dt);
+        } else {
+            synchronized (dropTargetLock){
+                // 10-14-02 VL: Windows WComponentPeer would add (or remove) the drop target only
+                // if it's the first (or last) one for the component. Otherwise this call is a no-op.
+                if (--fNumDropTargets == 0) {
+                    // Having a null drop target would be an error but let's check just in case:
+                    if (fDropTarget != null) {
+                        // Dispose of the drop target:
+                        fDropTarget.dispose();
+                        fDropTarget = null;
+                    } else
+                        System.err.println("CComponent.removeDropTarget(): current drop target is null.");
+                }
             }
         }
     }
