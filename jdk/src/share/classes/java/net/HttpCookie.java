@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -616,9 +616,6 @@ public final class HttpCookie implements Cloneable {
      *   would be accepted.</li>
      *   <li>A Set-Cookie2 with Domain=.com or Domain=.com., will always be
      *   rejected, because there is no embedded dot.</li>
-     *   <li>A Set-Cookie2 with Domain=ajax.com will be accepted, and the
-     *   value for Domain will be taken to be .ajax.com, because a dot
-     *   gets prepended to the value.</li>
      *   <li>A Set-Cookie2 from request-host example for Domain=.local will
      *   be accepted, because the effective host name for the request-
      *   host is example.local, and example.local domain-matches .local.</li>
