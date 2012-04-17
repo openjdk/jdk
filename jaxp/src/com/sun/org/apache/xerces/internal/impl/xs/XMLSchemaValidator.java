@@ -233,6 +233,8 @@ public class XMLSchemaValidator
     protected static final String SCHEMA_DV_FACTORY =
         Constants.XERCES_PROPERTY_PREFIX + Constants.SCHEMA_DV_FACTORY_PROPERTY;
 
+    protected static final String USE_SERVICE_MECHANISM = Constants.ORACLE_FEATURE_SERVICE_MECHANISM;
+
     // recognized features and properties
 
     /** Recognized features. */
@@ -250,7 +252,8 @@ public class XMLSchemaValidator
             HONOUR_ALL_SCHEMALOCATIONS,
             USE_GRAMMAR_POOL_ONLY,
             NAMESPACE_GROWTH,
-            TOLERATE_DUPLICATES
+            TOLERATE_DUPLICATES,
+            USE_SERVICE_MECHANISM
     };
 
     /** Feature defaults. */
@@ -272,7 +275,8 @@ public class XMLSchemaValidator
         null,
         null,
         null,
-        null
+        null,
+        Boolean.TRUE
     };
 
     /** Recognized properties. */
@@ -3488,7 +3492,8 @@ public class XMLSchemaValidator
                 if (fIdentityConstraint.getCategory() == IdentityConstraint.IC_KEY) {
                     String code = "AbsentKeyValue";
                     String eName = fIdentityConstraint.getElementName();
-                    reportSchemaError(code, new Object[] { eName });
+                    String cName = fIdentityConstraint.getIdentityConstraintName();
+                    reportSchemaError(code, new Object[] { eName, cName });
                 }
                 return;
             }
@@ -3503,9 +3508,9 @@ public class XMLSchemaValidator
                 if (fIdentityConstraint.getCategory() == IdentityConstraint.IC_KEY) {
                     String code = "KeyNotEnoughValues";
                     UniqueOrKey key = (UniqueOrKey) fIdentityConstraint;
-                    String ename = fIdentityConstraint.getElementName();
-                    String kname = key.getIdentityConstraintName();
-                    reportSchemaError(code, new Object[] { ename, kname });
+                    String eName = fIdentityConstraint.getElementName();
+                    String cName = key.getIdentityConstraintName();
+                    reportSchemaError(code, new Object[] { eName, cName });
                 }
                 return;
             }
@@ -3558,12 +3563,15 @@ public class XMLSchemaValidator
             // do we even know this field?
             if (i == -1) {
                 String code = "UnknownField";
-                reportSchemaError(code, new Object[] { field.toString()});
+                String eName = fIdentityConstraint.getElementName();
+                String cName = fIdentityConstraint.getIdentityConstraintName();
+                reportSchemaError(code, new Object[] { field.toString(), eName, cName });
                 return;
             }
             if (Boolean.TRUE != mayMatch(field)) {
                 String code = "FieldMultipleMatch";
-                reportSchemaError(code, new Object[] { field.toString()});
+                String cName = fIdentityConstraint.getIdentityConstraintName();
+                reportSchemaError(code, new Object[] { field.toString(), cName });
             } else {
                 fValuesCount++;
             }
@@ -3844,8 +3852,9 @@ public class XMLSchemaValidator
             if (contains()) {
                 String code = "DuplicateUnique";
                 String value = toString(fLocalValues);
-                String ename = fIdentityConstraint.getElementName();
-                reportSchemaError(code, new Object[] { value, ename });
+                String eName = fIdentityConstraint.getElementName();
+                String cName = fIdentityConstraint.getIdentityConstraintName();
+                reportSchemaError(code, new Object[] { value, eName, cName });
             }
         } // duplicateValue(Hashtable)
 
@@ -3880,8 +3889,9 @@ public class XMLSchemaValidator
             if (contains()) {
                 String code = "DuplicateKey";
                 String value = toString(fLocalValues);
-                String ename = fIdentityConstraint.getElementName();
-                reportSchemaError(code, new Object[] { value, ename });
+                String eName = fIdentityConstraint.getElementName();
+                String cName = fIdentityConstraint.getIdentityConstraintName();
+                reportSchemaError(code, new Object[] { value, eName, cName });
             }
         } // duplicateValue(Hashtable)
 

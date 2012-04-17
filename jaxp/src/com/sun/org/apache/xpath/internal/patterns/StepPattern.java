@@ -857,7 +857,7 @@ public class StepPattern extends NodeTest implements SubContextList, ExpressionO
       }
       else
       {
-        buf.append("?" + Integer.toHexString(pat.m_whatToShow));
+        buf.append('?').append(Integer.toHexString(pat.m_whatToShow));
       }
 
       if (null != pat.m_predicates)

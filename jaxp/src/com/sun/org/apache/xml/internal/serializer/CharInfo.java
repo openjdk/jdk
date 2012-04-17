@@ -40,6 +40,7 @@ import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
 import com.sun.org.apache.xml.internal.serializer.utils.SystemIDResolver;
 import com.sun.org.apache.xml.internal.serializer.utils.Utils;
 import com.sun.org.apache.xml.internal.serializer.utils.WrappedRuntimeException;
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 
 /**
  * This class provides services that tell if a character should have
@@ -54,7 +55,7 @@ import com.sun.org.apache.xml.internal.serializer.utils.WrappedRuntimeException;
 final class CharInfo
 {
     /** Given a character, lookup a String to output (e.g. a decorated entity reference). */
-    private HashMap m_charToString = new HashMap();
+    private HashMap m_charToString;
 
     /**
      * The name of the HTML entities file.
@@ -71,42 +72,50 @@ final class CharInfo
                 "com.sun.org.apache.xml.internal.serializer.XMLEntities";
 
     /** The horizontal tab character, which the parser should always normalize. */
-    public static final char S_HORIZONAL_TAB = 0x09;
+    static final char S_HORIZONAL_TAB = 0x09;
 
     /** The linefeed character, which the parser should always normalize. */
-    public static final char S_LINEFEED = 0x0A;
+    static final char S_LINEFEED = 0x0A;
 
     /** The carriage return character, which the parser should always normalize. */
-    public static final char S_CARRIAGERETURN = 0x0D;
+    static final char S_CARRIAGERETURN = 0x0D;
+    static final char S_SPACE = 0x20;
+    static final char S_QUOTE = 0x22;
+    static final char S_LT = 0x3C;
+    static final char S_GT = 0x3E;
+    static final char S_NEL = 0x85;
+    static final char S_LINE_SEPARATOR = 0x2028;
 
     /** This flag is an optimization for HTML entities. It false if entities
      * other than quot (34), amp (38), lt (60) and gt (62) are defined
      * in the range 0 to 127.
      * @xsl.usage internal
      */
-    final boolean onlyQuotAmpLtGt;
+    boolean onlyQuotAmpLtGt;
 
     /** Copy the first 0,1 ... ASCII_MAX values into an array */
-    private static final int ASCII_MAX = 128;
+    static final int ASCII_MAX = 128;
 
     /** Array of values is faster access than a set of bits
-     * to quickly check ASCII characters in attribute values.
+     * to quickly check ASCII characters in attribute values,
+     * the value is true if the character in an attribute value
+     * should be mapped to a String.
      */
-    private boolean[] isSpecialAttrASCII = new boolean[ASCII_MAX];
+    private final boolean[] shouldMapAttrChar_ASCII;
 
     /** Array of values is faster access than a set of bits
-     * to quickly check ASCII characters in text nodes.
+     * to quickly check ASCII characters in text nodes,
+     * the value is true if the character in a text node
+     * should be mapped to a String.
      */
-    private boolean[] isSpecialTextASCII = new boolean[ASCII_MAX];
-
-    private boolean[] isCleanTextASCII = new boolean[ASCII_MAX];
+    private final boolean[] shouldMapTextChar_ASCII;
 
     /** An array of bits to record if the character is in the set.
      * Although information in this array is complete, the
      * isSpecialAttrASCII array is used first because access to its values
      * is common and faster.
      */
-    private int array_of_bits[] = createEmptySetOfIntegers(65535);
+    private final int array_of_bits[];
 
 
     // 5 for 32 bit words,  6 for 64 bit words ...
@@ -137,33 +146,38 @@ final class CharInfo
 
 
     /**
-     * Constructor that reads in a resource file that describes the mapping of
-     * characters to entity references.
-     * This constructor is private, just to force the use
-     * of the getCharInfo(entitiesResource) factory
+     * A base constructor just to explicitly create the fields,
+     * with the exception of m_charToString which is handled
+     * by the constructor that delegates base construction to this one.
+     * <p>
+     * m_charToString is not created here only for performance reasons,
+     * to avoid creating a Hashtable that will be replaced when
+     * making a mutable copy, {@link #mutableCopyOf(CharInfo)}.
      *
-     * Resource files must be encoded in UTF-8 and can either be properties
-     * files with a .properties extension assumed.  Alternatively, they can
-     * have the following form, with no particular extension assumed:
-     *
-     * <pre>
-     * # First char # is a comment
-     * Entity numericValue
-     * quot 34
-     * amp 38
-     * </pre>
-     *
-     * @param entitiesResource Name of properties or resource file that should
-     * be loaded, which describes that mapping of characters to entity
-     * references.
      */
-    private CharInfo(String entitiesResource, String method)
+    private CharInfo()
     {
-        this(entitiesResource, method, false);
+        this.array_of_bits = createEmptySetOfIntegers(65535);
+        this.firstWordNotUsed = 0;
+        this.shouldMapAttrChar_ASCII = new boolean[ASCII_MAX];
+        this.shouldMapTextChar_ASCII = new boolean[ASCII_MAX];
+        this.m_charKey = new CharKey();
+
+        // Not set here, but in a constructor that uses this one
+        // this.m_charToString =  new Hashtable();
+
+        this.onlyQuotAmpLtGt = true;
+
+
+        return;
     }
 
     private CharInfo(String entitiesResource, String method, boolean internal)
     {
+        // call the default constructor to create the fields
+        this();
+        m_charToString = new HashMap();
+
         ResourceBundle entities = null;
         boolean noExtraEntities = true;
 
@@ -189,12 +203,10 @@ final class CharInfo
                 String name = (String) keys.nextElement();
                 String value = entities.getString(name);
                 int code = Integer.parseInt(value);
-                defineEntity(name, (char) code);
-                if (extraEntity(code))
+                boolean extra = defineEntity(name, (char) code);
+                if (extra)
                     noExtraEntities = false;
             }
-            set(S_LINEFEED);
-            set(S_CARRIAGERETURN);
         } else {
             InputStream is = null;
 
@@ -278,8 +290,8 @@ final class CharInfo
 
                             int code = Integer.parseInt(value);
 
-                            defineEntity(name, (char) code);
-                            if (extraEntity(code))
+                            boolean extra = defineEntity(name, (char) code);
+                            if (extra)
                                 noExtraEntities = false;
                         }
                     }
@@ -288,8 +300,6 @@ final class CharInfo
                 }
 
                 is.close();
-                set(S_LINEFEED);
-                set(S_CARRIAGERETURN);
             } catch (Exception e) {
                 throw new RuntimeException(
                     Utils.messages.createMessage(
@@ -307,30 +317,7 @@ final class CharInfo
             }
         }
 
-        /* initialize the array isCleanTextASCII[] with a cache of values
-         * for use by ToStream.character(char[], int , int)
-         * and the array isSpecialTextASCII[] with the opposite values
-         * (all in the name of performance!)
-         */
-        for (int ch = 0; ch <ASCII_MAX; ch++)
-        if((((0x20 <= ch || (0x0A == ch || 0x0D == ch || 0x09 == ch)))
-             && (!get(ch))) || ('"' == ch))
-        {
-            isCleanTextASCII[ch] = true;
-            isSpecialTextASCII[ch] = false;
-        }
-        else {
-            isCleanTextASCII[ch] = false;
-            isSpecialTextASCII[ch] = true;
-        }
-
-
-
         onlyQuotAmpLtGt = noExtraEntities;
-
-        // initialize the array with a cache of the BitSet values
-        for (int i=0; i<ASCII_MAX; i++)
-            isSpecialAttrASCII[i] = get(i);
 
         /* Now that we've used get(ch) just above to initialize the
          * two arrays we will change by adding a tab to the set of
@@ -343,8 +330,19 @@ final class CharInfo
          */
         if (Method.XML.equals(method))
         {
-            isSpecialAttrASCII[S_HORIZONAL_TAB] = true;
+            // We choose not to escape the quotation mark as &quot; in text nodes
+            shouldMapTextChar_ASCII[S_QUOTE] = false;
         }
+
+        if (Method.HTML.equals(method)) {
+                // The XSLT 1.0 recommendation says
+                // "The html output method should not escape < characters occurring in attribute values."
+                // So we don't escape '<' in an attribute for HTML
+                shouldMapAttrChar_ASCII['<'] = false;
+
+                // We choose not to escape the quotation mark as &quot; in text nodes.
+            shouldMapTextChar_ASCII[S_QUOTE] = false;
+    }
     }
 
     /**
@@ -352,21 +350,37 @@ final class CharInfo
      * supplied. Nothing happens if the character reference is already defined.
      * <p>Unlike internal entities, character references are a string to single
      * character mapping. They are used to map non-ASCII characters both on
-     * parsing and printing, primarily for HTML documents. '&lt;amp;' is an
+     * parsing and printing, primarily for HTML documents. '&amp;lt;' is an
      * example of a character reference.</p>
      *
      * @param name The entity's name
      * @param value The entity's value
+     * @return true if the mapping is not one of:
+     * <ul>
+     * <li> '<' to "&lt;"
+     * <li> '>' to "&gt;"
+     * <li> '&' to "&amp;"
+     * <li> '"' to "&quot;"
+     * </ul>
      */
-    private void defineEntity(String name, char value)
+    private boolean defineEntity(String name, char value)
     {
         StringBuilder sb = new StringBuilder("&");
         sb.append(name);
         sb.append(';');
         String entityString = sb.toString();
 
-        defineChar2StringMapping(entityString, value);
+        boolean extra = defineChar2StringMapping(entityString, value);
+        return extra;
     }
+
+    /**
+     * A utility object, just used to map characters to output Strings,
+     * needed because a HashMap needs to map an object as a key, not a
+     * Java primitive type, like a char, so this object gets around that
+     * and it is reusable.
+     */
+    private final CharKey m_charKey;
 
     /**
      * Map a character to a String. For example given
@@ -399,21 +413,21 @@ final class CharInfo
 
     /**
      * Tell if the character argument that is from
-     * an attribute value should have special treatment.
+     * an attribute value has a mapping to a String.
      *
      * @param value the value of a character that is in an attribute value
      * @return true if the character should have any special treatment,
      * such as when writing out attribute values,
-     * or entity references.
+     * such as when writing out entity references.
      * @xsl.usage internal
      */
-    final boolean isSpecialAttrChar(int value)
+    final boolean shouldMapAttrChar(int value)
     {
         // for performance try the values in the boolean array first,
         // this is faster access than the BitSet for common ASCII values
 
         if (value < ASCII_MAX)
-            return isSpecialAttrASCII[value];
+            return shouldMapAttrChar_ASCII[value];
 
         // rather than java.util.BitSet, our private
         // implementation is faster (and less general).
@@ -422,47 +436,26 @@ final class CharInfo
 
     /**
      * Tell if the character argument that is from a
-     * text node should have special treatment.
+     * text node has a mapping to a String, for example
+     * to map '<' to "&lt;".
      *
      * @param value the value of a character that is in a text node
-     * @return true if the character should have any special treatment,
-     * such as when writing out attribute values,
-     * or entity references.
+     * @return true if the character has a mapping to a String,
+     * such as when writing out entity references.
      * @xsl.usage internal
      */
-    final boolean isSpecialTextChar(int value)
+    final boolean shouldMapTextChar(int value)
     {
         // for performance try the values in the boolean array first,
         // this is faster access than the BitSet for common ASCII values
 
         if (value < ASCII_MAX)
-            return isSpecialTextASCII[value];
+            return shouldMapTextChar_ASCII[value];
 
         // rather than java.util.BitSet, our private
         // implementation is faster (and less general).
         return get(value);
     }
-
-    /**
-     * This method is used to determine if an ASCII character in
-     * a text node (not an attribute value) is "clean".
-     * @param value the character to check (0 to 127).
-     * @return true if the character can go to the writer as-is
-     * @xsl.usage internal
-     */
-    final boolean isTextASCIIClean(int value)
-    {
-        return isCleanTextASCII[value];
-    }
-
-//  In the future one might want to use the array directly and avoid
-//  the method call, but I think the JIT alreay inlines this well enough
-//  so don't do it (for now) - bjm
-//    public final boolean[] getASCIIClean()
-//    {
-//        return isCleanTextASCII;
-//    }
-
 
     private static CharInfo getCharInfoBasedOnPrivilege(
         final String entitiesFileName, final String method,
@@ -498,15 +491,17 @@ final class CharInfo
     {
         CharInfo charInfo = (CharInfo) m_getCharInfoCache.get(entitiesFileName);
         if (charInfo != null) {
-            return charInfo;
+            return mutableCopyOf(charInfo);
         }
 
         // try to load it internally - cache
         try {
             charInfo = getCharInfoBasedOnPrivilege(entitiesFileName,
                                         method, true);
+            // Put the common copy of charInfo in the cache, but return
+            // a copy of it.
             m_getCharInfoCache.put(entitiesFileName, charInfo);
-            return charInfo;
+            return mutableCopyOf(charInfo);
         } catch (Exception e) {}
 
         // try to load it externally - do not cache
@@ -533,7 +528,41 @@ final class CharInfo
                                 method, false);
     }
 
-    /** Table of user-specified char infos. */
+    /**
+     * Create a mutable copy of the cached one.
+     * @param charInfo The cached one.
+     * @return
+     */
+    private static CharInfo mutableCopyOf(CharInfo charInfo) {
+        CharInfo copy = new CharInfo();
+
+        int max = charInfo.array_of_bits.length;
+        System.arraycopy(charInfo.array_of_bits,0,copy.array_of_bits,0,max);
+
+        copy.firstWordNotUsed = charInfo.firstWordNotUsed;
+
+        max = charInfo.shouldMapAttrChar_ASCII.length;
+        System.arraycopy(charInfo.shouldMapAttrChar_ASCII,0,copy.shouldMapAttrChar_ASCII,0,max);
+
+        max = charInfo.shouldMapTextChar_ASCII.length;
+        System.arraycopy(charInfo.shouldMapTextChar_ASCII,0,copy.shouldMapTextChar_ASCII,0,max);
+
+        // utility field copy.m_charKey is already created in the default constructor
+
+        copy.m_charToString = (HashMap) charInfo.m_charToString.clone();
+
+        copy.onlyQuotAmpLtGt = charInfo.onlyQuotAmpLtGt;
+
+                return copy;
+        }
+
+        /**
+         * Table of user-specified char infos.
+         * The table maps entify file names (the name of the
+         * property file without the .properties extension)
+         * to CharInfo objects populated with entities defined in
+         * corresponding property file.
+         */
     private static HashMap m_getCharInfoCache = new HashMap();
 
     /**
@@ -575,7 +604,8 @@ final class CharInfo
      * the creation of the set.
      */
     private final void set(int i) {
-        setASCIIdirty(i);
+        setASCIItextDirty(i);
+        setASCIIattrDirty(i);
 
         int j = (i >> SHIFT_PER_WORD); // this word is used
         int k = j + 1;
@@ -610,24 +640,43 @@ final class CharInfo
         return in_the_set;
     }
 
-    // record if there are any entities other than
-    // quot, amp, lt, gt  (probably user defined)
     /**
-     * @return true if the entity
-     * @param code The value of the character that has an entity defined
-     * for it.
+     * This method returns true if there are some non-standard mappings to
+     * entities other than quot, amp, lt, gt, and its only purpose is for
+     * performance.
+     * @param charToMap The value of the character that is mapped to a String
+     * @param outputString The String to which the character is mapped, usually
+     * an entity reference such as "&lt;".
+     * @return true if the mapping is not one of:
+     * <ul>
+     * <li> '<' to "&lt;"
+     * <li> '>' to "&gt;"
+     * <li> '&' to "&amp;"
+     * <li> '"' to "&quot;"
+     * </ul>
      */
-    private boolean extraEntity(int entityValue)
+    private boolean extraEntity(String outputString, int charToMap)
     {
         boolean extra = false;
-        if (entityValue < 128)
+        if (charToMap < ASCII_MAX)
         {
-            switch (entityValue)
+            switch (charToMap)
             {
-                case 34 : // quot
-                case 38 : // amp
-                case 60 : // lt
-                case 62 : // gt
+                case '"' : // quot
+                        if (!outputString.equals("&quot;"))
+                                extra = true;
+                    break;
+                case '&' : // amp
+                        if (!outputString.equals("&amp;"))
+                                extra = true;
+                        break;
+                case '<' : // lt
+                        if (!outputString.equals("&lt;"))
+                                extra = true;
+                        break;
+                case '>' : // gt
+                        if (!outputString.equals("&gt;"))
+                                extra = true;
                     break;
                 default : // other entity in range 0 to 127
                     extra = true;
@@ -637,48 +686,60 @@ final class CharInfo
     }
 
     /**
-     * If the character is a printable ASCII character then
-     * mark it as not clean and needing replacement with
-     * a String on output.
+     * If the character is in the ASCII range then
+     * mark it as needing replacement with
+     * a String on output if it occurs in a text node.
      * @param ch
      */
-    private void setASCIIdirty(int j)
+    private void setASCIItextDirty(int j)
     {
         if (0 <= j && j < ASCII_MAX)
         {
-            isCleanTextASCII[j] = false;
-            isSpecialTextASCII[j] = true;
+            shouldMapTextChar_ASCII[j] = true;
         }
     }
 
     /**
-     * If the character is a printable ASCII character then
-     * mark it as and not needing replacement with
-     * a String on output.
+     * If the character is in the ASCII range then
+     * mark it as needing replacement with
+     * a String on output if it occurs in a attribute value.
      * @param ch
      */
-    private void setASCIIclean(int j)
+    private void setASCIIattrDirty(int j)
     {
         if (0 <= j && j < ASCII_MAX)
         {
-            isCleanTextASCII[j] = true;
-            isSpecialTextASCII[j] = false;
+            shouldMapAttrChar_ASCII[j] = true;
         }
     }
 
-    private void defineChar2StringMapping(String outputString, char inputChar)
+    /**
+     * Call this method to register a char to String mapping, for example
+     * to map '<' to "&lt;".
+     * @param outputString The String to map to.
+     * @param inputChar The char to map from.
+     * @return true if the mapping is not one of:
+     * <ul>
+     * <li> '<' to "&lt;"
+     * <li> '>' to "&gt;"
+     * <li> '&' to "&amp;"
+     * <li> '"' to "&quot;"
+     * </ul>
+     */
+    boolean defineChar2StringMapping(String outputString, char inputChar)
     {
         CharKey character = new CharKey(inputChar);
         m_charToString.put(character, outputString);
-        set(inputChar);
+        set(inputChar);  // mark the character has having a mapping to a String
+
+        boolean extraMapping = extraEntity(outputString, inputChar);
+        return extraMapping;
+
     }
 
     /**
      * Simple class for fast lookup of char values, when used with
      * hashtables.  You can set the char, then use it as a key.
-     *
-     * This class is a copy of the one in com.sun.org.apache.xml.internal.utils.
-     * It exists to cut the serializers dependancy on that package.
      *
      * @xsl.usage internal
      */

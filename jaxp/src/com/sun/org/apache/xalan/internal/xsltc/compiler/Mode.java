@@ -553,11 +553,7 @@ for (int i = 0; i < _templates.size(); i++) {
         il.append(template.compile(classGen, methodGen));
         il.append(RETURN);
 
-        methodGen.stripAttributes(true);
-        methodGen.setMaxLocals();
-        methodGen.setMaxStack();
-        methodGen.removeNOPs();
-        classGen.addMethod(methodGen.getMethod());
+        classGen.addMethod(methodGen);
     }
 
     private void compileTemplates(ClassGenerator classGen,
@@ -765,12 +761,16 @@ for (int i = 0; i < _templates.size(); i++) {
                                 getClassName(), mainIL,
                                 classGen.getConstantPool());
         methodGen.addException("com.sun.org.apache.xalan.internal.xsltc.TransletException");
+        // Insert an extra NOP just to keep "current" from appearing as if it
+        // has a value before the start of the loop.
+        mainIL.append(NOP);
+
 
         // Create a local variable to hold the current node
         final LocalVariableGen current;
         current = methodGen.addLocalVariable2("current",
                                               com.sun.org.apache.bcel.internal.generic.Type.INT,
-                                              mainIL.getEnd());
+                                              null);
         _currentIndex = current.getIndex();
 
         // Create the "body" instruction list that will eventually hold the
@@ -792,6 +792,11 @@ for (int i = 0; i < _templates.size(); i++) {
         final BranchHandle loop = ilLoop.append(new GOTO_W(null));
         ifeq.setTarget(ilLoop.append(RETURN));  // applyTemplates() ends here!
         final InstructionHandle ihLoop = ilLoop.getStart();
+
+        current.setStart(mainIL.append(new GOTO_W(ihLoop)));
+
+        // Live range of "current" ends at end of loop
+        current.setEnd(loop);
 
         // Compile default handling of elements (traverse children)
         InstructionList ilRecurse =
@@ -1029,18 +1034,12 @@ for (int i = 0; i < _templates.size(); i++) {
         body.append(ilText);
 
         // putting together constituent instruction lists
-        mainIL.append(new GOTO_W(ihLoop));
         mainIL.append(body);
         // fall through to ilLoop
         mainIL.append(ilLoop);
 
         peepHoleOptimization(methodGen);
-        methodGen.stripAttributes(true);
-
-        methodGen.setMaxLocals();
-        methodGen.setMaxStack();
-        methodGen.removeNOPs();
-        classGen.addMethod(methodGen.getMethod());
+        classGen.addMethod(methodGen);
 
         // Compile method(s) for <xsl:apply-imports/> for this mode
         if (_importLevels != null) {
@@ -1131,11 +1130,11 @@ for (int i = 0; i < _templates.size(); i++) {
         final LocalVariableGen current;
         current = methodGen.addLocalVariable2("current",
                                               com.sun.org.apache.bcel.internal.generic.Type.INT,
-                                              mainIL.getEnd());
+                                              null);
         _currentIndex = current.getIndex();
 
-    mainIL.append(new ILOAD(methodGen.getLocalIndex(NODE_PNAME)));
-    mainIL.append(new ISTORE(_currentIndex));
+        mainIL.append(new ILOAD(methodGen.getLocalIndex(NODE_PNAME)));
+        current.setStart(mainIL.append(new ISTORE(_currentIndex)));
 
         // Create the "body" instruction list that will eventually hold the
         // code for the entire method (other ILs will be appended).
@@ -1145,7 +1144,7 @@ for (int i = 0; i < _templates.size(); i++) {
         // Create an instruction list that contains the default next-node
         // iteration
         final InstructionList ilLoop = new InstructionList();
-    ilLoop.append(RETURN);
+        ilLoop.append(RETURN);
         final InstructionHandle ihLoop = ilLoop.getStart();
 
         // Compile default handling of elements (traverse children)
@@ -1385,16 +1384,15 @@ for (int i = 0; i < _templates.size(); i++) {
 
         // putting together constituent instruction lists
         mainIL.append(body);
+
+        // Mark the end of the live range for the "current" variable
+        current.setEnd(body.getEnd());
+
         // fall through to ilLoop
         mainIL.append(ilLoop);
 
         peepHoleOptimization(methodGen);
-        methodGen.stripAttributes(true);
-
-        methodGen.setMaxLocals();
-        methodGen.setMaxStack();
-        methodGen.removeNOPs();
-        classGen.addMethod(methodGen.getMethod());
+        classGen.addMethod(methodGen);
 
         // Restore original (complete) set of templates for this transformation
         _templates = oldTemplates;

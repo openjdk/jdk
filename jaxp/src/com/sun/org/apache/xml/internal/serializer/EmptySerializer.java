@@ -179,6 +179,13 @@ public class EmptySerializer implements SerializationHandler
         aMethodIsCalled();
     }
     /**
+     * @see SerializationHandler#setIsStandalone(boolean)
+     */
+    public void setIsStandalone(boolean isStandalone)
+    {
+        aMethodIsCalled();
+    }
+    /**
      * @see SerializationHandler#setOutputFormat(java.util.Properties)
      */
     public void setOutputFormat(Properties format)

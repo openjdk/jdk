@@ -55,6 +55,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLEntityResolver;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLErrorHandler;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
+import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.ls.LSResourceResolver;
 
@@ -324,8 +325,7 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
             MessageFormatter xmft = null;
             try {
                xmft = (MessageFormatter)(
-                    ObjectFactory.newInstance("com.sun.org.apache.xerces.internal.impl.xs.XSMessageFormatter",
-                    ObjectFactory.findClassLoader(), true));
+                    ObjectFactory.newInstance("com.sun.org.apache.xerces.internal.impl.xs.XSMessageFormatter", true));
             } catch (Exception exception){
             }
 

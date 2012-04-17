@@ -104,14 +104,14 @@ final class FilteredAbsoluteLocationPath extends Expression {
             LocalVariableGen pathTemp =
                methodGen.addLocalVariable("filtered_absolute_location_path_tmp",
                                           Util.getJCRefType(NODE_ITERATOR_SIG),
-                                          il.getEnd(), null);
+                                          null, null);
             _path.translate(classGen, methodGen);
-            il.append(new ASTORE(pathTemp.getIndex()));
+            pathTemp.setStart(il.append(new ASTORE(pathTemp.getIndex())));
 
             // Create new Dup Filter Iterator
             il.append(new NEW(cpg.addClass(DUP_FILTERED_ITERATOR)));
             il.append(DUP);
-            il.append(new ALOAD(pathTemp.getIndex()));
+            pathTemp.setEnd(il.append(new ALOAD(pathTemp.getIndex())));
 
             // Initialize Dup Filter Iterator with iterator from the stack
             il.append(new INVOKESPECIAL(initDFI));

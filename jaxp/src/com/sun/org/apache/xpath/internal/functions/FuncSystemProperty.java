@@ -31,6 +31,8 @@ import com.sun.org.apache.xpath.internal.objects.XNumber;
 import com.sun.org.apache.xpath.internal.objects.XObject;
 import com.sun.org.apache.xpath.internal.objects.XString;
 import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
+import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
 
 /**
  * Execute the SystemProperty() function.
@@ -168,9 +170,8 @@ public class FuncSystemProperty extends FunctionOneArg
     try
     {
       // Use SecuritySupport class to provide priveleged access to property file
-      SecuritySupport ss = SecuritySupport.getInstance();
 
-      InputStream is = ss.getResourceAsStream(ObjectFactory.findClassLoader(),
+      InputStream is = SecuritySupport.getResourceAsStream(ObjectFactory.findClassLoader(),
                                               file);
 
       // get a buffered version

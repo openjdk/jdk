@@ -127,7 +127,7 @@ public interface XMLString
   /**
    * Compares this string to the specified object.
    * The result is <code>true</code> if and only if the argument is not
-   * <code>null</code> and is a <code>String</code> object that represents
+   * <code>null</code> and is an <code>XMLString</code> object that represents
    * the same sequence of characters as this object.
    *
    * @param   anObject   the object to compare this <code>String</code>
@@ -139,6 +139,20 @@ public interface XMLString
    */
   public abstract boolean equals(XMLString anObject);
 
+  /**
+   * Compares this string to the specified <code>String</code>.
+   * The result is <code>true</code> if and only if the argument is not
+   * <code>null</code> and is a <code>String</code> object that represents
+   * the same sequence of characters as this object.
+   *
+   * @param   anotherString   the object to compare this <code>String</code>
+   *                          against.
+   * @return  <code>true</code> if the <code>String</code>s are equal;
+   *          <code>false</code> otherwise.
+   * @see     java.lang.String#compareTo(java.lang.String)
+   * @see     java.lang.String#equalsIgnoreCase(java.lang.String)
+   */
+  public abstract boolean equals(String anotherString);
 
   /**
    * Compares this string to the specified object.

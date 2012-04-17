@@ -35,6 +35,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 
 /**
  * @author G. Todd Miller
@@ -132,8 +133,7 @@ final class FunctionAvailableCall extends FunctionCall {
           methodName = replaceDash(methodName);
 
         try {
-            final Class clazz = ObjectFactory.findProviderClass(
-                className, ObjectFactory.findClassLoader(), true);
+            final Class clazz = ObjectFactory.findProviderClass(className, true);
 
             if (clazz == null) {
                 return false;

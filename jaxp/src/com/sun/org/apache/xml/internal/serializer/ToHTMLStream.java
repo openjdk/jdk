@@ -58,7 +58,7 @@ public final class ToHTMLStream extends ToStream
      * Map that tells which XML characters should have special treatment, and it
      *  provides character to entity name lookup.
      */
-    private static final CharInfo m_htmlcharInfo =
+    private final CharInfo m_htmlcharInfo =
 //        new CharInfo(CharInfo.HTML_ENTITIES_RESOURCE);
         CharInfo.getCharInfo(CharInfo.HTML_ENTITIES_RESOURCE, Method.HTML);
 
@@ -1369,7 +1369,7 @@ public final class ToHTMLStream extends ToStream
             // System.out.println("ch: "+(int)ch);
             // System.out.println("m_maxCharacter: "+(int)m_maxCharacter);
             // System.out.println("m_attrCharsMap[ch]: "+(int)m_attrCharsMap[ch]);
-            if (escapingNotNeeded(ch) && (!m_charInfo.isSpecialAttrChar(ch)))
+            if (escapingNotNeeded(ch) && (!m_charInfo.shouldMapAttrChar(ch)))
             {
                 cleanLength++;
             }

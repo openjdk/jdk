@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
+import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
 
 /**
  * Provides information about encodings. Depends on the Java runtime
@@ -41,7 +42,7 @@ import java.util.StringTokenizer;
  * to override encoding names and provide the last printable character
  * for each encoding.
  *
- * @version $Revision: 1.9 $ $Date: 2009/12/01 22:17:31 $
+ * @version $Revision: 1.11 $ $Date: 2010-11-01 04:34:44 $
  * @author <a href="mailto:arkin@intalio.com">Assaf Arkin</a>
  */
 
@@ -324,9 +325,7 @@ public final class Encodings extends Object
             }
 
             if (is == null) {
-                SecuritySupport ss = SecuritySupport.getInstance();
-                is = ss.getResourceAsStream(ObjectFactory.findClassLoader(),
-                                            ENCODINGS_FILE);
+                is = SecuritySupport.getResourceAsStream(ENCODINGS_FILE);
             }
 
             Properties props = new Properties();

@@ -427,7 +427,7 @@ public class AxesWalker extends PredicatedNodeTest
       return -1;
     }
 
-    walker.setPredicateCount(walker.getPredicateCount() - 1);
+    walker.setPredicateCount(m_predicateIndex);
     walker.setNextWalker(null);
     walker.setPrevWalker(null);
 

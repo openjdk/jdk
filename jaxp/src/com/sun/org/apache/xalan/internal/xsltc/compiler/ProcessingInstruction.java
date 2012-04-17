@@ -83,13 +83,14 @@ final class ProcessingInstruction extends Instruction {
 
         if (!_isLiteral) {
             // if the ncname is an AVT, then the ncname has to be checked at runtime if it is a valid ncname
-            LocalVariableGen nameValue = methodGen.addLocalVariable2("nameValue",
+            LocalVariableGen nameValue =
+                    methodGen.addLocalVariable2("nameValue",
             Util.getJCRefType(STRING_SIG),
-            il.getEnd());
+                                                null);
 
             // store the name into a variable first so _name.translate only needs to be called once
             _name.translate(classGen, methodGen);
-            il.append(new ASTORE(nameValue.getIndex()));
+            nameValue.setStart(il.append(new ASTORE(nameValue.getIndex())));
             il.append(new ALOAD(nameValue.getIndex()));
 
             // call checkNCName if the name is an AVT
@@ -104,7 +105,7 @@ final class ProcessingInstruction extends Instruction {
             il.append(DUP);     // first arg to "attributes" call
 
             // load name value again
-            il.append(new ALOAD(nameValue.getIndex()));
+            nameValue.setEnd(il.append(new ALOAD(nameValue.getIndex())));
         } else {
             // Save the current handler base on the stack
             il.append(methodGen.loadHandler());

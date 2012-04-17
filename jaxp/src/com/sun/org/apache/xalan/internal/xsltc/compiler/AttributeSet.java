@@ -192,11 +192,7 @@ final class AttributeSet extends TopLevelElement {
         final InstructionList il = methodGen.getInstructionList();
         il.append(RETURN);
 
-        methodGen.stripAttributes(true);
-        methodGen.setMaxLocals();
-        methodGen.setMaxStack();
-        methodGen.removeNOPs();
-        classGen.addMethod(methodGen.getMethod());
+        classGen.addMethod(methodGen);
     }
 
     public String toString() {

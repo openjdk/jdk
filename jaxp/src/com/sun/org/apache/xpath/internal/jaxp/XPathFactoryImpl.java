@@ -21,6 +21,7 @@
 
 package com.sun.org.apache.xpath.internal.jaxp;
 
+import com.sun.org.apache.xalan.internal.XalanConstants;
 import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
 import com.sun.org.apache.xalan.internal.res.XSLMessages;
 
@@ -33,7 +34,7 @@ import javax.xml.xpath.XPathVariableResolver;
 /**
  * The XPathFactory builds XPaths.
  *
- * @version $Revision: 1.9 $
+ * @version $Revision: 1.11 $
  * @author  Ramesh Mandava
  */
 public  class XPathFactoryImpl extends XPathFactory {
@@ -64,13 +65,24 @@ public  class XPathFactoryImpl extends XPathFactory {
         /**
          * javax.xml.xpath.XPathFactory implementation.
          */
+
+        private boolean _useServicesMechanism = true;
+
         public XPathFactoryImpl() {
+            this(true);
+        }
+
+        public static XPathFactory newXPathFactoryNoServiceLoader() {
+            return new XPathFactoryImpl(false);
+        }
+
+        public XPathFactoryImpl(boolean useServicesMechanism) {
             if (System.getSecurityManager() != null) {
                 _isSecureMode = true;
                 _isNotSecureProcessing = false;
             }
+            this._useServicesMechanism = useServicesMechanism;
         }
-
         /**
          * <p>Is specified object model supported by this
          * <code>XPathFactory</code>?</p>
@@ -119,7 +131,7 @@ public  class XPathFactoryImpl extends XPathFactory {
         public javax.xml.xpath.XPath newXPath() {
             return new com.sun.org.apache.xpath.internal.jaxp.XPathImpl(
                     xPathVariableResolver, xPathFunctionResolver,
-                    !_isNotSecureProcessing );
+                    !_isNotSecureProcessing, _useServicesMechanism );
         }
 
         /**
@@ -173,6 +185,12 @@ public  class XPathFactoryImpl extends XPathFactory {
                 // all done processing feature
                 return;
             }
+            if (name.equals(XalanConstants.ORACLE_FEATURE_SERVICE_MECHANISM)) {
+                //in secure mode, let _useServicesMechanism be determined by the constructor
+                if (!_isSecureMode)
+                    _useServicesMechanism = value;
+                return;
+            }
 
             // unknown feature
             String fmsg = XSLMessages.createXPATHMessage(
@@ -219,7 +237,9 @@ public  class XPathFactoryImpl extends XPathFactory {
             if (name.equals(XMLConstants.FEATURE_SECURE_PROCESSING)) {
                 return !_isNotSecureProcessing;
             }
-
+            if (name.equals(XalanConstants.ORACLE_FEATURE_SERVICE_MECHANISM)) {
+                return _useServicesMechanism;
+            }
             // unknown feature
             String fmsg = XSLMessages.createXPATHMessage(
                     XPATHErrorResources.ER_GETTING_UNKNOWN_FEATURE,

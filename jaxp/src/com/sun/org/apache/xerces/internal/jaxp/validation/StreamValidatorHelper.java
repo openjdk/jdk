@@ -30,7 +30,7 @@ import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
@@ -48,7 +48,7 @@ import org.xml.sax.SAXException;
  *
  * @author Michael Glavassevich, IBM
  * @author <a href="mailto:Sunitha.Reddy@Sun.com">Sunitha Reddy</a>
- * @version $Id: StreamValidatorHelper.java,v 1.6 2010/07/23 02:09:26 joehw Exp $
+ * @version $Id: StreamValidatorHelper.java,v 1.7 2010-11-01 04:40:08 joehw Exp $
  */
 final class StreamValidatorHelper implements ValidatorHelper {
 
@@ -84,6 +84,7 @@ final class StreamValidatorHelper implements ValidatorHelper {
     private static final String VALIDATION_MANAGER =
         Constants.XERCES_PROPERTY_PREFIX + Constants.VALIDATION_MANAGER_PROPERTY;
 
+    private static final String DEFAULT_TRANSFORMER_IMPL = "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl";
     //
     // Data
     //
@@ -112,7 +113,9 @@ final class StreamValidatorHelper implements ValidatorHelper {
 
             if( result!=null ) {
                 try {
-                    SAXTransformerFactory tf = (SAXTransformerFactory)SAXTransformerFactory.newInstance();
+                    SAXTransformerFactory tf = fComponentManager.getFeature(Constants.ORACLE_FEATURE_SERVICE_MECHANISM) ?
+                                    (SAXTransformerFactory)SAXTransformerFactory.newInstance()
+                                    : (SAXTransformerFactory) TransformerFactory.newInstance(DEFAULT_TRANSFORMER_IMPL, StreamValidatorHelper.class.getClassLoader());
                     identityTransformerHandler = tf.newTransformerHandler();
                 } catch (TransformerConfigurationException e) {
                     throw new TransformerFactoryConfigurationError(e);

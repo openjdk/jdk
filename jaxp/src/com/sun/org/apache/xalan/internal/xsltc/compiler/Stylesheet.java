@@ -23,9 +23,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.net.URL;
-import java.net.MalformedURLException;
-
 import java.util.Vector;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -203,8 +200,9 @@ public final class Stylesheet extends SyntaxTreeNode {
 
     /**
      * Set to true to enable template inlining optimization.
+     * @see XSLTC#_templateInlining
      */
-    private boolean _templateInlining = true;
+    private boolean _templateInlining = false;
 
     /**
      * A reference to the last xsl:output object found in the styleshet.
@@ -467,11 +465,11 @@ public final class Stylesheet extends SyntaxTreeNode {
             for (int i = 0; i < n; i++) {
                 final Template template = (Template)templates.elementAt(i);
                 if (template.hasParams()) {
-                    _hasLocalParams = new Boolean(true);
+                    _hasLocalParams = Boolean.TRUE;
                     return true;
                 }
             }
-            _hasLocalParams = new Boolean(false);
+            _hasLocalParams = Boolean.FALSE;
             return false;
         }
         else {
@@ -509,15 +507,9 @@ public final class Stylesheet extends SyntaxTreeNode {
         return (_extensions.get(uri) != null);
     }
 
-    public void excludeExtensionPrefixes(Parser parser) {
+    public void declareExtensionPrefixes(Parser parser) {
         final SymbolTable stable = parser.getSymbolTable();
-        final String excludePrefixes = getAttribute("exclude-result-prefixes");
         final String extensionPrefixes = getAttribute("extension-element-prefixes");
-
-        // Exclude XSLT uri
-        stable.excludeURI(Constants.XSLT_URI);
-        stable.excludeNamespaces(excludePrefixes);
-        stable.excludeNamespaces(extensionPrefixes);
         extensionURI(extensionPrefixes, stable);
     }
 
@@ -571,6 +563,16 @@ public final class Stylesheet extends SyntaxTreeNode {
      * Parse all direct children of the <xsl:stylesheet/> element.
      */
     public final void parseOwnChildren(Parser parser) {
+        final SymbolTable stable = parser.getSymbolTable();
+        final String excludePrefixes = getAttribute("exclude-result-prefixes");
+        final String extensionPrefixes = getAttribute("extension-element-prefixes");
+
+        // Exclude XSLT uri
+        stable.pushExcludedNamespacesContext();
+        stable.excludeURI(Constants.XSLT_URI);
+        stable.excludeNamespaces(excludePrefixes);
+        stable.excludeNamespaces(extensionPrefixes);
+
         final Vector contents = getContents();
         final int count = contents.size();
 
@@ -602,6 +604,8 @@ public final class Stylesheet extends SyntaxTreeNode {
                 template.setName(parser.getQName(name));
             }
         }
+
+        stable.popExcludedNamespacesContext();
     }
 
     public void processModes() {
@@ -801,81 +805,99 @@ public final class Stylesheet extends SyntaxTreeNode {
             }
         }
 
+        staticConst.markChunkStart();
         il.append(new PUSH(cpg, size));
         il.append(new ANEWARRAY(cpg.addClass(STRING)));
+        int namesArrayRef = cpg.addFieldref(_className,
+                                            STATIC_NAMES_ARRAY_FIELD,
+                                            NAMES_INDEX_SIG);
+        il.append(new PUTSTATIC(namesArrayRef));
+        staticConst.markChunkEnd();
 
         for (int i = 0; i < size; i++) {
             final String name = namesArray[i];
-            il.append(DUP);
+            staticConst.markChunkStart();
+            il.append(new GETSTATIC(namesArrayRef));
             il.append(new PUSH(cpg, i));
             il.append(new PUSH(cpg, name));
             il.append(AASTORE);
+            staticConst.markChunkEnd();
         }
-        il.append(new PUTSTATIC(cpg.addFieldref(_className,
-                                               STATIC_NAMES_ARRAY_FIELD,
-                                               NAMES_INDEX_SIG)));
 
+        staticConst.markChunkStart();
         il.append(new PUSH(cpg, size));
         il.append(new ANEWARRAY(cpg.addClass(STRING)));
+        int urisArrayRef = cpg.addFieldref(_className,
+                                           STATIC_URIS_ARRAY_FIELD,
+                                           URIS_INDEX_SIG);
+        il.append(new PUTSTATIC(urisArrayRef));
+        staticConst.markChunkEnd();
 
         for (int i = 0; i < size; i++) {
             final String uri = urisArray[i];
-            il.append(DUP);
+            staticConst.markChunkStart();
+            il.append(new GETSTATIC(urisArrayRef));
             il.append(new PUSH(cpg, i));
             il.append(new PUSH(cpg, uri));
             il.append(AASTORE);
+            staticConst.markChunkEnd();
         }
-        il.append(new PUTSTATIC(cpg.addFieldref(_className,
-                                               STATIC_URIS_ARRAY_FIELD,
-                                               URIS_INDEX_SIG)));
 
+        staticConst.markChunkStart();
         il.append(new PUSH(cpg, size));
         il.append(new NEWARRAY(BasicType.INT));
+        int typesArrayRef = cpg.addFieldref(_className,
+                                            STATIC_TYPES_ARRAY_FIELD,
+                                            TYPES_INDEX_SIG);
+        il.append(new PUTSTATIC(typesArrayRef));
+        staticConst.markChunkEnd();
 
         for (int i = 0; i < size; i++) {
             final int nodeType = typesArray[i];
-            il.append(DUP);
+            staticConst.markChunkStart();
+            il.append(new GETSTATIC(typesArrayRef));
             il.append(new PUSH(cpg, i));
             il.append(new PUSH(cpg, nodeType));
             il.append(IASTORE);
         }
-        il.append(new PUTSTATIC(cpg.addFieldref(_className,
-                                               STATIC_TYPES_ARRAY_FIELD,
-                                               TYPES_INDEX_SIG)));
 
         // Put the namespace names array into the translet
         final Vector namespaces = getXSLTC().getNamespaceIndex();
+        staticConst.markChunkStart();
         il.append(new PUSH(cpg, namespaces.size()));
         il.append(new ANEWARRAY(cpg.addClass(STRING)));
+        int namespaceArrayRef = cpg.addFieldref(_className,
+                                                STATIC_NAMESPACE_ARRAY_FIELD,
+                                                NAMESPACE_INDEX_SIG);
+        il.append(new PUTSTATIC(namespaceArrayRef));
+        staticConst.markChunkEnd();
 
         for (int i = 0; i < namespaces.size(); i++) {
             final String ns = (String)namespaces.elementAt(i);
-            il.append(DUP);
+            staticConst.markChunkStart();
+            il.append(new GETSTATIC(namespaceArrayRef));
             il.append(new PUSH(cpg, i));
             il.append(new PUSH(cpg, ns));
             il.append(AASTORE);
+            staticConst.markChunkEnd();
         }
-        il.append(new PUTSTATIC(cpg.addFieldref(_className,
-                                               STATIC_NAMESPACE_ARRAY_FIELD,
-                                               NAMESPACE_INDEX_SIG)));
 
         // Grab all the literal text in the stylesheet and put it in a char[]
         final int charDataCount = getXSLTC().getCharacterDataCount();
         final int toCharArray = cpg.addMethodref(STRING, "toCharArray", "()[C");
         for (int i = 0; i < charDataCount; i++) {
+            staticConst.markChunkStart();
             il.append(new PUSH(cpg, getXSLTC().getCharacterData(i)));
             il.append(new INVOKEVIRTUAL(toCharArray));
             il.append(new PUTSTATIC(cpg.addFieldref(_className,
                                                STATIC_CHAR_DATA_FIELD+i,
                                                STATIC_CHAR_DATA_FIELD_SIG)));
+            staticConst.markChunkEnd();
         }
 
         il.append(RETURN);
 
-        staticConst.stripAttributes(true);
-        staticConst.setMaxLocals();
-        staticConst.setMaxStack();
-        classGen.addMethod(staticConst.getMethod());
+        classGen.addMethod(staticConst);
 
     }
 
@@ -898,6 +920,7 @@ public final class Stylesheet extends SyntaxTreeNode {
         il.append(new INVOKESPECIAL(cpg.addMethodref(TRANSLET_CLASS,
                                                      "<init>", "()V")));
 
+        constructor.markChunkStart();
         il.append(classGen.loadTranslet());
         il.append(new GETSTATIC(cpg.addFieldref(_className,
                                                 STATIC_NAMES_ARRAY_FIELD,
@@ -913,7 +936,9 @@ public final class Stylesheet extends SyntaxTreeNode {
         il.append(new PUTFIELD(cpg.addFieldref(TRANSLET_CLASS,
                                                URIS_INDEX,
                                                URIS_INDEX_SIG)));
+        constructor.markChunkEnd();
 
+        constructor.markChunkStart();
         il.append(classGen.loadTranslet());
         il.append(new GETSTATIC(cpg.addFieldref(_className,
                                                 STATIC_TYPES_ARRAY_FIELD,
@@ -921,7 +946,9 @@ public final class Stylesheet extends SyntaxTreeNode {
         il.append(new PUTFIELD(cpg.addFieldref(TRANSLET_CLASS,
                                                TYPES_INDEX,
                                                TYPES_INDEX_SIG)));
+        constructor.markChunkEnd();
 
+        constructor.markChunkStart();
         il.append(classGen.loadTranslet());
         il.append(new GETSTATIC(cpg.addFieldref(_className,
                                                 STATIC_NAMESPACE_ARRAY_FIELD,
@@ -929,38 +956,45 @@ public final class Stylesheet extends SyntaxTreeNode {
         il.append(new PUTFIELD(cpg.addFieldref(TRANSLET_CLASS,
                                                NAMESPACE_INDEX,
                                                NAMESPACE_INDEX_SIG)));
+        constructor.markChunkEnd();
 
+        constructor.markChunkStart();
         il.append(classGen.loadTranslet());
         il.append(new PUSH(cpg, AbstractTranslet.CURRENT_TRANSLET_VERSION));
         il.append(new PUTFIELD(cpg.addFieldref(TRANSLET_CLASS,
                                                TRANSLET_VERSION_INDEX,
                                                TRANSLET_VERSION_INDEX_SIG)));
+        constructor.markChunkEnd();
 
         if (_hasIdCall) {
+            constructor.markChunkStart();
             il.append(classGen.loadTranslet());
             il.append(new PUSH(cpg, Boolean.TRUE));
             il.append(new PUTFIELD(cpg.addFieldref(TRANSLET_CLASS,
                                                    HASIDCALL_INDEX,
                                                    HASIDCALL_INDEX_SIG)));
+            constructor.markChunkEnd();
         }
 
         // Compile in code to set the output configuration from <xsl:output>
         if (output != null) {
             // Set all the output settings files in the translet
+            constructor.markChunkStart();
             output.translate(classGen, constructor);
+            constructor.markChunkEnd();
         }
 
         // Compile default decimal formatting symbols.
         // This is an implicit, nameless xsl:decimal-format top-level element.
-        if (_numberFormattingUsed)
+        if (_numberFormattingUsed) {
+            constructor.markChunkStart();
             DecimalFormatting.translateDefaultDFS(classGen, constructor);
+            constructor.markChunkEnd();
+        }
 
         il.append(RETURN);
 
-        constructor.stripAttributes(true);
-        constructor.setMaxLocals();
-        constructor.setMaxStack();
-        classGen.addMethod(constructor.getMethod());
+        classGen.addMethod(constructor);
     }
 
     /**
@@ -1000,25 +1034,23 @@ public final class Stylesheet extends SyntaxTreeNode {
 
         toplevel.addException("com.sun.org.apache.xalan.internal.xsltc.TransletException");
 
+        // Define and initialize 'current' variable with the root node
+        final LocalVariableGen current =
+            toplevel.addLocalVariable("current",
+                                      com.sun.org.apache.bcel.internal.generic.Type.INT,
+                                      null, null);
+
         final int setFilter = cpg.addInterfaceMethodref(DOM_INTF,
                                "setFilter",
                                "(Lcom/sun/org/apache/xalan/internal/xsltc/StripFilter;)V");
 
-        // Define and initialize 'current' variable with the root node
-        final LocalVariableGen current =
-            toplevel.addLocalVariable("current",
-                                    com.sun.org.apache.bcel.internal.generic.Type.INT,
-                                    il.getEnd(), null);
-
-        // Get root node from main DOM by calling dom.getIterator().next()
         final int gitr = cpg.addInterfaceMethodref(DOM_INTF,
-                                                   "getIterator", "()"+NODE_ITERATOR_SIG);
-        final int next = cpg.addInterfaceMethodref(NODE_ITERATOR,
-                                                   "next", "()I");
+                                                        "getIterator",
+                                                        "()"+NODE_ITERATOR_SIG);
         il.append(toplevel.loadDOM());
         il.append(new INVOKEINTERFACE(gitr, 1));
-        il.append(new INVOKEINTERFACE(next, 1));
-        il.append(new ISTORE(current.getIndex()));
+        il.append(toplevel.nextNode());
+        current.setStart(il.append(new ISTORE(current.getIndex())));
 
         // Create a new list containing variables/params + keys
         Vector varDepElements = new Vector(_globals);
@@ -1073,12 +1105,7 @@ public final class Stylesheet extends SyntaxTreeNode {
         il.append(RETURN);
 
         // Compute max locals + stack and add method to class
-        toplevel.stripAttributes(true);
-        toplevel.setMaxLocals();
-        toplevel.setMaxStack();
-        toplevel.removeNOPs();
-
-        classGen.addMethod(toplevel.getMethod());
+        classGen.addMethod(toplevel);
 
         return("("+DOM_INTF_SIG+NODE_ITERATOR_SIG+TRANSLET_OUTPUT_SIG+")V");
     }
@@ -1233,7 +1260,7 @@ public final class Stylesheet extends SyntaxTreeNode {
         final LocalVariableGen current =
             transf.addLocalVariable("current",
                                     com.sun.org.apache.bcel.internal.generic.Type.INT,
-                                    il.getEnd(), null);
+                                    null, null);
         final String applyTemplatesSig = classGen.getApplyTemplatesSig();
         final int applyTemplates = cpg.addMethodref(getClassName(),
                                                     "applyTemplates",
@@ -1269,6 +1296,15 @@ public final class Stylesheet extends SyntaxTreeNode {
 
         //store to _dom variable
         il.append(new PUTFIELD(domField));
+
+        // continue with globals initialization
+        final int gitr = cpg.addInterfaceMethodref(DOM_INTF,
+                                                        "getIterator",
+                                                        "()"+NODE_ITERATOR_SIG);
+        il.append(transf.loadDOM());
+        il.append(new INVOKEINTERFACE(gitr, 1));
+        il.append(transf.nextNode());
+        current.setStart(il.append(new ISTORE(current.getIndex())));
 
         // Transfer the output settings to the output post-processor
         il.append(classGen.loadTranslet());
@@ -1326,12 +1362,8 @@ public final class Stylesheet extends SyntaxTreeNode {
         il.append(RETURN);
 
         // Compute max locals + stack and add method to class
-        transf.stripAttributes(true);
-        transf.setMaxLocals();
-        transf.setMaxStack();
-        transf.removeNOPs();
+        classGen.addMethod(transf);
 
-        classGen.addMethod(transf.getMethod());
     }
 
     /**

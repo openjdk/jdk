@@ -53,6 +53,7 @@ import com.sun.org.apache.xml.internal.resolver.helpers.FileURL;
  * @author Norman Walsh
  * <a href="mailto:Norman.Walsh@Sun.COM">Norman.Walsh@Sun.COM</a>
  *
+ * @version 1.0
  */
 public class ResolvingXMLFilter extends XMLFilterImpl {
   /**
@@ -63,7 +64,7 @@ public class ResolvingXMLFilter extends XMLFilterImpl {
   public static boolean suppressExplanation = false;
 
   /** The manager for the underlying resolver. */
-  private CatalogManager catalogManager = CatalogManager.getStaticManager();
+  CatalogManager catalogManager = CatalogManager.getStaticManager();
 
   /** The underlying catalog resolver. */
   private CatalogResolver catalogResolver = null;

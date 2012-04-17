@@ -55,6 +55,7 @@ public class TrAXFilter extends XMLFilterImpl {
     private Templates              _templates;
     private TransformerImpl        _transformer;
     private TransformerHandlerImpl _transformerHandler;
+    private boolean _useServicesMechanism = true;
 
     public TrAXFilter(Templates templates)  throws
         TransformerConfigurationException
@@ -62,6 +63,7 @@ public class TrAXFilter extends XMLFilterImpl {
         _templates = templates;
         _transformer = (TransformerImpl) templates.newTransformer();
         _transformerHandler = new TransformerHandlerImpl(_transformer);
+        _useServicesMechanism = _transformer.useServicesMechnism();
     }
 
     public Transformer getTransformer() {
@@ -106,7 +108,7 @@ public class TrAXFilter extends XMLFilterImpl {
         try {
             if (getParent() == null) {
                 try {
-                    managedReader = XMLReaderManager.getInstance()
+                    managedReader = XMLReaderManager.getInstance(_useServicesMechanism)
                                                     .getXMLReader();
                     setParent(managedReader);
                 } catch (SAXException  e) {
@@ -118,7 +120,7 @@ public class TrAXFilter extends XMLFilterImpl {
             getParent().parse(input);
         } finally {
             if (managedReader != null) {
-                XMLReaderManager.getInstance().releaseXMLReader(managedReader);
+                XMLReaderManager.getInstance(_useServicesMechanism).releaseXMLReader(managedReader);
             }
         }
     }

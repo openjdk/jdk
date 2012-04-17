@@ -28,11 +28,12 @@ import java.util.Vector;
 import com.sun.org.apache.bcel.internal.generic.ALOAD;
 import com.sun.org.apache.bcel.internal.generic.ASTORE;
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
-import com.sun.org.apache.bcel.internal.generic.NEW;
+import com.sun.org.apache.bcel.internal.generic.ILOAD;
 import com.sun.org.apache.bcel.internal.generic.INVOKEINTERFACE;
 import com.sun.org.apache.bcel.internal.generic.INVOKESPECIAL;
 import com.sun.org.apache.bcel.internal.generic.INVOKESTATIC;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
+import com.sun.org.apache.bcel.internal.generic.ISTORE;
 import com.sun.org.apache.bcel.internal.generic.LocalVariableGen;
 import com.sun.org.apache.bcel.internal.generic.NEW;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
@@ -99,6 +100,7 @@ class FilterExpr extends Expression {
      */
     public Type typeCheck(SymbolTable stable) throws TypeCheckError {
         Type ptype = _primary.typeCheck(stable);
+        boolean canOptimize = _primary instanceof KeyCall;
 
         if (ptype instanceof NodeSetType == false) {
             if (ptype instanceof ReferenceType)  {
@@ -109,11 +111,14 @@ class FilterExpr extends Expression {
             }
         }
 
-        // Type check predicates and turn all optimizations off
+        // Type check predicates and turn all optimizations off if appropriate
         int n = _predicates.size();
         for (int i = 0; i < n; i++) {
             Predicate pred = (Predicate) _predicates.elementAt(i);
-            pred.dontOptimize();
+
+            if (!canOptimize) {
+                pred.dontOptimize();
+            }
             pred.typeCheck(stable);
         }
         return _type = Type.NodeSet;
@@ -155,52 +160,95 @@ class FilterExpr extends Expression {
             translateFilterExpr(classGen, methodGen, predicateIndex);
         }
         else {
-            // Translate predicates from right to left
-            final int initCNLI = cpg.addMethodref(CURRENT_NODE_LIST_ITERATOR,
-                                                  "<init>",
-                                                  "("+NODE_ITERATOR_SIG+"Z"+
-                                                  CURRENT_NODE_LIST_FILTER_SIG +
-                                                  NODE_SIG+TRANSLET_SIG+")V");
-
-            // Backwards branches are prohibited if an uninitialized object is
-            // on the stack by section 4.9.4 of the JVM Specification, 2nd Ed.
-            // We don't know whether this code might contain backwards branches,
-            // so we mustn't create the new object until after we've created
-            // the suspect arguments to its constructor.  Instead we calculate
-            // the values of the arguments to the constructor first, store them
-            // in temporary variables, create the object and reload the
-            // arguments from the temporaries to avoid the problem.
-
             // Get the next predicate to be translated
             Predicate predicate = (Predicate) _predicates.get(predicateIndex--);
 
             // Translate the rest of the predicates from right to left
             translatePredicates(classGen, methodGen, predicateIndex);
 
-            LocalVariableGen nodeIteratorTemp =
-                methodGen.addLocalVariable("filter_expr_tmp1",
-                                           Util.getJCRefType(NODE_ITERATOR_SIG),
-                                           il.getEnd(), null);
-            il.append(new ASTORE(nodeIteratorTemp.getIndex()));
+            if (predicate.isNthPositionFilter()) {
+                int nthIteratorIdx = cpg.addMethodref(NTH_ITERATOR_CLASS,
+                                       "<init>",
+                                       "("+NODE_ITERATOR_SIG+"I)V");
 
-            predicate.translate(classGen, methodGen);
-            LocalVariableGen filterTemp =
-                methodGen.addLocalVariable("filter_expr_tmp2",
-                              Util.getJCRefType(CURRENT_NODE_LIST_FILTER_SIG),
-                              il.getEnd(), null);
-            il.append(new ASTORE(filterTemp.getIndex()));
+                // Backwards branches are prohibited if an uninitialized object
+                // is on the stack by section 4.9.4 of the JVM Specification,
+                // 2nd Ed.  We don't know whether this code might contain
+                // backwards branches, so we mustn't create the new object unti
 
-            // Create a CurrentNodeListIterator
-            il.append(new NEW(cpg.addClass(CURRENT_NODE_LIST_ITERATOR)));
-            il.append(DUP);
+                // after we've created the suspect arguments to its constructor
 
-            // Initialize CurrentNodeListIterator
-            il.append(new ALOAD(nodeIteratorTemp.getIndex()));
-            il.append(ICONST_1);
-            il.append(new ALOAD(filterTemp.getIndex()));
-            il.append(methodGen.loadCurrentNode());
-            il.append(classGen.loadTranslet());
-            il.append(new INVOKESPECIAL(initCNLI));
+                // Instead we calculate the values of the arguments to the
+                // constructor first, store them in temporary variables, create
+                // the object and reload the arguments from the temporaries to
+                // avoid the problem.
+                LocalVariableGen iteratorTemp
+                        = methodGen.addLocalVariable("filter_expr_tmp1",
+                                         Util.getJCRefType(NODE_ITERATOR_SIG),
+                                         null, null);
+                iteratorTemp.setStart(
+                        il.append(new ASTORE(iteratorTemp.getIndex())));
+
+                predicate.translate(classGen, methodGen);
+                LocalVariableGen predicateValueTemp
+                        = methodGen.addLocalVariable("filter_expr_tmp2",
+                                         Util.getJCRefType("I"),
+                                         null, null);
+                predicateValueTemp.setStart(
+                        il.append(new ISTORE(predicateValueTemp.getIndex())));
+
+                il.append(new NEW(cpg.addClass(NTH_ITERATOR_CLASS)));
+                il.append(DUP);
+                iteratorTemp.setEnd(
+                        il.append(new ALOAD(iteratorTemp.getIndex())));
+                predicateValueTemp.setEnd(
+                        il.append(new ILOAD(predicateValueTemp.getIndex())));
+                il.append(new INVOKESPECIAL(nthIteratorIdx));
+            } else {
+                    // Translate predicates from right to left
+                final int initCNLI = cpg.addMethodref(CURRENT_NODE_LIST_ITERATOR,
+                                                      "<init>",
+                                                      "("+NODE_ITERATOR_SIG+"Z"+
+                                                      CURRENT_NODE_LIST_FILTER_SIG +
+                                                      NODE_SIG+TRANSLET_SIG+")V");
+
+                // Backwards branches are prohibited if an uninitialized object is
+                // on the stack by section 4.9.4 of the JVM Specification, 2nd Ed.
+                // We don't know whether this code might contain backwards branches,
+                // so we mustn't create the new object until after we've created
+                // the suspect arguments to its constructor.  Instead we calculate
+                // the values of the arguments to the constructor first, store them
+                // in temporary variables, create the object and reload the
+                // arguments from the temporaries to avoid the problem.
+
+
+                LocalVariableGen nodeIteratorTemp =
+                    methodGen.addLocalVariable("filter_expr_tmp1",
+                                               Util.getJCRefType(NODE_ITERATOR_SIG),
+                                               null, null);
+                nodeIteratorTemp.setStart(
+                        il.append(new ASTORE(nodeIteratorTemp.getIndex())));
+
+                predicate.translate(classGen, methodGen);
+                LocalVariableGen filterTemp =
+                    methodGen.addLocalVariable("filter_expr_tmp2",
+                                  Util.getJCRefType(CURRENT_NODE_LIST_FILTER_SIG),
+                                  null, null);
+                filterTemp.setStart(il.append(new ASTORE(filterTemp.getIndex())));
+
+                // Create a CurrentNodeListIterator
+                il.append(new NEW(cpg.addClass(CURRENT_NODE_LIST_ITERATOR)));
+                il.append(DUP);
+
+                // Initialize CurrentNodeListIterator
+                nodeIteratorTemp.setEnd(
+                        il.append(new ALOAD(nodeIteratorTemp.getIndex())));
+                il.append(ICONST_1);
+                filterTemp.setEnd(il.append(new ALOAD(filterTemp.getIndex())));
+                il.append(methodGen.loadCurrentNode());
+                il.append(classGen.loadTranslet());
+                il.append(new INVOKESPECIAL(initCNLI));
+            }
         }
     }
 }

@@ -143,6 +143,11 @@ public abstract class SerializerBase
     protected boolean m_standaloneWasSpecified = false;
 
     /**
+     * Determine if the output is a standalone.
+     */
+    protected boolean m_isStandalone = false;
+
+    /**
      * Flag to tell if indenting (pretty-printing) is on.
      */
     protected boolean m_doIndent = false;
@@ -737,6 +742,16 @@ public abstract class SerializerBase
     public void setIndent(boolean doIndent)
     {
         m_doIndent = doIndent;
+    }
+
+    /**
+     * Sets the isStandalone property
+     * @param isStandalone true if the ORACLE_IS_STANDALONE is set to yes
+     * @see OutputPropertiesFactory ORACLE_IS_STANDALONE
+     */
+    public void setIsStandalone(boolean isStandalone)
+    {
+       m_isStandalone = isStandalone;
     }
 
     /**

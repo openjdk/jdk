@@ -34,6 +34,7 @@ import com.sun.org.apache.bcel.internal.generic.Instruction;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.bcel.internal.generic.PUSH;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.Constants;
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 
 /**
  * @author Todd Miller
@@ -53,8 +54,7 @@ public final class ObjectType extends Type {
         _javaClassName = javaClassName;
 
         try {
-          _clazz = ObjectFactory.findProviderClass(
-            javaClassName, ObjectFactory.findClassLoader(), true);
+          _clazz = ObjectFactory.findProviderClass(javaClassName, true);
         }
         catch (ClassNotFoundException e) {
           _clazz = null;

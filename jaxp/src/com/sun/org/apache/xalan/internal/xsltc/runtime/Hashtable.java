@@ -294,7 +294,7 @@ public class Hashtable {
         for (i = 0; i <= max; i++) {
             String s1 = k.nextElement().toString();
             String s2 = e.nextElement().toString();
-            buf.append(s1 + "=" + s2);
+            buf.append(s1).append('=').append(s2);
             if (i < max) buf.append(", ");
         }
         buf.append("}");

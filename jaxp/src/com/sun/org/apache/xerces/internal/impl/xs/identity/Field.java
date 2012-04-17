@@ -35,6 +35,7 @@ import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
  * @xerces.internal
  *
  * @author Andy Clark, IBM
+ * @version $Id: Field.java,v 1.6 2010-11-01 04:39:57 joehw Exp $
  */
 public class Field {
 
@@ -176,7 +177,8 @@ public class Field {
             super.matched(actualValue, valueType, itemValueType, isNil);
             if(isNil && (fIdentityConstraint.getCategory() == IdentityConstraint.IC_KEY)) {
                 String code = "KeyMatchesNillable";
-                fStore.reportError(code, new Object[]{fIdentityConstraint.getElementName()});
+                fStore.reportError(code,
+                    new Object[]{fIdentityConstraint.getElementName(), fIdentityConstraint.getIdentityConstraintName()});
             }
             fStore.addValue(Field.this, actualValue, convertToPrimitiveKind(valueType), convertToPrimitiveKind(itemValueType));
             // once we've stored the value for this field, we set the mayMatch

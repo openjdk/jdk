@@ -190,15 +190,15 @@ final class ParentLocationPath extends RelativeLocationPath {
         LocalVariableGen pathTemp
                 = methodGen.addLocalVariable("parent_location_path_tmp1",
                                          Util.getJCRefType(NODE_ITERATOR_SIG),
-                                         il.getEnd(), null);
-        il.append(new ASTORE(pathTemp.getIndex()));
+                                         null, null);
+        pathTemp.setStart(il.append(new ASTORE(pathTemp.getIndex())));
 
         _step.translate(classGen, methodGen);
         LocalVariableGen stepTemp
                 = methodGen.addLocalVariable("parent_location_path_tmp2",
                                          Util.getJCRefType(NODE_ITERATOR_SIG),
-                                         il.getEnd(), null);
-        il.append(new ASTORE(stepTemp.getIndex()));
+                                         null, null);
+        stepTemp.setStart(il.append(new ASTORE(stepTemp.getIndex())));
 
         // Create new StepIterator
         final int initSI = cpg.addMethodref(STEP_ITERATOR_CLASS,
@@ -210,8 +210,8 @@ final class ParentLocationPath extends RelativeLocationPath {
         il.append(new NEW(cpg.addClass(STEP_ITERATOR_CLASS)));
         il.append(DUP);
 
-        il.append(new ALOAD(pathTemp.getIndex()));
-        il.append(new ALOAD(stepTemp.getIndex()));
+        pathTemp.setEnd(il.append(new ALOAD(pathTemp.getIndex())));
+        stepTemp.setEnd(il.append(new ALOAD(stepTemp.getIndex())));
 
         // Initialize StepIterator with iterators from the stack
         il.append(new INVOKESPECIAL(initSI));

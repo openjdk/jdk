@@ -22,6 +22,7 @@ package com.sun.org.apache.xerces.internal.impl.dv;
 
 import com.sun.org.apache.xerces.internal.util.SymbolHash;
 import com.sun.org.apache.xerces.internal.xs.XSObjectList;
+import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
 
 /**
  * Defines a factory API that enables applications to <p>
@@ -39,6 +40,7 @@ import com.sun.org.apache.xerces.internal.xs.XSObjectList;
  *
  * @author Sandy Gao, IBM
  *
+ * @version $Id: SchemaDVFactory.java,v 1.6 2010-11-01 04:39:43 joehw Exp $
  */
 public abstract class SchemaDVFactory {
 
@@ -68,8 +70,7 @@ public abstract class SchemaDVFactory {
 
         try {
             // if the class name is not specified, use the default one
-            return (SchemaDVFactory)(ObjectFactory.newInstance(
-                factoryClass, ObjectFactory.findClassLoader(), true));
+            return (SchemaDVFactory)(ObjectFactory.newInstance(factoryClass, true));
         } catch (ClassCastException e4) {
             throw new DVFactoryException("Schema factory class " + factoryClass + " does not extend from SchemaDVFactory.");
         }

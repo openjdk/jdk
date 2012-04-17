@@ -365,11 +365,6 @@ protected static final String PARSER_SETTINGS =
 
     // shared context
 
-    /** Shared declared entities.
-     * XXX understand it more deeply, why are we doing this ?? Is it really required ?
-     */
-    protected Hashtable fDeclaredEntities;
-
     protected XMLEntityStorage fEntityStorage ;
 
     protected final Object [] defaultEncoding = new Object[]{"UTF-8", null};
@@ -407,24 +402,6 @@ protected static final String PARSER_SETTINGS =
         fEntityScanner = new XMLEntityScanner(propertyManager, this) ;
         reset(propertyManager);
     } // <init>()
-
-    /**
-     * Constructs an entity manager that shares the specified entity
-     * declarations during each parse.
-     * <p>
-     * <strong>REVISIT:</strong> We might want to think about the "right"
-     * way to expose the list of declared entities. For now, the knowledge
-     * how to access the entity declarations is implicit.
-     */
-    public XMLEntityManager(XMLEntityManager entityManager) {
-
-
-        // save shared entity declarations
-        fDeclaredEntities = entityManager != null
-                          ? entityManager.getEntityStore().getDeclaredEntities() : null;
-
-        setScannerVersion(Constants.XML_VERSION_1_0);
-    } // <init>(XMLEntityManager)
 
     /**
      * Adds an internal entity declaration.
@@ -1111,7 +1088,7 @@ protected static final String PARSER_SETTINGS =
     throws IOException, XNIException {
 
         // was entity declared?
-        Entity entity = (Entity)fEntityStorage.getDeclaredEntities().get(entityName);
+        Entity entity = (Entity)fEntityStorage.getEntity(entityName);
         if (entity == null) {
             if (fEntityHandler != null) {
                 String encoding = null;
@@ -1331,23 +1308,16 @@ protected static final String PARSER_SETTINGS =
             (fEntityStack.empty() ? null : fEntityStack.elementAt(0));
     }
 
-    // a list of Readers ever seen
-    protected Vector fOwnReaders = new Vector();
 
     /**
      * Close all opened InputStreams and Readers opened by this parser.
      */
     public void closeReaders() {
-        // close all readers
-        for (int i = fOwnReaders.size()-1; i >= 0; i--) {
-            try {
-                ((Reader)fOwnReaders.elementAt(i)).close();
-            } catch (IOException e) {
-                // ignore
-            }
-        }
-        // and clear the list
-        fOwnReaders.removeAllElements();
+        /** this call actually does nothing, readers are closed in the endEntity method
+         * through the current entity.
+         * The change seems to have happened during the jdk6 development with the
+         * addition of StAX
+        **/
     }
 
     public void endEntity() throws IOException, XNIException {
@@ -1360,6 +1330,20 @@ protected static final String PARSER_SETTINGS =
         }
         //pop the entity from the stack
         Entity.ScannedEntity entity = fEntityStack.size() > 0 ? (Entity.ScannedEntity)fEntityStack.pop() : null ;
+
+        /** need to close the reader first since the program can end
+         *  prematurely (e.g. fEntityHandler.endEntity may throw exception)
+         *  leaving the reader open
+         */
+        //close the reader
+        if(fCurrentEntity != null){
+            //close the reader
+            try{
+                fCurrentEntity.close();
+            }catch(IOException ex){
+                throw new XNIException(ex);
+            }
+        }
 
         if (fEntityHandler != null) {
             //so this is the last opened entity, signal it to current fEntityHandler using Augmentation
@@ -1374,16 +1358,6 @@ protected static final String PARSER_SETTINGS =
         }
         //check if it is a document entity
         boolean documentEntity = fCurrentEntity.name == XMLEntity;
-
-        //close the reader
-        if(fCurrentEntity != null){
-            //close the reader
-            try{
-                fCurrentEntity.close();
-            }catch(IOException ex){
-                throw new XNIException(ex);
-            }
-        }
 
         //set popped entity as current entity
         fCurrentEntity = entity;
@@ -1536,15 +1510,6 @@ protected static final String PARSER_SETTINGS =
             }
         }
 
-        // copy declared entities
-        if (fDeclaredEntities != null) {
-            java.util.Enumeration keys = fDeclaredEntities.keys();
-            while (keys.hasMoreElements()) {
-                Object key = keys.nextElement();
-                Object value = fDeclaredEntities.get(key);
-                fEntities.put(key, value);
-            }
-        }
         fEntityHandler = null;
 
         // reset scanner

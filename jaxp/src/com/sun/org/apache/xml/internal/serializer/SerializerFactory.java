@@ -29,6 +29,7 @@ import javax.xml.transform.OutputKeys;
 
 import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
 import com.sun.org.apache.xml.internal.serializer.utils.Utils;
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import org.xml.sax.ContentHandler;
 
 /**
@@ -126,9 +127,7 @@ public final class SerializerFactory
 
 
 
-        ClassLoader loader = ObjectFactory.findClassLoader();
-
-        Class cls = ObjectFactory.findProviderClass(className, loader, true);
+        Class cls = ObjectFactory.findProviderClass(className, true);
 
         // _serializers.put(method, cls);
 
@@ -156,7 +155,7 @@ public final class SerializerFactory
                    * SAX ContentHandler events to the users handler.
                    */
                   className = SerializerConstants.DEFAULT_SAX_SERIALIZER;
-                  cls = ObjectFactory.findProviderClass(className, loader, true);
+                  cls = ObjectFactory.findProviderClass(className, true);
                   SerializationHandler sh =
                       (SerializationHandler) cls.newInstance();
                   sh.setContentHandler( (ContentHandler) obj);

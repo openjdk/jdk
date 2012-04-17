@@ -154,6 +154,8 @@ XSLoader, DOMConfiguration {
     protected static final String SCHEMA_DV_FACTORY =
         Constants.XERCES_PROPERTY_PREFIX + Constants.SCHEMA_DV_FACTORY_PROPERTY;
 
+    protected static final String USE_SERVICE_MECHANISM = Constants.ORACLE_FEATURE_SERVICE_MECHANISM;
+
     // recognized features:
     private static final String[] RECOGNIZED_FEATURES = {
         SCHEMA_FULL_CHECKING,
@@ -166,7 +168,8 @@ XSLoader, DOMConfiguration {
         VALIDATE_ANNOTATIONS,
         HONOUR_ALL_SCHEMALOCATIONS,
         NAMESPACE_GROWTH,
-        TOLERATE_DUPLICATES
+        TOLERATE_DUPLICATES,
+        USE_SERVICE_MECHANISM
     };
 
     // property identifiers
@@ -1148,7 +1151,8 @@ XSLoader, DOMConfiguration {
                 name.equals(GENERATE_SYNTHETIC_ANNOTATIONS) ||
                 name.equals(HONOUR_ALL_SCHEMALOCATIONS) ||
                 name.equals(NAMESPACE_GROWTH) ||
-                name.equals(TOLERATE_DUPLICATES)) {
+                name.equals(TOLERATE_DUPLICATES) ||
+                name.equals(USE_SERVICE_MECHANISM)) {
                 return true;
 
             }
@@ -1227,6 +1231,7 @@ XSLoader, DOMConfiguration {
             v.add(HONOUR_ALL_SCHEMALOCATIONS);
             v.add(NAMESPACE_GROWTH);
             v.add(TOLERATE_DUPLICATES);
+            v.add(USE_SERVICE_MECHANISM);
             fRecognizedParameters = new DOMStringListImpl(v);
         }
         return fRecognizedParameters;

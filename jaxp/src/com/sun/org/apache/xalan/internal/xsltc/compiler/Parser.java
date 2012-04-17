@@ -44,6 +44,8 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
+import com.sun.org.apache.xalan.internal.utils.FactoryImpl;
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.ContentHandler;
@@ -93,8 +95,11 @@ public class Parser implements Constants, ContentHandler {
 
     private int _currentImportPrecedence;
 
-    public Parser(XSLTC xsltc) {
+    private boolean _useServicesMechanism = true;
+
+    public Parser(XSLTC xsltc, boolean useServicesMechanism) {
         _xsltc = xsltc;
+        _useServicesMechanism = useServicesMechanism;
     }
 
     public void init() {
@@ -306,17 +311,22 @@ public class Parser implements Constants, ContentHandler {
         }
         else {
             Dictionary space = (Dictionary)_namespaces.get(namespace);
+            String lexicalQName =
+                       (prefix == null || prefix.length() == 0)
+                            ? localname
+                            : (prefix + ':' + localname);
+
             if (space == null) {
                 final QName name = new QName(namespace, prefix, localname);
                 _namespaces.put(namespace, space = new Hashtable());
-                space.put(localname, name);
+                space.put(lexicalQName, name);
                 return name;
             }
             else {
-                QName name = (QName)space.get(localname);
+                QName name = (QName)space.get(lexicalQName);
                 if (name == null) {
                     name = new QName(namespace, prefix, localname);
-                    space.put(localname, name);
+                    space.put(lexicalQName, name);
                 }
                 return name;
             }
@@ -449,7 +459,7 @@ public class Parser implements Constants, ContentHandler {
     public SyntaxTreeNode parse(InputSource input) {
         try {
             // Create a SAX parser and get the XMLReader object it uses
-            final SAXParserFactory factory = SAXParserFactory.newInstance();
+            final SAXParserFactory factory = FactoryImpl.getSAXFactory(_useServicesMechanism);
 
             if (_xsltc.isSecureProcessing()) {
                 try {
@@ -918,8 +928,7 @@ public class Parser implements Constants, ContentHandler {
 
         if (className != null) {
             try {
-                final Class clazz = ObjectFactory.findProviderClass(
-                    className, ObjectFactory.findClassLoader(), true);
+                final Class clazz = ObjectFactory.findProviderClass(className, true);
                 node = (SyntaxTreeNode)clazz.newInstance();
                 node.setQName(qname);
                 node.setParser(this);
@@ -1273,7 +1282,7 @@ public class Parser implements Constants, ContentHandler {
             // handled at this point in order to correctly generate
             // Fallback elements from <xsl:fallback>s.
             getSymbolTable().setCurrentNode(element);
-            ((Stylesheet)element).excludeExtensionPrefixes(this);
+            ((Stylesheet)element).declareExtensionPrefixes(this);
         }
 
         _prefixMapping = null;

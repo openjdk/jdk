@@ -27,6 +27,7 @@ import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.ILOAD;
 import com.sun.org.apache.bcel.internal.generic.INVOKEINTERFACE;
 import com.sun.org.apache.bcel.internal.generic.ISTORE;
+import com.sun.org.apache.bcel.internal.generic.InstructionHandle;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.bcel.internal.generic.LocalVariableGen;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
@@ -77,7 +78,7 @@ final class ParentPattern extends RelativePathPattern {
         final LocalVariableGen local =
             methodGen.addLocalVariable2("ppt",
                                         Util.getJCRefType(NODE_SIG),
-                                        il.getEnd());
+                                        null);
 
         final com.sun.org.apache.bcel.internal.generic.Instruction loadLocal =
             new ILOAD(local.getIndex());
@@ -90,7 +91,7 @@ final class ParentPattern extends RelativePathPattern {
         }
         else if (_right instanceof StepPattern) {
             il.append(DUP);
-            il.append(storeLocal);
+            local.setStart(il.append(storeLocal));
 
             _right.translate(classGen, methodGen);
 
@@ -119,7 +120,11 @@ final class ParentPattern extends RelativePathPattern {
         }
         else {
             il.append(DUP);
-            il.append(storeLocal);
+            InstructionHandle storeInst = il.append(storeLocal);
+
+            if (local.getStart() == null) {
+                local.setStart(storeInst);
+            }
 
             _left.translate(classGen, methodGen);
 

@@ -27,6 +27,7 @@ import org.xml.sax.*;
 
 import javax.xml.parsers.*;
 
+import com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl;
 import com.sun.org.apache.xml.internal.resolver.*;
 
 /**
@@ -43,6 +44,7 @@ import com.sun.org.apache.xml.internal.resolver.*;
  * @author Norman Walsh
  * <a href="mailto:Norman.Walsh@Sun.COM">Norman.Walsh@Sun.COM</a>
  *
+ * @version 1.0
  */
 public class ResolvingXMLReader extends ResolvingXMLFilter {
   /** Make the parser Namespace aware? */
@@ -60,7 +62,8 @@ public class ResolvingXMLReader extends ResolvingXMLFilter {
    */
   public ResolvingXMLReader() {
     super();
-    SAXParserFactory spf = SAXParserFactory.newInstance();
+    SAXParserFactory spf = catalogManager.useServicesMechanism() ?
+                    SAXParserFactory.newInstance() : new SAXParserFactoryImpl();
     spf.setNamespaceAware(namespaceAware);
     spf.setValidating(validating);
     try {
@@ -80,7 +83,8 @@ public class ResolvingXMLReader extends ResolvingXMLFilter {
    */
   public ResolvingXMLReader(CatalogManager manager) {
     super(manager);
-    SAXParserFactory spf = SAXParserFactory.newInstance();
+    SAXParserFactory spf = catalogManager.useServicesMechanism() ?
+                    SAXParserFactory.newInstance() : new SAXParserFactoryImpl();
     spf.setNamespaceAware(namespaceAware);
     spf.setValidating(validating);
     try {

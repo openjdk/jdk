@@ -66,6 +66,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
 import com.sun.org.apache.xerces.internal.xpointer.XPointerHandler;
 import com.sun.org.apache.xerces.internal.xpointer.XPointerProcessor;
+import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
 
 /**
  * <p>
@@ -111,6 +112,7 @@ import com.sun.org.apache.xerces.internal.xpointer.XPointerProcessor;
  * @author Peter McCracken, IBM
  * @author Michael Glavassevich, IBM
  *
+ * @version $Id: XIncludeHandler.java,v 1.7 2010-11-01 04:40:18 joehw Exp $
  *
  * @see XIncludeNamespaceSupport
  */
@@ -943,7 +945,8 @@ public class XIncludeHandler
                 setState(STATE_IGNORE);
             }
             else {
-                reportFatalError("NoFallback");
+                reportFatalError("NoFallback",
+                    new Object[] { attributes.getValue(null, "href") });
             }
         }
         else if (isFallbackElement(element)) {
@@ -1001,7 +1004,8 @@ public class XIncludeHandler
             // we check to see if the children of this include element contained a fallback
             if (getState() == STATE_EXPECT_FALLBACK
                 && !getSawFallback(fDepth + 1)) {
-                reportFatalError("NoFallback");
+                reportFatalError("NoFallback",
+                    new Object[] { "unknown" });
             }
         }
         if (isFallbackElement(element)) {
@@ -1567,7 +1571,6 @@ public class XIncludeHandler
                 fChildConfig =
                     (XMLParserConfiguration)ObjectFactory.newInstance(
                         parserName,
-                        ObjectFactory.findClassLoader(),
                         true);
 
                 // use the same symbol table, error reporter, entity resolver, security manager and buffer size.

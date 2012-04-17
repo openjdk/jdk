@@ -108,10 +108,10 @@ final class TestSeq {
                 (LocationPathPattern) _patterns.elementAt(i);
 
             if (i == 0) {
-                result.append("Testseq for kernel " + _kernelType)
+                result.append("Testseq for kernel ").append(_kernelType)
                       .append('\n');
             }
-            result.append("   pattern " + i + ": ")
+            result.append("   pattern ").append(i).append(": ")
                   .append(pattern.toString())
                   .append('\n');
         }

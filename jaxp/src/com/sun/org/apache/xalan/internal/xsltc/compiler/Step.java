@@ -447,20 +447,24 @@ final class Step extends RelativeLocationPath {
                 LocalVariableGen iteratorTemp
                         = methodGen.addLocalVariable("step_tmp1",
                                          Util.getJCRefType(NODE_ITERATOR_SIG),
-                                         il.getEnd(), null);
-                il.append(new ASTORE(iteratorTemp.getIndex()));
+                                         null, null);
+                iteratorTemp.setStart(
+                        il.append(new ASTORE(iteratorTemp.getIndex())));
 
                 predicate.translate(classGen, methodGen);
                 LocalVariableGen predicateValueTemp
                         = methodGen.addLocalVariable("step_tmp2",
                                          Util.getJCRefType("I"),
-                                         il.getEnd(), null);
-                il.append(new ISTORE(predicateValueTemp.getIndex()));
+                                         null, null);
+                predicateValueTemp.setStart(
+                        il.append(new ISTORE(predicateValueTemp.getIndex())));
 
                 il.append(new NEW(cpg.addClass(NTH_ITERATOR_CLASS)));
                 il.append(DUP);
-                il.append(new ALOAD(iteratorTemp.getIndex()));
-                il.append(new ILOAD(predicateValueTemp.getIndex()));
+                iteratorTemp.setEnd(
+                        il.append(new ALOAD(iteratorTemp.getIndex())));
+                predicateValueTemp.setEnd(
+                        il.append(new ILOAD(predicateValueTemp.getIndex())));
                 il.append(new INVOKESPECIAL(idx));
             }
             else {
@@ -486,22 +490,24 @@ final class Step extends RelativeLocationPath {
                 LocalVariableGen iteratorTemp
                         = methodGen.addLocalVariable("step_tmp1",
                                          Util.getJCRefType(NODE_ITERATOR_SIG),
-                                         il.getEnd(), null);
-                il.append(new ASTORE(iteratorTemp.getIndex()));
+                                         null, null);
+                iteratorTemp.setStart(
+                        il.append(new ASTORE(iteratorTemp.getIndex())));
 
                 predicate.translateFilter(classGen, methodGen);
                 LocalVariableGen filterTemp
                         = methodGen.addLocalVariable("step_tmp2",
                               Util.getJCRefType(CURRENT_NODE_LIST_FILTER_SIG),
-                              il.getEnd(), null);
-                il.append(new ASTORE(filterTemp.getIndex()));
-
+                              null, null);
+                filterTemp.setStart(
+                        il.append(new ASTORE(filterTemp.getIndex())));
                 // create new CurrentNodeListIterator
                 il.append(new NEW(cpg.addClass(CURRENT_NODE_LIST_ITERATOR)));
                 il.append(DUP);
 
-                il.append(new ALOAD(iteratorTemp.getIndex()));
-                il.append(new ALOAD(filterTemp.getIndex()));
+                iteratorTemp.setEnd(
+                        il.append(new ALOAD(iteratorTemp.getIndex())));
+                filterTemp.setEnd(il.append(new ALOAD(filterTemp.getIndex())));
 
                 il.append(methodGen.loadCurrentNode());
                 il.append(classGen.loadTranslet());
