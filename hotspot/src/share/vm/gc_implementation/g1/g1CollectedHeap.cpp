@@ -4064,7 +4064,6 @@ void G1CollectedHeap::finalize_for_evac_failure() {
 
 void G1CollectedHeap::remove_self_forwarding_pointers() {
   assert(check_cset_heap_region_claim_values(HeapRegion::InitialClaimValue), "sanity");
-  assert(g1_policy()->assertMarkedBytesDataOK(), "Should be!");
 
   G1ParRemoveSelfForwardPtrsTask rsfp_task(this);
 
@@ -4082,7 +4081,6 @@ void G1CollectedHeap::remove_self_forwarding_pointers() {
   reset_cset_heap_region_claim_values();
 
   assert(check_cset_heap_region_claim_values(HeapRegion::InitialClaimValue), "sanity");
-  assert(g1_policy()->assertMarkedBytesDataOK(), "Should be!");
 
   // Now restore saved marks, if any.
   if (_objs_with_preserved_marks != NULL) {

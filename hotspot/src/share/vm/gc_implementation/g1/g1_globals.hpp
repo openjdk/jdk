@@ -127,9 +127,6 @@
             "Prints the liveness information for all regions in the heap "  \
             "at the end of a marking cycle.")                               \
                                                                             \
-  develop(bool, G1PrintParCleanupStats, false,                              \
-          "When true, print extra stats about parallel cleanup.")           \
-                                                                            \
   product(intx, G1UpdateBufferSize, 256,                                    \
           "Size of an update buffer")                                       \
                                                                             \

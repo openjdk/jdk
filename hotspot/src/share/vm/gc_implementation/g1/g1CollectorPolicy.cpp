@@ -192,11 +192,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _in_marking_window(false),
   _in_marking_window_im(false),
 
-  _known_garbage_ratio(0.0),
-  _known_garbage_bytes(0),
-
-  _young_gc_eff_seq(new TruncatedSeq(TruncatedSeqLength)),
-
   _recent_prev_end_times_for_all_gcs_sec(
                                 new TruncatedSeq(NumPrevPausesForHeuristics)),
 
@@ -868,8 +863,6 @@ void G1CollectorPolicy::record_full_collection_end() {
   _last_young_gc = false;
   clear_initiate_conc_mark_if_possible();
   clear_during_initial_mark_pause();
-  _known_garbage_bytes = 0;
-  _known_garbage_ratio = 0.0;
   _in_marking_window = false;
   _in_marking_window_im = false;
 
@@ -882,7 +875,7 @@ void G1CollectorPolicy::record_full_collection_end() {
   // Reset survivors SurvRateGroup.
   _survivor_surv_rate_group->reset();
   update_young_list_target_length();
-  _collectionSetChooser->clearMarkedHeapRegions();
+  _collectionSetChooser->clear();
 }
 
 void G1CollectorPolicy::record_stop_world_start() {
@@ -1456,16 +1449,6 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     }
   }
 
-  // Update the efficiency-since-mark vars.
-  double proc_ms = elapsed_ms * (double) _parallel_gc_threads;
-  if (elapsed_ms < MIN_TIMER_GRANULARITY) {
-    // This usually happens due to the timer not having the required
-    // granularity. Some Linuxes are the usual culprits.
-    // We'll just set it to something (arbitrarily) small.
-    proc_ms = 1.0;
-  }
-  double cur_efficiency = (double) freed_bytes / proc_ms;
-
   bool new_in_marking_window = _in_marking_window;
   bool new_in_marking_window_im = false;
   if (during_initial_mark_pause()) {
@@ -1498,10 +1481,6 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
                                  "do not continue mixed GCs")) {
       set_gcs_are_young(true);
     }
-  }
-
-  if (_last_gc_was_young && !_during_marking) {
-    _young_gc_eff_seq->add(cur_efficiency);
   }
 
   _short_lived_surv_rate_group->start_adding_regions();
@@ -1618,7 +1597,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
   double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
   adjust_concurrent_refinement(update_rs_time, update_rs_processed_buffers, update_rs_time_goal_ms);
 
-  assert(assertMarkedBytesDataOK(), "Marked regions not OK at pause end.");
+  _collectionSetChooser->verify();
 }
 
 #define EXT_SIZE_FORMAT "%d%s"
@@ -2065,28 +2044,6 @@ void G1CollectorPolicy::update_survivors_policy() {
         HeapRegion::GrainWords * _max_survivor_regions);
 }
 
-#ifndef PRODUCT
-class HRSortIndexIsOKClosure: public HeapRegionClosure {
-  CollectionSetChooser* _chooser;
-public:
-  HRSortIndexIsOKClosure(CollectionSetChooser* chooser) :
-    _chooser(chooser) {}
-
-  bool doHeapRegion(HeapRegion* r) {
-    if (!r->continuesHumongous()) {
-      assert(_chooser->regionProperlyOrdered(r), "Ought to be.");
-    }
-    return false;
-  }
-};
-
-bool G1CollectorPolicy::assertMarkedBytesDataOK() {
-  HRSortIndexIsOKClosure cl(_collectionSetChooser);
-  _g1->heap_region_iterate(&cl);
-  return true;
-}
-#endif
-
 bool G1CollectorPolicy::force_initial_mark_if_outside_cycle(
                                                      GCCause::Cause gc_cause) {
   bool during_cycle = _g1->concurrent_mark()->cmThread()->during_cycle();
@@ -2184,8 +2141,8 @@ public:
       // We will skip any region that's currently used as an old GC
       // alloc region (we should not consider those for collection
       // before we fill them up).
-      if (_hrSorted->shouldAdd(r) && !_g1h->is_old_gc_alloc_region(r)) {
-        _hrSorted->addMarkedHeapRegion(r);
+      if (_hrSorted->should_add(r) && !_g1h->is_old_gc_alloc_region(r)) {
+        _hrSorted->add_region(r);
       }
     }
     return false;
@@ -2195,16 +2152,14 @@ public:
 class ParKnownGarbageHRClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   CollectionSetChooser* _hrSorted;
-  jint _marked_regions_added;
+  uint _marked_regions_added;
   size_t _reclaimable_bytes_added;
-  jint _chunk_size;
-  jint _cur_chunk_idx;
-  jint _cur_chunk_end; // Cur chunk [_cur_chunk_idx, _cur_chunk_end)
-  int _worker;
-  int _invokes;
+  uint _chunk_size;
+  uint _cur_chunk_idx;
+  uint _cur_chunk_end; // Cur chunk [_cur_chunk_idx, _cur_chunk_end)
 
   void get_new_chunk() {
-    _cur_chunk_idx = _hrSorted->getParMarkedHeapRegionChunk(_chunk_size);
+    _cur_chunk_idx = _hrSorted->claim_array_chunk(_chunk_size);
     _cur_chunk_end = _cur_chunk_idx + _chunk_size;
   }
   void add_region(HeapRegion* r) {
@@ -2212,7 +2167,7 @@ class ParKnownGarbageHRClosure: public HeapRegionClosure {
       get_new_chunk();
     }
     assert(_cur_chunk_idx < _cur_chunk_end, "postcondition");
-    _hrSorted->setMarkedHeapRegion(_cur_chunk_idx, r);
+    _hrSorted->set_region(_cur_chunk_idx, r);
     _marked_regions_added++;
     _reclaimable_bytes_added += r->reclaimable_bytes();
     _cur_chunk_idx++;
@@ -2220,78 +2175,55 @@ class ParKnownGarbageHRClosure: public HeapRegionClosure {
 
 public:
   ParKnownGarbageHRClosure(CollectionSetChooser* hrSorted,
-                           jint chunk_size,
-                           int worker) :
+                           uint chunk_size) :
       _g1h(G1CollectedHeap::heap()),
-      _hrSorted(hrSorted), _chunk_size(chunk_size), _worker(worker),
+      _hrSorted(hrSorted), _chunk_size(chunk_size),
       _marked_regions_added(0), _reclaimable_bytes_added(0),
-      _cur_chunk_idx(0), _cur_chunk_end(0), _invokes(0) { }
+      _cur_chunk_idx(0), _cur_chunk_end(0) { }
 
   bool doHeapRegion(HeapRegion* r) {
-    // We only include humongous regions in collection
-    // sets when concurrent mark shows that their contained object is
-    // unreachable.
-    _invokes++;
-
     // Do we have any marking information for this region?
     if (r->is_marked()) {
       // We will skip any region that's currently used as an old GC
       // alloc region (we should not consider those for collection
       // before we fill them up).
-      if (_hrSorted->shouldAdd(r) && !_g1h->is_old_gc_alloc_region(r)) {
+      if (_hrSorted->should_add(r) && !_g1h->is_old_gc_alloc_region(r)) {
         add_region(r);
       }
     }
     return false;
   }
-  jint marked_regions_added() { return _marked_regions_added; }
+  uint marked_regions_added() { return _marked_regions_added; }
   size_t reclaimable_bytes_added() { return _reclaimable_bytes_added; }
-  int invokes() { return _invokes; }
 };
 
 class ParKnownGarbageTask: public AbstractGangTask {
   CollectionSetChooser* _hrSorted;
-  jint _chunk_size;
+  uint _chunk_size;
   G1CollectedHeap* _g1;
 public:
-  ParKnownGarbageTask(CollectionSetChooser* hrSorted, jint chunk_size) :
+  ParKnownGarbageTask(CollectionSetChooser* hrSorted, uint chunk_size) :
     AbstractGangTask("ParKnownGarbageTask"),
     _hrSorted(hrSorted), _chunk_size(chunk_size),
     _g1(G1CollectedHeap::heap()) { }
 
   void work(uint worker_id) {
-    ParKnownGarbageHRClosure parKnownGarbageCl(_hrSorted,
-                                               _chunk_size,
-                                               worker_id);
+    ParKnownGarbageHRClosure parKnownGarbageCl(_hrSorted, _chunk_size);
+
     // Back to zero for the claim value.
     _g1->heap_region_par_iterate_chunked(&parKnownGarbageCl, worker_id,
                                          _g1->workers()->active_workers(),
                                          HeapRegion::InitialClaimValue);
-    jint regions_added = parKnownGarbageCl.marked_regions_added();
+    uint regions_added = parKnownGarbageCl.marked_regions_added();
     size_t reclaimable_bytes_added =
                                    parKnownGarbageCl.reclaimable_bytes_added();
-    _hrSorted->updateTotals(regions_added, reclaimable_bytes_added);
-    if (G1PrintParCleanupStats) {
-      gclog_or_tty->print_cr("     Thread %d called %d times, added %d regions to list.",
-                 worker_id, parKnownGarbageCl.invokes(), regions_added);
-    }
+    _hrSorted->update_totals(regions_added, reclaimable_bytes_added);
   }
 };
 
 void
 G1CollectorPolicy::record_concurrent_mark_cleanup_end(int no_of_gc_threads) {
-  double start_sec;
-  if (G1PrintParCleanupStats) {
-    start_sec = os::elapsedTime();
-  }
-
-  _collectionSetChooser->clearMarkedHeapRegions();
-  double clear_marked_end_sec;
-  if (G1PrintParCleanupStats) {
-    clear_marked_end_sec = os::elapsedTime();
-    gclog_or_tty->print_cr("  clear marked regions: %8.3f ms.",
-                           (clear_marked_end_sec - start_sec) * 1000.0);
-  }
+  _collectionSetChooser->clear();
 
   uint region_num = _g1->n_regions();
   if (G1CollectedHeap::use_parallel_gc_threads()) {
@@ -2314,8 +2246,8 @@ G1CollectorPolicy::record_concurrent_mark_cleanup_end(int no_of_gc_threads) {
         MAX2(region_num / (uint) (ParallelGCThreads * OverpartitionFactor),
              MinWorkUnit);
     }
-    _collectionSetChooser->prepareForAddMarkedHeapRegionsPar(_g1->n_regions(),
-                                                             WorkUnit);
+    _collectionSetChooser->prepare_for_par_region_addition(_g1->n_regions(),
+                                                           WorkUnit);
     ParKnownGarbageTask parKnownGarbageTask(_collectionSetChooser,
                                             (int) WorkUnit);
     _g1->workers()->run_task(&parKnownGarbageTask);
@@ -2326,20 +2258,10 @@ G1CollectorPolicy::record_concurrent_mark_cleanup_end(int no_of_gc_threads) {
     KnownGarbageClosure knownGarbagecl(_collectionSetChooser);
     _g1->heap_region_iterate(&knownGarbagecl);
   }
-  double known_garbage_end_sec;
-  if (G1PrintParCleanupStats) {
-    known_garbage_end_sec = os::elapsedTime();
-    gclog_or_tty->print_cr("  compute known garbage: %8.3f ms.",
-                      (known_garbage_end_sec - clear_marked_end_sec) * 1000.0);
-  }
 
-  _collectionSetChooser->sortMarkedHeapRegions();
+  _collectionSetChooser->sort_regions();
+
   double end_sec = os::elapsedTime();
-  if (G1PrintParCleanupStats) {
-    gclog_or_tty->print_cr("  sorting: %8.3f ms.",
-                           (end_sec - known_garbage_end_sec) * 1000.0);
-  }
-
   double elapsed_time_ms = (end_sec - _mark_cleanup_start_sec) * 1000.0;
   _concurrent_mark_cleanup_times_ms->add(elapsed_time_ms);
   _cur_mark_stop_world_time_ms += elapsed_time_ms;
@@ -2555,13 +2477,13 @@ void G1CollectorPolicy::print_collection_set(HeapRegion* list_head, outputStream
 bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
                                                 const char* false_action_str) {
   CollectionSetChooser* cset_chooser = _collectionSetChooser;
-  if (cset_chooser->isEmpty()) {
+  if (cset_chooser->is_empty()) {
     ergo_verbose0(ErgoMixedGCs,
                   false_action_str,
                   ergo_format_reason("candidate old regions not available"));
     return false;
   }
-  size_t reclaimable_bytes = cset_chooser->remainingReclaimableBytes();
+  size_t reclaimable_bytes = cset_chooser->remaining_reclaimable_bytes();
   size_t capacity_bytes = _g1->capacity();
   double perc = (double) reclaimable_bytes * 100.0 / (double) capacity_bytes;
   double threshold = (double) G1HeapWastePercent;
@@ -2572,7 +2494,7 @@ bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
               ergo_format_region("candidate old regions")
               ergo_format_byte_perc("reclaimable")
               ergo_format_perc("threshold"),
-              cset_chooser->remainingRegions(),
+              cset_chooser->remaining_regions(),
               reclaimable_bytes, perc, threshold);
     return false;
   }
@@ -2583,7 +2505,7 @@ bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
                 ergo_format_region("candidate old regions")
                 ergo_format_byte_perc("reclaimable")
                 ergo_format_perc("threshold"),
-                cset_chooser->remainingRegions(),
+                cset_chooser->remaining_regions(),
                 reclaimable_bytes, perc, threshold);
   return true;
 }
@@ -2666,9 +2588,9 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
 
   if (!gcs_are_young()) {
     CollectionSetChooser* cset_chooser = _collectionSetChooser;
-    assert(cset_chooser->verify(), "CSet Chooser verification - pre");
-    const uint min_old_cset_length = cset_chooser->calcMinOldCSetLength();
-    const uint max_old_cset_length = cset_chooser->calcMaxOldCSetLength();
+    cset_chooser->verify();
+    const uint min_old_cset_length = cset_chooser->calc_min_old_cset_length();
+    const uint max_old_cset_length = cset_chooser->calc_max_old_cset_length();
 
     uint expensive_region_num = 0;
     bool check_time_remaining = adaptive_young_list_length();
@@ -2755,7 +2677,7 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
                     time_remaining_ms);
     }
 
-    assert(cset_chooser->verify(), "CSet Chooser verification - post");
+    cset_chooser->verify();
   }
 
   stop_incremental_cset_building();

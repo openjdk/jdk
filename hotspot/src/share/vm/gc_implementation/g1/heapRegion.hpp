@@ -281,12 +281,8 @@ class HeapRegion: public G1OffsetTableContigSpace {
   size_t _prev_marked_bytes;    // Bytes known to be live via last completed marking.
   size_t _next_marked_bytes;    // Bytes known to be live via in-progress marking.
 
-  // See "sort_index" method.  -1 means is not in the array.
-  int _sort_index;
-
-  // <PREDICTION>
+  // The calculated GC efficiency of the region.
   double _gc_efficiency;
-  // </PREDICTION>
 
   enum YoungType {
     NotYoung,                   // a region is not young
@@ -628,16 +624,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // Returns "false" iff no object in the region was allocated when the
   // last mark phase ended.
   bool is_marked() { return _prev_top_at_mark_start != bottom(); }
-
-  // If "is_marked()" is true, then this is the index of the region in
-  // an array constructed at the end of marking of the regions in a
-  // "desirability" order.
-  int sort_index() {
-    return _sort_index;
-  }
-  void set_sort_index(int i) {
-    _sort_index = i;
-  }
 
   void init_top_at_conc_mark_count() {
     _top_at_conc_mark_count = bottom();

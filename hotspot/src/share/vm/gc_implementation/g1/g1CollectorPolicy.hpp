@@ -288,8 +288,6 @@ private:
 
   TruncatedSeq* _cost_per_byte_ms_during_cm_seq;
 
-  TruncatedSeq* _young_gc_eff_seq;
-
   G1YoungGenSizer* _young_gen_sizer;
 
   uint _eden_cset_region_length;
@@ -314,9 +312,6 @@ private:
   double _sigma;
 
   size_t _rs_lengths_prediction;
-
-  size_t _known_garbage_bytes;
-  double _known_garbage_ratio;
 
   double sigma() { return _sigma; }
 
@@ -509,10 +504,6 @@ public:
     _recorded_non_young_free_cset_time_ms = time_ms;
   }
 
-  double predict_young_gc_eff() {
-    return get_new_neg_prediction(_young_gc_eff_seq);
-  }
-
   double predict_survivor_regions_evac_time();
 
   void cset_regions_freed() {
@@ -520,20 +511,6 @@ public:
     _short_lived_surv_rate_group->all_surviving_words_recorded(propagate);
     _survivor_surv_rate_group->all_surviving_words_recorded(propagate);
     // also call it on any more surv rate groups
-  }
-
-  void set_known_garbage_bytes(size_t known_garbage_bytes) {
-    _known_garbage_bytes = known_garbage_bytes;
-    size_t heap_bytes = _g1->capacity();
-    _known_garbage_ratio = (double) _known_garbage_bytes / (double) heap_bytes;
-  }
-
-  void decrease_known_garbage_bytes(size_t known_garbage_bytes) {
-    guarantee( _known_garbage_bytes >= known_garbage_bytes, "invariant" );
-
-    _known_garbage_bytes -= known_garbage_bytes;
-    size_t heap_bytes = _g1->capacity();
-    _known_garbage_ratio = (double) _known_garbage_bytes / (double) heap_bytes;
   }
 
   G1MMUTracker* mmu_tracker() {
@@ -1026,12 +1003,6 @@ public:
   // exceeded the desired limit, return an amount to expand by.
   size_t expansion_amount();
 
-#ifndef PRODUCT
-  // Check any appropriate marked bytes info, asserting false if
-  // something's wrong, else returning "true".
-  bool assertMarkedBytesDataOK();
-#endif
-
   // Print tracing information.
   void print_tracing_info() const;
 
@@ -1072,19 +1043,6 @@ public:
 
   bool adaptive_young_list_length() {
     return _young_gen_sizer->adaptive_young_list_length();
-  }
-
-  inline double get_gc_eff_factor() {
-    double ratio = _known_garbage_ratio;
-
-    double square = ratio * ratio;
-    // square = square * square;
-    double ret = square * 9.0 + 1.0;
-#if 0
-    gclog_or_tty->print_cr("ratio = %1.2lf, ret = %1.2lf", ratio, ret);
-#endif // 0
-    guarantee(0.0 <= ret && ret < 10.0, "invariant!");
-    return ret;
   }
 
 private:
