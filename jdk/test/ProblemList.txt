@@ -161,6 +161,26 @@ demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
 # Need to be marked othervm, or changed to be samevm safe
 com/sun/jndi/rmi/registry/RegistryContext/UnbindIdempotent.java generic-all
 
+# 7162111
+demo/jvmti/mtrace/TraceJFrame.java                              macosx-all
+javax/script/CauseExceptionTest.java                            macosx-all
+javax/script/GetInterfaceTest.java                              macosx-all
+javax/script/JavaScriptScopeTest.java                           macosx-all
+javax/script/NullUndefinedVarTest.java                          macosx-all
+javax/script/PluggableContextTest.java                          macosx-all
+javax/script/ProviderTest.sh                                    macosx-all
+javax/script/RhinoExceptionTest.java                            macosx-all
+javax/script/StringWriterPrintTest.java                         macosx-all
+javax/script/Test1.java                                         macosx-all
+javax/script/Test2.java                                         macosx-all
+javax/script/Test3.java                                         macosx-all
+javax/script/Test4.java                                         macosx-all
+javax/script/Test5.java                                         macosx-all
+javax/script/Test6.java                                         macosx-all
+javax/script/Test7.java                                         macosx-all
+javax/script/Test8.java                                         macosx-all
+javax/script/UnescapedBracketRegExTest.java                     macosx-all
+javax/script/VersionTest.java                                   macosx-all
 ############################################################################
 
 # jdk_net
@@ -202,6 +222,8 @@ java/net/DatagramSocket/SendDatagramToBadAddress.java            macosx-all
 sun/net/www/protocol/http/B6299712.java                         macosx-all
 java/net/CookieHandler/CookieManagerTest.java                   macosx-all
 
+# JPRT needs to set 127.0.0.1 in proxy bypass list
+java/net/URLClassLoader/closetest/CloseTest.java                macosx-all
 ############################################################################
 
 # jdk_io
