@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,35 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 6286011 6330315
- * @summary Verify that appropriate SelectorProvider is selected.
+/*
+ * Portions Copyright (c) 2012 IBM Corporation
  */
 
-import java.nio.channels.spi.*;
+/* @test
+ * @bug 6610897
+ * @summary New constructor in sun.tools.java.ClassPath builds a path using
+ *          File.separator instead of File.pathSeparator
+ * @run main RMICClassPathTest
+ */
 
-public class SelProvider {
+import java.io.File;
+
+import sun.rmi.rmic.BatchEnvironment;
+
+public class RMICClassPathTest {
     public static void main(String[] args) throws Exception {
-        String osname = System.getProperty("os.name");
-        String osver = System.getProperty("os.version");
-        String spName = SelectorProvider.provider().getClass().getName();
-        String expected = null;
-        if ("SunOS".equals(osname)) {
-            expected = "sun.nio.ch.DevPollSelectorProvider";
-        } else if ("Linux".equals(osname)) {
-            expected = "sun.nio.ch.EPollSelectorProvider";
-        } else if (osname.startsWith("Mac OS")) {
-            expected = "sun.nio.ch.KQueueSelectorProvider";
-        } else
-            return;
-        if (!spName.equals(expected))
-            throw new Exception("failed");
+        String sysPath = "/home/~user/jdk/jre/lib/rt.jar";
+        String extDir = "";
+        String clPath = "/home/~user/user.jar" + File.pathSeparator +
+            "/home/~user/user2.jar" + File.pathSeparator +
+            "/home/~user/user3.jar";
+
+        String cpStr = BatchEnvironment.createClassPath(clPath, sysPath, extDir).toString();
+
+        String[] paths = cpStr.split(File.pathSeparator);
+
+        if (paths.length != 4) {
+            throw new Exception("ClassPath length is not correct: the expected length is 4 and the actual length is " + paths.length);
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,36 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 6286011 6330315
- * @summary Verify that appropriate SelectorProvider is selected.
+/* @test
+   @bug 7156873
+   @summary ZipFileSystem regression tests
  */
 
-import java.nio.channels.spi.*;
 
-public class SelProvider {
-    public static void main(String[] args) throws Exception {
-        String osname = System.getProperty("os.name");
-        String osver = System.getProperty("os.version");
-        String spName = SelectorProvider.provider().getClass().getName();
-        String expected = null;
-        if ("SunOS".equals(osname)) {
-            expected = "sun.nio.ch.DevPollSelectorProvider";
-        } else if ("Linux".equals(osname)) {
-            expected = "sun.nio.ch.EPollSelectorProvider";
-        } else if (osname.startsWith("Mac OS")) {
-            expected = "sun.nio.ch.KQueueSelectorProvider";
-        } else
-            return;
-        if (!spName.equals(expected))
-            throw new Exception("failed");
+import java.net.URI;
+import java.nio.file.*;
+import java.util.Map;
+import java.util.HashMap;
+
+public class ZFSTests {
+
+    public static void main(String[] args) throws Throwable {
+        test7156873();
+    }
+
+    static void test7156873() throws Throwable {
+        String DIRWITHSPACE = "testdir with spaces";
+        Path dir = Paths.get(DIRWITHSPACE);
+        Path path = Paths.get(DIRWITHSPACE, "file.zip");
+        try {
+            Files.createDirectory(dir);
+            URI uri = URI.create("jar:" + path.toUri());
+            Map<String, Object> env = new HashMap<String, Object>();
+            env.put("create", "true");
+            try (FileSystem fs = FileSystems.newFileSystem(uri, env)) {}
+        } finally {
+            Files.deleteIfExists(path);
+            Files.deleteIfExists(dir);
+        }
     }
 }

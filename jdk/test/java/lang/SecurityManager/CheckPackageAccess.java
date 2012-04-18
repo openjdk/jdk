@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,27 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 6286011 6330315
- * @summary Verify that appropriate SelectorProvider is selected.
+ * @bug 7146431
+ * @summary Test that internal JAXP packages cannot be accessed
  */
 
-import java.nio.channels.spi.*;
+public class CheckPackageAccess {
 
-public class SelProvider {
     public static void main(String[] args) throws Exception {
-        String osname = System.getProperty("os.name");
-        String osver = System.getProperty("os.version");
-        String spName = SelectorProvider.provider().getClass().getName();
-        String expected = null;
-        if ("SunOS".equals(osname)) {
-            expected = "sun.nio.ch.DevPollSelectorProvider";
-        } else if ("Linux".equals(osname)) {
-            expected = "sun.nio.ch.EPollSelectorProvider";
-        } else if (osname.startsWith("Mac OS")) {
-            expected = "sun.nio.ch.KQueueSelectorProvider";
-        } else
-            return;
-        if (!spName.equals(expected))
-            throw new Exception("failed");
+
+        String[] pkgs = new String[] {
+            "com.sun.org.apache.xerces.internal.utils.",
+            "com.sun.org.apache.xalan.internal.utils." };
+        SecurityManager sm = new SecurityManager();
+        System.setSecurityManager(sm);
+        for (String pkg : pkgs) {
+            System.out.println("Checking package access for " + pkg);
+            try {
+                sm.checkPackageAccess(pkg);
+                throw new Exception("Expected SecurityException not thrown");
+            } catch (SecurityException se) { }
+        }
     }
 }
