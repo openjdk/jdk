@@ -128,19 +128,19 @@ private:
     SizerNewRatio
   };
   SizerKind _sizer_kind;
-  size_t _min_desired_young_length;
-  size_t _max_desired_young_length;
+  uint _min_desired_young_length;
+  uint _max_desired_young_length;
   bool _adaptive_size;
-  size_t calculate_default_min_length(size_t new_number_of_heap_regions);
-  size_t calculate_default_max_length(size_t new_number_of_heap_regions);
+  uint calculate_default_min_length(uint new_number_of_heap_regions);
+  uint calculate_default_max_length(uint new_number_of_heap_regions);
 
 public:
   G1YoungGenSizer();
-  void heap_size_changed(size_t new_number_of_heap_regions);
-  size_t min_desired_young_length() {
+  void heap_size_changed(uint new_number_of_heap_regions);
+  uint min_desired_young_length() {
     return _min_desired_young_length;
   }
-  size_t max_desired_young_length() {
+  uint max_desired_young_length() {
     return _max_desired_young_length;
   }
   bool adaptive_young_list_length() {
@@ -175,7 +175,7 @@ private:
 
   double _cur_collection_start_sec;
   size_t _cur_collection_pause_used_at_start_bytes;
-  size_t _cur_collection_pause_used_regions_at_start;
+  uint   _cur_collection_pause_used_regions_at_start;
   double _cur_collection_par_time_ms;
 
   double _cur_collection_code_root_fixup_time_ms;
@@ -233,13 +233,13 @@ private:
   // indicates whether we are in young or mixed GC mode
   bool _gcs_are_young;
 
-  size_t _young_list_target_length;
-  size_t _young_list_fixed_length;
+  uint _young_list_target_length;
+  uint _young_list_fixed_length;
   size_t _prev_eden_capacity; // used for logging
 
   // The max number of regions we can extend the eden by while the GC
   // locker is active. This should be >= _young_list_target_length;
-  size_t _young_list_max_length;
+  uint _young_list_max_length;
 
   bool                  _last_gc_was_young;
 
@@ -257,7 +257,7 @@ private:
   double                _gc_overhead_perc;
 
   double _reserve_factor;
-  size_t _reserve_regions;
+  uint _reserve_regions;
 
   bool during_marking() {
     return _during_marking;
@@ -292,18 +292,18 @@ private:
 
   G1YoungGenSizer* _young_gen_sizer;
 
-  size_t _eden_cset_region_length;
-  size_t _survivor_cset_region_length;
-  size_t _old_cset_region_length;
+  uint _eden_cset_region_length;
+  uint _survivor_cset_region_length;
+  uint _old_cset_region_length;
 
-  void init_cset_region_lengths(size_t eden_cset_region_length,
-                                size_t survivor_cset_region_length);
+  void init_cset_region_lengths(uint eden_cset_region_length,
+                                uint survivor_cset_region_length);
 
-  size_t eden_cset_region_length()     { return _eden_cset_region_length;     }
-  size_t survivor_cset_region_length() { return _survivor_cset_region_length; }
-  size_t old_cset_region_length()      { return _old_cset_region_length;      }
+  uint eden_cset_region_length()     { return _eden_cset_region_length;     }
+  uint survivor_cset_region_length() { return _survivor_cset_region_length; }
+  uint old_cset_region_length()      { return _old_cset_region_length;      }
 
-  size_t _free_regions_at_end_of_collection;
+  uint _free_regions_at_end_of_collection;
 
   size_t _recorded_rs_lengths;
   size_t _max_rs_lengths;
@@ -496,10 +496,10 @@ public:
 
   void set_recorded_rs_lengths(size_t rs_lengths);
 
-  size_t cset_region_length()       { return young_cset_region_length() +
-                                             old_cset_region_length(); }
-  size_t young_cset_region_length() { return eden_cset_region_length() +
-                                             survivor_cset_region_length(); }
+  uint cset_region_length()       { return young_cset_region_length() +
+                                           old_cset_region_length(); }
+  uint young_cset_region_length() { return eden_cset_region_length() +
+                                           survivor_cset_region_length(); }
 
   void record_young_free_cset_time_ms(double time_ms) {
     _recorded_young_free_cset_time_ms = time_ms;
@@ -720,12 +720,12 @@ private:
   // Calculate and return the minimum desired young list target
   // length. This is the minimum desired young list length according
   // to the user's inputs.
-  size_t calculate_young_list_desired_min_length(size_t base_min_length);
+  uint calculate_young_list_desired_min_length(uint base_min_length);
 
   // Calculate and return the maximum desired young list target
   // length. This is the maximum desired young list length according
   // to the user's inputs.
-  size_t calculate_young_list_desired_max_length();
+  uint calculate_young_list_desired_max_length();
 
   // Calculate and return the maximum young list target length that
   // can fit into the pause time goal. The parameters are: rs_lengths
@@ -733,18 +733,18 @@ private:
   // be, base_min_length is the alreay existing number of regions in
   // the young list, min_length and max_length are the desired min and
   // max young list length according to the user's inputs.
-  size_t calculate_young_list_target_length(size_t rs_lengths,
-                                            size_t base_min_length,
-                                            size_t desired_min_length,
-                                            size_t desired_max_length);
+  uint calculate_young_list_target_length(size_t rs_lengths,
+                                          uint base_min_length,
+                                          uint desired_min_length,
+                                          uint desired_max_length);
 
   // Check whether a given young length (young_length) fits into the
   // given target pause time and whether the prediction for the amount
   // of objects to be copied for the given length will fit into the
   // given free space (expressed by base_free_regions).  It is used by
   // calculate_young_list_target_length().
-  bool predict_will_fit(size_t young_length, double base_time_ms,
-                        size_t base_free_regions, double target_pause_time_ms);
+  bool predict_will_fit(uint young_length, double base_time_ms,
+                        uint base_free_regions, double target_pause_time_ms);
 
   // Count the number of bytes used in the CS.
   void count_CS_bytes_used();
@@ -773,7 +773,7 @@ public:
   }
 
   // This should be called after the heap is resized.
-  void record_new_heap_size(size_t new_number_of_regions);
+  void record_new_heap_size(uint new_number_of_regions);
 
   void init();
 
@@ -1048,18 +1048,18 @@ public:
   }
 
   bool is_young_list_full() {
-    size_t young_list_length = _g1->young_list()->length();
-    size_t young_list_target_length = _young_list_target_length;
+    uint young_list_length = _g1->young_list()->length();
+    uint young_list_target_length = _young_list_target_length;
     return young_list_length >= young_list_target_length;
   }
 
   bool can_expand_young_list() {
-    size_t young_list_length = _g1->young_list()->length();
-    size_t young_list_max_length = _young_list_max_length;
+    uint young_list_length = _g1->young_list()->length();
+    uint young_list_max_length = _young_list_max_length;
     return young_list_length < young_list_max_length;
   }
 
-  size_t young_list_max_length() {
+  uint young_list_max_length() {
     return _young_list_max_length;
   }
 
@@ -1097,7 +1097,7 @@ private:
   int _tenuring_threshold;
 
   // The limit on the number of regions allocated for survivors.
-  size_t _max_survivor_regions;
+  uint _max_survivor_regions;
 
   // For reporting purposes.
   size_t _eden_bytes_before_gc;
@@ -1105,7 +1105,7 @@ private:
   size_t _capacity_before_gc;
 
   // The amount of survor regions after a collection.
-  size_t _recorded_survivor_regions;
+  uint _recorded_survivor_regions;
   // List of survivor regions.
   HeapRegion* _recorded_survivor_head;
   HeapRegion* _recorded_survivor_tail;
@@ -1127,9 +1127,9 @@ public:
     return purpose == GCAllocForSurvived;
   }
 
-  static const size_t REGIONS_UNLIMITED = ~(size_t)0;
+  static const uint REGIONS_UNLIMITED = (uint) -1;
 
-  size_t max_regions(int purpose);
+  uint max_regions(int purpose);
 
   // The limit on regions for a particular purpose is reached.
   void note_alloc_region_limit_reached(int purpose) {
@@ -1146,7 +1146,7 @@ public:
     _survivor_surv_rate_group->stop_adding_regions();
   }
 
-  void record_survivor_regions(size_t      regions,
+  void record_survivor_regions(uint regions,
                                HeapRegion* head,
                                HeapRegion* tail) {
     _recorded_survivor_regions = regions;
@@ -1154,12 +1154,11 @@ public:
     _recorded_survivor_tail    = tail;
   }
 
-  size_t recorded_survivor_regions() {
+  uint recorded_survivor_regions() {
     return _recorded_survivor_regions;
   }
 
-  void record_thread_age_table(ageTable* age_table)
-  {
+  void record_thread_age_table(ageTable* age_table) {
     _survivors_age_table.merge_par(age_table);
   }
 

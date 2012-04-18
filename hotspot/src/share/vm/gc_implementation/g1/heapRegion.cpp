@@ -334,7 +334,7 @@ void HeapRegion::setup_heap_region_size(uintx min_heap_size) {
 
   guarantee(GrainWords == 0, "we should only set it once");
   GrainWords = GrainBytes >> LogHeapWordSize;
-  guarantee((size_t)(1 << LogOfHRGrainWords) == GrainWords, "sanity");
+  guarantee((size_t) 1 << LogOfHRGrainWords == GrainWords, "sanity");
 
   guarantee(CardsPerRegion == 0, "we should only set it once");
   CardsPerRegion = GrainBytes >> CardTableModRefBS::card_shift;
@@ -482,10 +482,10 @@ void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
 #endif // _MSC_VER
 
 
-HeapRegion::
-HeapRegion(size_t hrs_index, G1BlockOffsetSharedArray* sharedOffsetArray,
-           MemRegion mr, bool is_zeroed)
-  : G1OffsetTableContigSpace(sharedOffsetArray, mr, is_zeroed),
+HeapRegion::HeapRegion(uint hrs_index,
+                       G1BlockOffsetSharedArray* sharedOffsetArray,
+                       MemRegion mr, bool is_zeroed) :
+    G1OffsetTableContigSpace(sharedOffsetArray, mr, is_zeroed),
     _hrs_index(hrs_index),
     _humongous_type(NotHumongous), _humongous_start_region(NULL),
     _in_collection_set(false),

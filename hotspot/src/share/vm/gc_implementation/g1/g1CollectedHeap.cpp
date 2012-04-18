@@ -234,7 +234,7 @@ void YoungList::empty_list() {
 bool YoungList::check_list_well_formed() {
   bool ret = true;
 
-  size_t length = 0;
+  uint length = 0;
   HeapRegion* curr = _head;
   HeapRegion* last = NULL;
   while (curr != NULL) {
@@ -253,7 +253,7 @@ bool YoungList::check_list_well_formed() {
 
   if (!ret) {
     gclog_or_tty->print_cr("### YOUNG LIST seems not well formed!");
-    gclog_or_tty->print_cr("###   list has %d entries, _length is %d",
+    gclog_or_tty->print_cr("###   list has %u entries, _length is %u",
                            length, _length);
   }
 
@@ -264,7 +264,7 @@ bool YoungList::check_list_empty(bool check_sample) {
   bool ret = true;
 
   if (_length != 0) {
-    gclog_or_tty->print_cr("### YOUNG LIST should have 0 length, not %d",
+    gclog_or_tty->print_cr("### YOUNG LIST should have 0 length, not %u",
                   _length);
     ret = false;
   }
@@ -337,8 +337,7 @@ YoungList::reset_auxilary_lists() {
     _g1h->g1_policy()->add_region_to_incremental_cset_rhs(curr);
     young_index_in_cset += 1;
   }
-  assert((size_t) young_index_in_cset == _survivor_length,
-         "post-condition");
+  assert((uint) young_index_in_cset == _survivor_length, "post-condition");
   _g1h->g1_policy()->note_stop_adding_survivor_regions();
 
   _head   = _survivor_head;
@@ -533,7 +532,7 @@ G1CollectedHeap::new_region_try_secondary_free_list() {
     if (!_secondary_free_list.is_empty()) {
       if (G1ConcRegionFreeingVerbose) {
         gclog_or_tty->print_cr("G1ConcRegionFreeing [region alloc] : "
-                               "secondary_free_list has "SIZE_FORMAT" entries",
+                               "secondary_free_list has %u entries",
                                _secondary_free_list.length());
       }
       // It looks as if there are free regions available on the
@@ -619,12 +618,12 @@ HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool do_expand) {
   return res;
 }
 
-size_t G1CollectedHeap::humongous_obj_allocate_find_first(size_t num_regions,
-                                                          size_t word_size) {
+uint G1CollectedHeap::humongous_obj_allocate_find_first(uint num_regions,
+                                                        size_t word_size) {
   assert(isHumongous(word_size), "word_size should be humongous");
   assert(num_regions * HeapRegion::GrainWords >= word_size, "pre-condition");
 
-  size_t first = G1_NULL_HRS_INDEX;
+  uint first = G1_NULL_HRS_INDEX;
   if (num_regions == 1) {
     // Only one region to allocate, no need to go through the slower
     // path. The caller will attempt the expasion if this fails, so
@@ -650,7 +649,7 @@ size_t G1CollectedHeap::humongous_obj_allocate_find_first(size_t num_regions,
     if (free_regions() >= num_regions) {
       first = _hrs.find_contiguous(num_regions);
       if (first != G1_NULL_HRS_INDEX) {
-        for (size_t i = first; i < first + num_regions; ++i) {
+        for (uint i = first; i < first + num_regions; ++i) {
           HeapRegion* hr = region_at(i);
           assert(hr->is_empty(), "sanity");
           assert(is_on_master_free_list(hr), "sanity");
@@ -664,15 +663,15 @@ size_t G1CollectedHeap::humongous_obj_allocate_find_first(size_t num_regions,
 }
 
 HeapWord*
-G1CollectedHeap::humongous_obj_allocate_initialize_regions(size_t first,
-                                                           size_t num_regions,
+G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
+                                                           uint num_regions,
                                                            size_t word_size) {
   assert(first != G1_NULL_HRS_INDEX, "pre-condition");
   assert(isHumongous(word_size), "word_size should be humongous");
   assert(num_regions * HeapRegion::GrainWords >= word_size, "pre-condition");
 
   // Index of last region in the series + 1.
-  size_t last = first + num_regions;
+  uint last = first + num_regions;
 
   // We need to initialize the region(s) we just discovered. This is
   // a bit tricky given that it can happen concurrently with
@@ -683,7 +682,7 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(size_t first,
   // a specific order.
 
   // The word size sum of all the regions we will allocate.
-  size_t word_size_sum = num_regions * HeapRegion::GrainWords;
+  size_t word_size_sum = (size_t) num_regions * HeapRegion::GrainWords;
   assert(word_size <= word_size_sum, "sanity");
 
   // This will be the "starts humongous" region.
@@ -722,7 +721,7 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(size_t first,
   // Then, if there are any, we will set up the "continues
   // humongous" regions.
   HeapRegion* hr = NULL;
-  for (size_t i = first + 1; i < last; ++i) {
+  for (uint i = first + 1; i < last; ++i) {
     hr = region_at(i);
     hr->set_continuesHumongous(first_hr);
   }
@@ -768,7 +767,7 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(size_t first,
   // last one) is actually used when we will free up the humongous
   // region in free_humongous_region().
   hr = NULL;
-  for (size_t i = first + 1; i < last; ++i) {
+  for (uint i = first + 1; i < last; ++i) {
     hr = region_at(i);
     if ((i + 1) == last) {
       // last continues humongous region
@@ -804,14 +803,14 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
 
   verify_region_sets_optional();
 
-  size_t num_regions =
-         round_to(word_size, HeapRegion::GrainWords) / HeapRegion::GrainWords;
-  size_t x_size = expansion_regions();
-  size_t fs = _hrs.free_suffix();
-  size_t first = humongous_obj_allocate_find_first(num_regions, word_size);
+  size_t word_size_rounded = round_to(word_size, HeapRegion::GrainWords);
+  uint num_regions = (uint) (word_size_rounded / HeapRegion::GrainWords);
+  uint x_num = expansion_regions();
+  uint fs = _hrs.free_suffix();
+  uint first = humongous_obj_allocate_find_first(num_regions, word_size);
   if (first == G1_NULL_HRS_INDEX) {
     // The only thing we can do now is attempt expansion.
-    if (fs + x_size >= num_regions) {
+    if (fs + x_num >= num_regions) {
       // If the number of regions we're trying to allocate for this
       // object is at most the number of regions in the free suffix,
       // then the call to humongous_obj_allocate_find_first() above
@@ -1781,7 +1780,7 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
     ReservedSpace::page_align_size_down(shrink_bytes);
   aligned_shrink_bytes = align_size_down(aligned_shrink_bytes,
                                          HeapRegion::GrainBytes);
-  size_t num_regions_deleted = 0;
+  uint num_regions_deleted = 0;
   MemRegion mr = _hrs.shrink_by(aligned_shrink_bytes, &num_regions_deleted);
   HeapWord* old_end = (HeapWord*) _g1_storage.high();
   assert(mr.end() == old_end, "post-condition");
@@ -2004,7 +2003,7 @@ jint G1CollectedHeap::initialize() {
   _reserved.set_start((HeapWord*)heap_rs.base());
   _reserved.set_end((HeapWord*)(heap_rs.base() + heap_rs.size()));
 
-  _expansion_regions = max_byte_size/HeapRegion::GrainBytes;
+  _expansion_regions = (uint) (max_byte_size / HeapRegion::GrainBytes);
 
   // Create the gen rem set (and barrier set) for the entire reserved region.
   _rem_set = collector_policy()->create_rem_set(_reserved, 2);
@@ -2041,7 +2040,7 @@ jint G1CollectedHeap::initialize() {
 
   // 6843694 - ensure that the maximum region index can fit
   // in the remembered set structures.
-  const size_t max_region_idx = ((size_t)1 << (sizeof(RegionIdx_t)*BitsPerByte-1)) - 1;
+  const uint max_region_idx = (1U << (sizeof(RegionIdx_t)*BitsPerByte-1)) - 1;
   guarantee((max_regions() - 1) <= max_region_idx, "too many regions");
 
   size_t max_cards_per_region = ((size_t)1 << (sizeof(CardIdx_t)*BitsPerByte-1)) - 1;
@@ -2057,13 +2056,14 @@ jint G1CollectedHeap::initialize() {
   _g1h = this;
 
    _in_cset_fast_test_length = max_regions();
-   _in_cset_fast_test_base = NEW_C_HEAP_ARRAY(bool, _in_cset_fast_test_length);
+   _in_cset_fast_test_base =
+                   NEW_C_HEAP_ARRAY(bool, (size_t) _in_cset_fast_test_length);
 
    // We're biasing _in_cset_fast_test to avoid subtracting the
    // beginning of the heap every time we want to index; basically
    // it's the same with what we do with the card table.
    _in_cset_fast_test = _in_cset_fast_test_base -
-                ((size_t) _g1_reserved.start() >> HeapRegion::LogOfHRGrainBytes);
+               ((uintx) _g1_reserved.start() >> HeapRegion::LogOfHRGrainBytes);
 
    // Clear the _cset_fast_test bitmap in anticipation of adding
    // regions to the incremental collection set for the first
@@ -2072,7 +2072,7 @@ jint G1CollectedHeap::initialize() {
 
   // Create the ConcurrentMark data structure and thread.
   // (Must do this late, so that "max_regions" is defined.)
-  _cm       = new ConcurrentMark(heap_rs, (int) max_regions());
+  _cm       = new ConcurrentMark(heap_rs, max_regions());
   _cmThread = _cm->cmThread();
 
   // Initialize the from_card cache structure of HeapRegionRemSet.
@@ -2581,7 +2581,7 @@ G1CollectedHeap::heap_region_par_iterate_chunked(HeapRegionClosure* cl,
                                                  uint worker,
                                                  uint no_of_par_workers,
                                                  jint claim_value) {
-  const size_t regions = n_regions();
+  const uint regions = n_regions();
   const uint max_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
                              no_of_par_workers :
                              1);
@@ -2589,11 +2589,11 @@ G1CollectedHeap::heap_region_par_iterate_chunked(HeapRegionClosure* cl,
          no_of_par_workers == workers()->total_workers(),
          "Non dynamic should use fixed number of workers");
   // try to spread out the starting points of the workers
-  const size_t start_index = regions / max_workers * (size_t) worker;
+  const uint start_index = regions / max_workers * worker;
 
   // each worker will actually look at all regions
-  for (size_t count = 0; count < regions; ++count) {
-    const size_t index = (start_index + count) % regions;
+  for (uint count = 0; count < regions; ++count) {
+    const uint index = (start_index + count) % regions;
     assert(0 <= index && index < regions, "sanity");
     HeapRegion* r = region_at(index);
     // we'll ignore "continues humongous" regions (we'll process them
@@ -2615,7 +2615,7 @@ G1CollectedHeap::heap_region_par_iterate_chunked(HeapRegionClosure* cl,
         // result, we might end up processing them twice. So, we'll do
         // them first (notice: most closures will ignore them anyway) and
         // then we'll do the "starts humongous" region.
-        for (size_t ch_index = index + 1; ch_index < regions; ++ch_index) {
+        for (uint ch_index = index + 1; ch_index < regions; ++ch_index) {
           HeapRegion* chr = region_at(ch_index);
 
           // if the region has already been claimed or it's not
@@ -2683,8 +2683,9 @@ void G1CollectedHeap::reset_cset_heap_region_claim_values() {
 class CheckClaimValuesClosure : public HeapRegionClosure {
 private:
   jint _claim_value;
-  size_t _failures;
+  uint _failures;
   HeapRegion* _sh_region;
+
 public:
   CheckClaimValuesClosure(jint claim_value) :
     _claim_value(claim_value), _failures(0), _sh_region(NULL) { }
@@ -2712,9 +2713,7 @@ public:
     }
     return false;
   }
-  size_t failures() {
-    return _failures;
-  }
+  uint failures() { return _failures; }
 };
 
 bool G1CollectedHeap::check_heap_region_claim_values(jint claim_value) {
@@ -2724,17 +2723,15 @@ bool G1CollectedHeap::check_heap_region_claim_values(jint claim_value) {
 }
 
 class CheckClaimValuesInCSetHRClosure: public HeapRegionClosure {
-  jint   _claim_value;
-  size_t _failures;
+private:
+  jint _claim_value;
+  uint _failures;
 
 public:
   CheckClaimValuesInCSetHRClosure(jint claim_value) :
-    _claim_value(claim_value),
-    _failures(0) { }
+    _claim_value(claim_value), _failures(0) { }
 
-  size_t failures() {
-    return _failures;
-  }
+  uint failures() { return _failures; }
 
   bool doHeapRegion(HeapRegion* hr) {
     assert(hr->in_collection_set(), "how?");
@@ -2801,14 +2798,14 @@ HeapRegion* G1CollectedHeap::start_cset_region_for_worker(int worker_i) {
 
   result = g1_policy()->collection_set();
   if (G1CollectedHeap::use_parallel_gc_threads()) {
-    size_t cs_size = g1_policy()->cset_region_length();
+    uint cs_size = g1_policy()->cset_region_length();
     uint active_workers = workers()->active_workers();
     assert(UseDynamicNumberOfGCThreads ||
              active_workers == workers()->total_workers(),
              "Unless dynamic should use total workers");
 
-    size_t end_ind   = (cs_size * worker_i) / active_workers;
-    size_t start_ind = 0;
+    uint end_ind   = (cs_size * worker_i) / active_workers;
+    uint start_ind = 0;
 
     if (worker_i > 0 &&
         _worker_cset_start_region_time_stamp[worker_i - 1] == gc_time_stamp) {
@@ -2818,7 +2815,7 @@ HeapRegion* G1CollectedHeap::start_cset_region_for_worker(int worker_i) {
       result = _worker_cset_start_region[worker_i - 1];
     }
 
-    for (size_t i = start_ind; i < end_ind; i++) {
+    for (uint i = start_ind; i < end_ind; i++) {
       result = result->next_in_collection_set();
     }
   }
@@ -3280,12 +3277,12 @@ void G1CollectedHeap::print_on(outputStream* st) const {
             _g1_storage.high_boundary());
   st->cr();
   st->print("  region size " SIZE_FORMAT "K, ", HeapRegion::GrainBytes / K);
-  size_t young_regions = _young_list->length();
-  st->print(SIZE_FORMAT " young (" SIZE_FORMAT "K), ",
-            young_regions, young_regions * HeapRegion::GrainBytes / K);
-  size_t survivor_regions = g1_policy()->recorded_survivor_regions();
-  st->print(SIZE_FORMAT " survivors (" SIZE_FORMAT "K)",
-            survivor_regions, survivor_regions * HeapRegion::GrainBytes / K);
+  uint young_regions = _young_list->length();
+  st->print("%u young (" SIZE_FORMAT "K), ", young_regions,
+            (size_t) young_regions * HeapRegion::GrainBytes / K);
+  uint survivor_regions = g1_policy()->recorded_survivor_regions();
+  st->print("%u survivors (" SIZE_FORMAT "K)", survivor_regions,
+            (size_t) survivor_regions * HeapRegion::GrainBytes / K);
   st->cr();
   perm()->as_gen()->print_on(st);
 }
@@ -3295,7 +3292,11 @@ void G1CollectedHeap::print_extended_on(outputStream* st) const {
 
   // Print the per-region information.
   st->cr();
-  st->print_cr("Heap Regions: (Y=young(eden), SU=young(survivor), HS=humongous(starts), HC=humongous(continues), CS=collection set, F=free, TS=gc time stamp, PTAMS=previous top-at-mark-start, NTAMS=next top-at-mark-start)");
+  st->print_cr("Heap Regions: (Y=young(eden), SU=young(survivor), "
+               "HS=humongous(starts), HC=humongous(continues), "
+               "CS=collection set, F=free, TS=gc time stamp, "
+               "PTAMS=previous top-at-mark-start, "
+               "NTAMS=next top-at-mark-start)");
   PrintRegionClosure blk(st);
   heap_region_iterate(&blk);
 }
@@ -3473,16 +3474,16 @@ size_t G1CollectedHeap::cards_scanned() {
 
 void
 G1CollectedHeap::setup_surviving_young_words() {
-  guarantee( _surviving_young_words == NULL, "pre-condition" );
-  size_t array_length = g1_policy()->young_cset_region_length();
-  _surviving_young_words = NEW_C_HEAP_ARRAY(size_t, array_length);
+  assert(_surviving_young_words == NULL, "pre-condition");
+  uint array_length = g1_policy()->young_cset_region_length();
+  _surviving_young_words = NEW_C_HEAP_ARRAY(size_t, (size_t) array_length);
   if (_surviving_young_words == NULL) {
     vm_exit_out_of_memory(sizeof(size_t) * array_length,
                           "Not enough space for young surv words summary.");
   }
-  memset(_surviving_young_words, 0, array_length * sizeof(size_t));
+  memset(_surviving_young_words, 0, (size_t) array_length * sizeof(size_t));
 #ifdef ASSERT
-  for (size_t i = 0;  i < array_length; ++i) {
+  for (uint i = 0;  i < array_length; ++i) {
     assert( _surviving_young_words[i] == 0, "memset above" );
   }
 #endif // !ASSERT
@@ -3491,9 +3492,10 @@ G1CollectedHeap::setup_surviving_young_words() {
 void
 G1CollectedHeap::update_surviving_young_words(size_t* surv_young_words) {
   MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
-  size_t array_length = g1_policy()->young_cset_region_length();
-  for (size_t i = 0; i < array_length; ++i)
+  uint array_length = g1_policy()->young_cset_region_length();
+  for (uint i = 0; i < array_length; ++i) {
     _surviving_young_words[i] += surv_young_words[i];
+  }
 }
 
 void
@@ -4242,16 +4244,16 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num)
   // non-young regions (where the age is -1)
   // We also add a few elements at the beginning and at the end in
   // an attempt to eliminate cache contention
-  size_t real_length = 1 + _g1h->g1_policy()->young_cset_region_length();
-  size_t array_length = PADDING_ELEM_NUM +
-                        real_length +
-                        PADDING_ELEM_NUM;
+  uint real_length = 1 + _g1h->g1_policy()->young_cset_region_length();
+  uint array_length = PADDING_ELEM_NUM +
+                      real_length +
+                      PADDING_ELEM_NUM;
   _surviving_young_words_base = NEW_C_HEAP_ARRAY(size_t, array_length);
   if (_surviving_young_words_base == NULL)
     vm_exit_out_of_memory(array_length * sizeof(size_t),
                           "Not enough space for young surv histo.");
   _surviving_young_words = _surviving_young_words_base + PADDING_ELEM_NUM;
-  memset(_surviving_young_words, 0, real_length * sizeof(size_t));
+  memset(_surviving_young_words, 0, (size_t) real_length * sizeof(size_t));
 
   _alloc_buffers[GCAllocForSurvived] = &_surviving_alloc_buffer;
   _alloc_buffers[GCAllocForTenured]  = &_tenured_alloc_buffer;
@@ -4388,7 +4390,7 @@ void G1ParCopyClosure<do_gen_barrier, barrier, do_mark_object>
 template <bool do_gen_barrier, G1Barrier barrier, bool do_mark_object>
 oop G1ParCopyClosure<do_gen_barrier, barrier, do_mark_object>
   ::copy_to_survivor_space(oop old) {
-  size_t    word_sz = old->size();
+  size_t word_sz = old->size();
   HeapRegion* from_region = _g1->heap_region_containing_raw(old);
   // +1 to make the -1 indexes valid...
   int       young_index = from_region->young_index_in_cset()+1;
@@ -5585,8 +5587,8 @@ void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
   hr->set_notHumongous();
   free_region(hr, &hr_pre_used, free_list, par);
 
-  size_t i = hr->hrs_index() + 1;
-  size_t num = 1;
+  uint i = hr->hrs_index() + 1;
+  uint num = 1;
   while (i < n_regions()) {
     HeapRegion* curr_hr = region_at(i);
     if (!curr_hr->continuesHumongous()) {
@@ -5795,7 +5797,7 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
     if (cur->is_young()) {
       int index = cur->young_index_in_cset();
       assert(index != -1, "invariant");
-      assert((size_t) index < policy->young_cset_region_length(), "invariant");
+      assert((uint) index < policy->young_cset_region_length(), "invariant");
       size_t words_survived = _surviving_young_words[index];
       cur->record_surv_words_in_group(words_survived);
 
@@ -6135,7 +6137,7 @@ void MutatorAllocRegion::retire_region(HeapRegion* alloc_region,
 // Methods for the GC alloc regions
 
 HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size,
-                                                 size_t count,
+                                                 uint count,
                                                  GCAllocPurpose ap) {
   assert(FreeList_lock->owned_by_self(), "pre-condition");
 
@@ -6207,7 +6209,7 @@ private:
   FreeRegionList*     _free_list;
   OldRegionSet*       _old_set;
   HumongousRegionSet* _humongous_set;
-  size_t              _region_count;
+  uint                _region_count;
 
 public:
   VerifyRegionListsClosure(OldRegionSet* old_set,
@@ -6216,7 +6218,7 @@ public:
     _old_set(old_set), _humongous_set(humongous_set),
     _free_list(free_list), _region_count(0) { }
 
-  size_t region_count()      { return _region_count;      }
+  uint region_count() { return _region_count; }
 
   bool doHeapRegion(HeapRegion* hr) {
     _region_count += 1;
@@ -6238,7 +6240,7 @@ public:
   }
 };
 
-HeapRegion* G1CollectedHeap::new_heap_region(size_t hrs_index,
+HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
                                              HeapWord* bottom) {
   HeapWord* end = bottom + HeapRegion::GrainWords;
   MemRegion mr(bottom, end);
