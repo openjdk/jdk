@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -596,8 +596,8 @@ public class JavacParserTest extends TestCase {
     public void testVariableInIfThen3() throws IOException {
 
         String code = "package t; class Test { "+
-                "private static void t(String name) { " +
-                "if (name != null) abstract } }";
+                "private static void t() { " +
+                "if (true) abstract class F {} }}";
         DiagnosticCollector<JavaFileObject> coll =
                 new DiagnosticCollector<JavaFileObject>();
         JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, coll, null,
@@ -612,7 +612,51 @@ public class JavacParserTest extends TestCase {
         }
 
         assertEquals("testVariableInIfThen3",
-                Arrays.<String>asList("compiler.err.illegal.start.of.expr"),
+                Arrays.<String>asList("compiler.err.class.not.allowed"), codes);
+    }
+
+    public void testVariableInIfThen4() throws IOException {
+
+        String code = "package t; class Test { "+
+                "private static void t(String name) { " +
+                "if (name != null) interface X {} } }";
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<JavaFileObject>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, coll, null,
+                null, Arrays.asList(new MyFileObject(code)));
+
+        ct.parse();
+
+        List<String> codes = new LinkedList<String>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getCode());
+        }
+
+        assertEquals("testVariableInIfThen4",
+                Arrays.<String>asList("compiler.err.class.not.allowed"), codes);
+    }
+
+    public void testVariableInIfThen5() throws IOException {
+
+        String code = "package t; class Test { "+
+                "private static void t() { " +
+                "if (true) } }";
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<JavaFileObject>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, coll, null,
+                null, Arrays.asList(new MyFileObject(code)));
+
+        ct.parse();
+
+        List<String> codes = new LinkedList<String>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getCode());
+        }
+
+        assertEquals("testVariableInIfThen5",
+                Arrays.<String>asList("compiler.err.illegal.start.of.stmt"),
                 codes);
     }
 
@@ -808,8 +852,6 @@ public class JavacParserTest extends TestCase {
         testPositionBrokenSource126732b();
 
         // Fails, these tests yet to be addressed
-        testVariableInIfThen1();
-        testVariableInIfThen2();
         testPositionForEnumModifiers();
         testStartPositionEnumConstantInit();
     }
@@ -821,7 +863,11 @@ public class JavacParserTest extends TestCase {
         testPreferredPositionForBinaryOp();
         testStartPositionForMethodWithoutModifiers();
         testVarPos();
+        testVariableInIfThen1();
+        testVariableInIfThen2();
         testVariableInIfThen3();
+        testVariableInIfThen4();
+        testVariableInIfThen5();
         testMissingExponent();
         testTryResourcePos();
         testOperatorMissingError();
