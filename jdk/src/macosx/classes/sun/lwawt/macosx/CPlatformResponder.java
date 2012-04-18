@@ -117,7 +117,7 @@ final class CPlatformResponder {
      * Handles key events.
      */
     void handleKeyEvent(int eventType, int modifierFlags, String chars,
-                        short keyCode) {
+                        short keyCode, boolean needsKeyTyped) {
         boolean isFlagsChangedEvent =
             isNpapiCallback ? (eventType == CocoaConstants.NPCocoaEventFlagsChanged) :
                               (eventType == CocoaConstants.NSFlagsChanged);
@@ -173,6 +173,10 @@ final class CPlatformResponder {
         peer.dispatchKeyEvent(jeventType, when, jmodifiers,
                               jkeyCode, javaChar, jkeyLocation);
 
+        // Current browser may be sending input events, so don't
+        // post the KEY_TYPED here.
+        postsTyped &= needsKeyTyped;
+
         // That's the reaction on the PRESSED (not RELEASED) event as it comes to
         // appear in MacOSX.
         // Modifier keys (shift, etc) don't want to send TYPED events.
@@ -183,6 +187,21 @@ final class CPlatformResponder {
             peer.dispatchKeyEvent(KeyEvent.KEY_TYPED, when, jmodifiers,
                                   KeyEvent.VK_UNDEFINED, javaChar,
                                   KeyEvent.KEY_LOCATION_UNKNOWN);
+        }
+    }
+
+    void handleInputEvent(String text) {
+        if (text != null) {
+            int index = 0, length = text.length();
+            char c;
+            while (index < length) {
+                c = text.charAt(index);
+                peer.dispatchKeyEvent(KeyEvent.KEY_TYPED,
+                                      System.currentTimeMillis(),
+                                      0, KeyEvent.VK_UNDEFINED, c,
+                                      KeyEvent.KEY_LOCATION_UNKNOWN);
+                index++;
+            }
         }
     }
 }
