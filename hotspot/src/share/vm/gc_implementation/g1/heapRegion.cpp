@@ -370,7 +370,6 @@ void HeapRegion::hr_clear(bool par, bool clear_space) {
     _claimed = InitialClaimValue;
   }
   zero_marked_bytes();
-  set_sort_index(-1);
 
   _offsets.resize(HeapRegion::GrainWords);
   init_top_at_mark_start();
@@ -491,8 +490,7 @@ HeapRegion::HeapRegion(uint hrs_index,
     _in_collection_set(false),
     _next_in_special_set(NULL), _orig_end(NULL),
     _claimed(InitialClaimValue), _evacuation_failed(false),
-    _prev_marked_bytes(0), _next_marked_bytes(0), _sort_index(-1),
-    _gc_efficiency(0.0),
+    _prev_marked_bytes(0), _next_marked_bytes(0), _gc_efficiency(0.0),
     _young_type(NotYoung), _next_young_region(NULL),
     _next_dirty_cards_region(NULL), _next(NULL), _pending_removal(false),
 #ifdef ASSERT
