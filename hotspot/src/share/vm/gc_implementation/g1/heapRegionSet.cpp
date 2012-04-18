@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,28 +25,26 @@
 #include "precompiled.hpp"
 #include "gc_implementation/g1/heapRegionSet.inline.hpp"
 
-size_t HeapRegionSetBase::_unrealistically_long_length = 0;
+uint HeapRegionSetBase::_unrealistically_long_length = 0;
 HRSPhase HeapRegionSetBase::_phase = HRSPhaseNone;
 
 //////////////////// HeapRegionSetBase ////////////////////
 
-void HeapRegionSetBase::set_unrealistically_long_length(size_t len) {
+void HeapRegionSetBase::set_unrealistically_long_length(uint len) {
   guarantee(_unrealistically_long_length == 0, "should only be set once");
   _unrealistically_long_length = len;
 }
 
-size_t HeapRegionSetBase::calculate_region_num(HeapRegion* hr) {
+uint HeapRegionSetBase::calculate_region_num(HeapRegion* hr) {
   assert(hr->startsHumongous(), "pre-condition");
   assert(hr->capacity() % HeapRegion::GrainBytes == 0, "invariant");
-  size_t region_num = hr->capacity() >> HeapRegion::LogOfHRGrainBytes;
+  uint region_num = (uint) (hr->capacity() >> HeapRegion::LogOfHRGrainBytes);
   assert(region_num > 0, "sanity");
   return region_num;
 }
 
 void HeapRegionSetBase::fill_in_ext_msg(hrs_ext_msg* msg, const char* message) {
-  msg->append("[%s] %s "
-              "ln: "SIZE_FORMAT" rn: "SIZE_FORMAT" "
-              "cy: "SIZE_FORMAT" ud: "SIZE_FORMAT,
+  msg->append("[%s] %s ln: %u rn: %u cy: "SIZE_FORMAT" ud: "SIZE_FORMAT,
               name(), message, length(), region_num(),
               total_capacity_bytes(), total_used_bytes());
   fill_in_ext_msg_extra(msg);
@@ -170,13 +168,11 @@ void HeapRegionSetBase::verify_end() {
          hrs_ext_msg(this, "verification should be in progress"));
 
   guarantee(length() == _calc_length,
-            hrs_err_msg("[%s] length: "SIZE_FORMAT" should be == "
-                        "calc length: "SIZE_FORMAT,
+            hrs_err_msg("[%s] length: %u should be == calc length: %u",
                         name(), length(), _calc_length));
 
   guarantee(region_num() == _calc_region_num,
-            hrs_err_msg("[%s] region num: "SIZE_FORMAT" should be == "
-                        "calc region num: "SIZE_FORMAT,
+            hrs_err_msg("[%s] region num: %u should be == calc region num: %u",
                         name(), region_num(), _calc_region_num));
 
   guarantee(total_capacity_bytes() == _calc_total_capacity_bytes,
@@ -211,8 +207,8 @@ void HeapRegionSetBase::print_on(outputStream* out, bool print_contents) {
   out->print_cr("    humongous         : %s", BOOL_TO_STR(regions_humongous()));
   out->print_cr("    empty             : %s", BOOL_TO_STR(regions_empty()));
   out->print_cr("  Attributes");
-  out->print_cr("    length            : "SIZE_FORMAT_W(14), length());
-  out->print_cr("    region num        : "SIZE_FORMAT_W(14), region_num());
+  out->print_cr("    length            : %14u", length());
+  out->print_cr("    region num        : %14u", region_num());
   out->print_cr("    total capacity    : "SIZE_FORMAT_W(14)" bytes",
                 total_capacity_bytes());
   out->print_cr("    total used        : "SIZE_FORMAT_W(14)" bytes",
@@ -243,14 +239,12 @@ void HeapRegionSet::update_from_proxy(HeapRegionSet* proxy_set) {
   if (proxy_set->is_empty()) return;
 
   assert(proxy_set->length() <= _length,
-         hrs_err_msg("[%s] proxy set length: "SIZE_FORMAT" "
-                     "should be <= length: "SIZE_FORMAT,
+         hrs_err_msg("[%s] proxy set length: %u should be <= length: %u",
                      name(), proxy_set->length(), _length));
   _length -= proxy_set->length();
 
   assert(proxy_set->region_num() <= _region_num,
-         hrs_err_msg("[%s] proxy set region num: "SIZE_FORMAT" "
-                     "should be <= region num: "SIZE_FORMAT,
+         hrs_err_msg("[%s] proxy set region num: %u should be <= region num: %u",
                      name(), proxy_set->region_num(), _region_num));
   _region_num -= proxy_set->region_num();
 
@@ -369,17 +363,17 @@ void HeapRegionLinkedList::remove_all() {
   verify_optional();
 }
 
-void HeapRegionLinkedList::remove_all_pending(size_t target_count) {
+void HeapRegionLinkedList::remove_all_pending(uint target_count) {
   hrs_assert_mt_safety_ok(this);
   assert(target_count > 1, hrs_ext_msg(this, "pre-condition"));
   assert(!is_empty(), hrs_ext_msg(this, "pre-condition"));
 
   verify_optional();
-  DEBUG_ONLY(size_t old_length = length();)
+  DEBUG_ONLY(uint old_length = length();)
 
   HeapRegion* curr = _head;
   HeapRegion* prev = NULL;
-  size_t count = 0;
+  uint count = 0;
   while (curr != NULL) {
     hrs_assert_region_ok(this, curr, this);
     HeapRegion* next = curr->next();
@@ -387,7 +381,7 @@ void HeapRegionLinkedList::remove_all_pending(size_t target_count) {
     if (curr->pending_removal()) {
       assert(count < target_count,
              hrs_err_msg("[%s] should not come across more regions "
-                         "pending for removal than target_count: "SIZE_FORMAT,
+                         "pending for removal than target_count: %u",
                          name(), target_count));
 
       if (prev == NULL) {
@@ -422,12 +416,11 @@ void HeapRegionLinkedList::remove_all_pending(size_t target_count) {
   }
 
   assert(count == target_count,
-         hrs_err_msg("[%s] count: "SIZE_FORMAT" should be == "
-                     "target_count: "SIZE_FORMAT, name(), count, target_count));
+         hrs_err_msg("[%s] count: %u should be == target_count: %u",
+                     name(), count, target_count));
   assert(length() + target_count == old_length,
          hrs_err_msg("[%s] new length should be consistent "
-                     "new length: "SIZE_FORMAT" old length: "SIZE_FORMAT" "
-                     "target_count: "SIZE_FORMAT,
+                     "new length: %u old length: %u target_count: %u",
                      name(), length(), old_length, target_count));
 
   verify_optional();
@@ -444,16 +437,16 @@ void HeapRegionLinkedList::verify() {
   HeapRegion* curr  = _head;
   HeapRegion* prev1 = NULL;
   HeapRegion* prev0 = NULL;
-  size_t      count = 0;
+  uint        count = 0;
   while (curr != NULL) {
     verify_next_region(curr);
 
     count += 1;
     guarantee(count < _unrealistically_long_length,
-              hrs_err_msg("[%s] the calculated length: "SIZE_FORMAT" "
+              hrs_err_msg("[%s] the calculated length: %u "
                           "seems very long, is there maybe a cycle? "
                           "curr: "PTR_FORMAT" prev0: "PTR_FORMAT" "
-                          "prev1: "PTR_FORMAT" length: "SIZE_FORMAT,
+                          "prev1: "PTR_FORMAT" length: %u",
                           name(), count, curr, prev0, prev1, length()));
 
     prev1 = prev0;

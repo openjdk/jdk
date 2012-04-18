@@ -273,7 +273,7 @@ void CollectionSetChooser::sortMarkedHeapRegions() {
   assert(verify(), "CSet chooser verification");
 }
 
-size_t CollectionSetChooser::calcMinOldCSetLength() {
+uint CollectionSetChooser::calcMinOldCSetLength() {
   // The min old CSet region bound is based on the maximum desired
   // number of mixed GCs after a cycle. I.e., even if some old regions
   // look expensive, we should add them to the CSet anyway to make
@@ -291,10 +291,10 @@ size_t CollectionSetChooser::calcMinOldCSetLength() {
   if (result * gc_num < region_num) {
     result += 1;
   }
-  return result;
+  return (uint) result;
 }
 
-size_t CollectionSetChooser::calcMaxOldCSetLength() {
+uint CollectionSetChooser::calcMaxOldCSetLength() {
   // The max old CSet region bound is based on the threshold expressed
   // as a percentage of the heap size. I.e., it should bound the
   // number of old regions added to the CSet irrespective of how many
@@ -308,7 +308,7 @@ size_t CollectionSetChooser::calcMaxOldCSetLength() {
   if (100 * result < region_num * perc) {
     result += 1;
   }
-  return result;
+  return (uint) result;
 }
 
 void CollectionSetChooser::addMarkedHeapRegion(HeapRegion* hr) {
@@ -321,10 +321,10 @@ void CollectionSetChooser::addMarkedHeapRegion(HeapRegion* hr) {
   hr->calc_gc_efficiency();
 }
 
-void CollectionSetChooser::prepareForAddMarkedHeapRegionsPar(size_t n_regions,
-                                                             size_t chunkSize) {
+void CollectionSetChooser::prepareForAddMarkedHeapRegionsPar(uint n_regions,
+                                                             uint chunkSize) {
   _first_par_unreserved_idx = 0;
-  int n_threads = ParallelGCThreads;
+  uint n_threads = (uint) ParallelGCThreads;
   if (UseDynamicNumberOfGCThreads) {
     assert(G1CollectedHeap::heap()->workers()->active_workers() > 0,
       "Should have been set earlier");
@@ -335,12 +335,11 @@ void CollectionSetChooser::prepareForAddMarkedHeapRegionsPar(size_t n_regions,
     n_threads = MAX2(G1CollectedHeap::heap()->workers()->active_workers(),
                      1U);
   }
-  size_t max_waste = n_threads * chunkSize;
+  uint max_waste = n_threads * chunkSize;
   // it should be aligned with respect to chunkSize
-  size_t aligned_n_regions =
-                     (n_regions + (chunkSize - 1)) / chunkSize * chunkSize;
-  assert( aligned_n_regions % chunkSize == 0, "should be aligned" );
-  _markedRegions.at_put_grow((int)(aligned_n_regions + max_waste - 1), NULL);
+  uint aligned_n_regions = (n_regions + chunkSize - 1) / chunkSize * chunkSize;
+  assert(aligned_n_regions % chunkSize == 0, "should be aligned");
+  _markedRegions.at_put_grow((int) (aligned_n_regions + max_waste - 1), NULL);
 }
 
 jint CollectionSetChooser::getParMarkedHeapRegionChunk(jint n_regions) {

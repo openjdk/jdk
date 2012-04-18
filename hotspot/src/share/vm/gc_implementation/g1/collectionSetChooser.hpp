@@ -150,18 +150,18 @@ public:
 
   // Calculate the minimum number of old regions we'll add to the CSet
   // during a mixed GC.
-  size_t calcMinOldCSetLength();
+  uint calcMinOldCSetLength();
 
   // Calculate the maximum number of old regions we'll add to the CSet
   // during a mixed GC.
-  size_t calcMaxOldCSetLength();
+  uint calcMaxOldCSetLength();
 
   // Serial version.
   void addMarkedHeapRegion(HeapRegion *hr);
 
   // Must be called before calls to getParMarkedHeapRegionChunk.
   // "n_regions" is the number of regions, "chunkSize" the chunk size.
-  void prepareForAddMarkedHeapRegionsPar(size_t n_regions, size_t chunkSize);
+  void prepareForAddMarkedHeapRegionsPar(uint n_regions, uint chunkSize);
   // Returns the first index in a contiguous chunk of "n_regions" indexes
   // that the calling thread has reserved.  These must be set by the
   // calling thread using "setMarkedHeapRegion" (to NULL if necessary).
@@ -176,7 +176,7 @@ public:
   void clearMarkedHeapRegions();
 
   // Return the number of candidate regions that remain to be collected.
-  size_t remainingRegions() { return _length - _curr_index; }
+  uint remainingRegions() { return (uint) (_length - _curr_index); }
 
   // Determine whether the CSet chooser has more candidate regions or not.
   bool isEmpty() { return remainingRegions() == 0; }

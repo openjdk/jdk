@@ -85,8 +85,8 @@ private:
 
   HeapRegion* _curr;
 
-  size_t      _length;
-  size_t      _survivor_length;
+  uint        _length;
+  uint        _survivor_length;
 
   size_t      _last_sampled_rs_lengths;
   size_t      _sampled_rs_lengths;
@@ -101,8 +101,8 @@ public:
 
   void         empty_list();
   bool         is_empty() { return _length == 0; }
-  size_t       length() { return _length; }
-  size_t       survivor_length() { return _survivor_length; }
+  uint         length() { return _length; }
+  uint         survivor_length() { return _survivor_length; }
 
   // Currently we do not keep track of the used byte sum for the
   // young list and the survivors and it'd be quite a lot of work to
@@ -111,10 +111,10 @@ public:
   // we'll report the more accurate information then.
   size_t       eden_used_bytes() {
     assert(length() >= survivor_length(), "invariant");
-    return (length() - survivor_length()) * HeapRegion::GrainBytes;
+    return (size_t) (length() - survivor_length()) * HeapRegion::GrainBytes;
   }
   size_t       survivor_used_bytes() {
-    return survivor_length() * HeapRegion::GrainBytes;
+    return (size_t) survivor_length() * HeapRegion::GrainBytes;
   }
 
   void rs_length_sampling_init();
@@ -247,7 +247,7 @@ private:
   MasterHumongousRegionSet  _humongous_set;
 
   // The number of regions we could create by expansion.
-  size_t _expansion_regions;
+  uint _expansion_regions;
 
   // The block offset table for the G1 heap.
   G1BlockOffsetSharedArray* _bot_shared;
@@ -339,7 +339,7 @@ private:
   bool* _in_cset_fast_test_base;
 
   // The length of the _in_cset_fast_test_base array.
-  size_t _in_cset_fast_test_length;
+  uint _in_cset_fast_test_length;
 
   volatile unsigned _gc_time_stamp;
 
@@ -458,14 +458,14 @@ protected:
   // length and remove them from the master free list. Return the
   // index of the first region or G1_NULL_HRS_INDEX if the search
   // was unsuccessful.
-  size_t humongous_obj_allocate_find_first(size_t num_regions,
-                                           size_t word_size);
+  uint humongous_obj_allocate_find_first(uint num_regions,
+                                         size_t word_size);
 
   // Initialize a contiguous set of free regions of length num_regions
   // and starting at index first so that they appear as a single
   // humongous region.
-  HeapWord* humongous_obj_allocate_initialize_regions(size_t first,
-                                                      size_t num_regions,
+  HeapWord* humongous_obj_allocate_initialize_regions(uint first,
+                                                      uint num_regions,
                                                       size_t word_size);
 
   // Attempt to allocate a humongous object of the given size. Return
@@ -574,7 +574,7 @@ protected:
                                    size_t allocated_bytes);
 
   // For GC alloc regions.
-  HeapRegion* new_gc_alloc_region(size_t word_size, size_t count,
+  HeapRegion* new_gc_alloc_region(size_t word_size, uint count,
                                   GCAllocPurpose ap);
   void retire_gc_alloc_region(HeapRegion* alloc_region,
                               size_t allocated_bytes, GCAllocPurpose ap);
@@ -641,7 +641,7 @@ public:
   void register_region_with_in_cset_fast_test(HeapRegion* r) {
     assert(_in_cset_fast_test_base != NULL, "sanity");
     assert(r->in_collection_set(), "invariant");
-    size_t index = r->hrs_index();
+    uint index = r->hrs_index();
     assert(index < _in_cset_fast_test_length, "invariant");
     assert(!_in_cset_fast_test_base[index], "invariant");
     _in_cset_fast_test_base[index] = true;
@@ -655,7 +655,7 @@ public:
     if (_g1_committed.contains((HeapWord*) obj)) {
       // no need to subtract the bottom of the heap from obj,
       // _in_cset_fast_test is biased
-      size_t index = ((size_t) obj) >> HeapRegion::LogOfHRGrainBytes;
+      uintx index = (uintx) obj >> HeapRegion::LogOfHRGrainBytes;
       bool ret = _in_cset_fast_test[index];
       // let's make sure the result is consistent with what the slower
       // test returns
@@ -670,7 +670,7 @@ public:
   void clear_cset_fast_test() {
     assert(_in_cset_fast_test_base != NULL, "sanity");
     memset(_in_cset_fast_test_base, false,
-        _in_cset_fast_test_length * sizeof(bool));
+           (size_t) _in_cset_fast_test_length * sizeof(bool));
   }
 
   // This is called at the end of either a concurrent cycle or a Full
@@ -1101,23 +1101,23 @@ public:
   }
 
   // The total number of regions in the heap.
-  size_t n_regions() { return _hrs.length(); }
+  uint n_regions() { return _hrs.length(); }
 
   // The max number of regions in the heap.
-  size_t max_regions() { return _hrs.max_length(); }
+  uint max_regions() { return _hrs.max_length(); }
 
   // The number of regions that are completely free.
-  size_t free_regions() { return _free_list.length(); }
+  uint free_regions() { return _free_list.length(); }
 
   // The number of regions that are not completely free.
-  size_t used_regions() { return n_regions() - free_regions(); }
+  uint used_regions() { return n_regions() - free_regions(); }
 
   // The number of regions available for "regular" expansion.
-  size_t expansion_regions() { return _expansion_regions; }
+  uint expansion_regions() { return _expansion_regions; }
 
   // Factory method for HeapRegion instances. It will return NULL if
   // the allocation fails.
-  HeapRegion* new_heap_region(size_t hrs_index, HeapWord* bottom);
+  HeapRegion* new_heap_region(uint hrs_index, HeapWord* bottom);
 
   void verify_not_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
   void verify_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
@@ -1301,7 +1301,7 @@ public:
   void heap_region_iterate_from(HeapRegion* r, HeapRegionClosure* blk) const;
 
   // Return the region with the given index. It assumes the index is valid.
-  HeapRegion* region_at(size_t index) const { return _hrs.at(index); }
+  HeapRegion* region_at(uint index) const { return _hrs.at(index); }
 
   // Divide the heap region sequence into "chunks" of some size (the number
   // of regions divided by the number of parallel threads times some
