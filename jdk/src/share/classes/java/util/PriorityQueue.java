@@ -449,6 +449,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      *         this queue
      * @throws NullPointerException if the specified array is null
      */
+    @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
         if (a.length < size)
             // Make a new array of a's runtime type, but my contents:
@@ -514,6 +515,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
                 (forgetMeNot != null && !forgetMeNot.isEmpty());
         }
 
+        @SuppressWarnings("unchecked")
         public E next() {
             if (expectedModCount != modCount)
                 throw new ConcurrentModificationException();
@@ -571,8 +573,10 @@ public class PriorityQueue<E> extends AbstractQueue<E>
             return null;
         int s = --size;
         modCount++;
-        E result = (E) queue[0];
-        E x = (E) queue[s];
+        @SuppressWarnings("unchecked")
+            E result = (E) queue[0];
+        @SuppressWarnings("unchecked")
+            E x = (E) queue[s];
         queue[s] = null;
         if (s != 0)
             siftDown(0, x);
@@ -598,7 +602,8 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         if (s == i) // removed last element
             queue[i] = null;
         else {
-            E moved = (E) queue[s];
+            @SuppressWarnings("unchecked")
+                E moved = (E) queue[s];
             queue[s] = null;
             siftDown(i, moved);
             if (queue[i] == moved) {
@@ -629,6 +634,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
             siftUpComparable(k, x);
     }
 
+    @SuppressWarnings("unchecked")
     private void siftUpComparable(int k, E x) {
         Comparable<? super E> key = (Comparable<? super E>) x;
         while (k > 0) {
@@ -645,8 +651,9 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     private void siftUpUsingComparator(int k, E x) {
         while (k > 0) {
             int parent = (k - 1) >>> 1;
-            Object e = queue[parent];
-            if (comparator.compare(x, (E) e) >= 0)
+            @SuppressWarnings("unchecked")
+                E e = (E) queue[parent];
+            if (comparator.compare(x, e) >= 0)
                 break;
             queue[k] = e;
             k = parent;
@@ -669,6 +676,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
             siftDownComparable(k, x);
     }
 
+    @SuppressWarnings("unchecked")
     private void siftDownComparable(int k, E x) {
         Comparable<? super E> key = (Comparable<? super E>)x;
         int half = size >>> 1;        // loop while a non-leaf
@@ -687,6 +695,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         queue[k] = key;
     }
 
+    @SuppressWarnings("unchecked")
     private void siftDownUsingComparator(int k, E x) {
         int half = size >>> 1;
         while (k < half) {
@@ -708,6 +717,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * Establishes the heap invariant (described above) in the entire tree,
      * assuming nothing about the order of the elements prior to the call.
      */
+    @SuppressWarnings("unchecked")
     private void heapify() {
         for (int i = (size >>> 1) - 1; i >= 0; i--)
             siftDown(i, (E) queue[i]);

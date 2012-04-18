@@ -88,11 +88,11 @@ public abstract class EnumSet<E extends Enum<E>> extends AbstractSet<E>
     /**
      * All of the values comprising T.  (Cached for performance.)
      */
-    final Enum[] universe;
+    final Enum<?>[] universe;
 
-    private static Enum[] ZERO_LENGTH_ENUM_ARRAY = new Enum[0];
+    private static Enum<?>[] ZERO_LENGTH_ENUM_ARRAY = new Enum<?>[0];
 
-    EnumSet(Class<E>elementType, Enum[] universe) {
+    EnumSet(Class<E>elementType, Enum<?>[] universe) {
         this.elementType = elementType;
         this.universe    = universe;
     }
@@ -105,7 +105,7 @@ public abstract class EnumSet<E extends Enum<E>> extends AbstractSet<E>
      * @throws NullPointerException if <tt>elementType</tt> is null
      */
     public static <E extends Enum<E>> EnumSet<E> noneOf(Class<E> elementType) {
-        Enum[] universe = getUniverse(elementType);
+        Enum<?>[] universe = getUniverse(elementType);
         if (universe == null)
             throw new ClassCastException(elementType + " not an enum");
 
@@ -358,6 +358,7 @@ public abstract class EnumSet<E extends Enum<E>> extends AbstractSet<E>
      *
      * @return a copy of this set
      */
+    @SuppressWarnings("unchecked")
     public EnumSet<E> clone() {
         try {
             return (EnumSet<E>) super.clone();
@@ -375,7 +376,7 @@ public abstract class EnumSet<E extends Enum<E>> extends AbstractSet<E>
      * Throws an exception if e is not of the correct type for this enum set.
      */
     final void typeCheck(E e) {
-        Class eClass = e.getClass();
+        Class<?> eClass = e.getClass();
         if (eClass != elementType && eClass.getSuperclass() != elementType)
             throw new ClassCastException(eClass + " != " + elementType);
     }
@@ -413,16 +414,19 @@ public abstract class EnumSet<E extends Enum<E>> extends AbstractSet<E>
          *
          * @serial
          */
-        private final Enum[] elements;
+        private final Enum<?>[] elements;
 
         SerializationProxy(EnumSet<E> set) {
             elementType = set.elementType;
             elements = set.toArray(ZERO_LENGTH_ENUM_ARRAY);
         }
 
+        // instead of cast to E, we should perhaps use elementType.cast()
+        // to avoid injection of forged stream, but it will slow the implementation
+        @SuppressWarnings("unchecked")
         private Object readResolve() {
             EnumSet<E> result = EnumSet.noneOf(elementType);
-            for (Enum e : elements)
+            for (Enum<?> e : elements)
                 result.add((E)e);
             return result;
         }
