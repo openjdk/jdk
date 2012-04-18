@@ -246,11 +246,12 @@ public class LinkedHashMap<K,V>
      * by superclass resize.  It is overridden for performance, as it is
      * faster to iterate using our linked list.
      */
+    @SuppressWarnings("unchecked")
     void transfer(HashMap.Entry[] newTable) {
         int newCapacity = newTable.length;
         for (Entry<K,V> e = header.after; e != header; e = e.after) {
             int index = indexFor(e.hash, newCapacity);
-            e.next = newTable[index];
+            e.next = (HashMap.Entry<K,V>)newTable[index];
             newTable[index] = e;
         }
     }
@@ -267,11 +268,11 @@ public class LinkedHashMap<K,V>
     public boolean containsValue(Object value) {
         // Overridden to take advantage of faster iterator
         if (value==null) {
-            for (Entry e = header.after; e != header; e = e.after)
+            for (Entry<?,?> e = header.after; e != header; e = e.after)
                 if (e.value==null)
                     return true;
         } else {
-            for (Entry e = header.after; e != header; e = e.after)
+            for (Entry<?,?> e = header.after; e != header; e = e.after)
                 if (value.equals(e.value))
                     return true;
         }
@@ -437,7 +438,8 @@ public class LinkedHashMap<K,V>
      * table or remove the eldest entry.
      */
     void createEntry(int hash, K key, V value, int bucketIndex) {
-        HashMap.Entry<K,V> old = table[bucketIndex];
+        @SuppressWarnings("unchecked")
+            HashMap.Entry<K,V> old = (HashMap.Entry<K,V>)table[bucketIndex];
         Entry<K,V> e = new Entry<>(hash, key, value, old);
         table[bucketIndex] = e;
         e.addBefore(header);
