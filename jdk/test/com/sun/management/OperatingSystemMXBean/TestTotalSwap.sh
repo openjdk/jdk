@@ -83,6 +83,13 @@ case `uname -s` in
        total_swap=`free -b | grep -i swap | awk '{print $2}'`
        runOne GetTotalSwapSpaceSize $total_swap 
        ;;
+     Darwin )
+       # $ sysctl -n vm.swapusage 
+       # total = 8192.00M  used = 7471.11M  free = 720.89M  (encrypted)
+       swap=`/usr/sbin/sysctl -n vm.swapusage | awk '{ print $3 }' | awk -F . '{ print $1 }'` || exit 2
+       total_swap=`expr $swap \* 1024 \* 1024` || exit 2
+       runOne GetTotalSwapSpaceSize $total_swap
+       ;;
     * )
        runOne GetTotalSwapSpaceSize "sanity-only"
        ;;

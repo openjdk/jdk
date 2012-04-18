@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,16 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 6286011 6330315
- * @summary Verify that appropriate SelectorProvider is selected.
+/* @test
+   @bug 7152690
+   @summary Initialize SJIS_0213 charset with SecurityManager enabled
  */
-
-import java.nio.channels.spi.*;
-
-public class SelProvider {
-    public static void main(String[] args) throws Exception {
-        String osname = System.getProperty("os.name");
-        String osver = System.getProperty("os.version");
-        String spName = SelectorProvider.provider().getClass().getName();
-        String expected = null;
-        if ("SunOS".equals(osname)) {
-            expected = "sun.nio.ch.DevPollSelectorProvider";
-        } else if ("Linux".equals(osname)) {
-            expected = "sun.nio.ch.EPollSelectorProvider";
-        } else if (osname.startsWith("Mac OS")) {
-            expected = "sun.nio.ch.KQueueSelectorProvider";
-        } else
-            return;
-        if (!spName.equals(expected))
-            throw new Exception("failed");
+public class TestSJIS0213_SM {
+    public static void main(String[] args) throws Throwable {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm == null) {
+            System.setSecurityManager(new SecurityManager());
+        }
+        java.nio.charset.Charset.forName("SJIS_0213");
     }
 }

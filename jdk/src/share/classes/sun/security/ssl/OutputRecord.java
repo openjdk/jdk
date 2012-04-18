@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.security.ssl;
 
 import java.io.*;
 import java.nio.*;
+import java.util.Arrays;
 
 import javax.net.ssl.SSLException;
 import sun.misc.HexDumpEncoder;
@@ -227,6 +228,24 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
     }
 
     /*
+     * Increases the capacity if necessary to ensure that it can hold
+     * at least the number of elements specified by the minimum
+     * capacity argument.
+     *
+     * Note that the increased capacity is only can be used for held
+     * record buffer. Please DO NOT update the availableDataBytes()
+     * according to the expended buffer capacity.
+     *
+     * @see availableDataBytes()
+     */
+    private void ensureCapacity(int minCapacity) {
+        // overflow-conscious code
+        if (minCapacity > buf.length) {
+            buf = Arrays.copyOf(buf, minCapacity);
+        }
+    }
+
+    /*
      * Return the type of SSL record that's buffered here.
      */
     final byte contentType() {
@@ -243,7 +262,9 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
      * that synchronization be done elsewhere.  Also, this does its work
      * in a single low level write, for efficiency.
      */
-    void write(OutputStream s) throws IOException {
+    void write(OutputStream s, boolean holdRecord,
+            ByteArrayOutputStream heldRecordBuffer) throws IOException {
+
         /*
          * Don't emit content-free records.  (Even change cipher spec
          * messages have a byte of data!)
@@ -300,7 +321,49 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
         }
         firstMessage = false;
 
-        writeBuffer(s, buf, 0, count);
+        /*
+         * The upper levels may want us to delay sending this packet so
+         * multiple TLS Records can be sent in one (or more) TCP packets.
+         * If so, add this packet to the heldRecordBuffer.
+         *
+         * NOTE:  all writes have been synchronized by upper levels.
+         */
+        int debugOffset = 0;
+        if (holdRecord) {
+            /*
+             * If holdRecord is true, we must have a heldRecordBuffer.
+             *
+             * Don't worry about the override of writeBuffer(), because
+             * when holdRecord is true, the implementation in this class
+             * will be used.
+             */
+            writeBuffer(heldRecordBuffer, buf, 0, count, debugOffset);
+        } else {
+            // It's time to send, do we have buffered data?
+            // May or may not have a heldRecordBuffer.
+            if (heldRecordBuffer != null && heldRecordBuffer.size() > 0) {
+                int heldLen = heldRecordBuffer.size();
+
+                // Ensure the capacity of this buffer.
+                ensureCapacity(count + heldLen);
+
+                // Slide everything in the buffer to the right.
+                System.arraycopy(buf, 0, buf, heldLen, count);
+
+                // Prepend the held record to the buffer.
+                System.arraycopy(
+                    heldRecordBuffer.toByteArray(), 0, buf, 0, heldLen);
+                count += heldLen;
+
+                // Clear the held buffer.
+                heldRecordBuffer.reset();
+
+                // The held buffer has been dumped, set the debug dump offset.
+                debugOffset = heldLen;
+            }
+            writeBuffer(s, buf, 0, count, debugOffset);
+        }
+
         reset();
     }
 
@@ -309,15 +372,17 @@ class OutputRecord extends ByteArrayOutputStream implements Record {
      * we'll override this method and let it take the appropriate
      * action.
      */
-    void writeBuffer(OutputStream s, byte [] buf, int off, int len)
-            throws IOException {
+    void writeBuffer(OutputStream s, byte [] buf, int off, int len,
+            int debugOffset) throws IOException {
         s.write(buf, off, len);
         s.flush();
 
+        // Output only the record from the specified debug offset.
         if (debug != null && Debug.isOn("packet")) {
             try {
                 HexDumpEncoder hd = new HexDumpEncoder();
-                ByteBuffer bb = ByteBuffer.wrap(buf, off, len);
+                ByteBuffer bb = ByteBuffer.wrap(
+                        buf, off + debugOffset, len - debugOffset);
 
                 System.out.println("[Raw write]: length = " +
                     bb.remaining());
