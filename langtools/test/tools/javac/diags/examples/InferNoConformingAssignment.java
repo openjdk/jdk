@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,13 @@
  * questions.
  */
 
-// key: compiler.misc.inferred.do.not.conform.to.bounds
-// key: compiler.err.cant.apply.diamond.1
-// key: compiler.misc.diamond
+// key: compiler.err.cant.apply.symbol.1
+// key: compiler.misc.infer.no.conforming.assignment.exists
 
-class InferredDoNotConformToBounds {
-   static class SuperFoo<X> {}
-   static class Foo<X extends Number> extends SuperFoo<X> {
-       Foo(X x) {}
-   }
+import java.util.*;
 
-   SuperFoo<String> sf1 = new Foo<>("");
+class InferNoConformingAssignment {
+    <X extends Number> List<X> m(String s) { return null; }
+    { this.m(1); }
 }
+
