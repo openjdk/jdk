@@ -62,7 +62,8 @@ public class B4957695 {
                 readOneRequest(s.getInputStream());
                 try (OutputStreamWriter ow =
                      new OutputStreamWriter((s.getOutputStream()))) {
-                    FileInputStream fin = new FileInputStream("foo1.jar");
+                    FileInputStream fin = new FileInputStream(new File(
+                        System.getProperty("test.src", "."), "foo1.jar"));
                     int length = fin.available();
                     byte[] b = new byte[length-10];
                     fin.read(b, 0, length-10);
