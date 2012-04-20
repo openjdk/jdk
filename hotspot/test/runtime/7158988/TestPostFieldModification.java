@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012 SAP AG.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +19,40 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_TRACE_TRACE_MACRO_HPP
-#define SHARE_VM_TRACE_TRACE_MACRO_HPP
+public class TestPostFieldModification {
 
-#define EVENT_BEGIN(type, name)
-#define EVENT_SET(name, field, value)
-#define EVENT_COMMIT(name, ...)
-#define EVENT_STARTED(name, time)
-#define EVENT_ENDED(name, time)
-#define EVENT_THREAD_EXIT(thread)
+  public String value;  // watch modification of value
 
-#define TRACE_ENABLED 0
+  public static void main(String[] args){
 
-#define TRACE_INIT_ID(k)
-#define TRACE_BUFFER void*
+    System.out.println("Start threads");
+    // this thread modifies the field 'value'
+    new Thread() {
+      TestPostFieldModification test = new TestPostFieldModification();
+      public void run() {
+        test.value="test";
+        for(int i = 0; i < 10; i++) {
+          test.value += new String("_test");
+        }
+      }
+    }.start();
 
-#define TRACE_START() true
-#define TRACE_INITIALIZE() 0
+    // this thread is used to trigger a gc
+    Thread d = new Thread() {
+      public void run() {
+        while(true) {
+          try {
+            Thread.sleep(100);
+          } catch (InterruptedException e) {
 
-#define TRACE_SET_KLASS_TRACE_ID(x1, x2) do { } while (0)
-#define TRACE_DEFINE_KLASS_METHODS typedef int ___IGNORED_hs_trace_type1
-#define TRACE_DEFINE_KLASS_TRACE_ID typedef int ___IGNORED_hs_trace_type2
-#define TRACE_DEFINE_OFFSET typedef int ___IGNORED_hs_trace_type3
-#define TRACE_ID_OFFSET in_ByteSize(0); ShouldNotReachHere()
-#define TRACE_TEMPLATES(template)
-#define TRACE_INTRINSICS(do_intrinsic, do_class, do_name, do_signature, do_alias)
-
-#endif
+          }
+          System.gc();
+        }
+      }
+    };
+    d.setDaemon(true);
+    d.start();
+  }
+}
