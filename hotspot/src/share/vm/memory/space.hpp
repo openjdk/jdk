@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,7 +306,7 @@ class Space: public CHeapObj {
   }
 
   // Debugging
-  virtual void verify(bool allow_dirty) const = 0;
+  virtual void verify() const = 0;
 };
 
 // A MemRegionClosure (ResourceObj) whose "do_MemRegion" function applies an
@@ -948,7 +948,7 @@ class ContiguousSpace: public CompactibleSpace {
   }
 
   // Debugging
-  virtual void verify(bool allow_dirty) const;
+  virtual void verify() const;
 
   // Used to increase collection frequency.  "factor" of 0 means entire
   // space.
@@ -1100,7 +1100,7 @@ class OffsetTableContigSpace: public ContiguousSpace {
   virtual void print_on(outputStream* st) const;
 
   // Debugging
-  void verify(bool allow_dirty) const;
+  void verify() const;
 
   // Shared space support
   void serialize_block_offset_array_offsets(SerializeOopClosure* soc);
