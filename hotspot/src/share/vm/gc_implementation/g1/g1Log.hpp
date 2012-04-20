@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,35 @@
  *
  */
 
-#ifndef SHARE_VM_TRACE_TRACE_MACRO_HPP
-#define SHARE_VM_TRACE_TRACE_MACRO_HPP
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1LOG_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_G1LOG_HPP
 
-#define EVENT_BEGIN(type, name)
-#define EVENT_SET(name, field, value)
-#define EVENT_COMMIT(name, ...)
-#define EVENT_STARTED(name, time)
-#define EVENT_ENDED(name, time)
-#define EVENT_THREAD_EXIT(thread)
+#include "memory/allocation.hpp"
 
-#define TRACE_ENABLED 0
+class G1Log : public AllStatic {
+  typedef enum {
+    LevelNone,
+    LevelFine,
+    LevelFiner,
+    LevelFinest
+  } LogLevel;
 
-#define TRACE_INIT_ID(k)
-#define TRACE_BUFFER void*
+  static LogLevel _level;
 
-#define TRACE_START() true
-#define TRACE_INITIALIZE() 0
+ public:
+  inline static bool fine() {
+    return _level >= LevelFine;
+  }
 
-#define TRACE_SET_KLASS_TRACE_ID(x1, x2) do { } while (0)
-#define TRACE_DEFINE_KLASS_METHODS typedef int ___IGNORED_hs_trace_type1
-#define TRACE_DEFINE_KLASS_TRACE_ID typedef int ___IGNORED_hs_trace_type2
-#define TRACE_DEFINE_OFFSET typedef int ___IGNORED_hs_trace_type3
-#define TRACE_ID_OFFSET in_ByteSize(0); ShouldNotReachHere()
-#define TRACE_TEMPLATES(template)
-#define TRACE_INTRINSICS(do_intrinsic, do_class, do_name, do_signature, do_alias)
+  inline static bool finer() {
+    return _level >= LevelFiner;
+  }
 
-#endif
+  inline static bool finest() {
+    return _level == LevelFinest;
+  }
+
+  static void init();
+};
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1LOG_HPP
