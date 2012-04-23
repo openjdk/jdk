@@ -1,0 +1,2 @@
+T7154127.java:19:49: compiler.err.prob.found.req.1: (compiler.misc.invalid.inferred.types: T,Y,U, (compiler.misc.inferred.do.not.conform.to.upper.bounds: Y, T7154127.D,T7154127.B<U>))
+1 error
