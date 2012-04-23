@@ -82,7 +82,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
 
     boolean paintPending = false;
     boolean isLayouting = false;
-    boolean enabled;
+    private boolean enabled;
 
     // Actually used only by XDecoratedPeer
     protected int boundsOperation;
@@ -128,9 +128,6 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
     }
     void postInit(XCreateWindowParams params) {
         super.postInit(params);
-        Color c;
-        Font  f;
-        Cursor cursor;
 
         pSetCursor(target.getCursor());
 
@@ -143,19 +140,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
             reshape(r.x, r.y, r.width, r.height);
         }
 
-        enabled = target.isEnabled();
-
-        // If any of our heavyweight ancestors are disable, we should be too
-        // See 6176875 for more information
-        Component comp = target;
-        while( !(comp == null || comp instanceof Window) ) {
-            comp = comp.getParent();
-            if( comp != null && !comp.isEnabled() && !comp.isLightweight() ){
-                setEnabled(false);
-                break;
-            }
-        }
-        enableLog.fine("Initial enable state: {0}", Boolean.valueOf(enabled));
+        setEnabled(target.isEnabled());
 
         if (target.isVisible()) {
             setVisible(true);
@@ -384,45 +369,48 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         setVisible(false);
     }
 
-
     /**
      * @see java.awt.peer.ComponentPeer
      */
-    public void setEnabled(boolean value) {
-        enableLog.fine("{0}ing {1}", (value?"Enabl":"Disabl"), this);
-        boolean repaintNeeded = (enabled != value);
-        enabled = value;
+    public void setEnabled(final boolean value) {
+        if (enableLog.isLoggable(PlatformLogger.FINE)) {
+            enableLog.fine("{0}ing {1}", (value ? "Enabl" : "Disabl"), this);
+        }
+        boolean status = value;
+        // If any of our heavyweight ancestors are disable, we should be too
+        // See 6176875 for more information
+        final Container cp = SunToolkit.getNativeContainer(target);
+        if (cp != null) {
+            status &= ((XComponentPeer) cp.getPeer()).isEnabled();
+        }
+        synchronized (getStateLock()) {
+            if (enabled == status) {
+                return;
+            }
+            enabled = status;
+        }
+
         if (target instanceof Container) {
-            Component list[] = ((Container)target).getComponents();
-            for (int i = 0; i < list.length; ++i) {
-                boolean childEnabled = list[i].isEnabled();
-                ComponentPeer p = list[i].getPeer();
-                if ( p != null ) {
-                    p.setEnabled(value && childEnabled);
+            final Component[] list = ((Container) target).getComponents();
+            for (final Component child : list) {
+                final ComponentPeer p = child.getPeer();
+                if (p != null) {
+                    p.setEnabled(status && child.isEnabled());
                 }
             }
         }
-        if (repaintNeeded) {
-            repaint();
-        }
+        repaint();
     }
 
     //
     // public so aw/Window can call it
     //
-    public boolean isEnabled() {
-        return enabled;
+    public final boolean isEnabled() {
+        synchronized (getStateLock()) {
+            return enabled;
+        }
     }
 
-
-
-    public void enable() {
-        setEnabled(true);
-    }
-
-    public void disable() {
-        setEnabled(false);
-    }
     @Override
     public void paint(final Graphics g) {
         super.paint(g);
