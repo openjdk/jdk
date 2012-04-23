@@ -78,7 +78,6 @@ compiler.misc.type.captureof
 compiler.misc.type.captureof.1
 compiler.misc.type.none
 compiler.misc.type.req.exact
-compiler.misc.type.variable.has.undetermined.type
 compiler.misc.unable.to.access.file                     # ClassFile
 compiler.misc.undecl.type.var                           # ClassReader
 compiler.misc.unicode.str.not.supported                 # ClassReader
