@@ -36,32 +36,34 @@ import sun.awt.SunToolkit;
 
 public abstract class LWCursorManager {
 
-    // A flag to indicate if the update is scheduled, so we don't
-    // process it twice
-    private AtomicBoolean updatePending = new AtomicBoolean(false);
+    /**
+     * A flag to indicate if the update is scheduled, so we don't process it
+     * twice.
+     */
+    private final AtomicBoolean updatePending = new AtomicBoolean(false);
 
     protected LWCursorManager() {
     }
 
-    /*
+    /**
      * Sets the cursor to correspond the component currently under mouse.
      *
      * This method should not be executed on the toolkit thread as it
      * calls to user code (e.g. Container.findComponentAt).
      */
-    public void updateCursor() {
+    public final void updateCursor() {
         updatePending.set(false);
         updateCursorImpl();
     }
 
-    /*
+    /**
      * Schedules updating the cursor on the corresponding event dispatch
      * thread for the given window.
      *
      * This method is called on the toolkit thread as a result of a
      * native update cursor request (e.g. WM_SETCURSOR on Windows).
      */
-    public void updateCursorLater(LWWindowPeer window) {
+    public final void updateCursorLater(final LWWindowPeer window) {
         if (updatePending.compareAndSet(false, true)) {
             Runnable r = new Runnable() {
                 @Override
@@ -74,45 +76,58 @@ public abstract class LWCursorManager {
     }
 
     private void updateCursorImpl() {
-        LWWindowPeer windowUnderCursor = LWWindowPeer.getWindowUnderCursor();
-        Point cursorPos = getCursorPosition();
-        LWComponentPeer<?, ?> componentUnderCursor = null;
-        // TODO: it's possible to get the component under cursor directly as
-        // it's stored in LWWindowPee anyway (lastMouseEventPeer)
-        if (windowUnderCursor != null) {
-            componentUnderCursor = windowUnderCursor.findPeerAt(cursorPos.x, cursorPos.y);
+        final Point cursorPos = getCursorPosition();
+        final Component c = findComponent(cursorPos);
+        final Cursor cursor;
+        final Object peer = LWToolkit.targetToPeer(c);
+        if (peer instanceof LWComponentPeer) {
+            final LWComponentPeer<?, ?> lwpeer = (LWComponentPeer<?, ?>) peer;
+            final Point p = lwpeer.getLocationOnScreen();
+            cursor = lwpeer.getCursor(new Point(cursorPos.x - p.x,
+                                                cursorPos.y - p.y));
+        } else {
+            cursor = (c != null) ? c.getCursor() : null;
         }
-        Cursor cursor = null;
-        if (componentUnderCursor != null) {
-            Component c = componentUnderCursor.getTarget();
+        // TODO: default cursor for modal blocked windows
+        setCursor(cursor);
+    }
+
+    /**
+     * Returns the first visible, enabled and showing component under cursor.
+     *
+     * @param cursorPos Current cursor position.
+     * @return Component
+     */
+    private static final Component findComponent(final Point cursorPos) {
+        final LWComponentPeer<?, ?> peer = LWWindowPeer.getPeerUnderCursor();
+        Component c = null;
+        if (peer != null) {
+            c = peer.getTarget();
             if (c instanceof Container) {
-                Point p = componentUnderCursor.getLocationOnScreen();
-                c = ((Container)c).findComponentAt(cursorPos.x - p.x, cursorPos.y - p.y);
+                final Point p = peer.getLocationOnScreen();
+                c = ((Container) c).findComponentAt(cursorPos.x - p.x,
+                                                    cursorPos.y - p.y);
             }
-            // Traverse up to the first visible, enabled and showing component
             while (c != null) {
                 if (c.isVisible() && c.isEnabled() && (c.getPeer() != null)) {
                     break;
                 }
                 c = c.getParent();
             }
-            if (c != null) {
-                cursor = c.getCursor();
-            }
         }
-        // TODO: default cursor for modal blocked windows
-        setCursor(windowUnderCursor, cursor);
+        return c;
     }
 
-    /*
+    /**
      * Returns the current cursor position.
      */
     // TODO: make it public to reuse for MouseInfo
     protected abstract Point getCursorPosition();
 
-    /*
-     * Sets a cursor. The cursor can be null if the mouse is not over a Java window.
+    /**
+     * Sets a cursor. The cursor can be null if the mouse is not over a Java
+     * window.
+     * @param cursor the new {@code Cursor}.
      */
-    protected abstract void setCursor(LWWindowPeer windowUnderCursor, Cursor cursor);
-
+    protected abstract void setCursor(Cursor cursor);
 }
