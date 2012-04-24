@@ -21,6 +21,8 @@
  * questions.
  */
 
+import java.io.StringWriter;
+import java.io.PrintWriter;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
@@ -87,6 +89,7 @@ public class TestHelper {
     static final String EXE_FILE_EXT   = ".exe";
     static final String JLDEBUG_KEY     = "_JAVA_LAUNCHER_DEBUG";
     static final String EXPECTED_MARKER = "TRACER_MARKER:About to EXEC";
+    static final String TEST_PREFIX     = "###TestError###: ";
 
     static int testExitValue = 0;
 
@@ -376,7 +379,8 @@ public class TestHelper {
      * of use methods to check the test results.
      */
     static class TestResult {
-        StringBuilder status;
+        PrintWriter status;
+        StringWriter sw;
         int exitValue;
         List<String> testOutput;
         Map<String, String> env;
@@ -384,27 +388,33 @@ public class TestHelper {
 
         public TestResult(String str, int rv, List<String> oList,
                 Map<String, String> env, Throwable t) {
-            status = new StringBuilder("Executed command: " + str + "\n");
+            sw = new StringWriter();
+            status = new PrintWriter(sw);
+            status.println("Executed command: " + str + "\n");
             exitValue = rv;
             testOutput = oList;
             this.env = env;
             this.t = t;
         }
 
-        void appendStatus(String x) {
-            status = status.append("  " + x + "\n");
+        void appendError(String x) {
+            status.println(TEST_PREFIX + x);
+        }
+
+        void indentStatus(String x) {
+            status.println("  " + x);
         }
 
         void checkNegative() {
             if (exitValue == 0) {
-                appendStatus("Error: test must not return 0 exit value");
+                appendError("test must not return 0 exit value");
                 testExitValue++;
             }
         }
 
         void checkPositive() {
             if (exitValue != 0) {
-                appendStatus("Error: test did not return 0 exit value");
+                appendError("test did not return 0 exit value");
                 testExitValue++;
             }
         }
@@ -415,7 +425,7 @@ public class TestHelper {
 
         boolean isZeroOutput() {
             if (!testOutput.isEmpty()) {
-                appendStatus("Error: No message from cmd please");
+                appendError("No message from cmd please");
                 testExitValue++;
                 return false;
             }
@@ -424,7 +434,7 @@ public class TestHelper {
 
         boolean isNotZeroOutput() {
             if (testOutput.isEmpty()) {
-                appendStatus("Error: Missing message");
+                appendError("Missing message");
                 testExitValue++;
                 return false;
             }
@@ -433,22 +443,25 @@ public class TestHelper {
 
         @Override
         public String toString() {
-            status.append("++++Begin Test Info++++\n");
-            status.append("++++Test Environment++++\n");
+            status.println("++++Begin Test Info++++");
+            status.println("++++Test Environment++++");
             for (String x : env.keySet()) {
-                status.append(x).append("=").append(env.get(x)).append("\n");
+                indentStatus(x + "=" + env.get(x));
             }
-            status.append("++++Test Output++++\n");
+            status.println("++++Test Output++++");
             for (String x : testOutput) {
-                appendStatus(x);
+                indentStatus(x);
             }
-            status.append("++++Test Stack Trace++++\n");
-            status.append(t.toString());
+            status.println("++++Test Stack Trace++++");
+            status.println(t.toString());
             for (StackTraceElement e : t.getStackTrace()) {
-                status.append(e.toString());
+                indentStatus(e.toString());
             }
-            status.append("++++End of Test Info++++\n");
-            return status.toString();
+            status.println("++++End of Test Info++++");
+            status.flush();
+            String out = sw.toString();
+            status.close();
+            return out;
         }
 
         boolean contains(String str) {
@@ -457,7 +470,7 @@ public class TestHelper {
                     return true;
                 }
             }
-            appendStatus("Error: string <" + str + "> not found");
+            appendError("string <" + str + "> not found");
             testExitValue++;
             return false;
         }
@@ -468,7 +481,7 @@ public class TestHelper {
                     return true;
                 }
             }
-            appendStatus("Error: string <" + stringToMatch + "> not found");
+            appendError("string <" + stringToMatch + "> not found");
             testExitValue++;
             return false;
         }
