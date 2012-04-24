@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,10 @@ CXX=cl.exe
 # These are always used in all compiles
 CXX_FLAGS=/nologo /W3 /WX
 
-# Let's add debug information always too.
+# Let's add debug information when Full Debug Symbols is enabled
+!if "$(ENABLE_FULL_DEBUG_SYMBOLS)" == "1"
 CXX_FLAGS=$(CXX_FLAGS) /Zi
+!endif
 
 # Based on BUILDARCH we add some flags and select the default compiler name
 !if "$(BUILDARCH)" == "ia64"
@@ -239,7 +241,10 @@ LD=link.exe
 LD_FLAGS= $(LD_FLAGS) kernel32.lib user32.lib gdi32.lib winspool.lib \
  comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib \
  uuid.lib Wsock32.lib winmm.lib /nologo /machine:$(MACHINE) /opt:REF \
- /opt:ICF,8 /map /debug
+ /opt:ICF,8
+!if "$(ENABLE_FULL_DEBUG_SYMBOLS)" == "1"
+LD_FLAGS= $(LD_FLAGS) /map /debug
+!endif
 
 
 !if $(MSC_VER) >= 1600 
