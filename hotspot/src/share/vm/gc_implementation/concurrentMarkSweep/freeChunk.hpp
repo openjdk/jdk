@@ -75,20 +75,20 @@ class FreeChunk VALUE_OBJ_CLASS_SPEC {
     // calls.  We really want the read of _mark and _prev from this pointer
     // to be volatile but making the fields volatile causes all sorts of
     // compilation errors.
-    return ((volatile FreeChunk*)addr)->isFree();
+    return ((volatile FreeChunk*)addr)->is_free();
   }
 
-  bool isFree() const volatile {
+  bool is_free() const volatile {
     LP64_ONLY(if (UseCompressedOops) return mark()->is_cms_free_chunk(); else)
     return (((intptr_t)_prev) & 0x1) == 0x1;
   }
   bool cantCoalesce() const {
-    assert(isFree(), "can't get coalesce bit on not free");
+    assert(is_free(), "can't get coalesce bit on not free");
     return (((intptr_t)_prev) & 0x2) == 0x2;
   }
   void dontCoalesce() {
     // the block should be free
-    assert(isFree(), "Should look like a free block");
+    assert(is_free(), "Should look like a free block");
     _prev = (FreeChunk*)(((intptr_t)_prev) | 0x2);
   }
   FreeChunk* prev() const {
@@ -103,23 +103,23 @@ class FreeChunk VALUE_OBJ_CLASS_SPEC {
     LP64_ONLY(if (UseCompressedOops) return mark()->get_size(); else )
     return _size;
   }
-  void setSize(size_t sz) {
+  void set_size(size_t sz) {
     LP64_ONLY(if (UseCompressedOops) set_mark(markOopDesc::set_size_and_free(sz)); else )
     _size = sz;
   }
 
   FreeChunk* next()   const { return _next; }
 
-  void linkAfter(FreeChunk* ptr) {
-    linkNext(ptr);
-    if (ptr != NULL) ptr->linkPrev(this);
+  void link_after(FreeChunk* ptr) {
+    link_next(ptr);
+    if (ptr != NULL) ptr->link_prev(this);
   }
-  void linkNext(FreeChunk* ptr) { _next = ptr; }
-  void linkPrev(FreeChunk* ptr) {
+  void link_next(FreeChunk* ptr) { _next = ptr; }
+  void link_prev(FreeChunk* ptr) {
     LP64_ONLY(if (UseCompressedOops) _prev = ptr; else)
     _prev = (FreeChunk*)((intptr_t)ptr | 0x1);
   }
-  void clearNext()              { _next = NULL; }
+  void clear_next()              { _next = NULL; }
   void markNotFree() {
     // Set _prev (klass) to null before (if) clearing the mark word below
     _prev = NULL;
@@ -129,7 +129,7 @@ class FreeChunk VALUE_OBJ_CLASS_SPEC {
       set_mark(markOopDesc::prototype());
     }
 #endif
-    assert(!isFree(), "Error");
+    assert(!is_free(), "Error");
   }
 
   // Return the address past the end of this chunk

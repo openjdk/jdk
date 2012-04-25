@@ -1026,7 +1026,7 @@ HeapWord* ConcurrentMarkSweepGeneration::have_lock_and_allocate(size_t size,
     // its mark-bit or P-bits not yet set. Such objects need
     // to be safely navigable by block_start().
     assert(oop(res)->klass_or_null() == NULL, "Object should be uninitialized here.");
-    assert(!((FreeChunk*)res)->isFree(), "Error, block will look free but show wrong size");
+    assert(!((FreeChunk*)res)->is_free(), "Error, block will look free but show wrong size");
     collector()->direct_allocated(res, adjustedSize);
     _direct_allocated_words += adjustedSize;
     // allocation counters
@@ -1391,7 +1391,7 @@ ConcurrentMarkSweepGeneration::par_promote(int thread_num,
   oop obj = oop(obj_ptr);
   OrderAccess::storestore();
   assert(obj->klass_or_null() == NULL, "Object should be uninitialized here.");
-  assert(!((FreeChunk*)obj_ptr)->isFree(), "Error, block will look free but show wrong size");
+  assert(!((FreeChunk*)obj_ptr)->is_free(), "Error, block will look free but show wrong size");
   // IMPORTANT: See note on object initialization for CMS above.
   // Otherwise, copy the object.  Here we must be careful to insert the
   // klass pointer last, since this marks the block as an allocated object.
@@ -1400,7 +1400,7 @@ ConcurrentMarkSweepGeneration::par_promote(int thread_num,
   // Restore the mark word copied above.
   obj->set_mark(m);
   assert(obj->klass_or_null() == NULL, "Object should be uninitialized here.");
-  assert(!((FreeChunk*)obj_ptr)->isFree(), "Error, block will look free but show wrong size");
+  assert(!((FreeChunk*)obj_ptr)->is_free(), "Error, block will look free but show wrong size");
   OrderAccess::storestore();
 
   if (UseCompressedOops) {
@@ -1421,7 +1421,7 @@ ConcurrentMarkSweepGeneration::par_promote(int thread_num,
     promoInfo->track((PromotedObject*)obj, old->klass());
   }
   assert(obj->klass_or_null() == NULL, "Object should be uninitialized here.");
-  assert(!((FreeChunk*)obj_ptr)->isFree(), "Error, block will look free but show wrong size");
+  assert(!((FreeChunk*)obj_ptr)->is_free(), "Error, block will look free but show wrong size");
   assert(old->is_oop(), "Will use and dereference old klass ptr below");
 
   // Finally, install the klass pointer (this should be volatile).
@@ -2034,7 +2034,7 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
            pointer_delta(cms_space->end(), cms_space->compaction_top())
            * HeapWordSize,
       "All the free space should be compacted into one chunk at top");
-    assert(cms_space->dictionary()->totalChunkSize(
+    assert(cms_space->dictionary()->total_chunk_size(
                                       debug_only(cms_space->freelistLock())) == 0 ||
            cms_space->totalSizeInIndexedFreeLists() == 0,
       "All the free space should be in a single chunk");
@@ -6131,7 +6131,7 @@ void ConcurrentMarkSweepGeneration::setNearLargestChunk() {
   double nearLargestPercent = FLSLargestBlockCoalesceProximity;
   HeapWord*  minAddr        = _cmsSpace->bottom();
   HeapWord*  largestAddr    =
-    (HeapWord*) _cmsSpace->dictionary()->findLargestDict();
+    (HeapWord*) _cmsSpace->dictionary()->find_largest_dict();
   if (largestAddr == NULL) {
     // The dictionary appears to be empty.  In this case
     // try to coalesce at the end of the heap.
@@ -7906,7 +7906,7 @@ SweepClosure::SweepClosure(CMSCollector* collector,
     _last_fc = NULL;
 
     _sp->initializeIndexedFreeListArrayReturnedBytes();
-    _sp->dictionary()->initializeDictReturnedBytes();
+    _sp->dictionary()->initialize_dict_returned_bytes();
   )
   assert(_limit >= _sp->bottom() && _limit <= _sp->end(),
          "sweep _limit out of bounds");
@@ -7954,13 +7954,13 @@ SweepClosure::~SweepClosure() {
 
     if (PrintCMSStatistics && CMSVerifyReturnedBytes) {
       size_t indexListReturnedBytes = _sp->sumIndexedFreeListArrayReturnedBytes();
-      size_t dictReturnedBytes = _sp->dictionary()->sumDictReturnedBytes();
-      size_t returnedBytes = indexListReturnedBytes + dictReturnedBytes;
-      gclog_or_tty->print("Returned "SIZE_FORMAT" bytes", returnedBytes);
+      size_t dict_returned_bytes = _sp->dictionary()->sum_dict_returned_bytes();
+      size_t returned_bytes = indexListReturnedBytes + dict_returned_bytes;
+      gclog_or_tty->print("Returned "SIZE_FORMAT" bytes", returned_bytes);
       gclog_or_tty->print("   Indexed List Returned "SIZE_FORMAT" bytes",
         indexListReturnedBytes);
       gclog_or_tty->print_cr("        Dictionary Returned "SIZE_FORMAT" bytes",
-        dictReturnedBytes);
+        dict_returned_bytes);
     }
   }
   if (CMSTraceSweeper) {
@@ -7985,9 +7985,9 @@ void SweepClosure::initialize_free_range(HeapWord* freeFinger,
   if (CMSTestInFreeList) {
     if (freeRangeInFreeLists) {
       FreeChunk* fc = (FreeChunk*) freeFinger;
-      assert(fc->isFree(), "A chunk on the free list should be free.");
+      assert(fc->is_free(), "A chunk on the free list should be free.");
       assert(fc->size() > 0, "Free range should have a size");
-      assert(_sp->verifyChunkInFreeLists(fc), "Chunk is not in free lists");
+      assert(_sp->verify_chunk_in_free_list(fc), "Chunk is not in free lists");
     }
   }
 }
@@ -8057,7 +8057,7 @@ size_t SweepClosure::do_blk_careful(HeapWord* addr) {
   assert(addr < _limit, "sweep invariant");
   // check if we should yield
   do_yield_check(addr);
-  if (fc->isFree()) {
+  if (fc->is_free()) {
     // Chunk that is already free
     res = fc->size();
     do_already_free_chunk(fc);
@@ -8145,7 +8145,7 @@ void SweepClosure::do_already_free_chunk(FreeChunk* fc) {
   // Chunks that cannot be coalesced are not in the
   // free lists.
   if (CMSTestInFreeList && !fc->cantCoalesce()) {
-    assert(_sp->verifyChunkInFreeLists(fc),
+    assert(_sp->verify_chunk_in_free_list(fc),
       "free chunk should be in free lists");
   }
   // a chunk that is already free, should not have been
@@ -8171,7 +8171,7 @@ void SweepClosure::do_already_free_chunk(FreeChunk* fc) {
         FreeChunk* nextChunk = (FreeChunk*)(addr + size);
         assert((HeapWord*)nextChunk <= _sp->end(), "Chunk size out of bounds?");
         if ((HeapWord*)nextChunk < _sp->end() &&     // There is another free chunk to the right ...
-            nextChunk->isFree()               &&     // ... which is free...
+            nextChunk->is_free()               &&     // ... which is free...
             nextChunk->cantCoalesce()) {             // ... but can't be coalesced
           // nothing to do
         } else {
@@ -8203,7 +8203,7 @@ void SweepClosure::do_already_free_chunk(FreeChunk* fc) {
           assert(ffc->size() == pointer_delta(addr, freeFinger()),
             "Size of free range is inconsistent with chunk size.");
           if (CMSTestInFreeList) {
-            assert(_sp->verifyChunkInFreeLists(ffc),
+            assert(_sp->verify_chunk_in_free_list(ffc),
               "free range is not in free lists");
           }
           _sp->removeFreeChunkFromFreeLists(ffc);
@@ -8262,7 +8262,7 @@ size_t SweepClosure::do_garbage_chunk(FreeChunk* fc) {
         assert(ffc->size() == pointer_delta(addr, freeFinger()),
           "Size of free range is inconsistent with chunk size.");
         if (CMSTestInFreeList) {
-          assert(_sp->verifyChunkInFreeLists(ffc),
+          assert(_sp->verify_chunk_in_free_list(ffc),
             "free range is not in free lists");
         }
         _sp->removeFreeChunkFromFreeLists(ffc);
@@ -8351,11 +8351,11 @@ void SweepClosure::do_post_free_or_garbage_chunk(FreeChunk* fc,
                                                  size_t chunkSize) {
   // do_post_free_or_garbage_chunk() should only be called in the case
   // of the adaptive free list allocator.
-  const bool fcInFreeLists = fc->isFree();
+  const bool fcInFreeLists = fc->is_free();
   assert(_sp->adaptive_freelists(), "Should only be used in this case.");
   assert((HeapWord*)fc <= _limit, "sweep invariant");
   if (CMSTestInFreeList && fcInFreeLists) {
-    assert(_sp->verifyChunkInFreeLists(fc), "free chunk is not in free lists");
+    assert(_sp->verify_chunk_in_free_list(fc), "free chunk is not in free lists");
   }
 
   if (CMSTraceSweeper) {
@@ -8410,7 +8410,7 @@ void SweepClosure::do_post_free_or_garbage_chunk(FreeChunk* fc,
       assert(ffc->size() == pointer_delta(fc_addr, freeFinger()),
         "Size of free range is inconsistent with chunk size.");
       if (CMSTestInFreeList) {
-        assert(_sp->verifyChunkInFreeLists(ffc),
+        assert(_sp->verify_chunk_in_free_list(ffc),
           "Chunk is not in free lists");
       }
       _sp->coalDeath(ffc->size());
@@ -8459,7 +8459,7 @@ void SweepClosure::lookahead_and_flush(FreeChunk* fc, size_t chunk_size) {
                  " when examining fc = " PTR_FORMAT "(" SIZE_FORMAT ")",
                  _limit, _sp->bottom(), _sp->end(), fc, chunk_size));
   if (eob >= _limit) {
-    assert(eob == _limit || fc->isFree(), "Only a free chunk should allow us to cross over the limit");
+    assert(eob == _limit || fc->is_free(), "Only a free chunk should allow us to cross over the limit");
     if (CMSTraceSweeper) {
       gclog_or_tty->print_cr("_limit " PTR_FORMAT " reached or crossed by block "
                              "[" PTR_FORMAT "," PTR_FORMAT ") in space "
@@ -8482,8 +8482,8 @@ void SweepClosure::flush_cur_free_chunk(HeapWord* chunk, size_t size) {
   if (!freeRangeInFreeLists()) {
     if (CMSTestInFreeList) {
       FreeChunk* fc = (FreeChunk*) chunk;
-      fc->setSize(size);
-      assert(!_sp->verifyChunkInFreeLists(fc),
+      fc->set_size(size);
+      assert(!_sp->verify_chunk_in_free_list(fc),
         "chunk should not be in free lists yet");
     }
     if (CMSTraceSweeper) {
@@ -8557,8 +8557,8 @@ void SweepClosure::do_yield_work(HeapWord* addr) {
 // This is actually very useful in a product build if it can
 // be called from the debugger.  Compile it into the product
 // as needed.
-bool debug_verifyChunkInFreeLists(FreeChunk* fc) {
-  return debug_cms_space->verifyChunkInFreeLists(fc);
+bool debug_verify_chunk_in_free_list(FreeChunk* fc) {
+  return debug_cms_space->verify_chunk_in_free_list(fc);
 }
 #endif
 
@@ -9255,7 +9255,7 @@ void ASConcurrentMarkSweepGeneration::shrink_by(size_t desired_bytes) {
       size_t chunk_at_end_old_size = chunk_at_end->size();
       assert(chunk_at_end_old_size >= word_size_change,
         "Shrink is too large");
-      chunk_at_end->setSize(chunk_at_end_old_size -
+      chunk_at_end->set_size(chunk_at_end_old_size -
                           word_size_change);
       _cmsSpace->freed((HeapWord*) chunk_at_end->end(),
         word_size_change);

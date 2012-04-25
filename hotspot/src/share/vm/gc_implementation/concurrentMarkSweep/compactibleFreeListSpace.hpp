@@ -499,7 +499,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // Verify that the given chunk is in the free lists:
   // i.e. either the binary tree dictionary, the indexed free lists
   // or the linear allocation block.
-  bool verifyChunkInFreeLists(FreeChunk* fc) const;
+  bool verify_chunk_in_free_list(FreeChunk* fc) const;
   // Verify that the given chunk is the linear allocation block
   bool verify_chunk_is_linear_alloc_block(FreeChunk* fc) const;
   // Do some basic checks on the the free lists.
@@ -608,7 +608,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   void coalDeath(size_t size);
   void smallSplitBirth(size_t size);
   void smallSplitDeath(size_t size);
-  void splitBirth(size_t size);
+  void split_birth(size_t size);
   void splitDeath(size_t size);
   void split(size_t from, size_t to1);
 
