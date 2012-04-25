@@ -65,7 +65,7 @@ FreeList<Chunk>::FreeList(Chunk* fc) :
   _hint         = 0;
   init_statistics();
 #ifndef PRODUCT
-  _allocation_stats.set_returnedBytes(size() * HeapWordSize);
+  _allocation_stats.set_returned_bytes(size() * HeapWordSize);
 #endif
 }
 
@@ -83,7 +83,7 @@ void FreeList<Chunk>::init_statistics(bool split_birth) {
 }
 
 template <class Chunk>
-Chunk* FreeList<Chunk>::getChunkAtHead() {
+Chunk* FreeList<Chunk>::get_chunk_at_head() {
   assert_proper_lock_protection();
   assert(head() == NULL || head()->prev() == NULL, "list invariant");
   assert(tail() == NULL || tail()->next() == NULL, "list invariant");
@@ -93,7 +93,7 @@ Chunk* FreeList<Chunk>::getChunkAtHead() {
     if (nextFC != NULL) {
       // The chunk fc being removed has a "next".  Set the "next" to the
       // "prev" of fc.
-      nextFC->linkPrev(NULL);
+      nextFC->link_prev(NULL);
     } else { // removed tail of list
       link_tail(NULL);
     }
@@ -126,10 +126,10 @@ void FreeList<Chunk>::getFirstNChunksFromList(size_t n, FreeList<Chunk>* fl) {
     if (new_head == NULL) {
       set_tail(NULL);
     } else {
-      new_head->linkPrev(NULL);
+      new_head->link_prev(NULL);
     }
     // Now we can fix up the tail.
-    tl->linkNext(NULL);
+    tl->link_next(NULL);
     // And return the result.
     fl->set_tail(tl);
     fl->set_count(k);
@@ -138,7 +138,7 @@ void FreeList<Chunk>::getFirstNChunksFromList(size_t n, FreeList<Chunk>* fl) {
 
 // Remove this chunk from the list
 template <class Chunk>
-void FreeList<Chunk>::removeChunk(Chunk*fc) {
+void FreeList<Chunk>::remove_chunk(Chunk*fc) {
    assert_proper_lock_protection();
    assert(head() != NULL, "Remove from empty list");
    assert(fc != NULL, "Remove a NULL chunk");
@@ -151,7 +151,7 @@ void FreeList<Chunk>::removeChunk(Chunk*fc) {
    if (nextFC != NULL) {
      // The chunk fc being removed has a "next".  Set the "next" to the
      // "prev" of fc.
-     nextFC->linkPrev(prevFC);
+     nextFC->link_prev(prevFC);
    } else { // removed tail of list
      link_tail(prevFC);
    }
@@ -160,7 +160,7 @@ void FreeList<Chunk>::removeChunk(Chunk*fc) {
      assert(nextFC == NULL || nextFC->prev() == NULL,
        "Prev of head should be NULL");
    } else {
-     prevFC->linkNext(nextFC);
+     prevFC->link_next(nextFC);
      assert(tail() != prevFC || prevFC->next() == NULL,
        "Next of tail should be NULL");
    }
@@ -169,10 +169,10 @@ void FreeList<Chunk>::removeChunk(Chunk*fc) {
           "H/T/C Inconsistency");
    // clear next and prev fields of fc, debug only
    NOT_PRODUCT(
-     fc->linkPrev(NULL);
-     fc->linkNext(NULL);
+     fc->link_prev(NULL);
+     fc->link_next(NULL);
    )
-   assert(fc->isFree(), "Should still be a free chunk");
+   assert(fc->is_free(), "Should still be a free chunk");
    assert(head() == NULL || head()->prev() == NULL, "list invariant");
    assert(tail() == NULL || tail()->next() == NULL, "list invariant");
    assert(head() == NULL || head()->size() == size(), "wrong item on list");
@@ -181,7 +181,7 @@ void FreeList<Chunk>::removeChunk(Chunk*fc) {
 
 // Add this chunk at the head of the list.
 template <class Chunk>
-void FreeList<Chunk>::returnChunkAtHead(Chunk* chunk, bool record_return) {
+void FreeList<Chunk>::return_chunk_at_head(Chunk* chunk, bool record_return) {
   assert_proper_lock_protection();
   assert(chunk != NULL, "insert a NULL chunk");
   assert(size() == chunk->size(), "Wrong size");
@@ -190,7 +190,7 @@ void FreeList<Chunk>::returnChunkAtHead(Chunk* chunk, bool record_return) {
 
   Chunk* oldHead = head();
   assert(chunk != oldHead, "double insertion");
-  chunk->linkAfter(oldHead);
+  chunk->link_after(oldHead);
   link_head(chunk);
   if (oldHead == NULL) { // only chunk in list
     assert(tail() == NULL, "inconsistent FreeList");
@@ -199,7 +199,7 @@ void FreeList<Chunk>::returnChunkAtHead(Chunk* chunk, bool record_return) {
   increment_count(); // of # of chunks in list
   DEBUG_ONLY(
     if (record_return) {
-      increment_returnedBytes_by(size()*HeapWordSize);
+      increment_returned_bytes_by(size()*HeapWordSize);
     }
   )
   assert(head() == NULL || head()->prev() == NULL, "list invariant");
@@ -209,14 +209,14 @@ void FreeList<Chunk>::returnChunkAtHead(Chunk* chunk, bool record_return) {
 }
 
 template <class Chunk>
-void FreeList<Chunk>::returnChunkAtHead(Chunk* chunk) {
+void FreeList<Chunk>::return_chunk_at_head(Chunk* chunk) {
   assert_proper_lock_protection();
-  returnChunkAtHead(chunk, true);
+  return_chunk_at_head(chunk, true);
 }
 
 // Add this chunk at the tail of the list.
 template <class Chunk>
-void FreeList<Chunk>::returnChunkAtTail(Chunk* chunk, bool record_return) {
+void FreeList<Chunk>::return_chunk_at_tail(Chunk* chunk, bool record_return) {
   assert_proper_lock_protection();
   assert(head() == NULL || head()->prev() == NULL, "list invariant");
   assert(tail() == NULL || tail()->next() == NULL, "list invariant");
@@ -226,7 +226,7 @@ void FreeList<Chunk>::returnChunkAtTail(Chunk* chunk, bool record_return) {
   Chunk* oldTail = tail();
   assert(chunk != oldTail, "double insertion");
   if (oldTail != NULL) {
-    oldTail->linkAfter(chunk);
+    oldTail->link_after(chunk);
   } else { // only chunk in list
     assert(head() == NULL, "inconsistent FreeList");
     link_head(chunk);
@@ -235,7 +235,7 @@ void FreeList<Chunk>::returnChunkAtTail(Chunk* chunk, bool record_return) {
   increment_count();  // of # of chunks in list
   DEBUG_ONLY(
     if (record_return) {
-      increment_returnedBytes_by(size()*HeapWordSize);
+      increment_returned_bytes_by(size()*HeapWordSize);
     }
   )
   assert(head() == NULL || head()->prev() == NULL, "list invariant");
@@ -245,8 +245,8 @@ void FreeList<Chunk>::returnChunkAtTail(Chunk* chunk, bool record_return) {
 }
 
 template <class Chunk>
-void FreeList<Chunk>::returnChunkAtTail(Chunk* chunk) {
-  returnChunkAtTail(chunk, true);
+void FreeList<Chunk>::return_chunk_at_tail(Chunk* chunk) {
+  return_chunk_at_tail(chunk, true);
 }
 
 template <class Chunk>
@@ -262,8 +262,8 @@ void FreeList<Chunk>::prepend(FreeList<Chunk>* fl) {
       Chunk* fl_tail = fl->tail();
       Chunk* this_head = head();
       assert(fl_tail->next() == NULL, "Well-formedness of fl");
-      fl_tail->linkNext(this_head);
-      this_head->linkPrev(fl_tail);
+      fl_tail->link_next(this_head);
+      this_head->link_prev(fl_tail);
       set_head(fl->head());
       set_count(count() + fl->count());
     }
@@ -273,10 +273,10 @@ void FreeList<Chunk>::prepend(FreeList<Chunk>* fl) {
   }
 }
 
-// verifyChunkInFreeLists() is used to verify that an item is in this free list.
+// verify_chunk_in_free_list() is used to verify that an item is in this free list.
 // It is used as a debugging aid.
 template <class Chunk>
-bool FreeList<Chunk>::verifyChunkInFreeLists(Chunk* fc) const {
+bool FreeList<Chunk>::verify_chunk_in_free_list(Chunk* fc) const {
   // This is an internal consistency check, not part of the check that the
   // chunk is in the free lists.
   guarantee(fc->size() == size(), "Wrong list is being searched");
@@ -302,21 +302,21 @@ void FreeList<Chunk>::verify_stats() const {
   // dictionary for example, this might be the first block and
   // in that case there would be no place that we could record
   // the stats (which are kept in the block itself).
-  assert((_allocation_stats.prevSweep() + _allocation_stats.splitBirths()
-          + _allocation_stats.coalBirths() + 1)   // Total Production Stock + 1
-         >= (_allocation_stats.splitDeaths() + _allocation_stats.coalDeaths()
+  assert((_allocation_stats.prev_sweep() + _allocation_stats.split_births()
+          + _allocation_stats.coal_births() + 1)   // Total Production Stock + 1
+         >= (_allocation_stats.split_deaths() + _allocation_stats.coal_deaths()
              + (ssize_t)count()),                // Total Current Stock + depletion
          err_msg("FreeList " PTR_FORMAT " of size " SIZE_FORMAT
                  " violates Conservation Principle: "
-                 "prevSweep(" SIZE_FORMAT ")"
-                 " + splitBirths(" SIZE_FORMAT ")"
-                 " + coalBirths(" SIZE_FORMAT ") + 1 >= "
-                 " splitDeaths(" SIZE_FORMAT ")"
-                 " coalDeaths(" SIZE_FORMAT ")"
+                 "prev_sweep(" SIZE_FORMAT ")"
+                 " + split_births(" SIZE_FORMAT ")"
+                 " + coal_births(" SIZE_FORMAT ") + 1 >= "
+                 " split_deaths(" SIZE_FORMAT ")"
+                 " coal_deaths(" SIZE_FORMAT ")"
                  " + count(" SSIZE_FORMAT ")",
-                 this, _size, _allocation_stats.prevSweep(), _allocation_stats.splitBirths(),
-                 _allocation_stats.splitBirths(), _allocation_stats.splitDeaths(),
-                 _allocation_stats.coalDeaths(), count()));
+                 this, _size, _allocation_stats.prev_sweep(), _allocation_stats.split_births(),
+                 _allocation_stats.split_births(), _allocation_stats.split_deaths(),
+                 _allocation_stats.coal_deaths(), count()));
 }
 
 template <class Chunk>
@@ -360,8 +360,8 @@ void FreeList<Chunk>::print_on(outputStream* st, const char* c) const {
   st->print("\t"
            SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t"
            SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\t" SSIZE_FORMAT_W(14) "\n",
-           bfrSurp(),             surplus(),             desired(),             prevSweep(),           beforeSweep(),
-           count(),               coalBirths(),          coalDeaths(),          splitBirths(),         splitDeaths());
+           bfr_surp(),             surplus(),             desired(),             prev_sweep(),           before_sweep(),
+           count(),               coal_births(),          coal_deaths(),          split_births(),         split_deaths());
 }
 
 #ifndef SERIALGC

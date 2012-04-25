@@ -46,7 +46,7 @@
   nonstatic_field(LinearAllocBlock,            _word_size,                                    size_t)                                \
   nonstatic_field(FreeList<FreeChunk>,         _size,                                         size_t)                                \
   nonstatic_field(FreeList<FreeChunk>,         _count,                                        ssize_t)                               \
-  nonstatic_field(BinaryTreeDictionary<FreeChunk>,_totalSize,                                 size_t)                                \
+  nonstatic_field(BinaryTreeDictionary<FreeChunk>,_total_size,                                 size_t)                                \
   nonstatic_field(CompactibleFreeListSpace,    _dictionary,                                   FreeBlockDictionary<FreeChunk>*)       \
   nonstatic_field(CompactibleFreeListSpace,    _indexedFreeList[0],                           FreeList<FreeChunk>)                   \
   nonstatic_field(CompactibleFreeListSpace,    _smallLinearAllocBlock,                        LinearAllocBlock)
