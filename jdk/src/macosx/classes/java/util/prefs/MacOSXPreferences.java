@@ -25,6 +25,8 @@
 
 package java.util.prefs;
 
+import java.util.Objects;
+
 class MacOSXPreferences extends AbstractPreferences {
     // fixme need security checks?
 
@@ -147,6 +149,7 @@ class MacOSXPreferences extends AbstractPreferences {
     // AbstractPreferences implementation
     protected void removeSpi(String key)
     {
+        Objects.requireNonNull(key, "Specified key cannot be null");
         file.removeKeyFromNode(path, key);
     }
 
