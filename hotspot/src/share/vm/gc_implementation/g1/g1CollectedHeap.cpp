@@ -1248,12 +1248,13 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     IsGCActiveMark x;
 
     // Timing
-    bool system_gc = (gc_cause() == GCCause::_java_lang_system_gc);
-    assert(!system_gc || explicit_gc, "invariant");
+    assert(gc_cause() != GCCause::_java_lang_system_gc || explicit_gc, "invariant");
     gclog_or_tty->date_stamp(G1Log::fine() && PrintGCDateStamps);
     TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
-    TraceTime t(system_gc ? "Full GC (System.gc())" : "Full GC",
-                G1Log::fine(), true, gclog_or_tty);
+
+    char verbose_str[128];
+    sprintf(verbose_str, "Full GC (%s)", GCCause::to_string(gc_cause()));
+    TraceTime t(verbose_str, G1Log::fine(), true, gclog_or_tty);
 
     TraceCollectorStats tcs(g1mm()->full_collection_counters());
     TraceMemoryManagerStats tms(true /* fullGC */, gc_cause());
@@ -3588,25 +3589,22 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
   // Inner scope for scope based logging, timers, and stats collection
   {
-    char verbose_str[128];
-    sprintf(verbose_str, "GC pause ");
-    if (g1_policy()->gcs_are_young()) {
-      strcat(verbose_str, "(young)");
-    } else {
-      strcat(verbose_str, "(mixed)");
-    }
     if (g1_policy()->during_initial_mark_pause()) {
-      strcat(verbose_str, " (initial-mark)");
       // We are about to start a marking cycle, so we increment the
       // full collection counter.
       increment_total_full_collections();
     }
-
     // if the log level is "finer" is on, we'll print long statistics information
     // in the collector policy code, so let's not print this as the output
     // is messy if we do.
     gclog_or_tty->date_stamp(G1Log::fine() && PrintGCDateStamps);
     TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
+
+    char verbose_str[128];
+    sprintf(verbose_str, "GC pause (%s) (%s)%s",
+      GCCause::to_string(gc_cause()),
+      g1_policy()->gcs_are_young() ? "young" : "mixed",
+      g1_policy()->during_initial_mark_pause() ? " (initial-mark)" : "");
     TraceTime t(verbose_str, G1Log::fine() && !G1Log::finer(), true, gclog_or_tty);
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
