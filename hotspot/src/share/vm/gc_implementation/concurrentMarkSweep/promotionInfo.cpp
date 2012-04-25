@@ -121,7 +121,7 @@ void PromotionInfo::track(PromotedObject* trackOop) {
 void PromotionInfo::track(PromotedObject* trackOop, klassOop klassOfOop) {
   // make a copy of header as it may need to be spooled
   markOop mark = oop(trackOop)->mark();
-  trackOop->clearNext();
+  trackOop->clear_next();
   if (mark->must_be_preserved_for_cms_scavenge(klassOfOop)) {
     // save non-prototypical header, and mark oop
     saveDisplacedHeader(mark);

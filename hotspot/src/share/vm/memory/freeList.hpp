@@ -119,7 +119,7 @@ class FreeList VALUE_OBJ_CLASS_SPEC {
     // If this method is not used (just set the head instead),
     // this check can be avoided.
     if (v != NULL) {
-      v->linkPrev(NULL);
+      v->link_prev(NULL);
     }
   }
 
@@ -138,7 +138,7 @@ class FreeList VALUE_OBJ_CLASS_SPEC {
     assert_proper_lock_protection();
     set_tail(v);
     if (v != NULL) {
-      v->clearNext();
+      v->clear_next();
     }
   }
 
@@ -185,12 +185,12 @@ class FreeList VALUE_OBJ_CLASS_SPEC {
                                       inter_sweep_estimate,
                                       intra_sweep_estimate);
   }
-  ssize_t coalDesired() const {
-    return _allocation_stats.coalDesired();
+  ssize_t coal_desired() const {
+    return _allocation_stats.coal_desired();
   }
-  void set_coalDesired(ssize_t v) {
+  void set_coal_desired(ssize_t v) {
     assert_proper_lock_protection();
-    _allocation_stats.set_coalDesired(v);
+    _allocation_stats.set_coal_desired(v);
   }
 
   ssize_t surplus() const {
@@ -209,106 +209,106 @@ class FreeList VALUE_OBJ_CLASS_SPEC {
     _allocation_stats.decrement_surplus();
   }
 
-  ssize_t bfrSurp() const {
-    return _allocation_stats.bfrSurp();
+  ssize_t bfr_surp() const {
+    return _allocation_stats.bfr_surp();
   }
-  void set_bfrSurp(ssize_t v) {
+  void set_bfr_surp(ssize_t v) {
     assert_proper_lock_protection();
-    _allocation_stats.set_bfrSurp(v);
+    _allocation_stats.set_bfr_surp(v);
   }
-  ssize_t prevSweep() const {
-    return _allocation_stats.prevSweep();
+  ssize_t prev_sweep() const {
+    return _allocation_stats.prev_sweep();
   }
-  void set_prevSweep(ssize_t v) {
+  void set_prev_sweep(ssize_t v) {
     assert_proper_lock_protection();
-    _allocation_stats.set_prevSweep(v);
+    _allocation_stats.set_prev_sweep(v);
   }
-  ssize_t beforeSweep() const {
-    return _allocation_stats.beforeSweep();
+  ssize_t before_sweep() const {
+    return _allocation_stats.before_sweep();
   }
-  void set_beforeSweep(ssize_t v) {
+  void set_before_sweep(ssize_t v) {
     assert_proper_lock_protection();
-    _allocation_stats.set_beforeSweep(v);
+    _allocation_stats.set_before_sweep(v);
   }
 
-  ssize_t coalBirths() const {
-    return _allocation_stats.coalBirths();
+  ssize_t coal_births() const {
+    return _allocation_stats.coal_births();
   }
-  void set_coalBirths(ssize_t v) {
+  void set_coal_births(ssize_t v) {
     assert_proper_lock_protection();
-    _allocation_stats.set_coalBirths(v);
+    _allocation_stats.set_coal_births(v);
   }
-  void increment_coalBirths() {
+  void increment_coal_births() {
     assert_proper_lock_protection();
-    _allocation_stats.increment_coalBirths();
+    _allocation_stats.increment_coal_births();
   }
 
-  ssize_t coalDeaths() const {
-    return _allocation_stats.coalDeaths();
+  ssize_t coal_deaths() const {
+    return _allocation_stats.coal_deaths();
   }
-  void set_coalDeaths(ssize_t v) {
+  void set_coal_deaths(ssize_t v) {
     assert_proper_lock_protection();
-    _allocation_stats.set_coalDeaths(v);
+    _allocation_stats.set_coal_deaths(v);
   }
-  void increment_coalDeaths() {
+  void increment_coal_deaths() {
     assert_proper_lock_protection();
-    _allocation_stats.increment_coalDeaths();
+    _allocation_stats.increment_coal_deaths();
   }
 
-  ssize_t splitBirths() const {
-    return _allocation_stats.splitBirths();
+  ssize_t split_births() const {
+    return _allocation_stats.split_births();
   }
-  void set_splitBirths(ssize_t v) {
+  void set_split_births(ssize_t v) {
     assert_proper_lock_protection();
-    _allocation_stats.set_splitBirths(v);
+    _allocation_stats.set_split_births(v);
   }
-  void increment_splitBirths() {
+  void increment_split_births() {
     assert_proper_lock_protection();
-    _allocation_stats.increment_splitBirths();
+    _allocation_stats.increment_split_births();
   }
 
-  ssize_t splitDeaths() const {
-    return _allocation_stats.splitDeaths();
+  ssize_t split_deaths() const {
+    return _allocation_stats.split_deaths();
   }
-  void set_splitDeaths(ssize_t v) {
+  void set_split_deaths(ssize_t v) {
     assert_proper_lock_protection();
-    _allocation_stats.set_splitDeaths(v);
+    _allocation_stats.set_split_deaths(v);
   }
-  void increment_splitDeaths() {
+  void increment_split_deaths() {
     assert_proper_lock_protection();
-    _allocation_stats.increment_splitDeaths();
+    _allocation_stats.increment_split_deaths();
   }
 
   NOT_PRODUCT(
-    // For debugging.  The "_returnedBytes" in all the lists are summed
+    // For debugging.  The "_returned_bytes" in all the lists are summed
     // and compared with the total number of bytes swept during a
     // collection.
-    size_t returnedBytes() const { return _allocation_stats.returnedBytes(); }
-    void set_returnedBytes(size_t v) { _allocation_stats.set_returnedBytes(v); }
-    void increment_returnedBytes_by(size_t v) {
-      _allocation_stats.set_returnedBytes(_allocation_stats.returnedBytes() + v);
+    size_t returned_bytes() const { return _allocation_stats.returned_bytes(); }
+    void set_returned_bytes(size_t v) { _allocation_stats.set_returned_bytes(v); }
+    void increment_returned_bytes_by(size_t v) {
+      _allocation_stats.set_returned_bytes(_allocation_stats.returned_bytes() + v);
     }
   )
 
   // Unlink head of list and return it.  Returns NULL if
   // the list is empty.
-  Chunk* getChunkAtHead();
+  Chunk* get_chunk_at_head();
 
   // Remove the first "n" or "count", whichever is smaller, chunks from the
   // list, setting "fl", which is required to be empty, to point to them.
   void getFirstNChunksFromList(size_t n, FreeList<Chunk>* fl);
 
   // Unlink this chunk from it's free list
-  void removeChunk(Chunk* fc);
+  void remove_chunk(Chunk* fc);
 
   // Add this chunk to this free list.
-  void returnChunkAtHead(Chunk* fc);
-  void returnChunkAtTail(Chunk* fc);
+  void return_chunk_at_head(Chunk* fc);
+  void return_chunk_at_tail(Chunk* fc);
 
   // Similar to returnChunk* but also records some diagnostic
   // information.
-  void returnChunkAtHead(Chunk* fc, bool record_return);
-  void returnChunkAtTail(Chunk* fc, bool record_return);
+  void return_chunk_at_head(Chunk* fc, bool record_return);
+  void return_chunk_at_tail(Chunk* fc, bool record_return);
 
   // Prepend "fl" (whose size is required to be the same as that of "this")
   // to the front of "this" list.
@@ -316,7 +316,7 @@ class FreeList VALUE_OBJ_CLASS_SPEC {
 
   // Verify that the chunk is in the list.
   // found.  Return NULL if "fc" is not found.
-  bool verifyChunkInFreeLists(Chunk* fc) const;
+  bool verify_chunk_in_free_list(Chunk* fc) const;
 
   // Stats verification
   void verify_stats() const PRODUCT_RETURN;
