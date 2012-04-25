@@ -143,7 +143,9 @@ _JUNK_ := $(shell \
 MAKE_ARGS += ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS)
 
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
-  ZIP_DEBUGINFO_FILES ?= 1
+  # Disable ZIP_DEBUGINFO_FILES by default because various tests are
+  # failing in nightly when the debug info files are ZIP'ed.
+  ZIP_DEBUGINFO_FILES ?= 0
 else
   ZIP_DEBUGINFO_FILES=0
 endif

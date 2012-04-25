@@ -109,12 +109,18 @@ ifeq ($(JDK6_OR_EARLIER),0)
   # overridden in some situations, e.g., a BUILD_FLAVOR != product
   # build.
 
+  # Disable FULL_DEBUG_SYMBOLS by default because dtrace tests are
+  # failing in nightly when the debug info files are ZIP'ed. On
+  # Solaris debug info files need to be ZIP'ed to reduce the impact
+  # on disk space footprint.
+  FULL_DEBUG_SYMBOLS ?= 0
   ifeq ($(BUILD_FLAVOR), product)
-    FULL_DEBUG_SYMBOLS ?= 1
+    # FULL_DEBUG_SYMBOLS ?= 1
     ENABLE_FULL_DEBUG_SYMBOLS = $(FULL_DEBUG_SYMBOLS)
   else
     # debug variants always get Full Debug Symbols (if available)
-    ENABLE_FULL_DEBUG_SYMBOLS = 1
+    # ENABLE_FULL_DEBUG_SYMBOLS = 1
+    ENABLE_FULL_DEBUG_SYMBOLS = $(FULL_DEBUG_SYMBOLS)
   endif
   _JUNK_ := $(shell \
     echo >&2 "INFO: ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS)")
@@ -172,7 +178,9 @@ ifeq ($(JDK6_OR_EARLIER),0)
     _JUNK_ := $(shell \
       echo >&2 "INFO: STRIP_POLICY=$(STRIP_POLICY)")
 
-    ZIP_DEBUGINFO_FILES ?= 1
+    # Disable ZIP_DEBUGINFO_FILES by default because dtrace tests are
+    # failing in nightly when the debug info files are ZIP'ed.
+    ZIP_DEBUGINFO_FILES ?= 0
 
     _JUNK_ := $(shell \
       echo >&2 "INFO: ZIP_DEBUGINFO_FILES=$(ZIP_DEBUGINFO_FILES)")
