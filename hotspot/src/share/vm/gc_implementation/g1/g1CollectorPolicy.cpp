@@ -2459,16 +2459,10 @@ void G1CollectorPolicy::print_collection_set(HeapRegion* list_head, outputStream
   while (csr != NULL) {
     HeapRegion* next = csr->next_in_collection_set();
     assert(csr->in_collection_set(), "bad CS");
-    st->print_cr("  [%08x-%08x], t: %08x, P: %08x, N: %08x, C: %08x, "
-                 "age: %4d, y: %d, surv: %d",
-                        csr->bottom(), csr->end(),
-                        csr->top(),
-                        csr->prev_top_at_mark_start(),
-                        csr->next_top_at_mark_start(),
-                        csr->top_at_conc_mark_count(),
-                        csr->age_in_surv_rate_group_cond(),
-                        csr->is_young(),
-                        csr->is_survivor());
+    st->print_cr("  "HR_FORMAT", P: "PTR_FORMAT "N: "PTR_FORMAT", age: %4d",
+                 HR_FORMAT_PARAMS(csr),
+                 csr->prev_top_at_mark_start(), csr->next_top_at_mark_start(),
+                 csr->age_in_surv_rate_group_cond());
     csr = next;
   }
 }

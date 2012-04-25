@@ -368,16 +368,11 @@ void YoungList::print() {
     if (curr == NULL)
       gclog_or_tty->print_cr("  empty");
     while (curr != NULL) {
-      gclog_or_tty->print_cr("  [%08x-%08x], t: %08x, P: %08x, N: %08x, C: %08x, "
-                             "age: %4d, y: %d, surv: %d",
-                             curr->bottom(), curr->end(),
-                             curr->top(),
+      gclog_or_tty->print_cr("  "HR_FORMAT", P: "PTR_FORMAT "N: "PTR_FORMAT", age: %4d",
+                             HR_FORMAT_PARAMS(curr),
                              curr->prev_top_at_mark_start(),
                              curr->next_top_at_mark_start(),
-                             curr->top_at_conc_mark_count(),
-                             curr->age_in_surv_rate_group_cond(),
-                             curr->is_young(),
-                             curr->is_survivor());
+                             curr->age_in_surv_rate_group_cond());
       curr = curr->get_next_young_region();
     }
   }
