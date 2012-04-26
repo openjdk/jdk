@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,5 +43,9 @@
 #define TRACE_SET_KLASS_TRACE_ID(x1, x2) do { } while (0)
 #define TRACE_DEFINE_KLASS_METHODS typedef int ___IGNORED_hs_trace_type1
 #define TRACE_DEFINE_KLASS_TRACE_ID typedef int ___IGNORED_hs_trace_type2
+#define TRACE_DEFINE_OFFSET typedef int ___IGNORED_hs_trace_type3
+#define TRACE_ID_OFFSET in_ByteSize(0); ShouldNotReachHere()
+#define TRACE_TEMPLATES(template)
+#define TRACE_INTRINSICS(do_intrinsic, do_class, do_name, do_signature, do_alias)
 
 #endif

@@ -326,11 +326,6 @@ public class Types {
             else if (t.tag == TYPEVAR) {
                 return isSubtypeUnchecked(t.getUpperBound(), s, warn);
             }
-            else if (s.tag == UNDETVAR) {
-                UndetVar uv = (UndetVar)s;
-                if (uv.inst != null)
-                    return isSubtypeUnchecked(t, uv.inst, warn);
-            }
             else if (!s.isRaw()) {
                 Type t2 = asSuper(t, s.tsym);
                 if (t2 != null && t2.isRaw()) {
@@ -515,9 +510,6 @@ public class Types {
                     return false;
                 }
 
-                if (t.inst != null)
-                    return isSubtypeNoCapture(t.inst, s); // TODO: ", warn"?
-
                 t.hibounds = t.hibounds.prepend(s);
                 return true;
             }
@@ -586,8 +578,6 @@ public class Types {
                 undet.qtype == s ||
                 s.tag == ERROR ||
                 s.tag == BOT) return true;
-            if (undet.inst != null)
-                return isSubtype(s, undet.inst);
             undet.lobounds = undet.lobounds.prepend(s);
             return true;
         }
@@ -733,18 +723,8 @@ public class Types {
                 if (t == s || t.qtype == s || s.tag == ERROR || s.tag == UNKNOWN)
                     return true;
 
-                if (t.inst != null)
-                    return visit(t.inst, s);
+                t.eq = t.eq.prepend(s);
 
-                t.inst = fromUnknownFun.apply(s);
-                for (List<Type> l = t.lobounds; l.nonEmpty(); l = l.tail) {
-                    if (!isSubtype(l.head, t.inst))
-                        return false;
-                }
-                for (List<Type> l = t.hibounds; l.nonEmpty(); l = l.tail) {
-                    if (!isSubtype(t.inst, l.head))
-                        return false;
-                }
                 return true;
             }
 
@@ -779,23 +759,11 @@ public class Types {
                     case UNBOUND: //similar to ? extends Object
                     case EXTENDS: {
                         Type bound = upperBound(s);
-                        // We should check the new upper bound against any of the
-                        // undetvar's lower bounds.
-                        for (Type t2 : undetvar.lobounds) {
-                            if (!isSubtype(t2, bound))
-                                return false;
-                        }
                         undetvar.hibounds = undetvar.hibounds.prepend(bound);
                         break;
                     }
                     case SUPER: {
                         Type bound = lowerBound(s);
-                        // We should check the new lower bound against any of the
-                        // undetvar's lower bounds.
-                        for (Type t2 : undetvar.hibounds) {
-                            if (!isSubtype(bound, t2))
-                                return false;
-                        }
                         undetvar.lobounds = undetvar.lobounds.prepend(bound);
                         break;
                     }

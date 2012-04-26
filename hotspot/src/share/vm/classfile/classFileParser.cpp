@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@
 #define JAVA_7_VERSION                    51
 
 
-void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int length, TRAPS) {
+void ClassFileParser::parse_constant_pool_entries(Handle class_loader, constantPoolHandle cp, int length, TRAPS) {
   // Use a local copy of ClassFileStream. It helps the C++ compiler to optimize
   // this function (_current can be allocated in a register, with scalar
   // replacement of aggregates). The _current pointer is copied back to
@@ -272,7 +272,7 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
             indices[names_count] = index;
             hashValues[names_count++] = hash;
             if (names_count == SymbolTable::symbol_alloc_batch_size) {
-              SymbolTable::new_symbols(cp, names_count, names, lengths, indices, hashValues, CHECK);
+              SymbolTable::new_symbols(class_loader, cp, names_count, names, lengths, indices, hashValues, CHECK);
               names_count = 0;
             }
           } else {
@@ -289,7 +289,7 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
 
   // Allocate the remaining symbols
   if (names_count > 0) {
-    SymbolTable::new_symbols(cp, names_count, names, lengths, indices, hashValues, CHECK);
+    SymbolTable::new_symbols(class_loader, cp, names_count, names, lengths, indices, hashValues, CHECK);
   }
 
   // Copy _current pointer of local copy back to stream().
@@ -318,7 +318,7 @@ class ConstantPoolCleaner : public StackObj {
 
 bool inline valid_cp_range(int index, int length) { return (index > 0 && index < length); }
 
-constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
+constantPoolHandle ClassFileParser::parse_constant_pool(Handle class_loader, TRAPS) {
   ClassFileStream* cfs = stream();
   constantPoolHandle nullHandle;
 
@@ -337,7 +337,7 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
   ConstantPoolCleaner cp_in_error(cp); // set constant pool to be cleaned up.
 
   // parsing constant pool entries
-  parse_constant_pool_entries(cp, length, CHECK_(nullHandle));
+  parse_constant_pool_entries(class_loader, cp, length, CHECK_(nullHandle));
 
   int index = 1;  // declared outside of loops for portability
 
@@ -2803,7 +2803,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   _relax_verify = Verifier::relax_verify_for(class_loader());
 
   // Constant pool
-  constantPoolHandle cp = parse_constant_pool(CHECK_(nullHandle));
+  constantPoolHandle cp = parse_constant_pool(class_loader, CHECK_(nullHandle));
   ConstantPoolCleaner error_handler(cp); // set constant pool to be cleaned up.
 
   int cp_size = cp->length();
@@ -3354,6 +3354,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     klassOop ik = oopFactory::new_instanceKlass(name, vtable_size, itable_size,
                                                 static_field_size,
                                                 total_oop_map_count,
+                                                access_flags,
                                                 rt, CHECK_(nullHandle));
     instanceKlassHandle this_klass (THREAD, ik);
 
@@ -3362,7 +3363,6 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
            "sanity");
 
     // Fill in information already parsed
-    this_klass->set_access_flags(access_flags);
     this_klass->set_should_verify_class(verify);
     jint lh = Klass::instance_layout_helper(instance_size, false);
     this_klass->set_layout_helper(lh);

@@ -327,7 +327,7 @@ public class TestWarnErrorCount extends JavacTestingAbstractProcessor {
             Writer out = fo.openWriter();
             try {
                 out.write("class " + name + " {\n"
-                        + (warn ? "    int i = (int) 0;\n" : "")
+                        + (warn ? "    void m() throws Exception { try (AutoCloseable ac = null) { } }" : "")
                         + (error ? "   ERROR\n" : "")
                         + "}\n");
             } finally {

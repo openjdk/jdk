@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,16 @@ endif
 
 JDK_BUILD_ARGUMENTS += \
         BUILD_HOTSPOT=$(BUILD_HOTSPOT)
+
+# Move to COMMON_BUILD_ARGUMENTS when all repos support
+# FULL_DEBUG_SYMBOLS and ZIP_DEBUGINFO_FILES:
+ifdef FULL_DEBUG_SYMBOLS
+  JDK_BUILD_ARGUMENTS += FULL_DEBUG_SYMBOLS=$(FULL_DEBUG_SYMBOLS)
+endif
+
+ifdef ZIP_DEBUGINFO_FILES
+  JDK_BUILD_ARGUMENTS += ZIP_DEBUGINFO_FILES="$(ZIP_DEBUGINFO_FILES)"
+endif
 
 
 $(JDK_JAVA_EXE):: jdk-build

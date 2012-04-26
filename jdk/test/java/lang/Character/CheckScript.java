@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @bug 6945564 6959267 7033561
+ * @bug 6945564 6959267 7033561 7070436
  * @summary  Check that the j.l.Character.UnicodeScript
  */
 
