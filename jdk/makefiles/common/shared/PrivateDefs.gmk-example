@@ -1,0 +1,19 @@
+
+# This file, when re-named to PrivateDefs.gmk will get included in the
+#   makefile definitions (before the ALT_ variables are read) so that you can
+#   override makefile settings permanently for a workspace.
+#   Use of this file will cause WARNING errors, repeatedly, for a reason.
+#
+# WARNING: Use with caution.
+#
+
+# EXAMPLE: Testing a special build of hotspot
+#    (this is the build/solaris/export-solaris-sparc directory from doing
+#     a 'cd hotspot/make; gnumake' build)
+#
+ifeq ($(PLATFORM),solaris)
+  ifeq ($(ARCH),sparc)
+    ALT_HOTSPOT_IMPORT_PATH=$(JDK_TOPDIR)/../export-solaris-sparc
+  endif
+endif
+

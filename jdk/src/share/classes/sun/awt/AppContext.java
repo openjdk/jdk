@@ -46,6 +46,7 @@ import sun.util.logging.PlatformLogger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * The AppContext is a table referenced by ThreadGroup which stores
@@ -194,6 +195,15 @@ public final class AppContext {
         return isDisposed;
     }
 
+    /*
+     * The total number of AppContexts, system-wide.  This number is
+     * incremented at the beginning of the constructor, and decremented
+     * at the end of dispose().  getAppContext() checks to see if this
+     * number is 1.  If so, it returns the sole AppContext without
+     * checking Thread.currentThread().
+     */
+    private static final AtomicInteger numAppContexts = new AtomicInteger(0);
+
     static {
         // On the main Thread, we get the ThreadGroup, make a corresponding
         // AppContext, and instantiate the Java EventQueue.  This way, legacy
@@ -209,20 +219,10 @@ public final class AppContext {
                     parentThreadGroup = currentThreadGroup.getParent();
                 }
                 mainAppContext = new AppContext(currentThreadGroup);
-                numAppContexts = 1;
                 return null;
             }
         });
     }
-
-    /*
-     * The total number of AppContexts, system-wide.  This number is
-     * incremented at the beginning of the constructor, and decremented
-     * at the end of dispose().  getAppContext() checks to see if this
-     * number is 1.  If so, it returns the sole AppContext without
-     * checking Thread.currentThread().
-     */
-    private static volatile int numAppContexts;
 
     /*
      * The context ClassLoader that was used to create this AppContext.
@@ -243,7 +243,7 @@ public final class AppContext {
      * @since   1.2
      */
     AppContext(ThreadGroup threadGroup) {
-        numAppContexts++;
+        numAppContexts.incrementAndGet();
 
         this.threadGroup = threadGroup;
         threadGroup2appContext.put(threadGroup, this);
@@ -278,7 +278,7 @@ public final class AppContext {
      * @since   1.2
      */
     public final static AppContext getAppContext() {
-        if (numAppContexts == 1)   // If there's only one system-wide,
+        if (numAppContexts.get() == 1)   // If there's only one system-wide,
             return mainAppContext; // return the main system AppContext.
 
         AppContext appContext = threadAppContext.get();
@@ -513,7 +513,7 @@ public final class AppContext {
             this.table.clear(); // Clear out the Hashtable to ease garbage collection
         }
 
-        numAppContexts--;
+        numAppContexts.decrementAndGet();
 
         mostRecentKeyValue = null;
     }
@@ -804,7 +804,7 @@ public final class AppContext {
                 return getAppContext().isDisposed();
             }
             public boolean isMainAppContext() {
-                return (numAppContexts == 1);
+                return (numAppContexts.get() == 1);
             }
         });
     }

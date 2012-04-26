@@ -1,0 +1,109 @@
+#
+# Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Define public interface.
+
+SUNWprivate_1.1 {
+	global:
+		JNI_OnLoad;
+
+                Java_sun_java2d_x11_X11PMBlitLoops_nativeBlit;
+		Java_sun_java2d_x11_X11PMBlitBgLoops_nativeBlitBg;
+		Java_sun_java2d_x11_X11Renderer_XFillSpans;
+		Java_sun_java2d_x11_X11Renderer_XDrawArc;
+		Java_sun_java2d_x11_X11Renderer_XDrawLine;
+		Java_sun_java2d_x11_X11Renderer_XDrawOval;
+		Java_sun_java2d_x11_X11Renderer_XDrawPoly;
+		Java_sun_java2d_x11_X11Renderer_XDrawRect;
+		Java_sun_java2d_x11_X11Renderer_XDrawRoundRect;
+                Java_sun_java2d_x11_X11Renderer_XDoPath;
+		Java_sun_java2d_x11_X11Renderer_XFillArc;
+		Java_sun_java2d_x11_X11Renderer_XFillOval;
+		Java_sun_java2d_x11_X11Renderer_XFillPoly;
+		Java_sun_java2d_x11_X11Renderer_XFillRect;
+		Java_sun_java2d_x11_X11Renderer_XFillRoundRect;
+		Java_sun_java2d_x11_X11Renderer_devCopyArea;
+		Java_sun_java2d_x11_X11SurfaceData_initIDs;
+		Java_sun_java2d_x11_X11SurfaceData_initSurface;
+                Java_sun_java2d_x11_X11SurfaceData_XSetCopyMode;
+                Java_sun_java2d_x11_X11SurfaceData_XSetXorMode;
+                Java_sun_java2d_x11_X11SurfaceData_XSetForeground;
+
+		Java_sun_java2d_x11_XSurfaceData_initOps;
+                Java_sun_java2d_x11_XSurfaceData_XCreateGC;
+                Java_sun_java2d_x11_XSurfaceData_XResetClip;
+                Java_sun_java2d_x11_XSurfaceData_XSetClip;
+                Java_sun_java2d_x11_XSurfaceData_flushNativeSurface;
+		Java_sun_java2d_x11_XSurfaceData_isDrawableValid;
+		Java_sun_java2d_x11_XSurfaceData_setInvalid;
+		Java_sun_java2d_x11_XSurfaceData_XSetGraphicsExposures;
+
+		X11SurfaceData_GetOps;
+		Java_java_awt_Font_initIDs;
+                Java_sun_font_FontConfigManager_getFontConfig;
+                Java_sun_font_FontConfigManager_getFontConfigAASettings;
+                Java_sun_font_FontConfigManager_getFontConfigVersion;
+                Java_sun_awt_X11FontManager_getFontPathNative;
+
+		Java_sun_awt_FontDescriptor_initIDs;
+		Java_sun_awt_PlatformFont_initIDs;
+
+		Java_sun_print_CUPSPrinter_initIDs;
+		Java_sun_print_CUPSPrinter_getCupsServer;
+		Java_sun_print_CUPSPrinter_getCupsPort;
+		Java_sun_print_CUPSPrinter_canConnect;	
+		Java_sun_print_CUPSPrinter_getMedia;
+		Java_sun_print_CUPSPrinter_getPageSizes;
+
+		# libfontmanager entry points
+		AWTIsHeadless;
+		AWTCountFonts;
+                AWTLoadFont;
+                AWTFreeFont;
+                AWTFontAscent;
+                AWTFontDescent;
+                AWTFontMinByte1;
+                AWTFontMaxByte1;
+                AWTFontMinCharOrByte2;
+                AWTFontMaxCharOrByte2;
+                AWTFontDefaultChar;
+                AWTFontPerChar;
+                AWTFontMaxBounds;
+                AWTFontTextExtents16;
+                AWTFreeChar;
+                AWTFontGenerateImage;
+                AWTCharAdvance;
+                AWTCharLBearing;
+                AWTCharRBearing;
+                AWTCharAscent;
+                AWTCharDescent;
+                AWTDrawGlyphList;
+                AccelGlyphCache_RemoveAllCellInfos;
+
+
+	local:
+		*;
+};
+

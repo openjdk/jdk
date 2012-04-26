@@ -22,7 +22,7 @@
  */
 
 // key: compiler.misc.possible.loss.of.precision
-// key: compiler.err.prob.found.req
+// key: compiler.err.prob.found.req.1
 
 class PossibleLossPrecision {
     long l;

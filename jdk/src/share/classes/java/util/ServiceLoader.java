@@ -218,20 +218,20 @@ public final class ServiceLoader<S>
         reload();
     }
 
-    private static void fail(Class service, String msg, Throwable cause)
+    private static void fail(Class<?> service, String msg, Throwable cause)
         throws ServiceConfigurationError
     {
         throw new ServiceConfigurationError(service.getName() + ": " + msg,
                                             cause);
     }
 
-    private static void fail(Class service, String msg)
+    private static void fail(Class<?> service, String msg)
         throws ServiceConfigurationError
     {
         throw new ServiceConfigurationError(service.getName() + ": " + msg);
     }
 
-    private static void fail(Class service, URL u, int line, String msg)
+    private static void fail(Class<?> service, URL u, int line, String msg)
         throws ServiceConfigurationError
     {
         fail(service, u + ":" + line + ": " + msg);
@@ -240,7 +240,7 @@ public final class ServiceLoader<S>
     // Parse a single line from the given configuration file, adding the name
     // on the line to the names list.
     //
-    private int parseLine(Class service, URL u, BufferedReader r, int lc,
+    private int parseLine(Class<?> service, URL u, BufferedReader r, int lc,
                           List<String> names)
         throws IOException, ServiceConfigurationError
     {
@@ -286,7 +286,7 @@ public final class ServiceLoader<S>
     //         If an I/O error occurs while reading from the given URL, or
     //         if a configuration-file format error is detected
     //
-    private Iterator<String> parse(Class service, URL u)
+    private Iterator<String> parse(Class<?> service, URL u)
         throws ServiceConfigurationError
     {
         InputStream in = null;

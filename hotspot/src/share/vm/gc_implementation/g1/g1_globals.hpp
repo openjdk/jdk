@@ -26,7 +26,6 @@
 #define SHARE_VM_GC_IMPLEMENTATION_G1_G1_GLOBALS_HPP
 
 #include "runtime/globals.hpp"
-
 //
 // Defines all globals flags used by the garbage-first compiler.
 //
@@ -68,9 +67,6 @@
                                                                             \
   diagnostic(bool, G1TraceConcRefinement, false,                            \
           "Trace G1 concurrent refinement")                                 \
-                                                                            \
-  product(intx, G1MarkRegionStackSize, 1024 * 1024,                         \
-          "Size of the region stack for concurrent marking.")               \
                                                                             \
   product(double, G1ConcMarkStepDurationMillis, 10.0,                       \
           "Target duration of individual concurrent marking steps "         \
@@ -130,9 +126,6 @@
   diagnostic(bool, G1PrintRegionLivenessInfo, false,                        \
             "Prints the liveness information for all regions in the heap "  \
             "at the end of a marking cycle.")                               \
-                                                                            \
-  develop(bool, G1PrintParCleanupStats, false,                              \
-          "When true, print extra stats about parallel cleanup.")           \
                                                                             \
   product(intx, G1UpdateBufferSize, 256,                                    \
           "Size of an update buffer")                                       \
@@ -312,7 +305,10 @@
                                                                             \
   develop(uintx, G1OldCSetRegionThresholdPercent, 10,                       \
           "An upper bound for the number of old CSet regions expressed "    \
-          "as a percentage of the heap size.")
+          "as a percentage of the heap size.")                              \
+                                                                            \
+  experimental(ccstr, G1LogLevel, NULL,                                     \
+          "Log level for G1 logging: fine, finer, finest")
 
 G1_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG)
 
