@@ -192,6 +192,39 @@ class MacOSXPreferencesFile {
     }
 
 
+    // Sync only current user preferences
+    static synchronized boolean syncUser() {
+        boolean ok = true;
+        if (cachedFiles != null  &&  !cachedFiles.isEmpty()) {
+            Iterator<WeakReference> iter = cachedFiles.values().iterator();
+            while (iter.hasNext()) {
+                WeakReference ref = iter.next();
+                MacOSXPreferencesFile f = (MacOSXPreferencesFile)ref.get();
+                if (f != null && f.user == cfCurrentUser) {
+                    if (!f.synchronize()) {
+                        ok = false;
+                    }
+                } else {
+                    iter.remove();
+                }
+            }
+        }
+        // Remove synchronized file from changed file list. The changed files were
+        // guaranteed to have been in the cached file list (because there was a strong
+        // reference from changedFiles.
+        if (changedFiles != null) {
+            Iterator<MacOSXPreferencesFile> iterChanged = changedFiles.iterator();
+            while (iterChanged.hasNext()) {
+                MacOSXPreferencesFile f = iterChanged.next();
+                if (f != null && f.user == cfCurrentUser)
+                    iterChanged.remove();
+             }
+        }
+        return ok;
+    }
+
+
+
     // Write all prefs changes to disk, but do not clear all cached prefs
     // values. Also kills any scheduled flush task.
     // There's no CFPreferencesFlush() (<rdar://problem/3049129>), so lots of cached prefs
