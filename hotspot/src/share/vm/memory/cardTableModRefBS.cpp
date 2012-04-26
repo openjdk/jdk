@@ -711,6 +711,11 @@ void CardTableModRefBS::verify_dirty_region(MemRegion mr) {
 }
 #endif
 
+void CardTableModRefBS::print_on(outputStream* st) const {
+  st->print_cr("Card table byte_map: [" INTPTR_FORMAT "," INTPTR_FORMAT "] byte_map_base: " INTPTR_FORMAT,
+               _byte_map, _byte_map + _byte_map_size, byte_map_base);
+}
+
 bool CardTableModRefBSForCTRS::card_will_be_scanned(jbyte cv) {
   return
     CardTableModRefBS::card_will_be_scanned(cv) ||

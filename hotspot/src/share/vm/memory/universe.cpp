@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1326,7 +1326,7 @@ void Universe::print_heap_after_gc(outputStream* st, bool ignore_extended) {
   st->print_cr("}");
 }
 
-void Universe::verify(bool allow_dirty, bool silent, VerifyOption option) {
+void Universe::verify(bool silent, VerifyOption option) {
   if (SharedSkipVerify) {
     return;
   }
@@ -1350,7 +1350,7 @@ void Universe::verify(bool allow_dirty, bool silent, VerifyOption option) {
   if (!silent) gclog_or_tty->print("[Verifying ");
   if (!silent) gclog_or_tty->print("threads ");
   Threads::verify();
-  heap()->verify(allow_dirty, silent, option);
+  heap()->verify(silent, option);
 
   if (!silent) gclog_or_tty->print("syms ");
   SymbolTable::verify();

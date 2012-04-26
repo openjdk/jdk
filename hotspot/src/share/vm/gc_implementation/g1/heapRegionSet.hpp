@@ -62,20 +62,20 @@ class HeapRegionSetBase VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
 
 protected:
-  static size_t calculate_region_num(HeapRegion* hr);
+  static uint calculate_region_num(HeapRegion* hr);
 
-  static size_t _unrealistically_long_length;
+  static uint _unrealistically_long_length;
 
   // The number of regions added to the set. If the set contains
   // only humongous regions, this reflects only 'starts humongous'
   // regions and does not include 'continues humongous' ones.
-  size_t _length;
+  uint _length;
 
   // The total number of regions represented by the set. If the set
   // does not contain humongous regions, this should be the same as
   // _length. If the set contains only humongous regions, this will
   // include the 'continues humongous' regions.
-  size_t _region_num;
+  uint _region_num;
 
   // We don't keep track of the total capacity explicitly, we instead
   // recalculate it based on _region_num and the heap region size.
@@ -86,8 +86,8 @@ protected:
   const char* _name;
 
   bool        _verify_in_progress;
-  size_t      _calc_length;
-  size_t      _calc_region_num;
+  uint        _calc_length;
+  uint        _calc_region_num;
   size_t      _calc_total_capacity_bytes;
   size_t      _calc_total_used_bytes;
 
@@ -153,18 +153,18 @@ protected:
   HeapRegionSetBase(const char* name);
 
 public:
-  static void set_unrealistically_long_length(size_t len);
+  static void set_unrealistically_long_length(uint len);
 
   const char* name() { return _name; }
 
-  size_t length() { return _length; }
+  uint length() { return _length; }
 
   bool is_empty() { return _length == 0; }
 
-  size_t region_num() { return _region_num; }
+  uint region_num() { return _region_num; }
 
   size_t total_capacity_bytes() {
-    return region_num() << HeapRegion::LogOfHRGrainBytes;
+    return (size_t) region_num() << HeapRegion::LogOfHRGrainBytes;
   }
 
   size_t total_used_bytes() { return _total_used_bytes; }
@@ -341,7 +341,7 @@ public:
   // of regions that are pending for removal in the list, and
   // target_count should be > 1 (currently, we never need to remove a
   // single region using this).
-  void remove_all_pending(size_t target_count);
+  void remove_all_pending(uint target_count);
 
   virtual void verify();
 

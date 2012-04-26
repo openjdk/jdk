@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,7 +225,7 @@ class MutableNUMASpace : public MutableSpace {
   // Debugging
   virtual void print_on(outputStream* st) const;
   virtual void print_short_on(outputStream* st) const;
-  virtual void verify(bool allow_dirty);
+  virtual void verify();
 
   virtual void set_top(HeapWord* value);
 };

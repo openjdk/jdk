@@ -85,8 +85,8 @@ private:
 
   HeapRegion* _curr;
 
-  size_t      _length;
-  size_t      _survivor_length;
+  uint        _length;
+  uint        _survivor_length;
 
   size_t      _last_sampled_rs_lengths;
   size_t      _sampled_rs_lengths;
@@ -101,8 +101,8 @@ public:
 
   void         empty_list();
   bool         is_empty() { return _length == 0; }
-  size_t       length() { return _length; }
-  size_t       survivor_length() { return _survivor_length; }
+  uint         length() { return _length; }
+  uint         survivor_length() { return _survivor_length; }
 
   // Currently we do not keep track of the used byte sum for the
   // young list and the survivors and it'd be quite a lot of work to
@@ -111,10 +111,10 @@ public:
   // we'll report the more accurate information then.
   size_t       eden_used_bytes() {
     assert(length() >= survivor_length(), "invariant");
-    return (length() - survivor_length()) * HeapRegion::GrainBytes;
+    return (size_t) (length() - survivor_length()) * HeapRegion::GrainBytes;
   }
   size_t       survivor_used_bytes() {
-    return survivor_length() * HeapRegion::GrainBytes;
+    return (size_t) survivor_length() * HeapRegion::GrainBytes;
   }
 
   void rs_length_sampling_init();
@@ -199,7 +199,8 @@ class G1CollectedHeap : public SharedHeap {
   friend class OldGCAllocRegion;
 
   // Closures used in implementation.
-  friend class G1ParCopyHelper;
+  template <bool do_gen_barrier, G1Barrier barrier, bool do_mark_object>
+  friend class G1ParCopyClosure;
   friend class G1IsAliveClosure;
   friend class G1EvacuateFollowersClosure;
   friend class G1ParScanThreadState;
@@ -246,7 +247,7 @@ private:
   MasterHumongousRegionSet  _humongous_set;
 
   // The number of regions we could create by expansion.
-  size_t _expansion_regions;
+  uint _expansion_regions;
 
   // The block offset table for the G1 heap.
   G1BlockOffsetSharedArray* _bot_shared;
@@ -338,7 +339,7 @@ private:
   bool* _in_cset_fast_test_base;
 
   // The length of the _in_cset_fast_test_base array.
-  size_t _in_cset_fast_test_length;
+  uint _in_cset_fast_test_length;
 
   volatile unsigned _gc_time_stamp;
 
@@ -457,14 +458,14 @@ protected:
   // length and remove them from the master free list. Return the
   // index of the first region or G1_NULL_HRS_INDEX if the search
   // was unsuccessful.
-  size_t humongous_obj_allocate_find_first(size_t num_regions,
-                                           size_t word_size);
+  uint humongous_obj_allocate_find_first(uint num_regions,
+                                         size_t word_size);
 
   // Initialize a contiguous set of free regions of length num_regions
   // and starting at index first so that they appear as a single
   // humongous region.
-  HeapWord* humongous_obj_allocate_initialize_regions(size_t first,
-                                                      size_t num_regions,
+  HeapWord* humongous_obj_allocate_initialize_regions(uint first,
+                                                      uint num_regions,
                                                       size_t word_size);
 
   // Attempt to allocate a humongous object of the given size. Return
@@ -573,7 +574,7 @@ protected:
                                    size_t allocated_bytes);
 
   // For GC alloc regions.
-  HeapRegion* new_gc_alloc_region(size_t word_size, size_t count,
+  HeapRegion* new_gc_alloc_region(size_t word_size, uint count,
                                   GCAllocPurpose ap);
   void retire_gc_alloc_region(HeapRegion* alloc_region,
                               size_t allocated_bytes, GCAllocPurpose ap);
@@ -640,7 +641,7 @@ public:
   void register_region_with_in_cset_fast_test(HeapRegion* r) {
     assert(_in_cset_fast_test_base != NULL, "sanity");
     assert(r->in_collection_set(), "invariant");
-    size_t index = r->hrs_index();
+    uint index = r->hrs_index();
     assert(index < _in_cset_fast_test_length, "invariant");
     assert(!_in_cset_fast_test_base[index], "invariant");
     _in_cset_fast_test_base[index] = true;
@@ -654,7 +655,7 @@ public:
     if (_g1_committed.contains((HeapWord*) obj)) {
       // no need to subtract the bottom of the heap from obj,
       // _in_cset_fast_test is biased
-      size_t index = ((size_t) obj) >> HeapRegion::LogOfHRGrainBytes;
+      uintx index = (uintx) obj >> HeapRegion::LogOfHRGrainBytes;
       bool ret = _in_cset_fast_test[index];
       // let's make sure the result is consistent with what the slower
       // test returns
@@ -669,7 +670,7 @@ public:
   void clear_cset_fast_test() {
     assert(_in_cset_fast_test_base != NULL, "sanity");
     memset(_in_cset_fast_test_base, false,
-        _in_cset_fast_test_length * sizeof(bool));
+           (size_t) _in_cset_fast_test_length * sizeof(bool));
   }
 
   // This is called at the end of either a concurrent cycle or a Full
@@ -1100,23 +1101,23 @@ public:
   }
 
   // The total number of regions in the heap.
-  size_t n_regions() { return _hrs.length(); }
+  uint n_regions() { return _hrs.length(); }
 
   // The max number of regions in the heap.
-  size_t max_regions() { return _hrs.max_length(); }
+  uint max_regions() { return _hrs.max_length(); }
 
   // The number of regions that are completely free.
-  size_t free_regions() { return _free_list.length(); }
+  uint free_regions() { return _free_list.length(); }
 
   // The number of regions that are not completely free.
-  size_t used_regions() { return n_regions() - free_regions(); }
+  uint used_regions() { return n_regions() - free_regions(); }
 
   // The number of regions available for "regular" expansion.
-  size_t expansion_regions() { return _expansion_regions; }
+  uint expansion_regions() { return _expansion_regions; }
 
   // Factory method for HeapRegion instances. It will return NULL if
   // the allocation fails.
-  HeapRegion* new_heap_region(size_t hrs_index, HeapWord* bottom);
+  HeapRegion* new_heap_region(uint hrs_index, HeapWord* bottom);
 
   void verify_not_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
   void verify_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
@@ -1300,7 +1301,7 @@ public:
   void heap_region_iterate_from(HeapRegion* r, HeapRegionClosure* blk) const;
 
   // Return the region with the given index. It assumes the index is valid.
-  HeapRegion* region_at(size_t index) const { return _hrs.at(index); }
+  HeapRegion* region_at(uint index) const { return _hrs.at(index); }
 
   // Divide the heap region sequence into "chunks" of some size (the number
   // of regions divided by the number of parallel threads times some
@@ -1503,10 +1504,10 @@ public:
   // Currently there is only one place where this is called with
   // vo == UseMarkWord, which is to verify the marking during a
   // full GC.
-  void verify(bool allow_dirty, bool silent, VerifyOption vo);
+  void verify(bool silent, VerifyOption vo);
 
   // Override; it uses the "prev" marking information
-  virtual void verify(bool allow_dirty, bool silent);
+  virtual void verify(bool silent);
   virtual void print_on(outputStream* st) const;
   virtual void print_extended_on(outputStream* st) const;
 
@@ -1674,202 +1675,6 @@ public:
 
 protected:
   size_t _max_heap_capacity;
-};
-
-#define use_local_bitmaps         1
-#define verify_local_bitmaps      0
-#define oop_buffer_length       256
-
-#ifndef PRODUCT
-class GCLabBitMap;
-class GCLabBitMapClosure: public BitMapClosure {
-private:
-  ConcurrentMark* _cm;
-  GCLabBitMap*    _bitmap;
-
-public:
-  GCLabBitMapClosure(ConcurrentMark* cm,
-                     GCLabBitMap* bitmap) {
-    _cm     = cm;
-    _bitmap = bitmap;
-  }
-
-  virtual bool do_bit(size_t offset);
-};
-#endif // !PRODUCT
-
-class GCLabBitMap: public BitMap {
-private:
-  ConcurrentMark* _cm;
-
-  int       _shifter;
-  size_t    _bitmap_word_covers_words;
-
-  // beginning of the heap
-  HeapWord* _heap_start;
-
-  // this is the actual start of the GCLab
-  HeapWord* _real_start_word;
-
-  // this is the actual end of the GCLab
-  HeapWord* _real_end_word;
-
-  // this is the first word, possibly located before the actual start
-  // of the GCLab, that corresponds to the first bit of the bitmap
-  HeapWord* _start_word;
-
-  // size of a GCLab in words
-  size_t _gclab_word_size;
-
-  static int shifter() {
-    return MinObjAlignment - 1;
-  }
-
-  // how many heap words does a single bitmap word corresponds to?
-  static size_t bitmap_word_covers_words() {
-    return BitsPerWord << shifter();
-  }
-
-  size_t gclab_word_size() const {
-    return _gclab_word_size;
-  }
-
-  // Calculates actual GCLab size in words
-  size_t gclab_real_word_size() const {
-    return bitmap_size_in_bits(pointer_delta(_real_end_word, _start_word))
-           / BitsPerWord;
-  }
-
-  static size_t bitmap_size_in_bits(size_t gclab_word_size) {
-    size_t bits_in_bitmap = gclab_word_size >> shifter();
-    // We are going to ensure that the beginning of a word in this
-    // bitmap also corresponds to the beginning of a word in the
-    // global marking bitmap. To handle the case where a GCLab
-    // starts from the middle of the bitmap, we need to add enough
-    // space (i.e. up to a bitmap word) to ensure that we have
-    // enough bits in the bitmap.
-    return bits_in_bitmap + BitsPerWord - 1;
-  }
-public:
-  GCLabBitMap(HeapWord* heap_start, size_t gclab_word_size)
-    : BitMap(bitmap_size_in_bits(gclab_word_size)),
-      _cm(G1CollectedHeap::heap()->concurrent_mark()),
-      _shifter(shifter()),
-      _bitmap_word_covers_words(bitmap_word_covers_words()),
-      _heap_start(heap_start),
-      _gclab_word_size(gclab_word_size),
-      _real_start_word(NULL),
-      _real_end_word(NULL),
-      _start_word(NULL) {
-    guarantee(false, "GCLabBitMap::GCLabBitmap(): don't call this any more");
-  }
-
-  inline unsigned heapWordToOffset(HeapWord* addr) {
-    unsigned offset = (unsigned) pointer_delta(addr, _start_word) >> _shifter;
-    assert(offset < size(), "offset should be within bounds");
-    return offset;
-  }
-
-  inline HeapWord* offsetToHeapWord(size_t offset) {
-    HeapWord* addr =  _start_word + (offset << _shifter);
-    assert(_real_start_word <= addr && addr < _real_end_word, "invariant");
-    return addr;
-  }
-
-  bool fields_well_formed() {
-    bool ret1 = (_real_start_word == NULL) &&
-                (_real_end_word == NULL) &&
-                (_start_word == NULL);
-    if (ret1)
-      return true;
-
-    bool ret2 = _real_start_word >= _start_word &&
-      _start_word < _real_end_word &&
-      (_real_start_word + _gclab_word_size) == _real_end_word &&
-      (_start_word + _gclab_word_size + _bitmap_word_covers_words)
-                                                              > _real_end_word;
-    return ret2;
-  }
-
-  inline bool mark(HeapWord* addr) {
-    guarantee(use_local_bitmaps, "invariant");
-    assert(fields_well_formed(), "invariant");
-
-    if (addr >= _real_start_word && addr < _real_end_word) {
-      assert(!isMarked(addr), "should not have already been marked");
-
-      // first mark it on the bitmap
-      at_put(heapWordToOffset(addr), true);
-
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  inline bool isMarked(HeapWord* addr) {
-    guarantee(use_local_bitmaps, "invariant");
-    assert(fields_well_formed(), "invariant");
-
-    return at(heapWordToOffset(addr));
-  }
-
-  void set_buffer(HeapWord* start) {
-    guarantee(false, "set_buffer(): don't call this any more");
-
-    guarantee(use_local_bitmaps, "invariant");
-    clear();
-
-    assert(start != NULL, "invariant");
-    _real_start_word = start;
-    _real_end_word   = start + _gclab_word_size;
-
-    size_t diff =
-      pointer_delta(start, _heap_start) % _bitmap_word_covers_words;
-    _start_word = start - diff;
-
-    assert(fields_well_formed(), "invariant");
-  }
-
-#ifndef PRODUCT
-  void verify() {
-    // verify that the marks have been propagated
-    GCLabBitMapClosure cl(_cm, this);
-    iterate(&cl);
-  }
-#endif // PRODUCT
-
-  void retire() {
-    guarantee(false, "retire(): don't call this any more");
-
-    guarantee(use_local_bitmaps, "invariant");
-    assert(fields_well_formed(), "invariant");
-
-    if (_start_word != NULL) {
-      CMBitMap*       mark_bitmap = _cm->nextMarkBitMap();
-
-      // this means that the bitmap was set up for the GCLab
-      assert(_real_start_word != NULL && _real_end_word != NULL, "invariant");
-
-      mark_bitmap->mostly_disjoint_range_union(this,
-                                0, // always start from the start of the bitmap
-                                _start_word,
-                                gclab_real_word_size());
-      _cm->grayRegionIfNecessary(MemRegion(_real_start_word, _real_end_word));
-
-#ifndef PRODUCT
-      if (use_local_bitmaps && verify_local_bitmaps)
-        verify();
-#endif // PRODUCT
-    } else {
-      assert(_real_start_word == NULL && _real_end_word == NULL, "invariant");
-    }
-  }
-
-  size_t bitmap_size_in_words() const {
-    return (bitmap_size_in_bits(gclab_word_size()) + BitsPerWord - 1) / BitsPerWord;
-  }
-
 };
 
 class G1ParGCAllocBuffer: public ParGCAllocBuffer {

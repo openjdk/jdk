@@ -1,0 +1,74 @@
+#
+# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include $(SPEC)
+include MakeBase.gmk
+include JavaCompilation.gmk
+include Setup.gmk
+
+default: $(IMAGES_OUTPUTDIR)/_the.images
+
+include Tools.gmk
+
+JARS:=
+
+##########################################################################################
+
+JCONSOLE_JAR_DEPS := \
+  $(shell $(FIND) $(JDK_OUTPUTDIR)/newclasses/sun/tools/jconsole/ -name "_the.package") \
+  $(shell $(FIND) $(JDK_OUTPUTDIR)/newclasses/com/sun/tools/jconsole/ -name "_the.package")
+
+$(eval $(call SetupArchive,BUILD_JCONSOLE_JAR,$(JCONSOLE_JAR_DEPS),\
+		SRCS:=$(JDK_OUTPUTDIR)/newclasses,\
+		SUFFIXES:=.class .gif .png,\
+		INCLUDES:=sun/tools/jconsole com/sun/tools/jconsole,\
+		JARMAIN:=sun.tools.jconsole.JConsole,\
+		JAR:=$(JDK_OUTPUTDIR)/lib/jconsole.jar,\
+		SKIP_METAINF:=true))
+
+JARS+=$(JDK_OUTPUTDIR)/lib/jconsole.jar
+
+##########################################################################################
+
+# Need to define BUILDDIR for Release.gmk to work
+BUILDDIR=$(JDK_TOPDIR)/makefiles
+include common/Defs.gmk
+include common/Release.gmk
+
+# A rudimentary attempt at band-aiding the dependency tracking.
+DEPS:=	$(shell $(FIND) $(JDK_OUTPUTDIR)/newclasses -name "*.class" -type f) \
+	$(shell $(FIND) $(JDK_OUTPUTDIR)/bin -type f) \
+	$(shell $(FIND) $(JDK_OUTPUTDIR)/lib -type f) 
+
+$(IMAGES_OUTPUTDIR)/_the.images : $(DEPS) $(JARS)
+	$(MKDIR) -p $(@D)
+# 	Restart this makefile, ugly, but since double colon (::) rules
+# 	have been used in Release.gmk, it is impossible to craft on
+# 	dependencies on these. I.e. -do-not-use- :: rules!!!!!
+#       Repeat after me: -do-not-use- :: rules!!!!!
+	$(MAKE) -j1 -f Images.gmk $(IMAGES_MAKE_ARGS) images
+	$(TOUCH) $@
+
+.PHONY: default
