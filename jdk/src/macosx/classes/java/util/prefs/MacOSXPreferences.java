@@ -231,8 +231,14 @@ class MacOSXPreferences extends AbstractPreferences {
             if (isRemoved())
                 throw new IllegalStateException("Node has been removed");
             // fixme! overkill
-            if (!MacOSXPreferencesFile.syncWorld()) {
-                throw new BackingStoreException("Synchronization failed for node '" + path + "'");
+            if (isUser) {
+                if (!MacOSXPreferencesFile.syncUser()) {
+                    throw new BackingStoreException("Synchronization failed for node '" + path + "'");
+                }
+            } else {
+                if (!MacOSXPreferencesFile.syncWorld()) {
+                    throw new BackingStoreException("Synchronization failed for node '" + path + "'");
+                }
             }
         }
     }
