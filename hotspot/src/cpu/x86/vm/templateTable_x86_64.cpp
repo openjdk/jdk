@@ -2685,26 +2685,23 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     __ pop_ptr(rbx);                  // copy the object pointer from tos
     __ verify_oop(rbx);
     __ push_ptr(rbx);                 // put the object pointer back on tos
-    __ subptr(rsp, sizeof(jvalue));  // add space for a jvalue object
-    __ mov(c_rarg3, rsp);
-    const Address field(c_rarg3, 0);
-
+    // Save tos values before call_VM() clobbers them. Since we have
+    // to do it for every data type, we use the saved values as the
+    // jvalue object.
     switch (bytecode()) {          // load values into the jvalue object
-    case Bytecodes::_fast_aputfield: __ movq(field, rax); break;
-    case Bytecodes::_fast_lputfield: __ movq(field, rax); break;
-    case Bytecodes::_fast_iputfield: __ movl(field, rax); break;
-    case Bytecodes::_fast_bputfield: __ movb(field, rax); break;
+    case Bytecodes::_fast_aputfield: __ push_ptr(rax); break;
+    case Bytecodes::_fast_bputfield: // fall through
     case Bytecodes::_fast_sputfield: // fall through
-    case Bytecodes::_fast_cputfield: __ movw(field, rax); break;
-    case Bytecodes::_fast_fputfield: __ movflt(field, xmm0); break;
-    case Bytecodes::_fast_dputfield: __ movdbl(field, xmm0); break;
+    case Bytecodes::_fast_cputfield: // fall through
+    case Bytecodes::_fast_iputfield: __ push_i(rax); break;
+    case Bytecodes::_fast_dputfield: __ push_d(); break;
+    case Bytecodes::_fast_fputfield: __ push_f(); break;
+    case Bytecodes::_fast_lputfield: __ push_l(rax); break;
+
     default:
       ShouldNotReachHere();
     }
-
-    // Save rax because call_VM() will clobber it, then use it for
-    // JVMTI purposes
-    __ push(rax);
+    __ mov(c_rarg3, rsp);             // points to jvalue on the stack
     // access constant pool cache entry
     __ get_cache_entry_pointer_at_bcp(c_rarg2, rax, 1);
     __ verify_oop(rbx);
@@ -2715,8 +2712,17 @@ void TemplateTable::jvmti_post_fast_field_mod() {
                CAST_FROM_FN_PTR(address,
                                 InterpreterRuntime::post_field_modification),
                rbx, c_rarg2, c_rarg3);
-    __ pop(rax);     // restore lower value
-    __ addptr(rsp, sizeof(jvalue));  // release jvalue object space
+
+    switch (bytecode()) {             // restore tos values
+    case Bytecodes::_fast_aputfield: __ pop_ptr(rax); break;
+    case Bytecodes::_fast_bputfield: // fall through
+    case Bytecodes::_fast_sputfield: // fall through
+    case Bytecodes::_fast_cputfield: // fall through
+    case Bytecodes::_fast_iputfield: __ pop_i(rax); break;
+    case Bytecodes::_fast_dputfield: __ pop_d(); break;
+    case Bytecodes::_fast_fputfield: __ pop_f(); break;
+    case Bytecodes::_fast_lputfield: __ pop_l(rax); break;
+    }
     __ bind(L2);
   }
 }

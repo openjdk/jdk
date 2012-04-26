@@ -118,9 +118,11 @@ public:
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
 };
 
+template <bool do_gen_barrier, G1Barrier barrier, bool do_mark_object>
+class G1ParCopyClosure : public G1ParClosureSuper {
+  G1ParScanClosure _scanner;
+  template <class T> void do_oop_work(T* p);
 
-class G1ParCopyHelper : public G1ParClosureSuper {
-  G1ParScanClosure *_scanner;
 protected:
   // Mark the object if it's not already marked. This is used to mark
   // objects pointed to by roots that are guaranteed not to move
@@ -135,22 +137,10 @@ protected:
   oop copy_to_survivor_space(oop obj);
 
 public:
-  G1ParCopyHelper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state,
-                  G1ParScanClosure *scanner) :
-    G1ParClosureSuper(g1, par_scan_state), _scanner(scanner) { }
-};
-
-template <bool do_gen_barrier, G1Barrier barrier, bool do_mark_object>
-class G1ParCopyClosure : public G1ParCopyHelper {
-  G1ParScanClosure _scanner;
-
-  template <class T> void do_oop_work(T* p);
-
-public:
   G1ParCopyClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state,
                    ReferenceProcessor* rp) :
       _scanner(g1, par_scan_state, rp),
-      G1ParCopyHelper(g1, par_scan_state, &_scanner) {
+      G1ParClosureSuper(g1, par_scan_state) {
     assert(_ref_processor == NULL, "sanity");
   }
 

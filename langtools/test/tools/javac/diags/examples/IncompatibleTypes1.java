@@ -21,14 +21,13 @@
  * questions.
  */
 
-// key: compiler.misc.incompatible.types.1
 // key: compiler.misc.infer.no.conforming.instance.exists
-// key: compiler.err.prob.found.req
+// key: compiler.err.prob.found.req.1
 
 class IncompatibleTypes1<V> {
-    <T extends Integer & Runnable> IncompatibleTypes1<T> m() {
+    <T> IncompatibleTypes1<Integer> m() {
         return null;
     }
 
-    IncompatibleTypes1<? super String> o = m();
+    IncompatibleTypes1<? extends String> o = m();
 }

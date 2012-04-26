@@ -29,6 +29,8 @@ import com.sun.tools.javac.api.Formattable.LocalizedString;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.comp.Attr.ResultInfo;
+import com.sun.tools.javac.comp.Check.CheckContext;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionContext.Candidate;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.tree.*;
@@ -70,6 +72,7 @@ public class Resolve {
     Names names;
     Log log;
     Symtab syms;
+    Attr attr;
     Check chk;
     Infer infer;
     ClassReader reader;
@@ -101,6 +104,7 @@ public class Resolve {
 
         names = Names.instance(context);
         log = Log.instance(context);
+        attr = Attr.instance(context);
         chk = Check.instance(context);
         infer = Infer.instance(context);
         reader = ClassReader.instance(context);
@@ -395,7 +399,6 @@ public class Resolve {
         else {
             Symbol s2 = ((MethodSymbol)sym).implementation(site.tsym, types, true);
             return (s2 == null || s2 == sym || sym.owner == s2.owner ||
-                    s2.isPolymorphicSignatureGeneric() ||
                     !types.isSubSignature(types.memberType(site, s2), types.memberType(site, sym)));
         }
     }
@@ -445,7 +448,6 @@ public class Resolve {
                         boolean useVarargs,
                         Warner warn)
         throws Infer.InferenceException {
-        boolean polymorphicSignature = m.isPolymorphicSignatureGeneric() && allowMethodHandles;
         if (useVarargs && (m.flags() & VARARGS) == 0)
             throw inapplicableMethodException.setMessage();
         Type mt = types.memberType(site, m);
@@ -486,8 +488,7 @@ public class Resolve {
         }
 
         // find out whether we need to go the slow route via infer
-        boolean instNeeded = tvars.tail != null || /*inlined: tvars.nonEmpty()*/
-                polymorphicSignature;
+        boolean instNeeded = tvars.tail != null; /*inlined: tvars.nonEmpty()*/
         for (List<Type> l = argtypes;
              l.tail != null/*inlined: l.nonEmpty()*/ && !instNeeded;
              l = l.tail) {
@@ -495,9 +496,7 @@ public class Resolve {
         }
 
         if (instNeeded)
-            return polymorphicSignature ?
-                infer.instantiatePolymorphicSignatureInstance(env, site, m.name, (MethodSymbol)m, argtypes) :
-                infer.instantiateMethod(env,
+            return infer.instantiateMethod(env,
                                     tvars,
                                     (MethodType)mt,
                                     m,
@@ -627,15 +626,8 @@ public class Resolve {
         }
 
         while (argtypes.nonEmpty() && formals.head != varargsFormal) {
-            Type undetFormal = infer.asUndetType(formals.head, undetvars);
-            Type capturedActual = types.capture(argtypes.head);
-            boolean works = allowBoxing ?
-                    types.isConvertible(capturedActual, undetFormal, warn) :
-                    types.isSubtypeUnchecked(capturedActual, undetFormal, warn);
-            if (!works) {
-                throw handler.argumentMismatch(false, argtypes.head, formals.head);
-            }
-            checkedArgs.append(capturedActual);
+            ResultInfo resultInfo = methodCheckResult(formals.head, allowBoxing, false, undetvars, handler, warn);
+            checkedArgs.append(resultInfo.check(env.tree.pos(), argtypes.head));
             argtypes = argtypes.tail;
             formals = formals.tail;
         }
@@ -648,13 +640,9 @@ public class Resolve {
             //note: if applicability check is triggered by most specific test,
             //the last argument of a varargs is _not_ an array type (see JLS 15.12.2.5)
             Type elt = types.elemtype(varargsFormal);
-            Type eltUndet = infer.asUndetType(elt, undetvars);
             while (argtypes.nonEmpty()) {
-                Type capturedActual = types.capture(argtypes.head);
-                if (!types.isConvertible(capturedActual, eltUndet, warn)) {
-                    throw handler.argumentMismatch(true, argtypes.head, elt);
-                }
-                checkedArgs.append(capturedActual);
+                ResultInfo resultInfo = methodCheckResult(elt, allowBoxing, true, undetvars, handler, warn);
+                checkedArgs.append(resultInfo.check(env.tree.pos(), argtypes.head));
                 argtypes = argtypes.tail;
             }
             //check varargs element type accessibility
@@ -665,39 +653,116 @@ public class Resolve {
         }
         return checkedArgs.toList();
     }
-    // where
-        public static class InapplicableMethodException extends RuntimeException {
-            private static final long serialVersionUID = 0;
 
-            JCDiagnostic diagnostic;
-            JCDiagnostic.Factory diags;
+    /**
+     * Check context to be used during method applicability checks. A method check
+     * context might contain inference variables.
+     */
+    abstract class MethodCheckContext implements CheckContext {
 
-            InapplicableMethodException(JCDiagnostic.Factory diags) {
-                this.diagnostic = null;
-                this.diags = diags;
-            }
-            InapplicableMethodException setMessage() {
-                this.diagnostic = null;
-                return this;
-            }
-            InapplicableMethodException setMessage(String key) {
-                this.diagnostic = key != null ? diags.fragment(key) : null;
-                return this;
-            }
-            InapplicableMethodException setMessage(String key, Object... args) {
-                this.diagnostic = key != null ? diags.fragment(key, args) : null;
-                return this;
-            }
-            InapplicableMethodException setMessage(JCDiagnostic diag) {
-                this.diagnostic = diag;
-                return this;
-            }
+        MethodCheckHandler handler;
+        boolean useVarargs;
+        List<Type> undetvars;
+        Warner rsWarner;
 
-            public JCDiagnostic getDiagnostic() {
-                return diagnostic;
-            }
+        public MethodCheckContext(MethodCheckHandler handler, boolean useVarargs, List<Type> undetvars, Warner rsWarner) {
+            this.handler = handler;
+            this.useVarargs = useVarargs;
+            this.undetvars = undetvars;
+            this.rsWarner = rsWarner;
         }
-        private final InapplicableMethodException inapplicableMethodException;
+
+        public void report(DiagnosticPosition pos, Type found, Type req, JCDiagnostic details) {
+            throw handler.argumentMismatch(useVarargs, found, req);
+        }
+
+        public Type rawInstantiatePoly(ForAll found, Type req, Warner warn) {
+            throw new AssertionError("ForAll in argument position");
+        }
+
+        public Warner checkWarner(DiagnosticPosition pos, Type found, Type req) {
+            return rsWarner;
+        }
+    }
+
+    /**
+     * Subclass of method check context class that implements strict method conversion.
+     * Strict method conversion checks compatibility between types using subtyping tests.
+     */
+    class StrictMethodContext extends MethodCheckContext {
+
+        public StrictMethodContext(MethodCheckHandler handler, boolean useVarargs, List<Type> undetvars, Warner rsWarner) {
+            super(handler, useVarargs, undetvars, rsWarner);
+        }
+
+        public boolean compatible(Type found, Type req, Warner warn) {
+            return types.isSubtypeUnchecked(found, infer.asUndetType(req, undetvars), warn);
+        }
+    }
+
+    /**
+     * Subclass of method check context class that implements loose method conversion.
+     * Loose method conversion checks compatibility between types using method conversion tests.
+     */
+    class LooseMethodContext extends MethodCheckContext {
+
+        public LooseMethodContext(MethodCheckHandler handler, boolean useVarargs, List<Type> undetvars, Warner rsWarner) {
+            super(handler, useVarargs, undetvars, rsWarner);
+        }
+
+        public boolean compatible(Type found, Type req, Warner warn) {
+            return types.isConvertible(found, infer.asUndetType(req, undetvars), warn);
+        }
+    }
+
+    /**
+     * Create a method check context to be used during method applicability check
+     */
+    ResultInfo methodCheckResult(Type to, boolean allowBoxing, boolean useVarargs,
+            List<Type> undetvars, MethodCheckHandler methodHandler, Warner rsWarner) {
+        MethodCheckContext checkContext = allowBoxing ?
+                new LooseMethodContext(methodHandler, useVarargs, undetvars, rsWarner) :
+                new StrictMethodContext(methodHandler, useVarargs, undetvars, rsWarner);
+        return attr.new ResultInfo(VAL, to, checkContext) {
+            @Override
+            protected Type check(DiagnosticPosition pos, Type found) {
+                return super.check(pos, chk.checkNonVoid(pos, types.capture(types.upperBound(found))));
+            }
+        };
+    }
+
+    public static class InapplicableMethodException extends RuntimeException {
+        private static final long serialVersionUID = 0;
+
+        JCDiagnostic diagnostic;
+        JCDiagnostic.Factory diags;
+
+        InapplicableMethodException(JCDiagnostic.Factory diags) {
+            this.diagnostic = null;
+            this.diags = diags;
+        }
+        InapplicableMethodException setMessage() {
+            this.diagnostic = null;
+            return this;
+        }
+        InapplicableMethodException setMessage(String key) {
+            this.diagnostic = key != null ? diags.fragment(key) : null;
+            return this;
+        }
+        InapplicableMethodException setMessage(String key, Object... args) {
+            this.diagnostic = key != null ? diags.fragment(key, args) : null;
+            return this;
+        }
+        InapplicableMethodException setMessage(JCDiagnostic diag) {
+            this.diagnostic = diag;
+            return this;
+        }
+
+        public JCDiagnostic getDiagnostic() {
+            return diagnostic;
+        }
+    }
+    private final InapplicableMethodException inapplicableMethodException;
 
 /* ***************************************************************************
  *  Symbol lookup
@@ -1670,25 +1735,18 @@ public class Resolve {
                 steps = steps.tail;
             }
             if (sym.kind >= AMBIGUOUS) {
-                if (site.tsym.isPolymorphicSignatureGeneric()) {
-                    //polymorphic receiver - synthesize new method symbol
+                //if nothing is found return the 'first' error
+                MethodResolutionPhase errPhase =
+                        currentResolutionContext.firstErroneousResolutionPhase();
+                sym = access(currentResolutionContext.resolutionCache.get(errPhase),
+                        pos, location, site, name, true, argtypes, typeargtypes);
+                env.info.varArgs = errPhase.isVarargsRequired;
+            } else if (allowMethodHandles) {
+                MethodSymbol msym = (MethodSymbol)sym;
+                if (msym.isSignaturePolymorphic(types)) {
                     env.info.varArgs = false;
-                    sym = findPolymorphicSignatureInstance(env,
-                            site, name, null, argtypes);
+                    return findPolymorphicSignatureInstance(env, sym, argtypes);
                 }
-                else {
-                    //if nothing is found return the 'first' error
-                    MethodResolutionPhase errPhase =
-                            currentResolutionContext.firstErroneousResolutionPhase();
-                    sym = access(currentResolutionContext.resolutionCache.get(errPhase),
-                            pos, location, site, name, true, argtypes, typeargtypes);
-                    env.info.varArgs = errPhase.isVarargsRequired;
-                }
-            } else if (allowMethodHandles && sym.isPolymorphicSignatureGeneric()) {
-                //non-instantiated polymorphic signature - synthesize new method symbol
-                env.info.varArgs = false;
-                sym = findPolymorphicSignatureInstance(env,
-                        site, name, (MethodSymbol)sym, argtypes);
             }
             return sym;
         }
@@ -1701,40 +1759,25 @@ public class Resolve {
      *  Searches in a side table, not the main scope of the site.
      *  This emulates the lookup process required by JSR 292 in JVM.
      *  @param env       Attribution environment
-     *  @param site      The original type from where the selection takes place.
-     *  @param name      The method's name.
-     *  @param spMethod  A template for the implicit method, or null.
-     *  @param argtypes  The required argument types.
-     *  @param typeargtypes  The required type arguments.
+     *  @param spMethod  signature polymorphic method - i.e. MH.invokeExact
+     *  @param argtypes  The required argument types
      */
-    Symbol findPolymorphicSignatureInstance(Env<AttrContext> env, Type site,
-                                            Name name,
-                                            MethodSymbol spMethod,  // sig. poly. method or null if none
+    Symbol findPolymorphicSignatureInstance(Env<AttrContext> env,
+                                            Symbol spMethod,
                                             List<Type> argtypes) {
         Type mtype = infer.instantiatePolymorphicSignatureInstance(env,
-                site, name, spMethod, argtypes);
-        long flags = ABSTRACT | HYPOTHETICAL | POLYMORPHIC_SIGNATURE |
-                    (spMethod != null ?
-                        spMethod.flags() & Flags.AccessFlags :
-                        Flags.PUBLIC | Flags.STATIC);
-        Symbol m = null;
-        for (Scope.Entry e = polymorphicSignatureScope.lookup(name);
-             e.scope != null;
-             e = e.next()) {
-            Symbol sym = e.sym;
-            if (types.isSameType(mtype, sym.type) &&
-                (sym.flags() & Flags.STATIC) == (flags & Flags.STATIC) &&
-                types.isSameType(sym.owner.type, site)) {
-               m = sym;
-               break;
+                (MethodSymbol)spMethod, argtypes);
+        for (Symbol sym : polymorphicSignatureScope.getElementsByName(spMethod.name)) {
+            if (types.isSameType(mtype, sym.type)) {
+               return sym;
             }
         }
-        if (m == null) {
-            // create the desired method
-            m = new MethodSymbol(flags, name, mtype, site.tsym);
-            polymorphicSignatureScope.enter(m);
-        }
-        return m;
+
+        // create the desired method
+        long flags = ABSTRACT | HYPOTHETICAL | spMethod.flags() & Flags.AccessFlags;
+        Symbol msym = new MethodSymbol(flags, spMethod.name, mtype, spMethod.owner);
+        polymorphicSignatureScope.enter(msym);
+        return msym;
     }
 
     /** Resolve a qualified method identifier, throw a fatal error if not

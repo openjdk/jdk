@@ -26,7 +26,7 @@
 // key: compiler.misc.where.description.typevar
 // key: compiler.misc.where.typevar
 // key: compiler.err.cant.apply.symbol.1
-// key: compiler.misc.infer.no.conforming.assignment.exists
+// key: compiler.misc.inferred.do.not.conform.to.eq.bounds
 // key: compiler.misc.captured.type
 // options: -XDdiags=where,simpleNames
 // run: simple
