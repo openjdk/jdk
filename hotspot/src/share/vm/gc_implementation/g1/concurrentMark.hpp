@@ -636,7 +636,7 @@ public:
     return _task_queues->steal(task_num, hash_seed, obj);
   }
 
-  ConcurrentMark(ReservedSpace rs, int max_regions);
+  ConcurrentMark(ReservedSpace rs, uint max_regions);
   ~ConcurrentMark();
 
   ConcurrentMarkThread* cmThread() { return _cmThread; }

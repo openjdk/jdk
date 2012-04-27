@@ -659,7 +659,7 @@ class CollectedHeap : public CHeapObj {
   }
 
   // Heap verification
-  virtual void verify(bool allow_dirty, bool silent, VerifyOption option) = 0;
+  virtual void verify(bool silent, VerifyOption option) = 0;
 
   // Non product verification and debugging.
 #ifndef PRODUCT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -340,7 +340,7 @@ protected:
   // PrintHeapAtGC support.
   void print_on(outputStream* st) const;
 
-  void verify(bool allow_dirty);
+  void verify();
 
   bool promo_failure_scan_is_complete() const {
     return _promo_failure_scan_stack.is_empty();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,15 @@
 
 // key: compiler.err.prob.found.req.1
 // key: compiler.misc.invalid.inferred.types
-// key: compiler.misc.inferred.do.not.conform.to.bounds
+// key: compiler.misc.inferred.do.not.conform.to.upper.bounds
 
 import java.util.*;
 
 class InvalidInferredTypes {
 
-    <T extends List<? super T>> T makeList() {
-        return null;
-    }
+    <S extends String> List<S> m() { return null; }
 
-    public void test() {
-        List<? super String> l = makeList();
+    void test() {
+        List<Integer> li = m();
     }
 }

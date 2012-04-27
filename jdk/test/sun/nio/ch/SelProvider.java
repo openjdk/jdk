@@ -38,20 +38,9 @@ public class SelProvider {
         if ("SunOS".equals(osname)) {
             expected = "sun.nio.ch.DevPollSelectorProvider";
         } else if ("Linux".equals(osname)) {
-            String[] vers = osver.split("\\.", 0);
-            if (vers.length >= 2) {
-                int major = Integer.parseInt(vers[0]);
-                int minor = Integer.parseInt(vers[1]);
-                if (major > 2 || (major == 2 && minor >= 6)) {
-                    expected = "sun.nio.ch.EPollSelectorProvider";
-                } else {
-                    expected = "sun.nio.ch.PollSelectorProvider";
-                }
-            } else {
-                throw new RuntimeException("Test does not recognize this operating system");
-            }
+            expected = "sun.nio.ch.EPollSelectorProvider";
         } else if (osname.startsWith("Mac OS")) {
-            expected = "sun.nio.ch.PollSelectorProvider";
+            expected = "sun.nio.ch.KQueueSelectorProvider";
         } else
             return;
         if (!spName.equals(expected))
