@@ -440,7 +440,7 @@ static bool sort_map_array(struct ps_prochandle* ph) {
       int j = 0;
       print_debug("---- sorted virtual address map ----\n");
       for (j = 0; j < ph->core->num_maps; j++) {
-        print_debug("base = 0x%lx\tsize = %d\n", ph->core->map_array[j]->vaddr,
+        print_debug("base = 0x%lx\tsize = %zd\n", ph->core->map_array[j]->vaddr,
                                          ph->core->map_array[j]->memsz);
       }
    }

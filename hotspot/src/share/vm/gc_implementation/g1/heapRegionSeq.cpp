@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,15 @@
 
 // Private
 
-size_t HeapRegionSeq::find_contiguous_from(size_t from, size_t num) {
-  size_t len = length();
+uint HeapRegionSeq::find_contiguous_from(uint from, uint num) {
+  uint len = length();
   assert(num > 1, "use this only for sequences of length 2 or greater");
   assert(from <= len,
-         err_msg("from: "SIZE_FORMAT" should be valid and <= than "SIZE_FORMAT,
-                 from, len));
+         err_msg("from: %u should be valid and <= than %u", from, len));
 
-  size_t curr = from;
-  size_t first = G1_NULL_HRS_INDEX;
-  size_t num_so_far = 0;
+  uint curr = from;
+  uint first = G1_NULL_HRS_INDEX;
+  uint num_so_far = 0;
   while (curr < len && num_so_far < num) {
     if (at(curr)->is_empty()) {
       if (first == G1_NULL_HRS_INDEX) {
@@ -60,7 +59,7 @@ size_t HeapRegionSeq::find_contiguous_from(size_t from, size_t num) {
     // we found enough space for the humongous object
     assert(from <= first && first < len, "post-condition");
     assert(first < curr && (curr - first) == num, "post-condition");
-    for (size_t i = first; i < first + num; ++i) {
+    for (uint i = first; i < first + num; ++i) {
       assert(at(i)->is_empty(), "post-condition");
     }
     return first;
@@ -73,10 +72,10 @@ size_t HeapRegionSeq::find_contiguous_from(size_t from, size_t num) {
 // Public
 
 void HeapRegionSeq::initialize(HeapWord* bottom, HeapWord* end,
-                               size_t max_length) {
-  assert((size_t) bottom % HeapRegion::GrainBytes == 0,
+                               uint max_length) {
+  assert((uintptr_t) bottom % HeapRegion::GrainBytes == 0,
          "bottom should be heap region aligned");
-  assert((size_t) end % HeapRegion::GrainBytes == 0,
+  assert((uintptr_t) end % HeapRegion::GrainBytes == 0,
          "end should be heap region aligned");
 
   _length = 0;
@@ -88,8 +87,8 @@ void HeapRegionSeq::initialize(HeapWord* bottom, HeapWord* end,
   _max_length = max_length;
 
   _regions = NEW_C_HEAP_ARRAY(HeapRegion*, max_length);
-  memset(_regions, 0, max_length * sizeof(HeapRegion*));
-  _regions_biased = _regions - ((size_t) bottom >> _region_shift);
+  memset(_regions, 0, (size_t) max_length * sizeof(HeapRegion*));
+  _regions_biased = _regions - ((uintx) bottom >> _region_shift);
 
   assert(&_regions[0] == &_regions_biased[addr_to_index_biased(bottom)],
          "bottom should be included in the region with index 0");
@@ -105,7 +104,7 @@ MemRegion HeapRegionSeq::expand_by(HeapWord* old_end,
   assert(_heap_bottom <= next_bottom, "invariant");
   while (next_bottom < new_end) {
     assert(next_bottom < _heap_end, "invariant");
-    size_t index = length();
+    uint index = length();
 
     assert(index < _max_length, "otherwise we cannot expand further");
     if (index == 0) {
@@ -139,9 +138,9 @@ MemRegion HeapRegionSeq::expand_by(HeapWord* old_end,
   return MemRegion(old_end, next_bottom);
 }
 
-size_t HeapRegionSeq::free_suffix() {
-  size_t res = 0;
-  size_t index = length();
+uint HeapRegionSeq::free_suffix() {
+  uint res = 0;
+  uint index = length();
   while (index > 0) {
     index -= 1;
     if (!at(index)->is_empty()) {
@@ -152,27 +151,24 @@ size_t HeapRegionSeq::free_suffix() {
   return res;
 }
 
-size_t HeapRegionSeq::find_contiguous(size_t num) {
+uint HeapRegionSeq::find_contiguous(uint num) {
   assert(num > 1, "use this only for sequences of length 2 or greater");
   assert(_next_search_index <= length(),
-         err_msg("_next_search_indeex: "SIZE_FORMAT" "
-                 "should be valid and <= than "SIZE_FORMAT,
+         err_msg("_next_search_index: %u should be valid and <= than %u",
                  _next_search_index, length()));
 
-  size_t start = _next_search_index;
-  size_t res = find_contiguous_from(start, num);
+  uint start = _next_search_index;
+  uint res = find_contiguous_from(start, num);
   if (res == G1_NULL_HRS_INDEX && start > 0) {
     // Try starting from the beginning. If _next_search_index was 0,
     // no point in doing this again.
     res = find_contiguous_from(0, num);
   }
   if (res != G1_NULL_HRS_INDEX) {
-    assert(res < length(),
-           err_msg("res: "SIZE_FORMAT" should be valid", res));
+    assert(res < length(), err_msg("res: %u should be valid", res));
     _next_search_index = res + num;
     assert(_next_search_index <= length(),
-           err_msg("_next_search_indeex: "SIZE_FORMAT" "
-                   "should be valid and <= than "SIZE_FORMAT,
+           err_msg("_next_search_index: %u should be valid and <= than %u",
                    _next_search_index, length()));
   }
   return res;
@@ -183,20 +179,20 @@ void HeapRegionSeq::iterate(HeapRegionClosure* blk) const {
 }
 
 void HeapRegionSeq::iterate_from(HeapRegion* hr, HeapRegionClosure* blk) const {
-  size_t hr_index = 0;
+  uint hr_index = 0;
   if (hr != NULL) {
-    hr_index = (size_t) hr->hrs_index();
+    hr_index = hr->hrs_index();
   }
 
-  size_t len = length();
-  for (size_t i = hr_index; i < len; i += 1) {
+  uint len = length();
+  for (uint i = hr_index; i < len; i += 1) {
     bool res = blk->doHeapRegion(at(i));
     if (res) {
       blk->incomplete();
       return;
     }
   }
-  for (size_t i = 0; i < hr_index; i += 1) {
+  for (uint i = 0; i < hr_index; i += 1) {
     bool res = blk->doHeapRegion(at(i));
     if (res) {
       blk->incomplete();
@@ -206,7 +202,7 @@ void HeapRegionSeq::iterate_from(HeapRegion* hr, HeapRegionClosure* blk) const {
 }
 
 MemRegion HeapRegionSeq::shrink_by(size_t shrink_bytes,
-                                   size_t* num_regions_deleted) {
+                                   uint* num_regions_deleted) {
   // Reset this in case it's currently pointing into the regions that
   // we just removed.
   _next_search_index = 0;
@@ -218,7 +214,7 @@ MemRegion HeapRegionSeq::shrink_by(size_t shrink_bytes,
   assert(_allocated_length > 0, "we should have at least one region committed");
 
   // around the loop, i will be the next region to be removed
-  size_t i = length() - 1;
+  uint i = length() - 1;
   assert(i > 0, "we should never remove all regions");
   // [last_start, end) is the MemRegion that covers the regions we will remove.
   HeapWord* end = at(i)->end();
@@ -249,29 +245,24 @@ MemRegion HeapRegionSeq::shrink_by(size_t shrink_bytes,
 #ifndef PRODUCT
 void HeapRegionSeq::verify_optional() {
   guarantee(_length <= _allocated_length,
-            err_msg("invariant: _length: "SIZE_FORMAT" "
-                    "_allocated_length: "SIZE_FORMAT,
+            err_msg("invariant: _length: %u _allocated_length: %u",
                     _length, _allocated_length));
   guarantee(_allocated_length <= _max_length,
-            err_msg("invariant: _allocated_length: "SIZE_FORMAT" "
-                    "_max_length: "SIZE_FORMAT,
+            err_msg("invariant: _allocated_length: %u _max_length: %u",
                     _allocated_length, _max_length));
   guarantee(_next_search_index <= _length,
-            err_msg("invariant: _next_search_index: "SIZE_FORMAT" "
-                    "_length: "SIZE_FORMAT,
+            err_msg("invariant: _next_search_index: %u _length: %u",
                     _next_search_index, _length));
 
   HeapWord* prev_end = _heap_bottom;
-  for (size_t i = 0; i < _allocated_length; i += 1) {
+  for (uint i = 0; i < _allocated_length; i += 1) {
     HeapRegion* hr = _regions[i];
-    guarantee(hr != NULL, err_msg("invariant: i: "SIZE_FORMAT, i));
+    guarantee(hr != NULL, err_msg("invariant: i: %u", i));
     guarantee(hr->bottom() == prev_end,
-              err_msg("invariant i: "SIZE_FORMAT" "HR_FORMAT" "
-                      "prev_end: "PTR_FORMAT,
+              err_msg("invariant i: %u "HR_FORMAT" prev_end: "PTR_FORMAT,
                       i, HR_FORMAT_PARAMS(hr), prev_end));
     guarantee(hr->hrs_index() == i,
-              err_msg("invariant: i: "SIZE_FORMAT" hrs_index(): "SIZE_FORMAT,
-                      i, hr->hrs_index()));
+              err_msg("invariant: i: %u hrs_index(): %u", i, hr->hrs_index()));
     if (i < _length) {
       // Asserts will fire if i is >= _length
       HeapWord* addr = hr->bottom();
@@ -290,8 +281,8 @@ void HeapRegionSeq::verify_optional() {
       prev_end = hr->end();
     }
   }
-  for (size_t i = _allocated_length; i < _max_length; i += 1) {
-    guarantee(_regions[i] == NULL, err_msg("invariant i: "SIZE_FORMAT, i));
+  for (uint i = _allocated_length; i < _max_length; i += 1) {
+    guarantee(_regions[i] == NULL, err_msg("invariant i: %u", i));
   }
 }
 #endif // PRODUCT
