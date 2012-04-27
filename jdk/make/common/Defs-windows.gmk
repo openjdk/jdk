@@ -113,9 +113,7 @@ _JUNK_ := $(shell \
   echo >&2 "INFO: ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS)")
 
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
-  # HACK: disable ZIP_DEBUGINFO_FILES by default until install repo
-  # changes are promoted
-  ZIP_DEBUGINFO_FILES ?= 0
+  ZIP_DEBUGINFO_FILES ?= 1
 else
   ZIP_DEBUGINFO_FILES=0
 endif

@@ -31,7 +31,6 @@ import java.text.Bidi;
 
 import javax.swing.UIManager;
 import javax.swing.undo.*;
-import javax.swing.event.ChangeListener;
 import javax.swing.event.*;
 import javax.swing.tree.TreeNode;
 
@@ -698,28 +697,31 @@ public abstract class AbstractDocument implements Document, Serializable {
             return;
         }
         DocumentFilter filter = getDocumentFilter();
+        InsertStringResult insertStringResult = null;
 
         writeLock();
+
         try {
             if (filter != null) {
                 filter.insertString(getFilterBypass(), offs, str, a);
-            }
-            else {
-                handleInsertString(offs, str, a);
+            } else {
+                insertStringResult = handleInsertString(offs, str, a);
             }
         } finally {
             writeUnlock();
         }
+
+        processInsertStringResult(insertStringResult);
     }
 
     /**
      * Performs the actual work of inserting the text; it is assumed the
      * caller has obtained a write lock before invoking this.
      */
-    void handleInsertString(int offs, String str, AttributeSet a)
-                         throws BadLocationException {
+    private InsertStringResult handleInsertString(int offs, String str, AttributeSet a)
+            throws BadLocationException {
         if ((str == null) || (str.length() == 0)) {
-            return;
+            return null;
         }
         UndoableEdit u = data.insertString(offs, str);
         DefaultDocumentEvent e =
@@ -746,12 +748,29 @@ public abstract class AbstractDocument implements Document, Serializable {
         insertUpdate(e, a);
         // Mark the edit as done.
         e.end();
-        fireInsertUpdate(e);
+
+        InsertStringResult result = new InsertStringResult();
+
+        result.documentEvent = e;
+
         // only fire undo if Content implementation supports it
         // undo for the composed text is not supported for now
-        if (u != null &&
-            (a == null || !a.isDefined(StyleConstants.ComposedTextAttribute))) {
-            fireUndoableEditUpdate(new UndoableEditEvent(this, e));
+        if (u != null && (a == null || !a.isDefined(StyleConstants.ComposedTextAttribute))) {
+            result.undoableEditEvent = new UndoableEditEvent(this, e);
+        }
+
+        return result;
+    }
+
+    private void processInsertStringResult(InsertStringResult insertStringResult) {
+        if (insertStringResult == null) {
+            return;
+        }
+
+        fireInsertUpdate(insertStringResult.documentEvent);
+
+        if (insertStringResult.undoableEditEvent != null) {
+            fireUndoableEditUpdate(insertStringResult.undoableEditEvent);
         }
     }
 
@@ -2947,12 +2966,10 @@ public abstract class AbstractDocument implements Document, Serializable {
      */
     class UndoRedoDocumentEvent implements DocumentEvent {
         private DefaultDocumentEvent src = null;
-        private boolean isUndo;
         private EventType type = null;
 
         public UndoRedoDocumentEvent(DefaultDocumentEvent src, boolean isUndo) {
             this.src = src;
-            this.isUndo = isUndo;
             if(isUndo) {
                 if(src.getType().equals(EventType.INSERT)) {
                     type = EventType.REMOVE;
@@ -3106,13 +3123,23 @@ public abstract class AbstractDocument implements Document, Serializable {
         public void insertString(int offset, String string,
                                  AttributeSet attr) throws
                                         BadLocationException {
-            handleInsertString(offset, string, attr);
+            InsertStringResult insertStringResult = handleInsertString(offset, string, attr);
+
+            processInsertStringResult(insertStringResult);
         }
 
         public void replace(int offset, int length, String text,
                             AttributeSet attrs) throws BadLocationException {
             handleRemove(offset, length);
-            handleInsertString(offset, text, attrs);
+
+            InsertStringResult insertStringResult = handleInsertString(offset, text, attrs);
+
+            processInsertStringResult(insertStringResult);
         }
+    }
+
+    private static class InsertStringResult {
+        DefaultDocumentEvent documentEvent;
+        UndoableEditEvent undoableEditEvent;
     }
 }

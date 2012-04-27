@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,9 +65,11 @@ private:
   ciConstantPoolCache*   _field_cache;  // cached map index->field
   GrowableArray<ciField*>* _nonstatic_fields;
 
-  enum { implementors_limit = instanceKlass::implementors_limit };
-  ciInstanceKlass*       _implementors[implementors_limit];
-  jint                   _nof_implementors;
+  // The possible values of the _implementor fall into following three cases:
+  //   NULL: no implementor.
+  //   A ciInstanceKlass that's not itself: one implementor.
+  //   Itsef: more than one implementors.
+  ciInstanceKlass*       _implementor;
 
   GrowableArray<ciField*>* _non_static_fields;
 
@@ -97,7 +99,6 @@ protected:
 
   void compute_shared_init_state();
   bool compute_shared_has_subklass();
-  int  compute_shared_nof_implementors();
   int  compute_nonstatic_fields();
   GrowableArray<ciField*>* compute_nonstatic_fields_impl(GrowableArray<ciField*>* super_fields);
 
@@ -158,10 +159,17 @@ public:
     assert(is_loaded(), "must be loaded");
     return _nonstatic_oop_map_size; }
   ciInstanceKlass*       super();
-  jint                   nof_implementors()  {
+  jint                   nof_implementors() {
+    ciInstanceKlass* impl;
     assert(is_loaded(), "must be loaded");
-    if (_is_shared)  return compute_shared_nof_implementors();
-    return _nof_implementors;
+    impl = implementor();
+    if (impl == NULL) {
+      return 0;
+    } else if (impl != this) {
+      return 1;
+    } else {
+      return 2;
+    }
   }
 
   ciInstanceKlass* get_canonical_holder(int offset);
@@ -207,7 +215,7 @@ public:
   // but consider adding to vmSymbols.hpp instead.
 
   bool is_leaf_type();
-  ciInstanceKlass* implementor(int n);
+  ciInstanceKlass* implementor();
 
   // Is the defining class loader of this class the default loader?
   bool uses_default_loader();

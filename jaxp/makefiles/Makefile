@@ -47,7 +47,7 @@ $(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG,\
 
 $(eval $(call SetupJavaCompilation,BUILD_JAXP,\
 		SETUP:=GENERATE_NEWBYTECODE_DEBUG,\
-		SRC:=$(JAXP_TOPDIR)/src/share/classes,\
+		SRC:=$(JAXP_TOPDIR)/src,\
 		CLEAN:=.properties,\
 		BIN:=$(JAXP_OUTPUTDIR)/classes,\
 		SRCZIP:=$(JAXP_OUTPUTDIR)/dist/lib/src.zip))

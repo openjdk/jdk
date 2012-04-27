@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -937,10 +937,10 @@ void PSYoungGen::update_counters() {
   }
 }
 
-void PSYoungGen::verify(bool allow_dirty) {
-  eden_space()->verify(allow_dirty);
-  from_space()->verify(allow_dirty);
-  to_space()->verify(allow_dirty);
+void PSYoungGen::verify() {
+  eden_space()->verify();
+  from_space()->verify();
+  to_space()->verify();
 }
 
 #ifndef PRODUCT

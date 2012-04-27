@@ -648,6 +648,10 @@ extern JNFClassInfo jc_CDropTargetContextPeer;
     if (sDraggingError == FALSE) {
         sDraggingLocation = [sender draggingLocation];
         NSPoint javaLocation = [fView convertPoint:sDraggingLocation fromView:nil];
+        // The y coordinate that comes in the NSDraggingInfo seems to be reversed - probably
+        // has to do something with the type of view it comes to.
+        // This is the earliest place where we can correct it.
+        javaLocation.y = fView.window.frame.size.height - javaLocation.y;
 
         jint actions = [DnDUtilities mapNSDragOperationMaskToJava:[sender draggingSourceOperationMask]];
         jint dropAction = sJavaDropOperation;
