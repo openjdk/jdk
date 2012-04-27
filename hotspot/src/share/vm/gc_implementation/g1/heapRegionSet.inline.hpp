@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,15 +54,15 @@ inline void HeapRegionSetBase::update_for_removal(HeapRegion* hr) {
   assert(_length > 0, hrs_ext_msg(this, "pre-condition"));
   _length -= 1;
 
-  size_t region_num_diff;
+  uint region_num_diff;
   if (!hr->isHumongous()) {
     region_num_diff = 1;
   } else {
     region_num_diff = calculate_region_num(hr);
   }
   assert(region_num_diff <= _region_num,
-         hrs_err_msg("[%s] region's region num: "SIZE_FORMAT" "
-                     "should be <= region num: "SIZE_FORMAT,
+         hrs_err_msg("[%s] region's region num: %u "
+                     "should be <= region num: %u",
                      name(), region_num_diff, _region_num));
   _region_num -= region_num_diff;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -477,8 +477,8 @@ void PSOldGen::space_invariants() {
 }
 #endif
 
-void PSOldGen::verify(bool allow_dirty) {
-  object_space()->verify(allow_dirty);
+void PSOldGen::verify() {
+  object_space()->verify();
 }
 class VerifyObjectStartArrayClosure : public ObjectClosure {
   PSOldGen* _gen;

@@ -295,6 +295,9 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, SharedRuntime::dtrace_method_entry);
   FUNCTION_CASE(entry, SharedRuntime::dtrace_method_exit);
   FUNCTION_CASE(entry, trace_block_entry);
+#ifdef TRACE_HAVE_INTRINSICS
+  FUNCTION_CASE(entry, TRACE_TIME_METHOD);
+#endif
 
 #undef FUNCTION_CASE
 

@@ -300,8 +300,7 @@ public class ArrayList<E> extends AbstractList<E>
      */
     public Object clone() {
         try {
-            @SuppressWarnings("unchecked")
-                ArrayList<E> v = (ArrayList<E>) super.clone();
+            ArrayList<?> v = (ArrayList<?>) super.clone();
             v.elementData = Arrays.copyOf(elementData, size);
             v.modCount = 0;
             return v;

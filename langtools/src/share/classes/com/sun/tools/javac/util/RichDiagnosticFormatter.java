@@ -540,13 +540,22 @@ public class RichDiagnosticFormatter extends
                                          bounds.head.tag == NONE ||
                                          bounds.head.tag == ERROR;
 
-
-                JCDiagnostic d = diags.fragment("where.typevar" +
+                if ((t.tsym.flags() & SYNTHETIC) == 0) {
+                    //this is a true typevar
+                    JCDiagnostic d = diags.fragment("where.typevar" +
                         (boundErroneous ? ".1" : ""), t, bounds,
                         Kinds.kindName(t.tsym.location()), t.tsym.location());
-                whereClauses.get(WhereClauseKind.TYPEVAR).put(t, d);
-                symbolPreprocessor.visit(t.tsym.location(), null);
-                visit(bounds);
+                    whereClauses.get(WhereClauseKind.TYPEVAR).put(t, d);
+                    symbolPreprocessor.visit(t.tsym.location(), null);
+                    visit(bounds);
+                } else {
+                    Assert.check(!boundErroneous);
+                    //this is a fresh (synthetic) tvar
+                    JCDiagnostic d = diags.fragment("where.fresh.typevar", t, bounds);
+                    whereClauses.get(WhereClauseKind.TYPEVAR).put(t, d);
+                    visit(bounds);
+                }
+
             }
             return null;
         }
