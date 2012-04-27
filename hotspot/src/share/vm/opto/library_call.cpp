@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,11 @@ class LibraryCallKit : public GraphKit {
   bool inline_unsafe_allocate();
   bool inline_unsafe_copyMemory();
   bool inline_native_currentThread();
-  bool inline_native_time_funcs(bool isNano);
+#ifdef TRACE_HAVE_INTRINSICS
+  bool inline_native_classID();
+  bool inline_native_threadID();
+#endif
+  bool inline_native_time_funcs(address method, const char* funcName);
   bool inline_native_isInterrupted();
   bool inline_native_Class_query(vmIntrinsics::ID id);
   bool inline_native_subtype_check();
@@ -638,10 +642,18 @@ bool LibraryCallKit::try_to_inline() {
   case vmIntrinsics::_isInterrupted:
     return inline_native_isInterrupted();
 
+#ifdef TRACE_HAVE_INTRINSICS
+  case vmIntrinsics::_classID:
+    return inline_native_classID();
+  case vmIntrinsics::_threadID:
+    return inline_native_threadID();
+  case vmIntrinsics::_counterTime:
+    return inline_native_time_funcs(CAST_FROM_FN_PTR(address, TRACE_TIME_METHOD), "counterTime");
+#endif
   case vmIntrinsics::_currentTimeMillis:
-    return inline_native_time_funcs(false);
+    return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeMillis), "currentTimeMillis");
   case vmIntrinsics::_nanoTime:
-    return inline_native_time_funcs(true);
+    return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeNanos), "nanoTime");
   case vmIntrinsics::_allocateInstance:
     return inline_unsafe_allocate();
   case vmIntrinsics::_copyMemory:
@@ -2840,14 +2852,63 @@ bool LibraryCallKit::inline_unsafe_allocate() {
   return true;
 }
 
+#ifdef TRACE_HAVE_INTRINSICS
+/*
+ * oop -> myklass
+ * myklass->trace_id |= USED
+ * return myklass->trace_id & ~0x3
+ */
+bool LibraryCallKit::inline_native_classID() {
+  int nargs = 1 + 1;
+  null_check_receiver(callee());  // check then ignore argument(0)
+  _sp += nargs;
+  Node* cls = do_null_check(argument(1), T_OBJECT);
+  _sp -= nargs;
+  Node* kls = load_klass_from_mirror(cls, false, nargs, NULL, 0);
+  _sp += nargs;
+  kls = do_null_check(kls, T_OBJECT);
+  _sp -= nargs;
+  ByteSize offset = TRACE_ID_OFFSET;
+  Node* insp = basic_plus_adr(kls, in_bytes(offset));
+  Node* tvalue = make_load(NULL, insp, TypeLong::LONG, T_LONG);
+  Node* bits = longcon(~0x03l); // ignore bit 0 & 1
+  Node* andl = _gvn.transform(new (C, 3) AndLNode(tvalue, bits));
+  Node* clsused = longcon(0x01l); // set the class bit
+  Node* orl = _gvn.transform(new (C, 3) OrLNode(tvalue, clsused));
+
+  const TypePtr *adr_type = _gvn.type(insp)->isa_ptr();
+  store_to_memory(control(), insp, orl, T_LONG, adr_type);
+  push_pair(andl);
+  return true;
+}
+
+bool LibraryCallKit::inline_native_threadID() {
+  Node* tls_ptr = NULL;
+  Node* cur_thr = generate_current_thread(tls_ptr);
+  Node* p = basic_plus_adr(top()/*!oop*/, tls_ptr, in_bytes(JavaThread::osthread_offset()));
+  Node* osthread = make_load(NULL, p, TypeRawPtr::NOTNULL, T_ADDRESS);
+  p = basic_plus_adr(top()/*!oop*/, osthread, in_bytes(OSThread::thread_id_offset()));
+
+  Node* threadid = NULL;
+  size_t thread_id_size = OSThread::thread_id_size();
+  if (thread_id_size == (size_t) BytesPerLong) {
+    threadid = ConvL2I(make_load(control(), p, TypeLong::LONG, T_LONG));
+    push(threadid);
+  } else if (thread_id_size == (size_t) BytesPerInt) {
+    threadid = make_load(control(), p, TypeInt::INT, T_INT);
+    push(threadid);
+  } else {
+    ShouldNotReachHere();
+  }
+  return true;
+}
+#endif
+
 //------------------------inline_native_time_funcs--------------
 // inline code for System.currentTimeMillis() and System.nanoTime()
 // these have the same type and signature
-bool LibraryCallKit::inline_native_time_funcs(bool isNano) {
-  address funcAddr = isNano ? CAST_FROM_FN_PTR(address, os::javaTimeNanos) :
-                              CAST_FROM_FN_PTR(address, os::javaTimeMillis);
-  const char * funcName = isNano ? "nanoTime" : "currentTimeMillis";
-  const TypeFunc *tf = OptoRuntime::current_time_millis_Type();
+bool LibraryCallKit::inline_native_time_funcs(address funcAddr, const char* funcName) {
+  const TypeFunc *tf = OptoRuntime::void_long_Type();
   const TypePtr* no_memory_effects = NULL;
   Node* time = make_runtime_call(RC_LEAF, tf, funcAddr, funcName, no_memory_effects);
   Node* value = _gvn.transform(new (C, 1) ProjNode(time, TypeFunc::Parms+0));

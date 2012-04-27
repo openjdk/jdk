@@ -428,7 +428,7 @@ abstract public class TimeZone implements Serializable, Cloneable {
         // The structure is:
         //   Map(key=id, value=SoftReference(Map(key=locale, value=displaynames)))
         private static final Map<String, SoftReference<Map<Locale, String[]>>> CACHE =
-            new ConcurrentHashMap<String, SoftReference<Map<Locale, String[]>>>();
+            new ConcurrentHashMap<>();
     }
 
     private static final String[] getDisplayNames(String id, Locale locale) {
@@ -452,9 +452,9 @@ abstract public class TimeZone implements Serializable, Cloneable {
 
         String[] names = TimeZoneNameUtility.retrieveDisplayNames(id, locale);
         if (names != null) {
-            Map<Locale, String[]> perLocale = new ConcurrentHashMap<Locale, String[]>();
+            Map<Locale, String[]> perLocale = new ConcurrentHashMap<>();
             perLocale.put(locale, names);
-            ref = new SoftReference<Map<Locale, String[]>>(perLocale);
+            ref = new SoftReference<>(perLocale);
             displayNames.put(id, ref);
         }
         return names;

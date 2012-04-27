@@ -269,7 +269,7 @@ public final class Files {
      *     WritableByteChannel wbc = Files.newByteChannel(path, EnumSet.of(CREATE,APPEND));
      *
      *     // create file with initial permissions, opening it for both reading and writing
-     *     {@code FileAttribute<<SetPosixFilePermission>> perms = ...}
+     *     {@code FileAttribute<Set<PosixFilePermission>> perms = ...}
      *     SeekableByteChannel sbc = Files.newByteChannel(path, EnumSet.of(CREATE_NEW,READ,WRITE), perms);
      * </pre>
      *
