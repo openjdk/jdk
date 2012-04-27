@@ -891,12 +891,12 @@ void MutableNUMASpace::print_on(outputStream* st) const {
   }
 }
 
-void MutableNUMASpace::verify(bool allow_dirty) {
+void MutableNUMASpace::verify() {
   // This can be called after setting an arbitary value to the space's top,
   // so an object can cross the chunk boundary. We ensure the parsablity
   // of the space and just walk the objects in linear fashion.
   ensure_parsability();
-  MutableSpace::verify(allow_dirty);
+  MutableSpace::verify();
 }
 
 // Scan pages and gather stats about page placement and size.

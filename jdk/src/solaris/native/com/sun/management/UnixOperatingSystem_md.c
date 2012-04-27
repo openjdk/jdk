@@ -34,6 +34,13 @@
 #include <sys/stat.h>
 #if defined(_ALLBSD_SOURCE)
 #include <sys/sysctl.h>
+#ifdef __APPLE__
+#include <sys/param.h>
+#include <sys/mount.h>
+#include <mach/mach.h>
+#include <sys/proc_info.h>
+#include <libproc.h>
+#endif
 #else
 #include <sys/swap.h>
 #endif
@@ -150,6 +157,13 @@ static jlong get_total_or_available_swap_space_size(JNIEnv* env, jboolean availa
     avail = (jlong)si.freeswap * si.mem_unit;
 
     return available ? avail : total;
+#elif defined(__APPLE__)
+    struct xsw_usage vmusage;
+    size_t size = sizeof(vmusage);
+    if (sysctlbyname("vm.swapusage", &vmusage, &size, NULL, 0) != 0) {
+        throw_internal_error(env, "sysctlbyname failed");
+    }
+    return available ? (jlong)vmusage.xsu_avail : (jlong)vmusage.xsu_total;
 #else /* _ALLBSD_SOURCE */
     /*
      * XXXBSD: there's no way available to get swap info in
@@ -216,6 +230,15 @@ Java_com_sun_management_UnixOperatingSystem_getCommittedVirtualMemorySize
 
     fclose(fp);
     return (jlong)vsize;
+#elif defined(__APPLE__)
+    struct task_basic_info t_info;
+    mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
+
+    kern_return_t res = task_info(mach_task_self(), TASK_BASIC_INFO, (task_info_t)&t_info, &t_info_count);
+    if (res != KERN_SUCCESS) {
+        throw_internal_error(env, "task_info failed");
+    }
+    return t_info.virtual_size;
 #else /* _ALLBSD_SOURCE */
     /*
      * XXXBSD: there's no way available to do it in FreeBSD, AFAIK.
@@ -243,6 +266,17 @@ JNIEXPORT jlong JNICALL
 Java_com_sun_management_UnixOperatingSystem_getProcessCpuTime
   (JNIEnv *env, jobject mbean)
 {
+#ifdef __APPLE__
+    struct rusage usage;
+    if (getrusage(RUSAGE_SELF, &usage) != 0) {
+        throw_internal_error(env, "getrusage failed");
+        return -1;
+    }
+    jlong microsecs =
+        usage.ru_utime.tv_sec * 1000 * 1000 + usage.ru_utime.tv_usec +
+        usage.ru_stime.tv_sec * 1000 * 1000 + usage.ru_stime.tv_usec;
+    return microsecs * 1000;
+#else
     jlong clk_tck, ns_per_clock_tick;
     jlong cpu_time_ns;
     struct tms time;
@@ -267,19 +301,32 @@ Java_com_sun_management_UnixOperatingSystem_getProcessCpuTime
     cpu_time_ns = ((jlong)time.tms_utime + (jlong) time.tms_stime) *
                       ns_per_clock_tick;
     return cpu_time_ns;
+#endif
 }
 
 JNIEXPORT jlong JNICALL
 Java_com_sun_management_UnixOperatingSystem_getFreePhysicalMemorySize
   (JNIEnv *env, jobject mbean)
 {
-#ifdef _ALLBSD_SOURCE
+#ifdef __APPLE__
+    mach_msg_type_number_t count;
+    vm_statistics_data_t vm_stats;
+    kern_return_t res;
+
+    count = HOST_VM_INFO_COUNT;
+    res = host_statistics(mach_host_self(), HOST_VM_INFO, (host_info_t)&vm_stats, &count);
+    if (res != KERN_SUCCESS) {
+        throw_internal_error(env, "host_statistics failed");
+        return -1;
+    }
+    return (jlong)vm_stats.free_count * page_size;
+#elif defined(_ALLBSD_SOURCE)
     /*
      * XXBSDL no way to do it in FreeBSD
      */
     // throw_internal_error(env, "unimplemented in FreeBSD")
     return (128 * MB);
-#else
+#else // solaris / linux
     jlong num_avail_physical_pages = sysconf(_SC_AVPHYS_PAGES);
     return (num_avail_physical_pages * page_size);
 #endif
@@ -290,28 +337,75 @@ Java_com_sun_management_UnixOperatingSystem_getTotalPhysicalMemorySize
   (JNIEnv *env, jobject mbean)
 {
 #ifdef _ALLBSD_SOURCE
-    jlong result;
+    jlong result = 0;
     int mib[2];
     size_t rlen;
 
     mib[0] = CTL_HW;
-    mib[1] = HW_PHYSMEM;
+    mib[1] = HW_MEMSIZE;
     rlen = sizeof(result);
-    if (sysctl(mib, 2, &result, &rlen, NULL, 0) == -1)
-        result = 256 * MB;
-
-    return (result);
-#else
+    if (sysctl(mib, 2, &result, &rlen, NULL, 0) != 0) {
+        throw_internal_error(env, "sysctl failed");
+        return -1;
+    }
+    return result;
+#else // solaris / linux
     jlong num_physical_pages = sysconf(_SC_PHYS_PAGES);
     return (num_physical_pages * page_size);
 #endif
 }
 
+
+
 JNIEXPORT jlong JNICALL
 Java_com_sun_management_UnixOperatingSystem_getOpenFileDescriptorCount
   (JNIEnv *env, jobject mbean)
 {
-#ifdef _ALLBSD_SOURCE
+#ifdef __APPLE__
+    // This code is influenced by the darwin lsof source
+    pid_t my_pid;
+    struct proc_bsdinfo bsdinfo;
+    struct proc_fdinfo *fds;
+    int nfiles;
+    kern_return_t kres;
+    int res;
+    size_t fds_size;
+
+    kres = pid_for_task(mach_task_self(), &my_pid);
+    if (res != KERN_SUCCESS) {
+        throw_internal_error(env, "pid_for_task failed");
+        return -1;
+    }
+
+    // get the maximum number of file descriptors
+    res = proc_pidinfo(my_pid, PROC_PIDTBSDINFO, 0, &bsdinfo, PROC_PIDTBSDINFO_SIZE);
+    if (res <= 0) {
+        throw_internal_error(env, "proc_pidinfo with PROC_PIDTBSDINFO failed");
+        return -1;
+    }
+
+    // allocate memory to hold the fd information (we don't acutally use this information
+    // but need it to get the number of open files)
+    fds_size = bsdinfo.pbi_nfiles * sizeof(struct proc_fdinfo);
+    fds = malloc(fds_size);
+    if (fds == NULL) {
+        JNU_ThrowOutOfMemoryError(env, "could not allocate space for file descriptors");
+        return -1;
+    }
+
+    // get the list of open files - the return value is the number of bytes
+    // proc_pidinfo filled in
+    res = proc_pidinfo(my_pid, PROC_PIDLISTFDS, 0, fds, fds_size);
+    if (res <= 0) {
+        free(fds);
+        throw_internal_error(env, "proc_pidinfo failed for PROC_PIDLISTFDS");
+        return -1;
+    }
+    nfiles = res / sizeof(struct proc_fdinfo);
+    free(fds);
+
+    return nfiles;
+#elif defined(_ALLBSD_SOURCE)
     /*
      * XXXBSD: there's no way available to do it in FreeBSD, AFAIK.
      */

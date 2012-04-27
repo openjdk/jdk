@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@
 class HeapRegion;
 class HeapRegionClosure;
 class FreeRegionList;
-
-#define G1_NULL_HRS_INDEX ((size_t) -1)
 
 // This class keeps track of the region metadata (i.e., HeapRegion
 // instances). They are kept in the _regions array in address
@@ -65,7 +63,7 @@ class HeapRegionSeq: public CHeapObj {
   HeapRegion** _regions_biased;
 
   // The number of regions committed in the heap.
-  size_t _length;
+  uint _length;
 
   // The address of the first reserved word in the heap.
   HeapWord* _heap_bottom;
@@ -74,32 +72,32 @@ class HeapRegionSeq: public CHeapObj {
   HeapWord* _heap_end;
 
   // The log of the region byte size.
-  size_t _region_shift;
+  uint _region_shift;
 
   // A hint for which index to start searching from for humongous
   // allocations.
-  size_t _next_search_index;
+  uint _next_search_index;
 
   // The number of regions for which we have allocated HeapRegions for.
-  size_t _allocated_length;
+  uint _allocated_length;
 
   // The maximum number of regions in the heap.
-  size_t _max_length;
+  uint _max_length;
 
   // Find a contiguous set of empty regions of length num, starting
   // from the given index.
-  size_t find_contiguous_from(size_t from, size_t num);
+  uint find_contiguous_from(uint from, uint num);
 
   // Map a heap address to a biased region index. Assume that the
   // address is valid.
-  inline size_t addr_to_index_biased(HeapWord* addr) const;
+  inline uintx addr_to_index_biased(HeapWord* addr) const;
 
-  void increment_length(size_t* length) {
+  void increment_length(uint* length) {
     assert(*length < _max_length, "pre-condition");
     *length += 1;
   }
 
-  void decrement_length(size_t* length) {
+  void decrement_length(uint* length) {
     assert(*length > 0, "pre-condition");
     *length -= 1;
   }
@@ -108,11 +106,11 @@ class HeapRegionSeq: public CHeapObj {
   // Empty contructor, we'll initialize it with the initialize() method.
   HeapRegionSeq() { }
 
-  void initialize(HeapWord* bottom, HeapWord* end, size_t max_length);
+  void initialize(HeapWord* bottom, HeapWord* end, uint max_length);
 
   // Return the HeapRegion at the given index. Assume that the index
   // is valid.
-  inline HeapRegion* at(size_t index) const;
+  inline HeapRegion* at(uint index) const;
 
   // If addr is within the committed space return its corresponding
   // HeapRegion, otherwise return NULL.
@@ -123,10 +121,10 @@ class HeapRegionSeq: public CHeapObj {
   inline HeapRegion* addr_to_region_unsafe(HeapWord* addr) const;
 
   // Return the number of regions that have been committed in the heap.
-  size_t length() const { return _length; }
+  uint length() const { return _length; }
 
   // Return the maximum number of regions in the heap.
-  size_t max_length() const { return _max_length; }
+  uint max_length() const { return _max_length; }
 
   // Expand the sequence to reflect that the heap has grown from
   // old_end to new_end. Either create new HeapRegions, or re-use
@@ -139,12 +137,12 @@ class HeapRegionSeq: public CHeapObj {
 
   // Return the number of contiguous regions at the end of the sequence
   // that are available for allocation.
-  size_t free_suffix();
+  uint free_suffix();
 
   // Find a contiguous set of empty regions of length num and return
   // the index of the first region or G1_NULL_HRS_INDEX if the
   // search was unsuccessful.
-  size_t find_contiguous(size_t num);
+  uint find_contiguous(uint num);
 
   // Apply blk->doHeapRegion() on all committed regions in address order,
   // terminating the iteration early if doHeapRegion() returns true.
@@ -159,7 +157,7 @@ class HeapRegionSeq: public CHeapObj {
   // sequence. Return a MemRegion that corresponds to the address
   // range of the uncommitted regions. Assume shrink_bytes is page and
   // heap region aligned.
-  MemRegion shrink_by(size_t shrink_bytes, size_t* num_regions_deleted);
+  MemRegion shrink_by(size_t shrink_bytes, uint* num_regions_deleted);
 
   // Do some sanity checking.
   void verify_optional() PRODUCT_RETURN;

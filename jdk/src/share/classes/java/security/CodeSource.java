@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,7 @@ public class CodeSource implements java.io.Serializable {
      *
      * @return a hash code value for this object.
      */
-
+    @Override
     public int hashCode() {
         if (location != null)
             return location.hashCode();
@@ -133,6 +133,7 @@ public class CodeSource implements java.io.Serializable {
      *
      * @return true if the objects are considered equal, false otherwise.
      */
+    @Override
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
@@ -231,10 +232,10 @@ public class CodeSource implements java.io.Serializable {
 
     /**
      * Returns true if this CodeSource object "implies" the specified CodeSource.
-     * <P>
-     * More specifically, this method makes the following checks, in order.
+     * <p>
+     * More specifically, this method makes the following checks.
      * If any fail, it returns false. If they all succeed, it returns true.<p>
-     * <ol>
+     * <ul>
      * <li> <i>codesource</i> must not be null.
      * <li> If this object's certificates are not null, then all
      * of this object's certificates must be present in <i>codesource</i>'s
@@ -242,14 +243,14 @@ public class CodeSource implements java.io.Serializable {
      * <li> If this object's location (getLocation()) is not null, then the
      * following checks are made against this object's location and
      * <i>codesource</i>'s:<p>
-     *   <ol>
+     *   <ul>
      *     <li>  <i>codesource</i>'s location must not be null.
      *
      *     <li>  If this object's location
      *           equals <i>codesource</i>'s location, then return true.
      *
      *     <li>  This object's protocol (getLocation().getProtocol()) must be
-     *           equal to <i>codesource</i>'s protocol.
+     *           equal to <i>codesource</i>'s protocol, ignoring case.
      *
      *     <li>  If this object's host (getLocation().getHost()) is not null,
      *           then the SocketPermission
@@ -258,7 +259,8 @@ public class CodeSource implements java.io.Serializable {
      *
      *     <li>  If this object's port (getLocation().getPort()) is not
      *           equal to -1 (that is, if a port is specified), it must equal
-     *           <i>codesource</i>'s port.
+     *           <i>codesource</i>'s port or default port
+     *           (codesource.getLocation().getDefaultPort()).
      *
      *     <li>  If this object's file (getLocation().getFile()) doesn't equal
      *           <i>codesource</i>'s file, then the following checks are made:
@@ -275,8 +277,8 @@ public class CodeSource implements java.io.Serializable {
      *     <li>  If this object's reference (getLocation().getRef()) is
      *           not null, it must equal <i>codesource</i>'s reference.
      *
-     *   </ol>
-     * </ol>
+     *   </ul>
+     * </ul>
      * <p>
      * For example, the codesource objects with the following locations
      * and null certificates all imply
@@ -369,85 +371,88 @@ public class CodeSource implements java.io.Serializable {
      *
      * @param that CodeSource to compare against
      */
-    private boolean matchLocation(CodeSource that)
-        {
-            if (location == null) {
-                return true;
-            }
+    private boolean matchLocation(CodeSource that) {
+        if (location == null)
+            return true;
 
-            if ((that == null) || (that.location == null))
+        if ((that == null) || (that.location == null))
+            return false;
+
+        if (location.equals(that.location))
+            return true;
+
+        if (!location.getProtocol().equalsIgnoreCase(that.location.getProtocol()))
+            return false;
+
+        int thisPort = location.getPort();
+        if (thisPort != -1) {
+            int thatPort = that.location.getPort();
+            int port = thatPort != -1 ? thatPort
+                                      : that.location.getDefaultPort();
+            if (thisPort != port)
                 return false;
-
-            if (location.equals(that.location))
-                return true;
-
-            if (!location.getProtocol().equals(that.location.getProtocol()))
-                return false;
-
-            String thisHost = location.getHost();
-            String thatHost = that.location.getHost();
-
-            if (thisHost != null) {
-                if (("".equals(thisHost) || "localhost".equals(thisHost)) &&
-                    ("".equals(thatHost) || "localhost".equals(thatHost))) {
-                    // ok
-                } else if (!thisHost.equals(thatHost)) {
-                    if (thatHost == null) {
-                        return false;
-                    }
-                    if (this.sp == null) {
-                        this.sp = new SocketPermission(thisHost, "resolve");
-                    }
-                    if (that.sp == null) {
-                        that.sp = new SocketPermission(thatHost, "resolve");
-                    }
-                    if (!this.sp.implies(that.sp)) {
-                        return false;
-                    }
-                }
-            }
-
-            if (location.getPort() != -1) {
-                if (location.getPort() != that.location.getPort())
-                    return false;
-            }
-
-            if (location.getFile().endsWith("/-")) {
-                // Matches the directory and (recursively) all files
-                // and subdirectories contained in that directory.
-                // For example, "/a/b/-" implies anything that starts with
-                // "/a/b/"
-                String thisPath = location.getFile().substring(0,
-                                                location.getFile().length()-1);
-                if (!that.location.getFile().startsWith(thisPath))
-                    return false;
-            } else if (location.getFile().endsWith("/*")) {
-                // Matches the directory and all the files contained in that
-                // directory.
-                // For example, "/a/b/*" implies anything that starts with
-                // "/a/b/" but has no further slashes
-                int last = that.location.getFile().lastIndexOf('/');
-                if (last == -1)
-                    return false;
-                String thisPath = location.getFile().substring(0,
-                                                location.getFile().length()-1);
-                String thatPath = that.location.getFile().substring(0, last+1);
-                if (!thatPath.equals(thisPath))
-                    return false;
-            } else {
-                // Exact matches only.
-                // For example, "/a/b" and "/a/b/" both imply "/a/b/"
-                if ((!that.location.getFile().equals(location.getFile()))
-                && (!that.location.getFile().equals(location.getFile()+"/"))) {
-                    return false;
-                }
-            }
-
-            if (location.getRef() == null)
-                return true;
-            else
-                return location.getRef().equals(that.location.getRef());
         }
+
+        if (location.getFile().endsWith("/-")) {
+            // Matches the directory and (recursively) all files
+            // and subdirectories contained in that directory.
+            // For example, "/a/b/-" implies anything that starts with
+            // "/a/b/"
+            String thisPath = location.getFile().substring(0,
+                                            location.getFile().length()-1);
+            if (!that.location.getFile().startsWith(thisPath))
+                return false;
+        } else if (location.getFile().endsWith("/*")) {
+            // Matches the directory and all the files contained in that
+            // directory.
+            // For example, "/a/b/*" implies anything that starts with
+            // "/a/b/" but has no further slashes
+            int last = that.location.getFile().lastIndexOf('/');
+            if (last == -1)
+                return false;
+            String thisPath = location.getFile().substring(0,
+                                            location.getFile().length()-1);
+            String thatPath = that.location.getFile().substring(0, last+1);
+            if (!thatPath.equals(thisPath))
+                return false;
+        } else {
+            // Exact matches only.
+            // For example, "/a/b" and "/a/b/" both imply "/a/b/"
+            if ((!that.location.getFile().equals(location.getFile()))
+                && (!that.location.getFile().equals(location.getFile()+"/"))) {
+                return false;
+            }
+        }
+
+        if (location.getRef() != null
+            && !location.getRef().equals(that.location.getRef())) {
+            return false;
+        }
+
+        String thisHost = location.getHost();
+        String thatHost = that.location.getHost();
+        if (thisHost != null) {
+            if (("".equals(thisHost) || "localhost".equals(thisHost)) &&
+                ("".equals(thatHost) || "localhost".equals(thatHost))) {
+                // ok
+            } else if (!thisHost.equals(thatHost)) {
+                if (thatHost == null) {
+                    return false;
+                }
+                if (this.sp == null) {
+                    this.sp = new SocketPermission(thisHost, "resolve");
+                }
+                if (that.sp == null) {
+                    that.sp = new SocketPermission(thatHost, "resolve");
+                }
+                if (!this.sp.implies(that.sp)) {
+                    return false;
+                }
+            }
+        }
+        // everything matches
+        return true;
+    }
 
     /**
      * Returns a string describing this CodeSource, telling its
@@ -455,6 +460,7 @@ public class CodeSource implements java.io.Serializable {
      *
      * @return information about this CodeSource.
      */
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("(");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -889,15 +889,9 @@ public class VirtualMachineImpl extends MirrorImpl implements PathSearchingVirtu
         Klass kls = ((ReferenceTypeImpl)type).ref();
         if (kls instanceof InstanceKlass) {
             InstanceKlass ik = (InstanceKlass) kls;
-            if (ik.isInterface()) {
-                if (ik.nofImplementors() == 0L) {
-                    return new ArrayList(0);
-                }
-            } else {
-                // if the Klass is final or if there are no subklasses loaded yet
-                if (ik.getAccessFlagsObj().isFinal() || ik.getSubklassKlass() == null) {
-                    includeSubtypes = false;
-                }
+            // if the Klass is final or if there are no subklasses loaded yet
+            if (ik.getAccessFlagsObj().isFinal() || ik.getSubklassKlass() == null) {
+                includeSubtypes = false;
             }
         } else {
             // no subtypes for primitive array types

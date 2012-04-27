@@ -1694,7 +1694,9 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       // they are roughly equivalent to Object.
       ciInstanceKlass* singleton = NULL;
       if (target->holder()->nof_implementors() == 1) {
-        singleton = target->holder()->implementor(0);
+        singleton = target->holder()->implementor();
+        assert(singleton != NULL && singleton != target->holder(),
+               "just checking");
 
         assert(holder->is_interface(), "invokeinterface to non interface?");
         ciInstanceKlass* decl_interface = (ciInstanceKlass*)holder;
@@ -3130,9 +3132,22 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
   bool cantrap = true;
   vmIntrinsics::ID id = callee->intrinsic_id();
   switch (id) {
-    case vmIntrinsics::_arraycopy     :
+    case vmIntrinsics::_arraycopy:
       if (!InlineArrayCopy) return false;
       break;
+
+#ifdef TRACE_HAVE_INTRINSICS
+    case vmIntrinsics::_classID:
+    case vmIntrinsics::_threadID:
+      preserves_state = true;
+      cantrap = true;
+      break;
+
+    case vmIntrinsics::_counterTime:
+      preserves_state = true;
+      cantrap = false;
+      break;
+#endif
 
     case vmIntrinsics::_currentTimeMillis:
     case vmIntrinsics::_nanoTime:
