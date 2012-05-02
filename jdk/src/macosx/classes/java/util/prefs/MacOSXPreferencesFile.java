@@ -79,7 +79,13 @@ import java.lang.ref.WeakReference;
 class MacOSXPreferencesFile {
 
     static {
-        java.security.AccessController.doPrivileged(new sun.security.action.LoadLibraryAction("osx"));
+        java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("osx");
+                    return null;
+                }
+            });
     }
 
     private class FlushTask extends TimerTask {
