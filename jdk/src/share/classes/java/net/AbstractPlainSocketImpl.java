@@ -78,7 +78,12 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
      */
     static {
         java.security.AccessController.doPrivileged(
-                  new sun.security.action.LoadLibraryAction("net"));
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("net");
+                    return null;
+                }
+            });
     }
 
     /**

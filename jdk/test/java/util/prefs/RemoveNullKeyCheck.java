@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,24 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 6286011 6330315
- * @summary Verify that appropriate SelectorProvider is selected.
+/* @test
+ * @bug 7160242
+ * @summary Check if NullPointerException is thrown if the key passed
+ *          to remove() is null.
  */
 
-import java.nio.channels.spi.*;
+import java.util.prefs.Preferences;
 
-public class SelProvider {
+public class RemoveNullKeyCheck {
+
     public static void main(String[] args) throws Exception {
-        String osname = System.getProperty("os.name");
-        String osver = System.getProperty("os.version");
-        String spName = SelectorProvider.provider().getClass().getName();
-        String expected = null;
-        if ("SunOS".equals(osname)) {
-            expected = "sun.nio.ch.DevPollSelectorProvider";
-        } else if ("Linux".equals(osname)) {
-            expected = "sun.nio.ch.EPollSelectorProvider";
-        } else if (osname.contains("OS X")) {
-            expected = "sun.nio.ch.KQueueSelectorProvider";
-        } else
-            return;
-        if (!spName.equals(expected))
-            throw new Exception("failed");
+       try {
+           Preferences node = Preferences.userRoot().node("N1");
+           node.remove(null);
+           throw new RuntimeException("Expected NullPointerException " +
+                                      "not thrown");
+       } catch (NullPointerException npe) {
+           System.out.println("NullPointerException thrown");
+       }
     }
 }
