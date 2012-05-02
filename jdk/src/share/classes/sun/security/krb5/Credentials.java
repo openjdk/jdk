@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,7 +289,7 @@ public class Credentials {
             String os = java.security.AccessController.doPrivileged(
                         new sun.security.action.GetPropertyAction("os.name"));
             if (os.toUpperCase(Locale.ENGLISH).startsWith("WINDOWS") ||
-                    os.toUpperCase(Locale.ENGLISH).startsWith("MAC")) {
+                    os.toUpperCase(Locale.ENGLISH).contains("OS X")) {
                 Credentials creds = acquireDefaultCreds();
                 if (creds == null) {
                     if (DEBUG) {
@@ -478,7 +478,7 @@ public class Credentials {
         java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<Void> () {
                         public Void run() {
-                                if (System.getProperty("os.name").startsWith("Mac")) {
+                                if (System.getProperty("os.name").contains("OS X")) {
                                     System.loadLibrary("osxkrb5");
                                 } else {
                                     System.loadLibrary("w2k_lsa_auth");

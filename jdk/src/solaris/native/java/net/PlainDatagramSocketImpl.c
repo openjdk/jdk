@@ -84,6 +84,7 @@ static jfieldID pdsi_ttlID;
 #endif
 
 extern void setDefaultScopeID(JNIEnv *env, struct sockaddr *him);
+extern int getDefaultScopeID(JNIEnv *env);
 
 /*
  * Returns a java.lang.Integer based on 'i'
@@ -2418,7 +2419,11 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
                 }
             }
 #endif
-
+#ifdef MACOSX
+            if (family == AF_INET6 && index == 0) {
+                index = getDefaultScopeID(env);
+            }
+#endif
             mname6.ipv6mr_interface = index;
         } else {
             jint idx = (*env)->GetIntField(env, niObj, ni_indexID);

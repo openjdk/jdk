@@ -1646,7 +1646,12 @@ public abstract class Toolkit {
     static void loadLibraries() {
         if (!loaded) {
             java.security.AccessController.doPrivileged(
-                          new sun.security.action.LoadLibraryAction("awt"));
+                new java.security.PrivilegedAction<Void>() {
+                    public Void run() {
+                        System.loadLibrary("awt");
+                        return null;
+                    }
+                });
             loaded = true;
         }
     }
