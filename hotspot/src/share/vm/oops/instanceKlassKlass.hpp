@@ -48,6 +48,7 @@ class instanceKlassKlass : public klassKlass {
                                    unsigned int nonstatic_oop_map_count,
                                    AccessFlags access_flags,
                                    ReferenceType rt,
+                                   KlassHandle host_klass,
                                    TRAPS);
 
   // Casting from klassOop
