@@ -5470,7 +5470,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 if (constructor.getDeclaringClass() == String.class) {
                     value = s;
                 }
-                super.stopCellEditing();
+                return super.stopCellEditing();
             }
 
             try {
