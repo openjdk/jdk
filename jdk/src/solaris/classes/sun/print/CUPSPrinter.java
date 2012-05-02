@@ -77,7 +77,12 @@ public class CUPSPrinter  {
     static {
         // load awt library to access native code
         java.security.AccessController.doPrivileged(
-            new sun.security.action.LoadLibraryAction("awt"));
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("awt");
+                    return null;
+                }
+            });
         libFound = initIDs();
         if (libFound) {
            cupsServer = getCupsServer();
