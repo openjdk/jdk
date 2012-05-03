@@ -81,7 +81,7 @@ AWT_ASSERT_APPKIT_THREAD;
     fEnablePressAndHold = shouldUsePressAndHold();
     fInPressAndHold = NO;
     fPAHNeedsToSelect = NO;
-    
+
     mouseIsOver = NO;
 
     if (windowLayer != nil) {
@@ -302,16 +302,25 @@ AWT_ASSERT_APPKIT_THREAD;
  */
 
 -(void) deliverJavaMouseEvent: (NSEvent *) event {
-    
-    NSEventType type = [event type];    
-    
+    BOOL isEnabled = YES;
+    NSWindow* window = [self window];
+    if ([window isKindOfClass: [AWTWindow class]]) {
+        isEnabled = [(AWTWindow*)window isEnabled];
+    }
+
+    if (!isEnabled) {
+        return;
+    }
+
+    NSEventType type = [event type];
+
     // check synthesized mouse entered/exited events
     if ((type == NSMouseEntered && mouseIsOver) || (type == NSMouseExited && !mouseIsOver)) {
         return;
     }else if ((type == NSMouseEntered && !mouseIsOver) || (type == NSMouseExited && mouseIsOver)) {
         mouseIsOver = !mouseIsOver;
     }
-    
+
     [AWTToolkit eventCountPlusPlus];
 
     JNIEnv *env = [ThreadUtilities getJNIEnv];

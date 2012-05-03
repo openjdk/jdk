@@ -61,6 +61,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeSetNSWindowMinimizedIcon(long nsWindowPtr, long nsImage);
     private static native void nativeSetNSWindowRepresentedFilename(long nsWindowPtr, String representedFilename);
     private static native void nativeSetNSWindowSecurityWarningPositioning(long nsWindowPtr, double x, double y, float biasX, float biasY);
+    private static native void nativeSetEnabled(long nsWindowPtr, boolean isEnabled);
     private static native void nativeSynthesizeMouseEnteredExitedEvents(long nsWindowPtr);
 
     private static native int nativeGetScreenNSWindowIsOn_AppKitThread(long nsWindowPtr);
@@ -798,6 +799,15 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
         // NOTE: the SWP.windowState field gets updated to the newWindowState
         //       value when the native notification comes to us
+    }
+
+    @Override
+    public void setModalBlocked(boolean blocked) {
+        if (target.getModalExclusionType() == Dialog.ModalExclusionType.APPLICATION_EXCLUDE) {
+            return;
+        }
+
+        nativeSetEnabled(getNSWindowPtr(), !blocked);
     }
 
     // ----------------------------------------------------------------------

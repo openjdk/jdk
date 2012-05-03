@@ -58,6 +58,7 @@ static JNF_CLASS_CACHE(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow");
 @synthesize javaMinSize;
 @synthesize javaMaxSize;
 @synthesize styleBits;
+@synthesize isEnabled;
 
 - (void) updateMinMaxSize:(BOOL)resizable {
     if (resizable) {
@@ -157,6 +158,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
     if (self == nil) return nil; // no hope
 
+    self.isEnabled = YES;
     self.javaPlatformWindow = platformWindow;
     self.styleBits = bits;
     [self setPropertiesForStyleBits:styleBits mask:MASK(_METHOD_PROP_BITMASK)];
@@ -170,22 +172,22 @@ AWT_ASSERT_APPKIT_THREAD;
     return self;
 }
 
-// checks that this window is under the mouse cursor and this point is not overlapped by others windows 
+// checks that this window is under the mouse cursor and this point is not overlapped by others windows
 - (BOOL) isTopmostWindowUnderMouse {
-    
-    int currentWinID = [self windowNumber]; 
-    
-    NSRect screenRect = [[NSScreen mainScreen] frame];    
+
+    int currentWinID = [self windowNumber];
+
+    NSRect screenRect = [[NSScreen mainScreen] frame];
     NSPoint nsMouseLocation = [NSEvent mouseLocation];
-    CGPoint cgMouseLocation = CGPointMake(nsMouseLocation.x, screenRect.size.height - nsMouseLocation.y);    
-    
+    CGPoint cgMouseLocation = CGPointMake(nsMouseLocation.x, screenRect.size.height - nsMouseLocation.y);
+
     NSMutableArray *windows = (NSMutableArray *)CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements, kCGNullWindowID);
-    
-    
+
+
     for (NSDictionary *window in windows) {
         int layer = [[window objectForKey:(id)kCGWindowLayer] intValue];
         if (layer == 0) {
-            int winID = [[window objectForKey:(id)kCGWindowNumber] intValue];            
+            int winID = [[window objectForKey:(id)kCGWindowNumber] intValue];
             CGRect rect;
             CGRectMakeWithDictionaryRepresentation((CFDictionaryRef)[window objectForKey:(id)kCGWindowBounds], &rect);
             if (CGRectContainsPoint(rect, cgMouseLocation)) {
@@ -199,23 +201,23 @@ AWT_ASSERT_APPKIT_THREAD;
 }
 
 - (void) synthesizeMouseEnteredExitedEvents {
-    
+
     int eventType = 0;
     BOOL isUnderMouse = [self isTopmostWindowUnderMouse];
     BOOL mouseIsOver = [[self contentView] mouseIsOver];
-    
+
     if (isUnderMouse && !mouseIsOver) {
         eventType = NSMouseEntered;
     } else if (!isUnderMouse && mouseIsOver) {
-        eventType = NSMouseExited;        
+        eventType = NSMouseExited;
     } else {
         return;
     }
-    
-    NSPoint screenLocation = [NSEvent mouseLocation];        
-    NSPoint windowLocation = [self convertScreenToBase: screenLocation];        
+
+    NSPoint screenLocation = [NSEvent mouseLocation];
+    NSPoint windowLocation = [self convertScreenToBase: screenLocation];
     int modifierFlags = (eventType == NSMouseEntered) ? NSMouseEnteredMask : NSMouseExitedMask;
-    
+
     NSEvent *mouseEvent = [NSEvent enterExitEventWithType: eventType
                                                   location: windowLocation
                                              modifierFlags: modifierFlags
@@ -226,7 +228,7 @@ AWT_ASSERT_APPKIT_THREAD;
                                             trackingNumber: 0
                                                   userData: nil
                             ];
-    
+
     [[self contentView] deliverJavaMouseEvent: mouseEvent];
 }
 
@@ -239,16 +241,15 @@ AWT_ASSERT_APPKIT_THREAD;
     [super dealloc];
 }
 
-
 // NSWindow overrides
 - (BOOL) canBecomeKeyWindow {
 AWT_ASSERT_APPKIT_THREAD;
-    return IS(self.styleBits, SHOULD_BECOME_KEY);
+    return self.isEnabled && IS(self.styleBits, SHOULD_BECOME_KEY);
 }
 
 - (BOOL) canBecomeMainWindow {
 AWT_ASSERT_APPKIT_THREAD;
-    return IS(self.styleBits, SHOULD_BECOME_MAIN);
+    return self.isEnabled && IS(self.styleBits, SHOULD_BECOME_MAIN);
 }
 
 - (BOOL) worksWhenModal {
@@ -562,6 +563,27 @@ AWT_ASSERT_APPKIT_THREAD;
     size->height = MAX(size->height, minHeight);
 }
 
+- (void) setEnabled: (BOOL)flag {
+    self.isEnabled = flag;
+
+    if (IS(self.styleBits, CLOSEABLE)) {
+        [[self standardWindowButton:NSWindowCloseButton] setEnabled: flag];
+    }
+
+    if (IS(self.styleBits, MINIMIZABLE)) {
+        [[self standardWindowButton:NSWindowMiniaturizeButton] setEnabled: flag];
+    }
+
+    if (IS(self.styleBits, ZOOMABLE)) {
+        [[self standardWindowButton:NSWindowZoomButton] setEnabled: flag];
+    }
+
+    if (IS(self.styleBits, RESIZABLE)) {
+        [self updateMinMaxSize:flag];
+        [self setShowsResizeIndicator:flag];
+    }
+}
+
 @end // AWTWindow
 
 
@@ -729,7 +751,7 @@ AWT_ASSERT_NOT_APPKIT_THREAD;
         // ensure we repaint the whole window after the resize operation
         // (this will also re-enable screen updates, which were disabled above)
         // TODO: send PaintEvent
-        
+
         [window synthesizeMouseEnteredExitedEvents];
     }];
 
@@ -969,14 +991,14 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSynthesizeMou
 {
     JNF_COCOA_ENTER(env);
     AWT_ASSERT_NOT_APPKIT_THREAD;
-    
+
     AWTWindow *window = OBJC(windowPtr);
     [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
         AWT_ASSERT_APPKIT_THREAD;
-        
+
         [window synthesizeMouseEnteredExitedEvents];
     }];
-    
+
     JNF_COCOA_EXIT(env);
 }
 
@@ -1056,3 +1078,17 @@ JNF_COCOA_EXIT(env);
 
     return underMouse;
 }
+
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSetEnabled
+(JNIEnv *env, jclass clazz, jlong windowPtr, jboolean isEnabled)
+{
+JNF_COCOA_ENTER(env);
+
+    AWTWindow *window = OBJC(windowPtr);
+    [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
+        [window setEnabled: isEnabled];
+    }];
+
+JNF_COCOA_EXIT(env);
+}
+
