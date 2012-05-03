@@ -42,6 +42,7 @@
     NSSize javaMinSize;
     NSSize javaMaxSize;
     jint styleBits;
+    BOOL isEnabled;
 }
 
 @property (nonatomic, retain) JNFWeakJObjectWrapper *javaPlatformWindow;
@@ -49,6 +50,7 @@
 @property (nonatomic) NSSize javaMinSize;
 @property (nonatomic) NSSize javaMaxSize;
 @property (nonatomic) jint styleBits;
+@property (nonatomic) BOOL isEnabled;
 
 - (id) initWithPlatformWindow:(JNFWeakJObjectWrapper *)javaPlatformWindow
                     styleBits:(jint)styleBits

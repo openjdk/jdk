@@ -409,6 +409,8 @@ public class LWWindowPeer
         synchronized (getPeerTreeLock()) {
             this.blocker = blocked ? (LWWindowPeer)blocker.getPeer() : null;
         }
+
+        platformWindow.setModalBlocked(blocked);
     }
 
     @Override
