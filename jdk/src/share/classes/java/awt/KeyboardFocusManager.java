@@ -991,12 +991,12 @@ public abstract class KeyboardFocusManager
 
     /**
      * Sets the default focus traversal keys for a given traversal operation.
-     * This traversal key <code>Set</code> will be in effect on all
-     * <code>Window</code>s that have no such <code>Set</code> of
-     * their own explicitly defined. This <code>Set</code> will also be
-     * inherited, recursively, by any child <code>Component</code> of
-     * those <code>Windows</code> that has
-     * no such <code>Set</code> of its own explicitly defined.
+     * This traversal key {@code Set} will be in effect on all
+     * {@code Window}s that have no such {@code Set} of
+     * their own explicitly defined. This {@code Set} will also be
+     * inherited, recursively, by any child {@code Component} of
+     * those {@code Windows} that has
+     * no such {@code Set} of its own explicitly defined.
      * <p>
      * The default values for the default focus traversal keys are
      * implementation-dependent. Sun recommends that all implementations for a
@@ -1011,66 +1011,67 @@ public abstract class KeyboardFocusManager
      *    <th>Default</th>
      * </tr>
      * <tr>
-     *    <td><code>KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS</code></td>
+     *    <td>{@code KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS}</td>
      *    <td>Normal forward keyboard traversal</td>
-     *    <td><code>TAB</code> on <code>KEY_PRESSED</code>,
-     *        <code>CTRL-TAB</code> on <code>KEY_PRESSED</code></td>
+     *    <td>{@code TAB} on {@code KEY_PRESSED},
+     *        {@code CTRL-TAB} on {@code KEY_PRESSED}</td>
      * </tr>
      * <tr>
-     *    <td><code>KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS</code></td>
+     *    <td>{@code KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS}</td>
      *    <td>Normal reverse keyboard traversal</td>
-     *    <td><code>SHIFT-TAB</code> on <code>KEY_PRESSED</code>,
-     *        <code>CTRL-SHIFT-TAB</code> on <code>KEY_PRESSED</code></td>
+     *    <td>{@code SHIFT-TAB} on {@code KEY_PRESSED},
+     *        {@code CTRL-SHIFT-TAB} on {@code KEY_PRESSED}</td>
      * </tr>
      * <tr>
-     *    <td><code>KeyboardFocusManager.UP_CYCLE_TRAVERSAL_KEYS</code></td>
+     *    <td>{@code KeyboardFocusManager.UP_CYCLE_TRAVERSAL_KEYS}</td>
      *    <td>Go up one focus traversal cycle</td>
      *    <td>none</td>
      * </tr>
      * <tr>
-     *    <td><code>KeyboardFocusManager.DOWN_CYCLE_TRAVERSAL_KEYS</code></td>
+     *    <td>{@code KeyboardFocusManager.DOWN_CYCLE_TRAVERSAL_KEYS}</td>
      *    <td>Go down one focus traversal cycle</td>
      *    <td>none</td>
      * </tr>
      * </table>
      *
-     * To disable a traversal key, use an empty <code>Set</code>;
-     * <code>Collections.EMPTY_SET</code> is recommended.
+     * To disable a traversal key, use an empty {@code Set};
+     * {@code Collections.EMPTY_SET} is recommended.
      * <p>
-     * Using the <code>AWTKeyStroke</code> API, client code can
+     * Using the {@code AWTKeyStroke} API, client code can
      * specify on which of two
-     * specific <code>KeyEvent</code>s, <code>KEY_PRESSED</code> or
-     * <code>KEY_RELEASED</code>, the focus traversal operation will
-     * occur. Regardless of which <code>KeyEvent</code> is specified,
-     * however, all <code>KeyEvent</code>s related to the focus
-     * traversal key, including the associated <code>KEY_TYPED</code>
+     * specific {@code KeyEvent}s, {@code KEY_PRESSED} or
+     * {@code KEY_RELEASED}, the focus traversal operation will
+     * occur. Regardless of which {@code KeyEvent} is specified,
+     * however, all {@code KeyEvent}s related to the focus
+     * traversal key, including the associated {@code KEY_TYPED}
      * event, will be consumed, and will not be dispatched
-     * to any <code>Component</code>. It is a runtime error to
-     * specify a <code>KEY_TYPED</code> event as
+     * to any {@code Component}. It is a runtime error to
+     * specify a {@code KEY_TYPED} event as
      * mapping to a focus traversal operation, or to map the same event to
      * multiple default focus traversal operations.
+     * <p>
+     * This method may throw a {@code ClassCastException} if any {@code Object}
+     * in {@code keystrokes} is not an {@code AWTKeyStroke}.
      *
      * @param id one of
-     *        <code>KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS</code>,
-     *        <code>KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS</code>,
-     *        <code>KeyboardFocusManager.UP_CYCLE_TRAVERSAL_KEYS</code>, or
-     *        <code>KeyboardFocusManager.DOWN_CYCLE_TRAVERSAL_KEYS</code>
-     * @param keystrokes the Set of <code>AWTKeyStroke</code>s for the
+     *        {@code KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS},
+     *        {@code KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS},
+     *        {@code KeyboardFocusManager.UP_CYCLE_TRAVERSAL_KEYS}, or
+     *        {@code KeyboardFocusManager.DOWN_CYCLE_TRAVERSAL_KEYS}
+     * @param keystrokes the Set of {@code AWTKeyStroke}s for the
      *        specified operation
      * @see #getDefaultFocusTraversalKeys
      * @see Component#setFocusTraversalKeys
      * @see Component#getFocusTraversalKeys
      * @throws IllegalArgumentException if id is not one of
-     *         <code>KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS</code>,
-     *         <code>KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS</code>,
-     *         <code>KeyboardFocusManager.UP_CYCLE_TRAVERSAL_KEYS</code>, or
-     *         <code>KeyboardFocusManager.DOWN_CYCLE_TRAVERSAL_KEYS</code>,
-     *         or if keystrokes is <code>null</code>,
-     *         or if keystrokes contains <code>null</code>,
-     *         or if any <code>Object</code> in
-     *         keystrokes is not an <code>AWTKeyStroke</code>,
+     *         {@code KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS},
+     *         {@code KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS},
+     *         {@code KeyboardFocusManager.UP_CYCLE_TRAVERSAL_KEYS}, or
+     *         {@code KeyboardFocusManager.DOWN_CYCLE_TRAVERSAL_KEYS},
+     *         or if keystrokes is {@code null},
+     *         or if keystrokes contains {@code null},
      *         or if any keystroke
-     *         represents a <code>KEY_TYPED</code> event,
+     *         represents a {@code KEY_TYPED} event,
      *         or if any keystroke already maps
      *         to another default focus traversal operation
      * @beaninfo
@@ -1090,19 +1091,11 @@ public abstract class KeyboardFocusManager
         Set oldKeys;
 
         synchronized (this) {
-            for (Iterator iter = keystrokes.iterator(); iter.hasNext(); ) {
-                Object obj = iter.next();
+            for (AWTKeyStroke keystroke : keystrokes) {
 
-                if (obj == null) {
+                if (keystroke == null) {
                     throw new IllegalArgumentException("cannot set null focus traversal key");
                 }
-
-                // Fix for 6195831:
-                //According to javadoc this method should throw IAE instead of ClassCastException
-                if (!(obj instanceof AWTKeyStroke)) {
-                    throw new IllegalArgumentException("object is expected to be AWTKeyStroke");
-                }
-                AWTKeyStroke keystroke = (AWTKeyStroke)obj;
 
                 if (keystroke.getKeyChar() != KeyEvent.CHAR_UNDEFINED) {
                     throw new IllegalArgumentException("focus traversal keys cannot map to KEY_TYPED events");
