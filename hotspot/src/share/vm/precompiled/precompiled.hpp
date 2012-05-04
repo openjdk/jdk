@@ -293,13 +293,10 @@
 # include "c1/c1_globals.hpp"
 #endif // COMPILER1
 #ifndef SERIALGC
-# include "gc_implementation/concurrentMarkSweep/binaryTreeDictionary.hpp"
 # include "gc_implementation/concurrentMarkSweep/cmsOopClosures.hpp"
 # include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
 # include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
-# include "gc_implementation/concurrentMarkSweep/freeBlockDictionary.hpp"
 # include "gc_implementation/concurrentMarkSweep/freeChunk.hpp"
-# include "gc_implementation/concurrentMarkSweep/freeList.hpp"
 # include "gc_implementation/concurrentMarkSweep/promotionInfo.hpp"
 # include "gc_implementation/g1/dirtyCardQueue.hpp"
 # include "gc_implementation/g1/g1BlockOffsetTable.hpp"
