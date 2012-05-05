@@ -1862,7 +1862,7 @@ void instanceKlass::follow_weak_klass_links(
       if (impl != NULL) {
         if (!is_alive->do_object_b(impl)) {
           // remove this guy
-          *start_of_implementor() = NULL;
+          *adr_implementor() = NULL;
         }
       }
     } else {
