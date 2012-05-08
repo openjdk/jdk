@@ -1,0 +1,95 @@
+#
+# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+include RMICompile.gmk
+
+CLASSES_DIR := $(JDK_OUTPUTDIR)/classes
+# Depend on files in newclasses for now to avoid bad dependency handling caused by
+# copy always updating timestamps in classes.
+NEWCLASSES_DIR := $(JDK_OUTPUTDIR)/newclasses
+# Generate classes into separate dir for now. Can't drop in same dir as JavaCompilation 
+# macros as that will mess up recompile deps.
+STUB_CLASSES_DIR := $(JDK_OUTPUTDIR)/newrmicclasses
+RMIC_GENSRC_DIR := $(JDK_OUTPUTDIR)/gendocsrc_rmic
+
+GENCLASSES :=
+
+##########################################################################################
+#
+# Generate RMI stubs
+#
+
+$(eval $(call SetupRMICompilation,RMI_12,\
+		CLASSES:=sun.rmi.server.Activation$$$$ActivationSystemImpl\
+			 java.rmi.activation.ActivationGroup\
+			 com.sun.jndi.rmi.registry.ReferenceWrapper,\
+		CLASSES_DIR:=$(NEWCLASSES_DIR),\
+		STUB_CLASSES_DIR:=$(STUB_CLASSES_DIR),\
+		RUN_V12:=true))
+GENCLASSES += $(RMI_12)
+
+$(eval $(call SetupRMICompilation,RMI_11,\
+		CLASSES:=sun.rmi.registry.RegistryImpl\
+			 sun.rmi.transport.DGCImpl,\
+		CLASSES_DIR:=$(NEWCLASSES_DIR),\
+		STUB_CLASSES_DIR:=$(STUB_CLASSES_DIR),\
+		RUN_V11:=true))
+GENCLASSES += $(RMI_11)
+
+# For RMI/IIOP call rmic a second time with -standardPackage option
+# so that *_tie classes are generated in package without the prefix
+# org.omg.stub (6375696)
+JMAN_RMI_CLASSES:=javax.management.remote.rmi.RMIConnectionImpl\
+		  javax.management.remote.rmi.RMIServerImpl
+$(eval $(call SetupRMICompilation,RMI_IIOP,\
+		CLASSES:=$(JMAN_RMI_CLASSES),\
+		CLASSES_DIR:=$(NEWCLASSES_DIR),\
+		STUB_CLASSES_DIR:=$(STUB_CLASSES_DIR),\
+		RUN_V12:=true,\
+		RUN_IIOP:=true,\
+		RUN_IIOP_STDPKG:=true))
+GENCLASSES += $(RMI_IIOP)
+
+# Keep generated RMI/JRMP Stub source files and copy them to RMIC_GENSRC_DIR
+# so that javadoc can include them in the API (4997471)
+$(eval $(call SetupRMICompilation,RMI_SRC,\
+		CLASSES:=$(JMAN_RMI_CLASSES),\
+		CLASSES_DIR:=$(NEWCLASSES_DIR),\
+		STUB_CLASSES_DIR:=$(RMIC_GENSRC_DIR),\
+		RUN_V12:=true,\
+		KEEP_GENERATED:=true))
+GENCLASSES += $(filter %.java,$(RMI_SRC))
+
+##########################################################################################
+
+all: $(GENCLASSES)
+	$(FIND) $(RMIC_GENSRC_DIR) -name "*.class" $(FIND_DELETE)
+	$(CP) -rp $(STUB_CLASSES_DIR)/* $(CLASSES_DIR)
+
+.PHONY: all

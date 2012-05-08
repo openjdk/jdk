@@ -144,6 +144,7 @@ JDK_MAN_PAGES =            \
 	javadoc.1          \
 	javah.1            \
 	javap.1            \
+	jcmd.1             \
 	jconsole.1         \
 	jdb.1              \
 	jhat.1             \
@@ -607,10 +608,6 @@ ifndef JAVASE_EMBEDDED
 	$(ECHO) "oracle/jrockit/jfr/parser/" >> $@
 	$(ECHO) "oracle/jrockit/jfr/settings/" >> $@
 	$(ECHO) "oracle/jrockit/jfr/tools/" >> $@
-	$(ECHO) "oracle/jrockit/jfr/util/" >> $@
-	$(ECHO) "oracle/jrockit/jfr/util/log/" >> $@
-	$(ECHO) "oracle/jrockit/jfr/util/os/" >> $@
-	$(ECHO) "oracle/jrockit/jfr/util/text/" >> $@
 endif
 endif
 
@@ -637,7 +634,7 @@ $(TOTAL_JAR_FILELIST): $(JARREORDER_JARFILE) $(NOT_RT_JAR_LIST)
 	$(MV) $@.temp $@
 	@($(CD) $(CLASSBINDIR) && $(java-vm-cleanup))
 
-# Create the jfr.jar containing Java Flight Recorder implementation
+# Create jfr.jar
 JFR_JAR=
 ifndef OPENJDK
 ifndef JAVASE_EMBEDDED
@@ -876,7 +873,9 @@ ifeq ($(PLATFORM), windows)
 	   -o -name \*.dll | $(EGREP) -v -i "$(MSVCRNN_DLL)" > $@
 else
 	$(FIND) $(JRE_IMAGE_DIR)/lib -type f -name \*.$(LIB_SUFFIX) >> $@
-	$(FILE) `$(FIND) $(JRE_IMAGE_DIR)/bin -type f -name \*$(EXE_SUFFIX)` \
+# The FILE command reports .debuginfo files as "ELF", but we don't want
+# those files in the JRE_BIN_LIST file. EXE_SUFFIX is empty on non-Windows.
+	$(FILE) `$(FIND) $(JRE_IMAGE_DIR)/bin -type f ! -name '*.debuginfo' -name \*$(EXE_SUFFIX)` \
 	    | $(EGREP) 'ELF' | $(CUT) -d':' -f1 >> $@
 endif
 
@@ -1143,9 +1142,11 @@ ifeq ($(PLATFORM), windows)
 else
 	$(RM) $@
 	$(FIND) $(JDK_IMAGE_DIR)/jre/lib -type f -name \*.$(LIB_SUFFIX) >> $@
-	$(FILE) `$(FIND) $(JDK_IMAGE_DIR)/jre/bin -type f -name \*$(EXE_SUFFIX)` \
+# The FILE command reports .debuginfo files as "ELF", but we don't want
+# those files in the JDK_BIN_LIST file. EXE_SUFFIX is empty on non-Windows.
+	$(FILE) `$(FIND) $(JDK_IMAGE_DIR)/jre/bin -type f ! -name '*.debuginfo' -name \*$(EXE_SUFFIX)` \
 	    | $(EGREP) 'ELF' | $(CUT) -d':' -f1 >> $@
-	file `$(FIND) $(JDK_IMAGE_DIR)/bin -type f -name \*$(EXE_SUFFIX)` \
+	file `$(FIND) $(JDK_IMAGE_DIR)/bin -type f ! -name '*.debuginfo' -name \*$(EXE_SUFFIX)` \
 	    | $(EGREP) 'ELF' | $(CUT) -d':' -f1 >> $@
 endif
 

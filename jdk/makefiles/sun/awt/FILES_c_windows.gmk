@@ -1,0 +1,208 @@
+#
+# Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+FILES_c = \
+	GraphicsPrimitiveMgr.c \
+	Blit.c \
+	BlitBg.c \
+	ScaledBlit.c \
+	FillRect.c \
+	FillSpans.c \
+	FillParallelogram.c \
+	DrawParallelogram.c \
+	DrawLine.c \
+	DrawRect.c \
+	DrawPolygons.c \
+        DrawPath.c \
+        FillPath.c \
+        ProcessPath.c \
+	MaskBlit.c \
+	MaskFill.c \
+	TransformHelper.c \
+        AlphaMath.c \
+	AlphaMacros.c \
+	AnyByte.c \
+        ByteBinary1Bit.c \
+        ByteBinary2Bit.c \
+        ByteBinary4Bit.c \
+	ByteIndexed.c \
+	ByteGray.c \
+	Index8Gray.c \
+	Index12Gray.c \
+	AnyShort.c \
+	Ushort555Rgb.c \
+	Ushort565Rgb.c \
+	Ushort4444Argb.c \
+	Ushort555Rgbx.c \
+	UshortGray.c \
+	UshortIndexed.c \
+	Any3Byte.c \
+	ThreeByteBgr.c \
+	AnyInt.c \
+	IntArgb.c \
+        IntArgbPre.c \
+        IntArgbBm.c \
+	IntRgb.c \
+	IntBgr.c \
+	IntRgbx.c \
+	Any4Byte.c \
+        FourByteAbgr.c \
+        FourByteAbgrPre.c \
+	BufferedMaskBlit.c \
+	BufferedRenderPipe.c \
+	ShapeSpanIterator.c \
+	SpanClipRenderer.c \
+	SurfaceData.c \
+	Region.c \
+	DataBufferNative.c \
+	BufImgSurfaceData.c \
+	Disposer.c \
+        Trace.c \
+	img_globals.c \
+	gifdecoder.c \
+	awt_parseImage.c \
+	awt_ImageRep.c \
+	awt_ImagingLib.c \
+	dither.c \
+	imageInitIDs.c \
+	debug_assert.c \
+	debug_mem.c \
+	debug_trace.c \
+	debug_util.c \
+        OGLBlitLoops.c \
+        OGLBufImgOps.c \
+        OGLContext.c \
+        OGLFuncs.c \
+        OGLMaskBlit.c \
+        OGLMaskFill.c \
+        OGLPaints.c \
+        OGLRenderQueue.c \
+        OGLRenderer.c \
+        OGLSurfaceData.c \
+        OGLTextRenderer.c \
+        OGLVertexCache.c \
+        WGLGraphicsConfig.c \
+        WGLSurfaceData.c \
+        AccelGlyphCache.c \
+        rect.c
+
+FILES_cpp = \
+	CmdIDList.cpp \
+	Hashtable.cpp \
+	GDIHashtable.cpp \
+	Devices.cpp \
+	ObjectList.cpp \
+	GDIBlitLoops.cpp \
+	GDIRenderer.cpp \
+	GDIWindowSurfaceData.cpp \
+	WindowsFlags.cpp \
+	WPrinterJob.cpp \
+	awt_AWTEvent.cpp \
+	awt_BitmapUtil.cpp \
+	awt_Brush.cpp \
+	awt_Button.cpp \
+	awt_Canvas.cpp \
+	awt_Checkbox.cpp \
+	awt_Choice.cpp \
+	awt_Clipboard.cpp \
+	awt_Color.cpp \
+	awt_Component.cpp \
+	awt_Container.cpp \
+	awt_Cursor.cpp \
+	awt_DataTransferer.cpp \
+	awt_Debug.cpp \
+	awt_Dimension.cpp \
+	awt_Desktop.cpp \
+	awt_DesktopProperties.cpp \
+	awt_Dialog.cpp \
+	awt_DrawingSurface.cpp \
+	awt_FileDialog.cpp \
+	awt_Event.cpp \
+	awt_Font.cpp \
+	awt_Frame.cpp \
+	awt_GDIObject.cpp \
+	awt_IconCursor.cpp \
+	awt_InputEvent.cpp \
+	awt_InputMethod.cpp \
+	awt_InputTextInfor.cpp \
+	awt_Insets.cpp \
+	awt_KeyEvent.cpp \
+	awt_KeyboardFocusManager.cpp \
+	awt_Label.cpp \
+	awt_List.cpp \
+	awt_Menu.cpp \
+	awt_MenuBar.cpp \
+	awt_MenuItem.cpp \
+	awt_MouseEvent.cpp \
+	awt_Object.cpp \
+	awt_Palette.cpp \
+	awt_Panel.cpp \
+	awt_PopupMenu.cpp \
+	awt_Pen.cpp \
+	awt_PrintControl.cpp \
+	awt_PrintDialog.cpp \
+	awt_PrintJob.cpp \
+	awt_Rectangle.cpp \
+	awt_Robot.cpp \
+	awt_Scrollbar.cpp \
+	awt_ScrollPane.cpp \
+	awt_TextArea.cpp \
+	awt_TextComponent.cpp \
+	awt_TextField.cpp \
+	awt_Toolkit.cpp \
+	awt_Window.cpp \
+	awt_Win32GraphicsEnv.cpp \
+	awt_Win32GraphicsDevice.cpp \
+	awt_Win32GraphicsConfig.cpp \
+	awt_DnDDT.cpp \
+	awt_DnDDS.cpp \
+	awt_Mlib.cpp \
+	awt_new.cpp \
+	awt_TrayIcon.cpp \
+	awt_DCHolder.cpp \
+	awt_ole.cpp \
+	ShaderList.cpp \
+	D3DBlitLoops.cpp \
+	D3DBufImgOps.cpp \
+	D3DContext.cpp \
+	D3DGlyphCache.cpp \
+	D3DGraphicsDevice.cpp \
+	D3DMaskBlit.cpp \
+	D3DMaskCache.cpp \
+	D3DMaskFill.cpp \
+	D3DPipelineManager.cpp \
+	D3DPaints.cpp \
+	D3DRenderer.cpp \
+	D3DRenderQueue.cpp \
+	D3DResourceManager.cpp \
+	D3DSurfaceData.cpp \
+	D3DTextRenderer.cpp \
+	D3DVertexCacher.cpp \
+	ShellFolder2.cpp \
+	ThemeReader.cpp \
+	ComCtl32Util.cpp \
+	DllUtil.cpp \
+	initIDs.cpp \
+	MouseInfo.cpp

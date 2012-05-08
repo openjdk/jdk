@@ -44,7 +44,7 @@
     <property file="build.properties"/>
 
     <!-- Source dir def -->
-    <property name="jaxp.src.dir" value="src/share/classes"/>
+    <property name="jaxp.src.dir" value="src"/>
     <path id="src.dir.id">
       <pathelement path="${jaxp.src.dir}"/>
     </path>

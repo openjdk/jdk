@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1320,10 +1320,6 @@ public class ClassReader implements Completer {
                     sym.flags_field |= PROPRIETARY;
                 else
                     proxies.append(proxy);
-                if (majorVersion >= V51.major &&
-                    proxy.type.tsym == syms.polymorphicSignatureType.tsym) {
-                    sym.flags_field |= POLYMORPHIC_SIGNATURE;
-                }
             }
             annotate.later(new AnnotationCompleter(sym, proxies.toList()));
         }

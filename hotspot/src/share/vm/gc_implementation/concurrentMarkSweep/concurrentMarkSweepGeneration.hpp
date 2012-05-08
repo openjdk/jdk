@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -988,7 +988,7 @@ class CMSCollector: public CHeapObj {
   CMSGCAdaptivePolicyCounters* gc_adaptive_policy_counters();
 
   // debugging
-  void verify(bool);
+  void verify();
   bool verify_after_remark();
   void verify_ok_to_terminate() const PRODUCT_RETURN;
   void verify_work_stacks_empty() const PRODUCT_RETURN;
@@ -1279,7 +1279,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
 
   // Debugging
   void prepare_for_verify();
-  void verify(bool allow_dirty);
+  void verify();
   void print_statistics()               PRODUCT_RETURN;
 
   // Performance Counters support

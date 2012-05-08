@@ -61,12 +61,12 @@ package java.util;
  */
 public class Observable {
     private boolean changed = false;
-    private Vector obs;
+    private Vector<Observer> obs;
 
     /** Construct an Observable with zero Observers. */
 
     public Observable() {
-        obs = new Vector();
+        obs = new Vector<>();
     }
 
     /**
