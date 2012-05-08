@@ -1147,29 +1147,6 @@ public class Type implements PrimitiveType {
         }
 
         /**
-         * Kind of type-constraint derived during type inference
-         */
-        public enum ConstraintKind {
-            /**
-             * upper bound constraint (a type variable must be instantiated
-             * with a type T, where T is a subtype of all the types specified by
-             * its EXTENDS constraints).
-             */
-            EXTENDS,
-            /**
-             * lower bound constraint (a type variable must be instantiated
-             * with a type T, where T is a supertype of all the types specified by
-             * its SUPER constraints).
-             */
-            SUPER,
-            /**
-             * equality constraint (a type variable must be instantiated to the type
-             * specified by its EQUAL constraint.
-             */
-            EQUAL;
-        }
-
-        /**
          * Get the type-constraints of a given kind for a given type-variable of
          * this ForAll type. Subclasses should override in order to return more
          * accurate sets of constraints.
@@ -1178,7 +1155,7 @@ public class Type implements PrimitiveType {
          * @param ck the constraint kind to be retrieved
          * @return the list of types specified by the selected constraint
          */
-        public List<Type> getConstraints(TypeVar tv, ConstraintKind ck) {
+        public List<Type> undetvars() {
             return List.nil();
         }
 
@@ -1220,6 +1197,7 @@ public class Type implements PrimitiveType {
     public static class UndetVar extends DelegatedType {
         public List<Type> lobounds = List.nil();
         public List<Type> hibounds = List.nil();
+        public List<Type> eq = List.nil();
         public Type inst = null;
 
         @Override

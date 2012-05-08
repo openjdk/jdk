@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -492,7 +492,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   void print()                            const;
   void print_on(outputStream* st)         const;
   void prepare_for_verify();
-  void verify(bool allow_dirty)           const;
+  void verify()                           const;
   void verifyFreeLists()                  const PRODUCT_RETURN;
   void verifyIndexedFreeLists()           const;
   void verifyIndexedFreeList(size_t size) const;

@@ -1,0 +1,608 @@
+#
+# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+defalt: all
+
+include $(SPEC)
+include MakeBase.gmk
+include NativeCompilation.gmk
+
+# Setup the java compilers for the JDK build.
+include Setup.gmk
+
+# Copy files (can now depend on $(COPY_FILES))
+include CopyFiles.gmk
+
+# Include the javah generated headers.
+CFLAGS_JDKLIB += -I$(JDK_OUTPUTDIR)/gensrc_headers
+CXXFLAGS_JDKLIB += -I$(JDK_OUTPUTDIR)/gensrc_headers
+
+# Put the libraries here. Different locations for different host apis.
+ifeq ($(HOST_OS_API),posix)
+    ifneq ($(HOST_OS),macosx)
+        INSTALL_LIBRARIES_HERE:=$(JDK_OUTPUTDIR)/lib/$(LIBARCH)
+        LIBARCHDIR=$(LIBARCH)/
+    else
+        INSTALL_LIBRARIES_HERE:=$(JDK_OUTPUTDIR)/lib
+        LIBARCHDIR=/
+    endif
+else
+    INSTALL_LIBRARIES_HERE:=$(JDK_OUTPUTDIR)/bin
+endif
+
+$(INSTALL_LIBRARIES_HERE)/%$(SHARED_LIBRARY_SUFFIX) : $(JDK_OUTPUTDIR)/newobjs/%$(SHARED_LIBRARY_SUFFIX)
+	echo Copying $(@F)
+	$(CP) $< $@
+
+BUILD_LIBRARIES=
+
+# TODO: Temporary until awt is converted:
+# OBJDIRNAME is the name of the directory where the object code is to
+#   be placed. It's name depends on whether the data model architecture 
+#   is 32-bit or not.
+ifneq ($(ARCH_DATA_MODEL), 32)
+  OBJDIRNAME  = obj$(ARCH_DATA_MODEL)$(OBJDIRNAME_SUFFIX)
+else
+  OBJDIRNAME  = obj$(OBJDIRNAME_SUFFIX)
+endif
+
+##########################################################################################
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBZIP,\
+                SRC:=$(JDK_TOPDIR)/src/share/native/java/util/zip,\
+		LANG:=C,\
+		CFLAGS:=$(CFLAGS_JDKLIB) $(C_O_FLAG_NORM) $(SHARED_LIBRARY_FLAGS) \
+                        -I$(JDK_TOPDIR)/src/share/native/java/util/zip/zlib-1.2.5 \
+		        -I$(JDK_TOPDIR)/src/share/native/java/io \
+                        -I$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/native/java/io,\
+		CFLAGS_posix:=-DUSE_MMAP,\
+		LDFLAGS:=$(LDFLAGS_JDKLIB) \
+			 $(EXPORT_ZIP_FUNCS) \
+			 $(call SET_SHARED_LIBRARY_MAPFILE,makefiles/mapfiles/libzip/mapfile-vers),\
+		LDFLAGS_winapi:=-export:ZIP_Open -export:ZIP_Close -export:ZIP_FindEntry \
+                                -export:ZIP_ReadEntry -export:ZIP_GetNextEntry,\
+		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX),\
+		BIN:=$(JDK_OUTPUTDIR)/newobjs/libzip,\
+		LIB:=$(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)zip$(SHARED_LIBRARY_SUFFIX)))
+
+BUILD_LIBRARIES += $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)zip$(SHARED_LIBRARY_SUFFIX)
+
+##########################################################################################
+
+LIBUNPACK_LIB_FILE := $(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)unpack$(SHARED_LIBRARY_SUFFIX)
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBUNPACK,\
+                SRC:=$(JDK_TOPDIR)/src/share/native/com/sun/java/util/jar/pack,\
+		EXCLUDE_FILES:=main.cpp,\
+		LANG:=C++,\
+		CFLAGS:=$(CXXFLAGS_JDKLIB) $(CXX_O_FLAG_NORM) $(SHARED_LIBRARY_FLAGS) \
+			 -DNO_ZLIB -DUNPACK_JNI -DFULL,\
+		CFLAGS_release:=-DPRODUCT,\
+		LDFLAGS:=$(LDFLAGS_JDKLIB)\
+			 $(call SET_SHARED_LIBRARY_MAPFILE,makefiles/mapfiles/libunpack/mapfile-vers) \
+			 $(call SET_SHARED_LIBRARY_ORIGIN),\
+		LDFLAGS_winapi:=-map:$(JDK_OUTPUTDIR)/newobjs/unpack.map /debug,\
+		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX),\
+		LDFLAGS_SUFFIX_posix:=$(LIBCXX),\
+		BIN:=$(JDK_OUTPUTDIR)/newobjs/libunpack,\
+		LIB:=$(LIBUNPACK_LIB_FILE),\
+		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
+		RC_FLAGS:=$(RC_FLAGS)\
+			  /D "JDK_FNAME=unpack.dll" \
+			  /D "JDK_INTERNAL_NAME=unpack" \
+			  /D "JDK_FTYPE=0x2L"))
+
+BUILD_LIBRARIES += $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)unpack$(SHARED_LIBRARY_SUFFIX)
+
+ifeq ($(HOST_OS_API),winapi)
+    $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)unpack.map: $(LIBUNPACK_LIB_FILE)
+	echo Copying $(@F)
+	$(CP) $(patsubst %$(SHARED_LIBRARY_SUFFIX),%.map,$<) $@
+
+    $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)unpack.pdb: $(LIBUNPACK_LIB_FILE)
+	echo Copying $(@F)
+	$(CP) $(patsubst %$(SHARED_LIBRARY_SUFFIX),%.pdb,$<) $@
+endif
+
+##########################################################################################
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBVERIFY,\
+                SRC:=$(JDK_TOPDIR)/src/share/native/common,\
+		EXCLUDE_FILES:=check_version.c jdk_util.c jio.c jni_util.c verify_stub.c,\
+		LANG:=C,\
+		CFLAGS:=$(CFLAGS_JDKLIB) ${C_O_FLAG_HI} $(SHARED_LIBRARY_FLAGS), \
+		LDFLAGS:=$(LDFLAGS_JDKLIB) \
+			 $(call SET_SHARED_LIBRARY_MAPFILE,makefiles/mapfiles/libverify/mapfile-vers),\
+		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX),\
+		BIN:=$(JDK_OUTPUTDIR)/newobjs/libverify,\
+		LIB:=$(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)verify$(SHARED_LIBRARY_SUFFIX)))
+
+BUILD_LIBRARIES += $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)verify$(SHARED_LIBRARY_SUFFIX)
+
+##########################################################################################
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBFDLIBM,\
+                SRC:=$(JDK_TOPDIR)/src/share/native/java/lang/fdlibm/src,\
+		LANG:=C,\
+		CFLAGS:=$(CFLAGS_JDKLIB) ${C_O_FLAG_NONE}\
+			-I$(JDK_TOPDIR)/src/share/native/java/lang/fdlibm/include,\
+		CFLAGS_winapi_debug:=-DLOGGING,\
+		ARFLAGS:=$(ARFLAGS),\
+		BIN:=$(JDK_OUTPUTDIR)/newobjs/libfdlibm,\
+		LIB:=$(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)fdlibm$(STATIC_LIBRARY_SUFFIX)))
+
+BUILD_LIBRARIES += $(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)fdlibm$(STATIC_LIBRARY_SUFFIX)
+
+##########################################################################################
+
+LIBATTACH_EXCLUDE_FILES:=
+ifneq ($(PLATFORM),solaris)
+    LIBATTACH_EXCLUDE_FILES+=SolarisVirtualMachine.c
+endif
+ifneq ($(PLATFORM),linux)
+    LIBATTACH_EXCLUDE_FILES+=LinuxVirtualMachine.c
+endif
+ifneq ($(PLATFORM),macosx)
+    LIBATTACH_EXCLUDE_FILES+=BsdVirtualMachine.c
+endif
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBATTACH,\
+                SRC:=$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/native/sun/tools/attach,\
+		EXCLUDE_FILES:=$(LIBATTACH_EXCLUDE_FILES),\
+		LANG:=C,\
+		CFLAGS:=$(CFLAGS_JDKLIB) $(C_O_FLAG_NORM) $(SHARED_LIBRARY_FLAGS),\
+		LDFLAGS:=$(LDFLAGS_JDKLIB) \
+			 $(call SET_SHARED_LIBRARY_MAPFILE,makefiles/mapfiles/libattach/mapfile-$(PLATFORM)) \
+			 $(call SET_SHARED_LIBRARY_ORIGIN),\
+		LDFLAGS_solaris:=-ldoor,\
+		LDFLAGS_winapi:=psapi.lib advapi32.lib,\
+		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX),\
+		BIN:=$(JDK_OUTPUTDIR)/newobjs/libattach,\
+		LIB:=$(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)attach$(SHARED_LIBRARY_SUFFIX)))
+
+BUILD_LIBRARIES += $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)attach$(SHARED_LIBRARY_SUFFIX)
+
+##########################################################################################
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBDT_SOCKET,\
+                SRC:=$(JDK_TOPDIR)/src/share/transport/socket \
+			$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/transport/socket,\
+		LANG:=C,\
+		CFLAGS:=$(CFLAGS_JDKLIB) -DUSE_MMAP $(C_O_FLAG_NORM) $(SHARED_LIBRARY_FLAGS) \
+                        -I$(INCLUDEDIR) -I$(JDK_OUTPUTDIR)/include/$(PLATFORM) \
+                        -I$(JDK_TOPDIR)/src/share/transport/socket \
+		        -I$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/transport/socket \
+                        -I$(JDK_TOPDIR)/src/share/back/export \
+                        -I$(JDK_TOPDIR)/src/share/back,\
+		LDFLAGS:=$(LDFLAGS_JDKLIB) \
+			 $(call SET_SHARED_LIBRARY_MAPFILE,makefiles/mapfiles/libdt_socket/mapfile-vers),\
+		LDFLAGS_SUFFIX_linux:=-lpthread,\
+		LDFLAGS_SUFFIX_solaris:=-lnsl -lsocket,\
+		LDFLAGS_SUFFIX_winapi:=-export:jdwpTransport_OnLoad ws2_32.lib,\
+		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX),\
+		BIN:=$(JDK_OUTPUTDIR)/newobjs/libdt_socket,\
+		LIB:=$(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)dt_socket$(SHARED_LIBRARY_SUFFIX)))
+
+BUILD_LIBRARIES += $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)dt_socket$(SHARED_LIBRARY_SUFFIX)
+
+##########################################################################################
+
+ifeq ($(HOST_OS_API),winapi)
+
+  $(eval $(call SetupNativeCompilation,BUILD_LIBDT_SHMEM,\
+                SRC:= $(JDK_TOPDIR)/src/share/native/com/sun/tools/jdi \
+			$(JDK_TOPDIR)/src/share/transport/shmem \
+			$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/transport/shmem,\
+		LANG:=C,\
+		CFLAGS:=$(CFLAGS_JDKLIB) -DUSE_MMAP $(C_O_FLAG_NORM) $(SHARED_LIBRARY_FLAGS)\
+                        -I$(INCLUDEDIR) -I$(JDK_OUTPUTDIR)/include/$(PLATFORM) \
+                        -I$(JDK_TOPDIR)/src/share/transport/shmem \
+		        -I$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/transport/shmem \
+                        -I$(JDK_TOPDIR)/src/share/back/export, \
+		LDFLAGS:=$(LDFLAGS_JDKLIB),\
+		LDFLAGS_winapi:=-export:jdwpTransport_OnLoad,\
+		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX),\
+		BIN:=$(JDK_OUTPUTDIR)/newobjs/libdt_shmem,\
+		LIB:=$(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)dt_shmem$(SHARED_LIBRARY_SUFFIX)))
+
+  BUILD_LIBRARIES += $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)dt_shmem$(SHARED_LIBRARY_SUFFIX)
+
+endif # PLATFORM
+
+##########################################################################################
+# JDWP_LOGGING causes log messages to be compiled into the library. These reference the 
+# __FILE__ macro which here expands to the absolute path of the file while the old build 
+# system used a relative path. This causes the binaries to differ in size.
+$(eval $(call SetupNativeCompilation,BUILD_LIBJDWP,\
+                SRC:=$(JDK_TOPDIR)/src/share/back $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/back,\
+		LANG:=C,\
+		CFLAGS:=$(CFLAGS_JDKLIB) -DJDWP_LOGGING $(C_O_FLAG_NORM) $(SHARED_LIBRARY_FLAGS)\
+		 -I$(JDK_TOPDIR)/src/share/transport/export \
+                 -I$(JDK_TOPDIR)/src/share/back/export \
+                 -I$(JDK_TOPDIR)/src/share/npt \
+                 -I$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/npt \
+                 -I$(JDK_TOPDIR)/src/share/back \
+                 -I$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/back \
+		 -I$(JDK_OUTPUTDIR)/gensrc_jdwp_headers,\
+		LDFLAGS:=$(filter-out -ljava,$(LDFLAGS_JDKLIB)) \
+			 $(call SET_SHARED_LIBRARY_MAPFILE,makefiles/mapfiles/libjdwp/mapfile-vers),\
+		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX),\
+		LDFLAGS_SUFFIX_linux:=-ldl,\
+		BIN:=$(JDK_OUTPUTDIR)/newobjs/libjdwp,\
+		LIB:=$(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)jdwp$(SHARED_LIBRARY_SUFFIX)))
+
+BUILD_LIBRARIES += $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)jdwp$(SHARED_LIBRARY_SUFFIX)
+
+##########################################################################################
+
+ifneq ($(PLATFORM),solaris)
+   LIBJAAS_EXCLUDE_FILES:=Solaris.c
+endif
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBJAAS,\
+                SRC:=$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/native/com/sun/security/auth/module,\
+		LANG:=C,\
+		CFLAGS:=$(CFLAGS_JDKLIB) $(C_O_FLAG_NORM) $(SHARED_LIBRARY_FLAGS),\
+		LDFLAGS:=$(filter-out -ljava,$(LDFLAGS_JDKLIB)) \
+			 $(call SET_SHARED_LIBRARY_ORIGIN),\
+		LDFLAGS_winapi:=netapi32.lib user32.lib mpr.lib advapi32.lib,\
+		LDFLAGS_solaris:=$(call SET_SHARED_LIBRARY_MAPFILE,makefiles/mapfiles/libjaas/mapfile-vers),\
+		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX),\
+		EXCLUDE_FILES:=$(LIBJAAS_EXCLUDE_FILES),\
+		BIN:=$(JDK_OUTPUTDIR)/newobjs/libjaas,\
+		LIB:=$(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)jaas$(SHARED_LIBRARY_SUFFIX)))
+
+BUILD_LIBRARIES += $(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)jaas$(SHARED_LIBRARY_SUFFIX)
+
+# Oddly enough, it is called jaas_nt.dll under winapi and libjaas_unix.so under posix.
+ifeq ($(PLATFORM),windows)
+    $(INSTALL_LIBRARIES_HERE)/jaas_nt.dll : $(JDK_OUTPUTDIR)/newobjs/jaas.dll
+	echo Copying $(@F)
+	$(CP) $< $@
+    BUILD_LIBRARIES += $(INSTALL_LIBRARIES_HERE)/jaas_nt.dll
+else
+    $(INSTALL_LIBRARIES_HERE)/libjaas_unix$(SHARED_LIBRARY_SUFFIX) : $(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)jaas$(SHARED_LIBRARY_SUFFIX)
+	echo Copying $(@F)
+	$(CP) $< $@
+    BUILD_LIBRARIES += $(INSTALL_LIBRARIES_HERE)/libjaas_unix$(SHARED_LIBRARY_SUFFIX)
+endif
+
+##########################################################################################
+
+ifeq ($(HOST_OS_API),posix)
+  # TODO make this work on macosx
+  ifneq ($(HOST_OS),macosx)
+#
+# NOTE: Change -L flag to point to new lib location after converting libnio. Also
+#       add dependency on nio from sctp.
+    $(eval $(call SetupNativeCompilation,BUILD_LIBSCTP,\
+                SRC:=$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/native/sun/nio/ch/sctp,\
+		LANG:=C,\
+		CFLAGS:=$(CFLAGS_JDKLIB) $(C_O_FLAG_NORM) $(SHARED_LIBRARY_FLAGS)\
+			-I$(JDK_TOPDIR)/src/share/native/sun/nio/ch \
+			-I$(JDK_TOPDIR)/src/share/native/sun/nio/ch/sctp \
+			-I$(JDK_TOPDIR)/src/share/native/java/net \
+			-I$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/native/sun/nio/ch \
+			-I$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/native/java/net,\
+		CFLAGS_linux:=-Werror,\
+		LDFLAGS:=$(LDFLAGS_JDKLIB) -L$(JDK_OUTPUTDIR)/lib/$(LIBARCHDIR)\
+			 $(call SET_SHARED_LIBRARY_MAPFILE,makefiles/mapfiles/libsctp/mapfile-vers) \
+			 $(call SET_SHARED_LIBRARY_ORIGIN),\
+		LDFLAGS_SUFFIX_linux:=-lpthread,\
+		LDFLAGS_SUFFIX_posix:=-ldl -lnio -lnet,\
+		LDFLAGS_SUFFIX_solaris:=-lsocket,\
+		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX),\
+		INCLUDE_FILES:=SctpNet.c SctpChannelImpl.c SctpServerChannelImpl.c,\
+		BIN:=$(JDK_OUTPUTDIR)/newobjs/libsctp,\
+		LIB:=$(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)sctp$(SHARED_LIBRARY_SUFFIX)))
+
+    BUILD_LIBRARIES += $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)sctp$(SHARED_LIBRARY_SUFFIX)
+  endif
+endif
+
+##########################################################################################
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBJSDT,\
+                SRC:=$(JDK_TOPDIR)/src/share/native/sun/tracing/dtrace\
+			$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/native/sun/tracing/dtrace,\
+		LANG:=C,\
+		CFLAGS:=$(CFLAGS_JDKLIB) $(C_O_FLAG_NORM) $(SHARED_LIBRARY_FLAGS)\
+			-I$(JDK_TOPDIR)/src/share/native/sun/tracing/dtrace,\
+		LDFLAGS:=$(LDFLAGS_JDKLIB) \
+			 $(call SET_SHARED_LIBRARY_MAPFILE,makefiles/mapfiles/libjsdt/mapfile-vers) \
+			 $(call SET_SHARED_LIBRARY_ORIGIN),\
+		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX) -ldl,\
+		BIN:=$(JDK_OUTPUTDIR)/newobjs/libjsdt,\
+		LIB:=$(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)jsdt$(SHARED_LIBRARY_SUFFIX)))
+
+BUILD_LIBRARIES += $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)jsdt$(SHARED_LIBRARY_SUFFIX)
+
+##########################################################################################
+
+ifdef OPENJDK
+    # TODO: Update awt lib path when awt is converted
+    $(eval $(call SetupNativeCompilation,BUILD_LIBLCMS,\
+                SRC:=$(JDK_TOPDIR)/src/share/native/sun/java2d/cmm/lcms \
+		     $(JDK_TOPDIR)/src/share/native/sun/java2d/,\
+		INCLUDE_FILES:=cmscam02.c cmscgats.c cmscnvrt.c cmserr.c \
+			       cmsgamma.c cmsgmt.c cmsintrp.c cmsio0.c \
+			       cmsio1.c cmslut.c cmsmd5.c cmsmtrx.c \
+			       cmsnamed.c cmsopt.c cmspack.c cmspcs.c \
+			       cmsplugin.c cmsps2.c cmssamp.c cmssm.c \
+			       cmstypes.c cmsvirt.c cmswtpnt.c cmsxform.c \
+			       LCMS.c,\
+		LANG:=C,\
+		CFLAGS:=$(filter-out -xc99=%none,$(CFLAGS_JDKLIB)) $(C_O_FLAG_NORM) \
+			$(SHARED_LIBRARY_FLAGS) \
+			-I$(JDK_TOPDIR)/src/share/native/sun/java2d \
+			-I$(JDK_TOPDIR)/src/share/native/sun/awt/debug,\
+		CFLAGS_solaris:=-xc99=no_lib,\
+		CFLAGS_winapi:=-DCMS_IS_WINDOWS_,\
+		LDFLAGS:=$(LDFLAGS_JDKLIB) \
+			 $(call SET_SHARED_LIBRARY_MAPFILE,makefiles/mapfiles/liblcms/mapfile-vers),\
+		LDFLAGS_posix:=-L$(JDK_OUTPUTDIR)/lib/$(LIBARCHDIR)xawt,\
+		LDFLAGS_solaris:=/usr/lib$(ISA_DIR)/libm.so.2,\
+		LDFLAGS_winapi:=$(JDK_OUTPUTDIR)/tmp/sun/sun.awt/awt/$(OBJDIRNAME)/awt.lib,\
+		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX),\
+		LDFLAGS_SUFFIX_posix:=-lawt,\
+		LDFLAGS_SUFFIX_linux:=-lm,\
+		BIN:=$(JDK_OUTPUTDIR)/newobjs/liblcms,\
+		LIB:=$(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)lcms$(SHARED_LIBRARY_SUFFIX)))
+
+    BUILD_LIBRARIES += $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)lcms$(SHARED_LIBRARY_SUFFIX)
+endif
+
+##########################################################################################
+
+ifdef OPENJDK
+    BUILD_LIBJPEG_MAPFILE := makefiles/mapfiles/libjpeg/mapfile-vers
+else
+    BUILD_LIBJPEG_MAPFILE := makefiles/mapfiles/libjpeg/mapfile-vers-closed
+    BUILD_LIBJPEG_CLOSED_SRC := $(JDK_TOPDIR)/src/closed/share/native/sun/awt/image/jpeg
+    BUILD_LIBJPEG_CLOSED_INCLUDES := -I$(BUILD_LIBJPEG_CLOSED_SRC)
+endif
+
+ifeq ($(PLATFORM), solaris)
+    ifneq ($(ARCH), amd64)
+        BUILD_LIBJPEG_REORDER := $(JDK_TOPDIR)/makefiles/mapfiles/libjpeg/reorder-$(ARCH)
+        $(JDK_OUTPUTDIR)/newobjs/libjpeg/mapfile-vers : $(JDK_TOPDIR)/$(BUILD_LIBJPEG_MAPFILE) \
+							$(BUILD_LIBJPEG_REORDER)
+		$(MKDIR) -p $(@D)
+		$(CAT) $(JDK_TOPDIR)/$(BUILD_LIBJPEG_MAPFILE) > $@
+		$(SED) -e 's=OUTPUTDIR=$(JDK_OUTPUTDIR)=' $(BUILD_LIBJPEG_REORDER) >> $@
+        LIBJPEG_MAPFILE:=$(JDK_OUTPUTDIR)/newobjs/libjpeg/mapfile-vers
+
+        $(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)jpeg$(SHARED_LIBRARY_SUFFIX): \
+			$(JDK_OUTPUTDIR)/newobjs/libjpeg/mapfile-vers
+    endif
+endif
+
+# Suppress gcc warnings like "variable might be clobbered by 'longjmp'
+# or 'vfork'": this warning indicates that some variable is placed to
+# a register by optimized compiler and it's value might be lost on longjmp().
+# Recommended way to avoid such warning is to declare the variable as
+# volatile to prevent the optimization. However, this approach does not
+# work because we have to declare all variables as volatile in result.
+#ifndef CROSS_COMPILE_ARCH
+#    CC_43_OR_NEWER := \
+#        $(shell $(EXPR) $(CC_MAJORVER) \> 4 \| \
+#              \( $(CC_MAJORVER) = 4 \& $(CC_MINORVER) \>= 3 \) )
+#    ifeq ($(CC_43_OR_NEWER),1)
+#        BUILD_LIBJPEG_CFLAGS_linux += -Wno-clobbered
+#    endif
+#endif
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBJPEG,\
+                SRC:=$(BUILD_LIBJPEG_CLOSED_SRC) \
+		     $(JDK_TOPDIR)/src/share/native/sun/awt/image/jpeg,\
+		LANG:=C,\
+		CFLAGS:=$(CFLAGS_JDKLIB) $(C_O_FLAG_HI) $(SHARED_LIBRARY_FLAGS) \
+			$(BUILD_LIBJPEG_CLOSED_INCLUDES) \
+			-I$(JDK_TOPDIR)/src/share/native/sun/awt/image/jpeg,\
+		CFLAGS_solaris:=-xF,\
+		LDFLAGS:=$(LDFLAGS_JDKLIB) \
+			 $(call SET_SHARED_LIBRARY_MAPFILE,$(BUILD_LIBJPEG_MAPFILE))\
+			 $(call SET_SHARED_LIBRARY_ORIGIN),\
+		LDFLAGS_linux:=-ldl,\
+		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX),\
+		BIN:=$(JDK_OUTPUTDIR)/newobjs/libjpeg,\
+		LIB:=$(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)jpeg$(SHARED_LIBRARY_SUFFIX)))
+
+BUILD_LIBRARIES += $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)jpeg$(SHARED_LIBRARY_SUFFIX)
+
+##########################################################################################
+
+ifndef OPENJDK
+    FONT_HEADERS := -I$(CLOSED_SRC)/share/native/$(PKGDIR)/t2k
+    BUILD_LIBFONTMANAGER_MAPFILE := makefiles/mapfiles/libfontmanager/mapfile-vers
+    LIBFONTMANAGER_EXCLUDE_FILES += freetypeScaler.c
+else
+    FONT_HEADERS := $(FREETYPE2_CFLAGS)
+    BUILD_LIBFONTMANAGER_MAPFILE := makefiles/mapfiles/libfontmanager/mapfile-vers.openjdk
+    BUILD_LIBFONTMANAGER_FONTLIB := $(FREETYPE2_LIBS)
+endif
+
+ifeq ($(PLATFORM),windows)
+    LIBFONTMANAGER_EXCLUDE_FILES += X11FontScaler.c \
+				    X11TextRenderer.c
+else
+    LIBFONTMANAGER_EXCLUDE_FILES += fontpath.c \
+				    lcdglyph.c
+endif
+
+BUILD_LIBFONTMANAGER_CFLAGS_COMMON := $(SHARED_LIBRARY_FLAGS) \
+			-DLE_STANDALONE -DHEADLESS \
+			$(FONT_HEADERS) \
+			-I$(JDK_TOPDIR)/src/share/native/sun/font \
+			-I$(JDK_TOPDIR)/src/share/native/sun/font/layout \
+			-I$(JDK_TOPDIR)/src/share/native/sun/awt/image/cvutils \
+			-I$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/native/sun/awt \
+			-I$(JDK_TOPDIR)/src/share/native/sun/awt/debug \
+			-I$(JDK_TOPDIR)/src/share/native/sun/java2d/loops \
+			-I$(JDK_TOPDIR)/src/share/native/sun/java2d/pipe \
+			-I$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/native/sun/java2d \
+			-I$(JDK_TOPDIR)/src/share/native/sun/java2d
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER,\
+                SRC:=$(JDK_TOPDIR)/src/share/native/sun/font\
+		     $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/native/sun/font,\
+		EXCLUDE_FILES:=$(LIBFONTMANAGER_EXCLUDE_FILES) \
+			       AccelGlyphCache.c,\
+		LANG:=C++,\
+		CFLAGS:=$(CFLAGS_JDKLIB) $(BUILD_LIBFONTMANAGER_CFLAGS_COMMON),\
+		CXXFLAGS:=$(CXXFLAGS_JDKLIB) $(BUILD_LIBFONTMANAGER_CFLAGS_COMMON),\
+		CFLAGS_posix:=$(C_O_FLAG_HI),\
+		CXXFLAGS_posix:=$(CXX_O_FLAG_HI),\
+		CFLAGS_windows=$(C_O_FLAG_NORM)\
+				-I$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/native/sun/windows \
+				-DCC_NOEX, \
+		LDFLAGS:=$(subst -Xlinker -z -Xlinker defs,,$(LDFLAGS_JDKLIB)) \
+			 $(call SET_SHARED_LIBRARY_MAPFILE,$(BUILD_LIBFONTMANAGER_MAPFILE)) \
+			 $(call SET_SHARED_LIBRARY_ORIGIN),\
+		LDFLAGS_solaris:=-L$(JDK_OUTPUTDIR)/lib/$(LIBARCHDIR)headless,\
+		LDFLAGS_windows:=advapi32.lib user32.lib gdi32.lib $(JDK_OUTPUTDIR)/tmp/sun/sun.awt/awt/$(OBJDIRNAME)/awt.lib,\
+		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX) \
+				$(BUILD_LIBFONTMANAGER_FONTLIB),\
+		LDFLAGS_SUFFIX_linux:=-lawt $(LIBM) $(LIBCXX),\
+		LDFLAGS_SUFFIX_solaris:=-lawt -lawt_xawt -lc $(LIBM) $(LIBCXX),\
+		LDFLAGS_SUFFIX_macosx:=-lawt $(LIBM) $(LIBCXX) -undefined dynamic_lookup,\
+		BIN:=$(JDK_OUTPUTDIR)/newobjs/libfontmanager,\
+		LIB:=$(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)fontmanager$(SHARED_LIBRARY_SUFFIX)))
+
+BUILD_LIBRARIES += $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)fontmanager$(SHARED_LIBRARY_SUFFIX)
+
+##########################################################################################
+
+ifndef OPENJDK
+
+#    ifeq ($(PLATFORM), linux)
+#        ifeq ("$(CC_VER_MAJOR)", "3")
+#            OTHER_LDLIBS  += -Wl,-Bstatic -lgcc_eh -Wl,-Bdynamic
+#        endif                           
+#    endif
+#
+# The resulting size of the t2k lib file is (at least on linux) dependant on the order of 
+# the input .o files. Because of this the new build will differ in size to the old build.
+    BUILD_LIBT2K_CFLAGS_COMMON:=-I$(JDK_TOPDIR)/src/share/native/sun/font \
+		            -I$(JDK_TOPDIR)/src/closed/share/native/sun/font/t2k \
+		            -I$(JDK_TOPDIR)/src/closed/share/native/sun/font \
+		            -I$(JDK_TOPDIR)/src/share/share/native/sun/font \
+		            -I$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/native/sun/font \
+		            -I$(JDK_TOPDIR)/src/share/native/sun/java2d/loops \
+		            -I$(JDK_TOPDIR)/src/share/native/sun/java2d/pipe \
+		            -I$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/native/sun/java2d \
+		            -I$(JDK_TOPDIR)/src/share/native/sun/java2d
+
+    $(eval $(call SetupNativeCompilation,BUILD_LIBT2K,\
+                SRC:=$(JDK_TOPDIR)/src/closed/share/native/sun/font \
+		     $(JDK_TOPDIR)/src/closed/share/native/sun/font/t2k \
+		     $(JDK_TOPDIR)/src/closed/share/native/sun/font/t2k/ttHints,\
+		EXCLUDE_FILES:=orion.c,\
+		LANG:=C++,\
+		CFLAGS:=$(CFLAGS_JDKLIB) $(BUILD_LIBT2K_CFLAGS_COMMON) $(C_O_FLAG_HI),\
+		CXXFLAGS:=$(CXXFLAGS_JDKLIB) $(BUILD_LIBT2K_CFLAGS_COMMON) $(CXX_O_FLAG_HI),\
+		CFLAGS_windows=-DCC_NOEX, \
+		CXXFLAGS_windows=-DCC_NOEX, \
+		LDFLAGS:=$(LDFLAGS_JDKLIB) \
+			 $(call SET_SHARED_LIBRARY_MAPFILE,makefiles/mapfiles/libt2k/mapfile-vers) \
+			 $(call SET_SHARED_LIBRARY_ORIGIN),\
+		LDFLAGS_windows:=user32.lib $(JDK_OUTPUTDIR)/newobjs/fontmanager.lib,\
+		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX),\
+		LDFLAGS_SUFFIX_linux:=$(LIBCXX) $(LIBM) -L$(INSTALL_LIBRARIES_HERE) -lfontmanager,\
+		LDFLAGS_SUFFIX_solaris:=$(LIBCXX) $(LIBM) -L$(INSTALL_LIBRARIES_HERE) -lfontmanager -lawt \
+					-lawt_xawt,\
+		BIN:=$(JDK_OUTPUTDIR)/newobjs/libt2k,\
+		LIB:=$(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)t2k$(SHARED_LIBRARY_SUFFIX)))
+
+    # t2k is linked against fontmanager
+    $(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)t2k$(SHARED_LIBRARY_SUFFIX): \
+	$(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)fontmanager$(SHARED_LIBRARY_SUFFIX)
+
+    BUILD_LIBRARIES += $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)t2k$(SHARED_LIBRARY_SUFFIX)
+endif
+
+##########################################################################################
+
+ifeq ($(PLATFORM), windows)
+    ifeq ($(ARCH_DATA_MODEL), 32)
+        KERNEL32_LIB := kernel32.lib
+    endif
+    $(eval $(call SetupNativeCompilation,BUILD_LIBJAWT,\
+                SRC:=$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/native/sun/windows,\
+		INCLUDE_FILES:=jawt.cpp,\
+		LANG:=C++,\
+		CFLAGS:=$(CXXFLAGS_JDKLIB) $(CXX_O_FLAG_NORM) \
+			-EHsc -DUNICODE -D_UNICODE \
+			-I$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/native/sun/windows \
+		        -I$(JDK_TOPDIR)/src/share/native/sun/awt/debug \
+		        -I$(JDK_TOPDIR)/src/share/native/sun/java2d \
+			-I$(JDK_TOPDIR)/src/share/native/sun/awt/image/cvutils \
+			-I$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/native/sun/java2d/windows, \
+		LDFLAGS:=$(LDFLAGS_JDKLIB) $(KERNEL32_LIB) \
+			 advapi32.lib $(JDK_OUTPUTDIR)/tmp/sun/sun.awt/awt/$(OBJDIRNAME)/awt.lib,\
+		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX),\
+		BIN:=$(JDK_OUTPUTDIR)/newobjs/libjawt,\
+		LIB:=$(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)jawt$(SHARED_LIBRARY_SUFFIX)))
+
+$(JDK_OUTPUTDIR)/lib/$(LIBRARY_PREFIX)jawt$(STATIC_LIBRARY_SUFFIX): \
+		$(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)jawt$(SHARED_LIBRARY_SUFFIX)
+	echo Copying $(@F)
+	$(CP) $(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)jawt$(STATIC_LIBRARY_SUFFIX) $@	
+
+BUILD_LIBRARIES += $(JDK_OUTPUTDIR)/lib/$(LIBRARY_PREFIX)jawt$(STATIC_LIBRARY_SUFFIX)
+
+else # PLATFORM not windows
+
+    ifndef BUILD_HEADLESS_ONLY
+        MAWT_AWT_LIB =-lawt_xawt
+    else
+        MAWT_AWT_LIB =-lawt_headless
+        HEADLESS_CFLAG += -DHEADLESS
+    endif
+
+    $(eval $(call SetupNativeCompilation,BUILD_LIBJAWT,\
+                SRC:=$(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/native/sun/awt,\
+		INCLUDE_FILES:=jawt.c,\
+		LANG:=C,\
+		CFLAGS:=$(CFLAGS_JDKLIB) $(C_O_FLAG_NORM), \
+		CFLAGS_linux:=$(HEADLESS_CFLAG),\
+		LDFLAGS:=$(LDFLAGS_JDKLIB) \
+			 $(call SET_SHARED_LIBRARY_MAPFILE,makefiles/mapfiles/libjawt/mapfile-vers) \
+			 $(call SET_SHARED_LIBRARY_ORIGIN),\
+		LDFLAGS_solaris:=-L/usr/openwin/sfw/lib$(ISA_DIR) -L/usr/openwin/lib$(ISA_DIR),\
+		LDFLAGS_SUFFIX:=$(LDFLAGS_JDKLIB_SUFFIX) $(MAWT_AWT_LIB) -lawt,\
+		LDFLAGS_SUFFIX_solaris:=-lXrender,\
+		BIN:=$(JDK_OUTPUTDIR)/newobjs/libjawt,\
+		LIB:=$(JDK_OUTPUTDIR)/newobjs/$(LIBRARY_PREFIX)jawt$(SHARED_LIBRARY_SUFFIX)))
+endif # PLATFORM
+
+BUILD_LIBRARIES += $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)jawt$(SHARED_LIBRARY_SUFFIX)
+
+
+##########################################################################################
+
+all: $(COPY_FILES) $(BUILD_LIBRARIES)
+
+.PHONY: all

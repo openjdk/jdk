@@ -58,7 +58,10 @@ public class OpRead {
             boolean done = false;
             int failCount = 0;
             while (!done) {
-                if (selector.select() > 0) {
+                int nSelected = selector.select();
+                if (nSelected > 0) {
+                    if (nSelected > 1)
+                        throw new RuntimeException("More than one channel selected");
                     Set<SelectionKey> keys = selector.selectedKeys();
                     Iterator<SelectionKey> iterator = keys.iterator();
                     while (iterator.hasNext()) {

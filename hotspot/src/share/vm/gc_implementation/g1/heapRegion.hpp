@@ -52,11 +52,14 @@ class HeapRegionRemSetIterator;
 class HeapRegion;
 class HeapRegionSetBase;
 
-#define HR_FORMAT SIZE_FORMAT":(%s)["PTR_FORMAT","PTR_FORMAT","PTR_FORMAT"]"
+#define HR_FORMAT "%u:(%s)["PTR_FORMAT","PTR_FORMAT","PTR_FORMAT"]"
 #define HR_FORMAT_PARAMS(_hr_) \
                 (_hr_)->hrs_index(), \
                 (_hr_)->is_survivor() ? "S" : (_hr_)->is_young() ? "E" : "-", \
                 (_hr_)->bottom(), (_hr_)->top(), (_hr_)->end()
+
+// sentinel value for hrs_index
+#define G1_NULL_HRS_INDEX ((uint) -1)
 
 // A dirty card to oop closure for heap regions. It
 // knows how to get the G1 heap and how to use the bitmap
@@ -235,7 +238,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
  protected:
   // The index of this region in the heap region sequence.
-  size_t  _hrs_index;
+  uint  _hrs_index;
 
   HumongousType _humongous_type;
   // For a humongous region, region in which it starts.
@@ -278,12 +281,8 @@ class HeapRegion: public G1OffsetTableContigSpace {
   size_t _prev_marked_bytes;    // Bytes known to be live via last completed marking.
   size_t _next_marked_bytes;    // Bytes known to be live via in-progress marking.
 
-  // See "sort_index" method.  -1 means is not in the array.
-  int _sort_index;
-
-  // <PREDICTION>
+  // The calculated GC efficiency of the region.
   double _gc_efficiency;
-  // </PREDICTION>
 
   enum YoungType {
     NotYoung,                   // a region is not young
@@ -342,7 +341,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
  public:
   // If "is_zeroed" is "true", the region "mr" can be assumed to contain zeros.
-  HeapRegion(size_t hrs_index,
+  HeapRegion(uint hrs_index,
              G1BlockOffsetSharedArray* sharedOffsetArray,
              MemRegion mr, bool is_zeroed);
 
@@ -373,10 +372,9 @@ class HeapRegion: public G1OffsetTableContigSpace {
     ScrubRemSetClaimValue      = 3,
     ParVerifyClaimValue        = 4,
     RebuildRSClaimValue        = 5,
-    CompleteMarkCSetClaimValue = 6,
-    ParEvacFailureClaimValue   = 7,
-    AggregateCountClaimValue   = 8,
-    VerifyCountClaimValue      = 9
+    ParEvacFailureClaimValue   = 6,
+    AggregateCountClaimValue   = 7,
+    VerifyCountClaimValue      = 8
   };
 
   inline HeapWord* par_allocate_no_bot_updates(size_t word_size) {
@@ -390,7 +388,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   // If this region is a member of a HeapRegionSeq, the index in that
   // sequence, otherwise -1.
-  size_t hrs_index() const { return _hrs_index; }
+  uint hrs_index() const { return _hrs_index; }
 
   // The number of bytes marked live in the region in the last marking phase.
   size_t marked_bytes()    { return _prev_marked_bytes; }
@@ -627,16 +625,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // last mark phase ended.
   bool is_marked() { return _prev_top_at_mark_start != bottom(); }
 
-  // If "is_marked()" is true, then this is the index of the region in
-  // an array constructed at the end of marking of the regions in a
-  // "desirability" order.
-  int sort_index() {
-    return _sort_index;
-  }
-  void set_sort_index(int i) {
-    _sort_index = i;
-  }
-
   void init_top_at_conc_mark_count() {
     _top_at_conc_mark_count = bottom();
   }
@@ -824,10 +812,10 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // Currently there is only one place where this is called with
   // vo == UseMarkWord, which is to verify the marking during a
   // full GC.
-  void verify(bool allow_dirty, VerifyOption vo, bool *failures) const;
+  void verify(VerifyOption vo, bool *failures) const;
 
   // Override; it uses the "prev" marking information
-  virtual void verify(bool allow_dirty) const;
+  virtual void verify() const;
 };
 
 // HeapRegionClosure is used for iterating over regions.

@@ -146,7 +146,7 @@ public class HashMap<K,V>
     /**
      * The table, resized as necessary. Length MUST Always be a power of two.
      */
-    transient Entry[] table;
+    transient Entry<?,?>[] table;
 
     /**
      * The number of key-value mappings contained in this map.
@@ -311,16 +311,17 @@ public class HashMap<K,V>
      *
      * @see #put(Object, Object)
      */
+    @SuppressWarnings("unchecked")
     public V get(Object key) {
         if (key == null)
-            return getForNullKey();
+            return (V)getForNullKey();
         int hash = hash(key.hashCode());
-        for (Entry<K,V> e = table[indexFor(hash, table.length)];
+        for (Entry<?,?> e = table[indexFor(hash, table.length)];
              e != null;
              e = e.next) {
             Object k;
             if (e.hash == hash && ((k = e.key) == key || key.equals(k)))
-                return e.value;
+                return (V)e.value;
         }
         return null;
     }
@@ -332,8 +333,8 @@ public class HashMap<K,V>
      * operations (get and put), but incorporated with conditionals in
      * others.
      */
-    private V getForNullKey() {
-        for (Entry<K,V> e = table[0]; e != null; e = e.next) {
+    private Object getForNullKey() {
+        for (Entry<?,?> e = table[0]; e != null; e = e.next) {
             if (e.key == null)
                 return e.value;
         }
@@ -357,15 +358,16 @@ public class HashMap<K,V>
      * HashMap.  Returns null if the HashMap contains no mapping
      * for the key.
      */
+    @SuppressWarnings("unchecked")
     final Entry<K,V> getEntry(Object key) {
         int hash = (key == null) ? 0 : hash(key.hashCode());
-        for (Entry<K,V> e = table[indexFor(hash, table.length)];
+        for (Entry<?,?> e = table[indexFor(hash, table.length)];
              e != null;
              e = e.next) {
             Object k;
             if (e.hash == hash &&
                 ((k = e.key) == key || (key != null && key.equals(k))))
-                return e;
+                return (Entry<K,V>)e;
         }
         return null;
     }
@@ -388,7 +390,9 @@ public class HashMap<K,V>
             return putForNullKey(value);
         int hash = hash(key.hashCode());
         int i = indexFor(hash, table.length);
-        for (Entry<K,V> e = table[i]; e != null; e = e.next) {
+        @SuppressWarnings("unchecked")
+        Entry<K,V> e = (Entry<K,V>)table[i];
+        for(; e != null; e = e.next) {
             Object k;
             if (e.hash == hash && ((k = e.key) == key || key.equals(k))) {
                 V oldValue = e.value;
@@ -407,7 +411,9 @@ public class HashMap<K,V>
      * Offloaded version of put for null keys
      */
     private V putForNullKey(V value) {
-        for (Entry<K,V> e = table[0]; e != null; e = e.next) {
+        @SuppressWarnings("unchecked")
+        Entry<K,V> e = (Entry<K,V>)table[0];
+        for(; e != null; e = e.next) {
             if (e.key == null) {
                 V oldValue = e.value;
                 e.value = value;
@@ -435,7 +441,8 @@ public class HashMap<K,V>
          * clone or deserialize.  It will only happen for construction if the
          * input Map is a sorted map whose ordering is inconsistent w/ equals.
          */
-        for (Entry<K,V> e = table[i]; e != null; e = e.next) {
+        for (@SuppressWarnings("unchecked")
+             Entry<?,V> e = (Entry<?,V>)table[i]; e != null; e = e.next) {
             Object k;
             if (e.hash == hash &&
                 ((k = e.key) == key || (key != null && key.equals(k)))) {
@@ -467,14 +474,14 @@ public class HashMap<K,V>
      *        is irrelevant).
      */
     void resize(int newCapacity) {
-        Entry[] oldTable = table;
+        Entry<?,?>[] oldTable = table;
         int oldCapacity = oldTable.length;
         if (oldCapacity == MAXIMUM_CAPACITY) {
             threshold = Integer.MAX_VALUE;
             return;
         }
 
-        Entry[] newTable = new Entry[newCapacity];
+        Entry<?,?>[] newTable = new Entry<?,?>[newCapacity];
         transfer(newTable);
         table = newTable;
         threshold = (int)(newCapacity * loadFactor);
@@ -483,17 +490,18 @@ public class HashMap<K,V>
     /**
      * Transfers all entries from current table to newTable.
      */
-    void transfer(Entry[] newTable) {
-        Entry[] src = table;
+    @SuppressWarnings("unchecked")
+    void transfer(Entry<?,?>[] newTable) {
+        Entry<?,?>[] src = table;
         int newCapacity = newTable.length;
         for (int j = 0; j < src.length; j++) {
-            Entry<K,V> e = src[j];
+            Entry<K,V> e = (Entry<K,V>)src[j];
             if (e != null) {
                 src[j] = null;
                 do {
                     Entry<K,V> next = e.next;
                     int i = indexFor(e.hash, newCapacity);
-                    e.next = newTable[i];
+                    e.next = (Entry<K,V>)newTable[i];
                     newTable[i] = e;
                     e = next;
                 } while (e != null);
@@ -560,7 +568,8 @@ public class HashMap<K,V>
     final Entry<K,V> removeEntryForKey(Object key) {
         int hash = (key == null) ? 0 : hash(key.hashCode());
         int i = indexFor(hash, table.length);
-        Entry<K,V> prev = table[i];
+        @SuppressWarnings("unchecked")
+            Entry<K,V> prev = (Entry<K,V>)table[i];
         Entry<K,V> e = prev;
 
         while (e != null) {
@@ -591,11 +600,12 @@ public class HashMap<K,V>
         if (!(o instanceof Map.Entry))
             return null;
 
-        Map.Entry<K,V> entry = (Map.Entry<K,V>) o;
+        Map.Entry<?,?> entry = (Map.Entry<?,?>) o;
         Object key = entry.getKey();
         int hash = (key == null) ? 0 : hash(key.hashCode());
         int i = indexFor(hash, table.length);
-        Entry<K,V> prev = table[i];
+        @SuppressWarnings("unchecked")
+            Entry<K,V> prev = (Entry<K,V>)table[i];
         Entry<K,V> e = prev;
 
         while (e != null) {
@@ -623,7 +633,7 @@ public class HashMap<K,V>
      */
     public void clear() {
         modCount++;
-        Entry[] tab = table;
+        Entry<?,?>[] tab = table;
         for (int i = 0; i < tab.length; i++)
             tab[i] = null;
         size = 0;
@@ -641,9 +651,9 @@ public class HashMap<K,V>
         if (value == null)
             return containsNullValue();
 
-        Entry[] tab = table;
+        Entry<?,?>[] tab = table;
         for (int i = 0; i < tab.length ; i++)
-            for (Entry e = tab[i] ; e != null ; e = e.next)
+            for (Entry<?,?> e = tab[i] ; e != null ; e = e.next)
                 if (value.equals(e.value))
                     return true;
         return false;
@@ -653,9 +663,9 @@ public class HashMap<K,V>
      * Special-case code for containsValue with null argument
      */
     private boolean containsNullValue() {
-        Entry[] tab = table;
+        Entry<?,?>[] tab = table;
         for (int i = 0; i < tab.length ; i++)
-            for (Entry e = tab[i] ; e != null ; e = e.next)
+            for (Entry<?,?> e = tab[i] ; e != null ; e = e.next)
                 if (e.value == null)
                     return true;
         return false;
@@ -667,6 +677,7 @@ public class HashMap<K,V>
      *
      * @return a shallow copy of this map
      */
+    @SuppressWarnings("unchecked")
     public Object clone() {
         HashMap<K,V> result = null;
         try {
@@ -674,7 +685,7 @@ public class HashMap<K,V>
         } catch (CloneNotSupportedException e) {
             // assert false;
         }
-        result.table = new Entry[table.length];
+        result.table = new Entry<?,?>[table.length];
         result.entrySet = null;
         result.modCount = 0;
         result.size = 0;
@@ -717,7 +728,7 @@ public class HashMap<K,V>
         public final boolean equals(Object o) {
             if (!(o instanceof Map.Entry))
                 return false;
-            Map.Entry e = (Map.Entry)o;
+            Map.Entry<?,?> e = (Map.Entry<?,?>)o;
             Object k1 = getKey();
             Object k2 = e.getKey();
             if (k1 == k2 || (k1 != null && k1.equals(k2))) {
@@ -762,7 +773,8 @@ public class HashMap<K,V>
      * Subclass overrides this to alter the behavior of put method.
      */
     void addEntry(int hash, K key, V value, int bucketIndex) {
-        Entry<K,V> e = table[bucketIndex];
+        @SuppressWarnings("unchecked")
+            Entry<K,V> e = (Entry<K,V>)table[bucketIndex];
         table[bucketIndex] = new Entry<>(hash, key, value, e);
         if (size++ >= threshold)
             resize(2 * table.length);
@@ -777,21 +789,22 @@ public class HashMap<K,V>
      * clone, and readObject.
      */
     void createEntry(int hash, K key, V value, int bucketIndex) {
-        Entry<K,V> e = table[bucketIndex];
+        @SuppressWarnings("unchecked")
+            Entry<K,V> e = (Entry<K,V>)table[bucketIndex];
         table[bucketIndex] = new Entry<>(hash, key, value, e);
         size++;
     }
 
     private abstract class HashIterator<E> implements Iterator<E> {
-        Entry<K,V> next;        // next entry to return
+        Entry<?,?> next;        // next entry to return
         int expectedModCount;   // For fast-fail
         int index;              // current slot
-        Entry<K,V> current;     // current entry
+        Entry<?,?> current;     // current entry
 
         HashIterator() {
             expectedModCount = modCount;
             if (size > 0) { // advance to first entry
-                Entry[] t = table;
+                Entry<?,?>[] t = table;
                 while (index < t.length && (next = t[index++]) == null)
                     ;
             }
@@ -801,20 +814,21 @@ public class HashMap<K,V>
             return next != null;
         }
 
+        @SuppressWarnings("unchecked")
         final Entry<K,V> nextEntry() {
             if (modCount != expectedModCount)
                 throw new ConcurrentModificationException();
-            Entry<K,V> e = next;
+            Entry<?,?> e = next;
             if (e == null)
                 throw new NoSuchElementException();
 
             if ((next = e.next) == null) {
-                Entry[] t = table;
+                Entry<?,?>[] t = table;
                 while (index < t.length && (next = t[index++]) == null)
                     ;
             }
             current = e;
-            return e;
+            return (Entry<K,V>)e;
         }
 
         public void remove() {
@@ -965,7 +979,7 @@ public class HashMap<K,V>
         public boolean contains(Object o) {
             if (!(o instanceof Map.Entry))
                 return false;
-            Map.Entry<K,V> e = (Map.Entry<K,V>) o;
+            Map.Entry<?,?> e = (Map.Entry<?,?>) o;
             Entry<K,V> candidate = getEntry(e.getKey());
             return candidate != null && candidate.equals(e);
         }
@@ -1039,8 +1053,10 @@ public class HashMap<K,V>
 
         // Read the keys and values, and put the mappings in the HashMap
         for (int i=0; i<size; i++) {
-            K key = (K) s.readObject();
-            V value = (V) s.readObject();
+            @SuppressWarnings("unchecked")
+                K key = (K) s.readObject();
+            @SuppressWarnings("unchecked")
+                V value = (V) s.readObject();
             putForCreate(key, value);
         }
     }
