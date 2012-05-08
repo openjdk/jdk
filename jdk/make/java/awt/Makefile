@@ -57,7 +57,7 @@ LIBPROPS = $(_LIBPROPS:%=$(LIBDIR)/%)
 
 properties: $(LIBDIR) $(LIBPROPS)
 
-$(LIBDIR)/%.properties: $(PLATFORM_SRC)/lib/%.properties
+$(LIBDIR)/%.properties: $(PLATFORM_PROPERTIES)/%.properties
 	$(install-file)
 
 properties.clean :

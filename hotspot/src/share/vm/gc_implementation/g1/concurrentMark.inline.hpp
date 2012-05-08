@@ -49,7 +49,7 @@ inline void ConcurrentMark::count_region(MemRegion mr, HeapRegion* hr,
   HeapWord* start = mr.start();
   HeapWord* last = mr.last();
   size_t region_size_bytes = mr.byte_size();
-  size_t index = hr->hrs_index();
+  uint index = hr->hrs_index();
 
   assert(!hr->continuesHumongous(), "should not be HC region");
   assert(hr == g1h->heap_region_containing(start), "sanity");

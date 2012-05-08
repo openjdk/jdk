@@ -27,10 +27,13 @@ package sun.nio.ch.sctp;
 import java.net.SocketAddress;
 import com.sun.nio.sctp.Association;
 import com.sun.nio.sctp.PeerAddressChangeNotification;
+import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * An implementation of PeerAddressChangeNotification
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class PeerAddrChange extends PeerAddressChangeNotification
     implements SctpNotification
 {

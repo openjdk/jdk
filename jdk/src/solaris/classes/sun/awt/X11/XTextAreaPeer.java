@@ -168,6 +168,8 @@ class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
 
     public void dispose() {
         XToolkit.specialPeerMap.remove(jtext);
+        // visible caret has a timer thread which must be stopped
+        jtext.getCaret().setVisible(false);
         jtext.removeNotify();
         textPane.removeNotify();
         super.dispose();

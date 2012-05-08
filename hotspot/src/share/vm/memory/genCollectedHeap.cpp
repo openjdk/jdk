@@ -1247,18 +1247,18 @@ GCStats* GenCollectedHeap::gc_stats(int level) const {
   return _gens[level]->gc_stats();
 }
 
-void GenCollectedHeap::verify(bool allow_dirty, bool silent, VerifyOption option /* ignored */) {
+void GenCollectedHeap::verify(bool silent, VerifyOption option /* ignored */) {
   if (!silent) {
     gclog_or_tty->print("permgen ");
   }
-  perm_gen()->verify(allow_dirty);
+  perm_gen()->verify();
   for (int i = _n_gens-1; i >= 0; i--) {
     Generation* g = _gens[i];
     if (!silent) {
       gclog_or_tty->print(g->name());
       gclog_or_tty->print(" ");
     }
-    g->verify(allow_dirty);
+    g->verify();
   }
   if (!silent) {
     gclog_or_tty->print("remset ");
