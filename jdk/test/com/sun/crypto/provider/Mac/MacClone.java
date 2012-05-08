@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 0000000
+ * @bug 7087021
  * @summary MacClone
  * @author Jan Luehe
  */
@@ -56,7 +56,7 @@ public class MacClone {
         KeyGenerator kgen = KeyGenerator.getInstance("DES");
         SecretKey skey = kgen.generateKey();
 
-        mac = Mac.getInstance("HmacSHA1");
+        mac = Mac.getInstance("HmacSHA1", "SunJCE");
         mac.init(skey);
         macClone = (Mac)mac.clone();
         System.out.println(macClone.getProvider().toString());
