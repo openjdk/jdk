@@ -528,10 +528,12 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     if (which == end_pc_operand)  return ip + (is_64bit ? 8 : 4);
     // these asserts are somewhat nonsensical
 #ifndef _LP64
-    assert(which == imm_operand || which == disp32_operand, "");
+    assert(which == imm_operand || which == disp32_operand,
+           err_msg("which %d is_64_bit %d ip " INTPTR_FORMAT, which, is_64bit, ip));
 #else
     assert((which == call32_operand || which == imm_operand) && is_64bit ||
-           which == narrow_oop_operand && !is_64bit, "");
+           which == narrow_oop_operand && !is_64bit,
+           err_msg("which %d is_64_bit %d ip " INTPTR_FORMAT, which, is_64bit, ip));
 #endif // _LP64
     return ip;
 

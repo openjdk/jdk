@@ -709,9 +709,9 @@ const TypeFunc* OptoRuntime::Math_DD_D_Type() {
   return TypeFunc::make(domain, range);
 }
 
-//-------------- currentTimeMillis
+//-------------- currentTimeMillis, currentTimeNanos, etc
 
-const TypeFunc* OptoRuntime::current_time_millis_Type() {
+const TypeFunc* OptoRuntime::void_long_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(0);
   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+0, fields);

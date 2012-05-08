@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 
@@ -53,82 +54,89 @@ public class StripProperties {
         }
     }
 
-    private static List<String> parseOptions(String args[]) {
-        List<String> files = new ArrayList<String>();
+    private static List<String> infiles = new ArrayList<String>();
+    private static List<String> outfiles = new ArrayList<String>();
+
+    private static boolean parseOptions(String args[]) {
+        boolean ok = true;
+
         for ( int i = 0; i < args.length ; i++ ) {
-            if ( "-optionsfile".equals(args[i]) && i+1 < args.length ) {
-                String filename = args[++i];
+            if ( "-clean".equals(args[i]) && i+2 < args.length ) {
+                infiles.add(args[++i]);
+                outfiles.add(args[++i]);
+            } else if ( args[i].charAt(0)=='@') {
+                String filename = args[i].substring(1);
                 FileInputStream finput = null;
                 byte contents[] = null;
                 try {
                     finput = new FileInputStream(filename);
                     int byteCount = finput.available();
                     if ( byteCount <= 0 ) {
-                        error("The -optionsfile file is empty", null);
-                        files = null;
+                        error("The @file is empty", null);
+                        ok = false;
                     } else {
                         contents = new byte[byteCount];
                         int bytesRead = finput.read(contents);
                         if ( byteCount != bytesRead ) {
-                            error("Cannot read all of -optionsfile file", null);
-                            files = null;
+                            error("Cannot read all of @file", null);
+                            ok = false;
                         }
                     }
                 } catch ( IOException e ) {
                     error("cannot open " + filename, e);
-                    files = null;
+                    ok = false;
                 }
                 if ( finput != null ) {
                     try {
                         finput.close();
                     } catch ( IOException e ) {
-                        files = null;
+                        ok = false;
                         error("cannot close " + filename, e);
                     }
                 }
-                if ( files != null && contents != null ) {
+                if ( ok && contents != null ) {
                     String tokens[] = (new String(contents)).split("\\s+");
                     if ( tokens.length > 0 ) {
-                        List<String> ofiles = parseOptions(tokens);
-                        if ( ofiles != null ) {
-                            files.addAll(ofiles);
-                        } else {
-                            error("No files found in file", null);
-                            files = null;
-                        }
+                        ok = parseOptions(tokens);
                     }
                 }
-                if ( files == null ) {
+                if ( !ok ) {
                     break;
                 }
             } else {
-                files.add(args[i]);
+                infiles.add(args[i]);
+                outfiles.add(args[i]);
             }
         }
-        return files;
+        return ok;
     }
 
-    private static boolean stripFiles(List<String> files) {
+    private static boolean stripFiles(List<String> infiles, List<String> outfiles) {
         boolean ok = true;
-        for ( String file : files ) {
+        Iterator<String> inIter  = infiles.iterator();
+        Iterator<String> outIter = outfiles.iterator();
+
+        for (; inIter.hasNext(); ) {
+            String infile = inIter.next();
+            String outfile = outIter.next();
 
             Properties prop = new Properties();
             InputStream in = null;
             try {
-                in = new BufferedInputStream(new FileInputStream(file));
+                in = new BufferedInputStream(new FileInputStream(infile));
                 prop.load(in);
             } catch ( FileNotFoundException e ) {
-                error("Cannot access file " + file, e);
+                error("Cannot access file " + infile, e);
                 ok = false;
             } catch ( IOException e ) {
-                error("IO exception processing file " + file, e);
+                error("IO exception processing file " + infile, e);
                 ok = false;
             }
             if ( in != null ) {
                 try {
                     in.close();
                 } catch ( IOException e ) {
-                    error("IO exception closing file " + file, e);
+                    error("IO exception closing file " + infile, e);
                     ok = false;
                 }
             }
@@ -138,18 +146,18 @@ public class StripProperties {
 
             OutputStream out = null;
             try {
-                out = new FileOutputStream(file);
+                out = new FileOutputStream(outfile);
                 storeProperties(prop, out);
                 out.flush();
             } catch ( IOException e ) {
-                error("IO exception processing file " + file, e);
+                error("IO exception processing file " + outfile, e);
                 ok = false;
             }
             if ( out != null ) {
                 try {
                     out.close();
                 } catch ( IOException e ) {
-                    error("IO exception closing file " + file, e);
+                    error("IO exception closing file " + outfile, e);
                     ok = false;
                 }
             }
@@ -166,8 +174,8 @@ public class StripProperties {
      * @param args Names of properties files to process and replace contents
      */
     public static void main(String args[]) {
-        List<String> files = parseOptions(args);
-        if ( files == null || !stripFiles(files) ) {
+        boolean ok = parseOptions(args);
+        if ( !ok || !stripFiles(infiles, outfiles) ) {
             System.exit(1);
         }
     }

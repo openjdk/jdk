@@ -247,6 +247,7 @@ public class HashSet<E>
      *
      * @return a shallow copy of this set
      */
+    @SuppressWarnings("unchecked")
     public Object clone() {
         try {
             HashSet<E> newSet = (HashSet<E>) super.clone();
@@ -296,7 +297,7 @@ public class HashSet<E>
         // Read in HashMap capacity and load factor and create backing HashMap
         int capacity = s.readInt();
         float loadFactor = s.readFloat();
-        map = (((HashSet)this) instanceof LinkedHashSet ?
+        map = (((HashSet<?>)this) instanceof LinkedHashSet ?
                new LinkedHashMap<E,Object>(capacity, loadFactor) :
                new HashMap<E,Object>(capacity, loadFactor));
 
@@ -305,7 +306,8 @@ public class HashSet<E>
 
         // Read in all elements in the proper order.
         for (int i=0; i<size; i++) {
-            E e = (E) s.readObject();
+            @SuppressWarnings("unchecked")
+                E e = (E) s.readObject();
             map.put(e, PRESENT);
         }
     }
