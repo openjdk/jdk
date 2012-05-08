@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ void vmSymbols::initialize(TRAPS) {
   if (!UseSharedSpaces) {
     const char* string = &vm_symbol_bodies[0];
     for (int index = (int)FIRST_SID; index < (int)SID_LIMIT; index++) {
-      Symbol* sym = SymbolTable::new_symbol(string, CHECK);
+      Symbol* sym = SymbolTable::new_permanent_symbol(string, CHECK);
       _symbols[index] = sym;
       string += strlen(string); // skip string body
       string += 1;              // skip trailing null
@@ -128,7 +128,7 @@ void vmSymbols::initialize(TRAPS) {
     // Spot-check correspondence between strings, symbols, and enums:
     assert(_symbols[NO_SID] == NULL, "must be");
     const char* str = "java/lang/Object";
-    TempNewSymbol jlo = SymbolTable::new_symbol(str, CHECK);
+    TempNewSymbol jlo = SymbolTable::new_permanent_symbol(str, CHECK);
     assert(strncmp(str, (char*)jlo->base(), jlo->utf8_length()) == 0, "");
     assert(jlo == java_lang_Object(), "");
     SID sid = VM_SYMBOL_ENUM_NAME(java_lang_Object);
@@ -147,7 +147,7 @@ void vmSymbols::initialize(TRAPS) {
     // The string "format" happens (at the moment) not to be a vmSymbol,
     // though it is a method name in java.lang.String.
     str = "format";
-    TempNewSymbol fmt = SymbolTable::new_symbol(str, CHECK);
+    TempNewSymbol fmt = SymbolTable::new_permanent_symbol(str, CHECK);
     sid = find_sid(fmt);
     assert(sid == NO_SID, "symbol index works (negative test)");
   }

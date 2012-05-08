@@ -1,0 +1,213 @@
+#
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+FILES_compiled_properties = \
+        sun/util/resources/LocaleNames.properties \
+        sun/util/resources/LocaleNames_be.properties \
+        sun/util/resources/LocaleNames_bg.properties \
+        sun/util/resources/LocaleNames_ca.properties \
+        sun/util/resources/LocaleNames_cs.properties \
+        sun/util/resources/LocaleNames_da.properties \
+        sun/util/resources/LocaleNames_de.properties \
+        sun/util/resources/LocaleNames_el.properties \
+        sun/util/resources/LocaleNames_el_CY.properties \
+        sun/util/resources/LocaleNames_en.properties \
+        sun/util/resources/LocaleNames_en_MT.properties \
+        sun/util/resources/LocaleNames_en_PH.properties \
+        sun/util/resources/LocaleNames_en_SG.properties \
+        sun/util/resources/LocaleNames_es.properties \
+        sun/util/resources/LocaleNames_es_US.properties \
+        sun/util/resources/LocaleNames_et.properties \
+        sun/util/resources/LocaleNames_fi.properties \
+        sun/util/resources/LocaleNames_fr.properties \
+        sun/util/resources/LocaleNames_ga.properties \
+        sun/util/resources/LocaleNames_hr.properties \
+        sun/util/resources/LocaleNames_hu.properties \
+        sun/util/resources/LocaleNames_in.properties \
+        sun/util/resources/LocaleNames_is.properties \
+        sun/util/resources/LocaleNames_it.properties \
+        sun/util/resources/LocaleNames_lt.properties \
+        sun/util/resources/LocaleNames_lv.properties \
+        sun/util/resources/LocaleNames_mk.properties \
+        sun/util/resources/LocaleNames_ms.properties \
+        sun/util/resources/LocaleNames_mt.properties \
+        sun/util/resources/LocaleNames_nl.properties \
+        sun/util/resources/LocaleNames_no.properties \
+        sun/util/resources/LocaleNames_no_NO_NY.properties \
+        sun/util/resources/LocaleNames_pl.properties \
+        sun/util/resources/LocaleNames_pt.properties \
+        sun/util/resources/LocaleNames_pt_BR.properties \
+        sun/util/resources/LocaleNames_pt_PT.properties \
+        sun/util/resources/LocaleNames_ro.properties \
+        sun/util/resources/LocaleNames_ru.properties \
+        sun/util/resources/LocaleNames_sk.properties \
+        sun/util/resources/LocaleNames_sl.properties \
+        sun/util/resources/LocaleNames_sq.properties \
+        sun/util/resources/LocaleNames_sr.properties \
+        sun/util/resources/LocaleNames_sr_Latn.properties \
+        sun/util/resources/LocaleNames_sv.properties \
+        sun/util/resources/LocaleNames_tr.properties \
+        sun/util/resources/LocaleNames_uk.properties \
+	\
+        sun/util/resources/CalendarData.properties \
+        sun/util/resources/CalendarData_be.properties \
+        sun/util/resources/CalendarData_bg.properties \
+        sun/util/resources/CalendarData_ca.properties \
+        sun/util/resources/CalendarData_cs.properties \
+        sun/util/resources/CalendarData_da.properties \
+        sun/util/resources/CalendarData_de.properties \
+        sun/util/resources/CalendarData_el.properties \
+        sun/util/resources/CalendarData_el_CY.properties \
+        sun/util/resources/CalendarData_en.properties \
+        sun/util/resources/CalendarData_en_GB.properties \
+        sun/util/resources/CalendarData_en_IE.properties \
+        sun/util/resources/CalendarData_en_MT.properties \
+        sun/util/resources/CalendarData_es.properties \
+        sun/util/resources/CalendarData_es_ES.properties \
+        sun/util/resources/CalendarData_es_US.properties \
+        sun/util/resources/CalendarData_et.properties \
+        sun/util/resources/CalendarData_fi.properties \
+        sun/util/resources/CalendarData_fr.properties \
+        sun/util/resources/CalendarData_fr_CA.properties \
+        sun/util/resources/CalendarData_hr.properties \
+        sun/util/resources/CalendarData_hu.properties \
+        sun/util/resources/CalendarData_in_ID.properties \
+        sun/util/resources/CalendarData_is.properties \
+        sun/util/resources/CalendarData_it.properties \
+        sun/util/resources/CalendarData_lt.properties \
+        sun/util/resources/CalendarData_lv.properties \
+        sun/util/resources/CalendarData_mk.properties \
+        sun/util/resources/CalendarData_ms_MY.properties \
+        sun/util/resources/CalendarData_mt.properties \
+        sun/util/resources/CalendarData_mt_MT.properties \
+        sun/util/resources/CalendarData_nl.properties \
+        sun/util/resources/CalendarData_no.properties \
+        sun/util/resources/CalendarData_pl.properties \
+        sun/util/resources/CalendarData_pt.properties \
+        sun/util/resources/CalendarData_pt_PT.properties \
+        sun/util/resources/CalendarData_ro.properties \
+        sun/util/resources/CalendarData_ru.properties \
+        sun/util/resources/CalendarData_sk.properties \
+        sun/util/resources/CalendarData_sl.properties \
+        sun/util/resources/CalendarData_sq.properties \
+        sun/util/resources/CalendarData_sr.properties \
+        sun/util/resources/CalendarData_sr_Latn_BA.properties \
+        sun/util/resources/CalendarData_sr_Latn_ME.properties \
+        sun/util/resources/CalendarData_sr_Latn_RS.properties \
+        sun/util/resources/CalendarData_sv.properties \
+        sun/util/resources/CalendarData_tr.properties \
+        sun/util/resources/CalendarData_uk.properties \
+	\
+        sun/util/resources/CurrencyNames.properties \
+        sun/util/resources/CurrencyNames_be_BY.properties \
+        sun/util/resources/CurrencyNames_bg_BG.properties \
+        sun/util/resources/CurrencyNames_ca_ES.properties \
+        sun/util/resources/CurrencyNames_cs_CZ.properties \
+        sun/util/resources/CurrencyNames_da_DK.properties \
+        sun/util/resources/CurrencyNames_de.properties \
+        sun/util/resources/CurrencyNames_de_AT.properties \
+        sun/util/resources/CurrencyNames_de_CH.properties \
+        sun/util/resources/CurrencyNames_de_DE.properties \
+        sun/util/resources/CurrencyNames_de_GR.properties \
+        sun/util/resources/CurrencyNames_de_LU.properties \
+        sun/util/resources/CurrencyNames_el_CY.properties \
+        sun/util/resources/CurrencyNames_el_GR.properties \
+        sun/util/resources/CurrencyNames_en_AU.properties \
+        sun/util/resources/CurrencyNames_en_CA.properties \
+        sun/util/resources/CurrencyNames_en_GB.properties \
+        sun/util/resources/CurrencyNames_en_IE.properties \
+        sun/util/resources/CurrencyNames_en_IN.properties \
+        sun/util/resources/CurrencyNames_en_MT.properties \
+        sun/util/resources/CurrencyNames_en_NZ.properties \
+        sun/util/resources/CurrencyNames_en_PH.properties \
+        sun/util/resources/CurrencyNames_en_SG.properties \
+        sun/util/resources/CurrencyNames_en_US.properties \
+        sun/util/resources/CurrencyNames_en_ZA.properties \
+        sun/util/resources/CurrencyNames_es.properties \
+        sun/util/resources/CurrencyNames_es_AR.properties \
+        sun/util/resources/CurrencyNames_es_BO.properties \
+        sun/util/resources/CurrencyNames_es_CL.properties \
+        sun/util/resources/CurrencyNames_es_CO.properties \
+        sun/util/resources/CurrencyNames_es_CR.properties \
+        sun/util/resources/CurrencyNames_es_CU.properties \
+        sun/util/resources/CurrencyNames_es_DO.properties \
+        sun/util/resources/CurrencyNames_es_EC.properties \
+        sun/util/resources/CurrencyNames_es_ES.properties \
+        sun/util/resources/CurrencyNames_es_GT.properties \
+        sun/util/resources/CurrencyNames_es_HN.properties \
+        sun/util/resources/CurrencyNames_es_MX.properties \
+        sun/util/resources/CurrencyNames_es_NI.properties \
+        sun/util/resources/CurrencyNames_es_PA.properties \
+        sun/util/resources/CurrencyNames_es_PE.properties \
+        sun/util/resources/CurrencyNames_es_PR.properties \
+        sun/util/resources/CurrencyNames_es_PY.properties \
+        sun/util/resources/CurrencyNames_es_SV.properties \
+        sun/util/resources/CurrencyNames_es_US.properties \
+        sun/util/resources/CurrencyNames_es_UY.properties \
+        sun/util/resources/CurrencyNames_es_VE.properties \
+        sun/util/resources/CurrencyNames_et_EE.properties \
+        sun/util/resources/CurrencyNames_fi_FI.properties \
+        sun/util/resources/CurrencyNames_fr.properties \
+        sun/util/resources/CurrencyNames_fr_BE.properties \
+        sun/util/resources/CurrencyNames_fr_CA.properties \
+        sun/util/resources/CurrencyNames_fr_CH.properties \
+        sun/util/resources/CurrencyNames_fr_FR.properties \
+        sun/util/resources/CurrencyNames_fr_LU.properties \
+        sun/util/resources/CurrencyNames_ga_IE.properties \
+        sun/util/resources/CurrencyNames_hr_HR.properties \
+        sun/util/resources/CurrencyNames_hu_HU.properties \
+        sun/util/resources/CurrencyNames_in_ID.properties \
+        sun/util/resources/CurrencyNames_is_IS.properties \
+        sun/util/resources/CurrencyNames_it.properties \
+        sun/util/resources/CurrencyNames_it_CH.properties \
+        sun/util/resources/CurrencyNames_it_IT.properties \
+        sun/util/resources/CurrencyNames_lt_LT.properties \
+        sun/util/resources/CurrencyNames_lv_LV.properties \
+        sun/util/resources/CurrencyNames_mk_MK.properties \
+        sun/util/resources/CurrencyNames_ms_MY.properties \
+        sun/util/resources/CurrencyNames_mt_MT.properties \
+        sun/util/resources/CurrencyNames_nl_BE.properties \
+        sun/util/resources/CurrencyNames_nl_NL.properties \
+        sun/util/resources/CurrencyNames_no_NO.properties \
+        sun/util/resources/CurrencyNames_pl_PL.properties \
+        sun/util/resources/CurrencyNames_pt.properties \
+        sun/util/resources/CurrencyNames_pt_BR.properties \
+        sun/util/resources/CurrencyNames_pt_PT.properties \
+        sun/util/resources/CurrencyNames_ro_RO.properties \
+        sun/util/resources/CurrencyNames_ru_RU.properties \
+        sun/util/resources/CurrencyNames_sk_SK.properties \
+        sun/util/resources/CurrencyNames_sl_SI.properties \
+        sun/util/resources/CurrencyNames_sq_AL.properties \
+        sun/util/resources/CurrencyNames_sr_BA.properties \
+        sun/util/resources/CurrencyNames_sr_CS.properties \
+        sun/util/resources/CurrencyNames_sr_ME.properties \
+        sun/util/resources/CurrencyNames_sr_RS.properties \
+        sun/util/resources/CurrencyNames_sr_Latn_BA.properties \
+        sun/util/resources/CurrencyNames_sr_Latn_ME.properties \
+        sun/util/resources/CurrencyNames_sr_Latn_RS.properties \
+        sun/util/resources/CurrencyNames_sv.properties \
+        sun/util/resources/CurrencyNames_sv_SE.properties \
+        sun/util/resources/CurrencyNames_tr_TR.properties \
+        sun/util/resources/CurrencyNames_uk_UA.properties

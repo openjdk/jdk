@@ -31,6 +31,7 @@ import java.awt.Point;
 import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
 import java.awt.peer.TextFieldPeer;
 
 import javax.swing.JPasswordField;
@@ -95,6 +96,21 @@ final class LWTextFieldPeer
     public void actionPerformed(final ActionEvent e) {
         postEvent(new ActionEvent(getTarget(), ActionEvent.ACTION_PERFORMED,
                                   getText(), e.getWhen(), e.getModifiers()));
+    }
+
+    /**
+     * Restoring native behavior. We should sets the selection range to zero,
+     * when component lost its focus.
+     *
+     * @param e the focus event
+     */
+    @Override
+    protected void handleJavaFocusEvent(final FocusEvent e) {
+        if (e.getID() == FocusEvent.FOCUS_LOST) {
+            // In order to de-select the selection
+            setCaretPosition(0);
+        }
+        super.handleJavaFocusEvent(e);
     }
 
     private final class JTextAreaDelegate extends JPasswordField {

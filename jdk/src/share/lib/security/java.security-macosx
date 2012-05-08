@@ -124,7 +124,7 @@ keystore.type=jks
 # passed to checkPackageAccess unless the
 # corresponding RuntimePermission ("accessClassInPackage."+package) has
 # been granted.
-package.access=sun.,com.sun.xml.internal.ws.,com.sun.xml.internal.bind.,com.sun.imageio.,apple.
+package.access=sun.,com.sun.xml.internal.ws.,com.sun.xml.internal.bind.,com.sun.imageio.,apple.,com.sun.org.apache.xerces.internal.utils.,com.sun.org.apache.xalan.internal.utils.
 
 #
 # List of comma-separated packages that start with or equal this string

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,6 +143,7 @@ public abstract class ImageWatched {
         if (iw != null && !isWatcher(iw)) {
             watcherList = new WeakLink(iw, watcherList);
         }
+        watcherList = watcherList.removeWatcher(null);
     }
 
     public synchronized boolean isWatcher(ImageObserver iw) {
