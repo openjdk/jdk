@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class Basic {
             checkSupported(fs, "posix", "unix", "owner", "acl", "user");
         if (os.equals("Linux"))
             checkSupported(fs, "posix", "unix", "owner", "dos", "user");
-        if (os.startsWith("Mac OS"))
+        if (os.contains("OS X"))
             checkSupported(fs, "posix", "unix", "owner");
         if (os.equals("Windows"))
             checkSupported(fs, "owner", "dos", "acl", "user");

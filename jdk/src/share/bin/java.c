@@ -695,6 +695,13 @@ SetClassPath(const char *s)
     char *def;
     const char *orig = s;
     static const char format[] = "-Djava.class.path=%s";
+    /*
+     * usually we should not get a null pointer, but there are cases where
+     * we might just get one, in which case we simply ignore it, and let the
+     * caller deal with it
+     */
+    if (s == NULL)
+        return;
     s = JLI_WildcardExpandClasspath(s);
     def = JLI_MemAlloc(sizeof(format)
                        - 2 /* strlen("%s") */

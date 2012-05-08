@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-
-
 // Global Structures
 struct jar;
 struct gunzip;
@@ -70,6 +67,9 @@ struct cpool {
   cpindex tag_index[CONSTANT_Limit];
   ptrlist tag_extras[CONSTANT_Limit];
 
+  int     tag_group_count[CONSTANT_GroupLimit - CONSTANT_GroupFirst];
+  cpindex tag_group_index[CONSTANT_GroupLimit - CONSTANT_GroupFirst];
+
   cpindex* member_indexes;   // indexed by 2*CONSTANT_Class.inord
   cpindex* getFieldIndex(entry* classRef);
   cpindex* getMethodIndex(entry* classRef);
@@ -82,6 +82,7 @@ struct cpool {
 
   int outputIndexLimit;  // index limit after renumbering
   ptrlist outputEntries; // list of entry* needing output idx assigned
+  ptrlist requested_bsms; // which bsms need output?
 
   entry** hashTab;
   uint    hashTabLength;
@@ -100,24 +101,36 @@ struct cpool {
   entry* sym[s_LIMIT];
 
   // read counts from hdr, allocate main arrays
-  enum { NUM_COUNTS = 12 };
-  void init(unpacker* u, int counts[NUM_COUNTS]);
+  void init(unpacker* u, int counts[CONSTANT_Limit]);
 
   // pointer to outer unpacker, for error checks etc.
   unpacker* u;
 
   int getCount(byte tag) {
-    assert((uint)tag < CONSTANT_Limit);
-    return tag_count[tag];
+    if ((uint)tag >= CONSTANT_GroupFirst) {
+      assert((uint)tag < CONSTANT_GroupLimit);
+      return tag_group_count[(uint)tag - CONSTANT_GroupFirst];
+    } else {
+      assert((uint)tag < CONSTANT_Limit);
+      return tag_count[(uint)tag];
+    }
   }
   cpindex* getIndex(byte tag) {
-    assert((uint)tag < CONSTANT_Limit);
-    return &tag_index[tag];
+    if ((uint)tag >= CONSTANT_GroupFirst) {
+      assert((uint)tag < CONSTANT_GroupLimit);
+      return &tag_group_index[(uint)tag - CONSTANT_GroupFirst];
+    } else {
+      assert((uint)tag < CONSTANT_Limit);
+      return &tag_index[(uint)tag];
+    }
   }
+
   cpindex* getKQIndex();  // uses cur_descr
 
   void expandSignatures();
+  void initGroupIndexes();
   void initMemberIndexes();
+  int  initLoadableValues(entry** loadable_entries);
 
   void computeOutputOrder();
   void computeOutputIndexes();
@@ -234,6 +247,7 @@ struct unpacker {
   int       cur_descr_flags;  // flags corresponding to cur_descr
   int       cur_class_minver, cur_class_majver;
   bool      cur_class_has_local_ics;
+  int       cur_class_local_bsm_count;
   fillbytes cur_classfile_head;
   fillbytes cur_classfile_tail;
   int       files_written;   // also tells which file we're working on
@@ -412,7 +426,7 @@ struct unpacker {
   void         abort(const char* s = null);
   bool         aborting() { return abort_message != null; }
   static unpacker* current();  // find current instance
-
+  void checkLegacy(const char* name);
   // Output management
   void set_output(fillbytes* which) {
     assert(wp == null);
@@ -464,6 +478,8 @@ struct unpacker {
   void write_bc_ops();
   void write_members(int num, int attrc);  // attrc=ATTR_CONTEXT_FIELD/METHOD
   int  write_attrs(int attrc, julong indexBits);
+  int  write_ics(int naOffset, int na);
+  int  write_bsms(int naOffset, int na);
 
   // The readers
   void read_bands();
@@ -484,6 +500,9 @@ struct unpacker {
   void read_single_refs(band& cp_band, byte refTag, entry* cpMap, int len);
   void read_double_refs(band& cp_band, byte ref1Tag, byte ref2Tag, entry* cpMap, int len);
   void read_signature_values(entry* cpMap, int len);
+  void read_method_handle(entry* cpMap, int len);
+  void read_method_type(entry* cpMap, int len);
+  void read_bootstrap_methods(entry* cpMap, int len);
 };
 
 inline void cpool::abort(const char* msg) { u->abort(msg); }

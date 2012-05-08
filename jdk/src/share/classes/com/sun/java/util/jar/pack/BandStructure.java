@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1372,17 +1372,17 @@ class BandStructure {
     protected long archiveSize1; // size reported in archive_header
     protected int  archiveNextCount; // reported in archive_header
 
-    static final int AH_LENGTH_0 = 3; //minver, majver, options
-    static final int AH_ARCHIVE_SIZE_HI = 0;
-    static final int AH_ARCHIVE_SIZE_LO = 1;
-    static final int AH_LENGTH_S = 2; //optional size hi/lo
-    static final int AH_LENGTH = 26;  // mentioned in spec
+    static final int AH_LENGTH_0 = 3;     // archive_header_0 = {minver, majver, options}
+    static final int AH_LENGTH_MIN = 15;  // observed in spec {header_0[3], cp_counts[8], class_counts[4]}
+    // Length contributions from optional archive size fields:
+    static final int AH_LENGTH_S = 2; // archive_header_S = optional {size_hi, size_lo}
+    static final int AH_ARCHIVE_SIZE_HI = 0; // offset in archive_header_S
+    static final int AH_ARCHIVE_SIZE_LO = 1; // offset in archive_header_S
     // Length contributions from optional header fields:
-    static final int AH_FILE_HEADER_LEN = 5; // sizehi/lo/next/modtime/files
-    static final int AH_SPECIAL_FORMAT_LEN = 2; // layouts/band-headers
-    static final int AH_CP_NUMBER_LEN = 4;  // int/float/long/double
-    static final int AH_LENGTH_MIN = AH_LENGTH
-        -(AH_SPECIAL_FORMAT_LEN+AH_FILE_HEADER_LEN+AH_CP_NUMBER_LEN);
+    static final int AH_FILE_HEADER_LEN = 5; // file_counts = {{size_hi, size_lo}, next, modtime, files}
+    static final int AH_SPECIAL_FORMAT_LEN = 2; // special_counts = {layouts, band_headers}
+    static final int AH_CP_NUMBER_LEN = 4;  // cp_number_counts = {int, float, long, double}
+    static final int AH_CP_EXTRA_LEN = 4;  // cp_attr_counts = {MH, MT, InDy, BSM}
 
     // Common structure of attribute band groups:
     static final int AB_FLAGS_HI = 0;
@@ -1446,6 +1446,14 @@ class BandStructure {
     CPRefBand cp_Method_desc = cp_bands.newCPRefBand("cp_Method_desc", UDELTA5, CONSTANT_NameandType);
     CPRefBand cp_Imethod_class = cp_bands.newCPRefBand("cp_Imethod_class", CONSTANT_Class);
     CPRefBand cp_Imethod_desc = cp_bands.newCPRefBand("cp_Imethod_desc", UDELTA5, CONSTANT_NameandType);
+    IntBand   cp_MethodHandle_refkind = cp_bands.newIntBand("cp_MethodHandle_refkind", DELTA5);
+    CPRefBand cp_MethodHandle_member = cp_bands.newCPRefBand("cp_MethodHandle_member", UDELTA5, CONSTANT_AnyMember);
+    CPRefBand cp_MethodType = cp_bands.newCPRefBand("cp_MethodType", UDELTA5, CONSTANT_Signature);
+    CPRefBand cp_BootstrapMethod_ref = cp_bands.newCPRefBand("cp_BootstrapMethod_ref", DELTA5, CONSTANT_MethodHandle);
+    IntBand   cp_BootstrapMethod_arg_count = cp_bands.newIntBand("cp_BootstrapMethod_arg_count", UDELTA5);
+    CPRefBand cp_BootstrapMethod_arg = cp_bands.newCPRefBand("cp_BootstrapMethod_arg", DELTA5, CONSTANT_LoadableValue);
+    CPRefBand cp_InvokeDynamic_spec = cp_bands.newCPRefBand("cp_InvokeDynamic_spec", DELTA5, CONSTANT_BootstrapMethod);
+    CPRefBand cp_InvokeDynamic_desc = cp_bands.newCPRefBand("cp_InvokeDynamic_desc", UDELTA5, CONSTANT_NameandType);
 
     // bands for carrying attribute definitions:
     MultiBand attr_definition_bands = all_bands.newMultiBand("(attr_definition_bands)", UNSIGNED5);
@@ -1481,7 +1489,7 @@ class BandStructure {
     IntBand field_attr_calls = field_attr_bands.newIntBand("field_attr_calls");
 
     // bands for predefined field attributes
-    CPRefBand field_ConstantValue_KQ = field_attr_bands.newCPRefBand("field_ConstantValue_KQ", CONSTANT_Literal);
+    CPRefBand field_ConstantValue_KQ = field_attr_bands.newCPRefBand("field_ConstantValue_KQ", CONSTANT_FieldSpecific);
     CPRefBand field_Signature_RS = field_attr_bands.newCPRefBand("field_Signature_RS", CONSTANT_Signature);
     MultiBand field_metadata_bands = field_attr_bands.newMultiBand("(field_metadata_bands)", UNSIGNED5);
 
@@ -1585,12 +1593,14 @@ class BandStructure {
     CPRefBand bc_longref = bc_bands.newCPRefBand("bc_longref", DELTA5, CONSTANT_Long);
     CPRefBand bc_doubleref = bc_bands.newCPRefBand("bc_doubleref", DELTA5, CONSTANT_Double);
     CPRefBand bc_stringref = bc_bands.newCPRefBand("bc_stringref", DELTA5, CONSTANT_String);
+    CPRefBand bc_loadablevalueref = bc_bands.newCPRefBand("bc_loadablevalueref", DELTA5, CONSTANT_LoadableValue);
 
     // nulls produced by bc_classref are taken to mean the current class
     CPRefBand bc_classref = bc_bands.newCPRefBand("bc_classref", UNSIGNED5, CONSTANT_Class, NULL_IS_OK);   // new, *anew*, c*cast, i*of, ldc
     CPRefBand bc_fieldref = bc_bands.newCPRefBand("bc_fieldref", DELTA5, CONSTANT_Fieldref);   // get*, put*
     CPRefBand bc_methodref = bc_bands.newCPRefBand("bc_methodref", CONSTANT_Methodref); // invoke[vs]*
     CPRefBand bc_imethodref = bc_bands.newCPRefBand("bc_imethodref", DELTA5, CONSTANT_InterfaceMethodref); // invokeinterface
+    CPRefBand bc_indyref = bc_bands.newCPRefBand("bc_indyref", DELTA5, CONSTANT_InvokeDynamic); // invokedynamic
 
     // _self_linker_op family
     CPRefBand bc_thisfield = bc_bands.newCPRefBand("bc_thisfield", CONSTANT_None);     // any field within cur. class
@@ -1633,7 +1643,7 @@ class BandStructure {
 
     protected void setBandIndex(CPRefBand b, byte which) {
         Object[] need = { b, Byte.valueOf(which) };
-        if (which == CONSTANT_Literal) {
+        if (which == CONSTANT_FieldSpecific) {
             // I.e., attribute layouts KQ (no null) or KQN (null ok).
             allKQBands.add(b);
         } else if (needPredefIndex != null) {
@@ -1856,11 +1866,19 @@ class BandStructure {
         attrClassFileVersionMask = (1<<CLASS_ATTR_ClassFile_version);
     }
 
-    private void adjustToMajver() {
+    private void adjustToMajver() throws IOException {
         if (getPackageMajver() < JAVA6_PACKAGE_MAJOR_VERSION) {
             if (verbose > 0)  Utils.log.fine("Legacy package version");
             // Revoke definition of pre-1.6 attribute type.
             undefineAttribute(CODE_ATTR_StackMapTable, ATTR_CONTEXT_CODE);
+        }
+        if (getPackageMajver() < JAVA7_PACKAGE_MAJOR_VERSION) {
+            if (testBit(archiveOptions, AO_HAVE_CP_EXTRAS))
+                // this bit was reserved for future use in previous versions
+                throw new IOException("Format bits for Java 7 must be zero in previous releases");
+        }
+        if (testBit(archiveOptions, AO_UNUSED_MBZ)) {
+            throw new IOException("High archive option bits are reserved and must be zero: "+Integer.toHexString(archiveOptions));
         }
     }
 
@@ -2323,7 +2341,9 @@ class BandStructure {
             return bc_methodref;
         case CONSTANT_InterfaceMethodref:
             return bc_imethodref;
-        case CONSTANT_Literal:
+        case CONSTANT_InvokeDynamic:
+            return bc_indyref;
+        case CONSTANT_LoadableValue:
             switch (bc) {
             case _ildc: case _ildc_w:
                 return bc_intref;
@@ -2333,10 +2353,12 @@ class BandStructure {
                 return bc_longref;
             case _dldc2_w:
                 return bc_doubleref;
-            case _aldc: case _aldc_w:
+            case _sldc: case _sldc_w:
                 return bc_stringref;
             case _cldc: case _cldc_w:
                 return bc_classref;
+            case _qldc: case _qldc_w:
+                return bc_loadablevalueref;
             }
             break;
         }
@@ -2623,15 +2645,23 @@ class BandStructure {
     }
 
     static void printArrayTo(PrintStream ps, Entry[] cpMap, int start, int end) {
+        printArrayTo(ps, cpMap, start, end, false);
+    }
+    static void printArrayTo(PrintStream ps, Entry[] cpMap, int start, int end, boolean showTags) {
         StringBuffer buf = new StringBuffer();
         int len = end-start;
         for (int i = 0; i < len; i++) {
-            String s = cpMap[start+i].stringValue();
+            Entry e = cpMap[start+i];
+            ps.print(start+i); ps.print("=");
+            if (showTags) { ps.print(e.tag); ps.print(":"); }
+            String s = e.stringValue();
             buf.setLength(0);
             for (int j = 0; j < s.length(); j++) {
                 char ch = s.charAt(j);
                 if (!(ch < ' ' || ch > '~' || ch == '\\')) {
                     buf.append(ch);
+                } else if (ch == '\\') {
+                    buf.append("\\\\");
                 } else if (ch == '\n') {
                     buf.append("\\n");
                 } else if (ch == '\t') {
@@ -2639,7 +2669,8 @@ class BandStructure {
                 } else if (ch == '\r') {
                     buf.append("\\r");
                 } else {
-                    buf.append("\\x"+Integer.toHexString(ch));
+                    String str = "000"+Integer.toHexString(ch);
+                    buf.append("\\u"+str.substring(str.length()-4));
                 }
             }
             ps.println(buf);
