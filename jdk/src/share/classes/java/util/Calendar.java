@@ -840,7 +840,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * of a Locale.
      */
     private static final ConcurrentMap<Locale, int[]> cachedLocaleData
-        = new ConcurrentHashMap<Locale, int[]>(3);
+        = new ConcurrentHashMap<>(3);
 
     // Special values of stamp[]
     /**
@@ -1499,7 +1499,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         DateFormatSymbols symbols = DateFormatSymbols.getInstance(locale);
         String[] strings = getFieldStrings(field, style, symbols);
         if (strings != null) {
-            Map<String,Integer> names = new HashMap<String,Integer>();
+            Map<String,Integer> names = new HashMap<>();
             for (int i = 0; i < strings.length; i++) {
                 if (strings[i].length() == 0) {
                     continue;

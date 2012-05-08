@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -696,8 +696,8 @@ void OneContigSpaceCardGeneration::record_spaces_top() {
   the_space()->set_top_for_allocations();
 }
 
-void OneContigSpaceCardGeneration::verify(bool allow_dirty) {
-  the_space()->verify(allow_dirty);
+void OneContigSpaceCardGeneration::verify() {
+  the_space()->verify();
 }
 
 void OneContigSpaceCardGeneration::print_on(outputStream* st)  const {

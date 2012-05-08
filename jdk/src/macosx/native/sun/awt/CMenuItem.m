@@ -125,11 +125,8 @@ AWT_ASSERT_NOT_APPKIT_THREAD;
 
     [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
         AWT_ASSERT_APPKIT_THREAD;
-
-        if (![theKeyEquivalent isEqualToString:@""]) {
-            [fMenuItem setKeyEquivalent:theKeyEquivalent];
-            [fMenuItem setKeyEquivalentModifierMask:modifierMask];
-        }
+        [fMenuItem setKeyEquivalent:theKeyEquivalent];
+        [fMenuItem setKeyEquivalentModifierMask:modifierMask];
         [fMenuItem setTitle:theLabel];
     }];
 }

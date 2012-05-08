@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -49,8 +51,8 @@ class KQueueSelectorImpl
     // Count of registered descriptors (including interrupt)
     private int totalChannels;
 
-    // Map from file descriptors to selection keys
-    private HashMap<Integer,SelectionKeyImpl> fdToKey;
+    // Map from a file descriptor to an entry containing the selection key
+    private HashMap<Integer,MapEntry> fdMap;
 
     // True if this Selector has been closed
     private boolean closed = false;
@@ -58,6 +60,20 @@ class KQueueSelectorImpl
     // Lock for interrupt triggering and clearing
     private Object interruptLock = new Object();
     private boolean interruptTriggered = false;
+
+    // used by updateSelectedKeys to handle cases where the same file
+    // descriptor is polled by more than one filter
+    private long updateCount;
+
+    // Used to map file descriptors to a selection key and "update count"
+    // (see updateSelectedKeys for usage).
+    private static class MapEntry {
+        SelectionKeyImpl ski;
+        long updateCount;
+        MapEntry(SelectionKeyImpl ski) {
+            this.ski = ski;
+        }
+    }
 
     /**
      * Package private constructor called by factory method in
@@ -70,7 +86,7 @@ class KQueueSelectorImpl
         fd1 = (int)fds;
         kqueueWrapper = new KQueueArrayWrapper();
         kqueueWrapper.initInterrupt(fd0, fd1);
-        fdToKey = new HashMap<>();
+        fdMap = new HashMap<>();
         totalChannels = 1;
     }
 
@@ -82,8 +98,6 @@ class KQueueSelectorImpl
         if (closed)
             throw new ClosedSelectorException();
         processDeregisterQueue();
-        if (timeout == 0  &&  totalChannels == 1)
-            return 0;
         try {
             begin();
             entries = kqueueWrapper.poll(timeout);
@@ -94,10 +108,9 @@ class KQueueSelectorImpl
         return updateSelectedKeys(entries);
     }
 
-
     /**
-     * Update the keys whose fd's have been selected by the devpoll
-     * driver. Add the ready keys to the ready queue.
+     * Update the keys whose fd's have been selected by kqueue.
+     * Add the ready keys to the selected key set.
      * If the interrupt fd has been selected, drain it and clear the interrupt.
      */
     private int updateSelectedKeys(int entries)
@@ -106,24 +119,42 @@ class KQueueSelectorImpl
         int numKeysUpdated = 0;
         boolean interrupted = false;
 
+        // A file descriptor may be registered with kqueue with more than one
+        // filter and so there may be more than one event for a fd. The update
+        // count in the MapEntry tracks when the fd was last updated and this
+        // ensures that the ready ops are updated rather than replaced by a
+        // second or subsequent event.
+        updateCount++;
+
         for (int i = 0; i < entries; i++) {
             int nextFD = kqueueWrapper.getDescriptor(i);
             if (nextFD == fd0) {
                 interrupted = true;
             } else {
-                SelectionKeyImpl ski = fdToKey.get(new Integer(nextFD));
-                // ski is null in the case of an interrupt
-                if (ski != null) {
+                MapEntry me = fdMap.get(Integer.valueOf(nextFD));
+
+                // entry is null in the case of an interrupt
+                if (me != null) {
                     int rOps = kqueueWrapper.getReventOps(i);
+                    SelectionKeyImpl ski = me.ski;
                     if (selectedKeys.contains(ski)) {
-                        if (ski.channel.translateAndSetReadyOps(rOps, ski)) {
-                            numKeysUpdated++;
+                        // first time this file descriptor has been encountered on this
+                        // update?
+                        if (me.updateCount != updateCount) {
+                            if (ski.channel.translateAndSetReadyOps(rOps, ski)) {
+                                numKeysUpdated++;
+                                me.updateCount = updateCount;
+                            }
+                        } else {
+                            // ready ops have already been set on this update
+                            ski.channel.translateAndUpdateReadyOps(rOps, ski);
                         }
                     } else {
                         ski.channel.translateAndSetReadyOps(rOps, ski);
-                        if ((ski.readyOps() & ski.interestOps()) != 0) {
+                        if ((ski.nioReadyOps() & ski.nioInterestOps()) != 0) {
                             selectedKeys.add(ski);
                             numKeysUpdated++;
+                            me.updateCount = updateCount;
                         }
                     }
                 }
@@ -137,7 +168,6 @@ class KQueueSelectorImpl
                 interruptTriggered = false;
             }
         }
-
         return numKeysUpdated;
     }
 
@@ -145,6 +175,12 @@ class KQueueSelectorImpl
     protected void implClose() throws IOException {
         if (!closed) {
             closed = true;
+
+            // prevent further wakeup
+            synchronized (interruptLock) {
+                interruptTriggered = true;
+            }
+
             FileDispatcherImpl.closeIntFD(fd0);
             FileDispatcherImpl.closeIntFD(fd1);
             if (kqueueWrapper != null) {
@@ -172,8 +208,10 @@ class KQueueSelectorImpl
 
 
     protected void implRegister(SelectionKeyImpl ski) {
+        if (closed)
+            throw new ClosedSelectorException();
         int fd = IOUtil.fdVal(ski.channel.getFD());
-        fdToKey.put(new Integer(fd), ski);
+        fdMap.put(Integer.valueOf(fd), new MapEntry(ski));
         totalChannels++;
         keys.add(ski);
     }
@@ -181,7 +219,7 @@ class KQueueSelectorImpl
 
     protected void implDereg(SelectionKeyImpl ski) throws IOException {
         int fd = ski.channel.getFDVal();
-        fdToKey.remove(new Integer(fd));
+        fdMap.remove(Integer.valueOf(fd));
         kqueueWrapper.release(fd);
         totalChannels--;
         keys.remove(ski);
@@ -194,6 +232,8 @@ class KQueueSelectorImpl
 
 
     public void putEventOps(SelectionKeyImpl ski, int ops) {
+        if (closed)
+            throw new ClosedSelectorException();
         int fd = IOUtil.fdVal(ski.channel.getFD());
         kqueueWrapper.setInterest(fd, ops);
     }

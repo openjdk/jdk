@@ -32,7 +32,6 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Type.*;
-import com.sun.tools.javac.code.Type.ForAll.ConstraintKind;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.Resolve.InapplicableMethodException;
 import com.sun.tools.javac.comp.Resolve.VerboseResolutionMode;
@@ -122,84 +121,21 @@ public class Infer {
 
     /** A mapping that turns type variables into undetermined type variables.
      */
-    Mapping fromTypeVarFun = new Mapping("fromTypeVarFun") {
-            public Type apply(Type t) {
-                if (t.tag == TYPEVAR) return new UndetVar(t);
-                else return t.map(this);
-            }
-        };
-
-    /** A mapping that returns its type argument with every UndetVar replaced
-     *  by its `inst' field. Throws a NoInstanceException
-     *  if this not possible because an `inst' field is null.
-     *  Note: mutually referring undertvars will be left uninstantiated
-     *  (that is, they will be replaced by the underlying type-variable).
-     */
-
-    Mapping getInstFun = new Mapping("getInstFun") {
-            public Type apply(Type t) {
-                switch (t.tag) {
-                    case UNKNOWN:
-                        throw ambiguousNoInstanceException
-                            .setMessage("undetermined.type");
-                    case UNDETVAR:
-                        UndetVar that = (UndetVar) t;
-                        if (that.inst == null)
-                            throw ambiguousNoInstanceException
-                                .setMessage("type.variable.has.undetermined.type",
-                                            that.qtype);
-                        return isConstraintCyclic(that) ?
-                            that.qtype :
-                            apply(that.inst);
-                        default:
-                            return t.map(this);
+    List<Type> makeUndetvars(List<Type> tvars) {
+        List<Type> undetvars = Type.map(tvars, fromTypeVarFun);
+        for (Type t : undetvars) {
+            UndetVar uv = (UndetVar)t;
+            uv.hibounds = types.getBounds((TypeVar)uv.qtype);
+        }
+        return undetvars;
+    }
+    //where
+            Mapping fromTypeVarFun = new Mapping("fromTypeVarFun") {
+                public Type apply(Type t) {
+                    if (t.tag == TYPEVAR) return new UndetVar(t);
+                    else return t.map(this);
                 }
-            }
-
-            private boolean isConstraintCyclic(UndetVar uv) {
-                Types.UnaryVisitor<Boolean> constraintScanner =
-                        new Types.UnaryVisitor<Boolean>() {
-
-                    List<Type> seen = List.nil();
-
-                    Boolean visit(List<Type> ts) {
-                        for (Type t : ts) {
-                            if (visit(t)) return true;
-                        }
-                        return false;
-                    }
-
-                    public Boolean visitType(Type t, Void ignored) {
-                        return false;
-                    }
-
-                    @Override
-                    public Boolean visitClassType(ClassType t, Void ignored) {
-                        if (t.isCompound()) {
-                            return visit(types.supertype(t)) ||
-                                    visit(types.interfaces(t));
-                        } else {
-                            return visit(t.getTypeArguments());
-                        }
-                    }
-                    @Override
-                    public Boolean visitWildcardType(WildcardType t, Void ignored) {
-                        return visit(t.type);
-                    }
-
-                    @Override
-                    public Boolean visitUndetVar(UndetVar t, Void ignored) {
-                        if (seen.contains(t)) {
-                            return true;
-                        } else {
-                            seen = seen.prepend(t);
-                            return visit(t.inst);
-                        }
-                    }
-                };
-                return constraintScanner.visit(uv);
-            }
-        };
+            };
 
 /***************************************************************************
  * Mini/Maximization of UndetVars
@@ -210,13 +146,15 @@ public class Infer {
      */
     void maximizeInst(UndetVar that, Warner warn) throws NoInstanceException {
         List<Type> hibounds = Type.filter(that.hibounds, errorFilter);
-        if (that.inst == null) {
+        if (that.eq.isEmpty()) {
             if (hibounds.isEmpty())
                 that.inst = syms.objectType;
             else if (hibounds.tail.isEmpty())
                 that.inst = hibounds.head;
             else
                 that.inst = types.glb(hibounds);
+        } else {
+            that.inst = that.eq.head;
         }
         if (that.inst == null ||
             that.inst.isErroneous())
@@ -224,27 +162,6 @@ public class Infer {
                 .setMessage("no.unique.maximal.instance.exists",
                             that.qtype, hibounds);
     }
-    //where
-        private boolean isSubClass(Type t, final List<Type> ts) {
-            t = t.baseType();
-            if (t.tag == TYPEVAR) {
-                List<Type> bounds = types.getBounds((TypeVar)t);
-                for (Type s : ts) {
-                    if (!types.isSameType(t, s.baseType())) {
-                        for (Type bound : bounds) {
-                            if (!isSubClass(bound, List.of(s.baseType())))
-                                return false;
-                        }
-                    }
-                }
-            } else {
-                for (Type s : ts) {
-                    if (!t.tsym.isSubClass(s.baseType().tsym, types))
-                        return false;
-                }
-            }
-            return true;
-        }
 
     private Filter<Type> errorFilter = new Filter<Type>() {
         @Override
@@ -258,7 +175,7 @@ public class Infer {
      */
     void minimizeInst(UndetVar that, Warner warn) throws NoInstanceException {
         List<Type> lobounds = Type.filter(that.lobounds, errorFilter);
-        if (that.inst == null) {
+        if (that.eq.isEmpty()) {
             if (lobounds.isEmpty())
                 that.inst = syms.botType;
             else if (lobounds.tail.isEmpty())
@@ -270,21 +187,8 @@ public class Infer {
                     throw ambiguousNoInstanceException
                         .setMessage("no.unique.minimal.instance.exists",
                                     that.qtype, lobounds);
-            // VGJ: sort of inlined maximizeInst() below.  Adding
-            // bounds can cause lobounds that are above hibounds.
-            List<Type> hibounds = Type.filter(that.hibounds, errorFilter);
-            Type hb = null;
-            if (hibounds.isEmpty())
-                hb = syms.objectType;
-            else if (hibounds.tail.isEmpty())
-                hb = hibounds.head;
-            else
-                hb = types.glb(hibounds);
-            if (hb == null ||
-                hb.isErroneous())
-                throw ambiguousNoInstanceException
-                        .setMessage("incompatible.upper.bounds",
-                                    that.qtype, hibounds);
+        } else {
+            that.inst = that.eq.head;
         }
     }
 
@@ -313,21 +217,7 @@ public class Infer {
     public Type instantiateExpr(ForAll that,
                                 Type to,
                                 Warner warn) throws InferenceException {
-        List<Type> undetvars = Type.map(that.tvars, fromTypeVarFun);
-        for (List<Type> l = undetvars; l.nonEmpty(); l = l.tail) {
-            UndetVar uv = (UndetVar) l.head;
-            TypeVar tv = (TypeVar)uv.qtype;
-            ListBuffer<Type> hibounds = new ListBuffer<Type>();
-            for (Type t : that.getConstraints(tv, ConstraintKind.EXTENDS)) {
-                hibounds.append(types.subst(t, that.tvars, undetvars));
-            }
-
-            List<Type> inst = that.getConstraints(tv, ConstraintKind.EQUAL);
-            if (inst.nonEmpty() && inst.head.tag != BOT) {
-                uv.inst = inst.head;
-            }
-            uv.hibounds = hibounds.toList();
-        }
+        List<Type> undetvars = that.undetvars();
         Type qtype1 = types.subst(that.qtype, that.tvars, undetvars);
         if (!types.isSubtype(qtype1,
                 qtype1.tag == UNDETVAR ? types.boxedTypeOrType(to) : to)) {
@@ -335,41 +225,72 @@ public class Infer {
                 .setMessage("infer.no.conforming.instance.exists",
                             that.tvars, that.qtype, to);
         }
-        for (List<Type> l = undetvars; l.nonEmpty(); l = l.tail)
-            maximizeInst((UndetVar) l.head, warn);
-        // System.out.println(" = " + qtype1.map(getInstFun));//DEBUG
 
-        // check bounds
-        List<Type> targs = Type.map(undetvars, getInstFun);
-        if (Type.containsAny(targs, that.tvars)) {
-            //replace uninferred type-vars
-            targs = types.subst(targs,
+        List<Type> insttypes;
+        while (true) {
+            boolean stuck = true;
+            insttypes = List.nil();
+            for (Type t : undetvars) {
+                UndetVar uv = (UndetVar)t;
+                if (uv.inst == null && (uv.eq.nonEmpty() || !Type.containsAny(uv.hibounds, that.tvars))) {
+                    maximizeInst((UndetVar)t, warn);
+                    stuck = false;
+                }
+                insttypes = insttypes.append(uv.inst == null ? uv.qtype : uv.inst);
+            }
+            if (!Type.containsAny(insttypes, that.tvars)) {
+                //all variables have been instantiated - exit
+                break;
+            } else if (stuck) {
+                //some variables could not be instantiated because of cycles in
+                //upper bounds - provide a (possibly recursive) default instantiation
+                insttypes = types.subst(insttypes,
                     that.tvars,
                     instantiateAsUninferredVars(undetvars, that.tvars));
+                break;
+            } else {
+                //some variables have been instantiated - replace newly instantiated
+                //variables in remaining upper bounds and continue
+                for (Type t : undetvars) {
+                    UndetVar uv = (UndetVar)t;
+                    uv.hibounds = types.subst(uv.hibounds, that.tvars, insttypes);
+                }
+            }
         }
-        return chk.checkType(warn.pos(), that.inst(targs, types), to);
+        return that.inst(insttypes, types);
     }
-    //where
+
+    /**
+     * Infer cyclic inference variables as described in 15.12.2.8.
+     */
     private List<Type> instantiateAsUninferredVars(List<Type> undetvars, List<Type> tvars) {
         Assert.check(undetvars.length() == tvars.length());
-        ListBuffer<Type> new_targs = ListBuffer.lb();
-        //step 1 - create synthetic captured vars
+        ListBuffer<Type> insttypes = ListBuffer.lb();
+        ListBuffer<Type> todo = ListBuffer.lb();
+        //step 1 - create fresh tvars
         for (Type t : undetvars) {
             UndetVar uv = (UndetVar)t;
-            Type newArg = new CapturedType(t.tsym.name, t.tsym, uv.inst, syms.botType, null);
-            new_targs = new_targs.append(newArg);
+            if (uv.inst == null) {
+                TypeSymbol fresh_tvar = new TypeSymbol(Flags.SYNTHETIC, uv.qtype.tsym.name, null, uv.qtype.tsym.owner);
+                fresh_tvar.type = new TypeVar(fresh_tvar, types.makeCompoundType(uv.hibounds), null);
+                todo.append(uv);
+                uv.inst = fresh_tvar.type;
+            }
+            insttypes.append(uv.inst);
         }
-        //step 2 - replace synthetic vars in their bounds
+        //step 2 - replace fresh tvars in their bounds
         List<Type> formals = tvars;
-        for (Type t : new_targs.toList()) {
-            CapturedType ct = (CapturedType)t;
-            ct.bound = types.subst(ct.bound, tvars, new_targs.toList());
-            WildcardType wt = new WildcardType(syms.objectType, BoundKind.UNBOUND, syms.boundClass);
-            wt.bound = (TypeVar)formals.head;
-            ct.wildcard = wt;
+        for (Type t : todo) {
+            UndetVar uv = (UndetVar)t;
+            TypeVar ct = (TypeVar)uv.inst;
+            ct.bound = types.glb(types.subst(types.getBounds(ct), tvars, insttypes.toList()));
+            if (ct.bound.isErroneous()) {
+                //report inference error if glb fails
+                reportBoundError(uv, BoundErrorKind.BAD_UPPER);
+            }
             formals = formals.tail;
         }
-        return new_targs.toList();
+        return insttypes.toList();
     }
 
     /** Instantiate method type `mt' by finding instantiations of
@@ -384,7 +305,7 @@ public class Infer {
                                   final boolean useVarargs,
                                   final Warner warn) throws InferenceException {
         //-System.err.println("instantiateMethod(" + tvars + ", " + mt + ", " + argtypes + ")"); //DEBUG
-        List<Type> undetvars = Type.map(tvars, fromTypeVarFun);
+        final List<Type> undetvars =  makeUndetvars(tvars);
 
         final List<Type> capturedArgs =
                 rs.checkRawArgumentsAcceptable(env, undetvars, argtypes, mt.getParameterTypes(),
@@ -419,7 +340,7 @@ public class Infer {
                 undettypes.append(uv.inst);
             }
         }
-        checkWithinBounds(tvars, undettypes.toList(), warn);
+        checkWithinBounds(tvars, undetvars, insttypes.toList(), warn);
 
         mt = (MethodType)types.subst(mt, tvars, insttypes.toList());
 
@@ -430,18 +351,8 @@ public class Infer {
             final List<Type> all_tvars = tvars; //this is the wrong tvars
             return new UninferredMethodType(env.tree.pos(), msym, mt, restvars.toList()) {
                 @Override
-                List<Type> getConstraints(TypeVar tv, ConstraintKind ck) {
-                    for (Type t : restundet.toList()) {
-                        UndetVar uv = (UndetVar)t;
-                        if (uv.qtype == tv) {
-                            switch (ck) {
-                                case EXTENDS: return uv.hibounds.appendList(types.subst(types.getBounds(tv), all_tvars, inferredTypes));
-                                case SUPER: return uv.lobounds;
-                                case EQUAL: return uv.inst != null ? List.of(uv.inst) : List.<Type>nil();
-                            }
-                        }
-                    }
-                    return List.nil();
+                List<Type> undetvars() {
+                    return restundet.toList();
                 }
                 @Override
                 void instantiateReturnType(Type restype, List<Type> inferred, Types types) throws NoInstanceException {
@@ -453,7 +364,7 @@ public class Infer {
                     warn.clear();
                     checkArgumentsAcceptable(env, capturedArgs, owntype.getParameterTypes(), allowBoxing, useVarargs, warn);
                     // check that inferred bounds conform to their bounds
-                    checkWithinBounds(all_tvars,
+                    checkWithinBounds(all_tvars, undetvars,
                            types.subst(inferredTypes, tvars, inferred), warn);
                     qtype = chk.checkMethod(owntype, msym, env, TreeInfo.args(env.tree), capturedArgs, useVarargs, warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED));
                 }
@@ -525,7 +436,7 @@ public class Infer {
 
             abstract void instantiateReturnType(Type restype, List<Type> inferred, Types types);
 
-            abstract List<Type> getConstraints(TypeVar tv, ConstraintKind ck);
+            abstract List<Type> undetvars();
 
             class UninferredReturnType extends ForAll {
                 public UninferredReturnType(List<Type> tvars, Type restype) {
@@ -541,8 +452,8 @@ public class Infer {
                     return UninferredMethodType.this.qtype.getReturnType();
                 }
                 @Override
-                public List<Type> getConstraints(TypeVar tv, ConstraintKind ck) {
-                    return UninferredMethodType.this.getConstraints(tv, ck);
+                public List<Type> undetvars() {
+                    return UninferredMethodType.this.undetvars();
                 }
             }
         }
@@ -559,43 +470,94 @@ public class Infer {
             }
         }
 
-    /** Try to instantiate argument type `that' to given type `to'.
-     *  If this fails, try to insantiate `that' to `to' where
-     *  every occurrence of a type variable in `tvars' is replaced
-     *  by an unknown type.
-     */
-    private Type instantiateArg(ForAll that,
-                                Type to,
-                                List<Type> tvars,
-                                Warner warn) throws InferenceException {
-        List<Type> targs;
-        try {
-            return instantiateExpr(that, to, warn);
-        } catch (NoInstanceException ex) {
-            Type to1 = to;
-            for (List<Type> l = tvars; l.nonEmpty(); l = l.tail)
-                to1 = types.subst(to1, List.of(l.head), List.of(syms.unknownType));
-            return instantiateExpr(that, to1, warn);
-        }
-    }
-
     /** check that type parameters are within their bounds.
      */
     void checkWithinBounds(List<Type> tvars,
-                                   List<Type> arguments,
-                                   Warner warn)
+                           List<Type> undetvars,
+                           List<Type> arguments,
+                           Warner warn)
         throws InvalidInstanceException {
-        for (List<Type> tvs = tvars, args = arguments;
-             tvs.nonEmpty();
-             tvs = tvs.tail, args = args.tail) {
-            if (args.head instanceof UndetVar ||
-                    tvars.head.getUpperBound().isErroneous()) continue;
-            List<Type> bounds = types.subst(types.getBounds((TypeVar)tvs.head), tvars, arguments);
-            if (!types.isSubtypeUnchecked(args.head, bounds, warn))
-                throw invalidInstanceException
-                    .setMessage("inferred.do.not.conform.to.bounds",
-                                args.head, bounds);
+        List<Type> args = arguments;
+        for (Type t : undetvars) {
+            UndetVar uv = (UndetVar)t;
+            uv.hibounds = types.subst(uv.hibounds, tvars, arguments);
+            uv.lobounds = types.subst(uv.lobounds, tvars, arguments);
+            uv.eq = types.subst(uv.eq, tvars, arguments);
+            checkCompatibleUpperBounds(uv, tvars);
+            if (args.head.tag != TYPEVAR || !args.head.containsAny(tvars)) {
+                Type inst = args.head;
+                for (Type u : uv.hibounds) {
+                    if (!types.isSubtypeUnchecked(inst, types.subst(u, tvars, undetvars), warn)) {
+                        reportBoundError(uv, BoundErrorKind.UPPER);
+                    }
+                }
+                for (Type l : uv.lobounds) {
+                    if (!types.isSubtypeUnchecked(types.subst(l, tvars, undetvars), inst, warn)) {
+                        reportBoundError(uv, BoundErrorKind.LOWER);
+                    }
+                }
+                for (Type e : uv.eq) {
+                    if (!types.isSameType(inst, types.subst(e, tvars, undetvars))) {
+                        reportBoundError(uv, BoundErrorKind.EQ);
+                    }
+                }
+            }
+            args = args.tail;
         }
+    }
+
+    void checkCompatibleUpperBounds(UndetVar uv, List<Type> tvars) {
+        // VGJ: sort of inlined maximizeInst() below.  Adding
+        // bounds can cause lobounds that are above hibounds.
+        ListBuffer<Type> hiboundsNoVars = ListBuffer.lb();
+        for (Type t : Type.filter(uv.hibounds, errorFilter)) {
+            if (!t.containsAny(tvars)) {
+                hiboundsNoVars.append(t);
+            }
+        }
+        List<Type> hibounds = hiboundsNoVars.toList();
+        Type hb = null;
+        if (hibounds.isEmpty())
+            hb = syms.objectType;
+        else if (hibounds.tail.isEmpty())
+            hb = hibounds.head;
+        else
+            hb = types.glb(hibounds);
+        if (hb == null || hb.isErroneous())
+            reportBoundError(uv, BoundErrorKind.BAD_UPPER);
+    }
+
+    enum BoundErrorKind {
+        BAD_UPPER() {
+            @Override
+            InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
+                return ex.setMessage("incompatible.upper.bounds", uv.qtype, uv.hibounds);
+            }
+        },
+        UPPER() {
+            @Override
+            InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
+                return ex.setMessage("inferred.do.not.conform.to.upper.bounds", uv.inst, uv.hibounds);
+            }
+        },
+        LOWER() {
+            @Override
+            InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
+                return ex.setMessage("inferred.do.not.conform.to.lower.bounds", uv.inst, uv.lobounds);
+            }
+        },
+        EQ() {
+            @Override
+            InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
+                return ex.setMessage("inferred.do.not.conform.to.eq.bounds", uv.inst, uv.eq);
+            }
+        };
+
+        abstract InapplicableMethodException setMessage(InferenceException ex, UndetVar uv);
+    }
+    //where
+    void reportBoundError(UndetVar uv, BoundErrorKind bk) {
+        throw bk.setMessage(uv.inst == null ? ambiguousNoInstanceException : invalidInstanceException, uv);
     }
 
     /**
@@ -603,8 +565,7 @@ public class Infer {
      * method signature. The target return type is computed from the immediately
      * enclosing scope surrounding the polymorphic-signature call.
      */
-    Type instantiatePolymorphicSignatureInstance(Env<AttrContext> env, Type site,
-                                            Name name,
+    Type instantiatePolymorphicSignatureInstance(Env<AttrContext> env,
                                             MethodSymbol spMethod,  // sig. poly. method or null if none
                                             List<Type> argtypes) {
         final Type restype;

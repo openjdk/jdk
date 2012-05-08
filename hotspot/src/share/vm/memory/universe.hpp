@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -412,7 +412,7 @@ class Universe: AllStatic {
 
   // Debugging
   static bool verify_in_progress() { return _verify_in_progress; }
-  static void verify(bool allow_dirty = true, bool silent = false,
+  static void verify(bool silent = false,
                      VerifyOption option = VerifyOption_Default );
   static int  verify_count()       { return _verify_count; }
   // The default behavior is to call print_on() on gclog_or_tty.
