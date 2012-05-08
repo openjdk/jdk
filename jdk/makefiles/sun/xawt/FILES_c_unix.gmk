@@ -1,0 +1,85 @@
+#
+# Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+#
+# include rules
+#
+
+FILES_c = \
+	XlibWrapper.c \
+	XWindow.c \
+	XToolkit.c \
+	X11Color.c \
+	X11SurfaceData.c \
+	awt_GraphicsEnv.c \
+	awt_InputMethod.c \
+	robot_common.c \
+	awt_Robot.c \
+        list.c \
+        multiVis.c \
+	initIDs.c \
+	awt_util.c \
+	awt_Desktop.c \
+	awt_UNIXToolkit.c \
+	X11FontScaler_md.c \
+	X11TextRenderer_md.c \
+	fontpath.c \
+	awt_Insets.c \
+	awt_Event.c \
+	X11Renderer.c \
+	X11PMBlitLoops.c \
+	OGLBlitLoops.c \
+	OGLBufImgOps.c \
+	OGLContext.c \
+	OGLFuncs.c \
+	OGLMaskBlit.c \
+	OGLMaskFill.c \
+	OGLPaints.c \
+	OGLRenderQueue.c \
+	OGLRenderer.c \
+	OGLSurfaceData.c \
+	OGLTextRenderer.c \
+	OGLVertexCache.c \
+	GLXGraphicsConfig.c \
+	GLXSurfaceData.c \
+	AccelGlyphCache.c \
+	awt_Font.c \
+	multi_font.c \
+	awt_AWTEvent.c \
+	awt_DrawingSurface.c \
+	jawt.c \
+	CUPSfuncs.c \
+	debug_assert.c \
+	debug_mem.c \
+	debug_trace.c \
+	debug_util.c \
+	awt_Plugin.c \
+	gtk2_interface.c \
+        swing_GTKEngine.c \
+        swing_GTKStyle.c \
+        rect.c \
+	sun_awt_X11_GtkFileDialogPeer.c \
+	XRSurfaceData.c \
+	XRBackendNative.c

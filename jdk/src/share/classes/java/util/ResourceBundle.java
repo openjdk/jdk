@@ -294,7 +294,8 @@ public abstract class ResourceBundle {
     /**
      * Queue for reference objects referring to class loaders or bundles.
      */
-    private static final ReferenceQueue<Object> referenceQueue = new ReferenceQueue<>();
+    private static final ReferenceQueue<Object> referenceQueue =
+        new ReferenceQueue<>();
 
     /**
      * The parent bundle of this bundle.
@@ -417,7 +418,7 @@ public abstract class ResourceBundle {
      * caller's caller.
      */
     private static ClassLoader getLoader() {
-        Class[] stack = getClassContext();
+        Class<?>[] stack = getClassContext();
         /* Magic number 2 identifies our caller's caller */
         Class<?> c = stack[2];
         ClassLoader cl = (c == null) ? null : c.getClassLoader();
@@ -434,7 +435,7 @@ public abstract class ResourceBundle {
         return cl;
     }
 
-    private static native Class[] getClassContext();
+    private static native Class<?>[] getClassContext();
 
     /**
      * A wrapper of ClassLoader.getSystemClassLoader().

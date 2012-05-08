@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -167,17 +167,32 @@ else # LIBRARY
 # build it into $(OBJDIR) so that the other generated files get put 
 # there, then copy just the DLL (and MAP file) to the requested directory.
 #
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  MAP_OPTION="-map:$(OBJDIR)/$(LIBRARY).map"
+endif
+
 $(ACTUAL_LIBRARY):: $(OBJDIR)/$(LIBRARY).lcf
 	@$(prep-target)
 	@$(MKDIR) -p $(OBJDIR)
 	$(LINK) -dll -out:$(OBJDIR)/$(@F) \
-	  -map:$(OBJDIR)/$(LIBRARY).map \
+	  $(MAP_OPTION) \
 	  $(LFLAGS) @$(OBJDIR)/$(LIBRARY).lcf \
 	  $(OTHER_LCF) $(LDLIBS)
 	$(CP) $(OBJDIR)/$(@F) $@
 	@$(call binary_file_verification,$@)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	(set -e ; \
+	 $(CD) $(OBJDIR) ; \
+	 $(ZIPEXE) -q $(LIBRARY).diz $(LIBRARY).map $(LIBRARY).pdb ; \
+	)
+	$(CP) $(OBJDIR)/$(LIBRARY).diz $(@D)
+	$(RM) $(OBJDIR)/$(LIBRARY).map $(OBJDIR)/$(LIBRARY).pdb
+  else
 	$(CP) $(OBJDIR)/$(LIBRARY).map $(@D)
 	$(CP) $(OBJDIR)/$(LIBRARY).pdb $(@D)
+  endif
+endif
 
 endif # LIBRARY
 
@@ -242,6 +257,37 @@ else # LIBRARY
 ifeq ($(WRITE_LIBVERSION),true)
 	$(MCS) -d -a "$(FULL_VERSION)" $@
 endif # WRITE_LIBVERSION
+  ifneq ($(PLATFORM), macosx)
+    ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+      ifeq ($(LIBRARY_SUPPORTS_FULL_DEBUG_SYMBOLS),1)
+	(set -e ; \
+	 $(CD) $(@D) ; \
+	 $(OBJCOPY) --only-keep-debug $(@F) $(LIBRARY).debuginfo ; \
+	 $(OBJCOPY) --add-gnu-debuglink=$(LIBRARY).debuginfo $(@F) ; \
+	)
+        ifeq ($(STRIP_POLICY),all_strip)
+	  $(STRIP) $@
+        else
+          ifeq ($(STRIP_POLICY),min_strip)
+            ifeq ($(PLATFORM), solaris)
+	      $(STRIP) -x $@
+            else
+              # assume Linux
+	      $(STRIP) -g $@
+            endif
+          # implied else here is no stripping at all
+          endif
+        endif
+        ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	  (set -e ; \
+	   $(CD) $(@D) ; \
+	   $(ZIPEXE) -q $(LIBRARY).diz $(LIBRARY).debuginfo ; \
+	   $(RM) $(LIBRARY).debuginfo ; \
+	  )
+        endif
+      endif # LIBRARY_SUPPORTS_FULL_DEBUG_SYMBOLS
+    endif # ENABLE_FULL_DEBUG_SYMBOLS
+  endif # PLATFORM-!macosx
 endif # LIBRARY
 
 endif # PLATFORM
