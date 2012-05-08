@@ -36,7 +36,7 @@ WB_JAVA_CLASSES  = $(patsubst $(WBSRCDIR)/%,$(WB_JAVA_CLASSDIR)/%, \
 	$(patsubst %.java,%.class,$(WB_JAVA_SRCS)))
 
 $(WB_JAVA_CLASSDIR)/%.class: $(WBSRCDIR)/%.java $(WB_JAVA_CLASSDIR)
-	$(REMOTE) $(COMPILE.JAVAC) -nowarn -d $(WB_JAVA_CLASSDIR) $<
+	$(REMOTE) $(COMPILE.JAVAC) -sourcepath $(WBSRCDIR) -nowarn -d $(WB_JAVA_CLASSDIR) $<
 
 $(WB_JAR): $(WB_JAVA_CLASSES)
 	$(QUIETLY) $(REMOTE) $(RUN.JAR) cf $@ -C $(WB_JAVA_CLASSDIR)/ .

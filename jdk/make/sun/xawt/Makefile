@@ -56,7 +56,7 @@ LDFLAGS += -lpthread
 dummy := $(shell $(MKDIR) -p $(LIB_LOCATION))
 endif
 
-ifeq ($(PLATFORM), macosx))
+ifeq ($(PLATFORM), macosx)
 LDFLAGS += -pthread
 dummy := $(shell $(MKDIR) -p $(LIB_LOCATION))
 endif

@@ -110,12 +110,20 @@ public:
   virtual void init_value(TRAPS) = 0;
   virtual void reset(TRAPS) = 0;
   virtual void cleanup() = 0;
+  virtual void value_as_str(char* buf, size_t len) = 0;
   void set_next(GenDCmdArgument* arg) {
     _next = arg;
   }
   GenDCmdArgument* next() {
     return _next;
   }
+
+  void to_string(jlong l, char* buf, size_t len);
+  void to_string(bool b, char* buf, size_t len);
+  void to_string(char* c, char* buf, size_t len);
+  void to_string(NanoTimeArgument n, char* buf, size_t len);
+  void to_string(MemorySizeArgument f, char* buf, size_t len);
+  void to_string(StringArrayArgument* s, char* buf, size_t len);
 };
 
 template <class ArgType> class DCmdArgument: public GenDCmdArgument {
@@ -143,6 +151,7 @@ public:
   void parse_value(const char* str, size_t len, TRAPS);
   void init_value(TRAPS);
   void destroy_value();
+  void value_as_str(char *buf, size_t len) { return to_string(_value, buf, len);}
 };
 
 #endif  /* SHARE_VM_SERVICES_DIAGNOSTICARGUMENT_HPP */

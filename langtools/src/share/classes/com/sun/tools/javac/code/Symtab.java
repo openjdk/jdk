@@ -127,7 +127,6 @@ public class Symtab {
     public final Type serializableType;
     public final Type methodHandleType;
     public final Type nativeHeaderType;
-    public final Type polymorphicSignatureType;
     public final Type throwableType;
     public final Type errorType;
     public final Type interruptedExceptionType;
@@ -436,7 +435,6 @@ public class Symtab {
         throwableType = enterClass("java.lang.Throwable");
         serializableType = enterClass("java.io.Serializable");
         methodHandleType = enterClass("java.lang.invoke.MethodHandle");
-        polymorphicSignatureType = enterClass("java.lang.invoke.MethodHandle$PolymorphicSignature");
         errorType = enterClass("java.lang.Error");
         illegalArgumentExceptionType = enterClass("java.lang.IllegalArgumentException");
         interruptedExceptionType = enterClass("java.lang.InterruptedException");
@@ -483,7 +481,6 @@ public class Symtab {
         synthesizeEmptyInterfaceIfMissing(autoCloseableType);
         synthesizeEmptyInterfaceIfMissing(cloneableType);
         synthesizeEmptyInterfaceIfMissing(serializableType);
-        synthesizeEmptyInterfaceIfMissing(polymorphicSignatureType);
         synthesizeBoxTypeIfMissing(doubleType);
         synthesizeBoxTypeIfMissing(floatType);
         synthesizeBoxTypeIfMissing(voidType);

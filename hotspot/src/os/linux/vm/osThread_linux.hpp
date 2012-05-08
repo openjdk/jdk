@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,8 @@
   // Methods to save/restore caller's signal mask
   sigset_t  caller_sigmask() const       { return _caller_sigmask; }
   void    set_caller_sigmask(sigset_t sigmask)  { _caller_sigmask = sigmask; }
+
+  static size_t thread_id_size()         { return sizeof(pid_t); }
 
   pid_t thread_id() const {
     return _thread_id;

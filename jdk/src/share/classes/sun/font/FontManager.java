@@ -32,10 +32,14 @@ import java.util.TreeMap;
 
 import javax.swing.plaf.FontUIResource;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * Interface between Java Fonts (java.awt.Font) and the underlying
  * font files/native font resources and the Java and native font scalers.
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public interface FontManager {
 
     // These constants are used in findFont().

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,7 +221,7 @@ public class Flags {
 
     /** Flag that marks a hypothetical method that need not really be
      *  generated in the binary, but is present in the symbol table to
-     *  simplify checking for erasure clashes.
+     *  simplify checking for erasure clashes - also used for 292 poly sig methods.
      */
     public static final long HYPOTHETICAL   = 1L<<37;
 
@@ -236,26 +236,20 @@ public class Flags {
     public static final long UNION = 1L<<39;
 
     /**
-     * Flag that marks a signature-polymorphic invoke method.
-     * (These occur inside java.lang.invoke.MethodHandle.)
-     */
-    public static final long POLYMORPHIC_SIGNATURE = 1L<<40;
-
-    /**
      * Flag that marks a special kind of bridge methods (the ones that
      * come from restricted supertype bounds)
      */
-    public static final long OVERRIDE_BRIDGE = 1L<<41;
+    public static final long OVERRIDE_BRIDGE = 1L<<40;
 
     /**
      * Flag that marks an 'effectively final' local variable
      */
-    public static final long EFFECTIVELY_FINAL = 1L<<42;
+    public static final long EFFECTIVELY_FINAL = 1L<<41;
 
     /**
      * Flag that marks non-override equivalent methods with the same signature
      */
-    public static final long CLASH = 1L<<43;
+    public static final long CLASH = 1L<<42;
 
     /** Modifier masks.
      */
