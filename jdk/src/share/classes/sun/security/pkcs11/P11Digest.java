@@ -39,7 +39,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
 /**
  * MessageDigest implementation class. This class currently supports
- * MD2, MD5, SHA-1, SHA-256, SHA-384, and SHA-512.
+ * MD2, MD5, SHA-1, SHA-224, SHA-256, SHA-384, and SHA-512.
  *
  * Note that many digest operations are on fairly small amounts of data
  * (less than 100 bytes total). For example, the 2nd hashing in HMAC or
@@ -98,6 +98,9 @@ final class P11Digest extends MessageDigestSpi implements Cloneable {
             break;
         case (int)CKM_SHA_1:
             digestLength = 20;
+            break;
+        case (int)CKM_SHA224:
+            digestLength = 28;
             break;
         case (int)CKM_SHA256:
             digestLength = 32;

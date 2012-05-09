@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,12 +78,16 @@ public class SignUsingSHA2withRSA {
         generatedSignatures.add(signUsing("SHA256withRSA", privateKey));
         generatedSignatures.add(signUsing("SHA384withRSA", privateKey));
         generatedSignatures.add(signUsing("SHA512withRSA", privateKey));
+        generatedSignatures.add(signUsing("SHA224withRSA", privateKey));
+
 
         System.out.println("-------------------------------------------------");
 
         verifyUsing("SHA256withRSA", publicKey, generatedSignatures.get(0));
         verifyUsing("SHA384withRSA", publicKey, generatedSignatures.get(1));
         verifyUsing("SHA512withRSA", publicKey, generatedSignatures.get(2));
+        verifyUsing("SHA224withRSA", publicKey, generatedSignatures.get(3));
+
 
         System.out.println("-------------------------------------------------");
     }

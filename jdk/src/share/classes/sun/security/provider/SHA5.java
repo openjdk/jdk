@@ -82,10 +82,10 @@ abstract class SHA5 extends DigestBase {
     };
 
     // buffer used by implCompress()
-    private final long[] W;
+    private long[] W;
 
     // state of this object
-    private final long[] state;
+    private long[] state;
 
     // initial state value. different between SHA-384 and SHA-512
     private final long[] initialHashes;
@@ -99,16 +99,6 @@ abstract class SHA5 extends DigestBase {
         state = new long[8];
         W = new long[80];
         implReset();
-    }
-
-    /**
-     * Creates a SHA object with state (for cloning)
-     */
-    SHA5(SHA5 base) {
-        super(base);
-        this.initialHashes = base.initialHashes;
-        this.state = base.state.clone();
-        this.W = new long[80];
     }
 
     final void implReset() {
@@ -255,6 +245,13 @@ abstract class SHA5 extends DigestBase {
         state[7] += h;
     }
 
+    public Object clone() throws CloneNotSupportedException {
+        SHA5 copy = (SHA5) super.clone();
+        copy.state = copy.state.clone();
+        copy.W = new long[80];
+        return copy;
+    }
+
     /**
      * SHA-512 implementation class.
      */
@@ -269,14 +266,6 @@ abstract class SHA5 extends DigestBase {
 
         public SHA512() {
             super("SHA-512", 64, INITIAL_HASHES);
-        }
-
-        private SHA512(SHA512 base) {
-            super(base);
-        }
-
-        public Object clone() {
-            return new SHA512(this);
         }
     }
 
@@ -295,14 +284,5 @@ abstract class SHA5 extends DigestBase {
         public SHA384() {
             super("SHA-384", 48, INITIAL_HASHES);
         }
-
-        private SHA384(SHA384 base) {
-            super(base);
-        }
-
-        public Object clone() {
-            return new SHA384(this);
-        }
     }
-
 }
