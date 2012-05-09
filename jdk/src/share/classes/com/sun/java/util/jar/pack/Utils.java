@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ class Utils {
      * If >3, print tons of comments (e.g., processing of references).
      * (installer only)
      */
-    static final String DEBUG_VERBOSE = Utils.COM_PREFIX+"verbose";
+    static final String DEBUG_VERBOSE = COM_PREFIX+"verbose";
 
     /*
      * Disables use of native code, prefers the Java-coded implementation.
@@ -134,33 +134,9 @@ class Utils {
     // to the engine code, especially the native code.
     static final ThreadLocal<TLGlobals> currentInstance = new ThreadLocal<>();
 
-    // convenience methods to access the TL globals
+    // convenience method to access the TL globals
     static TLGlobals getTLGlobals() {
         return currentInstance.get();
-    }
-
-    static Map<String, Utf8Entry> getUtf8Entries() {
-        return getTLGlobals().getUtf8Entries();
-    }
-
-    static Map<String, ClassEntry> getClassEntries() {
-        return getTLGlobals().getClassEntries();
-    }
-
-    static Map<Object, LiteralEntry> getLiteralEntries() {
-        return getTLGlobals().getLiteralEntries();
-    }
-
-    static Map<String, DescriptorEntry> getDescriptorEntries() {
-         return getTLGlobals().getDescriptorEntries();
-    }
-
-    static Map<String, SignatureEntry> getSignatureEntries() {
-        return getTLGlobals().getSignatureEntries();
-    }
-
-    static Map<String, MemberEntry> getMemberEntries() {
-        return getTLGlobals().getMemberEntries();
     }
 
     static PropMap currentPropMap() {
@@ -173,8 +149,19 @@ class Utils {
     }
 
     static final boolean nolog
-        = Boolean.getBoolean(Utils.COM_PREFIX+"nolog");
+        = Boolean.getBoolean(COM_PREFIX+"nolog");
 
+    static final boolean SORT_MEMBERS_DESCR_MAJOR
+        = Boolean.getBoolean(COM_PREFIX+"sort.members.descr.major");
+
+    static final boolean SORT_HANDLES_KIND_MAJOR
+        = Boolean.getBoolean(COM_PREFIX+"sort.handles.kind.major");
+
+    static final boolean SORT_INDY_BSS_MAJOR
+        = Boolean.getBoolean(COM_PREFIX+"sort.indy.bss.major");
+
+    static final boolean SORT_BSS_BSM_MAJOR
+        = Boolean.getBoolean(COM_PREFIX+"sort.bss.bsm.major");
 
     static class Pack200Logger {
         private final String name;

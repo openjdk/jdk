@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,8 @@ typedef DWORDLONG       julong;
 #define dup2(a,b)       _dup2(a,b)
 #define strcasecmp(s1, s2) _stricmp(s1,s2)
 #define tempname        _tempname
-#define sleep Sleep
+#define sleep           Sleep
+#define snprintf        _snprintf
 #else
 typedef signed char byte;
 #ifdef _LP64

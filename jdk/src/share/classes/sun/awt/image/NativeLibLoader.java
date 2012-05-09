@@ -53,7 +53,12 @@ class NativeLibLoader {
      * that the name of the library is "awt".  -br.
      */
     static void loadLibraries() {
-        java.security.AccessController.doPrivileged
-                (new sun.security.action.LoadLibraryAction("awt"));
+        java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("awt");
+                    return null;
+                }
+            });
     }
 }
