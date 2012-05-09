@@ -276,39 +276,33 @@ public abstract class SSLContextImpl extends SSLContextSpi {
                 supportedCipherSuiteList = getApplicableCipherSuiteList(
                         getSuportedProtocolList(), false);
             }
-        }
 
-        return supportedCipherSuiteList;
+            return supportedCipherSuiteList;
+        }
     }
 
     // Get default CipherSuiteList.
     CipherSuiteList getDefaultCipherSuiteList(boolean roleIsServer) {
-        if (roleIsServer) {
-            // The maintenance of cipher suites needs to be synchronized.
-            synchronized (this) {
-                // Clear cache of available ciphersuites.
-                clearAvailableCache();
+        // The maintenance of cipher suites needs to be synchronized.
+        synchronized (this) {
+            // Clear cache of available ciphersuites.
+            clearAvailableCache();
 
+            if (roleIsServer) {
                 if (defaultServerCipherSuiteList == null) {
                     defaultServerCipherSuiteList = getApplicableCipherSuiteList(
                         getDefaultProtocolList(true), true);
                 }
-            }
 
-            return defaultServerCipherSuiteList;
-        } else {
-            // The maintenance of cipher suites needs to be synchronized
-            synchronized (this) {
-                // Clear cache of available ciphersuites.
-                clearAvailableCache();
-
+                return defaultServerCipherSuiteList;
+            } else {
                 if (defaultClientCipherSuiteList == null) {
                     defaultClientCipherSuiteList = getApplicableCipherSuiteList(
                         getDefaultProtocolList(false), true);
                 }
-            }
 
-            return defaultClientCipherSuiteList;
+                return defaultClientCipherSuiteList;
+            }
         }
     }
 
