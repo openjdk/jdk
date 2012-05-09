@@ -567,8 +567,18 @@ void instanceKlass::set_initialization_state_and_notify_impl(instanceKlassHandle
   ol.notify_all(CHECK);
 }
 
+// The embedded _implementor field can only record one implementor.
+// When there are more than one implementors, the _implementor field
+// is set to the interface klassOop itself. Following are the possible
+// values for the _implementor field:
+//   NULL                  - no implementor
+//   implementor klassOop  - one implementor
+//   self                  - more than one implementor
+//
+// The _implementor field only exists for interfaces.
 void instanceKlass::add_implementor(klassOop k) {
   assert(Compile_lock->owned_by_self(), "");
+  assert(is_interface(), "not interface");
   // Filter out my subinterfaces.
   // (Note: Interfaces are never on the subklass list.)
   if (instanceKlass::cast(k)->is_interface()) return;
@@ -583,17 +593,13 @@ void instanceKlass::add_implementor(klassOop k) {
     // Any supers of the super have the same (or fewer) transitive_interfaces.
     return;
 
-  // Update number of implementors
-  int i = _nof_implementors++;
-
-  // Record this implementor, if there are not too many already
-  if (i < implementors_limit) {
-    assert(_implementors[i] == NULL, "should be exactly one implementor");
-    oop_store_without_check((oop*)&_implementors[i], k);
-  } else if (i == implementors_limit) {
-    // clear out the list on first overflow
-    for (int i2 = 0; i2 < implementors_limit; i2++)
-      oop_store_without_check((oop*)&_implementors[i2], NULL);
+  klassOop ik = implementor();
+  if (ik == NULL) {
+    set_implementor(k);
+  } else if (ik != this->as_klassOop()) {
+    // There is already an implementor. Use itself as an indicator of
+    // more than one implementors.
+    set_implementor(this->as_klassOop());
   }
 
   // The implementor also implements the transitive_interfaces
@@ -603,9 +609,9 @@ void instanceKlass::add_implementor(klassOop k) {
 }
 
 void instanceKlass::init_implementor() {
-  for (int i = 0; i < implementors_limit; i++)
-    oop_store_without_check((oop*)&_implementors[i], NULL);
-  _nof_implementors = 0;
+  if (is_interface()) {
+    set_implementor(NULL);
+  }
 }
 
 
@@ -1133,6 +1139,36 @@ JNIid* instanceKlass::jni_id_for(int offset) {
   return probe;
 }
 
+u2 instanceKlass::enclosing_method_data(int offset) {
+  typeArrayOop inner_class_list = inner_classes();
+  if (inner_class_list == NULL) {
+    return 0;
+  }
+  int length = inner_class_list->length();
+  if (length % inner_class_next_offset == 0) {
+    return 0;
+  } else {
+    int index = length - enclosing_method_attribute_size;
+    typeArrayHandle inner_class_list_h(inner_class_list);
+    assert(offset < enclosing_method_attribute_size, "invalid offset");
+    return inner_class_list_h->ushort_at(index + offset);
+  }
+}
+
+void instanceKlass::set_enclosing_method_indices(u2 class_index,
+                                                 u2 method_index) {
+  typeArrayOop inner_class_list = inner_classes();
+  assert (inner_class_list != NULL, "_inner_classes list is not set up");
+  int length = inner_class_list->length();
+  if (length % inner_class_next_offset == enclosing_method_attribute_size) {
+    int index = length - enclosing_method_attribute_size;
+    typeArrayHandle inner_class_list_h(inner_class_list);
+    inner_class_list_h->ushort_at_put(
+      index + enclosing_method_class_index_offset, class_index);
+    inner_class_list_h->ushort_at_put(
+      index + enclosing_method_method_index_offset, method_index);
+  }
+}
 
 // Lookup or create a jmethodID.
 // This code is called by the VMThread and JavaThreads so the
@@ -1819,24 +1855,22 @@ int instanceKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
 void instanceKlass::follow_weak_klass_links(
   BoolObjectClosure* is_alive, OopClosure* keep_alive) {
   assert(is_alive->do_object_b(as_klassOop()), "this oop should be live");
-  if (ClassUnloading) {
-    for (int i = 0; i < implementors_limit; i++) {
-      klassOop impl = _implementors[i];
-      if (impl == NULL)  break;  // no more in the list
-      if (!is_alive->do_object_b(impl)) {
-        // remove this guy from the list by overwriting him with the tail
-        int lasti = --_nof_implementors;
-        assert(lasti >= i && lasti < implementors_limit, "just checking");
-        _implementors[i] = _implementors[lasti];
-        _implementors[lasti] = NULL;
-        --i; // rerun the loop at this index
+
+  if (is_interface()) {
+    if (ClassUnloading) {
+      klassOop impl = implementor();
+      if (impl != NULL) {
+        if (!is_alive->do_object_b(impl)) {
+          // remove this guy
+          *start_of_implementor() = NULL;
+        }
       }
-    }
-  } else {
-    for (int i = 0; i < implementors_limit; i++) {
-      keep_alive->do_oop(&adr_implementors()[i]);
+    } else {
+      assert(adr_implementor() != NULL, "just checking");
+      keep_alive->do_oop(adr_implementor());
     }
   }
+
   Klass::follow_weak_klass_links(is_alive, keep_alive);
 }
 
@@ -2107,28 +2141,21 @@ jint instanceKlass::compute_modifier_flags(TRAPS) const {
   jint access = access_flags().as_int();
 
   // But check if it happens to be member class.
-  typeArrayOop inner_class_list = inner_classes();
-  int length = (inner_class_list == NULL) ? 0 : inner_class_list->length();
-  assert (length % instanceKlass::inner_class_next_offset == 0, "just checking");
-  if (length > 0) {
-    typeArrayHandle inner_class_list_h(THREAD, inner_class_list);
-    instanceKlassHandle ik(THREAD, k);
-    for (int i = 0; i < length; i += instanceKlass::inner_class_next_offset) {
-      int ioff = inner_class_list_h->ushort_at(
-                      i + instanceKlass::inner_class_inner_class_info_offset);
+  instanceKlassHandle ik(THREAD, k);
+  InnerClassesIterator iter(ik);
+  for (; !iter.done(); iter.next()) {
+    int ioff = iter.inner_class_info_index();
+    // Inner class attribute can be zero, skip it.
+    // Strange but true:  JVM spec. allows null inner class refs.
+    if (ioff == 0) continue;
 
-      // Inner class attribute can be zero, skip it.
-      // Strange but true:  JVM spec. allows null inner class refs.
-      if (ioff == 0) continue;
-
-      // only look at classes that are already loaded
-      // since we are looking for the flags for our self.
-      Symbol* inner_name = ik->constants()->klass_name_at(ioff);
-      if ((ik->name() == inner_name)) {
-        // This is really a member class.
-        access = inner_class_list_h->ushort_at(i + instanceKlass::inner_class_access_flags_offset);
-        break;
-      }
+    // only look at classes that are already loaded
+    // since we are looking for the flags for our self.
+    Symbol* inner_name = ik->constants()->klass_name_at(ioff);
+    if ((ik->name() == inner_name)) {
+      // This is really a member class.
+      access = iter.inner_access_flags();
+      break;
     }
   }
   // Remember to strip ACC_SUPER bit

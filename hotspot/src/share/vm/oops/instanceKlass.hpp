@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,6 @@
 //    [methods                    ]
 //    [local interfaces           ]
 //    [transitive interfaces      ]
-//    [number of implementors     ]
-//    [implementors               ] klassOop[2]
 //    [fields                     ]
 //    [constants                  ]
 //    [class loader               ]
@@ -77,9 +75,9 @@
 //    [oop map cache (stack maps) ]
 //    [EMBEDDED Java vtable             ] size in words = vtable_len
 //    [EMBEDDED nonstatic oop-map blocks] size in words = nonstatic_oop_map_size
-//
-//    The embedded nonstatic oop-map blocks are short pairs (offset, length) indicating
-//    where oops are located in instances of this klass.
+//      The embedded nonstatic oop-map blocks are short pairs (offset, length)
+//      indicating where oops are located in instances of this klass.
+//    [EMBEDDED implementor of the interface] only exist for interface
 
 
 // forward declaration for class -- see below for definition
@@ -153,10 +151,6 @@ class instanceKlass: public Klass {
   oop* oop_block_beg() const { return adr_array_klasses(); }
   oop* oop_block_end() const { return adr_methods_default_annotations() + 1; }
 
-  enum {
-    implementors_limit = 2              // how many implems can we track?
-  };
-
  protected:
   //
   // The oop block.  See comment in klass.hpp before making changes.
@@ -188,10 +182,18 @@ class instanceKlass: public Klass {
   klassOop        _host_klass;
   // Class signers.
   objArrayOop     _signers;
-  // inner_classes attribute.
+  // The InnerClasses attribute and EnclosingMethod attribute. The
+  // _inner_classes is an array of shorts. If the class has InnerClasses
+  // attribute, then the _inner_classes array begins with 4-tuples of shorts
+  // [inner_class_info_index, outer_class_info_index,
+  // inner_name_index, inner_class_access_flags] for the InnerClasses
+  // attribute. If the EnclosingMethod attribute exists, it occupies the
+  // last two shorts [class_index, method_index] of the array. If only
+  // the InnerClasses attribute exists, the _inner_classes array length is
+  // number_of_inner_classes * 4. If the class has both InnerClasses
+  // and EnclosingMethod attributes the _inner_classes array length is
+  // number_of_inner_classes * 4 + enclosing_method_attribute_size.
   typeArrayOop    _inner_classes;
-  // Implementors of this interface (not valid if it overflows)
-  klassOop        _implementors[implementors_limit];
   // Annotations for this class, or null if none.
   typeArrayOop    _class_annotations;
   // Annotation objects (byte arrays) for fields, or null if no annotations.
@@ -247,12 +249,9 @@ class instanceKlass: public Klass {
   nmethodBucket*  _dependencies;         // list of dependent nmethods
   nmethod*        _osr_nmethods_head;    // Head of list of on-stack replacement nmethods for this class
   BreakpointInfo* _breakpoints;          // bpt lists, managed by methodOop
-  int             _nof_implementors;     // No of implementors of this interface (zero if not an interface)
   // Array of interesting part(s) of the previous version(s) of this
   // instanceKlass. See PreviousVersionWalker below.
   GrowableArray<PreviousVersionNode *>* _previous_versions;
-  u2              _enclosing_method_class_index;  // Constant pool index for class of enclosing method, or 0 if none
-  u2              _enclosing_method_method_index; // Constant pool index for name and type of enclosing method, or 0 if none
   // JVMTI fields can be moved to their own structure - see 6315920
   unsigned char * _cached_class_file_bytes;       // JVMTI: cached class file, before retransformable agent modified it in CFLH
   jint            _cached_class_file_len;         // JVMTI: length of above
@@ -270,6 +269,13 @@ class instanceKlass: public Klass {
   // embedded Java itables follows here
   // embedded static fields follows here
   // embedded nonstatic oop-map blocks follows here
+  // embedded implementor of this interface follows here
+  //   The embedded implementor only exists if the current klass is an
+  //   iterface. The possible values of the implementor fall into following
+  //   three cases:
+  //     NULL: no implementor.
+  //     A klassOop that's not itself: one implementor.
+  //     Itsef: more than one implementors.
 
   friend class instanceKlassKlass;
   friend class SystemDictionary;
@@ -349,6 +355,12 @@ class instanceKlass: public Klass {
     inner_class_inner_name_offset = 2,
     inner_class_access_flags_offset = 3,
     inner_class_next_offset = 4
+  };
+
+  enum EnclosingMethodAttributeOffset {
+    enclosing_method_class_index_offset = 0,
+    enclosing_method_method_index_offset = 1,
+    enclosing_method_attribute_size = 2
   };
 
   // method override check
@@ -533,11 +545,15 @@ class instanceKlass: public Klass {
   Symbol* generic_signature() const                   { return _generic_signature; }
   void set_generic_signature(Symbol* sig)             { _generic_signature = sig; }
 
-  u2 enclosing_method_class_index() const             { return _enclosing_method_class_index; }
-  u2 enclosing_method_method_index() const            { return _enclosing_method_method_index; }
+  u2 enclosing_method_data(int offset);
+  u2 enclosing_method_class_index() {
+    return enclosing_method_data(enclosing_method_class_index_offset);
+  }
+  u2 enclosing_method_method_index() {
+    return enclosing_method_data(enclosing_method_method_index_offset);
+  }
   void set_enclosing_method_indices(u2 class_index,
-                                    u2 method_index)  { _enclosing_method_class_index  = class_index;
-                                                        _enclosing_method_method_index = method_index; }
+                                    u2 method_index);
 
   // jmethodID support
   static jmethodID get_jmethod_id(instanceKlassHandle ik_h,
@@ -626,19 +642,40 @@ class instanceKlass: public Klass {
 
   // support for stub routines
   static ByteSize init_state_offset()  { return in_ByteSize(sizeof(klassOopDesc) + offset_of(instanceKlass, _init_state)); }
+  TRACE_DEFINE_OFFSET;
   static ByteSize init_thread_offset() { return in_ByteSize(sizeof(klassOopDesc) + offset_of(instanceKlass, _init_thread)); }
 
   // subclass/subinterface checks
   bool implements_interface(klassOop k) const;
 
-  // Access to implementors of an interface. We only store the count
-  // of implementors, and in case, there are only a few
-  // implementors, we store them in a short list.
-  // This accessor returns NULL if we walk off the end of the list.
-  klassOop implementor(int i) const {
-    return (i < implementors_limit)? _implementors[i]: (klassOop) NULL;
+  // Access to the implementor of an interface.
+  klassOop implementor() const
+  {
+    klassOop* k = start_of_implementor();
+    if (k == NULL) {
+      return NULL;
+    } else {
+      return *k;
+    }
   }
-  int  nof_implementors() const       { return _nof_implementors; }
+
+  void set_implementor(klassOop k) {
+    assert(is_interface(), "not interface");
+    oop* addr = (oop*)start_of_implementor();
+    oop_store_without_check(addr, k);
+  }
+
+  int  nof_implementors() const       {
+    klassOop k = implementor();
+    if (k == NULL) {
+      return 0;
+    } else if (k != this->as_klassOop()) {
+      return 1;
+    } else {
+      return 2;
+    }
+  }
+
   void add_implementor(klassOop k);  // k is a new class that implements this interface
   void init_implementor();           // initialize
 
@@ -675,7 +712,15 @@ class instanceKlass: public Klass {
 
   // Sizing (in words)
   static int header_size()            { return align_object_offset(oopDesc::header_size() + sizeof(instanceKlass)/HeapWordSize); }
-  int object_size() const             { return object_size(align_object_offset(vtable_length()) + align_object_offset(itable_length()) + nonstatic_oop_map_size()); }
+
+  int object_size() const
+  {
+    return object_size(align_object_offset(vtable_length()) +
+                       align_object_offset(itable_length()) +
+                       (is_interface() ?
+                        (align_object_offset(nonstatic_oop_map_size()) + (int)sizeof(klassOop)/HeapWordSize) :
+                        nonstatic_oop_map_size()));
+  }
   static int vtable_start_offset()    { return header_size(); }
   static int vtable_length_offset()   { return oopDesc::header_size() + offset_of(instanceKlass, _vtable_len) / HeapWordSize; }
   static int object_size(int extra)   { return align_object_size(header_size() + extra); }
@@ -691,6 +736,15 @@ class instanceKlass: public Klass {
   OopMapBlock* start_of_nonstatic_oop_maps() const {
     return (OopMapBlock*)(start_of_itable() + align_object_offset(itable_length()));
   }
+
+  klassOop* start_of_implementor() const {
+    if (is_interface()) {
+      return (klassOop*)(start_of_nonstatic_oop_maps() +
+                         nonstatic_oop_map_count());
+    } else {
+      return NULL;
+    }
+  };
 
   // Allocation profiling support
   juint alloc_size() const            { return _alloc_count * size_helper(); }
@@ -801,7 +855,7 @@ private:
   oop* adr_host_klass() const        { return (oop*)&this->_host_klass;}
   oop* adr_signers() const           { return (oop*)&this->_signers;}
   oop* adr_inner_classes() const     { return (oop*)&this->_inner_classes;}
-  oop* adr_implementors() const      { return (oop*)&this->_implementors[0];}
+  oop* adr_implementor() const       { return (oop*)start_of_implementor(); }
   oop* adr_methods_jmethod_ids() const             { return (oop*)&this->_methods_jmethod_ids;}
   oop* adr_methods_cached_itable_indices() const   { return (oop*)&this->_methods_cached_itable_indices;}
   oop* adr_class_annotations() const   { return (oop*)&this->_class_annotations;}
@@ -1051,6 +1105,85 @@ class nmethodBucket: public CHeapObj {
   nmethodBucket* next()                   { return _next; }
   void set_next(nmethodBucket* b)         { _next = b; }
   nmethod* get_nmethod()                  { return _nmethod; }
+};
+
+// An iterator that's used to access the inner classes indices in the
+// instanceKlass::_inner_classes array.
+class InnerClassesIterator : public StackObj {
+ private:
+  typeArrayHandle _inner_classes;
+  int _length;
+  int _idx;
+ public:
+
+  InnerClassesIterator(instanceKlassHandle k) {
+    _inner_classes = k->inner_classes();
+    if (k->inner_classes() != NULL) {
+      _length = _inner_classes->length();
+      // The inner class array's length should be the multiple of
+      // inner_class_next_offset if it only contains the InnerClasses
+      // attribute data, or it should be
+      // n*inner_class_next_offset+enclosing_method_attribute_size
+      // if it also contains the EnclosingMethod data.
+      assert((_length % instanceKlass::inner_class_next_offset == 0 ||
+              _length % instanceKlass::inner_class_next_offset == instanceKlass::enclosing_method_attribute_size),
+             "just checking");
+      // Remove the enclosing_method portion if exists.
+      if (_length % instanceKlass::inner_class_next_offset == instanceKlass::enclosing_method_attribute_size) {
+        _length -= instanceKlass::enclosing_method_attribute_size;
+      }
+    } else {
+      _length = 0;
+    }
+    _idx = 0;
+  }
+
+  int length() const {
+    return _length;
+  }
+
+  void next() {
+    _idx += instanceKlass::inner_class_next_offset;
+  }
+
+  bool done() const {
+    return (_idx >= _length);
+  }
+
+  u2 inner_class_info_index() const {
+    return _inner_classes->ushort_at(
+               _idx + instanceKlass::inner_class_inner_class_info_offset);
+  }
+
+  void set_inner_class_info_index(u2 index) {
+    _inner_classes->ushort_at_put(
+               _idx + instanceKlass::inner_class_inner_class_info_offset, index);
+  }
+
+  u2 outer_class_info_index() const {
+    return _inner_classes->ushort_at(
+               _idx + instanceKlass::inner_class_outer_class_info_offset);
+  }
+
+  void set_outer_class_info_index(u2 index) {
+    _inner_classes->ushort_at_put(
+               _idx + instanceKlass::inner_class_outer_class_info_offset, index);
+  }
+
+  u2 inner_name_index() const {
+    return _inner_classes->ushort_at(
+               _idx + instanceKlass::inner_class_inner_name_offset);
+  }
+
+  void set_inner_name_index(u2 index) {
+    _inner_classes->ushort_at_put(
+               _idx + instanceKlass::inner_class_inner_name_offset, index);
+  }
+
+  u2 inner_access_flags() const {
+    return _inner_classes->ushort_at(
+               _idx + instanceKlass::inner_class_access_flags_offset);
+  }
 };
 
 #endif // SHARE_VM_OOPS_INSTANCEKLASS_HPP

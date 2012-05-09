@@ -685,6 +685,12 @@ void VMError::report(outputStream* st) {
        // extended (i.e., more detailed) version.
        Universe::print_on(st, true /* extended */);
        st->cr();
+
+       Universe::heap()->barrier_set()->print_on(st);
+       st->cr();
+
+       st->print_cr("Polling page: " INTPTR_FORMAT, os::get_polling_page());
+       st->cr();
      }
 
   STEP(195, "(printing code cache information)" )

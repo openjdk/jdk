@@ -222,7 +222,7 @@ struct Flag {
   // number of flags
   static size_t numFlags;
 
-  static Flag* find_flag(char* name, size_t length);
+  static Flag* find_flag(char* name, size_t length, bool allow_locked = false);
 
   bool is_bool() const        { return strcmp(type, "bool") == 0; }
   bool get_bool() const       { return *((bool*) addr); }
@@ -258,6 +258,9 @@ struct Flag {
   bool is_unlocked_ext() const;
   bool is_writeable_ext() const;
   bool is_external_ext() const;
+
+  void get_locked_message(char*, int) const;
+  void get_locked_message_ext(char*, int) const;
 
   void print_on(outputStream* st, bool withComments = false );
   void print_as_flag(outputStream* st);
@@ -3804,7 +3807,7 @@ class CommandLineFlags {
   product(uintx, SharedReadOnlySize,   10*M,                                \
           "Size of read-only space in permanent generation (in bytes)")     \
                                                                             \
-  product(uintx, SharedMiscDataSize,    NOT_LP64(4*M) LP64_ONLY(5*M),       \
+  product(uintx, SharedMiscDataSize, NOT_LP64(4*M) LP64_ONLY(5*M) NOT_PRODUCT(+1*M),       \
           "Size of the shared data area adjacent to the heap (in bytes)")   \
                                                                             \
   product(uintx, SharedMiscCodeSize,    4*M,                                \

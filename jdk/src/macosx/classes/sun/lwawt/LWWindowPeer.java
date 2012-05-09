@@ -784,9 +784,8 @@ public class LWWindowPeer
                 }
                 mouseClickButtons &= ~eventButtonMask;
             }
-
-            notifyUpdateCursor();
         }
+        notifyUpdateCursor();
     }
 
     public void dispatchMouseWheelEvent(long when, int x, int y, int modifiers,
@@ -1057,6 +1056,10 @@ public class LWWindowPeer
         return lastMouseEventPeer != null ? lastMouseEventPeer.getWindowPeerOrSelf() : null;
     }
 
+    public static LWComponentPeer<?, ?> getPeerUnderCursor() {
+        return lastMouseEventPeer;
+    }
+
     public boolean requestWindowFocus(CausedFocusEvent.Cause cause) {
         if (focusLog.isLoggable(PlatformLogger.FINE)) {
             focusLog.fine("requesting native focus to " + this);
@@ -1067,11 +1070,7 @@ public class LWWindowPeer
             return false;
         }
 
-        // Cross-app activation requests are not allowed.
-        if (cause != CausedFocusEvent.Cause.MOUSE_EVENT &&
-            !((LWToolkit)Toolkit.getDefaultToolkit()).isApplicationActive())
-        {
-            focusLog.fine("the app is inactive, so the request is rejected");
+        if (platformWindow.rejectFocusRequest(cause)) {
             return false;
         }
 

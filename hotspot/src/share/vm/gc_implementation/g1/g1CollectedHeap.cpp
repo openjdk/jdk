@@ -33,6 +33,7 @@
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/g1/g1ErgoVerbose.hpp"
 #include "gc_implementation/g1/g1EvacFailure.hpp"
+#include "gc_implementation/g1/g1Log.hpp"
 #include "gc_implementation/g1/g1MarkSweep.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.inline.hpp"
@@ -233,7 +234,7 @@ void YoungList::empty_list() {
 bool YoungList::check_list_well_formed() {
   bool ret = true;
 
-  size_t length = 0;
+  uint length = 0;
   HeapRegion* curr = _head;
   HeapRegion* last = NULL;
   while (curr != NULL) {
@@ -252,7 +253,7 @@ bool YoungList::check_list_well_formed() {
 
   if (!ret) {
     gclog_or_tty->print_cr("### YOUNG LIST seems not well formed!");
-    gclog_or_tty->print_cr("###   list has %d entries, _length is %d",
+    gclog_or_tty->print_cr("###   list has %u entries, _length is %u",
                            length, _length);
   }
 
@@ -263,7 +264,7 @@ bool YoungList::check_list_empty(bool check_sample) {
   bool ret = true;
 
   if (_length != 0) {
-    gclog_or_tty->print_cr("### YOUNG LIST should have 0 length, not %d",
+    gclog_or_tty->print_cr("### YOUNG LIST should have 0 length, not %u",
                   _length);
     ret = false;
   }
@@ -336,8 +337,7 @@ YoungList::reset_auxilary_lists() {
     _g1h->g1_policy()->add_region_to_incremental_cset_rhs(curr);
     young_index_in_cset += 1;
   }
-  assert((size_t) young_index_in_cset == _survivor_length,
-         "post-condition");
+  assert((uint) young_index_in_cset == _survivor_length, "post-condition");
   _g1h->g1_policy()->note_stop_adding_survivor_regions();
 
   _head   = _survivor_head;
@@ -532,7 +532,7 @@ G1CollectedHeap::new_region_try_secondary_free_list() {
     if (!_secondary_free_list.is_empty()) {
       if (G1ConcRegionFreeingVerbose) {
         gclog_or_tty->print_cr("G1ConcRegionFreeing [region alloc] : "
-                               "secondary_free_list has "SIZE_FORMAT" entries",
+                               "secondary_free_list has %u entries",
                                _secondary_free_list.length());
       }
       // It looks as if there are free regions available on the
@@ -618,12 +618,12 @@ HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool do_expand) {
   return res;
 }
 
-size_t G1CollectedHeap::humongous_obj_allocate_find_first(size_t num_regions,
-                                                          size_t word_size) {
+uint G1CollectedHeap::humongous_obj_allocate_find_first(uint num_regions,
+                                                        size_t word_size) {
   assert(isHumongous(word_size), "word_size should be humongous");
   assert(num_regions * HeapRegion::GrainWords >= word_size, "pre-condition");
 
-  size_t first = G1_NULL_HRS_INDEX;
+  uint first = G1_NULL_HRS_INDEX;
   if (num_regions == 1) {
     // Only one region to allocate, no need to go through the slower
     // path. The caller will attempt the expasion if this fails, so
@@ -649,7 +649,7 @@ size_t G1CollectedHeap::humongous_obj_allocate_find_first(size_t num_regions,
     if (free_regions() >= num_regions) {
       first = _hrs.find_contiguous(num_regions);
       if (first != G1_NULL_HRS_INDEX) {
-        for (size_t i = first; i < first + num_regions; ++i) {
+        for (uint i = first; i < first + num_regions; ++i) {
           HeapRegion* hr = region_at(i);
           assert(hr->is_empty(), "sanity");
           assert(is_on_master_free_list(hr), "sanity");
@@ -663,15 +663,15 @@ size_t G1CollectedHeap::humongous_obj_allocate_find_first(size_t num_regions,
 }
 
 HeapWord*
-G1CollectedHeap::humongous_obj_allocate_initialize_regions(size_t first,
-                                                           size_t num_regions,
+G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
+                                                           uint num_regions,
                                                            size_t word_size) {
   assert(first != G1_NULL_HRS_INDEX, "pre-condition");
   assert(isHumongous(word_size), "word_size should be humongous");
   assert(num_regions * HeapRegion::GrainWords >= word_size, "pre-condition");
 
   // Index of last region in the series + 1.
-  size_t last = first + num_regions;
+  uint last = first + num_regions;
 
   // We need to initialize the region(s) we just discovered. This is
   // a bit tricky given that it can happen concurrently with
@@ -682,7 +682,7 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(size_t first,
   // a specific order.
 
   // The word size sum of all the regions we will allocate.
-  size_t word_size_sum = num_regions * HeapRegion::GrainWords;
+  size_t word_size_sum = (size_t) num_regions * HeapRegion::GrainWords;
   assert(word_size <= word_size_sum, "sanity");
 
   // This will be the "starts humongous" region.
@@ -721,7 +721,7 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(size_t first,
   // Then, if there are any, we will set up the "continues
   // humongous" regions.
   HeapRegion* hr = NULL;
-  for (size_t i = first + 1; i < last; ++i) {
+  for (uint i = first + 1; i < last; ++i) {
     hr = region_at(i);
     hr->set_continuesHumongous(first_hr);
   }
@@ -767,7 +767,7 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(size_t first,
   // last one) is actually used when we will free up the humongous
   // region in free_humongous_region().
   hr = NULL;
-  for (size_t i = first + 1; i < last; ++i) {
+  for (uint i = first + 1; i < last; ++i) {
     hr = region_at(i);
     if ((i + 1) == last) {
       // last continues humongous region
@@ -803,14 +803,14 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
 
   verify_region_sets_optional();
 
-  size_t num_regions =
-         round_to(word_size, HeapRegion::GrainWords) / HeapRegion::GrainWords;
-  size_t x_size = expansion_regions();
-  size_t fs = _hrs.free_suffix();
-  size_t first = humongous_obj_allocate_find_first(num_regions, word_size);
+  size_t word_size_rounded = round_to(word_size, HeapRegion::GrainWords);
+  uint num_regions = (uint) (word_size_rounded / HeapRegion::GrainWords);
+  uint x_num = expansion_regions();
+  uint fs = _hrs.free_suffix();
+  uint first = humongous_obj_allocate_find_first(num_regions, word_size);
   if (first == G1_NULL_HRS_INDEX) {
     // The only thing we can do now is attempt expansion.
-    if (fs + x_size >= num_regions) {
+    if (fs + x_num >= num_regions) {
       // If the number of regions we're trying to allocate for this
       // object is at most the number of regions in the free suffix,
       // then the call to humongous_obj_allocate_find_first() above
@@ -993,7 +993,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
     // iteration (after taking the Heap_lock).
     result = _mutator_alloc_region.attempt_allocation(word_size,
                                                       false /* bot_updates */);
-    if (result != NULL ){
+    if (result != NULL) {
       return result;
     }
 
@@ -1255,10 +1255,10 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     // Timing
     bool system_gc = (gc_cause() == GCCause::_java_lang_system_gc);
     assert(!system_gc || explicit_gc, "invariant");
-    gclog_or_tty->date_stamp(PrintGC && PrintGCDateStamps);
-    TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
+    gclog_or_tty->date_stamp(G1Log::fine() && PrintGCDateStamps);
+    TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
     TraceTime t(system_gc ? "Full GC (System.gc())" : "Full GC",
-                PrintGC, true, gclog_or_tty);
+                G1Log::fine(), true, gclog_or_tty);
 
     TraceCollectorStats tcs(g1mm()->full_collection_counters());
     TraceMemoryManagerStats tms(true /* fullGC */, gc_cause());
@@ -1290,8 +1290,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       HandleMark hm;  // Discard invalid handles created during verification
       gclog_or_tty->print(" VerifyBeforeGC:");
       prepare_for_verify();
-      Universe::verify(/* allow dirty */ true,
-                       /* silent      */ false,
+      Universe::verify(/* silent      */ false,
                        /* option      */ VerifyOption_G1UsePrevMarking);
 
     }
@@ -1365,8 +1364,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       HandleMark hm;  // Discard invalid handles created during verification
       gclog_or_tty->print(" VerifyAfterGC:");
       prepare_for_verify();
-      Universe::verify(/* allow dirty */ false,
-                       /* silent      */ false,
+      Universe::verify(/* silent      */ false,
                        /* option      */ VerifyOption_G1UsePrevMarking);
 
     }
@@ -1444,7 +1442,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       heap_region_iterate(&rebuild_rs);
     }
 
-    if (PrintGC) {
+    if (G1Log::fine()) {
       print_size_transition(gclog_or_tty, g1h_prev_used, used(), capacity());
     }
 
@@ -1782,7 +1780,7 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
     ReservedSpace::page_align_size_down(shrink_bytes);
   aligned_shrink_bytes = align_size_down(aligned_shrink_bytes,
                                          HeapRegion::GrainBytes);
-  size_t num_regions_deleted = 0;
+  uint num_regions_deleted = 0;
   MemRegion mr = _hrs.shrink_by(aligned_shrink_bytes, &num_regions_deleted);
   HeapWord* old_end = (HeapWord*) _g1_storage.high();
   assert(mr.end() == old_end, "post-condition");
@@ -1917,6 +1915,8 @@ jint G1CollectedHeap::initialize() {
   CollectedHeap::pre_initialize();
   os::enable_vtime();
 
+  G1Log::init();
+
   // Necessary to satisfy locking discipline assertions.
 
   MutexLocker x(Heap_lock);
@@ -2003,7 +2003,7 @@ jint G1CollectedHeap::initialize() {
   _reserved.set_start((HeapWord*)heap_rs.base());
   _reserved.set_end((HeapWord*)(heap_rs.base() + heap_rs.size()));
 
-  _expansion_regions = max_byte_size/HeapRegion::GrainBytes;
+  _expansion_regions = (uint) (max_byte_size / HeapRegion::GrainBytes);
 
   // Create the gen rem set (and barrier set) for the entire reserved region.
   _rem_set = collector_policy()->create_rem_set(_reserved, 2);
@@ -2040,7 +2040,7 @@ jint G1CollectedHeap::initialize() {
 
   // 6843694 - ensure that the maximum region index can fit
   // in the remembered set structures.
-  const size_t max_region_idx = ((size_t)1 << (sizeof(RegionIdx_t)*BitsPerByte-1)) - 1;
+  const uint max_region_idx = (1U << (sizeof(RegionIdx_t)*BitsPerByte-1)) - 1;
   guarantee((max_regions() - 1) <= max_region_idx, "too many regions");
 
   size_t max_cards_per_region = ((size_t)1 << (sizeof(CardIdx_t)*BitsPerByte-1)) - 1;
@@ -2056,13 +2056,14 @@ jint G1CollectedHeap::initialize() {
   _g1h = this;
 
    _in_cset_fast_test_length = max_regions();
-   _in_cset_fast_test_base = NEW_C_HEAP_ARRAY(bool, _in_cset_fast_test_length);
+   _in_cset_fast_test_base =
+                   NEW_C_HEAP_ARRAY(bool, (size_t) _in_cset_fast_test_length);
 
    // We're biasing _in_cset_fast_test to avoid subtracting the
    // beginning of the heap every time we want to index; basically
    // it's the same with what we do with the card table.
    _in_cset_fast_test = _in_cset_fast_test_base -
-                ((size_t) _g1_reserved.start() >> HeapRegion::LogOfHRGrainBytes);
+               ((uintx) _g1_reserved.start() >> HeapRegion::LogOfHRGrainBytes);
 
    // Clear the _cset_fast_test bitmap in anticipation of adding
    // regions to the incremental collection set for the first
@@ -2071,7 +2072,7 @@ jint G1CollectedHeap::initialize() {
 
   // Create the ConcurrentMark data structure and thread.
   // (Must do this late, so that "max_regions" is defined.)
-  _cm       = new ConcurrentMark(heap_rs, (int) max_regions());
+  _cm       = new ConcurrentMark(heap_rs, max_regions());
   _cmThread = _cm->cmThread();
 
   // Initialize the from_card cache structure of HeapRegionRemSet.
@@ -2437,19 +2438,21 @@ void G1CollectedHeap::collect(GCCause::Cause cause) {
                                  true,  /* should_initiate_conc_mark */
                                  g1_policy()->max_pause_time_ms(),
                                  cause);
+
       VMThread::execute(&op);
       if (!op.pause_succeeded()) {
-        // Another GC got scheduled and prevented us from scheduling
-        // the initial-mark GC. It's unlikely that the GC that
-        // pre-empted us was also an initial-mark GC. So, we'll retry
-        // the initial-mark GC.
-
         if (full_gc_count_before == total_full_collections()) {
-          retry_gc = true;
+          retry_gc = op.should_retry_gc();
         } else {
           // A Full GC happened while we were trying to schedule the
           // initial-mark GC. No point in starting a new cycle given
           // that the whole heap was collected anyway.
+        }
+
+        if (retry_gc) {
+          if (GC_locker::is_active_and_needs_gc()) {
+            GC_locker::stall_until_clear();
+          }
         }
       }
     } else {
@@ -2578,7 +2581,7 @@ G1CollectedHeap::heap_region_par_iterate_chunked(HeapRegionClosure* cl,
                                                  uint worker,
                                                  uint no_of_par_workers,
                                                  jint claim_value) {
-  const size_t regions = n_regions();
+  const uint regions = n_regions();
   const uint max_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
                              no_of_par_workers :
                              1);
@@ -2586,11 +2589,11 @@ G1CollectedHeap::heap_region_par_iterate_chunked(HeapRegionClosure* cl,
          no_of_par_workers == workers()->total_workers(),
          "Non dynamic should use fixed number of workers");
   // try to spread out the starting points of the workers
-  const size_t start_index = regions / max_workers * (size_t) worker;
+  const uint start_index = regions / max_workers * worker;
 
   // each worker will actually look at all regions
-  for (size_t count = 0; count < regions; ++count) {
-    const size_t index = (start_index + count) % regions;
+  for (uint count = 0; count < regions; ++count) {
+    const uint index = (start_index + count) % regions;
     assert(0 <= index && index < regions, "sanity");
     HeapRegion* r = region_at(index);
     // we'll ignore "continues humongous" regions (we'll process them
@@ -2612,7 +2615,7 @@ G1CollectedHeap::heap_region_par_iterate_chunked(HeapRegionClosure* cl,
         // result, we might end up processing them twice. So, we'll do
         // them first (notice: most closures will ignore them anyway) and
         // then we'll do the "starts humongous" region.
-        for (size_t ch_index = index + 1; ch_index < regions; ++ch_index) {
+        for (uint ch_index = index + 1; ch_index < regions; ++ch_index) {
           HeapRegion* chr = region_at(ch_index);
 
           // if the region has already been claimed or it's not
@@ -2680,8 +2683,9 @@ void G1CollectedHeap::reset_cset_heap_region_claim_values() {
 class CheckClaimValuesClosure : public HeapRegionClosure {
 private:
   jint _claim_value;
-  size_t _failures;
+  uint _failures;
   HeapRegion* _sh_region;
+
 public:
   CheckClaimValuesClosure(jint claim_value) :
     _claim_value(claim_value), _failures(0), _sh_region(NULL) { }
@@ -2709,9 +2713,7 @@ public:
     }
     return false;
   }
-  size_t failures() {
-    return _failures;
-  }
+  uint failures() { return _failures; }
 };
 
 bool G1CollectedHeap::check_heap_region_claim_values(jint claim_value) {
@@ -2721,17 +2723,15 @@ bool G1CollectedHeap::check_heap_region_claim_values(jint claim_value) {
 }
 
 class CheckClaimValuesInCSetHRClosure: public HeapRegionClosure {
-  jint   _claim_value;
-  size_t _failures;
+private:
+  jint _claim_value;
+  uint _failures;
 
 public:
   CheckClaimValuesInCSetHRClosure(jint claim_value) :
-    _claim_value(claim_value),
-    _failures(0) { }
+    _claim_value(claim_value), _failures(0) { }
 
-  size_t failures() {
-    return _failures;
-  }
+  uint failures() { return _failures; }
 
   bool doHeapRegion(HeapRegion* hr) {
     assert(hr->in_collection_set(), "how?");
@@ -2798,14 +2798,14 @@ HeapRegion* G1CollectedHeap::start_cset_region_for_worker(int worker_i) {
 
   result = g1_policy()->collection_set();
   if (G1CollectedHeap::use_parallel_gc_threads()) {
-    size_t cs_size = g1_policy()->cset_region_length();
+    uint cs_size = g1_policy()->cset_region_length();
     uint active_workers = workers()->active_workers();
     assert(UseDynamicNumberOfGCThreads ||
              active_workers == workers()->total_workers(),
              "Unless dynamic should use total workers");
 
-    size_t end_ind   = (cs_size * worker_i) / active_workers;
-    size_t start_ind = 0;
+    uint end_ind   = (cs_size * worker_i) / active_workers;
+    uint start_ind = 0;
 
     if (worker_i > 0 &&
         _worker_cset_start_region_time_stamp[worker_i - 1] == gc_time_stamp) {
@@ -2815,7 +2815,7 @@ HeapRegion* G1CollectedHeap::start_cset_region_for_worker(int worker_i) {
       result = _worker_cset_start_region[worker_i - 1];
     }
 
-    for (size_t i = start_ind; i < end_ind; i++) {
+    for (uint i = start_ind; i < end_ind; i++) {
       result = result->next_in_collection_set();
     }
   }
@@ -3031,7 +3031,6 @@ public:
 
 class VerifyRegionClosure: public HeapRegionClosure {
 private:
-  bool         _allow_dirty;
   bool         _par;
   VerifyOption _vo;
   bool         _failures;
@@ -3039,9 +3038,8 @@ public:
   // _vo == UsePrevMarking -> use "prev" marking information,
   // _vo == UseNextMarking -> use "next" marking information,
   // _vo == UseMarkWord    -> use mark word from object header.
-  VerifyRegionClosure(bool allow_dirty, bool par, VerifyOption vo)
-    : _allow_dirty(allow_dirty),
-      _par(par),
+  VerifyRegionClosure(bool par, VerifyOption vo)
+    : _par(par),
       _vo(vo),
       _failures(false) {}
 
@@ -3054,7 +3052,7 @@ public:
               "Should be unclaimed at verify points.");
     if (!r->continuesHumongous()) {
       bool failures = false;
-      r->verify(_allow_dirty, _vo, &failures);
+      r->verify(_vo, &failures);
       if (failures) {
         _failures = true;
       } else {
@@ -3122,7 +3120,6 @@ public:
 class G1ParVerifyTask: public AbstractGangTask {
 private:
   G1CollectedHeap* _g1h;
-  bool             _allow_dirty;
   VerifyOption     _vo;
   bool             _failures;
 
@@ -3130,10 +3127,9 @@ public:
   // _vo == UsePrevMarking -> use "prev" marking information,
   // _vo == UseNextMarking -> use "next" marking information,
   // _vo == UseMarkWord    -> use mark word from object header.
-  G1ParVerifyTask(G1CollectedHeap* g1h, bool allow_dirty, VerifyOption vo) :
+  G1ParVerifyTask(G1CollectedHeap* g1h, VerifyOption vo) :
     AbstractGangTask("Parallel verify task"),
     _g1h(g1h),
-    _allow_dirty(allow_dirty),
     _vo(vo),
     _failures(false) { }
 
@@ -3143,7 +3139,7 @@ public:
 
   void work(uint worker_id) {
     HandleMark hm;
-    VerifyRegionClosure blk(_allow_dirty, true, _vo);
+    VerifyRegionClosure blk(true, _vo);
     _g1h->heap_region_par_iterate_chunked(&blk, worker_id,
                                           _g1h->workers()->active_workers(),
                                           HeapRegion::ParVerifyClaimValue);
@@ -3153,12 +3149,11 @@ public:
   }
 };
 
-void G1CollectedHeap::verify(bool allow_dirty, bool silent) {
-  verify(allow_dirty, silent, VerifyOption_G1UsePrevMarking);
+void G1CollectedHeap::verify(bool silent) {
+  verify(silent, VerifyOption_G1UsePrevMarking);
 }
 
-void G1CollectedHeap::verify(bool allow_dirty,
-                             bool silent,
+void G1CollectedHeap::verify(bool silent,
                              VerifyOption vo) {
   if (SafepointSynchronize::is_at_safepoint() || ! UseTLAB) {
     if (!silent) { gclog_or_tty->print("Roots (excluding permgen) "); }
@@ -3210,7 +3205,7 @@ void G1CollectedHeap::verify(bool allow_dirty,
       assert(check_heap_region_claim_values(HeapRegion::InitialClaimValue),
              "sanity check");
 
-      G1ParVerifyTask task(this, allow_dirty, vo);
+      G1ParVerifyTask task(this, vo);
       assert(UseDynamicNumberOfGCThreads ||
         workers()->active_workers() == workers()->total_workers(),
         "If not dynamic should be using all the workers");
@@ -3232,7 +3227,7 @@ void G1CollectedHeap::verify(bool allow_dirty,
       assert(check_heap_region_claim_values(HeapRegion::InitialClaimValue),
              "sanity check");
     } else {
-      VerifyRegionClosure blk(allow_dirty, false, vo);
+      VerifyRegionClosure blk(false, vo);
       heap_region_iterate(&blk);
       if (blk.failures()) {
         failures = true;
@@ -3282,12 +3277,12 @@ void G1CollectedHeap::print_on(outputStream* st) const {
             _g1_storage.high_boundary());
   st->cr();
   st->print("  region size " SIZE_FORMAT "K, ", HeapRegion::GrainBytes / K);
-  size_t young_regions = _young_list->length();
-  st->print(SIZE_FORMAT " young (" SIZE_FORMAT "K), ",
-            young_regions, young_regions * HeapRegion::GrainBytes / K);
-  size_t survivor_regions = g1_policy()->recorded_survivor_regions();
-  st->print(SIZE_FORMAT " survivors (" SIZE_FORMAT "K)",
-            survivor_regions, survivor_regions * HeapRegion::GrainBytes / K);
+  uint young_regions = _young_list->length();
+  st->print("%u young (" SIZE_FORMAT "K), ", young_regions,
+            (size_t) young_regions * HeapRegion::GrainBytes / K);
+  uint survivor_regions = g1_policy()->recorded_survivor_regions();
+  st->print("%u survivors (" SIZE_FORMAT "K)", survivor_regions,
+            (size_t) survivor_regions * HeapRegion::GrainBytes / K);
   st->cr();
   perm()->as_gen()->print_on(st);
 }
@@ -3297,7 +3292,11 @@ void G1CollectedHeap::print_extended_on(outputStream* st) const {
 
   // Print the per-region information.
   st->cr();
-  st->print_cr("Heap Regions: (Y=young(eden), SU=young(survivor), HS=humongous(starts), HC=humongous(continues), CS=collection set, F=free, TS=gc time stamp, PTAMS=previous top-at-mark-start, NTAMS=next top-at-mark-start)");
+  st->print_cr("Heap Regions: (Y=young(eden), SU=young(survivor), "
+               "HS=humongous(starts), HC=humongous(continues), "
+               "CS=collection set, F=free, TS=gc time stamp, "
+               "PTAMS=previous top-at-mark-start, "
+               "NTAMS=next top-at-mark-start)");
   PrintRegionClosure blk(st);
   heap_region_iterate(&blk);
 }
@@ -3475,16 +3474,16 @@ size_t G1CollectedHeap::cards_scanned() {
 
 void
 G1CollectedHeap::setup_surviving_young_words() {
-  guarantee( _surviving_young_words == NULL, "pre-condition" );
-  size_t array_length = g1_policy()->young_cset_region_length();
-  _surviving_young_words = NEW_C_HEAP_ARRAY(size_t, array_length);
+  assert(_surviving_young_words == NULL, "pre-condition");
+  uint array_length = g1_policy()->young_cset_region_length();
+  _surviving_young_words = NEW_C_HEAP_ARRAY(size_t, (size_t) array_length);
   if (_surviving_young_words == NULL) {
     vm_exit_out_of_memory(sizeof(size_t) * array_length,
                           "Not enough space for young surv words summary.");
   }
-  memset(_surviving_young_words, 0, array_length * sizeof(size_t));
+  memset(_surviving_young_words, 0, (size_t) array_length * sizeof(size_t));
 #ifdef ASSERT
-  for (size_t i = 0;  i < array_length; ++i) {
+  for (uint i = 0;  i < array_length; ++i) {
     assert( _surviving_young_words[i] == 0, "memset above" );
   }
 #endif // !ASSERT
@@ -3493,9 +3492,10 @@ G1CollectedHeap::setup_surviving_young_words() {
 void
 G1CollectedHeap::update_surviving_young_words(size_t* surv_young_words) {
   MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
-  size_t array_length = g1_policy()->young_cset_region_length();
-  for (size_t i = 0; i < array_length; ++i)
+  uint array_length = g1_policy()->young_cset_region_length();
+  for (uint i = 0; i < array_length; ++i) {
     _surviving_young_words[i] += surv_young_words[i];
+  }
 }
 
 void
@@ -3607,12 +3607,12 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       increment_total_full_collections();
     }
 
-    // if PrintGCDetails is on, we'll print long statistics information
+    // if the log level is "finer" is on, we'll print long statistics information
     // in the collector policy code, so let's not print this as the output
     // is messy if we do.
-    gclog_or_tty->date_stamp(PrintGC && PrintGCDateStamps);
-    TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
-    TraceTime t(verbose_str, PrintGC && !PrintGCDetails, true, gclog_or_tty);
+    gclog_or_tty->date_stamp(G1Log::fine() && PrintGCDateStamps);
+    TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
+    TraceTime t(verbose_str, G1Log::fine() && !G1Log::finer(), true, gclog_or_tty);
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
     TraceMemoryManagerStats tms(false /* fullGC */, gc_cause());
@@ -3645,8 +3645,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         HandleMark hm;  // Discard invalid handles created during verification
         gclog_or_tty->print(" VerifyBeforeGC:");
         prepare_for_verify();
-        Universe::verify(/* allow dirty */ false,
-                         /* silent      */ false,
+        Universe::verify(/* silent      */ false,
                          /* option      */ VerifyOption_G1UsePrevMarking);
       }
 
@@ -3890,8 +3889,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
           HandleMark hm;  // Discard invalid handles created during verification
           gclog_or_tty->print(" VerifyAfterGC:");
           prepare_for_verify();
-          Universe::verify(/* allow dirty */ true,
-                           /* silent      */ false,
+          Universe::verify(/* silent      */ false,
                            /* option      */ VerifyOption_G1UsePrevMarking);
         }
 
@@ -3929,8 +3927,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   }
 
   // The closing of the inner scope, immediately above, will complete
-  // the PrintGC logging output. The record_collection_pause_end() call
-  // above will complete the logging output of PrintGCDetails.
+  // logging at the "fine" level. The record_collection_pause_end() call
+  // above will complete logging at the "finer" level.
   //
   // It is not yet to safe, however, to tell the concurrent mark to
   // start as we have some optional output below. We don't want the
@@ -4066,7 +4064,6 @@ void G1CollectedHeap::finalize_for_evac_failure() {
 
 void G1CollectedHeap::remove_self_forwarding_pointers() {
   assert(check_cset_heap_region_claim_values(HeapRegion::InitialClaimValue), "sanity");
-  assert(g1_policy()->assertMarkedBytesDataOK(), "Should be!");
 
   G1ParRemoveSelfForwardPtrsTask rsfp_task(this);
 
@@ -4084,7 +4081,6 @@ void G1CollectedHeap::remove_self_forwarding_pointers() {
   reset_cset_heap_region_claim_values();
 
   assert(check_cset_heap_region_claim_values(HeapRegion::InitialClaimValue), "sanity");
-  assert(g1_policy()->assertMarkedBytesDataOK(), "Should be!");
 
   // Now restore saved marks, if any.
   if (_objs_with_preserved_marks != NULL) {
@@ -4246,16 +4242,16 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num)
   // non-young regions (where the age is -1)
   // We also add a few elements at the beginning and at the end in
   // an attempt to eliminate cache contention
-  size_t real_length = 1 + _g1h->g1_policy()->young_cset_region_length();
-  size_t array_length = PADDING_ELEM_NUM +
-                        real_length +
-                        PADDING_ELEM_NUM;
+  uint real_length = 1 + _g1h->g1_policy()->young_cset_region_length();
+  uint array_length = PADDING_ELEM_NUM +
+                      real_length +
+                      PADDING_ELEM_NUM;
   _surviving_young_words_base = NEW_C_HEAP_ARRAY(size_t, array_length);
   if (_surviving_young_words_base == NULL)
     vm_exit_out_of_memory(array_length * sizeof(size_t),
                           "Not enough space for young surv histo.");
   _surviving_young_words = _surviving_young_words_base + PADDING_ELEM_NUM;
-  memset(_surviving_young_words, 0, real_length * sizeof(size_t));
+  memset(_surviving_young_words, 0, (size_t) real_length * sizeof(size_t));
 
   _alloc_buffers[GCAllocForSurvived] = &_surviving_alloc_buffer;
   _alloc_buffers[GCAllocForTenured]  = &_tenured_alloc_buffer;
@@ -4353,7 +4349,8 @@ G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1,
   _during_initial_mark(_g1->g1_policy()->during_initial_mark_pause()),
   _mark_in_progress(_g1->mark_in_progress()) { }
 
-void G1ParCopyHelper::mark_object(oop obj) {
+template <bool do_gen_barrier, G1Barrier barrier, bool do_mark_object>
+void G1ParCopyClosure<do_gen_barrier, barrier, do_mark_object>::mark_object(oop obj) {
 #ifdef ASSERT
   HeapRegion* hr = _g1->heap_region_containing(obj);
   assert(hr != NULL, "sanity");
@@ -4364,7 +4361,9 @@ void G1ParCopyHelper::mark_object(oop obj) {
   _cm->grayRoot(obj, (size_t) obj->size(), _worker_id);
 }
 
-void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
+template <bool do_gen_barrier, G1Barrier barrier, bool do_mark_object>
+void G1ParCopyClosure<do_gen_barrier, barrier, do_mark_object>
+  ::mark_forwarded_object(oop from_obj, oop to_obj) {
 #ifdef ASSERT
   assert(from_obj->is_forwarded(), "from obj should be forwarded");
   assert(from_obj->forwardee() == to_obj, "to obj should be the forwardee");
@@ -4386,8 +4385,10 @@ void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
   _cm->grayRoot(to_obj, (size_t) from_obj->size(), _worker_id);
 }
 
-oop G1ParCopyHelper::copy_to_survivor_space(oop old) {
-  size_t    word_sz = old->size();
+template <bool do_gen_barrier, G1Barrier barrier, bool do_mark_object>
+oop G1ParCopyClosure<do_gen_barrier, barrier, do_mark_object>
+  ::copy_to_survivor_space(oop old) {
+  size_t word_sz = old->size();
   HeapRegion* from_region = _g1->heap_region_containing_raw(old);
   // +1 to make the -1 indexes valid...
   int       young_index = from_region->young_index_in_cset()+1;
@@ -4455,8 +4456,8 @@ oop G1ParCopyHelper::copy_to_survivor_space(oop old) {
     } else {
       // No point in using the slower heap_region_containing() method,
       // given that we know obj is in the heap.
-      _scanner->set_region(_g1->heap_region_containing_raw(obj));
-      obj->oop_iterate_backwards(_scanner);
+      _scanner.set_region(_g1->heap_region_containing_raw(obj));
+      obj->oop_iterate_backwards(&_scanner);
     }
   } else {
     _par_scan_state->undo_allocation(alloc_purpose, obj_ptr, word_sz);
@@ -4673,73 +4674,141 @@ public:
     double start_time_ms = os::elapsedTime() * 1000.0;
     _g1h->g1_policy()->record_gc_worker_start_time(worker_id, start_time_ms);
 
-    ResourceMark rm;
-    HandleMark   hm;
-
-    ReferenceProcessor*             rp = _g1h->ref_processor_stw();
-
-    G1ParScanThreadState            pss(_g1h, worker_id);
-    G1ParScanHeapEvacClosure        scan_evac_cl(_g1h, &pss, rp);
-    G1ParScanHeapEvacFailureClosure evac_failure_cl(_g1h, &pss, rp);
-    G1ParScanPartialArrayClosure    partial_scan_cl(_g1h, &pss, rp);
-
-    pss.set_evac_closure(&scan_evac_cl);
-    pss.set_evac_failure_closure(&evac_failure_cl);
-    pss.set_partial_scan_closure(&partial_scan_cl);
-
-    G1ParScanExtRootClosure        only_scan_root_cl(_g1h, &pss, rp);
-    G1ParScanPermClosure           only_scan_perm_cl(_g1h, &pss, rp);
-
-    G1ParScanAndMarkExtRootClosure scan_mark_root_cl(_g1h, &pss, rp);
-    G1ParScanAndMarkPermClosure    scan_mark_perm_cl(_g1h, &pss, rp);
-
-    OopClosure*                    scan_root_cl = &only_scan_root_cl;
-    OopsInHeapRegionClosure*       scan_perm_cl = &only_scan_perm_cl;
-
-    if (_g1h->g1_policy()->during_initial_mark_pause()) {
-      // We also need to mark copied objects.
-      scan_root_cl = &scan_mark_root_cl;
-      scan_perm_cl = &scan_mark_perm_cl;
-    }
-
-    G1ParPushHeapRSClosure          push_heap_rs_cl(_g1h, &pss);
-
-    pss.start_strong_roots();
-    _g1h->g1_process_strong_roots(/* not collecting perm */ false,
-                                  SharedHeap::SO_AllClasses,
-                                  scan_root_cl,
-                                  &push_heap_rs_cl,
-                                  scan_perm_cl,
-                                  worker_id);
-    pss.end_strong_roots();
-
     {
-      double start = os::elapsedTime();
-      G1ParEvacuateFollowersClosure evac(_g1h, &pss, _queues, &_terminator);
-      evac.do_void();
-      double elapsed_ms = (os::elapsedTime()-start)*1000.0;
-      double term_ms = pss.term_time()*1000.0;
-      _g1h->g1_policy()->record_obj_copy_time(worker_id, elapsed_ms-term_ms);
-      _g1h->g1_policy()->record_termination(worker_id, term_ms, pss.term_attempts());
+      ResourceMark rm;
+      HandleMark   hm;
+
+      ReferenceProcessor*             rp = _g1h->ref_processor_stw();
+
+      G1ParScanThreadState            pss(_g1h, worker_id);
+      G1ParScanHeapEvacClosure        scan_evac_cl(_g1h, &pss, rp);
+      G1ParScanHeapEvacFailureClosure evac_failure_cl(_g1h, &pss, rp);
+      G1ParScanPartialArrayClosure    partial_scan_cl(_g1h, &pss, rp);
+
+      pss.set_evac_closure(&scan_evac_cl);
+      pss.set_evac_failure_closure(&evac_failure_cl);
+      pss.set_partial_scan_closure(&partial_scan_cl);
+
+      G1ParScanExtRootClosure        only_scan_root_cl(_g1h, &pss, rp);
+      G1ParScanPermClosure           only_scan_perm_cl(_g1h, &pss, rp);
+
+      G1ParScanAndMarkExtRootClosure scan_mark_root_cl(_g1h, &pss, rp);
+      G1ParScanAndMarkPermClosure    scan_mark_perm_cl(_g1h, &pss, rp);
+
+      OopClosure*                    scan_root_cl = &only_scan_root_cl;
+      OopsInHeapRegionClosure*       scan_perm_cl = &only_scan_perm_cl;
+
+      if (_g1h->g1_policy()->during_initial_mark_pause()) {
+        // We also need to mark copied objects.
+        scan_root_cl = &scan_mark_root_cl;
+        scan_perm_cl = &scan_mark_perm_cl;
+      }
+
+      G1ParPushHeapRSClosure          push_heap_rs_cl(_g1h, &pss);
+
+      pss.start_strong_roots();
+      _g1h->g1_process_strong_roots(/* not collecting perm */ false,
+                                    SharedHeap::SO_AllClasses,
+                                    scan_root_cl,
+                                    &push_heap_rs_cl,
+                                    scan_perm_cl,
+                                    worker_id);
+      pss.end_strong_roots();
+
+      {
+        double start = os::elapsedTime();
+        G1ParEvacuateFollowersClosure evac(_g1h, &pss, _queues, &_terminator);
+        evac.do_void();
+        double elapsed_ms = (os::elapsedTime()-start)*1000.0;
+        double term_ms = pss.term_time()*1000.0;
+        _g1h->g1_policy()->record_obj_copy_time(worker_id, elapsed_ms-term_ms);
+        _g1h->g1_policy()->record_termination(worker_id, term_ms, pss.term_attempts());
+      }
+      _g1h->g1_policy()->record_thread_age_table(pss.age_table());
+      _g1h->update_surviving_young_words(pss.surviving_young_words()+1);
+
+      // Clean up any par-expanded rem sets.
+      HeapRegionRemSet::par_cleanup();
+
+      if (ParallelGCVerbose) {
+        MutexLocker x(stats_lock());
+        pss.print_termination_stats(worker_id);
+      }
+
+      assert(pss.refs()->is_empty(), "should be empty");
+
+      // Close the inner scope so that the ResourceMark and HandleMark
+      // destructors are executed here and are included as part of the
+      // "GC Worker Time".
     }
-    _g1h->g1_policy()->record_thread_age_table(pss.age_table());
-    _g1h->update_surviving_young_words(pss.surviving_young_words()+1);
 
-    // Clean up any par-expanded rem sets.
-    HeapRegionRemSet::par_cleanup();
-
-    if (ParallelGCVerbose) {
-      MutexLocker x(stats_lock());
-      pss.print_termination_stats(worker_id);
-    }
-
-    assert(pss.refs()->is_empty(), "should be empty");
     double end_time_ms = os::elapsedTime() * 1000.0;
     _g1h->g1_policy()->record_gc_worker_end_time(worker_id, end_time_ms);
   }
 };
 
 // *** Common G1 Evacuation Stuff
+
+// Closures that support the filtering of CodeBlobs scanned during
+// external root scanning.
+
+// Closure applied to reference fields in code blobs (specifically nmethods)
+// to determine whether an nmethod contains references that point into
+// the collection set. Used as a predicate when walking code roots so
+// that only nmethods that point into the collection set are added to the
+// 'marked' list.
+
+class G1FilteredCodeBlobToOopClosure : public CodeBlobToOopClosure {
+
+  class G1PointsIntoCSOopClosure : public OopClosure {
+    G1CollectedHeap* _g1;
+    bool _points_into_cs;
+  public:
+    G1PointsIntoCSOopClosure(G1CollectedHeap* g1) :
+      _g1(g1), _points_into_cs(false) { }
+
+    bool points_into_cs() const { return _points_into_cs; }
+
+    template <class T>
+    void do_oop_nv(T* p) {
+      if (!_points_into_cs) {
+        T heap_oop = oopDesc::load_heap_oop(p);
+        if (!oopDesc::is_null(heap_oop) &&
+            _g1->in_cset_fast_test(oopDesc::decode_heap_oop_not_null(heap_oop))) {
+          _points_into_cs = true;
+        }
+      }
+    }
+
+    virtual void do_oop(oop* p)        { do_oop_nv(p); }
+    virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
+  };
+
+  G1CollectedHeap* _g1;
+
+public:
+  G1FilteredCodeBlobToOopClosure(G1CollectedHeap* g1, OopClosure* cl) :
+    CodeBlobToOopClosure(cl, true), _g1(g1) { }
+
+  virtual void do_code_blob(CodeBlob* cb) {
+    nmethod* nm = cb->as_nmethod_or_null();
+    if (nm != NULL && !(nm->test_oops_do_mark())) {
+      G1PointsIntoCSOopClosure predicate_cl(_g1);
+      nm->oops_do(&predicate_cl);
+
+      if (predicate_cl.points_into_cs()) {
+        // At least one of the reference fields or the oop relocations
+        // in the nmethod points into the collection set. We have to
+        // 'mark' this nmethod.
+        // Note: Revisit the following if CodeBlobToOopClosure::do_code_blob()
+        // or MarkingCodeBlobClosure::do_code_blob() change.
+        if (!nm->test_set_oops_do_mark()) {
+          do_newly_marked_nmethod(nm);
+        }
+      }
+    }
+  }
+};
 
 // This method is run in a GC worker.
 
@@ -4762,7 +4831,7 @@ g1_process_strong_roots(bool collecting_perm_gen,
 
   // Walk the code cache w/o buffering, because StarTask cannot handle
   // unaligned oop locations.
-  CodeBlobToOopClosure eager_scan_code_roots(scan_non_heap_roots, /*do_marking=*/ true);
+  G1FilteredCodeBlobToOopClosure eager_scan_code_roots(this, scan_non_heap_roots);
 
   process_strong_roots(false, // no scoping; this is parallel code
                        collecting_perm_gen, so,
@@ -5376,25 +5445,39 @@ void G1CollectedHeap::evacuate_collection_set() {
   rem_set()->prepare_for_younger_refs_iterate(true);
 
   assert(dirty_card_queue_set().completed_buffers_num() == 0, "Should be empty");
-  double start_par = os::elapsedTime();
+  double start_par_time_sec = os::elapsedTime();
+  double end_par_time_sec;
 
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    // The individual threads will set their evac-failure closures.
+  {
     StrongRootsScope srs(this);
-    if (ParallelGCVerbose) G1ParScanThreadState::print_termination_stats_hdr();
-    // These tasks use ShareHeap::_process_strong_tasks
-    assert(UseDynamicNumberOfGCThreads ||
-           workers()->active_workers() == workers()->total_workers(),
-           "If not dynamic should be using all the  workers");
-    workers()->run_task(&g1_par_task);
-  } else {
-    StrongRootsScope srs(this);
-    g1_par_task.set_for_termination(n_workers);
-    g1_par_task.work(0);
+
+    if (G1CollectedHeap::use_parallel_gc_threads()) {
+      // The individual threads will set their evac-failure closures.
+      if (ParallelGCVerbose) G1ParScanThreadState::print_termination_stats_hdr();
+      // These tasks use ShareHeap::_process_strong_tasks
+      assert(UseDynamicNumberOfGCThreads ||
+             workers()->active_workers() == workers()->total_workers(),
+             "If not dynamic should be using all the  workers");
+      workers()->run_task(&g1_par_task);
+    } else {
+      g1_par_task.set_for_termination(n_workers);
+      g1_par_task.work(0);
+    }
+    end_par_time_sec = os::elapsedTime();
+
+    // Closing the inner scope will execute the destructor
+    // for the StrongRootsScope object. We record the current
+    // elapsed time before closing the scope so that time
+    // taken for the SRS destructor is NOT included in the
+    // reported parallel time.
   }
 
-  double par_time = (os::elapsedTime() - start_par) * 1000.0;
-  g1_policy()->record_par_time(par_time);
+  double par_time_ms = (end_par_time_sec - start_par_time_sec) * 1000.0;
+  g1_policy()->record_par_time(par_time_ms);
+
+  double code_root_fixup_time_ms =
+        (os::elapsedTime() - end_par_time_sec) * 1000.0;
+  g1_policy()->record_code_root_fixup_time(code_root_fixup_time_ms);
 
   set_par_threads(0);
 
@@ -5425,9 +5508,9 @@ void G1CollectedHeap::evacuate_collection_set() {
 
   if (evacuation_failed()) {
     remove_self_forwarding_pointers();
-    if (PrintGCDetails) {
+    if (G1Log::finer()) {
       gclog_or_tty->print(" (to-space overflow)");
-    } else if (PrintGC) {
+    } else if (G1Log::fine()) {
       gclog_or_tty->print("--");
     }
   }
@@ -5502,8 +5585,8 @@ void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
   hr->set_notHumongous();
   free_region(hr, &hr_pre_used, free_list, par);
 
-  size_t i = hr->hrs_index() + 1;
-  size_t num = 1;
+  uint i = hr->hrs_index() + 1;
+  uint num = 1;
   while (i < n_regions()) {
     HeapRegion* curr_hr = region_at(i);
     if (!curr_hr->continuesHumongous()) {
@@ -5712,7 +5795,7 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head) {
     if (cur->is_young()) {
       int index = cur->young_index_in_cset();
       assert(index != -1, "invariant");
-      assert((size_t) index < policy->young_cset_region_length(), "invariant");
+      assert((uint) index < policy->young_cset_region_length(), "invariant");
       size_t words_survived = _surviving_young_words[index];
       cur->record_surv_words_in_group(words_survived);
 
@@ -6052,7 +6135,7 @@ void MutatorAllocRegion::retire_region(HeapRegion* alloc_region,
 // Methods for the GC alloc regions
 
 HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size,
-                                                 size_t count,
+                                                 uint count,
                                                  GCAllocPurpose ap) {
   assert(FreeList_lock->owned_by_self(), "pre-condition");
 
@@ -6124,7 +6207,7 @@ private:
   FreeRegionList*     _free_list;
   OldRegionSet*       _old_set;
   HumongousRegionSet* _humongous_set;
-  size_t              _region_count;
+  uint                _region_count;
 
 public:
   VerifyRegionListsClosure(OldRegionSet* old_set,
@@ -6133,7 +6216,7 @@ public:
     _old_set(old_set), _humongous_set(humongous_set),
     _free_list(free_list), _region_count(0) { }
 
-  size_t region_count()      { return _region_count;      }
+  uint region_count() { return _region_count; }
 
   bool doHeapRegion(HeapRegion* hr) {
     _region_count += 1;
@@ -6155,7 +6238,7 @@ public:
   }
 };
 
-HeapRegion* G1CollectedHeap::new_heap_region(size_t hrs_index,
+HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
                                              HeapWord* bottom) {
   HeapWord* end = bottom + HeapRegion::GrainWords;
   MemRegion mr(bottom, end);

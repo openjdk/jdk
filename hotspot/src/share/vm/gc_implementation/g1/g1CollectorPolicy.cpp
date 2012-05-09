@@ -29,6 +29,7 @@
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/g1/g1ErgoVerbose.hpp"
+#include "gc_implementation/g1/g1Log.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "gc_implementation/shared/gcPolicyCounters.hpp"
 #include "runtime/arguments.hpp"
@@ -140,7 +141,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _summary(new Summary()),
 
   _cur_clear_ct_time_ms(0.0),
-  _mark_closure_time_ms(0.0),
   _root_region_scan_wait_time_ms(0.0),
 
   _cur_ref_proc_time_ms(0.0),
@@ -191,11 +191,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _during_marking(false),
   _in_marking_window(false),
   _in_marking_window_im(false),
-
-  _known_garbage_ratio(0.0),
-  _known_garbage_bytes(0),
-
-  _young_gc_eff_seq(new TruncatedSeq(TruncatedSeqLength)),
 
   _recent_prev_end_times_for_all_gcs_sec(
                                 new TruncatedSeq(NumPrevPausesForHeuristics)),
@@ -431,31 +426,36 @@ G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults), _adaptive_size(
   }
 
   if (FLAG_IS_CMDLINE(NewSize)) {
-     _min_desired_young_length = MAX2((size_t) 1, NewSize / HeapRegion::GrainBytes);
+    _min_desired_young_length = MAX2((uint) (NewSize / HeapRegion::GrainBytes),
+                                     1U);
     if (FLAG_IS_CMDLINE(MaxNewSize)) {
-      _max_desired_young_length = MAX2((size_t) 1, MaxNewSize / HeapRegion::GrainBytes);
+      _max_desired_young_length =
+                             MAX2((uint) (MaxNewSize / HeapRegion::GrainBytes),
+                                  1U);
       _sizer_kind = SizerMaxAndNewSize;
       _adaptive_size = _min_desired_young_length == _max_desired_young_length;
     } else {
       _sizer_kind = SizerNewSizeOnly;
     }
   } else if (FLAG_IS_CMDLINE(MaxNewSize)) {
-    _max_desired_young_length = MAX2((size_t) 1, MaxNewSize / HeapRegion::GrainBytes);
+    _max_desired_young_length =
+                             MAX2((uint) (MaxNewSize / HeapRegion::GrainBytes),
+                                  1U);
     _sizer_kind = SizerMaxNewSizeOnly;
   }
 }
 
-size_t G1YoungGenSizer::calculate_default_min_length(size_t new_number_of_heap_regions) {
-  size_t default_value = (new_number_of_heap_regions * G1DefaultMinNewGenPercent) / 100;
-  return MAX2((size_t)1, default_value);
+uint G1YoungGenSizer::calculate_default_min_length(uint new_number_of_heap_regions) {
+  uint default_value = (new_number_of_heap_regions * G1DefaultMinNewGenPercent) / 100;
+  return MAX2(1U, default_value);
 }
 
-size_t G1YoungGenSizer::calculate_default_max_length(size_t new_number_of_heap_regions) {
-  size_t default_value = (new_number_of_heap_regions * G1DefaultMaxNewGenPercent) / 100;
-  return MAX2((size_t)1, default_value);
+uint G1YoungGenSizer::calculate_default_max_length(uint new_number_of_heap_regions) {
+  uint default_value = (new_number_of_heap_regions * G1DefaultMaxNewGenPercent) / 100;
+  return MAX2(1U, default_value);
 }
 
-void G1YoungGenSizer::heap_size_changed(size_t new_number_of_heap_regions) {
+void G1YoungGenSizer::heap_size_changed(uint new_number_of_heap_regions) {
   assert(new_number_of_heap_regions > 0, "Heap must be initialized");
 
   switch (_sizer_kind) {
@@ -512,16 +512,16 @@ void G1CollectorPolicy::initialize_gc_policy_counters() {
   _gc_policy_counters = new GCPolicyCounters("GarbageFirst", 1, 3);
 }
 
-bool G1CollectorPolicy::predict_will_fit(size_t young_length,
+bool G1CollectorPolicy::predict_will_fit(uint young_length,
                                          double base_time_ms,
-                                         size_t base_free_regions,
+                                         uint base_free_regions,
                                          double target_pause_time_ms) {
   if (young_length >= base_free_regions) {
     // end condition 1: not enough space for the young regions
     return false;
   }
 
-  double accum_surv_rate = accum_yg_surv_rate_pred((int)(young_length - 1));
+  double accum_surv_rate = accum_yg_surv_rate_pred((int) young_length - 1);
   size_t bytes_to_copy =
                (size_t) (accum_surv_rate * (double) HeapRegion::GrainBytes);
   double copy_time_ms = predict_object_copy_time_ms(bytes_to_copy);
@@ -533,7 +533,7 @@ bool G1CollectorPolicy::predict_will_fit(size_t young_length,
   }
 
   size_t free_bytes =
-                  (base_free_regions - young_length) * HeapRegion::GrainBytes;
+                   (base_free_regions - young_length) * HeapRegion::GrainBytes;
   if ((2.0 * sigma()) * (double) bytes_to_copy > (double) free_bytes) {
     // end condition 3: out-of-space (conservatively!)
     return false;
@@ -543,25 +543,25 @@ bool G1CollectorPolicy::predict_will_fit(size_t young_length,
   return true;
 }
 
-void G1CollectorPolicy::record_new_heap_size(size_t new_number_of_regions) {
+void G1CollectorPolicy::record_new_heap_size(uint new_number_of_regions) {
   // re-calculate the necessary reserve
   double reserve_regions_d = (double) new_number_of_regions * _reserve_factor;
   // We use ceiling so that if reserve_regions_d is > 0.0 (but
   // smaller than 1.0) we'll get 1.
-  _reserve_regions = (size_t) ceil(reserve_regions_d);
+  _reserve_regions = (uint) ceil(reserve_regions_d);
 
   _young_gen_sizer->heap_size_changed(new_number_of_regions);
 }
 
-size_t G1CollectorPolicy::calculate_young_list_desired_min_length(
-                                                     size_t base_min_length) {
-  size_t desired_min_length = 0;
+uint G1CollectorPolicy::calculate_young_list_desired_min_length(
+                                                       uint base_min_length) {
+  uint desired_min_length = 0;
   if (adaptive_young_list_length()) {
     if (_alloc_rate_ms_seq->num() > 3) {
       double now_sec = os::elapsedTime();
       double when_ms = _mmu_tracker->when_max_gc_sec(now_sec) * 1000.0;
       double alloc_rate_ms = predict_alloc_rate_ms();
-      desired_min_length = (size_t) ceil(alloc_rate_ms * when_ms);
+      desired_min_length = (uint) ceil(alloc_rate_ms * when_ms);
     } else {
       // otherwise we don't have enough info to make the prediction
     }
@@ -571,7 +571,7 @@ size_t G1CollectorPolicy::calculate_young_list_desired_min_length(
   return MAX2(_young_gen_sizer->min_desired_young_length(), desired_min_length);
 }
 
-size_t G1CollectorPolicy::calculate_young_list_desired_max_length() {
+uint G1CollectorPolicy::calculate_young_list_desired_max_length() {
   // Here, we might want to also take into account any additional
   // constraints (i.e., user-defined minimum bound). Currently, we
   // effectively don't set this bound.
@@ -588,11 +588,11 @@ void G1CollectorPolicy::update_young_list_target_length(size_t rs_lengths) {
   // Calculate the absolute and desired min bounds.
 
   // This is how many young regions we already have (currently: the survivors).
-  size_t base_min_length = recorded_survivor_regions();
+  uint base_min_length = recorded_survivor_regions();
   // This is the absolute minimum young length, which ensures that we
   // can allocate one eden region in the worst-case.
-  size_t absolute_min_length = base_min_length + 1;
-  size_t desired_min_length =
+  uint absolute_min_length = base_min_length + 1;
+  uint desired_min_length =
                      calculate_young_list_desired_min_length(base_min_length);
   if (desired_min_length < absolute_min_length) {
     desired_min_length = absolute_min_length;
@@ -601,16 +601,16 @@ void G1CollectorPolicy::update_young_list_target_length(size_t rs_lengths) {
   // Calculate the absolute and desired max bounds.
 
   // We will try our best not to "eat" into the reserve.
-  size_t absolute_max_length = 0;
+  uint absolute_max_length = 0;
   if (_free_regions_at_end_of_collection > _reserve_regions) {
     absolute_max_length = _free_regions_at_end_of_collection - _reserve_regions;
   }
-  size_t desired_max_length = calculate_young_list_desired_max_length();
+  uint desired_max_length = calculate_young_list_desired_max_length();
   if (desired_max_length > absolute_max_length) {
     desired_max_length = absolute_max_length;
   }
 
-  size_t young_list_target_length = 0;
+  uint young_list_target_length = 0;
   if (adaptive_young_list_length()) {
     if (gcs_are_young()) {
       young_list_target_length =
@@ -648,11 +648,11 @@ void G1CollectorPolicy::update_young_list_target_length(size_t rs_lengths) {
   update_max_gc_locker_expansion();
 }
 
-size_t
+uint
 G1CollectorPolicy::calculate_young_list_target_length(size_t rs_lengths,
-                                                   size_t base_min_length,
-                                                   size_t desired_min_length,
-                                                   size_t desired_max_length) {
+                                                     uint base_min_length,
+                                                     uint desired_min_length,
+                                                     uint desired_max_length) {
   assert(adaptive_young_list_length(), "pre-condition");
   assert(gcs_are_young(), "only call this for young GCs");
 
@@ -667,9 +667,9 @@ G1CollectorPolicy::calculate_young_list_target_length(size_t rs_lengths,
   // will be reflected in the predictions by the
   // survivor_regions_evac_time prediction.
   assert(desired_min_length > base_min_length, "invariant");
-  size_t min_young_length = desired_min_length - base_min_length;
+  uint min_young_length = desired_min_length - base_min_length;
   assert(desired_max_length > base_min_length, "invariant");
-  size_t max_young_length = desired_max_length - base_min_length;
+  uint max_young_length = desired_max_length - base_min_length;
 
   double target_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
   double survivor_regions_evac_time = predict_survivor_regions_evac_time();
@@ -679,8 +679,8 @@ G1CollectorPolicy::calculate_young_list_target_length(size_t rs_lengths,
   double base_time_ms =
     predict_base_elapsed_time_ms(pending_cards, scanned_cards) +
     survivor_regions_evac_time;
-  size_t available_free_regions = _free_regions_at_end_of_collection;
-  size_t base_free_regions = 0;
+  uint available_free_regions = _free_regions_at_end_of_collection;
+  uint base_free_regions = 0;
   if (available_free_regions > _reserve_regions) {
     base_free_regions = available_free_regions - _reserve_regions;
   }
@@ -717,9 +717,9 @@ G1CollectorPolicy::calculate_young_list_target_length(size_t rs_lengths,
       // the new max. This way we maintain the loop invariants.
 
       assert(min_young_length < max_young_length, "invariant");
-      size_t diff = (max_young_length - min_young_length) / 2;
+      uint diff = (max_young_length - min_young_length) / 2;
       while (diff > 0) {
-        size_t young_length = min_young_length + diff;
+        uint young_length = min_young_length + diff;
         if (predict_will_fit(young_length, base_time_ms,
                              base_free_regions, target_pause_time_ms)) {
           min_young_length = young_length;
@@ -863,8 +863,6 @@ void G1CollectorPolicy::record_full_collection_end() {
   _last_young_gc = false;
   clear_initiate_conc_mark_if_possible();
   clear_during_initial_mark_pause();
-  _known_garbage_bytes = 0;
-  _known_garbage_ratio = 0.0;
   _in_marking_window = false;
   _in_marking_window_im = false;
 
@@ -877,7 +875,7 @@ void G1CollectorPolicy::record_full_collection_end() {
   // Reset survivors SurvRateGroup.
   _survivor_surv_rate_group->reset();
   update_young_list_target_length();
-  _collectionSetChooser->clearMarkedHeapRegions();
+  _collectionSetChooser->clear();
 }
 
 void G1CollectorPolicy::record_stop_world_start() {
@@ -886,7 +884,7 @@ void G1CollectorPolicy::record_stop_world_start() {
 
 void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
                                                       size_t start_used) {
-  if (PrintGCDetails) {
+  if (G1Log::finer()) {
     gclog_or_tty->stamp(PrintGCTimeStamps);
     gclog_or_tty->print("[GC pause");
     gclog_or_tty->print(" (%s)", gcs_are_young() ? "young" : "mixed");
@@ -944,9 +942,6 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
     _cur_aux_times_set[i] = false;
   }
 
-  // This is initialized to zero here and is set during
-  // the evacuation pause if marking is in progress.
-  _cur_satb_drain_time_ms = 0.0;
   // This is initialized to zero here and is set during the evacuation
   // pause if we actually waited for the root region scanning to finish.
   _root_region_scan_wait_time_ms = 0.0;
@@ -1026,11 +1021,16 @@ void G1CollectorPolicy::print_par_stats(int level,
     if (val > max)
       max = val;
     total += val;
-    buf.append("  %3.1lf", val);
+    if (G1Log::finest()) {
+      buf.append("  %.1lf", val);
+    }
   }
-  buf.append_and_print_cr("");
+
+  if (G1Log::finest()) {
+    buf.append_and_print_cr("");
+  }
   double avg = total / (double) no_of_gc_threads();
-  buf.append_and_print_cr(" Avg: %5.1lf, Min: %5.1lf, Max: %5.1lf, Diff: %5.1lf]",
+  buf.append_and_print_cr(" Avg: %.1lf Min: %.1lf Max: %.1lf Diff: %.1lf]",
     avg, min, max, max - min);
 }
 
@@ -1227,7 +1227,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
 
   // These values are used to update the summary information that is
   // displayed when TraceGen0Time is enabled, and are output as part
-  // of the PrintGCDetails output, in the non-parallel case.
+  // of the "finer" output, in the non-parallel case.
 
   double ext_root_scan_time = avg_value(_par_last_ext_root_scan_times_ms);
   double satb_filtering_time = avg_value(_par_last_satb_filtering_times_ms);
@@ -1246,11 +1246,6 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
 
   double other_time_ms = elapsed_ms;
 
-  // Subtract the SATB drain time. It's initialized to zero at the
-  // start of the pause and is updated during the pause if marking
-  // is in progress.
-  other_time_ms -= _cur_satb_drain_time_ms;
-
   // Subtract the root region scanning wait time. It's initialized to
   // zero at the start of the pause.
   other_time_ms -= _root_region_scan_wait_time_ms;
@@ -1261,14 +1256,12 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     other_time_ms -= known_time;
   }
 
+  // Now subtract the time taken to fix up roots in generated code
+  other_time_ms -= _cur_collection_code_root_fixup_time_ms;
+
   // Subtract the time taken to clean the card table from the
   // current value of "other time"
   other_time_ms -= _cur_clear_ct_time_ms;
-
-  // Subtract the time spent completing marking in the collection
-  // set. Note if marking is not in progress during the pause
-  // the value of _mark_closure_time_ms will be zero.
-  other_time_ms -= _mark_closure_time_ms;
 
   // TraceGen0Time and TraceGen1Time summary info updating.
   _all_pause_times_ms->add(elapsed_ms);
@@ -1280,16 +1273,8 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     MainBodySummary* body_summary = _summary->main_body_summary();
     assert(body_summary != NULL, "should not be null!");
 
-    // This will be non-zero iff marking is currently in progress (i.e.
-    // _g1->mark_in_progress() == true) and the currrent pause was not
-    // an initial mark pause. Since the body_summary items are NumberSeqs,
-    // however, they have to be consistent and updated in lock-step with
-    // each other. Therefore we unconditionally record the SATB drain
-    // time - even if it's zero.
-    body_summary->record_satb_drain_time_ms(_cur_satb_drain_time_ms);
     body_summary->record_root_region_scan_wait_time_ms(
                                                _root_region_scan_wait_time_ms);
-
     body_summary->record_ext_root_scan_time_ms(ext_root_scan_time);
     body_summary->record_satb_filtering_time_ms(satb_filtering_time);
     body_summary->record_update_rs_time_ms(update_rs_time);
@@ -1305,7 +1290,6 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
       body_summary->record_parallel_other_time_ms(parallel_other_time);
     }
 
-    body_summary->record_mark_closure_time_ms(_mark_closure_time_ms);
     body_summary->record_clear_ct_time_ms(_cur_clear_ct_time_ms);
 
     // We exempt parallel collection from this check because Alloc Buffer
@@ -1336,7 +1320,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     // given that humongous object allocations do not really affect
     // either the pause's duration nor when the next pause will take
     // place we can safely ignore them here.
-    size_t regions_allocated = eden_cset_region_length();
+    uint regions_allocated = eden_cset_region_length();
     double alloc_rate_ms = (double) regions_allocated / app_time_ms;
     _alloc_rate_ms_seq->add(alloc_rate_ms);
 
@@ -1376,8 +1360,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     }
   }
 
-  // PrintGCDetails output
-  if (PrintGCDetails) {
+  if (G1Log::finer()) {
     bool print_marking_info =
       _g1->mark_in_progress() && !last_pause_included_initial_mark;
 
@@ -1396,15 +1379,19 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
         print_par_stats(2, "SATB Filtering", _par_last_satb_filtering_times_ms);
       }
       print_par_stats(2, "Update RS", _par_last_update_rs_times_ms);
-      print_par_sizes(3, "Processed Buffers", _par_last_update_rs_processed_buffers);
+      if (G1Log::finest()) {
+        print_par_sizes(3, "Processed Buffers", _par_last_update_rs_processed_buffers);
+      }
       print_par_stats(2, "Scan RS", _par_last_scan_rs_times_ms);
       print_par_stats(2, "Object Copy", _par_last_obj_copy_times_ms);
       print_par_stats(2, "Termination", _par_last_termination_times_ms);
-      print_par_sizes(3, "Termination Attempts", _par_last_termination_attempts);
-      print_par_stats(2, "GC Worker End", _par_last_gc_worker_end_times_ms);
+      if (G1Log::finest()) {
+        print_par_sizes(3, "Termination Attempts", _par_last_termination_attempts);
+      }
 
       for (int i = 0; i < _parallel_gc_threads; i++) {
-        _par_last_gc_worker_times_ms[i] = _par_last_gc_worker_end_times_ms[i] - _par_last_gc_worker_start_times_ms[i];
+        _par_last_gc_worker_times_ms[i] = _par_last_gc_worker_end_times_ms[i] -
+                                          _par_last_gc_worker_start_times_ms[i];
 
         double worker_known_time = _par_last_ext_root_scan_times_ms[i] +
                                    _par_last_satb_filtering_times_ms[i] +
@@ -1413,23 +1400,26 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
                                    _par_last_obj_copy_times_ms[i] +
                                    _par_last_termination_times_ms[i];
 
-        _par_last_gc_worker_other_times_ms[i] = _cur_collection_par_time_ms - worker_known_time;
+        _par_last_gc_worker_other_times_ms[i] = _par_last_gc_worker_times_ms[i] -
+                                                worker_known_time;
       }
-      print_par_stats(2, "GC Worker", _par_last_gc_worker_times_ms);
+
       print_par_stats(2, "GC Worker Other", _par_last_gc_worker_other_times_ms);
+      print_par_stats(2, "GC Worker Total", _par_last_gc_worker_times_ms);
+      print_par_stats(2, "GC Worker End", _par_last_gc_worker_end_times_ms);
     } else {
       print_stats(1, "Ext Root Scanning", ext_root_scan_time);
       if (print_marking_info) {
         print_stats(1, "SATB Filtering", satb_filtering_time);
       }
       print_stats(1, "Update RS", update_rs_time);
-      print_stats(2, "Processed Buffers", (int)update_rs_processed_buffers);
+      if (G1Log::finest()) {
+        print_stats(2, "Processed Buffers", (int)update_rs_processed_buffers);
+      }
       print_stats(1, "Scan RS", scan_rs_time);
       print_stats(1, "Object Copying", obj_copy_time);
     }
-    if (print_marking_info) {
-      print_stats(1, "Complete CSet Marking", _mark_closure_time_ms);
-    }
+    print_stats(1, "Code Root Fixup", _cur_collection_code_root_fixup_time_ms);
     print_stats(1, "Clear CT", _cur_clear_ct_time_ms);
 #ifndef PRODUCT
     print_stats(1, "Cur Clear CC", _cur_clear_cc_time_ms);
@@ -1458,16 +1448,6 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
       }
     }
   }
-
-  // Update the efficiency-since-mark vars.
-  double proc_ms = elapsed_ms * (double) _parallel_gc_threads;
-  if (elapsed_ms < MIN_TIMER_GRANULARITY) {
-    // This usually happens due to the timer not having the required
-    // granularity. Some Linuxes are the usual culprits.
-    // We'll just set it to something (arbitrarily) small.
-    proc_ms = 1.0;
-  }
-  double cur_efficiency = (double) freed_bytes / proc_ms;
 
   bool new_in_marking_window = _in_marking_window;
   bool new_in_marking_window_im = false;
@@ -1503,10 +1483,6 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     }
   }
 
-  if (_last_gc_was_young && !_during_marking) {
-    _young_gc_eff_seq->add(cur_efficiency);
-  }
-
   _short_lived_surv_rate_group->start_adding_regions();
   // do that for any other surv rate groupsx
 
@@ -1514,8 +1490,9 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     double pause_time_ms = elapsed_ms;
 
     size_t diff = 0;
-    if (_max_pending_cards >= _pending_cards)
+    if (_max_pending_cards >= _pending_cards) {
       diff = _max_pending_cards - _pending_cards;
+    }
     _pending_card_diff_seq->add((double) diff);
 
     double cost_per_card_ms = 0.0;
@@ -1577,8 +1554,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     }
 
     double all_other_time_ms = pause_time_ms -
-      (update_rs_time + scan_rs_time + obj_copy_time +
-       _mark_closure_time_ms + termination_time);
+      (update_rs_time + scan_rs_time + obj_copy_time + termination_time);
 
     double young_other_time_ms = 0.0;
     if (young_cset_region_length() > 0) {
@@ -1621,7 +1597,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
   double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
   adjust_concurrent_refinement(update_rs_time, update_rs_processed_buffers, update_rs_time_goal_ms);
 
-  assert(assertMarkedBytesDataOK(), "Marked regions not OK at pause end.");
+  _collectionSetChooser->verify();
 }
 
 #define EXT_SIZE_FORMAT "%d%s"
@@ -1630,7 +1606,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
   proper_unit_for_byte_size((bytes))
 
 void G1CollectorPolicy::print_heap_transition() {
-  if (PrintGCDetails) {
+  if (G1Log::finer()) {
     YoungList* young_list = _g1->young_list();
     size_t eden_bytes = young_list->eden_used_bytes();
     size_t survivor_bytes = young_list->survivor_used_bytes();
@@ -1657,7 +1633,7 @@ void G1CollectorPolicy::print_heap_transition() {
       EXT_SIZE_PARAMS(capacity));
 
     _prev_eden_capacity = eden_capacity;
-  } else if (PrintGC) {
+  } else if (G1Log::fine()) {
     _g1->print_size_transition(gclog_or_tty,
                                _cur_collection_pause_used_at_start_bytes,
                                _g1->used(), _g1->capacity());
@@ -1706,41 +1682,6 @@ void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
 }
 
 double
-G1CollectorPolicy::
-predict_young_collection_elapsed_time_ms(size_t adjustment) {
-  guarantee( adjustment == 0 || adjustment == 1, "invariant" );
-
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  size_t young_num = g1h->young_list()->length();
-  if (young_num == 0)
-    return 0.0;
-
-  young_num += adjustment;
-  size_t pending_cards = predict_pending_cards();
-  size_t rs_lengths = g1h->young_list()->sampled_rs_lengths() +
-                      predict_rs_length_diff();
-  size_t card_num;
-  if (gcs_are_young()) {
-    card_num = predict_young_card_num(rs_lengths);
-  } else {
-    card_num = predict_non_young_card_num(rs_lengths);
-  }
-  size_t young_byte_size = young_num * HeapRegion::GrainBytes;
-  double accum_yg_surv_rate =
-    _short_lived_surv_rate_group->accum_surv_rate(adjustment);
-
-  size_t bytes_to_copy =
-    (size_t) (accum_yg_surv_rate * (double) HeapRegion::GrainBytes);
-
-  return
-    predict_rs_update_time_ms(pending_cards) +
-    predict_rs_scan_time_ms(card_num) +
-    predict_object_copy_time_ms(bytes_to_copy) +
-    predict_young_other_time_ms(young_num) +
-    predict_constant_other_time_ms();
-}
-
-double
 G1CollectorPolicy::predict_base_elapsed_time_ms(size_t pending_cards) {
   size_t rs_length = predict_rs_length_diff();
   size_t card_num;
@@ -1785,8 +1726,7 @@ G1CollectorPolicy::predict_region_elapsed_time_ms(HeapRegion* hr,
   return region_elapsed_time_ms;
 }
 
-size_t
-G1CollectorPolicy::predict_bytes_to_copy(HeapRegion* hr) {
+size_t G1CollectorPolicy::predict_bytes_to_copy(HeapRegion* hr) {
   size_t bytes_to_copy;
   if (hr->is_marked())
     bytes_to_copy = hr->max_live_bytes();
@@ -1800,8 +1740,8 @@ G1CollectorPolicy::predict_bytes_to_copy(HeapRegion* hr) {
 }
 
 void
-G1CollectorPolicy::init_cset_region_lengths(size_t eden_cset_region_length,
-                                          size_t survivor_cset_region_length) {
+G1CollectorPolicy::init_cset_region_lengths(uint eden_cset_region_length,
+                                            uint survivor_cset_region_length) {
   _eden_cset_region_length     = eden_cset_region_length;
   _survivor_cset_region_length = survivor_cset_region_length;
   _old_cset_region_length      = 0;
@@ -1973,7 +1913,6 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
         print_summary(1, "Object Copy", body_summary->get_obj_copy_seq());
       }
     }
-    print_summary(1, "Mark Closure", body_summary->get_mark_closure_seq());
     print_summary(1, "Clear CT", body_summary->get_clear_ct_seq());
     print_summary(1, "Other", summary->get_other_seq());
     {
@@ -1982,17 +1921,15 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
         if (parallel) {
           // parallel
           NumberSeq* other_parts[] = {
-            body_summary->get_satb_drain_seq(),
             body_summary->get_root_region_scan_wait_seq(),
             body_summary->get_parallel_seq(),
             body_summary->get_clear_ct_seq()
           };
           calc_other_times_ms = NumberSeq(summary->get_total_seq(),
-                                          4, other_parts);
+                                          3, other_parts);
         } else {
           // serial
           NumberSeq* other_parts[] = {
-            body_summary->get_satb_drain_seq(),
             body_summary->get_root_region_scan_wait_seq(),
             body_summary->get_update_rs_seq(),
             body_summary->get_ext_root_scan_seq(),
@@ -2001,7 +1938,7 @@ void G1CollectorPolicy::print_summary(PauseSummary* summary) const {
             body_summary->get_obj_copy_seq()
           };
           calc_other_times_ms = NumberSeq(summary->get_total_seq(),
-                                          7, other_parts);
+                                          6, other_parts);
         }
         check_other_times(1,  summary->get_other_seq(), &calc_other_times_ms);
       }
@@ -2068,7 +2005,7 @@ region_num_to_mbs(int length) {
 }
 #endif // PRODUCT
 
-size_t G1CollectorPolicy::max_regions(int purpose) {
+uint G1CollectorPolicy::max_regions(int purpose) {
   switch (purpose) {
     case GCAllocForSurvived:
       return _max_survivor_regions;
@@ -2081,13 +2018,13 @@ size_t G1CollectorPolicy::max_regions(int purpose) {
 }
 
 void G1CollectorPolicy::update_max_gc_locker_expansion() {
-  size_t expansion_region_num = 0;
+  uint expansion_region_num = 0;
   if (GCLockerEdenExpansionPercent > 0) {
     double perc = (double) GCLockerEdenExpansionPercent / 100.0;
     double expansion_region_num_d = perc * (double) _young_list_target_length;
     // We use ceiling so that if expansion_region_num_d is > 0.0 (but
     // less than 1.0) we'll get 1.
-    expansion_region_num = (size_t) ceil(expansion_region_num_d);
+    expansion_region_num = (uint) ceil(expansion_region_num_d);
   } else {
     assert(expansion_region_num == 0, "sanity");
   }
@@ -2101,33 +2038,11 @@ void G1CollectorPolicy::update_survivors_policy() {
                  (double) _young_list_target_length / (double) SurvivorRatio;
   // We use ceiling so that if max_survivor_regions_d is > 0.0 (but
   // smaller than 1.0) we'll get 1.
-  _max_survivor_regions = (size_t) ceil(max_survivor_regions_d);
+  _max_survivor_regions = (uint) ceil(max_survivor_regions_d);
 
   _tenuring_threshold = _survivors_age_table.compute_tenuring_threshold(
         HeapRegion::GrainWords * _max_survivor_regions);
 }
-
-#ifndef PRODUCT
-class HRSortIndexIsOKClosure: public HeapRegionClosure {
-  CollectionSetChooser* _chooser;
-public:
-  HRSortIndexIsOKClosure(CollectionSetChooser* chooser) :
-    _chooser(chooser) {}
-
-  bool doHeapRegion(HeapRegion* r) {
-    if (!r->continuesHumongous()) {
-      assert(_chooser->regionProperlyOrdered(r), "Ought to be.");
-    }
-    return false;
-  }
-};
-
-bool G1CollectorPolicy::assertMarkedBytesDataOK() {
-  HRSortIndexIsOKClosure cl(_collectionSetChooser);
-  _g1->heap_region_iterate(&cl);
-  return true;
-}
-#endif
 
 bool G1CollectorPolicy::force_initial_mark_if_outside_cycle(
                                                      GCCause::Cause gc_cause) {
@@ -2226,8 +2141,8 @@ public:
       // We will skip any region that's currently used as an old GC
       // alloc region (we should not consider those for collection
       // before we fill them up).
-      if (_hrSorted->shouldAdd(r) && !_g1h->is_old_gc_alloc_region(r)) {
-        _hrSorted->addMarkedHeapRegion(r);
+      if (_hrSorted->should_add(r) && !_g1h->is_old_gc_alloc_region(r)) {
+        _hrSorted->add_region(r);
       }
     }
     return false;
@@ -2237,16 +2152,14 @@ public:
 class ParKnownGarbageHRClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   CollectionSetChooser* _hrSorted;
-  jint _marked_regions_added;
+  uint _marked_regions_added;
   size_t _reclaimable_bytes_added;
-  jint _chunk_size;
-  jint _cur_chunk_idx;
-  jint _cur_chunk_end; // Cur chunk [_cur_chunk_idx, _cur_chunk_end)
-  int _worker;
-  int _invokes;
+  uint _chunk_size;
+  uint _cur_chunk_idx;
+  uint _cur_chunk_end; // Cur chunk [_cur_chunk_idx, _cur_chunk_end)
 
   void get_new_chunk() {
-    _cur_chunk_idx = _hrSorted->getParMarkedHeapRegionChunk(_chunk_size);
+    _cur_chunk_idx = _hrSorted->claim_array_chunk(_chunk_size);
     _cur_chunk_end = _cur_chunk_idx + _chunk_size;
   }
   void add_region(HeapRegion* r) {
@@ -2254,7 +2167,7 @@ class ParKnownGarbageHRClosure: public HeapRegionClosure {
       get_new_chunk();
     }
     assert(_cur_chunk_idx < _cur_chunk_end, "postcondition");
-    _hrSorted->setMarkedHeapRegion(_cur_chunk_idx, r);
+    _hrSorted->set_region(_cur_chunk_idx, r);
     _marked_regions_added++;
     _reclaimable_bytes_added += r->reclaimable_bytes();
     _cur_chunk_idx++;
@@ -2262,104 +2175,79 @@ class ParKnownGarbageHRClosure: public HeapRegionClosure {
 
 public:
   ParKnownGarbageHRClosure(CollectionSetChooser* hrSorted,
-                           jint chunk_size,
-                           int worker) :
+                           uint chunk_size) :
       _g1h(G1CollectedHeap::heap()),
-      _hrSorted(hrSorted), _chunk_size(chunk_size), _worker(worker),
+      _hrSorted(hrSorted), _chunk_size(chunk_size),
       _marked_regions_added(0), _reclaimable_bytes_added(0),
-      _cur_chunk_idx(0), _cur_chunk_end(0), _invokes(0) { }
+      _cur_chunk_idx(0), _cur_chunk_end(0) { }
 
   bool doHeapRegion(HeapRegion* r) {
-    // We only include humongous regions in collection
-    // sets when concurrent mark shows that their contained object is
-    // unreachable.
-    _invokes++;
-
     // Do we have any marking information for this region?
     if (r->is_marked()) {
       // We will skip any region that's currently used as an old GC
       // alloc region (we should not consider those for collection
       // before we fill them up).
-      if (_hrSorted->shouldAdd(r) && !_g1h->is_old_gc_alloc_region(r)) {
+      if (_hrSorted->should_add(r) && !_g1h->is_old_gc_alloc_region(r)) {
         add_region(r);
       }
     }
     return false;
   }
-  jint marked_regions_added() { return _marked_regions_added; }
+  uint marked_regions_added() { return _marked_regions_added; }
   size_t reclaimable_bytes_added() { return _reclaimable_bytes_added; }
-  int invokes() { return _invokes; }
 };
 
 class ParKnownGarbageTask: public AbstractGangTask {
   CollectionSetChooser* _hrSorted;
-  jint _chunk_size;
+  uint _chunk_size;
   G1CollectedHeap* _g1;
 public:
-  ParKnownGarbageTask(CollectionSetChooser* hrSorted, jint chunk_size) :
+  ParKnownGarbageTask(CollectionSetChooser* hrSorted, uint chunk_size) :
     AbstractGangTask("ParKnownGarbageTask"),
     _hrSorted(hrSorted), _chunk_size(chunk_size),
     _g1(G1CollectedHeap::heap()) { }
 
   void work(uint worker_id) {
-    ParKnownGarbageHRClosure parKnownGarbageCl(_hrSorted,
-                                               _chunk_size,
-                                               worker_id);
+    ParKnownGarbageHRClosure parKnownGarbageCl(_hrSorted, _chunk_size);
+
     // Back to zero for the claim value.
     _g1->heap_region_par_iterate_chunked(&parKnownGarbageCl, worker_id,
                                          _g1->workers()->active_workers(),
                                          HeapRegion::InitialClaimValue);
-    jint regions_added = parKnownGarbageCl.marked_regions_added();
+    uint regions_added = parKnownGarbageCl.marked_regions_added();
     size_t reclaimable_bytes_added =
                                    parKnownGarbageCl.reclaimable_bytes_added();
-    _hrSorted->updateTotals(regions_added, reclaimable_bytes_added);
-    if (G1PrintParCleanupStats) {
-      gclog_or_tty->print_cr("     Thread %d called %d times, added %d regions to list.",
-                 worker_id, parKnownGarbageCl.invokes(), regions_added);
-    }
+    _hrSorted->update_totals(regions_added, reclaimable_bytes_added);
   }
 };
 
 void
 G1CollectorPolicy::record_concurrent_mark_cleanup_end(int no_of_gc_threads) {
-  double start_sec;
-  if (G1PrintParCleanupStats) {
-    start_sec = os::elapsedTime();
-  }
+  _collectionSetChooser->clear();
 
-  _collectionSetChooser->clearMarkedHeapRegions();
-  double clear_marked_end_sec;
-  if (G1PrintParCleanupStats) {
-    clear_marked_end_sec = os::elapsedTime();
-    gclog_or_tty->print_cr("  clear marked regions: %8.3f ms.",
-                           (clear_marked_end_sec - start_sec) * 1000.0);
-  }
-
+  uint region_num = _g1->n_regions();
   if (G1CollectedHeap::use_parallel_gc_threads()) {
-    const size_t OverpartitionFactor = 4;
-    size_t WorkUnit;
+    const uint OverpartitionFactor = 4;
+    uint WorkUnit;
     // The use of MinChunkSize = 8 in the original code
     // causes some assertion failures when the total number of
     // region is less than 8.  The code here tries to fix that.
     // Should the original code also be fixed?
     if (no_of_gc_threads > 0) {
-      const size_t MinWorkUnit =
-        MAX2(_g1->n_regions() / no_of_gc_threads, (size_t) 1U);
-      WorkUnit =
-        MAX2(_g1->n_regions() / (no_of_gc_threads * OverpartitionFactor),
-             MinWorkUnit);
+      const uint MinWorkUnit = MAX2(region_num / no_of_gc_threads, 1U);
+      WorkUnit = MAX2(region_num / (no_of_gc_threads * OverpartitionFactor),
+                      MinWorkUnit);
     } else {
       assert(no_of_gc_threads > 0,
         "The active gc workers should be greater than 0");
       // In a product build do something reasonable to avoid a crash.
-      const size_t MinWorkUnit =
-        MAX2(_g1->n_regions() / ParallelGCThreads, (size_t) 1U);
+      const uint MinWorkUnit = MAX2(region_num / (uint) ParallelGCThreads, 1U);
       WorkUnit =
-        MAX2(_g1->n_regions() / (ParallelGCThreads * OverpartitionFactor),
+        MAX2(region_num / (uint) (ParallelGCThreads * OverpartitionFactor),
              MinWorkUnit);
     }
-    _collectionSetChooser->prepareForAddMarkedHeapRegionsPar(_g1->n_regions(),
-                                                             WorkUnit);
+    _collectionSetChooser->prepare_for_par_region_addition(_g1->n_regions(),
+                                                           WorkUnit);
     ParKnownGarbageTask parKnownGarbageTask(_collectionSetChooser,
                                             (int) WorkUnit);
     _g1->workers()->run_task(&parKnownGarbageTask);
@@ -2370,20 +2258,10 @@ G1CollectorPolicy::record_concurrent_mark_cleanup_end(int no_of_gc_threads) {
     KnownGarbageClosure knownGarbagecl(_collectionSetChooser);
     _g1->heap_region_iterate(&knownGarbagecl);
   }
-  double known_garbage_end_sec;
-  if (G1PrintParCleanupStats) {
-    known_garbage_end_sec = os::elapsedTime();
-    gclog_or_tty->print_cr("  compute known garbage: %8.3f ms.",
-                      (known_garbage_end_sec - clear_marked_end_sec) * 1000.0);
-  }
 
-  _collectionSetChooser->sortMarkedHeapRegions();
+  _collectionSetChooser->sort_regions();
+
   double end_sec = os::elapsedTime();
-  if (G1PrintParCleanupStats) {
-    gclog_or_tty->print_cr("  sorting: %8.3f ms.",
-                           (end_sec - known_garbage_end_sec) * 1000.0);
-  }
-
   double elapsed_time_ms = (end_sec - _mark_cleanup_start_sec) * 1000.0;
   _concurrent_mark_cleanup_times_ms->add(elapsed_time_ms);
   _cur_mark_stop_world_time_ms += elapsed_time_ms;
@@ -2599,16 +2477,16 @@ void G1CollectorPolicy::print_collection_set(HeapRegion* list_head, outputStream
 bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
                                                 const char* false_action_str) {
   CollectionSetChooser* cset_chooser = _collectionSetChooser;
-  if (cset_chooser->isEmpty()) {
+  if (cset_chooser->is_empty()) {
     ergo_verbose0(ErgoMixedGCs,
                   false_action_str,
                   ergo_format_reason("candidate old regions not available"));
     return false;
   }
-  size_t reclaimable_bytes = cset_chooser->remainingReclaimableBytes();
+  size_t reclaimable_bytes = cset_chooser->remaining_reclaimable_bytes();
   size_t capacity_bytes = _g1->capacity();
   double perc = (double) reclaimable_bytes * 100.0 / (double) capacity_bytes;
-  double threshold = (double) G1OldReclaimableThresholdPercent;
+  double threshold = (double) G1HeapWastePercent;
   if (perc < threshold) {
     ergo_verbose4(ErgoMixedGCs,
               false_action_str,
@@ -2616,7 +2494,7 @@ bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
               ergo_format_region("candidate old regions")
               ergo_format_byte_perc("reclaimable")
               ergo_format_perc("threshold"),
-              cset_chooser->remainingRegions(),
+              cset_chooser->remaining_regions(),
               reclaimable_bytes, perc, threshold);
     return false;
   }
@@ -2627,7 +2505,7 @@ bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
                 ergo_format_region("candidate old regions")
                 ergo_format_byte_perc("reclaimable")
                 ergo_format_perc("threshold"),
-                cset_chooser->remainingRegions(),
+                cset_chooser->remaining_regions(),
                 reclaimable_bytes, perc, threshold);
   return true;
 }
@@ -2671,8 +2549,8 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
   // pause are appended to the RHS of the young list, i.e.
   //   [Newly Young Regions ++ Survivors from last pause].
 
-  size_t survivor_region_length = young_list->survivor_length();
-  size_t eden_region_length = young_list->length() - survivor_region_length;
+  uint survivor_region_length = young_list->survivor_length();
+  uint eden_region_length = young_list->length() - survivor_region_length;
   init_cset_region_lengths(eden_region_length, survivor_region_length);
   hr = young_list->first_survivor_region();
   while (hr != NULL) {
@@ -2710,11 +2588,11 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
 
   if (!gcs_are_young()) {
     CollectionSetChooser* cset_chooser = _collectionSetChooser;
-    assert(cset_chooser->verify(), "CSet Chooser verification - pre");
-    const size_t min_old_cset_length = cset_chooser->calcMinOldCSetLength();
-    const size_t max_old_cset_length = cset_chooser->calcMaxOldCSetLength();
+    cset_chooser->verify();
+    const uint min_old_cset_length = cset_chooser->calc_min_old_cset_length();
+    const uint max_old_cset_length = cset_chooser->calc_max_old_cset_length();
 
-    size_t expensive_region_num = 0;
+    uint expensive_region_num = 0;
     bool check_time_remaining = adaptive_young_list_length();
     HeapRegion* hr = cset_chooser->peek();
     while (hr != NULL) {
@@ -2799,7 +2677,7 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms) {
                     time_remaining_ms);
     }
 
-    assert(cset_chooser->verify(), "CSet Chooser verification - post");
+    cset_chooser->verify();
   }
 
   stop_incremental_cset_building();

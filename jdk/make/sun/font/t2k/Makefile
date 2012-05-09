@@ -52,7 +52,6 @@ include FILES_c.gmk
 FILES_export = \
     java/awt/Font.java \
     sun/font/FileFont.java \
-    sun/font/FontManager.java \
     sun/font/GlyphList.java \
     sun/font/NativeFont.java \
     sun/font/StrikeCache.java \

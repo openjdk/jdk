@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@
 #define JAVA_7_VERSION                    51
 
 
-void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int length, TRAPS) {
+void ClassFileParser::parse_constant_pool_entries(Handle class_loader, constantPoolHandle cp, int length, TRAPS) {
   // Use a local copy of ClassFileStream. It helps the C++ compiler to optimize
   // this function (_current can be allocated in a register, with scalar
   // replacement of aggregates). The _current pointer is copied back to
@@ -272,7 +272,7 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
             indices[names_count] = index;
             hashValues[names_count++] = hash;
             if (names_count == SymbolTable::symbol_alloc_batch_size) {
-              SymbolTable::new_symbols(cp, names_count, names, lengths, indices, hashValues, CHECK);
+              SymbolTable::new_symbols(class_loader, cp, names_count, names, lengths, indices, hashValues, CHECK);
               names_count = 0;
             }
           } else {
@@ -289,7 +289,7 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
 
   // Allocate the remaining symbols
   if (names_count > 0) {
-    SymbolTable::new_symbols(cp, names_count, names, lengths, indices, hashValues, CHECK);
+    SymbolTable::new_symbols(class_loader, cp, names_count, names, lengths, indices, hashValues, CHECK);
   }
 
   // Copy _current pointer of local copy back to stream().
@@ -318,7 +318,7 @@ class ConstantPoolCleaner : public StackObj {
 
 bool inline valid_cp_range(int index, int length) { return (index > 0 && index < length); }
 
-constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
+constantPoolHandle ClassFileParser::parse_constant_pool(Handle class_loader, TRAPS) {
   ClassFileStream* cfs = stream();
   constantPoolHandle nullHandle;
 
@@ -337,7 +337,7 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
   ConstantPoolCleaner cp_in_error(cp); // set constant pool to be cleaned up.
 
   // parsing constant pool entries
-  parse_constant_pool_entries(cp, length, CHECK_(nullHandle));
+  parse_constant_pool_entries(class_loader, cp, length, CHECK_(nullHandle));
 
   int index = 1;  // declared outside of loops for portability
 
@@ -2315,13 +2315,32 @@ void ClassFileParser::parse_classfile_source_debug_extension_attribute(constantP
 #define RECOGNIZED_INNER_CLASS_MODIFIERS (JVM_RECOGNIZED_CLASS_MODIFIERS | JVM_ACC_PRIVATE | JVM_ACC_PROTECTED | JVM_ACC_STATIC)
 
 // Return number of classes in the inner classes attribute table
-u2 ClassFileParser::parse_classfile_inner_classes_attribute(constantPoolHandle cp, instanceKlassHandle k, TRAPS) {
+u2 ClassFileParser::parse_classfile_inner_classes_attribute(u1* inner_classes_attribute_start,
+                                                            bool parsed_enclosingmethod_attribute,
+                                                            u2 enclosing_method_class_index,
+                                                            u2 enclosing_method_method_index,
+                                                            constantPoolHandle cp,
+                                                            instanceKlassHandle k, TRAPS) {
   ClassFileStream* cfs = stream();
-  cfs->guarantee_more(2, CHECK_0);  // length
-  u2 length = cfs->get_u2_fast();
+  u1* current_mark = cfs->current();
+  u2 length = 0;
+  if (inner_classes_attribute_start != NULL) {
+    cfs->set_current(inner_classes_attribute_start);
+    cfs->guarantee_more(2, CHECK_0);  // length
+    length = cfs->get_u2_fast();
+  }
 
-  // 4-tuples of shorts [inner_class_info_index, outer_class_info_index, inner_name_index, inner_class_access_flags]
-  typeArrayOop ic = oopFactory::new_permanent_shortArray(length*4, CHECK_0);
+  // 4-tuples of shorts of inner classes data and 2 shorts of enclosing
+  // method data:
+  //   [inner_class_info_index,
+  //    outer_class_info_index,
+  //    inner_name_index,
+  //    inner_class_access_flags,
+  //    ...
+  //    enclosing_method_class_index,
+  //    enclosing_method_method_index]
+  int size = length * 4 + (parsed_enclosingmethod_attribute ? 2 : 0);
+  typeArrayOop ic = oopFactory::new_permanent_shortArray(size, CHECK_0);
   typeArrayHandle inner_classes(THREAD, ic);
   int index = 0;
   int cp_size = cp->length();
@@ -2372,8 +2391,8 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(constantPoolHandle c
 
   // 4347400: make sure there's no duplicate entry in the classes array
   if (_need_verify && _major_version >= JAVA_1_5_VERSION) {
-    for(int i = 0; i < inner_classes->length(); i += 4) {
-      for(int j = i + 4; j < inner_classes->length(); j += 4) {
+    for(int i = 0; i < length * 4; i += 4) {
+      for(int j = i + 4; j < length * 4; j += 4) {
         guarantee_property((inner_classes->ushort_at(i)   != inner_classes->ushort_at(j) ||
                             inner_classes->ushort_at(i+1) != inner_classes->ushort_at(j+1) ||
                             inner_classes->ushort_at(i+2) != inner_classes->ushort_at(j+2) ||
@@ -2384,8 +2403,19 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(constantPoolHandle c
     }
   }
 
+  // Set EnclosingMethod class and method indexes.
+  if (parsed_enclosingmethod_attribute) {
+    inner_classes->short_at_put(index++, enclosing_method_class_index);
+    inner_classes->short_at_put(index++, enclosing_method_method_index);
+  }
+  assert(index == size, "wrong size");
+
   // Update instanceKlass with inner class info.
   k->set_inner_classes(inner_classes());
+
+  // Restore buffer's current position.
+  cfs->set_current(current_mark);
+
   return length;
 }
 
@@ -2490,6 +2520,10 @@ void ClassFileParser::parse_classfile_attributes(constantPoolHandle cp, instance
   int runtime_visible_annotations_length = 0;
   u1* runtime_invisible_annotations = NULL;
   int runtime_invisible_annotations_length = 0;
+  u1* inner_classes_attribute_start = NULL;
+  u4  inner_classes_attribute_length = 0;
+  u2  enclosing_method_class_index = 0;
+  u2  enclosing_method_method_index = 0;
   // Iterate over attributes
   while (attributes_count--) {
     cfs->guarantee_more(6, CHECK);  // attribute_name_index, attribute_length
@@ -2522,11 +2556,9 @@ void ClassFileParser::parse_classfile_attributes(constantPoolHandle cp, instance
       } else {
         parsed_innerclasses_attribute = true;
       }
-      u2 num_of_classes = parse_classfile_inner_classes_attribute(cp, k, CHECK);
-      if (_need_verify && _major_version >= JAVA_1_5_VERSION) {
-        guarantee_property(attribute_length == sizeof(num_of_classes) + 4 * sizeof(u2) * num_of_classes,
-                          "Wrong InnerClasses attribute length in class file %s", CHECK);
-      }
+      inner_classes_attribute_start = cfs->get_u1_buffer();
+      inner_classes_attribute_length = attribute_length;
+      cfs->skip_u1(inner_classes_attribute_length, CHECK);
     } else if (tag == vmSymbols::tag_synthetic()) {
       // Check for Synthetic tag
       // Shouldn't we check that the synthetic flags wasn't already set? - not required in spec
@@ -2568,22 +2600,21 @@ void ClassFileParser::parse_classfile_attributes(constantPoolHandle cp, instance
           parsed_enclosingmethod_attribute = true;
         }
         cfs->guarantee_more(4, CHECK);  // class_index, method_index
-        u2 class_index  = cfs->get_u2_fast();
-        u2 method_index = cfs->get_u2_fast();
-        if (class_index == 0) {
+        enclosing_method_class_index  = cfs->get_u2_fast();
+        enclosing_method_method_index = cfs->get_u2_fast();
+        if (enclosing_method_class_index == 0) {
           classfile_parse_error("Invalid class index in EnclosingMethod attribute in class file %s", CHECK);
         }
         // Validate the constant pool indices and types
-        if (!cp->is_within_bounds(class_index) ||
-            !is_klass_reference(cp, class_index)) {
+        if (!cp->is_within_bounds(enclosing_method_class_index) ||
+            !is_klass_reference(cp, enclosing_method_class_index)) {
           classfile_parse_error("Invalid or out-of-bounds class index in EnclosingMethod attribute in class file %s", CHECK);
         }
-        if (method_index != 0 &&
-            (!cp->is_within_bounds(method_index) ||
-             !cp->tag_at(method_index).is_name_and_type())) {
+        if (enclosing_method_method_index != 0 &&
+            (!cp->is_within_bounds(enclosing_method_method_index) ||
+             !cp->tag_at(enclosing_method_method_index).is_name_and_type())) {
           classfile_parse_error("Invalid or out-of-bounds method index in EnclosingMethod attribute in class file %s", CHECK);
         }
-        k->set_enclosing_method_indices(class_index, method_index);
       } else if (tag == vmSymbols::tag_bootstrap_methods() &&
                  _major_version >= Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
         if (parsed_bootstrap_methods_attribute)
@@ -2605,6 +2636,20 @@ void ClassFileParser::parse_classfile_attributes(constantPoolHandle cp, instance
                                                      runtime_invisible_annotations_length,
                                                      CHECK);
   k->set_class_annotations(annotations());
+
+  if (parsed_innerclasses_attribute || parsed_enclosingmethod_attribute) {
+    u2 num_of_classes = parse_classfile_inner_classes_attribute(
+                            inner_classes_attribute_start,
+                            parsed_innerclasses_attribute,
+                            enclosing_method_class_index,
+                            enclosing_method_method_index,
+                            cp, k, CHECK);
+    if (parsed_innerclasses_attribute &&_need_verify && _major_version >= JAVA_1_5_VERSION) {
+      guarantee_property(
+        inner_classes_attribute_length == sizeof(num_of_classes) + 4 * sizeof(u2) * num_of_classes,
+        "Wrong InnerClasses attribute length in class file %s", CHECK);
+    }
+  }
 
   if (_max_bootstrap_specifier_index >= 0) {
     guarantee_property(parsed_bootstrap_methods_attribute,
@@ -2758,7 +2803,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   _relax_verify = Verifier::relax_verify_for(class_loader());
 
   // Constant pool
-  constantPoolHandle cp = parse_constant_pool(CHECK_(nullHandle));
+  constantPoolHandle cp = parse_constant_pool(class_loader, CHECK_(nullHandle));
   ConstantPoolCleaner error_handler(cp); // set constant pool to be cleaned up.
 
   int cp_size = cp->length();
@@ -3309,6 +3354,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     klassOop ik = oopFactory::new_instanceKlass(name, vtable_size, itable_size,
                                                 static_field_size,
                                                 total_oop_map_count,
+                                                access_flags,
                                                 rt, CHECK_(nullHandle));
     instanceKlassHandle this_klass (THREAD, ik);
 
@@ -3317,7 +3363,6 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
            "sanity");
 
     // Fill in information already parsed
-    this_klass->set_access_flags(access_flags);
     this_klass->set_should_verify_class(verify);
     jint lh = Klass::instance_layout_helper(instance_size, false);
     this_klass->set_layout_helper(lh);

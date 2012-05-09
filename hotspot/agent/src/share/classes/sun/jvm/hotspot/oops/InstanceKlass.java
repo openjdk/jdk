@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ public class InstanceKlass extends Klass {
   private static int HIGH_OFFSET;
   private static int GENERIC_SIGNATURE_INDEX_OFFSET;
   private static int FIELD_SLOTS;
-  public static int IMPLEMENTORS_LIMIT;
 
   // ClassState constants
   private static int CLASS_STATE_UNPARSABLE_BY_GC;
@@ -70,13 +69,6 @@ public class InstanceKlass extends Klass {
     methodOrdering       = new OopField(type.getOopField("_method_ordering"), Oop.getHeaderSize());
     localInterfaces      = new OopField(type.getOopField("_local_interfaces"), Oop.getHeaderSize());
     transitiveInterfaces = new OopField(type.getOopField("_transitive_interfaces"), Oop.getHeaderSize());
-    nofImplementors      = new CIntField(type.getCIntegerField("_nof_implementors"), Oop.getHeaderSize());
-    IMPLEMENTORS_LIMIT   = db.lookupIntConstant("instanceKlass::implementors_limit").intValue();
-    implementors         = new OopField[IMPLEMENTORS_LIMIT];
-    for (int i = 0; i < IMPLEMENTORS_LIMIT; i++) {
-      long arrayOffset = Oop.getHeaderSize() + (i * db.getAddressSize());
-      implementors[i]    = new OopField(type.getOopField("_implementors[0]"), arrayOffset);
-    }
     fields               = new OopField(type.getOopField("_fields"), Oop.getHeaderSize());
     javaFieldsCount      = new CIntField(type.getCIntegerField("_java_fields_count"), Oop.getHeaderSize());
     constants            = new OopField(type.getOopField("_constants"), Oop.getHeaderSize());
@@ -136,8 +128,6 @@ public class InstanceKlass extends Klass {
   private static OopField  methodOrdering;
   private static OopField  localInterfaces;
   private static OopField  transitiveInterfaces;
-  private static CIntField nofImplementors;
-  private static OopField[] implementors;
   private static OopField  fields;
   private static CIntField javaFieldsCount;
   private static OopField  constants;
@@ -317,9 +307,6 @@ public class InstanceKlass extends Klass {
   public TypeArray getMethodOrdering()      { return (TypeArray)    methodOrdering.getValue(this); }
   public ObjArray  getLocalInterfaces()     { return (ObjArray)     localInterfaces.getValue(this); }
   public ObjArray  getTransitiveInterfaces() { return (ObjArray)     transitiveInterfaces.getValue(this); }
-  public long      nofImplementors()        { return                nofImplementors.getValue(this); }
-  public Klass     getImplementor()         { return (Klass)        implementors[0].getValue(this); }
-  public Klass     getImplementor(int i)    { return (Klass)        implementors[i].getValue(this); }
   public TypeArray getFields()              { return (TypeArray)    fields.getValue(this); }
   public int       getJavaFieldsCount()     { return                (int) javaFieldsCount.getValue(this); }
   public int       getAllFieldsCount()      { return                (int)getFields().getLength() / FIELD_SLOTS; }
@@ -359,6 +346,12 @@ public class InstanceKlass extends Klass {
     public static final int innerClassNextOffset = 4;
   };
 
+  public static interface EnclosingMethodAttributeOffset {
+    public static final int enclosing_method_class_index_offset = 0;
+    public static final int enclosing_method_method_index_offset = 1;
+    public static final int enclosing_method_attribute_size = 2;
+  };
+
   // refer to compute_modifier_flags in VM code.
   public long computeModifierFlags() {
     long access = getAccessFlags();
@@ -367,9 +360,14 @@ public class InstanceKlass extends Klass {
     int length = ( innerClassList == null)? 0 : (int) innerClassList.getLength();
     if (length > 0) {
        if (Assert.ASSERTS_ENABLED) {
-          Assert.that(length % InnerClassAttributeOffset.innerClassNextOffset == 0, "just checking");
+          Assert.that(length % InnerClassAttributeOffset.innerClassNextOffset == 0 ||
+                      length % InnerClassAttributeOffset.innerClassNextOffset == EnclosingMethodAttributeOffset.enclosing_method_attribute_size,
+                      "just checking");
        }
        for (int i = 0; i < length; i += InnerClassAttributeOffset.innerClassNextOffset) {
+          if (i == length - EnclosingMethodAttributeOffset.enclosing_method_attribute_size) {
+              break;
+          }
           int ioff = innerClassList.getShortAt(i +
                          InnerClassAttributeOffset.innerClassInnerClassInfoOffset);
           // 'ioff' can be zero.
@@ -419,9 +417,14 @@ public class InstanceKlass extends Klass {
     int length = ( innerClassList == null)? 0 : (int) innerClassList.getLength();
     if (length > 0) {
        if (Assert.ASSERTS_ENABLED) {
-         Assert.that(length % InnerClassAttributeOffset.innerClassNextOffset == 0, "just checking");
+         Assert.that(length % InnerClassAttributeOffset.innerClassNextOffset == 0 ||
+                     length % InnerClassAttributeOffset.innerClassNextOffset == EnclosingMethodAttributeOffset.enclosing_method_attribute_size,
+                     "just checking");
        }
        for (int i = 0; i < length; i += InnerClassAttributeOffset.innerClassNextOffset) {
+         if (i == length - EnclosingMethodAttributeOffset.enclosing_method_attribute_size) {
+             break;
+         }
          int ioff = innerClassList.getShortAt(i +
                         InnerClassAttributeOffset.innerClassInnerClassInfoOffset);
          // 'ioff' can be zero.
@@ -511,9 +514,6 @@ public class InstanceKlass extends Klass {
       visitor.doOop(methodOrdering, true);
       visitor.doOop(localInterfaces, true);
       visitor.doOop(transitiveInterfaces, true);
-      visitor.doCInt(nofImplementors, true);
-      for (int i = 0; i < IMPLEMENTORS_LIMIT; i++)
-        visitor.doOop(implementors[i], true);
       visitor.doOop(fields, true);
       visitor.doOop(constants, true);
       visitor.doOop(classLoader, true);

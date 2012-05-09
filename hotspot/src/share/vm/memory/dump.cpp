@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -297,16 +297,14 @@ public:
 
       if (obj->blueprint()->oop_is_instanceKlass()) {
         instanceKlass* ik = instanceKlass::cast((klassOop)obj);
-        typeArrayOop inner_classes = ik->inner_classes();
-        if (inner_classes != NULL) {
-          constantPoolOop constants = ik->constants();
-          int n = inner_classes->length();
-          for (int i = 0; i < n; i += instanceKlass::inner_class_next_offset) {
-            int ioff = i + instanceKlass::inner_class_inner_name_offset;
-            int index = inner_classes->ushort_at(ioff);
-            if (index != 0) {
-              _closure->do_symbol(constants->symbol_at_addr(index));
-            }
+        instanceKlassHandle ik_h((klassOop)obj);
+        InnerClassesIterator iter(ik_h);
+        constantPoolOop constants = ik->constants();
+        for (; !iter.done(); iter.next()) {
+          int index = iter.inner_name_index();
+
+          if (index != 0) {
+            _closure->do_symbol(constants->symbol_at_addr(index));
           }
         }
       }
@@ -1490,12 +1488,11 @@ void GenCollectedHeap::preload_and_dump(TRAPS) {
 
     // sun.io.Converters
     static const char obj_array_sig[] = "[[Ljava/lang/Object;";
-    SymbolTable::lookup(obj_array_sig, (int)strlen(obj_array_sig), THREAD);
+    (void)SymbolTable::new_permanent_symbol(obj_array_sig, THREAD);
 
     // java.util.HashMap
     static const char map_entry_array_sig[] = "[Ljava/util/Map$Entry;";
-    SymbolTable::lookup(map_entry_array_sig, (int)strlen(map_entry_array_sig),
-                        THREAD);
+    (void)SymbolTable::new_permanent_symbol(map_entry_array_sig, THREAD);
 
     tty->print("Loading classes to share ... ");
     while ((fgets(class_name, sizeof class_name, file)) != NULL) {
@@ -1514,7 +1511,7 @@ void GenCollectedHeap::preload_and_dump(TRAPS) {
       computed_jsum = jsum(computed_jsum, class_name, (const int)name_len - 1);
 
       // Got a class name - load it.
-      TempNewSymbol class_name_symbol = SymbolTable::new_symbol(class_name, THREAD);
+      Symbol* class_name_symbol = SymbolTable::new_permanent_symbol(class_name, THREAD);
       guarantee(!HAS_PENDING_EXCEPTION, "Exception creating a symbol.");
       klassOop klass = SystemDictionary::resolve_or_null(class_name_symbol,
                                                          THREAD);

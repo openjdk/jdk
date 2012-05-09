@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -86,8 +86,8 @@ then
     exit 1
 fi
 
-echo "running: ${JSTAT} -J-XX:+UsePerfData -gcutil ${JSTATD_1_PID}@${HOSTNAME}:${PORT_1} 250 5"
-${JSTAT} -J-XX:+UsePerfData -gcutil ${JSTATD_1_PID}@${HOSTNAME}:${PORT_1} 250 5 2>&1 | awk -f ${TESTSRC}/jstatGcutilOutput1.awk
+echo "running: ${JSTAT} -J-XX:+UsePerfData -J-Duser.language=en -gcutil ${JSTATD_1_PID}@${HOSTNAME}:${PORT_1} 250 5"
+${JSTAT} -J-XX:+UsePerfData -J-Duser.language=en -gcutil ${JSTATD_1_PID}@${HOSTNAME}:${PORT_1} 250 5 2>&1 | awk -f ${TESTSRC}/jstatGcutilOutput1.awk
 RC=$?
 
 if [ ${RC} -ne 0 ]
@@ -95,8 +95,8 @@ then
     echo "jstat output differs from expected output"
 fi
 
-echo "running: ${JSTAT} -J-XX:+UsePerfData -gcutil ${JSTATD_1_PID}@${HOSTNAME}:${PORT_2}/${SERVERNAME} 250 5"
-${JSTAT} -J-XX:+UsePerfData -gcutil ${JSTATD_1_PID}@${HOSTNAME}:${PORT_2}/${SERVERNAME} 250 5 2>&1 | awk -f ${TESTSRC}/jstatGcutilOutput1.awk
+echo "running: ${JSTAT} -J-XX:+UsePerfData -J-Duser.language=en -gcutil ${JSTATD_1_PID}@${HOSTNAME}:${PORT_2}/${SERVERNAME} 250 5"
+${JSTAT} -J-XX:+UsePerfData -J-Duser.language=en -gcutil ${JSTATD_1_PID}@${HOSTNAME}:${PORT_2}/${SERVERNAME} 250 5 2>&1 | awk -f ${TESTSRC}/jstatGcutilOutput1.awk
 RC=$?
 
 if [ ${RC} -ne 0 ]
