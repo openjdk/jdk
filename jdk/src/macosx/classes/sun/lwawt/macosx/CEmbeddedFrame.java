@@ -38,6 +38,8 @@ import java.awt.event.*;
 public class CEmbeddedFrame extends EmbeddedFrame {
 
     private CPlatformResponder responder;
+    private boolean focused = true;
+    private boolean parentWindowActive = true;
 
     public CEmbeddedFrame() {
         show();
@@ -87,11 +89,45 @@ public class CEmbeddedFrame extends EmbeddedFrame {
     }
 
     public void handleKeyEvent(int eventType, int modifierFlags, String characters,
+                               String charsIgnoringMods, boolean isRepeat, short keyCode,
+                               boolean needsKeyTyped) {
+        responder.handleKeyEvent(eventType, modifierFlags, charsIgnoringMods, keyCode, needsKeyTyped);
+    }
+
+    // REMIND: delete this method once 'deploy' changes for 7156194 is pushed
+    public void handleKeyEvent(int eventType, int modifierFlags, String characters,
                                String charsIgnoringMods, boolean isRepeat, short keyCode) {
-        responder.handleKeyEvent(eventType, modifierFlags, charsIgnoringMods, keyCode);
+        handleKeyEvent(eventType, modifierFlags, characters, charsIgnoringMods, isRepeat, keyCode, true);
     }
 
     public void handleInputEvent(String text) {
-        new RuntimeException("Not implemented");
+        responder.handleInputEvent(text);
     }
+
+    public void handleFocusEvent(boolean focused) {
+        this.focused = focused;
+        updateOverlayWindowActiveState();
+    }
+
+    public void handleWindowFocusEvent(boolean parentWindowActive) {
+        this.parentWindowActive = parentWindowActive;
+        updateOverlayWindowActiveState();
+    }
+
+    public boolean isParentWindowActive() {
+        return parentWindowActive;
+    }
+
+    /*
+     * May change appearance of contents of window, and generate a
+     * WINDOW_ACTIVATED event.
+     */
+    private void updateOverlayWindowActiveState() {
+        final boolean showAsFocused = parentWindowActive && focused;
+        dispatchEvent(
+            new FocusEvent(this, showAsFocused ?
+                                 FocusEvent.FOCUS_GAINED :
+                                 FocusEvent.FOCUS_LOST));
+     }
+
 }

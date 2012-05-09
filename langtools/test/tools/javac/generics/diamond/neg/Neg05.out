@@ -1,19 +1,19 @@
 Neg05.java:19:48: compiler.err.improperly.formed.type.inner.raw.param
-Neg05.java:19:35: compiler.err.prob.found.req: (compiler.misc.incompatible.types), Neg05.Foo<java.lang.String>, Neg05<?>.Foo<java.lang.String>
+Neg05.java:19:35: compiler.err.prob.found.req: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<java.lang.String>
 Neg05.java:20:58: compiler.err.improperly.formed.type.inner.raw.param
-Neg05.java:20:45: compiler.err.prob.found.req: (compiler.misc.incompatible.types), Neg05.Foo<java.lang.String>, Neg05<?>.Foo<? extends java.lang.String>
+Neg05.java:20:45: compiler.err.prob.found.req: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<? extends java.lang.String>
 Neg05.java:21:43: compiler.err.improperly.formed.type.inner.raw.param
-Neg05.java:21:30: compiler.err.prob.found.req: (compiler.misc.incompatible.types), Neg05.Foo<java.lang.String>, Neg05<?>.Foo<?>
+Neg05.java:21:30: compiler.err.prob.found.req: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<?>
 Neg05.java:22:56: compiler.err.improperly.formed.type.inner.raw.param
-Neg05.java:22:43: compiler.err.prob.found.req: (compiler.misc.incompatible.types), Neg05.Foo<java.lang.String>, Neg05<?>.Foo<? super java.lang.String>
+Neg05.java:22:43: compiler.err.prob.found.req: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<? super java.lang.String>
 Neg05.java:24:48: compiler.err.improperly.formed.type.inner.raw.param
-Neg05.java:24:35: compiler.err.prob.found.req: (compiler.misc.incompatible.types), Neg05.Foo<java.lang.String>, Neg05<?>.Foo<java.lang.String>
+Neg05.java:24:35: compiler.err.prob.found.req: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<java.lang.String>
 Neg05.java:25:58: compiler.err.improperly.formed.type.inner.raw.param
-Neg05.java:25:45: compiler.err.prob.found.req: (compiler.misc.incompatible.types), Neg05.Foo<java.lang.String>, Neg05<?>.Foo<? extends java.lang.String>
+Neg05.java:25:45: compiler.err.prob.found.req: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<? extends java.lang.String>
 Neg05.java:26:43: compiler.err.improperly.formed.type.inner.raw.param
-Neg05.java:26:30: compiler.err.prob.found.req: (compiler.misc.incompatible.types), Neg05.Foo<java.lang.String>, Neg05<?>.Foo<?>
+Neg05.java:26:30: compiler.err.prob.found.req: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<?>
 Neg05.java:27:56: compiler.err.improperly.formed.type.inner.raw.param
-Neg05.java:27:43: compiler.err.prob.found.req: (compiler.misc.incompatible.types), Neg05.Foo<java.lang.String>, Neg05<?>.Foo<? super java.lang.String>
+Neg05.java:27:43: compiler.err.prob.found.req: Neg05.Foo<java.lang.String>, Neg05<?>.Foo<? super java.lang.String>
 Neg05.java:31:37: compiler.err.improperly.formed.type.inner.raw.param
 Neg05.java:32:47: compiler.err.improperly.formed.type.inner.raw.param
 Neg05.java:33:32: compiler.err.improperly.formed.type.inner.raw.param

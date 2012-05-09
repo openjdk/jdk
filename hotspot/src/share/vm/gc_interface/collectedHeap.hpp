@@ -128,7 +128,6 @@ class CollectedHeap : public CHeapObj {
   // Reinitialize tlabs before resuming mutators.
   virtual void resize_all_tlabs();
 
- protected:
   // Allocate from the current thread's TLAB, with broken-out slow path.
   inline static HeapWord* allocate_from_tlab(Thread* thread, size_t size);
   static HeapWord* allocate_from_tlab_slow(Thread* thread, size_t size);
@@ -150,18 +149,14 @@ class CollectedHeap : public CHeapObj {
   inline static HeapWord* common_permanent_mem_allocate_init(size_t size, TRAPS);
 
   // Helper functions for (VM) allocation.
-  inline static void post_allocation_setup_common(KlassHandle klass,
-                                                  HeapWord* obj, size_t size);
+  inline static void post_allocation_setup_common(KlassHandle klass, HeapWord* obj);
   inline static void post_allocation_setup_no_klass_install(KlassHandle klass,
-                                                            HeapWord* objPtr,
-                                                            size_t size);
+                                                            HeapWord* objPtr);
 
-  inline static void post_allocation_setup_obj(KlassHandle klass,
-                                               HeapWord* obj, size_t size);
+  inline static void post_allocation_setup_obj(KlassHandle klass, HeapWord* obj);
 
   inline static void post_allocation_setup_array(KlassHandle klass,
-                                                 HeapWord* obj, size_t size,
-                                                 int length);
+                                                 HeapWord* obj, int length);
 
   // Clears an allocated object.
   inline static void init_obj(HeapWord* obj, size_t size);
@@ -169,7 +164,6 @@ class CollectedHeap : public CHeapObj {
   // Filler object utilities.
   static inline size_t filler_array_hdr_size();
   static inline size_t filler_array_min_size();
-  static inline size_t filler_array_max_size();
 
   DEBUG_ONLY(static void fill_args_check(HeapWord* start, size_t words);)
   DEBUG_ONLY(static void zap_filler_array(HeapWord* start, size_t words, bool zap = true);)
@@ -196,6 +190,10 @@ class CollectedHeap : public CHeapObj {
     ParallelScavengeHeap,
     G1CollectedHeap
   };
+
+  static inline size_t filler_array_max_size() {
+    return _filler_array_max_size;
+  }
 
   virtual CollectedHeap::Name kind() const { return CollectedHeap::Abstract; }
 
@@ -366,9 +364,7 @@ class CollectedHeap : public CHeapObj {
   inline static oop permanent_obj_allocate_no_klass_install(KlassHandle klass,
                                                             int size,
                                                             TRAPS);
-  inline static void post_allocation_install_obj_klass(KlassHandle klass,
-                                                       oop obj,
-                                                       int size);
+  inline static void post_allocation_install_obj_klass(KlassHandle klass, oop obj);
   inline static oop permanent_array_allocate(KlassHandle klass, int size, int length, TRAPS);
 
   // Raw memory allocation facilities
@@ -662,11 +658,8 @@ class CollectedHeap : public CHeapObj {
     }
   }
 
-  // Allocate GCHeapLog during VM startup
-  static void initialize_heap_log();
-
   // Heap verification
-  virtual void verify(bool allow_dirty, bool silent, VerifyOption option) = 0;
+  virtual void verify(bool silent, VerifyOption option) = 0;
 
   // Non product verification and debugging.
 #ifndef PRODUCT

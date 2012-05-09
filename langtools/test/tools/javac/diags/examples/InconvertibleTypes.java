@@ -22,7 +22,7 @@
  */
 
 // key: compiler.misc.inconvertible.types
-// key: compiler.err.prob.found.req
+// key: compiler.err.prob.found.req.1
 
 class InconvertibleTypes {
     class Outer<S> {

@@ -647,6 +647,15 @@ public class LWCToolkit extends LWToolkit {
         return InputEvent.CTRL_MASK | InputEvent.ALT_MASK;
     }
 
+    /**
+     * Tests whether specified key modifiers mask can be used to enter a printable
+     * character.
+     */
+    @Override
+    public boolean isPrintableCharacterModifiersMask(int mods) {
+        return ((mods & (InputEvent.META_MASK | InputEvent.CTRL_MASK)) == 0);
+    }
+
     // Extends PeerEvent because we want to pass long an ObjC mediator object and because we want these events to be posted early
     // Typically, rather than relying on the notifier to call notifyAll(), we use the mediator to stop the runloop
     public static class CPeerEvent extends PeerEvent {
@@ -686,7 +695,10 @@ public class LWCToolkit extends LWToolkit {
         return sunAwtDisableCALayers.booleanValue();
     }
 
-    @Override
+
+    /*
+     * Returns true if the application (one of its windows) owns keyboard focus.
+     */
     public native boolean isApplicationActive();
 
     /************************

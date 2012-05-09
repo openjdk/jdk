@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,24 @@
 
 JPRT_ARCHIVE_BUNDLE=$(ABS_OUTPUTDIR)/$(JPRT_BUILD_FLAVOR)-bundle.zip
 
+ifeq ($(PLATFORM),windows)
+  ZIPFLAGS=-q
+else
+  # store symbolic links as the link
+  ZIPFLAGS=-q -y
+endif
+
 jprt_build_product:  all images
 	( $(CD) $(OUTPUTDIR)/j2sdk-image && \
-	  $(ZIPEXE) -q -r $(JPRT_ARCHIVE_BUNDLE) . )
+	  $(ZIPEXE) $(ZIPFLAGS) -r $(JPRT_ARCHIVE_BUNDLE) . )
 
 jprt_build_fastdebug: fastdebug images
 	( $(CD) $(OUTPUTDIR)/j2sdk-image && \
-	  $(ZIPEXE) -q -r $(JPRT_ARCHIVE_BUNDLE) . )
+	  $(ZIPEXE) $(ZIPFLAGS) -r $(JPRT_ARCHIVE_BUNDLE) . )
 
 jprt_build_debug: debug images 
 	( $(CD) $(OUTPUTDIR)/j2sdk-image && \
-	  $(ZIPEXE) -q -r $(JPRT_ARCHIVE_BUNDLE) . )
+	  $(ZIPEXE) $(ZIPFLAGS) -r $(JPRT_ARCHIVE_BUNDLE) . )
 
 #
 # Phonies to avoid accidents.

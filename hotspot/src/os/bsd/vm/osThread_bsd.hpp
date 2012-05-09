@@ -72,15 +72,18 @@
 
 #ifdef _ALLBSD_SOURCE
 #ifdef __APPLE__
+  static size_t thread_id_size()         { return sizeof(thread_t); }
   thread_t thread_id() const {
     return _thread_id;
   }
 #else
+  static size_t thread_id_size()         { return sizeof(pthread_t); }
   pthread_t thread_id() const {
     return _thread_id;
   }
 #endif
 #else
+  static size_t thread_id_size()         { return sizeof(pid_t); }
   pid_t thread_id() const {
     return _thread_id;
   }

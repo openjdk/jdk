@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,6 +159,8 @@ public enum Option {
     D("-d", "opt.arg.directory", "opt.d", STANDARD, FILEMANAGER),
 
     S("-s", "opt.arg.directory", "opt.sourceDest", STANDARD, FILEMANAGER),
+
+    H("-h", "opt.arg.directory", "opt.headerDest", STANDARD, FILEMANAGER),
 
     IMPLICIT("-implicit:", "opt.implicit", STANDARD, BASIC, ONEOF, "none", "class"),
 

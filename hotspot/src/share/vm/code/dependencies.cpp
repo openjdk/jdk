@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1033,21 +1033,25 @@ klassOop ClassHierarchyWalker::find_witness_anywhere(klassOop context_type,
     // (Old CHA had the same limitation.)
     return context_type;
   }
-  for (int i = 0; i < nof_impls; i++) {
-    klassOop impl = instanceKlass::cast(context_type)->implementor(i);
-    if (impl == NULL) {
-      // implementors array overflowed => no exact info.
+  if (nof_impls > 0) {
+    klassOop impl = instanceKlass::cast(context_type)->implementor();
+    assert(impl != NULL, "just checking");
+    // If impl is the same as the context_type, then more than one
+    // implementor has seen. No exact info in this case.
+    if (impl == context_type) {
       return context_type;  // report an inexact witness to this sad affair
     }
     if (do_counts)
       { NOT_PRODUCT(deps_find_witness_steps++); }
     if (is_participant(impl)) {
-      if (participants_hide_witnesses)  continue;
-      // else fall through to process this guy's subclasses
+      if (!participants_hide_witnesses) {
+        ADD_SUBCLASS_CHAIN(impl);
+      }
     } else if (is_witness(impl) && !ignore_witness(impl)) {
       return impl;
+    } else {
+      ADD_SUBCLASS_CHAIN(impl);
     }
-    ADD_SUBCLASS_CHAIN(impl);
   }
 
   // Recursively process each non-trivial sibling chain.
@@ -1174,8 +1178,9 @@ klassOop Dependencies::check_leaf_type(klassOop ctxk) {
   } else if (ctx->nof_implementors() != 0) {
     // if it is an interface, it must be unimplemented
     // (if it is not an interface, nof_implementors is always zero)
-    klassOop impl = ctx->implementor(0);
-    return (impl != NULL)? impl: ctxk;
+    klassOop impl = ctx->implementor();
+    assert(impl != NULL, "must be set");
+    return impl;
   } else {
     return NULL;
   }

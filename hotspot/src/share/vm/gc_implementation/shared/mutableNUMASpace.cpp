@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,29 +91,37 @@ void MutableNUMASpace::ensure_parsability() {
     MutableSpace *s = ls->space();
     if (s->top() < top()) { // For all spaces preceding the one containing top()
       if (s->free_in_words() > 0) {
-        size_t area_touched_words = pointer_delta(s->end(), s->top());
-        CollectedHeap::fill_with_object(s->top(), area_touched_words);
+        intptr_t cur_top = (intptr_t)s->top();
+        size_t words_left_to_fill = pointer_delta(s->end(), s->top());;
+        while (words_left_to_fill > 0) {
+          size_t words_to_fill = MIN2(words_left_to_fill, CollectedHeap::filler_array_max_size());
+          assert(words_to_fill >= CollectedHeap::min_fill_size(),
+            err_msg("Remaining size ("SIZE_FORMAT ") is too small to fill (based on " SIZE_FORMAT " and " SIZE_FORMAT ")",
+            words_to_fill, words_left_to_fill, CollectedHeap::filler_array_max_size()));
+          CollectedHeap::fill_with_object((HeapWord*)cur_top, words_to_fill);
+          if (!os::numa_has_static_binding()) {
+            size_t touched_words = words_to_fill;
 #ifndef ASSERT
-        if (!ZapUnusedHeapArea) {
-          area_touched_words = MIN2((size_t)align_object_size(typeArrayOopDesc::header_size(T_INT)),
-                                    area_touched_words);
-        }
+            if (!ZapUnusedHeapArea) {
+              touched_words = MIN2((size_t)align_object_size(typeArrayOopDesc::header_size(T_INT)),
+                touched_words);
+            }
 #endif
-        if (!os::numa_has_static_binding()) {
-          MemRegion invalid;
-          HeapWord *crossing_start = (HeapWord*)round_to((intptr_t)s->top(), os::vm_page_size());
-          HeapWord *crossing_end = (HeapWord*)round_to((intptr_t)(s->top() + area_touched_words),
-                                                       os::vm_page_size());
-          if (crossing_start != crossing_end) {
-            // If object header crossed a small page boundary we mark the area
-            // as invalid rounding it to a page_size().
-            HeapWord *start = MAX2((HeapWord*)round_down((intptr_t)s->top(), page_size()), s->bottom());
-            HeapWord *end = MIN2((HeapWord*)round_to((intptr_t)(s->top() + area_touched_words), page_size()),
-                                 s->end());
-            invalid = MemRegion(start, end);
-          }
+            MemRegion invalid;
+            HeapWord *crossing_start = (HeapWord*)round_to(cur_top, os::vm_page_size());
+            HeapWord *crossing_end = (HeapWord*)round_to(cur_top + touched_words, os::vm_page_size());
+            if (crossing_start != crossing_end) {
+              // If object header crossed a small page boundary we mark the area
+              // as invalid rounding it to a page_size().
+              HeapWord *start = MAX2((HeapWord*)round_down(cur_top, page_size()), s->bottom());
+              HeapWord *end = MIN2((HeapWord*)round_to(cur_top + touched_words, page_size()), s->end());
+              invalid = MemRegion(start, end);
+            }
 
-          ls->add_invalid_region(invalid);
+            ls->add_invalid_region(invalid);
+          }
+          cur_top = cur_top + (words_to_fill * HeapWordSize);
+          words_left_to_fill -= words_to_fill;
         }
       }
     } else {
@@ -883,12 +891,12 @@ void MutableNUMASpace::print_on(outputStream* st) const {
   }
 }
 
-void MutableNUMASpace::verify(bool allow_dirty) {
+void MutableNUMASpace::verify() {
   // This can be called after setting an arbitary value to the space's top,
   // so an object can cross the chunk boundary. We ensure the parsablity
   // of the space and just walk the objects in linear fashion.
   ensure_parsability();
-  MutableSpace::verify(allow_dirty);
+  MutableSpace::verify();
 }
 
 // Scan pages and gather stats about page placement and size.

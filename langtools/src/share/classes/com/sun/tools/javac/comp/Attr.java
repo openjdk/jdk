@@ -42,6 +42,7 @@ import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.code.Type.*;
+import com.sun.tools.javac.comp.Check.CheckContext;
 
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberSelectTree;
@@ -132,6 +133,11 @@ public class Attr extends JCTree.Visitor {
         findDiamonds = options.get("findDiamond") != null &&
                  source.allowDiamond();
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
+
+        statInfo = new ResultInfo(NIL, Type.noType);
+        varInfo = new ResultInfo(VAR, Type.noType);
+        unknownExprInfo = new ResultInfo(VAL, Type.noType);
+        unknownTypeInfo = new ResultInfo(TYP, Type.noType);
     }
 
     /** Switch: relax some constraints for retrofit mode.
@@ -204,7 +210,7 @@ public class Attr extends JCTree.Visitor {
     Type check(JCTree tree, Type owntype, int ownkind, ResultInfo resultInfo) {
         if (owntype.tag != ERROR && resultInfo.pt.tag != METHOD && resultInfo.pt.tag != FORALL) {
             if ((ownkind & ~resultInfo.pkind) == 0) {
-                owntype = chk.checkType(tree.pos(), owntype, resultInfo.pt, errKey);
+                owntype = resultInfo.check(tree, owntype);
             } else {
                 log.error(tree.pos(), "unexpected.type",
                           kindNames(resultInfo.pkind),
@@ -394,20 +400,30 @@ public class Attr extends JCTree.Visitor {
         }
     }
 
-    static class ResultInfo {
+    class ResultInfo {
         int pkind;
         Type pt;
+        CheckContext checkContext;
 
         ResultInfo(int pkind, Type pt) {
+            this(pkind, pt, chk.basicHandler);
+        }
+
+        protected ResultInfo(int pkind, Type pt, CheckContext checkContext) {
             this.pkind = pkind;
             this.pt = pt;
+            this.checkContext = checkContext;
+        }
+
+        protected Type check(DiagnosticPosition pos, Type found) {
+            return chk.checkType(pos, found, pt, checkContext);
         }
     }
 
-    private final ResultInfo statInfo = new ResultInfo(NIL, Type.noType);
-    private final ResultInfo varInfo = new ResultInfo(VAR, Type.noType);
-    private final ResultInfo unknownExprInfo = new ResultInfo(VAL, Type.noType);
-    private final ResultInfo unknownTypeInfo = new ResultInfo(TYP, Type.noType);
+    private final ResultInfo statInfo;
+    private final ResultInfo varInfo;
+    private final ResultInfo unknownExprInfo;
+    private final ResultInfo unknownTypeInfo;
 
     Type pt() {
         return resultInfo.pt;
@@ -429,10 +445,6 @@ public class Attr extends JCTree.Visitor {
      */
     ResultInfo resultInfo;
 
-    /** Visitor argument: the error key to be generated when a type error occurs
-     */
-    String errKey;
-
     /** Visitor result: the computed type.
      */
     Type result;
@@ -445,17 +457,11 @@ public class Attr extends JCTree.Visitor {
      *  @param resultInfo   The result info visitor argument.
      */
     private Type attribTree(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo) {
-        return attribTree(tree, env, resultInfo, "incompatible.types");
-    }
-
-    private Type attribTree(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo, String errKey) {
         Env<AttrContext> prevEnv = this.env;
         ResultInfo prevResult = this.resultInfo;
-        String prevErrKey = this.errKey;
         try {
             this.env = env;
             this.resultInfo = resultInfo;
-            this.errKey = errKey;
             tree.accept(this);
             if (tree == breakTree)
                 throw new BreakAttr(env);
@@ -466,18 +472,13 @@ public class Attr extends JCTree.Visitor {
         } finally {
             this.env = prevEnv;
             this.resultInfo = prevResult;
-            this.errKey = prevErrKey;
         }
     }
 
     /** Derived visitor method: attribute an expression tree.
      */
     public Type attribExpr(JCTree tree, Env<AttrContext> env, Type pt) {
-        return attribExpr(tree, env, pt, "incompatible.types");
-    }
-
-    public Type attribExpr(JCTree tree, Env<AttrContext> env, Type pt, String key) {
-        return attribTree(tree, env, new ResultInfo(VAL, pt.tag != ERROR ? pt : Type.noType), key);
+        return attribTree(tree, env, new ResultInfo(VAL, pt.tag != ERROR ? pt : Type.noType));
     }
 
     /** Derived visitor method: attribute an expression tree with
@@ -1121,9 +1122,16 @@ public class Attr extends JCTree.Visitor {
             localEnv;
         // Attribute resource declarations
         for (JCTree resource : tree.resources) {
+            CheckContext twrContext = new Check.NestedCheckContext(resultInfo.checkContext) {
+                @Override
+                public void report(DiagnosticPosition pos, Type found, Type req, JCDiagnostic details) {
+                    chk.basicHandler.report(pos, found, req, diags.fragment("try.not.applicable.to.type", found));
+                }
+            };
+            ResultInfo twrResult = new ResultInfo(VAL, syms.autoCloseableType, twrContext);
             if (resource.hasTag(VARDEF)) {
                 attribStat(resource, tryEnv);
-                chk.checkType(resource, resource.type, syms.autoCloseableType, "try.not.applicable.to.type");
+                twrResult.check(resource, resource.type);
 
                 //check that resource type cannot throw InterruptedException
                 checkAutoCloseable(resource.pos(), localEnv, resource.type);
@@ -1131,7 +1139,7 @@ public class Attr extends JCTree.Visitor {
                 VarSymbol var = (VarSymbol)TreeInfo.symbolFor(resource);
                 var.setData(ElementKind.RESOURCE_VARIABLE);
             } else {
-                attribExpr(resource, tryEnv, syms.autoCloseableType, "try.not.applicable.to.type");
+                attribTree(resource, tryEnv, twrResult);
             }
         }
         // Attribute body
@@ -1846,7 +1854,7 @@ public class Attr extends JCTree.Visitor {
     }
 
     Type attribDiamond(Env<AttrContext> env,
-                        JCNewClass tree,
+                        final JCNewClass tree,
                         Type clazztype,
                         List<Type> argtypes,
                         List<Type> typeargtypes) {
@@ -1886,25 +1894,17 @@ public class Attr extends JCTree.Visitor {
             clazztype = syms.errType;
         }
 
-        if (clazztype.tag == FORALL && !pt().isErroneous()) {
-            //if the resolved constructor's return type has some uninferred
-            //type-variables, infer them using the expected type and declared
-            //bounds (JLS 15.12.2.8).
+        if (clazztype.tag == FORALL && !resultInfo.pt.isErroneous()) {
             try {
-                clazztype = infer.instantiateExpr((ForAll) clazztype,
-                        pt().tag == NONE ? syms.objectType : pt(),
-                        Warner.noWarnings);
+                clazztype = resultInfo.checkContext.rawInstantiatePoly((ForAll)clazztype, pt(), Warner.noWarnings);
             } catch (Infer.InferenceException ex) {
                 //an error occurred while inferring uninstantiated type-variables
-                log.error(tree.clazz.pos(),
-                        "cant.apply.diamond.1",
-                        diags.fragment("diamond", clazztype.tsym),
-                        ex.diagnostic);
+                resultInfo.checkContext.report(tree.clazz.pos(), clazztype, resultInfo.pt,
+                        diags.fragment("cant.apply.diamond.1", diags.fragment("diamond", clazztype.tsym), ex.diagnostic));
             }
         }
-        return chk.checkClassType(tree.clazz.pos(),
-                clazztype,
-                true);
+
+        return chk.checkClassType(tree.clazz.pos(), clazztype, true);
     }
 
     /** Make an attributed null check tree.
@@ -2106,6 +2106,7 @@ public class Attr extends JCTree.Visitor {
         if (exprtype.constValue() != null)
             owntype = cfolder.coerce(exprtype, owntype);
         result = check(tree, capture(owntype), VAL, resultInfo);
+        chk.checkRedundantCast(localEnv, tree);
     }
 
     public void visitTypeTest(JCInstanceOf tree) {

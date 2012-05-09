@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,7 @@ ciInstanceKlass::ciInstanceKlass(KlassHandle h_k) :
   _has_nonstatic_fields = ik->has_nonstatic_fields();
   _nonstatic_fields = NULL; // initialized lazily by compute_nonstatic_fields:
 
-  _nof_implementors = ik->nof_implementors();
-  for (int i = 0; i < implementors_limit; i++) {
-    _implementors[i] = NULL;  // we will fill these lazily
-  }
+  _implementor = NULL; // we will fill these lazily
 
   Thread *thread = Thread::current();
   if (ciObjectFactory::is_initialized()) {
@@ -102,7 +99,6 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
   _nonstatic_field_size = -1;
   _has_nonstatic_fields = false;
   _nonstatic_fields = NULL;
-  _nof_implementors = -1;
   _loader = loader;
   _protection_domain = protection_domain;
   _is_shared = false;
@@ -129,17 +125,6 @@ bool ciInstanceKlass::compute_shared_has_subklass() {
     instanceKlass* ik = get_instanceKlass();
     _has_subklass = ik->subklass() != NULL;
     return _has_subklass;
-  )
-}
-
-// ------------------------------------------------------------------
-// ciInstanceKlass::compute_shared_nof_implementors
-int ciInstanceKlass::compute_shared_nof_implementors() {
-  // We requery this property, since it is a very old ciObject.
-  GUARDED_VM_ENTRY(
-    instanceKlass* ik = get_instanceKlass();
-    _nof_implementors = ik->nof_implementors();
-    return _nof_implementors;
   )
 }
 
@@ -540,7 +525,7 @@ bool ciInstanceKlass::is_leaf_type() {
   if (is_shared()) {
     return is_final();  // approximately correct
   } else {
-    return !_has_subklass && (_nof_implementors == 0);
+    return !_has_subklass && (nof_implementors() == 0);
   }
 }
 
@@ -548,35 +533,31 @@ bool ciInstanceKlass::is_leaf_type() {
 // ciInstanceKlass::implementor
 //
 // Report an implementor of this interface.
-// Returns NULL if exact information is not available.
 // Note that there are various races here, since my copy
 // of _nof_implementors might be out of date with respect
 // to results returned by instanceKlass::implementor.
 // This is OK, since any dependencies we decide to assert
 // will be checked later under the Compile_lock.
-ciInstanceKlass* ciInstanceKlass::implementor(int n) {
-  if (n >= implementors_limit) {
-    return NULL;
-  }
-  ciInstanceKlass* impl = _implementors[n];
+ciInstanceKlass* ciInstanceKlass::implementor() {
+  ciInstanceKlass* impl = _implementor;
   if (impl == NULL) {
-    if (_nof_implementors > implementors_limit) {
-      return NULL;
-    }
     // Go into the VM to fetch the implementor.
     {
       VM_ENTRY_MARK;
-      klassOop k = get_instanceKlass()->implementor(n);
+      klassOop k = get_instanceKlass()->implementor();
       if (k != NULL) {
-        impl = CURRENT_THREAD_ENV->get_object(k)->as_instance_klass();
+        if (k == get_instanceKlass()->as_klassOop()) {
+          // More than one implementors. Use 'this' in this case.
+          impl = this;
+        } else {
+          impl = CURRENT_THREAD_ENV->get_object(k)->as_instance_klass();
+        }
       }
     }
     // Memoize this result.
     if (!is_shared()) {
-      _implementors[n] = (impl == NULL)? this: impl;
+      _implementor = impl;
     }
-  } else if (impl == this) {
-    impl = NULL;  // memoized null result from a VM query
   }
   return impl;
 }
