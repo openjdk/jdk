@@ -117,6 +117,7 @@ Java_java_util_zip_ZipFile_open(JNIEnv *env, jclass cls, jstring name,
             result = ptr_to_jlong(zip);
         } else if (msg != 0) {
             ThrowZipException(env, msg);
+            free(msg);
         } else if (errno == ENOMEM) {
             JNU_ThrowOutOfMemoryError(env, 0);
         } else {

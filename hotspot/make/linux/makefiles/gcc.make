@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -230,7 +230,7 @@ ifeq ($(DEBUG_CFLAGS/$(BUILDARCH)),)
 DEBUG_CFLAGS += -gstabs
 endif
 
-ifneq ($(OBJCOPY),)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   FASTDEBUG_CFLAGS/ia64  = -g
   FASTDEBUG_CFLAGS/amd64 = -g
   FASTDEBUG_CFLAGS/arm   = -g
