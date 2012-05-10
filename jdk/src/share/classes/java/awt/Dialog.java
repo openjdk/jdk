@@ -1037,7 +1037,7 @@ public class Dialog extends Window {
                 predictedFocusOwner = getMostRecentFocusOwner();
                 if (conditionalShow(predictedFocusOwner, time)) {
                     modalFilter = ModalEventFilter.createFilterForDialog(this);
-                    Conditional cond = new Conditional() {
+                    final Conditional cond = new Conditional() {
                         @Override
                         public boolean evaluate() {
                             return windowClosingException == null;
@@ -1067,7 +1067,12 @@ public class Dialog extends Window {
 
                     modalityPushed();
                     try {
-                        EventQueue eventQueue = Toolkit.getDefaultToolkit().getSystemEventQueue();
+                        final EventQueue eventQueue = AccessController.doPrivileged(
+                            new PrivilegedAction<EventQueue>() {
+                                public EventQueue run() {
+                                    return Toolkit.getDefaultToolkit().getSystemEventQueue();
+                                }
+                        });
                         secondaryLoop = eventQueue.createSecondaryLoop(cond, modalFilter, 0);
                         if (!secondaryLoop.enter()) {
                             secondaryLoop = null;
