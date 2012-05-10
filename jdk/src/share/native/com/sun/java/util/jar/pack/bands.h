@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,7 @@ struct cpindex;
 struct unpacker;
 
 struct band {
-#ifndef PRODUCT
   const char*   name;
-#endif
   int           bn;             // band_number of this band
   coding*       defc;           // default coding method
   cpindex*      ix;             // CP entry mapping, if CPRefBand
@@ -162,6 +160,14 @@ enum band_number {
     e_cp_Method_desc,
     e_cp_Imethod_class,
     e_cp_Imethod_desc,
+    e_cp_MethodHandle_refkind,
+    e_cp_MethodHandle_member,
+    e_cp_MethodType,
+    e_cp_BootstrapMethod_ref,
+    e_cp_BootstrapMethod_arg_count,
+    e_cp_BootstrapMethod_arg,
+    e_cp_InvokeDynamic_spec,
+    e_cp_InvokeDynamic_desc,
 
     // bands which define transmission of attributes
     e_attr_definition_headers,
@@ -284,11 +290,13 @@ enum band_number {
     e_bc_longref,
     e_bc_doubleref,
     e_bc_stringref,
+    e_bc_loadablevalueref,
     e_bc_classref,
 
     e_bc_fieldref,
     e_bc_methodref,
     e_bc_imethodref,
+    e_bc_indyref,
 
     // _self_linker_op family
     e_bc_thisfield,
@@ -343,6 +351,14 @@ enum band_number {
 #define cp_Method_desc all_bands[e_cp_Method_desc]
 #define cp_Imethod_class all_bands[e_cp_Imethod_class]
 #define cp_Imethod_desc all_bands[e_cp_Imethod_desc]
+#define cp_MethodHandle_refkind all_bands[e_cp_MethodHandle_refkind]
+#define cp_MethodHandle_member all_bands[e_cp_MethodHandle_member]
+#define cp_MethodType all_bands[e_cp_MethodType]
+#define cp_BootstrapMethod_ref all_bands[e_cp_BootstrapMethod_ref]
+#define cp_BootstrapMethod_arg_count all_bands[e_cp_BootstrapMethod_arg_count]
+#define cp_BootstrapMethod_arg all_bands[e_cp_BootstrapMethod_arg]
+#define cp_InvokeDynamic_spec  all_bands[e_cp_InvokeDynamic_spec]
+#define cp_InvokeDynamic_desc all_bands[e_cp_InvokeDynamic_desc]
 #define attr_definition_headers all_bands[e_attr_definition_headers]
 #define attr_definition_name all_bands[e_attr_definition_name]
 #define attr_definition_layout all_bands[e_attr_definition_layout]
@@ -437,10 +453,12 @@ enum band_number {
 #define bc_longref all_bands[e_bc_longref]
 #define bc_doubleref all_bands[e_bc_doubleref]
 #define bc_stringref all_bands[e_bc_stringref]
+#define bc_loadablevalueref all_bands[e_bc_loadablevalueref]
 #define bc_classref all_bands[e_bc_classref]
 #define bc_fieldref all_bands[e_bc_fieldref]
 #define bc_methodref all_bands[e_bc_methodref]
 #define bc_imethodref all_bands[e_bc_imethodref]
+#define bc_indyref all_bands[e_bc_indyref]
 #define bc_thisfield all_bands[e_bc_thisfield]
 #define bc_superfield all_bands[e_bc_superfield]
 #define bc_thismethod all_bands[e_bc_thismethod]

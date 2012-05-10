@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,7 +293,7 @@ public abstract class Preferences {
         String platformFactory;
         if (osName.startsWith("Windows")) {
             platformFactory = "java.util.prefs.WindowsPreferencesFactory";
-        } else if (osName.startsWith("Mac OS X")) {
+        } else if (osName.contains("OS X")) {
             platformFactory = "java.util.prefs.MacOSXPreferencesFactory";
         } else {
             platformFactory = "java.util.prefs.FileSystemPreferencesFactory";
