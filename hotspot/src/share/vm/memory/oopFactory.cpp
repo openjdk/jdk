@@ -128,11 +128,12 @@ klassOop oopFactory::new_instanceKlass(Symbol* name, int vtable_len, int itable_
                                        int static_field_size,
                                        unsigned int nonstatic_oop_map_count,
                                        AccessFlags access_flags,
-                                       ReferenceType rt, TRAPS) {
+                                       ReferenceType rt,
+                                       KlassHandle host_klass, TRAPS) {
   instanceKlassKlass* ikk = instanceKlassKlass::cast(Universe::instanceKlassKlassObj());
   return ikk->allocate_instance_klass(name, vtable_len, itable_len,
                                       static_field_size, nonstatic_oop_map_count,
-                                      access_flags, rt, CHECK_NULL);
+                                      access_flags, rt, host_klass, CHECK_NULL);
 }
 
 
