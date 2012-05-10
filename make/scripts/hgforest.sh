@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 #
 
 # Shell script for a fast parallel forest command
+command="$1"
+pull_extra_base="$2"
 
 tmp=/tmp/forest.$$
 rm -f -r ${tmp}
@@ -35,40 +37,58 @@ trap 'rm -f -r ${tmp}' EXIT
 
 # Only look in specific locations for possible forests (avoids long searches)
 pull_default=""
-if [ "$1" = "clone" -o "$1" = "fclone" ] ; then
+repos=""
+repos_extra=""
+if [ "${command}" = "clone" -o "${command}" = "fclone" ] ; then
   subrepos="corba jaxp jaxws langtools jdk hotspot"
   if [ -f .hg/hgrc ] ; then
     pull_default=`hg paths default`
+    if [ "${pull_default}" = "" ] ; then
+      echo "ERROR: Need initial clone with 'hg paths default' defined"
+      exit 1
+    fi
   fi
   if [ "${pull_default}" = "" ] ; then
-    echo "ERROR: Need initial clone with 'hg paths default' defined"
+    echo "ERROR: Need initial repository to use this script"
     exit 1
   fi
-  repos=""
   for i in ${subrepos} ; do
     if [ ! -f ${i}/.hg/hgrc ] ; then
       repos="${repos} ${i}"
     fi
   done
+  if [ "${pull_extra_base}" != "" ] ; then
+    subrepos_extra="jdk/src/closed jdk/make/closed jdk/test/closed hotspot/src/closed hotspot/test/closed deploy install sponsors pubs"
+    pull_default_base=`echo ${pull_default} | sed -e 's@\(^.*://[^/]*\)/.*@\1@'`
+    pull_extra=`echo ${pull_default} | sed -e "s@${pull_default_base}@${pull_extra_base}@"`
+    for i in ${subrepos_extra} ; do
+      if [ ! -f ${i}/.hg/hgrc ] ; then
+        repos_extra="${repos_extra} ${i}"
+      fi
+    done
+  fi
   at_a_time=2
+  # Any repos to deal with?
+  if [ "${repos}" = "" -a "${repos_extra}" = "" ] ; then
+    echo "No repositories to clone."
+    exit
+  fi
 else
   hgdirs=`ls -d ./.hg ./*/.hg ./*/*/.hg ./*/*/*/.hg ./*/*/*/*/.hg 2>/dev/null`
   # Derive repository names from the .hg directory locations
-  repos=""
   for i in ${hgdirs} ; do
     repos="${repos} `echo ${i} | sed -e 's@/.hg$@@'`"
   done
   at_a_time=8
+  # Any repos to deal with?
+  if [ "${repos}" = "" ] ; then
+    echo "No repositories to process."
+    exit
+  fi
 fi
 
-# Any repos to deal with?
-if [ "${repos}" = "" ] ; then
-  echo "No repositories to process."
-  exit
-fi
-
-# Echo out what repositories we will process
-echo "# Repos: ${repos}"
+# Echo out what repositories we will clone
+echo "# Repos: ${repos} ${repos_extra}"
 
 # Run the supplied command on all repos in parallel, save output until end
 n=0
@@ -77,8 +97,8 @@ for i in ${repos} ; do
   n=`expr ${n} '+' 1`
   (
     (
-      if [ "$1" = "clone" -o "$1" = "fclone" ] ; then
-        cline="hg $* ${pull_default}/${i} ${i}"
+      if [ "${command}" = "clone" -o "${command}" = "fclone" ] ; then
+        cline="hg clone ${pull_default}/${i} ${i}"
         echo "# ${cline}"
         ( eval "${cline}" )
       else
@@ -92,6 +112,22 @@ for i in ${repos} ; do
     sleep 5
   fi
 done
+if [ "${repos_extra}" != "" ] ; then
+  for i in ${repos_extra} ; do
+    echo "Starting on ${i}"
+    n=`expr ${n} '+' 1`
+    (
+      (
+          cline="hg clone ${pull_extra}/${i} ${i}"
+          echo "# ${cline}"
+          ( eval "${cline}" )
+        echo "# exit code $?"
+      ) > ${tmp}/repo.${n} 2>&1 ; cat ${tmp}/repo.${n} ) &
+    if [ `expr ${n} '%' ${at_a_time}` -eq 0 ] ; then
+      sleep 5
+    fi
+  done
+fi
 
 # Wait for all hg commands to complete
 wait
