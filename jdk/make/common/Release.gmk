@@ -1311,8 +1311,8 @@ $(TEMP_PREV_JDK_COMPARISON): install-previous-jdk $(DIRDIFF_JARFILE)
 	@$(java-vm-cleanup)
 
 # Clean up names in the messages printed out
-CAT_FILTER = $(SED) -e "s@$(JDK_IMAGE_DIR)@JDK_IMAGE@g" \
-	            -e "s@$(JRE_IMAGE_DIR)@JRE_IMAGE@g"
+CAT_FILTER = $(SED) -e "s|$(JDK_IMAGE_DIR)|JDK_IMAGE|g" \
+	            -e "s|$(JRE_IMAGE_DIR)|JRE_IMAGE|g"
 
 # Report on the jre image comparison
 compare-image-jre: $(TEMP_PREV_JRE_COMPARISON)
