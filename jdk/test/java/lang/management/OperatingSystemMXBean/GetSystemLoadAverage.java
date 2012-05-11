@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public class GetSystemLoadAverage {
     }
 
     private static String LOAD_AVERAGE_TEXT
-            = System.getProperty("os.name").startsWith("Mac OS")
+            = System.getProperty("os.name").contains("OS X")
                 ? "load averages:"
                 : "load average:";
 
@@ -99,7 +99,7 @@ public class GetSystemLoadAverage {
         System.out.println("Load average returned from uptime = " + output);
         System.out.println("getSystemLoadAverage() returned " + loadavg);
 
-        String[] lavg = System.getProperty("os.name").startsWith("Mac OS")
+        String[] lavg = System.getProperty("os.name").contains("OS X")
                 ? output.split(" ")
                 : output.split(",");
         double expected = Double.parseDouble(lavg[0]);

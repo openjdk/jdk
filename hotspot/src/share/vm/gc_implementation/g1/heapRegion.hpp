@@ -306,9 +306,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // If a collection pause is in progress, this is the top at the start
   // of that pause.
 
-  // We've counted the marked bytes of objects below here.
-  HeapWord* _top_at_conc_mark_count;
-
   void init_top_at_mark_start() {
     assert(_prev_marked_bytes == 0 &&
            _next_marked_bytes == 0,
@@ -316,7 +313,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
     HeapWord* bot = bottom();
     _prev_top_at_mark_start = bot;
     _next_top_at_mark_start = bot;
-    _top_at_conc_mark_count = bot;
   }
 
   void set_young_type(YoungType new_type) {
@@ -625,19 +621,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // last mark phase ended.
   bool is_marked() { return _prev_top_at_mark_start != bottom(); }
 
-  void init_top_at_conc_mark_count() {
-    _top_at_conc_mark_count = bottom();
-  }
-
-  void set_top_at_conc_mark_count(HeapWord *cur) {
-    assert(bottom() <= cur && cur <= end(), "Sanity.");
-    _top_at_conc_mark_count = cur;
-  }
-
-  HeapWord* top_at_conc_mark_count() {
-    return _top_at_conc_mark_count;
-  }
-
   void reset_during_compaction() {
     guarantee( isHumongous() && startsHumongous(),
                "should only be called for humongous regions");
@@ -733,7 +716,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
     _evacuation_failed = b;
 
     if (b) {
-      init_top_at_conc_mark_count();
       _next_marked_bytes = 0;
     }
   }

@@ -897,8 +897,8 @@ bool StringConcat::validate_control_flow() {
 }
 
 Node* PhaseStringOpts::fetch_static_field(GraphKit& kit, ciField* field) {
-  const TypeKlassPtr* klass_type = TypeKlassPtr::make(field->holder());
-  Node* klass_node = __ makecon(klass_type);
+  const TypeInstPtr* mirror_type = TypeInstPtr::make(field->holder()->java_mirror());
+  Node* klass_node = __ makecon(mirror_type);
   BasicType bt = field->layout_type();
   ciType* field_klass = field->type();
 
@@ -913,6 +913,7 @@ Node* PhaseStringOpts::fetch_static_field(GraphKit& kit, ciField* field) {
       // and may yield a vacuous result if the field is of interface type.
       type = TypeOopPtr::make_from_constant(con, true)->isa_oopptr();
       assert(type != NULL, "field singleton type must be consistent");
+      return __ makecon(type);
     } else {
       type = TypeOopPtr::make_from_klass(field_klass->as_klass());
     }
@@ -922,7 +923,7 @@ Node* PhaseStringOpts::fetch_static_field(GraphKit& kit, ciField* field) {
 
   return kit.make_load(NULL, kit.basic_plus_adr(klass_node, field->offset_in_bytes()),
                        type, T_OBJECT,
-                       C->get_alias_index(klass_type->add_offset(field->offset_in_bytes())));
+                       C->get_alias_index(mirror_type->add_offset(field->offset_in_bytes())));
 }
 
 Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {

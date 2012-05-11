@@ -37,8 +37,6 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.*;
 
-import sun.security.action.LoadLibraryAction;
-
 import static sun.awt.shell.Win32ShellFolder2.*;
 import sun.awt.OSInfo;
 
@@ -56,7 +54,13 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
 
     static {
         // Load library here
-        AccessController.doPrivileged(new LoadLibraryAction("awt"));
+        AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("awt");
+                    return null;
+                }
+            });
     }
 
     public ShellFolder createShellFolder(File file) throws FileNotFoundException {
