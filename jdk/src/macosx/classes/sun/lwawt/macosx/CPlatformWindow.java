@@ -312,6 +312,10 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             styleBits = SET(styleBits, NONACTIVATING, true);
         }
 
+        if (Window.Type.UTILITY.equals(target.getType())) {
+            styleBits = SET(styleBits, UTILITY, true);
+        }
+
         if (target instanceof javax.swing.RootPaneContainer) {
             javax.swing.JRootPane rootpane = ((javax.swing.RootPaneContainer)target).getRootPane();
             Object prop = null;
