@@ -532,10 +532,15 @@ ping6(JNIEnv *env, jint fd, struct sockaddr_in6* him, jint timeout,
            *       from the host that we are trying to determine is reachable.
            */
           if (n >= 8 && icmp6->icmp6_type == ICMP6_ECHO_REPLY &&
-              (ntohs(icmp6->icmp6_id) == pid) &&
-              NET_IsEqual(caddr, recv_caddr)) {
-            close(fd);
-            return JNI_TRUE;
+              (ntohs(icmp6->icmp6_id) == pid)) {
+            if (NET_IsEqual(caddr, recv_caddr)) {
+              close(fd);
+              return JNI_TRUE;
+            }
+            if (NET_IsZeroAddr(caddr)) {
+              close(fd);
+              return JNI_TRUE;
+            }
           }
         }
       } while (tmout2 > 0);
