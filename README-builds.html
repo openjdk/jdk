@@ -65,6 +65,7 @@
                         <li><a href="#linux">Basic Linux System Setup</a> </li>
                         <li><a href="#solaris">Basic Solaris System Setup</a> </li>
                         <li><a href="#windows">Basic Windows System Setup</a> </li>
+                        <li><a href="#macosx">Basic Mac OS X System Setup</a></li>
                         <li><a href="#dependencies">Build Dependencies</a>
                             <ul>
                                 <li><a href="#bootjdk">Bootstrap JDK</a> </li>
@@ -229,6 +230,12 @@
                         <td>Windows Server 2003 - Enterprise x64 Edition</td>
                         <td>Microsoft Visual Studio C++ 2010 Professional Edition</td>
                         <td>JDK 6u18</td>
+                    </tr>
+                    <tr>
+                        <td>Mac OS X X64 (64-bit)</td>
+                        <td>Mac OS X 10.7.3 "Lion"</td>
+                        <td>XCode 4.1 or later</td>
+                        <td>Java for OS X Lion Update 1</td>
                     </tr>
                 </tbody>
             </table>
@@ -951,6 +958,36 @@
         </blockquote>
         <!-- ------------------------------------------------------ -->
         <hr>
+        <h3><a name="macosx">Basic Mac OS X System Setup</a></h3>
+        <blockquote> 
+            <strong>X64 only:</strong>
+            The minimum recommended hardware for building
+            the Mac OS X version is any 64-bit capable Intel processor, at least 2
+            GB of RAM, and approximately 3 GB of free disk space. You should also
+            have OS X Lion 10.7.3 installed.
+        </blockquote>
+        <!-- ------------------------------------------------------ -->
+
+        <h4><a name="macosx_checklist">Basic Mac OS X Check List</a></h4>
+        <blockquote>
+            <ol>
+                <li>
+                    Install <a href="https://developer.apple.com/xcode/">XCode 4.1</a> or newer. 
+		    If you install XCode 4.3 or newer, make sure you also install 
+		    "Command line tools" found under the preferences pane "Downloads".
+                </li>
+                <li>
+                    Install <a href="http://support.apple.com/kb/dl1421" target="_blank">"Java for OS X Lion Update 1"</a>, 
+                    set <tt><a href="#ALT_BOOTDIR">ALT_BOOTDIR</a> to <code>`/usr/libexec/java_home -v 1.6`</code></tt>
+                </li>
+                <li>
+                    <a href="#importjdk">Optional Import JDK</a>, set
+                    <tt><a href="#ALT_JDK_IMPORT_PATH">ALT_JDK_IMPORT_PATH</a></tt>.
+                </li>
+            </ol>
+        </blockquote>
+        <!-- ------------------------------------------------------ -->
+        <hr>
         <h3><a name="dependencies">Build Dependencies</a></h3>
         <blockquote>
             Depending on the platform, the OpenJDK build process has some basic
@@ -1194,6 +1231,10 @@
     set INCLUDE=%VSINSTALLDIR%\vc\include;%WindowsSdkDir%\include
     set LIB=%VSINSTALLDIR%\vc\lib\amd64;%WindowsSdkDir%\lib\x64
                 </pre>
+                <strong><a name="llvmgcc">OS X Lion 10.7.3: LLVM GCC</a></strong>
+                <blockquote>
+                   LLVM GCC is bundled with XCode. The version should be at least 4.2.1.
+                </blockquote>
             </blockquote>
             <!-- ------------------------------------------------------ --> 
             <h4><a name="zip">Zip and Unzip</a></h4>

@@ -1221,12 +1221,11 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
       return opd; // input is matching vector
     }
     assert(!opd->is_VectorStore(), "such vector is not expected here");
-    // Convert scalar input to vector. Use p0's type because it's container
-    // maybe smaller than the operand's container.
-    const Type* opd_t = velt_type(!in_bb(opd) ? p0 : opd);
-    const Type* p0_t  = velt_type(p0);
-    if (p0_t->higher_equal(opd_t)) opd_t = p0_t;
-    VectorNode* vn    = VectorNode::scalar2vector(_phase->C, opd, vlen, opd_t);
+    // Convert scalar input to vector with the same number of elements as
+    // p0's vector. Use p0's type because size of operand's container in
+    // vector should match p0's size regardless operand's size.
+    const Type* p0_t = velt_type(p0);
+    VectorNode* vn = VectorNode::scalar2vector(_phase->C, opd, vlen, p0_t);
 
     _phase->_igvn.register_new_node_with_optimizer(vn);
     _phase->set_ctrl(vn, _phase->get_ctrl(opd));
@@ -1234,14 +1233,15 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   }
 
   // Insert pack operation
-  const Type* opd_t = velt_type(!in_bb(opd) ? p0 : opd);
-  PackNode* pk = PackNode::make(_phase->C, opd, opd_t);
+  const Type* p0_t = velt_type(p0);
+  PackNode* pk = PackNode::make(_phase->C, opd, p0_t);
+  DEBUG_ONLY( const BasicType opd_bt = opd->bottom_type()->basic_type(); )
 
   for (uint i = 1; i < vlen; i++) {
     Node* pi = p->at(i);
     Node* in = pi->in(opd_idx);
     assert(my_pack(in) == NULL, "Should already have been unpacked");
-    assert(opd_t == velt_type(!in_bb(in) ? pi : in), "all same type");
+    assert(opd_bt == in->bottom_type()->basic_type(), "all same type");
     pk->add_opd(in);
   }
   _phase->_igvn.register_new_node_with_optimizer(pk);

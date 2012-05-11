@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public final class FontUtilities {
 
                 isLinux = osName.startsWith("Linux");
 
-                isMacOSX = osName.startsWith("Mac OS X"); // TODO: MacOSX
+                isMacOSX = osName.contains("OS X"); // TODO: MacOSX
 
                 String t2kStr = System.getProperty("sun.java2d.font.scaler");
                 if (t2kStr != null) {

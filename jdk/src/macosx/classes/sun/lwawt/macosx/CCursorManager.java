@@ -36,6 +36,7 @@ final class CCursorManager extends LWCursorManager {
     private static native Point2D nativeGetCursorPosition();
     private static native void nativeSetBuiltInCursor(final int type, final String name);
     private static native void nativeSetCustomCursor(final long imgPtr, final double x, final double y);
+    public static native void nativeSetAllowsCursorSetInBackground(final boolean allows);
 
     private static final int NAMED_CURSOR = -1;
 
