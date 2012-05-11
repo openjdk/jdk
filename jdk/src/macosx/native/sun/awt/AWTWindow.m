@@ -51,8 +51,61 @@
 
 static JNF_CLASS_CACHE(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow");
 
+// --------------------------------------------------------------
+// NSWindow/NSPanel descendants implementation
+#define AWT_NS_WINDOW_IMPLEMENTATION                            \
+- (id) initWithDelegate:(AWTWindow *)delegate                   \
+              frameRect:(NSRect)contectRect                     \
+              styleMask:(NSUInteger)styleMask                   \
+            contentView:(NSView *)view                          \
+{                                                               \
+    self = [super initWithContentRect:contectRect               \
+                            styleMask:styleMask                 \
+                              backing:NSBackingStoreBuffered    \
+                                defer:NO];                      \
+                                                                \
+    if (self == nil) return nil;                                \
+                                                                \
+    [self setDelegate:delegate];                                \
+    [self setContentView:view];                                 \
+    [self setInitialFirstResponder:view];                       \
+    [self setReleasedWhenClosed:NO];                            \
+    [self setPreservesContentDuringLiveResize:YES];             \
+                                                                \
+    return self;                                                \
+}                                                               \
+                                                                \
+/* NSWindow overrides */                                        \
+- (BOOL) canBecomeKeyWindow {                                   \
+    return [(AWTWindow*)[self delegate] canBecomeKeyWindow];    \
+}                                                               \
+                                                                \
+- (BOOL) canBecomeMainWindow {                                  \
+    return [(AWTWindow*)[self delegate] canBecomeMainWindow];   \
+}                                                               \
+                                                                \
+- (BOOL) worksWhenModal {                                       \
+    return [(AWTWindow*)[self delegate] worksWhenModal];        \
+}                                                               \
+                                                                \
+- (void)sendEvent:(NSEvent *)event {                            \
+    [(AWTWindow*)[self delegate] sendEvent:event];              \
+    [super sendEvent:event];                                    \
+}
+
+@implementation AWTWindow_Normal
+AWT_NS_WINDOW_IMPLEMENTATION
+@end
+@implementation AWTWindow_Panel
+AWT_NS_WINDOW_IMPLEMENTATION
+@end
+// END of NSWindow/NSPanel descendants implementation
+// --------------------------------------------------------------
+
+
 @implementation AWTWindow
 
+@synthesize nsWindow;
 @synthesize javaPlatformWindow;
 @synthesize javaMenuBar;
 @synthesize javaMinSize;
@@ -62,12 +115,12 @@ static JNF_CLASS_CACHE(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow");
 
 - (void) updateMinMaxSize:(BOOL)resizable {
     if (resizable) {
-        [self setMinSize:self.javaMinSize];
-        [self setMaxSize:self.javaMaxSize];
+        [self.nsWindow setMinSize:self.javaMinSize];
+        [self.nsWindow setMaxSize:self.javaMaxSize];
     } else {
-        NSRect currentFrame = [self frame];
-        [self setMinSize:currentFrame.size];
-        [self setMaxSize:currentFrame.size];
+        NSRect currentFrame = [self.nsWindow frame];
+        [self.nsWindow setMinSize:currentFrame.size];
+        [self.nsWindow setMaxSize:currentFrame.size];
     }
 }
 
@@ -98,38 +151,38 @@ static JNF_CLASS_CACHE(jc_CPlatformWindow, "sun/lwawt/macosx/CPlatformWindow");
     if (IS(mask, RESIZABLE)) {
         BOOL resizable = IS(bits, RESIZABLE);
         [self updateMinMaxSize:resizable];
-        [self setShowsResizeIndicator:resizable];
+        [self.nsWindow setShowsResizeIndicator:resizable];
     }
 
     if (IS(mask, HAS_SHADOW)) {
-        [self setHasShadow:IS(bits, HAS_SHADOW)];
+        [self.nsWindow setHasShadow:IS(bits, HAS_SHADOW)];
     }
 
     if (IS(mask, ZOOMABLE)) {
-        [[self standardWindowButton:NSWindowZoomButton] setEnabled:IS(bits, ZOOMABLE)];
+        [[self.nsWindow standardWindowButton:NSWindowZoomButton] setEnabled:IS(bits, ZOOMABLE)];
     }
 
     if (IS(mask, ALWAYS_ON_TOP)) {
-        [self setLevel:IS(bits, ALWAYS_ON_TOP) ? NSFloatingWindowLevel : NSNormalWindowLevel];
+        [self.nsWindow setLevel:IS(bits, ALWAYS_ON_TOP) ? NSFloatingWindowLevel : NSNormalWindowLevel];
     }
 
     if (IS(mask, HIDES_ON_DEACTIVATE)) {
-        [self setHidesOnDeactivate:IS(bits, HIDES_ON_DEACTIVATE)];
+        [self.nsWindow setHidesOnDeactivate:IS(bits, HIDES_ON_DEACTIVATE)];
     }
 
     if (IS(mask, DRAGGABLE_BACKGROUND)) {
-        [self setMovableByWindowBackground:IS(bits, DRAGGABLE_BACKGROUND)];
+        [self.nsWindow setMovableByWindowBackground:IS(bits, DRAGGABLE_BACKGROUND)];
     }
 
     if (IS(mask, DOCUMENT_MODIFIED)) {
-        [self setDocumentEdited:IS(bits, DOCUMENT_MODIFIED)];
+        [self.nsWindow setDocumentEdited:IS(bits, DOCUMENT_MODIFIED)];
     }
 
-    if ([self respondsToSelector:@selector(toggleFullScreen:)]) {
+    if ([self.nsWindow respondsToSelector:@selector(toggleFullScreen:)]) {
         if (IS(mask, FULLSCREENABLE)) {
-            [self setCollectionBehavior:(1 << 7) /*NSWindowCollectionBehaviorFullScreenPrimary*/];
+            [self.nsWindow setCollectionBehavior:(1 << 7) /*NSWindowCollectionBehaviorFullScreenPrimary*/];
         } else {
-            [self setCollectionBehavior:NSWindowCollectionBehaviorDefault];
+            [self.nsWindow setCollectionBehavior:NSWindowCollectionBehaviorDefault];
         }
     }
 
@@ -151,23 +204,35 @@ AWT_ASSERT_APPKIT_THREAD;
         contentRect.size.height = 1.0;
     }
 
-    self = [super initWithContentRect:contentRect
-                            styleMask:styleMask
-                              backing:NSBackingStoreBuffered
-                                defer:NO];
+    self = [super init];
 
     if (self == nil) return nil; // no hope
+
+    if (IS(bits, UTILITY) ||
+        IS(bits, NONACTIVATING) ||
+        IS(bits, HUD) ||
+        IS(bits, HIDES_ON_DEACTIVATE))
+    {
+        self.nsWindow = [[AWTWindow_Panel alloc] initWithDelegate:self
+                            frameRect:contentRect
+                            styleMask:styleMask
+                          contentView:view];
+    }
+    else
+    {
+        // These windows will appear in the window list in the dock icon menu
+        self.nsWindow = [[AWTWindow_Normal alloc] initWithDelegate:self
+                            frameRect:contentRect
+                            styleMask:styleMask
+                          contentView:view];
+    }
+
+    if (self.nsWindow == nil) return nil; // no hope either
 
     self.isEnabled = YES;
     self.javaPlatformWindow = platformWindow;
     self.styleBits = bits;
     [self setPropertiesForStyleBits:styleBits mask:MASK(_METHOD_PROP_BITMASK)];
-
-    [self setDelegate:self];
-    [self setContentView:view];
-    [self setInitialFirstResponder:view];
-    [self setReleasedWhenClosed:NO];
-    [self setPreservesContentDuringLiveResize:YES];
 
     return self;
 }
@@ -175,7 +240,7 @@ AWT_ASSERT_APPKIT_THREAD;
 // checks that this window is under the mouse cursor and this point is not overlapped by others windows
 - (BOOL) isTopmostWindowUnderMouse {
 
-    int currentWinID = [self windowNumber];
+    int currentWinID = [self.nsWindow windowNumber];
 
     NSRect screenRect = [[NSScreen mainScreen] frame];
     NSPoint nsMouseLocation = [NSEvent mouseLocation];
@@ -204,7 +269,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
     int eventType = 0;
     BOOL isUnderMouse = [self isTopmostWindowUnderMouse];
-    BOOL mouseIsOver = [[self contentView] mouseIsOver];
+    BOOL mouseIsOver = [[self.nsWindow contentView] mouseIsOver];
 
     if (isUnderMouse && !mouseIsOver) {
         eventType = NSMouseEntered;
@@ -215,21 +280,21 @@ AWT_ASSERT_APPKIT_THREAD;
     }
 
     NSPoint screenLocation = [NSEvent mouseLocation];
-    NSPoint windowLocation = [self convertScreenToBase: screenLocation];
+    NSPoint windowLocation = [self.nsWindow convertScreenToBase: screenLocation];
     int modifierFlags = (eventType == NSMouseEntered) ? NSMouseEnteredMask : NSMouseExitedMask;
 
     NSEvent *mouseEvent = [NSEvent enterExitEventWithType: eventType
                                                   location: windowLocation
                                              modifierFlags: modifierFlags
                                                  timestamp: 0
-                                              windowNumber: [self windowNumber]
+                                              windowNumber: [self.nsWindow windowNumber]
                                                    context: nil
                                                eventNumber: 0
                                             trackingNumber: 0
                                                   userData: nil
                             ];
 
-    [[self contentView] deliverJavaMouseEvent: mouseEvent];
+    [[self.nsWindow contentView] deliverJavaMouseEvent: mouseEvent];
 }
 
 - (void) dealloc {
@@ -237,6 +302,8 @@ AWT_ASSERT_APPKIT_THREAD;
 
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     [self.javaPlatformWindow setJObject:nil withEnv:env];
+
+    self.nsWindow = nil;
 
     [super dealloc];
 }
@@ -271,7 +338,7 @@ AWT_ASSERT_APPKIT_THREAD;
         if (awtWindow != NULL) {
             // translate the point into Java coordinates
             NSPoint loc = [event locationInWindow];
-            loc.y = [self frame].size.height - loc.y;
+            loc.y = [self.nsWindow frame].size.height - loc.y;
 
             // send up to the GestureHandler to recursively dispatch on the AWT event thread
             static JNF_CLASS_CACHE(jc_GestureHandler, "com/apple/eawt/event/GestureHandler");
@@ -334,7 +401,7 @@ AWT_ASSERT_APPKIT_THREAD;
         // TODO: create generic AWT assert
     }
 
-    NSRect frame = ConvertNSScreenRect(env, [self frame]);
+    NSRect frame = ConvertNSScreenRect(env, [self.nsWindow frame]);
 
     static JNF_MEMBER_CACHE(jm_deliverMoveResizeEvent, jc_CPlatformWindow, "deliverMoveResizeEvent", "(IIII)V");
     JNFCallVoidMethod(env, platformWindow, jm_deliverMoveResizeEvent,
@@ -524,8 +591,8 @@ AWT_ASSERT_APPKIT_THREAD;
         if ([event type] == NSLeftMouseDown || [event type] == NSRightMouseDown || [event type] == NSOtherMouseDown) {
 
             NSPoint p = [NSEvent mouseLocation];
-            NSRect frame = [self frame];
-            NSRect contentRect = [self contentRectForFrameRect:frame];
+            NSRect frame = [self.nsWindow frame];
+            NSRect contentRect = [self.nsWindow contentRectForFrameRect:frame];
 
             // Check if the click happened in the non-client area (title bar)
             if (p.y >= (frame.origin.y + contentRect.size.height)) {
@@ -536,15 +603,14 @@ AWT_ASSERT_APPKIT_THREAD;
                 JNFCallVoidMethod(env, platformWindow, jm_deliverNCMouseDown);
             }
         }
-        [super sendEvent:event];
 }
 
 - (void)constrainSize:(NSSize*)size {
     float minWidth = 0.f, minHeight = 0.f;
 
     if (IS(self.styleBits, DECORATED)) {
-        NSRect frame = [self frame];
-        NSRect contentRect = [NSWindow contentRectForFrameRect:frame styleMask:[self styleMask]];
+        NSRect frame = [self.nsWindow frame];
+        NSRect contentRect = [NSWindow contentRectForFrameRect:frame styleMask:[self.nsWindow styleMask]];
 
         float top = frame.size.height - contentRect.size.height;
         float left = contentRect.origin.x - frame.origin.x;
@@ -567,20 +633,20 @@ AWT_ASSERT_APPKIT_THREAD;
     self.isEnabled = flag;
 
     if (IS(self.styleBits, CLOSEABLE)) {
-        [[self standardWindowButton:NSWindowCloseButton] setEnabled: flag];
+        [[self.nsWindow standardWindowButton:NSWindowCloseButton] setEnabled: flag];
     }
 
     if (IS(self.styleBits, MINIMIZABLE)) {
-        [[self standardWindowButton:NSWindowMiniaturizeButton] setEnabled: flag];
+        [[self.nsWindow standardWindowButton:NSWindowMiniaturizeButton] setEnabled: flag];
     }
 
     if (IS(self.styleBits, ZOOMABLE)) {
-        [[self standardWindowButton:NSWindowZoomButton] setEnabled: flag];
+        [[self.nsWindow standardWindowButton:NSWindowZoomButton] setEnabled: flag];
     }
 
     if (IS(self.styleBits, RESIZABLE)) {
         [self updateMinMaxSize:flag];
-        [self setShowsResizeIndicator:flag];
+        [self.nsWindow setShowsResizeIndicator:flag];
     }
 }
 
@@ -618,7 +684,7 @@ AWT_ASSERT_NOT_APPKIT_THREAD;
 
 JNF_COCOA_EXIT(env);
 
-    return ptr_to_jlong(window);
+    return ptr_to_jlong(window ? window.nsWindow : nil);
 }
 
 /*
@@ -632,9 +698,11 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSetNSWindowSt
 JNF_COCOA_ENTER(env);
 AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    AWTWindow *window = OBJC(windowPtr);
+    NSWindow *nsWindow = OBJC(windowPtr);
     [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
         AWT_ASSERT_APPKIT_THREAD;
+
+        AWTWindow *window = (AWTWindow*)[nsWindow delegate];
 
         // scans the bit field, and only updates the values requested by the mask
         // (this implicity handles the _CALLBACK_PROP_BITMASK case, since those are passive reads)
@@ -642,7 +710,7 @@ AWT_ASSERT_NOT_APPKIT_THREAD;
 
         // resets the NSWindow's style mask if the mask intersects any of those bits
         if (mask & MASK(_STYLE_PROP_BITMASK)) {
-            [window setStyleMask:[AWTWindow styleMaskForStyleBits:newBits]];
+            [nsWindow setStyleMask:[AWTWindow styleMaskForStyleBits:newBits]];
         }
 
         // calls methods on NSWindow to change other properties, based on the mask
@@ -667,12 +735,14 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSetNSWindowMe
 JNF_COCOA_ENTER(env);
 AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    AWTWindow *window = OBJC(windowPtr);
+    NSWindow *nsWindow = OBJC(windowPtr);
     CMenuBar *menuBar = OBJC(menuBarPtr);
     [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
         AWT_ASSERT_APPKIT_THREAD;
 
-        if ([window isKeyWindow]) [window.javaMenuBar deactivate];
+        AWTWindow *window = (AWTWindow*)[nsWindow delegate];
+
+        if ([nsWindow isKeyWindow]) [window.javaMenuBar deactivate];
         window.javaMenuBar = menuBar;
 
         // if ([self isKeyWindow]) {
@@ -696,15 +766,15 @@ JNIEXPORT jobject JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeGetNSWindo
 JNF_COCOA_ENTER(env);
 AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    AWTWindow *window = OBJC(windowPtr);
+    NSWindow *nsWindow = OBJC(windowPtr);
     __block NSRect contentRect = NSZeroRect;
     __block NSRect frame = NSZeroRect;
 
     [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
         AWT_ASSERT_APPKIT_THREAD;
 
-        frame = [window frame];
-        contentRect = [NSWindow contentRectForFrameRect:frame styleMask:[window styleMask]];
+        frame = [nsWindow frame];
+        contentRect = [NSWindow contentRectForFrameRect:frame styleMask:[nsWindow styleMask]];
     }];
 
     jint top = (jint)(frame.size.height - contentRect.size.height);
@@ -734,19 +804,21 @@ AWT_ASSERT_NOT_APPKIT_THREAD;
     NSRect jrect = NSMakeRect(originX, originY, width, height);
 
     // TODO: not sure we need displayIfNeeded message in our view
-    AWTWindow *window = OBJC(windowPtr);
+    NSWindow *nsWindow = OBJC(windowPtr);
     [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
         AWT_ASSERT_APPKIT_THREAD;
+
+        AWTWindow *window = (AWTWindow*)[nsWindow delegate];
 
         NSRect rect = ConvertNSScreenRect(NULL, jrect);
         [window constrainSize:&rect.size];
 
-        [window setFrame:rect display:YES];
+        [nsWindow setFrame:rect display:YES];
 
         // only start tracking events if pointer is above the toplevel
         // TODO: should post an Entered event if YES.
         NSPoint mLocation = [NSEvent mouseLocation];
-        [window setAcceptsMouseMovedEvents:NSPointInRect(mLocation, rect)];
+        [nsWindow setAcceptsMouseMovedEvents:NSPointInRect(mLocation, rect)];
 
         // ensure we repaint the whole window after the resize operation
         // (this will also re-enable screen updates, which were disabled above)
@@ -774,9 +846,11 @@ AWT_ASSERT_NOT_APPKIT_THREAD;
     if (maxW < 1) maxW = 1;
     if (maxH < 1) maxH = 1;
 
-    AWTWindow *window = OBJC(windowPtr);
+    NSWindow *nsWindow = OBJC(windowPtr);
     [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
         AWT_ASSERT_APPKIT_THREAD;
+
+        AWTWindow *window = (AWTWindow*)[nsWindow delegate];
 
         NSSize min = { minW, minH };
         NSSize max = { maxW, maxH };
@@ -803,11 +877,11 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativePushNSWindowT
 JNF_COCOA_ENTER(env);
 AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    AWTWindow *window = OBJC(windowPtr);
+    NSWindow *nsWindow = OBJC(windowPtr);
     [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
         AWT_ASSERT_APPKIT_THREAD;
 
-        [window orderBack:nil];
+        [nsWindow orderBack:nil];
     }];
 
 JNF_COCOA_EXIT(env);
@@ -824,14 +898,14 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativePushNSWindowT
 JNF_COCOA_ENTER(env);
 AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    AWTWindow *window = OBJC(windowPtr);
+    NSWindow *nsWindow = OBJC(windowPtr);
     [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
         AWT_ASSERT_APPKIT_THREAD;
 
-        if (![window isKeyWindow]) {
-            [window makeKeyAndOrderFront:window];
+        if (![nsWindow isKeyWindow]) {
+            [nsWindow makeKeyAndOrderFront:nsWindow];
         } else {
-            [window orderFront:window];
+            [nsWindow orderFront:nsWindow];
         }
     }];
 
@@ -849,8 +923,8 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSetNSWindowTi
 JNF_COCOA_ENTER(env);
 AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    AWTWindow *window = OBJC(windowPtr);
-    [window performSelectorOnMainThread:@selector(setTitle:)
+    NSWindow *nsWindow = OBJC(windowPtr);
+    [nsWindow performSelectorOnMainThread:@selector(setTitle:)
                               withObject:JNFJavaToNSString(env, jtitle)
                            waitUntilDone:NO];
 
@@ -868,11 +942,11 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSetNSWindowAl
 JNF_COCOA_ENTER(env);
 AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    AWTWindow *window = OBJC(windowPtr);
+    NSWindow *nsWindow = OBJC(windowPtr);
     [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
         AWT_ASSERT_APPKIT_THREAD;
 
-        [window setAlphaValue:alpha];
+        [nsWindow setAlphaValue:alpha];
     }];
 
 JNF_COCOA_EXIT(env);
@@ -889,11 +963,11 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeRevalidateNSW
 JNF_COCOA_ENTER(env);
 AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    AWTWindow *window = OBJC(windowPtr);
+    NSWindow *nsWindow = OBJC(windowPtr);
     [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
         AWT_ASSERT_APPKIT_THREAD;
 
-        [window invalidateShadow];
+        [nsWindow invalidateShadow];
     }];
 
 JNF_COCOA_EXIT(env);
@@ -912,8 +986,8 @@ JNIEXPORT jint JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeScreenOn_1App
 JNF_COCOA_ENTER(env);
 AWT_ASSERT_APPKIT_THREAD;
 
-    AWTWindow *window = OBJC(windowPtr);
-    NSDictionary *props = [[window screen] deviceDescription];
+    NSWindow *nsWindow = OBJC(windowPtr);
+    NSDictionary *props = [[nsWindow screen] deviceDescription];
     ret = [[props objectForKey:@"NSScreenNumber"] intValue];
 
 JNF_COCOA_EXIT(env);
@@ -932,12 +1006,12 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSetNSWindowMi
 JNF_COCOA_ENTER(env);
 AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    AWTWindow *window = OBJC(windowPtr);
+    NSWindow *nsWindow = OBJC(windowPtr);
     NSImage *image = OBJC(nsImagePtr);
     [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
         AWT_ASSERT_APPKIT_THREAD;
 
-        [window setMiniwindowImage:image];
+        [nsWindow setMiniwindowImage:image];
     }];
 
 JNF_COCOA_EXIT(env);
@@ -954,12 +1028,12 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSetNSWindowRe
 JNF_COCOA_ENTER(env);
 AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    AWTWindow *window = OBJC(windowPtr);
+    NSWindow *nsWindow = OBJC(windowPtr);
     NSURL *url = (filename == NULL) ? nil : [NSURL fileURLWithPath:JNFNormalizedNSStringForPath(env, filename)];
     [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
         AWT_ASSERT_APPKIT_THREAD;
 
-        [window setRepresentedURL:url];
+        [nsWindow setRepresentedURL:url];
     }];
 
 JNF_COCOA_EXIT(env);
@@ -992,9 +1066,11 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSynthesizeMou
     JNF_COCOA_ENTER(env);
     AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    AWTWindow *window = OBJC(windowPtr);
+    NSWindow *nsWindow = OBJC(windowPtr);
     [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
         AWT_ASSERT_APPKIT_THREAD;
+
+        AWTWindow *window = (AWTWindow*)[nsWindow delegate];
 
         [window synthesizeMouseEnteredExitedEvents];
     }];
@@ -1015,8 +1091,8 @@ JNIEXPORT jint JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeGetScreenNSWi
 JNF_COCOA_ENTER(env);
 AWT_ASSERT_APPKIT_THREAD;
 
-    AWTWindow *window = OBJC(windowPtr);
-    NSScreen* screen = [window screen];
+    NSWindow *nsWindow = OBJC(windowPtr);
+    NSScreen* screen = [nsWindow screen];
 
     //+++gdb NOTE: This is using a linear search of the screens. If it should
     //  prove to be a bottleneck, this can definitely be improved. However,
@@ -1047,12 +1123,12 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow__1toggleFullScreenM
 {
 JNF_COCOA_ENTER(env);
 
-    AWTWindow *window = OBJC(windowPtr);
+    NSWindow *nsWindow = OBJC(windowPtr);
     SEL toggleFullScreenSelector = @selector(toggleFullScreen:);
-    if (![window respondsToSelector:toggleFullScreenSelector]) return;
+    if (![nsWindow respondsToSelector:toggleFullScreenSelector]) return;
 
     [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
-        [window performSelector:toggleFullScreenSelector withObject:nil];
+        [nsWindow performSelector:toggleFullScreenSelector withObject:nil];
     }];
 
 JNF_COCOA_EXIT(env);
@@ -1066,12 +1142,12 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CMouseInfoPeer_nativeIsWindowUn
 JNF_COCOA_ENTER(env);
 AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    AWTWindow *aWindow = OBJC(windowPtr);
+    NSWindow *nsWindow = OBJC(windowPtr);
     [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^() {
         AWT_ASSERT_APPKIT_THREAD;
 
-        NSPoint pt = [aWindow mouseLocationOutsideOfEventStream];
-        underMouse = [[aWindow contentView] hitTest:pt] != nil;
+        NSPoint pt = [nsWindow mouseLocationOutsideOfEventStream];
+        underMouse = [[nsWindow contentView] hitTest:pt] != nil;
     }];
 
 JNF_COCOA_EXIT(env);
@@ -1084,8 +1160,10 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSetEnabled
 {
 JNF_COCOA_ENTER(env);
 
-    AWTWindow *window = OBJC(windowPtr);
+    NSWindow *nsWindow = OBJC(windowPtr);
     [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^(){
+        AWTWindow *window = (AWTWindow*)[nsWindow delegate];
+
         [window setEnabled: isEnabled];
     }];
 

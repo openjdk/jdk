@@ -304,8 +304,8 @@ AWT_ASSERT_APPKIT_THREAD;
 -(void) deliverJavaMouseEvent: (NSEvent *) event {
     BOOL isEnabled = YES;
     NSWindow* window = [self window];
-    if ([window isKindOfClass: [AWTWindow class]]) {
-        isEnabled = [(AWTWindow*)window isEnabled];
+    if ([window isKindOfClass: [AWTWindow_Panel class]] || [window isKindOfClass: [AWTWindow_Normal class]]) {
+        isEnabled = [(AWTWindow*)[window delegate] isEnabled];
     }
 
     if (!isEnabled) {
