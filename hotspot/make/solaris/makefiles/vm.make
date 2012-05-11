@@ -56,7 +56,7 @@ Src_Dirs_I += $(GENERATED)
 INCLUDES += $(Src_Dirs_I:%=-I%)
 
 # SYMFLAG is used by {dtrace,jsig,saproc}.make.
-ifneq ($(OBJCOPY),)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   # always build with debug info when we can create .debuginfo files
   # and disable 'lazy debug info' so the .so has everything.
   SYMFLAG = -g -xs
@@ -152,7 +152,9 @@ LIBJVM   = lib$(JVM).so
 LIBJVM_G = lib$(JVM)$(G_SUFFIX).so
 
 LIBJVM_DEBUGINFO   = lib$(JVM).debuginfo
+LIBJVM_DIZ         = lib$(JVM).diz
 LIBJVM_G_DEBUGINFO = lib$(JVM)$(G_SUFFIX).debuginfo
+LIBJVM_G_DIZ       = lib$(JVM)$(G_SUFFIX).diz
 
 SPECIAL_PATHS:=adlc c1 dist gc_implementation opto shark libadt
 
@@ -283,7 +285,7 @@ ifeq ($(filter -sbfast -xsbfast, $(CFLAGS_BROWSE)),)
 	$(QUIETLY) rm -f $@.1 && ln -s $@ $@.1
 	$(QUIETLY) [ -f $(LIBJVM_G) ] || ln -s $@ $(LIBJVM_G)
 	$(QUIETLY) [ -f $(LIBJVM_G).1 ] || ln -s $@.1 $(LIBJVM_G).1
-ifneq ($(OBJCOPY),)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJVM_DEBUGINFO)
 	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DEBUGINFO) $@
   ifeq ($(STRIP_POLICY),all_strip)
@@ -295,6 +297,11 @@ ifneq ($(OBJCOPY),)
     endif
   endif
 	$(QUIETLY) [ -f $(LIBJVM_G_DEBUGINFO) ] || ln -s $(LIBJVM_DEBUGINFO) $(LIBJVM_G_DEBUGINFO)
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	$(ZIPEXE) -q -y $(LIBJVM_DIZ) $(LIBJVM_DEBUGINFO) $(LIBJVM_G_DEBUGINFO)
+	$(RM) $(LIBJVM_DEBUGINFO) $(LIBJVM_G_DEBUGINFO)
+	[ -f $(LIBJVM_G_DIZ) ] || { ln -s $(LIBJVM_DIZ) $(LIBJVM_G_DIZ); }
+  endif
 endif
 endif # filter -sbfast -xsbfast
 
@@ -302,11 +309,14 @@ endif # filter -sbfast -xsbfast
 DEST_SUBDIR        = $(JDK_LIBDIR)/$(VM_SUBDIR)
 DEST_JVM           = $(DEST_SUBDIR)/$(LIBJVM)
 DEST_JVM_DEBUGINFO = $(DEST_SUBDIR)/$(LIBJVM_DEBUGINFO)
+DEST_JVM_DIZ       = $(DEST_SUBDIR)/$(LIBJVM_DIZ)
 
 install_jvm: $(LIBJVM)
 	@echo "Copying $(LIBJVM) to $(DEST_JVM)"
 	$(QUIETLY) test -f $(LIBJVM_DEBUGINFO) && \
 	    cp -f $(LIBJVM_DEBUGINFO) $(DEST_JVM_DEBUGINFO)
+	$(QUIETLY) test -f $(LIBJVM_DIZ) && \
+	    cp -f $(LIBJVM_DIZ) $(DEST_JVM_DIZ)
 	$(QUIETLY) cp -f $(LIBJVM) $(DEST_JVM) && echo "Done"
 
 #----------------------------------------------------------------------

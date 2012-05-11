@@ -38,7 +38,7 @@
 
 CMSPermGen::CMSPermGen(ReservedSpace rs, size_t initial_byte_size,
              CardTableRS* ct,
-             FreeBlockDictionary::DictionaryChoice dictionaryChoice) {
+             FreeBlockDictionary<FreeChunk>::DictionaryChoice dictionaryChoice) {
   CMSPermGenGen* g =
     new CMSPermGenGen(rs, initial_byte_size, -1, ct);
   if (g == NULL) {

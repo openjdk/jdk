@@ -68,7 +68,7 @@ Generation* GenerationSpec::init(ReservedSpace rs, int level,
       ConcurrentMarkSweepGeneration* g = NULL;
       g = new ConcurrentMarkSweepGeneration(rs,
                  init_size(), level, ctrs, UseCMSAdaptiveFreeLists,
-                 (FreeBlockDictionary::DictionaryChoice)CMSDictionaryChoice);
+                 (FreeBlockDictionary<FreeChunk>::DictionaryChoice)CMSDictionaryChoice);
 
       g->initialize_performance_counters();
 
@@ -88,7 +88,7 @@ Generation* GenerationSpec::init(ReservedSpace rs, int level,
       ASConcurrentMarkSweepGeneration* g = NULL;
       g = new ASConcurrentMarkSweepGeneration(rs,
                  init_size(), level, ctrs, UseCMSAdaptiveFreeLists,
-                 (FreeBlockDictionary::DictionaryChoice)CMSDictionaryChoice);
+                 (FreeBlockDictionary<FreeChunk>::DictionaryChoice)CMSDictionaryChoice);
 
       g->initialize_performance_counters();
 
@@ -175,7 +175,7 @@ PermGen* PermanentGenerationSpec::init(ReservedSpace rs,
       }
       // XXXPERM
       return new CMSPermGen(perm_rs, init_size, ctrs,
-                   (FreeBlockDictionary::DictionaryChoice)CMSDictionaryChoice);
+                   (FreeBlockDictionary<FreeChunk>::DictionaryChoice)CMSDictionaryChoice);
     }
 #endif // SERIALGC
     default:
