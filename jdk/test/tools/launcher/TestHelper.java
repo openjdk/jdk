@@ -23,6 +23,7 @@
 
 import java.io.StringWriter;
 import java.io.PrintWriter;
+import java.util.Set;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
@@ -319,19 +320,28 @@ public class TestHelper {
     }
 
     static TestResult doExec(String...cmds) {
-        return doExec(null, cmds);
+        return doExec(null, null, cmds);
     }
 
+    static TestResult doExec(Map<String, String> envToSet, String...cmds) {
+        return doExec(envToSet, null, cmds);
+    }
     /*
      * A method which executes a java cmd and returns the results in a container
      */
-    static TestResult doExec(Map<String, String> envToSet, String...cmds) {
+    static TestResult doExec(Map<String, String> envToSet,
+                             Set<String> envToRemove, String...cmds) {
         String cmdStr = "";
         for (String x : cmds) {
             cmdStr = cmdStr.concat(x + " ");
         }
         ProcessBuilder pb = new ProcessBuilder(cmds);
         Map<String, String> env = pb.environment();
+        if (envToRemove != null) {
+            for (String key : envToRemove) {
+                env.remove(key);
+            }
+        }
         if (envToSet != null) {
             env.putAll(envToSet);
         }

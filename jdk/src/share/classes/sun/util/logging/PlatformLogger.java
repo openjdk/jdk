@@ -516,6 +516,9 @@ public class PlatformLogger {
         }
 
         void doLog(int level, String msg, Object... params) {
+            if (!isLoggable(level)) {
+                return;
+            }
             // only pass String objects to the j.u.l.Logger which may
             // be created by untrusted code
             int len = (params != null) ? params.length : 0;
