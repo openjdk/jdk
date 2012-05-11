@@ -35,7 +35,7 @@
 
 @class AWTView;
 
-@interface AWTWindow : NSPanel <NSWindowDelegate> {
+@interface AWTWindow : NSObject <NSWindowDelegate> {
 @private
     JNFWeakJObjectWrapper *javaPlatformWindow;
     CMenuBar *javaMenuBar;
@@ -44,6 +44,9 @@
     jint styleBits;
     BOOL isEnabled;
 }
+
+// An instance of either AWTWindow_Normal or AWTWindow_Panel
+@property (nonatomic, retain) NSWindow *nsWindow;
 
 @property (nonatomic, retain) JNFWeakJObjectWrapper *javaPlatformWindow;
 @property (nonatomic, retain) CMenuBar *javaMenuBar;
@@ -57,8 +60,28 @@
                     frameRect:(NSRect)frameRect
                   contentView:(NSView *)contentView;
 
-- (void) adjustGrowBoxWindow;
 - (BOOL) isTopmostWindowUnderMouse;
+
+// NSWindow overrides delegate methods
+- (BOOL) canBecomeKeyWindow;
+- (BOOL) canBecomeMainWindow;
+- (BOOL) worksWhenModal;
+- (void)sendEvent:(NSEvent *)event;
+
+@end
+
+@interface AWTWindow_Normal : NSWindow
+- (id) initWithDelegate:(AWTWindow *)delegate
+              frameRect:(NSRect)rect
+              styleMask:(NSUInteger)styleMask
+            contentView:(NSView *)view;
+@end
+
+@interface AWTWindow_Panel : NSPanel
+- (id) initWithDelegate:(AWTWindow *)delegate
+              frameRect:(NSRect)rect
+              styleMask:(NSUInteger)styleMask
+            contentView:(NSView *)view;
 @end
 
 #endif _AWTWINDOW_H
