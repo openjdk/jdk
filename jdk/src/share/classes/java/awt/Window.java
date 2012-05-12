@@ -2568,7 +2568,7 @@ public class Window extends Container implements Accessible {
                     }
                 }
             KeyboardFocusManager.getCurrentKeyboardFocusManager().
-                clearGlobalFocusOwner();
+                clearGlobalFocusOwnerPriv();
         }
     }
 

@@ -7833,7 +7833,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
             if (focusLog.isLoggable(PlatformLogger.FINER)) {
                 focusLog.finer("clear global focus owner");
             }
-            KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
+            KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwnerPriv();
         }
         if (focusLog.isLoggable(PlatformLogger.FINER)) {
             focusLog.finer("returning result: " + res);
@@ -7914,7 +7914,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
             if (focusLog.isLoggable(PlatformLogger.FINER)) {
                 focusLog.finer("clear global focus owner");
             }
-            KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
+            KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwnerPriv();
         }
         if (focusLog.isLoggable(PlatformLogger.FINER)) {
             focusLog.finer("returning result: " + res);
@@ -7947,21 +7947,32 @@ public abstract class Component implements ImageObserver, MenuContainer,
         if (rootAncestor != null) {
             Container rootAncestorRootAncestor =
                 rootAncestor.getFocusCycleRootAncestor();
-            KeyboardFocusManager.getCurrentKeyboardFocusManager().
-                setGlobalCurrentFocusCycleRoot(
-                                               (rootAncestorRootAncestor != null)
-                                               ? rootAncestorRootAncestor
-                                               : rootAncestor);
+
+            final Container fcr = (rootAncestorRootAncestor != null) ?
+                rootAncestorRootAncestor : rootAncestor;
+
+            AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
+                    KeyboardFocusManager.getCurrentKeyboardFocusManager().
+                        setGlobalCurrentFocusCycleRoot(fcr);
+                    return null;
+                }
+            });
             rootAncestor.requestFocus(CausedFocusEvent.Cause.TRAVERSAL_UP);
         } else {
-            Window window = getContainingWindow();
+            final Window window = getContainingWindow();
 
             if (window != null) {
                 Component toFocus = window.getFocusTraversalPolicy().
                     getDefaultComponent(window);
                 if (toFocus != null) {
-                    KeyboardFocusManager.getCurrentKeyboardFocusManager().
-                        setGlobalCurrentFocusCycleRoot(window);
+                    AccessController.doPrivileged(new PrivilegedAction() {
+                        public Object run() {
+                            KeyboardFocusManager.getCurrentKeyboardFocusManager().
+                                setGlobalCurrentFocusCycleRoot(window);
+                            return null;
+                        }
+                    });
                     toFocus.requestFocus(CausedFocusEvent.Cause.TRAVERSAL_UP);
                 }
             }
