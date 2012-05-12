@@ -62,7 +62,7 @@ import javax.swing.UIManager.LookAndFeelInfo;
 @SuppressWarnings("serial")
 class Notepad extends JPanel {
 
-    private static Properties properties;
+    protected static Properties properties;
     private static ResourceBundle resources;
     private final static String EXIT_AFTER_PAINT = "-exit";
     private static boolean exitAfterFirstPaint;
@@ -77,12 +77,12 @@ class Notepad extends JPanel {
         try {
             properties = new Properties();
             properties.load(Notepad.class.getResourceAsStream(
-                    "resources/system.properties"));
+                    "resources/NotepadSystem.properties"));
             resources = ResourceBundle.getBundle("resources.Notepad",
                     Locale.getDefault());
         } catch (MissingResourceException | IOException  e) {
             System.err.println("resources/Notepad.properties "
-                    + "or resources/system.properties not found");
+                    + "or resources/NotepadSystem.properties not found");
             System.exit(1);
         }
     }
@@ -298,7 +298,7 @@ class Notepad extends JPanel {
      */
     private Component createToolbar() {
         toolbar = new JToolBar();
-        for (String toolKey: TOOLBAR_KEYS) {
+        for (String toolKey: getToolBarKeys()) {
             if (toolKey.equals("-")) {
                 toolbar.add(Box.createHorizontalStrut(5));
             } else {
@@ -363,7 +363,7 @@ class Notepad extends JPanel {
      */
     protected JMenuBar createMenubar() {
         JMenuBar mb = new JMenuBar();
-        for(String menuKey: MENUBAR_KEYS){
+        for(String menuKey: getMenuBarKeys()){
             JMenu m = createMenu(menuKey);
             if (m != null) {
                 mb.add(m);
@@ -389,8 +389,10 @@ class Notepad extends JPanel {
         return menu;
     }
 
-    // get keys for menus
-    private String[] getItemKeys(String key) {
+    /**
+     *  Get keys for menus
+     */
+    protected String[] getItemKeys(String key) {
         switch (key) {
             case "file":
                 return FILE_KEYS;
@@ -401,6 +403,14 @@ class Notepad extends JPanel {
             default:
                 return null;
         }
+    }
+
+    protected String[] getMenuBarKeys() {
+        return MENUBAR_KEYS;
+    }
+
+    protected String[] getToolBarKeys() {
+        return TOOLBAR_KEYS;
     }
 
     // Yarked from JMenu, ideally this would be public.
