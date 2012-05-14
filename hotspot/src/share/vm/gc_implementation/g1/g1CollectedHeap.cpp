@@ -5502,7 +5502,7 @@ void G1CollectedHeap::evacuate_collection_set() {
   if (evacuation_failed()) {
     remove_self_forwarding_pointers();
     if (G1Log::finer()) {
-      gclog_or_tty->print(" (to-space overflow)");
+      gclog_or_tty->print(" (to-space exhausted)");
     } else if (G1Log::fine()) {
       gclog_or_tty->print("--");
     }
