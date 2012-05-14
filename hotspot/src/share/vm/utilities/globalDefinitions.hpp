@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,16 +188,16 @@ inline const char* proper_unit_for_byte_size(size_t s) {
   }
 }
 
-inline size_t byte_size_in_proper_unit(size_t s) {
+template <class T>
+inline T byte_size_in_proper_unit(T s) {
   if (s >= 10*M) {
-    return s/M;
+    return (T)(s/M);
   } else if (s >= 10*K) {
-    return s/K;
+    return (T)(s/K);
   } else {
     return s;
   }
 }
-
 
 //----------------------------------------------------------------------------------------------------
 // VM type definitions

@@ -1010,7 +1010,8 @@ T sum_of(T* sum_arr, int start, int n, int N) {
 
 void G1CollectorPolicy::print_par_stats(int level,
                                         const char* str,
-                                        double* data) {
+                                        double* data,
+                                        bool showDecimals) {
   double min = data[0], max = data[0];
   double total = 0.0;
   LineBuffer buf(level);
@@ -1023,7 +1024,11 @@ void G1CollectorPolicy::print_par_stats(int level,
       max = val;
     total += val;
     if (G1Log::finest()) {
-      buf.append("  %.1lf", val);
+      if (showDecimals) {
+        buf.append("  %.1lf", val);
+      } else {
+        buf.append("  %d", (int)val);
+      }
     }
   }
 
@@ -1031,36 +1036,26 @@ void G1CollectorPolicy::print_par_stats(int level,
     buf.append_and_print_cr("");
   }
   double avg = total / (double) no_of_gc_threads();
-  buf.append_and_print_cr(" Avg: %.1lf Min: %.1lf Max: %.1lf Diff: %.1lf]",
-    avg, min, max, max - min);
-}
-
-void G1CollectorPolicy::print_par_sizes(int level,
-                                        const char* str,
-                                        double* data) {
-  double min = data[0], max = data[0];
-  double total = 0.0;
-  LineBuffer buf(level);
-  buf.append("[%s :", str);
-  for (uint i = 0; i < no_of_gc_threads(); ++i) {
-    double val = data[i];
-    if (val < min)
-      min = val;
-    if (val > max)
-      max = val;
-    total += val;
-    buf.append(" %d", (int) val);
+  if (showDecimals) {
+    buf.append_and_print_cr(" Min: %.1lf, Avg: %.1lf, Max: %.1lf, Diff: %.1lf, Sum: %.1lf]",
+      min, avg, max, max - min, total);
+  } else {
+    buf.append_and_print_cr(" Min: %d, Avg: %d, Max: %d, Diff: %d, Sum: %d]",
+      (int)min, (int)avg, (int)max, (int)max - (int)min, (int)total);
   }
-  buf.append_and_print_cr("");
-  double avg = total / (double) no_of_gc_threads();
-  buf.append_and_print_cr(" Sum: %d, Avg: %d, Min: %d, Max: %d, Diff: %d]",
-    (int)total, (int)avg, (int)min, (int)max, (int)max - (int)min);
 }
 
 void G1CollectorPolicy::print_stats(int level,
                                     const char* str,
                                     double value) {
-  LineBuffer(level).append_and_print_cr("[%s: %5.1lf ms]", str, value);
+  LineBuffer(level).append_and_print_cr("[%s: %.1lf ms]", str, value);
+}
+
+void G1CollectorPolicy::print_stats(int level,
+                                    const char* str,
+                                    double value,
+                                    int workers) {
+  LineBuffer(level).append_and_print_cr("[%s: %.1lf ms, GC Workers: %d]", str, value, workers);
 }
 
 void G1CollectorPolicy::print_stats(int level,
@@ -1373,7 +1368,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
       print_stats(1, "Root Region Scan Waiting", _root_region_scan_wait_time_ms);
     }
     if (parallel) {
-      print_stats(1, "Parallel Time", _cur_collection_par_time_ms);
+      print_stats(1, "Parallel Time", _cur_collection_par_time_ms, no_of_gc_threads);
       print_par_stats(2, "GC Worker Start", _par_last_gc_worker_start_times_ms);
       print_par_stats(2, "Ext Root Scanning", _par_last_ext_root_scan_times_ms);
       if (print_marking_info) {
@@ -1381,13 +1376,15 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
       }
       print_par_stats(2, "Update RS", _par_last_update_rs_times_ms);
       if (G1Log::finest()) {
-        print_par_sizes(3, "Processed Buffers", _par_last_update_rs_processed_buffers);
+        print_par_stats(3, "Processed Buffers", _par_last_update_rs_processed_buffers,
+          false /* showDecimals */);
       }
       print_par_stats(2, "Scan RS", _par_last_scan_rs_times_ms);
       print_par_stats(2, "Object Copy", _par_last_obj_copy_times_ms);
       print_par_stats(2, "Termination", _par_last_termination_times_ms);
       if (G1Log::finest()) {
-        print_par_sizes(3, "Termination Attempts", _par_last_termination_attempts);
+        print_par_stats(3, "Termination Attempts", _par_last_termination_attempts,
+          false /* showDecimals */);
       }
 
       for (int i = 0; i < _parallel_gc_threads; i++) {
@@ -1601,9 +1598,9 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
   _collectionSetChooser->verify();
 }
 
-#define EXT_SIZE_FORMAT "%d%s"
+#define EXT_SIZE_FORMAT "%.1f%s"
 #define EXT_SIZE_PARAMS(bytes)                                  \
-  byte_size_in_proper_unit((bytes)),                            \
+  byte_size_in_proper_unit((double)(bytes)),                    \
   proper_unit_for_byte_size((bytes))
 
 void G1CollectorPolicy::print_heap_transition() {
