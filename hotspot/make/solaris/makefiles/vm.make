@@ -145,6 +145,10 @@ JDK_LIBDIR = $(JAVA_HOME)/jre/lib/$(LIBARCH)
 include $(MAKEFILES_DIR)/dtrace.make
 
 #----------------------------------------------------------------------
+# add_gnu_debuglink tool
+include $(MAKEFILES_DIR)/add_gnu_debuglink.make
+
+#----------------------------------------------------------------------
 # JVM
 
 JVM      = jvm
@@ -276,7 +280,7 @@ else
 LINK_VM = $(LINK_LIB.CXX)
 endif
 # making the library:
-$(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) 
+$(LIBJVM): $(ADD_GNU_DEBUGLINK) $(LIBJVM.o) $(LIBJVM_MAPFILE) 
 ifeq ($(filter -sbfast -xsbfast, $(CFLAGS_BROWSE)),)
 	@echo Linking vm...
 	$(QUIETLY) $(LINK_LIB.CXX/PRE_HOOK)
@@ -287,7 +291,11 @@ ifeq ($(filter -sbfast -xsbfast, $(CFLAGS_BROWSE)),)
 	$(QUIETLY) [ -f $(LIBJVM_G).1 ] || ln -s $@.1 $(LIBJVM_G).1
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJVM_DEBUGINFO)
-	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DEBUGINFO) $@
+# $(OBJCOPY) --add-gnu-debuglink=... corrupts the SUNW_dof section
+# in libjvm.so. Use $(ADD_GNU_DEBUGLINK) until a fixed $(OBJCOPY)
+# is available.
+#	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DEBUGINFO) $@
+	$(QUIETLY) $(ADD_GNU_DEBUGLINK) $(LIBJVM_DEBUGINFO) $@
   ifeq ($(STRIP_POLICY),all_strip)
 	$(QUIETLY) $(STRIP) $@
   else
