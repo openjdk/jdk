@@ -1148,6 +1148,9 @@ private:
   void fxsave(Address dst);
 
   void fyl2x();
+  void frndint();
+  void f2xm1();
+  void fldl2e();
 
   void hlt();
 
@@ -2387,7 +2390,28 @@ class MacroAssembler: public Assembler {
   void ldmxcsr(Address src) { Assembler::ldmxcsr(src); }
   void ldmxcsr(AddressLiteral src);
 
+  // compute pow(x,y) and exp(x) with x86 instructions. Don't cover
+  // all corner cases and may result in NaN and require fallback to a
+  // runtime call.
+  void fast_pow();
+  void fast_exp();
+
+  // computes exp(x). Fallback to runtime call included.
+  void exp_with_fallback(int num_fpu_regs_in_use) { pow_or_exp(true, num_fpu_regs_in_use); }
+  // computes pow(x,y). Fallback to runtime call included.
+  void pow_with_fallback(int num_fpu_regs_in_use) { pow_or_exp(false, num_fpu_regs_in_use); }
+
 private:
+
+  // call runtime as a fallback for trig functions and pow/exp.
+  void fp_runtime_fallback(address runtime_entry, int nb_args, int num_fpu_regs_in_use);
+
+  // computes 2^(Ylog2X); Ylog2X in ST(0)
+  void pow_exp_core_encoding();
+
+  // computes pow(x,y) or exp(x). Fallback to runtime call included.
+  void pow_or_exp(bool is_exp, int num_fpu_regs_in_use);
+
   // these are private because users should be doing movflt/movdbl
 
   void movss(Address dst, XMMRegister src)     { Assembler::movss(dst, src); }
