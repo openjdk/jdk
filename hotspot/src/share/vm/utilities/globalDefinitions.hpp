@@ -179,6 +179,11 @@ const jlong NANOSECS_PER_SEC      = CONST64(1000000000);
 const jint  NANOSECS_PER_MILLISEC = 1000000;
 
 inline const char* proper_unit_for_byte_size(size_t s) {
+#ifdef _LP64
+  if (s >= 10*G) {
+    return "G";
+  }
+#endif
   if (s >= 10*M) {
     return "M";
   } else if (s >= 10*K) {
@@ -190,6 +195,11 @@ inline const char* proper_unit_for_byte_size(size_t s) {
 
 template <class T>
 inline T byte_size_in_proper_unit(T s) {
+#ifdef _LP64
+  if (s >= 10*G) {
+    return (T)(s/G);
+  }
+#endif
   if (s >= 10*M) {
     return (T)(s/M);
   } else if (s >= 10*K) {
