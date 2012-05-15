@@ -886,9 +886,8 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
                                                       size_t start_used) {
   if (G1Log::finer()) {
     gclog_or_tty->stamp(PrintGCTimeStamps);
-    gclog_or_tty->print("[GC pause (%s) (%s)",
-      GCCause::to_string(_g1->gc_cause()),
-      gcs_are_young() ? "young" : "mixed");
+    gclog_or_tty->print("[%s", (const char*)GCCauseString("GC pause", _g1->gc_cause())
+      .append(gcs_are_young() ? " (young)" : " (mixed)"));
   }
 
   // We only need to do this here as the policy will only be applied

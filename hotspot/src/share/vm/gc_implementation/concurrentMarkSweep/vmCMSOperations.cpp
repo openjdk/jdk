@@ -146,7 +146,7 @@ void VM_CMS_Initial_Mark::doit() {
   VM_CMS_Operation::verify_before_gc();
 
   IsGCActiveMark x; // stop-world GC active
-  _collector->do_CMS_operation(CMSCollector::CMS_op_checkpointRootsInitial);
+  _collector->do_CMS_operation(CMSCollector::CMS_op_checkpointRootsInitial, gch->gc_cause());
 
   VM_CMS_Operation::verify_after_gc();
 #ifndef USDT2
@@ -178,7 +178,7 @@ void VM_CMS_Final_Remark::doit() {
   VM_CMS_Operation::verify_before_gc();
 
   IsGCActiveMark x; // stop-world GC active
-  _collector->do_CMS_operation(CMSCollector::CMS_op_checkpointRootsFinal);
+  _collector->do_CMS_operation(CMSCollector::CMS_op_checkpointRootsFinal, gch->gc_cause());
 
   VM_CMS_Operation::verify_after_gc();
 #ifndef USDT2
