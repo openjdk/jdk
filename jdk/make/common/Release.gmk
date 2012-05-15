@@ -156,6 +156,7 @@ JDK_MAN_PAGES =            \
         jstack.1           \
         jstat.1            \
         jstatd.1           \
+        jvisualvm.1        \
 	native2ascii.1     \
 	rmic.1             \
         schemagen.1        \
