@@ -41,6 +41,7 @@
            directory:(NSString *)inPath
                 file:(NSString *)inFile
                 mode:(jint)inMode
+        multipleMode:(BOOL)inMultipleMode
       shouldNavigate:(BOOL)inNavigateApps
              withEnv:(JNIEnv*)env;
 {
@@ -54,6 +55,7 @@
         fTitle = inTitle;
         [fTitle retain];
         fMode = inMode;
+        fMultipleMode = inMultipleMode;
         fNavigateApps = inNavigateApps;
         fPanelResult = NSCancelButton;
     }
@@ -79,8 +81,8 @@
     [fTitle release];
     fTitle = nil;
 
-    [fReturnedFilename release];
-    fReturnedFilename = nil;
+    [fURLs release];
+    fURLs = nil;
 
     [super dealloc];
 }
@@ -105,7 +107,7 @@
 
         if (fMode == java_awt_FileDialog_LOAD) {
             NSOpenPanel *openPanel = (NSOpenPanel *)thePanel;
-            [openPanel setAllowsMultipleSelection:NO];
+            [openPanel setAllowsMultipleSelection:fMultipleMode];
             [openPanel setCanChooseFiles:YES];
             [openPanel setCanChooseDirectories:NO];
             [openPanel setCanCreateDirectories:YES];
@@ -114,8 +116,16 @@
         [thePanel setDelegate:self];
         fPanelResult = [thePanel runModalForDirectory:fDirectory file:fFile];
         [thePanel setDelegate:nil];
-        fReturnedFilename = [thePanel filename];
-        [fReturnedFilename retain];
+
+        if ([self userClickedOK]) {
+            if (fMode == java_awt_FileDialog_LOAD) {
+                NSOpenPanel *openPanel = (NSOpenPanel *)thePanel;
+                fURLs = [openPanel URLs];
+            } else {
+                fURLs = [NSArray arrayWithObject:[thePanel URL]];
+            }
+            [fURLs retain];
+        }
     }
 
     [self disposer];
@@ -158,8 +168,8 @@
     return fPanelResult == NSOKButton;
 }
 
-- (NSString *)filename {
-    return [[fReturnedFilename retain] autorelease];
+- (NSArray *)URLs {
+    return [[fURLs retain] autorelease];
 }
 @end
 
@@ -167,13 +177,14 @@
  * Class:     sun_lwawt_macosx_CFileDialog
  * Method:    nativeRunFileDialog
  * Signature: (Ljava/lang/String;ILjava/io/FilenameFilter;
- *             Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+ *             Ljava/lang/String;Ljava/lang/String;)[Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL
+JNIEXPORT jobjectArray JNICALL
 Java_sun_lwawt_macosx_CFileDialog_nativeRunFileDialog
-(JNIEnv *env, jobject peer, jstring title, jint mode, jboolean navigateApps, jboolean hasFilter, jstring directory, jstring file)
+(JNIEnv *env, jobject peer, jstring title, jint mode, jboolean multipleMode,
+ jboolean navigateApps, jboolean hasFilter, jstring directory, jstring file)
 {
-    jstring returnValue = NULL;
+    jobjectArray returnValue = NULL;
 
 JNF_COCOA_ENTER(env);
     NSString *dialogTitle = JNFJavaToNSString(env, title);
@@ -187,6 +198,7 @@ JNF_COCOA_ENTER(env);
                                                             directory:JNFJavaToNSString(env, directory)
                                                                  file:JNFJavaToNSString(env, file)
                                                                  mode:mode
+                                                         multipleMode:multipleMode
                                                        shouldNavigate:navigateApps
                                                               withEnv:env];
 
@@ -196,8 +208,18 @@ JNF_COCOA_ENTER(env);
                       waitUntilDone:YES];
 
     if ([dialogDelegate userClickedOK]) {
-        NSString *filename = [dialogDelegate filename];
-        returnValue = JNFNSToJavaString(env, filename);
+        NSArray *urls = [dialogDelegate URLs];
+        jsize count = [urls count];
+
+        jclass stringClass = (*env)->FindClass(env, "java/lang/String");
+        returnValue = (*env)->NewObjectArray(env, count, stringClass, NULL);
+        (*env)->DeleteLocalRef(env, stringClass);
+
+        [urls enumerateObjectsUsingBlock:^(id url, NSUInteger index, BOOL *stop) {
+            jstring filename = JNFNormalizedJavaStringForPath(env, [url path]);
+            (*env)->SetObjectArrayElement(env, returnValue, index, filename);
+            (*env)->DeleteLocalRef(env, filename);
+        }];
     }
 
     [dialogDelegate release];
