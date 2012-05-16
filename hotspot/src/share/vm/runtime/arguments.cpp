@@ -3039,7 +3039,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     return result;
   }
 
-#ifdef JAVASE_EMBEDDED
+#if (defined JAVASE_EMBEDDED || defined ARM)
   UNSUPPORTED_OPTION(UseG1GC, "G1 GC");
 #endif
 
