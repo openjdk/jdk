@@ -50,7 +50,7 @@ public class LWWindowPeer
         EMBEDDEDFRAME
     }
 
-    private static final sun.util.logging.PlatformLogger focusLog = PlatformLogger.getLogger("sun.lwawt.focus.LWWindowPeer");
+    private static final PlatformLogger focusLog = PlatformLogger.getLogger("sun.lwawt.focus.LWWindowPeer");
 
     private PlatformWindow platformWindow;
 
@@ -245,15 +245,17 @@ public class LWWindowPeer
                         getInstance(getAppContext());
 
                     if (visible) {
-                        updateFocusableWindowState();
-                        changeFocusedWindow(true, true);
-
+                        if (!getTarget().isAutoRequestFocus()) {
+                            return;
+                        } else {
+                            requestWindowFocus(CausedFocusEvent.Cause.ACTIVATION);
+                        }
                     // Focus the owner in case this window is focused.
                     } else if (manager.getCurrentFocusedWindow() == getTarget()) {
+                        // Transfer focus to the owner.
                         LWWindowPeer owner = getOwnerFrameDialog(LWWindowPeer.this);
                         if (owner != null) {
-                            // KFM will do all the rest.
-                            owner.changeFocusedWindow(true, false);
+                            owner.requestWindowFocus(CausedFocusEvent.Cause.ACTIVATION);
                         }
                     }
                 }
@@ -619,7 +621,7 @@ public class LWWindowPeer
     }
 
     public void notifyActivation(boolean activation) {
-        changeFocusedWindow(activation, false);
+        changeFocusedWindow(activation);
     }
 
     // MouseDown in non-client area
@@ -1065,6 +1067,10 @@ public class LWWindowPeer
         return lastMouseEventPeer;
     }
 
+    /*
+     * Requests platform to set native focus on a frame/dialog.
+     * In case of a simple window, triggers appropriate java focus change.
+     */
     public boolean requestWindowFocus(CausedFocusEvent.Cause cause) {
         if (focusLog.isLoggable(PlatformLogger.FINE)) {
             focusLog.fine("requesting native focus to " + this);
@@ -1108,14 +1114,14 @@ public class LWWindowPeer
             }
 
             // DKFM will synthesize all the focus/activation events correctly.
-            changeFocusedWindow(true, false);
+            changeFocusedWindow(true);
             return true;
 
         // In case the toplevel is active but not focused, change focus directly,
         // as requesting native focus on it will not have effect.
         } else if (getTarget() == currentActive && !getTarget().hasFocus()) {
 
-            changeFocusedWindow(true, false);
+            changeFocusedWindow(true);
             return true;
         }
         return platformWindow.requestWindowFocus();
@@ -1133,13 +1139,13 @@ public class LWWindowPeer
     }
 
     /*
-     * "Delegates" the responsibility of managing focus to keyboard focus manager.
+     * Changes focused window on java level.
      */
-    private void changeFocusedWindow(boolean becomesFocused, boolean isShowing) {
+    private void changeFocusedWindow(boolean becomesFocused) {
         if (focusLog.isLoggable(PlatformLogger.FINE)) {
             focusLog.fine((becomesFocused?"gaining":"loosing") + " focus window: " + this);
         }
-        if (isShowing && !getTarget().isAutoRequestFocus() || skipNextFocusChange) {
+        if (skipNextFocusChange) {
             focusLog.fine("skipping focus change");
             skipNextFocusChange = false;
             return;
@@ -1184,7 +1190,7 @@ public class LWWindowPeer
         postEvent(windowEvent);
     }
 
-    private static LWWindowPeer getOwnerFrameDialog(LWWindowPeer peer) {
+    static LWWindowPeer getOwnerFrameDialog(LWWindowPeer peer) {
         Window owner = (peer != null ? peer.getTarget().getOwner() : null);
         while (owner != null && !(owner instanceof Frame || owner instanceof Dialog)) {
             owner = owner.getOwner();
