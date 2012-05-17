@@ -108,16 +108,9 @@ import java.util.regex.PatternSyntaxException;
  */
 
 public final class String
-    implements java.io.Serializable, Comparable<String>, CharSequence
-{
+    implements java.io.Serializable, Comparable<String>, CharSequence {
     /** The value is used for character storage. */
     private final char value[];
-
-    /** The offset is the first index of the storage that is used. */
-    private final int offset;
-
-    /** The count is the number of characters in the String. */
-    private final int count;
 
     /** Cache the hash code for the string */
     private int hash; // Default to 0
@@ -138,7 +131,7 @@ public final class String
      * string instance within the stream.
      */
     private static final ObjectStreamField[] serialPersistentFields =
-        new ObjectStreamField[0];
+            new ObjectStreamField[0];
 
     /**
      * Initializes a newly created {@code String} object so that it represents
@@ -146,8 +139,6 @@ public final class String
      * unnecessary since Strings are immutable.
      */
     public String() {
-        this.offset = 0;
-        this.count = 0;
         this.value = new char[0];
     }
 
@@ -162,23 +153,8 @@ public final class String
      *         A {@code String}
      */
     public String(String original) {
-        int size = original.count;
-        char[] originalValue = original.value;
-        char[] v;
-        if (originalValue.length > size) {
-            // The array representing the String is bigger than the new
-            // String itself.  Perhaps this constructor is being called
-            // in order to trim the baggage, so make a copy of the array.
-            int off = original.offset;
-            v = Arrays.copyOfRange(originalValue, off, off+size);
-        } else {
-            // The array representing the String is the same
-            // size as the String, so no point in making a copy.
-            v = originalValue;
-        }
-        this.offset = 0;
-        this.count = size;
-        this.value = v;
+        this.value = original.value;
+        this.hash = original.hash;
     }
 
     /**
@@ -191,10 +167,7 @@ public final class String
      *         The initial value of the string
      */
     public String(char value[]) {
-        int size = value.length;
-        this.offset = 0;
-        this.count = size;
-        this.value = Arrays.copyOf(value, size);
+        this.value = Arrays.copyOf(value, value.length);
     }
 
     /**
@@ -229,8 +202,6 @@ public final class String
         if (offset > value.length - count) {
             throw new StringIndexOutOfBoundsException(offset + count);
         }
-        this.offset = 0;
-        this.count = count;
         this.value = Arrays.copyOfRange(value, offset, offset+count);
     }
 
@@ -293,14 +264,12 @@ public final class String
         for (int i = offset, j = 0; i < end; i++, j++) {
             int c = codePoints[i];
             if (Character.isBmpCodePoint(c))
-                v[j] = (char) c;
+                v[j] = (char)c;
             else
                 Character.toSurrogates(c, v, j++);
         }
 
-        this.value  = v;
-        this.count  = n;
-        this.offset = 0;
+        this.value = v;
     }
 
     /**
@@ -348,17 +317,15 @@ public final class String
         char value[] = new char[count];
 
         if (hibyte == 0) {
-            for (int i = count ; i-- > 0 ;) {
-                value[i] = (char) (ascii[i + offset] & 0xff);
+            for (int i = count; i-- > 0;) {
+                value[i] = (char)(ascii[i + offset] & 0xff);
             }
         } else {
             hibyte <<= 8;
-            for (int i = count ; i-- > 0 ;) {
-                value[i] = (char) (hibyte | (ascii[i + offset] & 0xff));
+            for (int i = count; i-- > 0;) {
+                value[i] = (char)(hibyte | (ascii[i + offset] & 0xff));
             }
         }
-        this.offset = 0;
-        this.count = count;
         this.value = value;
     }
 
@@ -444,15 +411,11 @@ public final class String
      * @since  JDK1.1
      */
     public String(byte bytes[], int offset, int length, String charsetName)
-        throws UnsupportedEncodingException
-    {
+            throws UnsupportedEncodingException {
         if (charsetName == null)
             throw new NullPointerException("charsetName");
         checkBounds(bytes, offset, length);
-        char[] v = StringCoding.decode(charsetName, bytes, offset, length);
-        this.offset = 0;
-        this.count = v.length;
-        this.value = v;
+        this.value = StringCoding.decode(charsetName, bytes, offset, length);
     }
 
     /**
@@ -489,10 +452,7 @@ public final class String
         if (charset == null)
             throw new NullPointerException("charset");
         checkBounds(bytes, offset, length);
-        char[] v = StringCoding.decode(charset, bytes, offset, length);
-        this.offset = 0;
-        this.count = v.length;
-        this.value = v;
+        this.value =  StringCoding.decode(charset, bytes, offset, length);
     }
 
     /**
@@ -519,8 +479,7 @@ public final class String
      * @since  JDK1.1
      */
     public String(byte bytes[], String charsetName)
-        throws UnsupportedEncodingException
-    {
+            throws UnsupportedEncodingException {
         this(bytes, 0, bytes.length, charsetName);
     }
 
@@ -576,10 +535,7 @@ public final class String
      */
     public String(byte bytes[], int offset, int length) {
         checkBounds(bytes, offset, length);
-        char[] v  = StringCoding.decode(bytes, offset, length);
-        this.offset = 0;
-        this.count = v.length;
-        this.value = v;
+        this.value = StringCoding.decode(bytes, offset, length);
     }
 
     /**
@@ -612,10 +568,9 @@ public final class String
      *         A {@code StringBuffer}
      */
     public String(StringBuffer buffer) {
-        String result = buffer.toString();
-        this.value = result.value;
-        this.count = result.count;
-        this.offset = result.offset;
+        synchronized(buffer) {
+            this.value = Arrays.copyOf(buffer.getValue(), buffer.length());
+        }
     }
 
     /**
@@ -634,18 +589,18 @@ public final class String
      * @since  1.5
      */
     public String(StringBuilder builder) {
-        String result = builder.toString();
-        this.value = result.value;
-        this.count = result.count;
-        this.offset = result.offset;
+        this.value = Arrays.copyOf(builder.getValue(), builder.length());
     }
 
-
-    // Package private constructor which shares value array for speed.
-    String(int offset, int count, char value[]) {
+    /*
+    * Package private constructor which shares value array for speed.
+    * this constructor is always expected to be called with share==true.
+    * a separate constructor is needed because we already have a public
+    * String(char[]) constructor that makes a copy of the given char[].
+    */
+    String(char[] value, boolean share) {
+        // assert share : "unshared not supported";
         this.value = value;
-        this.offset = offset;
-        this.count = count;
     }
 
     /**
@@ -657,7 +612,7 @@ public final class String
      *          object.
      */
     public int length() {
-        return count;
+        return value.length;
     }
 
     /**
@@ -669,7 +624,7 @@ public final class String
      * @since 1.6
      */
     public boolean isEmpty() {
-        return count == 0;
+        return value.length == 0;
     }
 
     /**
@@ -691,10 +646,10 @@ public final class String
      *             string.
      */
     public char charAt(int index) {
-        if ((index < 0) || (index >= count)) {
+        if ((index < 0) || (index >= value.length)) {
             throw new StringIndexOutOfBoundsException(index);
         }
-        return value[index + offset];
+        return value[index];
     }
 
     /**
@@ -720,10 +675,10 @@ public final class String
      * @since      1.5
      */
     public int codePointAt(int index) {
-        if ((index < 0) || (index >= count)) {
+        if ((index < 0) || (index >= value.length)) {
             throw new StringIndexOutOfBoundsException(index);
         }
-        return Character.codePointAtImpl(value, offset + index, offset + count);
+        return Character.codePointAtImpl(value, index, value.length);
     }
 
     /**
@@ -750,10 +705,10 @@ public final class String
      */
     public int codePointBefore(int index) {
         int i = index - 1;
-        if ((i < 0) || (i >= count)) {
+        if ((i < 0) || (i >= value.length)) {
             throw new StringIndexOutOfBoundsException(index);
         }
-        return Character.codePointBeforeImpl(value, offset + index, offset);
+        return Character.codePointBeforeImpl(value, index, 0);
     }
 
     /**
@@ -778,10 +733,10 @@ public final class String
      * @since  1.5
      */
     public int codePointCount(int beginIndex, int endIndex) {
-        if (beginIndex < 0 || endIndex > count || beginIndex > endIndex) {
+        if (beginIndex < 0 || endIndex > value.length || beginIndex > endIndex) {
             throw new IndexOutOfBoundsException();
         }
-        return Character.codePointCountImpl(value, offset+beginIndex, endIndex-beginIndex);
+        return Character.codePointCountImpl(value, beginIndex, endIndex - beginIndex);
     }
 
     /**
@@ -805,11 +760,11 @@ public final class String
      * @since 1.5
      */
     public int offsetByCodePoints(int index, int codePointOffset) {
-        if (index < 0 || index > count) {
+        if (index < 0 || index > value.length) {
             throw new IndexOutOfBoundsException();
         }
-        return Character.offsetByCodePointsImpl(value, offset, count,
-                                                offset+index, codePointOffset) - offset;
+        return Character.offsetByCodePointsImpl(value, 0, value.length,
+                index, codePointOffset);
     }
 
     /**
@@ -817,7 +772,7 @@ public final class String
      * This method doesn't perform any range checking.
      */
     void getChars(char dst[], int dstBegin) {
-        System.arraycopy(value, offset, dst, dstBegin, count);
+        System.arraycopy(value, 0, dst, dstBegin, value.length);
     }
 
     /**
@@ -854,14 +809,13 @@ public final class String
         if (srcBegin < 0) {
             throw new StringIndexOutOfBoundsException(srcBegin);
         }
-        if (srcEnd > count) {
+        if (srcEnd > value.length) {
             throw new StringIndexOutOfBoundsException(srcEnd);
         }
         if (srcBegin > srcEnd) {
             throw new StringIndexOutOfBoundsException(srcEnd - srcBegin);
         }
-        System.arraycopy(value, offset + srcBegin, dst, dstBegin,
-             srcEnd - srcBegin);
+        System.arraycopy(value, srcBegin, dst, dstBegin, srcEnd - srcBegin);
     }
 
     /**
@@ -912,15 +866,15 @@ public final class String
         if (srcBegin < 0) {
             throw new StringIndexOutOfBoundsException(srcBegin);
         }
-        if (srcEnd > count) {
+        if (srcEnd > value.length) {
             throw new StringIndexOutOfBoundsException(srcEnd);
         }
         if (srcBegin > srcEnd) {
             throw new StringIndexOutOfBoundsException(srcEnd - srcBegin);
         }
         int j = dstBegin;
-        int n = offset + srcEnd;
-        int i = offset + srcBegin;
+        int n = srcEnd;
+        int i = srcBegin;
         char[] val = value;   /* avoid getfield opcode */
 
         while (i < n) {
@@ -949,10 +903,9 @@ public final class String
      * @since  JDK1.1
      */
     public byte[] getBytes(String charsetName)
-        throws UnsupportedEncodingException
-    {
+            throws UnsupportedEncodingException {
         if (charsetName == null) throw new NullPointerException();
-        return StringCoding.encode(charsetName, value, offset, count);
+        return StringCoding.encode(charsetName, value, 0, value.length);
     }
 
     /**
@@ -975,7 +928,7 @@ public final class String
      */
     public byte[] getBytes(Charset charset) {
         if (charset == null) throw new NullPointerException();
-        return StringCoding.encode(charset, value, offset, count);
+        return StringCoding.encode(charset, value, 0, value.length);
     }
 
     /**
@@ -992,7 +945,7 @@ public final class String
      * @since      JDK1.1
      */
     public byte[] getBytes() {
-        return StringCoding.encode(value, offset, count);
+        return StringCoding.encode(value, 0, value.length);
     }
 
     /**
@@ -1015,16 +968,16 @@ public final class String
             return true;
         }
         if (anObject instanceof String) {
-            String anotherString = (String)anObject;
-            int n = count;
-            if (n == anotherString.count) {
+            String anotherString = (String) anObject;
+            int n = value.length;
+            if (n == anotherString.value.length) {
                 char v1[] = value;
                 char v2[] = anotherString.value;
-                int i = offset;
-                int j = anotherString.offset;
+                int i = 0;
                 while (n-- != 0) {
-                    if (v1[i++] != v2[j++])
-                        return false;
+                    if (v1[i] != v2[i])
+                            return false;
+                    i++;
                 }
                 return true;
             }
@@ -1047,8 +1000,8 @@ public final class String
      * @since  1.4
      */
     public boolean contentEquals(StringBuffer sb) {
-        synchronized(sb) {
-            return contentEquals((CharSequence)sb);
+        synchronized (sb) {
+            return contentEquals((CharSequence) sb);
         }
     }
 
@@ -1067,18 +1020,18 @@ public final class String
      * @since  1.5
      */
     public boolean contentEquals(CharSequence cs) {
-        if (count != cs.length())
+        if (value.length != cs.length())
             return false;
         // Argument is a StringBuffer, StringBuilder
         if (cs instanceof AbstractStringBuilder) {
             char v1[] = value;
-            char v2[] = ((AbstractStringBuilder)cs).getValue();
-            int i = offset;
-            int j = 0;
-            int n = count;
+            char v2[] = ((AbstractStringBuilder) cs).getValue();
+            int i = 0;
+            int n = value.length;
             while (n-- != 0) {
-                if (v1[i++] != v2[j++])
+                if (v1[i] != v2[i])
                     return false;
+                i++;
             }
             return true;
         }
@@ -1087,12 +1040,12 @@ public final class String
             return true;
         // Argument is a generic CharSequence
         char v1[] = value;
-        int i = offset;
-        int j = 0;
-        int n = count;
+        int i = 0;
+        int n = value.length;
         while (n-- != 0) {
-            if (v1[i++] != cs.charAt(j++))
+            if (v1[i] != cs.charAt(i))
                 return false;
+            i++;
         }
         return true;
     }
@@ -1126,9 +1079,10 @@ public final class String
      * @see  #equals(Object)
      */
     public boolean equalsIgnoreCase(String anotherString) {
-        return (this == anotherString) ? true :
-               (anotherString != null) && (anotherString.count == count) &&
-               regionMatches(true, 0, anotherString, 0, count);
+        return (this == anotherString) ? true
+                : (anotherString != null)
+                && (anotherString.value.length == value.length)
+                && regionMatches(true, 0, anotherString, 0, value.length);
     }
 
     /**
@@ -1173,33 +1127,20 @@ public final class String
      *          lexicographically greater than the string argument.
      */
     public int compareTo(String anotherString) {
-        int len1 = count;
-        int len2 = anotherString.count;
-        int n = Math.min(len1, len2);
+        int len1 = value.length;
+        int len2 = anotherString.value.length;
+        int lim = Math.min(len1, len2);
         char v1[] = value;
         char v2[] = anotherString.value;
-        int i = offset;
-        int j = anotherString.offset;
 
-        if (i == j) {
-            int k = i;
-            int lim = n + i;
-            while (k < lim) {
-                char c1 = v1[k];
-                char c2 = v2[k];
-                if (c1 != c2) {
-                    return c1 - c2;
-                }
-                k++;
+        int k = 0;
+        while (k < lim) {
+            char c1 = v1[k];
+            char c2 = v2[k];
+            if (c1 != c2) {
+                return c1 - c2;
             }
-        } else {
-            while (n-- != 0) {
-                char c1 = v1[i++];
-                char c2 = v2[j++];
-                if (c1 != c2) {
-                    return c1 - c2;
-                }
-            }
+            k++;
         }
         return len1 - len2;
     }
@@ -1219,7 +1160,7 @@ public final class String
     public static final Comparator<String> CASE_INSENSITIVE_ORDER
                                          = new CaseInsensitiveComparator();
     private static class CaseInsensitiveComparator
-                         implements Comparator<String>, java.io.Serializable {
+            implements Comparator<String>, java.io.Serializable {
         // use serialVersionUID from JDK 1.2.2 for interoperability
         private static final long serialVersionUID = 8575799808933029326L;
 
@@ -1306,14 +1247,15 @@ public final class String
      *          {@code false} otherwise.
      */
     public boolean regionMatches(int toffset, String other, int ooffset,
-                                 int len) {
+            int len) {
         char ta[] = value;
-        int to = offset + toffset;
+        int to = toffset;
         char pa[] = other.value;
-        int po = other.offset + ooffset;
+        int po = ooffset;
         // Note: toffset, ooffset, or len might be near -1>>>1.
-        if ((ooffset < 0) || (toffset < 0) || (toffset > (long)count - len)
-            || (ooffset > (long)other.count - len)) {
+        if ((ooffset < 0) || (toffset < 0)
+                || (toffset > (long)value.length - len)
+                || (ooffset > (long)other.value.length - len)) {
             return false;
         }
         while (len-- > 0) {
@@ -1351,7 +1293,7 @@ public final class String
      * integer <i>k</i> less than <tt>len</tt> such that:
      * <blockquote><pre>
      * Character.toLowerCase(this.charAt(toffset+k)) !=
-               Character.toLowerCase(other.charAt(ooffset+k))
+     Character.toLowerCase(other.charAt(ooffset+k))
      * </pre></blockquote>
      * and:
      * <blockquote><pre>
@@ -1375,14 +1317,15 @@ public final class String
      *          argument.
      */
     public boolean regionMatches(boolean ignoreCase, int toffset,
-                           String other, int ooffset, int len) {
+            String other, int ooffset, int len) {
         char ta[] = value;
-        int to = offset + toffset;
+        int to = toffset;
         char pa[] = other.value;
-        int po = other.offset + ooffset;
+        int po = ooffset;
         // Note: toffset, ooffset, or len might be near -1>>>1.
-        if ((ooffset < 0) || (toffset < 0) || (toffset > (long)count - len) ||
-                (ooffset > (long)other.count - len)) {
+        if ((ooffset < 0) || (toffset < 0)
+                || (toffset > (long)value.length - len)
+                || (ooffset > (long)other.value.length - len)) {
             return false;
         }
         while (len-- > 0) {
@@ -1433,12 +1376,12 @@ public final class String
      */
     public boolean startsWith(String prefix, int toffset) {
         char ta[] = value;
-        int to = offset + toffset;
+        int to = toffset;
         char pa[] = prefix.value;
-        int po = prefix.offset;
-        int pc = prefix.count;
+        int po = 0;
+        int pc = prefix.value.length;
         // Note: toffset might be near -1>>>1.
-        if ((toffset < 0) || (toffset > count - pc)) {
+        if ((toffset < 0) || (toffset > value.length - pc)) {
             return false;
         }
         while (--pc >= 0) {
@@ -1478,7 +1421,7 @@ public final class String
      *          as determined by the {@link #equals(Object)} method.
      */
     public boolean endsWith(String suffix) {
-        return startsWith(suffix, count - suffix.count);
+        return startsWith(suffix, value.length - suffix.value.length);
     }
 
     /**
@@ -1496,13 +1439,11 @@ public final class String
      */
     public int hashCode() {
         int h = hash;
-        if (h == 0 && count > 0) {
-            int off = offset;
+        if (h == 0 && value.length > 0) {
             char val[] = value;
-            int len = count;
 
-            for (int i = 0; i < len; i++) {
-                h = 31*h + val[off++];
+            for (int i = 0; i < value.length; i++) {
+                h = 31 * h + val[i];
             }
             hash = h;
         }
@@ -1577,9 +1518,10 @@ public final class String
      *          if the character does not occur.
      */
     public int indexOf(int ch, int fromIndex) {
+        final int max = value.length;
         if (fromIndex < 0) {
             fromIndex = 0;
-        } else if (fromIndex >= count) {
+        } else if (fromIndex >= max) {
             // Note: fromIndex might be near -1>>>1.
             return -1;
         }
@@ -1588,11 +1530,9 @@ public final class String
             // handle most cases here (ch is a BMP code point or a
             // negative value (invalid code point))
             final char[] value = this.value;
-            final int offset = this.offset;
-            final int max = offset + count;
-            for (int i = offset + fromIndex; i < max ; i++) {
+            for (int i = fromIndex; i < max; i++) {
                 if (value[i] == ch) {
-                    return i - offset;
+                    return i;
                 }
             }
             return -1;
@@ -1607,13 +1547,12 @@ public final class String
     private int indexOfSupplementary(int ch, int fromIndex) {
         if (Character.isValidCodePoint(ch)) {
             final char[] value = this.value;
-            final int offset = this.offset;
             final char hi = Character.highSurrogate(ch);
             final char lo = Character.lowSurrogate(ch);
-            final int max = offset + count - 1;
-            for (int i = offset + fromIndex; i < max; i++) {
-                if (value[i] == hi && value[i+1] == lo) {
-                    return i - offset;
+            final int max = value.length - 1;
+            for (int i = fromIndex; i < max; i++) {
+                if (value[i] == hi && value[i + 1] == lo) {
+                    return i;
                 }
             }
         }
@@ -1644,7 +1583,7 @@ public final class String
      *          {@code -1} if the character does not occur.
      */
     public int lastIndexOf(int ch) {
-        return lastIndexOf(ch, count - 1);
+        return lastIndexOf(ch, value.length - 1);
     }
 
     /**
@@ -1686,11 +1625,10 @@ public final class String
             // handle most cases here (ch is a BMP code point or a
             // negative value (invalid code point))
             final char[] value = this.value;
-            final int offset = this.offset;
-            int i = offset + Math.min(fromIndex, count - 1);
-            for (; i >= offset ; i--) {
+            int i = Math.min(fromIndex, value.length - 1);
+            for (; i >= 0; i--) {
                 if (value[i] == ch) {
-                    return i - offset;
+                    return i;
                 }
             }
             return -1;
@@ -1705,13 +1643,12 @@ public final class String
     private int lastIndexOfSupplementary(int ch, int fromIndex) {
         if (Character.isValidCodePoint(ch)) {
             final char[] value = this.value;
-            final int offset = this.offset;
             char hi = Character.highSurrogate(ch);
             char lo = Character.lowSurrogate(ch);
-            int i = offset + Math.min(fromIndex, count - 2);
-            for (; i >= offset; i--) {
-                if (value[i] == hi && value[i+1] == lo) {
-                    return i - offset;
+            int i = Math.min(fromIndex, value.length - 2);
+            for (; i >= 0; i--) {
+                if (value[i] == hi && value[i + 1] == lo) {
+                    return i;
                 }
             }
         }
@@ -1753,8 +1690,8 @@ public final class String
      *          or {@code -1} if there is no such occurrence.
      */
     public int indexOf(String str, int fromIndex) {
-        return indexOf(value, offset, count,
-                       str.value, str.offset, str.count, fromIndex);
+        return indexOf(value, 0, value.length,
+                str.value, 0, str.value.length, fromIndex);
     }
 
     /**
@@ -1771,8 +1708,8 @@ public final class String
      * @param   fromIndex    the index to begin searching from.
      */
     static int indexOf(char[] source, int sourceOffset, int sourceCount,
-                       char[] target, int targetOffset, int targetCount,
-                       int fromIndex) {
+            char[] target, int targetOffset, int targetCount,
+            int fromIndex) {
         if (fromIndex >= sourceCount) {
             return (targetCount == 0 ? sourceCount : -1);
         }
@@ -1783,7 +1720,7 @@ public final class String
             return fromIndex;
         }
 
-        char first  = target[targetOffset];
+        char first = target[targetOffset];
         int max = sourceOffset + (sourceCount - targetCount);
 
         for (int i = sourceOffset + fromIndex; i <= max; i++) {
@@ -1796,8 +1733,8 @@ public final class String
             if (i <= max) {
                 int j = i + 1;
                 int end = j + targetCount - 1;
-                for (int k = targetOffset + 1; j < end && source[j] ==
-                         target[k]; j++, k++);
+                for (int k = targetOffset + 1; j < end && source[j]
+                        == target[k]; j++, k++);
 
                 if (j == end) {
                     /* Found whole string. */
@@ -1824,7 +1761,7 @@ public final class String
      *          or {@code -1} if there is no such occurrence.
      */
     public int lastIndexOf(String str) {
-        return lastIndexOf(str, count);
+        return lastIndexOf(str, value.length);
     }
 
     /**
@@ -1844,8 +1781,8 @@ public final class String
      *          or {@code -1} if there is no such occurrence.
      */
     public int lastIndexOf(String str, int fromIndex) {
-        return lastIndexOf(value, offset, count,
-                           str.value, str.offset, str.count, fromIndex);
+        return lastIndexOf(value, 0, value.length,
+                str.value, 0, str.value.length, fromIndex);
     }
 
     /**
@@ -1862,8 +1799,8 @@ public final class String
      * @param   fromIndex    the index to begin searching from.
      */
     static int lastIndexOf(char[] source, int sourceOffset, int sourceCount,
-                           char[] target, int targetOffset, int targetCount,
-                           int fromIndex) {
+            char[] target, int targetOffset, int targetCount,
+            int fromIndex) {
         /*
          * Check arguments; return immediately where possible. For
          * consistency, don't check for null str.
@@ -1885,7 +1822,7 @@ public final class String
         int min = sourceOffset + targetCount - 1;
         int i = min + fromIndex;
 
-    startSearchForLastChar:
+        startSearchForLastChar:
         while (true) {
             while (i >= min && source[i] != strLastChar) {
                 i--;
@@ -1925,7 +1862,14 @@ public final class String
      *             length of this {@code String} object.
      */
     public String substring(int beginIndex) {
-        return substring(beginIndex, count);
+        if (beginIndex < 0) {
+            throw new StringIndexOutOfBoundsException(beginIndex);
+        }
+        int subLen = value.length - beginIndex;
+        if (subLen < 0) {
+            throw new StringIndexOutOfBoundsException(subLen);
+        }
+        return (beginIndex == 0) ? this : new String(value, beginIndex, subLen);
     }
 
     /**
@@ -1954,14 +1898,15 @@ public final class String
         if (beginIndex < 0) {
             throw new StringIndexOutOfBoundsException(beginIndex);
         }
-        if (endIndex > count) {
+        if (endIndex > value.length) {
             throw new StringIndexOutOfBoundsException(endIndex);
         }
-        if (beginIndex > endIndex) {
-            throw new StringIndexOutOfBoundsException(endIndex - beginIndex);
+        int subLen = endIndex - beginIndex;
+        if (subLen < 0) {
+            throw new StringIndexOutOfBoundsException(subLen);
         }
-        return ((beginIndex == 0) && (endIndex == count)) ? this :
-            new String(offset + beginIndex, endIndex - beginIndex, value);
+        return ((beginIndex == 0) && (endIndex == value.length)) ? this
+                : new String(value, beginIndex, subLen);
     }
 
     /**
@@ -2021,10 +1966,10 @@ public final class String
         if (otherLen == 0) {
             return this;
         }
-        char buf[] = new char[count + otherLen];
-        getChars(0, count, buf, 0);
-        str.getChars(0, otherLen, buf, count);
-        return new String(0, count + otherLen, buf);
+        int len = value.length;
+        char buf[] = Arrays.copyOf(value, len + otherLen);
+        str.getChars(buf, len);
+        return new String(buf, true);
     }
 
     /**
@@ -2058,27 +2003,26 @@ public final class String
      */
     public String replace(char oldChar, char newChar) {
         if (oldChar != newChar) {
-            int len = count;
+            int len = value.length;
             int i = -1;
             char[] val = value; /* avoid getfield opcode */
-            int off = offset;   /* avoid getfield opcode */
 
             while (++i < len) {
-                if (val[off + i] == oldChar) {
+                if (val[i] == oldChar) {
                     break;
                 }
             }
             if (i < len) {
                 char buf[] = new char[len];
-                for (int j = 0 ; j < i ; j++) {
-                    buf[j] = val[off+j];
+                for (int j = 0; j < i; j++) {
+                    buf[j] = val[j];
                 }
                 while (i < len) {
-                    char c = val[off + i];
+                    char c = val[i];
                     buf[i] = (c == oldChar) ? newChar : c;
                     i++;
                 }
-                return new String(0, len, buf);
+                return new String(buf, true);
             }
         }
         return this;
@@ -2229,7 +2173,7 @@ public final class String
      */
     public String replace(CharSequence target, CharSequence replacement) {
         return Pattern.compile(target.toString(), Pattern.LITERAL).matcher(
-            this).replaceAll(Matcher.quoteReplacement(replacement.toString()));
+                this).replaceAll(Matcher.quoteReplacement(replacement.toString()));
     }
 
     /**
@@ -2314,13 +2258,13 @@ public final class String
      */
     public String[] split(String regex, int limit) {
         /* fastpath if the regex is a
-           (1)one-char String and this character is not one of the
-              RegEx's meta characters ".$|()[{^?*+\\", or
-           (2)two-char String and the first char is the backslash and
-              the second is not the ascii digit or ascii letter.
-        */
+         (1)one-char String and this character is not one of the
+            RegEx's meta characters ".$|()[{^?*+\\", or
+         (2)two-char String and the first char is the backslash and
+            the second is not the ascii digit or ascii letter.
+         */
         char ch = 0;
-        if (((regex.count == 1 &&
+        if (((regex.value.length == 1 &&
              ".$|()[{^?*+\\".indexOf(ch = regex.charAt(0)) == -1) ||
              (regex.length() == 2 &&
               regex.charAt(0) == '\\' &&
@@ -2340,23 +2284,23 @@ public final class String
                     off = next + 1;
                 } else {    // last one
                     //assert (list.size() == limit - 1);
-                    list.add(substring(off, count));
-                    off = count;
+                    list.add(substring(off, value.length));
+                    off = value.length;
                     break;
                 }
             }
             // If no match was found, return this
             if (off == 0)
-                return new String[] { this };
+                return new String[]{this};
 
             // Add remaining segment
             if (!limited || list.size() < limit)
-                list.add(substring(off, count));
+                list.add(substring(off, value.length));
 
             // Construct result
             int resultSize = list.size();
             if (limit == 0)
-                while (resultSize > 0 && list.get(resultSize-1).length() == 0)
+                while (resultSize > 0 && list.get(resultSize - 1).length() == 0)
                     resultSize--;
             String[] result = new String[resultSize];
             return list.subList(0, resultSize).toArray(result);
@@ -2463,14 +2407,15 @@ public final class String
             throw new NullPointerException();
         }
 
-        int     firstUpper;
+        int firstUpper;
+        final int len = value.length;
 
         /* Now check if there are any characters that need to be changed. */
         scan: {
-            for (firstUpper = 0 ; firstUpper < count; ) {
-                char c = value[offset+firstUpper];
-                if ((c >= Character.MIN_HIGH_SURROGATE) &&
-                    (c <= Character.MAX_HIGH_SURROGATE)) {
+            for (firstUpper = 0 ; firstUpper < len; ) {
+                char c = value[firstUpper];
+                if ((c >= Character.MIN_HIGH_SURROGATE)
+                        && (c <= Character.MAX_HIGH_SURROGATE)) {
                     int supplChar = codePointAt(firstUpper);
                     if (supplChar != Character.toLowerCase(supplChar)) {
                         break scan;
@@ -2486,24 +2431,24 @@ public final class String
             return this;
         }
 
-        char[]  result = new char[count];
-        int     resultOffset = 0;  /* result may grow, so i+resultOffset
-                                    * is the write location in result */
+        char[] result = new char[len];
+        int resultOffset = 0;  /* result may grow, so i+resultOffset
+                                * is the write location in result */
 
         /* Just copy the first few lowerCase characters. */
-        System.arraycopy(value, offset, result, 0, firstUpper);
+        System.arraycopy(value, 0, result, 0, firstUpper);
 
         String lang = locale.getLanguage();
         boolean localeDependent =
-            (lang == "tr" || lang == "az" || lang == "lt");
+                (lang == "tr" || lang == "az" || lang == "lt");
         char[] lowerCharArray;
         int lowerChar;
         int srcChar;
         int srcCount;
-        for (int i = firstUpper; i < count; i += srcCount) {
-            srcChar = (int)value[offset+i];
-            if ((char)srcChar >= Character.MIN_HIGH_SURROGATE &&
-                (char)srcChar <= Character.MAX_HIGH_SURROGATE) {
+        for (int i = firstUpper; i < len; i += srcCount) {
+            srcChar = (int)value[i];
+            if ((char)srcChar >= Character.MIN_HIGH_SURROGATE
+                    && (char)srcChar <= Character.MAX_HIGH_SURROGATE) {
                 srcChar = codePointAt(i);
                 srcCount = Character.charCount(srcChar);
             } else {
@@ -2516,16 +2461,16 @@ public final class String
             } else {
                 lowerChar = Character.toLowerCase(srcChar);
             }
-            if ((lowerChar == Character.ERROR) ||
-                (lowerChar >= Character.MIN_SUPPLEMENTARY_CODE_POINT)) {
+            if ((lowerChar == Character.ERROR)
+                    || (lowerChar >= Character.MIN_SUPPLEMENTARY_CODE_POINT)) {
                 if (lowerChar == Character.ERROR) {
-                     if (!localeDependent && srcChar == '\u0130') {
-                         lowerCharArray =
-                             ConditionalSpecialCasing.toLowerCaseCharArray(this, i, Locale.ENGLISH);
-                     } else {
+                    if (!localeDependent && srcChar == '\u0130') {
                         lowerCharArray =
-                            ConditionalSpecialCasing.toLowerCaseCharArray(this, i, locale);
-                     }
+                                ConditionalSpecialCasing.toLowerCaseCharArray(this, i, Locale.ENGLISH);
+                    } else {
+                        lowerCharArray =
+                                ConditionalSpecialCasing.toLowerCaseCharArray(this, i, locale);
+                    }
                 } else if (srcCount == 2) {
                     resultOffset += Character.toChars(lowerChar, result, i + resultOffset) - srcCount;
                     continue;
@@ -2537,19 +2482,18 @@ public final class String
                 int mapLen = lowerCharArray.length;
                 if (mapLen > srcCount) {
                     char[] result2 = new char[result.length + mapLen - srcCount];
-                    System.arraycopy(result, 0, result2, 0,
-                        i + resultOffset);
+                    System.arraycopy(result, 0, result2, 0, i + resultOffset);
                     result = result2;
                 }
-                for (int x=0; x<mapLen; ++x) {
-                    result[i+resultOffset+x] = lowerCharArray[x];
+                for (int x = 0; x < mapLen; ++x) {
+                    result[i + resultOffset + x] = lowerCharArray[x];
                 }
                 resultOffset += (mapLen - srcCount);
             } else {
-                result[i+resultOffset] = (char)lowerChar;
+                result[i + resultOffset] = (char)lowerChar;
             }
         }
-        return new String(0, count+resultOffset, result);
+        return new String(result, 0, len + resultOffset);
     }
 
     /**
@@ -2628,23 +2572,24 @@ public final class String
             throw new NullPointerException();
         }
 
-        int     firstLower;
+        int firstLower;
+        final int len = value.length;
 
         /* Now check if there are any characters that need to be changed. */
         scan: {
-            for (firstLower = 0 ; firstLower < count; ) {
-                int c = (int)value[offset+firstLower];
+            for (firstLower = 0 ; firstLower < len; ) {
+                int c = (int)value[firstLower];
                 int srcCount;
-                if ((c >= Character.MIN_HIGH_SURROGATE) &&
-                    (c <= Character.MAX_HIGH_SURROGATE)) {
+                if ((c >= Character.MIN_HIGH_SURROGATE)
+                        && (c <= Character.MAX_HIGH_SURROGATE)) {
                     c = codePointAt(firstLower);
                     srcCount = Character.charCount(c);
                 } else {
                     srcCount = 1;
                 }
                 int upperCaseChar = Character.toUpperCaseEx(c);
-                if ((upperCaseChar == Character.ERROR) ||
-                    (c != upperCaseChar)) {
+                if ((upperCaseChar == Character.ERROR)
+                        || (c != upperCaseChar)) {
                     break scan;
                 }
                 firstLower += srcCount;
@@ -2652,22 +2597,22 @@ public final class String
             return this;
         }
 
-        char[]  result       = new char[count]; /* may grow */
-        int     resultOffset = 0;  /* result may grow, so i+resultOffset
-                                    * is the write location in result */
+        char[] result = new char[len]; /* may grow */
+        int resultOffset = 0;  /* result may grow, so i+resultOffset
+         * is the write location in result */
 
         /* Just copy the first few upperCase characters. */
-        System.arraycopy(value, offset, result, 0, firstLower);
+        System.arraycopy(value, 0, result, 0, firstLower);
 
         String lang = locale.getLanguage();
         boolean localeDependent =
-            (lang == "tr" || lang == "az" || lang == "lt");
+                (lang == "tr" || lang == "az" || lang == "lt");
         char[] upperCharArray;
         int upperChar;
         int srcChar;
         int srcCount;
-        for (int i = firstLower; i < count; i += srcCount) {
-            srcChar = (int)value[offset+i];
+        for (int i = firstLower; i < len; i += srcCount) {
+            srcChar = (int)value[i];
             if ((char)srcChar >= Character.MIN_HIGH_SURROGATE &&
                 (char)srcChar <= Character.MAX_HIGH_SURROGATE) {
                 srcChar = codePointAt(i);
@@ -2680,12 +2625,12 @@ public final class String
             } else {
                 upperChar = Character.toUpperCaseEx(srcChar);
             }
-            if ((upperChar == Character.ERROR) ||
-                (upperChar >= Character.MIN_SUPPLEMENTARY_CODE_POINT)) {
+            if ((upperChar == Character.ERROR)
+                    || (upperChar >= Character.MIN_SUPPLEMENTARY_CODE_POINT)) {
                 if (upperChar == Character.ERROR) {
                     if (localeDependent) {
                         upperCharArray =
-                            ConditionalSpecialCasing.toUpperCaseCharArray(this, i, locale);
+                                ConditionalSpecialCasing.toUpperCaseCharArray(this, i, locale);
                     } else {
                         upperCharArray = Character.toUpperCaseCharArray(srcChar);
                     }
@@ -2700,19 +2645,18 @@ public final class String
                 int mapLen = upperCharArray.length;
                 if (mapLen > srcCount) {
                     char[] result2 = new char[result.length + mapLen - srcCount];
-                    System.arraycopy(result, 0, result2, 0,
-                        i + resultOffset);
+                    System.arraycopy(result, 0, result2, 0, i + resultOffset);
                     result = result2;
                 }
-                for (int x=0; x<mapLen; ++x) {
-                    result[i+resultOffset+x] = upperCharArray[x];
+                for (int x = 0; x < mapLen; ++x) {
+                    result[i + resultOffset + x] = upperCharArray[x];
                 }
                 resultOffset += (mapLen - srcCount);
             } else {
-                result[i+resultOffset] = (char)upperChar;
+                result[i + resultOffset] = (char)upperChar;
             }
         }
-        return new String(0, count+resultOffset, result);
+        return new String(result, 0, len + resultOffset);
     }
 
     /**
@@ -2770,18 +2714,17 @@ public final class String
      *          trailing white space.
      */
     public String trim() {
-        int len = count;
+        int len = value.length;
         int st = 0;
-        int off = offset;      /* avoid getfield opcode */
         char[] val = value;    /* avoid getfield opcode */
 
-        while ((st < len) && (val[off + st] <= ' ')) {
+        while ((st < len) && (val[st] <= ' ')) {
             st++;
         }
-        while ((st < len) && (val[off + len - 1] <= ' ')) {
+        while ((st < len) && (val[len - 1] <= ' ')) {
             len--;
         }
-        return ((st > 0) || (len < count)) ? substring(st, len) : this;
+        return ((st > 0) || (len < value.length)) ? substring(st, len) : this;
     }
 
     /**
@@ -2801,8 +2744,9 @@ public final class String
      *          the character sequence represented by this string.
      */
     public char[] toCharArray() {
-        char result[] = new char[count];
-        getChars(0, count, result, 0);
+        // Cannot use Arrays.copyOf because of class initialization order issues
+        char result[] = new char[value.length];
+        System.arraycopy(value, 0, result, 0, value.length);
         return result;
     }
 
@@ -2844,7 +2788,7 @@ public final class String
      * @see  java.util.Formatter
      * @since  1.5
      */
-    public static String format(String format, Object ... args) {
+    public static String format(String format, Object... args) {
         return new Formatter().format(format, args).toString();
     }
 
@@ -2888,7 +2832,7 @@ public final class String
      * @see  java.util.Formatter
      * @since  1.5
      */
-    public static String format(Locale l, String format, Object ... args) {
+    public static String format(Locale l, String format, Object... args) {
         return new Formatter(l).format(format, args).toString();
     }
 
@@ -2968,7 +2912,7 @@ public final class String
      *          character array.
      */
     public static String copyValueOf(char data[]) {
-        return copyValueOf(data, 0, data.length);
+        return new String(data);
     }
 
     /**
@@ -2993,7 +2937,7 @@ public final class String
      */
     public static String valueOf(char c) {
         char data[] = {c};
-        return new String(0, 1, data);
+        return new String(data, true);
     }
 
     /**
