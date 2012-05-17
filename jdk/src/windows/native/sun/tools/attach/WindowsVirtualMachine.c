@@ -466,7 +466,17 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_WindowsVirtualMachine_enqueue
         }
         CloseHandle(hThread);
     } else {
-        JNU_ThrowIOExceptionWithLastError(env, "CreateRemoteThread failed");
+        if (GetLastError() == ERROR_NOT_ENOUGH_MEMORY) {
+            //
+            // This error will occur when attaching to a process belonging to
+            // another terminal session. See "Remarks":
+            // http://msdn.microsoft.com/en-us/library/ms682437%28VS.85%29.aspx
+            //
+            JNU_ThrowIOException(env,
+                "Insufficient memory or insufficient privileges to attach");
+        } else {
+            JNU_ThrowIOExceptionWithLastError(env, "CreateRemoteThread failed");
+        }
     }
 
     VirtualFreeEx(hProcess, pCode, 0, MEM_RELEASE);
