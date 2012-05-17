@@ -48,7 +48,6 @@
 //#define IM_DEBUG TRUE
 //#define EXTRA_DEBUG
 
-
 static BOOL shouldUsePressAndHold() {
     static int shouldUsePressAndHold = -1;
     if (shouldUsePressAndHold != -1) return shouldUsePressAndHold;
@@ -394,6 +393,13 @@ AWT_ASSERT_APPKIT_THREAD;
 }
 
 -(void) deliverJavaKeyEventHelper: (NSEvent *) event {
+    static id sUnretainedLastKeyEvent = nil;    
+    if (event == sUnretainedLastKeyEvent) {
+        // The event is repeatedly delivered by keyDown: after performKeyEquivalent:
+        return;
+    }
+    sUnretainedLastKeyEvent = event;	
+	
     [AWTToolkit eventCountPlusPlus];
     JNIEnv *env = [ThreadUtilities getJNIEnv];
 
