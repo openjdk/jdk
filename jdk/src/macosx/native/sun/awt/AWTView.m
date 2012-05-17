@@ -393,12 +393,13 @@ AWT_ASSERT_APPKIT_THREAD;
 }
 
 -(void) deliverJavaKeyEventHelper: (NSEvent *) event {
-    static id sUnretainedLastKeyEvent = nil;    
-    if (event == sUnretainedLastKeyEvent) {
+    static NSEvent* sLastKeyEvent = nil;
+    if (event == sLastKeyEvent) {
         // The event is repeatedly delivered by keyDown: after performKeyEquivalent:
         return;
     }
-    sUnretainedLastKeyEvent = event;	
+    [sLastKeyEvent release];
+    sLastKeyEvent = [event retain];
 	
     [AWTToolkit eventCountPlusPlus];
     JNIEnv *env = [ThreadUtilities getJNIEnv];
