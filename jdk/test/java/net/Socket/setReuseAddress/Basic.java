@@ -26,6 +26,8 @@
  * @bug 4476378
  * @summary Check the specific behaviour of the setReuseAddress(boolean)
  * method.
+ * @run main Basic
+ * @run main/othervm -Dsun.net.useExclusiveBind Basic
  */
 import java.net.*;
 
@@ -170,7 +172,12 @@ public class Basic {
             s2.bind( new InetSocketAddress(s1.getLocalPort()) );
             passed();
         } catch (BindException e) {
-            failed();
+            if (System.getProperty("sun.net.useExclusiveBind") != null) {
+                // exclusive bind enabled - expected result
+                passed();
+            } else {
+                failed();
+            }
         }
         s2.close();
 
