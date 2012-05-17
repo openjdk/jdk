@@ -101,8 +101,6 @@ public class LWWindowPeer
     // events between MOUSE_PRESSED and MOUSE_RELEASED for particular button
     private static int mouseClickButtons = 0;
 
-    private volatile boolean cachedFocusableWindow;
-
     private volatile boolean isOpaque = true;
 
     private static final Font DEFAULT_FONT = new Font("Lucida Grande", Font.PLAIN, 13);
@@ -171,8 +169,6 @@ public class LWWindowPeer
 
         setAlwaysOnTop(getTarget().isAlwaysOnTop());
         updateMinimumSize();
-
-        cachedFocusableWindow = getTarget().isFocusableWindow();
 
         setOpacity(getTarget().getOpacity());
         setOpaque(getTarget().isOpaque());
@@ -402,7 +398,6 @@ public class LWWindowPeer
 
     @Override
     public void updateFocusableWindowState() {
-        cachedFocusableWindow = getTarget().isFocusableWindow();
         platformWindow.updateFocusableWindowState();
     }
 
@@ -1130,7 +1125,19 @@ public class LWWindowPeer
     private boolean focusAllowedFor() {
         Window window = getTarget();
         // TODO: check if modal blocked
-        return window.isVisible() && window.isEnabled() && window.isFocusableWindow();
+        return window.isVisible() && window.isEnabled() && isFocusableWindow();
+    }
+
+    private boolean isFocusableWindow() {
+        boolean focusable = getTarget().isFocusableWindow();
+        if (isSimpleWindow()) {
+            LWWindowPeer ownerPeer = getOwnerFrameDialog(this);
+            if (ownerPeer == null) {
+                return false;
+            }
+            return focusable && ownerPeer.getTarget().isFocusableWindow();
+        }
+        return focusable;
     }
 
     public boolean isSimpleWindow() {
@@ -1150,8 +1157,8 @@ public class LWWindowPeer
             skipNextFocusChange = false;
             return;
         }
-
-        if (!cachedFocusableWindow) {
+        if (!isFocusableWindow() && becomesFocused) {
+            focusLog.fine("the window is not focusable");
             return;
         }
         if (becomesFocused) {
