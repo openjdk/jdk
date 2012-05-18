@@ -717,7 +717,7 @@ class CMSCollector: public CHeapObj {
     CMS_op_checkpointRootsFinal
   };
 
-  void do_CMS_operation(CMS_op_type op);
+  void do_CMS_operation(CMS_op_type op, GCCause::Cause gc_cause);
   bool stop_world_and_do(CMS_op_type op);
 
   OopTaskQueueSet* task_queues() { return _task_queues; }
