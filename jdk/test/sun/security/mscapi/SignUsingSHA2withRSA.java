@@ -78,16 +78,12 @@ public class SignUsingSHA2withRSA {
         generatedSignatures.add(signUsing("SHA256withRSA", privateKey));
         generatedSignatures.add(signUsing("SHA384withRSA", privateKey));
         generatedSignatures.add(signUsing("SHA512withRSA", privateKey));
-        generatedSignatures.add(signUsing("SHA224withRSA", privateKey));
-
 
         System.out.println("-------------------------------------------------");
 
         verifyUsing("SHA256withRSA", publicKey, generatedSignatures.get(0));
         verifyUsing("SHA384withRSA", publicKey, generatedSignatures.get(1));
         verifyUsing("SHA512withRSA", publicKey, generatedSignatures.get(2));
-        verifyUsing("SHA224withRSA", publicKey, generatedSignatures.get(3));
-
 
         System.out.println("-------------------------------------------------");
     }

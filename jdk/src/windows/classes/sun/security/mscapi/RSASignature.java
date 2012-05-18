@@ -47,7 +47,6 @@ import sun.security.rsa.RSAKeyFactory;
  *
  *  . "NONEwithRSA"
  *  . "SHA1withRSA"
- *  . "SHA224withRSA"
  *  . "SHA256withRSA"
  *  . "SHA384withRSA"
  *  . "SHA512withRSA"
@@ -58,7 +57,7 @@ import sun.security.rsa.RSAKeyFactory;
  *
  * NOTE: NONEwithRSA must be supplied with a pre-computed message digest.
  *       Only the following digest algorithms are supported: MD5, SHA-1,
- *       SHA-224, SHA-256, SHA-384, SHA-512 and a special-purpose digest
+ *       SHA-256, SHA-384, SHA-512 and a special-purpose digest
  *       algorithm which is a concatenation of SHA-1 and MD5 digests.
  *
  * @since   1.6
@@ -181,8 +180,6 @@ abstract class RSASignature extends java.security.SignatureSpi
                 setDigestName("SHA-512");
             } else if (offset == 16) {
                 setDigestName("MD5");
-            } else if (offset == 28) {
-                setDigestName("SHA-224");
             } else {
                 throw new SignatureException(
                     "Message digest length is not supported");
@@ -199,12 +196,6 @@ abstract class RSASignature extends java.security.SignatureSpi
     public static final class SHA1 extends RSASignature {
         public SHA1() {
             super("SHA1");
-        }
-    }
-
-    public static final class SHA224 extends RSASignature {
-        public SHA224() {
-            super("SHA-224");
         }
     }
 
