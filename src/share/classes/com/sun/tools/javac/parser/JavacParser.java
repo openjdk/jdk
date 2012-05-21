@@ -2206,10 +2206,15 @@ public class JavacParser implements Parser {
         } else {
             JCExpression t = term(EXPR | TYPE);
             if ((lastmode & TYPE) != 0 &&
-                (token.kind == IDENTIFIER || token.kind == ASSERT || token.kind == ENUM))
+                (token.kind == IDENTIFIER || token.kind == ASSERT ||
+                 token.kind == ENUM)) {
                 return variableDeclarators(modifiersOpt(), t, stats).toList();
-            else
+            } else if ((lastmode & TYPE) != 0 && token.kind == COLON) {
+                error(pos, "bad.initializer", "for-loop");
+                return List.of((JCStatement)F.at(pos).VarDef(null, null, t, null));
+            } else {
                 return moreStatementExpressions(pos, t, stats).toList();
+            }
         }
     }
 
