@@ -940,8 +940,8 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
 
     @Override
     public Image createImage(int w, int h) {
-        // TODO: accelerated image
-        return getGraphicsConfiguration().createCompatibleImage(w, h);
+        CGraphicsConfig gc = (CGraphicsConfig)getGraphicsConfiguration();
+        return gc.createAcceleratedImage(getTarget(), w, h);
     }
 
     @Override
