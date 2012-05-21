@@ -3245,7 +3245,7 @@ public class Container extends Component {
 
         if (root != currentFocusCycleRoot) {
             KeyboardFocusManager.getCurrentKeyboardFocusManager().
-                setGlobalCurrentFocusCycleRoot(root);
+                setGlobalCurrentFocusCycleRootPriv(root);
         }
         return root;
     }
@@ -3302,7 +3302,7 @@ public class Container extends Component {
         Container cont = kfm.getCurrentFocusCycleRoot();
 
         if (cont == this || isParentOf(cont)) {
-            kfm.setGlobalCurrentFocusCycleRoot(null);
+            kfm.setGlobalCurrentFocusCycleRootPriv(null);
         }
     }
 
@@ -3506,7 +3506,7 @@ public class Container extends Component {
     public void transferFocusDownCycle() {
         if (isFocusCycleRoot()) {
             KeyboardFocusManager.getCurrentKeyboardFocusManager().
-                setGlobalCurrentFocusCycleRoot(this);
+                setGlobalCurrentFocusCycleRootPriv(this);
             Component toFocus = getFocusTraversalPolicy().
                 getDefaultComponent(this);
             if (toFocus != null) {
