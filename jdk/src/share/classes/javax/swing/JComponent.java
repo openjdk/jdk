@@ -5573,6 +5573,7 @@ public abstract class JComponent extends Container implements Serializable,
      * {@inheritDoc}
      */
     @Override
+    @Deprecated
     public void hide() {
         boolean showing = isShowing();
         super.hide();
