@@ -637,8 +637,8 @@ public abstract class KeyboardFocusManager
     }
 
     void clearGlobalFocusOwnerPriv() {
-        AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
                 clearGlobalFocusOwner();
                 return null;
             }
@@ -1285,6 +1285,15 @@ public abstract class KeyboardFocusManager
 
         firePropertyChange("currentFocusCycleRoot", oldFocusCycleRoot,
                            newFocusCycleRoot);
+    }
+
+    void setGlobalCurrentFocusCycleRootPriv(final Container newFocusCycleRoot) {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
+                setGlobalCurrentFocusCycleRoot(newFocusCycleRoot);
+                return null;
+            }
+        });
     }
 
     /**

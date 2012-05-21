@@ -7947,32 +7947,21 @@ public abstract class Component implements ImageObserver, MenuContainer,
         if (rootAncestor != null) {
             Container rootAncestorRootAncestor =
                 rootAncestor.getFocusCycleRootAncestor();
-
-            final Container fcr = (rootAncestorRootAncestor != null) ?
+            Container fcr = (rootAncestorRootAncestor != null) ?
                 rootAncestorRootAncestor : rootAncestor;
 
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    KeyboardFocusManager.getCurrentKeyboardFocusManager().
-                        setGlobalCurrentFocusCycleRoot(fcr);
-                    return null;
-                }
-            });
+            KeyboardFocusManager.getCurrentKeyboardFocusManager().
+                setGlobalCurrentFocusCycleRootPriv(fcr);
             rootAncestor.requestFocus(CausedFocusEvent.Cause.TRAVERSAL_UP);
         } else {
-            final Window window = getContainingWindow();
+            Window window = getContainingWindow();
 
             if (window != null) {
                 Component toFocus = window.getFocusTraversalPolicy().
                     getDefaultComponent(window);
                 if (toFocus != null) {
-                    AccessController.doPrivileged(new PrivilegedAction() {
-                        public Object run() {
-                            KeyboardFocusManager.getCurrentKeyboardFocusManager().
-                                setGlobalCurrentFocusCycleRoot(window);
-                            return null;
-                        }
-                    });
+                    KeyboardFocusManager.getCurrentKeyboardFocusManager().
+                        setGlobalCurrentFocusCycleRootPriv(window);
                     toFocus.requestFocus(CausedFocusEvent.Cause.TRAVERSAL_UP);
                 }
             }
