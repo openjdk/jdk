@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -111,10 +111,10 @@ CC_OPT          = $(CC_OPT/$(OPTIMIZATION_LEVEL))
 
 # For all platforms, do not omit the frame pointer register usage. 
 #    We need this frame pointer to make it easy to walk the stacks.
-#    This should be the default on X86, but ia64 and amd64 may not have this
-#    as the default.
-CFLAGS_REQUIRED_amd64   += -m64 -fno-omit-frame-pointer -D_LITTLE_ENDIAN
-LDFLAGS_COMMON_amd64    += -m64
+#    This should be the default on X86, but ia64, and x86_64
+#    may not have this as the default.
+CFLAGS_REQUIRED_x86_64  += -m64 -fno-omit-frame-pointer -D_LITTLE_ENDIAN
+LDFLAGS_COMMON_x86_64   += -m64
 CFLAGS_REQUIRED_i586    += -m32 -fno-omit-frame-pointer -D_LITTLE_ENDIAN
 LDFLAGS_COMMON_i586     += -m32
 CFLAGS_REQUIRED_ia64    += -m64 -fno-omit-frame-pointer -D_LITTLE_ENDIAN
@@ -168,7 +168,7 @@ PIC_CODE_LARGE = -fPIC
 PIC_CODE_SMALL = -fpic
 GLOBAL_KPIC = $(PIC_CODE_LARGE)
 CFLAGS_COMMON   += $(GLOBAL_KPIC) $(GCC_WARNINGS)
-ifeq ($(ARCH), amd64)
+ifeq ($(ARCH), x86_64)
  CFLAGS_COMMON += -pipe
 endif
 

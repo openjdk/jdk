@@ -136,31 +136,36 @@ docs:
 ifeq ($(OSNAME),windows)
 	@$(ECHO) "No docs ($(VM_TARGET)) for windows"
 else
+# We specify 'BUILD_FLAVOR=product' so that the proper
+# ENABLE_FULL_DEBUG_SYMBOLS value is used.
 	$(CD) $(OUTPUTDIR); \
 	    $(MAKE) -f $(ABS_OS_MAKEFILE) \
-		      $(MAKE_ARGS) docs
+		      $(MAKE_ARGS) BUILD_FLAVOR=product docs
 endif
 
 # Build variation of hotspot
 $(C1_VM_TARGETS):
 	$(CD) $(GAMMADIR)/make; \
-	$(MAKE) VM_TARGET=$@ generic_build1 $(ALT_OUT)
+	$(MAKE) BUILD_FLAVOR=$(@:%1=%) VM_TARGET=$@ generic_build1 $(ALT_OUT)
 
 $(C2_VM_TARGETS):
 	$(CD) $(GAMMADIR)/make; \
-	$(MAKE) VM_TARGET=$@ generic_build2 $(ALT_OUT)
+	$(MAKE) BUILD_FLAVOR=$@ VM_TARGET=$@ generic_build2 $(ALT_OUT)
 
 $(KERNEL_VM_TARGETS):
 	$(CD) $(GAMMADIR)/make; \
-	$(MAKE) VM_TARGET=$@ generic_buildkernel $(ALT_OUT)
+	$(MAKE) BUILD_FLAVOR=$(@:%kernel=%) VM_TARGET=$@ \
+	  generic_buildkernel $(ALT_OUT)
 
 $(ZERO_VM_TARGETS):
 	$(CD) $(GAMMADIR)/make; \
-	$(MAKE) VM_TARGET=$@ generic_buildzero $(ALT_OUT)
+	$(MAKE) BUILD_FLAVOR=$(@:%zero=%) VM_TARGET=$@ \
+	  generic_buildzero $(ALT_OUT)
 
 $(SHARK_VM_TARGETS):
 	$(CD) $(GAMMADIR)/make; \
-	$(MAKE) VM_TARGET=$@ generic_buildshark $(ALT_OUT)
+	$(MAKE) BUILD_FLAVOR=$(@:%shark=%) VM_TARGET=$@ \
+	  generic_buildshark $(ALT_OUT)
 
 # Build compiler1 (client) rule, different for platforms
 generic_build1:
@@ -237,25 +242,37 @@ generic_buildshark:
 # Export file rule
 generic_export: $(EXPORT_LIST)
 export_product:
-	$(MAKE) VM_SUBDIR=product                            generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%=%) VM_SUBDIR=$(@:export_%=%) \
+          generic_export
 export_fastdebug:
-	$(MAKE) VM_SUBDIR=fastdebug EXPORT_SUBDIR=/fastdebug generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%=%) VM_SUBDIR=$(@:export_%=%) \
+	  EXPORT_SUBDIR=/$(@:export_%=%) \
+	  generic_export
 export_debug:
-	$(MAKE) VM_SUBDIR=${VM_DEBUG} EXPORT_SUBDIR=/debug   generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%=%) VM_SUBDIR=${VM_DEBUG} \
+	  EXPORT_SUBDIR=/$(@:export_%=%) \
+	  generic_export
 export_optimized:
-	$(MAKE) VM_SUBDIR=optimized EXPORT_SUBDIR=/optimized generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%=%) VM_SUBDIR=$(@:export_%=%) \
+	  EXPORT_SUBDIR=/$(@:export_%=%) \
+	  generic_export
 export_product_jdk::
-	$(MAKE) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR) \
-		VM_SUBDIR=product                            generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) \
+	  VM_SUBDIR=$(@:export_%_jdk=%) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR) \
+	  generic_export
 export_optimized_jdk::
-	$(MAKE) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR) \
-		VM_SUBDIR=optimized                          generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) \
+	  VM_SUBDIR=$(@:export_%_jdk=%) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR) \
+	  generic_export
 export_fastdebug_jdk::
-	$(MAKE) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR)/fastdebug \
-		VM_SUBDIR=fastdebug                          generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) \
+	  VM_SUBDIR=$(@:export_%_jdk=%)  \
+	  ALT_EXPORT_PATH=$(JDK_IMAGE_DIR)/$(@:export_%_jdk=%) \
+	  generic_export
 export_debug_jdk::
-	$(MAKE) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR)/debug \
-		VM_SUBDIR=${VM_DEBUG}                        generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) VM_SUBDIR=${VM_DEBUG} \
+	  ALT_EXPORT_PATH=$(JDK_IMAGE_DIR)/$(@:export_%_jdk=%) \
+	  generic_export
 
 # Export file copy rules
 XUSAGE=$(HS_SRC_DIR)/share/vm/Xusage.txt
@@ -300,6 +317,8 @@ $(EXPORT_LIB_DIR)/%.lib:  $(MISC_DIR)/%.lib
 	$(install-file)
 
 # Other libraries (like SA)
+$(EXPORT_JRE_BIN_DIR)/%.diz: $(MISC_DIR)/%.diz
+	$(install-file)
 $(EXPORT_JRE_BIN_DIR)/%.dll: $(MISC_DIR)/%.dll
 	$(install-file)
 $(EXPORT_JRE_BIN_DIR)/%.pdb: $(MISC_DIR)/%.pdb
@@ -308,6 +327,8 @@ $(EXPORT_JRE_BIN_DIR)/%.map: $(MISC_DIR)/%.map
 	$(install-file)
 
 # Client files always come from C1 area
+$(EXPORT_CLIENT_DIR)/%.diz:  $(C1_DIR)/%.diz
+	$(install-file)
 $(EXPORT_CLIENT_DIR)/%.dll:  $(C1_DIR)/%.dll
 	$(install-file)
 $(EXPORT_CLIENT_DIR)/%.pdb:  $(C1_DIR)/%.pdb
@@ -316,6 +337,8 @@ $(EXPORT_CLIENT_DIR)/%.map:  $(C1_DIR)/%.map
 	$(install-file)
 
 # Server files always come from C2 area
+$(EXPORT_SERVER_DIR)/%.diz:  $(C2_DIR)/%.diz
+	$(install-file)
 $(EXPORT_SERVER_DIR)/%.dll:  $(C2_DIR)/%.dll
 	$(install-file)
 $(EXPORT_SERVER_DIR)/%.pdb:  $(C2_DIR)/%.pdb
@@ -324,6 +347,8 @@ $(EXPORT_SERVER_DIR)/%.map:  $(C2_DIR)/%.map
 	$(install-file)
 
 # Kernel files always come from kernel area
+$(EXPORT_KERNEL_DIR)/%.diz:  $(KERNEL_DIR)/%.diz
+	$(install-file)
 $(EXPORT_KERNEL_DIR)/%.dll:  $(KERNEL_DIR)/%.dll
 	$(install-file)
 $(EXPORT_KERNEL_DIR)/%.pdb:  $(KERNEL_DIR)/%.pdb
@@ -347,6 +372,12 @@ ifneq ($(OSNAME),windows)
 		$(install-file)
         $(EXPORT_SERVER_DIR)/64/%.debuginfo:    		$(C2_DIR)/%.debuginfo
 		$(install-file)
+        $(EXPORT_JRE_LIB_ARCH_DIR)/%.diz: 			$(C2_DIR)/%.diz
+		$(install-file)
+        $(EXPORT_SERVER_DIR)/%.diz:       			$(C2_DIR)/%.diz
+		$(install-file)
+        $(EXPORT_SERVER_DIR)/64/%.diz:    			$(C2_DIR)/%.diz
+		$(install-file)
     endif
     ifeq ($(JVM_VARIANT_CLIENT), true)
         $(EXPORT_JRE_LIB_ARCH_DIR)/%.$(LIBRARY_SUFFIX): $(C1_DIR)/%.$(LIBRARY_SUFFIX)
@@ -360,6 +391,12 @@ ifneq ($(OSNAME),windows)
         $(EXPORT_CLIENT_DIR)/%.debuginfo:       		$(C1_DIR)/%.debuginfo
 		$(install-file)
         $(EXPORT_CLIENT_DIR)/64/%.debuginfo:    		$(C1_DIR)/%.debuginfo
+		$(install-file)
+        $(EXPORT_JRE_LIB_ARCH_DIR)/%.diz: 			$(C1_DIR)/%.diz
+		$(install-file)
+        $(EXPORT_CLIENT_DIR)/%.diz:       			$(C1_DIR)/%.diz
+		$(install-file)
+        $(EXPORT_CLIENT_DIR)/64/%.diz:    			$(C1_DIR)/%.diz
 		$(install-file)
     endif
     ifeq ($(JVM_VARIANT_ZEROSHARK), true)

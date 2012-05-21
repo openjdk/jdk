@@ -3355,7 +3355,8 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
                                                 static_field_size,
                                                 total_oop_map_count,
                                                 access_flags,
-                                                rt, CHECK_(nullHandle));
+                                                rt, host_klass,
+                                                CHECK_(nullHandle));
     instanceKlassHandle this_klass (THREAD, ik);
 
     assert(this_klass->static_field_size() == static_field_size, "sanity");

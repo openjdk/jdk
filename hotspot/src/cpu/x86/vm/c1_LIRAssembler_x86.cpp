@@ -1462,7 +1462,11 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
       break;
 
     case Bytecodes::_l2i:
+#ifdef _LP64
+      __ movl(dest->as_register(), src->as_register_lo());
+#else
       move_regs(src->as_register_lo(), dest->as_register());
+#endif
       break;
 
     case Bytecodes::_i2b:

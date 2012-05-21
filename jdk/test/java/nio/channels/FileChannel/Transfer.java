@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,7 +228,7 @@ public class Transfer {
         // Windows and Linux can't handle the really large file sizes for a
         // truncate or a positional write required by the test for 4563125
         String osName = System.getProperty("os.name");
-        if (!(osName.startsWith("SunOS") || osName.startsWith("Mac OS")))
+        if (!(osName.startsWith("SunOS") || osName.contains("OS X")))
             return;
         File source = File.createTempFile("blah", null);
         source.deleteOnExit();

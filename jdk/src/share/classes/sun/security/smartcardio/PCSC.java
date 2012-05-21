@@ -27,8 +27,6 @@ package sun.security.smartcardio;
 
 import java.security.AccessController;
 
-import sun.security.action.LoadLibraryAction;
-
 /**
  * Access to native PC/SC functions and definition of PC/SC constants.
  * Initialization and platform specific PC/SC constants are handled in

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,9 @@ import com.sun.java.util.jar.pack.ConstantPool.ClassEntry;
 import com.sun.java.util.jar.pack.ConstantPool.DescriptorEntry;
 import com.sun.java.util.jar.pack.ConstantPool.Entry;
 import com.sun.java.util.jar.pack.ConstantPool.SignatureEntry;
+import com.sun.java.util.jar.pack.ConstantPool.MemberEntry;
+import com.sun.java.util.jar.pack.ConstantPool.MethodHandleEntry;
+import com.sun.java.util.jar.pack.ConstantPool.BootstrapMethodEntry;
 import com.sun.java.util.jar.pack.ConstantPool.Utf8Entry;
 import com.sun.java.util.jar.pack.Package.Class;
 import com.sun.java.util.jar.pack.Package.InnerClass;
@@ -37,6 +40,7 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import static com.sun.java.util.jar.pack.Constants.*;
 
@@ -114,6 +118,7 @@ class ClassReader {
     private Entry readRef(byte tag) throws IOException {
         Entry e = readRef();
         assert(e != null);
+        assert(!(e instanceof UnresolvedEntry));
         assert(e.tagMatches(tag));
         return e;
     }
@@ -151,6 +156,7 @@ class ClassReader {
             readMembers(false);  // fields
             readMembers(true);   // methods
             readAttributes(ATTR_CONTEXT_CLASS, cls);
+            fixUnresolvedEntries();
             cls.finishReading();
             assert(0 >= in.read(new byte[1]));
             ok = true;
@@ -236,6 +242,7 @@ class ClassReader {
                 // just read the refs; do not attempt to resolve while reading
                 case CONSTANT_Class:
                 case CONSTANT_String:
+                case CONSTANT_MethodType:
                     fixups[fptr++] = i;
                     fixups[fptr++] = tag;
                     fixups[fptr++] = in.readUnsignedShort();
@@ -248,6 +255,18 @@ class ClassReader {
                     fixups[fptr++] = i;
                     fixups[fptr++] = tag;
                     fixups[fptr++] = in.readUnsignedShort();
+                    fixups[fptr++] = in.readUnsignedShort();
+                    break;
+                case CONSTANT_InvokeDynamic:
+                    fixups[fptr++] = i;
+                    fixups[fptr++] = tag;
+                    fixups[fptr++] = -1 ^ in.readUnsignedShort();  // not a ref
+                    fixups[fptr++] = in.readUnsignedShort();
+                    break;
+                case CONSTANT_MethodHandle:
+                    fixups[fptr++] = i;
+                    fixups[fptr++] = tag;
+                    fixups[fptr++] = -1 ^ in.readUnsignedByte();
                     fixups[fptr++] = in.readUnsignedShort();
                     break;
                 default:
@@ -270,7 +289,7 @@ class ClassReader {
                 int ref2 = fixups[fi++];
                 if (verbose > 3)
                     Utils.log.fine("  cp["+cpi+"] = "+ConstantPool.tagName(tag)+"{"+ref+","+ref2+"}");
-                if (cpMap[ref] == null || ref2 >= 0 && cpMap[ref2] == null) {
+                if (ref >= 0 && cpMap[ref] == null || ref2 >= 0 && cpMap[ref2] == null) {
                     // Defer.
                     fixups[fptr++] = cpi;
                     fixups[fptr++] = tag;
@@ -297,6 +316,19 @@ class ClassReader {
                     Utf8Entry mtype = (Utf8Entry) cpMap[ref2];
                     cpMap[cpi] = ConstantPool.getDescriptorEntry(mname, mtype);
                     break;
+                case CONSTANT_MethodType:
+                    cpMap[cpi] = ConstantPool.getMethodTypeEntry((Utf8Entry) cpMap[ref]);
+                    break;
+                case CONSTANT_MethodHandle:
+                    byte refKind = (byte)(-1 ^ ref);
+                    MemberEntry memRef = (MemberEntry) cpMap[ref2];
+                    cpMap[cpi] = ConstantPool.getMethodHandleEntry(refKind, memRef);
+                    break;
+                case CONSTANT_InvokeDynamic:
+                    DescriptorEntry idescr = (DescriptorEntry) cpMap[ref2];
+                    cpMap[cpi] = new UnresolvedEntry((byte)tag, (-1 ^ ref), idescr);
+                    // Note that ref must be resolved later, using the BootstrapMethods attribute.
+                    break;
                 default:
                     assert(false);
                 }
@@ -305,6 +337,50 @@ class ClassReader {
         }
 
         cls.cpMap = cpMap;
+    }
+
+    private /*non-static*/
+    class UnresolvedEntry extends Entry {
+        final Object[] refsOrIndexes;
+        UnresolvedEntry(byte tag, Object... refsOrIndexes) {
+            super(tag);
+            this.refsOrIndexes = refsOrIndexes;
+            ClassReader.this.haveUnresolvedEntry = true;
+        }
+        Entry resolve() {
+            Class cls = ClassReader.this.cls;
+            Entry res;
+            switch (tag) {
+            case CONSTANT_InvokeDynamic:
+                BootstrapMethodEntry iboots = cls.bootstrapMethods.get((Integer) refsOrIndexes[0]);
+                DescriptorEntry         idescr = (DescriptorEntry) refsOrIndexes[1];
+                res = ConstantPool.getInvokeDynamicEntry(iboots, idescr);
+                break;
+            default:
+                throw new AssertionError();
+            }
+            return res;
+        }
+        private void unresolved() { throw new RuntimeException("unresolved entry has no string"); }
+        public int compareTo(Object x) { unresolved(); return 0; }
+        public boolean equals(Object x) { unresolved(); return false; }
+        protected int computeValueHash() { unresolved(); return 0; }
+        public String stringValue() { unresolved(); return toString(); }
+        public String toString() { return "(unresolved "+ConstantPool.tagName(tag)+")"; }
+    }
+
+    boolean haveUnresolvedEntry;
+    private void fixUnresolvedEntries() {
+        if (!haveUnresolvedEntry)  return;
+        Entry[] cpMap = cls.getCPMap();
+        for (int i = 0; i < cpMap.length; i++) {
+            Entry e = cpMap[i];
+            if (e instanceof UnresolvedEntry) {
+                cpMap[i] = e = ((UnresolvedEntry)e).resolve();
+                assert(!(e instanceof UnresolvedEntry));
+            }
+        }
+        haveUnresolvedEntry = false;
     }
 
     void readHeader() throws IOException {
@@ -416,23 +492,29 @@ class ClassReader {
                                                         unknownAttrCommand);
                 }
             }
-            if (a.layout() == Package.attrCodeEmpty ||
-                a.layout() == Package.attrInnerClassesEmpty) {
+            long pos0 = inPos;  // in case we want to check it
+            if (a.layout() == Package.attrCodeEmpty) {
                 // These are hardwired.
-                long pos0 = inPos;
-                if ("Code".equals(a.name())) {
-                    Class.Method m = (Class.Method) h;
-                    m.code = new Code(m);
-                    try {
-                        readCode(m.code);
-                    } catch (Instruction.FormatException iie) {
-                        String message = iie.getMessage() + " in " + h;
-                        throw new ClassReader.ClassFormatException(message, iie);
-                    }
-                } else {
-                    assert(h == cls);
-                    readInnerClasses(cls);
+                Class.Method m = (Class.Method) h;
+                m.code = new Code(m);
+                try {
+                    readCode(m.code);
+                } catch (Instruction.FormatException iie) {
+                    String message = iie.getMessage() + " in " + h;
+                    throw new ClassReader.ClassFormatException(message, iie);
                 }
+                assert(length == inPos - pos0);
+                // Keep empty attribute a...
+            } else if (a.layout() == Package.attrBootstrapMethodsEmpty) {
+                assert(h == cls);
+                readBootstrapMethods(cls);
+                assert(length == inPos - pos0);
+                // Delete the attribute; it is logically part of the constant pool.
+                continue;
+            } else if (a.layout() == Package.attrInnerClassesEmpty) {
+                // These are hardwired also.
+                assert(h == cls);
+                readInnerClasses(cls);
                 assert(length == inPos - pos0);
                 // Keep empty attribute a...
             } else if (length > 0) {
@@ -465,6 +547,19 @@ class ClassReader {
             code.handler_class[i] = readClassRefOrNull();
         }
         readAttributes(ATTR_CONTEXT_CODE, code);
+    }
+
+    void readBootstrapMethods(Class cls) throws IOException {
+        BootstrapMethodEntry[] bsms = new BootstrapMethodEntry[readUnsignedShort()];
+        for (int i = 0; i < bsms.length; i++) {
+            MethodHandleEntry bsmRef = (MethodHandleEntry) readRef(CONSTANT_MethodHandle);
+            Entry[] argRefs = new Entry[readUnsignedShort()];
+            for (int j = 0; j < argRefs.length; j++) {
+                argRefs[j] = readRef();
+            }
+            bsms[i] = ConstantPool.getBootstrapMethodEntry(bsmRef, argRefs);
+        }
+        cls.setBootstrapMethods(Arrays.asList(bsms));
     }
 
     void readInnerClasses(Class cls) throws IOException {
