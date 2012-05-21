@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,58 @@
  */
 package xmlkit; // -*- mode: java; indent-tabs-mode: nil -*-
 
+import com.sun.tools.classfile.AccessFlags;
+import com.sun.tools.classfile.Annotation;
+import com.sun.tools.classfile.Annotation.*;
+import com.sun.tools.classfile.AnnotationDefault_attribute;
+import com.sun.tools.classfile.Attribute;
+import com.sun.tools.classfile.Attributes;
+import com.sun.tools.classfile.BootstrapMethods_attribute;
+import com.sun.tools.classfile.CharacterRangeTable_attribute;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.Code_attribute;
+import com.sun.tools.classfile.CompilationID_attribute;
+import com.sun.tools.classfile.ConstantPool;
+import com.sun.tools.classfile.ConstantPool.*;
+import com.sun.tools.classfile.ConstantPoolException;
+import com.sun.tools.classfile.ConstantValue_attribute;
+import com.sun.tools.classfile.DefaultAttribute;
+import com.sun.tools.classfile.Deprecated_attribute;
+import com.sun.tools.classfile.Descriptor.InvalidDescriptor;
+import com.sun.tools.classfile.EnclosingMethod_attribute;
+import com.sun.tools.classfile.Exceptions_attribute;
+import com.sun.tools.classfile.Field;
+import com.sun.tools.classfile.InnerClasses_attribute;
+import com.sun.tools.classfile.InnerClasses_attribute.Info;
+import com.sun.tools.classfile.Instruction;
+import com.sun.tools.classfile.Instruction.TypeKind;
+import com.sun.tools.classfile.LineNumberTable_attribute;
+import com.sun.tools.classfile.LocalVariableTable_attribute;
+import com.sun.tools.classfile.LocalVariableTypeTable_attribute;
+import com.sun.tools.classfile.Method;
+import com.sun.tools.classfile.Opcode;
+import com.sun.tools.classfile.RuntimeInvisibleAnnotations_attribute;
+import com.sun.tools.classfile.RuntimeInvisibleParameterAnnotations_attribute;
+import com.sun.tools.classfile.RuntimeVisibleAnnotations_attribute;
+import com.sun.tools.classfile.RuntimeVisibleParameterAnnotations_attribute;
+import com.sun.tools.classfile.Signature_attribute;
+import com.sun.tools.classfile.SourceDebugExtension_attribute;
+import com.sun.tools.classfile.SourceFile_attribute;
+import com.sun.tools.classfile.SourceID_attribute;
+import com.sun.tools.classfile.StackMapTable_attribute;
+import com.sun.tools.classfile.StackMapTable_attribute.*;
+import com.sun.tools.classfile.StackMap_attribute;
+import com.sun.tools.classfile.Synthetic_attribute;
 import java.util.*;
-import java.util.jar.*;
-import java.lang.reflect.*;
 import java.io.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import xmlkit.XMLKit.Element;
 
 /*
- * @author jrose
+ * @author jrose, ksrini
  */
-public class ClassReader extends ClassSyntax {
+public class ClassReader {
 
     private static final CommandLineParser CLP = new CommandLineParser(""
             + "-source:     +> = \n"
@@ -41,23 +83,24 @@ public class ClassReader extends ClassSyntax {
             + "-encoding:   +> = \n"
             + "-jcov           $ \n   -nojcov         !-jcov        \n"
             + "-verbose        $ \n   -noverbose      !-verbose     \n"
-            + "-pretty         $ \n   -nopretty       !-pretty      \n"
             + "-keepPath       $ \n   -nokeepPath     !-keepPath    \n"
             + "-keepCP         $ \n   -nokeepCP       !-keepCP      \n"
-            + "-keepBytes      $ \n   -nokeepBytes    !-keepBytes   \n"
-            + "-parseBytes     $ \n   -noparseBytes   !-parseBytes  \n"
-            + "-resolveRefs    $ \n   -noresolveRefs  !-resolveRefs \n"
             + "-keepOrder      $ \n   -nokeepOrder    !-keepOrder   \n"
-            + "-keepSizes      $ \n   -nokeepSizes    !-keepSizes   \n"
             + "-continue       $ \n   -nocontinue     !-continue    \n"
-            + "-attrDef        & \n"
             + "-@         >-@  . \n"
             + "-              +? \n"
             + "\n");
 
+
+    // Protected state for representing the class file.
+    protected Element cfile;          // <ClassFile ...>
+    protected Element cpool;          // <ConstantPool ...>
+    protected Element klass;          // <Class ...>
+    protected List<String> thePool;    // stringified flattened Constant Pool
+
     public static void main(String[] ava) throws IOException {
-        ArrayList<String> av = new ArrayList<String>(Arrays.asList(ava));
-        HashMap<String, String> props = new HashMap<String, String>();
+        ArrayList<String> av = new ArrayList<>(Arrays.asList(ava));
+        HashMap<String, String> props = new HashMap<>();
         props.put("-encoding:", "UTF8");  // default
         props.put("-keepOrder", null);    // CLI default
         props.put("-pretty", "1");     // CLI default
@@ -80,7 +123,7 @@ public class ClassReader extends ClassSyntax {
         }
          */
         if (av.isEmpty()) {
-            av.add("doit");  //to enter this loop
+            av.add("");  //to enter this loop
         }
         boolean readList = false;
         for (String a : av) {
@@ -119,7 +162,7 @@ public class ClassReader extends ClassSyntax {
     private static void doFile(String a,
             File source, File dest,
             ClassReader options, String encoding,
-            boolean contError) throws IOException {
+            boolean contError) throws IOException  {
         if (!contError) {
             doFile(a, source, dest, options, encoding);
         } else {
@@ -127,40 +170,49 @@ public class ClassReader extends ClassSyntax {
                 doFile(a, source, dest, options, encoding);
             } catch (Exception ee) {
                 System.out.println("Error processing " + source + ": " + ee);
+                ee.printStackTrace();
             }
         }
     }
 
-    private static void doJar(String a, File source, File dest, ClassReader options,
-            String encoding, Boolean contError) throws IOException {
+    private static void doJar(String a, File source, File dest,
+                              ClassReader options, String encoding,
+                              Boolean contError) throws IOException {
         try {
             JarFile jf = new JarFile(source);
-            for (JarEntry je : Collections.list((Enumeration<JarEntry>) jf.entries())) {
+            for (JarEntry je : Collections.list(jf.entries())) {
                 String name = je.getName();
                 if (!name.endsWith(".class")) {
                     continue;
                 }
-                doStream(name, jf.getInputStream(je), dest, options, encoding);
+                try {
+                    doStream(name, jf.getInputStream(je), dest, options, encoding);
+                } catch (Exception e) {
+                    if (contError) {
+                        System.out.println("Error processing " + source + ": " + e);
+                        e.printStackTrace();
+                        continue;
+                    }
+                }
             }
         } catch (IOException ioe) {
-            if (contError) {
-                System.out.println("Error processing " + source + ": " + ioe);
-            } else {
-                throw ioe;
-            }
+            throw ioe;
         }
     }
 
     private static void doStream(String a, InputStream in, File dest,
-            ClassReader options, String encoding) throws IOException {
+                                 ClassReader options, String encoding) throws IOException {
 
         File f = new File(a);
         ClassReader cr = new ClassReader(options);
-        Element e = cr.readFrom(in);
+        Element e;
+        if (options.verbose) {
+            System.out.println("Reading " + f);
+        }
+        e = cr.readFrom(in);
 
         OutputStream out;
         if (dest == null) {
-            //System.out.println(e.prettyString());
             out = System.out;
         } else {
             File outf = new File(dest, f.isAbsolute() ? f.getName() : f.getPath());
@@ -202,20 +254,8 @@ public class ClassReader extends ClassSyntax {
 
     }
 
-    public static BufferedReader makeReader(InputStream in, String encoding) throws IOException {
-        // encoding in DEFAULT, '', UTF8, 8BIT, , or any valid encoding name
-        if (encoding.equals("8BIT")) {
-            encoding = EIGHT_BIT_CHAR_ENCODING;
-        }
-        if (encoding.equals("UTF8")) {
-            encoding = UTF8_ENCODING;
-        }
-        if (encoding.equals("DEFAULT")) {
-            encoding = null;
-        }
-        if (encoding.equals("-")) {
-            encoding = null;
-        }
+    public static BufferedReader makeReader(InputStream in,
+                                            String encoding) throws IOException {
         Reader inw;
         in = new BufferedInputStream(in);  // add buffering
         if (encoding == null) {
@@ -226,20 +266,8 @@ public class ClassReader extends ClassSyntax {
         return new BufferedReader(inw);  // add buffering
     }
 
-    public static Writer makeWriter(OutputStream out, String encoding) throws IOException {
-        // encoding in DEFAULT, '', UTF8, 8BIT, , or any valid encoding name
-        if (encoding.equals("8BIT")) {
-            encoding = EIGHT_BIT_CHAR_ENCODING;
-        }
-        if (encoding.equals("UTF8")) {
-            encoding = UTF8_ENCODING;
-        }
-        if (encoding.equals("DEFAULT")) {
-            encoding = null;
-        }
-        if (encoding.equals("-")) {
-            encoding = null;
-        }
+    public static Writer makeWriter(OutputStream out,
+                                    String encoding) throws IOException {
         Writer outw;
         if (encoding == null) {
             outw = new OutputStreamWriter(out);
@@ -252,12 +280,9 @@ public class ClassReader extends ClassSyntax {
     public Element result() {
         return cfile;
     }
+
     protected InputStream in;
     protected ByteArrayOutputStream buf = new ByteArrayOutputStream(1024);
-    protected byte cpTag[];
-    protected String cpName[];
-    protected String[] callables;     // varies
-    public static final String REF_PREFIX = "#";
     // input options
     public boolean pretty = false;
     public boolean verbose = false;
@@ -270,7 +295,7 @@ public class ClassReader extends ClassSyntax {
     public boolean keepSizes = false;
 
     public ClassReader() {
-        super.cfile = new Element("ClassFile");
+        cfile = new Element("ClassFile");
     }
 
     public ClassReader(ClassReader options) {
@@ -283,12 +308,7 @@ public class ClassReader extends ClassSyntax {
         verbose = options.verbose;
         keepPath = options.keepPath;
         keepCP = options.keepCP;
-        keepBytes = options.keepBytes;
-        parseBytes = options.parseBytes;
-        resolveRefs = options.resolveRefs;
-        keepSizes = options.keepSizes;
         keepOrder = options.keepOrder;
-        attrTypes = options.attrTypes;
     }
 
     public void copyOptionsFrom(Map<String, String> options) {
@@ -304,274 +324,177 @@ public class ClassReader extends ClassSyntax {
         if (options.containsKey("-keepCP")) {
             keepCP = (options.get("-keepCP") != null);
         }
-        if (options.containsKey("-keepBytes")) {
-            keepBytes = (options.get("-keepBytes") != null);
-        }
-        if (options.containsKey("-parseBytes")) {
-            parseBytes = (options.get("-parseBytes") != null);
-        }
-        if (options.containsKey("-resolveRefs")) {
-            resolveRefs = (options.get("-resolveRefs") != null);
-        }
-        if (options.containsKey("-keepSizes")) {
-            keepSizes = (options.get("-keepSizes") != null);
-        }
         if (options.containsKey("-keepOrder")) {
             keepOrder = (options.get("-keepOrder") != null);
         }
-        if (options.containsKey("-attrDef")) {
-            addAttrTypes(options.get("-attrDef").split(" "));
-        }
-        if (options.get("-jcov") != null) {
-            addJcovAttrTypes();
-        }
+    }
+
+    protected String getCpString(int i) {
+        return thePool.get(i);
     }
 
     public Element readFrom(InputStream in) throws IOException {
-        this.in = in;
-        // read the file header
-        int magic = u4();
-        if (magic != 0xCAFEBABE) {
-            throw new RuntimeException("bad magic number " + Integer.toHexString(magic));
+        try {
+            this.in = in;
+            ClassFile c = ClassFile.read(in);
+            // read the file header
+            if (c.magic != 0xCAFEBABE) {
+                throw new RuntimeException("bad magic number " +
+                        Integer.toHexString(c.magic));
+            }
+            cfile.setAttr("magic", "" + c.magic);
+            int minver = c.minor_version;
+            int majver = c.major_version;
+            cfile.setAttr("minver", "" + minver);
+            cfile.setAttr("majver", "" + majver);
+            readCP(c);
+            readClass(c);
+            return result();
+        } catch (InvalidDescriptor | ConstantPoolException ex) {
+            throw new IOException("Fatal error", ex);
         }
-        cfile.setAttr("magic", "" + magic);
-        int minver = u2();
-        int majver = u2();
-        cfile.setAttr("minver", "" + minver);
-        cfile.setAttr("majver", "" + majver);
-        readCP();
-        readClass();
-        return result();
     }
 
     public Element readFrom(File file) throws IOException {
-        InputStream in = null;
-        try {
-            in = new FileInputStream(file);
-            Element e = readFrom(new BufferedInputStream(in));
+        try (InputStream strm = new FileInputStream(file)) {
+            Element e = readFrom(new BufferedInputStream(strm));
             if (keepPath) {
                 e.setAttr("path", file.toString());
             }
             return e;
-        } finally {
-            if (in != null) {
-                in.close();
-            }
         }
     }
 
-    private void readClass() throws IOException {
+    private void readClass(ClassFile c) throws IOException,
+                                               ConstantPoolException,
+                                               InvalidDescriptor {
         klass = new Element("Class");
         cfile.add(klass);
-        int flags = u2();
-        String thisk = cpRef();
-        String superk = cpRef();
+        String thisk = c.getName();
+
         klass.setAttr("name", thisk);
-        boolean flagsSync = ((flags & Modifier.SYNCHRONIZED) != 0);
-        flags &= ~Modifier.SYNCHRONIZED;
-        String flagString = flagString(flags, klass);
-        if (!flagsSync) {
-            if (flagString.length() > 0) {
-                flagString += " ";
-            }
-            flagString += "!synchronized";
+
+        AccessFlags af = new AccessFlags(c.access_flags.flags);
+        klass.setAttr("flags", flagString(af, klass));
+        if (!"java/lang/Object".equals(thisk)) {
+            klass.setAttr("super", c.getSuperclassName());
         }
-        klass.setAttr("flags", flagString);
-        klass.setAttr("super", superk);
-        for (int len = u2(), i = 0; i < len; i++) {
-            String interk = cpRef();
-            klass.add(new Element("Interface", "name", interk));
+        for (int i : c.interfaces) {
+            klass.add(new Element("Interface", "name", getCpString(i)));
         }
-        Element fields = readMembers("Field");
+        readFields(c, klass);
+        readMethods(c, klass);
+        readAttributesFor(c, c.attributes, klass);
+        klass.trimToSize();
+    }
+
+    private void readFields(ClassFile c, Element klass) throws IOException {
+        int len = c.fields.length;
+        Element fields = new Element(len);
+        for (Field f : c.fields) {
+            Element field = new Element("Field");
+            field.setAttr("name", getCpString(f.name_index));
+            field.setAttr("type", getCpString(f.descriptor.index));
+            field.setAttr("flags", flagString(f.access_flags.flags, field));
+            readAttributesFor(c, f.attributes, field);
+
+            field.trimToSize();
+            fields.add(field);
+        }
+        if (!keepOrder) {
+            fields.sort();
+        }
         klass.addAll(fields);
-        Element methods = readMembers("Method");
+    }
+
+
+    private void readMethods(ClassFile c, Element klass) throws IOException {
+        int len = c.methods.length;
+        Element methods = new Element(len);
+        for (Method m : c.methods) {
+            Element member = new Element("Method");
+            member.setAttr("name", getCpString(m.name_index));
+            member.setAttr("type", getCpString(m.descriptor.index));
+            member.setAttr("flags", flagString(m.access_flags.flags, member));
+            readAttributesFor(c, m.attributes, member);
+
+            member.trimToSize();
+            methods.add(member);
+        }
         if (!keepOrder) {
             methods.sort();
         }
         klass.addAll(methods);
-        readAttributesFor(klass);
-        klass.trimToSize();
-        if (keepSizes) {
-            attachTo(cfile, formatAttrSizes());
-        }
-        if (paddingSize != 0) {
-            cfile.setAttr("padding", "" + paddingSize);
-        }
     }
 
-    private Element readMembers(String kind) throws IOException {
-        int len = u2();
-        Element members = new Element(len);
-        for (int i = 0; i < len; i++) {
-            Element member = new Element(kind);
-            int flags = u2();
-            String name = cpRef();
-            String type = cpRef();
-            member.setAttr("name", name);
-            member.setAttr("type", type);
-            member.setAttr("flags", flagString(flags, member));
-            readAttributesFor(member);
-            member.trimToSize();
-            members.add(member);
+    private AccessFlags.Kind getKind(Element e) {
+        switch(e.getName()) {
+            case "Class":
+                return AccessFlags.Kind.Class;
+            case "InnerClass":
+                return AccessFlags.Kind.InnerClass;
+            case "Field":
+                return AccessFlags.Kind.Field ;
+            case "Method":
+                return AccessFlags.Kind.Method;
+            default: throw new RuntimeException("should not reach here");
         }
-        return members;
     }
 
     protected String flagString(int flags, Element holder) {
-        // Superset of Modifier.toString.
-        int kind = 0;
-        if (holder.getName() == "Field") {
-            kind = 1;
+        return flagString(new AccessFlags(flags), holder);
+    }
+    protected String flagString(AccessFlags af, Element holder) {
+        return flagString(af, holder.getName());
+    }
+    protected String flagString(int flags, String kind) {
+        return flagString(new AccessFlags(flags), kind);
+    }
+    protected String flagString(AccessFlags af, String kind) {
+        Set<String> mods = null;
+        switch (kind) {
+            case "Class":
+                mods = af.getClassFlags();
+                break;
+            case "InnerClass":
+                mods = af.getInnerClassFlags();
+                break;
+            case "Field":
+                mods = af.getFieldFlags();
+                break;
+            case "Method":
+                mods = af.getMethodFlags();
+                break;
+            default:
+                throw new RuntimeException("should not reach here");
         }
-        if (holder.getName() == "Method") {
-            kind = 2;
+        StringBuilder sb = new StringBuilder();
+        for (String x : mods) {
+            sb.append(x.substring(x.indexOf('_') + 1).toLowerCase()).append(" ");
         }
-        StringBuffer sb = new StringBuffer();
-        for (int i = 0; flags != 0; i++, flags >>>= 1) {
-            if ((flags & 1) != 0) {
-                if (sb.length() > 0) {
-                    sb.append(' ');
-                }
-                if (i < modifierNames.length) {
-                    String[] names = modifierNames[i];
-                    String name = (kind < names.length) ? names[kind] : null;
-                    for (String name2 : names) {
-                        if (name != null) {
-                            break;
-                        }
-                        name = name2;
-                    }
-                    sb.append(name);
-                } else {
-                    sb.append("#").append(1 << i);
-                }
-            }
-        }
-        return sb.toString();
+        return sb.toString().trim();
     }
 
-    private void readAttributesFor(Element x) throws IOException {
-        Element prevCurrent;
-        Element y = new Element();
-        if (x.getName() == "Code") {
-            prevCurrent = currentCode;
-            currentCode = x;
-        } else {
-            prevCurrent = currentMember;
-            currentMember = x;
-        }
-        for (int len = u2(), i = 0; i < len; i++) {
-            int ref = u2();
-            String uname = cpName(ref).intern();
-            String refName = uname;
-            if (!resolveRefs) {
-                refName = (REF_PREFIX + ref).intern();
-            }
-            String qname = (x.getName() + "." + uname).intern();
-            String wname = ("*." + uname).intern();
-            String type = attrTypes.get(qname);
-            if (type == null || "".equals(type)) {
-                type = attrTypes.get(wname);
-            }
-            if ("".equals(type)) {
-                type = null;
-            }
-            int size = u4();
-            int[] countVar = attrSizes.get(qname);
-            if (countVar == null) {
-                attrSizes.put(qname, countVar = new int[2]);
-            }
-            countVar[0] += 1;
-            countVar[1] += size;
-            buf.reset();
-            for (int j = 0; j < size; j++) {
-                buf.write(u1());
-            }
-            if (type == null && size == 0) {
-                y.add(new Element(uname)); // <Bridge>, etc.
-            } else if (type == null) {
-                //System.out.println("Warning:  No attribute type description: "+qname);
-                // write cdata attribute
-                Element a = new Element("Attribute",
-                        new String[]{"Name", refName},
-                        buf.toString(EIGHT_BIT_CHAR_ENCODING));
-                a.addContent(getCPDigest());
-                y.add(a);
-            } else if (type.equals("")) {
-                // ignore this attribute...
-            } else {
-                InputStream in0 = in;
-                int fileSize0 = fileSize;
-                ByteArrayInputStream in1 = new ByteArrayInputStream(buf.toByteArray());
-                boolean ok = false;
-                try {
-                    in = in1;
-                    // parse according to type desc.
-                    Element aval;
-                    if (type.equals("<Code>...")) {
-                        // delve into Code attribute
-                        aval = readCode();
-                    } else if (type.equals("<Frame>...")) {
-                        // delve into StackMap attribute
-                        aval = readStackMap(false);
-                    } else if (type.equals("<FrameX>...")) {
-                        // delve into StackMap attribute
-                        aval = readStackMap(true);
-                    } else if (type.startsWith("[")) {
-                        aval = readAttributeCallables(type);
-                    } else {
-                        aval = readAttribute(type);
-                    }
-                    //System.out.println("attachTo 1 "+y+" <- "+aval);
-                    attachTo(y, aval);
-                    if (false
-                            && in1.available() != 0) {
-                        throw new RuntimeException("extra bytes in " + qname + " :" + in1.available());
-                    }
-                    ok = true;
-                } finally {
-                    in = in0;
-                    fileSize = fileSize0;
-                    if (!ok) {
-                        System.out.println("*** Failed to read " + type);
-                    }
-                }
-            }
-        }
-        if (x.getName() == "Code") {
-            currentCode = prevCurrent;
-        } else {
-            currentMember = prevCurrent;
+
+    protected  void readAttributesFor(ClassFile c, Attributes attrs, Element x) {
+        Element container = new Element();
+        AttributeVisitor av = new AttributeVisitor(this, c);
+        for (Attribute a : attrs) {
+            av.visit(a, container);
         }
         if (!keepOrder) {
-            y.sort();
-            y.sortAttrs();
+            container.sort();
         }
-        //System.out.println("attachTo 2 "+x+" <- "+y);
-        attachTo(x, y);
+        x.addAll(container);
     }
-    private int fileSize = 0;
-    private int paddingSize = 0;
-    private HashMap<String, int[]> attrSizes = new HashMap<String, int[]>();
 
-    private Element formatAttrSizes() {
-        Element e = new Element("Sizes");
-        e.setAttr("fileSize", "" + fileSize);
-        for (Map.Entry<String, int[]> ie : attrSizes.entrySet()) {
-            int[] countVar = ie.getValue();
-            e.add(new Element("AttrSize",
-                    "name", ie.getKey().toString(),
-                    "count", "" + countVar[0],
-                    "size", "" + countVar[1]));
-        }
-        return e;
-    }
+    private int fileSize = 0;
+    private HashMap<String, int[]> attrSizes = new HashMap<>();
 
     private void attachTo(Element x, Object aval0) {
         if (aval0 == null) {
             return;
         }
-        //System.out.println("attachTo "+x+" : "+aval0);
         if (!(aval0 instanceof Element)) {
             x.add(aval0);
             return;
@@ -589,7 +512,6 @@ public class ClassReader extends ClassSyntax {
     }
 
     private void attachAttrTo(Element x, String aname, String aval) {
-        //System.out.println("attachAttrTo "+x+" : "+aname+"="+aval);
         String aval0 = x.getAttr(aname);
         if (aval0 != null) {
             aval = aval0 + " " + aval;
@@ -597,407 +519,1003 @@ public class ClassReader extends ClassSyntax {
         x.setAttr(aname, aval);
     }
 
-    private Element readAttributeCallables(String type) throws IOException {
-        assert (callables == null);
-        callables = getBodies(type);
-        Element res = readAttribute(callables[0]);
-        callables = null;
-        return res;
-    }
-
-    private Element readAttribute(String type) throws IOException {
-        //System.out.println("readAttribute "+type);
-        Element aval = new Element();
-        String nextAttrName = null;
-        for (int len = type.length(), next, i = 0; i < len; i = next) {
-            String value;
-            switch (type.charAt(i)) {
-                case '<':
-                    assert (nextAttrName == null);
-                    next = type.indexOf('>', ++i);
-                    String form = type.substring(i, next++);
-                    if (form.indexOf('=') < 0) {
-                        //  elem_placement = '<' elemname '>'
-                        assert (aval.attrSize() == 0);
-                        assert (aval.isAnonymous());
-                        aval.setName(form.intern());
-                    } else {
-                        //  attr_placement = '<' attrname '=' (value)? '>'
-                        int eqPos = form.indexOf('=');
-                        nextAttrName = form.substring(0, eqPos).intern();
-                        if (eqPos != form.length() - 1) {
-                            value = form.substring(eqPos + 1);
-                            attachAttrTo(aval, nextAttrName, value);
-                            nextAttrName = null;
-                        }
-                        // ...else subsequent type parsing will find the attr value
-                        // and add it as "nextAttrName".
-                    }
-                    continue;
-                case '(':
-                    next = type.indexOf(')', ++i);
-                    int callee = Integer.parseInt(type.substring(i, next++));
-                    attachTo(aval, readAttribute(callables[callee]));
-                    continue;
-                case 'N': // replication = 'N' int '[' type ... ']'
-                {
-                    int count = getInt(type.charAt(i + 1), false);
-                    assert (count >= 0);
-                    next = i + 2;
-                    String type1 = getBody(type, next);
-                    next += type1.length() + 2;  // skip body and brackets
-                    for (int j = 0; j < count; j++) {
-                        attachTo(aval, readAttribute(type1));
-                    }
-                }
-                continue;
-                case 'T': // union = 'T' any_int union_case* '(' ')' '[' body ']'
-                    int tagValue;
-                    if (type.charAt(++i) == 'S') {
-                        tagValue = getInt(type.charAt(++i), true);
-                    } else {
-                        tagValue = getInt(type.charAt(i), false);
-                    }
-                    attachAttrTo(aval, "tag", "" + tagValue);  // always named "tag"
-                    ++i;  // skip the int type char
-                    // union_case = '(' uc_tag (',' uc_tag)* ')' '[' body ']'
-                    // uc_tag = ('-')? digit+
-                    for (boolean foundCase = false;; i = next) {
-                        assert (type.charAt(i) == '(');
-                        next = type.indexOf(')', ++i);
-                        assert (next >= i);
-                        if (type.charAt(next - 1) == '\\'
-                                && type.charAt(next - 2) != '\\') // Skip an escaped paren.
-                        {
-                            next = type.indexOf(')', next + 1);
-                        }
-                        String caseStr = type.substring(i, next++);
-                        String type1 = getBody(type, next);
-                        next += type1.length() + 2;  // skip body and brackets
-                        boolean lastCase = (caseStr.length() == 0);
-                        if (!foundCase
-                                && (lastCase || matchTag(tagValue, caseStr))) {
-                            foundCase = true;
-                            // Execute this body.
-                            attachTo(aval, readAttribute(type1));
-                        }
-                        if (lastCase) {
-                            break;
-                        }
-                    }
-                    continue;
-                case 'B':
-                case 'H':
-                case 'I': // int = oneof "BHI"
-                    next = i + 1;
-                    value = "" + getInt(type.charAt(i), false);
-                    break;
-                case 'K':
-                    assert ("IJFDLQ".indexOf(type.charAt(i + 1)) >= 0);
-                    assert (type.charAt(i + 2) == 'H');  // only H works for now
-                    next = i + 3;
-                    value = cpRef();
-                    break;
-                case 'R':
-                    assert ("CSDFMIU?".indexOf(type.charAt(i + 1)) >= 0);
-                    assert (type.charAt(i + 2) == 'H');  // only H works for now
-                    next = i + 3;
-                    value = cpRef();
-                    break;
-                case 'P':  // bci = 'P' int
-                    next = i + 2;
-                    value = "" + getInt(type.charAt(i + 1), false);
-                    break;
-                case 'S':  // signed_int = 'S' int
-                    next = i + 2;
-                    value = "" + getInt(type.charAt(i + 1), true);
-                    break;
-                case 'F':
-                    next = i + 2;
-                    value = flagString(getInt(type.charAt(i + 1), false), currentMember);
-                    break;
-                default:
-                    throw new RuntimeException("bad attr format '" + type.charAt(i) + "': " + type);
-            }
-            // store the value
-            if (nextAttrName != null) {
-                attachAttrTo(aval, nextAttrName, value);
-                nextAttrName = null;
-            } else {
-                attachTo(aval, value);
+    private void readCP(ClassFile c) throws IOException {
+        cpool = new Element("ConstantPool", c.constant_pool.size());
+        ConstantPoolVisitor cpv = new ConstantPoolVisitor(cpool, c,
+                c.constant_pool.size());
+        for (int i = 1 ; i < c.constant_pool.size() ; i++) {
+            try {
+                cpv.visit(c.constant_pool.get(i), i);
+            } catch (InvalidIndex ex) {
+                // can happen periodically when accessing doubles etc. ignore it
+                // ex.printStackTrace();
             }
         }
-        //System.out.println("readAttribute => "+aval);
-        assert (nextAttrName == null);
-        return aval;
-    }
-
-    private int getInt(char ch, boolean signed) throws IOException {
-        if (signed) {
-            switch (ch) {
-                case 'B':
-                    return (byte) u1();
-                case 'H':
-                    return (short) u2();
-                case 'I':
-                    return (int) u4();
+        thePool = cpv.getPoolList();
+        if (verbose) {
+            for (int i = 0; i < thePool.size(); i++) {
+                System.out.println("[" + i + "]: " + thePool.get(i));
             }
-        } else {
-            switch (ch) {
-                case 'B':
-                    return u1();
-                case 'H':
-                    return u2();
-                case 'I':
-                    return u4();
-            }
-        }
-        assert ("BHIJ".indexOf(ch) >= 0);
-        return 0;
-    }
-
-    private Element readCode() throws IOException {
-        int stack = u2();
-        int local = u2();
-        int length = u4();
-        StringBuilder sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            sb.append((char) u1());
-        }
-        String bytecodes = sb.toString();
-        Element e = new Element("Code",
-                "stack", "" + stack,
-                "local", "" + local);
-        Element bytes = new Element("Bytes", (String[]) null, bytecodes);
-        if (keepBytes) {
-            e.add(bytes);
-        }
-        if (parseBytes) {
-            e.add(parseByteCodes(bytecodes));
-        }
-        for (int len = u2(), i = 0; i < len; i++) {
-            int start = u2();
-            int end = u2();
-            int catsh = u2();
-            String clasz = cpRef();
-            e.add(new Element("Handler",
-                    "start", "" + start,
-                    "end", "" + end,
-                    "catch", "" + catsh,
-                    "class", clasz));
-        }
-        readAttributesFor(e);
-        e.trimToSize();
-        return e;
-    }
-
-    private Element parseByteCodes(String bytecodes) {
-        Element e = InstructionSyntax.parse(bytecodes);
-        for (Element ins : e.elements()) {
-            Number ref = ins.getAttrNumber("ref");
-            if (ref != null && resolveRefs) {
-                int id = ref.intValue();
-                String val = cpName(id);
-                if (ins.getName().startsWith("ldc")) {
-                    // Yuck:  Arb. string cannot be an XML attribute.
-                    ins.add(val);
-                    val = "";
-                    byte tag = (id >= 0 && id < cpTag.length) ? cpTag[id] : 0;
-                    if (tag != 0) {
-                        ins.setAttrLong("tag", tag);
-                    }
-                }
-                if (ins.getName() == "invokeinterface"
-                        && computeInterfaceNum(val) == ins.getAttrLong("num")) {
-                    ins.setAttr("num", null);  // garbage bytes
-                }
-                ins.setAttr("ref", null);
-                ins.setAttr("val", val);
-            }
-        }
-        return e;
-    }
-
-    private Element readStackMap(boolean hasXOption) throws IOException {
-        Element result = new Element();
-        Element bytes = currentCode.findElement("Bytes");
-        assert (bytes != null && bytes.size() == 1);
-        int byteLength = ((String) bytes.get(0)).length();
-        boolean uoffsetIsU4 = (byteLength >= (1 << 16));
-        boolean ulocalvarIsU4 = currentCode.getAttrLong("local") >= (1 << 16);
-        boolean ustackIsU4 = currentCode.getAttrLong("stack") >= (1 << 16);
-        if (hasXOption || uoffsetIsU4 || ulocalvarIsU4 || ustackIsU4) {
-            Element flags = new Element("StackMapFlags");
-            if (hasXOption) {
-                flags.setAttr("hasXOption", "true");
-            }
-            if (uoffsetIsU4) {
-                flags.setAttr("uoffsetIsU4", "true");
-            }
-            if (ulocalvarIsU4) {
-                flags.setAttr("ulocalvarIsU4", "true");
-            }
-            if (ustackIsU4) {
-                flags.setAttr("ustackIsU4", "true");
-            }
-            currentCode.add(flags);
-        }
-        int frame_count = (uoffsetIsU4 ? u4() : u2());
-        for (int i = 0; i < frame_count; i++) {
-            int bci = (uoffsetIsU4 ? u4() : u2());
-            int flags = (hasXOption ? u1() : 0);
-            Element frame = new Element("Frame");
-            result.add(frame);
-            if (flags != 0) {
-                frame.setAttr("flags", "" + flags);
-            }
-            frame.setAttr("bci", "" + bci);
-            // Scan local and stack types in this frame:
-            final int LOCALS = 0, STACK = 1;
-            for (int j = LOCALS; j <= STACK; j++) {
-                int typeSize;
-                if (j == LOCALS) {
-                    typeSize = (ulocalvarIsU4 ? u4() : u2());
-                } else { // STACK
-                    typeSize = (ustackIsU4 ? u4() : u2());
-                }
-                Element types = new Element(j == LOCALS ? "Local" : "Stack");
-                for (int k = 0; k < typeSize; k++) {
-                    int tag = u1();
-                    Element type = new Element(itemTagName(tag));
-                    types.add(type);
-                    switch (tag) {
-                        case ITEM_Object:
-                            type.setAttr("class", cpRef());
-                            break;
-                        case ITEM_Uninitialized:
-                        case ITEM_ReturnAddress:
-                            type.setAttr("bci", "" + (uoffsetIsU4 ? u4() : u2()));
-                            break;
-                    }
-                }
-                if (types.size() > 0) {
-                    frame.add(types);
-                }
-            }
-        }
-        return result;
-    }
-
-    private void readCP() throws IOException {
-        int cpLen = u2();
-        cpTag = new byte[cpLen];
-        cpName = new String[cpLen];
-        int cpTem[][] = new int[cpLen][];
-        for (int i = 1; i < cpLen; i++) {
-            cpTag[i] = (byte) u1();
-            switch (cpTag[i]) {
-                case CONSTANT_Utf8:
-                    buf.reset();
-                    for (int len = u2(), j = 0; j < len; j++) {
-                        buf.write(u1());
-                    }
-                    cpName[i] = buf.toString(UTF8_ENCODING);
-                    break;
-                case CONSTANT_Integer:
-                    cpName[i] = String.valueOf((int) u4());
-                    break;
-                case CONSTANT_Float:
-                    cpName[i] = String.valueOf(Float.intBitsToFloat(u4()));
-                    break;
-                case CONSTANT_Long:
-                    cpName[i] = String.valueOf(u8());
-                    i += 1;
-                    break;
-                case CONSTANT_Double:
-                    cpName[i] = String.valueOf(Double.longBitsToDouble(u8()));
-                    i += 1;
-                    break;
-                case CONSTANT_Class:
-                case CONSTANT_String:
-                    cpTem[i] = new int[]{u2()};
-                    break;
-                case CONSTANT_Fieldref:
-                case CONSTANT_Methodref:
-                case CONSTANT_InterfaceMethodref:
-                case CONSTANT_NameAndType:
-                    cpTem[i] = new int[]{u2(), u2()};
-                    break;
-            }
-        }
-        for (int i = 1; i < cpLen; i++) {
-            switch (cpTag[i]) {
-                case CONSTANT_Class:
-                case CONSTANT_String:
-                    cpName[i] = cpName[cpTem[i][0]];
-                    break;
-                case CONSTANT_NameAndType:
-                    cpName[i] = cpName[cpTem[i][0]] + " " + cpName[cpTem[i][1]];
-                    break;
-            }
-        }
-        // do fieldref et al after nameandtype are all resolved
-        for (int i = 1; i < cpLen; i++) {
-            switch (cpTag[i]) {
-                case CONSTANT_Fieldref:
-                case CONSTANT_Methodref:
-                case CONSTANT_InterfaceMethodref:
-                    cpName[i] = cpName[cpTem[i][0]] + " " + cpName[cpTem[i][1]];
-                    break;
-            }
-        }
-        cpool = new Element("ConstantPool", cpName.length);
-        for (int i = 0; i < cpName.length; i++) {
-            if (cpName[i] == null) {
-                continue;
-            }
-            cpool.add(new Element(cpTagName(cpTag[i]),
-                    new String[]{"id", "" + i},
-                    cpName[i]));
         }
         if (keepCP) {
             cfile.add(cpool);
         }
     }
+}
 
-    private String cpRef() throws IOException {
-        int ref = u2();
-        if (resolveRefs) {
-            return cpName(ref);
-        } else {
-            return REF_PREFIX + ref;
+class ConstantPoolVisitor implements ConstantPool.Visitor<String, Integer> {
+    final List<String> slist;
+    final Element xpool;
+    final ClassFile cf;
+    final ConstantPool cfpool;
+    final List<String> bsmlist;
+
+
+    public ConstantPoolVisitor(Element xpool, ClassFile cf, int size) {
+        slist = new ArrayList<>(size);
+        for (int i = 0 ; i < size; i++) {
+            slist.add(null);
+        }
+        this.xpool = xpool;
+        this.cf = cf;
+        this.cfpool = cf.constant_pool;
+        bsmlist = readBSM();
+    }
+
+    public List<String> getPoolList() {
+        return Collections.unmodifiableList(slist);
+    }
+
+    public List<String> getBSMList() {
+        return Collections.unmodifiableList(bsmlist);
+    }
+
+    public String visit(CPInfo c, int index) {
+        return c.accept(this, index);
+    }
+
+    private List<String> readBSM() {
+        BootstrapMethods_attribute bsmAttr =
+                (BootstrapMethods_attribute) cf.getAttribute(Attribute.BootstrapMethods);
+        if (bsmAttr != null) {
+            List<String> out =
+                    new ArrayList<>(bsmAttr.bootstrap_method_specifiers.length);
+            for (BootstrapMethods_attribute.BootstrapMethodSpecifier bsms :
+                    bsmAttr.bootstrap_method_specifiers) {
+                int index = bsms.bootstrap_method_ref;
+                try {
+                    String value = slist.get(index);
+                    String bsmStr = value;
+                    if (value == null) {
+                        value = visit(cfpool.get(index), index);
+                        slist.set(index, value);
+                    }
+                    bsmStr = value;
+                    for (int idx : bsms.bootstrap_arguments) {
+                        value = slist.get(idx);
+                        if (value == null) {
+                            value = visit(cfpool.get(idx), idx);
+                            slist.set(idx, value);
+                        }
+                        bsmStr = bsmStr.concat("," + value);
+                    }
+                    out.add(bsmStr);
+                } catch (InvalidIndex ex) {
+                    ex.printStackTrace();
+                }
+            }
+            return out;
+        }
+        return new ArrayList<>(0);
+    }
+
+    @Override
+    public String visitClass(CONSTANT_Class_info c, Integer p) {
+        String value = slist.get(p);
+        if (value == null) {
+            try {
+                value = visit(cfpool.get(c.name_index), c.name_index);
+                slist.set(p, value);
+                xpool.add(new Element("CONSTANT_Class",
+                        new String[]{"id", p.toString()},
+                        value));
+            } catch (ConstantPoolException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return value;
+    }
+
+    @Override
+    public String visitDouble(CONSTANT_Double_info c, Integer p) {
+        String value = slist.get(p);
+        if (value == null) {
+            value = Double.toString(c.value);
+            slist.set(p, value);
+            xpool.add(new Element("CONSTANT_Double",
+                      new String[]{"id", p.toString()},
+                      value));
+        }
+        return value;
+    }
+
+    @Override
+    public String visitFieldref(CONSTANT_Fieldref_info c, Integer p) {
+    String value = slist.get(p);
+        if (value == null) {
+            try {
+                value = visit(cfpool.get(c.class_index), c.class_index);
+                value = value.concat(" " + visit(cfpool.get(c.name_and_type_index),
+                                     c.name_and_type_index));
+                slist.set(p, value);
+                xpool.add(new Element("CONSTANT_Fieldref",
+                          new String[]{"id", p.toString()},
+                          value));
+            } catch (ConstantPoolException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return value;
+    }
+
+    @Override
+    public String visitFloat(CONSTANT_Float_info c, Integer p) {
+        String value = slist.get(p);
+        if (value == null) {
+            value = Float.toString(c.value);
+            slist.set(p, value);
+            xpool.add(new Element("CONSTANT_Float",
+                      new String[]{"id", p.toString()},
+                      value));
+        }
+        return value;
+    }
+
+    @Override
+    public String visitInteger(CONSTANT_Integer_info cnstnt, Integer p) {
+        String value = slist.get(p);
+        if (value == null) {
+            value = Integer.toString(cnstnt.value);
+            slist.set(p, value);
+            xpool.add(new Element("CONSTANT_Integer",
+                      new String[]{"id", p.toString()},
+                      value));
+        }
+        return value;
+    }
+
+    @Override
+    public String visitInterfaceMethodref(CONSTANT_InterfaceMethodref_info c,
+                                          Integer p) {
+        String value = slist.get(p);
+        if (value == null) {
+            try {
+                value = visit(cfpool.get(c.class_index), c.class_index);
+                value = value.concat(" " +
+                                     visit(cfpool.get(c.name_and_type_index),
+                                     c.name_and_type_index));
+                slist.set(p, value);
+                xpool.add(new Element("CONSTANT_InterfaceMethodref",
+                          new String[]{"id", p.toString()},
+                          value));
+
+            } catch (ConstantPoolException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return value;
+    }
+
+    @Override
+    public String visitInvokeDynamic(CONSTANT_InvokeDynamic_info c, Integer p) {
+        String value = slist.get(p);
+        if (value == null) {
+            try {
+                value = bsmlist.get(c.bootstrap_method_attr_index) + " "
+                        + visit(cfpool.get(c.name_and_type_index), c.name_and_type_index);
+                slist.set(p, value);
+                xpool.add(new Element("CONSTANT_InvokeDynamic",
+                          new String[]{"id", p.toString()},
+                          value));
+
+            } catch (ConstantPoolException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return value;
+    }
+
+    @Override
+    public String visitLong(CONSTANT_Long_info c, Integer p) {
+        String value = slist.get(p);
+        if (value == null) {
+            value = Long.toString(c.value);
+            slist.set(p, value);
+            xpool.add(new Element("CONSTANT_Long",
+                      new String[]{"id", p.toString()},
+                      value));
+        }
+        return value;
+    }
+
+    @Override
+    public String visitNameAndType(CONSTANT_NameAndType_info c, Integer p) {
+        String value = slist.get(p);
+        if (value == null) {
+            try {
+                value = visit(cfpool.get(c.name_index), c.name_index);
+                value = value.concat(" " +
+                        visit(cfpool.get(c.type_index), c.type_index));
+                slist.set(p, value);
+                xpool.add(new Element("CONSTANT_NameAndType",
+                          new String[]{"id", p.toString()},
+                          value));
+            } catch (InvalidIndex ex) {
+                ex.printStackTrace();
+            }
+        }
+        return value;
+    }
+
+    @Override
+    public String visitMethodref(CONSTANT_Methodref_info c, Integer p) {
+        String value = slist.get(p);
+        if (value == null) {
+            try {
+                value = visit(cfpool.get(c.class_index), c.class_index);
+                value = value.concat(" " +
+                                     visit(cfpool.get(c.name_and_type_index),
+                                     c.name_and_type_index));
+                slist.set(p, value);
+                xpool.add(new Element("CONSTANT_Methodref",
+                          new String[]{"id", p.toString()},
+                          value));
+
+            } catch (ConstantPoolException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return value;
+    }
+
+    @Override
+    public String visitMethodHandle(CONSTANT_MethodHandle_info c, Integer p) {
+    String value = slist.get(p);
+        if (value == null) {
+            try {
+                value = c.reference_kind.name();
+                value = value.concat(" "
+                        + visit(cfpool.get(c.reference_index), c.reference_index));
+                slist.set(p, value);
+                xpool.add(new Element("CONSTANT_MethodHandle",
+                          new String[]{"id", p.toString()},
+                          value));
+
+            } catch (ConstantPoolException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return value;
+    }
+
+    @Override
+    public String visitMethodType(CONSTANT_MethodType_info c, Integer p) {
+        String value = slist.get(p);
+        if (value == null) {
+            try {
+                value = visit(cfpool.get(c.descriptor_index), c.descriptor_index);
+                slist.set(p, value);
+                xpool.add(new Element("CONSTANT_MethodType",
+                          new String[]{"id", p.toString()},
+                          value));
+            } catch (ConstantPoolException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return value;
+    }
+
+    @Override
+    public String visitString(CONSTANT_String_info c, Integer p) {
+        try {
+
+            String value = slist.get(p);
+            if (value == null) {
+                value = c.getString();
+                slist.set(p, value);
+                xpool.add(new Element("CONSTANT_String",
+                          new String[]{"id", p.toString()},
+                          value));
+            }
+            return value;
+        } catch (ConstantPoolException ex) {
+            throw new RuntimeException("Fatal error", ex);
         }
     }
 
-    private String cpName(int id) {
-        if (id >= 0 && id < cpName.length) {
-            return cpName[id];
-        } else {
-            return "[CP#" + Integer.toHexString(id) + "]";
+    @Override
+    public String  visitUtf8(CONSTANT_Utf8_info cnstnt, Integer p) {
+        String value = slist.get(p);
+        if (value == null) {
+            value = cnstnt.value;
+            slist.set(p, value);
+            xpool.add(new Element("CONSTANT_Utf8",
+                      new String[]{"id", p.toString()},
+                      value));
         }
-    }
+        return value;
 
-    private long u8() throws IOException {
-        return ((long) u4() << 32) + (((long) u4() << 32) >>> 32);
-    }
-
-    private int u4() throws IOException {
-        return (u2() << 16) + u2();
-    }
-
-    private int u2() throws IOException {
-        return (u1() << 8) + u1();
-    }
-
-    private int u1() throws IOException {
-        int x = in.read();
-        if (x < 0) {
-            paddingSize++;
-            return 0;  // error recovery
-        }
-        fileSize++;
-        assert (x == (x & 0xFF));
-        return x;
     }
 }
 
+class AttributeVisitor implements Attribute.Visitor<Element, Element> {
+    final ClassFile cf;
+    final ClassReader x;
+    final AnnotationsElementVisitor aev;
+    final InstructionVisitor iv;
+
+    public AttributeVisitor(ClassReader x, ClassFile cf) {
+        this.x = x;
+        this.cf = cf;
+        iv =  new InstructionVisitor(x, cf);
+        aev = new AnnotationsElementVisitor(x, cf);
+    }
+
+    public void visit(Attribute a, Element parent) {
+        a.accept(this, parent);
+    }
+
+    @Override
+    public Element visitBootstrapMethods(BootstrapMethods_attribute bm, Element p) {
+        Element e = new Element(x.getCpString(bm.attribute_name_index));
+        for (BootstrapMethods_attribute.BootstrapMethodSpecifier bsm : bm.bootstrap_method_specifiers) {
+            Element be = new Element("BootstrapMethodSpecifier");
+            be.setAttr("ref", x.getCpString(bsm.bootstrap_method_ref));
+            if (bsm.bootstrap_arguments.length > 0) {
+                Element bme = new Element("MethodArguments");
+                for (int index : bsm.bootstrap_arguments) {
+                    bme.add(x.getCpString(index));
+                }
+                bme.trimToSize();
+                be.add(bme);
+            }
+            be.trimToSize();
+            e.add(be);
+        }
+        e.trimToSize();
+        if (!x.keepOrder) {
+            e.sort();
+        }
+        p.add(e);
+        return null;
+    }
+
+    @Override
+    public Element visitDefault(DefaultAttribute da, Element p) {
+        Element e = new Element(x.getCpString(da.attribute_name_index));
+        StringBuilder sb = new StringBuilder();
+        for (byte x : da.info) {
+            sb.append("0x").append(Integer.toHexString(x)).append(" ");
+        }
+        e.setAttr("bytes", sb.toString().trim());
+        e.trimToSize();
+        p.add(e);
+        return null;
+    }
+
+    @Override
+    public Element visitAnnotationDefault(AnnotationDefault_attribute ad, Element p) {
+        Element e = new Element(x.getCpString(ad.attribute_name_index));
+        e.setAttr("tag", "" + ad.default_value.tag);
+        Element child = aev.visit(ad.default_value, e);
+        if (child != null) {
+            e.add(child);
+        }
+        e.trimToSize();
+        p.add(e);
+        return null;
+    }
+
+    @Override
+    public Element visitCharacterRangeTable(CharacterRangeTable_attribute crt,
+                                            Element p) {
+        Element e = new Element(x.getCpString(crt.attribute_name_index));
+        for (CharacterRangeTable_attribute.Entry ce : crt.character_range_table) {
+            e.setAttr("start_pc", "" + ce.start_pc);
+            e.setAttr("end_pc", "" + ce.end_pc);
+            e.setAttr("range_start", "" + ce.character_range_start);
+            e.setAttr("range_end", "" + ce.character_range_end);
+            e.setAttr("flags", x.flagString(ce.flags, "Method"));
+        }
+        e.trimToSize();
+        p.add(e);
+        return null;
+    }
+
+    private Element instructions(Element code, Code_attribute c) {
+        Element ielement = new Element("Instructions");
+        for (Instruction ins : c.getInstructions()) {
+            ielement.add(iv.visit(ins));
+        }
+        ielement.trimToSize();
+        return ielement;
+    }
+
+    @Override
+    public Element visitCode(Code_attribute c, Element p) {
+        Element e = null;
+
+        e = new Element(x.getCpString(c.attribute_name_index),
+                "stack", "" + c.max_stack,
+                "local", "" + c.max_locals);
+
+        e.add(instructions(e, c));
+
+        for (Code_attribute.Exception_data edata : c.exception_table) {
+            e.add(new Element("Handler",
+                    "start", "" + edata.start_pc,
+                    "end", "" + edata.end_pc,
+                    "catch", "" + edata.handler_pc,
+                    "class", x.getCpString(edata.catch_type)));
+
+        }
+        this.x.readAttributesFor(cf, c.attributes, e);
+        e.trimToSize();
+        p.add(e);
+        return null;
+    }
+
+    @Override
+    public Element visitCompilationID(CompilationID_attribute cid, Element p) {
+        Element e = new Element(x.getCpString(cid.attribute_name_index),
+                x.getCpString(cid.compilationID_index));
+        p.add(e);
+        return null;
+    }
+
+    @Override
+    public Element visitConstantValue(ConstantValue_attribute cv, Element p) {
+        Element e = new Element(x.getCpString(cv.attribute_name_index));
+        e.add(x.getCpString(cv.constantvalue_index));
+        p.add(e);
+        return null;
+    }
+
+    @Override
+    public Element visitDeprecated(Deprecated_attribute d, Element p) {
+        Element e = new Element(x.getCpString(d.attribute_name_index));
+        p.add(e);
+        return null;
+    }
+
+    @Override
+    public Element visitEnclosingMethod(EnclosingMethod_attribute em, Element p) {
+        Element e = new Element(x.getCpString(em.attribute_name_index));
+        e.setAttr("class", x.getCpString(em.class_index));
+        e.setAttr("desc", x.getCpString(em.method_index));
+        e.trimToSize();
+        p.add(e);
+        return null;
+    }
+
+    @Override
+    public Element visitExceptions(Exceptions_attribute e, Element p) {
+        Element ee = new Element(x.getCpString(e.attribute_name_index));
+        for (int idx : e.exception_index_table) {
+            Element n = new Element("Item");
+            n.setAttr("class", x.getCpString(idx));
+            ee.add(n);
+        }
+        ee.trimToSize();
+        p.add(ee);
+        return null;
+    }
+
+    @Override
+    public Element visitInnerClasses(InnerClasses_attribute ic, Element p) {
+        for (Info info : ic.classes) {
+            Element e = new Element(x.getCpString(ic.attribute_name_index));
+            e.setAttr("class", x.getCpString(info.inner_class_info_index));
+            e.setAttr("outer", x.getCpString(info.outer_class_info_index));
+            e.setAttr("name", x.getCpString(info.inner_name_index));
+            e.setAttr("flags", x.flagString(info.inner_class_access_flags,
+                    "InnerClass"));
+            e.trimToSize();
+            p.add(e);
+        }
+        return null;
+    }
+
+    @Override
+    public Element visitLineNumberTable(LineNumberTable_attribute lnt, Element p) {
+        String name = x.getCpString(lnt.attribute_name_index);
+        for (LineNumberTable_attribute.Entry e : lnt.line_number_table) {
+            Element l = new Element(name);
+            l.setAttr("bci", "" + e.start_pc);
+            l.setAttr("line", "" + e.line_number);
+            l.trimToSize();
+            p.add(l);
+        }
+        return null; // already added to parent
+    }
+
+    @Override
+    public Element visitLocalVariableTable(LocalVariableTable_attribute lvt,
+                                                Element p) {
+        String name = x.getCpString(lvt.attribute_name_index);
+        for (LocalVariableTable_attribute.Entry e : lvt.local_variable_table) {
+            Element l = new Element(name);
+            l.setAttr("bci", "" + e.start_pc);
+            l.setAttr("span", "" + e.length);
+            l.setAttr("name", x.getCpString(e.name_index));
+            l.setAttr("type", x.getCpString(e.descriptor_index));
+            l.setAttr("slot", "" + e.index);
+            l.trimToSize();
+            p.add(l);
+        }
+        return null; // already added to parent
+    }
+
+    @Override
+    public Element visitLocalVariableTypeTable(LocalVariableTypeTable_attribute lvtt,
+                                                    Element p) {
+        String name = x.getCpString(lvtt.attribute_name_index);
+        for (LocalVariableTypeTable_attribute.Entry e : lvtt.local_variable_table) {
+            Element l = new Element(name);
+            l.setAttr("bci", "" + e.start_pc);
+            l.setAttr("span", "" + e.length);
+            l.setAttr("name", x.getCpString(e.name_index));
+            l.setAttr("type", x.getCpString(e.signature_index));
+            l.setAttr("slot", "" + e.index);
+            l.trimToSize();
+            p.add(l);
+        }
+        return null; // already added to parent
+    }
+
+    private void parseAnnotations(Annotation[] ra, Element p) {
+         for (Annotation anno : ra) {
+            Element ea = new Element("Member");
+            ea.setAttr("name", "" + x.getCpString(anno.type_index));
+            for (Annotation.element_value_pair evp : anno.element_value_pairs) {
+                Element evpe = new Element("Element");
+                evpe.setAttr("tag", "" + evp.value.tag);
+                evpe.setAttr("value", x.getCpString(evp.element_name_index));
+                Element child = aev.visit(evp.value, evpe);
+                if (child != null) {
+                    evpe.add(child);
+                }
+                ea.add(evpe);
+            }
+            ea.trimToSize();
+            p.add(ea);
+        }
+    }
+
+    @Override
+    public Element visitRuntimeVisibleAnnotations(RuntimeVisibleAnnotations_attribute rva,
+                                                  Element p) {
+        Element e = new Element(x.getCpString(rva.attribute_name_index));
+        parseAnnotations(rva.annotations, e);
+        e.trimToSize();
+        p.add(e);
+        return null;
+    }
+
+    @Override
+    public Element visitRuntimeInvisibleAnnotations(RuntimeInvisibleAnnotations_attribute ria,
+                                                    Element p) {
+        Element e = new Element(x.getCpString(ria.attribute_name_index));
+        parseAnnotations(ria.annotations, e);
+        e.trimToSize();
+        p.add(e);
+        return null;
+    }
+
+    @Override
+    public Element visitRuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations_attribute rvpa,
+                                                           Element p) {
+        Element e = new Element(x.getCpString(rvpa.attribute_name_index));
+        for (Annotation[] pa : rvpa.parameter_annotations) {
+           parseAnnotations(pa, e);
+        }
+        p.add(e);
+        return null;
+    }
+
+    @Override
+    public Element visitRuntimeInvisibleParameterAnnotations(RuntimeInvisibleParameterAnnotations_attribute ripa,
+                                                             Element p) {
+        Element e = new Element(x.getCpString(ripa.attribute_name_index));
+        for (Annotation[] pa : ripa.parameter_annotations) {
+            parseAnnotations(pa, e);
+        }
+        p.add(e);
+        return null;
+    }
+
+    @Override
+    public Element visitSignature(Signature_attribute s, Element p) {
+        String aname = x.getCpString(s.attribute_name_index);
+        String sname = x.getCpString(s.signature_index);
+        Element se = new Element(aname);
+        se.add(sname);
+        se.trimToSize();
+        p.add(se);
+        return null;
+    }
+
+    @Override
+    public Element visitSourceDebugExtension(SourceDebugExtension_attribute sde,
+                                                Element p) {
+        String aname = x.getCpString(sde.attribute_name_index);
+        Element se = new Element(aname);
+        se.setAttr("val", sde.getValue());
+        se.trimToSize();
+        p.add(se);
+        return null;
+    }
+
+    @Override
+    public Element visitSourceFile(SourceFile_attribute sf, Element p) {
+        String aname = x.getCpString(sf.attribute_name_index);
+        String sname = x.getCpString(sf.sourcefile_index);
+        Element se = new Element(aname);
+        se.add(sname);
+        se.trimToSize();
+        p.add(se);
+        return null;
+    }
+
+    @Override
+    public Element visitSourceID(SourceID_attribute sid, Element p) {
+        Element e = new Element(x.getCpString(sid.attribute_name_index));
+        e.add(x.getCpString(sid.sourceID_index));
+        e.trimToSize();
+        p.add(e);
+        return null;
+    }
+
+    @Override
+    public Element visitStackMap(StackMap_attribute sm, Element p) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public Element visitStackMapTable(StackMapTable_attribute smt, Element p) {
+        Element stackmap = new Element(x.getCpString(smt.attribute_name_index));
+        for (StackMapTable_attribute.stack_map_frame f : smt.entries) {
+           StackMapVisitor smv = new StackMapVisitor(x, cf, stackmap);
+           stackmap.add(smv.visit(f));
+        }
+        stackmap.trimToSize();
+        p.add(stackmap);
+        return null;
+    }
+
+    @Override
+    public Element visitSynthetic(Synthetic_attribute s, Element p) {
+        Element e = new Element(x.getCpString(s.attribute_name_index));
+        e.trimToSize();
+        p.add(e);
+        return null;
+    }
+}
+
+class StackMapVisitor implements StackMapTable_attribute.stack_map_frame.Visitor<Element, Void> {
+
+    final ClassFile cf;
+    final ClassReader x;
+    final Element parent;
+
+    public StackMapVisitor(ClassReader x, ClassFile cf, Element parent) {
+        this.x = x;
+        this.cf = cf;
+        this.parent = parent;
+    }
+
+    public Element visit(StackMapTable_attribute.stack_map_frame frame) {
+        return frame.accept(this, null);
+    }
+
+    @Override
+    public Element visit_same_frame(same_frame sm_frm, Void p) {
+        Element e = new Element("SameFrame");
+        e.setAttr("tag", "" + sm_frm.frame_type);
+        return e;
+    }
+
+    @Override
+    public Element visit_same_locals_1_stack_item_frame(same_locals_1_stack_item_frame s, Void p) {
+        Element e = new Element("SameLocals1StackItemFrame");
+        e.setAttr("tag", "" + s.frame_type);
+        e.addAll(getVerificationTypeInfo("Stack", s.stack));
+        e.trimToSize();
+        return e;
+    }
+
+    @Override
+    public Element visit_same_locals_1_stack_item_frame_extended(same_locals_1_stack_item_frame_extended s, Void p) {
+        Element e = new Element("SameLocals1StackItemFrameExtended");
+        e.setAttr("tag", "" + s.frame_type);
+        e.addAll(getVerificationTypeInfo("Stack", s.stack));
+        e.trimToSize();
+        return e;
+    }
+
+    @Override
+    public Element visit_chop_frame(chop_frame c, Void p) {
+        Element e = new Element("Chop" + (251 - c.frame_type));
+        e.setAttr("tag", "" + c.frame_type);
+        e.setAttr("offset", "" + c.offset_delta);
+        return e;
+    }
+
+    @Override
+    public Element visit_same_frame_extended(same_frame_extended s, Void p) {
+        Element e = new Element("SameFrameExtended");
+        e.setAttr("tag", "" + s.frame_type);
+        e.setAttr("offset", "" + s.offset_delta);
+        return e;
+    }
+
+    @Override
+    public Element visit_append_frame(append_frame a, Void p) {
+       Element e = new Element("AppendFrame" + (a.frame_type - 251));
+       e.setAttr("tag", "" + a.frame_type);
+       e.addAll(getVerificationTypeInfo("Local", a.locals));
+       e.trimToSize();
+       return e;
+    }
+
+    @Override
+    public Element visit_full_frame(full_frame fl_frm, Void p) {
+         Element e = new Element("FullFrame");
+         e.setAttr("tag", "" + fl_frm.frame_type);
+         e.addAll(getVerificationTypeInfo("Local", fl_frm.locals));
+         e.trimToSize();
+         return e;
+    }
+
+    private Element getVerificationTypeInfo(String kind,
+            StackMapTable_attribute.verification_type_info velems[]) {
+        Element container = new Element(velems.length);
+        for (StackMapTable_attribute.verification_type_info v : velems) {
+            Element ve = null;
+            int offset = 0;
+            int index = 0;
+            switch (v.tag) {
+                case StackMapTable_attribute.verification_type_info.ITEM_Top:
+                    ve = new Element("ITEM_Top");
+                    break;
+                case StackMapTable_attribute.verification_type_info.ITEM_Integer:
+                    ve = new Element("ITEM_Integer");
+                    break;
+                case StackMapTable_attribute.verification_type_info.ITEM_Float:
+                    ve = new Element("ITEM_Float");
+                    break;
+                case StackMapTable_attribute.verification_type_info.ITEM_Long:
+                    ve = new Element("ITEM_Long");
+                    break;
+                case StackMapTable_attribute.verification_type_info.ITEM_Double:
+                    ve = new Element("ITEM_Double");
+                    break;
+                case StackMapTable_attribute.verification_type_info.ITEM_Null:
+                    ve = new Element("ITEM_Null");
+                    break;
+                case StackMapTable_attribute.verification_type_info.ITEM_Uninitialized:
+                    ve = new Element("ITEM_Uninitialized");
+                    offset = ((StackMapTable_attribute.Uninitialized_variable_info) v).offset;
+                    ve.setAttr("offset", "" + offset);
+                    break;
+                case StackMapTable_attribute.verification_type_info.ITEM_UninitializedThis:
+                    ve = new Element("ITEM_UnitializedtThis");
+                    break;
+                case StackMapTable_attribute.verification_type_info.ITEM_Object:
+                    ve = new Element("ITEM_Object");
+                    index = ((StackMapTable_attribute.Object_variable_info) v).cpool_index;
+                    ve.setAttr("class", x.getCpString(index));
+                    break;
+                default:
+                    ve = new Element("Unknown");
+            }
+            Element kindE = new Element(kind);
+            kindE.setAttr("tag", "" + v.tag);
+            container.add(kindE);
+            kindE.add(ve);
+        }
+        container.trimToSize();
+        return container;
+    }
+}
+
+class InstructionVisitor implements Instruction.KindVisitor<Element, Void> {
+
+    final ClassReader x;
+    final ClassFile cf;
+
+    public InstructionVisitor(ClassReader x, ClassFile cf) {
+        this.x = x;
+        this.cf = cf;
+    }
+
+    public Element visit(Instruction i) {
+        Element ie =  i.accept(this, null);
+        ie.trimToSize();
+        return ie;
+    }
+
+    @Override
+    public Element visitNoOperands(Instruction i, Void p) {
+        Opcode o = i.getOpcode();
+        Element e = new Element(i.getMnemonic());
+        if (o.opcode > 0xab && o.opcode <= 0xb1) {
+            e.setAttr("pc", "" + i.getPC());
+        }
+        return e;
+    }
+
+    @Override
+    public Element visitArrayType(Instruction i, TypeKind tk, Void p) {
+        Element ie = new Element(i.getMnemonic());
+        ie.setAttr("num", "" + tk.value);
+        ie.setAttr("val", tk.name);
+        return ie;
+    }
+
+    @Override
+    public Element visitBranch(Instruction i, int i1, Void p) {
+        Element ie = new Element(i.getMnemonic());
+        ie.setAttr("lab", "" + (i.getPC() + i1));
+        return ie;
+    }
+
+    @Override
+    public Element visitConstantPoolRef(Instruction i, int i1, Void p) {
+        Element ie = new Element(i.getMnemonic());
+        ie.setAttr("ref", x.getCpString(i1));
+        return ie;
+    }
+
+    @Override
+    public Element visitConstantPoolRefAndValue(Instruction i, int i1, int i2, Void p) {
+        // workaround for a potential bug in classfile
+        Element ie = new Element(i.getMnemonic());
+        if (i.getOpcode().equals(Opcode.IINC_W)) {
+            ie.setAttr("loc", "" + i1);
+            ie.setAttr("num", "" + i2);
+        } else {
+            ie.setAttr("ref", x.getCpString(i1));
+            ie.setAttr("val", "" + i2);
+        }
+        return ie;
+    }
+
+    @Override
+    public Element visitLocal(Instruction i, int i1, Void p) {
+        Element ie = new Element(i.getMnemonic());
+        ie.setAttr("loc", "" + i1);
+        return ie;
+    }
+
+    @Override
+    public Element visitLocalAndValue(Instruction i, int i1, int i2, Void p) {
+        Element ie = new Element(i.getMnemonic());
+        ie.setAttr("loc", "" + i1);
+        ie.setAttr("num", "" + i2);
+        return ie;
+    }
+
+    @Override
+    public Element visitLookupSwitch(Instruction i, int i1, int i2, int[] ints,
+                                     int[] ints1, Void p) {
+        Element ie = new Element(i.getMnemonic());
+        int pc = i.getPC();
+        ie.setAttr("lab", "" + (pc + i1));
+        for (int k = 0 ; k < i2 ; k++) {
+            Element c = new Element("Case");
+            c.setAttr("num", "" + (ints[k]));
+            c.setAttr("lab", "" + (pc + ints1[k]));
+            c.trimToSize();
+            ie.add(c);
+        }
+        return ie;
+    }
+
+    @Override
+    public Element visitTableSwitch(Instruction i, int i1, int i2, int i3,
+                                    int[] ints, Void p) {
+        Element ie = new Element(i.getMnemonic());
+        int pc = i.getPC();
+        ie.setAttr("lab", "" + (pc + i1));
+        for (int k : ints) {
+            Element c = new Element("Case");
+            c.setAttr("num", "" + (k + i2));
+            c.setAttr("lab", "" + (pc + k));
+            c.trimToSize();
+            ie.add(c);
+        }
+        return ie;
+    }
+
+    @Override
+    public Element visitValue(Instruction i, int i1, Void p) {
+        Element ie = new Element(i.getMnemonic());
+        ie.setAttr("num", "" + i1);
+        return ie;
+    }
+
+    @Override
+    public Element visitUnknown(Instruction i, Void p) {
+        Element e = new Element(i.getMnemonic());
+        e.setAttr("pc", "" + i.getPC());
+        e.setAttr("opcode", "" + i.getOpcode().opcode);
+        return e;
+    }
+}
+
+class AnnotationsElementVisitor implements Annotation.element_value.Visitor<Element, Element> {
+    final ClassReader x;
+    final ClassFile cf;
+
+    public AnnotationsElementVisitor(ClassReader x, ClassFile cf) {
+        this.x = x;
+        this.cf = cf;
+    }
+
+    public Element visit(Annotation.element_value v, Element p) {
+        return v.accept(this, p);
+    }
+
+    @Override
+    public Element visitPrimitive(Primitive_element_value e, Element p) {
+        Element el = new Element("String");
+        el.setAttr("val", x.getCpString(e.const_value_index));
+        el.trimToSize();
+        return el;
+    }
+
+    @Override
+    public Element visitEnum(Enum_element_value e, Element p) {
+        Element el = new Element("Enum");
+        el.setAttr("name", x.getCpString(e.const_name_index));
+        el.setAttr("type", x.getCpString(e.type_name_index));
+        el.trimToSize();
+        return el;
+    }
+
+    @Override
+    public Element visitClass(Class_element_value c, Element p) {
+        Element el = new Element("Class");
+        el.setAttr("name", x.getCpString(c.class_info_index));
+        el.trimToSize();
+        return el;
+    }
+
+    @Override
+    public Element visitAnnotation(Annotation_element_value a, Element p) {
+        Element el = new Element("Annotation");
+        Annotation anno = a.annotation_value;
+        for (Annotation.element_value_pair evp : anno.element_value_pairs) {
+            Element child = visit(evp.value, el);
+            if (child != null) {
+                el.add(child);
+            }
+        }
+        el.trimToSize();
+        return el;
+    }
+
+    @Override
+    public Element visitArray(Array_element_value a, Element p) {
+     Element el = new Element("Array");
+        for (Annotation.element_value v : a.values) {
+           Element child = visit(v, el);
+           if (child != null) {
+               el.add(child);
+           }
+        }
+        el.trimToSize();
+        return el;
+    }
+}

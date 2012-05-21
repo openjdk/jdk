@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 /*
  * @test
- * @bug 6982312
+ * @bug 6746111
  * @summary tests various classfile format and attribute handling by pack200
  * @compile -XDignore.symbol.file Utils.java AttributeTests.java
  * @run main AttributeTests
@@ -36,39 +36,7 @@ import java.util.List;
 public class AttributeTests {
 
     public static void main(String... args) throws Exception {
-        test6982312();
         test6746111();
-    }
-    /*
-     * This is an interim test, which ensures pack200 handles JSR-292 related
-     * classfile changes seamlessly, until all the classfile changes in jdk7
-     * and jdk8 are fully supported. At that time this test should be jettisoned,
-     * along with the associated jar file.
-     *
-     * The jar file  contains sources and classes noting the classes were
-     * derived by using the javac from the lambda project,
-     * see http://openjdk.java.net/projects/lambda/.
-     * Therefore the classes contained in the jar cannot be compiled, using
-     * the standard jdk7's javac compiler.
-     */
-    static void test6982312() throws IOException {
-        String pack200Cmd = Utils.getPack200Cmd();
-        File dynJar = new File(".", "dyn.jar");
-        Utils.copyFile(new File(Utils.TEST_SRC_DIR, "dyn.jar"), dynJar);
-        File testJar = new File(".", "test.jar");
-        List<String> cmds = new ArrayList<String>();
-        cmds.add(pack200Cmd);
-        cmds.add("--repack");
-        cmds.add(testJar.getAbsolutePath());
-        cmds.add(dynJar.getAbsolutePath());
-        Utils.runExec(cmds);
-        /*
-         * compare the repacked jar bit-wise, as all the files
-         * should be transmitted "as-is".
-         */
-        Utils.doCompareBitWise(dynJar.getAbsoluteFile(), testJar.getAbsoluteFile());
-        testJar.delete();
-        dynJar.delete();
     }
 
     /*

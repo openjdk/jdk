@@ -27,7 +27,6 @@ package apple.launcher;
 
 import java.io.*;
 import java.lang.reflect.*;
-import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.jar.*;
@@ -36,7 +35,13 @@ import javax.swing.*;
 
 class JavaAppLauncher implements Runnable {
     static {
-        java.security.AccessController.doPrivileged((PrivilegedAction<?>)new sun.security.action.LoadLibraryAction("osx"));
+        java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("osx");
+                    return null;
+                }
+            });
     }
 
     private static native <T> T nativeConvertAndRelease(final long ptr);

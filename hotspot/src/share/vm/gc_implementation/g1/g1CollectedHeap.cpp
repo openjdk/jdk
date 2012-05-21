@@ -368,16 +368,11 @@ void YoungList::print() {
     if (curr == NULL)
       gclog_or_tty->print_cr("  empty");
     while (curr != NULL) {
-      gclog_or_tty->print_cr("  [%08x-%08x], t: %08x, P: %08x, N: %08x, C: %08x, "
-                             "age: %4d, y: %d, surv: %d",
-                             curr->bottom(), curr->end(),
-                             curr->top(),
+      gclog_or_tty->print_cr("  "HR_FORMAT", P: "PTR_FORMAT "N: "PTR_FORMAT", age: %4d",
+                             HR_FORMAT_PARAMS(curr),
                              curr->prev_top_at_mark_start(),
                              curr->next_top_at_mark_start(),
-                             curr->top_at_conc_mark_count(),
-                             curr->age_in_surv_rate_group_cond(),
-                             curr->is_young(),
-                             curr->is_survivor());
+                             curr->age_in_surv_rate_group_cond());
       curr = curr->get_next_young_region();
     }
   }
@@ -1253,13 +1248,11 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     IsGCActiveMark x;
 
     // Timing
-    bool system_gc = (gc_cause() == GCCause::_java_lang_system_gc);
-    assert(!system_gc || explicit_gc, "invariant");
+    assert(gc_cause() != GCCause::_java_lang_system_gc || explicit_gc, "invariant");
     gclog_or_tty->date_stamp(G1Log::fine() && PrintGCDateStamps);
     TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
-    TraceTime t(system_gc ? "Full GC (System.gc())" : "Full GC",
-                G1Log::fine(), true, gclog_or_tty);
 
+    TraceTime t(GCCauseString("Full GC", gc_cause()), G1Log::fine(), true, gclog_or_tty);
     TraceCollectorStats tcs(g1mm()->full_collection_counters());
     TraceMemoryManagerStats tms(true /* fullGC */, gc_cause());
 
@@ -3593,26 +3586,21 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
   // Inner scope for scope based logging, timers, and stats collection
   {
-    char verbose_str[128];
-    sprintf(verbose_str, "GC pause ");
-    if (g1_policy()->gcs_are_young()) {
-      strcat(verbose_str, "(young)");
-    } else {
-      strcat(verbose_str, "(mixed)");
-    }
     if (g1_policy()->during_initial_mark_pause()) {
-      strcat(verbose_str, " (initial-mark)");
       // We are about to start a marking cycle, so we increment the
       // full collection counter.
       increment_total_full_collections();
     }
-
     // if the log level is "finer" is on, we'll print long statistics information
     // in the collector policy code, so let's not print this as the output
     // is messy if we do.
     gclog_or_tty->date_stamp(G1Log::fine() && PrintGCDateStamps);
     TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
-    TraceTime t(verbose_str, G1Log::fine() && !G1Log::finer(), true, gclog_or_tty);
+
+    GCCauseString gc_cause_str = GCCauseString("GC pause", gc_cause())
+      .append(g1_policy()->gcs_are_young() ? " (young)" : " (mixed)")
+      .append(g1_policy()->during_initial_mark_pause() ? " (initial-mark)" : "");
+    TraceTime t(gc_cause_str, G1Log::fine() && !G1Log::finer(), true, gclog_or_tty);
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
     TraceMemoryManagerStats tms(false /* fullGC */, gc_cause());
@@ -5509,7 +5497,7 @@ void G1CollectedHeap::evacuate_collection_set() {
   if (evacuation_failed()) {
     remove_self_forwarding_pointers();
     if (G1Log::finer()) {
-      gclog_or_tty->print(" (to-space overflow)");
+      gclog_or_tty->print(" (to-space exhausted)");
     } else if (G1Log::fine()) {
       gclog_or_tty->print("--");
     }
