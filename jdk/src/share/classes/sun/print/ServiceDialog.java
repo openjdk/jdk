@@ -72,6 +72,7 @@ import javax.swing.text.NumberFormatter;
 import sun.print.SunPageSelection;
 import java.awt.event.KeyEvent;
 import java.net.URISyntaxException;
+import java.lang.reflect.Field;
 
 
 /**
@@ -479,20 +480,45 @@ public class ServiceDialog extends JDialog implements ActionListener {
      */
     public static String getMsg(String key) {
         try {
-            return messageRB.getString(key);
+            return removeMnemonics(messageRB.getString(key));
         } catch (java.util.MissingResourceException e) {
             throw new Error("Fatal: Resource for ServiceUI is broken; " +
                             "there is no " + key + " key in resource");
         }
     }
 
+    private static String removeMnemonics(String s) {
+        int i = s.indexOf('&');
+        int len = s.length();
+        if (i < 0 || i == (len - 1)) {
+            return s;
+        }
+        int j = s.indexOf('&', i+1);
+        if (j == i+1) {
+            if (j+1 == len) {
+                return s.substring(0, i+1);  // string ends with &&
+            } else {
+                return s.substring(0, i+1) + removeMnemonics(s.substring(j+1));
+            }
+        }
+        // ok first & not double &&
+        if (i == 0) {
+            return removeMnemonics(s.substring(1));
+        } else {
+            return (s.substring(0, i) + removeMnemonics(s.substring(i+1)));
+        }
+    }
+
+
     /**
      * Returns mnemonic character from resource
      */
     private static char getMnemonic(String key) {
-        String str = getMsg(key + ".mnemonic");
-        if ((str != null) && (str.length() > 0)) {
-            return str.charAt(0);
+        String str = messageRB.getString(key).replace("&&", "");
+        int index = str.indexOf('&');
+        if (0 <= index && index < str.length() - 1) {
+            char c = str.charAt(index + 1);
+            return Character.toUpperCase(c);
         } else {
             return (char)0;
         }
@@ -501,12 +527,23 @@ public class ServiceDialog extends JDialog implements ActionListener {
     /**
      * Returns the mnemonic as a KeyEvent.VK constant from the resource.
      */
+    static Class _keyEventClazz = null;
     private static int getVKMnemonic(String key) {
-        String str = getMsg(key + ".vkMnemonic");
-        if ((str != null) && (str.length() > 0)) {
-            try {
-                return Integer.parseInt(str);
-            } catch (NumberFormatException nfe) {}
+        String s = String.valueOf(getMnemonic(key));
+        if ( s == null || s.length() != 1) {
+            return 0;
+        }
+        String vkString = "VK_" + s.toUpperCase();
+
+        try {
+            if (_keyEventClazz == null) {
+                _keyEventClazz= Class.forName("java.awt.event.KeyEvent",
+                                 true, (ServiceDialog.class).getClassLoader());
+            }
+            Field field = _keyEventClazz.getDeclaredField(vkString);
+            int value = field.getInt(null);
+            return value;
+        } catch (Exception e) {
         }
         return 0;
     }

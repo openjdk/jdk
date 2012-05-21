@@ -29,14 +29,14 @@ JA_DIRNAME=ja_JP.UTF-8
 
 # Defines the release targets for Mac OS X build products
 
-JDK_BUNDLE_DIR = $(ABS_OUTPUTDIR)/j2sdk-bundle/$(THIS_JDK_VERSION).jdk/Contents
-JRE_BUNDLE_DIR = $(ABS_OUTPUTDIR)/j2re-bundle/$(THIS_JDK_VERSION).jre/Contents
+JDK_BUNDLE_DIR = $(ABS_OUTPUTDIR)/j2sdk-bundle/jdk$(JDK_VERSION).jdk/Contents
+JRE_BUNDLE_DIR = $(ABS_OUTPUTDIR)/j2re-bundle/jre$(JDK_VERSION).jre/Contents
 
 MACOSX_SRC	 = $(JDK_TOPDIR)/src/macosx
 
 BUNDLE_ID ?= net.java.openjdk
-BUNLDE_ID_JRE ?= $(BUNDLE_ID).jre
-BUNLDE_ID_JDK ?= $(BUNDLE_ID).jdk
+BUNDLE_ID_JRE ?= $(BUNDLE_ID).jre
+BUNDLE_ID_JDK ?= $(BUNDLE_ID).jdk
 
 BUNDLE_NAME ?= OpenJDK $(JDK_MINOR_VERSION)
 BUNDLE_NAME_JRE ?= $(BUNDLE_NAME)

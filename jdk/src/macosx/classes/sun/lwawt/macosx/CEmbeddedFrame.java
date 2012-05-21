@@ -76,6 +76,12 @@ public class CEmbeddedFrame extends EmbeddedFrame {
         int screenX = locationOnScreen.x + x;
         int screenY = locationOnScreen.y + y;
 
+        if (eventType == CocoaConstants.NPCocoaEventMouseEntered) {
+            CCursorManager.nativeSetAllowsCursorSetInBackground(true);
+        } else if (eventType == CocoaConstants.NPCocoaEventMouseExited) {
+            CCursorManager.nativeSetAllowsCursorSetInBackground(false);
+        }
+
         responder.handleMouseEvent(eventType, modifierFlags, buttonNumber,
                                    clickCount, x, y, screenX, screenY);
     }

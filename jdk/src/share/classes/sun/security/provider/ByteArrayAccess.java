@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,8 @@ final class ByteArrayAccess {
     private static boolean unaligned() {
         String arch = java.security.AccessController.doPrivileged
             (new sun.security.action.GetPropertyAction("os.arch", ""));
-        return arch.equals("i386") || arch.equals("x86") || arch.equals("amd64");
+        return arch.equals("i386") || arch.equals("x86") || arch.equals("amd64")
+            || arch.equals("x86_64");
     }
 
     /**
