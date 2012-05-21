@@ -103,7 +103,9 @@ void instanceKlassKlass::oop_follow_contents(oop obj) {
   MarkSweep::mark_and_push(ik->adr_class_loader());
   MarkSweep::mark_and_push(ik->adr_inner_classes());
   MarkSweep::mark_and_push(ik->adr_protection_domain());
-  MarkSweep::mark_and_push(ik->adr_host_klass());
+  if (ik->adr_host_klass() != NULL) {
+    MarkSweep::mark_and_push(ik->adr_host_klass());
+  }
   MarkSweep::mark_and_push(ik->adr_signers());
   MarkSweep::mark_and_push(ik->adr_class_annotations());
   MarkSweep::mark_and_push(ik->adr_fields_annotations());
@@ -139,7 +141,9 @@ void instanceKlassKlass::oop_follow_contents(ParCompactionManager* cm,
   PSParallelCompact::mark_and_push(cm, ik->adr_class_loader());
   PSParallelCompact::mark_and_push(cm, ik->adr_inner_classes());
   PSParallelCompact::mark_and_push(cm, ik->adr_protection_domain());
-  PSParallelCompact::mark_and_push(cm, ik->adr_host_klass());
+  if (ik->adr_host_klass() != NULL) {
+    PSParallelCompact::mark_and_push(cm, ik->adr_host_klass());
+  }
   PSParallelCompact::mark_and_push(cm, ik->adr_signers());
   PSParallelCompact::mark_and_push(cm, ik->adr_class_annotations());
   PSParallelCompact::mark_and_push(cm, ik->adr_fields_annotations());
@@ -177,10 +181,12 @@ int instanceKlassKlass::oop_oop_iterate(oop obj, OopClosure* blk) {
   blk->do_oop(ik->adr_constants());
   blk->do_oop(ik->adr_class_loader());
   blk->do_oop(ik->adr_protection_domain());
-  blk->do_oop(ik->adr_host_klass());
+  if (ik->adr_host_klass() != NULL) {
+    blk->do_oop(ik->adr_host_klass());
+  }
   blk->do_oop(ik->adr_signers());
   blk->do_oop(ik->adr_inner_classes());
-  if (ik->is_interface()) {
+  if (ik->adr_implementor() != NULL) {
     blk->do_oop(ik->adr_implementor());
   }
   blk->do_oop(ik->adr_class_annotations());
@@ -227,15 +233,13 @@ int instanceKlassKlass::oop_oop_iterate_m(oop obj, OopClosure* blk,
   adr = ik->adr_protection_domain();
   if (mr.contains(adr)) blk->do_oop(adr);
   adr = ik->adr_host_klass();
-  if (mr.contains(adr)) blk->do_oop(adr);
+  if (adr != NULL && mr.contains(adr)) blk->do_oop(adr);
   adr = ik->adr_signers();
   if (mr.contains(adr)) blk->do_oop(adr);
   adr = ik->adr_inner_classes();
   if (mr.contains(adr)) blk->do_oop(adr);
-  if (ik->is_interface()) {
-    adr = ik->adr_implementor();
-    if (mr.contains(adr)) blk->do_oop(adr);
-  }
+  adr = ik->adr_implementor();
+  if (adr != NULL && mr.contains(adr)) blk->do_oop(adr);
   adr = ik->adr_class_annotations();
   if (mr.contains(adr)) blk->do_oop(adr);
   adr = ik->adr_fields_annotations();
@@ -270,10 +274,12 @@ int instanceKlassKlass::oop_adjust_pointers(oop obj) {
   MarkSweep::adjust_pointer(ik->adr_constants());
   MarkSweep::adjust_pointer(ik->adr_class_loader());
   MarkSweep::adjust_pointer(ik->adr_protection_domain());
-  MarkSweep::adjust_pointer(ik->adr_host_klass());
+  if (ik->adr_host_klass() != NULL) {
+    MarkSweep::adjust_pointer(ik->adr_host_klass());
+  }
   MarkSweep::adjust_pointer(ik->adr_signers());
   MarkSweep::adjust_pointer(ik->adr_inner_classes());
-  if (ik->is_interface()) {
+  if (ik->adr_implementor() != NULL) {
     MarkSweep::adjust_pointer(ik->adr_implementor());
   }
   MarkSweep::adjust_pointer(ik->adr_class_annotations());
@@ -302,7 +308,7 @@ void instanceKlassKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   }
 
   oop* hk_addr = ik->adr_host_klass();
-  if (PSScavenge::should_scavenge(hk_addr)) {
+  if (hk_addr != NULL && PSScavenge::should_scavenge(hk_addr)) {
     pm->claim_or_forward_depth(hk_addr);
   }
 
@@ -328,8 +334,12 @@ int instanceKlassKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   for (oop* cur_oop = beg_oop; cur_oop < end_oop; ++cur_oop) {
     PSParallelCompact::adjust_pointer(cur_oop);
   }
-  if (ik->is_interface()) {
+  // embedded oops
+  if (ik->adr_implementor() != NULL) {
     PSParallelCompact::adjust_pointer(ik->adr_implementor());
+  }
+  if (ik->adr_host_klass() != NULL) {
+    PSParallelCompact::adjust_pointer(ik->adr_host_klass());
   }
 
   OopClosure* closure = PSParallelCompact::adjust_root_pointer_closure();
@@ -346,15 +356,22 @@ instanceKlassKlass::allocate_instance_klass(Symbol* name, int vtable_len, int it
                                             int static_field_size,
                                             unsigned nonstatic_oop_map_count,
                                             AccessFlags access_flags,
-                                            ReferenceType rt, TRAPS) {
+                                            ReferenceType rt,
+                                            KlassHandle host_klass, TRAPS) {
 
   const int nonstatic_oop_map_size =
     instanceKlass::nonstatic_oop_map_size(nonstatic_oop_map_count);
   int size = align_object_offset(vtable_len) + align_object_offset(itable_len);
-  if (access_flags.is_interface()) {
-    size += align_object_offset(nonstatic_oop_map_size) + (int)sizeof(klassOop)/HeapWordSize;
+  if (access_flags.is_interface() || !host_klass.is_null()) {
+    size += align_object_offset(nonstatic_oop_map_size);
   } else {
     size += nonstatic_oop_map_size;
+  }
+  if (access_flags.is_interface()) {
+    size += (int)sizeof(klassOop)/HeapWordSize;
+  }
+  if (!host_klass.is_null()) {
+    size += (int)sizeof(klassOop)/HeapWordSize;
   }
   size = instanceKlass::object_size(size);
 
@@ -389,6 +406,7 @@ instanceKlassKlass::allocate_instance_klass(Symbol* name, int vtable_len, int it
     ik->set_static_field_size(static_field_size);
     ik->set_nonstatic_oop_map_size(nonstatic_oop_map_size);
     ik->set_access_flags(access_flags);
+    ik->set_is_anonymous(!host_klass.is_null());
     assert(k()->size() == size, "wrong size for object");
 
     ik->set_array_klasses(NULL);
@@ -401,7 +419,6 @@ instanceKlassKlass::allocate_instance_klass(Symbol* name, int vtable_len, int it
     ik->set_constants(NULL);
     ik->set_class_loader(NULL);
     ik->set_protection_domain(NULL);
-    ik->set_host_klass(NULL);
     ik->set_signers(NULL);
     ik->set_source_file_name(NULL);
     ik->set_source_debug_extension(NULL);
@@ -503,7 +520,9 @@ void instanceKlassKlass::oop_print_on(oop obj, outputStream* st) {
   st->print(BULLET"constants:         "); ik->constants()->print_value_on(st);         st->cr();
   st->print(BULLET"class loader:      "); ik->class_loader()->print_value_on(st);      st->cr();
   st->print(BULLET"protection domain: "); ik->protection_domain()->print_value_on(st); st->cr();
-  st->print(BULLET"host class:        "); ik->host_klass()->print_value_on(st);        st->cr();
+  if (ik->host_klass() != NULL) {
+    st->print(BULLET"host class:        "); ik->host_klass()->print_value_on(st);        st->cr();
+  }
   st->print(BULLET"signers:           "); ik->signers()->print_value_on(st);           st->cr();
   if (ik->source_file_name() != NULL) {
     st->print(BULLET"source file:       ");

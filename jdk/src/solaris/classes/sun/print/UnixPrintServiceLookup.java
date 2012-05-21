@@ -121,7 +121,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
 
     static boolean isBSD() {
         return (osname.equals("Linux") ||
-                osname.startsWith("Mac OS X"));
+                osname.contains("OS X"));
     }
 
     static final int UNINITIALIZED = -1;
