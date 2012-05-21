@@ -2352,7 +2352,6 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_constant(FieldInfo::initval_index_offset)                       \
   declare_constant(FieldInfo::low_offset)                                 \
   declare_constant(FieldInfo::high_offset)                                \
-  declare_constant(FieldInfo::generic_signature_offset)                   \
   declare_constant(FieldInfo::field_slots)                                \
                                                                           \
   /************************************************/                      \
