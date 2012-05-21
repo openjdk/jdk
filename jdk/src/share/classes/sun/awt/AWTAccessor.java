@@ -34,6 +34,8 @@ import java.awt.geom.Point2D;
 import java.awt.peer.ComponentPeer;
 import java.security.AccessControlContext;
 
+import java.io.File;
+
 /**
  * The AWTAccessor utility class.
  * The main purpose of this class is to enable accessing
@@ -455,7 +457,7 @@ public final class AWTAccessor {
         /*
          * Sets the files the user selects
          */
-        void setFiles(FileDialog fileDialog, String directory, String files[]);
+        void setFiles(FileDialog fileDialog, File files[]);
 
         /*
          * Sets the file the user selects
