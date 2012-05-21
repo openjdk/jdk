@@ -6954,7 +6954,7 @@ void MacroAssembler::pow_or_exp(bool is_exp, int num_fpu_regs_in_use) {
     tmp = rdx;
   }
   Register tmp2 = rax;
-  NOT_LP64(Register tmp3 = rcx;)
+  Register tmp3 = rcx;
 
   if (is_exp) {
     // Stack: X
@@ -7081,7 +7081,8 @@ void MacroAssembler::pow_or_exp(bool is_exp, int num_fpu_regs_in_use) {
 #else
     {
       Label integer;
-      shlq(tmp2, 1);
+      mov(tmp3, tmp2); // preserve tmp2 for parity check below
+      shlq(tmp3, 1);
       jcc(Assembler::carryClear, integer);
       jcc(Assembler::notZero, integer);
       stop("integer indefinite value shouldn't be seen here");
