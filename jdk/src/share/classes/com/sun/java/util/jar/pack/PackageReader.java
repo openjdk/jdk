@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,7 @@
 
 package com.sun.java.util.jar.pack;
 
-import com.sun.java.util.jar.pack.ConstantPool.ClassEntry;
-import com.sun.java.util.jar.pack.ConstantPool.DescriptorEntry;
-import com.sun.java.util.jar.pack.ConstantPool.Entry;
-import com.sun.java.util.jar.pack.ConstantPool.Index;
-import com.sun.java.util.jar.pack.ConstantPool.MemberEntry;
-import com.sun.java.util.jar.pack.ConstantPool.SignatureEntry;
-import com.sun.java.util.jar.pack.ConstantPool.Utf8Entry;
+import com.sun.java.util.jar.pack.ConstantPool.*;
 import com.sun.java.util.jar.pack.Package.Class;
 import com.sun.java.util.jar.pack.Package.File;
 import com.sun.java.util.jar.pack.Package.InnerClass;
@@ -46,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.HashMap;
@@ -266,7 +261,6 @@ class PackageReader extends BandStructure {
         //        #band_headers_size :UNSIGNED5[1]
         //        #attr_definition_count :UNSIGNED5[1]
         //
-        assert(AH_LENGTH == 8+(ConstantPool.TAGS_IN_ORDER.length)+6);
         archive_header_0.expectLength(AH_LENGTH_0);
         archive_header_0.readFrom(in);
 
@@ -282,6 +276,7 @@ class PackageReader extends BandStructure {
         boolean haveSpecial = testBit(archiveOptions, AO_HAVE_SPECIAL_FORMATS);
         boolean haveFiles   = testBit(archiveOptions, AO_HAVE_FILE_HEADERS);
         boolean haveNumbers = testBit(archiveOptions, AO_HAVE_CP_NUMBERS);
+        boolean haveCPExtra = testBit(archiveOptions, AO_HAVE_CP_EXTRAS);
         initAttrIndexLimit();
 
         // now we are ready to use the data:
@@ -300,11 +295,11 @@ class PackageReader extends BandStructure {
         archive_header_S.doneDisbursing();
         archiveSize0 = in.getBytesServed();
 
-        int remainingHeaders = AH_LENGTH - AH_LENGTH_0 - AH_LENGTH_S;
-        if (!haveFiles)    remainingHeaders -= AH_FILE_HEADER_LEN-AH_LENGTH_S;
-        if (!haveSpecial)  remainingHeaders -= AH_SPECIAL_FORMAT_LEN;
-        if (!haveNumbers)  remainingHeaders -= AH_CP_NUMBER_LEN;
-        assert(remainingHeaders >= AH_LENGTH_MIN - AH_LENGTH_0);
+        int remainingHeaders = AH_LENGTH_MIN - AH_LENGTH_0 - AH_LENGTH_S;
+        if (haveFiles)    remainingHeaders += AH_FILE_HEADER_LEN;
+        if (haveSpecial)  remainingHeaders += AH_SPECIAL_FORMAT_LEN;
+        if (haveNumbers)  remainingHeaders += AH_CP_NUMBER_LEN;
+        if (haveCPExtra)  remainingHeaders += AH_CP_EXTRA_LEN;
         archive_header_1.expectLength(remainingHeaders);
         archive_header_1.readFrom(in);
 
@@ -325,7 +320,7 @@ class PackageReader extends BandStructure {
             numAttrDefs = 0;
         }
 
-        readConstantPoolCounts(haveNumbers);
+        readConstantPoolCounts(haveNumbers, haveCPExtra);
 
         numInnerClasses = archive_header_1.getInt();
 
@@ -351,7 +346,7 @@ class PackageReader extends BandStructure {
         band_headers.doneDisbursing();
     }
 
-    void readConstantPoolCounts(boolean haveNumbers) throws IOException {
+    void readConstantPoolCounts(boolean haveNumbers, boolean haveCPExtra) throws IOException {
         // size the constant pools:
         for (int k = 0; k < ConstantPool.TAGS_IN_ORDER.length; k++) {
             //  cp_counts:
@@ -364,12 +359,19 @@ class PackageReader extends BandStructure {
             //        #cp_Field_count :UNSIGNED5[1]
             //        #cp_Method_count :UNSIGNED5[1]
             //        #cp_Imethod_count :UNSIGNED5[1]
+            //        (cp_attr_counts) ** (#have_cp_attr_counts)
             //
             //  cp_number_counts:
             //        #cp_Int_count :UNSIGNED5[1]
             //        #cp_Float_count :UNSIGNED5[1]
             //        #cp_Long_count :UNSIGNED5[1]
             //        #cp_Double_count :UNSIGNED5[1]
+            //
+            //  cp_extra_counts:
+            //        #cp_MethodHandle_count :UNSIGNED5[1]
+            //        #cp_MethodType_count :UNSIGNED5[1]
+            //        #cp_InvokeDynamic_count :UNSIGNED5[1]
+            //        #cp_BootstrapMethod_count :UNSIGNED5[1]
             //
             byte tag = ConstantPool.TAGS_IN_ORDER[k];
             if (!haveNumbers) {
@@ -379,6 +381,16 @@ class PackageReader extends BandStructure {
                 case CONSTANT_Float:
                 case CONSTANT_Long:
                 case CONSTANT_Double:
+                    continue;
+                }
+            }
+            if (!haveCPExtra) {
+                // These four counts are optional.
+                switch (tag) {
+                case CONSTANT_MethodHandle:
+                case CONSTANT_MethodType:
+                case CONSTANT_InvokeDynamic:
+                case CONSTANT_BootstrapMethod:
                     continue;
                 }
             }
@@ -401,6 +413,11 @@ class PackageReader extends BandStructure {
         return index;
     }
 
+    void checkLegacy(String bandname) {
+        if (this.pkg.package_majver < JAVA7_PACKAGE_MAJOR_VERSION) {
+            throw new RuntimeException("unexpected band " + bandname);
+        }
+    }
     void readConstantPool() throws IOException {
         //  cp_bands:
         //        cp_Utf8
@@ -533,8 +550,82 @@ class PackageReader extends BandStructure {
             case CONSTANT_InterfaceMethodref:
                 readMemberRefs(tag, cpMap, cp_Imethod_class, cp_Imethod_desc);
                 break;
+            case CONSTANT_MethodHandle:
+                if (cpMap.length > 0) {
+                    checkLegacy(cp_MethodHandle_refkind.name());
+                }
+                cp_MethodHandle_refkind.expectLength(cpMap.length);
+                cp_MethodHandle_refkind.readFrom(in);
+                cp_MethodHandle_member.expectLength(cpMap.length);
+                cp_MethodHandle_member.readFrom(in);
+                cp_MethodHandle_member.setIndex(getCPIndex(CONSTANT_AnyMember));
+                for (int i = 0; i < cpMap.length; i++) {
+                    byte        refKind = (byte)        cp_MethodHandle_refkind.getInt();
+                    MemberEntry memRef  = (MemberEntry) cp_MethodHandle_member.getRef();
+                    cpMap[i] = ConstantPool.getMethodHandleEntry(refKind, memRef);
+                }
+                cp_MethodHandle_refkind.doneDisbursing();
+                cp_MethodHandle_member.doneDisbursing();
+                break;
+            case CONSTANT_MethodType:
+                if (cpMap.length > 0) {
+                    checkLegacy(cp_MethodType.name());
+                }
+                cp_MethodType.expectLength(cpMap.length);
+                cp_MethodType.readFrom(in);
+                cp_MethodType.setIndex(getCPIndex(CONSTANT_Signature));
+                for (int i = 0; i < cpMap.length; i++) {
+                    SignatureEntry typeRef  = (SignatureEntry) cp_MethodType.getRef();
+                    cpMap[i] = ConstantPool.getMethodTypeEntry(typeRef);
+                }
+                cp_MethodType.doneDisbursing();
+                break;
+            case CONSTANT_InvokeDynamic:
+                if (cpMap.length > 0) {
+                    checkLegacy(cp_InvokeDynamic_spec.name());
+                }
+                cp_InvokeDynamic_spec.expectLength(cpMap.length);
+                cp_InvokeDynamic_spec.readFrom(in);
+                cp_InvokeDynamic_spec.setIndex(getCPIndex(CONSTANT_BootstrapMethod));
+                cp_InvokeDynamic_desc.expectLength(cpMap.length);
+                cp_InvokeDynamic_desc.readFrom(in);
+                cp_InvokeDynamic_desc.setIndex(getCPIndex(CONSTANT_NameandType));
+                for (int i = 0; i < cpMap.length; i++) {
+                    BootstrapMethodEntry bss   = (BootstrapMethodEntry) cp_InvokeDynamic_spec.getRef();
+                    DescriptorEntry      descr = (DescriptorEntry)      cp_InvokeDynamic_desc.getRef();
+                    cpMap[i] = ConstantPool.getInvokeDynamicEntry(bss, descr);
+                }
+                cp_InvokeDynamic_spec.doneDisbursing();
+                cp_InvokeDynamic_desc.doneDisbursing();
+                break;
+            case CONSTANT_BootstrapMethod:
+                if (cpMap.length > 0) {
+                    checkLegacy(cp_BootstrapMethod_ref.name());
+                }
+                cp_BootstrapMethod_ref.expectLength(cpMap.length);
+                cp_BootstrapMethod_ref.readFrom(in);
+                cp_BootstrapMethod_ref.setIndex(getCPIndex(CONSTANT_MethodHandle));
+                cp_BootstrapMethod_arg_count.expectLength(cpMap.length);
+                cp_BootstrapMethod_arg_count.readFrom(in);
+                int totalArgCount = cp_BootstrapMethod_arg_count.getIntTotal();
+                cp_BootstrapMethod_arg.expectLength(totalArgCount);
+                cp_BootstrapMethod_arg.readFrom(in);
+                cp_BootstrapMethod_arg.setIndex(getCPIndex(CONSTANT_LoadableValue));
+                for (int i = 0; i < cpMap.length; i++) {
+                    MethodHandleEntry bsm = (MethodHandleEntry) cp_BootstrapMethod_ref.getRef();
+                    int argc = cp_BootstrapMethod_arg_count.getInt();
+                    Entry[] argRefs = new Entry[argc];
+                    for (int j = 0; j < argc; j++) {
+                        argRefs[j] = cp_BootstrapMethod_arg.getRef();
+                    }
+                    cpMap[i] = ConstantPool.getBootstrapMethodEntry(bsm, argRefs);
+                }
+                cp_BootstrapMethod_ref.doneDisbursing();
+                cp_BootstrapMethod_arg_count.doneDisbursing();
+                cp_BootstrapMethod_arg.doneDisbursing();
+                break;
             default:
-                assert(false);
+                throw new AssertionError("unexpected CP tag in package");
             }
 
             Index index = initCPIndex(tag, cpMap);
@@ -547,6 +638,21 @@ class PackageReader extends BandStructure {
         }
 
         cp_bands.doneDisbursing();
+
+        if (optDumpBands || verbose > 1) {
+            for (byte tag = CONSTANT_GroupFirst; tag < CONSTANT_GroupLimit; tag++) {
+                Index index = pkg.cp.getIndexByTag(tag);
+                if (index == null || index.isEmpty())  continue;
+                Entry[] cpMap = index.cpMap;
+                if (verbose > 1)
+                    Utils.log.info("Index group "+ConstantPool.tagName(tag)+" contains "+cpMap.length+" entries.");
+                if (optDumpBands) {
+                    try (PrintStream ps = new PrintStream(getDumpStream(index.debugName, tag, ".gidx", index))) {
+                        printArrayTo(ps, cpMap, 0, cpMap.length, true);
+                    }
+                }
+            }
+        }
 
         setBandIndexes();
     }
@@ -1056,8 +1162,16 @@ class PackageReader extends BandStructure {
         // look for constant pool entries:
         cls.visitRefs(VRM_CLASSIC, cpRefs);
 
+        ArrayList<BootstrapMethodEntry> bsms = new ArrayList<>();
+        /*
+         * BootstrapMethod(BSMs) are added here before InnerClasses(ICs),
+         * so as to ensure the order. Noting that the BSMs  may be
+         * removed if they are not found in the CP, after the ICs expansion.
+         */
+        cls.addAttribute(Package.attrBootstrapMethodsEmpty.canonicalInstance());
+
         // flesh out the local constant pool
-        ConstantPool.completeReferencesIn(cpRefs, true);
+        ConstantPool.completeReferencesIn(cpRefs, true, bsms);
 
         // Now that we know all our local class references,
         // compute the InnerClasses attribute.
@@ -1074,14 +1188,23 @@ class PackageReader extends BandStructure {
             }
 
             // flesh out the local constant pool, again
-            ConstantPool.completeReferencesIn(cpRefs, true);
+            ConstantPool.completeReferencesIn(cpRefs, true, bsms);
+        }
+
+        // remove the attr previously set, otherwise add the bsm and
+        // references as required
+        if (bsms.isEmpty()) {
+            cls.attributes.remove(Package.attrBootstrapMethodsEmpty.canonicalInstance());
+        } else {
+            cpRefs.add(Package.getRefString("BootstrapMethods"));
+            Collections.sort(bsms);
+            cls.setBootstrapMethods(bsms);
         }
 
         // construct a local constant pool
         int numDoubles = 0;
         for (Entry e : cpRefs) {
             if (e.isDoubleWord())  numDoubles++;
-            assert(e.tag != CONSTANT_Signature) : (e);
         }
         Entry[] cpMap = new Entry[1+numDoubles+cpRefs.size()];
         int fillp = 1;
@@ -1154,7 +1277,8 @@ class PackageReader extends BandStructure {
         int totalNM = class_method_count.getIntTotal();
         field_descr.expectLength(totalNF);
         method_descr.expectLength(totalNM);
-        if (verbose > 1)  Utils.log.fine("expecting #fields="+totalNF+" and #methods="+totalNM+" in #classes="+numClasses);
+        if (verbose > 1)  Utils.log.fine("expecting #fields="+totalNF+
+                " and #methods="+totalNM+" in #classes="+numClasses);
 
         List<Class.Field> fields = new ArrayList<>(totalNF);
         field_descr.readFrom(in);
@@ -1393,7 +1517,8 @@ class PackageReader extends BandStructure {
         MultiBand xxx_attr_bands = attrBands[ctype];
         long flagMask = attrFlagMask[ctype];
         if (verbose > 1) {
-            Utils.log.fine("scanning flags and attrs for "+Attribute.contextName(ctype)+"["+holders.size()+"]");
+            Utils.log.fine("scanning flags and attrs for "+
+                    Attribute.contextName(ctype)+"["+holders.size()+"]");
         }
 
         // Fetch the attribute layout definitions which govern the bands
@@ -1751,8 +1876,10 @@ class PackageReader extends BandStructure {
             bc_local, bc_label,
             bc_intref, bc_floatref,
             bc_longref, bc_doubleref, bc_stringref,
+            bc_loadablevalueref,
             bc_classref, bc_fieldref,
             bc_methodref, bc_imethodref,
+            bc_indyref,
             bc_thisfield, bc_superfield,
             bc_thismethod, bc_supermethod,
             bc_initref,
@@ -2099,7 +2226,8 @@ class PackageReader extends BandStructure {
                         case _ildc:
                         case _cldc:
                         case _fldc:
-                        case _aldc:
+                        case _sldc:
+                        case _qldc:
                             origBC = _ldc;
                             size = 1;
                             ldcRefSet.add(ref);
@@ -2107,7 +2235,8 @@ class PackageReader extends BandStructure {
                         case _ildc_w:
                         case _cldc_w:
                         case _fldc_w:
-                        case _aldc_w:
+                        case _sldc_w:
+                        case _qldc_w:
                             origBC = _ldc_w;
                             break;
                         case _lldc2_w:
@@ -2135,6 +2264,9 @@ class PackageReader extends BandStructure {
                         } else if (origBC == _invokeinterface) {
                             int argSize = ((MemberEntry)ref).descRef.typeRef.computeSize(true);
                             buf[pc++] = (byte)( 1 + argSize );
+                            buf[pc++] = 0;
+                        } else if (origBC == _invokedynamic) {
+                            buf[pc++] = 0;
                             buf[pc++] = 0;
                         }
                         assert(Instruction.opLength(origBC) == (pc - curPC));

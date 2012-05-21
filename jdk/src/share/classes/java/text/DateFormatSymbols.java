@@ -647,6 +647,8 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     private static final ConcurrentMap<Locale, SoftReference<DateFormatSymbols>> cachedInstances
         = new ConcurrentHashMap<Locale, SoftReference<DateFormatSymbols>>(3);
 
+    private transient int lastZoneIndex = 0;
+
     private void initializeData(Locale desiredLocale) {
         locale = desiredLocale;
 
@@ -692,12 +694,24 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * the given time zone ID can't be located in the DateFormatSymbols object.
      * @see java.util.SimpleTimeZone
      */
-    final int getZoneIndex(String ID)
-    {
+    final int getZoneIndex(String ID) {
         String[][] zoneStrings = getZoneStringsWrapper();
-        for (int index=0; index<zoneStrings.length; index++)
-        {
-            if (ID.equals(zoneStrings[index][0])) return index;
+
+        /*
+         * getZoneIndex has been re-written for performance reasons. instead of
+         * traversing the zoneStrings array every time, we cache the last used zone
+         * index
+         */
+        if (lastZoneIndex < zoneStrings.length && ID.equals(zoneStrings[lastZoneIndex][0])) {
+            return lastZoneIndex;
+        }
+
+        /* slow path, search entire list */
+        for (int index = 0; index < zoneStrings.length; index++) {
+            if (ID.equals(zoneStrings[index][0])) {
+                lastZoneIndex = index;
+                return index;
+            }
         }
 
         return -1;

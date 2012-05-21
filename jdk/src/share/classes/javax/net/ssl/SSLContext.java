@@ -145,7 +145,7 @@ public class SSLContext {
      * @return the new <code>SSLContext</code> object.
      *
      * @exception NoSuchAlgorithmException if no Provider supports a
-     *          TrustManagerFactorySpi implementation for the
+     *          SSLContextSpi implementation for the
      *          specified protocol.
      * @exception NullPointerException if protocol is null.
      *
@@ -222,11 +222,11 @@ public class SSLContext {
      *
      * @return the new <code>SSLContext</code> object.
      *
-     * @throws NoSuchAlgorithmException if a KeyManagerFactorySpi
+     * @throws NoSuchAlgorithmException if a SSLContextSpi
      *          implementation for the specified protocol is not available
      *          from the specified Provider object.
      *
-     * @throws IllegalArgumentException if the provider name is null.
+     * @throws IllegalArgumentException if the provider is null.
      * @throws NullPointerException if protocol is null.
      *
      * @see java.security.Provider
