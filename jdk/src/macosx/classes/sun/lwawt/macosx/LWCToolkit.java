@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,10 @@ public class LWCToolkit extends LWToolkit {
     private static final int BUTTONS = 5;
 
     private static native void initIDs();
+
+    static native void startNativeNestedEventLoop();
+
+    static native void stopNativeNestedEventLoop();
 
     private static CInputMethodDescriptor sInputMethodDescriptor;
 
@@ -654,6 +658,14 @@ public class LWCToolkit extends LWToolkit {
     @Override
     public boolean isPrintableCharacterModifiersMask(int mods) {
         return ((mods & (InputEvent.META_MASK | InputEvent.CTRL_MASK)) == 0);
+    }
+
+    /**
+     * Returns whether popup is allowed to be shown above the task bar.
+     */
+    @Override
+    public boolean canPopupOverlapTaskBar() {
+        return false;
     }
 
     // Extends PeerEvent because we want to pass long an ObjC mediator object and because we want these events to be posted early

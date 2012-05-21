@@ -205,4 +205,7 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
 
     @Override
     public void setWindowState(int windowState) {}
+
+    @Override
+    public void setModalBlocked(boolean blocked) {}
 }

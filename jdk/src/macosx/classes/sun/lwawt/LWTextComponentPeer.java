@@ -81,6 +81,18 @@ abstract class LWTextComponentPeer<T extends TextComponent, D extends JComponent
         firstChangeSkipped = true;
     }
 
+    @Override
+    protected final void disposeImpl() {
+        synchronized (getDelegateLock()) {
+            // visible caret has a timer thread which must be stopped
+            getTextComponent().getCaret().setVisible(false);
+        }
+        super.disposeImpl();
+    }
+
+    /**
+     * This method should be called under getDelegateLock().
+     */
     abstract JTextComponent getTextComponent();
 
     public Dimension getPreferredSize(final int rows, final int columns) {
@@ -187,7 +199,7 @@ abstract class LWTextComponentPeer<T extends TextComponent, D extends JComponent
         }
     }
 
-    private void sendTextEvent(final DocumentEvent e) {
+    protected final void postTextEvent() {
         postEvent(new TextEvent(getTarget(), TextEvent.TEXT_VALUE_CHANGED));
         synchronized (getDelegateLock()) {
             revalidate();
@@ -196,17 +208,17 @@ abstract class LWTextComponentPeer<T extends TextComponent, D extends JComponent
 
     @Override
     public final void changedUpdate(final DocumentEvent e) {
-        sendTextEvent(e);
+        postTextEvent();
     }
 
     @Override
     public final void insertUpdate(final DocumentEvent e) {
-        sendTextEvent(e);
+        postTextEvent();
     }
 
     @Override
     public final void removeUpdate(final DocumentEvent e) {
-        sendTextEvent(e);
+        postTextEvent();
     }
 
     @Override

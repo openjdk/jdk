@@ -48,7 +48,6 @@
 //#define IM_DEBUG TRUE
 //#define EXTRA_DEBUG
 
-
 static BOOL shouldUsePressAndHold() {
     static int shouldUsePressAndHold = -1;
     if (shouldUsePressAndHold != -1) return shouldUsePressAndHold;
@@ -61,6 +60,7 @@ static BOOL shouldUsePressAndHold() {
 @synthesize _dropTarget;
 @synthesize _dragSource;
 @synthesize cglLayer;
+@synthesize mouseIsOver;
 
 // Note: Must be called on main (AppKit) thread only
 - (id) initWithRect: (NSRect) rect
@@ -80,6 +80,8 @@ AWT_ASSERT_APPKIT_THREAD;
     fEnablePressAndHold = shouldUsePressAndHold();
     fInPressAndHold = NO;
     fPAHNeedsToSelect = NO;
+
+    mouseIsOver = NO;
 
     if (windowLayer != nil) {
         self.cglLayer = windowLayer;
@@ -299,6 +301,25 @@ AWT_ASSERT_APPKIT_THREAD;
  */
 
 -(void) deliverJavaMouseEvent: (NSEvent *) event {
+    BOOL isEnabled = YES;
+    NSWindow* window = [self window];
+    if ([window isKindOfClass: [AWTWindow_Panel class]] || [window isKindOfClass: [AWTWindow_Normal class]]) {
+        isEnabled = [(AWTWindow*)[window delegate] isEnabled];
+    }
+
+    if (!isEnabled) {
+        return;
+    }
+
+    NSEventType type = [event type];
+
+    // check synthesized mouse entered/exited events
+    if ((type == NSMouseEntered && mouseIsOver) || (type == NSMouseExited && !mouseIsOver)) {
+        return;
+    }else if ((type == NSMouseEntered && !mouseIsOver) || (type == NSMouseExited && mouseIsOver)) {
+        mouseIsOver = !mouseIsOver;
+    }
+
     [AWTToolkit eventCountPlusPlus];
 
     JNIEnv *env = [ThreadUtilities getJNIEnv];
@@ -306,7 +327,6 @@ AWT_ASSERT_APPKIT_THREAD;
     NSPoint eventLocation = [event locationInWindow];
     NSPoint localPoint = [self convertPoint: eventLocation fromView: nil];
     NSPoint absP = [NSEvent mouseLocation];
-    NSEventType type = [event type];
 
     // Convert global numbers between Cocoa's coordinate system and Java.
     // TODO: need consitent way for doing that both with global as well as with local coordinates.
@@ -373,6 +393,14 @@ AWT_ASSERT_APPKIT_THREAD;
 }
 
 -(void) deliverJavaKeyEventHelper: (NSEvent *) event {
+    static NSEvent* sLastKeyEvent = nil;
+    if (event == sLastKeyEvent) {
+        // The event is repeatedly delivered by keyDown: after performKeyEquivalent:
+        return;
+    }
+    [sLastKeyEvent release];
+    sLastKeyEvent = [event retain];
+	
     [AWTToolkit eventCountPlusPlus];
     JNIEnv *env = [ThreadUtilities getJNIEnv];
 

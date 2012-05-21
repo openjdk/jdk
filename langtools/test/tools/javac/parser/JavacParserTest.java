@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631
+ * @bug 7073631 7159445
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  */
@@ -875,6 +875,7 @@ public class JavacParserTest extends TestCase {
         testMissingClassError();
         testSwitchError();
         testMethodError();
+        testErrorRecoveryForEnhancedForLoop142381();
     }
 
     public static void main(String... args) throws IOException {
@@ -892,8 +893,10 @@ abstract class TestCase {
         }
     }
 
-    void assertFalse(String message, boolean empty) {
-        throw new UnsupportedOperationException("Not yet implemented");
+    void assertFalse(String message, boolean bvalue) {
+        if (bvalue == true) {
+            fail(message);
+        }
     }
 
     void assertEquals(String message, int i, long l) {

@@ -629,17 +629,6 @@ class SocketChannelImpl
                                 break;
                             }
 
-                            synchronized (stateLock) {
-                                if (isOpen() && (localAddress == null) ||
-                                    ((InetSocketAddress)localAddress)
-                                        .getAddress().isAnyLocalAddress())
-                                {
-                                    // Socket was not bound before connecting or
-                                    // Socket was bound with an "anyLocalAddress"
-                                    localAddress = Net.localAddress(fd);
-                                }
-                            }
-
                         } finally {
                             readerCleanup();
                             end((n > 0) || (n == IOStatus.UNAVAILABLE));
@@ -659,6 +648,8 @@ class SocketChannelImpl
                             // Connection succeeded; disallow further
                             // invocation
                             state = ST_CONNECTED;
+                            if (isOpen())
+                                localAddress = Net.localAddress(fd);
                             return true;
                         }
                         // If nonblocking and no exception then connection
@@ -747,6 +738,8 @@ class SocketChannelImpl
                 if (n > 0) {
                     synchronized (stateLock) {
                         state = ST_CONNECTED;
+                        if (isOpen())
+                            localAddress = Net.localAddress(fd);
                     }
                     return true;
                 }

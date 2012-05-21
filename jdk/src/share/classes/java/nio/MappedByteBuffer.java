@@ -139,6 +139,9 @@ public abstract class MappedByteBuffer
         return isLoaded0(mappingAddress(offset), length, Bits.pageCount(length));
     }
 
+    // not used, but a potential target for a store, see load() for details.
+    private static byte unused;
+
     /**
      * Loads this buffer's content into physical memory.
      *
@@ -157,15 +160,20 @@ public abstract class MappedByteBuffer
         long length = mappingLength(offset);
         load0(mappingAddress(offset), length);
 
-        // touch each page
+        // Read a byte from each page to bring it into memory. A checksum
+        // is computed as we go along to prevent the compiler from otherwise
+        // considering the loop as dead code.
         Unsafe unsafe = Unsafe.getUnsafe();
         int ps = Bits.pageSize();
         int count = Bits.pageCount(length);
         long a = mappingAddress(offset);
+        byte x = 0;
         for (int i=0; i<count; i++) {
-            unsafe.getByte(a);
+            x ^= unsafe.getByte(a);
             a += ps;
         }
+        if (unused != 0)
+            unused = x;
 
         return this;
     }

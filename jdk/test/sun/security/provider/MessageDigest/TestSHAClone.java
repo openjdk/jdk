@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4775971
- * @summary test the clone implementation of SHA, SHA-256,
+ * @summary test the clone implementation of SHA, SHA-224, SHA-256,
  *          SHA-384, SHA-512 MessageDigest implementation.
  */
 import java.security.*;
@@ -33,7 +33,7 @@ import java.util.*;
 public class TestSHAClone {
 
     private static final String[] ALGOS = {
-        "SHA", "SHA-256", "SHA-512", "SHA-384"
+        "SHA", "SHA-224", "SHA-256", "SHA-512", "SHA-384"
     };
 
     private static byte[] input1 = {

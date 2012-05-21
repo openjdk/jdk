@@ -56,7 +56,6 @@ G1OffsetTableContigSpace::block_start_const(const void* p) const {
 }
 
 inline void HeapRegion::note_start_of_marking() {
-  init_top_at_conc_mark_count();
   _next_marked_bytes = 0;
   _next_top_at_mark_start = top();
 }

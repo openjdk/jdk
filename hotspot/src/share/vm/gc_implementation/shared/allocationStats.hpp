@@ -39,7 +39,7 @@ class AllocationStats VALUE_OBJ_CLASS_SPEC {
   // We measure the demand between the end of the previous sweep and
   // beginning of this sweep:
   //   Count(end_last_sweep) - Count(start_this_sweep)
-  //     + splitBirths(between) - splitDeaths(between)
+  //     + split_births(between) - split_deaths(between)
   // The above number divided by the time since the end of the
   // previous sweep gives us a time rate of demand for blocks
   // of this size. We compute a padded average of this rate as
@@ -51,34 +51,34 @@ class AllocationStats VALUE_OBJ_CLASS_SPEC {
   AdaptivePaddedAverage _demand_rate_estimate;
 
   ssize_t     _desired;         // Demand stimate computed as described above
-  ssize_t     _coalDesired;     // desired +/- small-percent for tuning coalescing
+  ssize_t     _coal_desired;     // desired +/- small-percent for tuning coalescing
 
   ssize_t     _surplus;         // count - (desired +/- small-percent),
                                 // used to tune splitting in best fit
-  ssize_t     _bfrSurp;         // surplus at start of current sweep
-  ssize_t     _prevSweep;       // count from end of previous sweep
-  ssize_t     _beforeSweep;     // count from before current sweep
-  ssize_t     _coalBirths;      // additional chunks from coalescing
-  ssize_t     _coalDeaths;      // loss from coalescing
-  ssize_t     _splitBirths;     // additional chunks from splitting
-  ssize_t     _splitDeaths;     // loss from splitting
-  size_t      _returnedBytes;   // number of bytes returned to list.
+  ssize_t     _bfr_surp;         // surplus at start of current sweep
+  ssize_t     _prev_sweep;       // count from end of previous sweep
+  ssize_t     _before_sweep;     // count from before current sweep
+  ssize_t     _coal_births;      // additional chunks from coalescing
+  ssize_t     _coal_deaths;      // loss from coalescing
+  ssize_t     _split_births;     // additional chunks from splitting
+  ssize_t     _split_deaths;     // loss from splitting
+  size_t      _returned_bytes;   // number of bytes returned to list.
  public:
   void initialize(bool split_birth = false) {
     AdaptivePaddedAverage* dummy =
       new (&_demand_rate_estimate) AdaptivePaddedAverage(CMS_FLSWeight,
                                                          CMS_FLSPadding);
     _desired = 0;
-    _coalDesired = 0;
+    _coal_desired = 0;
     _surplus = 0;
-    _bfrSurp = 0;
-    _prevSweep = 0;
-    _beforeSweep = 0;
-    _coalBirths = 0;
-    _coalDeaths = 0;
-    _splitBirths = (split_birth ? 1 : 0);
-    _splitDeaths = 0;
-    _returnedBytes = 0;
+    _bfr_surp = 0;
+    _prev_sweep = 0;
+    _before_sweep = 0;
+    _coal_births = 0;
+    _coal_deaths = 0;
+    _split_births = (split_birth ? 1 : 0);
+    _split_deaths = 0;
+    _returned_bytes = 0;
   }
 
   AllocationStats() {
@@ -99,12 +99,12 @@ class AllocationStats VALUE_OBJ_CLASS_SPEC {
     // vulnerable to noisy glitches. In such cases, we
     // ignore the current sample and use currently available
     // historical estimates.
-    assert(prevSweep() + splitBirths() + coalBirths()        // "Total Production Stock"
-           >= splitDeaths() + coalDeaths() + (ssize_t)count, // "Current stock + depletion"
+    assert(prev_sweep() + split_births() + coal_births()        // "Total Production Stock"
+           >= split_deaths() + coal_deaths() + (ssize_t)count, // "Current stock + depletion"
            "Conservation Principle");
     if (inter_sweep_current > _threshold) {
-      ssize_t demand = prevSweep() - (ssize_t)count + splitBirths() + coalBirths()
-                       - splitDeaths() - coalDeaths();
+      ssize_t demand = prev_sweep() - (ssize_t)count + split_births() + coal_births()
+                       - split_deaths() - coal_deaths();
       assert(demand >= 0,
              err_msg("Demand (" SSIZE_FORMAT ") should be non-negative for "
                      PTR_FORMAT " (size=" SIZE_FORMAT ")",
@@ -130,40 +130,40 @@ class AllocationStats VALUE_OBJ_CLASS_SPEC {
   ssize_t desired() const { return _desired; }
   void set_desired(ssize_t v) { _desired = v; }
 
-  ssize_t coalDesired() const { return _coalDesired; }
-  void set_coalDesired(ssize_t v) { _coalDesired = v; }
+  ssize_t coal_desired() const { return _coal_desired; }
+  void set_coal_desired(ssize_t v) { _coal_desired = v; }
 
   ssize_t surplus() const { return _surplus; }
   void set_surplus(ssize_t v) { _surplus = v; }
   void increment_surplus() { _surplus++; }
   void decrement_surplus() { _surplus--; }
 
-  ssize_t bfrSurp() const { return _bfrSurp; }
-  void set_bfrSurp(ssize_t v) { _bfrSurp = v; }
-  ssize_t prevSweep() const { return _prevSweep; }
-  void set_prevSweep(ssize_t v) { _prevSweep = v; }
-  ssize_t beforeSweep() const { return _beforeSweep; }
-  void set_beforeSweep(ssize_t v) { _beforeSweep = v; }
+  ssize_t bfr_surp() const { return _bfr_surp; }
+  void set_bfr_surp(ssize_t v) { _bfr_surp = v; }
+  ssize_t prev_sweep() const { return _prev_sweep; }
+  void set_prev_sweep(ssize_t v) { _prev_sweep = v; }
+  ssize_t before_sweep() const { return _before_sweep; }
+  void set_before_sweep(ssize_t v) { _before_sweep = v; }
 
-  ssize_t coalBirths() const { return _coalBirths; }
-  void set_coalBirths(ssize_t v) { _coalBirths = v; }
-  void increment_coalBirths() { _coalBirths++; }
+  ssize_t coal_births() const { return _coal_births; }
+  void set_coal_births(ssize_t v) { _coal_births = v; }
+  void increment_coal_births() { _coal_births++; }
 
-  ssize_t coalDeaths() const { return _coalDeaths; }
-  void set_coalDeaths(ssize_t v) { _coalDeaths = v; }
-  void increment_coalDeaths() { _coalDeaths++; }
+  ssize_t coal_deaths() const { return _coal_deaths; }
+  void set_coal_deaths(ssize_t v) { _coal_deaths = v; }
+  void increment_coal_deaths() { _coal_deaths++; }
 
-  ssize_t splitBirths() const { return _splitBirths; }
-  void set_splitBirths(ssize_t v) { _splitBirths = v; }
-  void increment_splitBirths() { _splitBirths++; }
+  ssize_t split_births() const { return _split_births; }
+  void set_split_births(ssize_t v) { _split_births = v; }
+  void increment_split_births() { _split_births++; }
 
-  ssize_t splitDeaths() const { return _splitDeaths; }
-  void set_splitDeaths(ssize_t v) { _splitDeaths = v; }
-  void increment_splitDeaths() { _splitDeaths++; }
+  ssize_t split_deaths() const { return _split_deaths; }
+  void set_split_deaths(ssize_t v) { _split_deaths = v; }
+  void increment_split_deaths() { _split_deaths++; }
 
   NOT_PRODUCT(
-    size_t returnedBytes() const { return _returnedBytes; }
-    void set_returnedBytes(size_t v) { _returnedBytes = v; }
+    size_t returned_bytes() const { return _returned_bytes; }
+    void set_returned_bytes(size_t v) { _returned_bytes = v; }
   )
 };
 
