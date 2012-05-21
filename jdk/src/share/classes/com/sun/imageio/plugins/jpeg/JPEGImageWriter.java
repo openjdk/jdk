@@ -177,7 +177,12 @@ public class JPEGImageWriter extends ImageWriter {
 
     static {
         java.security.AccessController.doPrivileged(
-            new sun.security.action.LoadLibraryAction("jpeg"));
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("jpeg");
+                    return null;
+                }
+            });
         initWriterIDs(ImageOutputStream.class,
                       JPEGQTable.class,
                       JPEGHuffmanTable.class);

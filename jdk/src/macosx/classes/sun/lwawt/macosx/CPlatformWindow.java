@@ -61,6 +61,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private static native void nativeSetNSWindowMinimizedIcon(long nsWindowPtr, long nsImage);
     private static native void nativeSetNSWindowRepresentedFilename(long nsWindowPtr, String representedFilename);
     private static native void nativeSetNSWindowSecurityWarningPositioning(long nsWindowPtr, double x, double y, float biasX, float biasY);
+    private static native void nativeSetEnabled(long nsWindowPtr, boolean isEnabled);
+    private static native void nativeSynthesizeMouseEnteredExitedEvents(long nsWindowPtr);
 
     private static native int nativeGetScreenNSWindowIsOn_AppKitThread(long nsWindowPtr);
 
@@ -206,6 +208,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     private boolean visible = false; // visibility status from native perspective
     private boolean undecorated; // initialized in getInitialStyleBits()
     private Rectangle normalBounds = null; // not-null only for undecorated maximized windows
+    private CPlatformResponder responder;
 
     public CPlatformWindow(final PeerType peerType) {
         super(0, true);
@@ -230,8 +233,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         final long parentNSWindowPtr = (owner != null ? owner.getNSWindowPtr() : 0);
         String warningString = target.getWarningString();
 
+        responder = new CPlatformResponder(peer, false);
         contentView = new CPlatformView();
-        contentView.initialize(peer);
+        contentView.initialize(peer, responder);
 
         final long nativeWindowPtr = nativeCreateNSWindow(contentView.getAWTView(), styleBits, 0, 0, 0, 0);
         setPtr(nativeWindowPtr);
@@ -308,6 +312,10 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             styleBits = SET(styleBits, TEXTURED, true);
             // Popups in applets don't activate applet's process
             styleBits = SET(styleBits, NONACTIVATING, true);
+        }
+
+        if (Window.Type.UTILITY.equals(target.getType())) {
+            styleBits = SET(styleBits, UTILITY, true);
         }
 
         if (target instanceof javax.swing.RootPaneContainer) {
@@ -582,6 +590,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             }
         }
 
+        nativeSynthesizeMouseEnteredExitedEvents(nsWindowPtr);
+
         // 6. Configure stuff #2
         updateFocusabilityForAutoRequestFocus(true);
 
@@ -791,8 +801,19 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 throw new RuntimeException("Unknown window state: " + windowState);
         }
 
+        nativeSynthesizeMouseEnteredExitedEvents(nsWindowPtr);
+
         // NOTE: the SWP.windowState field gets updated to the newWindowState
         //       value when the native notification comes to us
+    }
+
+    @Override
+    public void setModalBlocked(boolean blocked) {
+        if (target.getModalExclusionType() == Dialog.ModalExclusionType.APPLICATION_EXCLUDE) {
+            return;
+        }
+
+        nativeSetEnabled(getNSWindowPtr(), !blocked);
     }
 
     // ----------------------------------------------------------------------
@@ -846,7 +867,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             focusLogger.fine("the app is inactive, so the notification is ignored");
             return;
         }
-        peer.notifyActivation(gained);
+        responder.handleWindowFocusEvent(gained);
     }
 
     private void deliverMoveResizeEvent(int x, int y, int width, int height) {

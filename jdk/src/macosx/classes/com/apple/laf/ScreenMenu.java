@@ -28,7 +28,6 @@ package com.apple.laf;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.peer.MenuComponentPeer;
-import java.security.PrivilegedAction;
 import java.util.Hashtable;
 
 import javax.swing.*;
@@ -38,7 +37,13 @@ import sun.lwawt.macosx.*;
 
 class ScreenMenu extends Menu implements ContainerListener, ComponentListener, ScreenMenuPropertyHandler {
     static {
-        java.security.AccessController.doPrivileged((PrivilegedAction<?>)new sun.security.action.LoadLibraryAction("awt"));
+        java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("awt");
+                    return null;
+                }
+            });
     }
 
     // screen menu stuff

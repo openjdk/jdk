@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ public class TestOAEP {
         Cipher.getInstance("RSA/ECB/OAEPwithMD5andMGF1Padding");
         Cipher.getInstance("RSA/ECB/OAEPwithSHA1andMGF1Padding");
         Cipher.getInstance("RSA/ECB/OAEPwithSHA-1andMGF1Padding");
+        Cipher.getInstance("RSA/ECB/OAEPwithSHA-224andMGF1Padding");
         Cipher.getInstance("RSA/ECB/OAEPwithSHA-256andMGF1Padding");
         Cipher.getInstance("RSA/ECB/OAEPwithSHA-384andMGF1Padding");
         Cipher.getInstance("RSA/ECB/OAEPwithSHA-512andMGF1Padding");
@@ -87,6 +88,18 @@ public class TestOAEP {
         }
         // tests alias works
         testEncryptDecrypt("SHA-1", 16);
+
+        // basic test using SHA-224
+        testEncryptDecrypt("SHA-224", 0);
+        testEncryptDecrypt("SHA-224", 16);
+        testEncryptDecrypt("SHA-224", 38);
+        try {
+            testEncryptDecrypt("SHA-224", 39);
+            throw new Exception("Unexpectedly completed call");
+        } catch (IllegalBlockSizeException e) {
+            // ok
+            System.out.println(e);
+        }
 
         // basic test using SHA-256
         testEncryptDecrypt("SHA-256", 0);
@@ -195,6 +208,7 @@ public class TestOAEP {
         System.out.println("Done (" + (stop - start) + " ms).");
     }
 
+    // NOTE: OAEP can process up to (modLen - 2*digestLen - 2) bytes of data
     private static void testEncryptDecrypt(String hashAlg, int dataLength) throws Exception {
         System.out.println("Testing OAEP with hash " + hashAlg + ", " + dataLength + " bytes");
         Cipher c = Cipher.getInstance("RSA/ECB/OAEPwith" + hashAlg + "andMGF1Padding", cp);
