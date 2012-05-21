@@ -178,7 +178,7 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
     int count;
     netif *netifP;
     DWORD i;
-    int lo=0, eth=0, tr=0, fddi=0, ppp=0, sl=0, net=0;
+    int lo=0, eth=0, tr=0, fddi=0, ppp=0, sl=0, wlan=0, net=0;
 
     /*
      * Ask the IP Helper library to enumerate the adapters
@@ -218,15 +218,15 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
          */
         switch (ifrowP->dwType) {
             case MIB_IF_TYPE_ETHERNET:
-                sprintf(dev_name, "eth%d", eth++);
+                _snprintf_s(dev_name, 8, _TRUNCATE, "eth%d", eth++);
                 break;
 
             case MIB_IF_TYPE_TOKENRING:
-                sprintf(dev_name, "tr%d", tr++);
+                _snprintf_s(dev_name, 8, _TRUNCATE, "tr%d", tr++);
                 break;
 
             case MIB_IF_TYPE_FDDI:
-                sprintf(dev_name, "fddi%d", fddi++);
+                _snprintf_s(dev_name, 8, _TRUNCATE, "fddi%d", fddi++);
                 break;
 
             case MIB_IF_TYPE_LOOPBACK:
@@ -234,20 +234,24 @@ int enumInterfaces(JNIEnv *env, netif **netifPP)
                 if (lo > 0) {
                     continue;
                 }
-                strcpy(dev_name, "lo");
+                strncpy_s(dev_name, 8, "lo", _TRUNCATE);
                 lo++;
                 break;
 
             case MIB_IF_TYPE_PPP:
-                sprintf(dev_name, "ppp%d", ppp++);
+                _snprintf_s(dev_name, 8, _TRUNCATE, "ppp%d", ppp++);
                 break;
 
             case MIB_IF_TYPE_SLIP:
-                sprintf(dev_name, "sl%d", sl++);
+                _snprintf_s(dev_name, 8, _TRUNCATE, "sl%d", sl++);
+                break;
+
+            case IF_TYPE_IEEE80211:
+                _snprintf_s(dev_name, 8, _TRUNCATE, "wlan%d", wlan++);
                 break;
 
             default:
-                sprintf(dev_name, "net%d", net++);
+                _snprintf_s(dev_name, 8, _TRUNCATE, "net%d", net++);
         }
 
         /*
@@ -382,6 +386,7 @@ int enumAddresses_win(JNIEnv *env, netif *netifP, netaddr **netaddrPP)
             case MIB_IF_TYPE_TOKENRING:
             case MIB_IF_TYPE_FDDI:
             case MIB_IF_TYPE_LOOPBACK:
+            case IF_TYPE_IEEE80211:
               /**
                * Contrary to what it seems to indicate, dwBCastAddr doesn't
                * contain the broadcast address but 0 or 1 depending on whether
@@ -928,6 +933,7 @@ JNIEXPORT jbyteArray JNICALL Java_java_net_NetworkInterface_getMacAddr0
       case MIB_IF_TYPE_ETHERNET:
       case MIB_IF_TYPE_TOKENRING:
       case MIB_IF_TYPE_FDDI:
+      case IF_TYPE_IEEE80211:
         len = ifRowP->dwPhysAddrLen;
         ret = (*env)->NewByteArray(env, len);
         if (!IS_NULL(ret)) {

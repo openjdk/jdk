@@ -1,5 +1,5 @@
 <project name="PackageVerify" default="dist" basedir="..">
-  <!-- Requires ant 1.6.1+ and JDK 1.6+-->
+  <!-- Requires ant 1.6.1+ and JDK 1.7+-->
 
   <!-- set global properties for this build -->
   <property name="src"      value="${basedir}/src"/>
@@ -22,7 +22,7 @@
   <target name="compile" depends="init">
     <!-- Compile the java code from ${src} into ${build} -->
     <javac 
-	source="1.6"
+	source="1.7"
 	srcdir="${src}"
 	destdir="${build}/classes"
 	verbose="no"
@@ -32,7 +32,7 @@
 
   <target name="doc" depends="init, compile">
       <javadoc
-        source="1.6"
+        source="1.7"
         sourcepath="${src}"
         destdir="${api}"
       />

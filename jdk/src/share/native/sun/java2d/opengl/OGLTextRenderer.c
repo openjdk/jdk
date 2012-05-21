@@ -202,11 +202,6 @@ OGLTR_InitGlyphCache(jboolean lcdCache)
 
     J2dTraceLn(J2D_TRACE_INFO, "OGLTR_InitGlyphCache");
 
-    // init vertex cache (if it hasn't been already)
-    if (!OGLVertexCache_InitVertexCache()) {
-        return JNI_FALSE;
-    }
-
     // init glyph cache data structure
     gcinfo = AccelGlyphCache_Init(OGLTR_CACHE_WIDTH,
                                   OGLTR_CACHE_HEIGHT,
@@ -582,6 +577,10 @@ void
 OGLTR_EnableGlyphVertexCache(OGLContext *oglc)
 {
     J2dTraceLn(J2D_TRACE_INFO, "OGLTR_EnableGlyphVertexCache");
+
+    if (!OGLVertexCache_InitVertexCache(oglc)) {
+        return;
+    }
 
     if (glyphCache == NULL) {
         if (!OGLTR_InitGlyphCache(JNI_FALSE)) {

@@ -25,6 +25,8 @@
 
 package java.util.prefs;
 
+import java.util.Objects;
+
 class MacOSXPreferences extends AbstractPreferences {
     // fixme need security checks?
 
@@ -133,25 +135,30 @@ class MacOSXPreferences extends AbstractPreferences {
 
 
     // AbstractPreferences implementation
+    @Override
     protected void putSpi(String key, String value)
     {
         file.addKeyToNode(path, key, value);
     }
 
     // AbstractPreferences implementation
+    @Override
     protected String getSpi(String key)
     {
         return file.getKeyFromNode(path, key);
     }
 
     // AbstractPreferences implementation
+    @Override
     protected void removeSpi(String key)
     {
+        Objects.requireNonNull(key, "Specified key cannot be null");
         file.removeKeyFromNode(path, key);
     }
 
 
     // AbstractPreferences implementation
+    @Override
     protected void removeNodeSpi()
         throws BackingStoreException
     {
@@ -171,6 +178,7 @@ class MacOSXPreferences extends AbstractPreferences {
 
 
     // AbstractPreferences implementation
+    @Override
     protected String[] childrenNamesSpi()
         throws BackingStoreException
     {
@@ -180,6 +188,7 @@ class MacOSXPreferences extends AbstractPreferences {
     }
 
     // AbstractPreferences implementation
+    @Override
     protected String[] keysSpi()
         throws BackingStoreException
     {
@@ -189,6 +198,7 @@ class MacOSXPreferences extends AbstractPreferences {
     }
 
     // AbstractPreferences implementation
+    @Override
     protected AbstractPreferences childSpi(String name)
     {
         // Add to parent's child list here and disallow sync
@@ -200,6 +210,7 @@ class MacOSXPreferences extends AbstractPreferences {
     }
 
     // AbstractPreferences override
+    @Override
     public void flush()
         throws BackingStoreException
     {
@@ -214,6 +225,7 @@ class MacOSXPreferences extends AbstractPreferences {
     }
 
     // AbstractPreferences implementation
+    @Override
     protected void flushSpi()
         throws BackingStoreException
     {
@@ -221,6 +233,7 @@ class MacOSXPreferences extends AbstractPreferences {
     }
 
     // AbstractPreferences override
+    @Override
     public void sync()
         throws BackingStoreException
     {
@@ -228,13 +241,20 @@ class MacOSXPreferences extends AbstractPreferences {
             if (isRemoved())
                 throw new IllegalStateException("Node has been removed");
             // fixme! overkill
-            if (!MacOSXPreferencesFile.syncWorld()) {
-                throw new BackingStoreException("Synchronization failed for node '" + path + "'");
+            if (isUser) {
+                if (!MacOSXPreferencesFile.syncUser()) {
+                    throw new BackingStoreException("Synchronization failed for node '" + path + "'");
+                }
+            } else {
+                if (!MacOSXPreferencesFile.syncWorld()) {
+                    throw new BackingStoreException("Synchronization failed for node '" + path + "'");
+                }
             }
         }
     }
 
     // AbstractPreferences implementation
+    @Override
     protected void syncSpi()
         throws BackingStoreException
     {

@@ -152,15 +152,24 @@ import java.util.Arrays;
  *     <td headers="matches">A digit: <tt>[0-9]</tt></td></tr>
  * <tr><td valign="top" headers="construct predef"><tt>\D</tt></td>
  *     <td headers="matches">A non-digit: <tt>[^0-9]</tt></td></tr>
+ * <tr><td valign="top" headers="construct predef"><tt>\h</tt></td>
+ *     <td headers="matches">A horizontal whitespace character:
+ *     <tt>[ \t\xA0&#92;u1680&#92;u180e&#92;u2000-&#92;u200a&#92;u202f&#92;u205f&#92;u3000]</tt></td></tr>
+ * <tr><td valign="top" headers="construct predef"><tt>\H</tt></td>
+ *     <td headers="matches">A non-horizontal whitespace character: <tt>[^\h]</tt></td></tr>
  * <tr><td valign="top" headers="construct predef"><tt>\s</tt></td>
  *     <td headers="matches">A whitespace character: <tt>[ \t\n\x0B\f\r]</tt></td></tr>
  * <tr><td valign="top" headers="construct predef"><tt>\S</tt></td>
  *     <td headers="matches">A non-whitespace character: <tt>[^\s]</tt></td></tr>
+ * <tr><td valign="top" headers="construct predef"><tt>\v</tt></td>
+ *     <td headers="matches">A vertical whitespace character: <tt>[\n\x0B\f\r\x85&#92;u2028&#92;u2029]</tt>
+ *     </td></tr>
+ * <tr><td valign="top" headers="construct predef"><tt>\V</tt></td>
+ *     <td headers="matches">A non-vertical whitespace character: <tt>[^\v]</tt></td></tr>
  * <tr><td valign="top" headers="construct predef"><tt>\w</tt></td>
  *     <td headers="matches">A word character: <tt>[a-zA-Z_0-9]</tt></td></tr>
  * <tr><td valign="top" headers="construct predef"><tt>\W</tt></td>
  *     <td headers="matches">A non-word character: <tt>[^\w]</tt></td></tr>
- *
  * <tr><th>&nbsp;</th></tr>
  * <tr align="left"><th colspan="2" id="posix">POSIX character classes</b> (US-ASCII only)<b></th></tr>
  *
@@ -242,6 +251,13 @@ import java.util.Arrays;
  *         <a href="#lt">terminator</a>, if&nbsp;any</td></tr>
  * <tr><td valign="top" headers="construct bounds"><tt>\z</tt></td>
  *     <td headers="matches">The end of the input</td></tr>
+ *
+ * <tr><th>&nbsp;</th></tr>
+ * <tr align="left"><th colspan="2" id="lineending">Linebreak matcher</th></tr>
+ * <tr><td valign="top" headers="construct lineending"><tt>\R</tt></td>
+ *     <td headers="matches">Any Unicode linebreak sequence, is equivalent to
+ *     <tt>&#92;u000D&#92;u000A|[&#92;u000A&#92;u000B&#92;u000C&#92;u000D&#92;u0085&#92;u2028&#92;u2029]
+ *     </tt></td></tr>
  *
  * <tr><th>&nbsp;</th></tr>
  * <tr align="left"><th colspan="2" id="greedy">Greedy quantifiers</th></tr>
@@ -599,11 +615,9 @@ import java.util.Arrays;
  *   <li> Noncharacter_Code_Point
  *   <li> Assigned
  * </ul>
-
-
  * <p>
- * <b>Predefined Character classes</b> and <b>POSIX character classes</b> are in
- * conformance with the recommendation of <i>Annex C: Compatibility Properties</i>
+ * The following <b>Predefined Character classes</b> and <b>POSIX character classes</b>
+ * are in conformance with the recommendation of <i>Annex C: Compatibility Properties</i>
  * of <a href="http://www.unicode.org/reports/tr18/"><i>Unicode Regular Expression
  * </i></a>, when {@link #UNICODE_CHARACTER_CLASS} flag is specified.
  * <p>
@@ -668,12 +682,6 @@ import java.util.Arrays;
  *
  * <ul>
  *    <li><p> Predefined character classes (Unicode character)
- *    <p><tt>\h&nbsp;&nbsp;&nbsp;&nbsp;</tt>A horizontal whitespace
- *    <p><tt>\H&nbsp;&nbsp;&nbsp;&nbsp;</tt>A non horizontal whitespace
- *    <p><tt>\v&nbsp;&nbsp;&nbsp;&nbsp;</tt>A vertical whitespace
- *    <p><tt>\V&nbsp;&nbsp;&nbsp;&nbsp;</tt>A non vertical whitespace
- *    <p><tt>\R&nbsp;&nbsp;&nbsp;&nbsp;</tt>Any Unicode linebreak sequence
- *    <tt>\u005cu000D\u005cu000A|[\u005cu000A\u005cu000B\u005cu000C\u005cu000D\u005cu0085\u005cu2028\u005cu2029]</tt>
  *    <p><tt>\X&nbsp;&nbsp;&nbsp;&nbsp;</tt>Match Unicode
  *    <a href="http://www.unicode.org/reports/tr18/#Default_Grapheme_Clusters">
  *    <i>extended grapheme cluster</i></a>
@@ -2178,7 +2186,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 }
                 unread();
                 prev = cursor;
-                ch = escape(false, first == 0);
+                ch = escape(false, first == 0, false);
                 if (ch >= 0) {
                     append(ch, first);
                     first++;
@@ -2276,7 +2284,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * If the returned value is greater than zero, it is the value that
      * matches the escape sequence.
      */
-    private int escape(boolean inclass, boolean create) {
+    private int escape(boolean inclass, boolean create, boolean isrange) {
         int ch = skip();
         switch (ch) {
         case '0':
@@ -2318,6 +2326,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             if (create) root = new LastMatch();
             return -1;
         case 'H':
+            if (create) root = new HorizWS().complement();
+            return -1;
         case 'I':
         case 'J':
         case 'K':
@@ -2327,8 +2337,11 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         case 'O':
         case 'P':
         case 'Q':
-        case 'R':
             break;
+        case 'R':
+            if (inclass) break;
+            if (create) root = new LineEnding();
+            return -1;
         case 'S':
             if (create) root = has(UNICODE_CHARACTER_CLASS)
                                ? new Utype(UnicodeProp.WHITE_SPACE).complement()
@@ -2336,8 +2349,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             return -1;
         case 'T':
         case 'U':
-        case 'V':
             break;
+        case 'V':
+            if (create) root = new VertWS().complement();
+            return -1;
         case 'W':
             if (create) root = has(UNICODE_CHARACTER_CLASS)
                                ? new Utype(UnicodeProp.WORD).complement()
@@ -2373,7 +2388,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         case 'f':
             return '\f';
         case 'g':
+            break;
         case 'h':
+            if (create) root = new HorizWS();
+            return -1;
         case 'i':
         case 'j':
             break;
@@ -2413,7 +2431,18 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         case 'u':
             return u();
         case 'v':
-            return '\013';
+            // '\v' was implemented as VT/0x0B in releases < 1.8 (though
+            // undocumented). In JDK8 '\v' is specified as a predefined
+            // character class for all vertical whitespace characters.
+            // So [-1, root=VertWS node] pair is returned (instead of a
+            // single 0x0B). This breaks the range if '\v' is used as
+            // the start or end value, such as [\v-...] or [...-\v], in
+            // which a single definite value (0x0B) is expected. For
+            // compatiblity concern '\013'/0x0B is returned if isrange.
+            if (isrange)
+                return '\013';
+            if (create) root = new VertWS();
+            return -1;
         case 'w':
             if (create) root = has(UNICODE_CHARACTER_CLASS)
                                ? new Utype(UnicodeProp.WORD)
@@ -2590,13 +2619,14 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                     oneLetter = false;
                 return family(oneLetter, comp);
             } else { // ordinary escape
+                boolean isrange = temp[cursor+1] == '-';
                 unread();
-                ch = escape(true, true);
+                ch = escape(true, true, isrange);
                 if (ch == -1)
                     return (CharProperty) root;
             }
         } else {
-            ch = single();
+            next();
         }
         if (ch >= 0) {
             if (peek() == '-') {
@@ -2606,9 +2636,15 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 }
                 if (endRange != ']') {
                     next();
-                    int m = single();
-                    if (m < ch)
+                    int m = peek();
+                    if (m == '\\') {
+                        m = escape(true, false, true);
+                    } else {
+                        next();
+                    }
+                    if (m < ch) {
                         throw error("Illegal character range");
+                    }
                     if (has(CASE_INSENSITIVE))
                         return caseInsensitiveRangeFor(ch, m);
                     else
@@ -2618,17 +2654,6 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             return bitsOrSingle(bits, ch);
         }
         throw error("Unexpected character '"+((char)ch)+"'");
-    }
-
-    private int single() {
-        int ch = peek();
-        switch (ch) {
-        case '\\':
-            return escape(true, false);
-        default:
-            next();
-            return ch;
-        }
     }
 
     /**
@@ -3695,6 +3720,35 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
     }
 
     /**
+     * Node class that matches a Unicode line ending '\R'
+     */
+    static final class LineEnding extends Node {
+        boolean match(Matcher matcher, int i, CharSequence seq) {
+            // (u+000Du+000A|[u+000Au+000Bu+000Cu+000Du+0085u+2028u+2029])
+            if (i < matcher.to) {
+                int ch = seq.charAt(i);
+                if (ch == 0x0A || ch == 0x0B || ch == 0x0C ||
+                    ch == 0x85 || ch == 0x2028 || ch == 0x2029)
+                    return next.match(matcher, i + 1, seq);
+                if (ch == 0x0D) {
+                    i++;
+                    if (i < matcher.to && seq.charAt(i) == 0x0A)
+                        i++;
+                    return next.match(matcher, i, seq);
+                }
+            } else {
+                matcher.hitEnd = true;
+            }
+            return false;
+        }
+        boolean study(TreeInfo info) {
+            info.minLength++;
+            info.maxLength += 2;
+            return next.study(info);
+        }
+    }
+
+    /**
      * Abstract node class to match one character satisfying some
      * boolean property.
      */
@@ -3789,7 +3843,6 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         }
     }
 
-
     /**
      * Node class that matches a Unicode block.
      */
@@ -3838,7 +3891,6 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         }
     }
 
-
     /**
      * Node class that matches a POSIX type.
      */
@@ -3847,6 +3899,28 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
         Ctype(int ctype) { this.ctype = ctype; }
         boolean isSatisfiedBy(int ch) {
             return ch < 128 && ASCII.isType(ch, ctype);
+        }
+    }
+
+    /**
+     * Node class that matches a Perl vertical whitespace
+     */
+    static final class VertWS extends BmpCharProperty {
+        boolean isSatisfiedBy(int cp) {
+            return (cp >= 0x0A && cp <= 0x0D) ||
+                   cp == 0x85 || cp == 0x2028 || cp == 0x2029;
+        }
+    }
+
+    /**
+     * Node class that matches a Perl horizontal whitespace
+     */
+    static final class HorizWS extends BmpCharProperty {
+        boolean isSatisfiedBy(int cp) {
+            return cp == 0x09 || cp == 0x20 || cp == 0xa0 ||
+                   cp == 0x1680 || cp == 0x180e ||
+                   cp >= 0x2000 && cp <= 0x200a ||
+                   cp == 0x202f || cp == 0x205f || cp == 0x3000;
         }
     }
 

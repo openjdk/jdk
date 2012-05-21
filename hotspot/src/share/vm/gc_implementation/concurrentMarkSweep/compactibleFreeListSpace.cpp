@@ -69,7 +69,7 @@ void CompactibleFreeListSpace::set_cms_values() {
 // Constructor
 CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs,
   MemRegion mr, bool use_adaptive_freelists,
-  FreeBlockDictionary::DictionaryChoice dictionaryChoice) :
+  FreeBlockDictionary<FreeChunk>::DictionaryChoice dictionaryChoice) :
   _dictionaryChoice(dictionaryChoice),
   _adaptive_freelists(use_adaptive_freelists),
   _bt(bs, mr),
@@ -87,6 +87,8 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs,
                     CMSConcMarkMultiple),
   _collector(NULL)
 {
+  assert(sizeof(FreeChunk) / BytesPerWord <= MinChunkSize,
+    "FreeChunk is larger than expected");
   _bt.set_space(this);
   initialize(mr, SpaceDecorator::Clear, SpaceDecorator::Mangle);
   // We have all of "mr", all of which we place in the dictionary
@@ -96,13 +98,13 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs,
   // implementation, namely, the simple binary tree (splaying
   // temporarily disabled).
   switch (dictionaryChoice) {
-    case FreeBlockDictionary::dictionarySplayTree:
-    case FreeBlockDictionary::dictionarySkipList:
+    case FreeBlockDictionary<FreeChunk>::dictionarySplayTree:
+    case FreeBlockDictionary<FreeChunk>::dictionarySkipList:
     default:
       warning("dictionaryChoice: selected option not understood; using"
               " default BinaryTreeDictionary implementation instead.");
-    case FreeBlockDictionary::dictionaryBinaryTree:
-      _dictionary = new BinaryTreeDictionary(mr);
+    case FreeBlockDictionary<FreeChunk>::dictionaryBinaryTree:
+      _dictionary = new BinaryTreeDictionary<FreeChunk>(mr, use_adaptive_freelists);
       break;
   }
   assert(_dictionary != NULL, "CMS dictionary initialization");
@@ -117,7 +119,7 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs,
   // moved to its new location before the klass is moved.
   // Set the _refillSize for the linear allocation blocks
   if (!use_adaptive_freelists) {
-    FreeChunk* fc = _dictionary->getChunk(mr.word_size());
+    FreeChunk* fc = _dictionary->get_chunk(mr.word_size());
     // The small linAB initially has all the space and will allocate
     // a chunk of any size.
     HeapWord* addr = (HeapWord*) fc;
@@ -273,12 +275,12 @@ void CompactibleFreeListSpace::reset(MemRegion mr) {
     assert(mr.word_size() >= MinChunkSize, "Chunk size is too small");
     _bt.single_block(mr.start(), mr.word_size());
     FreeChunk* fc = (FreeChunk*) mr.start();
-    fc->setSize(mr.word_size());
+    fc->set_size(mr.word_size());
     if (mr.word_size() >= IndexSetSize ) {
       returnChunkToDictionary(fc);
     } else {
       _bt.verify_not_unallocated((HeapWord*)fc, fc->size());
-      _indexedFreeList[mr.word_size()].returnChunkAtHead(fc);
+      _indexedFreeList[mr.word_size()].return_chunk_at_head(fc);
     }
   }
   _promoInfo.reset();
@@ -296,7 +298,7 @@ void CompactibleFreeListSpace::reset_after_compaction() {
   } else {
     // Place as much of mr in the linAB as we can get,
     // provided it was big enough to go into the dictionary.
-    FreeChunk* fc = dictionary()->findLargestDict();
+    FreeChunk* fc = dictionary()->find_largest_dict();
     if (fc != NULL) {
       assert(fc->size() == mr.word_size(),
              "Why was the chunk broken up?");
@@ -323,14 +325,14 @@ FreeChunk* CompactibleFreeListSpace::find_chunk_at_end() {
 #ifndef PRODUCT
 void CompactibleFreeListSpace::initializeIndexedFreeListArrayReturnedBytes() {
   for (size_t i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
-    _indexedFreeList[i].allocation_stats()->set_returnedBytes(0);
+    _indexedFreeList[i].allocation_stats()->set_returned_bytes(0);
   }
 }
 
 size_t CompactibleFreeListSpace::sumIndexedFreeListArrayReturnedBytes() {
   size_t sum = 0;
   for (size_t i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
-    sum += _indexedFreeList[i].allocation_stats()->returnedBytes();
+    sum += _indexedFreeList[i].allocation_stats()->returned_bytes();
   }
   return sum;
 }
@@ -354,7 +356,7 @@ size_t CompactibleFreeListSpace::totalCountInIndexedFreeLists() const {
 
 size_t CompactibleFreeListSpace::totalCount() {
   size_t num = totalCountInIndexedFreeLists();
-  num +=  dictionary()->totalCount();
+  num +=  dictionary()->total_count();
   if (_smallLinearAllocBlock._word_size != 0) {
     num++;
   }
@@ -364,7 +366,7 @@ size_t CompactibleFreeListSpace::totalCount() {
 
 bool CompactibleFreeListSpace::is_free_block(const HeapWord* p) const {
   FreeChunk* fc = (FreeChunk*) p;
-  return fc->isFree();
+  return fc->is_free();
 }
 
 size_t CompactibleFreeListSpace::used() const {
@@ -391,7 +393,7 @@ size_t CompactibleFreeListSpace::free() const {
   // that supports jvmstat, and you are apt to see the values
   // flicker in such cases.
   assert(_dictionary != NULL, "No _dictionary?");
-  return (_dictionary->totalChunkSize(DEBUG_ONLY(freelistLock())) +
+  return (_dictionary->total_chunk_size(DEBUG_ONLY(freelistLock())) +
           totalSizeInIndexedFreeLists() +
           _smallLinearAllocBlock._word_size) * HeapWordSize;
 }
@@ -399,7 +401,7 @@ size_t CompactibleFreeListSpace::free() const {
 size_t CompactibleFreeListSpace::max_alloc_in_words() const {
   assert(_dictionary != NULL, "No _dictionary?");
   assert_locked();
-  size_t res = _dictionary->maxChunkSize();
+  size_t res = _dictionary->max_chunk_size();
   res = MAX2(res, MIN2(_smallLinearAllocBlock._word_size,
                        (size_t) SmallForLinearAlloc - 1));
   // XXX the following could potentially be pretty slow;
@@ -448,7 +450,7 @@ const {
   reportIndexedFreeListStatistics();
   gclog_or_tty->print_cr("Layout of Indexed Freelists");
   gclog_or_tty->print_cr("---------------------------");
-  FreeList::print_labels_on(st, "size");
+  FreeList<FreeChunk>::print_labels_on(st, "size");
   for (size_t i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
     _indexedFreeList[i].print_on(gclog_or_tty);
     for (FreeChunk* fc = _indexedFreeList[i].head(); fc != NULL;
@@ -467,7 +469,7 @@ const {
 
 void CompactibleFreeListSpace::print_dictionary_free_lists(outputStream* st)
 const {
-  _dictionary->reportStatistics();
+  _dictionary->report_statistics();
   st->print_cr("Layout of Freelists in Tree");
   st->print_cr("---------------------------");
   _dictionary->print_free_lists(st);
@@ -545,12 +547,12 @@ void CompactibleFreeListSpace::dump_at_safepoint_with_locks(CMSCollector* c,
 void CompactibleFreeListSpace::reportFreeListStatistics() const {
   assert_lock_strong(&_freelistLock);
   assert(PrintFLSStatistics != 0, "Reporting error");
-  _dictionary->reportStatistics();
+  _dictionary->report_statistics();
   if (PrintFLSStatistics > 1) {
     reportIndexedFreeListStatistics();
-    size_t totalSize = totalSizeInIndexedFreeLists() +
-                       _dictionary->totalChunkSize(DEBUG_ONLY(freelistLock()));
-    gclog_or_tty->print(" free=%ld frag=%1.4f\n", totalSize, flsFrag());
+    size_t total_size = totalSizeInIndexedFreeLists() +
+                       _dictionary->total_chunk_size(DEBUG_ONLY(freelistLock()));
+    gclog_or_tty->print(" free=%ld frag=%1.4f\n", total_size, flsFrag());
   }
 }
 
@@ -558,13 +560,13 @@ void CompactibleFreeListSpace::reportIndexedFreeListStatistics() const {
   assert_lock_strong(&_freelistLock);
   gclog_or_tty->print("Statistics for IndexedFreeLists:\n"
                       "--------------------------------\n");
-  size_t totalSize = totalSizeInIndexedFreeLists();
-  size_t   freeBlocks = numFreeBlocksInIndexedFreeLists();
-  gclog_or_tty->print("Total Free Space: %d\n", totalSize);
+  size_t total_size = totalSizeInIndexedFreeLists();
+  size_t   free_blocks = numFreeBlocksInIndexedFreeLists();
+  gclog_or_tty->print("Total Free Space: %d\n", total_size);
   gclog_or_tty->print("Max   Chunk Size: %d\n", maxChunkSizeInIndexedFreeLists());
-  gclog_or_tty->print("Number of Blocks: %d\n", freeBlocks);
-  if (freeBlocks != 0) {
-    gclog_or_tty->print("Av.  Block  Size: %d\n", totalSize/freeBlocks);
+  gclog_or_tty->print("Number of Blocks: %d\n", free_blocks);
+  if (free_blocks != 0) {
+    gclog_or_tty->print("Av.  Block  Size: %d\n", total_size/free_blocks);
   }
 }
 
@@ -911,7 +913,7 @@ CompactibleFreeListSpace::object_iterate_careful(ObjectClosureCareful* cl) {
   for (addr = bottom(), last  = end();
        addr < last; addr += size) {
     FreeChunk* fc = (FreeChunk*)addr;
-    if (fc->isFree()) {
+    if (fc->is_free()) {
       // Since we hold the free list lock, which protects direct
       // allocation in this generation by mutators, a free object
       // will remain free throughout this iteration code.
@@ -953,7 +955,7 @@ CompactibleFreeListSpace::object_iterate_careful_m(MemRegion mr,
   for (addr = block_start_careful(mr.start()), end  = mr.end();
        addr < end; addr += size) {
     FreeChunk* fc = (FreeChunk*)addr;
-    if (fc->isFree()) {
+    if (fc->is_free()) {
       // Since we hold the free list lock, which protects direct
       // allocation in this generation by mutators, a free object
       // will remain free throughout this iteration code.
@@ -1069,7 +1071,7 @@ size_t CompactibleFreeListSpace::block_size_nopar(const HeapWord* p) const {
   NOT_PRODUCT(verify_objects_initialized());
   assert(MemRegion(bottom(), end()).contains(p), "p not in space");
   FreeChunk* fc = (FreeChunk*)p;
-  if (fc->isFree()) {
+  if (fc->is_free()) {
     return fc->size();
   } else {
     // Ignore mark word because this may be a recently promoted
@@ -1160,7 +1162,7 @@ bool CompactibleFreeListSpace::block_is_obj_nopar(const HeapWord* p) const {
   FreeChunk* fc = (FreeChunk*)p;
   assert(is_in_reserved(p), "Should be in space");
   assert(_bt.block_start(p) == p, "Should be a block boundary");
-  if (!fc->isFree()) {
+  if (!fc->is_free()) {
     // Ignore mark word because it may have been used to
     // chain together promoted objects (the last one
     // would have a null value).
@@ -1222,7 +1224,7 @@ HeapWord* CompactibleFreeListSpace::allocate(size_t size) {
 
     FreeChunk* fc = (FreeChunk*)res;
     fc->markNotFree();
-    assert(!fc->isFree(), "shouldn't be marked free");
+    assert(!fc->is_free(), "shouldn't be marked free");
     assert(oop(fc)->klass_or_null() == NULL, "should look uninitialized");
     // Verify that the block offset table shows this to
     // be a single block, but not one which is unallocated.
@@ -1331,10 +1333,10 @@ FreeChunk* CompactibleFreeListSpace::getChunkFromGreater(size_t numWords) {
   size_t currSize = numWords + MinChunkSize;
   assert(currSize % MinObjAlignment == 0, "currSize should be aligned");
   for (i = currSize; i < IndexSetSize; i += IndexSetStride) {
-    FreeList* fl = &_indexedFreeList[i];
+    FreeList<FreeChunk>* fl = &_indexedFreeList[i];
     if (fl->head()) {
       ret = getFromListGreater(fl, numWords);
-      assert(ret == NULL || ret->isFree(), "Should be returning a free chunk");
+      assert(ret == NULL || ret->is_free(), "Should be returning a free chunk");
       return ret;
     }
   }
@@ -1345,7 +1347,7 @@ FreeChunk* CompactibleFreeListSpace::getChunkFromGreater(size_t numWords) {
   /* Try to get a chunk that satisfies request, while avoiding
      fragmentation that can't be handled. */
   {
-    ret =  dictionary()->getChunk(currSize);
+    ret =  dictionary()->get_chunk(currSize);
     if (ret != NULL) {
       assert(ret->size() - numWords >= MinChunkSize,
              "Chunk is too small");
@@ -1353,10 +1355,10 @@ FreeChunk* CompactibleFreeListSpace::getChunkFromGreater(size_t numWords) {
       /* Carve returned chunk. */
       (void) splitChunkAndReturnRemainder(ret, numWords);
       /* Label this as no longer a free chunk. */
-      assert(ret->isFree(), "This chunk should be free");
-      ret->linkPrev(NULL);
+      assert(ret->is_free(), "This chunk should be free");
+      ret->link_prev(NULL);
     }
-    assert(ret == NULL || ret->isFree(), "Should be returning a free chunk");
+    assert(ret == NULL || ret->is_free(), "Should be returning a free chunk");
     return ret;
   }
   ShouldNotReachHere();
@@ -1364,7 +1366,7 @@ FreeChunk* CompactibleFreeListSpace::getChunkFromGreater(size_t numWords) {
 
 bool CompactibleFreeListSpace::verifyChunkInIndexedFreeLists(FreeChunk* fc) const {
   assert(fc->size() < IndexSetSize, "Size of chunk is too large");
-  return _indexedFreeList[fc->size()].verifyChunkInFreeLists(fc);
+  return _indexedFreeList[fc->size()].verify_chunk_in_free_list(fc);
 }
 
 bool CompactibleFreeListSpace::verify_chunk_is_linear_alloc_block(FreeChunk* fc) const {
@@ -1378,13 +1380,13 @@ bool CompactibleFreeListSpace::verify_chunk_is_linear_alloc_block(FreeChunk* fc)
 // Check if the purported free chunk is present either as a linear
 // allocation block, the size-indexed table of (smaller) free blocks,
 // or the larger free blocks kept in the binary tree dictionary.
-bool CompactibleFreeListSpace::verifyChunkInFreeLists(FreeChunk* fc) const {
+bool CompactibleFreeListSpace::verify_chunk_in_free_list(FreeChunk* fc) const {
   if (verify_chunk_is_linear_alloc_block(fc)) {
     return true;
   } else if (fc->size() < IndexSetSize) {
     return verifyChunkInIndexedFreeLists(fc);
   } else {
-    return dictionary()->verifyChunkInFreeLists(fc);
+    return dictionary()->verify_chunk_in_free_list(fc);
   }
 }
 
@@ -1412,7 +1414,7 @@ FreeChunk* CompactibleFreeListSpace::allocateScratch(size_t size) {
   }
   if (fc != NULL) {
     fc->dontCoalesce();
-    assert(fc->isFree(), "Should be free, but not coalescable");
+    assert(fc->is_free(), "Should be free, but not coalescable");
     // Verify that the block offset table shows this to
     // be a single block, but not one which is unallocated.
     _bt.verify_single_block((HeapWord*)fc, fc->size());
@@ -1492,7 +1494,7 @@ CompactibleFreeListSpace::getChunkFromLinearAllocBlock(LinearAllocBlock *blk,
     }
     // Return the chunk that isn't big enough, and then refill below.
     addChunkToFreeLists(blk->_ptr, sz);
-    splitBirth(sz);
+    split_birth(sz);
     // Don't keep statistics on adding back chunk from a LinAB.
   } else {
     // A refilled block would not satisfy the request.
@@ -1504,14 +1506,14 @@ CompactibleFreeListSpace::getChunkFromLinearAllocBlock(LinearAllocBlock *blk,
   assert(blk->_ptr == NULL || blk->_word_size >= size + MinChunkSize,
          "block was replenished");
   if (res != NULL) {
-    splitBirth(size);
+    split_birth(size);
     repairLinearAllocBlock(blk);
   } else if (blk->_ptr != NULL) {
     res = blk->_ptr;
     size_t blk_size = blk->_word_size;
     blk->_word_size -= size;
     blk->_ptr  += size;
-    splitBirth(size);
+    split_birth(size);
     repairLinearAllocBlock(blk);
     // Update BOT last so that other (parallel) GC threads see a consistent
     // view of the BOT and free blocks.
@@ -1540,7 +1542,7 @@ HeapWord*  CompactibleFreeListSpace::getChunkFromLinearAllocBlockRemainder(
     size_t blk_size = blk->_word_size;
     blk->_word_size -= size;
     blk->_ptr  += size;
-    splitBirth(size);
+    split_birth(size);
     repairLinearAllocBlock(blk);
     // Update BOT last so that other (parallel) GC threads see a consistent
     // view of the BOT and free blocks.
@@ -1557,7 +1559,7 @@ CompactibleFreeListSpace::getChunkFromIndexedFreeList(size_t size) {
   assert_locked();
   assert(size < SmallForDictionary, "just checking");
   FreeChunk* res;
-  res = _indexedFreeList[size].getChunkAtHead();
+  res = _indexedFreeList[size].get_chunk_at_head();
   if (res == NULL) {
     res = getChunkFromIndexedFreeListHelper(size);
   }
@@ -1591,7 +1593,7 @@ CompactibleFreeListSpace::getChunkFromIndexedFreeListHelper(size_t size,
         // Do not replenish from an underpopulated size.
         if (_indexedFreeList[replenish_size].surplus() > 0 &&
             _indexedFreeList[replenish_size].head() != NULL) {
-          newFc = _indexedFreeList[replenish_size].getChunkAtHead();
+          newFc = _indexedFreeList[replenish_size].get_chunk_at_head();
         } else if (bestFitFirst()) {
           newFc = bestFitSmall(replenish_size);
         }
@@ -1624,13 +1626,13 @@ CompactibleFreeListSpace::getChunkFromIndexedFreeListHelper(size_t size,
                i < (num_blk - 1);
                curFc = nextFc, nextFc = (FreeChunk*)((HeapWord*)nextFc + size),
                i++) {
-            curFc->setSize(size);
+            curFc->set_size(size);
             // Don't record this as a return in order to try and
             // determine the "returns" from a GC.
             _bt.verify_not_unallocated((HeapWord*) fc, size);
-            _indexedFreeList[size].returnChunkAtTail(curFc, false);
+            _indexedFreeList[size].return_chunk_at_tail(curFc, false);
             _bt.mark_block((HeapWord*)curFc, size);
-            splitBirth(size);
+            split_birth(size);
             // Don't record the initial population of the indexed list
             // as a split birth.
           }
@@ -1638,9 +1640,9 @@ CompactibleFreeListSpace::getChunkFromIndexedFreeListHelper(size_t size,
           // check that the arithmetic was OK above
           assert((HeapWord*)nextFc == (HeapWord*)newFc + num_blk*size,
             "inconsistency in carving newFc");
-          curFc->setSize(size);
+          curFc->set_size(size);
           _bt.mark_block((HeapWord*)curFc, size);
-          splitBirth(size);
+          split_birth(size);
           fc = curFc;
         } else {
           // Return entire block to caller
@@ -1653,14 +1655,14 @@ CompactibleFreeListSpace::getChunkFromIndexedFreeListHelper(size_t size,
     // replenish the indexed free list.
     fc = getChunkFromDictionaryExact(size);
   }
-  // assert(fc == NULL || fc->isFree(), "Should be returning a free chunk");
+  // assert(fc == NULL || fc->is_free(), "Should be returning a free chunk");
   return fc;
 }
 
 FreeChunk*
 CompactibleFreeListSpace::getChunkFromDictionary(size_t size) {
   assert_locked();
-  FreeChunk* fc = _dictionary->getChunk(size);
+  FreeChunk* fc = _dictionary->get_chunk(size);
   if (fc == NULL) {
     return NULL;
   }
@@ -1677,7 +1679,7 @@ CompactibleFreeListSpace::getChunkFromDictionary(size_t size) {
 FreeChunk*
 CompactibleFreeListSpace::getChunkFromDictionaryExact(size_t size) {
   assert_locked();
-  FreeChunk* fc = _dictionary->getChunk(size);
+  FreeChunk* fc = _dictionary->get_chunk(size);
   if (fc == NULL) {
     return fc;
   }
@@ -1686,11 +1688,11 @@ CompactibleFreeListSpace::getChunkFromDictionaryExact(size_t size) {
     _bt.verify_single_block((HeapWord*)fc, size);
     return fc;
   }
-  assert(fc->size() > size, "getChunk() guarantee");
+  assert(fc->size() > size, "get_chunk() guarantee");
   if (fc->size() < size + MinChunkSize) {
     // Return the chunk to the dictionary and go get a bigger one.
     returnChunkToDictionary(fc);
-    fc = _dictionary->getChunk(size + MinChunkSize);
+    fc = _dictionary->get_chunk(size + MinChunkSize);
     if (fc == NULL) {
       return NULL;
     }
@@ -1711,10 +1713,10 @@ CompactibleFreeListSpace::returnChunkToDictionary(FreeChunk* chunk) {
   _bt.verify_single_block((HeapWord*)chunk, size);
   // adjust _unallocated_block downward, as necessary
   _bt.freed((HeapWord*)chunk, size);
-  _dictionary->returnChunk(chunk);
+  _dictionary->return_chunk(chunk);
 #ifndef PRODUCT
   if (CMSCollector::abstract_state() != CMSCollector::Sweeping) {
-    TreeChunk::as_TreeChunk(chunk)->list()->verify_stats();
+    TreeChunk<FreeChunk>::as_TreeChunk(chunk)->list()->verify_stats();
   }
 #endif // PRODUCT
 }
@@ -1726,9 +1728,9 @@ CompactibleFreeListSpace::returnChunkToFreeList(FreeChunk* fc) {
   _bt.verify_single_block((HeapWord*) fc, size);
   _bt.verify_not_unallocated((HeapWord*) fc, size);
   if (_adaptive_freelists) {
-    _indexedFreeList[size].returnChunkAtTail(fc);
+    _indexedFreeList[size].return_chunk_at_tail(fc);
   } else {
-    _indexedFreeList[size].returnChunkAtHead(fc);
+    _indexedFreeList[size].return_chunk_at_head(fc);
   }
 #ifndef PRODUCT
   if (CMSCollector::abstract_state() != CMSCollector::Sweeping) {
@@ -1756,7 +1758,7 @@ CompactibleFreeListSpace::addChunkToFreeListsAtEndRecordingStats(
   FreeChunk* ec;
   {
     MutexLockerEx x(lock, Mutex::_no_safepoint_check_flag);
-    ec = dictionary()->findLargestDict();  // get largest block
+    ec = dictionary()->find_largest_dict();  // get largest block
     if (ec != NULL && ec->end() == chunk) {
       // It's a coterminal block - we can coalesce.
       size_t old_size = ec->size();
@@ -1767,7 +1769,7 @@ CompactibleFreeListSpace::addChunkToFreeListsAtEndRecordingStats(
       ec = (FreeChunk*)chunk;
     }
   }
-  ec->setSize(size);
+  ec->set_size(size);
   debug_only(ec->mangleFreed(size));
   if (size < SmallForDictionary) {
     lock = _indexedFreeListParLocks[size];
@@ -1790,7 +1792,7 @@ CompactibleFreeListSpace::addChunkToFreeLists(HeapWord* chunk,
   _bt.verify_single_block(chunk, size);
 
   FreeChunk* fc = (FreeChunk*) chunk;
-  fc->setSize(size);
+  fc->set_size(size);
   debug_only(fc->mangleFreed(size));
   if (size < SmallForDictionary) {
     returnChunkToFreeList(fc);
@@ -1833,7 +1835,7 @@ CompactibleFreeListSpace::removeChunkFromDictionary(FreeChunk* fc) {
   assert_locked();
   assert(fc != NULL, "null chunk");
   _bt.verify_single_block((HeapWord*)fc, size);
-  _dictionary->removeChunk(fc);
+  _dictionary->remove_chunk(fc);
   // adjust _unallocated_block upward, as necessary
   _bt.allocated((HeapWord*)fc, size);
 }
@@ -1848,7 +1850,7 @@ CompactibleFreeListSpace::removeChunkFromIndexedFreeList(FreeChunk* fc) {
       verifyIndexedFreeList(size);
     }
   )
-  _indexedFreeList[size].removeChunk(fc);
+  _indexedFreeList[size].remove_chunk(fc);
   NOT_PRODUCT(
     if (FLSVerifyIndexTable) {
       verifyIndexedFreeList(size);
@@ -1862,17 +1864,17 @@ FreeChunk* CompactibleFreeListSpace::bestFitSmall(size_t numWords) {
      the excess is >= MIN_CHUNK. */
   size_t start = align_object_size(numWords + MinChunkSize);
   if (start < IndexSetSize) {
-    FreeList* it   = _indexedFreeList;
+    FreeList<FreeChunk>* it   = _indexedFreeList;
     size_t    hint = _indexedFreeList[start].hint();
     while (hint < IndexSetSize) {
       assert(hint % MinObjAlignment == 0, "hint should be aligned");
-      FreeList *fl = &_indexedFreeList[hint];
+      FreeList<FreeChunk> *fl = &_indexedFreeList[hint];
       if (fl->surplus() > 0 && fl->head() != NULL) {
         // Found a list with surplus, reset original hint
         // and split out a free chunk which is returned.
         _indexedFreeList[start].set_hint(hint);
         FreeChunk* res = getFromListGreater(fl, numWords);
-        assert(res == NULL || res->isFree(),
+        assert(res == NULL || res->is_free(),
           "Should be returning a free chunk");
         return res;
       }
@@ -1885,7 +1887,7 @@ FreeChunk* CompactibleFreeListSpace::bestFitSmall(size_t numWords) {
 }
 
 /* Requires fl->size >= numWords + MinChunkSize */
-FreeChunk* CompactibleFreeListSpace::getFromListGreater(FreeList* fl,
+FreeChunk* CompactibleFreeListSpace::getFromListGreater(FreeList<FreeChunk>* fl,
   size_t numWords) {
   FreeChunk *curr = fl->head();
   size_t oldNumWords = curr->size();
@@ -1894,13 +1896,13 @@ FreeChunk* CompactibleFreeListSpace::getFromListGreater(FreeList* fl,
   assert(oldNumWords >= numWords + MinChunkSize,
         "Size of chunks in the list is too small");
 
-  fl->removeChunk(curr);
+  fl->remove_chunk(curr);
   // recorded indirectly by splitChunkAndReturnRemainder -
   // smallSplit(oldNumWords, numWords);
   FreeChunk* new_chunk = splitChunkAndReturnRemainder(curr, numWords);
   // Does anything have to be done for the remainder in terms of
   // fixing the card table?
-  assert(new_chunk == NULL || new_chunk->isFree(),
+  assert(new_chunk == NULL || new_chunk->is_free(),
     "Should be returning a free chunk");
   return new_chunk;
 }
@@ -1918,13 +1920,13 @@ CompactibleFreeListSpace::splitChunkAndReturnRemainder(FreeChunk* chunk,
   assert(rem_size >= MinChunkSize, "Free chunk smaller than minimum");
   FreeChunk* ffc = (FreeChunk*)((HeapWord*)chunk + new_size);
   assert(is_aligned(ffc), "alignment problem");
-  ffc->setSize(rem_size);
-  ffc->linkNext(NULL);
-  ffc->linkPrev(NULL); // Mark as a free block for other (parallel) GC threads.
+  ffc->set_size(rem_size);
+  ffc->link_next(NULL);
+  ffc->link_prev(NULL); // Mark as a free block for other (parallel) GC threads.
   // Above must occur before BOT is updated below.
   // adjust block offset table
   OrderAccess::storestore();
-  assert(chunk->isFree() && ffc->isFree(), "Error");
+  assert(chunk->is_free() && ffc->is_free(), "Error");
   _bt.split_block((HeapWord*)chunk, chunk->size(), new_size);
   if (rem_size < SmallForDictionary) {
     bool is_par = (SharedHeap::heap()->n_par_threads() > 0);
@@ -1939,7 +1941,7 @@ CompactibleFreeListSpace::splitChunkAndReturnRemainder(FreeChunk* chunk,
     returnChunkToDictionary(ffc);
     split(size ,rem_size);
   }
-  chunk->setSize(new_size);
+  chunk->set_size(new_size);
   return chunk;
 }
 
@@ -2046,10 +2048,10 @@ void CompactibleFreeListSpace::repairLinearAllocBlock(LinearAllocBlock* blk) {
     assert(blk->_word_size != 0 && blk->_word_size >= MinChunkSize,
            "Minimum block size requirement");
     FreeChunk* fc = (FreeChunk*)(blk->_ptr);
-    fc->setSize(blk->_word_size);
-    fc->linkPrev(NULL);   // mark as free
+    fc->set_size(blk->_word_size);
+    fc->link_prev(NULL);   // mark as free
     fc->dontCoalesce();
-    assert(fc->isFree(), "just marked it free");
+    assert(fc->is_free(), "just marked it free");
     assert(fc->cantCoalesce(), "just marked it uncoalescable");
   }
 }
@@ -2149,7 +2151,7 @@ double CompactibleFreeListSpace::flsFrag() const {
   }
 
   double totFree = itabFree +
-                   _dictionary->totalChunkSize(DEBUG_ONLY(freelistLock()));
+                   _dictionary->total_chunk_size(DEBUG_ONLY(freelistLock()));
   if (totFree > 0) {
     frag = ((frag + _dictionary->sum_of_squared_block_sizes()) /
             (totFree * totFree));
@@ -2167,16 +2169,16 @@ void CompactibleFreeListSpace::beginSweepFLCensus(
   assert_locked();
   size_t i;
   for (i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
-    FreeList* fl    = &_indexedFreeList[i];
+    FreeList<FreeChunk>* fl = &_indexedFreeList[i];
     if (PrintFLSStatistics > 1) {
       gclog_or_tty->print("size[%d] : ", i);
     }
     fl->compute_desired(inter_sweep_current, inter_sweep_estimate, intra_sweep_estimate);
-    fl->set_coalDesired((ssize_t)((double)fl->desired() * CMSSmallCoalSurplusPercent));
-    fl->set_beforeSweep(fl->count());
-    fl->set_bfrSurp(fl->surplus());
+    fl->set_coal_desired((ssize_t)((double)fl->desired() * CMSSmallCoalSurplusPercent));
+    fl->set_before_sweep(fl->count());
+    fl->set_bfr_surp(fl->surplus());
   }
-  _dictionary->beginSweepDictCensus(CMSLargeCoalSurplusPercent,
+  _dictionary->begin_sweep_dict_census(CMSLargeCoalSurplusPercent,
                                     inter_sweep_current,
                                     inter_sweep_estimate,
                                     intra_sweep_estimate);
@@ -2186,7 +2188,7 @@ void CompactibleFreeListSpace::setFLSurplus() {
   assert_locked();
   size_t i;
   for (i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
-    FreeList *fl = &_indexedFreeList[i];
+    FreeList<FreeChunk> *fl = &_indexedFreeList[i];
     fl->set_surplus(fl->count() -
                     (ssize_t)((double)fl->desired() * CMSSmallSplitSurplusPercent));
   }
@@ -2197,7 +2199,7 @@ void CompactibleFreeListSpace::setFLHints() {
   size_t i;
   size_t h = IndexSetSize;
   for (i = IndexSetSize - 1; i != 0; i -= IndexSetStride) {
-    FreeList *fl = &_indexedFreeList[i];
+    FreeList<FreeChunk> *fl = &_indexedFreeList[i];
     fl->set_hint(h);
     if (fl->surplus() > 0) {
       h = i;
@@ -2209,18 +2211,18 @@ void CompactibleFreeListSpace::clearFLCensus() {
   assert_locked();
   size_t i;
   for (i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
-    FreeList *fl = &_indexedFreeList[i];
-    fl->set_prevSweep(fl->count());
-    fl->set_coalBirths(0);
-    fl->set_coalDeaths(0);
-    fl->set_splitBirths(0);
-    fl->set_splitDeaths(0);
+    FreeList<FreeChunk> *fl = &_indexedFreeList[i];
+    fl->set_prev_sweep(fl->count());
+    fl->set_coal_births(0);
+    fl->set_coal_deaths(0);
+    fl->set_split_births(0);
+    fl->set_split_deaths(0);
   }
 }
 
 void CompactibleFreeListSpace::endSweepFLCensus(size_t sweep_count) {
   if (PrintFLSStatistics > 0) {
-    HeapWord* largestAddr = (HeapWord*) dictionary()->findLargestDict();
+    HeapWord* largestAddr = (HeapWord*) dictionary()->find_largest_dict();
     gclog_or_tty->print_cr("CMS: Large block " PTR_FORMAT,
                            largestAddr);
   }
@@ -2231,30 +2233,30 @@ void CompactibleFreeListSpace::endSweepFLCensus(size_t sweep_count) {
   }
   clearFLCensus();
   assert_locked();
-  _dictionary->endSweepDictCensus(CMSLargeSplitSurplusPercent);
+  _dictionary->end_sweep_dict_census(CMSLargeSplitSurplusPercent);
 }
 
 bool CompactibleFreeListSpace::coalOverPopulated(size_t size) {
   if (size < SmallForDictionary) {
-    FreeList *fl = &_indexedFreeList[size];
-    return (fl->coalDesired() < 0) ||
-           ((int)fl->count() > fl->coalDesired());
+    FreeList<FreeChunk> *fl = &_indexedFreeList[size];
+    return (fl->coal_desired() < 0) ||
+           ((int)fl->count() > fl->coal_desired());
   } else {
-    return dictionary()->coalDictOverPopulated(size);
+    return dictionary()->coal_dict_over_populated(size);
   }
 }
 
 void CompactibleFreeListSpace::smallCoalBirth(size_t size) {
   assert(size < SmallForDictionary, "Size too large for indexed list");
-  FreeList *fl = &_indexedFreeList[size];
-  fl->increment_coalBirths();
+  FreeList<FreeChunk> *fl = &_indexedFreeList[size];
+  fl->increment_coal_births();
   fl->increment_surplus();
 }
 
 void CompactibleFreeListSpace::smallCoalDeath(size_t size) {
   assert(size < SmallForDictionary, "Size too large for indexed list");
-  FreeList *fl = &_indexedFreeList[size];
-  fl->increment_coalDeaths();
+  FreeList<FreeChunk> *fl = &_indexedFreeList[size];
+  fl->increment_coal_deaths();
   fl->decrement_surplus();
 }
 
@@ -2262,7 +2264,7 @@ void CompactibleFreeListSpace::coalBirth(size_t size) {
   if (size  < SmallForDictionary) {
     smallCoalBirth(size);
   } else {
-    dictionary()->dictCensusUpdate(size,
+    dictionary()->dict_census_udpate(size,
                                    false /* split */,
                                    true /* birth */);
   }
@@ -2272,7 +2274,7 @@ void CompactibleFreeListSpace::coalDeath(size_t size) {
   if(size  < SmallForDictionary) {
     smallCoalDeath(size);
   } else {
-    dictionary()->dictCensusUpdate(size,
+    dictionary()->dict_census_udpate(size,
                                    false /* split */,
                                    false /* birth */);
   }
@@ -2280,23 +2282,23 @@ void CompactibleFreeListSpace::coalDeath(size_t size) {
 
 void CompactibleFreeListSpace::smallSplitBirth(size_t size) {
   assert(size < SmallForDictionary, "Size too large for indexed list");
-  FreeList *fl = &_indexedFreeList[size];
-  fl->increment_splitBirths();
+  FreeList<FreeChunk> *fl = &_indexedFreeList[size];
+  fl->increment_split_births();
   fl->increment_surplus();
 }
 
 void CompactibleFreeListSpace::smallSplitDeath(size_t size) {
   assert(size < SmallForDictionary, "Size too large for indexed list");
-  FreeList *fl = &_indexedFreeList[size];
-  fl->increment_splitDeaths();
+  FreeList<FreeChunk> *fl = &_indexedFreeList[size];
+  fl->increment_split_deaths();
   fl->decrement_surplus();
 }
 
-void CompactibleFreeListSpace::splitBirth(size_t size) {
+void CompactibleFreeListSpace::split_birth(size_t size) {
   if (size  < SmallForDictionary) {
     smallSplitBirth(size);
   } else {
-    dictionary()->dictCensusUpdate(size,
+    dictionary()->dict_census_udpate(size,
                                    true /* split */,
                                    true /* birth */);
   }
@@ -2306,7 +2308,7 @@ void CompactibleFreeListSpace::splitDeath(size_t size) {
   if (size  < SmallForDictionary) {
     smallSplitDeath(size);
   } else {
-    dictionary()->dictCensusUpdate(size,
+    dictionary()->dict_census_udpate(size,
                                    true /* split */,
                                    false /* birth */);
   }
@@ -2315,8 +2317,8 @@ void CompactibleFreeListSpace::splitDeath(size_t size) {
 void CompactibleFreeListSpace::split(size_t from, size_t to1) {
   size_t to2 = from - to1;
   splitDeath(from);
-  splitBirth(to1);
-  splitBirth(to2);
+  split_birth(to1);
+  split_birth(to2);
 }
 
 void CompactibleFreeListSpace::print() const {
@@ -2362,7 +2364,7 @@ class VerifyAllBlksClosure: public BlkClosure {
       FreeChunk* fc = (FreeChunk*)addr;
       res = fc->size();
       if (FLSVerifyLists && !fc->cantCoalesce()) {
-        guarantee(_sp->verifyChunkInFreeLists(fc),
+        guarantee(_sp->verify_chunk_in_free_list(fc),
                   "Chunk should be on a free list");
       }
     }
@@ -2518,7 +2520,7 @@ void CompactibleFreeListSpace::verifyIndexedFreeList(size_t size) const {
             "Slot should have been empty");
   for (; fc != NULL; fc = fc->next(), n++) {
     guarantee(fc->size() == size, "Size inconsistency");
-    guarantee(fc->isFree(), "!free?");
+    guarantee(fc->is_free(), "!free?");
     guarantee(fc->next() == NULL || fc->next()->prev() == fc, "Broken list");
     guarantee((fc->next() == NULL) == (fc == tail), "Incorrect tail");
   }
@@ -2527,10 +2529,10 @@ void CompactibleFreeListSpace::verifyIndexedFreeList(size_t size) const {
 
 #ifndef PRODUCT
 void CompactibleFreeListSpace::check_free_list_consistency() const {
-  assert(_dictionary->minSize() <= IndexSetSize,
+  assert(_dictionary->min_size() <= IndexSetSize,
     "Some sizes can't be allocated without recourse to"
     " linear allocation buffers");
-  assert(MIN_TREE_CHUNK_SIZE*HeapWordSize == sizeof(TreeChunk),
+  assert(BinaryTreeDictionary<FreeChunk>::min_tree_chunk_size*HeapWordSize == sizeof(TreeChunk<FreeChunk>),
     "else MIN_TREE_CHUNK_SIZE is wrong");
   assert((IndexSetStride == 2 && IndexSetStart == 4) ||                   // 32-bit
          (IndexSetStride == 1 && IndexSetStart == 3), "just checking");   // 64-bit
@@ -2543,36 +2545,36 @@ void CompactibleFreeListSpace::check_free_list_consistency() const {
 
 void CompactibleFreeListSpace::printFLCensus(size_t sweep_count) const {
   assert_lock_strong(&_freelistLock);
-  FreeList total;
+  FreeList<FreeChunk> total;
   gclog_or_tty->print("end sweep# " SIZE_FORMAT "\n", sweep_count);
-  FreeList::print_labels_on(gclog_or_tty, "size");
-  size_t totalFree = 0;
+  FreeList<FreeChunk>::print_labels_on(gclog_or_tty, "size");
+  size_t total_free = 0;
   for (size_t i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
-    const FreeList *fl = &_indexedFreeList[i];
-    totalFree += fl->count() * fl->size();
+    const FreeList<FreeChunk> *fl = &_indexedFreeList[i];
+    total_free += fl->count() * fl->size();
     if (i % (40*IndexSetStride) == 0) {
-      FreeList::print_labels_on(gclog_or_tty, "size");
+      FreeList<FreeChunk>::print_labels_on(gclog_or_tty, "size");
     }
     fl->print_on(gclog_or_tty);
-    total.set_bfrSurp(    total.bfrSurp()     + fl->bfrSurp()    );
+    total.set_bfr_surp(    total.bfr_surp()     + fl->bfr_surp()    );
     total.set_surplus(    total.surplus()     + fl->surplus()    );
     total.set_desired(    total.desired()     + fl->desired()    );
-    total.set_prevSweep(  total.prevSweep()   + fl->prevSweep()  );
-    total.set_beforeSweep(total.beforeSweep() + fl->beforeSweep());
+    total.set_prev_sweep(  total.prev_sweep()   + fl->prev_sweep()  );
+    total.set_before_sweep(total.before_sweep() + fl->before_sweep());
     total.set_count(      total.count()       + fl->count()      );
-    total.set_coalBirths( total.coalBirths()  + fl->coalBirths() );
-    total.set_coalDeaths( total.coalDeaths()  + fl->coalDeaths() );
-    total.set_splitBirths(total.splitBirths() + fl->splitBirths());
-    total.set_splitDeaths(total.splitDeaths() + fl->splitDeaths());
+    total.set_coal_births( total.coal_births()  + fl->coal_births() );
+    total.set_coal_deaths( total.coal_deaths()  + fl->coal_deaths() );
+    total.set_split_births(total.split_births() + fl->split_births());
+    total.set_split_deaths(total.split_deaths() + fl->split_deaths());
   }
   total.print_on(gclog_or_tty, "TOTAL");
   gclog_or_tty->print_cr("Total free in indexed lists "
-                         SIZE_FORMAT " words", totalFree);
+                         SIZE_FORMAT " words", total_free);
   gclog_or_tty->print("growth: %8.5f  deficit: %8.5f\n",
-    (double)(total.splitBirths()+total.coalBirths()-total.splitDeaths()-total.coalDeaths())/
-            (total.prevSweep() != 0 ? (double)total.prevSweep() : 1.0),
+    (double)(total.split_births()+total.coal_births()-total.split_deaths()-total.coal_deaths())/
+            (total.prev_sweep() != 0 ? (double)total.prev_sweep() : 1.0),
     (double)(total.desired() - total.count())/(total.desired() != 0 ? (double)total.desired() : 1.0));
-  _dictionary->printDictCensus();
+  _dictionary->print_dict_census();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -2634,18 +2636,18 @@ HeapWord* CFLS_LAB::alloc(size_t word_sz) {
     res = _cfls->getChunkFromDictionaryExact(word_sz);
     if (res == NULL) return NULL;
   } else {
-    FreeList* fl = &_indexedFreeList[word_sz];
+    FreeList<FreeChunk>* fl = &_indexedFreeList[word_sz];
     if (fl->count() == 0) {
       // Attempt to refill this local free list.
       get_from_global_pool(word_sz, fl);
       // If it didn't work, give up.
       if (fl->count() == 0) return NULL;
     }
-    res = fl->getChunkAtHead();
+    res = fl->get_chunk_at_head();
     assert(res != NULL, "Why was count non-zero?");
   }
   res->markNotFree();
-  assert(!res->isFree(), "shouldn't be marked free");
+  assert(!res->is_free(), "shouldn't be marked free");
   assert(oop(res)->klass_or_null() == NULL, "should look uninitialized");
   // mangle a just allocated object with a distinct pattern.
   debug_only(res->mangleAllocated(word_sz));
@@ -2654,7 +2656,7 @@ HeapWord* CFLS_LAB::alloc(size_t word_sz) {
 
 // Get a chunk of blocks of the right size and update related
 // book-keeping stats
-void CFLS_LAB::get_from_global_pool(size_t word_sz, FreeList* fl) {
+void CFLS_LAB::get_from_global_pool(size_t word_sz, FreeList<FreeChunk>* fl) {
   // Get the #blocks we want to claim
   size_t n_blks = (size_t)_blocks_to_claim[word_sz].average();
   assert(n_blks > 0, "Error");
@@ -2736,7 +2738,7 @@ void CFLS_LAB::retire(int tid) {
         if (num_retire > 0) {
           _cfls->_indexedFreeList[i].prepend(&_indexedFreeList[i]);
           // Reset this list.
-          _indexedFreeList[i] = FreeList();
+          _indexedFreeList[i] = FreeList<FreeChunk>();
           _indexedFreeList[i].set_size(i);
         }
       }
@@ -2750,7 +2752,7 @@ void CFLS_LAB::retire(int tid) {
   }
 }
 
-void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n, FreeList* fl) {
+void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n, FreeList<FreeChunk>* fl) {
   assert(fl->count() == 0, "Precondition.");
   assert(word_sz < CompactibleFreeListSpace::IndexSetSize,
          "Precondition");
@@ -2766,12 +2768,12 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n
          (cur_sz < CompactibleFreeListSpace::IndexSetSize) &&
          (CMSSplitIndexedFreeListBlocks || k <= 1);
          k++, cur_sz = k * word_sz) {
-      FreeList fl_for_cur_sz;  // Empty.
+      FreeList<FreeChunk> fl_for_cur_sz;  // Empty.
       fl_for_cur_sz.set_size(cur_sz);
       {
         MutexLockerEx x(_indexedFreeListParLocks[cur_sz],
                         Mutex::_no_safepoint_check_flag);
-        FreeList* gfl = &_indexedFreeList[cur_sz];
+        FreeList<FreeChunk>* gfl = &_indexedFreeList[cur_sz];
         if (gfl->count() != 0) {
           // nn is the number of chunks of size cur_sz that
           // we'd need to split k-ways each, in order to create
@@ -2784,9 +2786,9 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n
             // we increment the split death count by the number of blocks
             // we just took from the cur_sz-size blocks list and which
             // we will be splitting below.
-            ssize_t deaths = gfl->splitDeaths() +
+            ssize_t deaths = gfl->split_deaths() +
                              fl_for_cur_sz.count();
-            gfl->set_splitDeaths(deaths);
+            gfl->set_split_deaths(deaths);
           }
         }
       }
@@ -2797,21 +2799,21 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n
         } else {
           // Divide each block on fl_for_cur_sz up k ways.
           FreeChunk* fc;
-          while ((fc = fl_for_cur_sz.getChunkAtHead()) != NULL) {
+          while ((fc = fl_for_cur_sz.get_chunk_at_head()) != NULL) {
             // Must do this in reverse order, so that anybody attempting to
             // access the main chunk sees it as a single free block until we
             // change it.
             size_t fc_size = fc->size();
-            assert(fc->isFree(), "Error");
+            assert(fc->is_free(), "Error");
             for (int i = k-1; i >= 0; i--) {
               FreeChunk* ffc = (FreeChunk*)((HeapWord*)fc + i * word_sz);
               assert((i != 0) ||
-                        ((fc == ffc) && ffc->isFree() &&
+                        ((fc == ffc) && ffc->is_free() &&
                          (ffc->size() == k*word_sz) && (fc_size == word_sz)),
                         "Counting error");
-              ffc->setSize(word_sz);
-              ffc->linkPrev(NULL); // Mark as a free block for other (parallel) GC threads.
-              ffc->linkNext(NULL);
+              ffc->set_size(word_sz);
+              ffc->link_prev(NULL); // Mark as a free block for other (parallel) GC threads.
+              ffc->link_next(NULL);
               // Above must occur before BOT is updated below.
               OrderAccess::storestore();
               // splitting from the right, fc_size == i * word_sz
@@ -2822,7 +2824,7 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n
               _bt.verify_single_block((HeapWord*)fc, fc_size);
               _bt.verify_single_block((HeapWord*)ffc, word_sz);
               // Push this on "fl".
-              fl->returnChunkAtHead(ffc);
+              fl->return_chunk_at_head(ffc);
             }
             // TRAP
             assert(fl->tail()->next() == NULL, "List invariant.");
@@ -2832,8 +2834,8 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n
         size_t num = fl->count();
         MutexLockerEx x(_indexedFreeListParLocks[word_sz],
                         Mutex::_no_safepoint_check_flag);
-        ssize_t births = _indexedFreeList[word_sz].splitBirths() + num;
-        _indexedFreeList[word_sz].set_splitBirths(births);
+        ssize_t births = _indexedFreeList[word_sz].split_births() + num;
+        _indexedFreeList[word_sz].set_split_births(births);
         return;
       }
     }
@@ -2846,12 +2848,12 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n
     MutexLockerEx x(parDictionaryAllocLock(),
                     Mutex::_no_safepoint_check_flag);
     while (n > 0) {
-      fc = dictionary()->getChunk(MAX2(n * word_sz,
-                                  _dictionary->minSize()),
-                                  FreeBlockDictionary::atLeast);
+      fc = dictionary()->get_chunk(MAX2(n * word_sz,
+                                  _dictionary->min_size()),
+                                  FreeBlockDictionary<FreeChunk>::atLeast);
       if (fc != NULL) {
         _bt.allocated((HeapWord*)fc, fc->size(), true /* reducing */);  // update _unallocated_blk
-        dictionary()->dictCensusUpdate(fc->size(),
+        dictionary()->dict_census_udpate(fc->size(),
                                        true /*split*/,
                                        false /*birth*/);
         break;
@@ -2862,7 +2864,7 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n
     if (fc == NULL) return;
     // Otherwise, split up that block.
     assert((ssize_t)n >= 1, "Control point invariant");
-    assert(fc->isFree(), "Error: should be a free block");
+    assert(fc->is_free(), "Error: should be a free block");
     _bt.verify_single_block((HeapWord*)fc, fc->size());
     const size_t nn = fc->size() / word_sz;
     n = MIN2(nn, n);
@@ -2893,18 +2895,18 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n
     if (rem > 0) {
       size_t prefix_size = n * word_sz;
       rem_fc = (FreeChunk*)((HeapWord*)fc + prefix_size);
-      rem_fc->setSize(rem);
-      rem_fc->linkPrev(NULL); // Mark as a free block for other (parallel) GC threads.
-      rem_fc->linkNext(NULL);
+      rem_fc->set_size(rem);
+      rem_fc->link_prev(NULL); // Mark as a free block for other (parallel) GC threads.
+      rem_fc->link_next(NULL);
       // Above must occur before BOT is updated below.
       assert((ssize_t)n > 0 && prefix_size > 0 && rem_fc > fc, "Error");
       OrderAccess::storestore();
       _bt.split_block((HeapWord*)fc, fc->size(), prefix_size);
-      assert(fc->isFree(), "Error");
-      fc->setSize(prefix_size);
+      assert(fc->is_free(), "Error");
+      fc->set_size(prefix_size);
       if (rem >= IndexSetSize) {
         returnChunkToDictionary(rem_fc);
-        dictionary()->dictCensusUpdate(rem, true /*split*/, true /*birth*/);
+        dictionary()->dict_census_udpate(rem, true /*split*/, true /*birth*/);
         rem_fc = NULL;
       }
       // Otherwise, return it to the small list below.
@@ -2914,7 +2916,7 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n
     MutexLockerEx x(_indexedFreeListParLocks[rem],
                     Mutex::_no_safepoint_check_flag);
     _bt.verify_not_unallocated((HeapWord*)rem_fc, rem_fc->size());
-    _indexedFreeList[rem].returnChunkAtHead(rem_fc);
+    _indexedFreeList[rem].return_chunk_at_head(rem_fc);
     smallSplitBirth(rem);
   }
   assert((ssize_t)n > 0 && fc != NULL, "Consistency");
@@ -2926,9 +2928,9 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n
   // All but first chunk in this loop
   for (ssize_t i = n-1; i > 0; i--) {
     FreeChunk* ffc = (FreeChunk*)((HeapWord*)fc + i * word_sz);
-    ffc->setSize(word_sz);
-    ffc->linkPrev(NULL); // Mark as a free block for other (parallel) GC threads.
-    ffc->linkNext(NULL);
+    ffc->set_size(word_sz);
+    ffc->link_prev(NULL); // Mark as a free block for other (parallel) GC threads.
+    ffc->link_next(NULL);
     // Above must occur before BOT is updated below.
     OrderAccess::storestore();
     // splitting from the right, fc_size == (n - i + 1) * wordsize
@@ -2938,25 +2940,25 @@ void CompactibleFreeListSpace:: par_get_chunk_of_blocks(size_t word_sz, size_t n
     _bt.verify_single_block((HeapWord*)ffc, ffc->size());
     _bt.verify_single_block((HeapWord*)fc, fc_size);
     // Push this on "fl".
-    fl->returnChunkAtHead(ffc);
+    fl->return_chunk_at_head(ffc);
   }
   // First chunk
-  assert(fc->isFree() && fc->size() == n*word_sz, "Error: should still be a free block");
+  assert(fc->is_free() && fc->size() == n*word_sz, "Error: should still be a free block");
   // The blocks above should show their new sizes before the first block below
-  fc->setSize(word_sz);
-  fc->linkPrev(NULL);    // idempotent wrt free-ness, see assert above
-  fc->linkNext(NULL);
+  fc->set_size(word_sz);
+  fc->link_prev(NULL);    // idempotent wrt free-ness, see assert above
+  fc->link_next(NULL);
   _bt.verify_not_unallocated((HeapWord*)fc, fc->size());
   _bt.verify_single_block((HeapWord*)fc, fc->size());
-  fl->returnChunkAtHead(fc);
+  fl->return_chunk_at_head(fc);
 
   assert((ssize_t)n > 0 && (ssize_t)n == fl->count(), "Incorrect number of blocks");
   {
     // Update the stats for this block size.
     MutexLockerEx x(_indexedFreeListParLocks[word_sz],
                     Mutex::_no_safepoint_check_flag);
-    const ssize_t births = _indexedFreeList[word_sz].splitBirths() + n;
-    _indexedFreeList[word_sz].set_splitBirths(births);
+    const ssize_t births = _indexedFreeList[word_sz].split_births() + n;
+    _indexedFreeList[word_sz].set_split_births(births);
     // ssize_t new_surplus = _indexedFreeList[word_sz].surplus() + n;
     // _indexedFreeList[word_sz].set_surplus(new_surplus);
   }

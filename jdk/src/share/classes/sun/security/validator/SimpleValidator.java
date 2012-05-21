@@ -311,7 +311,7 @@ public final class SimpleValidator extends Validator {
         // if the certificate is self-issued, ignore the pathLenConstraint
         // checking.
         if (!X509CertImpl.isSelfIssued(cert)) {
-            if (maxPathLen <= 1) {   // reserved one for end-entity certificate
+            if (maxPathLen <= 0) {
                 throw new ValidatorException("Violated path length constraints",
                     ValidatorException.T_CA_EXTENSIONS, cert);
             }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,15 +41,19 @@ JVM_DB = libjvm_db
 LIBJVM_DB = libjvm_db.so
 LIBJVM_DB_G = libjvm$(G_SUFFIX)_db.so
 
-LIBJVM_DB_DEBUGINFO = libjvm_db.debuginfo
+LIBJVM_DB_DEBUGINFO   = libjvm_db.debuginfo
+LIBJVM_DB_DIZ         = libjvm_db.diz
 LIBJVM_DB_G_DEBUGINFO = libjvm$(G_SUFFIX)_db.debuginfo
+LIBJVM_DB_G_DIZ       = libjvm$(G_SUFFIX)_db.diz
 
 JVM_DTRACE = jvm_dtrace
 LIBJVM_DTRACE = libjvm_dtrace.so
 LIBJVM_DTRACE_G = libjvm$(G_SUFFIX)_dtrace.so
 
-LIBJVM_DTRACE_DEBUGINFO = libjvm_dtrace.debuginfo
+LIBJVM_DTRACE_DEBUGINFO   = libjvm_dtrace.debuginfo
+LIBJVM_DTRACE_DIZ         = libjvm_dtrace.diz
 LIBJVM_DTRACE_G_DEBUGINFO = libjvm$(G_SUFFIX)_dtrace.debuginfo
+LIBJVM_DTRACE_G_DIZ       = libjvm$(G_SUFFIX)_dtrace.diz
 
 JVMOFFS = JvmOffsets
 JVMOFFS.o = $(JVMOFFS).o
@@ -95,10 +99,14 @@ XLIBJVM_DB_G = 64/$(LIBJVM_DB_G)
 XLIBJVM_DTRACE = 64/$(LIBJVM_DTRACE)
 XLIBJVM_DTRACE_G = 64/$(LIBJVM_DTRACE_G)
 
-XLIBJVM_DB_DEBUGINFO = 64/$(LIBJVM_DB_DEBUGINFO)
-XLIBJVM_DB_G_DEBUGINFO = 64/$(LIBJVM_DB_G_DEBUGINFO)
-XLIBJVM_DTRACE_DEBUGINFO = 64/$(LIBJVM_DTRACE_DEBUGINFO)
+XLIBJVM_DB_DEBUGINFO       = 64/$(LIBJVM_DB_DEBUGINFO)
+XLIBJVM_DB_DIZ             = 64/$(LIBJVM_DB_DIZ)
+XLIBJVM_DB_G_DEBUGINFO     = 64/$(LIBJVM_DB_G_DEBUGINFO)
+XLIBJVM_DB_G_DIZ           = 64/$(LIBJVM_DB_G_DIZ)
+XLIBJVM_DTRACE_DEBUGINFO   = 64/$(LIBJVM_DTRACE_DEBUGINFO)
+XLIBJVM_DTRACE_DIZ         = 64/$(LIBJVM_DTRACE_DIZ)
 XLIBJVM_DTRACE_G_DEBUGINFO = 64/$(LIBJVM_DTRACE_G_DEBUGINFO)
+XLIBJVM_DTRACE_G_DIZ       = 64/$(LIBJVM_DTRACE_G_DIZ)
 
 $(XLIBJVM_DB): $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS).h $(LIBJVM_DB_MAPFILE)
 	@echo Making $@
@@ -106,7 +114,7 @@ $(XLIBJVM_DB): $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS).h $(LIBJVM_DB_MAPFILE)
 	$(CC) $(SYMFLAG) $(ARCHFLAG/$(ISA)) -D$(TYPE) -I. -I$(GENERATED) \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DB) -o $@ $(DTRACE_SRCDIR)/$(JVM_DB).c -lc
 	[ -f $(XLIBJVM_DB_G) ] || { ln -s $(LIBJVM_DB) $(XLIBJVM_DB_G); }
-ifneq ($(OBJCOPY),)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(XLIBJVM_DB_DEBUGINFO)
 	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(XLIBJVM_DB_DEBUGINFO) $@
   ifeq ($(STRIP_POLICY),all_strip)
@@ -117,7 +125,12 @@ ifneq ($(OBJCOPY),)
     # implied else here is no stripping at all
     endif
   endif
-	[ -f $(XLIBJVM_DB_G_DEBUGINFO) ] || { ln -s $(LIBJVM_DB_DEBUGINFO) $(XLIBJVM_DB_G_DEBUGINFO); }
+	[ -f $(XLIBJVM_DB_G_DEBUGINFO) ] || { ln -s $(XLIBJVM_DB_DEBUGINFO) $(XLIBJVM_DB_G_DEBUGINFO); }
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	$(ZIPEXE) -q -y $(XLIBJVM_DB_DIZ) $(XLIBJVM_DB_DEBUGINFO) $(XLIBJVM_DB_G_DEBUGINFO)
+	$(RM) $(XLIBJVM_DB_DEBUGINFO) $(XLIBJVM_DB_G_DEBUGINFO)
+	[ -f $(XLIBJVM_DB_G_DIZ) ] || { ln -s $(XLIBJVM_DB_DIZ) $(XLIBJVM_DB_G_DIZ); }
+  endif
 endif
 
 $(XLIBJVM_DTRACE): $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(DTRACE_SRCDIR)/$(JVM_DTRACE).h $(LIBJVM_DTRACE_MAPFILE)
@@ -126,7 +139,7 @@ $(XLIBJVM_DTRACE): $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(DTRACE_SRCDIR)/$(JVM_DTRAC
 	$(CC) $(SYMFLAG) $(ARCHFLAG/$(ISA)) -D$(TYPE) -I. \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c -lc -lthread -ldoor
 	[ -f $(XLIBJVM_DTRACE_G) ] || { ln -s $(LIBJVM_DTRACE) $(XLIBJVM_DTRACE_G); }
-ifneq ($(OBJCOPY),)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(XLIBJVM_DTRACE_DEBUGINFO)
 	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(XLIBJVM_DTRACE_DEBUGINFO) $@
   ifeq ($(STRIP_POLICY),all_strip)
@@ -137,7 +150,12 @@ ifneq ($(OBJCOPY),)
     # implied else here is no stripping at all
     endif
   endif
-	[ -f $(XLIBJVM_DTRACE_G_DEBUGINFO) ] || { ln -s $(LIBJVM_DTRACE_DEBUGINFO) $(XLIBJVM_DTRACE_G_DEBUGINFO); }
+	[ -f $(XLIBJVM_DTRACE_G_DEBUGINFO) ] || { ln -s $(XLIBJVM_DTRACE_DEBUGINFO) $(XLIBJVM_DTRACE_G_DEBUGINFO); }
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	$(ZIPEXE) -q -y $(XLIBJVM_DTRACE_DIZ) $(XLIBJVM_DTRACE_DEBUGINFO) $(XLIBJVM_DTRACE_G_DEBUGINFO)
+	$(RM) $(XLIBJVM_DTRACE_DEBUGINFO) $(XLIBJVM_DTRACE_G_DEBUGINFO)
+	[ -f $(XLIBJVM_DTRACE_G_DIZ) ] || { ln -s $(XLIBJVM_DTRACE_DIZ) $(XLIBJVM_DTRACE_G_DIZ); }
+  endif
 endif
 
 endif # ifneq ("${ISA}","${BUILDARCH}")
@@ -185,7 +203,7 @@ $(LIBJVM_DB): $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS.o) $(XLIBJVM_DB) $(LIBJVM_D
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) -D$(TYPE) -I. -I$(GENERATED) \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DB) -o $@ $(DTRACE_SRCDIR)/$(JVM_DB).c -lc
 	[ -f $(LIBJVM_DB_G) ] || { ln -s $@ $(LIBJVM_DB_G); }
-ifneq ($(OBJCOPY),)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJVM_DB_DEBUGINFO)
 	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DB_DEBUGINFO) $@
   ifeq ($(STRIP_POLICY),all_strip)
@@ -197,6 +215,11 @@ ifneq ($(OBJCOPY),)
     endif
   endif
 	[ -f $(LIBJVM_DB_G_DEBUGINFO) ] || { ln -s $(LIBJVM_DB_DEBUGINFO) $(LIBJVM_DB_G_DEBUGINFO); }
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	$(ZIPEXE) -q -y $(LIBJVM_DB_DIZ) $(LIBJVM_DB_DEBUGINFO) $(LIBJVM_DB_G_DEBUGINFO)
+	$(RM) $(LIBJVM_DB_DEBUGINFO) $(LIBJVM_DB_G_DEBUGINFO)
+	[ -f $(LIBJVM_DB_G_DIZ) ] || { ln -s $(LIBJVM_DB_DIZ) $(LIBJVM_DB_G_DIZ); }
+  endif
 endif
 
 $(LIBJVM_DTRACE): $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(XLIBJVM_DTRACE) $(DTRACE_SRCDIR)/$(JVM_DTRACE).h $(LIBJVM_DTRACE_MAPFILE)
@@ -204,7 +227,7 @@ $(LIBJVM_DTRACE): $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(XLIBJVM_DTRACE) $(DTRACE_SR
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) -D$(TYPE) -I.  \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c -lc -lthread -ldoor
 	[ -f $(LIBJVM_DTRACE_G) ] || { ln -s $@ $(LIBJVM_DTRACE_G); }
-ifneq ($(OBJCOPY),)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJVM_DTRACE_DEBUGINFO)
 	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DTRACE_DEBUGINFO) $@
   ifeq ($(STRIP_POLICY),all_strip)
@@ -216,6 +239,11 @@ ifneq ($(OBJCOPY),)
     endif
   endif
 	[ -f $(LIBJVM_DTRACE_G_DEBUGINFO) ] || { ln -s $(LIBJVM_DTRACE_DEBUGINFO) $(LIBJVM_DTRACE_G_DEBUGINFO); }
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	$(ZIPEXE) -q -y $(LIBJVM_DTRACE_DIZ) $(LIBJVM_DTRACE_DEBUGINFO) $(LIBJVM_DTRACE_G_DEBUGINFO)
+	$(RM) $(LIBJVM_DTRACE_DEBUGINFO) $(LIBJVM_DTRACE_G_DEBUGINFO)
+	[ -f $(LIBJVM_DTRACE_G_DIZ) ] || { ln -s $(LIBJVM_DTRACE_DIZ) $(LIBJVM_DTRACE_G_DIZ); }
+  endif
 endif
 
 $(DTRACE).d: $(DTRACE_SRCDIR)/hotspot.d $(DTRACE_SRCDIR)/hotspot_jni.d \

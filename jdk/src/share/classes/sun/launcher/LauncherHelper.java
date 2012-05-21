@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -381,7 +381,7 @@ public enum LauncherHelper {
         PrintStream ostream =  (printToStderr) ? System.err : System.out;
         ostream.println(getLocalizedMessage("java.launcher.X.usage",
                 File.pathSeparator));
-        if (System.getProperty("os.name").startsWith("Mac OS")) {
+        if (System.getProperty("os.name").contains("OS X")) {
             ostream.println(getLocalizedMessage("java.launcher.X.macosx.usage",
                         File.pathSeparator));
         }

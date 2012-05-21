@@ -88,20 +88,20 @@ public abstract class LWCursorManager {
         } else {
             cursor = (c != null) ? c.getCursor() : null;
         }
-        // TODO: default cursor for modal blocked windows
         setCursor(cursor);
     }
 
     /**
      * Returns the first visible, enabled and showing component under cursor.
+     * Returns null for modal blocked windows.
      *
      * @param cursorPos Current cursor position.
-     * @return Component
+     * @return Component or null.
      */
     private static final Component findComponent(final Point cursorPos) {
         final LWComponentPeer<?, ?> peer = LWWindowPeer.getPeerUnderCursor();
         Component c = null;
-        if (peer != null) {
+        if (peer != null && peer.getWindowPeerOrSelf().getBlocker() == null) {
             c = peer.getTarget();
             if (c instanceof Container) {
                 final Point p = peer.getLocationOnScreen();
