@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
   /* Threads (NOTE: incomplete) */                                                                                                   \
   /******************************/                                                                                                   \
                                                                                                                                      \
-  nonstatic_field(OSThread,                    _thread_id,                                    unsigned long)                         \
+  nonstatic_field(OSThread,                    _thread_id,                                    OSThread::thread_id_t)                 \
   unchecked_nonstatic_field(OSThread,          _thread_handle,                                sizeof(HANDLE)) /* NOTE: no type */    \
                                                                                                                                      \
   /* This must be the last entry, and must be present */                                                                             \
