@@ -403,6 +403,7 @@ GetJavaProperties(JNIEnv* env)
          * Windows Server 2008          6               0  (!VER_NT_WORKSTATION)
          * Windows 7                    6               1  (VER_NT_WORKSTATION)
          * Windows Server 2008 R2       6               1  (!VER_NT_WORKSTATION)
+         * Windows 8                    6               2  (VER_NT_WORKSTATION)
          *
          * This mapping will presumably be augmented as new Windows
          * versions are released.
@@ -459,6 +460,7 @@ GetJavaProperties(JNIEnv* env)
                     switch (ver.dwMinorVersion) {
                     case  0: sprops.os_name = "Windows Vista";        break;
                     case  1: sprops.os_name = "Windows 7";            break;
+                    case  2: sprops.os_name = "Windows 8";            break;
                     default: sprops.os_name = "Windows NT (unknown)";
                     }
                 } else {
