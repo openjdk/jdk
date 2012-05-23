@@ -572,7 +572,7 @@ void CompilerOracle::parse_from_file() {
   char token[1024];
   int  pos = 0;
   int  c = getc(stream);
-  while(c != EOF) {
+  while(c != EOF && pos < (sizeof(token)-1)) {
     if (c == '\n') {
       token[pos++] = '\0';
       parse_from_line(token);
@@ -593,7 +593,7 @@ void CompilerOracle::parse_from_string(const char* str, void (*parse_line)(char*
   int  pos = 0;
   const char* sp = str;
   int  c = *sp++;
-  while (c != '\0') {
+  while (c != '\0' && pos < (sizeof(token)-1)) {
     if (c == '\n') {
       token[pos++] = '\0';
       parse_line(token);
