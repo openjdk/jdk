@@ -43,6 +43,7 @@
 
 #define VM_TYPES_OS_CPU(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type, declare_c1_toplevel_type, declare_c2_type, declare_c2_toplevel_type, last_entry) \
                                                                           \
+  declare_unsigned_integer_type(OSThread::thread_id_t)                    \
   /* This must be the last entry, and must be present */                  \
   last_entry()
 
