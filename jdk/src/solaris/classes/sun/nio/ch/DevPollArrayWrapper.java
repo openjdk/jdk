@@ -25,9 +25,7 @@
 
 package sun.nio.ch;
 
-import sun.misc.*;
 import java.io.IOException;
-import java.util.LinkedList;
 
 
 /**
@@ -66,6 +64,9 @@ class DevPollArrayWrapper {
     static final short EVENT_OFFSET  = 4;
     static final short REVENT_OFFSET = 6;
 
+    // Special value to indicate that an update should be ignored
+    static final byte  CANCELLED     = (byte)-1;
+
     // Maximum number of open file descriptors
     static final int   OPEN_MAX      = fdLimit();
 
@@ -74,13 +75,16 @@ class DevPollArrayWrapper {
     static final int   NUM_POLLFDS   = Math.min(OPEN_MAX-1, 8192);
 
     // Base address of the native pollArray
-    private long pollArrayAddress;
+    private final long pollArrayAddress;
 
     // Array of pollfd structs used for driver updates
-    private AllocatedNativeObject updatePollArray;
+    private final AllocatedNativeObject updatePollArray;
 
     // Maximum number of POLL_FD structs to update at once
-    private int MAX_UPDATE_SIZE = Math.min(OPEN_MAX, 10000);
+    private final int MAX_UPDATE_SIZE = Math.min(OPEN_MAX, 512);
+
+    // Initial size of arrays for fd registration changes
+    private final int INITIAL_PENDING_UPDATE_SIZE = 64;
 
     DevPollArrayWrapper() {
         int allocationSize = NUM_POLLFDS * SIZE_POLLFD;
@@ -90,19 +94,6 @@ class DevPollArrayWrapper {
         updatePollArray = new AllocatedNativeObject(allocationSize, true);
         wfd = init();
     }
-
-    // Machinery for remembering fd registration changes
-    // A hashmap could be used but the number of changes pending
-    // is expected to be small
-    private static class Updator {
-        int fd;
-        int mask;
-        Updator(int fd, int mask) {
-            this.fd = fd;
-            this.mask = mask;
-        }
-    }
-    private LinkedList<Updator> updateList = new LinkedList<Updator>();
 
     // The pollfd array for results from devpoll driver
     private AllocatedNativeObject pollArray;
@@ -121,6 +112,20 @@ class DevPollArrayWrapper {
 
     // Number of updated pollfd entries
     int updated;
+
+    // object to synchronize fd registration changes
+    private final Object updateLock = new Object();
+
+    // number of file descriptors with registration changes pending
+    private int updateCount;
+
+    // file descriptors with registration changes pending
+    private int[] updateDescriptors = new int[INITIAL_PENDING_UPDATE_SIZE];
+
+    // events for file descriptors with registration changes pending, indexed
+    // by file descriptor and stored as bytes for efficiency reasons.
+    private byte[] updateEvents = new byte[OPEN_MAX];
+
 
     void initInterrupt(int fd0, int fd1) {
         outgoingInterruptFD = fd1;
@@ -149,14 +154,32 @@ class DevPollArrayWrapper {
     }
 
     void setInterest(int fd, int mask) {
-        synchronized (updateList) {
-            updateList.add(new Updator(fd, mask));
+        synchronized (updateLock) {
+            // record the file descriptor and events, expanding the
+            // respective arrays first if necessary.
+            int oldCapacity = updateDescriptors.length;
+            if (updateCount >= oldCapacity) {
+                int newCapacity = oldCapacity + INITIAL_PENDING_UPDATE_SIZE;
+                int[] newDescriptors = new int[newCapacity];
+                System.arraycopy(updateDescriptors, 0, newDescriptors, 0, oldCapacity);
+                updateDescriptors = newDescriptors;
+            }
+            updateDescriptors[updateCount++] = fd;
+
+            // events are stored as bytes for efficiency reasons
+            byte b = (byte)mask;
+            assert (b == mask) && (b != CANCELLED);
+            updateEvents[fd] = b;
         }
     }
 
     void release(int fd) {
-        synchronized (updateList) {
-            updateList.add(new Updator(fd, POLLREMOVE));
+        synchronized (updateLock) {
+            // cancel any pending update for this file descriptor
+            updateEvents[fd] = CANCELLED;
+
+            // remove from /dev/poll
+            register(wfd, fd, POLLREMOVE);
         }
     }
 
@@ -181,32 +204,37 @@ class DevPollArrayWrapper {
 
     void updateRegistrations() throws IOException {
         // Populate pollfd array with updated masks
-        synchronized (updateList) {
-            while (updateList.size() > 0) {
-                // We have to insert a dummy node in between each
-                // real update to use POLLREMOVE on the fd first because
-                // otherwise the changes are simply OR'd together
-                int index = 0;
-                Updator u = null;
-                while ((u = updateList.poll()) != null) {
-                    // First add pollfd struct to clear out this fd
-                    putPollFD(updatePollArray, index, u.fd, POLLREMOVE);
-                    index++;
-                    // Now add pollfd to update this fd, if necessary
-                    if (u.mask != POLLREMOVE) {
-                        putPollFD(updatePollArray, index, u.fd, (short)u.mask);
-                        index++;
-                    }
+        synchronized (updateLock) {
 
-                    // Check against the max update size; these are
-                    // all we will process. Valid index ranges from 0 to
-                    // (MAX_UPDATE_SIZE - 1) and we can use up to 2 per loop
-                    if (index >  MAX_UPDATE_SIZE - 2)
-                        break;
+            int j = 0;
+            int index = 0;
+            while (j < updateCount) {
+                int fd = updateDescriptors[j];
+                short events = updateEvents[fd];
+
+                // skip update if key has been cancelled
+                if (events != CANCELLED) {
+                    // remove from /dev/poll when the interest ops changes to 0
+                    if (events == 0)
+                        events = POLLREMOVE;
+
+                    // populate pollfd array with updated event
+                    putPollFD(updatePollArray, index, fd, events);
+                    index++;
+                    if (index >= MAX_UPDATE_SIZE) {
+                        registerMultiple(wfd, updatePollArray.address(), index);
+                        index = 0;
+                    }
                 }
-                // Register the changes with /dev/poll
+                j++;
+
+            }
+
+            // write any remaining updates
+            if (index > 0)
                 registerMultiple(wfd, updatePollArray.address(), index);
-             }
+
+            updateCount = 0;
         }
     }
 
