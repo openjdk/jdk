@@ -89,6 +89,12 @@
                          (ci)->input_position <= (ci)->input_len && \
                          (ci)->output_position <= (ci)->output_len) )
 
+#define BUFSIZE 256
+
+#ifdef _WIN32
+#define snprintf(buffer, count, format, ...) _snprintf_s(buffer, count, _TRUNCATE, format, ##__VA_ARGS__)
+#endif
+
 /* Typedefs for various integral numbers, just for code clarity */
 
 typedef unsigned       ClassOpcode;             /* One opcode */
@@ -651,6 +657,7 @@ cpool_setup(CrwClassImage *ci)
         unsigned int    index2;
         unsigned        len;
         char *          utf8;
+        char message[BUFSIZE];
 
         ipos    = i;
         index1  = 0;
@@ -689,8 +696,20 @@ cpool_setup(CrwClassImage *ci)
                 utf8[len] = 0;
                 write_bytes(ci, (void*)utf8, len);
                 break;
+            case JVM_CONSTANT_MethodType:
+                index1 = copyU2(ci);
+                break;
+            case JVM_CONSTANT_MethodHandle:
+                index1 = copyU1(ci);
+                index2 = copyU2(ci);
+                break;
+            case JVM_CONSTANT_InvokeDynamic:
+                index1 = copyU2(ci);
+                index2 = copyU2(ci);
+                break;
             default:
-                CRW_FATAL(ci, "Unknown constant");
+                snprintf(message, BUFSIZE, "Unknown tag: %d, at ipos %hu", tag, ipos);
+                CRW_FATAL(ci, message);
                 break;
         }
         fillin_cpool_entry(ci, ipos, tag, index1, index2, (const char *)utf8, len);
