@@ -57,8 +57,6 @@ import javax.swing.tree.DefaultTreeModel;
 import sun.tools.jconsole.*;
 import sun.tools.jconsole.inspector.XNodeInfo.Type;
 
-import static sun.tools.jconsole.Resources.*;
-
 @SuppressWarnings("serial")
 public class XSheet extends JPanel
         implements ActionListener, NotificationListener {
@@ -106,28 +104,24 @@ public class XSheet extends JPanel
         southPanel = new JPanel();
         add(southPanel, BorderLayout.SOUTH);
         // create the refresh button
-        String refreshButtonKey = "MBeansTab.refreshAttributesButton";
-        refreshButton = new JButton(getText(refreshButtonKey));
-        refreshButton.setMnemonic(getMnemonicInt(refreshButtonKey));
-        refreshButton.setToolTipText(getText(refreshButtonKey + ".toolTip"));
+        refreshButton = new JButton(Messages.MBEANS_TAB_REFRESH_ATTRIBUTES_BUTTON);
+        refreshButton.setMnemonic(Resources.getMnemonicInt(Messages.MBEANS_TAB_REFRESH_ATTRIBUTES_BUTTON));
+        refreshButton.setToolTipText(Messages.MBEANS_TAB_REFRESH_ATTRIBUTES_BUTTON_TOOLTIP);
         refreshButton.addActionListener(this);
         // create the clear button
-        String clearButtonKey = "MBeansTab.clearNotificationsButton";
-        clearButton = new JButton(getText(clearButtonKey));
-        clearButton.setMnemonic(getMnemonicInt(clearButtonKey));
-        clearButton.setToolTipText(getText(clearButtonKey + ".toolTip"));
+        clearButton = new JButton(Messages.MBEANS_TAB_CLEAR_NOTIFICATIONS_BUTTON);
+        clearButton.setMnemonic(Resources.getMnemonicInt(Messages.MBEANS_TAB_CLEAR_NOTIFICATIONS_BUTTON));
+        clearButton.setToolTipText(Messages.MBEANS_TAB_CLEAR_NOTIFICATIONS_BUTTON_TOOLTIP);
         clearButton.addActionListener(this);
         // create the subscribe button
-        String subscribeButtonKey = "MBeansTab.subscribeNotificationsButton";
-        subscribeButton = new JButton(getText(subscribeButtonKey));
-        subscribeButton.setMnemonic(getMnemonicInt(subscribeButtonKey));
-        subscribeButton.setToolTipText(getText(subscribeButtonKey + ".toolTip"));
+        subscribeButton = new JButton(Messages.MBEANS_TAB_SUBSCRIBE_NOTIFICATIONS_BUTTON);
+        subscribeButton.setMnemonic(Resources.getMnemonicInt(Messages.MBEANS_TAB_SUBSCRIBE_NOTIFICATIONS_BUTTON));
+        subscribeButton.setToolTipText(Messages.MBEANS_TAB_SUBSCRIBE_NOTIFICATIONS_BUTTON_TOOLTIP);
         subscribeButton.addActionListener(this);
         // create the unsubscribe button
-        String unsubscribeButtonKey = "MBeansTab.unsubscribeNotificationsButton";
-        unsubscribeButton = new JButton(getText(unsubscribeButtonKey));
-        unsubscribeButton.setMnemonic(getMnemonicInt(unsubscribeButtonKey));
-        unsubscribeButton.setToolTipText(getText(unsubscribeButtonKey + ".toolTip"));
+        unsubscribeButton = new JButton(Messages.MBEANS_TAB_UNSUBSCRIBE_NOTIFICATIONS_BUTTON);
+        unsubscribeButton.setMnemonic(Resources.getMnemonicInt(Messages.MBEANS_TAB_UNSUBSCRIBE_NOTIFICATIONS_BUTTON));
+        unsubscribeButton.setToolTipText(Messages.MBEANS_TAB_UNSUBSCRIBE_NOTIFICATIONS_BUTTON_TOOLTIP);
         unsubscribeButton.addActionListener(this);
         // create XMBeanAttributes container
         mbeanAttributes = new XMBeanAttributes(mbeansTab);
@@ -238,7 +232,7 @@ public class XSheet extends JPanel
                         t.printStackTrace();
                     }
                     showErrorDialog(t.toString(),
-                            Resources.getText("Problem displaying MBean"));
+                            Messages.PROBLEM_DISPLAYING_MBEAN);
                 }
             }
         };
@@ -279,7 +273,7 @@ public class XSheet extends JPanel
                                             new JPanel(new BorderLayout());
                                     attributeBorderPanel.setBorder(
                                             BorderFactory.createTitledBorder(
-                                            Resources.getText("Attribute value")));
+                                            Messages.ATTRIBUTE_VALUE));
                                     JPanel attributeValuePanel =
                                             new JPanel(new BorderLayout());
                                     attributeValuePanel.setBorder(
@@ -314,7 +308,7 @@ public class XSheet extends JPanel
                                         t.printStackTrace();
                                     }
                                     showErrorDialog(t.toString(),
-                                            Resources.getText("Problem displaying MBean"));
+                                            Messages.PROBLEM_DISPLAYING_MBEAN);
                                 }
                             }
                         };
@@ -333,7 +327,7 @@ public class XSheet extends JPanel
                 JPanel operationPanel = new JPanel(new BorderLayout());
                 JPanel operationBorderPanel = new JPanel(new BorderLayout());
                 operationBorderPanel.setBorder(BorderFactory.createTitledBorder(
-                        Resources.getText("Operation invocation")));
+                        Messages.OPERATION_INVOCATION));
                 operationBorderPanel.add(new JScrollPane(mbeanOperations));
                 operationPanel.add(operationBorderPanel, BorderLayout.NORTH);
                 mbi.addMBeanOperationInfo(mboi);
@@ -389,7 +383,7 @@ public class XSheet extends JPanel
                         mainPanel.removeAll();
                         JPanel borderPanel = new JPanel(new BorderLayout());
                         borderPanel.setBorder(BorderFactory.createTitledBorder(
-                                Resources.getText("Attribute values")));
+                                Messages.ATTRIBUTE_VALUES));
                         borderPanel.add(new JScrollPane(mbeanAttributes));
                         mainPanel.add(borderPanel, BorderLayout.CENTER);
                         // add the refresh button to the south panel
@@ -409,7 +403,7 @@ public class XSheet extends JPanel
                         t.printStackTrace();
                     }
                     showErrorDialog(t.toString(),
-                            Resources.getText("Problem displaying MBean"));
+                            Messages.PROBLEM_DISPLAYING_MBEAN);
                 }
             }
         };
@@ -442,7 +436,7 @@ public class XSheet extends JPanel
                         mainPanel.removeAll();
                         JPanel borderPanel = new JPanel(new BorderLayout());
                         borderPanel.setBorder(BorderFactory.createTitledBorder(
-                                Resources.getText("Operation invocation")));
+                                Messages.OPERATION_INVOCATION));
                         borderPanel.add(new JScrollPane(mbeanOperations));
                         mainPanel.add(borderPanel, BorderLayout.CENTER);
                         southPanel.setVisible(false);
@@ -459,7 +453,7 @@ public class XSheet extends JPanel
                         t.printStackTrace();
                     }
                     showErrorDialog(t.toString(),
-                            Resources.getText("Problem displaying MBean"));
+                            Messages.PROBLEM_DISPLAYING_MBEAN);
                 }
             }
         };
@@ -479,7 +473,7 @@ public class XSheet extends JPanel
         mainPanel.removeAll();
         JPanel borderPanel = new JPanel(new BorderLayout());
         borderPanel.setBorder(BorderFactory.createTitledBorder(
-                Resources.getText("Notification buffer")));
+                Messages.NOTIFICATION_BUFFER));
         borderPanel.add(new JScrollPane(mbeanNotifications));
         mainPanel.add(borderPanel, BorderLayout.CENTER);
         // add the subscribe/unsubscribe/clear buttons to the south panel
@@ -528,7 +522,7 @@ public class XSheet extends JPanel
                         t.printStackTrace();
                     }
                     showErrorDialog(t.getMessage(),
-                            Resources.getText("Problem adding listener"));
+                            Messages.PROBLEM_ADDING_LISTENER);
                 }
             }
         }.execute();
@@ -557,7 +551,7 @@ public class XSheet extends JPanel
                         t.printStackTrace();
                     }
                     showErrorDialog(t.getMessage(),
-                            Resources.getText("Problem removing listener"));
+                            Messages.PROBLEM_REMOVING_LISTENER);
                 }
             }
         }.execute();
@@ -586,7 +580,7 @@ public class XSheet extends JPanel
     // Call on EDT
     private void updateReceivedNotifications(
             DefaultMutableTreeNode emitter, long received, boolean bold) {
-        String text = Resources.getText("Notifications") + "[" + received + "]";
+        String text = Messages.NOTIFICATIONS + "[" + received + "]";
         DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) mbeansTab.getTree().getLastSelectedPathComponent();
         if (bold && emitter != selectedNode) {
             text = "<html><b>" + text + "</b></html>";
@@ -600,7 +594,7 @@ public class XSheet extends JPanel
     // Call on EDT
     private void clearNotifications() {
         updateNotificationsNodeLabel(currentNode,
-                Resources.getText("Notifications"));
+                Messages.NOTIFICATIONS);
     }
 
     /**
@@ -609,7 +603,7 @@ public class XSheet extends JPanel
     // Call on EDT
     private void clearNotifications0() {
         updateNotificationsNodeLabel(currentNode,
-                Resources.getText("Notifications") + "[0]");
+                Messages.NOTIFICATIONS + "[0]");
     }
 
     /**
@@ -712,7 +706,7 @@ public class XSheet extends JPanel
             new ThreadDialog(
                     (Component) e.getSource(),
                     message,
-                    Resources.getText("Operation return value"),
+                    Messages.OPERATION_RETURN_VALUE,
                     JOptionPane.INFORMATION_MESSAGE).run();
         } // Got notification
         else if (e.getType().equals(
