@@ -77,7 +77,7 @@ Java_sun_nio_ch_DatagramChannelImpl_initIDs(JNIEnv *env, jclass clazz)
 
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_DatagramChannelImpl_disconnect0(JNIEnv *env, jobject this,
-                                                jobject fdo)
+                                                jobject fdo, jboolean isIPv6)
 {
     jint fd = fdval(env, fdo);
     int rv;
@@ -94,7 +94,7 @@ Java_sun_nio_ch_DatagramChannelImpl_disconnect0(JNIEnv *env, jobject this,
         memset(&sa, 0, sizeof(sa));
 
 #ifdef AF_INET6
-        if (ipv6_available()) {
+        if (isIPv6) {
             struct sockaddr_in6 *him6 = (struct sockaddr_in6 *)&sa;
 #if defined(_ALLBSD_SOURCE)
             him6->sin6_family = AF_INET6;

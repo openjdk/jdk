@@ -108,7 +108,7 @@ jboolean purgeOutstandingICMP(JNIEnv *env, jclass clazz, jint fd)
 
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_DatagramChannelImpl_disconnect0(JNIEnv *env, jobject this,
-                                                jobject fdo)
+                                                jobject fdo, jboolean isIPv6)
 {
     jint fd = fdval(env, fdo);
     int rv = 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,8 +129,10 @@ class Utils {
         init();
         List<String> cmds = new ArrayList<String>();
         cmds.add(getJavaCmd());
-        cmds.add("-jar");
-        cmds.add(VerifierJar.getName());
+        cmds.add("-cp");
+        cmds.add(Utils.locateJar("tools.jar") +
+                System.getProperty("path.separator") + VerifierJar.getName());
+        cmds.add("sun.tools.pack.verify.Main");
         cmds.add(reference.getAbsolutePath());
         cmds.add(specimen.getAbsolutePath());
         cmds.add("-O");
@@ -142,8 +144,10 @@ class Utils {
         init();
         List<String> cmds = new ArrayList<String>();
         cmds.add(getJavaCmd());
-        cmds.add("-jar");
-        cmds.add(VerifierJar.getName());
+        cmds.add("-cp");
+        cmds.add(Utils.locateJar("tools.jar")
+                + System.getProperty("path.separator") + VerifierJar.getName());
+        cmds.add("sun.tools.pack.verify.Main");
         cmds.add(reference.getName());
         cmds.add(specimen.getName());
         cmds.add("-O");
