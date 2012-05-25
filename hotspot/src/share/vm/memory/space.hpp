@@ -880,10 +880,17 @@ class ContiguousSpace: public CompactibleSpace {
   void object_iterate_mem(MemRegion mr, UpwardsObjectClosure* cl);
   // iterates on objects up to the safe limit
   HeapWord* object_iterate_careful(ObjectClosureCareful* cl);
-  inline HeapWord* concurrent_iteration_safe_limit();
+  HeapWord* concurrent_iteration_safe_limit() {
+    assert(_concurrent_iteration_safe_limit <= top(),
+           "_concurrent_iteration_safe_limit update missed");
+    return _concurrent_iteration_safe_limit;
+  }
   // changes the safe limit, all objects from bottom() to the new
   // limit should be properly initialized
-  inline void set_concurrent_iteration_safe_limit(HeapWord* new_limit);
+  void set_concurrent_iteration_safe_limit(HeapWord* new_limit) {
+    assert(new_limit <= top(), "uninitialized objects in the safe range");
+    _concurrent_iteration_safe_limit = new_limit;
+  }
 
 #ifndef SERIALGC
   // In support of parallel oop_iterate.
