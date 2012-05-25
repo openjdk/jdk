@@ -2949,6 +2949,8 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   case vmIntrinsics::_dtan          : // fall through
   case vmIntrinsics::_dlog          : // fall through
   case vmIntrinsics::_dlog10        : // fall through
+  case vmIntrinsics::_dexp          : // fall through
+  case vmIntrinsics::_dpow          : // fall through
     {
       // Compiles where the root method is an intrinsic need a special
       // compilation environment because the bytecodes for the method
@@ -2969,6 +2971,9 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
       _state = start_block->state()->copy_for_parsing();
       _last  = start_block;
       load_local(doubleType, 0);
+      if (scope->method()->intrinsic_id() == vmIntrinsics::_dpow) {
+        load_local(doubleType, 2);
+      }
 
       // Emit the intrinsic node.
       bool result = try_inline_intrinsics(scope->method());
@@ -3182,6 +3187,8 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
     case vmIntrinsics::_dtan          : // fall through
     case vmIntrinsics::_dlog          : // fall through
     case vmIntrinsics::_dlog10        : // fall through
+    case vmIntrinsics::_dexp          : // fall through
+    case vmIntrinsics::_dpow          : // fall through
       if (!InlineMathNatives) return false;
       cantrap = false;
       preserves_state = true;
