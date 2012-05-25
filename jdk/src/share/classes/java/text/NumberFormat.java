@@ -756,7 +756,7 @@ public abstract class NumberFormat extends Format  {
         }
 
         /* try the cache first */
-        String[] numberPatterns = (String[])cachedLocaleData.get(desiredLocale);
+        String[] numberPatterns = cachedLocaleData.get(desiredLocale);
         if (numberPatterns == null) { /* cache miss */
             ResourceBundle resource = LocaleData.getNumberFormatData(desiredLocale);
             numberPatterns = resource.getStringArray("NumberPatterns");
@@ -844,7 +844,7 @@ public abstract class NumberFormat extends Format  {
     /**
      * Cache to hold the NumberPatterns of a Locale.
      */
-    private static final Hashtable cachedLocaleData = new Hashtable(3);
+    private static final Hashtable<Locale, String[]> cachedLocaleData = new Hashtable<>(3);
 
     // Constants used by factory methods to specify a style of format.
     private static final int NUMBERSTYLE = 0;
@@ -1035,7 +1035,7 @@ public abstract class NumberFormat extends Format  {
         private static final long serialVersionUID = 7494728892700160890L;
 
         // table of all instances in this class, used by readResolve
-        private static final Map instanceMap = new HashMap(11);
+        private static final Map<String, Field> instanceMap = new HashMap<>(11);
 
         /**
          * Creates a Field instance with the specified
