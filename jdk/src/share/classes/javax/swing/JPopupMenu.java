@@ -826,7 +826,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
             popupFactory.setPopupType(PopupFactory.LIGHT_WEIGHT_POPUP);
         }
         else {
-            popupFactory.setPopupType(PopupFactory.MEDIUM_WEIGHT_POPUP);
+            popupFactory.setPopupType(PopupFactory.HEAVY_WEIGHT_POPUP);
         }
 
         // adjust the location of the popup
