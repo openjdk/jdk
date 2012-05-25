@@ -67,17 +67,4 @@ OffsetTableContigSpace::block_start_const(const void* p) const {
   return _offsets.block_start(p);
 }
 
-inline HeapWord* ContiguousSpace::concurrent_iteration_safe_limit()
-{
-  assert(_concurrent_iteration_safe_limit <= top(),
-         "_concurrent_iteration_safe_limit update missed");
-  return _concurrent_iteration_safe_limit;
-}
-
-inline void ContiguousSpace::set_concurrent_iteration_safe_limit(HeapWord* new_limit)
-{
-  assert(new_limit <= top(), "uninitialized objects in the safe range");
-  _concurrent_iteration_safe_limit = new_limit;
-}
-
 #endif // SHARE_VM_MEMORY_SPACE_INLINE_HPP

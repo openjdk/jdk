@@ -56,6 +56,8 @@ import sun.java2d.SunGraphics2D;
 import sun.java2d.opengl.OGLRenderQueue;
 import sun.java2d.pipe.Region;
 
+import sun.util.logging.PlatformLogger;
+
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
 import javax.swing.RepaintManager;
@@ -65,7 +67,10 @@ import sun.lwawt.macosx.CDropTarget;
 import com.sun.java.swing.SwingUtilities3;
 
 public abstract class LWComponentPeer<T extends Component, D extends JComponent>
-        implements ComponentPeer, DropTargetPeer {
+    implements ComponentPeer, DropTargetPeer
+{
+    private static final PlatformLogger focusLog = PlatformLogger.getLogger("sun.lwawt.focus.LWComponentPeer");
+
     // State lock is to be used for modifications to this
     // peer's fields (e.g. bounds, background, font, etc.)
     // It should be the last lock in the lock chain
@@ -372,7 +377,7 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     }
 
     @Override
-    public void dispose() {
+    public final void dispose() {
         if (disposed.compareAndSet(false, true)) {
             disposeImpl();
         }
@@ -885,7 +890,13 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
     @Override
     public boolean requestFocus(Component lightweightChild, boolean temporary,
                                 boolean focusedWindowChangeAllowed, long time,
-                                CausedFocusEvent.Cause cause) {
+                                CausedFocusEvent.Cause cause)
+    {
+        if (focusLog.isLoggable(PlatformLogger.FINEST)) {
+            focusLog.finest("lightweightChild=" + lightweightChild + ", temporary=" + temporary +
+                            ", focusedWindowChangeAllowed=" + focusedWindowChangeAllowed +
+                            ", time= " + time + ", cause=" + cause);
+        }
         if (LWKeyboardFocusManagerPeer.getInstance(getAppContext()).
                 processSynchronousLightweightTransfer(getTarget(), lightweightChild, temporary,
                         focusedWindowChangeAllowed, time)) {
@@ -901,19 +912,44 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
             case LWKeyboardFocusManagerPeer.SNFH_SUCCESS_PROCEED:
                 Window parentWindow = SunToolkit.getContainingWindow(getTarget());
                 if (parentWindow == null) {
+                    focusLog.fine("request rejected, parentWindow is null");
                     LWKeyboardFocusManagerPeer.removeLastFocusRequest(getTarget());
                     return false;
                 }
                 LWWindowPeer parentPeer = (LWWindowPeer) parentWindow.getPeer();
                 if (parentPeer == null) {
+                    focusLog.fine("request rejected, parentPeer is null");
                     LWKeyboardFocusManagerPeer.removeLastFocusRequest(getTarget());
                     return false;
+                }
+
+                // A fix for 7145768. Ensure the parent window is currently natively focused.
+                // The more evident place to perform this check is in KFM.shouldNativelyFocusHeavyweight,
+                // however that is the shared code and this particular problem's reproducibility has
+                // platform specifics. So, it was decided to narrow down the fix to lwawt (OSX) in
+                // current release. TODO: consider fixing it in the shared code.
+                if (!focusedWindowChangeAllowed) {
+                    LWWindowPeer decoratedPeer = parentPeer.isSimpleWindow() ?
+                        LWWindowPeer.getOwnerFrameDialog(parentPeer) : parentPeer;
+
+                    if (decoratedPeer == null || !decoratedPeer.getPlatformWindow().isActive()) {
+                        if (focusLog.isLoggable(PlatformLogger.FINE)) {
+                            focusLog.fine("request rejected, focusedWindowChangeAllowed==false, " +
+                                          "decoratedPeer is inactive: " + decoratedPeer);
+                        }
+                        LWKeyboardFocusManagerPeer.removeLastFocusRequest(getTarget());
+                        return false;
+                    }
                 }
 
                 boolean res = parentPeer.requestWindowFocus(cause);
                 // If parent window can be made focused and has been made focused (synchronously)
                 // then we can proceed with children, otherwise we retreat
                 if (!res || !parentWindow.isFocused()) {
+                    if (focusLog.isLoggable(PlatformLogger.FINE)) {
+                        focusLog.fine("request rejected, res= " + res + ", parentWindow.isFocused()=" +
+                                      parentWindow.isFocused());
+                    }
                     LWKeyboardFocusManagerPeer.removeLastFocusRequest(getTarget());
                     return false;
                 }
@@ -940,8 +976,8 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
 
     @Override
     public Image createImage(int w, int h) {
-        // TODO: accelerated image
-        return getGraphicsConfiguration().createCompatibleImage(w, h);
+        CGraphicsConfig gc = (CGraphicsConfig)getGraphicsConfiguration();
+        return gc.createAcceleratedImage(getTarget(), w, h);
     }
 
     @Override
