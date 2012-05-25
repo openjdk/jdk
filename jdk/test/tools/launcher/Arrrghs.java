@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 5030233 6214916 6356475 6571029 6684582 6742159 4459600 6758881 6753938
- *      6894719 6968053
+ *      6894719 6968053 7151434
  * @summary Argument parsing validation.
  * @compile -XDignore.symbol.file Arrrghs.java
  * @run main Arrrghs
@@ -236,6 +236,13 @@ public class Arrrghs extends TestHelper {
         tr = doExec(javaCmd, "-Xcomp");
         tr.checkNegative();
         tr.isNotZeroOutput();
+        System.out.println(tr);
+
+        // 7151434, test for non-negative exit value for an incorrectly formed
+        // command line, '% java -jar -W', note the bogus -W
+        tr = doExec(javaCmd, "-jar", "-W");
+        tr.checkNegative();
+        tr.contains("Unrecognized option: -W");
         System.out.println(tr);
     }
 

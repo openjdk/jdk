@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2638,17 +2638,16 @@ public abstract class JComponent extends Container implements Serializable,
      *    attribute: visualUpdate true
      */
     public void setVisible(boolean aFlag) {
-        if(aFlag != isVisible()) {
+        if (aFlag != isVisible()) {
             super.setVisible(aFlag);
-            Container parent = getParent();
-            if(parent != null) {
-                Rectangle r = getBounds();
-                parent.repaint(r.x,r.y,r.width,r.height);
+            if (aFlag) {
+                Container parent = getParent();
+                if (parent != null) {
+                    Rectangle r = getBounds();
+                    parent.repaint(r.x, r.y, r.width, r.height);
+                }
+                revalidate();
             }
-            // Some (all should) LayoutManagers do not consider components
-            // that are not visible. As such we need to revalidate when the
-            // visible bit changes.
-            revalidate();
         }
     }
 
@@ -4149,6 +4148,9 @@ public abstract class JComponent extends Container implements Serializable,
      * Refer to
      * {@link java.awt.Component#setFocusTraversalKeys}
      * for a complete description of this method.
+     * <p>
+     * This method may throw a {@code ClassCastException} if any {@code Object}
+     * in {@code keystrokes} is not an {@code AWTKeyStroke}.
      *
      * @param id one of KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS,
      *        KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, or
@@ -4161,8 +4163,7 @@ public abstract class JComponent extends Container implements Serializable,
      *         KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS,
      *         KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, or
      *         KeyboardFocusManager.UP_CYCLE_TRAVERSAL_KEYS, or if keystrokes
-     *         contains null, or if any Object in keystrokes is not an
-     *         AWTKeyStroke, or if any keystroke represents a KEY_TYPED event,
+     *         contains null, or if any keystroke represents a KEY_TYPED event,
      *         or if any keystroke already maps to another focus traversal
      *         operation for this Component
      * @since 1.5
@@ -5566,6 +5567,24 @@ public abstract class JComponent extends Container implements Serializable,
         ",maximumSize=" + maximumSizeString +
         ",minimumSize=" + minimumSizeString +
         ",preferredSize=" + preferredSizeString;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Deprecated
+    public void hide() {
+        boolean showing = isShowing();
+        super.hide();
+        if (showing) {
+            Container parent = getParent();
+            if (parent != null) {
+                Rectangle r = getBounds();
+                parent.repaint(r.x, r.y, r.width, r.height);
+            }
+            revalidate();
+        }
     }
 
 }

@@ -1606,6 +1606,11 @@ public class Lower extends TreeTranslator {
     }
 
     private JCStatement makeResourceCloseInvocation(JCExpression resource) {
+        // convert to AutoCloseable if needed
+        if (types.asSuper(resource.type, syms.autoCloseableType.tsym) == null) {
+            resource = (JCExpression) convert(resource, syms.autoCloseableType);
+        }
+
         // create resource.close() method invocation
         JCExpression resourceClose = makeCall(resource,
                                               names.close,

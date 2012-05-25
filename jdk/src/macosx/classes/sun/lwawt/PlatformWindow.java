@@ -108,6 +108,8 @@ public interface PlatformWindow {
     public void flip(int x1, int y1, int x2, int y2,
                      BufferCapabilities.FlipContents flipAction);
 
+    public void setModalBlocked(boolean blocked);
+
     public void toFront();
 
     public void toBack();

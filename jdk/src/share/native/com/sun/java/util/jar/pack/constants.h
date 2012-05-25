@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,61 +49,82 @@
 #define JAVA6_PACKAGE_MAJOR_VERSION 160
 #define JAVA6_PACKAGE_MINOR_VERSION 1
 
+#define JAVA7_PACKAGE_MAJOR_VERSION 170
+#define JAVA7_PACKAGE_MINOR_VERSION 1
 
 // magic number for gzip streams (for processing pack200-gzip data)
 #define GZIP_MAGIC      0x1F8B0800
 #define GZIP_MAGIC_MASK 0xFFFFFF00  // last byte is variable "flg" field
 
 enum {
-    CONSTANT_None,
-    CONSTANT_Utf8,
-    CONSTANT_unused2,           /* unused, was Unicode */
-    CONSTANT_Integer,
-    CONSTANT_Float,
-    CONSTANT_Long,
-    CONSTANT_Double,
-    CONSTANT_Class,
-    CONSTANT_String,
-    CONSTANT_Fieldref,
-    CONSTANT_Methodref,
-    CONSTANT_InterfaceMethodref,
-    CONSTANT_NameandType,
+    CONSTANT_None               = 0,
+    CONSTANT_Utf8               = 1,
+    CONSTANT_unused             = 2,     /* unused, was Unicode */
+    CONSTANT_Integer            = 3,
+    CONSTANT_Float              = 4,
+    CONSTANT_Long               = 5,
+    CONSTANT_Double             = 6,
+    CONSTANT_Class              = 7,
+    CONSTANT_String             = 8,
+    CONSTANT_Fieldref           = 9,
+    CONSTANT_Methodref          = 10,
+    CONSTANT_InterfaceMethodref = 11,
+    CONSTANT_NameandType        = 12,
+    CONSTANT_unused13           = 13,
+    CONSTANT_unused14           = 14,
+    CONSTANT_MethodHandle       = 15,
+    CONSTANT_MethodType         = 16,
+    CONSTANT_unused17           = 17,
+    CONSTANT_InvokeDynamic      = 18,
+    CONSTANT_Limit              = 19,
+    CONSTANT_Signature          = CONSTANT_unused13,
+    CONSTANT_BootstrapMethod    = CONSTANT_unused17, // used only for InvokeDynamic
+    CONSTANT_All                = 50,                // combined global map
+    CONSTANT_LoadableValue      = 51,                // used for 'KL' and qldc operands
+    CONSTANT_AnyMember          = 52,                // union of refs to field or (interface) method
+    CONSTANT_FieldSpecific      = 53,                // used only for 'KQ' ConstantValue attrs
+    CONSTANT_GroupFirst         = CONSTANT_All,      // start group marker
+    CONSTANT_GroupLimit         = 54,                // end group marker
 
-    CONSTANT_Signature = 13,
-    CONSTANT_All       = 14,
-    CONSTANT_Limit     = 15,
-    CONSTANT_NONE      = 0,
-
-    CONSTANT_Literal   = 20,   //pseudo-tag for debugging
-    CONSTANT_Member    = 21,   //pseudo-tag for debugging
+    // CONSTANT_MethodHandle reference kinds
+    REF_getField         = 1,
+    REF_getStatic        = 2,
+    REF_putField         = 3,
+    REF_putStatic        = 4,
+    REF_invokeVirtual    = 5,
+    REF_invokeStatic     = 6,
+    REF_invokeSpecial    = 7,
+    REF_newInvokeSpecial = 8,
+    REF_invokeInterface  = 9,
 
     SUBINDEX_BIT = 64,  // combined with CONSTANT_xxx for ixTag
 
     ACC_STATIC       = 0x0008,
     ACC_IC_LONG_FORM = (1<<16), //for ic_flags
 
-    CLASS_ATTR_SourceFile = 17,
-    CLASS_ATTR_EnclosingMethod = 18,
-    CLASS_ATTR_InnerClasses = 23,
-    CLASS_ATTR_ClassFile_version = 24,
-    FIELD_ATTR_ConstantValue = 17,
-    METHOD_ATTR_Code = 17,
-    METHOD_ATTR_Exceptions = 18,
-    METHOD_ATTR_RuntimeVisibleParameterAnnotations = 23,
+    CLASS_ATTR_SourceFile                            = 17,
+    CLASS_ATTR_EnclosingMethod                       = 18,
+    CLASS_ATTR_InnerClasses                          = 23,
+    CLASS_ATTR_ClassFile_version                     = 24,
+    CLASS_ATTR_BootstrapMethods                      = 25,
+    FIELD_ATTR_ConstantValue                         = 17,
+    METHOD_ATTR_Code                                 = 17,
+    METHOD_ATTR_Exceptions                           = 18,
+    METHOD_ATTR_RuntimeVisibleParameterAnnotations   = 23,
     METHOD_ATTR_RuntimeInvisibleParameterAnnotations = 24,
-    METHOD_ATTR_AnnotationDefault = 25,
-    CODE_ATTR_StackMapTable = 0,
-    CODE_ATTR_LineNumberTable = 1,
-    CODE_ATTR_LocalVariableTable = 2,
+    METHOD_ATTR_AnnotationDefault                    = 25,
+    CODE_ATTR_StackMapTable          = 0,
+    CODE_ATTR_LineNumberTable        = 1,
+    CODE_ATTR_LocalVariableTable     = 2,
     CODE_ATTR_LocalVariableTypeTable = 3,
     //X_ATTR_Synthetic = 12,  // ACC_SYNTHETIC; not predefined
-    X_ATTR_Signature = 19,
-    X_ATTR_Deprecated = 20,
-    X_ATTR_RuntimeVisibleAnnotations = 21,
+    X_ATTR_Signature                   = 19,
+    X_ATTR_Deprecated                  = 20,
+    X_ATTR_RuntimeVisibleAnnotations   = 21,
     X_ATTR_RuntimeInvisibleAnnotations = 22,
-    X_ATTR_OVERFLOW = 16,
-    X_ATTR_LIMIT_NO_FLAGS_HI = 32,
-    X_ATTR_LIMIT_FLAGS_HI = 63,
+    X_ATTR_OVERFLOW                    = 16,
+    X_ATTR_LIMIT_NO_FLAGS_HI           = 32,
+    X_ATTR_LIMIT_FLAGS_HI              = 63,
 
 #define O_ATTR_DO(F) \
         F(X_ATTR_OVERFLOW,01) \
@@ -121,6 +142,7 @@ enum {
         F(CLASS_ATTR_InnerClasses,InnerClasses) \
         F(CLASS_ATTR_EnclosingMethod,EnclosingMethod) \
         F(CLASS_ATTR_ClassFile_version,02) \
+        F(CLASS_ATTR_BootstrapMethods,BootstrapMethods) \
           /*(end)*/
 #define FIELD_ATTR_DO(F) \
         F(FIELD_ATTR_ConstantValue,ConstantValue) \
@@ -175,7 +197,7 @@ enum {
     AO_HAVE_SPECIAL_FORMATS   = 1<<0,
     AO_HAVE_CP_NUMBERS        = 1<<1,
     AO_HAVE_ALL_CODE_FLAGS    = 1<<2,
-    AO_3_UNUSED_MBZ           = 1<<3,
+    AO_HAVE_CP_EXTRAS         = 1<<3,
     AO_HAVE_FILE_HEADERS      = 1<<4,
     AO_DEFLATE_HINT           = 1<<5,
     AO_HAVE_FILE_MODTIME      = 1<<6,
@@ -185,11 +207,13 @@ enum {
     AO_HAVE_FIELD_FLAGS_HI    = 1<<10,
     AO_HAVE_METHOD_FLAGS_HI   = 1<<11,
     AO_HAVE_CODE_FLAGS_HI     = 1<<12,
+    AO_UNUSED_MBZ             = (-1)<<13, // options bits reserved for future use.
+
 #define ARCHIVE_BIT_DO(F) \
          F(AO_HAVE_SPECIAL_FORMATS) \
          F(AO_HAVE_CP_NUMBERS) \
          F(AO_HAVE_ALL_CODE_FLAGS) \
-         /*F(AO_3_UNUSED_MBZ)*/ \
+         F(AO_HAVE_CP_EXTRAS) \
          F(AO_HAVE_FILE_HEADERS) \
          F(AO_DEFLATE_HINT) \
          F(AO_HAVE_FILE_MODTIME) \
@@ -215,14 +239,14 @@ enum {
     NO_MODTIME = 0,  // null modtime value
 
     // meta-coding
-    _meta_default = 0,
+    _meta_default   = 0,
     _meta_canon_min = 1,
     _meta_canon_max = 115,
-    _meta_arb = 116,
-    _meta_run = 117,
-    _meta_pop = 141,
-    _meta_limit = 189,
-    _meta_error = 255,
+    _meta_arb       = 116,
+    _meta_run       = 117,
+    _meta_pop       = 141,
+    _meta_limit     = 189,
+    _meta_error     = 255,
 
     _xxx_1_end
 };
@@ -416,7 +440,7 @@ enum {
   bc_invokespecial        = 183, // 0xb7
   bc_invokestatic         = 184, // 0xb8
   bc_invokeinterface      = 185, // 0xb9
-  bc_xxxunusedxxx         = 186, // 0xba
+  bc_invokedynamic        = 186, // 0xba
   bc_new                  = 187, // 0xbb
   bc_newarray             = 188, // 0xbc
   bc_anewarray            = 189, // 0xbd
@@ -455,17 +479,19 @@ enum {
   _invokeinit_limit = _invokeinit_op+3,
 
   _xldc_op = _invokeinit_limit,
-  bc_aldc = bc_ldc,
+  bc_sldc = bc_ldc,      // previously named bc_aldc
   bc_cldc = _xldc_op+0,
   bc_ildc = _xldc_op+1,
   bc_fldc = _xldc_op+2,
-  bc_aldc_w = bc_ldc_w,
+  bc_sldc_w = bc_ldc_w,  // previously named bc_aldc_w
   bc_cldc_w = _xldc_op+3,
   bc_ildc_w = _xldc_op+4,
   bc_fldc_w = _xldc_op+5,
   bc_lldc2_w = bc_ldc2_w,
   bc_dldc2_w = _xldc_op+6,
-  _xldc_limit = _xldc_op+7,
-
+  // anything other primitive, string, or class must be handled with qldc:
+  bc_qldc    = _xldc_op+7,
+  bc_qldc_w  = _xldc_op+8,
+  _xldc_limit = _xldc_op+9,
   _xxx_3_end
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -737,7 +737,7 @@ public class Config {
                     }
                 } else if (osname.startsWith("SunOS")) {
                     name =  "/etc/krb5/krb5.conf";
-                } else if (osname.startsWith("Mac")) {
+                } else if (osname.contains("OS X")) {
                     if (isMacosLionOrBetter()) return "";
                     name = findMacosConfigFile();
                 } else {
