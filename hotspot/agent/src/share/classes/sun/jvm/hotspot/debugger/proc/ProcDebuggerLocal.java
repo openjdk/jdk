@@ -81,7 +81,7 @@ public class ProcDebuggerLocal extends DebuggerBase implements ProcDebugger {
             pcRegIndex = X86ThreadContext.EIP;
             fpRegIndex = X86ThreadContext.EBP;
             unalignedAccessesOkay = true;
-        } else if (cpu.equals("amd64")) {
+        } else if (cpu.equals("amd64") || cpu.equals("x86_64")) {
             threadFactory = new ProcAMD64ThreadFactory(this);
             pcRegIndex = AMD64ThreadContext.RIP;
             fpRegIndex = AMD64ThreadContext.RBP;

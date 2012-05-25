@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,8 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
     private static String convertToStandardName(String internalName) {
         if (internalName.equals("SHA")) {
             return "SHA-1";
+        } else if (internalName.equals("SHA224")) {
+            return "SHA-224";
         } else if (internalName.equals("SHA256")) {
             return "SHA-256";
         } else if (internalName.equals("SHA384")) {
@@ -143,6 +145,8 @@ public final class OAEPParameters extends AlgorithmParametersSpi {
                 String mgfDigestName = convertToStandardName(params.getName());
                 if (mgfDigestName.equals("SHA-1")) {
                     mgfSpec = MGF1ParameterSpec.SHA1;
+                } else if (mgfDigestName.equals("SHA-224")) {
+                    mgfSpec = MGF1ParameterSpec.SHA224;
                 } else if (mgfDigestName.equals("SHA-256")) {
                     mgfSpec = MGF1ParameterSpec.SHA256;
                 } else if (mgfDigestName.equals("SHA-384")) {

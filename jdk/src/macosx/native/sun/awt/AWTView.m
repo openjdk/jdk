@@ -48,7 +48,6 @@
 //#define IM_DEBUG TRUE
 //#define EXTRA_DEBUG
 
-
 static BOOL shouldUsePressAndHold() {
     static int shouldUsePressAndHold = -1;
     if (shouldUsePressAndHold != -1) return shouldUsePressAndHold;
@@ -81,7 +80,7 @@ AWT_ASSERT_APPKIT_THREAD;
     fEnablePressAndHold = shouldUsePressAndHold();
     fInPressAndHold = NO;
     fPAHNeedsToSelect = NO;
-    
+
     mouseIsOver = NO;
 
     if (windowLayer != nil) {
@@ -302,16 +301,25 @@ AWT_ASSERT_APPKIT_THREAD;
  */
 
 -(void) deliverJavaMouseEvent: (NSEvent *) event {
-    
-    NSEventType type = [event type];    
-    
+    BOOL isEnabled = YES;
+    NSWindow* window = [self window];
+    if ([window isKindOfClass: [AWTWindow_Panel class]] || [window isKindOfClass: [AWTWindow_Normal class]]) {
+        isEnabled = [(AWTWindow*)[window delegate] isEnabled];
+    }
+
+    if (!isEnabled) {
+        return;
+    }
+
+    NSEventType type = [event type];
+
     // check synthesized mouse entered/exited events
     if ((type == NSMouseEntered && mouseIsOver) || (type == NSMouseExited && !mouseIsOver)) {
         return;
     }else if ((type == NSMouseEntered && !mouseIsOver) || (type == NSMouseExited && mouseIsOver)) {
         mouseIsOver = !mouseIsOver;
     }
-    
+
     [AWTToolkit eventCountPlusPlus];
 
     JNIEnv *env = [ThreadUtilities getJNIEnv];
@@ -385,6 +393,14 @@ AWT_ASSERT_APPKIT_THREAD;
 }
 
 -(void) deliverJavaKeyEventHelper: (NSEvent *) event {
+    static NSEvent* sLastKeyEvent = nil;
+    if (event == sLastKeyEvent) {
+        // The event is repeatedly delivered by keyDown: after performKeyEquivalent:
+        return;
+    }
+    [sLastKeyEvent release];
+    sLastKeyEvent = [event retain];
+	
     [AWTToolkit eventCountPlusPlus];
     JNIEnv *env = [ThreadUtilities getJNIEnv];
 
