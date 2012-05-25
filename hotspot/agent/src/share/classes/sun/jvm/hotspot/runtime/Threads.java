@@ -95,7 +95,7 @@ public class Threads {
         } else if (os.equals("bsd")) {
             if (cpu.equals("x86")) {
                 access = new BsdX86JavaThreadPDAccess();
-            } else if (cpu.equals("amd64")) {
+            } else if (cpu.equals("amd64") || cpu.equals("x86_64")) {
                 access = new BsdAMD64JavaThreadPDAccess();
             }
         }

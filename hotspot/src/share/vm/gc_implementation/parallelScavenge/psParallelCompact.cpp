@@ -2047,17 +2047,9 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     gc_task_manager()->task_idle_workers();
     heap->set_par_threads(gc_task_manager()->active_workers());
 
-    const bool is_system_gc = gc_cause == GCCause::_java_lang_system_gc;
-
-    // This is useful for debugging but don't change the output the
-    // the customer sees.
-    const char* gc_cause_str = "Full GC";
-    if (is_system_gc && PrintGCDetails) {
-      gc_cause_str = "Full GC (System)";
-    }
     gclog_or_tty->date_stamp(PrintGC && PrintGCDateStamps);
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
-    TraceTime t1(gc_cause_str, PrintGC, !PrintGCDetails, gclog_or_tty);
+    TraceTime t1(GCCauseString("Full GC", gc_cause), PrintGC, !PrintGCDetails, gclog_or_tty);
     TraceCollectorStats tcs(counters());
     TraceMemoryManagerStats tms(true /* Full GC */,gc_cause);
 
@@ -2090,7 +2082,8 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     }
 #endif  // #ifndef PRODUCT
 
-    bool max_on_system_gc = UseMaximumCompactionOnSystemGC && is_system_gc;
+    bool max_on_system_gc = UseMaximumCompactionOnSystemGC
+      && gc_cause == GCCause::_java_lang_system_gc;
     summary_phase(vmthread_cm, maximum_heap_compaction || max_on_system_gc);
 
     COMPILER2_PRESENT(assert(DerivedPointerTable::is_active(), "Sanity"));

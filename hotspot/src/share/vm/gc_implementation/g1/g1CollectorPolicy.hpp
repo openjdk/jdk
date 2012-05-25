@@ -552,10 +552,10 @@ public:
 
 private:
   void print_stats(int level, const char* str, double value);
+  void print_stats(int level, const char* str, double value, int workers);
   void print_stats(int level, const char* str, int value);
 
-  void print_par_stats(int level, const char* str, double* data);
-  void print_par_sizes(int level, const char* str, double* data);
+  void print_par_stats(int level, const char* str, double* data, bool showDecimals = true);
 
   void check_other_times(int level,
                          NumberSeq* other_times_ms,

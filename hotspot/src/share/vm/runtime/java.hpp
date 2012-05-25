@@ -206,6 +206,10 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
     return current().compare_major(7) == 0;
   }
 
+  static bool is_jdk18x_version() {
+    return current().compare_major(8) == 0;
+  }
+
   static bool is_gte_jdk13x_version() {
     return current().compare_major(3) >= 0;
   }
@@ -224,6 +228,10 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
 
   static bool is_gte_jdk17x_version() {
     return current().compare_major(7) >= 0;
+  }
+
+  static bool is_gte_jdk18x_version() {
+    return current().compare_major(8) >= 0;
   }
 };
 

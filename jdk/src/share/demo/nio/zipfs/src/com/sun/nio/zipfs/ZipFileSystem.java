@@ -651,7 +651,11 @@ public class ZipFileSystem extends FileSystem {
                     }
 
                     public int read(ByteBuffer dst) throws IOException {
-                        return rbc.read(dst);
+                        int n = rbc.read(dst);
+                        if (n > 0) {
+                            read += n;
+                        }
+                        return n;
                     }
 
                     public SeekableByteChannel truncate(long size)
