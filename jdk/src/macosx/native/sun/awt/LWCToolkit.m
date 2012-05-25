@@ -42,6 +42,7 @@ jint* gButtonDownMasks;
 @implementation AWTToolkit
 
 static long eventCount;
+static bool shouldKeepRunningNestedLoop = NO;
 
 + (long) getEventCount{
     return eventCount;
@@ -455,4 +456,37 @@ Java_sun_font_FontManager_populateFontFileNameMap
 (JNIEnv *env, jclass obj, jobject fontToFileMap, jobject fontToFamilyMap, jobject familyToFontListMap, jobject locale)
 {
 
+}
+
+/*
+ * Class:     sun_lwawt_macosx_LWCToolkit
+ * Method:    startNativeNestedEventLoop
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_startNativeNestedEventLoop
+(JNIEnv *env, jclass cls)
+{
+    if(!shouldKeepRunningNestedLoop) {
+        NSRunLoop *theRL = [NSRunLoop currentRunLoop];
+        NSApplication * app = [NSApplication sharedApplication];
+        shouldKeepRunningNestedLoop = YES;
+        while (shouldKeepRunningNestedLoop && [theRL runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]])
+        {
+            NSEvent * event = [app nextEventMatchingMask: 0xFFFFFFFF untilDate:nil inMode:NSDefaultRunLoopMode dequeue:YES];
+            if (event != nil) {
+                [app sendEvent: event];
+            }
+        }
+    }
+}
+
+/*
+ * Class:     sun_lwawt_macosx_LWCToolkit
+ * Method:    stopNativeNestedEventLoop
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_stopNativeNestedEventLoop
+(JNIEnv *env, jclass cls)
+{
+    shouldKeepRunningNestedLoop = NO;
 }
