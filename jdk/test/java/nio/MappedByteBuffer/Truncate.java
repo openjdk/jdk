@@ -88,6 +88,11 @@ public class Truncate {
             }
         };
         Thread t = new Thread(r);
+        t.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            public void uncaughtException(Thread t, Throwable e) {
+                e.printStackTrace();
+            }
+        });
         t.start();
         try { t.join(); } catch (InterruptedException ignore) { }
     }

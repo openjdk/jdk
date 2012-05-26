@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,18 +81,26 @@ public final class SunMSCAPI extends Provider {
          */
         // NONEwithRSA must be supplied with a pre-computed message digest.
         // Only the following digest algorithms are supported: MD5, SHA-1,
-        // SHA-256, SHA-384, SHA-512 and a special-purpose digest algorithm
-        // which is a concatenation of SHA-1 and MD5 digests.
+        // SHA-256, SHA-384, SHA-512 and a special-purpose digest
+        // algorithm which is a concatenation of SHA-1 and MD5 digests.
         map.put("Signature.NONEwithRSA",
             "sun.security.mscapi.RSASignature$Raw");
         map.put("Signature.SHA1withRSA",
             "sun.security.mscapi.RSASignature$SHA1");
         map.put("Signature.SHA256withRSA",
             "sun.security.mscapi.RSASignature$SHA256");
+        map.put("Alg.Alias.Signature.1.2.840.113549.1.1.11",     "SHA256withRSA");
+        map.put("Alg.Alias.Signature.OID.1.2.840.113549.1.1.11", "SHA256withRSA");
         map.put("Signature.SHA384withRSA",
             "sun.security.mscapi.RSASignature$SHA384");
+        map.put("Alg.Alias.Signature.1.2.840.113549.1.1.12",     "SHA384withRSA");
+        map.put("Alg.Alias.Signature.OID.1.2.840.113549.1.1.12", "SHA384withRSA");
+
         map.put("Signature.SHA512withRSA",
             "sun.security.mscapi.RSASignature$SHA512");
+        map.put("Alg.Alias.Signature.1.2.840.113549.1.1.13",     "SHA512withRSA");
+        map.put("Alg.Alias.Signature.OID.1.2.840.113549.1.1.13", "SHA512withRSA");
+
         map.put("Signature.MD5withRSA",
             "sun.security.mscapi.RSASignature$MD5");
         map.put("Signature.MD2withRSA",

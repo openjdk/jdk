@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4846410 6313661
+ * @bug 4846410 6313661 4963723
  * @summary Basic known-answer-test for Hmac and SslMac algorithms
  * @author Andreas Sterbenz
  */
@@ -147,7 +147,9 @@ public class MacKAT {
     private static Test t(String alg, String input, String macvalue, String key) {
         return new MacTest(alg, b(input), b(macvalue), b(key));
     }
-
+    private static Test t(String alg, String input, String macvalue, byte[] key) {
+        return new MacTest(alg, b(input), b(macvalue), key);
+    }
     private static Test t(String alg, byte[] input, String macvalue, String key) {
         return new MacTest(alg, input, b(macvalue), b(key));
     }
@@ -155,8 +157,8 @@ public class MacKAT {
     private static Test t(String alg, byte[] input, String macvalue, byte[] key) {
         return new MacTest(alg, input, b(macvalue), key);
     }
-
     private final static byte[] ALONG, BLONG, BKEY;
+    private final static byte[] BKEY_20, DDDATA_50, AAKEY_20, CDDATA_50, AAKEY_131;
 
     static {
         ALONG = new byte[1024 * 128];
@@ -166,6 +168,16 @@ public class MacKAT {
         random.nextBytes(BLONG);
         BKEY = new byte[128];
         random.nextBytes(BKEY);
+        BKEY_20 = new byte[20];
+        Arrays.fill(BKEY_20, (byte) 0x0b);
+        DDDATA_50 = new byte[50];
+        Arrays.fill(DDDATA_50, (byte) 0xdd);
+        AAKEY_20 = new byte[20];
+        Arrays.fill(AAKEY_20, (byte) 0xaa);
+        CDDATA_50 = new byte[50];
+        Arrays.fill(CDDATA_50, (byte) 0xcd);
+        AAKEY_131 = new byte[131];
+        Arrays.fill(AAKEY_131, (byte) 0xaa);
     }
 
     private final static Test[] tests = {
@@ -203,15 +215,24 @@ public class MacKAT {
                 "1b:34:61:29:05:0d:73:db:25:d0:dd:64:06:29:f6:8a"),
         t("HmacSHA512", BLONG, "fb:cf:4b:c6:d5:49:5a:5b:0b:d9:2a:32:f5:fa:68:d2:68:a4:0f:ae:53:fc:49:12:e6:1d:53:cf:b2:cb:c5:c5:f2:2d:86:bd:14:61:30:c3:a6:6f:44:1f:77:9b:aa:a1:22:48:a9:dd:d0:45:86:d1:a1:82:53:13:c4:03:06:a3",
                 BKEY),
+        // Test vectors From RFC4231
+        t("HmacSHA224", s("Hi There"), "89:6f:b1:12:8a:bb:df:19:68:32:10:7c:d4:9d:f3:3f:47:b4:b1:16:99:12:ba:4f:53:68:4b:22", BKEY_20),
+        t("HmacSHA224", s("what do ya want for nothing?"), "a3:0e:01:09:8b:c6:db:bf:45:69:0f:3a:7e:9e:6d:0f:8b:be:a2:a3:9e:61:48:00:8f:d0:5e:44", s("Jefe")),
+        t("HmacSHA224", DDDATA_50, "7f:b3:cb:35:88:c6:c1:f6:ff:a9:69:4d:7d:6a:d2:64:93:65:b0:c1:f6:5d:69:d1:ec:83:33:ea", AAKEY_20),
+        t("HmacSHA224", CDDATA_50, "6c:11:50:68:74:01:3c:ac:6a:2a:bc:1b:b3:82:62:7c:ec:6a:90:d8:6e:fc:01:2d:e7:af:ec:5a", "01:02:03:04:05:06:07:08:09:0a:0b:0c:0d:0e:0f:10:11:12:13:14:15:16:17:18:19"),
+        t("HmacSHA224", s("Test Using Larger Than Block-Size Key - Hash Key First"), "95:e9:a0:db:96:20:95:ad:ae:be:9b:2d:6f:0d:bc:e2:d4:99:f1:12:f2:d2:b7:27:3f:a6:87:0e", AAKEY_131),
+        t("HmacSHA224", s("This is a test using a larger than block-size key and a larger than block-size data. The key needs to be hashed before being used by the HMAC algorithm."), "3a:85:41:66:ac:5d:9f:02:3f:54:d5:17:d0:b3:9d:bd:94:67:70:db:9c:2b:95:c9:f6:f5:65:d1", AAKEY_131),
     };
 
     static void runTests(Test[] tests) throws Exception {
         long start = System.currentTimeMillis();
         Provider p = Security.getProvider("SunJCE");
         System.out.println("Testing provider " + p.getName() + "...");
+        Mac.getInstance("HmacSHA224", p);
         Mac.getInstance("HmacSHA256", p);
         Mac.getInstance("HmacSHA384", p);
         Mac.getInstance("HmacSHA512", p);
+        KeyGenerator.getInstance("HmacSHA224", p);
         KeyGenerator.getInstance("HmacSHA256", p);
         KeyGenerator.getInstance("HmacSHA384", p);
         KeyGenerator.getInstance("HmacSHA512", p);

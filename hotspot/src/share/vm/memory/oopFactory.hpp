@@ -78,7 +78,8 @@ class oopFactory: AllStatic {
                                            int static_field_size,
                                            unsigned int nonstatic_oop_map_count,
                                            AccessFlags access_flags,
-                                           ReferenceType rt, TRAPS);
+                                           ReferenceType rt,
+                                           KlassHandle host_klass, TRAPS);
 
   // Methods
 private:
