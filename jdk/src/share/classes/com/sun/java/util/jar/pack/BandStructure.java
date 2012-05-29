@@ -74,30 +74,27 @@ class BandStructure {
 
     abstract protected Index getCPIndex(byte tag);
 
-    // Local copy of package version.
-    private int packageMajver = -1;
+    // Local copy of highest class version.
+    private Package.Version highestClassVersion = null;
 
     /** Call this exactly once, early, to specify the archive major version. */
-    public void initPackageMajver(int packageMajver) throws IOException {
-        assert(packageMajver > 0 && packageMajver < 0x10000);
-        if (this.packageMajver > 0) {
+    public void initHighestClassVersion(Package.Version highestClassVersion) throws IOException {
+        if (this.highestClassVersion != null) {
             throw new IOException(
-                "Package majver is already initialized to " + this.packageMajver+
-                "; new setting is " + packageMajver);
+                "Highest class major version is already initialized to " +
+                this.highestClassVersion + "; new setting is " + highestClassVersion);
         }
-        this.packageMajver = packageMajver;
-        adjustToMajver();
+        this.highestClassVersion = highestClassVersion;
+        adjustToClassVersion();
     }
-    public int getPackageMajver() {
-        if (packageMajver < 0) {
-            throw new RuntimeException("Package majver not yet initialized");
-        }
-        return packageMajver;
+
+    public Package.Version getHighestClassVersion() {
+        return highestClassVersion;
     }
 
     private final boolean isReader = this instanceof PackageReader;
-    protected BandStructure() {
-    }
+
+    protected BandStructure() {}
 
     final static Coding BYTE1 = Coding.of(1,256);
 
@@ -1866,19 +1863,11 @@ class BandStructure {
         attrClassFileVersionMask = (1<<CLASS_ATTR_ClassFile_version);
     }
 
-    private void adjustToMajver() throws IOException {
-        if (getPackageMajver() < JAVA6_PACKAGE_MAJOR_VERSION) {
+    private void adjustToClassVersion() throws IOException {
+        if (getHighestClassVersion().lessThan(JAVA6_MAX_CLASS_VERSION)) {
             if (verbose > 0)  Utils.log.fine("Legacy package version");
             // Revoke definition of pre-1.6 attribute type.
             undefineAttribute(CODE_ATTR_StackMapTable, ATTR_CONTEXT_CODE);
-        }
-        if (getPackageMajver() < JAVA7_PACKAGE_MAJOR_VERSION) {
-            if (testBit(archiveOptions, AO_HAVE_CP_EXTRAS))
-                // this bit was reserved for future use in previous versions
-                throw new IOException("Format bits for Java 7 must be zero in previous releases");
-        }
-        if (testBit(archiveOptions, AO_UNUSED_MBZ)) {
-            throw new IOException("High archive option bits are reserved and must be zero: "+Integer.toHexString(archiveOptions));
         }
     }
 
@@ -1942,21 +1931,14 @@ class BandStructure {
         }
     }
 
-    protected Attribute makeClassFileVersionAttr(int minver, int majver) {
-        byte[] bytes = {
-            (byte)(minver >> 8), (byte)minver,
-            (byte)(majver >> 8), (byte)majver
-        };
-        return attrClassFileVersion.addContent(bytes);
+    protected Attribute makeClassFileVersionAttr(Package.Version ver) {
+        return attrClassFileVersion.addContent(ver.asBytes());
     }
 
-    protected short[] parseClassFileVersionAttr(Attribute attr) {
+    protected Package.Version parseClassFileVersionAttr(Attribute attr) {
         assert(attr.layout() == attrClassFileVersion);
         assert(attr.size() == 4);
-        byte[] bytes = attr.bytes();
-        int minver = ((bytes[0] & 0xFF) << 8) | (bytes[1] & 0xFF);
-        int majver = ((bytes[2] & 0xFF) << 8) | (bytes[3] & 0xFF);
-        return new short[]{ (short) minver, (short) majver };
+        return Package.Version.of(attr.bytes());
     }
 
     private boolean assertBandOKForElems(Band[] ab, Attribute.Layout.Element[] elems) {
