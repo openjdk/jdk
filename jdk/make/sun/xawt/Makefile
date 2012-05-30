@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -225,10 +225,16 @@ ifeq ($(ARCH_DATA_MODEL), 32)
 SIZERS = $(SIZER).32
 SIZERS_C = $(SIZER_32_C)
 SIZES = $(WRAPPER_GENERATOR_DIR)/sizes.32
+ifdef CROSS_COMPILE_ARCH
+CFLAGS_32 = -m32
+endif
 else # !32
 SIZERS = $(SIZER).64
 SIZERS_C = $(SIZER_64_C)
 SIZES = $(WRAPPER_GENERATOR_DIR)/sizes.64
+ifdef CROSS_COMPILE_ARCH
+CFLAGS_64 = -m64
+endif
 endif # 32
 endif # !macosx
 endif # solaris
@@ -264,15 +270,16 @@ WRAPPER_GENERATOR_TEMPDIR=$(TEMPDIR)/sun/awt/X11/generator
 WRAPPER_GENERATOR_CLASS=$(WRAPPER_GENERATOR_TEMPDIR)/WrapperGenerator.class 
 XLIBTYPES=$(PLATFORM_SRC)/classes/sun/awt/X11/generator/xlibtypes.txt
 
+ifndef CROSS_COMPILE_ARCH
+SIZERS_CC = $(CC)
+else
+SIZERS_CC = $(HOST_CC)
+endif
+
 $(SIZERS): $(SIZERS_C) 
 	$(prep-target)
-ifndef CROSS_COMPILE_ARCH
-	$(CC) $(CFLAGS_$(subst .,,$(suffix $@))) $(CPPFLAGS) -c -o $(SIZER)$(suffix $@).o $(SIZER)$(suffix $@).c
-	$(CC) $(CFLAGS_$(subst .,,$(suffix $@))) -o $@ $(CPPFLAGS) $(SIZER)$(suffix $@).o
-else
-	$(HOST_CC) $(CPPFLAGS) -c -o $(SIZER)$(suffix $@).o $(SIZER)$(suffix $@).c
-	$(HOST_CC) $(CPPFLAGS) -o $@ $(SIZER)$(suffix $@).o
-endif
+	$(SIZERS_CC) $(CFLAGS_$(subst .,,$(suffix $@))) $(CPPFLAGS) -c -o $(SIZER)$(suffix $@).o $(SIZER)$(suffix $@).c
+	$(SIZERS_CC) $(CFLAGS_$(subst .,,$(suffix $@))) -o $@ $(CPPFLAGS) $(SIZER)$(suffix $@).o
 
 $(WRAPPER_GENERATOR_CLASS): $(WRAPPER_GENERATOR_JAVA)
 	$(prep-target)
