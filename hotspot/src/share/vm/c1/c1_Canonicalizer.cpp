@@ -42,6 +42,11 @@ void Canonicalizer::set_canonical(Value x) {
   // the instruction stream (because the instruction list is embedded
   // in the instructions).
   if (canonical() != x) {
+#ifndef PRODUCT
+    if (!x->has_printable_bci()) {
+      x->set_printable_bci(bci());
+    }
+#endif
     if (PrintCanonicalization) {
       PrintValueVisitor do_print_value;
       canonical()->input_values_do(&do_print_value);
@@ -677,8 +682,8 @@ void Canonicalizer::do_If(If* x) {
                 return;
             }
           }
-          set_canonical(canon);
           set_bci(cmp->state_before()->bci());
+          set_canonical(canon);
         }
       }
     } else if (l->as_InstanceOf() != NULL) {
