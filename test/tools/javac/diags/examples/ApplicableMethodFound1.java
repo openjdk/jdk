@@ -23,7 +23,7 @@
 
 // key: compiler.misc.applicable.method.found.1
 // key: compiler.note.verbose.resolve.multi
-// key: compiler.misc.full.inst.sig
+// key: compiler.misc.partial.inst.sig
 // options: -XDverboseResolution=applicable,success
 
 class ApplicableMethodFound1 {
