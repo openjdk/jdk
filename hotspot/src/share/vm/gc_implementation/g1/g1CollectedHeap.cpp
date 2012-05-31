@@ -3930,12 +3930,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
       gc_epilogue(false);
     }
-
-    if (ExitAfterGCNum > 0 && total_collections() == ExitAfterGCNum) {
-      gclog_or_tty->print_cr("Stopping after GC #%d", ExitAfterGCNum);
-      print_tracing_info();
-      vm_exit(-1);
-    }
   }
 
   // The closing of the inner scope, immediately above, will complete
