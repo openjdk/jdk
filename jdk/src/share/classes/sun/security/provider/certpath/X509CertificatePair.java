@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,13 +207,14 @@ public class X509CertificatePair {
      *
      * @return A String describing the contents of the pair.
      */
+    @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("X.509 Certificate Pair: [\n");
         if (forward != null)
-            sb.append("  Forward: " + forward + "\n");
+            sb.append("  Forward: ").append(forward).append("\n");
         if (reverse != null)
-            sb.append("  Reverse: " + reverse + "\n");
+            sb.append("  Reverse: ").append(reverse).append("\n");
         sb.append("]");
         return sb.toString();
     }

@@ -26,10 +26,8 @@
 package sun.security.provider.certpath;
 
 import java.io.IOException;
-import java.security.AccessController;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
-import java.security.Principal;
 import java.security.PublicKey;
 import java.security.cert.*;
 import java.security.cert.PKIXReason;
@@ -37,7 +35,6 @@ import java.security.interfaces.DSAPublicKey;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -45,9 +42,8 @@ import java.util.LinkedList;
 import java.util.Set;
 import javax.security.auth.x500.X500Principal;
 
-import sun.security.action.GetBooleanSecurityPropertyAction;
-import sun.security.x509.X500Name;
-import sun.security.x509.PKIXExtensions;
+import sun.security.provider.certpath.PKIX.BuilderParams;
+import static sun.security.x509.PKIXExtensions.*;
 import sun.security.util.Debug;
 
 /**
@@ -78,16 +74,12 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
     /*
      * private objects shared by methods
      */
-    private PKIXBuilderParameters buildParams;
+    private BuilderParams buildParams;
     private CertificateFactory cf;
     private boolean pathCompleted = false;
-    private X500Principal targetSubjectDN;
     private PolicyNode policyTreeResult;
     private TrustAnchor trustAnchor;
     private PublicKey finalPublicKey;
-    private X509CertSelector targetSel;
-    private List<CertStore> orderedCertStores;
-    private boolean onlyEECert = false;
 
     /**
      * Create an instance of <code>SunCertPathBuilder</code>.
@@ -100,9 +92,11 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
         } catch (CertificateException e) {
             throw new CertPathBuilderException(e);
         }
-        onlyEECert = AccessController.doPrivileged(
-            new GetBooleanSecurityPropertyAction
-                ("com.sun.security.onlyCheckRevocationOfEECert"));
+    }
+
+    @Override
+    public CertPathChecker engineGetRevocationChecker() {
+        return new RevocationChecker();
     }
 
     /**
@@ -125,6 +119,7 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
      * @throws InvalidAlgorithmParameterException if the given parameters are
      *  inappropriate for this certification path builder.
      */
+    @Override
     public CertPathBuilderResult engineBuild(CertPathParameters params)
         throws CertPathBuilderException, InvalidAlgorithmParameterException {
 
@@ -132,66 +127,20 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
             debug.println("SunCertPathBuilder.engineBuild(" + params + ")");
         }
 
-        if (!(params instanceof PKIXBuilderParameters)) {
-            throw new InvalidAlgorithmParameterException("inappropriate " +
-                "parameter type, must be an instance of PKIXBuilderParameters");
-        }
+        buildParams = PKIX.checkBuilderParams(params);
+        return build();
+    }
 
-        boolean buildForward = true;
-        if (params instanceof SunCertPathBuilderParameters) {
-            buildForward =
-                ((SunCertPathBuilderParameters)params).getBuildForward();
-        }
-
-        buildParams = (PKIXBuilderParameters)params;
-
-        /* Check mandatory parameters */
-
-        // Make sure that none of the trust anchors include name constraints
-        // (not supported).
-        for (TrustAnchor anchor : buildParams.getTrustAnchors()) {
-            if (anchor.getNameConstraints() != null) {
-                throw new InvalidAlgorithmParameterException
-                    ("name constraints in trust anchor not supported");
-            }
-        }
-
-        CertSelector sel = buildParams.getTargetCertConstraints();
-        if (!(sel instanceof X509CertSelector)) {
-            throw new InvalidAlgorithmParameterException("the "
-                + "targetCertConstraints parameter must be an "
-                + "X509CertSelector");
-        }
-        targetSel = (X509CertSelector)sel;
-        targetSubjectDN = targetSel.getSubject();
-        if (targetSubjectDN == null) {
-            X509Certificate targetCert = targetSel.getCertificate();
-            if (targetCert != null) {
-                targetSubjectDN = targetCert.getSubjectX500Principal();
-            }
-        }
-        // reorder CertStores so that local CertStores are tried first
-        orderedCertStores =
-            new ArrayList<CertStore>(buildParams.getCertStores());
-        Collections.sort(orderedCertStores, new CertStoreComparator());
-        if (targetSubjectDN == null) {
-            targetSubjectDN = getTargetSubjectDN(orderedCertStores, targetSel);
-        }
-        if (targetSubjectDN == null) {
-            throw new InvalidAlgorithmParameterException
-                ("Could not determine unique target subject");
-        }
-
-        List<List<Vertex>> adjList = new ArrayList<List<Vertex>>();
-        CertPathBuilderResult result =
-            buildCertPath(buildForward, false, adjList);
+    private PKIXCertPathBuilderResult build() throws CertPathBuilderException {
+        List<List<Vertex>> adjList = new ArrayList<>();
+        PKIXCertPathBuilderResult result = buildCertPath(false, adjList);
         if (result == null) {
             if (debug != null) {
                 debug.println("SunCertPathBuilder.engineBuild: 2nd pass");
             }
             // try again
             adjList.clear();
-            result = buildCertPath(buildForward, true, adjList);
+            result = buildCertPath(true, adjList);
             if (result == null) {
                 throw new SunCertPathBuilderException("unable to find valid "
                     + "certification path to requested target",
@@ -201,24 +150,23 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
         return result;
     }
 
-    private CertPathBuilderResult buildCertPath(boolean buildForward,
-        boolean searchAllCertStores, List<List<Vertex>> adjList)
-        throws CertPathBuilderException {
-
+    private PKIXCertPathBuilderResult buildCertPath(boolean searchAllCertStores,
+                                                    List<List<Vertex>> adjList)
+        throws CertPathBuilderException
+    {
         // Init shared variables and build certification path
         pathCompleted = false;
         trustAnchor = null;
         finalPublicKey = null;
         policyTreeResult = null;
-        LinkedList<X509Certificate> certPathList =
-            new LinkedList<X509Certificate>();
+        LinkedList<X509Certificate> certPathList = new LinkedList<>();
         try {
-            if (buildForward) {
+            if (buildParams.buildForward()) {
                 buildForward(adjList, certPathList, searchAllCertStores);
             } else {
                 buildReverse(adjList, certPathList);
             }
-        } catch (Exception e) {
+        } catch (GeneralSecurityException | IOException e) {
             if (debug != null) {
                 debug.println("SunCertPathBuilder.engineBuild() exception in "
                     + "build");
@@ -242,11 +190,11 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                 Collections.reverse(certPathList);
 
                 return new SunCertPathBuilderResult(
-                    cf.generateCertPath(certPathList), this.trustAnchor,
+                    cf.generateCertPath(certPathList), trustAnchor,
                     policyTreeResult, finalPublicKey,
                     new AdjacencyList(adjList));
             }
-        } catch (Exception e) {
+        } catch (CertificateException e) {
             if (debug != null) {
                 debug.println("SunCertPathBuilder.engineBuild() exception "
                               + "in wrap-up");
@@ -264,12 +212,13 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
      * Private build reverse method.
      */
     private void buildReverse(List<List<Vertex>> adjacencyList,
-        LinkedList<X509Certificate> certPathList) throws Exception
+                              LinkedList<X509Certificate> certPathList)
+        throws GeneralSecurityException, IOException
     {
         if (debug != null) {
             debug.println("SunCertPathBuilder.buildReverse()...");
             debug.println("SunCertPathBuilder.buildReverse() InitialPolicies: "
-                + buildParams.getInitialPolicies());
+                + buildParams.initialPolicies());
         }
 
         ReverseState currentState = new ReverseState();
@@ -281,12 +230,12 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
          * Perform a search using each trust anchor, until a valid
          * path is found
          */
-        Iterator<TrustAnchor> iter = buildParams.getTrustAnchors().iterator();
+        Iterator<TrustAnchor> iter = buildParams.trustAnchors().iterator();
         while (iter.hasNext()) {
             TrustAnchor anchor = iter.next();
 
             /* check if anchor satisfies target constraints */
-            if (anchorIsTarget(anchor, targetSel)) {
+            if (anchorIsTarget(anchor, buildParams.targetCertConstraints())) {
                 this.trustAnchor = anchor;
                 this.pathCompleted = true;
                 this.finalPublicKey = anchor.getTrustedCert().getPublicKey();
@@ -294,22 +243,16 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
             }
 
             /* Initialize current state */
-            currentState.initState(buildParams.getMaxPathLength(),
-                       buildParams.isExplicitPolicyRequired(),
-                       buildParams.isPolicyMappingInhibited(),
-                       buildParams.isAnyPolicyInhibited(),
-                       buildParams.getCertPathCheckers());
-            currentState.updateState(anchor);
-            // init the crl checker
-            currentState.crlChecker =
-                new CrlRevocationChecker(null, buildParams, null, onlyEECert);
+            currentState.initState(buildParams);
+            currentState.updateState(anchor, buildParams);
+
             currentState.algorithmChecker = new AlgorithmChecker(anchor);
             currentState.untrustedChecker = new UntrustedChecker();
             try {
                 depthFirstSearchReverse(null, currentState,
-                new ReverseBuilder(buildParams, targetSubjectDN), adjacencyList,
-                certPathList);
-            } catch (Exception e) {
+                                        new ReverseBuilder(buildParams),
+                                        adjacencyList, certPathList);
+            } catch (GeneralSecurityException | IOException e) {
                 // continue on error if more anchors to try
                 if (iter.hasNext())
                     continue;
@@ -335,7 +278,8 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
      * Private build forward method.
      */
     private void buildForward(List<List<Vertex>> adjacencyList,
-        LinkedList<X509Certificate> certPathList, boolean searchAllCertStores)
+                              LinkedList<X509Certificate> certPathList,
+                              boolean searchAllCertStores)
         throws GeneralSecurityException, IOException
     {
         if (debug != null) {
@@ -344,21 +288,18 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
 
         /* Initialize current state */
         ForwardState currentState = new ForwardState();
-        currentState.initState(buildParams.getCertPathCheckers());
+        currentState.initState(buildParams.certPathCheckers());
 
         /* Initialize adjacency list */
         adjacencyList.clear();
         adjacencyList.add(new LinkedList<Vertex>());
 
-        // init the crl checker
-        currentState.crlChecker
-            = new CrlRevocationChecker(null, buildParams, null, onlyEECert);
         currentState.untrustedChecker = new UntrustedChecker();
 
-        depthFirstSearchForward(targetSubjectDN, currentState,
-          new ForwardBuilder
-              (buildParams, targetSubjectDN, searchAllCertStores, onlyEECert),
-          adjacencyList, certPathList);
+        depthFirstSearchForward(buildParams.targetSubject(), currentState,
+                                new ForwardBuilder(buildParams,
+                                                   searchAllCertStores),
+                                adjacencyList, certPathList);
     }
 
     /*
@@ -376,27 +317,28 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
      * @param dN the distinguished name being currently searched for certs
      * @param currentState the current PKIX validation state
      */
-    void depthFirstSearchForward(X500Principal dN, ForwardState currentState,
-        ForwardBuilder builder, List<List<Vertex>> adjList,
-        LinkedList<X509Certificate> certPathList)
+    private void depthFirstSearchForward(X500Principal dN,
+                                         ForwardState currentState,
+                                         ForwardBuilder builder,
+                                         List<List<Vertex>> adjList,
+                                         LinkedList<X509Certificate> cpList)
         throws GeneralSecurityException, IOException
     {
-        //XXX This method should probably catch & handle exceptions
-
         if (debug != null) {
             debug.println("SunCertPathBuilder.depthFirstSearchForward(" + dN
-                + ", " + currentState.toString() + ")");
+                          + ", " + currentState.toString() + ")");
         }
 
         /*
          * Find all the certificates issued to dN which
          * satisfy the PKIX certification path constraints.
          */
-        List<Vertex> vertices = addVertices
-           (builder.getMatchingCerts(currentState, orderedCertStores), adjList);
+        Collection<X509Certificate> certs =
+            builder.getMatchingCerts(currentState, buildParams.certStores());
+        List<Vertex> vertices = addVertices(certs, adjList);
         if (debug != null) {
             debug.println("SunCertPathBuilder.depthFirstSearchForward(): "
-                + "certs.size=" + vertices.size());
+                          + "certs.size=" + vertices.size());
         }
 
         /*
@@ -416,14 +358,14 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
              * the next matching cert is tried.
              */
             ForwardState nextState = (ForwardState) currentState.clone();
-            X509Certificate cert = (X509Certificate) vertex.getCertificate();
+            X509Certificate cert = vertex.getCertificate();
 
             try {
-                builder.verifyCert(cert, nextState, certPathList);
+                builder.verifyCert(cert, nextState, cpList);
             } catch (GeneralSecurityException gse) {
                 if (debug != null) {
                     debug.println("SunCertPathBuilder.depthFirstSearchForward()"
-                        + ": validation failed: " + gse);
+                                  + ": validation failed: " + gse);
                     gse.printStackTrace();
                 }
                 vertex.setThrowable(gse);
@@ -441,51 +383,44 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
              */
             if (builder.isPathCompleted(cert)) {
 
-                BasicChecker basicChecker = null;
                 if (debug != null)
                     debug.println("SunCertPathBuilder.depthFirstSearchForward()"
-                        + ": commencing final verification");
+                                  + ": commencing final verification");
 
-                ArrayList<X509Certificate> appendedCerts =
-                    new ArrayList<X509Certificate>(certPathList);
+                List<X509Certificate> appendedCerts = new ArrayList<>(cpList);
 
                 /*
                  * if the trust anchor selected is specified as a trusted
                  * public key rather than a trusted cert, then verify this
                  * cert (which is signed by the trusted public key), but
-                 * don't add it yet to the certPathList
+                 * don't add it yet to the cpList
                  */
                 if (builder.trustAnchor.getTrustedCert() == null) {
                     appendedCerts.add(0, cert);
                 }
 
-                HashSet<String> initExpPolSet = new HashSet<String>(1);
-                initExpPolSet.add(PolicyChecker.ANY_POLICY);
+                Set<String> initExpPolSet =
+                    Collections.singleton(PolicyChecker.ANY_POLICY);
 
                 PolicyNodeImpl rootNode = new PolicyNodeImpl(null,
                     PolicyChecker.ANY_POLICY, null, false, initExpPolSet, false);
 
+                List<PKIXCertPathChecker> checkers = new ArrayList<>();
                 PolicyChecker policyChecker
-                    = new PolicyChecker(buildParams.getInitialPolicies(),
-                                appendedCerts.size(),
-                                buildParams.isExplicitPolicyRequired(),
-                                buildParams.isPolicyMappingInhibited(),
-                                buildParams.isAnyPolicyInhibited(),
-                                buildParams.getPolicyQualifiersRejected(),
-                                rootNode);
+                    = new PolicyChecker(buildParams.initialPolicies(),
+                                        appendedCerts.size(),
+                                        buildParams.explicitPolicyRequired(),
+                                        buildParams.policyMappingInhibited(),
+                                        buildParams.anyPolicyInhibited(),
+                                        buildParams.policyQualifiersRejected(),
+                                        rootNode);
 
-                List<PKIXCertPathChecker> userCheckers = new
-                    ArrayList<PKIXCertPathChecker>
-                        (buildParams.getCertPathCheckers());
-                int mustCheck = 0;
-                userCheckers.add(mustCheck, policyChecker);
-                mustCheck++;
+                checkers.add(policyChecker);
 
                 // add the algorithm checker
-                userCheckers.add(mustCheck,
-                        new AlgorithmChecker(builder.trustAnchor));
-                mustCheck++;
+                checkers.add(new AlgorithmChecker(builder.trustAnchor));
 
+                BasicChecker basicChecker = null;
                 if (nextState.keyParamsNeeded()) {
                     PublicKey rootKey = cert.getPublicKey();
                     if (builder.trustAnchor.getTrustedCert() == null) {
@@ -500,24 +435,38 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                         (cert.getSubjectX500Principal(), rootKey, null);
 
                     // add the basic checker
-                    basicChecker = new BasicChecker(anchor,
-                                           builder.date,
-                                           buildParams.getSigProvider(),
-                                           true);
-                    userCheckers.add(mustCheck, basicChecker);
-                    mustCheck++;
+                    basicChecker = new BasicChecker(anchor, buildParams.date(),
+                                                    buildParams.sigProvider(),
+                                                    true);
+                    checkers.add(basicChecker);
+                }
 
-                    // add the crl revocation checker
-                    if (buildParams.isRevocationEnabled()) {
-                        userCheckers.add(mustCheck, new CrlRevocationChecker
-                            (anchor, buildParams, null, onlyEECert));
-                        mustCheck++;
+                buildParams.setCertPath(cf.generateCertPath(appendedCerts));
+
+                boolean revCheckerAdded = false;
+                List<PKIXCertPathChecker> ckrs = buildParams.certPathCheckers();
+                for (PKIXCertPathChecker ckr : ckrs) {
+                    if (ckr instanceof PKIXRevocationChecker) {
+                        revCheckerAdded = true;
+                        // if it's our own, initialize it
+                        if (ckr instanceof RevocationChecker)
+                            ((RevocationChecker)ckr).init(builder.trustAnchor,
+                                                          buildParams);
                     }
                 }
-                // Why we don't need BasicChecker and CrlRevocationChecker
+                // only add a RevocationChecker if revocation is enabled and
+                // a PKIXRevocationChecker has not already been added
+                if (buildParams.revocationEnabled() && !revCheckerAdded) {
+                    checkers.add(new RevocationChecker(builder.trustAnchor,
+                                                       buildParams));
+                }
+
+                checkers.addAll(ckrs);
+
+                // Why we don't need BasicChecker and RevocationChecker
                 // if nextState.keyParamsNeeded() is false?
 
-                for (int i=0; i<appendedCerts.size(); i++) {
+                for (int i = 0; i < appendedCerts.size(); i++) {
                     X509Certificate currCert = appendedCerts.get(i);
                     if (debug != null)
                         debug.println("current subject = "
@@ -528,18 +477,15 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                         unresCritExts = Collections.<String>emptySet();
                     }
 
-                    for (int j=0; j<userCheckers.size(); j++) {
-                        PKIXCertPathChecker currChecker = userCheckers.get(j);
-                        if (j < mustCheck ||
-                            !currChecker.isForwardCheckingSupported()) {
+                    for (PKIXCertPathChecker currChecker : checkers) {
+                        if (!currChecker.isForwardCheckingSupported()) {
                             if (i == 0) {
                                 currChecker.init(false);
 
                                 // The user specified
                                 // AlgorithmChecker may not be
                                 // able to set the trust anchor until now.
-                                if (j >= mustCheck &&
-                                    currChecker instanceof AlgorithmChecker) {
+                                if (currChecker instanceof AlgorithmChecker) {
                                     ((AlgorithmChecker)currChecker).
                                         trySetTrustAnchor(builder.trustAnchor);
                                 }
@@ -565,7 +511,7 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                      * are capable of processing.
                      */
                     for (PKIXCertPathChecker checker :
-                         buildParams.getCertPathCheckers())
+                         buildParams.certPathCheckers())
                     {
                         if (checker.isForwardCheckingSupported()) {
                             Set<String> suppExts =
@@ -577,24 +523,16 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                     }
 
                     if (!unresCritExts.isEmpty()) {
-                        unresCritExts.remove
-                            (PKIXExtensions.BasicConstraints_Id.toString());
-                        unresCritExts.remove
-                            (PKIXExtensions.NameConstraints_Id.toString());
-                        unresCritExts.remove
-                            (PKIXExtensions.CertificatePolicies_Id.toString());
-                        unresCritExts.remove
-                            (PKIXExtensions.PolicyMappings_Id.toString());
-                        unresCritExts.remove
-                            (PKIXExtensions.PolicyConstraints_Id.toString());
-                        unresCritExts.remove
-                            (PKIXExtensions.InhibitAnyPolicy_Id.toString());
-                        unresCritExts.remove(PKIXExtensions.
+                        unresCritExts.remove(BasicConstraints_Id.toString());
+                        unresCritExts.remove(NameConstraints_Id.toString());
+                        unresCritExts.remove(CertificatePolicies_Id.toString());
+                        unresCritExts.remove(PolicyMappings_Id.toString());
+                        unresCritExts.remove(PolicyConstraints_Id.toString());
+                        unresCritExts.remove(InhibitAnyPolicy_Id.toString());
+                        unresCritExts.remove(
                             SubjectAlternativeName_Id.toString());
-                        unresCritExts.remove
-                            (PKIXExtensions.KeyUsage_Id.toString());
-                        unresCritExts.remove
-                            (PKIXExtensions.ExtendedKeyUsage_Id.toString());
+                        unresCritExts.remove(KeyUsage_Id.toString());
+                        unresCritExts.remove(ExtendedKeyUsage_Id.toString());
 
                         if (!unresCritExts.isEmpty()) {
                             throw new CertPathValidatorException
@@ -611,10 +549,10 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                 /*
                  * if the user specified a trusted public key rather than
                  * trusted certs, then add this cert (which is signed by
-                 * the trusted public key) to the certPathList
+                 * the trusted public key) to the cpList
                  */
                 if (builder.trustAnchor.getTrustedCert() == null)
-                    builder.addCertToPath(cert, certPathList);
+                    builder.addCertToPath(cert, cpList);
                 // Save the trust anchor
                 this.trustAnchor = builder.trustAnchor;
 
@@ -625,10 +563,10 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                     finalPublicKey = basicChecker.getPublicKey();
                 } else {
                     Certificate finalCert;
-                    if (certPathList.size() == 0) {
+                    if (cpList.isEmpty()) {
                         finalCert = builder.trustAnchor.getTrustedCert();
                     } else {
-                        finalCert = certPathList.get(certPathList.size()-1);
+                        finalCert = cpList.getLast();
                     }
                     finalPublicKey = finalCert.getPublicKey();
                 }
@@ -636,7 +574,7 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                 policyTreeResult = policyChecker.getPolicyTree();
                 return;
             } else {
-                builder.addCertToPath(cert, certPathList);
+                builder.addCertToPath(cert, cpList);
             }
 
             /* Update the PKIX state */
@@ -650,8 +588,8 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
             vertex.setIndex(adjList.size() - 1);
 
             /* recursively search for matching certs at next dN */
-            depthFirstSearchForward(cert.getIssuerX500Principal(),
-                                    nextState, builder, adjList, certPathList);
+            depthFirstSearchForward(cert.getIssuerX500Principal(), nextState,
+                                    builder, adjList, cpList);
 
             /*
              * If path has been completed, return ASAP!
@@ -667,8 +605,8 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                  */
                 if (debug != null)
                     debug.println("SunCertPathBuilder.depthFirstSearchForward()"
-                        + ": backtracking");
-                builder.removeFinalCertFromPath(certPathList);
+                                  + ": backtracking");
+                builder.removeFinalCertFromPath(cpList);
             }
         }
     }
@@ -688,9 +626,11 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
      * @param dN the distinguished name being currently searched for certs
      * @param currentState the current PKIX validation state
      */
-    void depthFirstSearchReverse(X500Principal dN, ReverseState currentState,
-        ReverseBuilder builder, List<List<Vertex>> adjList,
-        LinkedList<X509Certificate> certPathList)
+    private void depthFirstSearchReverse(X500Principal dN,
+                                         ReverseState currentState,
+                                         ReverseBuilder builder,
+                                         List<List<Vertex>> adjList,
+                                         LinkedList<X509Certificate> cpList)
         throws GeneralSecurityException, IOException
     {
         if (debug != null)
@@ -701,8 +641,9 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
          * Find all the certificates issued by dN which
          * satisfy the PKIX certification path constraints.
          */
-        List<Vertex> vertices = addVertices
-           (builder.getMatchingCerts(currentState, orderedCertStores), adjList);
+        Collection<X509Certificate> certs =
+            builder.getMatchingCerts(currentState, buildParams.certStores());
+        List<Vertex> vertices = addVertices(certs, adjList);
         if (debug != null)
             debug.println("SunCertPathBuilder.depthFirstSearchReverse(): "
                 + "certs.size=" + vertices.size());
@@ -722,9 +663,9 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
              * the next matching cert is tried.
              */
             ReverseState nextState = (ReverseState) currentState.clone();
-            X509Certificate cert = (X509Certificate) vertex.getCertificate();
+            X509Certificate cert = vertex.getCertificate();
             try {
-                builder.verifyCert(cert, nextState, certPathList);
+                builder.verifyCert(cert, nextState, cpList);
             } catch (GeneralSecurityException gse) {
                 if (debug != null)
                     debug.println("SunCertPathBuilder.depthFirstSearchReverse()"
@@ -738,7 +679,7 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
              * self-signed cert) and update state
              */
             if (!currentState.isInitial())
-                builder.addCertToPath(cert, certPathList);
+                builder.addCertToPath(cert, cpList);
             // save trust anchor
             this.trustAnchor = currentState.trustAnchor;
 
@@ -787,7 +728,7 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
 
             /* recursively search for matching certs at next dN */
             depthFirstSearchReverse(cert.getSubjectX500Principal(), nextState,
-                builder, adjList, certPathList);
+                                    builder, adjList, cpList);
 
             /*
              * If path has been completed, return ASAP!
@@ -805,7 +746,7 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                     debug.println("SunCertPathBuilder.depthFirstSearchReverse()"
                         + ": backtracking");
                 if (!currentState.isInitial())
-                    builder.removeFinalCertFromPath(certPathList);
+                    builder.removeFinalCertFromPath(cpList);
             }
         }
         if (debug != null)
@@ -817,13 +758,14 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
      * Adds a collection of matching certificates to the
      * adjacency list.
      */
-    private List<Vertex> addVertices(Collection<X509Certificate> certs,
-        List<List<Vertex>> adjList) {
+    private static List<Vertex> addVertices(Collection<X509Certificate> certs,
+                                            List<List<Vertex>> adjList)
+    {
         List<Vertex> l = adjList.get(adjList.size() - 1);
 
         for (X509Certificate cert : certs) {
-           Vertex v = new Vertex(cert);
-           l.add(v);
+            Vertex v = new Vertex(cert);
+            l.add(v);
         }
 
         return l;
@@ -833,53 +775,13 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
      * Returns true if trust anchor certificate matches specified
      * certificate constraints.
      */
-    private boolean anchorIsTarget(TrustAnchor anchor, X509CertSelector sel) {
+    private static boolean anchorIsTarget(TrustAnchor anchor,
+                                          CertSelector sel)
+    {
         X509Certificate anchorCert = anchor.getTrustedCert();
         if (anchorCert != null) {
             return sel.match(anchorCert);
         }
         return false;
-    }
-
-    /**
-     * Comparator that orders CertStores so that local CertStores come before
-     * remote CertStores.
-     */
-    private static class CertStoreComparator implements Comparator<CertStore> {
-        public int compare(CertStore store1, CertStore store2) {
-            if (Builder.isLocalCertStore(store1)) {
-                return -1;
-            } else {
-                return 1;
-            }
-        }
-    }
-
-    /**
-     * Returns the target subject DN from the first X509Certificate that
-     * is fetched that matches the specified X509CertSelector.
-     */
-    private X500Principal getTargetSubjectDN(List<CertStore> stores,
-        X509CertSelector targetSel) {
-        for (CertStore store : stores) {
-            try {
-                Collection<? extends Certificate> targetCerts =
-                    (Collection<? extends Certificate>)
-                        store.getCertificates(targetSel);
-                if (!targetCerts.isEmpty()) {
-                    X509Certificate targetCert =
-                        (X509Certificate)targetCerts.iterator().next();
-                    return targetCert.getSubjectX500Principal();
-                }
-            } catch (CertStoreException e) {
-                // ignore but log it
-                if (debug != null) {
-                    debug.println("SunCertPathBuilder.getTargetSubjectDN: " +
-                        "non-fatal exception retrieving certs: " + e);
-                    e.printStackTrace();
-                }
-            }
-        }
-        return null;
     }
 }
