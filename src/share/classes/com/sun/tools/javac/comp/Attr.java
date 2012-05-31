@@ -702,6 +702,13 @@ public class Attr extends JCTree.Visitor {
         return t;
     }
 
+    Type attribIdentAsEnumType(Env<AttrContext> env, JCIdent id) {
+        Assert.check((env.enclClass.sym.flags() & ENUM) != 0);
+        id.type = env.info.scope.owner.type;
+        id.sym = env.info.scope.owner;
+        return id.type;
+    }
+
     public void visitClassDef(JCClassDecl tree) {
         // Local classes have not been entered yet, so we need to do it now:
         if ((env.info.scope.owner.kind & (VAR | MTH)) != 0)
@@ -1657,7 +1664,10 @@ public class Attr extends JCTree.Visitor {
 
         // Attribute clazz expression and store
         // symbol + type back into the attributed tree.
-        Type clazztype = attribType(clazz, env);
+        Type clazztype = TreeInfo.isEnumInit(env.tree) ?
+            attribIdentAsEnumType(env, (JCIdent)clazz) :
+            attribType(clazz, env);
+
         clazztype = chk.checkDiamond(tree, clazztype);
         chk.validate(clazz, localEnv);
         if (tree.encl != null) {
