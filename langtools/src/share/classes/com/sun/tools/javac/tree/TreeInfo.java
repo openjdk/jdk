@@ -237,6 +237,15 @@ public class TreeInfo {
         }
     }
 
+    public static boolean isEnumInit(JCTree tree) {
+        switch (tree.getTag()) {
+            case VARDEF:
+                return (((JCVariableDecl)tree).mods.flags & ENUM) != 0;
+            default:
+                return false;
+        }
+    }
+
     /**
      * Return true if the AST corresponds to a static select of the kind A.B
      */

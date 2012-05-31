@@ -620,7 +620,11 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         DeferredLintHandler prevLintHandler =
                 chk.setDeferredLintHandler(deferredLintHandler.setPos(tree.pos()));
         try {
-            attr.attribType(tree.vartype, localEnv);
+            if (TreeInfo.isEnumInit(tree)) {
+                attr.attribIdentAsEnumType(localEnv, (JCIdent)tree.vartype);
+            } else {
+                attr.attribType(tree.vartype, localEnv);
+            }
         } finally {
             chk.setDeferredLintHandler(prevLintHandler);
         }
