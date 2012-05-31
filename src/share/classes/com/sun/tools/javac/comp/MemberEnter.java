@@ -248,7 +248,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                                    final Name name,
                                    final Env<AttrContext> env) {
         if (tsym.kind != TYP) {
-            log.error(pos, "static.imp.only.classes.and.interfaces");
+            log.error(DiagnosticFlag.RECOVERABLE, pos, "static.imp.only.classes.and.interfaces");
             return;
         }
 
