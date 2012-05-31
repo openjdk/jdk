@@ -1529,7 +1529,7 @@ public class Attr extends JCTree.Visitor {
 
                     // ...and check that it is legal in the current context.
                     // (this will also set the tree's type)
-                    Type mpt = newMethTemplate(argtypes, typeargtypes);
+                    Type mpt = newMethodTemplate(resultInfo.pt, argtypes, typeargtypes);
                     checkId(tree.meth, site, sym, localEnv, new ResultInfo(MTH, mpt),
                             tree.varargsElement != null);
                 }
@@ -1545,7 +1545,7 @@ public class Attr extends JCTree.Visitor {
             // ... and attribute the method using as a prototype a methodtype
             // whose formal argument types is exactly the list of actual
             // arguments (this will also set the method symbol).
-            Type mpt = newMethTemplate(argtypes, typeargtypes);
+            Type mpt = newMethodTemplate(resultInfo.pt, argtypes, typeargtypes);
             localEnv.info.varArgs = false;
             Type mtype = attribExpr(tree.meth, localEnv, mpt);
 
@@ -1608,8 +1608,8 @@ public class Attr extends JCTree.Visitor {
 
         /** Obtain a method type with given argument types.
          */
-        Type newMethTemplate(List<Type> argtypes, List<Type> typeargtypes) {
-            MethodType mt = new MethodType(argtypes, null, null, syms.methodClass);
+        Type newMethodTemplate(Type restype, List<Type> argtypes, List<Type> typeargtypes) {
+            MethodType mt = new MethodType(argtypes, restype, null, syms.methodClass);
             return (typeargtypes == null) ? mt : (Type)new ForAll(typeargtypes, mt);
         }
 
@@ -1883,25 +1883,23 @@ public class Attr extends JCTree.Visitor {
                     typeargtypes);
 
         if (constructor.kind == MTH) {
-            clazztype = checkMethod(site,
-                    constructor,
-                    localEnv,
-                    tree.args,
-                    argtypes,
-                    typeargtypes,
-                    localEnv.info.varArgs).getReturnType();
-        } else {
-            clazztype = syms.errType;
-        }
-
-        if (clazztype.tag == FORALL && !resultInfo.pt.isErroneous()) {
             try {
-                clazztype = resultInfo.checkContext.rawInstantiatePoly((ForAll)clazztype, pt(), Warner.noWarnings);
-            } catch (Infer.InferenceException ex) {
+                clazztype = rawCheckMethod(site,
+                        constructor,
+                        resultInfo,
+                        localEnv,
+                        tree.args,
+                        argtypes,
+                        typeargtypes,
+                        localEnv.info.varArgs).getReturnType();
+            } catch (Resolve.InapplicableMethodException ex) {
                 //an error occurred while inferring uninstantiated type-variables
                 resultInfo.checkContext.report(tree.clazz.pos(), clazztype, resultInfo.pt,
                         diags.fragment("cant.apply.diamond.1", diags.fragment("diamond", clazztype.tsym), ex.diagnostic));
+                clazztype = syms.errType;
             }
+        } else {
+            clazztype = syms.errType;
         }
 
         return chk.checkClassType(tree.clazz.pos(), clazztype, true);
@@ -2255,15 +2253,6 @@ public class Attr extends JCTree.Visitor {
             sitesym != null &&
             sitesym.name == names._super;
 
-        // If selected expression is polymorphic, strip
-        // type parameters and remember in env.info.tvars, so that
-        // they can be added later (in Attr.checkId and Infer.instantiateMethod).
-        if (tree.selected.type.tag == FORALL) {
-            ForAll pstype = (ForAll)tree.selected.type;
-            env.info.tvars = pstype.tvars;
-            site = tree.selected.type = pstype.qtype;
-        }
-
         // Determine the symbol represented by the selection.
         env.info.varArgs = false;
         Symbol sym = selectSym(tree, sitesym, site, env, resultInfo);
@@ -2347,7 +2336,6 @@ public class Attr extends JCTree.Visitor {
 
         env.info.selectSuper = selectSuperPrev;
         result = checkId(tree, site, sym, env, resultInfo, varArgs);
-        env.info.tvars = List.nil();
     }
     //where
         /** Determine symbol referenced by a Select expression,
@@ -2530,16 +2518,6 @@ public class Attr extends JCTree.Visitor {
                     ? types.memberType(site, sym)
                     : sym.type;
 
-                if (env.info.tvars.nonEmpty()) {
-                    Type owntype1 = new ForAll(env.info.tvars, owntype);
-                    for (List<Type> l = env.info.tvars; l.nonEmpty(); l = l.tail)
-                        if (!owntype.contains(l.head)) {
-                            log.error(tree.pos(), "undetermined.type", owntype1);
-                            owntype1 = types.createErrorType(owntype1);
-                        }
-                    owntype = owntype1;
-                }
-
                 // If the variable is a constant, record constant value in
                 // computed type.
                 if (v.getConstValue() != null && isStaticReference(tree))
@@ -2551,9 +2529,10 @@ public class Attr extends JCTree.Visitor {
                 break;
             case MTH: {
                 JCMethodInvocation app = (JCMethodInvocation)env.tree;
-                owntype = checkMethod(site, sym, env, app.args,
-                                      resultInfo.pt.getParameterTypes(), resultInfo.pt.getTypeArguments(),
-                                      env.info.varArgs);
+                owntype = checkMethod(site, sym,
+                        new ResultInfo(VAL, resultInfo.pt.getReturnType(), resultInfo.checkContext),
+                        env, app.args, resultInfo.pt.getParameterTypes(),
+                        resultInfo.pt.getTypeArguments(), env.info.varArgs);
                 break;
             }
             case PCK: case ERR:
@@ -2692,6 +2671,33 @@ public class Attr extends JCTree.Visitor {
      **/
     public Type checkMethod(Type site,
                             Symbol sym,
+                            ResultInfo resultInfo,
+                            Env<AttrContext> env,
+                            final List<JCExpression> argtrees,
+                            List<Type> argtypes,
+                            List<Type> typeargtypes,
+                            boolean useVarargs) {
+        try {
+            return rawCheckMethod(site, sym, resultInfo, env, argtrees, argtypes, typeargtypes, useVarargs);
+        } catch (Resolve.InapplicableMethodException ex) {
+            String key = ex.getDiagnostic() == null ?
+                    "cant.apply.symbol" :
+                    "cant.apply.symbol.1";
+            log.error(env.tree.pos, key,
+                      Kinds.kindName(sym),
+                      sym.name == names.init ? sym.owner.name : sym.name,
+                      rs.methodArguments(sym.type.getParameterTypes()),
+                      rs.methodArguments(argtypes),
+                      Kinds.kindName(sym.owner),
+                      sym.owner.type,
+                      ex.getDiagnostic());
+            return types.createErrorType(site);
+        }
+    }
+
+    private Type rawCheckMethod(Type site,
+                            Symbol sym,
+                            ResultInfo resultInfo,
                             Env<AttrContext> env,
                             final List<JCExpression> argtrees,
                             List<Type> argtypes,
@@ -2717,32 +2723,19 @@ public class Attr extends JCTree.Visitor {
         // Resolve.instantiate from the symbol's type as well as
         // any type arguments and value arguments.
         noteWarner.clear();
-        Type owntype = rs.instantiate(env,
-                                      site,
-                                      sym,
-                                      argtypes,
-                                      typeargtypes,
-                                      true,
-                                      useVarargs,
-                                      noteWarner);
+        Type owntype = rs.rawInstantiate(env,
+                                          site,
+                                          sym,
+                                          resultInfo,
+                                          argtypes,
+                                          typeargtypes,
+                                          true,
+                                          useVarargs,
+                                          noteWarner);
 
         boolean unchecked = noteWarner.hasNonSilentLint(LintCategory.UNCHECKED);
 
-        // If this fails, something went wrong; we should not have
-        // found the identifier in the first place.
-        if (owntype == null) {
-            if (!pt().isErroneous())
-                log.error(env.tree.pos(),
-                           "internal.error.cant.instantiate",
-                           sym, site,
-                          Type.toString(pt().getParameterTypes()));
-            owntype = types.createErrorType(site);
-            return types.createErrorType(site);
-        } else if (owntype.getReturnType().tag == FORALL && !unchecked) {
-            return owntype;
-        } else {
-            return chk.checkMethod(owntype, sym, env, argtrees, argtypes, useVarargs, unchecked);
-        }
+        return chk.checkMethod(owntype, sym, env, argtrees, argtypes, useVarargs, unchecked);
     }
 
     /**
@@ -2755,7 +2748,7 @@ public class Attr extends JCTree.Visitor {
                             List<Type> argtypes,
                             List<Type> typeargtypes,
                             boolean useVarargs) {
-        Type owntype = checkMethod(site, sym, env, argtrees, argtypes, typeargtypes, useVarargs);
+        Type owntype = checkMethod(site, sym, new ResultInfo(VAL, syms.voidType), env, argtrees, argtypes, typeargtypes, useVarargs);
         chk.checkType(env.tree.pos(), owntype.getReturnType(), syms.voidType);
         return owntype;
     }
