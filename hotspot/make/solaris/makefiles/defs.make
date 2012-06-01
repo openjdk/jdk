@@ -123,25 +123,10 @@ ifeq ($(JDK6_OR_EARLIER),0)
   ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
     # Default OBJCOPY comes from the SUNWbinutils package:
     DEF_OBJCOPY=/usr/sfw/bin/gobjcopy
-    ifeq ($(VM_PLATFORM),solaris_amd64)
-      # On Solaris AMD64/X64, gobjcopy is not happy and fails:
-      #
-      # usr/sfw/bin/gobjcopy --add-gnu-debuglink=<lib>.debuginfo <lib>.so
-      # BFD: stKPaiop: Not enough room for program headers, try linking with -N
-      # /usr/sfw/bin/gobjcopy: stKPaiop: Bad value
-      # BFD: stKPaiop: Not enough room for program headers, try linking with -N
-      # /usr/sfw/bin/gobjcopy: libsaproc.debuginfo: Bad value
-      # BFD: stKPaiop: Not enough room for program headers, try linking with -N
-      # /usr/sfw/bin/gobjcopy: stKPaiop: Bad value
-      _JUNK_ := $(shell \
-        echo >&2 "INFO: $(DEF_OBJCOPY) is not working on Solaris AMD64/X64")
-      OBJCOPY=
-    else
-      OBJCOPY=$(shell test -x $(DEF_OBJCOPY) && echo $(DEF_OBJCOPY))
-      ifneq ($(ALT_OBJCOPY),)
-        _JUNK_ := $(shell echo >&2 "INFO: ALT_OBJCOPY=$(ALT_OBJCOPY)")
-        OBJCOPY=$(shell test -x $(ALT_OBJCOPY) && echo $(ALT_OBJCOPY))
-      endif
+    OBJCOPY=$(shell test -x $(DEF_OBJCOPY) && echo $(DEF_OBJCOPY))
+    ifneq ($(ALT_OBJCOPY),)
+      _JUNK_ := $(shell echo >&2 "INFO: ALT_OBJCOPY=$(ALT_OBJCOPY)")
+      OBJCOPY=$(shell test -x $(ALT_OBJCOPY) && echo $(ALT_OBJCOPY))
     endif
   else
     OBJCOPY=
