@@ -1493,22 +1493,28 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     JavaThread::dirty_card_queue_set().abandon_logs();
     assert(!G1DeferredRSUpdate
            || (G1DeferredRSUpdate && (dirty_card_queue_set().completed_buffers_num() == 0)), "Should not be any");
+
+    _young_list->reset_sampled_info();
+    // At this point there should be no regions in the
+    // entire heap tagged as young.
+    assert( check_young_list_empty(true /* check_heap */),
+      "young list should be empty at this point");
+
+    // Update the number of full collections that have been completed.
+    increment_old_marking_cycles_completed(false /* concurrent */);
+
+    _hrs.verify_optional();
+    verify_region_sets_optional();
+
+    print_heap_after_gc();
+
+    // We must call G1MonitoringSupport::update_sizes() in the same scoping level
+    // as an active TraceMemoryManagerStats object (i.e. before the destructor for the
+    // TraceMemoryManagerStats is called) so that the G1 memory pools are updated
+    // before any GC notifications are raised.
+    g1mm()->update_sizes();
   }
 
-  _young_list->reset_sampled_info();
-  // At this point there should be no regions in the
-  // entire heap tagged as young.
-  assert( check_young_list_empty(true /* check_heap */),
-    "young list should be empty at this point");
-
-  // Update the number of full collections that have been completed.
-  increment_old_marking_cycles_completed(false /* concurrent */);
-
-  _hrs.verify_optional();
-  verify_region_sets_optional();
-
-  print_heap_after_gc();
-  g1mm()->update_sizes();
   post_full_gc_dump();
 
   return true;
@@ -3936,25 +3942,30 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
       gc_epilogue(false);
     }
+
+    // The closing of the inner scope, immediately above, will complete
+    // logging at the "fine" level. The record_collection_pause_end() call
+    // above will complete logging at the "finer" level.
+    //
+    // It is not yet to safe, however, to tell the concurrent mark to
+    // start as we have some optional output below. We don't want the
+    // output from the concurrent mark thread interfering with this
+    // logging output either.
+
+    _hrs.verify_optional();
+    verify_region_sets_optional();
+
+    TASKQUEUE_STATS_ONLY(if (ParallelGCVerbose) print_taskqueue_stats());
+    TASKQUEUE_STATS_ONLY(reset_taskqueue_stats());
+
+    print_heap_after_gc();
+
+    // We must call G1MonitoringSupport::update_sizes() in the same scoping level
+    // as an active TraceMemoryManagerStats object (i.e. before the destructor for the
+    // TraceMemoryManagerStats is called) so that the G1 memory pools are updated
+    // before any GC notifications are raised.
+    g1mm()->update_sizes();
   }
-
-  // The closing of the inner scope, immediately above, will complete
-  // logging at the "fine" level. The record_collection_pause_end() call
-  // above will complete logging at the "finer" level.
-  //
-  // It is not yet to safe, however, to tell the concurrent mark to
-  // start as we have some optional output below. We don't want the
-  // output from the concurrent mark thread interfering with this
-  // logging output either.
-
-  _hrs.verify_optional();
-  verify_region_sets_optional();
-
-  TASKQUEUE_STATS_ONLY(if (ParallelGCVerbose) print_taskqueue_stats());
-  TASKQUEUE_STATS_ONLY(reset_taskqueue_stats());
-
-  print_heap_after_gc();
-  g1mm()->update_sizes();
 
   if (G1SummarizeRSetStats &&
       (G1SummarizeRSetStatsPeriod > 0) &&
