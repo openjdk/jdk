@@ -90,7 +90,8 @@ import java.lang.ref.ReferenceQueue;
  * from being discarded.  Note that a value object may refer indirectly to its
  * key via the <tt>WeakHashMap</tt> itself; that is, a value object may
  * strongly refer to some other key object whose associated value object, in
- * turn, strongly refers to the key of the first value object.  One way
+ * turn, strongly refers to the key of the first value object.  If the values
+ * in the map do not rely on the map holding strong references to them, one way
  * to deal with this is to wrap values themselves within
  * <tt>WeakReferences</tt> before
  * inserting, as in: <tt>m.put(key, new WeakReference(value))</tt>,
