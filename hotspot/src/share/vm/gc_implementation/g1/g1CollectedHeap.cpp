@@ -1299,6 +1299,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
     gc_prologue(true);
     increment_total_collections(true /* full gc */);
+    increment_old_marking_cycles_started();
 
     size_t g1h_prev_used = used();
     assert(used() == recalculate_used(), "Should be equal");
@@ -1501,7 +1502,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     "young list should be empty at this point");
 
   // Update the number of full collections that have been completed.
-  increment_full_collections_completed(false /* concurrent */);
+  increment_old_marking_cycles_completed(false /* concurrent */);
 
   _hrs.verify_optional();
   verify_region_sets_optional();
@@ -1888,7 +1889,8 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _retained_old_gc_alloc_region(NULL),
   _expand_heap_after_alloc_failure(true),
   _surviving_young_words(NULL),
-  _full_collections_completed(0),
+  _old_marking_cycles_started(0),
+  _old_marking_cycles_completed(0),
   _in_cset_fast_test(NULL),
   _in_cset_fast_test_base(NULL),
   _dirty_cards_region_list(NULL),
@@ -2360,18 +2362,22 @@ void G1CollectedHeap::allocate_dummy_regions() {
 }
 #endif // !PRODUCT
 
-void G1CollectedHeap::increment_full_collections_completed(bool concurrent) {
+void G1CollectedHeap::increment_old_marking_cycles_started() {
+  assert(_old_marking_cycles_started == _old_marking_cycles_completed ||
+    _old_marking_cycles_started == _old_marking_cycles_completed + 1,
+    err_msg("Wrong marking cycle count (started: %d, completed: %d)",
+    _old_marking_cycles_started, _old_marking_cycles_completed));
+
+  _old_marking_cycles_started++;
+}
+
+void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent) {
   MonitorLockerEx x(FullGCCount_lock, Mutex::_no_safepoint_check_flag);
 
   // We assume that if concurrent == true, then the caller is a
   // concurrent thread that was joined the Suspendible Thread
   // Set. If there's ever a cheap way to check this, we should add an
   // assert here.
-
-  // We have already incremented _total_full_collections at the start
-  // of the GC, so total_full_collections() represents how many full
-  // collections have been started.
-  unsigned int full_collections_started = total_full_collections();
 
   // Given that this method is called at the end of a Full GC or of a
   // concurrent cycle, and those can be nested (i.e., a Full GC can
@@ -2382,21 +2388,21 @@ void G1CollectedHeap::increment_full_collections_completed(bool concurrent) {
 
   // This is the case for the inner caller, i.e. a Full GC.
   assert(concurrent ||
-         (full_collections_started == _full_collections_completed + 1) ||
-         (full_collections_started == _full_collections_completed + 2),
-         err_msg("for inner caller (Full GC): full_collections_started = %u "
-                 "is inconsistent with _full_collections_completed = %u",
-                 full_collections_started, _full_collections_completed));
+         (_old_marking_cycles_started == _old_marking_cycles_completed + 1) ||
+         (_old_marking_cycles_started == _old_marking_cycles_completed + 2),
+         err_msg("for inner caller (Full GC): _old_marking_cycles_started = %u "
+                 "is inconsistent with _old_marking_cycles_completed = %u",
+                 _old_marking_cycles_started, _old_marking_cycles_completed));
 
   // This is the case for the outer caller, i.e. the concurrent cycle.
   assert(!concurrent ||
-         (full_collections_started == _full_collections_completed + 1),
+         (_old_marking_cycles_started == _old_marking_cycles_completed + 1),
          err_msg("for outer caller (concurrent cycle): "
-                 "full_collections_started = %u "
-                 "is inconsistent with _full_collections_completed = %u",
-                 full_collections_started, _full_collections_completed));
+                 "_old_marking_cycles_started = %u "
+                 "is inconsistent with _old_marking_cycles_completed = %u",
+                 _old_marking_cycles_started, _old_marking_cycles_completed));
 
-  _full_collections_completed += 1;
+  _old_marking_cycles_completed += 1;
 
   // We need to clear the "in_progress" flag in the CM thread before
   // we wake up any waiters (especially when ExplicitInvokesConcurrent
@@ -2432,7 +2438,7 @@ void G1CollectedHeap::collect(GCCause::Cause cause) {
   assert_heap_not_locked();
 
   unsigned int gc_count_before;
-  unsigned int full_gc_count_before;
+  unsigned int old_marking_count_before;
   bool retry_gc;
 
   do {
@@ -2443,7 +2449,7 @@ void G1CollectedHeap::collect(GCCause::Cause cause) {
 
       // Read the GC count while holding the Heap_lock
       gc_count_before = total_collections();
-      full_gc_count_before = total_full_collections();
+      old_marking_count_before = _old_marking_cycles_started;
     }
 
     if (should_do_concurrent_full_gc(cause)) {
@@ -2458,7 +2464,7 @@ void G1CollectedHeap::collect(GCCause::Cause cause) {
 
       VMThread::execute(&op);
       if (!op.pause_succeeded()) {
-        if (full_gc_count_before == total_full_collections()) {
+        if (old_marking_count_before == _old_marking_cycles_started) {
           retry_gc = op.should_retry_gc();
         } else {
           // A Full GC happened while we were trying to schedule the
@@ -2486,7 +2492,7 @@ void G1CollectedHeap::collect(GCCause::Cause cause) {
         VMThread::execute(&op);
       } else {
         // Schedule a Full GC.
-        VM_G1CollectFull op(gc_count_before, full_gc_count_before, cause);
+        VM_G1CollectFull op(gc_count_before, old_marking_count_before, cause);
         VMThread::execute(&op);
       }
     }
@@ -3613,7 +3619,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     if (g1_policy()->during_initial_mark_pause()) {
       // We are about to start a marking cycle, so we increment the
       // full collection counter.
-      increment_total_full_collections();
+      increment_old_marking_cycles_started();
     }
     // if the log level is "finer" is on, we'll print long statistics information
     // in the collector policy code, so let's not print this as the output
