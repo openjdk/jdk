@@ -1557,9 +1557,6 @@ bool LibraryCallKit::inline_exp(vmIntrinsics::ID id) {
   // every again.  NaN results requires StrictMath.exp handling.
   if (too_many_traps(Deoptimization::Reason_intrinsic))  return false;
 
-  // Do not intrinsify on older platforms which lack cmove.
-  if (ConditionalMoveLimit == 0)  return false;
-
   _sp += arg_size();        // restore stack pointer
   Node *x = pop_math_arg();
   Node *result = _gvn.transform(new (C, 2) ExpDNode(0,x));
@@ -1802,15 +1799,11 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsqrt: return Matcher::has_match_rule(Op_SqrtD) ? inline_sqrt(id) : false;
   case vmIntrinsics::_dabs:  return Matcher::has_match_rule(Op_AbsD)  ? inline_abs(id)  : false;
 
-    // These intrinsics don't work on X86.  The ad implementation doesn't
-    // handle NaN's properly.  Instead of returning infinity, the ad
-    // implementation returns a NaN on overflow. See bug: 6304089
-    // Once the ad implementations are fixed, change the code below
-    // to match the intrinsics above
-
   case vmIntrinsics::_dexp:  return
+    Matcher::has_match_rule(Op_ExpD) ? inline_exp(id) :
     runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dexp), "EXP");
   case vmIntrinsics::_dpow:  return
+    Matcher::has_match_rule(Op_PowD) ? inline_pow(id) :
     runtime_math(OptoRuntime::Math_DD_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dpow), "POW");
 
    // These intrinsics are not yet correctly implemented
