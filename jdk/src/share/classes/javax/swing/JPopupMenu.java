@@ -853,6 +853,11 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
     /**
      * Sets the location of the upper left corner of the
      * popup menu using x, y coordinates.
+     * <p>
+     * The method changes the geometry-related data. Therefore,
+     * the native windowing system may ignore such requests, or it may modify
+     * the requested data, so that the {@code JPopupMenu} object is placed and sized
+     * in a way that corresponds closely to the desktop settings.
      *
      * @param x the x coordinate of the popup's new position
      *          in the screen's coordinate space
