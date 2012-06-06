@@ -27,6 +27,7 @@
 // Win32_OS defines the interface to windows operating systems
 
 class win32 {
+  friend class os;
 
  protected:
   static int    _vm_page_size;
@@ -38,6 +39,8 @@ class win32 {
   static bool   _is_nt;
   static bool   _is_windows_2003;
   static bool   _is_windows_server;
+
+  static void print_windows_version(outputStream* st);
 
  public:
   // Windows-specific interface:
