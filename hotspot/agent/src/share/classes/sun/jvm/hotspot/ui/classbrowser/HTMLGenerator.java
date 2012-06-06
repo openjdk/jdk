@@ -199,7 +199,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
          cpuHelper = new SPARCHelper();
       } else if (cpu.equals("x86")) {
          cpuHelper = new X86Helper();
-      } else if (cpu.equals("amd64")) {
+      } else if (cpu.equals("amd64") || cpu.equals("x86_64")) {
          cpuHelper = new AMD64Helper();
       } else if (cpu.equals("ia64")) {
          cpuHelper = new IA64Helper();
