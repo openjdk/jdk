@@ -151,6 +151,9 @@ sun/management/jmxremote/startstop/JMXStartStopTest.sh          generic-all
 
 # jdk_math
 
+# 7174532
+java/lang/Math/WorstCaseTests.java				generic-all
+
 ############################################################################
 
 # jdk_misc
@@ -373,6 +376,9 @@ com/sun/jdi/ProcessAttachTest.sh                                generic-all
 
 # Filed 6979016
 sun/tools/jconsole/ResourceCheckTest.sh                         generic-all
+
+# 7172176
+sun/tools/jconsole/ImmutableResourceTest.sh			generic-all
 
 # 7132203
 sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
