@@ -1026,6 +1026,16 @@ void CppInterpreter::process_method_handle(oop method_handle, TRAPS) {
         java_lang_invoke_AdapterMethodHandle::vmargslot(method_handle);
       oop arg = VMSLOTS_OBJECT(arg_slot);
       jvalue arg_value;
+      if (arg == NULL) {
+        // queue a nullpointer exception for the caller
+        stack->set_sp(calculate_unwind_sp(stack, method_handle));
+        CALL_VM_NOCHECK_NOFIX(
+          throw_exception(
+            thread, vmSymbols::java_lang_NullPointerException()));
+        // NB all oops trashed!
+        assert(HAS_PENDING_EXCEPTION, "should do");
+        return;
+      }
       BasicType arg_type = java_lang_boxing_object::get_value(arg, &arg_value);
       if (arg_type == T_LONG || arg_type == T_DOUBLE) {
         intptr_t *unwind_sp = calculate_unwind_sp(stack, method_handle);
@@ -1110,6 +1120,15 @@ void CppInterpreter::process_method_handle(oop method_handle, TRAPS) {
       case T_CHAR:
       case T_BYTE:
       case T_SHORT:
+        return;
+      }
+      // INT results sometimes need narrowing
+    case T_BOOLEAN:
+    case T_CHAR:
+    case T_BYTE:
+    case T_SHORT:
+      switch (src_rtype) {
+      case T_INT:
         return;
       }
     }

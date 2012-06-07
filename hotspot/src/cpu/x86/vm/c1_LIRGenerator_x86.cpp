@@ -823,7 +823,7 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
 
 
 void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
-  assert(x->number_of_arguments() == 1, "wrong type");
+  assert(x->number_of_arguments() == 1 || (x->number_of_arguments() == 2 && x->id() == vmIntrinsics::_dpow), "wrong type");
   LIRItem value(x->argument_at(0), this);
 
   bool use_fpu = false;
@@ -834,6 +834,8 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       case vmIntrinsics::_dtan:
       case vmIntrinsics::_dlog:
       case vmIntrinsics::_dlog10:
+      case vmIntrinsics::_dexp:
+      case vmIntrinsics::_dpow:
         use_fpu = true;
     }
   } else {
@@ -843,20 +845,37 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
   value.load_item();
 
   LIR_Opr calc_input = value.result();
+  LIR_Opr calc_input2 = NULL;
+  if (x->id() == vmIntrinsics::_dpow) {
+    LIRItem extra_arg(x->argument_at(1), this);
+    if (UseSSE < 2) {
+      extra_arg.set_destroys_register();
+    }
+    extra_arg.load_item();
+    calc_input2 = extra_arg.result();
+  }
   LIR_Opr calc_result = rlock_result(x);
 
-  // sin and cos need two free fpu stack slots, so register two temporary operands
+  // sin, cos, pow and exp need two free fpu stack slots, so register
+  // two temporary operands
   LIR_Opr tmp1 = FrameMap::caller_save_fpu_reg_at(0);
   LIR_Opr tmp2 = FrameMap::caller_save_fpu_reg_at(1);
 
   if (use_fpu) {
     LIR_Opr tmp = FrameMap::fpu0_double_opr;
+    int tmp_start = 1;
+    if (calc_input2 != NULL) {
+      __ move(calc_input2, tmp);
+      tmp_start = 2;
+      calc_input2 = tmp;
+    }
     __ move(calc_input, tmp);
 
     calc_input = tmp;
     calc_result = tmp;
-    tmp1 = FrameMap::caller_save_fpu_reg_at(1);
-    tmp2 = FrameMap::caller_save_fpu_reg_at(2);
+
+    tmp1 = FrameMap::caller_save_fpu_reg_at(tmp_start);
+    tmp2 = FrameMap::caller_save_fpu_reg_at(tmp_start + 1);
   }
 
   switch(x->id()) {
@@ -867,6 +886,8 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
     case vmIntrinsics::_dtan:   __ tan  (calc_input, calc_result, tmp1, tmp2);              break;
     case vmIntrinsics::_dlog:   __ log  (calc_input, calc_result, tmp1);                    break;
     case vmIntrinsics::_dlog10: __ log10(calc_input, calc_result, tmp1);                    break;
+    case vmIntrinsics::_dexp:   __ exp  (calc_input, calc_result,              tmp1, tmp2, FrameMap::rax_opr, FrameMap::rcx_opr, FrameMap::rdx_opr); break;
+    case vmIntrinsics::_dpow:   __ pow  (calc_input, calc_input2, calc_result, tmp1, tmp2, FrameMap::rax_opr, FrameMap::rcx_opr, FrameMap::rdx_opr); break;
     default:                    ShouldNotReachHere();
   }
 

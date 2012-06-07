@@ -147,7 +147,8 @@ class LibraryCallKit : public GraphKit {
     return generate_method_call(method_id, true, false);
   }
 
-  Node* make_string_method_node(int opcode, Node* str1, Node* cnt1, Node* str2, Node* cnt2);
+  Node* make_string_method_node(int opcode, Node* str1_start, Node* cnt1, Node* str2_start, Node* cnt2);
+  Node* make_string_method_node(int opcode, Node* str1, Node* str2);
   bool inline_string_compareTo();
   bool inline_string_indexOf();
   Node* string_indexOf(Node* string_object, ciTypeArray* target_array, jint offset, jint cache_i, jint md2_i);
@@ -873,48 +874,76 @@ Node* LibraryCallKit::generate_current_thread(Node* &tls_output) {
 
 
 //------------------------------make_string_method_node------------------------
-// Helper method for String intrinsic finctions.
-Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1, Node* cnt1, Node* str2, Node* cnt2) {
-  const int value_offset  = java_lang_String::value_offset_in_bytes();
-  const int count_offset  = java_lang_String::count_offset_in_bytes();
-  const int offset_offset = java_lang_String::offset_offset_in_bytes();
-
+// Helper method for String intrinsic functions. This version is called
+// with str1 and str2 pointing to String object nodes.
+//
+Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1, Node* str2) {
   Node* no_ctrl = NULL;
 
-  ciInstanceKlass* klass = env()->String_klass();
-  const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
-
-  const TypeAryPtr* value_type =
-        TypeAryPtr::make(TypePtr::NotNull,
-                         TypeAry::make(TypeInt::CHAR,TypeInt::POS),
-                         ciTypeArrayKlass::make(T_CHAR), true, 0);
-
-  // Get start addr of string and substring
-  Node* str1_valuea  = basic_plus_adr(str1, str1, value_offset);
-  Node* str1_value   = make_load(no_ctrl, str1_valuea, value_type, T_OBJECT, string_type->add_offset(value_offset));
-  Node* str1_offseta = basic_plus_adr(str1, str1, offset_offset);
-  Node* str1_offset  = make_load(no_ctrl, str1_offseta, TypeInt::INT, T_INT, string_type->add_offset(offset_offset));
+  // Get start addr of string
+  Node* str1_value   = load_String_value(no_ctrl, str1);
+  Node* str1_offset  = load_String_offset(no_ctrl, str1);
   Node* str1_start   = array_element_address(str1_value, str1_offset, T_CHAR);
 
-  Node* str2_valuea  = basic_plus_adr(str2, str2, value_offset);
-  Node* str2_value   = make_load(no_ctrl, str2_valuea, value_type, T_OBJECT, string_type->add_offset(value_offset));
-  Node* str2_offseta = basic_plus_adr(str2, str2, offset_offset);
-  Node* str2_offset  = make_load(no_ctrl, str2_offseta, TypeInt::INT, T_INT, string_type->add_offset(offset_offset));
+  // Get length of string 1
+  Node* str1_len  = load_String_length(no_ctrl, str1);
+
+  Node* str2_value   = load_String_value(no_ctrl, str2);
+  Node* str2_offset  = load_String_offset(no_ctrl, str2);
   Node* str2_start   = array_element_address(str2_value, str2_offset, T_CHAR);
+
+  Node* str2_len = NULL;
+  Node* result = NULL;
+
+  switch (opcode) {
+  case Op_StrIndexOf:
+    // Get length of string 2
+    str2_len = load_String_length(no_ctrl, str2);
+
+    result = new (C, 6) StrIndexOfNode(control(), memory(TypeAryPtr::CHARS),
+                                 str1_start, str1_len, str2_start, str2_len);
+    break;
+  case Op_StrComp:
+    // Get length of string 2
+    str2_len = load_String_length(no_ctrl, str2);
+
+    result = new (C, 6) StrCompNode(control(), memory(TypeAryPtr::CHARS),
+                                 str1_start, str1_len, str2_start, str2_len);
+    break;
+  case Op_StrEquals:
+    result = new (C, 5) StrEqualsNode(control(), memory(TypeAryPtr::CHARS),
+                               str1_start, str2_start, str1_len);
+    break;
+  default:
+    ShouldNotReachHere();
+    return NULL;
+  }
+
+  // All these intrinsics have checks.
+  C->set_has_split_ifs(true); // Has chance for split-if optimization
+
+  return _gvn.transform(result);
+}
+
+// Helper method for String intrinsic functions. This version is called
+// with str1 and str2 pointing to char[] nodes, with cnt1 and cnt2 pointing
+// to Int nodes containing the lenghts of str1 and str2.
+//
+Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1_start, Node* cnt1, Node* str2_start, Node* cnt2) {
 
   Node* result = NULL;
   switch (opcode) {
   case Op_StrIndexOf:
     result = new (C, 6) StrIndexOfNode(control(), memory(TypeAryPtr::CHARS),
-                                       str1_start, cnt1, str2_start, cnt2);
+                                 str1_start, cnt1, str2_start, cnt2);
     break;
   case Op_StrComp:
     result = new (C, 6) StrCompNode(control(), memory(TypeAryPtr::CHARS),
-                                    str1_start, cnt1, str2_start, cnt2);
+                                 str1_start, cnt1, str2_start, cnt2);
     break;
   case Op_StrEquals:
     result = new (C, 5) StrEqualsNode(control(), memory(TypeAryPtr::CHARS),
-                                      str1_start, str2_start, cnt1);
+                                 str1_start, str2_start, cnt1);
     break;
   default:
     ShouldNotReachHere();
@@ -932,10 +961,6 @@ bool LibraryCallKit::inline_string_compareTo() {
 
   if (!Matcher::has_match_rule(Op_StrComp)) return false;
 
-  const int value_offset = java_lang_String::value_offset_in_bytes();
-  const int count_offset = java_lang_String::count_offset_in_bytes();
-  const int offset_offset = java_lang_String::offset_offset_in_bytes();
-
   _sp += 2;
   Node *argument = pop();  // pop non-receiver first:  it was pushed second
   Node *receiver = pop();
@@ -952,18 +977,7 @@ bool LibraryCallKit::inline_string_compareTo() {
     return true;
   }
 
-  ciInstanceKlass* klass = env()->String_klass();
-  const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
-  Node* no_ctrl = NULL;
-
-  // Get counts for string and argument
-  Node* receiver_cnta = basic_plus_adr(receiver, receiver, count_offset);
-  Node* receiver_cnt  = make_load(no_ctrl, receiver_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
-
-  Node* argument_cnta = basic_plus_adr(argument, argument, count_offset);
-  Node* argument_cnt  = make_load(no_ctrl, argument_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
-
-  Node* compare = make_string_method_node(Op_StrComp, receiver, receiver_cnt, argument, argument_cnt);
+  Node* compare = make_string_method_node(Op_StrComp, receiver, argument);
   push(compare);
   return true;
 }
@@ -972,10 +986,6 @@ bool LibraryCallKit::inline_string_compareTo() {
 bool LibraryCallKit::inline_string_equals() {
 
   if (!Matcher::has_match_rule(Op_StrEquals)) return false;
-
-  const int value_offset = java_lang_String::value_offset_in_bytes();
-  const int count_offset = java_lang_String::count_offset_in_bytes();
-  const int offset_offset = java_lang_String::offset_offset_in_bytes();
 
   int nargs = 2;
   _sp += nargs;
@@ -1030,24 +1040,31 @@ bool LibraryCallKit::inline_string_equals() {
     }
   }
 
-  const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
-
-  Node* no_ctrl = NULL;
-  Node* receiver_cnt;
-  Node* argument_cnt;
-
   if (!stopped()) {
+    const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
+
     // Properly cast the argument to String
     argument = _gvn.transform(new (C, 2) CheckCastPPNode(control(), argument, string_type));
     // This path is taken only when argument's type is String:NotNull.
     argument = cast_not_null(argument, false);
 
-    // Get counts for string and argument
-    Node* receiver_cnta = basic_plus_adr(receiver, receiver, count_offset);
-    receiver_cnt  = make_load(no_ctrl, receiver_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
+    Node* no_ctrl = NULL;
 
-    Node* argument_cnta = basic_plus_adr(argument, argument, count_offset);
-    argument_cnt  = make_load(no_ctrl, argument_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
+    // Get start addr of receiver
+    Node* receiver_val    = load_String_value(no_ctrl, receiver);
+    Node* receiver_offset = load_String_offset(no_ctrl, receiver);
+    Node* receiver_start = array_element_address(receiver_val, receiver_offset, T_CHAR);
+
+    // Get length of receiver
+    Node* receiver_cnt  = load_String_length(no_ctrl, receiver);
+
+    // Get start addr of argument
+    Node* argument_val   = load_String_value(no_ctrl, argument);
+    Node* argument_offset = load_String_offset(no_ctrl, argument);
+    Node* argument_start = array_element_address(argument_val, argument_offset, T_CHAR);
+
+    // Get length of argument
+    Node* argument_cnt  = load_String_length(no_ctrl, argument);
 
     // Check for receiver count != argument count
     Node* cmp = _gvn.transform( new(C, 3) CmpINode(receiver_cnt, argument_cnt) );
@@ -1057,14 +1074,14 @@ bool LibraryCallKit::inline_string_equals() {
       phi->init_req(4, intcon(0));
       region->init_req(4, if_ne);
     }
-  }
 
-  // Check for count == 0 is done by mach node StrEquals.
+    // Check for count == 0 is done by assembler code for StrEquals.
 
-  if (!stopped()) {
-    Node* equals = make_string_method_node(Op_StrEquals, receiver, receiver_cnt, argument, argument_cnt);
-    phi->init_req(1, equals);
-    region->init_req(1, control());
+    if (!stopped()) {
+      Node* equals = make_string_method_node(Op_StrEquals, receiver_start, receiver_cnt, argument_start, argument_cnt);
+      phi->init_req(1, equals);
+      region->init_req(1, control());
+    }
   }
 
   // post merge
@@ -1162,20 +1179,9 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
 
   const int nargs = 2; // number of arguments to push back for uncommon trap in predicate
 
-  const int value_offset  = java_lang_String::value_offset_in_bytes();
-  const int count_offset  = java_lang_String::count_offset_in_bytes();
-  const int offset_offset = java_lang_String::offset_offset_in_bytes();
-
-  ciInstanceKlass* klass = env()->String_klass();
-  const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
-  const TypeAryPtr*  source_type = TypeAryPtr::make(TypePtr::NotNull, TypeAry::make(TypeInt::CHAR,TypeInt::POS), ciTypeArrayKlass::make(T_CHAR), true, 0);
-
-  Node* sourceOffseta = basic_plus_adr(string_object, string_object, offset_offset);
-  Node* sourceOffset  = make_load(no_ctrl, sourceOffseta, TypeInt::INT, T_INT, string_type->add_offset(offset_offset));
-  Node* sourceCounta  = basic_plus_adr(string_object, string_object, count_offset);
-  Node* sourceCount   = make_load(no_ctrl, sourceCounta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
-  Node* sourcea       = basic_plus_adr(string_object, string_object, value_offset);
-  Node* source        = make_load(no_ctrl, sourcea, source_type, T_OBJECT, string_type->add_offset(value_offset));
+  Node* source        = load_String_value(no_ctrl, string_object);
+  Node* sourceOffset  = load_String_offset(no_ctrl, string_object);
+  Node* sourceCount   = load_String_length(no_ctrl, string_object);
 
   Node* target = _gvn.transform( makecon(TypeOopPtr::make_from_constant(target_array, true)) );
   jint target_length = target_array->length();
@@ -1243,10 +1249,6 @@ Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_ar
 //------------------------------inline_string_indexOf------------------------
 bool LibraryCallKit::inline_string_indexOf() {
 
-  const int value_offset  = java_lang_String::value_offset_in_bytes();
-  const int count_offset  = java_lang_String::count_offset_in_bytes();
-  const int offset_offset = java_lang_String::offset_offset_in_bytes();
-
   _sp += 2;
   Node *argument = pop();  // pop non-receiver first:  it was pushed second
   Node *receiver = pop();
@@ -1280,12 +1282,21 @@ bool LibraryCallKit::inline_string_indexOf() {
     Node*       result_phi = new (C, 4) PhiNode(result_rgn, TypeInt::INT);
     Node* no_ctrl  = NULL;
 
-    // Get counts for string and substr
-    Node* source_cnta = basic_plus_adr(receiver, receiver, count_offset);
-    Node* source_cnt  = make_load(no_ctrl, source_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
+    // Get start addr of source string
+    Node* source = load_String_value(no_ctrl, receiver);
+    Node* source_offset = load_String_offset(no_ctrl, receiver);
+    Node* source_start = array_element_address(source, source_offset, T_CHAR);
 
-    Node* substr_cnta = basic_plus_adr(argument, argument, count_offset);
-    Node* substr_cnt  = make_load(no_ctrl, substr_cnta, TypeInt::INT, T_INT, string_type->add_offset(count_offset));
+    // Get length of source string
+    Node* source_cnt  = load_String_length(no_ctrl, receiver);
+
+    // Get start addr of substring
+    Node* substr = load_String_value(no_ctrl, argument);
+    Node* substr_offset = load_String_offset(no_ctrl, argument);
+    Node* substr_start = array_element_address(substr, substr_offset, T_CHAR);
+
+    // Get length of source string
+    Node* substr_cnt  = load_String_length(no_ctrl, argument);
 
     // Check for substr count > string count
     Node* cmp = _gvn.transform( new(C, 3) CmpINode(substr_cnt, source_cnt) );
@@ -1308,7 +1319,7 @@ bool LibraryCallKit::inline_string_indexOf() {
     }
 
     if (!stopped()) {
-      result = make_string_method_node(Op_StrIndexOf, receiver, source_cnt, argument, substr_cnt);
+      result = make_string_method_node(Op_StrIndexOf, source_start, source_cnt, substr_start, substr_cnt);
       result_phi->init_req(1, result);
       result_rgn->init_req(1, control());
     }
@@ -1333,10 +1344,18 @@ bool LibraryCallKit::inline_string_indexOf() {
     ciInstance* str = str_const->as_instance();
     assert(str != NULL, "must be instance");
 
-    ciObject* v = str->field_value_by_offset(value_offset).as_object();
-    int       o = str->field_value_by_offset(offset_offset).as_int();
-    int       c = str->field_value_by_offset(count_offset).as_int();
+    ciObject* v = str->field_value_by_offset(java_lang_String::value_offset_in_bytes()).as_object();
     ciTypeArray* pat = v->as_type_array(); // pattern (argument) character array
+
+    int o;
+    int c;
+    if (java_lang_String::has_offset_field()) {
+      o = str->field_value_by_offset(java_lang_String::offset_offset_in_bytes()).as_int();
+      c = str->field_value_by_offset(java_lang_String::count_offset_in_bytes()).as_int();
+    } else {
+      o = 0;
+      c = pat->length();
+    }
 
     // constant strings have no offset and count == length which
     // simplifies the resulting code somewhat so lets optimize for that.
@@ -1537,9 +1556,6 @@ bool LibraryCallKit::inline_exp(vmIntrinsics::ID id) {
   // If this inlining ever returned NaN in the past, we do not intrinsify it
   // every again.  NaN results requires StrictMath.exp handling.
   if (too_many_traps(Deoptimization::Reason_intrinsic))  return false;
-
-  // Do not intrinsify on older platforms which lack cmove.
-  if (ConditionalMoveLimit == 0)  return false;
 
   _sp += arg_size();        // restore stack pointer
   Node *x = pop_math_arg();
@@ -1783,15 +1799,11 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsqrt: return Matcher::has_match_rule(Op_SqrtD) ? inline_sqrt(id) : false;
   case vmIntrinsics::_dabs:  return Matcher::has_match_rule(Op_AbsD)  ? inline_abs(id)  : false;
 
-    // These intrinsics don't work on X86.  The ad implementation doesn't
-    // handle NaN's properly.  Instead of returning infinity, the ad
-    // implementation returns a NaN on overflow. See bug: 6304089
-    // Once the ad implementations are fixed, change the code below
-    // to match the intrinsics above
-
   case vmIntrinsics::_dexp:  return
+    Matcher::has_match_rule(Op_ExpD) ? inline_exp(id) :
     runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dexp), "EXP");
   case vmIntrinsics::_dpow:  return
+    Matcher::has_match_rule(Op_PowD) ? inline_pow(id) :
     runtime_math(OptoRuntime::Math_DD_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dpow), "POW");
 
    // These intrinsics are not yet correctly implemented

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,16 +38,16 @@ import java.security.spec.*;
  * This class constitutes the core of HMAC-<MD> algorithms, where
  * <MD> can be SHA1 or MD5, etc. See RFC 2104 for spec.
  *
- * It also contains the implementation classes for the SHA-256,
+ * It also contains the implementation classes for SHA-224, SHA-256,
  * SHA-384, and SHA-512 HMACs.
  *
  * @author Jan Luehe
  */
-final class HmacCore implements Cloneable {
+abstract class HmacCore extends MacSpi implements Cloneable {
 
-    private final MessageDigest md;
-    private final byte[] k_ipad; // inner padding - key XORd with ipad
-    private final byte[] k_opad; // outer padding - key XORd with opad
+    private MessageDigest md;
+    private byte[] k_ipad; // inner padding - key XORd with ipad
+    private byte[] k_opad; // outer padding - key XORd with opad
     private boolean first;       // Is this the first data to be processed?
 
     private final int blockLen;
@@ -73,22 +73,11 @@ final class HmacCore implements Cloneable {
     }
 
     /**
-     * Constructor used for cloning.
-     */
-    private HmacCore(HmacCore other) throws CloneNotSupportedException {
-        this.md = (MessageDigest)other.md.clone();
-        this.blockLen = other.blockLen;
-        this.k_ipad = other.k_ipad.clone();
-        this.k_opad = other.k_opad.clone();
-        this.first = other.first;
-    }
-
-    /**
      * Returns the length of the HMAC in bytes.
      *
      * @return the HMAC length in bytes.
      */
-    int getDigestLength() {
+    protected int engineGetMacLength() {
         return this.md.getDigestLength();
     }
 
@@ -103,9 +92,8 @@ final class HmacCore implements Cloneable {
      * @exception InvalidAlgorithmParameterException if the given algorithm
      * parameters are inappropriate for this MAC.
      */
-    void init(Key key, AlgorithmParameterSpec params)
+    protected void engineInit(Key key, AlgorithmParameterSpec params)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
-
         if (params != null) {
             throw new InvalidAlgorithmParameterException
                 ("HMAC does not use parameters");
@@ -140,7 +128,7 @@ final class HmacCore implements Cloneable {
         Arrays.fill(secret, (byte)0);
         secret = null;
 
-        reset();
+        engineReset();
     }
 
     /**
@@ -148,7 +136,7 @@ final class HmacCore implements Cloneable {
      *
      * @param input the input byte to be processed.
      */
-    void update(byte input) {
+    protected void engineUpdate(byte input) {
         if (first == true) {
             // compute digest for 1st pass; start with inner pad
             md.update(k_ipad);
@@ -167,7 +155,7 @@ final class HmacCore implements Cloneable {
      * @param offset the offset in <code>input</code> where the input starts.
      * @param len the number of bytes to process.
      */
-    void update(byte input[], int offset, int len) {
+    protected void engineUpdate(byte input[], int offset, int len) {
         if (first == true) {
             // compute digest for 1st pass; start with inner pad
             md.update(k_ipad);
@@ -178,7 +166,13 @@ final class HmacCore implements Cloneable {
         md.update(input, offset, len);
     }
 
-    void update(ByteBuffer input) {
+    /**
+     * Processes the <code>input.remaining()</code> bytes in the ByteBuffer
+     * <code>input</code>.
+     *
+     * @param input the input byte buffer.
+     */
+    protected void engineUpdate(ByteBuffer input) {
         if (first == true) {
             // compute digest for 1st pass; start with inner pad
             md.update(k_ipad);
@@ -194,7 +188,7 @@ final class HmacCore implements Cloneable {
      *
      * @return the HMAC result.
      */
-    byte[] doFinal() {
+    protected byte[] engineDoFinal() {
         if (first == true) {
             // compute digest for 1st pass; start with inner pad
             md.update(k_ipad);
@@ -223,7 +217,7 @@ final class HmacCore implements Cloneable {
      * Resets the HMAC for further use, maintaining the secret key that the
      * HMAC was initialized with.
      */
-    void reset() {
+    protected void engineReset() {
         if (first == false) {
             md.reset();
             first = true;
@@ -234,115 +228,38 @@ final class HmacCore implements Cloneable {
      * Clones this object.
      */
     public Object clone() throws CloneNotSupportedException {
-        return new HmacCore(this);
+        HmacCore copy = (HmacCore) super.clone();
+        copy.md = (MessageDigest) md.clone();
+        copy.k_ipad = k_ipad.clone();
+        copy.k_opad = k_opad.clone();
+        return copy;
+    }
+
+    // nested static class for the HmacSHA224 implementation
+    public static final class HmacSHA224 extends HmacCore {
+        public HmacSHA224() throws NoSuchAlgorithmException {
+            super("SHA-224", 64);
+        }
     }
 
     // nested static class for the HmacSHA256 implementation
-    public static final class HmacSHA256 extends MacSpi implements Cloneable {
-        private final HmacCore core;
+    public static final class HmacSHA256 extends HmacCore {
         public HmacSHA256() throws NoSuchAlgorithmException {
-            core = new HmacCore("SHA-256", 64);
-        }
-        private HmacSHA256(HmacSHA256 base) throws CloneNotSupportedException {
-            core = (HmacCore)base.core.clone();
-        }
-        protected int engineGetMacLength() {
-            return core.getDigestLength();
-        }
-        protected void engineInit(Key key, AlgorithmParameterSpec params)
-                throws InvalidKeyException, InvalidAlgorithmParameterException {
-            core.init(key, params);
-        }
-        protected void engineUpdate(byte input) {
-            core.update(input);
-        }
-        protected void engineUpdate(byte input[], int offset, int len) {
-            core.update(input, offset, len);
-        }
-        protected void engineUpdate(ByteBuffer input) {
-            core.update(input);
-        }
-        protected byte[] engineDoFinal() {
-            return core.doFinal();
-        }
-        protected void engineReset() {
-            core.reset();
-        }
-        public Object clone() throws CloneNotSupportedException {
-            return new HmacSHA256(this);
+            super("SHA-256", 64);
         }
     }
 
     // nested static class for the HmacSHA384 implementation
-    public static final class HmacSHA384 extends MacSpi implements Cloneable {
-        private final HmacCore core;
+    public static final class HmacSHA384 extends HmacCore {
         public HmacSHA384() throws NoSuchAlgorithmException {
-            core = new HmacCore("SHA-384", 128);
-        }
-        private HmacSHA384(HmacSHA384 base) throws CloneNotSupportedException {
-            core = (HmacCore)base.core.clone();
-        }
-        protected int engineGetMacLength() {
-            return core.getDigestLength();
-        }
-        protected void engineInit(Key key, AlgorithmParameterSpec params)
-                throws InvalidKeyException, InvalidAlgorithmParameterException {
-            core.init(key, params);
-        }
-        protected void engineUpdate(byte input) {
-            core.update(input);
-        }
-        protected void engineUpdate(byte input[], int offset, int len) {
-            core.update(input, offset, len);
-        }
-        protected void engineUpdate(ByteBuffer input) {
-            core.update(input);
-        }
-        protected byte[] engineDoFinal() {
-            return core.doFinal();
-        }
-        protected void engineReset() {
-            core.reset();
-        }
-        public Object clone() throws CloneNotSupportedException {
-            return new HmacSHA384(this);
+            super("SHA-384", 128);
         }
     }
 
     // nested static class for the HmacSHA512 implementation
-    public static final class HmacSHA512 extends MacSpi implements Cloneable {
-        private final HmacCore core;
+    public static final class HmacSHA512 extends HmacCore {
         public HmacSHA512() throws NoSuchAlgorithmException {
-            core = new HmacCore("SHA-512", 128);
-        }
-        private HmacSHA512(HmacSHA512 base) throws CloneNotSupportedException {
-            core = (HmacCore)base.core.clone();
-        }
-        protected int engineGetMacLength() {
-            return core.getDigestLength();
-        }
-        protected void engineInit(Key key, AlgorithmParameterSpec params)
-                throws InvalidKeyException, InvalidAlgorithmParameterException {
-            core.init(key, params);
-        }
-        protected void engineUpdate(byte input) {
-            core.update(input);
-        }
-        protected void engineUpdate(byte input[], int offset, int len) {
-            core.update(input, offset, len);
-        }
-        protected void engineUpdate(ByteBuffer input) {
-            core.update(input);
-        }
-        protected byte[] engineDoFinal() {
-            return core.doFinal();
-        }
-        protected void engineReset() {
-            core.reset();
-        }
-        public Object clone() throws CloneNotSupportedException {
-            return new HmacSHA512(this);
+            super("SHA-512", 128);
         }
     }
-
 }

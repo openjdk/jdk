@@ -1534,7 +1534,9 @@ address AbstractInterpreterGenerator::generate_method_entry(
   case Interpreter::java_lang_math_abs     : // fall thru
   case Interpreter::java_lang_math_log     : // fall thru
   case Interpreter::java_lang_math_log10   : // fall thru
-  case Interpreter::java_lang_math_sqrt    : entry_point = ((InterpreterGenerator*) this)->generate_math_entry(kind);    break;
+  case Interpreter::java_lang_math_sqrt    : // fall thru
+  case Interpreter::java_lang_math_pow     : // fall thru
+  case Interpreter::java_lang_math_exp     : entry_point = ((InterpreterGenerator*) this)->generate_math_entry(kind);    break;
   case Interpreter::java_lang_ref_reference_get
                                            : entry_point = ((InterpreterGenerator*)this)->generate_Reference_get_entry(); break;
   default                                  : ShouldNotReachHere();                                                       break;
@@ -1558,7 +1560,9 @@ bool AbstractInterpreter::can_be_compiled(methodHandle m) {
     case Interpreter::java_lang_math_abs     : // fall thru
     case Interpreter::java_lang_math_log     : // fall thru
     case Interpreter::java_lang_math_log10   : // fall thru
-    case Interpreter::java_lang_math_sqrt    :
+    case Interpreter::java_lang_math_sqrt    : // fall thru
+    case Interpreter::java_lang_math_pow     : // fall thru
+    case Interpreter::java_lang_math_exp     :
       return false;
     default:
       return true;
