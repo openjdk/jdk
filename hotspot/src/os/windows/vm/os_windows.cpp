@@ -1562,9 +1562,17 @@ void os::print_dll_info(outputStream *st) {
    enumerate_modules(pid, _print_module, (void *)st);
 }
 
+void os::print_os_info_brief(outputStream* st) {
+  os::print_os_info(st);
+}
+
 void os::print_os_info(outputStream* st) {
   st->print("OS:");
 
+  os::win32::print_windows_version(st);
+}
+
+void os::win32::print_windows_version(outputStream* st) {
   OSVERSIONINFOEX osvi;
   ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
   osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);

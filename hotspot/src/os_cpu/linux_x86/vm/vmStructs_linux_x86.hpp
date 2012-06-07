@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
   /******************************/                                                                                                   \
   /* Threads (NOTE: incomplete) */                                                                                                   \
   /******************************/                                                                                                   \
-  nonstatic_field(OSThread,                      _thread_id,                                      pid_t)                             \
+  nonstatic_field(OSThread,                      _thread_id,                                      OSThread::thread_id_t)             \
   nonstatic_field(OSThread,                      _pthread_id,                                     pthread_t)                         \
   /* This must be the last entry, and must be present */                                                                             \
   last_entry()
@@ -46,7 +46,7 @@
   /* Posix Thread IDs   */                                                \
   /**********************/                                                \
                                                                           \
-  declare_integer_type(pid_t)                                             \
+  declare_integer_type(OSThread::thread_id_t)                             \
   declare_unsigned_integer_type(pthread_t)                                \
                                                                           \
   /* This must be the last entry, and must be present */                  \

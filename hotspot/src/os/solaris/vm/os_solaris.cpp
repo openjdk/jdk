@@ -2242,61 +2242,44 @@ static bool _print_ascii_file(const char* filename, outputStream* st) {
   return true;
 }
 
+void os::print_os_info_brief(outputStream* st) {
+  os::Solaris::print_distro_info(st);
+
+  os::Posix::print_uname_info(st);
+
+  os::Solaris::print_libversion_info(st);
+}
+
 void os::print_os_info(outputStream* st) {
   st->print("OS:");
 
-  if (!_print_ascii_file("/etc/release", st)) {
-    st->print("Solaris");
-  }
-  st->cr();
+  os::Solaris::print_distro_info(st);
 
-  // kernel
-  st->print("uname:");
-  struct utsname name;
-  uname(&name);
-  st->print(name.sysname); st->print(" ");
-  st->print(name.release); st->print(" ");
-  st->print(name.version); st->print(" ");
-  st->print(name.machine);
+  os::Posix::print_uname_info(st);
 
-  // libthread
-  if (os::Solaris::T2_libthread()) st->print("  (T2 libthread)");
-  else st->print("  (T1 libthread)");
-  st->cr();
+  os::Solaris::print_libversion_info(st);
 
-  // rlimit
-  st->print("rlimit:");
-  struct rlimit rlim;
+  os::Posix::print_rlimit_info(st);
 
-  st->print(" STACK ");
-  getrlimit(RLIMIT_STACK, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%uk", rlim.rlim_cur >> 10);
-
-  st->print(", CORE ");
-  getrlimit(RLIMIT_CORE, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%uk", rlim.rlim_cur >> 10);
-
-  st->print(", NOFILE ");
-  getrlimit(RLIMIT_NOFILE, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%d", rlim.rlim_cur);
-
-  st->print(", AS ");
-  getrlimit(RLIMIT_AS, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%uk", rlim.rlim_cur >> 10);
-  st->cr();
-
-  // load average
-  st->print("load average:");
-  double loadavg[3];
-  os::loadavg(loadavg, 3);
-  st->print("%0.02f %0.02f %0.02f", loadavg[0], loadavg[1], loadavg[2]);
-  st->cr();
+  os::Posix::print_load_average(st);
 }
 
+void os::Solaris::print_distro_info(outputStream* st) {
+  if (!_print_ascii_file("/etc/release", st)) {
+      st->print("Solaris");
+    }
+    st->cr();
+}
+
+void os::Solaris::print_libversion_info(outputStream* st) {
+  if (os::Solaris::T2_libthread()) {
+    st->print("  (T2 libthread)");
+  }
+  else {
+    st->print("  (T1 libthread)");
+  }
+  st->cr();
+}
 
 static bool check_addr0(outputStream* st) {
   jboolean status = false;
