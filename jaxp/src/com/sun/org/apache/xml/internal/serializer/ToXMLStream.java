@@ -56,7 +56,7 @@ public final class ToXMLStream extends ToStream
      * Map that tells which XML characters should have special treatment, and it
      *  provides character to entity name lookup.
      */
-    private CharInfo m_xmlcharInfo =
+    private static CharInfo m_xmlcharInfo =
 //      new CharInfo(CharInfo.XML_ENTITIES_RESOURCE);
         CharInfo.getCharInfo(CharInfo.XML_ENTITIES_RESOURCE, Method.XML);
 
@@ -329,10 +329,11 @@ public final class ToXMLStream extends ToStream
 
                 /**
                  * Before Xalan 1497, a newline char was printed out if not inside of an
-                 * element. The whitespace is not significant if the output is standalone
+                 * element. The whitespace is not significant is the output is standalone
                 */
                 if (m_elemContext.m_currentElemDepth <= 0 && m_isStandalone)
                     writer.write(m_lineSep, 0, m_lineSepLen);
+
 
                 /*
                  * Don't write out any indentation whitespace now,
