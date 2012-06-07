@@ -53,12 +53,9 @@ public class CheckUsage {
             rmidVM.start();
 
             // wait for registry exit
+            int rmidVMExitStatus = rmidVM.getVM().waitFor();
             System.err.println("rmid exited with status: " +
-                               rmidVM.getVM().waitFor());
-            try {
-                Thread.sleep(7000);
-            } catch (InterruptedException ie) {
-            }
+                               rmidVMExitStatus);
 
             String usage = new String(berr.toByteArray());
 

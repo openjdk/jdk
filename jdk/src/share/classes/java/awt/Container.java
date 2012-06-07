@@ -3093,6 +3093,9 @@ public class Container extends Component {
      * Set from its parent. If all ancestors of this Container have null
      * specified for the Set, then the current KeyboardFocusManager's default
      * Set is used.
+     * <p>
+     * This method may throw a {@code ClassCastException} if any {@code Object}
+     * in {@code keystrokes} is not an {@code AWTKeyStroke}.
      *
      * @param id one of KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS,
      *        KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS,
@@ -3109,8 +3112,7 @@ public class Container extends Component {
      *         KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS,
      *         KeyboardFocusManager.UP_CYCLE_TRAVERSAL_KEYS, or
      *         KeyboardFocusManager.DOWN_CYCLE_TRAVERSAL_KEYS, or if keystrokes
-     *         contains null, or if any Object in keystrokes is not an
-     *         AWTKeyStroke, or if any keystroke represents a KEY_TYPED event,
+     *         contains null, or if any keystroke represents a KEY_TYPED event,
      *         or if any keystroke already maps to another focus traversal
      *         operation for this Container
      * @since 1.4
@@ -3243,7 +3245,7 @@ public class Container extends Component {
 
         if (root != currentFocusCycleRoot) {
             KeyboardFocusManager.getCurrentKeyboardFocusManager().
-                setGlobalCurrentFocusCycleRoot(root);
+                setGlobalCurrentFocusCycleRootPriv(root);
         }
         return root;
     }
@@ -3300,7 +3302,7 @@ public class Container extends Component {
         Container cont = kfm.getCurrentFocusCycleRoot();
 
         if (cont == this || isParentOf(cont)) {
-            kfm.setGlobalCurrentFocusCycleRoot(null);
+            kfm.setGlobalCurrentFocusCycleRootPriv(null);
         }
     }
 
@@ -3504,7 +3506,7 @@ public class Container extends Component {
     public void transferFocusDownCycle() {
         if (isFocusCycleRoot()) {
             KeyboardFocusManager.getCurrentKeyboardFocusManager().
-                setGlobalCurrentFocusCycleRoot(this);
+                setGlobalCurrentFocusCycleRootPriv(this);
             Component toFocus = getFocusTraversalPolicy().
                 getDefaultComponent(this);
             if (toFocus != null) {

@@ -780,6 +780,9 @@ public final class Integer extends Number implements Comparable<Integer> {
             int j = low;
             for(int k = 0; k < cache.length; k++)
                 cache[k] = new Integer(j++);
+
+            // range [-128, 127] must be interned (JLS7 5.1.7)
+            assert IntegerCache.high >= 127;
         }
 
         private IntegerCache() {}
@@ -801,7 +804,6 @@ public final class Integer extends Number implements Comparable<Integer> {
      * @since  1.5
      */
     public static Integer valueOf(int i) {
-        assert IntegerCache.high >= 127;
         if (i >= IntegerCache.low && i <= IntegerCache.high)
             return IntegerCache.cache[i + (-IntegerCache.low)];
         return new Integer(i);

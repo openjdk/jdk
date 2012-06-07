@@ -7169,6 +7169,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Set from its parent. If all ancestors of this Component have null
      * specified for the Set, then the current KeyboardFocusManager's default
      * Set is used.
+     * <p>
+     * This method may throw a {@code ClassCastException} if any {@code Object}
+     * in {@code keystrokes} is not an {@code AWTKeyStroke}.
      *
      * @param id one of KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS,
      *        KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, or
@@ -7182,8 +7185,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *         KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS,
      *         KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, or
      *         KeyboardFocusManager.UP_CYCLE_TRAVERSAL_KEYS, or if keystrokes
-     *         contains null, or if any Object in keystrokes is not an
-     *         AWTKeyStroke, or if any keystroke represents a KEY_TYPED event,
+     *         contains null, or if any keystroke represents a KEY_TYPED event,
      *         or if any keystroke already maps to another focus traversal
      *         operation for this Component
      * @since 1.4
@@ -7831,7 +7833,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
             if (focusLog.isLoggable(PlatformLogger.FINER)) {
                 focusLog.finer("clear global focus owner");
             }
-            KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
+            KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwnerPriv();
         }
         if (focusLog.isLoggable(PlatformLogger.FINER)) {
             focusLog.finer("returning result: " + res);
@@ -7912,7 +7914,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
             if (focusLog.isLoggable(PlatformLogger.FINER)) {
                 focusLog.finer("clear global focus owner");
             }
-            KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
+            KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwnerPriv();
         }
         if (focusLog.isLoggable(PlatformLogger.FINER)) {
             focusLog.finer("returning result: " + res);
@@ -7945,11 +7947,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
         if (rootAncestor != null) {
             Container rootAncestorRootAncestor =
                 rootAncestor.getFocusCycleRootAncestor();
+            Container fcr = (rootAncestorRootAncestor != null) ?
+                rootAncestorRootAncestor : rootAncestor;
+
             KeyboardFocusManager.getCurrentKeyboardFocusManager().
-                setGlobalCurrentFocusCycleRoot(
-                                               (rootAncestorRootAncestor != null)
-                                               ? rootAncestorRootAncestor
-                                               : rootAncestor);
+                setGlobalCurrentFocusCycleRootPriv(fcr);
             rootAncestor.requestFocus(CausedFocusEvent.Cause.TRAVERSAL_UP);
         } else {
             Window window = getContainingWindow();
@@ -7959,7 +7961,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                     getDefaultComponent(window);
                 if (toFocus != null) {
                     KeyboardFocusManager.getCurrentKeyboardFocusManager().
-                        setGlobalCurrentFocusCycleRoot(window);
+                        setGlobalCurrentFocusCycleRootPriv(window);
                     toFocus.requestFocus(CausedFocusEvent.Cause.TRAVERSAL_UP);
                 }
             }

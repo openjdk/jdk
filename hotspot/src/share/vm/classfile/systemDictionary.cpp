@@ -1971,6 +1971,9 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   // first do Object, String, Class
   initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(Class_klass), scan, CHECK);
 
+  // Calculate offsets for String and Class classes since they are loaded and
+  // can be used after this point.
+  java_lang_String::compute_offsets();
   java_lang_Class::compute_offsets();
 
   // Fixup mirrors for classes loaded before java.lang.Class.
@@ -2760,7 +2763,7 @@ class ClassStatistics: AllStatic {
       class_size += ik->local_interfaces()->size();
       class_size += ik->transitive_interfaces()->size();
       // We do not have to count implementors, since we only store one!
-      class_size += ik->all_fields_count() * FieldInfo::field_slots;
+      class_size += ik->fields()->length();
     }
   }
 

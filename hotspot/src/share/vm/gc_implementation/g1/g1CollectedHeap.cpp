@@ -952,9 +952,18 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
         }
         should_try_gc = false;
       } else {
-        // Read the GC count while still holding the Heap_lock.
-        gc_count_before = total_collections();
-        should_try_gc = true;
+        // The GCLocker may not be active but the GCLocker initiated
+        // GC may not yet have been performed (GCLocker::needs_gc()
+        // returns true). In this case we do not try this GC and
+        // wait until the GCLocker initiated GC is performed, and
+        // then retry the allocation.
+        if (GC_locker::needs_gc()) {
+          should_try_gc = false;
+        } else {
+          // Read the GC count while still holding the Heap_lock.
+          gc_count_before = total_collections();
+          should_try_gc = true;
+        }
       }
     }
 
@@ -975,6 +984,9 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
         return NULL;
       }
     } else {
+      // The GCLocker is either active or the GCLocker initiated
+      // GC has not yet been performed. Stall until it is and
+      // then retry the allocation.
       GC_locker::stall_until_clear();
     }
 
@@ -1054,9 +1066,18 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
       if (GC_locker::is_active_and_needs_gc()) {
         should_try_gc = false;
       } else {
-        // Read the GC count while still holding the Heap_lock.
-        gc_count_before = total_collections();
-        should_try_gc = true;
+         // The GCLocker may not be active but the GCLocker initiated
+        // GC may not yet have been performed (GCLocker::needs_gc()
+        // returns true). In this case we do not try this GC and
+        // wait until the GCLocker initiated GC is performed, and
+        // then retry the allocation.
+        if (GC_locker::needs_gc()) {
+          should_try_gc = false;
+        } else {
+          // Read the GC count while still holding the Heap_lock.
+          gc_count_before = total_collections();
+          should_try_gc = true;
+        }
       }
     }
 
@@ -1081,6 +1102,9 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
         return NULL;
       }
     } else {
+      // The GCLocker is either active or the GCLocker initiated
+      // GC has not yet been performed. Stall until it is and
+      // then retry the allocation.
       GC_locker::stall_until_clear();
     }
 
@@ -1252,10 +1276,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     gclog_or_tty->date_stamp(G1Log::fine() && PrintGCDateStamps);
     TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
 
-    char verbose_str[128];
-    sprintf(verbose_str, "Full GC (%s)", GCCause::to_string(gc_cause()));
-    TraceTime t(verbose_str, G1Log::fine(), true, gclog_or_tty);
-
+    TraceTime t(GCCauseString("Full GC", gc_cause()), G1Log::fine(), true, gclog_or_tty);
     TraceCollectorStats tcs(g1mm()->full_collection_counters());
     TraceMemoryManagerStats tms(true /* fullGC */, gc_cause());
 
@@ -3600,12 +3621,10 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     gclog_or_tty->date_stamp(G1Log::fine() && PrintGCDateStamps);
     TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
 
-    char verbose_str[128];
-    sprintf(verbose_str, "GC pause (%s) (%s)%s",
-      GCCause::to_string(gc_cause()),
-      g1_policy()->gcs_are_young() ? "young" : "mixed",
-      g1_policy()->during_initial_mark_pause() ? " (initial-mark)" : "");
-    TraceTime t(verbose_str, G1Log::fine() && !G1Log::finer(), true, gclog_or_tty);
+    GCCauseString gc_cause_str = GCCauseString("GC pause", gc_cause())
+      .append(g1_policy()->gcs_are_young() ? " (young)" : " (mixed)")
+      .append(g1_policy()->during_initial_mark_pause() ? " (initial-mark)" : "");
+    TraceTime t(gc_cause_str, G1Log::fine() && !G1Log::finer(), true, gclog_or_tty);
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
     TraceMemoryManagerStats tms(false /* fullGC */, gc_cause());
@@ -3910,12 +3929,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 #endif
 
       gc_epilogue(false);
-    }
-
-    if (ExitAfterGCNum > 0 && total_collections() == ExitAfterGCNum) {
-      gclog_or_tty->print_cr("Stopping after GC #%d", ExitAfterGCNum);
-      print_tracing_info();
-      vm_exit(-1);
     }
   }
 
@@ -5502,7 +5515,7 @@ void G1CollectedHeap::evacuate_collection_set() {
   if (evacuation_failed()) {
     remove_self_forwarding_pointers();
     if (G1Log::finer()) {
-      gclog_or_tty->print(" (to-space overflow)");
+      gclog_or_tty->print(" (to-space exhausted)");
     } else if (G1Log::fine()) {
       gclog_or_tty->print("--");
     }

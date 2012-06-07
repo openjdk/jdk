@@ -1314,7 +1314,5 @@ const Type *PowDNode::Value( PhaseTransform *phase ) const {
   if( t2->base() != Type::DoubleCon ) return Type::DOUBLE;
   double d1 = t1->getd();
   double d2 = t2->getd();
-  if( d1 < 0.0 ) return Type::DOUBLE;
-  if( d2 < 0.0 ) return Type::DOUBLE;
   return TypeD::make( StubRoutines::intrinsic_pow( d1, d2 ) );
 }

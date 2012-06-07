@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,7 @@ public class TestOAEPParameterSpec {
     public static void main(String[] argv) throws Exception {
         boolean status = true;
         byte[] p = { (byte) 0x01, (byte) 0x02, (byte) 0x03, (byte) 0x04 };
+        status &= runTest("SHA-224", MGF1ParameterSpec.SHA224, p);
         status &= runTest("SHA-256", MGF1ParameterSpec.SHA256, p);
         status &= runTest("SHA-384", MGF1ParameterSpec.SHA384, p);
         status &= runTest("SHA-512", MGF1ParameterSpec.SHA512, p);
