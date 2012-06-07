@@ -3041,7 +3041,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     return result;
   }
 
-#ifdef JAVASE_EMBEDDED
+#if (defined JAVASE_EMBEDDED || defined ARM)
   UNSUPPORTED_OPTION(UseG1GC, "G1 GC");
 #endif
 
@@ -3092,6 +3092,14 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   if (PrintGCDetails) {
     // Turn on -verbose:gc options as well
     PrintGC = true;
+  }
+
+  if (!JDK_Version::is_gte_jdk18x_version()) {
+    // To avoid changing the log format for 7 updates this flag is only
+    // true by default in JDK8 and above.
+    if (FLAG_IS_DEFAULT(PrintGCCause)) {
+      FLAG_SET_DEFAULT(PrintGCCause, false);
+    }
   }
 
   // Set object alignment values.

@@ -102,8 +102,10 @@ CXXFLAGS =           \
 # a time and date. 
 vm_version.o: CXXFLAGS += ${JRE_VERSION}
 
-ifndef JAVASE_EMBEDDED
+ifndef JAVASE_EMBEDDED 
+ifneq (${ARCH},arm)
 CFLAGS += -DINCLUDE_TRACE
+endif
 endif
 
 # CFLAGS_WARN holds compiler options to suppress/enable warnings.
@@ -153,10 +155,12 @@ SOURCE_PATHS+=$(HS_COMMON_SRC)/os/posix/vm
 SOURCE_PATHS+=$(HS_COMMON_SRC)/cpu/$(Platform_arch)/vm
 SOURCE_PATHS+=$(HS_COMMON_SRC)/os_cpu/$(Platform_os_arch)/vm
 
-ifndef JAVASE_EMBEDDED
+ifndef JAVASE_EMBEDDED 
+ifneq (${ARCH},arm)
 SOURCE_PATHS+=$(shell if [ -d $(HS_ALT_SRC)/share/vm/jfr ]; then \
   find $(HS_ALT_SRC)/share/vm/jfr -type d; \
   fi)
+endif
 endif
 
 CORE_PATHS=$(foreach path,$(SOURCE_PATHS),$(call altsrc,$(path)) $(path))

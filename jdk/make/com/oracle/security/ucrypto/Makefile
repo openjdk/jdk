@@ -139,7 +139,7 @@ ifndef OPENJDK
   #
   CLASSDESTDIR = $(TEMPDIR)/classes
   JAVAHFLAGS = -bootclasspath \
-    "$(CLASSDESTDIR)$(CLASSPATH_SEPARATOR)$(CLASSBINDIR)"
+    "$(CLASSDESTDIR)$(CLASSPATH_SEPARATOR)$(CLASSBINDIR)$(JCE_PATH)"
 
   include $(BUILDDIR)/common/Mapfile-vers.gmk
   include $(BUILDDIR)/common/Library.gmk

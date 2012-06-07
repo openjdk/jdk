@@ -61,7 +61,6 @@ enum ThreadState {
 class OSThread: public CHeapObj {
   friend class VMStructs;
  private:
-  //void* _start_proc;            // Thread start routine
   OSThreadStartFunc _start_proc;  // Thread start routine
   void* _start_parm;              // Thread start routine parameter
   volatile ThreadState _state;    // Thread state *hint*
@@ -77,10 +76,7 @@ class OSThread: public CHeapObj {
   void set_state(ThreadState state)                { _state = state; }
   ThreadState get_state()                          { return _state; }
 
-  // Constructor
   OSThread(OSThreadStartFunc start_proc, void* start_parm);
-
-  // Destructor
   ~OSThread();
 
   // Accessors
@@ -98,7 +94,6 @@ class OSThread: public CHeapObj {
 
   // For java intrinsics:
   static ByteSize interrupted_offset()            { return byte_offset_of(OSThread, _interrupted); }
-  static ByteSize thread_id_offset()              { return byte_offset_of(OSThread, _thread_id); }
 
   // Platform dependent stuff
 #ifdef TARGET_OS_FAMILY_linux
@@ -114,6 +109,19 @@ class OSThread: public CHeapObj {
 # include "osThread_bsd.hpp"
 #endif
 
+ public:
+  static ByteSize thread_id_offset()              { return byte_offset_of(OSThread, _thread_id); }
+  static size_t thread_id_size()                  { return sizeof(thread_id_t); }
+
+  thread_id_t thread_id() const                   { return _thread_id; }
+
+  void set_thread_id(thread_id_t id)              { _thread_id = id; }
+
+ private:
+  // _thread_id is kernel thread id (similar to LWP id on Solaris). Each
+  // thread has a unique thread_id (BsdThreads or NPTL). It can be used
+  // to access /proc.
+  thread_id_t _thread_id;
 };
 
 

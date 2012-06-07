@@ -180,6 +180,9 @@ class Solaris {
   // proc_t structure (note that this is a system struct).
   static address _main_stack_base;
 
+  static void print_distro_info(outputStream* st);
+  static void print_libversion_info(outputStream* st);
+
  public:
   static void libthread_init();
   static void synchronization_init();

@@ -153,6 +153,8 @@ public interface ClassConstants
     public static final long JVM_ACC_FIELD_ACCESS_WATCHED         = 0x00002000;
     // field modification is watched by JVMTI
     public static final long JVM_ACC_FIELD_MODIFICATION_WATCHED   = 0x00008000;
+    // field has generic signature
+    public static final long JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE  = 0x00000800;
 
     // flags accepted by set_field_flags
     public static final long JVM_ACC_FIELD_FLAGS = 0x00008000 | JVM_ACC_WRITTEN_FLAGS;

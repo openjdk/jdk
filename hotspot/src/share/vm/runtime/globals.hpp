@@ -3285,9 +3285,6 @@ class CommandLineFlags {
   diagnostic(intx, VerifyGCLevel,     0,                                    \
           "Generation level at which to start +VerifyBefore/AfterGC")       \
                                                                             \
-  develop(uintx, ExitAfterGCNum,   0,                                       \
-          "If non-zero, exit after this GC.")                               \
-                                                                            \
   product(intx, MaxTenuringThreshold,    15,                                \
           "Maximum value for tenuring threshold")                           \
                                                                             \
@@ -3902,7 +3899,10 @@ class CommandLineFlags {
           " of this flag is true for JDK 6 and earlier")                    \
                                                                             \
   diagnostic(bool, WhiteBoxAPI, false,                                      \
-          "Enable internal testing APIs")
+          "Enable internal testing APIs")                                   \
+                                                                            \
+  product(bool, PrintGCCause, true,                                         \
+          "Include GC cause in GC logging")
 
 /*
  *  Macros for factoring of globals

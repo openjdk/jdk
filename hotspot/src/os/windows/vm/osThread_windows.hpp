@@ -25,12 +25,13 @@
 #ifndef OS_WINDOWS_VM_OSTHREAD_WINDOWS_HPP
 #define OS_WINDOWS_VM_OSTHREAD_WINDOWS_HPP
 
-typedef void* HANDLE;
+  typedef void* HANDLE;
+ public:
+  typedef unsigned long thread_id_t;
 
  private:
   // Win32-specific thread information
   HANDLE _thread_handle;        // Win32 thread handle
-  unsigned long _thread_id;     // Win32 thread id
   HANDLE _interrupt_event;      // Event signalled on thread interrupt
   ThreadState _last_state;
 
@@ -42,9 +43,6 @@ typedef void* HANDLE;
   HANDLE interrupt_event() const                   { return _interrupt_event; }
   void set_interrupt_event(HANDLE interrupt_event) { _interrupt_event = interrupt_event; }
 
-
-  static size_t thread_id_size()                   { return sizeof(unsigned long); }
-  unsigned long thread_id() const                  { return _thread_id; }
 #ifndef PRODUCT
   // Used for debugging, return a unique integer for each thread.
   int thread_identifier() const                    { return _thread_id; }
@@ -56,8 +54,6 @@ typedef void* HANDLE;
     return false;
   }
 #endif // ASSERT
-  void set_thread_id(unsigned long thread_id)      { _thread_id = thread_id; }
-
   bool is_try_mutex_enter()                        { return false; }
 
   // This is a temporary fix for the thread states during

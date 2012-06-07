@@ -37,49 +37,62 @@
 class HeapRegion;
 class CollectionSetChooser;
 
-// Yes, this is a bit unpleasant... but it saves replicating the same thing
-// over and over again and introducing subtle problems through small typos and
-// cutting and pasting mistakes. The macros below introduces a number
-// sequnce into the following two classes and the methods that access it.
+// TraceGen0Time collects data on _both_ young and mixed evacuation pauses
+// (the latter may contain non-young regions - i.e. regions that are
+// technically in Gen1) while TraceGen1Time collects data about full GCs.
+class TraceGen0TimeData : public CHeapObj {
+ private:
+  unsigned  _young_pause_num;
+  unsigned  _mixed_pause_num;
 
-#define define_num_seq(name)                                                  \
-private:                                                                      \
-  NumberSeq _all_##name##_times_ms;                                           \
-public:                                                                       \
-  void record_##name##_time_ms(double ms) {                                   \
-    _all_##name##_times_ms.add(ms);                                           \
-  }                                                                           \
-  NumberSeq* get_##name##_seq() {                                             \
-    return &_all_##name##_times_ms;                                           \
-  }
+  NumberSeq _all_stop_world_times_ms;
+  NumberSeq _all_yield_times_ms;
 
-class MainBodySummary;
+  NumberSeq _total;
+  NumberSeq _other;
+  NumberSeq _root_region_scan_wait;
+  NumberSeq _parallel;
+  NumberSeq _ext_root_scan;
+  NumberSeq _satb_filtering;
+  NumberSeq _update_rs;
+  NumberSeq _scan_rs;
+  NumberSeq _obj_copy;
+  NumberSeq _termination;
+  NumberSeq _parallel_other;
+  NumberSeq _clear_ct;
 
-class PauseSummary: public CHeapObj {
-  define_num_seq(total)
-    define_num_seq(other)
+  void print_summary (int level, const char* str, const NumberSeq* seq) const;
+  void print_summary_sd (int level, const char* str, const NumberSeq* seq) const;
 
 public:
-  virtual MainBodySummary*    main_body_summary()    { return NULL; }
+   TraceGen0TimeData() : _young_pause_num(0), _mixed_pause_num(0) {};
+  void record_start_collection(double time_to_stop_the_world_ms);
+  void record_yield_time(double yield_time_ms);
+  void record_end_collection(
+     double total_ms,
+     double other_ms,
+     double root_region_scan_wait_ms,
+     double parallel_ms,
+     double ext_root_scan_ms,
+     double satb_filtering_ms,
+     double update_rs_ms,
+     double scan_rs_ms,
+     double obj_copy_ms,
+     double termination_ms,
+     double parallel_other_ms,
+     double clear_ct_ms);
+  void increment_young_collection_count();
+  void increment_mixed_collection_count();
+  void print() const;
 };
 
-class MainBodySummary: public CHeapObj {
-  define_num_seq(root_region_scan_wait)
-  define_num_seq(parallel) // parallel only
-    define_num_seq(ext_root_scan)
-    define_num_seq(satb_filtering)
-    define_num_seq(update_rs)
-    define_num_seq(scan_rs)
-    define_num_seq(obj_copy)
-    define_num_seq(termination) // parallel only
-    define_num_seq(parallel_other) // parallel only
-  define_num_seq(clear_ct)
-};
+class TraceGen1TimeData : public CHeapObj {
+ private:
+  NumberSeq _all_full_gc_times;
 
-class Summary: public PauseSummary,
-               public MainBodySummary {
-public:
-  virtual MainBodySummary*    main_body_summary()    { return this; }
+ public:
+  void record_full_collection(double full_gc_time_ms);
+  void print() const;
 };
 
 // There are three command line options related to the young gen size:
@@ -199,19 +212,10 @@ private:
   TruncatedSeq* _concurrent_mark_remark_times_ms;
   TruncatedSeq* _concurrent_mark_cleanup_times_ms;
 
-  Summary*           _summary;
+  TraceGen0TimeData _trace_gen0_time_data;
+  TraceGen1TimeData _trace_gen1_time_data;
 
-  NumberSeq* _all_pause_times_ms;
-  NumberSeq* _all_full_gc_times_ms;
   double _stop_world_start;
-  NumberSeq* _all_stop_world_times_ms;
-  NumberSeq* _all_yield_times_ms;
-
-  int        _aux_num;
-  NumberSeq* _all_aux_times_ms;
-  double*    _cur_aux_start_times_ms;
-  double*    _cur_aux_times_ms;
-  bool*      _cur_aux_times_set;
 
   double* _par_last_gc_worker_start_times_ms;
   double* _par_last_ext_root_scan_times_ms;
@@ -242,9 +246,6 @@ private:
   uint _young_list_max_length;
 
   bool                  _last_gc_was_young;
-
-  unsigned              _young_pause_num;
-  unsigned              _mixed_pause_num;
 
   bool                  _during_marking;
   bool                  _in_marking_window;
@@ -552,19 +553,10 @@ public:
 
 private:
   void print_stats(int level, const char* str, double value);
+  void print_stats(int level, const char* str, double value, int workers);
   void print_stats(int level, const char* str, int value);
 
-  void print_par_stats(int level, const char* str, double* data);
-  void print_par_sizes(int level, const char* str, double* data);
-
-  void check_other_times(int level,
-                         NumberSeq* other_times_ms,
-                         NumberSeq* calc_other_times_ms) const;
-
-  void print_summary (PauseSummary* stats) const;
-
-  void print_summary (int level, const char* str, NumberSeq* seq) const;
-  void print_summary_sd (int level, const char* str, NumberSeq* seq) const;
+  void print_par_stats(int level, const char* str, double* data, bool showDecimals = true);
 
   double avg_value (double* data);
   double max_value (double* data);
@@ -745,10 +737,6 @@ public:
     return _bytes_in_collection_set_before_gc;
   }
 
-  unsigned calc_gc_alloc_time_stamp() {
-    return _all_pause_times_ms->num() + 1;
-  }
-
   // This should be called after the heap is resized.
   void record_new_heap_size(uint new_number_of_regions);
 
@@ -865,18 +853,6 @@ public:
 
   void record_code_root_fixup_time(double ms) {
     _cur_collection_code_root_fixup_time_ms = ms;
-  }
-
-  void record_aux_start_time(int i) {
-    guarantee(i < _aux_num, "should be within range");
-    _cur_aux_start_times_ms[i] = os::elapsedTime() * 1000.0;
-  }
-
-  void record_aux_end_time(int i) {
-    guarantee(i < _aux_num, "should be within range");
-    double ms = os::elapsedTime() * 1000.0 - _cur_aux_start_times_ms[i];
-    _cur_aux_times_set[i] = true;
-    _cur_aux_times_ms[i] += ms;
   }
 
   void record_ref_proc_time(double ms) {
