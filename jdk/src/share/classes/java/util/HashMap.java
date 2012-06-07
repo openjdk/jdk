@@ -611,7 +611,7 @@ public class HashMap<K,V>
 
         Map.Entry<?,?> entry = (Map.Entry<?,?>) o;
         Object key = entry.getKey();
-        int hash = (key == null) ? 0 : hash(key.hashCode());
+        int hash = (key == null) ? 0 : hash(key);
         int i = indexFor(hash, table.length);
         @SuppressWarnings("unchecked")
             Entry<K,V> prev = (Entry<K,V>)table[i];
