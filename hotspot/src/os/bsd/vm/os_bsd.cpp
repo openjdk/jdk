@@ -2340,93 +2340,21 @@ void os::print_dll_info(outputStream *st) {
 #endif
 }
 
+void os::print_os_info_brief(outputStream* st) {
+  st->print("Bsd");
+
+  os::Posix::print_uname_info(st);
+}
 
 void os::print_os_info(outputStream* st) {
   st->print("OS:");
+  st->print("Bsd");
 
-  // Try to identify popular distros.
-  // Most Bsd distributions have /etc/XXX-release file, which contains
-  // the OS version string. Some have more than one /etc/XXX-release file
-  // (e.g. Mandrake has both /etc/mandrake-release and /etc/redhat-release.),
-  // so the order is important.
-  if (!_print_ascii_file("/etc/mandrake-release", st) &&
-      !_print_ascii_file("/etc/sun-release", st) &&
-      !_print_ascii_file("/etc/redhat-release", st) &&
-      !_print_ascii_file("/etc/SuSE-release", st) &&
-      !_print_ascii_file("/etc/turbobsd-release", st) &&
-      !_print_ascii_file("/etc/gentoo-release", st) &&
-      !_print_ascii_file("/etc/debian_version", st) &&
-      !_print_ascii_file("/etc/ltib-release", st) &&
-      !_print_ascii_file("/etc/angstrom-version", st)) {
-      st->print("Bsd");
-  }
-  st->cr();
+  os::Posix::print_uname_info(st);
 
-  // kernel
-  st->print("uname:");
-  struct utsname name;
-  uname(&name);
-  st->print(name.sysname); st->print(" ");
-  st->print(name.release); st->print(" ");
-  st->print(name.version); st->print(" ");
-  st->print(name.machine);
-  st->cr();
+  os::Posix::print_rlimit_info(st);
 
-#ifndef _ALLBSD_SOURCE
-  // Print warning if unsafe chroot environment detected
-  if (unsafe_chroot_detected) {
-    st->print("WARNING!! ");
-    st->print_cr(unstable_chroot_error);
-  }
-
-  // libc, pthread
-  st->print("libc:");
-  st->print(os::Bsd::glibc_version()); st->print(" ");
-  st->print(os::Bsd::libpthread_version()); st->print(" ");
-  if (os::Bsd::is_BsdThreads()) {
-     st->print("(%s stack)", os::Bsd::is_floating_stack() ? "floating" : "fixed");
-  }
-  st->cr();
-#endif
-
-  // rlimit
-  st->print("rlimit:");
-  struct rlimit rlim;
-
-  st->print(" STACK ");
-  getrlimit(RLIMIT_STACK, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%uk", rlim.rlim_cur >> 10);
-
-  st->print(", CORE ");
-  getrlimit(RLIMIT_CORE, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%uk", rlim.rlim_cur >> 10);
-
-  st->print(", NPROC ");
-  getrlimit(RLIMIT_NPROC, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%d", rlim.rlim_cur);
-
-  st->print(", NOFILE ");
-  getrlimit(RLIMIT_NOFILE, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%d", rlim.rlim_cur);
-
-#ifndef _ALLBSD_SOURCE
-  st->print(", AS ");
-  getrlimit(RLIMIT_AS, &rlim);
-  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%uk", rlim.rlim_cur >> 10);
-  st->cr();
-
-  // load average
-  st->print("load average:");
-  double loadavg[3];
-  os::loadavg(loadavg, 3);
-  st->print("%0.02f %0.02f %0.02f", loadavg[0], loadavg[1], loadavg[2]);
-  st->cr();
-#endif
+  os::Posix::print_load_average(st);
 }
 
 void os::pd_print_cpu_info(outputStream* st) {

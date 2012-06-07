@@ -916,6 +916,8 @@ enum LIR_Code {
       , lir_tan
       , lir_log
       , lir_log10
+      , lir_exp
+      , lir_pow
       , lir_logic_and
       , lir_logic_or
       , lir_logic_xor
@@ -1560,7 +1562,11 @@ class LIR_Op2: public LIR_Op {
   LIR_Opr   _opr1;
   LIR_Opr   _opr2;
   BasicType _type;
-  LIR_Opr   _tmp;
+  LIR_Opr   _tmp1;
+  LIR_Opr   _tmp2;
+  LIR_Opr   _tmp3;
+  LIR_Opr   _tmp4;
+  LIR_Opr   _tmp5;
   LIR_Condition _condition;
 
   void verify() const;
@@ -1573,7 +1579,11 @@ class LIR_Op2: public LIR_Op {
     , _type(T_ILLEGAL)
     , _condition(condition)
     , _fpu_stack_size(0)
-    , _tmp(LIR_OprFact::illegalOpr) {
+    , _tmp1(LIR_OprFact::illegalOpr)
+    , _tmp2(LIR_OprFact::illegalOpr)
+    , _tmp3(LIR_OprFact::illegalOpr)
+    , _tmp4(LIR_OprFact::illegalOpr)
+    , _tmp5(LIR_OprFact::illegalOpr) {
     assert(code == lir_cmp, "code check");
   }
 
@@ -1584,7 +1594,11 @@ class LIR_Op2: public LIR_Op {
     , _type(type)
     , _condition(condition)
     , _fpu_stack_size(0)
-    , _tmp(LIR_OprFact::illegalOpr) {
+    , _tmp1(LIR_OprFact::illegalOpr)
+    , _tmp2(LIR_OprFact::illegalOpr)
+    , _tmp3(LIR_OprFact::illegalOpr)
+    , _tmp4(LIR_OprFact::illegalOpr)
+    , _tmp5(LIR_OprFact::illegalOpr) {
     assert(code == lir_cmove, "code check");
     assert(type != T_ILLEGAL, "cmove should have type");
   }
@@ -1597,25 +1611,38 @@ class LIR_Op2: public LIR_Op {
     , _type(type)
     , _condition(lir_cond_unknown)
     , _fpu_stack_size(0)
-    , _tmp(LIR_OprFact::illegalOpr) {
+    , _tmp1(LIR_OprFact::illegalOpr)
+    , _tmp2(LIR_OprFact::illegalOpr)
+    , _tmp3(LIR_OprFact::illegalOpr)
+    , _tmp4(LIR_OprFact::illegalOpr)
+    , _tmp5(LIR_OprFact::illegalOpr) {
     assert(code != lir_cmp && is_in_range(code, begin_op2, end_op2), "code check");
   }
 
-  LIR_Op2(LIR_Code code, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, LIR_Opr tmp)
+  LIR_Op2(LIR_Code code, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, LIR_Opr tmp1, LIR_Opr tmp2 = LIR_OprFact::illegalOpr,
+          LIR_Opr tmp3 = LIR_OprFact::illegalOpr, LIR_Opr tmp4 = LIR_OprFact::illegalOpr, LIR_Opr tmp5 = LIR_OprFact::illegalOpr)
     : LIR_Op(code, result, NULL)
     , _opr1(opr1)
     , _opr2(opr2)
     , _type(T_ILLEGAL)
     , _condition(lir_cond_unknown)
     , _fpu_stack_size(0)
-    , _tmp(tmp) {
+    , _tmp1(tmp1)
+    , _tmp2(tmp2)
+    , _tmp3(tmp3)
+    , _tmp4(tmp4)
+    , _tmp5(tmp5) {
     assert(code != lir_cmp && is_in_range(code, begin_op2, end_op2), "code check");
   }
 
   LIR_Opr in_opr1() const                        { return _opr1; }
   LIR_Opr in_opr2() const                        { return _opr2; }
   BasicType type()  const                        { return _type; }
-  LIR_Opr tmp_opr() const                        { return _tmp; }
+  LIR_Opr tmp1_opr() const                       { return _tmp1; }
+  LIR_Opr tmp2_opr() const                       { return _tmp2; }
+  LIR_Opr tmp3_opr() const                       { return _tmp3; }
+  LIR_Opr tmp4_opr() const                       { return _tmp4; }
+  LIR_Opr tmp5_opr() const                       { return _tmp5; }
   LIR_Condition condition() const  {
     assert(code() == lir_cmp || code() == lir_cmove, "only valid for cmp and cmove"); return _condition;
   }
@@ -2025,6 +2052,8 @@ class LIR_List: public CompilationResourceObj {
   void sin (LIR_Opr from, LIR_Opr to, LIR_Opr tmp1, LIR_Opr tmp2) { append(new LIR_Op2(lir_sin , from, tmp1, to, tmp2)); }
   void cos (LIR_Opr from, LIR_Opr to, LIR_Opr tmp1, LIR_Opr tmp2) { append(new LIR_Op2(lir_cos , from, tmp1, to, tmp2)); }
   void tan (LIR_Opr from, LIR_Opr to, LIR_Opr tmp1, LIR_Opr tmp2) { append(new LIR_Op2(lir_tan , from, tmp1, to, tmp2)); }
+  void exp (LIR_Opr from, LIR_Opr to, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, LIR_Opr tmp4, LIR_Opr tmp5)                { append(new LIR_Op2(lir_exp , from, tmp1, to, tmp2, tmp3, tmp4, tmp5)); }
+  void pow (LIR_Opr arg1, LIR_Opr arg2, LIR_Opr res, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, LIR_Opr tmp4, LIR_Opr tmp5) { append(new LIR_Op2(lir_pow, arg1, arg2, res, tmp1, tmp2, tmp3, tmp4, tmp5)); }
 
   void add (LIR_Opr left, LIR_Opr right, LIR_Opr res)      { append(new LIR_Op2(lir_add, left, right, res)); }
   void sub (LIR_Opr left, LIR_Opr right, LIR_Opr res, CodeEmitInfo* info = NULL) { append(new LIR_Op2(lir_sub, left, right, res, info)); }
