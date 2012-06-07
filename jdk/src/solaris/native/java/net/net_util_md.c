@@ -982,6 +982,16 @@ NET_IsEqual(jbyte* caddr1, jbyte* caddr2) {
     return 1;
 }
 
+int NET_IsZeroAddr(jbyte* caddr) {
+    int i;
+    for (i = 0; i < 16; i++) {
+        if (caddr[i] != 0) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 /*
  * Map the Java level socket option to the platform specific
  * level and option name.

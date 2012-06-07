@@ -63,19 +63,30 @@ public class ActivationLibrary {
      */
     public static void deactivate(Remote remote,
                                   ActivationID id) {
-        for (int i = 0; i < 5; i ++) {
+        // We do as much as 50 deactivation trials, each separated by
+        // at least 100 milliseconds sleep time (max sleep time of 5 secs).
+        final long deactivateSleepTime = 100;
+        for (int i = 0; i < 50; i ++) {
             try {
                 if (Activatable.inactive(id) == true) {
                     mesg("inactive successful");
                     return;
                 } else {
-                    Thread.sleep(1000);
+                    mesg("inactive trial failed. Sleeping " +
+                         deactivateSleepTime +
+                         " milliseconds before next trial");
+                    Thread.sleep(deactivateSleepTime);
                 }
             } catch (InterruptedException e) {
-                continue;
+                Thread.currentThread().interrupt();
+                mesg("Thread interrupted while trying to deactivate activatable. Exiting deactivation");
+                return;
             } catch (Exception e) {
                 try {
                     // forcibly unexport the object
+                    mesg("Unexpected exception. Have to forcibly unexport the object." +
+                         " Exception was :");
+                    e.printStackTrace();
                     Activatable.unexportObject(remote, true);
                 } catch (NoSuchObjectException ex) {
                 }
@@ -99,36 +110,60 @@ public class ActivationLibrary {
      * activation system.
      */
     public static boolean rmidRunning(int port) {
-        int allowedNotReady = 10;
+        int allowedNotReady = 50;
         int connectionRefusedExceptions = 0;
 
-        for (int i = 0; i < 15 ; i++) {
+        /* We wait as much as a total of 7.5 secs trying to see Rmid running.
+         * We do this by pausing steps of 100 milliseconds (so up to 75 steps),
+         * right after trying to lookup and find RMID running in the other vm.
+         */
+        final long rmidWaitingStepTime = 100;
+        for (int i = 0; i <= 74; i++) {
 
             try {
-                Thread.sleep(500);
                 LocateRegistry.getRegistry(port).lookup(SYSTEM_NAME);
+                mesg("Activation System available after " +
+                     (i * rmidWaitingStepTime) + " milliseconds");
                 return true;
 
             } catch (java.rmi.ConnectException e) {
-                // ignore connect exceptions until we decide rmid is not up
+                mesg("Remote connection refused after " +
+                     (i * rmidWaitingStepTime) + " milliseconds");
 
+                // ignore connect exceptions until we decide rmid is not up
                 if ((connectionRefusedExceptions ++) >= allowedNotReady) {
                     return false;
                 }
 
-            } catch (NotBoundException e) {
+            } catch (java.rmi.NoSuchObjectException nsoe) {
+                /* Activation System still unavailable.
+                 * Ignore this since we are just waiting for its availibility.
+                 * Just signal unavailibility.
+                 */
+                mesg("Activation System still unavailable after more than " +
+                     (i * rmidWaitingStepTime) + " milliseconds");
 
+            } catch (NotBoundException e) {
                 return false;
 
             } catch (Exception e) {
-                // print out other types of exceptions as an FYI.
-                // test should not fail as rmid is likely to be in an
-                // undetermined state at this point.
-
+                /* print out other types of exceptions as an FYI.
+                 * test should not fail as rmid is likely to be in an
+                 * undetermined state at this point.
+                 */
                 mesg("caught an exception trying to" +
                      " start rmid, last exception was: " +
                      e.getMessage());
                 e.printStackTrace();
+            }
+
+            // Waiting for another 100 milliseconds.
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                mesg("Thread interrupted while checking if Activation System is running. Exiting check");
+                return false;
             }
         }
         return false;

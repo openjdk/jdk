@@ -28,15 +28,33 @@
  * @author Jan Luehe
  */
 import javax.crypto.*;
+import javax.crypto.spec.SecretKeySpec;
 
 public class MacClone {
 
     public static void main(String[] args) throws Exception {
 
+        String[] algos = { "HmacMD5", "HmacSHA1", "HmacSHA224", "HmacSHA256",
+                           "HmacSHA384", "HmacSHA512" };
+        KeyGenerator kgen = KeyGenerator.getInstance("DES");
+        SecretKey skey = kgen.generateKey();
+        for (String algo : algos) {
+            doTest(algo, skey);
+        }
+
+        String[] algos2 = { "HmacPBESHA1" };
+        skey = new SecretKeySpec("whatever".getBytes(), "PBE");
+        for (String algo : algos2) {
+            doTest(algo, skey);
+        }
+        System.out.println("Test Passed");
+    }
+
+    private static void doTest(String algo, SecretKey skey) throws Exception {
         //
-        // Clone uninitialized Mac object
+        // Clone an uninitialized Mac object
         //
-        Mac mac = Mac.getInstance("HmacSHA1", "SunJCE");
+        Mac mac = Mac.getInstance(algo, "SunJCE");
         Mac macClone = (Mac)mac.clone();
         System.out.println(macClone.getProvider().toString());
         System.out.println(macClone.getAlgorithm());
@@ -51,12 +69,9 @@ public class MacClone {
         }
 
         //
-        // Clone initialized Mac object
+        // Clone an initialized Mac object
         //
-        KeyGenerator kgen = KeyGenerator.getInstance("DES");
-        SecretKey skey = kgen.generateKey();
-
-        mac = Mac.getInstance("HmacSHA1", "SunJCE");
+        mac = Mac.getInstance(algo, "SunJCE");
         mac.init(skey);
         macClone = (Mac)mac.clone();
         System.out.println(macClone.getProvider().toString());
@@ -66,7 +81,20 @@ public class MacClone {
         byte[] macFinal = mac.doFinal();
         byte[] macCloneFinal = macClone.doFinal();
         if (!java.util.Arrays.equals(macFinal, macCloneFinal)) {
-            throw new Exception("MAC results are different");
-        }
+            throw new Exception("ERROR: MAC result of init clone is different");
+        } else System.out.println("MAC check#1 passed");
+
+        //
+        // Clone an updated Mac object
+        //
+        mac.update((byte)0x12);
+        macClone = (Mac)mac.clone();
+        mac.update((byte)0x34);
+        macClone.update((byte)0x34);
+        macFinal = mac.doFinal();
+        macCloneFinal = macClone.doFinal();
+        if (!java.util.Arrays.equals(macFinal, macCloneFinal)) {
+            throw new Exception("ERROR: MAC result of updated clone is different");
+        } else System.out.println("MAC check#2 passed");
     }
 }

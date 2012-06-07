@@ -140,6 +140,9 @@ NET_IPv4MappedToIPv4(jbyte* caddr);
 int
 NET_IsEqual(jbyte* caddr1, jbyte* caddr2);
 
+int
+NET_IsZeroAddr(jbyte* caddr);
+
 /* Socket operations
  *
  * These work just like the JVM_* procedures, except that they may do some

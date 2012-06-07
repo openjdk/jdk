@@ -57,8 +57,8 @@ import sun.security.rsa.RSAKeyFactory;
  *
  * NOTE: NONEwithRSA must be supplied with a pre-computed message digest.
  *       Only the following digest algorithms are supported: MD5, SHA-1,
- *       SHA-256, SHA-384, SHA-512 and a special-purpose digest algorithm
- *       which is a concatenation of SHA-1 and MD5 digests.
+ *       SHA-256, SHA-384, SHA-512 and a special-purpose digest
+ *       algorithm which is a concatenation of SHA-1 and MD5 digests.
  *
  * @since   1.6
  * @author  Stanley Man-Kit Ho

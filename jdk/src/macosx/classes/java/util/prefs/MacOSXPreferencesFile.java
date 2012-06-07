@@ -101,9 +101,10 @@ class MacOSXPreferencesFile {
     }
 
     // Maps string -> weak reference to MacOSXPreferencesFile
-    private static HashMap cachedFiles = null;
+    private static HashMap<String, WeakReference<MacOSXPreferencesFile>>
+            cachedFiles;
     // Files that may have unflushed changes
-    private static HashSet changedFiles = null;
+    private static HashSet<MacOSXPreferencesFile> changedFiles;
 
 
     // Timer and pending sync and flush tasks (which are both scheduled
@@ -136,13 +137,14 @@ class MacOSXPreferencesFile {
     {
         MacOSXPreferencesFile result = null;
 
-        if (cachedFiles == null) cachedFiles = new HashMap();
+        if (cachedFiles == null)
+            cachedFiles = new HashMap<>();
 
         String hashkey =
             newName + String.valueOf(isUser);
-        WeakReference hashvalue = (WeakReference)cachedFiles.get(hashkey);
+        WeakReference<MacOSXPreferencesFile> hashvalue = cachedFiles.get(hashkey);
         if (hashvalue != null) {
-            result = (MacOSXPreferencesFile)hashvalue.get();
+            result = hashvalue.get();
         }
         if (result == null) {
             // Java user node == CF current user, any host
@@ -150,7 +152,7 @@ class MacOSXPreferencesFile {
             result = new MacOSXPreferencesFile(newName,
                                          isUser ? cfCurrentUser : cfAnyUser,
                                          isUser ? cfAnyHost : cfCurrentHost);
-            cachedFiles.put(hashkey, new WeakReference(result));
+            cachedFiles.put(hashkey, new WeakReference<MacOSXPreferencesFile>(result));
         }
 
         // Don't schedule this file for flushing until some nodes or
@@ -171,10 +173,11 @@ class MacOSXPreferencesFile {
         boolean ok = true;
 
         if (cachedFiles != null  &&  !cachedFiles.isEmpty()) {
-            Iterator iter = cachedFiles.values().iterator();
+            Iterator<WeakReference<MacOSXPreferencesFile>> iter =
+                    cachedFiles.values().iterator();
             while (iter.hasNext()) {
-                WeakReference ref = (WeakReference)iter.next();
-                MacOSXPreferencesFile f = (MacOSXPreferencesFile)ref.get();
+                WeakReference<MacOSXPreferencesFile> ref = iter.next();
+                MacOSXPreferencesFile f = ref.get();
                 if (f != null) {
                     if (!f.synchronize()) ok = false;
                 } else {
@@ -202,10 +205,11 @@ class MacOSXPreferencesFile {
     static synchronized boolean syncUser() {
         boolean ok = true;
         if (cachedFiles != null  &&  !cachedFiles.isEmpty()) {
-            Iterator<WeakReference> iter = cachedFiles.values().iterator();
+            Iterator<WeakReference<MacOSXPreferencesFile>> iter =
+                    cachedFiles.values().iterator();
             while (iter.hasNext()) {
-                WeakReference ref = iter.next();
-                MacOSXPreferencesFile f = (MacOSXPreferencesFile)ref.get();
+                WeakReference<MacOSXPreferencesFile> ref = iter.next();
+                MacOSXPreferencesFile f = ref.get();
                 if (f != null && f.user == cfCurrentUser) {
                     if (!f.synchronize()) {
                         ok = false;
@@ -240,12 +244,10 @@ class MacOSXPreferencesFile {
         boolean ok = true;
 
         if (changedFiles != null  &&  !changedFiles.isEmpty()) {
-            Iterator iter = changedFiles.iterator();
-            while (iter.hasNext()) {
-                MacOSXPreferencesFile f = (MacOSXPreferencesFile)iter.next();
-                if (!f.synchronize()) ok = false;
+            for (MacOSXPreferencesFile f : changedFiles) {
+                if (!f.synchronize())
+                    ok = false;
             }
-
             changedFiles.clear();
         }
 
@@ -263,7 +265,8 @@ class MacOSXPreferencesFile {
     private void markChanged()
     {
         // Add this file to the changed file list
-        if (changedFiles == null) changedFiles = new HashSet();
+        if (changedFiles == null)
+            changedFiles = new HashSet<>();
         changedFiles.add(this);
 
         // Schedule a new flush and a shutdown hook, if necessary
@@ -309,7 +312,9 @@ class MacOSXPreferencesFile {
 
             if (syncInterval > 0) {
                 timer().schedule(new TimerTask() {
-                        public void run() { MacOSXPreferencesFile.syncWorld();}
+                    @Override
+                    public void run() {
+                        MacOSXPreferencesFile.syncWorld();}
                     }, syncInterval * 1000, syncInterval * 1000);
             } else {
                 // syncInterval property not set. No sync timer ever.
@@ -323,6 +328,7 @@ class MacOSXPreferencesFile {
         if (timer == null) {
             timer = new Timer(true); // daemon
             Thread flushThread = new Thread() {
+                @Override
                 public void run() {
                     flushWorld();
                 }

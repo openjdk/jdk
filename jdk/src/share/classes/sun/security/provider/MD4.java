@@ -44,9 +44,9 @@ import static sun.security.provider.ByteArrayAccess.*;
 public final class MD4 extends DigestBase {
 
     // state of this object
-    private final int[] state;
+    private int[] state;
     // temporary buffer, used by implCompress()
-    private final int[] x;
+    private int[] x;
 
     // rotation constants
     private static final int S11 = 3;
@@ -93,16 +93,12 @@ public final class MD4 extends DigestBase {
         implReset();
     }
 
-    // Cloning constructor
-    private MD4(MD4 base) {
-        super(base);
-        this.state = base.state.clone();
-        this.x = new int[16];
-    }
-
     // clone this object
-    public Object clone() {
-        return new MD4(this);
+    public Object clone() throws CloneNotSupportedException {
+        MD4 copy = (MD4) super.clone();
+        copy.state = copy.state.clone();
+        copy.x = new int[16];
+        return copy;
     }
 
     /**

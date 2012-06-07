@@ -149,7 +149,7 @@ public class JApplet extends Applet implements Accessible,
         setRootPaneCheckingEnabled(true);
 
         setFocusTraversalPolicyProvider(true);
-        sun.awt.SunToolkit.checkAndSetPolicy(this, true);
+        sun.awt.SunToolkit.checkAndSetPolicy(this);
 
         enableEvents(AWTEvent.KEY_EVENT_MASK);
     }
