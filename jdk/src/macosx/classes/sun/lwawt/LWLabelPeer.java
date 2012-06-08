@@ -34,10 +34,14 @@ import java.awt.peer.LabelPeer;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * Lightweight implementation of {@link LabelPeer}. Delegates most of the work
  * to the {@link JLabel}.
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 final class LWLabelPeer extends LWComponentPeer<Label, JLabel>
         implements LabelPeer {
 

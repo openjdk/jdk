@@ -44,7 +44,10 @@ import sun.java2d.pipe.Region;
 import sun.java2d.pipe.RenderBuffer;
 import sun.java2d.pipe.RenderQueue;
 import static sun.java2d.pipe.BufferedOpCodes.*;
+import javax.tools.annotation.GenerateNativeHeader;
 
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 class OGLBlitLoops {
 
     static void register() {

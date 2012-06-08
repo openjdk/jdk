@@ -33,6 +33,10 @@ import javax.swing.RootPaneContainer;
 
 import com.apple.eawt.AppEvent.FullScreenEvent;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 final class FullScreenHandler {
     private static final String CLIENT_PROPERTY = "com.apple.eawt.event.internalFullScreenHandler";
 

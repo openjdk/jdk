@@ -31,6 +31,10 @@ import java.util.List;
 
 import javax.swing.*;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 final class GestureHandler {
     private static final String CLIENT_PROPERTY = "com.apple.eawt.event.internalGestureHandler";
 
