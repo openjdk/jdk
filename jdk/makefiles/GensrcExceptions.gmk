@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,36 +23,33 @@
 # questions.
 #
 
-#
-# Makefile for building all of java
-#
+GENSRC_EXCEPTIONS :=
 
-PRODUCT=java
-BUILDDIR=..
-include $(BUILDDIR)/common/Defs.gmk
+GENSRC_EXCEPTIONS_TMP := $(JDK_OUTPUTDIR)/gensrc_exceptions
+GENSRC_EXCEPTIONS_DST := $(JDK_OUTPUTDIR)/gensrc_exceptions/java/nio
 
-#
-# The order of subdirs here is important
-#
-SUBDIRS += redist
+GENSRC_EXCEPTIONS_SRC := $(JDK_TOPDIR)/src/share/classes/java/nio
+GENSRC_EXCEPTIONS_CMD := $(JDK_TOPDIR)/makefiles/scripts/genExceptions.sh
 
-# Others
-#    Note: java_crw_demo java_hprof_demo are demos but must be delivered built in sdk
+GENSRC_EXCEPTIONS_SRC_DIRS := . charset channels 
 
-SUBDIRS +=
+###
 
-SUBDIRS_management =
-SUBDIRS_misc       =
+$(GENSRC_EXCEPTIONS_DST)/_the.dir :
+	$(ECHO) "Generating exceptions classes"
+	$(MKDIR) -p $(@D)
+	$(TOUCH) $@
 
-#TODO Check invoke
-#                     logging instrument invoke sql rmi
 
-ifeq ($(PLATFORM), macosx)
-  SUBDIRS += jobjc
-endif # PLATFORM
+###
 
-include $(BUILDDIR)/common/Subdirs.gmk
+$(GENSRC_EXCEPTIONS_DST)/_the.% : $(GENSRC_EXCEPTIONS_SRC)/%/exceptions \
+                                  $(GENSRC_EXCEPTIONS_CMD) \
+                                  $(GENSRC_EXCEPTIONS_DST)/_the.dir
+	$(MKDIR) -p $(@D)/$*
+	SCRIPTS="$(JDK_TOPDIR)/makefiles/scripts" NAWK="$(NAWK)" SH="$(SH)" $(SH) $(GENSRC_EXCEPTIONS_CMD) $< $(@D)/$*
+	$(TOUCH) $@
 
-all build clean clobber::
-	$(SUBDIRS-loop)
+GENSRC_EXCEPTIONS += $(foreach D,$(GENSRC_EXCEPTIONS_SRC_DIRS),$(GENSRC_EXCEPTIONS_DST)/_the.$(D))
 
+$(GENSRC_EXCEPTIONS) : $(BUILD_TOOLS)
