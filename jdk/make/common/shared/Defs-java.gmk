@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ JAVACFLAGS += $(JAVAC_LINT_OPTIONS)
 # built implicitly/explicitly.
 #
 ifeq ($(wildcard $(SHARE_SRC)/classes/javax/crypto/Cipher.java),)
-  JCEFLAGS = $(CLASSPATH_SEPARATOR)$(LIBDIR)/jce.jar
+  JCE_PATH = $(CLASSPATH_SEPARATOR)$(LIBDIR)/jce.jar
 endif
 
 # Add the source level
@@ -152,11 +152,11 @@ TARGET_CLASS_VERSION = 7
 CLASS_VERSION = -target $(TARGET_CLASS_VERSION)
 JAVACFLAGS  += $(CLASS_VERSION)
 JAVACFLAGS  += -encoding ascii
-JAVACFLAGS  += "-Xbootclasspath:$(CLASSBINDIR)$(JCEFLAGS)"
+JAVACFLAGS  += "-Xbootclasspath:$(CLASSBINDIR)$(JCE_PATH)"
 JAVACFLAGS  += $(OTHER_JAVACFLAGS)
 
 # Needed for javah
-JAVAHFLAGS += -bootclasspath "$(CLASSBINDIR)$(JCEFLAGS)"
+JAVAHFLAGS += -bootclasspath "$(CLASSBINDIR)$(JCE_PATH)"
 
 # Needed for javadoc to ensure it builds documentation
 # against the newly built classes

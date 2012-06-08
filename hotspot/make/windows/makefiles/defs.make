@@ -107,6 +107,50 @@ ifneq ($(shell $(ECHO) $(PROCESSOR_IDENTIFIER) | $(GREP) EM64T),)
   endif
 endif
 
+# Full Debug Symbols has been enabled on Windows since JDK1.4.1 so
+# there is no need for an "earlier than JDK7 check".
+# The Full Debug Symbols (FDS) default for BUILD_FLAVOR == product
+# builds is enabled with debug info files ZIP'ed to save space. For
+# BUILD_FLAVOR != product builds, FDS is always enabled, after all a
+# debug build without debug info isn't very useful.
+# The ZIP_DEBUGINFO_FILES option only has meaning when FDS is enabled.
+#
+# If you invoke a build with FULL_DEBUG_SYMBOLS=0, then FDS will be
+# disabled for a BUILD_FLAVOR == product build.
+#
+# Note: Use of a different variable name for the FDS override option
+# versus the FDS enabled check is intentional (FULL_DEBUG_SYMBOLS
+# versus ENABLE_FULL_DEBUG_SYMBOLS). For auto build systems that pass
+# in options via environment variables, use of distinct variables
+# prevents strange behaviours. For example, in a BUILD_FLAVOR !=
+# product build, the FULL_DEBUG_SYMBOLS environment variable will be
+# 0, but the ENABLE_FULL_DEBUG_SYMBOLS make variable will be 1. If
+# the same variable name is used, then different values can be picked
+# up by different parts of the build. Just to be clear, we only need
+# two variable names because the incoming option value can be
+# overridden in some situations, e.g., a BUILD_FLAVOR != product
+# build.
+
+ifeq ($(BUILD_FLAVOR), product)
+  FULL_DEBUG_SYMBOLS ?= 1
+  ENABLE_FULL_DEBUG_SYMBOLS = $(FULL_DEBUG_SYMBOLS)
+else
+  # debug variants always get Full Debug Symbols (if available)
+  ENABLE_FULL_DEBUG_SYMBOLS = 1
+endif
+_JUNK_ := $(shell \
+  echo >&2 "INFO: ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS)")
+MAKE_ARGS += ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS)
+
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  ZIP_DEBUGINFO_FILES ?= 1
+else
+  ZIP_DEBUGINFO_FILES=0
+endif
+MAKE_ARGS += ZIP_DEBUGINFO_FILES=$(ZIP_DEBUGINFO_FILES)
+MAKE_ARGS += RM="$(RM)"
+MAKE_ARGS += ZIPEXE=$(ZIPEXE)
+
 # On 32 bit windows we build server, client and kernel, on 64 bit just server.
 ifeq ($(JVM_VARIANTS),)
   ifeq ($(ARCH_DATA_MODEL), 32)
@@ -193,29 +237,53 @@ EXPORT_KERNEL_DIR = $(EXPORT_JRE_BIN_DIR)/kernel
 ifeq ($(JVM_VARIANT_SERVER),true)
   EXPORT_LIST += $(EXPORT_SERVER_DIR)/Xusage.txt
   EXPORT_LIST += $(EXPORT_SERVER_DIR)/jvm.$(LIBRARY_SUFFIX)
-  EXPORT_LIST += $(EXPORT_SERVER_DIR)/jvm.pdb
-  EXPORT_LIST += $(EXPORT_SERVER_DIR)/jvm.map
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+      EXPORT_LIST += $(EXPORT_SERVER_DIR)/jvm.diz
+    else
+      EXPORT_LIST += $(EXPORT_SERVER_DIR)/jvm.pdb
+      EXPORT_LIST += $(EXPORT_SERVER_DIR)/jvm.map
+    endif
+  endif
   EXPORT_LIST += $(EXPORT_LIB_DIR)/jvm.lib
 endif
 ifeq ($(JVM_VARIANT_CLIENT),true)
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/Xusage.txt
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/jvm.$(LIBRARY_SUFFIX)
-  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/jvm.pdb
-  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/jvm.map
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+      EXPORT_LIST += $(EXPORT_CLIENT_DIR)/jvm.diz
+    else
+      EXPORT_LIST += $(EXPORT_CLIENT_DIR)/jvm.pdb
+      EXPORT_LIST += $(EXPORT_CLIENT_DIR)/jvm.map
+    endif
+  endif
 endif
 ifeq ($(JVM_VARIANT_KERNEL),true)
   EXPORT_LIST += $(EXPORT_KERNEL_DIR)/Xusage.txt
   EXPORT_LIST += $(EXPORT_KERNEL_DIR)/jvm.$(LIBRARY_SUFFIX)
-  EXPORT_LIST += $(EXPORT_KERNEL_DIR)/jvm.pdb
-  EXPORT_LIST += $(EXPORT_KERNEL_DIR)/jvm.map
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+      EXPORT_LIST += $(EXPORT_KERNEL_DIR)/jvm.diz
+    else
+      EXPORT_LIST += $(EXPORT_KERNEL_DIR)/jvm.pdb
+      EXPORT_LIST += $(EXPORT_KERNEL_DIR)/jvm.map
+    endif
+  endif
 endif
 
 EXPORT_LIST += $(EXPORT_JRE_LIB_DIR)/wb.jar
 
 ifeq ($(BUILD_WIN_SA), 1)
   EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.$(LIBRARY_SUFFIX)
-  EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.pdb
-  EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.map
+  ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+      EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.diz
+    else
+      EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.pdb
+      EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.map
+    endif
+  endif
   EXPORT_LIST += $(EXPORT_LIB_DIR)/sa-jdi.jar
   # Must pass this down to nmake.
   MAKE_ARGS += BUILD_WIN_SA=1

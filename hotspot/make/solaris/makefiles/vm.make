@@ -56,7 +56,7 @@ Src_Dirs_I += $(GENERATED)
 INCLUDES += $(Src_Dirs_I:%=-I%)
 
 # SYMFLAG is used by {dtrace,jsig,saproc}.make.
-ifneq ($(OBJCOPY),)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   # always build with debug info when we can create .debuginfo files
   # and disable 'lazy debug info' so the .so has everything.
   SYMFLAG = -g -xs
@@ -145,6 +145,14 @@ JDK_LIBDIR = $(JAVA_HOME)/jre/lib/$(LIBARCH)
 include $(MAKEFILES_DIR)/dtrace.make
 
 #----------------------------------------------------------------------
+# add_gnu_debuglink tool
+include $(MAKEFILES_DIR)/add_gnu_debuglink.make
+
+#----------------------------------------------------------------------
+# fix_empty_sec_hdr_flags tool
+include $(MAKEFILES_DIR)/fix_empty_sec_hdr_flags.make
+
+#----------------------------------------------------------------------
 # JVM
 
 JVM      = jvm
@@ -152,7 +160,9 @@ LIBJVM   = lib$(JVM).so
 LIBJVM_G = lib$(JVM)$(G_SUFFIX).so
 
 LIBJVM_DEBUGINFO   = lib$(JVM).debuginfo
+LIBJVM_DIZ         = lib$(JVM).diz
 LIBJVM_G_DEBUGINFO = lib$(JVM)$(G_SUFFIX).debuginfo
+LIBJVM_G_DIZ       = lib$(JVM)$(G_SUFFIX).diz
 
 SPECIAL_PATHS:=adlc c1 dist gc_implementation opto shark libadt
 
@@ -274,7 +284,7 @@ else
 LINK_VM = $(LINK_LIB.CXX)
 endif
 # making the library:
-$(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) 
+$(LIBJVM): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(LIBJVM.o) $(LIBJVM_MAPFILE) 
 ifeq ($(filter -sbfast -xsbfast, $(CFLAGS_BROWSE)),)
 	@echo Linking vm...
 	$(QUIETLY) $(LINK_LIB.CXX/PRE_HOOK)
@@ -283,9 +293,18 @@ ifeq ($(filter -sbfast -xsbfast, $(CFLAGS_BROWSE)),)
 	$(QUIETLY) rm -f $@.1 && ln -s $@ $@.1
 	$(QUIETLY) [ -f $(LIBJVM_G) ] || ln -s $@ $(LIBJVM_G)
 	$(QUIETLY) [ -f $(LIBJVM_G).1 ] || ln -s $@.1 $(LIBJVM_G).1
-ifneq ($(OBJCOPY),)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+# gobjcopy crashes on "empty" section headers with the SHF_ALLOC flag set.
+# Clear the SHF_ALLOC flag (if set) from empty section headers.
+# An empty section header has sh_addr == 0 and sh_size == 0.
+# This problem has only been seen on Solaris X64, but we call this tool
+# on all Solaris builds just in case.
+	$(QUIETLY) $(FIX_EMPTY_SEC_HDR_FLAGS) $@
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJVM_DEBUGINFO)
-	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DEBUGINFO) $@
+# $(OBJCOPY) --add-gnu-debuglink=... corrupts SUNW_* sections.
+# Use $(ADD_GNU_DEBUGLINK) until a fixed $(OBJCOPY) is available.
+#	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DEBUGINFO) $@
+	$(QUIETLY) $(ADD_GNU_DEBUGLINK) $(LIBJVM_DEBUGINFO) $@
   ifeq ($(STRIP_POLICY),all_strip)
 	$(QUIETLY) $(STRIP) $@
   else
@@ -295,6 +314,11 @@ ifneq ($(OBJCOPY),)
     endif
   endif
 	$(QUIETLY) [ -f $(LIBJVM_G_DEBUGINFO) ] || ln -s $(LIBJVM_DEBUGINFO) $(LIBJVM_G_DEBUGINFO)
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	$(ZIPEXE) -q -y $(LIBJVM_DIZ) $(LIBJVM_DEBUGINFO) $(LIBJVM_G_DEBUGINFO)
+	$(RM) $(LIBJVM_DEBUGINFO) $(LIBJVM_G_DEBUGINFO)
+	[ -f $(LIBJVM_G_DIZ) ] || { ln -s $(LIBJVM_DIZ) $(LIBJVM_G_DIZ); }
+  endif
 endif
 endif # filter -sbfast -xsbfast
 
@@ -302,11 +326,14 @@ endif # filter -sbfast -xsbfast
 DEST_SUBDIR        = $(JDK_LIBDIR)/$(VM_SUBDIR)
 DEST_JVM           = $(DEST_SUBDIR)/$(LIBJVM)
 DEST_JVM_DEBUGINFO = $(DEST_SUBDIR)/$(LIBJVM_DEBUGINFO)
+DEST_JVM_DIZ       = $(DEST_SUBDIR)/$(LIBJVM_DIZ)
 
 install_jvm: $(LIBJVM)
 	@echo "Copying $(LIBJVM) to $(DEST_JVM)"
 	$(QUIETLY) test -f $(LIBJVM_DEBUGINFO) && \
 	    cp -f $(LIBJVM_DEBUGINFO) $(DEST_JVM_DEBUGINFO)
+	$(QUIETLY) test -f $(LIBJVM_DIZ) && \
+	    cp -f $(LIBJVM_DIZ) $(DEST_JVM_DIZ)
 	$(QUIETLY) cp -f $(LIBJVM) $(DEST_JVM) && echo "Done"
 
 #----------------------------------------------------------------------

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,9 @@ SAPROC_G = $(SAPROC)$(G_SUFFIX)
 LIBSAPROC_G = lib$(SAPROC_G).so
 
 LIBSAPROC_DEBUGINFO   = lib$(SAPROC).debuginfo
+LIBSAPROC_DIZ         = lib$(SAPROC).diz
 LIBSAPROC_G_DEBUGINFO = lib$(SAPROC_G).debuginfo
+LIBSAPROC_G_DIZ       = lib$(SAPROC_G).diz
 
 AGENT_DIR = $(GAMMADIR)/agent
 
@@ -45,6 +47,7 @@ SAMAPFILE = $(SASRCDIR)/mapfile
 
 DEST_SAPROC           = $(JDK_LIBDIR)/$(LIBSAPROC)
 DEST_SAPROC_DEBUGINFO = $(JDK_LIBDIR)/$(LIBSAPROC_DEBUGINFO)
+DEST_SAPROC_DIZ       = $(JDK_LIBDIR)/$(LIBSAPROC_DIZ)
 
 # if $(AGENT_DIR) does not exist, we don't build SA
 
@@ -87,7 +90,7 @@ $(shell uname -r -v \
 # when actually building on Nevada-B158 or earlier:
 #SOLARIS_11_B159_OR_LATER=-DSOLARIS_11_B159_OR_LATER
 
-$(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
+$(LIBSAPROC): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(SASRCFILES) $(SAMAPFILE)
 	$(QUIETLY) if [ "$(BOOT_JAVA_HOME)" = "" ]; then \
 	  echo "ALT_BOOTDIR, BOOTDIR or JAVA_HOME needs to be defined to build SA"; \
 	  exit 1; \
@@ -105,9 +108,18 @@ $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
 	           -o $@                                                \
 	           -ldl -ldemangle -lthread -lc
 	[ -f $(LIBSAPROC_G) ] || { ln -s $@ $(LIBSAPROC_G); }
-ifneq ($(OBJCOPY),)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+# gobjcopy crashes on "empty" section headers with the SHF_ALLOC flag set.
+# Clear the SHF_ALLOC flag (if set) from empty section headers.
+# An empty section header has sh_addr == 0 and sh_size == 0.
+# This problem has only been seen on Solaris X64, but we call this tool
+# on all Solaris builds just in case.
+	$(QUIETLY) $(FIX_EMPTY_SEC_HDR_FLAGS) $@
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBSAPROC_DEBUGINFO)
-	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBSAPROC_DEBUGINFO) $@
+# $(OBJCOPY) --add-gnu-debuglink=... corrupts SUNW_* sections.
+# Use $(ADD_GNU_DEBUGLINK) until a fixed $(OBJCOPY) is available.
+#	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBSAPROC_DEBUGINFO) $@
+	$(QUIETLY) $(ADD_GNU_DEBUGLINK) $(LIBSAPROC_DEBUGINFO) $@
   ifeq ($(STRIP_POLICY),all_strip)
 	$(QUIETLY) $(STRIP) $@
   else
@@ -117,6 +129,11 @@ ifneq ($(OBJCOPY),)
     endif
   endif
 	[ -f $(LIBSAPROC_G_DEBUGINFO) ] || { ln -s $(LIBSAPROC_DEBUGINFO) $(LIBSAPROC_G_DEBUGINFO); }
+  ifeq ($(ZIP_DEBUGINFO_FILES),1)
+	$(ZIPEXE) -q -y $(LIBSAPROC_DIZ) $(LIBSAPROC_DEBUGINFO) $(LIBSAPROC_G_DEBUGINFO)
+	$(RM) $(LIBSAPROC_DEBUGINFO) $(LIBSAPROC_G_DEBUGINFO)
+	[ -f $(LIBSAPROC_G_DIZ) ] || { ln -s $(LIBSAPROC_DIZ) $(LIBSAPROC_G_DIZ); }
+  endif
 endif
 
 install_saproc: $(BULDLIBSAPROC)
@@ -124,6 +141,8 @@ install_saproc: $(BULDLIBSAPROC)
 	  echo "Copying $(LIBSAPROC) to $(DEST_SAPROC)";     \
 	  test -f $(LIBSAPROC_DEBUGINFO) &&             \
 	    cp -f $(LIBSAPROC_DEBUGINFO) $(DEST_SAPROC_DEBUGINFO); \
+	  test -f $(LIBSAPROC_DIZ) &&             \
+	    cp -f $(LIBSAPROC_DIZ) $(DEST_SAPROC_DIZ); \
 	  cp -f $(LIBSAPROC) $(DEST_SAPROC) && echo "Done";  \
 	fi
 

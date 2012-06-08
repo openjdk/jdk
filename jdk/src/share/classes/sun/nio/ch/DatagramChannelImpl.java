@@ -746,7 +746,8 @@ class DatagramChannelImpl
                     if (sm != null)
                         sm.checkConnect(isa.getAddress().getHostAddress(),
                                         isa.getPort());
-                    disconnect0(fd);
+                    boolean isIPv6 = (family == StandardProtocolFamily.INET6);
+                    disconnect0(fd, isIPv6);
                     remoteAddress = null;
                     state = ST_UNCONNECTED;
 
@@ -1081,7 +1082,7 @@ class DatagramChannelImpl
 
     private static native void initIDs();
 
-    private static native void disconnect0(FileDescriptor fd)
+    private static native void disconnect0(FileDescriptor fd, boolean isIPv6)
         throws IOException;
 
     private native int receive0(FileDescriptor fd, long address, int len,

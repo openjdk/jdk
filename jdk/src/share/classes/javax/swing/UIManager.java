@@ -191,6 +191,7 @@ public class UIManager implements Serializable
         private UIDefaults[] tables = new UIDefaults[2];
 
         boolean initialized = false;
+        boolean focusPolicyInitialized = false;
         MultiUIDefaults multiUIDefaults = new MultiUIDefaults(tables);
         LookAndFeel lookAndFeel;
         LookAndFeel multiLookAndFeel = null;
@@ -1000,6 +1001,7 @@ public class UIManager implements Serializable
      */
     public static ComponentUI getUI(JComponent target) {
         maybeInitialize();
+        maybeInitializeFocusPolicy(target);
         ComponentUI ui = null;
         LookAndFeel multiLAF = getLAFState().multiLookAndFeel;
         if (multiLAF != null) {
@@ -1422,6 +1424,27 @@ public class UIManager implements Serializable
         }
     }
 
+    /*
+     * Sets default swing focus traversal policy.
+     */
+    private static void maybeInitializeFocusPolicy(JComponent comp) {
+        // Check for JRootPane which indicates that a swing toplevel
+        // is coming, in which case a swing default focus policy
+        // should be instatiated. See 7125044.
+        if (comp instanceof JRootPane) {
+            synchronized (classLock) {
+                if (!getLAFState().focusPolicyInitialized) {
+                    getLAFState().focusPolicyInitialized = true;
+
+                    if (FocusManager.isFocusManagerEnabled()) {
+                        KeyboardFocusManager.getCurrentKeyboardFocusManager().
+                            setDefaultFocusTraversalPolicy(
+                                new LayoutFocusTraversalPolicy());
+                    }
+                }
+            }
+        }
+    }
 
     /*
      * Only called by maybeInitialize().
@@ -1432,17 +1455,6 @@ public class UIManager implements Serializable
         initializeDefaultLAF(swingProps);
         initializeAuxiliaryLAFs(swingProps);
         initializeInstalledLAFs(swingProps);
-
-        // Enable the Swing default LayoutManager.
-        String toolkitName = Toolkit.getDefaultToolkit().getClass().getName();
-        // don't set default policy if this is XAWT.
-        if (!"sun.awt.X11.XToolkit".equals(toolkitName)) {
-            if (FocusManager.isFocusManagerEnabled()) {
-                KeyboardFocusManager.getCurrentKeyboardFocusManager().
-                    setDefaultFocusTraversalPolicy(
-                        new LayoutFocusTraversalPolicy());
-            }
-        }
 
         // Install Swing's PaintEventDispatcher
         if (RepaintManager.HANDLE_TOP_LEVEL_PAINT) {

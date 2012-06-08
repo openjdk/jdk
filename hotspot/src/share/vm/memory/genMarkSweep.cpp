@@ -76,7 +76,7 @@ void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp,
   _ref_processor = rp;
   rp->setup_policy(clear_all_softrefs);
 
-  TraceTime t1("Full GC", PrintGC && !PrintGCDetails, true, gclog_or_tty);
+  TraceTime t1(GCCauseString("Full GC", gch->gc_cause()), PrintGC && !PrintGCDetails, true, gclog_or_tty);
 
   // When collecting the permanent generation methodOops may be moving,
   // so we either have to flush all bcp data or convert it into bci.

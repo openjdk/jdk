@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import sun.security.util.SecurityConstants;
 import sun.util.logging.PlatformLogger;
 import sun.misc.SoftCache;
 import sun.font.FontDesignMetrics;
@@ -459,48 +461,11 @@ public abstract class SunToolkit extends Toolkit
         AWTAccessor.getWindowAccessor().setLWRequestStatus(changed, status);
     };
 
-    public static void checkAndSetPolicy(Container cont, boolean isSwingCont)
-    {
-        FocusTraversalPolicy defaultPolicy = KeyboardFocusManager
-            .getCurrentKeyboardFocusManager().getDefaultFocusTraversalPolicy();
+    public static void checkAndSetPolicy(Container cont) {
+        FocusTraversalPolicy defaultPolicy = KeyboardFocusManager.
+            getCurrentKeyboardFocusManager().
+                getDefaultFocusTraversalPolicy();
 
-        String toolkitName = Toolkit.getDefaultToolkit().getClass().getName();
-        // if this is not XAWT then use default policy
-        // because Swing change it
-        if (!"sun.awt.X11.XToolkit".equals(toolkitName)) {
-            cont.setFocusTraversalPolicy(defaultPolicy);
-            return;
-        }
-
-        String policyName = defaultPolicy.getClass().getName();
-
-        if (DefaultFocusTraversalPolicy.class != defaultPolicy.getClass()) {
-            // Policy was changed
-            // Check if it is awt policy or swing policy
-            // If it is Swing policy we shouldn't use it in AWT frames
-            // If it is AWT policy  we shouldn't use it in Swing frames
-            // Otherwise we should use this policy
-            if (policyName.startsWith("java.awt.")) {
-                // AWT
-                if (isSwingCont) {
-                    // Can't use AWT policy in Swing windows - should use Swing's one.
-                    defaultPolicy = createLayoutPolicy();
-                } else {
-                    // New awt policy.
-                }
-            } else if (policyName.startsWith("javax.swing.")) {
-                if (isSwingCont) {
-                    // New Swing's policy
-                } else {
-                    defaultPolicy = new DefaultFocusTraversalPolicy();
-                }
-            }
-        } else {
-            // Policy is default, use different default policy for swing
-            if (isSwingCont) {
-                defaultPolicy = createLayoutPolicy();
-            }
-        }
         cont.setFocusTraversalPolicy(defaultPolicy);
     }
 
@@ -1133,6 +1098,26 @@ public abstract class SunToolkit extends Toolkit
      */
     public boolean isPrintableCharacterModifiersMask(int mods) {
         return ((mods & InputEvent.ALT_MASK) == (mods & InputEvent.CTRL_MASK));
+    }
+
+    /**
+     * Returns whether popup is allowed to be shown above the task bar.
+     * This is a default implementation of this method, which checks
+     * corresponding security permission.
+     */
+    public boolean canPopupOverlapTaskBar() {
+        boolean result = true;
+        try {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkPermission(
+                        SecurityConstants.AWT.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION);
+            }
+        } catch (SecurityException se) {
+            // There is no permission to show popups over the task bar
+            result = false;
+        }
+        return result;
     }
 
     /**

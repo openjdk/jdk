@@ -27,7 +27,8 @@ package javax.swing;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.Collection;
+import java.util.Iterator;
 import javax.swing.plaf.*;
 import javax.accessibility.*;
 
@@ -42,7 +43,6 @@ import java.io.IOException;
 import java.beans.PropertyVetoException;
 import java.util.Set;
 import java.util.TreeSet;
-
 /**
  * A container used to create a multiple-document interface or a virtual desktop.
  * You create <code>JInternalFrame</code> objects and add them to the
@@ -261,25 +261,26 @@ public class JDesktopPane extends JLayeredPane implements Accessible
      * @return an array of <code>JInternalFrame</code> objects
      */
     public JInternalFrame[] getAllFrames() {
-        int i, count;
-        JInternalFrame[] results;
-        Vector<JInternalFrame> vResults = new Vector<JInternalFrame>(10);
+        return getAllFrames(this).toArray(new JInternalFrame[0]);
+    }
 
-        count = getComponentCount();
-        for(i = 0; i < count; i++) {
-            Component next = getComponent(i);
-            if(next instanceof JInternalFrame)
-                vResults.addElement((JInternalFrame) next);
-            else if(next instanceof JInternalFrame.JDesktopIcon)  {
-                JInternalFrame tmp = ((JInternalFrame.JDesktopIcon)next).getInternalFrame();
-                if(tmp != null)
-                    vResults.addElement(tmp);
+    private static Collection<JInternalFrame> getAllFrames(Container parent) {
+        int i, count;
+        Collection<JInternalFrame> results = new ArrayList<JInternalFrame>();
+        count = parent.getComponentCount();
+        for (i = 0; i < count; i++) {
+            Component next = parent.getComponent(i);
+            if (next instanceof JInternalFrame) {
+                results.add((JInternalFrame) next);
+            } else if (next instanceof JInternalFrame.JDesktopIcon) {
+                JInternalFrame tmp = ((JInternalFrame.JDesktopIcon) next).getInternalFrame();
+                if (tmp != null) {
+                    results.add(tmp);
+                }
+            } else if (next instanceof Container) {
+                results.addAll(getAllFrames((Container) next));
             }
         }
-
-        results = new JInternalFrame[vResults.size()];
-        vResults.copyInto(results);
-
         return results;
     }
 
@@ -322,27 +323,14 @@ public class JDesktopPane extends JLayeredPane implements Accessible
      * @see JLayeredPane
      */
     public JInternalFrame[] getAllFramesInLayer(int layer) {
-        int i, count;
-        JInternalFrame[] results;
-        Vector<JInternalFrame> vResults = new Vector<JInternalFrame>(10);
-
-        count = getComponentCount();
-        for(i = 0; i < count; i++) {
-            Component next = getComponent(i);
-            if(next instanceof JInternalFrame) {
-                if(((JInternalFrame)next).getLayer() == layer)
-                    vResults.addElement((JInternalFrame) next);
-            } else if(next instanceof JInternalFrame.JDesktopIcon)  {
-                JInternalFrame tmp = ((JInternalFrame.JDesktopIcon)next).getInternalFrame();
-                if(tmp != null && tmp.getLayer() == layer)
-                    vResults.addElement(tmp);
+        Collection<JInternalFrame> allFrames = getAllFrames(this);
+        Iterator<JInternalFrame> iterator = allFrames.iterator();
+        while (iterator.hasNext()) {
+            if (iterator.next().getLayer() != layer) {
+                iterator.remove();
             }
         }
-
-        results = new JInternalFrame[vResults.size()];
-        vResults.copyInto(results);
-
-        return results;
+        return allFrames.toArray(new JInternalFrame[0]);
     }
 
     private List<JInternalFrame> getFrames() {

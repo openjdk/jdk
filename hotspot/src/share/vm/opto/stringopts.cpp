@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -528,16 +528,6 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn, Unique_Node_List*):
   }
 
   // Collect the types needed to talk about the various slices of memory
-  const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
-                                                     false, NULL, 0);
-
-  const TypePtr* value_field_type = string_type->add_offset(java_lang_String::value_offset_in_bytes());
-  const TypePtr* offset_field_type = string_type->add_offset(java_lang_String::offset_offset_in_bytes());
-  const TypePtr* count_field_type = string_type->add_offset(java_lang_String::count_offset_in_bytes());
-
-  value_field_idx = C->get_alias_index(value_field_type);
-  count_field_idx = C->get_alias_index(count_field_type);
-  offset_field_idx = C->get_alias_index(offset_field_type);
   char_adr_idx = C->get_alias_index(TypeAryPtr::CHARS);
 
   // For each locally allocated StringBuffer see if the usages can be
@@ -897,8 +887,8 @@ bool StringConcat::validate_control_flow() {
 }
 
 Node* PhaseStringOpts::fetch_static_field(GraphKit& kit, ciField* field) {
-  const TypeKlassPtr* klass_type = TypeKlassPtr::make(field->holder());
-  Node* klass_node = __ makecon(klass_type);
+  const TypeInstPtr* mirror_type = TypeInstPtr::make(field->holder()->java_mirror());
+  Node* klass_node = __ makecon(mirror_type);
   BasicType bt = field->layout_type();
   ciType* field_klass = field->type();
 
@@ -913,6 +903,7 @@ Node* PhaseStringOpts::fetch_static_field(GraphKit& kit, ciField* field) {
       // and may yield a vacuous result if the field is of interface type.
       type = TypeOopPtr::make_from_constant(con, true)->isa_oopptr();
       assert(type != NULL, "field singleton type must be consistent");
+      return __ makecon(type);
     } else {
       type = TypeOopPtr::make_from_klass(field_klass->as_klass());
     }
@@ -922,7 +913,7 @@ Node* PhaseStringOpts::fetch_static_field(GraphKit& kit, ciField* field) {
 
   return kit.make_load(NULL, kit.basic_plus_adr(klass_node, field->offset_in_bytes()),
                        type, T_OBJECT,
-                       C->get_alias_index(klass_type->add_offset(field->offset_in_bytes())));
+                       C->get_alias_index(mirror_type->add_offset(field->offset_in_bytes())));
 }
 
 Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
@@ -1173,18 +1164,9 @@ void PhaseStringOpts::int_getChars(GraphKit& kit, Node* arg, Node* char_array, N
 
 Node* PhaseStringOpts::copy_string(GraphKit& kit, Node* str, Node* char_array, Node* start) {
   Node* string = str;
-  Node* offset = kit.make_load(kit.control(),
-                               kit.basic_plus_adr(string, string, java_lang_String::offset_offset_in_bytes()),
-                               TypeInt::INT, T_INT, offset_field_idx);
-  Node* count = kit.make_load(kit.control(),
-                              kit.basic_plus_adr(string, string, java_lang_String::count_offset_in_bytes()),
-                              TypeInt::INT, T_INT, count_field_idx);
-  const TypeAryPtr*  value_type = TypeAryPtr::make(TypePtr::NotNull,
-                                                   TypeAry::make(TypeInt::CHAR,TypeInt::POS),
-                                                   ciTypeArrayKlass::make(T_CHAR), true, 0);
-  Node* value = kit.make_load(kit.control(),
-                              kit.basic_plus_adr(string, string, java_lang_String::value_offset_in_bytes()),
-                              value_type, T_OBJECT, value_field_idx);
+  Node* offset = kit.load_String_offset(kit.control(), string);
+  Node* count  = kit.load_String_length(kit.control(), string);
+  Node* value  = kit.load_String_value (kit.control(), string);
 
   // copy the contents
   if (offset->is_Con() && count->is_Con() && value->is_Con() && count->get_int() < unroll_string_copy_length) {
@@ -1341,10 +1323,9 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
           arg = phi;
           sc->set_argument(argi, arg);
         }
-        //         Node* offset = kit.make_load(NULL, kit.basic_plus_adr(arg, arg, offset_offset),
-        //                                      TypeInt::INT, T_INT, offset_field_idx);
-        Node* count = kit.make_load(kit.control(), kit.basic_plus_adr(arg, arg, java_lang_String::count_offset_in_bytes()),
-                                    TypeInt::INT, T_INT, count_field_idx);
+
+        Node* count = kit.load_String_length(kit.control(), arg);
+
         length = __ AddI(length, count);
         string_sizes->init_req(argi, NULL);
         break;
@@ -1435,12 +1416,11 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   }
 
   // Intialize the string
-  kit.store_to_memory(kit.control(), kit.basic_plus_adr(result, java_lang_String::offset_offset_in_bytes()),
-                      __ intcon(0), T_INT, offset_field_idx);
-  kit.store_to_memory(kit.control(), kit.basic_plus_adr(result, java_lang_String::count_offset_in_bytes()),
-                      length, T_INT, count_field_idx);
-  kit.store_to_memory(kit.control(), kit.basic_plus_adr(result, java_lang_String::value_offset_in_bytes()),
-                      char_array, T_OBJECT, value_field_idx);
+  if (java_lang_String::has_offset_field()) {
+    kit.store_String_offset(kit.control(), result, __ intcon(0));
+    kit.store_String_length(kit.control(), result, length);
+  }
+  kit.store_String_value(kit.control(), result, char_array);
 
   // hook up the outgoing control and result
   kit.replace_call(sc->end(), result);
