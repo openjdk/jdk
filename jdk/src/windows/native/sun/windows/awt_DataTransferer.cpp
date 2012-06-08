@@ -29,7 +29,6 @@
 #include "awt_TextComponent.h"
 #include <shlobj.h>
 #include <shellapi.h>
-#include <sun_awt_datatransfer_DataTransferer.h>
 #include <sun_awt_windows_WDataTransferer.h>
 
 #include "locale_str.h"
