@@ -25,6 +25,10 @@
 
 package sun.java2d.pipe;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class BufferedOpCodes {
     // draw ops
     public static final int DRAW_LINE            = 10;

@@ -27,6 +27,8 @@ package java.awt;
 
 import java.beans.ConstructorProperties;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * The <code>BasicStroke</code> class defines a basic set of rendering
  * attributes for the outlines of graphics primitives, which are rendered
@@ -109,6 +111,8 @@ import java.beans.ConstructorProperties;
  * @see Graphics2D
  * @author Jim Graham
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class BasicStroke implements Stroke {
 
     /**
