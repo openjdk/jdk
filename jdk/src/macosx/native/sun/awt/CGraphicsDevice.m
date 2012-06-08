@@ -92,8 +92,8 @@ static jobject createJavaDisplayMode(CGDisplayModeRef mode, JNIEnv *env, jint di
     CFStringRef currentBPP = CGDisplayModeCopyPixelEncoding(mode);
     bpp = getBPPFromModeString(currentBPP);
     refrate = CGDisplayModeGetRefreshRate(mode);
-    h = CGDisplayPixelsHigh(displayID);
-    w = CGDisplayPixelsWide(displayID);
+    h = CGDisplayModeGetHeight(mode);
+    w = CGDisplayModeGetWidth(mode);
     CFRelease(currentBPP);
     static JNF_CLASS_CACHE(jc_DisplayMode, "java/awt/DisplayMode");
     static JNF_CTOR_CACHE(jc_DisplayMode_ctor, jc_DisplayMode, "(IIII)V");
@@ -154,13 +154,17 @@ Java_sun_awt_CGraphicsDevice_nativeSetDisplayMode
     CFArrayRef allModes = CGDisplayCopyAllDisplayModes(displayID, NULL);
     CGDisplayModeRef closestMatch = getBestModeForParameters(allModes, (int)w, (int)h, (int)bpp, (int)refrate);
     if (closestMatch != NULL) {
-        CGDisplayConfigRef config;
-        CGError retCode = CGBeginDisplayConfiguration(&config);
-        if (retCode == kCGErrorSuccess) {
-            CGConfigureDisplayWithDisplayMode(config, displayID, closestMatch, NULL);
-            CGCompleteDisplayConfiguration(config, kCGConfigureForAppOnly);
-            CFRelease(config);
-        }
+        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+            CGDisplayConfigRef config;
+            CGError retCode = CGBeginDisplayConfiguration(&config);
+            if (retCode == kCGErrorSuccess) {
+                CGConfigureDisplayWithDisplayMode(config, displayID, closestMatch, NULL);
+                CGCompleteDisplayConfiguration(config, kCGConfigureForAppOnly);
+                if (config != NULL) {
+                    CFRelease(config);
+                }
+            }
+        }];
     }
     CFRelease(allModes);
     JNF_COCOA_EXIT(env);
