@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,40 @@
  * questions.
  */
 
-// key: compiler.err.prob.found.req.1
-// key: compiler.misc.invalid.inferred.types
-// key: compiler.misc.inferred.do.not.conform.to.upper.bounds
+/*
+ * @test
+ * @bug     7160084
+ * @summary javac fails to compile an apparently valid class/interface combination
+ */
+public class T7160084a {
 
-import java.util.*;
+    static int assertionCount = 0;
 
-class InvalidInferredTypes {
+    static void assertTrue(boolean cond) {
+        assertionCount++;
+        if (!cond) {
+            throw new AssertionError();
+        }
+    }
 
-    <S extends String> List<S> m() { return null; }
+    interface Intf {
+       enum MyEnumA {
+          AA(""),
+          UNUSED("");
 
-    void test() {
-        List<Integer> li = m();
+          private MyEnumA(String s) { }
+       }
+    }
+
+    enum MyEnumA implements Intf {
+        AA("");
+
+        private MyEnumA(String s) { }
+    }
+
+    public static void main(String... args) {
+        assertTrue(MyEnumA.values().length == 1);
+        assertTrue(Intf.MyEnumA.values().length == 2);
+        assertTrue(assertionCount == 2);
     }
 }
