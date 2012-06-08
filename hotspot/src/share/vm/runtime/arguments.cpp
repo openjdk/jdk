@@ -860,7 +860,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
   bool result         = true;
 
   int c = getc(stream);
-  while(c != EOF) {
+  while(c != EOF && pos < (int)(sizeof(token)-1)) {
     if (in_white_space) {
       if (in_comment) {
         if (c == '\n') in_comment = false;
