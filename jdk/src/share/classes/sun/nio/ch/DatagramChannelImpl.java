@@ -661,7 +661,12 @@ class DatagramChannelImpl
                         throw new AlreadyBoundException();
                     InetSocketAddress isa;
                     if (local == null) {
-                        isa = new InetSocketAddress(0);
+                        // only Inet4Address allowed with IPv4 socket
+                        if (family == StandardProtocolFamily.INET) {
+                            isa = new InetSocketAddress(InetAddress.getByName("0.0.0.0"), 0);
+                        } else {
+                            isa = new InetSocketAddress(0);
+                        }
                     } else {
                         isa = Net.checkAddress(local);
 
