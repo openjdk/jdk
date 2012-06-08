@@ -168,7 +168,10 @@ public class Agent {
 
         // management properties can be overridden by system properties
         // which take precedence
-        configProps.putAll(System.getProperties());
+        Properties sysProps = System.getProperties();
+        synchronized(sysProps){
+            configProps.putAll(sysProps);
+        }
 
         // if user specifies config file into command line for either
         // jcmd utilities or attach command it overrides properties set in
@@ -264,7 +267,10 @@ public class Agent {
 
         // management properties can be overridden by system properties
         // which take precedence
-        props.putAll(System.getProperties());
+        Properties sysProps = System.getProperties();
+        synchronized(sysProps){
+            props.putAll(sysProps);
+        }
 
         return props;
    }

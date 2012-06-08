@@ -137,3 +137,30 @@ JNF_COCOA_EXIT(env);
 
     return jpt;
 }
+
+
+JNIEXPORT void JNICALL
+Java_sun_lwawt_macosx_CCursorManager_nativeSetAllowsCursorSetInBackground
+(JNIEnv *env, jclass class, jboolean allows)
+{
+
+JNF_COCOA_ENTER(env);
+AWT_ASSERT_NOT_APPKIT_THREAD;
+
+    SEL allowsSetInBackground_SEL = @selector(javaSetAllowsCursorSetInBackground:);
+    if ([[NSCursor class] respondsToSelector:allowsSetInBackground_SEL]) {
+        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
+            NSMethodSignature *allowsSetInBackground_sig =
+                [[NSCursor class] methodSignatureForSelector:allowsSetInBackground_SEL];
+            NSInvocation *invocation =
+                [NSInvocation invocationWithMethodSignature:allowsSetInBackground_sig];
+            BOOL arg = (BOOL)allows;
+            [invocation setSelector:allowsSetInBackground_SEL];
+            [invocation setArgument:&arg atIndex:2];
+            [invocation invokeWithTarget:[NSCursor class]];
+        }];
+    }
+
+JNF_COCOA_EXIT(env);
+
+}

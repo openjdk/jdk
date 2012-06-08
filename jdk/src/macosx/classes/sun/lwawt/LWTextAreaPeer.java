@@ -211,6 +211,15 @@ final class LWTextAreaPeer
             }
 
             @Override
+            public void replaceSelection(String content) {
+                getDocument().removeDocumentListener(LWTextAreaPeer.this);
+                super.replaceSelection(content);
+                // post only one text event in this case
+                postTextEvent();
+                getDocument().addDocumentListener(LWTextAreaPeer.this);
+            }
+
+            @Override
             public boolean hasFocus() {
                 return getTarget().hasFocus();
             }

@@ -48,7 +48,12 @@ public class FileSystemImpl extends FileSystem {
     // Initialization
 
     static {
-        java.security.AccessController
-            .doPrivileged(new sun.security.action.LoadLibraryAction("management"));
+        java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("management");
+                    return null;
+                }
+            });
     }
 }

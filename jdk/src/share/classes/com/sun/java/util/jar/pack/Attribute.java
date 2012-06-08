@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,6 +166,7 @@ class Attribute implements Comparable<Attribute> {
         define(sd, ATTR_CONTEXT_CLASS, "SourceFile", "RUH");
         define(sd, ATTR_CONTEXT_CLASS, "EnclosingMethod", "RCHRDNH");
         define(sd, ATTR_CONTEXT_CLASS, "InnerClasses", "NH[RCHRCNHRUNHFH]");
+        define(sd, ATTR_CONTEXT_CLASS, "BootstrapMethods", "NH[RMHNH[KLH]]");
 
         define(sd, ATTR_CONTEXT_FIELD, "Signature", "RSH");
         define(sd, ATTR_CONTEXT_FIELD, "Synthetic", "");
@@ -203,6 +204,8 @@ class Attribute implements Comparable<Attribute> {
         // Their layout specs. are given here for completeness.
         // The Code spec is incomplete, in that it does not distinguish
         // bytecode bytes or locate CP references.
+        // The BootstrapMethods attribute is also special-cased
+        // elsewhere as an appendix to the local constant pool.
     }
 
     // Metadata.
@@ -822,9 +825,9 @@ class Attribute implements Comparable<Attribute> {
   reference_type:
         ( constant_ref | schema_ref | utf8_ref | untyped_ref )
   constant_ref:
-        ( 'KI' | 'KJ' | 'KF' | 'KD' | 'KS' | 'KQ' )
+        ( 'KI' | 'KJ' | 'KF' | 'KD' | 'KS' | 'KQ' | 'KM' | 'KT' | 'KL' )
   schema_ref:
-        ( 'RC' | 'RS' | 'RD' | 'RF' | 'RM' | 'RI' )
+        ( 'RC' | 'RS' | 'RD' | 'RF' | 'RM' | 'RI' | 'RY' | 'RB' | 'RN' )
   utf8_ref:
         'RU'
   untyped_ref:
@@ -1012,7 +1015,12 @@ class Attribute implements Comparable<Attribute> {
                 case 'F': e.refKind = CONSTANT_Float; break;
                 case 'D': e.refKind = CONSTANT_Double; break;
                 case 'S': e.refKind = CONSTANT_String; break;
-                case 'Q': e.refKind = CONSTANT_Literal; break;
+                case 'Q': e.refKind = CONSTANT_FieldSpecific; break;
+
+                // new in 1.7:
+                case 'M': e.refKind = CONSTANT_MethodHandle; break;
+                case 'T': e.refKind = CONSTANT_MethodType; break;
+                case 'L': e.refKind = CONSTANT_LoadableValue; break;
                 default: { i = -i; continue; } // fail
                 }
                 break;
@@ -1028,6 +1036,11 @@ class Attribute implements Comparable<Attribute> {
 
                 case 'U': e.refKind = CONSTANT_Utf8; break; //utf8_ref
                 case 'Q': e.refKind = CONSTANT_All; break; //untyped_ref
+
+                // new in 1.7:
+                case 'Y': e.refKind = CONSTANT_InvokeDynamic; break;
+                case 'B': e.refKind = CONSTANT_BootstrapMethod; break;
+                case 'N': e.refKind = CONSTANT_AnyMember; break;
 
                 default: { i = -i; continue; } // fail
                 }
@@ -1279,10 +1292,12 @@ class Attribute implements Comparable<Attribute> {
                         // Cf. ClassReader.readSignatureRef.
                         String typeName = globalRef.stringValue();
                         globalRef = ConstantPool.getSignatureEntry(typeName);
-                    } else if (e.refKind == CONSTANT_Literal) {
+                    } else if (e.refKind == CONSTANT_FieldSpecific) {
                         assert(globalRef.getTag() >= CONSTANT_Integer);
-                        assert(globalRef.getTag() <= CONSTANT_String);
-                    } else if (e.refKind != CONSTANT_All) {
+                        assert(globalRef.getTag() <= CONSTANT_String ||
+                               globalRef.getTag() >= CONSTANT_MethodHandle);
+                        assert(globalRef.getTag() <= CONSTANT_MethodType);
+                    } else if (e.refKind < CONSTANT_GroupFirst) {
                         assert(e.refKind == globalRef.getTag());
                     }
                 }
@@ -1462,27 +1477,29 @@ class Attribute implements Comparable<Attribute> {
                 "NH[PHPOHIIH]",         // CharacterRangeTable
                 "NH[PHHII]",            // CoverageTable
                 "NH[RCHRCNHRUNHFH]",    // InnerClasses
+                "NH[RMHNH[KLH]]",       // BootstrapMethods
                 "HHNI[B]NH[PHPOHPOHRCNH]NH[RUHNI[B]]", // Code
                 "=AnnotationDefault",
                 // Like metadata, but with a compact tag set:
                 "[NH[(1)]]"
-                +"[NH[(2)]]"
-                +"[RSHNH[RUH(3)]]"
-                +"[TB(0,1,3)[KIH](2)[KDH](5)[KFH](4)[KJH](7)[RSH](8)[RSHRUH](9)[RUH](10)[(2)](6)[NH[(3)]]()[]]",
+                +"[NH[(1)]]"
+                +"[RSHNH[RUH(1)]]"
+                +"[TB(0,1,3)[KIH](2)[KDH](5)[KFH](4)[KJH](7)[RSH](8)[RSHRUH](9)[RUH](10)[(-1)](6)[NH[(0)]]()[]]",
                 ""
             };
             ap = 0;
         }
+        Utils.currentInstance.set(new PackerImpl());
         final int[][] counts = new int[2][3];  // int bci ref
         final Entry[] cpMap = new Entry[maxVal+1];
         for (int i = 0; i < cpMap.length; i++) {
             if (i == 0)  continue;  // 0 => null
             cpMap[i] = ConstantPool.getLiteralEntry(new Integer(i));
         }
-        Class cls = new Package().new Class("");
+        Package.Class cls = new Package().new Class("");
         cls.cpMap = cpMap;
         class TestValueStream extends ValueStream {
-            Random rand = new Random(0);
+            java.util.Random rand = new java.util.Random(0);
             ArrayList history = new ArrayList();
             int ckidx = 0;
             int maxVal;
@@ -1570,8 +1587,7 @@ class Attribute implements Comparable<Attribute> {
                 String layout = av[i];
                 if (layout.startsWith("=")) {
                     String name = layout.substring(1);
-                    for (Iterator j = standardDefs.values().iterator(); j.hasNext(); ) {
-                        Attribute a = (Attribute) j.next();
+                    for (Attribute a : standardDefs.values()) {
                         if (a.name().equals(name)) {
                             layout = a.layout().layout();
                             break;
@@ -1604,7 +1620,7 @@ class Attribute implements Comparable<Attribute> {
                 if (verbose) {
                     System.out.print("  parse: {");
                 }
-                self.parse(0, cls, bytes, 0, bytes.length, tts);
+                self.parse(cls, bytes, 0, bytes.length, tts);
                 if (verbose) {
                     System.out.println("}");
                 }

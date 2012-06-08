@@ -56,7 +56,12 @@ public class Win32PrintServiceLookup extends PrintServiceLookup {
 
     static {
         java.security.AccessController.doPrivileged(
-                    new sun.security.action.LoadLibraryAction("awt"));
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("awt");
+                    return null;
+                }
+            });
     }
 
     /* The singleton win32 print lookup service.

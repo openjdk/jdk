@@ -76,6 +76,12 @@ public class CEmbeddedFrame extends EmbeddedFrame {
         int screenX = locationOnScreen.x + x;
         int screenY = locationOnScreen.y + y;
 
+        if (eventType == CocoaConstants.NPCocoaEventMouseEntered) {
+            CCursorManager.nativeSetAllowsCursorSetInBackground(true);
+        } else if (eventType == CocoaConstants.NPCocoaEventMouseExited) {
+            CCursorManager.nativeSetAllowsCursorSetInBackground(false);
+        }
+
         responder.handleMouseEvent(eventType, modifierFlags, buttonNumber,
                                    clickCount, x, y, screenX, screenY);
     }
@@ -106,28 +112,19 @@ public class CEmbeddedFrame extends EmbeddedFrame {
 
     public void handleFocusEvent(boolean focused) {
         this.focused = focused;
-        updateOverlayWindowActiveState();
+        if (parentWindowActive) {
+            responder.handleWindowFocusEvent(focused);
+        }
     }
 
     public void handleWindowFocusEvent(boolean parentWindowActive) {
         this.parentWindowActive = parentWindowActive;
-        updateOverlayWindowActiveState();
+        if (focused) {
+            responder.handleWindowFocusEvent(parentWindowActive);
+        }
     }
 
     public boolean isParentWindowActive() {
         return parentWindowActive;
     }
-
-    /*
-     * May change appearance of contents of window, and generate a
-     * WINDOW_ACTIVATED event.
-     */
-    private void updateOverlayWindowActiveState() {
-        final boolean showAsFocused = parentWindowActive && focused;
-        dispatchEvent(
-            new FocusEvent(this, showAsFocused ?
-                                 FocusEvent.FOCUS_GAINED :
-                                 FocusEvent.FOCUS_LOST));
-     }
-
 }

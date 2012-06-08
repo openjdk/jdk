@@ -396,11 +396,18 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
             savedFile = file.substring(index+1);
         }
 
+        String[] fileNames = fileList.getSelectedItems();
+        int filesNumber = (fileNames != null) ? fileNames.length : 0;
+        File[] files = new File[filesNumber];
+        for (int i = 0; i < filesNumber; i++) {
+            files[i] = new File(savedDir, fileNames[i]);
+        }
+
         AWTAccessor.FileDialogAccessor fileDialogAccessor = AWTAccessor.getFileDialogAccessor();
 
         fileDialogAccessor.setDirectory(target, savedDir);
         fileDialogAccessor.setFile(target, savedFile);
-        fileDialogAccessor.setFiles(target, savedDir, fileList.getSelectedItems());
+        fileDialogAccessor.setFiles(target, files);
     }
 
     /**
@@ -419,7 +426,7 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
 
         fileDialogAccessor.setDirectory(target, null);
         fileDialogAccessor.setFile(target, null);
-        fileDialogAccessor.setFiles(target, null, null);
+        fileDialogAccessor.setFiles(target, null);
 
         handleQuitButton();
     }

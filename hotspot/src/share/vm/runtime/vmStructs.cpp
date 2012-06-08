@@ -44,7 +44,6 @@
 #include "code/vmreg.hpp"
 #include "compiler/oopMap.hpp"
 #include "compiler/compileBroker.hpp"
-#include "gc_implementation/concurrentMarkSweep/freeBlockDictionary.hpp"
 #include "gc_implementation/shared/immutableSpace.hpp"
 #include "gc_implementation/shared/markSweep.hpp"
 #include "gc_implementation/shared/mutableSpace.hpp"
@@ -55,6 +54,7 @@
 #include "memory/cardTableRS.hpp"
 #include "memory/compactPermGen.hpp"
 #include "memory/defNewGeneration.hpp"
+#include "memory/freeBlockDictionary.hpp"
 #include "memory/genCollectedHeap.hpp"
 #include "memory/generation.hpp"
 #include "memory/generationSpec.hpp"
@@ -2352,7 +2352,6 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_constant(FieldInfo::initval_index_offset)                       \
   declare_constant(FieldInfo::low_offset)                                 \
   declare_constant(FieldInfo::high_offset)                                \
-  declare_constant(FieldInfo::generic_signature_offset)                   \
   declare_constant(FieldInfo::field_slots)                                \
                                                                           \
   /************************************************/                      \

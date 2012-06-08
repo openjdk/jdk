@@ -89,4 +89,9 @@ extern jfieldID ni_ibmaskID;        /* InterfaceAddress.maskLength */
 
 int enumInterfaces(JNIEnv *env, netif **netifPP);
 
+// Windows Visa (and later) only.....
+#ifndef IF_TYPE_IEEE80211
+#define IF_TYPE_IEEE80211     71
+#endif
+
 #endif

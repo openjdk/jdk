@@ -40,7 +40,7 @@ public class CGraphicsDevice extends GraphicsDevice {
     private final int displayID;
 
     // Array of all GraphicsConfig instances for this device
-    private final CGraphicsConfig[] configs;
+    private final GraphicsConfiguration[] configs;
 
     // Default config (temporarily hard coded)
     private final int DEFAULT_CONFIG = 0;
@@ -49,7 +49,7 @@ public class CGraphicsDevice extends GraphicsDevice {
 
     public CGraphicsDevice(int displayID) {
         this.displayID = displayID;
-        configs = new CGraphicsConfig[] {
+        configs = new GraphicsConfiguration[] {
             CGLGraphicsConfig.getConfig(this, 0)
         };
     }
@@ -66,7 +66,7 @@ public class CGraphicsDevice extends GraphicsDevice {
      */
     @Override
     public GraphicsConfiguration[] getConfigurations() {
-        return configs;
+        return configs.clone();
     }
 
     /**

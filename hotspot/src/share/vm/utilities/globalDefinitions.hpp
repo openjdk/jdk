@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,10 +161,6 @@ const size_t M                  = K*K;
 const size_t G                  = M*K;
 const size_t HWperKB            = K / sizeof(HeapWord);
 
-const size_t LOG_K              = 10;
-const size_t LOG_M              = 2 * LOG_K;
-const size_t LOG_G              = 2 * LOG_M;
-
 const jint min_jint = (jint)1 << (sizeof(jint)*BitsPerByte-1); // 0x80000000 == smallest jint
 const jint max_jint = (juint)min_jint - 1;                     // 0x7FFFFFFF == largest jint
 
@@ -179,6 +175,11 @@ const jlong NANOSECS_PER_SEC      = CONST64(1000000000);
 const jint  NANOSECS_PER_MILLISEC = 1000000;
 
 inline const char* proper_unit_for_byte_size(size_t s) {
+#ifdef _LP64
+  if (s >= 10*G) {
+    return "G";
+  }
+#endif
   if (s >= 10*M) {
     return "M";
   } else if (s >= 10*K) {
@@ -188,16 +189,21 @@ inline const char* proper_unit_for_byte_size(size_t s) {
   }
 }
 
-inline size_t byte_size_in_proper_unit(size_t s) {
+template <class T>
+inline T byte_size_in_proper_unit(T s) {
+#ifdef _LP64
+  if (s >= 10*G) {
+    return (T)(s/G);
+  }
+#endif
   if (s >= 10*M) {
-    return s/M;
+    return (T)(s/M);
   } else if (s >= 10*K) {
-    return s/K;
+    return (T)(s/K);
   } else {
     return s;
   }
 }
-
 
 //----------------------------------------------------------------------------------------------------
 // VM type definitions
