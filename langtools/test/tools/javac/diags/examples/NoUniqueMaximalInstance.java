@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,11 @@
  * questions.
  */
 
-// key: compiler.err.prob.found.req.1
-// key: compiler.misc.undetermined.type
+// key: compiler.err.cant.apply.symbol.1
 // key: compiler.misc.no.unique.maximal.instance.exists
 
-class UndeterminedType1<V> {
-    <T extends Integer & Runnable> UndeterminedType1<T> m() {
-        return null;
-    }
+class NoUniqueMaximalInstance {
+    <Z extends Integer> Z m() { return null; }
 
-
-    UndeterminedType1<? extends String> c2 = m();
+    { String s = m(); }
 }

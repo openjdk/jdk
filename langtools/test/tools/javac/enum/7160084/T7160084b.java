@@ -21,16 +21,48 @@
  * questions.
  */
 
-// key: compiler.err.prob.found.req.1
-// key: compiler.misc.cant.apply.diamond.1
-// key: compiler.misc.inferred.do.not.conform.to.upper.bounds
-// key: compiler.misc.diamond
+/*
+ * @test
+ * @bug     7160084
+ * @summary javac fails to compile an apparently valid class/interface combination
+ */
+public class T7160084b {
 
-class CantApplyDiamond1<X> {
+    static int assertionCount = 0;
 
-    CantApplyDiamond1(CantApplyDiamond1<? super X> lz) { }
+    static void assertTrue(boolean cond) {
+        assertionCount++;
+        if (!cond) {
+            throw new AssertionError();
+        }
+    }
 
-    void test(CantApplyDiamond1<Integer> li) {
-       CantApplyDiamond1<String> ls = new CantApplyDiamond1<>(li);
+    interface Extras {
+        static class Enums {
+            static class Component {
+                Component() { throw new RuntimeException("oops!"); }
+            }
+        }
+    }
+
+    interface Test {
+        public class Enums {
+            interface Widget {
+                enum Component { X, Y };
+            }
+
+            enum Component implements Widget, Extras {
+                Z;
+            };
+
+            public static void test() {
+               assertTrue(Component.values().length == 1);
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        Test.Enums.test();
+        assertTrue(assertionCount == 1);
     }
 }
