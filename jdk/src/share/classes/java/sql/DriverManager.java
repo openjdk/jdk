@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.ServiceLoader;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.CopyOnWriteArrayList;
+import sun.reflect.Reflection;
 
 
 /**
@@ -462,6 +463,15 @@ public class DriverManager {
 
     //------------------------------------------------------------------------
 
+    // Internal method used to get the caller's class loader.
+    // Replaces the call to the native method
+    private static ClassLoader getCallerClassLoader() {
+        Class<?> cc = Reflection.getCallerClass(3);
+        ClassLoader cl = (cc != null) ? cc.getClassLoader() : null;
+        return cl;
+    }
+
+
     // Indicates whether the class object that would be created if the code calling
     // DriverManager is accessible.
     private static boolean isDriverAllowed(Driver driver, ClassLoader classLoader) {
@@ -604,8 +614,6 @@ public class DriverManager {
         throw new SQLException("No suitable driver found for "+ url, "08001");
     }
 
-    /* Returns the caller's class loader, or null if none */
-    private static native ClassLoader getCallerClassLoader();
 
 }
 

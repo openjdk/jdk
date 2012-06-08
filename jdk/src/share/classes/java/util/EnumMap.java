@@ -730,6 +730,7 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
             throw new AssertionError();
         }
         result.vals = result.vals.clone();
+        result.entrySet = null;
         return result;
     }
 

@@ -439,7 +439,9 @@ public abstract class BreakIterator implements Cloneable
     private static final int WORD_INDEX = 1;
     private static final int LINE_INDEX = 2;
     private static final int SENTENCE_INDEX = 3;
-    private static final SoftReference[] iterCache = new SoftReference[4];
+
+    @SuppressWarnings("unchecked")
+    private static final SoftReference<BreakIteratorCache>[] iterCache = (SoftReference<BreakIteratorCache>[]) new SoftReference<?>[4];
 
     /**
      * Returns a new <code>BreakIterator</code> instance
@@ -554,7 +556,7 @@ public abstract class BreakIterator implements Cloneable
                                                   String dataName,
                                                   String dictionaryName) {
         if (iterCache[type] != null) {
-            BreakIteratorCache cache = (BreakIteratorCache) iterCache[type].get();
+            BreakIteratorCache cache = iterCache[type].get();
             if (cache != null) {
                 if (cache.getLocale().equals(locale)) {
                     return cache.createBreakInstance();
@@ -567,13 +569,13 @@ public abstract class BreakIterator implements Cloneable
                                                    dataName,
                                                    dictionaryName);
         BreakIteratorCache cache = new BreakIteratorCache(locale, result);
-        iterCache[type] = new SoftReference(cache);
+        iterCache[type] = new SoftReference<>(cache);
         return result;
     }
 
     private static ResourceBundle getBundle(final String baseName, final Locale locale) {
-         return (ResourceBundle) AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
+         return AccessController.doPrivileged(new PrivilegedAction<ResourceBundle>() {
+            public ResourceBundle run() {
                 return ResourceBundle.getBundle(baseName, locale);
             }
         });

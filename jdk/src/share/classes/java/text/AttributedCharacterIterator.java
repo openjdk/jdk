@@ -97,7 +97,7 @@ public interface AttributedCharacterIterator extends CharacterIterator {
         private String name;
 
         // table of all instances in this class, used by readResolve
-        private static final Map instanceMap = new HashMap(7);
+        private static final Map<String, Attribute> instanceMap = new HashMap<>(7);
 
         /**
          * Constructs an {@code Attribute} with the given name.
@@ -150,7 +150,7 @@ public interface AttributedCharacterIterator extends CharacterIterator {
                 throw new InvalidObjectException("subclass didn't correctly implement readResolve");
             }
 
-            Attribute instance = (Attribute) instanceMap.get(getName());
+            Attribute instance = instanceMap.get(getName());
             if (instance != null) {
                 return instance;
             } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,20 @@
  * questions.
  */
 
-#include <stdlib.h>
+package sun.nio.ch;
 
-#include "jni.h"
-#include "jni_util.h"
-#include "jvm.h"
+import java.io.IOException;
+import java.nio.channels.*;
+import java.nio.channels.spi.*;
 
-JNIEXPORT jobject JNICALL
-Java_java_sql_DriverManager_getCallerClassLoader(JNIEnv *env, jobject this)
+public class EventPortSelectorProvider
+    extends SelectorProviderImpl
 {
-    jclass caller = JVM_GetCallerClass(env, 2);
-    return caller != 0 ? JVM_GetClassLoader(env, caller) : 0;
+    public AbstractSelector openSelector() throws IOException {
+        return new EventPortSelectorImpl(this);
+    }
+
+    public Channel inheritedChannel() throws IOException {
+        return InheritedChannel.getChannel();
+    }
 }
