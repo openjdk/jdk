@@ -42,84 +42,23 @@ struct SetEchoCharStruct {
  */
 
 AwtTextField::AwtTextField()
-    : m_initialRescrollFlag( true )
 {
 }
 
 /* Create a new AwtTextField object and window.   */
 AwtTextField* AwtTextField::Create(jobject peer, jobject parent)
 {
-    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-
-    jobject target = NULL;
-    AwtTextField* c = NULL;
-
-    try {
-        PDATA pData;
-        AwtCanvas* awtParent;
-        JNI_CHECK_PEER_GOTO(parent, done);
-        awtParent = (AwtCanvas*)pData;
-
-        JNI_CHECK_NULL_GOTO(awtParent, "null awtParent", done);
-
-        target = env->GetObjectField(peer, AwtObject::targetID);
-        JNI_CHECK_NULL_GOTO(target, "null target", done);
-
-        c = new AwtTextField();
-
-        {
-            DWORD style = WS_CHILD | WS_CLIPSIBLINGS |
-                ES_LEFT | ES_AUTOHSCROLL;
-            DWORD exStyle = WS_EX_CLIENTEDGE;
-            if (GetRTL()) {
-                exStyle |= WS_EX_RIGHT | WS_EX_LEFTSCROLLBAR;
-                if (GetRTLReadingOrder())
-                    exStyle |= WS_EX_RTLREADING;
-            }
-
-            jint x = env->GetIntField(target, AwtComponent::xID);
-            jint y = env->GetIntField(target, AwtComponent::yID);
-            jint width = env->GetIntField(target, AwtComponent::widthID);
-            jint height = env->GetIntField(target, AwtComponent::heightID);
-
-            c->CreateHWnd(env, L"", style, exStyle,
-                          x, y, width, height,
-                          awtParent->GetHWnd(),
-                          reinterpret_cast<HMENU>(static_cast<INT_PTR>(
-                awtParent->CreateControlID())),
-                          ::GetSysColor(COLOR_WINDOWTEXT),
-                          ::GetSysColor(COLOR_WINDOW),
-                          peer);
-
-            c->m_backgroundColorSet = TRUE;
-            /* suppress inheriting parent's color. */
-            c->UpdateBackground(env, target);
-            c->SendMessage(EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN,
-                           MAKELPARAM(1, 1));
-            /*
-             * Fix for BugTraq Id 4260109.
-             * Set the text limit to the maximum.
-             */
-            c->SendMessage(EM_SETLIMITTEXT);
-
-        }
-    } catch (...) {
-        env->DeleteLocalRef(target);
-        throw;
-    }
-
-done:
-    env->DeleteLocalRef(target);
-
-    return c;
+    return (AwtTextField*) AwtTextComponent::Create(peer, parent, false);
 }
 
 void AwtTextField::EditSetSel(CHARRANGE &cr) {
-    SendMessage(EM_SETSEL, cr.cpMin, cr.cpMax);
-}
+    SendMessage(EM_EXSETSEL, 0, reinterpret_cast<LPARAM>(&cr));
 
-LONG AwtTextField::EditGetCharFromPos(POINT& pt) {
-    return static_cast<LONG>(SendMessage(EM_CHARFROMPOS, 0, MAKELPARAM(pt.x, pt.y)));
+    // 6417581: force expected drawing
+    if (IS_WINVISTA && cr.cpMin == cr.cpMax) {
+        ::InvalidateRect(GetHWnd(), NULL, TRUE);
+    }
+
 }
 
 LRESULT AwtTextField::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
@@ -162,10 +101,18 @@ AwtTextField::HandleEvent(MSG *msg, BOOL synthetic)
          * to allow dnd of the current selection.
          */
         if (msg->message == WM_LBUTTONDBLCLK) {
-            SetStartSelectionPos(static_cast<LONG>(SendMessage(
-                EM_FINDWORDBREAK, WB_MOVEWORDLEFT, lCurPos)));
-            SetEndSelectionPos(static_cast<LONG>(SendMessage(
-                EM_FINDWORDBREAK, WB_MOVEWORDRIGHT, lCurPos)));
+            jchar echo = SendMessage(EM_GETPASSWORDCHAR);
+
+            if(echo == 0){
+              SetStartSelectionPos(static_cast<LONG>(SendMessage(
+                  EM_FINDWORDBREAK, WB_MOVEWORDLEFT, lCurPos)));
+              SetEndSelectionPos(static_cast<LONG>(SendMessage(
+                  EM_FINDWORDBREAK, WB_MOVEWORDRIGHT, lCurPos)));
+            }else{
+              SetStartSelectionPos(0);
+              SetEndSelectionPos(GetTextLength());
+            }
+
         } else {
             SetStartSelectionPos(lCurPos);
             SetEndSelectionPos(lCurPos);
@@ -305,46 +252,6 @@ ret:
     env->DeleteGlobalRef(self);
 
     delete secs;
-}
-
-void AwtTextField::Reshape(int x, int y, int w, int h)
-{
-    AwtTextComponent::Reshape( x, y, w, h );
-
-    // Another option would be to call this
-    // after WM_SIZE notification is handled
-    initialRescroll();
-}
-
-
-// Windows' Edit control features:
-// (i) if text selection is set while control's width or height is 0,
-//   text is scrolled oddly.
-// (ii) if control's size is changed, text seems never be automatically
-//   rescrolled.
-//
-// This method is designed for the following scenario: AWT spawns Edit
-// control with 0x0 dimensions, then sets text selection, then resizes the
-// control (couple of times). This might cause text appear undesirably scrolled.
-// So we reset/set selection again to rescroll text. (see also CR 6480547)
-void AwtTextField::initialRescroll()
-{
-    if( ! m_initialRescrollFlag ) {
-        return;
-    }
-
-    ::RECT r;
-    BOOL ok = ::GetClientRect( GetHWnd(), &r );
-    if( ! ok || r.right==0 || r.bottom==0 ) {
-        return;
-    }
-
-    m_initialRescrollFlag = false;
-
-    DWORD start, end;
-    SendMessage( EM_GETSEL, (WPARAM)&start, (LPARAM)&end );
-    SendMessage( EM_SETSEL, (WPARAM)0, (LPARAM)0 );
-    SendMessage( EM_SETSEL, (WPARAM)start, (LPARAM)end );
 }
 
 
