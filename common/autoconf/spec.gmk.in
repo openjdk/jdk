@@ -64,6 +64,9 @@ endif
 # A self-referential reference to this file.
 SPEC:=@SPEC@
 
+# The "human readable" name of this configuration
+CONF_NAME:=@CONF_NAME@
+
 # The built jdk will run in this host system.
 HOST:=@HOST@
 HOST_OS:=@HOST_OS@
@@ -87,6 +90,10 @@ BUILD_CPU_ARCH:=@BUILD_CPU_ARCH@
 BUILD_CPU_BITS:=@BUILD_CPU_BITS@
 BUILD_CPU_ENDIAN:=@BUILD_CPU_ENDIAN@
 
+# Legacy OS values for use in release file.
+REQUIRED_OS_NAME:=@REQUIRED_OS_NAME@
+REQUIRED_OS_VERSION:=@REQUIRED_OS_VERSION@
+
 # Old name for HOST_OS (aix,bsd,hpux,linux,macosx,solaris,windows etc)
 PLATFORM:=@HOST_OS@
 # Old name for HOST_CPU, uses i586 and amd64, instead of ia32 and x64.
@@ -105,6 +112,7 @@ ENDIAN:=@HOST_CPU_ENDIAN@
 @SET_OPENJDK@
 JIGSAW:=@JIGSAW@
 LIBM:=-lm
+LIBDL:=@LIBDL@
 
 # colon or semicolon
 PATH_SEP:=@PATH_SEP@
@@ -287,8 +295,8 @@ CUPS_CFLAGS:=@CUPS_CFLAGS@
 
 PACKAGE_PATH=@PACKAGE_PATH@
 
-CACERTS_FILE:=$(SRC_ROOT)/jdk/src/share/lib/security/cacerts
-#CACERTS_INT=$(CLOSED_SHARE_SRC)/lib/security/cacerts.internal
+# Source file for cacerts
+CACERTS_FILE=@CACERTS_FILE@
 
 #MOZILLA_HEADERS_PATH:=
 
@@ -308,12 +316,17 @@ LD_OUT_OPTION:=@LD_OUT_OPTION@
 AR_OUT_OPTION:=@AR_OUT_OPTION@
 
 # Flags used for overriding the default opt setting for a C/C++ source file.
+C_O_FLAG_HIGHEST:=@C_O_FLAG_HIGHEST@
 C_O_FLAG_HI:=@C_O_FLAG_HI@
 C_O_FLAG_NORM:=@C_O_FLAG_NORM@
 C_O_FLAG_NONE:=@C_O_FLAG_NONE@
+CXX_O_FLAG_HIGHEST:=@CXX_O_FLAG_HIGHEST@
 CXX_O_FLAG_HI:=@CXX_O_FLAG_HI@
 CXX_O_FLAG_NORM:=@CXX_O_FLAG_NORM@
 CXX_O_FLAG_NONE:=@CXX_O_FLAG_NONE@
+
+C_FLAG_DEPS:=@C_FLAG_DEPS@
+CXX_FLAG_DEPS:=@CXX_FLAG_DEPS@
 
 # Tools that potentially need to be cross compilation aware.
 CC:=@UNCYGDRIVE@ @CCACHE@ @CC@
@@ -386,6 +399,11 @@ SHARED_LIBRARY_FLAGS:=@SHARED_LIBRARY_FLAGS@
 # (Note absence of := assignment, because we do not want to evaluate the macro body here)
 SET_SHARED_LIBRARY_MAPFILE=@SET_SHARED_LIBRARY_MAPFILE@
 
+# Options for C/CXX compiler to be used if linking is performed
+#   using reorder file
+C_FLAG_REORDER:=@C_FLAG_REORDER@
+CXX_FLAG_REORDER:=@CXX_FLAG_REORDER@
+
 # Options to linker to specify the library name.
 # (Note absence of := assignment, because we do not want to evaluate the macro body here)
 SET_SHARED_LIBRARY_NAME=@SET_SHARED_LIBRARY_NAME@
@@ -406,6 +424,9 @@ STATIC_LIBRARY_SUFFIX:=@STATIC_LIBRARY_SUFFIX@
 EXE_SUFFIX:=@EXE_SUFFIX@
 OBJ_SUFFIX:=@OBJ_SUFFIX@
 
+POST_STRIP_CMD:=@POST_STRIP_CMD@
+POST_MCS_CMD:=@POST_MCS_CMD@
+
 JAVA_FLAGS:=@BOOT_JDK_JVMARGS@
 
 JAVA=@UNCYGDRIVE@ @JAVA@ $(JAVA_FLAGS)
@@ -418,6 +439,8 @@ JAVAH:=@UNCYGDRIVE@ @JAVAH@
 JAR:=@UNCYGDRIVE@ @JAR@
 
 RMIC:=@UNCYGDRIVE@ @RMIC@
+
+NATIVE2ASCII:=@UNCYGDRIVE@ @NATIVE2ASCII@
 
 BOOT_JAR_CMD:=@UNCYGDRIVE@ @JAR@
 BOOT_JAR_JFLAGS:=
@@ -483,6 +506,7 @@ OTOOL:=@OTOOL@
 READELF:=@READELF@
 EXPR:=@EXPR@
 FILE:=@FILE@
+HG:=@HG@
 
 UNCYGDRIVE:=@UNCYGDRIVE@
 
@@ -584,5 +608,13 @@ INSTALL_SYSCONFDIR=@sysconfdir@
 # Misc
 #
 
+# Name of Service Agent library
+SALIB_NAME=@SALIB_NAME@
+
 # Control wether Hotspot runs Queens test after building
 TEST_IN_BUILD=@TEST_IN_BUILD@
+
+OS_VERSION_MAJOR:=@OS_VERSION_MAJOR@
+OS_VERSION_MINOR:=@OS_VERSION_MINOR@
+OS_VERSION_MICRO:=@OS_VERSION_MICRO@
+

@@ -93,7 +93,7 @@ AC_PATH_PROGS(MAKE, [gmake make])
 CHECK_NONEMPTY(MAKE)
 MAKE_VERSION=`$MAKE --version | head -n 1 | grep '3.8[[12346789]]'`
 if test "x$MAKE_VERSION" = x; then
-    AC_ERROR([You must use GNU make 3.81 or newer! Please put it in the path.])
+    AC_MSG_ERROR([You must use GNU make 3.81 or newer! Please put it in the path.])
 fi
 AC_PATH_PROG(MKDIR, mkdir)
 CHECK_NONEMPTY(MKDIR)
@@ -147,6 +147,8 @@ AC_PATH_PROG(EXPR, expr)
 CHECK_NONEMPTY(EXPR)
 AC_PATH_PROG(FILE, file)
 CHECK_NONEMPTY(FILE)
+AC_PATH_PROG(HG, hg)
+
 # Figure out the build and host system.
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
@@ -157,7 +159,7 @@ AC_ARG_WITH(data-model, [AS_HELP_STRING([--with-data-model],
 if test "x$with_data_model" != x && \
    test "x$with_data_model" != x32 && \
    test "x$with_data_model" != x64 ; then
-    AC_ERROR([The data model can only be 32 or 64!])
+    AC_MSG_ERROR([The data model can only be 32 or 64!])
 fi
 # Translate the standard cpu-vendor-kernel-os quadruplets into
 # the new HOST_.... and BUILD_... and the legacy names used by
@@ -221,7 +223,7 @@ AC_PATH_PROG(CYGPATH, cygpath)
 PATH_SEP=":"
 if test "x$BUILD_OS" = "xwindows"; then
     if test "x$CYGPATH" = x; then
-        AC_ERROR([Something is wrong with your cygwin installation since I cannot find cygpath.exe in your path])
+        AC_MSG_ERROR([Something is wrong with your cygwin installation since I cannot find cygpath.exe in your path])
     fi
     PATH_SEP=";"
 fi
@@ -239,12 +241,12 @@ fi
 #
 # OpenJDK or closed
 #
-AC_ARG_ENABLE([openjdk], [AS_HELP_STRING([--enable-openjdk],
+AC_ARG_ENABLE([openjdk-only], [AS_HELP_STRING([--enable-openjdk-only],
     [build OpenJDK regardless of the presence of closed repositories @<:@disabled@:>@])],,)
 
-if test "x$enable_openjdk" = "xyes"; then
+if test "x$enable_openjdk_only" = "xyes"; then
     OPENJDK=true
-elif test "x$enable_openjdk" = "xno"; then
+elif test "x$enable_openjdk_only" = "xno"; then
     OPENJDK=false
 elif test -d "$SRC_ROOT/jdk/src/closed"; then
     OPENJDK=false
@@ -298,7 +300,7 @@ elif test "x$with_jdk_variant" = xembedded; then
     MINIMIZE_RAM_USAGE="MINIMIZE_RAM_USAGE:=true"
     JDK_VARIANT="embedded"
 else
-    AC_ERROR([The available JDK variants are: normal, embedded])
+    AC_MSG_ERROR([The available JDK variants are: normal, embedded])
 fi
                               
 AC_SUBST(JAVASE_EMBEDDED)
@@ -370,7 +372,7 @@ JVM_VARIANTS=",$with_jvm_variants,"
 TEST_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,//' -e 's/client,//' -e 's/kernel,//' -e 's/zero,//' -e 's/zeroshark,//'`
 
 if test "x$TEST_VARIANTS" != "x,"; then
-   AC_ERROR([The available JVM variants are: server, client, kernel, zero, zeroshark])
+   AC_MSG_ERROR([The available JVM variants are: server, client, kernel, zero, zeroshark])
 fi   
 AC_MSG_RESULT([$with_jvm_variants])
 
@@ -382,12 +384,12 @@ JVM_VARIANT_ZEROSHARK=`$ECHO "$JVM_VARIANTS" | $SED -e '/,zeroshark,/!s/.*/false
 
 if test "x$JVM_VARIANT_CLIENT" = xtrue; then
     if test "x$HOST_CPU_BITS" = x64; then
-        AC_ERROR([You cannot build a client JVM for a 64-bit machine.])
+        AC_MSG_ERROR([You cannot build a client JVM for a 64-bit machine.])
     fi
 fi
 if test "x$JVM_VARIANT_KERNEL" = xtrue; then
     if test "x$HOST_CPU_BITS" = x64; then
-        AC_ERROR([You cannot build a kernel JVM for a 64-bit machine.])
+        AC_MSG_ERROR([You cannot build a kernel JVM for a 64-bit machine.])
     fi
 fi
 
@@ -426,7 +428,7 @@ AC_ARG_WITH([debug-level], [AS_HELP_STRING([--with-debug-level],
 	[
         DEBUG_LEVEL="${withval}"
         if test "x$ENABLE_DEBUG" = xyes; then
-			AC_ERROR([You cannot use both --enable-debug and --with-debug-level at the same time.])
+			AC_MSG_ERROR([You cannot use both --enable-debug and --with-debug-level at the same time.])
         fi
     ])
 AC_MSG_RESULT([$DEBUG_LEVEL])
@@ -434,7 +436,7 @@ AC_MSG_RESULT([$DEBUG_LEVEL])
 if test "x$DEBUG_LEVEL" != xrelease && \
    test "x$DEBUG_LEVEL" != xfastdebug && \
    test "x$DEBUG_LEVEL" != xslowdebug; then
-   AC_ERROR([Allowed debug levels are: release, fastdebug and slowdebug])
+   AC_MSG_ERROR([Allowed debug levels are: release, fastdebug and slowdebug])
 fi
 
 case $DEBUG_LEVEL in
@@ -520,14 +522,18 @@ AC_SUBST(COOKED_BUILD_NUMBER)
 if test "x$CURDIR" = "x$SRC_ROOT" || test "x$CURDIR" = "x$SRC_ROOT/common" || test "x$CURDIR" = "x$SRC_ROOT/common/autoconf" || test "x$CURDIR" = "x$SRC_ROOT/common/makefiles" ; then
     # We are running configure from the src root.
     # Create a default ./build/host-variant-debuglevel output root.
-    OUTPUT_ROOT="$SRC_ROOT/build/${HOST_OS}-${HOST_CPU}-${JDK_VARIANT}-${ANDED_JVM_VARIANTS}-${DEBUG_LEVEL}"
+    CONF_NAME="${HOST_OS}-${HOST_CPU}-${JDK_VARIANT}-${ANDED_JVM_VARIANTS}-${DEBUG_LEVEL}"
+    OUTPUT_ROOT="$SRC_ROOT/build/${CONF_NAME}"
     mkdir -p "$OUTPUT_ROOT"
     if test ! -d "$OUTPUT_ROOT"; then
-        AC_ERROR([Could not create build directory $OUTPUT_ROOT])
+        AC_MSG_ERROR([Could not create build directory $OUTPUT_ROOT])
     fi
 else
     # We are running configure from outside of the src dir.
     # Then use the current directory as output dir!
+    # If configuration is situated in normal build directory, just use the build
+    # directory name as configuration name, otherwise use the complete path.
+    CONF_NAME=`$ECHO $CURDIR | $SED -e "s!^${SRC_ROOT}/build/!!"`
     OUTPUT_ROOT="$CURDIR"
 fi
 
@@ -565,7 +571,7 @@ if test "x$BUILD_OS" = "xwindows"; then
 	if test "x$VARSBAT" = x || test ! -d "$VCPATH"; then
             AC_MSG_CHECKING([if we can find the VS installation])
             AC_MSG_RESULT([no])
-            AC_ERROR([Tried to find a VS installation using both $SEARCH_ROOT but failed. Please run "c:\\cygwin\\bin\\bash.exe -l" from a VS command prompt and then run configure/make from there.])
+            AC_MSG_ERROR([Tried to find a VS installation using both $SEARCH_ROOT but failed. Please run "c:\\cygwin\\bin\\bash.exe -l" from a VS command prompt and then run configure/make from there.])
         fi
         case "$LEGACY_HOST_CPU1" in
           i?86)
@@ -577,12 +583,12 @@ if test "x$BUILD_OS" = "xwindows"; then
         esac
         # Lets extract the variables that are set by vcvarsall.bat/vsvars32.bat/vsvars64.bat
         cd $OUTPUT_ROOT
-        $SRC_ROOT/common/bin/extractvcvars.sh "$VARSBAT" "$VARSBAT_ARCH"
+        bash $SRC_ROOT/common/bin/extractvcvars.sh "$VARSBAT" "$VARSBAT_ARCH"
 	cd $CURDIR
 	if test ! -s $OUTPUT_ROOT/localdevenv.sh || test ! -s $OUTPUT_ROOT/localdevenv.gmk; then
             AC_MSG_CHECKING([if we can extract the needed env variables])
             AC_MSG_RESULT([no])
-            AC_ERROR([Could not succesfully extract the env variables needed for the VS setup. Please run "c:\\cygwin\\bin\\bash.exe -l" from a VS command prompt and then run configure/make from there.])
+            AC_MSG_ERROR([Could not succesfully extract the env variables needed for the VS setup. Please run "c:\\cygwin\\bin\\bash.exe -l" from a VS command prompt and then run configure/make from there.])
         fi 
         # Now set all paths and other env variables. This will allow the rest of 
         # the configure script to find and run the compiler in the proper way.
@@ -592,7 +598,7 @@ if test "x$BUILD_OS" = "xwindows"; then
             AC_MSG_RESULT([$VCINSTALLDIR])
         else 
             AC_MSG_RESULT([no])
-            AC_ERROR([Could not find VS installation. Please install. If you are sure you have installed VS, then please run "c:\\cygwin\\bin\\bash.exe -l" from a VS command prompt and then run configure/make from there.])
+            AC_MSG_ERROR([Could not find VS installation. Please install. If you are sure you have installed VS, then please run "c:\\cygwin\\bin\\bash.exe -l" from a VS command prompt and then run configure/make from there.])
         fi
         CHECK_FOR_VCINSTALLDIR=no
 	SETUPDEVENV="include $OUTPUT_ROOT/localdevenv.gmk"
@@ -614,7 +620,7 @@ if test "x$BUILD_OS" = "xwindows"; then
         fi
 	if test "x$MSVCR100DLL" = x; then
            AC_MSG_RESULT([no])
-	   AC_ERROR([Could not find msvcr100.dll !])
+	   AC_MSG_ERROR([Could not find msvcr100.dll !])
         fi
         AC_MSG_RESULT([$MSVCR100DLL])
 	SPACESAFE(MSVCR100DLL,[the path to msvcr100.dll])
@@ -636,6 +642,7 @@ AC_CONFIG_FILES([$OUTPUT_ROOT/spec.gmk:$AUTOCONF_DIR/spec.gmk.in])
 AC_CONFIG_FILES([$OUTPUT_ROOT/Makefile:$AUTOCONF_DIR/Makefile.in])
 
 AC_SUBST(SPEC, $OUTPUT_ROOT/spec.gmk)
+AC_SUBST(CONF_NAME, $CONF_NAME)
 AC_SUBST(OUTPUT_ROOT, $OUTPUT_ROOT)
 
 # Where are the sources. Any of these can be overridden
@@ -783,13 +790,15 @@ ORG_CFLAGS="$CFLAGS"
 ORG_CXXFLAGS="$CXXFLAGS"
 ORG_OBJCFLAGS="$OBJCFLAGS"
 
+prepare_help_system
+
 # gcc is almost always present, but on Windows we
 # prefer cl.exe and on Solaris we prefer CC.
 # Thus test for them in this order.
 AC_PROG_CC([cl cc gcc])
 if test "x$CC" = x; then
     help_on_build_dependency devkit
-    AC_ERROR([Could not find a compiler. $HELP_MSG])
+    AC_MSG_ERROR([Could not find a compiler. $HELP_MSG])
 fi
 if test "x$CC" = xcc && test "x$BUILD_OS" = xmacosx; then
     # Do not use cc on MacOSX use gcc instead.
@@ -807,7 +816,7 @@ WHICHCMD(CXX)
 
 if test "x$CXX" = x || test "x$CC" = x; then
     help_on_build_dependency devkit
-    AC_ERROR([Could not find the needed compilers! $HELP_MSG ])
+    AC_MSG_ERROR([Could not find the needed compilers! $HELP_MSG ])
 fi
 
 if test "x$BUILD_OS" != xwindows; then
@@ -832,9 +841,10 @@ fi
 
 AC_CHECK_TOOL(LD, ld)
 WHICHCMD(LD)
-LDEXE="$LD"
-LDCXX="$LD"
-LDEXECXX="$LD"
+LD="$CC"
+LDEXE="$CC"
+LDCXX="$CXX"
+LDEXECXX="$CXX"
 # LDEXE is the linker to use, when creating executables.
 AC_SUBST(LDEXE)
 # Linking C++ libraries.
@@ -856,7 +866,7 @@ COMPILER_TYPE=CC
 AS_IF([test "x$BUILD_OS" = xwindows], [
     # For now, assume that we are always compiling using cl.exe. 
     CC_OUT_OPTION=-Fo
-    EXE_OUT_OPTION=-Fe
+    EXE_OUT_OPTION=-out:
     LD_OUT_OPTION=-out:
     AR_OUT_OPTION=-out:
     # On Windows, reject /usr/bin/link, which is a cygwin
@@ -866,10 +876,9 @@ AS_IF([test "x$BUILD_OS" = xwindows], [
     # the full path to the link.exe program.
     WHICHCMD_SPACESAFE([WINLD])
     LD="$WINLD"
-    # However creating executables can only be done with cl.exe. 
-    LDEXE="$CC"
+    LDEXE="$WINLD"
     LDCXX="$WINLD"
-    LDEXECXX="$CC"
+    LDEXECXX="$WINLD"
 
     AC_CHECK_PROG([MT], [mt], [mt],,, [/usr/bin/mt])
     WHICHCMD_SPACESAFE([MT])
@@ -877,7 +886,7 @@ AS_IF([test "x$BUILD_OS" = xwindows], [
     AC_CHECK_PROG([RC], [rc], [rc],,, [/usr/bin/rc])
     WHICHCMD_SPACESAFE([RC])
 
-    RC_FLAGS="/l 0x409 /r"
+    RC_FLAGS="-nologo /l 0x409 /r"
     AS_IF([test "x$VARIANT" = xOPT], [
         RC_FLAGS="$RC_FLAGS -d NDEBUG"
     ])
@@ -903,14 +912,13 @@ AS_IF([test "x$BUILD_OS" = xwindows], [
     WHICHCMD_SPACESAFE([DUMPBIN])
 
     COMPILER_TYPE=CL
-    CFLAGS="$CFLAGS -nologo"
-    LDFLAGS="$LDFLAGS -nologo -dll -opt:ref -incremental:no "
+    CCXXFLAGS="$CCXXFLAGS -nologo"
+    LDFLAGS="$LDFLAGS -nologo -opt:ref -incremental:no"
     if test "x$LEGACY_HOST_CPU1" = xi586; then 
         LDFLAGS="$LDFLAGS -safeseh"
     fi
-    if test "x$DEBUG_LEVEL" != xrelease; then
-        LDFLAGS="$LDFLAGS -debug"
-    fi
+    # TODO: make -debug optional "--disable-full-debug-symbols"
+    LDFLAGS="$LDFLAGS -debug"
 ])
 AC_SUBST(RC_FLAGS)
 AC_SUBST(COMPILER_TYPE)
@@ -933,7 +941,7 @@ fi
 AC_SUBST(AS)
 AC_SUBST(ASFLAGS)
 
-if test "x$HOST_CPU_BITS" = x32 && test "x$HOST_OS" = macosx; then
+if test "x$HOST_CPU_BITS" = x32 && test "x$HOST_OS" = xmacosx; then
     # On 32-bit MacOSX the OS requires C-entry points to be 16 byte aligned.
     # While waiting for a better solution, the current workaround is to use -mstackrealign.
     CFLAGS="$CFLAGS -mstackrealign"
@@ -944,7 +952,7 @@ if test "x$HOST_CPU_BITS" = x32 && test "x$HOST_OS" = macosx; then
                    ],
 	           [
 		        AC_MSG_RESULT([no])
-	                AC_ERROR([The selected compiler $CXX does not support -mstackrealign! Try to put another compiler in the path.])
+	                AC_MSG_ERROR([The selected compiler $CXX does not support -mstackrealign! Try to put another compiler in the path.])
 	           ])
 fi
 
@@ -979,7 +987,7 @@ if test "x$BUILD_OS" = xwindows; then
     if test ! -x $OUTPUT_ROOT/uncygdrive.exe; then 
         AC_MSG_RESULT([no])
         cat $OUTPUT_ROOT/uncygdrive1.log
-        AC_ERROR([Could not create $OUTPUT_ROOT/uncygdrive.exe])
+        AC_MSG_ERROR([Could not create $OUTPUT_ROOT/uncygdrive.exe])
     fi
     AC_MSG_RESULT([$UNCYGDRIVE])
     AC_MSG_CHECKING([if uncygdrive.exe works])
@@ -989,7 +997,7 @@ if test "x$BUILD_OS" = xwindows; then
     if test ! -x $OUTPUT_ROOT/uncygdrive2.exe; then 
         AC_MSG_RESULT([no])
         cat $OUTPUT_ROOT/uncygdrive2.log
-        AC_ERROR([Uncygdrive did not work!])
+        AC_MSG_ERROR([Uncygdrive did not work!])
     fi
     AC_MSG_RESULT([yes])
     rm -f $OUTPUT_ROOT/uncygdrive?.??? $OUTPUT_ROOT/uncygdrive.obj
@@ -1014,7 +1022,15 @@ AC_SUBST(BUILD_LOG_WRAPPER)
 # (The JVM can use 32 or 64 bit Java pointers but that decision
 # is made at runtime.)
 #
+AC_LANG_PUSH(C++)
+OLD_CXXFLAGS="$CXXFLAGS"
+if test "x$HOST_OS" = xsolaris && test "x$with_data_model" != x; then
+	CXXFLAGS="-m{$with_data_model} $CXXFLAGS"
+fi
 AC_CHECK_SIZEOF([int *], [1111])
+CXXFLAGS="$OLD_CXXFLAGS"
+AC_LANG_POP(C++)
+
 if test "x$ac_cv_sizeof_int_p" = x0; then 
     # The test failed, lets pick the assumed value.
     ARCH_DATA_MODEL=$HOST_CPU_BITS
@@ -1032,7 +1048,7 @@ AC_SUBST(LP64,$A_LP64)
 AC_SUBST(ARCH_DATA_MODEL)
 
 if test "x$ARCH_DATA_MODEL" != "x$HOST_CPU_BITS"; then
-    AC_ERROR([The tested number of bits in the host ($ARCH_DATA_MODEL) differs from the number of bits expected to be found in the host ($HOST_CPU_BITS)])
+    AC_MSG_ERROR([The tested number of bits in the host ($ARCH_DATA_MODEL) differs from the number of bits expected to be found in the host ($HOST_CPU_BITS)])
 fi
 
 ###############################################################################
@@ -1084,12 +1100,16 @@ if test "x$GCC" = xyes; then
     OBJ_SUFFIX='.o'
     EXE_SUFFIX=''
     SET_SHARED_LIBRARY_NAME='-Xlinker -soname=$1'
-    SET_SHARED_LIBRARY_MAPFILE='-Xlinker -version-script=$(JDK_TOPDIR)/$1'
+    SET_SHARED_LIBRARY_MAPFILE='-Xlinker -version-script=$1'
+    C_FLAG_REORDER=''
+    CXX_FLAG_REORDER=''
     SET_SHARED_LIBRARY_ORIGIN='-Xlinker -z -Xlinker origin -Xlinker -rpath -Xlinker \$$$$ORIGIN/$1'
     LD="$CC"
     LDEXE="$CC"
     LDCXX="$CXX"
     LDEXECXX="$CXX"
+    # TODO: for embedded set --strip-unneeded
+    POST_STRIP_CMD="$STRIP -g"
 
     # Linking is different on MacOSX
     if test "x$BUILD_OS" = xmacosx; then
@@ -1102,6 +1122,7 @@ if test "x$GCC" = xyes; then
         SET_SHARED_LIBRARY_NAME='-Xlinker -install_name -Xlinker @rpath/$1' 
         SET_SHARED_LIBRARY_MAPFILE=''
         SET_SHARED_LIBRARY_ORIGIN='-Xlinker -rpath -Xlinker @loader_path/.'
+        POST_STRIP_CMD="$STRIP -S"
     fi
 else
     if test "x$BUILD_OS" = xsolaris; then
@@ -1117,9 +1138,13 @@ else
         OBJ_SUFFIX='.o'
         EXE_SUFFIX=''
         SET_SHARED_LIBRARY_NAME=''
-        SET_SHARED_LIBRARY_MAPFILE='-M $(JDK_TOPDIR)/$1'
+        SET_SHARED_LIBRARY_MAPFILE='-M $1'
+	C_FLAG_REORDER='-xF'
+	CXX_FLAG_REORDER='-xF'
         SET_SHARED_LIBRARY_ORIGIN='-R \$$$$ORIGIN/$1'
         CFLAGS_JDKLIB_EXTRA='-xstrconst -D__solaris__'
+        POST_STRIP_CMD="$STRIP -x"
+        POST_MCS_CMD="$MCS -d -a \"JDK $FULL_VERSION\""
     fi
     if test "x$BUILD_OS" = xwindows; then
         # If it is not gcc, then assume it is the MS Visual Studio compiler
@@ -1149,7 +1174,11 @@ AC_SUBST(EXE_SUFFIX)
 AC_SUBST(SHARED_LIBRARY_FLAGS)
 AC_SUBST(SET_SHARED_LIBRARY_NAME)
 AC_SUBST(SET_SHARED_LIBRARY_MAPFILE)
+AC_SUBST(C_FLAG_REORDER)
+AC_SUBST(CXX_FLAG_REORDER)
 AC_SUBST(SET_SHARED_LIBRARY_ORIGIN)
+AC_SUBST(POST_STRIP_CMD)
+AC_SUBST(POST_MCS_CMD)
 
 # The (cross) compiler is now configured, we can now test capabilities
 # of the host platform.
@@ -1161,13 +1190,13 @@ AC_SUBST(SET_SHARED_LIBRARY_ORIGIN)
 AC_C_BIGENDIAN([ENDIAN="big"],[ENDIAN="little"],[ENDIAN="unknown"],[ENDIAN="universal"])
 
 if test "x$ENDIAN" = xuniversal; then
-    AC_ERROR([It seems like someone needs to decide how we are to deal with universal binaries on the MacOSX?])
+    AC_MSG_ERROR([It seems like someone needs to decide how we are to deal with universal binaries on the MacOSX?])
 fi
 if test "x$ENDIAN" = xunknown; then
     ENDIAN="$HOST_CPU_ENDIAN"
 fi
 if test "x$ENDIAN" != "x$HOST_CPU_ENDIAN"; then
-    AC_WARN([The tested endian in the host ($ENDIAN) differs from the endian expected to be found in the host ($HOST_CPU_ENDIAN)])
+    AC_MSG_WARN([The tested endian in the host ($ENDIAN) differs from the endian expected to be found in the host ($HOST_CPU_ENDIAN)])
     ENDIAN="$HOST_CPU_ENDIAN"
 fi
 AC_SUBST(ENDIAN)
@@ -1185,25 +1214,25 @@ if test "x$with_boot_jdk" != x; then
     BOOT_JDK_FOUND=yes
 fi
 if test "x$BOOT_JDK_FOUND" = xno; then
-    BDEPS_CHECK_MODULE(BOOT_JDK, bootjdk, xxx, [BOOT_JDK_FOUND=yes], [BOOT_JDK_FOUND=no])
+    BDEPS_CHECK_MODULE(BOOT_JDK, boot-jdk, xxx, [BOOT_JDK_FOUND=yes], [BOOT_JDK_FOUND=no])
 fi
 
 if test "x$BOOT_JDK_FOUND" = xno; then
     if test "x$JAVA_HOME" != x; then
         if test ! -d "$JAVA_HOME"; then
-            AC_ERROR([Your JAVA_HOME points to a non-existing directory!])
+            AC_MSG_ERROR([Your JAVA_HOME points to a non-existing directory!])
         fi
         # Aha, the user has set a JAVA_HOME
         # let us use that as the Boot JDK.
-        BOOT_JDK=$JAVA_HOME
+        BOOT_JDK="$JAVA_HOME"
         BOOT_JDK_FOUND=yes
         # To be on the safe side, lets check that it is a JDK.
-        if test -x $BOOT_JDK/bin/javac && test -x $BOOT_JDK/bin/java; then
-            JAVAC=$BOOT_JDK/bin/javac
-            JAVA=$BOOT_JDK/bin/java
+        if test -x "$BOOT_JDK/bin/javac" && test -x "$BOOT_JDK/bin/java"; then
+            JAVAC="$BOOT_JDK/bin/javac"
+            JAVA="$BOOT_JDK/bin/java"
             BOOT_JDK_FOUND=yes
         else
-            AC_ERROR([Your JAVA_HOME points to a JRE! The build needs a JDK! Please point JAVA_HOME to a JDK.])
+            AC_MSG_ERROR([Your JAVA_HOME points to a JRE! The build needs a JDK! Please point JAVA_HOME to a JDK. JAVA_HOME=[$]JAVA_HOME])
         fi            
     fi
 fi
@@ -1260,11 +1289,11 @@ if test "x$BOOT_JDK_FOUND" = xno; then
         fi
         if test "x$BOOT_JDK_FOUND" = xno; then
             help_on_build_dependency openjdk
-            AC_ERROR([Found a JRE, not not a JDK! Please remove the JRE from your path and put a JDK there instead. $HELP_MSG])
+            AC_MSG_ERROR([Found a JRE, not not a JDK! Please remove the JRE from your path and put a JDK there instead. $HELP_MSG])
         fi
     else
         help_on_build_dependency openjdk
-        AC_ERROR([Could not find a JDK. $HELP_MSG])
+        AC_MSG_ERROR([Could not find a JDK. $HELP_MSG])
     fi
 fi
 
@@ -1281,7 +1310,7 @@ if test ! -f $BOOT_RTJAR; then
     # On MacOSX it is called classes.jar
     BOOT_RTJAR=$BOOT_JDK/../Classes/classes.jar
     if test ! -f $BOOT_RTJAR; then
-        AC_ERROR([Cannot find the rt.jar or its equivalent!])
+        AC_MSG_ERROR([Cannot find the rt.jar or its equivalent!])
     fi
     # Remove the .. 
     BOOT_RTJAR="`cd ${BOOT_RTJAR%/*} && pwd`/${BOOT_RTJAR##*/}"
@@ -1303,7 +1332,7 @@ AC_MSG_RESULT([$BOOT_TOOLSJAR])
 AC_MSG_CHECKING([for java in Boot JDK])
 JAVA=$BOOT_JDK/bin/java
 if test ! -x $JAVA; then
-    AC_ERROR([Could not find a working java])
+    AC_MSG_ERROR([Could not find a working java])
 fi
 BOOT_JDK_VERSION=`$JAVA -version 2>&1 | head -n 1`
 AC_MSG_RESULT([yes $BOOT_JDK_VERSION])
@@ -1313,7 +1342,7 @@ AC_SUBST(JAVA)
 [FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`]
 if test "x$FOUND_VERSION_78" = x; then
     help_on_build_dependency openjdk
-    AC_ERROR([Your bootjdk must be version 7 or 8. $HELP_MSG])
+    AC_MSG_ERROR([Your boot-jdk must be version 7 or 8. $HELP_MSG])
 fi
 
 # When compiling code to be executed by the Boot JDK, force jdk7 compatibility.
@@ -1324,17 +1353,17 @@ AC_SUBST(BOOT_JDK_SOURCETARGET)
 AC_MSG_CHECKING([for javac in Boot JDK])
 JAVAC=$BOOT_JDK/bin/javac
 if test ! -x $JAVAC; then
-    AC_ERROR([Could not find a working javac])
+    AC_MSG_ERROR([Could not find a working javac])
 fi
 AC_MSG_RESULT(yes)
 AC_SUBST(JAVAC)
 AC_SUBST(JAVAC_FLAGS)
 
-# Use the javac tool from the Boot JDK.
+# Use the javah tool from the Boot JDK.
 AC_MSG_CHECKING([for javah in Boot JDK])
 JAVAH=$BOOT_JDK/bin/javah
 if test ! -x $JAVAH; then
-    AC_ERROR([Could not find a working javah])
+    AC_MSG_ERROR([Could not find a working javah])
 fi
 AC_MSG_RESULT(yes)
 AC_SUBST(JAVAH)
@@ -1343,7 +1372,7 @@ AC_SUBST(JAVAH)
 AC_MSG_CHECKING([for jar in Boot JDK])
 JAR=$BOOT_JDK/bin/jar
 if test ! -x $JAR; then
-    AC_ERROR([Could not find a working jar])
+    AC_MSG_ERROR([Could not find a working jar])
 fi
 AC_SUBST(JAR)
 AC_MSG_RESULT(yes)
@@ -1352,10 +1381,19 @@ AC_MSG_RESULT(yes)
 AC_MSG_CHECKING([for rmic in Boot JDK])
 RMIC=$BOOT_JDK/bin/rmic
 if test ! -x $RMIC; then
-    AC_ERROR([Could not find a working rmic])
+    AC_MSG_ERROR([Could not find a working rmic])
 fi
 AC_SUBST(RMIC)
 AC_MSG_RESULT(yes)
+
+# Use the native2ascii tool from the Boot JDK.
+AC_MSG_CHECKING([for native2ascii in Boot JDK])
+NATIVE2ASCII=$BOOT_JDK/bin/native2ascii
+if test ! -x $NATIVE2ASCII; then
+    AC_MSG_ERROR([Could not find a working native2ascii])
+fi
+AC_MSG_RESULT(yes)
+AC_SUBST(NATIVE2ASCII)
 
 ###############################################################################
 #
@@ -1382,7 +1420,7 @@ fi
 
 if test "x$with_add_source_root" != x; then
     if ! test -d $with_add_source_root; then
-       AC_ERROR([Trying to use a non-existant add-source-root $with_add_source_root])
+       AC_MSG_ERROR([Trying to use a non-existant add-source-root $with_add_source_root])
     fi
     CURDIR="$PWD"
     cd "$with_add_source_root"
@@ -1392,34 +1430,34 @@ if test "x$with_add_source_root" != x; then
     # If it does, then it is usually an error, prevent this.
     if test -f $with_add_source_root/langtools/makefiles/Makefile || \
        test -f $with_add_source_root/langtools/make/Makefile; then
-        AC_ERROR([Your add source root seems to contain a full langtools repo! An add source root should only contain additional sources.])
+        AC_MSG_ERROR([Your add source root seems to contain a full langtools repo! An add source root should only contain additional sources.])
     fi
     if test -f $with_add_source_root/corba/makefiles/Makefile || \
        test -f $with_add_source_root/corba/make/Makefile; then
-        AC_ERROR([Your add source root seems to contain a full corba repo! An add source root should only contain additional sources.])
+        AC_MSG_ERROR([Your add source root seems to contain a full corba repo! An add source root should only contain additional sources.])
     fi
     if test -f $with_add_source_root/jaxp/makefiles/Makefile || \
        test -f $with_add_source_root/jaxp/make/Makefile; then
-        AC_ERROR([Your add source root seems to contain a full jaxp repo! An add source root should only contain additional sources.])
+        AC_MSG_ERROR([Your add source root seems to contain a full jaxp repo! An add source root should only contain additional sources.])
     fi
     if test -f $with_add_source_root/jaxws/makefiles/Makefile || \
        test -f $with_add_source_root/jaxws/make/Makefile; then
-        AC_ERROR([Your add source root seems to contain a full jaxws repo! An add source root should only contain additional sources.])
+        AC_MSG_ERROR([Your add source root seems to contain a full jaxws repo! An add source root should only contain additional sources.])
     fi
     if test -f $with_add_source_root/hotspot/makefiles/Makefile || \
        test -f $with_add_source_root/hotspot/make/Makefile; then
-        AC_ERROR([Your add source root seems to contain a full hotspot repo! An add source root should only contain additional sources.])
+        AC_MSG_ERROR([Your add source root seems to contain a full hotspot repo! An add source root should only contain additional sources.])
     fi
     if test -f $with_add_source_root/jdk/makefiles/Makefile || \
        test -f $with_add_source_root/jdk/make/Makefile; then
-        AC_ERROR([Your add source root seems to contain a full JDK repo! An add source root should only contain additional sources.])
+        AC_MSG_ERROR([Your add source root seems to contain a full JDK repo! An add source root should only contain additional sources.])
     fi
 fi
 AC_SUBST(ADD_SRC_ROOT)
 
 if test "x$with_override_source_root" != x; then
     if ! test -d $with_override_source_root; then
-       AC_ERROR([Trying to use a non-existant override-source-root $with_override_source_root])
+       AC_MSG_ERROR([Trying to use a non-existant override-source-root $with_override_source_root])
     fi
     CURDIR="$PWD"
     cd "$with_override_source_root"
@@ -1427,27 +1465,27 @@ if test "x$with_override_source_root" != x; then
     cd "$CURDIR"
     if test -f $with_override_source_root/langtools/makefiles/Makefile || \
        test -f $with_override_source_root/langtools/make/Makefile; then
-        AC_ERROR([Your override source root seems to contain a full langtools repo! An override source root should only contain sources that override.])
+        AC_MSG_ERROR([Your override source root seems to contain a full langtools repo! An override source root should only contain sources that override.])
     fi
     if test -f $with_override_source_root/corba/makefiles/Makefile || \
        test -f $with_override_source_root/corba/make/Makefile; then
-        AC_ERROR([Your override source root seems to contain a full corba repo! An override source root should only contain sources that override.])
+        AC_MSG_ERROR([Your override source root seems to contain a full corba repo! An override source root should only contain sources that override.])
     fi
     if test -f $with_override_source_root/jaxp/makefiles/Makefile || \
        test -f $with_override_source_root/jaxp/make/Makefile; then
-        AC_ERROR([Your override source root seems to contain a full jaxp repo! An override source root should only contain sources that override.])
+        AC_MSG_ERROR([Your override source root seems to contain a full jaxp repo! An override source root should only contain sources that override.])
     fi
     if test -f $with_override_source_root/jaxws/makefiles/Makefile || \
        test -f $with_override_source_root/jaxws/make/Makefile; then
-        AC_ERROR([Your override source root seems to contain a full jaxws repo! An override source root should only contain sources that override.])
+        AC_MSG_ERROR([Your override source root seems to contain a full jaxws repo! An override source root should only contain sources that override.])
     fi
     if test -f $with_override_source_root/hotspot/makefiles/Makefile || \
        test -f $with_override_source_root/hotspot/make/Makefile; then
-        AC_ERROR([Your override source root seems to contain a full hotspot repo! An override source root should only contain sources that override.])
+        AC_MSG_ERROR([Your override source root seems to contain a full hotspot repo! An override source root should only contain sources that override.])
     fi
     if test -f $with_override_source_root/jdk/makefiles/Makefile || \
        test -f $with_override_source_root/jdk/make/Makefile; then
-        AC_ERROR([Your override source root seems to contain a full JDK repo! An override source root should only contain sources that override.])
+        AC_MSG_ERROR([Your override source root seems to contain a full JDK repo! An override source root should only contain sources that override.])
     fi
 fi
 AC_SUBST(OVERRIDE_SRC_ROOT)
@@ -1495,7 +1533,7 @@ if test "x$with_override_langtools" != x; then
     LANGTOOLS_TOPDIR="`pwd`"
     cd "$CURDIR"
     if ! test -f $LANGTOOLS_TOPDIR/makefiles/Makefile; then
-        AC_ERROR([You have to override langtools with a full langtools repo!])
+        AC_MSG_ERROR([You have to override langtools with a full langtools repo!])
     fi
     AC_MSG_CHECKING([if langtools should be overridden])
     AC_MSG_RESULT([yes with $LANGTOOLS_TOPDIR])
@@ -1506,7 +1544,7 @@ if test "x$with_override_corba" != x; then
     CORBA_TOPDIR="`pwd`"
     cd "$CURDIR"
     if ! test -f $CORBA_TOPDIR/makefiles/Makefile; then
-        AC_ERROR([You have to override corba with a full corba repo!])
+        AC_MSG_ERROR([You have to override corba with a full corba repo!])
     fi
     AC_MSG_CHECKING([if corba should be overridden])
     AC_MSG_RESULT([yes with $CORBA_TOPDIR])
@@ -1517,7 +1555,7 @@ if test "x$with_override_jaxp" != x; then
     JAXP_TOPDIR="`pwd`"
     cd "$CURDIR"
     if ! test -f $JAXP_TOPDIR/makefiles/Makefile; then
-        AC_ERROR([You have to override jaxp with a full jaxp repo!])
+        AC_MSG_ERROR([You have to override jaxp with a full jaxp repo!])
     fi
     AC_MSG_CHECKING([if jaxp should be overridden])
     AC_MSG_RESULT([yes with $JAXP_TOPDIR])
@@ -1528,7 +1566,7 @@ if test "x$with_override_jaxws" != x; then
     JAXWS_TOPDIR="`pwd`"
     cd "$CURDIR"
     if ! test -f $JAXWS_TOPDIR/makefiles/Makefile; then
-        AC_ERROR([You have to override jaxws with a full jaxws repo!])
+        AC_MSG_ERROR([You have to override jaxws with a full jaxws repo!])
     fi
     AC_MSG_CHECKING([if jaxws should be overridden])
     AC_MSG_RESULT([yes with $JAXWS_TOPDIR])
@@ -1540,7 +1578,7 @@ if test "x$with_override_hotspot" != x; then
     cd "$CURDIR"
     if ! test -f $HOTSPOT_TOPDIR/make/Makefile && \
        ! test -f $HOTSPOT_TOPDIR/makefiles/Makefile; then
-        AC_ERROR([You have to override hotspot with a full hotspot repo!])
+        AC_MSG_ERROR([You have to override hotspot with a full hotspot repo!])
     fi
     AC_MSG_CHECKING([if hotspot should be overridden])
     AC_MSG_RESULT([yes with $HOTSPOT_TOPDIR])
@@ -1551,7 +1589,7 @@ if test "x$with_override_jdk" != x; then
     JDK_TOPDIR="`pwd`"
     cd "$CURDIR"
     if ! test -f $JDK_TOPDIR/makefiles/Makefile; then
-        AC_ERROR([You have to override JDK with a full JDK repo!])
+        AC_MSG_ERROR([You have to override JDK with a full JDK repo!])
     fi
     AC_MSG_CHECKING([if JDK should be overridden])
     AC_MSG_RESULT([yes with $JDK_TOPDIR])
@@ -1605,7 +1643,7 @@ if test "x$with_server_java" != x; then
     SERVER_JAVA="$with_server_java"
     FOUND_VERSION=`$SERVER_JAVA -version 2>&1 | grep " version \""`
     if test "x$FOUND_VERSION" = x; then
-        AC_ERROR([Could not execute server java: $SERVER_JAVA])
+        AC_MSG_ERROR([Could not execute server java: $SERVER_JAVA])
     fi
 else
     SERVER_JAVA=""
@@ -1806,11 +1844,8 @@ AC_PATH_XTRA
 
 if test "x$no_x" = xyes && test "x$X11_NOT_NEEDED" != xyes; then 
     help_on_build_dependency x11
-    AC_ERROR([Could not find X11 libraries. $HELP_MSG])
+    AC_MSG_ERROR([Could not find X11 libraries. $HELP_MSG])
 fi
-
-AC_SUBST(X_CFLAGS)
-AC_SUBST(X_LIBS)
 
 # Some of the old makefiles require a setting of OPENWIN_HOME
 # Since the X11R6 directory has disappeared on later Linuxes,
@@ -1828,6 +1863,18 @@ if test "x$HOST_OS" = xsolaris; then
 fi
 AC_SUBST(OPENWIN_HOME)
 
+
+#
+# Weird Sol10 something check...TODO change to try compile
+#
+if test "x${HOST_OS}" = xsolaris; then
+  if test "`uname -r`" = "5.10"; then
+     if test "`${EGREP} -c XLinearGradient ${OPENWIN_HOME}/share/include/X11/extensions/Xrender.h`" = "0"; then
+     	X_CFLAGS="${X_CFLAGS} -DSOLARIS10_NO_XRENDER_STRUCTS"
+     fi
+  fi
+fi
+
 AC_LANG_PUSH(C)
 OLD_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS $X_CFLAGS"
@@ -1839,8 +1886,11 @@ AC_LANG_POP(C)
 
 if test "x$X11_A_OK" = xno && test "x$X11_NOT_NEEDED" != xyes; then 
     help_on_build_dependency x11
-    AC_ERROR([Could not find all X11 headers (shape.h Xrender.h XTest.h). $HELP_MSG])
+    AC_MSG_ERROR([Could not find all X11 headers (shape.h Xrender.h XTest.h). $HELP_MSG])
 fi
+
+AC_SUBST(X_CFLAGS)
+AC_SUBST(X_LIBS)
 
 ###############################################################################
 #
@@ -1855,7 +1905,7 @@ AC_ARG_WITH(cups-lib, [AS_HELP_STRING([--with-cups-lib],
 	[specify directory for the cups library])])
 
 if test "x$CUPS_NOT_NEEDED" = xyes; then
-	if test "x$with_cups" != x || test "x$with_cups-include" != x || test "x$with_cups-lib" != x; then
+	if test "x${with_cups}" != x || test "x${with_cups_include}" != x || test "x${with_cups_lib}" != x; then
 		AC_MSG_WARN([cups not used, so --with-cups is ignored])
 	fi
 	CUPS_CFLAGS=
@@ -1863,21 +1913,21 @@ if test "x$CUPS_NOT_NEEDED" = xyes; then
 else
 	CUPS_FOUND=no
 
-	if test "x$with_cups" = xno || test "x$with_cups-include" = xno || test "x$with_cups-lib" = xno; then
-	    AC_ERROR([It is not possible to disable the use of cups. Remove the --without-cups option.])
+	if test "x${with_cups}" = xno || test "x${with_cups_include}" = xno || test "x${with_cups_lib}" = xno; then
+	    AC_MSG_ERROR([It is not possible to disable the use of cups. Remove the --without-cups option.])
 	fi
 
-	if test "x$with_cups" != x; then
-	    CUPS_LIBS="-L$with_cups/lib -lcups"
-	    CUPS_CFLAGS="-I$with_cups/include"
+	if test "x${with_cups}" != x; then
+	    CUPS_LIBS="-L${with_cups}/lib -lcups"
+	    CUPS_CFLAGS="-I${with_cups}/include"
 	    CUPS_FOUND=yes
 	fi
-	if test "x$with_cups-include" != x; then
-	    CUPS_CFLAGS="-I$with_cups-include"
+	if test "x${with_cups_include}" != x; then
+	    CUPS_CFLAGS="-I${with_cups_include}"
 	    CUPS_FOUND=yes
 	fi
-	if test "x$with_cups-lib" != x; then
-	    CUPS_LIBS="-L$with_cups-lib -lcups"
+	if test "x${with_cups_lib}" != x; then
+	    CUPS_LIBS="-L${with_cups_lib} -lcups"
 	    CUPS_FOUND=yes
 	fi
 	if test "x$CUPS_FOUND" = xno; then
@@ -1910,7 +1960,7 @@ else
 	fi
 	if test "x$CUPS_FOUND" = xno; then 
 	    help_on_build_dependency cups
-	    AC_ERROR([Could not find cups! $HELP_MSG ])
+	    AC_MSG_ERROR([Could not find cups! $HELP_MSG ])
 	fi
 fi
 
@@ -1953,16 +2003,16 @@ else
    	    if test "x$FREETYPE2_FOUND" = xyes; then
 	        # Verify that the directories exist 
                 if ! test -d "$with_freetype/lib" || ! test -d "$with_freetype/include"; then
-		   AC_ERROR([Could not find the expected directories $with_freetype/lib and $with_freetype/include])
+		   AC_MSG_ERROR([Could not find the expected directories $with_freetype/lib and $with_freetype/include])
 		fi
 	        # List the contents of the lib.
 		FREETYPELIB=`ls $with_freetype/lib/libfreetype.so $with_freetype/lib/freetype.dll 2> /dev/null`
                 if test "x$FREETYPELIB" = x; then
-		   AC_ERROR([Could not find libfreetype.se nor freetype.dll in $with_freetype/lib])
+		   AC_MSG_ERROR([Could not find libfreetype.se nor freetype.dll in $with_freetype/lib])
 		fi
 	        # Check one h-file
                 if ! test -s "$with_freetype/include/ft2build.h"; then
-		   AC_ERROR([Could not find $with_freetype/include/ft2build.h])
+		   AC_MSG_ERROR([Could not find $with_freetype/include/ft2build.h])
 		fi
             fi
         fi
@@ -2010,7 +2060,7 @@ else
 	fi
 	if test "x$FREETYPE2_FOUND" = xno; then
 		help_on_build_dependency freetype2
-		AC_ERROR([Could not find freetype2! $HELP_MSG ])
+		AC_MSG_ERROR([Could not find freetype2! $HELP_MSG ])
 	fi    
 fi
 
@@ -2032,7 +2082,7 @@ AC_ARG_WITH(alsa-lib, [AS_HELP_STRING([--with-alsa-lib],
 	[specify directory for the alsa library])])
 
 if test "x$ALSA_NOT_NEEDED" = xyes; then
-	if test "x$with_alsa" != x || test "x$with_alsa-include" != x || test "x$with_alsa-lib" != x; then
+	if test "x${with_alsa}" != x || test "x${with_alsa_include}" != x || test "x${with_alsa_lib}" != x; then
 		AC_MSG_WARN([alsa not used, so --with-alsa is ignored])
 	fi
 	ALSA_CFLAGS=
@@ -2040,21 +2090,21 @@ if test "x$ALSA_NOT_NEEDED" = xyes; then
 else
 	ALSA_FOUND=no
 
-	if test "x$with_alsa" = xno || test "x$with_alsa-include" = xno || test "x$with_alsa-lib" = xno; then
-	    AC_ERROR([It is not possible to disable the use of alsa. Remove the --without-alsa option.])
+	if test "x${with_alsa}" = xno || test "x${with_alsa_include}" = xno || test "x${with_alsa_lib}" = xno; then
+	    AC_MSG_ERROR([It is not possible to disable the use of alsa. Remove the --without-alsa option.])
 	fi
 
-	if test "x$with_alsa" != x; then
-	    ALSA_LIBS="-L$with_alsa/lib -lalsa"
-	    ALSA_CFLAGS="-I$with_alsa/include"
+	if test "x${with_alsa}" != x; then
+	    ALSA_LIBS="-L${with_alsa}/lib -lalsa"
+	    ALSA_CFLAGS="-I${with_alsa}/include"
 	    ALSA_FOUND=yes
 	fi
-	if test "x$with_alsa-include" != x; then
-	    ALSA_CFLAGS="-I$with_alsa/include"
+	if test "x${with_alsa_include}" != x; then
+	    ALSA_CFLAGS="-I${with_alsa_include}"
 	    ALSA_FOUND=yes
 	fi
-	if test "x$with_alsa-lib" != x; then
-	    ALSA_LIBS="-L$with_alsa/lib -lalsa"
+	if test "x${with_alsa_lib}" != x; then
+	    ALSA_LIBS="-L${with_alsa_lib} -lalsa"
 	    ALSA_FOUND=yes
 	fi
 	if test "x$ALSA_FOUND" = xno; then
@@ -2073,7 +2123,7 @@ else
 	fi
 	if test "x$ALSA_FOUND" = xno; then 
 	    help_on_build_dependency alsa
-	    AC_ERROR([Could not find alsa! $HELP_MSG ])
+	    AC_MSG_ERROR([Could not find alsa! $HELP_MSG ])
 	fi    
 fi
 
@@ -2093,17 +2143,17 @@ AC_ARG_WITH(pulse-include, [AS_HELP_STRING([--with-pulse-include],
 AC_ARG_WITH(pulse-lib, [AS_HELP_STRING([--with-pulse-lib],
 	[specify directory for the pulseaudio library])])
 
-if test "x$with_pulse" != x; then
-    PULSE_LIBS="-L$with_pulse/lib -lfreetype"
-    PULSE_CFLAGS="-I$with_pulse/include"
+if test "x${with_pulse}" != x; then
+    PULSE_LIBS="-L${with_pulse}/lib -lfreetype"
+    PULSE_CFLAGS="-I${with_pulse}/include"
     PULSE_FOUND=yes
 fi
-if test "x$with_pulse-include" != x; then
-    PULSE_CFLAGS="-I$with_pulse/include"
+if test "x${with_pulse_include}" != x; then
+    PULSE_CFLAGS="-I${with_pulse_include}"
     PULSE_FOUND=yes
 fi
-if test "x$with_pulse-lib" != x; then
-    PULSE_LIBS="-L$with_pulse/lib -lfreetype"
+if test "x${with_pulse_lib}" != x; then
+    PULSE_LIBS="-L${with_pulse_lib} -lpulse"
     PULSE_FOUND=yes
 fi
 if test "x$PULSE_FOUND" = xno; then
@@ -2123,7 +2173,7 @@ fi
 
 if test "x$PULSE_FOUND" = xno && test "x$PULSE_NOT_NEEDED" != xyes; then 
     help_on_build_dependency pulse
-    AC_ERROR([Could not find pulse audio libraries. $HELP_MSG ])
+    AC_MSG_ERROR([Could not find pulse audio libraries. $HELP_MSG ])
 fi    
 
 AC_SUBST(PULSE_CFLAGS)
@@ -2170,9 +2220,9 @@ AC_SUBST(USE_EXTERNAL_LIBZ)
 # Check if altzone exists in time.h
 #
 
-AC_TRY_LINK([#include <time.h>], [return (int)altzone;],
-            has_altzone=yes,
-            has_altzone=no)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <time.h>], [return (int)altzone;])],
+            [has_altzone=yes],
+            [has_altzone=no])
 if test "x$has_altzone" = xyes; then
     AC_DEFINE([HAVE_ALTZONE], 1, [Define if you have the external 'altzone' variable in time.h])
 fi
@@ -2182,11 +2232,22 @@ fi
 # Check the maths library
 #
 
-AC_CHECK_LIB(m, main, [],
+AC_CHECK_LIB(m, cos, [],
              [ 
                   AC_MSG_NOTICE([Maths library was not found])
              ])
 AC_SUBST(LIBM)
+
+###############################################################################
+#
+# Check for libdl.so
+
+save_LIBS="$LIBS"
+LIBS=""
+AC_CHECK_LIB(dl,dlopen)
+LIBDL="$LIBS"
+AC_SUBST(LIBDL)
+LIBS="$save_LIBS"
 
 ###############################################################################
 #
@@ -2225,6 +2286,9 @@ AC_SUBST(DISABLE_NIMBUS)
 # Setup the opt flags for different compilers
 # and different operating systems.
 #
+C_FLAG_DEPS="-MMD -MF"
+CXX_FLAG_DEPS="-MMD -MF"
+
 case $COMPILER_TYPE in
   CC )
     D_FLAG="-g"
@@ -2234,9 +2298,9 @@ case $COMPILER_TYPE in
 	  macosx )
 	    # On MacOSX we optimize for size, something
 	    # we should do for all platforms?
-	    C_O_FLAG_HI="-O3"
+	    C_O_FLAG_HI="-Os"
 	    C_O_FLAG_NORM="-Os"
-	    C_O_FLAG_NONE="-O0"
+	    C_O_FLAG_NONE=""
 	    ;;
 	  *)
 	    C_O_FLAG_HI="-O3"
@@ -2249,19 +2313,61 @@ case $COMPILER_TYPE in
         CXX_O_FLAG_NONE="$C_O_FLAG_NONE"
         ;;
       ossc )
+        #
+        # Forte has different names for this with their C++ compiler...
+        #
+	CXX_FLAG_DEPS="-xMMD -xMF"
+
+# Extra options used with HIGHEST
+#
+# WARNING: Use of OPTIMIZATION_LEVEL=HIGHEST in your Makefile needs to be
+#          done with care, there are some assumptions below that need to
+#          be understood about the use of pointers, and IEEE behavior.
+#
+# Use non-standard floating point mode (not IEEE 754)
+CC_HIGHEST="$CC_HIGHEST -fns"
+# Do some simplification of floating point arithmetic (not IEEE 754)
+CC_HIGHEST="$CC_HIGHEST -fsimple"
+# Use single precision floating point with 'float'
+CC_HIGHEST="$CC_HIGHEST -fsingle"
+# Assume memory references via basic pointer types do not alias
+#   (Source with excessing pointer casting and data access with mixed 
+#    pointer types are not recommended)
+CC_HIGHEST="$CC_HIGHEST -xalias_level=basic"
+# Use intrinsic or inline versions for math/std functions
+#   (If you expect perfect errno behavior, do not use this)
+CC_HIGHEST="$CC_HIGHEST -xbuiltin=%all"
+# Loop data dependency optimizations (need -xO3 or higher)
+CC_HIGHEST="$CC_HIGHEST -xdepend"
+# Pointer parameters to functions do not overlap
+#   (Similar to -xalias_level=basic usage, but less obvious sometimes.
+#    If you pass in multiple pointers to the same data, do not use this)
+CC_HIGHEST="$CC_HIGHEST -xrestrict"
+# Inline some library routines
+#   (If you expect perfect errno behavior, do not use this)
+CC_HIGHEST="$CC_HIGHEST -xlibmil"
+# Use optimized math routines
+#   (If you expect perfect errno behavior, do not use this)
+#  Can cause undefined external on Solaris 8 X86 on __sincos, removing for now
+#CC_HIGHEST="$CC_HIGHEST -xlibmopt"
+
         case $LEGACY_HOST_CPU1 in
           i586)
+            C_O_FLAG_HIGHEST="-xO4 -Wu,-O4~yz $CC_HIGHEST -xchip=pentium"
             C_O_FLAG_HI="-xO4 -Wu,-O4~yz"
             C_O_FLAG_NORM="-xO2 -Wu,-O2~yz"
             C_O_FLAG_NONE=""
+            CXX_O_FLAG_HIGHEST="-xO4 -Qoption ube -O4~yz $CC_HIGHEST -xchip=pentium"
             CXX_O_FLAG_HI="-xO4 -Qoption ube -O4~yz"
             CXX_O_FLAG_NORM="-xO2 -Qoption ube -O2~yz"
             CXX_O_FLAG_NONE=""
             ;;
           sparc)
+            C_O_FLAG_HIGHEST="-xO4 -Wc,-Qrm-s -Wc,-Qiselect-T0 $CC_HIGHEST -xprefetch=auto,explicit -xchip=ultra"
             C_O_FLAG_HI="-xO4 -Wc,-Qrm-s -Wc,-Qiselect-T0"
             C_O_FLAG_NORM="-xO2 -Wc,-Qrm-s -Wc,-Qiselect-T0"
             C_O_FLAG_NONE=""
+            CXX_O_FLAG_HIGHEST="-xO4 -Qoption cg -Qrm-s -Qoption cg -Qiselect-T0 $CC_HIGHEST -xprefetch=auto,explicit -xchip=ultra"
             CXX_O_FLAG_HI="-xO4 -Qoption cg -Qrm-s -Qoption cg -Qiselect-T0"
             CXX_O_FLAG_NORM="-xO2 -Qoption cg -Qrm-s -Qoption cg -Qiselect-T0"
             CXX_O_FLAG_NONE=""
@@ -2280,12 +2386,24 @@ case $COMPILER_TYPE in
     ;;
 esac
 
+if test -z "$C_O_FLAG_HIGHEST"; then
+   C_O_FLAG_HIGHEST="$C_O_FLAG_HI"
+fi
+
+if test -z "$CXX_O_FLAG_HIGHEST"; then
+   CXX_O_FLAG_HIGHEST="$CXX_O_FLAG_HI"
+fi
+
+AC_SUBST(C_O_FLAG_HIGHEST)
 AC_SUBST(C_O_FLAG_HI)
 AC_SUBST(C_O_FLAG_NORM)
 AC_SUBST(C_O_FLAG_NONE)
+AC_SUBST(CXX_O_FLAG_HIGHEST)
 AC_SUBST(CXX_O_FLAG_HI)
 AC_SUBST(CXX_O_FLAG_NORM)
 AC_SUBST(CXX_O_FLAG_NONE)
+AC_SUBST(C_FLAG_DEPS)
+AC_SUBST(CXX_FLAG_DEPS)
 
 ###############################################################################
 #
@@ -2403,16 +2521,17 @@ AC_SUBST(IMAGES_MAKE_ARGS)
 #
 case $COMPILER_NAME in
       gcc )
-      	  CCXXFLAGS_JDK="$CCXXFLAGS_JDK -W -Wall -Wno-unused -Wno-parentheses -pipe -fno-omit-frame-pointer \
+      	  CCXXFLAGS_JDK="$CCXXFLAGS $CCXXFLAGS_JDK -W -Wall -Wno-unused -Wno-parentheses \
+                          -pipe -fno-omit-frame-pointer \
                           -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
           CFLAGS_JDK="$CFLAGS_JDK -fno-strict-aliasing"
           ;;
       ossc )
-      	  CFLAGS_JDK="$CFLAGS_JDK -xc99=%none -xCC -errshort=tags -Xa REQUIRED -v -mt -norunpath -xnolib"
-      	  CXXFLAGS_JDK="$CXXFLAGS_JDK -errtags=yes +w -mt REQUIRED -features=no%except -DCC_NOEX"
+      	  CFLAGS_JDK="$CFLAGS_JDK -xc99=%none -xCC -errshort=tags -Xa -v -mt -norunpath -xnolib"
+      	  CXXFLAGS_JDK="$CXXFLAGS_JDK -errtags=yes +w -mt -features=no%except -DCC_NOEX"
           ;;
       cl )
-          CCXXFLAGS_JDK="$CCXXFLAGS_JDK -Zi -MD -Zc:wchar_t- -W3 -wd4800 \
+          CCXXFLAGS_JDK="$CCXXFLAGS $CCXXFLAGS_JDK -Zi -MD -Zc:wchar_t- -W3 -wd4800 \
                -D_STATIC_CPPLIB -D_DISABLE_DEPRECATE_STATIC_CPPLIB -DWIN32_LEAN_AND_MEAN \
 	       -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE \
 	       -DWIN32 -DIAL"
@@ -2491,14 +2610,14 @@ CXXFLAGS_JDKEXE="$CCXXFLAGS_JDK $CXXFLAGS_JDK"
 #
 # Thus we offer the compiler to find libjvm.so first in server then in client. It works. Ugh.
 if test "x$COMPILER_TYPE" = xCL; then
-    LDFLAGS_JDKLIB="$LDFLAGS -libpath:${JDK_OUTPUTDIR}/lib jvm.lib java.lib"
+    LDFLAGS_JDKLIB="$LDFLAGS -dll -libpath:${JDK_OUTPUTDIR}/lib -libpath:${JDK_OUTPUTDIR}/objs"
     LDFLAGS_JDKLIB_SUFFIX=""
-    if test "x$HOST_CPU_BITS" = "x64"; then
-        LDFLAGS_JDKEXE="$CFLAGS ${JDK_OUTPUTDIR}/tmp/java/jli/obj64/jli.lib"
+    if test "$HOST_CPU_BITS" == "64"; then
+        LDFLAGS_STACK_SIZE=1048576
     else
-        LDFLAGS_JDKEXE="$CFLAGS ${JDK_OUTPUTDIR}/tmp/java/jli/obj/jli.lib"
+        LDFLAGS_STACK_SIZE=327680
     fi
-    LDFLAGS_JDKEXE_SUFFIX=""
+    LDFLAGS_JDKEXE="$LDFLAGS /STACK:$LDFLAGS_STACK_SIZE"
 else
     # If this is a --hash-style=gnu system, use --hash-style=both, why?
     HAS_GNU_HASH=`$CC -dumpspecs 2>/dev/null | $GREP 'hash-style=gnu'`
@@ -2513,9 +2632,11 @@ else
         fi
     fi
 
-    LDFLAGS_JDKLIB="$LDFLAGS $SHARED_LIBRARY_FLAGS -L${JDK_OUTPUTDIR}/lib/${LIBARCHDIR}server \
+    LDFLAGS_JDKLIB="$LDFLAGS $SHARED_LIBRARY_FLAGS \
+                    -L${JDK_OUTPUTDIR}/objs \
+                    -L${JDK_OUTPUTDIR}/lib/${LIBARCHDIR}server \
                     -L${JDK_OUTPUTDIR}/lib/${LIBARCHDIR}client \
-  	            -L${JDK_OUTPUTDIR}/lib/${LIBARCHDIR}" 
+  	            -L${JDK_OUTPUTDIR}/lib/${LIBARCHDIR}"
     LDFLAGS_JDKLIB_SUFFIX="-ljvm -ljava"
     if test "x$COMPILER_NAME" = xossc; then
         LDFLAGS_JDKLIB_SUFFIX="$LDFLAGS_JDKLIB_SUFFIX -lc"
@@ -2523,8 +2644,10 @@ else
 
     # Only the jli library is explicitly linked when the launchers are built.
     # The libjvm is then dynamically loaded/linked by the launcher.
-    LDFLAGS_JDKEXE="$LDFLAGS -L${JDK_OUTPUTDIR}/lib/${LIBARCHDIR}jli"
-    LDFLAGS_JDKEXE_SUFFIX="-ljli"
+    if test "x$HOST_OS" != "xmacosx"; then
+       LDFLAGS_JDKEXE="$LDFLAGS -L${JDK_OUTPUTDIR}/lib/${LIBARCHDIR}jli"
+       LDFLAGS_JDKEXE_SUFFIX="-ljli"
+    fi
 fi
 
                 
@@ -2557,9 +2680,9 @@ if test "x$HOST_OS" = xlinux; then
     AC_LANG_PUSH(C++)
     OLD_CXXFLAGS="$CXXFLAGS"
     CXXFLAGS="$CXXFLAGS -lstdc++"
-    AC_TRY_LINK([], [return 0;],
-            has_dynamic_libstdcxx=yes,
-            has_dynamic_libstdcxx=no)
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([], [return 0;])],
+            [has_dynamic_libstdcxx=yes],
+            [has_dynamic_libstdcxx=no])
     CXXFLAGS="$OLD_CXXFLAGS"
     AC_LANG_POP(C++)
     AC_MSG_RESULT([$has_dynamic_libstdcxx])
@@ -2572,16 +2695,16 @@ if test "x$HOST_OS" = xlinux; then
     OLD_CXX="$CXX"
     LIBS="$STATIC_STDCXX_FLAGS"
     CXX="$CC"                       
-    AC_TRY_LINK([], [return 0;],
-            has_static_libstdcxx=yes,
-            has_static_libstdcxx=no)
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([], [return 0;])],
+            [has_static_libstdcxx=yes],
+            [has_static_libstdcxx=no])
     LIBS="$OLD_LIBS"
     CXX="$OLD_CXX"
     AC_LANG_POP(C++)
     AC_MSG_RESULT([$has_static_libstdcxx])
 
     if test "x$has_static_libcxx" = xno && test "x$has_dynamic_libcxx" = xno; then
-        AC_ERROR([I cannot link to stdc++! Neither dynamically nor statically.])
+        AC_MSG_ERROR([I cannot link to stdc++! Neither dynamically nor statically.])
     fi
 
     if test "x$enable_static_link_stdc__" = xyes && test "x$has_static_libstdcxx" = xno; then
@@ -2611,16 +2734,38 @@ fi
 # Could someone enlighten this configure script with a comment about libCrun?
 # The LEGACY_HOST_CPU3 is the setting for ISA_DIR.
 #
-if test "x$HOST_OS" = xsolaris; then
-    LIBCXX="$LIBCXX /usr/lib${LEGACY_HOST_CPU3}/libCrun.so.1"
+if test "x$HOST_OS" = xsolaris && test "x$LIBCXX" = x; then
+    LIBCXX="/usr/lib${LEGACY_HOST_CPU3}/libCrun.so.1"
+fi
+
+# TODO better (platform agnostic) test
+if test "x$HOST_OS" = xmacosx && test "x$LIBCXX" = x && test "x$GCC" = xyes; then
+    LIBCXX="-lstdc++"
 fi
 
 AC_SUBST(LIBCXX)
 
 ###############################################################################
+
+OS_VERSION="`uname -r | ${SED} 's!\.! !g' | ${SED} 's!-! !g'`"
+OS_VERSION_MAJOR="`${ECHO} ${OS_VERSION} | ${CUT} -f 1 -d ' '`"
+OS_VERSION_MINOR="`${ECHO} ${OS_VERSION} | ${CUT} -f 2 -d ' '`"
+OS_VERSION_MICRO="`${ECHO} ${OS_VERSION} | ${CUT} -f 3 -d ' '`"
+AC_SUBST(OS_VERSION_MAJOR)
+AC_SUBST(OS_VERSION_MINOR)
+AC_SUBST(OS_VERSION_MICRO)
+
+###############################################################################
 #
 # Misc
 #
+
+# The name of the Service Agent jar.
+SALIB_NAME="${LIBRARY_PREFIX}saproc${SHARED_LIBRARY_SUFFIX}"
+if test "x$HOST_OS" = "xwindows"; then
+    SALIB_NAME="${LIBRARY_PREFIX}sawindbg${SHARED_LIBRARY_SUFFIX}"
+fi
+AC_SUBST(SALIB_NAME)
 
 # Control wether Hotspot runs Queens test after build.
 AC_ARG_ENABLE([hotspot-test-in-build], [AS_HELP_STRING([--enable-hotspot-test-in-build],
@@ -2635,17 +2780,99 @@ AC_SUBST(TEST_IN_BUILD)
 
 ###############################################################################
 #
-# A helpful message at the end of the configure run.
+# Choose cacerts source file
 #
-if test "x$CCACHE_FOUND" = x && test "x$GCC" = xyes; then
-    help_on_build_dependency ccache
-    
-    printf "\nTip of the day:\nYou should really install ccache version 3.1.4 or newer.\n"
-    printf "It gives a tremendous speedup for C++ recompilations with precompiled headers!\n"
-fi    
+AC_ARG_WITH(cacerts-file, [AS_HELP_STRING([--with-cacerts-file],
+    [specify alternative cacerts file])])
+if test "x$with_cacerts_file" != x; then
+    CACERTS_FILE=$with_cacerts_file
+else
+    if test "x$OPENJDK" = "xtrue"; then
+        CACERTS_FILE=${SRC_ROOT}/jdk/src/share/lib/security/cacerts
+    else
+        CACERTS_FILE=${SRC_ROOT}/jdk/src/closed/share/lib/security/cacerts.internal
+    fi
+fi
+AC_SUBST(CACERTS_FILE)
 
-if test "x$CCACHE_FOUND" != x && test "x$HAS_GOOD_CCACHE" = x; then
-    printf "You have a ccache installed, but it is a version prior to 3.1.4. Try upgrading.\n"
+# Check if build directory is on local disk.
+# return 0 if it is on local disk, non-0 if on remote disk or failure
+function is_directory_on_local_disk {
+	# df -l lists only local disks; if the given directory is not found then
+	# a non-zero exit code is given
+	$DF -l $1 > /dev/null 2>&1
+}
+
+AC_MSG_CHECKING([if build directory is on local disk])
+if is_directory_on_local_disk $OUTPUT_ROOT; then
+	OUTPUT_DIR_IS_LOCAL="yes"
+else
+	OUTPUT_DIR_IS_LOCAL="no"
+fi
+AC_MSG_RESULT($OUTPUT_DIR_IS_LOCAL)
+
+# We're messing a bit with internal autoconf variables to put the config.status in the
+# output directory instead of the current directory.
+CONFIG_STATUS=$OUTPUT_ROOT/config.status
+
+# Now create the actual output files, after this, the main work of configure is done
+AC_OUTPUT
+
+# Finally output some useful information to the user
+
+if test "x$CCACHE_FOUND" != x; then
+	if  test "x$HAS_GOOD_CCACHE" = x; then
+		CCACHE_STATUS="installed, but disabled (version older than 3.1.4)"
+		CCACHE_HELP_MSG="You have ccache installed, but it is a version prior to 3.1.4. Try upgrading."
+	else
+		CCACHE_STATUS="installed and in use"
+	fi
+else
+	if test "x$GCC" = xyes; then
+		CCACHE_STATUS="not installed (consider installing)"
+		CCACHE_HELP_MSG="You do not have ccache installed. Try installing it."
+	else
+		CCACHE_STATUS="not available for your system"
+	fi
 fi
 
-AC_OUTPUT
+printf "\n"
+printf "====================================================\n"
+printf "A new configuration has been successfully created in\n"
+printf "$OUTPUT_ROOT\n"
+if test "x$CONFIGURE_COMMAND_LINE" != x; then
+	printf "using configure arguments '$CONFIGURE_COMMAND_LINE'.\n"
+else
+	printf "using default settings.\n"
+fi
+
+printf "\n"
+printf "Configuration summary:\n"
+printf "* Debug level:  $DEBUG_LEVEL\n"
+printf "* JDK variant:  $JDK_VARIANT\n"
+printf "* JVM variants: $with_jvm_variants\n"
+printf "* Host info:    OS: $HOST_OS, CPU architecture: $HOST_CPU_ARCH, address length: $HOST_CPU_BITS\n"
+printf "* Boot JDK:     $BOOT_JDK\n"
+
+printf "\n"
+printf "Build performance summary:\n"
+printf "* Cores to use:  $NUM_CORES\n"
+printf "* Memory limit:  $MEMORY_SIZE MB\n"
+printf "* ccache status: $CCACHE_STATUS\n"
+
+if test "x$OUTPUT_DIR_IS_LOCAL" != "xyes"; then
+	printf "\n"
+	printf "WARNING: Your build output directory is not on a local disk.\n"
+	printf "This will severely degrade build performance!\n"
+	printf "It is recommended that you create an output directory on a local disk,\n"
+	printf "and run the configure script again from that directory.\n"
+fi
+
+if test "x$CCACHE_HELP_MSG" != x; then
+	printf "\n"
+	printf "Build performance tip: ccache gives a tremendous speedup for C++ recompilations.\n"
+	printf "$CCACHE_HELP_MSG\n"
+
+    help_on_build_dependency ccache
+    printf "$HELP_MSG\n"
+fi
