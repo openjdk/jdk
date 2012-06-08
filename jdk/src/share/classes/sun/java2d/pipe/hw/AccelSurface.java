@@ -28,9 +28,13 @@ package sun.java2d.pipe.hw;
 import java.awt.Rectangle;
 import sun.java2d.Surface;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * Abstraction for a hardware accelerated surface.
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public interface AccelSurface extends BufferedContextProvider, Surface {
     /**
      * Undefined

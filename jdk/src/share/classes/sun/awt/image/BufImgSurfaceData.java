@@ -45,6 +45,10 @@ import sun.java2d.loops.SurfaceType;
 import sun.java2d.loops.CompositeType;
 import sun.java2d.loops.RenderLoops;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class BufImgSurfaceData extends SurfaceData {
     BufferedImage bufImg;
     private BufferedImageGraphicsConfig graphicsConfig;

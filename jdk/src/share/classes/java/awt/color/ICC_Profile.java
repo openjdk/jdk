@@ -58,6 +58,7 @@ import java.util.StringTokenizer;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
+import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * A representation of color profile data for device independent and
@@ -89,6 +90,8 @@ import java.security.PrivilegedAction;
  */
 
 
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class ICC_Profile implements Serializable {
 
     private static final long serialVersionUID = -3938515861990936766L;

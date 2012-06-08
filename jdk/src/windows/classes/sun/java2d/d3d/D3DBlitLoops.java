@@ -32,6 +32,7 @@ import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.lang.ref.WeakReference;
+import javax.tools.annotation.GenerateNativeHeader;
 import sun.java2d.ScreenUpdateManager;
 import sun.java2d.SurfaceData;
 import sun.java2d.loops.Blit;
@@ -47,6 +48,8 @@ import sun.java2d.pipe.RenderQueue;
 import static sun.java2d.pipe.BufferedOpCodes.*;
 import sun.java2d.windows.GDIWindowSurfaceData;
 
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 class D3DBlitLoops {
 
     static void register() {

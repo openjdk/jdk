@@ -32,6 +32,8 @@ import sun.java2d.pipe.hw.ContextCapabilities;
 import static sun.java2d.pipe.BufferedOpCodes.*;
 import static sun.java2d.pipe.hw.ContextCapabilities.*;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * Note that the RenderQueue lock must be acquired before calling any of
  * the methods in this class.
@@ -153,6 +155,8 @@ public class OGLContext extends BufferedContext {
         rq.flushNow();
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     static class OGLContextCaps extends ContextCapabilities {
         /**
          * Indicates the presence of the GL_EXT_framebuffer_object extension.
