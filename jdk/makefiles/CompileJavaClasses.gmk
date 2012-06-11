@@ -297,8 +297,8 @@ JDK_BASE_HEADER_CLASSES:=java.lang.Integer \
 JDK_BASE_HEADER_JAVA_FILES:=$(patsubst %,$(JDK_TOPDIR)/src/share/classes/%.java,\
 				$(subst .,/,$(JDK_BASE_HEADER_CLASSES)))
 
-ifeq ($(TARGET_OS),windows)
-    JDK_BASE_HEADER_CLASSES_WINDOWS:=sun/nio/ch/PollArrayWrapper
+ifeq ($(PLATFORM),windows)
+    JDK_BASE_HEADER_CLASSES_WINDOWS:=sun.nio.ch.PollArrayWrapper
     JDK_BASE_HEADER_CLASSES+=$(JDK_BASE_HEADER_CLASSES_WINDOWS)
     JDK_BASE_HEADER_JAVA_FILES+=$(patsubst %,$(JDK_TOPDIR)/src/windows/classes/%.java,\
 				$(subst .,/,$(JDK_BASE_HEADER_CLASSES_WINDOWS)))
