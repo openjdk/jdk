@@ -1242,6 +1242,36 @@ void LIRGenerator::do_Reference_get(Intrinsic* x) {
               NULL   /* info */);
 }
 
+// Example: clazz.isInstance(object)
+void LIRGenerator::do_isInstance(Intrinsic* x) {
+  assert(x->number_of_arguments() == 2, "wrong type");
+
+  // TODO could try to substitute this node with an equivalent InstanceOf
+  // if clazz is known to be a constant Class. This will pick up newly found
+  // constants after HIR construction. I'll leave this to a future change.
+
+  // as a first cut, make a simple leaf call to runtime to stay platform independent.
+  // could follow the aastore example in a future change.
+
+  LIRItem clazz(x->argument_at(0), this);
+  LIRItem object(x->argument_at(1), this);
+  clazz.load_item();
+  object.load_item();
+  LIR_Opr result = rlock_result(x);
+
+  // need to perform null check on clazz
+  if (x->needs_null_check()) {
+    CodeEmitInfo* info = state_for(x);
+    __ null_check(clazz.result(), info);
+  }
+
+  LIR_Opr call_result = call_runtime(clazz.value(), object.value(),
+                                     CAST_FROM_FN_PTR(address, Runtime1::is_instance_of),
+                                     x->type(),
+                                     NULL); // NULL CodeEmitInfo results in a leaf call
+  __ move(call_result, result);
+}
+
 // Example: object.getClass ()
 void LIRGenerator::do_getClass(Intrinsic* x) {
   assert(x->number_of_arguments() == 1, "wrong type");
@@ -2951,6 +2981,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     break;
 
   case vmIntrinsics::_Object_init:    do_RegisterFinalizer(x); break;
+  case vmIntrinsics::_isInstance:     do_isInstance(x);    break;
   case vmIntrinsics::_getClass:       do_getClass(x);      break;
   case vmIntrinsics::_currentThread:  do_currentThread(x); break;
 
