@@ -5555,8 +5555,9 @@ instruct bytes_reverse_long(eRegL dst) %{
   ins_pipe( ialu_reg_reg);
 %}
 
-instruct bytes_reverse_unsigned_short(eRegI dst) %{
+instruct bytes_reverse_unsigned_short(eRegI dst, eFlagsReg cr) %{
   match(Set dst (ReverseBytesUS dst));
+  effect(KILL cr);
 
   format %{ "BSWAP  $dst\n\t" 
             "SHR    $dst,16\n\t" %}
@@ -5567,8 +5568,9 @@ instruct bytes_reverse_unsigned_short(eRegI dst) %{
   ins_pipe( ialu_reg );
 %}
 
-instruct bytes_reverse_short(eRegI dst) %{
+instruct bytes_reverse_short(eRegI dst, eFlagsReg cr) %{
   match(Set dst (ReverseBytesS dst));
+  effect(KILL cr);
 
   format %{ "BSWAP  $dst\n\t" 
             "SAR    $dst,16\n\t" %}
@@ -5729,9 +5731,10 @@ instruct countTrailingZerosL(eRegI dst, eRegL src, eFlagsReg cr) %{
 
 //---------- Population Count Instructions -------------------------------------
 
-instruct popCountI(eRegI dst, eRegI src) %{
+instruct popCountI(eRegI dst, eRegI src, eFlagsReg cr) %{
   predicate(UsePopCountInstruction);
   match(Set dst (PopCountI src));
+  effect(KILL cr);
 
   format %{ "POPCNT $dst, $src" %}
   ins_encode %{
@@ -5740,9 +5743,10 @@ instruct popCountI(eRegI dst, eRegI src) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct popCountI_mem(eRegI dst, memory mem) %{
+instruct popCountI_mem(eRegI dst, memory mem, eFlagsReg cr) %{
   predicate(UsePopCountInstruction);
   match(Set dst (PopCountI (LoadI mem)));
+  effect(KILL cr);
 
   format %{ "POPCNT $dst, $mem" %}
   ins_encode %{
