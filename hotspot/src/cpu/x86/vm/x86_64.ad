@@ -6417,14 +6417,14 @@ instruct bytes_reverse_long(rRegL dst) %{
   match(Set dst (ReverseBytesL dst));
 
   format %{ "bswapq  $dst" %}
-
   opcode(0x0F, 0xC8); /* Opcode 0F /C8 */
   ins_encode( REX_reg_wide(dst), OpcP, opc2_reg(dst) );
   ins_pipe( ialu_reg);
 %}
 
-instruct bytes_reverse_unsigned_short(rRegI dst) %{
+instruct bytes_reverse_unsigned_short(rRegI dst, rFlagsReg cr) %{
   match(Set dst (ReverseBytesUS dst));
+  effect(KILL cr);
 
   format %{ "bswapl  $dst\n\t"
             "shrl    $dst,16\n\t" %}
@@ -6435,8 +6435,9 @@ instruct bytes_reverse_unsigned_short(rRegI dst) %{
   ins_pipe( ialu_reg );
 %}
 
-instruct bytes_reverse_short(rRegI dst) %{
+instruct bytes_reverse_short(rRegI dst, rFlagsReg cr) %{
   match(Set dst (ReverseBytesS dst));
+  effect(KILL cr);
 
   format %{ "bswapl  $dst\n\t"
             "sar     $dst,16\n\t" %}
@@ -6564,9 +6565,10 @@ instruct countTrailingZerosL(rRegI dst, rRegL src, rFlagsReg cr) %{
 
 //---------- Population Count Instructions -------------------------------------
 
-instruct popCountI(rRegI dst, rRegI src) %{
+instruct popCountI(rRegI dst, rRegI src, rFlagsReg cr) %{
   predicate(UsePopCountInstruction);
   match(Set dst (PopCountI src));
+  effect(KILL cr);
 
   format %{ "popcnt  $dst, $src" %}
   ins_encode %{
@@ -6575,9 +6577,10 @@ instruct popCountI(rRegI dst, rRegI src) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct popCountI_mem(rRegI dst, memory mem) %{
+instruct popCountI_mem(rRegI dst, memory mem, rFlagsReg cr) %{
   predicate(UsePopCountInstruction);
   match(Set dst (PopCountI (LoadI mem)));
+  effect(KILL cr);
 
   format %{ "popcnt  $dst, $mem" %}
   ins_encode %{
@@ -6587,9 +6590,10 @@ instruct popCountI_mem(rRegI dst, memory mem) %{
 %}
 
 // Note: Long.bitCount(long) returns an int.
-instruct popCountL(rRegI dst, rRegL src) %{
+instruct popCountL(rRegI dst, rRegL src, rFlagsReg cr) %{
   predicate(UsePopCountInstruction);
   match(Set dst (PopCountL src));
+  effect(KILL cr);
 
   format %{ "popcnt  $dst, $src" %}
   ins_encode %{
@@ -6599,9 +6603,10 @@ instruct popCountL(rRegI dst, rRegL src) %{
 %}
 
 // Note: Long.bitCount(long) returns an int.
-instruct popCountL_mem(rRegI dst, memory mem) %{
+instruct popCountL_mem(rRegI dst, memory mem, rFlagsReg cr) %{
   predicate(UsePopCountInstruction);
   match(Set dst (PopCountL (LoadL mem)));
+  effect(KILL cr);
 
   format %{ "popcnt  $dst, $mem" %}
   ins_encode %{
