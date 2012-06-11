@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445
+ * @bug 7073631 7159445 7156633
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  */
@@ -49,11 +49,17 @@ import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.tree.JCTree;
 import java.io.IOException;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Pattern;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 import javax.tools.DiagnosticListener;
@@ -63,13 +69,15 @@ import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
 public class JavacParserTest extends TestCase {
-    final JavaCompiler tool;
-    public JavacParserTest(String testName) {
-        tool = ToolProvider.getSystemJavaCompiler();
-        System.out.println("java.home=" + System.getProperty("java.home"));
+    static final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
+
+    private JavacParserTest(){}
+
+    public static void main(String... args) throws Exception {
+        new JavacParserTest().run(args);
     }
 
-    static class MyFileObject extends SimpleJavaFileObject {
+    class MyFileObject extends SimpleJavaFileObject {
 
         private String text;
 
@@ -86,11 +94,11 @@ public class JavacParserTest extends TestCase {
     /*
      * converts Windows to Unix style LFs for comparing strings
      */
-    private String normalize(String in) {
+    String normalize(String in) {
         return in.replace(System.getProperty("line.separator"), "\n");
     }
 
-    public CompilationUnitTree getCompilationUnitTree(String code) throws IOException {
+    CompilationUnitTree getCompilationUnitTree(String code) throws IOException {
 
         JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
                 null, Arrays.asList(new MyFileObject(code)));
@@ -98,7 +106,7 @@ public class JavacParserTest extends TestCase {
         return cut;
     }
 
-    public List<String> getErroneousTreeValues(ErroneousTree node) {
+    List<String> getErroneousTreeValues(ErroneousTree node) {
 
         List<String> values = new ArrayList<>();
         if (node.getErrorTrees() != null) {
@@ -112,7 +120,8 @@ public class JavacParserTest extends TestCase {
         return values;
     }
 
-    public void testPositionForSuperConstructorCalls() throws IOException {
+    @Test
+    void testPositionForSuperConstructorCalls() throws IOException {
         assert tool != null;
 
         String code = "package test; public class Test {public Test() {super();}}";
@@ -149,12 +158,12 @@ public class JavacParserTest extends TestCase {
                 methodStartPos, pos.getStartPosition(cut, mit.getMethodSelect()));
         assertEquals("testPositionForSuperConstructorCalls",
                 methodEndPos, pos.getEndPosition(cut, mit.getMethodSelect()));
-
     }
 
-    public void testPositionForEnumModifiers() throws IOException {
-
-        String code = "package test; public enum Test {A;}";
+    @Test
+    void testPositionForEnumModifiers() throws IOException {
+        final String theString = "public";
+        String code = "package test; " + theString + " enum Test {A;}";
 
         JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
                 null, Arrays.asList(new MyFileObject(code)));
@@ -163,19 +172,21 @@ public class JavacParserTest extends TestCase {
 
         ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
         ModifiersTree mt = clazz.getModifiers();
-
+        int spos = code.indexOf(theString);
+        int epos = spos + theString.length();
         assertEquals("testPositionForEnumModifiers",
-                38 - 24, pos.getStartPosition(cut, mt));
+                spos, pos.getStartPosition(cut, mt));
         assertEquals("testPositionForEnumModifiers",
-                44 - 24, pos.getEndPosition(cut, mt));
+                epos, pos.getEndPosition(cut, mt));
     }
 
-    public void testNewClassWithEnclosing() throws IOException {
+    @Test
+    void testNewClassWithEnclosing() throws IOException {
 
-
+        final String theString = "Test.this.new d()";
         String code = "package test; class Test { " +
                 "class d {} private void method() { " +
-                "Object o = Test.this.new d(); } }";
+                "Object o = " + theString + "; } }";
 
         JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
                 null, Arrays.asList(new MyFileObject(code)));
@@ -186,13 +197,16 @@ public class JavacParserTest extends TestCase {
         ExpressionTree est =
                 ((VariableTree) ((MethodTree) clazz.getMembers().get(1)).getBody().getStatements().get(0)).getInitializer();
 
+        final int spos = code.indexOf(theString);
+        final int epos = spos + theString.length();
         assertEquals("testNewClassWithEnclosing",
-                97 - 24, pos.getStartPosition(cut, est));
+                spos, pos.getStartPosition(cut, est));
         assertEquals("testNewClassWithEnclosing",
-                114 - 24, pos.getEndPosition(cut, est));
+                epos, pos.getEndPosition(cut, est));
     }
 
-    public void testPreferredPositionForBinaryOp() throws IOException {
+    @Test
+    void testPreferredPositionForBinaryOp() throws IOException {
 
         String code = "package test; public class Test {"
                 + "private void test() {"
@@ -211,7 +225,581 @@ public class JavacParserTest extends TestCase {
                 condStartPos, condJC.pos);
     }
 
-    public void testPositionBrokenSource126732a() throws IOException {
+    @Test
+    void testErrorRecoveryForEnhancedForLoop142381() throws IOException {
+
+        String code = "package test; class Test { " +
+                "private void method() { " +
+                "java.util.Set<String> s = null; for (a : s) {} } }";
+
+        final List<Diagnostic<? extends JavaFileObject>> errors =
+                new LinkedList<Diagnostic<? extends JavaFileObject>>();
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null,
+                new DiagnosticListener<JavaFileObject>() {
+            public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
+                errors.add(diagnostic);
+            }
+        }, null, null, Arrays.asList(new MyFileObject(code)));
+
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
+        StatementTree forStatement =
+                ((MethodTree) clazz.getMembers().get(0)).getBody().getStatements().get(1);
+
+        assertEquals("testErrorRecoveryForEnhancedForLoop142381",
+                Kind.ENHANCED_FOR_LOOP, forStatement.getKind());
+        assertFalse("testErrorRecoveryForEnhancedForLoop142381", errors.isEmpty());
+    }
+
+    @Test
+    void testPositionAnnotationNoPackage187551() throws IOException {
+
+        String code = "\n@interface Test {}";
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
+                null, Arrays.asList(new MyFileObject(code)));
+
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
+        Trees t = Trees.instance(ct);
+
+        assertEquals("testPositionAnnotationNoPackage187551",
+                1, t.getSourcePositions().getStartPosition(cut, clazz));
+    }
+
+    @Test
+    void testPositionsSane1() throws IOException {
+        performPositionsSanityTest("package test; class Test { " +
+                "private void method() { " +
+                "java.util.List<? extends java.util.List<? extends String>> l; " +
+                "} }");
+    }
+
+    @Test
+    void testPositionsSane2() throws IOException {
+        performPositionsSanityTest("package test; class Test { " +
+                "private void method() { " +
+                "java.util.List<? super java.util.List<? super String>> l; " +
+                "} }");
+    }
+
+    @Test
+    void testPositionsSane3() throws IOException {
+        performPositionsSanityTest("package test; class Test { " +
+                "private void method() { " +
+                "java.util.List<? super java.util.List<?>> l; } }");
+    }
+
+    private void performPositionsSanityTest(String code) throws IOException {
+
+        final List<Diagnostic<? extends JavaFileObject>> errors =
+                new LinkedList<Diagnostic<? extends JavaFileObject>>();
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null,
+                new DiagnosticListener<JavaFileObject>() {
+
+            public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
+                errors.add(diagnostic);
+            }
+        }, null, null, Arrays.asList(new MyFileObject(code)));
+
+        final CompilationUnitTree cut = ct.parse().iterator().next();
+        final Trees trees = Trees.instance(ct);
+
+        new TreeScanner<Void, Void>() {
+
+            private long parentStart = 0;
+            private long parentEnd = Integer.MAX_VALUE;
+
+            @Override
+            public Void scan(Tree node, Void p) {
+                if (node == null) {
+                    return null;
+                }
+
+                long start = trees.getSourcePositions().getStartPosition(cut, node);
+
+                if (start == (-1)) {
+                    return null; // synthetic tree
+                }
+                assertTrue(node.toString() + ":" + start + "/" + parentStart,
+                        parentStart <= start);
+
+                long prevParentStart = parentStart;
+
+                parentStart = start;
+
+                long end = trees.getSourcePositions().getEndPosition(cut, node);
+
+                assertTrue(node.toString() + ":" + end + "/" + parentEnd,
+                        end <= parentEnd);
+
+                long prevParentEnd = parentEnd;
+
+                parentEnd = end;
+
+                super.scan(node, p);
+
+                parentStart = prevParentStart;
+                parentEnd = prevParentEnd;
+
+                return null;
+            }
+
+            private void assertTrue(String message, boolean b) {
+                if (!b) fail(message);
+            }
+        }.scan(cut, null);
+    }
+
+    @Test
+    void testCorrectWilcardPositions1() throws IOException {
+        performWildcardPositionsTest("package test; import java.util.List; " +
+                "class Test { private void method() { List<? extends List<? extends String>> l; } }",
+
+                Arrays.asList("List<? extends List<? extends String>> l;",
+                "List<? extends List<? extends String>>",
+                "List",
+                "? extends List<? extends String>",
+                "List<? extends String>",
+                "List",
+                "? extends String",
+                "String"));
+    }
+
+    @Test
+    void testCorrectWilcardPositions2() throws IOException {
+        performWildcardPositionsTest("package test; import java.util.List; "
+                + "class Test { private void method() { List<? super List<? super String>> l; } }",
+                Arrays.asList("List<? super List<? super String>> l;",
+                "List<? super List<? super String>>",
+                "List",
+                "? super List<? super String>",
+                "List<? super String>",
+                "List",
+                "? super String",
+                "String"));
+    }
+
+    @Test
+    void testCorrectWilcardPositions3() throws IOException {
+        performWildcardPositionsTest("package test; import java.util.List; " +
+                "class Test { private void method() { List<? super List<?>> l; } }",
+
+                Arrays.asList("List<? super List<?>> l;",
+                "List<? super List<?>>",
+                "List",
+                "? super List<?>",
+                "List<?>",
+                "List",
+                "?"));
+    }
+
+    @Test
+    void testCorrectWilcardPositions4() throws IOException {
+        performWildcardPositionsTest("package test; import java.util.List; " +
+                "class Test { private void method() { " +
+                "List<? extends List<? extends List<? extends String>>> l; } }",
+
+                Arrays.asList("List<? extends List<? extends List<? extends String>>> l;",
+                "List<? extends List<? extends List<? extends String>>>",
+                "List",
+                "? extends List<? extends List<? extends String>>",
+                "List<? extends List<? extends String>>",
+                "List",
+                "? extends List<? extends String>",
+                "List<? extends String>",
+                "List",
+                "? extends String",
+                "String"));
+    }
+
+    @Test
+    void testCorrectWilcardPositions5() throws IOException {
+        performWildcardPositionsTest("package test; import java.util.List; " +
+                "class Test { private void method() { " +
+                "List<? extends List<? extends List<? extends String   >>> l; } }",
+                Arrays.asList("List<? extends List<? extends List<? extends String   >>> l;",
+                "List<? extends List<? extends List<? extends String   >>>",
+                "List",
+                "? extends List<? extends List<? extends String   >>",
+                "List<? extends List<? extends String   >>",
+                "List",
+                "? extends List<? extends String   >",
+                "List<? extends String   >",
+                "List",
+                "? extends String",
+                "String"));
+    }
+
+    void performWildcardPositionsTest(final String code,
+            List<String> golden) throws IOException {
+
+        final List<Diagnostic<? extends JavaFileObject>> errors =
+                new LinkedList<Diagnostic<? extends JavaFileObject>>();
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null,
+                new DiagnosticListener<JavaFileObject>() {
+                    public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
+                        errors.add(diagnostic);
+                    }
+                }, null, null, Arrays.asList(new MyFileObject(code)));
+
+        final CompilationUnitTree cut = ct.parse().iterator().next();
+        final List<String> content = new LinkedList<String>();
+        final Trees trees = Trees.instance(ct);
+
+        new TreeScanner<Void, Void>() {
+            @Override
+            public Void scan(Tree node, Void p) {
+                if (node == null) {
+                    return null;
+                }
+                long start = trees.getSourcePositions().getStartPosition(cut, node);
+
+                if (start == (-1)) {
+                    return null; // synthetic tree
+                }
+                long end = trees.getSourcePositions().getEndPosition(cut, node);
+                String s = code.substring((int) start, (int) end);
+                content.add(s);
+
+                return super.scan(node, p);
+            }
+        }.scan(((MethodTree) ((ClassTree) cut.getTypeDecls().get(0)).getMembers().get(0)).getBody().getStatements().get(0), null);
+
+        assertEquals("performWildcardPositionsTest",golden.toString(),
+                content.toString());
+    }
+
+    @Test
+    void testStartPositionForMethodWithoutModifiers() throws IOException {
+
+        String code = "package t; class Test { <T> void t() {} }";
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
+        MethodTree mt = (MethodTree) clazz.getMembers().get(0);
+        Trees t = Trees.instance(ct);
+        int start = (int) t.getSourcePositions().getStartPosition(cut, mt);
+        int end = (int) t.getSourcePositions().getEndPosition(cut, mt);
+
+        assertEquals("testStartPositionForMethodWithoutModifiers",
+                "<T> void t() {}", code.substring(start, end));
+    }
+
+    @Test
+    void testVariableInIfThen1() throws IOException {
+
+        String code = "package t; class Test { " +
+                "private static void t(String name) { " +
+                "if (name != null) String nn = name.trim(); } }";
+
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<JavaFileObject>();
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, coll, null,
+                null, Arrays.asList(new MyFileObject(code)));
+
+        ct.parse();
+
+        List<String> codes = new LinkedList<String>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getCode());
+        }
+
+        assertEquals("testVariableInIfThen1",
+                Arrays.<String>asList("compiler.err.variable.not.allowed"),
+                codes);
+    }
+
+    @Test
+   void testVariableInIfThen2() throws IOException {
+
+        String code = "package t; class Test { " +
+                "private static void t(String name) { " +
+                "if (name != null) class X {} } }";
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<JavaFileObject>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, coll, null,
+                null, Arrays.asList(new MyFileObject(code)));
+
+        ct.parse();
+
+        List<String> codes = new LinkedList<String>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getCode());
+        }
+
+        assertEquals("testVariableInIfThen2",
+                Arrays.<String>asList("compiler.err.class.not.allowed"), codes);
+    }
+
+    @Test
+    void testVariableInIfThen3() throws IOException {
+
+        String code = "package t; class Test { "+
+                "private static void t() { " +
+                "if (true) abstract class F {} }}";
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<JavaFileObject>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, coll, null,
+                null, Arrays.asList(new MyFileObject(code)));
+
+        ct.parse();
+
+        List<String> codes = new LinkedList<String>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getCode());
+        }
+
+        assertEquals("testVariableInIfThen3",
+                Arrays.<String>asList("compiler.err.class.not.allowed"), codes);
+    }
+
+    @Test
+    void testVariableInIfThen4() throws IOException {
+
+        String code = "package t; class Test { "+
+                "private static void t(String name) { " +
+                "if (name != null) interface X {} } }";
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<JavaFileObject>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, coll, null,
+                null, Arrays.asList(new MyFileObject(code)));
+
+        ct.parse();
+
+        List<String> codes = new LinkedList<String>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getCode());
+        }
+
+        assertEquals("testVariableInIfThen4",
+                Arrays.<String>asList("compiler.err.class.not.allowed"), codes);
+    }
+
+    @Test
+    void testVariableInIfThen5() throws IOException {
+
+        String code = "package t; class Test { "+
+                "private static void t() { " +
+                "if (true) } }";
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<JavaFileObject>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, coll, null,
+                null, Arrays.asList(new MyFileObject(code)));
+
+        ct.parse();
+
+        List<String> codes = new LinkedList<String>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getCode());
+        }
+
+        assertEquals("testVariableInIfThen5",
+                Arrays.<String>asList("compiler.err.illegal.start.of.stmt"),
+                codes);
+    }
+
+    // see javac bug #6882235, NB bug #98234:
+    @Test
+    void testMissingExponent() throws IOException {
+
+        String code = "\nclass Test { { System.err.println(0e); } }";
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
+                null, Arrays.asList(new MyFileObject(code)));
+
+        assertNotNull(ct.parse().iterator().next());
+    }
+
+    @Test
+    void testTryResourcePos() throws IOException {
+
+        final String code = "package t; class Test { " +
+                "{ try (java.io.InputStream in = null) { } } }";
+
+        CompilationUnitTree cut = getCompilationUnitTree(code);
+
+        new TreeScanner<Void, Void>() {
+            @Override
+            public Void visitVariable(VariableTree node, Void p) {
+                if ("in".contentEquals(node.getName())) {
+                    JCTree.JCVariableDecl var = (JCTree.JCVariableDecl) node;
+                    assertEquals("testTryResourcePos", "in = null) { } } }",
+                            code.substring(var.pos));
+                }
+                return super.visitVariable(node, p);
+            }
+        }.scan(cut, null);
+    }
+
+    @Test
+    void testVarPos() throws IOException {
+
+        final String code = "package t; class Test { " +
+                "{ java.io.InputStream in = null; } }";
+
+        CompilationUnitTree cut = getCompilationUnitTree(code);
+
+        new TreeScanner<Void, Void>() {
+
+            @Override
+            public Void visitVariable(VariableTree node, Void p) {
+                if ("in".contentEquals(node.getName())) {
+                    JCTree.JCVariableDecl var = (JCTree.JCVariableDecl) node;
+                    assertEquals("testVarPos","in = null; } }",
+                            code.substring(var.pos));
+                }
+                return super.visitVariable(node, p);
+            }
+        }.scan(cut, null);
+    }
+
+    // expected erroneous tree: int x = y;(ERROR);
+    @Test
+    void testOperatorMissingError() throws IOException {
+
+        String code = "package test; public class ErrorTest { "
+                + "void method() { int x = y  z } }";
+        CompilationUnitTree cut = getCompilationUnitTree(code);
+        final List<String> values = new ArrayList<>();
+        final List<String> expectedValues =
+                new ArrayList<>(Arrays.asList("[z]"));
+
+        new TreeScanner<Void, Void>() {
+            @Override
+            public Void visitErroneous(ErroneousTree node, Void p) {
+                values.add(getErroneousTreeValues(node).toString());
+                return null;
+
+            }
+        }.scan(cut, null);
+
+        assertEquals("testSwitchError: The Erroneous tree "
+                + "error values: " + values
+                + " do not match expected error values: "
+                + expectedValues, values, expectedValues);
+    }
+
+    // expected erroneous tree:  String s = (ERROR);
+    @Test
+    void testMissingParenthesisError() throws IOException {
+
+        String code = "package test; public class ErrorTest { "
+                + "void f() {String s = new String; } }";
+        CompilationUnitTree cut = getCompilationUnitTree(code);
+        final List<String> values = new ArrayList<>();
+        final List<String> expectedValues =
+                new ArrayList<>(Arrays.asList("[new String()]"));
+
+        new TreeScanner<Void, Void>() {
+            @Override
+            public Void visitErroneous(ErroneousTree node, Void p) {
+                values.add(getErroneousTreeValues(node).toString());
+                return null;
+            }
+        }.scan(cut, null);
+
+        assertEquals("testSwitchError: The Erroneous tree "
+                + "error values: " + values
+                + " do not match expected error values: "
+                + expectedValues, values, expectedValues);
+    }
+
+    // expected erroneous tree: package test; (ERROR)(ERROR)
+    @Test
+    void testMissingClassError() throws IOException {
+
+        String code = "package Test; clas ErrorTest {  "
+                + "void f() {String s = new String(); } }";
+        CompilationUnitTree cut = getCompilationUnitTree(code);
+        final List<String> values = new ArrayList<>();
+        final List<String> expectedValues =
+                new ArrayList<>(Arrays.asList("[, clas]", "[]"));
+
+        new TreeScanner<Void, Void>() {
+            @Override
+            public Void visitErroneous(ErroneousTree node, Void p) {
+                values.add(getErroneousTreeValues(node).toString());
+                return null;
+            }
+        }.scan(cut, null);
+
+        assertEquals("testSwitchError: The Erroneous tree "
+                + "error values: " + values
+                + " do not match expected error values: "
+                + expectedValues, values, expectedValues);
+    }
+
+    // expected erroneous tree: void m1(int i) {(ERROR);{(ERROR);}
+    @Test
+    void testSwitchError() throws IOException {
+
+        String code = "package test; public class ErrorTest { "
+                + "int numDays; void m1(int i) { switchh {i} { case 1: "
+                + "numDays = 31; break; } } }";
+        CompilationUnitTree cut = getCompilationUnitTree(code);
+        final List<String> values = new ArrayList<>();
+        final List<String> expectedValues =
+                new ArrayList<>(Arrays.asList("[switchh]", "[i]"));
+
+        new TreeScanner<Void, Void>() {
+            @Override
+            public Void visitErroneous(ErroneousTree node, Void p) {
+                values.add(getErroneousTreeValues(node).toString());
+                return null;
+            }
+        }.scan(cut, null);
+
+        assertEquals("testSwitchError: The Erroneous tree "
+                + "error values: " + values
+                + " do not match expected error values: "
+                + expectedValues, values, expectedValues);
+    }
+
+    // expected erroneous tree: class ErrorTest {(ERROR)
+    @Test
+    void testMethodError() throws IOException {
+
+        String code = "package Test; class ErrorTest {  "
+                + "static final void f) {String s = new String(); } }";
+        CompilationUnitTree cut = cut = getCompilationUnitTree(code);
+
+        final List<String> values = new ArrayList<>();
+        final List<String> expectedValues =
+                new ArrayList<>(Arrays.asList("[\nstatic final void f();]"));
+
+        new TreeScanner<Void, Void>() {
+            @Override
+            public Void visitErroneous(ErroneousTree node, Void p) {
+                values.add(normalize(getErroneousTreeValues(node).toString()));
+                return null;
+            }
+        }.scan(cut, null);
+
+        assertEquals("testMethodError: The Erroneous tree "
+                + "error value: " + values
+                + " does not match expected error values: "
+                + expectedValues, values, expectedValues);
+    }
+
+    /*
+     * The following tests do not work just yet with nb-javac nor javac,
+     * they need further investigation, see CR: 7167356
+     */
+
+    void testPositionBrokenSource126732a() throws IOException {
         String[] commands = new String[]{
             "return Runnable()",
             "do { } while (true)",
@@ -250,7 +838,7 @@ public class JavacParserTest extends TestCase {
         }
     }
 
-    public void testPositionBrokenSource126732b() throws IOException {
+    void testPositionBrokenSource126732b() throws IOException {
         String[] commands = new String[]{
             "break",
             "break A",
@@ -291,246 +879,7 @@ public class JavacParserTest extends TestCase {
         }
     }
 
-    public void testErrorRecoveryForEnhancedForLoop142381() throws IOException {
-
-        String code = "package test; class Test { " +
-                "private void method() { " +
-                "java.util.Set<String> s = null; for (a : s) {} } }";
-
-        final List<Diagnostic<? extends JavaFileObject>> errors =
-                new LinkedList<Diagnostic<? extends JavaFileObject>>();
-
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null,
-                new DiagnosticListener<JavaFileObject>() {
-            public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-                errors.add(diagnostic);
-            }
-        }, null, null, Arrays.asList(new MyFileObject(code)));
-
-        CompilationUnitTree cut = ct.parse().iterator().next();
-
-        ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
-        StatementTree forStatement =
-                ((MethodTree) clazz.getMembers().get(0)).getBody().getStatements().get(1);
-
-        assertEquals("testErrorRecoveryForEnhancedForLoop142381",
-                Kind.ENHANCED_FOR_LOOP, forStatement.getKind());
-        assertFalse("testErrorRecoveryForEnhancedForLoop142381", errors.isEmpty());
-    }
-
-    public void testPositionAnnotationNoPackage187551() throws IOException {
-
-        String code = "\n@interface Test {}";
-
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
-                null, Arrays.asList(new MyFileObject(code)));
-
-        CompilationUnitTree cut = ct.parse().iterator().next();
-        ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
-        Trees t = Trees.instance(ct);
-
-        assertEquals("testPositionAnnotationNoPackage187551",
-                1, t.getSourcePositions().getStartPosition(cut, clazz));
-    }
-
-    public void testPositionsSane() throws IOException {
-        performPositionsSanityTest("package test; class Test { " +
-                "private void method() { " +
-                "java.util.List<? extends java.util.List<? extends String>> l; " +
-                "} }");
-        performPositionsSanityTest("package test; class Test { " +
-                "private void method() { " +
-                "java.util.List<? super java.util.List<? super String>> l; " +
-                "} }");
-        performPositionsSanityTest("package test; class Test { " +
-                "private void method() { " +
-                "java.util.List<? super java.util.List<?>> l; } }");
-    }
-
-    private void performPositionsSanityTest(String code) throws IOException {
-
-        final List<Diagnostic<? extends JavaFileObject>> errors =
-                new LinkedList<Diagnostic<? extends JavaFileObject>>();
-
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null,
-                new DiagnosticListener<JavaFileObject>() {
-
-            public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-                errors.add(diagnostic);
-            }
-        }, null, null, Arrays.asList(new MyFileObject(code)));
-
-        final CompilationUnitTree cut = ct.parse().iterator().next();
-        final Trees trees = Trees.instance(ct);
-
-        new TreeScanner<Void, Void>() {
-
-            private long parentStart = 0;
-            private long parentEnd = Integer.MAX_VALUE;
-
-            @Override
-            public Void scan(Tree node, Void p) {
-                if (node == null) {
-                    return null;
-                }
-
-                long start = trees.getSourcePositions().getStartPosition(cut, node);
-
-                if (start == (-1)) {
-                    return null; //synthetic tree
-                }
-                assertTrue(node.toString() + ":" + start + "/" + parentStart,
-                        parentStart <= start);
-
-                long prevParentStart = parentStart;
-
-                parentStart = start;
-
-                long end = trees.getSourcePositions().getEndPosition(cut, node);
-
-                assertTrue(node.toString() + ":" + end + "/" + parentEnd,
-                        end <= parentEnd);
-
-                long prevParentEnd = parentEnd;
-
-                parentEnd = end;
-
-                super.scan(node, p);
-
-                parentStart = prevParentStart;
-                parentEnd = prevParentEnd;
-
-                return null;
-            }
-
-            private void assertTrue(String message, boolean b) {
-                if (!b) fail(message);
-            }
-        }.scan(cut, null);
-    }
-
-    public void testCorrectWilcardPositions() throws IOException {
-        performWildcardPositionsTest("package test; import java.util.List; " +
-                "class Test { private void method() { List<? extends List<? extends String>> l; } }",
-
-                Arrays.asList("List<? extends List<? extends String>> l;",
-                "List<? extends List<? extends String>>",
-                "List",
-                "? extends List<? extends String>",
-                "List<? extends String>",
-                "List",
-                "? extends String",
-                "String"));
-        performWildcardPositionsTest("package test; import java.util.List; " +
-                "class Test { private void method() { List<? super List<? super String>> l; } }",
-
-                Arrays.asList("List<? super List<? super String>> l;",
-                "List<? super List<? super String>>",
-                "List",
-                "? super List<? super String>",
-                "List<? super String>",
-                "List",
-                "? super String",
-                "String"));
-        performWildcardPositionsTest("package test; import java.util.List; " +
-                "class Test { private void method() { List<? super List<?>> l; } }",
-
-                Arrays.asList("List<? super List<?>> l;",
-                "List<? super List<?>>",
-                "List",
-                "? super List<?>",
-                "List<?>",
-                "List",
-                "?"));
-        performWildcardPositionsTest("package test; import java.util.List; " +
-                "class Test { private void method() { " +
-                "List<? extends List<? extends List<? extends String>>> l; } }",
-
-                Arrays.asList("List<? extends List<? extends List<? extends String>>> l;",
-                "List<? extends List<? extends List<? extends String>>>",
-                "List",
-                "? extends List<? extends List<? extends String>>",
-                "List<? extends List<? extends String>>",
-                "List",
-                "? extends List<? extends String>",
-                "List<? extends String>",
-                "List",
-                "? extends String",
-                "String"));
-        performWildcardPositionsTest("package test; import java.util.List; " +
-                "class Test { private void method() { " +
-                "List<? extends List<? extends List<? extends String   >>> l; } }",
-                Arrays.asList("List<? extends List<? extends List<? extends String   >>> l;",
-                "List<? extends List<? extends List<? extends String   >>>",
-                "List",
-                "? extends List<? extends List<? extends String   >>",
-                "List<? extends List<? extends String   >>",
-                "List",
-                "? extends List<? extends String   >",
-                "List<? extends String   >",
-                "List",
-                "? extends String",
-                "String"));
-    }
-
-    public void performWildcardPositionsTest(final String code,
-            List<String> golden) throws IOException {
-
-        final List<Diagnostic<? extends JavaFileObject>> errors =
-                new LinkedList<Diagnostic<? extends JavaFileObject>>();
-
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null,
-                new DiagnosticListener<JavaFileObject>() {
-                    public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-                        errors.add(diagnostic);
-                    }
-                }, null, null, Arrays.asList(new MyFileObject(code)));
-
-        final CompilationUnitTree cut = ct.parse().iterator().next();
-        final List<String> content = new LinkedList<String>();
-        final Trees trees = Trees.instance(ct);
-
-        new TreeScanner<Void, Void>() {
-            @Override
-            public Void scan(Tree node, Void p) {
-                if (node == null) {
-                    return null;
-                }
-                long start = trees.getSourcePositions().getStartPosition(cut, node);
-
-                if (start == (-1)) {
-                    return null; //synthetic tree
-                }
-                long end = trees.getSourcePositions().getEndPosition(cut, node);
-                String s = code.substring((int) start, (int) end);
-                content.add(s);
-
-                return super.scan(node, p);
-            }
-        }.scan(((MethodTree) ((ClassTree) cut.getTypeDecls().get(0)).getMembers().get(0)).getBody().getStatements().get(0), null);
-
-        assertEquals("performWildcardPositionsTest",golden.toString(),
-                content.toString());
-    }
-
-    public void testStartPositionForMethodWithoutModifiers() throws IOException {
-
-        String code = "package t; class Test { <T> void t() {} }";
-
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
-                null, Arrays.asList(new MyFileObject(code)));
-        CompilationUnitTree cut = ct.parse().iterator().next();
-        ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
-        MethodTree mt = (MethodTree) clazz.getMembers().get(0);
-        Trees t = Trees.instance(ct);
-        int start = (int) t.getSourcePositions().getStartPosition(cut, mt);
-        int end = (int) t.getSourcePositions().getEndPosition(cut, mt);
-
-        assertEquals("testStartPositionForMethodWithoutModifiers",
-                "<T> void t() {}", code.substring(start, end));
-    }
-
-    public void testStartPositionEnumConstantInit() throws IOException {
+    void testStartPositionEnumConstantInit() throws IOException {
 
         String code = "package t; enum Test { AAA; }";
 
@@ -546,342 +895,34 @@ public class JavacParserTest extends TestCase {
         assertEquals("testStartPositionEnumConstantInit", -1, start);
     }
 
-    public void testVariableInIfThen1() throws IOException {
-
-        String code = "package t; class Test { " +
-                "private static void t(String name) { " +
-                "if (name != null) String nn = name.trim(); } }";
-
-        DiagnosticCollector<JavaFileObject> coll =
-                new DiagnosticCollector<JavaFileObject>();
-
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, coll, null,
-                null, Arrays.asList(new MyFileObject(code)));
-
-        ct.parse();
-
-        List<String> codes = new LinkedList<String>();
-
-        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
-            codes.add(d.getCode());
-        }
-
-        assertEquals("testVariableInIfThen1",
-                Arrays.<String>asList("compiler.err.variable.not.allowed"),
-                codes);
-    }
-
-    public void testVariableInIfThen2() throws IOException {
-
-        String code = "package t; class Test { " +
-                "private static void t(String name) { " +
-                "if (name != null) class X {} } }";
-        DiagnosticCollector<JavaFileObject> coll =
-                new DiagnosticCollector<JavaFileObject>();
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, coll, null,
-                null, Arrays.asList(new MyFileObject(code)));
-
-        ct.parse();
-
-        List<String> codes = new LinkedList<String>();
-
-        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
-            codes.add(d.getCode());
-        }
-
-        assertEquals("testVariableInIfThen2",
-                Arrays.<String>asList("compiler.err.class.not.allowed"), codes);
-    }
-
-    public void testVariableInIfThen3() throws IOException {
-
-        String code = "package t; class Test { "+
-                "private static void t() { " +
-                "if (true) abstract class F {} }}";
-        DiagnosticCollector<JavaFileObject> coll =
-                new DiagnosticCollector<JavaFileObject>();
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, coll, null,
-                null, Arrays.asList(new MyFileObject(code)));
-
-        ct.parse();
-
-        List<String> codes = new LinkedList<String>();
-
-        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
-            codes.add(d.getCode());
-        }
-
-        assertEquals("testVariableInIfThen3",
-                Arrays.<String>asList("compiler.err.class.not.allowed"), codes);
-    }
-
-    public void testVariableInIfThen4() throws IOException {
-
-        String code = "package t; class Test { "+
-                "private static void t(String name) { " +
-                "if (name != null) interface X {} } }";
-        DiagnosticCollector<JavaFileObject> coll =
-                new DiagnosticCollector<JavaFileObject>();
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, coll, null,
-                null, Arrays.asList(new MyFileObject(code)));
-
-        ct.parse();
-
-        List<String> codes = new LinkedList<String>();
-
-        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
-            codes.add(d.getCode());
-        }
-
-        assertEquals("testVariableInIfThen4",
-                Arrays.<String>asList("compiler.err.class.not.allowed"), codes);
-    }
-
-    public void testVariableInIfThen5() throws IOException {
-
-        String code = "package t; class Test { "+
-                "private static void t() { " +
-                "if (true) } }";
-        DiagnosticCollector<JavaFileObject> coll =
-                new DiagnosticCollector<JavaFileObject>();
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, coll, null,
-                null, Arrays.asList(new MyFileObject(code)));
-
-        ct.parse();
-
-        List<String> codes = new LinkedList<String>();
-
-        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
-            codes.add(d.getCode());
-        }
-
-        assertEquals("testVariableInIfThen5",
-                Arrays.<String>asList("compiler.err.illegal.start.of.stmt"),
-                codes);
-    }
-
-    //see javac bug #6882235, NB bug #98234:
-    public void testMissingExponent() throws IOException {
-
-        String code = "\nclass Test { { System.err.println(0e); } }";
-
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, null, null, null,
-                null, Arrays.asList(new MyFileObject(code)));
-
-        assertNotNull(ct.parse().iterator().next());
-    }
-
-    public void testTryResourcePos() throws IOException {
-
-        final String code = "package t; class Test { " +
-                "{ try (java.io.InputStream in = null) { } } }";
-
-        CompilationUnitTree cut = getCompilationUnitTree(code);
-
-        new TreeScanner<Void, Void>() {
-            @Override
-            public Void visitVariable(VariableTree node, Void p) {
-                if ("in".contentEquals(node.getName())) {
-                    JCTree.JCVariableDecl var = (JCTree.JCVariableDecl) node;
-                    System.out.println(node.getName() + "," + var.pos);
-                    assertEquals("testTryResourcePos", "in = null) { } } }",
-                            code.substring(var.pos));
+    void run(String[] args) throws Exception {
+        int passed = 0, failed = 0;
+        final Pattern p = (args != null && args.length > 0)
+                ? Pattern.compile(args[0])
+                : null;
+        for (Method m : this.getClass().getDeclaredMethods()) {
+            boolean selected = (p == null)
+                    ? m.isAnnotationPresent(Test.class)
+                    : p.matcher(m.getName()).matches();
+            if (selected) {
+                try {
+                    m.invoke(this, (Object[]) null);
+                    System.out.println(m.getName() + ": OK");
+                    passed++;
+                } catch (Throwable ex) {
+                    System.out.printf("Test %s failed: %s %n", m, ex.getCause());
+                    failed++;
                 }
-                return super.visitVariable(node, p);
             }
-        }.scan(cut, null);
-    }
-
-    public void testVarPos() throws IOException {
-
-        final String code = "package t; class Test { " +
-                "{ java.io.InputStream in = null; } }";
-
-        CompilationUnitTree cut = getCompilationUnitTree(code);
-
-        new TreeScanner<Void, Void>() {
-
-            @Override
-            public Void visitVariable(VariableTree node, Void p) {
-                if ("in".contentEquals(node.getName())) {
-                    JCTree.JCVariableDecl var = (JCTree.JCVariableDecl) node;
-                    assertEquals("testVarPos","in = null; } }",
-                            code.substring(var.pos));
-                }
-                return super.visitVariable(node, p);
-            }
-        }.scan(cut, null);
-    }
-
-    // expected erroneous tree: int x = y;(ERROR);
-    public void testOperatorMissingError() throws IOException {
-
-        String code = "package test; public class ErrorTest { "
-                + "void method() { int x = y  z } }";
-        CompilationUnitTree cut = getCompilationUnitTree(code);
-        final List<String> values = new ArrayList<>();
-        final List<String> expectedValues =
-                new ArrayList<>(Arrays.asList("[z]"));
-
-        new TreeScanner<Void, Void>() {
-
-            @Override
-            public Void visitErroneous(ErroneousTree node, Void p) {
-
-                values.add(getErroneousTreeValues(node).toString());
-                return null;
-
-            }
-        }.scan(cut, null);
-
-        assertEquals("testSwitchError: The Erroneous tree "
-                + "error values: " + values
-                + " do not match expected error values: "
-                + expectedValues, values, expectedValues);
-    }
-
-    //expected erroneous tree:  String s = (ERROR);
-    public void testMissingParenthesisError() throws IOException {
-
-        String code = "package test; public class ErrorTest { "
-                + "void f() {String s = new String; } }";
-        CompilationUnitTree cut = getCompilationUnitTree(code);
-        final List<String> values = new ArrayList<>();
-        final List<String> expectedValues =
-                new ArrayList<>(Arrays.asList("[new String()]"));
-
-        new TreeScanner<Void, Void>() {
-
-            @Override
-            public Void visitErroneous(ErroneousTree node, Void p) {
-
-                values.add(getErroneousTreeValues(node).toString());
-                return null;
-            }
-        }.scan(cut, null);
-
-        assertEquals("testSwitchError: The Erroneous tree "
-                + "error values: " + values
-                + " do not match expected error values: "
-                + expectedValues, values, expectedValues);
-    }
-
-    //expected erroneous tree: package test; (ERROR)(ERROR)
-    public void testMissingClassError() throws IOException {
-
-        String code = "package Test; clas ErrorTest {  "
-                + "void f() {String s = new String(); } }";
-        CompilationUnitTree cut = getCompilationUnitTree(code);
-        final List<String> values = new ArrayList<>();
-        final List<String> expectedValues =
-                new ArrayList<>(Arrays.asList("[, clas]", "[]"));
-
-        new TreeScanner<Void, Void>() {
-
-            @Override
-            public Void visitErroneous(ErroneousTree node, Void p) {
-
-                values.add(getErroneousTreeValues(node).toString());
-                return null;
-            }
-        }.scan(cut, null);
-
-        assertEquals("testSwitchError: The Erroneous tree "
-                + "error values: " + values
-                + " do not match expected error values: "
-                + expectedValues, values, expectedValues);
-    }
-
-    //expected erroneous tree: void m1(int i) {(ERROR);{(ERROR);}
-    public void testSwitchError() throws IOException {
-
-        String code = "package test; public class ErrorTest { "
-                + "int numDays; void m1(int i) { switchh {i} { case 1: "
-                + "numDays = 31; break; } } }";
-        CompilationUnitTree cut = getCompilationUnitTree(code);
-        final List<String> values = new ArrayList<>();
-        final List<String> expectedValues =
-                new ArrayList<>(Arrays.asList("[switchh]", "[i]"));
-
-        new TreeScanner<Void, Void>() {
-
-            @Override
-            public Void visitErroneous(ErroneousTree node, Void p) {
-
-                values.add(getErroneousTreeValues(node).toString());
-                return null;
-            }
-        }.scan(cut, null);
-
-        assertEquals("testSwitchError: The Erroneous tree "
-                + "error values: " + values
-                + " do not match expected error values: "
-                + expectedValues, values, expectedValues);
-    }
-
-    //expected erroneous tree: class ErrorTest {(ERROR)
-    public void testMethodError() throws IOException {
-
-        String code = "package Test; class ErrorTest {  "
-                + "static final void f) {String s = new String(); } }";
-        CompilationUnitTree cut = getCompilationUnitTree(code);
-        final List<String> values = new ArrayList<>();
-        final List<String> expectedValues =
-                new ArrayList<>(Arrays.asList("[\nstatic final void f();]"));
-
-        new TreeScanner<Void, Void>() {
-
-            @Override
-            public Void visitErroneous(ErroneousTree node, Void p) {
-
-                values.add(normalize(getErroneousTreeValues(node).toString()));
-                return null;
-            }
-        }.scan(cut, null);
-
-        assertEquals("testMethodError: The Erroneous tree "
-                + "error value: " + values
-                + " does not match expected error values: "
-                + expectedValues, values, expectedValues);
-    }
-
-    void testsNotWorking() throws IOException {
-
-        // Fails with nb-javac, needs further investigation
-        testPositionBrokenSource126732a();
-        testPositionBrokenSource126732b();
-
-        // Fails, these tests yet to be addressed
-        testPositionForEnumModifiers();
-        testStartPositionEnumConstantInit();
-    }
-    void testPositions() throws IOException {
-        testPositionsSane();
-        testCorrectWilcardPositions();
-        testPositionAnnotationNoPackage187551();
-        testPositionForSuperConstructorCalls();
-        testPreferredPositionForBinaryOp();
-        testStartPositionForMethodWithoutModifiers();
-        testVarPos();
-        testVariableInIfThen1();
-        testVariableInIfThen2();
-        testVariableInIfThen3();
-        testVariableInIfThen4();
-        testVariableInIfThen5();
-        testMissingExponent();
-        testTryResourcePos();
-        testOperatorMissingError();
-        testMissingParenthesisError();
-        testMissingClassError();
-        testSwitchError();
-        testMethodError();
-        testErrorRecoveryForEnhancedForLoop142381();
-    }
-
-    public static void main(String... args) throws IOException {
-        JavacParserTest jpt = new JavacParserTest("JavacParserTest");
-        jpt.testPositions();
-        System.out.println("PASS");
+        }
+        System.out.printf("Passed: %d, Failed %d%n", passed, failed);
+        if (failed > 0) {
+            throw new RuntimeException("Tests failed: " + failed);
+        }
+        if (passed == 0 && failed == 0) {
+            throw new AssertionError("No test(s) selected: passed = " +
+                    passed + ", failed = " + failed + " ??????????");
+        }
     }
 }
 
@@ -906,8 +947,6 @@ abstract class TestCase {
     }
 
     void assertEquals(String message, Object o1, Object o2) {
-        System.out.println(o1);
-        System.out.println(o2);
         if (o1 != null && o2 != null && !o1.equals(o2)) {
             fail(message);
         }
@@ -929,4 +968,11 @@ abstract class TestCase {
     void fail(String message) {
         throw new RuntimeException(message);
     }
+
+    /**
+     * Indicates that the annotated method is a test method.
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    public @interface Test {}
 }
