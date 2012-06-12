@@ -7800,50 +7800,6 @@ instruct loadPLocked(eRegP dst, memory mem) %{
   ins_pipe( ialu_reg_mem );
 %}
 
-// LoadLong-locked - same as a volatile long load when used with compare-swap
-instruct loadLLocked(stackSlotL dst, memory mem) %{
-  predicate(UseSSE<=1);
-  match(Set dst (LoadLLocked mem));
-
-  ins_cost(200);
-  format %{ "FILD   $mem\t# Atomic volatile long load\n\t"
-            "FISTp  $dst" %}
-  ins_encode(enc_loadL_volatile(mem,dst));
-  ins_pipe( fpu_reg_mem );
-%}
-
-instruct loadLX_Locked(stackSlotL dst, memory mem, regD tmp) %{
-  predicate(UseSSE>=2);
-  match(Set dst (LoadLLocked mem));
-  effect(TEMP tmp);
-  ins_cost(180);
-  format %{ "MOVSD  $tmp,$mem\t# Atomic volatile long load\n\t"
-            "MOVSD  $dst,$tmp" %}
-  ins_encode %{
-    __ movdbl($tmp$$XMMRegister, $mem$$Address);
-    __ movdbl(Address(rsp, $dst$$disp), $tmp$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct loadLX_reg_Locked(eRegL dst, memory mem, regD tmp) %{
-  predicate(UseSSE>=2);
-  match(Set dst (LoadLLocked mem));
-  effect(TEMP tmp);
-  ins_cost(160);
-  format %{ "MOVSD  $tmp,$mem\t# Atomic volatile long load\n\t"
-            "MOVD   $dst.lo,$tmp\n\t"
-            "PSRLQ  $tmp,32\n\t"
-            "MOVD   $dst.hi,$tmp" %}
-  ins_encode %{
-    __ movdbl($tmp$$XMMRegister, $mem$$Address);
-    __ movdl($dst$$Register, $tmp$$XMMRegister);
-    __ psrlq($tmp$$XMMRegister, 32);
-    __ movdl(HIGH_FROM_LOW($dst$$Register), $tmp$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 // Conditional-store of the updated heap-top.
 // Used during allocation of the shared heap.
 // Sets flags (EQ) on success.  Implemented with a CMPXCHG on Intel.

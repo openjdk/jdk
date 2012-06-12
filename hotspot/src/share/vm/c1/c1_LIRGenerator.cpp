@@ -3009,11 +3009,6 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     do_CompareAndSwap(x, longType);
     break;
 
-    // sun.misc.AtomicLongCSImpl.attemptUpdate
-  case vmIntrinsics::_attemptUpdate:
-    do_AttemptUpdate(x);
-    break;
-
   case vmIntrinsics::_Reference_get:
     do_Reference_get(x);
     break;
@@ -3254,4 +3249,3 @@ void LIRGenerator::do_MemBar(MemBar* x) {
     }
   }
 }
-
