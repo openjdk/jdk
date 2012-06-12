@@ -644,30 +644,6 @@ void LIRGenerator::do_CompareOp(CompareOp* x) {
 }
 
 
-void LIRGenerator::do_AttemptUpdate(Intrinsic* x) {
-  assert(x->number_of_arguments() == 3, "wrong type");
-  LIRItem obj       (x->argument_at(0), this);  // AtomicLong object
-  LIRItem cmp_value (x->argument_at(1), this);  // value to compare with field
-  LIRItem new_value (x->argument_at(2), this);  // replace field with new_value if it matches cmp_value
-
-  obj.load_item();
-  cmp_value.load_item();
-  new_value.load_item();
-
-  // generate compare-and-swap and produce zero condition if swap occurs
-  int value_offset = sun_misc_AtomicLongCSImpl::value_offset();
-  LIR_Opr addr = FrameMap::O7_opr;
-  __ add(obj.result(), LIR_OprFact::intConst(value_offset), addr);
-  LIR_Opr t1 = FrameMap::G1_opr;  // temp for 64-bit value
-  LIR_Opr t2 = FrameMap::G3_opr;  // temp for 64-bit value
-  __ cas_long(addr, cmp_value.result(), new_value.result(), t1, t2);
-
-  // generate conditional move of boolean result
-  LIR_Opr result = rlock_result(x);
-  __ cmove(lir_cond_equal, LIR_OprFact::intConst(1), LIR_OprFact::intConst(0), result, T_LONG);
-}
-
-
 void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   assert(x->number_of_arguments() == 4, "wrong type");
   LIRItem obj   (x->argument_at(0), this);  // object

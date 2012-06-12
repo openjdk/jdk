@@ -1876,7 +1876,6 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_c2_type(StoreNNode, StoreNode)                                  \
   declare_c2_type(StoreCMNode, StoreNode)                                 \
   declare_c2_type(LoadPLockedNode, LoadPNode)                             \
-  declare_c2_type(LoadLLockedNode, LoadLNode)                             \
   declare_c2_type(SCMemProjNode, ProjNode)                                \
   declare_c2_type(LoadStoreNode, Node)                                    \
   declare_c2_type(StorePConditionalNode, LoadStoreNode)                   \

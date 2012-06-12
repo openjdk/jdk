@@ -3195,13 +3195,6 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
       preserves_state = true;
       break;
 
-    // sun/misc/AtomicLong.attemptUpdate
-    case vmIntrinsics::_attemptUpdate :
-      if (!VM_Version::supports_cx8()) return false;
-      if (!InlineAtomicLong) return false;
-      preserves_state = true;
-      break;
-
     // Use special nodes for Unsafe instructions so we can more easily
     // perform an address-mode optimization on the raw variants
     case vmIntrinsics::_getObject : return append_unsafe_get_obj(callee, T_OBJECT,  false);

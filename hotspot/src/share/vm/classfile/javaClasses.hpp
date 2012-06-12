@@ -1383,15 +1383,6 @@ class java_nio_Buffer: AllStatic {
   static void compute_offsets();
 };
 
-class sun_misc_AtomicLongCSImpl: AllStatic {
- private:
-  static int _value_offset;
-
- public:
-  static int  value_offset();
-  static void compute_offsets();
-};
-
 class java_util_concurrent_locks_AbstractOwnableSynchronizer : AllStatic {
  private:
   static int  _owner_offset;

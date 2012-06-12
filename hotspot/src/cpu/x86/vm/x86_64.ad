@@ -7497,18 +7497,6 @@ instruct loadPLocked(rRegP dst, memory mem)
   ins_pipe(ialu_reg_mem); // XXX
 %}
 
-// LoadL-locked - same as a regular LoadL when used with compare-swap
-instruct loadLLocked(rRegL dst, memory mem)
-%{
-  match(Set dst (LoadLLocked mem));
-
-  ins_cost(125); // XXX
-  format %{ "movq    $dst, $mem\t# long locked" %}
-  opcode(0x8B);
-  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
-  ins_pipe(ialu_reg_mem); // XXX
-%}
-
 // Conditional-store of the updated heap-top.
 // Used during allocation of the shared heap.
 // Sets flags (EQ) on success.  Implemented with a CMPXCHG on Intel.
