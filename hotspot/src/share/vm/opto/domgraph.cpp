@@ -465,15 +465,11 @@ void PhaseIdealLoop::Dominators() {
           // Kill dead input path
           assert( !visited.test(whead->in(i)->_idx),
                   "input with no loop must be dead" );
-          _igvn.hash_delete(whead);
-          whead->del_req(i);
-          _igvn._worklist.push(whead);
+          _igvn.delete_input_of(whead, i);
           for (DUIterator_Fast jmax, j = whead->fast_outs(jmax); j < jmax; j++) {
             Node* p = whead->fast_out(j);
             if( p->is_Phi() ) {
-              _igvn.hash_delete(p);
-              p->del_req(i);
-              _igvn._worklist.push(p);
+              _igvn.delete_input_of(p, i);
             }
           }
           i--;                  // Rerun same iteration

@@ -212,9 +212,8 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
     Node* use = rgn->fast_out(i);
     if (use->is_Phi() && use->outcnt() > 0) {
       assert(use->in(0) == rgn, "");
-      _igvn.hash_delete(use);
+      _igvn.rehash_node_delayed(use);
       use->add_req(use->in(proj_index));
-      _igvn._worklist.push(use);
       has_phi = true;
     }
   }
@@ -284,9 +283,8 @@ ProjNode* PhaseIterGVN::create_new_if_for_predicate(ProjNode* cont_proj, Node* n
   for (DUIterator_Fast imax, i = rgn->fast_outs(imax); i < imax; i++) {
     Node* use = rgn->fast_out(i);
     if (use->is_Phi() && use->outcnt() > 0) {
-      hash_delete(use);
+      rehash_node_delayed(use);
       use->add_req(use->in(proj_index));
-      _worklist.push(use);
       has_phi = true;
     }
   }
