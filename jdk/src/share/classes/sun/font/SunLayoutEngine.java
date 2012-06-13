@@ -33,7 +33,7 @@ package sun.font;
 import sun.font.GlyphLayout.*;
 import java.awt.geom.Point2D;
 import java.lang.ref.SoftReference;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Locale;
 
 /*
@@ -129,9 +129,9 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
 
   // !!! don't need this unless we have more than one sun layout engine...
     public LayoutEngine getEngine(LayoutEngineKey key) {
-        HashMap cache = (HashMap)cacheref.get();
+        ConcurrentHashMap cache = (ConcurrentHashMap)cacheref.get();
         if (cache == null) {
-            cache = new HashMap();
+            cache = new ConcurrentHashMap();
             cacheref = new SoftReference(cache);
         }
 
