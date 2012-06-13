@@ -2662,6 +2662,9 @@ class CommandLineFlags {
   product(bool, UseHeavyMonitors, false,                                    \
           "use heavyweight instead of lightweight Java monitors")           \
                                                                             \
+  product(bool, PrintStringTableStatistics, false,                          \
+          "print statistics about the StringTable and SymbolTable")         \
+                                                                            \
   notproduct(bool, PrintSymbolTableSizeHistogram, false,                    \
           "print histogram of the symbol table")                            \
                                                                             \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,55 @@ template <class T> HashtableEntry<T>* Hashtable<T>::new_entry(unsigned int hashV
   return entry;
 }
 
+
+// Check to see if the hashtable is unbalanced.  The caller set a flag to
+// rehash at the next safepoint.  If this bucket is 60 times greater than the
+// expected average bucket length, it's an unbalanced hashtable.
+// This is somewhat an arbitrary heuristic but if one bucket gets to
+// rehash_count which is currently 100, there's probably something wrong.
+
+bool BasicHashtable::check_rehash_table(int count) {
+  assert(table_size() != 0, "underflow");
+  if (count > (((double)number_of_entries()/(double)table_size())*rehash_multiple)) {
+    // Set a flag for the next safepoint, which should be at some guaranteed
+    // safepoint interval.
+    return true;
+  }
+  return false;
+}
+
+// Create a new table and using alternate hash code, populate the new table
+// with the existing elements.   This can be used to change the hash code
+// and could in the future change the size of the table.
+
+template <class T> void Hashtable<T>::move_to(Hashtable<T>* new_table) {
+  int saved_entry_count = number_of_entries();
+
+  // Iterate through the table and create a new entry for the new table
+  for (int i = 0; i < new_table->table_size(); ++i) {
+    for (HashtableEntry<T>* p = bucket(i); p != NULL; ) {
+      HashtableEntry<T>* next = p->next();
+      T string = p->literal();
+      // Use alternate hashing algorithm on the symbol in the first table
+      unsigned int hashValue = new_hash(string);
+      // Get a new index relative to the new table (can also change size)
+      int index = new_table->hash_to_index(hashValue);
+      p->set_hash(hashValue);
+      unlink_entry(p);
+      new_table->add_entry(index, p);
+      p = next;
+    }
+  }
+  // give the new table the free list as well
+  new_table->copy_freelist(this);
+  assert(new_table->number_of_entries() == saved_entry_count, "lost entry on dictionary copy?");
+
+  // Destroy memory used by the buckets in the hashtable.  The memory
+  // for the elements has been used in a new table and is not
+  // destroyed.  The memory reuse will benefit resizing the SystemDictionary
+  // to avoid a memory allocation spike at safepoint.
+  free_buckets();
+}
 
 // Reverse the order of elements in the hash buckets.
 
