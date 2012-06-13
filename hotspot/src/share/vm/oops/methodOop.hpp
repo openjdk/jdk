@@ -198,8 +198,8 @@ class methodOopDesc : public oopDesc {
   // C string, for the purpose of providing more useful NoSuchMethodErrors
   // and fatal error handling. The string is allocated in resource
   // area if a buffer is not provided by the caller.
-  char* name_and_sig_as_C_string();
-  char* name_and_sig_as_C_string(char* buf, int size);
+  char* name_and_sig_as_C_string() const;
+  char* name_and_sig_as_C_string(char* buf, int size) const;
 
   // Static routine in the situations we don't have a methodOop
   static char* name_and_sig_as_C_string(Klass* klass, Symbol* method_name, Symbol* signature);

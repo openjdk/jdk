@@ -70,11 +70,11 @@ address methodOopDesc::get_c2i_unverified_entry() {
   return _adapter->get_c2i_unverified_entry();
 }
 
-char* methodOopDesc::name_and_sig_as_C_string() {
+char* methodOopDesc::name_and_sig_as_C_string() const {
   return name_and_sig_as_C_string(Klass::cast(constants()->pool_holder()), name(), signature());
 }
 
-char* methodOopDesc::name_and_sig_as_C_string(char* buf, int size) {
+char* methodOopDesc::name_and_sig_as_C_string(char* buf, int size) const {
   return name_and_sig_as_C_string(Klass::cast(constants()->pool_holder()), name(), signature(), buf, size);
 }
 
@@ -177,7 +177,8 @@ void methodOopDesc::mask_for(int bci, InterpreterOopMap* mask) {
 
 
 int methodOopDesc::bci_from(address bcp) const {
-  assert(is_native() && bcp == code_base() || contains(bcp) || is_error_reported(), "bcp doesn't belong to this method");
+  assert(is_native() && bcp == code_base() || contains(bcp) || is_error_reported(),
+         err_msg("bcp doesn't belong to this method: bcp: " INTPTR_FORMAT ", method: %s", bcp, name_and_sig_as_C_string()));
   return bcp - code_base();
 }
 

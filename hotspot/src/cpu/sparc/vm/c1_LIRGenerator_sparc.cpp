@@ -965,10 +965,10 @@ void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
   if (!x->klass()->is_loaded() || PatchALot) {
     patching_info = state_for(x, x->state_before());
 
-    // cannot re-use same xhandlers for multiple CodeEmitInfos, so
-    // clone all handlers.  This is handled transparently in other
-    // places by the CodeEmitInfo cloning logic but is handled
-    // specially here because a stub isn't being used.
+    // Cannot re-use same xhandlers for multiple CodeEmitInfos, so
+    // clone all handlers (NOTE: Usually this is handled transparently
+    // by the CodeEmitInfo cloning logic in CodeStub constructors but
+    // is done explicitly here because a stub isn't being used).
     x->set_exception_handlers(new XHandlers(x->exception_handlers()));
   }
   CodeEmitInfo* info = state_for(x, x->state());
