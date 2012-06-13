@@ -23,19 +23,24 @@
 # questions.
 #
 
+# The exception handling of swing beaninfo which have the own tool directory
 ifeq (,$(BUILD_TOOLS))
 $(eval $(call SetupJavaCompilation,BUILD_TOOLS,\
                 SETUP:=GENERATE_OLDBYTECODE,\
-		SRC:=$(JDK_TOPDIR)/make/tools/src,\
+		SRC:=$(JDK_TOPDIR)/make/tools/src \
+                     $(JDK_TOPDIR)/src/solaris/classes/sun/awt/X11/generator \
+                     $(JDK_TOPDIR)/makefiles/sun/xawt \
+                     $(JDK_TOPDIR)/make/tools/swing-beans,\
 		BIN:=$(JDK_OUTPUTDIR)/btclasses))
+
 endif
 
 ifndef DISABLE_NIMBUS
 
 $(JDK_OUTPUTDIR)/btclasses/build/tools/generatenimbus/resources/%.template : \
 	$(JDK_TOPDIR)/src/share/classes/javax/swing/plaf/nimbus/%.template
-	mkdir -p $(@D)
-	cp $< $@
+	$(MKDIR) -p $(@D)
+	$(CP) $< $@
 
 BUILD_TOOLS += $(foreach i,$(wildcard $(JDK_TOPDIR)/src/share/classes/javax/swing/plaf/nimbus/*.template),$(JDK_OUTPUTDIR)/btclasses/build/tools/generatenimbus/resources/$(notdir $i))
 
@@ -112,3 +117,9 @@ TOOL_MAKECLASSLIST=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
 # Nimbus is used somewhere in the swing build.
 TOOL_GENERATENIMBUS=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
 	build.tools.generatenimbus.Generator
+
+TOOL_WRAPPERGENERATOR=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+	WrapperGenerator
+
+TOOL_TOBIN=$(JAVA) -Djava.awt.headless=true -cp $(JDK_OUTPUTDIR)/btclasses \
+	sun.awt.X11.ToBin

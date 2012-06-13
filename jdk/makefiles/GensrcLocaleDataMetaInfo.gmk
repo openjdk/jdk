@@ -84,10 +84,26 @@ $(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,CalendarData,Non,filter))
 
 $(JDK_OUTPUTDIR)/gensrc_localedatametainfo/sun/util/LocaleDataMetaInfo.java: \
 		$(JDK_TOPDIR)/src/share/classes/sun/util/LocaleDataMetaInfo-XLocales.java.template
-	mkdir -p $(@D)
+	$(MKDIR) -p $(@D)
 	$(ECHO) Creating sun/util/LocaleDataMetaInfo.java from $(words $(LOCALE_RESOURCES)) found resources.
 	$(PRINTF) "PREV_LOCALE_RESOURCES:=$(LOCALE_RESOURCES)" > $(JDK_OUTPUTDIR)/gensrc_localedatametainfo/_the.locale_resources
 	$(SED) $(SED_ARGS) $(JDK_TOPDIR)/src/share/classes/sun/util/LocaleDataMetaInfo-XLocales.java.template \
 		> $(JDK_OUTPUTDIR)/gensrc_localedatametainfo/sun/util/LocaleDataMetaInfo.java
 
 GENSRC_LOCALEDATAMETAINFO:=$(JDK_OUTPUTDIR)/gensrc_localedatametainfo/sun/util/LocaleDataMetaInfo.java
+
+###
+
+GENSRC_CRBC_DST := $(JDK_OUTPUTDIR)/gensrc_localedatametainfo/sun/util/CoreResourceBundleControl.java
+GENSRC_CRBC_CMD := $(JDK_TOPDIR)/makefiles/scripts/localelist.sh
+
+JRE_NONEXIST_LOCALES := en en_US de_DE es_ES fr_FR it_IT ja_JP ko_KR sv_SE zh
+
+$(GENSRC_CRBC_DST) : $(JDK_TOPDIR)/src/share/classes/sun/util/CoreResourceBundleControl-XLocales.java.template \
+                     $(GENSRC_CRBC_CMD)
+	$(MKDIR) -p $(@D)
+	NAWK="$(NAWK)" SED="$(SED)" $(SH) $(GENSRC_CRBC_CMD) "$(JRE_NONEXIST_LOCALES)" $< $@ 
+
+GENSRC_LOCALEDATAMETAINFO += $(GENSRC_CRBC_DST)
+
+###
