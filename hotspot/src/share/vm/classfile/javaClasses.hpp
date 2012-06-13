@@ -158,20 +158,16 @@ class java_lang_String : AllStatic {
   static jchar* as_unicode_string(oop java_string, int& length);
 
   // Compute the hash value for a java.lang.String object which would
-  // contain the characters passed in. This hash value is used for at
-  // least two purposes.
+  // contain the characters passed in.
   //
-  // (a) As the hash value used by the StringTable for bucket selection
-  //     and comparison (stored in the HashtableEntry structures).  This
-  //     is used in the String.intern() method.
+  // As the hash value used by the String object itself, in
+  // String.hashCode().  This value is normally calculated in Java code
+  // in the String.hashCode method(), but is precomputed for String
+  // objects in the shared archive file.
+  // hash P(31) from Kernighan & Ritchie
   //
-  // (b) As the hash value used by the String object itself, in
-  //     String.hashCode().  This value is normally calculate in Java code
-  //     in the String.hashCode method(), but is precomputed for String
-  //     objects in the shared archive file.
-  //
-  //     For this reason, THIS ALGORITHM MUST MATCH String.hashCode().
-  static unsigned int hash_string(jchar* s, int len) {
+  // For this reason, THIS ALGORITHM MUST MATCH String.toHash().
+  template <typename T> static unsigned int to_hash(T* s, int len) {
     unsigned int h = 0;
     while (len-- > 0) {
       h = 31*h + (unsigned int) *s;
@@ -179,6 +175,10 @@ class java_lang_String : AllStatic {
     }
     return h;
   }
+  static unsigned int to_hash(oop java_string);
+
+  // This is the string hash code used by the StringTable, which may be
+  // the same as String.toHash or an alternate hash code.
   static unsigned int hash_string(oop java_string);
 
   static bool equals(oop java_string, jchar* chars, int len);
