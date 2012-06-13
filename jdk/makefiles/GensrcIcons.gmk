@@ -1,0 +1,112 @@
+#
+# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+GENSRC_ICONS :=
+GENSRC_ICONS_SRC :=
+GENSRC_ICONS_TMP := $(JDK_OUTPUTDIR)/gensrc_icons
+GENSRC_ICONS_DST := $(GENSRC_ICONS_TMP)/sun/awt/X11
+
+ifdef OPENJDK
+	ICONS_PATH_PREFIX := $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)
+else
+	ICONS_PATH_PREFIX := $(JDK_TOPDIR)/src/closed/solaris
+endif
+
+GENSRC_ICONS_SRC += \
+    $(ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon16.png \
+    $(ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon24.png \
+    $(ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon32.png \
+    $(ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon48.png
+
+
+ICONPATH := $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/classes/sun/awt/X11
+
+GENSRC_ICONS_SRC += \
+   $(ICONPATH)/security-icon-bw16.png \
+   $(ICONPATH)/security-icon-interim16.png \
+   $(ICONPATH)/security-icon-yellow16.png \
+   $(ICONPATH)/security-icon-bw24.png \
+   $(ICONPATH)/security-icon-interim24.png \
+   $(ICONPATH)/security-icon-yellow24.png \
+   $(ICONPATH)/security-icon-bw32.png \
+   $(ICONPATH)/security-icon-interim32.png \
+   $(ICONPATH)/security-icon-yellow32.png \
+   $(ICONPATH)/security-icon-bw48.png \
+   $(ICONPATH)/security-icon-interim48.png \
+   $(ICONPATH)/security-icon-yellow48.png
+
+GENSRC_ICONS_FILES := $(notdir $(GENSRC_ICONS_SRC))
+
+GENSRC_ICONS_SHORT_NAME = $(subst .,_,$(subst -,_,$(1)))
+GENSRC_ICONS_DST_NAME = XAWTIcon$(2)_$(subst .,_,$(subst -,_,$(1)))
+
+###
+
+$(GENSRC_ICONS_TMP)/_the.dir :
+	$(ECHO) Generating icon classes
+	$(MKDIR) -p $(GENSRC_ICONS_DST)
+	$(TOUCH) $@
+
+###
+
+define SetupGensrcIcon
+        # param 1 is for src-file
+        # param 2 is for src-dir
+	$1_SHORTNAME := $(call GENSRC_ICONS_SHORT_NAME,$1)
+	$1_NAME32 := $(call GENSRC_ICONS_DST_NAME,$1,32)
+	$1_TARGET32 := $(GENSRC_ICONS_DST)/$$($1_NAME32).java
+	$1_NAME64 := $(call GENSRC_ICONS_DST_NAME,$1,64)
+	$1_TARGET64 := $(GENSRC_ICONS_DST)/$$($1_NAME64).java
+
+$$($1_TARGET32) : $2/$1 $(GENSRC_ICONS_TMP)/_the.dir
+	$(RM) $$@ $$@.tmp
+	$(ECHO) "package sun.awt.X11;" > $$@.tmp
+	$(ECHO) "public class $$($1_NAME32) {" >> $$@.tmp
+	$(ECHO) "public static int[] $$($1_SHORTNAME) = { " >> $$@.tmp
+# TODO FIX FIX FIX
+ifneq ($(PLATFORM),macosx)
+	$(CAT) $$< | $(TOOL_TOBIN) >> $$@.tmp
+endif
+	$(ECHO) "}; }" >> $$@.tmp
+	$(MV) $$@.tmp $$@
+
+GENSRC_ICONS += $$($1_TARGET32)
+
+$$($1_TARGET64) : $2/$1 $(GENSRC_ICONS_TMP)/_the.dir
+	$(RM) $$@ $$@.tmp
+	$(ECHO) "package sun.awt.X11;" > $$@.tmp
+	$(ECHO) "public class $$($1_NAME64) {" >> $$@.tmp
+	$(ECHO) "public static long[] $$($1_SHORTNAME) = { " >> $$@.tmp
+# TODO FIX FIX FIX
+ifneq ($(PLATFORM),macosx)
+	$(CAT) $$< | $(TOOL_TOBIN) >> $$@.tmp
+endif
+	$(ECHO) "}; }" >> $$@.tmp
+	$(MV) $$@.tmp $$@
+
+GENSRC_ICONS += $$($1_TARGET64)
+endef
+
+$(foreach I,$(GENSRC_ICONS_SRC), $(eval $(call SetupGensrcIcon,$(notdir $(I)),$(dir $(I)))))
