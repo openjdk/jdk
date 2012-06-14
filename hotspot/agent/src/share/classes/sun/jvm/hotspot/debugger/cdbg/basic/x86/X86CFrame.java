@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.debugger.cdbg.basic.x86;
 
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.debugger.x86.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.*;
 
@@ -43,8 +44,11 @@ public class X86CFrame extends BasicCFrame {
     this.pc  = pc;
   }
 
-  public CFrame sender() {
-    if (ebp == null) {
+  public CFrame sender(ThreadProxy thread) {
+    X86ThreadContext context = (X86ThreadContext) thread.getContext();
+    Address esp = context.getRegisterAsAddress(X86ThreadContext.ESP);
+
+    if ( (ebp == null) || ebp.lessThan(esp) ) {
       return null;
     }
 
