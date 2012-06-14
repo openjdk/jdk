@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -657,7 +657,7 @@ public class BugSpot extends JPanel {
     while (fr != null) {
       trace.add(new StackTraceEntry(fr, getCDebugger()));
       try {
-        fr = fr.sender();
+        fr = fr.sender(t);
       } catch (AddressException e) {
         e.printStackTrace();
         showMessageDialog("Error while walking stack; stack trace will be truncated\n(see console for details)",
