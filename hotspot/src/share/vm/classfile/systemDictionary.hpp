@@ -170,9 +170,6 @@ class SymbolPropertyTable;
   /* It's okay if this turns out to be NULL in non-1.4 JDKs. */               \
   template(nio_Buffer_klass,             java_nio_Buffer,                Opt) \
                                                                               \
-  /* If this class isn't present, it won't be referenced. */                  \
-  template(AtomicLongCSImpl_klass,       sun_misc_AtomicLongCSImpl,   Opt)    \
-                                                                              \
   template(DownloadManager_klass,        sun_jkernel_DownloadManager, Opt_Kernel) \
                                                                               \
   template(PostVMInitHook_klass,         sun_misc_PostVMInitHook, Opt)        \

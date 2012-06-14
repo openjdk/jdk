@@ -460,6 +460,25 @@ public:
     subsume_node(old, nn);
   }
 
+  // Delayed node rehash: remove a node from the hash table and rehash it during
+  // next optimizing pass
+  void rehash_node_delayed(Node* n) {
+    hash_delete(n);
+    _worklist.push(n);
+  }
+
+  // Replace ith edge of "n" with "in"
+  void replace_input_of(Node* n, int i, Node* in) {
+    rehash_node_delayed(n);
+    n->set_req(i, in);
+  }
+
+  // Delete ith edge of "n"
+  void delete_input_of(Node* n, int i) {
+    rehash_node_delayed(n);
+    n->del_req(i);
+  }
+
   bool delay_transform() const { return _delay_transform; }
 
   void set_delay_transform(bool delay) {
