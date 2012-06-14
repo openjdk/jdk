@@ -527,6 +527,9 @@ class Parse : public GraphKit {
   int     repush_if_args();
   void    adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
                               Block* path, Block* other_path);
+  void    sharpen_type_after_if(BoolTest::mask btest,
+                                Node* con, const Type* tcon,
+                                Node* val, const Type* tval);
   IfNode* jump_if_fork_int(Node* a, Node* b, BoolTest::mask mask);
   Node*   jump_if_join(Node* iffalse, Node* iftrue);
   void    jump_if_true_fork(IfNode *ifNode, int dest_bci_if_true, int prof_table_index);
