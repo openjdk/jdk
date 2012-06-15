@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,9 +84,14 @@ class InterpreterMacroAssembler: public MacroAssembler {
     movptr(reg, Address(rbp, frame::interpreter_frame_method_offset * wordSize));
   }
 
-  void get_constant_pool(Register reg) {
+  void get_const(Register reg) {
     get_method(reg);
-    movptr(reg, Address(reg, methodOopDesc::constants_offset()));
+    movptr(reg, Address(reg, methodOopDesc::const_offset()));
+  }
+
+  void get_constant_pool(Register reg) {
+    get_const(reg);
+    movptr(reg, Address(reg, constMethodOopDesc::constants_offset()));
   }
 
   void get_constant_pool_cache(Register reg) {

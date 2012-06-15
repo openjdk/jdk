@@ -6927,21 +6927,42 @@ void MacroAssembler::pow_exp_core_encoding() {
   addptr(rsp,sizeof(jdouble));
 }
 
+void MacroAssembler::increase_precision() {
+  subptr(rsp, BytesPerWord);
+  fnstcw(Address(rsp, 0));
+  movl(rax, Address(rsp, 0));
+  orl(rax, 0x300);
+  push(rax);
+  fldcw(Address(rsp, 0));
+  pop(rax);
+}
+
+void MacroAssembler::restore_precision() {
+  fldcw(Address(rsp, 0));
+  addptr(rsp, BytesPerWord);
+}
+
 void MacroAssembler::fast_pow() {
   // computes X^Y = 2^(Y * log2(X))
   // if fast computation is not possible, result is NaN. Requires
   // fallback from user of this macro.
+  // increase precision for intermediate steps of the computation
+  increase_precision();
   fyl2x();                 // Stack: (Y*log2(X)) ...
   pow_exp_core_encoding(); // Stack: exp(X) ...
+  restore_precision();
 }
 
 void MacroAssembler::fast_exp() {
   // computes exp(X) = 2^(X * log2(e))
   // if fast computation is not possible, result is NaN. Requires
   // fallback from user of this macro.
+  // increase precision for intermediate steps of the computation
+  increase_precision();
   fldl2e();                // Stack: log2(e) X ...
   fmulp(1);                // Stack: (X*log2(e)) ...
   pow_exp_core_encoding(); // Stack: exp(X) ...
+  restore_precision();
 }
 
 void MacroAssembler::pow_or_exp(bool is_exp, int num_fpu_regs_in_use) {

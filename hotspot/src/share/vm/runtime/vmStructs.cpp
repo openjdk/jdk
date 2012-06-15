@@ -358,7 +358,6 @@ static inline uint64_t cast_uint64_t(size_t x)
   nonstatic_field(methodDataOopDesc,           _arg_stack,                                    intx)                                  \
   nonstatic_field(methodDataOopDesc,           _arg_returned,                                 intx)                                  \
   nonstatic_field(methodOopDesc,               _constMethod,                                  constMethodOop)                        \
-  nonstatic_field(methodOopDesc,               _constants,                                    constantPoolOop)                       \
   nonstatic_field(methodOopDesc,               _method_data,                                  methodDataOop)                         \
   nonstatic_field(methodOopDesc,               _interpreter_invocation_count,                 int)                                   \
   nonstatic_field(methodOopDesc,               _access_flags,                                 AccessFlags)                           \
@@ -378,7 +377,7 @@ static inline uint64_t cast_uint64_t(size_t x)
   volatile_nonstatic_field(methodOopDesc,      _from_compiled_entry,                          address)                               \
   volatile_nonstatic_field(methodOopDesc,      _from_interpreted_entry,                       address)                               \
   volatile_nonstatic_field(constMethodOopDesc, _fingerprint,                                  uint64_t)                              \
-  nonstatic_field(constMethodOopDesc,          _method,                                       methodOop)                             \
+  nonstatic_field(constMethodOopDesc,          _constants,                                    constantPoolOop)                       \
   nonstatic_field(constMethodOopDesc,          _stackmap_data,                                typeArrayOop)                          \
   nonstatic_field(constMethodOopDesc,          _exception_table,                              typeArrayOop)                          \
   nonstatic_field(constMethodOopDesc,          _constMethod_size,                             int)                                   \
@@ -1876,7 +1875,6 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_c2_type(StoreNNode, StoreNode)                                  \
   declare_c2_type(StoreCMNode, StoreNode)                                 \
   declare_c2_type(LoadPLockedNode, LoadPNode)                             \
-  declare_c2_type(LoadLLockedNode, LoadLNode)                             \
   declare_c2_type(SCMemProjNode, ProjNode)                                \
   declare_c2_type(LoadStoreNode, Node)                                    \
   declare_c2_type(StorePConditionalNode, LoadStoreNode)                   \
