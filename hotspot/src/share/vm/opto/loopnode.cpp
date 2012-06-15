@@ -2751,7 +2751,8 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
         // Do not count uncommon calls
         if( !n->is_CallStaticJava() || !n->as_CallStaticJava()->_name ) {
           Node *iff = n->in(0)->in(0);
-          if( !iff->is_If() ||
+          // No any calls for vectorized loops.
+          if( UseSuperWord || !iff->is_If() ||
               (n->in(0)->Opcode() == Op_IfFalse &&
                (1.0 - iff->as_If()->_prob) >= 0.01) ||
               (iff->as_If()->_prob >= 0.01) )
@@ -3216,7 +3217,8 @@ void PhaseIdealLoop::build_loop_late_post( Node *n ) {
     case Op_ModF:
     case Op_ModD:
     case Op_LoadB:              // Same with Loads; they can sink
-    case Op_LoadUS:             // during loop optimizations.
+    case Op_LoadUB:             // during loop optimizations.
+    case Op_LoadUS:
     case Op_LoadD:
     case Op_LoadF:
     case Op_LoadI:

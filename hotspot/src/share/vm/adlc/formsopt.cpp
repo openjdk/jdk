@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ AllocClass *RegisterForm::addAllocClass(char *className) {
 // for spill-slots/regs.
 void RegisterForm::addSpillRegClass() {
   // Stack slots start at the next available even register number.
-  _reg_ctr = (_reg_ctr+1) & ~1;
+  _reg_ctr = (_reg_ctr+7) & ~7;
   const char *rc_name   = "stack_slots";
   RegClass   *reg_class = new RegClass(rc_name);
   reg_class->_stack_or_reg = true;
@@ -150,9 +150,14 @@ bool   RegisterForm::verify() {
 int RegisterForm::RegMask_Size() {
   // Need at least this many words
   int words_for_regs = (_reg_ctr + 31)>>5;
-  // Add a few for incoming & outgoing arguments to calls.
+  // The array of Register Mask bits should be large enough to cover
+  // all the machine registers and all parameters that need to be passed
+  // on the stack (stack registers) up to some interesting limit.  Methods
+  // that need more parameters will NOT be compiled.  On Intel, the limit
+  // is something like 90+ parameters.
+  // Add a few (3 words == 96 bits) for incoming & outgoing arguments to calls.
   // Round up to the next doubleword size.
-  return (words_for_regs + 2 + 1) & ~1;
+  return (words_for_regs + 3 + 1) & ~1;
 }
 
 void RegisterForm::dump() {                  // Debug printer

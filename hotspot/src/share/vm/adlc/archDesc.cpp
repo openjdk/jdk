@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -911,12 +911,24 @@ const char *ArchDesc::getIdealType(const char *idealOp) {
   // Find last character in idealOp, it specifies the type
   char  last_char = 0;
   const char *ptr = idealOp;
-  for( ; *ptr != '\0'; ++ptr) {
+  for (; *ptr != '\0'; ++ptr) {
     last_char = *ptr;
   }
 
+  // Match Vector types.
+  if (strncmp(idealOp, "Vec",3)==0) {
+    switch(last_char) {
+    case 'S':  return "TypeVect::VECTS";
+    case 'D':  return "TypeVect::VECTD";
+    case 'X':  return "TypeVect::VECTX";
+    case 'Y':  return "TypeVect::VECTY";
+    default:
+      internal_err("Vector type %s with unrecognized type\n",idealOp);
+    }
+  }
+
   // !!!!!
-  switch( last_char ) {
+  switch(last_char) {
   case 'I':    return "TypeInt::INT";
   case 'P':    return "TypePtr::BOTTOM";
   case 'N':    return "TypeNarrowOop::BOTTOM";

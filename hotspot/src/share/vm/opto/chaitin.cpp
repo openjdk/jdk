@@ -75,6 +75,7 @@ void LRG::dump( ) const {
   // Flags
   if( _is_oop ) tty->print("Oop ");
   if( _is_float ) tty->print("Float ");
+  if( _is_vector ) tty->print("Vector ");
   if( _was_spilled1 ) tty->print("Spilled ");
   if( _was_spilled2 ) tty->print("Spilled2 ");
   if( _direct_conflict ) tty->print("Direct_conflict ");
@@ -479,16 +480,18 @@ void PhaseChaitin::Register_Allocate() {
 
   // Move important info out of the live_arena to longer lasting storage.
   alloc_node_regs(_names.Size());
-  for( uint i=0; i < _names.Size(); i++ ) {
-    if( _names[i] ) {           // Live range associated with Node?
-      LRG &lrg = lrgs( _names[i] );
-      if( lrg.num_regs() == 1 ) {
-        _node_regs[i].set1( lrg.reg() );
+  for (uint i=0; i < _names.Size(); i++) {
+    if (_names[i]) {           // Live range associated with Node?
+      LRG &lrg = lrgs(_names[i]);
+      if (!lrg.alive()) {
+        _node_regs[i].set_bad();
+      } else if (lrg.num_regs() == 1) {
+        _node_regs[i].set1(lrg.reg());
       } else {                  // Must be a register-pair
-        if( !lrg._fat_proj ) {  // Must be aligned adjacent register pair
+        if (!lrg._fat_proj) {   // Must be aligned adjacent register pair
           // Live ranges record the highest register in their mask.
           // We want the low register for the AD file writer's convenience.
-          _node_regs[i].set2( OptoReg::add(lrg.reg(),-1) );
+          _node_regs[i].set2( OptoReg::add(lrg.reg(),(1-lrg.num_regs())) );
         } else {                // Misaligned; extract 2 bits
           OptoReg::Name hi = lrg.reg(); // Get hi register
           lrg.Remove(hi);       // Yank from mask
@@ -568,7 +571,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         // Check for float-vs-int live range (used in register-pressure
         // calculations)
         const Type *n_type = n->bottom_type();
-        if( n_type->is_floatingpoint() )
+        if (n_type->is_floatingpoint())
           lrg._is_float = 1;
 
         // Check for twice prior spilling.  Once prior spilling might have
@@ -599,18 +602,28 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         // Limit result register mask to acceptable registers
         const RegMask &rm = n->out_RegMask();
         lrg.AND( rm );
-        // Check for bound register masks
-        const RegMask &lrgmask = lrg.mask();
-        if( lrgmask.is_bound1() || lrgmask.is_bound2() )
-          lrg._is_bound = 1;
-
-        // Check for maximum frequency value
-        if( lrg._maxfreq < b->_freq )
-          lrg._maxfreq = b->_freq;
 
         int ireg = n->ideal_reg();
         assert( !n->bottom_type()->isa_oop_ptr() || ireg == Op_RegP,
                 "oops must be in Op_RegP's" );
+
+        // Check for vector live range (only if vector register is used).
+        // On SPARC vector uses RegD which could be misaligned so it is not
+        // processes as vector in RA.
+        if (RegMask::is_vector(ireg))
+          lrg._is_vector = 1;
+        assert(n_type->isa_vect() == NULL || lrg._is_vector || ireg == Op_RegD,
+               "vector must be in vector registers");
+
+        // Check for bound register masks
+        const RegMask &lrgmask = lrg.mask();
+        if (lrgmask.is_bound(ireg))
+          lrg._is_bound = 1;
+
+        // Check for maximum frequency value
+        if (lrg._maxfreq < b->_freq)
+          lrg._maxfreq = b->_freq;
+
         // Check for oop-iness, or long/double
         // Check for multi-kill projection
         switch( ireg ) {
@@ -689,7 +702,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           // AND changes how we count interferences.  A mis-aligned
           // double can interfere with TWO aligned pairs, or effectively
           // FOUR registers!
-          if( rm.is_misaligned_Pair() ) {
+          if (rm.is_misaligned_pair()) {
             lrg._fat_proj = 1;
             lrg._is_bound = 1;
           }
@@ -705,6 +718,33 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
 #else
           lrg.set_reg_pressure(1);
 #endif
+          break;
+        case Op_VecS:
+          assert(Matcher::vector_size_supported(T_BYTE,4), "sanity");
+          assert(RegMask::num_registers(Op_VecS) == RegMask::SlotsPerVecS, "sanity");
+          lrg.set_num_regs(RegMask::SlotsPerVecS);
+          lrg.set_reg_pressure(1);
+          break;
+        case Op_VecD:
+          assert(Matcher::vector_size_supported(T_FLOAT,RegMask::SlotsPerVecD), "sanity");
+          assert(RegMask::num_registers(Op_VecD) == RegMask::SlotsPerVecD, "sanity");
+          assert(lrgmask.is_aligned_sets(RegMask::SlotsPerVecD), "vector should be aligned");
+          lrg.set_num_regs(RegMask::SlotsPerVecD);
+          lrg.set_reg_pressure(1);
+          break;
+        case Op_VecX:
+          assert(Matcher::vector_size_supported(T_FLOAT,RegMask::SlotsPerVecX), "sanity");
+          assert(RegMask::num_registers(Op_VecX) == RegMask::SlotsPerVecX, "sanity");
+          assert(lrgmask.is_aligned_sets(RegMask::SlotsPerVecX), "vector should be aligned");
+          lrg.set_num_regs(RegMask::SlotsPerVecX);
+          lrg.set_reg_pressure(1);
+          break;
+        case Op_VecY:
+          assert(Matcher::vector_size_supported(T_FLOAT,RegMask::SlotsPerVecY), "sanity");
+          assert(RegMask::num_registers(Op_VecY) == RegMask::SlotsPerVecY, "sanity");
+          assert(lrgmask.is_aligned_sets(RegMask::SlotsPerVecY), "vector should be aligned");
+          lrg.set_num_regs(RegMask::SlotsPerVecY);
+          lrg.set_reg_pressure(1);
           break;
         default:
           ShouldNotReachHere();
@@ -763,24 +803,38 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         } else {
           lrg.AND( rm );
         }
+
         // Check for bound register masks
         const RegMask &lrgmask = lrg.mask();
-        if( lrgmask.is_bound1() || lrgmask.is_bound2() )
+        int kreg = n->in(k)->ideal_reg();
+        bool is_vect = RegMask::is_vector(kreg);
+        assert(n->in(k)->bottom_type()->isa_vect() == NULL ||
+               is_vect || kreg == Op_RegD,
+               "vector must be in vector registers");
+        if (lrgmask.is_bound(kreg))
           lrg._is_bound = 1;
+
         // If this use of a double forces a mis-aligned double,
         // flag as '_fat_proj' - really flag as allowing misalignment
         // AND changes how we count interferences.  A mis-aligned
         // double can interfere with TWO aligned pairs, or effectively
         // FOUR registers!
-        if( lrg.num_regs() == 2 && !lrg._fat_proj && rm.is_misaligned_Pair() ) {
+#ifdef ASSERT
+        if (is_vect) {
+          assert(lrgmask.is_aligned_sets(lrg.num_regs()), "vector should be aligned");
+          assert(!lrg._fat_proj, "sanity");
+          assert(RegMask::num_registers(kreg) == lrg.num_regs(), "sanity");
+        }
+#endif
+        if (!is_vect && lrg.num_regs() == 2 && !lrg._fat_proj && rm.is_misaligned_pair()) {
           lrg._fat_proj = 1;
           lrg._is_bound = 1;
         }
         // if the LRG is an unaligned pair, we will have to spill
         // so clear the LRG's register mask if it is not already spilled
-        if ( !n->is_SpillCopy() &&
-               (lrg._def == NULL || lrg.is_multidef() || !lrg._def->is_SpillCopy()) &&
-               lrgmask.is_misaligned_Pair()) {
+        if (!is_vect && !n->is_SpillCopy() &&
+            (lrg._def == NULL || lrg.is_multidef() || !lrg._def->is_SpillCopy()) &&
+            lrgmask.is_misaligned_pair()) {
           lrg.Clear();
         }
 
@@ -793,12 +847,14 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
   } // end for all blocks
 
   // Final per-liverange setup
-  for( uint i2=0; i2<_maxlrg; i2++ ) {
+  for (uint i2=0; i2<_maxlrg; i2++) {
     LRG &lrg = lrgs(i2);
-    if( lrg.num_regs() == 2 && !lrg._fat_proj )
-      lrg.ClearToPairs();
+    assert(!lrg._is_vector || !lrg._fat_proj, "sanity");
+    if (lrg.num_regs() > 1 && !lrg._fat_proj) {
+      lrg.clear_to_sets();
+    }
     lrg.compute_set_mask_size();
-    if( lrg.not_free() ) {      // Handle case where we lose from the start
+    if (lrg.not_free()) {      // Handle case where we lose from the start
       lrg.set_reg(OptoReg::Name(LRG::SPILL_REG));
       lrg._direct_conflict = 1;
     }
@@ -1104,22 +1160,17 @@ OptoReg::Name PhaseChaitin::bias_color( LRG &lrg, int chunk ) {
       // Choose a color which is legal for him
       RegMask tempmask = lrg.mask();
       tempmask.AND(lrgs(copy_lrg).mask());
-      OptoReg::Name reg;
-      if( lrg.num_regs() == 1 ) {
-        reg = tempmask.find_first_elem();
-      } else {
-        tempmask.ClearToPairs();
-        reg = tempmask.find_first_pair();
-      }
-      if( OptoReg::is_valid(reg) )
+      tempmask.clear_to_sets(lrg.num_regs());
+      OptoReg::Name reg = tempmask.find_first_set(lrg.num_regs());
+      if (OptoReg::is_valid(reg))
         return reg;
     }
   }
 
   // If no bias info exists, just go with the register selection ordering
-  if( lrg.num_regs() == 2 ) {
-    // Find an aligned pair
-    return OptoReg::add(lrg.mask().find_first_pair(),chunk);
+  if (lrg._is_vector || lrg.num_regs() == 2) {
+    // Find an aligned set
+    return OptoReg::add(lrg.mask().find_first_set(lrg.num_regs()),chunk);
   }
 
   // CNC - Fun hack.  Alternate 1st and 2nd selection.  Enables post-allocate
@@ -1149,6 +1200,7 @@ OptoReg::Name PhaseChaitin::choose_color( LRG &lrg, int chunk ) {
     // Use a heuristic to "bias" the color choice
     return bias_color(lrg, chunk);
 
+  assert(!lrg._is_vector, "should be not vector here" );
   assert( lrg.num_regs() >= 2, "dead live ranges do not color" );
 
   // Fat-proj case or misaligned double argument.
@@ -1238,14 +1290,16 @@ uint PhaseChaitin::Select( ) {
     }
     //assert(is_allstack == lrg->mask().is_AllStack(), "nbrs must not change AllStackedness");
     // Aligned pairs need aligned masks
-    if( lrg->num_regs() == 2 && !lrg->_fat_proj )
-      lrg->ClearToPairs();
+    assert(!lrg->_is_vector || !lrg->_fat_proj, "sanity");
+    if (lrg->num_regs() > 1 && !lrg->_fat_proj) {
+      lrg->clear_to_sets();
+    }
 
     // Check if a color is available and if so pick the color
     OptoReg::Name reg = choose_color( *lrg, chunk );
 #ifdef SPARC
     debug_only(lrg->compute_set_mask_size());
-    assert(lrg->num_regs() != 2 || lrg->is_bound() || is_even(reg-1), "allocate all doubles aligned");
+    assert(lrg->num_regs() < 2 || lrg->is_bound() || is_even(reg-1), "allocate all doubles aligned");
 #endif
 
     //---------------
@@ -1277,17 +1331,16 @@ uint PhaseChaitin::Select( ) {
       // If the live range is not bound, then we actually had some choices
       // to make.  In this case, the mask has more bits in it than the colors
       // chosen.  Restrict the mask to just what was picked.
-      if( lrg->num_regs() == 1 ) { // Size 1 live range
+      int n_regs = lrg->num_regs();
+      assert(!lrg->_is_vector || !lrg->_fat_proj, "sanity");
+      if (n_regs == 1 || !lrg->_fat_proj) {
+        assert(!lrg->_is_vector || n_regs <= RegMask::SlotsPerVecY, "sanity");
         lrg->Clear();           // Clear the mask
         lrg->Insert(reg);       // Set regmask to match selected reg
-        lrg->set_mask_size(1);
-      } else if( !lrg->_fat_proj ) {
-        // For pairs, also insert the low bit of the pair
-        assert( lrg->num_regs() == 2, "unbound fatproj???" );
-        lrg->Clear();           // Clear the mask
-        lrg->Insert(reg);       // Set regmask to match selected reg
-        lrg->Insert(OptoReg::add(reg,-1));
-        lrg->set_mask_size(2);
+        // For vectors and pairs, also insert the low bit of the pair
+        for (int i = 1; i < n_regs; i++)
+          lrg->Insert(OptoReg::add(reg,-i));
+        lrg->set_mask_size(n_regs);
       } else {                  // Else fatproj
         // mask must be equal to fatproj bits, by definition
       }
@@ -1860,12 +1913,20 @@ char *PhaseChaitin::dump_register( const Node *n, char *buf  ) const {
       sprintf(buf,"L%d",lidx);  // No register binding yet
     } else if( !lidx ) {        // Special, not allocated value
       strcpy(buf,"Special");
-    } else if( (lrgs(lidx).num_regs() == 1)
-                ? !lrgs(lidx).mask().is_bound1()
-                : !lrgs(lidx).mask().is_bound2() ) {
-      sprintf(buf,"L%d",lidx); // No register binding yet
-    } else {                    // Hah!  We have a bound machine register
-      print_reg( lrgs(lidx).reg(), this, buf );
+    } else {
+      if (lrgs(lidx)._is_vector) {
+        if (lrgs(lidx).mask().is_bound_set(lrgs(lidx).num_regs()))
+          print_reg( lrgs(lidx).reg(), this, buf ); // a bound machine register
+        else
+          sprintf(buf,"L%d",lidx); // No register binding yet
+      } else if( (lrgs(lidx).num_regs() == 1)
+                 ? lrgs(lidx).mask().is_bound1()
+                 : lrgs(lidx).mask().is_bound_pair() ) {
+        // Hah!  We have a bound machine register
+        print_reg( lrgs(lidx).reg(), this, buf );
+      } else {
+        sprintf(buf,"L%d",lidx); // No register binding yet
+      }
     }
   }
   return buf+strlen(buf);
