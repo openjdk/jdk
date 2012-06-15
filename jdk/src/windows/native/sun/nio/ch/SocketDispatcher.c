@@ -141,41 +141,54 @@ Java_sun_nio_ch_SocketDispatcher_readv0(JNIEnv *env, jclass clazz, jobject fdo,
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_SocketDispatcher_write0(JNIEnv *env, jclass clazz, jobject fdo,
-                                       jlong address, jint len)
+                                       jlong address, jint total)
 {
     /* set up */
     int i = 0;
     DWORD written = 0;
+    jint count = 0;
     jint fd = fdval(env, fdo);
     WSABUF buf;
 
-    /* limit size */
-    if (len > MAX_BUFFER_SIZE)
-        len = MAX_BUFFER_SIZE;
+    do {
+        /* limit size */
+        jint len = total - count;
+        if (len > MAX_BUFFER_SIZE)
+            len = MAX_BUFFER_SIZE;
 
-    /* copy iovec into WSABUF */
-    buf.buf = (char *)address;
-    buf.len = (u_long)len;
+        /* copy iovec into WSABUF */
+        buf.buf = (char *)address;
+        buf.len = (u_long)len;
 
-    /* read into the buffers */
-    i = WSASend((SOCKET)fd, /* Socket */
-            &buf,           /* pointers to the buffers */
-            (DWORD)1,       /* number of buffers to process */
-            &written,       /* receives number of bytes written */
-            0,              /* no flags */
-            0,              /* no overlapped sockets */
-            0);             /* no completion routine */
+        /* write from the buffer */
+        i = WSASend((SOCKET)fd,     /* Socket */
+                    &buf,           /* pointers to the buffers */
+                    (DWORD)1,       /* number of buffers to process */
+                    &written,       /* receives number of bytes written */
+                    0,              /* no flags */
+                    0,              /* no overlapped sockets */
+                    0);             /* no completion routine */
 
-    if (i == SOCKET_ERROR) {
-        int theErr = (jint)WSAGetLastError();
-        if (theErr == WSAEWOULDBLOCK) {
-            return IOS_UNAVAILABLE;
+        if (i == SOCKET_ERROR) {
+            if (count > 0) {
+                /* can't throw exception when some bytes have been written */
+                break;
+            } else {
+               int theErr = (jint)WSAGetLastError();
+               if (theErr == WSAEWOULDBLOCK) {
+                   return IOS_UNAVAILABLE;
+               }
+               JNU_ThrowIOExceptionWithLastError(env, "Write failed");
+               return IOS_THROWN;
+            }
         }
-        JNU_ThrowIOExceptionWithLastError(env, "Write failed");
-        return IOS_THROWN;
-    }
 
-    return convertReturnVal(env, (jint)written, JNI_FALSE);
+        count += written;
+        address += written;
+
+    } while ((count < total) && (written == MAX_BUFFER_SIZE));
+
+    return count;
 }
 
 JNIEXPORT jlong JNICALL

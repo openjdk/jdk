@@ -194,19 +194,17 @@ public class Hashtable<K,V>
     transient final int hashSeed = sun.misc.Hashing.randomHashSeed(this);
 
     private int hash(Object k) {
-        int h = hashSeed;
-
         if (k instanceof String) {
             return ((String)k).hash32();
-        } else {
-            h ^= k.hashCode();
-
-            // This function ensures that hashCodes that differ only by
-            // constant multiples at each bit position have a bounded
-            // number of collisions (approximately 8 at default load factor).
-            h ^= (h >>> 20) ^ (h >>> 12);
-            return h ^ (h >>> 7) ^ (h >>> 4);
         }
+
+        int h = hashSeed ^ k.hashCode();
+
+        // This function ensures that hashCodes that differ only by
+        // constant multiples at each bit position have a bounded
+        // number of collisions (approximately 8 at default load factor).
+        h ^= (h >>> 20) ^ (h >>> 12);
+        return h ^ (h >>> 7) ^ (h >>> 4);
     }
 
     /**
@@ -1015,7 +1013,7 @@ public class Hashtable<K,V>
      */
     private static class Entry<K,V> implements Map.Entry<K,V> {
         final int hash;
-        K key;
+        final K key;
         V value;
         Entry<K,V> next;
 
