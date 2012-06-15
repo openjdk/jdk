@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ inline VMReg FloatRegisterImpl::as_VMReg() {
 }
 
 inline VMReg XMMRegisterImpl::as_VMReg() {
-  return VMRegImpl::as_VMReg((encoding() << 1) + ConcreteRegisterImpl::max_fpr);
+  return VMRegImpl::as_VMReg((encoding() << 3) + ConcreteRegisterImpl::max_fpr);
 }
 
 
@@ -75,7 +75,7 @@ inline FloatRegister VMRegImpl::as_FloatRegister() {
 inline XMMRegister VMRegImpl::as_XMMRegister() {
   assert( is_XMMRegister() && is_even(value()), "must be" );
   // Yuk
-  return ::as_XMMRegister((value() - ConcreteRegisterImpl::max_fpr) >> 1);
+  return ::as_XMMRegister((value() - ConcreteRegisterImpl::max_fpr) >> 3);
 }
 
 inline   bool VMRegImpl::is_concrete() {

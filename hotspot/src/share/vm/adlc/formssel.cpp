@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -432,6 +432,14 @@ Form::DataType InstructForm::is_ideal_store() const {
   return  _matrule->is_ideal_store();
 }
 
+// Return 'true' if this instruction matches an ideal vector node
+bool InstructForm::is_vector() const {
+  if( _matrule == NULL ) return false;
+
+  return _matrule->is_vector();
+}
+
+
 // Return the input register that must match the output register
 // If this is not required, return 0
 uint InstructForm::two_address(FormDict &globals) {
@@ -750,6 +758,9 @@ bool InstructForm::captures_bottom_type(FormDict &globals) const {
   else if ( is_ideal_store() != Form::none  )                return true;
 
   if (needs_base_oop_edge(globals)) return true;
+
+  if (is_vector()) return true;
+  if (is_mach_constant()) return true;
 
   return  false;
 }
@@ -3381,11 +3392,8 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "StoreI","StoreL","StoreP","StoreN","StoreD","StoreF" ,
     "StoreB","StoreC","Store" ,"StoreFP",
     "LoadI", "LoadUI2L", "LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
-    "LoadB" , "LoadUB", "LoadUS" ,"LoadS" ,"Load"   ,
-    "Store4I","Store2I","Store2L","Store2D","Store4F","Store2F","Store16B",
-    "Store8B","Store4B","Store8C","Store4C","Store2C",
-    "Load4I" ,"Load2I" ,"Load2L" ,"Load2D" ,"Load4F" ,"Load2F" ,"Load16B" ,
-    "Load8B" ,"Load4B" ,"Load8C" ,"Load4C" ,"Load2C" ,"Load8S", "Load4S","Load2S",
+    "LoadB" , "LoadUB", "LoadUS" ,"LoadS" ,"Load" ,
+    "StoreVector", "LoadVector",
     "LoadRange", "LoadKlass", "LoadNKlass", "LoadL_unaligned", "LoadD_unaligned",
     "LoadPLocked",
     "StorePConditional", "StoreIConditional", "StoreLConditional",
@@ -3822,6 +3830,10 @@ bool MatchRule::is_base_register(FormDict &globals) const {
          strcmp(opType,"RegL")==0 ||
          strcmp(opType,"RegF")==0 ||
          strcmp(opType,"RegD")==0 ||
+         strcmp(opType,"VecS")==0 ||
+         strcmp(opType,"VecD")==0 ||
+         strcmp(opType,"VecX")==0 ||
+         strcmp(opType,"VecY")==0 ||
          strcmp(opType,"Reg" )==0) ) {
       return 1;
     }
@@ -3938,19 +3950,12 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"ReverseBytesL")==0 ||
         strcmp(opType,"ReverseBytesUS")==0 ||
         strcmp(opType,"ReverseBytesS")==0 ||
-        strcmp(opType,"Replicate16B")==0 ||
-        strcmp(opType,"Replicate8B")==0 ||
-        strcmp(opType,"Replicate4B")==0 ||
-        strcmp(opType,"Replicate8C")==0 ||
-        strcmp(opType,"Replicate4C")==0 ||
-        strcmp(opType,"Replicate8S")==0 ||
-        strcmp(opType,"Replicate4S")==0 ||
-        strcmp(opType,"Replicate4I")==0 ||
-        strcmp(opType,"Replicate2I")==0 ||
-        strcmp(opType,"Replicate2L")==0 ||
-        strcmp(opType,"Replicate4F")==0 ||
-        strcmp(opType,"Replicate2F")==0 ||
-        strcmp(opType,"Replicate2D")==0 ||
+        strcmp(opType,"ReplicateB")==0 ||
+        strcmp(opType,"ReplicateS")==0 ||
+        strcmp(opType,"ReplicateI")==0 ||
+        strcmp(opType,"ReplicateL")==0 ||
+        strcmp(opType,"ReplicateF")==0 ||
+        strcmp(opType,"ReplicateD")==0 ||
         0 /* 0 to line up columns nicely */ )
       return 1;
   }
@@ -4032,6 +4037,23 @@ Form::DataType MatchRule::is_ideal_load() const {
   }
 
   return ideal_load;
+}
+
+bool MatchRule::is_vector() const {
+  if( _rChild ) {
+    const char  *opType = _rChild->_opType;
+    if( strcmp(opType,"ReplicateB")==0 ||
+        strcmp(opType,"ReplicateS")==0 ||
+        strcmp(opType,"ReplicateI")==0 ||
+        strcmp(opType,"ReplicateL")==0 ||
+        strcmp(opType,"ReplicateF")==0 ||
+        strcmp(opType,"ReplicateD")==0 ||
+        strcmp(opType,"LoadVector")==0 ||
+        strcmp(opType,"StoreVector")==0 ||
+        0 /* 0 to line up columns nicely */ )
+      return true;
+  }
+  return false;
 }
 
 
