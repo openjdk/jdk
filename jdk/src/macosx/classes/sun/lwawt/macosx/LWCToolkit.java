@@ -63,9 +63,7 @@ public class LWCToolkit extends LWToolkit {
 
     private static native void initIDs();
 
-    static native void startNativeNestedEventLoop();
-
-    static native void stopNativeNestedEventLoop();
+    static native void executeNextAppKitEvent();
 
     private static CInputMethodDescriptor sInputMethodDescriptor;
 

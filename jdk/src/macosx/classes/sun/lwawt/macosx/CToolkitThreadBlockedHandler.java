@@ -41,10 +41,11 @@ final class CToolkitThreadBlockedHandler implements ToolkitThreadBlockedHandler 
     }
 
     public void enter() {
-        toolkit.startNativeNestedEventLoop();
+        // Execute the next AppKit event while we are waiting for system to
+        // finish our request - this will save us from biting our own tail
+        toolkit.executeNextAppKitEvent();
     }
 
     public void exit() {
-        toolkit.stopNativeNestedEventLoop();
     }
 }
