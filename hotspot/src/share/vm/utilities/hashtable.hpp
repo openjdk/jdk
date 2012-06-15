@@ -159,8 +159,6 @@ public:
   // Reverse the order of elements in each of the buckets.
   void reverse();
 
-  static unsigned int hash_symbol(const char* s, int len);
-
 private:
   // Instance variables
   int               _table_size;
@@ -179,6 +177,11 @@ protected:
   void verify_lookup_length(double load);
 #endif
 
+  enum {
+    rehash_count = 100,
+    rehash_multiple = 60
+  };
+
   void initialize(int table_size, int entry_size, int number_of_entries);
 
   // Accessor
@@ -192,6 +195,34 @@ protected:
 
   // Table entry management
   BasicHashtableEntry* new_entry(unsigned int hashValue);
+
+  // Check that the table is unbalanced
+  bool check_rehash_table(int count);
+
+  // Used when moving the entry to another table
+  // Clean up links, but do not add to free_list
+  void unlink_entry(BasicHashtableEntry* entry) {
+    entry->set_next(NULL);
+    --_number_of_entries;
+  }
+
+  // Move over freelist and free block for allocation
+  void copy_freelist(BasicHashtable* src) {
+    _free_list = src->_free_list;
+    src->_free_list = NULL;
+    _first_free_entry = src->_first_free_entry;
+    src->_first_free_entry = NULL;
+    _end_block = src->_end_block;
+    src->_end_block = NULL;
+  }
+
+  // Free the buckets in this hashtable
+  void free_buckets() {
+    if (NULL != _buckets) {
+      FREE_C_HEAP_ARRAY(HashtableBucket, _buckets);
+      _buckets = NULL;
+    }
+  }
 
 public:
   int table_size() { return _table_size; }
@@ -249,6 +280,10 @@ protected:
   HashtableEntry<T>** bucket_addr(int i) {
     return (HashtableEntry<T>**)BasicHashtable::bucket_addr(i);
   }
+
+  // Function to move these elements into the new table.
+  void move_to(Hashtable<T>* new_table);
+  virtual unsigned int new_hash(T) { ShouldNotReachHere(); return 0; } // should be overridden
 };
 
 
