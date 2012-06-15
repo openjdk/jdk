@@ -2297,7 +2297,6 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc ) {
   case Op_LoadL:
   case Op_LoadL_unaligned:
   case Op_LoadPLocked:
-  case Op_LoadLLocked:
   case Op_LoadP:
   case Op_LoadN:
   case Op_LoadRange:
