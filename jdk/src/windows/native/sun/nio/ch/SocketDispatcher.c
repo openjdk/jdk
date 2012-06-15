@@ -97,10 +97,6 @@ Java_sun_nio_ch_SocketDispatcher_readv0(JNIEnv *env, jclass clazz, jobject fdo,
         return IOS_THROWN;
     }
 
-    if ((isNT() == JNI_FALSE) && (len > 16)) {
-        len = 16;
-    }
-
     /* copy iovec into WSABUF */
     for(i=0; i<len; i++) {
         jint iov_len = iovp[i].iov_len;
@@ -206,10 +202,6 @@ Java_sun_nio_ch_SocketDispatcher_writev0(JNIEnv *env, jclass clazz,
     if (bufs == 0) {
         JNU_ThrowOutOfMemoryError(env, 0);
         return IOS_THROWN;
-    }
-
-    if ((isNT() == JNI_FALSE) && (len > 16)) {
-        len = 16;
     }
 
     /* copy iovec into WSABUF */
