@@ -424,10 +424,6 @@ public class Check {
          */
         boolean compatible(Type found, Type req, Warner warn);
         /**
-         * Instantiate a ForAll type against a given target type 'req' in given context
-         */
-        Type rawInstantiatePoly(ForAll found, Type req, Warner warn);
-        /**
          * Report a check error
          */
         void report(DiagnosticPosition pos, Type found, Type req, JCDiagnostic details);
@@ -454,10 +450,6 @@ public class Check {
             return enclosingContext.compatible(found, req, warn);
         }
 
-        public Type rawInstantiatePoly(ForAll found, Type req, Warner warn) {
-            return enclosingContext.rawInstantiatePoly(found, req, warn);
-        }
-
         public void report(DiagnosticPosition pos, Type found, Type req, JCDiagnostic details) {
             enclosingContext.report(pos, found, req, details);
         }
@@ -482,12 +474,6 @@ public class Check {
             return types.isAssignable(found, req, warn);
         }
 
-        public Type rawInstantiatePoly(ForAll found, Type req, Warner warn) {
-            if (req.tag == NONE)
-                req = found.qtype.tag <= VOID ? found.qtype : syms.objectType;
-            return infer.instantiateExpr(found, req, warn);
-        }
-
         public Warner checkWarner(DiagnosticPosition pos, Type found, Type req) {
             return convertWarner(pos, found, req);
         }
@@ -506,11 +492,6 @@ public class Check {
     Type checkType(final DiagnosticPosition pos, Type found, Type req, CheckContext checkContext) {
         if (req.tag == ERROR)
             return req;
-        if (found.tag == FORALL) {
-            ForAll fa = (ForAll)found;
-            Type owntype = instantiatePoly(pos, checkContext, fa, req, checkContext.checkWarner(pos, found, req));
-            return checkType(pos, owntype, req, checkContext);
-        }
         if (req.tag == NONE)
             return found;
         if (checkContext.compatible(found, req, checkContext.checkWarner(pos, found, req))) {
@@ -525,32 +506,6 @@ public class Check {
         }
     }
 
-    /** Instantiate polymorphic type to some prototype, unless
-     *  prototype is `anyPoly' in which case polymorphic type
-     *  is returned unchanged.
-     */
-    Type instantiatePoly(DiagnosticPosition pos, CheckContext checkContext, ForAll t, Type pt, Warner warn) throws Infer.NoInstanceException {
-        try {
-            return checkContext.rawInstantiatePoly(t, pt, warn);
-        } catch (final Infer.NoInstanceException ex) {
-            JCDiagnostic d = ex.getDiagnostic();
-            if (d != null) {
-                if (ex.isAmbiguous) {
-                    d = diags.fragment("undetermined.type", t, d);
-                }
-            }
-            checkContext.report(pos, t, pt, d);
-            return types.createErrorType(pt);
-        } catch (Infer.InvalidInstanceException ex) {
-            JCDiagnostic d = ex.getDiagnostic();
-            if (d != null) {
-                d = diags.fragment("invalid.inferred.types", t.tvars, d);
-            }
-            checkContext.report(pos, t, pt, d);
-            return types.createErrorType(pt);
-        }
-    }
-
     /** Check that a given type can be cast to a given target type.
      *  Return the result of the cast.
      *  @param pos        Position to be used for error reporting.
@@ -561,10 +516,7 @@ public class Check {
         return checkCastable(pos, found, req, basicHandler);
     }
     Type checkCastable(DiagnosticPosition pos, Type found, Type req, CheckContext checkContext) {
-        if (found.tag == FORALL) {
-            instantiatePoly(pos, basicHandler, (ForAll) found, req, castWarner(pos, found, req));
-            return req;
-        } else if (types.isCastable(found, req, castWarner(pos, found, req))) {
+        if (types.isCastable(found, req, castWarner(pos, found, req))) {
             return req;
         } else {
             checkContext.report(pos, found, req, diags.fragment("inconvertible.types", found, req));

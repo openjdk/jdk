@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ constMethodOop constMethodKlass::allocate(int byte_code_size,
   No_Safepoint_Verifier no_safepoint;
   cm->set_interpreter_kind(Interpreter::invalid);
   cm->init_fingerprint();
-  cm->set_method(NULL);
+  cm->set_constants(NULL);
   cm->set_stackmap_data(NULL);
   cm->set_exception_table(NULL);
   cm->set_code_size(byte_code_size);
@@ -98,7 +98,7 @@ constMethodOop constMethodKlass::allocate(int byte_code_size,
 void constMethodKlass::oop_follow_contents(oop obj) {
   assert (obj->is_constMethod(), "object must be constMethod");
   constMethodOop cm = constMethodOop(obj);
-  MarkSweep::mark_and_push(cm->adr_method());
+  MarkSweep::mark_and_push(cm->adr_constants());
   MarkSweep::mark_and_push(cm->adr_stackmap_data());
   MarkSweep::mark_and_push(cm->adr_exception_table());
   // Performance tweak: We skip iterating over the klass pointer since we
@@ -110,7 +110,7 @@ void constMethodKlass::oop_follow_contents(ParCompactionManager* cm,
                                            oop obj) {
   assert (obj->is_constMethod(), "object must be constMethod");
   constMethodOop cm_oop = constMethodOop(obj);
-  PSParallelCompact::mark_and_push(cm, cm_oop->adr_method());
+  PSParallelCompact::mark_and_push(cm, cm_oop->adr_constants());
   PSParallelCompact::mark_and_push(cm, cm_oop->adr_stackmap_data());
   PSParallelCompact::mark_and_push(cm, cm_oop->adr_exception_table());
   // Performance tweak: We skip iterating over the klass pointer since we
@@ -121,7 +121,7 @@ void constMethodKlass::oop_follow_contents(ParCompactionManager* cm,
 int constMethodKlass::oop_oop_iterate(oop obj, OopClosure* blk) {
   assert (obj->is_constMethod(), "object must be constMethod");
   constMethodOop cm = constMethodOop(obj);
-  blk->do_oop(cm->adr_method());
+  blk->do_oop(cm->adr_constants());
   blk->do_oop(cm->adr_stackmap_data());
   blk->do_oop(cm->adr_exception_table());
   // Get size before changing pointers.
@@ -135,7 +135,7 @@ int constMethodKlass::oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr) 
   assert (obj->is_constMethod(), "object must be constMethod");
   constMethodOop cm = constMethodOop(obj);
   oop* adr;
-  adr = cm->adr_method();
+  adr = cm->adr_constants();
   if (mr.contains(adr)) blk->do_oop(adr);
   adr = cm->adr_stackmap_data();
   if (mr.contains(adr)) blk->do_oop(adr);
@@ -153,7 +153,7 @@ int constMethodKlass::oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr) 
 int constMethodKlass::oop_adjust_pointers(oop obj) {
   assert(obj->is_constMethod(), "should be constMethod");
   constMethodOop cm = constMethodOop(obj);
-  MarkSweep::adjust_pointer(cm->adr_method());
+  MarkSweep::adjust_pointer(cm->adr_constants());
   MarkSweep::adjust_pointer(cm->adr_stackmap_data());
   MarkSweep::adjust_pointer(cm->adr_exception_table());
   // Get size before changing pointers.
@@ -188,8 +188,8 @@ void constMethodKlass::oop_print_on(oop obj, outputStream* st) {
   assert(obj->is_constMethod(), "must be constMethod");
   Klass::oop_print_on(obj, st);
   constMethodOop m = constMethodOop(obj);
-  st->print(" - method:       " INTPTR_FORMAT " ", (address)m->method());
-  m->method()->print_value_on(st); st->cr();
+  st->print(" - constants:       " INTPTR_FORMAT " ", (address)m->constants());
+  m->constants()->print_value_on(st); st->cr();
   st->print(" - exceptions:   " INTPTR_FORMAT "\n", (address)m->exception_table());
   if (m->has_stackmap_table()) {
     st->print(" - stackmap data:       ");
@@ -223,8 +223,8 @@ void constMethodKlass::oop_verify_on(oop obj, outputStream* st) {
   // Verification can occur during oop construction before the method or
   // other fields have been initialized.
   if (!obj->partially_loaded()) {
-    guarantee(m->method()->is_perm(), "should be in permspace");
-    guarantee(m->method()->is_method(), "should be method");
+    guarantee(m->constants()->is_perm(), "should be in permspace");
+    guarantee(m->constants()->is_constantPool(), "should be constant pool");
     typeArrayOop stackmap_data = m->stackmap_data();
     guarantee(stackmap_data == NULL ||
               stackmap_data->is_perm(),  "should be in permspace");

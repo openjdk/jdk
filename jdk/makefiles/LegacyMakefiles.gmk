@@ -31,26 +31,11 @@ all: $(JDK_OUTPUTDIR)/_the.legacy_make
 DEPS:=	$(shell $(FIND) $(JDK_TOPDIR)/makefiles/java -type f) \
 		$(shell $(FIND) $(JDK_TOPDIR)/makefiles/javax -type f) \
 		$(shell $(FIND) $(JDK_TOPDIR)/makefiles/sun -type f) \
-		$(shell $(FIND) $(JDK_TOPDIR)/makefiles/com -type f) \
-		$(shell $(FIND) $(JDK_TOPDIR)/makefiles/apple -type f)
+		$(shell $(FIND) $(JDK_TOPDIR)/makefiles/com -type f)
 
 $(JDK_OUTPUTDIR)/_the.legacy_make: $(DEPS)
 	(echo Building single threaded Java subdir && \
         $(MAKE) -j1 -C java all && \
-	(if test "$(PLATFORM)" = macosx; then \
-		echo Building single threaded Apple subdir && \
-		$(MAKE) -j1 -C apple all; \
-	fi) && \
-	echo Building single threaded javax subdir && \
-	$(MAKE) -j1 -C javax all && \
-	echo Building single threaded sun subdir && \
-	$(MAKE) -j1 -C sun all && \
-	echo Building single threaded com subdir && \
-	$(MAKE) -j1 -C com all && \
-	if [ -z "$(OPENJDK)" ]; then \
-		echo Building single threaded altclasses subdir && \
-		$(MAKE) -j1 -C altclasses all; \
-	fi && \
 	touch $@)
 
 .PHONY: all

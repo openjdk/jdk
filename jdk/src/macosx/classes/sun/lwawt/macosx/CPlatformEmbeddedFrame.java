@@ -86,11 +86,10 @@ public class CPlatformEmbeddedFrame implements PlatformWindow {
     }
 
     @Override
-    public int getScreenImOn() {
+    public GraphicsDevice getGraphicsDevice() {
         // REMIND: return the main screen for the initial implementation
-        CGraphicsConfig gc = (CGraphicsConfig)peer.getGraphicsConfiguration();
-        CGraphicsDevice device = gc.getDevice();
-        return device.getCoreGraphicsScreen();
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        return ge.getDefaultScreenDevice();
     }
 
     @Override

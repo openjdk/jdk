@@ -31,6 +31,7 @@ import java.security.cert.CRLReason;
 import java.security.cert.X509CRLEntry;
 import java.math.BigInteger;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -500,6 +501,9 @@ public class X509CRLEntryImpl extends X509CRLEntry {
     }
 
     public Map<String, java.security.cert.Extension> getExtensions() {
+        if (extensions == null) {
+            return Collections.emptyMap();
+        }
         Collection<Extension> exts = extensions.getAllExtensions();
         HashMap<String, java.security.cert.Extension> map =
             new HashMap<String, java.security.cert.Extension>(exts.size());

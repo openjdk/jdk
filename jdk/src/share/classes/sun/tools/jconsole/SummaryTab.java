@@ -29,24 +29,19 @@ import java.awt.*;
 import java.io.*;
 import java.lang.management.*;
 import java.lang.reflect.*;
-import java.net.URL;
 import java.text.*;
 import java.util.*;
 import java.util.concurrent.*;
 
 import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.text.*;
+
 
 import static sun.tools.jconsole.Formatter.*;
-import static sun.tools.jconsole.Resources.*;
 import static sun.tools.jconsole.Utilities.*;
 
 @SuppressWarnings("serial")
 class SummaryTab extends Tab {
     private static final String cpuUsageKey = "cpu";
-    private static final String cpuUsageName = getText("CPU Usage");
-    private static final String cpuUsageFormat = "CPUUsageFormat";
 
     private static final String newDivider =   "<tr><td colspan=4><font size =-1><hr>";
     private static final String newTable =     "<tr><td colspan=4 align=left><table cellpadding=1>";
@@ -70,7 +65,7 @@ class SummaryTab extends Tab {
     }
 
     public static String getTabName() {
-        return Resources.getText("SummaryTab.tabName");
+        return Messages.SUMMARY_TAB_TAB_NAME;
     }
 
     public SummaryTab(VMPanel vmPanel) {
@@ -83,7 +78,7 @@ class SummaryTab extends Tab {
         add(new JScrollPane(info));
 
         headerDateTimeFormat =
-            getDateTimeFormat("SummaryTab.headerDateTimeFormat");
+            Formatter.getDateTimeFormat(Messages.SUMMARY_TAB_HEADER_DATE_TIME_FORMAT);
     }
 
     public SwingWorker<?, ?> newSwingWorker() {
@@ -138,7 +133,7 @@ class SummaryTab extends Tab {
                proxyClient.getSunOperatingSystemMXBean();
 
             append("<tr><td colspan=4>");
-            append("<center><b>" + getText("SummaryTab.tabName") + "</b></center>");
+            append("<center><b>" + Messages.SUMMARY_TAB_TAB_NAME + "</b></center>");
             String dateTime =
                 headerDateTimeFormat.format(System.currentTimeMillis());
             append("<center>" + dateTime + "</center>");
@@ -147,30 +142,30 @@ class SummaryTab extends Tab {
 
             {  // VM info
                 append(newLeftTable);
-                append("Connection name", vmPanel.getDisplayName());
-                append("Virtual Machine",
-                       getText("SummaryTab.vmVersion",
-                               rmBean.getVmName(), rmBean.getVmVersion()));
-                append("Vendor", rmBean.getVmVendor());
-                append("Name", rmBean.getName());
+                append(Messages.CONNECTION_NAME, vmPanel.getDisplayName());
+                append(Messages.VIRTUAL_MACHINE,
+                       Resources.format(Messages.SUMMARY_TAB_VM_VERSION,
+                                        rmBean.getVmName(), rmBean.getVmVersion()));
+                append(Messages.VENDOR, rmBean.getVmVendor());
+                append(Messages.NAME, rmBean.getName());
                 append(endTable);
 
                 append(newRightTable);
                 result.upTime = rmBean.getUptime();
-                append("Uptime", formatTime(result.upTime));
+                append(Messages.UPTIME, formatTime(result.upTime));
                 if (sunOSMBean != null) {
                     result.processCpuTime = sunOSMBean.getProcessCpuTime();
-                    append("Process CPU time", formatNanoTime(result.processCpuTime));
+                    append(Messages.PROCESS_CPU_TIME, formatNanoTime(result.processCpuTime));
                 }
 
                 if (cmpMBean != null) {
-                    append("JIT compiler", cmpMBean.getName());
-                    append("Total compile time",
+                    append(Messages.JIT_COMPILER, cmpMBean.getName());
+                    append(Messages.TOTAL_COMPILE_TIME,
                            cmpMBean.isCompilationTimeMonitoringSupported()
                                     ? formatTime(cmpMBean.getTotalCompilationTime())
-                                    : getText("Unavailable"));
+                                    : Messages.UNAVAILABLE);
                 } else {
-                    append("JIT compiler", getText("Unavailable"));
+                    append(Messages.JIT_COMPILER, Messages.UNAVAILABLE);
                 }
                 append(endTable);
             }
@@ -185,10 +180,10 @@ class SummaryTab extends Tab {
                 long ttCount = tmBean.getTotalStartedThreadCount();
                 String[] strings1 = formatLongs(tlCount, tpCount,
                                                 tdCount, ttCount);
-                append("Live Threads",          strings1[0]);
-                append("Peak",                  strings1[1]);
-                append("Daemon threads",        strings1[2]);
-                append("Total threads started", strings1[3]);
+                append(Messages.LIVE_THREADS, strings1[0]);
+                append(Messages.PEAK, strings1[1]);
+                append(Messages.DAEMON_THREADS, strings1[2]);
+                append(Messages.TOTAL_THREADS_STARTED, strings1[3]);
                 append(endTable);
 
                 append(newRightTable);
@@ -196,9 +191,9 @@ class SummaryTab extends Tab {
                 long cuCount = clMBean.getUnloadedClassCount();
                 long ctCount = clMBean.getTotalLoadedClassCount();
                 String[] strings2 = formatLongs(clCount, cuCount, ctCount);
-                append("Current classes loaded", strings2[0]);
-                append("Total classes loaded",   strings2[2]);
-                append("Total classes unloaded", strings2[1]);
+                append(Messages.CURRENT_CLASSES_LOADED, strings2[0]);
+                append(Messages.TOTAL_CLASSES_LOADED, strings2[2]);
+                append(Messages.TOTAL_CLASSES_UNLOADED, strings2[1]);
                 append(null, "");
                 append(endTable);
             }
@@ -210,16 +205,16 @@ class SummaryTab extends Tab {
 
                 append(newLeftTable);
                 String[] strings1 = formatKByteStrings(u.getUsed(), u.getMax());
-                append("Current heap size", strings1[0]);
-                append("Maximum heap size", strings1[1]);
+                append(Messages.CURRENT_HEAP_SIZE, strings1[0]);
+                append(Messages.MAXIMUM_HEAP_SIZE, strings1[1]);
                 append(endTable);
 
                 append(newRightTable);
                 String[] strings2 = formatKByteStrings(u.getCommitted());
-                append("Committed memory",  strings2[0]);
-                append("SummaryTab.pendingFinalization.label",
-                       getText("SummaryTab.pendingFinalization.value",
-                               memoryBean.getObjectPendingFinalizationCount()));
+                append(Messages.COMMITTED_MEMORY,  strings2[0]);
+                append(Messages.SUMMARY_TAB_PENDING_FINALIZATION_LABEL,
+                       Messages.SUMMARY_TAB_PENDING_FINALIZATION_VALUE,
+                       memoryBean.getObjectPendingFinalizationCount());
                 append(endTable);
 
                 append(newTable);
@@ -230,10 +225,10 @@ class SummaryTab extends Tab {
                     long gcCount = garbageCollectorMBean.getCollectionCount();
                     long gcTime = garbageCollectorMBean.getCollectionTime();
 
-                    append("Garbage collector",
-                           getText("GcInfo", gcName, gcCount,
-                                   (gcTime >= 0) ? formatTime(gcTime)
-                                                 : getText("Unavailable")),
+                    append(Messages.GARBAGE_COLLECTOR,
+                           Resources.format(Messages.GC_INFO, gcName, gcCount,
+                                            (gcTime >= 0) ? formatTime(gcTime)
+                                                 : Messages.UNAVAILABLE),
                            4);
                 }
                 append(endTable);
@@ -247,9 +242,9 @@ class SummaryTab extends Tab {
                 String osVersion = osMBean.getVersion();
                 String osArch = osMBean.getArch();
                 result.nCPUs = osMBean.getAvailableProcessors();
-                append("Operating System", osName + " " + osVersion);
-                append("Architecture", osArch);
-                append("Number of processors", result.nCPUs+"");
+                append(Messages.OPERATING_SYSTEM, osName + " " + osVersion);
+                append(Messages.ARCHITECTURE, osArch);
+                append(Messages.NUMBER_OF_PROCESSORS, result.nCPUs+"");
 
                 if (pathSeparator == null) {
                     // Must use separator of remote OS, not File.pathSeparator
@@ -268,14 +263,14 @@ class SummaryTab extends Tab {
                                            sunOSMBean.getTotalSwapSpaceSize(),
                                            sunOSMBean.getFreeSwapSpaceSize());
 
-                    append("Committed virtual memory", kbStrings1[0]);
+                    append(Messages.COMMITTED_VIRTUAL_MEMORY, kbStrings1[0]);
                     append(endTable);
 
                     append(newRightTable);
-                    append("Total physical memory", kbStrings2[0]);
-                    append("Free physical memory",  kbStrings2[1]);
-                    append("Total swap space",      kbStrings2[2]);
-                    append("Free swap space",       kbStrings2[3]);
+                    append(Messages.TOTAL_PHYSICAL_MEMORY, kbStrings2[0]);
+                    append(Messages.FREE_PHYSICAL_MEMORY,  kbStrings2[1]);
+                    append(Messages.TOTAL_SWAP_SPACE,      kbStrings2[2]);
+                    append(Messages.FREE_SWAP_SPACE,       kbStrings2[3]);
                 }
 
                 append(endTable);
@@ -290,13 +285,13 @@ class SummaryTab extends Tab {
                 for (String arg : inputArguments) {
                     args += arg + " ";
                 }
-                append("VM arguments", args, 4);
-                append("Class path",   rmBean.getClassPath(), 4);
-                append("Library path", rmBean.getLibraryPath(), 4);
-                append("Boot class path",
+                append(Messages.VM_ARGUMENTS, args, 4);
+                append(Messages.CLASS_PATH,   rmBean.getClassPath(), 4);
+                append(Messages.LIBRARY_PATH, rmBean.getLibraryPath(), 4);
+                append(Messages.BOOT_CLASS_PATH,
                        rmBean.isBootClassPathSupported()
                                     ? rmBean.getBootClassPath()
-                                    : getText("Unavailable"),
+                                    : Messages.UNAVAILABLE,
                        4);
                 append(endTable);
             }
@@ -327,7 +322,7 @@ class SummaryTab extends Tab {
     }
 
     void append(String label, String value) {
-        append(newRow((label != null) ? getText(label) : label, value));
+        append(newRow(label, value));
     }
 
     private void append(String label, String value, int columnPerRow) {
@@ -335,13 +330,7 @@ class SummaryTab extends Tab {
             value = value.replace(pathSeparator,
                                   "<b></b>" + pathSeparator);
         }
-        append(newRow(getText(label), value, columnPerRow));
-    }
-
-    void append(String label1, String value1,
-                String label2, String value2) {
-        append(newRow(getText(label1), value1,
-                      getText(label2), value2));
+        append(newRow(label, value, columnPerRow));
     }
 
     OverviewPanel[] getOverviewPanels() {
@@ -355,7 +344,7 @@ class SummaryTab extends Tab {
         private long prevUpTime, prevProcessCpuTime;
 
         CPUOverviewPanel() {
-            super(getText("CPU Usage"), cpuUsageKey, cpuUsageName, Plotter.Unit.PERCENT);
+            super(Messages.CPU_USAGE, cpuUsageKey, Messages.CPU_USAGE, Plotter.Unit.PERCENT);
             getPlotter().setDecimals(CPU_DECIMALS);
         }
 
@@ -373,14 +362,11 @@ class SummaryTab extends Tab {
 
                 getPlotter().addValues(result.timeStamp,
                                 Math.round(cpuUsage * Math.pow(10.0, CPU_DECIMALS)));
-                getInfoLabel().setText(getText(cpuUsageFormat,
+                getInfoLabel().setText(Resources.format(Messages.CPU_USAGE_FORMAT,
                                                String.format("%."+CPU_DECIMALS+"f", cpuUsage)));
             }
             this.prevUpTime = result.upTime;
             this.prevProcessCpuTime = result.processCpuTime;
         }
     }
-
-
-
 }

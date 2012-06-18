@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,32 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 6853328 7172701
+ * @run main/othervm OkAsDelegate false true true false false false
+ *      FORWARDABLE ticket not allowed, always fail
+ * @run main/othervm OkAsDelegate true false false false false false
+ *      Service ticket no OK-AS-DELEGATE. Request nothing, gain nothing
+ * @run main/othervm OkAsDelegate true false true false false false
+ *      Service ticket no OK-AS-DELEGATE. Request deleg policy, gain nothing
+ * @run main/othervm OkAsDelegate true true false true false true
+ *      Service ticket no OK-AS-DELEGATE. Request deleg, granted
+ * @run main/othervm OkAsDelegate true true true true false true
+ *      Service ticket no OK-AS-DELEGATE. Request deleg and deleg policy, granted, with info not by policy
+ * @run main/othervm -Dtest.kdc.policy.ok-as-delegate OkAsDelegate true false true true true true
+ *      Service ticket has OK-AS-DELEGATE. Request deleg policy, granted
+ * @run main/othervm -Dtest.kdc.policy.ok-as-delegate OkAsDelegate true true true true true true
+ *      Service ticket has OK-AS-DELEGATE. granted, with info by policy
+ * @run main/othervm -Dtest.spnego OkAsDelegate false true true false false false
+ * @run main/othervm -Dtest.spnego OkAsDelegate true false false false false false
+ * @run main/othervm -Dtest.spnego OkAsDelegate true false true false false false
+ * @run main/othervm -Dtest.spnego OkAsDelegate true true false true false true
+ * @run main/othervm -Dtest.spnego OkAsDelegate true true true true false true
+ * @run main/othervm -Dtest.spnego -Dtest.kdc.policy.ok-as-delegate OkAsDelegate true false true true true true
+ * @run main/othervm -Dtest.spnego -Dtest.kdc.policy.ok-as-delegate OkAsDelegate true true true true true true
+ * @summary Support OK-AS-DELEGATE flag
+ */
 import com.sun.security.jgss.ExtendedGSSContext;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
@@ -52,7 +78,7 @@ public class OkAsDelegate {
             boolean delegated
             ) throws Exception {
         OneKDC kdc = new OneKDC(null);
-        kdc.setPolicy("ok-as-delegate",
+        kdc.setOption(KDC.Option.OK_AS_DELEGATE,
                 System.getProperty("test.kdc.policy.ok-as-delegate"));
         kdc.writeJAASConf();
         if (!forwardable) {

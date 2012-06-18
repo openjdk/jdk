@@ -26,6 +26,7 @@
 package sun.lwawt.macosx;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 
 public class CCustomCursor extends Cursor {
     static Dimension sMaxCursorSize;
@@ -36,7 +37,6 @@ public class CCustomCursor extends Cursor {
     }
 
     Image fImage;
-    private boolean isImageOk = false;
     Point fHotspot;
 
     public CCustomCursor(final Image cursor, final Point hotSpot, final String name) throws IndexOutOfBoundsException, HeadlessException {
@@ -61,21 +61,19 @@ public class CCustomCursor extends Cursor {
         // Fix for bug 4212593 The Toolkit.createCustomCursor does not
         // check absence of the image of cursor
         // If the image is invalid, the cursor will be hidden (made completely
-        // transparent). In this case, getBestCursorSize() will adjust negative w and h,
-        // but we need to set the hotspot inside the image here.
+        // transparent).
         if (tracker.isErrorAny() || width < 0 || height < 0) {
             fHotspot.x = fHotspot.y = 0;
-            isImageOk = false;
+            width = height = 1;
+            fImage = createTransparentImage(width, height);
         } else {
-            isImageOk = true;
-        }
-
-        // Scale image to nearest supported size
-        final Dimension nativeSize = toolkit.getBestCursorSize(width, height);
-        if (nativeSize.width != width || nativeSize.height != height) {
-            fImage = fImage.getScaledInstance(nativeSize.width, nativeSize.height, Image.SCALE_DEFAULT);
-            width = nativeSize.width;
-            height = nativeSize.height;
+            // Scale image to nearest supported size
+            final Dimension nativeSize = toolkit.getBestCursorSize(width, height);
+            if (nativeSize.width != width || nativeSize.height != height) {
+                fImage = fImage.getScaledInstance(nativeSize.width, nativeSize.height, Image.SCALE_DEFAULT);
+                width = nativeSize.width;
+                height = nativeSize.height;
+            }
         }
 
         // NOTE: this was removed for 3169146, but in 1.5 the JCK tests for an exception and fails if one isn't thrown.
@@ -98,6 +96,21 @@ public class CCustomCursor extends Cursor {
         }
     }
 
+    private static BufferedImage createTransparentImage(int w, int h) {
+        GraphicsEnvironment ge =
+                GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice gs = ge.getDefaultScreenDevice();
+        GraphicsConfiguration gc = gs.getDefaultConfiguration();
+
+        BufferedImage img = gc.createCompatibleImage(w, h, Transparency.BITMASK);
+        Graphics2D g = (Graphics2D)img.getGraphics();
+        g.setBackground(new Color(0, 0, 0, 0));
+        g.clearRect(0, 0, w, h);
+        g.dispose();
+
+        return img;
+    }
+
     public static Dimension getBestCursorSize(final int preferredWidth, final int preferredHeight) {
         // With Panther, cursors have no limit on their size. So give the client their
         // preferred size, but no larger than half the dimensions of the main screen
@@ -111,31 +124,26 @@ public class CCustomCursor extends Cursor {
     }
 
     // Called from native when the cursor is set
-    // Returns long array of [NSImage ptr, x hotspot, y hotspot]
     CImage fCImage;
     long getImageData() {
         if (fCImage != null) {
             return fCImage.ptr;
         }
 
-        if (isImageOk) {
-            try {
-                fCImage = CImage.getCreator().createFromImage(fImage);
-
-                if (fCImage == null) {
-                    isImageOk = false;
-                    return 0L;
-                } else {
-                    return fCImage.ptr;
-                }
-            } catch (IllegalArgumentException iae) {
-                // Silently return null - we want to hide cursor by providing an empty
-                // ByteArray or just null
+        try {
+            fCImage = CImage.getCreator().createFromImage(fImage);
+            if (fCImage == null) {
+                // Something unexpected happened: CCustomCursor constructor
+                // takes care of invalid cursor images, yet createFromImage()
+                // failed to do its job. Return null to keep the cursor unchanged.
                 return 0L;
+            } else {
+                return fCImage.ptr;
             }
+        } catch (IllegalArgumentException iae) {
+            // see comment above
+            return 0L;
         }
-
-        return 0L;
     }
 
     Point getHotSpot() {

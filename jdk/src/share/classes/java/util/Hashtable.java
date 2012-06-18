@@ -163,6 +163,52 @@ public class Hashtable<K,V>
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
     private static final long serialVersionUID = 1421746759512286392L;
 
+    private static class Holder {
+            // Unsafe mechanics
+        /**
+         *
+         */
+        static final sun.misc.Unsafe UNSAFE;
+
+        /**
+         * Offset of "final" hashSeed field we must set in
+         * readObject() method.
+         */
+        static final long HASHSEED_OFFSET;
+
+        static {
+            try {
+                UNSAFE = sun.misc.Unsafe.getUnsafe();
+                HASHSEED_OFFSET = UNSAFE.objectFieldOffset(
+                    Hashtable.class.getDeclaredField("hashSeed"));
+            } catch (NoSuchFieldException | SecurityException e) {
+                throw new InternalError("Failed to record hashSeed offset", e);
+            }
+        }
+    }
+
+    /**
+     * A randomizing value associated with this instance that is applied to
+     * hash code of keys to make hash collisions harder to find.
+     */
+    transient final int hashSeed = sun.misc.Hashing.randomHashSeed(this);
+
+    private int hash(Object k) {
+        int h = hashSeed;
+
+        if (k instanceof String) {
+            return ((String)k).hash32();
+        } else {
+            h ^= k.hashCode();
+
+            // This function ensures that hashCodes that differ only by
+            // constant multiples at each bit position have a bounded
+            // number of collisions (approximately 8 at default load factor).
+            h ^= (h >>> 20) ^ (h >>> 12);
+            return h ^ (h >>> 7) ^ (h >>> 4);
+        }
+    }
+
     /**
      * Constructs a new, empty hashtable with the specified initial
      * capacity and the specified load factor.
@@ -183,7 +229,7 @@ public class Hashtable<K,V>
             initialCapacity = 1;
         this.loadFactor = loadFactor;
         table = new Entry<?,?>[initialCapacity];
-        threshold = (int)(initialCapacity * loadFactor);
+        threshold = (int)Math.min(initialCapacity * loadFactor, MAX_ARRAY_SIZE + 1);
     }
 
     /**
@@ -327,7 +373,7 @@ public class Hashtable<K,V>
      */
     public synchronized boolean containsKey(Object key) {
         Entry<?,?> tab[] = table;
-        int hash = key.hashCode();
+        int hash = hash(key);
         int index = (hash & 0x7FFFFFFF) % tab.length;
         for (Entry<?,?> e = tab[index] ; e != null ; e = e.next) {
             if ((e.hash == hash) && e.key.equals(key)) {
@@ -355,7 +401,7 @@ public class Hashtable<K,V>
     @SuppressWarnings("unchecked")
     public synchronized V get(Object key) {
         Entry<?,?> tab[] = table;
-        int hash = key.hashCode();
+        int hash = hash(key);
         int index = (hash & 0x7FFFFFFF) % tab.length;
         for (Entry<?,?> e = tab[index] ; e != null ; e = e.next) {
             if ((e.hash == hash) && e.key.equals(key)) {
@@ -396,7 +442,7 @@ public class Hashtable<K,V>
         Entry<?,?>[] newMap = new Entry<?,?>[newCapacity];
 
         modCount++;
-        threshold = (int)(newCapacity * loadFactor);
+        threshold = (int)Math.min(newCapacity * loadFactor, MAX_ARRAY_SIZE + 1);
         table = newMap;
 
         for (int i = oldCapacity ; i-- > 0 ;) {
@@ -436,7 +482,7 @@ public class Hashtable<K,V>
 
         // Makes sure the key is not already in the hashtable.
         Entry<?,?> tab[] = table;
-        int hash = key.hashCode();
+        int hash = hash(key);
         int index = (hash & 0x7FFFFFFF) % tab.length;
         @SuppressWarnings("unchecked")
         Entry<K,V> entry = (Entry<K,V>)tab[index];
@@ -454,6 +500,7 @@ public class Hashtable<K,V>
             rehash();
 
             tab = table;
+            hash = hash(key);
             index = (hash & 0x7FFFFFFF) % tab.length;
         }
 
@@ -476,7 +523,7 @@ public class Hashtable<K,V>
      */
     public synchronized V remove(Object key) {
         Entry<?,?> tab[] = table;
-        int hash = key.hashCode();
+        int hash = hash(key);
         int index = (hash & 0x7FFFFFFF) % tab.length;
         @SuppressWarnings("unchecked")
         Entry<K,V> e = (Entry<K,V>)tab[index];
@@ -685,7 +732,7 @@ public class Hashtable<K,V>
             Map.Entry<?,?> entry = (Map.Entry<?,?>)o;
             Object key = entry.getKey();
             Entry<?,?>[] tab = table;
-            int hash = key.hashCode();
+            int hash = hash(key);
             int index = (hash & 0x7FFFFFFF) % tab.length;
 
             for (Entry<?,?> e = tab[index]; e != null; e = e.next)
@@ -700,7 +747,7 @@ public class Hashtable<K,V>
             Map.Entry<?,?> entry = (Map.Entry<?,?>) o;
             Object key = entry.getKey();
             Entry<?,?>[] tab = table;
-            int hash = key.hashCode();
+            int hash = hash(key);
             int index = (hash & 0x7FFFFFFF) % tab.length;
 
             @SuppressWarnings("unchecked")
@@ -835,9 +882,13 @@ public class Hashtable<K,V>
 
         loadFactor = -loadFactor;  // Mark hashCode computation in progress
         Entry<?,?>[] tab = table;
-        for (int i = 0; i < tab.length; i++)
-            for (Entry<?,?> e = tab[i]; e != null; e = e.next)
-                h += e.key.hashCode() ^ e.value.hashCode();
+        for (Entry<?,?> entry : tab) {
+            while (entry != null) {
+                h += entry.hashCode();
+                entry = entry.next;
+            }
+        }
+
         loadFactor = -loadFactor;  // Mark hashCode computation complete
 
         return h;
@@ -894,6 +945,10 @@ public class Hashtable<K,V>
         // Read in the length, threshold, and loadfactor
         s.defaultReadObject();
 
+        // set hashMask
+        Holder.UNSAFE.putIntVolatile(this, Holder.HASHSEED_OFFSET,
+                sun.misc.Hashing.randomHashSeed(this));
+
         // Read the original length of the array and number of elements
         int origlength = s.readInt();
         int elements = s.readInt();
@@ -907,7 +962,8 @@ public class Hashtable<K,V>
             length--;
         if (origlength > 0 && length > origlength)
             length = origlength;
-        Entry<?,?>[] table = new Entry<?,?>[length];
+        table = new Entry<?,?>[length];
+        threshold = (int)Math.min(length * loadFactor, MAX_ARRAY_SIZE + 1);
         count = 0;
 
         // Read the number of elements and then all the key/value objects
@@ -919,7 +975,6 @@ public class Hashtable<K,V>
             // synch could be eliminated for performance
             reconstitutionPut(table, key, value);
         }
-        this.table = table;
     }
 
     /**
@@ -941,7 +996,7 @@ public class Hashtable<K,V>
         }
         // Makes sure the key is not already in the hashtable.
         // This should not happen in deserialized version.
-        int hash = key.hashCode();
+        int hash = hash(key);
         int index = (hash & 0x7FFFFFFF) % tab.length;
         for (Entry<?,?> e = tab[index] ; e != null ; e = e.next) {
             if ((e.hash == hash) && e.key.equals(key)) {
@@ -956,17 +1011,17 @@ public class Hashtable<K,V>
     }
 
     /**
-     * Hashtable collision list.
+     * Hashtable bucket collision list entry
      */
     private static class Entry<K,V> implements Map.Entry<K,V> {
-        int hash;
+        final int hash;
         K key;
         V value;
         Entry<K,V> next;
 
         protected Entry(int hash, K key, V value, Entry<K,V> next) {
             this.hash = hash;
-            this.key = key;
+            this.key =  key;
             this.value = value;
             this.next = next;
         }

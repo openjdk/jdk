@@ -214,16 +214,23 @@ public class Infer {
      *  If no instantiation exists, or if several incomparable
      *  best instantiations exist throw a NoInstanceException.
      */
-    public Type instantiateExpr(ForAll that,
-                                Type to,
+    public List<Type> instantiateUninferred(DiagnosticPosition pos,
+                                List<Type> undetvars,
+                                List<Type> tvars,
+                                MethodType mtype,
+                                Attr.ResultInfo resultInfo,
                                 Warner warn) throws InferenceException {
-        List<Type> undetvars = that.undetvars();
-        Type qtype1 = types.subst(that.qtype, that.tvars, undetvars);
+        Type to = resultInfo.pt;
+        if (to.tag == NONE) {
+            to = mtype.getReturnType().tag <= VOID ?
+                    mtype.getReturnType() : syms.objectType;
+        }
+        Type qtype1 = types.subst(mtype.getReturnType(), tvars, undetvars);
         if (!types.isSubtype(qtype1,
                 qtype1.tag == UNDETVAR ? types.boxedTypeOrType(to) : to)) {
             throw unambiguousNoInstanceException
                 .setMessage("infer.no.conforming.instance.exists",
-                            that.tvars, that.qtype, to);
+                            tvars, mtype.getReturnType(), to);
         }
 
         List<Type> insttypes;
@@ -232,32 +239,32 @@ public class Infer {
             insttypes = List.nil();
             for (Type t : undetvars) {
                 UndetVar uv = (UndetVar)t;
-                if (uv.inst == null && (uv.eq.nonEmpty() || !Type.containsAny(uv.hibounds, that.tvars))) {
+                if (uv.inst == null && (uv.eq.nonEmpty() || !Type.containsAny(uv.hibounds, tvars))) {
                     maximizeInst((UndetVar)t, warn);
                     stuck = false;
                 }
                 insttypes = insttypes.append(uv.inst == null ? uv.qtype : uv.inst);
             }
-            if (!Type.containsAny(insttypes, that.tvars)) {
+            if (!Type.containsAny(insttypes, tvars)) {
                 //all variables have been instantiated - exit
                 break;
             } else if (stuck) {
                 //some variables could not be instantiated because of cycles in
                 //upper bounds - provide a (possibly recursive) default instantiation
                 insttypes = types.subst(insttypes,
-                    that.tvars,
-                    instantiateAsUninferredVars(undetvars, that.tvars));
+                    tvars,
+                    instantiateAsUninferredVars(undetvars, tvars));
                 break;
             } else {
                 //some variables have been instantiated - replace newly instantiated
                 //variables in remaining upper bounds and continue
                 for (Type t : undetvars) {
                     UndetVar uv = (UndetVar)t;
-                    uv.hibounds = types.subst(uv.hibounds, that.tvars, insttypes);
+                    uv.hibounds = types.subst(uv.hibounds, tvars, insttypes);
                 }
             }
         }
-        return that.inst(insttypes, types);
+        return insttypes;
     }
 
     /**
@@ -296,18 +303,19 @@ public class Infer {
     /** Instantiate method type `mt' by finding instantiations of
      *  `tvars' so that method can be applied to `argtypes'.
      */
-    public Type instantiateMethod(final Env<AttrContext> env,
+    public Type instantiateMethod(Env<AttrContext> env,
                                   List<Type> tvars,
                                   MethodType mt,
-                                  final Symbol msym,
-                                  final List<Type> argtypes,
-                                  final boolean allowBoxing,
-                                  final boolean useVarargs,
-                                  final Warner warn) throws InferenceException {
+                                  Attr.ResultInfo resultInfo,
+                                  Symbol msym,
+                                  List<Type> argtypes,
+                                  boolean allowBoxing,
+                                  boolean useVarargs,
+                                  Warner warn) throws InferenceException {
         //-System.err.println("instantiateMethod(" + tvars + ", " + mt + ", " + argtypes + ")"); //DEBUG
-        final List<Type> undetvars =  makeUndetvars(tvars);
+        List<Type> undetvars =  makeUndetvars(tvars);
 
-        final List<Type> capturedArgs =
+        List<Type> capturedArgs =
                 rs.checkRawArgumentsAcceptable(env, undetvars, argtypes, mt.getParameterTypes(),
                     allowBoxing, useVarargs, warn, new InferenceCheckHandler(undetvars));
 
@@ -344,38 +352,23 @@ public class Infer {
 
         mt = (MethodType)types.subst(mt, tvars, insttypes.toList());
 
-        if (!restvars.isEmpty()) {
-            // if there are uninstantiated variables,
-            // quantify result type with them
-            final List<Type> inferredTypes = insttypes.toList();
-            final List<Type> all_tvars = tvars; //this is the wrong tvars
-            return new UninferredMethodType(env.tree.pos(), msym, mt, restvars.toList()) {
-                @Override
-                List<Type> undetvars() {
-                    return restundet.toList();
-                }
-                @Override
-                void instantiateReturnType(Type restype, List<Type> inferred, Types types) throws NoInstanceException {
-                    Type owntype = new MethodType(types.subst(getParameterTypes(), tvars, inferred),
-                                       restype,
-                                       types.subst(getThrownTypes(), tvars, inferred),
-                                       qtype.tsym);
-                    // check that actuals conform to inferred formals
-                    warn.clear();
-                    checkArgumentsAcceptable(env, capturedArgs, owntype.getParameterTypes(), allowBoxing, useVarargs, warn);
-                    // check that inferred bounds conform to their bounds
-                    checkWithinBounds(all_tvars, undetvars,
-                           types.subst(inferredTypes, tvars, inferred), warn);
-                    qtype = chk.checkMethod(owntype, msym, env, TreeInfo.args(env.tree), capturedArgs, useVarargs, warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED));
-                }
-            };
+        if (!restvars.isEmpty() && resultInfo != null) {
+            List<Type> restInferred =
+                    instantiateUninferred(env.tree.pos(), restundet.toList(), restvars.toList(), mt, resultInfo, warn);
+            checkWithinBounds(tvars, undetvars,
+                           types.subst(insttypes.toList(), restvars.toList(), restInferred), warn);
+            mt = (MethodType)types.subst(mt, restvars.toList(), restInferred);
+            if (rs.verboseResolutionMode.contains(VerboseResolutionMode.DEFERRED_INST)) {
+                log.note(env.tree.pos, "deferred.method.inst", msym, mt, resultInfo.pt);
+            }
         }
-        else {
+
+        if (restvars.isEmpty() || resultInfo != null) {
             // check that actuals conform to inferred formals
             checkArgumentsAcceptable(env, capturedArgs, mt.getParameterTypes(), allowBoxing, useVarargs, warn);
-            // return instantiated version of method type
-            return mt;
         }
+        // return instantiated version of method type
+        return mt;
     }
     //where
 
@@ -401,60 +394,6 @@ public class Infer {
             public InapplicableMethodException inaccessibleVarargs(Symbol location, Type expected) {
                 return unambiguousNoInstanceException.setMessage("inaccessible.varargs.type",
                         expected, Kinds.kindName(location), location);
-            }
-        }
-
-        /**
-         * A delegated type representing a partially uninferred method type.
-         * The return type of a partially uninferred method type is a ForAll
-         * type - when the return type is instantiated (see Infer.instantiateExpr)
-         * the underlying method type is also updated.
-         */
-        abstract class UninferredMethodType extends DelegatedType {
-
-            final List<Type> tvars;
-            final Symbol msym;
-            final DiagnosticPosition pos;
-
-            public UninferredMethodType(DiagnosticPosition pos, Symbol msym, MethodType mtype, List<Type> tvars) {
-                super(METHOD, new MethodType(mtype.argtypes, null, mtype.thrown, mtype.tsym));
-                this.tvars = tvars;
-                this.msym = msym;
-                this.pos = pos;
-                asMethodType().restype = new UninferredReturnType(tvars, mtype.restype);
-            }
-
-            @Override
-            public MethodType asMethodType() {
-                return qtype.asMethodType();
-            }
-
-            @Override
-            public Type map(Mapping f) {
-                return qtype.map(f);
-            }
-
-            abstract void instantiateReturnType(Type restype, List<Type> inferred, Types types);
-
-            abstract List<Type> undetvars();
-
-            class UninferredReturnType extends ForAll {
-                public UninferredReturnType(List<Type> tvars, Type restype) {
-                    super(tvars, restype);
-                }
-                @Override
-                public Type inst(List<Type> actuals, Types types) {
-                    Type newRestype = super.inst(actuals, types);
-                    instantiateReturnType(newRestype, actuals, types);
-                    if (rs.verboseResolutionMode.contains(VerboseResolutionMode.DEFERRED_INST)) {
-                        log.note(pos, "deferred.method.inst", msym, UninferredMethodType.this.qtype, newRestype);
-                    }
-                    return UninferredMethodType.this.qtype.getReturnType();
-                }
-                @Override
-                public List<Type> undetvars() {
-                    return UninferredMethodType.this.undetvars();
-                }
             }
         }
 
