@@ -1313,7 +1313,7 @@ final class ServerHandshaker extends Handshaker {
                    return false;
                 }
             }
-            return (kerberosKeys != null);
+            return (kerberosKeys != null && kerberosKeys.length > 0);
         } catch (PrivilegedActionException e) {
             // Likely exception here is LoginExceptin
             if (debug != null && Debug.isOn("handshake")) {

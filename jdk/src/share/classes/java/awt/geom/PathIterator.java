@@ -25,6 +25,8 @@
 
 package java.awt.geom;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * The <code>PathIterator</code> interface provides the mechanism
  * for objects that implement the {@link java.awt.Shape Shape}
@@ -57,6 +59,8 @@ package java.awt.geom;
  *
  * @author Jim Graham
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public interface PathIterator {
     /**
      * The winding rule constant for specifying an even-odd rule

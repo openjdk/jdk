@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6952519
+ * @compile -XDignore.symbol.file TcpTimeout.java
  * @run main/othervm TcpTimeout
  * @summary kdc_timeout is not being honoured when using TCP
  */
@@ -73,9 +74,7 @@ public class TcpTimeout {
         // 5 sec on p1, 5 sec on p1, fail
         // 5 sec on p2, 5 sec on p2, fail
         // p3 ok, p3 ok again for preauth.
-        // The total time should be 20sec + 2x. x is processing time for AS-REQ.
         int count = 6;
-        long start = System.currentTimeMillis();
 
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
         PrintStream oldout = System.out;
@@ -92,11 +91,6 @@ public class TcpTimeout {
         }
         if (count != 0) {
             throw new Exception("Retry count is " + count + " less");
-        }
-
-        long end = System.currentTimeMillis();
-        if ((end - start)/1000L < 20) {
-            throw new Exception("Too fast? " + (end - start)/1000L);
         }
     }
 }

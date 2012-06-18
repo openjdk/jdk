@@ -457,8 +457,8 @@ public class ChoiceFormat extends NumberFormat {
     {
         ChoiceFormat other = (ChoiceFormat) super.clone();
         // for primitives or immutables, shallow clone is enough
-        other.choiceLimits = (double[]) choiceLimits.clone();
-        other.choiceFormats = (String[]) choiceFormats.clone();
+        other.choiceLimits = choiceLimits.clone();
+        other.choiceFormats = choiceFormats.clone();
         return other;
     }
 

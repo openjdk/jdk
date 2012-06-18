@@ -109,8 +109,14 @@ final class CPlatformResponder {
         final long when = System.currentTimeMillis();
         final int scrollType = MouseWheelEvent.WHEEL_UNIT_SCROLL;
         final int scrollAmount = 1;
+        int wheelRotation = (int) delta;
+        int signum = (int) Math.signum(delta);
+        if (signum * delta < 1) {
+            wheelRotation = signum;
+        }
+        // invert the wheelRotation for the peer
         peer.dispatchMouseWheelEvent(when, x, y, modifiers, scrollType,
-                                     scrollAmount, (int) -delta, -delta, null);
+                                     scrollAmount, -wheelRotation, -delta, null);
     }
 
     /**

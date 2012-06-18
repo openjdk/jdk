@@ -27,7 +27,6 @@ package sun.tools.jconsole;
 
 import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.tools.jconsole.JConsoleContext;
-import com.sun.tools.jconsole.JConsoleContext.ConnectionState;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
@@ -504,7 +503,7 @@ public class ProxyClient implements JConsoleContext {
 
     public String toString() {
         if (!isConnected()) {
-            return Resources.getText("ConnectionName (disconnected)", displayName);
+            return Resources.format(Messages.CONNECTION_NAME__DISCONNECTED_, displayName);
         } else {
             return displayName;
         }
@@ -595,10 +594,10 @@ public class ProxyClient implements JConsoleContext {
                 assert(false);
             }
         }
-        Set mbeans = server.queryNames(name, null);
+        Set<ObjectName> mbeans = server.queryNames(name, null);
         Map<ObjectName,MBeanInfo> result =
             new HashMap<ObjectName,MBeanInfo>(mbeans.size());
-        Iterator iterator = mbeans.iterator();
+        Iterator<ObjectName> iterator = mbeans.iterator();
         while (iterator.hasNext()) {
             Object object = iterator.next();
             if (object instanceof ObjectName) {
@@ -704,10 +703,10 @@ public class ProxyClient implements JConsoleContext {
                 // should not reach here
                 assert(false);
             }
-            Set mbeans = server.queryNames(poolName, null);
+            Set<ObjectName> mbeans = server.queryNames(poolName, null);
             if (mbeans != null) {
                 memoryPoolProxies = new ArrayList<MemoryPoolProxy>();
-                Iterator iterator = mbeans.iterator();
+                Iterator<ObjectName> iterator = mbeans.iterator();
                 while (iterator.hasNext()) {
                     ObjectName objName = (ObjectName) iterator.next();
                     MemoryPoolProxy p = new MemoryPoolProxy(this, objName);
@@ -730,10 +729,10 @@ public class ProxyClient implements JConsoleContext {
                 // should not reach here
                 assert(false);
             }
-            Set mbeans = server.queryNames(gcName, null);
+            Set<ObjectName> mbeans = server.queryNames(gcName, null);
             if (mbeans != null) {
                 garbageCollectorMBeans = new ArrayList<GarbageCollectorMXBean>();
-                Iterator iterator = mbeans.iterator();
+                Iterator<ObjectName> iterator = mbeans.iterator();
                 while (iterator.hasNext()) {
                     ObjectName on = (ObjectName) iterator.next();
                     String name = GARBAGE_COLLECTOR_MXBEAN_DOMAIN_TYPE +

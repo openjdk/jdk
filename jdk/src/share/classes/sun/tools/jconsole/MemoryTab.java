@@ -38,18 +38,14 @@ import javax.management.*;
 import javax.management.openmbean.CompositeData;
 import javax.swing.*;
 import javax.swing.border.*;
-import javax.swing.text.*;
 
-import sun.management.*;
 
 import static sun.tools.jconsole.Formatter.*;
-import static sun.tools.jconsole.OverviewPanel.*;
-import static sun.tools.jconsole.Resources.*;
 import static sun.tools.jconsole.Utilities.*;
 
 @SuppressWarnings("serial")
 class MemoryTab extends Tab implements ActionListener, ItemListener {
-    JComboBox plotterChoice;
+    JComboBox<Plotter> plotterChoice;
     TimeComboBox timeComboBox;
     JButton gcButton;
 
@@ -67,18 +63,10 @@ class MemoryTab extends Tab implements ActionListener, ItemListener {
     private static final String committedKey   = "committed";
     private static final String maxKey         = "max";
     private static final String thresholdKey   = "threshold";
-
-    private static final String usedName        = Resources.getText("Used");
-    private static final String committedName   = Resources.getText("Committed");
-    private static final String maxName         = Resources.getText("Max");
-    private static final String thresholdName   = Resources.getText("Threshold");
-
     private static final Color  usedColor      = Plotter.defaultColor;
     private static final Color  committedColor = null;
     private static final Color  maxColor       = null;
     private static final Color  thresholdColor = Color.red;
-
-    private static final String infoLabelFormat = "MemoryTab.infoLabelFormat";
 
     /*
       Hierarchy of panels and layouts for this tab:
@@ -105,7 +93,7 @@ class MemoryTab extends Tab implements ActionListener, ItemListener {
 
 
     public static String getTabName() {
-        return getText("Memory");
+        return Messages.MEMORY;
     }
 
     public MemoryTab(VMPanel vmPanel) {
@@ -125,32 +113,32 @@ class MemoryTab extends Tab implements ActionListener, ItemListener {
         topPanel.add(controlPanel, BorderLayout.CENTER);
 
         // Plotter choice
-        plotterChoice = new JComboBox();
+        plotterChoice = new JComboBox<Plotter>();
         plotterChoice.addItemListener(this);
-        controlPanel.add(new LabeledComponent(getText("Chart:"),
-                                              getMnemonicInt("Chart:"),
+        controlPanel.add(new LabeledComponent(Messages.CHART_COLON,
+                                              Resources.getMnemonicInt(Messages.CHART_COLON),
                                               plotterChoice));
 
         // Range control
         timeComboBox = new TimeComboBox();
-        controlPanel.add(new LabeledComponent(getText("Time Range:"),
-                                              getMnemonicInt("Time Range:"),
+        controlPanel.add(new LabeledComponent(Messages.TIME_RANGE_COLON,
+                                              Resources.getMnemonicInt(Messages.TIME_RANGE_COLON),
                                               timeComboBox));
 
-        gcButton = new JButton(getText("Perform GC"));
-        gcButton.setMnemonic(getMnemonicInt("Perform GC"));
+        gcButton = new JButton(Messages.PERFORM_GC);
+        gcButton.setMnemonic(Resources.getMnemonicInt(Messages.PERFORM_GC));
         gcButton.addActionListener(this);
-        gcButton.setToolTipText(getText("Perform GC.toolTip"));
+        gcButton.setToolTipText(Messages.PERFORM_GC_TOOLTIP);
         JPanel topRightPanel = new JPanel();
         topRightPanel.setBorder(new EmptyBorder(0, 65-8, 0, 70));
         topRightPanel.add(gcButton);
         topPanel.add(topRightPanel, BorderLayout.AFTER_LINE_ENDS);
 
-        bottomPanel.setBorder(new CompoundBorder(new TitledBorder(getText("Details")),
+        bottomPanel.setBorder(new CompoundBorder(new TitledBorder(Messages.DETAILS),
                                                   new EmptyBorder(10, 10, 10, 10)));
 
         details = new HTMLPane();
-        setAccessibleName(details, getText("Details"));
+        setAccessibleName(details, Messages.DETAILS);
         bottomPanel.add(new JScrollPane(details), BorderLayout.CENTER);
 
         poolChart = new PoolChart();
@@ -165,31 +153,31 @@ class MemoryTab extends Tab implements ActionListener, ItemListener {
 
         heapPlotter = new Plotter(Plotter.Unit.BYTES) {
             public String toString() {
-                return Resources.getText("Heap Memory Usage");
+                return Messages.HEAP_MEMORY_USAGE;
             }
         };
         proxyClient.addWeakPropertyChangeListener(heapPlotter);
 
         nonHeapPlotter = new Plotter(Plotter.Unit.BYTES) {
             public String toString() {
-                return Resources.getText("Non-Heap Memory Usage");
+                return Messages.NON_HEAP_MEMORY_USAGE;
             }
         };
 
         setAccessibleName(heapPlotter,
-                          getText("MemoryTab.heapPlotter.accessibleName"));
+                          Messages.MEMORY_TAB_HEAP_PLOTTER_ACCESSIBLE_NAME);
         setAccessibleName(nonHeapPlotter,
-                          getText("MemoryTab.nonHeapPlotter.accessibleName"));
+                          Messages.MEMORY_TAB_NON_HEAP_PLOTTER_ACCESSIBLE_NAME);
 
         proxyClient.addWeakPropertyChangeListener(nonHeapPlotter);
 
-        heapPlotter.createSequence(usedKey,         usedName,      usedColor,      true);
-        heapPlotter.createSequence(committedKey,    committedName, committedColor, false);
-        heapPlotter.createSequence(maxKey,          maxName,       maxColor,       false);
+        heapPlotter.createSequence(usedKey,         Messages.USED,      usedColor,      true);
+        heapPlotter.createSequence(committedKey,    Messages.COMMITTED, committedColor, false);
+        heapPlotter.createSequence(maxKey,          Messages.MAX,       maxColor,       false);
 
-        nonHeapPlotter.createSequence(usedKey,      usedName,      usedColor,      true);
-        nonHeapPlotter.createSequence(committedKey, committedName, committedColor, false);
-        nonHeapPlotter.createSequence(maxKey,       maxName,       maxColor,       false);
+        nonHeapPlotter.createSequence(usedKey,      Messages.USED,      usedColor,      true);
+        nonHeapPlotter.createSequence(committedKey, Messages.COMMITTED, committedColor, false);
+        nonHeapPlotter.createSequence(maxKey,       Messages.MAX,       maxColor,       false);
 
         plotterList.add(heapPlotter);
         plotterList.add(nonHeapPlotter);
@@ -202,8 +190,8 @@ class MemoryTab extends Tab implements ActionListener, ItemListener {
         for (ObjectName objectName : objectNames) {
             String type = objectName.getKeyProperty("type");
             if (type.equals("MemoryPool")) {
-                String name = getText("MemoryPoolLabel",
-                                      objectName.getKeyProperty("name"));
+                String name = Resources.format(Messages.MEMORY_POOL_LABEL,
+                                               objectName.getKeyProperty("name"));
                 // Heap or non-heap?
                 boolean isHeap = false;
                 AttributeList al =
@@ -215,10 +203,10 @@ class MemoryTab extends Tab implements ActionListener, ItemListener {
                 PoolPlotter poolPlotter = new PoolPlotter(objectName, name, isHeap);
                 proxyClient.addWeakPropertyChangeListener(poolPlotter);
 
-                poolPlotter.createSequence(usedKey,      usedName,      usedColor,      true);
-                poolPlotter.createSequence(committedKey, committedName, committedColor, false);
-                poolPlotter.createSequence(maxKey,       maxName,       maxColor,       false);
-                poolPlotter.createSequence(thresholdKey, thresholdName, thresholdColor, false);
+                poolPlotter.createSequence(usedKey,      Messages.USED,      usedColor,      true);
+                poolPlotter.createSequence(committedKey, Messages.COMMITTED, committedColor, false);
+                poolPlotter.createSequence(maxKey,       Messages.MAX,       maxColor,       false);
+                poolPlotter.createSequence(thresholdKey, Messages.THRESHOLD, thresholdColor, false);
                 poolPlotter.setUseDashedTransitions(thresholdKey, true);
 
                 if (isHeap) {
@@ -286,7 +274,6 @@ class MemoryTab extends Tab implements ActionListener, ItemListener {
                 max       = new long[n];
                 threshold = new long[n];
                 timeStamp = System.currentTimeMillis();
-                int poolCount = 0;
 
                 for (int i = 0; i < n; i++) {
                     Plotter plotter = plotterList.get(i);
@@ -400,22 +387,22 @@ class MemoryTab extends Tab implements ActionListener, ItemListener {
         //long time = plotter.getLastTimeStamp();
         long time = System.currentTimeMillis();
         String timeStamp = formatDateTime(time);
-        text += newRow(getText("Time"), timeStamp);
+        text += newRow(Messages.TIME, timeStamp);
 
         long used = plotter.getLastValue(usedKey);
         long committed = plotter.getLastValue(committedKey);
         long max = plotter.getLastValue(maxKey);
         long threshold = plotter.getLastValue(thresholdKey);
 
-        text += newRow(getText("Used"), formatKBytes(used));
+        text += newRow(Messages.USED, formatKBytes(used));
         if (committed > 0L) {
-            text += newRow(getText("Committed"), formatKBytes(committed));
+            text += newRow(Messages.COMMITTED, formatKBytes(committed));
         }
         if (max > 0L) {
-            text += newRow(getText("Max"), formatKBytes(max));
+            text += newRow(Messages.MAX, formatKBytes(max));
         }
         if (threshold > 0L) {
-            text += newRow(getText("Usage Threshold"), formatKBytes(threshold));
+            text += newRow(Messages.USAGE_THRESHOLD, formatKBytes(threshold));
         }
 
         try {
@@ -427,11 +414,11 @@ class MemoryTab extends Tab implements ActionListener, ItemListener {
                 String gcName = garbageCollectorMBean.getName();
                 long gcCount = garbageCollectorMBean.getCollectionCount();
                 long gcTime = garbageCollectorMBean.getCollectionTime();
-                String str = getText("GC time details", justify(formatTime(gcTime), 14),
-                                     gcName,
-                                     String.format("%,d",gcCount));
+                String str = Resources.format(Messages.GC_TIME_DETAILS, justify(formatTime(gcTime), 14),
+                                              gcName,
+                                              String.format("%,d",gcCount));
                 if (!descPrinted) {
-                    text += newRow(getText("GC time"), str);
+                    text += newRow(Messages.GC_TIME, str);
                     descPrinted = true;
                 } else {
                     text += newRow(null, str);
@@ -465,8 +452,8 @@ class MemoryTab extends Tab implements ActionListener, ItemListener {
             this.isHeap     = isHeap;
 
             setAccessibleName(this,
-                              getText("MemoryTab.poolPlotter.accessibleName",
-                                      name));
+                              Resources.format(Messages.MEMORY_TAB_POOL_PLOTTER_ACCESSIBLE_NAME,
+                                               name));
         }
 
 
@@ -627,7 +614,7 @@ class MemoryTab extends Tab implements ActionListener, ItemListener {
             g.setColor(nonHeapColor);
             g.fillRect(nonHeapRect.x + 1, nonHeapRect.y + 1, nonHeapRect.width - 1, nonHeapRect.height - 1);
 
-            String str = getText("Heap");
+            String str = Messages.HEAP;
             int stringWidth = fm.stringWidth(str);
             int x = heapRect.x + (heapRect.width - stringWidth) / 2;
             int y = heapRect.y + heapRect.height - 6;
@@ -639,7 +626,7 @@ class MemoryTab extends Tab implements ActionListener, ItemListener {
             g.setColor(Color.black);
             g.drawString(str, x, y);
 
-            str = getText("Non-Heap");
+            str = Messages.NON_HEAP;
             stringWidth = fm.stringWidth(str);
             x = nonHeapRect.x + (nonHeapRect.width - stringWidth) / 2;
             y = nonHeapRect.y + nonHeapRect.height - 6;
@@ -728,26 +715,26 @@ class MemoryTab extends Tab implements ActionListener, ItemListener {
 
         protected class AccessiblePoolChart extends AccessibleJPanel {
             public String getAccessibleName() {
-                String name = getText("MemoryTab.poolChart.accessibleName");
+                String name = Messages.MEMORY_TAB_POOL_CHART_ACCESSIBLE_NAME;
 
                 String keyValueList = "";
                 for (PoolPlotter poolPlotter : poolPlotters) {
                     String value = (poolPlotter.value * 100 / poolPlotter.max) + "%";
                     // Assume format string ends with newline
                     keyValueList +=
-                        getText("Plotter.accessibleName.keyAndValue",
-                                poolPlotter.toString(), value);
+                        Resources.format(Messages.PLOTTER_ACCESSIBLE_NAME_KEY_AND_VALUE,
+                                         poolPlotter.toString(), value);
                     if (poolPlotter.threshold > 0L) {
                         String threshold =
                             (poolPlotter.threshold * 100 / poolPlotter.max) + "%";
                         if (poolPlotter.value > poolPlotter.threshold) {
                             keyValueList +=
-                                getText("MemoryTab.poolChart.aboveThreshold",
-                                        threshold);
+                               Resources.format(Messages.MEMORY_TAB_POOL_CHART_ABOVE_THRESHOLD,
+                                                threshold);
                         } else {
                             keyValueList +=
-                                getText("MemoryTab.poolChart.belowThreshold",
-                                        threshold);
+                                    Resources.format(Messages.MEMORY_TAB_POOL_CHART_BELOW_THRESHOLD,
+                                                     threshold);
                         }
                     }
                 }
@@ -767,14 +754,14 @@ class MemoryTab extends Tab implements ActionListener, ItemListener {
 
     private static class MemoryOverviewPanel extends OverviewPanel {
         MemoryOverviewPanel() {
-            super(getText("Heap Memory Usage"), usedKey, usedName, Plotter.Unit.BYTES);
+            super(Messages.HEAP_MEMORY_USAGE, usedKey, Messages.USED, Plotter.Unit.BYTES);
         }
 
         private void updateMemoryInfo(long used, long committed, long max) {
-            getInfoLabel().setText(getText(infoLabelFormat,
-                                           formatBytes(used, true),
-                                           formatBytes(committed, true),
-                                           formatBytes(max, true)));
+            getInfoLabel().setText(Resources.format(Messages.MEMORY_TAB_INFO_LABEL_FORMAT,
+                                                    formatBytes(used, true),
+                                                    formatBytes(committed, true),
+                                                    formatBytes(max, true)));
         }
     }
 }

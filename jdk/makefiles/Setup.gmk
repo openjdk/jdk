@@ -25,12 +25,13 @@
 
 JAVAC_JARS ?= "-Xbootclasspath/p:$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar" -jar $(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javac.jar
 JAVAH_JARS ?= "-Xbootclasspath/p:$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javah.jar" -jar $(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javah.jar
+JAVADOC_JARS ?= "-Xbootclasspath/p:$(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javadoc.jar" -jar $(LANGTOOLS_OUTPUTDIR)/dist/bootstrap/lib/javadoc.jar
 
 DISABLE_WARNINGS:=-Xlint:all,-deprecation,-unchecked,-rawtypes,-cast,-serial,-dep-ann,-static,-fallthrough,-try,-varargs,-empty,-finally
 
 # The generate old bytecode javac setup uses the new compiler to compile for the
 # boot jdk to generate tools that need to be run with the boot jdk.
-# Thus we force the target bytecode to 6.
+# Thus we force the target bytecode to 7.
 $(eval $(call SetupJavaCompiler,GENERATE_OLDBYTECODE,\
      JVM:=$(JAVA),\
      JAVAC:=$(JAVAC_JARS),\
@@ -46,7 +47,7 @@ $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE,\
      JVM:=$(JAVA),\
      JAVAC:=$(JAVAC_JARS),\
      JAVAH:=$(JAVAH_JARS),\
-     FLAGS:=-bootclasspath "$(JDK_OUTPUTDIR)/newclasses$(PATH_SEP)$(JDK_OUTPUTDIR)/classes" -Xprefer:source -XDignore.symbol.file=true $(DISABLE_WARNINGS),\
+     FLAGS:=-bootclasspath "$(JDK_OUTPUTDIR)/classes" -Xprefer:source -XDignore.symbol.file=true $(DISABLE_WARNINGS),\
      SERVER_DIR:=$(JAVAC_SERVERS),\
      SERVER_JVM:=$(SERVER_JAVA),\
      MODE:=$(JAVAC_USE_MODE),\

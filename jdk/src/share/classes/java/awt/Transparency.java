@@ -25,10 +25,14 @@
 
 package java.awt;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * The <code>Transparency</code> interface defines the common transparency
  * modes for implementing classes.
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public interface Transparency {
 
     /**
