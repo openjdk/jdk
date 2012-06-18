@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -526,8 +527,20 @@ void SafepointSynchronize::do_cleanup_tasks() {
     CompilationPolicy::policy()->do_safepoint_work();
   }
 
-  TraceTime t4("sweeping nmethods", TraceSafepointCleanupTime);
-  NMethodSweeper::scan_stacks();
+  {
+    TraceTime t4("sweeping nmethods", TraceSafepointCleanupTime);
+    NMethodSweeper::scan_stacks();
+  }
+
+  if (SymbolTable::needs_rehashing()) {
+    TraceTime t5("rehashing symbol table", TraceSafepointCleanupTime);
+    SymbolTable::rehash_table();
+  }
+
+  if (StringTable::needs_rehashing()) {
+    TraceTime t6("rehashing string table", TraceSafepointCleanupTime);
+    StringTable::rehash_table();
+  }
 
   // rotate log files?
   if (UseGCLogFileRotation) {
