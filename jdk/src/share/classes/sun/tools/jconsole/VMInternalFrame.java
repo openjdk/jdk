@@ -26,16 +26,9 @@
 package sun.tools.jconsole;
 
 import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
-import java.util.*;
-
 import javax.swing.*;
-import javax.swing.Timer;
-import javax.swing.border.*;
-import javax.swing.event.*;
 
-import static sun.tools.jconsole.Resources.*;
+
 import static sun.tools.jconsole.Utilities.*;
 
 @SuppressWarnings("serial")
@@ -47,7 +40,7 @@ public class VMInternalFrame extends MaximizableInternalFrame {
 
         this.vmPanel = vmPanel;
         setAccessibleDescription(this,
-                                 getText("VMInternalFrame.accessibleDescription"));
+                                 Messages.VMINTERNAL_FRAME_ACCESSIBLE_DESCRIPTION);
         getContentPane().add(vmPanel, BorderLayout.CENTER);
         pack();
         vmPanel.updateFrameTitle();

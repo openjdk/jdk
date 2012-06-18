@@ -1233,6 +1233,71 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
   if (!have_con)                        // remaining adjustments need a con
     return;
 
+  sharpen_type_after_if(btest, con, tcon, val, tval);
+}
+
+
+static Node* extract_obj_from_klass_load(PhaseGVN* gvn, Node* n) {
+  Node* ldk;
+  if (n->is_DecodeN()) {
+    if (n->in(1)->Opcode() != Op_LoadNKlass) {
+      return NULL;
+    } else {
+      ldk = n->in(1);
+    }
+  } else if (n->Opcode() != Op_LoadKlass) {
+    return NULL;
+  } else {
+    ldk = n;
+  }
+  assert(ldk != NULL && ldk->is_Load(), "should have found a LoadKlass or LoadNKlass node");
+
+  Node* adr = ldk->in(MemNode::Address);
+  intptr_t off = 0;
+  Node* obj = AddPNode::Ideal_base_and_offset(adr, gvn, off);
+  if (obj == NULL || off != oopDesc::klass_offset_in_bytes()) // loading oopDesc::_klass?
+    return NULL;
+  const TypePtr* tp = gvn->type(obj)->is_ptr();
+  if (tp == NULL || !(tp->isa_instptr() || tp->isa_aryptr())) // is obj a Java object ptr?
+    return NULL;
+
+  return obj;
+}
+
+void Parse::sharpen_type_after_if(BoolTest::mask btest,
+                                  Node* con, const Type* tcon,
+                                  Node* val, const Type* tval) {
+  // Look for opportunities to sharpen the type of a node
+  // whose klass is compared with a constant klass.
+  if (btest == BoolTest::eq && tcon->isa_klassptr()) {
+    Node* obj = extract_obj_from_klass_load(&_gvn, val);
+    const TypeOopPtr* con_type = tcon->isa_klassptr()->as_instance_type();
+    if (obj != NULL && (con_type->isa_instptr() || con_type->isa_aryptr())) {
+       // Found:
+       //   Bool(CmpP(LoadKlass(obj._klass), ConP(Foo.klass)), [eq])
+       // or the narrowOop equivalent.
+       const Type* obj_type = _gvn.type(obj);
+       const TypeOopPtr* tboth = obj_type->join(con_type)->isa_oopptr();
+       if (tboth != NULL && tboth != obj_type && tboth->higher_equal(obj_type)) {
+          // obj has to be of the exact type Foo if the CmpP succeeds.
+          assert(tboth->klass_is_exact(), "klass should be exact");
+          int obj_in_map = map()->find_edge(obj);
+          JVMState* jvms = this->jvms();
+          if (obj_in_map >= 0 &&
+              (jvms->is_loc(obj_in_map) || jvms->is_stk(obj_in_map))) {
+            TypeNode* ccast = new (C, 2) CheckCastPPNode(control(), obj, tboth);
+            const Type* tcc = ccast->as_Type()->type();
+            assert(tcc != obj_type && tcc->higher_equal(obj_type), "must improve");
+            // Delay transform() call to allow recovery of pre-cast value
+            // at the control merge.
+            _gvn.set_type_bottom(ccast);
+            record_for_igvn(ccast);
+            // Here's the payoff.
+            replace_in_map(obj, ccast);
+          }
+       }
+    }
+  }
 
   int val_in_map = map()->find_edge(val);
   if (val_in_map < 0)  return;          // replace_in_map would be useless
@@ -1265,6 +1330,7 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
         // Exclude tests vs float/double 0 as these could be
         // either +0 or -0.  Just because you are equal to +0
         // doesn't mean you ARE +0!
+        // Note, following code also replaces Long and Oop values.
         if ((!tf || tf->_f != 0.0) &&
             (!td || td->_d != 0.0))
           cast = con;                   // Replace non-constant val by con.

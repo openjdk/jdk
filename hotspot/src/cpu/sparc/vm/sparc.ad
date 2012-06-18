@@ -827,7 +827,6 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, const MachNode* n, int primary, int te
       // a Load
       // inputs are (0:control, 1:memory, 2:address)
       if (!(n->ideal_Opcode()==ld_op)       && // Following are special cases
-          !(n->ideal_Opcode()==Op_LoadLLocked && ld_op==Op_LoadI) &&
           !(n->ideal_Opcode()==Op_LoadPLocked && ld_op==Op_LoadP) &&
           !(n->ideal_Opcode()==Op_LoadI     && ld_op==Op_LoadF) &&
           !(n->ideal_Opcode()==Op_LoadF     && ld_op==Op_LoadI) &&
@@ -7303,17 +7302,6 @@ instruct loadPLocked(iRegP dst, memory mem) %{
   opcode(Assembler::ldx_op3, 0, REGP_OP);
 #endif
   ins_encode( form3_mem_reg( mem, dst ) );
-  ins_pipe(iload_mem);
-%}
-
-// LoadL-locked.  Same as a regular long load when used with a compare-swap
-instruct loadLLocked(iRegL dst, memory mem) %{
-  match(Set dst (LoadLLocked mem));
-  ins_cost(MEMORY_REF_COST);
-  size(4);
-  format %{ "LDX    $mem,$dst\t! long" %}
-  opcode(Assembler::ldx_op3);
-  ins_encode(simple_form3_mem_reg( mem, dst ) );
   ins_pipe(iload_mem);
 %}
 

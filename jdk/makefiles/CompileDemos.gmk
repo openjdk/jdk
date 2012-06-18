@@ -134,9 +134,9 @@ define SetupDemo
 			$$(wildcard $$(addprefix $(JDK_TOPDIR)/src/$6share/demo/$2/$1/,$7)))
     ifneq ($7,)
         $(JDK_OUTPUTDIR)/newdemo/$2/$1/% : $(JDK_TOPDIR)/src/$6share/demo/$2/$1/%
-		mkdir -p $$(@D)
-		cp $$< $$@
-		chmod -f ug+w $$@
+		$(MKDIR) -p $$(@D)
+		$(CP) $$< $$@
+		$(CHMOD) -f ug+w $$@
 
         BUILD_DEMOS += $$($1_COPY_TARGETS)
     endif
@@ -155,7 +155,7 @@ $(JDK_OUTPUTDIR)/newdemo/jfc/CodePointIM/_the.services : \
 		cd META-INF/services && \
 		$(JAR) uf $(JDK_OUTPUTDIR)/newdemo/jfc/CodePointIM/CodePointIM.jar java.awt.im.spi.InputMethodDescriptor)
 	$(RM) -r $(JDK_OUTPUTDIR)/newdemo/jfc/CodePointIM/_the.tmp
-	touch $@
+	$(TOUCH) $@
 
 BUILD_DEMOS+=$(JDK_OUTPUTDIR)/newdemo/jfc/CodePointIM/_the.services
 
@@ -167,12 +167,12 @@ $(eval $(call SetupDemo,SampleTree,jfc,,SampleTree,,,README*))
 $(eval $(call SetupDemo,SwingApplet,jfc,,SwingApplet,,,README* *.html))
 $(eval $(call SetupDemo,TableExample,jfc,,TableExample,,,README*))
 $(eval $(call SetupDemo,TransparentRuler,jfc,,transparentruler.Ruler,,,README*))
-$(eval $(call SetupDemo,jconsole-plugin,scripting,-cp $(JDK_OUTPUTDIR)/lib/jconsole.jar,,,,*.xml *.txt))
+$(eval $(call SetupDemo,jconsole-plugin,scripting,-cp $(JDK_OUTPUTDIR)/lib/jconsole.jar,,,,*.xml *.txt,,,,Main-Class: \n))
 $(eval $(call SetupDemo,FullThreadDump,management,,FullThreadDump,,,README*))
 $(eval $(call SetupDemo,JTop,management,-cp $(JDK_OUTPUTDIR)/lib/jconsole.jar,JTop,,,README*))
 $(eval $(call SetupDemo,MemoryMonitor,management,,MemoryMonitor,,,README*))
 $(eval $(call SetupDemo,VerboseGC,management,,VerboseGC,,,README*))
-$(eval $(call SetupDemo,zipfs,nio,,,,,README* *.java))
+$(eval $(call SetupDemo,zipfs,nio,,,,,README* *.java,,,,Main-Class: \n))
 
 ifndef OPENJDK
     $(eval $(call SetupDemo,Laffy,jfc,,,,closed/,*))
@@ -188,9 +188,9 @@ ifndef OPENJDK
 			$(JDK_OUTPUTDIR)/newdemo/nbproject/%,\
 			$(shell $(FIND) $(JDK_TOPDIR)/src/closed/share/demo/nbproject/ -type f))
     $(JDK_OUTPUTDIR)/newdemo/nbproject/% : $(JDK_TOPDIR)/src/closed/share/demo/nbproject/%
-		mkdir -p $(@D)
-		cp $< $@
-		chmod -f ug+w $@
+		$(MKDIR) -p $(@D)
+		$(CP) $< $@
+		$(CHMOD) -f ug+w $@
 endif
 
 ##################################################################################################
@@ -231,6 +231,7 @@ define SetupJVMTIDemo
 		SRC:=$(JDK_TOPDIR)/src/share/demo/jvmti/$1 $$(BUILD_DEMO_JVMTI_$1_EXTRA_SRC),\
 		LANG:=$$(BUILD_DEMO_JVMTI_$1_LANG),\
 		CFLAGS:=$(CFLAGS_JDKLIB) $$(BUILD_DEMO_JVMTI_$1_O_FLAG) -I$(JDK_TOPDIR)/src/share/demo/jvmti/$1 $$(BUILD_DEMO_JVMTI_$1_EXTRA_INC) $3,\
+		CXXFLAGS:=$(CXXFLAGS_JDKLIB) $$(BUILD_DEMO_JVMTI_$1_O_FLAG) -I$(JDK_TOPDIR)/src/share/demo/jvmti/$1 $$(BUILD_DEMO_JVMTI_$1_EXTRA_INC) $3,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB),\
 		LDFLAGS_SUFFIX:=$$($1_EXTRA_CXX),\
 		LDFLAGS_SUFFIX_posix:=$5,\
@@ -255,7 +256,7 @@ define SetupJVMTIDemo
 		BIN:=$(JDK_OUTPUTDIR)/newdemoclasses/jvmti/$1,\
 		COPY:=$(PATTERNS_TO_COPY),\
 		JAR:=$(JDK_OUTPUTDIR)/newdemo/jvmti/$1/$1.jar,\
-		JARMAIN:=,\
+		EXTRA_MANIFEST_ATTR:=Main-Class: \n,\
 		MANIFEST:=$(JDK_TOPDIR)/make/tools/manifest.mf))
 
          BUILD_DEMOS += $(JDK_OUTPUTDIR)/newdemo/jvmti/$1/$1.jar
@@ -290,11 +291,11 @@ JPDA_SOURCES:=$(shell $(FIND) $(JDK_TOPDIR)/src/share/classes/com/sun/tools/exam
 JPDA_FILES:=$(subst $(JDK_TOPDIR)/src/share/classes/,,$(JPDA_SOURCES))
 
 $(JDK_OUTPUTDIR)/newdemo/jpda/src.zip : $(JPDA_SOURCES)
-		mkdir -p $(@D)
+		$(MKDIR) -p $(@D)
 		(cd $(JDK_TOPDIR)/src/share/classes && $(ZIP) -qru $@ com -i "com/sun/tools/example/*")
 
 $(JDK_OUTPUTDIR)/newdemo/jpda/examples.jar : $(JPDA_SOURCES)
-		mkdir -p $(@D)
+		$(MKDIR) -p $(@D)
 		$(RM) $(@D)/_the.sources
 		$(call ListPathsSafely,JPDA_FILES,\n, >> $(@D)/_the.sources)
 		$(SED) -e "s#@@RELEASE@@#$(RELEASE)#" 		\
@@ -304,7 +305,7 @@ $(JDK_OUTPUTDIR)/newdemo/jpda/examples.jar : $(JPDA_SOURCES)
 		(cd $(JDK_TOPDIR)/src/share/classes/com/sun/tools/example && $(JAR) uf $@ README)
 
 $(JDK_OUTPUTDIR)/newdemo/jpda/com/sun/tools/example/README : $(JDK_TOPDIR)/src/share/classes/com/sun/tools/example/README
-		mkdir -p $(@D)
+		$(MKDIR) -p $(@D)
 		$(CP) $< $@
 		$(CHMOD) -f ug+w $@
 
@@ -314,12 +315,12 @@ BUILD_DEMOS += $(JDK_OUTPUTDIR)/newdemo/jpda/src.zip $(JDK_OUTPUTDIR)/newdemo/jp
 ##################################################################################################
 
 $(JDK_OUTPUTDIR)/newdemo/management/index.html : $(JDK_TOPDIR)/src/share/demo/management/index.html
-		mkdir -p $(@D)
+		$(MKDIR) -p $(@D)
 		$(CP) $< $@
 		$(CHMOD) -f ug+w $@
 
 $(JDK_OUTPUTDIR)/newdemo/jvmti/index.html : $(JDK_TOPDIR)/src/share/demo/jvmti/index.html
-		mkdir -p $(@D)
+		$(MKDIR) -p $(@D)
 		$(CP) $< $@
 		$(CHMOD) -f ug+w $@
 
@@ -329,24 +330,102 @@ BUILD_DEMOS += $(JDK_OUTPUTDIR)/newdemo/management/index.html \
 ##################################################################################################
 
 # The netbeans project files are copied into the demo directory.
+BUILD_DEMOS += $(patsubst $(JDK_TOPDIR)/src/share/demo/nbproject/%,\
+		$(JDK_OUTPUTDIR)/newdemo/nbproject/%,\
+		$(shell $(FIND) $(JDK_TOPDIR)/src/share/demo/nbproject/ -type f))
 
-NETBEANS_DEMO_PROJECTS_FILES=$(shell $(FIND) $(JDK_TOPDIR)/src/share/demo/nbproject -type f)
-
-$(JDK_OUTPUTDIR)/newdemo/_the.nbproject: $(NETBEANS_DEMO_PROJECTS_FILES)
-	$(MKDIR) -p $(JDK_OUTPUTDIR)/newdemo
-	$(RM) -rf $(JDK_OUTPUTDIR)/newdemo/nbproject
-	echo Copying Netbeans demo projects
-	(cd $(JDK_TOPDIR)/src/share/demo && cp -r nbproject $(JDK_OUTPUTDIR)/newdemo)
-	touch $@
-
-##################################################################################################
-
-$(JDK_OUTPUTDIR)/newdemo/README : $(JDK_TOPDIR)/src/share/demo/README
-	mkdir -p $(@D)
-	cp $< $@
+$(JDK_OUTPUTDIR)/newdemo/nbproject/% : $(JDK_TOPDIR)/src/share/demo/nbproject/%
+	$(MKDIR) -p $(@D)
+	$(CP) $< $@
+	$(CHMOD) -f ug+w $@
 
 ##################################################################################################
 
-all: $(BUILD_DEMOS) $(JDK_OUTPUTDIR)/newdemo/_the.nbproject $(JDK_OUTPUTDIR)/newdemo/README
+$(JDK_OUTPUTDIR)/newdemo/README: $(JDK_TOPDIR)/src/share/demo/README
+	$(MKDIR) -p $(@D)
+	$(CP) $< $@
+
+BUILD_DEMOS += $(JDK_OUTPUTDIR)/newdemo/README
+
+##################################################################################################
+
+ifeq ($(PLATFORM), solaris)
+
+$(JDK_OUTPUTDIR)/newdemoclasses/jni/Poller/% : $(JDK_TOPDIR)/src/solaris/demo/jni/Poller/%
+		$(MKDIR) -p $(@D)
+		$(CP) $< $@
+		$(CHMOD) -f ug+w $@
+
+$(JDK_OUTPUTDIR)/newdemo/jni/Poller/README.txt : $(JDK_TOPDIR)/src/solaris/demo/jni/Poller/README.txt
+		$(MKDIR) -p $(@D)
+		$(CP) $< $@
+		$(CHMOD) -f ug+w $@
+
+$(JDK_OUTPUTDIR)/newdemo/jni/Poller/Poller.jar : \
+  $(JDK_OUTPUTDIR)/newdemoclasses/jni/Poller/README.txt $(JDK_OUTPUTDIR)/newdemoclasses/jni/Poller/Poller.c
+
+$(eval $(call SetupJavaCompilation,BUILD_DEMO_POLLER_JAR,\
+		SETUP:=GENERATE_USINGJDKBYTECODE, \
+		SRC:=$(JDK_TOPDIR)/src/solaris/demo/jni/Poller, \
+		BIN:=$(JDK_OUTPUTDIR)/newdemoclasses/jni/Poller, \
+		HEADERS:=$(JDK_OUTPUTDIR)/newdemoclasses/jni/Poller, \
+		JAR:=$(JDK_OUTPUTDIR)/newdemo/jni/Poller/Poller.jar, \
+		MANIFEST:=$(JDK_TOPDIR)/make/tools/manifest.mf, \
+		SRCZIP:=$(JDK_OUTPUTDIR)/newdemo/jni/Poller/src.zip, \
+		COPY := README.txt Poller.c, \
+		JARMAIN := Client))
+
+
+
+BUILD_DEMOS += $(JDK_OUTPUTDIR)/newdemo/jni/Poller/Poller.jar $(JDK_OUTPUTDIR)/newdemo/jni/Poller/src.zip \
+               $(JDK_OUTPUTDIR)/newdemo/jni/Poller/README.txt
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBPOLLER,\
+		SRC:=$(JDK_TOPDIR)/src/solaris/demo/jni/Poller, \
+		LANG := C, \
+		CFLAGS:=$(CFLAGS_JDKLIB) $(C_O_FLAG_NORM) $(SHARED_LIBRARY_FLAGS) \
+                        -I$(JDK_OUTPUTDIR)/newdemoclasses/jni/Poller, \
+		LDFLAGS:=$(LDFLAGS_JDKLIB), \
+		BIN:=$(JDK_OUTPUTDIR)/newdemoobjs/jni/Poller,\
+		LIB:=$(JDK_OUTPUTDIR)/newdemoobjs/$(LIBRARY_PREFIX)Poller$(SHARED_LIBRARY_SUFFIX)))
+
+#
+# We can only compile native code after jar has been build (since we depend on generated .h files)
+#
+$(JDK_OUTPUTDIR)/newdemoobjs/jni/Poller/Poller.o : $(JDK_OUTPUTDIR)/newdemo/jni/Poller/Poller.jar
+
+$(JDK_OUTPUTDIR)/newdemo/jni/Poller/lib/$(LIBRARY_PREFIX)Poller$(SHARED_LIBRARY_SUFFIX) : \
+  $(JDK_OUTPUTDIR)/newdemoobjs/$(LIBRARY_PREFIX)Poller$(SHARED_LIBRARY_SUFFIX)
+	$(MKDIR) -p $(@D)
+	$(CP) $< $@
+
+BUILD_DEMOS += $(JDK_OUTPUTDIR)/newdemo/jni/Poller/lib/$(LIBRARY_PREFIX)Poller$(SHARED_LIBRARY_SUFFIX)
+
+endif
+
+##################################################################################################
+
+ifndef OPENJDK
+    DB_DEMO_ZIPFILE := $(shell $(FIND) $(JDK_TOPDIR)/src/closed/share/db -name "*demo*.zip")
+
+    $(JDK_OUTPUTDIR)/newdemo/_the.db.unzipped: $(DB_DEMO_ZIPFILE)
+	$(MKDIR) -p $(@D)
+	$(RM) -rf $(JDK_OUTPUTDIR)/newdemo/db $(JDK_OUTPUTDIR)/newdemo/demo
+	$(CD) $(JDK_OUTPUTDIR)/newdemo && $(UNZIP) -o $<
+	$(MV) $(JDK_OUTPUTDIR)/newdemo/demo $(JDK_OUTPUTDIR)/newdemo/db
+	$(TOUCH) $@
+
+#    Copy this after the unzip above to avoid race with directory creation and mv command.
+     $(JDK_OUTPUTDIR)/newdemo/db/README-JDK-DEMOS.html: \
+		$(JDK_TOPDIR)/src/closed/share/db/README-JDK-DEMOS.html \
+		| $(JDK_OUTPUTDIR)/newdemo/_the.db.unzipped
+	$(MKDIR) -p $(@D)
+	$(CP) '$<' '$@'
+     BUILD_DEMOS += $(JDK_OUTPUTDIR)/newdemo/_the.db.unzipped $(JDK_OUTPUTDIR)/newdemo/db/README-JDK-DEMOS.html
+endif
+
+##################################################################################################
+
+all: $(BUILD_DEMOS)
 
 .PHONY: all

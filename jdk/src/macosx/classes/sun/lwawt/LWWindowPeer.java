@@ -68,7 +68,7 @@ public class LWWindowPeer
 
     private Insets insets = new Insets(0, 0, 0, 0);
 
-    private int screenOn = -1;
+    private GraphicsDevice graphicsDevice;
     private GraphicsConfiguration graphicsConfig;
 
     private SurfaceData surfaceData;
@@ -868,17 +868,6 @@ public class LWWindowPeer
         return 0;
     }
 
-    private static GraphicsConfiguration getScreenGraphicsConfig(int screen) {
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice[] gds = ge.getScreenDevices();
-        if (screen >= gds.length) {
-            // This could happen during device addition/removal. Use
-            // the default screen device in this case
-            return ge.getDefaultScreenDevice().getDefaultConfiguration();
-        }
-        return gds[screen].getDefaultConfiguration();
-    }
-
     /*
      * This method is called when window's graphics config is changed from
      * the app code (e.g. when the window is made non-opaque) or when
@@ -893,7 +882,7 @@ public class LWWindowPeer
             }
             // If window's graphics config is changed from the app code, the
             // config correspond to the same device as before; when the window
-            // is moved by user, screenOn is updated in checkIfOnNewScreen().
+            // is moved by user, graphicsDevice is updated in checkIfOnNewScreen().
             // In either case, there's nothing to do with screenOn here
             graphicsConfig = gc;
         }
@@ -902,16 +891,17 @@ public class LWWindowPeer
     }
 
     private void checkIfOnNewScreen() {
-        int windowScreen = platformWindow.getScreenImOn();
+        GraphicsDevice newGraphicsDevice = platformWindow.getGraphicsDevice();
         synchronized (getStateLock()) {
-            if (windowScreen == screenOn) {
+            if (graphicsDevice == newGraphicsDevice) {
                 return;
             }
-            screenOn = windowScreen;
+            graphicsDevice = newGraphicsDevice;
         }
 
         // TODO: DisplayChangedListener stuff
-        final GraphicsConfiguration newGC = getScreenGraphicsConfig(windowScreen);
+        final GraphicsConfiguration newGC = newGraphicsDevice.getDefaultConfiguration();
+
         if (!setGraphicsConfig(newGC)) return;
 
         SunToolkit.executeOnEventHandlerThread(getTarget(), new Runnable() {

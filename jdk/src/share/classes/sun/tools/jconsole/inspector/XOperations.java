@@ -26,22 +26,18 @@
 package sun.tools.jconsole.inspector;
 
 import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.table.*;
-import javax.swing.tree.*;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.FlowLayout;
 import java.awt.Component;
 import java.awt.event.*;
 import java.util.*;
-import java.io.*;
 
 import javax.management.*;
 
-import sun.tools.jconsole.Resources;
 import sun.tools.jconsole.MBeansTab;
 import sun.tools.jconsole.JConsole;
+import sun.tools.jconsole.Messages;
 
 public abstract class XOperations extends JPanel implements ActionListener {
 
@@ -185,8 +181,8 @@ public abstract class XOperations extends JPanel implements ActionListener {
                     } else {
                         new ThreadDialog(
                                 button,
-                                Resources.getText("Method successfully invoked"),
-                                Resources.getText("Info"),
+                                Messages.METHOD_SUCCESSFULLY_INVOKED,
+                                Messages.INFO,
                                 JOptionPane.INFORMATION_MESSAGE).run();
                     }
                 } catch (Throwable t) {
@@ -196,9 +192,9 @@ public abstract class XOperations extends JPanel implements ActionListener {
                     }
                     new ThreadDialog(
                             button,
-                            Resources.getText("Problem invoking") + " " +
+                            Messages.PROBLEM_INVOKING + " " +
                             button.getText() + " : " + t.toString(),
-                            Resources.getText("Error"),
+                            Messages.ERROR,
                             JOptionPane.ERROR_MESSAGE).run();
                 }
             }
