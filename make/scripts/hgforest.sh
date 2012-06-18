@@ -112,6 +112,9 @@ for i in ${repos} ; do
     sleep 5
   fi
 done
+# Wait for all hg commands to complete
+wait
+
 if [ "${repos_extra}" != "" ] ; then
   for i in ${repos_extra} ; do
     echo "Starting on ${i}"
@@ -127,10 +130,9 @@ if [ "${repos_extra}" != "" ] ; then
       sleep 5
     fi
   done
+  # Wait for all hg commands to complete
+  wait
 fi
-
-# Wait for all hg commands to complete
-wait
 
 # Cleanup
 rm -f -r ${tmp}

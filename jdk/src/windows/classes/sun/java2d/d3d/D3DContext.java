@@ -25,6 +25,7 @@
 
 package sun.java2d.d3d;
 
+import javax.tools.annotation.GenerateNativeHeader;
 import sun.java2d.pipe.BufferedContext;
 import sun.java2d.pipe.RenderBuffer;
 import sun.java2d.pipe.RenderQueue;
@@ -37,6 +38,8 @@ import static sun.java2d.d3d.D3DContext.D3DContextCaps.*;
  * Note that the RenderQueue lock must be acquired before calling any of
  * the methods in this class.
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 class D3DContext extends BufferedContext {
 
     private final D3DGraphicsDevice device;
@@ -140,6 +143,8 @@ class D3DContext extends BufferedContext {
         return device;
     }
 
+    /* No native methods here, but the constants are needed in the supporting JNI code */
+    @GenerateNativeHeader
     static class D3DContextCaps extends ContextCapabilities {
         /**
          * Indicates the presence of pixel shaders (v2.0 or greater).

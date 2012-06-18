@@ -636,17 +636,6 @@ public:
   virtual bool depends_only_on_test() const { return true; }
 };
 
-//------------------------------LoadLLockedNode---------------------------------
-// Load-locked a pointer from memory (either object or array).
-// On Sparc & Intel this is implemented as a normal long load.
-class LoadLLockedNode : public LoadLNode {
-public:
-  LoadLLockedNode( Node *c, Node *mem, Node *adr )
-    : LoadLNode(c,mem,adr,TypeRawPtr::BOTTOM, TypeLong::LONG) {}
-  virtual int Opcode() const;
-  virtual int store_Opcode() const { return Op_StoreLConditional; }
-};
-
 //------------------------------SCMemProjNode---------------------------------------
 // This class defines a projection of the memory  state of a store conditional node.
 // These nodes return a value, but also update memory.

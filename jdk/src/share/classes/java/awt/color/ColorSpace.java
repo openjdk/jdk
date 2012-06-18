@@ -35,6 +35,8 @@
 
 package java.awt.color;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 import sun.java2d.cmm.PCMM;
 import sun.java2d.cmm.CMSManager;
 
@@ -93,8 +95,8 @@ import sun.java2d.cmm.CMSManager;
  * @see ICC_ColorSpace
  */
 
-
-
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public abstract class ColorSpace implements java.io.Serializable {
 
     static final long serialVersionUID = -409452704308689724L;

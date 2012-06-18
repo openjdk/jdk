@@ -67,9 +67,9 @@ public interface PlatformWindow {
     public void setBounds(int x, int y, int w, int h);
 
     /*
-     * Returns the screen number where the window is.
+     * Returns the graphics device where the window is.
      */
-    public int getScreenImOn();
+    public GraphicsDevice getGraphicsDevice();
 
     /*
      * Returns the location of the window.
