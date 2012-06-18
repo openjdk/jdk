@@ -257,7 +257,7 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
     }
 
     public Dimension getPreferredSize(JComponent x) {
-        Dimension preferredSize = super.getMinimumSize(x);
+        Dimension preferredSize = super.getPreferredSize(x);
         Dimension minimumSize = frame.getMinimumSize();
         if (preferredSize.width < minimumSize.width) {
             preferredSize.width = minimumSize.width;

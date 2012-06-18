@@ -74,7 +74,7 @@ class EPollArrayWrapper {
     static final int EVENT_OFFSET     = 0;
     static final int DATA_OFFSET      = offsetofData();
     static final int FD_OFFSET        = DATA_OFFSET;
-    static final int NUM_EPOLLEVENTS  = Math.min(fdLimit(), 8192);
+    static final int NUM_EPOLLEVENTS  = Math.min(IOUtil.fdLimit(), 8192);
 
     // Base address of the native pollArray
     private final long pollArrayAddress;
@@ -296,7 +296,6 @@ class EPollArrayWrapper {
                                  int epfd) throws IOException;
     private static native int sizeofEPollEvent();
     private static native int offsetofData();
-    private static native int fdLimit();
     private static native void interrupt(int fd);
     private static native void init();
 }

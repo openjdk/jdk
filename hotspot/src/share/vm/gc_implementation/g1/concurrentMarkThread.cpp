@@ -293,7 +293,7 @@ void ConcurrentMarkThread::run() {
     // Java thread is waiting for a full GC to happen (e.g., it
     // called System.gc() with +ExplicitGCInvokesConcurrent).
     _sts.join();
-    g1h->increment_full_collections_completed(true /* concurrent */);
+    g1h->increment_old_marking_cycles_completed(true /* concurrent */);
     _sts.leave();
   }
   assert(_should_terminate, "just checking");

@@ -28,47 +28,518 @@ include MakeBase.gmk
 include JavaCompilation.gmk
 include Setup.gmk
 
-default: $(IMAGES_OUTPUTDIR)/_the.images
+default: images
 
 include Tools.gmk
 
-JARS:=
+images: jre-image jdk-image
 
-##########################################################################################
-
-JCONSOLE_JAR_DEPS := \
-  $(shell $(FIND) $(JDK_OUTPUTDIR)/newclasses/sun/tools/jconsole/ -name "_the.package") \
-  $(shell $(FIND) $(JDK_OUTPUTDIR)/newclasses/com/sun/tools/jconsole/ -name "_the.package")
-
-$(eval $(call SetupArchive,BUILD_JCONSOLE_JAR,$(JCONSOLE_JAR_DEPS),\
-		SRCS:=$(JDK_OUTPUTDIR)/newclasses,\
-		SUFFIXES:=.class .gif .png,\
-		INCLUDES:=sun/tools/jconsole com/sun/tools/jconsole,\
-		JARMAIN:=sun.tools.jconsole.JConsole,\
-		JAR:=$(JDK_OUTPUTDIR)/lib/jconsole.jar,\
-		SKIP_METAINF:=true))
-
-JARS+=$(JDK_OUTPUTDIR)/lib/jconsole.jar
-
-##########################################################################################
-
-# Need to define BUILDDIR for Release.gmk to work
-BUILDDIR=$(JDK_TOPDIR)/makefiles
-include common/Defs.gmk
-include common/Release.gmk
-
-# A rudimentary attempt at band-aiding the dependency tracking.
-DEPS:=	$(shell $(FIND) $(JDK_OUTPUTDIR)/newclasses -name "*.class" -type f) \
-	$(shell $(FIND) $(JDK_OUTPUTDIR)/bin -type f) \
-	$(shell $(FIND) $(JDK_OUTPUTDIR)/lib -type f) 
-
-$(IMAGES_OUTPUTDIR)/_the.images : $(DEPS) $(JARS)
+ifeq ($(HOST_OS),solaris)
+define install-file
 	$(MKDIR) -p $(@D)
-# 	Restart this makefile, ugly, but since double colon (::) rules
-# 	have been used in Release.gmk, it is impossible to craft on
-# 	dependencies on these. I.e. -do-not-use- :: rules!!!!!
-#       Repeat after me: -do-not-use- :: rules!!!!!
-	$(MAKE) -j1 -f Images.gmk $(IMAGES_MAKE_ARGS) images
+	$(CP) -r -P '$<' '$(@D)'
+endef
+else
+define install-file
+	$(MKDIR) -p $(@D)
+	$(CP) -P '$<' '$@'
+endef
+endif
+
+################################################################################
+#
+# JRE and JDK build rules
+#
+################################################################################
+
+################################################################################
+# /bin dir
+
+$(JRE_IMAGE_DIR)/bin/%: $(JDK_OUTPUTDIR)/bin/%
+	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
+
+$(JDK_IMAGE_DIR)/bin/%: $(JDK_OUTPUTDIR)/bin/%
+	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
+
+$(JDK_IMAGE_DIR)/jre/bin/%: $(JDK_OUTPUTDIR)/bin/%
+	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
+
+NOT_JRE_BIN_FILES = \
+	appletviewer$(EXE_SUFFIX) \
+	extcheck$(EXE_SUFFIX) \
+	idlj$(EXE_SUFFIX) \
+	jar$(EXE_SUFFIX) \
+	jarsigner$(EXE_SUFFIX) \
+	java-rmi.cgi \
+	javac$(EXE_SUFFIX) \
+	javadoc$(EXE_SUFFIX) \
+	javah$(EXE_SUFFIX) \
+	javap$(EXE_SUFFIX) \
+	jcmd$(EXE_SUFFIX) \
+	jdb$(EXE_SUFFIX) \
+	jps$(EXE_SUFFIX) \
+	jrunscript$(EXE_SUFFIX) \
+	jstat$(EXE_SUFFIX) \
+	jstatd$(EXE_SUFFIX) \
+	jstack$(EXE_SUFFIX) \
+	packagebean$(SCRIPT_SUFFIX) \
+	rmic$(EXE_SUFFIX) \
+	serialver$(EXE_SUFFIX) \
+	unregbean$(EXE_SUFFIX) \
+	jconsole$(EXE_SUFFIX) \
+	jinfo$(EXE_SUFFIX) \
+	jmap$(EXE_SUFFIX) \
+	native2ascii$(EXE_SUFFIX) \
+	xjc$(EXE_SUFFIX) \
+	wsgen$(EXE_SUFFIX) \
+	wsimport$(EXE_SUFFIX) \
+        schemagen$(EXE_SUFFIX) \
+	jsadebugd$(EXE_SUFFIX) \
+	jhat$(EXE_SUFFIX)
+
+WINDOWS_JDK_BIN_FILES = \
+	$(EXE_SUFFIX) \
+	$(LIB_PREFIX)jli$(SHARED_LIBRARY_SUFFIX) \
+	$(MSVCRNN_DLL)
+
+# Find all files in bin dir
+ALL_BIN_LIST := $(shell $(FIND) $(JDK_OUTPUTDIR)/bin -type f)
+ifeq ($(HOST_OS),windows)
+    JDK_BIN_LIST := $(filter $(addprefix %,$(WINDOWS_JDK_BIN_FILES)), $(ALL_BIN_LIST))
+else
+    JDK_BIN_LIST := $(ALL_BIN_LIST)
+endif
+JRE_BIN_LIST := $(filter-out $(addprefix %,$(NOT_JRE_BIN_FILES)), $(ALL_BIN_LIST))
+
+JRE_BIN_TARGETS := $(patsubst $(JDK_OUTPUTDIR)/%,$(JRE_IMAGE_DIR)/%, $(JRE_BIN_LIST))
+JDK_BIN_TARGETS := $(patsubst $(JDK_OUTPUTDIR)/%,$(JDK_IMAGE_DIR)/%, $(JDK_BIN_LIST))
+JDKJRE_BIN_TARGETS := $(patsubst $(JDK_OUTPUTDIR)/%,$(JDK_IMAGE_DIR)/jre/%, $(JRE_BIN_LIST))
+
+################################################################################
+# /lib dir
+
+$(JRE_IMAGE_DIR)/lib/%: $(JDK_OUTPUTDIR)/lib/%
+	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
+
+$(JDK_IMAGE_DIR)/lib/%: $(JDK_OUTPUTDIR)/lib/%
+	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
+
+$(JDK_IMAGE_DIR)/jre/lib/%: $(JDK_OUTPUTDIR)/lib/%
+	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
+
+JDKJRE_LIB_FILES := \
+	$(LIB_PREFIX)attach$(SHARED_LIBRARY_SUFFIX) \
+	$(SALIB_NAME)
+
+NOT_JRE_LIB_FILES := \
+	tools.jar \
+	jconsole.jar \
+	sa-jdi.jar \
+	dt.jar \
+	orb.idl \
+	ir.idl \
+	ct.sym
+
+JDK_LIB_FILES := $(NOT_JRE_LIB_FILES)
+ifeq ($(HOST_OS), linux)
+    JDK_LIB_FILES += jexec
+endif
+
+ALL_LIB_LIST := $(shell $(FIND) $(JDK_OUTPUTDIR)/lib \( -type f -o -type l \) ! -name "_the*")
+JRE_LIB_LIST := $(filter-out $(addprefix %,$(NOT_JRE_LIB_FILES) $(JDKJRE_LIB_FILES)),$(ALL_LIB_LIST))
+JDKJRE_LIB_LIST := $(filter-out $(addprefix %,$(NOT_JRE_LIB_FILES)),$(ALL_LIB_LIST))
+JDK_LIB_LIST := $(filter $(addprefix %,$(JDK_LIB_FILES)),$(ALL_LIB_LIST))
+
+JRE_LIB_TARGETS := $(patsubst $(JDK_OUTPUTDIR)/%,$(JRE_IMAGE_DIR)/%,$(JRE_LIB_LIST))
+JDK_LIB_TARGETS := $(patsubst $(JDK_OUTPUTDIR)/%,$(JDK_IMAGE_DIR)/%,$(JDK_LIB_LIST))
+JDKJRE_LIB_TARGETS := $(patsubst $(JDK_OUTPUTDIR)/%,$(JDK_IMAGE_DIR)/jre/%,$(JDKJRE_LIB_LIST))
+
+# CTE plugin security change require new empty directory lib/applet
+$(JRE_IMAGE_DIR)/lib/applet: 
+	$(ECHO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(MKDIR) -p $@
+
+$(JDK_IMAGE_DIR)/jre/lib/applet: 
+	$(ECHO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(MKDIR) -p $@
+
+$(JRE_IMAGE_DIR)/lib/meta-index: $(JRE_LIB_TARGETS)
+	$(ECHO) Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(CD) $(@D) && $(TOOL_BUILDMETAINDEX) -o meta-index *.jar
+
+$(JDK_IMAGE_DIR)/jre/lib/meta-index: $(JDKJRE_LIB_TARGETS)
+	$(ECHO) Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(CD) $(@D) && $(TOOL_BUILDMETAINDEX) -o meta-index *.jar
+
+$(JRE_IMAGE_DIR)/lib/ext/meta-index: $(JRE_LIB_TARGETS)
+	$(ECHO) Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(CD) $(@D) && $(TOOL_BUILDMETAINDEX) -o meta-index *.jar
+
+$(JDK_IMAGE_DIR)/jre/lib/ext/meta-index: $(JRE_LIB_TARGETS)
+	$(ECHO) Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(CD) $(@D) && $(TOOL_BUILDMETAINDEX) -o meta-index *.jar
+
+################################################################################
+# /man dir
+
+JRE_MAN_PAGES := \
+	java.1		\
+	keytool.1	\
+	orbd.1          \
+	pack200.1	\
+	policytool.1    \
+	rmid.1		\
+	rmiregistry.1	\
+	servertool.1    \
+	tnameserv.1     \
+	unpack200.1
+
+ifndef OPENJDK
+  JRE_MAN_PAGES += javaws.1
+endif
+
+JDK_MAN_PAGES =            \
+	$(JRE_MAN_PAGES)   \
+	appletviewer.1     \
+	extcheck.1         \
+	idlj.1             \
+	jar.1              \
+	jarsigner.1        \
+	javac.1            \
+	javadoc.1          \
+	javah.1            \
+	javap.1            \
+	jconsole.1         \
+	jcmd.1             \
+	jdb.1              \
+	jhat.1             \
+        jinfo.1            \
+        jmap.1             \
+        jps.1              \
+	jrunscript.1       \
+        jsadebugd.1        \
+        jstack.1           \
+        jstat.1            \
+        jstatd.1           \
+	jvisualvm.1        \
+	native2ascii.1     \
+	rmic.1             \
+        schemagen.1        \
+	serialver.1        \
+        wsgen.1            \
+        wsimport.1         \
+        xjc.1
+
+ifeq ($(HOST_OS), linux)
+    MAN_SRC_DIR:=$(JDK_TOPDIR)/src/linux/doc
+    MAN1_SUBDIR:=man
+endif
+ifeq ($(HOST_OS), solaris)
+    MAN_SRC_DIR:=$(JDK_TOPDIR)/src/solaris/doc
+    MAN1_SUBDIR:=sun/man/man1
+endif
+
+$(JRE_IMAGE_DIR)/man/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/%
+	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
+
+$(JDK_IMAGE_DIR)/man/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/%
+	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
+
+$(JRE_IMAGE_DIR)/man/man1/%: $(JDK_OUTPUTDIR)/impdoc/$(MAN1_SUBDIR)/%
+	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
+
+$(JDK_IMAGE_DIR)/man/man1/%: $(JDK_OUTPUTDIR)/impdoc/$(MAN1_SUBDIR)/%
+	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
+
+define install-ja-manpage
+	$(MKDIR) -p $(@D)
+	$(CAT) $< \
+		| $(NATIVE2ASCII) -encoding eucJP \
+		| $(SED) 's/@@VERSION@@/$(THIS_JDK_VERSION)/g' \
+		| $(NATIVE2ASCII) -reverse -encoding $1 \
+		> $@
+endef
+
+$(JRE_IMAGE_DIR)/man/ja_JP.UTF-8/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
+	$(ECHO) Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(call install-ja-manpage,UTF-8)
+
+$(JDK_IMAGE_DIR)/man/ja_JP.UTF-8/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
+	$(ECHO) Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(call install-ja-manpage,UTF-8)
+
+$(JRE_IMAGE_DIR)/man/ja_JP.PCK/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
+	$(ECHO) Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(call install-ja-manpage,PCK)
+
+$(JDK_IMAGE_DIR)/man/ja_JP.PCK/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
+	$(ECHO) Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(call install-ja-manpage,PCK)
+
+ifeq ($(HOST_OS), solaris)
+    $(JRE_IMAGE_DIR)/man/ja/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
+	$(ECHO) Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
+
+    $(JDK_IMAGE_DIR)/man/ja/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
+	$(ECHO) Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
+endif
+
+# Old build creates empty man page for this, mimicing behaviour.
+$(JDK_IMAGE_DIR)/man/ja_JP.UTF-8/man1/jcmd.1 $(JDK_IMAGE_DIR)/man/ja_JP.PCK/man1/jcmd.1 $(JDK_IMAGE_DIR)/man/ja/man1/jcmd.1:
+	$(ECHO) Creating dummy $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(MKDIR) -p $(@D)
 	$(TOUCH) $@
 
-.PHONY: default
+ifeq ($(HOST_OS), linux)
+    $(JRE_IMAGE_DIR)/man/ja:
+	$(ECHO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(CD) $(@D) && $(RM) ja && $(LN) -s ja_JP.UTF-8 ja
+
+    $(JDK_IMAGE_DIR)/man/ja:
+	$(ECHO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(CD) $(@D) && $(RM) ja && $(LN) -s ja_JP.UTF-8 ja
+endif
+
+ifeq ($(HOST_OS), linux)
+    JRE_MAN_PAGE_LIST := $(addprefix $(JRE_IMAGE_DIR)/man/man1/,$(JRE_MAN_PAGES)) \
+			 $(addprefix $(JRE_IMAGE_DIR)/man/ja_JP.UTF-8/man1/,$(JRE_MAN_PAGES)) \
+			 $(JRE_IMAGE_DIR)/man/ja
+
+    JDK_MAN_PAGE_LIST := $(addprefix $(JDK_IMAGE_DIR)/man/man1/,$(JDK_MAN_PAGES)) \
+			 $(addprefix $(JDK_IMAGE_DIR)/man/ja_JP.UTF-8/man1/,$(JDK_MAN_PAGES)) \
+			 $(JDK_IMAGE_DIR)/man/ja
+endif
+
+ifeq ($(HOST_OS), solaris)
+    JRE_MAN_PAGE_LIST := $(addprefix $(JRE_IMAGE_DIR)/man/man1/,$(JRE_MAN_PAGES)) \
+			 $(addprefix $(JRE_IMAGE_DIR)/man/ja/man1/,$(JRE_MAN_PAGES)) \
+			 $(addprefix $(JRE_IMAGE_DIR)/man/ja_JP.UTF-8/man1/,$(JRE_MAN_PAGES)) \
+			 $(addprefix $(JRE_IMAGE_DIR)/man/ja_JP.PCK/man1/,$(JRE_MAN_PAGES))
+
+    JDK_MAN_PAGE_LIST := $(addprefix $(JDK_IMAGE_DIR)/man/man1/,$(JDK_MAN_PAGES)) \
+			 $(addprefix $(JDK_IMAGE_DIR)/man/ja/man1/,$(JDK_MAN_PAGES)) \
+			 $(addprefix $(JDK_IMAGE_DIR)/man/ja_JP.UTF-8/man1/,$(JDK_MAN_PAGES)) \
+			 $(addprefix $(JDK_IMAGE_DIR)/man/ja_JP.PCK/man1/,$(JDK_MAN_PAGES))
+endif
+
+################################################################################
+# /demo dir
+
+ifndef NO_DEMOS
+# FIXME: newdemo/applets/GraphLayout/GraphPanel$2.class is sometimes not copied.
+
+#   The db demo contains an empty dir that needs to be copied. The other 
+#   directories will always trigger the rule for recompile since 
+#   _the.list_of_packages files are touched.
+    $(JDK_IMAGE_DIR)/demo/%: $(JDK_OUTPUTDIR)/newdemo/%
+	if [ ! -d "$@" ]; then \
+	  $(ECHO) Copying '$(patsubst $(OUTPUT_ROOT)/%,%,$@)'; \
+	  $(MKDIR) -p $(@D); \
+	  if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) '$<' '$@'; fi \
+	fi
+
+#   Find all files including directories
+    JDK_DEMO_TARGETS := $(patsubst $(JDK_OUTPUTDIR)/newdemo/%,$(JDK_IMAGE_DIR)/demo/%,\
+			$(shell $(FIND) $(JDK_OUTPUTDIR)/newdemo ! -name "_the.*"))
+
+endif
+
+################################################################################
+# /sample dir
+
+ifndef NO_SAMPLES
+    $(JDK_IMAGE_DIR)/sample/%: $(JDK_OUTPUTDIR)/sample/%
+	$(ECHO) Copying '$(patsubst $(OUTPUT_ROOT)/%,%,$@)'
+	$(install-file)
+
+    JDK_SAMPLE_TARGETS := $(patsubst $(JDK_OUTPUTDIR)/sample/%,$(JDK_IMAGE_DIR)/sample/%,\
+			$(shell $(FIND) $(JDK_OUTPUTDIR)/sample -type f))
+
+endif
+
+################################################################################
+# /db dir
+
+ifndef OPENJDK
+    $(IMAGES_OUTPUTDIR)/_unzip/%.unzipped: $(JDK_TOPDIR)/src/closed/share/db/%
+	$(ECHO) Unzipping $(patsubst $(SRC_ROOT)/%,%,$<)
+	$(MKDIR) -p $(JDK_IMAGE_DIR)/db
+	cd $(JDK_IMAGE_DIR)/db && $(UNZIP) -o $< -x index.html 2> /dev/null
+	$(MKDIR) -p $(@D)
+	$(TOUCH) $@
+
+    $(JDK_IMAGE_DIR)/db/README-JDK.html: $(JDK_TOPDIR)/src/closed/share/db/README-JDK.html
+	$(ECHO) Copying '$(patsubst $(OUTPUT_ROOT)/%,%,$@)'
+	$(install-file)
+
+    JDK_DB_TARGETS := $(patsubst $(JDK_TOPDIR)/src/closed/share/db/%,$(IMAGES_OUTPUTDIR)/_unzip/%.unzipped,\
+			$(shell $(FIND) $(JDK_TOPDIR)/src/closed/share/db -name "*.zip" ! -name "*demo*")) \
+		      $(JDK_IMAGE_DIR)/db/README-JDK.html
+
+endif
+
+################################################################################
+# /include dir
+
+$(JDK_IMAGE_DIR)/include/%: $(JDK_OUTPUTDIR)/include/%
+	$(ECHO) Copying '$(patsubst $(OUTPUT_ROOT)/%,%,$@)'
+	$(install-file)
+
+    JDK_INCLUDE_TARGETS := $(patsubst $(JDK_OUTPUTDIR)/include/%,$(JDK_IMAGE_DIR)/include/%,\
+			$(shell $(FIND) $(JDK_OUTPUTDIR)/include -type f))
+
+################################################################################
+# doc files
+
+ifdef OPENJDK
+    JRE_DOC_FILES := LICENSE ASSEMBLY_EXCEPTION THIRD_PARTY_README
+    JDK_DOC_FILES := LICENSE ASSEMBLY_EXCEPTION THIRD_PARTY_README
+    JRE_DOC_LOCATION := $(JDK_TOPDIR)
+    JDK_DOC_LOCATION := $(JDK_TOPDIR)
+else
+    JRE_DOC_FILES := COPYRIGHT Welcome.html LICENSE THIRDPARTYLICENSEREADME.txt
+    JDK_DOC_FILES := COPYRIGHT README.html  LICENSE THIRDPARTYLICENSEREADME.txt
+    ifeq ($(HOST_OS), windows)
+        JRE_DOC_FILES += README.txt
+    else
+        JRE_DOC_FILES += README
+    endif
+    ifndef NO_DEMOS
+        JDK_DOC_FILES += demo/DEMOS_LICENSE
+    endif
+    ifndef NO_SAMPLES
+        JDK_DOC_FILES += sample/SAMPLES_LICENSE
+    endif
+    JRE_DOC_LOCATION := $(JDK_TOPDIR)/src/closed/share/doc/jre
+    JDK_DOC_LOCATION := $(JDK_TOPDIR)/src/closed/share/doc/jdk
+endif
+JRE_DOC_TARGETS := $(addprefix $(JRE_IMAGE_DIR)/,$(JRE_DOC_FILES))
+JDKJRE_DOC_TARGETS := $(addprefix $(JDK_IMAGE_DIR)/jre/,$(JRE_DOC_FILES))
+JDK_DOC_TARGETS := $(addprefix $(JDK_IMAGE_DIR)/,$(JDK_DOC_FILES))
+
+$(JRE_IMAGE_DIR)/%: $(JRE_DOC_LOCATION)/%
+	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
+
+$(JDK_IMAGE_DIR)/jre/%: $(JRE_DOC_LOCATION)/%
+	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
+
+$(JRE_IMAGE_DIR)/README.txt: $(JRE_DOC_LOCATION)/README
+	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(MKDIR) -p $(@D)
+	$(CP) $< $@
+
+$(JDK_IMAGE_DIR)/jre/README.txt: $(JRE_DOC_LOCATION)/README
+	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(MKDIR) -p $(@D)
+	$(CP) $< $@
+
+$(JDK_IMAGE_DIR)/%: $(JDK_DOC_LOCATION)/%
+	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
+
+$(JDK_IMAGE_DIR)/demo/%: $(JDK_DOC_LOCATION)/%
+	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
+
+$(JDK_IMAGE_DIR)/sample/%: $(JDK_DOC_LOCATION)/%
+	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
+
+JRE_INFO_FILE := $(JRE_IMAGE_DIR)/release
+JDK_INFO_FILE := $(JDK_IMAGE_DIR)/release
+
+# Common way to emit a line into the release or info file
+define info-file-item # name value
+$(PRINTF) '%s="%s"\n' $1 $2 >> $@
+endef
+
+ALL_SOURCE_TIPS = $(shell \
+  if [ -f $(OUTPUT_ROOT)/source_tips ] ; then \
+    $(CAT) $(OUTPUT_ROOT)/source_tips ; \
+  fi)
+
+$(JRE_INFO_FILE): $(OUTPUT_ROOT)/spec.gmk $(OUTPUT_ROOT)/source_tips
+	$(ECHO) Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(call info-file-item, "JAVA_VERSION", "$(JDK_VERSION)")
+	$(call info-file-item, "OS_NAME",      "$(REQUIRED_OS_NAME)")
+	$(call info-file-item, "OS_VERSION",   "$(REQUIRED_OS_VERSION)")
+	$(call info-file-item, "OS_ARCH",      "$(ARCH)")
+	$(call info-file-item, "SOURCE",       "$(ALL_SOURCE_TIPS)")
+
+$(JDK_INFO_FILE): $(OUTPUT_ROOT)/spec.gmk $(OUTPUT_ROOT)/source_tips
+	$(ECHO) Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(call info-file-item, "JAVA_VERSION", "$(JDK_VERSION)")
+	$(call info-file-item, "OS_NAME",      "$(REQUIRED_OS_NAME)")
+	$(call info-file-item, "OS_VERSION",   "$(REQUIRED_OS_VERSION)")
+	$(call info-file-item, "OS_ARCH",      "$(ARCH)")
+	$(call info-file-item, "SOURCE",       "$(ALL_SOURCE_TIPS)")
+
+$(JDK_IMAGE_DIR)/src.zip: $(IMAGES_OUTPUTDIR)/src.zip
+	$(ECHO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(install-file)
+
+################################################################################
+# Post processing (strip etc)
+
+ifneq ($(POST_STRIP_CMD),)
+    ifeq ($(HOST_OS), windows)
+        EXEC_LIST:=$(shell $(FIND) $(JDK_OUTPUTDIR)/bin -type f -name \*.exe \
+		-o -name \*.dll | $(EGREP) -v -i "$(MSVCRNN_DLL)")
+    else
+        # Find all executables in JDK_OUTPUTDIR since they exist when this makefile is parsed
+        EXEC_LIST:=$(shell $(FIND) $(JDK_OUTPUTDIR)/lib -type f -name \*$(SHARED_LIBRARY_SUFFIX) && \
+		$(FILE) `$(FIND) $(JDK_OUTPUTDIR)/bin -type f -name \*$(EXE_SUFFIX)` \
+		| $(EGREP) 'ELF' | $(CUT) -d':' -f1)
+    endif
+    # Filter out non JRE files and convert to unique touch files to depend on
+    JRE_EXEC_TOUCH_LIST:=$(patsubst $(JDK_OUTPUTDIR)/%,$(IMAGES_OUTPUTDIR)/_strip/%.stripped,\
+			$(filter-out $(addprefix %,$(NOT_JRE_BIN_FILES) $(NOT_JRE_LIB_FILES)), $(EXEC_LIST)))
+
+    # Setup a rule for stripping files based on touch files
+    $(IMAGES_OUTPUTDIR)/_strip/%.stripped: $(JRE_IMAGE_DIR)/%
+	$(ECHO) Stripping $(patsubst $(OUTPUT_ROOT)/%,%,$<)
+	$(CHMOD) u+w $<
+	$(POST_STRIP_CMD) $<
+	$(CHMOD) go-w $<
+	$(MKDIR) -p $(@D)
+	$(TOUCH) $@
+endif
+
+################################################################################
+# Main targets
+
+jre-image: $(JRE_BIN_TARGETS) $(JRE_LIB_TARGETS) $(JRE_IMAGE_DIR)/lib/applet \
+	$(JRE_IMAGE_DIR)/lib/meta-index $(JRE_IMAGE_DIR)/lib/ext/meta-index \
+	$(JRE_MAN_PAGE_LIST) $(JRE_DOC_TARGETS) $(JRE_INFO_FILE) $(JRE_EXEC_TOUCH_LIST)
+
+jdk-image: $(JDK_BIN_TARGETS) $(JDKJRE_BIN_TARGETS) \
+	$(JDK_LIB_TARGETS) $(JDKJRE_LIB_TARGETS) \
+	$(JDK_IMAGE_DIR)/jre/lib/applet \
+	$(JDK_DEMO_TARGETS) \
+	$(JDK_IMAGE_DIR)/jre/lib/meta-index $(JDK_IMAGE_DIR)/jre/lib/ext/meta-index \
+	$(JDK_MAN_PAGE_LIST) $(JDK_SAMPLE_TARGETS) \
+	$(JDK_DB_TARGETS) $(JDK_INCLUDE_TARGETS) \
+	$(JDKJRE_DOC_TARGETS) $(JDK_DOC_TARGETS) \
+	$(JDK_INFO_FILE) $(JDK_IMAGE_DIR)/src.zip
+
+################################################################################
+
+.PHONY: default images jre-image jdk-image

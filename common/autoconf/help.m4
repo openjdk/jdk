@@ -23,18 +23,20 @@
 # questions.
 #
 
+function prepare_help_system {
+    AC_CHECK_PROGS(PKGHANDLER, apt-get yum port pkgutil pkgadd)
+}
+	
 function help_on_build_dependency {
     # Print a helpful message on how to acquire the necessary build dependency.
     # $1 is the help tag: freetyp2, cups, pulse, alsa etc
     MISSING_DEPENDENCY=$1
     PKGHANDLER_COMMAND=
 
-    AC_CHECK_PROGS(PKGHANDLER, apt-get yum port pkgutil pkgadd)
-
     case $PKGHANDLER in
 	apt-get)
                 apt_help     $MISSING_DEPENDENCY ;;
-        yum)
+    yum)
                 yum_help     $MISSING_DEPENDENCY ;;
 	port)
                 port_help    $MISSING_DEPENDENCY ;;
@@ -47,7 +49,7 @@ function help_on_build_dependency {
     esac
 
     if test "x$PKGHANDLER_COMMAND" != x; then
-        HELP_MSG="Try running '$PKGHANDLER_COMMAND'."
+        HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
     fi
 }
 

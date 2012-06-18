@@ -54,15 +54,11 @@ public:
     // invoked on Toolkit thread
     static void _SetEchoChar(void *param);
 
-  protected:
-    LONG EditGetCharFromPos(POINT& pt);
-    virtual void Reshape(int x, int y, int w, int h);
+protected:
 
 private:
     void EditSetSel(CHARRANGE &cr);
-    void initialRescroll();
 
-    bool m_initialRescrollFlag;
 };
 
 #endif /* AWT_TEXTFIELD_H */

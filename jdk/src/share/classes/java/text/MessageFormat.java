@@ -422,6 +422,7 @@ public class MessageFormat extends Format {
      * @param pattern the pattern for this message format
      * @exception IllegalArgumentException if the pattern is invalid
      */
+    @SuppressWarnings("fallthrough") // fallthrough in switch is expected, suppress it
     public void applyPattern(String pattern) {
             StringBuilder[] segments = new StringBuilder[4];
             // Allocate only segments[SEG_RAW] here. The rest are
@@ -897,7 +898,7 @@ public class MessageFormat extends Format {
      */
     public AttributedCharacterIterator formatToCharacterIterator(Object arguments) {
         StringBuffer result = new StringBuffer();
-        ArrayList iterators = new ArrayList();
+        ArrayList<AttributedCharacterIterator> iterators = new ArrayList<>();
 
         if (arguments == null) {
             throw new NullPointerException(
@@ -908,7 +909,7 @@ public class MessageFormat extends Format {
             return createAttributedCharacterIterator("");
         }
         return createAttributedCharacterIterator(
-                     (AttributedCharacterIterator[])iterators.toArray(
+                     iterators.toArray(
                      new AttributedCharacterIterator[iterators.size()]));
     }
 
@@ -1074,14 +1075,14 @@ public class MessageFormat extends Format {
         MessageFormat other = (MessageFormat) super.clone();
 
         // clone arrays. Can't do with utility because of bug in Cloneable
-        other.formats = (Format[]) formats.clone(); // shallow clone
+        other.formats = formats.clone(); // shallow clone
         for (int i = 0; i < formats.length; ++i) {
             if (formats[i] != null)
                 other.formats[i] = (Format)formats[i].clone();
         }
         // for primitives or immutables, shallow clone is enough
-        other.offsets = (int[]) offsets.clone();
-        other.argumentNumbers = (int[]) argumentNumbers.clone();
+        other.offsets = offsets.clone();
+        other.argumentNumbers = argumentNumbers.clone();
 
         return other;
     }
@@ -1224,7 +1225,7 @@ public class MessageFormat extends Format {
      *            expected by the format element(s) that use it.
      */
     private StringBuffer subformat(Object[] arguments, StringBuffer result,
-                                   FieldPosition fp, List characterIterators) {
+                                   FieldPosition fp, List<AttributedCharacterIterator> characterIterators) {
         // note: this implementation assumes a fast substring & index.
         // if this is not true, would be better to append chars one by one.
         int lastOffset = 0;

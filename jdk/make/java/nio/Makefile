@@ -55,6 +55,9 @@ FILES_java += \
 	sun/nio/ch/DevPollArrayWrapper.java \
 	sun/nio/ch/DevPollSelectorImpl.java \
         sun/nio/ch/DevPollSelectorProvider.java \
+	sun/nio/ch/EventPortSelectorImpl.java \
+	sun/nio/ch/EventPortSelectorProvider.java \
+	sun/nio/ch/EventPortWrapper.java \
 	sun/nio/ch/InheritedChannel.java \
         sun/nio/ch/PollSelectorProvider.java \
         sun/nio/ch/PollSelectorImpl.java \
